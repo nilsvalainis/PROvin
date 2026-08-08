@@ -1,7 +1,7 @@
 "use client";
 
 import { Expand, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
@@ -18,14 +18,22 @@ type Props = {
 /** lg breakpoint — desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
 
-/**
- * Sample PDFs are A4-ish. Safari fits PDF width to the iframe width, so the
- * laid-out page height ≈ width × this ratio. We scale that box down to fit
- * the preview frame — full page visible, native PDF paint (no WebP shadows).
- */
-const PDF_PAGE_HEIGHT_OVER_WIDTH = 1981 / 1400;
+/** Bust CDN/browser cache when page-1 rasters are regenerated. */
+const MOBILE_PAGE1_ASSET_VERSION = "4";
 
-/** Defaults to desktop so web never flashes the mobile preview layout. */
+/**
+ * Full first-page PNG for mobile.
+ * iOS Safari’s PDF iframe ignores fit/zoom and stays cropped — only a static
+ * full-page image guarantees the whole page is visible. Lossless PNG (not WebP)
+ * avoids the harsh shadow/contour banding from lossy compression.
+ */
+function mobilePreviewImageSrc(pdfHref: string): string | null {
+  const path = pdfHref.split("#")[0] ?? "";
+  if (!path.endsWith(".pdf")) return null;
+  return `${path.replace(/\.pdf$/i, "-page1.png")}?v=${MOBILE_PAGE1_ASSET_VERSION}`;
+}
+
+/** Defaults to desktop so web never flashes the mobile static image. */
 function useIsDesktopPreview() {
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -40,67 +48,9 @@ function useIsDesktopPreview() {
   return isDesktop;
 }
 
-type MobileNativeFitProps = {
-  href: string;
-  title: string;
-  previewLabel: string;
-};
-
-/**
- * Native PDF iframe scaled to show the entire first page inside the frame.
- * pointer-events none — Pakalpojumi page scroll passes through; interact via Pietuvināt.
- */
-function MobileNativePdfFitPreview({ href, title, previewLabel }: MobileNativeFitProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [layout, setLayout] = useState({ pageHeight: 0, scale: 1 });
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const measure = () => {
-      const w = el.clientWidth;
-      const h = el.clientHeight;
-      if (w < 1 || h < 1) return;
-      const pageHeight = w * PDF_PAGE_HEIGHT_OVER_WIDTH;
-      const scale = Math.min(1, h / pageHeight);
-      setLayout({ pageHeight, scale });
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const src = `${href}#page=1&toolbar=0&navpanes=0&scrollbar=0`;
-
-  return (
-    <div
-      ref={containerRef}
-      className="pointer-events-none relative h-[min(28rem,55vh)] w-full overflow-hidden bg-white sm:h-[min(32rem,58vh)]"
-    >
-      {layout.pageHeight > 0 ? (
-        <iframe
-          title={`${title} — ${previewLabel}`}
-          src={src}
-          tabIndex={-1}
-          loading="lazy"
-          className="pointer-events-none absolute left-0 top-0 w-full border-0 bg-white"
-          style={{
-            height: layout.pageHeight,
-            transform: `scale(${layout.scale})`,
-            transformOrigin: "top center",
-          }}
-        />
-      ) : null}
-    </div>
-  );
-}
-
 /**
  * Desktop/web: scrollable PDF iframe (unchanged).
- * Mobile: native PDF (original paint) scaled to fit the full first page;
+ * Mobile: full first-page PNG (object-contain — entire page, not a zoomed crop);
  * touches pass through; PDF interaction only via „Pietuvināt”.
  */
 export function SampleReportPreview({
@@ -143,6 +93,7 @@ export function SampleReportPreview({
   };
 
   const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
+  const mobileImageSrc = href ? mobilePreviewImageSrc(href) : null;
   const lightboxSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
 
   return (
@@ -184,11 +135,23 @@ export function SampleReportPreview({
               </div>
             )}
           </div>
-        ) : href ? (
-          <MobileNativePdfFitPreview href={href} title={title} previewLabel={previewLabel} />
         ) : (
-          <div className="relative flex h-[min(28rem,55vh)] w-full items-center justify-center bg-zinc-950 px-6 text-center sm:h-[min(32rem,58vh)]">
-            <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
+          <div className="pointer-events-none relative flex h-[min(28rem,55vh)] w-full items-center justify-center overflow-hidden bg-white p-1.5 sm:h-[min(32rem,58vh)]">
+            {mobileImageSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element -- full-page PDF snapshot; avoid next/image crop
+              <img
+                src={mobileImageSrc}
+                alt=""
+                className="max-h-full max-w-full object-contain"
+                draggable={false}
+                loading="eager"
+                decoding="async"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-zinc-950 px-6 text-center">
+                <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
+              </div>
+            )}
           </div>
         )}
       </div>
