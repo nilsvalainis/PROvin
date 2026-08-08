@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useLocale } from "next-intl";
+import { useEffect, useState } from "react";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { SampleReportPreview } from "@/components/home/SampleReportPreview";
 import { Link } from "@/i18n/navigation";
@@ -22,6 +23,7 @@ import {
   catalogPackageAnchorId,
   getCatalogFeatureBreakdownPackages,
   type HomeFeatureBreakdownIcon,
+  type HomeFeatureBreakdownPackageId,
 } from "@/lib/home-feature-breakdown";
 import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -98,6 +100,47 @@ export function HomeFeatureBreakdown({
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
   const packages = getCatalogFeatureBreakdownPackages(locale);
+  const [activeId, setActiveId] = useState<HomeFeatureBreakdownPackageId>(
+    packages[0]?.id ?? "mini",
+  );
+
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace(/^#/, "");
+      const match = packages.find((pkg) => catalogPackageAnchorId(pkg.id) === hash);
+      if (match) setActiveId(match.id);
+    };
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, [packages]);
+
+  useEffect(() => {
+    const elements = packages
+      .map((pkg) => document.getElementById(catalogPackageAnchorId(pkg.id)))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const top = visible[0]?.target;
+        if (!(top instanceof HTMLElement) || !top.id) return;
+        const match = packages.find((pkg) => catalogPackageAnchorId(pkg.id) === top.id);
+        if (match) setActiveId(match.id);
+      },
+      {
+        root: null,
+        rootMargin: "-18% 0px -62% 0px",
+        threshold: [0, 0.2, 0.45],
+      },
+    );
+
+    for (const el of elements) observer.observe(el);
+    return () => observer.disconnect();
+  }, [packages]);
 
   return (
     <section
@@ -113,6 +156,45 @@ export function HomeFeatureBreakdown({
           {uiCopy.catalogHeading}
         </h2>
 
+        {/* Desktop/web only — mobile intentionally has no jump strip. */}
+        <nav
+          aria-label={uiCopy.catalogNavAria}
+          className="mb-10 hidden sticky top-11 z-30 -mx-6 border-b border-white/[0.1] bg-[#0d0d0d]/92 px-6 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-[#0d0d0d]/78 lg:block"
+        >
+          <ul className="flex items-stretch justify-center">
+            {packages.map((pkg, index) => {
+              const active = activeId === pkg.id;
+              return (
+                <li key={`nav-d-${pkg.id}`} className="flex min-w-0 items-stretch">
+                  {index > 0 ? (
+                    <span
+                      className="mx-1.5 flex select-none items-center self-center px-3 text-[0.65rem] font-light leading-none text-white/25"
+                      aria-hidden
+                    >
+                      |
+                    </span>
+                  ) : null}
+                  <a
+                    href={`#${catalogPackageAnchorId(pkg.id)}`}
+                    aria-current={active ? "true" : undefined}
+                    data-active={active ? "true" : undefined}
+                    className={`${tp5Styles.tierTabBtn} -mb-px px-2`}
+                    onClick={() => setActiveId(pkg.id)}
+                  >
+                    <span
+                      className={`${tp5Styles.tierTabLabel} ${tp5Styles.tierTabLabelCompact} ${
+                        active ? tp5Styles.tierTabLabelActive : tp5Styles.tierTabLabelInactive
+                      }`}
+                    >
+                      {pkg.title}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
         <div className="flex flex-col">
           {packages.map((pkg) => {
             const checkoutHref = homeHeroCheckoutHref(pkg.id as Tp5MobileServiceId);
@@ -121,7 +203,7 @@ export function HomeFeatureBreakdown({
               <article
                 key={pkg.id}
                 id={catalogPackageAnchorId(pkg.id)}
-                className="scroll-mt-24 border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:scroll-mt-28 sm:py-10 lg:scroll-mt-32 lg:py-12"
+                className="scroll-mt-24 border-b border-white/[0.08] py-8 first:pt-0 last:border-b-0 sm:scroll-mt-28 sm:py-10 lg:scroll-mt-36 lg:py-12"
               >
                 <div className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22.5rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:gap-12">
                   <div className="min-w-0">
