@@ -18,22 +18,14 @@ type Props = {
 /** lg breakpoint — desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
 
-/** Bust CDN/browser cache when page-1 rasters are regenerated. */
-const MOBILE_PAGE1_ASSET_VERSION = "4";
-
 /**
- * Full first-page PNG for mobile.
- * iOS Safari’s PDF iframe ignores fit/zoom and stays cropped — only a static
- * full-page image guarantees the whole page is visible. Lossless PNG (not WebP)
- * avoids the harsh shadow/contour banding from lossy compression.
+ * Sample pages are A4-ish. Mobile preview height follows this ratio so Safari’s
+ * width-fit PDF paint shows the whole first page — no CSS scale (broken for
+ * iOS PDF plugins) and no raster (harsh soft-mask shadows).
  */
-function mobilePreviewImageSrc(pdfHref: string): string | null {
-  const path = pdfHref.split("#")[0] ?? "";
-  if (!path.endsWith(".pdf")) return null;
-  return `${path.replace(/\.pdf$/i, "-page1.png")}?v=${MOBILE_PAGE1_ASSET_VERSION}`;
-}
+const PDF_PAGE_ASPECT = "1400 / 1981";
 
-/** Defaults to desktop so web never flashes the mobile static image. */
+/** Defaults to desktop so web never flashes the mobile preview layout. */
 function useIsDesktopPreview() {
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -48,9 +40,38 @@ function useIsDesktopPreview() {
   return isDesktop;
 }
 
+type MobileNativeProps = {
+  href: string;
+  title: string;
+  previewLabel: string;
+};
+
+/**
+ * Native PDF, full first page: frame aspect matches the page so width-fit ≡ page-fit.
+ * pointer-events none — Pakalpojumi scroll passes through; interact via Pietuvināt.
+ */
+function MobileNativeFullPagePreview({ href, title, previewLabel }: MobileNativeProps) {
+  const src = `${href}#page=1&toolbar=0&navpanes=0&scrollbar=0`;
+
+  return (
+    <div
+      className="pointer-events-none relative w-full overflow-hidden bg-white"
+      style={{ aspectRatio: PDF_PAGE_ASPECT }}
+    >
+      <iframe
+        title={`${title} — ${previewLabel}`}
+        src={src}
+        tabIndex={-1}
+        loading="lazy"
+        className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white"
+      />
+    </div>
+  );
+}
+
 /**
  * Desktop/web: scrollable PDF iframe (unchanged).
- * Mobile: full first-page PNG (object-contain — entire page, not a zoomed crop);
+ * Mobile: native PDF in a page-aspect frame (full page + original Safari paint);
  * touches pass through; PDF interaction only via „Pietuvināt”.
  */
 export function SampleReportPreview({
@@ -93,7 +114,6 @@ export function SampleReportPreview({
   };
 
   const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
-  const mobileImageSrc = href ? mobilePreviewImageSrc(href) : null;
   const lightboxSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
 
   return (
@@ -135,23 +155,11 @@ export function SampleReportPreview({
               </div>
             )}
           </div>
+        ) : href ? (
+          <MobileNativeFullPagePreview href={href} title={title} previewLabel={previewLabel} />
         ) : (
-          <div className="pointer-events-none relative flex h-[min(28rem,55vh)] w-full items-center justify-center overflow-hidden bg-white p-1.5 sm:h-[min(32rem,58vh)]">
-            {mobileImageSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element -- full-page PDF snapshot; avoid next/image crop
-              <img
-                src={mobileImageSrc}
-                alt=""
-                className="max-h-full max-w-full object-contain"
-                draggable={false}
-                loading="eager"
-                decoding="async"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center bg-zinc-950 px-6 text-center">
-                <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
-              </div>
-            )}
+          <div className="relative flex aspect-[1400/1981] w-full items-center justify-center bg-zinc-950 px-6 text-center">
+            <p className="text-sm font-medium text-zinc-500">{comingSoonLabel}</p>
           </div>
         )}
       </div>
