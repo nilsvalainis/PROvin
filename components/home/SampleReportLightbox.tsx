@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
@@ -14,100 +14,10 @@ type Props = {
   onClose: () => void;
 };
 
-const DESKTOP_MQ = "(min-width: 1024px)";
-
-function useIsDesktopLightbox() {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia(DESKTOP_MQ);
-    const apply = () => setIsDesktop(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  return isDesktop;
-}
-
 /**
- * Mobile: render each PDF page at the dialog width (screen-fit) via pdf.js.
- * Avoids iOS Safari’s zoomed native PDF iframe / new-tab viewer.
+ * Full-viewport PDF lightbox using the browser’s native PDF viewer
+ * (original colors/shadows — no pdf.js raster distortions).
  */
-function MobileFitWidthPdfPages({ href }: { href: string }) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-        const loadingTask = pdfjs.getDocument({ url: href, withCredentials: false });
-        const pdf = await loadingTask.promise;
-        if (cancelled) return;
-
-        host.replaceChildren();
-        const cssWidth = Math.max(280, Math.floor(host.clientWidth));
-        const outputScale = Math.min(window.devicePixelRatio || 1, 2);
-
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
-          if (cancelled) return;
-          const page = await pdf.getPage(pageNum);
-          const base = page.getViewport({ scale: 1 });
-          const scale = cssWidth / base.width;
-          const viewport = page.getViewport({ scale: scale * outputScale });
-
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.floor(viewport.width);
-          canvas.height = Math.floor(viewport.height);
-          canvas.style.width = `${cssWidth}px`;
-          canvas.style.height = `${Math.floor(base.height * scale)}px`;
-          canvas.style.display = "block";
-          canvas.style.margin = "0 auto";
-          canvas.style.background = "#fff";
-          canvas.setAttribute("aria-hidden", "true");
-          host.appendChild(canvas);
-
-          const ctx = canvas.getContext("2d", { alpha: false });
-          if (!ctx) continue;
-          await page.render({ canvasContext: ctx, viewport, intent: "print" }).promise;
-
-          if (pageNum < pdf.numPages) {
-            const spacer = document.createElement("div");
-            spacer.style.height = "0.5rem";
-            spacer.setAttribute("aria-hidden", "true");
-            host.appendChild(spacer);
-          }
-        }
-      } catch {
-        if (!cancelled) setError(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      host.replaceChildren();
-    };
-  }, [href]);
-
-  if (error) {
-    return (
-      <iframe
-        title="PDF"
-        src={`${href}#toolbar=0&navpanes=0&view=FitH`}
-        className="absolute inset-0 h-full w-full border-0 bg-white"
-      />
-    );
-  }
-
-  return <div ref={hostRef} className="w-full min-h-full bg-zinc-300" />;
-}
-
 export function SampleReportLightbox({
   open,
   href,
@@ -117,8 +27,8 @@ export function SampleReportLightbox({
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false);
-  const isDesktop = useIsDesktopLightbox();
   const dialogTitleId = useId();
+  const paneSrc = `${href}#toolbar=0&navpanes=0&scrollbar=1`;
 
   useEffect(() => {
     setMounted(true);
@@ -162,7 +72,7 @@ export function SampleReportLightbox({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden rounded-md px-2 py-1 text-[0.75rem] font-medium text-[#60a5fa] hover:underline sm:inline"
+              className="rounded-md px-2 py-1 text-[0.75rem] font-medium text-[#60a5fa] hover:underline"
               onClick={() => recordSampleReportClick()}
             >
               {openPdfLabel}
@@ -177,16 +87,8 @@ export function SampleReportLightbox({
             </button>
           </div>
         </div>
-        <div className="relative min-h-0 flex-1 overflow-auto overscroll-contain bg-zinc-300 sm:bg-zinc-950">
-          {isDesktop ? (
-            <iframe
-              title={title}
-              src={`${href}#toolbar=0&navpanes=0&scrollbar=1`}
-              className="absolute inset-0 h-full w-full border-0"
-            />
-          ) : (
-            <MobileFitWidthPdfPages href={href} />
-          )}
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-white sm:bg-zinc-950">
+          <iframe title={title} src={paneSrc} className="absolute inset-0 h-full w-full border-0 bg-white" />
         </div>
       </div>
     </div>,
