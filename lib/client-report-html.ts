@@ -68,8 +68,8 @@ import {
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import {
   collectUnifiedIncidentRows,
-  sortUnifiedIncidentsNewestFirst,
-  type UnifiedIncidentRow,
+  prepareUnifiedIncidentDisplayRows,
+  type UnifiedIncidentDisplayRow,
 } from "@/lib/unified-incidents";
 import {
   MILEAGE_PDF_SOURCE_LEGEND,
@@ -552,15 +552,16 @@ export function buildUnifiedMileageTableHtml(
 }
 
 // „Bojātā puse / Bojājumu grupas” apakšbloku PDF pagaidām nerādām (dati paliek admin pusē).
-function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
+function buildUnifiedIncidentRowHtml(r: UnifiedIncidentDisplayRow): string {
   const lossCell = formatLossAmountEurCell(r.lossAmount);
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
-  const stripeSpan = buildPdfMileageSourceStripeSpan(r.sourceLabel, "table");
+  const labels = r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel];
+  const stripeSpan = buildPdfMileageSourceStripesHtml(labels, "table");
   const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${stripeSpan}</span></td>`;
   return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
-function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
+function buildIncidentHistoryTableHtml(rows: UnifiedIncidentDisplayRow[]): string {
   if (rows.length === 0) return "";
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
@@ -579,10 +580,16 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   const hasTable = collected.length > 0;
   if (!hasTable && !adminNoteHtml) return "";
-  const rows = sortUnifiedIncidentsNewestFirst(collected);
+  const rows = prepareUnifiedIncidentDisplayRows(collected);
   const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
-  const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
-  const legendAbbrevs = hasTable ? buildPdfSourceLegendAbbrevsHtml(collected.map((r) => r.sourceLabel)) : "";
+  const sourceCount = hasTable
+    ? new Set(rows.flatMap((r) => (r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel]))).size
+    : 0;
+  const legendAbbrevs = hasTable
+    ? buildPdfSourceLegendAbbrevsHtml(
+        rows.flatMap((r) => (r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel])),
+      )
+    : "";
   const sourceCountHtml = hasTable
     ? `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${
         legendAbbrevs
