@@ -68,7 +68,9 @@ import {
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import {
   collectUnifiedIncidentRows,
+  formatUnifiedIncidentCountSummaryLine,
   prepareUnifiedIncidentDisplayRows,
+  summarizeUnifiedIncidentCounts,
   type UnifiedIncidentDisplayRow,
 } from "@/lib/unified-incidents";
 import {
@@ -564,7 +566,7 @@ function buildUnifiedIncidentRowHtml(r: UnifiedIncidentDisplayRow): string {
 function buildIncidentHistoryTableHtml(rows: UnifiedIncidentDisplayRow[]): string {
   if (rows.length === 0) return "";
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
-  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
+  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Mēnesis</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
   const body = rows.map((r) => buildUnifiedIncidentRowHtml(r)).join("\n");
   return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows pdf-mileage-history-table--incidents" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
@@ -582,6 +584,11 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
   if (!hasTable && !adminNoteHtml) return "";
   const rows = prepareUnifiedIncidentDisplayRows(collected);
   const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
+  const countSummary = hasTable ? summarizeUnifiedIncidentCounts(collected, rows) : null;
+  const incidentCountHtml =
+    countSummary != null
+      ? `<p class="pdf-source-count-note pdf-incident-count-note"><span class="pdf-mileage-source-count-title">${escapeHtml(formatUnifiedIncidentCountSummaryLine(countSummary))}</span></p>`
+      : "";
   const sourceCount = hasTable
     ? new Set(rows.flatMap((r) => (r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel]))).size
     : 0;
@@ -598,7 +605,7 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
       }</p>`
     : "";
   const head = sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE);
-  const body = `${tablesHtml}${sourceCountHtml}${adminNoteHtml}`;
+  const body = `${tablesHtml}${incidentCountHtml}${sourceCountHtml}${adminNoteHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 

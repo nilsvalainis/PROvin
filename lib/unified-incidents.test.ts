@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   areUnifiedIncidentAmountsSimilar,
+  formatUnifiedIncidentCountSummaryLine,
   mergeUnifiedIncidentRowsForPdf,
   prepareUnifiedIncidentDisplayRows,
+  summarizeUnifiedIncidentCounts,
   type UnifiedIncidentRow,
 } from "@/lib/unified-incidents";
 
@@ -35,47 +37,72 @@ describe("areUnifiedIncidentAmountsSimilar", () => {
 });
 
 describe("mergeUnifiedIncidentRowsForPdf", () => {
-  it("merges same date + similar amount from different sources into one row with stripes labels", () => {
+  it("merges same month + different days from different sources into one MM.YYYY row", () => {
     const merged = mergeUnifiedIncidentRowsForPdf([
       row({ date: "2021-06-01", lossAmount: "1200 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
-      row({ date: "2021-06-01", lossAmount: "1300 €", sourceLabel: "LTAB", sourceOrder: 1 }),
+      row({ date: "2021-06-15", lossAmount: "1300 €", sourceLabel: "LTAB", sourceOrder: 1 }),
     ]);
     expect(merged).toHaveLength(1);
+    expect(merged[0]?.date).toBe("06.2021");
     expect(merged[0]?.sourceLabels).toEqual(expect.arrayContaining(["AutoDNA", "LTAB"]));
     expect(merged[0]?.lossAmount).toContain("1 200");
     expect(merged[0]?.lossAmount).toContain("1 300");
+    expect(merged[0]?.sourceRecordCount).toBe(2);
   });
 
-  it("keeps same-month different dates as separate incidents", () => {
+  it("merges all records in the same month including same source", () => {
     const merged = mergeUnifiedIncidentRowsForPdf([
-      row({ date: "2021-06-01", lossAmount: "1200 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
-      row({ date: "2021-06-15", lossAmount: "1200 €", sourceLabel: "LTAB", sourceOrder: 1 }),
+      row({ date: "2012-10-01", lossAmount: "1200 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
+      row({ date: "2012-10-01", lossAmount: "800 €", sourceLabel: "AutoDNA", sourceOrder: 1 }),
+      row({ date: "2012-10-01", lossAmount: "1001 - 1500 €", sourceLabel: "CarVertical", sourceOrder: 2 }),
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.date).toBe("10.2012");
+    expect(merged[0]?.sourceRecordCount).toBe(3);
+    expect(merged[0]?.lossAmount).toMatch(/800/);
+    expect(merged[0]?.lossAmount).toMatch(/1\s*500/);
+  });
+
+  it("keeps different months as separate periods", () => {
+    const merged = mergeUnifiedIncidentRowsForPdf([
+      row({ date: "2014-04-01", lossAmount: "1100 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
+      row({ date: "2014-08-01", lossAmount: "3200 €", sourceLabel: "CarVertical", sourceOrder: 1 }),
     ]);
     expect(merged).toHaveLength(2);
+    expect(merged.map((r) => r.date)).toEqual(["08.2014", "04.2014"]);
   });
 
-  it("does not merge two rows from the same source", () => {
+  it("keeps non-numeric labels like theft alongside amount range", () => {
     const merged = mergeUnifiedIncidentRowsForPdf([
-      row({ date: "2021-06-01", lossAmount: "1200 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
-      row({ date: "2021-06-01", lossAmount: "1250 €", sourceLabel: "AutoDNA", sourceOrder: 1 }),
+      row({ date: "2013-01-01", lossAmount: "1001 - 1500 €", sourceLabel: "CarVertical", sourceOrder: 0 }),
+      row({ date: "2013-01-01", lossAmount: "Zādzība", sourceLabel: "AutoDNA", sourceOrder: 1 }),
     ]);
-    expect(merged).toHaveLength(2);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.lossAmount).toContain("Zādzība");
+    expect(merged[0]?.lossAmount).toMatch(/1\s*001/);
   });
 
-  it("does not merge dissimilar amounts on the same date", () => {
-    const merged = mergeUnifiedIncidentRowsForPdf([
-      row({ date: "2021-06-01", lossAmount: "1200 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
-      row({ date: "2021-06-01", lossAmount: "8000 €", sourceLabel: "LTAB", sourceOrder: 1 }),
-    ]);
-    expect(merged).toHaveLength(2);
-  });
-
-  it("prepareUnifiedIncidentDisplayRows sorts newest first", () => {
+  it("prepareUnifiedIncidentDisplayRows sorts newest month first", () => {
     const out = prepareUnifiedIncidentDisplayRows([
       row({ date: "2020-01-01", lossAmount: "500 €", sourceLabel: "LTAB", sourceOrder: 1 }),
       row({ date: "2021-06-01", lossAmount: "1200 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
     ]);
-    expect(out[0]?.date).toBe("2021-06-01");
-    expect(out[1]?.date).toBe("2020-01-01");
+    expect(out[0]?.date).toBe("06.2021");
+    expect(out[1]?.date).toBe("01.2020");
+  });
+
+  it("summarizes period vs source record counts", () => {
+    const collected = [
+      row({ date: "2012-10-01", lossAmount: "800 €", sourceLabel: "AutoDNA", sourceOrder: 0 }),
+      row({ date: "2012-10-01", lossAmount: "900 €", sourceLabel: "CarVertical", sourceOrder: 1 }),
+      row({ date: "2014-08-01", lossAmount: "3200 €", sourceLabel: "AutoDNA", sourceOrder: 2 }),
+    ];
+    const display = mergeUnifiedIncidentRowsForPdf(collected);
+    const summary = summarizeUnifiedIncidentCounts(collected, display);
+    expect(summary.periodCount).toBe(2);
+    expect(summary.sourceRecordCount).toBe(3);
+    expect(formatUnifiedIncidentCountSummaryLine(summary)).toContain("Negadījumu periodi: 2");
+    expect(formatUnifiedIncidentCountSummaryLine(summary)).toContain("AutoDNA: 2");
+    expect(formatUnifiedIncidentCountSummaryLine(summary)).toContain("CarVertical: 1");
   });
 });

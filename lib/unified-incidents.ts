@@ -1,6 +1,6 @@
 /**
  * Vienota negadījumu tabula PDF — AutoDNA, CarVertical, LTAB, Citi avoti (tikai rindas ar aizpildītu „Zaudējumu summu”).
- * PDF attēlojumā dažādu avotu līdzīgi ieraksti (tas pats datums + līdzīga summa) apvienojas ar strīpiņām.
+ * PDF: visi ieraksti vienā kalendāra mēnesī apvienojas vienā rindā ar avotu strīpiņām un summu diapazonu.
  */
 
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
@@ -20,15 +20,26 @@ export type UnifiedIncidentRow = {
   sourceLabel: string;
 };
 
-/** Tabulas rinda pēc PDF apvienošanas — vairāki avoti vienā „Avots” kolonnā. */
+/** Tabulas rinda pēc PDF mēneša apvienošanas — vairāki avoti / summas vienā rindā. */
 export type UnifiedIncidentDisplayRow = UnifiedIncidentRow & {
   sourceLabels: string[];
+  /** Cik avotu ierakstu iekļauti šajā mēneša rindā. */
+  sourceRecordCount: number;
 };
 
-/** Relatīvā summas starpība (no lielākās) — apvienošanai starp avotiem. */
+export type UnifiedIncidentCountSummary = {
+  /** Rindu skaits pēc mēneša apvienošanas (periodi). */
+  periodCount: number;
+  /** Neapvienoto avotu ierakstu skaits. */
+  sourceRecordCount: number;
+  /** Ieraksti pa avotu etiķeti (AutoDNA, CarVertical, …). */
+  bySource: { label: string; count: number }[];
+};
+
+/** Relatīvā summas starpība (no lielākās) — paliek utilītēm / testiem. */
 export const UNIFIED_INCIDENT_MERGE_MAX_REL_DIFF = 0.15;
 
-/** Absolūtā summas starpība (€) — apvienošanai starp avotiem. */
+/** Absolūtā summas starpība (€). */
 export const UNIFIED_INCIDENT_MERGE_MAX_ABS_DIFF_EUR = 250;
 
 function incidentRowHasLossAmount(r: LtabIncidentRow): boolean {
@@ -70,7 +81,7 @@ export function collectUnifiedIncidentRows(args: {
   return out;
 }
 
-/** Jaunākais datums augšā (kā nobraukuma tabulā). */
+/** Jaunākais datums / mēnesis augšā. */
 export function sortUnifiedIncidentsNewestFirst(rows: UnifiedIncidentRow[]): UnifiedIncidentRow[] {
   return [...rows].sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
@@ -78,16 +89,28 @@ export function sortUnifiedIncidentsNewestFirst(rows: UnifiedIncidentRow[]): Uni
   });
 }
 
-function dateGroupKey(r: UnifiedIncidentRow): string {
-  if (r.sortableTime !== Number.NEGATIVE_INFINITY) return `t:${r.sortableTime}`;
-  return `d:${r.date.trim().toLowerCase()}`;
+/** Kalendāra mēneša atslēga `YYYY-MM` (UTC); bez derīga datuma — atsevišķi. */
+export function incidentMonthGroupKey(r: UnifiedIncidentRow): string {
+  if (r.sortableTime !== Number.NEGATIVE_INFINITY) {
+    const d = new Date(r.sortableTime);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }
+  return `raw:${r.date.trim().toLowerCase() || "—"}`;
+}
+
+export function formatIncidentMonthLabel(monthKey: string, fallbackDate: string): string {
+  const m = monthKey.match(/^(\d{4})-(\d{2})$/);
+  if (m) return `${m[2]}.${m[1]}`;
+  return fallbackDate || "—";
 }
 
 function sourceKey(label: string): string {
   return label.trim().toLowerCase() || "nezināms avots";
 }
 
-/** Vai divas summas uzskatāmas par to pašu notikumu (min(15 %, 250 €)). */
+/** Vai divas summas uzskatāmas par tuvām (min(15 %, 250 €)) — utilīta / testi. */
 export function areUnifiedIncidentAmountsSimilar(aRaw: string, bRaw: string): boolean {
   const a = parseLossAmountEurComparable(aRaw);
   const b = parseLossAmountEurComparable(bRaw);
@@ -114,80 +137,117 @@ function uniqueSourceLabelsOrdered(rows: UnifiedIncidentRow[]): string[] {
 function formatMergedLossAmount(rows: UnifiedIncidentRow[]): string {
   let lo = Number.POSITIVE_INFINITY;
   let hi = Number.NEGATIVE_INFINITY;
-  let any = false;
+  let anyNumeric = false;
+  const nonNumeric: string[] = [];
+  const seenText = new Set<string>();
+
   for (const r of rows) {
     const bounds = parseLossAmountEurBounds(r.lossAmount);
-    if (!bounds) continue;
-    any = true;
-    lo = Math.min(lo, bounds.lo);
-    hi = Math.max(hi, bounds.hi);
+    if (bounds) {
+      anyNumeric = true;
+      lo = Math.min(lo, bounds.lo);
+      hi = Math.max(hi, bounds.hi);
+      continue;
+    }
+    const t = r.lossAmount.trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seenText.has(key)) continue;
+    seenText.add(key);
+    nonNumeric.push(t);
   }
-  if (!any) return rows[0]?.lossAmount ?? "";
-  if (lo === hi) return normalizeLossAmountEurDisplay(`${lo} €`) || `${lo} €`;
-  return normalizeLossAmountEurDisplay(`${lo} - ${hi} €`) || `${lo} - ${hi} €`;
+
+  const parts: string[] = [];
+  if (anyNumeric) {
+    if (lo === hi) parts.push(normalizeLossAmountEurDisplay(`${lo} €`) || `${lo} €`);
+    else parts.push(normalizeLossAmountEurDisplay(`${lo} - ${hi} €`) || `${lo} - ${hi} €`);
+  }
+  parts.push(...nonNumeric);
+  if (parts.length === 0) return rows[0]?.lossAmount ?? "";
+  return parts.join("; ");
 }
 
-function mergeIncidentCluster(cluster: UnifiedIncidentRow[]): UnifiedIncidentDisplayRow {
+function mergeIncidentMonthCluster(
+  monthKey: string,
+  cluster: UnifiedIncidentRow[],
+): UnifiedIncidentDisplayRow {
   const sorted = sortUnifiedIncidentsNewestFirst(cluster);
   const primary = sorted[0] ?? cluster[0]!;
   const labels = uniqueSourceLabelsOrdered(cluster);
   const countries = [
     ...new Set(cluster.map((r) => r.country.trim()).filter((c) => c && c !== "—")),
   ];
+  const monthMs =
+    primary.sortableTime !== Number.NEGATIVE_INFINITY
+      ? Date.UTC(
+          new Date(primary.sortableTime).getUTCFullYear(),
+          new Date(primary.sortableTime).getUTCMonth(),
+          1,
+        )
+      : primary.sortableTime;
   return {
     ...primary,
+    date: formatIncidentMonthLabel(monthKey, primary.date),
+    sortableTime: monthMs,
     lossAmount: formatMergedLossAmount(cluster),
     country: countries.length <= 1 ? (countries[0] ?? primary.country) : countries.join(" / "),
     sourceOrder: Math.min(...cluster.map((r) => r.sourceOrder)),
     sourceLabel: labels[0] ?? primary.sourceLabel,
     sourceLabels: labels,
+    sourceRecordCount: cluster.length,
   };
 }
 
 /**
- * PDF: apvieno dažādu avotu rindas ar to pašu datumu un līdzīgu summu.
- * Viena avota vairāki ieraksti (arī tajā pašā mēnesī / dienā) paliek atsevišķi.
+ * PDF: apvieno visus ierakstus vienā kalendāra mēnesī (gads + mēnesis) — vieglākai uztverei.
+ * Viena rinda = mēnesis; summa kā diapazons; avoti kā strīpiņas.
  */
 export function mergeUnifiedIncidentRowsForPdf(rows: UnifiedIncidentRow[]): UnifiedIncidentDisplayRow[] {
-  const byDate = new Map<string, UnifiedIncidentRow[]>();
+  const byMonth = new Map<string, UnifiedIncidentRow[]>();
   for (const row of rows) {
-    const key = dateGroupKey(row);
-    const bucket = byDate.get(key) ?? [];
+    const key = incidentMonthGroupKey(row);
+    const bucket = byMonth.get(key) ?? [];
     bucket.push(row);
-    byDate.set(key, bucket);
+    byMonth.set(key, bucket);
   }
 
   const out: UnifiedIncidentDisplayRow[] = [];
-  for (const bucket of byDate.values()) {
-    const clusters: UnifiedIncidentRow[][] = [];
-    const ordered = [...bucket].sort((a, b) => a.sourceOrder - b.sourceOrder);
-
-    for (const row of ordered) {
-      const amountOk = parseLossAmountEurComparable(row.lossAmount) != null;
-      let placed = false;
-      if (amountOk) {
-        for (const cluster of clusters) {
-          if (cluster.some((c) => sourceKey(c.sourceLabel) === sourceKey(row.sourceLabel))) continue;
-          if (!cluster.every((c) => areUnifiedIncidentAmountsSimilar(c.lossAmount, row.lossAmount))) {
-            continue;
-          }
-          cluster.push(row);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) clusters.push([row]);
-    }
-
-    for (const cluster of clusters) {
-      out.push(mergeIncidentCluster(cluster));
-    }
+  for (const [monthKey, bucket] of byMonth) {
+    out.push(mergeIncidentMonthCluster(monthKey, bucket));
   }
-
   return sortUnifiedIncidentsNewestFirst(out) as UnifiedIncidentDisplayRow[];
 }
 
-/** PDF tabulas rindas — jaunākais augšā + starpavotu apvienošana. */
+/** PDF tabulas rindas — jaunākais mēnesis augšā + mēneša apvienošana. */
 export function prepareUnifiedIncidentDisplayRows(rows: UnifiedIncidentRow[]): UnifiedIncidentDisplayRow[] {
   return mergeUnifiedIncidentRowsForPdf(rows);
+}
+
+/** Skaitļi zem tabulas — periodi vs neapvienotie avotu ieraksti. */
+export function summarizeUnifiedIncidentCounts(
+  collected: UnifiedIncidentRow[],
+  displayRows: UnifiedIncidentDisplayRow[],
+): UnifiedIncidentCountSummary {
+  const bySourceMap = new Map<string, { label: string; count: number }>();
+  for (const r of collected) {
+    const lbl = r.sourceLabel.trim() || "Nezināms avots";
+    const key = sourceKey(lbl);
+    const prev = bySourceMap.get(key);
+    if (prev) prev.count += 1;
+    else bySourceMap.set(key, { label: lbl, count: 1 });
+  }
+  return {
+    periodCount: displayRows.length,
+    sourceRecordCount: collected.length,
+    bySource: [...bySourceMap.values()],
+  };
+}
+
+export function formatUnifiedIncidentCountSummaryLine(summary: UnifiedIncidentCountSummary): string {
+  const bySrc =
+    summary.bySource.length > 0
+      ? summary.bySource.map((s) => `${s.label}: ${s.count}`).join(", ")
+      : "";
+  const base = `Negadījumu periodi: ${summary.periodCount} · Ieraksti avotos: ${summary.sourceRecordCount}`;
+  return bySrc ? `${base} (${bySrc})` : base;
 }
