@@ -48,7 +48,7 @@ function useIsDesktopPreview() {
 
 /**
  * Desktop/web: scrollable PDF iframe (unchanged).
- * Mobile: full-page PNG preview; „Pietuvināt” opens screen-fit lightbox (not zoomed).
+ * Mobile: full-page PNG preview; „Pietuvināt” opens the original PDF in a native lightbox.
  */
 export function SampleReportPreview({
   href,

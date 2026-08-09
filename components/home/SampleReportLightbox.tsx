@@ -15,8 +15,8 @@ type Props = {
 };
 
 /**
- * Full-viewport PDF lightbox using the browser’s native PDF viewer
- * (original colors/shadows — no pdf.js raster distortions).
+ * Native PDF iframe lightbox (browser viewer — no pdf.js re-raster).
+ * Pakalpojumi „Pietuvināt”; hero „Skatīt atskaites piemēru” opens the PDF in a new tab.
  */
 export function SampleReportLightbox({
   open,
@@ -52,7 +52,7 @@ export function SampleReportLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-stretch justify-center bg-black/80 p-0 sm:items-center sm:bg-black/75 sm:p-3 lg:p-6"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 sm:p-6"
       role="presentation"
       onClick={onClose}
     >
@@ -60,10 +60,10 @@ export function SampleReportLightbox({
         role="dialog"
         aria-modal="true"
         aria-labelledby={dialogTitleId}
-        className="flex h-[100dvh] w-full max-w-none flex-col overflow-hidden bg-zinc-950 shadow-2xl sm:h-[min(92vh,56rem)] sm:max-w-5xl sm:rounded-2xl sm:border sm:border-white/15"
+        className="flex h-[min(92vh,56rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-zinc-950 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-3 sm:px-4">
+        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
           <h2 id={dialogTitleId} className="min-w-0 truncate text-sm font-semibold text-zinc-100">
             {title}
           </h2>
