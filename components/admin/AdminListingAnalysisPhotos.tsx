@@ -36,6 +36,8 @@ type Props = {
   maxPhotos?: number;
   emptyGroup?: () => PhotoGroupLike;
   sectionTitle?: string;
+  /** `thumb` — mazs režģis; `wide` — pilns komentāra platums, proporcionāls augstums. */
+  previewLayout?: "thumb" | "wide";
 };
 
 const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif)$/i;
@@ -123,6 +125,7 @@ export function AdminListingAnalysisPhotos({
   maxPhotos = LISTING_ANALYSIS_MAX_PHOTOS,
   emptyGroup = emptyListingAnalysisPhotoGroup,
   sectionTitle = "Fotogrāfijas (PDF režģis)",
+  previewLayout = "thumb",
 }: Props) {
   const baseInputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -643,7 +646,7 @@ export function AdminListingAnalysisPhotos({
           )}
 
           {group.photos.length > 0 ? (
-            <ul className="flex flex-wrap gap-2">
+            <ul className={previewLayout === "wide" ? "flex flex-col gap-2" : "flex flex-wrap gap-2"}>
               {group.photos.map((p, index) => (
                 <li
                   key={p.id}
@@ -652,11 +655,19 @@ export function AdminListingAnalysisPhotos({
                   onDragOver={(e) => onDragOverItem(e, group.id, index)}
                   onDrop={(e) => onDropItem(e, group.id, index)}
                   onDragEnd={onDragEnd}
-                  className={`group relative flex h-[4.5rem] w-[4.5rem] shrink-0 cursor-grab flex-col overflow-hidden rounded-md border bg-black/[0.06] active:cursor-grabbing dark:bg-white/10 ${
-                    dragOver?.groupId === group.id && dragOver.index === index
-                      ? "border-[var(--color-provin-accent)] ring-2 ring-[var(--color-provin-accent)]/30"
-                      : "border-[var(--admin-field-border)]"
-                  }`}
+                  className={
+                    previewLayout === "wide"
+                      ? `group relative w-full min-w-0 cursor-grab overflow-hidden rounded-md border bg-black/[0.04] active:cursor-grabbing dark:bg-white/5 ${
+                          dragOver?.groupId === group.id && dragOver.index === index
+                            ? "border-[var(--color-provin-accent)] ring-2 ring-[var(--color-provin-accent)]/30"
+                            : "border-[var(--admin-field-border)]"
+                        }`
+                      : `group relative flex h-[4.5rem] w-[4.5rem] shrink-0 cursor-grab flex-col overflow-hidden rounded-md border bg-black/[0.06] active:cursor-grabbing dark:bg-white/10 ${
+                          dragOver?.groupId === group.id && dragOver.index === index
+                            ? "border-[var(--color-provin-accent)] ring-2 ring-[var(--color-provin-accent)]/30"
+                            : "border-[var(--admin-field-border)]"
+                        }`
+                  }
                   title="Velc, lai mainītu secību PDF"
                 >
                   <span className="absolute left-0.5 top-0.5 z-10 rounded bg-black/45 p-0.5 text-white opacity-0 transition group-hover:opacity-100">
@@ -666,7 +677,11 @@ export function AdminListingAnalysisPhotos({
                   <img
                     src={displaySrc(p.id)}
                     alt=""
-                    className="h-full w-full object-cover"
+                    className={
+                      previewLayout === "wide"
+                        ? "block h-auto w-full object-contain"
+                        : "h-full w-full object-cover"
+                    }
                     loading="lazy"
                     decoding="async"
                     draggable={false}

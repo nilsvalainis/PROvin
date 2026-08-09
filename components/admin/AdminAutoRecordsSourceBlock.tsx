@@ -334,7 +334,8 @@ export function AdminAutoRecordsSourceBlock({
               apiBasePath="/api/admin/auto-records-photo"
               maxPhotos={AUTO_RECORDS_MAX_PHOTOS}
               emptyGroup={emptyAutoRecordsPhotoGroup}
-              sectionTitle="Fotogrāfijas (PDF režģis)"
+              sectionTitle="Fotogrāfijas (PDF)"
+              previewLayout="wide"
             />
           ) : null}
           <AdminSourceCommentField
