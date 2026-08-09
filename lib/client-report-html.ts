@@ -35,6 +35,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
+import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import {
   buildPdfAdminMirrorClientBlock,
   buildPdfAdminMirrorNotesBlock,
@@ -714,10 +715,46 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
 
 const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
 
+function buildSourcePhotoGroupsPdfHtml(
+  photoGroups: { title: string; photos: { id: string }[] }[] | null | undefined,
+  legacyPhotos: { id: string }[] | null | undefined,
+  dataUrls: Map<string, string> | undefined,
+  normalizeGroups: (
+    groups: unknown,
+    legacy: unknown,
+  ) => { title: string; photos: { id: string }[] }[],
+): string {
+  if (!dataUrls?.size) return "";
+
+  const groups = normalizeGroups(photoGroups, legacyPhotos);
+  if (groups.length === 0) return "";
+
+  const sections: string[] = [];
+  for (const group of groups) {
+    const cells: string[] = [];
+    for (const ph of group.photos) {
+      const src = dataUrls.get(ph.id);
+      if (!src) continue;
+      cells.push(
+        `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/></figure>`,
+      );
+    }
+    if (cells.length === 0) continue;
+    const titleHtml = group.title.trim()
+      ? `<p class="pdf-listing-photo-group-title">${escapeHtml(group.title.trim())}</p>`
+      : "";
+    sections.push(
+      `<section class="pdf-listing-photo-group">${titleHtml}<div class="pdf-listing-photo-grid">${cells.join("")}</div></section>`,
+    );
+  }
+  return sections.join("");
+}
+
 /** AUTO RECORDS — Outvin dīlera dati PDF; nobraukums tikai vienotajā tabulā; servisa vēsture + komentāri atsevišķi. */
 function buildAutoRecordsAvotuSubsection(
   b: AutoRecordsBlockState | null | undefined,
   vis: PdfVisibilitySettings,
+  autoRecordsPhotoDataUrls?: Map<string, string>,
 ): string {
   if (!vis.auto_records) return "";
   if (!b || !autoRecordsBlockHasContent(b)) return "";
@@ -736,8 +773,15 @@ function buildAutoRecordsAvotuSubsection(
   const hasComments = commentBlock.trim().length > 0;
   const hasOutvin = outvinInner.length > 0;
   const hasServiceHistory = serviceHistoryBox.length > 0;
+  const photosHtml = buildSourcePhotoGroupsPdfHtml(
+    b.photoGroups,
+    b.photos,
+    autoRecordsPhotoDataUrls,
+    normalizeAutoRecordsPhotoGroups,
+  );
+  const hasPhotos = photosHtml.length > 0;
 
-  if (!hasOutvin && !hasServiceHistory && !hasComments) return "";
+  if (!hasOutvin && !hasServiceHistory && !hasComments && !hasPhotos) return "";
 
   const head = pdfV1PanelHead(
     SOURCE_BLOCK_LABELS.auto_records.toLowerCase(),
@@ -746,6 +790,7 @@ function buildAutoRecordsAvotuSubsection(
   const bodyParts: string[] = [];
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
+  if (hasPhotos) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}${bodyParts.join("\n")}</div>`;
 }
@@ -784,30 +829,12 @@ function buildListingAnalysisPhotosPdfHtml(
   legacyPhotos: { id: string }[] | null | undefined,
   dataUrls: Map<string, string> | undefined,
 ): string {
-  if (!dataUrls?.size) return "";
-
-  const groups = normalizeListingAnalysisPhotoGroups(photoGroups, legacyPhotos);
-  if (groups.length === 0) return "";
-
-  const sections: string[] = [];
-  for (const group of groups) {
-    const cells: string[] = [];
-    for (const ph of group.photos) {
-      const src = dataUrls.get(ph.id);
-      if (!src) continue;
-      cells.push(
-        `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/></figure>`,
-      );
-    }
-    if (cells.length === 0) continue;
-    const titleHtml = group.title.trim()
-      ? `<p class="pdf-listing-photo-group-title">${escapeHtml(group.title.trim())}</p>`
-      : "";
-    sections.push(
-      `<section class="pdf-listing-photo-group">${titleHtml}<div class="pdf-listing-photo-grid">${cells.join("")}</div></section>`,
-    );
-  }
-  return sections.join("");
+  return buildSourcePhotoGroupsPdfHtml(
+    photoGroups,
+    legacyPhotos,
+    dataUrls,
+    normalizeListingAnalysisPhotoGroups,
+  );
 }
 
 function buildListingAnalysisPriorityHtml(
@@ -884,7 +911,11 @@ function buildCitiAvotiAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilit
  * Avotu apakšsadaļas (PDF): katra patstāvīga pilna platuma zona — CSDD, AutoDNA, CarVertical, utt.
  * Nav kopējā „Avotu bloki“ mātes sadaļas.
  */
-function buildAvotuDatiSectionHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+function buildAvotuDatiSectionHtml(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+  autoRecordsPhotoDataUrls?: Map<string, string>,
+): string {
   const csdd = buildCsddAvotuSubsection(p, vis);
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock, vis);
   const citiAvoti = buildCitiAvotiAvotuSubsection(p, vis);
@@ -897,7 +928,11 @@ function buildAvotuDatiSectionHtml(p: ClientReportPayload, vis: PdfVisibilitySet
   };
   const autodna = vendorHtml(SOURCE_BLOCK_LABELS.autodna);
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
-  const autoRecords = buildAutoRecordsAvotuSubsection(p.autoRecordsBlock ?? null, vis);
+  const autoRecords = buildAutoRecordsAvotuSubsection(
+    p.autoRecordsBlock ?? null,
+    vis,
+    autoRecordsPhotoDataUrls,
+  );
 
   const stack = [csdd, autodna, carvertical, autoRecords, ltab, citiAvoti].filter(Boolean);
   if (stack.length === 0) return "";
@@ -1635,8 +1670,9 @@ export function buildClientReportDocumentHtml(args: {
   dateFmt: Intl.DateTimeFormat;
   formatBytes: (n: number) => string;
   listingAnalysisPhotoDataUrls?: Map<string, string>;
+  autoRecordsPhotoDataUrls?: Map<string, string>;
 }): string {
-  const { payload: p, dateFmt, listingAnalysisPhotoDataUrls } = args;
+  const { payload: p, dateFmt, listingAnalysisPhotoDataUrls, autoRecordsPhotoDataUrls } = args;
   const vis = mergePdfVisibility(p.pdfVisibility);
 
   const money =
@@ -1732,7 +1768,7 @@ export function buildClientReportDocumentHtml(args: {
   const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis);
   if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
 
-  const avotuHtml = buildAvotuDatiSectionHtml(p, vis);
+  const avotuHtml = buildAvotuDatiSectionHtml(p, vis, autoRecordsPhotoDataUrls);
   if (avotuHtml) lines.push(avotuHtml);
 
   const listingPriorityHtml = buildListingAnalysisPriorityHtml(p, vis, listingAnalysisPhotoDataUrls);

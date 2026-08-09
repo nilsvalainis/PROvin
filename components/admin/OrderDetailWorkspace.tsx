@@ -35,9 +35,11 @@ import {
   toPdfManualVendorBlocks,
   type SourceBlockKey,
   type ListingAnalysisBlockState,
+  type AutoRecordsBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
+import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
 import {
   idbDeletePortfolio,
   idbGetPortfolio,
@@ -1315,6 +1317,35 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
   );
 
+  const commitAutoRecordsPhotoGroupsStructural = useCallback(
+    async (nextGroups: AutoRecordsBlockState["photoGroups"]) => {
+      const synced = syncAutoRecordsPhotoGroupsAndFlat(nextGroups);
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const blocks = mergeSourceBlocksWithDefaults(prev.sourceBlocks);
+          const next = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: {
+              ...blocks,
+              auto_records: {
+                ...blocks.auto_records,
+                photoGroups: synced.photoGroups,
+                photos: synced.photos,
+              },
+            },
+          });
+          return applyPersistBodyToWs(next);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        await persistFullWorkspaceRef("auto_records_photos", { showFlash: false });
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
   const runGeminiTirgusMarket = useCallback(
     async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
       if (!payload.geminiAllowed || geminiTirgusMarketBusy) return;
@@ -2392,6 +2423,44 @@ export function OrderDetailWorkspace({
         .filter((id) => listingAnalysisPhotoDataUrls.has(id))
         .map((id) => ({ id })),
     };
+
+    const autoRecordsPhotoIds = (listingBlocks.auto_records.photos ?? []).map((p) => p.id);
+    const autoRecordsPhotoDataUrls = new Map<string, string>();
+    let resolvedAutoRecordsPhotoIds = autoRecordsPhotoIds;
+    if (autoRecordsPhotoIds.length > 0) {
+      try {
+        const res = await fetch("/api/admin/auto-records-photo/pdf-batch", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: payload.sessionId, photoIds: autoRecordsPhotoIds }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          dataUrls?: Record<string, string>;
+          missing?: string[];
+        };
+        if (res.ok && data.dataUrls) {
+          for (const [id, url] of Object.entries(data.dataUrls)) {
+            autoRecordsPhotoDataUrls.set(id, url);
+          }
+          const fromBatch = Object.keys(data.dataUrls);
+          resolvedAutoRecordsPhotoIds = [
+            ...autoRecordsPhotoIds.filter((id) => data.dataUrls![id]),
+            ...fromBatch.filter((id) => !autoRecordsPhotoIds.includes(id)),
+          ];
+        }
+      } catch {
+        /* PDF bez dīlera fotogrāfijām, ja batch neizdevās */
+      }
+    }
+    const autoRecordsForPdf = {
+      ...blocksDisplaySafe.auto_records,
+      photos: resolvedAutoRecordsPhotoIds
+        .filter((id) => autoRecordsPhotoDataUrls.has(id))
+        .map((id) => ({ id })),
+      photoGroups: listingBlocks.auto_records.photoGroups ?? [],
+    };
+
     const html = buildClientReportDocumentHtml({
       payload: {
         ...payload,
@@ -2400,7 +2469,7 @@ export function OrderDetailWorkspace({
         tirgusForm: blocksDisplaySafe.tirgus,
         manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
         manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
-        autoRecordsBlock: blocksDisplaySafe.auto_records,
+        autoRecordsBlock: autoRecordsForPdf,
         citiAvoti: blocksDisplaySafe.citi_avoti,
         listingAnalysis: listingAnalysisForPdf,
         iriss: ws.iriss,
@@ -2419,6 +2488,7 @@ export function OrderDetailWorkspace({
       dateFmt,
       formatBytes,
       listingAnalysisPhotoDataUrls,
+      autoRecordsPhotoDataUrls,
     });
 
     const w = window.open("", "_blank");
@@ -3503,6 +3573,8 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               geminiComment={geminiCommentSlot("auto_records")}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onAutoRecordsPhotoGroupsStructuralCommit={commitAutoRecordsPhotoGroupsStructural}
             />
           </div>
         ) : null}

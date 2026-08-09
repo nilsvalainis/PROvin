@@ -10,6 +10,7 @@ import {
   SOURCE_BLOCK_KEYS,
   createDefaultSourceBlocks,
   mergeSourceBlocksWithDefaults,
+  type AutoRecordsBlockState,
   type ListingAnalysisBlockState,
   type SourceBlockKey,
   type WorkspaceSourceBlocks,
@@ -26,8 +27,11 @@ import {
   type TrafficFillLevel,
 } from "@/lib/admin-block-traffic-status";
 import {
+  mergeAutoRecordsPhotoGroups,
+  syncAutoRecordsPhotoGroupsAndFlat,
+} from "@/lib/auto-records-photo-types";
+import {
   mergeListingAnalysisPhotoGroups,
-  normalizeListingAnalysisPhotoGroups,
   syncListingAnalysisPhotoGroupsAndFlat,
 } from "@/lib/listing-analysis-photo-types";
 
@@ -152,6 +156,25 @@ function pickRicherListingAnalysisBlock(
   };
 }
 
+function pickRicherAutoRecordsBlock(
+  incoming: AutoRecordsBlockState,
+  baseline: AutoRecordsBlockState,
+): AutoRecordsBlockState {
+  const picked = pickRicherSourceBlock("auto_records", incoming, baseline);
+  const mergedGroups = mergeAutoRecordsPhotoGroups(
+    incoming.photoGroups,
+    incoming.photos,
+    baseline.photoGroups,
+    baseline.photos,
+  );
+  const synced = syncAutoRecordsPhotoGroupsAndFlat(mergedGroups);
+  return {
+    ...picked,
+    photoGroups: synced.photoGroups,
+    photos: synced.photos,
+  };
+}
+
 /**
  * Apvieno ienākošo darba zonu ar pēdējo zināmo labo momentuzņēmumu — nekad neiztukšo bloku,
  * kurā baseline jau bija dati (piem. saglabā AutoDNA, ja saglabā tikai Citi avoti).
@@ -169,7 +192,7 @@ export function coalesceOrderWorkspacePersistBody(
     csdd: pickRicherSourceBlock("csdd", incomingBlocks.csdd, baselineBlocks.csdd),
     autodna: pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
     carvertical: pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
-    auto_records: pickRicherSourceBlock("auto_records", incomingBlocks.auto_records, baselineBlocks.auto_records),
+    auto_records: pickRicherAutoRecordsBlock(incomingBlocks.auto_records, baselineBlocks.auto_records),
     ltab: pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
     tirgus: pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
     citi_avoti: pickRicherSourceBlock("citi_avoti", incomingBlocks.citi_avoti, baselineBlocks.citi_avoti),

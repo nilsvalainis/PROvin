@@ -39,6 +39,11 @@ import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
+import {
+  AUTO_RECORDS_MAX_PHOTOS,
+  emptyAutoRecordsPhotoGroup,
+} from "@/lib/auto-records-photo-types";
 
 const DEALER_ARIA = "Oficiālā dīlera dati";
 
@@ -57,6 +62,10 @@ type Props = {
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
   geminiComment?: AdminGeminiSourceCommentSlot;
+  photosPersistenceEnabled?: boolean;
+  onAutoRecordsPhotoGroupsStructuralCommit?: (
+    next: AutoRecordsBlockState["photoGroups"],
+  ) => void | Promise<void>;
 };
 
 export function AdminAutoRecordsSourceBlock({
@@ -69,6 +78,8 @@ export function AdminAutoRecordsSourceBlock({
   pdfInclude,
   onPdfIncludeChange,
   geminiComment,
+  photosPersistenceEnabled = false,
+  onAutoRecordsPhotoGroupsStructuralCommit,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
     const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
@@ -314,6 +325,18 @@ export function AdminAutoRecordsSourceBlock({
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
             aria-label={`${DEALER_ARIA} — Servisa vēsture`}
           />
+          {sessionId && onAutoRecordsPhotoGroupsStructuralCommit ? (
+            <AdminListingAnalysisPhotos
+              sessionId={sessionId}
+              photoGroups={value.photoGroups ?? []}
+              disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(next) => onAutoRecordsPhotoGroupsStructuralCommit(next)}
+              apiBasePath="/api/admin/auto-records-photo"
+              maxPhotos={AUTO_RECORDS_MAX_PHOTOS}
+              emptyGroup={emptyAutoRecordsPhotoGroup}
+              sectionTitle="Fotogrāfijas (PDF režģis)"
+            />
+          ) : null}
           <AdminSourceCommentField
             value={value.comments}
             onChange={(next) => onChange({ ...value, comments: next })}

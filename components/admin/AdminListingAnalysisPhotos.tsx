@@ -4,11 +4,8 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { FolderPlus, GripVertical, ImagePlus, Loader2, Trash2 } from "lucide-react";
 
 import {
-  countListingAnalysisPhotos,
   emptyListingAnalysisPhotoGroup,
   LISTING_ANALYSIS_MAX_PHOTOS,
-  type ListingAnalysisPhotoGroup,
-  type ListingAnalysisPhotoMeta,
 } from "@/lib/listing-analysis-photo-types";
 import { compressImageFileToJpegForConsultation } from "@/lib/consultation-photo-client-compress";
 
@@ -23,17 +20,28 @@ type PendingUpload = {
   error?: string;
 };
 
+type PhotoGroupLike = {
+  id: string;
+  title: string;
+  photos: { id: string }[];
+};
+
 type Props = {
   sessionId: string;
-  photoGroups: ListingAnalysisPhotoGroup[];
+  photoGroups: PhotoGroupLike[];
   disabled: boolean;
-  onPhotoGroupsStructuralCommit: (next: ListingAnalysisPhotoGroup[]) => void | Promise<void>;
+  onPhotoGroupsStructuralCommit: (next: PhotoGroupLike[]) => void | Promise<void>;
+  /** Noklusējums: sludinājuma analīzes API. */
+  apiBasePath?: string;
+  maxPhotos?: number;
+  emptyGroup?: () => PhotoGroupLike;
+  sectionTitle?: string;
 };
 
 const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif)$/i;
 
-function uploadErrorMessage(error: string | undefined, detail?: string): string {
-  if (error === "photo_limit") return `Sasniegts limits (${LISTING_ANALYSIS_MAX_PHOTOS} fotogrāfijas).`;
+function uploadErrorMessage(error: string | undefined, maxPhotos: number, detail?: string): string {
+  if (error === "photo_limit") return `Sasniegts limits (${maxPhotos} fotogrāfijas).`;
   if (error === "file_too_large") return "Fails pēc kompresijas joprojām pārāk liels.";
   if (error === "invalid_jpeg") return "Serveris pieņem tikai JPEG pēc kompresijas.";
   if (error === "store_disabled") return "Servera glabātuve nav pieejama — pārbaudi ADMIN_ORDER_DRAFT_* / Blob env.";
@@ -65,8 +73,10 @@ function phaseLabel(phase: UploadPhase, fileName: string): string {
   }
 }
 
-function totalPhotos(groups: ListingAnalysisPhotoGroup[]): number {
-  return countListingAnalysisPhotos(groups);
+function totalPhotos(groups: { photos?: { id: string }[] }[]): number {
+  let n = 0;
+  for (const g of groups) n += g.photos?.length ?? 0;
+  return n;
 }
 
 function isImageFile(file: File): boolean {
@@ -91,16 +101,17 @@ function collectImageFilesFromDataTransfer(dt: DataTransfer): File[] {
   return out;
 }
 
-function newDefaultGroup(index: number): ListingAnalysisPhotoGroup {
-  return { ...emptyListingAnalysisPhotoGroup(), title: `Grupa ${index}` };
+function newDefaultGroup(index: number, emptyGroup: () => PhotoGroupLike): PhotoGroupLike {
+  return { ...emptyGroup(), title: `Grupa ${index}` };
 }
 
 function ensureGroupInList(
-  groups: ListingAnalysisPhotoGroup[],
+  groups: PhotoGroupLike[],
   targetGroupId: string,
-): ListingAnalysisPhotoGroup[] {
+  emptyGroup: () => PhotoGroupLike,
+): PhotoGroupLike[] {
   if (groups.some((g) => g.id === targetGroupId)) return groups;
-  return [...groups, { ...newDefaultGroup(groups.length + 1), id: targetGroupId }];
+  return [...groups, { ...newDefaultGroup(groups.length + 1, emptyGroup), id: targetGroupId }];
 }
 
 export function AdminListingAnalysisPhotos({
@@ -108,10 +119,14 @@ export function AdminListingAnalysisPhotos({
   photoGroups,
   disabled,
   onPhotoGroupsStructuralCommit,
+  apiBasePath = "/api/admin/listing-analysis-photo",
+  maxPhotos = LISTING_ANALYSIS_MAX_PHOTOS,
+  emptyGroup = emptyListingAnalysisPhotoGroup,
+  sectionTitle = "Fotogrāfijas (PDF režģis)",
 }: Props) {
   const baseInputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
-  const defaultGroupIdRef = useRef(emptyListingAnalysisPhotoGroup().id);
+  const defaultGroupIdRef = useRef(emptyGroup().id);
   const previewUrlsRef = useRef<Map<string, string>>(new Map());
   const dragRef = useRef<{ groupId: string; index: number } | null>(null);
   const dropDepthRef = useRef(0);
@@ -124,8 +139,8 @@ export function AdminListingAnalysisPhotos({
 
   const serverImgSrc = useCallback(
     (photoId: string) =>
-      `/api/admin/listing-analysis-photo?sessionId=${encodeURIComponent(sessionId)}&photoId=${encodeURIComponent(photoId)}&v=${encodeURIComponent(photoId.slice(-8))}`,
-    [sessionId],
+      `${apiBasePath}?sessionId=${encodeURIComponent(sessionId)}&photoId=${encodeURIComponent(photoId)}&v=${encodeURIComponent(photoId.slice(-8))}`,
+    [apiBasePath, sessionId],
   );
 
   const displaySrc = useCallback(
@@ -158,7 +173,7 @@ export function AdminListingAnalysisPhotos({
   }, []);
 
   const commitGroups = useCallback(
-    async (next: ListingAnalysisPhotoGroup[], status?: string) => {
+    async (next: PhotoGroupLike[], status?: string) => {
       if (status) setStatusLine(status);
       try {
         await onPhotoGroupsStructuralCommit(next);
@@ -178,7 +193,7 @@ export function AdminListingAnalysisPhotos({
 
   const addGroup = () => {
     const n = photoGroups.length + 1;
-    void commitGroups([...photoGroups, newDefaultGroup(n)], "Pievienota jauna grupa");
+    void commitGroups([...photoGroups, newDefaultGroup(n, emptyGroup)], "Pievienota jauna grupa");
   };
 
   const removeGroup = async (groupId: string) => {
@@ -195,7 +210,7 @@ export function AdminListingAnalysisPhotos({
     setStatusLine("Dzēš grupu…");
     try {
       if (group.photos.length > 0) {
-        await fetch("/api/admin/listing-analysis-photo", {
+        await fetch(apiBasePath, {
           method: "DELETE",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -220,16 +235,16 @@ export function AdminListingAnalysisPhotos({
     const imageFiles = collectImageFiles(list);
     if (!imageFiles.length || disabled) return;
 
-    const groups = ensureGroupInList(photoGroups, targetGroupId);
+    const groups = ensureGroupInList(photoGroups, targetGroupId, emptyGroup);
     const group = groups.find((g) => g.id === targetGroupId)!;
     const currentTotal = totalPhotos(groups);
 
     setBusy(true);
     setError(null);
     setStatusLine(null);
-    const files = imageFiles.slice(0, Math.max(0, LISTING_ANALYSIS_MAX_PHOTOS - currentTotal));
+    const files = imageFiles.slice(0, Math.max(0, maxPhotos - currentTotal));
     if (files.length === 0) {
-      setError(`Sasniegts limits (${LISTING_ANALYSIS_MAX_PHOTOS} fotogrāfijas).`);
+      setError(`Sasniegts limits (${maxPhotos} fotogrāfijas).`);
       setBusy(false);
       return;
     }
@@ -269,7 +284,7 @@ export function AdminListingAnalysisPhotos({
       }
 
       setStatusLine(`Augšupielādē ${compressed.length} fotogrāfijas…`);
-      const uploaded: ListingAnalysisPhotoMeta[] = [];
+      const uploaded: { id: string }[] = [];
       const groupPhotoCount = group.photos.length;
 
       await Promise.all(
@@ -278,7 +293,7 @@ export function AdminListingAnalysisPhotos({
           fd.set("sessionId", sessionId);
           fd.set("currentCount", String(currentTotal + uploadIndex));
           fd.set("file", jpeg);
-          const res = await fetch("/api/admin/listing-analysis-photo", {
+          const res = await fetch(apiBasePath, {
             method: "POST",
             body: fd,
             credentials: "include",
@@ -291,7 +306,7 @@ export function AdminListingAnalysisPhotos({
           };
           if (!res.ok || !data.id) {
             URL.revokeObjectURL(previewUrl);
-            const msg = uploadErrorMessage(data.error, data.detail);
+            const msg = uploadErrorMessage(data.error, maxPhotos, data.detail);
             setPending((p) =>
               p.map((x) => (x.key === key ? { ...x, phase: "error" as const, error: msg } : x)),
             );
@@ -365,7 +380,7 @@ export function AdminListingAnalysisPhotos({
     setError(null);
     setStatusLine("Dzēš visas fotogrāfijas…");
     try {
-      await fetch("/api/admin/listing-analysis-photo", {
+      await fetch(apiBasePath, {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -393,7 +408,7 @@ export function AdminListingAnalysisPhotos({
     setError(null);
     setStatusLine("Dzēš fotogrāfiju…");
     try {
-      await fetch("/api/admin/listing-analysis-photo", {
+      await fetch(apiBasePath, {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -414,7 +429,7 @@ export function AdminListingAnalysisPhotos({
     }
   };
 
-  const commitReorder = async (groupId: string, nextPhotos: ListingAnalysisPhotoMeta[]) => {
+  const commitReorder = async (groupId: string, nextPhotos: { id: string }[]) => {
     const next = photoGroups.map((g) => (g.id === groupId ? { ...g, photos: nextPhotos } : g));
     await commitGroups(next, "Saglabā secību…");
   };
@@ -462,7 +477,7 @@ export function AdminListingAnalysisPhotos({
   };
 
   const photoCount = totalPhotos(photoGroups);
-  const atLimit = photoCount >= LISTING_ANALYSIS_MAX_PHOTOS;
+  const atLimit = photoCount >= maxPhotos;
   const defaultGroupId = defaultGroupIdRef.current;
 
   const renderFileInput = (groupId: string) => (
@@ -521,7 +536,7 @@ export function AdminListingAnalysisPhotos({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
-          Fotogrāfijas (PDF režģis) · {photoCount}/{LISTING_ANALYSIS_MAX_PHOTOS}
+          {sectionTitle} · {photoCount}/{maxPhotos}
         </p>
         {!disabled ? (
           <div className="flex flex-wrap items-center gap-2">

@@ -24,9 +24,14 @@ import {
   ADMIN_RAW_UNPROCESSED_MAX_LEN,
 } from "@/lib/admin-raw-field-limits";
 import {
+  countAutoRecordsPhotos,
+  normalizeAutoRecordsPhotoGroups,
+  syncAutoRecordsPhotoGroupsAndFlat,
+} from "@/lib/auto-records-photo-types";
+import type { AutoRecordsPhotoGroup, AutoRecordsPhotoMeta } from "@/lib/auto-records-photo-types";
+import {
   countListingAnalysisPhotos,
   normalizeListingAnalysisPhotoGroups,
-  normalizeListingAnalysisPhotos,
   syncListingAnalysisPhotoGroupsAndFlat,
 } from "@/lib/listing-analysis-photo-types";
 import type { ListingAnalysisPhotoGroup, ListingAnalysisPhotoMeta } from "@/lib/listing-analysis-photo-types";
@@ -639,6 +644,10 @@ export type AutoRecordsBlockState = {
    * Admin lauks „Servisa vēsture”; Copilot aizpilda no AutoDNA u.c. PDF.
    */
   serviceHistoryNotes: string;
+  /** Fotogrāfiju vizuālie pierādījumi — PDF režģī (kā Sludinājuma analīzē). */
+  photos: AutoRecordsPhotoMeta[];
+  /** Fotogrāfiju grupas ar manuāli ievadāmiem virsrakstiem. */
+  photoGroups: AutoRecordsPhotoGroup[];
   /** Papildu konteksts tikai Gemini AI — nav PDF. */
   geminiContextRaw: string;
   pdfChecklist?: SourcePdfChecklist;
@@ -738,6 +747,8 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
     serviceHistory: [emptyAutoRecordsServiceRow()],
     comments: "",
     serviceHistoryNotes: "",
+    photos: [],
+    photoGroups: [],
     geminiContextRaw: "",
   };
 }
@@ -907,6 +918,8 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
     wsStr(b.rawUnprocessedData).trim().length > 0 ||
     wsStr(b.comments).trim().length > 0 ||
     wsStr(b.serviceHistoryNotes).trim().length > 0 ||
+    (b.photos?.length ?? 0) > 0 ||
+    countAutoRecordsPhotos(b.photoGroups) > 0 ||
     outvinDealerReportHasContent(b.outvinReport) ||
     outvinBundleHasStructuredContent(b.outvin ?? getAutoRecordsOutvinBundle(b))
   );
@@ -1224,18 +1237,30 @@ function parseOutvinDealerReportRaw(raw: unknown): OutvinDealerReport | undefine
 }
 
 function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBlockState {
-  if ("serviceHistory" in raw || "rawUnprocessedData" in raw || "outvinReport" in raw || "outvin" in raw) {
+  if (
+    "serviceHistory" in raw ||
+    "rawUnprocessedData" in raw ||
+    "outvinReport" in raw ||
+    "outvin" in raw ||
+    "photos" in raw ||
+    "photoGroups" in raw
+  ) {
     const rowsIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
     const rawRows = mapUnknownArrayToAutoRecordsRows(rowsIn);
     const normalized = normalizeParsedAutoRecordsRows(rawRows);
     const outvinReport = parseOutvinDealerReportRaw(raw.outvinReport);
     const outvin = parseOutvinDataBundleRaw(raw.outvin);
+    const synced = syncAutoRecordsPhotoGroupsAndFlat(
+      normalizeAutoRecordsPhotoGroups(raw.photoGroups, raw.photos),
+    );
     return {
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
       serviceHistory: normalized,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
       serviceHistoryNotes:
         typeof raw.serviceHistoryNotes === "string" ? raw.serviceHistoryNotes.slice(0, 12000) : "",
+      photos: synced.photos,
+      photoGroups: synced.photoGroups,
       geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
       ...(outvin ? { outvin } : {}),
       ...(outvinReport ? { outvinReport } : {}),
@@ -1250,6 +1275,8 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
     serviceHistory: [emptyAutoRecordsServiceRow()],
     comments: "",
     serviceHistoryNotes: "",
+    photos: [],
+    photoGroups: [],
     geminiContextRaw: "",
   };
 }
@@ -1710,17 +1737,24 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     csdd: csddRepaired,
     autodna: repairVendorBlock(blocks.autodna),
     carvertical: repairVendorBlock(blocks.carvertical),
-    auto_records: {
-      ...d.auto_records,
-      ...blocks.auto_records,
-      serviceHistory: Array.isArray(blocks.auto_records?.serviceHistory)
-        ? blocks.auto_records.serviceHistory
-        : d.auto_records.serviceHistory,
-      comments: wsStr(blocks.auto_records?.comments),
-      serviceHistoryNotes: wsStr(blocks.auto_records?.serviceHistoryNotes),
-      rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),
-      geminiContextRaw: wsStr(blocks.auto_records?.geminiContextRaw),
-    },
+    auto_records: (() => {
+      const synced = syncAutoRecordsPhotoGroupsAndFlat(
+        normalizeAutoRecordsPhotoGroups(blocks.auto_records?.photoGroups, blocks.auto_records?.photos),
+      );
+      return {
+        ...d.auto_records,
+        ...blocks.auto_records,
+        serviceHistory: Array.isArray(blocks.auto_records?.serviceHistory)
+          ? blocks.auto_records.serviceHistory
+          : d.auto_records.serviceHistory,
+        comments: wsStr(blocks.auto_records?.comments),
+        serviceHistoryNotes: wsStr(blocks.auto_records?.serviceHistoryNotes),
+        rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),
+        photos: synced.photos,
+        photoGroups: synced.photoGroups,
+        geminiContextRaw: wsStr(blocks.auto_records?.geminiContextRaw),
+      };
+    })(),
     ltab: {
       ...d.ltab,
       ...blocks.ltab,
