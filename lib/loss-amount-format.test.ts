@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import {
+  normalizeLossAmountEurDisplay,
+  parseLossAmountEurBounds,
+} from "@/lib/loss-amount-format";
 
 describe("normalizeLossAmountEurDisplay", () => {
   it("normalizes EUR suffix variants", () => {
@@ -23,5 +26,17 @@ describe("normalizeLossAmountEurDisplay", () => {
   it("formats EUR ranges", () => {
     expect(normalizeLossAmountEurDisplay("300 - 400 EUR")).toBe("300 - 400 €");
     expect(normalizeLossAmountEurDisplay("40 000 - 41 000 EUR")).toBe("40 000 - 41 000 €");
+    expect(normalizeLossAmountEurDisplay("1001\u00a0€ – 1500\u00a0€")).toBe("1 001 - 1 500 €");
+  });
+
+  it("does not concatenate range digits when a text note is appended", () => {
+    expect(normalizeLossAmountEurDisplay("1 001 - 1 500 €; Zādzība")).toBe("1 001 - 1 500 €; Zādzība");
+    expect(parseLossAmountEurBounds("1 001 - 1 500 €; Zādzība")).toEqual({ lo: 1001, hi: 1500 });
+  });
+});
+
+describe("parseLossAmountEurBounds", () => {
+  it("rejects digit soup that would become a fake mega-amount", () => {
+    expect(parseLossAmountEurBounds("1001 1500")).toBeNull();
   });
 });

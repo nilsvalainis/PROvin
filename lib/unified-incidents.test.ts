@@ -80,6 +80,7 @@ describe("mergeUnifiedIncidentRowsForPdf", () => {
     expect(merged).toHaveLength(1);
     expect(merged[0]?.lossAmount).toContain("Zādzība");
     expect(merged[0]?.lossAmount).toMatch(/1\s*001/);
+    expect(merged[0]?.lossAmount).not.toMatch(/10\s*011\s*500/);
   });
 
   it("prepareUnifiedIncidentDisplayRows sorts newest month first", () => {
