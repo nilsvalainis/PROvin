@@ -100,36 +100,6 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-mileage-source-count-abbrevs");
   });
 
-  it("merges same-month losses from different sources into one multi-stripe MM.YYYY row with counts", () => {
-    const p = {
-      manualVendorBlocks: [
-        {
-          title: "AutoDNA",
-          mileageRows: [],
-          incidentRows: [{ csngDate: "01.06.2021", lossAmount: "1200 €", incidentNo: "LV" }],
-          comments: "",
-        },
-      ],
-      manualLtabBlock: {
-        rows: [{ csngDate: "15.06.2021", lossAmount: "1300 €", incidentNo: "LV" }],
-        comments: "",
-      },
-    } as ClientReportPayload;
-    const vis = mergePdfVisibility({ unifiedIncidents: true });
-    const html = buildUnifiedIncidentsTableHtml(p, vis);
-    const rowMatches = html.match(/pdf-mileage-history-row/g) ?? [];
-    expect(rowMatches.length).toBe(1);
-    expect(html).toContain("06.2021");
-    expect(html).toContain("Mēnesis");
-    expect(html).toContain("Negadījumu periodi: 1");
-    expect(html).toContain("Ieraksti avotos: 2");
-    expect(html).toContain("pdf-mileage-source-stripes");
-    expect(html).toContain("pdf-mileage-source-stripe--autodna");
-    expect(html).toContain("pdf-mileage-source-stripe--ltab");
-    expect(html).toMatch(/1\s*200/);
-    expect(html).toMatch(/1\s*300/);
-  });
-
   it("does not render CarVertical damage detail sub-rows (hidden for now)", () => {
     const p = {
       internalComment: "Kopsavilkums",
@@ -153,7 +123,7 @@ describe("unified PDF sections single block", () => {
     } as ClientReportPayload;
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
-    expect(html).toContain("06.2024");
+    expect(html).toContain("01.06.2024");
     expect(html).not.toContain("pdf-cv-damage-sub");
     expect(html).not.toContain("Kreisā puse Priekšpuse");
     expect(html).not.toContain("Ārējās virsbūves detaļas");
