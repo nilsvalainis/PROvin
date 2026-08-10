@@ -2,42 +2,56 @@
   "RiskAuditGuide": {
     "eyebrow": "Pirms pasūtījuma",
     "title": "Riska & Audita Ceļvedis",
-    "subtitle": "Neesi drošs, cik dziļi šo auto pārbaudīt? Izvēlies līmeni — vai saņem īsu skatījumu uz sludinājumu.",
+    "subtitle": "Trīs soļi — saproti, cik dziļi šo auto pārbaudīt, un izvēlies līmeni.",
     "recommended": "Rekomendēts",
+    "progress": {
+      "aria": "Ceļveža soļi",
+      "step1": "Ekspluatācija",
+      "step2": "Saite",
+      "step3": "Līmenis"
+    },
     "step1": {
-      "label": "1. Kur auto?",
-      "lvTitle": "Latvijā",
+      "label": "1. solis",
+      "question": "Nesen ievests auto, vai Latvijā ilgāku laiku ekspluatēts?",
+      "hint": "Tas nosaka, cik dziļi vēsturi ir vērts pārbaudīt.",
+      "lvTitle": "Latvijā ilgāku laiku",
       "lvHint": "SS.lv / Facebook / dīleris",
-      "abroadTitle": "Ārvalstīs",
+      "abroadTitle": "Nesen ievests",
       "abroadHint": "Mobile.de / AutoScout24 u.c."
     },
     "step2": {
-      "label": "2. Sludinājuma saite",
-      "hint": "Neobligāta maksas pasūtījumam. Obligatoriska īsam bezmaksas vērtējumam.",
-      "placeholder": "https://…"
+      "label": "2. solis",
+      "title": "Sludinājuma saite",
+      "hint": "Neobligāta, ja pasūti auditu. Obligatoriska īsam bezmaksas vērtējumam.",
+      "placeholder": "https://…",
+      "continue": "Turpināt",
+      "skip": "Turpināt bez saites",
+      "back": "Atpakaļ"
     },
     "step3": {
-      "label": "3. Izvēlies līmeni",
-      "pickLocationFirst": "Vispirms izvēlies, kur auto atrodas."
+      "label": "3. solis",
+      "title": "Izvēlies līmeni",
+      "locked": "Vispirms atbildi uz 1. soli — tad parādīsies ieteiktais līmenis.",
+      "back": "Atpakaļ"
     },
     "options": {
       "free": {
         "title": "Īss sludinājuma vērtējums",
         "price": "0 €",
         "body": "3–5 teikumi e-pastā 24–48h. Tas nav audits un nav konsultācija.",
-        "needUrl": "Lai saņemtu īso vērtējumu, ielīmē sludinājuma saiti.",
+        "needUrl": "Lai saņemtu īso vērtējumu, ielīmē saiti 2. solī.",
         "cta": "Saņemt īso vērtējumu"
       },
       "mini": {
         "title": "PROVIN MINI",
         "price": "39,99 €",
-        "body": "Kompakta pārbaude; tipiski LV ekspluatētiem auto.",
+        "body": "Kompakta pārbaude; tipiski LV ilgāk ekspluatētiem auto.",
         "cta": "Pasūtīt MINI"
       },
       "audits": {
         "title": "PROVIN AUDITS",
         "price": "99,99 €",
-        "body": "Pilnais audits; tipiski importam no ārvalstīm.",
+        "body": "Pilnais audits; tipiski nesen ievestiem / importam.",
         "cta": "Pasūtīt AUDITS"
       }
     },
