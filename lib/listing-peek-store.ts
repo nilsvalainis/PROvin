@@ -16,6 +16,7 @@ export type ListingPeekStatus = "new" | "in_progress" | "completed" | "rejected"
 export type ListingPeekEntry = {
   id: string;
   email: string;
+  phone: string;
   listingUrl: string;
   location: ListingPeekLocation;
   createdAt: string;
@@ -88,6 +89,7 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
   const o = raw as Partial<ListingPeekEntry>;
   const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : null;
   const email = typeof o.email === "string" ? normalizePeekEmail(o.email) : "";
+  const phone = typeof o.phone === "string" ? o.phone.trim() : "";
   const listingUrl = typeof o.listingUrl === "string" ? o.listingUrl.trim() : "";
   const createdAt =
     typeof o.createdAt === "string" && o.createdAt.trim() ? o.createdAt.trim() : null;
@@ -97,6 +99,7 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
   return {
     id,
     email,
+    phone,
     listingUrl,
     location: o.location,
     createdAt,
@@ -213,10 +216,12 @@ export type CreateListingPeekResult =
 
 export async function createListingPeek(input: {
   email: string;
+  phone: string;
   listingUrl: string;
   location: ListingPeekLocation;
 }): Promise<CreateListingPeekResult> {
   const email = normalizePeekEmail(input.email);
+  const phone = input.phone.trim();
   const listingUrl = input.listingUrl.trim();
   const listingKey = normalizePeekListingUrl(listingUrl);
   const now = Date.now();
@@ -255,6 +260,7 @@ export async function createListingPeek(input: {
   const entry: ListingPeekEntry = {
     id: randomUUID(),
     email,
+    phone,
     listingUrl,
     location: input.location,
     createdAt: new Date(now).toISOString(),

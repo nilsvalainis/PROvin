@@ -67,8 +67,8 @@ export default async function AdminListingPeeksPage() {
             <thead className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
               <tr>
                 <th className="px-3 py-2.5">Datums</th>
-                <th className="px-3 py-2.5">E-pasts</th>
-                <th className="px-3 py-2.5">Vieta</th>
+                <th className="px-3 py-2.5">Kontakti</th>
+                <th className="px-3 py-2.5">Konteksts</th>
                 <th className="px-3 py-2.5">Sludinājums</th>
                 <th className="px-3 py-2.5">Statuss</th>
               </tr>
@@ -86,9 +86,19 @@ export default async function AdminListingPeeksPage() {
                     >
                       {e.email}
                     </a>
+                    {e.phone ? (
+                      <p className="mt-0.5">
+                        <a
+                          href={`tel:${e.phone.replace(/\s/g, "")}`}
+                          className="text-[13px] text-[var(--color-provin-muted)] hover:underline"
+                        >
+                          {e.phone}
+                        </a>
+                      </p>
+                    ) : null}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-[var(--color-provin-muted)]">
-                    {e.location === "lv" ? "LV" : "Ārvalstis"}
+                    {e.location === "lv" ? "Latvijā lietots" : "Nesen ievests"}
                   </td>
                   <td className="max-w-[16rem] px-3 py-3">
                     <a

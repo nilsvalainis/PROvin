@@ -2,75 +2,47 @@
   "RiskAuditGuide": {
     "eyebrow": "Free listing check",
     "title": "Risk & Audit Guide",
-    "subtitle": "3 steps to the right level — or a free short review of what’s visible in the listing.",
-    "recommended": "Recommended",
+    "subtitle": "Get a free short comment on the listing — and see when a full PROVIN AUDITS is worth it.",
     "choose": "Choose",
     "progress": {
       "aria": "Guide steps",
-      "step1": "History",
-      "step2": "Level",
-      "step3": "Link"
+      "step1": "Context",
+      "step2": "Free"
     },
     "step1": {
       "label": "1",
-      "question": "Recently imported, or driven in Latvia for longer?",
-      "hint": "This decides how deep the history check should go.",
-      "lvTitle": "Longer use in Latvia",
+      "question": "What’s the car’s context?",
+      "hint": "Helps us understand the situation — not a product filter. Full history (also for Latvia-used cars) usually means PROVIN AUDITS.",
+      "lvTitle": "Used in Latvia",
       "abroadTitle": "Recently imported"
     },
     "step2": {
       "label": "2",
-      "title": "What do you want?",
-      "hint": "A free short review — or go straight to MINI / AUDITS.",
-      "back": "Back"
-    },
-    "step3": {
-      "label": "3",
-      "title": "Listing link and email",
-      "hint": "Last step for the free review — public listing only, no database analysis.",
+      "title": "Free short review",
+      "hint": "3–5 sentences by email in 24–48h about what is visible in the listing. No database / VIN analysis.",
       "placeholder": "https://…",
-      "back": "Back"
-    },
-    "options": {
-      "free": {
-        "title": "Free short review",
-        "price": "€0",
-        "body": "3–5 sentences by email in 24–48h about what is visible in the listing.",
-        "cta": "Continue free"
-      },
-      "mini": {
-        "title": "PROVIN MINI",
-        "price": "€39.99",
-        "body": "Compact check; typically for cars used longer in Latvia.",
-        "cta": "Order MINI"
-      },
-      "audits": {
-        "title": "PROVIN AUDITS",
-        "price": "€99.99",
-        "body": "Full audit; typically for recent imports.",
-        "cta": "Order AUDITS"
-      }
-    },
-    "dealer": {
-      "prefix": "Need only official dealer history?",
-      "link": "Dealer data package"
+      "back": "Back",
+      "auditsNow": "I want PROVIN AUDITS now",
+      "miniSoft": "Or simpler MINI"
     },
     "form": {
-      "boundary": "No database or VIN analysis — this is not an audit.",
+      "boundary": "Public listing only — not an audit and not a consultation.",
       "listingLabel": "Listing link",
       "emailLabel": "Email",
-      "submit": "Submit request",
+      "phoneLabel": "Phone",
+      "submit": "Get free review",
       "submitting": "Sending…"
     },
     "success": {
       "title": "Request received.",
-      "body": "We’ll reply by email within 24–48h with a short look at the listing. If you need a deeper check — order an audit now.",
-      "ctaMini": "Order MINI — €39.99",
-      "ctaAudits": "Order AUDITS — €99.99"
+      "body": "We’ll reply within 24–48h with a short look at the listing. If you already know you need full history — PROVIN AUDITS is the next step.",
+      "ctaAudits": "Order PROVIN AUDITS — €99.99",
+      "ctaMini": "Or MINI — €39.99"
     },
     "errors": {
       "listing": "Paste a valid link to a specific listing.",
       "email": "Email address is not valid.",
+      "phone": "Phone number is not valid.",
       "rateLimited": "A short review was already requested for this email in the last 7 days.",
       "listingRateLimited": "A short review was already requested for this listing in the last 7 days.",
       "ipRateLimited": "Several requests were already submitted from this device / network today. Try again tomorrow or order an audit.",

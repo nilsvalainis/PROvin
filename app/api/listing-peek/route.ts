@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isSmtpConfigured, sendListingPeekLeadEmail } from "@/lib/email/send-transactional";
-import { isPlausibleListingUrl, isValidOrderEmail } from "@/lib/order-field-validation";
+import {
+  isPlausibleListingUrl,
+  isValidOrderEmail,
+  isValidOrderPhone,
+} from "@/lib/order-field-validation";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import {
@@ -11,11 +15,8 @@ import {
 
 export const runtime = "nodejs";
 
-/** Īss burst pret botiem. */
 const BURST_WINDOW_MS = 15 * 60 * 1000;
 const BURST_MAX = 5;
-
-/** ~3 pieprasījumi / diena no viena IP (serverless — best-effort uz instances). */
 const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
 const DAY_MAX = 3;
 
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
 
   const o = body as Record<string, unknown>;
   const email = typeof o.email === "string" ? clip(o.email, 200) : "";
+  const phone = typeof o.phone === "string" ? clip(o.phone, 40) : "";
   const listingUrl = typeof o.listingUrl === "string" ? clip(o.listingUrl, 2000) : "";
   const location = parseLocation(o.location);
 
@@ -69,11 +71,14 @@ export async function POST(req: Request) {
   if (!email || !isValidOrderEmail(email)) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });
   }
+  if (!phone || !isValidOrderPhone(phone)) {
+    return NextResponse.json({ error: "invalid_phone" }, { status: 400 });
+  }
   if (!listingUrl || !isPlausibleListingUrl(listingUrl)) {
     return NextResponse.json({ error: "invalid_listing" }, { status: 400 });
   }
 
-  const created = await createListingPeek({ email, listingUrl, location });
+  const created = await createListingPeek({ email, phone, listingUrl, location });
   if (!created.ok) {
     const error =
       created.reason === "listing_rate_limited" ? "listing_rate_limited" : "email_rate_limited";
@@ -86,13 +91,13 @@ export async function POST(req: Request) {
       await sendListingPeekLeadEmail({
         adminTo,
         email: created.entry.email,
+        phone: created.entry.phone,
         listingUrl: created.entry.listingUrl,
         location: created.entry.location,
         id: created.entry.id,
       });
     } catch (e) {
       console.error("[listing-peek] notify email failed:", e);
-      /* pieprasījums saglabāts — e-pasts ir best-effort */
     }
   } else {
     console.warn(
