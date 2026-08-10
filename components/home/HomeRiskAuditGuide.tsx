@@ -139,7 +139,7 @@ export function HomeRiskAuditGuide() {
         />
 
         <div className="relative mx-auto w-full max-w-2xl">
-          <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.55)] px-5 py-7 shadow-[0_20px_52px_rgb(0_0_0/0.35)] backdrop-blur-md sm:px-8 sm:py-9">
+          <div className="overflow-hidden px-1 py-2 sm:px-2 sm:py-3">
             <div className="text-center">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7eb0ff]/90">
                 {t("eyebrow")}
