@@ -12,7 +12,7 @@
       "phonePlaceholder": "+371 …",
       "submit": "Get the review",
       "submitting": "Sending…",
-      "disclaimer": "* Short visual comment by email. Does not include vehicle history checks in databases."
+      "disclaimer": "* Does not include risk analysis, consultation, or vehicle history checks in databases."
     },
     "success": {
       "title": "Thanks! We’ve received the link.",
