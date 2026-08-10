@@ -268,7 +268,7 @@ export function HomeRiskAuditGuide() {
                   </p>
 
                   <div
-                    className="mt-8 grid gap-4 sm:grid-cols-2"
+                    className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4"
                     role="radiogroup"
                     aria-label={t("step1.question")}
                   >
@@ -278,18 +278,23 @@ export function HomeRiskAuditGuide() {
                         { id: "abroad" as const, title: t("step1.abroadTitle") },
                       ] as const
                     ).map((opt) => (
-                      <div
+                      <button
                         key={opt.id}
-                        className="flex flex-col justify-between gap-5 rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.55)] px-5 py-5 shadow-[0_20px_52px_rgb(0_0_0/0.35)] backdrop-blur-md sm:min-h-[10rem] sm:px-6 sm:py-6"
+                        type="button"
+                        role="radio"
+                        aria-checked={location === opt.id}
+                        onClick={() => selectLocation(opt.id)}
+                        className="group flex min-h-[5.5rem] items-center justify-between gap-4 rounded-2xl border border-white/[0.14] bg-white/[0.03] px-5 py-5 text-left transition duration-200 hover:border-[#0066ff]/45 hover:bg-[#0066ff]/[0.08] active:scale-[0.99] sm:min-h-[6.25rem] sm:px-6 sm:py-6"
                       >
-                        <p className="text-[1.15rem] font-semibold tracking-tight text-white sm:text-[1.3rem]">
+                        <span className="text-[1.2rem] font-semibold tracking-tight text-white sm:text-[1.35rem]">
                           {opt.title}
-                        </p>
-                        <LiquidBtn onClick={() => selectLocation(opt.id)}>
-                          {t("choose")}
-                          <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                        </LiquidBtn>
-                      </div>
+                        </span>
+                        <ArrowRight
+                          className="h-5 w-5 shrink-0 text-white/35 transition duration-200 group-hover:translate-x-0.5 group-hover:text-[#7eb0ff]"
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                      </button>
                     ))}
                   </div>
                 </div>
