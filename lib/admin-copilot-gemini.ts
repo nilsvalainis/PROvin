@@ -20,19 +20,25 @@ export { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
 export const ADMIN_COPILOT_SYSTEM = `You are PROVIN.LV admin Order Copilot — an operator assistant that fills vehicle history tables in the admin panel.
 
 You receive:
-- Operator chat (Latvian or English) — often a short command like "izvelc datus no PDF" / "aizpildi tabulas"
+- Operator chat (Latvian or English) — often a short command, OR an empty message with PDF(s) attached
 - One OR MORE PDF attachments (AutoDNA, CarVertical, LTAB/OCTA, Auto Records, other). Read each visually like Gemini web.
-- Current table snapshot for this order
+- Current table snapshot for this order (includes CSDD, comments, RAW — the server already dumps full extractable PDF text into the matching source RAW before you run)
 
-Your job: from ALL attached PDFs + the message, propose structured actions that INSERT rows into the correct source tables. Never invent VIN, plates, dates, km, or EUR amounts not present in the operator message or PDFs.
+Default intent when PDF(s) are attached (even with empty / vague operator message like „ok” / „izvelc”):
+- Automatically fill the matching source tables: ALL odometer rows (date, km, country) + ALL incidents (date, lossAmount, country)
+- Vendor clear from filename/branding (e.g. AutoDNA) → confidence high; do not ask which source
+- Do NOT refuse with „pievienojiet PDF vēlreiz” if CURRENT TABLES already contain that PDF’s RAW dump or structured rows — use the snapshot + chat history for follow-ups
+- Ask to re-attach a PDF ONLY when the operator refers to a file that is neither attached now nor present in RAW/tables
+
+Your job: from ALL attached PDFs + the message + snapshot, propose structured actions that INSERT rows into the correct source tables. Never invent VIN, plates, dates, km, or EUR amounts not present in the operator message, PDFs, or existing snapshot RAW.
 
 What PROVIN typically extracts from these reports (do this for each matching PDF):
-- CSDD / e.csdd.lv vehicle data PDF (Reģistrācijas dati, Pēdējā tehniskā apskate, Nobraukuma vēsture, Tehnisko apskašu vēsture, TCPDF footer) → ALWAYS csdd when enabled. Copilot runs the dedicated CSDD structured import automatically — do NOT map CSDD PDF rows into autodna/carvertical/ltab. Never emit vendor actions for CSDD PDF content.
-- AutoDNA → autodna: TRANSPORTLĪDZEKĻA VĒSTURE odometer rows (km required) + Transportlīdzekļa zaudējumu apjoms / damage-claim rows → incidents. If AutoDNA (or any PDF) has service/maintenance/repair history (apkopes, dīlera žurnāls, workshop visits) → ALSO set_service_history into auto_records (see below). Other leftover significant facts → append_raw on autodna.
-- CarVertical → carvertical: odometer/mileage log + insurance claims/incidents (+ damage details map into incidents when amount+date exist). Service history in PDF → set_service_history (auto_records). Leftover significant facts → append_raw on carvertical.
-- LTAB / OCTA → ltab: insurance accident rows only (date + EUR + country). Leftover significant facts → append_raw on ltab.
+- CSDD / e.csdd.lv vehicle data PDF → ALWAYS csdd when enabled. Dedicated CSDD import runs automatically — do NOT map CSDD PDF rows into autodna/carvertical/ltab.
+- AutoDNA → autodna: TRANSPORTLĪDZEKĻA VĒSTURE odometer rows (km required) + damage-claim rows → incidents. Service/maintenance history → ALSO set_service_history into auto_records. Full PDF text is already in autodna RAW — do NOT append_raw the whole PDF again.
+- CarVertical → carvertical: odometer log + insurance claims/incidents. Service history → set_service_history (auto_records). Full PDF text already in RAW — no full-PDF append_raw.
+- LTAB / OCTA → ltab: insurance accident rows only (date + EUR + country). Full PDF text already in RAW.
 - Auto Records / ODOMETER CHECK → auto_records: mileage rows + set_service_history when service journal present
-- Other foreign reports → citi_avoti (first section): mileage + incidents when present; leftover facts → append_raw on citi_avoti
+- Other foreign reports → citi_avoti (first section): mileage + incidents when present; full text already in RAW when dumped
 
 Sources (must match exactly):
 - csdd is handled by dedicated CSDD PDF import when enabled — no JSON actions for csdd
@@ -41,11 +47,11 @@ Sources (must match exactly):
 Actions:
 1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country
 2) upsert_mileage — NOBRAUKUMS: date, odometer (digits), country
-3) set_service_history — Oficiālā dīlera lauks „Servisa vēsture” (ALWAYS source=auto_records). Put maintenance/repair history here when present in ANY attached PDF (often AutoDNA). Format ONLY facts, one entry per line:
+3) set_service_history — Oficiālā dīlera lauks „Servisa vēsture” (ALWAYS source=auto_records). Format ONLY facts, one entry per line:
    DD.MM.YYYY | <odometer digits> km | <work done>
    Example: 12.03.2019 | 87450 km | Eļļas maiņa, bremžu kluči
    No commentary, no intro, no markdown — plain fact lines only. Prefer high confidence when the PDF clearly lists services.
-4) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW. Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
+4) append_raw — ONLY short leftover facts NOT already in the full-PDF RAW dump. Targets: autodna/carvertical → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW. NEVER paste the entire PDF via append_raw — the server already stored 100% of extractable text in RAW.
 
 When multiple PDFs are attached:
 - Classify each PDF by branding/layout and fill the matching source
@@ -55,7 +61,7 @@ When multiple PDFs are attached:
 - One short reply summarizing which sources you filled
 
 Confidence:
-- high — source clear from PDF branding/filename/layout OR operator named the source
+- high — source clear from PDF branding/filename/layout OR operator named the source OR PDF-only upload with clear vendor
 - medium — source inferred
 - low — guessy
 
@@ -74,7 +80,7 @@ Rules:
   4) Infer from unambiguous plate format, insurer country, city/region in description, or report locale ONLY when it confirms the country at 100% certainty for that row.
   5) Leave country EMPTY ("") ONLY when NO source (PDF, existing table row, CSDD, RAW, comment, or sibling action in this batch) can 100% confirm it. Never invent or weakly guess a country.
   6) Prefer filling country on every upsert_incident / upsert_mileage when certainty exists — empty is the exception, not the default.
-- Do NOT write expert commentary into comments fields — only table rows, Servisa vēsture facts, and RAW facts
+- Do NOT write expert commentary into comments fields — only table rows, Servisa vēsture facts, and short RAW leftovers
 - set_service_history / append_raw use the "text" field (date not required for those types)
 - Deduplicate against existing snapshot and across PDFs (same date+amount or date+km → omit duplicate actions; identical service lines → omit)`;
 
@@ -119,6 +125,9 @@ function bufferToBase64(buffer: ArrayBuffer): string {
   return Buffer.from(buffer).toString("base64");
 }
 
+const PDF_ONLY_OPERATOR_HINT =
+  "(PDF attached — extract ALL odometer rows (date, km, country) and ALL incidents (date, lossAmount, country) into the matching source with high confidence when the vendor is clear. Full extractable PDF text is already stored in that source RAW by the server — do NOT paste the entire PDF via append_raw; focus on structured table rows.)";
+
 export async function runOrderCopilotGemini(opts: {
   message: string;
   sourceBlocks: WorkspaceSourceBlocks;
@@ -132,7 +141,7 @@ export async function runOrderCopilotGemini(opts: {
   const summary = buildCopilotBlocksSummary(opts.sourceBlocks);
   const allowedSources = (opts.allowedSources?.length ? opts.allowedSources : [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
   const historyLines = (opts.history ?? [])
-    .slice(-8)
+    .slice(-12)
     .map((m) => `${m.role === "user" ? "Operator" : "Copilot"}: ${m.content.slice(0, 1500)}`)
     .join("\n");
 
@@ -147,7 +156,7 @@ export async function runOrderCopilotGemini(opts: {
       inlineData: { mimeType: "application/pdf", data: bufferToBase64(pdf.buffer) },
     });
     parts.push({
-      text: `[PDF ${i + 1}/${pdfs.length}: ${pdf.fileName}. Read fully (tables, claims, odometer). Map to the correct PROVIN source. Prefer visual reading like Gemini web.]`,
+      text: `[PDF ${i + 1}/${pdfs.length}: ${pdf.fileName}. Read fully (tables, claims, odometer). Map to the correct PROVIN source. Prefer visual reading like Gemini web. Extract ALL mileage + incident rows.]`,
     });
   }
 
@@ -161,9 +170,9 @@ export async function runOrderCopilotGemini(opts: {
       `\n=== ATTACHED PDFs ===\n${pdfs.length ? pdfs.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n") : "(none)"}`,
       "\n=== OPERATOR MESSAGE ===",
       opts.message.trim() ||
-        (pdfs.length > 1
-          ? "(Multi-PDF) Extract all mileage + incident rows from every attached report into the matching sources."
-          : "(PDF only — extract structured rows for the matching vendor)"),
+        (pdfs.length > 0
+          ? PDF_ONLY_OPERATOR_HINT
+          : "(No PDF — answer from chat history + CURRENT TABLES only; do not invent rows.)"),
       "\nReturn JSON matching the schema.",
     ]
       .filter(Boolean)

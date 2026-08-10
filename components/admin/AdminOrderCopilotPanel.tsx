@@ -38,11 +38,20 @@ type Props = {
 type PanelPos = { left: number; top: number };
 
 const POS_STORAGE_KEY = "provin-admin-copilot-pos-v2";
+const CHAT_STORAGE_PREFIX = "provin-admin-copilot-chat-v1:";
+const CHAT_MAX_MESSAGES = 60;
 const PANEL_W = 440;
 const PANEL_H = 620;
 const CHIP_W = 272;
 const CHIP_H = 44;
 const MARGIN = 12;
+
+const WELCOME_MESSAGE: UiMessage = {
+  id: "welcome",
+  role: "system",
+  content:
+    "Ieslēdz mērķa avotus un pievieno PDF (piem. AutoDNA) — pietiek ar failu: aizpildīs odometru, datumus, valsti, negadījumus un iemetīs pilnu PDF tekstu RAW. Sarakste saglabājas šim pasūtījumam.",
+};
 const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
   autodna: SOURCE_BLOCK_LABELS.autodna,
@@ -104,6 +113,65 @@ function savePos(pos: PanelPos) {
   }
 }
 
+function chatStorageKey(sessionId: string): string {
+  return `${CHAT_STORAGE_PREFIX}${sessionId}`;
+}
+
+function loadStoredChat(sessionId: string): { messages: UiMessage[]; allowedSources?: CopilotSourceKey[] } | null {
+  if (!sessionId || typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(chatStorageKey(sessionId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      messages?: unknown;
+      allowedSources?: unknown;
+    };
+    if (!Array.isArray(parsed.messages) || parsed.messages.length === 0) return null;
+    const messages: UiMessage[] = [];
+    for (const item of parsed.messages.slice(-CHAT_MAX_MESSAGES)) {
+      if (!item || typeof item !== "object") continue;
+      const o = item as Record<string, unknown>;
+      const role = o.role;
+      const content = typeof o.content === "string" ? o.content : "";
+      if (role !== "user" && role !== "assistant" && role !== "system") continue;
+      if (!content.trim() && role === "system") continue;
+      messages.push({
+        id: typeof o.id === "string" ? o.id : newId(),
+        role,
+        content: content.slice(0, 12_000),
+        ...(Array.isArray(o.needsConfirm) ? { needsConfirm: o.needsConfirm as UiMessage["needsConfirm"] } : {}),
+        ...(Array.isArray(o.autoApplied) ? { autoApplied: o.autoApplied as UiMessage["autoApplied"] } : {}),
+      });
+    }
+    if (messages.length === 0) return null;
+    const allowedSources = Array.isArray(parsed.allowedSources)
+      ? parsed.allowedSources.filter((s): s is CopilotSourceKey => typeof s === "string" && COPILOT_SOURCE_KEYS.includes(s as CopilotSourceKey))
+      : undefined;
+    return { messages, allowedSources: allowedSources?.length ? allowedSources : undefined };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredChat(sessionId: string, messages: UiMessage[], allowedSources: CopilotSourceKey[]) {
+  if (!sessionId || typeof window === "undefined") return;
+  try {
+    const slim = messages.slice(-CHAT_MAX_MESSAGES).map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content.slice(0, 12_000),
+      ...(m.needsConfirm?.length ? { needsConfirm: m.needsConfirm } : {}),
+      ...(m.autoApplied?.length ? { autoApplied: m.autoApplied } : {}),
+    }));
+    localStorage.setItem(
+      chatStorageKey(sessionId),
+      JSON.stringify({ messages: slim, allowedSources, updatedAt: Date.now() }),
+    );
+  } catch {
+    /* quota / private mode */
+  }
+}
+
 export function AdminOrderCopilotTrigger({
   open,
   onOpen,
@@ -158,14 +226,8 @@ export function AdminOrderCopilotPanel({
   const [unreadDone, setUnreadDone] = useState(false);
   const [pos, setPos] = useState<PanelPos>({ left: 24, top: 24 });
   const [dragging, setDragging] = useState(false);
-  const [messages, setMessages] = useState<UiMessage[]>([
-    {
-      id: "welcome",
-      role: "system",
-      content:
-        "Ieslēdz mērķa avotus, pievieno PDF un īsu komandu (piem. „izvelc datus”). Pēc sūtīšanas logs samazinās — Tu vari turpināt darbu.",
-    },
-  ]);
+  const [messages, setMessages] = useState<UiMessage[]>([WELCOME_MESSAGE]);
+  const [chatHydrated, setChatHydrated] = useState(false);
   const [draft, setDraft] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -178,6 +240,23 @@ export function AdminOrderCopilotPanel({
     const stored = loadStoredPos();
     setPos(clampPos(stored ?? defaultPos(false), false));
   }, []);
+
+  useEffect(() => {
+    setChatHydrated(false);
+    const stored = loadStoredChat(sessionId);
+    if (stored) {
+      setMessages(stored.messages);
+      if (stored.allowedSources?.length) setAllowedSources(stored.allowedSources);
+    } else {
+      setMessages([WELCOME_MESSAGE]);
+    }
+    setChatHydrated(true);
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!chatHydrated || !sessionId) return;
+    saveStoredChat(sessionId, messages, allowedSources);
+  }, [allowedSources, chatHydrated, messages, sessionId]);
 
   useEffect(() => {
     if (!mounted) return;
