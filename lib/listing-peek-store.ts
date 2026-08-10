@@ -9,6 +9,7 @@ const RELATIVE_DIR = ".data/listing-peeks";
 const FILENAME = "index.json";
 const BLOB_PATHNAME = "listing-peeks/index.json";
 
+/** Legacy field — jauni ieraksti bez lokācijas. */
 export type ListingPeekLocation = "lv" | "abroad";
 
 export type ListingPeekStatus = "new" | "in_progress" | "completed" | "rejected";
@@ -18,10 +19,11 @@ export type ListingPeekEntry = {
   email: string;
   phone: string;
   listingUrl: string;
-  location: ListingPeekLocation;
+  /** @deprecated Nav formā; vecie ieraksti var saturēt. */
+  location?: ListingPeekLocation;
   createdAt: string;
   status: ListingPeekStatus;
-  source: "risk_audit_guide";
+  source: "risk_audit_guide" | "listing_peek";
 };
 
 type ListingPeekDoc = {
@@ -33,39 +35,15 @@ type ListingPeekDoc = {
 const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 500;
 
-const TRACKING_PARAMS = new Set([
-  "utm_source",
-  "utm_medium",
-  "utm_campaign",
-  "utm_content",
-  "utm_term",
-  "fbclid",
-  "gclid",
-  "mc_cid",
-  "mc_eid",
-]);
-
 export function normalizePeekEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/** Salīdzināšanai: host lowercase, bez hash, bez tipiskiem tracking parametriem. */
-export function normalizePeekListingUrl(url: string): string {
-  try {
-    const u = new URL(url.trim());
-    u.hash = "";
-    u.protocol = u.protocol.toLowerCase();
-    u.hostname = u.hostname.toLowerCase();
-    if (u.pathname.length > 1 && u.pathname.endsWith("/")) {
-      u.pathname = u.pathname.replace(/\/+$/, "");
-    }
-    for (const key of [...u.searchParams.keys()]) {
-      if (TRACKING_PARAMS.has(key.toLowerCase())) u.searchParams.delete(key);
-    }
-    return u.toString();
-  } catch {
-    return url.trim().toLowerCase();
-  }
+/** Salīdzināšanai: tikai cipari, pēdējie 8 (+371 / atstarpes nesvarīgas). */
+export function normalizePeekPhoneKey(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length <= 8) return digits;
+  return digits.slice(-8);
 }
 
 function cooldownRetryAfterSec(lastMs: number, now: number): number {
@@ -93,18 +71,20 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
   const listingUrl = typeof o.listingUrl === "string" ? o.listingUrl.trim() : "";
   const createdAt =
     typeof o.createdAt === "string" && o.createdAt.trim() ? o.createdAt.trim() : null;
-  if (!id || !email || !listingUrl || !createdAt || !isLocation(o.location) || !isStatus(o.status)) {
+  if (!id || !email || !listingUrl || !createdAt || !isStatus(o.status)) {
     return null;
   }
+  const source =
+    o.source === "listing_peek" || o.source === "risk_audit_guide" ? o.source : "listing_peek";
   return {
     id,
     email,
     phone,
     listingUrl,
-    location: o.location,
+    ...(isLocation(o.location) ? { location: o.location } : {}),
     createdAt,
     status: o.status,
-    source: "risk_audit_guide",
+    source,
   };
 }
 
@@ -210,7 +190,7 @@ export type CreateListingPeekResult =
   | { ok: true; entry: ListingPeekEntry }
   | {
       ok: false;
-      reason: "email_rate_limited" | "listing_rate_limited";
+      reason: "contact_rate_limited";
       retryAfterSec: number;
     };
 
@@ -218,12 +198,11 @@ export async function createListingPeek(input: {
   email: string;
   phone: string;
   listingUrl: string;
-  location: ListingPeekLocation;
 }): Promise<CreateListingPeekResult> {
   const email = normalizePeekEmail(input.email);
   const phone = input.phone.trim();
+  const phoneKey = normalizePeekPhoneKey(phone);
   const listingUrl = input.listingUrl.trim();
-  const listingKey = normalizePeekListingUrl(listingUrl);
   const now = Date.now();
   const doc = await readDoc();
 
@@ -236,24 +215,26 @@ export async function createListingPeek(input: {
     if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
       return {
         ok: false,
-        reason: "email_rate_limited",
+        reason: "contact_rate_limited",
         retryAfterSec: cooldownRetryAfterSec(lastMs, now),
       };
     }
   }
 
-  const lastForListing = doc.entries
-    .filter((e) => normalizePeekListingUrl(e.listingUrl) === listingKey)
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
+  if (phoneKey.length >= 8) {
+    const lastForPhone = doc.entries
+      .filter((e) => e.phone && normalizePeekPhoneKey(e.phone) === phoneKey)
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
 
-  if (lastForListing) {
-    const lastMs = Date.parse(lastForListing.createdAt);
-    if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
-      return {
-        ok: false,
-        reason: "listing_rate_limited",
-        retryAfterSec: cooldownRetryAfterSec(lastMs, now),
-      };
+    if (lastForPhone) {
+      const lastMs = Date.parse(lastForPhone.createdAt);
+      if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
+        return {
+          ok: false,
+          reason: "contact_rate_limited",
+          retryAfterSec: cooldownRetryAfterSec(lastMs, now),
+        };
+      }
     }
   }
 
@@ -262,10 +243,9 @@ export async function createListingPeek(input: {
     email,
     phone,
     listingUrl,
-    location: input.location,
     createdAt: new Date(now).toISOString(),
     status: "new",
-    source: "risk_audit_guide",
+    source: "listing_peek",
   };
 
   doc.entries = [entry, ...doc.entries].slice(0, MAX_ENTRIES);
@@ -280,6 +260,13 @@ export async function listListingPeeks(limit = 100): Promise<ListingPeekEntry[]>
     .slice()
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, Math.max(1, Math.min(limit, MAX_ENTRIES)));
+}
+
+export async function getListingPeekById(id: string): Promise<ListingPeekEntry | null> {
+  const trimmed = id.trim();
+  if (!trimmed) return null;
+  const doc = await readDoc();
+  return doc.entries.find((e) => e.id === trimmed) ?? null;
 }
 
 export async function updateListingPeekStatus(

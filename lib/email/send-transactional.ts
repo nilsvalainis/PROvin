@@ -3,7 +3,12 @@ import "server-only";
 import nodemailer from "nodemailer";
 import type { Attachment } from "nodemailer/lib/mailer";
 import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
-import { adminNewOrderHtml, auditCompletedEmailHtml, paymentConfirmationHtml } from "@/lib/email/html-templates";
+import {
+  adminNewOrderHtml,
+  auditCompletedEmailHtml,
+  listingPeekCustomerCommentHtml,
+  paymentConfirmationHtml,
+} from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { buildClientReportLegalFooterPlainText } from "@/lib/report-pdf-standards";
@@ -317,38 +322,34 @@ export async function sendProvinSelectConsultationLeadEmail(opts: {
   });
 }
 
-/** Admin: īss bezmaksas sludinājuma vērtējums no Riska & Audita Ceļveža. */
+/** Admin: jauns bezmaksas sludinājuma komentāra pieprasījums. */
 export async function sendListingPeekLeadEmail(opts: {
   adminTo: string;
   email: string;
   phone: string;
   listingUrl: string;
-  location: "lv" | "abroad";
   id: string;
 }): Promise<void> {
-  const locationLabel = opts.location === "lv" ? "Latvijā" : "Ārvalstīs";
-  const subject = "PROVIN — īss sludinājuma vērtējums";
+  const subject = "PROVIN — bezmaksas sludinājuma komentārs";
   const text = [
-    "Jauns īss sludinājuma vērtējuma pieprasījums (Riska & Audita Ceļvedis).",
+    "Jauns bezmaksas sludinājuma komentāra pieprasījums.",
     "",
     `ID: ${opts.id}`,
     `E-pasts: ${opts.email}`,
     `Tālrunis: ${opts.phone}`,
-    `Konteksts: ${locationLabel}`,
     `Sludinājums: ${opts.listingUrl}`,
     "",
-    "Atbilde klientam: 3–5 teikumi TIKAI par to, kas redzams sludinājumā (bez datubāžu / VIN analīzes; nav audits / konsultācija).",
-    "Pēc atbildes mīksti virzi uz PROVIN AUDITS (primārais).",
+    "Atbilde klientam: īss komentārs TIKAI par to, kas redzams sludinājumā (bez datubāžu / VIN analīzes).",
+    "Admin → Ātrie vērtējumi: ieraksti komentāru un nosūti HTML e-pastu ar PROVIN AUDITS CTA.",
   ].join("\n");
-  const html = `<p>Jauns <strong>īss sludinājuma vērtējums</strong> (Riska &amp; Audita Ceļvedis).</p>
+  const html = `<p>Jauns <strong>bezmaksas sludinājuma komentāra</strong> pieprasījums.</p>
 <table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
 <tr><td><strong>ID</strong></td><td>${escHtmlMail(opts.id)}</td></tr>
 <tr><td><strong>E-pasts</strong></td><td>${escHtmlMail(opts.email)}</td></tr>
 <tr><td><strong>Tālrunis</strong></td><td>${escHtmlMail(opts.phone)}</td></tr>
-<tr><td><strong>Konteksts</strong></td><td>${escHtmlMail(locationLabel)}</td></tr>
 <tr><td><strong>Sludinājums</strong></td><td><a href="${escHtmlMail(opts.listingUrl)}">${escHtmlMail(opts.listingUrl)}</a></td></tr>
 </table>
-<p style="color:#666;font-size:13px;">Atbilde: 3–5 teikumi <strong>tikai</strong> par publisko sludinājumu — bez datubāžu / VIN analīzes. Primārā pārdošana pēc tam: <strong>PROVIN AUDITS</strong>.</p>`;
+<p style="color:#666;font-size:13px;">Atbilde: īss komentārs <strong>tikai</strong> par publisko sludinājumu. Nosūti no admina ar <strong>PROVIN AUDITS</strong> CTA pogu.</p>`;
 
   await sendSmtpMail({
     to: opts.adminTo,
@@ -356,5 +357,39 @@ export async function sendListingPeekLeadEmail(opts: {
     text,
     html,
     replyTo: opts.email,
+  });
+}
+
+/** Klientam: īss komentārs + CTA uz PROVIN AUDITS. */
+export async function sendListingPeekCustomerCommentEmail(opts: {
+  to: string;
+  comment: string;
+}): Promise<void> {
+  const origin = getSiteOrigin();
+  const auditsUrl = `${origin}/?plan=audits#home-hero`;
+  const comment = opts.comment.trim();
+  const subject = "PROVIN — īss komentārs par tavu sludinājumu";
+  const text = [
+    "Labdien!",
+    "",
+    "Īss skatījums uz tavu sludinājumu:",
+    "",
+    comment,
+    "",
+    "Šis ir īss vizuālais komentārs par publisko sludinājumu — bez auto vēstures pārbaudes maksas datubāzēs.",
+    "",
+    "Vajag pilnu skaidrību? PROVIN AUDITS:",
+    auditsUrl,
+    "",
+    "Ar cieņu,",
+    "PROVIN.LV",
+  ].join("\n");
+  const html = listingPeekCustomerCommentHtml({ comment, auditsUrl });
+
+  await sendSmtpMail({
+    to: opts.to,
+    subject,
+    text,
+    html,
   });
 }

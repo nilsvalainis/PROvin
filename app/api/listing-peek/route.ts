@@ -8,10 +8,7 @@ import {
 } from "@/lib/order-field-validation";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
-import {
-  createListingPeek,
-  type ListingPeekLocation,
-} from "@/lib/listing-peek-store";
+import { createListingPeek } from "@/lib/listing-peek-store";
 
 export const runtime = "nodejs";
 
@@ -22,10 +19,6 @@ const DAY_MAX = 3;
 
 function clip(s: string, max: number): string {
   return s.trim().slice(0, max);
-}
-
-function parseLocation(v: unknown): ListingPeekLocation | null {
-  return v === "lv" || v === "abroad" ? v : null;
 }
 
 function rateLimitedJson(retryAfterSec: number, error: string) {
@@ -63,11 +56,7 @@ export async function POST(req: Request) {
   const email = typeof o.email === "string" ? clip(o.email, 200) : "";
   const phone = typeof o.phone === "string" ? clip(o.phone, 40) : "";
   const listingUrl = typeof o.listingUrl === "string" ? clip(o.listingUrl, 2000) : "";
-  const location = parseLocation(o.location);
 
-  if (!location) {
-    return NextResponse.json({ error: "invalid_location" }, { status: 400 });
-  }
   if (!email || !isValidOrderEmail(email)) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });
   }
@@ -78,11 +67,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_listing" }, { status: 400 });
   }
 
-  const created = await createListingPeek({ email, phone, listingUrl, location });
+  const created = await createListingPeek({ email, phone, listingUrl });
   if (!created.ok) {
-    const error =
-      created.reason === "listing_rate_limited" ? "listing_rate_limited" : "email_rate_limited";
-    return rateLimitedJson(created.retryAfterSec, error);
+    return rateLimitedJson(created.retryAfterSec, "contact_rate_limited");
   }
 
   const adminTo = getAdminOrderNotifyEmail();
@@ -93,7 +80,6 @@ export async function POST(req: Request) {
         email: created.entry.email,
         phone: created.entry.phone,
         listingUrl: created.entry.listingUrl,
-        location: created.entry.location,
         id: created.entry.id,
       });
     } catch (e) {

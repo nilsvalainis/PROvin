@@ -2,56 +2,29 @@
   "RiskAuditGuide": {
     "eyebrow": "Free listing check",
     "title": "Check the listing for free",
-    "subtitle": "Send a link and get a first take on whether this car is even worth looking at.",
-    "choose": "Choose",
-    "recommended": "Recommended",
-    "progress": {
-      "aria": "Guide steps",
-      "step1": "Step 1",
-      "step2": "Step 2"
-    },
-    "step1": {
-      "label": "1",
-      "question": "Where has the car mainly been used?",
-      "lvTitle": "In Latvia",
-      "abroadTitle": "Abroad"
-    },
-    "step2": {
-      "label": "2",
-      "back": "Back",
-      "changeChoice": "Change choice",
-      "auditsTitle": "PROVIN AUDITS",
-      "auditsBody": "Comprehensive vehicle history and risk research",
-      "auditsCta": "Order audit",
-      "freeCta": "Get a free short review",
-      "miniTitle": "PROVIN MINI",
-      "miniBody": "Listing and risk analysis, consultation, and free data check.",
-      "miniWarning": "PROVIN MINI does not include vehicle history checks in paid databases.",
-      "miniCta": "Choose MINI",
-      "placeholder": "https://…"
-    },
+    "subtitle": "Send a listing and get a first take on whether this car is even worth checking further.",
+    "triggerCta": "Check the listing for free",
     "form": {
-      "title": "Short free review",
-      "boundary": "Listing only — no consultation and no data analysis.",
       "listingLabel": "Listing link",
-      "emailLabel": "Email",
+      "listingPlaceholder": "https://www.ss.com/msg/lv/… or Mobile.de",
+      "emailLabel": "Your email",
+      "emailPlaceholder": "janis@inbox.lv",
       "phoneLabel": "Phone",
-      "submit": "Submit request",
+      "phonePlaceholder": "+371 …",
+      "submit": "Get the review",
       "submitting": "Sending…",
-      "cancel": "Close"
+      "disclaimer": "* Short visual comment by email. Does not include vehicle history checks in databases."
     },
     "success": {
-      "title": "Request received.",
-      "body": "We’ll reply within 24–48h with a short look at the listing. If you need full history — PROVIN AUDITS is the next step.",
-      "ctaAudits": "Order PROVIN AUDITS — €99.99",
-      "ctaMini": "Or MINI — €39.99"
+      "title": "Thanks! We’ve received the link.",
+      "body": "We’ll send a short comment by email."
     },
     "errors": {
       "listing": "Paste a valid link to a specific listing.",
       "email": "Email address is not valid.",
       "phone": "Phone number is not valid.",
-      "rateLimited": "A short review was already requested for this email in the last 7 days.",
-      "listingRateLimited": "A short review was already requested for this listing in the last 7 days.",
+      "rateLimited": "A free review has already been requested. We’ll reply by email, or order PROVIN AUDITS.",
+      "rateLimitedCta": "Order PROVIN AUDITS",
       "ipRateLimited": "Several requests were already submitted from this device / network today. Try again tomorrow or order an audit.",
       "generic": "Could not submit. Please try again."
     }

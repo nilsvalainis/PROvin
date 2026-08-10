@@ -97,6 +97,38 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
 }
 
 /** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili — nodemailer). */
+/** Bezmaksas īss sludinājuma komentārs + CTA uz PROVIN AUDITS. */
+export function listingPeekCustomerCommentHtml(opts: {
+  comment: string;
+  auditsUrl: string;
+}): string {
+  const paragraphs = opts.comment
+    .trim()
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const bodyHtml = paragraphs.length
+    ? paragraphs
+        .map(
+          (p) =>
+            `<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;white-space:pre-wrap;">${esc(p)}</p>`,
+        )
+        .join("")
+    : `<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;white-space:pre-wrap;">${esc(opts.comment.trim())}</p>`;
+
+  const inner = `
+<p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">Bezmaksas komentārs</p>
+<p style="margin:0 0 18px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Īss skatījums uz tavu sludinājumu</p>
+${bodyHtml}
+<p style="margin:22px 0 0;padding:16px 0 0;border-top:1px solid #ececec;font-size:13px;color:${MUTED};line-height:1.55;">Šis ir īss vizuālais komentārs par publisko sludinājumu — bez auto vēstures pārbaudes maksas datubāzēs.</p>
+<p style="margin:18px 0 6px;font-size:15px;font-weight:600;color:${INK};">Vajag pilnu skaidrību?</p>
+<p style="margin:0 0 4px;font-size:14px;color:${MUTED};line-height:1.55;">PROVIN AUDITS — visaptveroša auto vēstures un risku izpēte.</p>
+${ctaButton(opts.auditsUrl, "Pasūtīt PROVIN AUDITS")}
+<p style="margin:24px 0 0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
+`;
+  return shell(inner, { omitBrandRibbon: true });
+}
+
 export function auditCompletedEmailHtml(opts: {
   carVin: string;
   attachmentLines: string[];

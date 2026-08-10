@@ -1,6 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
 import {
+  getListingPeekById,
   listListingPeeks,
   updateListingPeekStatus,
   type ListingPeekStatus,
@@ -26,6 +28,26 @@ async function setStatus(formData: FormData) {
   revalidatePath("/admin/atras-vertesanas");
 }
 
+async function sendComment(formData: FormData) {
+  "use server";
+  const id = String(formData.get("id") ?? "").trim();
+  const comment = String(formData.get("comment") ?? "").trim();
+  if (!id || comment.length < 8) return;
+  if (!isSmtpConfigured()) return;
+
+  const entry = await getListingPeekById(id);
+  if (!entry?.email) return;
+
+  try {
+    await sendListingPeekCustomerCommentEmail({ to: entry.email, comment });
+    await updateListingPeekStatus(id, "completed");
+  } catch (e) {
+    console.error("[atras-vertesanas] send comment failed:", e);
+    return;
+  }
+  revalidatePath("/admin/atras-vertesanas");
+}
+
 function formatWhen(iso: string): string {
   const d = new Date(iso);
   if (!Number.isFinite(d.getTime())) return iso;
@@ -37,6 +59,7 @@ function formatWhen(iso: string): string {
 
 export default async function AdminListingPeeksPage() {
   const entries = await listListingPeeks(200);
+  const smtpOk = isSmtpConfigured();
 
   return (
     <div className="w-full max-w-none">
@@ -48,9 +71,9 @@ export default async function AdminListingPeeksPage() {
           Ātrie vērtējumi
         </h1>
         <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
-          Īsie bezmaksas sludinājuma komentāri no Riska & Audita Ceļveža. Limits: 1 /
-          7 dienas / e-pasts, 1 / 7 dienas / saite, ~3 / diena / IP. Tikai skatījums uz
-          sludinājumu — bez datubāžu analīzes.
+          Bezmaksas sludinājuma komentāri. Limits: 1 / 7 dienas / e-pasts vai telefona pēdējie 8
+          cipari; ~3 / diena / IP. Tikai skatījums uz sludinājumu — bez datubāžu analīzes. Atbildē
+          klientam e-pastā vienmēr ir PROVIN AUDITS CTA.
         </p>
       </AdminDashboardHeaderWithMenu>
 
@@ -62,81 +85,95 @@ export default async function AdminListingPeeksPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-sm">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-              <tr>
-                <th className="px-3 py-2.5">Datums</th>
-                <th className="px-3 py-2.5">Kontakti</th>
-                <th className="px-3 py-2.5">Konteksts</th>
-                <th className="px-3 py-2.5">Sludinājums</th>
-                <th className="px-3 py-2.5">Statuss</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <tr key={e.id} className="border-b border-slate-100 last:border-b-0">
-                  <td className="whitespace-nowrap px-3 py-3 text-[var(--color-provin-muted)]">
-                    {formatWhen(e.createdAt)}
-                  </td>
-                  <td className="px-3 py-3">
+        <ul className="mt-6 space-y-4">
+          {entries.map((e) => (
+            <li
+              key={e.id}
+              className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[12px] text-[var(--color-provin-muted)]">{formatWhen(e.createdAt)}</p>
+                  <a
+                    href={`mailto:${e.email}`}
+                    className="mt-1 block font-medium text-[var(--color-apple-text)] hover:underline"
+                  >
+                    {e.email}
+                  </a>
+                  {e.phone ? (
                     <a
-                      href={`mailto:${e.email}`}
-                      className="font-medium text-[var(--color-apple-text)] hover:underline"
+                      href={`tel:${e.phone.replace(/\s/g, "")}`}
+                      className="mt-0.5 block text-[13px] text-[var(--color-provin-muted)] hover:underline"
                     >
-                      {e.email}
+                      {e.phone}
                     </a>
-                    {e.phone ? (
-                      <p className="mt-0.5">
-                        <a
-                          href={`tel:${e.phone.replace(/\s/g, "")}`}
-                          className="text-[13px] text-[var(--color-provin-muted)] hover:underline"
-                        >
-                          {e.phone}
-                        </a>
-                      </p>
+                  ) : null}
+                  <a
+                    href={e.listingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 block break-all text-[13px] text-[var(--color-provin-accent)] hover:underline"
+                  >
+                    {e.listingUrl}
+                  </a>
+                </div>
+                <form action={setStatus} className="flex items-center gap-2">
+                  <input type="hidden" name="id" value={e.id} />
+                  <select
+                    name="status"
+                    defaultValue={e.status}
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12px] text-[var(--color-apple-text)]"
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABEL[s]}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-slate-200 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50"
+                  >
+                    OK
+                  </button>
+                </form>
+              </div>
+
+              {e.status !== "completed" && e.status !== "rejected" ? (
+                <form action={sendComment} className="mt-4 border-t border-slate-100 pt-4">
+                  <input type="hidden" name="id" value={e.id} />
+                  <label
+                    htmlFor={`comment-${e.id}`}
+                    className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
+                  >
+                    Komentārs klientam (e-pastā + AUDITS CTA)
+                  </label>
+                  <textarea
+                    id={`comment-${e.id}`}
+                    name="comment"
+                    required
+                    minLength={8}
+                    rows={4}
+                    placeholder="Īss komentārs tikai par to, kas redzams sludinājumā…"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
+                  />
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={!smtpOk}
+                      className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Nosūtīt e-pastu
+                    </button>
+                    {!smtpOk ? (
+                      <p className="text-[12px] text-amber-700">SMTP nav konfigurēts.</p>
                     ) : null}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-[var(--color-provin-muted)]">
-                    {e.location === "lv" ? "Latvijā" : "Ārvalstīs"}
-                  </td>
-                  <td className="max-w-[16rem] px-3 py-3">
-                    <a
-                      href={e.listingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="break-all text-[var(--color-provin-accent)] hover:underline"
-                    >
-                      {e.listingUrl}
-                    </a>
-                  </td>
-                  <td className="px-3 py-3">
-                    <form action={setStatus} className="flex items-center gap-2">
-                      <input type="hidden" name="id" value={e.id} />
-                      <select
-                        name="status"
-                        defaultValue={e.status}
-                        className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12px] text-[var(--color-apple-text)]"
-                      >
-                        {STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {STATUS_LABEL[s]}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="submit"
-                        className="rounded-lg border border-slate-200 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50"
-                      >
-                        OK
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </form>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

@@ -2,56 +2,29 @@
   "RiskAuditGuide": {
     "eyebrow": "Bezmaksas sludinājuma pārbaude",
     "title": "Pārbaudi sludinājumu bez maksas",
-    "subtitle": "Iesūti saiti un saņem pirmo vērtējumu, vai šo auto vispār ir vērts skatīties.",
-    "choose": "Izvēlēties",
-    "recommended": "Rekomendēts",
-    "progress": {
-      "aria": "Ceļveža soļi",
-      "step1": "1. solis",
-      "step2": "2. solis"
-    },
-    "step1": {
-      "label": "1",
-      "question": "Kur auto pamatā ticis lietots?",
-      "lvTitle": "Latvijā",
-      "abroadTitle": "Ārvalstīs"
-    },
-    "step2": {
-      "label": "2",
-      "back": "Atpakaļ",
-      "changeChoice": "Mainīt izvēli",
-      "auditsTitle": "PROVIN AUDITS",
-      "auditsBody": "Visaptveroša auto vēstures un risku izpēte",
-      "auditsCta": "Pasūtīt auditu",
-      "freeCta": "Saņemt bezmaksas novērtējumu",
-      "miniTitle": "PROVIN MINI",
-      "miniBody": "Sludinājuma un risku analīze, konsultācija un bezmaksas datu pārbaude.",
-      "miniWarning": "PROVIN MINI neietver auto vēstures pārbaudi maksas datubāzēs.",
-      "miniCta": "Izvēlēties MINI",
-      "placeholder": "https://…"
-    },
+    "subtitle": "Iesūti sludinājumu un saņem pirmo vērtējumu, vai šo auto vispār ir vērts pārbaudīt tālāk.",
+    "triggerCta": "Pārbaudīt sludinājumu bez maksas",
     "form": {
-      "title": "Īss bezmaksas novērtējums",
-      "boundary": "Tikai sludinājums — bez konsultācijas un datu analīzes.",
       "listingLabel": "Sludinājuma saite",
-      "emailLabel": "E-pasts",
+      "listingPlaceholder": "https://www.ss.com/msg/lv/… vai Mobile.de",
+      "emailLabel": "Tavs e-pasts",
+      "emailPlaceholder": "janis@inbox.lv",
       "phoneLabel": "Tālrunis",
-      "submit": "Iesniegt pieprasījumu",
+      "phonePlaceholder": "+371 …",
+      "submit": "Saņemt novērtējumu",
       "submitting": "Sūta…",
-      "cancel": "Aizvērt"
+      "disclaimer": "* Īss vizuālais komentārs e-pastā. Neietver auto vēstures pārbaudi datubāzēs."
     },
     "success": {
-      "title": "Pieprasījums saņemts.",
-      "body": "Atbildēsim 24–48h ar īsu skatījumu uz sludinājumu. Ja vajag pilnu vēsturi — PROVIN AUDITS ir nākamais solis.",
-      "ctaAudits": "Pasūtīt PROVIN AUDITS — 99,99 €",
-      "ctaMini": "Vai MINI — 39,99 €"
+      "title": "Paldies! Saite ir saņemta.",
+      "body": "Nosūtīsim īsu komentāru e-pastā."
     },
     "errors": {
       "listing": "Ielīmē derīgu saiti uz konkrētu sludinājumu.",
       "email": "E-pasta adrese nav derīga.",
       "phone": "Tālruņa numurs nav derīgs.",
-      "rateLimited": "Šim e-pastam īss vērtējums jau pieprasīts pēdējo 7 dienu laikā.",
-      "listingRateLimited": "Šim sludinājumam īss vērtējums jau pieprasīts pēdējo 7 dienu laikā.",
+      "rateLimited": "Bezmaksas novērtējums jau ir pieprasīts. Nosūtīsim atbildi e-pastā vai pasūti PROVIN AUDITS.",
+      "rateLimitedCta": "Pasūtīt PROVIN AUDITS",
       "ipRateLimited": "No šīs ierīces / tīkla šodien jau iesniegti vairāki pieprasījumi. Mēģini rīt vai pasūti auditu.",
       "generic": "Neizdevās iesniegt. Mēģini vēlreiz."
     }
