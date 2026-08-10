@@ -270,82 +270,55 @@ export function HomeRiskAuditGuide() {
               </ol>
             </div>
 
-            <div className="mt-8 border-t border-white/[0.08] pt-8 lg:mt-10 lg:pt-10">
-              {step === 1 ? (
-                <div>
-                  <h3 className="text-balance text-[1.55rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-[1.85rem] lg:text-[2.05rem]">
-                    {t("step1.question")}
-                  </h3>
+            {step === 1 || (step === 2 && location && success) ? (
+              <div className="mt-8 border-t border-white/[0.08] pt-8 lg:mt-10 lg:pt-10">
+                {step === 1 ? (
+                  <div>
+                    <h3 className="text-balance text-[1.55rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-[1.85rem] lg:text-[2.05rem]">
+                      {t("step1.question")}
+                    </h3>
 
-                  <div
-                    className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4"
-                    role="radiogroup"
-                    aria-label={t("step1.question")}
-                  >
-                    {(
-                      [
-                        { id: "abroad" as const, title: t("step1.abroadTitle") },
-                        { id: "lv" as const, title: t("step1.lvTitle") },
-                      ] as const
-                    ).map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={location === opt.id}
-                        onClick={() => selectLocation(opt.id)}
-                        className="group flex min-h-[5.5rem] items-center justify-between gap-4 rounded-2xl border border-white/[0.14] bg-white/[0.03] px-5 py-5 text-left transition duration-200 hover:border-[#0066ff]/45 hover:bg-[#0066ff]/[0.08] active:scale-[0.99] sm:min-h-[6.25rem] sm:px-6 sm:py-6"
-                      >
-                        <span className="text-[1.2rem] font-semibold tracking-tight text-white sm:text-[1.35rem]">
-                          {opt.title}
-                        </span>
-                        <ArrowRight
-                          className="h-5 w-5 shrink-0 text-white/35 transition duration-200 group-hover:translate-x-0.5 group-hover:text-[#7eb0ff]"
-                          strokeWidth={2}
-                          aria-hidden
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {step === 2 && location ? (
-                <div>
-                  {!success ? (
-                    <div className="mb-6 flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={goBackToStep1}
-                        className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/80 transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white"
-                      >
-                        <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                        {t("step2.back")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={goBackToStep1}
-                        className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/[0.1] px-3.5 text-[12px] text-white/55 transition hover:border-white/25 hover:text-white/80"
-                      >
-                        <span className="font-medium text-white/80">
-                          {location === "lv" ? t("step1.lvTitle") : t("step1.abroadTitle")}
-                        </span>
-                        <span className="text-white/30">·</span>
-                        <span className="font-semibold uppercase tracking-[0.08em] text-[#7eb0ff]">
-                          {t("step2.changeChoice")}
-                        </span>
-                      </button>
+                    <div
+                      className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4"
+                      role="radiogroup"
+                      aria-label={t("step1.question")}
+                    >
+                      {(
+                        [
+                          { id: "abroad" as const, title: t("step1.abroadTitle") },
+                          { id: "lv" as const, title: t("step1.lvTitle") },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={location === opt.id}
+                          onClick={() => selectLocation(opt.id)}
+                          className="group flex min-h-[5.5rem] items-center justify-between gap-4 rounded-2xl border border-white/[0.14] bg-white/[0.03] px-5 py-5 text-left transition duration-200 hover:border-[#0066ff]/45 hover:bg-[#0066ff]/[0.08] active:scale-[0.99] sm:min-h-[6.25rem] sm:px-6 sm:py-6"
+                        >
+                          <span className="text-[1.2rem] font-semibold tracking-tight text-white sm:text-[1.35rem]">
+                            {opt.title}
+                          </span>
+                          <ArrowRight
+                            className="h-5 w-5 shrink-0 text-white/35 transition duration-200 group-hover:translate-x-0.5 group-hover:text-[#7eb0ff]"
+                            strokeWidth={2}
+                            aria-hidden
+                          />
+                        </button>
+                      ))}
                     </div>
-                  ) : null}
+                  </div>
+                ) : null}
 
-                  <h3 className="text-balance text-[1.55rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-[1.85rem] lg:text-[2.05rem]">
-                    {success ? t("success.title") : t("step2.title")}
-                  </h3>
-                  <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-white/50 sm:text-[16px] lg:text-[17px]">
-                    {success ? t("success.body") : t("step2.hint")}
-                  </p>
-
-                  {success ? (
+                {step === 2 && location && success ? (
+                  <div>
+                    <h3 className="text-balance text-[1.55rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-[1.85rem] lg:text-[2.05rem]">
+                      {t("success.title")}
+                    </h3>
+                    <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-white/50 sm:text-[16px] lg:text-[17px]">
+                      {t("success.body")}
+                    </p>
                     <div className="mt-8 flex max-w-md flex-col gap-3">
                       <LiquidLink
                         href={homeHeroCheckoutHref("audits")}
@@ -362,15 +335,39 @@ export function HomeRiskAuditGuide() {
                         {t("success.ctaMini")}
                       </Link>
                     </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
 
         {step === 2 && location && !success ? (
           <div className="mt-8 lg:mt-10">
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={goBackToStep1}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/80 transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white"
+              >
+                <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                {t("step2.back")}
+              </button>
+              <button
+                type="button"
+                onClick={goBackToStep1}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/[0.1] px-3.5 text-[12px] text-white/55 transition hover:border-white/25 hover:text-white/80"
+              >
+                <span className="font-medium text-white/80">
+                  {location === "lv" ? t("step1.lvTitle") : t("step1.abroadTitle")}
+                </span>
+                <span className="text-white/30">·</span>
+                <span className="font-semibold uppercase tracking-[0.08em] text-[#7eb0ff]">
+                  {t("step2.changeChoice")}
+                </span>
+              </button>
+            </div>
+
             <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
               <div className="order-2 flex flex-col rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.45)] px-5 py-6 backdrop-blur-md sm:px-6 sm:py-7 md:order-1">
                 <h4 className="text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.2rem]">
