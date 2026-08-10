@@ -3,7 +3,7 @@
     "eyebrow": "Free listing check",
     "title": "Check the listing for free",
     "subtitle": "Send a listing and get a first take on whether this car is even worth checking further.",
-    "triggerCta": "Check the listing for free",
+    "triggerCta": "Submit a listing",
     "form": {
       "listingLabel": "Listing link",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… or Mobile.de",

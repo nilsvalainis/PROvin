@@ -3,7 +3,7 @@
     "eyebrow": "Bezmaksas sludinājuma pārbaude",
     "title": "Pārbaudi sludinājumu bez maksas",
     "subtitle": "Iesūti sludinājumu un saņem pirmo vērtējumu, vai šo auto vispār ir vērts pārbaudīt tālāk.",
-    "triggerCta": "Pārbaudīt sludinājumu bez maksas",
+    "triggerCta": "Iesūtīt sludinājumu",
     "form": {
       "listingLabel": "Sludinājuma saite",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… vai Mobile.de",
