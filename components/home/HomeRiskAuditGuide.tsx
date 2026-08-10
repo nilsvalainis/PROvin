@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, useTransition, type FormEvent, type ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { useTranslations } from "next-intl";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -253,21 +253,21 @@ export function HomeRiskAuditGuide() {
 
         <div className="mt-10 lg:mt-14">
           {step === 1 ? (
-            <div className="grid gap-8 lg:grid-cols-12 lg:items-center lg:gap-16">
-              <div className="lg:col-span-5">
+            <div className="mx-auto w-full max-w-3xl">
+              <div className="text-center sm:text-left">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
                   {t("step1.label")} / 2
                 </p>
                 <h3 className="mt-3 text-balance text-[1.35rem] font-semibold leading-[1.2] tracking-tight text-white sm:text-[1.65rem] lg:text-[1.85rem]">
                   {t("step1.question")}
                 </h3>
-                <p className="mt-3 text-[14px] leading-relaxed text-white/45 sm:text-[15px]">
+                <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-white/45 sm:text-[15px]">
                   {t("step1.hint")}
                 </p>
               </div>
 
               <div
-                className="grid gap-4 sm:grid-cols-2 lg:col-span-7"
+                className="mt-8 grid gap-4 sm:grid-cols-2"
                 role="radiogroup"
                 aria-label={t("step1.question")}
               >
@@ -279,7 +279,7 @@ export function HomeRiskAuditGuide() {
                 ).map((opt) => (
                   <div
                     key={opt.id}
-                    className="flex flex-col justify-between gap-5 rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.55)] px-5 py-5 shadow-[0_20px_52px_rgb(0_0_0/0.35)] backdrop-blur-md sm:min-h-[11rem] sm:px-6 sm:py-6"
+                    className="flex flex-col justify-between gap-5 rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.55)] px-5 py-5 shadow-[0_20px_52px_rgb(0_0_0/0.35)] backdrop-blur-md sm:min-h-[10rem] sm:px-6 sm:py-6"
                   >
                     <p className="text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.25rem]">
                       {opt.title}
@@ -295,7 +295,42 @@ export function HomeRiskAuditGuide() {
           ) : null}
 
           {step === 2 && location ? (
-            <div className="grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-16">
+            <div>
+              {!success ? (
+                <div className="mb-6 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFreeForm(false);
+                      setFormError(null);
+                      setStep(1);
+                    }}
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/80 transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white"
+                  >
+                    <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                    {t("step2.back")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFreeForm(false);
+                      setFormError(null);
+                      setStep(1);
+                    }}
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/[0.1] px-3.5 text-[12px] text-white/55 transition hover:border-white/25 hover:text-white/80"
+                  >
+                    <span className="font-medium text-white/80">
+                      {location === "lv" ? t("step1.lvTitle") : t("step1.abroadTitle")}
+                    </span>
+                    <span className="text-white/30">·</span>
+                    <span className="font-semibold uppercase tracking-[0.08em] text-[#7eb0ff]">
+                      {t("step2.changeChoice")}
+                    </span>
+                  </button>
+                </div>
+              ) : null}
+
+              <div className="grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-16">
               <div className="lg:col-span-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
                   {t("step2.label")} / 2
@@ -306,18 +341,6 @@ export function HomeRiskAuditGuide() {
                 <p className="mt-3 text-[14px] leading-relaxed text-white/45 sm:text-[15px]">
                   {success ? t("success.body") : t("step2.hint")}
                 </p>
-                {!success ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowFreeForm(false);
-                      setStep(1);
-                    }}
-                    className="mt-5 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/40 transition hover:text-white/70"
-                  >
-                    {t("step2.back")}
-                  </button>
-                ) : null}
               </div>
 
               <div className="space-y-4 lg:col-span-7">
@@ -491,6 +514,7 @@ export function HomeRiskAuditGuide() {
                     </div>
                   </>
                 )}
+              </div>
               </div>
             </div>
           ) : null}
