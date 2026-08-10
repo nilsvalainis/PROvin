@@ -11,8 +11,13 @@ import {
 
 export const runtime = "nodejs";
 
-const WINDOW_MS = 15 * 60 * 1000;
-const MAX_PER_WINDOW = 8;
+/** Īss burst pret botiem. */
+const BURST_WINDOW_MS = 15 * 60 * 1000;
+const BURST_MAX = 5;
+
+/** ~3 pieprasījumi / diena no viena IP (serverless — best-effort uz instances). */
+const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DAY_MAX = 3;
 
 function clip(s: string, max: number): string {
   return s.trim().slice(0, max);
@@ -22,14 +27,24 @@ function parseLocation(v: unknown): ListingPeekLocation | null {
   return v === "lv" || v === "abroad" ? v : null;
 }
 
+function rateLimitedJson(retryAfterSec: number, error: string) {
+  return NextResponse.json(
+    { error, retryAfterSec },
+    { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+  );
+}
+
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const rl = checkRateLimit(`listing-peek:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "rate_limited", retryAfterSec: rl.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
-    );
+
+  const burst = checkRateLimit(`listing-peek-burst:${ip}`, BURST_MAX, BURST_WINDOW_MS);
+  if (!burst.ok) {
+    return rateLimitedJson(burst.retryAfterSec, "rate_limited");
+  }
+
+  const day = checkRateLimit(`listing-peek-day:${ip}`, DAY_MAX, DAY_WINDOW_MS);
+  if (!day.ok) {
+    return rateLimitedJson(day.retryAfterSec, "ip_rate_limited");
   }
 
   let body: unknown;
@@ -60,10 +75,9 @@ export async function POST(req: Request) {
 
   const created = await createListingPeek({ email, listingUrl, location });
   if (!created.ok) {
-    return NextResponse.json(
-      { error: "rate_limited", retryAfterSec: created.retryAfterSec },
-      { status: 429, headers: { "Retry-After": String(created.retryAfterSec) } },
-    );
+    const error =
+      created.reason === "listing_rate_limited" ? "listing_rate_limited" : "email_rate_limited";
+    return rateLimitedJson(created.retryAfterSec, error);
   }
 
   const adminTo = getAdminOrderNotifyEmail();

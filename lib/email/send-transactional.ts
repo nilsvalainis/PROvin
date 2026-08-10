@@ -335,7 +335,7 @@ export async function sendListingPeekLeadEmail(opts: {
     `Vieta: ${locationLabel}`,
     `Sludinājums: ${opts.listingUrl}`,
     "",
-    "Atbilde klientam: 3–5 teikumi par to, kas redzams sludinājumā (nav audits / konsultācija).",
+    "Atbilde klientam: 3–5 teikumi TIKAI par to, kas redzams sludinājumā (bez datubāžu / VIN analīzes; nav audits / konsultācija).",
   ].join("\n");
   const html = `<p>Jauns <strong>īss sludinājuma vērtējums</strong> (Riska &amp; Audita Ceļvedis).</p>
 <table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
@@ -344,7 +344,7 @@ export async function sendListingPeekLeadEmail(opts: {
 <tr><td><strong>Vieta</strong></td><td>${escHtmlMail(locationLabel)}</td></tr>
 <tr><td><strong>Sludinājums</strong></td><td><a href="${escHtmlMail(opts.listingUrl)}">${escHtmlMail(opts.listingUrl)}</a></td></tr>
 </table>
-<p style="color:#666;font-size:13px;">Atbilde: 3–5 teikumi par to, kas redzams sludinājumā. Nav audits un nav konsultācija.</p>`;
+<p style="color:#666;font-size:13px;">Atbilde: 3–5 teikumi <strong>tikai</strong> par publisko sludinājumu — bez datubāžu / VIN analīzes. Nav audits un nav konsultācija.</p>`;
 
   await sendSmtpMail({
     to: opts.adminTo,

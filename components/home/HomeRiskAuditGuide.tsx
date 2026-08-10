@@ -180,7 +180,13 @@ export function HomeRiskAuditGuide() {
 
         if (res.status === 429) {
           safeTrack("risk_guide_rate_limited");
-          setFormError(t("errors.rateLimited"));
+          if (data?.error === "listing_rate_limited") {
+            setFormError(t("errors.listingRateLimited"));
+          } else if (data?.error === "ip_rate_limited") {
+            setFormError(t("errors.ipRateLimited"));
+          } else {
+            setFormError(t("errors.rateLimited"));
+          }
           return;
         }
         if (!res.ok) {

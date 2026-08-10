@@ -38,7 +38,7 @@
       "free": {
         "title": "Short listing review",
         "price": "€0",
-        "body": "3–5 sentences by email in 24–48h. Not an audit and not a consultation.",
+        "body": "3–5 sentences by email in 24–48h about what is visible in the listing. No database / VIN analysis — not an audit and not a consultation.",
         "needUrl": "To get the short review, paste a link in step 2.",
         "cta": "Get short review"
       },
@@ -60,7 +60,7 @@
       "link": "Dealer data package"
     },
     "form": {
-      "boundary": "You get a 3–5 sentence review of what is visible in the listing within 24–48h. This is not a full audit.",
+      "boundary": "You get a 3–5 sentence look at the public listing (text, price signals, visible risks) within 24–48h. No database or VIN analysis — this is not an audit.",
       "listingLabel": "Listing link",
       "emailLabel": "Email",
       "submit": "Submit request",
@@ -68,7 +68,7 @@
     },
     "success": {
       "title": "Request received.",
-      "body": "We’ll reply by email within 24–48h with a short look at the listing. If you already know you need a deeper check — order an audit now.",
+      "body": "We’ll reply by email within 24–48h with a short look at the listing (not data analysis). If you need a deeper check — order an audit now.",
       "ctaMini": "Order MINI — €39.99",
       "ctaAudits": "Order AUDITS — €99.99"
     },
@@ -76,6 +76,8 @@
       "listing": "Paste a valid link to a specific listing.",
       "email": "Email address is not valid.",
       "rateLimited": "A short review was already requested for this email in the last 7 days.",
+      "listingRateLimited": "A short review was already requested for this listing in the last 7 days.",
+      "ipRateLimited": "Several requests were already submitted from this device / network today. Try again tomorrow or order an audit.",
       "generic": "Could not submit. Please try again."
     }
   }

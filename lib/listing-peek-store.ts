@@ -32,8 +32,43 @@ type ListingPeekDoc = {
 const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 500;
 
+const TRACKING_PARAMS = new Set([
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "fbclid",
+  "gclid",
+  "mc_cid",
+  "mc_eid",
+]);
+
 export function normalizePeekEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+/** Salīdzināšanai: host lowercase, bez hash, bez tipiskiem tracking parametriem. */
+export function normalizePeekListingUrl(url: string): string {
+  try {
+    const u = new URL(url.trim());
+    u.hash = "";
+    u.protocol = u.protocol.toLowerCase();
+    u.hostname = u.hostname.toLowerCase();
+    if (u.pathname.length > 1 && u.pathname.endsWith("/")) {
+      u.pathname = u.pathname.replace(/\/+$/, "");
+    }
+    for (const key of [...u.searchParams.keys()]) {
+      if (TRACKING_PARAMS.has(key.toLowerCase())) u.searchParams.delete(key);
+    }
+    return u.toString();
+  } catch {
+    return url.trim().toLowerCase();
+  }
+}
+
+function cooldownRetryAfterSec(lastMs: number, now: number): number {
+  return Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastMs)) / 1000));
 }
 
 function emptyDoc(): ListingPeekDoc {
@@ -170,7 +205,11 @@ async function writeDoc(doc: ListingPeekDoc): Promise<void> {
 
 export type CreateListingPeekResult =
   | { ok: true; entry: ListingPeekEntry }
-  | { ok: false; reason: "rate_limited"; retryAfterSec: number };
+  | {
+      ok: false;
+      reason: "email_rate_limited" | "listing_rate_limited";
+      retryAfterSec: number;
+    };
 
 export async function createListingPeek(input: {
   email: string;
@@ -179,6 +218,7 @@ export async function createListingPeek(input: {
 }): Promise<CreateListingPeekResult> {
   const email = normalizePeekEmail(input.email);
   const listingUrl = input.listingUrl.trim();
+  const listingKey = normalizePeekListingUrl(listingUrl);
   const now = Date.now();
   const doc = await readDoc();
 
@@ -189,8 +229,26 @@ export async function createListingPeek(input: {
   if (lastForEmail) {
     const lastMs = Date.parse(lastForEmail.createdAt);
     if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
-      const retryAfterSec = Math.max(1, Math.ceil((COOLDOWN_MS - (now - lastMs)) / 1000));
-      return { ok: false, reason: "rate_limited", retryAfterSec };
+      return {
+        ok: false,
+        reason: "email_rate_limited",
+        retryAfterSec: cooldownRetryAfterSec(lastMs, now),
+      };
+    }
+  }
+
+  const lastForListing = doc.entries
+    .filter((e) => normalizePeekListingUrl(e.listingUrl) === listingKey)
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
+
+  if (lastForListing) {
+    const lastMs = Date.parse(lastForListing.createdAt);
+    if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
+      return {
+        ok: false,
+        reason: "listing_rate_limited",
+        retryAfterSec: cooldownRetryAfterSec(lastMs, now),
+      };
     }
   }
 

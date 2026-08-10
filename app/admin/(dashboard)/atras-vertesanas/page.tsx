@@ -48,8 +48,9 @@ export default async function AdminListingPeeksPage() {
           Ātrie vērtējumi
         </h1>
         <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
-          Īsie bezmaksas sludinājuma komentāri no Riska & Audita Ceļveža. Limits: 1 / 7 dienas /
-          e-pasts.
+          Īsie bezmaksas sludinājuma komentāri no Riska & Audita Ceļveža. Limits: 1 /
+          7 dienas / e-pasts, 1 / 7 dienas / saite, ~3 / diena / IP. Tikai skatījums uz
+          sludinājumu — bez datubāžu analīzes.
         </p>
       </AdminDashboardHeaderWithMenu>
 

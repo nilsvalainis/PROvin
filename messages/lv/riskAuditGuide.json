@@ -38,7 +38,7 @@
       "free": {
         "title": "Īss sludinājuma vērtējums",
         "price": "0 €",
-        "body": "3–5 teikumi e-pastā 24–48h. Tas nav audits un nav konsultācija.",
+        "body": "3–5 teikumi e-pastā 24–48h par to, kas redzams sludinājumā. Bez datubāžu / VIN analīzes — nav audits un nav konsultācija.",
         "needUrl": "Lai saņemtu īso vērtējumu, ielīmē saiti 2. solī.",
         "cta": "Saņemt īso vērtējumu"
       },
@@ -60,7 +60,7 @@
       "link": "Dīlera datu pakete"
     },
     "form": {
-      "boundary": "Saņem 3–5 teikumu novērtējumu par to, kas redzams sludinājumā, 24–48h laikā. Tas nav pilns audits.",
+      "boundary": "Saņem 3–5 teikumu skatījumu uz publisko sludinājumu (teksts, cenas signāli, redzamie riski) 24–48h laikā. Bez datubāžu un VIN analīzes — tas nav audits.",
       "listingLabel": "Sludinājuma saite",
       "emailLabel": "E-pasts",
       "submit": "Iesniegt pieprasījumu",
@@ -68,7 +68,7 @@
     },
     "success": {
       "title": "Pieprasījums saņemts.",
-      "body": "Atbildēsim e-pastā 24–48h laikā ar īsu skatījumu uz sludinājumu. Ja jau zini, ka vajag dziļāku pārbaudi — pasūti auditu tagad.",
+      "body": "Atbildēsim e-pastā 24–48h ar īsu skatījumu uz sludinājumu (ne datu analīzi). Ja vajag dziļāku pārbaudi — pasūti auditu tagad.",
       "ctaMini": "Pasūtīt MINI — 39,99 €",
       "ctaAudits": "Pasūtīt AUDITS — 99,99 €"
     },
@@ -76,6 +76,8 @@
       "listing": "Ielīmē derīgu saiti uz konkrētu sludinājumu.",
       "email": "E-pasta adrese nav derīga.",
       "rateLimited": "Šim e-pastam īss vērtējums jau pieprasīts pēdējo 7 dienu laikā.",
+      "listingRateLimited": "Šim sludinājumam īss vērtējums jau pieprasīts pēdējo 7 dienu laikā.",
+      "ipRateLimited": "No šīs ierīces / tīkla šodien jau iesniegti vairāki pieprasījumi. Mēģini rīt vai pasūti auditu.",
       "generic": "Neizdevās iesniegt. Mēģini vēlreiz."
     }
   }
