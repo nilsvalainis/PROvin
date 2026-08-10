@@ -40,7 +40,7 @@ export async function HomeGoogleReviews() {
         aria-hidden
       />
 
-      <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-12 lg:px-8 lg:pb-14 lg:pt-12">
+      <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-16 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-20 lg:px-8 lg:py-24">
         <h2 id="home-google-reviews-heading" className="sr-only">
           {t("title")}
         </h2>
