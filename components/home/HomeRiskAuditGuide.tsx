@@ -135,12 +135,9 @@ export function HomeRiskAuditGuide() {
       <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-16 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-20 lg:px-8 lg:py-24">
         <div className="mx-auto w-full max-w-2xl">
             <div className="text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7eb0ff]/90">
-                {t("eyebrow")}
-              </p>
               <h2
                 id={`${baseId}-heading`}
-                className="mt-3 text-balance text-[1.55rem] font-semibold tracking-tight text-white sm:text-[1.85rem] lg:text-[2rem]"
+                className="text-balance text-[1.55rem] font-semibold tracking-tight text-white sm:text-[1.85rem] lg:text-[2rem]"
               >
                 {t("title")}
               </h2>
