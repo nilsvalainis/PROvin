@@ -10,7 +10,7 @@ const selectFeatureRows = [
   { label: "Tehnisko risku izvērtējums", icon: "check" as const },
   { label: "Sarunu stratēģija", icon: "check" as const },
   { label: "Rakstisks izvērtējums", icon: "check" as const },
-  { label: "48h izpilde", icon: "check" as const },
+  { label: "24-72h izpilde", icon: "check" as const },
   { label: "Papildjautājumi", icon: "check" as const },
   { label: "Atlasītie kandidāti", icon: "check" as const },
   { label: "Aizsardzība pret liekiem VIN tēriņiem", icon: "check" as const },

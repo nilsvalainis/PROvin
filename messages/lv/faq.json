@@ -22,12 +22,12 @@
       {
         "id": "dealer-data",
         "q": "Kas ir Oficiālā dīlera servisa vēstures dati?",
-        "a": "Tas ir neatkarīgs produkts (24,99 €) — oficiālie dīlera / ražotāja servisa vēstures ieraksti. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm. Izpilde: 24–48h. Ja oficiālo dīleru datubāzē ieraksti nav pieejami — 100% naudas atmaksa."
+        "a": "Tas ir neatkarīgs produkts (24,99 €) — oficiālie dīlera / ražotāja servisa vēstures ieraksti. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm. Izpilde: 24–72h. Ja oficiālo dīleru datubāzē ieraksti nav pieejami — 100% naudas atmaksa."
       },
       {
         "id": "delivery-time",
         "q": "Cik ilgi jāgaida atskaite?",
-        "a": "Standarta izpildes laiks ir līdz 48 stundām pēc maksājuma saņemšanas. Tā kā katru auto pārbaudām un analizējam manuāli, mums ir svarīgi rūpīgi izpētīt visas detaļas. Tiklīdz audits ir gatavs, nosūtām to uz tavu e-pastu un vienojamies par īsu konsultāciju pa tālruni."
+        "a": "Standarta izpildes laiks ir 24–72 stundas pēc maksājuma saņemšanas. Tā kā katru auto pārbaudām un analizējam manuāli, mums ir svarīgi rūpīgi izpētīt visas detaļas. Tiklīdz audits ir gatavs, nosūtām to uz tavu e-pastu un vienojamies par īsu konsultāciju pa tālruni."
       },
       {
         "id": "what-to-provide",

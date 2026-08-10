@@ -162,7 +162,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     description: "",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
-    turnaround: "⏱️ Izpilde: 24-48h",
+    turnaround: "⏱️ Izpilde: 24-72h",
   },
   {
     id: "koreaUsa",
@@ -171,7 +171,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     buttonText: "PASŪTĪT ASV UN KOREJA — 19,99 €",
     description: "Pilns komplekts ASV un Korejā lietotiem vai importētiem auto.",
     features: KOREA_USA_FEATURES_LV,
-    turnaround: "⏱️ Izpilde: 24-48h",
+    turnaround: "⏱️ Izpilde: 24-72h",
   },
 ];
 
@@ -200,7 +200,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     description: "",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
-    turnaround: "⏱️ Delivery: 24-48h",
+    turnaround: "⏱️ Delivery: 24-72h",
   },
   {
     id: "koreaUsa",
@@ -209,7 +209,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     buttonText: "ORDER USA & KOREA — €19.99",
     description: "Full check package for US and Korea used or imported vehicles.",
     features: KOREA_USA_FEATURES_EN,
-    turnaround: "⏱️ Delivery: 24-48h",
+    turnaround: "⏱️ Delivery: 24-72h",
   },
 ];
 

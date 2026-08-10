@@ -41,11 +41,11 @@ describe("test-pricing plans", () => {
     expect(plus.features.some((f) => f.kind === "exclusion")).toBe(true);
   });
 
-  it("premium is highlighted with 9999 cents and 48h turnaround", () => {
+  it("premium is highlighted with 9999 cents and 24-72h turnaround", () => {
     const premium = getTestPricingPlan("premium")!;
     expect(premium.amountCents).toBe(9999);
     expect(premium.highlighted).toBe(true);
-    expect(premium.turnaround).toContain("48h");
+    expect(premium.turnaround).toContain("24-72h");
     expect(premium.vinRequired).toBe(true);
     expect(premium.heroCtaLabel).toContain("99,99");
   });
@@ -55,7 +55,7 @@ describe("test-pricing plans", () => {
     expect(dealer.amountCents).toBe(2499);
     expect(dealer.productName).toBe("Oficiālā dīlera servisa vēstures dati");
     expect(dealer.productDesc).toContain("100%");
-    expect(dealer.turnaround).toContain("24-48h");
+    expect(dealer.turnaround).toContain("24-72h");
   });
 
   it("requires vin or plate and consent; listing url is optional", () => {

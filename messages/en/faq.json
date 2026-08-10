@@ -22,12 +22,12 @@
       {
         "id": "dealer-data",
         "q": "What is Official dealer service history data?",
-        "a": "An independent product (€24.99) — official dealer/manufacturer service records. This report includes only data from official dealer databases. Delivery: 24–48h. If official dealer database records are unavailable — 100% refund."
+        "a": "An independent product (€24.99) — official dealer/manufacturer service records. This report includes only data from official dealer databases. Delivery: 24–72h. If official dealer database records are unavailable — 100% refund."
       },
       {
         "id": "delivery-time",
         "q": "How long does the report take?",
-        "a": "Standard turnaround is within 48 hours after payment is received. Because we check and analyse every car manually, we take care to examine the details thoroughly. As soon as the audit is ready, we email it to you and arrange a short phone consultation."
+        "a": "Standard turnaround is 24–72 hours after payment is received. Because we check and analyse every car manually, we take care to examine the details thoroughly. As soon as the audit is ready, we email it to you and arrange a short phone consultation."
       },
       {
         "id": "what-to-provide",
