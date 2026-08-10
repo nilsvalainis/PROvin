@@ -67,7 +67,13 @@ Rules:
 - Dates: always full DD.MM.YYYY in output. If the report shows only MM.YYYY / M.YYYY (e.g. 06.2020 or 11.2019), convert to 01.MM.YYYY (e.g. 01.06.2020). Never leave month-year-only dates.
 - lossAmount: keep ranges like "300 - 400 EUR"; free text allowed if not a number
 - odometer: digits only (no "km") in upsert_mileage; in set_service_history include "km" after the number as shown in the format
-- country: Latvian names when known (Vācija, Latvija, …)
+- country (mileage) / country (incident → stored as country name): Latvian names when known (Vācija, Latvija, …). CROSS-SOURCE COUNTRY RULES (mandatory):
+  1) Read ALL attached PDFs + CURRENT TABLES (every source’s mileage/incidents, CSDD fields, comments, RAW/AI-context). Treat sources as one shared evidence pool — exchange country facts between them.
+  2) If a row’s PDF does not name the country, but another already-filled source (or another PDF / CSDD / RAW / comment) clearly refers to the SAME event (same or equivalent date + same loss EUR, or same date + same odometer km, or unambiguous matching claim text), COPY that confirmed country into this action.
+  3) Use CSDD timeline: «Iepriekšējās reģistrācijas valsts», pirmā reģistrācija LV, TA/nobraukuma ieraksti — to place early foreign history vs Latvija after LV registration when the match is unambiguous (e.g. OCTA/CSDD inspection in LV → Latvija).
+  4) Infer from unambiguous plate format, insurer country, city/region in description, or report locale ONLY when it confirms the country at 100% certainty for that row.
+  5) Leave country EMPTY ("") ONLY when NO source (PDF, existing table row, CSDD, RAW, comment, or sibling action in this batch) can 100% confirm it. Never invent or weakly guess a country.
+  6) Prefer filling country on every upsert_incident / upsert_mileage when certainty exists — empty is the exception, not the default.
 - Do NOT write expert commentary into comments fields — only table rows, Servisa vēsture facts, and RAW facts
 - set_service_history / append_raw use the "text" field (date not required for those types)
 - Deduplicate against existing snapshot and across PDFs (same date+amount or date+km → omit duplicate actions; identical service lines → omit)`;

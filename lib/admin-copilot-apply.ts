@@ -76,6 +76,116 @@ function mileageKey(r: AutoRecordsServiceRow): string {
   return `${r.date}|${r.odometer}|${r.country}`;
 }
 
+function normDateKey(raw: string): string {
+  return formatAutoRecordsDateForOutput(raw.trim()) || raw.trim();
+}
+
+function normLossKey(raw: string): string {
+  const t = normalizeLossAmountEurDisplay(raw.trim()) || raw.trim();
+  return t.replace(/\s+/g, " ").toLowerCase();
+}
+
+function normOdoKey(raw: string): string {
+  return normalizeAutoRecordsOdometer(raw.trim()) || raw.replace(/\D/g, "");
+}
+
+function normCountryKey(raw: string): string {
+  return normalizeCountryNameLv(raw.trim()) || raw.trim();
+}
+
+/** Collect confirmed countries for event keys from existing tables + this action batch. */
+function collectConfirmedCountryMaps(
+  blocks: WorkspaceSourceBlocks,
+  actions: CopilotAction[],
+): { byIncident: Map<string, string>; byMileage: Map<string, string> } {
+  const byIncident = new Map<string, string>();
+  const byMileage = new Map<string, string>();
+  const incidentConflict = new Set<string>();
+  const mileageConflict = new Set<string>();
+
+  const putIncident = (date: string, loss: string, country: string) => {
+    const c = normCountryKey(country);
+    if (!c || !date) return;
+    const key = `${normDateKey(date)}|${normLossKey(loss)}`;
+    if (incidentConflict.has(key)) return;
+    const prev = byIncident.get(key);
+    if (prev && prev !== c) {
+      byIncident.delete(key);
+      incidentConflict.add(key);
+      return;
+    }
+    byIncident.set(key, c);
+  };
+  const putMileage = (date: string, odo: string, country: string) => {
+    const c = normCountryKey(country);
+    if (!c || !date || !odo) return;
+    const key = `${normDateKey(date)}|${normOdoKey(odo)}`;
+    if (mileageConflict.has(key)) return;
+    const prev = byMileage.get(key);
+    if (prev && prev !== c) {
+      byMileage.delete(key);
+      mileageConflict.add(key);
+      return;
+    }
+    byMileage.set(key, c);
+  };
+
+  const b = mergeSourceBlocksWithDefaults(blocks);
+  for (const r of b.autodna.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  for (const r of b.carvertical.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  for (const r of b.ltab.rows.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  const citi0 = b.citi_avoti.sections[0];
+  if (citi0) {
+    for (const r of citi0.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  }
+
+  const mileRows = [
+    ...b.autodna.serviceHistory,
+    ...b.carvertical.serviceHistory,
+    ...b.auto_records.serviceHistory,
+    ...(citi0?.serviceHistory ?? []),
+    ...(b.csdd.mileageHistory ?? []),
+  ];
+  for (const r of mileRows) {
+    if (autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0") || (r.date.trim() && r.odometer.trim() && r.country.trim())) {
+      putMileage(r.date, r.odometer, r.country);
+    }
+  }
+
+  for (const a of actions) {
+    if (a.type === "upsert_incident" && a.country.trim()) {
+      putIncident(a.date, a.lossAmount, a.country);
+    }
+    if (a.type === "upsert_mileage" && a.country.trim()) {
+      putMileage(a.date, a.odometer, a.country);
+    }
+  }
+
+  return { byIncident, byMileage };
+}
+
+/**
+ * Fill empty country on incident/mileage actions when another source (or sibling
+ * action) already confirms the same event at 100% (unique date+loss / date+km).
+ */
+export function enrichCopilotActionCountries(
+  blocks: WorkspaceSourceBlocks,
+  actions: CopilotAction[],
+): CopilotAction[] {
+  const { byIncident, byMileage } = collectConfirmedCountryMaps(blocks, actions);
+  return actions.map((a) => {
+    if (a.type === "upsert_incident" && !a.country.trim()) {
+      const found = byIncident.get(`${normDateKey(a.date)}|${normLossKey(a.lossAmount)}`);
+      if (found) return { ...a, country: found };
+    }
+    if (a.type === "upsert_mileage" && !a.country.trim()) {
+      const found = byMileage.get(`${normDateKey(a.date)}|${normOdoKey(a.odometer)}`);
+      if (found) return { ...a, country: found };
+    }
+    return a;
+  });
+}
+
 function mergeIncidentRows(existing: LtabIncidentRow[], incoming: LtabIncidentRow): LtabIncidentRow[] {
   const withData = existing.filter(ltabRowHasData);
   const key = incidentKey(incoming);
@@ -268,8 +378,9 @@ export function applyCopilotActions(
   const skipped: CopilotApplyResult["skipped"] = [];
   const changed = new Set<CopilotSourceKey>();
   const clarification = opts?.clarificationNeeded?.trim() ?? "";
+  const enrichedActions = enrichCopilotActionCountries(next, actions);
 
-  for (const action of actions) {
+  for (const action of enrichedActions) {
     if (!isCopilotSourceKey(action.source)) {
       skipped.push({ action, reason: "unknown_source" });
       continue;
@@ -357,7 +468,14 @@ export function applyCopilotActions(
   };
 }
 
-/** Īss konteksts Gemini — esošās tabulas. */
+function pushClippedNote(lines: string[], label: string, text: string, max = 1200) {
+  const t = text.trim();
+  if (!t) return;
+  lines.push(`${label}:`);
+  lines.push(t.length > max ? `${t.slice(0, max)}…` : t);
+}
+
+/** Īss konteksts Gemini — esošās tabulas + CSDD + komentāri/RAW (valsts cross-fill). */
 export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string {
   const b = mergeSourceBlocksWithDefaults(blocks);
   const lines: string[] = [];
@@ -385,23 +503,60 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
     }
   };
 
+  const csdd = b.csdd;
+  lines.push("CSDD (use for country timeline when unambiguous):");
+  lines.push(`  - Pirmā reģistrācija: ${csdd.firstRegistration || "—"}`);
+  lines.push(`  - Iepriekšējās reģistrācijas valsts: ${csdd.previousRegistrationCountry || "—"}`);
+  const csddMile = (csdd.mileageHistory ?? []).filter((r) => r.date.trim() || r.odometer.trim());
+  if (csddMile.length > 0) {
+    lines.push("CSDD mileage:");
+    for (const r of csddMile.slice(0, 40)) {
+      lines.push(`  - ${r.date} | ${r.odometer} km | ${r.country}`);
+    }
+  }
+  if ((csdd.comments ?? "").trim()) pushClippedNote(lines, "CSDD comments", csdd.comments, 800);
+  if ((csdd.rawUnprocessedData ?? "").trim()) {
+    pushClippedNote(lines, "CSDD RAW", csdd.rawUnprocessedData, 1000);
+  }
+  if ((csdd.geminiContextRaw ?? "").trim()) {
+    pushClippedNote(lines, "CSDD AI context", csdd.geminiContextRaw, 800);
+  }
+
   pushInc("autodna", b.autodna.incidents);
   pushMile("autodna", b.autodna.serviceHistory);
+  pushClippedNote(lines, "autodna comments", b.autodna.comments);
+  pushClippedNote(lines, "autodna RAW/AI", b.autodna.geminiContextRaw);
+
   pushInc("carvertical", b.carvertical.incidents);
   pushMile("carvertical", b.carvertical.serviceHistory);
+  pushClippedNote(lines, "carvertical comments", b.carvertical.comments);
+  pushClippedNote(lines, "carvertical RAW/AI", b.carvertical.geminiContextRaw);
+
   pushInc("ltab", b.ltab.rows);
+  pushClippedNote(lines, "ltab comments", b.ltab.comments);
+  pushClippedNote(lines, "ltab PDF RAW", b.ltab.pdfImportRaw ?? "");
+
   pushMile("auto_records", b.auto_records.serviceHistory);
   if ((b.auto_records.serviceHistoryNotes ?? "").trim()) {
     lines.push("auto_records Servisa vēsture:");
     lines.push(b.auto_records.serviceHistoryNotes.trim().slice(0, 2000));
   }
+  pushClippedNote(lines, "auto_records comments", b.auto_records.comments);
+  pushClippedNote(lines, "auto_records RAW", b.auto_records.rawUnprocessedData ?? "");
+
   const citi0 = b.citi_avoti.sections[0];
   if (citi0) {
     pushInc("citi_avoti", citi0.incidents);
     pushMile("citi_avoti", citi0.serviceHistory);
+    pushClippedNote(lines, "citi_avoti comments", citi0.comments);
+    pushClippedNote(lines, "citi_avoti RAW", citi0.rawUnprocessedData ?? "");
   } else {
     lines.push("citi_avoti: (no sections)");
   }
+
+  lines.push(
+    "COUNTRY HINT: Prefer copying a confirmed country across matching events (same date+EUR or date+km). Leave empty only if nothing confirms it 100%.",
+  );
 
   return lines.join("\n");
 }

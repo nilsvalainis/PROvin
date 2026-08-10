@@ -115,6 +115,86 @@ describe("buildCopilotBlocksSummary", () => {
     expect(s).toContain("autodna");
     expect(s).toContain("empty");
   });
+
+  it("includes CSDD country timeline fields", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.csdd.previousRegistrationCountry = "Vācija";
+    blocks.csdd.firstRegistration = "15.03.2018";
+    const s = buildCopilotBlocksSummary(blocks);
+    expect(s).toContain("Iepriekšējās reģistrācijas valsts");
+    expect(s).toContain("Vācija");
+    expect(s).toContain("COUNTRY HINT");
+  });
+});
+
+describe("enrichCopilotActionCountries / apply country cross-fill", () => {
+  it("fills empty incident country from another source with same date+loss", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna.incidents = [
+      { csngDate: "17.11.2020", lossAmount: "5 000 €", incidentNo: "Vācija" },
+    ];
+    const actions: CopilotAction[] = [
+      {
+        type: "upsert_incident",
+        source: "carvertical",
+        date: "17.11.2020",
+        lossAmount: "5000 eiro",
+        country: "",
+        confidence: "high",
+      },
+    ];
+    const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
+    expect(result.applied).toHaveLength(1);
+    const row = result.sourceBlocks.carvertical.incidents.find((r) => r.csngDate.includes("17.11.2020"));
+    expect(row?.incidentNo).toBe("Vācija");
+  });
+
+  it("fills empty mileage country from sibling action in the same batch", () => {
+    const blocks = createDefaultSourceBlocks();
+    const actions: CopilotAction[] = [
+      {
+        type: "upsert_mileage",
+        source: "autodna",
+        date: "01.06.2020",
+        odometer: "120000",
+        country: "Vācija",
+        confidence: "high",
+      },
+      {
+        type: "upsert_mileage",
+        source: "carvertical",
+        date: "01.06.2020",
+        odometer: "120000",
+        country: "",
+        confidence: "high",
+      },
+    ];
+    const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
+    expect(result.applied).toHaveLength(2);
+    const cv = result.sourceBlocks.carvertical.serviceHistory.find((r) => r.odometer === "120000");
+    expect(cv?.country).toBe("Vācija");
+  });
+
+  it("leaves country empty when sources disagree", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna.incidents = [
+      { csngDate: "01.02.2021", lossAmount: "1 200 €", incidentNo: "Vācija" },
+    ];
+    blocks.ltab.rows = [{ csngDate: "01.02.2021", lossAmount: "1 200 €", incidentNo: "Latvija" }];
+    const actions: CopilotAction[] = [
+      {
+        type: "upsert_incident",
+        source: "carvertical",
+        date: "01.02.2021",
+        lossAmount: "1200 €",
+        country: "",
+        confidence: "high",
+      },
+    ];
+    const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
+    const row = result.sourceBlocks.carvertical.incidents.find((r) => r.csngDate.includes("01.02.2021"));
+    expect(row?.incidentNo ?? "").toBe("");
+  });
 });
 
 describe("parseCopilotGeminiPayload", () => {
