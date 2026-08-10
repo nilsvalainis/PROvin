@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent, type TouchEvent } from "react";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import {
   TP5_TURNAROUND_INFO_PHONE_TEL,
@@ -10,11 +10,19 @@ import {
 type Props = {
   copy: Pick<
     Tp5UiCopy,
-    "turnaroundInfoAria" | "turnaroundInfoBody" | "turnaroundInfoPhoneLink"
+    | "turnaroundUrgencyCta"
+    | "turnaroundInfoAria"
+    | "turnaroundInfoBody"
+    | "turnaroundInfoPhoneLink"
   >;
 };
 
-/** Mazs „i” pie izpildes laika — hover un klikšķis atver skaidrojumu. */
+function canHoverFinePointer(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+/** «Steidzami?» + i — visa zona atver tipu; hover tikai peles/trackpad ierīcēs. */
 export function Tp5TurnaroundInfoTip({ copy }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLSpanElement | null>(null);
@@ -38,26 +46,41 @@ export function Tp5TurnaroundInfoTip({ copy }: Props) {
     };
   }, [open]);
 
+  function toggle(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen((prev) => !prev);
+  }
+
+  function stopSwipe(event: TouchEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+  }
+
   return (
     <span
       ref={rootRef}
       className={styles.turnaroundInfo}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={() => {
+        if (canHoverFinePointer()) setOpen(true);
+      }}
+      onMouseLeave={() => {
+        if (canHoverFinePointer()) setOpen(false);
+      }}
     >
       <button
         type="button"
-        className={styles.turnaroundInfoBtn}
-        aria-label={copy.turnaroundInfoAria}
+        className={styles.turnaroundUrgencyHit}
+        aria-label={`${copy.turnaroundUrgencyCta}. ${copy.turnaroundInfoAria}`}
         aria-expanded={open}
         aria-controls={tipId}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
+        onClick={toggle}
+        onTouchStart={stopSwipe}
+        onTouchEnd={stopSwipe}
       >
-        <span aria-hidden>i</span>
+        <span className={styles.turnaroundUrgency}>{copy.turnaroundUrgencyCta}</span>
+        <span className={styles.turnaroundInfoBtn} aria-hidden>
+          <span>i</span>
+        </span>
       </button>
       {open ? (
         <span id={tipId} role="tooltip" className={styles.turnaroundInfoPopup}>

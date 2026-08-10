@@ -288,7 +288,6 @@ export function Tp5MobilePricingCard({
             <span className={styles.turnaroundDivider} aria-hidden>
               |
             </span>
-            <span className={styles.turnaroundUrgency}>{uiCopy.turnaroundUrgencyCta}</span>
             <Tp5TurnaroundInfoTip copy={uiCopy} />
           </>
         ) : null}
