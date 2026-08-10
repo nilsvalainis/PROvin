@@ -1,7 +1,7 @@
 {
   "RiskAuditGuide": {
     "title": "Pārbaudi sludinājumu bez maksas",
-    "subtitle": "Iesūti mums sludinājuma linku un saņem īsu komentāru, vai šo auto vispār ir vērts pārbaudīt tālāk.",
+    "subtitle": "Iesūti mums sludinājuma linku un saņem īsu komentāru, vai šo auto ir vērts pārbaudīt tālāk.",
     "triggerCta": "Iesūtīt sludinājumu",
     "form": {
       "listingLabel": "Sludinājuma saite",

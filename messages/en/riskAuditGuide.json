@@ -1,7 +1,7 @@
 {
   "RiskAuditGuide": {
     "title": "Check the listing for free",
-    "subtitle": "Send us a listing link and get a short comment on whether this car is even worth checking further.",
+    "subtitle": "Send us a listing link and get a short comment on whether this car is worth checking further.",
     "triggerCta": "Submit a listing",
     "form": {
       "listingLabel": "Listing link",
