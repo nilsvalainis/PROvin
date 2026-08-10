@@ -263,9 +263,6 @@ export function HomeRiskAuditGuide() {
                   <h3 className="text-balance text-[1.55rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-[1.85rem] lg:text-[2.05rem]">
                     {t("step1.question")}
                   </h3>
-                  <p className="mt-4 text-[15px] leading-relaxed text-white/50 sm:text-[16px] lg:text-[17px]">
-                    {t("step1.hint")}
-                  </p>
 
                   <div
                     className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4"

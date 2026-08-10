@@ -13,7 +13,6 @@
     "step1": {
       "label": "1",
       "question": "Where has the car mainly been used?",
-      "hint": "Local-market and imported-car risks differ — this helps us evaluate the listing more precisely.",
       "lvTitle": "In Latvia",
       "abroadTitle": "Abroad"
     },
