@@ -326,7 +326,7 @@ export async function sendListingPeekLeadEmail(opts: {
   location: "lv" | "abroad";
   id: string;
 }): Promise<void> {
-  const locationLabel = opts.location === "lv" ? "Latvijā lietots" : "Nesen ievests / ārvalstis";
+  const locationLabel = opts.location === "lv" ? "Latvijā" : "Ārvalstīs";
   const subject = "PROVIN — īss sludinājuma vērtējums";
   const text = [
     "Jauns īss sludinājuma vērtējuma pieprasījums (Riska & Audita Ceļvedis).",
