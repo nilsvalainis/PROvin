@@ -2,18 +2,20 @@
   "RiskAuditGuide": {
     "eyebrow": "Pirms pasūtījuma",
     "title": "Riska & Audita Ceļvedis",
-    "subtitle": "Trīs soļi — saproti, cik dziļi šo auto pārbaudīt, un izvēlies līmeni.",
+    "subtitle": "Dari pa soļiem 1 → 2 → 3. Katru reizi redzi tikai to, kas jādara tagad.",
     "recommended": "Rekomendēts",
     "progress": {
       "aria": "Ceļveža soļi",
       "step1": "Ekspluatācija",
       "step2": "Saite",
-      "step3": "Līmenis"
+      "step3": "Līmenis",
+      "now": "tagad"
     },
     "step1": {
       "label": "1. solis",
       "question": "Nesen ievests auto, vai Latvijā ilgāku laiku ekspluatēts?",
       "hint": "Tas nosaka, cik dziļi vēsturi ir vērts pārbaudīt.",
+      "actionCue": "Sāc šeit — izvēlies vienu, un uzreiz atvērsies 2. solis",
       "lvTitle": "Latvijā ilgāku laiku",
       "lvHint": "SS.lv / Facebook / dīleris",
       "abroadTitle": "Nesen ievests",

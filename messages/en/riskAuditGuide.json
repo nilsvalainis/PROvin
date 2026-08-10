@@ -2,18 +2,20 @@
   "RiskAuditGuide": {
     "eyebrow": "Before you order",
     "title": "Risk & Audit Guide",
-    "subtitle": "Three steps — see how deep to check this car, then pick a level.",
+    "subtitle": "Go step by step 1 → 2 → 3. Each screen shows only what to do now.",
     "recommended": "Recommended",
     "progress": {
       "aria": "Guide steps",
       "step1": "History",
       "step2": "Link",
-      "step3": "Level"
+      "step3": "Level",
+      "now": "now"
     },
     "step1": {
       "label": "Step 1",
       "question": "Recently imported, or driven in Latvia for longer?",
       "hint": "This decides how deep the history check should go.",
+      "actionCue": "Start here — pick one and step 2 opens right away",
       "lvTitle": "Longer use in Latvia",
       "lvHint": "SS.lv / Facebook / dealer",
       "abroadTitle": "Recently imported",

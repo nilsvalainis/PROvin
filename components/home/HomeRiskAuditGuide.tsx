@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -24,63 +25,69 @@ function ProgressRail({
   onJump,
   labels,
   ariaLabel,
-  interactive,
+  nowLabel,
 }: {
   active: WizardStep;
   unlockedThrough: WizardStep;
-  onJump?: (step: WizardStep) => void;
+  onJump: (step: WizardStep) => void;
   labels: [string, string, string];
   ariaLabel: string;
-  interactive: boolean;
+  nowLabel: string;
 }) {
   const steps: WizardStep[] = [1, 2, 3];
   return (
-    <nav aria-label={ariaLabel} className="mt-6">
-      <ol className="grid grid-cols-3 gap-2 sm:gap-3">
+    <nav aria-label={ariaLabel} className="mt-7">
+      <ol className="flex items-center justify-between gap-1 sm:gap-2">
         {steps.map((step, i) => {
           const unlocked = step <= unlockedThrough;
           const isActive = step === active;
-          const lineClass = `h-px w-full transition ${
-            isActive
-              ? "bg-[#0066ff]"
-              : unlocked
-                ? "bg-white/35"
-                : "bg-white/15"
-          }`;
-          const labelClass = `text-[10px] font-semibold uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em] ${
-            isActive ? "text-white" : unlocked ? "text-white/50" : "text-white/30"
-          }`;
-          const wrapClass = `flex w-full flex-col items-start gap-1.5 text-left ${
-            unlocked ? "" : "opacity-35"
-          }`;
-
+          const done = unlocked && step < active;
           return (
-            <li key={step} className="min-w-0">
-              {interactive ? (
-                <button
-                  type="button"
-                  disabled={!unlocked}
-                  onClick={() => unlocked && onJump?.(step)}
-                  className={`group ${wrapClass} transition disabled:cursor-default ${
-                    unlocked ? "cursor-pointer" : ""
+            <li key={step} className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
+              <button
+                type="button"
+                disabled={!unlocked}
+                onClick={() => unlocked && onJump(step)}
+                className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-0.5 py-1 text-left transition disabled:cursor-default ${
+                  unlocked ? "cursor-pointer" : "opacity-40"
+                }`}
+                aria-current={isActive ? "step" : undefined}
+              >
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-semibold tabular-nums transition sm:h-8 sm:w-8 sm:text-[13px] ${
+                    isActive
+                      ? "border-[#0066ff] bg-[#0066ff] text-white"
+                      : done
+                        ? "border-white/35 bg-white/10 text-white"
+                        : "border-white/20 bg-transparent text-white/45"
                   }`}
                 >
+                  {step}
+                </span>
+                <span className="min-w-0">
                   <span
-                    className={`${lineClass} ${unlocked && !isActive ? "group-hover:bg-white/55" : ""}`}
-                    aria-hidden
-                  />
-                  <span className={labelClass}>
-                    {step}. {labels[i]}
+                    className={`block truncate text-[10px] font-semibold uppercase tracking-[0.12em] sm:text-[11px] sm:tracking-[0.14em] ${
+                      isActive ? "text-white" : done ? "text-white/70" : "text-white/40"
+                    }`}
+                  >
+                    {labels[i]}
                   </span>
-                </button>
-              ) : (
-                <div className={wrapClass} aria-current={isActive ? "step" : undefined}>
-                  <span className={lineClass} aria-hidden />
-                  <span className={labelClass}>
-                    {step}. {labels[i]}
-                  </span>
-                </div>
-              )}
+                  {isActive ? (
+                    <span className="mt-0.5 hidden text-[10px] text-[#7eb0ff] sm:block">
+                      ← {nowLabel}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+              {i < steps.length - 1 ? (
+                <ChevronRight
+                  className={`h-4 w-4 shrink-0 ${
+                    step < unlockedThrough ? "text-[#0066ff]/80" : "text-white/25"
+                  }`}
+                  strokeWidth={2}
+                  aria-hidden
+                />
+              ) : null}
             </li>
           );
         })}
@@ -94,7 +101,7 @@ export function HomeRiskAuditGuide() {
   const baseId = useId();
   const [location, setLocation] = useState<LocationId | null>(null);
   const [listingUrl, setListingUrl] = useState("");
-  const [mobileStep, setMobileStep] = useState<WizardStep>(1);
+  const [step, setStep] = useState<WizardStep>(1);
   const [showFreeForm, setShowFreeForm] = useState(false);
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -106,7 +113,6 @@ export function HomeRiskAuditGuide() {
   const listingTouchedInvalid = listingTrim.length > 0 && !listingOk;
   const recommended: LocationId | null = location;
   const unlockedThrough: WizardStep = location ? 3 : 1;
-  const desktopActive: WizardStep = !location ? 1 : success || showFreeForm ? 3 : 2;
 
   useEffect(() => {
     try {
@@ -125,7 +131,7 @@ export function HomeRiskAuditGuide() {
     setSuccess(false);
     setFormError(null);
     setShowFreeForm(false);
-    setMobileStep(2);
+    setStep(2);
     safeTrack("risk_guide_location_selected", { location: next });
   }
 
@@ -135,12 +141,12 @@ export function HomeRiskAuditGuide() {
     }
   }
 
-  function goMobileStep3() {
+  function goStep3() {
     if (listingTouchedInvalid) return;
     if (listingTrim) {
       safeTrack("risk_guide_listing_entered", { hasUrl: listingOk });
     }
-    setMobileStep(3);
+    setStep(3);
   }
 
   function openFreeForm() {
@@ -199,128 +205,11 @@ export function HomeRiskAuditGuide() {
         safeTrack("risk_guide_free_success");
         setSuccess(true);
         setShowFreeForm(false);
-        setMobileStep(3);
+        setStep(3);
       } catch {
         setFormError(t("errors.generic"));
       }
     });
-  }
-
-  function renderStep1Body() {
-    return (
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-          {t("step1.label")}
-        </p>
-        <h3 className="mt-2 text-[1.05rem] font-semibold leading-snug tracking-tight text-white sm:text-[1.15rem]">
-          {t("step1.question")}
-        </h3>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">{t("step1.hint")}</p>
-        <div
-          className="mt-5 grid grid-cols-1 gap-0 border-t border-white/[0.1] sm:grid-cols-2"
-          role="radiogroup"
-          aria-label={t("step1.question")}
-        >
-          {(
-            [
-              { id: "lv" as const, title: t("step1.lvTitle"), hint: t("step1.lvHint") },
-              {
-                id: "abroad" as const,
-                title: t("step1.abroadTitle"),
-                hint: t("step1.abroadHint"),
-              },
-            ] as const
-          ).map((opt, idx) => {
-            const active = location === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => selectLocation(opt.id)}
-                className={`min-h-[3.5rem] border-b border-white/[0.1] px-0 py-3.5 text-left transition sm:px-4 ${
-                  idx === 0 ? "sm:border-r sm:border-white/[0.1]" : ""
-                } ${
-                  active
-                    ? "text-white"
-                    : "text-white/65 hover:text-white"
-                }`}
-              >
-                <span
-                  className={`block text-[14px] font-semibold tracking-tight ${
-                    active ? "text-white" : ""
-                  }`}
-                >
-                  {opt.title}
-                </span>
-                <span className="mt-0.5 block text-[12px] leading-snug text-white/40">{opt.hint}</span>
-                <span
-                  className={`mt-2 block h-px w-10 transition ${
-                    active ? "bg-[#0066ff]" : "bg-transparent"
-                  }`}
-                  aria-hidden
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  function renderStep2Body(opts: { showNav: boolean }) {
-    return (
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-          {t("step2.label")}
-        </p>
-        <h3 className="mt-2 text-[1.05rem] font-semibold tracking-tight text-white sm:text-[1.15rem]">
-          {t("step2.title")}
-        </h3>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">{t("step2.hint")}</p>
-        <label htmlFor={`${baseId}-listing`} className="sr-only">
-          {t("step2.title")}
-        </label>
-        <input
-          id={`${baseId}-listing`}
-          type="url"
-          inputMode="url"
-          autoComplete="url"
-          placeholder={t("step2.placeholder")}
-          value={listingUrl}
-          onChange={(e) => {
-            setListingUrl(e.target.value);
-            setSuccess(false);
-          }}
-          onBlur={onListingBlur}
-          className="mt-4 w-full border-0 border-b border-white/[0.18] bg-transparent px-0 py-2.5 text-[15px] text-white placeholder:text-white/30 outline-none transition focus:border-[#0066ff]/70"
-        />
-        {listingTouchedInvalid ? (
-          <p className="mt-2 text-[12px] text-amber-200/90">{t("errors.listing")}</p>
-        ) : null}
-
-        {opts.showNav ? (
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <button
-              type="button"
-              onClick={goMobileStep3}
-              disabled={listingTouchedInvalid}
-              className="provin-home-pill-cta inline-flex min-h-[48px] w-full items-center justify-center px-5 text-[12px] font-semibold uppercase tracking-[0.08em] disabled:opacity-40 sm:w-auto"
-            >
-              {listingTrim ? t("step2.continue") : t("step2.skip")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileStep(1)}
-              className="inline-flex min-h-[44px] items-center justify-center px-2 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/45 transition hover:text-white/75"
-            >
-              {t("step2.back")}
-            </button>
-          </div>
-        ) : null}
-      </div>
-    );
   }
 
   function optionRow(opts: {
@@ -362,199 +251,6 @@ export function HomeRiskAuditGuide() {
     return `inline-flex min-h-[44px] w-full items-center justify-center border border-white/15 px-4 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/75 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-35 sm:w-full ${className}`;
   }
 
-  function renderStep3Body(opts: { showBack: boolean; locked: boolean }) {
-    if (opts.locked || !location) {
-      return (
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-            {t("step3.label")}
-          </p>
-          <h3 className="mt-2 text-[1.05rem] font-semibold tracking-tight text-white/50 sm:text-[1.15rem]">
-            {t("step3.title")}
-          </h3>
-          <p className="mt-3 text-[13px] leading-relaxed text-white/35">{t("step3.locked")}</p>
-        </div>
-      );
-    }
-
-    if (success) {
-      return (
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-            {t("step3.label")}
-          </p>
-          <h3 className="mt-2 text-[1.05rem] font-semibold tracking-tight text-white sm:text-[1.15rem]">
-            {t("success.title")}
-          </h3>
-          <p className="mt-2 text-[13px] leading-relaxed text-white/55">{t("success.body")}</p>
-          <div className="mt-5 flex flex-col gap-2 sm:max-w-md">
-            <Link
-              href={homeHeroCheckoutHref(location === "abroad" ? "audits" : "mini")}
-              onClick={() =>
-                safeTrack(
-                  location === "abroad" ? "risk_guide_audits_clicked" : "risk_guide_mini_clicked",
-                )
-              }
-              className={ctaPrimary()}
-            >
-              {location === "abroad" ? t("success.ctaAudits") : t("success.ctaMini")}
-            </Link>
-            <Link
-              href={homeHeroCheckoutHref(location === "abroad" ? "mini" : "audits")}
-              onClick={() =>
-                safeTrack(
-                  location === "abroad" ? "risk_guide_mini_clicked" : "risk_guide_audits_clicked",
-                )
-              }
-              className={ctaGhost()}
-            >
-              {location === "abroad" ? t("success.ctaMini") : t("success.ctaAudits")}
-            </Link>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-              {t("step3.label")}
-            </p>
-            <h3 className="mt-2 text-[1.05rem] font-semibold tracking-tight text-white sm:text-[1.15rem]">
-              {t("step3.title")}
-            </h3>
-          </div>
-          {opts.showBack ? (
-            <button
-              type="button"
-              onClick={() => {
-                setShowFreeForm(false);
-                setMobileStep(2);
-              }}
-              className="shrink-0 pb-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/40 transition hover:text-white/70"
-            >
-              {t("step3.back")}
-            </button>
-          ) : null}
-        </div>
-
-        <div className="mt-2 border-t border-white/[0.1]">
-          {optionRow({
-            title: t("options.free.title"),
-            price: t("options.free.price"),
-            body: listingOk ? t("options.free.body") : t("options.free.needUrl"),
-            muted: !listingOk,
-            action: (
-              <button
-                type="button"
-                disabled={!listingOk}
-                onClick={openFreeForm}
-                className={ctaGhost()}
-              >
-                {t("options.free.cta")}
-              </button>
-            ),
-          })}
-
-          {optionRow({
-            title: t("options.mini.title"),
-            price: t("options.mini.price"),
-            body: t("options.mini.body"),
-            recommended: recommended === "lv",
-            action: (
-              <Link
-                href={homeHeroCheckoutHref("mini")}
-                onClick={() => safeTrack("risk_guide_mini_clicked")}
-                className={recommended === "lv" ? ctaPrimary() : ctaGhost()}
-              >
-                {t("options.mini.cta")}
-              </Link>
-            ),
-          })}
-
-          {optionRow({
-            title: t("options.audits.title"),
-            price: t("options.audits.price"),
-            body: t("options.audits.body"),
-            recommended: recommended === "abroad",
-            action: (
-              <Link
-                href={homeHeroCheckoutHref("audits")}
-                onClick={() => safeTrack("risk_guide_audits_clicked")}
-                className={recommended === "abroad" ? ctaPrimary() : ctaGhost()}
-              >
-                {t("options.audits.cta")}
-              </Link>
-            ),
-          })}
-        </div>
-
-        <p className="mt-5 text-[12px] text-white/40">
-          {t("dealer.prefix")}{" "}
-          <Link
-            href={homeHeroCheckoutHref("dealer")}
-            className="text-white/65 underline decoration-white/25 underline-offset-2 transition hover:text-white hover:decoration-white/50"
-          >
-            {t("dealer.link")}
-          </Link>
-        </p>
-
-        {showFreeForm ? (
-          <form onSubmit={submitFree} className="mt-6 space-y-4 border-t border-white/[0.1] pt-5">
-            <p className="text-[13px] leading-relaxed text-white/50">{t("form.boundary")}</p>
-            <div>
-              <label
-                htmlFor={`${baseId}-form-listing`}
-                className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
-              >
-                {t("form.listingLabel")}
-              </label>
-              <input
-                id={`${baseId}-form-listing`}
-                type="url"
-                required
-                value={listingUrl}
-                onChange={(e) => setListingUrl(e.target.value)}
-                className="mt-1.5 w-full border-0 border-b border-white/[0.18] bg-transparent px-0 py-2.5 text-[15px] text-white outline-none focus:border-[#0066ff]/70"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor={`${baseId}-form-email`}
-                className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
-              >
-                {t("form.emailLabel")}
-              </label>
-              <input
-                id={`${baseId}-form-email`}
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5 w-full border-0 border-b border-white/[0.18] bg-transparent px-0 py-2.5 text-[15px] text-white outline-none focus:border-[#0066ff]/70"
-              />
-            </div>
-            {formError ? (
-              <p className="text-[13px] text-amber-200/90" role="alert">
-                {formError}
-              </p>
-            ) : null}
-            <button
-              type="submit"
-              disabled={pending}
-              className="provin-home-pill-cta inline-flex min-h-[48px] w-full items-center justify-center px-5 text-[12px] font-semibold uppercase tracking-[0.08em] disabled:opacity-50 sm:w-auto"
-            >
-              {pending ? t("form.submitting") : t("form.submit")}
-            </button>
-          </form>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <section
       id="riska-celvedis"
@@ -567,58 +263,324 @@ export function HomeRiskAuditGuide() {
       />
 
       <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-12 lg:px-8 lg:pb-14 lg:pt-12">
-        <header className="mx-auto max-w-2xl text-center lg:mx-0 lg:max-w-2xl lg:text-left">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
-            {t("eyebrow")}
-          </p>
-          <h2
-            id={`${baseId}-heading`}
-            className="mt-2 text-[1.35rem] font-semibold tracking-tight text-white sm:text-[1.55rem]"
-          >
-            {t("title")}
-          </h2>
-          <p className="mt-2 text-[14px] leading-relaxed text-white/55 sm:text-[15px]">
-            {t("subtitle")}
-          </p>
-        </header>
+        <div className="mx-auto w-full max-w-xl">
+          <header className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
+              {t("eyebrow")}
+            </p>
+            <h2
+              id={`${baseId}-heading`}
+              className="mt-2 text-[1.35rem] font-semibold tracking-tight text-white sm:text-[1.55rem]"
+            >
+              {t("title")}
+            </h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-white/55 sm:text-[15px]">
+              {t("subtitle")}
+            </p>
+          </header>
 
-        {/* Mobile: wizard A — one step at a time */}
-        <div className="mx-auto mt-6 max-w-xl lg:hidden">
           <ProgressRail
-            active={mobileStep}
+            active={step}
             unlockedThrough={unlockedThrough}
-            onJump={setMobileStep}
-            interactive
+            onJump={setStep}
             labels={[t("progress.step1"), t("progress.step2"), t("progress.step3")]}
             ariaLabel={t("progress.aria")}
-          />
-          <div className="mt-8">
-            {mobileStep === 1 ? renderStep1Body() : null}
-            {mobileStep === 2 ? renderStep2Body({ showNav: true }) : null}
-            {mobileStep === 3 ? renderStep3Body({ showBack: true, locked: !location }) : null}
-          </div>
-        </div>
-
-        {/* Desktop: stacked B — next steps visible but locked */}
-        <div className="mt-8 hidden lg:block">
-          <ProgressRail
-            active={desktopActive}
-            unlockedThrough={unlockedThrough}
-            interactive={false}
-            labels={[t("progress.step1"), t("progress.step2"), t("progress.step3")]}
-            ariaLabel={t("progress.aria")}
+            nowLabel={t("progress.now")}
           />
 
-          <div className="mt-10 grid grid-cols-12 gap-12">
-            <div className="col-span-5 space-y-10">
-              {renderStep1Body()}
-              <div className={location ? "" : "pointer-events-none opacity-35"}>
-                {renderStep2Body({ showNav: false })}
+          <div className="mt-8 min-h-[14rem]">
+            {step === 1 ? (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7eb0ff]">
+                  {t("step1.label")} · {t("progress.now")}
+                </p>
+                <h3 className="mt-2 text-[1.1rem] font-semibold leading-snug tracking-tight text-white sm:text-[1.25rem]">
+                  {t("step1.question")}
+                </h3>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">{t("step1.hint")}</p>
+                <p className="mt-4 flex items-center justify-center gap-1.5 text-[12px] font-medium text-white/50 sm:justify-start">
+                  <span>{t("step1.actionCue")}</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-[#0066ff]" strokeWidth={2} aria-hidden />
+                </p>
+                <div
+                  className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+                  role="radiogroup"
+                  aria-label={t("step1.question")}
+                >
+                  {(
+                    [
+                      { id: "lv" as const, title: t("step1.lvTitle"), hint: t("step1.lvHint") },
+                      {
+                        id: "abroad" as const,
+                        title: t("step1.abroadTitle"),
+                        hint: t("step1.abroadHint"),
+                      },
+                    ] as const
+                  ).map((opt) => {
+                    const active = location === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => selectLocation(opt.id)}
+                        className={`group flex min-h-[4.5rem] flex-col justify-center border border-white/[0.12] px-4 py-3.5 text-left transition hover:border-[#0066ff]/45 hover:bg-[#0066ff]/[0.08] ${
+                          active ? "border-[#0066ff]/55 bg-[#0066ff]/[0.12]" : "bg-transparent"
+                        }`}
+                      >
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="text-[15px] font-semibold tracking-tight text-white">
+                            {opt.title}
+                          </span>
+                          <ArrowRight
+                            className="h-4 w-4 shrink-0 text-[#0066ff] opacity-70 transition group-hover:translate-x-0.5 group-hover:opacity-100"
+                            strokeWidth={2}
+                            aria-hidden
+                          />
+                        </span>
+                        <span className="mt-1 block text-[12px] leading-snug text-white/40">
+                          {opt.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <div className={`col-span-7 ${location ? "" : "opacity-45"}`}>
-              {renderStep3Body({ showBack: false, locked: !location })}
-            </div>
+            ) : null}
+
+            {step === 2 ? (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7eb0ff]">
+                  {t("step2.label")} · {t("progress.now")}
+                </p>
+                <h3 className="mt-2 text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.25rem]">
+                  {t("step2.title")}
+                </h3>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">{t("step2.hint")}</p>
+                <label htmlFor={`${baseId}-listing`} className="sr-only">
+                  {t("step2.title")}
+                </label>
+                <input
+                  id={`${baseId}-listing`}
+                  type="url"
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder={t("step2.placeholder")}
+                  value={listingUrl}
+                  onChange={(e) => {
+                    setListingUrl(e.target.value);
+                    setSuccess(false);
+                  }}
+                  onBlur={onListingBlur}
+                  className="mt-5 w-full border-0 border-b border-white/[0.18] bg-transparent px-0 py-2.5 text-[15px] text-white placeholder:text-white/30 outline-none transition focus:border-[#0066ff]/70"
+                />
+                {listingTouchedInvalid ? (
+                  <p className="mt-2 text-[12px] text-amber-200/90">{t("errors.listing")}</p>
+                ) : null}
+
+                <div className="mt-7 flex flex-col gap-3">
+                  <button
+                    type="button"
+                    onClick={goStep3}
+                    disabled={listingTouchedInvalid}
+                    className="provin-home-pill-cta inline-flex min-h-[50px] w-full items-center justify-center gap-2 px-5 text-[12px] font-semibold uppercase tracking-[0.08em] disabled:opacity-40"
+                  >
+                    <span>{listingTrim ? t("step2.continue") : t("step2.skip")}</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="inline-flex min-h-[40px] items-center justify-center text-[12px] font-semibold uppercase tracking-[0.1em] text-white/45 transition hover:text-white/75"
+                  >
+                    {t("step2.back")}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 3 && location ? (
+              <div>
+                {success ? (
+                  <>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7eb0ff]">
+                      {t("step3.label")}
+                    </p>
+                    <h3 className="mt-2 text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.25rem]">
+                      {t("success.title")}
+                    </h3>
+                    <p className="mt-2 text-[13px] leading-relaxed text-white/55">{t("success.body")}</p>
+                    <div className="mt-5 flex flex-col gap-2">
+                      <Link
+                        href={homeHeroCheckoutHref(location === "abroad" ? "audits" : "mini")}
+                        onClick={() =>
+                          safeTrack(
+                            location === "abroad"
+                              ? "risk_guide_audits_clicked"
+                              : "risk_guide_mini_clicked",
+                          )
+                        }
+                        className={ctaPrimary()}
+                      >
+                        {location === "abroad" ? t("success.ctaAudits") : t("success.ctaMini")}
+                      </Link>
+                      <Link
+                        href={homeHeroCheckoutHref(location === "abroad" ? "mini" : "audits")}
+                        onClick={() =>
+                          safeTrack(
+                            location === "abroad"
+                              ? "risk_guide_mini_clicked"
+                              : "risk_guide_audits_clicked",
+                          )
+                        }
+                        className={ctaGhost()}
+                      >
+                        {location === "abroad" ? t("success.ctaMini") : t("success.ctaAudits")}
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7eb0ff]">
+                          {t("step3.label")} · {t("progress.now")}
+                        </p>
+                        <h3 className="mt-2 text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.25rem]">
+                          {t("step3.title")}
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowFreeForm(false);
+                          setStep(2);
+                        }}
+                        className="shrink-0 pb-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/40 transition hover:text-white/70"
+                      >
+                        {t("step3.back")}
+                      </button>
+                    </div>
+
+                    <div className="mt-4 border-t border-white/[0.1]">
+                      {optionRow({
+                        title: t("options.free.title"),
+                        price: t("options.free.price"),
+                        body: listingOk ? t("options.free.body") : t("options.free.needUrl"),
+                        muted: !listingOk,
+                        action: (
+                          <button
+                            type="button"
+                            disabled={!listingOk}
+                            onClick={openFreeForm}
+                            className={ctaGhost()}
+                          >
+                            {t("options.free.cta")}
+                          </button>
+                        ),
+                      })}
+
+                      {optionRow({
+                        title: t("options.mini.title"),
+                        price: t("options.mini.price"),
+                        body: t("options.mini.body"),
+                        recommended: recommended === "lv",
+                        action: (
+                          <Link
+                            href={homeHeroCheckoutHref("mini")}
+                            onClick={() => safeTrack("risk_guide_mini_clicked")}
+                            className={recommended === "lv" ? ctaPrimary() : ctaGhost()}
+                          >
+                            {t("options.mini.cta")}
+                          </Link>
+                        ),
+                      })}
+
+                      {optionRow({
+                        title: t("options.audits.title"),
+                        price: t("options.audits.price"),
+                        body: t("options.audits.body"),
+                        recommended: recommended === "abroad",
+                        action: (
+                          <Link
+                            href={homeHeroCheckoutHref("audits")}
+                            onClick={() => safeTrack("risk_guide_audits_clicked")}
+                            className={recommended === "abroad" ? ctaPrimary() : ctaGhost()}
+                          >
+                            {t("options.audits.cta")}
+                          </Link>
+                        ),
+                      })}
+                    </div>
+
+                    <p className="mt-5 text-[12px] text-white/40">
+                      {t("dealer.prefix")}{" "}
+                      <Link
+                        href={homeHeroCheckoutHref("dealer")}
+                        className="text-white/65 underline decoration-white/25 underline-offset-2 transition hover:text-white hover:decoration-white/50"
+                      >
+                        {t("dealer.link")}
+                      </Link>
+                    </p>
+
+                    {showFreeForm ? (
+                      <form
+                        onSubmit={submitFree}
+                        className="mt-6 space-y-4 border-t border-white/[0.1] pt-5"
+                      >
+                        <p className="text-[13px] leading-relaxed text-white/50">{t("form.boundary")}</p>
+                        <div>
+                          <label
+                            htmlFor={`${baseId}-form-listing`}
+                            className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
+                          >
+                            {t("form.listingLabel")}
+                          </label>
+                          <input
+                            id={`${baseId}-form-listing`}
+                            type="url"
+                            required
+                            value={listingUrl}
+                            onChange={(e) => setListingUrl(e.target.value)}
+                            className="mt-1.5 w-full border-0 border-b border-white/[0.18] bg-transparent px-0 py-2.5 text-[15px] text-white outline-none focus:border-[#0066ff]/70"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor={`${baseId}-form-email`}
+                            className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
+                          >
+                            {t("form.emailLabel")}
+                          </label>
+                          <input
+                            id={`${baseId}-form-email`}
+                            type="email"
+                            autoComplete="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="mt-1.5 w-full border-0 border-b border-white/[0.18] bg-transparent px-0 py-2.5 text-[15px] text-white outline-none focus:border-[#0066ff]/70"
+                          />
+                        </div>
+                        {formError ? (
+                          <p className="text-[13px] text-amber-200/90" role="alert">
+                            {formError}
+                          </p>
+                        ) : null}
+                        <button
+                          type="submit"
+                          disabled={pending}
+                          className="provin-home-pill-cta inline-flex min-h-[48px] w-full items-center justify-center px-5 text-[12px] font-semibold uppercase tracking-[0.08em] disabled:opacity-50"
+                        >
+                          {pending ? t("form.submitting") : t("form.submit")}
+                        </button>
+                      </form>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
