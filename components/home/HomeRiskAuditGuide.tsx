@@ -341,199 +341,197 @@ export function HomeRiskAuditGuide() {
                   <h3 className="text-balance text-[1.55rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-[1.85rem] lg:text-[2.05rem]">
                     {success ? t("success.title") : t("step2.title")}
                   </h3>
-                  <p className="mt-4 text-[15px] leading-relaxed text-white/50 sm:text-[16px] lg:text-[17px]">
+                  <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-white/50 sm:text-[16px] lg:text-[17px]">
                     {success ? t("success.body") : t("step2.hint")}
                   </p>
 
-                  <div className="mt-8">
-                    {success ? (
-                      <div className="flex max-w-md flex-col gap-3">
-                        <LiquidLink
-                          href={homeHeroCheckoutHref("audits")}
-                          onClick={() => safeTrack("risk_guide_audits_clicked")}
-                        >
-                          {t("success.ctaAudits")}
-                          <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                        </LiquidLink>
-                        <Link
-                          href={homeHeroCheckoutHref("mini")}
-                          onClick={() => safeTrack("risk_guide_mini_clicked")}
-                          className="inline-flex min-h-[44px] w-full items-center justify-center text-[12px] font-semibold uppercase tracking-[0.1em] text-white/45 transition hover:text-white/75"
-                        >
-                          {t("success.ctaMini")}
-                        </Link>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
-                          <div className="order-2 flex flex-col rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.45)] px-4 py-5 backdrop-blur-md sm:px-5 sm:py-6 lg:order-1">
-                            <h4 className="text-[1.05rem] font-semibold tracking-tight text-white sm:text-[1.15rem]">
-                              {t("form.title")}
-                            </h4>
-                            <p className="mt-2 flex-1 text-[13px] leading-relaxed text-white/50 sm:text-[14px]">
-                              {t("form.boundary")}
-                            </p>
-                            <div className="mt-6">
-                              <GhostBtn onClick={openFreeForm}>
-                                {t("step2.freeCta")}
-                                <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                              </GhostBtn>
-                            </div>
-                          </div>
-
-                          <div className="order-1 flex flex-col rounded-2xl border border-[#0066ff]/45 bg-[#0066ff]/[0.1] px-4 py-5 shadow-[0_20px_52px_rgb(0_0_0/0.28)] sm:px-5 sm:py-6 lg:order-2 lg:-translate-y-1">
-                            <span className="inline-flex w-fit rounded border border-[#0066ff]/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7eb0ff]">
-                              {t("recommended")}
-                            </span>
-                            <h4 className="mt-3 text-[1.05rem] font-semibold tracking-tight text-white sm:text-[1.15rem]">
-                              {t("step2.auditsTitle")}
-                            </h4>
-                            <p className="mt-2 flex-1 text-[13px] leading-relaxed text-white/60 sm:text-[14px]">
-                              {t("step2.auditsBody")}
-                            </p>
-                            <div className="mt-6">
-                              <LiquidLink
-                                href={homeHeroCheckoutHref("audits")}
-                                onClick={() => safeTrack("risk_guide_audits_clicked")}
-                              >
-                                {t("step2.auditsCta")}
-                                <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                              </LiquidLink>
-                            </div>
-                          </div>
-
-                          <div className="order-3 flex flex-col rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.45)] px-4 py-5 backdrop-blur-md sm:px-5 sm:py-6">
-                            <h4 className="text-[1.05rem] font-semibold tracking-tight text-white sm:text-[1.15rem]">
-                              {t("step2.miniTitle")}
-                            </h4>
-                            <p className="mt-2 text-[13px] leading-relaxed text-white/50 sm:text-[14px]">
-                              {t("step2.miniBody")}
-                            </p>
-                            <p className="mt-3 flex-1 text-[12px] leading-relaxed text-amber-200/70">
-                              ⚠️ {t("step2.miniWarning")}
-                            </p>
-                            <div className="mt-6">
-                              <GhostLink
-                                href={homeHeroCheckoutHref("mini")}
-                                onClick={() => safeTrack("risk_guide_mini_clicked")}
-                              >
-                                {t("step2.miniCta")}
-                                <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                              </GhostLink>
-                            </div>
-                          </div>
-                        </div>
-
-                        {showFreeForm ? (
-                          <form
-                            onSubmit={submitFree}
-                            className="mt-4 space-y-4 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-5 py-5 sm:px-6 sm:py-6"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-[15px] font-semibold text-white">{t("form.title")}</p>
-                                <p className="mt-1 text-[13px] leading-relaxed text-white/45">
-                                  {t("form.boundary")}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowFreeForm(false);
-                                  setFormError(null);
-                                }}
-                                className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/40 transition hover:text-white/70"
-                              >
-                                {t("form.cancel")}
-                              </button>
-                            </div>
-                            <div>
-                              <label
-                                htmlFor={`${baseId}-listing`}
-                                className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
-                              >
-                                {t("form.listingLabel")}
-                              </label>
-                              <input
-                                id={`${baseId}-listing`}
-                                type="url"
-                                inputMode="url"
-                                autoComplete="url"
-                                required
-                                placeholder={t("step2.placeholder")}
-                                value={listingUrl}
-                                onChange={(e) => setListingUrl(e.target.value)}
-                                onBlur={() => {
-                                  if (listingTrim) {
-                                    safeTrack("risk_guide_listing_entered", { hasUrl: listingOk });
-                                  }
-                                }}
-                                className="mt-2 w-full rounded-xl border border-white/[0.12] bg-black/20 px-4 py-3.5 text-[15px] text-white placeholder:text-white/30 outline-none focus:border-[#0066ff]/50"
-                              />
-                              {listingTouchedInvalid ? (
-                                <p className="mt-2 text-[13px] text-amber-200/90">{t("errors.listing")}</p>
-                              ) : null}
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <div>
-                                <label
-                                  htmlFor={`${baseId}-email`}
-                                  className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
-                                >
-                                  {t("form.emailLabel")}
-                                </label>
-                                <input
-                                  id={`${baseId}-email`}
-                                  type="email"
-                                  autoComplete="email"
-                                  required
-                                  value={email}
-                                  onChange={(e) => setEmail(e.target.value)}
-                                  className="mt-2 w-full rounded-xl border border-white/[0.12] bg-black/20 px-4 py-3.5 text-[15px] text-white outline-none focus:border-[#0066ff]/50"
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  htmlFor={`${baseId}-phone`}
-                                  className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
-                                >
-                                  {t("form.phoneLabel")}
-                                </label>
-                                <input
-                                  id={`${baseId}-phone`}
-                                  type="tel"
-                                  autoComplete="tel"
-                                  inputMode="tel"
-                                  required
-                                  value={phone}
-                                  onChange={(e) => setPhone(e.target.value)}
-                                  className="mt-2 w-full rounded-xl border border-white/[0.12] bg-black/20 px-4 py-3.5 text-[15px] text-white outline-none focus:border-[#0066ff]/50"
-                                />
-                              </div>
-                            </div>
-                            {formError ? (
-                              <p className="text-[13px] text-amber-200/90" role="alert">
-                                {formError}
-                              </p>
-                            ) : null}
-                            <div className="max-w-sm">
-                              <LiquidBtn type="submit" disabled={pending}>
-                                {pending ? t("form.submitting") : t("form.submit")}
-                                {!pending ? (
-                                  <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                                ) : null}
-                              </LiquidBtn>
-                            </div>
-                          </form>
-                        ) : null}
-                      </>
-                    )}
-                  </div>
+                  {success ? (
+                    <div className="mt-8 flex max-w-md flex-col gap-3">
+                      <LiquidLink
+                        href={homeHeroCheckoutHref("audits")}
+                        onClick={() => safeTrack("risk_guide_audits_clicked")}
+                      >
+                        {t("success.ctaAudits")}
+                        <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                      </LiquidLink>
+                      <Link
+                        href={homeHeroCheckoutHref("mini")}
+                        onClick={() => safeTrack("risk_guide_mini_clicked")}
+                        className="inline-flex min-h-[44px] w-full items-center justify-center text-[12px] font-semibold uppercase tracking-[0.1em] text-white/45 transition hover:text-white/75"
+                      >
+                        {t("success.ctaMini")}
+                      </Link>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
           </div>
         </div>
+
+        {step === 2 && location && !success ? (
+          <div className="mt-8 lg:mt-10">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
+              <div className="order-2 flex flex-col rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.45)] px-5 py-6 backdrop-blur-md sm:px-6 sm:py-7 md:order-1">
+                <h4 className="text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.2rem]">
+                  {t("form.title")}
+                </h4>
+                <p className="mt-2 flex-1 text-[14px] leading-relaxed text-white/50 sm:text-[15px]">
+                  {t("form.boundary")}
+                </p>
+                <div className="mt-7">
+                  <GhostBtn onClick={openFreeForm}>
+                    {t("step2.freeCta")}
+                    <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                  </GhostBtn>
+                </div>
+              </div>
+
+              <div className="order-1 flex flex-col rounded-2xl border border-[#0066ff]/45 bg-[#0066ff]/[0.1] px-5 py-6 shadow-[0_20px_52px_rgb(0_0_0/0.28)] sm:px-6 sm:py-7 md:order-2 md:-translate-y-1">
+                <span className="inline-flex w-fit rounded border border-[#0066ff]/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7eb0ff]">
+                  {t("recommended")}
+                </span>
+                <h4 className="mt-3 text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.2rem]">
+                  {t("step2.auditsTitle")}
+                </h4>
+                <p className="mt-2 flex-1 text-[14px] leading-relaxed text-white/60 sm:text-[15px]">
+                  {t("step2.auditsBody")}
+                </p>
+                <div className="mt-7">
+                  <LiquidLink
+                    href={homeHeroCheckoutHref("audits")}
+                    onClick={() => safeTrack("risk_guide_audits_clicked")}
+                  >
+                    {t("step2.auditsCta")}
+                    <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                  </LiquidLink>
+                </div>
+              </div>
+
+              <div className="order-3 flex flex-col rounded-2xl border border-white/[0.1] bg-[rgb(3_4_6/0.45)] px-5 py-6 backdrop-blur-md sm:px-6 sm:py-7">
+                <h4 className="text-[1.1rem] font-semibold tracking-tight text-white sm:text-[1.2rem]">
+                  {t("step2.miniTitle")}
+                </h4>
+                <p className="mt-2 text-[14px] leading-relaxed text-white/50 sm:text-[15px]">
+                  {t("step2.miniBody")}
+                </p>
+                <p className="mt-3 flex-1 text-[13px] leading-relaxed text-amber-200/70">
+                  ⚠️ {t("step2.miniWarning")}
+                </p>
+                <div className="mt-7">
+                  <GhostLink
+                    href={homeHeroCheckoutHref("mini")}
+                    onClick={() => safeTrack("risk_guide_mini_clicked")}
+                  >
+                    {t("step2.miniCta")}
+                    <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                  </GhostLink>
+                </div>
+              </div>
+            </div>
+
+            {showFreeForm ? (
+              <form
+                onSubmit={submitFree}
+                className="mt-4 space-y-4 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-5 py-5 sm:px-6 sm:py-6 lg:px-8"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[15px] font-semibold text-white">{t("form.title")}</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-white/45">{t("form.boundary")}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFreeForm(false);
+                      setFormError(null);
+                    }}
+                    className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/40 transition hover:text-white/70"
+                  >
+                    {t("form.cancel")}
+                  </button>
+                </div>
+                <div>
+                  <label
+                    htmlFor={`${baseId}-listing`}
+                    className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
+                  >
+                    {t("form.listingLabel")}
+                  </label>
+                  <input
+                    id={`${baseId}-listing`}
+                    type="url"
+                    inputMode="url"
+                    autoComplete="url"
+                    required
+                    placeholder={t("step2.placeholder")}
+                    value={listingUrl}
+                    onChange={(e) => setListingUrl(e.target.value)}
+                    onBlur={() => {
+                      if (listingTrim) {
+                        safeTrack("risk_guide_listing_entered", { hasUrl: listingOk });
+                      }
+                    }}
+                    className="mt-2 w-full rounded-xl border border-white/[0.12] bg-black/20 px-4 py-3.5 text-[15px] text-white placeholder:text-white/30 outline-none focus:border-[#0066ff]/50"
+                  />
+                  {listingTouchedInvalid ? (
+                    <p className="mt-2 text-[13px] text-amber-200/90">{t("errors.listing")}</p>
+                  ) : null}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
+                  <div>
+                    <label
+                      htmlFor={`${baseId}-email`}
+                      className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
+                    >
+                      {t("form.emailLabel")}
+                    </label>
+                    <input
+                      id={`${baseId}-email`}
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="mt-2 w-full rounded-xl border border-white/[0.12] bg-black/20 px-4 py-3.5 text-[15px] text-white outline-none focus:border-[#0066ff]/50"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor={`${baseId}-phone`}
+                      className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40"
+                    >
+                      {t("form.phoneLabel")}
+                    </label>
+                    <input
+                      id={`${baseId}-phone`}
+                      type="tel"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="mt-2 w-full rounded-xl border border-white/[0.12] bg-black/20 px-4 py-3.5 text-[15px] text-white outline-none focus:border-[#0066ff]/50"
+                    />
+                  </div>
+                </div>
+                {formError ? (
+                  <p className="text-[13px] text-amber-200/90" role="alert">
+                    {formError}
+                  </p>
+                ) : null}
+                <div className="max-w-sm">
+                  <LiquidBtn type="submit" disabled={pending}>
+                    {pending ? t("form.submitting") : t("form.submit")}
+                    {!pending ? (
+                      <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                    ) : null}
+                  </LiquidBtn>
+                </div>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
   );
