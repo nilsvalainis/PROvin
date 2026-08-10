@@ -4,11 +4,12 @@
     "title": "Riska & Audita Ceļvedis",
     "subtitle": "3 soļi līdz ieteiktajam līmenim — vai bezmaksas īsam vērtējumam par to, kas redzams sludinājumā.",
     "recommended": "Rekomendēts",
+    "choose": "Izvēlēties",
     "progress": {
       "aria": "Ceļveža soļi",
       "step1": "Ekspluatācija",
-      "step2": "Saite",
-      "step3": "Līmenis"
+      "step2": "Līmenis",
+      "step3": "Saite"
     },
     "step1": {
       "label": "1",
@@ -19,25 +20,23 @@
     },
     "step2": {
       "label": "2",
-      "title": "Sludinājuma saite",
-      "hint": "Neobligāta maksas pasūtījumam. Obligatoriska īsam bezmaksas vērtējumam.",
-      "placeholder": "https://…",
-      "continue": "Turpināt",
-      "skip": "Turpināt bez saites",
+      "title": "Ko vēlies saņemt?",
+      "hint": "Bezmaksas īss vērtējums — vai uzreiz MINI / AUDITS.",
       "back": "Atpakaļ"
     },
     "step3": {
       "label": "3",
-      "title": "Izvēlies līmeni",
+      "title": "Sludinājuma saite un e-pasts",
+      "hint": "Pēdējais solis bezmaksas vērtējumam — tikai publiskais sludinājums, bez datubāžu analīzes.",
+      "placeholder": "https://…",
       "back": "Atpakaļ"
     },
     "options": {
       "free": {
-        "title": "Īss sludinājuma vērtējums",
+        "title": "Bezmaksas īss vērtējums",
         "price": "0 €",
-        "body": "3–5 teikumi e-pastā 24–48h par to, kas redzams sludinājumā. Bez datubāžu / VIN analīzes — nav audits un nav konsultācija.",
-        "needUrl": "Lai saņemtu īso vērtējumu, ielīmē saiti iepriekšējā solī.",
-        "cta": "Saņemt īso vērtējumu"
+        "body": "3–5 teikumi e-pastā 24–48h par to, kas redzams sludinājumā.",
+        "cta": "Turpināt bezmaksas"
       },
       "mini": {
         "title": "PROVIN MINI",
@@ -57,7 +56,7 @@
       "link": "Dīlera datu pakete"
     },
     "form": {
-      "boundary": "Saņem 3–5 teikumu skatījumu uz publisko sludinājumu (teksts, cenas signāli, redzamie riski) 24–48h laikā. Bez datubāžu un VIN analīzes — tas nav audits.",
+      "boundary": "Bez datubāžu un VIN analīzes — tas nav audits.",
       "listingLabel": "Sludinājuma saite",
       "emailLabel": "E-pasts",
       "submit": "Iesniegt pieprasījumu",
@@ -65,7 +64,7 @@
     },
     "success": {
       "title": "Pieprasījums saņemts.",
-      "body": "Atbildēsim e-pastā 24–48h ar īsu skatījumu uz sludinājumu (ne datu analīzi). Ja vajag dziļāku pārbaudi — pasūti auditu tagad.",
+      "body": "Atbildēsim e-pastā 24–48h ar īsu skatījumu uz sludinājumu. Ja vajag dziļāku pārbaudi — pasūti auditu tagad.",
       "ctaMini": "Pasūtīt MINI — 39,99 €",
       "ctaAudits": "Pasūtīt AUDITS — 99,99 €"
     },
