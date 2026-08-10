@@ -252,6 +252,7 @@
 
 .tierMeta {
   margin: 0 0 0.55rem;
+  text-align: center;
 }
 
 .tierMetaTitle {
@@ -262,6 +263,7 @@
   text-transform: uppercase;
   color: rgb(37 99 235 / 0.92);
   display: none;
+  text-align: center;
 }
 
 .tierMetaDesc {
@@ -275,6 +277,7 @@
   -webkit-line-clamp: 2;
   overflow: hidden;
   min-height: calc(2 * 1.45em);
+  text-align: center;
 }
 
 .featureStack {
