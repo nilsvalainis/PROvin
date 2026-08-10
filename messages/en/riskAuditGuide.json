@@ -2,40 +2,49 @@
   "RiskAuditGuide": {
     "eyebrow": "Free listing check",
     "title": "Risk & Audit Guide",
-    "subtitle": "Get a free short comment on the listing — and see when a full PROVIN AUDITS is worth it.",
+    "subtitle": "A short context step — then the recommended service. Free review stays a secondary option.",
     "choose": "Choose",
+    "recommended": "Recommended",
     "progress": {
       "aria": "Guide steps",
       "step1": "Context",
-      "step2": "Free"
+      "step2": "Recommendation"
     },
     "step1": {
       "label": "1",
       "question": "What’s the car’s context?",
-      "hint": "Helps us understand the situation — not a product filter. Full history (also for Latvia-used cars) usually means PROVIN AUDITS.",
+      "hint": "Helps us understand the situation — not a product filter.",
       "lvTitle": "Used in Latvia",
       "abroadTitle": "Recently imported"
     },
     "step2": {
       "label": "2",
-      "title": "Free short review",
-      "hint": "3–5 sentences by email in 24–48h about what is visible in the listing. No database / VIN analysis.",
-      "placeholder": "https://…",
+      "title": "Recommended service",
+      "hint": "Even for cars used in Latvia for years, local registries don’t show the full history — for example hidden accidents before import, true mileage, or visual contradictions in the listing.",
       "back": "Back",
-      "auditsNow": "I want PROVIN AUDITS now",
-      "miniSoft": "Or simpler MINI"
+      "auditsTitle": "PROVIN AUDITS",
+      "auditsBody": "Full listing, photo and vehicle history check in international paid databases + our final conclusion.",
+      "auditsCta": "Order audit",
+      "freeCta": "Get a free short review",
+      "miniTitle": "PROVIN MINI",
+      "miniBody": "Basic data check without deep history analysis.",
+      "miniWarning": "PROVIN MINI does not include vehicle history checks in paid databases, and does not provide full listing and photo risk analysis.",
+      "miniCta": "Choose MINI",
+      "placeholder": "https://…"
     },
     "form": {
-      "boundary": "Public listing only — not an audit and not a consultation.",
+      "title": "Free 3–5 sentence review",
+      "boundary": "Public listing only — not an audit and not a consultation. Reply by email in 24–48h.",
       "listingLabel": "Listing link",
       "emailLabel": "Email",
       "phoneLabel": "Phone",
-      "submit": "Get free review",
-      "submitting": "Sending…"
+      "submit": "Submit request",
+      "submitting": "Sending…",
+      "cancel": "Close"
     },
     "success": {
       "title": "Request received.",
-      "body": "We’ll reply within 24–48h with a short look at the listing. If you already know you need full history — PROVIN AUDITS is the next step.",
+      "body": "We’ll reply within 24–48h with a short look at the listing. If you need full history — PROVIN AUDITS is the next step.",
       "ctaAudits": "Order PROVIN AUDITS — €99.99",
       "ctaMini": "Or MINI — €39.99"
     },

@@ -2,40 +2,49 @@
   "RiskAuditGuide": {
     "eyebrow": "Bezmaksas sludinājuma pārbaude",
     "title": "Riska & Audita Ceļvedis",
-    "subtitle": "Saņem bezmaksas īsu komentāru par sludinājumu — un uzzini, kad vērts pasūtīt pilno PROVIN AUDITS.",
+    "subtitle": "Īss konteksts — tad ieteiktais pakalpojums. Bezmaksas novērtējums pieejams kā otršķirīga opcija.",
     "choose": "Izvēlēties",
+    "recommended": "Rekomendēts",
     "progress": {
       "aria": "Ceļveža soļi",
       "step1": "Konteksts",
-      "step2": "Bezmaksas"
+      "step2": "Ieteikums"
     },
     "step1": {
       "label": "1",
       "question": "Kāds ir auto konteksts?",
-      "hint": "Palīdz mums saprast situāciju — tas nav produktu filtrs. Pilnai vēsturei (arī LV lietotiem) parasti der PROVIN AUDITS.",
+      "hint": "Palīdz mums saprast situāciju — tas nav produktu filtrs.",
       "lvTitle": "Latvijā lietots",
       "abroadTitle": "Nesen ievests"
     },
     "step2": {
       "label": "2",
-      "title": "Bezmaksas īss vērtējums",
-      "hint": "3–5 teikumi e-pastā 24–48h par to, kas redzams sludinājumā. Bez datubāžu / VIN analīzes.",
-      "placeholder": "https://…",
+      "title": "Rekomendētais pakalpojums",
+      "hint": "Arī Latvijā ilgi lietotiem auto vietējie reģistri neuzrāda visu vēsturi — piemēram, slēptas avārijas pirms ievešanas, reālo nobraukumu vai vizuālās pretrunas sludinājumā.",
       "back": "Atpakaļ",
-      "auditsNow": "Vēlos uzreiz PROVIN AUDITS",
-      "miniSoft": "Vai vienkāršāks MINI"
+      "auditsTitle": "PROVIN AUDITS",
+      "auditsBody": "Pilna sludinājuma, fotoattēlu un auto vēstures pārbaude starptautiskajās maksas datubāzēs + mūsu gala slēdziens.",
+      "auditsCta": "Pasūtīt auditu",
+      "freeCta": "Saņemt bezmaksas novērtējumu",
+      "miniTitle": "PROVIN MINI",
+      "miniBody": "Pamata datu pārbaude bez dziļās vēstures analīzes.",
+      "miniWarning": "PROVIN MINI neietver auto vēstures pārbaudi maksas datubāzēs, kā arī nesniedz pilnu sludinājuma un fotoattēlu risku analīzi.",
+      "miniCta": "Izvēlēties MINI",
+      "placeholder": "https://…"
     },
     "form": {
-      "boundary": "Tikai publiskais sludinājums — nav audits un nav konsultācija.",
+      "title": "Bezmaksas 3–5 teikumu novērtējums",
+      "boundary": "Tikai publiskais sludinājums — nav audits un nav konsultācija. Atbilde e-pastā 24–48h.",
       "listingLabel": "Sludinājuma saite",
       "emailLabel": "E-pasts",
       "phoneLabel": "Tālrunis",
-      "submit": "Saņemt bezmaksas vērtējumu",
-      "submitting": "Sūta…"
+      "submit": "Iesniegt pieprasījumu",
+      "submitting": "Sūta…",
+      "cancel": "Aizvērt"
     },
     "success": {
       "title": "Pieprasījums saņemts.",
-      "body": "Atbildēsim 24–48h ar īsu skatījumu uz sludinājumu. Ja jau zini, ka vajag pilnu vēsturi — PROVIN AUDITS ir nākamais solis.",
+      "body": "Atbildēsim 24–48h ar īsu skatījumu uz sludinājumu. Ja vajag pilnu vēsturi — PROVIN AUDITS ir nākamais solis.",
       "ctaAudits": "Pasūtīt PROVIN AUDITS — 99,99 €",
       "ctaMini": "Vai MINI — 39,99 €"
     },
