@@ -159,7 +159,7 @@ export function HomeFeatureBreakdown({
         {/* Desktop/web only — mobile intentionally has no jump strip. */}
         <nav
           aria-label={uiCopy.catalogNavAria}
-          className="mb-10 hidden sticky top-11 z-30 -mx-6 border-b border-white/[0.1] bg-[#0d0d0d]/92 px-6 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-[#0d0d0d]/78 lg:block"
+          className="mb-10 hidden sticky top-11 z-30 -mx-6 border-b border-white/[0.1] bg-transparent px-6 py-2 lg:block"
         >
           <ul className="flex items-stretch justify-center">
             {packages.map((pkg, index) => {
