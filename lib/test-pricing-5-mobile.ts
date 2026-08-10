@@ -151,7 +151,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     title: "PROVIN AUDITS",
     price: "99,99 €",
     buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
-    description: "Pilnīgākais auto pārbaudes komplekts Latvijā.",
+    description: "Noskaidro visu par savu topošo auto.",
     features: AUDITS_FEATURES_LV,
   },
   {
@@ -189,7 +189,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     title: "PROVIN AUDIT",
     price: "€99.99",
     buttonText: "ORDER PROVIN AUDIT — €99.99",
-    description: "The most complete vehicle check package in Latvia.",
+    description: "Find out everything about your next car.",
     features: AUDITS_FEATURES_EN,
   },
   {

@@ -41,7 +41,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
   it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {
     const mini = getTp5MobileService("mini");
     const audits = getTp5MobileService("audits");
-    expect(audits.description).toContain("Pilnīgākais");
+    expect(audits.description).toContain("Noskaidro visu");
     expect(audits.description).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
     expect(mini.description).toContain("Latvijā ekspluatētiem");
     expect(mini.description).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
