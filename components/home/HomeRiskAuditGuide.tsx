@@ -284,8 +284,8 @@ export function HomeRiskAuditGuide() {
                   >
                     {(
                       [
-                        { id: "lv" as const, title: t("step1.lvTitle") },
                         { id: "abroad" as const, title: t("step1.abroadTitle") },
+                        { id: "lv" as const, title: t("step1.lvTitle") },
                       ] as const
                     ).map((opt) => (
                       <button
