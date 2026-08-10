@@ -2,38 +2,33 @@
   "RiskAuditGuide": {
     "eyebrow": "Pirms pasūtījuma",
     "title": "Riska & Audita Ceļvedis",
-    "subtitle": "Dari pa soļiem 1 → 2 → 3. Katru reizi redzi tikai to, kas jādara tagad.",
+    "subtitle": "Trīs īsi soļi līdz ieteiktajam pārbaudes līmenim.",
     "recommended": "Rekomendēts",
     "progress": {
       "aria": "Ceļveža soļi",
       "step1": "Ekspluatācija",
       "step2": "Saite",
-      "step3": "Līmenis",
-      "now": "tagad"
+      "step3": "Līmenis"
     },
     "step1": {
-      "label": "1. solis",
+      "label": "1",
       "question": "Nesen ievests auto, vai Latvijā ilgāku laiku ekspluatēts?",
       "hint": "Tas nosaka, cik dziļi vēsturi ir vērts pārbaudīt.",
-      "actionCue": "Sāc šeit — izvēlies vienu, un uzreiz atvērsies 2. solis",
       "lvTitle": "Latvijā ilgāku laiku",
-      "lvHint": "SS.lv / Facebook / dīleris",
-      "abroadTitle": "Nesen ievests",
-      "abroadHint": "Mobile.de / AutoScout24 u.c."
+      "abroadTitle": "Nesen ievests"
     },
     "step2": {
-      "label": "2. solis",
+      "label": "2",
       "title": "Sludinājuma saite",
-      "hint": "Neobligāta, ja pasūti auditu. Obligatoriska īsam bezmaksas vērtējumam.",
+      "hint": "Neobligāta maksas pasūtījumam. Obligatoriska īsam bezmaksas vērtējumam.",
       "placeholder": "https://…",
       "continue": "Turpināt",
       "skip": "Turpināt bez saites",
       "back": "Atpakaļ"
     },
     "step3": {
-      "label": "3. solis",
+      "label": "3",
       "title": "Izvēlies līmeni",
-      "locked": "Vispirms atbildi uz 1. soli — tad parādīsies ieteiktais līmenis.",
       "back": "Atpakaļ"
     },
     "options": {
@@ -41,7 +36,7 @@
         "title": "Īss sludinājuma vērtējums",
         "price": "0 €",
         "body": "3–5 teikumi e-pastā 24–48h par to, kas redzams sludinājumā. Bez datubāžu / VIN analīzes — nav audits un nav konsultācija.",
-        "needUrl": "Lai saņemtu īso vērtējumu, ielīmē saiti 2. solī.",
+        "needUrl": "Lai saņemtu īso vērtējumu, ielīmē saiti iepriekšējā solī.",
         "cta": "Saņemt īso vērtējumu"
       },
       "mini": {
