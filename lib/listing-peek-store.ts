@@ -35,6 +35,10 @@ type ListingPeekDoc = {
 const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 500;
 
+/** Operatora testkontakti — bez 7 dienu / kontaktlimits. */
+const LISTING_PEEK_RATE_LIMIT_EXEMPT_EMAILS = new Set(["nils.valainis@gmail.com"]);
+const LISTING_PEEK_RATE_LIMIT_EXEMPT_PHONE_KEYS = new Set(["26123193"]);
+
 export function normalizePeekEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -44,6 +48,12 @@ export function normalizePeekPhoneKey(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.length <= 8) return digits;
   return digits.slice(-8);
+}
+
+export function isListingPeekRateLimitExempt(email: string, phone: string): boolean {
+  if (LISTING_PEEK_RATE_LIMIT_EXEMPT_EMAILS.has(normalizePeekEmail(email))) return true;
+  const phoneKey = normalizePeekPhoneKey(phone);
+  return phoneKey.length > 0 && LISTING_PEEK_RATE_LIMIT_EXEMPT_PHONE_KEYS.has(phoneKey);
 }
 
 function cooldownRetryAfterSec(lastMs: number, now: number): number {
@@ -205,35 +215,38 @@ export async function createListingPeek(input: {
   const listingUrl = input.listingUrl.trim();
   const now = Date.now();
   const doc = await readDoc();
+  const exempt = isListingPeekRateLimitExempt(email, phone);
 
-  const lastForEmail = doc.entries
-    .filter((e) => e.email === email)
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
-
-  if (lastForEmail) {
-    const lastMs = Date.parse(lastForEmail.createdAt);
-    if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
-      return {
-        ok: false,
-        reason: "contact_rate_limited",
-        retryAfterSec: cooldownRetryAfterSec(lastMs, now),
-      };
-    }
-  }
-
-  if (phoneKey.length >= 8) {
-    const lastForPhone = doc.entries
-      .filter((e) => e.phone && normalizePeekPhoneKey(e.phone) === phoneKey)
+  if (!exempt) {
+    const lastForEmail = doc.entries
+      .filter((e) => e.email === email)
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
 
-    if (lastForPhone) {
-      const lastMs = Date.parse(lastForPhone.createdAt);
+    if (lastForEmail) {
+      const lastMs = Date.parse(lastForEmail.createdAt);
       if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
         return {
           ok: false,
           reason: "contact_rate_limited",
           retryAfterSec: cooldownRetryAfterSec(lastMs, now),
         };
+      }
+    }
+
+    if (phoneKey.length >= 8) {
+      const lastForPhone = doc.entries
+        .filter((e) => e.phone && normalizePeekPhoneKey(e.phone) === phoneKey)
+        .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
+
+      if (lastForPhone) {
+        const lastMs = Date.parse(lastForPhone.createdAt);
+        if (Number.isFinite(lastMs) && now - lastMs < COOLDOWN_MS) {
+          return {
+            ok: false,
+            reason: "contact_rate_limited",
+            retryAfterSec: cooldownRetryAfterSec(lastMs, now),
+          };
+        }
       }
     }
   }

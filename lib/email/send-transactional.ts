@@ -339,8 +339,8 @@ export async function sendListingPeekLeadEmail(opts: {
     `Tālrunis: ${opts.phone}`,
     `Sludinājums: ${opts.listingUrl}`,
     "",
-    "Atbilde klientam: īss komentārs TIKAI par to, kas redzams sludinājumā (bez datubāžu / VIN analīzes).",
-    "Admin → Ātrie vērtējumi: ieraksti komentāru un nosūti HTML e-pastu ar PROVIN AUDITS CTA.",
+    "Atbilde klientam: Admin → Ātrie vērtējumi → ieraksti komentāru → «Nosūtīt e-pastu».",
+    "NESŪTI ar Gmail Reply — tur būs parasts teksts bez HTML CTA pogas.",
   ].join("\n");
   const html = `<p>Jauns <strong>bezmaksas sludinājuma komentāra</strong> pieprasījums.</p>
 <table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
@@ -349,7 +349,7 @@ export async function sendListingPeekLeadEmail(opts: {
 <tr><td><strong>Tālrunis</strong></td><td>${escHtmlMail(opts.phone)}</td></tr>
 <tr><td><strong>Sludinājums</strong></td><td><a href="${escHtmlMail(opts.listingUrl)}">${escHtmlMail(opts.listingUrl)}</a></td></tr>
 </table>
-<p style="color:#666;font-size:13px;">Atbilde: īss komentārs <strong>tikai</strong> par publisko sludinājumu. Nosūti no admina ar <strong>PROVIN AUDITS</strong> CTA pogu.</p>`;
+<p style="color:#666;font-size:13px;"><strong>Svarīgi:</strong> atbildi no <em>Admin → Ātrie vērtējumi → Nosūtīt e-pastu</em>. Gmail Reply sūta parasto tekstu <strong>bez</strong> PROVIN AUDITS CTA pogas.</p>`;
 
   await sendSmtpMail({
     to: opts.adminTo,
@@ -360,13 +360,16 @@ export async function sendListingPeekLeadEmail(opts: {
   });
 }
 
-/** Klientam: īss komentārs + CTA uz PROVIN AUDITS. */
+/** Klientam: īss komentārs + CTA uz PROVIN AUDITS (HTML ar pogu; text kā fallback). */
 export async function sendListingPeekCustomerCommentEmail(opts: {
   to: string;
   comment: string;
 }): Promise<void> {
-  const origin = getSiteOrigin();
-  const auditsUrl = `${origin}/?plan=audits#home-hero`;
+  const origin = getSiteOrigin().replace(/\/$/, "");
+  const auditsUrl =
+    !origin || origin.includes("localhost") || origin.includes("127.0.0.1")
+      ? "https://provin.lv/?plan=audits#home-hero"
+      : `${origin}/?plan=audits#home-hero`;
   const comment = opts.comment.trim();
   const subject = "PROVIN — īss komentārs par tavu sludinājumu";
   const text = [
@@ -376,7 +379,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     "",
     comment,
     "",
-    "Šis ir īss vizuālais komentārs par publisko sludinājumu — bez auto vēstures pārbaudes maksas datubāzēs.",
+    "Šis ir īss vizuālais komentārs par publisko sludinājumu — bez risku analīzes, konsultācijas un auto vēstures pārbaudes maksas datubāzēs.",
     "",
     "Vajag pilnu skaidrību? PROVIN AUDITS:",
     auditsUrl,

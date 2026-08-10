@@ -8,7 +8,7 @@ import {
 } from "@/lib/order-field-validation";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
-import { createListingPeek } from "@/lib/listing-peek-store";
+import { createListingPeek, isListingPeekRateLimitExempt } from "@/lib/listing-peek-store";
 
 export const runtime = "nodejs";
 
@@ -30,16 +30,6 @@ function rateLimitedJson(retryAfterSec: number, error: string) {
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-
-  const burst = checkRateLimit(`listing-peek-burst:${ip}`, BURST_MAX, BURST_WINDOW_MS);
-  if (!burst.ok) {
-    return rateLimitedJson(burst.retryAfterSec, "rate_limited");
-  }
-
-  const day = checkRateLimit(`listing-peek-day:${ip}`, DAY_MAX, DAY_WINDOW_MS);
-  if (!day.ok) {
-    return rateLimitedJson(day.retryAfterSec, "ip_rate_limited");
-  }
 
   let body: unknown;
   try {
@@ -65,6 +55,19 @@ export async function POST(req: Request) {
   }
   if (!listingUrl || !isPlausibleListingUrl(listingUrl)) {
     return NextResponse.json({ error: "invalid_listing" }, { status: 400 });
+  }
+
+  const exempt = isListingPeekRateLimitExempt(email, phone);
+  if (!exempt) {
+    const burst = checkRateLimit(`listing-peek-burst:${ip}`, BURST_MAX, BURST_WINDOW_MS);
+    if (!burst.ok) {
+      return rateLimitedJson(burst.retryAfterSec, "rate_limited");
+    }
+
+    const day = checkRateLimit(`listing-peek-day:${ip}`, DAY_MAX, DAY_WINDOW_MS);
+    if (!day.ok) {
+      return rateLimitedJson(day.retryAfterSec, "ip_rate_limited");
+    }
   }
 
   const created = await createListingPeek({ email, phone, listingUrl });

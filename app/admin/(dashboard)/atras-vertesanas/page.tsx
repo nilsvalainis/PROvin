@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
 import {
@@ -32,20 +33,27 @@ async function sendComment(formData: FormData) {
   "use server";
   const id = String(formData.get("id") ?? "").trim();
   const comment = String(formData.get("comment") ?? "").trim();
-  if (!id || comment.length < 8) return;
-  if (!isSmtpConfigured()) return;
+  if (!id || comment.length < 8) {
+    redirect("/admin/atras-vertesanas?mail=invalid");
+  }
+  if (!isSmtpConfigured()) {
+    redirect("/admin/atras-vertesanas?mail=smtp");
+  }
 
   const entry = await getListingPeekById(id);
-  if (!entry?.email) return;
+  if (!entry?.email) {
+    redirect("/admin/atras-vertesanas?mail=missing");
+  }
 
   try {
     await sendListingPeekCustomerCommentEmail({ to: entry.email, comment });
     await updateListingPeekStatus(id, "completed");
   } catch (e) {
     console.error("[atras-vertesanas] send comment failed:", e);
-    return;
+    redirect("/admin/atras-vertesanas?mail=error");
   }
   revalidatePath("/admin/atras-vertesanas");
+  redirect("/admin/atras-vertesanas?mail=sent");
 }
 
 function formatWhen(iso: string): string {
@@ -57,9 +65,15 @@ function formatWhen(iso: string): string {
   });
 }
 
-export default async function AdminListingPeeksPage() {
+export default async function AdminListingPeeksPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ mail?: string }>;
+}) {
   const entries = await listListingPeeks(200);
   const smtpOk = isSmtpConfigured();
+  const sp = searchParams ? await searchParams : undefined;
+  const mail = sp?.mail;
 
   return (
     <div className="w-full max-w-none">
@@ -72,10 +86,27 @@ export default async function AdminListingPeeksPage() {
         </h1>
         <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
           Bezmaksas sludinājuma komentāri. Limits: 1 / 7 dienas / e-pasts vai telefona pēdējie 8
-          cipari; ~3 / diena / IP. Tikai skatījums uz sludinājumu — bez datubāžu analīzes. Atbildē
-          klientam e-pastā vienmēr ir PROVIN AUDITS CTA.
+          cipari; ~3 / diena / IP. Atbildi tikai ar «Nosūtīt e-pastu» zemāk — HTML ar PROVIN AUDITS
+          CTA. Gmail Reply = parasts teksts bez pogas.
         </p>
       </AdminDashboardHeaderWithMenu>
+
+      {mail === "sent" ? (
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          HTML e-pasts ar AUDITS CTA nosūtīts klientam.
+        </p>
+      ) : null}
+      {mail === "error" || mail === "smtp" || mail === "missing" || mail === "invalid" ? (
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          E-pastu neizdevās nosūtīt
+          {mail === "smtp"
+            ? " (SMTP nav konfigurēts)."
+            : mail === "invalid"
+              ? " (komentārs pārāk īss)."
+              : "."}{" "}
+          Pārbaudi SMTP un mēģini vēlreiz.
+        </p>
+      ) : null}
 
       {entries.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
