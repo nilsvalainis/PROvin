@@ -18,22 +18,22 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
 
   const core = (
     <div className="about-provin-section mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
-      {/* Hero-stila virsraksts: liels H1 tips, scan line, uppercase lead */}
-      <header className="text-center lg:max-w-[46rem] lg:text-left">
+      {/* Hero-stila virsraksts — centrēts */}
+      <header className="mx-auto max-w-[min(100%,46rem)] text-center">
         <h2
           className={`${tp5Styles.heroTitle} font-extrabold tracking-[-0.025em] text-white lg:text-[3rem] lg:leading-[1.1] xl:text-[3.75rem]`}
         >
           {renderProvinText(t("title"), homeDarkProvinWordmarkOptions)}
         </h2>
-        <div className="mx-auto mt-4 w-full max-w-[min(100%,28rem)] lg:mx-0">
+        <div className="mx-auto mt-4 w-full max-w-[min(100%,28rem)]">
           <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
         </div>
-        <p className="mx-auto mt-4 max-w-[min(100%,40rem)] text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45 sm:mt-5 sm:text-[12px] lg:mx-0">
+        <p className="mx-auto mt-4 max-w-[min(100%,40rem)] text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45 sm:mt-5 sm:text-[12px]">
           {t("pageLead")}
         </p>
       </header>
 
-      <div className="mt-6 flex justify-center sm:mt-7 lg:justify-start">
+      <div className="mt-6 flex justify-center sm:mt-7">
         <IrissSocialIcons
           tiktok={social.tiktok}
           youtube={social.youtube}
