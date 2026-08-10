@@ -1007,11 +1007,13 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 
 .turnaroundInfoPopup {
   position: absolute;
-  left: 50%;
+  right: 0;
+  left: auto;
   bottom: calc(100% + 0.45rem);
   z-index: 20;
-  width: min(17.5rem, calc(100vw - 2.5rem));
-  transform: translateX(-50%);
+  width: min(17.5rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  transform: none;
   padding: 0.7rem 0.8rem;
   border: 1px solid rgb(255 255 255 / 0.14);
   border-radius: 0.7rem;
@@ -1027,11 +1029,12 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 .turnaroundInfoPopup::after {
   content: "";
   position: absolute;
-  left: 50%;
+  right: 0.55rem;
+  left: auto;
   top: 100%;
   width: 0.55rem;
   height: 0.55rem;
-  transform: translateX(-50%) translateY(-45%) rotate(45deg);
+  transform: translateY(-45%) rotate(45deg);
   border-right: 1px solid rgb(255 255 255 / 0.14);
   border-bottom: 1px solid rgb(255 255 255 / 0.14);
   background: rgb(14 16 22 / 0.98);
