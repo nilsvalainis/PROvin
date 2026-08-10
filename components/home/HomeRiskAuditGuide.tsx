@@ -172,6 +172,9 @@ export function HomeRiskAuditGuide() {
     );
   }
 
+  const ghostCtaClass =
+    "inline-flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.05] px-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white shadow-[0_8px_24px_rgb(0_0_0/0.25)] transition hover:border-white/40 hover:bg-white/[0.09] active:scale-[0.98]";
+
   function GhostLink({
     href,
     onClick,
@@ -182,13 +185,23 @@ export function HomeRiskAuditGuide() {
     children: ReactNode;
   }) {
     return (
-      <Link
-        href={href}
-        onClick={onClick}
-        className="inline-flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.05] px-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-white shadow-[0_8px_24px_rgb(0_0_0/0.25)] transition hover:border-white/40 hover:bg-white/[0.09] active:scale-[0.98]"
-      >
+      <Link href={href} onClick={onClick} className={ghostCtaClass}>
         {children}
       </Link>
+    );
+  }
+
+  function GhostBtn({
+    onClick,
+    children,
+  }: {
+    onClick?: () => void;
+    children: ReactNode;
+  }) {
+    return (
+      <button type="button" onClick={onClick} className={ghostCtaClass}>
+        {children}
+      </button>
     );
   }
 
@@ -362,7 +375,7 @@ export function HomeRiskAuditGuide() {
                           <p className="mt-2 text-[14px] leading-relaxed text-white/60 sm:text-[15px]">
                             {t("step2.auditsBody")}
                           </p>
-                          <div className="mt-5 max-w-sm">
+                          <div className="mt-5 flex max-w-sm flex-col gap-3">
                             <LiquidLink
                               href={homeHeroCheckoutHref("audits")}
                               onClick={() => safeTrack("risk_guide_audits_clicked")}
@@ -370,14 +383,11 @@ export function HomeRiskAuditGuide() {
                               {t("step2.auditsCta")}
                               <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
                             </LiquidLink>
+                            <GhostBtn onClick={openFreeForm}>
+                              {t("step2.freeCta")}
+                              <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+                            </GhostBtn>
                           </div>
-                          <button
-                            type="button"
-                            onClick={openFreeForm}
-                            className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-medium text-white/55 underline decoration-white/25 underline-offset-4 transition hover:text-white hover:decoration-white/50"
-                          >
-                            {t("step2.freeCta")}
-                          </button>
                         </div>
 
                         {showFreeForm ? (
