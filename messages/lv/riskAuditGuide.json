@@ -1,8 +1,8 @@
 {
   "RiskAuditGuide": {
     "eyebrow": "Bezmaksas sludinājuma pārbaude",
-    "title": "Riska & Audita Ceļvedis",
-    "subtitle": "Īss konteksts — tad ieteiktais pakalpojums. Bezmaksas novērtējums pieejams kā otršķirīga opcija.",
+    "title": "Pārbaudi sludinājumu bez maksas",
+    "subtitle": "Iesūti saiti un saņem pirmo vērtējumu, vai šo auto vispār ir vērts skatīties.",
     "choose": "Izvēlēties",
     "recommended": "Rekomendēts",
     "progress": {
@@ -12,10 +12,10 @@
     },
     "step1": {
       "label": "1",
-      "question": "Kāds ir auto konteksts?",
-      "hint": "Palīdz mums saprast situāciju — tas nav produktu filtrs.",
-      "lvTitle": "Latvijā lietots",
-      "abroadTitle": "Nesen ievests"
+      "question": "Kur auto pamatā ticis lietots?",
+      "hint": "Vietējā tirgus un ievesto auto riski atšķiras — tas palīdz mums precīzāk izvērtēt sludinājumu.",
+      "lvTitle": "Latvijā",
+      "abroadTitle": "Ārvalstīs"
     },
     "step2": {
       "label": "2",

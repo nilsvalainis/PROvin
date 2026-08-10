@@ -98,7 +98,7 @@ export default async function AdminListingPeeksPage() {
                     ) : null}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-[var(--color-provin-muted)]">
-                    {e.location === "lv" ? "Latvijā lietots" : "Nesen ievests"}
+                    {e.location === "lv" ? "Latvijā" : "Ārvalstīs"}
                   </td>
                   <td className="max-w-[16rem] px-3 py-3">
                     <a

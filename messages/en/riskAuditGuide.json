@@ -1,8 +1,8 @@
 {
   "RiskAuditGuide": {
     "eyebrow": "Free listing check",
-    "title": "Risk & Audit Guide",
-    "subtitle": "A short context step — then the recommended service. Free review stays a secondary option.",
+    "title": "Check the listing for free",
+    "subtitle": "Send a link and get a first take on whether this car is even worth looking at.",
     "choose": "Choose",
     "recommended": "Recommended",
     "progress": {
@@ -12,10 +12,10 @@
     },
     "step1": {
       "label": "1",
-      "question": "What’s the car’s context?",
-      "hint": "Helps us understand the situation — not a product filter.",
-      "lvTitle": "Used in Latvia",
-      "abroadTitle": "Recently imported"
+      "question": "Where has the car mainly been used?",
+      "hint": "Local-market and imported-car risks differ — this helps us evaluate the listing more precisely.",
+      "lvTitle": "In Latvia",
+      "abroadTitle": "Abroad"
     },
     "step2": {
       "label": "2",
