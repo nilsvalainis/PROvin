@@ -24,6 +24,13 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 /** Avotu bloki ar „Komentāri” lauku (bez sludinājuma analīzes). */
 export type GeminiSourceCommentBlockKey = Exclude<SourceBlockKey, "listing_analysis">;
 
+/** Kurā laukā ierakstīt Gemini rezultātu (noklusējums: comments). */
+export type GeminiSourceCommentTargetField = "comments" | "serviceHistoryNotes";
+
+export function isGeminiSourceCommentTargetField(v: string): v is GeminiSourceCommentTargetField {
+  return v === "comments" || v === "serviceHistoryNotes";
+}
+
 export const GEMINI_SOURCE_COMMENT_BLOCK_KEYS: GeminiSourceCommentBlockKey[] = [
   "csdd",
   "autodna",
@@ -143,10 +150,15 @@ export function sourceBlockCommentsPlainForGemini(
   blockKey: GeminiSourceCommentBlockKey,
   sourceBlocks: WorkspaceSourceBlocks,
   citiAvotiSectionIndex?: number,
+  targetField: GeminiSourceCommentTargetField = "comments",
 ): string {
   if (blockKey === "citi_avoti" && citiAvotiSectionIndex != null) {
     const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
     return blocks.citi_avoti.sections[citiAvotiSectionIndex]?.comments ?? "";
+  }
+  if (blockKey === "auto_records" && targetField === "serviceHistoryNotes") {
+    const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+    return blocks.auto_records.serviceHistoryNotes ?? "";
   }
   return sourceBlockCommentsPlain(blockKey, sourceBlocks);
 }
@@ -180,6 +192,11 @@ export function buildPreviouslyGeneratedSourceCommentsContext(
     parts.push(`### ${SOURCE_BLOCK_LABELS[key]}\n${plain}`);
   }
 
+  const serviceNotes = adminRichHtmlToPlainText(blocks.auto_records.serviceHistoryNotes ?? "").trim();
+  if (serviceNotes && !(currentBlockKey === "auto_records")) {
+    parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa vēsture\n${serviceNotes}`);
+  }
+
   return parts.join("\n\n");
 }
 
@@ -188,8 +205,9 @@ export function applySourceBlockGeneratedComment(
   blockKey: GeminiSourceCommentBlockKey,
   block: WorkspaceSourceBlocks[GeminiSourceCommentBlockKey],
   html: string,
-  opts?: { citiAvotiSectionIndex?: number },
+  opts?: { citiAvotiSectionIndex?: number; targetField?: GeminiSourceCommentTargetField },
 ): WorkspaceSourceBlocks[GeminiSourceCommentBlockKey] {
+  const targetField = opts?.targetField ?? "comments";
   switch (blockKey) {
     case "csdd":
       return { ...block, comments: html };
@@ -204,6 +222,9 @@ export function applySourceBlockGeneratedComment(
       return { sections };
     }
     case "auto_records":
+      if (targetField === "serviceHistoryNotes") {
+        return { ...block, serviceHistoryNotes: html };
+      }
       return { ...block, comments: html };
     case "ltab":
       return { ...block, comments: html };

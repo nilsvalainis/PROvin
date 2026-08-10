@@ -471,6 +471,48 @@ DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay)
 - Every paragraph opens with **bold** topic hook; never start a line with "- ", "•", or "*".`;
 }
 
+/** Oficiālā dīlera „Servisa vēsture” — faktu saraksts PDF, ne pircēja eseja. */
+export function geminiAutoRecordsServiceHistorySystemPrompt(): string {
+  return `${PROVIN_EXPERT_SYSTEM_PROMPT}
+
+ACTIVE FIELD: OFICIĀLĀ DĪLERA DATI — Servisa vēsture (service/repair journal for client PDF).
+
+OUTPUT RULES:
+- Factual journal only — one service/repair event per line.
+- Preferred line format: DD.MM.YYYY | XXXXX km | work done / parts / notes
+- If odometer missing: DD.MM.YYYY | work done
+- Chronological or newest-first is fine; keep dates as in sources.
+- Extract from dealer/Auto Records/AutoDNA RAW/Outvin service narratives present in context — do NOT invent services.
+- No buyer essay, no **bold** hooks, no section titles, no bullet characters "- "/"•".
+- Latvian language. Compact.`;
+}
+
+export const GEMINI_LISTING_PHOTO_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
+  "LISTING PHOTO ANALYSIS (Fotogrāfiju analīze)",
+  `${GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
+
+Uzdevums: sagatavot komentāru laukam „Fotogrāfiju analīze” — eksperta novērojumi no sludinājuma / pievienoto foto konteksta un pasūtījuma datiem.
+
+Rezultāts:
+- Kas redzams (vai secināms) par stāvokli, bojājumiem, aprīkojumu, nobraukuma / vecuma saskaņu
+- Riski pircējam ar **bold** uz kritiskiem punktiem
+- Neizdomā detales, kas nav kontekstā vai foto metadatos
+- Katru rindkopu sāc ar **bold** tēmu; nekad nesāc rindu ar "- ", "•", vai "*"`,
+);
+
+export const GEMINI_LISTING_SALES_CONTEXT_SYSTEM = provinFieldAgentPrompt(
+  "LISTING SALES CONTEXT (Pārdošanas sludinājuma konteksts)",
+  `${GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
+
+Uzdevums: sagatavot profesionālu tekstu laukam „Pārdošanas sludinājuma konteksts” no iekopētā sludinājuma un pasūtījuma konteksta.
+
+Rezultāts:
+- Strukturēts, klientam saprotams pārdošanas konteksts (cena, apraksta signāli, trūkumi/riski)
+- **Bold** uz kritiskām summām un brīdinājumiem
+- Neizdomā faktus ārpus konteksta
+- Katru rindkopu sāc ar **bold** tēmu; nekad nesāc rindu ar "- ", "•", vai "*"`,
+);
+
 export const GEMINI_INCIDENTS_SUMMARY_SYSTEM = provinFieldAgentPrompt(
   "ACCIDENT HISTORY (Negadījumu vēstures kopsavilkums)",
   `${GEMINI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}

@@ -1,13 +1,17 @@
 import "server-only";
 
 import { geminiGenerateExpertText, resolveGeminiAdminModel } from "@/lib/admin-gemini";
-import { geminiSourceCommentSystemPrompt } from "@/lib/admin-gemini-prompts";
+import {
+  geminiAutoRecordsServiceHistorySystemPrompt,
+  geminiSourceCommentSystemPrompt,
+} from "@/lib/admin-gemini-prompts";
 import { appendGeminiOperatorNotesSection, geminiMaxLenForOperatorNotes } from "@/lib/admin-gemini-operator-notes";
 import { buildFullGeminiOrderContextText } from "@/lib/admin-gemini-order-context";
 import {
   buildPreviouslyGeneratedSourceCommentsContext,
   sourceBlockPlainTextForGemini,
   type GeminiSourceCommentBlockKey,
+  type GeminiSourceCommentTargetField,
 } from "@/lib/admin-source-comment-blocks";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
@@ -25,12 +29,14 @@ export type GeminiSourceCommentInput = {
   operatorNotes?: string | null;
   existingDraftPlain?: string | null;
   citiAvotiSectionIndex?: number;
+  targetField?: GeminiSourceCommentTargetField;
   modelTier?: GeminiAdminModelTier;
 };
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
 export async function generateSourceCommentWithGemini(input: GeminiSourceCommentInput): Promise<string> {
   const blockLabel = SOURCE_BLOCK_LABELS[input.blockKey];
+  const targetField = input.targetField ?? "comments";
   const focusDataText = sourceBlockPlainTextForGemini(
     input.blockKey,
     input.sourceBlocks,
@@ -70,8 +76,30 @@ ${previousComments}
     : `Pilno nobraukuma hronoloģiju, vidējos km/gadā un motorstundu profilu NEIEKĻAUJ šeit — to raksta tikai „NOBRAUKUMA VĒSTURES KOMENTĀRS”.
 `;
 
-  const userPrompt = appendGeminiOperatorNotesSection(
-    `Pasūtījuma ID: ${input.sessionId}
+  const isServiceHistory =
+    input.blockKey === "auto_records" && targetField === "serviceHistoryNotes";
+
+  const userPrompt = isServiceHistory
+    ? appendGeminiOperatorNotesSection(
+        `Pasūtījuma ID: ${input.sessionId}
+Lauks: OFICIĀLĀ DĪLERA DATI — Servisa vēsture (PDF)
+
+=== Pilns pasūtījuma konteksts ===
+${portfolioContext}
+
+=== Oficiālā dīlera / Auto Records dati ===
+${focusDataText}
+
+Sagatavo „Servisa vēsture” lauku klienta PDF — faktu saraksts no dīlera / AutoDNA / RAW / Outvin servisa ierakstiem.
+Formāts: katra rinda „DD.MM.YYYY | XXXXX km | darbi / komentārs” (ja km nav — izlaid km daļu).
+Tikai fakti no konteksta; neizdomā apkopes. Bez ievada, bez kopsavilkuma, bez bold virsrakstiem.`,
+        {
+          operatorNotes: input.operatorNotes,
+          existingDraftPlain: input.existingDraftPlain,
+        },
+      )
+    : appendGeminiOperatorNotesSection(
+        `Pasūtījuma ID: ${input.sessionId}
 Avota sadaļa (fokuss): ${blockLabel}
 
 === Pilns pasūtījuma konteksts (visi avoti — salīdzināšanai) ===
@@ -86,18 +114,20 @@ Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to
 Ja šis avots tikai apstiprina jau uzrakstīto: 1–3 īsas rindkopas max.
 ${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
 Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
-    {
-      operatorNotes: input.operatorNotes,
-      existingDraftPlain: input.existingDraftPlain,
-    },
-  );
+        {
+          operatorNotes: input.operatorNotes,
+          existingDraftPlain: input.existingDraftPlain,
+        },
+      );
 
   return geminiGenerateExpertText({
     model: resolveGeminiAdminModel(input.modelTier),
-    systemInstruction: geminiSourceCommentSystemPrompt(blockLabel),
+    systemInstruction: isServiceHistory
+      ? geminiAutoRecordsServiceHistorySystemPrompt()
+      : geminiSourceCommentSystemPrompt(blockLabel),
     userPrompt,
     temperature: 0.25,
-    maxLen: geminiMaxLenForOperatorNotes(input.operatorNotes, 3200),
+    maxLen: geminiMaxLenForOperatorNotes(input.operatorNotes, isServiceHistory ? 2400 : 3200),
   });
 }
 

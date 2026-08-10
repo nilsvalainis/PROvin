@@ -1,5 +1,5 @@
 /**
- * Admin: Gemini — avota bloka „Komentāri” ģenerēšana (tikai DEMO pasūtījumi).
+ * Admin: Gemini — sludinājuma analīzes lauku komentāri (fotogrāfijas / pārdošanas konteksts).
  */
 import { NextResponse } from "next/server";
 
@@ -7,23 +7,18 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
 import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import {
-  generateSourceCommentWithGemini,
-  isGeminiSourceCommentBlockKey,
-} from "@/lib/admin-gemini-source-comment";
+  generateListingFieldCommentWithGemini,
+  isGeminiListingCommentField,
+} from "@/lib/admin-gemini-listing-field";
 import { mergeSourceBlocksFromBody } from "@/lib/admin-gemini-api-body";
 import { parseGeminiModelTier } from "@/lib/gemini-admin-model-tier";
-import {
-  isGeminiSourceCommentTargetField,
-  sourceBlockCommentsPlainForGemini,
-} from "@/lib/admin-source-comment-blocks";
-import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 export const maxDuration = 90;
 export const runtime = "nodejs";
 
 type BodyShape = {
   sessionId?: unknown;
-  blockKey?: unknown;
+  field?: unknown;
   vin?: unknown;
   listingUrl?: unknown;
   customerName?: unknown;
@@ -31,10 +26,12 @@ type BodyShape = {
   sourceBlocks?: unknown;
   internalComment?: unknown;
   mileageComment?: unknown;
+  iriss?: unknown;
+  apskatesPlāns?: unknown;
+  tehniskoRiskuAnalize?: unknown;
+  cenasAtbilstiba?: unknown;
   operatorNotes?: unknown;
   existingDraftPlain?: unknown;
-  citiAvotiSectionIndex?: unknown;
-  targetField?: unknown;
   modelTier?: unknown;
 };
 
@@ -62,9 +59,9 @@ export async function POST(req: Request) {
 
   const b = body as BodyShape;
   const sessionId = str(b.sessionId).trim();
-  const blockKeyRaw = str(b.blockKey).trim();
-  if (!isGeminiSourceCommentBlockKey(blockKeyRaw)) {
-    return NextResponse.json({ error: "invalid_block_key" }, { status: 400 });
+  const fieldRaw = str(b.field).trim();
+  if (!isGeminiListingCommentField(fieldRaw)) {
+    return NextResponse.json({ error: "invalid_field" }, { status: 400 });
   }
 
   const guard = await assertGeminiAllowedForSession(sessionId);
@@ -75,46 +72,32 @@ export async function POST(req: Request) {
     );
   }
 
-  const sourceBlocks = mergeSourceBlocksFromBody(b);
-  const citiAvotiSectionIndex =
-    typeof b.citiAvotiSectionIndex === "number" && Number.isInteger(b.citiAvotiSectionIndex) ?
-      Math.max(0, b.citiAvotiSectionIndex)
-    : undefined;
-  const targetFieldRaw = str(b.targetField).trim();
-  const targetField = isGeminiSourceCommentTargetField(targetFieldRaw) ? targetFieldRaw : "comments";
-  if (targetField === "serviceHistoryNotes" && blockKeyRaw !== "auto_records") {
-    return NextResponse.json({ error: "invalid_target_field" }, { status: 400 });
-  }
-  const existingDraftPlain =
-    str(b.existingDraftPlain).trim() ||
-    adminRichHtmlToPlainText(
-      sourceBlockCommentsPlainForGemini(blockKeyRaw, sourceBlocks, citiAvotiSectionIndex, targetField),
-    ).trim();
-
   try {
-    const text = await generateSourceCommentWithGemini({
+    const text = await generateListingFieldCommentWithGemini({
       sessionId,
-      blockKey: blockKeyRaw,
-      citiAvotiSectionIndex,
-      targetField,
+      field: fieldRaw,
       vin: str(b.vin).trim() || null,
       listingUrl: str(b.listingUrl).trim() || null,
       customerName: str(b.customerName).trim() || null,
       notes: str(b.notes).trim() || null,
-      sourceBlocks,
+      sourceBlocks: mergeSourceBlocksFromBody(b),
       internalComment: str(b.internalComment),
       mileageComment: str(b.mileageComment),
+      irissSummary: str(b.iriss),
+      inspectionPlan: str(b.apskatesPlāns),
+      technicalRiskAnalysis: str(b.tehniskoRiskuAnalize),
+      priceFit: str(b.cenasAtbilstiba),
       operatorNotes: str(b.operatorNotes),
-      existingDraftPlain,
+      existingDraftPlain: str(b.existingDraftPlain).trim() || undefined,
       modelTier: parseGeminiModelTier(b.modelTier),
     });
     return NextResponse.json({ text });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
-    if (msg === "empty_source_data") {
-      return NextResponse.json({ error: "empty_source_data" }, { status: 400 });
+    if (msg === "missing_listing_paste" || msg === "missing_photo_context") {
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
-    console.error("[gemini/source-comment]", blockKeyRaw, targetField, msg);
+    console.error("[gemini/listing-field-comment]", fieldRaw, msg);
     return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
   }
 }

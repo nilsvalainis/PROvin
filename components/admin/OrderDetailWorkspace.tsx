@@ -131,6 +131,7 @@ import {
   citiAvotiSectionPlainTextExcludingComments,
   sourceBlockCommentsPlainForGemini,
   type GeminiSourceCommentBlockKey,
+  type GeminiSourceCommentTargetField,
   sourceBlockHasDataExcludingComments,
 } from "@/lib/admin-source-comment-blocks";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -675,9 +676,9 @@ export function OrderDetailWorkspace({
   const [geminiMileageCommentErr, setGeminiMileageCommentErr] = useState<string | null>(null);
   const [geminiSourcesComparisonBusy, setGeminiSourcesComparisonBusy] = useState(false);
   const [geminiSourcesComparisonErr, setGeminiSourcesComparisonErr] = useState<string | null>(null);
-  const [geminiSourceCommentBusy, setGeminiSourceCommentBusy] = useState<GeminiSourceCommentBlockKey | null>(null);
+  const [geminiSourceCommentBusy, setGeminiSourceCommentBusy] = useState<string | null>(null);
   const [geminiSourceCommentErr, setGeminiSourceCommentErr] = useState<{
-    key: GeminiSourceCommentBlockKey;
+    key: string;
     msg: string;
   } | null>(null);
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
@@ -1410,9 +1411,16 @@ export function OrderDetailWorkspace({
   );
 
   const runGeminiSourceComment = useCallback(
-    async (blockKey: GeminiSourceCommentBlockKey, operatorNotes = "", citiAvotiSectionIndex?: number, modelTier: GeminiAdminModelTier = "pro") => {
+    async (
+      blockKey: GeminiSourceCommentBlockKey,
+      operatorNotes = "",
+      citiAvotiSectionIndex?: number,
+      modelTier: GeminiAdminModelTier = "pro",
+      targetField: GeminiSourceCommentTargetField = "comments",
+    ) => {
+      const busyKey = targetField === "comments" ? blockKey : `${blockKey}:${targetField}`;
       if (!payload.geminiAllowed || geminiSourceCommentBusy) return;
-      setGeminiSourceCommentBusy(blockKey);
+      setGeminiSourceCommentBusy(busyKey);
       setGeminiSourceCommentErr(null);
       try {
         const cur = wsPersistRef.current;
@@ -1420,6 +1428,7 @@ export function OrderDetailWorkspace({
           blockKey,
           cur.sourceBlocks,
           citiAvotiSectionIndex,
+          targetField,
         );
         const res = await fetch("/api/admin/gemini/source-comment", {
           method: "POST",
@@ -1431,6 +1440,7 @@ export function OrderDetailWorkspace({
               existingDraftPlain: adminRichHtmlToPlainText(existingComments).trim(),
             }),
             blockKey,
+            targetField,
             ...(citiAvotiSectionIndex != null ? { citiAvotiSectionIndex } : {}),
             modelTier,
           }),
@@ -1438,7 +1448,7 @@ export function OrderDetailWorkspace({
         const { data, parseFailed } = await parseAdminGeminiResponse(res);
         if (!res.ok) {
           setGeminiSourceCommentErr({
-            key: blockKey,
+            key: busyKey,
             msg: geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās ģenerēt komentāru"),
           });
           return;
@@ -1448,11 +1458,12 @@ export function OrderDetailWorkspace({
           const prevBlock = cur.sourceBlocks[blockKey];
           const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
             citiAvotiSectionIndex,
+            targetField,
           });
           updateSourceBlock(blockKey, nextBlock);
         }
       } catch {
-        setGeminiSourceCommentErr({ key: blockKey, msg: "Gemini: neizdevās savienoties" });
+        setGeminiSourceCommentErr({ key: busyKey, msg: "Gemini: neizdevās savienoties" });
       } finally {
         setGeminiSourceCommentBusy(null);
       }
@@ -2217,7 +2228,12 @@ export function OrderDetailWorkspace({
   const canGeneratePdf = true;
 
   const geminiCommentSlot = useCallback(
-    (key: GeminiSourceCommentBlockKey, citiAvotiSectionIndex?: number): AdminGeminiSourceCommentSlot => {
+    (
+      key: GeminiSourceCommentBlockKey,
+      citiAvotiSectionIndex?: number,
+      targetField: GeminiSourceCommentTargetField = "comments",
+    ): AdminGeminiSourceCommentSlot => {
+      const busyKey = targetField === "comments" ? key : `${key}:${targetField}`;
       const hasSourceData =
         key === "citi_avoti" && citiAvotiSectionIndex != null ?
           citiAvotiSectionPlainTextExcludingComments(
@@ -2226,11 +2242,11 @@ export function OrderDetailWorkspace({
         : sourceBlockHasDataExcludingComments(key, blocksDisplaySafe);
       return {
         allowed: payload.geminiAllowed,
-        busy: geminiSourceCommentBusy === key,
-        error: geminiSourceCommentErr?.key === key ? geminiSourceCommentErr.msg : null,
+        busy: geminiSourceCommentBusy === busyKey,
+        error: geminiSourceCommentErr?.key === busyKey ? geminiSourceCommentErr.msg : null,
         hasSourceData,
         onGenerate: (operatorNotes, modelTier) =>
-          void runGeminiSourceComment(key, operatorNotes, citiAvotiSectionIndex, modelTier),
+          void runGeminiSourceComment(key, operatorNotes, citiAvotiSectionIndex, modelTier, targetField),
       };
     },
     [
@@ -3573,6 +3589,7 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               geminiComment={geminiCommentSlot("auto_records")}
+              geminiServiceHistory={geminiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
               photosPersistenceEnabled={orderDraftPersistenceEnabled}
               onAutoRecordsPhotoGroupsStructuralCommit={commitAutoRecordsPhotoGroupsStructural}
             />

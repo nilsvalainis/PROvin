@@ -13,6 +13,7 @@ import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnaly
 import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { AdminSourceCommentField } from "@/components/admin/AdminSourceCommentField";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import {
   emptyListingAnalysisBlock,
@@ -26,6 +27,7 @@ import { ADMIN_LISTING_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { geminiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
+import type { GeminiListingCommentField } from "@/lib/admin-gemini-listing-field";
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 
 const ta =
@@ -86,6 +88,11 @@ export function AdminListingAnalysisSourceBlock({
   const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
   const [sellerAnalyzing, setSellerAnalyzing] = useState(false);
   const [sellerAnalyzeErr, setSellerAnalyzeErr] = useState<string | null>(null);
+  const [listingFieldBusy, setListingFieldBusy] = useState<GeminiListingCommentField | null>(null);
+  const [listingFieldErr, setListingFieldErr] = useState<{
+    field: GeminiListingCommentField;
+    msg: string;
+  } | null>(null);
   const refPaste = useRef<HTMLTextAreaElement>(null);
 
   const bumpTa = useCallback((el: HTMLTextAreaElement | null) => {
@@ -104,6 +111,77 @@ export function AdminListingAnalysisSourceBlock({
     geminiAllowed &&
     Boolean(buildGeminiPayload) &&
     (v.extraSellerName.trim().length > 0 || v.listingPasteRaw.trim().length > 0);
+
+  const photoCount = (v.photoGroups ?? []).reduce((n, g) => n + (g.photos?.length ?? 0), 0);
+  const canRunPhotoGemini =
+    geminiAllowed && Boolean(buildGeminiPayload) && (v.listingPasteRaw.trim().length > 0 || photoCount > 0);
+  const canRunSalesContextGemini =
+    geminiAllowed && Boolean(buildGeminiPayload) && v.listingPasteRaw.trim().length > 0;
+
+  const runListingFieldGemini = useCallback(
+    async (
+      field: GeminiListingCommentField,
+      operatorNotes: string,
+      modelTier: GeminiAdminModelTier = "pro",
+    ) => {
+      if (!buildGeminiPayload || disabled || readOnly || listingFieldBusy) return;
+      if (field === "photoAnalysis" && !canRunPhotoGemini) return;
+      if (field === "listingSalesContext" && !canRunSalesContextGemini) return;
+      setListingFieldBusy(field);
+      setListingFieldErr(null);
+      try {
+        const base = buildGeminiPayload();
+        const existing =
+          field === "photoAnalysis"
+            ? adminRichHtmlToPlainText(v.photoAnalysis).trim()
+            : adminRichHtmlToPlainText(v.listingSalesContext).trim();
+        const res = await fetch("/api/admin/gemini/listing-field-comment", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...base,
+            field,
+            operatorNotes,
+            existingDraftPlain: existing,
+            modelTier,
+          }),
+        });
+        const { data, parseFailed } = await parseAdminGeminiResponse(res);
+        if (!res.ok) {
+          setListingFieldErr({
+            field,
+            msg: parseFailed
+              ? `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`
+              : formatAdminGeminiFetchError(data, res, "Gemini: neizdevās ģenerēt komentāru"),
+          });
+          return;
+        }
+        if (typeof data.text === "string" && data.text.trim()) {
+          const html = geminiExpertSourceCommentToRichHtml(data.text);
+          onChange(
+            field === "photoAnalysis"
+              ? { ...v, photoAnalysis: html }
+              : { ...v, listingSalesContext: html },
+          );
+        }
+      } catch {
+        setListingFieldErr({ field, msg: "Gemini: neizdevās savienoties" });
+      } finally {
+        setListingFieldBusy(null);
+      }
+    },
+    [
+      buildGeminiPayload,
+      canRunPhotoGemini,
+      canRunSalesContextGemini,
+      disabled,
+      listingFieldBusy,
+      onChange,
+      readOnly,
+      v,
+    ],
+  );
 
   const runSellerGeminiAnalyze = useCallback(
     async (operatorNotes: string, modelTier: GeminiAdminModelTier = "pro") => {
@@ -286,24 +364,33 @@ export function AdminListingAnalysisSourceBlock({
           title={L.photoAnalysis}
           compact={dense}
         >
-          <p
-            className={
-              dense
-                ? "mb-0.5 text-[9px] font-medium text-slate-400"
-                : "mb-0.5 text-[10px] font-medium text-slate-400"
-            }
-          >
-            {LISTING_ANALYSIS_COMMENT_LABEL}
-          </p>
           {readOnly ? (
-            <AdminRichCommentReadonly html={v.photoAnalysis} className={pri ? roBox(!!dense) : roDefault} />
+            <>
+              <p
+                className={
+                  dense
+                    ? "mb-0.5 text-[9px] font-medium text-slate-400"
+                    : "mb-0.5 text-[10px] font-medium text-slate-400"
+                }
+              >
+                {LISTING_ANALYSIS_COMMENT_LABEL}
+              </p>
+              <AdminRichCommentReadonly html={v.photoAnalysis} className={pri ? roBox(!!dense) : roDefault} />
+            </>
           ) : (
-            <AdminAiPolishRichCommentShell
+            <AdminSourceCommentField
               value={v.photoAnalysis}
               onChange={(next) => onChange({ ...v, photoAnalysis: next })}
               disabled={disabled}
               compact={pri && dense}
               aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+              gemini={{
+                allowed: geminiAllowed,
+                busy: listingFieldBusy === "photoAnalysis",
+                error: listingFieldErr?.field === "photoAnalysis" ? listingFieldErr.msg : null,
+                hasSourceData: canRunPhotoGemini,
+                onGenerate: (notes, tier) => void runListingFieldGemini("photoAnalysis", notes, tier),
+              }}
             />
           )}
           {sessionId && onListingPhotoGroupsStructuralCommit ? (
@@ -386,24 +473,38 @@ export function AdminListingAnalysisSourceBlock({
           title={L.listingSalesContext}
           compact={dense}
         >
-          <p
-            className={
-              dense
-                ? "mb-0.5 text-[9px] font-medium text-slate-400"
-                : "mb-0.5 text-[10px] font-medium text-slate-400"
-            }
-          >
-            {LISTING_ANALYSIS_COMMENT_LABEL}
-          </p>
           {readOnly ? (
-            <AdminRichCommentReadonly html={v.listingSalesContext} className={pri ? roBox(!!dense) : roDefault} />
+            <>
+              <p
+                className={
+                  dense
+                    ? "mb-0.5 text-[9px] font-medium text-slate-400"
+                    : "mb-0.5 text-[10px] font-medium text-slate-400"
+                }
+              >
+                {LISTING_ANALYSIS_COMMENT_LABEL}
+              </p>
+              <AdminRichCommentReadonly
+                html={v.listingSalesContext}
+                className={pri ? roBox(!!dense) : roDefault}
+              />
+            </>
           ) : (
-            <AdminAiPolishRichCommentShell
+            <AdminSourceCommentField
               value={v.listingSalesContext}
               onChange={(next) => onChange({ ...v, listingSalesContext: next })}
               disabled={disabled}
               compact={pri && dense}
               aria-label={`${L.listingSalesContext} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+              gemini={{
+                allowed: geminiAllowed,
+                busy: listingFieldBusy === "listingSalesContext",
+                error:
+                  listingFieldErr?.field === "listingSalesContext" ? listingFieldErr.msg : null,
+                hasSourceData: canRunSalesContextGemini,
+                onGenerate: (notes, tier) =>
+                  void runListingFieldGemini("listingSalesContext", notes, tier),
+              }}
             />
           )}
         </ListingAnalysisSubsectionHeading>
