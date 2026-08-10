@@ -132,14 +132,8 @@ export function HomeRiskAuditGuide() {
         aria-hidden
       />
 
-      <div className="relative mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-12 lg:px-8 lg:pb-16 lg:pt-14">
-        <div
-          className="pointer-events-none absolute inset-x-8 top-1/2 h-40 -translate-y-1/2 bg-[radial-gradient(ellipse_at_center,rgb(0_102_255/0.07),transparent_70%)] sm:inset-x-16"
-          aria-hidden
-        />
-
-        <div className="relative mx-auto w-full max-w-2xl">
-          <div className="overflow-hidden px-1 py-2 sm:px-2 sm:py-3">
+      <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-12 lg:px-8 lg:pb-16 lg:pt-14">
+        <div className="mx-auto w-full max-w-2xl">
             <div className="text-center">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7eb0ff]/90">
                 {t("eyebrow")}
@@ -301,7 +295,6 @@ export function HomeRiskAuditGuide() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
         </div>
       </div>
     </section>
