@@ -42,8 +42,6 @@ export type Tp5UiCopy = {
   turnaroundUrgencyCta: string;
   /** Aria / title for the turnaround info tip control. */
   turnaroundInfoAria: string;
-  /** Popup heading for urgent delivery. */
-  turnaroundInfoTitle: string;
   /** Body text inside the turnaround info popup (phone shown separately). */
   turnaroundInfoBody: string;
   /** Clickable phone link label in the tip. */
@@ -91,11 +89,10 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   sampleReportEnlarge: "Pietuvināt",
   sampleReportClose: "Aizvērt",
   sampleReportComingSoon: "Atskaites piemērs drīzumā",
-  turnaroundUrgencyCta: "Vajag ātrāk (1-2h)?",
+  turnaroundUrgencyCta: "Steidzami?",
   turnaroundInfoAria: "Vairāk par steidzamu izpildi",
-  turnaroundInfoTitle: "Vajag atskaiti steidzami?",
-  turnaroundInfoBody: "Pamata datus un vispārēju komentāru iespējams saņemt 1–2h laikā.",
-  turnaroundInfoPhoneLink: `📞 Zvanīt uzreiz: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
+  turnaroundInfoBody: "Pamata datus un vispārēju komentāru iespējams saņemt dažu stundu laikā.",
+  turnaroundInfoPhoneLink: `📞 Zvanīt: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
   dealerBrandsTrigger: "Atbalstītie ražotāji",
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsClose: "Aizvērt",
@@ -123,11 +120,10 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   sampleReportEnlarge: "Enlarge",
   sampleReportClose: "Close",
   sampleReportComingSoon: "Sample report coming soon",
-  turnaroundUrgencyCta: "Need it faster (1–2h)?",
+  turnaroundUrgencyCta: "Urgent?",
   turnaroundInfoAria: "More about urgent delivery",
-  turnaroundInfoTitle: "Need a report urgently?",
-  turnaroundInfoBody: "Basic data and a general comment can be provided within 1–2 hours.",
-  turnaroundInfoPhoneLink: `📞 Call now: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
+  turnaroundInfoBody: "Basic data and a general comment can be provided within a few hours.",
+  turnaroundInfoPhoneLink: `📞 Call: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
   dealerBrandsTrigger: "Supported manufacturers",
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsClose: "Close",

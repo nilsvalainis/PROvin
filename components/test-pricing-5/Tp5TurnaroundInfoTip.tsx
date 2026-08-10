@@ -10,10 +10,7 @@ import {
 type Props = {
   copy: Pick<
     Tp5UiCopy,
-    | "turnaroundInfoAria"
-    | "turnaroundInfoTitle"
-    | "turnaroundInfoBody"
-    | "turnaroundInfoPhoneLink"
+    "turnaroundInfoAria" | "turnaroundInfoBody" | "turnaroundInfoPhoneLink"
   >;
 };
 
@@ -64,7 +61,6 @@ export function Tp5TurnaroundInfoTip({ copy }: Props) {
       </button>
       {open ? (
         <span id={tipId} role="tooltip" className={styles.turnaroundInfoPopup}>
-          <span className={styles.turnaroundInfoPopupTitle}>{copy.turnaroundInfoTitle}</span>
           <span className={styles.turnaroundInfoPopupText}>{copy.turnaroundInfoBody}</span>
           <a
             href={`tel:${TP5_TURNAROUND_INFO_PHONE_TEL}`}
