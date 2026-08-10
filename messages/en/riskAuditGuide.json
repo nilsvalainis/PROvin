@@ -1,0 +1,68 @@
+{
+  "RiskAuditGuide": {
+    "eyebrow": "Before you order",
+    "title": "Risk & Audit Guide",
+    "subtitle": "Not sure how deep to check this car? Pick a level — or get a short look at the listing.",
+    "recommended": "Recommended",
+    "step1": {
+      "label": "1. Where is the car?",
+      "lvTitle": "In Latvia",
+      "lvHint": "SS.lv / Facebook / dealer",
+      "abroadTitle": "Abroad",
+      "abroadHint": "Mobile.de / AutoScout24 etc."
+    },
+    "step2": {
+      "label": "2. Listing link",
+      "hint": "Optional for paid orders. Required for the free short review.",
+      "placeholder": "https://…"
+    },
+    "step3": {
+      "label": "3. Choose a level",
+      "pickLocationFirst": "First choose where the car is."
+    },
+    "options": {
+      "free": {
+        "title": "Short listing review",
+        "price": "€0",
+        "body": "3–5 sentences by email in 24–48h. Not an audit and not a consultation.",
+        "needUrl": "To get the short review, paste a listing link.",
+        "cta": "Get short review"
+      },
+      "mini": {
+        "title": "PROVIN MINI",
+        "price": "€39.99",
+        "body": "Compact check; typically for cars used in Latvia.",
+        "cta": "Order MINI"
+      },
+      "audits": {
+        "title": "PROVIN AUDITS",
+        "price": "€99.99",
+        "body": "Full audit; typically for imports from abroad.",
+        "cta": "Order AUDITS"
+      }
+    },
+    "dealer": {
+      "prefix": "Need only official dealer history?",
+      "link": "Dealer data package"
+    },
+    "form": {
+      "boundary": "You get a 3–5 sentence review of what is visible in the listing within 24–48h. This is not a full audit.",
+      "listingLabel": "Listing link",
+      "emailLabel": "Email",
+      "submit": "Submit request",
+      "submitting": "Sending…"
+    },
+    "success": {
+      "title": "Request received.",
+      "body": "We’ll reply by email within 24–48h with a short look at the listing. If you already know you need a deeper check — order an audit now.",
+      "ctaMini": "Order MINI — €39.99",
+      "ctaAudits": "Order AUDITS — €99.99"
+    },
+    "errors": {
+      "listing": "Paste a valid link to a specific listing.",
+      "email": "Email address is not valid.",
+      "rateLimited": "A short review was already requested for this email in the last 7 days.",
+      "generic": "Could not submit. Please try again."
+    }
+  }
+}

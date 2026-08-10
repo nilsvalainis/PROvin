@@ -24,11 +24,13 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
   const rekiniActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
   const statistikaActive = Boolean(pathname?.startsWith("/admin/statistika"));
   const blogsActive = Boolean(pathname?.startsWith("/admin/blogs"));
+  const peeksActive = Boolean(pathname?.startsWith("/admin/atras-vertesanas"));
   const sakumsActive =
     !consultationsActive &&
     !rekiniActive &&
     !statistikaActive &&
     !blogsActive &&
+    !peeksActive &&
     (pathname === "/admin/dashboard" ||
       pathname === "/admin/dashboard/" ||
       Boolean(pathname?.startsWith("/admin/orders/")));
@@ -37,6 +39,9 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
     <nav className={horizontal ? "flex flex-wrap items-center gap-1" : "flex flex-col items-stretch gap-1"}>
       <Link href="/admin/dashboard" className={navItemClass(sakumsActive)}>
         Sākums
+      </Link>
+      <Link href="/admin/atras-vertesanas" className={navItemClass(peeksActive)}>
+        Ātrie vērtējumi
       </Link>
       <Link href="/admin/konsultacijas" className={navItemClass(consultationsActive)}>
         Konsultācijas

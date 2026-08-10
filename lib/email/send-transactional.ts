@@ -316,3 +316,41 @@ export async function sendProvinSelectConsultationLeadEmail(opts: {
     replyTo: opts.email,
   });
 }
+
+/** Admin: īss bezmaksas sludinājuma vērtējums no Riska & Audita Ceļveža. */
+export async function sendListingPeekLeadEmail(opts: {
+  adminTo: string;
+  email: string;
+  listingUrl: string;
+  location: "lv" | "abroad";
+  id: string;
+}): Promise<void> {
+  const locationLabel = opts.location === "lv" ? "Latvijā" : "Ārvalstīs";
+  const subject = "PROVIN — īss sludinājuma vērtējums";
+  const text = [
+    "Jauns īss sludinājuma vērtējuma pieprasījums (Riska & Audita Ceļvedis).",
+    "",
+    `ID: ${opts.id}`,
+    `E-pasts: ${opts.email}`,
+    `Vieta: ${locationLabel}`,
+    `Sludinājums: ${opts.listingUrl}`,
+    "",
+    "Atbilde klientam: 3–5 teikumi par to, kas redzams sludinājumā (nav audits / konsultācija).",
+  ].join("\n");
+  const html = `<p>Jauns <strong>īss sludinājuma vērtējums</strong> (Riska &amp; Audita Ceļvedis).</p>
+<table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
+<tr><td><strong>ID</strong></td><td>${escHtmlMail(opts.id)}</td></tr>
+<tr><td><strong>E-pasts</strong></td><td>${escHtmlMail(opts.email)}</td></tr>
+<tr><td><strong>Vieta</strong></td><td>${escHtmlMail(locationLabel)}</td></tr>
+<tr><td><strong>Sludinājums</strong></td><td><a href="${escHtmlMail(opts.listingUrl)}">${escHtmlMail(opts.listingUrl)}</a></td></tr>
+</table>
+<p style="color:#666;font-size:13px;">Atbilde: 3–5 teikumi par to, kas redzams sludinājumā. Nav audits un nav konsultācija.</p>`;
+
+  await sendSmtpMail({
+    to: opts.adminTo,
+    subject,
+    text,
+    html,
+    replyTo: opts.email,
+  });
+}
