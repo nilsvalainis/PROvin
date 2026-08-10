@@ -7,8 +7,8 @@
     "recommended": "Rekomendēts",
     "progress": {
       "aria": "Ceļveža soļi",
-      "step1": "Konteksts",
-      "step2": "Ieteikums"
+      "step1": "1. solis",
+      "step2": "2. solis"
     },
     "step1": {
       "label": "1",

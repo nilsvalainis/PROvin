@@ -7,8 +7,8 @@
     "recommended": "Recommended",
     "progress": {
       "aria": "Guide steps",
-      "step1": "Context",
-      "step2": "Recommendation"
+      "step1": "Step 1",
+      "step2": "Step 2"
     },
     "step1": {
       "label": "1",
