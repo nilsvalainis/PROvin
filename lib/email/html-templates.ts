@@ -122,7 +122,7 @@ export function listingPeekCustomerCommentHtml(opts: {
   const auditsHref = esc(opts.auditsUrl);
   const cta = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 10px;">
 <tr><td align="left" bgcolor="${BRAND}" style="border-radius:9999px;background-color:${BRAND};">
-<a href="${auditsHref}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:700;line-height:1.25;color:#ffffff !important;text-decoration:none;border-radius:9999px;">Pasūtīt PROVIN AUDITS →</a>
+<a href="${auditsHref}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:700;line-height:1.25;color:#ffffff !important;text-decoration:none;border-radius:9999px;">Pasūtīt</a>
 </td></tr>
 </table>
 <p style="margin:0 0 18px;font-size:12px;line-height:1.45;color:${MUTED};">Ja poga neatveras: <a href="${auditsHref}" style="color:${BRAND};text-decoration:underline;">${auditsHref}</a></p>`;
@@ -131,8 +131,7 @@ export function listingPeekCustomerCommentHtml(opts: {
 <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV · Bezmaksas komentārs</p>
 <p style="margin:0 0 18px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:${INK};">Īss skatījums uz tavu sludinājumu</p>
 ${bodyHtml}
-<p style="margin:8px 0 0;padding:16px 0 0;border-top:1px solid #ececec;font-size:13px;line-height:1.55;color:${MUTED};">Šis ir īss vizuālais komentārs par publisko sludinājumu — bez risku analīzes, konsultācijas un auto vēstures pārbaudes maksas datubāzēs.</p>
-<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Vajag pilnu skaidrību?</p>
+<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Noskaidro visu par savu topošo auto.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:${MUTED};">PROVIN AUDITS — visaptveroša auto vēstures un risku izpēte.</p>
 ${cta}
 <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:${INK};">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
