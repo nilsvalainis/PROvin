@@ -10,6 +10,7 @@ import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { isLikelyCsddPdfText, mergeCsddFieldsFillEmpty } from "@/lib/admin-copilot-csdd";
 import { runOrderCopilotGemini } from "@/lib/admin-copilot-gemini";
 import { appendCopilotFullPdfRaw } from "@/lib/admin-copilot-pdf-raw";
+import { seedCopilotBlocksFromPdfText } from "@/lib/admin-copilot-pdf-seed";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey, isCopilotSourceKey } from "@/lib/admin-copilot-types";
 import { detectSourcePdfIngestTarget } from "@/lib/admin-source-pdf-detect";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -231,7 +232,9 @@ export async function POST(req: Request) {
     let workingBlocks = sourceBlocks;
     const csddImportNotes: string[] = [];
     const rawDumpNotes: string[] = [];
+    const seedNotes: string[] = [];
     const preGeminiChanged = new Set<CopilotSourceKey>();
+    const seedActionsAll: CopilotAction[] = [];
 
     if (pdfs.length > 0) {
       for (const pdf of pdfs) {
@@ -240,19 +243,28 @@ export async function POST(req: Request) {
           detectSourcePdfIngestTarget(pdf.fileName, extract.text) ??
           (isLikelyCsddPdfText(extract.text) ? ("csdd" as const) : null);
 
-        let rawTarget: SourcePdfIngestTarget | null = detected;
-        if (rawTarget === "csdd" && !allowedSet.has("csdd")) rawTarget = null;
-        if (rawTarget && rawTarget !== "csdd" && !allowedSet.has(rawTarget)) rawTarget = null;
-        if (!rawTarget && allowedSet.has("citi_avoti")) rawTarget = "citi_avoti";
+        // RAW dump ALWAYS to the matching source (even if tables already filled / toggle off).
+        // Comment generation needs 100% PDF text in RAW, not only structured fields.
+        const rawTarget: SourcePdfIngestTarget = detected ?? "citi_avoti";
 
-        if (rawTarget && extract.text.trim()) {
+        if (extract.text.trim()) {
           const dumped = appendCopilotFullPdfRaw(workingBlocks, rawTarget, pdf.fileName, extract.text);
           workingBlocks = dumped.blocks;
           if (dumped.changed) {
             preGeminiChanged.add(rawTarget);
             rawDumpNotes.push(
-              `RAW „${pdf.fileName}” → ${rawTarget} (${dumped.chars.toLocaleString("lv-LV")} simb.).`,
+              `RAW 100% „${pdf.fileName}” → ${rawTarget} (${dumped.chars.toLocaleString("lv-LV")} simb.).`,
             );
+          }
+
+          if (rawTarget !== "csdd") {
+            const seeded = seedCopilotBlocksFromPdfText(workingBlocks, rawTarget, extract.text);
+            workingBlocks = seeded.blocks;
+            if (seeded.note) seedNotes.push(seeded.note);
+            for (const a of seeded.seedActions) {
+              if (allowedSet.has(a.source)) seedActionsAll.push(a);
+            }
+            if (seeded.seedActions.length > 0) preGeminiChanged.add(rawTarget);
           }
         }
 
@@ -296,7 +308,7 @@ export async function POST(req: Request) {
     const gemini = skipGenericCopilot
       ? {
           reply:
-            [...csddImportNotes, ...rawDumpNotes].join("\n") ||
+            [...csddImportNotes, ...rawDumpNotes, ...seedNotes].join("\n") ||
             "CSDD PDF apstrādāts — pārbaudi CSDD avota laukus un raw, ja kaut kas trūkst.",
           actions: [] as CopilotAction[],
           clarificationNeeded: "",
@@ -310,18 +322,30 @@ export async function POST(req: Request) {
         });
 
     const blocked = gemini.actions.filter((a) => !allowedSet.has(a.source));
-    const allowedActions = gemini.actions.filter((a) => allowedSet.has(a.source));
+    // Seeded local parse (countries from PDF text) always applies — not blocked by Gemini clarification.
+    const seedOnly = seedActionsAll.filter((a) => allowedSet.has(a.source));
+    const seedResult = applyCopilotActions(workingBlocks, seedOnly, {
+      onlyAuto: true,
+      clarificationNeeded: "",
+    });
+    workingBlocks = seedResult.sourceBlocks;
 
-    const autoResult = applyCopilotActions(workingBlocks, allowedActions, {
+    const geminiAllowed = gemini.actions.filter((a) => allowedSet.has(a.source));
+    const autoResult = applyCopilotActions(workingBlocks, geminiAllowed, {
       onlyAuto: true,
       clarificationNeeded: gemini.clarificationNeeded,
     });
     workingBlocks = autoResult.sourceBlocks;
 
-    const changedKeys = new Set<CopilotSourceKey>([...preGeminiChanged, ...autoResult.changedKeys]);
+    const changedKeys = new Set<CopilotSourceKey>([
+      ...preGeminiChanged,
+      ...seedResult.changedKeys,
+      ...autoResult.changedKeys,
+    ]);
 
     const needsConfirm = autoResult.skipped.filter((s) => s.reason === "needs_confirm").map((s) => s.action);
     const hardSkipped = [
+      ...seedResult.skipped.filter((s) => s.reason !== "needs_confirm"),
       ...autoResult.skipped.filter((s) => s.reason !== "needs_confirm"),
       ...blocked.map((action) => ({ action, reason: "source_disabled" as const })),
     ];
@@ -331,6 +355,9 @@ export async function POST(req: Request) {
     if (rawDumpNotes.length > 0 && !skipGenericCopilot) {
       replyParts.push(rawDumpNotes.join("\n"));
     }
+    if (seedNotes.length > 0 && !skipGenericCopilot) {
+      replyParts.push(seedNotes.join("\n"));
+    }
     if (csddImportNotes.length > 0 && !skipGenericCopilot) {
       replyParts.push(csddImportNotes.join("\n"));
     }
@@ -339,11 +366,12 @@ export async function POST(req: Request) {
       sessionId: sessionId.slice(0, 12),
       actions: gemini.actions.length,
       allowedSources,
-      auto: autoResult.applied.length,
+      auto: seedResult.applied.length + autoResult.applied.length,
       confirm: needsConfirm.length,
       pdfCount: pdfs.length,
       csddImports: csddImportNotes.length,
       rawDumps: rawDumpNotes.length,
+      seedActions: seedActionsAll.length,
     });
 
     const changedList = [...changedKeys];
@@ -352,9 +380,9 @@ export async function POST(req: Request) {
       ok: true,
       reply: replyParts.filter(Boolean).join("\n\n"),
       clarificationNeeded: gemini.clarificationNeeded,
-      actions: gemini.actions.map((a) => ({ ...a, label: describeAction(a) })),
+      actions: [...seedOnly, ...gemini.actions].map((a) => ({ ...a, label: describeAction(a) })),
       autoApplied: shouldPatch
-        ? autoResult.applied.map((a) => ({ ...a, label: describeAction(a) }))
+        ? [...seedResult.applied, ...autoResult.applied].map((a) => ({ ...a, label: describeAction(a) }))
         : [],
       needsConfirm: needsConfirm.map((a) => ({ ...a, label: describeAction(a) })),
       skipped: hardSkipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),

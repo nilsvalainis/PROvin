@@ -107,6 +107,23 @@ describe("applyCopilotActions", () => {
     expect(result.applied).toHaveLength(1);
     expect(result.sourceBlocks.autodna.geminiContextRaw).toContain("Type code: 8V");
   });
+  it("fills empty mileage country when same date+km already exists", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna.serviceHistory = [{ date: "01.06.2020", odometer: "120000", country: "" }];
+    const actions: CopilotAction[] = [
+      {
+        type: "upsert_mileage",
+        source: "autodna",
+        date: "01.06.2020",
+        odometer: "120000",
+        country: "Vācija",
+        confidence: "high",
+      },
+    ];
+    const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
+    const row = result.sourceBlocks.autodna.serviceHistory.find((r) => r.odometer === "120000");
+    expect(row?.country).toBe("Vācija");
+  });
 });
 
 describe("buildCopilotBlocksSummary", () => {

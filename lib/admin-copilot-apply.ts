@@ -186,10 +186,32 @@ export function enrichCopilotActionCountries(
   });
 }
 
+function incidentEventKey(r: LtabIncidentRow): string {
+  const loss = (normalizeLossAmountEurDisplay(r.lossAmount.trim()) || r.lossAmount.trim())
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+  return `${formatAutoRecordsDateForOutput(r.csngDate.trim()) || r.csngDate.trim()}|${loss}`;
+}
+
+function mileageEventKey(r: AutoRecordsServiceRow): string {
+  const odo = normalizeAutoRecordsOdometer(r.odometer.trim()) || r.odometer.replace(/\D/g, "");
+  return `${formatAutoRecordsDateForOutput(r.date.trim()) || r.date.trim()}|${odo}`;
+}
+
 function mergeIncidentRows(existing: LtabIncidentRow[], incoming: LtabIncidentRow): LtabIncidentRow[] {
   const withData = existing.filter(ltabRowHasData);
-  const key = incidentKey(incoming);
-  if (withData.some((r) => incidentKey(r) === key)) return existing.length ? existing : [incoming];
+  const eventKey = incidentEventKey(incoming);
+  const sameIdx = withData.findIndex((r) => incidentEventKey(r) === eventKey);
+  if (sameIdx >= 0) {
+    const prev = withData[sameIdx]!;
+    if (!prev.incidentNo.trim() && incoming.incidentNo.trim()) {
+      const next = [...withData];
+      next[sameIdx] = { ...prev, incidentNo: incoming.incidentNo };
+      return next;
+    }
+    if (incidentKey(prev) === incidentKey(incoming)) return existing.length ? existing : [incoming];
+    return existing.length ? existing : [incoming];
+  }
   const emptyIdx = existing.findIndex((r) => !ltabRowHasData(r));
   if (emptyIdx >= 0) {
     const next = [...existing];
@@ -206,8 +228,18 @@ function mergeMileageRows(
   const withData = existing.filter(
     (r) => autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0"),
   );
-  const key = mileageKey(incoming);
-  if (withData.some((r) => mileageKey(r) === key)) {
+  const eventKey = mileageEventKey(incoming);
+  const sameIdx = withData.findIndex((r) => mileageEventKey(r) === eventKey);
+  if (sameIdx >= 0) {
+    const prev = withData[sameIdx]!;
+    if (!prev.country.trim() && incoming.country.trim()) {
+      const next = [...withData];
+      next[sameIdx] = { ...prev, country: incoming.country };
+      return sortAutoRecordsDescending(next);
+    }
+    if (mileageKey(prev) === mileageKey(incoming)) {
+      return sortAutoRecordsDescending(withData.length ? withData : [incoming]);
+    }
     return sortAutoRecordsDescending(withData.length ? withData : [incoming]);
   }
   const emptyIdx = existing.findIndex(
