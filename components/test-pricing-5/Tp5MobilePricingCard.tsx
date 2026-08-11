@@ -221,11 +221,15 @@ export function Tp5MobilePricingCard({
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           {isDealer && activeService.features[0] ? (
-            <DealerFeatureHighlight
-              feature={activeService.features[0]}
-              brands={activeService.brands ?? []}
-              uiCopy={uiCopy}
-            />
+            <div className={styles.dealerUnifiedPanel}>
+              <DealerFeatureHighlight
+                feature={activeService.features[0]}
+                brands={activeService.brands ?? []}
+                uiCopy={uiCopy}
+              />
+              <hr className={styles.dealerUnifiedDivider} aria-hidden />
+              <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
+            </div>
           ) : (
             <ul className={styles.featureList}>
               {activeService.features.map((feature) => (
@@ -234,8 +238,6 @@ export function Tp5MobilePricingCard({
             </ul>
           )}
         </div>
-
-        {isDealer ? <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p> : null}
 
         <div
           className={styles.inlineFields}

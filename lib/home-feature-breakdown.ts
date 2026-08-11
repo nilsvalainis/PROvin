@@ -31,6 +31,8 @@ export type HomeFeatureBreakdownPackage = {
   buttonText: string;
   /** Optional PDF sample under the CTA. */
   sampleReportHref?: string;
+  /** Optional highlight badge (e.g. „Populārākā izvēle”). */
+  badge?: string;
 };
 
 const MINI_LV: HomeFeatureBreakdownPackage = {
@@ -71,6 +73,7 @@ const MINI_LV: HomeFeatureBreakdownPackage = {
 const AUDITS_LV: HomeFeatureBreakdownPackage = {
   id: "audits",
   title: "PROVIN AUDITS",
+  badge: "Populārākā izvēle",
   buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
   goal:
     "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI un starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un izsoļu foto arhīvus, sniedzot padziļinātu vēstures, nobraukuma un risku analīzi.",
@@ -209,6 +212,7 @@ const MINI_EN: HomeFeatureBreakdownPackage = {
 const AUDITS_EN: HomeFeatureBreakdownPackage = {
   id: "audits",
   title: "PROVIN AUDIT",
+  badge: "Most popular choice",
   buttonText: "ORDER PROVIN AUDIT — €99.99",
   goal:
     "Maximum confidence and a complete investigation of cars imported from abroad. Combines PROVIN MINI with international paid database reports, official dealer system data and auction photo archives, delivering in-depth history, mileage and risk analysis.",

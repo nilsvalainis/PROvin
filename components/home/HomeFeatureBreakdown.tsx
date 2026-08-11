@@ -178,9 +178,12 @@ export function HomeFeatureBreakdown({
                     href={`#${catalogPackageAnchorId(pkg.id)}`}
                     aria-current={active ? "true" : undefined}
                     data-active={active ? "true" : undefined}
-                    className={`${tp5Styles.tierTabBtn} -mb-px px-2`}
+                    className={`${tp5Styles.tierTabBtn}${pkg.badge ? ` ${tp5Styles.tierTabBtnWithBadge}` : ""} -mb-px px-2`}
                     onClick={() => setActiveId(pkg.id)}
                   >
+                    {pkg.badge ? (
+                      <span className={tp5Styles.catalogPopularBadge}>{pkg.badge}</span>
+                    ) : null}
                     <span
                       className={`${tp5Styles.tierTabLabel} ${tp5Styles.tierTabLabelCompact} ${
                         active ? tp5Styles.tierTabLabelActive : tp5Styles.tierTabLabelInactive
@@ -208,6 +211,9 @@ export function HomeFeatureBreakdown({
                 <div className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22.5rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:gap-12">
                   <div className="min-w-0">
                     <header className="min-w-0">
+                      {pkg.badge ? (
+                        <p className={tp5Styles.catalogPopularBadgeHeader}>{pkg.badge}</p>
+                      ) : null}
                       <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                         {renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}
                       </h3>
