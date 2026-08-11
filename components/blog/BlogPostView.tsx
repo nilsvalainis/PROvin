@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { BlogComments } from "@/components/blog/BlogComments";
 import { BlogPostBody } from "@/components/blog/BlogPostBody";
@@ -6,6 +7,7 @@ import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { Link } from "@/i18n/navigation";
 import type { BlogPost } from "@/lib/blog/types";
 import { resolveBlogLocale } from "@/lib/blog/posts";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 
 type Props = {
   post: BlogPost;
@@ -15,9 +17,35 @@ type Props = {
 export async function BlogPostView({ post, locale }: Props) {
   const t = await getTranslations("Blogs");
   const { content, usingFallback } = resolveBlogLocale(post, locale);
+  const base = getPublicSiteOrigin().replace(/\/$/, "");
+  const cover = post.coverImage;
+  const articleLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: content.title,
+    description: content.socialExcerpt ?? content.excerpt,
+    datePublished: `${post.publishedAt}T12:00:00.000Z`,
+    inLanguage: locale === "en" ? "en" : "lv",
+    mainEntityOfPage: `${base}/${locale}/blogs/${post.slug}`,
+    keywords: post.tags.join(", "),
+    ...(cover
+      ? {
+          image: [`${base}${cover.src}`],
+        }
+      : {}),
+    publisher: {
+      "@type": "Organization",
+      name: "PROVIN.LV",
+      url: base,
+    },
+  };
 
   return (
     <article className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+      />
       <BlogViewTracker slug={post.slug} />
       <div className="demo-design-dir__shell relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
         <p className="mx-auto max-w-[min(42.5rem,calc(100vw-2rem))]">
@@ -43,6 +71,25 @@ export async function BlogPostView({ post, locale }: Props) {
           </div>
           {usingFallback ? <p className="mt-4 text-sm text-white/45">{t("lvOnlyNote")}</p> : null}
         </header>
+
+        {cover ? (
+          <figure className="mx-auto mt-8 max-w-[min(42.5rem,calc(100vw-2rem))] overflow-hidden rounded-sm border border-white/[0.08] bg-white/[0.03] sm:mt-10">
+            <Image
+              src={cover.src}
+              alt={cover.alt}
+              width={cover.width}
+              height={cover.height}
+              className="h-auto w-full object-cover"
+              sizes="(max-width: 680px) 100vw, 42.5rem"
+              priority
+            />
+            {cover.caption ? (
+              <figcaption className="border-t border-white/[0.06] px-3 py-2.5 text-left text-[0.75rem] leading-snug text-white/55 sm:px-4 sm:text-[0.8125rem]">
+                {cover.caption}
+              </figcaption>
+            ) : null}
+          </figure>
+        ) : null}
 
         <div className="mt-10 sm:mt-12">
           <BlogPostBody blocks={content.body} />

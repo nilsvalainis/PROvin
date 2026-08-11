@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
 import { postMobileDeScam48000 } from "@/lib/blog/posts/mobile-de-scam-48000";
-import type { BlogBlock, BlogPost, BlogPostLocale } from "@/lib/blog/types";
+import type { BlogBlock, BlogImage, BlogPost, BlogPostLocale } from "@/lib/blog/types";
 
 const RELATIVE_DIR = ".data/blog-posts";
 const BLOB_PATHNAME = "blog-posts/index.json";
@@ -57,7 +57,23 @@ function isBlogBlock(raw: unknown): raw is BlogBlock {
       )
     );
   }
+  if (b.type === "image") {
+    return typeof b.src === "string" && b.src.trim().length > 0 && typeof b.alt === "string";
+  }
   return false;
+}
+
+function normalizeCoverImage(raw: unknown): BlogImage | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const src = typeof o.src === "string" ? o.src.trim() : "";
+  const alt = typeof o.alt === "string" ? o.alt.trim() : "";
+  if (!src || !alt) return undefined;
+  const width = typeof o.width === "number" && o.width > 0 ? o.width : 1200;
+  const height = typeof o.height === "number" && o.height > 0 ? o.height : 630;
+  const caption =
+    typeof o.caption === "string" && o.caption.trim() ? o.caption.trim() : undefined;
+  return { src, alt, width, height, ...(caption ? { caption } : {}) };
 }
 
 function normalizeLocale(raw: unknown): BlogPostLocale | null {
@@ -66,7 +82,20 @@ function normalizeLocale(raw: unknown): BlogPostLocale | null {
   const title = typeof o.title === "string" ? o.title.trim() : "";
   const excerpt = typeof o.excerpt === "string" ? o.excerpt.trim() : "";
   if (!title) return null;
-  const body = Array.isArray(o.body) ? o.body.filter(isBlogBlock) : [];
+  const bodyRaw = Array.isArray(o.body) ? o.body.filter(isBlogBlock) : [];
+  const body = bodyRaw.map((block): BlogBlock => {
+    if (block.type !== "image") return block;
+    return {
+      type: "image",
+      src: block.src.trim(),
+      alt: block.alt.trim() || "Attēls",
+      ...(typeof block.width === "number" && block.width > 0 ? { width: block.width } : {}),
+      ...(typeof block.height === "number" && block.height > 0 ? { height: block.height } : {}),
+      ...(typeof block.caption === "string" && block.caption.trim()
+        ? { caption: block.caption.trim() }
+        : {}),
+    };
+  });
   const socialExcerpt =
     typeof o.socialExcerpt === "string" && o.socialExcerpt.trim() ? o.socialExcerpt.trim() : undefined;
   return { title, excerpt, body, ...(socialExcerpt ? { socialExcerpt } : {}) };
@@ -88,7 +117,16 @@ function normalizePost(raw: unknown): BlogPost | null {
     ? o.tags.filter((t): t is string => typeof t === "string" && t.trim().length > 0).map((t) => t.trim())
     : [];
   const en = normalizeLocale(o.en) ?? undefined;
-  return { slug, publishedAt, category, tags, lv, ...(en ? { en } : {}) };
+  const coverImage = normalizeCoverImage(o.coverImage);
+  return {
+    slug,
+    publishedAt,
+    category,
+    tags,
+    lv,
+    ...(en ? { en } : {}),
+    ...(coverImage ? { coverImage } : {}),
+  };
 }
 
 function parseDoc(raw: string): PostsIndexDoc {
@@ -167,23 +205,71 @@ function seedDoc(): PostsIndexDoc {
   };
 }
 
+/**
+ * Ja Blob/FS ieraksts ir vecāks par seed (bez cover),
+ * ielīmē SEO cover no seed bez visa body pārrakstīšanas.
+ */
+function mergeSeedSeoAssets(doc: PostsIndexDoc): { doc: PostsIndexDoc; changed: boolean } {
+  const seed = postMobileDeScam48000;
+  const idx = doc.posts.findIndex((p) => p.slug === seed.slug);
+  if (idx < 0 || !seed.coverImage) return { doc, changed: false };
+
+  const current = doc.posts[idx]!;
+  let changed = false;
+  let next = current;
+
+  if (!current.coverImage || current.coverImage.src !== seed.coverImage.src) {
+    next = { ...next, coverImage: seed.coverImage };
+    changed = true;
+  }
+
+  const missingTags = seed.tags.filter((t) => !next.tags.includes(t));
+  if (missingTags.length > 0) {
+    next = { ...next, tags: [...next.tags, ...missingTags] };
+    changed = true;
+  }
+
+  if (!changed) return { doc, changed: false };
+  const posts = doc.posts.slice();
+  posts[idx] = next;
+  return {
+    doc: { ...doc, posts, updatedAt: new Date().toISOString() },
+    changed: true,
+  };
+}
+
 async function readDoc(): Promise<PostsIndexDoc> {
   const token = blobToken();
+  let doc: PostsIndexDoc | null = null;
   if (token) {
     const fromBlob = await readFromBlob(token);
-    if (fromBlob && fromBlob.posts.length > 0) return fromBlob;
+    if (fromBlob && fromBlob.posts.length > 0) doc = fromBlob;
   }
-  const fromFs = await readFromFilesystem();
-  if (fromFs && fromFs.posts.length > 0) return fromFs;
+  if (!doc) {
+    const fromFs = await readFromFilesystem();
+    if (fromFs && fromFs.posts.length > 0) doc = fromFs;
+  }
 
-  /* Pirmo reizi — iesējam esošo static ierakstu un saglabājam. */
-  const seeded = seedDoc();
-  try {
-    await writeDoc(seeded);
-  } catch {
-    /* ja rakstīšana neizdodas, tomēr atgriežam seed lasīšanai */
+  if (!doc || doc.posts.length === 0) {
+    const seeded = seedDoc();
+    try {
+      await writeDoc(seeded);
+    } catch {
+      /* ja rakstīšana neizdodas, tomēr atgriežam seed lasīšanai */
+    }
+    return seeded;
   }
-  return seeded;
+
+  const merged = mergeSeedSeoAssets(doc);
+  if (merged.changed) {
+    try {
+      await writeDoc(merged.doc);
+    } catch {
+      /* ignore persist failure — still serve merged in-memory */
+    }
+    return merged.doc;
+  }
+  return doc;
 }
 
 export async function listStoredBlogPosts(): Promise<BlogPost[]> {

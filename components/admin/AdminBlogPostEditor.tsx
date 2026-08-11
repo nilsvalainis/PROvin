@@ -41,7 +41,16 @@ export function AdminBlogPostEditor({ initialPost, initialComments }: Props) {
     const blank: BlogBlock =
       type === "stats"
         ? { type: "stats", rows: [{ label: "", value: "" }] }
-        : { type, text: "" };
+        : type === "image"
+          ? {
+              type: "image",
+              src: "/blog/auto-vestures-parbaude.jpg",
+              alt: "Auto vēstures pārbaude",
+              width: 870,
+              height: 1024,
+              caption: "",
+            }
+          : { type, text: "" };
     setBlocks([...post.lv.body, blank]);
   }
 
@@ -190,6 +199,67 @@ export function AdminBlogPostEditor({ initialPost, initialComments }: Props) {
             }
           />
         </label>
+        <label className={`${labelClass} sm:col-span-2`}>
+          Cover attēls (src) — SEO / Open Graph
+          <input
+            className={fieldClass}
+            placeholder="/blog/auto-vestures-parbaude.jpg"
+            value={post.coverImage?.src ?? ""}
+            onChange={(e) => {
+              const src = e.target.value.trim();
+              setPost((p) => ({
+                ...p,
+                coverImage: src
+                  ? {
+                      src,
+                      alt: p.coverImage?.alt ?? "Auto vēstures pārbaude",
+                      width: p.coverImage?.width ?? 870,
+                      height: p.coverImage?.height ?? 1024,
+                      caption: p.coverImage?.caption,
+                    }
+                  : undefined,
+              }));
+            }}
+          />
+        </label>
+        {post.coverImage ? (
+          <>
+            <label className={`${labelClass} sm:col-span-2`}>
+              Cover alt (SEO)
+              <input
+                className={fieldClass}
+                value={post.coverImage.alt}
+                onChange={(e) =>
+                  setPost((p) =>
+                    p.coverImage
+                      ? { ...p, coverImage: { ...p.coverImage, alt: e.target.value } }
+                      : p,
+                  )
+                }
+              />
+            </label>
+            <label className={`${labelClass} sm:col-span-2`}>
+              Cover paraksts
+              <input
+                className={fieldClass}
+                value={post.coverImage.caption ?? ""}
+                onChange={(e) =>
+                  setPost((p) =>
+                    p.coverImage
+                      ? {
+                          ...p,
+                          coverImage: {
+                            ...p.coverImage,
+                            caption: e.target.value.trim() || undefined,
+                          },
+                        }
+                      : p,
+                  )
+                }
+              />
+            </label>
+          </>
+        ) : null}
       </div>
 
       <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
@@ -225,16 +295,16 @@ export function AdminBlogPostEditor({ initialPost, initialComments }: Props) {
               Teksta bloki
             </h3>
             <div className="flex flex-wrap gap-1.5">
-              {(["p", "h2", "callout", "stats"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => addBlock(type)}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-slate-50"
-                >
-                  + {type}
-                </button>
-              ))}
+            {(["p", "h2", "callout", "stats", "image"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => addBlock(type)}
+                className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-slate-50"
+              >
+                + {type}
+              </button>
+            ))}
             </div>
           </div>
 
@@ -295,6 +365,32 @@ export function AdminBlogPostEditor({ initialPost, initialComments }: Props) {
                     >
                       + rinda
                     </button>
+                  </div>
+                ) : block.type === "image" ? (
+                  <div className="space-y-2">
+                    <input
+                      className={fieldClass}
+                      placeholder="src (/blog/...)"
+                      value={block.src}
+                      onChange={(e) => updateBlock(index, { ...block, src: e.target.value })}
+                    />
+                    <input
+                      className={fieldClass}
+                      placeholder="alt (SEO)"
+                      value={block.alt}
+                      onChange={(e) => updateBlock(index, { ...block, alt: e.target.value })}
+                    />
+                    <input
+                      className={fieldClass}
+                      placeholder="paraksts"
+                      value={block.caption ?? ""}
+                      onChange={(e) =>
+                        updateBlock(index, {
+                          ...block,
+                          caption: e.target.value.trim() || undefined,
+                        })
+                      }
+                    />
                   </div>
                 ) : (
                   <textarea

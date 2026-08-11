@@ -21,18 +21,37 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { content } = resolveBlogLocale(post, locale);
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const description = content.socialExcerpt ?? content.excerpt;
+  const url = `${base}/${locale}/blogs/${post.slug}`;
+  const ogImages = post.coverImage
+    ? [
+        {
+          url: `${base}${post.coverImage.src}`,
+          width: post.coverImage.width,
+          height: post.coverImage.height,
+          alt: post.coverImage.alt,
+        },
+      ]
+    : undefined;
   return {
     title: content.title,
     description,
+    keywords: [...post.tags, "auto vēstures pārbaude", "PROVIN"],
     alternates: {
-      canonical: `${base}/${locale}/blogs/${post.slug}`,
+      canonical: url,
     },
     openGraph: {
       title: content.title,
       description,
       type: "article",
       publishedTime: `${post.publishedAt}T12:00:00.000Z`,
-      url: `${base}/${locale}/blogs/${post.slug}`,
+      url,
+      ...(ogImages ? { images: ogImages } : {}),
+    },
+    twitter: {
+      card: ogImages ? "summary_large_image" : "summary",
+      title: content.title,
+      description,
+      ...(ogImages ? { images: [ogImages[0]!.url] } : {}),
     },
   };
 }

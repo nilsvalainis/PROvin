@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { BlogBlock } from "@/lib/blog/types";
 
 export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
@@ -42,6 +43,28 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
                 </div>
               ))}
             </dl>
+          );
+        }
+        if (block.type === "image") {
+          const w = block.width ?? 870;
+          const h = block.height ?? 1024;
+          return (
+            <figure key={key} className="my-1 overflow-hidden rounded-sm border border-white/[0.08] bg-white/[0.03]">
+              <Image
+                src={block.src}
+                alt={block.alt}
+                width={w}
+                height={h}
+                className="h-auto w-full object-cover"
+                sizes="(max-width: 680px) 100vw, 42.5rem"
+                priority={i < 2}
+              />
+              {block.caption ? (
+                <figcaption className="border-t border-white/[0.06] px-3 py-2.5 text-[0.75rem] leading-snug text-white/55 sm:px-4 sm:text-[0.8125rem]">
+                  {block.caption}
+                </figcaption>
+              ) : null}
+            </figure>
           );
         }
         return (

@@ -1,8 +1,24 @@
+export type BlogImage = {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  caption?: string;
+};
+
 export type BlogBlock =
   | { type: "p"; text: string }
   | { type: "h2"; text: string }
   | { type: "callout"; text: string }
-  | { type: "stats"; rows: { label: string; value: string }[] };
+  | { type: "stats"; rows: { label: string; value: string }[] }
+  | {
+      type: "image";
+      src: string;
+      alt: string;
+      width?: number;
+      height?: number;
+      caption?: string;
+    };
 
 export type BlogPostLocale = {
   title: string;
@@ -18,6 +34,8 @@ export type BlogPost = {
   publishedAt: string;
   category: string;
   tags: string[];
+  /** Cover / Open Graph — SEO un saraksta thumbnail. */
+  coverImage?: BlogImage;
   lv: BlogPostLocale;
   /** Ja nav — rādām LV ar atzīmi. */
   en?: BlogPostLocale;

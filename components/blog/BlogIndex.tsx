@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { getIrissSocialUrls, IrissSocialIcons } from "@/components/IrissSocialIcons";
@@ -54,6 +55,21 @@ export async function BlogIndex({ locale }: Props) {
                       {content.title}
                     </Link>
                   </h2>
+                  {post.coverImage ? (
+                    <Link
+                      href={blogPostHref(post.slug)}
+                      className="mt-4 block overflow-hidden rounded-sm border border-white/[0.08] no-underline"
+                    >
+                      <Image
+                        src={post.coverImage.src}
+                        alt={post.coverImage.alt}
+                        width={post.coverImage.width}
+                        height={post.coverImage.height}
+                        className="h-auto max-h-64 w-full object-cover object-top sm:max-h-72"
+                        sizes="(max-width: 680px) 100vw, 42.5rem"
+                      />
+                    </Link>
+                  ) : null}
                   <p className="mt-3 text-[0.95rem] leading-relaxed text-[rgb(200_205_215/0.78)]">
                     {content.excerpt}
                   </p>
