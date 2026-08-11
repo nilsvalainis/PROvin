@@ -1,36 +1,11 @@
 import type { BlogPost } from "@/lib/blog/types";
 
-/** SEO cover / in-article image: filename targets “auto vēstures pārbaude”. */
-export const BLOG_IMG_AUTO_VESTURES_PARBAUDE = {
-  src: "/blog/auto-vestures-parbaude.jpg",
-  width: 870,
-  height: 1024,
-  alt: "Auto vēstures pārbaude — sludinājuma piemērs ar nobraukumu, jaudu, degvielu un pirmo reģistrāciju",
-  caption:
-    "Auto vēstures pārbaude: pirms pirkuma salīdzini sludinājuma nobraukumu un pirmo reģistrāciju ar oficiālajiem ierakstiem.",
-} as const;
-
 /** Krāpšanas shēmas mobile.de — pirmais IRISS bloga ieraksts. */
 export const postMobileDeScam48000: BlogPost = {
   slug: "krapsanas-shemas-mobile-de-48000",
   publishedAt: "2026-08-07",
   category: "Tirgus un shēmas",
-  tags: [
-    "mobile.de",
-    "Vācija",
-    "krāpšana",
-    "eksports",
-    "PVN",
-    "auto vēstures pārbaude",
-    "VIN",
-  ],
-  coverImage: {
-    src: BLOG_IMG_AUTO_VESTURES_PARBAUDE.src,
-    alt: BLOG_IMG_AUTO_VESTURES_PARBAUDE.alt,
-    width: BLOG_IMG_AUTO_VESTURES_PARBAUDE.width,
-    height: BLOG_IMG_AUTO_VESTURES_PARBAUDE.height,
-    caption: BLOG_IMG_AUTO_VESTURES_PARBAUDE.caption,
-  },
+  tags: ["mobile.de", "Vācija", "krāpšana", "eksports", "PVN"],
   lv: {
     title: "Krāpšanas shēmas mobile.de vai kā mēs gandrīz \"zaudējām\" 48 000 €",
     excerpt:
@@ -77,7 +52,7 @@ export const postMobileDeScam48000: BlogPost = {
       { type: "h2", text: "Kā tas sākās: \"Pārāk labi, lai būtu patiesība\"" },
       {
         type: "p",
-        text: "Šķirstām sludinājumus — ieraugām ļoti labu variantu. Tādu, ka iepriekšējā vakarā vēl nosmējāmies: izskatās pēc tīrā metiena. Tieši tāpēc auto vēstures pārbaude un dīlera pārbaude jāsāk pirms jebkādas iemaksas — no sludinājuma datiem (nobraukums, pirmā reģistrācija) līdz VIN un uzņēmuma reģistriem.",
+        text: "Šķirstām sludinājumus — ieraugām ļoti labu variantu. Tādu, ka iepriekšējā vakarā vēl nosmējāmies: izskatās pēc tīrā metiena.",
       },
       {
         type: "p",
@@ -211,7 +186,7 @@ export const postMobileDeScam48000: BlogPost = {
       },
       {
         type: "p",
-        text: "Attālināts pirkums ir iespējams, taču informācija ir jāanalizē ar mikroskopu. VIN kods un dīlera nosaukums ir jāpārbauda visos iespējamos avotos. Auto vēstures pārbaude pirms naudas pārskaitījuma ir obligāts solis — ne opcija.",
+        text: "Attālināts pirkums ir iespējams, taču informācija ir jāanalizē ar mikroskopu. VIN kods un dīlera nosaukums ir jāpārbauda visos iespējamos avotos.",
       },
       { type: "h2", text: "Vajadzīga palīdzība auto pārbaudē?" },
       {

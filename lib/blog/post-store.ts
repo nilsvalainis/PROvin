@@ -206,26 +206,32 @@ function seedDoc(): PostsIndexDoc {
 }
 
 /**
- * Ja Blob/FS ieraksts ir vecāks par seed (bez cover),
- * ielīmē SEO cover no seed bez visa body pārrakstīšanas.
+ * Notīra iepriekš iesēto cover (ja seed to vairs neizmanto).
+ * Tips/UI cover atbalstam paliek — vēlāk varēs atgriezt labākā formā.
  */
 function mergeSeedSeoAssets(doc: PostsIndexDoc): { doc: PostsIndexDoc; changed: boolean } {
   const seed = postMobileDeScam48000;
   const idx = doc.posts.findIndex((p) => p.slug === seed.slug);
-  if (idx < 0 || !seed.coverImage) return { doc, changed: false };
+  if (idx < 0) return { doc, changed: false };
 
   const current = doc.posts[idx]!;
   let changed = false;
   let next = current;
 
-  if (!current.coverImage || current.coverImage.src !== seed.coverImage.src) {
-    next = { ...next, coverImage: seed.coverImage };
+  if (!seed.coverImage && current.coverImage) {
+    const { coverImage: _removed, ...rest } = next;
+    next = rest;
     changed = true;
   }
 
-  const missingTags = seed.tags.filter((t) => !next.tags.includes(t));
-  if (missingTags.length > 0) {
-    next = { ...next, tags: [...next.tags, ...missingTags] };
+  if (current.lv.body.some((b) => b.type === "image")) {
+    next = {
+      ...next,
+      lv: {
+        ...next.lv,
+        body: next.lv.body.filter((b) => b.type !== "image"),
+      },
+    };
     changed = true;
   }
 
