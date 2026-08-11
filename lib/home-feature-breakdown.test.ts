@@ -31,7 +31,7 @@ describe("home-hero-plan", () => {
 describe("pakalpojumi catalog", () => {
   it("exposes four detailed cards including dealer and koreaUsa", () => {
     const pkgs = getCatalogFeatureBreakdownPackages();
-    expect(pkgs.map((p) => p.id)).toEqual(["mini", "audits", "dealer", "koreaUsa"]);
+    expect(pkgs.map((p) => p.id)).toEqual(["audits", "mini", "dealer", "koreaUsa"]);
     const dealer = pkgs.find((p) => p.id === "dealer")!;
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.items).toHaveLength(4);
@@ -49,8 +49,8 @@ describe("pakalpojumi catalog", () => {
   it("builds stable section anchors for jump pills (scales with catalog size)", () => {
     const pkgs = getCatalogFeatureBreakdownPackages();
     expect(pkgs.map((p) => catalogPackageAnchorId(p.id))).toEqual([
-      "pakalpojums-mini",
       "pakalpojums-audits",
+      "pakalpojums-mini",
       "pakalpojums-dealer",
       "pakalpojums-koreaUsa",
     ]);

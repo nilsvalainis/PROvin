@@ -311,15 +311,15 @@ const KOREA_USA_EN: HomeFeatureBreakdownPackage = {
 
 /** Full catalog for `/pakalpojumi` (extensible to 4–6 services). */
 export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
-  MINI_LV,
   AUDITS_LV,
+  MINI_LV,
   DEALER_LV,
   KOREA_USA_LV,
 ];
 
 const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
-  MINI_EN,
   AUDITS_EN,
+  MINI_EN,
   DEALER_EN,
   KOREA_USA_EN,
 ];

@@ -101,7 +101,7 @@ export function HomeFeatureBreakdown({
   const uiCopy = getTp5UiCopy(locale);
   const packages = getCatalogFeatureBreakdownPackages(locale);
   const [activeId, setActiveId] = useState<HomeFeatureBreakdownPackageId>(
-    packages[0]?.id ?? "mini",
+    packages[0]?.id ?? "audits",
   );
 
   useEffect(() => {
