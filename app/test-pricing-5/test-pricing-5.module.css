@@ -1279,8 +1279,8 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 0.76rem;
-  font-weight: 500;
+  font-size: 0.82rem;
+  font-weight: 700;
   line-height: 1.32;
   letter-spacing: inherit;
   cursor: pointer;
@@ -1294,7 +1294,10 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 }
 
 .dealerRefundLabel {
-  color: rgb(226 232 240 / 0.92);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.32;
+  color: rgb(226 232 240 / 0.95);
 }
 
 .dealerRefundInfoBtn {
