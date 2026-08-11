@@ -365,35 +365,6 @@
   padding: 0;
 }
 
-.featureListHeadingBlock {
-  margin: 0 0 0.65rem;
-  padding-bottom: 0.65rem;
-  text-align: center;
-}
-
-.featureListHeading {
-  margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.45;
-  font-weight: 600;
-  color: #f1f5f9;
-  text-align: center;
-}
-
-.featureListSubheading {
-  margin: 0.3rem 0 0;
-  font-size: 0.76rem;
-  line-height: 1.32;
-  font-weight: 450;
-  color: rgb(203 213 225 / 0.88);
-  text-align: center;
-}
-
-.liquidAccent > .featureListHeading {
-  margin: 0 0 0.65rem;
-  padding-bottom: 0.65rem;
-}
-
 .featureRow {
   display: grid;
   grid-template-columns: 1.25rem minmax(0, 1fr);
@@ -671,18 +642,56 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   border-top: 1px solid rgb(255 255 255 / 0.08);
 }
 
+.dealerFeatureHighlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  gap: 0.55rem;
+  text-align: center;
+}
+
 .dealerUnifiedPanel {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: calc(5 * 1.89rem + 2 * 1.45em + 1.3rem);
+  min-height: calc(5 * 1.89rem);
   text-align: center;
 }
 
 .dealerUnifiedDivider {
-  margin: 0 0 0.75rem;
+  margin: 0.75rem 0;
   border: 0;
   border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.dealerFeatureIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  color: rgb(203 213 225);
+  stroke-width: 1.5;
+}
+
+.dealerFeatureCopy {
+  min-width: 0;
+  width: 100%;
+}
+
+.dealerFeatureTitle {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.32;
+  color: #f1f5f9;
+}
+
+.dealerFeatureSubtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 450;
+  line-height: 1.32;
+  color: rgb(203 213 225 / 0.88);
 }
 
 /* Mobile-only: one compact line under dealer subtitle — no extra card height. */
@@ -1605,14 +1614,23 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   }
 
   .dealerUnifiedPanel {
-    min-height: calc(5 * 2.21rem + 2 * 1.45em + 1.3rem);
+    min-height: calc(5 * 2.21rem);
   }
 
-  .featureListHeading {
-    font-size: 0.9375rem;
+  .dealerUnifiedDivider {
+    margin: 0.9rem 0;
   }
 
-  .featureListSubheading,
+  .dealerFeatureIcon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .dealerFeatureTitle {
+    font-size: clamp(0.78rem, 2.1vw, 0.8125rem);
+  }
+
+  .dealerFeatureSubtitle,
   .dealerRefundBanner {
     font-size: clamp(0.78rem, 2.1vw, 0.8125rem);
     line-height: 1.32;
@@ -1811,11 +1829,15 @@ html[data-site-theme="light"] .catalogPopularBadgeHeader {
   color: rgb(37 99 235 / 0.88);
 }
 
-html[data-site-theme="light"] .featureListHeading {
+html[data-site-theme="light"] .dealerFeatureTitle {
   color: #1d1d1f;
 }
 
-html[data-site-theme="light"] .featureListSubheading {
+html[data-site-theme="light"] .dealerFeatureSubtitle {
+  color: #64748b;
+}
+
+html[data-site-theme="light"] .dealerFeatureIcon {
   color: #64748b;
 }
 

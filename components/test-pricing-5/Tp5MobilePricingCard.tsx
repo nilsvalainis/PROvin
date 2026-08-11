@@ -1,5 +1,6 @@
 "use client";
 
+import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
@@ -52,11 +53,7 @@ function SampleReportPdfIcon() {
   );
 }
 
-function FeatureListHeading({ text }: { text: string }) {
-  return <p className={styles.featureListHeading}>{text}</p>;
-}
-
-function DealerFeatureHeading({
+function DealerFeatureHighlight({
   feature,
   brands,
   uiCopy,
@@ -66,14 +63,17 @@ function DealerFeatureHeading({
   uiCopy: Pick<Tp5UiCopy, "dealerBrandsTrigger" | "dealerBrandsAria" | "dealerBrandsClose">;
 }) {
   return (
-    <div className={styles.featureListHeadingBlock}>
-      <p className={styles.featureListHeading}>{feature.name}</p>
-      {feature.subtitle ? <p className={styles.featureListSubheading}>{feature.subtitle}</p> : null}
-      {brands.length > 0 ? (
-        <div className={styles.dealerBrandsUnderSubtitle}>
-          <Tp5DealerBrandsTip brands={brands} copy={uiCopy} />
-        </div>
-      ) : null}
+    <div className={styles.dealerFeatureHighlight} role="listitem">
+      <Globe className={styles.dealerFeatureIcon} aria-hidden />
+      <div className={styles.dealerFeatureCopy}>
+        <p className={styles.dealerFeatureTitle}>{feature.name}</p>
+        {feature.subtitle ? <p className={styles.dealerFeatureSubtitle}>{feature.subtitle}</p> : null}
+        {brands.length > 0 ? (
+          <div className={styles.dealerBrandsUnderSubtitle}>
+            <Tp5DealerBrandsTip brands={brands} copy={uiCopy} />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -132,6 +132,7 @@ type Tp5MobilePricingCardProps = {
   onSubmit: () => void;
   tabLayoutGroupId?: string;
   tabPillLayoutId?: string;
+  tierMetaDescClassName?: string;
   onSwipeAreaTouchStart?: (event: TouchEvent) => void;
   onSwipeAreaTouchMove?: (event: TouchEvent) => void;
   onSwipeAreaTouchEnd?: (event: TouchEvent) => void;
@@ -152,6 +153,7 @@ export function Tp5MobilePricingCard({
   onSubmit,
   tabLayoutGroupId: _tabLayoutGroupId = "tp5-tabs-mobile",
   tabPillLayoutId: _tabPillLayoutId = "tp5-tab-pill-mobile",
+  tierMetaDescClassName,
   onSwipeAreaTouchStart,
   onSwipeAreaTouchMove,
   onSwipeAreaTouchEnd,
@@ -208,13 +210,19 @@ export function Tp5MobilePricingCard({
             );
           })}
         </div>
+
+        {activeService.description.trim() ? (
+          <div className={styles.tierMeta} aria-live="polite">
+            <p className={tierMetaDescClassName ?? styles.tierMetaDesc}>{activeService.description}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
           {isDealer && activeService.features[0] ? (
             <div className={styles.dealerUnifiedPanel}>
-              <DealerFeatureHeading
+              <DealerFeatureHighlight
                 feature={activeService.features[0]}
                 brands={activeService.brands ?? []}
                 uiCopy={uiCopy}
@@ -223,16 +231,11 @@ export function Tp5MobilePricingCard({
               <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
             </div>
           ) : (
-            <>
-              {activeService.description.trim() ? (
-                <FeatureListHeading text={activeService.description} />
-              ) : null}
-              <ul className={styles.featureList}>
-                {activeService.features.map((feature) => (
-                  <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
-                ))}
-              </ul>
-            </>
+            <ul className={styles.featureList}>
+              {activeService.features.map((feature) => (
+                <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
+              ))}
+            </ul>
           )}
         </div>
 

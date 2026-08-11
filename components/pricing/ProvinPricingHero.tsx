@@ -197,6 +197,7 @@ export function ProvinPricingHero({
             stopSwipePropagation={stopSwipePropagation}
             tabLayoutGroupId="tp5-tabs-desktop"
             tabPillLayoutId="tp5-tab-pill-desktop"
+            tierMetaDescClassName={styles.tierMetaDesc}
           />
         </div>
       </div>
