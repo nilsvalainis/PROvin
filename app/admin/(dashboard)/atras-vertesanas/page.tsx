@@ -2,9 +2,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
+import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
   getListingPeekById,
   listListingPeeks,
+  updateListingPeekContact,
   updateListingPeekStatus,
   type ListingPeekStatus,
 } from "@/lib/listing-peek-store";
@@ -29,10 +31,30 @@ async function setStatus(formData: FormData) {
   revalidatePath("/admin/atras-vertesanas");
 }
 
+async function saveContact(formData: FormData) {
+  "use server";
+  const id = String(formData.get("id") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  if (!id || !isValidOrderEmail(email)) {
+    redirect("/admin/atras-vertesanas?contact=invalid");
+  }
+  const updated = await updateListingPeekContact(id, { email, phone });
+  if (!updated) {
+    redirect("/admin/atras-vertesanas?contact=missing");
+  }
+  if (updated.status === "completed") {
+    await updateListingPeekStatus(id, "in_progress");
+  }
+  revalidatePath("/admin/atras-vertesanas");
+  redirect("/admin/atras-vertesanas?contact=saved");
+}
+
 async function sendComment(formData: FormData) {
   "use server";
   const id = String(formData.get("id") ?? "").trim();
   const comment = String(formData.get("comment") ?? "").trim();
+  const emailOverride = String(formData.get("email") ?? "").trim();
   if (!id || comment.length < 8) {
     redirect("/admin/atras-vertesanas?mail=invalid");
   }
@@ -41,12 +63,21 @@ async function sendComment(formData: FormData) {
   }
 
   const entry = await getListingPeekById(id);
-  if (!entry?.email) {
+  if (!entry) {
     redirect("/admin/atras-vertesanas?mail=missing");
   }
 
+  const to = emailOverride || entry.email;
+  if (!isValidOrderEmail(to)) {
+    redirect("/admin/atras-vertesanas?mail=invalid");
+  }
+
+  if (to !== entry.email) {
+    await updateListingPeekContact(id, { email: to });
+  }
+
   try {
-    await sendListingPeekCustomerCommentEmail({ to: entry.email, comment });
+    await sendListingPeekCustomerCommentEmail({ to, comment });
     await updateListingPeekStatus(id, "completed");
   } catch (e) {
     console.error("[atras-vertesanas] send comment failed:", e);
@@ -68,12 +99,13 @@ function formatWhen(iso: string): string {
 export default async function AdminListingPeeksPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ mail?: string }>;
+  searchParams?: Promise<{ mail?: string; contact?: string }>;
 }) {
   const entries = await listListingPeeks(200);
   const smtpOk = isSmtpConfigured();
   const sp = searchParams ? await searchParams : undefined;
   const mail = sp?.mail;
+  const contact = sp?.contact;
 
   return (
     <div className="w-full max-w-none">
@@ -87,10 +119,22 @@ export default async function AdminListingPeeksPage({
         <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
           Bezmaksas sludinājuma komentāri. Limits: 1 / 7 dienas / e-pasts vai telefona pēdējie 8
           cipari; ~3 / diena / IP. Atbildi tikai ar «Nosūtīt e-pastu» zemāk — HTML ar PROVIN AUDITS
-          CTA. Gmail Reply = parasts teksts bez pogas.
+          CTA. Gmail Reply = parasts teksts bez pogas. Kļūdainu adresi labo laukā «E-pasts» un
+          sūti vēlreiz.
         </p>
       </AdminDashboardHeaderWithMenu>
 
+      {contact === "saved" ? (
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Kontakts saglabāts. Vari nosūtīt e-pastu uz jauno adresi.
+        </p>
+      ) : null}
+      {contact === "invalid" || contact === "missing" ? (
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          Kontaktu neizdevās saglabāt
+          {contact === "invalid" ? " (e-pasta adrese nav derīga)." : "."}
+        </p>
+      ) : null}
       {mail === "sent" ? (
         <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           HTML e-pasts ar AUDITS CTA nosūtīts klientam.
@@ -102,9 +146,9 @@ export default async function AdminListingPeeksPage({
           {mail === "smtp"
             ? " (SMTP nav konfigurēts)."
             : mail === "invalid"
-              ? " (komentārs pārāk īss)."
+              ? " (komentārs pārāk īss vai e-pasts nav derīgs)."
               : "."}{" "}
-          Pārbaudi SMTP un mēģini vēlreiz.
+          Pārbaudi SMTP / adresi un mēģini vēlreiz.
         </p>
       ) : null}
 
@@ -123,22 +167,52 @@ export default async function AdminListingPeeksPage({
               className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-[12px] text-[var(--color-provin-muted)]">{formatWhen(e.createdAt)}</p>
-                  <a
-                    href={`mailto:${e.email}`}
-                    className="mt-1 block font-medium text-[var(--color-apple-text)] hover:underline"
-                  >
-                    {e.email}
-                  </a>
-                  {e.phone ? (
-                    <a
-                      href={`tel:${e.phone.replace(/\s/g, "")}`}
-                      className="mt-0.5 block text-[13px] text-[var(--color-provin-muted)] hover:underline"
-                    >
-                      {e.phone}
-                    </a>
-                  ) : null}
+                  <form action={saveContact} className="mt-2 space-y-2">
+                    <input type="hidden" name="id" value={e.id} />
+                    <div>
+                      <label
+                        htmlFor={`email-${e.id}`}
+                        className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
+                      >
+                        E-pasts (adresāts)
+                      </label>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        <input
+                          id={`email-${e.id}`}
+                          type="email"
+                          name="email"
+                          required
+                          defaultValue={e.email}
+                          autoComplete="off"
+                          className="min-w-[16rem] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50"
+                        >
+                          Saglabāt
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor={`phone-${e.id}`}
+                        className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
+                      >
+                        Tālrunis
+                      </label>
+                      <input
+                        id={`phone-${e.id}`}
+                        type="tel"
+                        name="phone"
+                        defaultValue={e.phone}
+                        autoComplete="off"
+                        className="mt-1 w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
+                      />
+                    </div>
+                  </form>
                   <a
                     href={e.listingUrl}
                     target="_blank"
@@ -170,14 +244,30 @@ export default async function AdminListingPeeksPage({
                 </form>
               </div>
 
-              {e.status !== "completed" && e.status !== "rejected" ? (
+              {e.status !== "rejected" ? (
                 <form action={sendComment} className="mt-4 border-t border-slate-100 pt-4">
                   <input type="hidden" name="id" value={e.id} />
                   <label
-                    htmlFor={`comment-${e.id}`}
+                    htmlFor={`send-email-${e.id}`}
                     className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
                   >
+                    Adresāts (e-pasts)
+                  </label>
+                  <input
+                    id={`send-email-${e.id}`}
+                    type="email"
+                    name="email"
+                    required
+                    defaultValue={e.email}
+                    autoComplete="off"
+                    className="mt-1 w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
+                  />
+                  <label
+                    htmlFor={`comment-${e.id}`}
+                    className="mt-3 block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
+                  >
                     Komentārs klientam (e-pastā + AUDITS CTA)
+                    {e.status === "completed" ? " — nosūtīt vēlreiz" : ""}
                   </label>
                   <textarea
                     id={`comment-${e.id}`}
@@ -194,11 +284,15 @@ export default async function AdminListingPeeksPage({
                       disabled={!smtpOk}
                       className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Nosūtīt e-pastu
+                      {e.status === "completed" ? "Nosūtīt vēlreiz" : "Nosūtīt e-pastu"}
                     </button>
                     {!smtpOk ? (
                       <p className="text-[12px] text-amber-700">SMTP nav konfigurēts.</p>
-                    ) : null}
+                    ) : (
+                      <p className="text-[12px] text-[var(--color-provin-muted)]">
+                        Labo adresi augšā un sūti — saglabāsies automātiski.
+                      </p>
+                    )}
                   </div>
                 </form>
               ) : null}

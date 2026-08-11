@@ -297,3 +297,30 @@ export async function updateListingPeekStatus(
   await writeDoc(doc);
   return next;
 }
+
+export async function updateListingPeekContact(
+  id: string,
+  input: { email?: string; phone?: string },
+): Promise<ListingPeekEntry | null> {
+  const trimmed = id.trim();
+  if (!trimmed) return null;
+  const doc = await readDoc();
+  const idx = doc.entries.findIndex((e) => e.id === trimmed);
+  if (idx < 0) return null;
+
+  const current = doc.entries[idx];
+  const nextEmail =
+    input.email !== undefined ? normalizePeekEmail(input.email) : current.email;
+  const nextPhone = input.phone !== undefined ? input.phone.trim() : current.phone;
+  if (!nextEmail) return null;
+
+  const next: ListingPeekEntry = {
+    ...current,
+    email: nextEmail,
+    phone: nextPhone,
+  };
+  doc.entries[idx] = next;
+  doc.updatedAt = new Date().toISOString();
+  await writeDoc(doc);
+  return next;
+}
