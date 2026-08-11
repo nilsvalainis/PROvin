@@ -21,6 +21,7 @@ import {
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
+import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 function SampleReportPdfIcon() {
@@ -228,7 +229,7 @@ export function Tp5MobilePricingCard({
                 uiCopy={uiCopy}
               />
               <hr className={styles.dealerUnifiedDivider} aria-hidden />
-              <p className={styles.dealerRefundBanner}>{uiCopy.dealerRefundBanner}</p>
+              <Tp5DealerRefundTip copy={uiCopy} />
             </div>
           ) : (
             <ul className={styles.featureList}>

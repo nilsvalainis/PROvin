@@ -52,8 +52,12 @@ export type Tp5UiCopy = {
   dealerBrandsAria: string;
   /** Close button label for brands dialog. */
   dealerBrandsClose: string;
-  /** Refund guarantee banner above dealer CTA. */
+  /** Refund guarantee short label next to info tip. */
   dealerRefundBanner: string;
+  /** Refund guarantee tooltip body text. */
+  dealerRefundInfoBody: string;
+  /** Refund guarantee tooltip aria label. */
+  dealerRefundInfoAria: string;
 };
 
 /** Publiskais PROVIN MINI atskaites piemērs (`public/samples/…`). */
@@ -97,7 +101,10 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsClose: "Aizvērt",
   dealerRefundBanner:
-    "100% Naudas atmaksas garantija: Ja dīleru datubāzēs dati nav pieejami, veiksim pilnu atmaksu.",
+    "100% Naudas atmaksas garantija.",
+  dealerRefundInfoBody:
+    "Pilna naudas atmaksa, ja dīleru datubāzē nav neviena ieraksta. Pakalpojums tiek uzskatīts par izpildītu 100% apjomā, ja atrodama vismaz viena atzīme par odometra rādījumu. Pieejamo datu apjomu nosaka oficiāli fiksētā vēsture.",
+  dealerRefundInfoAria: "Naudas atmaksas nosacījumi",
 };
 
 const TP5_UI_COPY_EN: Tp5UiCopy = {
@@ -128,7 +135,10 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsClose: "Close",
   dealerRefundBanner:
-    "100% refund guarantee: If no data is available in dealer databases, we will issue a full refund.",
+    "100% Refund guarantee.",
+  dealerRefundInfoBody:
+    "Full refund if no records exist in the dealer database. The service is considered fulfilled if at least one odometer reading is found. Available data volume depends on officially recorded history.",
+  dealerRefundInfoAria: "Refund conditions",
 };
 
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {
