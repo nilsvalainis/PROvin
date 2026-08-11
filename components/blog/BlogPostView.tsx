@@ -73,18 +73,18 @@ export async function BlogPostView({ post, locale }: Props) {
         </header>
 
         {cover ? (
-          <figure className="mx-auto mt-8 max-w-[min(42.5rem,calc(100vw-2rem))] overflow-hidden rounded-sm border border-white/[0.08] bg-white/[0.03] sm:mt-10">
+          <figure className="mx-auto mt-6 max-w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-sm border border-white/[0.08] bg-white/[0.03] sm:mt-8">
             <Image
               src={cover.src}
               alt={cover.alt}
               width={cover.width}
               height={cover.height}
-              className="h-auto w-full object-cover"
-              sizes="(max-width: 680px) 100vw, 42.5rem"
+              className="aspect-[16/9] h-auto max-h-[12rem] w-full object-cover object-[center_28%] sm:max-h-[14rem]"
+              sizes="(max-width: 680px) 100vw, 36rem"
               priority
             />
             {cover.caption ? (
-              <figcaption className="border-t border-white/[0.06] px-3 py-2.5 text-left text-[0.75rem] leading-snug text-white/55 sm:px-4 sm:text-[0.8125rem]">
+              <figcaption className="border-t border-white/[0.06] px-3 py-2 text-left text-[0.7rem] leading-snug text-white/55 sm:px-3.5 sm:text-[0.75rem]">
                 {cover.caption}
               </figcaption>
             ) : null}

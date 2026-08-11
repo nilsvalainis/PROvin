@@ -58,14 +58,14 @@ export async function BlogIndex({ locale }: Props) {
                   {post.coverImage ? (
                     <Link
                       href={blogPostHref(post.slug)}
-                      className="mt-4 block overflow-hidden rounded-sm border border-white/[0.08] no-underline"
+                      className="mt-3 block overflow-hidden rounded-sm border border-white/[0.08] no-underline"
                     >
                       <Image
                         src={post.coverImage.src}
                         alt={post.coverImage.alt}
                         width={post.coverImage.width}
                         height={post.coverImage.height}
-                        className="h-auto max-h-64 w-full object-cover object-top sm:max-h-72"
+                        className="aspect-[16/9] h-auto max-h-[9.5rem] w-full object-cover object-[center_28%] sm:max-h-[11rem]"
                         sizes="(max-width: 680px) 100vw, 42.5rem"
                       />
                     </Link>
