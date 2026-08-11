@@ -52,13 +52,11 @@ function SampleReportPdfIcon() {
 
 function HighlightFeature({ feature }: { feature: AzvinMobileFeature }) {
   return (
-    <div className="mb-6 flex items-center gap-3.5" role="listitem">
-      <Globe className="h-6 w-6 shrink-0 text-slate-300 stroke-[1.5]" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="m-0 text-[0.92rem] font-semibold leading-snug text-slate-100">{feature.name}</p>
-        {feature.subtitle ? (
-          <p className="mt-0.5 m-0 text-xs font-normal leading-snug text-slate-400">{feature.subtitle}</p>
-        ) : null}
+    <div className={styles.dealerFeatureHighlight} role="listitem">
+      <Globe className={styles.dealerFeatureIcon} aria-hidden />
+      <div className={styles.dealerFeatureCopy}>
+        <p className={styles.dealerFeatureTitle}>{feature.name}</p>
+        {feature.subtitle ? <p className={styles.dealerFeatureSubtitle}>{feature.subtitle}</p> : null}
       </div>
     </div>
   );
@@ -259,7 +257,6 @@ export function AzvinPricingCard({
 
         {activeService.description.trim() ? (
           <div className={styles.tierMeta} aria-live="polite">
-            <p className={styles.tierMetaTitle}>{activeService.title}</p>
             <p className={styles.tierMetaDesc}>{activeService.description}</p>
           </div>
         ) : null}
