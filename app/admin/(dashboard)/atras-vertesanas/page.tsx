@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { ListingPeeksAdminList } from "@/components/admin/ListingPeeksAdminList";
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
@@ -14,13 +15,6 @@ import {
 export const dynamic = "force-dynamic";
 
 const STATUSES: ListingPeekStatus[] = ["new", "in_progress", "completed", "rejected"];
-
-const STATUS_LABEL: Record<ListingPeekStatus, string> = {
-  new: "Jauns",
-  in_progress: "Procesā",
-  completed: "Pabeigts",
-  rejected: "Noraidīts",
-};
 
 async function setStatus(formData: FormData) {
   "use server";
@@ -73,15 +67,6 @@ async function sendComment(formData: FormData) {
   redirect("/admin/atras-vertesanas?mail=sent");
 }
 
-function formatWhen(iso: string): string {
-  const d = new Date(iso);
-  if (!Number.isFinite(d.getTime())) return iso;
-  return d.toLocaleString("lv-LV", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-}
-
 export default async function AdminListingPeeksPage({
   searchParams,
 }: {
@@ -93,248 +78,59 @@ export default async function AdminListingPeeksPage({
   const mail = sp?.mail;
   const contact = sp?.contact;
 
-  const pending = entries.filter((e) => e.status === "new" || e.status === "in_progress");
-  const done = entries.filter((e) => e.status === "completed" || e.status === "rejected");
+  const pendingCount = entries.filter((e) => e.status === "new" || e.status === "in_progress").length;
 
   return (
-    <div className="w-full max-w-none">
+    <div className="w-full max-w-none pb-24 sm:pb-8">
       <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          Lead
-        </p>
-        <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-          Ātrie vērtējumi
-        </h1>
-        <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
-          Bezmaksas sludinājuma komentāri. Atbildi ar «Nosūtīt e-pastu» — HTML ar PROVIN AUDITS CTA.
-          Gmail Reply = parasts teksts. Kļūdainu e-pastu labo rindā un saglabā.
+        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Lead</p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+            Ātrie vērtējumi
+          </h1>
+          {pendingCount > 0 ? (
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold tabular-nums text-amber-900">
+              {pendingCount} gaida
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-1.5 max-w-xl text-[13px] leading-snug text-[var(--color-provin-muted)] sm:text-sm">
+          Bezmaksas sludinājuma komentāri. Atbildi ar «Nosūtīt e-pastu» — HTML ar PROVIN AUDITS CTA. Gmail Reply =
+          parasts teksts.
         </p>
       </AdminDashboardHeaderWithMenu>
 
       {contact === "saved" ? (
-        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
           E-pasts saglabāts.
         </p>
       ) : null}
       {contact === "invalid" || contact === "missing" ? (
-        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
           E-pastu neizdevās saglabāt
           {contact === "invalid" ? " (adrese nav derīga)." : "."}
         </p>
       ) : null}
       {mail === "sent" ? (
-        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
           HTML e-pasts ar AUDITS CTA nosūtīts klientam.
         </p>
       ) : null}
       {mail === "error" || mail === "smtp" || mail === "missing" || mail === "invalid" ? (
-        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
           E-pastu neizdevās nosūtīt
-          {mail === "smtp"
-            ? " (SMTP nav konfigurēts)."
-            : mail === "invalid"
-              ? " (komentārs pārāk īss)."
-              : "."}{" "}
+          {mail === "smtp" ? " (SMTP nav konfigurēts)." : mail === "invalid" ? " (komentārs pārāk īss)." : "."}{" "}
           Pārbaudi SMTP un mēģini vēlreiz.
         </p>
       ) : null}
 
-      {entries.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
-          <p className="font-medium text-[var(--color-apple-text)]">Nav pieprasījumu</p>
-          <p className="mt-2 text-sm text-[var(--color-provin-muted)]">
-            Kad kāds iesniegs īso vērtējumu mājaslapā, ieraksti parādīsies šeit.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 space-y-8">
-          {pending.length > 0 ? (
-            <section>
-              <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-700">
-                Gaida atbildi ({pending.length})
-              </h2>
-              <ul className="space-y-3">
-                {pending.map((e) => (
-                  <PeekCard
-                    key={e.id}
-                    entry={e}
-                    smtpOk={smtpOk}
-                    setStatus={setStatus}
-                    saveEmail={saveEmail}
-                    sendComment={sendComment}
-                    showSend
-                  />
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {done.length > 0 ? (
-            <section>
-              <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700">
-                Apstrādāti ({done.length})
-              </h2>
-              <ul className="space-y-2">
-                {done.map((e) => (
-                  <PeekCard
-                    key={e.id}
-                    entry={e}
-                    smtpOk={smtpOk}
-                    setStatus={setStatus}
-                    saveEmail={saveEmail}
-                    sendComment={sendComment}
-                    showSend={false}
-                    compact
-                  />
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </div>
-      )}
+      <ListingPeeksAdminList
+        entries={entries}
+        smtpOk={smtpOk}
+        setStatus={setStatus}
+        saveEmail={saveEmail}
+        sendComment={sendComment}
+      />
     </div>
-  );
-}
-
-function PeekCard({
-  entry: e,
-  smtpOk,
-  setStatus,
-  saveEmail,
-  sendComment,
-  showSend,
-  compact = false,
-}: {
-  entry: Awaited<ReturnType<typeof listListingPeeks>>[number];
-  smtpOk: boolean;
-  setStatus: (formData: FormData) => Promise<void>;
-  saveEmail: (formData: FormData) => Promise<void>;
-  sendComment: (formData: FormData) => Promise<void>;
-  showSend: boolean;
-  compact?: boolean;
-}) {
-  const isDone = e.status === "completed";
-  const isRejected = e.status === "rejected";
-
-  return (
-    <li
-      className={`rounded-2xl border bg-white p-3 shadow-sm sm:p-4 ${
-        isDone
-          ? "border-emerald-200/90 bg-emerald-50/40"
-          : isRejected
-            ? "border-slate-200/90 bg-slate-50/80 opacity-80"
-            : "border-slate-200/90"
-      }`}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[12px] text-[var(--color-provin-muted)]">{formatWhen(e.createdAt)}</p>
-            {isDone ? (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-emerald-800">
-                E-pasts nosūtīts
-              </span>
-            ) : null}
-            {isRejected ? (
-              <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-600">
-                Noraidīts
-              </span>
-            ) : null}
-          </div>
-
-          <form action={saveEmail} className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <input type="hidden" name="id" value={e.id} />
-            <input
-              type="email"
-              name="email"
-              required
-              defaultValue={e.email}
-              aria-label="E-pasts"
-              autoComplete="off"
-              className="min-w-[14rem] flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
-            />
-            <button
-              type="submit"
-              className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50"
-            >
-              Labot
-            </button>
-          </form>
-
-          {e.phone ? (
-            <a
-              href={`tel:${e.phone.replace(/\s/g, "")}`}
-              className="mt-0.5 block text-[13px] text-[var(--color-provin-muted)] hover:underline"
-            >
-              {e.phone}
-            </a>
-          ) : null}
-          <a
-            href={e.listingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`mt-1.5 block break-all text-[var(--color-provin-accent)] hover:underline ${
-              compact ? "text-[12px] line-clamp-1" : "text-[13px]"
-            }`}
-          >
-            {e.listingUrl}
-          </a>
-        </div>
-
-        <form action={setStatus} className="flex items-center gap-2">
-          <input type="hidden" name="id" value={e.id} />
-          <select
-            name="status"
-            defaultValue={e.status}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12px] text-[var(--color-apple-text)]"
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-lg border border-slate-200 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50"
-          >
-            OK
-          </button>
-        </form>
-      </div>
-
-      {showSend ? (
-        <form action={sendComment} className="mt-3 border-t border-slate-100 pt-3">
-          <input type="hidden" name="id" value={e.id} />
-          <label
-            htmlFor={`comment-${e.id}`}
-            className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
-          >
-            Komentārs klientam (e-pastā + AUDITS CTA)
-          </label>
-          <textarea
-            id={`comment-${e.id}`}
-            name="comment"
-            required
-            minLength={8}
-            rows={3}
-            placeholder="Īss komentārs tikai par to, kas redzams sludinājumā…"
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
-          />
-          <div className="mt-2.5 flex flex-wrap items-center gap-3">
-            <button
-              type="submit"
-              disabled={!smtpOk}
-              className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Nosūtīt e-pastu
-            </button>
-            {!smtpOk ? (
-              <p className="text-[12px] text-amber-700">SMTP nav konfigurēts.</p>
-            ) : null}
-          </div>
-        </form>
-      ) : null}
-    </li>
   );
 }
