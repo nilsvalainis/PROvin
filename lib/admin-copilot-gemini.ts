@@ -39,7 +39,7 @@ Sources (must match exactly):
 - autodna | carvertical | ltab | auto_records | citi_avoti
 
 Actions:
-1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country
+1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country. ONLY real accidents / insurance claims / damage-loss events. Never invent incidents. Never map vehicle value/price records into incidents.
 2) upsert_mileage — NOBRAUKUMS: date, odometer (digits), country
 3) set_service_history — Oficiālā dīlera lauks „Servisa vēsture” (ALWAYS source=auto_records). Put maintenance/repair history here when present in ANY attached PDF (often AutoDNA). Format ONLY facts, one entry per line:
    DD.MM.YYYY | <odometer digits> km | <work done>
@@ -65,7 +65,11 @@ reply: short Latvian confirmation. No markdown fences.
 
 Rules:
 - Dates: always full DD.MM.YYYY in output. If the report shows only MM.YYYY / M.YYYY (e.g. 06.2020 or 11.2019), convert to 01.MM.YYYY (e.g. 01.06.2020). Never leave month-year-only dates.
-- lossAmount: keep ranges like "300 - 400 EUR"; free text allowed if not a number
+- lossAmount: ONLY insurance/accident/damage payout or estimated damage cost (zaudējumu apjoms, claim amount, bojājumu vērtība after a damage event). Keep ranges like "300 - 400 EUR"; free text allowed if not a number.
+  NEVER use vehicle valuation / sale price as lossAmount. Reject these as upsert_incident amounts:
+  «Vērtība», «Tirgus vērtība», «Aptuvenā vērtība», «Novērtētā cena», market/estimated/appraised vehicle value, Kaufpreis, Fahrzeugwert, listing/sale price, Cena (when it is a price record, not a claim).
+  If the PDF shows a value/price EUR next to a date without damage/claim/accident context → do NOT create an incident; put that fact in append_raw if useful.
+  Read the PDF row/section carefully: same-looking EUR next to «Vērtība» ≠ «Zaudējumu apjoms» / claim payout.
 - odometer: digits only (no "km") in upsert_mileage; in set_service_history include "km" after the number as shown in the format
 - country (mileage) / country (incident → stored as country name): Latvian names when known (Vācija, Latvija, …). CROSS-SOURCE COUNTRY RULES (mandatory):
   1) Read ALL attached PDFs + CURRENT TABLES (every source’s mileage/incidents, CSDD fields, comments, RAW/AI-context). Treat sources as one shared evidence pool — exchange country facts between them.

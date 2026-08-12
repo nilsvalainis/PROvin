@@ -197,6 +197,27 @@ export function extractClaimRowsForPdfInsight(text: string, sourceOrdinal: numbe
   return mergeClaimRowLists([dense, lines]);
 }
 
+function isVehicleValuationNoise(row: ClaimTableRow): boolean {
+  const s = `${row.descShort}\n${row.desc}`;
+  // Damage-loss "bojājumu vērtība" after Novērtējums is a real claim amount — keep.
+  if (
+    /boj[āa]jumu\s+v[eē]rt|zaud[ēe]jumu\s+apjom|zaud[ēe]jumu\s+summ|claim\s+amount|payout|atl[īi]dz/i.test(s)
+  ) {
+    return false;
+  }
+  if (
+    /(?:^|[^\wāčēģīķļņšūž])v[eē]rt[īi]ba(?:$|[^\wāčēģīķļņšūž])/i.test(s) ||
+    /tirgus\s+v[eē]rt|nov[eē]rt[eē]t[āa]\s+cena|aptuven[āa]\s+v[eē]rt|market\s+value|estimated\s+value|vehicle\s+value|appraised\s+value|fahrzeugwert|kaufpreis|listing\s+price|sale\s+price|verkaufspreis/i.test(
+      s,
+    )
+  ) {
+    return true;
+  }
+  // Bare "Cena … EUR" price record without claim/damage context
+  if (/\bcena\b/i.test(s) && !CLAIM_CTX.test(s) && !DAMAGE_HINT.test(s)) return true;
+  return false;
+}
+
 function isOdometerOrListingNoise(row: ClaimTableRow): boolean {
   const s = `${row.descShort}\n${row.desc}`.toLowerCase();
   if (DAMAGE_HINT.test(s)) return false;
@@ -237,6 +258,7 @@ export function filterClaimRowsForClientReport(rows: ClaimTableRow[]): ClaimTabl
   for (const row of rows) {
     if (isPdfBoilerplateGarbage(row)) continue;
     if (isBrokenOcrNoise(row)) continue;
+    if (isVehicleValuationNoise(row)) continue;
     if (isOdometerOrListingNoise(row)) continue;
     const n = amountToIntRough(row.amount);
     if (n > 0 && n < 200 && !row.emphasize && !DAMAGE_HINT.test(row.descShort)) continue;

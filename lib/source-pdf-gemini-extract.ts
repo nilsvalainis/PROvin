@@ -171,7 +171,7 @@ ${SOURCE_PDF_COMMENT_GEMINI_RULES}
 
 Rules:
 - serviceHistory: ONLY rows with explicit odometer km digits (≥3 digits). If a timeline line has only year/date without km — do NOT add to serviceHistory.
-- incidents: ALL damage/claim/accident rows with date + amount + country (including insurance tables).
+- incidents: ALL damage/claim/accident rows with date + amount + country (including insurance tables). NEVER put vehicle «Vērtība» / market/sale price EUR into lossAmount — those are not claims.
 - damageDetails: body damage sections (CarVertical „Virsbūves bojājums”, AutoDNA damage tables) — every event with date, country, loss/cost, affected sides/zones.
 - vehicleHistoryTimeline: non-mileage history events (registration, sale, inspection) when shown separately from odometer log.
 - pdfChecklist.incidents true if any accident/claim/damage mentioned; mileageHistory true if odometer history exists; mileageLine true if chart/curve looks consistent.
@@ -183,10 +183,12 @@ const TARGET_USER: Record<HistoryVendorPdfTarget, string> = {
 CRITICAL terminology:
 - "TRANSPORTLĪDZEKĻA VĒSTURE" = odometer timeline → serviceHistory ONLY when km digits are shown next to the date.
 - "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate: if source is MM.YYYY use 01.MM.YYYY e.g. 06.2020 → 01.06.2020; lossAmount as full EUR range e.g. "300 - 400 EUR" or "40 000 - 41 000 EUR", incidentNo=country from "Valsts …"). Also mirror into damageDetails when sides/zones are listed.
+- "Vērtība" / "Tirgus vērtība" / estimated market or sale price EUR = NOT an incident. Never put those amounts in incidents[].lossAmount. Mentions may go to comments as facts.
 - Year-only lines in history without km are NOT mileage rows.
 Extract: first registration, Status Center, average mileage text into comments.`,
   carvertical: `TARGET: CarVertical report.
 Extract: Odometer / mileage log → serviceHistory (km required per row), insurance claims → incidents, "Virsbūves bojājums" / damage sections → damageDetails (date, country, lossAmount, damagedSides, damageGroups), timeline events → vehicleHistoryTimeline.
+"Aptuvenā iepriekš gūto bojājumu vērtība" under Novērtējums/damage = lossAmount (OK). Market/sale "Vērtība" / price records without damage context = NOT incidents.
 In comments: body damage zones, mileage milestones, market hints.`,
   ltab: `TARGET: LTAB / OCTA Latvia insurance report.
 Extract ONLY insurance accidents: each row needs csngDate, lossAmount (EUR), incidentNo as country. Put policy period / negadījumu skaits / reģ. nr. in comments as facts. serviceHistory may be empty array.`,
