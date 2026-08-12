@@ -39,6 +39,10 @@ import type {
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
 import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
+import {
+  backfillEmptyCountriesInBlocks,
+  collectCountryEvidenceFromBlocks,
+} from "@/lib/admin-copilot-country-backfill";
 
 export type CopilotApplyResult = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -93,13 +97,12 @@ function normCountryKey(raw: string): string {
   return normalizeCountryNameLv(raw.trim()) || raw.trim();
 }
 
-/** Collect confirmed countries for event keys from existing tables + this action batch. */
+/** Collect confirmed countries for event keys from existing tables + RAW + this action batch. */
 function collectConfirmedCountryMaps(
   blocks: WorkspaceSourceBlocks,
   actions: CopilotAction[],
 ): { byIncident: Map<string, string>; byMileage: Map<string, string> } {
-  const byIncident = new Map<string, string>();
-  const byMileage = new Map<string, string>();
+  const maps = collectCountryEvidenceFromBlocks(blocks);
   const incidentConflict = new Set<string>();
   const mileageConflict = new Set<string>();
 
@@ -108,49 +111,27 @@ function collectConfirmedCountryMaps(
     if (!c || !date) return;
     const key = `${normDateKey(date)}|${normLossKey(loss)}`;
     if (incidentConflict.has(key)) return;
-    const prev = byIncident.get(key);
+    const prev = maps.byIncident.get(key);
     if (prev && prev !== c) {
-      byIncident.delete(key);
+      maps.byIncident.delete(key);
       incidentConflict.add(key);
       return;
     }
-    byIncident.set(key, c);
+    maps.byIncident.set(key, c);
   };
   const putMileage = (date: string, odo: string, country: string) => {
     const c = normCountryKey(country);
     if (!c || !date || !odo) return;
     const key = `${normDateKey(date)}|${normOdoKey(odo)}`;
     if (mileageConflict.has(key)) return;
-    const prev = byMileage.get(key);
+    const prev = maps.byMileage.get(key);
     if (prev && prev !== c) {
-      byMileage.delete(key);
+      maps.byMileage.delete(key);
       mileageConflict.add(key);
       return;
     }
-    byMileage.set(key, c);
+    maps.byMileage.set(key, c);
   };
-
-  const b = mergeSourceBlocksWithDefaults(blocks);
-  for (const r of b.autodna.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
-  for (const r of b.carvertical.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
-  for (const r of b.ltab.rows.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
-  const citi0 = b.citi_avoti.sections[0];
-  if (citi0) {
-    for (const r of citi0.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
-  }
-
-  const mileRows = [
-    ...b.autodna.serviceHistory,
-    ...b.carvertical.serviceHistory,
-    ...b.auto_records.serviceHistory,
-    ...(citi0?.serviceHistory ?? []),
-    ...(b.csdd.mileageHistory ?? []),
-  ];
-  for (const r of mileRows) {
-    if (autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0") || (r.date.trim() && r.odometer.trim() && r.country.trim())) {
-      putMileage(r.date, r.odometer, r.country);
-    }
-  }
 
   for (const a of actions) {
     if (a.type === "upsert_incident" && a.country.trim()) {
@@ -161,7 +142,7 @@ function collectConfirmedCountryMaps(
     }
   }
 
-  return { byIncident, byMileage };
+  return maps;
 }
 
 /**
@@ -492,6 +473,10 @@ export function applyCopilotActions(
     }
   }
 
+  const backfill = backfillEmptyCountriesInBlocks(next);
+  next = backfill.blocks;
+  for (const k of backfill.changedKeys) changed.add(k);
+
   return {
     sourceBlocks: next,
     applied,
@@ -587,7 +572,7 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   }
 
   lines.push(
-    "COUNTRY HINT: Prefer copying a confirmed country across matching events (same date+EUR or date+km). Leave empty only if nothing confirms it 100%.",
+    "COUNTRY HINT: Valsts laukā (nobraukums + negadījumi) kopē apstiprinātu valsti no citiem avotiem/RAW, ja tas pats notikums (datums+km vai datums+EUR). Bez minējuma — tukšs, ja pierādījumu nav.",
   );
 
   return lines.join("\n");

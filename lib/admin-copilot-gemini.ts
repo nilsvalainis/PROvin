@@ -39,6 +39,13 @@ COUNTRY EXTRACTION (critical — operators report countries are visible in PDF b
 - Normalize to Latvian names (Vācija, Latvija, Itālija, Šveice, …). ISO2 DE → Vācija, LV → Latvija, etc.
 - Empty country is allowed ONLY when that specific row truly has no country marker in PDF/RAW.
 
+LOGICAL CONTEXT CHAIN (Valsts lauks tabulās — ne ✨ komentāru teksts):
+- All sources share ONE evidence pool: tables + RAW + CSDD + chat. When AutoDNA/LTAB/CSDD already has Valsts for an event, copy it to CarVertical / other sources for the SAME event (identical date+km or date+loss EUR).
+- Filling source B after source A: read A’s filled rows and RAW first — propagate confirmed countries; do not re-ask and do not leave Valsts empty when A already proved it.
+- If two sources disagree on country for the same event → leave Valsts EMPTY (do not pick a guess).
+- Never infer country from make/model, seller country, or „probably imported from DE” without a row-level marker.
+- Never write expert prose into comments fields — only structured rows with Valsts filled when evidence exists.
+
 Your job: from ALL attached PDFs + the message + snapshot, propose structured actions that INSERT rows into the correct source tables. Never invent VIN, plates, dates, km, or EUR amounts not present in the operator message, PDFs, or existing snapshot RAW.
 
 What PROVIN typically extracts from these reports (do this for each matching PDF):
@@ -87,8 +94,9 @@ Rules:
   2) If a row’s PDF does not name the country, but another already-filled source (or another PDF / CSDD / RAW / comment) clearly refers to the SAME event (same or equivalent date + same loss EUR, or same date + same odometer km, or unambiguous matching claim text), COPY that confirmed country into this action.
   3) Use CSDD timeline: «Iepriekšējās reģistrācijas valsts», pirmā reģistrācija LV, TA/nobraukuma ieraksti — to place early foreign history vs Latvija after LV registration when the match is unambiguous (e.g. OCTA/CSDD inspection in LV → Latvija).
   4) Infer from unambiguous plate format, insurer country, city/region in description, or report locale ONLY when it confirms the country at 100% certainty for that row.
-  5) Leave country EMPTY ("") ONLY when NO source (PDF row, existing table row, CSDD, RAW, comment, or sibling action in this batch) can 100% confirm it. Never invent or weakly guess a country. Never leave empty when the PDF row shows a country/flag/ISO code.
+  5) Leave country EMPTY ("") ONLY when NO source (PDF row, existing table row, CSDD, RAW, comment, or sibling action in this batch) can 100% confirm it. Never invent or weakly guess a country. Never leave empty when the PDF row shows a country/flag/ISO code. If sources CONFLICT on country for the same event — leave empty.
   6) Prefer filling country on every upsert_incident / upsert_mileage when certainty exists — empty is the exception, not the default.
+  7) After extracting rows, mentally cross-check ALL sources: if another source’s table or RAW already has Valsts for matching date+km / date+EUR, apply it to your new rows.
 - Do NOT write expert commentary into comments fields — only table rows, Servisa vēsture facts, and short RAW leftovers
 - set_service_history / append_raw use the "text" field (date not required for those types)
 - Deduplicate against existing snapshot and across PDFs (same date+amount or date+km → omit duplicate actions; identical service lines → omit)`;
