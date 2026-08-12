@@ -221,12 +221,9 @@ export function backfillEmptyCountriesInBlocks(blocks: WorkspaceSourceBlocks): {
   if (adInc.filled || adMil.filled) changedKeys.add("autodna");
 
   const cvInc = fillIncidentRows(b.carvertical.incidents, maps);
-  let cvServiceHistory = fillMileageRows(b.carvertical.serviceHistory, maps).rows;
-  const cvMilCross = cvServiceHistory.filter((r, i) => {
-    const prev = b.carvertical.serviceHistory[i];
-    return prev && !prev.country.trim() && r.country.trim();
-  }).length;
-  filledMileage += cvMilCross;
+  const cvMil = fillMileageRows(b.carvertical.serviceHistory, maps);
+  let cvServiceHistory = cvMil.rows;
+  filledMileage += cvMil.filled;
   if (b.carvertical.vehicleHistoryTimeline?.length) {
     const beforeTimeline = cvServiceHistory;
     cvServiceHistory = inferOdometerCountriesFromTimeline(
@@ -239,12 +236,11 @@ export function backfillEmptyCountriesInBlocks(blocks: WorkspaceSourceBlocks): {
     }).length;
   }
   filledIncidents += cvInc.filled;
-  const cvTimelineFill = cvServiceHistory.filter((r, i) => {
+  const cvAnyMilFilled = cvServiceHistory.some((r, i) => {
     const orig = b.carvertical.serviceHistory[i];
     return orig && !orig.country.trim() && r.country.trim();
-  }).length;
-  filledMileage += cvTimelineFill;
-  if (cvInc.filled || cvMilCross > 0 || cvTimelineFill > 0) changedKeys.add("carvertical");
+  });
+  if (cvInc.filled || cvAnyMilFilled) changedKeys.add("carvertical");
 
   const ltabInc = fillIncidentRows(b.ltab.rows, maps);
   if (ltabInc.filled) changedKeys.add("ltab");
