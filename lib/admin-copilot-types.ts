@@ -44,7 +44,7 @@ export type CopilotServiceHistoryAction = {
   note?: string;
 };
 
-/** Būtiska papildu info → avota AI konteksts (geminiContextRaw), ne RAW paste. */
+/** Būtiska papildu info → avota RAW žurnāls. */
 export type CopilotAppendRawAction = {
   type: "append_raw";
   source: CopilotSourceKey;

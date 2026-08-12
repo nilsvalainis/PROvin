@@ -16,6 +16,8 @@ import {
 } from "@/lib/admin-source-blocks";
 import {
   ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
+  ADMIN_PDF_IMPORT_RAW_MAX_LEN,
+  ADMIN_RAW_UNPROCESSED_MAX_LEN,
 } from "@/lib/admin-raw-field-limits";
 import { clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
 import {
@@ -37,10 +39,6 @@ import type {
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
 import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
-import {
-  backfillEmptyCountriesInBlocks,
-  collectCountryEvidenceFromBlocks,
-} from "@/lib/admin-copilot-country-backfill";
 
 export type CopilotApplyResult = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -95,12 +93,13 @@ function normCountryKey(raw: string): string {
   return normalizeCountryNameLv(raw.trim()) || raw.trim();
 }
 
-/** Collect confirmed countries for event keys from existing tables + RAW + this action batch. */
+/** Collect confirmed countries for event keys from existing tables + this action batch. */
 function collectConfirmedCountryMaps(
   blocks: WorkspaceSourceBlocks,
   actions: CopilotAction[],
 ): { byIncident: Map<string, string>; byMileage: Map<string, string> } {
-  const maps = collectCountryEvidenceFromBlocks(blocks);
+  const byIncident = new Map<string, string>();
+  const byMileage = new Map<string, string>();
   const incidentConflict = new Set<string>();
   const mileageConflict = new Set<string>();
 
@@ -109,27 +108,49 @@ function collectConfirmedCountryMaps(
     if (!c || !date) return;
     const key = `${normDateKey(date)}|${normLossKey(loss)}`;
     if (incidentConflict.has(key)) return;
-    const prev = maps.byIncident.get(key);
+    const prev = byIncident.get(key);
     if (prev && prev !== c) {
-      maps.byIncident.delete(key);
+      byIncident.delete(key);
       incidentConflict.add(key);
       return;
     }
-    maps.byIncident.set(key, c);
+    byIncident.set(key, c);
   };
   const putMileage = (date: string, odo: string, country: string) => {
     const c = normCountryKey(country);
     if (!c || !date || !odo) return;
     const key = `${normDateKey(date)}|${normOdoKey(odo)}`;
     if (mileageConflict.has(key)) return;
-    const prev = maps.byMileage.get(key);
+    const prev = byMileage.get(key);
     if (prev && prev !== c) {
-      maps.byMileage.delete(key);
+      byMileage.delete(key);
       mileageConflict.add(key);
       return;
     }
-    maps.byMileage.set(key, c);
+    byMileage.set(key, c);
   };
+
+  const b = mergeSourceBlocksWithDefaults(blocks);
+  for (const r of b.autodna.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  for (const r of b.carvertical.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  for (const r of b.ltab.rows.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  const citi0 = b.citi_avoti.sections[0];
+  if (citi0) {
+    for (const r of citi0.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  }
+
+  const mileRows = [
+    ...b.autodna.serviceHistory,
+    ...b.carvertical.serviceHistory,
+    ...b.auto_records.serviceHistory,
+    ...(citi0?.serviceHistory ?? []),
+    ...(b.csdd.mileageHistory ?? []),
+  ];
+  for (const r of mileRows) {
+    if (autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0") || (r.date.trim() && r.odometer.trim() && r.country.trim())) {
+      putMileage(r.date, r.odometer, r.country);
+    }
+  }
 
   for (const a of actions) {
     if (a.type === "upsert_incident" && a.country.trim()) {
@@ -140,7 +161,7 @@ function collectConfirmedCountryMaps(
     }
   }
 
-  return maps;
+  return { byIncident, byMileage };
 }
 
 /**
@@ -165,32 +186,10 @@ export function enrichCopilotActionCountries(
   });
 }
 
-function incidentEventKey(r: LtabIncidentRow): string {
-  const loss = (normalizeLossAmountEurDisplay(r.lossAmount.trim()) || r.lossAmount.trim())
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-  return `${formatAutoRecordsDateForOutput(r.csngDate.trim()) || r.csngDate.trim()}|${loss}`;
-}
-
-function mileageEventKey(r: AutoRecordsServiceRow): string {
-  const odo = normalizeAutoRecordsOdometer(r.odometer.trim()) || r.odometer.replace(/\D/g, "");
-  return `${formatAutoRecordsDateForOutput(r.date.trim()) || r.date.trim()}|${odo}`;
-}
-
 function mergeIncidentRows(existing: LtabIncidentRow[], incoming: LtabIncidentRow): LtabIncidentRow[] {
   const withData = existing.filter(ltabRowHasData);
-  const eventKey = incidentEventKey(incoming);
-  const sameIdx = withData.findIndex((r) => incidentEventKey(r) === eventKey);
-  if (sameIdx >= 0) {
-    const prev = withData[sameIdx]!;
-    if (!prev.incidentNo.trim() && incoming.incidentNo.trim()) {
-      const next = [...withData];
-      next[sameIdx] = { ...prev, incidentNo: incoming.incidentNo };
-      return next;
-    }
-    if (incidentKey(prev) === incidentKey(incoming)) return existing.length ? existing : [incoming];
-    return existing.length ? existing : [incoming];
-  }
+  const key = incidentKey(incoming);
+  if (withData.some((r) => incidentKey(r) === key)) return existing.length ? existing : [incoming];
   const emptyIdx = existing.findIndex((r) => !ltabRowHasData(r));
   if (emptyIdx >= 0) {
     const next = [...existing];
@@ -207,18 +206,8 @@ function mergeMileageRows(
   const withData = existing.filter(
     (r) => autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0"),
   );
-  const eventKey = mileageEventKey(incoming);
-  const sameIdx = withData.findIndex((r) => mileageEventKey(r) === eventKey);
-  if (sameIdx >= 0) {
-    const prev = withData[sameIdx]!;
-    if (!prev.country.trim() && incoming.country.trim()) {
-      const next = [...withData];
-      next[sameIdx] = { ...prev, country: incoming.country };
-      return sortAutoRecordsDescending(next);
-    }
-    if (mileageKey(prev) === mileageKey(incoming)) {
-      return sortAutoRecordsDescending(withData.length ? withData : [incoming]);
-    }
+  const key = mileageKey(incoming);
+  if (withData.some((r) => mileageKey(r) === key)) {
     return sortAutoRecordsDescending(withData.length ? withData : [incoming]);
   }
   const emptyIdx = existing.findIndex(
@@ -308,7 +297,6 @@ function applyAppendRaw(
   const text = action.text.trim();
   if (!text) return { blocks, ok: false, reason: "empty_raw_text" };
 
-  // Copilot append_raw → tikai AI konteksts (geminiContextRaw), nekad RAW paste lauki.
   if (action.source === "auto_records") {
     return {
       ok: true,
@@ -316,8 +304,10 @@ function applyAppendRaw(
         ...blocks,
         auto_records: {
           ...blocks.auto_records,
-          geminiContextRaw: clipGeminiContextRaw(
-            appendText(blocks.auto_records.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
+          rawUnprocessedData: appendText(
+            blocks.auto_records.rawUnprocessedData ?? "",
+            text,
+            ADMIN_RAW_UNPROCESSED_MAX_LEN,
           ),
         },
       },
@@ -330,9 +320,7 @@ function applyAppendRaw(
         ...blocks,
         ltab: {
           ...blocks.ltab,
-          geminiContextRaw: clipGeminiContextRaw(
-            appendText(blocks.ltab.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-          ),
+          pdfImportRaw: appendText(blocks.ltab.pdfImportRaw ?? "", text, ADMIN_PDF_IMPORT_RAW_MAX_LEN),
         },
       },
     };
@@ -358,15 +346,13 @@ function applyAppendRaw(
     if (sections.length === 0) {
       sections.push({
         ...emptyVendorAvotuBlock(),
-        geminiContextRaw: clipGeminiContextRaw(text.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN)),
+        rawUnprocessedData: text.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
       });
     } else {
       const s0 = sections[0]!;
       sections[0] = {
         ...s0,
-        geminiContextRaw: clipGeminiContextRaw(
-          appendText(s0.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-        ),
+        rawUnprocessedData: appendText(s0.rawUnprocessedData ?? "", text, ADMIN_RAW_UNPROCESSED_MAX_LEN),
       };
     }
     return { ok: true, blocks: { ...blocks, citi_avoti: { sections } } };
@@ -474,10 +460,6 @@ export function applyCopilotActions(
     }
   }
 
-  const backfill = backfillEmptyCountriesInBlocks(next);
-  next = backfill.blocks;
-  for (const k of backfill.changedKeys) changed.add(k);
-
   return {
     sourceBlocks: next,
     applied,
@@ -573,7 +555,7 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   }
 
   lines.push(
-    "COUNTRY HINT: Valsts laukā (nobraukums + negadījumi) kopē apstiprinātu valsti no citiem avotiem/RAW, ja tas pats notikums (datums+km vai datums+EUR). Bez minējuma — tukšs, ja pierādījumu nav.",
+    "COUNTRY HINT: Prefer copying a confirmed country across matching events (same date+EUR or date+km). Leave empty only if nothing confirms it 100%.",
   );
 
   return lines.join("\n");

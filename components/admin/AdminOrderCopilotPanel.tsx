@@ -50,7 +50,7 @@ const WELCOME_MESSAGE: UiMessage = {
   id: "welcome",
   role: "system",
   content:
-    "Ieslēdz mērķa avotus un pievieno PDF (piem. AutoDNA) — pietiek ar failu: aizpildīs odometru, datumus, valsti, negadījumus un iemetīs pilnu PDF tekstu AI konteksta laukā. Sarakste saglabājas šim pasūtījumam.",
+    "Ieslēdz mērķa avotus, pievieno PDF un īsu komandu (piem. „izvelc datus”). Pēc sūtīšanas logs samazinās — Tu vari turpināt darbu. Sarakste saglabājas šim pasūtījumam.",
 };
 const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
