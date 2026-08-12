@@ -243,8 +243,7 @@ export async function POST(req: Request) {
           detectSourcePdfIngestTarget(pdf.fileName, extract.text) ??
           (isLikelyCsddPdfText(extract.text) ? ("csdd" as const) : null);
 
-        // RAW dump ALWAYS to the matching source (even if tables already filled / toggle off).
-        // Comment generation needs 100% PDF text in RAW, not only structured fields.
+        // Full PDF text → AI konteksts only (geminiContextRaw). Never RAW paste fields.
         const rawTarget: SourcePdfIngestTarget = detected ?? "citi_avoti";
 
         if (extract.text.trim()) {
@@ -253,7 +252,7 @@ export async function POST(req: Request) {
           if (dumped.changed) {
             preGeminiChanged.add(rawTarget);
             rawDumpNotes.push(
-              `RAW 100% „${pdf.fileName}” → ${rawTarget} (${dumped.chars.toLocaleString("lv-LV")} simb.).`,
+              `AI konteksts 100% „${pdf.fileName}” → ${rawTarget} (${dumped.chars.toLocaleString("lv-LV")} simb.).`,
             );
           }
 

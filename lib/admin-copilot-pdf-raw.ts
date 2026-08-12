@@ -1,12 +1,9 @@
 /**
- * Copilot — iemet ekstrahēto PDF tekstu 100% atbilstošā avota RAW
- * (neatkarīgi no tā, vai tabulas jau aizpildītas). Upsert pēc faila nosaukuma.
+ * Copilot — iemet ekstrahēto PDF tekstu 100% tikai avota AI konteksta laukā
+ * (`geminiContextRaw`). RAW / paste laukus (mileagePasteRaw, rawUnprocessedData,
+ * pdfImportRaw) NEskār — tie konfliktē ar tabulu aizpildi.
  */
-import {
-  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
-  ADMIN_PDF_IMPORT_RAW_MAX_LEN,
-  ADMIN_RAW_UNPROCESSED_MAX_LEN,
-} from "@/lib/admin-raw-field-limits";
+import { ADMIN_MILEAGE_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import { clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
 import {
   emptyVendorAvotuBlock,
@@ -45,10 +42,19 @@ export function upsertPdfRawChunk(existing: string, fileName: string, text: stri
   return kept.join("\n\n").slice(0, maxLen);
 }
 
+function upsertContext(
+  existing: string,
+  fileName: string,
+  body: string,
+): string {
+  return clipGeminiContextRaw(
+    upsertPdfRawChunk(existing, fileName, body, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
+  );
+}
+
 /**
- * Ieraksta / pārraksta pilnu ekstrahēto PDF tekstu avota RAW laukā.
- * AutoDNA/CarVertical → mileagePasteRaw + geminiContextRaw (komentāru ģenerācijai).
- * CSDD / dīleris / citi → rawUnprocessedData (+ geminiContextRaw, ja ir).
+ * Ieraksta / pārraksta pilnu ekstrahēto PDF tekstu avota «Papildu AI konteksts» laukā.
+ * Nekad neraksta mileagePasteRaw / rawUnprocessedData / pdfImportRaw.
  */
 export function appendCopilotFullPdfRaw(
   blocks: WorkspaceSourceBlocks,
@@ -63,98 +69,68 @@ export function appendCopilotFullPdfRaw(
   const chunkLen = formatCopilotPdfRawChunk(fileName, body).length;
 
   if (target === "csdd") {
-    const prev = b.csdd.rawUnprocessedData ?? "";
-    const rawUnprocessedData = upsertPdfRawChunk(prev, fileName, body, ADMIN_RAW_UNPROCESSED_MAX_LEN);
-    const geminiContextRaw = clipGeminiContextRaw(
-      upsertPdfRawChunk(b.csdd.geminiContextRaw ?? "", fileName, body, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-    );
-    if (rawUnprocessedData === prev && geminiContextRaw === (b.csdd.geminiContextRaw ?? "")) {
-      return { blocks: b, changed: false, chars: 0 };
-    }
+    const prev = b.csdd.geminiContextRaw ?? "";
+    const geminiContextRaw = upsertContext(prev, fileName, body);
+    if (geminiContextRaw === prev) return { blocks: b, changed: false, chars: 0 };
     return {
       changed: true,
       chars: chunkLen,
-      blocks: { ...b, csdd: { ...b.csdd, rawUnprocessedData, geminiContextRaw } },
+      blocks: { ...b, csdd: { ...b.csdd, geminiContextRaw } },
     };
   }
 
   if (target === "autodna" || target === "carvertical") {
     const cur = { ...emptyVendorAvotuBlock(), ...b[target] };
-    const mileagePasteRaw = upsertPdfRawChunk(
-      cur.mileagePasteRaw ?? "",
-      fileName,
-      body,
-      ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
-    );
-    const geminiContextRaw = clipGeminiContextRaw(
-      upsertPdfRawChunk(cur.geminiContextRaw ?? "", fileName, body, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-    );
-    if (mileagePasteRaw === (cur.mileagePasteRaw ?? "") && geminiContextRaw === (cur.geminiContextRaw ?? "")) {
-      return { blocks: b, changed: false, chars: 0 };
-    }
+    const prev = cur.geminiContextRaw ?? "";
+    const geminiContextRaw = upsertContext(prev, fileName, body);
+    if (geminiContextRaw === prev) return { blocks: b, changed: false, chars: 0 };
     return {
       changed: true,
       chars: chunkLen,
       blocks: {
         ...b,
-        [target]: { ...cur, mileagePasteRaw, geminiContextRaw },
+        [target]: { ...cur, geminiContextRaw },
       },
     };
   }
 
   if (target === "ltab") {
-    const prev = b.ltab.pdfImportRaw ?? "";
-    const pdfImportRaw = upsertPdfRawChunk(prev, fileName, body, ADMIN_PDF_IMPORT_RAW_MAX_LEN);
-    const geminiContextRaw = clipGeminiContextRaw(
-      upsertPdfRawChunk(b.ltab.geminiContextRaw ?? "", fileName, body, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-    );
-    if (pdfImportRaw === prev && geminiContextRaw === (b.ltab.geminiContextRaw ?? "")) {
-      return { blocks: b, changed: false, chars: 0 };
-    }
+    const prev = b.ltab.geminiContextRaw ?? "";
+    const geminiContextRaw = upsertContext(prev, fileName, body);
+    if (geminiContextRaw === prev) return { blocks: b, changed: false, chars: 0 };
     return {
       changed: true,
       chars: chunkLen,
-      blocks: { ...b, ltab: { ...b.ltab, pdfImportRaw, geminiContextRaw } },
+      blocks: { ...b, ltab: { ...b.ltab, geminiContextRaw } },
     };
   }
 
   if (target === "auto_records") {
-    const prev = b.auto_records.rawUnprocessedData ?? "";
-    const rawUnprocessedData = upsertPdfRawChunk(prev, fileName, body, ADMIN_RAW_UNPROCESSED_MAX_LEN);
-    const geminiContextRaw = clipGeminiContextRaw(
-      upsertPdfRawChunk(b.auto_records.geminiContextRaw ?? "", fileName, body, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-    );
-    if (rawUnprocessedData === prev && geminiContextRaw === (b.auto_records.geminiContextRaw ?? "")) {
-      return { blocks: b, changed: false, chars: 0 };
-    }
+    const prev = b.auto_records.geminiContextRaw ?? "";
+    const geminiContextRaw = upsertContext(prev, fileName, body);
+    if (geminiContextRaw === prev) return { blocks: b, changed: false, chars: 0 };
     return {
       changed: true,
       chars: chunkLen,
-      blocks: { ...b, auto_records: { ...b.auto_records, rawUnprocessedData, geminiContextRaw } },
+      blocks: { ...b, auto_records: { ...b.auto_records, geminiContextRaw } },
     };
   }
 
   // citi_avoti
   const sections = [...(b.citi_avoti.sections ?? [])];
   if (sections.length === 0) {
-    const chunk = formatCopilotPdfRawChunk(fileName, body).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
+    const geminiContextRaw = upsertContext("", fileName, body);
     sections.push({
       ...emptyVendorAvotuBlock(),
-      rawUnprocessedData: chunk,
-      geminiContextRaw: clipGeminiContextRaw(chunk.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN)),
+      geminiContextRaw,
       label: fileName.replace(/\.pdf$/i, "").slice(0, 80),
     });
   } else {
     const s0 = sections[0]!;
-    const prev = s0.rawUnprocessedData ?? "";
-    const rawUnprocessedData = upsertPdfRawChunk(prev, fileName, body, ADMIN_RAW_UNPROCESSED_MAX_LEN);
-    const geminiContextRaw = clipGeminiContextRaw(
-      upsertPdfRawChunk(s0.geminiContextRaw ?? "", fileName, body, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-    );
-    if (rawUnprocessedData === prev && geminiContextRaw === (s0.geminiContextRaw ?? "")) {
-      return { blocks: b, changed: false, chars: 0 };
-    }
-    sections[0] = { ...s0, rawUnprocessedData, geminiContextRaw };
+    const prev = s0.geminiContextRaw ?? "";
+    const geminiContextRaw = upsertContext(prev, fileName, body);
+    if (geminiContextRaw === prev) return { blocks: b, changed: false, chars: 0 };
+    sections[0] = { ...s0, geminiContextRaw };
   }
   return {
     changed: true,

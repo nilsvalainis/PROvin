@@ -16,8 +16,6 @@ import {
 } from "@/lib/admin-source-blocks";
 import {
   ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
-  ADMIN_PDF_IMPORT_RAW_MAX_LEN,
-  ADMIN_RAW_UNPROCESSED_MAX_LEN,
 } from "@/lib/admin-raw-field-limits";
 import { clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
 import {
@@ -310,6 +308,7 @@ function applyAppendRaw(
   const text = action.text.trim();
   if (!text) return { blocks, ok: false, reason: "empty_raw_text" };
 
+  // Copilot append_raw → tikai AI konteksts (geminiContextRaw), nekad RAW paste lauki.
   if (action.source === "auto_records") {
     return {
       ok: true,
@@ -317,10 +316,8 @@ function applyAppendRaw(
         ...blocks,
         auto_records: {
           ...blocks.auto_records,
-          rawUnprocessedData: appendText(
-            blocks.auto_records.rawUnprocessedData ?? "",
-            text,
-            ADMIN_RAW_UNPROCESSED_MAX_LEN,
+          geminiContextRaw: clipGeminiContextRaw(
+            appendText(blocks.auto_records.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
           ),
         },
       },
@@ -333,7 +330,9 @@ function applyAppendRaw(
         ...blocks,
         ltab: {
           ...blocks.ltab,
-          pdfImportRaw: appendText(blocks.ltab.pdfImportRaw ?? "", text, ADMIN_PDF_IMPORT_RAW_MAX_LEN),
+          geminiContextRaw: clipGeminiContextRaw(
+            appendText(blocks.ltab.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
+          ),
         },
       },
     };
@@ -359,13 +358,15 @@ function applyAppendRaw(
     if (sections.length === 0) {
       sections.push({
         ...emptyVendorAvotuBlock(),
-        rawUnprocessedData: text.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+        geminiContextRaw: clipGeminiContextRaw(text.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN)),
       });
     } else {
       const s0 = sections[0]!;
       sections[0] = {
         ...s0,
-        rawUnprocessedData: appendText(s0.rawUnprocessedData ?? "", text, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+        geminiContextRaw: clipGeminiContextRaw(
+          appendText(s0.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
+        ),
       };
     }
     return { ok: true, blocks: { ...blocks, citi_avoti: { sections } } };

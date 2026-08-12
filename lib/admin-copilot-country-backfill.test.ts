@@ -33,9 +33,9 @@ describe("backfillEmptyCountriesInBlocks", () => {
     expect(r.blocks.ltab.rows[0]?.incidentNo ?? "").toBe("");
   });
 
-  it("uses RAW paste evidence for cross-source fill", () => {
+  it("uses AI context evidence for cross-source fill", () => {
     const blocks = createDefaultSourceBlocks();
-    blocks.autodna.mileagePasteRaw = [
+    blocks.autodna.geminiContextRaw = [
       "TRANSPORTLĪDZEKĻA VĒSTURE",
       "01.06.2020",
       "120 000 km",

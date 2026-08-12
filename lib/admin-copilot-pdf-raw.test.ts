@@ -4,14 +4,14 @@ import { seedCopilotBlocksFromPdfText } from "@/lib/admin-copilot-pdf-seed";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 
 describe("appendCopilotFullPdfRaw", () => {
-  it("dumps full AutoDNA extract into mileagePasteRaw", () => {
+  it("dumps full AutoDNA extract into geminiContextRaw only (not mileagePasteRaw)", () => {
     const blocks = createDefaultSourceBlocks();
     const text = "TRANSPORTLĪDZEKĻA VĒSTURE\n01.06.2020 120000 km Vācija\n".repeat(20);
     const r = appendCopilotFullPdfRaw(blocks, "autodna", "AutoDNA_report.pdf", text);
     expect(r.changed).toBe(true);
-    expect(r.blocks.autodna.mileagePasteRaw).toContain("=== PDF: AutoDNA_report.pdf ===");
-    expect(r.blocks.autodna.mileagePasteRaw).toContain("TRANSPORTLĪDZEKĻA VĒSTURE");
+    expect(r.blocks.autodna.geminiContextRaw).toContain("=== PDF: AutoDNA_report.pdf ===");
     expect(r.blocks.autodna.geminiContextRaw).toContain("TRANSPORTLĪDZEKĻA VĒSTURE");
+    expect(r.blocks.autodna.mileagePasteRaw ?? "").toBe("");
   });
 
   it("upserts same filename with updated body even when tables already filled", () => {
@@ -20,8 +20,24 @@ describe("appendCopilotFullPdfRaw", () => {
     const once = appendCopilotFullPdfRaw(blocks, "autodna", "dna.pdf", "VERSION_ONE country Vācija");
     const twice = appendCopilotFullPdfRaw(once.blocks, "autodna", "dna.pdf", "VERSION_TWO country Itālija");
     expect(twice.changed).toBe(true);
-    expect(twice.blocks.autodna.mileagePasteRaw).toContain("VERSION_TWO");
-    expect(twice.blocks.autodna.mileagePasteRaw).not.toContain("VERSION_ONE");
+    expect(twice.blocks.autodna.geminiContextRaw).toContain("VERSION_TWO");
+    expect(twice.blocks.autodna.geminiContextRaw).not.toContain("VERSION_ONE");
+    expect(twice.blocks.autodna.mileagePasteRaw ?? "").toBe("");
+  });
+
+  it("does not write CSDD/auto_records/citi into rawUnprocessedData", () => {
+    const blocks = createDefaultSourceBlocks();
+    const csdd = appendCopilotFullPdfRaw(blocks, "csdd", "csdd.pdf", "CSDD body text");
+    expect(csdd.blocks.csdd.geminiContextRaw).toContain("CSDD body text");
+    expect(csdd.blocks.csdd.rawUnprocessedData).toBe("");
+
+    const ar = appendCopilotFullPdfRaw(blocks, "auto_records", "dealer.pdf", "dealer body");
+    expect(ar.blocks.auto_records.geminiContextRaw).toContain("dealer body");
+    expect(ar.blocks.auto_records.rawUnprocessedData).toBe("");
+
+    const citi = appendCopilotFullPdfRaw(blocks, "citi_avoti", "other.pdf", "other body");
+    expect(citi.blocks.citi_avoti.sections[0]?.geminiContextRaw).toContain("other body");
+    expect(citi.blocks.citi_avoti.sections[0]?.rawUnprocessedData ?? "").toBe("");
   });
 
   it("skips write when identical chunk already present", () => {
