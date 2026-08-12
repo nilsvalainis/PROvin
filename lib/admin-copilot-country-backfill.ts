@@ -254,7 +254,7 @@ export function backfillEmptyCountriesInBlocks(blocks: WorkspaceSourceBlocks): {
   if (csddMil.filled) changedKeys.add("csdd");
   filledMileage += csddMil.filled;
 
-  let citiSections = [...(b.citi_avoti.sections ?? [])];
+  const citiSections = [...(b.citi_avoti.sections ?? [])];
   if (citiSections[0]) {
     const s0 = { ...emptyVendorAvotuBlock(), ...citiSections[0] };
     const cInc = fillIncidentRows(s0.incidents, maps);
