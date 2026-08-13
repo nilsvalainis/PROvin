@@ -4,6 +4,7 @@ import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { BlogPostView } from "@/components/blog/BlogPostView";
 import { getAllBlogSlugs, getBlogPost, resolveBlogLocale } from "@/lib/blog/posts";
 import { publicPageAlternates, publicPageUrl } from "@/lib/seo-public-metadata";
+import { getPublicSiteOrigin } from "@/lib/site-url";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { content } = resolveBlogLocale(post, locale);
   const description = content.socialExcerpt ?? content.excerpt;
   const url = publicPageUrl(locale, `/blogs/${post.slug}`);
+  const base = getPublicSiteOrigin().replace(/\/$/, "");
   const ogImages = post.coverImage
     ? [
         {
