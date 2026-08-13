@@ -25,6 +25,7 @@ import {
   TIRGUS_LABEL_LISTED,
   TIRGUS_LABEL_PRICE_DROP,
   tirgusFormHasContent,
+  tirgusPriceHistoryHasRows,
   type AutoRecordsBlockState,
   type CitiAvotiBlockState,
   type ClientManualLtabBlockPdf,
@@ -34,6 +35,20 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import {
+  formatLtabCertificateAmountEur,
+  LTAB_CERTIFICATE_FOOTER_DEFAULT,
+  LTAB_CERTIFICATE_TITLE,
+  ltabCertificateClaimHasData,
+  ltabCertificateHasContent,
+} from "@/lib/ltab-report-extract";
+import {
+  formatAdifyDeltaLabel,
+  formatAdifyMileageLabel,
+  formatAdifyPriceLabel,
+  formatAdifySignedEur,
+  formatAdifyYearLabel,
+} from "@/lib/adify-listing-history";
 import {
   autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
@@ -101,7 +116,7 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
-import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
+import { parseListedForSaleDays, shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import {
@@ -242,7 +257,7 @@ function payloadLtabHasData(p: ClientReportPayload, vis: PdfVisibilitySettings):
   if (!vis.ltab) return false;
   const b = p.manualLtabBlock;
   if (!b) return false;
-  return b.rows.length > 0 || b.comments.trim().length > 0;
+  return b.rows.length > 0 || b.comments.trim().length > 0 || ltabCertificateHasContent(b.certificate);
 }
 
 function payloadSludinajumsHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
@@ -690,6 +705,36 @@ function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySett
 }
 
 /** Tirgus dati — HTML ķermenis „Sludinājuma vēsture” apakšsadaļai (bez ārējās kartes). */
+function buildTirgusPriceHistoryTableHtml(f: TirgusFormFields): string {
+  const rows = f.priceHistory ?? [];
+  if (!tirgusPriceHistoryHasRows(rows)) return "";
+  const priceChange = rows[0]!.price - rows[rows.length - 1]!.price;
+  const days = parseListedForSaleDays(f.listedForSale);
+  const body = rows
+    .map((row) => {
+      const delta = formatAdifyDeltaLabel(row.delta);
+      const deltaHtml = delta
+        ? `<span class="pdf-adify-delta ${row.delta < 0 ? "pdf-adify-delta--down" : "pdf-adify-delta--up"}">${escapeHtml(delta)}</span>`
+        : "";
+      return `<tr>
+        <td class="pdf-adify-price">${escapeHtml(formatAdifyPriceLabel(row.price))}${deltaHtml}</td>
+        <td>${escapeHtml(formatAdifyMileageLabel(row.mileage))}</td>
+        <td>${escapeHtml(formatAdifyYearLabel(row.year))}</td>
+        <td>${escapeHtml(row.date)}</td>
+      </tr>`;
+    })
+    .join("\n");
+  const duration = days != null ? `${days} diena(s)` : "—";
+  return `<div class="pdf-adify-history">
+    <p class="pdf-adify-history-title">Cenas izmaiņas šajā sludinājumā</p>
+    <table class="pdf-adify-history-table" role="table">${body}</table>
+    <div class="pdf-adify-history-foot">
+      <span>Cenas izmaiņa: <strong>${escapeHtml(formatAdifySignedEur(priceChange))}</strong></span>
+      <span>Ilgums: <strong>${escapeHtml(duration)}</strong></span>
+    </div>
+  </div>`;
+}
+
 function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
   const hasForm = tirgusFormHasContent(p.tirgusForm);
   const hasText = p.tirgus.trim().length > 0;
@@ -698,6 +743,8 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
   const parts: string[] = [];
   if (hasForm && p.tirgusForm) {
     const f = p.tirgusForm;
+    const historyHtml = buildTirgusPriceHistoryTableHtml(f);
+    if (historyHtml) parts.push(historyHtml);
     const rows: string[] = [];
     if (f.listedForSale.trim()) {
       rows.push(
@@ -855,6 +902,45 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisib
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
+function buildLtabCertificateHtml(cert: NonNullable<ClientManualLtabBlockPdf["certificate"]>): string {
+  const title = cert.issuedAt.trim()
+    ? `${LTAB_CERTIFICATE_TITLE} uz ${cert.issuedAt.trim()}`
+    : LTAB_CERTIFICATE_TITLE;
+  const facts: string[] = [];
+  if (cert.vehicleLine.trim()) {
+    facts.push(`<p class="pdf-ltab-izzi-line">${escapeHtml(cert.vehicleLine.trim())}</p>`);
+  }
+  if (cert.accidentCount.trim()) {
+    facts.push(
+      `<p class="pdf-ltab-izzi-line">Negadījumu skaits: <strong>${escapeHtml(cert.accidentCount.trim())}</strong></p>`,
+    );
+  }
+  if (cert.insuredFrom.trim() || cert.insuredTo.trim() || cert.insuredDays.trim()) {
+    const days = cert.insuredDays.trim()
+      ? ` apdrošināts ${escapeHtml(cert.insuredDays.trim())} dienas.`
+      : ".";
+    facts.push(
+      `<p class="pdf-ltab-izzi-line">Laikā no ${escapeHtml(cert.insuredFrom.trim() || "—")} līdz ${escapeHtml(cert.insuredTo.trim() || "—")}${days}</p>`,
+    );
+  }
+  const claims = (cert.claims ?? []).filter(ltabCertificateClaimHasData);
+  let table = "";
+  if (claims.length > 0) {
+    const head =
+      `<tr><th scope="col">CSNg datums</th><th scope="col">Statuss</th><th scope="col">Zaudējumu summa</th></tr>`;
+    const body = claims
+      .map((row) => {
+        const when = [row.date, row.time].filter((x) => x.trim()).join(" ");
+        const amt = formatLtabCertificateAmountEur(row.amount) || row.amount.trim() || "—";
+        return `<tr><td>${escapeHtml(when || "—")}</td><td>${escapeHtml(row.status.trim() || "—")}</td><td class="pdf-ltab-izzi-amt">${escapeHtml(amt)}</td></tr>`;
+      })
+      .join("");
+    table = `<p class="pdf-ltab-izzi-table-label">Zaudējumu dati</p><table class="pdf-ltab-izzi-table" role="table"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  }
+  const footer = `<p class="pdf-ltab-izzi-footer">${escapeHtml(cert.footerNote.trim() || LTAB_CERTIFICATE_FOOTER_DEFAULT)}</p>`;
+  return `<div class="pdf-ltab-izzi"><p class="pdf-ltab-izzi-title">${escapeHtml(title)}</p>${facts.join("")}${table}${footer}</div>`;
+}
+
 function buildLtabAvotuSubsection(
   b: ClientManualLtabBlockPdf | null | undefined,
   vis: PdfVisibilitySettings,
@@ -862,9 +948,11 @@ function buildLtabAvotuSubsection(
   if (!vis.ltab) return "";
   if (!b) return "";
   const hasComments = b.comments.trim().length > 0;
-  if (!hasComments) return "";
+  const certHtml = ltabCertificateHasContent(b.certificate) ? buildLtabCertificateHtml(b.certificate!) : "";
+  if (!hasComments && !certHtml) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml("shield"), SOURCE_BLOCK_LABELS.ltab);
-  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(b.comments)}</div>`;
+  const inner = [certHtml, hasComments ? pdfAvotuCommentIsland(b.comments) : ""].filter(Boolean).join("");
+  const body = `<div class="pdf-source-section-body">${inner}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }
 
@@ -1144,6 +1232,19 @@ function clientReportPrintCss(): string {
         width:26px;height:26px;border-radius:999px;background:rgba(0,97,210,0.1);
       }
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
+      .pdf-ltab-izzi{
+        margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-ltab-izzi-title{margin:0 0 8px;font-size:12px;font-weight:700;color:#0f172a;line-height:1.35;}
+      .pdf-ltab-izzi-line{margin:0 0 4px;font-size:11px;line-height:1.45;color:#0f172a;}
+      .pdf-ltab-izzi-table-label{margin:8px 0 4px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b;}
+      .pdf-ltab-izzi-table{width:100%;border-collapse:collapse;font-size:11px;line-height:1.35;font-family:Inter,sans-serif!important;}
+      .pdf-ltab-izzi-table th{text-align:left;padding:5px 8px;background:#e2e8f0;color:#475569;font-weight:700;font-size:9px;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid #cbd5e1;}
+      .pdf-ltab-izzi-table td{padding:5px 8px;border-bottom:1px solid #e2e8f0;color:#0f172a;background:#fff;}
+      .pdf-ltab-izzi-table tbody tr:last-child td{border-bottom:none;}
+      .pdf-ltab-izzi-amt{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;}
+      .pdf-ltab-izzi-footer{margin:8px 0 0;font-size:9px;line-height:1.4;color:#64748b;font-style:italic;}
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
       .pdf-field-label--row{display:flex;align-items:center;gap:8px;}
       .pdf-field-label-ico{flex-shrink:0;line-height:0;}
@@ -1533,6 +1634,16 @@ function clientReportPrintCss(): string {
       .pdf-price-drop-val{color:#000!important;font-weight:600!important;}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
+      .pdf-adify-history{margin:4px 0 10px;border:1px solid #d4d4dc;border-radius:12px;overflow:hidden;background:#fff;}
+      .pdf-adify-history-title{margin:8px 10px 4px;font-size:0.78rem;font-weight:700;color:#2b2f4a;}
+      .pdf-adify-history-table{width:100%;border-collapse:collapse;font-size:0.72rem;font-weight:600;color:#2b2f4a;}
+      .pdf-adify-history-table td{padding:5px 6px;text-align:center;border-right:1px solid #e4e4ea;width:25%;}
+      .pdf-adify-history-table td:last-child{border-right:0;}
+      .pdf-adify-delta{margin-left:3px;font-size:0.62rem;font-weight:600;}
+      .pdf-adify-delta--down{color:#22c55e;}
+      .pdf-adify-delta--up{color:#ef4444;}
+      .pdf-adify-history-foot{display:flex;justify-content:space-between;background:#686a94;color:#fff;padding:8px 14px;font-size:0.72rem;}
+      .pdf-adify-history-foot strong{font-weight:700;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}

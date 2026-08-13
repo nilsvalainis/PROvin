@@ -2,6 +2,8 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import type { TirgusPriceHistoryRow } from "@/lib/adify-listing-history";
+import { formatAdifyDeltaLabel, formatAdifyPriceLabel } from "@/lib/adify-listing-history";
 import {
   CARVERTICAL_TIMELINE_TITLE,
   type CarVerticalDamageDetailRow,
@@ -350,6 +352,8 @@ export function filterCsddInspectionWarnings(rows: CsddInspectionWarningRow[] | 
 /** @deprecated Lietot CSDD_FORM_STRUCTURED_FIELDS */
 export const CSDD_FORM_SHORT_FIELDS = CSDD_FORM_STRUCTURED_FIELDS;
 
+export type { TirgusPriceHistoryRow };
+
 /** Tirgus dati — admin un PDF etiķetes (precīzi). */
 export type TirgusFormFields = {
   listedForSale: string;
@@ -358,6 +362,8 @@ export type TirgusFormFields = {
   comments: string;
   /** Papildu konteksts tikai Gemini AI — nav PDF. */
   geminiContextRaw: string;
+  /** Adify / sludinājuma cenu vēsture (jaunākais augšā). */
+  priceHistory: TirgusPriceHistoryRow[];
 };
 
 export const TIRGUS_LABEL_LISTED = "Auto pārdošanā (dienas):";
@@ -367,7 +373,44 @@ export const TIRGUS_LABEL_PRICE_DROP = "Cenas izmaiņas (eiro):";
 export const TIRGUS_LABEL_COMMENTS = "Komentāri:";
 
 export function emptyTirgusFields(): TirgusFormFields {
-  return { listedForSale: "", listingCreated: "", priceDrop: "", comments: "", geminiContextRaw: "" };
+  return {
+    listedForSale: "",
+    listingCreated: "",
+    priceDrop: "",
+    comments: "",
+    geminiContextRaw: "",
+    priceHistory: [],
+  };
+}
+
+export function tirgusPriceHistoryHasRows(rows: TirgusPriceHistoryRow[] | null | undefined): boolean {
+  return (rows ?? []).some((r) => Number.isFinite(r?.price) && Boolean(r?.date?.trim()));
+}
+
+export function parseTirgusPriceHistoryRaw(raw: unknown): TirgusPriceHistoryRow[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TirgusPriceHistoryRow[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const price = typeof o.price === "number" && Number.isFinite(o.price) ? o.price : Number(o.price);
+    const date = String(o.date ?? "").trim();
+    if (!date || !Number.isFinite(price)) continue;
+    const mileage =
+      typeof o.mileage === "number" && Number.isFinite(o.mileage) ? o.mileage : o.mileage == null ? null : Number(o.mileage);
+    const year =
+      typeof o.year === "number" && Number.isFinite(o.year) ? o.year : o.year == null ? null : Number(o.year);
+    const delta = typeof o.delta === "number" && Number.isFinite(o.delta) ? o.delta : Number(o.delta) || 0;
+    out.push({
+      date: date.slice(0, 32),
+      price,
+      mileage: mileage != null && Number.isFinite(mileage) ? mileage : null,
+      year: year != null && Number.isFinite(year) ? year : null,
+      delta,
+    });
+    if (out.length >= 80) break;
+  }
+  return out;
 }
 
 export function tirgusFormHasContent(f: TirgusFormFields | null | undefined): boolean {
@@ -376,7 +419,8 @@ export function tirgusFormHasContent(f: TirgusFormFields | null | undefined): bo
     wsStr(f.listedForSale).trim().length > 0 ||
     wsStr(f.listingCreated).trim().length > 0 ||
     wsStr(f.priceDrop).trim().length > 0 ||
-    wsStr(f.comments).trim().length > 0
+    wsStr(f.comments).trim().length > 0 ||
+    tirgusPriceHistoryHasRows(f.priceHistory)
   );
 }
 
@@ -385,6 +429,15 @@ export function tirgusFormToPlainText(f: TirgusFormFields): string {
   if (f.listedForSale.trim()) lines.push(`${TIRGUS_LABEL_LISTED} ${f.listedForSale.trim()}`);
   if (f.listingCreated.trim()) lines.push(`${TIRGUS_LABEL_CREATED} ${f.listingCreated.trim()}`);
   if (f.priceDrop.trim()) lines.push(`${TIRGUS_LABEL_PRICE_DROP} ${f.priceDrop.trim()}`);
+  if (tirgusPriceHistoryHasRows(f.priceHistory)) {
+    lines.push("Cenas izmaiņas šajā sludinājumā:");
+    for (const row of f.priceHistory) {
+      const delta = formatAdifyDeltaLabel(row.delta);
+      lines.push(
+        [formatAdifyPriceLabel(row.price) + (delta ? ` ${delta}` : ""), row.date].filter(Boolean).join(" · "),
+      );
+    }
+  }
   if (f.comments.trim()) {
     lines.push(`${LISTING_ANALYSIS_COMMENT_LABEL}\n${f.comments.trim()}`);
   }
@@ -1871,13 +1924,14 @@ function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
 
 function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
   const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
-  if ("listedForSale" in raw || "listingCreated" in raw || "priceDrop" in raw) {
+  if ("listedForSale" in raw || "listingCreated" in raw || "priceDrop" in raw || "priceHistory" in raw) {
     return {
       listedForSale: clip(raw.listedForSale),
       listingCreated: clip(raw.listingCreated),
       priceDrop: clip(raw.priceDrop),
       comments: typeof raw.comments === "string" ? raw.comments : "",
       geminiContextRaw: clip(raw.geminiContextRaw),
+      priceHistory: parseTirgusPriceHistoryRaw(raw.priceHistory),
     };
   }
   if ("rows" in raw || "comments" in raw) {
@@ -2003,6 +2057,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       priceDrop: wsStr(blocks.tirgus?.priceDrop),
       comments: wsStr(blocks.tirgus?.comments),
       geminiContextRaw: wsStr(blocks.tirgus?.geminiContextRaw),
+      priceHistory: parseTirgusPriceHistoryRaw(blocks.tirgus?.priceHistory),
     },
     citi_avoti: {
       sections: (blocks.citi_avoti?.sections ?? d.citi_avoti.sections).map(repairCitiSection),

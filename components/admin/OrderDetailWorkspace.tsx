@@ -3758,6 +3758,7 @@ export function OrderDetailWorkspace({
                       marketGeminiBusy={geminiTirgusMarketBusy}
                       marketGeminiError={geminiTirgusMarketErr}
                       onMarketGeminiAnalyze={(notes, tier) => void runGeminiTirgusMarket(notes, tier)}
+                      listingUrl={payload.listingUrl}
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>
