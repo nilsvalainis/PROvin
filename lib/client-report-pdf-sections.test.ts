@@ -128,6 +128,8 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-incident-src-pill--autodna");
     expect(html).toContain("pdf-incident-src-pill--carvertical");
     expect(html).not.toContain("pdf-incident-source-vals");
+    expect(html).toMatch(/~[\d\s]+€/);
+    expect(html).not.toContain("vid.");
   });
 
   it("renders damage zones and top-down silhouette on incident cards", () => {

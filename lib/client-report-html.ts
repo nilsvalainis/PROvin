@@ -399,10 +399,11 @@ function formatTirgusPriceDropCellHtml(raw: string): string {
   return `<span class="pdf-price-drop-wrap"><span class="pdf-price-drop-ico" aria-hidden="true">${pdfPriceDropDownArrowHtml()}</span><span class="tabular pdf-price-drop-val">${escapeHtml(t)}</span></span>`;
 }
 
-function formatLossAmountEurCell(raw: string): string {
+function formatLossAmountEurCell(raw: string, opts?: { approx?: boolean }): string {
   const display = normalizeLossAmountEurDisplay(raw);
   const t = display || raw.trim();
-  const esc = escapeHtml(t);
+  const shown = opts?.approx && t ? `~${t}` : t;
+  const esc = escapeHtml(shown);
   if (!t) return esc;
   const flag = getLossAmountUiFlag(display || raw);
   if (flag === "none") return esc;
@@ -613,8 +614,7 @@ function buildIncidentDamageTagsHtml(title: string, labels: string[]): string {
 }
 
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number): string {
-  const lossCell = formatLossAmountEurCell(c.displayAmount);
-  const avgMark = c.averaged ? `<span class="pdf-listing-price-delta pdf-listing-price-delta--note">vid.</span>` : "";
+  const lossCell = formatLossAmountEurCell(c.displayAmount, { approx: c.averaged });
   const sourcePills = buildIncidentSourcePillsHtml(c);
   const countryLabel = c.country.trim() || "—";
   const flag = pdfCountryFlagEmoji(countryLabel);
@@ -629,7 +629,7 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number):
   }
   return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
     <div class="pdf-incident-card__meta">
-      <div class="pdf-incident-card__amount">${lossCell}${avgMark}</div>
+      <div class="pdf-incident-card__amount">${lossCell}</div>
       <div class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></div>
       <div class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</div>
     </div>
