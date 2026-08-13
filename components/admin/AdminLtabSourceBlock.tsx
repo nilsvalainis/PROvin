@@ -17,11 +17,15 @@ import type { LtabBlockState, LtabIncidentRow, WorkspaceSourceBlocks } from "@/l
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   emptyLtabCertificateClaim,
+  formatLtabCentsAsEur,
   formatLtabCertificateAmountEur,
+  formatLtabClaimWhen,
   LTAB_CERTIFICATE_FOOTER_DEFAULT,
   LTAB_CERTIFICATE_SECTION_LABEL,
   LTAB_CERTIFICATE_TITLE,
+  ltabCertificateClaimHasData,
   ltabCertificateHasContent,
+  sumLtabCertificateAmountCents,
   type LtabCertificate,
   type LtabCertificateClaim,
 } from "@/lib/ltab-report-extract";
@@ -382,96 +386,115 @@ export function AdminLtabSourceBlock({
                   <p className="pt-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
                     Zaudējumu dati
                   </p>
-                  <div className="overflow-x-auto rounded-md border border-slate-200/90">
-                    <table className="w-full min-w-[360px] border-collapse text-[11px]">
-                      <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                          <th className={mileCell}>CSNg datums</th>
-                          <th className={mileCell}>Statuss</th>
-                          <th className={mileCell}>Zaudējumu summa</th>
-                          {!readOnly ? <th className={`w-9 ${mileCell}`} aria-hidden /> : null}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(cert.claims.length > 0 ? cert.claims : [emptyLtabCertificateClaim()]).map((row, ri) => (
-                          <tr key={ri} className="border-b border-slate-100 last:border-b-0">
-                            <td className={`${mileCell} align-top`}>
-                              {readOnly ? (
-                                <span className="text-[var(--color-apple-text)]">
-                                  {[row.date, row.time].filter(Boolean).join(" ") || "—"}
-                                </span>
-                              ) : (
-                                <div className="flex flex-col gap-0.5">
-                                  <input
-                                    className={inp}
-                                    placeholder="16.06.2021"
-                                    value={row.date}
-                                    disabled={disabled}
-                                    onChange={(e) => setClaim(ri, { date: e.target.value })}
-                                    aria-label={`LTAB izziņa datums, rinda ${ri + 1}`}
-                                  />
-                                  <input
-                                    className={inp}
-                                    placeholder="07:40"
-                                    value={row.time}
-                                    disabled={disabled}
-                                    onChange={(e) => setClaim(ri, { time: e.target.value })}
-                                    aria-label={`LTAB izziņa laiks, rinda ${ri + 1}`}
-                                  />
+                  {(() => {
+                    const claimRows =
+                      cert.claims.length > 0 ? cert.claims : [emptyLtabCertificateClaim()];
+                    const filled = cert.claims.filter(ltabCertificateClaimHasData);
+                    const totalCents = sumLtabCertificateAmountCents(filled);
+                    const totalLabel = totalCents > 0 ? formatLtabCentsAsEur(totalCents) : "—";
+                    return (
+                      <div className="overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm">
+                        <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+                          CSNg izmaiņas šajā izziņā
+                        </p>
+                        <ul className="m-0 list-none divide-y divide-slate-100 px-1 pb-1">
+                          {claimRows.map((row, ri) => {
+                            const amt =
+                              formatLtabCertificateAmountEur(row.amount) || row.amount.trim() || "";
+                            return (
+                              <li
+                                key={ri}
+                                className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,1fr)_auto] items-start gap-1 px-2 py-1.5"
+                              >
+                                <div className="min-w-0">
+                                  {readOnly ? (
+                                    <span className="text-[12px] font-semibold tabular-nums text-[var(--color-apple-text)]">
+                                      {amt || "—"}
+                                    </span>
+                                  ) : (
+                                    <input
+                                      className={inp}
+                                      placeholder="2778.22"
+                                      value={row.amount}
+                                      disabled={disabled}
+                                      onChange={(e) => setClaim(ri, { amount: e.target.value })}
+                                      aria-label={`LTAB izziņa summa, rinda ${ri + 1}`}
+                                    />
+                                  )}
                                 </div>
-                              )}
-                            </td>
-                            <td className={`${mileCell} align-top`}>
-                              {readOnly ? (
-                                <span>{row.status.trim() || "—"}</span>
-                              ) : (
-                                <input
-                                  className={inp}
-                                  placeholder="Cietušais"
-                                  value={row.status}
-                                  disabled={disabled}
-                                  onChange={(e) => setClaim(ri, { status: e.target.value })}
-                                  aria-label={`LTAB izziņa statuss, rinda ${ri + 1}`}
-                                />
-                              )}
-                            </td>
-                            <td className={`${mileCell} align-top`}>
-                              {readOnly ? (
-                                <span className="font-semibold">
-                                  {formatLtabCertificateAmountEur(row.amount) || row.amount || "—"}
-                                </span>
-                              ) : (
-                                <input
-                                  className={inp}
-                                  placeholder="2778.22"
-                                  value={row.amount}
-                                  disabled={disabled}
-                                  onChange={(e) => setClaim(ri, { amount: e.target.value })}
-                                  aria-label={`LTAB izziņa summa, rinda ${ri + 1}`}
-                                />
-                              )}
-                            </td>
-                            {!readOnly ? (
-                              <td className={`${mileCell} align-top`}>
-                                {cert.claims.length > 1 ? (
-                                  <button
-                                    type="button"
-                                    disabled={disabled}
-                                    className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
-                                    onClick={() => removeClaim(ri)}
-                                    title="Noņemt rindu"
-                                    aria-label={`Noņemt LTAB izziņas rindu ${ri + 1}`}
-                                  >
-                                    ×
-                                  </button>
+                                <div className="min-w-0">
+                                  {readOnly ? (
+                                    <span className="block text-center text-[12px] font-medium text-[var(--color-apple-text)]">
+                                      {row.status.trim() || "—"}
+                                    </span>
+                                  ) : (
+                                    <input
+                                      className={inp}
+                                      placeholder="Cietušais"
+                                      value={row.status}
+                                      disabled={disabled}
+                                      onChange={(e) => setClaim(ri, { status: e.target.value })}
+                                      aria-label={`LTAB izziņa statuss, rinda ${ri + 1}`}
+                                    />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  {readOnly ? (
+                                    <span className="block text-right text-[12px] font-medium tabular-nums text-[var(--color-provin-muted)]">
+                                      {formatLtabClaimWhen(row) || "—"}
+                                    </span>
+                                  ) : (
+                                    <div className="flex flex-col gap-0.5">
+                                      <input
+                                        className={inp}
+                                        placeholder="16.06.2021"
+                                        value={row.date}
+                                        disabled={disabled}
+                                        onChange={(e) => setClaim(ri, { date: e.target.value })}
+                                        aria-label={`LTAB izziņa datums, rinda ${ri + 1}`}
+                                      />
+                                      <input
+                                        className={inp}
+                                        placeholder="07:40"
+                                        value={row.time}
+                                        disabled={disabled}
+                                        onChange={(e) => setClaim(ri, { time: e.target.value })}
+                                        aria-label={`LTAB izziņa laiks, rinda ${ri + 1}`}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                                {!readOnly ? (
+                                  <div>
+                                    {cert.claims.length > 1 ? (
+                                      <button
+                                        type="button"
+                                        disabled={disabled}
+                                        className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
+                                        onClick={() => removeClaim(ri)}
+                                        title="Noņemt rindu"
+                                        aria-label={`Noņemt LTAB izziņas rindu ${ri + 1}`}
+                                      >
+                                        ×
+                                      </button>
+                                    ) : null}
+                                  </div>
                                 ) : null}
-                              </td>
-                            ) : null}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        <div className="flex items-center justify-between gap-3 bg-[var(--color-provin-accent)] px-3 py-2 text-[11px] text-white">
+                          <span>
+                            Kopā: <strong>{totalLabel}</strong>
+                          </span>
+                          <span>
+                            Negadījumi: <strong>{filled.length}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {!readOnly && !disabled ? (
                     <button
                       type="button"

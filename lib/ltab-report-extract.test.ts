@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   extractLtabCertificate,
+  formatLtabCentsAsEur,
   formatLtabCertificateAmountEur,
   looksLikeLtabCertificate,
   ltabCertificateToIncidentRows,
+  sumLtabCertificateAmountCents,
+  unglueLtabOctaText,
 } from "@/lib/ltab-report-extract";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { normalizePdfExtractedText } from "@/lib/pdf-text-normalize";
 
 const LTAB_TEXT = `
 Transportlīdzekļa zaudējumu dati uz 13.08.2026 20:06:02
@@ -131,10 +135,87 @@ describe("LTAB izziņas parseris", () => {
       formatBytes: () => "0 B",
     });
     expect(html).toContain("pdf-ltab-izzi");
+    expect(html).toContain("pdf-ltab-loss-history");
+    expect(html).toContain("pdf-listing-price-history-foot");
     expect(html).toContain("AUDI A6 AVANT");
     expect(html).toContain("Cietušais");
     expect(html).toContain("2 778.22 €");
     expect(html).toContain("16.06.2021 07:40");
+    expect(html).toContain("Kopā:");
+    expect(html).toContain("4 377.22 €");
+    expect(html).toContain("Negadījumi:");
     expect(html).toContain("OCTA informācijas sistēmas");
+  });
+});
+
+const AUDI_A6_PDF_RAW = `
+Transportlīdzekļa zaudējumu dati uz 13.08.2026 20:06:02
+Transportlīdzeklis AUDI A6 AVANT, izlaiduma gads 2016. Valsts numura zīme OB5401.
+Negadījumu skaits: 2
+Laikā no 31.07.2019 līdz 31.01.2027 apdrošināts 2216 dienas.
+Zaudējumu dati:
+CSNg
+Datums
+StatussZaudējumu summa, ja transportlīdzeklis cietis vai norakstāms
+16.06.2021
+07:40
+Cietušais2778.22
+20.10.2020
+20:30
+Cietušais1599.00
+Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.
+`.trim();
+
+const ATBILDIGS_RAW = `
+Transportlīdzekļa zaudējumu dati uz 21.04.2026 01:41:05
+Transportlīdzeklis AUDI Q5, izlaiduma gads 2010. Valsts numura zīme RX73.
+Negadījumu skaits: 1
+Laikā no 21.08.2020 līdz 01.11.2026 apdrošināts 2191 dienas.
+Zaudējumu dati:
+CSNg
+Datums
+StatussZaudējumu summa, ja transportlīdzeklis cietis vai norakstāms
+27.05.2022
+13:00
+Atbildīgs
+Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.
+`.trim();
+
+describe("LTAB izziņa — reāls pdf-parse teksts", () => {
+  it("atlimē datumu no laika un statusu no summas pēc ciparu salīmēšanas", () => {
+    const glued = normalizePdfExtractedText(AUDI_A6_PDF_RAW);
+    expect(glued).toContain("16.06.202107:40");
+    expect(glued).toContain("Cietušais2778.22");
+    const fixed = unglueLtabOctaText(glued);
+    expect(fixed).toContain("16.06.2021 07:40");
+    expect(fixed).toContain("Cietušais 2778.22");
+  });
+
+  it("aizpilda Zaudējumu dati rindas no salīmēta servera teksta", () => {
+    const cert = extractLtabCertificate(normalizePdfExtractedText(AUDI_A6_PDF_RAW));
+    expect(cert).not.toBeNull();
+    expect(cert!.issuedAt).toBe("13.08.2026 20:06:02");
+    expect(cert!.claims).toHaveLength(2);
+    expect(cert!.claims[0]).toEqual({
+      date: "16.06.2021",
+      time: "07:40",
+      status: "Cietušais",
+      amount: "2778.22",
+    });
+    expect(cert!.claims[1]).toEqual({
+      date: "20.10.2020",
+      time: "20:30",
+      status: "Cietušais",
+      amount: "1599.00",
+    });
+    expect(sumLtabCertificateAmountCents(cert!.claims)).toBe(437722);
+    expect(formatLtabCentsAsEur(437722)).toBe("4 377.22 €");
+  });
+
+  it("saglabā Atbildīgs rindu bez summas", () => {
+    const cert = extractLtabCertificate(normalizePdfExtractedText(ATBILDIGS_RAW));
+    expect(cert!.claims).toEqual([
+      { date: "27.05.2022", time: "13:00", status: "Atbildīgs", amount: "" },
+    ]);
   });
 });

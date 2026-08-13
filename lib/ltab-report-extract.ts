@@ -54,6 +54,57 @@ export function emptyLtabCertificateClaim(): LtabCertificateClaim {
   return { date: "", time: "", status: "", amount: "" };
 }
 
+/** OCTA izziņas statusi tabulā „Zaudējumu dati”. */
+export const LTAB_CLAIM_STATUSES = ["Cietušais", "Atbildīgs", "Norakstāms"] as const;
+
+const LTAB_CLAIM_STATUS_ALT = LTAB_CLAIM_STATUSES.join("|");
+
+/**
+ * pdf-parse / `normalizePdfExtractedText` salīmē ciparus (`2021 07:40` → `202107:40`,
+ * `Cietušais2778.22`, `2778.2220.10.2020`). Atjauno robežas pirms CSNg parsēšanas.
+ */
+export function unglueLtabOctaText(raw: string): string {
+  return raw
+    .replace(/(\d{1,2}\.\d{1,2}\.\d{4})(\d{1,2}:\d{2}(?::\d{2})?)/g, "$1 $2")
+    .replace(/(\d+[.,]\d{2})(?=\d{1,2}\.\d{1,2}\.\d{4})/g, "$1 ")
+    .replace(new RegExp(`(${LTAB_CLAIM_STATUS_ALT})(?=\\d)`, "gi"), "$1 ");
+}
+
+/** Summa → centi; tukšs / nederīgs → null. */
+export function ltabCertificateAmountToCents(raw: string): number | null {
+  const t = raw.replace(/EUR|€/gi, "").trim();
+  if (!t) return null;
+  const m = t.match(/^([\d\s\u00a0\u202f']+)(?:[.,](\d{1,2}))?$/);
+  if (!m) return null;
+  const whole = Number.parseInt(m[1]!.replace(/[^\d]/g, ""), 10);
+  if (Number.isNaN(whole)) return null;
+  const cents = m[2] ? Number.parseInt(m[2].padEnd(2, "0").slice(0, 2), 10) : 0;
+  if (Number.isNaN(cents)) return null;
+  return whole * 100 + cents;
+}
+
+export function sumLtabCertificateAmountCents(claims: LtabCertificateClaim[]): number {
+  let sum = 0;
+  for (const c of claims) {
+    const n = ltabCertificateAmountToCents(c.amount);
+    if (n != null) sum += n;
+  }
+  return sum;
+}
+
+export function formatLtabCentsAsEur(cents: number): string {
+  const sign = cents < 0 ? "-" : "";
+  const abs = Math.abs(Math.round(cents));
+  const whole = Math.floor(abs / 100);
+  const frac = String(abs % 100).padStart(2, "0");
+  const grouped = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${sign}${grouped}.${frac} €`;
+}
+
+export function formatLtabClaimWhen(c: Pick<LtabCertificateClaim, "date" | "time">): string {
+  return [c.date.trim(), c.time.trim()].filter(Boolean).join(" ");
+}
+
 export function ltabCertificateClaimHasData(c: LtabCertificateClaim): boolean {
   return Boolean(c.date.trim() || c.time.trim() || c.status.trim() || c.amount.trim());
 }
@@ -156,19 +207,27 @@ function normalizePdfText(raw: string): string {
     .trim();
 }
 
-const CLAIM_RE =
-  /(\d{1,2}\.\d{1,2}\.\d{4})\s+(\d{1,2}:\d{2})\s+([A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž]+)(?:\s+|$)(\d+(?:[.,]\d{1,2})?)/g;
+const CLAIM_RE = new RegExp(
+  `(\\d{1,2}\\.\\d{1,2}\\.\\d{4})\\s+(\\d{1,2}:\\d{2})\\s+(${LTAB_CLAIM_STATUS_ALT})(?:\\s+(\\d+[.,]\\d{2}))?`,
+  "gi",
+);
+
+function canonicalLtabClaimStatus(raw: string): string {
+  const t = raw.trim();
+  const hit = LTAB_CLAIM_STATUSES.find((s) => s.toLowerCase() === t.toLowerCase());
+  return hit ?? t;
+}
 
 export function extractLtabCertificate(rawText: string): LtabCertificate | null {
-  const text = normalizePdfText(rawText);
+  const text = unglueLtabOctaText(normalizePdfText(rawText));
   if (!text || !looksLikeLtabCertificate(text)) return null;
 
   const cert = emptyLtabCertificate();
 
   const issued = text.match(
-    /Transportlīdzekļa\s+zaudējumu\s+dati\s+uz\s+(\d{1,2}\.\d{1,2}\.\d{4}\s+\d{1,2}:\d{2}(?::\d{2})?)/i,
+    /Transportlīdzekļa\s+zaudējumu\s+dati\s+uz\s+(\d{1,2}\.\d{1,2}\.\d{4})\s+(\d{1,2}:\d{2}(?::\d{2})?)/i,
   );
-  if (issued?.[1]) cert.issuedAt = issued[1].trim();
+  if (issued?.[1] && issued[2]) cert.issuedAt = `${issued[1].trim()} ${issued[2].trim()}`;
 
   const vehicle = text.match(
     /Transportlīdzeklis\s+([^.\n]+?),\s+izlaiduma\s+gads\s+(\d{4})\.\s+Valsts\s+numura\s+z[īi]me\s+([A-Z0-9]+)/i,
@@ -204,7 +263,7 @@ export function extractLtabCertificate(rawText: string): LtabCertificate | null 
   while ((m = CLAIM_RE.exec(tableHead)) !== null) {
     const date = formatAutoRecordsDateForOutput(m[1] ?? "") || (m[1] ?? "").trim();
     const time = (m[2] ?? "").trim();
-    const status = (m[3] ?? "").trim();
+    const status = canonicalLtabClaimStatus(m[3] ?? "");
     const amount = (m[4] ?? "").replace(",", ".").trim();
     const key = `${date}|${time}|${amount}`;
     if (!date || seen.has(key)) continue;

@@ -36,11 +36,14 @@ import {
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import {
+  formatLtabCentsAsEur,
   formatLtabCertificateAmountEur,
+  formatLtabClaimWhen,
   LTAB_CERTIFICATE_FOOTER_DEFAULT,
   LTAB_CERTIFICATE_TITLE,
   ltabCertificateClaimHasData,
   ltabCertificateHasContent,
+  sumLtabCertificateAmountCents,
 } from "@/lib/ltab-report-extract";
 import {
   formatAdifyDeltaLabel,
@@ -925,16 +928,27 @@ function buildLtabCertificateHtml(cert: NonNullable<ClientManualLtabBlockPdf["ce
   const claims = (cert.claims ?? []).filter(ltabCertificateClaimHasData);
   let table = "";
   if (claims.length > 0) {
-    const head =
-      `<tr><th scope="col">CSNg datums</th><th scope="col">Statuss</th><th scope="col">Zaudējumu summa</th></tr>`;
     const body = claims
       .map((row) => {
-        const when = [row.date, row.time].filter((x) => x.trim()).join(" ");
+        const when = formatLtabClaimWhen(row) || "—";
         const amt = formatLtabCertificateAmountEur(row.amount) || row.amount.trim() || "—";
-        return `<tr><td>${escapeHtml(when || "—")}</td><td>${escapeHtml(row.status.trim() || "—")}</td><td class="pdf-ltab-izzi-amt">${escapeHtml(amt)}</td></tr>`;
+        return `<tr>
+        <td class="pdf-listing-price">${escapeHtml(amt)}</td>
+        <td>${escapeHtml(row.status.trim() || "—")}</td>
+        <td>${escapeHtml(when)}</td>
+      </tr>`;
       })
       .join("");
-    table = `<p class="pdf-ltab-izzi-table-label">Zaudējumu dati</p><table class="pdf-ltab-izzi-table" role="table"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    const totalCents = sumLtabCertificateAmountCents(claims);
+    const totalLabel = totalCents > 0 ? formatLtabCentsAsEur(totalCents) : "—";
+    table = `<div class="pdf-listing-price-history pdf-ltab-loss-history">
+    <p class="pdf-listing-price-history-title">Zaudējumu dati</p>
+    <table class="pdf-listing-price-history-table" role="table">${body}</table>
+    <div class="pdf-listing-price-history-foot">
+      <span>Kopā: <strong>${escapeHtml(totalLabel)}</strong></span>
+      <span>Negadījumi: <strong>${claims.length}</strong></span>
+    </div>
+  </div>`;
   }
   const footer = `<p class="pdf-ltab-izzi-footer">${escapeHtml(cert.footerNote.trim() || LTAB_CERTIFICATE_FOOTER_DEFAULT)}</p>`;
   return `<div class="pdf-ltab-izzi"><p class="pdf-ltab-izzi-title">${escapeHtml(title)}</p>${facts.join("")}${table}${footer}</div>`;
@@ -1239,12 +1253,6 @@ function clientReportPrintCss(): string {
       }
       .pdf-ltab-izzi-title{margin:0 0 8px;font-size:12px;font-weight:700;color:#0f172a;line-height:1.35;}
       .pdf-ltab-izzi-line{margin:0 0 4px;font-size:11px;line-height:1.45;color:#0f172a;}
-      .pdf-ltab-izzi-table-label{margin:8px 0 4px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b;}
-      .pdf-ltab-izzi-table{width:100%;border-collapse:collapse;font-size:11px;line-height:1.35;font-family:Inter,sans-serif!important;}
-      .pdf-ltab-izzi-table th{text-align:left;padding:5px 8px;background:#e2e8f0;color:#475569;font-weight:700;font-size:9px;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid #cbd5e1;}
-      .pdf-ltab-izzi-table td{padding:5px 8px;border-bottom:1px solid #e2e8f0;color:#0f172a;background:#fff;}
-      .pdf-ltab-izzi-table tbody tr:last-child td{border-bottom:none;}
-      .pdf-ltab-izzi-amt{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;}
       .pdf-ltab-izzi-footer{margin:8px 0 0;font-size:9px;line-height:1.4;color:#64748b;font-style:italic;}
       .pdf-field-label{font-size:0.68rem;font-weight:600;margin:0.45rem 0 0.2rem;color:#334155;letter-spacing:0.02em;}
       .pdf-field-label--row{display:flex;align-items:center;gap:8px;}
@@ -1635,7 +1643,7 @@ function clientReportPrintCss(): string {
       .pdf-price-drop-val{color:#000!important;font-weight:600!important;}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
-      .pdf-listing-price-history{margin:4px 0 10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;}
+      .pdf-listing-price-history,.pdf-ltab-loss-history{margin:4px 0 10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;}
       .pdf-listing-price-history-title{margin:8px 10px 4px;font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;}
       .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:0.72rem;font-weight:600;color:#1d1d1f;}
       .pdf-listing-price-history-table td{padding:5px 8px;border-bottom:1px solid #f1f5f9;width:33.33%;}
