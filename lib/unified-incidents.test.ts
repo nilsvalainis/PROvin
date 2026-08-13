@@ -137,6 +137,32 @@ describe("aggregateUnifiedIncidents", () => {
     expect(agg.clusters[0]?.averageEur).toBe(1500);
     expect(agg.clusters[0]?.country).toBe("Latvija");
   });
+
+  it("piesaista bojājumu zonas pēc mēneša un valsts", () => {
+    const agg = aggregateUnifiedIncidents(
+      [
+        row({
+          date: "01.10.2020",
+          lossAmount: "1 300 - 1 400 €",
+          country: "Latvija",
+          sourceLabel: "AutoDNA",
+          sortableTime: Date.UTC(2020, 9, 1),
+          sourceOrder: 0,
+        }),
+      ],
+      [
+        {
+          date: "01.10.2020",
+          country: "Latvija",
+          lossAmount: "1 300 - 1 400 €",
+          damagedSides: "Priekšpuse Labā sāna priekšpuse Kreisā sāna priekšpuse",
+          damageGroups: "Virsbūves ārējās daļas",
+        },
+      ],
+    );
+    expect(agg.clusters[0]?.damage?.zoneIds.sort()).toEqual(["front", "front_left", "front_right"]);
+    expect(agg.clusters[0]?.damage?.groupLabels).toEqual(["Virsbūves ārējās daļas"]);
+  });
 });
 
 describe("collectUnifiedIncidentRows + count label", () => {

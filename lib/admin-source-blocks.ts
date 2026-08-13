@@ -1433,9 +1433,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(k === "carvertical" && (b.vehicleHistoryTimeline ?? []).length > 0
         ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline }
         : {}),
-      ...(k === "carvertical" && (b.damageDetails ?? []).length > 0
-        ? { damageDetails: b.damageDetails }
-        : {}),
+      ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),
     });
   }
   for (const k of VIN_REGISTRY_BLOCK_KEYS) {
@@ -1466,6 +1464,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       incidentRows: (citi.incidents ?? []).filter(ltabRowHasData),
       comments: (citi.comments ?? "").trim(),
       ...(sourcePdfChecklistHasAny(citi.pdfChecklist) ? { pdfChecklist: citi.pdfChecklist } : {}),
+      ...((citi.damageDetails ?? []).length > 0 ? { damageDetails: citi.damageDetails } : {}),
     });
   }
   return out;

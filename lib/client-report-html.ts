@@ -91,8 +91,10 @@ import {
   getClientReportLegalFooterBlocks,
 } from "@/lib/report-pdf-standards";
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
+import { buildDamageZoneSilhouetteSvg } from "@/lib/damage-zones";
 import {
   aggregateUnifiedIncidents,
+  collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
   formatIncidentSourceValuationsLine,
   type UnifiedIncidentAggregation,
@@ -586,25 +588,45 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
-function buildIncidentClusterRowHtml(c: UnifiedIncidentCluster): string {
+function buildIncidentDamageTagsHtml(title: string, labels: string[]): string {
+  if (labels.length === 0) return "";
+  const items = labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("");
+  return `<div class="pdf-dmg-list"><p class="pdf-dmg-list__h">${escapeHtml(title)}</p><ul class="pdf-dmg-tags">${items}</ul></div>`;
+}
+
+function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number): string {
   const lossCell = formatLossAmountEurCell(c.displayAmount);
   const avgMark = c.averaged ? `<span class="pdf-listing-price-delta pdf-listing-price-delta--note">vid.</span>` : "";
   const sourceLine = formatIncidentSourceValuationsLine(c);
   const sourceHtml = sourceLine
     ? `<div class="pdf-incident-source-vals">${escapeHtml(sourceLine)}</div>`
     : "";
-  return `<tr>
-        <td class="pdf-listing-price">${lossCell}${avgMark}${sourceHtml}</td>
-        <td>${escapeHtml(c.country || "—")}</td>
-        <td>${escapeHtml(c.date || "—")}</td>
-      </tr>`;
+  const countryLabel = c.country.trim() || "—";
+  const flag = pdfCountryFlagEmoji(countryLabel);
+  const dmg = c.damage;
+  const withDmg = Boolean(dmg && (dmg.zoneIds.length > 0 || dmg.zoneLabels.length > 0 || dmg.groupLabels.length > 0));
+  let visual = "";
+  if (withDmg && dmg) {
+    const svg = buildDamageZoneSilhouetteSvg(dmg.zoneIds, `c${index}`);
+    const zones = buildIncidentDamageTagsHtml("Bojājumu zonas", dmg.zoneLabels);
+    const groups = buildIncidentDamageTagsHtml("Bojājumu grupas", dmg.groupLabels);
+    visual = `<div class="pdf-incident-card__visual">${svg}<div class="pdf-incident-card__lists">${zones}${groups}</div></div>`;
+  }
+  return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
+    <div class="pdf-incident-card__meta">
+      <div class="pdf-incident-card__amount">${lossCell}${avgMark}${sourceHtml}</div>
+      <div class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></div>
+      <div class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</div>
+    </div>
+    ${visual}
+  </article>`;
 }
 
 function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string {
   if (agg.clusters.length === 0) return "";
-  const body = agg.clusters.map(buildIncidentClusterRowHtml).join("\n");
+  const body = agg.clusters.map((c, i) => buildIncidentClusterCardHtml(c, i)).join("\n");
   return `<div class="pdf-listing-price-history pdf-incident-history-card">
-    <table class="pdf-listing-price-history-table" role="table">${body}</table>
+    ${body}
     <div class="pdf-listing-price-history-foot">
       <span>Negadījumi: <strong>${escapeHtml(String(agg.uniqueCount))}</strong></span>
     </div>
@@ -620,7 +642,8 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
   });
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   if (collected.length === 0 && !adminNoteHtml) return "";
-  const agg = aggregateUnifiedIncidents(collected);
+  const damageDetails = collectUnifiedIncidentDamageDetails(p.manualVendorBlocks ?? null);
+  const agg = aggregateUnifiedIncidents(collected, damageDetails);
   const card = buildIncidentClustersCardHtml(agg);
   const head = sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE);
   const body = `${card}${adminNoteHtml}`;
@@ -1316,7 +1339,7 @@ function clientReportPrintCss(): string {
         box-shadow:0 1px 4px rgba(15,23,42,.05);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-unified-incidents-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
+      .pdf-unified-incidents-zone{margin:0 0 16px;padding:16px 16px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:10px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
       .pdf-unified-incidents-zone__body > .pdf-report-comment-note:last-child,
       .pdf-unified-mileage-zone__body > .pdf-report-comment-note:last-child{
@@ -1652,7 +1675,23 @@ function clientReportPrintCss(): string {
       .pdf-listing-price-delta--down{color:#059669;}
       .pdf-listing-price-delta--up{color:#dc2626;}
       .pdf-listing-price-delta--note{color:#64748b;font-weight:500;}
-      .pdf-incident-source-vals{display:block;margin-top:2px;font-size:0.62rem;font-weight:500;color:#64748b;line-height:1.35;}
+      .pdf-incident-source-vals{display:block;margin-top:3px;font-size:0.62rem;font-weight:500;color:#64748b;line-height:1.35;}
+      .pdf-incident-history-card{padding:0;}
+      .pdf-incident-card{padding:14px 16px 16px;border-bottom:1px solid #f1f5f9;break-inside:avoid;page-break-inside:avoid;}
+      .pdf-incident-card:last-of-type{border-bottom:none;}
+      .pdf-incident-card__meta{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;gap:10px 16px;align-items:start;}
+      .pdf-incident-card__amount{font-size:0.92rem;font-weight:700;color:#0f172a;line-height:1.25;}
+      .pdf-incident-card__amount .pdf-num-warn{font-size:0.92rem!important;}
+      .pdf-incident-card__country{display:flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:600;color:#334155;justify-content:center;padding-top:2px;}
+      .pdf-incident-card__country .pdf-country-flag{font-size:14px;line-height:1;}
+      .pdf-incident-card__date{font-size:0.78rem;font-weight:600;color:#64748b;text-align:right;padding-top:2px;white-space:nowrap;}
+      .pdf-incident-card--with-dmg .pdf-incident-card__visual{display:grid;grid-template-columns:158px minmax(0,1fr);gap:18px 22px;align-items:start;margin-top:14px;padding-top:14px;border-top:1px solid #f1f5f9;}
+      .pdf-dmg-sil{display:block;width:158px;height:auto;max-width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-incident-card__lists{display:flex;flex-direction:column;gap:12px;min-width:0;padding-top:4px;}
+      .pdf-dmg-list__h{margin:0 0 6px;font-size:0.62rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;}
+      .pdf-dmg-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none;}
+      .pdf-dmg-tags li{margin:0;padding:5px 10px;border-radius:999px;background:rgba(0,97,210,0.1);color:${PDF_BRAND_BLUE_HEX};font-size:0.72rem;font-weight:600;line-height:1.3;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-dmg-list + .pdf-dmg-list .pdf-dmg-tags li{background:#f1f5f9;color:#334155;}
       .pdf-listing-price-history-foot{display:flex;justify-content:space-between;background:${PDF_BRAND_BLUE_HEX};color:#fff;padding:8px 12px;font-size:0.72rem;}
       .pdf-listing-price-history-foot strong{font-weight:700;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
@@ -1859,9 +1898,12 @@ function clientReportPrintCss(): string {
     ` +
     pdfLayoutDraftExtraCss() +
     `
-      .provin-report-doc .pdf-unified-mileage-zone.pdf-surface-card,
-      .provin-report-doc .pdf-unified-incidents-zone.pdf-surface-card{
+      .provin-report-doc .pdf-unified-mileage-zone.pdf-surface-card{
         margin:0 0 14px!important;padding:12px 14px!important;border:1px solid #f1f5f9!important;border-radius:8px!important;
+        background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.05)!important;
+      }
+      .provin-report-doc .pdf-unified-incidents-zone.pdf-surface-card{
+        margin:0 0 16px!important;padding:16px 16px 14px!important;border:1px solid #f1f5f9!important;border-radius:10px!important;
         background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.05)!important;
       }
     `;

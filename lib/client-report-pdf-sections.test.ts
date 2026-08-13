@@ -100,7 +100,7 @@ describe("unified PDF sections single block", () => {
     expect(html.indexOf("pdf-incident-history-card")).toBeLessThan(html.indexOf("Kopsavilkuma teksts"));
   });
 
-  it("does not render CarVertical damage detail sub-rows (hidden for now)", () => {
+  it("renders damage zones and top-down silhouette on incident cards", () => {
     const p = {
       internalComment: "Kopsavilkums",
       manualVendorBlocks: [
@@ -124,9 +124,13 @@ describe("unified PDF sections single block", () => {
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("01.06.2024");
+    expect(html).toContain("pdf-incident-card--with-dmg");
+    expect(html).toContain("pdf-dmg-sil");
+    expect(html).toContain("Bojājumu zonas");
+    expect(html).toContain("Kreisā puse");
+    expect(html).toContain("Priekšpuse");
+    expect(html).toContain("Ārējās virsbūves detaļas");
     expect(html).not.toContain("pdf-cv-damage-sub");
-    expect(html).not.toContain("Kreisā puse Priekšpuse");
-    expect(html).not.toContain("Ārējās virsbūves detaļas");
     expect(html).not.toContain("pdf-cv-damage-chart");
   });
 });

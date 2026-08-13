@@ -8,6 +8,12 @@ import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncident
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
+  damageGroupDisplayLabels,
+  damageZoneDisplayLabels,
+  parseDamageZoneHits,
+  type DamageZoneId,
+} from "@/lib/damage-zones";
+import {
   formatLossEurWholeDisplay,
   normalizeLossAmountEurDisplay,
   parseLossAmountEurComparable,
@@ -38,6 +44,21 @@ export type UnifiedIncidentCluster = {
   averaged: boolean;
   sourceValuations: UnifiedIncidentSourceValuation[];
   sortableTime: number;
+  damage: UnifiedIncidentDamage | null;
+};
+
+export type UnifiedIncidentDamage = {
+  zoneIds: DamageZoneId[];
+  zoneLabels: string[];
+  groupLabels: string[];
+};
+
+export type UnifiedIncidentDamageInput = {
+  date: string;
+  country: string;
+  lossAmount: string;
+  damagedSides: string;
+  damageGroups: string;
 };
 
 export type UnifiedIncidentAggregation = {
@@ -81,6 +102,28 @@ export function collectUnifiedIncidentRows(args: {
   }
   if (!args.options?.omitLtab) {
     for (const r of args.manualLtabBlock?.rows ?? []) push(r, "LTAB");
+  }
+  return out;
+}
+
+export function collectUnifiedIncidentDamageDetails(
+  manualVendorBlocks?: ClientManualVendorBlockPdf[] | null,
+  options?: CollectUnifiedIncidentOptions,
+): UnifiedIncidentDamageInput[] {
+  const omitTitles = options?.omitVendorBlockTitles;
+  const out: UnifiedIncidentDamageInput[] = [];
+  for (const b of manualVendorBlocks ?? []) {
+    if (omitTitles?.has(b.title)) continue;
+    for (const d of b.damageDetails ?? []) {
+      if (!d.damagedSides.trim() && !d.damageGroups.trim()) continue;
+      out.push({
+        date: d.date.trim(),
+        country: d.country.trim(),
+        lossAmount: d.lossAmount.trim(),
+        damagedSides: d.damagedSides.trim(),
+        damageGroups: d.damageGroups.trim(),
+      });
+    }
   }
   return out;
 }
@@ -212,6 +255,7 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
     averaged,
     sourceValuations,
     sortableTime: newest.sortableTime,
+    damage: null,
   };
 }
 
@@ -220,7 +264,10 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
  * Vidējā summa = vidējais no katra avota novērtējuma (nevis visu rindu aritmētiskais, lai AutoDNA
  * vairākas rindas par to pašu CSNg nepārsvarotu LTAB).
  */
-export function aggregateUnifiedIncidents(rows: UnifiedIncidentRow[]): UnifiedIncidentAggregation {
+export function aggregateUnifiedIncidents(
+  rows: UnifiedIncidentRow[],
+  damageDetails: UnifiedIncidentDamageInput[] = [],
+): UnifiedIncidentAggregation {
   const sorted = sortUnifiedIncidentsNewestFirst(rows);
   const groups = new Map<string, UnifiedIncidentRow[]>();
   for (const row of sorted) {
@@ -230,7 +277,11 @@ export function aggregateUnifiedIncidents(rows: UnifiedIncidentRow[]): UnifiedIn
     groups.set(key, list);
   }
 
-  const clusters = [...groups.values()].map(clusterFromMembers);
+  const clusters = [...groups.values()].map((members) => {
+    const cluster = clusterFromMembers(members);
+    const matched = damageDetails.filter((d) => damageDetailMatchesCluster(d, cluster));
+    return { ...cluster, damage: mergeClusterDamage(matched) };
+  });
   clusters.sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     return a.date.localeCompare(b.date, "lv");
@@ -241,6 +292,51 @@ export function aggregateUnifiedIncidents(rows: UnifiedIncidentRow[]): UnifiedIn
     uniqueCount: clusters.length,
     rawCount: rows.length,
   };
+}
+
+function damageDetailMatchesCluster(d: UnifiedIncidentDamageInput, c: UnifiedIncidentCluster): boolean {
+  const dYm = incidentYearMonthKey({ date: d.date, sortableTime: parseMileageDateForSort(d.date) });
+  const cYm = incidentYearMonthKey({ date: c.date, sortableTime: c.sortableTime });
+  const dc = incidentCountryKey(d.country);
+  const cc = incidentCountryKey(c.country);
+  if (dc !== "?" && cc !== "?" && dc !== cc) return false;
+  if (dYm && cYm) return dYm === cYm;
+  if (!dYm && dc === cc) return true;
+  return false;
+}
+
+function mergeClusterDamage(details: UnifiedIncidentDamageInput[]): UnifiedIncidentDamage | null {
+  if (details.length === 0) return null;
+  const zoneIds: DamageZoneId[] = [];
+  const zoneLabels: string[] = [];
+  const zoneSeen = new Set<string>();
+  const groupLabels: string[] = [];
+  const groupSeen = new Set<string>();
+  for (const d of details) {
+    const hits = parseDamageZoneHits(d.damagedSides);
+    for (const h of hits) {
+      if (zoneSeen.has(h.id)) continue;
+      zoneSeen.add(h.id);
+      zoneIds.push(h.id);
+      zoneLabels.push(h.label);
+    }
+    if (hits.length === 0) {
+      for (const label of damageZoneDisplayLabels(d.damagedSides)) {
+        const k = label.toLowerCase();
+        if (zoneSeen.has(k)) continue;
+        zoneSeen.add(k);
+        zoneLabels.push(label);
+      }
+    }
+    for (const g of damageGroupDisplayLabels(d.damageGroups)) {
+      const k = g.toLowerCase();
+      if (groupSeen.has(k)) continue;
+      groupSeen.add(k);
+      groupLabels.push(g);
+    }
+  }
+  if (zoneIds.length === 0 && zoneLabels.length === 0 && groupLabels.length === 0) return null;
+  return { zoneIds, zoneLabels, groupLabels };
 }
 
 export function formatUnifiedIncidentCountLabel(n: number): string {

@@ -3,7 +3,7 @@
  */
 import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
-import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
+import { parseAutodnaDamageDetails, parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
   autoRecordsMileageRowHasData,
@@ -205,6 +205,11 @@ export function parseVendorPdfLocal(
     if (reg) factualMeta.push(reg);
     const statusNote = extractAutodnaStatusCenterNote(trimmed);
     if (statusNote) factualMeta.push(statusNote);
+    const autodnaDetails = parseAutodnaDamageDetails(trimmed);
+    if (autodnaDetails.length > 0) {
+      damageDetails = autodnaDetails;
+      factualMeta.push(`${autodnaDetails.length} bojājumu ieraksti`);
+    }
   }
 
   serviceHistory = sortAutoRecordsDescending(serviceHistory.filter(autoRecordsMileageRowHasData));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
+import { parseAutodnaDamageDetails, parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 
 describe("parseAutodnaDamageEvents", () => {
   it("parses zaudējumu apjoms with EUR range and country", () => {
@@ -20,5 +20,27 @@ Rezultāts VIRSBŪVES BOJĀJUMS
     expect(rows[0]?.lossAmount).toMatch(/300.*400.*€/);
     expect(rows[1]?.incidentNo).toMatch(/Austr/i);
     expect(rows[1]?.lossAmount).toMatch(/40.*000.*41.*000.*€/);
+  });
+
+  it("parses Bojājumu zona and Detaļu grupa", () => {
+    const raw = `
+10.2020
+Transportlīdzekļa zaudējumu apjoms
+Summa 1 300 - 1 400 EUR
+Rezultāts VIRSBŪVES BOJĀJUMS
+Detaļu grupa - Virsbūves ārējās daļas
+Valsts Latvija
+Bojājumu zona
+- Priekšpuse
+- Labā sāna priekšpuse
+- Kreisā sāna priekšpuse
+`;
+    const details = parseAutodnaDamageDetails(raw);
+    expect(details).toHaveLength(1);
+    expect(details[0]?.damagedSides).toMatch(/Priekšpuse/i);
+    expect(details[0]?.damagedSides).toMatch(/Labā sāna priekšpuse/i);
+    expect(details[0]?.damagedSides).toMatch(/Kreisā sāna priekšpuse/i);
+    expect(details[0]?.damageGroups).toMatch(/Virsbūves ārējās daļas/i);
+    expect(details[0]?.country).toMatch(/Latvij/i);
   });
 });
