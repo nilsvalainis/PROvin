@@ -56,6 +56,33 @@ type AgentResponse = {
   changedKeys?: CopilotSourceKey[];
 };
 
+const ERROR_LABELS: Record<string, string> = {
+  unauthorized: "Nav admin piekļuves",
+  missing_gemini_key: "Serverī nav GEMINI_API_KEY",
+  gemini_demo_only: "Gemini atļauts tikai DEMO pasūtījumiem (GEMINI_DEMO_ONLY)",
+  not_found: "Pasūtījums nav atrasts Stripe",
+  missing_session_id: "Trūkst pasūtījuma sessionId",
+  missing_session: "Trūkst pasūtījuma sessionId",
+  missing_source_blocks: "Avotu bloki netika nosūtīti — pārlādē lapu",
+  invalid_target: "Nepareizs avota bloks",
+  missing_file: "Fails netika nosūtīts",
+  invalid_file_type: "Tikai PDF",
+  file_too_large: "PDF fails pārāk liels",
+  payload_too_large: "Pieprasījums pārāk liels",
+  extraction_failed: "Neizdevās nolasīt PDF",
+};
+
+/** Kļūda vienmēr ir atpazīstama: apraksts + servera kods, lai nav „kaut kas nogāja greizi”. */
+function describeUploadError(
+  status: number,
+  data: { error?: string; detail?: string },
+): string {
+  const code = (data.error ?? "").trim();
+  const detail = (data.detail ?? "").trim();
+  const label = ERROR_LABELS[code] ?? (code ? `Servera kļūda: ${code}` : `Servera kļūda (HTTP ${status})`);
+  return detail && detail !== label ? `${label} — ${detail}` : label;
+}
+
 export function AdminHistoryVendorPdfUpload({
   target,
   sessionId,
@@ -95,12 +122,7 @@ export function AdminHistoryVendorPdfUpload({
         });
         const data = (await res.json().catch(() => ({}))) as AgentResponse;
         if (!res.ok || !data.ok) {
-          const detail = (data.detail ?? "").trim();
-          if (data.error === "unauthorized") setError("Nav admin piekļuves");
-          else if (data.error === "missing_gemini_key") setError("Nav GEMINI_API_KEY serverī");
-          else if (data.error === "file_too_large") setError(detail || "PDF fails pārāk liels");
-          else if (data.error === "invalid_file_type") setError(detail || "Tikai PDF");
-          else setError(detail || "Neizdevās apstrādāt PDF");
+          setError(describeUploadError(res.status, data));
           return;
         }
 

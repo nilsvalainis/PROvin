@@ -427,15 +427,17 @@ export function AdminOrderCopilotPanel({
 
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail : "";
-        if (data.error === "unauthorized") setError("Nav admin piekļuves");
-        else if (data.error === "missing_gemini_key") setError("Nav GEMINI_API_KEY");
-        else if (data.error === "gemini_demo_only") setError("Gemini tikai DEMO pasūtījumiem");
+        let reason: string;
+        if (data.error === "unauthorized") reason = "Nav admin piekļuves";
+        else if (data.error === "missing_gemini_key") reason = "Nav GEMINI_API_KEY";
+        else if (data.error === "gemini_demo_only") reason = "Gemini tikai DEMO pasūtījumiem";
         else if (data.error === "file_too_large" || data.error === "too_many_files") {
-          setError(detail || "PDF limits pārsniegts");
-        } else setError(detail || data.error || "Copilot kļūda");
+          reason = detail || "PDF limits pārsniegts";
+        } else reason = detail || data.error || `Copilot kļūda (HTTP ${res.status})`;
+        setError(reason);
         setMessages((prev) => [
           ...prev,
-          { id: newId(), role: "assistant", content: "Neizdevās apstrādāt — skatīt kļūdu panelī." },
+          { id: newId(), role: "assistant", content: `Neizdevās apstrādāt: ${reason}` },
         ]);
         setUnreadDone(true);
         return;

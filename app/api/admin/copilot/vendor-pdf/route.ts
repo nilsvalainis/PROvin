@@ -52,9 +52,6 @@ function describeAction(a: CopilotAction): string {
 export async function POST(req: Request) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  if (!getGeminiApiKeyFromEnv()) {
-    return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
-  }
 
   let form: FormData;
   try {
@@ -103,12 +100,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_source_blocks" }, { status: 400 });
   }
 
-  const guard = await assertGeminiAllowedForSession(sessionId);
-  if (!guard.ok) {
-    return NextResponse.json(
-      { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) },
-      { status: guard.status },
-    );
+  // Oficiālā dīlera un vēstures atskaišu teksta slānis tiek nolasīts lokāli, tāpēc Gemini
+  // nepieejamība nav iemesls atteikt augšupielādi — tā kļūst par kļūdu tikai tad, ja lokālais
+  // parseris no šī PDF neizvelk nevienu ierakstu.
+  let geminiBlocked: { error: string; detail?: string } | null = null;
+  if (!getGeminiApiKeyFromEnv()) {
+    geminiBlocked = { error: "missing_gemini_key", detail: "Serverī nav GEMINI_API_KEY" };
+  } else {
+    const guard = await assertGeminiAllowedForSession(sessionId);
+    if (!guard.ok) geminiBlocked = { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) };
   }
 
   const buffer = await file.arrayBuffer();
@@ -125,10 +125,28 @@ export async function POST(req: Request) {
       fileName: file.name || "report.pdf",
       buffer,
       sourceBlocks,
+      useGemini: !geminiBlocked,
     });
+
+    if (agent.actions.length === 0 && geminiBlocked) {
+      const reason = geminiBlocked.detail ?? geminiBlocked.error;
+      return NextResponse.json(
+        {
+          error: geminiBlocked.error,
+          detail: `PDF teksta slānis nedeva nevienu ierakstu, un Gemini nav pieejams (${reason})`,
+        },
+        { status: 503 },
+      );
+    }
 
     const result = applyCopilotActions(sourceBlocks, agent.actions, { onlyAuto: false });
     const changedKeys: CopilotSourceKey[] = result.changedKeys;
+    const notes = geminiBlocked
+      ? [
+          ...agent.notes,
+          `Gemini izlaists (${geminiBlocked.detail ?? geminiBlocked.error}) — izmantots tikai PDF teksta slānis.`,
+        ]
+      : agent.notes;
 
     console.info(`${LOG_PREFIX} ok`, {
       sessionId: sessionId.slice(0, 12),
@@ -143,7 +161,7 @@ export async function POST(req: Request) {
       ok: true,
       vendor: agent.vendor,
       summary: agent.summary,
-      notes: agent.notes,
+      notes,
       applied: result.applied.map(describeAction),
       skipped: result.skipped.map((s) => ({ label: describeAction(s.action), reason: s.reason })),
       patchedSourceBlocks: Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
