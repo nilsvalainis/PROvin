@@ -65,7 +65,7 @@ function blankDemoDetail(id: string, iso: string) {
   };
 }
 
-/** Demo rindas sarakstam (augšā — jaunākie). */
+/** Demo rindas sarakstam (kārto pēc `created` kopā ar pārējiem pasūtījumiem). */
 export function getDemoOrderRows() {
   return BLANK_AUDIT_DEMOS.map((d) => blankDemoRow(d.id, d.iso)).sort(
     (a, b) => b.created - a.created,

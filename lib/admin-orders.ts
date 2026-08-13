@@ -221,8 +221,8 @@ export async function listAdminOrders(): Promise<{
   /** Ja Stripe saraksts neizdodas, rādām demo pat tad, ja ADMIN_DEMO_ORDERS=0 — lai admin nav tukšs. */
   const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
   const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
-  /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. */
-  const rows = [...demo, ...[...manual, ...real].sort((a, b) => b.created - a.created)];
+  /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. Paraugi (isDemo) nav piesprausti augšā — tieši starp pārējiem pēc datuma. */
+  const rows = [...demo, ...manual, ...real].sort((a, b) => b.created - a.created);
   return { rows, stripeError };
 }
 
