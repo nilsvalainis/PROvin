@@ -93,6 +93,7 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("NEGADĪJUMU VĒSTURES KOPSAVILKUMS");
     expect(html).toContain("pdf-incident-history-card");
     expect(html).toContain("Negadījumi:");
+    expect(html.indexOf("pdf-listing-price-history-foot")).toBeLessThan(html.indexOf("pdf-incident-card"));
     expect(html).not.toContain("Apvienotie negadījumi");
     expect(html).not.toContain("Vidējā zaudējumu summa pa avotiem");
     expect(html).not.toContain("Kopā:");

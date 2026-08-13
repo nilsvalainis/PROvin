@@ -642,10 +642,10 @@ function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string 
   if (agg.clusters.length === 0) return "";
   const body = agg.clusters.map((c, i) => buildIncidentClusterCardHtml(c, i)).join("\n");
   return `<div class="pdf-listing-price-history pdf-incident-history-card">
-    ${body}
     <div class="pdf-listing-price-history-foot">
       <span>Negadījumi: <strong>${escapeHtml(String(agg.uniqueCount))}</strong></span>
     </div>
+    ${body}
   </div>`;
 }
 
