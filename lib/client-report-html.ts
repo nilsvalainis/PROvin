@@ -92,10 +92,17 @@ import {
 } from "@/lib/report-pdf-standards";
 import { buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import {
+  aggregateUnifiedIncidents,
   collectUnifiedIncidentRows,
-  sortUnifiedIncidentsNewestFirst,
-  type UnifiedIncidentRow,
+  formatUnifiedIncidentCountLabel,
+  type UnifiedIncidentAggregation,
+  type UnifiedIncidentCluster,
+  type UnifiedIncidentSourceSummary,
 } from "@/lib/unified-incidents";
+import {
+  formatLossEurWholeDisplay,
+  normalizeLossAmountEurDisplay,
+} from "@/lib/loss-amount-format";
 import {
   MILEAGE_PDF_SOURCE_LEGEND,
   collectMileagePdfSourceKeysFromLabels,
@@ -117,7 +124,6 @@ import {
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
-import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
@@ -584,47 +590,72 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
-// „Bojātā puse / Bojājumu grupas” apakšbloku PDF pagaidām nerādām (dati paliek admin pusē).
-function buildUnifiedIncidentRowHtml(r: UnifiedIncidentRow): string {
-  const lossCell = formatLossAmountEurCell(r.lossAmount);
-  const flagCell = buildPdfCountryFlagCellHtml(r.country);
-  const stripeSpan = buildPdfMileageSourceStripeSpan(r.sourceLabel, "table");
-  const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${stripeSpan}</span></td>`;
-  return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo pdf-mileage-cell-loss">${lossCell}</td>${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+function buildIncidentClusterRowHtml(c: UnifiedIncidentCluster): string {
+  const lossCell = formatLossAmountEurCell(c.displayAmount);
+  const avgNote =
+    c.averaged && c.sources.length > 1
+      ? `<span class="pdf-listing-price-delta pdf-listing-price-delta--note">vid. · ${escapeHtml(c.sources.join(" · "))}</span>`
+      : c.sources.length > 1
+        ? `<span class="pdf-listing-price-delta pdf-listing-price-delta--note">${escapeHtml(c.sources.join(" · "))}</span>`
+        : "";
+  return `<tr>
+        <td class="pdf-listing-price">${lossCell}${avgNote}</td>
+        <td>${escapeHtml(c.country || "—")}</td>
+        <td>${escapeHtml(c.date || "—")}</td>
+      </tr>`;
 }
 
-function buildIncidentHistoryTableHtml(rows: UnifiedIncidentRow[]): string {
-  if (rows.length === 0) return "";
-  const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
-  const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Zaudējuma summa</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
-  const body = rows.map((r) => buildUnifiedIncidentRowHtml(r)).join("\n");
-  return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows pdf-mileage-history-table--incidents" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string {
+  if (agg.clusters.length === 0) return "";
+  const body = agg.clusters.map(buildIncidentClusterRowHtml).join("\n");
+  const totalLabel = agg.totalSumEur != null ? formatLossEurWholeDisplay(agg.totalSumEur) : "—";
+  return `<div class="pdf-listing-price-history pdf-incident-history-card">
+    <p class="pdf-listing-price-history-title">Apvienotie negadījumi</p>
+    <table class="pdf-listing-price-history-table" role="table">${body}</table>
+    <div class="pdf-listing-price-history-foot">
+      <span>Kopā: <strong>${escapeHtml(totalLabel)}</strong></span>
+      <span>${escapeHtml(formatUnifiedIncidentCountLabel(agg.uniqueCount))}</span>
+    </div>
+  </div>`;
 }
 
-/** Apvienota negadījumu tabula (AutoDNA, CarVertical, LTAB, Citi avoti) — tikai rindas ar aizpildītu zaudējumu summu. */
+function buildIncidentSourceAvgRowHtml(s: UnifiedIncidentSourceSummary): string {
+  return `<tr>
+        <td class="pdf-listing-price">${escapeHtml(s.displayAverage)}</td>
+        <td>${escapeHtml(formatUnifiedIncidentCountLabel(s.count))}</td>
+        <td>${escapeHtml(s.sourceLabel)}</td>
+      </tr>`;
+}
+
+function buildIncidentSourceAveragesCardHtml(agg: UnifiedIncidentAggregation): string {
+  if (agg.bySource.length === 0) return "";
+  const body = agg.bySource.map(buildIncidentSourceAvgRowHtml).join("\n");
+  const avgLabel = agg.overallAverageEur != null ? formatLossEurWholeDisplay(agg.overallAverageEur) : "—";
+  const sourceCount = agg.bySource.length;
+  const sourceLabel = sourceCount === 1 ? "1 avots" : `${sourceCount} avoti`;
+  return `<div class="pdf-listing-price-history pdf-incident-history-card">
+    <p class="pdf-listing-price-history-title">Vidējā zaudējumu summa pa avotiem</p>
+    <table class="pdf-listing-price-history-table" role="table">${body}</table>
+    <div class="pdf-listing-price-history-foot">
+      <span>Vidēji: <strong>${escapeHtml(avgLabel)}</strong></span>
+      <span>${escapeHtml(sourceLabel)}</span>
+    </div>
+  </div>`;
+}
+
+/** Apvienota negadījumu vēsture (AutoDNA, CarVertical, LTAB, Citi avoti) — Adify/LTAB kartītes + vidējās summas. */
 export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.unifiedIncidents) return "";
-  // Per-source „Rādīt laukus” nefiltrē datus no šīs apvienotās sadaļas — tikai atsevišķos avotu blokos.
   const collected = collectUnifiedIncidentRows({
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
   });
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
-  const hasTable = collected.length > 0;
-  if (!hasTable && !adminNoteHtml) return "";
-  const rows = sortUnifiedIncidentsNewestFirst(collected);
-  const tablesHtml = hasTable ? buildIncidentHistoryTableHtml(rows) : "";
-  const sourceCount = hasTable ? new Set(collected.map((r) => r.sourceLabel)).size : 0;
-  const legendAbbrevs = hasTable ? buildPdfSourceLegendAbbrevsHtml(collected.map((r) => r.sourceLabel)) : "";
-  const sourceCountHtml = hasTable
-    ? `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${
-        legendAbbrevs
-          ? `<span class="pdf-mileage-source-count-abbrevs">${legendAbbrevs}</span>`
-          : ""
-      }</p>`
-    : "";
+  if (collected.length === 0 && !adminNoteHtml) return "";
+  const agg = aggregateUnifiedIncidents(collected);
+  const cards = `${buildIncidentClustersCardHtml(agg)}${buildIncidentSourceAveragesCardHtml(agg)}`;
   const head = sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE);
-  const body = `${tablesHtml}${sourceCountHtml}${adminNoteHtml}`;
+  const body = `${cards}${adminNoteHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
@@ -1652,6 +1683,7 @@ function clientReportPrintCss(): string {
       .pdf-listing-price-delta{margin-left:4px;font-size:0.62rem;font-weight:600;}
       .pdf-listing-price-delta--down{color:#059669;}
       .pdf-listing-price-delta--up{color:#dc2626;}
+      .pdf-listing-price-delta--note{color:#64748b;font-weight:500;}
       .pdf-listing-price-history-foot{display:flex;justify-content:space-between;background:${PDF_BRAND_BLUE_HEX};color:#fff;padding:8px 12px;font-size:0.72rem;}
       .pdf-listing-price-history-foot strong{font-weight:700;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}

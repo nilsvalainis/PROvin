@@ -74,6 +74,14 @@ function formatEurGrouped(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
+/** Vesela EUR summa PDF/admin kopsavilkumiem: „2 189 €”. */
+export function formatLossEurWholeDisplay(n: number): string {
+  const rounded = Math.round(n);
+  if (rounded === 0) return "0 €";
+  const sign = rounded < 0 ? "-" : "";
+  return `${sign}${formatEurGrouped(Math.abs(rounded))} €`;
+}
+
 /** Formatē summu kā „1 234 €”, diapazonu „300 - 400 €” vai atgriež nemainītu brīvo tekstu. */
 export function normalizeLossAmountEurDisplay(raw: string): string {
   const trimmed = raw.trim();
