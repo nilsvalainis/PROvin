@@ -3560,6 +3560,8 @@ export function OrderDetailWorkspace({
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
                 geminiComment={geminiCommentSlot("autodna")}
                 autodnaApiConfigured={autodnaApiConfigured}
+                getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+                applyPatchedBlocks={applyCopilotPatchedBlocks}
               />
             </div>
             <div id="admin-order-block-carvertical" className="flex min-h-0 min-w-0 flex-col">
@@ -3573,6 +3575,8 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.carvertical}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
                 geminiComment={geminiCommentSlot("carvertical")}
+                getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+                applyPatchedBlocks={applyCopilotPatchedBlocks}
               />
             </div>
           </div>

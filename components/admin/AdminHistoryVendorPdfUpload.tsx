@@ -1,42 +1,63 @@
-/** Pagaidām nav montēts admin UI — PDF augšupielāde atslēgta līdz jaunai implementācijai. */
+/**
+ * Avota bloka PDF augšupielāde (AutoDNA / CarVertical) — Copilot aģents aizpilda tabulas.
+ *
+ * Aizpilda TIKAI strukturētās rindas (datums, odometrs, valsts, negadījumi EUR) un
+ * OFICIĀLĀ DĪLERA DATI specifikācijas laukus. RAW / AI konteksta laukus neaiztiek.
+ */
 "use client";
 
 import { FileUp, Loader2 } from "lucide-react";
 import { useCallback, useId, useRef, useState } from "react";
-import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 
-const LABELS: Record<
-  HistoryVendorPdfTarget,
-  { title: string; hint: string }
-> = {
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
+import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+
+export type VendorPdfUploadTarget = "autodna" | "carvertical";
+
+const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   autodna: {
     title: "Augšupielādēt AutoDNA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · Gemini Pro lasa pilnu PDF",
+    hint: "Velc PDF šeit vai klikšķini · Copilot aģents aizpilda tabulas (RAW lauki netiek aiztikti)",
   },
   carvertical: {
     title: "Augšupielādēt CarVertical PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · Gemini Pro lasa pilnu PDF",
-  },
-  ltab: {
-    title: "Augšupielādēt LTAB / OCTA PDF atskaiti",
-    hint: "Velc PDF šeit vai klikšķini · maks. 15 MB · Gemini Pro lasa pilnu PDF",
+    hint: "Velc PDF šeit vai klikšķini · Copilot aģents aizpilda tabulas (RAW lauki netiek aiztikti)",
   },
 };
 
 type Props = {
-  target: HistoryVendorPdfTarget;
+  target: VendorPdfUploadTarget;
+  sessionId: string;
   disabled?: boolean;
   readOnly?: boolean;
-  onImported: (result: HistoryVendorPdfParseResult & { fileName?: string }) => void;
-  /** `true` kamēr PDF/Gemini parsers darbojas — bloķē autosaglabāšanu. */
+  /** Visi avotu bloki (aģentam vajag jau aizpildītos avotus valstu noteikšanai). */
+  getSourceBlocks: () => WorkspaceSourceBlocks;
+  applyPatchedBlocks: (
+    patched: Partial<WorkspaceSourceBlocks>,
+    changedKeys: CopilotSourceKey[],
+  ) => void;
+  /** `true` kamēr aģents strādā — bloķē autosaglabāšanu. */
   onParseActiveChange?: (active: boolean) => void;
+};
+
+type AgentResponse = {
+  ok?: boolean;
+  error?: string;
+  detail?: string;
+  summary?: string;
+  notes?: string[];
+  applied?: string[];
+  patchedSourceBlocks?: Partial<WorkspaceSourceBlocks>;
+  changedKeys?: CopilotSourceKey[];
 };
 
 export function AdminHistoryVendorPdfUpload({
   target,
+  sessionId,
   disabled,
   readOnly,
-  onImported,
+  getSourceBlocks,
+  applyPatchedBlocks,
   onParseActiveChange,
 }: Props) {
   const inputId = useId();
@@ -46,7 +67,6 @@ export function AdminHistoryVendorPdfUpload({
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [statusLine, setStatusLine] = useState<string | null>(null);
   const labels = LABELS[target];
 
   const uploadFile = useCallback(
@@ -56,89 +76,58 @@ export function AdminHistoryVendorPdfUpload({
       onParseActiveChange?.(true);
       setError(null);
       setNotice(null);
-      setStatusLine("Nolasām PDF teksta slāni…");
       try {
         const fd = new FormData();
         fd.set("file", file);
         fd.set("target", target);
-        setStatusLine("Apstrādājam PDF (ja vajag — Gemini analīze, līdz ~1 min)…");
-        const res = await fetch("/api/admin/reports/parse-pdf", {
+        fd.set("sessionId", sessionId);
+        fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
+
+        const res = await fetch("/api/admin/copilot/vendor-pdf", {
           method: "POST",
           body: fd,
           credentials: "include",
         });
-        const data = (await res.json().catch(() => ({}))) as HistoryVendorPdfParseResult & {
-          ok?: boolean;
-          error?: string;
-          detail?: string;
-          fileName?: string;
-        };
-        if (!res.ok) {
-          const detail = typeof data.detail === "string" ? data.detail.trim() : "";
+        const data = (await res.json().catch(() => ({}))) as AgentResponse;
+        if (!res.ok || !data.ok) {
+          const detail = (data.detail ?? "").trim();
           if (data.error === "unauthorized") setError("Nav admin piekļuves");
           else if (data.error === "missing_gemini_key") setError("Nav GEMINI_API_KEY serverī");
-          else if (data.error === "file_too_large" || data.error === "payload_too_large") {
-            setError(detail || "PDF fails pārāk liels");
-          } else if (data.error === "invalid_file_type") setError(detail || "Tikai PDF");
+          else if (data.error === "file_too_large") setError(detail || "PDF fails pārāk liels");
+          else if (data.error === "invalid_file_type") setError(detail || "Tikai PDF");
           else setError(detail || "Neizdevās apstrādāt PDF");
           return;
         }
 
-        const viaGemini =
-          data.meta?.engine === "gemini_primary" ||
-          data.meta?.engine === "gemini_fallback" ||
-          data.meta?.extractionMethod === "gemini";
-        const engineLabel =
-          data.meta?.engine === "gemini_primary"
-            ? "Gemini Pro (PDF)"
-            : viaGemini
-              ? "Gemini Pro"
-              : "lokāli";
-        const parts: string[] = [];
-        if (data.meta?.mileageRowCount) parts.push(`${data.meta.mileageRowCount} nobraukuma`);
-        if (data.meta?.incidentRowCount) parts.push(`${data.meta.incidentRowCount} negadījumu`);
-        if (data.vehicleHistoryTimeline?.length) {
-          parts.push(`${data.vehicleHistoryTimeline.length} vēstures ierakstu`);
+        const changedKeys = data.changedKeys ?? [];
+        if (data.patchedSourceBlocks && changedKeys.length > 0) {
+          applyPatchedBlocks(data.patchedSourceBlocks, changedKeys);
         }
-        if (data.damageDetails?.length) parts.push(`${data.damageDetails.length} bojājumu`);
-        if (parts.length > 0) {
-          setNotice(
-            `Importēts no „${file.name}”: ${parts.join(", ")} rinda(s) (${engineLabel}).`,
-          );
-        } else {
-          setNotice(
-            viaGemini
-              ? `${engineLabel} — „${file.name}”; pārbaudi tabulas.`
-              : `Lokāli — „${file.name}”; ieteicams pārimportēt (Gemini Pro).`,
-          );
-        }
-        if (data.warnings?.length) {
-          setNotice((prev) => (prev ? `${prev} ${data.warnings![0]}` : (data.warnings![0] ?? null)));
-        }
-        onParseActiveChange?.(false);
-        onImported({
-          rawText: data.rawText ?? "",
-          serviceHistory: data.serviceHistory ?? [],
-          incidents: data.incidents ?? [],
-          ...(data.vehicleHistoryTimeline?.length
-            ? { vehicleHistoryTimeline: data.vehicleHistoryTimeline }
-            : {}),
-          ...(data.damageDetails?.length ? { damageDetails: data.damageDetails } : {}),
-          suggestedPdfChecklist: data.suggestedPdfChecklist ?? {},
-          suggestedComments: data.suggestedComments,
-          warnings: data.warnings ?? [],
-          meta: data.meta ?? { charCount: 0, mileageRowCount: 0, incidentRowCount: 0 },
-          fileName: data.fileName ?? file.name,
-        });
+        const lines = [
+          data.summary?.trim() || `„${file.name}” apstrādāts.`,
+          changedKeys.length > 0
+            ? `Aizpildīts: ${changedKeys.join(", ")} (${data.applied?.length ?? 0} ieraksti).`
+            : "Jaunu rindu nebija — tabulas jau atbilst atskaitei.",
+          ...(data.notes ?? []).slice(0, 4),
+        ];
+        setNotice(lines.filter(Boolean).join(" "));
       } catch {
         setError("Neizdevās savienoties ar serveri");
       } finally {
         setBusy(false);
         onParseActiveChange?.(false);
-        setStatusLine(null);
       }
     },
-    [busy, disabled, onImported, onParseActiveChange, readOnly, target],
+    [
+      applyPatchedBlocks,
+      busy,
+      disabled,
+      getSourceBlocks,
+      onParseActiveChange,
+      readOnly,
+      sessionId,
+      target,
+    ],
   );
 
   const onFiles = useCallback(
@@ -220,9 +209,9 @@ export function AdminHistoryVendorPdfUpload({
         <span className="text-[11px] font-medium text-[var(--color-apple-text)]">{labels.title}</span>
         <span className="text-[9px] leading-snug text-[var(--color-provin-muted)]">{labels.hint}</span>
       </div>
-      {statusLine && busy ? (
+      {busy ? (
         <p className="mt-1 text-[9px] leading-snug text-[var(--color-provin-accent)]" role="status">
-          {statusLine}
+          Copilot lasa PDF (teksta slānis + Gemini Pro, līdz ~1 min)…
         </p>
       ) : null}
       {notice ? (

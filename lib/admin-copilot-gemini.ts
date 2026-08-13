@@ -45,7 +45,10 @@ Actions:
    DD.MM.YYYY | <odometer digits> km | <work done>
    Example: 12.03.2019 | 87450 km | Eļļas maiņa, bremžu kluči
    No commentary, no intro, no markdown — plain fact lines only. Prefer high confidence when the PDF clearly lists services.
-4) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW. Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
+4) set_dealer_vehicle_info — OFICIĀLĀ DĪLERA DATI transporta informācija (ALWAYS source=auto_records), field "vehicleInfo": { vinCode, engineCode, transmission, color, interior, model, generation, series, typeCode, steeringSide }.
+   Fill it from CarVertical „Transportlīdzekļa specifikācija” + PR/equipment code list and AutoDNA „Transportlīdzekļa tehniskie dati”.
+   Prefer the LONGEST / most specific designation WITH its factory code: „Havana Black Metallic (LY8X)” over „Melns”; „Valcona leather (N5D)” over „Leather package”; transmission with gear count + code. Omit fields the PDFs do not show.
+5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW. Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
 
 When multiple PDFs are attached:
 - Classify each PDF by branding/layout and fill the matching source
@@ -88,7 +91,13 @@ const ACTION_ITEM_SCHEMA: Schema = {
     type: {
       type: SchemaType.STRING,
       format: "enum",
-      enum: ["upsert_incident", "upsert_mileage", "set_service_history", "append_raw"],
+      enum: [
+        "upsert_incident",
+        "upsert_mileage",
+        "set_service_history",
+        "set_dealer_vehicle_info",
+        "append_raw",
+      ],
     },
     source: {
       type: SchemaType.STRING,
@@ -100,6 +109,21 @@ const ACTION_ITEM_SCHEMA: Schema = {
     odometer: { type: SchemaType.STRING },
     country: { type: SchemaType.STRING },
     text: { type: SchemaType.STRING },
+    vehicleInfo: {
+      type: SchemaType.OBJECT,
+      properties: {
+        vinCode: { type: SchemaType.STRING },
+        series: { type: SchemaType.STRING },
+        typeCode: { type: SchemaType.STRING },
+        steeringSide: { type: SchemaType.STRING },
+        interior: { type: SchemaType.STRING },
+        model: { type: SchemaType.STRING },
+        generation: { type: SchemaType.STRING },
+        engineCode: { type: SchemaType.STRING },
+        color: { type: SchemaType.STRING },
+        transmission: { type: SchemaType.STRING },
+      },
+    },
     confidence: { type: SchemaType.STRING, format: "enum", enum: ["high", "medium", "low"] },
     note: { type: SchemaType.STRING },
   },

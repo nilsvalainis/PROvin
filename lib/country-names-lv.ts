@@ -124,9 +124,13 @@ const NAME_TO_ISO2: Record<string, string> = {
   czechia: "CZ",
   czech: "CZ",
   czechrepublic: "CZ",
+  cehijasrepublika: "CZ",
+  ceskarepublika: "CZ",
+  ceska: "CZ",
   sk: "SK",
   slovakija: "SK",
   slovakia: "SK",
+  slovakijasrepublika: "SK",
   hu: "HU",
   ungarija: "HU",
   hungary: "HU",
@@ -257,4 +261,51 @@ export function normalizeCountryNameLv(raw: string): string {
 
 export function isLatviaCountryName(raw: string): boolean {
   return countryLabelToIso2(raw) === "LV";
+}
+
+/**
+ * Nosaukumi, ar kuriem atskaitēs sākas valsts kolonna (garākie vispirms).
+ * Slinkā inicializācija — `admin-source-blocks` imports ir ciklisks.
+ */
+let leadingCountryLabelsCache: string[] | null = null;
+
+function leadingCountryLabels(): string[] {
+  if (leadingCountryLabelsCache) return leadingCountryLabelsCache;
+  leadingCountryLabelsCache = [
+    CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
+    "Nezināma valsts",
+    "Čehijas Republika",
+    "Čehijas republika",
+    "Slovākijas Republika",
+    "Vācijas Federatīvā Republika",
+    "Apvienotā Karaliste",
+    "Bosnija un Hercegovina",
+    ...Object.values(ISO2_TO_LV_NAME),
+  ]
+    .filter((label): label is string => Boolean(label))
+    .sort((a, b) => b.length - a.length);
+  return leadingCountryLabelsCache;
+}
+
+/**
+ * Atdala valsts nosaukumu teksta sākumā („Čehijas RepublikaVeikta apskate”).
+ * `country` ir normalizēts latviskais nosaukums; „Nezināma valsts” → tukšs.
+ */
+export function matchLeadingCountryNameLv(
+  raw: string,
+): { country: string; matched: string; rest: string } | null {
+  const t = raw.replace(/^[\s.:·-]+/, "");
+  if (!t) return null;
+  const lower = t.toLowerCase();
+  for (const label of leadingCountryLabels()) {
+    if (!lower.startsWith(label.toLowerCase())) continue;
+    const rest = t.slice(label.length).trim();
+    const isUnknown = /nezināma/i.test(label);
+    return {
+      country: isUnknown ? "" : normalizeCountryNameLv(label),
+      matched: label,
+      rest,
+    };
+  }
+  return null;
 }

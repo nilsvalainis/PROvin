@@ -8,6 +8,7 @@ import type {
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
 import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
+import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
 function asRecord(v: unknown): Record<string, unknown> | null {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
@@ -22,6 +23,17 @@ function asConfidence(v: unknown): CopilotConfidence {
   const s = asString(v, 16);
   if (s === "high" || s === "medium" || s === "low") return s;
   return "medium";
+}
+
+function parseDealerVehicleInfo(raw: unknown): Partial<OutvinVehicleInfo> {
+  const o = asRecord(raw);
+  if (!o) return {};
+  const out: Partial<OutvinVehicleInfo> = {};
+  for (const { key } of OUTVIN_VEHICLE_INFO_ROWS) {
+    const value = asString(o[key], 160);
+    if (value && !/^[-—–]$/.test(value)) out[key] = value;
+  }
+  return out;
 }
 
 function parseAction(raw: unknown): CopilotAction | null {
@@ -63,6 +75,17 @@ function parseAction(raw: unknown): CopilotAction | null {
       type: "set_service_history",
       source: "auto_records",
       text,
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "set_dealer_vehicle_info") {
+    const vehicleInfo = parseDealerVehicleInfo(o.vehicleInfo);
+    if (Object.keys(vehicleInfo).length === 0) return null;
+    return {
+      type: "set_dealer_vehicle_info",
+      source: "auto_records",
+      vehicleInfo,
       confidence,
       ...(note ? { note } : {}),
     };

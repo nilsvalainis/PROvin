@@ -16,6 +16,7 @@ import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-gemini-extract";
+import { detectVendorFromReport, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -87,6 +88,9 @@ function describeAction(a: CopilotAction): string {
   if (a.type === "set_service_history") {
     const lines = a.text.trim().split(/\n+/).filter(Boolean).length;
     return `auto_records · Servisa vēsture (${lines} rindas) (${a.confidence})`;
+  }
+  if (a.type === "set_dealer_vehicle_info") {
+    return `auto_records · dīlera dati: ${Object.keys(a.vehicleInfo).join(", ")} (${a.confidence})`;
   }
   if (a.type === "append_raw") {
     const preview = a.text.trim().slice(0, 60).replace(/\s+/g, " ");
@@ -228,9 +232,37 @@ export async function POST(req: Request) {
     const allowedSet = new Set<CopilotSourceKey>(allowedSources);
     let workingBlocks = sourceBlocks;
     const csddImportNotes: string[] = [];
+    const vendorAgentNotes: string[] = [];
+    const vendorAgentApplied: CopilotAction[] = [];
+    const vendorHandledFiles = new Set<string>();
+
+    for (const pdf of pdfs) {
+      const detected = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName })
+        .then((e) => detectVendorFromReport(e.text, pdf.fileName))
+        .catch(() => null);
+      if (!detected || !allowedSet.has(detected)) continue;
+      try {
+        const agent = await runVendorPdfAgent({
+          target: detected,
+          fileName: pdf.fileName,
+          buffer: pdf.buffer,
+          sourceBlocks: workingBlocks,
+        });
+        const result = applyCopilotActions(workingBlocks, agent.actions, { onlyAuto: false });
+        workingBlocks = result.sourceBlocks;
+        vendorAgentApplied.push(...result.applied);
+        vendorAgentNotes.push(agent.summary, ...agent.notes.slice(0, 4));
+        vendorHandledFiles.add(pdf.fileName);
+      } catch (vendorErr) {
+        const detail = vendorErr instanceof Error ? vendorErr.message : "unknown";
+        console.warn(`${LOG_PREFIX} vendor_pdf_failed`, { fileName: pdf.fileName, detail });
+        vendorAgentNotes.push(`„${pdf.fileName}” — avota aģents neizdevās (${detail}).`);
+      }
+    }
 
     if (allowedSet.has("csdd") && pdfs.length > 0) {
       for (const pdf of pdfs) {
+        if (vendorHandledFiles.has(pdf.fileName)) continue;
         const extract = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
         if (!isLikelyCsddPdfText(extract.text)) continue;
         try {
@@ -259,17 +291,20 @@ export async function POST(req: Request) {
       }
     }
 
+    // Avota aģents jau izlasīja šos PDF — ģenēriskajam Copilot tos vairs nedodam (nedublējam rindas).
+    const remainingPdfs = pdfs.filter((p) => !vendorHandledFiles.has(p.fileName));
     const skipGenericCopilot =
-      allowedSet.has("csdd") &&
-      allowedSources.length === 1 &&
-      pdfs.length > 0 &&
-      csddImportNotes.some((n) => n.includes("aizpildīti"));
+      (allowedSet.has("csdd") &&
+        allowedSources.length === 1 &&
+        pdfs.length > 0 &&
+        csddImportNotes.some((n) => n.includes("aizpildīti"))) ||
+      (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0);
 
     const gemini = skipGenericCopilot
       ? {
           reply:
-            csddImportNotes.join("\n") ||
-            "CSDD PDF apstrādāts — pārbaudi CSDD avota laukus un raw, ja kaut kas trūkst.",
+            [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
+            "PDF apstrādāts — pārbaudi avota laukus, ja kaut kas trūkst.",
           actions: [] as CopilotAction[],
           clarificationNeeded: "",
         }
@@ -278,7 +313,7 @@ export async function POST(req: Request) {
           sourceBlocks: workingBlocks,
           allowedSources,
           history,
-          pdfs,
+          pdfs: remainingPdfs,
         });
 
     const blocked = gemini.actions.filter((a) => !allowedSet.has(a.source));
@@ -291,8 +326,8 @@ export async function POST(req: Request) {
     workingBlocks = autoResult.sourceBlocks;
 
     const changedKeys = new Set<CopilotSourceKey>(autoResult.changedKeys);
-    if (workingBlocks.csdd !== sourceBlocks.csdd) {
-      changedKeys.add("csdd");
+    for (const key of COPILOT_SOURCE_KEYS) {
+      if (workingBlocks[key] !== sourceBlocks[key]) changedKeys.add(key);
     }
 
     const needsConfirm = autoResult.skipped.filter((s) => s.reason === "needs_confirm").map((s) => s.action);
@@ -301,10 +336,11 @@ export async function POST(req: Request) {
       ...blocked.map((action) => ({ action, reason: "source_disabled" as const })),
     ];
 
-    const shouldPatch = applyMode === "auto" && (autoResult.applied.length > 0 || changedKeys.has("csdd"));
+    const shouldPatch = applyMode === "auto" && (autoResult.applied.length > 0 || changedKeys.size > 0);
     const replyParts = [gemini.reply.trim()];
-    if (csddImportNotes.length > 0 && !skipGenericCopilot) {
-      replyParts.push(csddImportNotes.join("\n"));
+    if (!skipGenericCopilot) {
+      if (vendorAgentNotes.length > 0) replyParts.push(vendorAgentNotes.filter(Boolean).join("\n"));
+      if (csddImportNotes.length > 0) replyParts.push(csddImportNotes.join("\n"));
     }
 
     console.info(`${LOG_PREFIX} ok`, {
@@ -314,6 +350,8 @@ export async function POST(req: Request) {
       auto: autoResult.applied.length,
       confirm: needsConfirm.length,
       pdfCount: pdfs.length,
+      vendorAgentPdfs: vendorHandledFiles.size,
+      vendorAgentApplied: vendorAgentApplied.length,
       csddImports: csddImportNotes.length,
     });
 
@@ -325,7 +363,7 @@ export async function POST(req: Request) {
       clarificationNeeded: gemini.clarificationNeeded,
       actions: gemini.actions.map((a) => ({ ...a, label: describeAction(a) })),
       autoApplied: shouldPatch
-        ? autoResult.applied.map((a) => ({ ...a, label: describeAction(a) }))
+        ? [...vendorAgentApplied, ...autoResult.applied].map((a) => ({ ...a, label: describeAction(a) }))
         : [],
       needsConfirm: needsConfirm.map((a) => ({ ...a, label: describeAction(a) })),
       skipped: hardSkipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),

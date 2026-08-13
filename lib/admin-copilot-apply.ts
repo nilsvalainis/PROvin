@@ -29,10 +29,16 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import {
+  emptyOutvinDealerReport,
+  OUTVIN_VEHICLE_INFO_ROWS,
+  type OutvinVehicleInfo,
+} from "@/lib/outvin-dealer-types";
 import type {
   CopilotAction,
   CopilotAppendRawAction,
   CopilotConfidence,
+  CopilotDealerVehicleInfoAction,
   CopilotIncidentAction,
   CopilotMileageAction,
   CopilotServiceHistoryAction,
@@ -290,6 +296,37 @@ function applyServiceHistoryNotes(
   };
 }
 
+/** Precīzāks apzīmējums = ar iekavās norādītu rūpnīcas kodu („Havana Black Metallic (LY8X)”). */
+function hasSpecCode(value: string): boolean {
+  return /\([0-9A-Za-z][0-9A-Za-z /-]{1,20}\)/.test(value.trim());
+}
+
+/**
+ * Tukšos dīlera laukus aizpilda; aizpildītu pārraksta tikai tad, ja jaunajā ir precīzs kods,
+ * bet esošajā nav (piem. „Melns” → „Havana Black Metallic (LY8X)”).
+ */
+function applyDealerVehicleInfo(
+  b: AutoRecordsBlockState,
+  action: CopilotDealerVehicleInfoAction,
+): AutoRecordsBlockState {
+  const report = b.outvinReport ?? emptyOutvinDealerReport();
+  const vehicleInfo: OutvinVehicleInfo = { ...report.vehicleInfo };
+  let changed = false;
+
+  for (const { key } of OUTVIN_VEHICLE_INFO_ROWS) {
+    const incoming = (action.vehicleInfo[key] ?? "").trim();
+    if (!incoming) continue;
+    const current = vehicleInfo[key].trim();
+    if (current === incoming) continue;
+    if (current && !(hasSpecCode(incoming) && !hasSpecCode(current))) continue;
+    vehicleInfo[key] = incoming.slice(0, 500);
+    changed = true;
+  }
+
+  if (!changed) return b;
+  return { ...b, outvinReport: { ...report, vehicleInfo } };
+}
+
 function applyAppendRaw(
   blocks: WorkspaceSourceBlocks,
   action: CopilotAppendRawAction,
@@ -443,6 +480,18 @@ export function applyCopilotActions(
         ...next,
         auto_records: applyServiceHistoryNotes(next.auto_records, action),
       };
+      applied.push(action);
+      changed.add("auto_records");
+      continue;
+    }
+
+    if (action.type === "set_dealer_vehicle_info") {
+      const updated = applyDealerVehicleInfo(next.auto_records, action);
+      if (updated === next.auto_records) {
+        skipped.push({ action, reason: "dealer_fields_already_filled" });
+        continue;
+      }
+      next = { ...next, auto_records: updated };
       applied.push(action);
       changed.add("auto_records");
       continue;

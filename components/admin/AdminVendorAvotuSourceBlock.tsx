@@ -21,9 +21,7 @@ import {
   PROVIN_VENDOR_FIELD,
   emptyAutoRecordsServiceRow,
   emptyLtabRow,
-  emptySourcePdfChecklist,
   ltabRowHasData,
-  normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
   coerceVendorAvotuBlock,
 } from "@/lib/admin-source-blocks";
@@ -49,11 +47,8 @@ import {
 } from "@/lib/carvertical-pdf-parse";
 import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
-import type { HistoryVendorPdfParseResult } from "@/lib/history-vendor-pdf-import";
-import {
-  mergeLtabIncidentRows,
-  mergeVendorServiceHistory,
-} from "@/lib/history-vendor-pdf-import";
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
+import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -84,6 +79,12 @@ type Props = {
   sectionIndex?: number;
   /** autoDNA sandbox API konfigurācija serverī (AUTODNA_* env). */
   autodnaApiConfigured?: boolean;
+  /** Copilot PDF augšupielādei — visi avotu bloki + patch atpakaļ darbvirsmā. */
+  getSourceBlocks?: () => WorkspaceSourceBlocks;
+  applyPatchedBlocks?: (
+    patched: Partial<WorkspaceSourceBlocks>,
+    changedKeys: CopilotSourceKey[],
+  ) => void;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -100,6 +101,8 @@ export function AdminVendorAvotuSourceBlock({
   embedded = false,
   sectionIndex,
   autodnaApiConfigured = false,
+  getSourceBlocks,
+  applyPatchedBlocks,
 }: Props) {
   const block = coerceVendorAvotuBlock(value);
   const serviceHistory = block.serviceHistory ?? [];
@@ -175,37 +178,6 @@ export function AdminVendorAvotuSourceBlock({
     });
   };
 
-  const applyVendorPdfImport = (result: HistoryVendorPdfParseResult) => {
-    const raw = result.rawText.trim();
-    const nextService =
-      result.serviceHistory.length > 0
-        ? mergeVendorServiceHistory(serviceHistory, result.serviceHistory)
-        : serviceHistory;
-    const nextIncidents =
-      result.incidents.length > 0 ? mergeLtabIncidentRows(incidents, result.incidents) : incidents;
-
-    if (blockKey === "carvertical") {
-      onChange({
-        ...block,
-        ...(raw ? { mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) } : {}),
-        ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
-        ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
-        ...(result.vehicleHistoryTimeline?.length
-          ? { vehicleHistoryTimeline: result.vehicleHistoryTimeline }
-          : {}),
-        ...(result.damageDetails?.length ? { damageDetails: result.damageDetails } : {}),
-      });
-      return;
-    }
-
-    onChange({
-      ...block,
-      ...(raw ? { mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) } : {}),
-      ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
-      ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
-    });
-  };
-
   const inner = (
     <div className={`flex min-h-0 flex-col overflow-hidden ${embedded ? "" : trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${embedded ? "" : trafficFillLevel ? "px-2 pt-2" : ""}`}>
@@ -224,12 +196,16 @@ export function AdminVendorAvotuSourceBlock({
         </p>
         {blockKey === "carvertical" || blockKey === "autodna" ? (
           <>
-            <AdminHistoryVendorPdfUpload
-              target={blockKey}
-              disabled={disabled}
-              readOnly={readOnly}
-              onImported={applyVendorPdfImport}
-            />
+            {getSourceBlocks && applyPatchedBlocks ? (
+              <AdminHistoryVendorPdfUpload
+                target={blockKey}
+                sessionId={sessionId}
+                disabled={disabled}
+                readOnly={readOnly}
+                getSourceBlocks={getSourceBlocks}
+                applyPatchedBlocks={applyPatchedBlocks}
+              />
+            ) : null}
             <div className="mb-2">
             <label
               className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
