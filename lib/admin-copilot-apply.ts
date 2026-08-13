@@ -74,9 +74,9 @@ function normalizeMileageRow(a: CopilotMileageAction): AutoRecordsServiceRow | n
   const odometer = normalizeAutoRecordsOdometer(a.odometer.trim()) || a.odometer.replace(/\D/g, "");
   const country = normalizeCountryNameLv(a.country.trim()) || a.country.trim();
   const row: AutoRecordsServiceRow = { date, odometer, country };
-  // Allow 0 km (registry) — same rule as mileage-history paste
+  // Mazi reģistru rādījumi (0 km, 14 km) ir derīgi, ja ir datums.
   if (!date.trim() || odometer === "") return null;
-  if (!autoRecordsMileageRowHasData(row) && odometer !== "0") return null;
+  if (!autoRecordsMileageRowHasData(row)) return null;
   return row;
 }
 
@@ -159,9 +159,7 @@ function collectConfirmedCountryMaps(
     ...(b.csdd.mileageHistory ?? []),
   ];
   for (const r of mileRows) {
-    if (autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0") || (r.date.trim() && r.odometer.trim() && r.country.trim())) {
-      putMileage(r.date, r.odometer, r.country);
-    }
+    if (autoRecordsMileageRowHasData(r)) putMileage(r.date, r.odometer, r.country);
   }
 
   for (const a of actions) {
@@ -215,16 +213,12 @@ function mergeMileageRows(
   existing: AutoRecordsServiceRow[],
   incoming: AutoRecordsServiceRow,
 ): AutoRecordsServiceRow[] {
-  const withData = existing.filter(
-    (r) => autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0"),
-  );
+  const withData = existing.filter(autoRecordsMileageRowHasData);
   const key = mileageKey(incoming);
   if (withData.some((r) => mileageKey(r) === key)) {
     return sortAutoRecordsDescending(withData.length ? withData : [incoming]);
   }
-  const emptyIdx = existing.findIndex(
-    (r) => !autoRecordsMileageRowHasData(r) && !(r.date.trim() && r.odometer === "0"),
-  );
+  const emptyIdx = existing.findIndex((r) => !autoRecordsMileageRowHasData(r));
   let next: AutoRecordsServiceRow[];
   if (emptyIdx >= 0) {
     next = [...existing];
@@ -580,7 +574,7 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
     }
   };
   const pushMile = (label: string, rows: AutoRecordsServiceRow[]) => {
-    const filled = rows.filter((r) => autoRecordsMileageRowHasData(r) || (r.date.trim() && r.odometer === "0"));
+    const filled = rows.filter(autoRecordsMileageRowHasData);
     if (filled.length === 0) {
       lines.push(`${label} mileage: (empty)`);
       return;

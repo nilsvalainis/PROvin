@@ -239,10 +239,15 @@ export function autoRecordsRowHasData(r: AutoRecordsServiceRow): boolean {
   return Boolean(r.date.trim() || r.odometer.trim() || r.country.trim());
 }
 
-/** Nobraukuma tabulai — rinda tikai ar faktisku odometru (gads bez km neiet). */
+/**
+ * Nobraukuma tabulai — rinda tikai ar faktisku odometru (gads bez km neiet).
+ * Mazi rādījumi (0–99 km, piem. pirmā reģistrācija „14 km”) ir derīgi, bet prasa datumu,
+ * lai ielīmētā teksta atsevišķi cipari bez konteksta neveidotu rindu.
+ */
 export function autoRecordsMileageRowHasData(r: AutoRecordsServiceRow): boolean {
   const digits = r.odometer.replace(/\D/g, "");
-  if (digits.length < 3) return false;
+  if (digits.length === 0) return false;
+  if (digits.length < 3) return Boolean(r.date.trim());
   return Boolean(r.date.trim() || r.country.trim());
 }
 
