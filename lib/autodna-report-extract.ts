@@ -23,6 +23,12 @@ import {
   type SpecCandidate,
   type VendorReportExtract,
 } from "@/lib/vendor-report-extract";
+import {
+  isVendorServiceCategoryLine,
+  isVendorServiceEventTitle,
+  mergeVendorServiceEntries,
+  type VendorServiceEntry,
+} from "@/lib/vendor-service-history";
 
 const HISTORY_END_RE =
   /^(Datu\s+interpret[āa]cijas|Iepriek[šs][ēe]jie\s+mekl[ēe]jumi|Apr[īi]kojums|Transportl[īi]dzek[ļl]a\s+arh[īi]va)/i;
@@ -118,6 +124,36 @@ function eventLossAmountRaw(lines: string[]): string {
   return "";
 }
 
+/** Notikuma virsraksts = pirmā rinda, kas nav metadatu lauks („Odometra rādījums”, „Valsts …”). */
+function eventTitle(lines: string[]): string {
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    if (EVENT_META_RE.test(line)) continue;
+    return line.trim();
+  }
+  return "";
+}
+
+const EVENT_META_RE =
+  /^(Odometra\s+r[āa]d[īi]jums|[\d\s]+km$|Valsts\b|Rezult[āa]ts\b|Atra[šs]an[āa]s\s+vieta\b|Summa\b|Cena\b|Deta[ļl]u\s+grupa|Boj[āa]jumu\s+zona|Tehnisk[āa]\s+apskate\s+der[īi]ga|Iepriek[šs][ēe]j[āa]s\s+re[ģg]istr[āa]cijas\s+valsts|Autost[āa]vvieta|Virsb[ūu]ves\s+kr[āa]sa|D[īi]lera\s+piesl[ēe]gums|D[īi]lera\s+pied[āa]v[āa]jums|-\s)/i;
+
+/** Veiktie darbi servisa notikumā (bez metadatiem un virsraksta). */
+function eventServiceWorks(lines: string[], title: string): { category: string; works: string[] } {
+  let category = "";
+  const works: string[] = [];
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line === title) continue;
+    if (EVENT_META_RE.test(line)) continue;
+    if (!category && isVendorServiceCategoryLine(line)) {
+      category = line.replace(/[:.]$/, "").trim();
+      continue;
+    }
+    works.push(line);
+  }
+  return { category, works };
+}
+
 function eventPriceRaw(lines: string[]): string {
   for (const line of lines) {
     const m = line.match(/^Cena\s+(.+)$/i);
@@ -169,6 +205,7 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
   const mileage: AutoRecordsServiceRow[] = [];
   const incidents: LtabIncidentRow[] = [];
   const timeline: CountryTimelineEntry[] = [];
+  const serviceHistory: VendorServiceEntry[] = [];
 
   for (const event of events) {
     const country = eventCountry(event.lines);
@@ -176,6 +213,14 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
 
     const odometer = eventOdometer(event.lines);
     if (odometer) mileage.push({ date: event.date, odometer, country });
+
+    const title = eventTitle(event.lines);
+    if (isVendorServiceEventTitle(title)) {
+      const { category, works } = eventServiceWorks(event.lines, title);
+      if (category || works.length > 0) {
+        serviceHistory.push({ date: event.date, odometer, country, category, works });
+      }
+    }
 
     const lossRaw = eventLossAmountRaw(event.lines);
     if (lossRaw) {
@@ -203,6 +248,7 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
 
   out.mileage = sortAutoRecordsDescending(dedupeMileage(mileage));
   out.incidents = dedupeIncidents(incidents);
+  out.serviceHistory = mergeVendorServiceEntries(serviceHistory, []);
   out.countryTimeline = timeline;
   out.vehicleInfo = {
     ...vehicleInfo,

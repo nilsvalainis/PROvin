@@ -10,6 +10,7 @@ import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
+import type { VendorServiceEntry } from "@/lib/vendor-service-history";
 
 export type VendorReportVendor = "autodna" | "carvertical";
 
@@ -19,6 +20,8 @@ export type VendorReportExtract = {
   mileage: AutoRecordsServiceRow[];
   /** Negadījumi: datums, summa EUR, valsts (`incidentNo` = valsts kolonna). */
   incidents: LtabIncidentRow[];
+  /** Apkopes / remonti ar veiktajiem darbiem (bez tehniskajām apskatēm). */
+  serviceHistory: VendorServiceEntry[];
   /** Auto dzīves cikls pa valstīm (valsts noteikšanai tukšajām rindām). */
   countryTimeline: CountryTimelineEntry[];
   /** Dīlera tehniskie lauki (OFICIĀLĀ DĪLERA DATI). */
@@ -32,6 +35,7 @@ export function emptyVendorReportExtract(vendor: VendorReportVendor): VendorRepo
     vendor,
     mileage: [],
     incidents: [],
+    serviceHistory: [],
     countryTimeline: [],
     vehicleInfo: {},
     notes: [],

@@ -47,6 +47,7 @@ type AgentResponse = {
   summary?: string;
   notes?: string[];
   applied?: string[];
+  skipped?: { label: string; reason: string }[];
   patchedSourceBlocks?: Partial<WorkspaceSourceBlocks>;
   changedKeys?: CopilotSourceKey[];
 };
@@ -103,11 +104,20 @@ export function AdminHistoryVendorPdfUpload({
         if (data.patchedSourceBlocks && changedKeys.length > 0) {
           applyPatchedBlocks(data.patchedSourceBlocks, changedKeys);
         }
+        const dropped = (data.skipped ?? []).filter(
+          (s) => !s.reason.endsWith("already_filled") && s.reason !== "needs_confirm",
+        );
         const lines = [
           data.summary?.trim() || `„${file.name}” apstrādāts.`,
           changedKeys.length > 0
             ? `Aizpildīts: ${changedKeys.join(", ")} (${data.applied?.length ?? 0} ieraksti).`
             : "Jaunu rindu nebija — tabulas jau atbilst atskaitei.",
+          dropped.length > 0
+            ? `Neievietoti ${dropped.length}: ${dropped
+                .slice(0, 3)
+                .map((s) => `${s.label} (${s.reason})`)
+                .join("; ")}.`
+            : "",
           ...(data.notes ?? []).slice(0, 4),
         ];
         setNotice(lines.filter(Boolean).join(" "));

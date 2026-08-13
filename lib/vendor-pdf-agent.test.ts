@@ -13,6 +13,7 @@ import {
   resolveExtractCountries,
 } from "@/lib/vendor-pdf-agent-merge";
 import { emptyVendorReportExtract } from "@/lib/vendor-report-extract";
+import { formatVendorServiceHistoryText } from "@/lib/vendor-service-history";
 import { collectWorkspaceCountryTimeline } from "@/lib/workspace-country-timeline";
 
 const AUTODNA_TEXT = `Transportlīdzekļa vēsture
@@ -36,6 +37,33 @@ Odometra rādījums
 Virsbūves krāsa Melns
 Cena 29 380 EUR
 Valsts Čehijas Republika
+Datu interpretācijas noteikumi
+`;
+
+const AUTODNA_SERVICE_TEXT = `Transportlīdzekļa vēsture
+12.2023
+Transportlīdzekļu apkalpošana vai apskate
+Odometra rādījums
+47 521 km
+Regulārā apkope
+Salona gaisa filtra maiņa
+Dzinēja gaisa filtra maiņa
+Auto Vēstures Atskaite autoDNA TMBJJ7NX9NY019543
+Pārbaudiet ziņojuma oriģinalitāti — noskenējiet galvenē redzamo QR kodu.
+TMBJJ7NX9NY019543
+Eļļas maiņa
+Valsts Latvija
+10.01.2026
+Veikta tehniskā apskate
+Odometra rādījums
+91 038 km
+Rezultāts Izgāja
+Atrašanās vieta Rīga
+Valsts Latvija
+01.2022
+Transportlīdzekļu apkalpošana vai apskate
+Pirms piegādes sagatavošana
+Valsts Latvija
 Datu interpretācijas noteikumi
 `;
 
@@ -99,6 +127,82 @@ describe("AutoDNA deterministiskā ekstrakcija", () => {
   it("cenas ierakstu neuzskata par negadījumu", () => {
     expect(extract.incidents.some((r) => r.lossAmount.includes("29 380"))).toBe(false);
     expect(extract.notes.some((n) => n.includes("29 380 EUR"))).toBe(true);
+  });
+});
+
+describe("AutoDNA apkopes → Servisa vēsture", () => {
+  const extract = extractAutodnaReport(AUTODNA_SERVICE_TEXT);
+
+  it("saglabā visus darbus, arī pāri lappuses pārrāvumam", () => {
+    expect(extract.serviceHistory).toEqual([
+      {
+        date: "01.12.2023",
+        odometer: "47521",
+        country: "Latvija",
+        category: "Regulārā apkope",
+        works: [
+          "Salona gaisa filtra maiņa",
+          "Dzinēja gaisa filtra maiņa",
+          "Eļļas maiņa",
+        ],
+      },
+      {
+        date: "01.01.2022",
+        odometer: "",
+        country: "Latvija",
+        category: "",
+        works: ["Pirms piegādes sagatavošana"],
+      },
+    ]);
+  });
+
+  it("neiekļauj tehniskās apskates", () => {
+    expect(extract.serviceHistory.some((e) => e.date === "10.01.2026")).toBe(false);
+  });
+
+  it("formatē rindas laukam „Servisa vēsture”", () => {
+    expect(formatVendorServiceHistoryText(extract.serviceHistory)).toBe(
+      [
+        "01.12.2023 | 47 521 km | Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa",
+        "01.01.2022 | Pirms piegādes sagatavošana",
+      ].join("\n"),
+    );
+  });
+
+  it("atkārtota augšupielāde nedublē rindas un sakārto jaunāko augšā", () => {
+    const actions = buildVendorCopilotActions(extract, "autodna");
+    const first = applyCopilotActions(createDefaultSourceBlocks(), actions, { onlyAuto: false });
+    const notes = first.sourceBlocks.auto_records.serviceHistoryNotes;
+    expect(notes.split("\n")[0]).toContain("01.12.2023");
+
+    const again = applyCopilotActions(first.sourceBlocks, actions, { onlyAuto: false });
+    expect(again.sourceBlocks.auto_records.serviceHistoryNotes).toBe(notes);
+    expect(again.skipped.map((s) => s.reason)).toContain("service_history_already_filled");
+  });
+
+  it("Gemini „tehniskā apskate” kategoriju atmet, apkopi pieņem", () => {
+    const payload = parseVendorPdfAgentPayload(
+      JSON.stringify({
+        vendor: "autodna",
+        mileage: [],
+        incidents: [],
+        countryTimeline: [],
+        serviceHistory: [
+          { date: "10.01.2026", category: "Veikta tehniskā apskate", works: ["Rezultāts Izgāja"] },
+          { date: "05.2025", odometer: "75 634 km", category: "Regulārā apkope", works: ["Eļļas maiņa"] },
+        ],
+      }),
+      "autodna",
+    );
+    expect(payload.serviceHistory).toEqual([
+      {
+        date: "01.05.2025",
+        odometer: "75634",
+        country: "",
+        category: "Regulārā apkope",
+        works: ["Eļļas maiņa"],
+      },
+    ]);
   });
 });
 

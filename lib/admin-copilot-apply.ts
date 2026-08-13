@@ -34,6 +34,7 @@ import {
   OUTVIN_VEHICLE_INFO_ROWS,
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
+import { mergeServiceHistoryFieldText } from "@/lib/vendor-service-history";
 import type {
   CopilotAction,
   CopilotAppendRawAction,
@@ -292,7 +293,7 @@ function applyServiceHistoryNotes(
 ): AutoRecordsBlockState {
   return {
     ...b,
-    serviceHistoryNotes: appendText(b.serviceHistoryNotes ?? "", action.text, 12_000),
+    serviceHistoryNotes: mergeServiceHistoryFieldText(b.serviceHistoryNotes ?? "", action.text),
   };
 }
 
@@ -476,10 +477,12 @@ export function applyCopilotActions(
     }
 
     if (action.type === "set_service_history") {
-      next = {
-        ...next,
-        auto_records: applyServiceHistoryNotes(next.auto_records, action),
-      };
+      const updated = applyServiceHistoryNotes(next.auto_records, action);
+      if (updated.serviceHistoryNotes === next.auto_records.serviceHistoryNotes) {
+        skipped.push({ action, reason: "service_history_already_filled" });
+        continue;
+      }
+      next = { ...next, auto_records: updated };
       applied.push(action);
       changed.add("auto_records");
       continue;

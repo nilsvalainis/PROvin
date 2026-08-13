@@ -20,7 +20,16 @@ import {
 import {
   mergeVehicleInfoPreferSpecific,
   type VendorReportExtract,
+  type VendorReportVendor,
 } from "@/lib/vendor-report-extract";
+import {
+  formatVendorServiceHistoryText,
+  mergeVendorServiceEntries,
+} from "@/lib/vendor-service-history";
+
+function vendorLabel(vendor: VendorReportVendor): string {
+  return vendor === "autodna" ? "AutoDNA" : "CarVertical";
+}
 
 function mileageKey(r: AutoRecordsServiceRow): string {
   return `${r.date}|${r.odometer}`;
@@ -59,6 +68,7 @@ export function mergeVendorReportExtracts(
     vendor: primary.vendor,
     mileage,
     incidents,
+    serviceHistory: mergeVendorServiceEntries(primary.serviceHistory, secondary.serviceHistory),
     countryTimeline: [...primary.countryTimeline, ...secondary.countryTimeline],
     vehicleInfo: mergeVehicleInfoPreferSpecific(primary.vehicleInfo, secondary.vehicleInfo),
     notes: [...primary.notes, ...secondary.notes],
@@ -128,6 +138,17 @@ export function buildVendorCopilotActions(
     });
   }
 
+  const serviceText = formatVendorServiceHistoryText(extract.serviceHistory);
+  if (serviceText) {
+    actions.push({
+      type: "set_service_history",
+      source: "auto_records",
+      text: serviceText,
+      confidence: "high",
+      note: `Apkopes no ${vendorLabel(extract.vendor)} atskaites`,
+    });
+  }
+
   if (opts?.includeDealerFields !== false) {
     const vehicleInfo: Partial<OutvinVehicleInfo> = {};
     for (const key of DEALER_VEHICLE_INFO_KEYS) {
@@ -140,7 +161,7 @@ export function buildVendorCopilotActions(
         source: "auto_records",
         vehicleInfo,
         confidence: "high",
-        note: `Specifikācija no ${extract.vendor === "autodna" ? "AutoDNA" : "CarVertical"} atskaites`,
+        note: `Specifikācija no ${vendorLabel(extract.vendor)} atskaites`,
       });
     }
   }

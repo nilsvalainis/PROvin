@@ -35,6 +35,10 @@ function describeAction(a: CopilotAction): string {
   if (a.type === "set_dealer_vehicle_info") {
     return `dīlera dati: ${Object.keys(a.vehicleInfo).join(", ")}`;
   }
+  if (a.type === "set_service_history") {
+    const lines = a.text.trim().split(/\n+/).filter(Boolean).length;
+    return `servisa vēsture (${lines} apkopes)`;
+  }
   return a.type;
 }
 

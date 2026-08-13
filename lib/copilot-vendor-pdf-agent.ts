@@ -71,7 +71,7 @@ async function runGeminiExtract(opts: {
         `Vendor: ${vendorLabel(opts.vendor)} (${opts.vendor}). File: ${opts.fileName}.`,
         "Read the whole PDF (all pages, both table columns, timeline sections) and extract every record.",
         opts.local.mileage.length > 0
-          ? `The PROVIN text-layer parser already found ${opts.local.mileage.length} odometer and ${opts.local.incidents.length} damage records. Return the COMPLETE list anyway (yours is verified independently).`
+          ? `The PROVIN text-layer parser already found ${opts.local.mileage.length} odometer, ${opts.local.incidents.length} damage and ${opts.local.serviceHistory.length} service records. Return the COMPLETE list anyway (yours is verified independently).`
           : "The PROVIN text-layer parser found nothing — you are the only extraction pass, so be exhaustive.",
         "Return JSON matching the schema.",
       ].join("\n"),
@@ -134,6 +134,9 @@ export async function runVendorPdfAgent(opts: {
   const summaryParts = [
     `${vendorLabel(vendor)} „${opts.fileName}”: ${resolved.mileage.length} nobraukuma, ${resolved.incidents.length} negadījumu ierakstu`,
   ];
+  if (resolved.serviceHistory.length > 0) {
+    summaryParts.push(`${resolved.serviceHistory.length} apkopes/remonti → Servisa vēsture`);
+  }
   if (missingCountry > 0) summaryParts.push(`${missingCountry} rindām valsts nav droši nosakāma (atstāta tukša)`);
   const dealerFields = Object.keys(resolved.vehicleInfo).length;
   if (dealerFields > 0) summaryParts.push(`${dealerFields} dīlera specifikācijas lauki`);

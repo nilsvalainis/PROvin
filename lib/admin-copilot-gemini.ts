@@ -41,9 +41,11 @@ Sources (must match exactly):
 Actions:
 1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country. ONLY real accidents / insurance claims / damage-loss events. Never invent incidents. Never map vehicle value/price records into incidents.
 2) upsert_mileage — NOBRAUKUMS: date, odometer (digits), country
-3) set_service_history — Oficiālā dīlera lauks „Servisa vēsture” (ALWAYS source=auto_records). Put maintenance/repair history here when present in ANY attached PDF (often AutoDNA). Format ONLY facts, one entry per line:
-   DD.MM.YYYY | <odometer digits> km | <work done>
-   Example: 12.03.2019 | 87450 km | Eļļas maiņa, bremžu kluči
+3) set_service_history — Oficiālā dīlera lauks „Servisa vēsture” (ALWAYS source=auto_records). Put maintenance/repair history here when present in ANY attached PDF (often AutoDNA „Transportlīdzekļu apkalpošana vai apskate”). Format ONLY facts, one entry per line, newest first:
+   DD.MM.YYYY | <odometer> km | <category>: <work items>
+   Example: 01.12.2023 | 47 521 km | Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa
+   Copy every printed work item in Latvian exactly — never summarise or drop one; a work list may continue on the next page.
+   NEVER put here: technical inspections („Veikta tehniskā apskate”, periodiska/papildus TA, emission checks), odometer-only records, registrations, damage records, or CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (recommended, not performed).
    No commentary, no intro, no markdown — plain fact lines only. Prefer high confidence when the PDF clearly lists services.
 4) set_dealer_vehicle_info — OFICIĀLĀ DĪLERA DATI transporta informācija (ALWAYS source=auto_records), field "vehicleInfo": { vinCode, engineCode, transmission, color, interior, model, generation, series, typeCode, steeringSide }.
    Fill it from CarVertical „Transportlīdzekļa specifikācija” + PR/equipment code list and AutoDNA „Transportlīdzekļa tehniskie dati”.

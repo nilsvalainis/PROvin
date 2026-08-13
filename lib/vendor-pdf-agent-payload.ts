@@ -23,6 +23,12 @@ import {
   type VendorReportExtract,
   type VendorReportVendor,
 } from "@/lib/vendor-report-extract";
+import {
+  isVendorServiceCategoryLine,
+  isVendorServiceEventTitle,
+  mergeVendorServiceEntries,
+  type VendorServiceEntry,
+} from "@/lib/vendor-service-history";
 
 export const VENDOR_PDF_AGENT_SYSTEM = `You are the PROVIN.LV vehicle-history PDF extraction agent for ONE report (AutoDNA or CarVertical).
 Every vendor PDF follows a similar but slightly different layout — read the attached PDF like a human expert, section by section, and return ONLY the JSON described by the schema.
@@ -56,7 +62,14 @@ ABSOLUTE RULES
 - amountRaw: copy the amount EXACTLY as printed, including range and currency ("510 000 - 520 000 CZK", "8501 € – 9000 €"). currency: ISO code you see (CZK, EUR, PLN, SEK …). Do NOT convert — PROVIN converts to EUR in code.
 - NOT incidents (never output them): „Cena”, „Pēdējā zināmā pārdošanas cena”, „Tirgus vērtība”, „Vērtība”, dealer listing prices, market value tables, „Remonta izmaksu reitings” percentages, service cost estimates.
 
-6) VEHICLE SPECIFICATION → dealer fields (vehicleInfo)
+6) SERVICE / REPAIR HISTORY (serviceHistory) — maintenance and repairs WITH the work items
+- AutoDNA: „Transportlīdzekļu apkalpošana vai apskate” events → the work list printed inside the event („Regulārā apkope” + „Eļļas maiņa”, „Salona gaisa filtra maiņa”, „Bremžu šķidruma maiņa”, „Degvielas filtra maiņa”, „Pirms piegādes sagatavošana”, repairs). Also „Veikta apkope” / service or repair events in other reports.
+- One object per event: {date, odometer, category ("Regulārā apkope" / "Remonts" / ""), works: ["Eļļas maiņa", …], country}. Copy work names EXACTLY as printed in Latvian — never summarise, translate, merge or drop a work item, and never invent one.
+- A work list can continue on the NEXT PAGE (after the page header/footer) — keep reading and include those items in the same event.
+- NEVER include here: „Veikta tehniskā apskate” / „Veikta periodiska tehniskā apskate” / „Veikta papildus tehniskā apskate” / emission checks (those are inspections, not work), „Ziņots par odometra rādījumu”, registration/export/insurance events, damage records, and CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (that is a RECOMMENDATION, not performed work).
+- If an event has no printed work items and no category, skip it.
+
+7) VEHICLE SPECIFICATION → dealer fields (vehicleInfo)
 - Read AutoDNA „Transportlīdzekļa tehniskie dati” and CarVertical „Transportlīdzekļa specifikācija” + the PR/equipment code list.
 - vinCode: the 17-character VIN.
 - engineCode: e.g. „Dzinēja kods: CVUA”.
@@ -107,6 +120,20 @@ export const VENDOR_PDF_AGENT_SCHEMA: Schema = {
         required: ["date", "country"],
       },
     },
+    serviceHistory: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          date: { type: SchemaType.STRING },
+          odometer: { type: SchemaType.STRING },
+          category: { type: SchemaType.STRING },
+          works: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          country: { type: SchemaType.STRING },
+        },
+        required: ["date", "works"],
+      },
+    },
     vehicleInfo: {
       type: SchemaType.OBJECT,
       properties: {
@@ -124,7 +151,7 @@ export const VENDOR_PDF_AGENT_SCHEMA: Schema = {
     },
     warnings: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
   },
-  required: ["vendor", "mileage", "incidents", "countryTimeline"],
+  required: ["vendor", "mileage", "incidents", "countryTimeline", "serviceHistory"],
 };
 
 function asRecord(v: unknown): Record<string, unknown> | null {
@@ -207,6 +234,31 @@ export function parseVendorPdfAgentPayload(
     countryTimeline.push({ date, country });
   }
 
+  const serviceHistory: VendorServiceEntry[] = [];
+  for (const item of Array.isArray(payload.serviceHistory) ? payload.serviceHistory : []) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const date = formatAutoRecordsDateForOutput(asString(o.date, 32));
+    if (!date) continue;
+    const rawCategory = asString(o.category, 80).replace(/[:.]$/, "").trim();
+    // Tehniskā apskate nav veikts darbs — modeļa kļūdas šeit nogriežam.
+    if (rawCategory && !isVendorServiceCategoryLine(rawCategory) && !isVendorServiceEventTitle(rawCategory)) {
+      continue;
+    }
+    const works = (Array.isArray(o.works) ? o.works : [])
+      .map((w) => asString(w, 160))
+      .filter((w) => w && !/^[-—–]$/.test(w));
+    const category = isVendorServiceCategoryLine(rawCategory) ? rawCategory : "";
+    if (works.length === 0 && !category) continue;
+    serviceHistory.push({
+      date,
+      odometer: normalizeAutoRecordsOdometer(asString(o.odometer, 32)),
+      country: normalizeCountry(asString(o.country, 80)),
+      category,
+      works,
+    });
+  }
+
   const vehicleInfoRaw = asRecord(payload.vehicleInfo);
   const vehicleInfo: Partial<OutvinVehicleInfo> = {};
   if (vehicleInfoRaw) {
@@ -218,6 +270,7 @@ export function parseVendorPdfAgentPayload(
 
   out.mileage = mileage;
   out.incidents = incidents;
+  out.serviceHistory = mergeVendorServiceEntries(serviceHistory, []);
   out.countryTimeline = countryTimeline;
   out.vehicleInfo = vehicleInfo;
   return out;

@@ -24,6 +24,7 @@ import {
   type SpecCandidate,
   type VendorReportExtract,
 } from "@/lib/vendor-report-extract";
+import { mergeVendorServiceEntries, type VendorServiceEntry } from "@/lib/vendor-service-history";
 
 const DAMAGE_VALUE_LABEL_RE = /^Aptuven[āa]\s+iepriek[šs]\s+g[ūu]to\s+boj[āa]jumu\s+v[ēe]rt[īi]ba/i;
 const DAMAGE_HEADER_LOOKBACK = 40;
@@ -66,6 +67,30 @@ function collectDatedCountryLines(lines: string[]): DatedCountryLine[] {
         out.push({ index: i, date, country: match.country });
       }
     }
+  }
+  return out;
+}
+
+/**
+ * „Laikposms” fiksētie apkopes ieraksti („02.2024.Čehija” → „Veikta apkope”).
+ * CarVertical PDF nesatur darbu sarakstu, tāpēc ieraksts ir tikai fakts par apkopi;
+ * „Ieteicamais apkopes plāns” (plānotie darbi) šeit netiek ņemts — tas nav veikts darbs.
+ */
+function parseServiceTimelineEntries(
+  lines: string[],
+  datedCountries: DatedCountryLine[],
+): VendorServiceEntry[] {
+  const out: VendorServiceEntry[] = [];
+  for (const header of datedCountries) {
+    const title = (lines[header.index + 1] ?? "").trim() || (lines[header.index + 2] ?? "").trim();
+    if (!/^Veikta\s+apkope$/i.test(title)) continue;
+    out.push({
+      date: header.date,
+      odometer: "",
+      country: header.country,
+      category: "Apkope",
+      works: [],
+    });
   }
   return out;
 }
@@ -244,6 +269,10 @@ export function extractCarverticalReport(rawText: string): VendorReportExtract {
 
   out.mileage = sortAutoRecordsDescending(mileage);
   out.incidents = dedupeIncidents(incidents);
+  out.serviceHistory = mergeVendorServiceEntries(
+    parseServiceTimelineEntries(lines, datedCountries),
+    [],
+  );
   out.countryTimeline = timeline;
   out.notes = notes;
   out.vehicleInfo = {
