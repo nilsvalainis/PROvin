@@ -57,6 +57,12 @@ import {
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { normalizeLossAmountEurDisplay, normalizeLtabIncidentRow } from "@/lib/loss-amount-format";
 import {
+  ltabCertificateHasContent,
+  ltabCertificateToPlainText,
+  parseLtabCertificateRaw,
+  type LtabCertificate,
+} from "@/lib/ltab-report-extract";
+import {
   emptyOutvinDealerReport,
   outvinDealerReportHasContent,
   outvinDealerReportToPlainText,
@@ -761,6 +767,8 @@ export type LtabBlockState = {
   pdfImportRaw?: string;
   /** Papildu konteksts tikai Gemini AI — nav PDF. */
   geminiContextRaw: string;
+  /** LTAB OCTA izziņas strukturētā kopija (galvene + CSNg tabula). */
+  certificate?: LtabCertificate;
 };
 
 /** AutoDNA / CarVertical — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
@@ -1255,7 +1263,11 @@ export function ltabRowHasData(r: LtabIncidentRow): boolean {
 }
 
 export function ltabBlockHasContent(b: LtabBlockState): boolean {
-  return (b.rows ?? []).some(ltabRowHasData) || wsStr(b.comments).trim().length > 0;
+  return (
+    (b.rows ?? []).some(ltabRowHasData) ||
+    wsStr(b.comments).trim().length > 0 ||
+    ltabCertificateHasContent(b.certificate)
+  );
 }
 
 /**
@@ -1272,7 +1284,8 @@ export function ltabBlockToPlainText(b: LtabBlockState): string {
     return n ? `${core}\t${n}`.trim() : core;
   });
   const c = wsStr(b.comments).trim();
-  return [...lines, ...(c ? [c] : [])].join("\n");
+  const cert = b.certificate ? ltabCertificateToPlainText(b.certificate) : "";
+  return [...(cert ? [cert] : []), ...lines, ...(c ? [c] : [])].join("\n");
 }
 
 export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState | null | undefined): boolean {
@@ -1403,6 +1416,7 @@ export type ClientManualVendorBlockPdf = {
 export type ClientManualLtabBlockPdf = {
   rows: LtabIncidentRow[];
   comments: string;
+  certificate?: LtabCertificate;
 };
 
 export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientManualVendorBlockPdf[] {
@@ -1462,6 +1476,7 @@ export function toPdfLtabManualBlock(b: LtabBlockState): ClientManualLtabBlockPd
   return {
     rows: b.rows.filter(ltabRowHasData),
     comments: b.comments.trim(),
+    ...(ltabCertificateHasContent(b.certificate) ? { certificate: b.certificate } : {}),
   };
 }
 
@@ -1682,6 +1697,7 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
   const rowsIn = Array.isArray(raw.rows) ? raw.rows : [];
   const comments = typeof raw.comments === "string" ? raw.comments : "";
   const pdfImportRaw = typeof raw.pdfImportRaw === "string" ? raw.pdfImportRaw.slice(0, ADMIN_PDF_IMPORT_RAW_MAX_LEN) : "";
+  const certificate = parseLtabCertificateRaw(raw.certificate);
   const rows: LtabIncidentRow[] = rowsIn.map((row) => {
     if (!row || typeof row !== "object") return emptyLtabRow();
     const x = row as Record<string, unknown>;
@@ -1698,23 +1714,25 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
       lossAmount: String(x.amount ?? "").slice(0, 120),
     });
   });
+  const withCert = (base: LtabBlockState): LtabBlockState =>
+    certificate ? { ...base, certificate } : base;
   if (rows.length === 0) {
-    return {
+    return withCert({
       rows: [emptyLtabRow()],
       comments,
       geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
       ...(pdfImportRaw ? { pdfImportRaw } : {}),
-    };
+    });
   }
   const { head, trailing } = splitTrailingEmptyBy(rows, ltabRowHasData);
   const dataRows = head.filter(ltabRowHasData);
   const combined = [...dataRows, ...trailing];
-  return {
+  return withCert({
     rows: combined.length > 0 ? combined : [emptyLtabRow()],
     comments,
     geminiContextRaw: clipGeminiContextRaw(raw.geminiContextRaw),
     ...(pdfImportRaw ? { pdfImportRaw } : {}),
-  };
+  });
 }
 
 function parseCsddMileageHistoryRaw(raw: unknown): CsddMileageHistoryRow[] {
@@ -2050,6 +2068,11 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       comments: wsStr(blocks.ltab?.comments),
       pdfImportRaw: wsStr(blocks.ltab?.pdfImportRaw),
       geminiContextRaw: wsStr(blocks.ltab?.geminiContextRaw),
+      ...(ltabCertificateHasContent(blocks.ltab?.certificate)
+        ? { certificate: blocks.ltab.certificate }
+        : ltabCertificateHasContent(d.ltab.certificate)
+          ? { certificate: d.ltab.certificate }
+          : {}),
     },
     tirgus: {
       listedForSale: wsStr(blocks.tirgus?.listedForSale),

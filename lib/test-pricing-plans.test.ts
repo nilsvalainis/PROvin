@@ -25,10 +25,10 @@ describe("test-pricing plans", () => {
     expect(isTestPricingPlanId("other")).toBe(false);
   });
 
-  it("mini uses 1999 cents and 24h turnaround", () => {
+  it("mini uses 1999 cents and 24-72h turnaround", () => {
     const mini = getTestPricingPlan("mini")!;
     expect(mini.amountCents).toBe(1999);
-    expect(mini.turnaround).toContain("24h");
+    expect(mini.turnaround).toContain("24-72h");
     expect(mini.vinRequired).toBe(true);
     expect(mini.features.filter((f) => f.kind === "bullet")).toHaveLength(3);
     expect(mini.features.some((f) => f.kind === "exclusion")).toBe(true);

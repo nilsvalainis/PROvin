@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { BlogPostView } from "@/components/blog/BlogPostView";
 import { getAllBlogSlugs, getBlogPost, resolveBlogLocale } from "@/lib/blog/posts";
-import { getPublicSiteOrigin } from "@/lib/site-url";
+import { publicPageAlternates, publicPageUrl } from "@/lib/seo-public-metadata";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+/** Jauni ieraksti (pievienoti pēc build) jārenderē pieprasījuma laikā, nevis 404. */
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const slugs = await getAllBlogSlugs();
@@ -19,9 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getBlogPost(slug);
   if (!post) return {};
   const { content } = resolveBlogLocale(post, locale);
-  const base = getPublicSiteOrigin().replace(/\/$/, "");
   const description = content.socialExcerpt ?? content.excerpt;
-  const url = `${base}/${locale}/blogs/${post.slug}`;
+  const url = publicPageUrl(locale, `/blogs/${post.slug}`);
   const ogImages = post.coverImage
     ? [
         {
@@ -36,9 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: content.title,
     description,
     keywords: [...post.tags, "auto vēstures pārbaude", "PROVIN"],
-    alternates: {
-      canonical: url,
-    },
+    alternates: publicPageAlternates(locale, `/blogs/${post.slug}`),
     openGraph: {
       title: content.title,
       description,

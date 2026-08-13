@@ -14,6 +14,13 @@ describe("detectSourcePdfIngestTarget", () => {
     expect(detectSourcePdfIngestTarget("LTAB_OCTA_abc.pdf", "")).toBe("ltab");
   });
 
+  it("detects LTAB izziņa from filename and zaudējumu dati text", () => {
+    expect(detectSourcePdfIngestTarget("Izziņa.pdf", "")).toBe("ltab");
+    expect(
+      detectSourcePdfIngestTarget("report.pdf", "Transportlīdzekļa zaudējumu dati uz 13.08.2026"),
+    ).toBe("ltab");
+  });
+
   it("detects CSDD from text", () => {
     expect(detectSourcePdfIngestTarget("report.pdf", "CSDD reģistrācijas dati e.csdd.lv")).toBe("csdd");
   });

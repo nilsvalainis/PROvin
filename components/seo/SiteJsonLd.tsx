@@ -23,7 +23,7 @@ export function SiteJsonLd({ locale, description }: Props) {
         url,
         name: brand,
         description,
-        inLanguage: "lv-LV",
+        inLanguage: locale === "en" ? "en-GB" : "lv-LV",
         publisher: { "@id": `${url}#organization` },
       },
       {

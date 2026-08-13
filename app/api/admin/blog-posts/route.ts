@@ -1,5 +1,7 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { routing } from "@/i18n/routing";
 import {
   deleteStoredBlogPost,
   emptyBlogPostDraft,
@@ -12,6 +14,18 @@ import type { BlogPost } from "@/lib/blog/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Publiskās bloga lapas ir ISR (`revalidate = 3600`) — bez šī izmaiņas parādītos ar stundas nobīdi. */
+function revalidateBlogPaths(slug?: string): void {
+  for (const locale of routing.locales) {
+    try {
+      revalidatePath(`/${locale}/blogs`);
+      if (slug) revalidatePath(`/${locale}/blogs/${slug}`);
+    } catch {
+      /* revalidatePath nav pieejams ārpus pieprasījuma konteksta */
+    }
+  }
+}
 
 export async function GET() {
   const session = await getAdminSession();
@@ -49,6 +63,7 @@ export async function POST(request: Request) {
     lv: { title, excerpt: "", body: [{ type: "p", text: "" }] },
   });
   const post = await upsertStoredBlogPost(draft);
+  revalidateBlogPaths(post.slug);
   return NextResponse.json({ ok: true, post }, { status: 201 });
 }
 
@@ -65,6 +80,7 @@ export async function PUT(request: Request) {
 
   try {
     const post = await upsertStoredBlogPost(body as BlogPost);
+    revalidateBlogPaths(post.slug);
     return NextResponse.json({ ok: true, post });
   } catch (e) {
     return NextResponse.json(
@@ -89,5 +105,6 @@ export async function DELETE(request: Request) {
   } catch {
     /* ignore */
   }
+  revalidateBlogPaths(slug);
   return NextResponse.json({ ok: true });
 }

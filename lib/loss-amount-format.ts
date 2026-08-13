@@ -93,6 +93,11 @@ export function normalizeLossAmountEurDisplay(raw: string): string {
   if (bounds) {
     if (bounds.lo === bounds.hi) {
       if (bounds.lo <= 0) return "0 €";
+      const centsMatch = trimmed.replace(/EUR|€/gi, "").trim().match(/[.,](\d{1,2})\s*$/);
+      if (centsMatch) {
+        const cents = centsMatch[1]!.padEnd(2, "0").slice(0, 2);
+        return `${formatEurGrouped(bounds.lo)}.${cents} €`;
+      }
       return `${formatEurGrouped(bounds.lo)} €`;
     }
     return `${formatEurGrouped(bounds.lo)} - ${formatEurGrouped(bounds.hi)} €`;

@@ -13,6 +13,7 @@ import {
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
 } from "@/lib/auto-records-service-works";
 import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import { ltabCertificateHasContent, parseLtabCertificateRaw } from "@/lib/ltab-report-extract";
 
 function asRecord(v: unknown): Record<string, unknown> | null {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
@@ -116,6 +117,17 @@ function parseAction(raw: unknown): CopilotAction | null {
       type: "append_raw",
       source,
       text,
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "set_ltab_certificate") {
+    const certificate = parseLtabCertificateRaw(o.certificate);
+    if (!certificate || !ltabCertificateHasContent(certificate)) return null;
+    return {
+      type: "set_ltab_certificate",
+      source: "ltab",
+      certificate,
       confidence,
       ...(note ? { note } : {}),
     };

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import { Footer } from "@/components/Footer";
 import { HomeFeatureBreakdown } from "@/components/home/HomeFeatureBreakdown";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
@@ -10,10 +11,12 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
-  return {
+  return buildPublicPageMetadata({
+    locale,
+    path: "/pakalpojumi",
     title: t("servicesTitle"),
     description: t("servicesDescription"),
-  };
+  });
 }
 
 export default async function PakalpojumiPage() {

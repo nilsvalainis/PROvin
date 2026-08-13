@@ -3708,6 +3708,8 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.ltab}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
               geminiComment={geminiCommentSlot("ltab")}
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
             />
           </div>
         ) : null}

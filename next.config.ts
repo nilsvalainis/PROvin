@@ -63,6 +63,16 @@ const nextConfig: NextConfig = {
       },
     ];
 
+    /** Sākumlapa ir prerenderēta (SSG) — `no-store` liktu Vercel CDN to ģenerēt no jauna katram
+     * apmeklētājam. Pārlūks vienmēr pārvalidē (`max-age=0`), CDN drīkst turēt minūti, lai cenu
+     * izmaiņas parādās ātri; deploy jebkurā gadījumā invalidē CDN kešu. */
+    const marketingCache: { key: string; value: string }[] = [
+      {
+        key: "Cache-Control",
+        value: "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+      },
+    ];
+
     return [
       {
         source: "/:path*",
@@ -82,11 +92,11 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/lv",
-        headers: [...securityHeaders, ...noStoreTestPricing],
+        headers: [...securityHeaders, ...marketingCache],
       },
       {
         source: "/en",
-        headers: [...securityHeaders, ...noStoreTestPricing],
+        headers: [...securityHeaders, ...marketingCache],
       },
     ];
   },

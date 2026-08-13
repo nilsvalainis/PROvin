@@ -106,6 +106,10 @@ function describeAction(a: CopilotAction): string {
     const preview = a.text.trim().slice(0, 60).replace(/\s+/g, " ");
     return `${a.source} · RAW · ${preview}${a.text.trim().length > 60 ? "…" : ""} (${a.confidence})`;
   }
+  if (a.type === "set_ltab_certificate") {
+    const n = a.certificate.claims.length;
+    return `ltab · izziņa · ${n} CSNg (${a.confidence})`;
+  }
   const _exhaustive: never = a;
   return String(_exhaustive);
 }

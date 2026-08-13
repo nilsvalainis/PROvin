@@ -49,6 +49,7 @@ import {
   formatAdifySignedEur,
   formatAdifyYearLabel,
 } from "@/lib/adify-listing-history";
+import { parseListedForSaleDays } from "@/lib/tirgus-listed-ui";
 import {
   autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
@@ -116,7 +117,7 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
-import { parseListedForSaleDays, shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
+import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import {
@@ -951,7 +952,9 @@ function buildLtabAvotuSubsection(
   const certHtml = ltabCertificateHasContent(b.certificate) ? buildLtabCertificateHtml(b.certificate!) : "";
   if (!hasComments && !certHtml) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml("shield"), SOURCE_BLOCK_LABELS.ltab);
-  const inner = [certHtml, hasComments ? pdfAvotuCommentIsland(b.comments) : ""].filter(Boolean).join("");
+  const inner = [certHtml, hasComments ? pdfAvotuCommentIsland(b.comments) : ""]
+    .filter(Boolean)
+    .join("");
   const body = `<div class="pdf-source-section-body">${inner}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card" role="region">${head}${body}</div>`;
 }

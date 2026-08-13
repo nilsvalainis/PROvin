@@ -13,6 +13,11 @@ import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
 import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
 import { extractDealerReport, looksLikeDealerReport } from "@/lib/dealer-report-extract";
+import {
+  extractLtabCertificate,
+  looksLikeLtabCertificate,
+  ltabCertificateHasContent,
+} from "@/lib/ltab-report-extract";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import {
   parseVendorPdfAgentPayload,
@@ -177,3 +182,47 @@ export async function runVendorPdfAgent(opts: {
     notes: [...notes, ...resolved.notes],
   };
 }
+
+export type LtabPdfAgentResult = {
+  actions: CopilotAction[];
+  summary: string;
+  notes: string[];
+};
+
+/** LTAB OCTA izziņa — tikai teksta slānis (formāts stabils; Gemini nav vajadzīgs). */
+export async function runLtabPdfAgent(opts: {
+  fileName: string;
+  buffer: ArrayBuffer;
+}): Promise<LtabPdfAgentResult> {
+  const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch(() => ({
+    text: "",
+  }));
+  const text = pdfText.text ?? "";
+  const notes: string[] = [];
+  if (!looksLikeLtabCertificate(text) && text.trim()) {
+    notes.push(`„${opts.fileName}” neizskatās pēc tipiskas LTAB izziņas — mēģināts nolasīt CSNg tabulu tik un tā.`);
+  }
+  const certificate = extractLtabCertificate(text);
+  if (!certificate || !ltabCertificateHasContent(certificate)) {
+    return {
+      actions: [],
+      summary: `LTAB „${opts.fileName}”: izziņas struktūra netika nolasīta.`,
+      notes: notes.length ? notes : ["PDF teksta slānis nedeva LTAB izziņas laukus."],
+    };
+  }
+  const claims = certificate.claims.length;
+  return {
+    actions: [
+      {
+        type: "set_ltab_certificate",
+        source: "ltab",
+        certificate,
+        confidence: "high",
+        note: `LTAB izziņa (${opts.fileName})`,
+      },
+    ],
+    summary: `LTAB izziņa „${opts.fileName}”: ${claims} CSNg ${claims === 1 ? "ieraksts" : "ieraksti"}, valsts Latvija.`,
+    notes,
+  };
+}
+

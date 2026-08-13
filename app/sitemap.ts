@@ -17,7 +17,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: number;
   }[] = [
     { path: "", changeFrequency: "weekly", priority: 1 },
-    { path: "/pasutit", changeFrequency: "monthly", priority: 0.85 },
     { path: "/pakalpojumi", changeFrequency: "weekly", priority: 0.8 },
     { path: "/par-mums", changeFrequency: "monthly", priority: 0.75 },
     { path: "/blogs", changeFrequency: "weekly", priority: 0.75 },
@@ -29,19 +28,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const locale of routing.locales) {
     const prefix = `/${locale}`;
     for (const { path, changeFrequency, priority } of publicPaths) {
+      const languages: Record<string, string> = {};
+      for (const loc of routing.locales) languages[loc] = `${base}/${loc}${path}`;
+      languages["x-default"] = `${base}/${routing.defaultLocale}${path}`;
       entries.push({
         url: `${base}${prefix}${path}`,
         lastModified,
         changeFrequency,
         priority,
+        alternates: { languages },
       });
     }
     for (const post of posts) {
+      const postPath = `/blogs/${post.slug}`;
+      const languages: Record<string, string> = {};
+      for (const loc of routing.locales) languages[loc] = `${base}/${loc}${postPath}`;
+      languages["x-default"] = `${base}/${routing.defaultLocale}${postPath}`;
       entries.push({
-        url: `${base}${prefix}/blogs/${post.slug}`,
+        url: `${base}${prefix}${postPath}`,
         lastModified: new Date(`${post.publishedAt}T12:00:00.000Z`),
         changeFrequency: "monthly",
         priority: 0.65,
+        alternates: { languages },
       });
     }
   }

@@ -12,6 +12,7 @@ import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import { getCompanyPublicBrand } from "@/lib/company";
 import { routing } from "@/i18n/routing";
+import { openGraphLocale, publicPageAlternates, publicPageUrl } from "@/lib/seo-public-metadata";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import "./design-direction-theme.css";
 
@@ -34,8 +35,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
-  const base = getPublicSiteOrigin().replace(/\/$/, "");
-  const canonical = `${base}/${locale}`;
+  const canonical = publicPageUrl(locale);
   const ogImage = `/${locale}/opengraph-image`;
   const keywords = [
     "pārbaudīt vin kodu",
@@ -54,15 +54,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     description: t("description"),
     keywords,
-    alternates: {
-      canonical,
-    },
+    alternates: publicPageAlternates(locale),
     openGraph: {
       title: t("ogTitle"),
       description: t("ogDescription"),
       url: canonical,
       siteName: getCompanyPublicBrand(),
-      locale: "lv_LV",
+      locale: openGraphLocale(locale),
       type: "website",
       images: [
         {

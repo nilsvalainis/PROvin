@@ -2,6 +2,7 @@
  * Admin Order Copilot — strukturētās darbības (negadījumi / nobraukums / serviss / RAW).
  */
 import type { OutvinEquipmentLine, OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import type { LtabCertificate } from "@/lib/ltab-report-extract";
 
 export const COPILOT_SOURCE_KEYS = [
   "csdd",
@@ -88,13 +89,23 @@ export type CopilotAppendRawAction = {
   note?: string;
 };
 
+/** LTAB OCTA izziņas strukturētā kopija + CSNg rindas (datums / summa / Latvija). */
+export type CopilotLtabCertificateAction = {
+  type: "set_ltab_certificate";
+  source: "ltab";
+  certificate: LtabCertificate;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
 export type CopilotAction =
   | CopilotIncidentAction
   | CopilotMileageAction
   | CopilotServiceHistoryAction
   | CopilotServiceWorkAction
   | CopilotDealerVehicleInfoAction
-  | CopilotAppendRawAction;
+  | CopilotAppendRawAction
+  | CopilotLtabCertificateAction;
 
 export type CopilotChatMessage = {
   role: "user" | "assistant";

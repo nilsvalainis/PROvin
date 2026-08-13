@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getMessages, getTranslations } from "next-intl/server";
+import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import { Faq } from "@/components/Faq";
 import { Footer } from "@/components/Footer";
 import { Link } from "@/i18n/navigation";
@@ -14,10 +15,12 @@ type FaqMsgItem = { q: string; a: string };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
-  return {
+  return buildPublicPageMetadata({
+    locale,
+    path: "/biezi-jautajumi",
     title: t("faqTitle"),
     description: t("faqDescription"),
-  };
+  });
 }
 
 export default async function FaqPage({ params }: Props) {

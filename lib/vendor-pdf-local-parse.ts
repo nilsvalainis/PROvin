@@ -17,6 +17,11 @@ import { parseCarverticalOdometerPaste } from "@/lib/carvertical-odometer-paste-
 import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import {
+  extractLtabCertificate,
+  ltabCertificateToIncidentRows,
+  ltabCertificateToPlainText,
+} from "@/lib/ltab-report-extract";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import {
@@ -214,8 +219,14 @@ export function parseVendorPdfLocal(
         : claimRowsToLtabRows(claims);
 
   if (target === "ltab") {
-    incidents = dedupeLtab(incidents);
-    factualMeta.push(...extractLtabMetaComments(trimmed));
+    const cert = extractLtabCertificate(trimmed);
+    if (cert) {
+      incidents = ltabCertificateToIncidentRows(cert);
+      factualMeta.push(ltabCertificateToPlainText(cert));
+    } else {
+      incidents = dedupeLtab(incidents);
+      factualMeta.push(...extractLtabMetaComments(trimmed));
+    }
     if (incidents.length === 0) {
       warnings.push("LTAB: negadījumu rindas netika strukturētas — teksts saglabāts RAW.");
     }

@@ -11,6 +11,7 @@ import {
   CreditCard,
   Database,
   FileSearch,
+  FileText,
   Globe,
   History,
   Landmark,
@@ -24,7 +25,6 @@ import {
   ShieldCheck,
   Tag,
   ClipboardPaste,
-  FileText,
   GitCompareArrows,
   Wrench,
 } from "lucide-react";
@@ -81,4 +81,5 @@ export const SUBHEADING_LUCIDE = {
   incidents: Shield,
   listingHistory: History,
   serviceWorks: Wrench,
+  ltabCertificate: FileText,
 } as const;

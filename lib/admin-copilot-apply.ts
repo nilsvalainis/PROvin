@@ -28,6 +28,11 @@ import {
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import {
+  ltabCertificateHasContent,
+  ltabCertificateToIncidentRows,
+  type LtabCertificate,
+} from "@/lib/ltab-report-extract";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
   emptyOutvinDealerReport,
@@ -250,6 +255,14 @@ function applyMileageToVendor(b: VendorAvotuBlockState, row: AutoRecordsServiceR
 
 function applyIncidentToLtab(b: LtabBlockState, row: LtabIncidentRow): LtabBlockState {
   return { ...b, rows: mergeIncidentRows(b.rows ?? [emptyLtabRow()], row) };
+}
+
+function applyLtabCertificate(b: LtabBlockState, cert: LtabCertificate): LtabBlockState {
+  let rows = b.rows ?? [emptyLtabRow()];
+  for (const row of ltabCertificateToIncidentRows(cert)) {
+    rows = mergeIncidentRows(rows, row);
+  }
+  return { ...b, certificate: cert, rows };
 }
 
 function applyMileageToAutoRecords(b: AutoRecordsBlockState, row: AutoRecordsServiceRow): AutoRecordsBlockState {
@@ -586,6 +599,17 @@ export function applyCopilotActions(
       next = { ...next, auto_records: updated };
       applied.push(action);
       changed.add("auto_records");
+      continue;
+    }
+
+    if (action.type === "set_ltab_certificate") {
+      if (!ltabCertificateHasContent(action.certificate)) {
+        skipped.push({ action, reason: "empty_ltab_certificate" });
+        continue;
+      }
+      next = { ...next, ltab: applyLtabCertificate(next.ltab, action.certificate) };
+      applied.push(action);
+      changed.add("ltab");
       continue;
     }
 

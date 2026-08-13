@@ -5,7 +5,7 @@ export function detectSourcePdfIngestTarget(fileName: string, text: string): Sou
   const hay = `${fileName.toLowerCase()}\n${text.slice(0, 80_000).toLowerCase()}`;
   if (/car[\s_-]*vertical|carvertical/.test(hay)) return "carvertical";
   if (/auto[\s_-]*dna|autodna/.test(hay)) return "autodna";
-  if (/ltab|octa[\s_-]?apdro|apdrošin/.test(hay)) return "ltab";
+  if (/ltab|octa[\s_-]?apdro|apdrošin|izzi[nņ]a|zaudējumu\s+dati/.test(hay)) return "ltab";
   if (/auto[\s_-]*records|autorecords|odometer\s+check/.test(hay)) return "auto_records";
   if (
     /\bcsdd\b|e\.csdd\.lv|ceļu\s*satiksmes\s*un\s*drošības|reģistrācijas\s+dati|tehnisko\s+apskašu\s+vēsture/i.test(

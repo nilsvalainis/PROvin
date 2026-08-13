@@ -14,7 +14,7 @@ import type { CopilotAction, CopilotSourceKey } from "@/lib/admin-copilot-types"
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { parseSourcePdfBlobRefs } from "@/lib/admin-source-pdf-blob-constants";
 import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
-import { runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import { runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
@@ -49,6 +49,10 @@ function describeAction(a: CopilotAction): string {
     const place = a.location.trim() ? ` · ${a.location.slice(0, 40)}` : "";
     return `apkope ${a.date} · ${a.odometer || "—"} km${place} · ${a.works.slice(0, 60)}`;
   }
+  if (a.type === "set_ltab_certificate") {
+    const n = a.certificate.claims.length;
+    return `LTAB izziņa · ${n} CSNg ${n === 1 ? "ieraksts" : "ieraksti"}`;
+  }
   return a.type;
 }
 
@@ -68,14 +72,16 @@ export async function POST(req: Request) {
   if (!sessionId) return NextResponse.json({ error: "missing_session" }, { status: 400 });
 
   const targetRaw = str(form.get("target")).trim();
+  const isLtab = targetRaw === "ltab";
   // `auto_records` blokā gaidām oficiālā dīlera / rūpnīcas izdruku (BMW portāls, auto-records.com).
-  const target: VendorReportVendor | null =
-    targetRaw === "autodna" || targetRaw === "carvertical"
+  const target: VendorReportVendor | null = isLtab
+    ? null
+    : targetRaw === "autodna" || targetRaw === "carvertical"
       ? targetRaw
       : targetRaw === "auto_records" || targetRaw === "dealer"
         ? "dealer"
         : null;
-  if (!target) {
+  if (!isLtab && !target) {
     return NextResponse.json({ error: "invalid_target" }, { status: 400 });
   }
 
@@ -111,11 +117,13 @@ export async function POST(req: Request) {
   // nepieejamība nav iemesls atteikt augšupielādi — tā kļūst par kļūdu tikai tad, ja lokālais
   // parseris no šī PDF neizvelk nevienu ierakstu.
   let geminiBlocked: { error: string; detail?: string } | null = null;
-  if (!getGeminiApiKeyFromEnv()) {
-    geminiBlocked = { error: "missing_gemini_key", detail: "Serverī nav GEMINI_API_KEY" };
-  } else {
-    const guard = await assertGeminiAllowedForSession(sessionId);
-    if (!guard.ok) geminiBlocked = { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) };
+  if (!isLtab) {
+    if (!getGeminiApiKeyFromEnv()) {
+      geminiBlocked = { error: "missing_gemini_key", detail: "Serverī nav GEMINI_API_KEY" };
+    } else {
+      const guard = await assertGeminiAllowedForSession(sessionId);
+      if (!guard.ok) geminiBlocked = { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) };
+    }
   }
 
   let fileName: string;
@@ -147,8 +155,37 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (isLtab) {
+      const agent = await runLtabPdfAgent({ fileName, buffer });
+      if (agent.actions.length === 0) {
+        return NextResponse.json(
+          { error: "extraction_failed", detail: agent.summary },
+          { status: 422 },
+        );
+      }
+      const result = applyCopilotActions(sourceBlocks, agent.actions, { onlyAuto: false });
+      const changedKeys: CopilotSourceKey[] = result.changedKeys;
+      console.info(`${LOG_PREFIX} ok`, {
+        sessionId: sessionId.slice(0, 12),
+        target: "ltab",
+        actions: agent.actions.length,
+        applied: result.applied.length,
+        changedKeys,
+      });
+      return NextResponse.json({
+        ok: true,
+        vendor: "ltab",
+        summary: agent.summary,
+        notes: agent.notes,
+        applied: result.applied.map(describeAction),
+        skipped: result.skipped.map((s) => ({ label: describeAction(s.action), reason: s.reason })),
+        patchedSourceBlocks: Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
+        changedKeys,
+      });
+    }
+
     const agent = await runVendorPdfAgent({
-      target,
+      target: target!,
       fileName,
       buffer,
       sourceBlocks,
