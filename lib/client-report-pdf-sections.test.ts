@@ -100,6 +100,36 @@ describe("unified PDF sections single block", () => {
     expect(html.indexOf("pdf-incident-history-card")).toBeLessThan(html.indexOf("Kopsavilkuma teksts"));
   });
 
+  it("renders source valuations as colored pills in one row", () => {
+    const p = {
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "01.06.2021", lossAmount: "3500", incidentNo: "Latvija" }],
+          comments: "",
+        },
+        {
+          title: "CarVertical",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "01.06.2021", lossAmount: "2584", incidentNo: "Latvija" }],
+          comments: "",
+        },
+      ],
+      manualLtabBlock: {
+        rows: [{ csngDate: "16.06.2021", lossAmount: "2778", incidentNo: "Latvija" }],
+        comments: "",
+      },
+    } as ClientReportPayload;
+    const vis = mergePdfVisibility({ unifiedIncidents: true });
+    const html = buildUnifiedIncidentsTableHtml(p, vis);
+    expect(html).toContain("pdf-incident-src-pills");
+    expect(html).toContain("pdf-incident-src-pill--ltab");
+    expect(html).toContain("pdf-incident-src-pill--autodna");
+    expect(html).toContain("pdf-incident-src-pill--carvertical");
+    expect(html).not.toContain("pdf-incident-source-vals");
+  });
+
   it("renders damage zones and top-down silhouette on incident cards", () => {
     const p = {
       internalComment: "Kopsavilkums",

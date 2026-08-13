@@ -1,9 +1,6 @@
 /**
  * Bojājumu zonas — atpazīšana no AutoDNA / CarVertical tekstiem un PDF siluets no augšas.
- * PROVIN dizains (zils akcents), nevis vendoru grafiku kopija.
  */
-
-import { PDF_BRAND_BLUE_HEX } from "@/lib/client-report-pdf-layout-draft";
 
 export type DamageZoneId =
   | "front"
@@ -113,15 +110,15 @@ export function extractGroupListFromBlock(block: string): string {
 }
 
 const ZONE_SHAPES: Record<DamageZoneId, { x: number; y: number; w: number; h: number; rx: number }> = {
-  front: { x: 58, y: 16, w: 84, h: 54, rx: 22 },
-  front_left: { x: 16, y: 36, w: 52, h: 66, rx: 18 },
-  front_right: { x: 132, y: 36, w: 52, h: 66, rx: 18 },
-  left: { x: 12, y: 106, w: 42, h: 108, rx: 16 },
-  right: { x: 146, y: 106, w: 42, h: 108, rx: 16 },
-  roof: { x: 70, y: 118, w: 60, h: 72, rx: 12 },
-  rear_left: { x: 16, y: 216, w: 52, h: 66, rx: 18 },
-  rear_right: { x: 132, y: 216, w: 52, h: 66, rx: 18 },
-  rear: { x: 58, y: 248, w: 84, h: 54, rx: 22 },
+  front: { x: 54, y: 10, w: 92, h: 50, rx: 18 },
+  front_left: { x: 12, y: 30, w: 52, h: 66, rx: 16 },
+  front_right: { x: 136, y: 30, w: 52, h: 66, rx: 16 },
+  left: { x: 8, y: 102, w: 40, h: 122, rx: 14 },
+  right: { x: 152, y: 102, w: 40, h: 122, rx: 14 },
+  roof: { x: 68, y: 126, w: 64, h: 90, rx: 10 },
+  rear_left: { x: 12, y: 230, w: 52, h: 66, rx: 16 },
+  rear_right: { x: 136, y: 230, w: 52, h: 66, rx: 16 },
+  rear: { x: 54, y: 280, w: 92, h: 50, rx: 18 },
 };
 
 const ZONE_ORDER: DamageZoneId[] = [
@@ -136,40 +133,29 @@ const ZONE_ORDER: DamageZoneId[] = [
   "rear",
 ];
 
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-/** Top-down auto siluets; aktīvās zonas — zīmola zils ar slīpu šķērsējumu. */
+/** Top-down sedana siluets; aktīvās zonas — vienlaidus sarkans. */
 export function buildDamageZoneSilhouetteSvg(active: Iterable<DamageZoneId>, uid: string): string {
   const on = new Set(active);
-  const hatchId = `pdfDmgHatch-${uid}`;
   const zones = ZONE_ORDER.map((id) => {
     const s = ZONE_SHAPES[id]!;
     const activeZone = on.has(id);
-    const fill = activeZone ? `url(#${hatchId})` : "#eef2f6";
-    const stroke = activeZone ? PDF_BRAND_BLUE_HEX : "#d5dde6";
-    const sw = activeZone ? "1.6" : "0.8";
-    const opacity = activeZone ? "1" : "0.85";
-    return `<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${opacity}"/>`;
+    const fill = activeZone ? "#ef4444" : "#eef2f6";
+    const stroke = activeZone ? "#b91c1c" : "#d5dde6";
+    const sw = activeZone ? "1.7" : "0.8";
+    return `<rect class="pdf-dmg-zone${activeZone ? " pdf-dmg-zone--on" : ""}" data-zone="${id}" data-uid="${uid}" x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
   }).join("");
 
-  return `<svg class="pdf-dmg-sil" viewBox="0 0 200 320" width="158" height="252" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs>
-    <pattern id="${hatchId}" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(40)">
-      <rect width="8" height="8" fill="${PDF_BRAND_BLUE_HEX}" fill-opacity="0.14"/>
-      <path d="M0 0 H8" stroke="${PDF_BRAND_BLUE_HEX}" stroke-width="1.6" stroke-opacity="0.88"/>
-    </pattern>
-  </defs>
+  return `<svg class="pdf-dmg-sil" viewBox="0 0 200 340" width="158" height="268" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   ${zones}
-  <path d="M74 44 C74 28 86 18 100 18 C114 18 126 28 126 44 L136 96 L138 214 C138 238 122 264 100 278 C78 264 62 238 62 214 L64 96 Z" fill="#f8fafc" fill-opacity="0.72" stroke="#475569" stroke-width="1.45"/>
-  <rect x="74" y="108" width="52" height="86" rx="10" fill="#fff" fill-opacity="0.78" stroke="#94a3b8" stroke-width="1"/>
-  <path d="M78 54 C84 48 92 44 100 44 C108 44 116 48 122 54 L118 82 C112 78 106 76 100 76 C94 76 88 78 82 82 Z" fill="#fff" fill-opacity="0.62" stroke="#94a3b8" stroke-width="0.85"/>
-  <path d="M80 228 C86 236 93 242 100 242 C107 242 114 236 120 228 L116 214 C110 218 105 220 100 220 C95 220 90 218 84 214 Z" fill="#fff" fill-opacity="0.62" stroke="#94a3b8" stroke-width="0.85"/>
-  <rect x="18" y="88" width="12" height="30" rx="5" fill="#1e293b"/>
-  <rect x="170" y="88" width="12" height="30" rx="5" fill="#1e293b"/>
-  <rect x="18" y="196" width="12" height="30" rx="5" fill="#1e293b"/>
-  <rect x="170" y="196" width="12" height="30" rx="5" fill="#1e293b"/>
-  <text x="100" y="156" text-anchor="middle" font-size="10" font-family="Inter,sans-serif" font-weight="700" fill="${PDF_BRAND_BLUE_HEX}">${escapeXml("PROVIN")}</text>
+  <rect x="26" y="78" width="18" height="40" rx="9" fill="#1e293b"/>
+  <rect x="156" y="78" width="18" height="40" rx="9" fill="#1e293b"/>
+  <rect x="26" y="226" width="18" height="40" rx="9" fill="#1e293b"/>
+  <rect x="156" y="226" width="18" height="40" rx="9" fill="#1e293b"/>
+  <path d="M64 40 C64 26 80 20 100 20 C120 20 136 26 136 40 L150 90 L154 128 L154 216 L150 258 L136 300 C136 314 120 320 100 320 C80 320 64 314 64 300 L50 258 L46 216 L46 128 L50 90 Z" fill="#e8eef4" stroke="#334155" stroke-width="1.55"/>
+  <ellipse cx="40" cy="120" rx="9" ry="6.5" fill="#334155"/>
+  <ellipse cx="160" cy="120" rx="9" ry="6.5" fill="#334155"/>
+  <path d="M72 86 L128 86 L122 128 L78 128 Z" fill="#c5d4e8" stroke="#64748b" stroke-width="0.9"/>
+  <rect x="72" y="132" width="56" height="86" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <path d="M78 224 L122 224 L128 262 L72 262 Z" fill="#c5d4e8" stroke="#64748b" stroke-width="0.9"/>
 </svg>`;
 }

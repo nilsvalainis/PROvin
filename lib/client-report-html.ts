@@ -96,7 +96,6 @@ import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
-  formatIncidentSourceValuationsLine,
   type UnifiedIncidentAggregation,
   type UnifiedIncidentCluster,
 } from "@/lib/unified-incidents";
@@ -588,6 +587,25 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
+function incidentSourcePillClass(sourceLabel: string): string {
+  const key = mileageSourceLabelToPdfKey(sourceLabel);
+  if (key === "ltab") return "pdf-incident-src-pill pdf-incident-src-pill--ltab";
+  if (key === "autodna") return "pdf-incident-src-pill pdf-incident-src-pill--autodna";
+  if (key === "carvertical") return "pdf-incident-src-pill pdf-incident-src-pill--carvertical";
+  return "pdf-incident-src-pill pdf-incident-src-pill--other";
+}
+
+function buildIncidentSourcePillsHtml(c: UnifiedIncidentCluster): string {
+  if (c.sourceValuations.length <= 1) return "";
+  const items = c.sourceValuations
+    .map((s) => {
+      const label = `${s.sourceLabel} ${s.displayAmount}`.trim();
+      return `<li class="${incidentSourcePillClass(s.sourceLabel)}">${escapeHtml(label)}</li>`;
+    })
+    .join("");
+  return `<ul class="pdf-incident-src-pills">${items}</ul>`;
+}
+
 function buildIncidentDamageTagsHtml(title: string, labels: string[]): string {
   if (labels.length === 0) return "";
   const items = labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("");
@@ -597,10 +615,7 @@ function buildIncidentDamageTagsHtml(title: string, labels: string[]): string {
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number): string {
   const lossCell = formatLossAmountEurCell(c.displayAmount);
   const avgMark = c.averaged ? `<span class="pdf-listing-price-delta pdf-listing-price-delta--note">vid.</span>` : "";
-  const sourceLine = formatIncidentSourceValuationsLine(c);
-  const sourceHtml = sourceLine
-    ? `<div class="pdf-incident-source-vals">${escapeHtml(sourceLine)}</div>`
-    : "";
+  const sourcePills = buildIncidentSourcePillsHtml(c);
   const countryLabel = c.country.trim() || "—";
   const flag = pdfCountryFlagEmoji(countryLabel);
   const dmg = c.damage;
@@ -614,10 +629,11 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number):
   }
   return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
     <div class="pdf-incident-card__meta">
-      <div class="pdf-incident-card__amount">${lossCell}${avgMark}${sourceHtml}</div>
+      <div class="pdf-incident-card__amount">${lossCell}${avgMark}</div>
       <div class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></div>
       <div class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</div>
     </div>
+    ${sourcePills}
     ${visual}
   </article>`;
 }
@@ -1676,6 +1692,12 @@ function clientReportPrintCss(): string {
       .pdf-listing-price-delta--up{color:#dc2626;}
       .pdf-listing-price-delta--note{color:#64748b;font-weight:500;}
       .pdf-incident-source-vals{display:block;margin-top:3px;font-size:0.62rem;font-weight:500;color:#64748b;line-height:1.35;}
+      .pdf-incident-src-pills{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin:8px 0 0;padding:0;list-style:none;width:100%;}
+      .pdf-incident-src-pill{margin:0;padding:5px 10px;border-radius:999px;font-size:0.68rem;font-weight:700;line-height:1.25;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-incident-src-pill--ltab{background:#dc2626;color:#fff;}
+      .pdf-incident-src-pill--autodna{background:#1e3a8a;color:#fff;}
+      .pdf-incident-src-pill--carvertical{background:#eab308;color:#1c1917;}
+      .pdf-incident-src-pill--other{background:#e2e8f0;color:#334155;}
       .pdf-incident-history-card{padding:0;}
       .pdf-incident-card{padding:14px 16px 16px;border-bottom:1px solid #f1f5f9;break-inside:avoid;page-break-inside:avoid;}
       .pdf-incident-card:last-of-type{border-bottom:none;}
@@ -1690,7 +1712,7 @@ function clientReportPrintCss(): string {
       .pdf-incident-card__lists{display:flex;flex-direction:column;gap:12px;min-width:0;padding-top:4px;}
       .pdf-dmg-list__h{margin:0 0 6px;font-size:0.62rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;}
       .pdf-dmg-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none;}
-      .pdf-dmg-tags li{margin:0;padding:5px 10px;border-radius:999px;background:rgba(0,97,210,0.1);color:${PDF_BRAND_BLUE_HEX};font-size:0.72rem;font-weight:600;line-height:1.3;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-dmg-tags li{margin:0;padding:5px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:0.72rem;font-weight:600;line-height:1.3;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .pdf-dmg-list + .pdf-dmg-list .pdf-dmg-tags li{background:#f1f5f9;color:#334155;}
       .pdf-listing-price-history-foot{display:flex;justify-content:space-between;background:${PDF_BRAND_BLUE_HEX};color:#fff;padding:8px 12px;font-size:0.72rem;}
       .pdf-listing-price-history-foot strong{font-weight:700;}

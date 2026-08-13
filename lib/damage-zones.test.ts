@@ -28,11 +28,12 @@ describe("parseDamageZoneHits", () => {
 });
 
 describe("buildDamageZoneSilhouetteSvg", () => {
-  it("iezīmē aktīvās zonas ar zīmola šķērsējumu", () => {
+  it("iezīmē aktīvās zonas sarkanā krāsā bez zīmola uzraksta", () => {
     const svg = buildDamageZoneSilhouetteSvg(["front", "front_left"], "t1");
     expect(svg).toContain('class="pdf-dmg-sil"');
-    expect(svg).toContain("pdfDmgHatch-t1");
-    expect(svg).toContain("PROVIN");
-    expect((svg.match(/url\(#pdfDmgHatch-t1\)/g) ?? []).length).toBe(2);
+    expect(svg).toContain("#ef4444");
+    expect(svg).not.toContain("PROVIN");
+    expect(svg).not.toContain("pdfDmgHatch");
+    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(2);
   });
 });
