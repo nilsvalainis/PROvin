@@ -82,7 +82,7 @@ export function peelEmbeddedServiceWorkLocation(
   location: string,
   works: string,
 ): { location: string; works: string } {
-  let place = location.replace(/\s+/g, " ").trim();
+  const place = location.replace(/\s+/g, " ").trim();
   let detail = works.replace(/[ \t]+/g, " ").replace(/\u00a0/g, " ").trim();
 
   if (place) {
