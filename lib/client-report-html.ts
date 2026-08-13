@@ -37,6 +37,11 @@ import {
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import { buildPdfReportSummaryTiles, PDF_REPORT_SUMMARY_TITLE } from "@/lib/pdf-report-summary";
 import {
+  buildVehicleLifecycleEvents,
+  PDF_LIFECYCLE_TITLE,
+  type LifecycleEvent,
+} from "@/lib/vehicle-lifecycle-timeline";
+import {
   formatLtabCentsAsEur,
   formatLtabCertificateAmountEur,
   formatLtabClaimWhen,
@@ -390,6 +395,64 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
           .join("")}</ul>`;
 
   return `<section class="pdf-provin-sources-wrap pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region" aria-labelledby="pdf-provin-sources-h">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table>${grid}</section>`;
+}
+
+const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], string> = {
+  first_registration: "carFront",
+  registration: "scrollText",
+  import: "route",
+  inspection: "listChecks",
+  odometer: "route",
+  incident: "shield",
+  service: "wrench",
+  listed: "priceTag",
+  gap: "clock",
+  anomaly: "search",
+};
+
+/** LAIKPOSMS — viena hronoloģiska lente ar gadu čipiem un avotu plāksnītēm. */
+function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+  if (!vis.unifiedMileage && !vis.unifiedIncidents) return "";
+  const events = buildVehicleLifecycleEvents({
+    csddForm: p.csddForm ?? null,
+    autoRecordsBlock: p.autoRecordsBlock ?? null,
+    manualVendorBlocks: p.manualVendorBlocks ?? null,
+    manualLtabBlock: p.manualLtabBlock ?? null,
+    citiAvoti: p.citiAvoti ?? null,
+    tirgusForm: p.tirgusForm ?? null,
+  });
+  if (events.length === 0) return "";
+
+  const items: string[] = [];
+  let lastYear = "";
+  for (const e of events) {
+    if (e.year !== lastYear) {
+      items.push(`<li class="pdf-life-year"><span class="pdf-life-year__chip">${escapeHtml(e.year)}</span></li>`);
+      lastYear = e.year;
+    }
+    const pills = e.sources
+      .map((s) => `<li class="${incidentSourcePillClass(s)}">${escapeHtml(s)}</li>`)
+      .join("");
+    const flag = e.country ? buildPdfCountryFlagCellHtml(e.country) : "";
+    const odo = e.odometer.trim() ? `<span class="pdf-life-odo">${escapeHtml(e.odometer.trim())} km</span>` : "";
+    items.push(`<li class="pdf-life-item pdf-life-item--${e.tone}">
+      <span class="pdf-life-dot" aria-hidden="true"></span>
+      <span class="pdf-life-date">${escapeHtml(e.date)}</span>
+      <span class="pdf-life-body">
+        <span class="pdf-life-title"><span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>${escapeHtml(e.title)}</span>
+        ${e.detail ? `<span class="pdf-life-detail">${escapeHtml(e.detail)}</span>` : ""}
+        ${pills ? `<ul class="pdf-incident-src-pills pdf-life-pills">${pills}</ul>` : ""}
+      </span>
+      <span class="pdf-life-meta">${odo}${flag}</span>
+    </li>`);
+  }
+
+  const head = sectionHeadBrand(
+    sectionIconPdfHtml("history"),
+    PDF_LIFECYCLE_TITLE,
+    sourceRecordCountBadgeHtml(events.filter((e) => e.kind !== "gap").length),
+  );
+  return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-lifecycle-zone" role="region">${head}<ol class="pdf-life-list">${items.join("")}</ol></div>`;
 }
 
 /** Atskaites kopsavilkums — četras statusa plāksnītes uzreiz zem galvas. */
@@ -1416,6 +1479,40 @@ function clientReportPrintCss(): string {
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
       .pdf-sec-head--brand{align-items:center;gap:10px;margin:0 0 12px;}
+      .pdf-life-list{margin:0;padding:0;list-style:none;}
+      .pdf-life-year{margin:10px 0 6px;}
+      .pdf-life-year:first-child{margin-top:0;}
+      .pdf-life-year__chip{
+        display:inline-block;padding:2px 10px;border-radius:999px;background:#0f172a;color:#fff;
+        font-size:var(--pdf-fs-label);font-weight:700;letter-spacing:0.06em;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-life-item{
+        display:grid;grid-template-columns:10px 62px 1fr auto;gap:0 10px;align-items:start;
+        padding:6px 0;border-bottom:1px solid var(--pdf-line-soft);
+        break-inside:avoid;page-break-inside:avoid;
+      }
+      .pdf-life-item:last-child{border-bottom:none;}
+      .pdf-life-dot{
+        width:8px;height:8px;margin-top:4px;border-radius:999px;background:#94a3b8;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-life-item--warn .pdf-life-dot{background:#FFC107;}
+      .pdf-life-item--alert .pdf-life-dot{background:#FF4D4D;}
+      .pdf-life-date{font-size:var(--pdf-fs-table);color:#64748b;white-space:nowrap;line-height:1.5;}
+      .pdf-life-body{min-width:0;}
+      .pdf-life-title{
+        display:flex;align-items:center;gap:6px;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;line-height:1.35;
+      }
+      .pdf-life-ico{display:inline-flex;color:${PDF_BRAND_BLUE_HEX};flex-shrink:0;}
+      .pdf-life-ico .pdf-ico{width:13px;height:13px;}
+      .pdf-life-detail{display:block;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
+      .pdf-life-pills{margin-top:3px;}
+      .pdf-life-meta{
+        display:flex;align-items:center;gap:8px;font-size:var(--pdf-fs-table);color:#0f172a;white-space:nowrap;
+      }
+      .pdf-life-odo{font-weight:600;}
+      .pdf-lifecycle-zone .pdf-life-item--gap .pdf-life-title{color:#92400e;}
       .pdf-summary-tiles{
         display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0;padding:0;list-style:none;
       }
@@ -2217,6 +2314,9 @@ export function buildClientReportDocumentHtml(args: {
     titleIconHtml: sectionIconPdfHtml("fileText"),
   });
   if (aboutBlock) lines.push(aboutBlock);
+
+  const lifecycleHtml = buildPdfLifecycleTimelineHtml(p, vis);
+  if (lifecycleHtml) lines.push(lifecycleHtml);
 
   const mileageOpts: CollectUnifiedMileageOptions | undefined = vis.unifiedMileage
     ? {

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultSourceBlocks, emptyCsddFields, emptyCitiAvotiSection, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import {
+  createDefaultSourceBlocks,
+  emptyAutoRecordsBlock,
+  emptyCsddFields,
+  emptyCitiAvotiSection,
+  SOURCE_BLOCK_LABELS,
+} from "@/lib/admin-source-blocks";
+import { buildVehicleLifecycleEvents } from "@/lib/vehicle-lifecycle-timeline";
 import {
   buildUnifiedIncidentsTableHtml,
   buildUnifiedMileageTableHtml,
@@ -150,6 +157,106 @@ describe("PDF design system", () => {
     // Paneļu galvai vairs nav atsevišķas zilās kreisās strīpas
     const panelHead = html.slice(html.indexOf(".pdf-v1-panel-head{"));
     expect(panelHead.slice(0, 160)).not.toContain("border-left");
+  });
+});
+
+describe("LAIKPOSMS", () => {
+  it("builds one chronological lifecycle from all sources", () => {
+    const csdd = emptyCsddFields();
+    csdd.firstRegistration = "12.05.2016";
+    csdd.previousRegistrationCountry = "Vācija";
+    csdd.ownerRegistrationEvents = [{ date: "03.02.2021", label: "Reģistrēts uz jaunu īpašnieku" }];
+    csdd.technicalInspectionHistory = [
+      {
+        date: "10.03.2022",
+        inspectionType: "Kārtējā",
+        ratingLabel: "Bez trūkumiem",
+        ratingLevel: 1,
+        maxDefectLevel: null,
+        smokeCoefficient: "",
+        notes: "",
+        defects: [],
+      },
+    ];
+    const events = buildVehicleLifecycleEvents({
+      csddForm: csdd,
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [{ date: "01.07.2019", odometer: "90000", country: "Vācija" }],
+          incidentRows: [{ csngDate: "01.06.2021", lossAmount: "3500", incidentNo: "Latvija" }],
+          comments: "",
+        },
+      ],
+    });
+    const kinds = events.map((e) => e.kind);
+    expect(kinds).toContain("first_registration");
+    expect(kinds).toContain("registration");
+    expect(kinds).toContain("inspection");
+    expect(kinds).toContain("incident");
+    expect(kinds).toContain("import");
+    const times = events.map((e) => e.time);
+    expect([...times].sort((a, b) => a - b)).toEqual(times);
+  });
+
+  it("attaches same-month odometer readings to the fact instead of a separate row", () => {
+    const events = buildVehicleLifecycleEvents({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          { date: "05.09.2022", odometer: "120000", location: "BMW Bonn", works: "Eļļas maiņa" },
+        ],
+      },
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [{ date: "07.09.2022", odometer: "120000", country: "Vācija" }],
+          incidentRows: [],
+          comments: "",
+        },
+      ],
+    });
+    const service = events.filter((e) => e.kind === "service");
+    expect(service).toHaveLength(1);
+    expect(service[0]!.odometer).toBe("120000");
+    expect(events.filter((e) => e.kind === "odometer")).toHaveLength(0);
+  });
+
+  it("marks long silences between records", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [
+            { date: "01.01.2016", odometer: "10000", country: "Vācija" },
+            { date: "01.01.2021", odometer: "80000", country: "Vācija" },
+          ],
+          incidentRows: [],
+          comments: "",
+        },
+      ],
+    });
+    const gap = events.find((e) => e.kind === "gap");
+    expect(gap).toBeTruthy();
+    expect(gap!.title).toBe("Bez ierakstiem");
+    expect(gap!.tone).toBe("warn");
+  });
+
+  it("prints the timeline before the mileage section", () => {
+    const csdd = emptyCsddFields();
+    csdd.firstRegistration = "12.05.2016";
+    csdd.mileageHistory = [{ date: "01.06.2020", odometer: "120000", country: "LV" }];
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({ csddForm: csdd }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("LAIKPOSMS");
+    expect(html).toContain("pdf-life-year__chip");
+    expect(html).toContain("Pirmā reģistrācija");
+    expect(html.indexOf("LAIKPOSMS")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 });
 
@@ -373,8 +480,9 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     // Servisa punkts ir atsevišķā kolonnā, ne darbu šūnā
     expect(doc).toContain("pdf-service-cell-place");
     expect(doc).toContain("Niederlassung Bonn BMW AG, Bonn");
-    // Jaunākais augšā
-    expect(doc.indexOf("01.12.2023")).toBeLessThan(doc.indexOf("01.06.2023"));
+    // Jaunākais augšā — tikai servisa tabulā (LAIKPOSMS augstāk iet hronoloģiski)
+    const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
+    expect(serviceTable.indexOf("01.12.2023")).toBeLessThan(serviceTable.indexOf("01.06.2023"));
   });
 
   it("moves dealer names out of works into the Vieta column", () => {
