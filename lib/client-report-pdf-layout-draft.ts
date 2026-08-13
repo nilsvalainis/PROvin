@@ -60,29 +60,32 @@ export function pdfLayoutDraftExtraCss(): string {
         font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;
       }
       .pdf-surface-card{
-        margin:0 0 14px;padding:12px 14px;border:1px solid #f1f5f9;border-radius:8px;
-        background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05);
+        margin:0 0 var(--pdf-gap-section);padding:var(--pdf-pad-outer);
+        border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);
+        background:#fff;box-shadow:var(--pdf-shadow);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-v1-panel.pdf-v1-panel--clean{
-        margin:0 0 14px;padding:12px 14px;border:1px solid #f1f5f9;border-radius:8px;
-        background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05);
+        margin:0 0 var(--pdf-gap-section);padding:var(--pdf-pad-outer);
+        border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);
+        background:#fff;box-shadow:var(--pdf-shadow);
       }
       .pdf-v1-panel-head{
-        display:flex;align-items:center;gap:10px;margin:0 0 8px;flex-wrap:wrap;
-        padding:0 0 0 10px;border-left:2px solid ${PDF_BRAND_BLUE_HEX};
+        display:flex;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap;
+        padding:0;border:0;
       }
-      .pdf-v1-panel-ico-wrap{flex-shrink:0}
       .pdf-v1-panel-ico-wrap .pdf-ico{width:16px;height:16px}
       .pdf-v1-notes-client-wrap{
-        margin:0;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;background:#fafafa;
+        margin:0;padding:var(--pdf-pad-inner);border-radius:var(--pdf-radius-inner);
+        border:1px solid var(--pdf-line);background:#fafafa;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-v1-notes-body{font-style:italic;color:#000;line-height:1.45}
       .pdf-v1-panel-title{
-        margin:0;font-size:0.75rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#000;
+        margin:0;font-size:var(--pdf-fs-sec);font-weight:700;letter-spacing:0.08em;
+        text-transform:uppercase;color:#0f172a;
       }
-      .pdf-v1-panel-title--src{letter-spacing:0.04em;font-size:0.75rem;color:#000}
+      .pdf-v1-panel-title--src{letter-spacing:0.08em;font-size:var(--pdf-fs-sec);color:#0f172a}
       .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:0.74rem}
       .pdf-v1-kv td{padding:6px 0 6px;border-bottom:1px solid #f1f5f9;vertical-align:top}
       .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}

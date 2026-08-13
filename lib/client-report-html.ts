@@ -1219,6 +1219,22 @@ export function getClientReportPrintCss(): string {
 function clientReportPrintCss(): string {
   return `
       @page{margin:0;size:auto;}
+      :root{
+        --pdf-radius-outer:12px;
+        --pdf-radius-inner:8px;
+        --pdf-line:#E9EDF3;
+        --pdf-line-soft:#F1F5F9;
+        --pdf-shadow:0 1px 3px rgba(15,23,42,.06);
+        --pdf-pad-outer:16px 18px;
+        --pdf-pad-inner:12px 14px;
+        --pdf-gap-section:24px;
+        --pdf-gap-block:12px;
+        --pdf-fs-sec:13px;
+        --pdf-fs-base:11.5px;
+        --pdf-fs-table:10.5px;
+        --pdf-fs-label:9.5px;
+        --pdf-fs-fine:8.5px;
+      }
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
       .provin-report-doc .pdf-vin,.provin-report-doc code,.provin-report-doc kbd,.provin-report-doc samp,.provin-report-doc tt{
@@ -1262,12 +1278,12 @@ function clientReportPrintCss(): string {
       }
       .provin-report-doc .pdf-report-comment-note{margin-top:10px;}
       .sheet{background:#fff;padding:0;}
-      .pdf-sec-head{display:flex;align-items:center;gap:8px;margin:0.75rem 0 0.35rem;}
+      .pdf-sec-head{display:flex;align-items:center;gap:10px;margin:0 0 12px;}
       .pdf-sec-head--nobar{margin-top:0;}
-      .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE_HEX};width:16px;height:16px;flex-shrink:0;opacity:0.88;}
+      .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE_HEX};width:16px;height:16px;flex-shrink:0;}
       h2.pdf-sec{
-        font-size:0.72rem;font-weight:500;margin:0;flex:1;color:#475569;letter-spacing:0.06em;line-height:1.35;
-        padding:0 0 0 8px;border-left:2px solid ${PDF_BRAND_BLUE_HEX};text-transform:uppercase;
+        font-size:var(--pdf-fs-sec);font-weight:700;margin:0;flex:1;color:#0f172a;letter-spacing:0.08em;line-height:1.3;
+        padding:0;border:0;text-transform:uppercase;
       }
       h2.pdf-sec--nobar{border-left:none;padding-left:0;}
       h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:0.6rem 0 0.35rem;color:#000;text-transform:uppercase;letter-spacing:0.05em;}
@@ -1277,17 +1293,16 @@ function clientReportPrintCss(): string {
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
       .pdf-sec-head--brand{align-items:center;gap:10px;margin:0 0 12px;}
-      .pdf-sec-ico-wrap{
+      .pdf-sec-ico-wrap,
+      .pdf-v1-panel-ico-wrap{
         display:inline-flex;align-items:center;justify-content:center;color:${PDF_BRAND_BLUE_HEX};flex-shrink:0;
+        width:26px;height:26px;border-radius:999px;background:rgba(0,97,210,0.1);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-sec-ico-wrap .pdf-ico{width:16px;height:16px;}
-      .pdf-listing-analysis-root .pdf-sec-ico-wrap,
-      .pdf-iriss-approved .pdf-sec-ico-wrap{
-        width:26px;height:26px;border-radius:999px;background:rgba(0,97,210,0.1);
-      }
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-ltab-izzi{
-        margin:0 0 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;
+        margin:0 0 10px;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);background:#f8fafc;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-ltab-izzi-title{margin:0 0 8px;font-size:12px;font-weight:700;color:#0f172a;line-height:1.35;}
@@ -1323,16 +1338,16 @@ function clientReportPrintCss(): string {
         max-height:none;width:100%;height:auto;object-fit:contain;
       }
       .pdf-listing-history-frame{
-        border:1px solid #f1f5f9;
-        border-radius:6px;
+        border:1px solid var(--pdf-line);
+        border-radius:var(--pdf-radius-inner);
         background:#fff;
-        padding:10px 10px;
+        padding:var(--pdf-pad-inner);
       }
       .pdf-listing-analysis-chunk:last-child{margin-bottom:0;border-bottom:none;}
       .pdf-listing-analysis-chunk-pre{margin:0;}
-      .pdf-unified-mileage-zone{margin:0 0 14px;padding:12px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
+      .pdf-unified-mileage-zone{margin:0 0 var(--pdf-gap-section);padding:var(--pdf-pad-outer);background:#fff!important;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);box-shadow:var(--pdf-shadow);}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
-      .pdf-provin-sources-wrap{margin:0 0 18px;}
+      .pdf-provin-sources-wrap{margin:0 0 var(--pdf-gap-section);}
       .pdf-v1-panel-title--provin-sources{
         text-transform:none;
         letter-spacing:0.02em;
@@ -1352,11 +1367,11 @@ function clientReportPrintCss(): string {
         font-weight:700;
       }
       .pdf-listing-analysis-root.pdf-surface-card{
-        border:1px solid #f1f5f9;border-radius:8px;
-        box-shadow:0 1px 4px rgba(15,23,42,.05);
+        border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);
+        box-shadow:var(--pdf-shadow);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-unified-incidents-zone{margin:0 0 16px;padding:16px 16px 14px;background:#fff!important;border:1px solid #f1f5f9;border-radius:10px;box-shadow:0 1px 4px rgba(15,23,42,.05);}
+      .pdf-unified-incidents-zone{margin:0 0 var(--pdf-gap-section);padding:var(--pdf-pad-outer);background:#fff!important;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);box-shadow:var(--pdf-shadow);}
       .pdf-unified-incidents-zone .pdf-sec-head{margin-top:0;}
       .pdf-unified-incidents-zone__body > .pdf-report-comment-note:last-child,
       .pdf-unified-mileage-zone__body > .pdf-report-comment-note:last-child{
@@ -1378,7 +1393,8 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
       .pdf-mileage-comment-note{
-        margin:10px 0 0;padding:10px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fafafa;
+        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-line);
+        border-radius:var(--pdf-radius-inner);background:#fafafa;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-report-comment-note .pdf-field-label,
@@ -1632,8 +1648,8 @@ function clientReportPrintCss(): string {
         display:flex;flex-direction:column;gap:8px;margin:0 0 10px;
       }
       .pdf-alert-banner{
-        display:flex;align-items:flex-start;gap:12px;padding:6px 12px 6px 14px;border-radius:8px;
-        box-shadow:0 2px 16px rgba(15,23,42,0.06);
+        display:flex;align-items:flex-start;gap:12px;padding:8px 12px 8px 14px;border-radius:var(--pdf-radius-inner);
+        box-shadow:var(--pdf-shadow);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-alert-banner--red{
@@ -1643,7 +1659,7 @@ function clientReportPrintCss(): string {
         background:rgba(255,193,7,0.04);border-left:2px solid #FFC107;color:#FFC107;
       }
       .pdf-alert-banner-text{
-        flex:1;margin:0;font-size:8pt;line-height:1.35;color:#1d1d1f;font-weight:400;font-family:Inter,sans-serif!important;
+        flex:1;margin:0;font-size:var(--pdf-fs-base);line-height:1.4;color:#1d1d1f;font-weight:400;font-family:Inter,sans-serif!important;
       }
       .pdf-alert-banner-ico{flex-shrink:0;display:block;width:18px;height:18px;margin-top:1px;}
       .pdf-alert-banner--red .pdf-alert-banner-ico{color:#FF4D4D;}
@@ -1654,15 +1670,15 @@ function clientReportPrintCss(): string {
         display:flex;flex-direction:column;gap:8px;margin:0 0 10px;
       }
       .pdf-info-banner{
-        display:flex;align-items:flex-start;gap:12px;padding:6px 12px 6px 14px;border-radius:8px;
-        box-shadow:0 2px 16px rgba(15,23,42,0.04);
+        display:flex;align-items:flex-start;gap:12px;padding:8px 12px 8px 14px;border-radius:var(--pdf-radius-inner);
+        box-shadow:var(--pdf-shadow);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-info-banner--grey{
         background:rgba(142,142,147,0.08);border-left:2px solid #8e8e93;color:#636366;
       }
       .pdf-info-banner-text{
-        flex:1;margin:0;font-size:8pt;line-height:1.35;color:#3a3a3c;font-weight:400;font-family:Inter,sans-serif!important;
+        flex:1;margin:0;font-size:var(--pdf-fs-base);line-height:1.4;color:#3a3a3c;font-weight:400;font-family:Inter,sans-serif!important;
       }
       .pdf-info-banner-ico{flex-shrink:0;display:block;width:18px;height:18px;margin-top:1px;color:#8e8e93;}
       .pdf-data-alert-wrap{
@@ -1682,7 +1698,7 @@ function clientReportPrintCss(): string {
       .pdf-price-drop-val{color:#000!important;font-weight:600!important;}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
-      .pdf-listing-price-history,.pdf-ltab-loss-history{margin:4px 0 10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;}
+      .pdf-listing-price-history,.pdf-ltab-loss-history{margin:4px 0 10px;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);overflow:hidden;background:#fff;}
       .pdf-listing-price-history-title{margin:8px 10px 4px;font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;}
       .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:0.72rem;font-weight:600;color:#1d1d1f;}
       .pdf-listing-price-history-table td{padding:5px 8px;border-bottom:1px solid #f1f5f9;width:33.33%;}
@@ -1921,13 +1937,11 @@ function clientReportPrintCss(): string {
     ` +
     pdfLayoutDraftExtraCss() +
     `
-      .provin-report-doc .pdf-unified-mileage-zone.pdf-surface-card{
-        margin:0 0 14px!important;padding:12px 14px!important;border:1px solid #f1f5f9!important;border-radius:8px!important;
-        background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.05)!important;
-      }
+      .provin-report-doc .pdf-unified-mileage-zone.pdf-surface-card,
       .provin-report-doc .pdf-unified-incidents-zone.pdf-surface-card{
-        margin:0 0 16px!important;padding:16px 16px 14px!important;border:1px solid #f1f5f9!important;border-radius:10px!important;
-        background:#fff!important;box-shadow:0 1px 4px rgba(15,23,42,.05)!important;
+        margin:0 0 var(--pdf-gap-section)!important;padding:var(--pdf-pad-outer)!important;
+        border:1px solid var(--pdf-line)!important;border-radius:var(--pdf-radius-outer)!important;
+        background:#fff!important;box-shadow:var(--pdf-shadow)!important;
       }
     `;
 }

@@ -36,6 +36,42 @@ function minimalPayload(overrides: Partial<ClientReportPayload> = {}): ClientRep
   } as ClientReportPayload;
 }
 
+describe("PDF design system", () => {
+  function doc(): string {
+    return buildClientReportDocumentHtml({
+      payload: minimalPayload({ notes: "Klienta piezīme" }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+  }
+
+  it("declares one set of layout tokens", () => {
+    const html = doc();
+    expect(html).toContain("--pdf-radius-outer:12px");
+    expect(html).toContain("--pdf-radius-inner:8px");
+    expect(html).toContain("--pdf-gap-section:24px");
+    expect(html).toContain("--pdf-fs-sec:13px");
+  });
+
+  it("uses tokens instead of per-section radii and paddings", () => {
+    const html = doc();
+    const zoneCss = html.slice(html.indexOf(".pdf-unified-mileage-zone{"));
+    expect(zoneCss.slice(0, 260)).toContain("border-radius:var(--pdf-radius-outer)");
+    expect(html).not.toContain("border-radius:10px;box-shadow");
+    expect(html).not.toContain("font-size:8pt");
+  });
+
+  it("renders every section head with the same icon bubble and title style", () => {
+    const html = doc();
+    expect(html).toContain("font-size:var(--pdf-fs-sec);font-weight:700");
+    // Paneļu galvai vairs nav atsevišķas zilās kreisās strīpas
+    const panelHead = html.slice(html.indexOf(".pdf-v1-panel-head{"));
+    expect(panelHead.slice(0, 160)).not.toContain("border-left");
+  });
+});
+
 describe("unified PDF sections single block", () => {
   it("mileage zone is one card: chart, table, source count, comment", () => {
     const csdd = emptyCsddFields();
