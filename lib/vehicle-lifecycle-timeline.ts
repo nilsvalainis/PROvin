@@ -158,7 +158,8 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         kind: "inspection",
         rawDate: r.date,
         title: "Tehniskā apskate",
-        detail: r.ratingLabel.trim() || r.inspectionType.trim(),
+        // Apskates vērtējuma skaidrojums paliek CSDD sadaļā — laikposmā tikai datums, virsraksts, nobraukums.
+        detail: "",
         country: "Latvija",
         source: "CSDD",
         tone: failed ? "warn" : "info",
@@ -172,7 +173,8 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         kind: "service",
         rawDate: w.date,
         title: "Apkope / remonts",
-        detail: [w.location.trim(), w.works.trim()].filter(Boolean).join(" — "),
+        // Veikto darbu saraksts paliek dīlera sadaļā; laikposmā — tikai vieta.
+        detail: w.location.trim(),
         odometer: w.odometer,
         source: "Dīleris",
       }),

@@ -99,7 +99,7 @@ describe("PDF design system", () => {
     expect(html).toContain("120000 km");
     expect(html).toContain("Īpašnieki Latvijā: 2");
     expect(html).toContain("Kas tika pārbaudīts");
-    expect(html).toContain("pdf-sources-checked-dot--autodna");
+    expect(html).toContain("pdf-src-dot pdf-src-dot--autodna");
     expect(html).toContain("PAR ŠO ATSKAITI");
     expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
     expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PAR ŠO ATSKAITI"));
@@ -148,7 +148,7 @@ describe("PDF design system", () => {
     expect(html).toContain("pdf-src-zone pdf-src-zone--autodna");
     expect(html).toContain("pdf-src-count-badge");
     expect(html).toContain("2 ieraksti");
-    expect(html).toContain(".pdf-src-zone--autodna{border-top-color:#1e3a8a;}");
+    expect(html).toContain(".pdf-src-zone--autodna{border-top-color:#1E3A8A;}");
   });
 
   it("renders every section head with the same icon bubble and title style", () => {
@@ -282,7 +282,7 @@ describe("LAIKPOSMS", () => {
       formatBytes: () => "0 B",
     });
     expect(html).toContain("LAIKPOSMS");
-    expect(html).toContain("pdf-life-year__chip");
+    expect(html).toContain("pdf-life-year__num");
     expect(html).toContain("Pirmā reģistrācija");
     expect(html.indexOf("LAIKPOSMS")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
@@ -320,9 +320,9 @@ describe("unified PDF sections single block", () => {
     });
     const rowMatches = html.match(/pdf-mileage-history-row/g) ?? [];
     expect(rowMatches.length).toBe(1);
-    expect(html).toContain("pdf-mileage-source-stripes");
-    expect(html).toContain("pdf-mileage-source-stripe--csdd");
-    expect(html).toContain("pdf-mileage-source-stripe--autodna");
+    expect(html).toContain("pdf-src-dots");
+    expect(html).toContain("pdf-src-dot--csdd");
+    expect(html).toContain("pdf-src-dot--autodna");
   });
 
   it("incidents zone is one card: table, source count, kopsavilkums", () => {
@@ -376,10 +376,10 @@ describe("unified PDF sections single block", () => {
     } as ClientReportPayload;
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
-    expect(html).toContain("pdf-incident-src-pills");
-    expect(html).toContain("pdf-incident-src-pill--ltab");
-    expect(html).toContain("pdf-incident-src-pill--autodna");
-    expect(html).toContain("pdf-incident-src-pill--carvertical");
+    expect(html).toContain("pdf-src-tags pdf-incident-card__srcs");
+    expect(html).toContain("pdf-src-dot--ltab");
+    expect(html).toContain("pdf-src-dot--autodna");
+    expect(html).toContain("pdf-src-dot--carvertical");
     expect(html).not.toContain("pdf-incident-source-vals");
     expect(html).toMatch(/~[\d\s]+€/);
     expect(html).not.toContain("vid.");

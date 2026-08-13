@@ -105,11 +105,12 @@ import {
 } from "@/lib/unified-incidents";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
+  MILEAGE_PDF_SOURCE_COLOR,
   MILEAGE_PDF_SOURCE_LEGEND,
+  MILEAGE_PDF_SOURCE_LEGEND_ORDER,
   collectMileagePdfSourceKeysFromLabels,
   mileagePdfLegendKeysInOrder,
   mileageSourceLabelToPdfKey,
-  type MileagePdfSourceKey,
 } from "@/lib/pdf-mileage-source";
 import {
   collectUnifiedMileageRows,
@@ -377,7 +378,7 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
     { n: n3, label: PDF_PROVIN_SOURCES_L3 },
   ].filter((c) => c.n > 0);
 
-  const head = `<div class="pdf-v1-panel-head"><p id="pdf-provin-sources-h" class="pdf-v1-panel-title pdf-v1-panel-title--provin-sources">${pdfProvinWordmarkHtml()}${escapeHtml(PDF_PROVIN_SOURCES_TITLE_SUFFIX)}</p></div>`;
+  const head = `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap" aria-hidden="true">${sectionIconPdfHtml("database")}</span><h2 id="pdf-provin-sources-h" class="pdf-sec pdf-sec--nobar pdf-sec--provin-sources">${pdfProvinWordmarkHtml()}${escapeHtml(PDF_PROVIN_SOURCES_TITLE_SUFFIX)}</h2></div>`;
   const categoryRows = cards
     .map((c) => `<tr><td>${escapeHtml(c.label)}</td><td>${escapeHtml(String(c.n))}</td></tr>`)
     .join("");
@@ -390,9 +391,8 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
       ? ""
       : `<p class="pdf-field-label pdf-sources-checked-label">${escapeHtml(PDF_SOURCES_CHECKED_TITLE)}</p><ul class="pdf-sources-checked-grid">${checked
           .map((s) => {
-            const key = mileageSourceLabelToPdfKey(s.label);
             const count = s.count > 0 ? formatSourceRecordCountLv(s.count) : "pārbaudīts";
-            return `<li class="pdf-sources-checked-item"><span class="pdf-sources-checked-dot pdf-sources-checked-dot--${key}" aria-hidden="true"></span><span class="pdf-sources-checked-name">${escapeHtml(s.label)}</span><span class="pdf-sources-checked-count">${escapeHtml(count)}</span></li>`;
+            return `<li class="pdf-sources-checked-item">${pdfSourceDotHtml(s.label)}<span class="pdf-sources-checked-name">${escapeHtml(s.label)}</span><span class="pdf-sources-checked-count">${escapeHtml(count)}</span></li>`;
           })
           .join("")}</ul>`;
 
@@ -428,13 +428,19 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
   const items: string[] = [];
   let lastYear = "";
   for (const e of events) {
+    if (e.kind === "gap") {
+      items.push(
+        `<li class="pdf-life-gap"><span class="pdf-life-gap__text">${escapeHtml(`${e.title} · ${e.detail}`)}</span></li>`,
+      );
+      continue;
+    }
     if (e.year !== lastYear) {
-      items.push(`<li class="pdf-life-year"><span class="pdf-life-year__chip">${escapeHtml(e.year)}</span></li>`);
+      items.push(
+        `<li class="pdf-life-year"><span class="pdf-life-year__num">${escapeHtml(e.year)}</span><span class="pdf-life-year__rule" aria-hidden="true"></span></li>`,
+      );
       lastYear = e.year;
     }
-    const pills = e.sources
-      .map((s) => `<li class="${incidentSourcePillClass(s)}">${escapeHtml(s)}</li>`)
-      .join("");
+    const tags = e.sources.map((s) => `<li class="pdf-src-tags__item">${pdfSourceTagHtml(s)}</li>`).join("");
     const flag = e.country ? buildPdfCountryFlagCellHtml(e.country) : "";
     const odo = e.odometer.trim() ? `<span class="pdf-life-odo">${escapeHtml(e.odometer.trim())} km</span>` : "";
     items.push(`<li class="pdf-life-item pdf-life-item--${e.tone}">
@@ -443,7 +449,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
       <span class="pdf-life-body">
         <span class="pdf-life-title"><span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>${escapeHtml(e.title)}</span>
         ${e.detail ? `<span class="pdf-life-detail">${escapeHtml(e.detail)}</span>` : ""}
-        ${pills ? `<ul class="pdf-incident-src-pills pdf-life-pills">${pills}</ul>` : ""}
+        ${tags ? `<ul class="pdf-src-tags pdf-life-tags">${tags}</ul>` : ""}
       </span>
       <span class="pdf-life-meta">${odo}${flag}</span>
     </li>`);
@@ -457,8 +463,8 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-lifecycle-zone" role="region">${head}<ol class="pdf-life-list">${items.join("")}</ol></div>`;
 }
 
-/** Atskaites kopsavilkums — četras statusa plāksnītes uzreiz zem galvas. */
-function buildPdfReportSummaryHtml(p: ClientReportPayload): string {
+/** Atskaites kopsavilkums — statusa plāksnītes + visas brīdinājumu joslas vienā blokā zem galvas. */
+function buildPdfReportSummaryHtml(p: ClientReportPayload, bannersHtml = ""): string {
   const tiles = buildPdfReportSummaryTiles({
     csddForm: p.csddForm ?? null,
     autoRecordsBlock: p.autoRecordsBlock ?? null,
@@ -476,7 +482,8 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload): string {
     )
     .join("");
   const head = sectionHeadBrand(sectionIconPdfHtml("listChecks"), PDF_REPORT_SUMMARY_TITLE);
-  return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul></section>`;
+  const banners = bannersHtml ? `<div class="pdf-summary-banners">${bannersHtml}</div>` : "";
+  return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul>${banners}</section>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string): string {
@@ -594,11 +601,13 @@ function extractVehicleMakeModel(csdd: string): string | null {
   return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
 }
 
-/** Komentāru bloks — vienots stils visā atskaitē (kā NEGADĪJUMU VĒSTURE). */
-function pdfReportCommentBox(text: string, label = PDF_REPORT_COMMENT_LABEL): string {
+/** Komentāru bloks — vienots stils visā atskaitē; „Komentārs” virsraksts netiek rādīts. */
+function pdfReportCommentBox(text: string, label = ""): string {
   const body = adminRichHtmlToPdfSafeHtml(text).trim();
   if (!body) return "";
-  return `<div class="pdf-report-comment-note" role="note"><p class="pdf-field-label">${escapeHtml(label)}</p><div class="pdf-report-comment-note-body">${body}</div></div>`;
+  const shownLabel = label.trim().toLowerCase() === PDF_REPORT_COMMENT_LABEL.toLowerCase() ? "" : label.trim();
+  const head = shownLabel ? `<p class="pdf-field-label">${escapeHtml(shownLabel)}</p>` : "";
+  return `<div class="pdf-report-comment-note" role="note">${head}<div class="pdf-report-comment-note-body">${body}</div></div>`;
 }
 
 /** Komentāru bloks zem avota (PDF). */
@@ -606,36 +615,21 @@ function pdfAvotuCommentIsland(text: string): string {
   return pdfReportCommentBox(text);
 }
 
-/** Svītriņa HTML — tabulas „Avots” kolonnā vai leģendā. */
-function buildPdfMileageSourceStripeSpan(sourceLabel: string, size: "table" | "legend" = "table"): string {
+/** Avota punkts — viens vizuālais kods visā atskaitē (tabulas, laikposms, negadījumi, leģendas). */
+function pdfSourceDotHtml(sourceLabel: string): string {
   const key = mileageSourceLabelToPdfKey(sourceLabel);
-  const sizeCls = size === "legend" ? " pdf-mileage-source-stripe--legend" : " pdf-mileage-source-stripe--table";
-  const stripeCls = `pdf-mileage-source-stripe pdf-mileage-source-stripe--${key}${sizeCls}`;
   const aria = `Avots: ${MILEAGE_PDF_SOURCE_LEGEND[key].full}`;
-  return `<span class="${stripeCls}" role="img" aria-label="${escapeHtml(aria)}"></span>`;
+  return `<span class="pdf-src-dot pdf-src-dot--${key}" role="img" aria-label="${escapeHtml(aria)}"></span>`;
 }
 
-function buildPdfMileageSourceStripeSpanForKey(key: MileagePdfSourceKey): string {
-  const stripeCls = `pdf-mileage-source-stripe pdf-mileage-source-stripe--${key} pdf-mileage-source-stripe--legend`;
-  return `<span class="${stripeCls}" role="img" aria-label="${escapeHtml(`Avots: ${MILEAGE_PDF_SOURCE_LEGEND[key].full}`)}"></span>`;
+/** Punkts + avota nosaukums (+ neobligāta vērtība, piem. summa). */
+function pdfSourceTagHtml(sourceLabel: string, value = ""): string {
+  const name = sourceLabel.trim() || MILEAGE_PDF_SOURCE_LEGEND.cits.full;
+  const valueHtml = value.trim() ? `<span class="pdf-src-tag__val">${escapeHtml(value.trim())}</span>` : "";
+  return `<span class="pdf-src-tag">${pdfSourceDotHtml(name)}<span class="pdf-src-tag__name">${escapeHtml(name)}</span>${valueHtml}</span>`;
 }
 
-function buildPdfSourceLegendAbbrevsHtml(sourceLabels: string[]): string {
-  const keySet = collectMileagePdfSourceKeysFromLabels(sourceLabels);
-  const ordered = mileagePdfLegendKeysInOrder(keySet);
-  const parts: string[] = [];
-  for (const k of ordered) {
-    const abbrev = MILEAGE_PDF_SOURCE_LEGEND[k].abbrev;
-    parts.push(
-      `<span class="pdf-mileage-legend-term"><span class="pdf-mileage-legend-term-stripe">${buildPdfMileageSourceStripeSpanForKey(k)}</span><span class="pdf-mileage-legend-term-text">${escapeHtml(abbrev)}</span></span>`,
-    );
-  }
-  if (parts.length === 0) return "";
-  return `<span class="pdf-mileage-legend-terms-row">${parts.join("")}</span>`;
-}
-
-/** Vairākas avota svītriņas tabulas „Avots” kolonnā — horizontāli, ar nelielu atstarpi. */
-function buildPdfMileageSourceStripesHtml(sourceLabels: string[], size: "table" | "legend" = "table"): string {
+function uniqueSourceLabels(sourceLabels: string[]): string[] {
   const unique: string[] = [];
   const seen = new Set<string>();
   for (const raw of sourceLabels) {
@@ -646,15 +640,30 @@ function buildPdfMileageSourceStripesHtml(sourceLabels: string[], size: "table" 
     seen.add(key);
     unique.push(t);
   }
-  if (unique.length === 0) unique.push("CITS");
-  const sizeCls = size === "legend" ? " pdf-mileage-source-stripes--legend" : " pdf-mileage-source-stripes--table";
-  const inner = unique.map((lbl) => buildPdfMileageSourceStripeSpan(lbl, size)).join("");
-  return `<span class="pdf-mileage-source-stripes${sizeCls}" role="presentation">${inner}</span>`;
+  if (unique.length === 0) unique.push(MILEAGE_PDF_SOURCE_LEGEND.cits.full);
+  return unique;
 }
 
-function buildPdfMileageSourceLegendAbbrevsHtml(mileageRows: UnifiedMileageDisplayRow[]): string {
+/** Avotu saraksts kā punkti + nosaukumi (nobraukuma leģenda zem grafika un tabulām). */
+function buildPdfSourceLegendHtml(sourceLabels: string[]): string {
+  const keySet = collectMileagePdfSourceKeysFromLabels(sourceLabels);
+  const ordered = mileagePdfLegendKeysInOrder(keySet);
+  if (ordered.length === 0) return "";
+  const parts = ordered.map(
+    (k) => `<li class="pdf-src-legend__item">${pdfSourceTagHtml(MILEAGE_PDF_SOURCE_LEGEND[k].full)}</li>`,
+  );
+  return `<ul class="pdf-src-legend">${parts.join("")}</ul>`;
+}
+
+/** Tabulas „Avots” kolonna — punkti bez teksta (nosaukumi ir leģendā zem tabulas). */
+function buildPdfMileageSourceDotsHtml(sourceLabels: string[]): string {
+  const inner = uniqueSourceLabels(sourceLabels).map((lbl) => pdfSourceDotHtml(lbl)).join("");
+  return `<span class="pdf-src-dots" role="presentation">${inner}</span>`;
+}
+
+function buildPdfMileageSourceLegendHtml(mileageRows: UnifiedMileageDisplayRow[]): string {
   const labels = mileageRows.flatMap((r) => (r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel]));
-  return buildPdfSourceLegendAbbrevsHtml(labels);
+  return buildPdfSourceLegendHtml(labels);
 }
 
 function buildUnifiedMileageTableRowHtml(
@@ -664,7 +673,7 @@ function buildUnifiedMileageTableRowHtml(
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
   const odoEscaped = escapeHtml(r.odometer);
   const labels = r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel];
-  const stripeSpan = buildPdfMileageSourceStripesHtml(labels, "table");
+  const stripeSpan = buildPdfMileageSourceDotsHtml(labels);
   const anom = anomalyBySourceOrder.get(r.sourceOrder) === true;
   const rowClass = anom ? "pdf-mileage-history-row pdf-mileage-history-row--anomaly" : "pdf-mileage-history-row";
   const ico = pdfLossAmountAlertIconHtml("red");
@@ -733,12 +742,8 @@ export function buildUnifiedMileageTableHtml(
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder)}</div></div>`;
 
   const sourceCount = new Set(mileageRows.flatMap((r) => r.sourceLabels)).size;
-  const legendAbbrevs = buildPdfMileageSourceLegendAbbrevsHtml(mileageRows);
-  const sourceCountHtml = `<p class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${
-    legendAbbrevs
-      ? `<span class="pdf-mileage-source-count-abbrevs">${legendAbbrevs}</span>`
-      : ""
-  }</p>`;
+  const legend = buildPdfMileageSourceLegendHtml(mileageRows);
+  const sourceCountHtml = `<div class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${legend}</div>`;
 
   const head = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
   const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
@@ -747,34 +752,29 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
-function incidentSourcePillClass(sourceLabel: string): string {
-  const key = mileageSourceLabelToPdfKey(sourceLabel);
-  if (key === "ltab") return "pdf-incident-src-pill pdf-incident-src-pill--ltab";
-  if (key === "autodna") return "pdf-incident-src-pill pdf-incident-src-pill--autodna";
-  if (key === "carvertical") return "pdf-incident-src-pill pdf-incident-src-pill--carvertical";
-  return "pdf-incident-src-pill pdf-incident-src-pill--other";
-}
-
-function buildIncidentSourcePillsHtml(c: UnifiedIncidentCluster): string {
-  if (c.sourceValuations.length <= 1) return "";
+/** Avotu vērtējumi zem summas — punkts + avots + summa (tas pats kods kā „Kas tika pārbaudīts”). */
+function buildIncidentSourceTagsHtml(c: UnifiedIncidentCluster): string {
+  if (c.sourceValuations.length === 0) return "";
+  // Viens avots — summa jau ir virsrakstā, tāpēc tikai punkts + nosaukums.
+  const withValues = c.sourceValuations.length > 1;
   const items = c.sourceValuations
-    .map((s) => {
-      const label = `${s.sourceLabel} ${s.displayAmount}`.trim();
-      return `<li class="${incidentSourcePillClass(s.sourceLabel)}">${escapeHtml(label)}</li>`;
-    })
+    .map(
+      (s) =>
+        `<li class="pdf-src-tags__item">${pdfSourceTagHtml(s.sourceLabel, withValues ? s.displayAmount : "")}</li>`,
+    )
     .join("");
-  return `<ul class="pdf-incident-src-pills">${items}</ul>`;
+  return `<ul class="pdf-src-tags pdf-incident-card__srcs">${items}</ul>`;
 }
 
-function buildIncidentDamageTagsHtml(title: string, labels: string[]): string {
+function buildIncidentDamageListHtml(title: string, labels: string[]): string {
   if (labels.length === 0) return "";
-  const items = labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("");
-  return `<div class="pdf-dmg-list"><p class="pdf-dmg-list__h">${escapeHtml(title)}</p><ul class="pdf-dmg-tags">${items}</ul></div>`;
+  const text = labels.join(" · ");
+  return `<div class="pdf-dmg-list"><p class="pdf-dmg-list__h">${escapeHtml(title)}</p><p class="pdf-dmg-list__text">${escapeHtml(text)}</p></div>`;
 }
 
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number): string {
   const lossCell = formatLossAmountEurCell(c.displayAmount, { approx: c.averaged });
-  const sourcePills = buildIncidentSourcePillsHtml(c);
+  const sourceTags = buildIncidentSourceTagsHtml(c);
   const countryLabel = c.country.trim() || "—";
   const flag = pdfCountryFlagEmoji(countryLabel);
   const dmg = c.damage;
@@ -782,17 +782,17 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number):
   let visual = "";
   if (withDmg && dmg) {
     const svg = buildDamageZoneSilhouetteSvg(dmg.zoneIds, `c${index}`);
-    const zones = buildIncidentDamageTagsHtml("Bojājumu zonas", dmg.zoneLabels);
-    const groups = buildIncidentDamageTagsHtml("Bojājumu grupas", dmg.groupLabels);
+    const zones = buildIncidentDamageListHtml("Bojājumu zonas", dmg.zoneLabels);
+    const groups = buildIncidentDamageListHtml("Bojājumu grupas", dmg.groupLabels);
     visual = `<div class="pdf-incident-card__visual">${svg}<div class="pdf-incident-card__lists">${zones}${groups}</div></div>`;
   }
   return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
     <div class="pdf-incident-card__meta">
+      <div class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</div>
       <div class="pdf-incident-card__amount">${lossCell}</div>
       <div class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></div>
-      <div class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</div>
     </div>
-    ${sourcePills}
+    ${sourceTags}
     ${visual}
   </article>`;
 }
@@ -870,14 +870,8 @@ function buildPdfVehicleSpecSectionHtml(
     rows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
   }
   if (rows.length <= 1) return "";
-  const mid = Math.ceil(rows.length / 2);
-  const table = (part: string[]) =>
-    `<table class="mirror-table mirror-table--csdd"><tbody>${part.join("")}</tbody></table>`;
   const head = sectionHeadBrand(sectionIconPdfHtml("carFront"), PDF_VEHICLE_SPEC_TITLE);
-  const body =
-    rows.length <= 4
-      ? table(rows)
-      : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${table(rows.slice(0, mid))}</div><div class="pdf-mileage-dual__cell">${table(rows.slice(mid))}</div></div>`;
+  const body = `<table class="mirror-table mirror-table--csdd"><tbody>${rows.join("")}</tbody></table>`;
   return `<section class="pdf-unified-mileage-zone pdf-surface-card pdf-vehicle-spec pdf-page-flow-chunk--avoid" role="region">${head}${body}</section>`;
 }
 
@@ -1462,6 +1456,14 @@ export function getClientReportPrintCss(): string {
   return clientReportPrintCss();
 }
 
+/** Avotu krāsas vienā vietā: punkti + sadaļu augšmalas akcents. */
+function sourceDotColorCss(): string {
+  return MILEAGE_PDF_SOURCE_LEGEND_ORDER.map((k) => {
+    const hex = MILEAGE_PDF_SOURCE_COLOR[k];
+    return `      .pdf-src-dot--${k}{background:${hex};}\n      .provin-report-doc .pdf-src-zone--${k}{border-top-color:${hex};}`;
+  }).join("\n");
+}
+
 function clientReportPrintCss(): string {
   return `
       @page{margin:0;size:auto;}
@@ -1538,97 +1540,96 @@ function clientReportPrintCss(): string {
       .pdf-subhead-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
-      .pdf-sec-head--brand{align-items:center;gap:10px;margin:0 0 12px;}
+      .pdf-sec-head--brand{
+        align-items:center;gap:10px;margin:0 0 14px;padding-bottom:10px;
+        border-bottom:1px solid var(--pdf-line);
+      }
       .pdf-life-list{margin:0;padding:0;list-style:none;}
-      .pdf-life-year{margin:10px 0 6px;}
+      .pdf-life-year{display:flex;align-items:center;gap:10px;margin:14px 0 4px;}
       .pdf-life-year:first-child{margin-top:0;}
-      .pdf-life-year__chip{
-        display:inline-block;padding:2px 10px;border-radius:999px;background:#0f172a;color:#fff;
-        font-size:var(--pdf-fs-label);font-weight:700;letter-spacing:0.06em;
+      .pdf-life-year__num{
+        font-size:13px;font-weight:700;color:${PDF_BRAND_BLUE_HEX};letter-spacing:0.08em;line-height:1.2;
+      }
+      .pdf-life-year__rule{
+        flex:1;height:1px;background:var(--pdf-line);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item{
-        display:grid;grid-template-columns:10px 62px 1fr auto;gap:0 10px;align-items:start;
-        padding:6px 0;border-bottom:1px solid var(--pdf-line-soft);
+        display:grid;grid-template-columns:8px 72px 1fr auto;gap:0 10px;align-items:baseline;
+        padding:5px 0;border-bottom:1px solid var(--pdf-line-soft);
         break-inside:avoid;page-break-inside:avoid;
       }
       .pdf-life-item:last-child{border-bottom:none;}
       .pdf-life-dot{
-        width:8px;height:8px;margin-top:4px;border-radius:999px;background:#94a3b8;
+        width:6px;height:6px;border-radius:999px;background:#cbd5e1;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item--warn .pdf-life-dot{background:#FFC107;}
-      .pdf-life-item--alert .pdf-life-dot{background:#FF4D4D;}
-      .pdf-life-date{font-size:var(--pdf-fs-table);color:#64748b;white-space:nowrap;line-height:1.5;}
+      .pdf-life-item--alert .pdf-life-dot{background:${PDF_BRAND_BLUE_HEX};}
+      .pdf-life-date{
+        font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;white-space:nowrap;
+        font-variant-numeric:tabular-nums;
+      }
       .pdf-life-body{min-width:0;}
       .pdf-life-title{
         display:flex;align-items:center;gap:6px;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;line-height:1.35;
       }
-      .pdf-life-ico{display:inline-flex;color:${PDF_BRAND_BLUE_HEX};flex-shrink:0;}
+      .pdf-life-ico{display:inline-flex;color:#94a3b8;flex-shrink:0;}
       .pdf-life-ico .pdf-ico{width:13px;height:13px;}
-      .pdf-life-detail{display:block;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
-      .pdf-life-pills{margin-top:3px;}
+      .pdf-life-detail{display:block;font-size:var(--pdf-fs-table);color:#64748b;line-height:1.4;}
+      .pdf-life-tags{margin-top:2px;}
       .pdf-life-meta{
-        display:flex;align-items:center;gap:8px;font-size:var(--pdf-fs-table);color:#0f172a;white-space:nowrap;
+        display:flex;align-items:baseline;gap:8px;font-size:var(--pdf-fs-base);color:#0f172a;white-space:nowrap;
       }
-      .pdf-life-odo{font-weight:600;}
-      .pdf-lifecycle-zone .pdf-life-item--gap .pdf-life-title{color:#92400e;}
+      .pdf-life-odo{font-weight:700;font-variant-numeric:tabular-nums;}
+      .pdf-life-gap{
+        margin:4px 0;padding:5px 0;border-top:1px dashed var(--pdf-line);border-bottom:1px dashed var(--pdf-line);
+        text-align:center;
+      }
+      .pdf-life-gap__text{font-size:var(--pdf-fs-table);color:#94a3b8;letter-spacing:0.01em;}
       .pdf-summary-tiles{
-        display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0;padding:0;list-style:none;
+        display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin:0;padding:0;list-style:none;
       }
       .pdf-summary-tile{
-        padding:10px 12px;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);
-        border-top:3px solid #94a3b8;background:#fff;min-width:0;
+        padding:12px 14px;border:0;border-radius:var(--pdf-radius-inner);background:#F7F9FC;min-width:0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-summary-tile--ok{border-top-color:#16a34a;}
-      .pdf-summary-tile--warn{border-top-color:#FFC107;}
-      .pdf-summary-tile--alert{border-top-color:#FF4D4D;}
-      .pdf-summary-tile--neutral{border-top-color:#cbd5e1;}
       .pdf-summary-tile__label{
-        margin:0;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
-        letter-spacing:0.04em;text-transform:uppercase;line-height:1.3;
+        display:flex;align-items:center;gap:7px;margin:0;font-size:var(--pdf-fs-label);font-weight:600;
+        color:#86868b;letter-spacing:0.06em;text-transform:uppercase;line-height:1.3;
       }
-      .pdf-summary-tile__value{margin:4px 0 0;font-size:var(--pdf-fs-sec);font-weight:700;color:#0f172a;line-height:1.25;}
-      .pdf-summary-tile__note{margin:3px 0 0;font-size:var(--pdf-fs-label);color:#64748b;line-height:1.35;}
-      .pdf-sources-checked-label{margin:12px 0 6px;}
-      .pdf-sources-checked-grid{
-        display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin:0;padding:0;list-style:none;
-      }
-      .pdf-sources-checked-item{
-        display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--pdf-line-soft);
-        font-size:var(--pdf-fs-table);line-height:1.35;
-      }
-      .pdf-sources-checked-name{flex:1;color:#0f172a;font-weight:500;}
-      .pdf-sources-checked-count{color:#86868b;white-space:nowrap;}
-      .pdf-sources-checked-dot{
-        width:8px;height:8px;border-radius:999px;flex-shrink:0;background:#94a3b8;
+      .pdf-summary-tile__label::before{
+        content:"";width:7px;height:7px;border-radius:999px;background:#cbd5e1;flex-shrink:0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-sources-checked-dot--csdd{background:#16a34a;}
-      .pdf-sources-checked-dot--autodna{background:#1e3a8a;}
-      .pdf-sources-checked-dot--carvertical{background:#eab308;}
-      .pdf-sources-checked-dot--dealer{background:#dc2626;}
-      .pdf-sources-checked-dot--tjekbil{background:#be123c;}
-      .pdf-sources-checked-dot--ee{background:#0e7490;}
-      .pdf-sources-checked-dot--carinfo{background:#0f766e;}
-      .pdf-sources-checked-dot--ltab{background:#b91c1c;}
-      .pdf-sources-checked-dot--cits{background:#ea580c;}
+      .pdf-summary-tile--ok .pdf-summary-tile__label::before{background:#16a34a;}
+      .pdf-summary-tile--warn .pdf-summary-tile__label::before{background:#FFC107;}
+      .pdf-summary-tile--alert .pdf-summary-tile__label::before{background:#FF4D4D;}
+      .pdf-summary-tile__value{
+        margin:6px 0 0;font-size:18px;font-weight:700;color:#0f172a;line-height:1.2;letter-spacing:-0.01em;
+      }
+      .pdf-summary-tile__note{margin:4px 0 0;font-size:var(--pdf-fs-table);color:#64748b;line-height:1.4;}
+      .pdf-summary-banners{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--pdf-line);}
+      .pdf-summary-banners .pdf-alert-banners-stack,
+      .pdf-summary-banners .pdf-info-banners-stack{margin:0;}
+      .pdf-summary-banners > * + *{margin-top:8px;}
+      .pdf-summary-banners .pdf-alert-banner,
+      .pdf-summary-banners .pdf-info-banner{box-shadow:none;}
+      .pdf-sources-checked-label{margin:14px 0 6px;}
+      .pdf-sources-checked-grid{margin:0;padding:0;list-style:none;}
+      .pdf-sources-checked-item{
+        display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--pdf-line-soft);
+        font-size:var(--pdf-fs-base);line-height:1.35;
+      }
+      .pdf-sources-checked-item:last-child{border-bottom:none;}
+      .pdf-sources-checked-name{flex:1;color:#0f172a;font-weight:500;}
+      .pdf-sources-checked-count{color:#86868b;white-space:nowrap;font-size:var(--pdf-fs-table);}
       .pdf-src-count-badge{
         flex-shrink:0;padding:3px 9px;border-radius:999px;background:#F1F5F9;color:#475569;
         font-size:var(--pdf-fs-label);font-weight:600;letter-spacing:0.01em;line-height:1.3;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .provin-report-doc .pdf-src-zone{border-top:2px solid #94a3b8;}
-      .provin-report-doc .pdf-src-zone--csdd{border-top-color:#16a34a;}
-      .provin-report-doc .pdf-src-zone--autodna{border-top-color:#1e3a8a;}
-      .provin-report-doc .pdf-src-zone--carvertical{border-top-color:#eab308;}
-      .provin-report-doc .pdf-src-zone--dealer{border-top-color:#dc2626;}
-      .provin-report-doc .pdf-src-zone--tjekbil{border-top-color:#be123c;}
-      .provin-report-doc .pdf-src-zone--ee{border-top-color:#0e7490;}
-      .provin-report-doc .pdf-src-zone--carinfo{border-top-color:#0f766e;}
-      .provin-report-doc .pdf-src-zone--ltab{border-top-color:#b91c1c;}
-      .provin-report-doc .pdf-src-zone--cits{border-top-color:#ea580c;}
       .pdf-sec-ico-wrap,
       .pdf-v1-panel-ico-wrap{
         display:inline-flex;align-items:center;justify-content:center;color:${PDF_BRAND_BLUE_HEX};flex-shrink:0;
@@ -1684,6 +1685,7 @@ function clientReportPrintCss(): string {
       .pdf-unified-mileage-zone{margin:0 0 var(--pdf-gap-section);padding:var(--pdf-pad-outer);background:#fff!important;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);box-shadow:var(--pdf-shadow);}
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
       .pdf-provin-sources-wrap{margin:0 0 var(--pdf-gap-section);}
+      h2.pdf-sec--provin-sources{text-transform:uppercase;letter-spacing:0.06em;}
       .pdf-v1-panel-title--provin-sources{
         text-transform:none;
         letter-spacing:0.02em;
@@ -1721,13 +1723,11 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
       .pdf-mileage-comment-note{
-        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-line);
-        border-radius:var(--pdf-radius-inner);background:#fafafa;
+        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid #E4EDFA;
+        border-left:3px solid #C6DAF6;border-radius:var(--pdf-radius-inner);background:#F6FAFF;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-report-comment-note .pdf-field-label,
-      .pdf-incident-internal-note .pdf-field-label,
-      .pdf-mileage-comment-note .pdf-field-label{margin:0 0 6px;font-size:11px;font-weight:700;color:#0f172a;}
+      .pdf-report-comment-note .pdf-field-label{margin:0 0 5px;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:0.05em;}
       .pdf-report-comment-note-body,
       .pdf-incident-internal-note-body,
       .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.55;color:#0f172a;font-family:Inter,sans-serif!important;}
@@ -1804,29 +1804,25 @@ function clientReportPrintCss(): string {
         display:flex!important;justify-content:center!important;align-items:center!important;
         width:100%!important;margin:0 auto!important;box-sizing:border-box!important;
       }
-      .pdf-mileage-source-stripe{
-        display:inline-block;flex-shrink:0;border-radius:2px;vertical-align:middle;
+      .pdf-src-dot{
+        display:inline-block;width:8px;height:8px;border-radius:999px;flex-shrink:0;background:#64748B;
+        vertical-align:middle;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-source-stripe--table{width:9px!important;height:4px!important;}
-      .pdf-mileage-source-stripe--legend{width:7px!important;height:3px!important;}
-      .pdf-mileage-source-stripe--csdd{background:#16a34a!important;}
-      .pdf-mileage-source-stripe--autodna{background:#1e3a8a!important;}
-      .pdf-mileage-source-stripe--carvertical{background:#eab308!important;}
-      .pdf-mileage-source-stripe--dealer{background:#dc2626!important;}
-      .pdf-mileage-source-stripe--tjekbil{background:#be123c!important;}
-      .pdf-mileage-source-stripe--ee{background:#0e7490!important;}
-      .pdf-mileage-source-stripe--carinfo{background:#0f766e!important;}
-      .pdf-mileage-source-stripe--ltab{background:#b91c1c!important;}
-      .pdf-mileage-source-stripe--cits{background:#ea580c!important;}
-      .pdf-mileage-source-stripe--unknown{background:#ea580c!important;}
-      .pdf-mileage-source-stripes{
+${sourceDotColorCss()}
+      .pdf-src-dots{
         display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;
-        flex-wrap:nowrap;flex-shrink:0;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        flex-wrap:nowrap;flex-shrink:0;gap:4px;
       }
-      .pdf-mileage-source-stripes--table{gap:3px;}
-      .pdf-mileage-source-stripes--legend{gap:2px;}
+      .pdf-src-tag{display:inline-flex;align-items:center;gap:6px;line-height:1.3;}
+      .pdf-src-tag__name{font-weight:600;color:#475569;}
+      .pdf-src-tag__val{color:#0f172a;font-weight:600;}
+      .pdf-src-tags{display:flex;flex-wrap:wrap;gap:3px 14px;margin:0;padding:0;list-style:none;}
+      .pdf-src-tags__item{font-size:var(--pdf-fs-table);}
+      .pdf-src-legend{
+        display:flex;flex-wrap:wrap;gap:4px 16px;margin:8px 0 0;padding:0;list-style:none;
+        font-size:var(--pdf-fs-table);
+      }
       .pdf-mileage-history-table td.pdf-mileage-cell-loss{
         text-align:center!important;
       }
@@ -1927,25 +1923,6 @@ function clientReportPrintCss(): string {
         margin:0!important;
         font-weight:500!important;
       }
-      .pdf-mileage-source-count-abbrevs{
-        display:block!important;
-        margin:10px 0 0!important;
-        padding:0!important;
-        white-space:nowrap!important;
-        font-weight:600!important;
-        letter-spacing:0.02em!important;
-        color:#475569!important;
-      }
-      .pdf-mileage-legend-terms-row{
-        display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;
-        gap:18px!important;
-      }
-      .pdf-mileage-legend-term{
-        display:inline-flex!important;align-items:center!important;vertical-align:middle!important;
-        gap:3px!important;
-      }
-      .pdf-mileage-legend-term-stripe{display:inline-flex!important;align-items:center!important;flex-shrink:0!important;}
-      .pdf-mileage-legend-term-text{font-weight:600!important;color:#475569!important;}
       .pdf-mileage-chart-dot--anomaly{
         fill:#ef4444!important;stroke:#7f1d1d!important;stroke-width:2.5!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -2037,28 +2014,33 @@ function clientReportPrintCss(): string {
       .pdf-listing-price-delta--up{color:#dc2626;}
       .pdf-listing-price-delta--note{color:#64748b;font-weight:500;}
       .pdf-incident-source-vals{display:block;margin-top:3px;font-size:0.62rem;font-weight:500;color:#64748b;line-height:1.35;}
-      .pdf-incident-src-pills{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin:8px 0 0;padding:0;list-style:none;width:100%;}
-      .pdf-incident-src-pill{margin:0;padding:5px 10px;border-radius:999px;font-size:0.68rem;font-weight:700;line-height:1.25;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      .pdf-incident-src-pill--ltab{background:#dc2626;color:#fff;}
-      .pdf-incident-src-pill--autodna{background:#1e3a8a;color:#fff;}
-      .pdf-incident-src-pill--carvertical{background:#eab308;color:#1c1917;}
-      .pdf-incident-src-pill--other{background:#e2e8f0;color:#334155;}
       .pdf-incident-history-card{padding:0;}
-      .pdf-incident-card{padding:14px 16px 16px;border-bottom:1px solid #f1f5f9;break-inside:avoid;page-break-inside:avoid;}
+      .pdf-incident-card{padding:14px 16px 16px;border-bottom:1px solid var(--pdf-line-soft);break-inside:avoid;page-break-inside:avoid;}
       .pdf-incident-card:last-of-type{border-bottom:none;}
-      .pdf-incident-card__meta{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;gap:10px 16px;align-items:start;}
-      .pdf-incident-card__amount{font-size:0.92rem;font-weight:700;color:#0f172a;line-height:1.25;}
-      .pdf-incident-card__amount .pdf-num-warn{font-size:0.92rem!important;}
-      .pdf-incident-card__country{display:flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:600;color:#334155;justify-content:center;padding-top:2px;}
-      .pdf-incident-card__country .pdf-country-flag{font-size:14px;line-height:1;}
-      .pdf-incident-card__date{font-size:0.78rem;font-weight:600;color:#64748b;text-align:right;padding-top:2px;white-space:nowrap;}
-      .pdf-incident-card--with-dmg .pdf-incident-card__visual{display:grid;grid-template-columns:158px minmax(0,1fr);gap:18px 22px;align-items:start;margin-top:14px;padding-top:14px;border-top:1px solid #f1f5f9;}
-      .pdf-dmg-sil{display:block;width:158px;height:auto;max-width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      .pdf-incident-card__lists{display:flex;flex-direction:column;gap:12px;min-width:0;padding-top:4px;}
-      .pdf-dmg-list__h{margin:0 0 6px;font-size:0.62rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;}
-      .pdf-dmg-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none;}
-      .pdf-dmg-tags li{margin:0;padding:5px 10px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:0.72rem;font-weight:600;line-height:1.3;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      .pdf-dmg-list + .pdf-dmg-list .pdf-dmg-tags li{background:#f1f5f9;color:#334155;}
+      .pdf-incident-card__meta{display:flex;align-items:baseline;gap:14px;}
+      .pdf-incident-card__date{
+        font-size:var(--pdf-fs-base);font-weight:700;color:#0f172a;white-space:nowrap;
+        font-variant-numeric:tabular-nums;
+      }
+      .pdf-incident-card__amount{flex:1;font-size:15px;font-weight:700;color:#0f172a;line-height:1.2;}
+      .pdf-incident-card__amount .pdf-num-warn{font-size:15px!important;}
+      .pdf-incident-card__country{
+        display:flex;align-items:center;gap:6px;font-size:var(--pdf-fs-table);font-weight:500;color:#64748b;
+        white-space:nowrap;
+      }
+      .pdf-incident-card__country .pdf-country-flag{font-size:13px;line-height:1;}
+      .pdf-incident-card__srcs{margin-top:7px;}
+      .pdf-incident-card--with-dmg .pdf-incident-card__visual{
+        display:grid;grid-template-columns:120px minmax(0,1fr);gap:0 20px;align-items:start;
+        margin-top:12px;padding-top:12px;border-top:1px solid var(--pdf-line-soft);
+      }
+      .pdf-dmg-sil{display:block;width:120px;height:auto;max-width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-incident-card__lists{display:flex;flex-direction:column;gap:10px;min-width:0;}
+      .pdf-dmg-list__h{
+        margin:0 0 3px;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
+        text-transform:uppercase;letter-spacing:0.06em;
+      }
+      .pdf-dmg-list__text{margin:0;font-size:var(--pdf-fs-base);color:#0f172a;line-height:1.45;}
       .pdf-listing-price-history-foot{display:flex;justify-content:space-between;background:${PDF_BRAND_BLUE_HEX};color:#fff;padding:8px 12px;font-size:0.72rem;}
       .pdf-listing-price-history-foot strong{font-weight:700;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
@@ -2076,9 +2058,11 @@ function clientReportPrintCss(): string {
         width:100%;
         max-width:100%;
         margin:4px 0 0;
-        padding:10px 12px;
-        border-radius:10px;
-        background:#f1f5f9;
+        padding:var(--pdf-pad-inner);
+        border:1px solid #E4EDFA;
+        border-left:3px solid #C6DAF6;
+        border-radius:var(--pdf-radius-inner);
+        background:#F6FAFF;
         font-size:calc(0.72rem + 1px)!important;
         font-weight:595!important;
         font-style:normal!important;
@@ -2090,8 +2074,20 @@ function clientReportPrintCss(): string {
       }
       .pdf-listing-analysis-chunk .mirror-pre.pdf-manual-comment-body{margin-top:6px;}
       .pdf-iriss-approved .mirror-pre.pdf-manual-comment-body{
-        background:rgba(0,97,210,0.09)!important;
+        background:#fff!important;
       }
+      .provin-report-doc .pdf-iriss-approved{
+        border:1px solid #B6D2F6!important;background:#F3F8FF!important;
+        box-shadow:0 2px 10px rgba(0,97,210,0.10)!important;
+      }
+      .pdf-iriss-approved .pdf-sec-head--brand{border-bottom-color:#CFE0FA;}
+      .pdf-iriss-approved h2.pdf-sec{font-size:15px;}
+      .pdf-iriss-approved .pdf-sec-ico-wrap{background:${PDF_BRAND_BLUE_HEX}!important;}
+      .pdf-iriss-approved .pdf-sec-ico-wrap .pdf-ico{color:#fff!important;}
+      .pdf-iriss-approved .pdf-report-comment-note{
+        background:#fff!important;border-color:#DCE8F8!important;border-left-color:${PDF_BRAND_BLUE_HEX}!important;
+      }
+      .pdf-iriss-approved .pdf-field-label--row{color:#0f172a;}
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
       .mirror-table{width:100%;border-collapse:collapse;font-size:0.72rem;margin:4px 0;}
       .mirror-table td,.mirror-table th{padding:6px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;text-align:left;}
@@ -2323,12 +2319,10 @@ export function buildClientReportDocumentHtml(args: {
         ),
       )
     : "";
-  if (infoBannersHtml) lines.push(infoBannersHtml);
 
   const manualBannersHtml = vis.alerts
     ? buildPdfManualBannersHtml(mergeProvinManualBanners(p.manualBanners))
     : "";
-  if (manualBannersHtml) lines.push(manualBannersHtml);
 
   const alertBannersHtml = vis.alerts
     ? buildPdfAlertBannersHtml(
@@ -2345,9 +2339,10 @@ export function buildClientReportDocumentHtml(args: {
         ),
       )
     : "";
-  if (alertBannersHtml) lines.push(alertBannersHtml);
 
-  lines.push(buildPdfReportSummaryHtml(p));
+  // Viena banneru vieta: manuālie (mani) → automātiskie brīdinājumi → informatīvie.
+  const bannersHtml = [manualBannersHtml, alertBannersHtml, infoBannersHtml].filter(Boolean).join("");
+  lines.push(buildPdfReportSummaryHtml(p, bannersHtml));
 
   const vehicleSpecHtml = buildPdfVehicleSpecSectionHtml(p.csddForm, p.vin, vis);
   if (vehicleSpecHtml) lines.push(vehicleSpecHtml);

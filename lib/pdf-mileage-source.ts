@@ -110,6 +110,22 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   cits: { full: "Citi Avoti", abbrev: "CITS" },
 };
 
+/**
+ * Avotu punktu krāsas — vienota vēsa (zila / tirkīza / indigo) skala visā PDF:
+ * laikposms, nobraukums, negadījumi, „Kas tika pārbaudīts”, sadaļu augšmalas akcents.
+ */
+export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
+  csdd: "#0061D2",
+  autodna: "#1E3A8A",
+  carvertical: "#0E7490",
+  dealer: "#4338CA",
+  tjekbil: "#0891B2",
+  ee: "#1D4ED8",
+  carinfo: "#0F766E",
+  ltab: "#6D28D9",
+  cits: "#64748B",
+};
+
 /** Secība leģendas izdrukai (PDF). */
 export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "csdd",

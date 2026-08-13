@@ -109,17 +109,25 @@ export function extractGroupListFromBlock(block: string): string {
   return (m?.[1] ?? "").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Zonu laukumi virsbūves koordinātēs (viewBox 0 0 140 231); tiek apgriezti pēc virsbūves kontūras,
+ * tāpēc drīkst pārklāties un iziet ārpus siluetā redzamās formas.
+ */
 const ZONE_SHAPES: Record<DamageZoneId, { x: number; y: number; w: number; h: number; rx: number }> = {
-  front: { x: 54, y: 10, w: 92, h: 50, rx: 18 },
-  front_left: { x: 12, y: 30, w: 52, h: 66, rx: 16 },
-  front_right: { x: 136, y: 30, w: 52, h: 66, rx: 16 },
-  left: { x: 8, y: 102, w: 40, h: 122, rx: 14 },
-  right: { x: 152, y: 102, w: 40, h: 122, rx: 14 },
-  roof: { x: 68, y: 126, w: 64, h: 90, rx: 10 },
-  rear_left: { x: 12, y: 230, w: 52, h: 66, rx: 16 },
-  rear_right: { x: 136, y: 230, w: 52, h: 66, rx: 16 },
-  rear: { x: 54, y: 280, w: 92, h: 50, rx: 18 },
+  front: { x: 16, y: -8, w: 108, h: 54, rx: 10 },
+  front_left: { x: 12, y: 19, w: 59, h: 56, rx: 10 },
+  front_right: { x: 69, y: 19, w: 59, h: 56, rx: 10 },
+  left: { x: 12, y: 71, w: 40, h: 88, rx: 10 },
+  right: { x: 88, y: 71, w: 40, h: 88, rx: 10 },
+  roof: { x: 44, y: 76, w: 52, h: 62, rx: 8 },
+  rear_left: { x: 12, y: 153, w: 59, h: 58, rx: 10 },
+  rear_right: { x: 69, y: 153, w: 59, h: 58, rx: 10 },
+  rear: { x: 16, y: 186, w: 108, h: 45, rx: 10 },
 };
+
+/** Virsbūves kontūra no augšas — priekšgals augšā, reālas proporcijas (garums:platums ~2,6:1). */
+const CAR_BODY_PATH =
+  "M70 8 C82 8 92 11 96 16 L104 34 C109 45 111 55 111 66 L111 164 C111 176 109 186 104 194 L97 213 C93 220 82 223 70 223 C58 223 47 220 43 213 L36 194 C31 186 29 176 29 164 L29 66 C29 55 31 45 36 34 L44 16 C48 11 58 8 70 8 Z";
 
 const ZONE_ORDER: DamageZoneId[] = [
   "front",
@@ -133,29 +141,36 @@ const ZONE_ORDER: DamageZoneId[] = [
   "rear",
 ];
 
-/** Top-down sedana siluets; aktīvās zonas — vienlaidus sarkans. */
+/** Siluets no augšas; bojātās zonas — maigs zils tonis, apgriezts pēc virsbūves kontūras. */
 export function buildDamageZoneSilhouetteSvg(active: Iterable<DamageZoneId>, uid: string): string {
   const on = new Set(active);
-  const zones = ZONE_ORDER.map((id) => {
-    const s = ZONE_SHAPES[id]!;
-    const activeZone = on.has(id);
-    const fill = activeZone ? "#ef4444" : "#eef2f6";
-    const stroke = activeZone ? "#b91c1c" : "#d5dde6";
-    const sw = activeZone ? "1.7" : "0.8";
-    return `<rect class="pdf-dmg-zone${activeZone ? " pdf-dmg-zone--on" : ""}" data-zone="${id}" data-uid="${uid}" x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
-  }).join("");
+  const clipId = `dmg-body-${uid}`;
+  const zones = ZONE_ORDER.filter((id) => on.has(id))
+    .map((id) => {
+      const s = ZONE_SHAPES[id]!;
+      return `<rect class="pdf-dmg-zone pdf-dmg-zone--on" data-zone="${id}" data-uid="${uid}" x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx}" fill="#B7D1F5"/>`;
+    })
+    .join("");
 
-  return `<svg class="pdf-dmg-sil" viewBox="0 0 200 340" width="158" height="268" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  ${zones}
-  <rect x="26" y="78" width="18" height="40" rx="9" fill="#1e293b"/>
-  <rect x="156" y="78" width="18" height="40" rx="9" fill="#1e293b"/>
-  <rect x="26" y="226" width="18" height="40" rx="9" fill="#1e293b"/>
-  <rect x="156" y="226" width="18" height="40" rx="9" fill="#1e293b"/>
-  <path d="M64 40 C64 26 80 20 100 20 C120 20 136 26 136 40 L150 90 L154 128 L154 216 L150 258 L136 300 C136 314 120 320 100 320 C80 320 64 314 64 300 L50 258 L46 216 L46 128 L50 90 Z" fill="#e8eef4" stroke="#334155" stroke-width="1.55"/>
-  <ellipse cx="40" cy="120" rx="9" ry="6.5" fill="#334155"/>
-  <ellipse cx="160" cy="120" rx="9" ry="6.5" fill="#334155"/>
-  <path d="M72 86 L128 86 L122 128 L78 128 Z" fill="#c5d4e8" stroke="#64748b" stroke-width="0.9"/>
-  <rect x="72" y="132" width="56" height="86" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
-  <path d="M78 224 L122 224 L128 262 L72 262 Z" fill="#c5d4e8" stroke="#64748b" stroke-width="0.9"/>
+  return `<svg class="pdf-dmg-sil" viewBox="0 0 140 231" width="120" height="198" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs><clipPath id="${clipId}"><path d="${CAR_BODY_PATH}"/></clipPath></defs>
+  <rect x="22" y="35" width="12" height="27" rx="5" fill="#334155"/>
+  <rect x="106" y="35" width="12" height="27" rx="5" fill="#334155"/>
+  <rect x="22" y="157" width="12" height="27" rx="5" fill="#334155"/>
+  <rect x="106" y="157" width="12" height="27" rx="5" fill="#334155"/>
+  <path d="M29 65 L22 69 L23 73 L30 70 Z" fill="#94A3B8"/>
+  <path d="M111 65 L118 69 L117 73 L110 70 Z" fill="#94A3B8"/>
+  <path d="${CAR_BODY_PATH}" fill="#F5F8FC"/>
+  <g clip-path="url(#${clipId})">${zones}</g>
+  <g clip-path="url(#${clipId})" fill="#E7EEF7" stroke="#C3D2E2" stroke-width="1">
+    <rect x="34" y="9" width="24" height="9" rx="4"/>
+    <rect x="82" y="9" width="24" height="9" rx="4"/>
+    <rect x="32" y="211" width="26" height="10" rx="4"/>
+    <rect x="82" y="211" width="26" height="10" rx="4"/>
+  </g>
+  <path d="M50 59 C60 56 80 56 90 59 L96 78 L44 78 Z" fill="#E7EEF7" stroke="#B9C8DA" stroke-width="1.1"/>
+  <path d="M44 78 L96 78 L94 136 L46 136 Z" fill="none" stroke="#D5E0EC" stroke-width="1"/>
+  <path d="M46 136 L94 136 L90 156 C80 159 60 159 50 156 Z" fill="#E7EEF7" stroke="#B9C8DA" stroke-width="1.1"/>
+  <path d="${CAR_BODY_PATH}" fill="none" stroke="#8A9CB0" stroke-width="1.6"/>
 </svg>`;
 }

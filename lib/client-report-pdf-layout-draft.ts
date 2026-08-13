@@ -77,7 +77,7 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-panel-ico-wrap .pdf-ico{width:16px;height:16px}
       .pdf-v1-notes-client-wrap{
         margin:0;padding:var(--pdf-pad-inner);border-radius:var(--pdf-radius-inner);
-        border:1px solid var(--pdf-line);background:#fafafa;
+        border:1px solid #E4EDFA;border-left:3px solid #C6DAF6;background:#F6FAFF;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-v1-notes-body{font-style:italic;color:#000;line-height:1.45}
@@ -104,16 +104,17 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv a{color:${PDF_BRAND_BLUE_HEX};word-break:break-all}
       .pdf-v1-listing-link{color:${PDF_BRAND_BLUE_HEX};word-break:break-all;text-decoration:underline}
       .pdf-v1-kv .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;}
-      .pdf-about-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px}
+      .pdf-about-grid{display:block}
       .pdf-about-group{min-width:0}
+      .pdf-about-group + .pdf-about-group{margin-top:12px}
       .pdf-about-group-title{
         margin:0 0 4px;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
-        letter-spacing:0.04em;text-transform:uppercase;line-height:1.3;
+        letter-spacing:0.06em;text-transform:uppercase;line-height:1.3;
       }
-      .pdf-v1-kv--about{font-size:var(--pdf-fs-table)}
-      .pdf-v1-kv--about td{padding:4px 0}
-      .pdf-v1-kv--about td:first-child{width:44%}
-      .pdf-about-notes{margin-top:12px}
+      .pdf-v1-kv--about{font-size:var(--pdf-fs-base)}
+      .pdf-v1-kv--about td{padding:5px 0}
+      .pdf-v1-kv--about td:first-child{width:30%}
+      .pdf-about-notes{margin-top:14px}
       .pdf-source-mirror-panel{margin-top:0}
       .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
   `;

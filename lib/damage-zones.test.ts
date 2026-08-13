@@ -28,12 +28,19 @@ describe("parseDamageZoneHits", () => {
 });
 
 describe("buildDamageZoneSilhouetteSvg", () => {
-  it("iezīmē aktīvās zonas sarkanā krāsā bez zīmola uzraksta", () => {
+  it("iezīmē aktīvās zonas zilā tonī, apgrieztas pēc virsbūves kontūras", () => {
     const svg = buildDamageZoneSilhouetteSvg(["front", "front_left"], "t1");
     expect(svg).toContain('class="pdf-dmg-sil"');
-    expect(svg).toContain("#ef4444");
+    expect(svg).toContain("#B7D1F5");
+    expect(svg).not.toContain("#ef4444");
+    expect(svg).toContain('clip-path="url(#dmg-body-t1)"');
     expect(svg).not.toContain("PROVIN");
     expect(svg).not.toContain("pdfDmgHatch");
     expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(2);
+  });
+
+  it("nezīmē neaktīvās zonas", () => {
+    const svg = buildDamageZoneSilhouetteSvg([], "t2");
+    expect(svg).not.toContain("pdf-dmg-zone");
   });
 });
