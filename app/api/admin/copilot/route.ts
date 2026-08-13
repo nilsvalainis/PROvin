@@ -89,6 +89,9 @@ function describeAction(a: CopilotAction): string {
     const lines = a.text.trim().split(/\n+/).filter(Boolean).length;
     return `auto_records · Servisa vēsture (${lines} rindas) (${a.confidence})`;
   }
+  if (a.type === "upsert_service_work") {
+    return `auto_records · apkope ${a.date || "—"} · ${a.odometer || "—"} km · ${a.works.slice(0, 60)} (${a.confidence})`;
+  }
   if (a.type === "set_dealer_vehicle_info") {
     return `auto_records · dīlera dati: ${Object.keys(a.vehicleInfo).join(", ")} (${a.confidence})`;
   }

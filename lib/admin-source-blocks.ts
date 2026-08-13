@@ -44,6 +44,14 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "./auto-records-paste-parse";
+import {
+  autoRecordsServiceWorkRowHasData,
+  autoRecordsServiceWorkRowsToPlainText,
+  emptyAutoRecordsServiceWorkRow,
+  normalizeAutoRecordsServiceWorkRows,
+  PROVIN_SERVICE_WORKS_TABLE_TITLE,
+  type AutoRecordsServiceWorkRow,
+} from "@/lib/auto-records-service-works";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { normalizeLossAmountEurDisplay, normalizeLtabIncidentRow } from "@/lib/loss-amount-format";
 import {
@@ -71,6 +79,7 @@ import { emptyCsddPreviousInspectionBlock, previousInspectionBlockHasData } from
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
 export type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
+export type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 
 export const SOURCE_BLOCK_KEYS = [
   "csdd",
@@ -633,6 +642,11 @@ export type StandardSourceBlockState = {
 export type AutoRecordsBlockState = {
   rawUnprocessedData: string;
   serviceHistory: AutoRecordsServiceRow[];
+  /**
+   * Servisa / remontu tabula: datums + odometrs + veiktie darbi.
+   * Copilot to aizpilda no PDF; operators var labot kā nobraukuma tabulu.
+   */
+  serviceWorks: AutoRecordsServiceWorkRow[];
   /** Strukturētie Outvin API dati (legacy; UI netiek rādīts). */
   outvin?: OutvinDataBundle;
   /** Oficiālā dīlera atskaite — transporta info (VIN, tips u.c.), negadījumi, nozagts, komplektācija. */
@@ -745,6 +759,7 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
   return {
     rawUnprocessedData: "",
     serviceHistory: [emptyAutoRecordsServiceRow()],
+    serviceWorks: [emptyAutoRecordsServiceWorkRow()],
     comments: "",
     serviceHistoryNotes: "",
     photos: [],
@@ -915,6 +930,7 @@ export function standardBlockToPlainText(b: StandardSourceBlockState): string {
 export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
   return (
     (b.serviceHistory ?? []).some(autoRecordsRowHasData) ||
+    (b.serviceWorks ?? []).some(autoRecordsServiceWorkRowHasData) ||
     wsStr(b.rawUnprocessedData).trim().length > 0 ||
     wsStr(b.comments).trim().length > 0 ||
     wsStr(b.serviceHistoryNotes).trim().length > 0 ||
@@ -976,6 +992,10 @@ export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
 
   const checklistTxt = formatSourcePdfChecklistForPdf(b.pdfChecklist);
   if (checklistTxt) lines.push(checklistTxt);
+  const serviceWorksTxt = autoRecordsServiceWorkRowsToPlainText(b.serviceWorks ?? []);
+  if (serviceWorksTxt) {
+    lines.push(`${PROVIN_SERVICE_WORKS_TABLE_TITLE}\n${serviceWorksTxt}`);
+  }
   if ((b.serviceHistoryNotes ?? "").trim()) {
     lines.push(`Servisa vēsture\n${(b.serviceHistoryNotes ?? "").trim()}`);
   }
@@ -1239,6 +1259,7 @@ function parseOutvinDealerReportRaw(raw: unknown): OutvinDealerReport | undefine
 function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBlockState {
   if (
     "serviceHistory" in raw ||
+    "serviceWorks" in raw ||
     "rawUnprocessedData" in raw ||
     "outvinReport" in raw ||
     "outvin" in raw ||
@@ -1246,6 +1267,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
     "photoGroups" in raw
   ) {
     const rowsIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
+    const serviceWorks = normalizeAutoRecordsServiceWorkRows(raw.serviceWorks);
     const rawRows = mapUnknownArrayToAutoRecordsRows(rowsIn);
     const normalized = normalizeParsedAutoRecordsRows(rawRows);
     const outvinReport = parseOutvinDealerReportRaw(raw.outvinReport);
@@ -1256,6 +1278,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
     return {
       rawUnprocessedData: String(raw.rawUnprocessedData ?? "").slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
       serviceHistory: normalized,
+      serviceWorks,
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
       serviceHistoryNotes:
         typeof raw.serviceHistoryNotes === "string" ? raw.serviceHistoryNotes.slice(0, 12000) : "",
@@ -1273,6 +1296,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
   return {
     rawUnprocessedData: legacyText.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     serviceHistory: [emptyAutoRecordsServiceRow()],
+    serviceWorks: [emptyAutoRecordsServiceWorkRow()],
     comments: "",
     serviceHistoryNotes: "",
     photos: [],
@@ -1747,6 +1771,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         serviceHistory: Array.isArray(blocks.auto_records?.serviceHistory)
           ? blocks.auto_records.serviceHistory
           : d.auto_records.serviceHistory,
+        serviceWorks: normalizeAutoRecordsServiceWorkRows(blocks.auto_records?.serviceWorks),
         comments: wsStr(blocks.auto_records?.comments),
         serviceHistoryNotes: wsStr(blocks.auto_records?.serviceHistoryNotes),
         rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),

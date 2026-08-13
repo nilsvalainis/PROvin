@@ -23,8 +23,9 @@ import {
   type VendorReportVendor,
 } from "@/lib/vendor-report-extract";
 import {
-  formatVendorServiceHistoryText,
+  formatVendorServiceWorksText,
   mergeVendorServiceEntries,
+  sortVendorServiceEntries,
 } from "@/lib/vendor-service-history";
 
 function vendorLabel(vendor: VendorReportVendor): string {
@@ -138,14 +139,17 @@ export function buildVendorCopilotActions(
     });
   }
 
-  const serviceText = formatVendorServiceHistoryText(extract.serviceHistory);
-  if (serviceText) {
+  for (const entry of sortVendorServiceEntries(extract.serviceHistory)) {
+    const works = formatVendorServiceWorksText(entry);
+    if (!entry.date.trim() || !works) continue;
     actions.push({
-      type: "set_service_history",
+      type: "upsert_service_work",
       source: "auto_records",
-      text: serviceText,
+      date: entry.date,
+      odometer: entry.odometer,
+      works,
       confidence: "high",
-      note: `Apkopes no ${vendorLabel(extract.vendor)} atskaites`,
+      note: `Apkope no ${vendorLabel(extract.vendor)} atskaites`,
     });
   }
 

@@ -153,6 +153,38 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("102300");
   });
 
+  it("renders Auto Records service works table in client PDF", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        { date: "01.06.2023", odometer: "26276", works: "Regulārā apkope: Eļļas maiņa" },
+        {
+          date: "01.12.2023",
+          odometer: "47521",
+          works: "Regulārā apkope: Salona gaisa filtra maiņa, Eļļas maiņa",
+        },
+      ],
+      comments: "",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("Servisa un remontu vēsture");
+    expect(doc).toContain("pdf-mileage-history-table--service");
+    expect(doc).toContain("Veiktie darbi");
+    expect(doc).toContain("47 521 km");
+    expect(doc).toContain("Salona gaisa filtra maiņa");
+    // Jaunākais augšā
+    expect(doc.indexOf("01.12.2023")).toBeLessThan(doc.indexOf("01.06.2023"));
+  });
+
   it("citi avoti subheads use manual label only, without CITI AVOTI prefix", () => {
     const p = {
       citiAvoti: {

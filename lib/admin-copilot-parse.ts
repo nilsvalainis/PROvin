@@ -8,6 +8,7 @@ import type {
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
 import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
+import { AUTO_RECORDS_SERVICE_WORKS_MAX_LEN } from "@/lib/auto-records-service-works";
 import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
 function asRecord(v: unknown): Record<string, unknown> | null {
@@ -75,6 +76,20 @@ function parseAction(raw: unknown): CopilotAction | null {
       type: "set_service_history",
       source: "auto_records",
       text,
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "upsert_service_work") {
+    const works = asString(o.works, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN);
+    const date = asString(o.date, 40);
+    if (!works || !date) return null;
+    return {
+      type: "upsert_service_work",
+      source: "auto_records",
+      date,
+      odometer: asString(o.odometer, 32),
+      works,
       confidence,
       ...(note ? { note } : {}),
     };

@@ -169,15 +169,30 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
     );
   });
 
-  it("atkārtota augšupielāde nedublē rindas un sakārto jaunāko augšā", () => {
+  it("aizpilda strukturēto servisa tabulu, nevis rezerves teksta lauku", () => {
     const actions = buildVendorCopilotActions(extract, "autodna");
     const first = applyCopilotActions(createDefaultSourceBlocks(), actions, { onlyAuto: false });
-    const notes = first.sourceBlocks.auto_records.serviceHistoryNotes;
-    expect(notes.split("\n")[0]).toContain("01.12.2023");
+    const rows = first.sourceBlocks.auto_records.serviceWorks;
+    expect(rows).toEqual([
+      {
+        date: "01.12.2023",
+        odometer: "47521",
+        works:
+          "Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa",
+      },
+      { date: "01.01.2022", odometer: "", works: "Pirms piegādes sagatavošana" },
+    ]);
+    expect(first.sourceBlocks.auto_records.serviceHistoryNotes).toBe("");
+  });
 
+  it("atkārtota augšupielāde nedublē rindas", () => {
+    const actions = buildVendorCopilotActions(extract, "autodna");
+    const first = applyCopilotActions(createDefaultSourceBlocks(), actions, { onlyAuto: false });
     const again = applyCopilotActions(first.sourceBlocks, actions, { onlyAuto: false });
-    expect(again.sourceBlocks.auto_records.serviceHistoryNotes).toBe(notes);
-    expect(again.skipped.map((s) => s.reason)).toContain("service_history_already_filled");
+    expect(again.sourceBlocks.auto_records.serviceWorks).toEqual(
+      first.sourceBlocks.auto_records.serviceWorks,
+    );
+    expect(again.skipped.map((s) => s.reason)).toContain("service_work_row_exists");
   });
 
   it("Gemini „tehniskā apskate” kategoriju atmet, apkopi pieņem", () => {

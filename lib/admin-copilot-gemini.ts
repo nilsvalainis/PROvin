@@ -41,12 +41,12 @@ Sources (must match exactly):
 Actions:
 1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country. ONLY real accidents / insurance claims / damage-loss events. Never invent incidents. Never map vehicle value/price records into incidents.
 2) upsert_mileage — NOBRAUKUMS: date, odometer (digits), country
-3) set_service_history — Oficiālā dīlera lauks „Servisa vēsture” (ALWAYS source=auto_records). Put maintenance/repair history here when present in ANY attached PDF (often AutoDNA „Transportlīdzekļu apkalpošana vai apskate”). Format ONLY facts, one entry per line, newest first:
-   DD.MM.YYYY | <odometer> km | <category>: <work items>
-   Example: 01.12.2023 | 47 521 km | Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa
-   Copy every printed work item in Latvian exactly — never summarise or drop one; a work list may continue on the next page.
-   NEVER put here: technical inspections („Veikta tehniskā apskate”, periodiska/papildus TA, emission checks), odometer-only records, registrations, damage records, or CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (recommended, not performed).
-   No commentary, no intro, no markdown — plain fact lines only. Prefer high confidence when the PDF clearly lists services.
+3) upsert_service_work — PREFERRED for maintenance/repair history: one action per service visit into the structured table „SERVISA UN REMONTU VĒSTURE” (ALWAYS source=auto_records). Fields: date (DD.MM.YYYY), odometer (digits only), works.
+   works = category + every printed work item in Latvian exactly as shown, e.g. „Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa”.
+   Never summarise, translate or drop a work item; a work list may continue on the NEXT PAGE — include those items in the same visit. Long lists are fine (the field is large).
+   NEVER emit here: technical inspections („Veikta tehniskā apskate”, periodiska/papildus TA, emission checks), odometer-only records, registrations, damage records, or CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (recommended, not performed).
+3b) set_service_history — the FALLBACK free-text field „Servisa vēsture” (ALWAYS source=auto_records). Use it ONLY when the service data has no per-visit date+works structure (e.g. a narrative dealer note). If you can produce upsert_service_work rows, do NOT also emit set_service_history for the same data.
+   Format: one plain fact line per entry, newest first — DD.MM.YYYY | <odometer> km | <category>: <work items>. No commentary, no markdown.
 4) set_dealer_vehicle_info — OFICIĀLĀ DĪLERA DATI transporta informācija (ALWAYS source=auto_records), field "vehicleInfo": { vinCode, engineCode, transmission, color, interior, model, generation, series, typeCode, steeringSide }.
    Fill it from CarVertical „Transportlīdzekļa specifikācija” + PR/equipment code list and AutoDNA „Transportlīdzekļa tehniskie dati”.
    Prefer the LONGEST / most specific designation WITH its factory code: „Havana Black Metallic (LY8X)” over „Melns”; „Valcona leather (N5D)” over „Leather package”; transmission with gear count + code. Omit fields the PDFs do not show.
@@ -55,7 +55,7 @@ Actions:
 When multiple PDFs are attached:
 - Classify each PDF by branding/layout and fill the matching source
 - Extract ALL readable mileage and incident rows (not just a sample)
-- Also extract full service history into one set_service_history action (merge all PDFs’ service lines chronologically if helpful)
+- Also extract the full service/repair history as upsert_service_work rows (one per visit, from all PDFs)
 - Prefer high confidence when the vendor is clear from the PDF itself
 - One short reply summarizing which sources you filled
 
@@ -75,7 +75,7 @@ Rules:
   «Vērtība», «Tirgus vērtība», «Aptuvenā vērtība», «Novērtētā cena», market/estimated/appraised vehicle value, Kaufpreis, Fahrzeugwert, listing/sale price, Cena (when it is a price record, not a claim).
   If the PDF shows a value/price EUR next to a date without damage/claim/accident context → do NOT create an incident; put that fact in append_raw if useful.
   Read the PDF row/section carefully: same-looking EUR next to «Vērtība» ≠ «Zaudējumu apjoms» / claim payout.
-- odometer: digits only (no "km") in upsert_mileage; in set_service_history include "km" after the number as shown in the format
+- odometer: digits only (no "km") in upsert_mileage and upsert_service_work; in set_service_history text include "km" after the number as shown in the format
 - country (mileage) / country (incident → stored as country name): Latvian names when known (Vācija, Latvija, …). CROSS-SOURCE COUNTRY RULES (mandatory):
   1) Read ALL attached PDFs + CURRENT TABLES (every source’s mileage/incidents, CSDD fields, comments, RAW/AI-context). Treat sources as one shared evidence pool — exchange country facts between them.
   2) If a row’s PDF does not name the country, but another already-filled source (or another PDF / CSDD / RAW / comment) clearly refers to the SAME event (same or equivalent date + same loss EUR, or same date + same odometer km, or unambiguous matching claim text), COPY that confirmed country into this action.
@@ -96,6 +96,7 @@ const ACTION_ITEM_SCHEMA: Schema = {
       enum: [
         "upsert_incident",
         "upsert_mileage",
+        "upsert_service_work",
         "set_service_history",
         "set_dealer_vehicle_info",
         "append_raw",
@@ -110,6 +111,7 @@ const ACTION_ITEM_SCHEMA: Schema = {
     lossAmount: { type: SchemaType.STRING },
     odometer: { type: SchemaType.STRING },
     country: { type: SchemaType.STRING },
+    works: { type: SchemaType.STRING },
     text: { type: SchemaType.STRING },
     vehicleInfo: {
       type: SchemaType.OBJECT,

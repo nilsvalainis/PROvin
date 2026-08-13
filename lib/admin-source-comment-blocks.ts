@@ -18,6 +18,7 @@ import {
   vendorAvotuBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
 import { appendGeminiContextRawSection } from "@/lib/admin-gemini-context-raw";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
@@ -192,9 +193,15 @@ export function buildPreviouslyGeneratedSourceCommentsContext(
     parts.push(`### ${SOURCE_BLOCK_LABELS[key]}\n${plain}`);
   }
 
-  const serviceNotes = adminRichHtmlToPlainText(blocks.auto_records.serviceHistoryNotes ?? "").trim();
-  if (serviceNotes && !(currentBlockKey === "auto_records")) {
-    parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa vēsture\n${serviceNotes}`);
+  if (currentBlockKey !== "auto_records") {
+    const serviceWorks = autoRecordsServiceWorkRowsToPlainText(blocks.auto_records.serviceWorks ?? []);
+    if (serviceWorks) {
+      parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa un remontu vēsture\n${serviceWorks}`);
+    }
+    const serviceNotes = adminRichHtmlToPlainText(blocks.auto_records.serviceHistoryNotes ?? "").trim();
+    if (serviceNotes) {
+      parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa vēsture\n${serviceNotes}`);
+    }
   }
 
   return parts.join("\n\n");

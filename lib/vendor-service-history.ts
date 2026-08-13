@@ -58,14 +58,19 @@ function normalizeWork(raw: string): string {
   return raw.replace(/\s+/g, " ").replace(/[;,.]+$/, "").trim();
 }
 
+/** Veiktie darbi vienā tekstā: „Regulārā apkope: eļļas maiņa, salona gaisa filtra maiņa”. */
+export function formatVendorServiceWorksText(entry: VendorServiceEntry): string {
+  const works = entry.works.map(normalizeWork).filter(Boolean);
+  const category = normalizeWork(entry.category);
+  const worksText = works.join(", ");
+  return category && worksText ? `${category}: ${worksText}` : worksText || category;
+}
+
 /** Viens ieraksts → viena rinda „Servisa vēsture” laukam. */
 export function formatVendorServiceEntryLine(entry: VendorServiceEntry): string {
   const date = entry.date.trim();
   if (!date) return "";
-  const works = entry.works.map(normalizeWork).filter(Boolean);
-  const category = normalizeWork(entry.category);
-  const worksText = works.join(", ");
-  const detail = category && worksText ? `${category}: ${worksText}` : worksText || category;
+  const detail = formatVendorServiceWorksText(entry);
   if (!detail) return "";
   const odometer = entry.odometer.replace(/\D/g, "");
   const parts = [date, odometer ? `${groupDigits(odometer)} km` : "", detail].filter(Boolean);

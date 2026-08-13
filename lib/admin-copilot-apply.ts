@@ -35,6 +35,11 @@ import {
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 import { mergeServiceHistoryFieldText } from "@/lib/vendor-service-history";
+import {
+  autoRecordsServiceWorkRowsToPlainText,
+  mergeAutoRecordsServiceWorkRow,
+  type AutoRecordsServiceWorkRow,
+} from "@/lib/auto-records-service-works";
 import type {
   CopilotAction,
   CopilotAppendRawAction,
@@ -297,6 +302,17 @@ function applyServiceHistoryNotes(
   };
 }
 
+function sameServiceWorkRows(
+  a: AutoRecordsServiceWorkRow[],
+  b: AutoRecordsServiceWorkRow[],
+): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((r, i) => {
+    const other = b[i]!;
+    return r.date === other.date && r.odometer === other.odometer && r.works === other.works;
+  });
+}
+
 /** Precīzāks apzīmējums = ar iekavās norādītu rūpnīcas kodu („Havana Black Metallic (LY8X)”). */
 function hasSpecCode(value: string): boolean {
   return /\([0-9A-Za-z][0-9A-Za-z /-]{1,20}\)/.test(value.trim());
@@ -488,6 +504,26 @@ export function applyCopilotActions(
       continue;
     }
 
+    if (action.type === "upsert_service_work") {
+      const rows = mergeAutoRecordsServiceWorkRow(next.auto_records.serviceWorks ?? [], {
+        date: action.date,
+        odometer: action.odometer,
+        works: action.works,
+      });
+      if (rows === (next.auto_records.serviceWorks ?? [])) {
+        skipped.push({ action, reason: "invalid_service_work_row" });
+        continue;
+      }
+      if (sameServiceWorkRows(rows, next.auto_records.serviceWorks ?? [])) {
+        skipped.push({ action, reason: "service_work_row_exists" });
+        continue;
+      }
+      next = { ...next, auto_records: { ...next.auto_records, serviceWorks: rows } };
+      applied.push(action);
+      changed.add("auto_records");
+      continue;
+    }
+
     if (action.type === "set_dealer_vehicle_info") {
       const updated = applyDealerVehicleInfo(next.auto_records, action);
       if (updated === next.auto_records) {
@@ -589,6 +625,11 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   pushClippedNote(lines, "ltab PDF RAW", b.ltab.pdfImportRaw ?? "");
 
   pushMile("auto_records", b.auto_records.serviceHistory);
+  const serviceWorksTxt = autoRecordsServiceWorkRowsToPlainText(b.auto_records.serviceWorks ?? []);
+  if (serviceWorksTxt) {
+    lines.push("auto_records servisa/remontu tabula (jau aizpildīta):");
+    lines.push(serviceWorksTxt.slice(0, 3000));
+  }
   if ((b.auto_records.serviceHistoryNotes ?? "").trim()) {
     lines.push("auto_records Servisa vēsture:");
     lines.push(b.auto_records.serviceHistoryNotes.trim().slice(0, 2000));

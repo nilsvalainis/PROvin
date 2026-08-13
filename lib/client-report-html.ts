@@ -34,6 +34,12 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import {
+  autoRecordsServiceWorkRowIsPrintable,
+  formatServiceWorkOdometer,
+  sortAutoRecordsServiceWorkRows,
+  type AutoRecordsServiceWorkRow,
+} from "@/lib/auto-records-service-works";
 import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
 import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import {
@@ -714,6 +720,27 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
 }
 
 const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
+const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
+
+/** OFICIĀLĀ DĪLERA DATI — apkopju tabula: datums, odometrs, veiktie darbi. */
+function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]): string {
+  const printable = sortAutoRecordsServiceWorkRows(
+    (rows ?? []).filter(autoRecordsServiceWorkRowIsPrintable),
+  );
+  if (printable.length === 0) return "";
+  const colgroup =
+    '<colgroup><col class="pdf-service-col-date" /><col class="pdf-service-col-odo" /><col class="pdf-service-col-works" /></colgroup>';
+  const head =
+    '<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-service-th-works" scope="col">Veiktie darbi</th></tr>';
+  const body = printable
+    .map((r) => {
+      const odo = formatServiceWorkOdometer(r.odometer);
+      const works = escapeHtml(r.works).replace(/\r?\n/g, "<br/>");
+      return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${odo ? escapeHtml(odo) : "—"}</td><td class="pdf-service-cell-works">${works}</td></tr>`;
+    })
+    .join("\n");
+  return `<section class="pdf-service-works-zone"><p class="pdf-field-label">${escapeHtml(PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL)}</p><div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--service" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div></section>`;
+}
 
 function buildSourcePhotoGroupsPdfHtml(
   photoGroups: { title: string; photos: { id: string }[] }[] | null | undefined,
@@ -767,6 +794,7 @@ function buildAutoRecordsAvotuSubsection(
     : "";
   const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport);
   const outvinInner = bundleInner.trim() || legacyInner.trim();
+  const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? []);
   const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
@@ -783,8 +811,9 @@ function buildAutoRecordsAvotuSubsection(
     "wide",
   );
   const hasPhotos = photosHtml.length > 0;
+  const hasServiceWorks = serviceWorksTable.length > 0;
 
-  if (!hasOutvin && !hasServiceHistory && !hasComments && !hasPhotos) return "";
+  if (!hasOutvin && !hasServiceWorks && !hasServiceHistory && !hasComments && !hasPhotos) return "";
 
   const head = pdfV1PanelHead(
     SOURCE_BLOCK_LABELS.auto_records.toLowerCase(),
@@ -792,6 +821,7 @@ function buildAutoRecordsAvotuSubsection(
   );
   const bodyParts: string[] = [];
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
+  if (hasServiceWorks) bodyParts.push(serviceWorksTable);
   if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
   if (hasPhotos) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
@@ -1299,6 +1329,23 @@ function clientReportPrintCss(): string {
       .pdf-mileage-history-table td.pdf-mileage-cell-flag{
         text-align:right!important;vertical-align:middle!important;
       }
+      .pdf-service-works-zone{margin:12px 0 0;}
+      .pdf-service-works-zone .pdf-field-label{margin:0 0 4px;}
+      .pdf-mileage-history-table--service col.pdf-service-col-date{width:17%!important;}
+      .pdf-mileage-history-table--service col.pdf-service-col-odo{width:20%!important;}
+      .pdf-mileage-history-table--service col.pdf-service-col-works{width:63%!important;}
+      .pdf-mileage-history-table--service thead th{vertical-align:middle!important;}
+      .pdf-mileage-history-table--service th.pdf-service-th-works{text-align:left!important;}
+      .pdf-mileage-history-table--service tbody td{vertical-align:top!important;}
+      .pdf-mileage-history-table--service td.pdf-mileage-cell-odo{
+        text-align:left!important;color:#1d1d1f!important;white-space:nowrap;
+      }
+      .pdf-mileage-history-table--service th.pdf-mileage-th-odo{text-align:left!important;}
+      .pdf-mileage-history-table--service td.pdf-service-cell-works{
+        text-align:left!important;white-space:normal!important;color:#0f172a!important;
+        line-height:1.5!important;overflow-wrap:break-word;word-break:break-word;
+      }
+      .pdf-mileage-history-table--service tbody tr{page-break-inside:avoid;break-inside:avoid;}
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
       .pdf-country-flag-wrap{
         display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;

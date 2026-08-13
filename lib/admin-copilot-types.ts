@@ -45,6 +45,17 @@ export type CopilotServiceHistoryAction = {
   note?: string;
 };
 
+/** OFICIĀLĀ DĪLERA DATI → „SERVISA UN REMONTU VĒSTURE” tabulas rinda. */
+export type CopilotServiceWorkAction = {
+  type: "upsert_service_work";
+  source: "auto_records";
+  date: string;
+  odometer: string;
+  works: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
 /**
  * OFICIĀLĀ DĪLERA DATI — transporta informācijas lauki (VIN, dzinēja kods, ātrumkārba,
  * krāsa, interjērs) no avotu atskaišu specifikācijas sadaļām.
@@ -70,6 +81,7 @@ export type CopilotAction =
   | CopilotIncidentAction
   | CopilotMileageAction
   | CopilotServiceHistoryAction
+  | CopilotServiceWorkAction
   | CopilotDealerVehicleInfoAction
   | CopilotAppendRawAction;
 

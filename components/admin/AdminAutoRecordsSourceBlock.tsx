@@ -10,7 +10,23 @@ import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
-import type { AutoRecordsBlockState, AutoRecordsServiceRow } from "@/lib/admin-source-blocks";
+import type {
+  AutoRecordsBlockState,
+  AutoRecordsServiceRow,
+  AutoRecordsServiceWorkRow,
+} from "@/lib/admin-source-blocks";
+import {
+  AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
+  autoRecordsServiceWorkRowHasData,
+  emptyAutoRecordsServiceWorkRow,
+  formatServiceWorkOdometer,
+  mergeAutoRecordsServiceWorkRow,
+  parseDealerNarrativeServiceWorks,
+  PROVIN_SERVICE_WORKS_TABLE_DOM_KIND,
+  PROVIN_SERVICE_WORKS_TABLE_FIELD,
+  PROVIN_SERVICE_WORKS_TABLE_TITLE,
+  sortAutoRecordsServiceWorkRows,
+} from "@/lib/auto-records-service-works";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
@@ -111,6 +127,13 @@ export function AdminAutoRecordsSourceBlock({
       if (parsed.length > 0) {
         next = { ...next, serviceHistory: parsed };
       }
+      // Nobraukuma tabula neglabā darbu aprakstu — tas iet servisa tabulā.
+      const works = parseDealerNarrativeServiceWorks(raw);
+      if (works.length > 0) {
+        let rows = next.serviceWorks ?? [];
+        for (const row of works) rows = mergeAutoRecordsServiceWorkRow(rows, row);
+        next = { ...next, serviceWorks: rows };
+      }
     }
     onChange(next);
   };
@@ -135,6 +158,32 @@ export function AdminAutoRecordsSourceBlock({
       ...value,
       serviceHistory: sortAutoRecordsDescending([...value.serviceHistory, emptyAutoRecordsServiceRow()]),
     });
+  };
+
+  const workRows =
+    (value.serviceWorks ?? []).length > 0
+      ? (value.serviceWorks ?? [])
+      : [emptyAutoRecordsServiceWorkRow()];
+
+  const setWorkRow = (index: number, patch: Partial<AutoRecordsServiceWorkRow>) => {
+    const rows = [...workRows];
+    rows[index] = { ...rows[index]!, ...patch };
+    onChange({ ...value, serviceWorks: rows });
+  };
+
+  /** Kārtošana tikai pēc ievades beigām, lai rinda nepazūd zem kursora rakstīšanas laikā. */
+  const sortWorkRows = () => {
+    const rows = sortAutoRecordsServiceWorkRows(workRows.filter(autoRecordsServiceWorkRowHasData));
+    onChange({ ...value, serviceWorks: rows.length > 0 ? rows : [emptyAutoRecordsServiceWorkRow()] });
+  };
+
+  const addWorkRow = () => {
+    onChange({ ...value, serviceWorks: [...workRows, emptyAutoRecordsServiceWorkRow()] });
+  };
+
+  const removeWorkRow = (index: number) => {
+    const rows = workRows.filter((_, i) => i !== index);
+    onChange({ ...value, serviceWorks: rows.length > 0 ? rows : [emptyAutoRecordsServiceWorkRow()] });
   };
 
   return (
@@ -298,6 +347,155 @@ export function AdminAutoRecordsSourceBlock({
               type="button"
               className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
               onClick={addRow}
+            >
+              + Rinda
+            </button>
+          ) : null}
+
+          <p className="mb-1.5 mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.serviceWorks} />
+            {PROVIN_SERVICE_WORKS_TABLE_TITLE}
+          </p>
+          <div
+            className="overflow-x-auto rounded-lg border border-slate-200/90"
+            data-provin-mileage-table={PROVIN_SERVICE_WORKS_TABLE_DOM_KIND}
+            data-provin-block="auto_records"
+          >
+            <table className="w-full min-w-[320px] border-collapse text-[11px]">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+                  <th
+                    className={`${mileCell} w-[86px]`}
+                    data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.datums}
+                  >
+                    Datums
+                  </th>
+                  <th
+                    className={`${mileCell} w-[86px]`}
+                    data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.odometrsKm}
+                  >
+                    Odometrs (km)
+                  </th>
+                  <th className={mileCell} data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}>
+                    Veiktie darbi
+                  </th>
+                  {!readOnly ? <th className={`${mileCell} w-[28px]`} aria-label="Noņemt" /> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {workRows.map((row, i) => (
+                  <tr key={i} className="border-b border-slate-100 last:border-b-0">
+                    <td className={`${mileCell} align-top`}>
+                      {readOnly ? (
+                        <span
+                          className="text-[var(--color-provin-muted)]"
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.datums}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                        >
+                          {formatAutoRecordsDateForOutput(row.date).trim() || "—"}
+                        </span>
+                      ) : (
+                        <input
+                          type="text"
+                          className={inp}
+                          value={row.date}
+                          disabled={disabled}
+                          id={`auto_records-${PROVIN_SERVICE_WORKS_TABLE_FIELD.datums}-${i}`}
+                          name={`${PROVIN_SERVICE_WORKS_TABLE_FIELD.datums}[${i}]`}
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.datums}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                          placeholder="01.12.2023"
+                          onChange={(e) => setWorkRow(i, { date: e.target.value })}
+                          onBlur={sortWorkRows}
+                          aria-label={`${DEALER_ARIA} servisa datums ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className={`${mileCell} align-top`}>
+                      {readOnly ? (
+                        <span
+                          className="text-[var(--color-provin-muted)]"
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.odometrsKm}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                        >
+                          {formatServiceWorkOdometer(row.odometer) || "—"}
+                        </span>
+                      ) : (
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className={inp}
+                          value={row.odometer}
+                          disabled={disabled}
+                          id={`auto_records-${PROVIN_SERVICE_WORKS_TABLE_FIELD.odometrsKm}-${i}`}
+                          name={`${PROVIN_SERVICE_WORKS_TABLE_FIELD.odometrsKm}[${i}]`}
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.odometrsKm}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                          onChange={(e) =>
+                            setWorkRow(i, { odometer: normalizeAutoRecordsOdometer(e.target.value) })
+                          }
+                          onBlur={sortWorkRows}
+                          aria-label={`${DEALER_ARIA} servisa odometrs ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className={`${mileCell} align-top`}>
+                      {readOnly ? (
+                        <span
+                          className="block whitespace-pre-wrap text-[var(--color-provin-muted)]"
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                        >
+                          {row.works.trim() || "—"}
+                        </span>
+                      ) : (
+                        <textarea
+                          className={`${inp} min-h-[52px] resize-y leading-snug`}
+                          rows={2}
+                          value={row.works}
+                          disabled={disabled}
+                          maxLength={AUTO_RECORDS_SERVICE_WORKS_MAX_LEN}
+                          id={`auto_records-${PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}-${i}`}
+                          name={`${PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}[${i}]`}
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                          placeholder="Regulārā apkope: eļļas maiņa, salona gaisa filtra maiņa…"
+                          onChange={(e) => setWorkRow(i, { works: e.target.value })}
+                          aria-label={`${DEALER_ARIA} veiktie darbi ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    {!readOnly ? (
+                      <td className={`${mileCell} align-top`}>
+                        {!disabled ? (
+                          <button
+                            type="button"
+                            disabled={disabled}
+                            className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
+                            onClick={() => removeWorkRow(i)}
+                            title="Noņemt rindu"
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!readOnly && !disabled ? (
+            <button
+              type="button"
+              className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+              onClick={addWorkRow}
             >
               + Rinda
             </button>
