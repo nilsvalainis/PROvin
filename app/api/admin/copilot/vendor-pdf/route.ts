@@ -12,6 +12,8 @@ import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import type { CopilotAction, CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { parseSourcePdfBlobRefs } from "@/lib/admin-source-pdf-blob-constants";
+import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
 import { runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
@@ -76,20 +78,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_target" }, { status: 400 });
   }
 
+  // Lieli PDF nāk caur Vercel Blob (`fileUrls`), jo funkcijas pieprasījuma ķermenis ir ~4,5 MB.
+  const blobRefs = parseSourcePdfBlobRefs(str(form.get("fileUrls")), 1);
   const file = form.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json({ error: "missing_file" }, { status: 400 });
-  }
-  const name = (file.name || "report.pdf").toLowerCase();
-  const mime = (file.type || "").toLowerCase();
-  if ((mime && !mime.includes("pdf")) || !name.endsWith(".pdf")) {
-    return NextResponse.json({ error: "invalid_file_type", detail: "Tikai PDF" }, { status: 400 });
-  }
-  if (file.size > PDF_MAX_FILE_BYTES) {
-    return NextResponse.json(
-      { error: "file_too_large", detail: `Maks. ${Math.round(PDF_MAX_FILE_BYTES / (1024 * 1024))} MB` },
-      { status: 413 },
-    );
+  if (blobRefs.length === 0) {
+    if (!(file instanceof File) || file.size === 0) {
+      return NextResponse.json({ error: "missing_file" }, { status: 400 });
+    }
+    const name = (file.name || "report.pdf").toLowerCase();
+    const mime = (file.type || "").toLowerCase();
+    if ((mime && !mime.includes("pdf")) || !name.endsWith(".pdf")) {
+      return NextResponse.json({ error: "invalid_file_type", detail: "Tikai PDF" }, { status: 400 });
+    }
+    if (file.size > PDF_MAX_FILE_BYTES) {
+      return NextResponse.json(
+        { error: "file_too_large", detail: `Maks. ${Math.round(PDF_MAX_FILE_BYTES / (1024 * 1024))} MB` },
+        { status: 413 },
+      );
+    }
   }
 
   let sourceBlocks: WorkspaceSourceBlocks;
@@ -111,8 +117,28 @@ export async function POST(req: Request) {
     if (!guard.ok) geminiBlocked = { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) };
   }
 
-  const buffer = await file.arrayBuffer();
+  let fileName: string;
+  let buffer: ArrayBuffer;
+  try {
+    if (blobRefs.length > 0) {
+      const [fetched] = await fetchSourcePdfsFromBlob(sessionId, blobRefs);
+      if (!fetched) return NextResponse.json({ error: "missing_file" }, { status: 400 });
+      fileName = fetched.fileName;
+      buffer = fetched.buffer;
+    } else {
+      const f = file as File;
+      fileName = f.name || "report.pdf";
+      buffer = await f.arrayBuffer();
+    }
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : "unknown";
+    console.error(`${LOG_PREFIX} blob_fetch_failed`, detail);
+    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
+    return NextResponse.json({ error: "blob_fetch_failed", detail }, { status: 502 });
+  }
+
   if (buffer.byteLength > PDF_GEMINI_INLINE_MAX_BYTES) {
+    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
     return NextResponse.json(
       { error: "file_too_large", detail: "Pārāk liels Gemini inline (maks. ~18 MB)" },
       { status: 413 },
@@ -122,7 +148,7 @@ export async function POST(req: Request) {
   try {
     const agent = await runVendorPdfAgent({
       target,
-      fileName: file.name || "report.pdf",
+      fileName,
       buffer,
       sourceBlocks,
       useGemini: !geminiBlocked,
@@ -174,5 +200,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
     }
     return NextResponse.json({ error: "extraction_failed", detail }, { status: 502 });
+  } finally {
+    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
   }
 }

@@ -17,6 +17,11 @@ import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-gemini-extract";
 import { detectVendorFromReport, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import {
+  parseSourcePdfBlobRefs,
+  type SourcePdfBlobRef,
+} from "@/lib/admin-source-pdf-blob-constants";
+import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
 import { vendorSourceKey } from "@/lib/vendor-report-extract";
 
 export const maxDuration = 120;
@@ -119,6 +124,8 @@ export async function POST(req: Request) {
   let sourceBlocks: WorkspaceSourceBlocks | null = null;
   let allowedSources: CopilotSourceKey[] = [...COPILOT_SOURCE_KEYS];
   const pdfs: { fileName: string; buffer: ArrayBuffer }[] = [];
+  /** Lieli PDF ceļo caur Vercel Blob — funkcijas pieprasījuma ķermenis ir ~4,5 MB. */
+  let blobRefs: SourcePdfBlobRef[] = [];
   let applyMode: "auto" | "preview" = "auto";
 
   try {
@@ -190,6 +197,7 @@ export async function POST(req: Request) {
         }
         pdfs.push({ fileName: file.name || "report.pdf", buffer });
       }
+      blobRefs = parseSourcePdfBlobRefs(str(form.get("fileUrls")), PDF_MAX_FILES);
     } else {
       let body: unknown;
       try {
@@ -216,6 +224,18 @@ export async function POST(req: Request) {
 
   if (!sessionId) {
     return NextResponse.json({ error: "missing_session" }, { status: 400 });
+  }
+  if (blobRefs.length > 0) {
+    try {
+      for (const fetched of await fetchSourcePdfsFromBlob(sessionId, blobRefs)) {
+        pdfs.push({ fileName: fetched.fileName, buffer: fetched.buffer });
+      }
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : "unknown";
+      console.error(`${LOG_PREFIX} blob_fetch_failed`, detail);
+      await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
+      return NextResponse.json({ error: "blob_fetch_failed", detail }, { status: 502 });
+    }
   }
   if (!message && pdfs.length === 0) {
     return NextResponse.json({ error: "empty_message", detail: "Ieraksti ziņu vai pievieno PDF" }, { status: 400 });
@@ -386,6 +406,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "extraction_failed", detail: "Gemini atgrieza nederīgu JSON" }, { status: 502 });
     }
     return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
+  } finally {
+    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
   }
 }
 

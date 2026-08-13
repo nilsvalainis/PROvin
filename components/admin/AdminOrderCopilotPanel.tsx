@@ -5,6 +5,11 @@ import { createPortal } from "react-dom";
 import { Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  SourcePdfBlobUploadError,
+  sourcePdfNeedsBlobUpload,
+  uploadSourcePdfToBlob,
+} from "@/lib/admin-source-pdf-blob-client";
 
 type UiMessage = {
   id: string;
@@ -413,7 +418,13 @@ export function AdminOrderCopilotPanel({
       fd.set("history", JSON.stringify(historyForApi()));
       fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
       fd.set("allowedSources", JSON.stringify(allowedSources));
-      for (const f of filesToSend) fd.append("files", f);
+      // Lielie PDF neiekļaujas Vercel funkcijas ķermenī — tos augšupielādē tieši krātuvē.
+      const blobRefs: { url: string; name: string }[] = [];
+      for (const f of filesToSend) {
+        if (sourcePdfNeedsBlobUpload(f)) blobRefs.push(await uploadSourcePdfToBlob(sessionId, f));
+        else fd.append("files", f);
+      }
+      if (blobRefs.length > 0) fd.set("fileUrls", JSON.stringify(blobRefs));
 
       const res = await fetch("/api/admin/copilot", {
         method: "POST",
@@ -433,6 +444,10 @@ export function AdminOrderCopilotPanel({
         else if (data.error === "gemini_demo_only") reason = "Gemini tikai DEMO pasūtījumiem";
         else if (data.error === "file_too_large" || data.error === "too_many_files") {
           reason = detail || "PDF limits pārsniegts";
+        } else if (data.error === "blob_fetch_failed") {
+          reason = `Neizdevās nolasīt PDF no krātuves${detail ? ` (${detail})` : ""}`;
+        } else if (res.status === 413) {
+          reason = "Pieprasījums pārāk liels — pārlādē lapu un pievieno PDF vēlreiz";
         } else reason = detail || data.error || `Copilot kļūda (HTTP ${res.status})`;
         setError(reason);
         setMessages((prev) => [
@@ -469,7 +484,17 @@ export function AdminOrderCopilotPanel({
       ]);
       setUnreadDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "network_error");
+      const reason =
+        e instanceof SourcePdfBlobUploadError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "network_error";
+      setError(reason);
+      setMessages((prev) => [
+        ...prev,
+        { id: newId(), role: "assistant", content: `Neizdevās apstrādāt: ${reason}` },
+      ]);
       setUnreadDone(true);
     } finally {
       setBusy(false);

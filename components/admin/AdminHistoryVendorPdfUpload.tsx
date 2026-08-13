@@ -11,6 +11,11 @@ import { useCallback, useId, useRef, useState } from "react";
 
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  SourcePdfBlobUploadError,
+  sourcePdfNeedsBlobUpload,
+  uploadSourcePdfToBlob,
+} from "@/lib/admin-source-pdf-blob-client";
 
 export type VendorPdfUploadTarget = "autodna" | "carvertical" | "auto_records";
 
@@ -68,8 +73,10 @@ const ERROR_LABELS: Record<string, string> = {
   missing_file: "Fails netika nosūtīts",
   invalid_file_type: "Tikai PDF",
   file_too_large: "PDF fails pārāk liels",
-  payload_too_large: "Pieprasījums pārāk liels",
+  payload_too_large: "Pieprasījums pārāk liels — pārlādē lapu un mēģini vēlreiz",
   extraction_failed: "Neizdevās nolasīt PDF",
+  blob_fetch_failed: "Neizdevās nolasīt PDF no krātuves",
+  blob_token_missing: "Serverī nav BLOB_READ_WRITE_TOKEN — lielus PDF nevar apstrādāt",
 };
 
 /** Kļūda vienmēr ir atpazīstama: apraksts + servera kods, lai nav „kaut kas nogāja greizi”. */
@@ -110,10 +117,17 @@ export function AdminHistoryVendorPdfUpload({
       setNotice(null);
       try {
         const fd = new FormData();
-        fd.set("file", file);
         fd.set("target", target);
         fd.set("sessionId", sessionId);
         fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
+        if (sourcePdfNeedsBlobUpload(file)) {
+          setNotice(`„${file.name}” (${Math.round(file.size / (1024 * 1024))} MB) — augšupielāde krātuvē…`);
+          const ref = await uploadSourcePdfToBlob(sessionId, file);
+          fd.set("fileUrls", JSON.stringify([ref]));
+          setNotice(null);
+        } else {
+          fd.set("file", file);
+        }
 
         const res = await fetch("/api/admin/copilot/vendor-pdf", {
           method: "POST",
@@ -147,8 +161,13 @@ export function AdminHistoryVendorPdfUpload({
           ...(data.notes ?? []).slice(0, 4),
         ];
         setNotice(lines.filter(Boolean).join(" "));
-      } catch {
-        setError("Neizdevās savienoties ar serveri");
+      } catch (e) {
+        setNotice(null);
+        setError(
+          e instanceof SourcePdfBlobUploadError
+            ? e.message
+            : "Neizdevās savienoties ar serveri",
+        );
       } finally {
         setBusy(false);
         onParseActiveChange?.(false);
