@@ -81,6 +81,7 @@ import {
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { attachPdfTextsToVendorBlocks } from "@/lib/vendor-damage-hydrate";
+import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
