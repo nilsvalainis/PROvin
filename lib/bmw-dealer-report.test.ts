@@ -169,6 +169,10 @@ describe("BMW dealer PDF", () => {
     const visit = extract.serviceHistory.find((e) => e.date === "23.10.2014");
     expect(visit?.odometer).toBe("120475");
     expect(visit?.country).toBe("Vācija");
+    // Servisa punkts ir atsevišķi, nevis darbu tekstā
+    expect(visit?.location).toBe("B&K Deutschland GmbH, Osnabrück");
+    expect(visit?.category).toBe("");
+    expect(visit?.works.join(" | ")).not.toContain("B&K");
     expect(visit?.works).toEqual([
       "Priekšējo riteņu balansēšana",
       "Castrol Magnatec Prof. MP 5W-30 LL04",
@@ -201,7 +205,10 @@ describe("BMW dealer PDF", () => {
     expect(report.equipment.length).toBe(3);
 
     const works = sourceBlocks.auto_records.serviceWorks;
-    expect(works.some((r) => r.date === "23.10.2014" && r.odometer === "120475")).toBe(true);
+    const visitRow = works.find((r) => r.date === "23.10.2014" && r.odometer === "120475");
+    expect(visitRow?.location).toBe("B&K Deutschland GmbH, Osnabrück");
+    expect(visitRow?.works).toContain("Eļļas filtra komplekts");
+    expect(visitRow?.works).not.toContain("Osnabrück");
     expect(sourceBlocks.auto_records.serviceHistoryNotes).toContain("Oficiālā dīlera dati");
   });
 

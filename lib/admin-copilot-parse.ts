@@ -8,7 +8,10 @@ import type {
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
 import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
-import { AUTO_RECORDS_SERVICE_WORKS_MAX_LEN } from "@/lib/auto-records-service-works";
+import {
+  AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
+  AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
+} from "@/lib/auto-records-service-works";
 import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
 function asRecord(v: unknown): Record<string, unknown> | null {
@@ -89,6 +92,7 @@ function parseAction(raw: unknown): CopilotAction | null {
       source: "auto_records",
       date,
       odometer: asString(o.odometer, 32),
+      location: asString(o.location, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
       works,
       confidence,
       ...(note ? { note } : {}),

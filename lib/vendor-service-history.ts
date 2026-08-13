@@ -13,12 +13,14 @@ export type VendorServiceEntry = {
   country: string;
   /** Darbu kategorija atskaitē („Regulārā apkope”, „Remonts”); tukšs, ja nav. */
   category: string;
+  /** Servisa punkts („Niederlassung Bonn BMW AG, Bonn”) — atsevišķa kolonna, ne darbu tekstā. */
+  location: string;
   /** Veiktie darbi („Eļļas maiņa”, „Salona gaisa filtra maiņa”). */
   works: string[];
 };
 
 export function emptyVendorServiceEntry(): VendorServiceEntry {
-  return { date: "", odometer: "", country: "", category: "", works: [] };
+  return { date: "", odometer: "", country: "", category: "", location: "", works: [] };
 }
 
 /** Tehniskās apskates un citi ne-servisa notikumi, kas nedrīkst iekļūt servisa vēsturē. */
@@ -73,7 +75,13 @@ export function formatVendorServiceEntryLine(entry: VendorServiceEntry): string 
   const detail = formatVendorServiceWorksText(entry);
   if (!detail) return "";
   const odometer = entry.odometer.replace(/\D/g, "");
-  const parts = [date, odometer ? `${groupDigits(odometer)} km` : "", detail].filter(Boolean);
+  const location = normalizeWork(entry.location);
+  const parts = [
+    date,
+    odometer ? `${groupDigits(odometer)} km` : "",
+    detail,
+    location ? `Vieta: ${location}` : "",
+  ].filter(Boolean);
   return parts.join(" | ");
 }
 
@@ -118,6 +126,7 @@ export function mergeVendorServiceEntries(
       odometer: prev.odometer || entry.odometer,
       country: prev.country || entry.country,
       category: prev.category || entry.category,
+      location: prev.location || entry.location,
       works: dedupeWorks([...prev.works, ...entry.works]),
     };
     byKey.set(key, merged);

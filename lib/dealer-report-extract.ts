@@ -22,6 +22,7 @@ import {
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { OUTVIN_NO_RECORDS_LV, type OutvinEquipmentLine } from "@/lib/outvin-dealer-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
+import { serviceWorkTermLv, serviceWorkTermsLv } from "@/lib/service-work-term-lv";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
 import { emptyVendorReportExtract, type VendorReportExtract } from "@/lib/vendor-report-extract";
 import type { VendorServiceEntry } from "@/lib/vendor-service-history";
@@ -32,43 +33,9 @@ export function looksLikeDealerReport(text: string): boolean {
   return /VEHICLE\s+INFORMATION/i.test(text) && /ODOMETER\s+CHECK/i.test(text);
 }
 
-/** Detaļu / darbu nosaukumi izdrukā → latviski (tikai nepārprotamie termini). */
-const PART_NAME_LV: { re: RegExp; lv: string }[] = [
-  { re: /^BREMSFL[ÜU]SSIGKEIT$/i, lv: "Bremžu šķidrums" },
-  { re: /^BREMSENREINIGER$/i, lv: "Bremžu tīrītājs" },
-  { re: /^SCHEIBENKLAR$/i, lv: "Stiklu mazgāšanas šķidrums" },
-  { re: /^Beide\s+Vorderr[äa]der\s+auswuchten$/i, lv: "Priekšējo riteņu balansēšana" },
-  { re: /^Beide\s+Hinterr[äa]der\s+auswuchten$/i, lv: "Aizmugurējo riteņu balansēšana" },
-  { re: /^GEWICHTE$/i, lv: "Balansēšanas atsvari" },
-  { re: /^ENTSORGUNG\s+REIFEN$/i, lv: "Riepu utilizācija" },
-  { re: /^Kleinteile$/i, lv: "Sīkdetaļas" },
-  { re: /^Kontaktschutzfett(\s+KF1)?$/i, lv: "Kontaktu aizsargsmērviela" },
-  { re: /^Set\s+oil-filter\s+element$/i, lv: "Eļļas filtra komplekts" },
-  { re: /^Air\s+filter\s+element$/i, lv: "Gaisa filtrs" },
-  { re: /^Fuel\s+filter(\s+cartridge)?$/i, lv: "Degvielas filtrs" },
-  { re: /^Microfilter\/activated\s+Carbon\s+container$/i, lv: "Salona filtrs (ar aktivēto ogli)" },
-  { re: /^Set\s+of\s+wiper\s+blades$/i, lv: "Logu tīrītāju slotiņu komplekts" },
-  { re: /^Wiper\s+blade$/i, lv: "Logu tīrītāja slotiņa" },
-  { re: /^Repair\s+kit,\s+brake\s+pads.*$/i, lv: "Bremžu kluču komplekts" },
-  { re: /^Brake\s+pad\s+wear\s+sensor.*$/i, lv: "Bremžu kluču nodiluma sensors" },
-  { re: /^Brake\s+disc,\s+ventilated$/i, lv: "Bremžu disks (ventilēts)" },
-  { re: /^Rubber\s+valve$/i, lv: "Riepas ventilis" },
-  { re: /^(Longlife\s+)?bulb$/i, lv: "Spuldze" },
-  { re: /^Cooling\s+agent$/i, lv: "Kondicionētāja dzesētājviela" },
-  { re: /^Lubricant\s+refrigeration\s+compressor$/i, lv: "Kondicionētāja kompresora smērviela" },
-  { re: /^Gas\s+pressurized\s+spring$/i, lv: "Gāzes amortizators" },
-];
-
-const OIL_PREFIX_RE = /^(MOTOROEL|MOTOR[ÖO]L)\b/i;
-
-/** Zināms termins → latviski; pārējie nosaukumi paliek tādi, kā izdrukā. */
+/** Detaļu / darbu nosaukumi izdrukā → latviski pēc nozīmes (`lib/service-work-term-lv.ts`). */
 export function dealerPartNameLv(raw: string): string {
-  const name = raw.replace(/\s+/g, " ").trim();
-  if (!name) return "";
-  const hit = PART_NAME_LV.find(({ re }) => re.test(name));
-  if (hit) return hit.lv;
-  if (OIL_PREFIX_RE.test(name)) return `Motoreļļa ${name.replace(OIL_PREFIX_RE, "").trim()}`.trim();
-  return name;
+  return serviceWorkTermLv(raw);
 }
 
 const COUNTRY_IN_DEALER_NAME: { re: RegExp; country: string }[] = [
@@ -103,12 +70,14 @@ function kmLabel(odometer: string): string {
 }
 
 function visitToServiceEntry(visit: BmwDealerVisit): VendorServiceEntry {
-  const works = visit.parts.map(dealerPartNameLv).filter(Boolean);
+  const works = serviceWorkTermsLv(visit.parts);
   return {
     date: visit.date,
     odometer: visit.odometer,
     country: countryFromDealerName(visit.dealer),
-    category: visit.dealer,
+    category: "",
+    // Servisa punkts ir atsevišķa kolonna — tas nedrīkst salipt ar veiktajiem darbiem.
+    location: visit.dealer,
     works: works.length > 0 ? works : ["detalizēts darbu saraksts atskaitē nav pieejams"],
   };
 }

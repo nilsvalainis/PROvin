@@ -140,6 +140,7 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
         odometer: "47521",
         country: "Latvija",
         category: "Regulārā apkope",
+        location: "",
         works: [
           "Salona gaisa filtra maiņa",
           "Dzinēja gaisa filtra maiņa",
@@ -151,6 +152,7 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
         odometer: "",
         country: "Latvija",
         category: "",
+        location: "",
         works: ["Pirms piegādes sagatavošana"],
       },
     ]);
@@ -177,10 +179,11 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
       {
         date: "01.12.2023",
         odometer: "47521",
+        location: "",
         works:
           "Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa",
       },
-      { date: "01.01.2022", odometer: "", works: "Pirms piegādes sagatavošana" },
+      { date: "01.01.2022", odometer: "", location: "", works: "Pirms piegādes sagatavošana" },
     ]);
     expect(first.sourceBlocks.auto_records.serviceHistoryNotes).toBe("");
   });
@@ -204,7 +207,13 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
         countryTimeline: [],
         serviceHistory: [
           { date: "10.01.2026", category: "Veikta tehniskā apskate", works: ["Rezultāts Izgāja"] },
-          { date: "05.2025", odometer: "75 634 km", category: "Regulārā apkope", works: ["Eļļas maiņa"] },
+          {
+            date: "05.2025",
+            odometer: "75 634 km",
+            category: "Regulārā apkope",
+            location: "Rīga",
+            works: ["Eļļas maiņa"],
+          },
         ],
       }),
       "autodna",
@@ -215,7 +224,38 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
         odometer: "75634",
         country: "",
         category: "Regulārā apkope",
+        location: "Rīga",
         works: ["Eļļas maiņa"],
+      },
+    ]);
+  });
+
+  it("dīlera atbildē servisa punkts nonāk vietas laukā, ne darbos", () => {
+    const payload = parseVendorPdfAgentPayload(
+      JSON.stringify({
+        vendor: "dealer",
+        mileage: [],
+        incidents: [],
+        countryTimeline: [],
+        serviceHistory: [
+          {
+            date: "23.10.2014",
+            odometer: "120 475 km",
+            location: "Niederlassung Bonn BMW AG, Bonn",
+            works: ["Set oil-filter element", "Vehicle check"],
+          },
+        ],
+      }),
+      "dealer",
+    );
+    expect(payload.serviceHistory).toEqual([
+      {
+        date: "23.10.2014",
+        odometer: "120475",
+        country: "",
+        category: "",
+        location: "Niederlassung Bonn BMW AG, Bonn",
+        works: ["Eļļas filtra komplekts", "Tehniskā pārbaude servisā"],
       },
     ]);
   });

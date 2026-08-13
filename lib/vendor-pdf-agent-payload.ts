@@ -17,6 +17,7 @@ import {
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
 import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import { serviceWorkTermsLv } from "@/lib/service-work-term-lv";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
 import {
   emptyVendorReportExtract,
@@ -64,7 +65,9 @@ ABSOLUTE RULES
 
 6) SERVICE / REPAIR HISTORY (serviceHistory) — maintenance and repairs WITH the work items
 - AutoDNA: „Transportlīdzekļu apkalpošana vai apskate” events → the work list printed inside the event („Regulārā apkope” + „Eļļas maiņa”, „Salona gaisa filtra maiņa”, „Bremžu šķidruma maiņa”, „Degvielas filtra maiņa”, „Pirms piegādes sagatavošana”, repairs). Also „Veikta apkope” / service or repair events in other reports.
-- One object per event: {date, odometer, category ("Regulārā apkope" / "Remonts" / ""), works: ["Eļļas maiņa", …], country}. Copy work names EXACTLY as printed in Latvian — never summarise, translate, merge or drop a work item, and never invent one.
+- One object per event: {date, odometer, category ("Regulārā apkope" / "Remonts" / ""), location, works: ["Eļļas maiņa", …], country}. Never summarise, merge or drop a work item, and never invent one.
+- location = the workshop / dealer / place where the work was done, exactly as printed („Niederlassung Bonn BMW AG, Bonn”, „B&K Deutschland GmbH, Osnabrück”, AutoDNA „Atrašanās vieta Rīga” → „Rīga”). It is a SEPARATE field — the place must NEVER appear inside works or category. Leave "" when the report does not name a place.
+- works language: Latvian. If the report prints work items in Latvian, copy them exactly. If they are in English or German (BMW / dealer printouts), translate them to Latvian by MEANING, not word by word — „Set oil-filter element” → „Eļļas filtra komplekts”, „Repair kit, brake pads front” → „Bremžu kluču komplekts (priekšā)”, „Vehicle check” → „Tehniskā pārbaude servisā”, „Bremsflüssigkeit” → „Bremžu šķidrums”. Keep brand names, oil specifications and part designations as printed („Castrol Magnatec Prof. MP 5W-30 LL04”); never guess a work item that is not printed.
 - A work list can continue on the NEXT PAGE (after the page header/footer) — keep reading and include those items in the same event.
 - NEVER include here: „Veikta tehniskā apskate” / „Veikta periodiska tehniskā apskate” / „Veikta papildus tehniskā apskate” / emission checks (those are inspections, not work), „Ziņots par odometra rādījumu”, registration/export/insurance events, damage records, and CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (that is a RECOMMENDATION, not performed work).
 - If an event has no printed work items and no category, skip it.
@@ -79,7 +82,7 @@ ABSOLUTE RULES
 
 8) OFFICIAL DEALER / FACTORY PRINTOUTS (vendor "dealer")
 - Field list layout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY, UPHOLSTERY CODE) → vehicleInfo, one value per label, copied exactly.
-- „Key Read History” and auto-records.com „ODOMETER CHECK” rows → mileage. „Repair History” / „Service History” visits (date + odometer + dealer + parts) → serviceHistory: category = the dealer/workshop name as printed, works = the part / work names without part numbers and quantities.
+- „Key Read History” and auto-records.com „ODOMETER CHECK” rows → mileage. „Repair History” / „Service History” visits (date + odometer + dealer + parts) → serviceHistory: location = the dealer/workshop name as printed, works = the part / work names in Latvian without part numbers and quantities, category = "".
 - Odometer values are often „188,858 mi / 303,938 km” — ALWAYS return kilometres (convert miles × 1.609344 and round when only miles are printed).
 - A dealer/workshop name that names its country („B&K Deutschland GmbH, Osnabrück”) is a countryTimeline entry for that visit date.
 
@@ -137,6 +140,7 @@ export const VENDOR_PDF_AGENT_SCHEMA: Schema = {
           date: { type: SchemaType.STRING },
           odometer: { type: SchemaType.STRING },
           category: { type: SchemaType.STRING },
+          location: { type: SchemaType.STRING },
           works: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
           country: { type: SchemaType.STRING },
         },
@@ -252,16 +256,22 @@ export function parseVendorPdfAgentPayload(
     ) {
       continue;
     }
-    const works = (Array.isArray(o.works) ? o.works : [])
-      .map((w) => asString(w, 160))
-      .filter((w) => w && !/^[-—–]$/.test(w));
-    const category = dealerReport || isVendorServiceCategoryLine(rawCategory) ? rawCategory : "";
+    const works = serviceWorkTermsLv(
+      (Array.isArray(o.works) ? o.works : [])
+        .map((w) => asString(w, 160))
+        .filter((w) => w && !/^[-—–]$/.test(w)),
+    );
+    // Vecākas atbildes dīlera punktu lika `category` laukā — vieta ir atsevišķa kolonna.
+    const rawLocation = asString(o.location, 200);
+    const location = rawLocation || (dealerReport ? rawCategory : "");
+    const category = !dealerReport && isVendorServiceCategoryLine(rawCategory) ? rawCategory : "";
     if (works.length === 0 && !category) continue;
     serviceHistory.push({
       date,
       odometer: normalizeAutoRecordsOdometer(asString(o.odometer, 32)),
       country: normalizeCountry(asString(o.country, 80)),
       category,
+      location,
       works,
     });
   }

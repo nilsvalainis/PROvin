@@ -137,6 +137,15 @@ function eventTitle(lines: string[]): string {
 const EVENT_META_RE =
   /^(Odometra\s+r[āa]d[īi]jums|[\d\s]+km$|Valsts\b|Rezult[āa]ts\b|Atra[šs]an[āa]s\s+vieta\b|Summa\b|Cena\b|Deta[ļl]u\s+grupa|Boj[āa]jumu\s+zona|Tehnisk[āa]\s+apskate\s+der[īi]ga|Iepriek[šs][ēe]j[āa]s\s+re[ģg]istr[āa]cijas\s+valsts|Autost[āa]vvieta|Virsb[ūu]ves\s+kr[āa]sa|D[īi]lera\s+piesl[ēe]gums|D[īi]lera\s+pied[āa]v[āa]jums|-\s)/i;
 
+/** Servisa punkts / pilsēta notikumā („Atrašanās vieta Rīga”) — atsevišķa kolonna tabulā. */
+function eventLocation(lines: string[]): string {
+  for (const line of lines) {
+    const m = line.match(/^Atra[šs]an[āa]s\s+vieta\s+(.+)$/i);
+    if (m) return m[1]!.replace(/\s+/g, " ").trim();
+  }
+  return "";
+}
+
 /** Veiktie darbi servisa notikumā (bez metadatiem un virsraksta). */
 function eventServiceWorks(lines: string[], title: string): { category: string; works: string[] } {
   let category = "";
@@ -218,7 +227,14 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
     if (isVendorServiceEventTitle(title)) {
       const { category, works } = eventServiceWorks(event.lines, title);
       if (category || works.length > 0) {
-        serviceHistory.push({ date: event.date, odometer, country, category, works });
+        serviceHistory.push({
+          date: event.date,
+          odometer,
+          country,
+          category,
+          location: eventLocation(event.lines),
+          works,
+        });
       }
     }
 

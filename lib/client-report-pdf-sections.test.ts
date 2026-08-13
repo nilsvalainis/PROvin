@@ -157,10 +157,16 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,
       serviceWorks: [
-        { date: "01.06.2023", odometer: "26276", works: "Regulārā apkope: Eļļas maiņa" },
+        {
+          date: "01.06.2023",
+          odometer: "26276",
+          location: "",
+          works: "Regulārā apkope: Eļļas maiņa",
+        },
         {
           date: "01.12.2023",
           odometer: "47521",
+          location: "Niederlassung Bonn BMW AG, Bonn",
           works: "Regulārā apkope: Salona gaisa filtra maiņa, Eļļas maiņa",
         },
       ],
@@ -181,6 +187,9 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("Veiktie darbi");
     expect(doc).toContain("47 521 km");
     expect(doc).toContain("Salona gaisa filtra maiņa");
+    // Servisa punkts ir atsevišķā kolonnā, ne darbu šūnā
+    expect(doc).toContain("pdf-service-cell-place");
+    expect(doc).toContain("Niederlassung Bonn BMW AG, Bonn");
     // Jaunākais augšā
     expect(doc.indexOf("01.12.2023")).toBeLessThan(doc.indexOf("01.06.2023"));
   });

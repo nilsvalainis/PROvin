@@ -37,6 +37,7 @@ import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import {
   autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
+  SERVICE_WORKS_LOCATION_LABEL,
   sortAutoRecordsServiceWorkRows,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
@@ -729,14 +730,15 @@ function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]
   );
   if (printable.length === 0) return "";
   const colgroup =
-    '<colgroup><col class="pdf-service-col-date" /><col class="pdf-service-col-odo" /><col class="pdf-service-col-works" /></colgroup>';
+    '<colgroup><col class="pdf-service-col-date" /><col class="pdf-service-col-odo" /><col class="pdf-service-col-place" /><col class="pdf-service-col-works" /></colgroup>';
   const head =
-    '<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-service-th-works" scope="col">Veiktie darbi</th></tr>';
+    `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-service-th-place" scope="col">${escapeHtml(SERVICE_WORKS_LOCATION_LABEL)}</th><th class="pdf-service-th-works" scope="col">Veiktie darbi</th></tr>`;
   const body = printable
     .map((r) => {
       const odo = formatServiceWorkOdometer(r.odometer);
+      const place = r.location.trim() ? escapeHtml(r.location.trim()) : "—";
       const works = escapeHtml(r.works).replace(/\r?\n/g, "<br/>");
-      return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${odo ? escapeHtml(odo) : "—"}</td><td class="pdf-service-cell-works">${works}</td></tr>`;
+      return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${odo ? escapeHtml(odo) : "—"}</td><td class="pdf-service-cell-place">${place}</td><td class="pdf-service-cell-works">${works}</td></tr>`;
     })
     .join("\n");
   return `<section class="pdf-service-works-zone"><p class="pdf-field-label">${escapeHtml(PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL)}</p><div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--service" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div></section>`;
@@ -1331,11 +1333,16 @@ function clientReportPrintCss(): string {
       }
       .pdf-service-works-zone{margin:12px 0 0;}
       .pdf-service-works-zone .pdf-field-label{margin:0 0 4px;}
-      .pdf-mileage-history-table--service col.pdf-service-col-date{width:17%!important;}
-      .pdf-mileage-history-table--service col.pdf-service-col-odo{width:20%!important;}
-      .pdf-mileage-history-table--service col.pdf-service-col-works{width:63%!important;}
+      .pdf-mileage-history-table--service col.pdf-service-col-date{width:14%!important;}
+      .pdf-mileage-history-table--service col.pdf-service-col-odo{width:16%!important;}
+      .pdf-mileage-history-table--service col.pdf-service-col-place{width:24%!important;}
+      .pdf-mileage-history-table--service col.pdf-service-col-works{width:46%!important;}
       .pdf-mileage-history-table--service thead th{vertical-align:middle!important;}
+      .pdf-mileage-history-table--service th.pdf-service-th-place,
       .pdf-mileage-history-table--service th.pdf-service-th-works{text-align:left!important;}
+      .pdf-mileage-history-table--service td.pdf-service-cell-place{
+        text-align:left!important;color:#1d1d1f!important;
+      }
       .pdf-mileage-history-table--service tbody td{vertical-align:top!important;}
       .pdf-mileage-history-table--service td.pdf-mileage-cell-odo{
         text-align:left!important;color:#1d1d1f!important;white-space:nowrap;

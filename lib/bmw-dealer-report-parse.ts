@@ -12,6 +12,7 @@
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import type { OutvinEquipmentLine, OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
+import { serviceWorkTermLv } from "@/lib/service-work-term-lv";
 
 export type BmwDealerVisit = {
   /** DD.MM.YYYY */
@@ -187,25 +188,9 @@ function parseEquipment(lines: string[]): OutvinEquipmentLine[] {
   return out;
 }
 
-/** Atskaites komponentu nosaukumi → latviski (tikai nepārprotamie termini). */
-const COMPONENT_LV: { re: RegExp; lv: string }[] = [
-  { re: /^engine\s+oil$/i, lv: "Motoreļļa" },
-  { re: /^brake\s+fluid$/i, lv: "Bremžu šķidrums" },
-  { re: /^air\s+filter\s+element$/i, lv: "Gaisa filtrs" },
-  { re: /^fuel\s+filter$/i, lv: "Degvielas filtrs" },
-  { re: /^microfilter$/i, lv: "Salona filtrs" },
-  { re: /^front\s+brake$/i, lv: "Priekšējās bremzes" },
-  { re: /^rear\s+brake$/i, lv: "Aizmugurējās bremzes" },
-  { re: /^vehicle\s+check$/i, lv: "Tehniskā pārbaude servisā" },
-  { re: /^statutory\s+vehicle\s+inspection$/i, lv: "Obligātā tehniskā apskate" },
-  { re: /^standard\s+scope$/i, lv: "Standarta apkopes apjoms" },
-];
-
 /** Nosaukums latviski, ja termins ir zināms; citādi oriģināls (nekas netiek izdomāts). */
 export function bmwComponentLabelLv(raw: string): string {
-  const name = normalizeSpace(raw);
-  const hit = COMPONENT_LV.find(({ re }) => re.test(name));
-  return hit ? hit.lv : name;
+  return serviceWorkTermLv(normalizeSpace(raw));
 }
 
 const KEY_READ_HEAD_RE = /^(\d{2}\/\d{2}\/\d{4})\s*(.*)$/;

@@ -16,12 +16,15 @@ export type AutoRecordsServiceWorkRow = {
   date: string;
   /** Odometrs cipariem; tukšs, ja ierakstā nav. */
   odometer: string;
+  /** Servisa punkts, kur darbi veikti, piem. „Niederlassung Bonn BMW AG, Bonn”. */
+  location: string;
   /** Veiktie darbi, piem. „Regulārā apkope: eļļas maiņa, salona gaisa filtrs”. */
   works: string;
 };
 
 /** Darbu saraksts var būt garš (dīlera apkopes pozīcijas) — atļaujam plašu tekstu. */
 export const AUTO_RECORDS_SERVICE_WORKS_MAX_LEN = 8_000;
+export const AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN = 200;
 export const AUTO_RECORDS_SERVICE_WORKS_MAX_ROWS = 300;
 
 export const PROVIN_SERVICE_WORKS_TABLE_TITLE = "SERVISA UN REMONTU VĒSTURE";
@@ -29,15 +32,19 @@ export const PROVIN_SERVICE_WORKS_TABLE_DOM_KIND = "servisa_vesture";
 export const PROVIN_SERVICE_WORKS_TABLE_FIELD = {
   datums: "servisa_vesture_datums",
   odometrsKm: "servisa_vesture_odometrs",
+  vieta: "servisa_vesture_vieta",
   darbi: "servisa_vesture_darbi",
 } as const;
 
+/** Vietas kolonnas etiķete tabulās, plain-text izvadā un klienta PDF. */
+export const SERVICE_WORKS_LOCATION_LABEL = "Vieta";
+
 export function emptyAutoRecordsServiceWorkRow(): AutoRecordsServiceWorkRow {
-  return { date: "", odometer: "", works: "" };
+  return { date: "", odometer: "", location: "", works: "" };
 }
 
 export function autoRecordsServiceWorkRowHasData(r: AutoRecordsServiceWorkRow): boolean {
-  return Boolean(r.date.trim() || r.odometer.trim() || r.works.trim());
+  return Boolean(r.date.trim() || r.odometer.trim() || r.location.trim() || r.works.trim());
 }
 
 /** PDF / klienta atskaitei — rinda skaitās tikai ar aprakstītiem darbiem. */
@@ -51,6 +58,10 @@ export function normalizeAutoRecordsServiceWorkRow(
   return {
     date: formatAutoRecordsDateForOutput(r.date) || r.date.trim().slice(0, 40),
     odometer: normalizeAutoRecordsOdometer(r.odometer).slice(0, 40),
+    location: r.location
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
     works: r.works.replace(/[ \t]+/g, " ").trim().slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
   };
 }
@@ -89,6 +100,7 @@ export function normalizeAutoRecordsServiceWorkRows(raw: unknown): AutoRecordsSe
     const row = normalizeAutoRecordsServiceWorkRow({
       date: String(x.date ?? ""),
       odometer: String(x.odometer ?? ""),
+      location: String(x.location ?? ""),
       works: String(x.works ?? ""),
     });
     if (!autoRecordsServiceWorkRowHasData(row)) continue;
@@ -106,7 +118,7 @@ function dedupeRows(rows: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRo
   const seen = new Set<string>();
   const out: AutoRecordsServiceWorkRow[] = [];
   for (const r of rows) {
-    const key = `${rowKey(r)}|${r.works.trim().toLowerCase()}`;
+    const key = `${rowKey(r)}|${r.location.trim().toLowerCase()}|${r.works.trim().toLowerCase()}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(r);
@@ -128,7 +140,13 @@ export function mergeAutoRecordsServiceWorkRow(
   const withData = existing.filter(autoRecordsServiceWorkRowHasData);
   const key = rowKey(row);
   if (withData.some((r) => rowKey(r) === key)) {
-    return sortAutoRecordsServiceWorkRows(withData.length > 0 ? withData : [row]);
+    // Tukšu vietas kolonnu drīkst papildināt (rindas no vecākām apstrādēm bez šīs kolonnas).
+    const filled = withData.map((r) =>
+      rowKey(r) === key && !r.location.trim() && row.location.trim()
+        ? { ...r, location: row.location }
+        : r,
+    );
+    return sortAutoRecordsServiceWorkRows(filled.length > 0 ? filled : [row]);
   }
   if (withData.length >= AUTO_RECORDS_SERVICE_WORKS_MAX_ROWS) return existing;
   return sortAutoRecordsServiceWorkRows([...withData, row]);
@@ -136,9 +154,11 @@ export function mergeAutoRecordsServiceWorkRow(
 
 const SERVICE_TEXT_LINE_RE = /^(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s*\|(.*)$/;
 
+const LOCATION_PART_RE = new RegExp(`^(?:${SERVICE_WORKS_LOCATION_LABEL}|vieta)\\s*:\\s*(.+)$`, "i");
+
 /**
- * Teksta rindas („01.12.2023 | 47 521 km | Regulārā apkope: eļļas maiņa”) → tabulas rindas.
- * Ļauj pārnest esošo brīvā teksta lauku uz strukturēto tabulu.
+ * Teksta rindas („01.12.2023 | 47 521 km | Regulārā apkope: eļļas maiņa | Vieta: BMW Bonn”)
+ * → tabulas rindas. Ļauj pārnest esošo brīvā teksta lauku uz strukturēto tabulu.
  */
 export function parseAutoRecordsServiceWorkLines(text: string): AutoRecordsServiceWorkRow[] {
   const rows: AutoRecordsServiceWorkRow[] = [];
@@ -151,9 +171,17 @@ export function parseAutoRecordsServiceWorkLines(text: string): AutoRecordsServi
     const kmPart = parts[0] ?? "";
     const isKm = /^[\d\s]+(km)?$/i.test(kmPart) && /\d/.test(kmPart);
     const odometer = isKm ? normalizeAutoRecordsOdometer(kmPart) : "";
-    const works = (isKm ? parts.slice(1) : parts).join(" | ").trim();
+    const detailParts = isKm ? parts.slice(1) : parts;
+    let location = "";
+    const workParts: string[] = [];
+    for (const part of detailParts) {
+      const hit = part.match(LOCATION_PART_RE);
+      if (hit && !location) location = (hit[1] ?? "").trim();
+      else workParts.push(part);
+    }
+    const works = workParts.join(" | ").trim();
     if (!works) continue;
-    rows.push(normalizeAutoRecordsServiceWorkRow({ date: m[1]!, odometer, works }));
+    rows.push(normalizeAutoRecordsServiceWorkRow({ date: m[1]!, odometer, location, works }));
   }
   return sortAutoRecordsServiceWorkRows(dedupeRows(rows));
 }
@@ -182,6 +210,7 @@ export function parseDealerNarrativeServiceWorks(raw: string): AutoRecordsServic
       normalizeAutoRecordsServiceWorkRow({
         date: `01.${String(month).padStart(2, "0")}.${year}`,
         odometer: m[3] ?? "",
+        location: "",
         works,
       }),
     );
@@ -202,6 +231,15 @@ export function formatServiceWorkOdometer(odometer: string): string {
 /** Teksta izvads (Gemini konteksts, plain-text eksports). */
 export function autoRecordsServiceWorkRowsToPlainText(rows: AutoRecordsServiceWorkRow[]): string {
   return sortAutoRecordsServiceWorkRows(rows.filter(autoRecordsServiceWorkRowIsPrintable))
-    .map((r) => [r.date, formatServiceWorkOdometer(r.odometer), r.works].filter(Boolean).join(" | "))
+    .map((r) =>
+      [
+        r.date,
+        formatServiceWorkOdometer(r.odometer),
+        r.works,
+        r.location.trim() ? `${SERVICE_WORKS_LOCATION_LABEL}: ${r.location.trim()}` : "",
+      ]
+        .filter(Boolean)
+        .join(" | "),
+    )
     .join("\n");
 }

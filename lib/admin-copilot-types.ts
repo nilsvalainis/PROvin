@@ -51,6 +51,8 @@ export type CopilotServiceWorkAction = {
   source: "auto_records";
   date: string;
   odometer: string;
+  /** Servisa punkts („Niederlassung Bonn BMW AG, Bonn”) — atsevišķa kolonna. */
+  location: string;
   works: string;
   confidence: CopilotConfidence;
   note?: string;

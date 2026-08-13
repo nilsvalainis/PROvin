@@ -147,6 +147,7 @@ export function buildVendorCopilotActions(
       source: "auto_records",
       date: entry.date,
       odometer: entry.odometer,
+      location: entry.location,
       works,
       confidence: "high",
       note: `Apkope no ${vendorLabel(extract.vendor)} atskaites`,

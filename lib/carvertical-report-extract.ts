@@ -89,6 +89,7 @@ function parseServiceTimelineEntries(
       odometer: "",
       country: header.country,
       category: "Apkope",
+      location: "",
       works: [],
     });
   }

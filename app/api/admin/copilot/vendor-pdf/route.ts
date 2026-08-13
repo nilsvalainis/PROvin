@@ -46,7 +46,8 @@ function describeAction(a: CopilotAction): string {
     return `servisa vēsture (${lines} apkopes)`;
   }
   if (a.type === "upsert_service_work") {
-    return `apkope ${a.date} · ${a.odometer || "—"} km · ${a.works.slice(0, 60)}`;
+    const place = a.location.trim() ? ` · ${a.location.slice(0, 40)}` : "";
+    return `apkope ${a.date} · ${a.odometer || "—"} km${place} · ${a.works.slice(0, 60)}`;
   }
   return a.type;
 }

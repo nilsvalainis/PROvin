@@ -19,6 +19,7 @@ import type {
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import {
+  AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
   autoRecordsServiceWorkRowHasData,
   emptyAutoRecordsServiceWorkRow,
@@ -28,6 +29,7 @@ import {
   PROVIN_SERVICE_WORKS_TABLE_DOM_KIND,
   PROVIN_SERVICE_WORKS_TABLE_FIELD,
   PROVIN_SERVICE_WORKS_TABLE_TITLE,
+  SERVICE_WORKS_LOCATION_LABEL,
   sortAutoRecordsServiceWorkRows,
 } from "@/lib/auto-records-service-works";
 import {
@@ -382,7 +384,7 @@ export function AdminAutoRecordsSourceBlock({
             data-provin-mileage-table={PROVIN_SERVICE_WORKS_TABLE_DOM_KIND}
             data-provin-block="auto_records"
           >
-            <table className="w-full min-w-[320px] border-collapse text-[11px]">
+            <table className="w-full min-w-[460px] border-collapse text-[11px]">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                   <th
@@ -396,6 +398,12 @@ export function AdminAutoRecordsSourceBlock({
                     data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.odometrsKm}
                   >
                     Odometrs (km)
+                  </th>
+                  <th
+                    className={`${mileCell} w-[150px]`}
+                    data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}
+                  >
+                    {SERVICE_WORKS_LOCATION_LABEL}
                   </th>
                   <th className={mileCell} data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}>
                     Veiktie darbi
@@ -461,6 +469,34 @@ export function AdminAutoRecordsSourceBlock({
                           }
                           onBlur={sortWorkRows}
                           aria-label={`${DEALER_ARIA} servisa odometrs ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className={`${mileCell} align-top`}>
+                      {readOnly ? (
+                        <span
+                          className="block text-[var(--color-provin-muted)]"
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                        >
+                          {row.location.trim() || "—"}
+                        </span>
+                      ) : (
+                        <textarea
+                          className={`${inp} min-h-[52px] resize-y leading-snug`}
+                          rows={2}
+                          value={row.location}
+                          disabled={disabled}
+                          maxLength={AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN}
+                          id={`auto_records-${PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}-${i}`}
+                          name={`${PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}[${i}]`}
+                          data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}
+                          data-provin-block="auto_records"
+                          data-row-index={i}
+                          placeholder="Niederlassung Bonn BMW AG, Bonn"
+                          onChange={(e) => setWorkRow(i, { location: e.target.value })}
+                          aria-label={`${DEALER_ARIA} servisa vieta ${i + 1}`}
                         />
                       )}
                     </td>

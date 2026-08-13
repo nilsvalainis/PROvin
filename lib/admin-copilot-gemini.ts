@@ -33,7 +33,7 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 - CarVertical → carvertical: odometer/mileage log + insurance claims/incidents (+ damage details map into incidents when amount+date exist). Service history in PDF → set_service_history (auto_records). Leftover significant facts → append_raw on carvertical.
 - LTAB / OCTA → ltab: insurance accident rows only (date + EUR + country). Leftover significant facts → append_raw on ltab.
 - Auto Records / ODOMETER CHECK → auto_records: mileage rows + set_service_history when service journal present
-- Official dealer / factory printout (BMW dealer portal export with MODEL SERIES … UPHOLSTERY CODE, „Specifications & Options”, „Key Read History”, „Repair History”; auto-records.com „VEHICLE INFORMATION”) → auto_records: set_dealer_vehicle_info (primary field source), Key Read History rows → upsert_mileage, Repair/Service History visits → upsert_service_work (works = dealer/workshop name + parts as printed, no part numbers), plus a factual set_service_history summary. Odometer values printed as „188,858 mi / 303,938 km” → ALWAYS store kilometres (convert miles × 1.609344 when km is missing).
+- Official dealer / factory printout (BMW dealer portal export with MODEL SERIES … UPHOLSTERY CODE, „Specifications & Options”, „Key Read History”, „Repair History”; auto-records.com „VEHICLE INFORMATION”) → auto_records: set_dealer_vehicle_info (primary field source), Key Read History rows → upsert_mileage, Repair/Service History visits → upsert_service_work (location = dealer/workshop name, works = the parts in Latvian without part numbers), plus a factual set_service_history summary. Odometer values printed as „188,858 mi / 303,938 km” → ALWAYS store kilometres (convert miles × 1.609344 when km is missing).
 - Other foreign reports → citi_avoti (first section): mileage + incidents when present; leftover facts → append_raw on citi_avoti
 
 Sources (must match exactly):
@@ -43,9 +43,11 @@ Sources (must match exactly):
 Actions:
 1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country. ONLY real accidents / insurance claims / damage-loss events. Never invent incidents. Never map vehicle value/price records into incidents.
 2) upsert_mileage — NOBRAUKUMS: date, odometer (digits), country
-3) upsert_service_work — PREFERRED for maintenance/repair history: one action per service visit into the structured table „SERVISA UN REMONTU VĒSTURE” (ALWAYS source=auto_records). Fields: date (DD.MM.YYYY), odometer (digits only), works.
-   works = category + every printed work item in Latvian exactly as shown, e.g. „Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa”.
-   Never summarise, translate or drop a work item; a work list may continue on the NEXT PAGE — include those items in the same visit. Long lists are fine (the field is large).
+3) upsert_service_work — PREFERRED for maintenance/repair history: one action per service visit into the structured table „SERVISA UN REMONTU VĒSTURE” (ALWAYS source=auto_records). Fields: date (DD.MM.YYYY), odometer (digits only), location, works.
+   works = category + every printed work item in Latvian, e.g. „Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa”.
+   location = the workshop / dealer / place of that visit, exactly as printed („Niederlassung Bonn BMW AG, Bonn”, „B&K Deutschland GmbH, Osnabrück”, AutoDNA „Atrašanās vieta Rīga” → „Rīga”). It is a SEPARATE column — the place must NEVER be written inside works. Leave "" when no place is printed.
+   Latvian works: copy Latvian reports as printed; translate English / German dealer wording by MEANING („Set oil-filter element” → „Eļļas filtra komplekts”, „Repair kit, brake pads front” → „Bremžu kluču komplekts (priekšā)”, „Vehicle check” → „Tehniskā pārbaude servisā”, „Bremsflüssigkeit” → „Bremžu šķidrums”). Keep brands and oil specifications as printed („Castrol Magnatec Prof. MP 5W-30 LL04”).
+   Never summarise or drop a work item; a work list may continue on the NEXT PAGE — include those items in the same visit. Long lists are fine (the field is large).
    NEVER emit here: technical inspections („Veikta tehniskā apskate”, periodiska/papildus TA, emission checks), odometer-only records, registrations, damage records, or CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (recommended, not performed).
 3b) set_service_history — the FALLBACK free-text field „Servisa vēsture” (ALWAYS source=auto_records). Use it ONLY when the service data has no per-visit date+works structure (e.g. a narrative dealer note). If you can produce upsert_service_work rows, do NOT also emit set_service_history for the same data.
    Format: one plain fact line per entry, newest first — DD.MM.YYYY | <odometer> km | <category>: <work items>. No commentary, no markdown.
@@ -114,6 +116,7 @@ const ACTION_ITEM_SCHEMA: Schema = {
     lossAmount: { type: SchemaType.STRING },
     odometer: { type: SchemaType.STRING },
     country: { type: SchemaType.STRING },
+    location: { type: SchemaType.STRING },
     works: { type: SchemaType.STRING },
     text: { type: SchemaType.STRING },
     vehicleInfo: {

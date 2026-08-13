@@ -305,7 +305,12 @@ function sameServiceWorkRows(
   if (a.length !== b.length) return false;
   return a.every((r, i) => {
     const other = b[i]!;
-    return r.date === other.date && r.odometer === other.odometer && r.works === other.works;
+    return (
+      r.date === other.date &&
+      r.odometer === other.odometer &&
+      r.location === other.location &&
+      r.works === other.works
+    );
   });
 }
 
@@ -555,6 +560,7 @@ export function applyCopilotActions(
       const rows = mergeAutoRecordsServiceWorkRow(next.auto_records.serviceWorks ?? [], {
         date: action.date,
         odometer: action.odometer,
+        location: action.location,
         works: action.works,
       });
       if (rows === (next.auto_records.serviceWorks ?? [])) {
