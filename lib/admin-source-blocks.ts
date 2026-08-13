@@ -87,11 +87,23 @@ export const SOURCE_BLOCK_KEYS = [
   "autodna",
   "carvertical",
   "auto_records",
+  "tjekbil",
+  "mnt_ee",
+  "lkf_ee",
+  "carinfo",
   "ltab",
   "tirgus",
   "citi_avoti",
   "listing_analysis",
 ] as const;
+
+/** Publiskie valsts reģistru avoti ar automātisko ielādi pēc VIN (viens bloka tips). */
+export const VIN_REGISTRY_BLOCK_KEYS = ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const;
+export type VinRegistryBlockKey = (typeof VIN_REGISTRY_BLOCK_KEYS)[number];
+
+export function isVinRegistryBlockKey(v: string): v is VinRegistryBlockKey {
+  return (VIN_REGISTRY_BLOCK_KEYS as readonly string[]).includes(v);
+}
 
 export type SourceBlockKey = (typeof SOURCE_BLOCK_KEYS)[number];
 
@@ -112,6 +124,10 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   autodna: "AutoDNA",
   carvertical: "CarVertical",
   auto_records: "OFICIĀLĀ DĪLERA DATI",
+  tjekbil: "TJEKBIL.DK — Dānijas reģistrs",
+  mnt_ee: "MNT.EE — Igaunijas reģistrs",
+  lkf_ee: "LKF.EE — Igaunijas OCTA",
+  carinfo: "CAR.INFO",
   ltab: "LTAB",
   citi_avoti: "CITI AVOTI",
   listing_analysis: "Sludinājuma analīze",
@@ -125,6 +141,10 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   autodna: "https://www.autodna.com",
   carvertical: "https://www.carvertical.lv",
   auto_records: "https://www.auto-records.com",
+  tjekbil: "https://www.tjekbil.dk",
+  mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+  lkf_ee: "https://lkf.ee/et/kahjukontroll",
+  carinfo: "https://www.car.info",
   citi_avoti: "https://www.provin.lv",
   listing_analysis: "https://www.ss.lv",
 };
@@ -137,6 +157,10 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   autodna: "text-sky-700",
   carvertical: "text-yellow-600",
   auto_records: "text-orange-500",
+  tjekbil: "text-rose-700",
+  mnt_ee: "text-cyan-700",
+  lkf_ee: "text-indigo-700",
+  carinfo: "text-teal-700",
   citi_avoti: "text-stone-700",
   listing_analysis: "text-green-700",
 };
@@ -702,6 +726,45 @@ export type VendorAvotuBlockState = {
   geminiContextRaw: string;
 };
 
+/** Publiskā reģistra nobraukuma rinda: datums + km + valsts (+ ieraksta izcelsme avotā). */
+export type VinRegistryMileageRow = {
+  date: string;
+  odometer: string;
+  country: string;
+  origin: string;
+};
+
+/** Publiskā reģistra negadījums: datums + summa (ja pieejama) + valsts. */
+export type VinRegistryIncidentRow = {
+  date: string;
+  amount: string;
+  country: string;
+  note: string;
+};
+
+/**
+ * tjekbil.dk / mnt.ee / lkf.ee / car.info — vienota struktūra ar automātisko ielādi pēc VIN.
+ * Tikai iekšējai analīzei: dati nonāk Gemini kontekstā, nevis tieši klienta PDF.
+ */
+export type VinRegistryBlockState = {
+  mileage: VinRegistryMileageRow[];
+  incidents: VinRegistryIncidentRow[];
+  /** Īpašnieku skaits un reģistrācijas darbību apkopojums. */
+  ownersSummary: string;
+  /** TAXI, īre bez vadītāja, autoskola, līzings u.tml. ieraksti. */
+  statusRecords: string;
+  /** Neapstrādātie dati avota valodā (JSON / lapas teksts). */
+  rawUnprocessedData: string;
+  /** Piezīmes: automātiski atrastās anomālijas, brīdinājumi, sarkanie karogi. */
+  autoNotes: string;
+  comments: string;
+  /** Papildu konteksts tikai Gemini AI. */
+  geminiContextRaw: string;
+  /** Pēdējās automātiskās ielādes laiks (ISO) un avota atbildes statuss. */
+  fetchedAt?: string;
+  fetchMessage?: string;
+};
+
 /** Viens papildu avots „Citi avoti” — struktūra kā AutoDNA / CarVertical + RAW žurnāls. */
 export type CitiAvotiSectionState = VendorAvotuBlockState & {
   /** Neapstrādātie / iekopētie dati no avota (admin žurnāls). */
@@ -739,6 +802,10 @@ export type WorkspaceSourceBlocks = {
   autodna: VendorAvotuBlockState;
   carvertical: VendorAvotuBlockState;
   auto_records: AutoRecordsBlockState;
+  tjekbil: VinRegistryBlockState;
+  mnt_ee: VinRegistryBlockState;
+  lkf_ee: VinRegistryBlockState;
+  carinfo: VinRegistryBlockState;
   ltab: LtabBlockState;
   citi_avoti: CitiAvotiBlockState;
   listing_analysis: ListingAnalysisBlockState;
@@ -790,6 +857,127 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
 export function coerceVendorAvotuBlock(b: unknown): VendorAvotuBlockState {
   if (!b || typeof b !== "object") return emptyVendorAvotuBlock();
   return repairVendorBlock(b as VendorAvotuBlockState);
+}
+
+export function emptyVinRegistryMileageRow(): VinRegistryMileageRow {
+  return { date: "", odometer: "", country: "", origin: "" };
+}
+
+export function emptyVinRegistryIncidentRow(): VinRegistryIncidentRow {
+  return { date: "", amount: "", country: "", note: "" };
+}
+
+export function emptyVinRegistryBlock(): VinRegistryBlockState {
+  return {
+    mileage: [emptyVinRegistryMileageRow()],
+    incidents: [emptyVinRegistryIncidentRow()],
+    ownersSummary: "",
+    statusRecords: "",
+    rawUnprocessedData: "",
+    autoNotes: "",
+    comments: "",
+    geminiContextRaw: "",
+  };
+}
+
+export function vinRegistryMileageRowHasData(r: VinRegistryMileageRow | null | undefined): boolean {
+  if (!r) return false;
+  return Boolean(wsStr(r.date).trim() || wsStr(r.odometer).trim() || wsStr(r.country).trim());
+}
+
+export function vinRegistryIncidentRowHasData(r: VinRegistryIncidentRow | null | undefined): boolean {
+  if (!r) return false;
+  return Boolean(wsStr(r.date).trim() || wsStr(r.amount).trim() || wsStr(r.country).trim() || wsStr(r.note).trim());
+}
+
+/** Jaunākais ieraksts augšā (kā pārējās nobraukuma tabulās). */
+export function sortVinRegistryMileage(rows: VinRegistryMileageRow[]): VinRegistryMileageRow[] {
+  return [...rows].sort((a, b) => {
+    const diff = parseDotOrIsoDateToMs(b.date) - parseDotOrIsoDateToMs(a.date);
+    if (diff !== 0) return diff;
+    return Number(b.odometer.replace(/\D/g, "") || 0) - Number(a.odometer.replace(/\D/g, "") || 0);
+  });
+}
+
+export function vinRegistryBlockHasContent(b: VinRegistryBlockState | null | undefined): boolean {
+  if (!b) return false;
+  return (
+    (b.mileage ?? []).some(vinRegistryMileageRowHasData) ||
+    (b.incidents ?? []).some(vinRegistryIncidentRowHasData) ||
+    wsStr(b.ownersSummary).trim().length > 0 ||
+    wsStr(b.statusRecords).trim().length > 0 ||
+    wsStr(b.rawUnprocessedData).trim().length > 0 ||
+    wsStr(b.autoNotes).trim().length > 0 ||
+    wsStr(b.comments).trim().length > 0
+  );
+}
+
+export function vinRegistryBlockToPlainText(b: VinRegistryBlockState | null | undefined): string {
+  const safe = repairVinRegistryBlock(b ?? undefined);
+  const lines: string[] = [];
+
+  const mileage = sortVinRegistryMileage((safe.mileage ?? []).filter(vinRegistryMileageRowHasData));
+  if (mileage.length > 0) {
+    lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
+    for (const r of mileage) {
+      lines.push([r.date, r.odometer, r.country, r.origin].map((c) => wsStr(c).trim()).filter(Boolean).join("\t"));
+    }
+  }
+
+  const incidents = (safe.incidents ?? []).filter(vinRegistryIncidentRowHasData);
+  if (incidents.length > 0) {
+    lines.push(NEGADIJUMU_VESTURE_TITLE);
+    for (const r of incidents) {
+      lines.push([r.date, r.amount, r.country, r.note].map((c) => wsStr(c).trim()).filter(Boolean).join("\t"));
+    }
+  }
+
+  if (safe.ownersSummary.trim()) {
+    lines.push(`Īpašnieki un reģistrācijas darbības\n${safe.ownersSummary.trim()}`);
+  }
+  if (safe.statusRecords.trim()) {
+    lines.push(`Statusi (TAXI, īre, autoskola, līzings)\n${safe.statusRecords.trim()}`);
+  }
+  if (safe.autoNotes.trim()) lines.push(`Piezīmes / brīdinājumi\n${safe.autoNotes.trim()}`);
+  if (safe.comments.trim()) lines.push(`Komentāri\n${safe.comments.trim()}`);
+  if (safe.rawUnprocessedData.trim()) {
+    lines.push(`RAW (avota valodā)\n${safe.rawUnprocessedData.trim().slice(0, 8000)}`);
+  }
+  return lines.join("\n");
+}
+
+export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): VinRegistryBlockState {
+  const e = emptyVinRegistryBlock();
+  if (!b || typeof b !== "object") return e;
+  const mileage = (Array.isArray(b.mileage) ? b.mileage : []).map((r) => ({
+    date: wsStr(r?.date).slice(0, 40),
+    odometer: wsStr(r?.odometer).slice(0, 40),
+    country: wsStr(r?.country).slice(0, 120),
+    origin: wsStr(r?.origin).slice(0, 200),
+  }));
+  const incidents = (Array.isArray(b.incidents) ? b.incidents : []).map((r) => ({
+    date: wsStr(r?.date).slice(0, 40),
+    amount: wsStr(r?.amount).slice(0, 120),
+    country: wsStr(r?.country).slice(0, 120),
+    note: wsStr(r?.note).slice(0, 600),
+  }));
+  return {
+    mileage: mileage.length > 0 ? mileage : e.mileage,
+    incidents: incidents.length > 0 ? incidents : e.incidents,
+    ownersSummary: wsStr(b.ownersSummary).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    statusRecords: wsStr(b.statusRecords).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    rawUnprocessedData: wsStr(b.rawUnprocessedData).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    autoNotes: wsStr(b.autoNotes).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    comments: wsStr(b.comments).slice(0, 12000),
+    geminiContextRaw: clipGeminiContextRaw(b.geminiContextRaw),
+    ...(wsStr(b.fetchedAt).trim() ? { fetchedAt: wsStr(b.fetchedAt).slice(0, 40) } : {}),
+    ...(wsStr(b.fetchMessage).trim() ? { fetchMessage: wsStr(b.fetchMessage).slice(0, 400) } : {}),
+  };
+}
+
+export function parseVinRegistryBlockRaw(raw: unknown): VinRegistryBlockState {
+  if (!raw || typeof raw !== "object") return emptyVinRegistryBlock();
+  return repairVinRegistryBlock(raw as VinRegistryBlockState);
 }
 
 export function emptyCitiAvotiSection(): CitiAvotiSectionState {
@@ -908,6 +1096,10 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     autodna: emptyVendorAvotuBlock(),
     carvertical: emptyVendorAvotuBlock(),
     auto_records: emptyAutoRecordsBlock(),
+    tjekbil: emptyVinRegistryBlock(),
+    mnt_ee: emptyVinRegistryBlock(),
+    lkf_ee: emptyVinRegistryBlock(),
+    carinfo: emptyVinRegistryBlock(),
     ltab: emptyLtabBlock(),
     citi_avoti: emptyCitiAvotiBlock(),
     listing_analysis: emptyListingAnalysisBlock(),
@@ -1177,6 +1369,24 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(k === "carvertical" && (b.damageDetails ?? []).length > 0
         ? { damageDetails: b.damageDetails }
         : {}),
+    });
+  }
+  for (const k of VIN_REGISTRY_BLOCK_KEYS) {
+    const b = blocks[k];
+    if (!vinRegistryBlockHasContent(b)) continue;
+    out.push({
+      title: SOURCE_BLOCK_LABELS[k],
+      mileageRows: (b.mileage ?? []).filter(vinRegistryMileageRowHasData).map((r) => ({
+        date: r.date,
+        odometer: r.odometer,
+        country: r.country,
+      })),
+      incidentRows: (b.incidents ?? []).filter(vinRegistryIncidentRowHasData).map((r) => ({
+        csngDate: r.date,
+        lossAmount: r.amount,
+        incidentNo: r.country,
+      })),
+      comments: (b.comments ?? "").trim(),
     });
   }
   const citiSections = blocks.citi_avoti.sections ?? [];
@@ -1756,6 +1966,10 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     csdd: csddRepaired,
     autodna: repairVendorBlock(blocks.autodna),
     carvertical: repairVendorBlock(blocks.carvertical),
+    tjekbil: repairVinRegistryBlock(blocks.tjekbil),
+    mnt_ee: repairVinRegistryBlock(blocks.mnt_ee),
+    lkf_ee: repairVinRegistryBlock(blocks.lkf_ee),
+    carinfo: repairVinRegistryBlock(blocks.carinfo),
     auto_records: (() => {
       const synced = syncAutoRecordsPhotoGroupsAndFlat(
         normalizeAutoRecordsPhotoGroups(blocks.auto_records?.photoGroups, blocks.auto_records?.photos),
@@ -1856,6 +2070,13 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   const rawCarvertical = o.carvertical;
   if (rawCarvertical && typeof rawCarvertical === "object") {
     base.carvertical = parseVendorAvotuBlockRaw(rawCarvertical as Record<string, unknown>);
+  }
+
+  for (const key of VIN_REGISTRY_BLOCK_KEYS) {
+    const rawBlock = o[key];
+    if (rawBlock && typeof rawBlock === "object") {
+      base[key] = parseVinRegistryBlockRaw(rawBlock);
+    }
   }
 
   const rawTirgus = o.tirgus;

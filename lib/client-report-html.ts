@@ -137,6 +137,10 @@ function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
   const s = new Set<string>();
   if (!vis.autodna) s.add(L.autodna);
   if (!vis.carvertical) s.add(L.carvertical);
+  if (!vis.tjekbil) s.add(L.tjekbil);
+  if (!vis.mnt_ee) s.add(L.mnt_ee);
+  if (!vis.lkf_ee) s.add(L.lkf_ee);
+  if (!vis.carinfo) s.add(L.carinfo);
   if (!vis.citi_avoti) s.add(L.citi_avoti);
   return s;
 }
@@ -271,6 +275,10 @@ function computeProvinPdfSourcesUsedCounts(
   if (vis.autodna && vendorPdfBlockHasData(getVendorPdfBlock(p, L.autodna))) n1++;
   if (vis.carvertical && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carvertical))) n1++;
   if (payloadAutoRecordsHasData(p, vis)) n1++;
+  if (vis.tjekbil && vendorPdfBlockHasData(getVendorPdfBlock(p, L.tjekbil))) n1++;
+  if (vis.mnt_ee && vendorPdfBlockHasData(getVendorPdfBlock(p, L.mnt_ee))) n1++;
+  if (vis.lkf_ee && vendorPdfBlockHasData(getVendorPdfBlock(p, L.lkf_ee))) n1++;
+  if (vis.carinfo && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carinfo))) n1++;
   n1 = capSourceCount(n1);
 
   let n2 = 0;
@@ -835,6 +843,10 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisib
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";
   if (b.title === L.carvertical && !vis.carvertical) return "";
+  if (b.title === L.tjekbil && !vis.tjekbil) return "";
+  if (b.title === L.mnt_ee && !vis.mnt_ee) return "";
+  if (b.title === L.lkf_ee && !vis.lkf_ee) return "";
+  if (b.title === L.carinfo && !vis.carinfo) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
   if (!hasComments) return "";
@@ -968,8 +980,12 @@ function buildAvotuDatiSectionHtml(
     vis,
     autoRecordsPhotoDataUrls,
   );
+  const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
+  const mntEe = vendorHtml(SOURCE_BLOCK_LABELS.mnt_ee);
+  const lkfEe = vendorHtml(SOURCE_BLOCK_LABELS.lkf_ee);
+  const carinfo = vendorHtml(SOURCE_BLOCK_LABELS.carinfo);
 
-  const stack = [csdd, autodna, carvertical, autoRecords, ltab, citiAvoti].filter(Boolean);
+  const stack = [csdd, autodna, carvertical, autoRecords, tjekbil, mntEe, lkfEe, carinfo, ltab, citiAvoti].filter(Boolean);
   if (stack.length === 0) return "";
   return stack.join("\n");
 }
@@ -1305,6 +1321,9 @@ function clientReportPrintCss(): string {
       .pdf-mileage-source-stripe--autodna{background:#1e3a8a!important;}
       .pdf-mileage-source-stripe--carvertical{background:#eab308!important;}
       .pdf-mileage-source-stripe--dealer{background:#dc2626!important;}
+      .pdf-mileage-source-stripe--tjekbil{background:#be123c!important;}
+      .pdf-mileage-source-stripe--ee{background:#0e7490!important;}
+      .pdf-mileage-source-stripe--carinfo{background:#0f766e!important;}
       .pdf-mileage-source-stripe--ltab{background:#b91c1c!important;}
       .pdf-mileage-source-stripe--cits{background:#ea580c!important;}
       .pdf-mileage-source-stripe--unknown{background:#ea580c!important;}

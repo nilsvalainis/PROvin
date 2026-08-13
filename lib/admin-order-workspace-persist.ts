@@ -24,6 +24,7 @@ import {
   ltabTrafficLevel,
   tirgusTrafficLevel,
   vendorAvotuTrafficLevel,
+  vinRegistryTrafficLevel,
   type TrafficFillLevel,
 } from "@/lib/admin-block-traffic-status";
 import {
@@ -79,6 +80,11 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
       return TRAFFIC_RANK[vendorAvotuTrafficLevel(block as WorkspaceSourceBlocks["autodna"])];
     case "auto_records":
       return TRAFFIC_RANK[autoRecordsTrafficLevel(block as WorkspaceSourceBlocks["auto_records"])];
+    case "tjekbil":
+    case "mnt_ee":
+    case "lkf_ee":
+    case "carinfo":
+      return TRAFFIC_RANK[vinRegistryTrafficLevel(block as WorkspaceSourceBlocks["tjekbil"])];
     case "ltab":
       return TRAFFIC_RANK[ltabTrafficLevel(block as WorkspaceSourceBlocks["ltab"])];
     case "citi_avoti":
@@ -193,6 +199,10 @@ export function coalesceOrderWorkspacePersistBody(
     autodna: pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
     carvertical: pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
     auto_records: pickRicherAutoRecordsBlock(incomingBlocks.auto_records, baselineBlocks.auto_records),
+    tjekbil: pickRicherSourceBlock("tjekbil", incomingBlocks.tjekbil, baselineBlocks.tjekbil),
+    mnt_ee: pickRicherSourceBlock("mnt_ee", incomingBlocks.mnt_ee, baselineBlocks.mnt_ee),
+    lkf_ee: pickRicherSourceBlock("lkf_ee", incomingBlocks.lkf_ee, baselineBlocks.lkf_ee),
+    carinfo: pickRicherSourceBlock("carinfo", incomingBlocks.carinfo, baselineBlocks.carinfo),
     ltab: pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
     tirgus: pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
     citi_avoti: pickRicherSourceBlock("citi_avoti", incomingBlocks.citi_avoti, baselineBlocks.citi_avoti),

@@ -33,6 +33,10 @@ export function collectWorkspaceCountryTimeline(
     ...b.auto_records.serviceHistory,
     ...(citi?.serviceHistory ?? []),
     ...(b.csdd.mileageHistory ?? []),
+    ...(b.tjekbil.mileage ?? []),
+    ...(b.mnt_ee.mileage ?? []),
+    ...(b.lkf_ee.mileage ?? []),
+    ...(b.carinfo.mileage ?? []),
   ];
   for (const r of mileageRows) push(r.date, r.country);
 

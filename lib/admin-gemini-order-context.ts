@@ -12,11 +12,13 @@ import {
   ltabRowHasData,
   mergeSourceBlocksWithDefaults,
   NEGADIJUMU_VESTURE_TITLE,
+  vinRegistryIncidentRowHasData,
   SOURCE_BLOCK_LABELS,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
   vendorAvotuBlockToPlainText,
+  vinRegistryBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
@@ -115,6 +117,14 @@ function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
       parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
     }
   }
+  for (const key of ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const) {
+    const inc = (blocks[key].incidents ?? []).filter(vinRegistryIncidentRowHasData);
+    if (inc.length === 0) continue;
+    parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    for (const r of inc) {
+      parts.push([r.date.trim(), r.amount.trim(), r.country.trim(), r.note.trim()].filter(Boolean).join("\t"));
+    }
+  }
   return parts.join("\n");
 }
 
@@ -170,6 +180,13 @@ export function buildFinishedReportStyleReferenceSection(input: {
 ${parts.join("\n\n")}`;
 }
 
+/** „Papildu AI konteksts” — visiem blokiem, izņemot Citi avoti (tur tas ir katrai sekcijai). */
+function blockGeminiContextRaw(blocks: WorkspaceSourceBlocks, key: keyof WorkspaceSourceBlocks): string {
+  if (key === "citi_avoti") return "";
+  const b = blocks[key] as { geminiContextRaw?: string };
+  return b.geminiContextRaw ?? "";
+}
+
 /** Visi pieejamie pasūtījuma dati vienā prompta kontekstā. */
 export function buildGeminiOrderContextText(input: GeminiOrderContextInput): string {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
@@ -198,6 +215,10 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
     { key: "autodna", text: vendorAvotuBlockToPlainText(blocks.autodna) },
     { key: "carvertical", text: vendorAvotuBlockToPlainText(blocks.carvertical) },
     { key: "auto_records", text: autoRecordsBlockToPlainText(blocks.auto_records) },
+    { key: "tjekbil", text: vinRegistryBlockToPlainText(blocks.tjekbil) },
+    { key: "mnt_ee", text: vinRegistryBlockToPlainText(blocks.mnt_ee) },
+    { key: "lkf_ee", text: vinRegistryBlockToPlainText(blocks.lkf_ee) },
+    { key: "carinfo", text: vinRegistryBlockToPlainText(blocks.carinfo) },
     { key: "ltab", text: ltabBlockToPlainText(blocks.ltab) },
     { key: "tirgus", text: tirgusFormToPlainText(blocks.tirgus) },
     { key: "citi_avoti", text: citiAvotiToPlainText(blocks.citi_avoti) },
@@ -214,21 +235,7 @@ export function buildGeminiOrderContextText(input: GeminiOrderContextInput): str
           : `Sludinājuma apraksts (iekopēts, nav PDF):\n${paste}`;
       }
     }
-    const geminiRaw =
-      key === "csdd"
-        ? blocks.csdd.geminiContextRaw
-        : key === "autodna" || key === "carvertical"
-          ? blocks[key].geminiContextRaw
-          : key === "auto_records"
-            ? blocks.auto_records.geminiContextRaw
-            : key === "ltab"
-              ? blocks.ltab.geminiContextRaw
-              : key === "tirgus"
-                ? blocks.tirgus.geminiContextRaw
-                : key === "listing_analysis"
-                  ? blocks.listing_analysis.geminiContextRaw
-                  : "";
-    sectionText = appendGeminiContextRawSection(sectionText, geminiRaw);
+    sectionText = appendGeminiContextRawSection(sectionText, blockGeminiContextRaw(blocks, key));
     const section = block(SOURCE_BLOCK_LABELS[key], sectionText);
     if (section) parts.push(section);
   }

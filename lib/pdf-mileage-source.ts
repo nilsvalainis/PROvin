@@ -4,7 +4,16 @@
 
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 
-export type MileagePdfSourceKey = "csdd" | "autodna" | "carvertical" | "dealer" | "ltab" | "cits";
+export type MileagePdfSourceKey =
+  | "csdd"
+  | "autodna"
+  | "carvertical"
+  | "dealer"
+  | "tjekbil"
+  | "ee"
+  | "carinfo"
+  | "ltab"
+  | "cits";
 
 function normLabel(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, " ");
@@ -59,6 +68,22 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     return "ltab";
   }
 
+  if (t === normLabel(SOURCE_BLOCK_LABELS.tjekbil) || sq.includes("tjekbil")) {
+    return "tjekbil";
+  }
+  if (
+    t === normLabel(SOURCE_BLOCK_LABELS.mnt_ee) ||
+    t === normLabel(SOURCE_BLOCK_LABELS.lkf_ee) ||
+    sq.includes("mnt.ee") ||
+    sq.includes("lkf.ee") ||
+    sq === "igaunija"
+  ) {
+    return "ee";
+  }
+  if (t === normLabel(SOURCE_BLOCK_LABELS.carinfo) || sq.includes("car.info") || sq === "carinfo") {
+    return "carinfo";
+  }
+
   if (
     t === normLabel(SOURCE_BLOCK_LABELS.citi_avoti) ||
     sq === "citiavoti" ||
@@ -78,6 +103,9 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   autodna: { full: "AutoDNA", abbrev: "DNA" },
   carvertical: { full: "Car Vertical", abbrev: "CV" },
   dealer: { full: "OFICIĀLĀ DĪLERA DATI", abbrev: "DEALER" },
+  tjekbil: { full: SOURCE_BLOCK_LABELS.tjekbil, abbrev: "DK" },
+  ee: { full: "Igaunijas reģistri", abbrev: "EE" },
+  carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "INFO" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
   cits: { full: "Citi Avoti", abbrev: "CITS" },
 };
@@ -88,6 +116,9 @@ export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "autodna",
   "carvertical",
   "dealer",
+  "tjekbil",
+  "ee",
+  "carinfo",
   "ltab",
   "cits",
 ];

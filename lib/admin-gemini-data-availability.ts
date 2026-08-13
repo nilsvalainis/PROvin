@@ -13,6 +13,8 @@ import {
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
   vendorAvotuBlockHasContent,
+  vinRegistryBlockHasContent,
+  vinRegistryIncidentRowHasData,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
@@ -22,6 +24,10 @@ function hasAnyIncidentTableRows(blocks: WorkspaceSourceBlocks): boolean {
   for (const key of ["autodna", "carvertical"] as const) {
     const incidents = blocks[key]?.incidents;
     if (Array.isArray(incidents) && incidents.some(ltabRowHasData)) return true;
+  }
+  for (const key of ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const) {
+    const incidents = blocks[key]?.incidents;
+    if (Array.isArray(incidents) && incidents.some(vinRegistryIncidentRowHasData)) return true;
   }
   const sections = blocks.citi_avoti?.sections;
   if (Array.isArray(sections) && sections.some((s) => (s?.incidents ?? []).some(ltabRowHasData))) return true;
@@ -51,6 +57,10 @@ export function orderHasSourceDataForGemini(sourceBlocks: WorkspaceSourceBlocks)
     vendorAvotuBlockHasContent(blocks.autodna),
     vendorAvotuBlockHasContent(blocks.carvertical),
     autoRecordsBlockHasContent(blocks.auto_records),
+    vinRegistryBlockHasContent(blocks.tjekbil),
+    vinRegistryBlockHasContent(blocks.mnt_ee),
+    vinRegistryBlockHasContent(blocks.lkf_ee),
+    vinRegistryBlockHasContent(blocks.carinfo),
     ltabBlockHasContent(blocks.ltab),
     tirgusFormHasContent(blocks.tirgus),
     citiAvotiHasContent(blocks.citi_avoti),

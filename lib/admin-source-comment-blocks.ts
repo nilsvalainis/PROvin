@@ -9,6 +9,8 @@ import {
   type CitiAvotiBlockState,
   type CitiAvotiSectionState,
   type VendorAvotuBlockState,
+  type VinRegistryBlockState,
+  vinRegistryBlockToPlainText,
   csddFormToPlainText,
   ltabBlockToPlainText,
   mergeSourceBlocksWithDefaults,
@@ -37,6 +39,10 @@ export const GEMINI_SOURCE_COMMENT_BLOCK_KEYS: GeminiSourceCommentBlockKey[] = [
   "autodna",
   "carvertical",
   "auto_records",
+  "tjekbil",
+  "mnt_ee",
+  "lkf_ee",
+  "carinfo",
   "ltab",
   "citi_avoti",
   "tirgus",
@@ -79,6 +85,12 @@ export function sourceBlockPlainTextExcludingComments(
     case "auto_records":
       base = autoRecordsBlockToPlainText({ ...blocks.auto_records, comments: "" }).trim();
       return appendGeminiContextRawSection(base, blocks.auto_records.geminiContextRaw);
+    case "tjekbil":
+    case "mnt_ee":
+    case "lkf_ee":
+    case "carinfo":
+      base = vinRegistryBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
+      return appendGeminiContextRawSection(base, blocks[blockKey].geminiContextRaw);
     case "ltab":
       base = ltabBlockToPlainText({ ...blocks.ltab, comments: "" }).trim();
       return appendGeminiContextRawSection(base, blocks.ltab.geminiContextRaw);
@@ -108,6 +120,11 @@ export function sourceBlockCommentsPlain(
         .join("\n\n");
     case "auto_records":
       return blocks.auto_records.comments;
+    case "tjekbil":
+    case "mnt_ee":
+    case "lkf_ee":
+    case "carinfo":
+      return blocks[blockKey].comments;
     case "ltab":
       return blocks.ltab.comments;
     case "tirgus":
@@ -233,6 +250,11 @@ export function applySourceBlockGeneratedComment(
         return { ...block, serviceHistoryNotes: html };
       }
       return { ...block, comments: html };
+    case "tjekbil":
+    case "mnt_ee":
+    case "lkf_ee":
+    case "carinfo":
+      return { ...(block as VinRegistryBlockState), comments: html };
     case "ltab":
       return { ...block, comments: html };
     case "tirgus":

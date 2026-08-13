@@ -11,6 +11,7 @@ import type {
   ListingAnalysisBlockState,
   TirgusFormFields,
   VendorAvotuBlockState,
+  VinRegistryBlockState,
 } from "@/lib/admin-source-blocks";
 import {
   CSDD_FORM_STRUCTURED_FIELDS,
@@ -23,6 +24,9 @@ import {
   ltabRowHasData,
   tirgusFormHasContent,
   vendorAvotuBlockHasContent,
+  vinRegistryBlockHasContent,
+  vinRegistryIncidentRowHasData,
+  vinRegistryMileageRowHasData,
   citiAvotiSectionHasContent,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
@@ -77,6 +81,22 @@ export function vendorAvotuTrafficLevel(b: VendorAvotuBlockState | null | undefi
     const safe = coerceVendorAvotuBlock(b);
     if (!vendorAvotuBlockHasContent(safe)) return "empty";
     if (vendorComplete(safe)) return "complete";
+    return "partial";
+  } catch {
+    return "empty";
+  }
+}
+
+/** Publiskie reģistru avoti: dati ielasīti + komentārs sagatavots = pilns. */
+export function vinRegistryTrafficLevel(b: VinRegistryBlockState | null | undefined): TrafficFillLevel {
+  try {
+    if (!b) return "empty";
+    if (!vinRegistryBlockHasContent(b)) return "empty";
+    const hasRows =
+      (b.mileage ?? []).some(vinRegistryMileageRowHasData) ||
+      (b.incidents ?? []).some(vinRegistryIncidentRowHasData) ||
+      wsStr(b.ownersSummary).trim().length > 0;
+    if (hasRows && wsStr(b.comments).trim().length > 0) return "complete";
     return "partial";
   } catch {
     return "empty";

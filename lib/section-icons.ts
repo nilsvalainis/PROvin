@@ -100,6 +100,10 @@ export const SOURCE_BLOCK_ICON: Record<SourceBlockKey, SectionIconId> = {
   autodna: "database",
   carvertical: "barChart",
   auto_records: "shieldCheck",
+  tjekbil: "search",
+  mnt_ee: "fileText",
+  lkf_ee: "shield",
+  carinfo: "history",
   ltab: "shield",
   tirgus: "history",
   citi_avoti: "layers",
@@ -118,5 +122,9 @@ export function vendorPdfTitleToIconId(title: string): SectionIconId {
   if (title === SOURCE_BLOCK_LABELS.autodna) return "database";
   if (title === SOURCE_BLOCK_LABELS.carvertical) return "barChart";
   if (title === SOURCE_BLOCK_LABELS.auto_records) return "shieldCheck";
+  if (title === SOURCE_BLOCK_LABELS.tjekbil) return "search";
+  if (title === SOURCE_BLOCK_LABELS.mnt_ee) return "fileText";
+  if (title === SOURCE_BLOCK_LABELS.lkf_ee) return "shield";
+  if (title === SOURCE_BLOCK_LABELS.carinfo) return "history";
   return "layers";
 }

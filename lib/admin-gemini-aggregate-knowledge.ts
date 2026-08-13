@@ -83,6 +83,10 @@ function extractLearningSnippetsFromDraft(draft: OrderDraftState): string[] {
     [SOURCE_BLOCK_LABELS.autodna, blocks.autodna.comments],
     [SOURCE_BLOCK_LABELS.carvertical, blocks.carvertical.comments],
     [SOURCE_BLOCK_LABELS.auto_records, blocks.auto_records.comments],
+    [SOURCE_BLOCK_LABELS.tjekbil, blocks.tjekbil.comments],
+    [SOURCE_BLOCK_LABELS.mnt_ee, blocks.mnt_ee.comments],
+    [SOURCE_BLOCK_LABELS.lkf_ee, blocks.lkf_ee.comments],
+    [SOURCE_BLOCK_LABELS.carinfo, blocks.carinfo.comments],
     [SOURCE_BLOCK_LABELS.ltab, blocks.ltab.comments],
   ];
   for (const [label, comments] of sourcePairs) {

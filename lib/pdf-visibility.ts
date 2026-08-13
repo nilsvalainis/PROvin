@@ -18,6 +18,10 @@ export type PdfVisibilitySettings = {
   autodna: boolean;
   carvertical: boolean;
   auto_records: boolean;
+  tjekbil: boolean;
+  mnt_ee: boolean;
+  lkf_ee: boolean;
+  carinfo: boolean;
   ltab: boolean;
   citi_avoti: boolean;
   sludinajums: boolean;
@@ -38,6 +42,10 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   autodna: true,
   carvertical: true,
   auto_records: true,
+  tjekbil: true,
+  mnt_ee: true,
+  lkf_ee: true,
+  carinfo: true,
   ltab: true,
   citi_avoti: true,
   sludinajums: true,
@@ -67,6 +75,10 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     autodna: isBool(o.autodna) ? o.autodna : d.autodna,
     carvertical: isBool(o.carvertical) ? o.carvertical : d.carvertical,
     auto_records: isBool(o.auto_records) ? o.auto_records : d.auto_records,
+    tjekbil: isBool(o.tjekbil) ? o.tjekbil : d.tjekbil,
+    mnt_ee: isBool(o.mnt_ee) ? o.mnt_ee : d.mnt_ee,
+    lkf_ee: isBool(o.lkf_ee) ? o.lkf_ee : d.lkf_ee,
+    carinfo: isBool(o.carinfo) ? o.carinfo : d.carinfo,
     ltab: isBool(o.ltab) ? o.ltab : d.ltab,
     citi_avoti: isBool(o.citi_avoti) ? o.citi_avoti : d.citi_avoti,
     sludinajums: isBool(o.sludinajums) ? o.sludinajums : d.sludinajums,

@@ -13,6 +13,10 @@ import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBloc
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import {
+  AdminEstoniaVinRegistryPair,
+  AdminVinRegistrySourceBlock,
+} from "@/components/admin/AdminVinRegistrySourceBlock";
+import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
   SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS,
@@ -30,6 +34,7 @@ import {
   autoRecordsBlockToPlainText,
   standardBlockToPlainText,
   vendorAvotuBlockToPlainText,
+  vinRegistryBlockToPlainText,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
@@ -103,12 +108,15 @@ import {
   ltabTrafficLevel,
   type TrafficFillLevel,
   vendorAvotuTrafficLevel,
+  vinRegistryTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import {
   CarFront,
   Check,
   ClipboardList,
+  Globe,
+  Landmark,
   LayoutDashboard,
   Layers,
   Link2,
@@ -118,8 +126,10 @@ import {
   Newspaper,
   FileText,
   Scale,
+  Flag,
   RotateCcw,
   Send,
+  ShieldAlert,
   Sparkles,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -332,7 +342,8 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   complete: "bg-emerald-500",
 };
 
-const WIZARD_STEP_COUNT = 8;
+const WIZARD_STEP_COUNT = 11;
+const WIZARD_SUMMARY_STEP = 10;
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
   const vin = (p.vin ?? "").trim();
@@ -389,6 +400,11 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
     case "autodna":
     case "carvertical":
       return vendorAvotuBlockToPlainText(blocks[key] ?? null);
+    case "tjekbil":
+    case "mnt_ee":
+    case "lkf_ee":
+    case "carinfo":
+      return vinRegistryBlockToPlainText(blocks[key]);
   }
 }
 
@@ -2309,6 +2325,10 @@ export function OrderDetailWorkspace({
       autodna: "empty" as const,
       carvertical: "empty" as const,
       auto_records: "empty" as const,
+      tjekbil: "empty" as const,
+      mnt_ee: "empty" as const,
+      lkf_ee: "empty" as const,
+      carinfo: "empty" as const,
       ltab: "empty" as const,
       citi_avoti: "empty" as const,
       listingSection: "empty" as const,
@@ -2319,6 +2339,10 @@ export function OrderDetailWorkspace({
         autodna: vendorAvotuTrafficLevel(b?.autodna),
         carvertical: vendorAvotuTrafficLevel(b?.carvertical),
         auto_records: autoRecordsTrafficLevel(b.auto_records),
+        tjekbil: vinRegistryTrafficLevel(b.tjekbil),
+        mnt_ee: vinRegistryTrafficLevel(b.mnt_ee),
+        lkf_ee: vinRegistryTrafficLevel(b.lkf_ee),
+        carinfo: vinRegistryTrafficLevel(b.carinfo),
         ltab: ltabTrafficLevel(b.ltab),
         citi_avoti: citiAvotiTrafficLevel(b.citi_avoti),
         listingSection: listingSectionTrafficLevel(b.tirgus, b.listing_analysis),
@@ -2350,6 +2374,9 @@ export function OrderDetailWorkspace({
       traffic.csdd,
       vendors,
       traffic.auto_records,
+      traffic.tjekbil,
+      worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
+      traffic.carinfo,
       traffic.ltab,
       traffic.citi_avoti,
       traffic.listingSection,
@@ -2360,14 +2387,17 @@ export function OrderDetailWorkspace({
   const wizardStepsUi = useMemo(
     () =>
       [
-        { label: "Pārskats", Icon: LayoutDashboard },
-        { label: "CSDD", Icon: ClipboardList },
-        { label: "Datu serv.", Icon: Layers },
-        { label: "Auto Records", Icon: CarFront },
-        { label: "LTAB", Icon: Scale },
-        { label: "Citi avoti", Icon: Link2 },
-        { label: "Sludinājums", Icon: Newspaper },
-        { label: "Kopsavilkums", Icon: ListChecks },
+        { label: "Pārskats", Icon: LayoutDashboard, row: 1 as const },
+        { label: "CSDD", Icon: ClipboardList, row: 1 as const },
+        { label: "Datu serv.", Icon: Layers, row: 1 as const },
+        { label: "Auto Records", Icon: CarFront, row: 1 as const },
+        { label: "Tjekbil", Icon: Landmark, row: 2 as const },
+        { label: "Igaunija", Icon: Flag, row: 2 as const },
+        { label: "car.info", Icon: Globe, row: 2 as const },
+        { label: "LTAB", Icon: Scale, row: 1 as const },
+        { label: "Citi avoti", Icon: Link2, row: 1 as const },
+        { label: "Sludinājums", Icon: Newspaper, row: 1 as const },
+        { label: "Kopsavilkums", Icon: ListChecks, row: 1 as const },
       ] as const,
     [],
   );
@@ -3035,6 +3065,10 @@ export function OrderDetailWorkspace({
       { title: "CSDD", text: csddFormToPlainText(blocksDisplaySafe.csdd) },
       { title: "Datu servisi", text: [vendorAvotuBlockToPlainText(blocksDisplaySafe.autodna), vendorAvotuBlockToPlainText(blocksDisplaySafe.carvertical)].filter(Boolean).join("\n\n") },
       { title: "Auto Records", text: autoRecordsBlockToPlainText(blocksDisplaySafe.auto_records) },
+      { title: SOURCE_BLOCK_LABELS.tjekbil, text: vinRegistryBlockToPlainText(blocksDisplaySafe.tjekbil) },
+      { title: SOURCE_BLOCK_LABELS.mnt_ee, text: vinRegistryBlockToPlainText(blocksDisplaySafe.mnt_ee) },
+      { title: SOURCE_BLOCK_LABELS.lkf_ee, text: vinRegistryBlockToPlainText(blocksDisplaySafe.lkf_ee) },
+      { title: SOURCE_BLOCK_LABELS.carinfo, text: vinRegistryBlockToPlainText(blocksDisplaySafe.carinfo) },
       { title: "LTAB", text: ltabBlockToPlainText(blocksDisplaySafe.ltab) },
       { title: "Citi avoti", text: citiAvotiToPlainText(blocksDisplaySafe.citi_avoti) },
       { title: "Sludinājuma analīze", text: listingAnalysisToPlainText(blocksDisplaySafe.listing_analysis) },
@@ -3349,7 +3383,7 @@ export function OrderDetailWorkspace({
             className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
             title={`${ADMIN_INCIDENTS_SUMMARY_LABEL} — solis „Kopsavilkums”`}
             aria-label={`Pāriet uz ${ADMIN_INCIDENTS_SUMMARY_LABEL} (kopsavilkuma solis)`}
-            onClick={() => goWizardStep(7)}
+            onClick={() => goWizardStep(WIZARD_SUMMARY_STEP)}
           >
             <MessageSquare className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -3408,38 +3442,43 @@ export function OrderDetailWorkspace({
               setCopilotOpen(true);
             }}
           />
-          <div className="flex min-w-0 flex-1 flex-wrap items-stretch gap-1 sm:gap-1.5">
-            {wizardStepsUi.map(({ label, Icon }, idx) => {
-              const lvl = wizardStepLevels[idx] ?? "empty";
-              const active = wizardStep === idx;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => goWizardStep(idx)}
-                  className={`flex min-w-0 max-w-[7.5rem] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 text-center transition sm:max-w-none sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 ${
-                    active
-                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
-                      : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
-                    <Icon className="h-3.5 w-3.5" aria-hidden />
-                    <span
-                      className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
-                      title={`Aizpildījums: ${lvl}`}
-                    />
-                  </span>
-                  <span
-                    className={`line-clamp-2 w-full text-[9px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left ${
-                      active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            {([1, 2] as const).map((row) => (
+              <div key={row} className="flex min-w-0 flex-wrap items-stretch gap-1 sm:gap-1.5">
+                {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
+                  if (stepRow !== row) return null;
+                  const lvl = wizardStepLevels[idx] ?? "empty";
+                  const active = wizardStep === idx;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => goWizardStep(idx)}
+                      className={`flex min-w-0 max-w-[7.5rem] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 text-center transition sm:max-w-none sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 ${
+                        active
+                          ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
+                          : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
+                        <Icon className="h-3.5 w-3.5" aria-hidden />
+                        <span
+                          className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
+                          title={`Aizpildījums: ${lvl}`}
+                        />
+                      </span>
+                      <span
+                        className={`line-clamp-2 w-full text-[9px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left ${
+                          active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
+                        }`}
+                      >
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
           <div
             className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 font-mono text-[8px] font-medium text-[var(--color-apple-text)] dark:bg-white/[0.06] sm:text-[9px] ${
@@ -3603,6 +3642,62 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 4 ? (
+          <div id="admin-order-block-tjekbil" className="min-w-0">
+            <AdminVinRegistrySourceBlock
+              blockKey="tjekbil"
+              value={blocksDisplaySafe.tjekbil}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("tjekbil", next)}
+              trafficFillLevel={traffic.tjekbil}
+              sessionId={payload.sessionId}
+              vin={vinBar}
+              geminiComment={geminiCommentSlot("tjekbil")}
+              pdfInclude={pdfVisibility.tjekbil}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ tjekbil: next })}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 5 ? (
+          <div id="admin-order-block-estonia" className="min-w-0">
+            <AdminEstoniaVinRegistryPair
+              mnt={blocksDisplaySafe.mnt_ee}
+              lkf={blocksDisplaySafe.lkf_ee}
+              onChangeMnt={(next) => updateSourceBlock("mnt_ee", next)}
+              onChangeLkf={(next) => updateSourceBlock("lkf_ee", next)}
+              trafficMnt={traffic.mnt_ee}
+              trafficLkf={traffic.lkf_ee}
+              pdfIncludeMnt={pdfVisibility.mnt_ee}
+              pdfIncludeLkf={pdfVisibility.lkf_ee}
+              onPdfIncludeMnt={(next) => onPdfVisibilityChange({ mnt_ee: next })}
+              onPdfIncludeLkf={(next) => onPdfVisibilityChange({ lkf_ee: next })}
+              geminiMnt={geminiCommentSlot("mnt_ee")}
+              geminiLkf={geminiCommentSlot("lkf_ee")}
+              sessionId={payload.sessionId}
+              vin={vinBar}
+              readOnly={false}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 6 ? (
+          <div id="admin-order-block-carinfo" className="min-w-0">
+            <AdminVinRegistrySourceBlock
+              blockKey="carinfo"
+              value={blocksDisplaySafe.carinfo}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("carinfo", next)}
+              trafficFillLevel={traffic.carinfo}
+              sessionId={payload.sessionId}
+              vin={vinBar}
+              geminiComment={geminiCommentSlot("carinfo")}
+              pdfInclude={pdfVisibility.carinfo}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ carinfo: next })}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 7 ? (
           <div id="admin-order-block-ltab" className="min-w-0">
             <AdminLtabSourceBlock
               value={blocksDisplaySafe.ltab}
@@ -3617,7 +3712,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 5 ? (
+        {wizardStep === 8 ? (
           <div id="admin-order-block-citi-avoti" className="min-w-0">
             <AdminCitiAvotiSourceBlock
               value={blocksDisplaySafe.citi_avoti}
@@ -3632,7 +3727,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {wizardStep === 9 ? (
           <section id="admin-order-section-sludinajums" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
@@ -3706,7 +3801,7 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {wizardStep === 10 ? (
           <section id="admin-order-section-kopsavilkums" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">

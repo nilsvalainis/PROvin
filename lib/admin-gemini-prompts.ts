@@ -433,6 +433,25 @@ DEALER / AUTO RECORDS FOCUS:
 - When Servisa vēsture / RAW facts are present in context, weave those maintenance facts into the buyer comment; do not invent services.
 - Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.`;
   }
+  if (blockLabel === L.tjekbil || blockLabel === L.mnt_ee || blockLabel === L.lkf_ee || blockLabel === L.carinfo) {
+    const scope =
+      blockLabel === L.tjekbil
+        ? "Danish DMR / Færdselsstyrelsen / Motorstyrelsen registry data (odometer log, inspections, usage type, leasing, Bilbogen debt)"
+        : blockLabel === L.mnt_ee
+          ? "Estonian Transpordiamet registry data (odometer readings, usage history, restrictions, arrests/pledges)"
+          : blockLabel === L.lkf_ee
+            ? "Estonian LKF motor third-party liability claim records (claim dates, amounts if published, total-loss marks)"
+            : "car.info aggregated multi-country registry data (per-country odometer rows, ownership, usage)";
+    return `
+
+PUBLIC FOREIGN REGISTRY FOCUS (${blockLabel}):
+- Source scope: ${scope}.
+- Source data arrives in the original language (Danish / Estonian / English) with a Latvian dictionary pre-translation. Output MUST be Latvian; never leave foreign registry terms untranslated — explain the Latvian meaning of every status you cite (e.g. „Registreret” = reģistrēts, „takso” = taksometrs).
+- Priority facts for the buyer: (1) odometer rows with date + km + country, (2) accident / claim rows with date + amount + country, (3) owner count and registration activity, (4) TAXI / rent-a-car / driving-school / commercial-use records.
+- Treat the „Piezīmes / brīdinājumi” lines as pre-computed anomalies: confirm, quantify, and explain their buyer impact — do not silently repeat them as a list.
+- State registry coverage limits honestly (e.g. Danish public data has no owner names; LKF publishes no claim amounts) so the client understands what is unknown rather than assuming „clean”.
+- If this source only confirms the same km line as CSDD/AutoDNA/CarVertical, say it in one sentence; spend the comment on what only this registry adds (country of use, usage type, restrictions, claim confirmation).`;
+  }
   if (blockLabel === L.citi_avoti) {
     return `
 
