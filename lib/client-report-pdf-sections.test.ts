@@ -63,6 +63,64 @@ describe("PDF design system", () => {
     expect(html).not.toContain("font-size:8pt");
   });
 
+  it("opens with summary tiles above the source list and the about block", () => {
+    const csdd = emptyCsddFields();
+    csdd.registrationStatus = "Reģistrēts";
+    csdd.ownerCountLatvia = "2";
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        notes: "Klienta piezīme",
+        manualVendorBlocks: [
+          {
+            title: "AutoDNA",
+            mileageRows: [{ date: "2020-07-01", odometer: "120000", country: "DE" }],
+            incidentRows: [{ csngDate: "01.06.2021", lossAmount: "3500", incidentNo: "Latvija" }],
+            comments: "AutoDNA komentārs",
+          },
+        ],
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("ATSKAITES KOPSAVILKUMS");
+    expect(html).toContain("pdf-summary-tile--alert");
+    expect(html).toContain("Negadījumi un bojājumi");
+    expect(html).toContain("1 negadījums");
+    expect(html).toContain("120000 km");
+    expect(html).toContain("Īpašnieki Latvijā: 2");
+    expect(html).toContain("Kas tika pārbaudīts");
+    expect(html).toContain("pdf-sources-checked-dot--autodna");
+    expect(html).toContain("PAR ŠO ATSKAITI");
+    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
+    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PAR ŠO ATSKAITI"));
+    expect(html.indexOf("PAR ŠO ATSKAITI")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
+  });
+
+  it("keeps payment, vehicle, client and notes in one about block", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingUrl: "https://www.ss.lv/msg/lv/transport/cars/audi/a6/abcd.html",
+        customerName: "Jānis Bērziņš",
+        notes: "Interesē tikai bojājumi",
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const aboutCount = (html.match(/pdf-about-report/g) ?? []).length;
+    expect(aboutCount).toBe(1);
+    expect(html).toContain("Transportlīdzeklis");
+    expect(html).toContain("Maksājums");
+    expect(html).toContain("Jānis Bērziņš");
+    expect(html).toContain("Interesē tikai bojājumi");
+    expect(html).not.toContain("transportlīdzeklis un sludinājums");
+    expect(html).not.toContain("klienta dati");
+  });
+
   it("marks each source zone with its own accent and record count", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({

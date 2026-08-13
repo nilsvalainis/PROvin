@@ -104,6 +104,16 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv a{color:${PDF_BRAND_BLUE_HEX};word-break:break-all}
       .pdf-v1-listing-link{color:${PDF_BRAND_BLUE_HEX};word-break:break-all;text-decoration:underline}
       .pdf-v1-kv .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;}
+      .pdf-about-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px}
+      .pdf-about-group{min-width:0}
+      .pdf-about-group-title{
+        margin:0 0 4px;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
+        letter-spacing:0.04em;text-transform:uppercase;line-height:1.3;
+      }
+      .pdf-v1-kv--about{font-size:var(--pdf-fs-table)}
+      .pdf-v1-kv--about td{padding:4px 0}
+      .pdf-v1-kv--about td:first-child{width:44%}
+      .pdf-about-notes{margin-top:12px}
       .pdf-source-mirror-panel{margin-top:0}
       .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
   `;
@@ -176,6 +186,93 @@ export function buildPdfAdminMirrorClientBlock(
   const body = rows.map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`).join("");
   const head = pdfV1PanelHead("klienta dati", titleIconHtml);
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
+}
+
+export const PDF_ABOUT_REPORT_TITLE = "PAR ŠO ATSKAITI";
+
+/**
+ * Maksājums, transportlīdzeklis, klients un piezīmes vienā kompaktā blokā —
+ * klientam tie ir viens konteksts, nevis četras atsevišķas sadaļas.
+ */
+export function buildPdfAboutReportBlock(args: {
+  order: {
+    created: number;
+    paymentStatus: string;
+    amountTotal: number | null;
+    currency: string | null;
+    vin: string | null;
+    listingUrl: string | null;
+    customerName: string | null;
+    customerEmail: string | null;
+    customerPhone: string | null;
+    notes: string | null | undefined;
+  };
+  money: string;
+  dateFmt: Intl.DateTimeFormat;
+  makeModel: string | null;
+  show: { payment: boolean; vehicle: boolean; client: boolean; notes: boolean };
+  titleIconHtml?: string;
+}): string {
+  const { order: o, money, dateFmt, makeModel, show } = args;
+  type Row = { k: string; v: string; kind?: "vin" | "link" };
+  const groups: { title: string; rows: Row[] }[] = [];
+
+  if (show.vehicle) {
+    const rows: Row[] = [];
+    if (o.vin?.trim()) rows.push({ k: "VIN", v: o.vin.trim(), kind: "vin" });
+    if (makeModel?.trim()) rows.push({ k: "Marka / modelis", v: makeModel.trim() });
+    if (o.listingUrl?.trim()) rows.push({ k: "Sludinājums", v: o.listingUrl.trim(), kind: "link" });
+    if (rows.length > 0) groups.push({ title: "Transportlīdzeklis", rows });
+  }
+
+  if (show.payment) {
+    const rows: Row[] = [];
+    if (money !== "—") rows.push({ k: "Summa", v: money });
+    rows.push({ k: "Pasūtījums", v: dateFmt.format(new Date(o.created * 1000)) });
+    if (o.paymentStatus?.trim()) rows.push({ k: "Statuss", v: o.paymentStatus.trim() });
+    groups.push({ title: "Maksājums", rows });
+  }
+
+  if (show.client) {
+    const rows: Row[] = [];
+    if (o.customerName?.trim()) rows.push({ k: "Vārds, uzvārds", v: o.customerName.trim() });
+    if (o.customerEmail?.trim()) rows.push({ k: "E-pasts", v: o.customerEmail.trim() });
+    if (o.customerPhone?.trim()) rows.push({ k: "Tālrunis", v: o.customerPhone.trim() });
+    if (rows.length > 0) groups.push({ title: "Klients", rows });
+  }
+
+  let notesHtml = "";
+  if (show.notes && o.notes?.trim()) {
+    const plain = adminRichHtmlToPlainText(o.notes).replace(/\u00a0/g, " ");
+    if (plain.trim()) {
+      const body = plain
+        .split(/\r?\n/)
+        .map((ln) => esc(ln))
+        .join("<br />");
+      notesHtml = `<div class="pdf-about-notes"><p class="pdf-about-group-title">Klienta komentārs</p><div class="pdf-v1-notes-client-wrap"><p class="client-msg pdf-v1-notes-body" style="margin:0">${body}</p></div></div>`;
+    }
+  }
+
+  if (groups.length === 0 && !notesHtml) return "";
+
+  const cols = groups
+    .map((g) => {
+      const rows = g.rows
+        .map((r) => {
+          const value =
+            r.kind === "vin" ? `<span class="pdf-vin">${esc(r.v)}</span>`
+            : r.kind === "link" ? `<a href="${esc(r.v)}" class="pdf-v1-listing-link">${esc(r.v)}</a>`
+            : esc(r.v);
+          return `<tr><td>${esc(r.k)}</td><td>${value}</td></tr>`;
+        })
+        .join("");
+      return `<div class="pdf-about-group"><p class="pdf-about-group-title">${esc(g.title)}</p><table class="pdf-v1-kv pdf-v1-kv--about"><tbody>${rows}</tbody></table></div>`;
+    })
+    .join("");
+
+  const head = pdfV1PanelHead(PDF_ABOUT_REPORT_TITLE, args.titleIconHtml ?? "");
+  const grid = cols ? `<div class="pdf-about-grid">${cols}</div>` : "";
+  return `<section class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card pdf-about-report" role="region">${head}${grid}${notesHtml}</section>`;
 }
 
 export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined, titleIconHtml = ""): string {

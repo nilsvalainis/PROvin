@@ -35,6 +35,7 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import { buildPdfReportSummaryTiles, PDF_REPORT_SUMMARY_TITLE } from "@/lib/pdf-report-summary";
 import {
   formatLtabCentsAsEur,
   formatLtabCertificateAmountEur,
@@ -63,13 +64,9 @@ import {
 import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
 import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import {
-  buildPdfAdminMirrorClientBlock,
-  buildPdfAdminMirrorNotesBlock,
-  buildPdfAdminMirrorPaymentBlock,
-  buildPdfAdminMirrorVehicleBlock,
+  buildPdfAboutReportBlock,
   pdfLayoutDraftExtraCss,
   pdfProvinWordmarkHtml,
-  pdfV1PanelHead,
   PDF_BRAND_BLUE_HEX,
   provincLogoSvg,
 } from "@/lib/client-report-pdf-layout-draft";
@@ -232,6 +229,7 @@ const PDF_PROVIN_SOURCES_L1 = "Maksas vēstures atskaites";
 const PDF_PROVIN_SOURCES_L2 = "Publiskas Eiropas datubāzes";
 const PDF_PROVIN_SOURCES_L3 = "Citi avoti";
 const PDF_PROVIN_SOURCES_L_TOTAL = "Kopā";
+const PDF_SOURCES_CHECKED_TITLE = "Kas tika pārbaudīts";
 
 function capSourceCount(n: number): number {
   return Math.min(Math.max(0, n), 9);
@@ -320,6 +318,47 @@ function computeProvinPdfSourcesUsedCounts(
   return { n1, n2, n3 };
 }
 
+/** Katrs pārbaudītais avots atsevišķi — nosaukums, avota krāsa un ierakstu skaits. */
+function collectPdfCheckedSources(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+): { label: string; count: number }[] {
+  const L = SOURCE_BLOCK_LABELS;
+  const out: { label: string; count: number }[] = [];
+  if (payloadCsddHasData(p, vis)) {
+    const f = p.csddForm;
+    out.push({
+      label: L.csdd,
+      count:
+        (f?.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
+        (f?.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length +
+        (f?.mileageHistory ?? []).filter((r) => r.date.trim() && r.odometer.trim()).length,
+    });
+  }
+  for (const title of [L.autodna, L.carvertical, L.tjekbil, L.mnt_ee, L.lkf_ee, L.carinfo] as const) {
+    const b = getVendorPdfBlock(p, title);
+    if (!b || !vendorPdfBlockHasData(b)) continue;
+    if (vendorTitlesOmittedForPdf(vis).has(title)) continue;
+    out.push({ label: title, count: b.mileageRows.length + b.incidentRows.length });
+  }
+  if (payloadAutoRecordsHasData(p, vis)) {
+    const ar = p.autoRecordsBlock;
+    out.push({
+      label: PDF_SOURCE_DEALER_TITLE,
+      count:
+        (ar?.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
+        (ar?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length,
+    });
+  }
+  if (payloadLtabHasData(p, vis)) {
+    out.push({ label: L.ltab, count: (p.manualLtabBlock?.rows ?? []).filter(ltabRowHasData).length });
+  }
+  if (vis.citi_avoti && p.citiAvoti && citiAvotiHasContent(p.citiAvoti)) {
+    out.push({ label: L.citi_avoti, count: countCitiAvotiFilledParts(p.citiAvoti) });
+  }
+  return out;
+}
+
 function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   const { n1, n2, n3 } = computeProvinPdfSourcesUsedCounts(p, vis);
   const nTotal = capSourceCount(n1 + n2 + n3);
@@ -337,7 +376,42 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
     .join("");
   const totalRow = `<tr class="pdf-provin-sources-total"><td><strong>${escapeHtml(PDF_PROVIN_SOURCES_L_TOTAL)}</strong></td><td><strong>${escapeHtml(String(nTotal))}</strong></td></tr>`;
   const body = `${categoryRows}${totalRow}`;
-  return `<section class="pdf-provin-sources-wrap pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region" aria-labelledby="pdf-provin-sources-h">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></section>`;
+
+  const checked = collectPdfCheckedSources(p, vis);
+  const grid =
+    checked.length === 0
+      ? ""
+      : `<p class="pdf-field-label pdf-sources-checked-label">${escapeHtml(PDF_SOURCES_CHECKED_TITLE)}</p><ul class="pdf-sources-checked-grid">${checked
+          .map((s) => {
+            const key = mileageSourceLabelToPdfKey(s.label);
+            const count = s.count > 0 ? formatSourceRecordCountLv(s.count) : "pārbaudīts";
+            return `<li class="pdf-sources-checked-item"><span class="pdf-sources-checked-dot pdf-sources-checked-dot--${key}" aria-hidden="true"></span><span class="pdf-sources-checked-name">${escapeHtml(s.label)}</span><span class="pdf-sources-checked-count">${escapeHtml(count)}</span></li>`;
+          })
+          .join("")}</ul>`;
+
+  return `<section class="pdf-provin-sources-wrap pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region" aria-labelledby="pdf-provin-sources-h">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table>${grid}</section>`;
+}
+
+/** Atskaites kopsavilkums — četras statusa plāksnītes uzreiz zem galvas. */
+function buildPdfReportSummaryHtml(p: ClientReportPayload): string {
+  const tiles = buildPdfReportSummaryTiles({
+    csddForm: p.csddForm ?? null,
+    autoRecordsBlock: p.autoRecordsBlock ?? null,
+    manualVendorBlocks: p.manualVendorBlocks ?? null,
+    manualLtabBlock: p.manualLtabBlock ?? null,
+    citiAvoti: p.citiAvoti ?? null,
+  });
+  const items = tiles
+    .map(
+      (t) => `<li class="pdf-summary-tile pdf-summary-tile--${t.tone}">
+      <p class="pdf-summary-tile__label">${escapeHtml(t.label)}</p>
+      <p class="pdf-summary-tile__value">${escapeHtml(t.value)}</p>
+      ${t.note ? `<p class="pdf-summary-tile__note">${escapeHtml(t.note)}</p>` : ""}
+    </li>`,
+    )
+    .join("");
+  const head = sectionHeadBrand(sectionIconPdfHtml("listChecks"), PDF_REPORT_SUMMARY_TITLE);
+  return `<section class="pdf-report-summary pdf-surface-card" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul></section>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string): string {
@@ -1342,6 +1416,47 @@ function clientReportPrintCss(): string {
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
       .pdf-sec-head--brand{align-items:center;gap:10px;margin:0 0 12px;}
+      .pdf-summary-tiles{
+        display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0;padding:0;list-style:none;
+      }
+      .pdf-summary-tile{
+        padding:10px 12px;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);
+        border-top:3px solid #94a3b8;background:#fff;min-width:0;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-summary-tile--ok{border-top-color:#16a34a;}
+      .pdf-summary-tile--warn{border-top-color:#FFC107;}
+      .pdf-summary-tile--alert{border-top-color:#FF4D4D;}
+      .pdf-summary-tile--neutral{border-top-color:#cbd5e1;}
+      .pdf-summary-tile__label{
+        margin:0;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
+        letter-spacing:0.04em;text-transform:uppercase;line-height:1.3;
+      }
+      .pdf-summary-tile__value{margin:4px 0 0;font-size:var(--pdf-fs-sec);font-weight:700;color:#0f172a;line-height:1.25;}
+      .pdf-summary-tile__note{margin:3px 0 0;font-size:var(--pdf-fs-label);color:#64748b;line-height:1.35;}
+      .pdf-sources-checked-label{margin:12px 0 6px;}
+      .pdf-sources-checked-grid{
+        display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin:0;padding:0;list-style:none;
+      }
+      .pdf-sources-checked-item{
+        display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--pdf-line-soft);
+        font-size:var(--pdf-fs-table);line-height:1.35;
+      }
+      .pdf-sources-checked-name{flex:1;color:#0f172a;font-weight:500;}
+      .pdf-sources-checked-count{color:#86868b;white-space:nowrap;}
+      .pdf-sources-checked-dot{
+        width:8px;height:8px;border-radius:999px;flex-shrink:0;background:#94a3b8;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-sources-checked-dot--csdd{background:#16a34a;}
+      .pdf-sources-checked-dot--autodna{background:#1e3a8a;}
+      .pdf-sources-checked-dot--carvertical{background:#eab308;}
+      .pdf-sources-checked-dot--dealer{background:#dc2626;}
+      .pdf-sources-checked-dot--tjekbil{background:#be123c;}
+      .pdf-sources-checked-dot--ee{background:#0e7490;}
+      .pdf-sources-checked-dot--carinfo{background:#0f766e;}
+      .pdf-sources-checked-dot--ltab{background:#b91c1c;}
+      .pdf-sources-checked-dot--cits{background:#ea580c;}
       .pdf-src-count-badge{
         flex-shrink:0;padding:3px 9px;border-radius:999px;background:#F1F5F9;color:#475569;
         font-size:var(--pdf-fs-label);font-weight:600;letter-spacing:0.01em;line-height:1.3;white-space:nowrap;
@@ -2088,19 +2203,20 @@ export function buildClientReportDocumentHtml(args: {
     : "";
   if (alertBannersHtml) lines.push(alertBannersHtml);
 
-  const payBlock = vis.payment
-    ? buildPdfAdminMirrorPaymentBlock(p, money, dateFmt, sectionIconPdfHtml("creditCard"))
-    : "";
-  if (payBlock) lines.push(payBlock);
-  const vehicleBlock = vis.vehicle ? buildPdfAdminMirrorVehicleBlock(p, makeModel, sectionIconPdfHtml("carFront")) : "";
-  if (vehicleBlock) lines.push(vehicleBlock);
-  const clientBlock = vis.client ? buildPdfAdminMirrorClientBlock(p, sectionIconPdfHtml("userCircle")) : "";
-  if (clientBlock) lines.push(clientBlock);
-  const notesBlock = vis.notes ? buildPdfAdminMirrorNotesBlock(p.notes, sectionIconPdfHtml("messageSquare")) : "";
-  if (notesBlock) lines.push(notesBlock);
+  lines.push(buildPdfReportSummaryHtml(p));
 
   const provinSourcesStrip = buildProvinPdfSourcesUsedStripHtml(p, vis);
   if (provinSourcesStrip) lines.push(provinSourcesStrip);
+
+  const aboutBlock = buildPdfAboutReportBlock({
+    order: p,
+    money,
+    dateFmt,
+    makeModel,
+    show: { payment: vis.payment, vehicle: vis.vehicle, client: vis.client, notes: vis.notes },
+    titleIconHtml: sectionIconPdfHtml("fileText"),
+  });
+  if (aboutBlock) lines.push(aboutBlock);
 
   const mileageOpts: CollectUnifiedMileageOptions | undefined = vis.unifiedMileage
     ? {
