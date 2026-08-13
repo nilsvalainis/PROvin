@@ -25,10 +25,10 @@ describe("isMainAnalysisSourceBlock", () => {
 describe("outvinDealerReportToPlainText", () => {
   it("includes vehicle info and checks", () => {
     const report = emptyOutvinDealerReport();
-    report.vehicleInfo.typeCode = "937";
+    report.vehicleInfo.vehicleType = "937";
     report.accidentCheck = "Nav ierakstu.";
     const plain = outvinDealerReportToPlainText(report);
-    expect(plain).toContain("Tips: 937");
+    expect(plain).toContain("Transportlīdzekļa tips: 937");
     expect(plain).toContain("Negadījumu pārbaude");
   });
 });
@@ -49,7 +49,7 @@ describe("auto_records Gemini context", () => {
       },
     });
     const plain = sourceBlockPlainTextExcludingComments("auto_records", blocks);
-    expect(plain).toContain("Oficiālā dīlera atskaite");
+    expect(plain).toContain("Oficiālā dīlera dati:");
     expect(plain).toContain("Modelis: E 220");
     expect(plain).toContain("937");
   });

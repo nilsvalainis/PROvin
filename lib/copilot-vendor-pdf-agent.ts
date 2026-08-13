@@ -12,6 +12,7 @@ import type { CopilotAction } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
 import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
+import { extractDealerReport, looksLikeDealerReport } from "@/lib/dealer-report-extract";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import {
   parseVendorPdfAgentPayload,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/vendor-pdf-agent-merge";
 import {
   emptyVendorReportExtract,
+  vendorSourceKey,
   type VendorReportExtract,
   type VendorReportVendor,
 } from "@/lib/vendor-report-extract";
@@ -42,7 +44,9 @@ export type VendorPdfAgentResult = {
 };
 
 function vendorLabel(vendor: VendorReportVendor): string {
-  return vendor === "autodna" ? "AutoDNA" : "CarVertical";
+  if (vendor === "autodna") return "AutoDNA";
+  if (vendor === "carvertical") return "CarVertical";
+  return "Oficiālā dīlera";
 }
 
 /** Zīmola noteikšana no teksta / faila nosaukuma (mērķa avots UI jau ir zināms, šis ir pārbaude). */
@@ -50,12 +54,15 @@ export function detectVendorFromReport(text: string, fileName: string): VendorRe
   const haystack = `${fileName}\n${text.slice(0, 6000)}`.toLowerCase();
   if (/carvertical|car\s*vertical/.test(haystack)) return "carvertical";
   if (/autodna|auto\s*dna|auto\s*v[ēe]stures\s+atskaite/.test(haystack)) return "autodna";
+  if (looksLikeDealerReport(text)) return "dealer";
   return null;
 }
 
 function extractDeterministic(vendor: VendorReportVendor, text: string): VendorReportExtract {
   if (!text.trim()) return emptyVendorReportExtract(vendor);
-  return vendor === "autodna" ? extractAutodnaReport(text) : extractCarverticalReport(text);
+  if (vendor === "autodna") return extractAutodnaReport(text);
+  if (vendor === "carvertical") return extractCarverticalReport(text);
+  return extractDealerReport(text);
 }
 
 async function runGeminiExtract(opts: {
@@ -115,8 +122,13 @@ export async function runVendorPdfAgent(opts: {
 
   const local = extractDeterministic(vendor, text);
 
+  // Dīlera / rūpnīcas izdrukas struktūra ir stabila: Gemini tur ir tikai rezerve, ja teksta
+  // slānis nedeva ne laukus, ne rindas (skenēts vai vēl neredzēts izkārtojums).
+  const dealerLocalIsEnough =
+    vendor === "dealer" && (Object.keys(local.vehicleInfo).length > 0 || local.mileage.length > 0);
+
   let ai = emptyVendorReportExtract(vendor);
-  if (opts.useGemini !== false) {
+  if (opts.useGemini !== false && !dealerLocalIsEnough) {
     try {
       ai = await runGeminiExtract({ vendor, fileName: opts.fileName, buffer: opts.buffer, local });
     } catch (e) {
@@ -128,18 +140,23 @@ export async function runVendorPdfAgent(opts: {
 
   const merged = mergeVendorReportExtracts(local, ai);
   const resolved = resolveExtractCountries(merged, collectWorkspaceCountryTimeline(opts.sourceBlocks));
-  const actions = buildVendorCopilotActions(resolved, vendor);
+  const actions = buildVendorCopilotActions(resolved, vendorSourceKey(vendor));
 
   const missingCountry = resolved.mileage.filter((r) => !r.country.trim()).length;
   const summaryParts = [
     `${vendorLabel(vendor)} „${opts.fileName}”: ${resolved.mileage.length} nobraukuma, ${resolved.incidents.length} negadījumu ierakstu`,
   ];
   if (resolved.serviceHistory.length > 0) {
-    summaryParts.push(`${resolved.serviceHistory.length} apkopes/remonti → Servisa vēsture`);
+    summaryParts.push(
+      `${resolved.serviceHistory.length} apkopes/remonti → Servisa un remontu vēsture`,
+    );
   }
   if (missingCountry > 0) summaryParts.push(`${missingCountry} rindām valsts nav droši nosakāma (atstāta tukša)`);
   const dealerFields = Object.keys(resolved.vehicleInfo).length;
-  if (dealerFields > 0) summaryParts.push(`${dealerFields} dīlera specifikācijas lauki`);
+  if (dealerFields > 0) summaryParts.push(`${dealerFields} transporta informācijas lauki`);
+  if (resolved.equipment.length > 0) {
+    summaryParts.push(`${resolved.equipment.length} komplektācijas pozīcijas`);
+  }
 
   console.info(`${LOG_PREFIX} ok`, {
     vendor,

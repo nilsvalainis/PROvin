@@ -123,14 +123,14 @@ export function extractVehicleReportFingerprint(
   const csdd = blocks.csdd;
   const outvin = getAutoRecordsOutvinBundle(blocks.auto_records, opts?.vin ?? "");
   const vi = blocks.auto_records.outvinReport?.vehicleInfo ?? outvin.vehicleInfo;
-  const { makeTokens, modelTokens } = tokenizeMakeModel(csdd.makeModel || vi.model || vi.series);
+  const { makeTokens, modelTokens } = tokenizeMakeModel(csdd.makeModel || vi.model || vi.modelSeries);
   const year =
     parseYearFromRegistration(csdd.firstRegistration) ??
     (opts?.manufactureYear != null && Number.isFinite(opts.manufactureYear) ? opts.manufactureYear : null) ??
     parseYearFromVin(opts?.vin);
 
   return {
-    makeModel: (csdd.makeModel || vi.model || vi.series).trim(),
+    makeModel: (csdd.makeModel || vi.model || vi.modelSeries).trim(),
     makeTokens,
     modelTokens,
     year,
@@ -140,7 +140,7 @@ export function extractVehicleReportFingerprint(
     engineDisplacementCm3: csdd.engineDisplacementCm3.replace(/\D/g, ""),
     enginePowerKw: csdd.enginePowerKw.replace(/[^\d.,]/g, "").replace(",", "."),
     emissionStandard: csdd.emissionStandard.trim().toUpperCase(),
-    typeCode: (vi.typeCode || "").trim().toUpperCase(),
+    typeCode: (vi.vehicleType || "").trim().toUpperCase(),
   };
 }
 

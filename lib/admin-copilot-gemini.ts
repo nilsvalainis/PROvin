@@ -14,6 +14,7 @@ import { buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
 import { COPILOT_SOURCE_KEYS, type CopilotChatMessage, type CopilotGeminiResponse, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { OUTVIN_VEHICLE_INFO_ROWS } from "@/lib/outvin-dealer-types";
 
 export { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
 
@@ -32,6 +33,7 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 - CarVertical → carvertical: odometer/mileage log + insurance claims/incidents (+ damage details map into incidents when amount+date exist). Service history in PDF → set_service_history (auto_records). Leftover significant facts → append_raw on carvertical.
 - LTAB / OCTA → ltab: insurance accident rows only (date + EUR + country). Leftover significant facts → append_raw on ltab.
 - Auto Records / ODOMETER CHECK → auto_records: mileage rows + set_service_history when service journal present
+- Official dealer / factory printout (BMW dealer portal export with MODEL SERIES … UPHOLSTERY CODE, „Specifications & Options”, „Key Read History”, „Repair History”; auto-records.com „VEHICLE INFORMATION”) → auto_records: set_dealer_vehicle_info (primary field source), Key Read History rows → upsert_mileage, Repair/Service History visits → upsert_service_work (works = dealer/workshop name + parts as printed, no part numbers), plus a factual set_service_history summary. Odometer values printed as „188,858 mi / 303,938 km” → ALWAYS store kilometres (convert miles × 1.609344 when km is missing).
 - Other foreign reports → citi_avoti (first section): mileage + incidents when present; leftover facts → append_raw on citi_avoti
 
 Sources (must match exactly):
@@ -47,9 +49,10 @@ Actions:
    NEVER emit here: technical inspections („Veikta tehniskā apskate”, periodiska/papildus TA, emission checks), odometer-only records, registrations, damage records, or CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (recommended, not performed).
 3b) set_service_history — the FALLBACK free-text field „Servisa vēsture” (ALWAYS source=auto_records). Use it ONLY when the service data has no per-visit date+works structure (e.g. a narrative dealer note). If you can produce upsert_service_work rows, do NOT also emit set_service_history for the same data.
    Format: one plain fact line per entry, newest first — DD.MM.YYYY | <odometer> km | <category>: <work items>. No commentary, no markdown.
-4) set_dealer_vehicle_info — OFICIĀLĀ DĪLERA DATI transporta informācija (ALWAYS source=auto_records), field "vehicleInfo": { vinCode, engineCode, transmission, color, interior, model, generation, series, typeCode, steeringSide }.
-   Fill it from CarVertical „Transportlīdzekļa specifikācija” + PR/equipment code list and AutoDNA „Transportlīdzekļa tehniskie dati”.
-   Prefer the LONGEST / most specific designation WITH its factory code: „Havana Black Metallic (LY8X)” over „Melns”; „Valcona leather (N5D)” over „Leather package”; transmission with gear count + code. Omit fields the PDFs do not show.
+4) set_dealer_vehicle_info — OFICIĀLĀ DĪLERA DATI transporta informācija (ALWAYS source=auto_records), field "vehicleInfo": { model, modelSeries, vinCode, vehicleType, transmission, steeringSide, engineCode, engineNumber, body, drive, power, integrationLevel, currentILevel, developmentCode, modelCode, productionDate, firstRegistration, warrantyStartDate, countryRegion, color, colorCode, interior, interiorCode }.
+   Field set mirrors an official dealer / factory printout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE → engineCode, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY → interior, UPHOLSTERY CODE → interiorCode).
+   Fill it from an official dealer printout when attached; otherwise from CarVertical „Transportlīdzekļa specifikācija” + PR/equipment code list and AutoDNA „Transportlīdzekļa tehniskie dati”. An official dealer / factory printout is the PRIMARY source for these fields — its values replace AutoDNA / CarVertical values.
+   Prefer the LONGEST / most specific designation WITH its factory code: „Havana Black Metallic (LY8X)” over „Melns”; „Valcona leather (N5D)” over „Leather package”; transmission with gear count + code. Omit fields the PDFs do not show. Dates in these fields: DD.MM.YYYY.
 5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW. Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
 
 When multiple PDFs are attached:
@@ -115,18 +118,9 @@ const ACTION_ITEM_SCHEMA: Schema = {
     text: { type: SchemaType.STRING },
     vehicleInfo: {
       type: SchemaType.OBJECT,
-      properties: {
-        vinCode: { type: SchemaType.STRING },
-        series: { type: SchemaType.STRING },
-        typeCode: { type: SchemaType.STRING },
-        steeringSide: { type: SchemaType.STRING },
-        interior: { type: SchemaType.STRING },
-        model: { type: SchemaType.STRING },
-        generation: { type: SchemaType.STRING },
-        engineCode: { type: SchemaType.STRING },
-        color: { type: SchemaType.STRING },
-        transmission: { type: SchemaType.STRING },
-      },
+      properties: Object.fromEntries(
+        OUTVIN_VEHICLE_INFO_ROWS.map(({ key }) => [key, { type: SchemaType.STRING } as Schema]),
+      ),
     },
     confidence: { type: SchemaType.STRING, format: "enum", enum: ["high", "medium", "low"] },
     note: { type: SchemaType.STRING },

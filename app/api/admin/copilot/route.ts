@@ -17,6 +17,7 @@ import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-gemini-extract";
 import { detectVendorFromReport, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import { vendorSourceKey } from "@/lib/vendor-report-extract";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -243,7 +244,7 @@ export async function POST(req: Request) {
       const detected = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName })
         .then((e) => detectVendorFromReport(e.text, pdf.fileName))
         .catch(() => null);
-      if (!detected || !allowedSet.has(detected)) continue;
+      if (!detected || !allowedSet.has(vendorSourceKey(detected))) continue;
       try {
         const agent = await runVendorPdfAgent({
           target: detected,

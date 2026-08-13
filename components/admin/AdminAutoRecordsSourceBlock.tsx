@@ -14,7 +14,10 @@ import type {
   AutoRecordsBlockState,
   AutoRecordsServiceRow,
   AutoRecordsServiceWorkRow,
+  WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
+import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import {
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
   autoRecordsServiceWorkRowHasData,
@@ -75,6 +78,12 @@ type Props = {
   onChange: (next: AutoRecordsBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
   sessionId: string;
+  /** Copilot dīlera PDF aģentam vajag visus avotu blokus (valstu noteikšanai). */
+  getSourceBlocks?: () => WorkspaceSourceBlocks;
+  applyPatchedBlocks?: (
+    patched: Partial<WorkspaceSourceBlocks>,
+    changedKeys: CopilotSourceKey[],
+  ) => void;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
   geminiComment?: AdminGeminiSourceCommentSlot;
@@ -92,6 +101,8 @@ export function AdminAutoRecordsSourceBlock({
   onChange,
   trafficFillLevel,
   sessionId,
+  getSourceBlocks,
+  applyPatchedBlocks,
   pdfInclude,
   onPdfIncludeChange,
   geminiComment,
@@ -201,6 +212,16 @@ export function AdminAutoRecordsSourceBlock({
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
         <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
+          {getSourceBlocks && applyPatchedBlocks ? (
+            <AdminHistoryVendorPdfUpload
+              target="auto_records"
+              sessionId={sessionId}
+              disabled={disabled}
+              readOnly={readOnly}
+              getSourceBlocks={getSourceBlocks}
+              applyPatchedBlocks={applyPatchedBlocks}
+            />
+          ) : null}
           <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
             Paste RAW data here
           </label>

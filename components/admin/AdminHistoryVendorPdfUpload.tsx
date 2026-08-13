@@ -12,7 +12,7 @@ import { useCallback, useId, useRef, useState } from "react";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
-export type VendorPdfUploadTarget = "autodna" | "carvertical";
+export type VendorPdfUploadTarget = "autodna" | "carvertical" | "auto_records";
 
 const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   autodna: {
@@ -22,6 +22,10 @@ const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   carvertical: {
     title: "Augšupielādēt CarVertical PDF atskaiti",
     hint: "Velc PDF šeit vai klikšķini · Copilot aģents aizpilda tabulas (RAW lauki netiek aiztikti)",
+  },
+  auto_records: {
+    title: "Augšupielādēt oficiālā dīlera PDF (BMW / auto-records.com)",
+    hint: "Velc PDF šeit vai klikšķini · Copilot aizpilda transporta informāciju, servisa un nobraukuma tabulas",
   },
 };
 

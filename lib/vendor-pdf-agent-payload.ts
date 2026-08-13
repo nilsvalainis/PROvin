@@ -30,7 +30,7 @@ import {
   type VendorServiceEntry,
 } from "@/lib/vendor-service-history";
 
-export const VENDOR_PDF_AGENT_SYSTEM = `You are the PROVIN.LV vehicle-history PDF extraction agent for ONE report (AutoDNA or CarVertical).
+export const VENDOR_PDF_AGENT_SYSTEM = `You are the PROVIN.LV vehicle-history PDF extraction agent for ONE report (AutoDNA, CarVertical or an official dealer / factory printout such as a BMW dealer portal export or auto-records.com vehicle information).
 Every vendor PDF follows a similar but slightly different layout — read the attached PDF like a human expert, section by section, and return ONLY the JSON described by the schema.
 
 ABSOLUTE RULES
@@ -70,20 +70,29 @@ ABSOLUTE RULES
 - If an event has no printed work items and no category, skip it.
 
 7) VEHICLE SPECIFICATION → dealer fields (vehicleInfo)
-- Read AutoDNA „Transportlīdzekļa tehniskie dati” and CarVertical „Transportlīdzekļa specifikācija” + the PR/equipment code list.
-- vinCode: the 17-character VIN.
-- engineCode: e.g. „Dzinēja kods: CVUA”.
-- transmission: the most complete designation available, with code — e.g. „8-speed automatic transmission for four-wheel drive (G1G)”, „Automātiskā ātrumkārba (PPE)”.
-- color: prefer the FULL factory name with the paint code from the equipment list (e.g. „LY8X/Havana Black Metallic” → „Havana Black Metallic (LY8X)”) over a plain word like „Melns”.
-- interior: same rule — prefer the upholstery designation with code (e.g. „N5D Valcona leather” → „Valcona leather (N5D)”) over generic „Leather package”.
-- Leave a field as "" when the PDF does not show it.
+- Read AutoDNA „Transportlīdzekļa tehniskie dati”, CarVertical „Transportlīdzekļa specifikācija” + the PR/equipment code list, or the dealer printout field list.
+- Fields (leave "" when the PDF does not show it): model, modelSeries, vinCode, vehicleType, transmission, steeringSide, engineCode (ENGINE), engineNumber, body, drive, power, integrationLevel, currentILevel, developmentCode, modelCode, productionDate, firstRegistration, warrantyStartDate, countryRegion, color (COLOUR), colorCode, interior (UPHOLSTERY), interiorCode.
+- vinCode: the 17-character VIN. Dates in these fields: DD.MM.YYYY.
+- transmission: the most complete designation available, with code — e.g. „8-speed automatic transmission for four-wheel drive (G1G)”, „Automātiskā ātrumkārba (PPE)”, „AUT”.
+- color: prefer the FULL factory name with the paint code from the equipment list (e.g. „LY8X/Havana Black Metallic” → „Havana Black Metallic (LY8X)”) over a plain word like „Melns”; put a separate factory code into colorCode.
+- interior: same rule — prefer the upholstery designation with code (e.g. „N5D Valcona leather” → „Valcona leather (N5D)”) over generic „Leather package”; separate code → interiorCode.
+
+8) OFFICIAL DEALER / FACTORY PRINTOUTS (vendor "dealer")
+- Field list layout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY, UPHOLSTERY CODE) → vehicleInfo, one value per label, copied exactly.
+- „Key Read History” and auto-records.com „ODOMETER CHECK” rows → mileage. „Repair History” / „Service History” visits (date + odometer + dealer + parts) → serviceHistory: category = the dealer/workshop name as printed, works = the part / work names without part numbers and quantities.
+- Odometer values are often „188,858 mi / 303,938 km” — ALWAYS return kilometres (convert miles × 1.609344 and round when only miles are printed).
+- A dealer/workshop name that names its country („B&K Deutschland GmbH, Osnabrück”) is a countryTimeline entry for that visit date.
 
 Return JSON only — no markdown, no commentary.`;
+
+const VEHICLE_INFO_SCHEMA_PROPERTIES: Record<string, Schema> = Object.fromEntries(
+  OUTVIN_VEHICLE_INFO_ROWS.map(({ key }) => [key, { type: SchemaType.STRING } as Schema]),
+);
 
 export const VENDOR_PDF_AGENT_SCHEMA: Schema = {
   type: SchemaType.OBJECT,
   properties: {
-    vendor: { type: SchemaType.STRING, format: "enum", enum: ["autodna", "carvertical"] },
+    vendor: { type: SchemaType.STRING, format: "enum", enum: ["autodna", "carvertical", "dealer"] },
     mileage: {
       type: SchemaType.ARRAY,
       items: {
@@ -136,18 +145,7 @@ export const VENDOR_PDF_AGENT_SCHEMA: Schema = {
     },
     vehicleInfo: {
       type: SchemaType.OBJECT,
-      properties: {
-        vinCode: { type: SchemaType.STRING },
-        engineCode: { type: SchemaType.STRING },
-        transmission: { type: SchemaType.STRING },
-        color: { type: SchemaType.STRING },
-        interior: { type: SchemaType.STRING },
-        model: { type: SchemaType.STRING },
-        series: { type: SchemaType.STRING },
-        generation: { type: SchemaType.STRING },
-        typeCode: { type: SchemaType.STRING },
-        steeringSide: { type: SchemaType.STRING },
-      },
+      properties: VEHICLE_INFO_SCHEMA_PROPERTIES,
     },
     warnings: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
   },
@@ -193,7 +191,9 @@ export function parseVendorPdfAgentPayload(
 
   const vendorRaw = asString(payload.vendor, 20);
   const vendor: VendorReportVendor =
-    vendorRaw === "autodna" || vendorRaw === "carvertical" ? vendorRaw : fallbackVendor;
+    vendorRaw === "autodna" || vendorRaw === "carvertical" || vendorRaw === "dealer"
+      ? vendorRaw
+      : fallbackVendor;
   const out = emptyVendorReportExtract(vendor);
 
   const mileage: AutoRecordsServiceRow[] = [];
@@ -240,15 +240,22 @@ export function parseVendorPdfAgentPayload(
     if (!o) continue;
     const date = formatAutoRecordsDateForOutput(asString(o.date, 32));
     if (!date) continue;
-    const rawCategory = asString(o.category, 80).replace(/[:.]$/, "").trim();
+    const rawCategory = asString(o.category, 120).replace(/[:.]$/, "").trim();
     // Tehniskā apskate nav veikts darbs — modeļa kļūdas šeit nogriežam.
-    if (rawCategory && !isVendorServiceCategoryLine(rawCategory) && !isVendorServiceEventTitle(rawCategory)) {
+    // Dīlera izdrukā kategorija ir servisa punkta nosaukums, tāpēc tur šis filtrs neattiecas.
+    const dealerReport = vendor === "dealer";
+    if (
+      !dealerReport &&
+      rawCategory &&
+      !isVendorServiceCategoryLine(rawCategory) &&
+      !isVendorServiceEventTitle(rawCategory)
+    ) {
       continue;
     }
     const works = (Array.isArray(o.works) ? o.works : [])
       .map((w) => asString(w, 160))
       .filter((w) => w && !/^[-—–]$/.test(w));
-    const category = isVendorServiceCategoryLine(rawCategory) ? rawCategory : "";
+    const category = dealerReport || isVendorServiceCategoryLine(rawCategory) ? rawCategory : "";
     if (works.length === 0 && !category) continue;
     serviceHistory.push({
       date,

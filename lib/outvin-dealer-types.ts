@@ -1,18 +1,35 @@
 /**
- * Outvin dīlera atskaite — struktūra admin + PDF (bez nobraukuma tabulas dublēšanas PDF).
+ * Oficiālā dīlera atskaite — struktūra admin + PDF (bez nobraukuma tabulas dublēšanas PDF).
+ *
+ * Lauku kopa atbilst rūpnīcas / dīlera portāla izdrukai (BMW: MODEL SERIES … UPHOLSTERY CODE).
+ * Tos pašus laukus aizpilda arī auto-records.com „VEHICLE INFORMATION” un AutoDNA / CarVertical
+ * specifikācijas sadaļas, tāpēc lauku secība un nosaukumi ir vienā vietā.
  */
 
 export type OutvinVehicleInfo = {
-  vinCode: string;
-  series: string;
-  typeCode: string;
-  steeringSide: string;
-  interior: string;
   model: string;
-  generation: string;
-  engineCode: string;
-  color: string;
+  modelSeries: string;
+  vinCode: string;
+  vehicleType: string;
   transmission: string;
+  steeringSide: string;
+  engineCode: string;
+  engineNumber: string;
+  body: string;
+  drive: string;
+  power: string;
+  integrationLevel: string;
+  currentILevel: string;
+  developmentCode: string;
+  modelCode: string;
+  productionDate: string;
+  firstRegistration: string;
+  warrantyStartDate: string;
+  countryRegion: string;
+  color: string;
+  colorCode: string;
+  interior: string;
+  interiorCode: string;
 };
 
 export type OutvinEquipmentLine = {
@@ -36,40 +53,85 @@ export const OUTVIN_VEHICLE_INFO_ROWS: {
   labelEn: string;
   labelLv: string;
 }[] = [
-  { key: "vinCode", labelEn: "VIN Code", labelLv: "VIN kods" },
-  { key: "series", labelEn: "Series", labelLv: "Sērija" },
-  { key: "typeCode", labelEn: "Type code", labelLv: "Tips" },
-  { key: "steeringSide", labelEn: "Steering side", labelLv: "Stūre" },
-  { key: "interior", labelEn: "Interior", labelLv: "Interjers" },
   { key: "model", labelEn: "Model", labelLv: "Modelis" },
-  { key: "generation", labelEn: "Generation", labelLv: "Paaudze" },
-  { key: "engineCode", labelEn: "Engine code", labelLv: "Dzinēja kods" },
-  { key: "color", labelEn: "Color", labelLv: "Krāsa" },
+  { key: "modelSeries", labelEn: "Model series", labelLv: "Modeļa sērija" },
+  { key: "vinCode", labelEn: "VIN", labelLv: "VIN kods" },
+  { key: "vehicleType", labelEn: "Vehicle type", labelLv: "Transportlīdzekļa tips" },
   { key: "transmission", labelEn: "Transmission", labelLv: "Ātrumkārba" },
+  { key: "steeringSide", labelEn: "Steering", labelLv: "Stūre" },
+  { key: "engineCode", labelEn: "Engine", labelLv: "Dzinējs" },
+  { key: "engineNumber", labelEn: "Engine number", labelLv: "Dzinēja numurs" },
+  { key: "body", labelEn: "Body", labelLv: "Virsbūve" },
+  { key: "drive", labelEn: "Drive", labelLv: "Piedziņa" },
+  { key: "power", labelEn: "Power", labelLv: "Jauda" },
+  { key: "integrationLevel", labelEn: "Integration level", labelLv: "Integrācijas līmenis" },
+  { key: "currentILevel", labelEn: "Current I level", labelLv: "Pašreizējais I-Level" },
+  { key: "developmentCode", labelEn: "Development code", labelLv: "Izstrādes kods" },
+  { key: "modelCode", labelEn: "Model code", labelLv: "Modeļa kods" },
+  { key: "productionDate", labelEn: "Production date", labelLv: "Ražošanas datums" },
+  { key: "firstRegistration", labelEn: "First registration", labelLv: "Pirmā reģistrācija" },
+  { key: "warrantyStartDate", labelEn: "Warranty start date", labelLv: "Garantijas sākums" },
+  { key: "countryRegion", labelEn: "Country/region", labelLv: "Valsts / reģions" },
+  { key: "color", labelEn: "Colour", labelLv: "Krāsa" },
+  { key: "colorCode", labelEn: "Colour code", labelLv: "Krāsas kods" },
+  { key: "interior", labelEn: "Upholstery", labelLv: "Interjers" },
+  { key: "interiorCode", labelEn: "Upholstery code", labelLv: "Interjera kods" },
 ];
 
-/** PDF: divas kolonnas (kā Outvin atskaitē). */
-export const OUTVIN_VEHICLE_INFO_PDF_PAIRS: [keyof OutvinVehicleInfo, keyof OutvinVehicleInfo][] = [
-  ["vinCode", "model"],
-  ["series", "generation"],
-  ["typeCode", "engineCode"],
-  ["steeringSide", "color"],
-  ["interior", "transmission"],
-];
+/** Vecās atskaites lauki → jaunie (saglabātie pasūtījumi nedrīkst pazaudēt datus). */
+export const OUTVIN_LEGACY_VEHICLE_INFO_KEYS: Record<string, keyof OutvinVehicleInfo> = {
+  generation: "modelSeries",
+  series: "modelSeries",
+  typeCode: "vehicleType",
+};
 
 export function emptyOutvinVehicleInfo(): OutvinVehicleInfo {
   return {
-    vinCode: "",
-    series: "",
-    typeCode: "",
-    steeringSide: "",
-    interior: "",
     model: "",
-    generation: "",
-    engineCode: "",
-    color: "",
+    modelSeries: "",
+    vinCode: "",
+    vehicleType: "",
     transmission: "",
+    steeringSide: "",
+    engineCode: "",
+    engineNumber: "",
+    body: "",
+    drive: "",
+    power: "",
+    integrationLevel: "",
+    currentILevel: "",
+    developmentCode: "",
+    modelCode: "",
+    productionDate: "",
+    firstRegistration: "",
+    warrantyStartDate: "",
+    countryRegion: "",
+    color: "",
+    colorCode: "",
+    interior: "",
+    interiorCode: "",
   };
+}
+
+/**
+ * Saglabātie (arī vecie) dati → `OutvinVehicleInfo`. Vecos laukus (`generation`, `series`,
+ * `typeCode`) pārliek uz jaunajiem tikai tad, ja jaunais lauks ir tukšs.
+ */
+export function parseOutvinVehicleInfoRaw(raw: unknown, maxLen = 500): OutvinVehicleInfo {
+  const info = emptyOutvinVehicleInfo();
+  if (!raw || typeof raw !== "object") return info;
+  const v = raw as Record<string, unknown>;
+  for (const { key } of OUTVIN_VEHICLE_INFO_ROWS) {
+    const value = v[key];
+    if (typeof value === "string") info[key] = value.slice(0, maxLen);
+  }
+  for (const [legacyKey, key] of Object.entries(OUTVIN_LEGACY_VEHICLE_INFO_KEYS)) {
+    const value = v[legacyKey];
+    if (typeof value !== "string" || !value.trim()) continue;
+    if (info[key].trim()) continue;
+    info[key] = value.slice(0, maxLen);
+  }
+  return info;
 }
 
 export function emptyOutvinEquipmentLine(): OutvinEquipmentLine {

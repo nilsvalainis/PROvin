@@ -31,7 +31,9 @@ import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
   emptyOutvinDealerReport,
+  outvinEquipmentLineHasData,
   OUTVIN_VEHICLE_INFO_ROWS,
+  type OutvinEquipmentLine,
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 import { mergeServiceHistoryFieldText } from "@/lib/vendor-service-history";
@@ -315,6 +317,9 @@ function hasSpecCode(value: string): boolean {
 /**
  * Tukšos dīlera laukus aizpilda; aizpildītu pārraksta tikai tad, ja jaunajā ir precīzs kods,
  * bet esošajā nav (piem. „Melns” → „Havana Black Metallic (LY8X)”).
+ *
+ * `action.override` (oficiālā dīlera / rūpnīcas izdruka) pārraksta visus laukus — tā ir
+ * primārā specifikācija arī tad, ja lauki jau nāca no AutoDNA vai CarVertical.
  */
 function applyDealerVehicleInfo(
   b: AutoRecordsBlockState,
@@ -329,13 +334,61 @@ function applyDealerVehicleInfo(
     if (!incoming) continue;
     const current = vehicleInfo[key].trim();
     if (current === incoming) continue;
-    if (current && !(hasSpecCode(incoming) && !hasSpecCode(current))) continue;
+    if (!action.override && current && !(hasSpecCode(incoming) && !hasSpecCode(current))) continue;
     vehicleInfo[key] = incoming.slice(0, 500);
     changed = true;
   }
 
+  let equipment = report.equipment;
+  const incomingEquipment = (action.equipment ?? []).filter(outvinEquipmentLineHasData);
+  if (incomingEquipment.length > 0) {
+    const merged = mergeDealerEquipment(report.equipment, incomingEquipment, action.override === true);
+    if (merged !== report.equipment) {
+      equipment = merged;
+      changed = true;
+    }
+  }
+
+  let accidentCheck = report.accidentCheck;
+  const incomingAccident = (action.accidentCheck ?? "").trim();
+  if (incomingAccident && (action.override || !accidentCheck.trim())) {
+    if (incomingAccident !== accidentCheck) {
+      accidentCheck = incomingAccident.slice(0, 8000);
+      changed = true;
+    }
+  }
+
+  let stolenCheck = report.stolenCheck;
+  const incomingStolen = (action.stolenCheck ?? "").trim();
+  if (incomingStolen && (action.override || !stolenCheck.trim())) {
+    if (incomingStolen !== stolenCheck) {
+      stolenCheck = incomingStolen.slice(0, 8000);
+      changed = true;
+    }
+  }
+
   if (!changed) return b;
-  return { ...b, outvinReport: { ...report, vehicleInfo } };
+  return { ...b, outvinReport: { vehicleInfo, equipment, accidentCheck, stolenCheck } };
+}
+
+/** Komplektācija: dīlera izdruka aizstāj sarakstu, citādi pieliek tikai jaunos kodus. */
+function mergeDealerEquipment(
+  existing: OutvinEquipmentLine[],
+  incoming: OutvinEquipmentLine[],
+  replace: boolean,
+): OutvinEquipmentLine[] {
+  const current = existing.filter(outvinEquipmentLineHasData);
+  if (replace) {
+    const same =
+      current.length === incoming.length &&
+      current.every((l, i) => l.code === incoming[i]!.code && l.description === incoming[i]!.description);
+    return same ? existing : incoming;
+  }
+  const seen = new Set(current.map((l) => l.code.trim().toUpperCase() || l.description.trim().toLowerCase()));
+  const added = incoming.filter(
+    (l) => !seen.has(l.code.trim().toUpperCase() || l.description.trim().toLowerCase()),
+  );
+  return added.length > 0 ? [...current, ...added] : existing;
 }
 
 function applyAppendRaw(

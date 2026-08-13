@@ -3596,6 +3596,8 @@ export function OrderDetailWorkspace({
               geminiServiceHistory={geminiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
               photosPersistenceEnabled={orderDraftPersistenceEnabled}
               onAutoRecordsPhotoGroupsStructuralCommit={commitAutoRecordsPhotoGroupsStructural}
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
             />
           </div>
         ) : null}

@@ -1,7 +1,7 @@
 /**
  * Admin Order Copilot — strukturētās darbības (negadījumi / nobraukums / serviss / RAW).
  */
-import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import type { OutvinEquipmentLine, OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
 export const COPILOT_SOURCE_KEYS = [
   "csdd",
@@ -57,13 +57,22 @@ export type CopilotServiceWorkAction = {
 };
 
 /**
- * OFICIĀLĀ DĪLERA DATI — transporta informācijas lauki (VIN, dzinēja kods, ātrumkārba,
- * krāsa, interjērs) no avotu atskaišu specifikācijas sadaļām.
+ * OFICIĀLĀ DĪLERA DATI — transporta informācijas lauki (VIN, dzinējs, ātrumkārba, krāsa,
+ * interjērs, rūpnīcas kodi) no avotu atskaišu specifikācijas sadaļām.
  */
 export type CopilotDealerVehicleInfoAction = {
   type: "set_dealer_vehicle_info";
   source: "auto_records";
   vehicleInfo: Partial<OutvinVehicleInfo>;
+  /** Rūpnīcas komplektācija (tikai oficiālā dīlera izdrukas). */
+  equipment?: OutvinEquipmentLine[];
+  accidentCheck?: string;
+  stolenCheck?: string;
+  /**
+   * `true` — oficiālā dīlera / rūpnīcas izdruka: šie lauki ir primārais avots un pārraksta
+   * arī jau aizpildītās vērtības (piem. no AutoDNA vai CarVertical).
+   */
+  override?: boolean;
   confidence: CopilotConfidence;
   note?: string;
 };

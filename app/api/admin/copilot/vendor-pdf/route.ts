@@ -33,7 +33,11 @@ function describeAction(a: CopilotAction): string {
     return `negadījums ${a.date} · ${a.lossAmount} · ${a.country || "—"}`;
   }
   if (a.type === "set_dealer_vehicle_info") {
-    return `dīlera dati: ${Object.keys(a.vehicleInfo).join(", ")}`;
+    const parts = [
+      Object.keys(a.vehicleInfo).length > 0 ? Object.keys(a.vehicleInfo).join(", ") : "",
+      a.equipment && a.equipment.length > 0 ? `komplektācija (${a.equipment.length})` : "",
+    ].filter(Boolean);
+    return `dīlera dati: ${parts.join(" · ")}`;
   }
   if (a.type === "set_service_history") {
     const lines = a.text.trim().split(/\n+/).filter(Boolean).length;
@@ -64,10 +68,16 @@ export async function POST(req: Request) {
   if (!sessionId) return NextResponse.json({ error: "missing_session" }, { status: 400 });
 
   const targetRaw = str(form.get("target")).trim();
-  if (targetRaw !== "autodna" && targetRaw !== "carvertical") {
+  // `auto_records` blokā gaidām oficiālā dīlera / rūpnīcas izdruku (BMW portāls, auto-records.com).
+  const target: VendorReportVendor | null =
+    targetRaw === "autodna" || targetRaw === "carvertical"
+      ? targetRaw
+      : targetRaw === "auto_records" || targetRaw === "dealer"
+        ? "dealer"
+        : null;
+  if (!target) {
     return NextResponse.json({ error: "invalid_target" }, { status: 400 });
   }
-  const target: VendorReportVendor = targetRaw;
 
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) {

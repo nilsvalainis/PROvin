@@ -43,6 +43,7 @@ public/mobile-preview.png
 # Sociālā banera lokālie artefakti
 social-banner/node_modules/
 social-banner/banner.jpg
+social-banner/iriss-thumbs/out/
 
 # typescript
 next-env.d.ts

@@ -4,6 +4,7 @@
 import {
   emptyOutvinVehicleInfo,
   outvinDealerReportHasContent,
+  parseOutvinVehicleInfoRaw,
   type OutvinDealerReport,
   type OutvinEquipmentLine,
   type OutvinVehicleInfo,
@@ -254,10 +255,7 @@ export function parseOutvinDataBundleRaw(raw: unknown, fallbackVin = ""): Outvin
   }
 
   if (o.vehicleInfo && typeof o.vehicleInfo === "object") {
-    const v = o.vehicleInfo as Record<string, unknown>;
-    for (const key of Object.keys(base.vehicleInfo) as (keyof OutvinVehicleInfo)[]) {
-      if (typeof v[key] === "string") base.vehicleInfo[key] = v[key].slice(0, 500);
-    }
+    base.vehicleInfo = parseOutvinVehicleInfoRaw(o.vehicleInfo);
   }
 
   if (Array.isArray(o.equipment)) {

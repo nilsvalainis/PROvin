@@ -145,7 +145,7 @@ function parseDamageRows(
 const SPEC_LABELS: { key: keyof OutvinVehicleInfo; re: RegExp }[] = [
   { key: "engineCode", re: /^Dzin[ēe]ja\s+kods$/i },
   { key: "model", re: /^Modelis$/i },
-  { key: "generation", re: /^Mode[ļl]a\s+paaudze$/i },
+  { key: "modelSeries", re: /^Mode[ļl]a\s+paaudze$/i },
   { key: "steeringSide", re: /^St[ūu]res\s+rata\s+novietojums$/i },
 ];
 

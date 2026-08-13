@@ -58,6 +58,7 @@ import {
   emptyOutvinDealerReport,
   outvinDealerReportHasContent,
   outvinDealerReportToPlainText,
+  parseOutvinVehicleInfoRaw,
   type OutvinDealerReport,
 } from "@/lib/outvin-dealer-types";
 import {
@@ -1232,13 +1233,7 @@ function parseOutvinDealerReportRaw(raw: unknown): OutvinDealerReport | undefine
   if (!raw || typeof raw !== "object") return undefined;
   const o = raw as Record<string, unknown>;
   const base = emptyOutvinDealerReport();
-  const vi = o.vehicleInfo;
-  if (vi && typeof vi === "object") {
-    const v = vi as Record<string, unknown>;
-    for (const key of Object.keys(base.vehicleInfo) as (keyof typeof base.vehicleInfo)[]) {
-      if (typeof v[key] === "string") base.vehicleInfo[key] = v[key].slice(0, 500);
-    }
-  }
+  base.vehicleInfo = parseOutvinVehicleInfoRaw(o.vehicleInfo);
   if (typeof o.accidentCheck === "string") base.accidentCheck = o.accidentCheck.slice(0, 8000);
   if (typeof o.stolenCheck === "string") base.stolenCheck = o.stolenCheck.slice(0, 8000);
   if (Array.isArray(o.equipment)) {

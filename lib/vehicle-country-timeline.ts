@@ -60,7 +60,11 @@ export function buildCountryTimeline(entries: CountryTimelineEntry[]): CountryTi
  * 3) pēdējais zināmais ieraksts, ja datums ir pēc visas vēstures.
  * Pirms pirmā zināmā ieraksta valsti neizdomājam (ražošana/reģistrācija var būt citur) — tukšs.
  */
-export function resolveCountryForDate(timeline: CountryTimeline, date: string): string {
+export function resolveCountryForDate(
+  timeline: CountryTimeline,
+  date: string,
+  opts?: { extrapolateAfterLast?: boolean },
+): string {
   if (!timeline.hasData) return "";
   const ms = dateToMs(date);
   const monthKey = monthKeyOf(date);
@@ -76,19 +80,24 @@ export function resolveCountryForDate(timeline: CountryTimeline, date: string): 
   const after = timeline.points.find((p) => p.ms > ms);
 
   if (before && after) return before.country === after.country ? before.country : "";
-  if (before) return before.country;
+  if (before) return opts?.extrapolateAfterLast === false ? "" : before.country;
   return "";
 }
 
-/** Aizpilda tukšos valsts laukus rindām (datums + valsts). Aizpildītos nemaina. */
+/**
+ * Aizpilda tukšos valsts laukus rindām (datums + valsts). Aizpildītos nemaina.
+ * `extrapolateAfterLast: false` — datumiem pēc pēdējā zināmā ieraksta valsti neizdomā
+ * (retiem ierakstiem, piem. dīlera apmeklējumiem, pēdējā valsts nav pierādījums).
+ */
 export function fillCountriesFromTimeline<T extends { date: string; country: string }>(
   rows: T[],
   timeline: CountryTimeline,
+  opts?: { extrapolateAfterLast?: boolean },
 ): T[] {
   if (!timeline.hasData) return rows;
   return rows.map((r) => {
     if (r.country.trim()) return r;
-    const resolved = resolveCountryForDate(timeline, r.date);
+    const resolved = resolveCountryForDate(timeline, r.date, opts);
     return resolved ? { ...r, country: resolved } : r;
   });
 }

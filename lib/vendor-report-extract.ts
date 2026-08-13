@@ -6,13 +6,15 @@
  * dīlera tehniskie lauki).
  */
 
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
-import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import type { OutvinEquipmentLine, OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
 import type { VendorServiceEntry } from "@/lib/vendor-service-history";
 
-export type VendorReportVendor = "autodna" | "carvertical";
+/** `dealer` — oficiālā dīlera / rūpnīcas izdruka (BMW portāls, auto-records.com). */
+export type VendorReportVendor = "autodna" | "carvertical" | "dealer";
 
 export type VendorReportExtract = {
   vendor: VendorReportVendor;
@@ -26,6 +28,13 @@ export type VendorReportExtract = {
   countryTimeline: CountryTimelineEntry[];
   /** Dīlera tehniskie lauki (OFICIĀLĀ DĪLERA DATI). */
   vehicleInfo: Partial<OutvinVehicleInfo>;
+  /** Rūpnīcas komplektācija (kods + apraksts) — tikai dīlera / rūpnīcas izdrukām. */
+  equipment: OutvinEquipmentLine[];
+  /** Gatavs teksts laukam „Servisa vēsture” (tikai fakti) — tikai dīlera izdrukām. */
+  serviceHistoryNotes: string;
+  /** Negadījumu / nozagto reģistru pārbaudes teksts, ja atskaitē ir šāda sadaļa. */
+  accidentCheck: string;
+  stolenCheck: string;
   /** Audita piezīmes: valūtas pārrēķini, izlaistās cenu rindas. */
   notes: string[];
 };
@@ -38,8 +47,17 @@ export function emptyVendorReportExtract(vendor: VendorReportVendor): VendorRepo
     serviceHistory: [],
     countryTimeline: [],
     vehicleInfo: {},
+    equipment: [],
+    serviceHistoryNotes: "",
+    accidentCheck: "",
+    stolenCheck: "",
     notes: [],
   };
+}
+
+/** Avota bloks, kurā nonāk šī atskaite (dīlera izdruka → OFICIĀLĀ DĪLERA DATI). */
+export function vendorSourceKey(vendor: VendorReportVendor): CopilotSourceKey {
+  return vendor === "dealer" ? "auto_records" : vendor;
 }
 
 const VIN_RE = /\b([A-HJ-NPR-Z0-9]{17})\b/g;

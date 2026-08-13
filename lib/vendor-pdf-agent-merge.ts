@@ -11,7 +11,7 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
-import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import {
   buildCountryTimeline,
   fillCountriesFromTimeline,
@@ -29,7 +29,9 @@ import {
 } from "@/lib/vendor-service-history";
 
 function vendorLabel(vendor: VendorReportVendor): string {
-  return vendor === "autodna" ? "AutoDNA" : "CarVertical";
+  if (vendor === "autodna") return "AutoDNA";
+  if (vendor === "carvertical") return "CarVertical";
+  return "oficiālā dīlera";
 }
 
 function mileageKey(r: AutoRecordsServiceRow): string {
@@ -72,6 +74,10 @@ export function mergeVendorReportExtracts(
     serviceHistory: mergeVendorServiceEntries(primary.serviceHistory, secondary.serviceHistory),
     countryTimeline: [...primary.countryTimeline, ...secondary.countryTimeline],
     vehicleInfo: mergeVehicleInfoPreferSpecific(primary.vehicleInfo, secondary.vehicleInfo),
+    equipment: primary.equipment.length > 0 ? primary.equipment : secondary.equipment,
+    serviceHistoryNotes: primary.serviceHistoryNotes || secondary.serviceHistoryNotes,
+    accidentCheck: primary.accidentCheck || secondary.accidentCheck,
+    stolenCheck: primary.stolenCheck || secondary.stolenCheck,
     notes: [...primary.notes, ...secondary.notes],
   };
 }
@@ -85,27 +91,21 @@ export function resolveExtractCountries(
   extraTimeline: CountryTimelineEntry[] = [],
 ): VendorReportExtract {
   const timeline = buildCountryTimeline([...extract.countryTimeline, ...extraTimeline]);
-  const mileage = fillCountriesFromTimeline(extract.mileage, timeline);
+  // Dīlera izdrukā ieraksti ir reti — pēc pēdējā zināmā apmeklējuma valsti neizdomājam.
+  const opts = extract.vendor === "dealer" ? { extrapolateAfterLast: false } : undefined;
+  const mileage = fillCountriesFromTimeline(extract.mileage, timeline, opts);
   const incidents = fillCountriesFromTimeline(
     extract.incidents.map((r) => ({ date: r.csngDate, country: r.incidentNo, row: r })),
     timeline,
+    opts,
   ).map(({ row, country }) => ({ ...row, incidentNo: country }));
 
   return { ...extract, mileage, incidents };
 }
 
-const DEALER_VEHICLE_INFO_KEYS: (keyof OutvinVehicleInfo)[] = [
-  "vinCode",
-  "engineCode",
-  "transmission",
-  "color",
-  "interior",
-  "model",
-  "generation",
-  "series",
-  "typeCode",
-  "steeringSide",
-];
+const DEALER_VEHICLE_INFO_KEYS: (keyof OutvinVehicleInfo)[] = OUTVIN_VEHICLE_INFO_ROWS.map(
+  ({ key }) => key,
+);
 
 /** `VendorReportExtract` → Copilot darbības (nobraukums, negadījumi, dīlera tehniskie lauki). */
 export function buildVendorCopilotActions(
@@ -153,21 +153,42 @@ export function buildVendorCopilotActions(
     });
   }
 
+  // Oficiālā dīlera / rūpnīcas izdruka ir primārais specifikācijas avots — tā pārraksta pārējos.
+  const dealerReport = extract.vendor === "dealer";
+
   if (opts?.includeDealerFields !== false) {
     const vehicleInfo: Partial<OutvinVehicleInfo> = {};
     for (const key of DEALER_VEHICLE_INFO_KEYS) {
       const value = (extract.vehicleInfo[key] ?? "").trim();
       if (value) vehicleInfo[key] = value;
     }
-    if (Object.keys(vehicleInfo).length > 0) {
+    const equipment = extract.equipment.filter((l) => l.code.trim() || l.description.trim());
+    const accidentCheck = extract.accidentCheck.trim();
+    const stolenCheck = extract.stolenCheck.trim();
+    if (Object.keys(vehicleInfo).length > 0 || equipment.length > 0 || accidentCheck || stolenCheck) {
       actions.push({
         type: "set_dealer_vehicle_info",
         source: "auto_records",
         vehicleInfo,
+        ...(equipment.length > 0 ? { equipment } : {}),
+        ...(accidentCheck ? { accidentCheck } : {}),
+        ...(stolenCheck ? { stolenCheck } : {}),
+        ...(dealerReport ? { override: true } : {}),
         confidence: "high",
         note: `Specifikācija no ${vendorLabel(extract.vendor)} atskaites`,
       });
     }
+  }
+
+  const serviceFacts = extract.serviceHistoryNotes.trim();
+  if (serviceFacts) {
+    actions.push({
+      type: "set_service_history",
+      source: "auto_records",
+      text: serviceFacts,
+      confidence: "high",
+      note: `Fakti no ${vendorLabel(extract.vendor)} atskaites`,
+    });
   }
 
   return actions;

@@ -36,7 +36,7 @@ import {
   normalizeExpertSourcePdfComment,
   SOURCE_PDF_COMMENT_GEMINI_RULES,
 } from "@/lib/source-summary-comment-format";
-import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import {
   ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
   ADMIN_PDF_IMPORT_RAW_MAX_LEN,
@@ -214,16 +214,29 @@ Return ONLY valid JSON:
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
   "vehicleInfo": {
-    "vinCode": "string",
     "model": "string",
-    "series": "string",
-    "generation": "string",
-    "typeCode": "string",
-    "engineCode": "string",
+    "modelSeries": "string",
+    "vinCode": "string",
+    "vehicleType": "string",
+    "transmission": "string",
     "steeringSide": "string",
+    "engineCode": "string",
+    "engineNumber": "string",
+    "body": "string",
+    "drive": "string",
+    "power": "string",
+    "integrationLevel": "string",
+    "currentILevel": "string",
+    "developmentCode": "string",
+    "modelCode": "string",
+    "productionDate": "string",
+    "firstRegistration": "string",
+    "warrantyStartDate": "string",
+    "countryRegion": "string",
     "color": "string",
+    "colorCode": "string",
     "interior": "string",
-    "transmission": "string"
+    "interiorCode": "string"
   },
   "comments": "string — see COMMENTS rules below",
   "warnings": ["string"]
@@ -231,7 +244,8 @@ Return ONLY valid JSON:
 ${AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES}
 Extract every service/odometer row from tables (dates YYYY-MM-DD or DD.MM.YYYY; odometer even if glued to "km" or "ServiceVisit"). checklist.incidents if damage/accident mentioned.
 
-Also extract VEHICLE INFORMATION fields into vehicleInfo (VIN Code, Model, Series, Generation, Type code, Engine code, Steering side, Color, Interior, Transmission). If value is missing or shown as "-" then use empty string for that field.`;
+Also extract the vehicle field list into vehicleInfo. auto-records.com „VEHICLE INFORMATION”: VIN Code → vinCode, Model → model, Generation → modelSeries, Series → modelSeries when Generation is missing, Type code → vehicleType + modelCode, Engine code → engineCode, Steering side → steeringSide, Color → color (factory code in brackets → colorCode), Interior → interior (code in brackets → interiorCode), Transmission → transmission.
+An official dealer / factory printout (BMW portal) uses the same fields: MODEL SERIES → modelSeries, VEHICLE TYPE → vehicleType, STEERING → steeringSide, ENGINE → engineCode, ENGINE NUMBER → engineNumber, BODY → body, DRIVE → drive, POWER → power, INTEGRATION LEVEL → integrationLevel, CURRENT I LEVEL → currentILevel, DEVELOPMENT CODE → developmentCode, MODEL CODE → modelCode, PRODUCTION DATE → productionDate, FIRST REGISTRATION → firstRegistration, WARRANTY START DATE → warrantyStartDate, COUNTRY/REGION → countryRegion, COLOUR → color, COLOUR CODE → colorCode, UPHOLSTERY → interior, UPHOLSTERY CODE → interiorCode. Dates as DD.MM.YYYY. If a value is missing or shown as "-" then use empty string for that field.`;
 
 function parseDamageAndTimeline(payload: Record<string, unknown>) {
   const damageDetails = (Array.isArray(payload.damageDetails) ? payload.damageDetails : [])
@@ -326,22 +340,10 @@ function autoRecordsResultFromGemini(
   };
   const suggestedOutvinVehicleInfo: Partial<OutvinVehicleInfo> | undefined = (() => {
     if (!vehiclePayload) return undefined;
-    const keys: (keyof OutvinVehicleInfo)[] = [
-      "vinCode",
-      "model",
-      "series",
-      "generation",
-      "typeCode",
-      "engineCode",
-      "steeringSide",
-      "color",
-      "interior",
-      "transmission",
-    ];
     const out: Partial<OutvinVehicleInfo> = {};
-    for (const k of keys) {
-      const v = normalizeVehicleField(vehiclePayload[k]);
-      if (v) out[k] = v;
+    for (const { key } of OUTVIN_VEHICLE_INFO_ROWS) {
+      const v = normalizeVehicleField(vehiclePayload[key]);
+      if (v) out[key] = v;
     }
     return Object.keys(out).length > 0 ? out : undefined;
   })();

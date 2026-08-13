@@ -11,16 +11,29 @@ import {
 import { extractEventsFromPayload } from "@/lib/outvin-history-map";
 
 const VEHICLE_ALIASES: Record<keyof OutvinVehicleInfo, string[]> = {
-  vinCode: ["vincode", "vin", "vin_code", "vehicleidentificationnumber"],
-  series: ["series", "serie", "modelseries"],
-  typeCode: ["typecode", "type", "type_code", "bodytype"],
-  steeringSide: ["steeringside", "steering", "steering_side", "wheel"],
-  interior: ["interior", "upholstery", "interiortrim"],
   model: ["model", "modelname", "modell"],
-  generation: ["generation", "gen", "platform", "chassis"],
-  engineCode: ["enginecode", "engine", "engine_code", "motorcode"],
-  color: ["color", "colour", "paint", "exteriorcolor"],
+  modelSeries: ["modelseries", "series", "serie", "generation", "gen", "platform", "chassis"],
+  vinCode: ["vincode", "vin", "vin_code", "vehicleidentificationnumber"],
+  vehicleType: ["vehicletype", "typecode", "type", "type_code", "bodytype"],
   transmission: ["transmission", "gearbox", "trans"],
+  steeringSide: ["steeringside", "steering", "steering_side", "wheel"],
+  engineCode: ["enginecode", "engine", "engine_code", "motorcode"],
+  engineNumber: ["enginenumber", "engineno", "motornumber"],
+  body: ["body", "bodystyle", "bodyversion"],
+  drive: ["drive", "drivetype", "driveline", "drivetrain"],
+  power: ["power", "enginepower", "kw", "horsepower"],
+  integrationLevel: ["integrationlevel", "ilevel"],
+  currentILevel: ["currentilevel", "currentlevel", "ilevelcurrent"],
+  developmentCode: ["developmentcode", "devcode"],
+  modelCode: ["modelcode"],
+  productionDate: ["productiondate", "produced", "buildDate", "builddate"],
+  firstRegistration: ["firstregistration", "firstregistrationdate", "registrationdate"],
+  warrantyStartDate: ["warrantystartdate", "warrantystart"],
+  countryRegion: ["countryregion", "country", "region", "market"],
+  color: ["color", "colour", "paint", "exteriorcolor"],
+  colorCode: ["colorcode", "colourcode", "paintcode"],
+  interior: ["interior", "upholstery", "interiortrim"],
+  interiorCode: ["interiorcode", "upholsterycode", "trimcode"],
 };
 
 function normKey(s: string): string {
