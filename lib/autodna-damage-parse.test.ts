@@ -42,5 +42,6 @@ Bojājumu zona
     expect(details[0]?.damagedSides).toMatch(/Kreisā sāna priekšpuse/i);
     expect(details[0]?.damageGroups).toMatch(/Virsbūves ārējās daļas/i);
     expect(details[0]?.country).toMatch(/Latvij/i);
+    expect(details[0]?.country).not.toMatch(/Bojājumu/i);
   });
 });

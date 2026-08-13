@@ -133,6 +133,35 @@ describe("unified PDF sections single block", () => {
     expect(html).not.toContain("pdf-cv-damage-sub");
     expect(html).not.toContain("pdf-cv-damage-chart");
   });
+
+  it("renders silhouette from AutoDNA sourceRaw when damageDetails were never saved", () => {
+    const p = {
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "01.10.2020", lossAmount: "1300 - 1400 EUR", incidentNo: "Latvija" }],
+          comments: "",
+          sourceRaw: `
+10.2020
+Transportlīdzekļa zaudējumu apjoms
+Summa 1 300 - 1 400 EUR
+Detaļu grupa - Virsbūves ārējās daļas
+Valsts Latvija
+Bojājumu zona
+- Priekšpuse
+- Labā sāna priekšpuse
+- Kreisā sāna priekšpuse
+`,
+        },
+      ],
+    } as ClientReportPayload;
+    const vis = mergePdfVisibility({ unifiedIncidents: true });
+    const html = buildUnifiedIncidentsTableHtml(p, vis);
+    expect(html).toContain("pdf-dmg-sil");
+    expect(html).toContain("Bojājumu zonas");
+    expect(html).toContain("Priekšpuse");
+  });
 });
 
 describe("CITI AVOTI and Outvin PDF labels", () => {

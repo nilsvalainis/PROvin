@@ -13,6 +13,7 @@ import {
   parseDamageZoneHits,
   type DamageZoneId,
 } from "@/lib/damage-zones";
+import { damageDetailRowHasZones, parseDamageDetailsFromVendorRaw } from "@/lib/vendor-damage-hydrate";
 import {
   formatLossEurWholeDisplay,
   normalizeLossAmountEurDisplay,
@@ -112,11 +113,16 @@ export function collectUnifiedIncidentDamageDetails(
 ): UnifiedIncidentDamageInput[] {
   const omitTitles = options?.omitVendorBlockTitles;
   const out: UnifiedIncidentDamageInput[] = [];
+  const push = (d: UnifiedIncidentDamageInput) => {
+    if (!d.damagedSides && !d.damageGroups) return;
+    out.push(d);
+  };
   for (const b of manualVendorBlocks ?? []) {
     if (omitTitles?.has(b.title)) continue;
-    for (const d of b.damageDetails ?? []) {
-      if (!d.damagedSides.trim() && !d.damageGroups.trim()) continue;
-      out.push({
+    const saved = (b.damageDetails ?? []).filter(damageDetailRowHasZones);
+    const rows = saved.length > 0 ? saved : parseDamageDetailsFromVendorRaw(`${b.sourceRaw ?? ""}\n${b.comments ?? ""}`);
+    for (const d of rows) {
+      push({
         date: d.date.trim(),
         country: d.country.trim(),
         lossAmount: d.lossAmount.trim(),

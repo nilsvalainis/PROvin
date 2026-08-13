@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   aggregateUnifiedIncidents,
+  collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
   formatIncidentSourceValuationsLine,
   formatUnifiedIncidentCountLabel,
@@ -186,5 +187,42 @@ describe("collectUnifiedIncidentRows + count label", () => {
     expect(agg.uniqueCount).toBe(1);
     expect(formatUnifiedIncidentCountLabel(1)).toBe("1 negadījums");
     expect(formatUnifiedIncidentCountLabel(2)).toBe("2 negadījumi");
+  });
+
+  it("hidratē bojājumu zonas no AutoDNA RAW, ja damageDetails nav saglabāti", () => {
+    const details = collectUnifiedIncidentDamageDetails([
+      {
+        title: "AutoDNA",
+        mileageRows: [],
+        incidentRows: [{ csngDate: "01.10.2020", lossAmount: "1 300 - 1 400 €", incidentNo: "Latvija" }],
+        comments: "",
+        sourceRaw: `
+10.2020
+Transportlīdzekļa zaudējumu apjoms
+Summa 1 300 - 1 400 EUR
+Rezultāts VIRSBŪVES BOJĀJUMS
+Detaļu grupa - Virsbūves ārējās daļas
+Valsts Latvija
+Bojājumu zona
+- Priekšpuse
+- Labā sāna priekšpuse
+- Kreisā sāna priekšpuse
+`,
+      },
+    ]);
+    expect(details).toHaveLength(1);
+    expect(details[0]?.damagedSides).toMatch(/Priekšpuse/);
+    const rows = collectUnifiedIncidentRows({
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "01.10.2020", lossAmount: "1 300 - 1 400 €", incidentNo: "Latvija" }],
+          comments: "",
+        },
+      ],
+    });
+    const agg = aggregateUnifiedIncidents(rows, details);
+    expect(agg.clusters[0]?.damage?.zoneIds.sort()).toEqual(["front", "front_left", "front_right"]);
   });
 });

@@ -46,6 +46,7 @@ import {
   parseCarverticalPdfText,
 } from "@/lib/carvertical-pdf-parse";
 import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
+import { parseAutodnaDamageDetails } from "@/lib/autodna-damage-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -170,11 +171,13 @@ export function AdminVendorAvotuSourceBlock({
 
   const applyAutodnaMileagePaste = (raw: string) => {
     const parsed = parseAutodnaMileagePaste(raw);
-    if (parsed.length === 0) return;
+    const details = parseAutodnaDamageDetails(raw);
+    if (parsed.length === 0 && details.length === 0) return;
     onChange({
       ...block,
       mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-      serviceHistory: parsed,
+      ...(parsed.length > 0 ? { serviceHistory: parsed } : {}),
+      ...(details.length > 0 ? { damageDetails: details } : {}),
     });
   };
 

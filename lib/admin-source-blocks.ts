@@ -1410,6 +1410,8 @@ export type ClientManualVendorBlockPdf = {
   pdfChecklist?: SourcePdfChecklist;
   vehicleHistoryTimeline?: CarVerticalTimelineRow[];
   damageDetails?: CarVerticalDamageDetailRow[];
+  /** AutoDNA / CarVertical iekopētais RAW — zonu hidratācijai, netiek drukāts. */
+  sourceRaw?: string;
 };
 
 /** Strukturēts LTAB bloks PDF — atsevišķi panelī pēc AutoDNA / CV / Auto-Records (kā admin režģī). */
@@ -1434,6 +1436,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
         ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline }
         : {}),
       ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),
+      ...((b.mileagePasteRaw ?? "").trim() ? { sourceRaw: b.mileagePasteRaw } : {}),
     });
   }
   for (const k of VIN_REGISTRY_BLOCK_KEYS) {
@@ -1465,6 +1468,9 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       comments: (citi.comments ?? "").trim(),
       ...(sourcePdfChecklistHasAny(citi.pdfChecklist) ? { pdfChecklist: citi.pdfChecklist } : {}),
       ...((citi.damageDetails ?? []).length > 0 ? { damageDetails: citi.damageDetails } : {}),
+      ...((citi.mileagePasteRaw ?? citi.rawUnprocessedData ?? "").trim()
+        ? { sourceRaw: (citi.mileagePasteRaw || citi.rawUnprocessedData || "").trim() }
+        : {}),
     });
   }
   return out;

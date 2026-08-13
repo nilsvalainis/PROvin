@@ -13,6 +13,14 @@ import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 const DAMAGE_SECTION_HINT =
   /Transportlīdzekļa\s+zaudējumu\s+apjoms|Zaudējumu\s+apjoms/i;
 
+const COUNTRY_STOP_RE = /\s+(?:Boj[āa]jumu|Deta[ļl]u|Rezult[āa]ts|Summa|Valsts)\b/i;
+
+function clipAutodnaCountry(raw: string): string {
+  const t = raw.replace(/\s+/g, " ").trim();
+  const cut = t.search(COUNTRY_STOP_RE);
+  return (cut >= 0 ? t.slice(0, cut) : t).trim();
+}
+
 /** Viens negadījums: datums (MM.YYYY) … Summa … EUR … Valsts … */
 const AUTODNA_DAMAGE_EVENT_RE =
   /(\d{1,2})\.(\d{4})[\s\S]{0,200}?zaudējumu\s+apjoms[\s\S]{0,450}?Summa\s+([\d\s\u00A0]+(?:\s*[-–—]\s*[\d\s\u00A0]+)?)\s*EUR[\s\S]{0,180}?Valsts\s+([A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž][A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž\s-]{1,48})/gi;
@@ -53,7 +61,7 @@ export function parseAutodnaDamageEvents(raw: string): LtabIncidentRow[] {
     const month = m[1] ?? "";
     const year = m[2] ?? "";
     const sumRaw = (m[3] ?? "").replace(/\u00a0/g, " ").trim();
-    const countryRaw = (m[4] ?? "").replace(/\s+/g, " ").trim();
+    const countryRaw = clipAutodnaCountry((m[4] ?? "").replace(/\s+/g, " ").trim());
     if (!month || !year || !sumRaw) continue;
 
     const csngDate = monthYearToDateDisplay(month, year);
@@ -94,7 +102,7 @@ export function parseAutodnaDamageDetails(raw: string): CarVerticalDamageDetailR
     );
     const sumRaw = (sumM?.[1] ?? "").replace(/\u00a0/g, " ").trim();
     const lossAmount = sumRaw ? normalizeLossAmountEurDisplay(`${sumRaw} EUR`) : "";
-    const countryRaw = (countryM?.[1] ?? "").replace(/\s+/g, " ").trim();
+    const countryRaw = clipAutodnaCountry((countryM?.[1] ?? "").replace(/\s+/g, " ").trim());
     const damagedSides = extractZoneListFromBlock(block);
     const damageGroups = extractGroupListFromBlock(block);
     if (!damagedSides && !damageGroups && !lossAmount) continue;
