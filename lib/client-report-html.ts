@@ -89,6 +89,7 @@ import {
 import {
   sectionIconPdfHtml,
   vendorPdfTitleToIconId,
+  type SectionIconId,
 } from "@/lib/section-icons";
 import {
   getClientReportLegalFooterBlocks,
@@ -235,6 +236,7 @@ const PDF_PROVIN_SOURCES_L2 = "Publiskas Eiropas datubāzes";
 const PDF_PROVIN_SOURCES_L3 = "Citi avoti";
 const PDF_PROVIN_SOURCES_L_TOTAL = "Kopā";
 const PDF_SOURCES_CHECKED_TITLE = "Kas tika pārbaudīts";
+const PDF_VEHICLE_SPEC_TITLE = "TRANSPORTLĪDZEKĻA DATI";
 
 function capSourceCount(n: number): number {
   return Math.min(Math.max(0, n), 9);
@@ -397,7 +399,7 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
   return `<section class="pdf-provin-sources-wrap pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region" aria-labelledby="pdf-provin-sources-h">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table>${grid}</section>`;
 }
 
-const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], string> = {
+const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], SectionIconId> = {
   first_registration: "carFront",
   registration: "scrollText",
   import: "route",
@@ -474,7 +476,7 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload): string {
     )
     .join("");
   const head = sectionHeadBrand(sectionIconPdfHtml("listChecks"), PDF_REPORT_SUMMARY_TITLE);
-  return `<section class="pdf-report-summary pdf-surface-card" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul></section>`;
+  return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul></section>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string): string {
@@ -823,6 +825,62 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
+/** Tehniskā specifikācija — patstāvīga sadaļa augšā; CSDD zonā paliek reģistrācijas dati. */
+const PDF_VEHICLE_SPEC_FIELD_KEYS: (keyof CsddFormFields)[] = [
+  "makeModel",
+  "firstRegistration",
+  "engineDisplacementCm3",
+  "enginePowerKw",
+  "fuelType",
+  "emissionStandard",
+  "grossMassKg",
+  "curbMassKg",
+  "opacityCoefficient",
+  "particulateMatter",
+];
+
+function csddFieldIsVehicleSpec(key: keyof CsddFormFields): boolean {
+  return PDF_VEHICLE_SPEC_FIELD_KEYS.includes(key);
+}
+
+/** TRANSPORTLĪDZEKĻA DATI — kas šis auto ir, pirms sākam runāt par avotiem. */
+function buildPdfVehicleSpecSectionHtml(
+  form: CsddFormFields | null | undefined,
+  vin: string | null,
+  vis: PdfVisibilitySettings,
+): string {
+  if (!vis.csdd && !vis.vehicle) return "";
+  const rows: string[] = [];
+  const vinTrim = vin?.trim();
+  if (vinTrim) {
+    rows.push(`<tr><td>VIN</td><td><span class="pdf-vin">${escapeHtml(vinTrim)}</span></td></tr>`);
+  }
+  for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
+    if (!csddFieldIsVehicleSpec(key)) continue;
+    const v = (form?.[key] as string | undefined)?.trim() ?? "";
+    if (!v) continue;
+    const valueHtml = escapeCsddPdfFieldValue(key, v);
+    if (key === "particulateMatter") {
+      const flag = getParticulateMatterUiFlag(v);
+      if (flag !== "none") {
+        rows.push(buildCsddPdfAlertRowHtml(escapeHtml(label), valueHtml, flag));
+        continue;
+      }
+    }
+    rows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
+  }
+  if (rows.length <= 1) return "";
+  const mid = Math.ceil(rows.length / 2);
+  const table = (part: string[]) =>
+    `<table class="mirror-table mirror-table--csdd"><tbody>${part.join("")}</tbody></table>`;
+  const head = sectionHeadBrand(sectionIconPdfHtml("carFront"), PDF_VEHICLE_SPEC_TITLE);
+  const body =
+    rows.length <= 4
+      ? table(rows)
+      : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${table(rows.slice(0, mid))}</div><div class="pdf-mileage-dual__cell">${table(rows.slice(mid))}</div></div>`;
+  return `<section class="pdf-unified-mileage-zone pdf-surface-card pdf-vehicle-spec pdf-page-flow-chunk--avoid" role="region">${head}${body}</section>`;
+}
+
 /** CSDD — strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
 export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
   if (!csddFormHasContent(form)) return "";
@@ -839,6 +897,8 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
   const hasComments = commentTrim.length > 0;
   const regRows: string[] = [];
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
+    // Tehniskie dati ir atsevišķā TRANSPORTLĪDZEKĻA DATI sadaļā; īpašnieku skaits — laika joslā.
+    if (csddFieldIsVehicleSpec(key) || key === "ownerCountLatvia") continue;
     const v = (form[key] as string).trim();
     if (!v) continue;
     let flag: CsddFieldUiFlag = "none";
@@ -1657,14 +1717,6 @@ function clientReportPrintCss(): string {
       .pdf-mileage-history-table--incidents tbody tr.pdf-mileage-history-row:nth-child(4n+2){
         background:#fafbfc;
       }
-      .pdf-cv-damage-sub{margin:0 0 2px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;overflow:hidden;}
-      .pdf-cv-damage-sub-head,.pdf-cv-damage-sub-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:5px 10px;font-size:9px;line-height:1.35;}
-      .pdf-cv-damage-sub-head{font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #e2e8f0;background:#f1f5f9;}
-      .pdf-cv-damage-sub-row{border-bottom:none;}
-      .pdf-cv-damage-sub-row .pdf-cv-damage-sides{color:#1d1d1f;font-weight:500;}
-      .pdf-cv-damage-sub-row .pdf-cv-damage-groups{color:#64748b;}
-      .pdf-cv-damage-sub-row td,.pdf-cv-damage-sub-cell{padding:2px 0 4px!important;border:none!important;background:transparent!important;}
-      .pdf-cv-damage-sub-row .pdf-cv-damage-sub{width:100%;}
       .pdf-source-section-body > .pdf-report-comment-note:first-child{margin-top:0;}
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
@@ -1964,7 +2016,7 @@ function clientReportPrintCss(): string {
       .pdf-csdd-alert-wrap{
         display:flex;align-items:center;gap:8px;width:100%;
       }
-      .pdf-num-warn{font-size:9pt!important;line-height:1.2;font-family:Inter,sans-serif!important;vertical-align:middle;}
+      .pdf-num-warn{font-size:var(--pdf-fs-table)!important;line-height:1.2;font-family:Inter,sans-serif!important;vertical-align:middle;}
       .pdf-num-warn--red .pdf-num-warn-digits,.pdf-num-warn--yellow .pdf-num-warn-digits{
         color:#000!important;font-weight:600!important;
       }
@@ -2045,8 +2097,8 @@ function clientReportPrintCss(): string {
       .mirror-table td,.mirror-table th{padding:6px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;text-align:left;}
       .mirror-table thead th{font-weight:600;color:#000;font-size:0.68rem;}
       .mirror-table td:first-child{color:#86868b;width:38%;}
-      .mirror-table--csdd{font-size:9pt!important;}
-      .mirror-table--csdd td,.mirror-table--csdd th{font-size:9pt!important;}
+      .mirror-table--csdd{font-size:var(--pdf-fs-table)!important;}
+      .mirror-table--csdd td,.mirror-table--csdd th{font-size:var(--pdf-fs-table)!important;}
       .mirror-table--csdd td:first-child{
         width:54%;min-width:14em;max-width:62%;white-space:nowrap;color:#86868b;
       }
@@ -2055,7 +2107,7 @@ function clientReportPrintCss(): string {
         width:100%!important;max-width:none!important;padding:4px 0!important;border-bottom:1px solid #f1f5f9!important;
       }
       .pdf-csdd-alert{
-        flex:1;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:9pt!important;line-height:1.25;
+        flex:1;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:var(--pdf-fs-table)!important;line-height:1.25;
         border:1px solid #e8eaed;background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2065,16 +2117,16 @@ function clientReportPrintCss(): string {
       .pdf-csdd-alert-val{color:#1d1d1f;text-align:right;flex:1;min-width:0;}
       .mirror-table--csdd td.pdf-csdd-tech-compact{
         width:auto;max-width:none;white-space:normal;padding:4px 0 6px;
-        font-size:9pt;line-height:1.25;color:#1d1d1f;text-align:left;border-bottom:1px solid #f1f5f9;
+        font-size:var(--pdf-fs-table);line-height:1.25;color:#1d1d1f;text-align:left;border-bottom:1px solid #f1f5f9;
       }
-      .pdf-csdd-tech-line{font-size:9pt;line-height:1.25;margin:0 0 3px;}
+      .pdf-csdd-tech-line{font-size:var(--pdf-fs-table);line-height:1.25;margin:0 0 3px;}
       .pdf-csdd-tech-line:last-child{margin-bottom:0;}
       .pdf-csdd-tech-bit{color:#1d1d1f;}
-      .mirror-pre--csdd-dense{font-size:9pt!important;line-height:1.3!important;margin:0 0 4px!important;}
+      .mirror-pre--csdd-dense{font-size:var(--pdf-fs-table)!important;line-height:1.3!important;margin:0 0 4px!important;}
       .pdf-field-label--historic{color:#64748b!important;}
-      .mirror-table--csdd-defect-current{font-size:9pt!important;margin:2px 0 6px!important;}
+      .mirror-table--csdd-defect-current{font-size:var(--pdf-fs-table)!important;margin:2px 0 6px!important;}
       .mirror-table--csdd-defect-current td,.mirror-table--csdd-defect-current th{padding:3px 5px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
-      .mirror-table--csdd-defect-historic{font-size:9pt!important;margin:2px 0 4px!important;color:#64748b!important;}
+      .mirror-table--csdd-defect-historic{font-size:var(--pdf-fs-table)!important;margin:2px 0 4px!important;color:#64748b!important;}
       .mirror-table--csdd-defect-historic td,.mirror-table--csdd-defect-historic th{
         padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #eef2f7!important;
         color:#64748b!important;
@@ -2082,17 +2134,17 @@ function clientReportPrintCss(): string {
       .mirror-table--csdd-defect-historic .pdf-csdd-defect-rating--1{color:#16a34a!important;font-weight:700;}
       .mirror-table--csdd-defect-historic .pdf-csdd-defect-rating--2{color:#d97706!important;font-weight:700;}
       .mirror-table--csdd-defect-historic .pdf-csdd-defect-rating--3{color:#dc2626!important;font-weight:700;}
-      .mirror-table--csdd-mh{font-size:9pt!important;margin:2px 0 4px!important;}
+      .mirror-table--csdd-mh{font-size:var(--pdf-fs-table)!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
-      .mirror-table--csdd-mh thead th{font-size:9pt!important;}
+      .mirror-table--csdd-mh thead th{font-size:var(--pdf-fs-table)!important;}
       .pdf-csdd-subsection-title{
-        margin:10px 0 6px;font-size:9pt;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
+        margin:10px 0 6px;font-size:var(--pdf-fs-table);font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
       }
       .pdf-csdd-ta-section{margin-top:8px;}
       .pdf-csdd-ta-table-wrap{display:flex;flex-direction:column;gap:10px;}
       .pdf-csdd-ta-year-block{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;}
       .pdf-csdd-ta-year-heading{
-        margin:0 0 4px;font-size:9pt;font-weight:700;letter-spacing:0.04em;
+        margin:0 0 4px;font-size:var(--pdf-fs-table);font-weight:700;letter-spacing:0.04em;
         text-transform:uppercase;color:#475569;
       }
       .pdf-csdd-ta-year-frame{
@@ -2102,7 +2154,7 @@ function clientReportPrintCss(): string {
       .pdf-csdd-ta-warnings{margin:0 0 8px;display:flex;flex-direction:column;gap:6px;}
       .pdf-csdd-ta-warnings:last-child{margin-bottom:0;}
       .pdf-csdd-ta-warn{
-        margin:0;padding:6px 8px;border-radius:4px;font-size:9pt;line-height:1.35;
+        margin:0;padding:6px 8px;border-radius:4px;font-size:var(--pdf-fs-table);line-height:1.35;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-csdd-ta-warn--gray{border-left:3px solid #94a3b8;background:#f8fafc;color:#334155;}
@@ -2112,7 +2164,7 @@ function clientReportPrintCss(): string {
       .pdf-csdd-ta-inspection:last-child{margin-bottom:0;}
       .pdf-csdd-ta-inspection--historic{opacity:0.92;}
       .pdf-csdd-ta-inspection-meta{
-        margin:0 0 3px;font-size:9pt;font-weight:600;line-height:1.3;color:#1d1d1f;
+        margin:0 0 3px;font-size:var(--pdf-fs-table);font-weight:600;line-height:1.3;color:#1d1d1f;
       }
       .pdf-csdd-ta-extras{margin:0 0 4px;}
       .mirror-table--csdd-defect-2col{table-layout:fixed;width:100%;}
@@ -2140,14 +2192,9 @@ function clientReportPrintCss(): string {
       }
       .pdf-csdd-owner-timeline{margin:8px 0 4px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;}
       .pdf-cv-subsection-title{margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b;}
-      .pdf-cv-timeline{margin:6px 0 10px;padding:8px 10px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;}
-      .pdf-cv-timeline-event{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:10px;line-height:1.35;margin:0 0 3px;}
-      .pdf-cv-timeline-date{min-width:72px;font-weight:700;color:#475569;}
-      .pdf-cv-timeline-country{color:#64748b;}
-      .pdf-cv-timeline-desc{color:#1d1d1f;flex:1 1 160px;}
-      .pdf-csdd-owner-count{margin:0 0 6px;font-size:9pt;color:#1d1d1f;}
+      .pdf-csdd-owner-count{margin:0 0 6px;font-size:var(--pdf-fs-table);color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}
-      .pdf-csdd-owner-event{display:flex;gap:8px;font-size:9pt;line-height:1.35;}
+      .pdf-csdd-owner-event{display:flex;gap:8px;font-size:var(--pdf-fs-table);line-height:1.35;}
       .pdf-csdd-owner-date{min-width:72px;font-weight:600;color:#475569;}
       .pdf-csdd-owner-label{color:#1d1d1f;}
       .pdf-outvin-dealer-stack{margin:4px 0 0;}
@@ -2302,6 +2349,9 @@ export function buildClientReportDocumentHtml(args: {
 
   lines.push(buildPdfReportSummaryHtml(p));
 
+  const vehicleSpecHtml = buildPdfVehicleSpecSectionHtml(p.csddForm, p.vin, vis);
+  if (vehicleSpecHtml) lines.push(vehicleSpecHtml);
+
   const provinSourcesStrip = buildProvinPdfSourcesUsedStripHtml(p, vis);
   if (provinSourcesStrip) lines.push(provinSourcesStrip);
 
@@ -2309,7 +2359,7 @@ export function buildClientReportDocumentHtml(args: {
     order: p,
     money,
     dateFmt,
-    makeModel,
+    makeModel: vehicleSpecHtml ? null : makeModel,
     show: { payment: vis.payment, vehicle: vis.vehicle, client: vis.client, notes: vis.notes },
     titleIconHtml: sectionIconPdfHtml("fileText"),
   });

@@ -160,6 +160,34 @@ describe("PDF design system", () => {
   });
 });
 
+describe("TRANSPORTLĪDZEKĻA DATI", () => {
+  it("moves the technical fields into their own section and out of the CSDD zone", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "BMW 520d";
+    csdd.fuelType = "Dīzelis";
+    csdd.enginePowerKw = "140";
+    csdd.engineDisplacementCm3 = "1995";
+    csdd.registrationNumber = "AB1234";
+    csdd.registrationStatus = "Reģistrēts";
+    csdd.ownerCountLatvia = "3";
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({ csddForm: csdd }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("TRANSPORTLĪDZEKĻA DATI");
+    expect(html).toContain("BMW 520d");
+    expect(html.indexOf("TRANSPORTLĪDZEKĻA DATI")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
+    const csddZone = html.slice(html.indexOf("pdf-src-zone pdf-src-zone--csdd"));
+    expect(csddZone).toContain("AB1234");
+    expect(csddZone).not.toContain("Degvielas veids:");
+    // Īpašnieku skaits paliek tikai īpašnieku laika joslā
+    expect((html.match(/Īpašnieku skaits Latvijā:/g) ?? []).length).toBeLessThanOrEqual(1);
+  });
+});
+
 describe("LAIKPOSMS", () => {
   it("builds one chronological lifecycle from all sources", () => {
     const csdd = emptyCsddFields();
