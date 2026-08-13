@@ -63,6 +63,29 @@ describe("PDF design system", () => {
     expect(html).not.toContain("font-size:8pt");
   });
 
+  it("marks each source zone with its own accent and record count", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: "AutoDNA",
+            mileageRows: [{ date: "2020-07-01", odometer: "120000", country: "DE" }],
+            incidentRows: [{ csngDate: "01.06.2021", lossAmount: "3500", incidentNo: "Latvija" }],
+            comments: "AutoDNA komentārs",
+          },
+        ],
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("pdf-src-zone pdf-src-zone--autodna");
+    expect(html).toContain("pdf-src-count-badge");
+    expect(html).toContain("2 ieraksti");
+    expect(html).toContain(".pdf-src-zone--autodna{border-top-color:#1e3a8a;}");
+  });
+
   it("renders every section head with the same icon bubble and title style", () => {
     const html = doc();
     expect(html).toContain("font-size:var(--pdf-fs-sec);font-weight:700");
