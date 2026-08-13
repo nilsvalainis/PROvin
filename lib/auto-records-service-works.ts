@@ -10,6 +10,7 @@ import {
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
 } from "@/lib/auto-records-paste-parse";
+import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 
 export type AutoRecordsServiceWorkRow = {
   /** DD.MM.YYYY (ja zināms tikai mēnesis — diena „01”). */
@@ -47,22 +48,74 @@ export function autoRecordsServiceWorkRowHasData(r: AutoRecordsServiceWorkRow): 
   return Boolean(r.date.trim() || r.odometer.trim() || r.location.trim() || r.works.trim());
 }
 
-/** PDF / klienta atskaitei — rinda skaitās tikai ar aprakstītiem darbiem. */
+/** PDF / klienta atskaitei — rinda ar datumu/odometru un vietu vai darbiem. */
 export function autoRecordsServiceWorkRowIsPrintable(r: AutoRecordsServiceWorkRow): boolean {
-  return Boolean(r.works.trim() && (r.date.trim() || r.odometer.trim()));
+  return Boolean((r.works.trim() || r.location.trim()) && (r.date.trim() || r.odometer.trim()));
+}
+
+const DEALER_ID_LABEL_RE = /^(d[īi]lera?\s+id|dealer\s+id)$/i;
+
+/** Servisa punkta pazīmes, kas nedrīkst palikt „Veiktie darbi” kolonnā. */
+const SERVICE_WORK_LOCATION_HINT_RE =
+  /\b(gmbh|s\.r\.o\.|srl|ltd\.?|llc|inc\.?|autohaus|autosalon|niederlassung|werkstatt|workshop|einsatzleitzentrale|mobiler\s+service|d[īi]lera?\s+id|dealer(?:\s+id)?)\b/i;
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Vai teksts izskatās pēc dīlera / darbnīcas, nevis pēc darbu kategorijas. */
+export function looksLikeServiceWorkLocation(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length < 4 || t.length > AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN) return false;
+  if (isVendorServiceCategoryLine(t)) return false;
+  if (SERVICE_WORK_LOCATION_HINT_RE.test(t)) return true;
+  if (/^.+,\s*\p{Lu}[\p{L}'\-]{1,40}$/u.test(t) && !/apkope|remont/i.test(t)) return true;
+  return false;
+}
+
+/**
+ * Gemini / vecākas rindas bieži saliek servisa punktu darbu tekstā:
+ * „B&K Deutschland GmbH, Osnabrück: detalizēts darbu saraksts…”.
+ * Atgriež punktu „Vieta” kolonnai un pārējo — darbiem.
+ */
+export function peelEmbeddedServiceWorkLocation(
+  location: string,
+  works: string,
+): { location: string; works: string } {
+  let place = location.replace(/\s+/g, " ").trim();
+  let detail = works.replace(/[ \t]+/g, " ").replace(/\u00a0/g, " ").trim();
+
+  if (place) {
+    const prefix = new RegExp(`^${escapeRegExp(place)}\\s*:\\s*`, "i");
+    if (prefix.test(detail)) detail = detail.replace(prefix, "").trim();
+    return { location: place, works: detail };
+  }
+
+  if (!detail.includes(":")) return { location: place, works: detail };
+
+  for (let i = 0; i < detail.length; i++) {
+    if (detail[i] !== ":") continue;
+    const left = detail.slice(0, i).trim();
+    const right = detail.slice(i + 1).trim();
+    if (!left) continue;
+    if (isVendorServiceCategoryLine(left)) break;
+    if (DEALER_ID_LABEL_RE.test(left)) continue;
+    if (!looksLikeServiceWorkLocation(left)) continue;
+    return { location: left, works: right };
+  }
+
+  return { location: place, works: detail };
 }
 
 export function normalizeAutoRecordsServiceWorkRow(
   r: AutoRecordsServiceWorkRow,
 ): AutoRecordsServiceWorkRow {
+  const peeled = peelEmbeddedServiceWorkLocation(r.location, r.works);
   return {
     date: formatAutoRecordsDateForOutput(r.date) || r.date.trim().slice(0, 40),
     odometer: normalizeAutoRecordsOdometer(r.odometer).slice(0, 40),
-    location: r.location
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
-    works: r.works.replace(/[ \t]+/g, " ").trim().slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
+    location: peeled.location.slice(0, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
+    works: peeled.works.slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
   };
 }
 

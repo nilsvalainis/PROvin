@@ -81,6 +81,75 @@ describe("servisa darbu rindas", () => {
     ]);
   });
 
+  it("izceļ dīlera punktu no darbu teksta pirms kolona", () => {
+    expect(
+      normalizeAutoRecordsServiceWorkRows([
+        {
+          date: "05.09.2019",
+          odometer: "198833",
+          location: "",
+          works: "B&K Deutschland GmbH, Osnabrück: detalizēts darbu saraksts atskaitē nav pieejams",
+        },
+        {
+          date: "12.04.2012",
+          odometer: "80000",
+          location: "",
+          works:
+            "BMW Mobiler Service Einsatzleitzentrale, München: detalizēts darbu saraksts atskaitē nav pieejams",
+        },
+        {
+          date: "01.01.2010",
+          odometer: "1000",
+          location: "",
+          works: "Dīlera ID: 00863 - 3: detalizēts darbu saraksts atskaitē nav pieejams",
+        },
+        {
+          date: "23.10.2014",
+          odometer: "120475",
+          location: "",
+          works: "B&K Deutschland GmbH, Osnabrück: Update DVD Road Map Europe Professional",
+        },
+        {
+          date: "01.12.2023",
+          odometer: "47521",
+          location: "",
+          works: "Regulārā apkope: eļļas maiņa",
+        },
+      ]),
+    ).toEqual([
+      {
+        date: "01.12.2023",
+        odometer: "47521",
+        location: "",
+        works: "Regulārā apkope: eļļas maiņa",
+      },
+      {
+        date: "05.09.2019",
+        odometer: "198833",
+        location: "B&K Deutschland GmbH, Osnabrück",
+        works: "detalizēts darbu saraksts atskaitē nav pieejams",
+      },
+      {
+        date: "23.10.2014",
+        odometer: "120475",
+        location: "B&K Deutschland GmbH, Osnabrück",
+        works: "Update DVD Road Map Europe Professional",
+      },
+      {
+        date: "12.04.2012",
+        odometer: "80000",
+        location: "BMW Mobiler Service Einsatzleitzentrale, München",
+        works: "detalizēts darbu saraksts atskaitē nav pieejams",
+      },
+      {
+        date: "01.01.2010",
+        odometer: "1000",
+        location: "Dīlera ID: 00863 - 3",
+        works: "detalizēts darbu saraksts atskaitē nav pieejams",
+      },
+    ]);
+  });
+
   it("pārnes teksta rindas uz tabulu, atdalot vietu", () => {
     const rows = parseAutoRecordsServiceWorkLines(
       [

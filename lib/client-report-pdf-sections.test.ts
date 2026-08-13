@@ -260,6 +260,49 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc.indexOf("01.12.2023")).toBeLessThan(doc.indexOf("01.06.2023"));
   });
 
+  it("moves dealer names out of works into the Vieta column", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        {
+          date: "05.09.2019",
+          odometer: "198833",
+          location: "",
+          works: "B&K Deutschland GmbH, Osnabrück: detalizēts darbu saraksts atskaitē nav pieejams",
+        },
+        {
+          date: "12.04.2012",
+          odometer: "80000",
+          location: "",
+          works:
+            "BMW Mobiler Service Einsatzleitzentrale, München: detalizēts darbu saraksts atskaitē nav pieejams",
+        },
+      ],
+      comments: "",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain('class="pdf-service-cell-place">B&amp;K Deutschland GmbH, Osnabrück</td>');
+    expect(doc).toContain(
+      'class="pdf-service-cell-place">BMW Mobiler Service Einsatzleitzentrale, München</td>',
+    );
+    expect(doc).toContain("detalizēts darbu saraksts atskaitē nav pieejams");
+    expect(doc).not.toContain(
+      'class="pdf-service-cell-works">B&amp;K Deutschland GmbH, Osnabrück:',
+    );
+    expect(doc).not.toContain(
+      'class="pdf-service-cell-works">BMW Mobiler Service Einsatzleitzentrale, München:',
+    );
+  });
+
   it("citi avoti subheads use manual label only, without CITI AVOTI prefix", () => {
     const p = {
       citiAvoti: {

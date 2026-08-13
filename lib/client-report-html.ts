@@ -55,6 +55,7 @@ import { parseListedForSaleDays } from "@/lib/tirgus-listed-ui";
 import {
   autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
+  normalizeAutoRecordsServiceWorkRow,
   SERVICE_WORKS_LOCATION_LABEL,
   sortAutoRecordsServiceWorkRows,
   type AutoRecordsServiceWorkRow,
@@ -821,7 +822,7 @@ const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 /** OFICIĀLĀ DĪLERA DATI — apkopju tabula: datums, odometrs, veiktie darbi. */
 function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]): string {
   const printable = sortAutoRecordsServiceWorkRows(
-    (rows ?? []).filter(autoRecordsServiceWorkRowIsPrintable),
+    (rows ?? []).map(normalizeAutoRecordsServiceWorkRow).filter(autoRecordsServiceWorkRowIsPrintable),
   );
   if (printable.length === 0) return "";
   const colgroup =
@@ -832,7 +833,7 @@ function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]
     .map((r) => {
       const odo = formatServiceWorkOdometer(r.odometer);
       const place = r.location.trim() ? escapeHtml(r.location.trim()) : "—";
-      const works = escapeHtml(r.works).replace(/\r?\n/g, "<br/>");
+      const works = r.works.trim() ? escapeHtml(r.works).replace(/\r?\n/g, "<br/>") : "—";
       return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${odo ? escapeHtml(odo) : "—"}</td><td class="pdf-service-cell-place">${place}</td><td class="pdf-service-cell-works">${works}</td></tr>`;
     })
     .join("\n");
