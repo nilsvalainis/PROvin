@@ -165,11 +165,6 @@ export function AdminTirgusSourceBlock({
             adify.lv/history
           </a>
         </div>
-        {status ? (
-          <p className="text-[10px] font-medium text-emerald-700" role="status">
-            {status}
-          </p>
-        ) : null}
         {error ? (
           <p className="text-[10px] font-medium text-red-700" role="alert">
             {error}
@@ -183,6 +178,7 @@ export function AdminTirgusSourceBlock({
       rows={historyRows}
       priceChangeEur={historyPriceChange}
       durationDays={historyDays}
+      foundMessage={status}
     />
   ) : null;
 

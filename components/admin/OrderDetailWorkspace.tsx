@@ -927,24 +927,45 @@ export function OrderDetailWorkspace({
         };
         wsStateRef.current = wsPersistRef.current;
       }
-      const result = await persistWorkspaceState({
-        sessionId: payload.sessionId,
-        body,
-        baseline: lastGoodPersistBodyRef.current,
-        pdfVisibility: pdfVisibilityRef.current,
-        pdfBannerInclude: pdfBannerIncludeRef.current,
-        manualBanners: manualBannersRef.current,
-        expectedWorkspaceRevision:
-          workspaceRevisionRef.current > 0 ? workspaceRevisionRef.current : undefined,
-        saveGeneration: myGen,
-        logContext,
-        fetchKeepalive: logContext === "navigation_flush",
-      });
-      if (result.generation !== workspaceServerSaveGenRef.current) return true;
-      if (!result.ok) {
-        if (typeof result.currentRevision === "number") {
-          workspaceRevisionRef.current = result.currentRevision;
+      let result;
+      try {
+        result = await persistWorkspaceState({
+          sessionId: payload.sessionId,
+          body,
+          baseline: lastGoodPersistBodyRef.current,
+          pdfVisibility: pdfVisibilityRef.current,
+          pdfBannerInclude: pdfBannerIncludeRef.current,
+          manualBanners: manualBannersRef.current,
+          expectedWorkspaceRevision:
+            workspaceRevisionRef.current > 0 ? workspaceRevisionRef.current : undefined,
+          saveGeneration: myGen,
+          logContext,
+          fetchKeepalive: logContext === "navigation_flush",
+        });
+      } catch (e) {
+        workspaceDebugLog("persist_failed", {
+          sessionId: payload.sessionId,
+          source: "client_patch",
+          error: e instanceof Error ? e.message : "persist_threw",
+          extra: { context: logContext },
+        });
+        if (myGen === workspaceServerSaveGenRef.current) {
+          setWorkspaceSaveServerOk(false);
+          setWorkspaceAutosaveStatus("error");
         }
+        return false;
+      }
+      if (result.ok && typeof result.workspaceRevision === "number") {
+        if (result.workspaceRevision > workspaceRevisionRef.current) {
+          workspaceRevisionRef.current = result.workspaceRevision;
+        }
+      } else if (!result.ok && typeof result.currentRevision === "number") {
+        workspaceRevisionRef.current = result.currentRevision;
+      }
+      if (result.generation !== workspaceServerSaveGenRef.current) {
+        return result.ok;
+      }
+      if (!result.ok) {
         setWorkspaceSaveServerOk(false);
         setWorkspaceAutosaveStatus("error");
         return false;
@@ -953,8 +974,8 @@ export function OrderDetailWorkspace({
       workspaceRevisionRef.current = result.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
       setWorkspaceSaveServerOk(true);
+      setWorkspaceAutosaveStatus("saved");
       if (ui?.showFlash !== false) {
-        setWorkspaceAutosaveStatus("saved");
         setWorkspaceSaveFlash(true);
       }
       return true;
@@ -2374,11 +2395,11 @@ export function OrderDetailWorkspace({
       traffic.csdd,
       vendors,
       traffic.auto_records,
+      traffic.ltab,
+      traffic.citi_avoti,
       traffic.tjekbil,
       worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
       traffic.carinfo,
-      traffic.ltab,
-      traffic.citi_avoti,
       traffic.listingSection,
       expertTraffic,
     ];
@@ -2391,13 +2412,13 @@ export function OrderDetailWorkspace({
         { label: "CSDD", Icon: ClipboardList, row: 1 as const },
         { label: "Datu serv.", Icon: Layers, row: 1 as const },
         { label: "Auto Records", Icon: CarFront, row: 1 as const },
+        { label: "LTAB", Icon: Scale, row: 1 as const },
+        { label: "Citi avoti", Icon: Link2, row: 1 as const },
         { label: "Tjekbil", Icon: Landmark, row: 2 as const },
         { label: "Igaunija", Icon: Flag, row: 2 as const },
         { label: "car.info", Icon: Globe, row: 2 as const },
-        { label: "LTAB", Icon: Scale, row: 1 as const },
-        { label: "Citi avoti", Icon: Link2, row: 1 as const },
-        { label: "Sludinājums", Icon: Newspaper, row: 1 as const },
-        { label: "Kopsavilkums", Icon: ListChecks, row: 1 as const },
+        { label: "Sludinājums", Icon: Newspaper, row: 2 as const },
+        { label: "Kopsavilkums", Icon: ListChecks, row: 2 as const },
       ] as const,
     [],
   );
@@ -3442,43 +3463,46 @@ export function OrderDetailWorkspace({
               setCopilotOpen(true);
             }}
           />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            {([1, 2] as const).map((row) => (
-              <div key={row} className="flex min-w-0 flex-wrap items-stretch gap-1 sm:gap-1.5">
-                {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
-                  if (stepRow !== row) return null;
-                  const lvl = wizardStepLevels[idx] ?? "empty";
-                  const active = wizardStep === idx;
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => goWizardStep(idx)}
-                      className={`flex min-w-0 max-w-[7.5rem] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 text-center transition sm:max-w-none sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 ${
-                        active
-                          ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
-                          : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-                      }`}
-                    >
-                      <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
-                        <Icon className="h-3.5 w-3.5" aria-hidden />
-                        <span
-                          className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
-                          title={`Aizpildījums: ${lvl}`}
-                        />
-                      </span>
-                      <span
-                        className={`line-clamp-2 w-full text-[9px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left ${
-                          active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            {([1, 2] as const).map((row) => {
+              const cols = row === 1 ? "grid-cols-6" : "grid-cols-5";
+              return (
+                <div key={row} className={`grid min-w-0 ${cols} gap-1`}>
+                  {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
+                    if (stepRow !== row) return null;
+                    const lvl = wizardStepLevels[idx] ?? "empty";
+                    const active = wizardStep === idx;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => goWizardStep(idx)}
+                        className={`flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-0.5 py-1 text-center transition sm:flex-row sm:justify-start sm:gap-1 sm:px-1.5 ${
+                          active
+                            ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
+                            : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                         }`}
                       >
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+                        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
+                          <Icon className="h-3.5 w-3.5" aria-hidden />
+                          <span
+                            className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
+                            title={`Aizpildījums: ${lvl}`}
+                          />
+                        </span>
+                        <span
+                          className={`line-clamp-2 w-full text-[8px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left sm:text-[9px] ${
+                            active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
+                          }`}
+                        >
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
           <div
             className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 font-mono text-[8px] font-medium text-[var(--color-apple-text)] dark:bg-white/[0.06] sm:text-[9px] ${
@@ -3642,6 +3666,38 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 4 ? (
+          <div id="admin-order-block-ltab" className="min-w-0">
+            <AdminLtabSourceBlock
+              value={blocksDisplaySafe.ltab}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("ltab", next)}
+              trafficFillLevel={traffic.ltab}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.ltab}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
+              geminiComment={geminiCommentSlot("ltab")}
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 5 ? (
+          <div id="admin-order-block-citi-avoti" className="min-w-0">
+            <AdminCitiAvotiSourceBlock
+              value={blocksDisplaySafe.citi_avoti}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("citi_avoti", next)}
+              trafficFillLevel={traffic.citi_avoti}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.citi_avoti}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
+              geminiComment={(i) => geminiCommentSlot("citi_avoti", i)}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 6 ? (
           <div id="admin-order-block-tjekbil" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
@@ -3658,7 +3714,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 5 ? (
+        {wizardStep === 7 ? (
           <div id="admin-order-block-estonia" className="min-w-0">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
@@ -3680,7 +3736,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {wizardStep === 8 ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -3693,38 +3749,6 @@ export function OrderDetailWorkspace({
               geminiComment={geminiCommentSlot("carinfo")}
               pdfInclude={pdfVisibility.carinfo}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ carinfo: next })}
-            />
-          </div>
-        ) : null}
-
-        {wizardStep === 7 ? (
-          <div id="admin-order-block-ltab" className="min-w-0">
-            <AdminLtabSourceBlock
-              value={blocksDisplaySafe.ltab}
-              readOnly={false}
-              onChange={(next) => updateSourceBlock("ltab", next)}
-              trafficFillLevel={traffic.ltab}
-              sessionId={payload.sessionId}
-              pdfInclude={pdfVisibility.ltab}
-              onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
-              geminiComment={geminiCommentSlot("ltab")}
-              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
-              applyPatchedBlocks={applyCopilotPatchedBlocks}
-            />
-          </div>
-        ) : null}
-
-        {wizardStep === 8 ? (
-          <div id="admin-order-block-citi-avoti" className="min-w-0">
-            <AdminCitiAvotiSourceBlock
-              value={blocksDisplaySafe.citi_avoti}
-              readOnly={false}
-              onChange={(next) => updateSourceBlock("citi_avoti", next)}
-              trafficFillLevel={traffic.citi_avoti}
-              sessionId={payload.sessionId}
-              pdfInclude={pdfVisibility.citi_avoti}
-              onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
-              geminiComment={(i) => geminiCommentSlot("citi_avoti", i)}
             />
           </div>
         ) : null}

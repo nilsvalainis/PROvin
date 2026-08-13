@@ -47,7 +47,6 @@ import {
   formatAdifyMileageLabel,
   formatAdifyPriceLabel,
   formatAdifySignedEur,
-  formatAdifyYearLabel,
 } from "@/lib/adify-listing-history";
 import { parseListedForSaleDays } from "@/lib/tirgus-listed-ui";
 import {
@@ -715,21 +714,20 @@ function buildTirgusPriceHistoryTableHtml(f: TirgusFormFields): string {
     .map((row) => {
       const delta = formatAdifyDeltaLabel(row.delta);
       const deltaHtml = delta
-        ? `<span class="pdf-adify-delta ${row.delta < 0 ? "pdf-adify-delta--down" : "pdf-adify-delta--up"}">${escapeHtml(delta)}</span>`
+        ? `<span class="pdf-listing-price-delta ${row.delta < 0 ? "pdf-listing-price-delta--down" : "pdf-listing-price-delta--up"}">${escapeHtml(delta)}</span>`
         : "";
       return `<tr>
-        <td class="pdf-adify-price">${escapeHtml(formatAdifyPriceLabel(row.price))}${deltaHtml}</td>
+        <td class="pdf-listing-price">${escapeHtml(formatAdifyPriceLabel(row.price))}${deltaHtml}</td>
         <td>${escapeHtml(formatAdifyMileageLabel(row.mileage))}</td>
-        <td>${escapeHtml(formatAdifyYearLabel(row.year))}</td>
         <td>${escapeHtml(row.date)}</td>
       </tr>`;
     })
     .join("\n");
   const duration = days != null ? `${days} diena(s)` : "—";
-  return `<div class="pdf-adify-history">
-    <p class="pdf-adify-history-title">Cenas izmaiņas šajā sludinājumā</p>
-    <table class="pdf-adify-history-table" role="table">${body}</table>
-    <div class="pdf-adify-history-foot">
+  return `<div class="pdf-listing-price-history">
+    <p class="pdf-listing-price-history-title">Cenas izmaiņas šajā sludinājumā</p>
+    <table class="pdf-listing-price-history-table" role="table">${body}</table>
+    <div class="pdf-listing-price-history-foot">
       <span>Cenas izmaiņa: <strong>${escapeHtml(formatAdifySignedEur(priceChange))}</strong></span>
       <span>Ilgums: <strong>${escapeHtml(duration)}</strong></span>
     </div>
@@ -1637,16 +1635,17 @@ function clientReportPrintCss(): string {
       .pdf-price-drop-val{color:#000!important;font-weight:600!important;}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
-      .pdf-adify-history{margin:4px 0 10px;border:1px solid #d4d4dc;border-radius:12px;overflow:hidden;background:#fff;}
-      .pdf-adify-history-title{margin:8px 10px 4px;font-size:0.78rem;font-weight:700;color:#2b2f4a;}
-      .pdf-adify-history-table{width:100%;border-collapse:collapse;font-size:0.72rem;font-weight:600;color:#2b2f4a;}
-      .pdf-adify-history-table td{padding:5px 6px;text-align:center;border-right:1px solid #e4e4ea;width:25%;}
-      .pdf-adify-history-table td:last-child{border-right:0;}
-      .pdf-adify-delta{margin-left:3px;font-size:0.62rem;font-weight:600;}
-      .pdf-adify-delta--down{color:#22c55e;}
-      .pdf-adify-delta--up{color:#ef4444;}
-      .pdf-adify-history-foot{display:flex;justify-content:space-between;background:#686a94;color:#fff;padding:8px 14px;font-size:0.72rem;}
-      .pdf-adify-history-foot strong{font-weight:700;}
+      .pdf-listing-price-history{margin:4px 0 10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;}
+      .pdf-listing-price-history-title{margin:8px 10px 4px;font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;}
+      .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:0.72rem;font-weight:600;color:#1d1d1f;}
+      .pdf-listing-price-history-table td{padding:5px 8px;border-bottom:1px solid #f1f5f9;width:33.33%;}
+      .pdf-listing-price-history-table td:nth-child(2){text-align:center;}
+      .pdf-listing-price-history-table td:last-child{text-align:right;color:#64748b;font-weight:500;}
+      .pdf-listing-price-delta{margin-left:4px;font-size:0.62rem;font-weight:600;}
+      .pdf-listing-price-delta--down{color:#059669;}
+      .pdf-listing-price-delta--up{color:#dc2626;}
+      .pdf-listing-price-history-foot{display:flex;justify-content:space-between;background:${PDF_BRAND_BLUE_HEX};color:#fff;padding:8px 12px;font-size:0.72rem;}
+      .pdf-listing-price-history-foot strong{font-weight:700;}
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}

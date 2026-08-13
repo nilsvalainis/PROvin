@@ -180,9 +180,6 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
   if (data.durable === false) {
     return { ok: false, error: "store_not_durable", generation: gen };
   }
-  if (data.workspaceChecksum && data.workspaceChecksum !== expectedChecksum) {
-    return { ok: false, error: "persistence_verification_failed", generation: gen };
-  }
 
   workspaceDebugLog("persist_ok", {
     sessionId: opts.sessionId,

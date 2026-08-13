@@ -5,7 +5,6 @@ import {
   formatAdifyMileageLabel,
   formatAdifyPriceLabel,
   formatAdifySignedEur,
-  formatAdifyYearLabel,
   type TirgusPriceHistoryRow,
 } from "@/lib/adify-listing-history";
 
@@ -13,58 +12,62 @@ type Props = {
   rows: TirgusPriceHistoryRow[];
   priceChangeEur: number;
   durationDays: number | null;
+  foundMessage?: string | null;
 };
 
-export function AdminListingPriceHistoryTable({ rows, priceChangeEur, durationDays }: Props) {
+export function AdminListingPriceHistoryTable({
+  rows,
+  priceChangeEur,
+  durationDays,
+  foundMessage,
+}: Props) {
   if (rows.length === 0) return null;
 
   return (
-    <div className="w-full min-w-0">
-      <p className="mb-1.5 text-[12px] font-bold text-[#2B2F4A]">Cenas izmaiņas šajā sludinājumā</p>
-      <div className="relative">
-        <div className="relative overflow-hidden rounded-xl border border-[#2B2F4A40] bg-white p-3">
-          <ul className="m-0 list-none p-0">
-            {rows.map((row, i) => {
-              const deltaLabel = formatAdifyDeltaLabel(row.delta);
-              const dropped = row.delta < 0;
-              return (
-                <li
-                  key={`${row.date}-${row.price}-${i}`}
-                  className="mb-2 flex last:mb-0"
-                >
-                  <span className="flex-1 border-r border-[#2B2F4A40] pr-2 text-center text-[13px] font-semibold leading-tight text-[#2B2F4A] sm:text-[15px]">
-                    <span>{formatAdifyPriceLabel(row.price)}</span>
-                    {deltaLabel ? (
-                      <span
-                        className={`ml-0.5 text-[11px] ${dropped ? "text-green-500" : "text-red-500"}`}
-                      >
-                        {deltaLabel}
-                      </span>
-                    ) : null}
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm">
+      {foundMessage ? (
+        <p className="border-b border-[var(--color-provin-accent)]/20 bg-[var(--color-provin-accent-soft)]/50 px-3 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent-hover)]">
+          {foundMessage}
+        </p>
+      ) : null}
+      <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+        Cenas izmaiņas šajā sludinājumā
+      </p>
+      <ul className="m-0 list-none divide-y divide-slate-100 px-1 pb-1">
+        {rows.map((row, i) => {
+          const deltaLabel = formatAdifyDeltaLabel(row.delta);
+          const dropped = row.delta < 0;
+          return (
+            <li key={`${row.date}-${row.price}-${i}`} className="grid grid-cols-3 items-center gap-1 px-2 py-1.5">
+              <span className="min-w-0 text-[12px] font-semibold leading-tight text-[var(--color-apple-text)]">
+                <span>{formatAdifyPriceLabel(row.price)}</span>
+                {deltaLabel ? (
+                  <span
+                    className={`ml-1 text-[10px] font-semibold ${
+                      dropped ? "text-emerald-600" : "text-red-600"
+                    }`}
+                  >
+                    {deltaLabel}
                   </span>
-                  <span className="flex-1 border-r border-[#2B2F4A40] px-2 text-center text-[13px] font-semibold leading-tight text-[#2B2F4A] sm:text-[15px]">
-                    {formatAdifyMileageLabel(row.mileage)}
-                  </span>
-                  <span className="flex-1 border-r border-[#2B2F4A40] px-2 text-center text-[13px] font-semibold leading-tight text-[#2B2F4A] sm:text-[15px]">
-                    {formatAdifyYearLabel(row.year)}
-                  </span>
-                  <span className="flex-1 pl-2 text-center text-[13px] font-semibold leading-tight text-[#2B2F4A] sm:text-[15px]">
-                    {row.date}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-        <div className="-mt-2 flex rounded-b-xl border border-[#2B2F4A40] bg-[#686A94] px-5 pb-3 pt-5 text-[13px] text-white">
-          <div className="flex-1">
-            Cenas izmaiņa: <strong>{formatAdifySignedEur(priceChangeEur)}</strong>
-          </div>
-          <div className="text-center">
-            Ilgums:{" "}
-            <strong>{durationDays != null ? `${durationDays} diena(s)` : "—"}</strong>
-          </div>
-        </div>
+                ) : null}
+              </span>
+              <span className="min-w-0 text-center text-[12px] font-medium tabular-nums text-[var(--color-apple-text)]">
+                {formatAdifyMileageLabel(row.mileage)}
+              </span>
+              <span className="min-w-0 text-right text-[12px] font-medium tabular-nums text-[var(--color-provin-muted)]">
+                {row.date}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="flex items-center justify-between gap-3 border-t border-[var(--color-provin-accent)]/25 bg-[var(--color-provin-accent)] px-3 py-2 text-[11px] text-white">
+        <span>
+          Cenas izmaiņa: <strong>{formatAdifySignedEur(priceChangeEur)}</strong>
+        </span>
+        <span>
+          Ilgums: <strong>{durationDays != null ? `${durationDays} diena(s)` : "—"}</strong>
+        </span>
       </div>
     </div>
   );
