@@ -1605,6 +1605,9 @@ function clientReportPrintCss(): string {
       .pdf-summary-tile--ok .pdf-summary-tile__label::before{background:#16a34a;}
       .pdf-summary-tile--warn .pdf-summary-tile__label::before{background:#FFC107;}
       .pdf-summary-tile--alert .pdf-summary-tile__label::before{background:#FF4D4D;}
+      .pdf-summary-tile--ok{background:#F5FBF7;}
+      .pdf-summary-tile--warn{background:#FFFCF3;}
+      .pdf-summary-tile--alert{background:#FFF7F7;}
       .pdf-summary-tile__value{
         margin:6px 0 0;font-size:18px;font-weight:700;color:#0f172a;line-height:1.2;letter-spacing:-0.01em;
       }
@@ -1686,6 +1689,7 @@ function clientReportPrintCss(): string {
       .pdf-unified-mileage-zone .pdf-sec-head{margin-top:0;}
       .pdf-provin-sources-wrap{margin:0 0 var(--pdf-gap-section);}
       h2.pdf-sec--provin-sources{text-transform:uppercase;letter-spacing:0.06em;}
+      .pdf-provin-sources-wrap .pdf-v1-kv td:last-child{text-align:right;font-weight:600;}
       .pdf-v1-panel-title--provin-sources{
         text-transform:none;
         letter-spacing:0.02em;
@@ -1899,13 +1903,15 @@ ${sourceDotColorCss()}
       }
       .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-year{font-size:7.5px;}
       .pdf-mileage-chart-legend{
-        display:flex;align-items:center;gap:6px;padding:0 10px 8px 12px;font-size:0.62rem;color:#64748b;
+        display:flex;align-items:center;gap:6px;padding:0 10px 8px 12px;
+        font-size:var(--pdf-fs-table);color:#64748b;
       }
       .pdf-mileage-chart-legend-line{
-        display:inline-block;width:18px;height:2px;border-radius:1px;background:${PDF_MILEAGE_CHART_LINE};
+        display:inline-block;width:8px;height:8px;border-radius:999px;background:${PDF_MILEAGE_CHART_LINE};
         flex-shrink:0;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-chart-legend-text{font-weight:500;color:#64748b;}
+      .pdf-mileage-chart-legend-text{font-weight:600;color:#475569;}
       .pdf-source-count-note{
         margin:8px 0 0;
         font-size:0.62rem;
