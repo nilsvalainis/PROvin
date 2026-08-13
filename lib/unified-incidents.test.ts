@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentRows,
+  formatIncidentSourceValuationsLine,
   formatUnifiedIncidentCountLabel,
   type UnifiedIncidentRow,
 } from "@/lib/unified-incidents";
@@ -37,24 +38,80 @@ describe("aggregateUnifiedIncidents", () => {
     expect(agg.clusters).toHaveLength(1);
     expect(agg.clusters[0]?.averaged).toBe(true);
     expect(agg.clusters[0]?.averageEur).toBe(2789);
-    expect(agg.clusters[0]?.sources).toEqual(["AutoDNA", "LTAB"]);
     expect(agg.clusters[0]?.displayAmount).toBe("2 789 €");
-    expect(agg.bySource).toHaveLength(2);
-    expect(agg.bySource[0]).toMatchObject({ sourceLabel: "AutoDNA", count: 1, averageEur: 2800 });
-    expect(agg.bySource[1]).toMatchObject({ sourceLabel: "LTAB", count: 1, averageEur: 2778 });
+    expect(agg.clusters[0]?.date).toBe("16.06.2021");
+    expect(agg.clusters[0]?.sourceValuations).toEqual([
+      { sourceLabel: "AutoDNA", displayAmount: "2 800 €", amountEur: 2800 },
+      { sourceLabel: "LTAB", displayAmount: "2 778.22 €", amountEur: 2778 },
+    ]);
+    expect(formatIncidentSourceValuationsLine(agg.clusters[0]!)).toBe(
+      "AutoDNA 2 800 € · LTAB 2 778.22 €",
+    );
   });
 
-  it("neatņem divas viena avota rindas tajā pašā dienā", () => {
-    const t = Date.UTC(2020, 9, 20);
+  it("apvieno viena mēneša ierakstus no dažādiem avotiem par vienu negadījumu", () => {
     const agg = aggregateUnifiedIncidents([
-      row({ date: "20.10.2020", lossAmount: "1 599 €", sourceLabel: "LTAB", sortableTime: t, sourceOrder: 0 }),
-      row({ date: "20.10.2020", lossAmount: "400 €", sourceLabel: "LTAB", sortableTime: t, sourceOrder: 1 }),
+      row({
+        date: "01.06.2021",
+        lossAmount: "3 501 - 4 000 €",
+        sourceLabel: "AutoDNA",
+        sortableTime: Date.UTC(2021, 5, 1),
+        sourceOrder: 0,
+      }),
+      row({
+        date: "16.06.2021",
+        lossAmount: "2 778 €",
+        sourceLabel: "LTAB",
+        sortableTime: Date.UTC(2021, 5, 16),
+        sourceOrder: 1,
+      }),
+      row({
+        date: "20.10.2020",
+        lossAmount: "1 599 €",
+        sourceLabel: "LTAB",
+        sortableTime: Date.UTC(2020, 9, 20),
+        sourceOrder: 2,
+      }),
     ]);
     expect(agg.uniqueCount).toBe(2);
-    expect(agg.clusters.every((c) => !c.averaged)).toBe(true);
+    expect(agg.clusters[0]?.date).toBe("06.2021");
+    expect(agg.clusters[0]?.averaged).toBe(true);
+    expect(agg.clusters[1]?.date).toBe("20.10.2020");
+    expect(agg.clusters[1]?.averaged).toBe(false);
   });
 
-  it("nesapludina dažādu valstu ierakstus vienā datumā", () => {
+  it("AutoDNA vairākas rindas tajā pašā mēnesī nesaskaita kā atsevišķus negadījumus", () => {
+    const agg = aggregateUnifiedIncidents([
+      row({
+        date: "01.06.2021",
+        lossAmount: "3 500 €",
+        sourceLabel: "AutoDNA",
+        sortableTime: Date.UTC(2021, 5, 1),
+        sourceOrder: 0,
+      }),
+      row({
+        date: "15.06.2021",
+        lossAmount: "1 200 €",
+        sourceLabel: "AutoDNA",
+        sortableTime: Date.UTC(2021, 5, 15),
+        sourceOrder: 1,
+      }),
+      row({
+        date: "16.06.2021",
+        lossAmount: "2 778 €",
+        sourceLabel: "LTAB",
+        sortableTime: Date.UTC(2021, 5, 16),
+        sourceOrder: 2,
+      }),
+    ]);
+    expect(agg.rawCount).toBe(3);
+    expect(agg.uniqueCount).toBe(1);
+    expect(agg.clusters[0]?.sourceValuations).toHaveLength(2);
+    const autodna = agg.clusters[0]?.sourceValuations.find((s) => s.sourceLabel === "AutoDNA");
+    expect(autodna?.amountEur).toBe(2350);
+  });
+
+  it("nesapludina dažādu valstu ierakstus vienā mēnesī", () => {
     const t = Date.UTC(2022, 4, 27);
     const agg = aggregateUnifiedIncidents([
       row({ date: "27.05.2022", lossAmount: "1200", country: "LV", sourceLabel: "LTAB", sortableTime: t, sourceOrder: 0 }),

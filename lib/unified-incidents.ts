@@ -1,9 +1,11 @@
 /**
  * Vienota negadījumu tabula PDF — AutoDNA, CarVertical, LTAB, Citi avoti (tikai rindas ar aizpildītu „Zaudējumu summu”).
- * Loģiskais apkopojums: tas pats CSNg (datums + valsts) no vairākiem avotiem → viena rinda ar vidējo summu.
+ * Loģiskais apkopojums: tas pats mēnesis + valsts (arī starp avotiem) → viens negadījums ar vidējo summu
+ * un katra avota novērtējumu.
  */
 
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
+import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   formatLossEurWholeDisplay,
@@ -21,33 +23,27 @@ export type UnifiedIncidentRow = {
   sourceLabel: string;
 };
 
-/** Viens loģisks negadījums (pēc apvienošanas starp avotiem). */
+export type UnifiedIncidentSourceValuation = {
+  sourceLabel: string;
+  displayAmount: string;
+  amountEur: number | null;
+};
+
+/** Viens loģisks negadījums (pēc apvienošanas starp avotiem tajā pašā mēnesī). */
 export type UnifiedIncidentCluster = {
   date: string;
   country: string;
   displayAmount: string;
   averageEur: number | null;
-  minEur: number | null;
-  maxEur: number | null;
   averaged: boolean;
-  sources: string[];
+  sourceValuations: UnifiedIncidentSourceValuation[];
   sortableTime: number;
-};
-
-export type UnifiedIncidentSourceSummary = {
-  sourceLabel: string;
-  count: number;
-  averageEur: number | null;
-  displayAverage: string;
 };
 
 export type UnifiedIncidentAggregation = {
   clusters: UnifiedIncidentCluster[];
-  bySource: UnifiedIncidentSourceSummary[];
   uniqueCount: number;
   rawCount: number;
-  totalSumEur: number | null;
-  overallAverageEur: number | null;
 };
 
 function incidentRowHasLossAmount(r: LtabIncidentRow): boolean {
@@ -104,10 +100,31 @@ function incidentCountryKey(raw: string): string {
   return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+/** `2021-06` vai null, ja mēnesi nevar nolasīt. */
+export function incidentYearMonthKey(row: Pick<UnifiedIncidentRow, "date" | "sortableTime">): string | null {
+  if (row.sortableTime !== Number.NEGATIVE_INFINITY) {
+    const d = new Date(row.sortableTime);
+    const y = d.getUTCFullYear();
+    const m = d.getUTCMonth() + 1;
+    if (y >= 1900 && y <= 2100 && m >= 1 && m <= 12) {
+      return `${y}-${String(m).padStart(2, "0")}`;
+    }
+  }
+  const t = row.date.trim();
+  const monthYear = t.match(/^(\d{1,2})\.(\d{4})$/);
+  if (monthYear) {
+    const m = Number(monthYear[1]);
+    const y = Number(monthYear[2]);
+    if (m >= 1 && m <= 12 && y >= 1900 && y <= 2100) return `${y}-${String(m).padStart(2, "0")}`;
+  }
+  return null;
+}
+
 function incidentClusterKey(row: UnifiedIncidentRow): string {
-  const datePart =
-    row.sortableTime === Number.NEGATIVE_INFINITY ? `raw:${row.date}` : String(row.sortableTime);
-  return `${datePart}|${incidentCountryKey(row.country)}`;
+  const ym = incidentYearMonthKey(row);
+  const country = incidentCountryKey(row.country);
+  if (!ym) return `unique:${row.sourceOrder}`;
+  return `${ym}|${country}`;
 }
 
 function parseIncidentAmountEur(raw: string): number | null {
@@ -135,54 +152,73 @@ function averageEur(values: number[]): number | null {
   return Math.round(values.reduce((s, n) => s + n, 0) / values.length);
 }
 
-function uniqueSources(rows: UnifiedIncidentRow[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const r of rows) {
-    if (seen.has(r.sourceLabel)) continue;
-    seen.add(r.sourceLabel);
-    out.push(r.sourceLabel);
+function formatMonthYearDisplay(ym: string): string {
+  const [y, m] = ym.split("-");
+  if (!y || !m) return ym;
+  return `${m}.${y}`;
+}
+
+function clusterDisplayDate(members: UnifiedIncidentRow[], ym: string | null): string {
+  const dayDates = new Set<string>();
+  for (const m of members) {
+    if (m.sortableTime === Number.NEGATIVE_INFINITY) continue;
+    const lv = formatAutoRecordsDateForOutput(m.date) || m.date.trim();
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(lv)) dayDates.add(lv);
   }
-  return out;
+  if (dayDates.size === 1) return [...dayDates][0]!;
+  if (ym) return formatMonthYearDisplay(ym);
+  return sortUnifiedIncidentsNewestFirst(members)[0]?.date.trim() || "—";
+}
+
+function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedIncidentSourceValuation {
+  const values = amountsOf(rows);
+  const avg = averageEur(values);
+  if (rows.length === 1) {
+    return {
+      sourceLabel: label,
+      displayAmount: rows[0]!.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "—"),
+      amountEur: avg,
+    };
+  }
+  return {
+    sourceLabel: label,
+    displayAmount: avg != null ? formatLossEurWholeDisplay(avg) : "—",
+    amountEur: avg,
+  };
 }
 
 function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentCluster {
   const newest = sortUnifiedIncidentsNewestFirst(members)[0]!;
-  const values = amountsOf(members);
-  const avg = averageEur(values);
-  const min = values.length ? Math.min(...values) : null;
-  const max = values.length ? Math.max(...values) : null;
-  const averaged = members.length > 1 && avg != null;
+  const bySource = new Map<string, UnifiedIncidentRow[]>();
+  for (const m of members) {
+    const list = bySource.get(m.sourceLabel) ?? [];
+    list.push(m);
+    bySource.set(m.sourceLabel, list);
+  }
+  const sourceValuations = [...bySource.entries()].map(([label, list]) => sourceValuation(label, list));
+  const sourceAmounts = sourceValuations.map((s) => s.amountEur).filter((n): n is number => n != null);
+  const avg = averageEur(sourceAmounts);
+  const averaged = sourceValuations.length > 1 && avg != null;
   const displayAmount = averaged
     ? formatLossEurWholeDisplay(avg)
-    : newest.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "—");
+    : sourceValuations[0]?.displayAmount || newest.lossAmount.trim() || "—";
   const country = normalizeCountryNameLv(newest.country) || newest.country.trim() || "—";
+  const ym = incidentYearMonthKey(newest) ?? incidentYearMonthKey(members[0]!);
   return {
-    date: newest.date,
+    date: clusterDisplayDate(members, ym),
     country,
     displayAmount,
     averageEur: avg,
-    minEur: min,
-    maxEur: max,
     averaged,
-    sources: uniqueSources(members),
+    sourceValuations,
     sortableTime: newest.sortableTime,
   };
 }
 
-function sourceSummary(label: string, rows: UnifiedIncidentRow[]): UnifiedIncidentSourceSummary {
-  const avg = averageEur(amountsOf(rows));
-  return {
-    sourceLabel: label,
-    count: rows.length,
-    averageEur: avg,
-    displayAverage: avg != null ? formatLossEurWholeDisplay(avg) : "—",
-  };
-}
-
 /**
- * Apvieno to pašu CSNg (datums + valsts) no dažādiem avotiem.
- * Ja viens avots tajā pašā dienā/valstī dod vairākas rindas — neatņemam tās (nav droši sapludināt).
+ * Apvieno to pašu mēnesi + valsti no visiem avotiem par vienu negadījumu.
+ * Vidējā summa = vidējais no katra avota novērtējuma (nevis visu rindu aritmētiskais, lai AutoDNA
+ * vairākas rindas par to pašu CSNg nepārsvarotu LTAB).
  */
 export function aggregateUnifiedIncidents(rows: UnifiedIncidentRow[]): UnifiedIncidentAggregation {
   const sorted = sortUnifiedIncidentsNewestFirst(rows);
@@ -194,46 +230,25 @@ export function aggregateUnifiedIncidents(rows: UnifiedIncidentRow[]): UnifiedIn
     groups.set(key, list);
   }
 
-  const clusters: UnifiedIncidentCluster[] = [];
-  for (const members of groups.values()) {
-    const perSource = new Map<string, number>();
-    for (const m of members) perSource.set(m.sourceLabel, (perSource.get(m.sourceLabel) ?? 0) + 1);
-    const maxPerSource = Math.max(0, ...perSource.values());
-    if (members.length > 1 && maxPerSource <= 1) {
-      clusters.push(clusterFromMembers(members));
-    } else {
-      for (const m of members) clusters.push(clusterFromMembers([m]));
-    }
-  }
+  const clusters = [...groups.values()].map(clusterFromMembers);
   clusters.sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     return a.date.localeCompare(b.date, "lv");
   });
 
-  const bySourceMap = new Map<string, UnifiedIncidentRow[]>();
-  for (const row of sorted) {
-    const list = bySourceMap.get(row.sourceLabel) ?? [];
-    list.push(row);
-    bySourceMap.set(row.sourceLabel, list);
-  }
-  const bySource = [...bySourceMap.entries()].map(([label, list]) => sourceSummary(label, list));
-
-  const clusterAmounts = clusters.map((c) => c.averageEur).filter((n): n is number => n != null);
-  const totalSumEur = clusterAmounts.length ? clusterAmounts.reduce((s, n) => s + n, 0) : null;
-  const overallAverageEur =
-    clusterAmounts.length > 0 ? Math.round(totalSumEur! / clusterAmounts.length) : null;
-
   return {
     clusters,
-    bySource,
     uniqueCount: clusters.length,
     rawCount: rows.length,
-    totalSumEur,
-    overallAverageEur,
   };
 }
 
 export function formatUnifiedIncidentCountLabel(n: number): string {
   if (n === 1) return "1 negadījums";
   return `${n} negadījumi`;
+}
+
+export function formatIncidentSourceValuationsLine(c: UnifiedIncidentCluster): string {
+  if (c.sourceValuations.length <= 1) return "";
+  return c.sourceValuations.map((s) => `${s.sourceLabel} ${s.displayAmount}`).join(" · ");
 }

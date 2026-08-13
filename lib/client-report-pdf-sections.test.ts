@@ -92,12 +92,12 @@ describe("unified PDF sections single block", () => {
     expect(html).not.toContain("pdf-unified-incidents-zone--continued");
     expect(html).toContain("NEGADĪJUMU VĒSTURES KOPSAVILKUMS");
     expect(html).toContain("pdf-incident-history-card");
-    expect(html).toContain("Apvienotie negadījumi");
-    expect(html).toContain("Vidējā zaudējumu summa pa avotiem");
-    expect(html).toContain("1 negadījums");
-    expect(html).toContain("Kopā:");
-    expect(html).toContain("Vidēji:");
-    expect(html.indexOf("Apvienotie negadījumi")).toBeLessThan(html.indexOf("Kopsavilkuma teksts"));
+    expect(html).toContain("Negadījumi:");
+    expect(html).not.toContain("Apvienotie negadījumi");
+    expect(html).not.toContain("Vidējā zaudējumu summa pa avotiem");
+    expect(html).not.toContain("Kopā:");
+    expect(html).not.toContain("Vidēji:");
+    expect(html.indexOf("pdf-incident-history-card")).toBeLessThan(html.indexOf("Kopsavilkuma teksts"));
   });
 
   it("does not render CarVertical damage detail sub-rows (hidden for now)", () => {
