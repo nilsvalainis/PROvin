@@ -25,7 +25,7 @@ function clipAutodnaCountry(raw: string): string {
 const AUTODNA_DAMAGE_EVENT_RE =
   /(\d{1,2})\.(\d{4})[\s\S]{0,200}?zaudējumu\s+apjoms[\s\S]{0,450}?Summa\s+([\d\s\u00A0]+(?:\s*[-–—]\s*[\d\s\u00A0]+)?)\s*EUR[\s\S]{0,180}?Valsts\s+([A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž][A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž\s-]{1,48})/gi;
 
-const EVENT_START_RE = /(\d{1,2})\.(\d{4})[\s\S]{0,80}?zaudējumu\s+apjoms/gi;
+const EVENT_START_RE = /(\d{1,2})\.(\d{4})[\s\S]{0,600}?zaudējumu\s+apjoms/gi;
 
 function monthYearToDateDisplay(month: string, year: string): string {
   const mo = month.padStart(2, "0");
@@ -46,7 +46,33 @@ function dedupeIncidents(rows: LtabIncidentRow[]): LtabIncidentRow[] {
 }
 
 export function autodnaDamageSectionDetected(text: string): boolean {
-  return DAMAGE_SECTION_HINT.test(text);
+  return DAMAGE_SECTION_HINT.test(text) || /Boj[āa]jumu\s+zonas?/i.test(text);
+}
+
+function collectAutodnaDamageStarts(text: string): { index: number; month: string; year: string }[] {
+  const starts: { index: number; month: string; year: string }[] = [];
+  const push = (index: number, month: string, year: string) => {
+    if (!month || !year) return;
+    if (starts.some((s) => Math.abs(s.index - index) < 48)) return;
+    starts.push({ index, month, year });
+  };
+  EVENT_START_RE.lastIndex = 0;
+  let sm: RegExpExecArray | null;
+  while ((sm = EVENT_START_RE.exec(text)) !== null) {
+    push(sm.index ?? 0, sm[1] ?? "", sm[2] ?? "");
+  }
+  const hintRe = /zaudējumu\s+apjoms|Boj[āa]jumu\s+zonas?/gi;
+  while ((sm = hintRe.exec(text)) !== null) {
+    const idx = sm.index ?? 0;
+    const lookback = text.slice(Math.max(0, idx - 360), idx);
+    const dates = [...lookback.matchAll(/(\d{1,2})\.(\d{4})/g)];
+    const last = dates[dates.length - 1];
+    if (!last) continue;
+    const dateIndex = idx - lookback.length + (last.index ?? 0);
+    push(dateIndex, last[1] ?? "", last[2] ?? "");
+  }
+  starts.sort((a, b) => a.index - b.index);
+  return starts;
 }
 
 /** Parsē visus „zaudējumu apjoms” ierakstus no AutoDNA PDF teksta. */
@@ -83,12 +109,7 @@ export function parseAutodnaDamageDetails(raw: string): CarVerticalDamageDetailR
   const text = sanitizePdfTextForParsing(raw);
   if (!autodnaDamageSectionDetected(text)) return [];
 
-  const starts: { index: number; month: string; year: string }[] = [];
-  EVENT_START_RE.lastIndex = 0;
-  let sm: RegExpExecArray | null;
-  while ((sm = EVENT_START_RE.exec(text)) !== null) {
-    starts.push({ index: sm.index ?? 0, month: sm[1] ?? "", year: sm[2] ?? "" });
-  }
+  const starts = collectAutodnaDamageStarts(text);
 
   const out: CarVerticalDamageDetailRow[] = [];
   const seen = new Set<string>();

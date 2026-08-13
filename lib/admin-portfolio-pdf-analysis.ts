@@ -137,7 +137,7 @@ function extractHighlights(text: string): string[] {
   return [...found];
 }
 
-async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ text: string; ocrPages: number }> {
+export async function extractPdfTextLayer(buffer: ArrayBuffer): Promise<string> {
   const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -156,7 +156,15 @@ async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ tex
       .join(" ");
     parts.push(line);
   }
-  let text = normalizePdfExtractedText(parts.join("\n"));
+  return normalizePdfExtractedText(parts.join("\n"));
+}
+
+async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ text: string; ocrPages: number }> {
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+  const pdf = await pdfjs.getDocument({ data: buffer, useSystemFonts: true }).promise;
+  let text = await extractPdfTextLayer(buffer);
   let ocrPages = 0;
 
   const needOcr =

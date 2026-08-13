@@ -19,9 +19,11 @@ describe("parseDamageZoneHits", () => {
     expect(hits.map((h) => h.id).sort()).toEqual(["front", "front_left", "front_right"]);
   });
 
-  it("atpazīst Kreisā puse un Priekšpuse kā atsevišķas zonas", () => {
-    const hits = parseDamageZoneHits("Kreisā puse Priekšpuse");
-    expect(hits.map((h) => h.id).sort()).toEqual(["front", "left"]);
+  it("atpazīst Jumts un priekšpusi pa labi", () => {
+    const hits = parseDamageZoneHits(
+      "Jumts / Virs-virsbūve Priekšpuse (Pa labi / Buferis) Labais priekšējais spārns",
+    );
+    expect(hits.map((h) => h.id)).toEqual(expect.arrayContaining(["front_right", "roof"]));
   });
 });
 

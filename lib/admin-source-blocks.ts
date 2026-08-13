@@ -1436,7 +1436,13 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
         ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline }
         : {}),
       ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),
-      ...((b.mileagePasteRaw ?? "").trim() ? { sourceRaw: b.mileagePasteRaw } : {}),
+      ...(() => {
+        const sourceRaw = [b.mileagePasteRaw, b.geminiContextRaw, b.comments]
+          .map((s) => (s ?? "").trim())
+          .filter(Boolean)
+          .join("\n\n");
+        return sourceRaw ? { sourceRaw } : {};
+      })(),
     });
   }
   for (const k of VIN_REGISTRY_BLOCK_KEYS) {

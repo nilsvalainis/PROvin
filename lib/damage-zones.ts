@@ -13,7 +13,8 @@ export type DamageZoneId =
   | "right"
   | "rear"
   | "rear_left"
-  | "rear_right";
+  | "rear_right"
+  | "roof";
 
 export type DamageZoneHit = {
   id: DamageZoneId;
@@ -22,6 +23,12 @@ export type DamageZoneHit = {
 
 /** Garākie vispirms, lai „labā sāna priekšpuse” nekrīt uz vispārīgo „priekšpuse”. */
 const ZONE_KEYWORDS: { id: DamageZoneId; label: string; re: RegExp }[] = [
+  { id: "front_right", label: "Labais priekšējais spārns", re: /lab(?:ais|[āa])\s+priek[šs]ējais\s+sp[āa]rns/i },
+  { id: "front_left", label: "Kreisais priekšējais spārns", re: /kreis(?:ais|[āa])\s+priek[šs]ējais\s+sp[āa]rns/i },
+  { id: "front_right", label: "Lukturis priekšā pa labi", re: /lukturis\s+priek[šs][āa]\s+pa\s+labi/i },
+  { id: "front_left", label: "Lukturis priekšā pa kreisi", re: /lukturis\s+priek[šs][āa]\s+pa\s+kreisi/i },
+  { id: "front_right", label: "Priekšpuse pa labi", re: /priek[šs]puse\s*(?:\(\s*)?pa\s+labi/i },
+  { id: "front_left", label: "Priekšpuse pa kreisi", re: /priek[šs]puse\s*(?:\(\s*)?pa\s+kreisi/i },
   { id: "front_left", label: "Kreisā sāna priekšpuse", re: /kreis(?:ā|a)\s+(?:s[āa]na\s+)?priek[šs](?:ēj[āa]\s+da[ļl]a|puse)/i },
   { id: "front_right", label: "Labā sāna priekšpuse", re: /lab(?:ā|a)\s+(?:s[āa]na\s+)?priek[šs](?:ēj[āa]\s+da[ļl]a|puse)/i },
   { id: "rear_left", label: "Kreisā sāna aizmugure", re: /kreis(?:ā|a)\s+(?:s[āa]na\s+)?aizmugur/i },
@@ -32,10 +39,11 @@ const ZONE_KEYWORDS: { id: DamageZoneId; label: string; re: RegExp }[] = [
   { id: "right", label: "Labā puse", re: /lab(?:ā|a)\s+(?:puse|s[āa]na)/i },
   { id: "front", label: "Priekšpuse", re: /priek[šs]puse|priek[šs]ēj(?:ā|a)\s+da[ļl]a/i },
   { id: "rear", label: "Aizmugure", re: /aizmugure|aizmugurēj(?:ā|a)\s+da[ļl]a/i },
+  { id: "roof", label: "Jumts", re: /jumts|virs-virsb[ūu]ve|virsvirsb[ūu]ve/i },
 ];
 
 const ZONE_LIST_HEADING_RE =
-  /Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+deta[ļl]as|Boj[āa]t[āa]\s+puse/i;
+  /Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+(?:deta[ļl]as|zonas)|Boj[āa]t[āa]\s+puse|Fiks[eē]tie\s+boj[āa]jumi/i;
 
 const GROUP_LIST_HEADING_RE = /Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas/i;
 
@@ -92,7 +100,7 @@ function splitLooseLabels(raw: string): string[] {
 
 export function extractZoneListFromBlock(block: string): string {
   const m = block.match(
-    /(?:Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+deta[ļl]as|Boj[āa]t[āa]\s+puse)\s*[:\-–]?\s*([\s\S]{0,500}?)(?=Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas|Valsts|Summa|Rezult[āa]ts|Aptuven|\d{1,2}\.\d{4}|$)/i,
+    /(?:Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+(?:deta[ļl]as|zonas)|Boj[āa]t[āa]\s+puse)\s*[:\-–]?\s*([\s\S]{0,500}?)(?=Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas|Valsts|Summa|Rezult[āa]ts|Aptuven|\d{1,2}\.\d{4}|$)/i,
   );
   return (m?.[1] ?? "").replace(/\s+/g, " ").trim();
 }
@@ -110,6 +118,7 @@ const ZONE_SHAPES: Record<DamageZoneId, { x: number; y: number; w: number; h: nu
   front_right: { x: 132, y: 36, w: 52, h: 66, rx: 18 },
   left: { x: 12, y: 106, w: 42, h: 108, rx: 16 },
   right: { x: 146, y: 106, w: 42, h: 108, rx: 16 },
+  roof: { x: 70, y: 118, w: 60, h: 72, rx: 12 },
   rear_left: { x: 16, y: 216, w: 52, h: 66, rx: 18 },
   rear_right: { x: 132, y: 216, w: 52, h: 66, rx: 18 },
   rear: { x: 58, y: 248, w: 84, h: 54, rx: 22 },
@@ -121,6 +130,7 @@ const ZONE_ORDER: DamageZoneId[] = [
   "front_right",
   "left",
   "right",
+  "roof",
   "rear_left",
   "rear_right",
   "rear",

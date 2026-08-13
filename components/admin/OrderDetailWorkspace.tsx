@@ -76,10 +76,11 @@ import {
 } from "@/lib/admin-workspace-preview-format";
 import {
   analyzePdfBuffer,
+  extractPdfTextLayer,
   mergeKmForChart,
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
-import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
+import { attachPdfTextsToVendorBlocks } from "@/lib/vendor-damage-hydrate";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
@@ -2528,13 +2529,29 @@ export function OrderDetailWorkspace({
       photoGroups: listingBlocks.auto_records.photoGroups ?? [],
     };
 
+    let manualVendorBlocks = toPdfManualVendorBlocks(blocksDisplaySafe);
+    const portfolioPdfs = portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
+    if (portfolioPdfs.length > 0) {
+      try {
+        const texts: { fileName: string; text: string }[] = [];
+        for (const p of portfolioPdfs) {
+          const buf = await fetch(p.blobUrl).then((r) => r.arrayBuffer());
+          const text = await extractPdfTextLayer(buf);
+          if (text.trim()) texts.push({ fileName: p.name, text });
+        }
+        manualVendorBlocks = attachPdfTextsToVendorBlocks(manualVendorBlocks, texts);
+      } catch {
+        /* PDF teksta slānis nav obligāts — paliek saglabātās damageDetails */
+      }
+    }
+
     const html = buildClientReportDocumentHtml({
       payload: {
         ...payload,
         ...flatSources,
         csddForm: blocksDisplaySafe.csdd,
         tirgusForm: blocksDisplaySafe.tirgus,
-        manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
+        manualVendorBlocks,
         manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
         autoRecordsBlock: autoRecordsForPdf,
         citiAvoti: blocksDisplaySafe.citi_avoti,

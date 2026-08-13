@@ -483,8 +483,8 @@ export function parseCarverticalDamagesFromText(text: string): {
   const norm = normalizeCarVerticalDamageText(normalizeCarVerticalPdfText(text));
 
   const hasExplicitDamage =
-    /Nov[eē]rt[eē]jums/i.test(norm) &&
-    (/Aptuven[āa]\s+iepriek[sš]/i.test(norm) || /Boj[āa]t[āa]\s+puse/i.test(norm));
+    (/Nov[eē]rt[eē]jums/i.test(norm) || /Fiks[eē]tie\s+boj[āa]jumi/i.test(norm)) &&
+    (/Aptuven[āa]/i.test(norm) || /Boj[āa]t[āa]\s+puse/i.test(norm) || /Boj[āa]t[āa]s\s+zonas/i.test(norm));
 
   if (
     /Nav atrasti boj[āa]jumu/i.test(norm) &&
@@ -497,14 +497,14 @@ export function parseCarverticalDamagesFromText(text: string): {
   const incidents: LtabIncidentRow[] = [];
   const damageDetails: CarVerticalDamageDetailRow[] = [];
 
-  // pdf.js / RAW: Novērtējums bloks (datums var būt pirms vai pēc)
-  for (const m of norm.matchAll(/Nov[eē]rt[eē]jums/gi)) {
-    const start = Math.max(0, (m.index ?? 0) - 200);
+  // pdf.js / RAW: Novērtējums vai Fiksētie bojājumi
+  for (const m of norm.matchAll(/Nov[eē]rt[eē]jums|Fiks[eē]tie\s+boj[āa]jumi/gi)) {
+    const start = Math.max(0, (m.index ?? 0) - 220);
     const block = norm.slice(start, (m.index ?? 0) + 4000);
-    if (!/Aptuven[āa]\s+iepriek[sš]/i.test(block)) continue;
+    if (!/Aptuven[āa]/i.test(block) && !/Boj[āa]t[āa]s?\s+(?:puse|zonas)/i.test(block)) continue;
 
     const lossM = block.match(
-      /Aptuven[āa]\s+iepriek[sš]\s+g[ūu]t[oa]?\s+boj[āa]jumu\s+v[eē]rt[īi]ba\s*([\s\S]{0,100}?)(?:Boj[āa]jumu\s*grupas|\d{1,2}\.\d{4}|Dabas stih|$)/i,
+      /Aptuven[āa]\s+(?:iepriek[sš][\s\S]{0,60}vērt[īi]ba|remonta[\s\S]{0,80}vērt[īi]ba)\s*([\s\S]{0,120}?)(?:Boj[āa]jumu\s*grupas|Tirgus|\d{1,2}\.\d{4}|Dabas stih|$)/i,
     );
     const lossAmount = (lossM?.[1] ?? "").replace(/\s+/g, " ").trim();
     if (!lossAmount || !/\d/.test(lossAmount)) continue;
@@ -514,7 +514,9 @@ export function parseCarverticalDamagesFromText(text: string): {
     const afterDate = dateM ? block.slice((dateM.index ?? 0) + dateM[0].length, (dateM.index ?? 0) + dateM[0].length + 80) : "";
     const { country } = splitTimelineCountryAndDescription(afterDate.trim());
 
-    const sidesM = block.match(/Boj[āa]t[āa]\s+puse\s*([\s\S]{0,120}?)(?:Aptuven)/i);
+    const sidesM = block.match(
+      /Boj[āa]t[āa]s?\s+(?:puse|zonas?|deta[ļl]as)\s*([\s\S]{0,400}?)(?:Aptuven|Boj[āa]jumu\s*grupas|Tirgus|$)/i,
+    );
     const damagedSides = (sidesM?.[1] ?? "").replace(/\s+/g, " ").replace(/\bA\b/g, "").trim();
 
     const groupsM = block.match(/Boj[āa]jumu\s*grupas\s*([\s\S]{0,800}?)(?:\d{1,2}(?:\.\d{1,2})?\.\d{4}|Dabas stih|Tirgus|$)/i);

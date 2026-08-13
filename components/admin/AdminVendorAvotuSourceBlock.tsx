@@ -431,17 +431,14 @@ export function AdminVendorAvotuSourceBlock({
               </thead>
               <tbody>
                 {incidents.map((row, ri) => {
-                  const damageDetail =
-                    blockKey === "carvertical"
-                      ? matchCarVerticalDamageDetail(
-                          {
-                            csngDate: row.csngDate,
-                            incidentNo: row.incidentNo,
-                            lossAmount: row.lossAmount,
-                          },
-                          block.damageDetails,
-                        )
-                      : undefined;
+                  const damageDetail = matchCarVerticalDamageDetail(
+                    {
+                      csngDate: row.csngDate,
+                      incidentNo: row.incidentNo,
+                      lossAmount: row.lossAmount,
+                    },
+                    block.damageDetails,
+                  );
                   const showDamageSub =
                     damageDetail &&
                     (damageDetail.damagedSides.trim() || damageDetail.damageGroups.trim());

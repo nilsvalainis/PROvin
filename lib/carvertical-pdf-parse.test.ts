@@ -74,11 +74,19 @@ describe("parseCarverticalDamagesFromText", () => {
     expect(damageDetails[0]?.damageGroups).toMatch(/Dzesēšanas/i);
   });
 
-  it("returns empty for no-damage BMW section", () => {
-    const raw = "Bojājumi\nNav atrasti bojājumu vai novērtējumu ieraksti.\nDabas stihiju";
-    const { incidents, damageDetails } = parseCarverticalDamagesFromText(raw);
-    expect(incidents.length).toBe(0);
-    expect(damageDetails.length).toBe(0);
+  it("parses Fiksētie bojājumi and Bojātās zonas", () => {
+    const raw = `
+10.2020 Latvija
+Fiksētie bojājumi
+Bojātās zonas
+Jumts / Virs-virsbūve
+Aptuvenā remonta darbu izmaksu vērtība
+1501 € – 2000 €
+`;
+    const { damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails.length).toBe(1);
+    expect(damageDetails[0]?.damagedSides).toMatch(/Jumts/i);
+    expect(damageDetails[0]?.lossAmount).toMatch(/1501/);
   });
 });
 

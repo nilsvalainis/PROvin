@@ -13,7 +13,7 @@ import {
   parseDamageZoneHits,
   type DamageZoneId,
 } from "@/lib/damage-zones";
-import { damageDetailRowHasZones, parseDamageDetailsFromVendorRaw } from "@/lib/vendor-damage-hydrate";
+import { damageDetailRowHasZones, mergeDamageDetailRows, parseDamageDetailsFromVendorRaw } from "@/lib/vendor-damage-hydrate";
 import {
   formatLossEurWholeDisplay,
   normalizeLossAmountEurDisplay,
@@ -119,8 +119,9 @@ export function collectUnifiedIncidentDamageDetails(
   };
   for (const b of manualVendorBlocks ?? []) {
     if (omitTitles?.has(b.title)) continue;
-    const saved = (b.damageDetails ?? []).filter(damageDetailRowHasZones);
-    const rows = saved.length > 0 ? saved : parseDamageDetailsFromVendorRaw(`${b.sourceRaw ?? ""}\n${b.comments ?? ""}`);
+    const saved = b.damageDetails ?? [];
+    const fromRaw = parseDamageDetailsFromVendorRaw(`${b.sourceRaw ?? ""}\n${b.comments ?? ""}`);
+    const rows = mergeDamageDetailRows(saved, fromRaw).filter(damageDetailRowHasZones);
     for (const d of rows) {
       push({
         date: d.date.trim(),
@@ -300,14 +301,20 @@ export function aggregateUnifiedIncidents(
   };
 }
 
+function countriesCompatible(a: string, b: string): boolean {
+  if (a === "?" || b === "?") return true;
+  if (a === b) return true;
+  return a.includes(b) || b.includes(a);
+}
+
 function damageDetailMatchesCluster(d: UnifiedIncidentDamageInput, c: UnifiedIncidentCluster): boolean {
   const dYm = incidentYearMonthKey({ date: d.date, sortableTime: parseMileageDateForSort(d.date) });
   const cYm = incidentYearMonthKey({ date: c.date, sortableTime: c.sortableTime });
   const dc = incidentCountryKey(d.country);
   const cc = incidentCountryKey(c.country);
-  if (dc !== "?" && cc !== "?" && dc !== cc) return false;
+  if (!countriesCompatible(dc, cc)) return false;
   if (dYm && cYm) return dYm === cYm;
-  if (!dYm && dc === cc) return true;
+  if (!dYm && dc !== "?") return true;
   return false;
 }
 
