@@ -16,7 +16,7 @@ import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-htm
 import { outvinBundleToDealerReport } from "@/lib/outvin-purchase-map";
 
 function subhead(title: string): string {
-  return `<p class="pdf-field-label pdf-field-label--row pdf-outvin-subhead"><span>${escapeHtml(title)}</span></p>`;
+  return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
 }
 
 function plainBlock(text: string): string {

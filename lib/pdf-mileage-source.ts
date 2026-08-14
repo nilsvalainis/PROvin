@@ -19,8 +19,14 @@ function normLabel(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Bez atstarpēm un bez garumzīmēm — „DĪLERA DATI” un „DILERA DATI” ir viens avots. */
 function squishLower(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, "");
+  return raw
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "");
 }
 
 /**

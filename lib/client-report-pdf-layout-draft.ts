@@ -86,18 +86,21 @@ export function pdfLayoutDraftExtraCss(): string {
         text-transform:uppercase;color:#0f172a;
       }
       .pdf-v1-panel-title--src{letter-spacing:0.08em;font-size:var(--pdf-fs-sec);color:#0f172a}
-      .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:0.74rem}
-      .pdf-v1-kv td{padding:6px 0 6px;border-bottom:1px solid #f1f5f9;vertical-align:top}
-      .pdf-v1-kv td:first-child{width:36%;color:#86868b;font-weight:500}
+      /* Faktu saraksts — tie paši mērījumi kā .mirror-table (skat. client-report-html.ts). */
+      .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);margin:0}
+      .pdf-v1-kv td{padding:7px 0;border-bottom:1px solid var(--pdf-line-soft);vertical-align:top;line-height:1.45}
+      .pdf-v1-kv td:first-child{width:38%;color:#86868b;font-weight:500;padding-right:12px}
+      .pdf-v1-kv td:nth-child(2){color:#0f172a}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
       .pdf-v1-kv--outvin-log thead th{
-        font-size:0.68rem;font-weight:600;color:#86868b;text-align:left;
-        padding:6px 8px 6px 0;border-bottom:1px solid #f1f5f9;
+        font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;text-align:left;
+        text-transform:uppercase;letter-spacing:0.06em;
+        padding:6px 10px 6px 0;border-bottom:1px solid var(--pdf-line);
       }
       .pdf-v1-kv--outvin-log tbody td{
-        padding:6px 8px 6px 0;border-bottom:1px solid #f1f5f9;color:#0f172a;vertical-align:top;
+        padding:7px 10px 7px 0;border-bottom:1px solid var(--pdf-line-soft);color:#0f172a;vertical-align:top;
       }
-      .pdf-v1-kv--outvin-log tbody td:first-child{width:auto;font-weight:400;color:#0f172a}
+      .pdf-v1-kv--outvin-log tbody td:first-child{width:auto;font-weight:500;color:#0f172a}
       .pdf-provin-wordmark{font-weight:inherit;letter-spacing:inherit;white-space:nowrap}
       .pdf-provin-wordmark-pro{color:#000}
       .pdf-provin-wordmark-vin{color:${PDF_BRAND_BLUE_HEX}}

@@ -15,7 +15,7 @@ function escapeHtml(s: string): string {
 }
 
 function pdfSubLabel(title: string): string {
-  return `<p class="pdf-field-label pdf-field-label--row pdf-outvin-subhead"><span>${escapeHtml(title)}</span></p>`;
+  return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
 }
 
 function pdfPlainBlock(text: string): string {
@@ -51,25 +51,25 @@ export function buildOutvinDealerReportPdfInnerHtml(report: OutvinDealerReport |
 
   const vehicleTable = vehicleInfoTable(vi);
   if (vehicleTable) {
-    parts.push(pdfSubLabel("VEHICLE INFORMATION"));
+    parts.push(pdfSubLabel("Transportlīdzekļa informācija"));
     parts.push(vehicleTable);
   }
 
   const accident = report.accidentCheck.trim();
   if (accident) {
-    parts.push(pdfSubLabel("ACCIDENT CHECK"));
+    parts.push(pdfSubLabel("Negadījumu pārbaude"));
     parts.push(pdfPlainBlock(accident));
   }
 
   const stolen = report.stolenCheck.trim();
   if (stolen) {
-    parts.push(pdfSubLabel("STOLEN VEHICLE DATABASE"));
+    parts.push(pdfSubLabel("Zagto transportlīdzekļu datubāze"));
     parts.push(pdfPlainBlock(stolen));
   }
 
   const equip = report.equipment.filter(outvinEquipmentLineHasData);
   if (equip.length > 0) {
-    parts.push(pdfSubLabel("EQUIPMENT LIST"));
+    parts.push(pdfSubLabel("Aprīkojums"));
     parts.push(
       pdfKvTable(
         equip.map((line, i) => {

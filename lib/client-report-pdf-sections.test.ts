@@ -625,7 +625,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     });
     expect(doc).toContain("Fotogrāfiju analīze");
     expect(doc).toContain("pdf-listing-photo-grid");
-    expect(doc).toContain("pdf-listing-photo-group-title");
+    expect(doc).toContain("pdf-subhead--photo");
     expect(doc).toContain("2024-06-12 — ss.com");
     expect(doc).toContain("Rūsa");
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
