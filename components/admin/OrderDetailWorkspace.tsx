@@ -2215,15 +2215,16 @@ export function OrderDetailWorkspace({
     portfolioBytes,
   ]);
 
-  const onPickFiles = async (files: FileList | null) => {
+  const onPickFiles = async (files: FileList | File[] | null) => {
     setFileError(null);
     setPortfolioUploadNotice(null);
     if (!files?.length) return;
+    const picked = Array.from(files);
     const prevIds = new Set(portfolio.map((p) => p.id));
     const next = [...portfolio];
     let total = next.reduce((s, p) => s + p.size, 0);
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let i = 0; i < picked.length; i++) {
+      const file = picked[i]!;
       if (file.size > MAX_FILE_BYTES) {
         setFileError(`Fails „${file.name}” ir par lielu (max ${formatBytes(MAX_FILE_BYTES)}).`);
         continue;
@@ -2916,9 +2917,15 @@ export function OrderDetailWorkspace({
           <input
             id={fileInputId}
             type="file"
+            accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
             multiple
             className="sr-only"
-            onChange={(e) => void onPickFiles(e.target.files)}
+            onChange={(e) => {
+              /** Kopija masīvā pirms `value` notīrīšanas — citādi to pašu failu nevar izvēlēties atkārtoti. */
+              const picked = Array.from(e.target.files ?? []);
+              e.target.value = "";
+              if (picked.length > 0) void onPickFiles(picked);
+            }}
           />
           <label
             htmlFor={fileInputId}
