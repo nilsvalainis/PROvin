@@ -33,10 +33,19 @@ async function main() {
   const fileUrl = pathToFileURL(htmlPath).href;
   console.log('Atver:', fileUrl);
 
-  const browser = await puppeteer.launch({
+  const chromePath =
+    process.env.PUPPETEER_EXECUTABLE_PATH ||
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
+  const launchOpts = {
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  };
+  if (fs.existsSync(chromePath)) {
+    launchOpts.executablePath = chromePath;
+  }
+
+  const browser = await puppeteer.launch(launchOpts);
 
   try {
     const page = await browser.newPage();

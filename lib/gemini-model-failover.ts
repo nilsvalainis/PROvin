@@ -2,16 +2,23 @@ export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
 export const GEMINI_MODEL_FLASH = "gemini-2.5-flash";
 export const GEMINI_MODEL_LEGACY_FLASH = "gemini-2.0-flash";
 
-/** Pro → 2.5 Flash → 2.0 Flash; primārais modelis vienmēr pirmais mēģinājums. */
+/**
+ * Failover tikai uz LĒTĀKIEM modeļiem — Flash 503 nedrīkst pāriet uz Pro.
+ * Pro → 2.5 Flash → 2.0 Flash; Flash → 2.0 Flash; 2.0 paliek 2.0.
+ */
 export function geminiFailoverModels(primary: string): string[] {
-  const chain = [GEMINI_MODEL_PRO, GEMINI_MODEL_FLASH, GEMINI_MODEL_LEGACY_FLASH];
+  const cheaper: Record<string, readonly string[]> = {
+    [GEMINI_MODEL_PRO]: [GEMINI_MODEL_FLASH, GEMINI_MODEL_LEGACY_FLASH],
+    [GEMINI_MODEL_FLASH]: [GEMINI_MODEL_LEGACY_FLASH],
+    [GEMINI_MODEL_LEGACY_FLASH]: [],
+  };
   const out: string[] = [];
   const add = (m: string) => {
     const t = m.trim();
     if (t && !out.includes(t)) out.push(t);
   };
   add(primary);
-  for (const m of chain) add(m);
+  for (const m of cheaper[primary] ?? [GEMINI_MODEL_FLASH, GEMINI_MODEL_LEGACY_FLASH]) add(m);
   return out;
 }
 

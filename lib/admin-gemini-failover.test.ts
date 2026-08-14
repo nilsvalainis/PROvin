@@ -16,10 +16,9 @@ describe("geminiFailoverModels", () => {
     ]);
   });
 
-  it("puts custom primary first without duplicates", () => {
+  it("does not upgrade Flash to Pro", () => {
     expect(geminiFailoverModels(GEMINI_MODEL_FLASH)).toEqual([
       GEMINI_MODEL_FLASH,
-      GEMINI_MODEL_PRO,
       GEMINI_MODEL_LEGACY_FLASH,
     ]);
   });

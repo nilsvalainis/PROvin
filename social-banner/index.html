@@ -3,405 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PROVIN.LV — mobile.de krāpšanas shēmas baneris</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            ink: '#07090d',
-            panel: '#10151d',
-            danger: '#ef233c',
-            warn: '#f5c518',
-          },
-          fontFamily: {
-            display: ['"Segoe UI"', 'system-ui', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
+  <title>PROVIN.LV — thumbnail baneris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap"
+    rel="stylesheet"
+  />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-
     :root {
-      --bg: #07090d;
-      --danger: #ef233c;
-      --warn: #f5c518;
+      --provin-accent: #0066ff;
+      --provin-danger: #ff3b30;
     }
+
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       min-height: 100vh;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(239, 35, 60, 0.18), transparent 55%),
-        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(245, 197, 24, 0.08), transparent 50%),
-        #0a0c10;
-      color: #f4f6f8;
-      font-family: 'DM Sans', system-ui, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #fff;
+      background: #121418;
+      -webkit-font-smoothing: antialiased;
     }
 
     .page {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1.75rem;
+      gap: 1.5rem;
       padding: 2.5rem 1.25rem 3rem;
     }
 
+    /* 1200×630 — FB / LinkedIn / blog thumbnail */
     .banner {
       position: relative;
       width: 1200px;
       height: 630px;
       overflow: hidden;
-      border-radius: 4px;
+      background: #030304;
+      box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 24px 60px rgb(0 0 0 / 0.5);
+    }
+
+    .banner-bg {
+      position: absolute;
+      inset: 0;
       background:
-        linear-gradient(135deg, rgba(239, 35, 60, 0.12) 0%, transparent 42%),
-        linear-gradient(225deg, rgba(245, 197, 24, 0.08) 0%, transparent 38%),
-        linear-gradient(180deg, #0c1018 0%, #07090d 55%, #050608 100%);
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.06),
-        0 40px 80px rgba(0, 0, 0, 0.55),
-        0 0 120px rgba(239, 35, 60, 0.12);
+        radial-gradient(ellipse 80% 70% at 50% 55%, rgb(0 102 255 / 0.18), transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 15%, rgb(255 59 48 / 0.12), transparent 50%),
+        #030304;
     }
 
-    .banner::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 48px 48px;
-      mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black, transparent);
-      pointer-events: none;
-    }
-
-    .banner::after {
-      content: '';
-      position: absolute;
-      right: -120px;
-      bottom: -160px;
-      width: 520px;
-      height: 520px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(239, 35, 60, 0.22), transparent 68%);
-      pointer-events: none;
-    }
-
-    .scanline {
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 3px,
-        rgba(0, 0, 0, 0.08) 3px,
-        rgba(0, 0, 0, 0.08) 4px
-      );
-      opacity: 0.35;
-      pointer-events: none;
+    .inner {
+      position: relative;
       z-index: 1;
+      height: 100%;
+      padding: 40px 56px 48px;
+      display: flex;
+      flex-direction: column;
     }
 
-    .glow-bar {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--danger), var(--warn), var(--danger));
-      box-shadow: 0 0 24px rgba(239, 35, 60, 0.7);
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
     .brand {
-      font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: 0.18em;
-      font-size: 1.65rem;
-      color: #fff;
-      text-shadow: 0 0 24px rgba(245, 197, 24, 0.35);
-    }
-
-    .brand span {
-      color: var(--warn);
-    }
-
-    .headline {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 3.35rem;
-      line-height: 0.95;
-      letter-spacing: 0.02em;
-      max-width: 18ch;
-    }
-
-    .headline .accent {
-      color: var(--danger);
-      text-shadow: 0 0 28px rgba(239, 35, 60, 0.55);
-    }
-
-    .stat-card {
-      position: relative;
-      background: linear-gradient(160deg, rgba(22, 28, 38, 0.95), rgba(12, 16, 24, 0.92));
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 1.1rem 1.25rem;
-      overflow: hidden;
-    }
-
-    .stat-card.loss {
-      border-color: rgba(239, 35, 60, 0.45);
-      box-shadow: 0 0 0 1px rgba(239, 35, 60, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    }
-
-    .stat-card.win {
-      border-color: rgba(245, 197, 24, 0.4);
-      box-shadow: 0 0 0 1px rgba(245, 197, 24, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    }
-
-    .stat-card .label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      opacity: 0.72;
-    }
-
-    .stat-card .value {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2.15rem;
-      letter-spacing: 0.02em;
-      margin-top: 0.2rem;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
       line-height: 1;
     }
 
-    .stat-card.loss .value {
-      color: #ff4d5e;
+    .brand .vin { color: var(--provin-accent); }
+
+    .tag {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgb(255 255 255 / 0.45);
     }
 
-    .stat-card.win .value {
-      color: var(--warn);
-    }
-
-    .bullet {
+    .center {
+      flex: 1;
       display: flex;
+      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      gap: 0.7rem;
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: rgba(244, 246, 248, 0.92);
+      text-align: center;
+      padding: 0 24px;
+      gap: 0.12em;
     }
 
-    .bullet-dot {
-      flex-shrink: 0;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--warn);
-      box-shadow: 0 0 10px rgba(245, 197, 24, 0.7);
+    .stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+    }
+
+    .line {
+      margin: 0;
+      font-weight: 900;
+      letter-spacing: -0.045em;
+      line-height: 0.92;
+      text-transform: uppercase;
+    }
+
+    .line-lead {
+      font-size: 72px;
+      color: #fff;
+    }
+
+    .line-danger {
+      font-size: 72px;
+      color: var(--provin-danger);
+    }
+
+    .line-money {
+      font-size: 120px;
+      letter-spacing: -0.06em;
+      color: var(--provin-danger);
+      text-shadow: 0 0 60px rgb(255 59 48 / 0.35);
+    }
+
+    .cta-row {
+      display: flex;
+      justify-content: center;
     }
 
     .cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.65rem;
-      padding: 0.7rem 1.25rem;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #ef233c, #c9182b);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.92rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      box-shadow: 0 8px 28px rgba(239, 35, 60, 0.45);
-    }
-
-    .cta .arrow {
-      color: var(--warn);
-      font-size: 1.1rem;
-    }
-
-    .vin-mark {
-      position: absolute;
-      right: 36px;
-      top: 50%;
-      transform: translateY(-42%) rotate(-8deg);
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 11rem;
-      line-height: 1;
-      color: rgba(255, 255, 255, 0.03);
-      letter-spacing: -0.04em;
-      user-select: none;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.28rem 0.7rem;
-      border-radius: 999px;
-      border: 1px solid rgba(239, 35, 60, 0.45);
-      background: rgba(239, 35, 60, 0.12);
-      color: #ff8a95;
-      font-size: 0.68rem;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 800;
       letter-spacing: 0.14em;
       text-transform: uppercase;
+      color: var(--provin-accent);
     }
 
     #download-btn {
       appearance: none;
-      border: none;
+      border: 1px solid #0052cc;
       cursor: pointer;
-      font-family: 'DM Sans', system-ui, sans-serif;
+      font-family: inherit;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      font-size: 0.85rem;
-      padding: 0.95rem 1.6rem;
-      border-radius: 999px;
-      color: #0a0c10;
-      background: linear-gradient(90deg, #f5c518, #ffdd57);
-      box-shadow: 0 10px 30px rgba(245, 197, 24, 0.35);
-      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      font-size: 0.75rem;
+      padding: 0.9rem 1.5rem;
+      color: #fff;
+      background: var(--provin-accent);
     }
 
-    #download-btn:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-      box-shadow: 0 14px 36px rgba(245, 197, 24, 0.45);
-    }
-
-    #download-btn:disabled {
-      opacity: 0.65;
-      cursor: wait;
-      transform: none;
-    }
+    #download-btn:disabled { opacity: 0.65; cursor: wait; }
 
     .hint {
       font-size: 0.85rem;
-      color: rgba(244, 246, 248, 0.55);
+      color: rgb(255 255 255 / 0.5);
       text-align: center;
-      max-width: 36rem;
     }
 
-    /* Capture mode: hide chrome around the banner */
-    body.capturing .page > :not(#banner) {
-      display: none !important;
-    }
-
-    body.capturing {
-      background: transparent;
-      padding: 0;
-      min-height: 0;
-    }
-
-    body.capturing .page {
-      padding: 0;
-      gap: 0;
-    }
-
-    body.capturing .banner {
-      border-radius: 0;
-      box-shadow: none;
-    }
+    body.capturing .page > :not(#banner) { display: none !important; }
+    body.capturing { background: transparent; min-height: 0; }
+    body.capturing .page { padding: 0; gap: 0; }
+    body.capturing .banner { box-shadow: none; }
   </style>
 </head>
 <body>
   <div class="page">
     <div id="banner" class="banner" data-banner>
-      <div class="glow-bar"></div>
-      <div class="scanline"></div>
-      <div class="vin-mark">48K</div>
-
-      <div class="relative z-10 flex h-full flex-col px-12 py-9">
-        <!-- Top brand row -->
-        <div class="flex items-center justify-between">
-          <div class="brand">PROVIN<span>.LV</span></div>
-          <div class="badge">
-            <span style="width:6px;height:6px;border-radius:50%;background:#ef233c;box-shadow:0 0 8px #ef233c;"></span>
-            Krāpšanas shēma · mobile.de
-          </div>
+      <div class="banner-bg" aria-hidden="true"></div>
+      <div class="inner">
+        <div class="top">
+          <div class="brand"><span>PRO</span><span class="vin">VIN</span><span>.LV</span></div>
+          <div class="tag">mobile.de</div>
         </div>
 
-        <!-- Main content -->
-        <div class="mt-7 flex flex-1 gap-10">
-          <div class="flex min-w-0 flex-1 flex-col">
-            <h1 class="headline">
-              KĀ MĒS GANDRĪZ
-              <span class="accent">„ZAUDĒJĀM”</span>
-              48&nbsp;000&nbsp;€ MOBILE.DE? 🚨
-            </h1>
+        <div class="center">
+          <h1 class="stack">
+            <span class="line line-lead">Kā mēs gandrīz</span>
+            <span class="line line-danger">„zaudējām”</span>
+            <span class="line line-money">48 000 €</span>
+          </h1>
+        </div>
 
-            <div class="mt-7 grid max-w-xl grid-cols-2 gap-4">
-              <div class="stat-card loss">
-                <div class="label">Paredzamais zaudējums</div>
-                <div class="value">48 000 €</div>
-              </div>
-              <div class="stat-card win">
-                <div class="label">Reālais iznākums</div>
-                <div class="value" style="font-size:1.55rem;line-height:1.05;padding-top:0.15rem;">
-                  Ietaupīta nauda<br />&amp; pieredze
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-auto flex flex-col gap-2.5 pb-1 pt-8">
-              <div class="bullet">
-                <span class="bullet-dot"></span>
-                MI un nevainojama komunikācija
-              </div>
-              <div class="bullet">
-                <span class="bullet-dot"></span>
-                Izdomāts pircējs no Polijas
-              </div>
-              <div class="bullet">
-                <span class="bullet-dot"></span>
-                Viltoti rēķini
-              </div>
-            </div>
-          </div>
-
-          <!-- Right visual column -->
-          <div class="relative flex w-[280px] shrink-0 flex-col items-end justify-between">
-            <div
-              class="w-full rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm"
-              style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);"
-            >
-              <div class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/45">
-                Risku signāli
-              </div>
-              <div class="mt-3 space-y-2.5">
-                <div class="flex items-center justify-between rounded-lg bg-danger/15 px-3 py-2 text-sm font-semibold text-[#ff8a95]">
-                  <span>Pircējs</span>
-                  <span>FIKTĪVS</span>
-                </div>
-                <div class="flex items-center justify-between rounded-lg bg-warn/10 px-3 py-2 text-sm font-semibold text-warn">
-                  <span>Rēķini</span>
-                  <span>VILTOTI</span>
-                </div>
-                <div class="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm font-semibold text-white/80">
-                  <span>Summa</span>
-                  <span>48 000 €</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="cta mt-6">
-              LASI BLOGĀ <span class="arrow">➔</span> PROVIN.LV
-            </div>
-          </div>
+        <div class="cta-row">
+          <div class="cta">Lasi blogā → PROVIN.LV</div>
         </div>
       </div>
     </div>
 
     <button id="download-btn" type="button">Lejupielādēt JPG</button>
-    <p class="hint">
-      Atver šo failu pārlūkā un nospied pogu, lai saglabātu <strong>banner.jpg</strong> (1200×630).
-      Automātiskai ģenerēšanai: <code>node generate.js</code>
-    </p>
+    <p class="hint">Atver pārlūkā → nospied pogu, vai <code>node generate.js</code></p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -414,40 +209,36 @@
         scale: 2,
         width: 1200,
         height: 630,
-        backgroundColor: '#07090d',
+        backgroundColor: '#030304',
         useCORS: true,
         allowTaint: true,
         logging: false,
       });
     }
 
-    async function downloadJpg() {
+    btn.addEventListener('click', async () => {
       btn.disabled = true;
       const prev = btn.textContent;
       btn.textContent = 'Ģenerē…';
       try {
         const canvas = await renderBannerCanvas();
-        const link = document.createElement('a');
-        link.download = 'banner.jpg';
-        link.href = canvas.toDataURL('image/jpeg', 0.95);
-        link.click();
-      } catch (err) {
-        console.error(err);
-        alert('Neizdevās ģenerēt attēlu. Skaties konsoli.');
+        const a = document.createElement('a');
+        a.download = 'banner.jpg';
+        a.href = canvas.toDataURL('image/jpeg', 0.95);
+        a.click();
+      } catch (e) {
+        console.error(e);
+        alert('Neizdevās ģenerēt attēlu.');
       } finally {
         btn.disabled = false;
         btn.textContent = prev;
       }
-    }
+    });
 
-    btn.addEventListener('click', downloadJpg);
-
-    // Used by Puppeteer generate.js
-    window.__renderBannerJpg = async function renderBannerJpg() {
+    window.__renderBannerJpg = async function () {
       document.body.classList.add('capturing');
       try {
-        const canvas = await renderBannerCanvas();
-        return canvas.toDataURL('image/jpeg', 0.95);
+        return (await renderBannerCanvas()).toDataURL('image/jpeg', 0.95);
       } finally {
         document.body.classList.remove('capturing');
       }
