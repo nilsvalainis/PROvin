@@ -2,6 +2,7 @@
  * Admin: AI — Tehnisko risku analīze (APPROVED BY IRISS, 1. sadaļa).
  */
 import { NextResponse } from "next/server";
+import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -64,8 +65,7 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
 
   try {
-    const text = await generateTechnicalRiskAnalysisWithAi(parseAiOrderContextFromBody(b, sourceBlocks));
-    return NextResponse.json({ text });
+    return nextJsonWithAiUsage(() => generateTechnicalRiskAnalysisWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[ai/technical-risk-analysis]", msg);

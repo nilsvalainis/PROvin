@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
+import { withAiUsageOnJsonResponse } from "@/lib/admin-ai-route-response";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
 import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
@@ -128,6 +129,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
   }
 
+  return withAiUsageOnJsonResponse(async () => {
   const contentType = req.headers.get("content-type") || "";
   let sessionId = "";
   let message = "";
@@ -434,6 +436,7 @@ export async function POST(req: Request) {
   } finally {
     await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
   }
+  });
 }
 
 /** Apstiprina / piespiež medium-confidence darbības ar to pašu apply loģiku. */

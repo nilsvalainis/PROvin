@@ -1,5 +1,7 @@
 /** Admin AI UI — kopīga fetch kļūdu tulkošana latviski (client-safe). */
 
+import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
+
 export type AdminAiApiErrorBody = {
   error?: string;
   detail?: string;
@@ -118,7 +120,8 @@ export async function parseAdminAiResponse(res: Response): Promise<{
   parseFailed: boolean;
 }> {
   try {
-    const data = (await res.json()) as AdminAiApiErrorBody & { text?: string };
+    const data = (await res.json()) as AdminAiApiErrorBody & { text?: string; usage?: unknown };
+    if (isAiUsageSummary(data.usage)) emitAdminAiUsage(data.usage);
     return { data, parseFailed: false };
   } catch {
     return { data: {}, parseFailed: true };

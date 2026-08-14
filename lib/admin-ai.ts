@@ -12,6 +12,7 @@ import {
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { toClaudeJsonSchema, type AiJsonSchema } from "@/lib/ai-json-schema";
 import { AI_LV_POLISH_SYSTEM } from "@/lib/admin-ai-prompts";
+import { recordAiUsage } from "@/lib/ai-usage-meter";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
   applyProvinReportCopyVocabulary,
@@ -63,14 +64,26 @@ function claudeSystemWithCache(text: string): Anthropic.TextBlockParam[] {
 
 function logClaudeUsage(label: string, model: string, message: Anthropic.Message): void {
   const u = message.usage;
+  const inputTokens = u.input_tokens ?? 0;
+  const outputTokens = u.output_tokens ?? 0;
+  const cacheCreationInputTokens = u.cache_creation_input_tokens ?? 0;
+  const cacheReadInputTokens = u.cache_read_input_tokens ?? 0;
+  recordAiUsage({
+    provider: "anthropic",
+    model,
+    inputTokens,
+    outputTokens,
+    cacheCreationInputTokens,
+    cacheReadInputTokens,
+  });
   console.info(`${LOG_PREFIX} usage`, {
     label,
     model,
     promptVersion: PROVIN_AI_PROMPT_VERSION,
-    inputTokens: u.input_tokens,
-    outputTokens: u.output_tokens,
-    cacheCreationInputTokens: u.cache_creation_input_tokens ?? 0,
-    cacheReadInputTokens: u.cache_read_input_tokens ?? 0,
+    inputTokens,
+    outputTokens,
+    cacheCreationInputTokens,
+    cacheReadInputTokens,
   });
 }
 

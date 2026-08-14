@@ -11,6 +11,7 @@ import {
   isTransientHttpStatus,
 } from "@/lib/gemini-model-failover";
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+import { recordAiUsage } from "@/lib/ai-usage-meter";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
   applyProvinReportCopyVocabulary,
@@ -46,6 +47,39 @@ export function getGeminiApiKeyFromEnv(): string | null {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isGemini3Model(model: string): boolean {
+  return /gemini-3/i.test(model);
+}
+
+function geminiThinkingExtra(model: string): { thinkingConfig: { thinkingLevel: "low" } } | Record<string, never> {
+  return isGemini3Model(model) ? { thinkingConfig: { thinkingLevel: "low" } } : {};
+}
+
+function isGeminiThinkingUnsupported(e: unknown): boolean {
+  const msg = geminiErrorMessage(e);
+  return /400|INVALID_ARGUMENT|thinkingConfig|thinking_level|thinkingLevel/i.test(msg);
+}
+
+type GeminiUsageMeta = {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  thoughtsTokenCount?: number;
+  cachedContentTokenCount?: number;
+};
+
+function recordGeminiUsage(model: string, meta: GeminiUsageMeta | undefined | null): void {
+  if (!meta) return;
+  const prompt = meta.promptTokenCount ?? 0;
+  const cached = meta.cachedContentTokenCount ?? 0;
+  recordAiUsage({
+    provider: "google",
+    model,
+    inputTokens: Math.max(0, prompt - cached),
+    outputTokens: (meta.candidatesTokenCount ?? 0) + (meta.thoughtsTokenCount ?? 0),
+    cacheReadInputTokens: cached,
+  });
 }
 
 /** Izvelk lasāmu kļūdu no Google Generative AI SDK / fetch atbildes. */
@@ -146,22 +180,34 @@ async function geminiGenerateJsonFromPartsOnce(
     responseSchema?: GeminiJsonSchema;
   },
 ): Promise<string> {
-  const genAI = new GoogleGenerativeAI(key);
-  const model = genAI.getGenerativeModel({
-    model: opts.model,
-    systemInstruction: opts.systemInstruction,
-  });
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: opts.parts }],
-    generationConfig: {
-      temperature: opts.temperature ?? 0.2,
-      responseMimeType: "application/json",
-      ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
-    },
-  });
-  const text = result.response.text()?.trim();
-  if (!text) throw new Error("gemini_empty_content");
-  return text;
+  const run = async (withThinking: boolean) => {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({
+      model: opts.model,
+      systemInstruction: opts.systemInstruction,
+    });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: opts.parts }],
+      generationConfig: {
+        temperature: opts.temperature ?? 0.2,
+        responseMimeType: "application/json",
+        ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
+        ...(withThinking ? geminiThinkingExtra(opts.model) : {}),
+      } as never,
+    });
+    const text = result.response.text()?.trim();
+    if (!text) throw new Error("gemini_empty_content");
+    recordGeminiUsage(opts.model, result.response.usageMetadata);
+    return text;
+  };
+  try {
+    return await run(isGemini3Model(opts.model));
+  } catch (e) {
+    if (isGemini3Model(opts.model) && isGeminiThinkingUnsupported(e)) {
+      return await run(false);
+    }
+    throw e;
+  }
 }
 
 /** Strukturēta JSON atbilde (responseMimeType application/json). */
@@ -225,18 +271,32 @@ async function geminiGenerateTextOnce(
     temperature?: number;
   },
 ): Promise<string> {
-  const genAI = new GoogleGenerativeAI(key);
-  const model = genAI.getGenerativeModel({
-    model: opts.model,
-    systemInstruction: opts.systemInstruction,
-  });
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
-    generationConfig: { temperature: opts.temperature ?? 0.35 },
-  });
-  const text = result.response.text()?.trim();
-  if (!text) throw new Error("gemini_empty_content");
-  return text;
+  const run = async (withThinking: boolean) => {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({
+      model: opts.model,
+      systemInstruction: opts.systemInstruction,
+    });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
+      generationConfig: {
+        temperature: opts.temperature ?? 0.35,
+        ...(withThinking ? geminiThinkingExtra(opts.model) : {}),
+      } as never,
+    });
+    const text = result.response.text()?.trim();
+    if (!text) throw new Error("gemini_empty_content");
+    recordGeminiUsage(opts.model, result.response.usageMetadata);
+    return text;
+  };
+  try {
+    return await run(isGemini3Model(opts.model));
+  } catch (e) {
+    if (isGemini3Model(opts.model) && isGeminiThinkingUnsupported(e)) {
+      return await run(false);
+    }
+    throw e;
+  }
 }
 
 /** Brīva teksta ģenerēšana ar automātisku modeļu failover (503 u.c.). */
@@ -282,6 +342,7 @@ export async function geminiGenerateTextWithVocabulary(opts: {
 type GenerateContentApiResponse = {
   candidates?: { content?: { parts?: { text?: string }[] } }[];
   error?: { message?: string };
+  usageMetadata?: GeminiUsageMeta;
 };
 
 async function geminiGenerateTextWithGoogleSearchOnce(
@@ -295,30 +356,39 @@ async function geminiGenerateTextWithGoogleSearchOnce(
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:generateContent?key=${encodeURIComponent(key)}`;
   const toolVariants: Record<string, unknown>[][] = [[{ google_search: {} }], [{ googleSearch: {} }]];
+  const thinkingPasses = isGemini3Model(opts.model) ? [true, false] : [false];
 
   let lastErr = "gemini_grounding_failed";
-  for (const tools of toolVariants) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: opts.systemInstruction }] },
-        contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
-        tools,
-        generationConfig: { temperature: opts.temperature ?? 0.35 },
-      }),
-    });
-    const raw = (await res.json()) as GenerateContentApiResponse;
-    if (!res.ok) {
-      lastErr = raw.error?.message?.trim() || `http_${res.status}`;
-      if (isTransientHttpStatus(res.status)) {
-        throw new Error(`[${res.status} Service Unavailable] ${lastErr}`);
+  for (const withThinking of thinkingPasses) {
+    for (const tools of toolVariants) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: opts.systemInstruction }] },
+          contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
+          tools,
+          generationConfig: {
+            temperature: opts.temperature ?? 0.35,
+            ...(withThinking ? geminiThinkingExtra(opts.model) : {}),
+          },
+        }),
+      });
+      const raw = (await res.json()) as GenerateContentApiResponse;
+      if (!res.ok) {
+        lastErr = raw.error?.message?.trim() || `http_${res.status}`;
+        if (isTransientHttpStatus(res.status)) {
+          throw new Error(`[${res.status} Service Unavailable] ${lastErr}`);
+        }
+        continue;
       }
-      continue;
+      const text = raw.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim();
+      if (text) {
+        recordGeminiUsage(opts.model, raw.usageMetadata);
+        return text;
+      }
+      lastErr = "gemini_empty_content";
     }
-    const text = raw.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim();
-    if (text) return text;
-    lastErr = "gemini_empty_content";
   }
   throw new Error(lastErr);
 }

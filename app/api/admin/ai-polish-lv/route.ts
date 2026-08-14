@@ -2,6 +2,7 @@
  * Admin: latviešu gramatikas labošana caur AI (flash). Atslēga: `process.env.ANTHROPIC_API_KEY` (tikai serverī).
  */
 import { NextResponse } from "next/server";
+import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
 import { getAdminSession } from "@/lib/admin-auth";
 import { polishLatvianTextWithAi } from "@/lib/admin-ai-polish";
 import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
@@ -36,8 +37,7 @@ export async function POST(req: Request) {
     }
 
     try {
-      const polished = await polishLatvianTextWithAi(text);
-      return NextResponse.json({ text: polished });
+      return await nextJsonWithAiUsage(() => polishLatvianTextWithAi(text));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       console.error("[ai-polish-lv] AI:", msg);

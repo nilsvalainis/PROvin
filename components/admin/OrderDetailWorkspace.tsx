@@ -189,7 +189,9 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
+import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
@@ -1587,6 +1589,7 @@ export function OrderDetailWorkspace({
         ok?: boolean;
         error?: string;
         detail?: string;
+        usage?: unknown;
         sourceBlocks?: WorkspaceSourceBlocks;
         orderEdits?: {
           internalComment?: string;
@@ -1596,6 +1599,7 @@ export function OrderDetailWorkspace({
         steps?: { status: string }[];
         warnings?: string[];
       };
+      if (isAiUsageSummary(data.usage)) emitAdminAiUsage(data.usage);
       if (!res.ok) {
         setPrepareDraftErr(
           typeof data.detail === "string" && data.detail.trim()
@@ -3565,6 +3569,7 @@ export function OrderDetailWorkspace({
               setCopilotOpen(true);
             }}
           />
+          <AdminAiSessionCostBar />
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             {([1, 2] as const).map((row) => {
               const cols = "grid-cols-6";

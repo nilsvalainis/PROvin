@@ -3,6 +3,7 @@
  * Atslēga: `process.env.ANTHROPIC_API_KEY` (tikai serverī).
  */
 import { NextResponse } from "next/server";
+import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -64,8 +65,7 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
 
   try {
-    const text = await generateInspectionRecommendationsWithAi(parseAiOrderContextFromBody(b, sourceBlocks));
-    return NextResponse.json({ text });
+    return nextJsonWithAiUsage(() => generateInspectionRecommendationsWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[ai/inspection-recommendations]", msg);

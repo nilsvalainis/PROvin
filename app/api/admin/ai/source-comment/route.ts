@@ -2,6 +2,7 @@
  * Admin: AI — avota bloka „Komentāri” ģenerēšana (tikai DEMO pasūtījumi).
  */
 import { NextResponse } from "next/server";
+import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
     ).trim();
 
   try {
-    const text = await generateSourceCommentWithAi({
+    return nextJsonWithAiUsage(() => generateSourceCommentWithAi({
       sessionId,
       blockKey: blockKeyRaw,
       citiAvotiSectionIndex,
@@ -107,8 +108,7 @@ export async function POST(req: Request) {
       operatorNotes: str(b.operatorNotes),
       existingDraftPlain,
       modelTier: parseAiModelTier(b.modelTier),
-    });
-    return NextResponse.json({ text });
+    }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     if (msg === "empty_source_data") {

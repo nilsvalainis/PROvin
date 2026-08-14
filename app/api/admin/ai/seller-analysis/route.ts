@@ -4,6 +4,7 @@
  * Atslēga: `process.env.ANTHROPIC_API_KEY` (tikai serverī).
  */
 import { NextResponse } from "next/server";
+import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -69,11 +70,10 @@ export async function POST(req: Request) {
     str(b.extraSellerName).trim() || sourceBlocks.listing_analysis.extraSellerName.trim();
 
   try {
-    const text = await generateSellerAnalysisWithAi({
+    return nextJsonWithAiUsage(() => generateSellerAnalysisWithAi({
       ...ctx,
       extraSellerName: extraSellerName || ctx.extraSellerName || undefined,
-    });
-    return NextResponse.json({ text });
+    }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[ai/seller-analysis]", msg);

@@ -2,6 +2,7 @@
  * Admin: AI — sludinājuma analīzes lauku komentāri (fotogrāfijas / pārdošanas konteksts).
  */
 import { NextResponse } from "next/server";
+import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const text = await generateListingFieldCommentWithAi({
+    return nextJsonWithAiUsage(() => generateListingFieldCommentWithAi({
       sessionId,
       field: fieldRaw,
       vin: str(b.vin).trim() || null,
@@ -90,8 +91,7 @@ export async function POST(req: Request) {
       operatorNotes: str(b.operatorNotes),
       existingDraftPlain: str(b.existingDraftPlain).trim() || undefined,
       modelTier: parseAiModelTier(b.modelTier),
-    });
-    return NextResponse.json({ text });
+    }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     if (msg === "missing_listing_paste" || msg === "missing_photo_context") {

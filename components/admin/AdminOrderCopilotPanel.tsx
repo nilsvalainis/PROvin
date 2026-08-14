@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, ty
 import { createPortal } from "react-dom";
 import { Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
+import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import {
   SourcePdfBlobUploadError,
@@ -436,7 +437,9 @@ export function AdminOrderCopilotPanel({
       const data = (await res.json().catch(() => ({}))) as CopilotApiOk & {
         error?: string;
         detail?: string;
+        usage?: unknown;
       };
+      if (isAiUsageSummary(data.usage)) emitAdminAiUsage(data.usage);
 
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail : "";

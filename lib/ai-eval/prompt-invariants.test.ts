@@ -218,4 +218,18 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prep).toMatch(/Promise\.all/);
     expect(prep).toMatch(/modelTier/);
   });
+
+  it("Gemini 3 uses low thinking with 400 fallback", () => {
+    const gemini = readRepo("lib/admin-gemini.ts");
+    expect(gemini).toMatch(/thinkingLevel:\s*"low"/);
+    expect(gemini).toMatch(/isGeminiThinkingUnsupported/);
+    expect(gemini).toMatch(/thoughtsTokenCount/);
+  });
+
+  it("admin AI routes attach usage to JSON responses", () => {
+    expect(readRepo("app/api/admin/ai/source-comment/route.ts")).toMatch(/nextJsonWithAiUsage/);
+    expect(readRepo("app/api/admin/ai/tirgus-market/route.ts")).toMatch(/nextJsonBodyWithAiUsage/);
+    expect(readRepo("app/api/admin/prepare-draft/route.ts")).toMatch(/nextJsonBodyWithAiUsage/);
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/AdminAiSessionCostBar/);
+  });
 });
