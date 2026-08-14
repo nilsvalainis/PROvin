@@ -17,7 +17,7 @@ import {
   uploadSourcePdfToBlob,
 } from "@/lib/admin-source-pdf-blob-client";
 
-export type VendorPdfUploadTarget = "autodna" | "carvertical" | "auto_records" | "ltab";
+export type VendorPdfUploadTarget = "autodna" | "carvertical" | "auto_records" | "cc_vin" | "ltab";
 
 const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   autodna: {
@@ -31,6 +31,10 @@ const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   auto_records: {
     title: "Augšupielādēt oficiālā dīlera PDF (BMW / auto-records.com)",
     hint: "Velc PDF šeit vai klikšķini · Copilot aizpilda transporta informāciju, servisa un nobraukuma tabulas",
+  },
+  cc_vin: {
+    title: "Augšupielādēt starptautiskās vēstures PDF atskaiti",
+    hint: "Velc PDF šeit vai klikšķini · nolasām sarkanos karogus, odometru, bojājumus un īpašumtiesību ierakstus",
   },
   ltab: {
     title: "Augšupielādēt LTAB izziņu (PDF)",

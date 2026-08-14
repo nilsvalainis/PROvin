@@ -18,6 +18,13 @@ import {
   looksLikeLtabCertificate,
   ltabCertificateHasContent,
 } from "@/lib/ltab-report-extract";
+import { applyCcVinParsedReport, describeCcVinParsedReport } from "@/lib/cc-vin-report-apply";
+import type { CcVinBlockState } from "@/lib/cc-vin-report";
+import {
+  countCcVinParsedRows,
+  looksLikeCcVinReport,
+  parseCcVinReportText,
+} from "@/lib/cc-vin-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import {
   parseVendorPdfAgentPayload,
@@ -180,6 +187,69 @@ export async function runVendorPdfAgent(opts: {
     actions,
     summary: summaryParts.join("; ") + ".",
     notes: [...notes, ...resolved.notes],
+  };
+}
+
+export type CcVinPdfAgentResult = {
+  block: CcVinBlockState | null;
+  summary: string;
+  notes: string[];
+  rows: number;
+};
+
+/**
+ * Starptautiskās vēstures atskaite — deterministisks teksta parseris (AI nav vajadzīgs).
+ * Bloks tiek atgriezts jau apvienots ar esošo, lai atkārtota augšupielāde nedublē rindas.
+ */
+export async function runCcVinPdfAgent(opts: {
+  fileName: string;
+  buffer: ArrayBuffer;
+  previous: CcVinBlockState | null | undefined;
+}): Promise<CcVinPdfAgentResult> {
+  const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch((e) => ({
+    text: "",
+    backend: "none" as const,
+    errorMessage: e instanceof Error ? e.message : "unknown",
+  }));
+  const text = pdfText.text ?? "";
+  const backend = "backend" in pdfText ? pdfText.backend : "none";
+  const extractError = "errorMessage" in pdfText ? (pdfText.errorMessage ?? "") : "";
+
+  if (!text.trim()) {
+    console.warn(`${LOG_PREFIX} cc_vin_empty_text_layer`, {
+      fileName: opts.fileName,
+      backend,
+      extractError: extractError.slice(0, 200),
+    });
+    return {
+      block: null,
+      rows: 0,
+      summary: `„${opts.fileName}”: PDF teksta slāni neizdevās nolasīt (${backend}${extractError ? `: ${extractError.slice(0, 120)}` : ""}).`,
+      notes: ["PDF teksta slānis bija tukšs — serverī neizdevās neviena teksta izvilkšanas metode."],
+    };
+  }
+
+  const notes: string[] = [];
+  if (!looksLikeCcVinReport(text, opts.fileName)) {
+    notes.push(`„${opts.fileName}” neizskatās pēc tipiskas vēstures atskaites — nolasīts tik un tā.`);
+  }
+
+  const parsed = parseCcVinReportText(text);
+  const rows = countCcVinParsedRows(parsed);
+  if (rows === 0 && parsed.checks.length === 0) {
+    return {
+      block: null,
+      rows: 0,
+      summary: `„${opts.fileName}”: atskaites struktūra netika nolasīta.`,
+      notes: notes.length > 0 ? notes : ["PDF teksta slānis nedeva vēstures ierakstus."],
+    };
+  }
+
+  return {
+    block: applyCcVinParsedReport(parsed, opts.previous),
+    rows,
+    summary: describeCcVinParsedReport(parsed),
+    notes: [...notes, ...parsed.notes],
   };
 }
 

@@ -18,6 +18,7 @@ import {
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
 } from "@/lib/auto-records-paste-parse";
+import { CC_VIN_PDF_SOURCE_LABEL, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export type UnifiedMileageRow = {
@@ -45,6 +46,7 @@ export const UNIFIED_MILEAGE_MERGE_MAX_DATE_SPAN_MS = 62 * 24 * 60 * 60 * 1000;
 export type UnifiedMileageSourcePayload = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
+  ccVinBlock?: CcVinBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   citiAvotiBlock?: CitiAvotiBlockState | null;
 };
@@ -361,6 +363,8 @@ export type CollectUnifiedMileageOptions = {
   omitCsddMileage?: boolean;
   /** Neiekļaut AUTO RECORDS servisa vēsturi. */
   omitAutoRecords?: boolean;
+  /** Neiekļaut starptautiskās vēstures odometra ierakstus. */
+  omitCcVin?: boolean;
   /** Neiekļaut konkrētus trešās puses avotus pēc nosaukuma (`SOURCE_BLOCK_LABELS`). */
   omitVendorBlockTitles?: Set<string>;
 };
@@ -430,6 +434,14 @@ export function collectUnifiedMileageRows(
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
     pushRow(dateOut, odoOut, r.country, "OFICIĀLĀ DĪLERA DATI", documentKeys.has(dealerDocumentKey(dateOut, odoOut)));
   }
+  }
+
+  if (!options?.omitCcVin) {
+    for (const r of (p.ccVinBlock?.mileage ?? []).filter(autoRecordsRowHasData)) {
+      const dateOut = formatAutoRecordsDateForOutput(r.date);
+      const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+      pushRow(dateOut, odoOut, r.country, CC_VIN_PDF_SOURCE_LABEL);
+    }
   }
 
   const omitTitles = options?.omitVendorBlockTitles;

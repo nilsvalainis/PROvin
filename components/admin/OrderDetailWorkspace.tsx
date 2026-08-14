@@ -8,6 +8,9 @@ import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePor
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
+import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
+import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
+import { CC_VIN_PDF_TITLE, ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
@@ -103,6 +106,7 @@ import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
   autoRecordsTrafficLevel,
+  ccVinTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
   expertSummaryTrafficLevel,
@@ -344,8 +348,8 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   complete: "bg-emerald-500",
 };
 
-const WIZARD_STEP_COUNT = 11;
-const WIZARD_SUMMARY_STEP = 10;
+const WIZARD_STEP_COUNT = 12;
+const WIZARD_SUMMARY_STEP = 11;
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
   const vin = (p.vin ?? "").trim();
@@ -399,6 +403,8 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
       return listingAnalysisToPlainText(blocks.listing_analysis);
     case "auto_records":
       return autoRecordsBlockToPlainText(blocks.auto_records);
+    case "cc_vin":
+      return ccVinBlockToPlainText(blocks.cc_vin);
     case "autodna":
     case "carvertical":
       return vendorAvotuBlockToPlainText(blocks[key] ?? null);
@@ -1383,6 +1389,35 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
   );
 
+  const commitCcVinPhotoGroupsStructural = useCallback(
+    async (nextGroups: CcVinBlockState["photoGroups"]) => {
+      const synced = syncCcVinPhotoGroupsAndFlat(nextGroups);
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const blocks = mergeSourceBlocksWithDefaults(prev.sourceBlocks);
+          const next = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: {
+              ...blocks,
+              cc_vin: {
+                ...blocks.cc_vin,
+                photoGroups: synced.photoGroups,
+                photos: synced.photos,
+              },
+            },
+          });
+          return applyPersistBodyToWs(next);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        await persistFullWorkspaceRef("cc_vin_photos", { showFlash: false });
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
   const runAiTirgusMarket = useCallback(
     async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
       if (!payload.aiAllowed || aiTirgusMarketBusy) return;
@@ -2346,6 +2381,7 @@ export function OrderDetailWorkspace({
       autodna: "empty" as const,
       carvertical: "empty" as const,
       auto_records: "empty" as const,
+      cc_vin: "empty" as const,
       tjekbil: "empty" as const,
       mnt_ee: "empty" as const,
       lkf_ee: "empty" as const,
@@ -2360,6 +2396,7 @@ export function OrderDetailWorkspace({
         autodna: vendorAvotuTrafficLevel(b?.autodna),
         carvertical: vendorAvotuTrafficLevel(b?.carvertical),
         auto_records: autoRecordsTrafficLevel(b.auto_records),
+        cc_vin: ccVinTrafficLevel(b.cc_vin),
         tjekbil: vinRegistryTrafficLevel(b.tjekbil),
         mnt_ee: vinRegistryTrafficLevel(b.mnt_ee),
         lkf_ee: vinRegistryTrafficLevel(b.lkf_ee),
@@ -2397,6 +2434,7 @@ export function OrderDetailWorkspace({
       traffic.auto_records,
       traffic.ltab,
       traffic.citi_avoti,
+      traffic.cc_vin,
       traffic.tjekbil,
       worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
       traffic.carinfo,
@@ -2414,6 +2452,7 @@ export function OrderDetailWorkspace({
         { label: "Auto Records", Icon: CarFront, row: 1 as const },
         { label: "LTAB", Icon: Scale, row: 1 as const },
         { label: "Citi avoti", Icon: Link2, row: 1 as const },
+        { label: "Starptaut.", Icon: Globe, row: 2 as const },
         { label: "Tjekbil", Icon: Landmark, row: 2 as const },
         { label: "Igaunija", Icon: Flag, row: 2 as const },
         { label: "car.info", Icon: Globe, row: 2 as const },
@@ -2528,6 +2567,41 @@ export function OrderDetailWorkspace({
       photoGroups: listingBlocks.auto_records.photoGroups ?? [],
     };
 
+    const ccVinPhotoIds = (listingBlocks.cc_vin.photos ?? []).map((p) => p.id);
+    const ccVinPhotoDataUrls = new Map<string, string>();
+    let resolvedCcVinPhotoIds = ccVinPhotoIds;
+    if (ccVinPhotoIds.length > 0) {
+      try {
+        const res = await fetch("/api/admin/cc-vin-photo/pdf-batch", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: payload.sessionId, photoIds: ccVinPhotoIds }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          dataUrls?: Record<string, string>;
+          missing?: string[];
+        };
+        if (res.ok && data.dataUrls) {
+          for (const [id, url] of Object.entries(data.dataUrls)) {
+            ccVinPhotoDataUrls.set(id, url);
+          }
+          const fromBatch = Object.keys(data.dataUrls);
+          resolvedCcVinPhotoIds = [
+            ...ccVinPhotoIds.filter((id) => data.dataUrls![id]),
+            ...fromBatch.filter((id) => !ccVinPhotoIds.includes(id)),
+          ];
+        }
+      } catch {
+        /* PDF bez starptautiskās vēstures fotogrāfijām, ja batch neizdevās */
+      }
+    }
+    const ccVinForPdf = {
+      ...blocksDisplaySafe.cc_vin,
+      photos: resolvedCcVinPhotoIds.filter((id) => ccVinPhotoDataUrls.has(id)).map((id) => ({ id })),
+      photoGroups: listingBlocks.cc_vin.photoGroups ?? [],
+    };
+
     let manualVendorBlocks = toPdfManualVendorBlocks(blocksDisplaySafe);
     const portfolioPdfs = portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
     if (portfolioPdfs.length > 0) {
@@ -2553,6 +2627,7 @@ export function OrderDetailWorkspace({
         manualVendorBlocks,
         manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
         autoRecordsBlock: autoRecordsForPdf,
+        ccVinBlock: ccVinForPdf,
         citiAvoti: blocksDisplaySafe.citi_avoti,
         listingAnalysis: listingAnalysisForPdf,
         iriss: ws.iriss,
@@ -2572,6 +2647,7 @@ export function OrderDetailWorkspace({
       formatBytes,
       listingAnalysisPhotoDataUrls,
       autoRecordsPhotoDataUrls,
+      ccVinPhotoDataUrls,
     });
 
     const w = window.open("", "_blank");
@@ -3110,6 +3186,7 @@ export function OrderDetailWorkspace({
       { title: "CSDD", text: csddFormToPlainText(blocksDisplaySafe.csdd) },
       { title: "Datu servisi", text: [vendorAvotuBlockToPlainText(blocksDisplaySafe.autodna), vendorAvotuBlockToPlainText(blocksDisplaySafe.carvertical)].filter(Boolean).join("\n\n") },
       { title: "Auto Records", text: autoRecordsBlockToPlainText(blocksDisplaySafe.auto_records) },
+      { title: CC_VIN_PDF_TITLE, text: ccVinBlockToPlainText(blocksDisplaySafe.cc_vin) },
       { title: SOURCE_BLOCK_LABELS.tjekbil, text: vinRegistryBlockToPlainText(blocksDisplaySafe.tjekbil) },
       { title: SOURCE_BLOCK_LABELS.mnt_ee, text: vinRegistryBlockToPlainText(blocksDisplaySafe.mnt_ee) },
       { title: SOURCE_BLOCK_LABELS.lkf_ee, text: vinRegistryBlockToPlainText(blocksDisplaySafe.lkf_ee) },
@@ -3489,7 +3566,7 @@ export function OrderDetailWorkspace({
           />
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             {([1, 2] as const).map((row) => {
-              const cols = row === 1 ? "grid-cols-6" : "grid-cols-5";
+              const cols = "grid-cols-6";
               return (
                 <div key={row} className={`grid min-w-0 ${cols} gap-1`}>
                   {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
@@ -3721,6 +3798,25 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 6 ? (
+          <div id="admin-order-block-cc-vin" className="min-w-0">
+            <AdminCcVinSourceBlock
+              value={blocksDisplaySafe.cc_vin}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("cc_vin", next)}
+              trafficFillLevel={traffic.cc_vin}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.cc_vin}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ cc_vin: next })}
+              aiComment={aiCommentSlot("cc_vin")}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={commitCcVinPhotoGroupsStructural}
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 7 ? (
           <div id="admin-order-block-tjekbil" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
@@ -3737,7 +3833,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {wizardStep === 8 ? (
           <div id="admin-order-block-estonia" className="min-w-0">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
@@ -3759,7 +3855,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 8 ? (
+        {wizardStep === 9 ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -3776,7 +3872,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 9 ? (
+        {wizardStep === 10 ? (
           <section id="admin-order-section-sludinajums" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
@@ -3851,7 +3947,7 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 10 ? (
+        {wizardStep === 11 ? (
           <section id="admin-order-section-kopsavilkums" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">

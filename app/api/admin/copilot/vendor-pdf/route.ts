@@ -14,7 +14,7 @@ import type { CopilotAction, CopilotSourceKey } from "@/lib/admin-copilot-types"
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { parseSourcePdfBlobRefs } from "@/lib/admin-source-pdf-blob-constants";
 import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
-import { runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import { runCcVinPdfAgent, runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
@@ -73,15 +73,16 @@ export async function POST(req: Request) {
 
   const targetRaw = str(form.get("target")).trim();
   const isLtab = targetRaw === "ltab";
+  const isCcVin = targetRaw === "cc_vin";
   // `auto_records` blokā gaidām oficiālā dīlera / rūpnīcas izdruku (BMW portāls, auto-records.com).
-  const target: VendorReportVendor | null = isLtab
+  const target: VendorReportVendor | null = isLtab || isCcVin
     ? null
     : targetRaw === "autodna" || targetRaw === "carvertical"
       ? targetRaw
       : targetRaw === "auto_records" || targetRaw === "dealer"
         ? "dealer"
         : null;
-  if (!isLtab && !target) {
+  if (!isLtab && !isCcVin && !target) {
     return NextResponse.json({ error: "invalid_target" }, { status: 400 });
   }
 
@@ -117,7 +118,7 @@ export async function POST(req: Request) {
   // nepieejamība nav iemesls atteikt augšupielādi — tā kļūst par kļūdu tikai tad, ja lokālais
   // parseris no šī PDF neizvelk nevienu ierakstu.
   let aiBlocked: { error: string; detail?: string } | null = null;
-  if (!isLtab) {
+  if (!isLtab && !isCcVin) {
     if (!getAnthropicApiKeyFromEnv()) {
       aiBlocked = { error: "missing_ai_key", detail: "Serverī nav ANTHROPIC_API_KEY" };
     } else {
@@ -158,6 +159,33 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (isCcVin) {
+      const agent = await runCcVinPdfAgent({
+        fileName,
+        buffer,
+        previous: sourceBlocks.cc_vin,
+      });
+      if (!agent.block) {
+        return NextResponse.json({ error: "extraction_failed", detail: agent.summary }, { status: 422 });
+      }
+      const changedKeys: CopilotSourceKey[] = ["cc_vin"];
+      console.info(`${LOG_PREFIX} ok`, {
+        sessionId: sessionId.slice(0, 12),
+        target: "cc_vin",
+        rows: agent.rows,
+      });
+      return NextResponse.json({
+        ok: true,
+        vendor: "cc_vin",
+        summary: agent.summary,
+        notes: agent.notes,
+        applied: [`${agent.rows} vēstures ieraksti`],
+        skipped: [],
+        patchedSourceBlocks: { cc_vin: agent.block },
+        changedKeys,
+      });
+    }
+
     if (isLtab) {
       const agent = await runLtabPdfAgent({ fileName, buffer });
       if (agent.actions.length === 0) {

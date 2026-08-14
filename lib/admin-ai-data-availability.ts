@@ -17,6 +17,7 @@ import {
   vinRegistryIncidentRowHasData,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { ccVinBlockHasContent } from "@/lib/cc-vin-report";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 
@@ -42,6 +43,7 @@ export function orderHasIncidentDataForAi(sourceBlocks: WorkspaceSourceBlocks): 
     collectUnifiedIncidentRows({
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
+      ccVinBlock: blocks.cc_vin,
     }).length > 0
   ) {
     return true;
@@ -57,6 +59,7 @@ export function orderHasSourceDataForAi(sourceBlocks: WorkspaceSourceBlocks): bo
     vendorAvotuBlockHasContent(blocks.autodna),
     vendorAvotuBlockHasContent(blocks.carvertical),
     autoRecordsBlockHasContent(blocks.auto_records),
+    ccVinBlockHasContent(blocks.cc_vin),
     vinRegistryBlockHasContent(blocks.tjekbil),
     vinRegistryBlockHasContent(blocks.mnt_ee),
     vinRegistryBlockHasContent(blocks.lkf_ee),
@@ -75,6 +78,7 @@ export function orderHasMileageDataForAi(sourceBlocks: WorkspaceSourceBlocks): b
     collectUnifiedMileageRows({
       csddForm: blocks.csdd,
       autoRecordsBlock: blocks.auto_records,
+      ccVinBlock: blocks.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,
     }).length > 0

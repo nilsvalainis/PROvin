@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import {
   autoRecordsTrafficLevel,
+  ccVinTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
   listingAnalysisTrafficLevel,
@@ -31,6 +32,8 @@ import {
   mergeAutoRecordsPhotoGroups,
   syncAutoRecordsPhotoGroupsAndFlat,
 } from "@/lib/auto-records-photo-types";
+import { mergeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
+import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import {
   mergeListingAnalysisPhotoGroups,
   syncListingAnalysisPhotoGroupsAndFlat,
@@ -80,6 +83,8 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
       return TRAFFIC_RANK[vendorAvotuTrafficLevel(block as WorkspaceSourceBlocks["autodna"])];
     case "auto_records":
       return TRAFFIC_RANK[autoRecordsTrafficLevel(block as WorkspaceSourceBlocks["auto_records"])];
+    case "cc_vin":
+      return TRAFFIC_RANK[ccVinTrafficLevel(block as WorkspaceSourceBlocks["cc_vin"])];
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -181,6 +186,14 @@ function pickRicherAutoRecordsBlock(
   };
 }
 
+function pickRicherCcVinBlock(incoming: CcVinBlockState, baseline: CcVinBlockState): CcVinBlockState {
+  const picked = pickRicherSourceBlock("cc_vin", incoming, baseline);
+  const synced = syncCcVinPhotoGroupsAndFlat(
+    mergeCcVinPhotoGroups(incoming.photoGroups, incoming.photos, baseline.photoGroups, baseline.photos),
+  );
+  return { ...picked, photoGroups: synced.photoGroups, photos: synced.photos };
+}
+
 /**
  * Apvieno ienākošo darba zonu ar pēdējo zināmo labo momentuzņēmumu — nekad neiztukšo bloku,
  * kurā baseline jau bija dati (piem. saglabā AutoDNA, ja saglabā tikai Citi avoti).
@@ -199,6 +212,7 @@ export function coalesceOrderWorkspacePersistBody(
     autodna: pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
     carvertical: pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
     auto_records: pickRicherAutoRecordsBlock(incomingBlocks.auto_records, baselineBlocks.auto_records),
+    cc_vin: pickRicherCcVinBlock(incomingBlocks.cc_vin, baselineBlocks.cc_vin),
     tjekbil: pickRicherSourceBlock("tjekbil", incomingBlocks.tjekbil, baselineBlocks.tjekbil),
     mnt_ee: pickRicherSourceBlock("mnt_ee", incomingBlocks.mnt_ee, baselineBlocks.mnt_ee),
     lkf_ee: pickRicherSourceBlock("lkf_ee", incomingBlocks.lkf_ee, baselineBlocks.lkf_ee),

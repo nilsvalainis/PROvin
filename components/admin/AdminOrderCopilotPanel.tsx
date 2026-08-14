@@ -63,6 +63,7 @@ const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   carvertical: SOURCE_BLOCK_LABELS.carvertical,
   ltab: SOURCE_BLOCK_LABELS.ltab,
   auto_records: "Dīleris",
+  cc_vin: "Starptaut.",
   citi_avoti: "Citi",
 };
 const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
@@ -71,6 +72,7 @@ const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   carvertical: SOURCE_BLOCK_LABELS.carvertical,
   ltab: SOURCE_BLOCK_LABELS.ltab,
   auto_records: "Oficiālais dīleris",
+  cc_vin: SOURCE_BLOCK_LABELS.cc_vin,
   citi_avoti: SOURCE_BLOCK_LABELS.citi_avoti,
 };
 

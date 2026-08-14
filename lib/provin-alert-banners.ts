@@ -526,6 +526,7 @@ export function computeProvinInfoBannersFromWorkspace(
     {
       csddForm: ws.csdd,
       autoRecordsBlock: ws.auto_records,
+      ccVinBlock: ws.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(ws),
       manualLtabBlock: toPdfLtabManualBlock(ws.ltab),
       citiAvotiBlock: ws.citi_avoti,
@@ -542,6 +543,7 @@ export function computeProvinAlertBannersFromWorkspace(
     {
       csddForm: ws.csdd,
       autoRecordsBlock: ws.auto_records,
+      ccVinBlock: ws.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(ws),
       citiAvotiBlock: ws.citi_avoti,
       manualLtabBlock: toPdfLtabManualBlock(ws.ltab),

@@ -3,6 +3,7 @@
  */
 
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { CC_VIN_PDF_SOURCE_LABEL } from "@/lib/cc-vin-report";
 
 export type MileagePdfSourceKey =
   | "csdd"
@@ -13,6 +14,7 @@ export type MileagePdfSourceKey =
   | "ee"
   | "carinfo"
   | "ltab"
+  | "intl"
   | "cits";
 
 function normLabel(raw: string): string {
@@ -72,6 +74,10 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     return "dealer";
   }
 
+  if (sq === squishLower(CC_VIN_PDF_SOURCE_LABEL) || sq === "starptautiskavesture") {
+    return "intl";
+  }
+
   if (t === normLabel(SOURCE_BLOCK_LABELS.ltab) || sq === "ltab") {
     return "ltab";
   }
@@ -115,6 +121,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   ee: { full: "Igaunijas reģistri", abbrev: "EE" },
   carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "INFO" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
+  intl: { full: CC_VIN_PDF_SOURCE_LABEL, abbrev: "INTL" },
   cits: { full: "Citi avoti", abbrev: "CITS" },
 };
 
@@ -131,6 +138,7 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   ee: "#0E7490",
   carinfo: "#0F766E",
   ltab: "#DC2626",
+  intl: "#7C3AED",
   cits: "#94A3B8",
 };
 
@@ -144,6 +152,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "ee",
   "carinfo",
   "ltab",
+  "intl",
   "cits",
 ];
 

@@ -18,6 +18,7 @@ export type PdfVisibilitySettings = {
   autodna: boolean;
   carvertical: boolean;
   auto_records: boolean;
+  cc_vin: boolean;
   tjekbil: boolean;
   mnt_ee: boolean;
   lkf_ee: boolean;
@@ -42,6 +43,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   autodna: true,
   carvertical: true,
   auto_records: true,
+  cc_vin: true,
   tjekbil: true,
   mnt_ee: true,
   lkf_ee: true,
@@ -75,6 +77,7 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     autodna: isBool(o.autodna) ? o.autodna : d.autodna,
     carvertical: isBool(o.carvertical) ? o.carvertical : d.carvertical,
     auto_records: isBool(o.auto_records) ? o.auto_records : d.auto_records,
+    cc_vin: isBool(o.cc_vin) ? o.cc_vin : d.cc_vin,
     tjekbil: isBool(o.tjekbil) ? o.tjekbil : d.tjekbil,
     mnt_ee: isBool(o.mnt_ee) ? o.mnt_ee : d.mnt_ee,
     lkf_ee: isBool(o.lkf_ee) ? o.lkf_ee : d.lkf_ee,

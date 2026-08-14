@@ -72,6 +72,7 @@ function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
   const rows = collectUnifiedMileageRows({
     csddForm: blocks.csdd,
     autoRecordsBlock: blocks.auto_records,
+    ccVinBlock: blocks.cc_vin,
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     citiAvotiBlock: blocks.citi_avoti,
   });
@@ -84,6 +85,7 @@ function unifiedIncidentsWithLossPlainText(blocks: WorkspaceSourceBlocks): strin
   const rows = collectUnifiedIncidentRows({
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
+    ccVinBlock: blocks.cc_vin,
   });
   if (rows.length === 0) return "";
   const lines = rows.map((r) => [r.date, r.lossAmount, r.country, r.sourceLabel].join("\t"));

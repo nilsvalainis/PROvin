@@ -10,6 +10,7 @@ export const COPILOT_SOURCE_KEYS = [
   "carvertical",
   "ltab",
   "auto_records",
+  "cc_vin",
   "citi_avoti",
 ] as const;
 

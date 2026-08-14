@@ -34,6 +34,7 @@ export const SOURCE_BLOCK_LUCIDE: Record<SourceBlockKey, LucideIcon> = {
   autodna: Database,
   carvertical: ChartColumn,
   auto_records: ShieldCheck,
+  cc_vin: Globe,
   tjekbil: Landmark,
   mnt_ee: Landmark,
   lkf_ee: Shield,

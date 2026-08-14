@@ -32,6 +32,14 @@ import {
 } from "@/lib/auto-records-photo-types";
 import type { AutoRecordsPhotoGroup, AutoRecordsPhotoMeta } from "@/lib/auto-records-photo-types";
 import {
+  CC_VIN_ADMIN_LABEL,
+  ccVinBlockHasContent,
+  ccVinBlockToPlainText,
+  emptyCcVinBlock,
+  normalizeCcVinBlock,
+  type CcVinBlockState,
+} from "@/lib/cc-vin-report";
+import {
   countListingAnalysisPhotos,
   normalizeListingAnalysisPhotoGroups,
   syncListingAnalysisPhotoGroupsAndFlat,
@@ -95,6 +103,7 @@ export const SOURCE_BLOCK_KEYS = [
   "autodna",
   "carvertical",
   "auto_records",
+  "cc_vin",
   "tjekbil",
   "mnt_ee",
   "lkf_ee",
@@ -116,7 +125,10 @@ export function isVinRegistryBlockKey(v: string): v is VinRegistryBlockKey {
 export type SourceBlockKey = (typeof SOURCE_BLOCK_KEYS)[number];
 
 /** Režģa standarta bloki (rindas + komentāri; bez CSDD, citi_avoti, Sludinājuma analīzes). */
-export type StandardSourceBlockKey = Exclude<SourceBlockKey, "csdd" | "listing_analysis" | "citi_avoti">;
+export type StandardSourceBlockKey = Exclude<
+  SourceBlockKey,
+  "csdd" | "listing_analysis" | "citi_avoti" | "cc_vin"
+>;
 
 export const STANDARD_SOURCE_BLOCK_KEYS: StandardSourceBlockKey[] = [
   "tirgus",
@@ -132,6 +144,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   autodna: "AutoDNA",
   carvertical: "CarVertical",
   auto_records: "OFICIĀLĀ DĪLERA DATI",
+  cc_vin: CC_VIN_ADMIN_LABEL,
   tjekbil: "TJEKBIL.DK — Dānijas reģistrs",
   mnt_ee: "MNT.EE — Igaunijas reģistrs",
   lkf_ee: "LKF.EE — Igaunijas OCTA",
@@ -149,6 +162,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   autodna: "https://www.autodna.com",
   carvertical: "https://www.carvertical.lv",
   auto_records: "https://www.auto-records.com",
+  cc_vin: "https://cc.vin",
   tjekbil: "https://www.tjekbil.dk",
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
   lkf_ee: "https://lkf.ee/et/kahjukontroll",
@@ -165,6 +179,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   autodna: "text-sky-700",
   carvertical: "text-yellow-600",
   auto_records: "text-orange-500",
+  cc_vin: "text-violet-700",
   tjekbil: "text-rose-700",
   mnt_ee: "text-cyan-700",
   lkf_ee: "text-indigo-700",
@@ -863,6 +878,7 @@ export type WorkspaceSourceBlocks = {
   autodna: VendorAvotuBlockState;
   carvertical: VendorAvotuBlockState;
   auto_records: AutoRecordsBlockState;
+  cc_vin: CcVinBlockState;
   tjekbil: VinRegistryBlockState;
   mnt_ee: VinRegistryBlockState;
   lkf_ee: VinRegistryBlockState;
@@ -1157,6 +1173,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     autodna: emptyVendorAvotuBlock(),
     carvertical: emptyVendorAvotuBlock(),
     auto_records: emptyAutoRecordsBlock(),
+    cc_vin: emptyCcVinBlock(),
     tjekbil: emptyVinRegistryBlock(),
     mnt_ee: emptyVinRegistryBlock(),
     lkf_ee: emptyVinRegistryBlock(),
@@ -1380,6 +1397,8 @@ export function mergeVendorBlocksPlain(blocks: WorkspaceSourceBlocks): string {
   }
   const ar = autoRecordsBlockToPlainText(blocks.auto_records).trim();
   if (ar) parts.push(`【${SOURCE_BLOCK_LABELS.auto_records}】\n${ar}`);
+  const cc = ccVinBlockToPlainText(blocks.cc_vin).trim();
+  if (cc) parts.push(`【${SOURCE_BLOCK_LABELS.cc_vin}】\n${cc}`);
   return parts.join("\n\n");
 }
 
@@ -2072,6 +2091,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         aiContextRaw: wsStr(blocks.auto_records?.aiContextRaw),
       };
     })(),
+    cc_vin: normalizeCcVinBlock(blocks.cc_vin),
     ltab: {
       ...d.ltab,
       ...blocks.ltab,
@@ -2150,6 +2170,11 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   const rawAutoRecords = o.auto_records;
   if (rawAutoRecords && typeof rawAutoRecords === "object") {
     base.auto_records = parseAutoRecordsBlockRaw(rawAutoRecords as Record<string, unknown>);
+  }
+
+  const rawCcVin = o.cc_vin;
+  if (rawCcVin && typeof rawCcVin === "object") {
+    base.cc_vin = normalizeCcVinBlock(rawCcVin);
   }
 
   const rawAutodna = o.autodna;

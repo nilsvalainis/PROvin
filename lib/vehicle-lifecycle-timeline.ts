@@ -12,6 +12,7 @@ import type {
   TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
+import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
@@ -62,6 +63,7 @@ const GAP_MONTHS_THRESHOLD = 24;
 export type LifecycleInput = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
+  ccVinBlock?: CcVinBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
@@ -200,6 +202,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     collectUnifiedIncidentRows({
       manualVendorBlocks: input.manualVendorBlocks ?? null,
       manualLtabBlock: input.manualLtabBlock ?? null,
+      ccVinBlock: input.ccVinBlock ?? null,
     }),
     collectUnifiedIncidentDamageDetails(input.manualVendorBlocks ?? null),
   );
@@ -240,6 +243,7 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
     collectUnifiedMileageRows({
       csddForm: input.csddForm ?? undefined,
       autoRecordsBlock: input.autoRecordsBlock ?? undefined,
+      ccVinBlock: input.ccVinBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,
     }),

@@ -6,6 +6,7 @@
 
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { CC_VIN_PDF_SOURCE_LABEL, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   damageGroupDisplayLabels,
@@ -75,11 +76,13 @@ function incidentRowHasLossAmount(r: LtabIncidentRow): boolean {
 export type CollectUnifiedIncidentOptions = {
   omitVendorBlockTitles?: Set<string>;
   omitLtab?: boolean;
+  omitCcVin?: boolean;
 };
 
 export function collectUnifiedIncidentRows(args: {
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
+  ccVinBlock?: CcVinBlockState | null;
   options?: CollectUnifiedIncidentOptions;
 }): UnifiedIncidentRow[] {
   const out: UnifiedIncidentRow[] = [];
@@ -103,6 +106,15 @@ export function collectUnifiedIncidentRows(args: {
   }
   if (!args.options?.omitLtab) {
     for (const r of args.manualLtabBlock?.rows ?? []) push(r, "LTAB");
+  }
+  // Starptautiskā vēsture: tikai bojājumi ar summu — pārējie paliek savā sadaļā, lai tabulā nerastos rindas bez vērtības.
+  if (!args.options?.omitCcVin) {
+    for (const d of args.ccVinBlock?.damages ?? []) {
+      push(
+        { csngDate: d.date, lossAmount: d.amount, incidentNo: d.region } as LtabIncidentRow,
+        CC_VIN_PDF_SOURCE_LABEL,
+      );
+    }
   }
   return out;
 }

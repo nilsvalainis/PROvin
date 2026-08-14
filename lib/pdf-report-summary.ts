@@ -4,6 +4,7 @@
  */
 
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
 import type {
   AutoRecordsBlockState,
@@ -53,6 +54,7 @@ export type PdfSummaryTile = {
 export type PdfSummaryInput = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
+  ccVinBlock?: CcVinBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
@@ -69,6 +71,7 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
   const rows = collectUnifiedIncidentRows({
     manualVendorBlocks: input.manualVendorBlocks ?? null,
     manualLtabBlock: input.manualLtabBlock ?? null,
+    ccVinBlock: input.ccVinBlock ?? null,
   });
   const agg = aggregateUnifiedIncidents(
     rows,
@@ -103,6 +106,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
     collectUnifiedMileageRows({
       csddForm: input.csddForm ?? undefined,
       autoRecordsBlock: input.autoRecordsBlock ?? undefined,
+      ccVinBlock: input.ccVinBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,
     }),
