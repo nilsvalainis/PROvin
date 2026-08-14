@@ -415,7 +415,7 @@ const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], SectionIconId> = {
   anomaly: "search",
 };
 
-/** LAIKPOSMS — viena hronoloģiska lente ar gadu čipiem un avotu plāksnītēm. */
+/** Ekspluatācijas hronoloģija — viena hronoloģiska lente ar gadu čipiem un avotu plāksnītēm. */
 function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.unifiedMileage && !vis.unifiedIncidents) return "";
   const events = buildVehicleLifecycleEvents({

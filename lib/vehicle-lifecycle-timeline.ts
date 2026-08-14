@@ -1,5 +1,5 @@
 /**
- * LAIKPOSMS — viena hronoloģiska transportlīdzekļa dzīves cikla lente no visiem avotiem.
+ * Ekspluatācijas hronoloģija — viena hronoloģiska transportlīdzekļa dzīves cikla lente no visiem avotiem.
  * Fakti nāk no jau savāktajiem blokiem; loģikas slānis pievieno importu, robus un pretrunas.
  */
 
@@ -25,7 +25,7 @@ import {
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
 
-export const PDF_LIFECYCLE_TITLE = "LAIKPOSMS";
+export const PDF_LIFECYCLE_TITLE = "Ekspluatācijas hronoloģija";
 
 export type LifecycleEventKind =
   | "first_registration"

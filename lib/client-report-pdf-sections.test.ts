@@ -6,7 +6,7 @@ import {
   emptyCitiAvotiSection,
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
-import { buildVehicleLifecycleEvents } from "@/lib/vehicle-lifecycle-timeline";
+import { buildVehicleLifecycleEvents, PDF_LIFECYCLE_TITLE } from "@/lib/vehicle-lifecycle-timeline";
 import {
   buildUnifiedIncidentsTableHtml,
   buildUnifiedMileageTableHtml,
@@ -188,7 +188,7 @@ describe("TRANSPORTLĪDZEKĻA DATI", () => {
   });
 });
 
-describe("LAIKPOSMS", () => {
+describe("Ekspluatācijas hronoloģija", () => {
   it("builds one chronological lifecycle from all sources", () => {
     const csdd = emptyCsddFields();
     csdd.firstRegistration = "12.05.2016";
@@ -281,14 +281,14 @@ describe("LAIKPOSMS", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("LAIKPOSMS");
+    expect(html).toContain(PDF_LIFECYCLE_TITLE);
     expect(html).toContain("pdf-life-year__num");
     expect(html).toContain("Pirmā reģistrācija");
     // Avoti laikposmā — tikai krāsu punkti atsevišķā kolonnā + leģenda sadaļas apakšā.
     expect(html).toContain('<span class="pdf-life-srcs">');
     expect(html).toContain("pdf-life-rail");
     expect(html).not.toContain("pdf-life-tags");
-    expect(html.indexOf("LAIKPOSMS")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
+    expect(html.indexOf(PDF_LIFECYCLE_TITLE)).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 });
 
@@ -512,7 +512,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     // Servisa punkts ir atsevišķā kolonnā, ne darbu šūnā
     expect(doc).toContain("pdf-service-cell-place");
     expect(doc).toContain("Niederlassung Bonn BMW AG, Bonn");
-    // Jaunākais augšā — tikai servisa tabulā (LAIKPOSMS augstāk iet hronoloģiski)
+    // Jaunākais augšā — tikai servisa tabulā (ekspluatācijas hronoloģija augstāk iet hronoloģiski)
     const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
     expect(serviceTable.indexOf("01.12.2023")).toBeLessThan(serviceTable.indexOf("01.06.2023"));
   });
