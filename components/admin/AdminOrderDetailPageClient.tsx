@@ -18,7 +18,6 @@ export function AdminOrderDetailPageClient({
   serverWorkspaceJson,
   orderDraftPersistenceEnabled,
   aiAllowed,
-  autodnaApiConfigured,
 }: {
   sessionId: string;
   order: AdminOrderDetailClientModel;
@@ -26,7 +25,6 @@ export function AdminOrderDetailPageClient({
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
-  autodnaApiConfigured: boolean;
 }) {
   return (
     <AdminOrderWorkspaceErrorBoundary sessionId={sessionId}>
@@ -37,7 +35,6 @@ export function AdminOrderDetailPageClient({
         serverWorkspaceJson={serverWorkspaceJson}
         orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
         aiAllowed={aiAllowed}
-        autodnaApiConfigured={autodnaApiConfigured}
       />
     </AdminOrderWorkspaceErrorBoundary>
   );

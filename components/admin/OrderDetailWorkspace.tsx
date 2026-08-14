@@ -618,7 +618,6 @@ export function OrderDetailWorkspace({
   pdfVisibility,
   onPdfVisibilityChange,
   alertsPortalDomId,
-  autodnaApiConfigured = false,
 }: {
   payload: OrderWorkspacePayload;
   adminDark: boolean;
@@ -643,8 +642,6 @@ export function OrderDetailWorkspace({
   onPdfVisibilityChange: (patch: Partial<PdfVisibilitySettings>) => void;
   /** Brīdinājumu bloks virs „Maksājums” (vecākā kolonnā). */
   alertsPortalDomId?: string;
-  /** Vai serverī ir konfigurēts autoDNA sandbox API (AUTODNA_* env). */
-  autodnaApiConfigured?: boolean;
 }) {
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
@@ -3649,7 +3646,6 @@ export function OrderDetailWorkspace({
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
                 aiComment={aiCommentSlot("autodna")}
-                autodnaApiConfigured={autodnaApiConfigured}
                 getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
                 applyPatchedBlocks={applyCopilotPatchedBlocks}
               />

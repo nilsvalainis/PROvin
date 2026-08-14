@@ -99,8 +99,6 @@ type Props = {
   embedded?: boolean;
   /** Unikāli ID iegultām sekcijām. */
   sectionIndex?: number;
-  /** autoDNA sandbox API konfigurācija serverī (AUTODNA_* env). */
-  autodnaApiConfigured?: boolean;
   /** Copilot PDF augšupielādei — visi avotu bloki + patch atpakaļ darbvirsmā. */
   getSourceBlocks?: () => WorkspaceSourceBlocks;
   applyPatchedBlocks?: (
@@ -122,7 +120,6 @@ export function AdminVendorAvotuSourceBlock({
   aiComment,
   embedded = false,
   sectionIndex,
-  autodnaApiConfigured = false,
   getSourceBlocks,
   applyPatchedBlocks,
 }: Props) {
@@ -205,15 +202,6 @@ export function AdminVendorAvotuSourceBlock({
   const inner = (
     <div className={`flex min-h-0 flex-col overflow-hidden ${embedded ? "" : trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${embedded ? "" : trafficFillLevel ? "px-2 pt-2" : ""}`}>
-        {blockKey === "autodna" && !autodnaApiConfigured ? (
-          <p
-            className="mb-2 rounded-md border border-slate-200/90 bg-slate-50/90 px-2 py-1.5 text-[10px] leading-snug text-slate-600"
-            role="status"
-          >
-            autoDNA API vēl nav konfigurēts serverī (AUTODNA_API_URL, AUTODNA_EMAIL, AUTODNA_API_KEY). Manuāla
-            ievade un iekopēšana joprojām pieejama.
-          </p>
-        ) : null}
         <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}

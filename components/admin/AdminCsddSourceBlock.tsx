@@ -24,9 +24,7 @@ import {
   AdminCsddInspectionHistoryTable,
   AdminCsddPreviousInspectionBlock,
 } from "@/components/admin/AdminCsddInspectionHistoryTable";
-import { AdminCsddInspectionWarningsEditor } from "@/components/admin/AdminCsddInspectionWarningsEditor";
 import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
-import { filterCsddInspectionWarnings } from "@/lib/admin-source-blocks";
 import { AdminCsddPdfUpload } from "@/components/admin/AdminCsddPdfUpload";
 import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-charts";
@@ -146,9 +144,6 @@ export function AdminCsddSourceBlock({
 
   const taRows = value.technicalInspectionHistory.filter((r) => r.date.trim());
   const hasPrevInspection = previousInspectionBlockHasData(value.prevInspectionBlock);
-  const prevWarnings = filterCsddInspectionWarnings(value.prevInspectionWarnings);
-  const taWarnings = filterCsddInspectionWarnings(value.technicalInspectionWarnings);
-
   const mileageRows =
     value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
 
@@ -184,37 +179,6 @@ export function AdminCsddSourceBlock({
       }
     >
       <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2 p-2"}>
-      {!readOnly || prevWarnings.length > 0 || taWarnings.length > 0 ? (
-        <div className="rounded-lg border border-slate-200/90 bg-slate-50/60 px-2 py-2">
-          <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-            Brīdinājumi (PDF)
-          </p>
-          <div className="space-y-3">
-            <div>
-              <p className="mb-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
-                {CSDD_PREVIOUS_INSPECTION_TITLE}
-              </p>
-              <AdminCsddInspectionWarningsEditor
-                idPrefix="csdd_prev_warn"
-                value={value.prevInspectionWarnings}
-                readOnly={readOnly}
-                onChange={(next) => onChange({ ...value, prevInspectionWarnings: next })}
-              />
-            </div>
-            <div>
-              <p className="mb-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
-                {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
-              </p>
-              <AdminCsddInspectionWarningsEditor
-                idPrefix="csdd_ta_warn"
-                value={value.technicalInspectionWarnings}
-                readOnly={readOnly}
-                onChange={(next) => onChange({ ...value, technicalInspectionWarnings: next })}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
       {!readOnly ? (
         <AdminCsddPdfUpload
           disabled={disabled}
