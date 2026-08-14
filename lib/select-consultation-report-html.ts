@@ -311,7 +311,16 @@ export function buildSelectConsultationDocumentHtml(args: {
       margin:0;padding:10px 12px;font-family:Inter,ui-sans-serif,sans-serif;font-size:0.72rem;line-height:1.45;
       color:#1d1d1f;background:#fafafa;border-radius:8px;border:1px solid #f1f5f9;word-break:break-word;
     }
-    .pdf-select-rich-body strong{font-weight:700;color:#0f172a;}
+    .pdf-select-rich-body strong,.pdf-select-rich-body b{font-weight:700;color:#0f172a;}
+    .pdf-select-rich-body em,.pdf-select-rich-body i{font-style:italic;}
+    .pdf-select-rich-body u{text-decoration:underline;}
+    .pdf-select-rich-body s,.pdf-select-rich-body del{text-decoration:line-through;}
+    /* Krāsas un marķiera izcēlums drukā pazūd bez print-color-adjust. */
+    .pdf-select-rich-body span,.pdf-select-rich-body mark{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .pdf-select-rich-body mark{background:#fde68a;color:inherit;}
+    .pdf-select-rich-body span[style*="background"]{
+      padding:0 2px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;
+    }
     .pdf-slot-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
     .pdf-slot-photo-card{margin:0;break-inside:avoid;}
     .pdf-slot-photo-img{width:100%;height:auto;max-height:280px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;display:block;}

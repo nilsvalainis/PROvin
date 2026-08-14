@@ -1790,12 +1790,32 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note-body,
       .pdf-incident-internal-note-body,
       .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.55;color:#0f172a;font-family:Inter,sans-serif!important;}
-      .pdf-report-comment-note-body strong,
-      .pdf-report-comment-note-body b{font-weight:700;}
-      .pdf-report-comment-note-body em,
-      .pdf-report-comment-note-body i{font-style:italic;}
-      .pdf-report-comment-note-body u{text-decoration:underline;}
-      .pdf-report-comment-note-body span{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      .pdf-report-comment-note-body strong, .pdf-report-comment-note-body b,
+      .pdf-incident-internal-note-body strong, .pdf-incident-internal-note-body b,
+      .pdf-mileage-comment-note-body strong, .pdf-mileage-comment-note-body b{font-weight:700;}
+      .pdf-report-comment-note-body em, .pdf-report-comment-note-body i,
+      .pdf-incident-internal-note-body em, .pdf-incident-internal-note-body i,
+      .pdf-mileage-comment-note-body em, .pdf-mileage-comment-note-body i{font-style:italic;}
+      .pdf-report-comment-note-body u,
+      .pdf-incident-internal-note-body u,
+      .pdf-mileage-comment-note-body u{text-decoration:underline;}
+      .pdf-report-comment-note-body s, .pdf-report-comment-note-body del,
+      .pdf-incident-internal-note-body s, .pdf-incident-internal-note-body del,
+      .pdf-mileage-comment-note-body s, .pdf-mileage-comment-note-body del{text-decoration:line-through;}
+      /* Krāsas un marķiera izcēlums drukā pazūd bez print-color-adjust. */
+      .pdf-report-comment-note-body span, .pdf-report-comment-note-body mark,
+      .pdf-incident-internal-note-body span, .pdf-incident-internal-note-body mark,
+      .pdf-mileage-comment-note-body span, .pdf-mileage-comment-note-body mark{
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-report-comment-note-body mark,
+      .pdf-incident-internal-note-body mark,
+      .pdf-mileage-comment-note-body mark{background:#fde68a;color:inherit;}
+      .pdf-report-comment-note-body span[style*="background"],
+      .pdf-incident-internal-note-body span[style*="background"],
+      .pdf-mileage-comment-note-body span[style*="background"]{
+        padding:0 2px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;
+      }
       .pdf-mileage-dual{
         display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;align-items:start;margin:8px 0 0;
       }

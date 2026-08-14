@@ -1,31 +1,55 @@
 "use client";
-
-import { useCallback, useEffect, useRef, type ChangeEvent, type ClipboardEvent, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+import { Baseline, Highlighter, RemoveFormatting } from "lucide-react";
 import {
   coerceAdminRichHtmlForDisplay,
+  normalizeEditorRichHtmlForStorage,
   normalizePastedAdminRichHtml,
   plainTextToMinimalRichHtml,
 } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_RICH_COMMENT_FONT_OPTIONS,
+  ADMIN_RICH_COMMENT_HIGHLIGHT_OPTIONS,
   ADMIN_RICH_COMMENT_SIZE_OPTIONS,
+  ADMIN_RICH_COMMENT_TEXT_COLOR_OPTIONS,
 } from "@/lib/admin-rich-comment-fonts";
 
 /** Pievienot read-only `className`, ja HTML rāda ar `AdminRichCommentReadonly`. */
 export const ADMIN_RICH_READONLY_CHILD_MARKUP =
-  "[&_b]:font-semibold [&_strong]:font-semibold [&_i]:italic [&_em]:italic [&_u]:underline [&_span]:[font:inherit]";
+  "[&_b]:font-semibold [&_strong]:font-semibold [&_i]:italic [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through [&_del]:line-through [&_span]:[font:inherit]";
+
+const editorMarkupClass =
+  "[&_b]:font-semibold [&_strong]:font-semibold [&_i]:italic [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through [&_del]:line-through";
 
 const editorShellDefaultClass =
-  "w-full min-h-[min(40vh,280px)] rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 [&_b]:font-semibold [&_strong]:font-semibold [&_i]:italic [&_em]:italic [&_u]:underline";
+  `w-full min-h-[min(40vh,280px)] rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 ${editorMarkupClass}`;
 
 const editorShellCompactClass =
-  "w-full min-h-[52px] rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 [&_b]:font-semibold [&_strong]:font-semibold [&_i]:italic [&_em]:italic [&_u]:underline";
+  `w-full min-h-[52px] rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 ${editorMarkupClass}`;
 
-const toolBtnClass =
-  "rounded border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/10";
+const toolBtnBase =
+  "inline-flex h-[22px] min-w-[22px] items-center justify-center rounded border px-1.5 text-[10px] font-semibold transition-colors";
+
+const toolBtnIdle =
+  "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/[0.05] dark:hover:bg-white/10";
+
+/** Aktīvs formatējums pie kursora — lai redaktors nav „akls”. */
+const toolBtnActive =
+  "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent)]/15 text-[var(--color-provin-accent)]";
 
 const toolSelectClass =
-  "max-w-[7.5rem] rounded border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1 py-0.5 text-[10px] text-[var(--color-apple-text)]";
+  "h-[22px] max-w-[7.5rem] rounded border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1 text-[10px] text-[var(--color-apple-text)]";
+
+const dividerClass = "mx-0.5 h-[18px] w-px bg-[var(--admin-border-subtle)]";
 
 export function AdminRichCommentReadonly({
   html,
@@ -74,6 +98,15 @@ type AdminInternalRichCommentEditorProps = {
   "aria-label"?: string;
 };
 
+type ActiveMarks = {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strike: boolean;
+};
+
+const NO_MARKS: ActiveMarks = { bold: false, italic: false, underline: false, strike: false };
+
 export function AdminInternalRichCommentEditor({
   value,
   onChange,
@@ -84,6 +117,8 @@ export function AdminInternalRichCommentEditor({
   const ref = useRef<HTMLDivElement>(null);
   const syncingFromParent = useRef(false);
   const shellClass = variant === "compact" ? editorShellCompactClass : editorShellDefaultClass;
+  const [marks, setMarks] = useState<ActiveMarks>(NO_MARKS);
+  const [palette, setPalette] = useState<"text" | "highlight" | null>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -103,8 +138,55 @@ export function AdminInternalRichCommentEditor({
     const el = ref.current;
     if (!el) return;
     syncingFromParent.current = true;
-    onChange(el.innerHTML);
+    /** Glabā vienotu HTML (span style), lai PDF nekad nesaņem `<font color>`. */
+    onChange(normalizeEditorRichHtmlForStorage(el.innerHTML));
   }, [onChange]);
+
+  const selectionInsideEditor = useCallback(() => {
+    const el = ref.current;
+    if (!el) return false;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return false;
+    return el.contains(sel.getRangeAt(0).commonAncestorContainer);
+  }, []);
+
+  const refreshMarks = useCallback(() => {
+    if (!selectionInsideEditor()) return;
+    const state = (cmd: string) => {
+      try {
+        return document.queryCommandState(cmd);
+      } catch {
+        return false;
+      }
+    };
+    setMarks({
+      bold: state("bold"),
+      italic: state("italic"),
+      underline: state("underline"),
+      strike: state("strikeThrough"),
+    });
+  }, [selectionInsideEditor]);
+
+  useEffect(() => {
+    const onSelectionChange = () => refreshMarks();
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => document.removeEventListener("selectionchange", onSelectionChange);
+  }, [refreshMarks]);
+
+  /** Aizver krāsu paleti, klikšķinot ārpus rīkjoslas. */
+  useEffect(() => {
+    if (!palette) return;
+    const onDocPointerDown = (e: globalThis.MouseEvent) => {
+      const target = e.target as Node | null;
+      if (target && (e.currentTarget as Document).contains(target)) {
+        const inToolbar = (target as HTMLElement).closest?.("[data-rich-toolbar]");
+        if (inToolbar) return;
+      }
+      setPalette(null);
+    };
+    document.addEventListener("mousedown", onDocPointerDown);
+    return () => document.removeEventListener("mousedown", onDocPointerDown);
+  }, [palette]);
 
   const runFormat = useCallback(
     (command: string, commandValue?: string) => {
@@ -112,13 +194,20 @@ export function AdminInternalRichCommentEditor({
       if (!el) return;
       el.focus();
       try {
+        /** Bez tā pārlūki raksta `<font color>`, ko PDF konvertācija nesaprot. */
+        document.execCommand("styleWithCSS", false, "true");
+      } catch {
+        /* ignore */
+      }
+      try {
         document.execCommand(command, false, commandValue);
       } catch {
         /* ignore */
       }
       emit();
+      refreshMarks();
     },
-    [emit],
+    [emit, refreshMarks],
   );
 
   const applySpanStyle = useCallback(
@@ -161,6 +250,47 @@ export function AdminInternalRichCommentEditor({
     [emit],
   );
 
+  const applyTextColor = useCallback(
+    (hex: string) => {
+      setPalette(null);
+      runFormat("foreColor", hex);
+    },
+    [runFormat],
+  );
+
+  const applyHighlight = useCallback(
+    (hex: string) => {
+      setPalette(null);
+      const el = ref.current;
+      if (!el) return;
+      el.focus();
+      try {
+        document.execCommand("styleWithCSS", false, "true");
+      } catch {
+        /* ignore */
+      }
+      let ok = false;
+      try {
+        ok = document.execCommand("hiliteColor", false, hex);
+      } catch {
+        ok = false;
+      }
+      if (!ok) {
+        try {
+          ok = document.execCommand("backColor", false, hex);
+        } catch {
+          ok = false;
+        }
+      }
+      if (!ok) {
+        applySpanStyle({ "background-color": hex });
+        return;
+      }
+      emit();
+    },
+    [applySpanStyle, emit],
+  );
+
   const onFontChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
       const opt = ADMIN_RICH_COMMENT_FONT_OPTIONS.find((f) => f.id === e.target.value);
@@ -185,6 +315,24 @@ export function AdminInternalRichCommentEditor({
     e.preventDefault();
   }, []);
 
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      /** Pārlūka noklusējums nelieto styleWithCSS — pārņemam, lai HTML paliek vienots. */
+      if (key === "b" || key === "i" || key === "u") {
+        e.preventDefault();
+        runFormat(key === "b" ? "bold" : key === "i" ? "italic" : "underline");
+        return;
+      }
+      if (key === "x" && e.shiftKey) {
+        e.preventDefault();
+        runFormat("strikeThrough");
+      }
+    },
+    [runFormat],
+  );
+
   const onPaste = useCallback(
     (e: ClipboardEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -207,39 +355,80 @@ export function AdminInternalRichCommentEditor({
     [emit],
   );
 
+  const markBtn = (
+    active: boolean,
+    label: string,
+    title: string,
+    command: string,
+    render: React.ReactNode,
+  ) => (
+    <button
+      key={command}
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      className={`${toolBtnBase} ${active ? toolBtnActive : toolBtnIdle}`}
+      onClick={() => runFormat(command)}
+      title={title}
+    >
+      {render}
+    </button>
+  );
+
   return (
     <div className={className}>
       <div
-        className="mb-1.5 flex flex-wrap items-center gap-1"
+        data-rich-toolbar
+        className="relative mb-1.5 flex flex-wrap items-center gap-1"
         onMouseDown={onToolbarMouseDown}
         role="toolbar"
         aria-label="Teksta formatējums"
       >
-        <button type="button" className={toolBtnClass} onClick={() => runFormat("bold")} title="Treknraksts">
-          <span className="font-bold">B</span>
-        </button>
-        <button type="button" className={toolBtnClass} onClick={() => runFormat("italic")} title="Kursīvs">
-          <span className="italic">I</span>
-        </button>
-        <button type="button" className={toolBtnClass} onClick={() => runFormat("underline")} title="Pasvītrots">
-          <span className="underline">U</span>
+        {markBtn(marks.bold, "Treknraksts", "Treknraksts (⌘B)", "bold", <span className="font-bold">B</span>)}
+        {markBtn(marks.italic, "Kursīvs", "Kursīvs (⌘I)", "italic", <span className="italic">I</span>)}
+        {markBtn(marks.underline, "Pasvītrots", "Pasvītrots (⌘U)", "underline", <span className="underline">U</span>)}
+        {markBtn(
+          marks.strike,
+          "Pārsvītrots",
+          "Pārsvītrots (⌘⇧X)",
+          "strikeThrough",
+          <span className="line-through">S</span>,
+        )}
+
+        <span className={dividerClass} aria-hidden />
+
+        <button
+          type="button"
+          aria-label="Teksta krāsa"
+          aria-expanded={palette === "text"}
+          className={`${toolBtnBase} ${palette === "text" ? toolBtnActive : toolBtnIdle}`}
+          onClick={() => setPalette((p) => (p === "text" ? null : "text"))}
+          title="Teksta krāsa"
+        >
+          <Baseline className="h-3.5 w-3.5" aria-hidden />
         </button>
         <button
           type="button"
-          className={toolBtnClass}
-          onClick={() => runFormat("foreColor", "#ef4444")}
-          title="Sarkans teksts"
+          aria-label="Izcelt tekstu"
+          aria-expanded={palette === "highlight"}
+          className={`${toolBtnBase} ${palette === "highlight" ? toolBtnActive : toolBtnIdle}`}
+          onClick={() => setPalette((p) => (p === "highlight" ? null : "highlight"))}
+          title="Izcelt (marķieris)"
         >
-          <span className="font-semibold text-red-500">A</span>
+          <Highlighter className="h-3.5 w-3.5" aria-hidden />
         </button>
         <button
           type="button"
-          className={toolBtnClass}
-          onClick={() => runFormat("foreColor", "#22c55e")}
-          title="Zaļš teksts"
+          aria-label="Notīrīt formatējumu"
+          className={`${toolBtnBase} ${toolBtnIdle}`}
+          onClick={() => runFormat("removeFormat")}
+          title="Notīrīt formatējumu"
         >
-          <span className="font-semibold text-green-500">A</span>
+          <RemoveFormatting className="h-3.5 w-3.5" aria-hidden />
         </button>
+
+        <span className={dividerClass} aria-hidden />
+
         <select
           className={toolSelectClass}
           defaultValue="default"
@@ -269,6 +458,40 @@ export function AdminInternalRichCommentEditor({
             </option>
           ))}
         </select>
+
+        {palette ? (
+          <div className="absolute left-0 top-full z-30 mt-1 w-[min(19rem,90vw)] rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-2 shadow-lg">
+            <p className="mb-1.5 text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+              {palette === "text" ? "Teksta krāsa" : "Izcēluma krāsa"}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {(palette === "text"
+                ? ADMIN_RICH_COMMENT_TEXT_COLOR_OPTIONS
+                : ADMIN_RICH_COMMENT_HIGHLIGHT_OPTIONS
+              ).map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  title={c.label}
+                  aria-label={c.label}
+                  onClick={() =>
+                    palette === "text" ? applyTextColor(c.css) : applyHighlight(c.css)
+                  }
+                  className="h-6 w-6 rounded border border-black/15 shadow-sm transition-transform hover:scale-110 dark:border-white/25"
+                  style={
+                    c.id === "none"
+                      ? {
+                          backgroundImage:
+                            "linear-gradient(45deg, transparent 45%, #ef4444 45%, #ef4444 55%, transparent 55%)",
+                          backgroundColor: "var(--admin-field-bg)",
+                        }
+                      : { backgroundColor: c.css }
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
       <div
         ref={ref}
@@ -281,6 +504,10 @@ export function AdminInternalRichCommentEditor({
         onInput={emit}
         onBlur={emit}
         onPaste={onPaste}
+        onKeyDown={onKeyDown}
+        onKeyUp={refreshMarks}
+        onMouseUp={refreshMarks}
+        onFocus={refreshMarks}
       />
     </div>
   );

@@ -140,10 +140,17 @@ function hasUnderlineDecoration(decl: Record<string, string>): boolean {
   return deco.includes("underline");
 }
 
+function hasLineThroughDecoration(decl: Record<string, string>): boolean {
+  const deco = `${decl["text-decoration"] ?? ""} ${decl["text-decoration-line"] ?? ""}`;
+  return deco.includes("line-through");
+}
+
 function buildPreservedInlineStyle(decl: Record<string, string>): string {
   const allowed: string[] = [];
   const color = decl.color;
   if (color && isSafePdfColor(color)) allowed.push(`color:${color}`);
+  const background = decl["background-color"] ?? decl.background;
+  if (background && isSafePdfColor(background)) allowed.push(`background-color:${background}`);
   const fontSize = decl["font-size"];
   if (fontSize && /^\d+(?:\.\d+)?(?:px|pt|rem|em)$/.test(fontSize)) {
     allowed.push(`font-size:${fontSize}`);
@@ -156,6 +163,44 @@ function buildPreservedInlineStyle(decl: Record<string, string>): string {
     }
   }
   return allowed.join(";");
+}
+
+/**
+ * `execCommand("foreColor")` vecākos pārlūkos rada `<font color>`, nevis `<span style>`.
+ * Bez šīs normalizācijas PDF konvertācija krāsu pazaudē (tags tiek noņemts kā nezināms).
+ */
+function normalizeLegacyFontTags(html: string): string {
+  let s = html;
+  s = s.replace(/<font(\s[^>]*)?>/gi, (_full, attrsRaw: string | undefined) => {
+    const attrs = attrsRaw ?? "";
+    const styles: string[] = [];
+    const color = /\scolor\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
+    const colorVal = (color?.[2] ?? color?.[3] ?? color?.[4] ?? "").trim();
+    if (colorVal && isSafePdfColor(colorVal)) styles.push(`color:${colorVal}`);
+    const face = /\sface\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
+    const faceVal = (face?.[2] ?? face?.[3] ?? face?.[4] ?? "").trim();
+    if (faceVal) styles.push(`font-family:${faceVal}`);
+    const inline = /\sstyle\s*=\s*"([^"]*)"/i.exec(attrs);
+    if (inline?.[1]) styles.push(inline[1]);
+    return styles.length ? `<span style="${styles.join(";")}">` : "<span>";
+  });
+  s = s.replace(/<\/font>/gi, "</span>");
+  return s;
+}
+
+export const ADMIN_RICH_DEFAULT_HIGHLIGHT = "#fde68a";
+
+/** `<mark>` (izcēlums) → span ar fona krāsu, lai vienota apstrāde PDF un lasīšanai. */
+function normalizeMarkTags(html: string): string {
+  return html
+    .replace(/<mark(\s[^>]*)?>/gi, (_full, attrsRaw: string | undefined) => {
+      const inline = /\sstyle\s*=\s*"([^"]*)"/i.exec(attrsRaw ?? "");
+      const decl = parseCssDeclarations(inline?.[1] ?? "");
+      const bg = decl["background-color"] ?? decl.background ?? "";
+      const safe = bg && isSafePdfColor(bg) ? bg : ADMIN_RICH_DEFAULT_HIGHLIGHT;
+      return `<span style="background-color:${safe}">`;
+    })
+    .replace(/<\/mark>/gi, "</span>");
 }
 
 /** Pārvērš `span style="font-weight:bold"` u.c. par semantiskajiem tagiem — PDF un ielīmēšanai. */
@@ -175,8 +220,10 @@ export function promoteInlineStyleSemantics(html: string): string {
         const italic =
           decl["font-style"] === "italic" || decl["font-style"] === "oblique";
         const underline = hasUnderlineDecoration(decl);
+        const strike = hasLineThroughDecoration(decl);
 
         let out = inner;
+        if (strike) out = `<s>${out}</s>`;
         if (underline) out = `<u>${out}</u>`;
         if (italic) out = `<em>${out}</em>`;
         if (bold) out = `<strong>${out}</strong>`;
@@ -192,7 +239,6 @@ function stripWordPasteBoilerplate(html: string): string {
   let s = html;
   s = s.replace(/<!--[\s\S]*?-->/g, "");
   s = s.replace(/<(?:\/?)(?:o:p|xml|meta|link|style|head|title|body)[^>]*>/gi, "");
-  s = s.replace(/<\/?font[^>]*>/gi, "");
   s = s.replace(/\sclass="[^"]*"/gi, "");
   s = s.replace(/\sclass='[^']*'/gi, "");
   s = s.replace(/\sid="[^"]*"/gi, "");
@@ -211,6 +257,9 @@ function stripFontFamilyAndSizeFromInlineStyles(html: string): string {
       if (!val) continue;
       if (prop === "font-family" || prop === "font-size") continue;
       if (prop === "color" && isSafePdfColor(val)) allowed.push(`color:${val}`);
+      if ((prop === "background-color" || prop === "background") && isSafePdfColor(val)) {
+        allowed.push(`background-color:${val}`);
+      }
     }
     return allowed.length ? ` style="${allowed.join(";")}"` : "";
   });
@@ -218,22 +267,38 @@ function stripFontFamilyAndSizeFromInlineStyles(html: string): string {
 
 function stripDecorativeInlineStylesFromSemanticTags(html: string): string {
   return html.replace(
-    /<(strong|b|em|i|u)(\s[^>]*?)\sstyle="[^"]*"([^>]*)>/gi,
+    /<(strong|b|em|i|u|s|strike|del)(\s[^>]*?)\sstyle="[^"]*"([^>]*)>/gi,
     "<$1$2$3>",
   );
 }
 
 /**
- * Ielīmēts HTML → editora noklusējuma fonts/izmērs; saglabā treknrakstu, kursīvu, pasvītrojumu un krāsu.
+ * Ielīmēts HTML → editora noklusējuma fonts/izmērs; saglabā treknrakstu, kursīvu, pasvītrojumu,
+ * pārsvītrojumu, teksta krāsu un izcēlumu.
  */
 export function normalizePastedAdminRichHtml(html: string): string {
   let s = coerceAdminRichHtmlForDisplay(html);
   s = stripWordPasteBoilerplate(s);
+  s = normalizeLegacyFontTags(s);
+  s = normalizeMarkTags(s);
   s = promoteInlineStyleSemantics(s);
   s = stripFontFamilyAndSizeFromInlineStyles(s);
   s = stripDecorativeInlineStylesFromSemanticTags(s);
   s = s.replace(/<span\s*>([\s\S]*?)<\/span>/gi, "$1");
   return s.trim();
+}
+
+/**
+ * Redaktora `innerHTML` → glabāšanai vienots formāts: `<font>` un `<mark>` vietā `<span style>`.
+ * Tā glabātais HTML vienmēr ir tāds, kādu PDF konvertācija prot lasīt.
+ */
+export function normalizeEditorRichHtmlForStorage(html: string): string {
+  let s = coerceAdminRichHtmlForDisplay(html);
+  if (!s.trim()) return "";
+  s = normalizeLegacyFontTags(s);
+  s = normalizeMarkTags(s);
+  s = s.replace(/<span\s*>([\s\S]*?)<\/span>/gi, "$1");
+  return s;
 }
 
 function normalizeRichHtmlBlockLineBreaks(html: string): string {
@@ -270,16 +335,6 @@ export function coerceAdminRichHtmlForDisplay(html: string | null | undefined): 
   return s;
 }
 
-const PDF_B_OPEN = "\uE000";
-const PDF_B_CLOSE = "\uE001";
-const PDF_I_OPEN = "\uE002";
-const PDF_I_CLOSE = "\uE003";
-const PDF_U_OPEN = "\uE004";
-const PDF_U_CLOSE = "\uE005";
-const PDF_SPAN_OPEN = "\uE006";
-const PDF_SPAN_MID = "\uE007";
-const PDF_SPAN_CLOSE = "\uE008";
-
 function isSafePdfColor(value: string): boolean {
   const v = value.trim().toLowerCase();
   if (/^#[0-9a-f]{3,8}$/.test(v)) return true;
@@ -300,6 +355,10 @@ function sanitizePdfInlineStyle(styleRaw: string): string {
       allowed.push(`color:${val}`);
       continue;
     }
+    if ((prop === "background-color" || prop === "background") && isSafePdfColor(val)) {
+      allowed.push(`background-color:${val}`);
+      continue;
+    }
     if (prop === "font-size" && /^\d+(?:\.\d+)?(?:px|pt|rem|em)$/.test(val)) {
       allowed.push(`font-size:${val}`);
       continue;
@@ -314,54 +373,102 @@ function sanitizePdfInlineStyle(styleRaw: string): string {
   return allowed.join(";");
 }
 
-function replaceInlineTagsWithMarkers(input: string): string {
-  let s = input;
-  s = s.replace(/<(strong|b)(\s[^>]*)?>/gi, PDF_B_OPEN);
-  s = s.replace(/<\/(strong|b)>/gi, PDF_B_CLOSE);
-  s = s.replace(/<(em|i)(\s[^>]*)?>/gi, PDF_I_OPEN);
-  s = s.replace(/<\/(em|i)>/gi, PDF_I_CLOSE);
-  s = s.replace(/<u(\s[^>]*)?>/gi, PDF_U_OPEN);
-  s = s.replace(/<\/u>/gi, PDF_U_CLOSE);
-  s = s.replace(/<font\s+face="([^"]*)"[^>]*>/gi, (_, face) => {
-    const safe = sanitizePdfInlineStyle(`font-family:${face}`);
-    return safe ? `${PDF_SPAN_OPEN}${safe}${PDF_SPAN_MID}` : "";
-  });
-  s = s.replace(/<\/font>/gi, PDF_SPAN_CLOSE);
-  s = s.replace(/<span\s+style="([^"]*)"[^>]*>/gi, (_, style) => {
-    const safe = sanitizePdfInlineStyle(style);
-    return safe ? `${PDF_SPAN_OPEN}${safe}${PDF_SPAN_MID}` : "";
-  });
-  s = s.replace(/<\/span>/gi, PDF_SPAN_CLOSE);
-  return s;
+/** Iekšējie tagi, ko PDF drīkst saturēt. Viss cits tiek izmests kopā ar aizverošo tagu. */
+const PDF_INLINE_TAG_ALIASES: Record<string, "strong" | "em" | "u" | "s" | "span"> = {
+  strong: "strong",
+  b: "strong",
+  em: "em",
+  i: "em",
+  u: "u",
+  s: "s",
+  strike: "s",
+  del: "s",
+  span: "span",
+  font: "span",
+  mark: "span",
+};
+
+type OpenPdfTag = { kind: "strong" | "em" | "u" | "s" | "span"; style: string };
+
+function openTagHtml(tag: OpenPdfTag): string {
+  if (tag.kind !== "span") return `<${tag.kind}>`;
+  return tag.style ? `<span style="${tag.style}">` : "";
 }
 
-function restorePdfMarkersToHtml(escaped: string): string {
-  let s = escaped;
-  s = s.replace(/\uE006([^\uE007]*)\uE007/g, (_, style) => `<span style="${style}">`);
-  s = s.replace(/\uE008/g, "</span>");
-  s = s.replace(/\uE000/g, "<strong>");
-  s = s.replace(/\uE001/g, "</strong>");
-  s = s.replace(/\uE002/g, "<em>");
-  s = s.replace(/\uE003/g, "</em>");
-  s = s.replace(/\uE004/g, "<u>");
-  s = s.replace(/\uE005/g, "</u>");
-  return s;
+function closeTagHtml(tag: OpenPdfTag): string {
+  if (tag.kind !== "span") return `</${tag.kind}>`;
+  return tag.style ? "</span>" : "";
 }
 
 /**
- * Admin bagātinātais HTML → drošs PDF HTML (`strong`, `em`, `u`, `span` ar krāsu/fontu; pārējie tagi noņemti).
+ * Pārraksta atlikušos iekšējos tagus drošā, vienmēr līdzsvarotā HTML.
+ *
+ * Iepriekš to darīja regex + PUA marķieri, kas pie `<font color>` vai `<span>` bez stila
+ * atstāja aizverošu `</span>` bez atverošā — PDF krāsa pazuda vai izjuka izkārtojums.
+ */
+function renderPdfSafeInlineHtml(input: string): string {
+  const out: string[] = [];
+  const stack: OpenPdfTag[] = [];
+  const tagRe = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
+  let cursor = 0;
+
+  const pushText = (raw: string) => {
+    if (!raw) return;
+    out.push(escapeHtmlPlain(decodeBasicHtmlEntities(raw)));
+  };
+
+  let match: RegExpExecArray | null;
+  while ((match = tagRe.exec(input)) !== null) {
+    pushText(input.slice(cursor, match.index));
+    cursor = match.index + match[0].length;
+
+    const isClosing = match[1] === "/";
+    const kind = PDF_INLINE_TAG_ALIASES[match[2]!.toLowerCase()];
+    if (!kind) continue;
+
+    if (!isClosing) {
+      let style = "";
+      if (kind === "span") {
+        const inline = /\sstyle\s*=\s*"([^"]*)"/i.exec(match[3] ?? "");
+        style = sanitizePdfInlineStyle(inline?.[1] ?? "");
+      }
+      const tag: OpenPdfTag = { kind, style };
+      stack.push(tag);
+      out.push(openTagHtml(tag));
+      continue;
+    }
+
+    const at = [...stack].reverse().findIndex((t) => t.kind === kind);
+    if (at < 0) continue;
+    const index = stack.length - 1 - at;
+    /** Aizver visu virs meklētā taga, pēc tam atver atpakaļ — koriģē pārklājošos tagus. */
+    const above = stack.splice(index + 1);
+    for (const t of [...above].reverse()) out.push(closeTagHtml(t));
+    const target = stack.pop();
+    if (target) out.push(closeTagHtml(target));
+    for (const t of above) {
+      stack.push(t);
+      out.push(openTagHtml(t));
+    }
+  }
+  pushText(input.slice(cursor));
+  for (const t of [...stack].reverse()) out.push(closeTagHtml(t));
+  return out.join("");
+}
+
+/**
+ * Admin bagātinātais HTML → drošs PDF HTML: `strong`, `em`, `u`, `s` un `span`
+ * ar krāsu / izcēluma fonu / izmēru / fontu. Pārējie tagi tiek noņemti.
  */
 export function adminRichHtmlToPdfSafeHtml(html: string): string {
   let s = coerceAdminRichHtmlForDisplay(html);
   if (!s.trim()) return "";
 
+  s = normalizeLegacyFontTags(s);
+  s = normalizeMarkTags(s);
   s = promoteInlineStyleSemantics(s);
   s = normalizeRichHtmlBlockLineBreaks(s);
-  s = replaceInlineTagsWithMarkers(s);
-  s = s.replace(/<[^>]+>/g, "");
-  s = decodeBasicHtmlEntities(s);
-  s = escapeHtmlPlain(s);
-  s = restorePdfMarkersToHtml(s);
+  s = renderPdfSafeInlineHtml(s);
   s = s.replace(/\n{3,}/g, "\n\n");
   s = s.replace(/\n+$/g, "");
   s = s.replace(/\r?\n/g, "<br />");

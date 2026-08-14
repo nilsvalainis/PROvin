@@ -309,7 +309,13 @@ function irissPrintShell(accent: string, title: string, body: string): string {
     .ipdf-rich-comment strong, .ipdf-rich-comment b { font-weight: 700; }
     .ipdf-rich-comment em, .ipdf-rich-comment i { font-style: italic; }
     .ipdf-rich-comment u { text-decoration: underline; }
-    .ipdf-rich-comment span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ipdf-rich-comment s, .ipdf-rich-comment del { text-decoration: line-through; }
+    /* Krāsas un marķiera izcēlums drukā pazūd bez print-color-adjust. */
+    .ipdf-rich-comment span, .ipdf-rich-comment mark { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ipdf-rich-comment mark { background: #fde68a; color: inherit; }
+    .ipdf-rich-comment span[style*="background"] {
+      padding: 0 2px; border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+    }
     .ipdf-eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     @media (max-width: 560px) { .ipdf-eval-grid { grid-template-columns: 1fr; } }
     .ipdf-cl-item {
