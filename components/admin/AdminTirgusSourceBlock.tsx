@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminListingPriceHistoryTable } from "@/components/admin/AdminListingPriceHistoryTable";
 import { AdminSourceCommentField, type AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
@@ -323,11 +324,9 @@ export function AdminTirgusSourceBlock({
           demoOnly={!marketAiAllowed}
           onGenerate={(notes, tier) => onMarketAiAnalyze(notes, tier)}
         />
-        {marketAiError ? (
-          <p className="w-full text-[9px] leading-snug text-amber-800/90" title={marketAiError}>
-            {marketAiError}
-          </p>
-        ) : null}
+        <div className="w-full">
+          <AdminAiFieldError message={marketAiError} />
+        </div>
       </div>
     ) : null;
 

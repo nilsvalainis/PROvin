@@ -139,6 +139,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
@@ -3953,11 +3954,7 @@ export function OrderDetailWorkspace({
                       onGenerate={(operatorNotes, modelTier) => void runAiPriceAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
-                  {aiPriceErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiPriceErr}>
-                      {aiPriceErr}
-                    </p>
-                  ) : null}
+                  <AdminAiFieldError message={aiPriceErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.cenasAtbilstiba ?? ""}
                     onChange={(next) => updateWs({ cenasAtbilstiba: next })}
@@ -4004,11 +4001,7 @@ export function OrderDetailWorkspace({
                         void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
-                  {aiTechnicalRisksErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiTechnicalRisksErr}>
-                      {aiTechnicalRisksErr}
-                    </p>
-                  ) : null}
+                  <AdminAiFieldError message={aiTechnicalRisksErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.tehniskoRiskuAnalize ?? ""}
                     onChange={(next) => updateWs({ tehniskoRiskuAnalize: next })}
@@ -4030,11 +4023,7 @@ export function OrderDetailWorkspace({
                         void runAiInspectionRecommendations(operatorNotes, modelTier)}
                     />
                   </div>
-                  {aiInspectionErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiInspectionErr}>
-                      {aiInspectionErr}
-                    </p>
-                  ) : null}
+                  <AdminAiFieldError message={aiInspectionErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns ?? ""}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
@@ -4072,11 +4061,7 @@ export function OrderDetailWorkspace({
                       onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
-                  {aiSummaryErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiSummaryErr}>
-                      {aiSummaryErr}
-                    </p>
-                  ) : null}
+                  <AdminAiFieldError message={aiSummaryErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.iriss ?? ""}
                     onChange={setIrissSummary}
@@ -4103,11 +4088,7 @@ export function OrderDetailWorkspace({
                         void runAiIncidentsSummary(operatorNotes, modelTier)}
                     />
                   </div>
-                  {aiIncidentsSummaryErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiIncidentsSummaryErr}>
-                      {aiIncidentsSummaryErr}
-                    </p>
-                  ) : null}
+                  <AdminAiFieldError message={aiIncidentsSummaryErr} />
                   <div className="mt-2">
                     <AdminAiPolishRichCommentShell
                       compact
@@ -4141,11 +4122,7 @@ export function OrderDetailWorkspace({
                       onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
                     />
                   </div>
-                  {aiMileageCommentErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiMileageCommentErr}>
-                      {aiMileageCommentErr}
-                    </p>
-                  ) : null}
+                  <AdminAiFieldError message={aiMileageCommentErr} />
                   <div className="mt-2">
                     <AdminAiPolishRichCommentShell
                       compact
@@ -4181,14 +4158,7 @@ export function OrderDetailWorkspace({
                         void runAiSourcesComparison(operatorNotes, modelTier)}
                     />
                   </div>
-                  {aiSourcesComparisonErr ? (
-                    <p
-                      className="mb-1.5 text-[9px] leading-snug text-amber-800/90"
-                      title={aiSourcesComparisonErr}
-                    >
-                      {aiSourcesComparisonErr}
-                    </p>
-                  ) : null}
+                  <AdminAiFieldError message={aiSourcesComparisonErr} />
                   <div className="mt-2">
                     <AdminAiPolishRichCommentShell
                       compact

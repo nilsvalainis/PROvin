@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
+import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
@@ -336,11 +337,7 @@ export function AdminListingAnalysisSourceBlock({
               onGenerate={(operatorNotes, modelTier) => void runSellerAiAnalyze(operatorNotes, modelTier)}
             />
           </div>
-          {sellerAnalyzeErr ? (
-            <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={sellerAnalyzeErr}>
-              {sellerAnalyzeErr}
-            </p>
-          ) : null}
+          <AdminAiFieldError message={sellerAnalyzeErr} />
           <p
             className={
               dense
@@ -427,11 +424,7 @@ export function AdminListingAnalysisSourceBlock({
               Ģenerēt pārdošanas kontekstu
             </button>
           </div>
-          {analyzeErr ? (
-            <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={analyzeErr}>
-              {analyzeErr}
-            </p>
-          ) : null}
+          <AdminAiFieldError message={analyzeErr} />
           {readOnly ? (
             <div
               className={

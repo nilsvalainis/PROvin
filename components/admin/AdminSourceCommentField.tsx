@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
@@ -59,11 +60,7 @@ export function AdminSourceCommentField({
           />
         ) : null}
       </div>
-      {ai?.error ? (
-        <p className="mb-1 text-[9px] leading-snug text-amber-800/90" title={ai.error}>
-          {ai.error}
-        </p>
-      ) : null}
+      <AdminAiFieldError message={ai?.error} />
       {readOnly ? (
         <AdminRichCommentReadonly html={value} className={readonlyClassName} />
       ) : (

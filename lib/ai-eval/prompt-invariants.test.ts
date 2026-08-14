@@ -308,6 +308,20 @@ describe("PROVIN AI prompt invariants", () => {
     expect(ai).toMatch(/WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000/);
   });
 
+  it("AI field errors are rendered visibly, not as 9px amber whispers", () => {
+    for (const file of [
+      "components/admin/OrderDetailWorkspace.tsx",
+      "components/admin/AdminListingAnalysisSourceBlock.tsx",
+      "components/admin/AdminSourceCommentField.tsx",
+      "components/admin/AdminTirgusSourceBlock.tsx",
+    ]) {
+      const src = readRepo(file);
+      expect(src).toMatch(/AdminAiFieldError/);
+      expect(src).not.toMatch(/text-\[9px\] leading-snug text-amber-800\/90/);
+    }
+    expect(readRepo("components/admin/AdminAiFieldError.tsx")).toMatch(/role="alert"/);
+  });
+
   it("web search agents get a route budget longer than their request timeout", () => {
     for (const route of [
       "app/api/admin/ai/summary-analysis/route.ts",
