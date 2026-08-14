@@ -59,7 +59,9 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     t === "auto records" ||
     raw.trim() === "AUTO RECORDS" ||
     sq === "dealer" ||
-    sq === "oficialadileradati"
+    sq === "oficialadileradati" ||
+    sq === "razotajaundileradati" ||
+    sq === "dileradati"
   ) {
     return "dealer";
   }
@@ -101,29 +103,29 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
 export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: string; abbrev: string }> = {
   csdd: { full: "CSDD", abbrev: "CSDD" },
   autodna: { full: "AutoDNA", abbrev: "DNA" },
-  carvertical: { full: "Car Vertical", abbrev: "CV" },
-  dealer: { full: "OFICIĀLĀ DĪLERA DATI", abbrev: "DEALER" },
+  carvertical: { full: "carVertical", abbrev: "CV" },
+  dealer: { full: "DĪLERA DATI", abbrev: "DEALER" },
   tjekbil: { full: SOURCE_BLOCK_LABELS.tjekbil, abbrev: "DK" },
   ee: { full: "Igaunijas reģistri", abbrev: "EE" },
   carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "INFO" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
-  cits: { full: "Citi Avoti", abbrev: "CITS" },
+  cits: { full: "Citi avoti", abbrev: "CITS" },
 };
 
 /**
- * Avotu punktu krāsas — vienota vēsa (zila / tirkīza / indigo) skala visā PDF:
- * laikposms, nobraukums, negadījumi, „Kas tika pārbaudīts”, sadaļu augšmalas akcents.
+ * Avotu punktu krāsas — viens kods visā PDF: laikposms, nobraukums, negadījumi,
+ * „Kas tika pārbaudīts”, sadaļu augšmalas akcents.
  */
 export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
-  csdd: "#0061D2",
+  csdd: "#16A34A",
   autodna: "#1E3A8A",
-  carvertical: "#0E7490",
-  dealer: "#4338CA",
-  tjekbil: "#0891B2",
-  ee: "#1D4ED8",
+  carvertical: "#EAB308",
+  dealer: "#EA580C",
+  tjekbil: "#BE123C",
+  ee: "#0E7490",
   carinfo: "#0F766E",
-  ltab: "#6D28D9",
-  cits: "#64748B",
+  ltab: "#DC2626",
+  cits: "#94A3B8",
 };
 
 /** Secība leģendas izdrukai (PDF). */

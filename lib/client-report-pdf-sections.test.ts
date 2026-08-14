@@ -284,6 +284,10 @@ describe("LAIKPOSMS", () => {
     expect(html).toContain("LAIKPOSMS");
     expect(html).toContain("pdf-life-year__num");
     expect(html).toContain("Pirmā reģistrācija");
+    // Avoti laikposmā — tikai krāsu punkti atsevišķā kolonnā + leģenda sadaļas apakšā.
+    expect(html).toContain('<span class="pdf-life-srcs">');
+    expect(html).toContain("pdf-life-rail");
+    expect(html).not.toContain("pdf-life-tags");
     expect(html.indexOf("LAIKPOSMS")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 });
