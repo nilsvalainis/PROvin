@@ -40,14 +40,17 @@ const LOG_PREFIX = "[admin-ai]";
 /** Starp lētāku failover modeli — viena pauze, bez atkārtotas Opus raundas. */
 const FAILOVER_STEP_MS = 800;
 /**
- * Anthropic `max_tokens` ir kopējais limīts: thinking + redzamais teksts.
- * Opus 5 / Sonnet 5 thinking ir IESLĒGTS pēc noklusējuma — 8k bija par šauru un
- * atbilde palika tukša, lai gan tokeni (un nauda) jau bija noņemti.
+ * Anthropic `max_tokens` ir kopējais limīts: thinking + redzamais teksts, un tas
+ * ir tikai griesti — maksā par faktiski ģenerētajiem tokeniem. Šaurs limits
+ * nozīmē, ka thinking to apēd un komentārs paliek tukšs, lai gan nauda jau ir
+ * noņemta, tāpēc te vajag telpu, nevis ekonomiju.
  */
-const MAX_TOKENS_TEXT = 16_000;
+const MAX_TOKENS_TEXT = 32_000;
 const MAX_TOKENS_JSON = 32_000;
-/** Komentāru maršrutu `maxDuration` ir 90s — nogrist pirms Vercel nogalina procesu. */
-const TEXT_REQUEST_TIMEOUT_MS = 75_000;
+/** Komentāru maršrutu `maxDuration` ir 90s — nogrist ar rezervi atbildes noformēšanai. */
+const TEXT_REQUEST_TIMEOUT_MS = 80_000;
+/** Web search aģenti (kopsavilkums, riski, pārdevējs) — maršruti ar `maxDuration = 120`. */
+const WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000;
 const JSON_REQUEST_TIMEOUT_MS = 150_000;
 /** SDK noklusējums PDF/gariem izsaukumiem. */
 const REQUEST_TIMEOUT_MS = 180_000;
@@ -419,6 +422,41 @@ export async function aiGenerateJsonWithSchema(opts: {
   });
 }
 
+/**
+ * Straumē tekstu, nevis gaida vienu atbildi. Ja pieprasījums nogriežas (timeout,
+ * savienojums), jau ģenerētais teksts ir apmaksāts — to atgriež, nevis izmet.
+ */
+async function claudeStreamText(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  opts: { label: string; timeoutMs: number },
+): Promise<string> {
+  const stream = client.messages.stream(params, { timeout: opts.timeoutMs });
+  let partial = "";
+  stream.on("text", (delta) => {
+    partial += delta;
+  });
+  // Bez šī klausītāja straumes kļūda kļūst par neapstrādātu notikumu; `finalMessage()` to tāpat noraida.
+  stream.on("error", () => {});
+
+  try {
+    const message = await stream.finalMessage();
+    logClaudeUsage(opts.label, params.model, message);
+    return requireAssistantText(message);
+  } catch (e) {
+    const salvaged = partial.trim();
+    if (!salvaged) throw e;
+    console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
+      label: opts.label,
+      model: params.model,
+      promptVersion: PROVIN_AI_PROMPT_VERSION,
+      chars: salvaged.length,
+      message: aiErrorMessage(e).slice(0, 240),
+    });
+    return salvaged;
+  }
+}
+
 async function aiGenerateTextOnce(
   key: string,
   opts: {
@@ -429,8 +467,8 @@ async function aiGenerateTextOnce(
     maxTokens?: number;
   },
 ): Promise<string> {
-  const client = anthropicClient(key);
-  const message = await client.messages.create(
+  return claudeStreamText(
+    anthropicClient(key),
     {
       model: opts.model,
       max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
@@ -438,10 +476,8 @@ async function aiGenerateTextOnce(
       messages: [{ role: "user", content: opts.userPrompt }],
       ...claudeOutputControls(opts.model),
     },
-    { timeout: TEXT_REQUEST_TIMEOUT_MS },
+    { label: "text", timeoutMs: TEXT_REQUEST_TIMEOUT_MS },
   );
-  logClaudeUsage("text", opts.model, message);
-  return requireAssistantText(message);
 }
 
 /** Brīva teksta ģenerēšana ar automātisku modeļu failover (529 u.c.). */
@@ -513,8 +549,12 @@ export async function aiGenerateTextWithVocabulary(opts: {
   return applyProvinReportCopyVocabulary(raw);
 }
 
-/** Cik meklējumu drīkst vienā tirgus/cenas analīzē ($0,01 par meklējumu). */
-const WEB_SEARCH_MAX_USES = 6;
+/**
+ * Cik meklējumu drīkst vienā tirgus/cenas analīzē ($0,01 par meklējumu). Katrs
+ * meklējums arī pagarina izsaukumu, tāpēc seši mēdza neiekļauties maršruta laikā —
+ * teksts nepienāca, bet meklējumi un tokeni jau bija apmaksāti.
+ */
+const WEB_SEARCH_MAX_USES = 4;
 
 /**
  * Claude `web_search` noraida ISO kodu `LV` (400: Country code LV is not supported).
@@ -537,8 +577,8 @@ async function aiGenerateTextWithWebSearchOnce(
     maxSearches?: number;
   },
 ): Promise<string> {
-  const client = anthropicClient(key);
-  const message = await client.messages.create(
+  return claudeStreamText(
+    anthropicClient(key),
     {
       model: opts.model,
       max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
@@ -554,11 +594,8 @@ async function aiGenerateTextWithWebSearchOnce(
       ],
       ...claudeOutputControls(opts.model),
     },
-    { timeout: TEXT_REQUEST_TIMEOUT_MS },
+    { label: "web_search", timeoutMs: WEB_SEARCH_REQUEST_TIMEOUT_MS },
   );
-
-  logClaudeUsage("web_search", opts.model, message);
-  return requireAssistantText(message);
 }
 
 /** Web meklēšana (Claude server-side tool) — tirgus un cenu analīzei ar modeļu failover. */

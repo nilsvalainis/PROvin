@@ -292,12 +292,29 @@ describe("PROVIN AI prompt invariants", () => {
   it("Claude text generation bounds thinking so comments are not billed empty", () => {
     const ai = readRepo("lib/admin-ai.ts");
     expect(ai).toMatch(/effort:\s*"low"/);
-    expect(ai).toMatch(/MAX_TOKENS_TEXT = 16_000/);
+    expect(ai).toMatch(/MAX_TOKENS_TEXT = 32_000/);
     expect(ai).toMatch(/shouldAiModelFailover/);
     expect(ai).not.toMatch(/FAILOVER_BACKOFF_MS/);
     expect(readRepo("lib/admin-gemini.ts")).not.toMatch(/FAILOVER_BACKOFF_MS/);
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(
       /readGeneratedAdminAiText/,
     );
+  });
+
+  it("text generation streams so a paid-but-cut-off answer is still salvaged", () => {
+    const ai = readRepo("lib/admin-ai.ts");
+    expect(ai).toMatch(/messages\.stream\(/);
+    expect(ai).toMatch(/partial_text_salvaged/);
+    expect(ai).toMatch(/WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000/);
+  });
+
+  it("web search agents get a route budget longer than their request timeout", () => {
+    for (const route of [
+      "app/api/admin/ai/summary-analysis/route.ts",
+      "app/api/admin/ai/technical-risk-analysis/route.ts",
+      "app/api/admin/ai/seller-analysis/route.ts",
+    ]) {
+      expect(readRepo(route)).toMatch(/maxDuration = 120/);
+    }
   });
 });
