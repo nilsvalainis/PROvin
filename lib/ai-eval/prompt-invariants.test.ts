@@ -186,10 +186,25 @@ describe("PROVIN AI prompt invariants", () => {
     expect(dispatch).toMatch(/geminiGenerateTextWithGoogleSearch/);
     expect(dispatch).toMatch(/isGeminiAdminTier/);
     const ui = readRepo("components/admin/AdminAiGenerateWithPrefill.tsx");
-    expect(ui).toMatch(/openDialog\("gemini"\)/);
-    expect(ui).toMatch(/openDialog\("gemini-flash"\)/);
-    expect(ui).toMatch(/openDialog\("pro"\)/);
-    expect(ui).toMatch(/openDialog\("flash"\)/);
+    expect(ui).toMatch(/recommendedTier/);
+    expect(ui).toMatch(/aiAdminButtonOrder/);
+    expect(ui).toMatch(/openDialog\(tier\)/);
+  });
+
+  it("Claude requests cache the stable system prompt", () => {
+    const ai = readRepo("lib/admin-ai.ts");
+    expect(ai).toMatch(/cache_control/);
+    expect(ai).toMatch(/ephemeral/);
+    expect(ai).toMatch(/cacheReadInputTokens/);
+  });
+
+  it("PDF extract and copilot default to Sonnet, not Opus", () => {
+    expect(readRepo("lib/source-pdf-ai-extract.ts")).toMatch(/CLAUDE_MODEL_EXTRACT/);
+    expect(readRepo("lib/source-pdf-ai-extract.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
+    expect(readRepo("lib/csdd-ai-structured.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
+    expect(readRepo("lib/admin-copilot-ai.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
+    expect(readRepo("lib/copilot-vendor-pdf-agent.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
+    expect(readRepo("lib/admin-vehicle-reports-ai.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
   });
 
   it("EV forensics rules cover SOH and charging habits", () => {

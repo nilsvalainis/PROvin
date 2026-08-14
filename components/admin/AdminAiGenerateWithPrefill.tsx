@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, MessageSquarePlus } from "lucide-react";
 
 import { AdminAiGenerateButton } from "@/components/admin/AdminAiGenerateButton";
+import { aiAdminButtonOrder } from "@/lib/ai-admin-field-defaults";
 import { aiAdminModelTierLabel, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   title?: string;
   dialogTitle?: string;
   dialogHint?: string;
+  /** Ieteicamais līmenis šim laukam — pirmā poga; Opus paliek pieejams, bet nav noklusējums. */
+  recommendedTier?: AiAdminModelTier;
   onGenerate: (operatorNotes: string, modelTier: AiAdminModelTier) => void | Promise<void>;
 };
 
@@ -25,12 +28,16 @@ const CONFIRM_CLASS: Record<AiAdminModelTier, string> = {
   "gemini-flash": "bg-teal-600 hover:bg-teal-700",
 };
 
+const SHORT_LABEL: Record<AiAdminModelTier, string> = {
+  "gemini-flash": "Flash",
+  gemini: "Gemini",
+  flash: "Sonnet",
+  pro: "Opus",
+  lite: "Haiku",
+};
+
 function confirmTierLabel(tier: AiAdminModelTier): string {
-  if (tier === "gemini-flash") return "Flash";
-  if (tier === "gemini") return "Gemini";
-  if (tier === "lite") return "Haiku";
-  if (tier === "flash") return "Sonnet";
-  return "Opus";
+  return SHORT_LABEL[tier];
 }
 
 export function AdminAiGenerateWithPrefill({
@@ -41,13 +48,15 @@ export function AdminAiGenerateWithPrefill({
   title,
   dialogTitle = "Papildu piezīmes AI",
   dialogHint = "Ievadi korekcijas vai pilnu eksperta tekstu. AI drīkst pārkārtot PROVIN stilā un papildināt, bet nedrīkst apgraizīt tavu detalizāciju — datumi, km, servisi un secinājumi jāsaglabā.",
+  recommendedTier = "gemini-flash",
   onGenerate,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
-  const [pendingTier, setPendingTier] = useState<AiAdminModelTier>("pro");
+  const [pendingTier, setPendingTier] = useState<AiAdminModelTier>(recommendedTier);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleId = useId();
+  const tiers = aiAdminButtonOrder(recommendedTier);
 
   useEffect(() => {
     if (!open) return;
@@ -75,42 +84,23 @@ export function AdminAiGenerateWithPrefill({
   return (
     <>
       <div className="inline-flex flex-wrap items-center gap-1.5">
-        <AdminAiGenerateButton
-          label={label}
-          variant="pro"
-          disabled={disabled}
-          busy={busy}
-          demoOnly={demoOnly}
-          title={title}
-          onClick={() => openDialog("pro")}
-        />
-        <AdminAiGenerateButton
-          label="Sonnet"
-          variant="flash"
-          disabled={disabled}
-          busy={busy}
-          demoOnly={demoOnly}
-          onClick={() => openDialog("flash")}
-        />
-        <span className="mx-0.5 select-none text-[10px] text-slate-300" aria-hidden>
-          |
-        </span>
-        <AdminAiGenerateButton
-          label="Gemini"
-          variant="gemini"
-          disabled={disabled}
-          busy={busy}
-          demoOnly={demoOnly}
-          onClick={() => openDialog("gemini")}
-        />
-        <AdminAiGenerateButton
-          label="Flash"
-          variant="gemini-flash"
-          disabled={disabled}
-          busy={busy}
-          demoOnly={demoOnly}
-          onClick={() => openDialog("gemini-flash")}
-        />
+        {tiers.map((tier) => (
+          <AdminAiGenerateButton
+            key={tier}
+            label={tier === recommendedTier ? label : SHORT_LABEL[tier]}
+            variant={tier}
+            disabled={disabled}
+            busy={busy}
+            demoOnly={demoOnly}
+            title={
+              title ??
+              (tier === recommendedTier
+                ? `${aiAdminModelTierLabel(tier)} — ieteicams šim laukam`
+                : undefined)
+            }
+            onClick={() => openDialog(tier)}
+          />
+        ))}
       </div>
       {open ? (
         <div
@@ -134,13 +124,8 @@ export function AdminAiGenerateWithPrefill({
                 <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">{dialogHint}</p>
                 <p className="mt-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
                   Modelis: {aiAdminModelTierLabel(pendingTier)}
-                  {pendingTier === "gemini-flash"
-                    ? " — vislētākais, vieglākiem laukiem"
-                    : pendingTier === "gemini"
-                      ? " — vieglāki komentāri"
-                      : pendingTier === "pro"
-                        ? " — smagā analīze"
-                        : null}
+                  {pendingTier === recommendedTier ? " — ieteicams šim laukam" : null}
+                  {pendingTier === "pro" ? " — dārgākais, tikai nopietnai analīzei" : null}
                 </p>
               </div>
             </div>

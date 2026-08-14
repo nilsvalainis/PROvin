@@ -28,6 +28,7 @@ import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
 import type { AiListingCommentField } from "@/lib/admin-ai-listing-field";
+import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 const ta =
@@ -122,7 +123,7 @@ export function AdminListingAnalysisSourceBlock({
     async (
       field: AiListingCommentField,
       operatorNotes: string,
-      modelTier: AiAdminModelTier = "pro",
+      modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.listing,
     ) => {
       if (!buildAiPayload || disabled || readOnly || listingFieldBusy) return;
       if (field === "photoAnalysis" && !canRunPhotoAi) return;
@@ -184,7 +185,7 @@ export function AdminListingAnalysisSourceBlock({
   );
 
   const runSellerAiAnalyze = useCallback(
-    async (operatorNotes: string, modelTier: AiAdminModelTier = "pro") => {
+    async (operatorNotes: string, modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.seller) => {
       if (!canRunSellerAi || sellerAnalyzing || disabled || readOnly || !buildAiPayload) return;
       setSellerAnalyzing(true);
       setSellerAnalyzeErr(null);
@@ -329,7 +330,8 @@ export function AdminListingAnalysisSourceBlock({
               busy={sellerAnalyzing}
               disabled={!canRunSellerAi || readOnly || disabled}
               demoOnly={!aiAllowed}
-              onGenerate={(operatorNotes) => void runSellerAiAnalyze(operatorNotes)}
+              recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.seller}
+              onGenerate={(operatorNotes, modelTier) => void runSellerAiAnalyze(operatorNotes, modelTier)}
             />
           </div>
           {sellerAnalyzeErr ? (

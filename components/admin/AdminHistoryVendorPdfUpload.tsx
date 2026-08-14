@@ -274,7 +274,7 @@ export function AdminHistoryVendorPdfUpload({
       </div>
       {busy ? (
         <p className="mt-1 text-[9px] leading-snug text-[var(--color-provin-accent)]" role="status">
-          Copilot lasa PDF (teksta slānis + Claude Opus, līdz ~1 min)…
+          Copilot lasa PDF (teksta slānis + Claude Sonnet, līdz ~1 min)…
         </p>
       ) : null}
       {notice ? (

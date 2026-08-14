@@ -1,7 +1,7 @@
 import "server-only";
 
 import {
-  CLAUDE_MODEL_OPUS,
+  CLAUDE_MODEL_EXTRACT,
   aiGenerateJsonText,
   type AiUserPart,
 } from "@/lib/admin-ai";
@@ -426,7 +426,7 @@ export async function classifyPdfIngestTargetWithAi(opts: {
       : "";
   try {
     const raw = await aiGenerateJsonText({
-      model: CLAUDE_MODEL_OPUS,
+      model: CLAUDE_MODEL_EXTRACT,
       systemInstruction: CLASSIFY_SYSTEM,
       extraParts,
       userPrompt: `Classify this PDF.${textSection}`,
@@ -486,7 +486,7 @@ export async function extractSourcePdfWithAi(opts: {
 
   if (target === "auto_records") {
     const raw = await aiGenerateJsonText({
-      model: CLAUDE_MODEL_OPUS,
+      model: CLAUDE_MODEL_EXTRACT,
       systemInstruction: AUTO_RECORDS_SYSTEM,
       extraParts,
       userPrompt: `Extract AUTO RECORDS fields from this PDF.${textSection}`,
@@ -510,7 +510,7 @@ export async function extractSourcePdfWithAi(opts: {
       ? `${CITI_AVOTI_USER}\nFile name hint: ${fileName}`
       : TARGET_USER[vendorTarget];
   const raw = await aiGenerateJsonText({
-    model: CLAUDE_MODEL_OPUS,
+    model: CLAUDE_MODEL_EXTRACT,
     systemInstruction: VENDOR_SYSTEM,
     extraParts,
     userPrompt: `${userIntro}\n\nExtract all fields.${textSection}`,

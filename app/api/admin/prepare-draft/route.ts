@@ -150,7 +150,7 @@ export async function POST(req: Request) {
     sessionId,
     pdfCount: pdfs.length,
     generateComments,
-    modelTier: context.modelTier ?? "pro",
+    modelTier: context.modelTier ?? "gemini-flash",
   });
 
   try {

@@ -1,7 +1,7 @@
 import "server-only";
 
 import {
-  CLAUDE_MODEL_OPUS,
+  CLAUDE_MODEL_EXTRACT,
   aiGenerateJsonWithSchema,
   type AiUserPart,
 } from "@/lib/admin-ai";
@@ -71,7 +71,7 @@ export async function extractCsddPdfWithAiStructured(opts: {
   });
 
   const rawJson = await aiGenerateJsonWithSchema({
-    model: CLAUDE_MODEL_OPUS,
+    model: CLAUDE_MODEL_EXTRACT,
     systemInstruction: CSDD_AI_STRUCTURED_SYSTEM,
     parts: extraParts,
     responseSchema: CSDD_AI_RESPONSE_SCHEMA,
@@ -114,7 +114,7 @@ export async function extractCsddPdfWithAiStructured(opts: {
     });
 
     const taRawJson = await aiGenerateJsonWithSchema({
-      model: CLAUDE_MODEL_OPUS,
+      model: CLAUDE_MODEL_EXTRACT,
       systemInstruction: CSDD_TA_AI_STRUCTURED_SYSTEM,
       parts: taParts,
       responseSchema: CSDD_TA_AI_RESPONSE_SCHEMA,

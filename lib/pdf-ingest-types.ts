@@ -1,4 +1,4 @@
-/** PDF avota imports — lokāls parsers vai Claude Opus (vizuāli). */
+/** PDF avota imports — lokāls parsers vai Claude Sonnet (vizuāli). */
 export type PdfIngestEngine = "local_parser" | "ai_fallback" | "ai_primary";
 
 export type PdfIngestMeta = {

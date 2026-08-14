@@ -7,7 +7,7 @@
  */
 import "server-only";
 
-import { CLAUDE_MODEL_OPUS, aiGenerateJsonWithSchema, type AiUserPart } from "@/lib/admin-ai";
+import { CLAUDE_MODEL_EXTRACT, aiGenerateJsonWithSchema, type AiUserPart } from "@/lib/admin-ai";
 import type { CopilotAction } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
@@ -98,7 +98,7 @@ async function runAiExtract(opts: {
   ];
 
   const raw = await aiGenerateJsonWithSchema({
-    model: CLAUDE_MODEL_OPUS,
+    model: CLAUDE_MODEL_EXTRACT,
     systemInstruction: VENDOR_PDF_AGENT_SYSTEM,
     parts,
     responseSchema: VENDOR_PDF_AGENT_SCHEMA,

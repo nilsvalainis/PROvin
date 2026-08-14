@@ -43,7 +43,7 @@ function humanizeAiDetail(raw: string): string {
     return "Claude modelis nav pieejams šai API atslēgai — pārbaudi claude-opus-5 / claude-sonnet-5 un ANTHROPIC_API_KEY";
   }
   if (/models\/gemini|is not found for API version/i.test(detail)) {
-    return "Gemini modelis nav pieejams — pārbaudi gemini-2.5-flash / gemini-2.5-pro un GEMINI_API_KEY";
+    return "Gemini modelis nav pieejams — pārbaudi gemini-3-flash-preview / gemini-2.5-flash un GEMINI_API_KEY";
   }
   if (/credit balance is too low|billing/i.test(detail)) {
     return "Anthropic kontā nepietiek kredīta — papildini Anthropic Console → Billing";

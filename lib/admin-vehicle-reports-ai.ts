@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CLAUDE_MODEL_OPUS, aiGenerateJsonText, type AiUserPart } from "@/lib/admin-ai";
+import { CLAUDE_MODEL_EXTRACT, aiGenerateJsonText, type AiUserPart } from "@/lib/admin-ai";
 import { parseVehicleAIExtraction } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction } from "@/lib/vehicle-ai-extraction-types";
 
@@ -105,7 +105,7 @@ export async function extractVehicleDataWithAi(input: {
   }
 
   const raw = await aiGenerateJsonText({
-    model: CLAUDE_MODEL_OPUS,
+    model: CLAUDE_MODEL_EXTRACT,
     systemInstruction: VEHICLE_AI_EXTRACTION_SYSTEM,
     extraParts,
     userPrompt: buildVehicleReportsUserPrompt(input.textBundles, pdfs.length),

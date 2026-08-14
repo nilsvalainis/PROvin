@@ -1,10 +1,10 @@
 /**
- * Order Copilot — Claude Opus + PDF inline → strukturētas darbības.
+ * Order Copilot — Claude Sonnet + PDF inline → strukturētas darbības.
  */
 import "server-only";
 
 import {
-  CLAUDE_MODEL_OPUS,
+  CLAUDE_MODEL_EXTRACT,
   aiGenerateJsonWithSchema,
   type AiUserPart,
 } from "@/lib/admin-ai";
@@ -197,7 +197,7 @@ export async function runOrderCopilotAi(opts: {
   });
 
   const raw = await aiGenerateJsonWithSchema({
-    model: CLAUDE_MODEL_OPUS,
+    model: CLAUDE_MODEL_EXTRACT,
     systemInstruction: ADMIN_COPILOT_SYSTEM,
     parts,
     responseSchema: ADMIN_COPILOT_RESPONSE_SCHEMA,

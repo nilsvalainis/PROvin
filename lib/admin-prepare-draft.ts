@@ -9,6 +9,7 @@ import { generateMileageCommentWithAi } from "@/lib/admin-ai-mileage-comment";
 import type { AiOrderContextInput } from "@/lib/admin-ai-order-context";
 import { generateSourceCommentWithAi } from "@/lib/admin-ai-source-comment";
 import { generateSourcesComparisonWithAi } from "@/lib/admin-ai-sources-comparison";
+import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import {
   applySourceBlockGeneratedComment,
   AI_SOURCE_COMMENT_BLOCK_KEYS,
@@ -216,7 +217,7 @@ export async function runPrepareDraftPipeline(input: {
         preferAi: true,
       });
       const engineLabel =
-        plan === "ai_primary" ? "Claude Opus (PDF)" : plan === "ai_fallback" ? "AI (fallback)" : "lokāli";
+        plan === "ai_primary" ? "Claude Sonnet (PDF)" : plan === "ai_fallback" ? "AI (fallback)" : "lokāli";
 
       if (target === "auto_records") {
         blocks = {
@@ -273,8 +274,9 @@ export async function runPrepareDraftPipeline(input: {
     return { sourceBlocks: blocks, orderEdits, steps, warnings };
   }
 
-  const modelTier = input.context.modelTier;
-  const ctxBase: AiOrderContextInput = { ...input.context, sourceBlocks: blocks, modelTier };
+  const commentTier = AI_ADMIN_FIELD_DEFAULT_TIER.source_comment;
+  const synthesisTier = AI_ADMIN_FIELD_DEFAULT_TIER.mileage;
+  const ctxBase: AiOrderContextInput = { ...input.context, sourceBlocks: blocks, modelTier: commentTier };
 
   /** Avotu komentāri paralēli — sākuma Prepare Draft brīdī sibling komentāru vēl nav; mileage/negadījumi secīgi pēc tam. */
   const commentJobs = AI_SOURCE_COMMENT_BLOCK_KEYS.map(async (blockKey) => {
@@ -306,7 +308,7 @@ export async function runPrepareDraftPipeline(input: {
         internalComment: ctxBase.internalComment,
         mileageComment: ctxBase.mileageComment,
         existingDraftPlain: existingPlain,
-        modelTier,
+        modelTier: commentTier,
       });
       const html = text.trim() ? plainCommentToHtml(blockKey, text) : null;
       return {
@@ -343,7 +345,7 @@ export async function runPrepareDraftPipeline(input: {
     }
   }
 
-  const ctxAfterComments: AiOrderContextInput = { ...ctxBase, sourceBlocks: blocks, modelTier };
+  const ctxAfterComments: AiOrderContextInput = { ...ctxBase, sourceBlocks: blocks, modelTier: synthesisTier };
 
   try {
     const mileageText = await generateMileageCommentWithAi(ctxAfterComments);
@@ -407,9 +409,9 @@ export async function runPrepareDraftPipeline(input: {
 export function formatPrepareDraftEngineLabel(plan: PdfIngestEngine): string {
   switch (plan) {
     case "ai_primary":
-      return "Claude Opus (PDF vizuāli)";
+      return "Claude Sonnet (PDF vizuāli)";
     case "ai_fallback":
-      return "Claude Opus (fallback)";
+      return "Claude Sonnet (fallback)";
     default:
       return "Lokālais parsers";
   }

@@ -189,6 +189,7 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
@@ -1022,7 +1023,7 @@ export function OrderDetailWorkspace({
     [updateWs],
   );
 
-  const runAiTechnicalRiskAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+  const runAiTechnicalRiskAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks) => {
     if (!payload.aiAllowed || aiTechnicalRisksBusy) return;
     setAiTechnicalRisksBusy(true);
     setAiTechnicalRisksErr(null);
@@ -1057,7 +1058,7 @@ export function OrderDetailWorkspace({
     }
   }, [buildAiOrderPayload, aiTechnicalRisksBusy, payload.aiAllowed, updateWs]);
 
-  const runAiInspectionRecommendations = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+  const runAiInspectionRecommendations = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.inspection) => {
     if (!payload.aiAllowed || aiInspectionBusy) return;
     setAiInspectionBusy(true);
     setAiInspectionErr(null);
@@ -1090,7 +1091,7 @@ export function OrderDetailWorkspace({
     }
   }, [buildAiOrderPayload, aiInspectionBusy, payload.aiAllowed, updateWs]);
 
-  const runAiPriceAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+  const runAiPriceAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.price) => {
     if (!payload.aiAllowed || aiPriceBusy) return;
     setAiPriceBusy(true);
     setAiPriceErr(null);
@@ -1123,7 +1124,7 @@ export function OrderDetailWorkspace({
     }
   }, [buildAiOrderPayload, aiPriceBusy, payload.aiAllowed, updateWs]);
 
-  const runAiSummaryAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+  const runAiSummaryAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.summary) => {
     if (!payload.aiAllowed || aiSummaryBusy) return;
     setAiSummaryBusy(true);
     setAiSummaryErr(null);
@@ -1156,7 +1157,7 @@ export function OrderDetailWorkspace({
     }
   }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, setIrissSummary]);
 
-  const runAiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+  const runAiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.incidents) => {
     if (!payload.aiAllowed || aiIncidentsSummaryBusy) return;
     setAiIncidentsSummaryBusy(true);
     setAiIncidentsSummaryErr(null);
@@ -1196,7 +1197,7 @@ export function OrderDetailWorkspace({
     payload.aiAllowed,
   ]);
 
-  const runAiMileageComment = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+  const runAiMileageComment = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.mileage) => {
     if (!payload.aiAllowed || aiMileageCommentBusy) return;
     setAiMileageCommentBusy(true);
     setAiMileageCommentErr(null);
@@ -1236,7 +1237,7 @@ export function OrderDetailWorkspace({
     payload.aiAllowed,
   ]);
 
-  const runAiSourcesComparison = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+  const runAiSourcesComparison = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison) => {
     if (!payload.aiAllowed || aiSourcesComparisonBusy) return;
     setAiSourcesComparisonBusy(true);
     setAiSourcesComparisonErr(null);
@@ -1419,7 +1420,7 @@ export function OrderDetailWorkspace({
   );
 
   const runAiTirgusMarket = useCallback(
-    async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.tirgus) => {
       if (!payload.aiAllowed || aiTirgusMarketBusy) return;
       setAiTirgusMarketBusy(true);
       setAiTirgusMarketErr(null);
@@ -1486,7 +1487,7 @@ export function OrderDetailWorkspace({
       blockKey: AiSourceCommentBlockKey,
       operatorNotes = "",
       citiAvotiSectionIndex?: number,
-      modelTier: AiAdminModelTier = "pro",
+      modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.source_comment,
       targetField: AiSourceCommentTargetField = "comments",
     ) => {
       const busyKey = targetField === "comments" ? blockKey : `${blockKey}:${targetField}`;
@@ -1554,7 +1555,7 @@ export function OrderDetailWorkspace({
     setPrepareDraftBusy(true);
     setPrepareDraftErr(null);
     setPrepareDraftNotice(null);
-    setPrepareDraftPhase("Analizējam PDF ar Claude Opus un ģenerējam komentārus…");
+    setPrepareDraftPhase("Analizējam PDF un ģenerējam komentārus…");
     try {
       const cur = wsPersistRef.current;
       const edits = orderEditsRef.current;
@@ -1569,7 +1570,7 @@ export function OrderDetailWorkspace({
       fd.set("sourcesComparisonComment", edits.sourcesComparison);
       fd.set("sourceBlocks", JSON.stringify(cur.sourceBlocks));
       fd.set("generateComments", "true");
-      fd.set("modelTier", "pro");
+      fd.set("modelTier", AI_ADMIN_FIELD_DEFAULT_TIER.source_comment);
       for (const p of pdfs) {
         const blob = await fetch(p.blobUrl).then((r) => r.blob());
         fd.append(
@@ -2883,7 +2884,7 @@ export function OrderDetailWorkspace({
                 onClick={() => void runPrepareDraft()}
                 disabled={prepareDraftBusy || portfolio.every((p) => p.mime !== "application/pdf" && !/\.pdf$/i.test(p.name))}
                 className="inline-flex items-center gap-1 rounded-md border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/80 px-2 py-1 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:cursor-not-allowed disabled:opacity-45"
-                title="Portfeļa PDF → avotu tabulas + Claude Opus komentāru melnraksts"
+                title="Portfeļa PDF → avotu tabulas + komentāru melnraksts"
               >
                 {prepareDraftBusy ? (
                   <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden />
@@ -3928,6 +3929,7 @@ export function OrderDetailWorkspace({
                       busy={aiPriceBusy}
                       disabled={!payload.aiAllowed}
                       demoOnly={!payload.aiAllowed}
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.price}
                       onGenerate={(operatorNotes, modelTier) => void runAiPriceAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
@@ -3977,6 +3979,7 @@ export function OrderDetailWorkspace({
                       busy={aiTechnicalRisksBusy}
                       disabled={!payload.aiAllowed}
                       demoOnly={!payload.aiAllowed}
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks}
                       onGenerate={(operatorNotes, modelTier) =>
                         void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
                     />
@@ -4002,6 +4005,7 @@ export function OrderDetailWorkspace({
                       busy={aiInspectionBusy}
                       disabled={!payload.aiAllowed}
                       demoOnly={!payload.aiAllowed}
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.inspection}
                       onGenerate={(operatorNotes, modelTier) =>
                         void runAiInspectionRecommendations(operatorNotes, modelTier)}
                     />
@@ -4044,6 +4048,7 @@ export function OrderDetailWorkspace({
                             ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja, ieteikumu vai cenas sadaļu"
                             : undefined
                       }
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.summary}
                       onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
@@ -4073,6 +4078,7 @@ export function OrderDetailWorkspace({
                       busy={aiIncidentsSummaryBusy}
                       disabled={!payload.aiAllowed}
                       demoOnly={!payload.aiAllowed}
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.incidents}
                       onGenerate={(operatorNotes, modelTier) =>
                         void runAiIncidentsSummary(operatorNotes, modelTier)}
                     />
@@ -4111,6 +4117,7 @@ export function OrderDetailWorkspace({
                             ? "Vispirms aizpildi nobraukuma tabulas avotos"
                             : undefined
                       }
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.mileage}
                       onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
                     />
                   </div>
@@ -4149,6 +4156,7 @@ export function OrderDetailWorkspace({
                             ? "Vispirms aizpildi avotu sadaļas"
                             : undefined
                       }
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison}
                       onGenerate={(operatorNotes, modelTier) =>
                         void runAiSourcesComparison(operatorNotes, modelTier)}
                     />

@@ -1,6 +1,6 @@
 /**
  * Admin: vēstures PDF → strukturēti dati.
- * Noklusējums: Claude Opus lasa pilnu PDF; lokālais parsers — fallback.
+ * Noklusējums: Claude Sonnet lasa pilnu PDF; lokālais parsers — fallback.
  */
 import { NextResponse } from "next/server";
 

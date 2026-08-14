@@ -53,7 +53,7 @@ export function formatGeminiSdkError(e: unknown): string {
   if (e instanceof Error) {
     const msg = e.message.trim();
     if (/404.*models\/gemini|is not found for API version/i.test(msg)) {
-      return `Gemini modelis nav pieejams (${msg.match(/models\/[^\s:]+/)?.[0] ?? "model"}) — izmanto gemini-2.5-flash / gemini-2.5-pro`;
+      return `Gemini modelis nav pieejams (${msg.match(/models\/[^\s:]+/)?.[0] ?? "model"}) — izmanto gemini-3-flash-preview / gemini-2.5-flash`;
     }
     if (/429|quota|rate limit|RESOURCE_EXHAUSTED/i.test(msg)) {
       return "Gemini API kvota pārsniegta — uzgaidi vai pārbaudi Google AI Studio billing";

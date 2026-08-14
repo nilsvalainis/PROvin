@@ -1,14 +1,15 @@
 /**
  * Admin ✨ kvalitātes līmenis:
- * `pro` → Claude Opus (smagā analīze),
- * `flash` → Claude Sonnet (vidējais),
+ * `pro` → Claude Opus (tikai kopsavilkums / apzināts klikšķis),
+ * `flash` → Claude Sonnet (sintēze: nobraukums, negadījumi, riski, cena),
  * `lite` → Claude Haiku + Sonnet gramatika (API saderība; UI slēpts),
- * `gemini` → Gemini 2.5 Pro (vieglāki komentāri),
- * `gemini-flash` → Gemini 2.5 Flash (vislētākais).
+ * `gemini` → Gemini 2.5 Pro (vidēji smagi Gemini lauki),
+ * `gemini-flash` → Gemini 3 Flash (noklusējums avotu komentāriem).
  */
 export type AiAdminModelTier = "pro" | "flash" | "lite" | "gemini" | "gemini-flash";
 
-export const AI_ADMIN_MODEL_TIER_DEFAULT: AiAdminModelTier = "pro";
+/** Globālais fallback, ja lauks nav norādīts — lētais līmenis, ne Opus. */
+export const AI_ADMIN_MODEL_TIER_DEFAULT: AiAdminModelTier = "gemini-flash";
 
 export function parseAiModelTier(raw: unknown): AiAdminModelTier {
   const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
@@ -24,7 +25,7 @@ export function isGeminiAdminTier(tier?: AiAdminModelTier | null): boolean {
 }
 
 export function aiAdminModelTierLabel(tier: AiAdminModelTier): string {
-  if (tier === "gemini-flash") return "Gemini 2.5 Flash";
+  if (tier === "gemini-flash") return "Gemini 3 Flash";
   if (tier === "gemini") return "Gemini 2.5 Pro";
   if (tier === "lite") return "Claude Haiku";
   if (tier === "flash") return "Claude Sonnet";

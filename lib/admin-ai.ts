@@ -48,6 +48,32 @@ const MAX_TOKENS_JSON = 32_000;
 /** Serverless timeout — nokrist pirms platformas limita, lai kļūda ir lasāma. */
 const REQUEST_TIMEOUT_MS = 180_000;
 
+/** Strukturētā PDF/CSDD ielase — Sonnet; failover iet uz Haiku, ne Opus. */
+export const CLAUDE_MODEL_EXTRACT = CLAUDE_MODEL_SONNET;
+
+function claudeSystemWithCache(text: string): Anthropic.TextBlockParam[] {
+  return [
+    {
+      type: "text",
+      text,
+      cache_control: { type: "ephemeral" },
+    },
+  ];
+}
+
+function logClaudeUsage(label: string, model: string, message: Anthropic.Message): void {
+  const u = message.usage;
+  console.info(`${LOG_PREFIX} usage`, {
+    label,
+    model,
+    promptVersion: PROVIN_AI_PROMPT_VERSION,
+    inputTokens: u.input_tokens,
+    outputTokens: u.output_tokens,
+    cacheCreationInputTokens: u.cache_creation_input_tokens ?? 0,
+    cacheReadInputTokens: u.cache_read_input_tokens ?? 0,
+  });
+}
+
 export function getAnthropicApiKeyFromEnv(): string | null {
   const k = process.env.ANTHROPIC_API_KEY?.trim();
   return k || null;
@@ -254,9 +280,11 @@ async function aiGenerateJsonFromPartsOnce(
   const message = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens ?? MAX_TOKENS_JSON,
-    system: hasSchema
-      ? `${opts.systemInstruction}${SCHEMA_MISSING_VALUES_SUFFIX}`
-      : `${opts.systemInstruction}${JSON_ONLY_SUFFIX}`,
+    system: claudeSystemWithCache(
+      hasSchema
+        ? `${opts.systemInstruction}${SCHEMA_MISSING_VALUES_SUFFIX}`
+        : `${opts.systemInstruction}${JSON_ONLY_SUFFIX}`,
+    ),
     messages: [{ role: "user", content: toContentBlocks(opts.parts) }],
     ...(opts.responseSchema
       ? {
@@ -267,6 +295,7 @@ async function aiGenerateJsonFromPartsOnce(
       : {}),
   });
 
+  logClaudeUsage("json", opts.model, message);
   const text = stripJsonFences(textFromMessage(message));
   if (!text) throw new Error("ai_empty_content");
   return text;
@@ -357,9 +386,10 @@ async function aiGenerateTextOnce(
   const message = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-    system: opts.systemInstruction,
+    system: claudeSystemWithCache(opts.systemInstruction),
     messages: [{ role: "user", content: opts.userPrompt }],
   });
+  logClaudeUsage("text", opts.model, message);
   const text = textFromMessage(message);
   if (!text) throw new Error("ai_empty_content");
   return text;
@@ -462,7 +492,7 @@ async function aiGenerateTextWithWebSearchOnce(
   const message = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-    system: opts.systemInstruction,
+    system: claudeSystemWithCache(opts.systemInstruction),
     messages: [{ role: "user", content: opts.userPrompt }],
     tools: [
       {
@@ -474,6 +504,7 @@ async function aiGenerateTextWithWebSearchOnce(
     ],
   });
 
+  logClaudeUsage("web_search", opts.model, message);
   const text = textFromMessage(message);
   if (!text) throw new Error("ai_empty_content");
   return text;

@@ -1,15 +1,18 @@
 export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
-export const GEMINI_MODEL_FLASH = "gemini-2.5-flash";
+/** Primārais lētais līmenis — Pro inteliģence Flash cenā (preview; 404 → 2.5 Flash). */
+export const GEMINI_MODEL_FLASH = "gemini-3-flash-preview";
+export const GEMINI_MODEL_FLASH_25 = "gemini-2.5-flash";
 export const GEMINI_MODEL_LEGACY_FLASH = "gemini-2.0-flash";
 
 /**
- * Failover tikai uz LĒTĀKIEM modeļiem — Flash 503 nedrīkst pāriet uz Pro.
- * Pro → 2.5 Flash → 2.0 Flash; Flash → 2.0 Flash; 2.0 paliek 2.0.
+ * Failover tikai uz LĒTĀKIEM modeļiem — Flash 503/404 nedrīkst pāriet uz Pro.
+ * Pro → 3 Flash → 2.5 Flash; 3 Flash → 2.5 Flash → 2.0 Flash.
  */
 export function geminiFailoverModels(primary: string): string[] {
   const cheaper: Record<string, readonly string[]> = {
-    [GEMINI_MODEL_PRO]: [GEMINI_MODEL_FLASH, GEMINI_MODEL_LEGACY_FLASH],
-    [GEMINI_MODEL_FLASH]: [GEMINI_MODEL_LEGACY_FLASH],
+    [GEMINI_MODEL_PRO]: [GEMINI_MODEL_FLASH, GEMINI_MODEL_FLASH_25],
+    [GEMINI_MODEL_FLASH]: [GEMINI_MODEL_FLASH_25, GEMINI_MODEL_LEGACY_FLASH],
+    [GEMINI_MODEL_FLASH_25]: [GEMINI_MODEL_LEGACY_FLASH],
     [GEMINI_MODEL_LEGACY_FLASH]: [],
   };
   const out: string[] = [];
@@ -31,7 +34,7 @@ export function geminiErrorMessage(e: unknown): string {
 export function isGeminiTransientError(e: unknown): boolean {
   const msg = geminiErrorMessage(e);
   if (!msg) return false;
-  return /503|429|500|502|504|UNAVAILABLE|RESOURCE_EXHAUSTED|SERVICE_UNAVAILABLE|rate\s*limit|quota|high\s+demand|experiencing\s+high\s+demand|overloaded|temporarily\s+unavailable|timeout|DEADLINE_EXCEEDED|ECONNRESET|ETIMEDOUT|fetch\s+failed|too\s+many\s+requests/i.test(
+  return /503|429|500|502|504|UNAVAILABLE|RESOURCE_EXHAUSTED|SERVICE_UNAVAILABLE|rate\s*limit|quota|high\s+demand|experiencing\s+high\s+demand|overloaded|temporarily\s+unavailable|timeout|DEADLINE_EXCEEDED|ECONNRESET|ETIMEDOUT|fetch\s+failed|too\s+many\s+requests|404.*models\/gemini|is not found for API version/i.test(
     msg,
   );
 }
