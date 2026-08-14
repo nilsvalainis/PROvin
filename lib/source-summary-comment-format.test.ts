@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyProvinReportCopyVocabulary,
-  normalizeProvinExpertGeminiComment,
+  normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
 
 describe("applyProvinReportCopyVocabulary", () => {
@@ -11,17 +11,17 @@ describe("applyProvinReportCopyVocabulary", () => {
   });
 });
 
-describe("normalizeProvinExpertGeminiComment", () => {
+describe("normalizeProvinExpertAiComment", () => {
   it("strips leading dash from paragraph openers and keeps bold hooks", () => {
     const raw = `- **Nobraukums.** Automašīna ar **120 000 km**.\n\n- Otrā rindkopa bez treknraksta.`;
-    const out = normalizeProvinExpertGeminiComment(raw);
+    const out = normalizeProvinExpertAiComment(raw);
     expect(out).toContain("**Nobraukums.**");
     expect(out).not.toMatch(/^-\s/m);
     expect(out).not.toMatch(/\n\n-\s/);
   });
 
   it("replaces automobīlis inside normalized paragraphs", () => {
-    const out = normalizeProvinExpertGeminiComment("**Tests.** Šis automobīlis ir ok.");
+    const out = normalizeProvinExpertAiComment("**Tests.** Šis automobīlis ir ok.");
     expect(out).toContain("automašīna");
     expect(out).not.toContain("automobīlis");
   });

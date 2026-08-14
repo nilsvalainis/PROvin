@@ -1,13 +1,13 @@
 /**
- * Copilot avotu PDF aģents (AutoDNA / CarVertical): PDF → deterministiskais parseris + Gemini →
+ * Copilot avotu PDF aģents (AutoDNA / CarVertical): PDF → deterministiskais parseris + AI →
  * Copilot darbības (nobraukums, negadījumi EUR, valsts, OFICIĀLĀ DĪLERA DATI lauki).
  *
  * Divi slāņi ar nolūku: teksta slāņa parseris dod stabilo skeletu (nekad neizdomā),
- * Gemini pielasa to, ko teksta slānis nespēj (netipisks izkārtojums, skenēti PDF, PR kodi).
+ * AI pielasa to, ko teksta slānis nespēj (netipisks izkārtojums, skenēti PDF, PR kodi).
  */
 import "server-only";
 
-import { GEMINI_MODEL_PRO, geminiGenerateJsonWithSchema, type GeminiUserPart } from "@/lib/admin-gemini";
+import { CLAUDE_MODEL_OPUS, aiGenerateJsonWithSchema, type AiUserPart } from "@/lib/admin-ai";
 import type { CopilotAction } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
@@ -70,13 +70,13 @@ function extractDeterministic(vendor: VendorReportVendor, text: string): VendorR
   return extractDealerReport(text);
 }
 
-async function runGeminiExtract(opts: {
+async function runAiExtract(opts: {
   vendor: VendorReportVendor;
   fileName: string;
   buffer: ArrayBuffer;
   local: VendorReportExtract;
 }): Promise<VendorReportExtract> {
-  const parts: GeminiUserPart[] = [
+  const parts: AiUserPart[] = [
     { inlineData: { mimeType: "application/pdf", data: Buffer.from(opts.buffer).toString("base64") } },
     {
       text: [
@@ -90,8 +90,8 @@ async function runGeminiExtract(opts: {
     },
   ];
 
-  const raw = await geminiGenerateJsonWithSchema({
-    model: GEMINI_MODEL_PRO,
+  const raw = await aiGenerateJsonWithSchema({
+    model: CLAUDE_MODEL_OPUS,
     systemInstruction: VENDOR_PDF_AGENT_SYSTEM,
     parts,
     responseSchema: VENDOR_PDF_AGENT_SCHEMA,
@@ -101,15 +101,15 @@ async function runGeminiExtract(opts: {
 }
 
 /**
- * Viena avota PDF → Copilot darbības. Gemini kļūme nav fatāla: paliek deterministiskais rezultāts.
+ * Viena avota PDF → Copilot darbības. AI kļūme nav fatāla: paliek deterministiskais rezultāts.
  */
 export async function runVendorPdfAgent(opts: {
   target: VendorReportVendor;
   fileName: string;
   buffer: ArrayBuffer;
   sourceBlocks: WorkspaceSourceBlocks;
-  /** `false` — izlaiž Gemini (tikai teksta slānis; testiem / atkāpes režīmam). */
-  useGemini?: boolean;
+  /** `false` — izlaiž AI (tikai teksta slānis; testiem / atkāpes režīmam). */
+  useAi?: boolean;
 }): Promise<VendorPdfAgentResult> {
   const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch(() => ({
     text: "",
@@ -127,19 +127,19 @@ export async function runVendorPdfAgent(opts: {
 
   const local = extractDeterministic(vendor, text);
 
-  // Dīlera / rūpnīcas izdrukas struktūra ir stabila: Gemini tur ir tikai rezerve, ja teksta
+  // Dīlera / rūpnīcas izdrukas struktūra ir stabila: AI tur ir tikai rezerve, ja teksta
   // slānis nedeva ne laukus, ne rindas (skenēts vai vēl neredzēts izkārtojums).
   const dealerLocalIsEnough =
     vendor === "dealer" && (Object.keys(local.vehicleInfo).length > 0 || local.mileage.length > 0);
 
   let ai = emptyVendorReportExtract(vendor);
-  if (opts.useGemini !== false && !dealerLocalIsEnough) {
+  if (opts.useAi !== false && !dealerLocalIsEnough) {
     try {
-      ai = await runGeminiExtract({ vendor, fileName: opts.fileName, buffer: opts.buffer, local });
+      ai = await runAiExtract({ vendor, fileName: opts.fileName, buffer: opts.buffer, local });
     } catch (e) {
       const detail = e instanceof Error ? e.message : "unknown";
-      console.warn(`${LOG_PREFIX} gemini_failed`, { fileName: opts.fileName, detail });
-      notes.push(`Gemini lasījums neizdevās (${detail}) — izmantots tikai PDF teksta slānis.`);
+      console.warn(`${LOG_PREFIX} ai_failed`, { fileName: opts.fileName, detail });
+      notes.push(`AI lasījums neizdevās (${detail}) — izmantots tikai PDF teksta slānis.`);
     }
   }
 
@@ -189,7 +189,7 @@ export type LtabPdfAgentResult = {
   notes: string[];
 };
 
-/** LTAB OCTA izziņa — tikai teksta slānis (formāts stabils; Gemini nav vajadzīgs). */
+/** LTAB OCTA izziņa — tikai teksta slānis (formāts stabils; AI nav vajadzīgs). */
 export async function runLtabPdfAgent(opts: {
   fileName: string;
   buffer: ArrayBuffer;

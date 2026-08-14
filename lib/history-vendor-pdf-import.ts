@@ -40,9 +40,9 @@ export type HistoryVendorPdfParseResult = {
     engine?: PdfIngestEngine;
     textBackend?: "pdf-parse" | "pdfjs" | "none";
     /** @deprecated use meta.engine */
-    extractionMethod?: "text_layer" | "gemini";
+    extractionMethod?: "text_layer" | "ai";
   };
-  /** Gemini: status alerts / market notes → avota komentāri. */
+  /** AI: status alerts / market notes → avota komentāri. */
   suggestedComments?: string;
 };
 

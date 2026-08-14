@@ -43,7 +43,7 @@ describe("admin-copilot-csdd", () => {
   });
 
   it("mergeCsddFieldsFillEmpty fills empty CSDD from HB5743-style parse", () => {
-    const { fields } = buildCsddFieldsFromPdfSources({ textHint: HB5743_CSDD_RAW, geminiRaw: "" });
+    const { fields } = buildCsddFieldsFromPdfSources({ textHint: HB5743_CSDD_RAW, aiRaw: "" });
     const merged = mergeCsddFieldsFillEmpty(emptyCsddFields(), fields, HB5743_CSDD_RAW);
     expect(merged.registrationNumber).toBe("HB5743");
     expect(merged.makeModel).toContain("HONDA");
@@ -55,7 +55,7 @@ describe("admin-copilot-csdd", () => {
   });
 
   it("does not overwrite existing CSDD scalar fields", () => {
-    const { fields } = buildCsddFieldsFromPdfSources({ textHint: HB5743_CSDD_RAW, geminiRaw: "" });
+    const { fields } = buildCsddFieldsFromPdfSources({ textHint: HB5743_CSDD_RAW, aiRaw: "" });
     const existing = { ...emptyCsddFields(), registrationNumber: "KG982", comments: "Eksperta piezīme" };
     const merged = mergeCsddFieldsFillEmpty(existing, fields, HB5743_CSDD_RAW);
     expect(merged.registrationNumber).toBe("KG982");

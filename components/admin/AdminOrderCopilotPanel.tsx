@@ -34,7 +34,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   sessionId: string;
-  geminiAllowed: boolean;
+  aiAllowed: boolean;
   getSourceBlocks: () => WorkspaceSourceBlocks;
   applyPatchedBlocks: (patched: Partial<WorkspaceSourceBlocks>, changedKeys: CopilotSourceKey[]) => void;
   restoreBlocksSnapshot: (snapshot: WorkspaceSourceBlocks) => void;
@@ -209,7 +209,7 @@ export function AdminOrderCopilotPanel({
   open,
   onClose,
   sessionId,
-  geminiAllowed,
+  aiAllowed,
   getSourceBlocks,
   applyPatchedBlocks,
   restoreBlocksSnapshot,
@@ -392,7 +392,7 @@ export function AdminOrderCopilotPanel({
   );
 
   const send = useCallback(async () => {
-    if (busy || !geminiAllowed) return;
+    if (busy || !aiAllowed) return;
     const text = draft.trim();
     if (!text && files.length === 0) return;
 
@@ -440,8 +440,8 @@ export function AdminOrderCopilotPanel({
         const detail = typeof data.detail === "string" ? data.detail : "";
         let reason: string;
         if (data.error === "unauthorized") reason = "Nav admin piekļuves";
-        else if (data.error === "missing_gemini_key") reason = "Nav GEMINI_API_KEY";
-        else if (data.error === "gemini_demo_only") reason = "Gemini tikai DEMO pasūtījumiem";
+        else if (data.error === "missing_ai_key") reason = "Nav ANTHROPIC_API_KEY";
+        else if (data.error === "ai_demo_only") reason = "AI tikai DEMO pasūtījumiem";
         else if (data.error === "file_too_large" || data.error === "too_many_files") {
           reason = detail || "PDF limits pārsniegts";
         } else if (data.error === "blob_fetch_failed") {
@@ -499,7 +499,7 @@ export function AdminOrderCopilotPanel({
     } finally {
       setBusy(false);
     }
-  }, [allowedSources, busy, draft, files, geminiAllowed, getSourceBlocks, historyForApi, mergePatch, sessionId]);
+  }, [allowedSources, busy, draft, files, aiAllowed, getSourceBlocks, historyForApi, mergePatch, sessionId]);
 
   const confirmActions = useCallback(
     async (actions: CopilotAction[]) => {
@@ -710,7 +710,7 @@ export function AdminOrderCopilotPanel({
         {busy ? (
           <div className="flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-            Gemini lasa / aizpilda fonā…
+            AI lasa / aizpilda fonā…
           </div>
         ) : null}
       </div>
@@ -739,7 +739,7 @@ export function AdminOrderCopilotPanel({
                   key={source}
                   type="button"
                   aria-pressed={active}
-                  disabled={busy || !geminiAllowed}
+                  disabled={busy || !aiAllowed}
                   onClick={() => toggleSource(source)}
                   className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
                     active
@@ -816,14 +816,14 @@ export function AdminOrderCopilotPanel({
             autoCapitalize="off"
             className="min-h-[4.5rem] w-full resize-none border-0 bg-transparent px-1.5 py-1 text-sm leading-snug text-[var(--color-apple-text)] outline-none placeholder:text-[var(--color-provin-muted)] dark:text-zinc-100"
             placeholder={
-              geminiAllowed
+              aiAllowed
                 ? files.length
                   ? "Piem. izvelc datus no PDF…"
                   : "Uzraksti uzdevumu vai pievieno PDF…"
-                : "Gemini nav pieejams šim pasūtījumam"
+                : "AI nav pieejams šim pasūtījumam"
             }
             value={draft}
-            disabled={busy || !geminiAllowed}
+            disabled={busy || !aiAllowed}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -837,7 +837,7 @@ export function AdminOrderCopilotPanel({
               type="button"
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2.5 text-xs font-medium text-[var(--color-apple-text)] hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
               title="Pievienot PDF (vairākus)"
-              disabled={busy || !geminiAllowed || files.length >= 8}
+              disabled={busy || !aiAllowed || files.length >= 8}
               onClick={() => fileRef.current?.click()}
             >
               <FileUp className="h-3.5 w-3.5" aria-hidden />
@@ -846,7 +846,7 @@ export function AdminOrderCopilotPanel({
             <button
               type="button"
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
-              disabled={busy || !geminiAllowed || allowedSources.length === 0 || (!draft.trim() && files.length === 0)}
+              disabled={busy || !aiAllowed || allowedSources.length === 0 || (!draft.trim() && files.length === 0)}
               onClick={() => void send()}
               aria-label="Sūtīt un turpināt darbu"
               title="Sūtīt — logs samazinās, Tu turpini darbu"
@@ -858,7 +858,7 @@ export function AdminOrderCopilotPanel({
         </div>
 
         <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          Gemini raksta tikai ieslēgtajos avotos
+          AI raksta tikai ieslēgtajos avotos
           {files.length > 0 ? ` · ${files.length}/8 PDF` : ""}.
         </p>
       </div>

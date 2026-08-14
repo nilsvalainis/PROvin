@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyCopilotActions, buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import type { CopilotAction } from "@/lib/admin-copilot-types";
-import { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
+import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 
 describe("applyCopilotActions", () => {
   it("auto-applies high-confidence AutoDNA incident", () => {
@@ -105,7 +105,7 @@ describe("applyCopilotActions", () => {
     ];
     const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
     expect(result.applied).toHaveLength(1);
-    expect(result.sourceBlocks.autodna.geminiContextRaw).toContain("Type code: 8V");
+    expect(result.sourceBlocks.autodna.aiContextRaw).toContain("Type code: 8V");
   });
 });
 
@@ -197,9 +197,9 @@ describe("enrichCopilotActionCountries / apply country cross-fill", () => {
   });
 });
 
-describe("parseCopilotGeminiPayload", () => {
+describe("parseCopilotAiPayload", () => {
   it("parses actions", () => {
-    const r = parseCopilotGeminiPayload(
+    const r = parseCopilotAiPayload(
       JSON.stringify({
         reply: "Pievienoju.",
         clarificationNeeded: "",

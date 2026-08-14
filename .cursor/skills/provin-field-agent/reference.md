@@ -2,7 +2,7 @@
 
 ## `provinFieldAgentPrompt(activeField, taskBlock)`
 
-Runtime shape in `lib/admin-gemini-prompts.ts`:
+Runtime shape in `lib/admin-ai-prompts.ts`:
 
 ```
 ${PROVIN_FIELD_AGENT_SYSTEM}
@@ -16,13 +16,13 @@ ${taskBlock}
 
 | Export | Admin field |
 |--------|-------------|
-| `GEMINI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei |
-| `GEMINI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets |
-| `GEMINI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums |
-| `GEMINI_SUMMARY_ANALYSIS_SYSTEM` | 2. Kopsavilkums (+ email rules) |
-| `GEMINI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs |
-| `GEMINI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums |
-| `geminiSourceCommentSystemPrompt(label)` | Avota „Komentāri” |
+| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei |
+| `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets |
+| `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums |
+| `AI_SUMMARY_ANALYSIS_SYSTEM` | 2. Kopsavilkums (+ email rules) |
+| `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs |
+| `AI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums |
+| `aiSourceCommentSystemPrompt(label)` | Avota „Komentāri” |
 
 ## Extensions beyond core prompt (in repo today)
 

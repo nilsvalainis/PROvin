@@ -50,15 +50,15 @@ export function parseVehicleAIExtraction(raw: string): VehicleAIExtraction {
   try {
     parsed = JSON.parse(jsonText);
   } catch {
-    throw new Error("gemini_invalid_json");
+    throw new Error("ai_invalid_json");
   }
-  if (!parsed || typeof parsed !== "object") throw new Error("gemini_invalid_json");
+  if (!parsed || typeof parsed !== "object") throw new Error("ai_invalid_json");
 
   const root = parsed as Record<string, unknown>;
   const meta = root.vehicle_metadata;
   const metrics = root.extracted_metrics;
   if (!meta || typeof meta !== "object" || !metrics || typeof metrics !== "object") {
-    throw new Error("gemini_invalid_json");
+    throw new Error("ai_invalid_json");
   }
 
   const m = meta as Record<string, unknown>;

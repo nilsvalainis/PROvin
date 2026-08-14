@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
   adminRichHtmlToPdfSafeHtml,
-  geminiExpertSourceCommentToRichHtml,
-  geminiPlainTextToRichHtml,
-  normalizeGeminiClientPlainText,
-  normalizeGeminiExpertParagraphText,
+  aiExpertSourceCommentToRichHtml,
+  aiPlainTextToRichHtml,
+  normalizeAiClientPlainText,
+  normalizeAiExpertParagraphText,
   normalizePastedAdminRichHtml,
   promoteInlineStyleSemantics,
 } from "@/lib/admin-rich-comment-html";
 
-describe("normalizeGeminiClientPlainText", () => {
+describe("normalizeAiClientPlainText", () => {
   it("converts asterisk bullets to hyphens", () => {
-    expect(normalizeGeminiClientPlainText("* Pirmais\n* Otrais")).toBe("- Pirmais\n- Otrais");
+    expect(normalizeAiClientPlainText("* Pirmais\n* Otrais")).toBe("- Pirmais\n- Otrais");
   });
 
   it("strips markdown bold markers", () => {
-    expect(normalizeGeminiClientPlainText("**Bīstams** risks")).toBe("Bīstams risks");
+    expect(normalizeAiClientPlainText("**Bīstams** risks")).toBe("Bīstams risks");
   });
 });
 
@@ -93,26 +93,26 @@ describe("promoteInlineStyleSemantics", () => {
   });
 });
 
-describe("geminiPlainTextToRichHtml", () => {
+describe("aiPlainTextToRichHtml", () => {
   it("normalizes then wraps lines", () => {
-    expect(geminiPlainTextToRichHtml("* Punkts")).toBe("- Punkts");
+    expect(aiPlainTextToRichHtml("* Punkts")).toBe("- Punkts");
   });
 });
 
-describe("normalizeGeminiExpertParagraphText", () => {
+describe("normalizeAiExpertParagraphText", () => {
   it("strips leading hyphen bullets", () => {
-    expect(normalizeGeminiExpertParagraphText("- Pirmais punkts. Turpinājums.\n- Otrais punkts. Teksts.")).toContain(
+    expect(normalizeAiExpertParagraphText("- Pirmais punkts. Turpinājums.\n- Otrais punkts. Teksts.")).toContain(
       "**Pirmais punkts.**",
     );
-    expect(normalizeGeminiExpertParagraphText("- Pirmais punkts. Turpinājums.")).not.toMatch(/^- /m);
+    expect(normalizeAiExpertParagraphText("- Pirmais punkts. Turpinājums.")).not.toMatch(/^- /m);
   });
 
   it("converts ANOMĀLIJA prefix to bold hook", () => {
-    expect(normalizeGeminiExpertParagraphText("ANOMĀLIJA: nobraukums")).toContain("**Anomālija:**");
+    expect(normalizeAiExpertParagraphText("ANOMĀLIJA: nobraukums")).toContain("**Anomālija:**");
   });
 
   it("auto-bolds first sentence when markdown hooks are missing", () => {
-    const out = normalizeGeminiExpertParagraphText(
+    const out = normalizeAiExpertParagraphText(
       "Virsbūves pārbaude ar krāsas mērītāju. Automašīnai jāveic mērījumi uz šuvēm.",
     );
     expect(out).toMatch(/^\*\*Virsbūves pārbaude ar krāsas mērītāju\.\*\*/);
@@ -120,16 +120,16 @@ describe("normalizeGeminiExpertParagraphText", () => {
   });
 });
 
-describe("geminiExpertSourceCommentToRichHtml", () => {
+describe("aiExpertSourceCommentToRichHtml", () => {
   it("preserves bold and strips list prefixes at line start", () => {
-    const html = geminiExpertSourceCommentToRichHtml("**Nobraukums.**\n\n- Fakts bez saraksta.");
+    const html = aiExpertSourceCommentToRichHtml("**Nobraukums.**\n\n- Fakts bez saraksta.");
     expect(html).toContain("<strong>Nobraukums.</strong>");
     expect(html).not.toMatch(/<br \/>- Fakts/);
     expect(html).toContain("Fakts bez saraksta.");
   });
 
   it("formats inspection-style hyphen lists into bold openers", () => {
-    const html = geminiExpertSourceCommentToRichHtml(
+    const html = aiExpertSourceCommentToRichHtml(
       "- Virsbūves pārbaude ar krāsas mērītāju. Jāmēra šuves.\n- Neatkarīga diagnostika servisā. Jāpārbauda kļūdu kodi.",
     );
     expect(html).toContain("<strong>Virsbūves pārbaude ar krāsas mērītāju.</strong>");

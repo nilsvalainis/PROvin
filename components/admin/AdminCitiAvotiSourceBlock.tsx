@@ -2,7 +2,7 @@
 
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
-import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
+import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
   citiAvotiSectionLabel,
   emptyCitiAvotiSection,
@@ -34,7 +34,7 @@ type Props = {
   sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
-  geminiComment?: (sectionIndex: number) => AdminGeminiSourceCommentSlot;
+  aiComment?: (sectionIndex: number) => AdminAiSourceCommentSlot;
 };
 
 function sectionFromVendor(
@@ -58,7 +58,7 @@ export function AdminCitiAvotiSourceBlock({
   sessionId,
   pdfInclude,
   onPdfIncludeChange,
-  geminiComment,
+  aiComment,
 }: Props) {
   const sections = (value.sections ?? []).length > 0 ? value.sections! : [emptyCitiAvotiSection()];
   const total = sections.length;
@@ -201,7 +201,7 @@ export function AdminCitiAvotiSourceBlock({
                   readOnly={readOnly}
                   disabled={disabled}
                   sessionId={sessionId}
-                  geminiComment={geminiComment?.(index)}
+                  aiComment={aiComment?.(index)}
                   onChange={(vendor) => updateSection(index, sectionFromVendor(section, vendor))}
                 />
               </div>

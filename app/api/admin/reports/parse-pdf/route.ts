@@ -1,13 +1,13 @@
 /**
  * Admin: vēstures PDF → strukturēti dati.
- * Noklusējums: Gemini Pro lasa pilnu PDF; lokālais parsers — fallback.
+ * Noklusējums: Claude Opus lasa pilnu PDF; lokālais parsers — fallback.
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
 import type { HistoryVendorPdfParseResult } from "@/lib/history-vendor-pdf-import";
-import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
+import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import { logPdfExtractResult } from "@/lib/pdf-text-extract-server";
 import {
@@ -15,7 +15,7 @@ import {
   csddParseHasData,
   vendorParseHasData,
   type CsddPdfParseResult,
-} from "@/lib/source-pdf-gemini-extract";
+} from "@/lib/source-pdf-ai-extract";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -151,18 +151,21 @@ export async function POST(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error(`${LOG_PREFIX} failed`, { fileName: file.name, target, msg });
-    if (msg === "missing_gemini_key") {
-      return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+    if (msg === "missing_ai_key") {
+      return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
     }
-    if (msg === "pdf_too_large_for_gemini") {
+    if (msg === "pdf_too_large_for_ai") {
       return NextResponse.json(
-        { error: "file_too_large", detail: "PDF pārāk liels Gemini inline analīzei (maks. ~18 MB)." },
+        {
+          error: "file_too_large",
+          detail: `PDF pārāk liels AI inline analīzei (maks. ~${Math.round(PDF_AI_INLINE_MAX_BYTES / (1024 * 1024))} MB).`,
+        },
         { status: 413 },
       );
     }
-    if (msg === "gemini_invalid_json") {
+    if (msg === "ai_invalid_json") {
       return NextResponse.json(
-        { error: "extraction_failed", detail: "Gemini atgrieza nevalīdu JSON." },
+        { error: "extraction_failed", detail: "AI atgrieza nevalīdu JSON." },
         { status: 502 },
       );
     }

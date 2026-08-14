@@ -7,15 +7,15 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
-import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
+import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
+import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import type { CopilotAction, CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { parseSourcePdfBlobRefs } from "@/lib/admin-source-pdf-blob-constants";
 import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
 import { runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
-import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
+import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
 export const maxDuration = 120;
@@ -113,16 +113,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_source_blocks" }, { status: 400 });
   }
 
-  // Oficiālā dīlera un vēstures atskaišu teksta slānis tiek nolasīts lokāli, tāpēc Gemini
+  // Oficiālā dīlera un vēstures atskaišu teksta slānis tiek nolasīts lokāli, tāpēc AI
   // nepieejamība nav iemesls atteikt augšupielādi — tā kļūst par kļūdu tikai tad, ja lokālais
   // parseris no šī PDF neizvelk nevienu ierakstu.
-  let geminiBlocked: { error: string; detail?: string } | null = null;
+  let aiBlocked: { error: string; detail?: string } | null = null;
   if (!isLtab) {
-    if (!getGeminiApiKeyFromEnv()) {
-      geminiBlocked = { error: "missing_gemini_key", detail: "Serverī nav GEMINI_API_KEY" };
+    if (!getAnthropicApiKeyFromEnv()) {
+      aiBlocked = { error: "missing_ai_key", detail: "Serverī nav ANTHROPIC_API_KEY" };
     } else {
-      const guard = await assertGeminiAllowedForSession(sessionId);
-      if (!guard.ok) geminiBlocked = { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) };
+      const guard = await assertAiAllowedForSession(sessionId);
+      if (!guard.ok) aiBlocked = { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) };
     }
   }
 
@@ -146,10 +146,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "blob_fetch_failed", detail }, { status: 502 });
   }
 
-  if (buffer.byteLength > PDF_GEMINI_INLINE_MAX_BYTES) {
+  if (buffer.byteLength > PDF_AI_INLINE_MAX_BYTES) {
     await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
     return NextResponse.json(
-      { error: "file_too_large", detail: "Pārāk liels Gemini inline (maks. ~18 MB)" },
+      {
+        error: "file_too_large",
+        detail: `Pārāk liels AI inline (maks. ~${Math.round(PDF_AI_INLINE_MAX_BYTES / (1024 * 1024))} MB)`,
+      },
       { status: 413 },
     );
   }
@@ -189,15 +192,15 @@ export async function POST(req: Request) {
       fileName,
       buffer,
       sourceBlocks,
-      useGemini: !geminiBlocked,
+      useAi: !aiBlocked,
     });
 
-    if (agent.actions.length === 0 && geminiBlocked) {
-      const reason = geminiBlocked.detail ?? geminiBlocked.error;
+    if (agent.actions.length === 0 && aiBlocked) {
+      const reason = aiBlocked.detail ?? aiBlocked.error;
       return NextResponse.json(
         {
-          error: geminiBlocked.error,
-          detail: `PDF teksta slānis nedeva nevienu ierakstu, un Gemini nav pieejams (${reason})`,
+          error: aiBlocked.error,
+          detail: `PDF teksta slānis nedeva nevienu ierakstu, un AI nav pieejams (${reason})`,
         },
         { status: 503 },
       );
@@ -205,10 +208,10 @@ export async function POST(req: Request) {
 
     const result = applyCopilotActions(sourceBlocks, agent.actions, { onlyAuto: false });
     const changedKeys: CopilotSourceKey[] = result.changedKeys;
-    const notes = geminiBlocked
+    const notes = aiBlocked
       ? [
           ...agent.notes,
-          `Gemini izlaists (${geminiBlocked.detail ?? geminiBlocked.error}) — izmantots tikai PDF teksta slānis.`,
+          `AI izlaists (${aiBlocked.detail ?? aiBlocked.error}) — izmantots tikai PDF teksta slānis.`,
         ]
       : agent.notes;
 
@@ -234,8 +237,8 @@ export async function POST(req: Request) {
   } catch (e) {
     const detail = e instanceof Error ? e.message : "unknown";
     console.error(`${LOG_PREFIX} failed`, detail);
-    if (detail === "missing_gemini_key") {
-      return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+    if (detail === "missing_ai_key") {
+      return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
     }
     return NextResponse.json({ error: "extraction_failed", detail }, { status: 502 });
   } finally {

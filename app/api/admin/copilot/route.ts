@@ -4,18 +4,24 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
-import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
+import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
+import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { isLikelyCsddPdfText, mergeCsddFieldsFillEmpty } from "@/lib/admin-copilot-csdd";
-import { runOrderCopilotGemini } from "@/lib/admin-copilot-gemini";
+import { runOrderCopilotAi } from "@/lib/admin-copilot-ai";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey, isCopilotSourceKey } from "@/lib/admin-copilot-types";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
-import { PDF_GEMINI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES, PDF_MAX_FILES, PDF_MAX_TOTAL_BYTES } from "@/lib/pdf-api-limits";
+import {
+  PDF_AI_INLINE_MAX_BYTES,
+  PDF_AI_INLINE_MAX_TOTAL_BYTES,
+  PDF_MAX_FILE_BYTES,
+  PDF_MAX_FILES,
+  PDF_MAX_TOTAL_BYTES,
+} from "@/lib/pdf-api-limits";
 import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
-import { csddParseHasData } from "@/lib/source-pdf-gemini-extract";
+import { csddParseHasData } from "@/lib/source-pdf-ai-extract";
 import { detectVendorFromReport, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import {
   parseSourcePdfBlobRefs,
@@ -118,8 +124,8 @@ export async function POST(req: Request) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  if (!getGeminiApiKeyFromEnv()) {
-    return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+  if (!getAnthropicApiKeyFromEnv()) {
+    return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
   }
 
   const contentType = req.headers.get("content-type") || "";
@@ -165,6 +171,7 @@ export async function POST(req: Request) {
         );
       }
       let totalBytes = 0;
+      let inlineBytes = 0;
       for (const file of unique) {
         const name = (file.name || "report.pdf").toLowerCase();
         const mime = (file.type || "").toLowerCase();
@@ -194,9 +201,22 @@ export async function POST(req: Request) {
           );
         }
         const buffer = await file.arrayBuffer();
-        if (buffer.byteLength > PDF_GEMINI_INLINE_MAX_BYTES) {
+        if (buffer.byteLength > PDF_AI_INLINE_MAX_BYTES) {
           return NextResponse.json(
-            { error: "file_too_large", detail: `${file.name}: pārāk liels Gemini inline (maks. ~18 MB)` },
+            {
+              error: "file_too_large",
+              detail: `${file.name}: pārāk liels AI inline (maks. ~${Math.round(PDF_AI_INLINE_MAX_BYTES / (1024 * 1024))} MB)`,
+            },
+            { status: 413 },
+          );
+        }
+        inlineBytes += buffer.byteLength;
+        if (inlineBytes > PDF_AI_INLINE_MAX_TOTAL_BYTES) {
+          return NextResponse.json(
+            {
+              error: "file_too_large",
+              detail: `Kopā pārāk daudz PDF vienam AI pieprasījumam (maks. ~${Math.round(PDF_AI_INLINE_MAX_TOTAL_BYTES / (1024 * 1024))} MB) — sadali pa vairākiem izsaukumiem`,
+            },
             { status: 413 },
           );
         }
@@ -249,7 +269,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_source_blocks" }, { status: 400 });
   }
 
-  const guard = await assertGeminiAllowedForSession(sessionId);
+  const guard = await assertAiAllowedForSession(sessionId);
   if (!guard.ok) {
     return NextResponse.json(
       { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) },
@@ -329,7 +349,7 @@ export async function POST(req: Request) {
         csddImportNotes.some((n) => n.includes("aizpildīti"))) ||
       (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0);
 
-    const gemini = skipGenericCopilot
+    const ai = skipGenericCopilot
       ? {
           reply:
             [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
@@ -337,7 +357,7 @@ export async function POST(req: Request) {
           actions: [] as CopilotAction[],
           clarificationNeeded: "",
         }
-      : await runOrderCopilotGemini({
+      : await runOrderCopilotAi({
           message,
           sourceBlocks: workingBlocks,
           allowedSources,
@@ -345,12 +365,12 @@ export async function POST(req: Request) {
           pdfs: remainingPdfs,
         });
 
-    const blocked = gemini.actions.filter((a) => !allowedSet.has(a.source));
-    const allowedActions = gemini.actions.filter((a) => allowedSet.has(a.source));
+    const blocked = ai.actions.filter((a) => !allowedSet.has(a.source));
+    const allowedActions = ai.actions.filter((a) => allowedSet.has(a.source));
 
     const autoResult = applyCopilotActions(workingBlocks, allowedActions, {
       onlyAuto: true,
-      clarificationNeeded: gemini.clarificationNeeded,
+      clarificationNeeded: ai.clarificationNeeded,
     });
     workingBlocks = autoResult.sourceBlocks;
 
@@ -366,7 +386,7 @@ export async function POST(req: Request) {
     ];
 
     const shouldPatch = applyMode === "auto" && (autoResult.applied.length > 0 || changedKeys.size > 0);
-    const replyParts = [gemini.reply.trim()];
+    const replyParts = [ai.reply.trim()];
     if (!skipGenericCopilot) {
       if (vendorAgentNotes.length > 0) replyParts.push(vendorAgentNotes.filter(Boolean).join("\n"));
       if (csddImportNotes.length > 0) replyParts.push(csddImportNotes.join("\n"));
@@ -374,7 +394,7 @@ export async function POST(req: Request) {
 
     console.info(`${LOG_PREFIX} ok`, {
       sessionId: sessionId.slice(0, 12),
-      actions: gemini.actions.length,
+      actions: ai.actions.length,
       allowedSources,
       auto: autoResult.applied.length,
       confirm: needsConfirm.length,
@@ -389,8 +409,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       reply: replyParts.filter(Boolean).join("\n\n"),
-      clarificationNeeded: gemini.clarificationNeeded,
-      actions: gemini.actions.map((a) => ({ ...a, label: describeAction(a) })),
+      clarificationNeeded: ai.clarificationNeeded,
+      actions: ai.actions.map((a) => ({ ...a, label: describeAction(a) })),
       autoApplied: shouldPatch
         ? [...vendorAgentApplied, ...autoResult.applied].map((a) => ({ ...a, label: describeAction(a) }))
         : [],
@@ -404,11 +424,11 @@ export async function POST(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error(`${LOG_PREFIX} failed`, msg);
-    if (msg === "missing_gemini_key") {
-      return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+    if (msg === "missing_ai_key") {
+      return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
     }
-    if (msg === "gemini_invalid_json") {
-      return NextResponse.json({ error: "extraction_failed", detail: "Gemini atgrieza nederīgu JSON" }, { status: 502 });
+    if (msg === "ai_invalid_json") {
+      return NextResponse.json({ error: "extraction_failed", detail: "AI atgrieza nederīgu JSON" }, { status: 502 });
     }
     return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
   } finally {
@@ -434,7 +454,7 @@ export async function PUT(req: Request) {
   const sessionId = str(b.sessionId).trim();
   if (!sessionId) return NextResponse.json({ error: "missing_session" }, { status: 400 });
 
-  const guard = await assertGeminiAllowedForSession(sessionId);
+  const guard = await assertAiAllowedForSession(sessionId);
   if (!guard.ok) {
     return NextResponse.json(
       { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) },
@@ -447,10 +467,10 @@ export async function PUT(req: Request) {
   const allowedSources = parseAllowedSources(b.allowedSources);
 
   const actionsRaw = Array.isArray(b.actions) ? b.actions : [];
-  const { parseCopilotGeminiPayload } = await import("@/lib/admin-copilot-parse");
+  const { parseCopilotAiPayload } = await import("@/lib/admin-copilot-parse");
   let actions: CopilotAction[] = [];
   try {
-    const parsed = parseCopilotGeminiPayload(
+    const parsed = parseCopilotAiPayload(
       JSON.stringify({ reply: "", clarificationNeeded: "", actions: actionsRaw }),
     );
     actions = parsed.actions;

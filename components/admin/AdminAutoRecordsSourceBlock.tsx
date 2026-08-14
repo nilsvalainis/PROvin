@@ -2,9 +2,9 @@
 
 import {
   AdminSourceCommentField,
-  type AdminGeminiSourceCommentSlot,
+  type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
-import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -93,8 +93,8 @@ type Props = {
   ) => void;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
-  geminiComment?: AdminGeminiSourceCommentSlot;
-  geminiServiceHistory?: AdminGeminiSourceCommentSlot;
+  aiComment?: AdminAiSourceCommentSlot;
+  aiServiceHistory?: AdminAiSourceCommentSlot;
   photosPersistenceEnabled?: boolean;
   onAutoRecordsPhotoGroupsStructuralCommit?: (
     next: AutoRecordsBlockState["photoGroups"],
@@ -112,8 +112,8 @@ export function AdminAutoRecordsSourceBlock({
   applyPatchedBlocks,
   pdfInclude,
   onPdfIncludeChange,
-  geminiComment,
-  geminiServiceHistory,
+  aiComment,
+  aiServiceHistory,
   photosPersistenceEnabled = false,
   onAutoRecordsPhotoGroupsStructuralCommit,
 }: Props) {
@@ -591,7 +591,7 @@ export function AdminAutoRecordsSourceBlock({
             readOnly={readOnly}
             disabled={disabled}
             compact
-            gemini={geminiServiceHistory}
+            ai={aiServiceHistory}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
             aria-label={`${DEALER_ARIA} — Servisa vēsture`}
           />
@@ -614,16 +614,16 @@ export function AdminAutoRecordsSourceBlock({
             readOnly={readOnly}
             disabled={disabled}
             compact
-            gemini={geminiComment}
+            ai={aiComment}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
             aria-label={`${DEALER_ARIA} — komentāri`}
           />
-          <AdminGeminiContextRawField
-            value={value.geminiContextRaw}
-            onChange={(next) => onChange({ ...value, geminiContextRaw: next })}
+          <AdminAiContextRawField
+            value={value.aiContextRaw}
+            onChange={(next) => onChange({ ...value, aiContextRaw: next })}
             readOnly={readOnly}
             disabled={disabled}
-            ariaLabel={`${DEALER_ARIA} — Gemini AI papildu konteksts`}
+            ariaLabel={`${DEALER_ARIA} — AI papildu konteksts`}
           />
         </div>
       </div>

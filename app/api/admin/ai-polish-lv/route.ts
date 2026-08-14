@@ -1,10 +1,10 @@
 /**
- * Admin: latviešu gramatikas labošana caur Gemini (flash). Atslēga: `process.env.GEMINI_API_KEY` (tikai serverī).
+ * Admin: latviešu gramatikas labošana caur AI (flash). Atslēga: `process.env.ANTHROPIC_API_KEY` (tikai serverī).
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { polishLatvianTextWithGemini } from "@/lib/admin-gemini-polish";
-import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
+import { polishLatvianTextWithAi } from "@/lib/admin-ai-polish";
+import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -17,8 +17,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    if (!getGeminiApiKeyFromEnv()) {
-      return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+    if (!getAnthropicApiKeyFromEnv()) {
+      return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
     }
 
     let body: unknown;
@@ -36,11 +36,11 @@ export async function POST(req: Request) {
     }
 
     try {
-      const polished = await polishLatvianTextWithGemini(text);
+      const polished = await polishLatvianTextWithAi(text);
       return NextResponse.json({ text: polished });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
-      console.error("[ai-polish-lv] Gemini:", msg);
+      console.error("[ai-polish-lv] AI:", msg);
       return NextResponse.json({ error: "polish_failed", detail: msg }, { status: 502 });
     }
   } catch (e) {

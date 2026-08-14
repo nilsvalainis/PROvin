@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AdminOrderDetail, AdminOrderRow } from "@/lib/admin-orders";
 
-/** Stripe Checkout session meta — pietiek PATCH/Gemini guard validācijai bez pilna retrieve. */
+/** Stripe Checkout session meta — pietiek PATCH/AI guard validācijai bez pilna retrieve. */
 export type StripeCheckoutSessionMeta = {
   id: string;
   paymentStatus: string;

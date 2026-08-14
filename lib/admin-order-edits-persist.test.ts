@@ -34,7 +34,7 @@ describe("pickOrderEditsForHydration", () => {
 
   it("local shorter internalComment wins over longer server (manual fix after AI)", () => {
     const server: OrderDraftState = {
-      orderEdits: { internalComment: "Garš Gemini ģenerēts iekšējais komentārs ar papildu teikumiem." },
+      orderEdits: { internalComment: "Garš AI ģenerēts iekšējais komentārs ar papildu teikumiem." },
       workspace: null,
       updatedAt: "2026-06-01T12:00:00.000Z",
     };

@@ -103,14 +103,14 @@ export function AdminOrderDetailView({
   serverOrderDraft,
   serverWorkspaceJson,
   orderDraftPersistenceEnabled,
-  geminiAllowed,
+  aiAllowed,
   autodnaApiConfigured = false,
 }: {
   order: AdminOrderDetailClientModel;
   serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
-  geminiAllowed: boolean;
+  aiAllowed: boolean;
   autodnaApiConfigured?: boolean;
 }) {
   const [edits, setEdits] = useState<OrderEdits>(() => orderEditsFromServerDraft(serverOrderDraft));
@@ -772,7 +772,7 @@ export function AdminOrderDetailView({
         payload={{
           sessionId: order.id,
           isDemo: Boolean(order.isDemo),
-          geminiAllowed,
+          aiAllowed,
           vin: mergedVin.trim() || null,
           created: order.created,
           amountTotal: order.amountTotal,

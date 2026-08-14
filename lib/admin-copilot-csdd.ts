@@ -94,8 +94,8 @@ export function mergeCsddFieldsFillEmpty(
     next = { ...next, opacityCoefficient: incoming.opacityCoefficient };
   }
 
-  if (!next.geminiContextRaw.trim() && incoming.geminiContextRaw.trim()) {
-    next = { ...next, geminiContextRaw: incoming.geminiContextRaw };
+  if (!next.aiContextRaw.trim() && incoming.aiContextRaw.trim()) {
+    next = { ...next, aiContextRaw: incoming.aiContextRaw };
   }
 
   next = {

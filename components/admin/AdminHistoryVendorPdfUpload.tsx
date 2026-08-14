@@ -67,8 +67,8 @@ type AgentResponse = {
 
 const ERROR_LABELS: Record<string, string> = {
   unauthorized: "Nav admin piekļuves",
-  missing_gemini_key: "Serverī nav GEMINI_API_KEY",
-  gemini_demo_only: "Gemini atļauts tikai DEMO pasūtījumiem (GEMINI_DEMO_ONLY)",
+  missing_ai_key: "Serverī nav ANTHROPIC_API_KEY",
+  ai_demo_only: "AI atļauts tikai DEMO pasūtījumiem (AI_DEMO_ONLY)",
   not_found: "Pasūtījums nav atrasts Stripe",
   missing_session_id: "Trūkst pasūtījuma sessionId",
   missing_session: "Trūkst pasūtījuma sessionId",
@@ -270,7 +270,7 @@ export function AdminHistoryVendorPdfUpload({
       </div>
       {busy ? (
         <p className="mt-1 text-[9px] leading-snug text-[var(--color-provin-accent)]" role="status">
-          Copilot lasa PDF (teksta slānis + Gemini Pro, līdz ~1 min)…
+          Copilot lasa PDF (teksta slānis + Claude Opus, līdz ~1 min)…
         </p>
       ) : null}
       {notice ? (

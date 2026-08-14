@@ -112,7 +112,7 @@ export type CopilotChatMessage = {
   content: string;
 };
 
-export type CopilotGeminiResponse = {
+export type CopilotAiResponse = {
   reply: string;
   actions: CopilotAction[];
   /** Ja avots nav skaidrs — īss jautājums operatoram. */

@@ -17,7 +17,7 @@ export function detectSourcePdfIngestTarget(fileName: string, text: string): Sou
   return null;
 }
 
-/** Nosaukums bez atpazīstama avota — Gemini klasificē pēc satura; citādi CITI AVOTI. */
+/** Nosaukums bez atpazīstama avota — AI klasificē pēc satura; citādi CITI AVOTI. */
 export function labelFromUnknownPdfFileName(fileName: string): string {
   const base = fileName.replace(/\.pdf$/i, "").trim();
   return base.length > 0 ? base.slice(0, 80) : "Nezināms avots";

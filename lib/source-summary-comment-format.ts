@@ -1,5 +1,5 @@
 /**
- * Īsi, faktiski avota komentāri (PDF imports, Gemini Plan B, ✨ avota komentāri).
+ * Īsi, faktiski avota komentāri (PDF imports, AI Plan B, ✨ avota komentāri).
  * Hibrīds: objektīvs konteksts + skaidri atzīmētas anomālijas.
  */
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
@@ -41,7 +41,7 @@ export function applyProvinReportCopyVocabulary(text: string): string {
 }
 
 /** No rindkopām noņem sarakstu prefiksus un normalizē atstarpes — ✨ eksperta komentāri. */
-export function normalizeProvinExpertGeminiComment(raw: string | undefined | null, maxLen = 2400): string {
+export function normalizeProvinExpertAiComment(raw: string | undefined | null, maxLen = 2400): string {
   const t = applyProvinReportCopyVocabulary((raw ?? "").trim());
   if (!t) return t;
   return normalizeExpertSourcePdfComment(t, maxLen);
@@ -102,7 +102,7 @@ Example:
 - 07.03.2021 Dīlera apkope pie 46,441 km.`;
 
 /** Vienots eksperta komentāru vizuālais formāts — ✨ avoti, PDF, cena, nobraukums u.c. */
-export const GEMINI_EXPERT_PARAGRAPH_PRESENTATION = `
+export const AI_EXPERT_PARAGRAPH_PRESENTATION = `
 VISUAL PRESENTATION (mandatory for all expert client PDF comments):
 ${PROVIN_REPORT_COPY_VOCABULARY}
 - STRUCTURE: Write ONLY in paragraphs — separate paragraphs with a blank line (double newline). NEVER start any line with "- ", "• ", "* ", "– ", or "1." / "2." — no bullet lists, no numbered lists, no list-style prefixes of any kind. This applies to EVERY expert field, including ieteikumi klātienes apskatei, pārdevēja portrets, avotu komentāri, nobraukums, negadījumi, cena and kopsavilkums.
@@ -115,7 +115,7 @@ ${PROVIN_REPORT_COPY_VOCABULARY}
 `;
 
 /** Apdrošināšanas / zaudējumu summu interpretācija — ne absolūts skaitlis, bet konteksts. */
-export const GEMINI_DAMAGE_CLAIM_CONTEXT_RULES = `DAMAGE & CLAIM AMOUNT CONTEXT (mandatory when interpreting EUR loss / zaudējumu apjoms):
+export const AI_DAMAGE_CLAIM_CONTEXT_RULES = `DAMAGE & CLAIM AMOUNT CONTEXT (mandatory when interpreting EUR loss / zaudējumu apjoms):
 - NEVER treat an insurance payout or loss amount as absolute crash severity in isolation — always calibrate against vehicle context available in the order (make/model/class, first registration year, age at incident date, equipment level, market where repaired, damaged zones if listed).
 - Context axes to weigh explicitly:
   1) Vehicle age at incident — same EUR sum means very different structural risk on a 15-year budget car vs a 1-year-old premium car.
@@ -127,7 +127,7 @@ export const GEMINI_DAMAGE_CLAIM_CONTEXT_RULES = `DAMAGE & CLAIM AMOUNT CONTEXT 
 - Examples (logic, not templates): **5 000 €** on a **12-year-old** **~8 000 €** segment car **recently** → likely material damage relative to residual value. **5 000 €** on a **1-year-old premium** in **Germany** with front bumper + headlight zones → may be parking/low-speed impact with costly OEM parts — still requires paint-gauge inspection, but not automatically „write-off level”.`;
 
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
-export const GEMINI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):
+export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):
 
 WHEN TO ACTIVATE:
 - CSDD „Degvielas veids” / fuel type mentions elektriskais, elektro, hybrid ar uzlādes spraudni, u.c.; sludinājums vai aprīkojums min kWh, SOH, DC uzlādi, Type 2/CCS; tipiski BEV modeļi (Tesla, ID., e-tron, Leaf, Zoe, Ioniq/EV6 u.tml.).
@@ -162,7 +162,7 @@ ANTI-HALLUCINATION:
 - Kopsavilkumā (3. Kopsavilkums): ja auto ir elektrisks, **obligāti** iekļauj īsu rindkopu par akumulatora/uzlādes riskiem (detalizētā tehnika — 1. Tehnisko risku analīzē), nevis tikai ICE motorstundu eseju.`;
 
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
-export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
+export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
 - These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — they are PROVIN **institutional memory**.
 - Reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, cost-band thinking, and aggregate-specific advice for **whatever ACTIVE FIELD** you are writing (source comments, mileage, incidents, technical risks, inspection, summary, price).
 - NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums tied to that other order, seller names, or order IDs — adapt the logic and style only.
@@ -172,35 +172,35 @@ export const GEMINI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS
 /** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
-${GEMINI_EXPERT_PARAGRAPH_PRESENTATION}
+${AI_EXPERT_PARAGRAPH_PRESENTATION}
 - LENGTH (default when generating from source data alone): Target 600–1100 characters for per-source comments — thorough on THIS source, not a second full-report essay. Prefer **value density**: fewer paragraphs if each is sharper.
 - LENGTH OVERRIDE: When the user prompt includes substantial OPERATORA KOMANDAS / eksperta piezīmes with detailed prose, dates, km, service history, or interval analysis — IGNORE the 600–1100 target. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula. Output may be long.
 - STYLE: Analytical, professional automotive forensic Latvian. Flexible structure — not one fixed 3-paragraph template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
 - LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
-${GEMINI_DAMAGE_CLAIM_CONTEXT_RULES}
+${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 - ANTI-REPETITION (critical): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, data-vacuum narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here. Per-source text = unique facts from THIS source + a short cross-check (1–2 sentences) vs other sources when generating from data alone. If another source comment already covered the same fact: one short confirmation only — never a near-duplicate essay.
 `;
 
-/** Gemini PDF extract JSON — eksperta komentārs (visi avoti). */
-export const SOURCE_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (client PDF expert commentary):
+/** AI PDF extract JSON — eksperta komentārs (visi avoti). */
+export const SOURCE_PDF_COMMENT_AI_RULES = `COMMENTS field (client PDF expert commentary):
 ${HYBRID_COMMENT_RULES}
 - Extract and interpret ALL substantive facts from this report: mileage, damage zones, registration, insurance, policy periods, dealer/service milestones — not only anomalies.
 - Never return a generic one-liner when tables or descriptive history exist in the PDF.`;
 
 /** ✨ Visu avotu bloku „Komentāri” ģenerēšana (admin) — dziļā forenzika. */
-export const SOURCE_BLOCK_COMMENT_GEMINI_RULES = `OUTPUT FORMAT (mandatory):\n${HYBRID_COMMENT_RULES}`;
+export const SOURCE_BLOCK_COMMENT_AI_RULES = `OUTPUT FORMAT (mandatory):\n${HYBRID_COMMENT_RULES}`;
 
-/** @deprecated Izmanto SOURCE_BLOCK_COMMENT_GEMINI_RULES — vairs nav īsā režīma. */
-export const SOURCE_BLOCK_BRIEF_COMMENT_GEMINI_RULES = SOURCE_BLOCK_COMMENT_GEMINI_RULES;
+/** @deprecated Izmanto SOURCE_BLOCK_COMMENT_AI_RULES — vairs nav īsā režīma. */
+export const SOURCE_BLOCK_BRIEF_COMMENT_AI_RULES = SOURCE_BLOCK_COMMENT_AI_RULES;
 
-/** auto-records.com / Outvin PDF — papildus dīlera specifika virs SOURCE_PDF_COMMENT_GEMINI_RULES. */
-export const AUTO_RECORDS_PDF_COMMENT_GEMINI_RULES = `COMMENTS field (OFICIĀLĀ DĪLERA DATI):
+/** auto-records.com / Outvin PDF — papildus dīlera specifika virs SOURCE_PDF_COMMENT_AI_RULES. */
+export const AUTO_RECORDS_PDF_COMMENT_AI_RULES = `COMMENTS field (OFICIĀLĀ DĪLERA DATI):
 ${HYBRID_COMMENT_RULES}
 - Cover type code, engine code, equipment, accident/stolen checks, and dealer service timeline—not only km digits.
 - Explain fleet/taxi/commercial type-code signals for Latvian buyers when present.
 - Never return a generic one-liner when VEHICLE INFORMATION or service tables exist in the PDF.`;
 
-/** Saglabā rindkopas no Gemini (PDF imports), nevis piespiedu 4 bulletus. */
+/** Saglabā rindkopas no AI (PDF imports), nevis piespiedu 4 bulletus. */
 export function normalizeExpertSourcePdfComment(raw: string | undefined | null, maxLen = 1600): string {
   const t = applyProvinReportCopyVocabulary((raw ?? "").trim());
   if (!t) return SOURCE_COMMENT_NO_ISSUES_LV;
@@ -313,7 +313,7 @@ export function buildHybridSourcePdfComments(opts: { facts?: string[]; anomalies
   return formatSourcePdfComments(lines);
 }
 
-/** Lokālie / Gemini komentāri → vienots īss formāts. */
+/** Lokālie / AI komentāri → vienots īss formāts. */
 export function formatSourcePdfComments(facts: string[]): string {
   const bullets = facts
     .map((f) => f.trim())
@@ -328,7 +328,7 @@ export function formatSourcePdfComments(facts: string[]): string {
   return bullets.join("\n");
 }
 
-/** Normalizē Gemini atgriezto komentāru. */
+/** Normalizē AI atgriezto komentāru. */
 export function normalizeSourcePdfComment(raw: string | undefined | null): string {
   const t = (raw ?? "").trim();
   if (!t) return SOURCE_COMMENT_NO_ISSUES_LV;

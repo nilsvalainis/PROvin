@@ -40,7 +40,7 @@ export type AutoRecordsPdfParseResult = {
     engine?: PdfIngestEngine;
     textBackend?: "pdf-parse" | "pdfjs" | "none";
     /** @deprecated use meta.engine */
-    extractionMethod?: "text_layer" | "gemini";
+    extractionMethod?: "text_layer" | "ai";
   };
 };
 

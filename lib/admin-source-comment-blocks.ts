@@ -21,20 +21,20 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
-import { appendGeminiContextRawSection } from "@/lib/admin-gemini-context-raw";
+import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 /** Avotu bloki ar „Komentāri” lauku (bez sludinājuma analīzes). */
-export type GeminiSourceCommentBlockKey = Exclude<SourceBlockKey, "listing_analysis">;
+export type AiSourceCommentBlockKey = Exclude<SourceBlockKey, "listing_analysis">;
 
-/** Kurā laukā ierakstīt Gemini rezultātu (noklusējums: comments). */
-export type GeminiSourceCommentTargetField = "comments" | "serviceHistoryNotes";
+/** Kurā laukā ierakstīt AI rezultātu (noklusējums: comments). */
+export type AiSourceCommentTargetField = "comments" | "serviceHistoryNotes";
 
-export function isGeminiSourceCommentTargetField(v: string): v is GeminiSourceCommentTargetField {
+export function isAiSourceCommentTargetField(v: string): v is AiSourceCommentTargetField {
   return v === "comments" || v === "serviceHistoryNotes";
 }
 
-export const GEMINI_SOURCE_COMMENT_BLOCK_KEYS: GeminiSourceCommentBlockKey[] = [
+export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
   "csdd",
   "autodna",
   "carvertical",
@@ -48,24 +48,24 @@ export const GEMINI_SOURCE_COMMENT_BLOCK_KEYS: GeminiSourceCommentBlockKey[] = [
   "tirgus",
 ];
 
-/** Visi avotu bloki ar ✨ Gemini „Komentāri” — vienots dziļā eksperta režīms. */
-export const MAIN_ANALYSIS_SOURCE_BLOCK_KEYS: readonly GeminiSourceCommentBlockKey[] =
-  GEMINI_SOURCE_COMMENT_BLOCK_KEYS;
+/** Visi avotu bloki ar ✨ AI „Komentāri” — vienots dziļā eksperta režīms. */
+export const MAIN_ANALYSIS_SOURCE_BLOCK_KEYS: readonly AiSourceCommentBlockKey[] =
+  AI_SOURCE_COMMENT_BLOCK_KEYS;
 
-export type MainAnalysisSourceBlockKey = GeminiSourceCommentBlockKey;
+export type MainAnalysisSourceBlockKey = AiSourceCommentBlockKey;
 
 export function isMainAnalysisSourceBlock(
-  blockKey: GeminiSourceCommentBlockKey,
+  blockKey: AiSourceCommentBlockKey,
 ): blockKey is MainAnalysisSourceBlockKey {
-  return isGeminiSourceCommentBlockKey(blockKey);
+  return isAiSourceCommentBlockKey(blockKey);
 }
 
-export function isGeminiSourceCommentBlockKey(v: string): v is GeminiSourceCommentBlockKey {
-  return (GEMINI_SOURCE_COMMENT_BLOCK_KEYS as string[]).includes(v);
+export function isAiSourceCommentBlockKey(v: string): v is AiSourceCommentBlockKey {
+  return (AI_SOURCE_COMMENT_BLOCK_KEYS as string[]).includes(v);
 }
 
 export function sourceBlockPlainTextExcludingComments(
-  blockKey: GeminiSourceCommentBlockKey,
+  blockKey: AiSourceCommentBlockKey,
   sourceBlocks: WorkspaceSourceBlocks,
 ): string {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
@@ -73,37 +73,37 @@ export function sourceBlockPlainTextExcludingComments(
   switch (blockKey) {
     case "csdd":
       base = csddFormToPlainText({ ...blocks.csdd, comments: "" }).trim();
-      return appendGeminiContextRawSection(base, blocks.csdd.geminiContextRaw);
+      return appendAiContextRawSection(base, blocks.csdd.aiContextRaw);
     case "autodna":
     case "carvertical":
       base = vendorAvotuBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
-      return appendGeminiContextRawSection(base, blocks[blockKey].geminiContextRaw);
+      return appendAiContextRawSection(base, blocks[blockKey].aiContextRaw);
     case "citi_avoti":
       return citiAvotiToPlainText({
         sections: blocks.citi_avoti.sections.map((s) => ({ ...s, comments: "" })),
       }).trim();
     case "auto_records":
       base = autoRecordsBlockToPlainText({ ...blocks.auto_records, comments: "" }).trim();
-      return appendGeminiContextRawSection(base, blocks.auto_records.geminiContextRaw);
+      return appendAiContextRawSection(base, blocks.auto_records.aiContextRaw);
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
     case "carinfo":
       base = vinRegistryBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
-      return appendGeminiContextRawSection(base, blocks[blockKey].geminiContextRaw);
+      return appendAiContextRawSection(base, blocks[blockKey].aiContextRaw);
     case "ltab":
       base = ltabBlockToPlainText({ ...blocks.ltab, comments: "" }).trim();
-      return appendGeminiContextRawSection(base, blocks.ltab.geminiContextRaw);
+      return appendAiContextRawSection(base, blocks.ltab.aiContextRaw);
     case "tirgus":
       base = tirgusFormToPlainText({ ...blocks.tirgus, comments: "" }).trim();
-      return appendGeminiContextRawSection(base, blocks.tirgus.geminiContextRaw);
+      return appendAiContextRawSection(base, blocks.tirgus.aiContextRaw);
     default:
       return "";
   }
 }
 
 export function sourceBlockCommentsPlain(
-  blockKey: GeminiSourceCommentBlockKey,
+  blockKey: AiSourceCommentBlockKey,
   sourceBlocks: WorkspaceSourceBlocks,
 ): string {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
@@ -135,23 +135,23 @@ export function sourceBlockCommentsPlain(
 }
 
 export function sourceBlockHasDataExcludingComments(
-  blockKey: GeminiSourceCommentBlockKey,
+  blockKey: AiSourceCommentBlockKey,
   sourceBlocks: WorkspaceSourceBlocks,
 ): boolean {
   return sourceBlockPlainTextExcludingComments(blockKey, sourceBlocks).length > 0;
 }
 
 export function citiAvotiSectionPlainTextExcludingComments(section: CitiAvotiSectionState): string {
-  return appendGeminiContextRawSection(
+  return appendAiContextRawSection(
     citiAvotiToPlainText({
       sections: [{ ...section, comments: "" }],
     }).trim(),
-    section.geminiContextRaw,
+    section.aiContextRaw,
   );
 }
 
-export function sourceBlockPlainTextForGemini(
-  blockKey: GeminiSourceCommentBlockKey,
+export function sourceBlockPlainTextForAi(
+  blockKey: AiSourceCommentBlockKey,
   sourceBlocks: WorkspaceSourceBlocks,
   citiAvotiSectionIndex?: number,
 ): string {
@@ -164,11 +164,11 @@ export function sourceBlockPlainTextForGemini(
   return sourceBlockPlainTextExcludingComments(blockKey, sourceBlocks);
 }
 
-export function sourceBlockCommentsPlainForGemini(
-  blockKey: GeminiSourceCommentBlockKey,
+export function sourceBlockCommentsPlainForAi(
+  blockKey: AiSourceCommentBlockKey,
   sourceBlocks: WorkspaceSourceBlocks,
   citiAvotiSectionIndex?: number,
-  targetField: GeminiSourceCommentTargetField = "comments",
+  targetField: AiSourceCommentTargetField = "comments",
 ): string {
   if (blockKey === "citi_avoti" && citiAvotiSectionIndex != null) {
     const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
@@ -186,14 +186,14 @@ export function sourceBlockCommentsPlainForGemini(
  * Izslēdz pašreiz ģenerējamo bloku/sekciju, lai novērstu atkārtošanos.
  */
 export function buildPreviouslyGeneratedSourceCommentsContext(
-  currentBlockKey: GeminiSourceCommentBlockKey | null,
+  currentBlockKey: AiSourceCommentBlockKey | null,
   sourceBlocks: WorkspaceSourceBlocks,
   citiAvotiSectionIndex?: number,
 ): string {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
   const parts: string[] = [];
 
-  for (const key of GEMINI_SOURCE_COMMENT_BLOCK_KEYS) {
+  for (const key of AI_SOURCE_COMMENT_BLOCK_KEYS) {
     if (key === "citi_avoti") {
       const total = blocks.citi_avoti.sections.length;
       for (const [i, section] of blocks.citi_avoti.sections.entries()) {
@@ -224,13 +224,13 @@ export function buildPreviouslyGeneratedSourceCommentsContext(
   return parts.join("\n\n");
 }
 
-/** Pēc Gemini ģenerēšanas — ieraksta HTML komentārā (Citi avoti: konkrētā sekcija). */
+/** Pēc AI ģenerēšanas — ieraksta HTML komentārā (Citi avoti: konkrētā sekcija). */
 export function applySourceBlockGeneratedComment(
-  blockKey: GeminiSourceCommentBlockKey,
-  block: WorkspaceSourceBlocks[GeminiSourceCommentBlockKey],
+  blockKey: AiSourceCommentBlockKey,
+  block: WorkspaceSourceBlocks[AiSourceCommentBlockKey],
   html: string,
-  opts?: { citiAvotiSectionIndex?: number; targetField?: GeminiSourceCommentTargetField },
-): WorkspaceSourceBlocks[GeminiSourceCommentBlockKey] {
+  opts?: { citiAvotiSectionIndex?: number; targetField?: AiSourceCommentTargetField },
+): WorkspaceSourceBlocks[AiSourceCommentBlockKey] {
   const targetField = opts?.targetField ?? "comments";
   switch (blockKey) {
     case "csdd":

@@ -669,15 +669,15 @@ export async function patchOrderDraft(
     ),
   ).catch(() => {});
 
-  void import("@/lib/admin-gemini-historical-context")
+  void import("@/lib/admin-ai-historical-context")
     .then((m) => m.invalidateHistoricalReportsIndexCache())
     .catch(() => {});
 
-  void import("@/lib/admin-gemini-order-context")
-    .then((m) => m.invalidateGeminiOrderContextCache())
+  void import("@/lib/admin-ai-order-context")
+    .then((m) => m.invalidateAiOrderContextCache())
     .catch(() => {});
 
-  void import("@/lib/admin-gemini-aggregate-knowledge")
+  void import("@/lib/admin-ai-aggregate-knowledge")
     .then(async (m) => {
       await m.recordAuditAggregateLearningFromDraft(doc as OrderDraftState);
       m.invalidateAuditLearningsCache();

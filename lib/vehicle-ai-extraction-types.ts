@@ -1,5 +1,5 @@
 /**
- * Gemini strukturētā atbilde — vairāku vēstures PDF kopīga analīze.
+ * AI strukturētā atbilde — vairāku vēstures PDF kopīga analīze.
  */
 
 export type VehicleAiAnomalySeverity = "CRITICAL" | "WARNING" | "INFO";

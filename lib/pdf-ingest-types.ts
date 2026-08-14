@@ -1,5 +1,5 @@
-/** PDF avota imports — lokāls parsers vai Gemini Pro (vizuāli). */
-export type PdfIngestEngine = "local_parser" | "gemini_fallback" | "gemini_primary";
+/** PDF avota imports — lokāls parsers vai Claude Opus (vizuāli). */
+export type PdfIngestEngine = "local_parser" | "ai_fallback" | "ai_primary";
 
 export type PdfIngestMeta = {
   engine: PdfIngestEngine;

@@ -6,7 +6,7 @@
 /** CSDD / Auto Records / Citi avoti `rawUnprocessedData` (bija 500_000). */
 export const ADMIN_RAW_UNPROCESSED_MAX_LEN = 2_000_000;
 
-/** AutoDNA / carVertical mileage paste + Gemini context raw (bija 24_000). */
+/** AutoDNA / carVertical mileage paste + AI context raw (bija 24_000). */
 export const ADMIN_MILEAGE_PASTE_RAW_MAX_LEN = 100_000;
 
 /** Sludinājuma paste RAW (bija 50_000). */

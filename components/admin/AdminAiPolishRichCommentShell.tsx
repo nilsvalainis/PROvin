@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ✨ gramatikas labošana (Gemini) + bagātinātais teksts (`AdminRichCommentField`).
+ * ✨ gramatikas labošana (AI) + bagātinātais teksts (`AdminRichCommentField`).
  */
 
 import { useCallback, useState } from "react";
@@ -13,7 +13,7 @@ import {
   ADMIN_AI_POLISH_SPINNER_CLASS,
 } from "@/components/admin/admin-ai-polish-ui";
 import { adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
-import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
+import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
 
 type Props = {
   value: string;
@@ -50,12 +50,12 @@ export function AdminAiPolishRichCommentShell({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: t }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
         setError(
           parseFailed
-            ? `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`
-            : formatAdminGeminiFetchError(data, res, "Gemini: neizdevās labot gramatiku"),
+            ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
+            : formatAdminAiFetchError(data, res, "AI: neizdevās labot gramatiku"),
         );
         return;
       }
@@ -63,7 +63,7 @@ export function AdminAiPolishRichCommentShell({
         onChange(plainTextToMinimalRichHtml(data.text));
       }
     } catch {
-      setError("Gemini: neizdevās savienoties");
+      setError("AI: neizdevās savienoties");
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ export function AdminAiPolishRichCommentShell({
           className={ADMIN_AI_POLISH_BTN_CLASS}
           onClick={() => void run()}
           disabled={disabled || loading || !plainForPolish.trim()}
-          title="Labot gramatiku (Gemini)"
+          title="Labot gramatiku (AI)"
           aria-busy={loading}
           aria-label="Labot gramatiku"
         >
@@ -106,7 +106,7 @@ export function AdminAiPolishRichCommentShell({
         {error ? (
           <p
             className="pointer-events-none absolute bottom-1 left-0 right-10 truncate text-[9px] text-amber-800/90"
-            title="Projektā nepieciešams GEMINI_API_KEY."
+            title="Projektā nepieciešams ANTHROPIC_API_KEY."
           >
             {error}
           </p>

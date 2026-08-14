@@ -1,6 +1,6 @@
 /**
  * Dāņu (DMR / Færdselsstyrelsen) un igauņu (Transpordiamet / LKF) terminu tulkojumi latviski.
- * Deterministiska vārdnīca — Gemini komentārs balstās uz jau saprotamiem latviskiem faktiem,
+ * Deterministiska vārdnīca — AI komentārs balstās uz jau saprotamiem latviskiem faktiem,
  * bet RAW laukā vienmēr paliek oriģinālais teksts pārbaudei.
  */
 

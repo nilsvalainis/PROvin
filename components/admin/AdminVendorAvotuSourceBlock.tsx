@@ -5,9 +5,9 @@ import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome"
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import {
   AdminSourceCommentField,
-  type AdminGeminiSourceCommentSlot,
+  type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
-import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminIncidentFieldFillOption } from "@/components/admin/AdminIncidentFieldFillOption";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -94,7 +94,7 @@ type Props = {
   sessionId: string;
   pdfInclude?: boolean;
   onPdfIncludeChange?: (next: boolean) => void;
-  geminiComment?: AdminGeminiSourceCommentSlot;
+  aiComment?: AdminAiSourceCommentSlot;
   /** Iegults citā blokā (piem. Citi avoti papildu sekcija) — bez kolapsa un PDF toggle. */
   embedded?: boolean;
   /** Unikāli ID iegultām sekcijām. */
@@ -119,7 +119,7 @@ export function AdminVendorAvotuSourceBlock({
   sessionId,
   pdfInclude = true,
   onPdfIncludeChange,
-  geminiComment,
+  aiComment,
   embedded = false,
   sectionIndex,
   autodnaApiConfigured = false,
@@ -655,15 +655,15 @@ export function AdminVendorAvotuSourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           compact
-          gemini={geminiComment}
+          ai={aiComment}
           aria-label="Avota komentāri"
         />
-        <AdminGeminiContextRawField
-          value={block.geminiContextRaw ?? ""}
-          onChange={(next) => onChange({ ...block, geminiContextRaw: next })}
+        <AdminAiContextRawField
+          value={block.aiContextRaw ?? ""}
+          onChange={(next) => onChange({ ...block, aiContextRaw: next })}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="Avots — Gemini AI papildu konteksts"
+          ariaLabel="Avots — AI papildu konteksts"
         />
       </div>
     </div>

@@ -217,7 +217,7 @@ export function parseCsddTechnicalFields(
     particulateMatter,
     previousRegistrationCountry,
     comments: "",
-    geminiContextRaw: "",
+    aiContextRaw: "",
   };
 }
 

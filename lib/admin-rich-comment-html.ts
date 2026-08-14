@@ -29,8 +29,8 @@ function escapeHtmlPlain(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/** No Gemini / Markdown atbildes — nekad neielikt `*` kā punktus PDF laukā. */
-export function normalizeGeminiClientPlainText(text: string): string {
+/** No AI / Markdown atbildes — nekad neielikt `*` kā punktus PDF laukā. */
+export function normalizeAiClientPlainText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
   t = t.replace(/\*\*([^*]+)\*\*/g, "$1");
   t = t.replace(/__([^_]+)__/g, "$1");
@@ -46,9 +46,9 @@ export function plainTextToMinimalRichHtml(text: string): string {
   return escapeHtmlPlain(t).replace(/\r?\n/g, "<br />");
 }
 
-/** Gemini ✨ ģenerēts teksts klienta PDF laukam — bez `*` punktiem. */
-export function geminiPlainTextToRichHtml(text: string): string {
-  return plainTextToMinimalRichHtml(normalizeGeminiClientPlainText(text));
+/** AI ✨ ģenerēts teksts klienta PDF laukam — bez `*` punktiem. */
+export function aiPlainTextToRichHtml(text: string): string {
+  return plainTextToMinimalRichHtml(normalizeAiClientPlainText(text));
 }
 
 const EXPERT_BOLD_OPEN = "\uE010";
@@ -94,8 +94,8 @@ export function ensureExpertBoldParagraphOpeners(text: string): string {
     .join("\n\n");
 }
 
-/** Noņem sarakstu prefiksus no Gemini eksperta komentāra (ja modelis tomēr izmanto "- "). */
-export function normalizeGeminiExpertParagraphText(text: string): string {
+/** Noņem sarakstu prefiksus no AI eksperta komentāra (ja modelis tomēr izmanto "- "). */
+export function normalizeAiExpertParagraphText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
   t = t.replace(/^\s*[-•*–]\s+/gm, "");
   t = t.replace(/^\s*\d+[\.)]\s+/gm, "");
@@ -106,8 +106,8 @@ export function normalizeGeminiExpertParagraphText(text: string): string {
 }
 
 /** Dziļās avotu analīzes ✨ — saglabā **bold** kā <strong> admin redaktoram un PDF. */
-export function geminiExpertSourceCommentToRichHtml(text: string): string {
-  let t = normalizeGeminiExpertParagraphText(text);
+export function aiExpertSourceCommentToRichHtml(text: string): string {
+  let t = normalizeAiExpertParagraphText(text);
   t = t.replace(/\*\*([^*\n]+)\*\*/g, `${EXPERT_BOLD_OPEN}$1${EXPERT_BOLD_CLOSE}`);
   t = escapeHtmlPlain(t);
   t = t

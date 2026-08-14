@@ -2,9 +2,9 @@
 
 import {
   AdminSourceCommentField,
-  type AdminGeminiSourceCommentSlot,
+  type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
-import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -57,7 +57,7 @@ type Props = {
   sessionId: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
-  geminiComment?: AdminGeminiSourceCommentSlot;
+  aiComment?: AdminAiSourceCommentSlot;
   getSourceBlocks?: () => WorkspaceSourceBlocks;
   applyPatchedBlocks?: (
     patched: Partial<WorkspaceSourceBlocks>,
@@ -74,7 +74,7 @@ export function AdminLtabSourceBlock({
   sessionId,
   pdfInclude,
   onPdfIncludeChange,
-  geminiComment,
+  aiComment,
   getSourceBlocks,
   applyPatchedBlocks,
 }: Props) {
@@ -543,15 +543,15 @@ export function AdminLtabSourceBlock({
               readOnly={readOnly}
               disabled={disabled}
               compact
-              gemini={geminiComment}
+              ai={aiComment}
               aria-label="LTAB — komentāri"
             />
-            <AdminGeminiContextRawField
-              value={value.geminiContextRaw}
-              onChange={(next) => onChange({ ...value, geminiContextRaw: next })}
+            <AdminAiContextRawField
+              value={value.aiContextRaw}
+              onChange={(next) => onChange({ ...value, aiContextRaw: next })}
               readOnly={readOnly}
               disabled={disabled}
-              ariaLabel="LTAB — Gemini AI papildu konteksts"
+              ariaLabel="LTAB — AI papildu konteksts"
             />
           </div>
       </div>

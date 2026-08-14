@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
-import { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
+import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import {
   autoRecordsServiceWorkRowsToPlainText,
@@ -208,7 +208,7 @@ describe("servisa darbu rindas", () => {
   });
 
   it("Copilot upsert_service_work → tabula ar vietas kolonnu", () => {
-    const payload = parseCopilotGeminiPayload(
+    const payload = parseCopilotAiPayload(
       JSON.stringify({
         reply: "ok",
         actions: [
@@ -241,7 +241,7 @@ describe("servisa darbu rindas", () => {
   });
 
   it("Copilot rindu bez darbiem atmet", () => {
-    const payload = parseCopilotGeminiPayload(
+    const payload = parseCopilotAiPayload(
       JSON.stringify({
         reply: "ok",
         actions: [

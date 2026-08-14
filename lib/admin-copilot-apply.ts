@@ -19,7 +19,7 @@ import {
   ADMIN_PDF_IMPORT_RAW_MAX_LEN,
   ADMIN_RAW_UNPROCESSED_MAX_LEN,
 } from "@/lib/admin-raw-field-limits";
-import { clipGeminiContextRaw } from "@/lib/admin-gemini-context-raw";
+import { clipAiContextRaw } from "@/lib/admin-ai-context-raw";
 import {
   autoRecordsMileageRowHasData,
   formatAutoRecordsDateForOutput,
@@ -453,8 +453,8 @@ function applyAppendRaw(
         ...blocks,
         [key]: {
           ...cur,
-          geminiContextRaw: clipGeminiContextRaw(
-            appendText(cur.geminiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
+          aiContextRaw: clipAiContextRaw(
+            appendText(cur.aiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
           ),
         },
       },
@@ -640,7 +640,7 @@ function pushClippedNote(lines: string[], label: string, text: string, max = 120
   lines.push(t.length > max ? `${t.slice(0, max)}…` : t);
 }
 
-/** Īss konteksts Gemini — esošās tabulas + CSDD + komentāri/RAW (valsts cross-fill). */
+/** Īss konteksts AI — esošās tabulas + CSDD + komentāri/RAW (valsts cross-fill). */
 export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string {
   const b = mergeSourceBlocksWithDefaults(blocks);
   const lines: string[] = [];
@@ -683,19 +683,19 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   if ((csdd.rawUnprocessedData ?? "").trim()) {
     pushClippedNote(lines, "CSDD RAW", csdd.rawUnprocessedData, 1000);
   }
-  if ((csdd.geminiContextRaw ?? "").trim()) {
-    pushClippedNote(lines, "CSDD AI context", csdd.geminiContextRaw, 800);
+  if ((csdd.aiContextRaw ?? "").trim()) {
+    pushClippedNote(lines, "CSDD AI context", csdd.aiContextRaw, 800);
   }
 
   pushInc("autodna", b.autodna.incidents);
   pushMile("autodna", b.autodna.serviceHistory);
   pushClippedNote(lines, "autodna comments", b.autodna.comments);
-  pushClippedNote(lines, "autodna RAW/AI", b.autodna.geminiContextRaw);
+  pushClippedNote(lines, "autodna RAW/AI", b.autodna.aiContextRaw);
 
   pushInc("carvertical", b.carvertical.incidents);
   pushMile("carvertical", b.carvertical.serviceHistory);
   pushClippedNote(lines, "carvertical comments", b.carvertical.comments);
-  pushClippedNote(lines, "carvertical RAW/AI", b.carvertical.geminiContextRaw);
+  pushClippedNote(lines, "carvertical RAW/AI", b.carvertical.aiContextRaw);
 
   pushInc("ltab", b.ltab.rows);
   pushClippedNote(lines, "ltab comments", b.ltab.comments);

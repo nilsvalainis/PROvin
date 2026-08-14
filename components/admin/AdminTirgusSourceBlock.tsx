@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
+import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminListingPriceHistoryTable } from "@/components/admin/AdminListingPriceHistoryTable";
-import { AdminSourceCommentField, type AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
-import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
+import { AdminSourceCommentField, type AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
@@ -25,7 +25,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { parseListedForSaleDays, shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 
-import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -33,7 +33,7 @@ const inp =
 const fetchBtn =
   "rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50";
 
-type StringTirgusKey = "listedForSale" | "listingCreated" | "priceDrop" | "comments" | "geminiContextRaw";
+type StringTirgusKey = "listedForSale" | "listingCreated" | "priceDrop" | "comments" | "aiContextRaw";
 
 type Props = {
   value?: TirgusFormFields | null;
@@ -44,12 +44,12 @@ type Props = {
   variant?: "default" | "embedded";
   /** Zemāks augstums (admin kompaktais skats). */
   compact?: boolean;
-  geminiComment?: AdminGeminiSourceCommentSlot;
-  /** ss.lv + IRISS EU izsoles + LV tirgus — strukturēta Gemini analīze. */
-  marketGeminiAllowed?: boolean;
-  marketGeminiBusy?: boolean;
-  marketGeminiError?: string | null;
-  onMarketGeminiAnalyze?: (operatorNotes: string, modelTier: GeminiAdminModelTier) => void;
+  aiComment?: AdminAiSourceCommentSlot;
+  /** ss.lv + IRISS EU izsoles + LV tirgus — strukturēta AI analīze. */
+  marketAiAllowed?: boolean;
+  marketAiBusy?: boolean;
+  marketAiError?: string | null;
+  onMarketAiAnalyze?: (operatorNotes: string, modelTier: AiAdminModelTier) => void;
   /** Pasūtījuma sludinājuma URL — Adify vēstures ielādei. */
   listingUrl?: string | null;
 };
@@ -61,11 +61,11 @@ export function AdminTirgusSourceBlock({
   onChange,
   variant = "default",
   compact = false,
-  geminiComment,
-  marketGeminiAllowed = false,
-  marketGeminiBusy = false,
-  marketGeminiError = null,
-  onMarketGeminiAnalyze,
+  aiComment,
+  marketAiAllowed = false,
+  marketAiBusy = false,
+  marketAiError = null,
+  onMarketAiAnalyze,
   listingUrl = "",
 }: Props) {
   const val = value ?? emptyTirgusFields();
@@ -280,16 +280,16 @@ export function AdminTirgusSourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           compact={embDense}
-          gemini={geminiComment}
+          ai={aiComment}
           readonlyClassName={commentsReadonlyClassEmbedded}
           aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
         />
-        <AdminGeminiContextRawField
-          value={val.geminiContextRaw}
-          onChange={(next) => setField("geminiContextRaw", next)}
+        <AdminAiContextRawField
+          value={val.aiContextRaw}
+          onChange={(next) => setField("aiContextRaw", next)}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="Tirgus — Gemini AI papildu konteksts"
+          ariaLabel="Tirgus — AI papildu konteksts"
         />
       </>
     ) : (
@@ -299,33 +299,33 @@ export function AdminTirgusSourceBlock({
           onChange={(next) => setField("comments", next)}
           readOnly={readOnly}
           disabled={disabled}
-          gemini={geminiComment}
+          ai={aiComment}
           readonlyClassName={commentsReadonlyClassDefault}
           aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
         />
-        <AdminGeminiContextRawField
-          value={val.geminiContextRaw}
-          onChange={(next) => setField("geminiContextRaw", next)}
+        <AdminAiContextRawField
+          value={val.aiContextRaw}
+          onChange={(next) => setField("aiContextRaw", next)}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="Tirgus — Gemini AI papildu konteksts"
+          ariaLabel="Tirgus — AI papildu konteksts"
         />
       </div>
     );
 
   const marketAnalyzeRow =
-    onMarketGeminiAnalyze ? (
+    onMarketAiAnalyze ? (
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <AdminGeminiGenerateWithPrefill
+        <AdminAiGenerateWithPrefill
           label="Analizēt tirgu (ss.lv + EU izsoles)"
-          busy={marketGeminiBusy}
-          disabled={!marketGeminiAllowed}
-          demoOnly={!marketGeminiAllowed}
-          onGenerate={(notes, tier) => onMarketGeminiAnalyze(notes, tier)}
+          busy={marketAiBusy}
+          disabled={!marketAiAllowed}
+          demoOnly={!marketAiAllowed}
+          onGenerate={(notes, tier) => onMarketAiAnalyze(notes, tier)}
         />
-        {marketGeminiError ? (
-          <p className="w-full text-[9px] leading-snug text-amber-800/90" title={marketGeminiError}>
-            {marketGeminiError}
+        {marketAiError ? (
+          <p className="w-full text-[9px] leading-snug text-amber-800/90" title={marketAiError}>
+            {marketAiError}
           </p>
         ) : null}
       </div>

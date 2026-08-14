@@ -1,6 +1,6 @@
 ---
 name: provin-expert-agent
-description: Globālais PROVIN.LV AI aģents ar reģionālo, juridisko, motorstundu un datu pietiekamības forenziku. Use for vehicle report expert copy, admin ✨ Gemini prompts, mileage/incident forensics, regional import risks, and Latvian buyer analysis.
+description: Globālais PROVIN.LV AI aģents ar reģionālo, juridisko, motorstundu un datu pietiekamības forenziku. Use for vehicle report expert copy, admin ✨ AI prompts, mileage/incident forensics, regional import risks, and Latvian buyer analysis.
 ---
 
 # PROVIN Expert Agent
@@ -9,12 +9,12 @@ description: Globālais PROVIN.LV AI aģents ar reģionālo, juridisko, motorstu
 
 Read this skill **first** when the task involves:
 
-- Admin panel ✨ generation (`lib/admin-gemini-prompts.ts`, `/api/admin/*` Gemini routes)
+- Admin panel ✨ generation (`lib/admin-ai-prompts.ts`, `/api/admin/*` AI routes)
 - Expert sections: pārdevēja portrets, klātienes apskate / testa brauciens, cenas vērtējums, kopsavilkums, avotu komentāri, nobraukums, negadījumi
 - Drafting or reviewing Latvian expert copy for vehicle reports (PDF / client email)
 - Data sufficiency, odometer timelines, driving profile / motorstundas, regional origin, import, CSDD, or Baltic/LV legal-administrative buyer risks
 
-**Sync:** tone/LV grammar → [provin-field-agent](../provin-field-agent/SKILL.md); **domain below** → `PROVIN_FIELD_AGENT_SYSTEM` when production API must match. Powertrain matrices & motorstundas injection → [provin-admin-prompt-engineering](../provin-admin-prompt-engineering/SKILL.md). See [reference.md](reference.md) and [provin-admin-gemini-prompts](../provin-admin-gemini-prompts/SKILL.md).
+**Sync:** tone/LV grammar → [provin-field-agent](../provin-field-agent/SKILL.md); **domain below** → `PROVIN_FIELD_AGENT_SYSTEM` when production API must match. Powertrain matrices & motorstundas injection → [provin-admin-prompt-engineering](../provin-admin-prompt-engineering/SKILL.md). See [reference.md](reference.md) and [provin-admin-ai-prompts](../provin-admin-ai-prompts/SKILL.md).
 
 ## Cross-source discipline (always)
 
@@ -97,9 +97,9 @@ ANTI-REPETITION / FIELD DIVISION:
 
 ## Field-specific tasks
 
-When the user or API specifies an **ACTIVE FIELD**, follow the matching task block in `lib/admin-gemini-prompts.ts`. Apply the core prompt above plus that field's task instructions.
+When the user or API specifies an **ACTIVE FIELD**, follow the matching task block in `lib/admin-ai-prompts.ts`. Apply the core prompt above plus that field's task instructions.
 
-**Client summary (2. Kopsavilkums):** `GEMINI_CLIENT_EMAIL_FORMAT_RULES` — plain text, no Markdown; end with `APPROVED BY IRISS` per project prompt.
+**Client summary (2. Kopsavilkums):** `AI_CLIENT_EMAIL_FORMAT_RULES` — plain text, no Markdown; end with `APPROVED BY IRISS` per project prompt.
 
 ## Business / legal context
 

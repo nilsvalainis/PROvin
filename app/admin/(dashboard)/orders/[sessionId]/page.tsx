@@ -54,7 +54,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
         serverOrderDraft={loaded.serverOrderDraft}
         serverWorkspaceJson={loaded.serverWorkspaceJson}
         orderDraftPersistenceEnabled={loaded.orderDraftPersistenceEnabled}
-        geminiAllowed={loaded.geminiAllowed}
+        aiAllowed={loaded.aiAllowed}
         autodnaApiConfigured={loaded.autodnaApiConfigured}
       />
     </>

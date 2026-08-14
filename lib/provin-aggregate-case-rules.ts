@@ -345,7 +345,7 @@ export function selectAggregateCasePacks(
   return out;
 }
 
-export function formatAggregateCasePacksForGemini(packs: AggregateCasePack[]): string {
+export function formatAggregateCasePacksForAi(packs: AggregateCasePack[]): string {
   if (packs.length === 0) return "";
   const blocks = packs.map((p) => `#### ${p.title}\n${p.body.trim()}`);
   return blocks.join("\n\n");

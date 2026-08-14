@@ -74,7 +74,7 @@ export function looksLikeServiceWorkLocation(text: string): boolean {
 }
 
 /**
- * Gemini / vecākas rindas bieži saliek servisa punktu darbu tekstā:
+ * AI / vecākas rindas bieži saliek servisa punktu darbu tekstā:
  * „B&K Deutschland GmbH, Osnabrück: detalizēts darbu saraksts…”.
  * Atgriež punktu „Vieta” kolonnai un pārējo — darbiem.
  */
@@ -281,7 +281,7 @@ export function formatServiceWorkOdometer(odometer: string): string {
   return digits ? `${groupDigits(digits)} km` : "";
 }
 
-/** Teksta izvads (Gemini konteksts, plain-text eksports). */
+/** Teksta izvads (AI konteksts, plain-text eksports). */
 export function autoRecordsServiceWorkRowsToPlainText(rows: AutoRecordsServiceWorkRow[]): string {
   return sortAutoRecordsServiceWorkRows(rows.filter(autoRecordsServiceWorkRowIsPrintable))
     .map((r) =>

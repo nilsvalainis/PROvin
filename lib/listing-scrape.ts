@@ -24,7 +24,7 @@ export type ListingMarketSnapshot = {
   note?: string;
 };
 
-/** Pilns ss.lv sludinājuma saturs Gemini / AI analīzei. */
+/** Pilns ss.lv sludinājuma saturs AI / AI analīzei. */
 export type ListingAiSnapshot = ListingMarketSnapshot & {
   url: string;
   pageTitle: string | null;
@@ -289,8 +289,8 @@ export function parseSsLvListingAiHtml(html: string, url: string, now: Date = ne
   };
 }
 
-/** Teksts Gemini promptam no servera nolasīta ss.lv sludinājuma. */
-export function formatListingAiSnapshotForGemini(snapshot: ListingAiSnapshot): string {
+/** Teksts AI promptam no servera nolasīta ss.lv sludinājuma. */
+export function formatListingAiSnapshotForAi(snapshot: ListingAiSnapshot): string {
   if (!snapshot.ok) {
     return [
       "### Sludinājums (ss.lv — neizdevās nolasīt)",

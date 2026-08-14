@@ -1,5 +1,5 @@
 /**
- * CSDD PDF → forma: apvieno PDF teksta slāni ar Gemini izvilkumu un lokālo parseri.
+ * CSDD PDF → forma: apvieno PDF teksta slāni ar AI izvilkumu un lokālo parseri.
  */
 import { emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
@@ -30,7 +30,7 @@ export type CsddPdfParseResult = {
   meta: {
     charCount: number;
     engine: PdfIngestEngine;
-    extractionMethod: "gemini" | "text_layer";
+    extractionMethod: "ai" | "text_layer";
   };
 };
 
@@ -47,7 +47,7 @@ export function csddPdfTextLayerUsable(text: string): boolean {
 export function buildCsddLocalParseFromText(text: string, fileName: string): CsddPdfParseResult {
   const { fields, rawUnprocessedData } = buildCsddFieldsFromPdfSources({
     textHint: text,
-    geminiRaw: "",
+    aiRaw: "",
   });
   return {
     rawUnprocessedData,
@@ -107,7 +107,7 @@ export function pickRicherCsddFields(primary: CsddFormFields, secondary: CsddFor
   };
 }
 
-/** Ātra CSDD forma tikai no PDF teksta slāņa (bez Gemini). */
+/** Ātra CSDD forma tikai no PDF teksta slāņa (bez AI). */
 export function buildCsddPdfParseResultFromTextLayer(
   text: string,
   fileName: string,
@@ -115,7 +115,7 @@ export function buildCsddPdfParseResultFromTextLayer(
   if (!csddPdfTextLayerUsable(text)) return null;
   const { fields, rawUnprocessedData } = buildCsddFieldsFromPdfSources({
     textHint: text,
-    geminiRaw: "",
+    aiRaw: "",
   });
   const hasData =
     Boolean(fields.previousRegistrationCountry.trim()) ||
@@ -145,7 +145,7 @@ function asString(v: unknown, max = 500): string {
   return v.trim().slice(0, max);
 }
 
-function parseGeminiDefectRow(raw: unknown): CsddInspectionDefectRow | null {
+function parseAiDefectRow(raw: unknown): CsddInspectionDefectRow | null {
   const o = asRecord(raw);
   if (!o) return null;
   const code = asString(o.code, 32);
@@ -155,11 +155,11 @@ function parseGeminiDefectRow(raw: unknown): CsddInspectionDefectRow | null {
   return { code, rating, description };
 }
 
-function parseGeminiPrevBlock(raw: unknown): CsddPreviousInspectionBlock | null {
+function parseAiPrevBlock(raw: unknown): CsddPreviousInspectionBlock | null {
   const o = asRecord(raw);
   if (!o) return null;
   const defects = (Array.isArray(o.defects) ? o.defects : [])
-    .map(parseGeminiDefectRow)
+    .map(parseAiDefectRow)
     .filter((d): d is CsddInspectionDefectRow => d !== null);
   const ratingLevelRaw = o.ratingLevel;
   const ratingLevel =
@@ -178,13 +178,13 @@ function parseGeminiPrevBlock(raw: unknown): CsddPreviousInspectionBlock | null 
   return previousInspectionBlockHasData(block) ? block : null;
 }
 
-function parseGeminiTaRow(raw: unknown): CsddTechnicalInspectionRow | null {
+function parseAiTaRow(raw: unknown): CsddTechnicalInspectionRow | null {
   const o = asRecord(raw);
   if (!o) return null;
   const date = asString(o.date, 32);
   if (!date) return null;
   const defects = (Array.isArray(o.defects) ? o.defects : [])
-    .map(parseGeminiDefectRow)
+    .map(parseAiDefectRow)
     .filter((d): d is CsddInspectionDefectRow => d !== null);
   const ratingLevelRaw = o.ratingLevel;
   const ratingLevel =
@@ -204,7 +204,7 @@ function parseGeminiTaRow(raw: unknown): CsddTechnicalInspectionRow | null {
   };
 }
 
-function parseGeminiOwnerEvent(raw: unknown): CsddOwnerChangeRow | null {
+function parseAiOwnerEvent(raw: unknown): CsddOwnerChangeRow | null {
   const o = asRecord(raw);
   if (!o) return null;
   const date = asString(o.date, 32);
@@ -213,7 +213,7 @@ function parseGeminiOwnerEvent(raw: unknown): CsddOwnerChangeRow | null {
   return { date, label };
 }
 
-function overlayGeminiScalars(fields: CsddFormFields, payload: Record<string, unknown>): CsddFormFields {
+function overlayAiScalars(fields: CsddFormFields, payload: Record<string, unknown>): CsddFormFields {
   let next = fields;
   const scalarKeys: (keyof CsddFormFields)[] = [
     "makeModel",
@@ -235,15 +235,15 @@ function overlayGeminiScalars(fields: CsddFormFields, payload: Record<string, un
     "ownerCountLatvia",
   ];
   for (const key of scalarKeys) {
-    const geminiVal = asString(payload[key], key === "makeModel" ? 120 : 200);
-    if (!geminiVal) continue;
+    const aiVal = asString(payload[key], key === "makeModel" ? 120 : 200);
+    if (!aiVal) continue;
     const cur = String(next[key] ?? "").trim();
-    if (!cur) next = { ...next, [key]: geminiVal };
+    if (!cur) next = { ...next, [key]: aiVal };
   }
   return next;
 }
 
-function overlayGeminiStructured(fields: CsddFormFields, payload: Record<string, unknown>): CsddFormFields {
+function overlayAiStructured(fields: CsddFormFields, payload: Record<string, unknown>): CsddFormFields {
   let next = fields;
 
   if (!next.previousRegistrationCountry.trim()) {
@@ -260,22 +260,22 @@ function overlayGeminiStructured(fields: CsddFormFields, payload: Record<string,
     ? payload.ownerRegistrationEvents
     : []
   )
-    .map(parseGeminiOwnerEvent)
+    .map(parseAiOwnerEvent)
     .filter((e): e is CsddOwnerChangeRow => e !== null);
   if (!(next.ownerRegistrationEvents ?? []).some((e) => e.date.trim()) && ownerEvents.length > 0) {
     next = { ...next, ownerRegistrationEvents: ownerEvents };
   }
 
-  const geminiPrev = parseGeminiPrevBlock(payload.prevInspectionBlock);
-  if (!previousInspectionBlockHasData(next.prevInspectionBlock) && geminiPrev) {
-    next = { ...next, prevInspectionBlock: geminiPrev };
+  const aiPrev = parseAiPrevBlock(payload.prevInspectionBlock);
+  if (!previousInspectionBlockHasData(next.prevInspectionBlock) && aiPrev) {
+    next = { ...next, prevInspectionBlock: aiPrev };
   }
 
   const taRows = (Array.isArray(payload.technicalInspectionHistory)
     ? payload.technicalInspectionHistory
     : []
   )
-    .map(parseGeminiTaRow)
+    .map(parseAiTaRow)
     .filter((r): r is CsddTechnicalInspectionRow => r !== null);
   if (!(next.technicalInspectionHistory ?? []).some((r) => r.date.trim()) && taRows.length > 0) {
     next = { ...next, technicalInspectionHistory: taRows };
@@ -291,19 +291,19 @@ function overlayGeminiStructured(fields: CsddFormFields, payload: Record<string,
 }
 
 /**
- * Pilna CSDD forma no apvienota PDF/Gemini teksta + opc. Gemini JSON laukiem.
+ * Pilna CSDD forma no apvienota PDF/AI teksta + opc. AI JSON laukiem.
  */
 export function buildCsddFieldsFromPdfSources(opts: {
   textHint?: string;
-  geminiRaw?: string;
-  geminiPayload?: Record<string, unknown>;
+  aiRaw?: string;
+  aiPayload?: Record<string, unknown>;
 }): { fields: CsddFormFields; rawUnprocessedData: string } {
-  const combined = mergeCsddPdfRawSources(opts.textHint ?? "", opts.geminiRaw ?? "");
+  const combined = mergeCsddPdfRawSources(opts.textHint ?? "", opts.aiRaw ?? "");
   const parsed: CsddPasteParseResult = parseCsddPaste(combined);
   let fields = applyCsddPasteToForm(emptyCsddFields(), combined, parsed);
-  if (opts.geminiPayload) {
-    fields = overlayGeminiScalars(fields, opts.geminiPayload);
-    fields = overlayGeminiStructured(fields, opts.geminiPayload);
+  if (opts.aiPayload) {
+    fields = overlayAiScalars(fields, opts.aiPayload);
+    fields = overlayAiStructured(fields, opts.aiPayload);
   }
   fields = backfillCsddExtendedFromRaw(fields);
 

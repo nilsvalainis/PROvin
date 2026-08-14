@@ -17,7 +17,7 @@ export function AdminOrderDetailPageClient({
   serverOrderDraft,
   serverWorkspaceJson,
   orderDraftPersistenceEnabled,
-  geminiAllowed,
+  aiAllowed,
   autodnaApiConfigured,
 }: {
   sessionId: string;
@@ -25,7 +25,7 @@ export function AdminOrderDetailPageClient({
   serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
-  geminiAllowed: boolean;
+  aiAllowed: boolean;
   autodnaApiConfigured: boolean;
 }) {
   return (
@@ -36,7 +36,7 @@ export function AdminOrderDetailPageClient({
         serverOrderDraft={serverOrderDraft}
         serverWorkspaceJson={serverWorkspaceJson}
         orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
-        geminiAllowed={geminiAllowed}
+        aiAllowed={aiAllowed}
         autodnaApiConfigured={autodnaApiConfigured}
       />
     </AdminOrderWorkspaceErrorBoundary>

@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
-import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import {
   AdminSourceCommentField,
-  type AdminGeminiSourceCommentSlot,
+  type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
@@ -64,7 +64,7 @@ type Props = {
   sessionId: string;
   /** Pasūtījuma VIN automātiskajai ielādei. */
   vin: string;
-  geminiComment?: AdminGeminiSourceCommentSlot;
+  aiComment?: AdminAiSourceCommentSlot;
   pdfInclude?: boolean;
   onPdfIncludeChange?: (next: boolean) => void;
 };
@@ -108,7 +108,7 @@ export function AdminVinRegistrySourceBlock({
   trafficFillLevel,
   sessionId,
   vin,
-  geminiComment,
+  aiComment,
   pdfInclude,
   onPdfIncludeChange,
 }: Props) {
@@ -154,7 +154,7 @@ export function AdminVinRegistrySourceBlock({
       onChange({
         ...data.block,
         comments: block.comments,
-        geminiContextRaw: block.geminiContextRaw,
+        aiContextRaw: block.aiContextRaw,
       });
       setStatus(data.message);
     } catch (e) {
@@ -467,15 +467,15 @@ export function AdminVinRegistrySourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           compact
-          gemini={geminiComment}
+          ai={aiComment}
           aria-label={`${label} komentāri`}
         />
-        <AdminGeminiContextRawField
-          value={block.geminiContextRaw}
-          onChange={(next) => onChange({ ...block, geminiContextRaw: next })}
+        <AdminAiContextRawField
+          value={block.aiContextRaw}
+          onChange={(next) => onChange({ ...block, aiContextRaw: next })}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel={`${label} — Gemini AI papildu konteksts`}
+          ariaLabel={`${label} — AI papildu konteksts`}
         />
       </div>
     </div>
@@ -508,8 +508,8 @@ type EstoniaPairProps = {
   pdfIncludeLkf: boolean;
   onPdfIncludeMnt: (next: boolean) => void;
   onPdfIncludeLkf: (next: boolean) => void;
-  geminiMnt?: AdminGeminiSourceCommentSlot;
-  geminiLkf?: AdminGeminiSourceCommentSlot;
+  aiMnt?: AdminAiSourceCommentSlot;
+  aiLkf?: AdminAiSourceCommentSlot;
   sessionId: string;
   vin: string;
   readOnly: boolean;
@@ -528,8 +528,8 @@ export function AdminEstoniaVinRegistryPair({
   pdfIncludeLkf,
   onPdfIncludeMnt,
   onPdfIncludeLkf,
-  geminiMnt,
-  geminiLkf,
+  aiMnt,
+  aiLkf,
   sessionId,
   vin,
   readOnly,
@@ -549,12 +549,12 @@ export function AdminEstoniaVinRegistryPair({
     try {
       const mntRes = await requestVinRegistryFetch("mnt_ee", cleanVin);
       if (mntRes.ok) {
-        onChangeMnt({ ...mntRes.block, comments: mnt.comments, geminiContextRaw: mnt.geminiContextRaw });
+        onChangeMnt({ ...mntRes.block, comments: mnt.comments, aiContextRaw: mnt.aiContextRaw });
       }
       setStatus("Ielasu LKF kahjukontroll…");
       const lkfRes = await requestVinRegistryFetch("lkf_ee", cleanVin);
       if (lkfRes.ok) {
-        onChangeLkf({ ...lkfRes.block, comments: lkf.comments, geminiContextRaw: lkf.geminiContextRaw });
+        onChangeLkf({ ...lkfRes.block, comments: lkf.comments, aiContextRaw: lkf.aiContextRaw });
       }
       const parts = [
         mntRes.ok ? `MNT: ${mntRes.message}` : `MNT: ${mntRes.error}`,
@@ -599,7 +599,7 @@ export function AdminEstoniaVinRegistryPair({
             trafficFillLevel={trafficMnt}
             sessionId={sessionId}
             vin={vin}
-            geminiComment={geminiMnt}
+            aiComment={aiMnt}
             pdfInclude={pdfIncludeMnt}
             onPdfIncludeChange={onPdfIncludeMnt}
           />
@@ -614,7 +614,7 @@ export function AdminEstoniaVinRegistryPair({
             trafficFillLevel={trafficLkf}
             sessionId={sessionId}
             vin={vin}
-            geminiComment={geminiLkf}
+            aiComment={aiLkf}
             pdfInclude={pdfIncludeLkf}
             onPdfIncludeChange={onPdfIncludeLkf}
           />

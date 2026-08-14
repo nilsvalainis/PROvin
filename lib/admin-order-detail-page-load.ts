@@ -2,7 +2,7 @@ import "server-only";
 
 import { isAutodnaApiConfigured } from "@/lib/autodna-config";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
-import { geminiAllowsOrder } from "@/lib/admin-gemini-access";
+import { aiAllowsOrder } from "@/lib/admin-ai-access";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
 import { isOrderDraftStorageDurable, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
@@ -20,7 +20,7 @@ export type AdminOrderDetailPageLoadSuccess = {
   serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
-  geminiAllowed: boolean;
+  aiAllowed: boolean;
   autodnaApiConfigured: boolean;
 };
 
@@ -134,7 +134,7 @@ export async function loadAdminOrderDetailPageData(
       serverOrderDraft: serverOrderDraft ? { orderEdits: serverOrderDraft.orderEdits ?? {} } : null,
       serverWorkspaceJson,
       orderDraftPersistenceEnabled: isOrderDraftStorageDurable(),
-      geminiAllowed: geminiAllowsOrder(Boolean(order.isDemo)),
+      aiAllowed: aiAllowsOrder(Boolean(order.isDemo)),
       autodnaApiConfigured: isAutodnaApiConfigured(),
     };
   } catch (e) {

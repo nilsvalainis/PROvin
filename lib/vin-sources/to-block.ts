@@ -38,7 +38,7 @@ export function vinSourceResultToBlock(result: VinSourceFetchResult): VinRegistr
     rawUnprocessedData: result.raw,
     autoNotes: noteLines.join("\n"),
     comments: "",
-    geminiContextRaw: "",
+    aiContextRaw: "",
     fetchedAt: result.fetchedAt,
     fetchMessage: result.message,
   });

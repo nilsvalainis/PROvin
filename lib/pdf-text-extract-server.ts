@@ -179,8 +179,8 @@ export function logPdfExtractResult(prefix: string, result: PdfExtractResult): v
     errorMessage: result.errorMessage,
     hint:
       result.stage === "text_layer_empty"
-        ? "Tukšs teksta slānis — iespējams skenēts PDF (Plan B: Gemini)"
-        : "Teksta izvilkšana neizdevās — Plan B: Gemini",
+        ? "Tukšs teksta slānis — iespējams skenēts PDF (Plan B: AI)"
+        : "Teksta izvilkšana neizdevās — Plan B: AI",
   });
 }
 

@@ -1,6 +1,6 @@
 /**
  * Publiskie valsts reģistru avoti, ko admin panelis ielasa pēc VIN.
- * Kopīgs rezultāta formāts visiem avotiem, lai UI un Gemini konteksts būtu vienāds.
+ * Kopīgs rezultāta formāts visiem avotiem, lai UI un AI konteksts būtu vienāds.
  */
 
 export const VIN_SOURCE_IDS = ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const;
@@ -15,7 +15,7 @@ export type VinSourceMileageRow = {
   date: string;
   odometer: string;
   country: string;
-  /** Ieraksta izcelsme avotā (reģistrs / apskate) — nonāk piezīmēs un Gemini kontekstā. */
+  /** Ieraksta izcelsme avotā (reģistrs / apskate) — nonāk piezīmēs un AI kontekstā. */
   origin?: string;
 };
 

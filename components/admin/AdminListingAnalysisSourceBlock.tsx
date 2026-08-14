@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Sludinājuma analīze: Groq pārdošanas konteksts + Gemini pārdevēja analīze (DEMO).
+ * Sludinājuma analīze: Groq pārdošanas konteksts + AI pārdevēja analīze (DEMO).
  */
 
 import { Loader2 } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
-import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
+import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
-import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminSourceCommentField } from "@/components/admin/AdminSourceCommentField";
@@ -25,15 +25,15 @@ import {
 } from "@/lib/admin-source-blocks";
 import { ADMIN_LISTING_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
-import { geminiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
-import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
-import type { GeminiListingCommentField } from "@/lib/admin-gemini-listing-field";
-import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import type { AiListingCommentField } from "@/lib/admin-ai-listing-field";
+import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
 
-export type GeminiListingAnalysisPayload = {
+export type AiListingAnalysisPayload = {
   sessionId: string;
   vin: string | null;
   listingUrl: string | null;
@@ -59,9 +59,9 @@ type Props = {
   compact?: boolean;
   /** Teksta lauku augstums pēc scrollHeight (+ aptuveni viena rinda). */
   autoGrow?: boolean;
-  /** Gemini — ja atļauts šim pasūtījumam (skat. GEMINI_DEMO_ONLY). */
-  geminiAllowed?: boolean;
-  buildGeminiPayload?: () => GeminiListingAnalysisPayload;
+  /** AI — ja atļauts šim pasūtījumam (skat. AI_DEMO_ONLY). */
+  aiAllowed?: boolean;
+  buildAiPayload?: () => AiListingAnalysisPayload;
   sessionId?: string;
   photosPersistenceEnabled?: boolean;
   onListingPhotoGroupsStructuralCommit?: (next: ListingAnalysisBlockState["photoGroups"]) => void;
@@ -75,8 +75,8 @@ export function AdminListingAnalysisSourceBlock({
   variant = "default",
   compact = false,
   autoGrow = false,
-  geminiAllowed = true,
-  buildGeminiPayload,
+  aiAllowed = true,
+  buildAiPayload,
   sessionId,
   photosPersistenceEnabled = false,
   onListingPhotoGroupsStructuralCommit,
@@ -88,9 +88,9 @@ export function AdminListingAnalysisSourceBlock({
   const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
   const [sellerAnalyzing, setSellerAnalyzing] = useState(false);
   const [sellerAnalyzeErr, setSellerAnalyzeErr] = useState<string | null>(null);
-  const [listingFieldBusy, setListingFieldBusy] = useState<GeminiListingCommentField | null>(null);
+  const [listingFieldBusy, setListingFieldBusy] = useState<AiListingCommentField | null>(null);
   const [listingFieldErr, setListingFieldErr] = useState<{
-    field: GeminiListingCommentField;
+    field: AiListingCommentField;
     msg: string;
   } | null>(null);
   const refPaste = useRef<HTMLTextAreaElement>(null);
@@ -107,35 +107,35 @@ export function AdminListingAnalysisSourceBlock({
     bumpTa(refPaste.current);
   }, [autoGrow, readOnly, bumpTa, v.listingPasteRaw]);
 
-  const canRunSellerGemini =
-    geminiAllowed &&
-    Boolean(buildGeminiPayload) &&
+  const canRunSellerAi =
+    aiAllowed &&
+    Boolean(buildAiPayload) &&
     (v.extraSellerName.trim().length > 0 || v.listingPasteRaw.trim().length > 0);
 
   const photoCount = (v.photoGroups ?? []).reduce((n, g) => n + (g.photos?.length ?? 0), 0);
-  const canRunPhotoGemini =
-    geminiAllowed && Boolean(buildGeminiPayload) && (v.listingPasteRaw.trim().length > 0 || photoCount > 0);
-  const canRunSalesContextGemini =
-    geminiAllowed && Boolean(buildGeminiPayload) && v.listingPasteRaw.trim().length > 0;
+  const canRunPhotoAi =
+    aiAllowed && Boolean(buildAiPayload) && (v.listingPasteRaw.trim().length > 0 || photoCount > 0);
+  const canRunSalesContextAi =
+    aiAllowed && Boolean(buildAiPayload) && v.listingPasteRaw.trim().length > 0;
 
-  const runListingFieldGemini = useCallback(
+  const runListingFieldAi = useCallback(
     async (
-      field: GeminiListingCommentField,
+      field: AiListingCommentField,
       operatorNotes: string,
-      modelTier: GeminiAdminModelTier = "pro",
+      modelTier: AiAdminModelTier = "pro",
     ) => {
-      if (!buildGeminiPayload || disabled || readOnly || listingFieldBusy) return;
-      if (field === "photoAnalysis" && !canRunPhotoGemini) return;
-      if (field === "listingSalesContext" && !canRunSalesContextGemini) return;
+      if (!buildAiPayload || disabled || readOnly || listingFieldBusy) return;
+      if (field === "photoAnalysis" && !canRunPhotoAi) return;
+      if (field === "listingSalesContext" && !canRunSalesContextAi) return;
       setListingFieldBusy(field);
       setListingFieldErr(null);
       try {
-        const base = buildGeminiPayload();
+        const base = buildAiPayload();
         const existing =
           field === "photoAnalysis"
             ? adminRichHtmlToPlainText(v.photoAnalysis).trim()
             : adminRichHtmlToPlainText(v.listingSalesContext).trim();
-        const res = await fetch("/api/admin/gemini/listing-field-comment", {
+        const res = await fetch("/api/admin/ai/listing-field-comment", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -147,18 +147,18 @@ export function AdminListingAnalysisSourceBlock({
             modelTier,
           }),
         });
-        const { data, parseFailed } = await parseAdminGeminiResponse(res);
+        const { data, parseFailed } = await parseAdminAiResponse(res);
         if (!res.ok) {
           setListingFieldErr({
             field,
             msg: parseFailed
-              ? `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`
-              : formatAdminGeminiFetchError(data, res, "Gemini: neizdevās ģenerēt komentāru"),
+              ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
+              : formatAdminAiFetchError(data, res, "AI: neizdevās ģenerēt komentāru"),
           });
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          const html = geminiExpertSourceCommentToRichHtml(data.text);
+          const html = aiExpertSourceCommentToRichHtml(data.text);
           onChange(
             field === "photoAnalysis"
               ? { ...v, photoAnalysis: html }
@@ -166,15 +166,15 @@ export function AdminListingAnalysisSourceBlock({
           );
         }
       } catch {
-        setListingFieldErr({ field, msg: "Gemini: neizdevās savienoties" });
+        setListingFieldErr({ field, msg: "AI: neizdevās savienoties" });
       } finally {
         setListingFieldBusy(null);
       }
     },
     [
-      buildGeminiPayload,
-      canRunPhotoGemini,
-      canRunSalesContextGemini,
+      buildAiPayload,
+      canRunPhotoAi,
+      canRunSalesContextAi,
       disabled,
       listingFieldBusy,
       onChange,
@@ -183,14 +183,14 @@ export function AdminListingAnalysisSourceBlock({
     ],
   );
 
-  const runSellerGeminiAnalyze = useCallback(
-    async (operatorNotes: string, modelTier: GeminiAdminModelTier = "pro") => {
-      if (!canRunSellerGemini || sellerAnalyzing || disabled || readOnly || !buildGeminiPayload) return;
+  const runSellerAiAnalyze = useCallback(
+    async (operatorNotes: string, modelTier: AiAdminModelTier = "pro") => {
+      if (!canRunSellerAi || sellerAnalyzing || disabled || readOnly || !buildAiPayload) return;
       setSellerAnalyzing(true);
       setSellerAnalyzeErr(null);
       try {
-        const base = buildGeminiPayload();
-        const res = await fetch("/api/admin/gemini/seller-analysis", {
+        const base = buildAiPayload();
+        const res = await fetch("/api/admin/ai/seller-analysis", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -202,25 +202,25 @@ export function AdminListingAnalysisSourceBlock({
             modelTier,
           }),
         });
-        const { data, parseFailed } = await parseAdminGeminiResponse(res);
+        const { data, parseFailed } = await parseAdminAiResponse(res);
         if (!res.ok) {
           setSellerAnalyzeErr(
             parseFailed
-              ? `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`
-              : formatAdminGeminiFetchError(data, res, "Gemini: neizdevās analizēt pārdevēju"),
+              ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
+              : formatAdminAiFetchError(data, res, "AI: neizdevās analizēt pārdevēju"),
           );
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          onChange({ ...v, sellerPortrait: geminiExpertSourceCommentToRichHtml(data.text) });
+          onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(data.text) });
         }
       } catch {
-        setSellerAnalyzeErr("Gemini: neizdevās savienoties");
+        setSellerAnalyzeErr("AI: neizdevās savienoties");
       } finally {
         setSellerAnalyzing(false);
       }
     },
-    [buildGeminiPayload, canRunSellerGemini, disabled, onChange, readOnly, sellerAnalyzing, v],
+    [buildAiPayload, canRunSellerAi, disabled, onChange, readOnly, sellerAnalyzing, v],
   );
 
   const runListingAnalyze = useCallback(async () => {
@@ -254,7 +254,7 @@ export function AdminListingAnalysisSourceBlock({
         return;
       }
       if (typeof data.text === "string") {
-        onChange({ ...v, listingSalesContext: geminiExpertSourceCommentToRichHtml(data.text) });
+        onChange({ ...v, listingSalesContext: aiExpertSourceCommentToRichHtml(data.text) });
       }
     } catch {
       setAnalyzeErr("Groq: neizdevās savienoties");
@@ -324,12 +324,12 @@ export function AdminListingAnalysisSourceBlock({
             )}
           </label>
           <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-            <AdminGeminiGenerateWithPrefill
+            <AdminAiGenerateWithPrefill
               label="Analizēt Pārdevēju"
               busy={sellerAnalyzing}
-              disabled={!canRunSellerGemini || readOnly || disabled}
-              demoOnly={!geminiAllowed}
-              onGenerate={(operatorNotes) => void runSellerGeminiAnalyze(operatorNotes)}
+              disabled={!canRunSellerAi || readOnly || disabled}
+              demoOnly={!aiAllowed}
+              onGenerate={(operatorNotes) => void runSellerAiAnalyze(operatorNotes)}
             />
           </div>
           {sellerAnalyzeErr ? (
@@ -384,12 +384,12 @@ export function AdminListingAnalysisSourceBlock({
               disabled={disabled}
               compact={pri && dense}
               aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-              gemini={{
-                allowed: geminiAllowed,
+              ai={{
+                allowed: aiAllowed,
                 busy: listingFieldBusy === "photoAnalysis",
                 error: listingFieldErr?.field === "photoAnalysis" ? listingFieldErr.msg : null,
-                hasSourceData: canRunPhotoGemini,
-                onGenerate: (notes, tier) => void runListingFieldGemini("photoAnalysis", notes, tier),
+                hasSourceData: canRunPhotoAi,
+                onGenerate: (notes, tier) => void runListingFieldAi("photoAnalysis", notes, tier),
               }}
             />
           )}
@@ -496,25 +496,25 @@ export function AdminListingAnalysisSourceBlock({
               disabled={disabled}
               compact={pri && dense}
               aria-label={`${L.listingSalesContext} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-              gemini={{
-                allowed: geminiAllowed,
+              ai={{
+                allowed: aiAllowed,
                 busy: listingFieldBusy === "listingSalesContext",
                 error:
                   listingFieldErr?.field === "listingSalesContext" ? listingFieldErr.msg : null,
-                hasSourceData: canRunSalesContextGemini,
+                hasSourceData: canRunSalesContextAi,
                 onGenerate: (notes, tier) =>
-                  void runListingFieldGemini("listingSalesContext", notes, tier),
+                  void runListingFieldAi("listingSalesContext", notes, tier),
               }}
             />
           )}
         </ListingAnalysisSubsectionHeading>
       </div>
-      <AdminGeminiContextRawField
-        value={v.geminiContextRaw}
-        onChange={(next) => onChange({ ...v, geminiContextRaw: next })}
+      <AdminAiContextRawField
+        value={v.aiContextRaw}
+        onChange={(next) => onChange({ ...v, aiContextRaw: next })}
         readOnly={readOnly}
         disabled={disabled}
-        ariaLabel="Sludinājuma analīze — Gemini AI papildu konteksts"
+        ariaLabel="Sludinājuma analīze — AI papildu konteksts"
       />
     </div>
   );

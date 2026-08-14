@@ -1,6 +1,6 @@
 # Mandatory knowledge injection (deployed agents)
 
-Use verbatim substance when syncing into `lib/admin-gemini-prompts.ts`. Categorize by model and powertrain in prompt strings.
+Use verbatim substance when syncing into `lib/admin-ai-prompts.ts`. Categorize by model and powertrain in prompt strings.
 
 ## 1. MANDATORY KNOWLEDGE INJECTION FOR DEPLOYED AGENTS
 
@@ -46,7 +46,7 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
 
 ### D. ELECTRIC (BEV) & PLUG-IN (PHEV) FORENSICS
 
-Sync full deployed text from `GEMINI_EV_BEV_FORENSICS_RULES` in `lib/source-summary-comment-format.ts`. Core vectors for agents:
+Sync full deployed text from `AI_EV_BEV_FORENSICS_RULES` in `lib/source-summary-comment-format.ts`. Core vectors for agents:
 
 - **SOH is not sufficient alone** — pair with charging profile, climate, km, warranty, real range.
 - **Charging:** explain **20–80 %** daily SOC sweet spot; risk from habitual **100 %** and frequent **DC fast charging** vs **AC home** (3.7–22 kW).

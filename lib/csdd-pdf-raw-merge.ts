@@ -13,20 +13,20 @@ const CSDD_SECTION_MARKERS = [
   "Pēdējā tehniskā apskate",
 ] as const;
 
-/** Apvieno PDF teksta slāni un Gemini transkriptu — PDF teksts ir primārais avots. */
-export function mergeCsddPdfRawSources(textHint: string, geminiRaw: string): string {
+/** Apvieno PDF teksta slāni un AI transkriptu — PDF teksts ir primārais avots. */
+export function mergeCsddPdfRawSources(textHint: string, aiRaw: string): string {
   const pdf = normalizeCsddRawText(textHint).trim();
-  const gemini = normalizeCsddRawText(geminiRaw).trim();
-  if (!pdf) return gemini;
-  if (!gemini) return pdf;
-  if (pdf.includes(gemini)) return pdf;
-  if (gemini.includes(pdf) && pdf.length >= gemini.length * 0.55) return pdf;
+  const ai = normalizeCsddRawText(aiRaw).trim();
+  if (!pdf) return ai;
+  if (!ai) return pdf;
+  if (pdf.includes(ai)) return pdf;
+  if (ai.includes(pdf) && pdf.length >= ai.length * 0.55) return pdf;
 
   const missingChunks: string[] = [];
   for (const marker of CSDD_SECTION_MARKERS) {
-    if (gemini.includes(marker) && !pdf.includes(marker)) {
-      const idx = gemini.indexOf(marker);
-      missingChunks.push(gemini.slice(idx, idx + 12_000));
+    if (ai.includes(marker) && !pdf.includes(marker)) {
+      const idx = ai.indexOf(marker);
+      missingChunks.push(ai.slice(idx, idx + 12_000));
     }
   }
   if (missingChunks.length === 0) return pdf.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);

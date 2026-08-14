@@ -4,20 +4,20 @@ import {
   detectSourcePdfIngestTarget,
   labelFromUnknownPdfFileName,
 } from "@/lib/admin-source-pdf-detect";
-import { generateIncidentsSummaryWithGemini } from "@/lib/admin-gemini-incidents-summary";
-import { generateMileageCommentWithGemini } from "@/lib/admin-gemini-mileage-comment";
-import type { GeminiOrderContextInput } from "@/lib/admin-gemini-order-context";
-import { generateSourceCommentWithGemini } from "@/lib/admin-gemini-source-comment";
-import { generateSourcesComparisonWithGemini } from "@/lib/admin-gemini-sources-comparison";
+import { generateIncidentsSummaryWithAi } from "@/lib/admin-ai-incidents-summary";
+import { generateMileageCommentWithAi } from "@/lib/admin-ai-mileage-comment";
+import type { AiOrderContextInput } from "@/lib/admin-ai-order-context";
+import { generateSourceCommentWithAi } from "@/lib/admin-ai-source-comment";
+import { generateSourcesComparisonWithAi } from "@/lib/admin-ai-sources-comparison";
 import {
   applySourceBlockGeneratedComment,
-  GEMINI_SOURCE_COMMENT_BLOCK_KEYS,
-  sourceBlockCommentsPlainForGemini,
+  AI_SOURCE_COMMENT_BLOCK_KEYS,
+  sourceBlockCommentsPlainForAi,
   sourceBlockHasDataExcludingComments,
-  type GeminiSourceCommentBlockKey,
+  type AiSourceCommentBlockKey,
 } from "@/lib/admin-source-comment-blocks";
 import {
-  geminiExpertSourceCommentToRichHtml,
+  aiExpertSourceCommentToRichHtml,
   adminRichHtmlToPlainText,
 } from "@/lib/admin-rich-comment-html";
 import type { AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
@@ -46,9 +46,9 @@ import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import {
-  classifyPdfIngestTargetWithGemini,
+  classifyPdfIngestTargetWithAi,
   type CsddPdfParseResult,
-} from "@/lib/source-pdf-gemini-extract";
+} from "@/lib/source-pdf-ai-extract";
 
 export type PrepareDraftStep = {
   id: string;
@@ -142,7 +142,7 @@ function applyCsddImport(existing: CsddFormFields, result: CsddPdfParseResult): 
     ...imported,
     ...(raw ? { rawUnprocessedData: raw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) } : {}),
     comments: existing.comments || imported.comments,
-    geminiContextRaw: existing.geminiContextRaw || imported.geminiContextRaw,
+    aiContextRaw: existing.aiContextRaw || imported.aiContextRaw,
   };
 }
 
@@ -168,22 +168,22 @@ function applyCitiAvotiImport(
   return { sections };
 }
 
-function plainCommentToHtml(_blockKey: GeminiSourceCommentBlockKey, plain: string): string {
-  return geminiExpertSourceCommentToRichHtml(plain);
+function plainCommentToHtml(_blockKey: AiSourceCommentBlockKey, plain: string): string {
+  return aiExpertSourceCommentToRichHtml(plain);
 }
 
 function countSourcesWithData(blocks: WorkspaceSourceBlocks): number {
-  return GEMINI_SOURCE_COMMENT_BLOCK_KEYS.filter((k) =>
+  return AI_SOURCE_COMMENT_BLOCK_KEYS.filter((k) =>
     sourceBlockHasDataExcludingComments(k, blocks),
   ).length;
 }
 
 /**
- * Portfeļa PDF → avotu bloki + Gemini ✨ komentāru melnraksts.
+ * Portfeļa PDF → avotu bloki + AI ✨ komentāru melnraksts.
  */
 export async function runPrepareDraftPipeline(input: {
   pdfs: PrepareDraftPdfInput[];
-  context: GeminiOrderContextInput;
+  context: AiOrderContextInput;
   /** Ģenerēt avotu / kopsavilkuma komentārus pēc importa. */
   generateComments?: boolean;
 }): Promise<PrepareDraftResult> {
@@ -199,7 +199,7 @@ export async function runPrepareDraftPipeline(input: {
     let target = pdf.target ?? detectSourcePdfIngestTarget(pdf.fileName, quick.text);
     let citiLabel = labelFromUnknownPdfFileName(pdf.fileName);
     if (!target) {
-      const classified = await classifyPdfIngestTargetWithGemini({
+      const classified = await classifyPdfIngestTargetWithAi({
         buffer: pdf.buffer,
         fileName: pdf.fileName,
         textHint: quick.text,
@@ -213,10 +213,10 @@ export async function runPrepareDraftPipeline(input: {
         target,
         buffer: pdf.buffer,
         fileName: pdf.fileName,
-        preferGemini: true,
+        preferAi: true,
       });
       const engineLabel =
-        plan === "gemini_primary" ? "Gemini Pro (PDF)" : plan === "gemini_fallback" ? "Gemini (fallback)" : "lokāli";
+        plan === "ai_primary" ? "Claude Opus (PDF)" : plan === "ai_fallback" ? "AI (fallback)" : "lokāli";
 
       if (target === "auto_records") {
         blocks = {
@@ -274,10 +274,10 @@ export async function runPrepareDraftPipeline(input: {
   }
 
   const modelTier = input.context.modelTier;
-  const ctxBase: GeminiOrderContextInput = { ...input.context, sourceBlocks: blocks, modelTier };
+  const ctxBase: AiOrderContextInput = { ...input.context, sourceBlocks: blocks, modelTier };
 
   /** Avotu komentāri paralēli — sākuma Prepare Draft brīdī sibling komentāru vēl nav; mileage/negadījumi secīgi pēc tam. */
-  const commentJobs = GEMINI_SOURCE_COMMENT_BLOCK_KEYS.map(async (blockKey) => {
+  const commentJobs = AI_SOURCE_COMMENT_BLOCK_KEYS.map(async (blockKey) => {
     const stepId = `comment:${blockKey}`;
     if (!sourceBlockHasDataExcludingComments(blockKey, blocks)) {
       return {
@@ -293,9 +293,9 @@ export async function runPrepareDraftPipeline(input: {
     }
     try {
       const existingPlain = adminRichHtmlToPlainText(
-        sourceBlockCommentsPlainForGemini(blockKey, blocks),
+        sourceBlockCommentsPlainForAi(blockKey, blocks),
       ).trim();
-      const text = await generateSourceCommentWithGemini({
+      const text = await generateSourceCommentWithAi({
         sessionId: ctxBase.sessionId,
         blockKey,
         vin: ctxBase.vin,
@@ -343,10 +343,10 @@ export async function runPrepareDraftPipeline(input: {
     }
   }
 
-  const ctxAfterComments: GeminiOrderContextInput = { ...ctxBase, sourceBlocks: blocks, modelTier };
+  const ctxAfterComments: AiOrderContextInput = { ...ctxBase, sourceBlocks: blocks, modelTier };
 
   try {
-    const mileageText = await generateMileageCommentWithGemini(ctxAfterComments);
+    const mileageText = await generateMileageCommentWithAi(ctxAfterComments);
     if (mileageText.trim()) {
       orderEdits.mileageComment = mileageText.trim();
       steps.push({ id: "comment:mileage", label: "Nobraukuma komentārs", status: "ok" });
@@ -360,7 +360,7 @@ export async function runPrepareDraftPipeline(input: {
   }
 
   try {
-    const incidentsText = await generateIncidentsSummaryWithGemini(ctxAfterComments);
+    const incidentsText = await generateIncidentsSummaryWithAi(ctxAfterComments);
     if (incidentsText.trim()) {
       orderEdits.internalComment = incidentsText.trim();
       steps.push({ id: "comment:incidents", label: "Negadījumu kopsavilkums", status: "ok" });
@@ -375,7 +375,7 @@ export async function runPrepareDraftPipeline(input: {
 
   if (countSourcesWithData(blocks) >= 2) {
     try {
-      const comparisonText = await generateSourcesComparisonWithGemini(ctxAfterComments);
+      const comparisonText = await generateSourcesComparisonWithAi(ctxAfterComments);
       if (comparisonText.trim()) {
         orderEdits.sourcesComparisonComment = comparisonText.trim();
         steps.push({ id: "comment:sources-comparison", label: "Avotu salīdzinājums", status: "ok" });
@@ -406,10 +406,10 @@ export async function runPrepareDraftPipeline(input: {
 
 export function formatPrepareDraftEngineLabel(plan: PdfIngestEngine): string {
   switch (plan) {
-    case "gemini_primary":
-      return "Gemini Pro (PDF vizuāli)";
-    case "gemini_fallback":
-      return "Gemini Pro (fallback)";
+    case "ai_primary":
+      return "Claude Opus (PDF vizuāli)";
+    case "ai_fallback":
+      return "Claude Opus (fallback)";
     default:
       return "Lokālais parsers";
   }

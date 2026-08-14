@@ -136,14 +136,14 @@ import {
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
-import { AdminGeminiGenerateWithPrefill } from "@/components/admin/AdminGeminiGenerateWithPrefill";
-import type { AdminGeminiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
+import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
+import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
   applySourceBlockGeneratedComment,
   citiAvotiSectionPlainTextExcludingComments,
-  sourceBlockCommentsPlainForGemini,
-  type GeminiSourceCommentBlockKey,
-  type GeminiSourceCommentTargetField,
+  sourceBlockCommentsPlainForAi,
+  type AiSourceCommentBlockKey,
+  type AiSourceCommentTargetField,
   sourceBlockHasDataExcludingComments,
 } from "@/lib/admin-source-comment-blocks";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -158,7 +158,7 @@ import {
 } from "@/components/admin/AdminOrderCopilotPanel";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
-import { adminRichHtmlToPlainText, geminiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
+import { adminRichHtmlToPlainText, aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -166,10 +166,10 @@ import {
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import {
-  orderHasIncidentDataForGemini,
-  orderHasMileageDataForGemini,
-  orderHasSourceDataForGemini,
-} from "@/lib/admin-gemini-data-availability";
+  orderHasIncidentDataForAi,
+  orderHasMileageDataForAi,
+  orderHasSourceDataForAi,
+} from "@/lib/admin-ai-data-availability";
 import { buildProvinAuditPdfFilename, resolveProvinAuditPdfProductBrand } from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
@@ -184,26 +184,26 @@ import {
   postNotifyReportReadyViaBlob,
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
-import { formatAdminGeminiFetchError, parseAdminGeminiResponse } from "@/lib/admin-gemini-client-errors";
-import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
+import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 
-function geminiFetchErrorMessage(
+function aiFetchErrorMessage(
   res: Response,
   data: { error?: string; detail?: string },
   parseFailed: boolean,
   fallback: string,
 ): string {
-  if (parseFailed) return `Gemini: servera atbilde nav lasāma (HTTP ${res.status})`;
-  return formatAdminGeminiFetchError(data, res, fallback);
+  if (parseFailed) return `AI: servera atbilde nav lasāma (HTTP ${res.status})`;
+  return formatAdminAiFetchError(data, res, fallback);
 }
 
 export type OrderWorkspacePayload = {
   sessionId: string;
   isDemo: boolean;
-  /** Vai Gemini pogas drīkst strādāt (pēc noklusējuma visiem pasūtījumiem). */
-  geminiAllowed: boolean;
+  /** Vai AI pogas drīkst strādāt (pēc noklusējuma visiem pasūtījumiem). */
+  aiAllowed: boolean;
   vin: string | null;
   created: number;
   amountTotal: number | null;
@@ -678,24 +678,24 @@ export function OrderDetailWorkspace({
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
-  const [geminiInspectionBusy, setGeminiInspectionBusy] = useState(false);
-  const [geminiInspectionErr, setGeminiInspectionErr] = useState<string | null>(null);
-  const [geminiTechnicalRisksBusy, setGeminiTechnicalRisksBusy] = useState(false);
-  const [geminiTechnicalRisksErr, setGeminiTechnicalRisksErr] = useState<string | null>(null);
-  const [geminiPriceBusy, setGeminiPriceBusy] = useState(false);
-  const [geminiTirgusMarketBusy, setGeminiTirgusMarketBusy] = useState(false);
-  const [geminiTirgusMarketErr, setGeminiTirgusMarketErr] = useState<string | null>(null);
-  const [geminiPriceErr, setGeminiPriceErr] = useState<string | null>(null);
-  const [geminiSummaryBusy, setGeminiSummaryBusy] = useState(false);
-  const [geminiSummaryErr, setGeminiSummaryErr] = useState<string | null>(null);
-  const [geminiIncidentsSummaryBusy, setGeminiIncidentsSummaryBusy] = useState(false);
-  const [geminiIncidentsSummaryErr, setGeminiIncidentsSummaryErr] = useState<string | null>(null);
-  const [geminiMileageCommentBusy, setGeminiMileageCommentBusy] = useState(false);
-  const [geminiMileageCommentErr, setGeminiMileageCommentErr] = useState<string | null>(null);
-  const [geminiSourcesComparisonBusy, setGeminiSourcesComparisonBusy] = useState(false);
-  const [geminiSourcesComparisonErr, setGeminiSourcesComparisonErr] = useState<string | null>(null);
-  const [geminiSourceCommentBusy, setGeminiSourceCommentBusy] = useState<string | null>(null);
-  const [geminiSourceCommentErr, setGeminiSourceCommentErr] = useState<{
+  const [aiInspectionBusy, setAiInspectionBusy] = useState(false);
+  const [aiInspectionErr, setAiInspectionErr] = useState<string | null>(null);
+  const [aiTechnicalRisksBusy, setAiTechnicalRisksBusy] = useState(false);
+  const [aiTechnicalRisksErr, setAiTechnicalRisksErr] = useState<string | null>(null);
+  const [aiPriceBusy, setAiPriceBusy] = useState(false);
+  const [aiTirgusMarketBusy, setAiTirgusMarketBusy] = useState(false);
+  const [aiTirgusMarketErr, setAiTirgusMarketErr] = useState<string | null>(null);
+  const [aiPriceErr, setAiPriceErr] = useState<string | null>(null);
+  const [aiSummaryBusy, setAiSummaryBusy] = useState(false);
+  const [aiSummaryErr, setAiSummaryErr] = useState<string | null>(null);
+  const [aiIncidentsSummaryBusy, setAiIncidentsSummaryBusy] = useState(false);
+  const [aiIncidentsSummaryErr, setAiIncidentsSummaryErr] = useState<string | null>(null);
+  const [aiMileageCommentBusy, setAiMileageCommentBusy] = useState(false);
+  const [aiMileageCommentErr, setAiMileageCommentErr] = useState<string | null>(null);
+  const [aiSourcesComparisonBusy, setAiSourcesComparisonBusy] = useState(false);
+  const [aiSourcesComparisonErr, setAiSourcesComparisonErr] = useState<string | null>(null);
+  const [aiSourceCommentBusy, setAiSourceCommentBusy] = useState<string | null>(null);
+  const [aiSourceCommentErr, setAiSourceCommentErr] = useState<{
     key: string;
     msg: string;
   } | null>(null);
@@ -985,7 +985,7 @@ export function OrderDetailWorkspace({
     [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, payload.sessionId, syncWsPersistRefFromState],
   );
 
-  const buildGeminiOrderPayload = useCallback(
+  const buildAiOrderPayload = useCallback(
     (extra: { operatorNotes?: string; existingDraftPlain?: string } = {}) => {
       const cur = wsPersistRef.current;
       const edits = orderEditsRef.current;
@@ -1010,7 +1010,7 @@ export function OrderDetailWorkspace({
     [payload.customerName, payload.listingUrl, payload.notes, payload.sessionId, payload.vin],
   );
 
-  const buildGeminiListingPayload = useCallback(() => buildGeminiOrderPayload(), [buildGeminiOrderPayload]);
+  const buildAiListingPayload = useCallback(() => buildAiOrderPayload(), [buildAiOrderPayload]);
 
   const setIrissSummary = useCallback(
     (next: string) => {
@@ -1019,257 +1019,257 @@ export function OrderDetailWorkspace({
     [updateWs],
   );
 
-  const runGeminiTechnicalRiskAnalysis = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-    if (!payload.geminiAllowed || geminiTechnicalRisksBusy) return;
-    setGeminiTechnicalRisksBusy(true);
-    setGeminiTechnicalRisksErr(null);
+  const runAiTechnicalRiskAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    if (!payload.aiAllowed || aiTechnicalRisksBusy) return;
+    setAiTechnicalRisksBusy(true);
+    setAiTechnicalRisksErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/gemini/technical-risk-analysis", {
+      const res = await fetch("/api/admin/ai/technical-risk-analysis", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...buildGeminiOrderPayload({
+          ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim(),
           }),
           modelTier,
         }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
-        setGeminiTechnicalRisksErr(
-          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās ģenerēt tehnisko risku analīzi"),
+        setAiTechnicalRisksErr(
+          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās ģenerēt tehnisko risku analīzi"),
         );
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ tehniskoRiskuAnalize: geminiExpertSourceCommentToRichHtml(data.text) });
+        updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(data.text) });
       }
     } catch {
-      setGeminiTechnicalRisksErr("Gemini: neizdevās savienoties");
+      setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
-      setGeminiTechnicalRisksBusy(false);
+      setAiTechnicalRisksBusy(false);
     }
-  }, [buildGeminiOrderPayload, geminiTechnicalRisksBusy, payload.geminiAllowed, updateWs]);
+  }, [buildAiOrderPayload, aiTechnicalRisksBusy, payload.aiAllowed, updateWs]);
 
-  const runGeminiInspectionRecommendations = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-    if (!payload.geminiAllowed || geminiInspectionBusy) return;
-    setGeminiInspectionBusy(true);
-    setGeminiInspectionErr(null);
+  const runAiInspectionRecommendations = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    if (!payload.aiAllowed || aiInspectionBusy) return;
+    setAiInspectionBusy(true);
+    setAiInspectionErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/gemini/inspection-recommendations", {
+      const res = await fetch("/api/admin/ai/inspection-recommendations", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...buildGeminiOrderPayload({
+          ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.apskatesPlāns).trim(),
           }),
           modelTier,
         }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
-        setGeminiInspectionErr(geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās ģenerēt"));
+        setAiInspectionErr(aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās ģenerēt"));
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ apskatesPlāns: geminiExpertSourceCommentToRichHtml(data.text) });
+        updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(data.text) });
       }
     } catch {
-      setGeminiInspectionErr("Gemini: neizdevās savienoties");
+      setAiInspectionErr("AI: neizdevās savienoties");
     } finally {
-      setGeminiInspectionBusy(false);
+      setAiInspectionBusy(false);
     }
-  }, [buildGeminiOrderPayload, geminiInspectionBusy, payload.geminiAllowed, updateWs]);
+  }, [buildAiOrderPayload, aiInspectionBusy, payload.aiAllowed, updateWs]);
 
-  const runGeminiPriceAnalysis = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-    if (!payload.geminiAllowed || geminiPriceBusy) return;
-    setGeminiPriceBusy(true);
-    setGeminiPriceErr(null);
+  const runAiPriceAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    if (!payload.aiAllowed || aiPriceBusy) return;
+    setAiPriceBusy(true);
+    setAiPriceErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/gemini/price-analysis", {
+      const res = await fetch("/api/admin/ai/price-analysis", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...buildGeminiOrderPayload({
+          ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.cenasAtbilstiba).trim(),
           }),
           modelTier,
         }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
-        setGeminiPriceErr(geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās analizēt cenu"));
+        setAiPriceErr(aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās analizēt cenu"));
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ cenasAtbilstiba: geminiExpertSourceCommentToRichHtml(data.text) });
+        updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(data.text) });
       }
     } catch {
-      setGeminiPriceErr("Gemini: neizdevās savienoties");
+      setAiPriceErr("AI: neizdevās savienoties");
     } finally {
-      setGeminiPriceBusy(false);
+      setAiPriceBusy(false);
     }
-  }, [buildGeminiOrderPayload, geminiPriceBusy, payload.geminiAllowed, updateWs]);
+  }, [buildAiOrderPayload, aiPriceBusy, payload.aiAllowed, updateWs]);
 
-  const runGeminiSummaryAnalysis = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-    if (!payload.geminiAllowed || geminiSummaryBusy) return;
-    setGeminiSummaryBusy(true);
-    setGeminiSummaryErr(null);
+  const runAiSummaryAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    if (!payload.aiAllowed || aiSummaryBusy) return;
+    setAiSummaryBusy(true);
+    setAiSummaryErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/gemini/summary-analysis", {
+      const res = await fetch("/api/admin/ai/summary-analysis", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...buildGeminiOrderPayload({
+          ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.iriss).trim(),
           }),
           modelTier,
         }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
-        setGeminiSummaryErr(geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot atbildi"));
+        setAiSummaryErr(aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot atbildi"));
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        setIrissSummary(geminiExpertSourceCommentToRichHtml(data.text));
+        setIrissSummary(aiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
-      setGeminiSummaryErr("Gemini: neizdevās savienoties");
+      setAiSummaryErr("AI: neizdevās savienoties");
     } finally {
-      setGeminiSummaryBusy(false);
+      setAiSummaryBusy(false);
     }
-  }, [buildGeminiOrderPayload, geminiSummaryBusy, payload.geminiAllowed, setIrissSummary]);
+  }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, setIrissSummary]);
 
-  const runGeminiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-    if (!payload.geminiAllowed || geminiIncidentsSummaryBusy) return;
-    setGeminiIncidentsSummaryBusy(true);
-    setGeminiIncidentsSummaryErr(null);
+  const runAiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    if (!payload.aiAllowed || aiIncidentsSummaryBusy) return;
+    setAiIncidentsSummaryBusy(true);
+    setAiIncidentsSummaryErr(null);
     try {
-      const res = await fetch("/api/admin/gemini/incidents-summary", {
+      const res = await fetch("/api/admin/ai/incidents-summary", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...buildGeminiOrderPayload({
+          ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(internalCommentDraft).trim(),
           }),
           modelTier,
         }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
-        setGeminiIncidentsSummaryErr(
-          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot atbildi"),
+        setAiIncidentsSummaryErr(
+          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot atbildi"),
         );
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onInternalCommentChange(geminiExpertSourceCommentToRichHtml(data.text));
+        onInternalCommentChange(aiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
-      setGeminiIncidentsSummaryErr("Gemini: neizdevās savienoties");
+      setAiIncidentsSummaryErr("AI: neizdevās savienoties");
     } finally {
-      setGeminiIncidentsSummaryBusy(false);
+      setAiIncidentsSummaryBusy(false);
     }
   }, [
-    buildGeminiOrderPayload,
-    geminiIncidentsSummaryBusy,
+    buildAiOrderPayload,
+    aiIncidentsSummaryBusy,
     internalCommentDraft,
     onInternalCommentChange,
-    payload.geminiAllowed,
+    payload.aiAllowed,
   ]);
 
-  const runGeminiMileageComment = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-    if (!payload.geminiAllowed || geminiMileageCommentBusy) return;
-    setGeminiMileageCommentBusy(true);
-    setGeminiMileageCommentErr(null);
+  const runAiMileageComment = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    if (!payload.aiAllowed || aiMileageCommentBusy) return;
+    setAiMileageCommentBusy(true);
+    setAiMileageCommentErr(null);
     try {
-      const res = await fetch("/api/admin/gemini/mileage-comment", {
+      const res = await fetch("/api/admin/ai/mileage-comment", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...buildGeminiOrderPayload({
+          ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(mileageCommentDraft).trim(),
           }),
           modelTier,
         }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
-        setGeminiMileageCommentErr(
-          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot atbildi"),
+        setAiMileageCommentErr(
+          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot atbildi"),
         );
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onMileageCommentChange(geminiExpertSourceCommentToRichHtml(data.text));
+        onMileageCommentChange(aiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
-      setGeminiMileageCommentErr("Gemini: neizdevās savienoties");
+      setAiMileageCommentErr("AI: neizdevās savienoties");
     } finally {
-      setGeminiMileageCommentBusy(false);
+      setAiMileageCommentBusy(false);
     }
   }, [
-    buildGeminiOrderPayload,
-    geminiMileageCommentBusy,
+    buildAiOrderPayload,
+    aiMileageCommentBusy,
     mileageCommentDraft,
     onMileageCommentChange,
-    payload.geminiAllowed,
+    payload.aiAllowed,
   ]);
 
-  const runGeminiSourcesComparison = useCallback(async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-    if (!payload.geminiAllowed || geminiSourcesComparisonBusy) return;
-    setGeminiSourcesComparisonBusy(true);
-    setGeminiSourcesComparisonErr(null);
+  const runAiSourcesComparison = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+    if (!payload.aiAllowed || aiSourcesComparisonBusy) return;
+    setAiSourcesComparisonBusy(true);
+    setAiSourcesComparisonErr(null);
     try {
-      const res = await fetch("/api/admin/gemini/sources-comparison", {
+      const res = await fetch("/api/admin/ai/sources-comparison", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...buildGeminiOrderPayload({
+          ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(sourcesComparisonCommentDraft).trim(),
           }),
           modelTier,
         }),
       });
-      const { data, parseFailed } = await parseAdminGeminiResponse(res);
+      const { data, parseFailed } = await parseAdminAiResponse(res);
       if (!res.ok) {
-        setGeminiSourcesComparisonErr(
-          geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās sagatavot avotu salīdzinājumu"),
+        setAiSourcesComparisonErr(
+          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot avotu salīdzinājumu"),
         );
         return;
       }
       if (typeof data.text === "string" && data.text.trim()) {
-        onSourcesComparisonCommentChange(geminiExpertSourceCommentToRichHtml(data.text));
+        onSourcesComparisonCommentChange(aiExpertSourceCommentToRichHtml(data.text));
       }
     } catch {
-      setGeminiSourcesComparisonErr("Gemini: neizdevās savienoties");
+      setAiSourcesComparisonErr("AI: neizdevās savienoties");
     } finally {
-      setGeminiSourcesComparisonBusy(false);
+      setAiSourcesComparisonBusy(false);
     }
   }, [
-    buildGeminiOrderPayload,
-    geminiSourcesComparisonBusy,
+    buildAiOrderPayload,
+    aiSourcesComparisonBusy,
     onSourcesComparisonCommentChange,
-    payload.geminiAllowed,
+    payload.aiAllowed,
     sourcesComparisonCommentDraft,
   ]);
 
@@ -1386,29 +1386,29 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
   );
 
-  const runGeminiTirgusMarket = useCallback(
-    async (operatorNotes = "", modelTier: GeminiAdminModelTier = "pro") => {
-      if (!payload.geminiAllowed || geminiTirgusMarketBusy) return;
-      setGeminiTirgusMarketBusy(true);
-      setGeminiTirgusMarketErr(null);
+  const runAiTirgusMarket = useCallback(
+    async (operatorNotes = "", modelTier: AiAdminModelTier = "pro") => {
+      if (!payload.aiAllowed || aiTirgusMarketBusy) return;
+      setAiTirgusMarketBusy(true);
+      setAiTirgusMarketErr(null);
       try {
         const cur = wsPersistRef.current;
-        const res = await fetch("/api/admin/gemini/tirgus-market", {
+        const res = await fetch("/api/admin/ai/tirgus-market", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...buildGeminiOrderPayload({
+            ...buildAiOrderPayload({
               operatorNotes,
               existingDraftPlain: adminRichHtmlToPlainText(cur.sourceBlocks.tirgus.comments).trim(),
             }),
             modelTier,
           }),
         });
-        const { data, parseFailed } = await parseAdminGeminiResponse(res);
+        const { data, parseFailed } = await parseAdminAiResponse(res);
         if (!res.ok) {
-          setGeminiTirgusMarketErr(
-            geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās analizēt tirgu"),
+          setAiTirgusMarketErr(
+            aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās analizēt tirgu"),
           );
           return;
         }
@@ -1420,7 +1420,7 @@ export function OrderDetailWorkspace({
         };
         const comments = typeof market.comments === "string" ? market.comments.trim() : "";
         if (!comments) {
-          setGeminiTirgusMarketErr("Gemini: tukšs komentārs");
+          setAiTirgusMarketErr("AI: tukšs komentārs");
           return;
         }
         const prev = cur.sourceBlocks.tirgus;
@@ -1438,43 +1438,43 @@ export function OrderDetailWorkspace({
             typeof market.priceDrop === "string" && market.priceDrop.trim()
               ? market.priceDrop.trim()
               : prev.priceDrop,
-          comments: geminiExpertSourceCommentToRichHtml(comments),
+          comments: aiExpertSourceCommentToRichHtml(comments),
         });
       } catch {
-        setGeminiTirgusMarketErr("Gemini: neizdevās savienoties");
+        setAiTirgusMarketErr("AI: neizdevās savienoties");
       } finally {
-        setGeminiTirgusMarketBusy(false);
+        setAiTirgusMarketBusy(false);
       }
     },
-    [buildGeminiOrderPayload, geminiTirgusMarketBusy, payload.geminiAllowed, updateSourceBlock],
+    [buildAiOrderPayload, aiTirgusMarketBusy, payload.aiAllowed, updateSourceBlock],
   );
 
-  const runGeminiSourceComment = useCallback(
+  const runAiSourceComment = useCallback(
     async (
-      blockKey: GeminiSourceCommentBlockKey,
+      blockKey: AiSourceCommentBlockKey,
       operatorNotes = "",
       citiAvotiSectionIndex?: number,
-      modelTier: GeminiAdminModelTier = "pro",
-      targetField: GeminiSourceCommentTargetField = "comments",
+      modelTier: AiAdminModelTier = "pro",
+      targetField: AiSourceCommentTargetField = "comments",
     ) => {
       const busyKey = targetField === "comments" ? blockKey : `${blockKey}:${targetField}`;
-      if (!payload.geminiAllowed || geminiSourceCommentBusy) return;
-      setGeminiSourceCommentBusy(busyKey);
-      setGeminiSourceCommentErr(null);
+      if (!payload.aiAllowed || aiSourceCommentBusy) return;
+      setAiSourceCommentBusy(busyKey);
+      setAiSourceCommentErr(null);
       try {
         const cur = wsPersistRef.current;
-        const existingComments = sourceBlockCommentsPlainForGemini(
+        const existingComments = sourceBlockCommentsPlainForAi(
           blockKey,
           cur.sourceBlocks,
           citiAvotiSectionIndex,
           targetField,
         );
-        const res = await fetch("/api/admin/gemini/source-comment", {
+        const res = await fetch("/api/admin/ai/source-comment", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...buildGeminiOrderPayload({
+            ...buildAiOrderPayload({
               operatorNotes,
               existingDraftPlain: adminRichHtmlToPlainText(existingComments).trim(),
             }),
@@ -1484,16 +1484,16 @@ export function OrderDetailWorkspace({
             modelTier,
           }),
         });
-        const { data, parseFailed } = await parseAdminGeminiResponse(res);
+        const { data, parseFailed } = await parseAdminAiResponse(res);
         if (!res.ok) {
-          setGeminiSourceCommentErr({
+          setAiSourceCommentErr({
             key: busyKey,
-            msg: geminiFetchErrorMessage(res, data, parseFailed, "Gemini: neizdevās ģenerēt komentāru"),
+            msg: aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās ģenerēt komentāru"),
           });
           return;
         }
         if (typeof data.text === "string" && data.text.trim()) {
-          const html = geminiExpertSourceCommentToRichHtml(data.text);
+          const html = aiExpertSourceCommentToRichHtml(data.text);
           const prevBlock = cur.sourceBlocks[blockKey];
           const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
             citiAvotiSectionIndex,
@@ -1502,16 +1502,16 @@ export function OrderDetailWorkspace({
           updateSourceBlock(blockKey, nextBlock);
         }
       } catch {
-        setGeminiSourceCommentErr({ key: busyKey, msg: "Gemini: neizdevās savienoties" });
+        setAiSourceCommentErr({ key: busyKey, msg: "AI: neizdevās savienoties" });
       } finally {
-        setGeminiSourceCommentBusy(null);
+        setAiSourceCommentBusy(null);
       }
     },
-    [buildGeminiOrderPayload, geminiSourceCommentBusy, payload.geminiAllowed, updateSourceBlock],
+    [buildAiOrderPayload, aiSourceCommentBusy, payload.aiAllowed, updateSourceBlock],
   );
 
   const runPrepareDraft = useCallback(async () => {
-    if (!payload.geminiAllowed || prepareDraftBusy) return;
+    if (!payload.aiAllowed || prepareDraftBusy) return;
     const pdfs = portfolioRef.current.filter(
       (p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name),
     );
@@ -1522,7 +1522,7 @@ export function OrderDetailWorkspace({
     setPrepareDraftBusy(true);
     setPrepareDraftErr(null);
     setPrepareDraftNotice(null);
-    setPrepareDraftPhase("Analizējam PDF ar Gemini Pro un ģenerējam komentārus…");
+    setPrepareDraftPhase("Analizējam PDF ar Claude Opus un ģenerējam komentārus…");
     try {
       const cur = wsPersistRef.current;
       const edits = orderEditsRef.current;
@@ -1567,8 +1567,8 @@ export function OrderDetailWorkspace({
         setPrepareDraftErr(
           typeof data.detail === "string" && data.detail.trim()
             ? data.detail
-            : data.error === "missing_gemini_key"
-              ? "Nav GEMINI_API_KEY serverī"
+            : data.error === "missing_ai_key"
+              ? "Nav ANTHROPIC_API_KEY serverī"
               : "Neizdevās sagatavot melnrakstu",
         );
         return;
@@ -1607,7 +1607,7 @@ export function OrderDetailWorkspace({
     onMileageCommentChange,
     onSourcesComparisonCommentChange,
     payload.customerName,
-    payload.geminiAllowed,
+    payload.aiAllowed,
     payload.listingUrl,
     payload.notes,
     payload.sessionId,
@@ -1850,11 +1850,11 @@ export function OrderDetailWorkspace({
     onInternalCommentChange("");
     onMileageCommentChange("");
     onSourcesComparisonCommentChange("");
-    setGeminiInspectionErr(null);
-    setGeminiTechnicalRisksErr(null);
-    setGeminiPriceErr(null);
-    setGeminiSummaryErr(null);
-    setGeminiSourceCommentErr(null);
+    setAiInspectionErr(null);
+    setAiTechnicalRisksErr(null);
+    setAiPriceErr(null);
+    setAiSummaryErr(null);
+    setAiSourceCommentErr(null);
     setPreviewOpen(false);
     setWizardStep(0);
     portfolioRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
@@ -2266,12 +2266,12 @@ export function OrderDetailWorkspace({
   /** PDF drīkst ģenerēt arī ar tukšiem laukiem — redzamība kontrolēta ar `pdfVisibility`. */
   const canGeneratePdf = true;
 
-  const geminiCommentSlot = useCallback(
+  const aiCommentSlot = useCallback(
     (
-      key: GeminiSourceCommentBlockKey,
+      key: AiSourceCommentBlockKey,
       citiAvotiSectionIndex?: number,
-      targetField: GeminiSourceCommentTargetField = "comments",
-    ): AdminGeminiSourceCommentSlot => {
+      targetField: AiSourceCommentTargetField = "comments",
+    ): AdminAiSourceCommentSlot => {
       const busyKey = targetField === "comments" ? key : `${key}:${targetField}`;
       const hasSourceData =
         key === "citi_avoti" && citiAvotiSectionIndex != null ?
@@ -2280,20 +2280,20 @@ export function OrderDetailWorkspace({
           ).length > 0
         : sourceBlockHasDataExcludingComments(key, blocksDisplaySafe);
       return {
-        allowed: payload.geminiAllowed,
-        busy: geminiSourceCommentBusy === busyKey,
-        error: geminiSourceCommentErr?.key === busyKey ? geminiSourceCommentErr.msg : null,
+        allowed: payload.aiAllowed,
+        busy: aiSourceCommentBusy === busyKey,
+        error: aiSourceCommentErr?.key === busyKey ? aiSourceCommentErr.msg : null,
         hasSourceData,
         onGenerate: (operatorNotes, modelTier) =>
-          void runGeminiSourceComment(key, operatorNotes, citiAvotiSectionIndex, modelTier, targetField),
+          void runAiSourceComment(key, operatorNotes, citiAvotiSectionIndex, modelTier, targetField),
       };
     },
     [
       blocksDisplaySafe,
-      geminiSourceCommentBusy,
-      geminiSourceCommentErr,
-      payload.geminiAllowed,
-      runGeminiSourceComment,
+      aiSourceCommentBusy,
+      aiSourceCommentErr,
+      payload.aiAllowed,
+      runAiSourceComment,
     ],
   );
 
@@ -2317,25 +2317,25 @@ export function OrderDetailWorkspace({
     }
   }, [blocksDisplaySafe]);
 
-  const hasIncidentDataForGemini = useMemo(() => {
+  const hasIncidentDataForAi = useMemo(() => {
     try {
-      return orderHasIncidentDataForGemini(blocksDisplaySafe);
+      return orderHasIncidentDataForAi(blocksDisplaySafe);
     } catch {
       return false;
     }
   }, [blocksDisplaySafe]);
 
-  const hasMileageDataForGemini = useMemo(() => {
+  const hasMileageDataForAi = useMemo(() => {
     try {
-      return orderHasMileageDataForGemini(blocksDisplaySafe);
+      return orderHasMileageDataForAi(blocksDisplaySafe);
     } catch {
       return false;
     }
   }, [blocksDisplaySafe]);
 
-  const hasSourceDataForGemini = useMemo(() => {
+  const hasSourceDataForAi = useMemo(() => {
     try {
-      return orderHasSourceDataForGemini(blocksDisplaySafe);
+      return orderHasSourceDataForAi(blocksDisplaySafe);
     } catch {
       return false;
     }
@@ -2803,13 +2803,13 @@ export function OrderDetailWorkspace({
             ) : null}
           </h2>
           <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-            {payload.geminiAllowed ? (
+            {payload.aiAllowed ? (
               <button
                 type="button"
                 onClick={() => void runPrepareDraft()}
                 disabled={prepareDraftBusy || portfolio.every((p) => p.mime !== "application/pdf" && !/\.pdf$/i.test(p.name))}
                 className="inline-flex items-center gap-1 rounded-md border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/80 px-2 py-1 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:cursor-not-allowed disabled:opacity-45"
-                title="Portfeļa PDF → avotu tabulas + Gemini Pro komentāru melnraksts"
+                title="Portfeļa PDF → avotu tabulas + Claude Opus komentāru melnraksts"
               >
                 {prepareDraftBusy ? (
                   <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden />
@@ -3399,7 +3399,7 @@ export function OrderDetailWorkspace({
         open={copilotOpen}
         onClose={() => setCopilotOpen(false)}
         sessionId={payload.sessionId}
-        geminiAllowed={payload.geminiAllowed}
+        aiAllowed={payload.aiAllowed}
         getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
         applyPatchedBlocks={applyCopilotPatchedBlocks}
         restoreBlocksSnapshot={restoreCopilotBlocksSnapshot}
@@ -3477,7 +3477,7 @@ export function OrderDetailWorkspace({
           <AdminOrderCopilotTrigger
             open={copilotOpen}
             busy={copilotBusy}
-            disabled={!payload.geminiAllowed}
+            disabled={!payload.aiAllowed}
             onOpen={() => {
               setPhrasesOpen(false);
               setCopilotOpen(true);
@@ -3623,7 +3623,7 @@ export function OrderDetailWorkspace({
                 pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
                 onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
                 sessionId={payload.sessionId}
-                geminiComment={geminiCommentSlot("csdd")}
+                aiComment={aiCommentSlot("csdd")}
               />
             </div>
           </div>
@@ -3641,7 +3641,7 @@ export function OrderDetailWorkspace({
                 sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.autodna}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ autodna: next })}
-                geminiComment={geminiCommentSlot("autodna")}
+                aiComment={aiCommentSlot("autodna")}
                 autodnaApiConfigured={autodnaApiConfigured}
                 getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
                 applyPatchedBlocks={applyCopilotPatchedBlocks}
@@ -3657,7 +3657,7 @@ export function OrderDetailWorkspace({
                 sessionId={payload.sessionId}
                 pdfInclude={pdfVisibility.carvertical}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ carvertical: next })}
-                geminiComment={geminiCommentSlot("carvertical")}
+                aiComment={aiCommentSlot("carvertical")}
                 getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
                 applyPatchedBlocks={applyCopilotPatchedBlocks}
               />
@@ -3675,8 +3675,8 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
-              geminiComment={geminiCommentSlot("auto_records")}
-              geminiServiceHistory={geminiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
+              aiComment={aiCommentSlot("auto_records")}
+              aiServiceHistory={aiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
               photosPersistenceEnabled={orderDraftPersistenceEnabled}
               onAutoRecordsPhotoGroupsStructuralCommit={commitAutoRecordsPhotoGroupsStructural}
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
@@ -3695,7 +3695,7 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.ltab}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
-              geminiComment={geminiCommentSlot("ltab")}
+              aiComment={aiCommentSlot("ltab")}
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
               applyPatchedBlocks={applyCopilotPatchedBlocks}
             />
@@ -3712,7 +3712,7 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.citi_avoti}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
-              geminiComment={(i) => geminiCommentSlot("citi_avoti", i)}
+              aiComment={(i) => aiCommentSlot("citi_avoti", i)}
             />
           </div>
         ) : null}
@@ -3727,7 +3727,7 @@ export function OrderDetailWorkspace({
               trafficFillLevel={traffic.tjekbil}
               sessionId={payload.sessionId}
               vin={vinBar}
-              geminiComment={geminiCommentSlot("tjekbil")}
+              aiComment={aiCommentSlot("tjekbil")}
               pdfInclude={pdfVisibility.tjekbil}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ tjekbil: next })}
             />
@@ -3747,8 +3747,8 @@ export function OrderDetailWorkspace({
               pdfIncludeLkf={pdfVisibility.lkf_ee}
               onPdfIncludeMnt={(next) => onPdfVisibilityChange({ mnt_ee: next })}
               onPdfIncludeLkf={(next) => onPdfVisibilityChange({ lkf_ee: next })}
-              geminiMnt={geminiCommentSlot("mnt_ee")}
-              geminiLkf={geminiCommentSlot("lkf_ee")}
+              aiMnt={aiCommentSlot("mnt_ee")}
+              aiLkf={aiCommentSlot("lkf_ee")}
               sessionId={payload.sessionId}
               vin={vinBar}
               readOnly={false}
@@ -3766,7 +3766,7 @@ export function OrderDetailWorkspace({
               trafficFillLevel={traffic.carinfo}
               sessionId={payload.sessionId}
               vin={vinBar}
-              geminiComment={geminiCommentSlot("carinfo")}
+              aiComment={aiCommentSlot("carinfo")}
               pdfInclude={pdfVisibility.carinfo}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ carinfo: next })}
             />
@@ -3799,11 +3799,11 @@ export function OrderDetailWorkspace({
                       readOnly={false}
                       onChange={(next) => updateSourceBlock("tirgus", next)}
                       variant="embedded"
-                      geminiComment={geminiCommentSlot("tirgus")}
-                      marketGeminiAllowed={payload.geminiAllowed}
-                      marketGeminiBusy={geminiTirgusMarketBusy}
-                      marketGeminiError={geminiTirgusMarketErr}
-                      onMarketGeminiAnalyze={(notes, tier) => void runGeminiTirgusMarket(notes, tier)}
+                      aiComment={aiCommentSlot("tirgus")}
+                      marketAiAllowed={payload.aiAllowed}
+                      marketAiBusy={aiTirgusMarketBusy}
+                      marketAiError={aiTirgusMarketErr}
+                      onMarketAiAnalyze={(notes, tier) => void runAiTirgusMarket(notes, tier)}
                       listingUrl={payload.listingUrl}
                     />
                   </div>
@@ -3815,8 +3815,8 @@ export function OrderDetailWorkspace({
                     onChange={(next) => updateSourceBlock("listing_analysis", next)}
                     variant="priority"
                     autoGrow
-                    geminiAllowed={payload.geminiAllowed}
-                    buildGeminiPayload={buildGeminiListingPayload}
+                    aiAllowed={payload.aiAllowed}
+                    buildAiPayload={buildAiListingPayload}
                     sessionId={payload.sessionId}
                     photosPersistenceEnabled={orderDraftPersistenceEnabled}
                     onListingPhotoGroupsStructuralCommit={commitListingPhotoGroupsStructural}
@@ -3824,17 +3824,17 @@ export function OrderDetailWorkspace({
                 </div>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateWithPrefill
+                    <AdminAiGenerateWithPrefill
                       label="Analizēt cenu"
-                      busy={geminiPriceBusy}
-                      disabled={!payload.geminiAllowed}
-                      demoOnly={!payload.geminiAllowed}
-                      onGenerate={(operatorNotes, modelTier) => void runGeminiPriceAnalysis(operatorNotes, modelTier)}
+                      busy={aiPriceBusy}
+                      disabled={!payload.aiAllowed}
+                      demoOnly={!payload.aiAllowed}
+                      onGenerate={(operatorNotes, modelTier) => void runAiPriceAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
-                  {geminiPriceErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiPriceErr}>
-                      {geminiPriceErr}
+                  {aiPriceErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiPriceErr}>
+                      {aiPriceErr}
                     </p>
                   ) : null}
                   <AdminAiPolishRichCommentShell
@@ -3873,18 +3873,18 @@ export function OrderDetailWorkspace({
                   title={`1. ${ADMIN_TECHNICAL_RISKS_LABEL}`}
                 >
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateWithPrefill
+                    <AdminAiGenerateWithPrefill
                       label="Ģenerēt analīzi"
-                      busy={geminiTechnicalRisksBusy}
-                      disabled={!payload.geminiAllowed}
-                      demoOnly={!payload.geminiAllowed}
+                      busy={aiTechnicalRisksBusy}
+                      disabled={!payload.aiAllowed}
+                      demoOnly={!payload.aiAllowed}
                       onGenerate={(operatorNotes, modelTier) =>
-                        void runGeminiTechnicalRiskAnalysis(operatorNotes, modelTier)}
+                        void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
-                  {geminiTechnicalRisksErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiTechnicalRisksErr}>
-                      {geminiTechnicalRisksErr}
+                  {aiTechnicalRisksErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiTechnicalRisksErr}>
+                      {aiTechnicalRisksErr}
                     </p>
                   ) : null}
                   <AdminAiPolishRichCommentShell
@@ -3898,18 +3898,18 @@ export function OrderDetailWorkspace({
                   title="2. Ieteikumi klātienes apskatei"
                 >
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateWithPrefill
+                    <AdminAiGenerateWithPrefill
                       label="Ģenerēt ieteikumus"
-                      busy={geminiInspectionBusy}
-                      disabled={!payload.geminiAllowed}
-                      demoOnly={!payload.geminiAllowed}
+                      busy={aiInspectionBusy}
+                      disabled={!payload.aiAllowed}
+                      demoOnly={!payload.aiAllowed}
                       onGenerate={(operatorNotes, modelTier) =>
-                        void runGeminiInspectionRecommendations(operatorNotes, modelTier)}
+                        void runAiInspectionRecommendations(operatorNotes, modelTier)}
                     />
                   </div>
-                  {geminiInspectionErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiInspectionErr}>
-                      {geminiInspectionErr}
+                  {aiInspectionErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiInspectionErr}>
+                      {aiInspectionErr}
                     </p>
                   ) : null}
                   <AdminAiPolishRichCommentShell
@@ -3920,11 +3920,11 @@ export function OrderDetailWorkspace({
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="3. Kopsavilkums">
                   <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateWithPrefill
+                    <AdminAiGenerateWithPrefill
                       label="Sagatavot atbildi"
-                      busy={geminiSummaryBusy}
+                      busy={aiSummaryBusy}
                       disabled={
-                        !payload.geminiAllowed ||
+                        !payload.aiAllowed ||
                         !(
                           adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
                           adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
@@ -3932,9 +3932,9 @@ export function OrderDetailWorkspace({
                           adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
                         )
                       }
-                      demoOnly={!payload.geminiAllowed}
+                      demoOnly={!payload.aiAllowed}
                       title={
-                        !payload.geminiAllowed
+                        !payload.aiAllowed
                           ? undefined
                           : !(
                                 adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
@@ -3945,12 +3945,12 @@ export function OrderDetailWorkspace({
                             ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja, ieteikumu vai cenas sadaļu"
                             : undefined
                       }
-                      onGenerate={(operatorNotes, modelTier) => void runGeminiSummaryAnalysis(operatorNotes, modelTier)}
+                      onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
                     />
                   </div>
-                  {geminiSummaryErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiSummaryErr}>
-                      {geminiSummaryErr}
+                  {aiSummaryErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiSummaryErr}>
+                      {aiSummaryErr}
                     </p>
                   ) : null}
                   <AdminAiPolishRichCommentShell
@@ -3969,18 +3969,18 @@ export function OrderDetailWorkspace({
                     Saglabājas automātiski.
                   </p>
                   <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateWithPrefill
+                    <AdminAiGenerateWithPrefill
                       label="Sagatavot atbildi"
-                      busy={geminiIncidentsSummaryBusy}
-                      disabled={!payload.geminiAllowed}
-                      demoOnly={!payload.geminiAllowed}
+                      busy={aiIncidentsSummaryBusy}
+                      disabled={!payload.aiAllowed}
+                      demoOnly={!payload.aiAllowed}
                       onGenerate={(operatorNotes, modelTier) =>
-                        void runGeminiIncidentsSummary(operatorNotes, modelTier)}
+                        void runAiIncidentsSummary(operatorNotes, modelTier)}
                     />
                   </div>
-                  {geminiIncidentsSummaryErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiIncidentsSummaryErr}>
-                      {geminiIncidentsSummaryErr}
+                  {aiIncidentsSummaryErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiIncidentsSummaryErr}>
+                      {aiIncidentsSummaryErr}
                     </p>
                   ) : null}
                   <div className="mt-2">
@@ -4000,24 +4000,24 @@ export function OrderDetailWorkspace({
                     Glabājas pasūtījuma melnrakstā; PDF drukā zem nobraukuma grafika kā komentārs. Saglabājas automātiski.
                   </p>
                   <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateWithPrefill
+                    <AdminAiGenerateWithPrefill
                       label="Sagatavot atbildi"
-                      busy={geminiMileageCommentBusy}
-                      disabled={!payload.geminiAllowed || !hasMileageDataForGemini}
-                      demoOnly={!payload.geminiAllowed}
+                      busy={aiMileageCommentBusy}
+                      disabled={!payload.aiAllowed || !hasMileageDataForAi}
+                      demoOnly={!payload.aiAllowed}
                       title={
-                        !payload.geminiAllowed
+                        !payload.aiAllowed
                           ? undefined
-                          : !hasMileageDataForGemini
+                          : !hasMileageDataForAi
                             ? "Vispirms aizpildi nobraukuma tabulas avotos"
                             : undefined
                       }
-                      onGenerate={(operatorNotes, modelTier) => void runGeminiMileageComment(operatorNotes, modelTier)}
+                      onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
                     />
                   </div>
-                  {geminiMileageCommentErr ? (
-                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={geminiMileageCommentErr}>
-                      {geminiMileageCommentErr}
+                  {aiMileageCommentErr ? (
+                    <p className="mb-1.5 text-[9px] leading-snug text-amber-800/90" title={aiMileageCommentErr}>
+                      {aiMileageCommentErr}
                     </p>
                   ) : null}
                   <div className="mt-2">
@@ -4038,28 +4038,28 @@ export function OrderDetailWorkspace({
                     apkopošanas. Saglabājas automātiski.
                   </p>
                   <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminGeminiGenerateWithPrefill
+                    <AdminAiGenerateWithPrefill
                       label="Salīdzināt avotus"
-                      busy={geminiSourcesComparisonBusy}
-                      disabled={!payload.geminiAllowed || !hasSourceDataForGemini}
-                      demoOnly={!payload.geminiAllowed}
+                      busy={aiSourcesComparisonBusy}
+                      disabled={!payload.aiAllowed || !hasSourceDataForAi}
+                      demoOnly={!payload.aiAllowed}
                       title={
-                        !payload.geminiAllowed
+                        !payload.aiAllowed
                           ? undefined
-                          : !hasSourceDataForGemini
+                          : !hasSourceDataForAi
                             ? "Vispirms aizpildi avotu sadaļas"
                             : undefined
                       }
                       onGenerate={(operatorNotes, modelTier) =>
-                        void runGeminiSourcesComparison(operatorNotes, modelTier)}
+                        void runAiSourcesComparison(operatorNotes, modelTier)}
                     />
                   </div>
-                  {geminiSourcesComparisonErr ? (
+                  {aiSourcesComparisonErr ? (
                     <p
                       className="mb-1.5 text-[9px] leading-snug text-amber-800/90"
-                      title={geminiSourcesComparisonErr}
+                      title={aiSourcesComparisonErr}
                     >
-                      {geminiSourcesComparisonErr}
+                      {aiSourcesComparisonErr}
                     </p>
                   ) : null}
                   <div className="mt-2">

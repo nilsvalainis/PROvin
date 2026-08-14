@@ -155,7 +155,7 @@ export function outvinVehicleInfoHasData(v: OutvinVehicleInfo): boolean {
   return OUTVIN_VEHICLE_INFO_ROWS.some(({ key }) => v[key].trim().length > 0);
 }
 
-/** Plakans teksts Gemini / admin kontekstam (bez HTML). */
+/** Plakans teksts AI / admin kontekstam (bez HTML). */
 export function outvinDealerReportToPlainText(r: OutvinDealerReport): string {
   const lines: string[] = [];
   const vi = r.vehicleInfo;

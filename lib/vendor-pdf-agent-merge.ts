@@ -1,7 +1,7 @@
 /**
  * Avota PDF aģenta rezultātu apvienošana un pārvēršana Copilot darbībās.
  *
- * Deterministiskais parseris (PDF teksta slānis) ir pamats — Gemini rezultāts pievieno rindas,
+ * Deterministiskais parseris (PDF teksta slānis) ir pamats — AI rezultāts pievieno rindas,
  * ko teksta slānis nedeva (skenēti / netipiski PDF), un precizē tehniskos laukus.
  */
 
@@ -42,7 +42,7 @@ function incidentKey(r: LtabIncidentRow): string {
   return `${r.csngDate}|${r.lossAmount.replace(/\s+/g, "")}`;
 }
 
-/** Apvieno deterministisko un Gemini rezultātu; primārais nosaka vērtības konfliktos. */
+/** Apvieno deterministisko un AI rezultātu; primārais nosaka vērtības konfliktos. */
 export function mergeVendorReportExtracts(
   primary: VendorReportExtract,
   secondary: VendorReportExtract,

@@ -120,7 +120,7 @@ function substantivePlainTextLen(htmlOrText: string | null | undefined): number 
 
 /**
  * Apvieno vienu teksta lauku. Ja ienākošajam ir saturs, tas uzvar — arī īsāks par baseline
- * (piem. lietotājs saīsina Gemini ģenerētu IRISS / apskates plānu).
+ * (piem. lietotājs saīsina AI ģenerētu IRISS / apskates plānu).
  * Tukšs ienākošais neiztukšo aizpildītu baseline (daļējs PATCH).
  */
 function pickRicherTextField(incoming: string | null | undefined, baseline: string | null | undefined): string {

@@ -65,7 +65,7 @@ function suggestChecklist(
   return patch;
 }
 
-/** Vai PDF tekstā ir atpazīstama avota struktūra (pirms Gemini). */
+/** Vai PDF tekstā ir atpazīstama avota struktūra (pirms AI). */
 export function detectVendorPdfStructure(target: HistoryVendorPdfTarget, text: string): VendorStructureMatch {
   const t = text.slice(0, 200_000);
   const markers: string[] = [];

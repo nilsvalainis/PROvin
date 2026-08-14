@@ -7,7 +7,7 @@ import { emptyAutoRecordsBlock, mergeSourceBlocksWithDefaults } from "@/lib/admi
 import { outvinDealerReportToPlainText, emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 
 describe("isMainAnalysisSourceBlock", () => {
-  it("treats all Gemini source blocks as deep analysis", () => {
+  it("treats all AI source blocks as deep analysis", () => {
     for (const key of [
       "csdd",
       "autodna",
@@ -33,7 +33,7 @@ describe("outvinDealerReportToPlainText", () => {
   });
 });
 
-describe("auto_records Gemini context", () => {
+describe("auto_records AI context", () => {
   it("includes outvin report in plain text", () => {
     const blocks = mergeSourceBlocksWithDefaults({
       auto_records: {

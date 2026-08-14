@@ -1181,7 +1181,7 @@ function buildAutoRecordsAvotuSubsection(
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
 }
 
-/** Trešās puses avots — tikai komentāri PDF (laikposms paliek Gemini kontekstam, nav drukāts). */
+/** Trešās puses avots — tikai komentāri PDF (laikposms paliek AI kontekstam, nav drukāts). */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisibilitySettings): string {
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";

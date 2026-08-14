@@ -45,7 +45,7 @@ describe("coalesceOrderWorkspacePersistBody", () => {
     expect(isRegressiveWorkspacePersist(coalesced, baseline)).toBe(false);
   });
 
-  it("coalesce keeps shorter user iriss over longer baseline (post-Gemini edit)", () => {
+  it("coalesce keeps shorter user iriss over longer baseline (post-AI edit)", () => {
     const baseline = { ...bodyWithAutodnaComment(""), iriss: "<p>Garš AI ģenerēts kopsavilkums ar daudz detaļām.</p>" };
     const incoming = { ...baseline, iriss: "<p>Īss labojums.</p>" };
     const coalesced = coalesceOrderWorkspacePersistBody(incoming, baseline);

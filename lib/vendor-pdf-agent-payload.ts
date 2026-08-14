@@ -1,12 +1,12 @@
 /**
- * AutoDNA / CarVertical PDF aģenta Gemini kontrakts: sistēmas instrukcija, JSON shēma
+ * AutoDNA / CarVertical PDF aģenta AI kontrakts: sistēmas instrukcija, JSON shēma
  * un atbildes normalizācija uz `VendorReportExtract`.
  *
- * Summas Gemini atgriež TĀ, KĀ TĀS IR ATSKAITĒ (ar valūtu) — pārrēķinu uz EUR veic kods
+ * Summas AI atgriež TĀ, KĀ TĀS IR ATSKAITĒ (ar valūtu) — pārrēķinu uz EUR veic kods
  * (`convertAmountTextToEur`), lai modelis nerēķina un nesajauc vērtību ar zaudējumiem.
  */
 
-import { SchemaType, type Schema } from "@google/generative-ai";
+import { JsonType, type AiJsonSchema } from "@/lib/ai-json-schema";
 
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import {
@@ -88,70 +88,70 @@ ABSOLUTE RULES
 
 Return JSON only — no markdown, no commentary.`;
 
-const VEHICLE_INFO_SCHEMA_PROPERTIES: Record<string, Schema> = Object.fromEntries(
-  OUTVIN_VEHICLE_INFO_ROWS.map(({ key }) => [key, { type: SchemaType.STRING } as Schema]),
+const VEHICLE_INFO_SCHEMA_PROPERTIES: Record<string, AiJsonSchema> = Object.fromEntries(
+  OUTVIN_VEHICLE_INFO_ROWS.map(({ key }) => [key, { type: JsonType.STRING } as AiJsonSchema]),
 );
 
-export const VENDOR_PDF_AGENT_SCHEMA: Schema = {
-  type: SchemaType.OBJECT,
+export const VENDOR_PDF_AGENT_SCHEMA: AiJsonSchema = {
+  type: JsonType.OBJECT,
   properties: {
-    vendor: { type: SchemaType.STRING, format: "enum", enum: ["autodna", "carvertical", "dealer"] },
+    vendor: { type: JsonType.STRING, enum: ["autodna", "carvertical", "dealer"] },
     mileage: {
-      type: SchemaType.ARRAY,
+      type: JsonType.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: JsonType.OBJECT,
         properties: {
-          date: { type: SchemaType.STRING },
-          odometer: { type: SchemaType.STRING },
-          country: { type: SchemaType.STRING },
+          date: { type: JsonType.STRING },
+          odometer: { type: JsonType.STRING },
+          country: { type: JsonType.STRING },
         },
         required: ["date", "odometer"],
       },
     },
     incidents: {
-      type: SchemaType.ARRAY,
+      type: JsonType.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: JsonType.OBJECT,
         properties: {
-          date: { type: SchemaType.STRING },
-          amountRaw: { type: SchemaType.STRING },
-          currency: { type: SchemaType.STRING },
-          country: { type: SchemaType.STRING },
+          date: { type: JsonType.STRING },
+          amountRaw: { type: JsonType.STRING },
+          currency: { type: JsonType.STRING },
+          country: { type: JsonType.STRING },
         },
         required: ["date", "amountRaw"],
       },
     },
     countryTimeline: {
-      type: SchemaType.ARRAY,
+      type: JsonType.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: JsonType.OBJECT,
         properties: {
-          date: { type: SchemaType.STRING },
-          country: { type: SchemaType.STRING },
+          date: { type: JsonType.STRING },
+          country: { type: JsonType.STRING },
         },
         required: ["date", "country"],
       },
     },
     serviceHistory: {
-      type: SchemaType.ARRAY,
+      type: JsonType.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: JsonType.OBJECT,
         properties: {
-          date: { type: SchemaType.STRING },
-          odometer: { type: SchemaType.STRING },
-          category: { type: SchemaType.STRING },
-          location: { type: SchemaType.STRING },
-          works: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          country: { type: SchemaType.STRING },
+          date: { type: JsonType.STRING },
+          odometer: { type: JsonType.STRING },
+          category: { type: JsonType.STRING },
+          location: { type: JsonType.STRING },
+          works: { type: JsonType.ARRAY, items: { type: JsonType.STRING } },
+          country: { type: JsonType.STRING },
         },
         required: ["date", "works"],
       },
     },
     vehicleInfo: {
-      type: SchemaType.OBJECT,
+      type: JsonType.OBJECT,
       properties: VEHICLE_INFO_SCHEMA_PROPERTIES,
     },
-    warnings: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    warnings: { type: JsonType.ARRAY, items: { type: JsonType.STRING } },
   },
   required: ["vendor", "mileage", "incidents", "countryTimeline", "serviceHistory"],
 };
@@ -170,7 +170,7 @@ function normalizeCountry(raw: string): string {
   return normalizeCountryNameLv(t) || t;
 }
 
-/** Summas teksts + (ja Gemini norādījis) valūta → viens teksts konversijai. */
+/** Summas teksts + (ja AI norādījis) valūta → viens teksts konversijai. */
 function amountWithCurrency(amountRaw: string, currency: string): string {
   const amount = amountRaw.trim();
   const code = currency.trim().toUpperCase();
@@ -179,7 +179,7 @@ function amountWithCurrency(amountRaw: string, currency: string): string {
   return `${amount} ${code}`;
 }
 
-/** Gemini JSON → `VendorReportExtract` (ar EUR pārrēķinu koda pusē). */
+/** AI JSON → `VendorReportExtract` (ar EUR pārrēķinu koda pusē). */
 export function parseVendorPdfAgentPayload(
   rawJson: string,
   fallbackVendor: VendorReportVendor,
@@ -188,10 +188,10 @@ export function parseVendorPdfAgentPayload(
   try {
     parsed = JSON.parse(rawJson);
   } catch {
-    throw new Error("gemini_invalid_json");
+    throw new Error("ai_invalid_json");
   }
   const payload = asRecord(parsed);
-  if (!payload) throw new Error("gemini_invalid_json");
+  if (!payload) throw new Error("ai_invalid_json");
 
   const vendorRaw = asString(payload.vendor, 20);
   const vendor: VendorReportVendor =

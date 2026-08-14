@@ -42,9 +42,9 @@ import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell"
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import {
   AdminSourceCommentField,
-  type AdminGeminiSourceCommentSlot,
+  type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
-import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
 import {
@@ -95,7 +95,7 @@ type Props = {
   sessionId: string;
   /** localStorage atslēgai — noklusējums `csdd`. */
   collapseBlockId?: string;
-  geminiComment?: AdminGeminiSourceCommentSlot;
+  aiComment?: AdminAiSourceCommentSlot;
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -112,7 +112,7 @@ export function AdminCsddSourceBlock({
   onPdfIncludeMileageTableChange,
   sessionId,
   collapseBlockId = "csdd",
-  geminiComment,
+  aiComment,
 }: Props) {
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange({ ...value, [key]: v });
@@ -571,15 +571,15 @@ export function AdminCsddSourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           compact
-          gemini={geminiComment}
+          ai={aiComment}
           aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
         />
-        <AdminGeminiContextRawField
-          value={value.geminiContextRaw}
-          onChange={(next) => onChange({ ...value, geminiContextRaw: next })}
+        <AdminAiContextRawField
+          value={value.aiContextRaw}
+          onChange={(next) => onChange({ ...value, aiContextRaw: next })}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="CSDD — Gemini AI papildu konteksts"
+          ariaLabel="CSDD — AI papildu konteksts"
         />
       </div>
       </div>

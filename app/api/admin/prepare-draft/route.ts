@@ -1,15 +1,15 @@
 /**
- * Admin: portfeļa PDF → avotu bloki + Gemini ✨ melnraksta komentāri.
+ * Admin: portfeļa PDF → avotu bloki + AI ✨ melnraksta komentāri.
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { assertGeminiAllowedForSession } from "@/lib/admin-gemini-demo-guard";
-import { getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
-import { mergeSourceBlocksFromBody, parseGeminiOrderContextFromBody } from "@/lib/admin-gemini-api-body";
+import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
+import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
+import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 import { runPrepareDraftPipeline, type PrepareDraftPdfInput } from "@/lib/admin-prepare-draft";
 import { detectSourcePdfIngestTarget } from "@/lib/admin-source-pdf-detect";
-import { PROVIN_GEMINI_PROMPT_VERSION } from "@/lib/gemini-prompt-version";
+import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
   PDF_MAX_FILE_BYTES,
   PDF_MAX_FILES,
@@ -50,8 +50,8 @@ export async function POST(req: Request) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  if (!getGeminiApiKeyFromEnv()) {
-    return NextResponse.json({ error: "missing_gemini_key" }, { status: 503 });
+  if (!getAnthropicApiKeyFromEnv()) {
+    return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
   }
 
   let form: FormData;
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   }
 
   const sessionId = String(form.get("sessionId") ?? "").trim();
-  const guard = await assertGeminiAllowedForSession(sessionId);
+  const guard = await assertAiAllowedForSession(sessionId);
   if (!guard.ok) {
     return NextResponse.json(
       { error: guard.error, ...(guard.detail ? { detail: guard.detail } : {}) },
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
 
   const sourceBlocks = mergeSourceBlocksFromBody({ sourceBlocks: sourceBlocksBody });
 
-  const context = parseGeminiOrderContextFromBody(
+  const context = parseAiOrderContextFromBody(
     {
       sessionId,
       vin: form.get("vin"),
@@ -165,7 +165,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      promptVersion: PROVIN_GEMINI_PROMPT_VERSION,
+      promptVersion: PROVIN_AI_PROMPT_VERSION,
       ...result,
     });
   } catch (e) {

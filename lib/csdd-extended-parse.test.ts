@@ -111,7 +111,7 @@ describe("csdd extended parse", () => {
     expect(form.mileageHistory.some((r) => r.odometer === "274516")).toBe(true);
   });
 
-  it("plain text for Gemini includes each defect line", () => {
+  it("plain text for AI includes each defect line", () => {
     const parsed = parseCsddPaste(SAMPLE_RAW);
     const form = applyCsddPasteToForm(emptyCsddFields(), SAMPLE_RAW, parsed);
     const text = csddFormToPlainText(form);

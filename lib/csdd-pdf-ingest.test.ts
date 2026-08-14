@@ -25,8 +25,8 @@ Novērtējums 1 - Ar pieļaujamiem defektiem`;
 describe("csdd-pdf-ingest", () => {
   it("mergeCsddPdfRawSources keeps PDF layer when it has unique sections", () => {
     const pdf = SAMPLE_RAW;
-    const gemini = "Marka BMW\nReģistrācijas numurs AB-123";
-    const merged = mergeCsddPdfRawSources(pdf, gemini);
+    const ai = "Marka BMW\nReģistrācijas numurs AB-123";
+    const merged = mergeCsddPdfRawSources(pdf, ai);
     expect(merged).toContain("Iepriekšējās reģistrācijas valsts");
     expect(merged).toContain("5.3.4.");
   });
@@ -34,7 +34,7 @@ describe("csdd-pdf-ingest", () => {
   it("buildCsddFieldsFromPdfSources fills country and prev inspection from combined text", () => {
     const { fields } = buildCsddFieldsFromPdfSources({
       textHint: SAMPLE_RAW,
-      geminiRaw: "",
+      aiRaw: "",
     });
     expect(fields.previousRegistrationCountry).toBe("VĀCIJA");
     expect(fields.ownerCountLatvia).toBe("3");

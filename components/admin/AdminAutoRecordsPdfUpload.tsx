@@ -33,7 +33,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
       try {
         const fd = new FormData();
         fd.set("file", file);
-        setStatusLine("Apstrādājam PDF (ja vajag — Gemini, līdz ~1 min)…");
+        setStatusLine("Apstrādājam PDF (ja vajag — AI, līdz ~1 min)…");
         const res = await fetch("/api/admin/reports/parse-pdf", {
           method: "POST",
           body: fd,
@@ -49,8 +49,8 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
           const detail = typeof data.detail === "string" ? data.detail.trim() : "";
           if (data.error === "unauthorized") {
             setError("Nav admin piekļuves");
-          } else if (data.error === "missing_gemini_key") {
-            setError("Nav GEMINI_API_KEY serverī");
+          } else if (data.error === "missing_ai_key") {
+            setError("Nav ANTHROPIC_API_KEY serverī");
           } else if (data.error === "file_too_large" || data.error === "payload_too_large") {
             setError(detail || "PDF fails pārāk liels");
           } else if (data.error === "invalid_file_type") {
@@ -60,12 +60,12 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
           }
           return;
         }
-        const viaGemini =
-          data.meta?.engine === "gemini_fallback" || data.meta?.extractionMethod === "gemini";
+        const viaAi =
+          data.meta?.engine === "ai_fallback" || data.meta?.extractionMethod === "ai";
         const rowN = data.meta?.rowCount ?? data.serviceHistory?.length ?? 0;
         if (rowN > 0) {
           setNotice(
-            `Importētas ${rowN} nobraukuma rinda(s) no „${file.name}”${viaGemini ? " (Plan B: Gemini)" : " (Plan A: lokāli)"}.`,
+            `Importētas ${rowN} nobraukuma rinda(s) no „${file.name}”${viaAi ? " (Plan B: AI)" : " (Plan A: lokāli)"}.`,
           );
         } else if ((data.rawUnprocessedData ?? "").trim()) {
           setNotice(`Plan B — RAW teksts no „${file.name}”; pārbaudi tabulu.`);
@@ -174,7 +174,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
           Augšupielādēt oficiālā dīlera PDF atskaiti
         </span>
         <span className="text-[9px] leading-snug text-[var(--color-provin-muted)]">
-          Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — Gemini
+          Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — AI
         </span>
       </div>
       {statusLine && busy ? (

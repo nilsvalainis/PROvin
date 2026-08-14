@@ -62,7 +62,7 @@ export function AdminCsddPdfUpload({
           setError("Nav strukturētu CSDD datu — izmanto raw lauku.");
           return;
         }
-        setNotice(`CSDD PDF „${file.name}” importēts (Gemini Pro).`);
+        setNotice(`CSDD PDF „${file.name}” importēts (Claude Opus).`);
         onImported({
           rawUnprocessedData: data.rawUnprocessedData ?? "",
           fields: data.fields,
@@ -143,7 +143,7 @@ export function AdminCsddPdfUpload({
           Augšupielādēt CSDD PDF atskaiti
         </span>
         <span className="text-[9px] text-slate-500">
-          Velc PDF vai klikšķini · Gemini Pro · papildus raw iekopēšanai
+          Velc PDF vai klikšķini · Claude Opus · papildus raw iekopēšanai
         </span>
       </div>
       {notice ? (

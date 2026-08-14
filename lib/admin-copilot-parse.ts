@@ -1,10 +1,10 @@
 /**
- * Order Copilot — Gemini JSON atbildes parsēšana (bez server-only; der arī testiem).
+ * Order Copilot — AI JSON atbildes parsēšana (bez server-only; der arī testiem).
  */
 import type {
   CopilotAction,
   CopilotConfidence,
-  CopilotGeminiResponse,
+  CopilotAiResponse,
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
 import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
@@ -135,15 +135,15 @@ function parseAction(raw: unknown): CopilotAction | null {
   return null;
 }
 
-export function parseCopilotGeminiPayload(rawJson: string): CopilotGeminiResponse {
+export function parseCopilotAiPayload(rawJson: string): CopilotAiResponse {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawJson);
   } catch {
-    throw new Error("gemini_invalid_json");
+    throw new Error("ai_invalid_json");
   }
   const o = asRecord(parsed);
-  if (!o) throw new Error("gemini_invalid_json");
+  if (!o) throw new Error("ai_invalid_json");
   const actionsIn = Array.isArray(o.actions) ? o.actions : [];
   const actions: CopilotAction[] = [];
   for (const item of actionsIn.slice(0, 120)) {

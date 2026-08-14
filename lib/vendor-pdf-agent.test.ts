@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
-import { parseCopilotGeminiPayload } from "@/lib/admin-copilot-parse";
+import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
 import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
@@ -198,7 +198,7 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
     expect(again.skipped.map((s) => s.reason)).toContain("service_work_row_exists");
   });
 
-  it("Gemini „tehniskā apskate” kategoriju atmet, apkopi pieņem", () => {
+  it("AI „tehniskā apskate” kategoriju atmet, apkopi pieņem", () => {
     const payload = parseVendorPdfAgentPayload(
       JSON.stringify({
         vendor: "autodna",
@@ -288,7 +288,7 @@ describe("CarVertical deterministiskā ekstrakcija", () => {
   });
 });
 
-describe("Gemini payload → extract", () => {
+describe("AI payload → extract", () => {
   it("pārrēķina summu no norādītās valūtas un normalizē datumus", () => {
     const extract = parseVendorPdfAgentPayload(
       JSON.stringify({
@@ -311,12 +311,12 @@ describe("Gemini payload → extract", () => {
   });
 
   it("nederīgu JSON neapstrādā klusi", () => {
-    expect(() => parseVendorPdfAgentPayload("nav json", "carvertical")).toThrow("gemini_invalid_json");
+    expect(() => parseVendorPdfAgentPayload("nav json", "carvertical")).toThrow("ai_invalid_json");
   });
 });
 
 describe("merge + darbības", () => {
-  it("Gemini rindas pievieno, bet deterministiskā summa vienam datumam paliek", () => {
+  it("AI rindas pievieno, bet deterministiskā summa vienam datumam paliek", () => {
     const local = emptyVendorReportExtract("autodna");
     local.mileage = [{ date: "13.10.2025", odometer: "254941", country: "Latvija" }];
     local.incidents = [{ csngDate: "01.06.2023", lossAmount: "20 400 - 20 800 €", incidentNo: "Čehija" }];
@@ -383,8 +383,8 @@ describe("dīlera lauku piemērošana", () => {
     expect(info?.engineCode).toBe("CVUA");
   });
 
-  it("parsē Gemini `set_dealer_vehicle_info` darbību", () => {
-    const parsed = parseCopilotGeminiPayload(
+  it("parsē AI `set_dealer_vehicle_info` darbību", () => {
+    const parsed = parseCopilotAiPayload(
       JSON.stringify({
         reply: "ok",
         clarificationNeeded: "",
