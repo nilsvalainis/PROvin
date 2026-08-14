@@ -33,6 +33,7 @@ Whenever you generate or refactor prompt strings in code, you **MUST** hardcode 
 | Regional & forensic signatures | §3 |
 | Manufacturer aggregate case packs (deployed) | `lib/provin-aggregate-case-rules.ts` + `lib/admin-ai-aggregate-knowledge.ts` |
 | Learnings from saved audits (Blob index) | `lib/admin-audit-learnings-store.ts` |
+| Cheap backfill → candidates MD (no LLM) | `POST /api/admin/audit-knowledge` + `npm run audit:knowledge:promote` — Claude reviews **only** candidates, never full orders |
 
 Port substance into `PROVIN_FIELD_AGENT_SYSTEM` and/or field-specific `taskBlock` strings via `provinFieldAgentPrompt()`. Keep [provin-expert-agent](../provin-expert-agent/SKILL.md) aligned for Cursor-side expert copy; avoid drift between skill, reference, and deployed constants.
 

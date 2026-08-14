@@ -4,6 +4,9 @@ import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
 import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-order-draft-store";
+import type { AuditAggregateLearningEntry } from "@/lib/admin-audit-learnings-types";
+
+export type { AuditAggregateLearningEntry };
 
 /**
  * Anonimizēti agregātu mācījumi no pabeigtām PROVIN atskaitēm — papildina statisko case-rule bāzi.
@@ -13,13 +16,6 @@ import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-or
 const LEARNINGS_FILENAME = "provin_audit_aggregate_learnings.json";
 const MAX_SNIPPETS_PER_KEY = 12;
 const SNIPPET_MAX_LEN = 420;
-
-export type AuditAggregateLearningEntry = {
-  key: string;
-  label: string;
-  updatedAt: string;
-  snippets: string[];
-};
 
 type LearningsDoc = {
   version: 1;
@@ -191,4 +187,9 @@ export async function getAuditLearningsForKeys(keys: string[]): Promise<AuditAgg
 export async function listAllAuditLearningKeys(): Promise<string[]> {
   const doc = await readLearningsCached();
   return Object.keys(doc.entries);
+}
+
+export async function readAllAuditLearningEntries(): Promise<AuditAggregateLearningEntry[]> {
+  const doc = await readLearningsCached();
+  return Object.values(doc.entries).sort((a, b) => b.snippets.length - a.snippets.length);
 }

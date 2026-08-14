@@ -16,6 +16,17 @@ Field agent prompts are for **data processing and Latvian expert copy** on admin
 
 **Institutional memory:** every ✨ generation receives historical similar-audit excerpts + aggregate case packs + learnings saved after each substantive workspace persist (`recordAuditAggregateLearningFromDraft`). Prefer client **value density** over long essays.
 
+## Audit knowledge pipeline (token discipline)
+
+**Never** dump full order drafts into Cursor Claude / expensive models. Use the cheap local path:
+
+1. **Backfill (no LLM):** `POST /api/admin/audit-knowledge` `{ "action": "backfill", "limit": 120 }` — scans drafts → anonymized snippets → `provin_audit_aggregate_learnings.json`.
+2. **Promote (no LLM):** `{ "action": "promote" }` or `npm run audit:knowledge:promote` → `.data/…/audit-knowledge-candidates.md` (hard-capped ~12k chars).
+3. **Expensive agent:** review **only** that candidates MD → inject durable rules into [provin-admin-prompt-engineering/reference.md](../provin-admin-prompt-engineering/reference.md) + `lib/provin-aggregate-case-rules.ts` → sync prompts.
+4. **Runtime ✨ budget:** `buildAggregateKnowledgeAiContext` caps packs (3), learning keys (3), snippets/key (4), total ~5500 chars.
+
+Code: `lib/admin-audit-learning-extract.ts`, `lib/admin-audit-knowledge-promote.ts`, `lib/admin-ai-aggregate-knowledge.ts`, `app/api/admin/audit-knowledge/route.ts`.
+
 ## Source of truth
 
 1. **Base field agent (tone, LV grammar, mission):** [.cursor/skills/provin-field-agent/SKILL.md](../provin-field-agent/SKILL.md) → `PROVIN_FIELD_AGENT_SYSTEM`.

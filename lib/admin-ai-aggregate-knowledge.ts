@@ -1,7 +1,12 @@
 import "server-only";
 
+import fs from "fs/promises";
+import path from "path";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
-import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import {
+  draftQualifiesForAggregateLearning,
+  extractLearningSnippetsFromDraft,
+} from "@/lib/admin-audit-learning-extract";
 import {
   extractVehicleReportFingerprint,
   formatVehicleFingerprintLabel,
@@ -9,10 +14,8 @@ import {
 } from "@/lib/admin-vehicle-report-fingerprint";
 import {
   mergeSourceBlocksWithDefaults,
-  SOURCE_BLOCK_LABELS,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
-import { workspaceFillScoreFromDraft } from "@/lib/admin-workspace-integrity";
 import {
   formatAggregateCasePacksForAi,
   fingerprintLearningKey,
@@ -22,9 +25,24 @@ import {
   getAuditLearningsForKeys,
   invalidateAuditLearningsCache,
   listAllAuditLearningKeys,
+  readAllAuditLearningEntries,
   upsertAuditAggregateLearning,
   type AuditAggregateLearningEntry,
 } from "@/lib/admin-audit-learnings-store";
+import {
+  buildPromotionCandidates,
+  clipPromotionMarkdown,
+  formatPromotionCandidatesMarkdown,
+} from "@/lib/admin-audit-knowledge-promote";
+import {
+  getOrderDraftBlobConfig,
+  getOrderDraftStorageDir,
+  isSafeOrderDraftSessionId,
+  readOrderDraft,
+} from "@/lib/admin-order-draft-store";
+import { list } from "@vercel/blob";
+
+export { draftQualifiesForAggregateLearning, extractLearningSnippetsFromDraft };
 
 export const AI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (statiskā bāze + mācījumi no iepriekšējām atskaitēm):
 - Kombinē zemāk esošās ražotāju/agregātu pakas ar AKTĪVĀ pasūtījuma datiem un (ja ir) vēsturisko auditu fragmentiem.
@@ -34,74 +52,11 @@ export const AI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (stat
 - Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.
 - Pēc katras bagātīgas atskaites PROVIN saglabā anonimizētus mācījumus — uzskati tos par institucionālo atmiņu nākamajiem līdzīgiem agregātiem.`;
 
-function redactLearningText(text: string): string {
-  return text
-    .replace(/\b[A-HJ-NPR-Z0-9]{17}\b/gi, "[VIN]")
-    .replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, "[e-pasts]")
-    .replace(/(\+371\s?)?2[\d\s-]{6,12}/g, "[tālrunis]")
-    .replace(/\bcs_[a-zA-Z0-9]+\b/g, "[pasūtījums]")
-    .replace(/\b\d{5,7}\s*km\b/gi, "[km]")
-    .replace(/\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b/g, "[datums]");
-}
-
-function clipLearningSnippet(text: string, max = 400): string {
-  const t = redactLearningText(text.replace(/\s+/g, " ").trim());
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1).trim()}…`;
-}
-
-/** Īss „mācību” fragments — pirmās 1–2 teikuma daļas ar riska/EUR signāliem. */
-function distillLesson(plain: string, tag: string, max = 360): string | null {
-  const cleaned = plain.replace(/\s+/g, " ").trim();
-  if (cleaned.length < 70) return null;
-  const sentences = cleaned.split(/(?<=[.!?…])\s+/).filter((s) => s.trim().length > 25);
-  const pick = sentences.slice(0, 2).join(" ").trim() || cleaned.slice(0, max);
-  return clipLearningSnippet(`[${tag}] ${pick}`, max);
-}
-
-function extractLearningSnippetsFromDraft(draft: OrderDraftState): string[] {
-  const ws = draft.workspace;
-  if (!ws) return [];
-  const out: string[] = [];
-  const pushTagged = (tag: string, raw: string | undefined, minLen = 70) => {
-    const plain = adminRichHtmlToPlainText(raw ?? "").trim();
-    if (plain.length < minLen) return;
-    const lesson = distillLesson(plain, tag);
-    if (lesson) out.push(lesson);
-  };
-
-  pushTagged("Tehnika", ws.tehniskoRiskuAnalize, 60);
-  pushTagged("Apskate", ws.apskatesPlāns, 60);
-  pushTagged("Kopsavilkums", ws.iriss, 80);
-  pushTagged("Nobraukums", draft.orderEdits.mileageComment, 70);
-  pushTagged("Negadījumi", draft.orderEdits.internalComment, 70);
-  pushTagged("Cena", ws.cenasAtbilstiba, 70);
-
-  const blocks = mergeSourceBlocksWithDefaults(ws.sourceBlocks as WorkspaceSourceBlocks);
-  const sourcePairs: Array<[string, string]> = [
-    [SOURCE_BLOCK_LABELS.csdd, blocks.csdd.comments],
-    [SOURCE_BLOCK_LABELS.autodna, blocks.autodna.comments],
-    [SOURCE_BLOCK_LABELS.carvertical, blocks.carvertical.comments],
-    [SOURCE_BLOCK_LABELS.auto_records, blocks.auto_records.comments],
-    [SOURCE_BLOCK_LABELS.tjekbil, blocks.tjekbil.comments],
-    [SOURCE_BLOCK_LABELS.mnt_ee, blocks.mnt_ee.comments],
-    [SOURCE_BLOCK_LABELS.lkf_ee, blocks.lkf_ee.comments],
-    [SOURCE_BLOCK_LABELS.carinfo, blocks.carinfo.comments],
-    [SOURCE_BLOCK_LABELS.ltab, blocks.ltab.comments],
-  ];
-  for (const [label, comments] of sourcePairs) {
-    pushTagged(`Avots:${label}`, comments, 90);
-  }
-
-  return [...new Set(out)].slice(0, 10);
-}
-
-export function draftQualifiesForAggregateLearning(draft: OrderDraftState): boolean {
-  if (!draft.workspace) return false;
-  const fill = workspaceFillScoreFromDraft(draft.workspace);
-  const snippets = extractLearningSnippetsFromDraft(draft);
-  return snippets.length >= 2 && (fill >= 5 || snippets.some((s) => s.length >= 120));
-}
+/** Tokenu budžets ✨ kontekstā (dārgais modelis). */
+const AGGREGATE_CTX_MAX_PACKS = 3;
+const AGGREGATE_CTX_MAX_LEARNING_KEYS = 3;
+const AGGREGATE_CTX_MAX_SNIPPETS_PER_KEY = 4;
+const AGGREGATE_CTX_MAX_CHARS = 5_500;
 
 /** Pēc veiksmīgas atskaites saglabāšanas — papildina mācījumu indeksu (fire-and-forget). */
 export async function recordAuditAggregateLearningFromDraft(draft: OrderDraftState): Promise<void> {
@@ -121,6 +76,123 @@ export async function recordAuditAggregateLearningFromDraft(draft: OrderDraftSta
   await upsertAuditAggregateLearning(entry);
 }
 
+async function listOrderDraftSessionIdsFromFs(dir: string): Promise<string[]> {
+  let names: string[] = [];
+  try {
+    names = await fs.readdir(dir);
+  } catch {
+    return [];
+  }
+  const ids: string[] = [];
+  for (const name of names) {
+    if (!name.endsWith(".json") || name.startsWith("_")) continue;
+    const id = name.slice(0, -5);
+    if (isSafeOrderDraftSessionId(id)) ids.push(id);
+  }
+  return ids;
+}
+
+async function listOrderDraftSessionIdsFromBlob(prefix: string, token: string): Promise<string[]> {
+  const ids: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix, token, cursor, limit: 1000, mode: "expanded" });
+    for (const b of page.blobs) {
+      if (!b.pathname.endsWith(".json")) continue;
+      const id = b.pathname.slice(prefix.length, -".json".length);
+      if (isSafeOrderDraftSessionId(id)) ids.push(id);
+    }
+    cursor = page.hasMore && page.cursor ? page.cursor : undefined;
+  } while (cursor);
+  return ids;
+}
+
+async function listAllOrderDraftSessionIdsForBackfill(): Promise<string[]> {
+  const seen = new Set<string>();
+  const dir = getOrderDraftStorageDir();
+  if (dir) {
+    for (const id of await listOrderDraftSessionIdsFromFs(dir)) seen.add(id);
+  }
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    for (const id of await listOrderDraftSessionIdsFromBlob(blob.prefix, blob.token)) seen.add(id);
+  }
+  return [...seen].filter((id) => !id.startsWith("demo_order_"));
+}
+
+export type AuditKnowledgeBackfillResult = {
+  scanned: number;
+  recorded: number;
+  skipped: number;
+  errors: number;
+};
+
+/** Lēts backfill — tikai lokālā ekstrakcija + Blob/FS write; **bez** Claude/Gemini API. */
+export async function backfillAuditAggregateLearnings(opts?: {
+  limit?: number;
+}): Promise<AuditKnowledgeBackfillResult> {
+  const limit = Math.min(500, Math.max(1, opts?.limit ?? 120));
+  const ids = (await listAllOrderDraftSessionIdsForBackfill()).slice(0, limit);
+  let recorded = 0;
+  let skipped = 0;
+  let errors = 0;
+  for (const sessionId of ids) {
+    try {
+      const draft = await readOrderDraft(sessionId);
+      if (!draft || !draftQualifiesForAggregateLearning(draft)) {
+        skipped += 1;
+        continue;
+      }
+      await recordAuditAggregateLearningFromDraft(draft);
+      recorded += 1;
+    } catch {
+      errors += 1;
+    }
+  }
+  return { scanned: ids.length, recorded, skipped, errors };
+}
+
+export type AuditKnowledgePromoteResult = {
+  candidateCount: number;
+  markdownChars: number;
+  outputPath: string | null;
+  markdown: string;
+};
+
+/** Bez LLM — raksta kompaktu MD Claude pārskatam (`.data/…`). */
+export async function promoteAuditKnowledgeCandidates(opts?: {
+  writeFile?: boolean;
+  minSnippets?: number;
+  maxCandidates?: number;
+}): Promise<AuditKnowledgePromoteResult> {
+  const entries = await readAllAuditLearningEntries();
+  const candidates = buildPromotionCandidates(entries, {
+    minSnippets: opts?.minSnippets ?? 3,
+    maxCandidates: opts?.maxCandidates ?? 24,
+  });
+  const markdown = clipPromotionMarkdown(
+    formatPromotionCandidatesMarkdown(candidates, {
+      generatedAt: new Date().toISOString(),
+      sourceEntryCount: entries.length,
+    }),
+  );
+
+  let outputPath: string | null = null;
+  if (opts?.writeFile !== false) {
+    const dir = getOrderDraftStorageDir() ?? path.join(process.cwd(), ".data");
+    await fs.mkdir(dir, { recursive: true });
+    outputPath = path.join(dir, "audit-knowledge-candidates.md");
+    await fs.writeFile(outputPath, markdown, "utf8");
+  }
+
+  return {
+    candidateCount: candidates.length,
+    markdownChars: markdown.length,
+    outputPath,
+    markdown,
+  };
+}
+
 async function rankLearningKeysForFingerprint(fp: VehicleReportFingerprint): Promise<string[]> {
   const primary = fingerprintLearningKey(fp);
   const allKeys = await listAllAuditLearningKeys();
@@ -135,7 +207,7 @@ async function rankLearningKeysForFingerprint(fp: VehicleReportFingerprint): Pro
     if (engine && k.includes(engine)) out.push(k);
     else if (make && k.includes(make)) out.push(k);
   }
-  return out.slice(0, 4);
+  return out.slice(0, AGGREGATE_CTX_MAX_LEARNING_KEYS);
 }
 
 export type AggregateKnowledgeContextInput = {
@@ -144,7 +216,13 @@ export type AggregateKnowledgeContextInput = {
   manufactureYear?: number | null;
 };
 
-/** Statiskās paka + mācījumi no līdzīgiem agregātiem — AI ✨ kontekstam. */
+function clipAggregateContext(parts: string[], maxChars: number): string {
+  const joined = parts.filter(Boolean).join("\n\n");
+  if (joined.length <= maxChars) return joined;
+  return `${joined.slice(0, maxChars - 1).trim()}…`;
+}
+
+/** Statiskās paka + mācījumi — ar stingru rakstzīmju limitu (dārgais ✨ modelis). */
 export async function buildAggregateKnowledgeAiContext(
   input: AggregateKnowledgeContextInput,
 ): Promise<string> {
@@ -161,7 +239,7 @@ export async function buildAggregateKnowledgeAiContext(
     fp.modelTokens.length > 0;
   if (!hasSignal) return "";
 
-  const packs = selectAggregateCasePacks(fp);
+  const packs = selectAggregateCasePacks(fp, { maxPacks: AGGREGATE_CTX_MAX_PACKS });
   const packText = formatAggregateCasePacksForAi(packs);
   const keys = await rankLearningKeysForFingerprint(fp);
   const learnings = await getAuditLearningsForKeys(keys);
@@ -175,12 +253,15 @@ export async function buildAggregateKnowledgeAiContext(
   if (learnings.length > 0) {
     parts.push("### Mācījumi no iepriekšējām PROVIN atskaitēm (anonimizēti, līdzīgs agregāts)");
     for (const e of learnings) {
-      const body = e.snippets.map((s) => `- ${s}`).join("\n");
+      const body = e.snippets
+        .slice(-AGGREGATE_CTX_MAX_SNIPPETS_PER_KEY)
+        .map((s) => `- ${s}`)
+        .join("\n");
       parts.push(`#### ${e.label}\n${body}`);
     }
   }
 
-  return parts.filter(Boolean).join("\n\n");
+  return clipAggregateContext(parts, AGGREGATE_CTX_MAX_CHARS);
 }
 
 export { invalidateAuditLearningsCache };
