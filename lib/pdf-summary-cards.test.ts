@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
 import {
   filterManualBannersForPdf,
@@ -6,6 +7,8 @@ import {
   ownManualBanners,
   resolveProvinBanners,
   upsertProvinBannerOverride,
+  computeCcVinAlertBanners,
+  ccVinBannerKindFromLabel,
   type ProvinManualBanner,
 } from "@/lib/provin-alert-banners";
 
@@ -165,5 +168,43 @@ describe("aprēķināto brīdinājumu labošana", () => {
     expect(merged.map((b) => b.id)).toEqual(["m1", "kind:inspection", "x"]);
     expect(ownManualBanners(merged).map((b) => b.id)).toEqual(["m1", "x"]);
     expect(filterManualBannersForPdf(merged).map((b) => b.id)).toEqual(["m1", "x"]);
+  });
+
+  it("starptautiskās vēstures labojums paliek override, nevis manuālais baneris", () => {
+    const merged = mergeProvinManualBanners([
+      {
+        id: "kind:ccvin:fiksetie_bojajumi",
+        kind: "ccvin:fiksetie_bojajumi",
+        text: "Mans teksts",
+        severity: "yellow",
+      },
+    ]);
+    expect(ownManualBanners(merged)).toEqual([]);
+    expect(merged[0]!.kind).toBe("ccvin:fiksetie_bojajumi");
+  });
+
+  it("starptautiskās vēstures brīdinājumi kļūst par kopsavilkuma kartītēm", () => {
+    const banners = computeCcVinAlertBanners({
+      ...emptyCcVinBlock(),
+      checks: [
+        { label: "Fiksētie bojājumi", status: "2 bojājumi", severity: "alert" },
+        { label: "Zādzību ieraksti", status: "Nav atrastu problēmu", severity: "ok" },
+      ],
+    });
+    expect(banners).toHaveLength(1);
+    expect(banners[0]!.kind).toBe(ccVinBannerKindFromLabel("Fiksētie bojājumi"));
+    expect(banners[0]!.text).toBe("Fiksētie bojājumi: 2 bojājumi");
+
+    const tiles = buildPdfSummaryBannerTiles({ alertBanners: banners });
+    expect(tiles).toEqual([
+      {
+        id: "alert-ccvin-fiksetie_bojajumi",
+        label: "Fiksētie bojājumi",
+        value: "2 bojājumi",
+        note: "Starptautiskajos vēstures reģistros fiksēta atzīme.",
+        tone: "alert",
+        wide: false,
+      },
+    ]);
   });
 });

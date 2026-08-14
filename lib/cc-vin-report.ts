@@ -22,7 +22,7 @@ export const CC_VIN_PDF_SOURCE_LABEL = "Starptautiskā vēsture";
 
 export const CC_VIN_SUBTITLES = {
   checks: "Pārbaudītie reģistri",
-  flags: "Sarkanie karogi",
+  flags: "Brīdinājumi",
   damages: "Fiksētie bojājumi",
   insurance: "Apdrošinātāju un norakstīšanas ieraksti",
   brands: "Īpašumtiesību atzīmes",

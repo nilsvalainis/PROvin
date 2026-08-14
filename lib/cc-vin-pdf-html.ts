@@ -56,7 +56,7 @@ function kmDisplay(raw: string): string {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-/** Sarkanie karogi — tikai reģistri ar atzīmi; „tīrie” netiek uzskaitīti. */
+/** Brīdinājumi — tikai reģistri ar atzīmi; „tīrie” netiek uzskaitīti. */
 function alertList(b: CcVinBlockState): string {
   const alerts = ccVinAlertChecks(b);
   if (alerts.length === 0) return "";

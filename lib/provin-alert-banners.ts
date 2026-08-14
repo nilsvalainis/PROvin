@@ -30,6 +30,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { computeLatviaRegistrationTenure } from "@/lib/latvia-registration-tenure";
+import { ccVinAlertChecks, type CcVinBlockState, type CcVinCheckRow } from "@/lib/cc-vin-report";
 
 export type ProvinInfoBannerKind = "lv_registration_tenure";
 
@@ -40,7 +41,29 @@ export type ProvinAlertBannerKind =
   | "particulate"
   | "inspection";
 
-export type ProvinBannerKind = ProvinAlertBannerKind | ProvinInfoBannerKind;
+/** Starptautiskās vēstures brīdinājums — `ccvin:` + stabils slugs no reģistra nosaukuma. */
+export type ProvinCcVinBannerKind = `ccvin:${string}`;
+
+export type ProvinBannerKind = ProvinAlertBannerKind | ProvinInfoBannerKind | ProvinCcVinBannerKind;
+
+const CCVIN_BANNER_KIND_RE = /^ccvin:[a-z0-9_]{1,40}$/;
+
+export function isCcVinBannerKind(raw: string): raw is ProvinCcVinBannerKind {
+  return CCVIN_BANNER_KIND_RE.test(raw);
+}
+
+/** Stabils banera `kind` no reģistra etiķetes, lai labojumi saglabātos pēc atkārtotas ielādes. */
+export function ccVinBannerKindFromLabel(label: string): ProvinCcVinBannerKind {
+  const slug = label
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 40);
+  return `ccvin:${slug || "check"}`;
+}
 
 /** Manuāli pievienoti augšējās joslas brīdinājumi (admin). */
 export type ProvinManualBannerSeverity = "grey" | "yellow" | "red";
@@ -84,13 +107,17 @@ const PROVIN_BANNER_KINDS = new Set<ProvinBannerKind>([
   ...PROVIN_INFO_BANNER_KINDS,
 ]);
 
+export function isProvinBannerKind(raw: string): raw is ProvinBannerKind {
+  return PROVIN_BANNER_KINDS.has(raw as ProvinBannerKind) || isCcVinBannerKind(raw);
+}
+
 /** Aprēķinātā brīdinājuma labojums glabājas tajā pašā sarakstā ar šādu id. */
 export function provinBannerOverrideId(kind: ProvinBannerKind): string {
   return `kind:${kind}`;
 }
 
 export function isProvinBannerOverride(b: ProvinManualBanner): boolean {
-  return typeof b.kind === "string" && PROVIN_BANNER_KINDS.has(b.kind);
+  return typeof b.kind === "string" && isProvinBannerKind(b.kind);
 }
 
 export function isProvinBannerIncludedInPdf(
@@ -104,8 +131,8 @@ export function mergeProvinBannerPdfInclude(raw: unknown): ProvinBannerPdfInclud
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
   const out: ProvinBannerPdfInclude = {};
-  for (const kind of [...PROVIN_ALERT_BANNER_KINDS, ...PROVIN_INFO_BANNER_KINDS]) {
-    if (typeof o[kind] === "boolean") out[kind] = o[kind];
+  for (const [key, value] of Object.entries(o)) {
+    if (typeof value === "boolean" && isProvinBannerKind(key)) out[key] = value;
   }
   return out;
 }
@@ -117,10 +144,7 @@ export function mergeProvinManualBanners(raw: unknown): ProvinManualBanner[] {
   for (const item of raw) {
     if (!item || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
-    const kind =
-      typeof o.kind === "string" && PROVIN_BANNER_KINDS.has(o.kind as ProvinBannerKind)
-        ? (o.kind as ProvinBannerKind)
-        : null;
+    const kind = typeof o.kind === "string" && isProvinBannerKind(o.kind) ? o.kind : null;
     const id = kind ? provinBannerOverrideId(kind) : typeof o.id === "string" ? o.id.trim() : "";
     const text = typeof o.text === "string" ? o.text : "";
     const severity = o.severity;
@@ -143,7 +167,7 @@ export function mergeProvinManualBanners(raw: unknown): ProvinManualBanner[] {
     }
     out.push(banner);
   }
-  return out.slice(0, 32);
+  return out.slice(0, 48);
 }
 
 /** Tikai operatora pašrocīgi veidotie baneri (bez aprēķināto brīdinājumu labojumiem). */
@@ -221,9 +245,11 @@ export type ProvinInfoBanner = {
 export type ProvinAlertSeverity = "red" | "yellow";
 
 export type ProvinAlertBanner = {
-  kind: ProvinAlertBannerKind;
+  kind: ProvinAlertBannerKind | ProvinCcVinBannerKind;
   text: string;
   severity: ProvinAlertSeverity;
+  /** Kopsavilkuma kartīte starptautiskās vēstures brīdinājumam (fiksētajiem veidiem — `PROVIN_ALERT_CARD_DEFAULTS`). */
+  card?: ProvinBannerCardCopy;
 };
 
 export const PROVIN_ALERT_TEXT = {
@@ -347,6 +373,23 @@ export function resolveProvinBanners(args: {
     });
   }
 
+  for (const computed of args.alertBanners ?? []) {
+    if (!isCcVinBannerKind(computed.kind)) continue;
+    const override = provinBannerOverrideFor(args.manualBanners, computed.kind);
+    const computedSeverity = alertSeverityToManual(computed.severity);
+    const severity = override?.severity ?? computedSeverity;
+    const defaultCard = computed.card ?? null;
+    out.push({
+      kind: computed.kind,
+      text: (override?.text ?? "").trim() || computed.text,
+      severity,
+      card: resolveBannerCard(defaultCard, override, severity),
+      defaults: { text: computed.text, severity: computedSeverity, card: defaultCard },
+      override,
+      edited: bannerOverrideChangesAnything(override, computedSeverity),
+    });
+  }
+
   for (const kind of PROVIN_INFO_BANNER_KINDS) {
     const computed = (args.infoBanners ?? []).find((b) => b.kind === kind);
     if (!computed) continue;
@@ -420,6 +463,7 @@ export function computeProvinAlertBanners(args: {
   manualLtabBlock: ClientManualLtabBlockPdf | null | undefined;
   manualVendorBlocks: ClientManualVendorBlockPdf[] | undefined;
   tirgusForm?: TirgusFormFields | null;
+  ccVinBlock?: CcVinBlockState | null;
   referenceDate?: Date;
 }): ProvinAlertBanner[] {
   const ref = args.referenceDate ?? new Date();
@@ -459,7 +503,38 @@ export function computeProvinAlertBanners(args: {
     }
   }
 
+  out.push(...computeCcVinAlertBanners(args.ccVinBlock));
+
   return out;
+}
+
+const CC_VIN_BANNER_NOTE = "Starptautiskajos vēstures reģistros fiksēta atzīme.";
+
+export function computeCcVinAlertBanners(block: CcVinBlockState | null | undefined): ProvinAlertBanner[] {
+  const seen = new Set<string>();
+  const out: ProvinAlertBanner[] = [];
+  for (const check of ccVinAlertChecks(block)) {
+    const kind = ccVinBannerKindFromLabel(check.label);
+    if (seen.has(kind)) continue;
+    seen.add(kind);
+    out.push(ccVinCheckToBanner(check, kind));
+  }
+  return out;
+}
+
+function ccVinCheckToBanner(check: CcVinCheckRow, kind: ProvinCcVinBannerKind): ProvinAlertBanner {
+  const label = check.label.trim();
+  const status = check.status.trim() || "Atrasts ieraksts";
+  return {
+    kind,
+    text: `${label}: ${status}`,
+    severity: "red",
+    card: {
+      label,
+      value: status,
+      note: CC_VIN_BANNER_NOTE,
+    },
+  };
 }
 
 /** Payload ar tiem pašiem laukiem kā `ClientReportPayload` nobraukuma daļai. */
@@ -479,6 +554,7 @@ export function computeProvinAlertBannersFromPayloadSlice(
     manualLtabBlock: p.manualLtabBlock,
     manualVendorBlocks: p.manualVendorBlocks ?? undefined,
     tirgusForm: p.tirgusForm,
+    ccVinBlock: p.ccVinBlock,
     referenceDate,
   });
 }

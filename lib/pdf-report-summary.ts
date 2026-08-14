@@ -232,7 +232,7 @@ export function buildPdfSummaryBannerTiles(input: {
   for (const b of resolved) {
     if (!b.card) continue;
     out.push({
-      id: `${INFO_KINDS.has(b.kind) ? "info" : "alert"}-${b.kind}`,
+      id: `${INFO_KINDS.has(b.kind) ? "info" : "alert"}-${b.kind.replace(/:/g, "-")}`,
       label: b.card.label,
       value: b.card.value,
       note: b.card.note,

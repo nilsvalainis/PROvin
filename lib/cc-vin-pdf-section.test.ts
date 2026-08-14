@@ -54,7 +54,7 @@ function blockFromReport(): CcVinBlockState {
 describe("starptautiskās vēstures PDF sadaļa", () => {
   it("rāda sarkanos karogus un vēsturi, bet nedublē specifikācijas", () => {
     const html = buildCcVinPdfInnerHtml(blockFromReport());
-    expect(html).toContain("Sarkanie karogi");
+    expect(html).toContain("Brīdinājumi");
     expect(html).toContain("Odometra ieraksti");
     expect(html).toContain("Īpašumtiesību (title) ieraksti");
     expect(html).toContain("Pārdošanas un izsoļu vēsture");
