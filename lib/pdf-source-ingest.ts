@@ -7,7 +7,11 @@ import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
-import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
+import {
+  buildCsddPdfParseResultFromTextLayer,
+  pickRicherCsddFields,
+  type CsddPdfParseResult,
+} from "@/lib/csdd-pdf-ingest";
 import { extractCsddPdfWithAiStructured } from "@/lib/csdd-ai-structured";
 import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
@@ -192,7 +196,7 @@ function parseHasData(
 
 /**
  * Viena PDF imports.
- * CSDD: tikai AI Structured Output (PDF pielikums + shēma).
+ * CSDD: vispirms lokālais parsers no teksta slāņa (e.csdd.lv TCPDF); AI — tukšam/skenētam PDF.
  */
 export async function ingestSourcePdfFile(opts: {
   target: SourcePdfIngestTarget;
@@ -226,7 +230,41 @@ export async function ingestSourcePdfFile(opts: {
   }
 
   if (target === "csdd") {
+    const local = extract.textLayerCharCount >= MIN_TEXT_FOR_STRUCTURE
+      ? buildCsddPdfParseResultFromTextLayer(text, fileName)
+      : null;
+    const localOk = Boolean(local && csddParseHasData(local));
+
+    if (localOk && local) {
+      const hasInspection =
+        local.fields.technicalInspectionHistory.some((r) => r.date.trim()) ||
+        (local.fields.prevInspectionBlock.defects?.length ?? 0) > 0 ||
+        Boolean(local.fields.registrationNumber.trim());
+      if (hasInspection) {
+        console.info(`${LOG_PREFIX} csdd_text_layer_ok`, {
+          fileName,
+          mileage: local.fields.mileageHistory.filter((r) => r.odometer.trim()).length,
+          ta: local.fields.technicalInspectionHistory.length,
+          prevDefects: local.fields.prevInspectionBlock.defects?.length ?? 0,
+        });
+        return {
+          result: withEngine(local, "local_parser", extract.backend),
+          extract,
+          plan: "local_parser",
+          planReason: "csdd_text_layer",
+        };
+      }
+    }
+
     if (!preferAi || !getAnthropicApiKeyFromEnv()) {
+      if (localOk && local) {
+        return {
+          result: withEngine(local, "local_parser", extract.backend),
+          extract,
+          plan: "local_parser",
+          planReason: "csdd_text_layer_no_ai",
+        };
+      }
       throw new Error("missing_ai_key");
     }
     const structured = await extractCsddPdfWithAiStructured({
@@ -234,23 +272,30 @@ export async function ingestSourcePdfFile(opts: {
       fileName,
       textHint: text,
     });
-    if (!csddParseHasData(structured)) {
+    const merged = local
+      ? {
+          ...structured,
+          fields: pickRicherCsddFields(structured.fields, local.fields),
+          rawUnprocessedData: local.rawUnprocessedData || structured.rawUnprocessedData,
+        }
+      : structured;
+    if (!csddParseHasData(merged)) {
       console.warn(`${LOG_PREFIX} csdd_ai_sparse`, { fileName });
     }
-    console.info(`${LOG_PREFIX} csdd_ai_only_ok`, {
+    console.info(`${LOG_PREFIX} csdd_ai_ok`, {
       fileName,
-      mileage: structured.fields.mileageHistory.filter((r) => r.odometer.trim()).length,
-      taDefects: structured.fields.technicalInspectionHistory.reduce(
+      mileage: merged.fields.mileageHistory.filter((r) => r.odometer.trim()).length,
+      taDefects: merged.fields.technicalInspectionHistory.reduce(
         (n, r) => n + (r.defects?.length ?? 0),
         0,
       ),
-      prevDefects: structured.fields.prevInspectionBlock.defects?.length ?? 0,
+      prevDefects: merged.fields.prevInspectionBlock.defects?.length ?? 0,
     });
     return {
-      result: withEngine(structured, "ai_primary", extract.backend),
+      result: withEngine(merged, "ai_primary", extract.backend),
       extract,
       plan: "ai_primary",
-      planReason: "csdd_ai_only",
+      planReason: "csdd_ai_fallback",
     };
   }
 

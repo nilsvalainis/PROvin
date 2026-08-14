@@ -115,10 +115,18 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
       key = tabs[0].replace(/:\s*$/g, "").trim();
       val = tabs.slice(1).join("\t").trim();
     } else {
-      const m = line.match(/^([^:]+):\s*(.+)$/);
-      if (m) {
-        key = m[1].trim();
-        val = m[2].trim();
+      const spaceKv = line.match(
+        /^(Marka\s+Modelis|Reģistrācijas\s+numurs|Statuss|Pilna\s+masa\s*\(kg\)|Pašmasa\s*\(kg\)|Degviela|VIN|Izlaiduma\s+gads|Iepriekšējās\s+reģistrācijas\s+valsts)\s+(.+)$/i,
+      );
+      if (spaceKv?.[1] && spaceKv[2]) {
+        key = spaceKv[1].trim();
+        val = spaceKv[2].trim();
+      } else {
+        const m = line.match(/^([^:]+):\s*(.+)$/);
+        if (m) {
+          key = m[1].trim();
+          val = m[2].trim();
+        }
       }
     }
     if (!key || !val) continue;
@@ -222,12 +230,19 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
       out.makeModel = val;
       continue;
     }
-    if (nk === "plate_number" || nk.includes("plate_number") || nk.includes("numurzime") || nk === "reg_nr") {
+    if (
+      nk === "plate_number" ||
+      nk.includes("plate_number") ||
+      nk.includes("numurzime") ||
+      nk === "reg_nr" ||
+      nk === "registracijas_numurs"
+    ) {
       out.plateNumber = val;
       continue;
     }
     if (
       nk === "status" ||
+      nk === "statuss" ||
       nk === "vehicle_status" ||
       nk.includes("uzskate") ||
       nk.includes("registracijas_status") ||
@@ -252,6 +267,7 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
 export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
   const t = csdd.replace(/\r/g, "");
   let markModel =
+    firstMatch(t, /Marka\s+Modelis\s+([^\n]{2,80})/i) ??
     firstMatch(t, /(?:marka|modelis)\s*[,&]?\s*(?:modelis|marka)?\s*[:\-]\s*([^\n]{2,80})/i) ??
     firstMatch(
       t,
@@ -266,6 +282,7 @@ export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
     ) ?? firstMatch(t, /\b([A-Z]{1,2}\s?\d{3,4})\b/);
 
   const firstReg =
+    firstMatch(t, /(\d{1,2}[./]\d{1,2}[./]\d{2,4})\s*[-–—]\s*Pirm[āa]\s+reģistr[āa]cija\s+Latvijā/i) ??
     firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i) ??
     firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*\s*[:\-]?\s*(\d{4}-\d{2}-\d{2})/i);
 
@@ -276,12 +293,13 @@ export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
   const powerKw =
     firstMatch(t, /(?:jauda|jauda\s*kw)\s*[:\-]?\s*(\d{2,4})\s*kW/i) ?? firstMatch(t, /\b(\d{2,4})\s*kW\b/i);
 
-  const grossMassKg = firstMatch(
-    t,
-    /(?:piln[āa]\s*masa|pielaujam[āa]\s*masa)\s*[:\-]?\s*([\d\s]{3,7})\s*kg/i,
-  );
+  const grossMassKg =
+    firstMatch(t, /Pilna\s+masa\s*\(kg\)\s*[:.]?\s*([\d\s]{3,7})/i) ??
+    firstMatch(t, /(?:piln[āa]\s*masa|pielaujam[āa]\s*masa)\s*[:\-]?\s*([\d\s]{3,7})\s*kg/i);
 
-  const curbWeightKg = firstMatch(t, /(?:pašmasa)\s*[:\-]?\s*([\d\s]{3,7})\s*kg/i);
+  const curbWeightKg =
+    firstMatch(t, /Pašmasa\s*\(kg\)\s*[:.]?\s*([\d\s]{3,7})/i) ??
+    firstMatch(t, /(?:pašmasa)\s*[:\-]?\s*([\d\s]{3,7})\s*kg/i);
 
   const roadTaxEur =
     firstMatch(
@@ -292,7 +310,7 @@ export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
 
   const smokeOpacity = firstMatch(
     t,
-    /(?:d[ūu]main[īi]bas\s+koeficients|d[ūu]main[īi]ba)\s*[:\-]?\s*([^\n]{1,32})/i,
+    /(?:d[ūu]main[īi]bas\s+koeficients|d[ūu]main[īi]ba)(?:\s*\([^)]*\))?\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?)/i,
   );
 
   return {

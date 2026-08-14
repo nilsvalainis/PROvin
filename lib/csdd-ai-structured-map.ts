@@ -148,7 +148,9 @@ CRITICAL RULES:
 - For EACH inspection: copy EVERY row from columns Kods / Novērtējums / Trūkumi vai bojājumi into truukumi[] (codes like 5.3.4., 3.2., 503, 618).
 - NEVER output "Nav reģistrētu trūkumu vai bojājumu" when the table lists concrete codes.
 - Include inspection with rating 1 or 2 even when many defects — do not skip older years.
-- Dates: DD.MM.YYYY. valsts for mileage: LV or Latvija.`;
+- Dates: DD.MM.YYYY. valsts for mileage: LV or Latvija.
+- Newer diesels may show "Atgāzu cietās daļiņas (cm-3)" instead of "Dūmainības koeficients (m-1)" — copy the numeric value.
+- TCPDF text layer often glues labels to values ("Apskates datums19.05.2026", "8.2.2.3.2Cieto") — still extract correctly.`;
 
 /** Otrais izsaukums, ja pilnajā shēmā TA palika tukša (garš PDF). */
 export const CSDD_TA_AI_RESPONSE_SCHEMA: AiJsonSchema = {

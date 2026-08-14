@@ -9,6 +9,7 @@ type CsddPdfImportPayload = {
   fields: CsddFormFields;
   warnings?: string[];
   fileName?: string;
+  meta?: { extractionMethod?: string; engine?: string };
 };
 
 type Props = {
@@ -62,7 +63,11 @@ export function AdminCsddPdfUpload({
           setError("Nav strukturētu CSDD datu — izmanto raw lauku.");
           return;
         }
-        setNotice(`CSDD PDF „${file.name}” importēts (Claude Opus).`);
+        const engine =
+          data.meta?.extractionMethod === "text_layer" || data.meta?.engine === "local_parser"
+            ? "lokālais parsers"
+            : "Claude";
+        setNotice(`CSDD PDF „${file.name}” importēts (${engine}). Raw lauku var labot vai ielīmēt daļēji.`);
         onImported({
           rawUnprocessedData: data.rawUnprocessedData ?? "",
           fields: data.fields,
@@ -143,7 +148,7 @@ export function AdminCsddPdfUpload({
           Augšupielādēt CSDD PDF atskaiti
         </span>
         <span className="text-[9px] text-slate-500">
-          Velc PDF vai klikšķini · Claude Opus · papildus raw iekopēšanai
+          Velc PDF vai klikšķini · aizpilda laukus · raw paliek rediģējams
         </span>
       </div>
       {notice ? (

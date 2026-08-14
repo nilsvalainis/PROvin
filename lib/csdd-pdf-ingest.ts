@@ -311,7 +311,10 @@ export function buildCsddFieldsFromPdfSources(opts: {
   if (previousInspectionBlockHasData(resolvedPrev)) {
     fields = { ...fields, prevInspectionBlock: resolvedPrev };
     if (resolvedPrev.smokeCoefficient.trim()) {
-      fields = { ...fields, opacityCoefficient: resolvedPrev.smokeCoefficient };
+      const n = Number.parseFloat(resolvedPrev.smokeCoefficient.replace(",", ".").replace(/[^\d.]+/g, ""));
+      if (Number.isFinite(n) && n > 0 && n < 50) {
+        fields = { ...fields, opacityCoefficient: resolvedPrev.smokeCoefficient };
+      }
     }
   }
 

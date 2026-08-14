@@ -2,6 +2,8 @@
  * CSDD paplašinātie lauki no raw: tehnisko apskašu vēsture, īpašnieku maiņas, iepriekšējā valsts.
  */
 
+import { normalizeEcsddPdfText } from "@/lib/csdd-ecsdd-pdf-normalize";
+
 export type CsddInspectionDefectRow = {
   code: string;
   rating: string;
@@ -219,6 +221,9 @@ function parseMetadataIntoBlock(section: string, block: CsddPreviousInspectionBl
       if (rm) block.ratingLevel = toRatingLevel(Number.parseInt(rm[1]!, 10));
     } else if (nk.includes("dumainib")) {
       block.smokeCoefficient = val;
+    } else if (nk.includes("cietas") && nk.includes("dalin")) {
+      if (!block.smokeCoefficient.trim()) block.smokeCoefficient = val;
+      if (!block.notes.trim()) block.notes = `Atgāzu cietās daļiņas: ${val}`;
     } else if (nk.includes("piezim")) {
       block.notes = val;
     }
@@ -340,14 +345,57 @@ export function parsePreviousInspectionFromRaw(raw: string): CsddPreviousInspect
   return parseIeprieksejasApskatesSection(raw);
 }
 
+function findOdometerForInspectionDate(raw: string, date: string): string {
+  const target = normalizeDotDate(date);
+  if (!target) return "";
+  const text = normalizeCsddRawText(raw);
+  const re = /(\d{4,7})\s*[-–—]\s*(\d{2}[./]\d{2}[./]\d{4})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (normalizeDotDate(m[2] ?? "") === target) return normalizeOdometerDigits(m[1] ?? "");
+  }
+  return "";
+}
+
+function technicalRowToPrevBlock(
+  row: CsddTechnicalInspectionRow,
+  odometer: string,
+): CsddPreviousInspectionBlock {
+  return {
+    inspectionType: row.inspectionType,
+    inspectionDateText: row.date,
+    nextInspectionDateText: "",
+    odometer,
+    ratingLabel: row.ratingLabel,
+    ratingLevel: row.ratingLevel,
+    smokeCoefficient: row.smokeCoefficient,
+    notes: row.notes,
+    defects: row.defects ?? [],
+  };
+}
+
 /**
  * Admin bloks „Iepriekšējās apskates dati” — prioritāte sadaļai ar šo virsrakstu PDF/raw.
- * Ja tās nav, „Detalizētais vērtējums” / tehniskie dati augšā.
+ * e.csdd.lv PDF to bieži aizstāj ar „Tehnisko apskašu vēsture” (defektu tabula) +
+ * „Pēdējā tehniskā apskate” (kopsavilkums bez kodiem).
  */
 export function resolvePrevInspectionBlockFromRaw(raw: string): CsddPreviousInspectionBlock {
   const iep = parseIeprieksejasApskatesSection(raw);
   if (previousInspectionBlockHasData(iep)) return iep;
-  return parseDetailedRatingBlockFromRaw(raw);
+
+  const detailed = parseDetailedRatingBlockFromRaw(raw);
+  if ((detailed.defects?.length ?? 0) > 0) return detailed;
+
+  const history = parseTechnicalInspectionHistorySection(raw);
+  const withDefects = history.find((r) => (r.defects?.length ?? 0) > 0) ?? history[0];
+  if (withDefects) {
+    const odo =
+      findOdometerForInspectionDate(raw, withDefects.date) ||
+      (detailed.inspectionDateText === withDefects.date ? detailed.odometer : "");
+    return technicalRowToPrevBlock(withDefects, odo);
+  }
+
+  return detailed;
 }
 
 /** „Iepriekšējās apskates dati” → rinda tehnisko apskašu vēsturei. */
@@ -367,15 +415,17 @@ export function parseLastTechnicalInspectionHead(raw: string): {
   ratingLabel: string;
 } | null {
   const text = normalizeCsddRawText(raw);
-  const m = text.match(
-    /Pēdēj[āa]\s+tehnisk[āa]\s+apskate[\s\S]{0,400}?TA\s+datums\s+(\d{2}[./]\d{2}[./]\d{4})/i,
-  );
-  if (!m?.[1]) return null;
-  const date = normalizeDotDate(m[1]);
-  const odometerM = text.match(/Odometra\s+rādījums\s+(\d[\d\s]*)/i);
-  const ratingM = text.match(/Novērtējums\s+(\d(?:\s*-\s*[^\n]+)?)/i);
+  const start = text.search(/Pēdēj[āa]\s+tehnisk[āa]\s+apskate/i);
+  if (start < 0) return null;
+  const rest = text.slice(start);
+  const end = rest.search(/\n\s*(Nobraukuma\s+vēsture|Tehnisko\s+apska[šs]u\s+vēsture|Iepriekšējās\s+apskates\s+dati)/i);
+  const slice = end >= 0 ? rest.slice(0, end) : rest.slice(0, 800);
+  const dateM = slice.match(/TA\s+datums\s*[:.]?\s*(\d{2}[./]\d{2}[./]\d{4})/i);
+  if (!dateM?.[1]) return null;
+  const odometerM = slice.match(/Odometra\s+rādījums\s*[:.]?\s*(\d[\d\s]*)/i);
+  const ratingM = slice.match(/Novērtējums\s*[:.]?\s*(\d(?:\s*-\s*[^\n]+)?)/i);
   return {
-    date,
+    date: normalizeDotDate(dateM[1]),
     odometer: odometerM?.[1] ? normalizeOdometerDigits(odometerM[1]) : "",
     ratingLabel: ratingM?.[1]?.trim() ?? "",
   };
@@ -404,11 +454,13 @@ export function previousInspectionBlockToRow(
 
 /** PDF/NBSP un līdzīgas atstarpes → parasta atstarpe pirms regex. */
 export function normalizeCsddRawText(raw: string): string {
-  return raw
-    .replace(/\r/g, "")
-    .replace(/[\u00A0\u202F\u2007]/g, " ")
-    .replace(/\uFEFF/g, "")
-    .replace(/[ \t]+\n/g, "\n");
+  return normalizeEcsddPdfText(
+    raw
+      .replace(/\r/g, "")
+      .replace(/[\u00A0\u202F\u2007]/g, " ")
+      .replace(/\uFEFF/g, "")
+      .replace(/[ \t]+\n/g, "\n"),
+  );
 }
 
 function normalizeDotDate(date: string): string {
@@ -528,22 +580,30 @@ function parseDefectsFromBlock(block: string): CsddInspectionDefectRow[] {
 }
 
 function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null {
-  const dateM = block.match(/Apskates\s+datums\s+(\d{2}\.\d{2}\.\d{4})/i);
+  const dateM = block.match(/Apskates\s+datums\s*[:.]?\s*(\d{2}\.\d{2}\.\d{4})/i);
   if (!dateM?.[1]) return null;
   const date = dateM[1];
 
-  const typeM = block.match(/Apskates\s+tips\s+([^\n]+)/i);
+  const typeM = block.match(/Apskates\s+tips\s*[:.]?\s*([^\n]+)/i);
   const inspectionType = typeM?.[1]?.trim() ?? "";
 
-  const ratingM = block.match(/Novērtējums\s+(\d(?:\s*-\s*[^\n]+)?)/i);
+  const ratingM = block.match(/Novērtējums\s*[:.]?\s*(\d(?:\s*-\s*[^\n]+)?)/i);
   const ratingLabel = ratingM?.[1]?.trim() ?? "";
   const ratingLevel = ratingM?.[1] ? toRatingLevel(Number.parseInt(ratingM[1], 10)) : null;
 
-  const smokeM = block.match(/Dūmainības\s+koeficients\s*\([^)]*\)\s*:\s*([^\n]+)/i);
-  const smokeCoefficient = smokeM?.[1]?.trim() ?? "";
+  const smokeM = block.match(
+    /Dūmainības\s+koeficients(?:\s*\([^)]*\))?\s*:?\s*([0-9]+(?:[.,][0-9]+)?)/i,
+  );
+  const particleM = block.match(
+    /Atgāzu\s+cietās\s+daļiņas(?:\s*\([^)]*\))?\s*:?\s*([0-9][\d\s]*)/i,
+  );
+  const smokeCoefficient = (smokeM?.[1] ?? particleM?.[1] ?? "").trim();
 
-  const notesM = block.match(/Piezīmes\s+([\s\S]*?)(?=\n\s*Kods\s+Novērtējums|\n\s*[\d.]+\s+\d\s+|$)/i);
+  const notesM = block.match(/Piezīmes\s*[:.]?\s*([\s\S]*?)(?=\n\s*Kods\s+Novērtējums|\n\s*[\d.]+\s+\d\s+|$)/i);
   let notes = notesM?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+  if (particleM?.[1] && smokeM?.[1] == null && !/cietās\s+daļiņas/i.test(notes)) {
+    notes = [`Atgāzu cietās daļiņas: ${particleM[1].trim()}`, notes].filter(Boolean).join(" ");
+  }
   if (notes.length > 500) notes = notes.slice(0, 500);
 
   const defects = parseDefectsFromBlock(block);
@@ -571,7 +631,7 @@ function parseTechnicalInspectionHistorySection(raw: string): CsddTechnicalInspe
   const section = extractTechnicalInspectionSection(raw);
   if (!section.trim()) return [];
 
-  const blocks = section.split(/(?=Apskates\s+datums\s)/i).filter((b) => /Apskates\s+datums/i.test(b));
+  const blocks = section.split(/(?=Apskates\s+datums\s*)/i).filter((b) => /Apskates\s+datums/i.test(b));
   return blocks.map(parseInspectionBlock).filter((r): r is CsddTechnicalInspectionRow => r != null);
 }
 
@@ -579,6 +639,7 @@ function parseTechnicalInspectionHistorySection(raw: string): CsddTechnicalInspe
 export function parseTechnicalInspectionHistory(raw: string): CsddTechnicalInspectionRow[] {
   const sectionRows = parseTechnicalInspectionHistorySection(raw);
   const ieprieksejasRow = parseIeprieksejasApskatesTaRow(raw);
+  const lastHead = parseLastTechnicalInspectionHead(raw);
 
   const rows = [...sectionRows];
   if (ieprieksejasRow) {
@@ -590,6 +651,22 @@ export function parseTechnicalInspectionHistory(raw: string): CsddTechnicalInspe
     } else {
       rows.unshift(ieprieksejasRow);
     }
+  }
+
+  if (lastHead?.date && !rows.some((r) => r.date.trim() === lastHead.date)) {
+    const ratingLevel = lastHead.ratingLabel
+      ? toRatingLevel(Number.parseInt(lastHead.ratingLabel, 10))
+      : null;
+    rows.unshift({
+      date: lastHead.date,
+      inspectionType: "",
+      ratingLabel: lastHead.ratingLabel,
+      ratingLevel,
+      maxDefectLevel: null,
+      smokeCoefficient: "",
+      notes: "",
+      defects: [],
+    });
   }
 
   return rows.sort((a, b) => parseInspectionDateMs(b.date) - parseInspectionDateMs(a.date));
@@ -673,6 +750,11 @@ export function parseOwnerRegistrationFromRaw(raw: string): {
         events.push({ date: normalizeDotDate(ev[1]), label: ev[2].trim() });
       }
     }
+  }
+
+  if (!ownerCount && events.length > 0) {
+    const changes = events.filter((e) => /īpašnieka\s+maiņa/i.test(e.label)).length;
+    ownerCount = String(changes + 1);
   }
 
   return { ownerCount, events };

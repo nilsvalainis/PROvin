@@ -14,7 +14,6 @@ import {
 import { parseCsddMileagePairsDense } from "@/lib/csdd-mileage-dense-parse";
 import {
   parseOwnerRegistrationFromRaw,
-  parseDetailedRatingBlockFromRaw,
   parsePreviousRegistrationCountry,
   resolvePrevInspectionBlockFromRaw,
   parseLastTechnicalInspectionHead,
@@ -30,6 +29,12 @@ import {
   normalizeRoadTaxDisplay,
   parseLvRegistryBasics,
 } from "@/lib/client-report-lv-parse";
+
+/** Dūmainība ir mazs decimāls (0.09–9.99); atgāzu daļiņas ir miljonos. */
+function looksLikeSmokeOpacity(raw: string): boolean {
+  const n = Number.parseFloat(raw.replace(",", ".").replace(/[^\d.]+/g, ""));
+  return Number.isFinite(n) && n > 0 && n < 50;
+}
 
 /** Rindas, pēc kurām „Nākamās / Iepriekšējās apskates datums” vairs nedrīkst ņemt. */
 const NEXT_INSPECTION_HEAD_BOUNDARY_RES = [
@@ -195,8 +200,10 @@ export function parseCsddTechnicalFields(
 
   let particulateMatter = (st.particulateMatter ?? "").trim();
   if (!particulateMatter) {
-    const m = raw.match(/(?:atgāzu\s+)?cietās\s+daļiņas\s*[:\s]*([^\n]+)/i);
-    if (m) particulateMatter = m[1].trim().slice(0, 120);
+    const m = raw.match(
+      /(?:atgāzu\s+)?cietās\s+daļiņas(?:\s*\([^)]*\))?\s*:?\s*([0-9][\d\s]*)/i,
+    );
+    if (m) particulateMatter = m[1].replace(/\s+/g, "").slice(0, 120);
   }
 
   const previousRegistrationCountry = parsePreviousRegistrationCountry(raw);
@@ -490,6 +497,12 @@ export function applyCsddPasteToForm(
     nextInspectionDate = current.nextInspectionDate;
   }
 
+  let firstRegistration = tech.firstRegistration;
+  if (!firstRegistration.trim()) {
+    const firstLv = ownerReg.events.find((e) => /Pirmā\s+reģistrācija\s+Latvijā/i.test(e.label));
+    if (firstLv?.date) firstRegistration = lvDateToIsoFlexible(firstLv.date) || firstLv.date;
+  }
+
   let prevInspectionDate = "";
   if (lastTaHead?.date) {
     const iso = lvDateToIsoFlexible(lastTaHead.date);
@@ -509,8 +522,9 @@ export function applyCsddPasteToForm(
   }
 
   let opacityCoefficient = tech.opacityCoefficient;
-  if (prevInspectionBlock.smokeCoefficient.trim()) {
-    opacityCoefficient = prevInspectionBlock.smokeCoefficient;
+  const prevSmoke = prevInspectionBlock.smokeCoefficient.trim();
+  if (prevSmoke && looksLikeSmokeOpacity(prevSmoke)) {
+    opacityCoefficient = prevSmoke;
   }
 
   let mileageHistory = parsed.mileageHistory;
@@ -534,9 +548,26 @@ export function applyCsddPasteToForm(
     }
   }
 
+  if (lastTaHead?.odometer && lastTaHead.date) {
+    const exists = mileageHistory.some(
+      (r) => r.odometer === lastTaHead.odometer && r.date === lastTaHead.date,
+    );
+    if (!exists) {
+      mileageHistory = finalizeMileageHistory([
+        ...mileageHistory,
+        {
+          date: lastTaHead.date,
+          odometer: lastTaHead.odometer,
+          country: CSDD_MILEAGE_COUNTRY_LV,
+        },
+      ]);
+    }
+  }
+
   return {
     ...emptyCsddFields(),
     ...tech,
+    firstRegistration,
     opacityCoefficient,
     ownerCountLatvia: ownerReg.ownerCount,
     ownerRegistrationEvents: ownerReg.events,
@@ -591,7 +622,7 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
       const iso = extractFirstNextInspectionDateIso(raw);
       if (iso) patch.nextInspectionDate = iso;
     }
-    if (!csdd.opacityCoefficient.trim() && prevBlock.smokeCoefficient.trim()) {
+    if (!csdd.opacityCoefficient.trim() && prevBlock.smokeCoefficient.trim() && looksLikeSmokeOpacity(prevBlock.smokeCoefficient)) {
       patch.opacityCoefficient = prevBlock.smokeCoefficient;
     }
   }
