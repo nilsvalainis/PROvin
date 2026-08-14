@@ -43,10 +43,6 @@ import {
   type AutoRecordsBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
-import {
-  clearAllOdometerReadings,
-  countOdometerReadings,
-} from "@/lib/admin-clear-odometer-readings";
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
 import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
 import {
@@ -121,7 +117,6 @@ import {
   CarFront,
   Check,
   ClipboardList,
-  Eraser,
   Globe,
   Landmark,
   LayoutDashboard,
@@ -1837,36 +1832,6 @@ export function OrderDetailWorkspace({
     return () => window.clearTimeout(u);
   }, [workspaceSaveFlash]);
 
-  const clearAllLoadedOdometerReadings = useCallback(() => {
-    if (!workspaceHydrated) return;
-    const currentBlocks = mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks);
-    const count = countOdometerReadings(currentBlocks);
-    const ok = window.confirm(
-      count > 0
-        ? `Dzēst visus ielasītos odometra rādījumus visos avotos (${count} rindas / iekopējumi)? Tiks notīrītas CSDD, AutoDNA, CarVertical, dīlera, reģistru un citu avotu nobraukuma tabulas, kā arī odometra iekopējumi. Negadījumi, komentāri un servisa darbi paliks. Šo darbību nevar atsaukt.`
-        : "Strukturētu odometra rindu nav. Vai tik un tā notīrīt odometra iekopējumu laukus visos avotos?",
-    );
-    if (!ok) return;
-    workspaceDirtyRef.current = true;
-    flushSync(() => {
-      setWs((prev) => {
-        const next = normalizeOrderWorkspacePersistBody({
-          ...workspaceToPersistBody(prev),
-          sourceBlocks: clearAllOdometerReadings(mergeSourceBlocksWithDefaults(prev.sourceBlocks)),
-        });
-        return applyPersistBodyToWs(next);
-      });
-    });
-    commitWorkspaceLocalNow({ force: true });
-    setWorkspaceSaveBusy(true);
-    void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
-  }, [
-    applyPersistBodyToWs,
-    commitWorkspaceLocalNow,
-    persistWorkspaceSnapshot,
-    workspaceHydrated,
-  ]);
-
   const resetDemoWorkspace = useCallback(() => {
     if (!payload.isDemo) return;
     if (
@@ -3472,17 +3437,6 @@ export function OrderDetailWorkspace({
             }}
           >
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
-          </button>
-          <button
-            type="button"
-            disabled={!workspaceHydrated || workspaceSaveBusy}
-            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-rose-300/80 bg-rose-50 px-2 text-[10px] font-semibold text-rose-950 shadow-sm transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-700/50 dark:bg-rose-950/40 dark:text-rose-100 dark:hover:bg-rose-950/60"
-            title="Dzēst visus ielasītos odometra rādījumus visos avotos"
-            aria-label="Dzēst visus odometra rādījumus visos avotos"
-            onClick={() => clearAllLoadedOdometerReadings()}
-          >
-            <Eraser className="h-3.5 w-3.5" aria-hidden />
-            <span className="hidden sm:inline">Odometrs</span>
           </button>
           {workspaceAutosaveStatus === "saving" ? (
             <span className="text-[10px] font-medium text-[var(--color-provin-muted)]" role="status">

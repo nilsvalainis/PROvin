@@ -17,6 +17,7 @@ import {
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
   sourcePdfChecklistHasAny,
+  SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import {
@@ -45,6 +46,11 @@ import {
 } from "@/components/admin/AdminSourceCommentField";
 import { AdminGeminiContextRawField } from "@/components/admin/AdminGeminiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
+import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import {
+  clearCsddOdometerReadings,
+  countCsddOdometerReadings,
+} from "@/lib/admin-clear-odometer-readings";
 import { AlertTriangle } from "lucide-react";
 
 const inp =
@@ -496,13 +502,20 @@ export function AdminCsddSourceBlock({
           </table>
         </div>
         {!readOnly && !disabled && (
-          <button
-            type="button"
-            className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-            onClick={addMileageRow}
-          >
-            + Rinda
-          </button>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+              onClick={addMileageRow}
+            >
+              + Rinda
+            </button>
+            <AdminClearOdometerButton
+              sourceLabel={SOURCE_BLOCK_LABELS.csdd}
+              count={countCsddOdometerReadings(value)}
+              onClear={() => onChange(clearCsddOdometerReadings(value))}
+            />
+          </div>
         )}
       </div>
 

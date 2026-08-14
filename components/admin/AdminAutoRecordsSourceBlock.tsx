@@ -65,6 +65,11 @@ import {
   AUTO_RECORDS_MAX_PHOTOS,
   emptyAutoRecordsPhotoGroup,
 } from "@/lib/auto-records-photo-types";
+import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import {
+  clearAutoRecordsOdometerReadings,
+  countAutoRecordsOdometerReadings,
+} from "@/lib/admin-clear-odometer-readings";
 
 const DEALER_ARIA = "Oficiālā dīlera dati";
 
@@ -366,13 +371,20 @@ export function AdminAutoRecordsSourceBlock({
             </table>
           </div>
           {!readOnly && !disabled ? (
-            <button
-              type="button"
-              className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-              onClick={addRow}
-            >
-              + Rinda
-            </button>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+                onClick={addRow}
+              >
+                + Rinda
+              </button>
+              <AdminClearOdometerButton
+                sourceLabel={DEALER_ARIA}
+                count={countAutoRecordsOdometerReadings(value)}
+                onClear={() => onChange(clearAutoRecordsOdometerReadings(value))}
+              />
+            </div>
           ) : null}
 
           <p className="mb-1.5 mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">

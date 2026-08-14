@@ -30,6 +30,11 @@ import {
   type VinRegistryMileageRow,
 } from "@/lib/admin-source-blocks";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import {
+  clearVinRegistryOdometerReadings,
+  countVinRegistryOdometerReadings,
+} from "@/lib/admin-clear-odometer-readings";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -304,13 +309,20 @@ export function AdminVinRegistrySourceBlock({
           </table>
         </div>
         {!readOnly && !disabled ? (
-          <button
-            type="button"
-            className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-            onClick={() => onChange({ ...block, mileage: [...mileage, emptyVinRegistryMileageRow()] })}
-          >
-            + Rinda
-          </button>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+              onClick={() => onChange({ ...block, mileage: [...mileage, emptyVinRegistryMileageRow()] })}
+            >
+              + Rinda
+            </button>
+            <AdminClearOdometerButton
+              sourceLabel={label}
+              count={countVinRegistryOdometerReadings(block)}
+              onClear={() => onChange(clearVinRegistryOdometerReadings(block))}
+            />
+          </div>
         ) : null}
 
         <div className="mt-4 border-t border-slate-200 pt-3">

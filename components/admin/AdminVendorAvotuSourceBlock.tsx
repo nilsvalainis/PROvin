@@ -24,6 +24,7 @@ import {
   ltabRowHasData,
   sourcePdfChecklistHasAny,
   coerceVendorAvotuBlock,
+  SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import {
   ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
@@ -55,11 +56,31 @@ import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
+import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import {
+  clearVendorOdometerReadings,
+  countVendorOdometerReadings,
+} from "@/lib/admin-clear-odometer-readings";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 type BlockKey = "autodna" | "carvertical" | "citi_avoti";
+
+function vendorOdometerSourceLabel(
+  blockKey: BlockKey,
+  block: VendorAvotuBlockState,
+  sectionIndex?: number,
+): string {
+  if (blockKey === "citi_avoti") {
+    const custom = "label" in block && typeof (block as { label?: string }).label === "string"
+      ? (block as { label?: string }).label!.trim()
+      : "";
+    if (custom) return custom;
+    if (sectionIndex != null) return `Avots ${sectionIndex + 1}`;
+  }
+  return SOURCE_BLOCK_LABELS[blockKey];
+}
 
 const mileCell = "px-1.5 py-0.5";
 
@@ -385,13 +406,20 @@ export function AdminVendorAvotuSourceBlock({
           </table>
         </div>
         {!readOnly && !disabled ? (
-          <button
-            type="button"
-            className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-            onClick={addMileageRow}
-          >
-            + Rinda
-          </button>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+              onClick={addMileageRow}
+            >
+              + Rinda
+            </button>
+            <AdminClearOdometerButton
+              sourceLabel={vendorOdometerSourceLabel(blockKey, block, sectionIndex)}
+              count={countVendorOdometerReadings(block)}
+              onClear={() => onChange(clearVendorOdometerReadings(block))}
+            />
+          </div>
         ) : null}
 
         {blockKey === "carvertical" && (block.vehicleHistoryTimeline ?? []).length > 0 ? (
