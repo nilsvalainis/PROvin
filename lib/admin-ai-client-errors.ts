@@ -26,7 +26,12 @@ const ERROR_MESSAGES_LV: Record<string, string> = {
   missing_expert_sections: "Vispirms aizpildi pārdevēja, ieteikumu vai cenas sadaļu",
   missing_seller_input: "Ievadi papildus nosaukumu vai sludinājuma aprakstu",
   listing_scrape_failed: "Neizdevās nolasīt ss.lv sludinājumu — pārbaudi saiti",
-  ai_empty_content: "AI atgrieza tukšu atbildi (iespējams satura filtrs)",
+  ai_empty_content:
+    "AI atgrieza tukšu atbildi — tokeni tika tērēti, bet teksts nepienāca. Mēģini vēlreiz.",
+  ai_empty_content_max_tokens:
+    "Claude iztērēja tokenu limitu thinking posmā un neatgrieza tekstu — mēģini vēlreiz.",
+  gemini_empty_content:
+    "AI atgrieza tukšu atbildi — tokeni tika tērēti, bet teksts nepienāca. Mēģini vēlreiz.",
   ai_invalid_json: "AI atgrieza nevalīdu JSON — mēģini vēlreiz",
   missing_files: "Pievieno vismaz vienu PDF",
   extraction_failed: "Neizdevās izvilkt datus no PDF",
@@ -113,6 +118,31 @@ export function formatAdminAiFetchError(
   }
 
   return fallback;
+}
+
+/** HTTP 200 ar tukšu `text` nozīmē, ka AI jau iekasēja tokenus, bet UI to klusi ignorēja. */
+export function readGeneratedAdminAiText(
+  res: Pick<Response, "ok" | "status">,
+  data: AdminAiApiErrorBody & { text?: string },
+  parseFailed: boolean,
+  httpFallback: string,
+): { ok: true; text: string } | { ok: false; error: string } {
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: parseFailed
+        ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
+        : formatAdminAiFetchError(data, res, httpFallback),
+    };
+  }
+  const text = typeof data.text === "string" ? data.text.trim() : "";
+  if (text) return { ok: true, text };
+  return {
+    ok: false,
+    error: parseFailed
+      ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
+      : ERROR_MESSAGES_LV.ai_empty_content,
+  };
 }
 
 export async function parseAdminAiResponse(res: Response): Promise<{

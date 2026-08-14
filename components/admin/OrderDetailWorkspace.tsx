@@ -188,7 +188,11 @@ import {
   postNotifyReportReadyViaBlob,
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
-import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import {
+  formatAdminAiFetchError,
+  parseAdminAiResponse,
+  readGeneratedAdminAiText,
+} from "@/lib/admin-ai-client-errors";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
@@ -198,7 +202,7 @@ import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle
 
 function aiFetchErrorMessage(
   res: Response,
-  data: { error?: string; detail?: string },
+  data: { error?: string; detail?: string; text?: string },
   parseFailed: boolean,
   fallback: string,
 ): string {
@@ -1044,15 +1048,17 @@ export function OrderDetailWorkspace({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiTechnicalRisksErr(
-          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās ģenerēt tehnisko risku analīzi"),
-        );
+      const generated = readGeneratedAdminAiText(
+        res,
+        data,
+        parseFailed,
+        "AI: neizdevās ģenerēt tehnisko risku analīzi",
+      );
+      if (!generated.ok) {
+        setAiTechnicalRisksErr(generated.error);
         return;
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(data.text) });
-      }
+      updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(generated.text) });
     } catch {
       setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
@@ -1079,13 +1085,12 @@ export function OrderDetailWorkspace({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiInspectionErr(aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās ģenerēt"));
+      const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās ģenerēt");
+      if (!generated.ok) {
+        setAiInspectionErr(generated.error);
         return;
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(data.text) });
-      }
+      updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(generated.text) });
     } catch {
       setAiInspectionErr("AI: neizdevās savienoties");
     } finally {
@@ -1112,13 +1117,12 @@ export function OrderDetailWorkspace({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiPriceErr(aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās analizēt cenu"));
+      const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās analizēt cenu");
+      if (!generated.ok) {
+        setAiPriceErr(generated.error);
         return;
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(data.text) });
-      }
+      updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(generated.text) });
     } catch {
       setAiPriceErr("AI: neizdevās savienoties");
     } finally {
@@ -1145,13 +1149,17 @@ export function OrderDetailWorkspace({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiSummaryErr(aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot atbildi"));
+      const generated = readGeneratedAdminAiText(
+        res,
+        data,
+        parseFailed,
+        "AI: neizdevās sagatavot atbildi",
+      );
+      if (!generated.ok) {
+        setAiSummaryErr(generated.error);
         return;
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        setIrissSummary(aiExpertSourceCommentToRichHtml(data.text));
-      }
+      setIrissSummary(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiSummaryErr("AI: neizdevās savienoties");
     } finally {
@@ -1177,15 +1185,17 @@ export function OrderDetailWorkspace({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiIncidentsSummaryErr(
-          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot atbildi"),
-        );
+      const generated = readGeneratedAdminAiText(
+        res,
+        data,
+        parseFailed,
+        "AI: neizdevās sagatavot atbildi",
+      );
+      if (!generated.ok) {
+        setAiIncidentsSummaryErr(generated.error);
         return;
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        onInternalCommentChange(aiExpertSourceCommentToRichHtml(data.text));
-      }
+      onInternalCommentChange(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiIncidentsSummaryErr("AI: neizdevās savienoties");
     } finally {
@@ -1217,15 +1227,17 @@ export function OrderDetailWorkspace({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiMileageCommentErr(
-          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot atbildi"),
-        );
+      const generated = readGeneratedAdminAiText(
+        res,
+        data,
+        parseFailed,
+        "AI: neizdevās sagatavot atbildi",
+      );
+      if (!generated.ok) {
+        setAiMileageCommentErr(generated.error);
         return;
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        onMileageCommentChange(aiExpertSourceCommentToRichHtml(data.text));
-      }
+      onMileageCommentChange(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiMileageCommentErr("AI: neizdevās savienoties");
     } finally {
@@ -1257,15 +1269,17 @@ export function OrderDetailWorkspace({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiSourcesComparisonErr(
-          aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās sagatavot avotu salīdzinājumu"),
-        );
+      const generated = readGeneratedAdminAiText(
+        res,
+        data,
+        parseFailed,
+        "AI: neizdevās sagatavot avotu salīdzinājumu",
+      );
+      if (!generated.ok) {
+        setAiSourcesComparisonErr(generated.error);
         return;
       }
-      if (typeof data.text === "string" && data.text.trim()) {
-        onSourcesComparisonCommentChange(aiExpertSourceCommentToRichHtml(data.text));
-      }
+      onSourcesComparisonCommentChange(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiSourcesComparisonErr("AI: neizdevās savienoties");
     } finally {
@@ -1520,22 +1534,23 @@ export function OrderDetailWorkspace({
           }),
         });
         const { data, parseFailed } = await parseAdminAiResponse(res);
-        if (!res.ok) {
-          setAiSourceCommentErr({
-            key: busyKey,
-            msg: aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās ģenerēt komentāru"),
-          });
+        const generated = readGeneratedAdminAiText(
+          res,
+          data,
+          parseFailed,
+          "AI: neizdevās ģenerēt komentāru",
+        );
+        if (!generated.ok) {
+          setAiSourceCommentErr({ key: busyKey, msg: generated.error });
           return;
         }
-        if (typeof data.text === "string" && data.text.trim()) {
-          const html = aiExpertSourceCommentToRichHtml(data.text);
-          const prevBlock = cur.sourceBlocks[blockKey];
-          const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
-            citiAvotiSectionIndex,
-            targetField,
-          });
-          updateSourceBlock(blockKey, nextBlock);
-        }
+        const html = aiExpertSourceCommentToRichHtml(generated.text);
+        const prevBlock = cur.sourceBlocks[blockKey];
+        const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
+          citiAvotiSectionIndex,
+          targetField,
+        });
+        updateSourceBlock(blockKey, nextBlock);
       } catch {
         setAiSourceCommentErr({ key: busyKey, msg: "AI: neizdevās savienoties" });
       } finally {

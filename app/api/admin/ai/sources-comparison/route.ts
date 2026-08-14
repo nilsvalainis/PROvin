@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
 
   try {
-    return nextJsonWithAiUsage(() => generateSourcesComparisonWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
+    return await nextJsonWithAiUsage(() => generateSourcesComparisonWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[ai/sources-comparison]", msg);

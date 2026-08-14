@@ -26,7 +26,10 @@ import {
 import { ADMIN_LISTING_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
-import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import {
+  parseAdminAiResponse,
+  readGeneratedAdminAiText,
+} from "@/lib/admin-ai-client-errors";
 import type { AiListingCommentField } from "@/lib/admin-ai-listing-field";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -149,23 +152,22 @@ export function AdminListingAnalysisSourceBlock({
           }),
         });
         const { data, parseFailed } = await parseAdminAiResponse(res);
-        if (!res.ok) {
-          setListingFieldErr({
-            field,
-            msg: parseFailed
-              ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
-              : formatAdminAiFetchError(data, res, "AI: neizdevās ģenerēt komentāru"),
-          });
+        const generated = readGeneratedAdminAiText(
+          res,
+          data,
+          parseFailed,
+          "AI: neizdevās ģenerēt komentāru",
+        );
+        if (!generated.ok) {
+          setListingFieldErr({ field, msg: generated.error });
           return;
         }
-        if (typeof data.text === "string" && data.text.trim()) {
-          const html = aiExpertSourceCommentToRichHtml(data.text);
-          onChange(
-            field === "photoAnalysis"
-              ? { ...v, photoAnalysis: html }
-              : { ...v, listingSalesContext: html },
-          );
-        }
+        const html = aiExpertSourceCommentToRichHtml(generated.text);
+        onChange(
+          field === "photoAnalysis"
+            ? { ...v, photoAnalysis: html }
+            : { ...v, listingSalesContext: html },
+        );
       } catch {
         setListingFieldErr({ field, msg: "AI: neizdevās savienoties" });
       } finally {
@@ -204,17 +206,17 @@ export function AdminListingAnalysisSourceBlock({
           }),
         });
         const { data, parseFailed } = await parseAdminAiResponse(res);
-        if (!res.ok) {
-          setSellerAnalyzeErr(
-            parseFailed
-              ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
-              : formatAdminAiFetchError(data, res, "AI: neizdevās analizēt pārdevēju"),
-          );
+        const generated = readGeneratedAdminAiText(
+          res,
+          data,
+          parseFailed,
+          "AI: neizdevās analizēt pārdevēju",
+        );
+        if (!generated.ok) {
+          setSellerAnalyzeErr(generated.error);
           return;
         }
-        if (typeof data.text === "string" && data.text.trim()) {
-          onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(data.text) });
-        }
+        onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(generated.text) });
       } catch {
         setSellerAnalyzeErr("AI: neizdevās savienoties");
       } finally {

@@ -37,6 +37,21 @@ function errorHttpStatus(e: unknown): number | null {
   return typeof status === "number" ? status : null;
 }
 
+/**
+ * Timeout jau nozīmē, ka primārais modelis strādāja (un parasti arī iekasēja).
+ * Failover uz nākamo modeli tad dubulto rēķinu, bet komentārs tāpat var nepienākt.
+ */
+export function isAiTimeoutError(e: unknown): boolean {
+  const status = errorHttpStatus(e);
+  if (status === 408 || status === 504) return true;
+  return /timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED/i.test(aiErrorMessage(e));
+}
+
+/** Pagaidu kļūdas, kurās drīkst pāriet uz lētāku modeli (529, 429) — ne tukša atbilde, ne timeout. */
+export function shouldAiModelFailover(e: unknown): boolean {
+  return isAiTransientError(e) && !isAiTimeoutError(e);
+}
+
 /** Pagaidu kļūdas — modeļa failover + atkārtots mēģinājums (529 overloaded, 429 kvota, timeout). */
 export function isAiTransientError(e: unknown): boolean {
   const status = errorHttpStatus(e);

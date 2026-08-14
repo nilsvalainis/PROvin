@@ -65,7 +65,7 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
 
   try {
-    return nextJsonWithAiUsage(() => generateTechnicalRiskAnalysisWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
+    return await nextJsonWithAiUsage(() => generateTechnicalRiskAnalysisWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[ai/technical-risk-analysis]", msg);

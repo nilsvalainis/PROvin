@@ -7,7 +7,7 @@ import {
   CLAUDE_MODEL_SONNET,
   aiErrorMessage,
   aiFailoverModels,
-  isAiTransientError,
+  shouldAiModelFailover,
 } from "@/lib/ai-model-failover";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { toClaudeJsonSchema, type AiJsonSchema } from "@/lib/ai-json-schema";
@@ -37,16 +37,19 @@ export function resolveAiAdminModel(tier?: AiAdminModelTier | null): string {
 }
 
 const LOG_PREFIX = "[admin-ai]";
-/** Pilna modeļu kārta katrā retry raundā; starp raundiem — exponential backoff. */
-const FAILOVER_BACKOFF_MS = [0, 1_000, 2_500] as const;
+/** Starp lētāku failover modeli — viena pauze, bez atkārtotas Opus raundas. */
+const FAILOVER_STEP_MS = 800;
 /**
- * Anthropic prasa `max_tokens`. Rēķina tikai faktiski ģenerētos tokenus, tāpēc JSON
- * limits ir dāsns — nogriezta atbilde shēmas režīmā būtu nevalīds JSON (blīvas CSDD
- * atskaites ar daudzām apskatēm mēdz būt garas).
+ * Anthropic `max_tokens` ir kopējais limīts: thinking + redzamais teksts.
+ * Opus 5 / Sonnet 5 thinking ir IESLĒGTS pēc noklusējuma — 8k bija par šauru un
+ * atbilde palika tukša, lai gan tokeni (un nauda) jau bija noņemti.
  */
-const MAX_TOKENS_TEXT = 8_000;
+const MAX_TOKENS_TEXT = 16_000;
 const MAX_TOKENS_JSON = 32_000;
-/** Serverless timeout — nokrist pirms platformas limita, lai kļūda ir lasāma. */
+/** Komentāru maršrutu `maxDuration` ir 90s — nogrist pirms Vercel nogalina procesu. */
+const TEXT_REQUEST_TIMEOUT_MS = 75_000;
+const JSON_REQUEST_TIMEOUT_MS = 150_000;
+/** SDK noklusējums PDF/gariem izsaukumiem. */
 const REQUEST_TIMEOUT_MS = 180_000;
 
 /** Strukturētā PDF/CSDD ielase — Sonnet; failover iet uz Haiku, ne Opus. */
@@ -68,6 +71,7 @@ function logClaudeUsage(label: string, model: string, message: Anthropic.Message
   const outputTokens = u.output_tokens ?? 0;
   const cacheCreationInputTokens = u.cache_creation_input_tokens ?? 0;
   const cacheReadInputTokens = u.cache_read_input_tokens ?? 0;
+  const thinkingTokens = u.output_tokens_details?.thinking_tokens ?? 0;
   recordAiUsage({
     provider: "anthropic",
     model,
@@ -80,11 +84,41 @@ function logClaudeUsage(label: string, model: string, message: Anthropic.Message
     label,
     model,
     promptVersion: PROVIN_AI_PROMPT_VERSION,
+    stopReason: message.stop_reason,
+    contentTypes: message.content.map((b) => b.type),
     inputTokens,
     outputTokens,
+    thinkingTokens,
     cacheCreationInputTokens,
     cacheReadInputTokens,
   });
+}
+
+/**
+ * Opus 5 / Sonnet 5: `effort: low` saīsina adaptive thinking, lai tas neapēd
+ * `max_tokens` un neatstātu tukšu komentāru (bet rēķinu). Haiku effort neatbalsta.
+ */
+function claudeOutputControls(
+  model: string,
+  schema?: AiJsonSchema,
+): {
+  output_config?: {
+    effort?: "low";
+    format?: { type: "json_schema"; schema: Record<string, unknown> };
+  };
+} {
+  const format = schema
+    ? { type: "json_schema" as const, schema: toClaudeJsonSchema(schema) }
+    : undefined;
+  if (model.includes("haiku")) {
+    return format ? { output_config: { format } } : {};
+  }
+  return {
+    output_config: {
+      effort: "low",
+      ...(format ? { format } : {}),
+    },
+  };
 }
 
 export function getAnthropicApiKeyFromEnv(): string | null {
@@ -133,6 +167,12 @@ export function formatAiSdkError(e: unknown): string {
     if (/credit balance is too low|billing/i.test(msg)) {
       return "Anthropic kontā nepietiek kredīta — papildini Anthropic Console → Billing";
     }
+    if (/ai_empty_content_max_tokens/i.test(msg)) {
+      return "Claude iztērēja tokenu limitu thinking posmā un neatgrieza tekstu — mēģini vēlreiz";
+    }
+    if (/ai_empty_content/i.test(msg)) {
+      return "Claude atgrieza tukšu atbildi — mēģini vēlreiz";
+    }
     if (status === 400 && /schema/i.test(msg)) {
       return `Claude noraidīja JSON shēmu: ${msg}`;
     }
@@ -142,8 +182,9 @@ export function formatAiSdkError(e: unknown): string {
 }
 
 /**
- * Mēģina `run(model)` pa failover modeļiem; pagaidu kļūdās pārslēdzas bez lietotāja kļūdas.
- * Līdz 3 raundi ar backoff; failover iet tikai uz lētākiem modeļiem.
+ * Mēģina `run(model)` pa failover ķēdi vienu reizi (Opus → Sonnet → Haiku).
+ * Vecais 3 raundu cikls pēc timeout vēlreiz palaida Opus — tas iekasēja naudu
+ * arī tad, kad lietotājs komentāru neredzēja.
  */
 export async function runAiWithModelFailover<T>(opts: {
   primaryModel: string;
@@ -157,44 +198,31 @@ export async function runAiWithModelFailover<T>(opts: {
   let lastTransient: unknown = null;
   const startedAt = Date.now();
 
-  for (let round = 0; round < FAILOVER_BACKOFF_MS.length; round++) {
-    const delayMs = FAILOVER_BACKOFF_MS[round];
-    if (delayMs > 0) {
-      console.warn(`${LOG_PREFIX} backoff_retry`, {
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i]!;
+    if (i > 0) await sleep(FAILOVER_STEP_MS);
+    try {
+      const result = await opts.run(model);
+      console.info(`${LOG_PREFIX} ok`, {
         label: opts.logLabel ?? "claude",
         promptVersion: PROVIN_AI_PROMPT_VERSION,
-        round,
-        delayMs,
-        models,
+        primary: opts.primaryModel,
+        used: model,
+        failover: model !== opts.primaryModel,
+        latencyMs: Date.now() - startedAt,
       });
-      await sleep(delayMs);
-    }
-
-    for (const model of models) {
-      try {
-        const result = await opts.run(model);
-        console.info(`${LOG_PREFIX} ok`, {
-          label: opts.logLabel ?? "claude",
-          promptVersion: PROVIN_AI_PROMPT_VERSION,
-          primary: opts.primaryModel,
-          used: model,
-          failover: model !== opts.primaryModel,
-          latencyMs: Date.now() - startedAt,
-        });
-        return result;
-      } catch (e) {
-        if (!isAiTransientError(e)) {
-          throw new Error(formatAiSdkError(e));
-        }
-        lastTransient = e;
-        console.warn(`${LOG_PREFIX} transient_error`, {
-          label: opts.logLabel ?? "claude",
-          promptVersion: PROVIN_AI_PROMPT_VERSION,
-          round,
-          model,
-          message: aiErrorMessage(e).slice(0, 240),
-        });
+      return result;
+    } catch (e) {
+      if (!shouldAiModelFailover(e)) {
+        throw new Error(formatAiSdkError(e));
       }
+      lastTransient = e;
+      console.warn(`${LOG_PREFIX} transient_error`, {
+        label: opts.logLabel ?? "claude",
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        model,
+        message: aiErrorMessage(e).slice(0, 240),
+      });
     }
   }
 
@@ -255,6 +283,15 @@ function textFromMessage(message: Anthropic.Message): string {
     .trim();
 }
 
+function requireAssistantText(message: Anthropic.Message): string {
+  const text = textFromMessage(message);
+  if (text) return text;
+  if (message.stop_reason === "max_tokens") {
+    throw new Error("ai_empty_content_max_tokens");
+  }
+  throw new Error("ai_empty_content");
+}
+
 /** Noņem ```json fences, ja modelis tos pievieno bez shēmas režīmā. */
 function stripJsonFences(raw: string): string {
   const t = raw.trim();
@@ -290,26 +327,23 @@ async function aiGenerateJsonFromPartsOnce(
   const client = anthropicClient(key);
   const hasSchema = Boolean(opts.responseSchema);
   /** Opus 5 / Sonnet 5 noraida `temperature` — 400 invalid_request_error. */
-  const message = await client.messages.create({
-    model: opts.model,
-    max_tokens: opts.maxTokens ?? MAX_TOKENS_JSON,
-    system: claudeSystemWithCache(
-      hasSchema
-        ? `${opts.systemInstruction}${SCHEMA_MISSING_VALUES_SUFFIX}`
-        : `${opts.systemInstruction}${JSON_ONLY_SUFFIX}`,
-    ),
-    messages: [{ role: "user", content: toContentBlocks(opts.parts) }],
-    ...(opts.responseSchema
-      ? {
-          output_config: {
-            format: { type: "json_schema" as const, schema: toClaudeJsonSchema(opts.responseSchema) },
-          },
-        }
-      : {}),
-  });
+  const message = await client.messages.create(
+    {
+      model: opts.model,
+      max_tokens: opts.maxTokens ?? MAX_TOKENS_JSON,
+      system: claudeSystemWithCache(
+        hasSchema
+          ? `${opts.systemInstruction}${SCHEMA_MISSING_VALUES_SUFFIX}`
+          : `${opts.systemInstruction}${JSON_ONLY_SUFFIX}`,
+      ),
+      messages: [{ role: "user", content: toContentBlocks(opts.parts) }],
+      ...claudeOutputControls(opts.model, opts.responseSchema),
+    },
+    { timeout: JSON_REQUEST_TIMEOUT_MS },
+  );
 
   logClaudeUsage("json", opts.model, message);
-  const text = stripJsonFences(textFromMessage(message));
+  const text = stripJsonFences(requireAssistantText(message));
   if (!text) throw new Error("ai_empty_content");
   return text;
 }
@@ -335,7 +369,7 @@ export async function aiGenerateJsonText(opts: {
 }
 
 /**
- * JSON ģenerēšana ar modeļu failover (Opus ↔ Sonnet ↔ Haiku) un backoff.
+ * JSON ģenerēšana ar modeļu failover (Opus → Sonnet → Haiku), vienu reizi.
  * Ja Claude noraida shēmu (pārāk sarežģīta), atkāpjas uz prompt bāzētu JSON.
  */
 export async function aiGenerateJsonFromParts(opts: {
@@ -396,16 +430,18 @@ async function aiGenerateTextOnce(
   },
 ): Promise<string> {
   const client = anthropicClient(key);
-  const message = await client.messages.create({
-    model: opts.model,
-    max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-    system: claudeSystemWithCache(opts.systemInstruction),
-    messages: [{ role: "user", content: opts.userPrompt }],
-  });
+  const message = await client.messages.create(
+    {
+      model: opts.model,
+      max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
+      system: claudeSystemWithCache(opts.systemInstruction),
+      messages: [{ role: "user", content: opts.userPrompt }],
+      ...claudeOutputControls(opts.model),
+    },
+    { timeout: TEXT_REQUEST_TIMEOUT_MS },
+  );
   logClaudeUsage("text", opts.model, message);
-  const text = textFromMessage(message);
-  if (!text) throw new Error("ai_empty_content");
-  return text;
+  return requireAssistantText(message);
 }
 
 /** Brīva teksta ģenerēšana ar automātisku modeļu failover (529 u.c.). */
@@ -502,25 +538,27 @@ async function aiGenerateTextWithWebSearchOnce(
   },
 ): Promise<string> {
   const client = anthropicClient(key);
-  const message = await client.messages.create({
-    model: opts.model,
-    max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-    system: claudeSystemWithCache(opts.systemInstruction),
-    messages: [{ role: "user", content: opts.userPrompt }],
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: opts.maxSearches ?? WEB_SEARCH_MAX_USES,
-        user_location: WEB_SEARCH_USER_LOCATION,
-      },
-    ],
-  });
+  const message = await client.messages.create(
+    {
+      model: opts.model,
+      max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
+      system: claudeSystemWithCache(opts.systemInstruction),
+      messages: [{ role: "user", content: opts.userPrompt }],
+      tools: [
+        {
+          type: "web_search_20250305",
+          name: "web_search",
+          max_uses: opts.maxSearches ?? WEB_SEARCH_MAX_USES,
+          user_location: WEB_SEARCH_USER_LOCATION,
+        },
+      ],
+      ...claudeOutputControls(opts.model),
+    },
+    { timeout: TEXT_REQUEST_TIMEOUT_MS },
+  );
 
   logClaudeUsage("web_search", opts.model, message);
-  const text = textFromMessage(message);
-  if (!text) throw new Error("ai_empty_content");
-  return text;
+  return requireAssistantText(message);
 }
 
 /** Web meklēšana (Claude server-side tool) — tirgus un cenu analīzei ar modeļu failover. */

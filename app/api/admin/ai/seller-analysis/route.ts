@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     str(b.extraSellerName).trim() || sourceBlocks.listing_analysis.extraSellerName.trim();
 
   try {
-    return nextJsonWithAiUsage(() => generateSellerAnalysisWithAi({
+    return await nextJsonWithAiUsage(() => generateSellerAnalysisWithAi({
       ...ctx,
       extraSellerName: extraSellerName || ctx.extraSellerName || undefined,
     }));

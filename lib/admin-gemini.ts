@@ -37,8 +37,8 @@ export function resolveGeminiAdminModel(tier?: GeminiAdminModelTier | null): str
 export const GEMINI_MODEL_FLASH_FALLBACK = GEMINI_MODEL_FLASH;
 
 const LOG_PREFIX = "[admin-gemini]";
-/** Pilna modeļu kārta katrā retry raundā; starp raundiem — exponential backoff. */
-const FAILOVER_BACKOFF_MS = [0, 1_000, 2_500] as const;
+/** Starp lētāku failover modeli — viena pauze, bez atkārtotas primārās raundas. */
+const FAILOVER_STEP_MS = 800;
 
 export function getGeminiApiKeyFromEnv(): string | null {
   const k = process.env.GEMINI_API_KEY?.trim();
@@ -98,14 +98,17 @@ export function formatGeminiSdkError(e: unknown): string {
     if (/API key not valid|API_KEY_INVALID|invalid.*api.?key/i.test(msg)) {
       return "Nederīga GEMINI_API_KEY";
     }
+    if (/gemini_empty_content/i.test(msg)) {
+      return "Gemini atgrieza tukšu atbildi — mēģini vēlreiz";
+    }
     return msg || "unknown";
   }
   return "unknown";
 }
 
 /**
- * Mēģina `run(model)` pa failover modeļiem; pagaidu kļūdās pārslēdzas bez lietotāja kļūdas.
- * Līdz 3 raundi × 3 modeļi (Pro → Flash → 2.0 Flash) ar backoff.
+ * Mēģina `run(model)` pa failover ķēdi vienu reizi (Pro → Flash → 2.5 Flash).
+ * Vecais 3 raundu cikls pēc timeout vēlreiz palaida to pašu dārgo modeli.
  */
 export async function runGeminiWithModelFailover<T>(opts: {
   primaryModel: string;
@@ -119,44 +122,31 @@ export async function runGeminiWithModelFailover<T>(opts: {
   let lastTransient: unknown = null;
   const startedAt = Date.now();
 
-  for (let round = 0; round < FAILOVER_BACKOFF_MS.length; round++) {
-    const delayMs = FAILOVER_BACKOFF_MS[round];
-    if (delayMs > 0) {
-      console.warn(`${LOG_PREFIX} backoff_retry`, {
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i]!;
+    if (i > 0) await sleep(FAILOVER_STEP_MS);
+    try {
+      const result = await opts.run(model);
+      console.info(`${LOG_PREFIX} ok`, {
         label: opts.logLabel ?? "gemini",
         promptVersion: PROVIN_AI_PROMPT_VERSION,
-        round,
-        delayMs,
-        models,
+        primary: opts.primaryModel,
+        used: model,
+        failover: model !== opts.primaryModel,
+        latencyMs: Date.now() - startedAt,
       });
-      await sleep(delayMs);
-    }
-
-    for (const model of models) {
-      try {
-        const result = await opts.run(model);
-        console.info(`${LOG_PREFIX} ok`, {
-          label: opts.logLabel ?? "gemini",
-          promptVersion: PROVIN_AI_PROMPT_VERSION,
-          primary: opts.primaryModel,
-          used: model,
-          failover: model !== opts.primaryModel,
-          latencyMs: Date.now() - startedAt,
-        });
-        return result;
-      } catch (e) {
-        if (!isGeminiTransientError(e)) {
-          throw new Error(formatGeminiSdkError(e));
-        }
-        lastTransient = e;
-        console.warn(`${LOG_PREFIX} transient_error`, {
-          label: opts.logLabel ?? "gemini",
-          promptVersion: PROVIN_AI_PROMPT_VERSION,
-          round,
-          model,
-          message: geminiErrorMessage(e).slice(0, 240),
-        });
+      return result;
+    } catch (e) {
+      if (!isGeminiTransientError(e) || /timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED/i.test(geminiErrorMessage(e))) {
+        throw new Error(formatGeminiSdkError(e));
       }
+      lastTransient = e;
+      console.warn(`${LOG_PREFIX} transient_error`, {
+        label: opts.logLabel ?? "gemini",
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        model,
+        message: geminiErrorMessage(e).slice(0, 240),
+      });
     }
   }
 
@@ -229,7 +219,7 @@ export async function geminiGenerateJsonText(opts: {
 }
 
 /**
- * JSON ģenerēšana ar modeļu failover (2.5 flash ↔ pro ↔ 2.0 flash) un backoff.
+ * JSON ģenerēšana ar modeļu failover (Flash → 2.5 Flash → 2.0 Flash), vienu reizi.
  */
 export async function geminiGenerateJsonFromParts(opts: {
   model: string;

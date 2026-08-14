@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    return nextJsonWithAiUsage(() => generateListingFieldCommentWithAi({
+    return await nextJsonWithAiUsage(() => generateListingFieldCommentWithAi({
       sessionId,
       field: fieldRaw,
       vin: str(b.vin).trim() || null,

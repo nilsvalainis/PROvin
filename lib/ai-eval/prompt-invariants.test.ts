@@ -232,4 +232,25 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("app/api/admin/prepare-draft/route.ts")).toMatch(/nextJsonBodyWithAiUsage/);
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/AdminAiSessionCostBar/);
   });
+
+  it("comment generation awaits AI usage helper so empty/failed calls surface as errors", () => {
+    expect(readRepo("app/api/admin/ai/source-comment/route.ts")).toMatch(
+      /return await nextJsonWithAiUsage/,
+    );
+    expect(readRepo("app/api/admin/ai/mileage-comment/route.ts")).toMatch(
+      /return await nextJsonWithAiUsage/,
+    );
+  });
+
+  it("Claude text generation bounds thinking so comments are not billed empty", () => {
+    const ai = readRepo("lib/admin-ai.ts");
+    expect(ai).toMatch(/effort:\s*"low"/);
+    expect(ai).toMatch(/MAX_TOKENS_TEXT = 16_000/);
+    expect(ai).toMatch(/shouldAiModelFailover/);
+    expect(ai).not.toMatch(/FAILOVER_BACKOFF_MS/);
+    expect(readRepo("lib/admin-gemini.ts")).not.toMatch(/FAILOVER_BACKOFF_MS/);
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(
+      /readGeneratedAdminAiText/,
+    );
+  });
 });

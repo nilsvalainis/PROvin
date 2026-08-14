@@ -93,7 +93,7 @@ export async function POST(req: Request) {
     ).trim();
 
   try {
-    return nextJsonWithAiUsage(() => generateSourceCommentWithAi({
+    return await nextJsonWithAiUsage(() => generateSourceCommentWithAi({
       sessionId,
       blockKey: blockKeyRaw,
       citiAvotiSectionIndex,

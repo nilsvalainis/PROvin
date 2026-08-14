@@ -5,6 +5,7 @@ import {
   CLAUDE_MODEL_OPUS,
   aiFailoverModels,
   isAiTransientError,
+  shouldAiModelFailover,
 } from "@/lib/ai-model-failover";
 
 describe("aiFailoverModels", () => {
@@ -43,6 +44,15 @@ describe("isAiTransientError", () => {
 
     const badKey = Object.assign(new Error("authentication_error"), { status: 401 });
     expect(isAiTransientError(badKey)).toBe(false);
+  });
+
+  it("empty content and timeouts must not multiply billed model calls", () => {
+    expect(isAiTransientError(new Error("ai_empty_content"))).toBe(false);
+    expect(isAiTransientError(new Error("ai_empty_content_max_tokens"))).toBe(false);
+    expect(shouldAiModelFailover(new Error("ai_empty_content"))).toBe(false);
+    expect(shouldAiModelFailover(new Error("Request timed out"))).toBe(false);
+    expect(shouldAiModelFailover(Object.assign(new Error("timeout"), { status: 408 }))).toBe(false);
+    expect(shouldAiModelFailover(new Error("529 overloaded_error"))).toBe(true);
   });
 
   it("rejects invalid API key", () => {
