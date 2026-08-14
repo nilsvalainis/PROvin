@@ -27,6 +27,11 @@ export type UnifiedMileageRow = {
   sortableTime: number;
   sourceOrder: number;
   sourceLabel: string;
+  /**
+   * Odometrs nolasīts no dokumenta (dīlera remonta / apkopes pasūtījuma), nevis no reāla nolasījuma.
+   * Dokumentā rādījums bieži saglabāts no pasūtījuma atvēršanas brīža, tāpēc datums var būt vēlāks par rādījumu.
+   */
+  documentValue?: boolean;
 };
 
 /** Tabulas rinda pēc km apvienošanas — vairāki avoti vienā „Avots” kolonnā. */
@@ -134,12 +139,15 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
   const primary = chrono[chrono.length - 1] ?? cluster[0]!;
   const labels = uniqueSourceLabelsOrdered(cluster);
   const countries = [...new Set(cluster.map((r) => r.country.trim()).filter(Boolean))];
+  // Ja to pašu km apstiprina kāds neatkarīgs nolasījums, apvienotā rinda vairs nav tikai dokumenta vērtība.
+  const documentValue = cluster.every((r) => r.documentValue === true);
   return {
     ...primary,
     country: countries.length <= 1 ? (countries[0] ?? primary.country) : countries.join(" / "),
     sourceOrder: Math.min(...cluster.map((r) => r.sourceOrder)),
     sourceLabel: labels[0] ?? primary.sourceLabel,
     sourceLabels: labels,
+    ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
   };
 }
 
@@ -221,11 +229,70 @@ export type UnifiedMileageAnomalyAnalysis = {
   anomalyBySourceOrder: Map<number, boolean>;
   /** Extra-digit / needle spike — izlaist no līknes (tabulā tomēr ar brīdinājumu). */
   chartExcludeSourceOrders: Set<number>;
+  /** Novecojis dokumenta rādījums: „dokumenta datums ≠ nolasījuma datums” (nav odometra pretruna). */
+  staleDocumentSourceOrders: Set<number>;
+};
+
+/** Cita avota atkārtots tas pats novecojušais dokumenta rādījums — pieļaujamā km atšķirība. */
+const STALE_DOCUMENT_MIRROR_TOLERANCE_KM = 1_000;
+
+type StaleDocumentCandidate = {
+  sourceOrder: number;
+  /** Uzticamais nolasījumu līmenis pirms šīs rindas — tam ķēdei jāatgriežas, lai rindu uzskatītu par dokumentu. */
+  levelKm: number;
 };
 
 /**
+ * Dīlera pasūtījuma odometrs zem faktisko nolasījumu līmeņa: dokuments atvērts agrāk, nekā datēts.
+ * Kandidāts kļūst par apstiprinātu „novecojušu dokumentu” tikai tad, ja vēlākie nolasījumi atgriežas
+ * vismaz līdz iepriekšējam līmenim — citādi tā ir īsta odometra pretruna un paliek atzīmēta.
+ */
+function findStaleDocumentSourceOrders(
+  sorted: UnifiedMileageRow[],
+  chartExclude: Set<number>,
+): Set<number> {
+  const pts: { sourceOrder: number; km: number; documentValue: boolean }[] = [];
+  for (const r of sorted) {
+    if (chartExclude.has(r.sourceOrder)) continue;
+    const km = parseOdometerKm(r.odometer);
+    if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km, documentValue: r.documentValue === true });
+  }
+
+  const candidates: StaleDocumentCandidate[] = [];
+  const candidateOrders = new Set<number>();
+  const staleValues: number[] = [];
+  let trustedMaxKm: number | null = null;
+
+  for (const pt of pts) {
+    const belowTrusted =
+      trustedMaxKm !== null && trustedMaxKm - pt.km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
+    const mirrorsStaleValue = staleValues.some(
+      (v) => Math.abs(v - pt.km) <= STALE_DOCUMENT_MIRROR_TOLERANCE_KM,
+    );
+    if (belowTrusted && (pt.documentValue || mirrorsStaleValue)) {
+      candidates.push({ sourceOrder: pt.sourceOrder, levelKm: trustedMaxKm! });
+      candidateOrders.add(pt.sourceOrder);
+      staleValues.push(pt.km);
+      continue;
+    }
+    trustedMaxKm = trustedMaxKm === null ? pt.km : Math.max(trustedMaxKm, pt.km);
+  }
+
+  const confirmed = new Set<number>();
+  for (const candidate of candidates) {
+    const idx = pts.findIndex((pt) => pt.sourceOrder === candidate.sourceOrder);
+    const recovers = pts
+      .slice(idx + 1)
+      .some((pt) => !candidateOrders.has(pt.sourceOrder) && pt.km >= candidate.levelKm);
+    if (recovers) confirmed.add(candidate.sourceOrder);
+  }
+  return confirmed;
+}
+
+/**
  * 1) Atzīmē viltus spike (ekstra cipars u.c.) — tabulā + izslēgšana no grafika.
- * 2) Back-roll uz ķēdes *bez* šiem spike: V_current < V_previous un Δ ≥ {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}.
+ * 2) Novecojuši dokumenta rādījumi (dīlera pasūtījums) — nav pretruna, arī ārpus ķēdes un līknes.
+ * 3) Back-roll uz ķēdes *bez* šiem spike: V_current < V_previous un Δ ≥ {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}.
  */
 export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): UnifiedMileageAnomalyAnalysis {
   const sorted = sortMileageChronological(rows);
@@ -251,12 +318,20 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     }
   }
 
+  const staleDocuments = findStaleDocumentSourceOrders(sorted, chartExclude);
+
   const map = new Map<number, boolean>();
   let prevKm: number | null = null;
   for (const r of sorted) {
     const km = parseOdometerKm(r.odometer);
     if (km === null) {
       map.set(r.sourceOrder, false);
+      continue;
+    }
+    if (staleDocuments.has(r.sourceOrder)) {
+      // Nav pretruna: dokumenta datums ≠ nolasījuma datums. Ķēdē un līknē neietekmē.
+      map.set(r.sourceOrder, false);
+      chartExclude.add(r.sourceOrder);
       continue;
     }
     if (chartExclude.has(r.sourceOrder)) {
@@ -269,7 +344,11 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     prevKm = km;
   }
 
-  return { anomalyBySourceOrder: map, chartExcludeSourceOrders: chartExclude };
+  return {
+    anomalyBySourceOrder: map,
+    chartExcludeSourceOrders: chartExclude,
+    staleDocumentSourceOrders: staleDocuments,
+  };
 }
 
 /** @see analyzeUnifiedMileageAnomalies */
@@ -286,13 +365,38 @@ export type CollectUnifiedMileageOptions = {
   omitVendorBlockTitles?: Set<string>;
 };
 
+function dealerDocumentKey(dateRaw: string, odometerRaw: string): string {
+  return `${dateRaw.trim()}|${odometerRaw.replace(/\D/g, "")}`;
+}
+
+/**
+ * Dīlera remonta / apkopes pasūtījumu (datums + odometrs) atslēgas — pēc tām nobraukuma rinda
+ * tiek atzīta par dokumenta rādījumu, nevis par faktisku odometra nolasījumu.
+ */
+function dealerDocumentOdometerKeys(works: AutoRecordsBlockState["serviceWorks"] | undefined): Set<string> {
+  const keys = new Set<string>();
+  for (const w of works ?? []) {
+    const date = formatAutoRecordsDateForOutput(w.date) || w.date.trim();
+    const digits = w.odometer.replace(/\D/g, "");
+    if (!date || !digits) continue;
+    keys.add(dealerDocumentKey(date, digits));
+  }
+  return keys;
+}
+
 export function collectUnifiedMileageRows(
   p: UnifiedMileageSourcePayload,
   options?: CollectUnifiedMileageOptions,
 ): UnifiedMileageRow[] {
   const rows: UnifiedMileageRow[] = [];
   let sourceOrder = 0;
-  const pushRow = (dateRaw: string, odometerRaw: string, countryRaw: string, sourceLabelRaw: string) => {
+  const pushRow = (
+    dateRaw: string,
+    odometerRaw: string,
+    countryRaw: string,
+    sourceLabelRaw: string,
+    documentValue = false,
+  ) => {
     const date = dateRaw.trim();
     const odometer = odometerRaw.trim();
     if (!date || !odometer) return;
@@ -304,6 +408,7 @@ export function collectUnifiedMileageRows(
       sortableTime: parseMileageDateForSort(date),
       sourceOrder,
       sourceLabel: sourceLabelRaw.trim() || "Nezināms avots",
+      ...(documentValue ? { documentValue: true } : null),
     });
     sourceOrder += 1;
   };
@@ -319,10 +424,11 @@ export function collectUnifiedMileageRows(
     /* skip auto records */
   } else {
   const autoRows = (p.autoRecordsBlock?.serviceHistory ?? []).filter(autoRecordsRowHasData);
+  const documentKeys = dealerDocumentOdometerKeys(p.autoRecordsBlock?.serviceWorks);
   for (const r of autoRows) {
     const dateOut = formatAutoRecordsDateForOutput(r.date);
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-    pushRow(dateOut, odoOut, r.country, "OFICIĀLĀ DĪLERA DATI");
+    pushRow(dateOut, odoOut, r.country, "OFICIĀLĀ DĪLERA DATI", documentKeys.has(dealerDocumentKey(dateOut, odoOut)));
   }
   }
 

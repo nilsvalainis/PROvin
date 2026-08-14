@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import {
   analyzeUnifiedMileageAnomalies,
+  collectUnifiedMileageRows,
   mergeUnifiedMileageRowsByOdometer,
   prepareUnifiedMileageDisplayRows,
   type UnifiedMileageRow,
@@ -130,5 +132,104 @@ describe("analyzeUnifiedMileageAnomalies", () => {
     const { anomalyBySourceOrder, chartExcludeSourceOrders } = analyzeUnifiedMileageAnomalies(rows);
     expect(chartExcludeSourceOrders.size).toBe(0);
     expect(anomalyBySourceOrder.get(1)).toBe(true);
+  });
+
+  it("treats a stale dealer-order odometer as „dokumenta datums ≠ nolasījuma datums”, not a contradiction", () => {
+    // BMW WBA3D91080J411190: 02.10.2014 atslēgas nolasījums 41874, pasūtījumi 28.10.2014 / 09.01.2015 ar 33472.
+    const rows = [
+      row({ date: "03.05.2014", odometer: "33472", sourceLabel: "DEALER", sourceOrder: 0, sortableTime: Date.UTC(2014, 4, 3) }),
+      row({ date: "02.10.2014", odometer: "41874", sourceLabel: "DEALER", sourceOrder: 1, sortableTime: Date.UTC(2014, 9, 2) }),
+      row({
+        date: "28.10.2014",
+        odometer: "33472",
+        sourceLabel: "DEALER",
+        sourceOrder: 2,
+        sortableTime: Date.UTC(2014, 9, 28),
+        documentValue: true,
+      }),
+      row({ date: "01.01.2015", odometer: "33272", sourceLabel: "CarVertical", sourceOrder: 3, sortableTime: Date.UTC(2015, 0, 1) }),
+      row({
+        date: "09.01.2015",
+        odometer: "33472",
+        sourceLabel: "DEALER",
+        sourceOrder: 4,
+        sortableTime: Date.UTC(2015, 0, 9),
+        documentValue: true,
+      }),
+      row({ date: "01.01.2016", odometer: "62175", sourceLabel: "CarVertical", sourceOrder: 5, sortableTime: Date.UTC(2016, 0, 1) }),
+    ];
+    const { anomalyBySourceOrder, chartExcludeSourceOrders, staleDocumentSourceOrders } =
+      analyzeUnifiedMileageAnomalies(rows);
+
+    expect(staleDocumentSourceOrders.has(2)).toBe(true);
+    expect(staleDocumentSourceOrders.has(4)).toBe(true);
+    // Cita avota atkārtots tas pats novecojušais rādījums arī nav pretruna.
+    expect(staleDocumentSourceOrders.has(3)).toBe(true);
+    expect(anomalyBySourceOrder.get(2)).toBe(false);
+    expect(anomalyBySourceOrder.get(3)).toBe(false);
+    expect(anomalyBySourceOrder.get(4)).toBe(false);
+    expect(anomalyBySourceOrder.get(5)).toBe(false);
+    // Novecojušie dokumenti neizkropļo līkni un vidējo nobraukumu.
+    expect(chartExcludeSourceOrders.has(2)).toBe(true);
+    expect(chartExcludeSourceOrders.has(4)).toBe(true);
+  });
+
+  it("keeps flagging a rollback when later readings never return to the earlier level", () => {
+    const rows = [
+      row({ date: "01.01.2020", odometer: "150000", sourceLabel: "AutoDNA", sourceOrder: 0, sortableTime: Date.UTC(2020, 0, 1) }),
+      row({
+        date: "01.01.2021",
+        odometer: "80000",
+        sourceLabel: "DEALER",
+        sourceOrder: 1,
+        sortableTime: Date.UTC(2021, 0, 1),
+        documentValue: true,
+      }),
+      row({ date: "01.06.2021", odometer: "85000", sourceLabel: "CSDD", sourceOrder: 2, sortableTime: Date.UTC(2021, 5, 1) }),
+      row({ date: "01.01.2022", odometer: "90000", sourceLabel: "CSDD", sourceOrder: 3, sortableTime: Date.UTC(2022, 0, 1) }),
+    ];
+    const { anomalyBySourceOrder, staleDocumentSourceOrders } = analyzeUnifiedMileageAnomalies(rows);
+    expect(staleDocumentSourceOrders.size).toBe(0);
+    expect(anomalyBySourceOrder.get(1)).toBe(true);
+  });
+
+  it("does not touch a dealer-order odometer that fits the reading chain", () => {
+    const rows = [
+      row({ date: "01.01.2020", odometer: "100000", sourceLabel: "DEALER", sourceOrder: 0, sortableTime: Date.UTC(2020, 0, 1) }),
+      row({
+        date: "01.06.2020",
+        odometer: "108000",
+        sourceLabel: "DEALER",
+        sourceOrder: 1,
+        sortableTime: Date.UTC(2020, 5, 1),
+        documentValue: true,
+      }),
+      row({ date: "01.01.2021", odometer: "115000", sourceLabel: "CSDD", sourceOrder: 2, sortableTime: Date.UTC(2021, 0, 1) }),
+    ];
+    const { anomalyBySourceOrder, staleDocumentSourceOrders, chartExcludeSourceOrders } =
+      analyzeUnifiedMileageAnomalies(rows);
+    expect(staleDocumentSourceOrders.size).toBe(0);
+    expect(chartExcludeSourceOrders.size).toBe(0);
+    expect([...anomalyBySourceOrder.values()].every((v) => v === false)).toBe(true);
+  });
+});
+
+describe("collectUnifiedMileageRows — dokumenta rādījumi", () => {
+  it("marks dealer mileage rows that come from a service/repair order", () => {
+    const collected = collectUnifiedMileageRows({
+      autoRecordsBlock: {
+        ...createDefaultSourceBlocks().auto_records,
+        serviceHistory: [
+          { date: "02.10.2014", odometer: "41874", country: "Vācija" },
+          { date: "28.10.2014", odometer: "33472", country: "Vācija" },
+        ],
+        serviceWorks: [
+          { date: "28.10.2014", odometer: "33472", location: "Autohaus Karl + Co., Rüsselsheim", works: "Eļļas maiņa" },
+        ],
+      },
+    });
+    const byOdometer = new Map(collected.map((r) => [r.odometer.replace(/\D/g, ""), r]));
+    expect(byOdometer.get("41874")?.documentValue).toBeUndefined();
+    expect(byOdometer.get("33472")?.documentValue).toBe(true);
   });
 });
