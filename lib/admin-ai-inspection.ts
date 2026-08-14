@@ -1,6 +1,7 @@
 import "server-only";
 
 import { adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
+import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-identification";
 import { AI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
@@ -23,8 +24,15 @@ export async function generateInspectionRecommendationsWithAi(
     ? `\n\n---\n\nJau sagatavotā „${ADMIN_TECHNICAL_RISKS_LABEL}” (pārvērt par klātienes soļiem; nedublē visu eseju):\n\n${techPlain}\n`
     : "";
 
+  const identificationBrief = buildAggregateIdentificationBrief({
+    sourceBlocks: input.sourceBlocks,
+    vin: input.vin,
+  });
+
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
+
+${identificationBrief}
 
 ${context}
 ${techSection}

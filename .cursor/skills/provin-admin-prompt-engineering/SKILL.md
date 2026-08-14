@@ -26,6 +26,7 @@ Whenever you generate or refactor prompt strings in code, you **MUST** hardcode 
 
 | Block | reference.md section |
 |-------|----------------------|
+| Aggregate identification & mileage-band calibration | §1c |
 | Audi V6 diesel & transmission matrix | §1.A |
 | Mercedes-Benz powertrain forensics | §1.B |
 | High financial risk engine segments | §1.C |

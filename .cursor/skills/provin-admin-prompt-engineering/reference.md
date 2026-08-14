@@ -74,6 +74,31 @@ Whenever prompts generate **2. Kopsavilkums** or **Ieteikumi klātienes apskatei
 - Tie every important aggregate risk to a **specific verification action** in the inspection field: cold-start noise, shift quality, vibration, leak traces, thermal behavior, fault scan, boost pull, HV diagnostics, DC charging test, underbody inspection, etc.
 - In summary, explain which aggregate is most likely to generate the biggest near-term cost and whether that changes the buy / inspect / avoid recommendation.
 
+## 1c. AGGREGATE IDENTIFICATION & MILEAGE-BAND CALIBRATION (mandatory)
+
+Deployed text: `AI_POWERTRAIN_IDENTIFICATION_RULES` + `AI_MILEAGE_BAND_RISK_RULES` in `lib/source-summary-comment-format.ts`, injected into `PROVIN_FIELD_AGENT_SYSTEM` and `PROVIN_EXPERT_SYSTEM_PROMPT`. Pre-digested vehicle parameters: `buildAggregateIdentificationBrief()` in `lib/admin-ai-aggregate-identification.ts` (used by technical risks + inspection prompts).
+
+**1. Tehnisko risku analīze is the highest-value comment in the report** — the agent must behave like a senior technical expert on that exact brand/model/generation/engine/gearbox, not a generic used-car reviewer.
+
+Identification before risk:
+
+- Derive in order: model **generation / facelift** (make + model + first registration year) → **engine family** (fuel + cm³ + kW + Euro class) → **transmission type** (manual / torque-converter AT / dry or wet dual-clutch / CVT / EV reducer) → **drive layout** (FWD / RWD / AWD architecture: Haldex, Torsen, 4Matic, xDrive).
+- Evidence priority: dealer/Outvin/AUTO RECORDS **engine code** + type code → CSDD technical parameters → VIN → listing badges (quattro, 4Matic, xDrive, DSG, Tiptronic) → service records naming replaced parts.
+- No engine code in sources → name **1–2 ranked candidates as a hypothesis** plus how to confirm (VIN decode, engine bay marking, gearbox plate, service invoices). An inferred code must never be written as a registry-read fact.
+- Same displacement/power mapping to materially different architectures (chain vs belt, dry vs wet DCT, with/without DPF) → state it and split into **max two** scenarios.
+- Too little data → analyze at **family level** and say the exact aggregate is undetermined; never invent codes.
+- Risks apply only to the identified combination — never import another engine version's or generation's failure modes because the brand matches.
+
+Mileage-band calibration (anti-exaggeration):
+
+- Fix approximate **current km** (latest credible odometer) and **km/year**; if odometer data conflicts, work with a stated range.
+- Split every aggregate risk into: (1) resource typically already consumed at this km/age → must be evidenced in service history; (2) **next window** ~20–40k km or 1–2 years → the buyer's real cost; (3) distant resource → brief or omitted.
+- A failure typical at 250k km must not be presented as an active threat at 90k km. **Max 1–2 primary purchase risks**; everything else is medium maintenance risk or an inspection control point.
+- Age ≠ mileage: rubber, plastics, cooling, belts, hoses degrade on time — a low-km old car can be worse than a high-km highway car. Combine with §2 motorstundas math.
+- Evidence lowers risk: a documented chain / DCT oil / belt / water pump job is a **favourable signal in the data**; missing records = **unproven**, not "not done".
+- Prioritize by **probability × EUR**; EUR bands always indicative (Baltic service level).
+- When the picture is relatively favourable, the agent must say so (hedged, PROVIN has not inspected the car physically). Fabricated red flags are as damaging as silence about real risks.
+
 ## 2. DRIVING PROFILE & MOTORSTUNDAS MATH
 
 Instruct the backend agent to always run this factual analysis when calculating oil life quality:

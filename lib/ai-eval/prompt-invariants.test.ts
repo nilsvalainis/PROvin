@@ -6,6 +6,8 @@ import {
   AI_DAMAGE_CLAIM_CONTEXT_RULES,
   AI_EV_BEV_FORENSICS_RULES,
   AI_EXPERT_PARAGRAPH_PRESENTATION,
+  AI_MILEAGE_BAND_RISK_RULES,
+  AI_POWERTRAIN_IDENTIFICATION_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -102,6 +104,51 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/OPERATORA KOMANDAS/i);
     expect(prompts).toMatch(/klātienes pārbaudes|Agregātu riski|Tehnisko risku/i);
     expect(prompts).toMatch(/NESĀC ar „Sveiki”|NESĀC ar \"Sveiki\"|Bez „Sveiki”/i);
+  });
+
+  it("powertrain identification rules demand hypotheses, not invented engine codes", () => {
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/AGREGĀTU IDENTIFIKĀCIJA/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/1–2 visticamākos/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/kā to apstiprināt/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/Neizdomā kodu/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/saimes līmenī/);
+  });
+
+  it("mileage-band rules calibrate risk without exaggeration", () => {
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/Nepārspīlē/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/maksimāli 1–2|tikai 1–2/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/20 000–40 000 km/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/nepierādītu/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/Vecums nav tas pats/);
+  });
+
+  it("both base system prompts train aggregate identification and mileage calibration", () => {
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toContain("AI_POWERTRAIN_IDENTIFICATION_RULES");
+    expect(prompts).toContain("AI_MILEAGE_BAND_RISK_RULES");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_POWERTRAIN_IDENTIFICATION_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_MILEAGE_BAND_RISK_RULES\}/,
+    );
+  });
+
+  it("technical risk analysis is the flagship field with identification-first structure", () => {
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    const block = prompts.slice(
+      prompts.indexOf("AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM"),
+      prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
+    );
+    expect(block).toMatch(/Agregātu identifikācija/);
+    expect(block).toMatch(/varbūtības × izmaksām/);
+    expect(block).toMatch(/maksimāli 1–2 pozīcijas/);
+    expect(block).toMatch(/NAV risks/);
+    expect(block).toMatch(/5–7 rindkopas/);
+    const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/buildAggregateIdentificationBrief/);
+    expect(tech).toMatch(/Nepārspīlē/);
+    expect(tech).toMatch(/20–40 tūkst\. km/);
   });
 
   it("operator notes are prepended with highest priority", () => {
