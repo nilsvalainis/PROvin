@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
-import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
+import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { generateMileageCommentWithAi } from "@/lib/admin-ai-mileage-comment";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  if (!getAnthropicApiKeyFromEnv()) {
+  if (!hasAnyAdminAiProviderKey()) {
     return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
   }
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateExpertText, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import {
   AI_LISTING_PHOTO_ANALYSIS_SYSTEM,
   AI_LISTING_SALES_CONTEXT_SYSTEM,
@@ -75,8 +75,8 @@ ${focusBlock}`,
       ? AI_LISTING_PHOTO_ANALYSIS_SYSTEM
       : AI_LISTING_SALES_CONTEXT_SYSTEM;
 
-  const raw = await aiGenerateExpertText({
-    model: resolveAiAdminModel(input.modelTier),
+  const raw = await adminGenerateExpertText({
+    modelTier: input.modelTier,
     systemInstruction,
     userPrompt,
     temperature: 0.3,

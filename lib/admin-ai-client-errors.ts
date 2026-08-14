@@ -8,6 +8,7 @@ export type AdminAiApiErrorBody = {
 
 const ERROR_MESSAGES_LV: Record<string, string> = {
   missing_ai_key: "Nav ANTHROPIC_API_KEY (.env.local / Vercel Environment Variables)",
+  missing_gemini_key: "Nav GEMINI_API_KEY (.env.local / Vercel Environment Variables)",
   ai_demo_only: "AI pieejams tikai DEMO pasūtījumiem (AI_DEMO_ONLY=1)",
   unauthorized: "Nav admin piekļuves — pārlogojies admin panelī",
   not_found: "Pasūtījums nav atrasts — pārbaudi sessionId un STRIPE_SECRET_KEY (Vercel)",
@@ -41,22 +42,26 @@ function humanizeAiDetail(raw: string): string {
   if (/not_found_error|unknown model|model.*not.*found/i.test(detail)) {
     return "Claude modelis nav pieejams šai API atslēgai — pārbaudi claude-opus-5 / claude-sonnet-5 un ANTHROPIC_API_KEY";
   }
+  if (/models\/gemini|is not found for API version/i.test(detail)) {
+    return "Gemini modelis nav pieejams — pārbaudi gemini-2.5-flash / gemini-2.5-pro un GEMINI_API_KEY";
+  }
   if (/credit balance is too low|billing/i.test(detail)) {
     return "Anthropic kontā nepietiek kredīta — papildini Anthropic Console → Billing";
   }
-  if (/429|quota|rate.?limit/i.test(detail)) {
-    return "Anthropic API limits pārsniegts — uzgaidi vai palielini limitu Anthropic Console";
+  if (/429|quota|rate.?limit|RESOURCE_EXHAUSTED/i.test(detail)) {
+    return "API limits pārsniegts — uzgaidi vai palielini limitu Anthropic / Google AI Studio";
   }
-  if (/529|overloaded|pārslogots/i.test(detail)) {
-    return "Claude īslaicīgi pārslogots — mēģini vēlreiz pēc brīža";
+  if (/529|overloaded|pārslogots|high\s+demand|SERVICE_UNAVAILABLE/i.test(detail)) {
+    return "Modelis īslaicīgi pārslogots — mēģini vēlreiz pēc brīža";
   }
-  if (/authentication_error|invalid x-api-key|invalid.*api.?key/i.test(detail)) {
-    return "Nederīga ANTHROPIC_API_KEY — izveido jaunu atslēgu Anthropic Console";
+  if (/authentication_error|invalid x-api-key|invalid.*api.?key|API_KEY_INVALID/i.test(detail)) {
+    return "Nederīga API atslēga — pārbaudi ANTHROPIC_API_KEY vai GEMINI_API_KEY";
   }
   if (/permission_error/i.test(detail)) {
-    return "ANTHROPIC_API_KEY nav tiesību uz šo modeli — pārbaudi Anthropic Console";
+    return "API atslēgai nav tiesību uz šo modeli — pārbaudi Anthropic Console / Google AI Studio";
   }
   if (detail === "missing_ai_key") return ERROR_MESSAGES_LV.missing_ai_key;
+  if (detail === "missing_gemini_key") return ERROR_MESSAGES_LV.missing_gemini_key;
   if (ERROR_MESSAGES_LV[detail]) return ERROR_MESSAGES_LV[detail];
 
   return detail.startsWith("AI:") ? detail : `AI: ${detail}`;
@@ -94,7 +99,9 @@ export function formatAdminAiFetchError(
   if (code) return humanizeAiDetail(code);
 
   if (res.status === 401) return ERROR_MESSAGES_LV.unauthorized;
-  if (res.status === 503) return ERROR_MESSAGES_LV.missing_ai_key;
+  if (res.status === 503) {
+    return ERROR_MESSAGES_LV[code] ?? ERROR_MESSAGES_LV.missing_ai_key;
+  }
   if (res.status === 404) return ERROR_MESSAGES_LV.not_found;
   if (res.status === 504 || res.status === 408) {
     return "AI: pieprasījums pārāk ilgs (timeout) — mēģini vēlreiz ar īsāku tekstu";

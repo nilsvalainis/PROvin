@@ -18,12 +18,16 @@ const VARIANT_CLASS: Record<AiAdminModelTier, string> = {
   pro: "border border-violet-700 bg-violet-600 text-white hover:bg-violet-700",
   flash: "border border-emerald-700/70 bg-emerald-600 text-white hover:bg-emerald-700",
   lite: "border border-sky-700/70 bg-sky-600 text-white hover:bg-sky-700",
+  gemini: "border border-amber-700/70 bg-amber-600 text-white hover:bg-amber-700",
+  "gemini-flash": "border border-teal-700/70 bg-teal-600 text-white hover:bg-teal-700",
 };
 
 const VARIANT_HINT: Record<AiAdminModelTier, string> = {
-  pro: "Claude Opus — dziļāka eksperta analīze (dārgākais)",
+  pro: "Claude Opus — smagā eksperta analīze (dārgākais)",
   flash: "Claude Sonnet — vidējā kvalitāte un cena",
-  lite: "Claude Haiku — lētākais; īsiem komentāriem, kad dati jau ir tabulā",
+  lite: "Claude Haiku + Sonnet gramatika",
+  gemini: "Gemini 2.5 Pro — vieglāki komentāri, lētāks par Claude",
+  "gemini-flash": "Gemini 2.5 Flash — vislētākais; īsiem / vienkāršiem laukiem",
 };
 
 export function AdminAiGenerateButton({

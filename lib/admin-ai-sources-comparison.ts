@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateTextWithVocabulary, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
 import { AI_SOURCES_COMPARISON_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
@@ -42,8 +42,8 @@ Salīdzini VISUS avotus, izceļ PROVIN vērtību vairāku datu apkopojumā, un s
     },
   );
 
-  return aiGenerateTextWithVocabulary({
-    model: resolveAiAdminModel(input.modelTier),
+  return adminGenerateTextWithVocabulary({
+    modelTier: input.modelTier,
     systemInstruction: AI_SOURCES_COMPARISON_SYSTEM,
     userPrompt,
     temperature: 0.42,

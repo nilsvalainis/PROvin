@@ -8,6 +8,13 @@ describe("parseAiModelTier", () => {
     expect(parseAiModelTier("eco")).toBe("lite");
   });
 
+  it("maps Gemini aliases", () => {
+    expect(parseAiModelTier("gemini")).toBe("gemini");
+    expect(parseAiModelTier("gemini-pro")).toBe("gemini");
+    expect(parseAiModelTier("gemini-flash")).toBe("gemini-flash");
+    expect(parseAiModelTier("gflash")).toBe("gemini-flash");
+  });
+
   it("maps sonnet aliases to flash", () => {
     expect(parseAiModelTier("flash")).toBe("flash");
     expect(parseAiModelTier("sonnet")).toBe("flash");

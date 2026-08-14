@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateJsonText, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
 import { AI_TIRGUS_MARKET_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
@@ -72,8 +72,8 @@ Ja ss.lv datos ir dienas platformā — izmanto to listedForSale; ja ir cenu vē
     },
   );
 
-  const raw = await aiGenerateJsonText({
-    model: resolveAiAdminModel(input.modelTier),
+  const raw = await adminGenerateJsonText({
+    modelTier: input.modelTier,
     systemInstruction: AI_TIRGUS_MARKET_SYSTEM,
     userPrompt,
     temperature: 0.25,

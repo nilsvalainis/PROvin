@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateTextWithWebSearch, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { AI_SELLER_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
@@ -51,8 +51,8 @@ ${taskBlock}`,
     },
   );
 
-  const raw = await aiGenerateTextWithWebSearch({
-    model: resolveAiAdminModel(input.modelTier),
+  const raw = await adminGenerateTextWithWebSearch({
+    modelTier: input.modelTier,
     systemInstruction: AI_SELLER_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.35,

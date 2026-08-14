@@ -21,7 +21,17 @@ const CONFIRM_CLASS: Record<AiAdminModelTier, string> = {
   pro: "bg-violet-600 hover:bg-violet-700",
   flash: "bg-emerald-600 hover:bg-emerald-700",
   lite: "bg-sky-600 hover:bg-sky-700",
+  gemini: "bg-amber-600 hover:bg-amber-700",
+  "gemini-flash": "bg-teal-600 hover:bg-teal-700",
 };
+
+function confirmTierLabel(tier: AiAdminModelTier): string {
+  if (tier === "gemini-flash") return "Flash";
+  if (tier === "gemini") return "Gemini";
+  if (tier === "lite") return "Haiku";
+  if (tier === "flash") return "Sonnet";
+  return "Opus";
+}
 
 export function AdminAiGenerateWithPrefill({
   label,
@@ -82,13 +92,24 @@ export function AdminAiGenerateWithPrefill({
           demoOnly={demoOnly}
           onClick={() => openDialog("flash")}
         />
+        <span className="mx-0.5 select-none text-[10px] text-slate-300" aria-hidden>
+          |
+        </span>
         <AdminAiGenerateButton
-          label="Haiku"
-          variant="lite"
+          label="Gemini"
+          variant="gemini"
           disabled={disabled}
           busy={busy}
           demoOnly={demoOnly}
-          onClick={() => openDialog("lite")}
+          onClick={() => openDialog("gemini")}
+        />
+        <AdminAiGenerateButton
+          label="Flash"
+          variant="gemini-flash"
+          disabled={disabled}
+          busy={busy}
+          demoOnly={demoOnly}
+          onClick={() => openDialog("gemini-flash")}
         />
       </div>
       {open ? (
@@ -113,7 +134,13 @@ export function AdminAiGenerateWithPrefill({
                 <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">{dialogHint}</p>
                 <p className="mt-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
                   Modelis: {aiAdminModelTierLabel(pendingTier)}
-                  {pendingTier === "lite" ? " — lētākais, īsiem komentāriem" : null}
+                  {pendingTier === "gemini-flash"
+                    ? " — vislētākais, vieglākiem laukiem"
+                    : pendingTier === "gemini"
+                      ? " — vieglāki komentāri"
+                      : pendingTier === "pro"
+                        ? " — smagā analīze"
+                        : null}
                 </p>
               </div>
             </div>
@@ -142,7 +169,7 @@ export function AdminAiGenerateWithPrefill({
                 onClick={confirm}
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
-                Ģenerēt ({pendingTier === "lite" ? "Haiku" : pendingTier === "flash" ? "Sonnet" : "Opus"})
+                Ģenerēt ({confirmTierLabel(pendingTier)})
               </button>
             </div>
           </div>

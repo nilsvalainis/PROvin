@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateExpertText, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
 import {
@@ -36,8 +36,8 @@ Novērtē cenas atbilstību Latvijas lietotu auto tirgum (ss.lv), salīdzinot ar
     },
   );
 
-  return aiGenerateExpertText({
-    model: resolveAiAdminModel(input.modelTier),
+  return adminGenerateExpertText({
+    modelTier: input.modelTier,
     systemInstruction: AI_PRICE_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.35,

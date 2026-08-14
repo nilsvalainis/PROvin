@@ -11,6 +11,7 @@ import {
 } from "@/lib/ai-model-failover";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { toClaudeJsonSchema, type AiJsonSchema } from "@/lib/ai-json-schema";
+import { AI_LV_POLISH_SYSTEM } from "@/lib/admin-ai-prompts";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
   applyProvinReportCopyVocabulary,
@@ -378,8 +379,34 @@ export async function aiGenerateText(opts: {
   return runAiWithModelFailover({
     primaryModel: opts.model,
     logLabel: "text",
-    run: (model) => aiGenerateTextOnce(key, { ...opts, model }),
+    run: async (model) =>
+      polishHaikuLatvianProse(model, await aiGenerateTextOnce(key, { ...opts, model })),
   });
+}
+
+/**
+ * Haiku neder latviešu eksperta prozai (gramatika/stils). Ģenerē lēti, tad Sonnet
+ * slīpē tikai īso izejas tekstu — nevis visu pasūtījuma kontekstu.
+ */
+async function polishHaikuLatvianProse(model: string, text: string): Promise<string> {
+  const t = text.trim();
+  if (!t || model !== CLAUDE_MODEL_HAIKU) return text;
+  try {
+    const key = getAnthropicApiKeyFromEnv();
+    if (!key) return text;
+    const polished = await aiGenerateTextOnce(key, {
+      model: CLAUDE_MODEL_SONNET,
+      systemInstruction: AI_LV_POLISH_SYSTEM,
+      userPrompt: t,
+    });
+    return polished.trim() || text;
+  } catch (e) {
+    console.warn(`${LOG_PREFIX} haiku_lv_polish_failed`, {
+      promptVersion: PROVIN_AI_PROMPT_VERSION,
+      message: aiErrorMessage(e).slice(0, 240),
+    });
+    return text;
+  }
 }
 
 /** Eksperta PDF komentāri — pēc ģenerēšanas normalizē vārdu krājumu un rindkopu formātu. */
@@ -467,6 +494,10 @@ export async function aiGenerateTextWithWebSearch(opts: {
   return runAiWithModelFailover({
     primaryModel: opts.model,
     logLabel: "web_search",
-    run: (model) => aiGenerateTextWithWebSearchOnce(key, { ...opts, model }),
+    run: async (model) =>
+      polishHaikuLatvianProse(
+        model,
+        await aiGenerateTextWithWebSearchOnce(key, { ...opts, model }),
+      ),
   });
 }
