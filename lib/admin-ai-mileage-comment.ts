@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateExpertText, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_MILEAGE_COMMENT_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
 import {
@@ -27,7 +27,8 @@ export async function generateMileageCommentWithAi(input: AiOrderContextInput): 
 ${orderContext}
 
 Sagatavo komentāru laukam „${ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}”.
-Šis ir APKOPOJOŠAIS nobraukuma lauks: sintezē visu avotu odometra ainu (lineārums, vakuumi, neatbilstības, motorstundas, ja dati ļauj).
+Šis ir APKOPOJOŠAIS nobraukuma lauks: sintezē visu avotu odometra ainu (lineārums, periodi bez datiem, neatbilstības, motorstundas, ja dati ļauj).
+Garums: **3–5 rindkopas**, koncentrēti. Tonis atturīgs — nesakritības apraksti kā neatbilstības digitālos ierakstos (kas var būt arī ievades kļūda), nevis kā pierādītu manipulāciju; bez vārdiem „kritisks”, „anomālija”.
 Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu, tehnisko risku eseju vai kopsavilkuma verdiktu — fokusējas uz nobraukumu — IZŅEMOT, ja OPERATORA KOMANDĀS iedots plašs materiāls: tad to saglabā pilnībā (pārkārto, neapgraizi).`,
     {
       operatorNotes: input.operatorNotes,
@@ -38,8 +39,8 @@ Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu, tehnisko risku eseju va
     },
   );
 
-  return aiGenerateExpertText({
-    model: resolveAiAdminModel(input.modelTier),
+  return adminGenerateExpertText({
+    modelTier: input.modelTier,
     systemInstruction: AI_MILEAGE_COMMENT_SYSTEM,
     userPrompt,
     temperature: 0.35,

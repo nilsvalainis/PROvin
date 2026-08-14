@@ -43,10 +43,10 @@ JSON schema:
     {
       "severity": "CRITICAL|WARNING|INFO",
       "category": "MILEAGE_ROLLBACK|HIDDEN_DAMAGE|COMMERCIAL_USE|DATA_DISCREPANCY",
-      "description_lv": "string — one short factual sentence in Latvian, no fluff"
+      "description_lv": "string — one short factual sentence in Latvian, no fluff; restrained wording (never „kritisks”, „anomālija”, „katastrofāls”) — say what the records show"
     }
   ],
-  "ai_generated_comments_lv": "string — if no substantive history anywhere use exactly \"Problēmas nav konstatētas.\"; else 2–4 short paragraphs separated by blank lines; each paragraph opens with **bold** topic hook (3–10 words); never line-start \"- \" or bullet lists; use \"automašīna\" never \"automobīlis\"; prefix clear conflicts with **Anomālija:** in prose; max ~600 chars"
+  "ai_generated_comments_lv": "string — if no substantive history anywhere use exactly \"Problēmas nav konstatētas.\"; else 2–3 short paragraphs separated by blank lines; each paragraph opens with **bold** topic hook (3–10 words); never line-start \"- \" or bullet lists; use \"automašīna\" never \"automobīlis\"; prefix clear conflicts with **Neatbilstība:** in prose; restrained tone — no „kritisks”, „anomālija”, „katastrofāls”, no exclamation marks, digital records may be incomplete so state findings as what the data shows; max ~600 chars"
 }`;
 
 export type PdfTextBundle = { fileName: string; text: string; sourceHint: string };

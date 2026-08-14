@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  aiGenerateTextWithWebSearch,
-  resolveAiAdminModel,
-} from "@/lib/admin-ai";
+import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { AI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
 import {
@@ -70,10 +67,12 @@ ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
 
 Uzdevums: īss, skaidrs **profesionāls viedoklis** par datu **kopainu** + **rekomendācija**. Brīvā formā — nevis katra punkta atkārtošana.
 
-KRITISKI:
+OBLIGĀTI:
+- Šī ir vieta, kur avotu dati tiek sasaistīti kopainā — pārējos laukos katrs avots pastāsta tikai savu daļu.
 - NEATKĀRTO un neapkopo jau ģenerētos teikumus no avotiem / nobraukuma / negadījumiem / „${ADMIN_TECHNICAL_RISKS_LABEL}” / apskates.
 - Neveido „CSDD… AutoDNA… CarVertical…” katalogu.
 - Tipiski 3–5 īsas rindkopas + APPROVED BY IRISS.
+- Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; rekomendācija kalibrēta, jo pamatā ir digitāli dati, kas var būt nepilnīgi.
 - NESĀC ar „Sveiki” vai sarunas uzrunu.
 - Beigās: APPROVED BY IRISS.`,
     {
@@ -85,8 +84,8 @@ KRITISKI:
     },
   );
 
-  const raw = await aiGenerateTextWithWebSearch({
-    model: resolveAiAdminModel(input.modelTier),
+  const raw = await adminGenerateTextWithWebSearch({
+    modelTier: input.modelTier,
     systemInstruction: AI_SUMMARY_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.3,

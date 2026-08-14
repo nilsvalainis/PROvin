@@ -1,6 +1,6 @@
 /**
  * Īsi, faktiski avota komentāri (PDF imports, AI Plan B, ✨ avota komentāri).
- * Hibrīds: objektīvs konteksts + skaidri atzīmētas anomālijas.
+ * Hibrīds: objektīvs konteksts + skaidri atzīmētas datu neatbilstības.
  */
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import {
@@ -12,7 +12,10 @@ import {
 
 export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
-export const SOURCE_COMMENT_ANOMALY_PREFIX = "ANOMĀLIJA: ";
+/** Klientam redzams neitrāls apzīmējums datu nesakritībai (agrāk „ANOMĀLIJA: ”). */
+export const SOURCE_COMMENT_ANOMALY_PREFIX = "NEATBILSTĪBA: ";
+
+const SOURCE_COMMENT_ANOMALY_PREFIX_RE = /^(?:ANOMĀLIJA|NEATBILSTĪBA):\s*/i;
 
 /** Obligātā vārdu krājuma un rindkopu disciplīna — visi ✨ eksperta komentāri. */
 export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (mandatory):
@@ -20,6 +23,24 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
 - Mid-sentence dashes for ranges (piem. 2007–2015, 300–400 €) are fine; NEVER start a paragraph or standalone sentence with "- " or "– ".
 - EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.`;
+
+/** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
+export const PROVIN_RESTRAINED_TONE_RULES = `RESTRAINED EXPERT VOICE (mandatory — PROVIN gives a documentary opinion, not a verdict):
+- BANNED WORDS in client-facing Latvian text: „kritisks” / „kritiski” / „kritiska”, „anomālija”, „katastrofāls”, „šokējošs”, „drastisks”, „briesmīgs”, „milzīgs”, „bīstams”, „skandalozs”, „krāpšana”, „mahinācija”, „absolūti”, „nepārprotami”, „acīmredzami”, „100 %”, „pierāda”, „garantēti”. No exclamation marks, no ALL-CAPS emphasis, no stacked dramatic adjectives.
+- Neutral replacements: „neatbilstība”, „nesakritība”, „pretruna starp avotiem”, „iztrūkstoši dati”, „būtisks”, „paaugstināts risks”, „jāņem vērā”, „jāpārbauda klātienē”, „dati to neapstiprina”, „dati to neizslēdz”.
+- Digital registry data can be incomplete, delayed, or entered with errors. State what the records show („ierakstos fiksēts”, „pēc pieejamajiem datiem”, „avotos nav fiksēts”) — never as proven physical condition and never as proven intent (odometer manipulation, fraud, concealment).
+- Missing records do not prove a clean car; an existing record does not prove severity. Make clear which of the two the data supports.
+- One calibrated sentence outweighs three emphatic ones: never repeat the same warning inside one field and never add a dramatic closing paragraph.
+- The client should feel he is reading a calm senior expert opinion — informative, not pushy, no sales pressure and no scare tactics.`;
+
+/** Īsi, koncentrēti lauki — apkopojumi un salīdzinājumi tikai kopsavilkumā. */
+export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
+- Each comment answers ONE question: what does THIS source / THIS field add to the audit? Say it in the first paragraph.
+- DEFAULT LENGTH: 2–4 paragraphs, 2–3 sentences each (≈350–800 characters). Thin data → shorter. Only OPERATORA KOMANDAS may extend this.
+- Cross-source comparison is NOT this field's job: at most ONE short sentence, and only when a conflict changes the conclusion. The aggregate picture, source-by-source comparison, and the purchase verdict belong to „3. Kopsavilkums”.
+- Never retell a fact the client already reads in another section or source comment. If this source only confirms it: one sentence („Saskan ar …”) and move on.
+- Cut: greetings, restating the section title, „kopumā var secināt”, „svarīgi atzīmēt”, generic „jāpārbauda klātienē” without naming the component, closing paragraphs that repeat earlier content.
+- No paragraph without new information. When there is nothing left to add, end the comment — a short, precise comment is the goal, not filling space.`;
 
 /** Aizstāj „automobīlis” formas ar „automašīna” pircējam domātajā tekstā. */
 export function applyProvinReportCopyVocabulary(text: string): string {
@@ -48,54 +69,54 @@ export function normalizeProvinExpertAiComment(raw: string | undefined | null, m
 }
 
 /** Gatavo PROVIN audita atskaišu komentāru paraugi — few-shot stils ✨ ģeneratoram. */
-export const PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES = `FEW-SHOT STYLE EXAMPLES (match this exact paragraph structure, bold hooks, and tone):
+export const PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES = `FEW-SHOT STYLE EXAMPLES (match this paragraph structure, bold hooks, restrained tone — and this LENGTH: these are complete comments, not excerpts):
 
 Example 1 (CSDD — avota fokuss, nevis pilna nobraukuma eseja):
-"**Pirmā reģistrācija Latvijā.** Automašīna CSDD datos Latvijā pirmo reizi reģistrēta **2016. gada 22. janvārī**, kā izcelsmes valsti norādot Vāciju; īpašnieku maiņu ķēde pēc importa ir īsa un bez ierobežojumu atzīmēm.
+"**Pirmā reģistrācija Latvijā.** CSDD datos automašīna Latvijā reģistrēta **2016. gada 22. janvārī**, kā izcelsmes valsti norādot Vāciju; īpašnieku maiņu ķēde pēc importa ir īsa, bez ierobežojumu atzīmēm.
 
-**Tehnisko apskašu tendence.** Pamata pārbaudi ar pirmo reizi nav izgājusi **sešas reizes**; hroniski atkārtojas korozija, eļļas noplūdes un priekšējā tilta brīvkustības. Salīdzinājumā ar AutoDNA/CarVertical CSDD šeit ir vienīgais avots ar atkārtotu TA defektu sēriju."
+**Tehnisko apskašu tendence.** Pamata pārbaudi ar pirmo reizi nav izgājusi **sešas reizes**; atkārtojas korozija, eļļas noplūdes un priekšējā tilta brīvkustības. Šo atkārtoto defektu sēriju pārējie avoti nefiksē — tas ir CSDD ieguldījums šajā auditā."
 
-Example 2 (CSDD tehniskā apskate):
-"**Tehnisko apskašu vēsture.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **kopumā sešas reizes**, pēdējo reizi novērtējumu '2' saņemot **2025. gada 16. decembrī**. Sistēmā hroniski atkārtojas vieni un tie paši defekti: progresējoša nesošo elementu korozija, pastāvīgas eļļas noplūdes no motora un transmisijas, kā arī brīvkustības priekšējā tilta svirās.
+Example 2 (CSDD tehniskā apskate — atturīgs formulējums skaitļiem):
+"**Tehnisko apskašu vēsture.** Pamatpārbaudi ar pirmo reizi automašīna nav izgājusi **sešas reizes**, pēdējo reizi novērtējumu '2' saņemot **2025. gada 16. decembrī**. Atkārtojas vieni un tie paši defekti: nesošo elementu korozija, eļļas noplūdes un brīvkustības priekšējā tilta svirās.
 
-**Dūmainības un dzinēja resursa signāli.** Atgāzu pārbaudes uzrāda nestabilitāti — iepriekšējos gados dūmainības koeficients ir sasniedzis kritisku **2.32 un 2.95 atzīmi**, kas liecina par dzinēja un degvielas sistēmas resursa izsīkumu, lai gan pēdējā apskatē fiksēts koeficients **0.58**."
+**Dūmainības rādītāji.** Atgāzu mērījumi ir bijuši nevienmērīgi — iepriekšējos gados dūmainības koeficients sasniedzis **2.32** un **2.95**, pēdējā apskatē fiksēts **0.58**. Tas var norādīt uz dzinēja un degvielas sistēmas nolietojumu, tomēr viens mērījums ir situatīvs un jāpārbauda klātienē."
 
 Example 3 (negadījumi — kontekstuāla summas interpretācija):
-"**Apdrošināšanas ieraksti un avotu salīdzinājums.** CarVertical fiksē **2019. gada jūlijā** Vācijā reģistrētu negadījumu ar zaudējumu diapazonu **5 001–10 000 €**, savukārt LTAB un AutoDNA šim periodam konkrētu izmaksu neuzrāda. Auto tajā brīdī bija **~8 gadus vecs** vidējā segmenta universālis — šāda summa šai klasei liecina par **būtisku**, ne tikai kosmētisku remontu, nevis par „dārgu mazā skrāpējuma” premium scenāriju.
+"**Apdrošināšanas ieraksts.** CarVertical fiksē **2019. gada jūlijā** Vācijā reģistrētu negadījumu ar zaudējumu diapazonu **5 001–10 000 €**; LTAB un AutoDNA šim periodam summu neuzrāda. Automašīna tobrīd bija **~8 gadus** vecs vidējā segmenta universālis, tāpēc šāda summa drīzāk liecina par **būtisku**, ne tikai kosmētisku remontu.
 
-**Praktiskā nozīme pircējam.** Pat ja LTAB neko nerāda, ierakstu jāsasaista ar virsbūves stāvokli klātienē — krāsas biezums, šuvju platums un panelu simetrija. Bez fiziskas pārbaudes nevar izslēgt strukturālu remontu."
+**Nozīme pircējam.** Ieraksts jāsasaista ar virsbūves stāvokli klātienē — krāsas biezums, šuvju platums un paneļu simetrija. Bez fiziskas pārbaudes strukturālu remontu izslēgt nevar."
 
-Example 3b (augsta summa, bet relatīvi neliels smagums premium klasē):
-"**Zaudējumu apjoms kontekstā.** AutoDNA fiksē **2022. gada februārī** Vācijā apdrošināšanas izmaksu **6 840 €**, bojājot priekšējo buferi un labo priekšējo lukturi. Incidenta brīdī automašīnai bija **~1 gads** un tā ir **premium** klase ar adaptīvo gaismu un parkošanās sensoriem — šāda summa šeit bieži atspoguļo dārgu OEM detaļu un dīlera darbu, ne obligāti smagu rāmi vai total loss.
+Example 3b (augsta summa, bet ierobežots smagums premium klasē):
+"**Zaudējumu apjoms kontekstā.** AutoDNA fiksē **2022. gada februārī** Vācijā apdrošināšanas izmaksu **6 840 €** ar bojātu priekšējo buferi un labo priekšējo lukturi. Automašīnai tobrīd bija **~1 gads**, tā ir premium klase ar adaptīvo apgaismojumu un sensoriem, tāpēc šāda summa bieži atspoguļo dārgas OEM detaļas un dīlera darbu, ne obligāti nesošo elementu bojājumu.
 
-**Ko pārbaudīt klātienē.** Joprojām obligāta virsbūves pārbaude (šuvju platums, radar/stereo kamera aiz bufera), bet secinājums nav automātiski „katastrofāls negadījums” — gan izmaksas, gan bojājumu zonas jāvērtē kopā ar vecumu un klasi."
+**Ko pārbaudīt klātienē.** Virsbūves pārbaude joprojām nepieciešama (šuvju platums, radars un kamera aiz bufera), taču pēc summas vien smagu negadījumu secināt nevar — jāvērtē kopā ar bojājumu zonām, vecumu un klasi."
 
 Example 4 (cena / tirgus):
-"**Cenas pozīcija Latvijas tirgū.** Sludinājumā norādītā cena **14 900 €** atbilst vidējam līmenim ss.lv segmentā šim modeļa gadam un dzinējam, tomēr **nobraukums 218 000 km** un ierobežota servisa dokumentācija samazina faktisko vērtību pret līdzīgiem auto ar pilnu vēsturi.
+"**Cenas pozīcija Latvijas tirgū.** Sludinājuma cena **14 900 €** atbilst vidējam ss.lv līmenim šim modeļa gadam un dzinējam, tomēr **nobraukums 218 000 km** un ierobežota servisa dokumentācija samazina vērtību pret līdzīgiem auto ar pilnu vēsturi.
 
-**Importa un izsoles konteksts.** IRISS dati rāda līdzīgus eksemplārus Vācijas wholesale segmentā **11 500–12 800 €** apmērā, kas pēc loģiskā uzcenojuma, reģistrācijas un risku rezerves atstāj ierobežotu telpu sarunām par cenu samazinājumu."
+**Importa konteksts.** IRISS dati rāda līdzīgus eksemplārus Vācijas wholesale segmentā **11 500–12 800 €** apmērā; pēc loģiskā uzcenojuma un reģistrācijas izmaksām telpa cenas sarunām ir ierobežota."
 
-Example 5 (AutoDNA — bojājumi; īss salīdzinājums, bez nobraukuma pārstāsta):
-"**Apdrošināšanas un zaudējumu ieraksti.** AutoDNA fiksē **2018. gada martā** Vācijā reģistrētu negadījumu ar zaudējumu **2 930 €**, bojājot galvenokārt priekšējo labo sānu un priekšējo kreiso durvi. Pret CarVertical laika līniju datums sakrīt — AutoDNA šeit dod precīzāku summu un zonas.
+Example 5 (AutoDNA — bojājumi; viens teikums salīdzinājumam):
+"**Zaudējumu ieraksts.** AutoDNA fiksē **2018. gada martā** Vācijā reģistrētu negadījumu ar zaudējumu **2 930 €**, bojājot priekšējo labo sānu un priekšējo kreiso durvi; salīdzinājumā ar CarVertical datums sakrīt, bet šis avots dod precīzāku summu un bojājumu zonas.
 
-**Datu asinhronija.** CSDD/LTAB šim periodam konkrētu izmaksu neuzrāda; praktiski tas nozīmē, ka virsbūves kvalitāte jāpārbauda klātienē, nevis jāatkārto visa odometra stāsta no citiem avotiem."
+**Ko tas nozīmē.** CSDD un LTAB šim periodam izmaksu neuzrāda, tāpēc virsbūves remonta kvalitāte jāvērtē klātienē ar krāsas mērītāju."
 
 Example 6 (AUTO RECORDS / dīlera dati):
-"**Dīlera servisa vēsture un komerciālais konteksts.** Outvin datos automašīna klasificēta ar tipa kodu, kas atbilst taksometra/komerciālai ekspluatācijai (**937**), un servisa žurnālā redzamas regulāras apkopes ik **15 000–18 000 km** Vācijā pirms ievešanas. Šis ir unikāls dīlera signāls, ko CSDD/AutoDNA tabulas nesniedz.
+"**Dīlera serviss un ekspluatācijas veids.** Dīlera datos automašīnai norādīts tipa kods, kas atbilst taksometra vai komerciālai ekspluatācijai (**937**), un servisa žurnālā redzamas apkopes ik **15 000–18 000 km** Vācijā pirms ievešanas. Šo signālu CSDD un AutoDNA tabulas nesniedz.
 
-**Īss km salīdzinājums.** Pēdējais dīlera fiksējums (**198 420 km**, **2023. gada augusts**) sakrīt ar CSDD/AutoDNA līkni tajā pašā logā — detalizēto nobraukuma forenziku atstāj „NOBRAUKUMA VĒSTURES KOMENTĀRAM”."
+**Km atskaites punkts.** Pēdējais dīlera fiksējums (**198 420 km**, **2023. gada augusts**) sakrīt ar pārējo avotu līkni; detalizētā nobraukuma analīze ir „NOBRAUKUMA VĒSTURES KOMENTĀRĀ”."
 
 Example 7 (NOBRAUKUMA VĒSTURES KOMENTĀRS — vienīgā vieta pilnai apkopošanai):
-"**Hronoloģija un lineārums.** Visos pieejamajos avotos nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā** pēc pirmās reģistrācijas Vācijā **2014. gadā**; kritiski kritumi nav konstatēti. Automašīnas profils atbilst šosejas režīmam ar zemāku motorstundu slodzi nekā tipiskam Rīgas pilsētas auto.
+"**Hronoloģija un lineārums.** Pieejamajos avotos nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā** pēc pirmās reģistrācijas Vācijā **2014. gadā**; izteikti kritumi nav fiksēti. Ieraksti atbilst drīzāk šosejas režīmam ar zemāku motorstundu slodzi nekā tipiskam pilsētas auto.
 
-**Datu blīvums un vakuums.** Ieraksti ir bieži (reizi 6–12 mēnešos), kas ļauj objektīvi secināt par braukšanas režīmu; tomēr pirms ievešanas Latvijā ir **astoņu gadu datu vakuums** (2007–2015), un ņemot vērā dīlera **kodu 937**, reālais Eiropas nobraukums varētu būt ievērojami augstāks — šī ir atskaites apkopojošā nobraukuma interpretācija."`;
+**Datu blīvums un iztrūkstošie periodi.** Ieraksti ir regulāri (reizi 6–12 mēnešos), tomēr pirms ievešanas Latvijā ir **astoņu gadu periods bez datiem** (2007–2015). Kopā ar dīlera **kodu 937** tas pieļauj, ka faktiskais Eiropas nobraukums bijis augstāks, taču pieejamie ieraksti to neapstiprina."`;
 
 const PDF_HYBRID_COMMENT_RULES = `COMMENTARY (mandatory) — hybrid "Factual Context + Anomalies":
 1. NEVER suppress normal context: damage zones, body sides, dealer/service milestones, registration facts, policy periods, Status Center notes, historical remarks — always extract as objective Latvian facts.
 2. Ultra-concise bullet list (- prefix per line), zero conversational fluff, max 4 bullets, max ~350 characters total.
 3. If the report is entirely clean (no substantive history/notes/descriptions — empty or only generic blank markers): set comments EXACTLY to "Problēmas nav konstatētas." (nothing else).
 4. If the source contains ANY history, metadata, or descriptive notes: summarize the factual timeline in short sentences (not only problems).
-5. For clear conflicts, major mileage issues, or text mentioning damage/claims without structured rows: add a bullet prefixed "ANOMĀLIJA: " (e.g. "- ANOMĀLIJA: nobraukuma nesakritība …").
+5. For clear conflicts, major mileage issues, or text mentioning damage/claims without structured rows: add a bullet prefixed "NEATBILSTĪBA: " (e.g. "- NEATBILSTĪBA: nobraukuma nesakritība …").
 6. NEVER use asterisk (*) for bullets — only hyphen (-) at line start.
 Example:
 - Reģistrēts neliels virsbūves bojājums Vācijā (summa <=100 EUR). Bojāta labā sāna priekšpuse un kreisais sāns.
@@ -105,12 +126,16 @@ Example:
 export const AI_EXPERT_PARAGRAPH_PRESENTATION = `
 VISUAL PRESENTATION (mandatory for all expert client PDF comments):
 ${PROVIN_REPORT_COPY_VOCABULARY}
+
+${PROVIN_RESTRAINED_TONE_RULES}
+
+${PROVIN_COMMENT_BREVITY_RULES}
 - STRUCTURE: Write ONLY in paragraphs — separate paragraphs with a blank line (double newline). NEVER start any line with "- ", "• ", "* ", "– ", or "1." / "2." — no bullet lists, no numbered lists, no list-style prefixes of any kind. This applies to EVERY expert field, including ieteikumi klātienes apskatei, pārdevēja portrets, avotu komentāri, nobraukums, negadījumi, cena and kopsavilkums.
 - PARAGRAPH OPENER: Every paragraph MUST begin with a short **bold** topic hook (3–10 words) naming the theme — e.g. **Nobraukuma vēsture Latvijā**, **Virsbūves pārbaude ar krāsas mērītāju**, **Tehnisko apskašu tendence** — then continue in natural prose in the same paragraph.
-- SCANABILITY: Keep each paragraph to 2–4 sentences by default. When OPERATORA KOMANDAS supply dense timelines or interval analysis, allow longer paragraphs and more paragraphs — never sacrifice operator detail for scanability.
+- SCANABILITY: Keep each paragraph to 2–3 sentences by default. When OPERATORA KOMANDAS supply dense timelines or interval analysis, allow longer paragraphs and more paragraphs — never sacrifice operator detail for scanability.
 - EMPHASIS: Use **bold** inline for key dates, km, EUR sums, option codes, and risk labels — never bold an entire paragraph.
 - HUMAN TONE: Write like a senior Latvian inspector briefing a buyer — concrete, varied rhythm, no AI filler ("Kopumā var secināt", "Svarīgi atzīmēt", "Turklāt jāpiemin", "Nav šaubu"). Do not wrap the whole output in quotation marks.
-- ANOMALIES: State risks inside prose; you may use **Anomālija:** as a bold paragraph opener when a clear conflict exists — still never prefix with "- ".
+- CONFLICTS: State risks inside prose; you may use **Neatbilstība:** or **Pretruna avotos:** as a bold paragraph opener when the data conflicts — never the word „anomālija”, and never prefix with "- ".
 - STYLE REFERENCE: When the user prompt includes existing expert comments or drafts from this order, treat them as the canonical finished-report reference — match their paragraph rhythm, bold hooks, vocabulary ("automašīna"), and tone; extend with new facts, do not switch to a different format.
 `;
 
@@ -173,12 +198,12 @@ export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cr
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${AI_EXPERT_PARAGRAPH_PRESENTATION}
-- LENGTH (default when generating from source data alone): Target 600–1100 characters for per-source comments — thorough on THIS source, not a second full-report essay. Prefer **value density**: fewer paragraphs if each is sharper.
-- LENGTH OVERRIDE: When the user prompt includes substantial OPERATORA KOMANDAS / eksperta piezīmes with detailed prose, dates, km, service history, or interval analysis — IGNORE the 600–1100 target. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula. Output may be long.
-- STYLE: Analytical, professional automotive forensic Latvian. Flexible structure — not one fixed 3-paragraph template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
-- LOGIC: Interpret contradictions and what findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
+- LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.
+- LENGTH OVERRIDE: When the user prompt includes substantial OPERATORA KOMANDAS / eksperta piezīmes with detailed prose, dates, km, service history, or interval analysis — IGNORE the 350–800 target. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula. Output may be long.
+- STYLE: Analytical, professional, restrained automotive Latvian. Flexible structure — not one fixed template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
+- LOGIC: Interpret what the findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
-- ANTI-REPETITION (critical): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, data-vacuum narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here. Per-source text = unique facts from THIS source + a short cross-check (1–2 sentences) vs other sources when generating from data alone. If another source comment already covered the same fact: one short confirmation only — never a near-duplicate essay.
+- ANTI-REPETITION (mandatory): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, missing-data narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here. Per-source text = unique facts from THIS source + at most ONE cross-check sentence vs other sources when generating from data alone. If another source comment already covered the same fact: one short confirmation only — never a near-duplicate essay.
 `;
 
 /** AI PDF extract JSON — eksperta komentārs (visi avoti). */
@@ -231,7 +256,7 @@ export function normalizeExpertSourcePdfComment(raw: string | undefined | null, 
 }
 
 export function formatAnomalyBullet(text: string): string {
-  const core = text.trim().replace(/^[-•]\s*/, "").replace(/^ANOMĀLIJA:\s*/i, "");
+  const core = text.trim().replace(/^[-•]\s*/, "").replace(SOURCE_COMMENT_ANOMALY_PREFIX_RE, "");
   if (!core) return "";
   return `${SOURCE_COMMENT_ANOMALY_PREFIX}${core}`;
 }
@@ -296,7 +321,7 @@ export function extractBodyDamageSnippets(text: string, max = 2): string[] {
 }
 
 /**
- * Hibrīds komentārs: fakti + anomālijas.
+ * Hibrīds komentārs: fakti + neatbilstības.
  * Ja nav nekā būtiska — "Problēmas nav konstatētas."
  */
 export function buildHybridSourcePdfComments(opts: { facts?: string[]; anomalies?: string[] }): string {
@@ -318,11 +343,7 @@ export function formatSourcePdfComments(facts: string[]): string {
   const bullets = facts
     .map((f) => f.trim())
     .filter(Boolean)
-    .map((f) => {
-      const trimmed = f.trim().replace(/^[-•]\s*/, "");
-      if (/^ANOMĀLIJA:\s*/i.test(trimmed)) return `- ${trimmed}`;
-      return `- ${trimmed}`;
-    })
+    .map((f) => `- ${f.trim().replace(/^[-•]\s*/, "")}`)
     .slice(0, 4);
   if (bullets.length === 0) return SOURCE_COMMENT_NO_ISSUES_LV;
   return bullets.join("\n");
@@ -342,7 +363,7 @@ export function normalizeSourcePdfComment(raw: string | undefined | null): strin
   if (/^(ok|clean|none|no issues)/i.test(t) && t.length < 60) {
     return SOURCE_COMMENT_NO_ISSUES_LV;
   }
-  if (t.includes("-") || t.includes("ANOMĀLIJA")) {
+  if (t.includes("-") || t.includes("ANOMĀLIJA") || t.includes("NEATBILSTĪBA")) {
     const lines = t
       .split(/\n+/)
       .map((l) => l.trim())

@@ -99,7 +99,7 @@ export function normalizeAiExpertParagraphText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
   t = t.replace(/^\s*[-•*–]\s+/gm, "");
   t = t.replace(/^\s*\d+[\.)]\s+/gm, "");
-  t = t.replace(/^ANOMĀLIJA:\s*/gim, "**Anomālija:** ");
+  t = t.replace(/^(?:ANOMĀLIJA|NEATBILSTĪBA):\s*/gim, "**Neatbilstība:** ");
   t = t.replace(/\r\n/g, "\n");
   t = t.trim();
   return ensureExpertBoldParagraphOpeners(t);

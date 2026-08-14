@@ -27,7 +27,7 @@ export function appendAiOperatorNotesSection(
         "- NEDRĪKSTI APGRAIZĪT, saspiest „formulā” vai izmest detalizāciju, ko operators iedeva.",
         "- Saglabā konkrētus faktus: datumus, km, servisa nosaukumus, eļļas tipus, intervālu aprēķinus, secinājumus, skaitļus.",
         substantial
-          ? "- Šis ir PLAŠS operators materiāls — izejas tekstam jābūt TIKPAT BAGĀTAM (vai bagātākam). Noklusējuma īsais 600–1100 rakstzīmju limits ŠEIT NEATTIECAS."
+          ? "- Šis ir PLAŠS operators materiāls — izejas tekstam jābūt TIKPAT BAGĀTAM (vai bagātākam). Noklusējuma īsais 350–800 rakstzīmju limits ŠEIT NEATTIECAS."
           : "- Iekļauj pieprasītos faktus un formulējumus; neaizstāj ar vispārīgu tekstu.",
         "Ja komanda liek rakstīt par tehniskajiem riskiem, intervāliem vai konkrētu frāzi — TAS JĀBŪT izejas tekstā.",
         "",

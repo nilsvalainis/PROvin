@@ -5,9 +5,12 @@ import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
   AI_DAMAGE_CLAIM_CONTEXT_RULES,
   AI_EV_BEV_FORENSICS_RULES,
+  AI_EXPERT_PARAGRAPH_PRESENTATION,
   HYBRID_COMMENT_RULES,
+  PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
   PROVIN_REPORT_COPY_VOCABULARY,
+  PROVIN_RESTRAINED_TONE_RULES,
 } from "@/lib/source-summary-comment-format";
 
 const root = process.cwd();
@@ -111,15 +114,49 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("hybrid comment rules waive short length when operator supplies detail", () => {
     expect(HYBRID_COMMENT_RULES).toMatch(/LENGTH OVERRIDE/i);
-    expect(HYBRID_COMMENT_RULES).toMatch(/IGNORE the 600–1100/i);
+    expect(HYBRID_COMMENT_RULES).toMatch(/IGNORE the 350–800/i);
   });
 
-  it("summary generation uses Claude web search", () => {
+  it("restrained tone rules ban hyperbole and absolute claims", () => {
+    expect(PROVIN_RESTRAINED_TONE_RULES).toMatch(/RESTRAINED EXPERT VOICE/);
+    expect(PROVIN_RESTRAINED_TONE_RULES).toMatch(/„kritisks”/);
+    expect(PROVIN_RESTRAINED_TONE_RULES).toMatch(/„anomālija”/);
+    expect(PROVIN_RESTRAINED_TONE_RULES).toMatch(/„neatbilstība”/);
+    expect(PROVIN_RESTRAINED_TONE_RULES).toMatch(/No exclamation marks/i);
+  });
+
+  it("brevity rules keep fields short and move comparison to the summary", () => {
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/BREVITY & FOCUS/);
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/2–4 paragraphs/);
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/ONE short sentence/i);
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/3\. Kopsavilkums/);
+  });
+
+  it("expert presentation and field-agent prompts carry restraint and brevity", () => {
+    expect(AI_EXPERT_PARAGRAPH_PRESENTATION).toContain("RESTRAINED EXPERT VOICE");
+    expect(AI_EXPERT_PARAGRAPH_PRESENTATION).toContain("BREVITY & FOCUS");
+    expect(AI_EXPERT_PARAGRAPH_PRESENTATION).not.toMatch(/\*\*Anomālija:\*\*/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toContain("PROVIN_RESTRAINED_TONE_RULES");
+    expect(prompts).toContain("PROVIN_COMMENT_BREVITY_RULES");
+    expect(prompts).toMatch(/2–4 short paragraphs/);
+  });
+
+  it("few-shot examples stay free of hyperbole", () => {
+    expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).not.toMatch(
+      /kritisk|anomālij|katastrofāl/i,
+    );
+  });
+
+  it("summary generation uses web search dispatch", () => {
     const summary = readRepo("lib/admin-ai-summary.ts");
-    expect(summary).toMatch(/aiGenerateTextWithWebSearch/);
+    expect(summary).toMatch(/adminGenerateTextWithWebSearch/);
     expect(summary).toMatch(/Tehnisko risku|NEATKĀRTO|nedublē|NEDUBLĒ/i);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
-    expect(tech).toMatch(/aiGenerateTextWithWebSearch/);
+    expect(tech).toMatch(/adminGenerateTextWithWebSearch/);
+    const dispatch = readRepo("lib/admin-ai-dispatch.ts");
+    expect(dispatch).toMatch(/aiGenerateTextWithWebSearch/);
+    expect(dispatch).toMatch(/geminiGenerateTextWithGoogleSearch/);
   });
 
   it("avg annual mileage banner is removed from info banners", () => {
@@ -129,11 +166,30 @@ describe("PROVIN AI prompt invariants", () => {
     expect(banners).toMatch(/lv_registration_tenure/);
   });
 
-  it("polish uses the cheapest Haiku model", () => {
+  it("polish uses Sonnet, not Haiku or Opus", () => {
     const polish = readRepo("lib/admin-ai-polish.ts");
-    expect(polish).toMatch(/CLAUDE_MODEL_HAIKU/);
-    expect(polish).not.toMatch(/model:\s*CLAUDE_MODEL_OPUS/);
-    expect(polish).not.toMatch(/model:\s*CLAUDE_MODEL_SONNET/);
+    expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
+    expect(polish).not.toMatch(/CLAUDE_MODEL_HAIKU/);
+    expect(polish).not.toMatch(/CLAUDE_MODEL_OPUS/);
+  });
+
+  it("Haiku Latvian prose is post-edited by Sonnet grammar polish", () => {
+    const ai = readRepo("lib/admin-ai.ts");
+    expect(ai).toMatch(/polishHaikuLatvianProse/);
+    expect(ai).toMatch(/AI_LV_POLISH_SYSTEM/);
+    expect(ai).toMatch(/model:\s*CLAUDE_MODEL_SONNET/);
+  });
+
+  it("comment generation can dispatch to Gemini for light tiers", () => {
+    const dispatch = readRepo("lib/admin-ai-dispatch.ts");
+    expect(dispatch).toMatch(/geminiGenerateExpertText/);
+    expect(dispatch).toMatch(/geminiGenerateTextWithGoogleSearch/);
+    expect(dispatch).toMatch(/isGeminiAdminTier/);
+    const ui = readRepo("components/admin/AdminAiGenerateWithPrefill.tsx");
+    expect(ui).toMatch(/openDialog\("gemini"\)/);
+    expect(ui).toMatch(/openDialog\("gemini-flash"\)/);
+    expect(ui).toMatch(/openDialog\("pro"\)/);
+    expect(ui).toMatch(/openDialog\("flash"\)/);
   });
 
   it("EV forensics rules cover SOH and charging habits", () => {

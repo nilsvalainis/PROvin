@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  aiGenerateTextWithWebSearch,
-  resolveAiAdminModel,
-} from "@/lib/admin-ai";
+import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
 import {
@@ -41,7 +38,9 @@ ${orderContext}
 
 Sagatavo detalizētu tehnisko risku analīzi laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”.
 
-KRITISKI:
+OBLIGĀTI:
+- Garums: **4–6 rindkopas** (2–3 teikumi katrā) — tikai tie riski, kas šim auto tiešām maina lēmumu; bez atkārtojumiem un bez „ūdens”.
+- Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; tipiskās vājās vietas apraksti kā varbūtību („tipiski šim agregātam”, „var novest pie”).
 - Fokusējas uz šī auto agregātiem (dzinējs, ātrumkārba, piedziņa, EV baterija u.c.): tipiskās slimības, lietotāju sūdzības, aptuvenās remonta izmaksas EUR diapazonā, ja zināms no zināšanām/meklēšanas.
 - Izmanto PROVIN agregātu zināšanas un vēsturiskos auditus no konteksta; ja trūkst — web meklēšana tipiskajām vājajām vietām, tad pielāgo AKTĪVAJAM auto.
 - Norādi arī stiprās puses (uzticami motori/kārbas), bet uzsver: arī labākie agregāti var būt slikti uzturēti — īpaši Latvijā ekspluatētiem auto.
@@ -57,8 +56,8 @@ KRITISKI:
     },
   );
 
-  const raw = await aiGenerateTextWithWebSearch({
-    model: resolveAiAdminModel(input.modelTier),
+  const raw = await adminGenerateTextWithWebSearch({
+    modelTier: input.modelTier,
     systemInstruction: AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.32,

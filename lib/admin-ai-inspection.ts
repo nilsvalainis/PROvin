@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateTextWithVocabulary, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
 import { AI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
@@ -38,7 +38,8 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 - nobraukums, negadījumi, TA, dīleris, pārdevējs, cena;
 - vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
 
-Katrs punkts — konkrēta pārbaude + kāpēc šim auto. Īsi, vērtīgi, bez ūdens.
+Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: **4–6 rindkopas**, īsi un bez ūdens; tikai tas, kas maina lēmumu.
+Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls” un bez izsaukuma zīmēm.
 NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu — tikai pārvērt signālus par klātienes soļiem.`,
     {
       operatorNotes: input.operatorNotes,
@@ -49,8 +50,8 @@ NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/n
     },
   );
 
-  return aiGenerateTextWithVocabulary({
-    model: resolveAiAdminModel(input.modelTier),
+  return adminGenerateTextWithVocabulary({
+    modelTier: input.modelTier,
     systemInstruction: AI_INSPECTION_RECOMMENDATIONS_SYSTEM,
     userPrompt,
     temperature: 0.35,

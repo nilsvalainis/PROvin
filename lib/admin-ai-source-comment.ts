@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiGenerateExpertText, resolveAiAdminModel } from "@/lib/admin-ai";
+import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import {
   aiAutoRecordsServiceHistorySystemPrompt,
   aiSourceCommentSystemPrompt,
@@ -109,9 +109,11 @@ ${chainingSection}=== Konkrētā avota „${blockLabel}” dati (bez esošajiem 
 ${focusDataText}
 
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
-Prioritāte: unikālie fakti no „${blockLabel}” + īss salīdzinājums ar citiem avotiem (kas sakrīt / kas atšķiras).
+Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” pievieno šim auditam? To pasaki pirmajā rindkopā.
+Garums: **2–4 īsas rindkopas** (≈350–800 rakstzīmes). Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
-Ja šis avots tikai apstiprina jau uzrakstīto: 1–3 īsas rindkopas max.
+Ja šis avots tikai apstiprina jau uzrakstīto: 1–2 īsas rindkopas max.
+Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; digitālie ieraksti var būt nepilnīgi, tāpēc raksti, ko dati uzrāda, nevis ko tie „pierāda”.
 ${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
 Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
         {
@@ -120,8 +122,8 @@ Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā ga
         },
       );
 
-  return aiGenerateExpertText({
-    model: resolveAiAdminModel(input.modelTier),
+  return adminGenerateExpertText({
+    modelTier: input.modelTier,
     systemInstruction: isServiceHistory
       ? aiAutoRecordsServiceHistorySystemPrompt()
       : aiSourceCommentSystemPrompt(blockLabel),

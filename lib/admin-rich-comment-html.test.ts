@@ -213,8 +213,9 @@ describe("normalizeAiExpertParagraphText", () => {
     expect(normalizeAiExpertParagraphText("- Pirmais punkts. Turpinājums.")).not.toMatch(/^- /m);
   });
 
-  it("converts ANOMĀLIJA prefix to bold hook", () => {
-    expect(normalizeAiExpertParagraphText("ANOMĀLIJA: nobraukums")).toContain("**Anomālija:**");
+  it("converts legacy and current mismatch prefixes to a neutral bold hook", () => {
+    expect(normalizeAiExpertParagraphText("ANOMĀLIJA: nobraukums")).toContain("**Neatbilstība:**");
+    expect(normalizeAiExpertParagraphText("NEATBILSTĪBA: nobraukums")).toContain("**Neatbilstība:**");
   });
 
   it("auto-bolds first sentence when markdown hooks are missing", () => {

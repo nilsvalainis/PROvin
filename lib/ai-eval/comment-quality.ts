@@ -17,6 +17,18 @@ const AUTOMIBILIS_RE = /\bautomobīl/i;
 const LEADING_DASH_PARA_RE = /(^|\n\n)\s*[-–•]\s+/;
 const LIST_LINE_RE = /^\s*[-•*]\s+/m;
 
+/** Pārspīlējumi un absolūti apgalvojumi — PROVIN raksta atturīgi. */
+const HYPERBOLE_RE =
+  /\b(kritisk\w*|anomālij\w*|katastrofāl\w*|šokējoš\w*|drastisk\w*|briesmīg\w*|milzīg\w*|nepārprotami|acīmredzami|garantēti)\b/i;
+
+/** Maksimālais saprātīgais garums pēc lauka (bez operatora materiāla). */
+const MAX_CHARS_BY_FIELD: Record<string, number> = {
+  source: 1400,
+  incidents: 1800,
+  mileage: 2400,
+  generic: 1800,
+};
+
 /** Heuristics for a full mileage essay that belongs only in NOBRAUKUMA VĒSTURES KOMENTĀRS. */
 const MILEAGE_ESSAY_SIGNALS = [
   /vidēji\s+\*?\*?[\d\s]+(?:–|-|līdz)\s*[\d\s]+\*?\*?\s*km\s+gadā/i,
@@ -51,7 +63,30 @@ export function evaluateExpertCommentQuality(
     });
   }
 
+  const hyperbole = HYPERBOLE_RE.exec(t);
+  if (hyperbole) {
+    issues.push({
+      code: "hyperbolic_language",
+      message: `Pārspīlēts formulējums „${hyperbole[0]}” — izmanto atturīgu vārdu (neatbilstība, būtisks, paaugstināts risks)`,
+    });
+  }
+
+  if (/!/.test(t)) {
+    issues.push({
+      code: "exclamation",
+      message: "Eksperta komentārā nelieto izsaukuma zīmes",
+    });
+  }
+
   const field = opts.field ?? "generic";
+  const maxChars = MAX_CHARS_BY_FIELD[field] ?? MAX_CHARS_BY_FIELD.generic;
+  if (t.length > maxChars) {
+    issues.push({
+      code: "too_long",
+      message: `Komentārs ir pārāk garš (${t.length} rakstzīmes, mērķis līdz ${maxChars})`,
+    });
+  }
+
   if (field === "source") {
     const hits = MILEAGE_ESSAY_SIGNALS.filter((re) => re.test(t)).length;
     if (hits >= 2) {
