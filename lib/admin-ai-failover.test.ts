@@ -19,9 +19,12 @@ describe("aiFailoverModels", () => {
   it("puts custom primary first without duplicates", () => {
     expect(aiFailoverModels(CLAUDE_MODEL_SONNET)).toEqual([
       CLAUDE_MODEL_SONNET,
-      CLAUDE_MODEL_OPUS,
       CLAUDE_MODEL_HAIKU,
     ]);
+  });
+
+  it("does not upgrade Haiku to a more expensive model", () => {
+    expect(aiFailoverModels(CLAUDE_MODEL_HAIKU)).toEqual([CLAUDE_MODEL_HAIKU]);
   });
 });
 

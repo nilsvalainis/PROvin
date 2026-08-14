@@ -129,10 +129,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(banners).toMatch(/lv_registration_tenure/);
   });
 
-  it("polish uses the cheaper Sonnet model", () => {
+  it("polish uses the cheapest Haiku model", () => {
     const polish = readRepo("lib/admin-ai-polish.ts");
-    expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
+    expect(polish).toMatch(/CLAUDE_MODEL_HAIKU/);
     expect(polish).not.toMatch(/model:\s*CLAUDE_MODEL_OPUS/);
+    expect(polish).not.toMatch(/model:\s*CLAUDE_MODEL_SONNET/);
   });
 
   it("EV forensics rules cover SOH and charging habits", () => {

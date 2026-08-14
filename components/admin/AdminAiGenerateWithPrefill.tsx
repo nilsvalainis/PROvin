@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, MessageSquarePlus } from "lucide-react";
 
 import { AdminAiGenerateButton } from "@/components/admin/AdminAiGenerateButton";
-import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import { aiAdminModelTierLabel, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 type Props = {
   label: string;
@@ -17,6 +17,12 @@ type Props = {
   onGenerate: (operatorNotes: string, modelTier: AiAdminModelTier) => void | Promise<void>;
 };
 
+const CONFIRM_CLASS: Record<AiAdminModelTier, string> = {
+  pro: "bg-violet-600 hover:bg-violet-700",
+  flash: "bg-emerald-600 hover:bg-emerald-700",
+  lite: "bg-sky-600 hover:bg-sky-700",
+};
+
 export function AdminAiGenerateWithPrefill({
   label,
   disabled,
@@ -24,7 +30,7 @@ export function AdminAiGenerateWithPrefill({
   demoOnly,
   title,
   dialogTitle = "Papildu piezīmes AI",
-                dialogHint = "Ievadi korekcijas vai pilnu eksperta tekstu. AI drīkst pārkārtot PROVIN stilā un papildināt, bet nedrīkst apgraizīt tavu detalizāciju — datumi, km, servisi un secinājumi jāsaglabā.",
+  dialogHint = "Ievadi korekcijas vai pilnu eksperta tekstu. AI drīkst pārkārtot PROVIN stilā un papildināt, bet nedrīkst apgraizīt tavu detalizāciju — datumi, km, servisi un secinājumi jāsaglabā.",
   onGenerate,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -76,6 +82,14 @@ export function AdminAiGenerateWithPrefill({
           demoOnly={demoOnly}
           onClick={() => openDialog("flash")}
         />
+        <AdminAiGenerateButton
+          label="Haiku"
+          variant="lite"
+          disabled={disabled}
+          busy={busy}
+          demoOnly={demoOnly}
+          onClick={() => openDialog("lite")}
+        />
       </div>
       {open ? (
         <div
@@ -98,7 +112,8 @@ export function AdminAiGenerateWithPrefill({
                 </h3>
                 <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">{dialogHint}</p>
                 <p className="mt-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
-                  Modelis: {pendingTier === "flash" ? "Claude Sonnet" : "Claude Opus"}
+                  Modelis: {aiAdminModelTierLabel(pendingTier)}
+                  {pendingTier === "lite" ? " — lētākais, īsiem komentāriem" : null}
                 </p>
               </div>
             </div>
@@ -122,14 +137,12 @@ export function AdminAiGenerateWithPrefill({
               </button>
               <button
                 type="button"
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50 ${
-                  pendingTier === "flash" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-violet-600 hover:bg-violet-700"
-                }`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50 ${CONFIRM_CLASS[pendingTier]}`}
                 disabled={busy}
                 onClick={confirm}
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
-                {pendingTier === "flash" ? "Ģenerēt (Sonnet)" : "Ģenerēt (Opus)"}
+                Ģenerēt ({pendingTier === "lite" ? "Haiku" : pendingTier === "flash" ? "Sonnet" : "Opus"})
               </button>
             </div>
           </div>

@@ -4,16 +4,24 @@ export const CLAUDE_MODEL_SONNET = "claude-sonnet-5";
 /** Datēts ID: /v1/models neuzskaita īso `claude-haiku-4-5` aliasu. */
 export const CLAUDE_MODEL_HAIKU = "claude-haiku-4-5-20251001";
 
-/** Opus → Sonnet → Haiku; primārais modelis vienmēr pirmais mēģinājums. */
+/**
+ * Failover tikai uz LĒTĀKIEM modeļiem — Sonnet kļūme nedrīkst pāriet uz Opus
+ * (tas ir tas, kas 2 klikšķos sadedzina dolāru).
+ * Opus → Sonnet → Haiku; Sonnet → Haiku; Haiku paliek Haiku.
+ */
 export function aiFailoverModels(primary: string): string[] {
-  const chain = [CLAUDE_MODEL_OPUS, CLAUDE_MODEL_SONNET, CLAUDE_MODEL_HAIKU];
+  const cheaper: Record<string, readonly string[]> = {
+    [CLAUDE_MODEL_OPUS]: [CLAUDE_MODEL_SONNET, CLAUDE_MODEL_HAIKU],
+    [CLAUDE_MODEL_SONNET]: [CLAUDE_MODEL_HAIKU],
+    [CLAUDE_MODEL_HAIKU]: [],
+  };
   const out: string[] = [];
   const add = (m: string) => {
     const t = m.trim();
     if (t && !out.includes(t)) out.push(t);
   };
   add(primary);
-  for (const m of chain) add(m);
+  for (const m of cheaper[primary] ?? [CLAUDE_MODEL_SONNET, CLAUDE_MODEL_HAIKU]) add(m);
   return out;
 }
 

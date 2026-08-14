@@ -17,6 +17,13 @@ type Props = {
 const VARIANT_CLASS: Record<AiAdminModelTier, string> = {
   pro: "border border-violet-700 bg-violet-600 text-white hover:bg-violet-700",
   flash: "border border-emerald-700/70 bg-emerald-600 text-white hover:bg-emerald-700",
+  lite: "border border-sky-700/70 bg-sky-600 text-white hover:bg-sky-700",
+};
+
+const VARIANT_HINT: Record<AiAdminModelTier, string> = {
+  pro: "Claude Opus — dziļāka eksperta analīze (dārgākais)",
+  flash: "Claude Sonnet — vidējā kvalitāte un cena",
+  lite: "Claude Haiku — lētākais; īsiem komentāriem, kad dati jau ir tabulā",
 };
 
 export function AdminAiGenerateButton({
@@ -28,13 +35,7 @@ export function AdminAiGenerateButton({
   variant = "pro",
   onClick,
 }: Props) {
-  const hint =
-    title ??
-    (demoOnly
-      ? "AI pieejams tikai DEMO pasūtījumiem (drošības iemesli)"
-      : variant === "flash"
-        ? "Claude Sonnet — ātrāks un lētāks; piemērots, ja Opus ir pārslogots"
-        : "Claude Opus — dziļāka eksperta analīze");
+  const hint = title ?? (demoOnly ? "AI pieejams tikai DEMO pasūtījumiem (drošības iemesli)" : VARIANT_HINT[variant]);
 
   return (
     <button

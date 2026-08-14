@@ -2,6 +2,7 @@ import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
 import {
+  CLAUDE_MODEL_HAIKU,
   CLAUDE_MODEL_OPUS,
   CLAUDE_MODEL_SONNET,
   aiErrorMessage,
@@ -26,9 +27,11 @@ export {
 export type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 export { parseAiModelTier } from "@/lib/ai-admin-model-tier";
 
-/** Admin izvēlētais modelis — Opus (dziļā analīze) vai Sonnet (ātrāks). */
+/** Admin izvēlētais modelis: Opus / Sonnet / Haiku. */
 export function resolveAiAdminModel(tier?: AiAdminModelTier | null): string {
-  return tier === "flash" ? CLAUDE_MODEL_SONNET : CLAUDE_MODEL_OPUS;
+  if (tier === "lite") return CLAUDE_MODEL_HAIKU;
+  if (tier === "flash") return CLAUDE_MODEL_SONNET;
+  return CLAUDE_MODEL_OPUS;
 }
 
 const LOG_PREFIX = "[admin-ai]";
@@ -100,7 +103,7 @@ export function formatAiSdkError(e: unknown): string {
 
 /**
  * Mēģina `run(model)` pa failover modeļiem; pagaidu kļūdās pārslēdzas bez lietotāja kļūdas.
- * Līdz 3 raundi × 3 modeļi (Opus → Sonnet → Haiku) ar backoff.
+ * Līdz 3 raundi ar backoff; failover iet tikai uz lētākiem modeļiem.
  */
 export async function runAiWithModelFailover<T>(opts: {
   primaryModel: string;
