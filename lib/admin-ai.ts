@@ -246,10 +246,10 @@ async function aiGenerateJsonFromPartsOnce(
 ): Promise<string> {
   const client = anthropicClient(key);
   const hasSchema = Boolean(opts.responseSchema);
+  /** Opus 5 / Sonnet 5 noraida `temperature` — 400 invalid_request_error. */
   const message = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens ?? MAX_TOKENS_JSON,
-    temperature: opts.temperature ?? 0.2,
     system: hasSchema
       ? `${opts.systemInstruction}${SCHEMA_MISSING_VALUES_SUFFIX}`
       : `${opts.systemInstruction}${JSON_ONLY_SUFFIX}`,
@@ -353,7 +353,6 @@ async function aiGenerateTextOnce(
   const message = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-    temperature: opts.temperature ?? 0.35,
     system: opts.systemInstruction,
     messages: [{ role: "user", content: opts.userPrompt }],
   });
@@ -433,7 +432,6 @@ async function aiGenerateTextWithWebSearchOnce(
   const message = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-    temperature: opts.temperature ?? 0.35,
     system: opts.systemInstruction,
     messages: [{ role: "user", content: opts.userPrompt }],
     tools: [
