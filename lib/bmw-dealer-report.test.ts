@@ -58,6 +58,19 @@ CodeDescription
 0255Sports leather steering wheel
 02BYBMW LA wheel,double spoke 278/flat-runn.
 
+Service History
+26/01/201638,758 mi / 62,375 kmAutohaus Karl + Co., Mainz-Kastel
+IconComponentStatusServicedDue DateRemaining Distance
+Engine oil-
+✓
+--
+Front brake-
+-
+--
+Microfilter-
+✓
+--
+
 Key Read History
 12/05/2026188,858 mi / 303,938 km
 IconComponentStatusDue DateRemaining Distance
@@ -67,6 +80,9 @@ Brake FluidNot due
 Engine oil--17398 mi
 Statutory vehicle inspectionNot due
 05/08/2027-
+Engine oilOverdue
+01/05/2025-11185 mi
+Fuel filterNot due01/05/20256835 mi
 
 Repair History
 
@@ -82,6 +98,9 @@ Beide Vorderräder auswuchtenFTT361
 Castrol Magnatec Prof. MP 5W-30 LL04FT9999000007
 Set oil-filter element114285133771
 Microfilter/activated Carbon container643191718582
+02/01/2013-Autohaus Karl + Co. GmbH & Co. KG, RüsselsheimOrder: 620527
+Part NamePart NumberQuantity
+Cover, windshield, top51317258053-1
 `;
 
 /** auto-records.com izdruka: divas komplektācijas kolonnas salīp vienā rindā. */
@@ -179,6 +198,32 @@ describe("BMW dealer PDF", () => {
       "Eļļas filtra komplekts",
       "Salona filtrs (ar aktivēto ogli)",
     ]);
+  });
+
+  it("never reads the „Remaining Distance” column as an odometer value", () => {
+    const extract = extractDealerReport(BMW_TEXT);
+    // „01/05/2025-11185 mi” un „01/05/20256835 mi” ir termiņi, nevis nobraukuma ieraksti.
+    expect(extract.mileage.some((r) => r.date === "01.05.2025")).toBe(false);
+    expect(extract.mileage.map((r) => r.odometer)).not.toContain("18001");
+    expect(extract.mileage.map((r) => r.odometer)).not.toContain("11000");
+    // Termiņa datums no tās pašas rindas joprojām tiek nolasīts.
+    expect(extract.serviceHistoryNotes).toContain("Motoreļļa — 01.05.2025");
+  });
+
+  it("reads the Service History table as serviced components, not as table text", () => {
+    const visit = extractDealerReport(BMW_TEXT).serviceHistory.find((e) => e.date === "26.01.2016");
+    expect(visit?.odometer).toBe("62375");
+    expect(visit?.location).toBe("Autohaus Karl + Co., Mainz-Kastel");
+    // Ķeksītis ir tikai motoreļļai un salona filtram; priekšējām bremzēm tā nav.
+    expect(visit?.works).toEqual(["Motoreļļa", "Salona filtrs"]);
+    expect(visit?.works.join(" ")).not.toContain("Icon");
+  });
+
+  it("keeps a visit that has no odometer and strips part numbers with quantity", () => {
+    const visit = extractDealerReport(BMW_TEXT).serviceHistory.find((e) => e.date === "02.01.2013");
+    expect(visit?.odometer).toBe("");
+    expect(visit?.location).toBe("Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim");
+    expect(visit?.works).toEqual(["Vējstikla augšējā apdare"]);
   });
 
   it("summarises only facts into the service history comment", () => {

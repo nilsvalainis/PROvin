@@ -126,6 +126,22 @@ export function bmwOdometerToKm(fragment: string): string {
   return "";
 }
 
+/**
+ * Odometra rādījums aiz datuma ir tikai tad, ja fragments SĀKAS ar rādījumu („145,613 mi /
+ * 234,342 km”). Kolonna „Remaining Distance” satur nobraukumu līdz nākamajai apkopei tikai
+ * jūdzēs („6835 mi”, „-11185 mi”) — tas nav odometrs, un tas nedrīkst nonākt nobraukuma tabulā.
+ */
+export function bmwOdometerReadingKm(fragment: string, opts?: { allowMilesOnly?: boolean }): string {
+  const value = normalizeSpace(fragment);
+  const pair = value.match(/^([\d.,]+)\s*mi\s*\/\s*([\d.,]+)\s*km\b/i);
+  if (pair) return digitsOnly(pair[2] ?? "");
+  const km = value.match(/^([\d.,]+)\s*km\b/i);
+  if (km) return digitsOnly(km[1] ?? "");
+  if (!opts?.allowMilesOnly) return "";
+  const mi = value.match(/^([\d.,]+)\s*mi\b/i);
+  return mi ? milesToKm(mi[1] ?? "") : "";
+}
+
 function parseVehicleInfo(lines: string[]): Partial<OutvinVehicleInfo> {
   const out: Partial<OutvinVehicleInfo> = {};
   const stopRe = /^(Specifications\s*&\s*Options|Service\s+History|Key\s+Read\s+History|Repair\s+History)$/i;
@@ -195,6 +211,10 @@ export function bmwComponentLabelLv(raw: string): string {
 
 const KEY_READ_HEAD_RE = /^(\d{2}\/\d{2}\/\d{4})\s*(.*)$/;
 const KEY_READ_COMPONENT_RE = /^(.+?)(Not due|Due soon|Overdue|-)?\s*(\d{2}\/\d{2}\/\d{4})?\s*-?\s*$/;
+/** Aiz katra nolasījuma seko tabulas galva — pēc tās atpazīstam arī izdrukas, kur ir tikai jūdzes. */
+const COMPONENT_TABLE_HEAD_RE = /^Icon\s*Component/i;
+/** „…01/05/2025-11185 mi” → nogriež atlikuma kolonnu, lai paliek tikai termiņa datums. */
+const REMAINING_DISTANCE_TAIL_RE = /\s*-?[\d.,]+\s*(?:mi|km)\s*$/i;
 
 function parseKeyReadHistory(lines: string[]): BmwDealerKeyRead[] {
   const start = lines.findIndex((l) => /^Key\s+Read\s+History$/i.test(normalizeSpace(l)));
@@ -207,21 +227,27 @@ function parseKeyReadHistory(lines: string[]): BmwDealerKeyRead[] {
     const line = normalizeSpace(lines[i] ?? "");
     if (!line) continue;
     if (/^Repair\s+History$/i.test(line)) break;
-    if (/^IconComponent/i.test(line) || /^Icon\s+Component/i.test(line)) continue;
+    if (COMPONENT_TABLE_HEAD_RE.test(line)) continue;
 
     const head = line.match(KEY_READ_HEAD_RE);
-    if (head && /\b(mi|km)\b/i.test(head[2] ?? "")) {
-      const odometer = bmwOdometerToKm(head[2] ?? "");
-      current = { date: normalizeSlashDate(head[1] ?? ""), odometer, dueDates: [] };
-      out.push(current);
-      continue;
+    if (head) {
+      const odometer = bmwOdometerReadingKm(head[2] ?? "", {
+        allowMilesOnly: COMPONENT_TABLE_HEAD_RE.test(normalizeSpace(lines[i + 1] ?? "")),
+      });
+      if (odometer) {
+        current = { date: normalizeSlashDate(head[1] ?? ""), odometer, dueDates: [] };
+        out.push(current);
+        continue;
+      }
     }
     if (!current) continue;
 
-    const comp = line.match(KEY_READ_COMPONENT_RE);
+    // Kolonna „Remaining Distance” („-11185 mi”) nav daļa no termiņa rindas.
+    const row = line.replace(REMAINING_DISTANCE_TAIL_RE, "");
+    const comp = row.match(KEY_READ_COMPONENT_RE);
     if (!comp) continue;
     // Izdrukā statuss un termiņš mēdz būt nākamajā rindā („Brake FluidNot due” + „30/07/2026-”).
-    const nextLine = normalizeSpace(lines[i + 1] ?? "");
+    const nextLine = normalizeSpace(lines[i + 1] ?? "").replace(REMAINING_DISTANCE_TAIL_RE, "");
     const dueDate = comp[3] || (nextLine.match(/^(\d{2}\/\d{2}\/\d{4})\s*-?$/)?.[1] ?? "");
     if (!dueDate) continue;
     const component = normalizeSpace((comp[1] ?? "").replace(/(Not due|Due soon|Overdue)\s*$/i, ""));
@@ -232,22 +258,49 @@ function parseKeyReadHistory(lines: string[]): BmwDealerKeyRead[] {
   return out.filter((r) => r.date && r.odometer);
 }
 
+/** Apmeklējums bez odometra izdrukā ir „02/01/2013-Autohaus …”. */
 const VISIT_HEAD_RE =
-  /^(\d{2}\/\d{2}\/\d{4})\s*([\d.,]+\s*mi\s*\/\s*[\d.,]+\s*km|[\d.,]+\s*km|[\d.,]+\s*mi)\s*(.*)$/i;
+  /^(\d{2}\/\d{2}\/\d{4})\s*([\d.,]+\s*mi\s*\/\s*[\d.,]+\s*km|[\d.,]+\s*km|[\d.,]+\s*mi|-)\s*(.*)$/i;
 
 /** Nākamā apmeklējuma sākums var salipt ar iepriekšējās detaļas rindu. */
-const VISIT_HEAD_SPLIT_RE = /(?=\d{2}\/\d{2}\/\d{4}\s*[\d.,]+\s*(?:mi|km)\b)/;
+const VISIT_HEAD_SPLIT_RE =
+  /(?=\d{2}\/\d{2}\/\d{4}\s*(?:[\d.,]+\s*(?:mi|km)\b|-[A-Za-zÄÖÜ]{3,}))/;
+
+/** Servisa punkta nosaukums, nevis „11185 mi” no atlikuma kolonnas. */
+function looksLikeDealerName(rest: string): boolean {
+  if (!/[A-Za-zÄÖÜ]{3,}/.test(rest)) return false;
+  return !/^[\d.,\s-]*(mi|km)\b/i.test(rest);
+}
 
 /**
- * Detaļas numurs un daudzums rindas beigās (`…FTT361`, `…659024568861`, `…65902456886-1`) —
- * klientam vērtīgs ir tikai nosaukums.
+ * Detaļas numurs un daudzums rindas beigās (`…FTT361`, `…FL001111`, `…659024568861`,
+ * `…65902456886-1`) — klientam vērtīgs ir tikai nosaukums.
  */
-const PART_NUMBER_TAIL_RE = /\s*(?:FT[A-Z]*\d+|\d{10,})\s*-?\d*$/;
+const PART_CODE_TAIL_RE = /\s*F[A-Z]+\d[\dA-Z]*\s*-?\d{0,3}$/;
+const PART_NUMBER_TAIL_RE = /\s*\d{6,}\s*-?\d{0,3}$/;
 
 function parsePartName(line: string): string {
-  const name = normalizeSpace(line).replace(PART_NUMBER_TAIL_RE, "").trim();
+  const name = normalizeSpace(line)
+    .replace(PART_CODE_TAIL_RE, "")
+    .replace(PART_NUMBER_TAIL_RE, "")
+    .replace(/[-–\s]+$/, "")
+    .trim();
   if (!name || /^part\s*name/i.test(name)) return "";
   return name.replace(/[,;]+$/, "");
+}
+
+const PART_TABLE_HEAD_RE = /^Part\s*Name/i;
+const SERVICED_MARK_RE = /[✓✔]/;
+
+/** „Engine oil-” → „Engine oil”; atdalītāji („-”, „--”) un datumi nav komponenti. */
+function componentName(raw: string): string {
+  const name = normalizeSpace(raw)
+    .replace(/\s*(Not due|Due soon|Overdue)\s*$/i, "")
+    .replace(/[-–—\s]+$/, "")
+    .trim();
+  if (!name || !/[A-Za-zÄÖÜäöüß]/.test(name)) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(name)) return "";
+  return name;
 }
 
 /** PDF teksta rindas → rindas, kurās katrs apmeklējuma virsraksts sākas no jaunas rindas. */
@@ -271,6 +324,9 @@ function parseVisitSection(rawLines: string[], heading: RegExp): BmwDealerVisit[
 
   const out: BmwDealerVisit[] = [];
   let current: BmwDealerVisit | null = null;
+  // „Service History” dod komponentu tabulu ar ķeksīšiem, „Repair History” — detaļu sarakstu.
+  let mode: "parts" | "components" = "parts";
+  let pendingComponent = "";
 
   for (let i = start + 1; i < lines.length; i++) {
     const line = normalizeSpace(lines[i] ?? "");
@@ -280,22 +336,49 @@ function parseVisitSection(rawLines: string[], heading: RegExp): BmwDealerVisit[
 
     const head = line.match(VISIT_HEAD_RE);
     if (head) {
+      const token = normalizeSpace(head[2] ?? "");
       const rest = normalizeSpace(head[3] ?? "");
-      const orderMatch = rest.match(/Order\s*:?\s*(.+)$/i);
-      const dealer = normalizeSpace(rest.replace(/Order\s*:?.*$/i, "")).replace(/[,;]+$/, "");
-      current = {
-        date: normalizeSlashDate(head[1] ?? ""),
-        odometer: bmwOdometerToKm(head[2] ?? ""),
-        dealer: dealer.replace(/^Dealer\s+ID\s*:?\s*/i, "Dīlera ID: ").slice(0, 200),
-        orderNo: normalizeSpace(orderMatch?.[1] ?? "").slice(0, 80),
-        parts: [],
-      };
-      out.push(current);
-      continue;
+      const hasDealer = looksLikeDealerName(rest);
+      const odometer = token === "-" ? "" : bmwOdometerReadingKm(token, { allowMilesOnly: hasDealer });
+      if (odometer || hasDealer) {
+        const orderMatch = rest.match(/Order\s*:?\s*(.+)$/i);
+        const dealer = normalizeSpace(rest.replace(/Order\s*:?.*$/i, "")).replace(/[,;]+$/, "");
+        current = {
+          date: normalizeSlashDate(head[1] ?? ""),
+          odometer,
+          dealer: dealer.replace(/^Dealer\s+ID\s*:?\s*/i, "Dīlera ID: ").slice(0, 200),
+          orderNo: normalizeSpace(orderMatch?.[1] ?? "").slice(0, 80),
+          parts: [],
+        };
+        out.push(current);
+        mode = "parts";
+        pendingComponent = "";
+        continue;
+      }
     }
     if (!current) continue;
     if (/^No additional details available\.?$/i.test(line)) continue;
-    if (/^Part\s*NamePart\s*NumberQuantity$/i.test(line) || /^Part\s+Name/i.test(line)) continue;
+    if (COMPONENT_TABLE_HEAD_RE.test(line)) {
+      mode = "components";
+      pendingComponent = "";
+      continue;
+    }
+    if (PART_TABLE_HEAD_RE.test(line)) {
+      mode = "parts";
+      continue;
+    }
+
+    if (mode === "components") {
+      // Komponents un ķeksītis „Serviced” ir atsevišķās rindās: „Engine oil-” … „✓”.
+      if (SERVICED_MARK_RE.test(line)) {
+        const name = componentName(line.replace(SERVICED_MARK_RE, " ")) || pendingComponent;
+        if (name) current.parts.push(name);
+        pendingComponent = "";
+        continue;
+      }
+      pendingComponent = componentName(line);
+      continue;
+    }
 
     const part = parsePartName(line);
     if (part) current.parts.push(part);

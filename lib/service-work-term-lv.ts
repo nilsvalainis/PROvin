@@ -20,6 +20,11 @@ const QUALIFIER_LV: TermRule[] = [
   { re: /^(lower|unten)$/i, lv: "apakšā" },
   { re: /^(with\s+sensor|mit\s+sensor)$/i, lv: "ar sensoru" },
   { re: /^(automatic\s+transmission|automatikgetriebe)$/i, lv: "automātiskajai pārnesumkārbai" },
+  { re: /^(top|oben\s+top)$/i, lv: "augšdaļa" },
+  { re: /^(green|gr[üu]n)$/i, lv: "zaļš" },
+  { re: /^rain\/light(\/solar)?(\/(condens\.?s?\.?|misting))?.*$/i, lv: "ar lietus un gaismas sensoru" },
+  { re: /^(winter|winterr[äa]der)$/i, lv: "ziemai" },
+  { re: /^(asbestos[- ]free|asbestfrei)$/i, lv: "bez azbesta" },
 ];
 
 /**
@@ -32,6 +37,20 @@ const TERM_LV: TermRule[] = [
   { re: /^(vehicle\s+check|fahrzeug[- ]?check)$/i, lv: "Tehniskā pārbaude servisā" },
   { re: /^(standard\s+scope|standardumfang)$/i, lv: "Standarta apkopes apjoms" },
   { re: /^(statutory\s+vehicle\s+inspection|hauptuntersuchung|hu)$/i, lv: "Obligātā tehniskā apskate" },
+  { re: /^(statutory\s+emissions\s+test|abgasuntersuchung|au)$/i, lv: "Obligātā izplūdes gāzu pārbaude" },
+  {
+    re: /^roadworthiness\s+pre[- ]check(\s*\(german\s+market\s+only\))?$/i,
+    lv: "Tehniskā priekšpārbaude (Vācijas tirgum)",
+  },
+  { re: /^(digitale\s+serviceberatung|digital\s+service\s+advice)$/i, lv: "Digitālā servisa konsultācija" },
+  { re: /^kaskoschaden\b.*$/i, lv: "KASKO apdrošināšanas gadījuma remonts" },
+  { re: /^(ersatzfahrzeug|replacement\s+vehicle|courtesy\s+car)(\s*\(.*\))?$/i, lv: "Maiņas auto" },
+  { re: /^(t[üu]v\s+geb[üu]hren\b.*|t[üu]v\s+fee)$/i, lv: "TÜV apskates nodeva" },
+  { re: /^(kostenlose\s+)?fahrzeugoberw[äa]sche$/i, lv: "Virsbūves mazgāšana" },
+  { re: /^servicew[äa]sche(\s+plus)?$/i, lv: "Servisa mazgāšana" },
+  { re: /^fahrzeug\s+nicht\s+waschen\.?$/i, lv: "Norāde: automašīnu nemazgāt" },
+  { re: /^schleifvlies\s+und\s+hohlraumspray$/i, lv: "Slīpēšanas vate un dobumu aizsargaerosols" },
+  { re: /^(feinstaub[- ]plakette(\s+gr[üu]n)?|umweltplakette)$/i, lv: "Vācijas ekoloģiskā uzlīme (zaļā)" },
   { re: /^(service|inspection|inspektion|maintenance|wartung)$/i, lv: "Apkope" },
   { re: /^(repair|reparatur)$/i, lv: "Remonts" },
   { re: /^(diagnosis|diagnostics|diagnose)$/i, lv: "Diagnostika" },
@@ -78,7 +97,11 @@ const TERM_LV: TermRule[] = [
 
   // Bremzes
   { re: /^(repair\s+kit,?\s+brake\s+pads?.*|brake\s+pad\s+set|bremsbel[äa]ge?(satz)?)$/i, lv: "Bremžu kluču komplekts" },
-  { re: /^(brake\s+pad\s+wear\s+sensor.*|bremsbelagverschlei[ßs]sensor)$/i, lv: "Bremžu kluču nodiluma sensors" },
+  {
+    re: /^(brake[- ]pad(\s+wear)?\s+sensor|bremsbelagverschlei[ßs]sensor)$/i,
+    lv: "Bremžu kluču nodiluma sensors",
+  },
+  { re: /^(brake[- ]pad\s+paste|bremsenpaste)$/i, lv: "Bremžu kluču pasta" },
   { re: /^(brake\s+disc|bremsscheibe)$/i, lv: "Bremžu disks" },
   { re: /^(brake\s+discs?,\s*ventilated|bremsscheibe\s+innenbel[üu]ftet)$/i, lv: "Bremžu disks (ventilēts)" },
   { re: /^(brake\s+caliper|bremssattel)$/i, lv: "Bremžu suports" },
@@ -92,7 +115,7 @@ const TERM_LV: TermRule[] = [
   { re: /^(glow\s+plug|gl[üu]hkerze)$/i, lv: "Kvēlsvece" },
   { re: /^(injector|einspritzd[üu]se|injektor)$/i, lv: "Iesmidzinātājs" },
   { re: /^(turbocharger|turbolader)$/i, lv: "Turbokompresors" },
-  { re: /^(egr\s+valve|agr[- ]ventil)$/i, lv: "EGR vārsts" },
+  { re: /^(egr[- ]valve|agr[- ]ventil)$/i, lv: "EGR vārsts" },
   { re: /^(lambda|oxygen)\s+(sensor|probe)$/i, lv: "Lambda zonde" },
   { re: /^(lambdasonde)$/i, lv: "Lambda zonde" },
   { re: /^(water\s+pump|wasserpumpe)$/i, lv: "Ūdens sūknis" },
@@ -132,12 +155,39 @@ const TERM_LV: TermRule[] = [
   { re: /^(nut|mutter)$/i, lv: "Uzgrieznis" },
   { re: /^(washer|scheibe|unterlegscheibe)$/i, lv: "Paplāksne" },
   { re: /^(clamp|schelle)$/i, lv: "Skava" },
+  { re: /^(hose\s+clamp|schlauchschelle)$/i, lv: "Šļūtenes skava" },
   { re: /^(hose|schlauch)$/i, lv: "Šļūtene" },
   { re: /^(repair\s+kit|reparatursatz)$/i, lv: "Remonta komplekts" },
+  { re: /^repair\s+kit,?\s+window\s+glass.*$/i, lv: "Loga stikla remonta komplekts" },
+  { re: /^(repair\s+kit\s+screws|schraubensatz)$/i, lv: "Skrūvju komplekts" },
+  { re: /^(oval\s+head\s+screw|linsenkopfschraube)$/i, lv: "Ovālgalvas skrūve" },
+  {
+    re: /^(fillister\s+head\s+self[- ]tapping\s+screw|zylinderschraube\s+selbstschneidend)$/i,
+    lv: "Pašvītņojoša skrūve ar cilindrisku galvu",
+  },
+  { re: /^(clip|klip)$/i, lv: "Klipsis" },
+  { re: /^(plaque|plakette)$/i, lv: "Plāksnīte" },
+  { re: /^(connecting\s+line|verbindungsleitung)$/i, lv: "Savienojuma cauruļvads" },
+  { re: /^cover\s+base\s+b\+$/i, lv: "Akumulatora B+ spailes vāciņš" },
+  { re: /^(exhaust\s+pressure\s+sensor|abgasdrucksensor)$/i, lv: "Izplūdes spiediena sensors" },
+  { re: /^sensor\s+rain\/light\/solar\/misting.*$/i, lv: "Lietus, gaismas, saules un aizsvīšanas sensors" },
+  { re: /^cover,\s*windshield,?\s*top$/i, lv: "Vējstikla augšējā apdare" },
+  { re: /^(drip\s+moulding|wasserabweisleiste)$/i, lv: "Jumta notekrenes apdare" },
+  { re: /^instruction\s+notice,?\s*airbag$/i, lv: "Drošības spilvena norādījumu uzlīme" },
+  { re: /^(complete\s+alloy\s+wheel\s+winter|complete\s+winter\s+wheel)$/i, lv: "Ziemas ritenis (komplektā)" },
+  { re: /^(wheel\s+cover|radblende|radkappe)$/i, lv: "Riteņa dekoratīvais vāciņš" },
+  {
+    re: /^(windshield|windscreen)\s+washer\s+antifreeze$/i,
+    lv: "Stiklu mazgāšanas šķidrums (ziemas)",
+  },
+  { re: /^bmw\s+high[- ]visibility\s+jacket$/i, lv: "BMW atstarojošā veste" },
 ];
 
 /** Motoreļļas apzīmējums ar specifikāciju („MOTOROEL 5W-30 LL04”) — zīmols paliek. */
-const OIL_PREFIX_RE = /^(motoroel|motor[öo]l|engine\s+oil)\b/i;
+const OIL_PREFIX_RE = /^(motoroel|motor[öo]l|motor\s+oil|engine\s+oil)\b/i;
+
+/** „BREMSFLÜSSIGKEIT DOT4” — nosaukums latviski, specifikācija paliek. */
+const BRAKE_FLUID_PREFIX_RE = /^(bremsfl[üu]ssigkeit|brake\s+fluid)\b/i;
 
 function normalize(raw: string): string {
   return raw.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim().replace(/[,;.]+$/, "");
@@ -188,6 +238,10 @@ export function serviceWorkTermLv(raw: string): string {
   if (OIL_PREFIX_RE.test(name)) {
     const spec = name.replace(OIL_PREFIX_RE, "").trim();
     return spec ? `Motoreļļa ${spec}` : "Motoreļļa";
+  }
+  if (BRAKE_FLUID_PREFIX_RE.test(name)) {
+    const spec = name.replace(BRAKE_FLUID_PREFIX_RE, "").trim();
+    return spec ? `Bremžu šķidrums ${spec.toUpperCase()}` : "Bremžu šķidrums";
   }
 
   return name;
