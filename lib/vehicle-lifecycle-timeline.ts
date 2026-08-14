@@ -60,6 +60,23 @@ export type LifecycleEvent = {
 /** Mēnešu skaits starp notikumiem, no kura robs kļūst par patstāvīgu ierakstu. */
 const GAP_MONTHS_THRESHOLD = 24;
 
+/**
+ * BMW/dīlera iekšējie kodi (piem. „Dīlera ID: 00863-3”) nav saprotami pircējam
+ * un nedrīkst parādīties ekspluatācijas hronoloģijā.
+ */
+const OPAQUE_DEALER_CODE_RE =
+  /(?:^|\s|[,;])(?:d[iī]lera|dealer)\s+id\s*:?\s*[0-9][0-9a-z.\-\/\s]*/gi;
+
+/** Noņem dīlera ID kodus; tukšs, ja pēc tīrīšanas paliek tikai interpunkcija. */
+export function lifecyclePublicCaption(raw: string): string {
+  const t = raw
+    .replace(OPAQUE_DEALER_CODE_RE, " ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[\s,;:.\-–—]+|[\s,;:.\-–—]+$/g, "")
+    .trim();
+  return t;
+}
+
 export type LifecycleInput = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
@@ -112,7 +129,7 @@ function makeEvent(args: {
     time: ms > 0 ? ms : 0,
     year: yearOf(args.rawDate, ms),
     title: args.title,
-    detail: args.detail?.trim() ?? "",
+    detail: lifecyclePublicCaption(args.detail ?? ""),
     country: normalizeCountryNameLv(args.country ?? "") || (args.country ?? "").trim(),
     odometer: args.odometer?.trim() ?? "",
     sources: args.source?.trim() ? [args.source.trim()] : [],

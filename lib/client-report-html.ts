@@ -468,6 +468,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
     const dots = e.sources.map((s) => pdfSourceDotHtml(s)).join("");
     const flag = e.country ? buildPdfCountryFlagCellHtml(e.country) : "";
     const odo = e.odometer.trim() ? `${escapeHtml(e.odometer.trim())} km` : "";
+    const srcsWrap = e.sources.length > 4 ? " pdf-life-srcs--wrap" : "";
     items.push(`<li class="pdf-life-item pdf-life-item--${e.tone}">
       <span class="pdf-life-date">${escapeHtml(e.date)}</span>
       <span class="pdf-life-rail" aria-hidden="true"><span class="pdf-life-dot"></span></span>
@@ -476,7 +477,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
         ${e.detail ? `<span class="pdf-life-detail">${escapeHtml(e.detail)}</span>` : ""}
       </span>
       <span class="pdf-life-odo">${odo}</span>
-      <span class="pdf-life-srcs">${dots}</span>
+      <span class="pdf-life-srcs${srcsWrap}">${dots}</span>
       <span class="pdf-life-flag">${flag}</span>
     </li>`);
   }
@@ -1685,10 +1686,11 @@ function clientReportPrintCss(): string {
       .pdf-life-detail{display:block;margin-top:2px;font-size:var(--pdf-fs-table);color:#64748b;line-height:1.45;}
       .pdf-life-odo{
         font-size:var(--pdf-fs-base);font-weight:700;color:#0f172a;white-space:nowrap;
-        font-variant-numeric:tabular-nums;line-height:1.4;
+        font-variant-numeric:tabular-nums;line-height:1.4;min-width:6.6em;text-align:right;
       }
       .pdf-life-srcs{
-        display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:nowrap;line-height:1;
+        display:flex;align-items:center;justify-content:center;align-content:center;
+        gap:4px;flex-wrap:wrap;max-width:44px;line-height:1;box-sizing:border-box;
       }
       .pdf-life-flag{display:flex;align-items:center;justify-content:flex-end;line-height:1;}
       .pdf-life-gap .pdf-life-rail{grid-column:2;}

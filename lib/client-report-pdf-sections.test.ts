@@ -290,6 +290,83 @@ describe("Ekspluatācijas hronoloģija", () => {
     expect(html).not.toContain("pdf-life-tags");
     expect(html.indexOf(PDF_LIFECYCLE_TITLE)).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
+
+  it("omits opaque dealer ID codes from the lifecycle caption", () => {
+    const events = buildVehicleLifecycleEvents({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          { date: "12.05.2026", odometer: "303616", location: "Dīlera ID: 00863-3", works: "Apkope" },
+        ],
+      },
+    });
+    const service = events.find((e) => e.kind === "service");
+    expect(service).toBeTruthy();
+    expect(service!.detail).toBe("");
+    expect(service!.title).toBe("Apkope / remonts");
+  });
+
+  it("keeps a real workshop name next to a stripped dealer ID", () => {
+    const events = buildVehicleLifecycleEvents({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          {
+            date: "12.05.2026",
+            odometer: "303616",
+            location: "BMW Bonn, Dīlera ID: 00863 - 3",
+            works: "Apkope",
+          },
+        ],
+      },
+    });
+    expect(events.find((e) => e.kind === "service")!.detail).toBe("BMW Bonn");
+  });
+
+  it("wraps more than four source dots so they do not overflow the odometer", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [{ date: "12.05.2026", odometer: "303616", country: "DE" }];
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        autoRecordsBlock: {
+          ...emptyAutoRecordsBlock(),
+          serviceWorks: [
+            { date: "12.05.2026", odometer: "303616", location: "Dīlera ID: 00863-3", works: "Apkope" },
+          ],
+        },
+        manualVendorBlocks: [
+          {
+            title: "AutoDNA",
+            mileageRows: [{ date: "12.05.2026", odometer: "303616", country: "Vācija" }],
+            incidentRows: [],
+            comments: "",
+          },
+          {
+            title: "CarVertical",
+            mileageRows: [{ date: "12.05.2026", odometer: "303616", country: "Vācija" }],
+            incidentRows: [],
+            comments: "",
+          },
+          {
+            title: "CC VIN",
+            mileageRows: [{ date: "12.05.2026", odometer: "303616", country: "Vācija" }],
+            incidentRows: [],
+            comments: "",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const zone = html.slice(html.indexOf("pdf-lifecycle-zone"), html.indexOf("NOBRAUKUMA VĒSTURE"));
+    expect(zone).toContain("pdf-life-srcs--wrap");
+    expect(zone).not.toContain("Dīlera ID");
+    expect(html).toMatch(/\.pdf-life-srcs\{[^}]*flex-wrap:wrap/);
+    expect(html).toMatch(/\.pdf-life-srcs\{[^}]*max-width:44px/);
+  });
 });
 
 describe("unified PDF sections single block", () => {
