@@ -55,8 +55,6 @@ type Props = {
   maxPhotos?: number;
   emptyGroup?: () => PhotoGroupLike;
   sectionTitle?: string;
-  /** `thumb` — mazs režģis; `wide` — pilns komentāra platums, proporcionāls augstums. */
-  previewLayout?: "thumb" | "wide";
 };
 
 const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif)$/i;
@@ -162,7 +160,6 @@ type SortablePhotoProps = {
   photoId: string;
   src: string;
   position: number;
-  wide: boolean;
   disabled: boolean;
   onRemove: () => void;
   onZoom: () => void;
@@ -172,7 +169,6 @@ function SortablePhoto({
   photoId,
   src,
   position,
-  wide,
   disabled,
   onRemove,
   onZoom,
@@ -181,10 +177,6 @@ function SortablePhoto({
     id: photoId,
     disabled,
   });
-
-  const frame = wide
-    ? "group relative w-full min-w-0 overflow-hidden rounded-md border bg-black/[0.04] dark:bg-white/5"
-    : "group relative flex h-[5.5rem] w-[5.5rem] shrink-0 flex-col overflow-hidden rounded-md border bg-black/[0.06] dark:bg-white/10";
 
   return (
     <li
@@ -196,7 +188,7 @@ function SortablePhoto({
         opacity: isDragging ? 0.35 : 1,
         zIndex: isDragging ? 1 : undefined,
       }}
-      className={`${frame} ${
+      className={`group relative flex h-[5.5rem] w-[5.5rem] shrink-0 flex-col overflow-hidden rounded-md border bg-black/[0.06] dark:bg-white/10 ${
         isDragging
           ? "border-[var(--color-provin-accent)] ring-2 ring-[var(--color-provin-accent)]/40"
           : "border-[var(--admin-field-border)]"
@@ -216,7 +208,7 @@ function SortablePhoto({
       <img
         src={src}
         alt=""
-        className={wide ? "block h-auto w-full object-contain" : "h-full w-full object-cover"}
+        className="h-full w-full object-cover"
         loading="lazy"
         decoding="async"
         draggable={false}
@@ -250,12 +242,10 @@ function SortablePhoto({
 /** Konteiners, kas pieņem arī iemešanu tukšā grupā. */
 function GroupPhotoList({
   groupId,
-  wide,
   isEmpty,
   children,
 }: {
   groupId: string;
-  wide: boolean;
   isEmpty: boolean;
   children: React.ReactNode;
 }) {
@@ -277,7 +267,7 @@ function GroupPhotoList({
   return (
     <ul
       ref={setNodeRef}
-      className={`${wide ? "flex flex-col gap-2" : "flex flex-wrap gap-2"} rounded-md transition-colors ${
+      className={`flex flex-wrap gap-2 rounded-md transition-colors ${
         isOver ? "bg-[var(--color-provin-accent-soft)]/30" : ""
       }`}
     >
@@ -295,7 +285,6 @@ export function AdminListingAnalysisPhotos({
   maxPhotos = LISTING_ANALYSIS_MAX_PHOTOS,
   emptyGroup = emptyListingAnalysisPhotoGroup,
   sectionTitle = "Fotogrāfijas (PDF režģis)",
-  previewLayout = "thumb",
 }: Props) {
   const baseInputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -313,7 +302,6 @@ export function AdminListingAnalysisPhotos({
   const [lightboxId, setLightboxId] = useState<string | null>(null);
 
   const groups = dragDraft ?? photoGroups;
-  const wide = previewLayout === "wide";
 
   const serverImgSrc = useCallback(
     (photoId: string) =>
@@ -906,14 +894,13 @@ export function AdminListingAnalysisPhotos({
               )}
 
               <SortableContext items={photoIds} strategy={rectSortingStrategy}>
-                <GroupPhotoList groupId={group.id} wide={wide} isEmpty={photoIds.length === 0}>
+                <GroupPhotoList groupId={group.id} isEmpty={photoIds.length === 0}>
                   {group.photos.map((p, index) => (
                     <SortablePhoto
                       key={p.id}
                       photoId={p.id}
                       src={displaySrc(p.id)}
                       position={index + 1}
-                      wide={wide}
                       disabled={disabled || busy}
                       onRemove={() => void removePhoto(group.id, p.id)}
                       onZoom={() => setLightboxId(p.id)}
@@ -932,7 +919,7 @@ export function AdminListingAnalysisPhotos({
               <img
                 src={displaySrc(activePhotoId)}
                 alt=""
-                className={wide ? "block h-auto w-full object-contain" : "h-[5.5rem] w-[5.5rem] object-cover"}
+                className="h-[5.5rem] w-[5.5rem] object-cover"
                 draggable={false}
               />
             </div>

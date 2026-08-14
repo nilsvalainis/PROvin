@@ -631,6 +631,47 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });
 
+  it("auto records photos render in the same two-column PDF grid", () => {
+    const dataUrls = new Map<string, string>([
+      ["ar_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],
+      ["ar_ph_112233445566778899aabbcc", "data:image/jpeg;base64,/9j/4AAQ"],
+      ["ar_ph_aabbccddeeff998877665544", "data:image/jpeg;base64,/9j/4AAQ"],
+    ]);
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: {
+          ...createDefaultSourceBlocks().auto_records,
+          photoGroups: [
+            {
+              id: "ar_phg_aabbccddeeff001122334455",
+              title: "Dīlera foto",
+              photos: [
+                { id: "ar_ph_aabbccddeeff001122334455" },
+                { id: "ar_ph_112233445566778899aabbcc" },
+                { id: "ar_ph_aabbccddeeff998877665544" },
+              ],
+            },
+          ],
+          photos: [
+            { id: "ar_ph_aabbccddeeff001122334455" },
+            { id: "ar_ph_112233445566778899aabbcc" },
+            { id: "ar_ph_aabbccddeeff998877665544" },
+          ],
+        },
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      autoRecordsPhotoDataUrls: dataUrls,
+    });
+    expect(doc).toContain("pdf-listing-photo-grid");
+    expect(doc).not.toContain("pdf-source-photo-stack");
+    expect(doc).not.toContain("pdf-listing-photo-img--wide");
+    expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(3);
+  });
+
   it("outvin vehicle info uses single-column pdf-v1-kv", () => {
     const report = emptyOutvinDealerReport();
     report.vehicleInfo.vinCode = "WVWZZZ";

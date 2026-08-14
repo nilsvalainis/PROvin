@@ -1005,7 +1005,6 @@ export function AdminCcVinSourceBlock({
               maxPhotos={CC_VIN_MAX_PHOTOS}
               emptyGroup={emptyCcVinPhotoGroup}
               sectionTitle="Fotogrāfijas (PDF)"
-              previewLayout="wide"
             />
           ) : null}
           <AdminSourceCommentField

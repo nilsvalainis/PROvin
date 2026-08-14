@@ -1123,14 +1123,12 @@ function buildSourcePhotoGroupsPdfHtml(
     groups: unknown,
     legacy: unknown,
   ) => { title: string; photos: { id: string }[] }[],
-  layout: "grid" | "wide" = "grid",
 ): string {
   if (!dataUrls?.size) return "";
 
   const groups = normalizeGroups(photoGroups, legacyPhotos);
   if (groups.length === 0) return "";
 
-  const gridClass = layout === "wide" ? "pdf-source-photo-stack" : "pdf-listing-photo-grid";
   const sections: string[] = [];
   for (const group of groups) {
     const cells: string[] = [];
@@ -1138,7 +1136,7 @@ function buildSourcePhotoGroupsPdfHtml(
       const src = dataUrls.get(ph.id);
       if (!src) continue;
       cells.push(
-        `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img${layout === "wide" ? " pdf-listing-photo-img--wide" : ""}" src="${src}" alt=""/></figure>`,
+        `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/></figure>`,
       );
     }
     if (cells.length === 0) continue;
@@ -1146,7 +1144,7 @@ function buildSourcePhotoGroupsPdfHtml(
       ? `<p class="pdf-subhead pdf-subhead--photo">${escapeHtml(group.title.trim())}</p>`
       : "";
     sections.push(
-      `<section class="pdf-listing-photo-group">${titleHtml}<div class="${gridClass}">${cells.join("")}</div></section>`,
+      `<section class="pdf-listing-photo-group">${titleHtml}<div class="pdf-listing-photo-grid">${cells.join("")}</div></section>`,
     );
   }
   return sections.join("");
@@ -1181,7 +1179,6 @@ function buildAutoRecordsAvotuSubsection(
     b.photos,
     autoRecordsPhotoDataUrls,
     normalizeAutoRecordsPhotoGroups,
-    "wide",
   );
   const hasPhotos = photosHtml.length > 0;
   const hasServiceWorks = serviceWorksTable.length > 0;
@@ -1219,7 +1216,6 @@ function buildCcVinAvotuSubsection(
     b.photos,
     photoDataUrls,
     normalizeCcVinPhotoGroups,
-    "wide",
   );
   const comments = (b.comments ?? "").trim();
   if (!inner && !photosHtml && !comments) return "";
@@ -1783,9 +1779,6 @@ function clientReportPrintCss(): string {
       .pdf-listing-photo-grid{
         display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 8px;
       }
-      .pdf-source-photo-stack{
-        display:flex;flex-direction:column;gap:12px;margin:0 0 8px;
-      }
       .pdf-listing-photo-group{margin:0 0 14px;}
       .pdf-listing-photo-group:last-child{margin-bottom:0;}
       .pdf-subhead--photo{margin:0 0 6px;}
@@ -1793,9 +1786,6 @@ function clientReportPrintCss(): string {
       .pdf-listing-photo-img{
         width:100%;height:auto;max-height:220px;object-fit:contain;
         border-radius:6px;border:1px solid #e2e8f0;display:block;background:#f8fafc;
-      }
-      .pdf-listing-photo-img--wide{
-        max-height:none;width:100%;height:auto;object-fit:contain;
       }
       .pdf-listing-history-frame{
         border:1px solid var(--pdf-line);

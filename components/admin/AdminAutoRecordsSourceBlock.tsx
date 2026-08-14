@@ -605,7 +605,6 @@ export function AdminAutoRecordsSourceBlock({
               maxPhotos={AUTO_RECORDS_MAX_PHOTOS}
               emptyGroup={emptyAutoRecordsPhotoGroup}
               sectionTitle="Fotogrāfijas (PDF)"
-              previewLayout="wide"
             />
           ) : null}
           <AdminSourceCommentField
