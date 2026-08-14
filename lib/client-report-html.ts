@@ -86,7 +86,6 @@ import {
   computeProvinInfoBannersFromPayloadSlice,
   filterAlertBannersForPdf,
   filterInfoBannersForPdf,
-  filterManualBannersForPdf,
   mergeProvinManualBanners,
 } from "@/lib/provin-alert-banners";
 import {
@@ -2342,7 +2341,7 @@ export function buildClientReportDocumentHtml(args: {
   // Viena kartīšu valoda kopsavilkumā: manuālās (admin) → automātiskie brīdinājumi → informatīvās.
   const summaryBannerTiles = vis.alerts
     ? buildPdfSummaryBannerTiles({
-        manualBanners: filterManualBannersForPdf(mergeProvinManualBanners(p.manualBanners)),
+        manualBanners: mergeProvinManualBanners(p.manualBanners),
         alertBanners: filterAlertBannersForPdf(
           computeProvinAlertBannersFromPayloadSlice({
             csddForm: p.csddForm,

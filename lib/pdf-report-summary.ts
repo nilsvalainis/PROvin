@@ -15,10 +15,15 @@ import type {
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import type {
   ProvinAlertBanner,
-  ProvinAlertBannerKind,
   ProvinInfoBanner,
   ProvinManualBanner,
   ProvinManualBannerSeverity,
+} from "@/lib/provin-alert-banners";
+import {
+  filterManualBannersForPdf,
+  PROVIN_BANNER_DEFAULT_LABEL,
+  PROVIN_INFO_BANNER_KINDS,
+  resolveProvinBanners,
 } from "@/lib/provin-alert-banners";
 import {
   aggregateUnifiedIncidents,
@@ -177,36 +182,6 @@ export function buildPdfReportSummaryTiles(input: PdfSummaryInput): PdfSummaryTi
   ];
 }
 
-/**
- * Automātiskie brīdinājumi kā kartītes. Odometrs un negadījumi jau ir bāzes plāksnītēs
- * (tie paši aprēķini), tāpēc tos neatkārtojam.
- */
-const ALERT_CARD_COPY: Record<ProvinAlertBannerKind, { label: string; value: string; note: string } | null> = {
-  odometer: null,
-  incidents: null,
-  tirgus_high_supply: {
-    label: "Sludinājuma vecums",
-    value: "Ilgi pārdošanā",
-    note: "Tirgū virs 200 dienām — iespējama zema likviditāte vai slēpti defekti",
-  },
-  particulate: {
-    label: "Izplūdes cietās daļiņas",
-    value: "Paaugstināts līmenis",
-    note: "Pēdējā apskatē fiksēts pārsniegums — iespējami izplūdes sistēmas defekti",
-  },
-  inspection: {
-    label: "Tehniskā apskate",
-    value: "Termiņš beidzas",
-    note: "Nav derīgas apskates vai tās termiņš tuvojas beigām",
-  },
-};
-
-const MANUAL_CARD_DEFAULT_LABEL: Record<ProvinManualBannerSeverity, string> = {
-  grey: "Informācija",
-  yellow: "Brīdinājums",
-  red: "Svarīgi",
-};
-
 /** Īsāks teksts iztiek bez atsevišķas paskaidrojuma rindas — tas kļūst par kartītes vērtību. */
 const MANUAL_CARD_VALUE_MAX_CHARS = 42;
 
@@ -216,7 +191,13 @@ function manualSeverityToTone(severity: ProvinManualBannerSeverity): PdfSummaryT
   return "neutral";
 }
 
-/** Brīdinājumu, informatīvās un manuālās kartītes — tāds pats formāts kā bāzes plāksnītēm. */
+const INFO_KINDS = new Set<string>(PROVIN_INFO_BANNER_KINDS);
+
+/**
+ * Brīdinājumu, informatīvās un manuālās kartītes — tāds pats formāts kā bāzes plāksnītēm.
+ * `manualBanners` gaida pilnu sarakstu: patstāvīgie ieraksti filtrējas pēc „Rādīt PDF”,
+ * ieraksti ar `kind` ir aprēķināto brīdinājumu labojumi.
+ */
 export function buildPdfSummaryBannerTiles(input: {
   manualBanners?: ProvinManualBanner[];
   alertBanners?: ProvinAlertBanner[];
@@ -224,14 +205,14 @@ export function buildPdfSummaryBannerTiles(input: {
 }): PdfSummaryTile[] {
   const out: PdfSummaryTile[] = [];
 
-  for (const b of input.manualBanners ?? []) {
+  for (const b of filterManualBannersForPdf(input.manualBanners ?? [])) {
     const text = b.text.trim();
     const explicitValue = (b.value ?? "").trim();
     const value = explicitValue || (text.length <= MANUAL_CARD_VALUE_MAX_CHARS ? text : "");
     const note = value === text ? "" : text;
     out.push({
       id: `manual-${b.id}`,
-      label: (b.title ?? "").trim() || MANUAL_CARD_DEFAULT_LABEL[b.severity],
+      label: (b.title ?? "").trim() || PROVIN_BANNER_DEFAULT_LABEL[b.severity],
       value,
       note,
       tone: manualSeverityToTone(b.severity),
@@ -239,20 +220,21 @@ export function buildPdfSummaryBannerTiles(input: {
     });
   }
 
-  for (const b of input.alertBanners ?? []) {
-    const copy = ALERT_CARD_COPY[b.kind];
-    if (!copy) continue;
+  const resolved = resolveProvinBanners({
+    alertBanners: input.alertBanners,
+    infoBanners: input.infoBanners,
+    manualBanners: input.manualBanners,
+  });
+  for (const b of resolved) {
+    if (!b.card) continue;
     out.push({
-      id: `alert-${b.kind}`,
-      label: copy.label,
-      value: copy.value,
-      note: copy.note,
-      tone: b.severity === "red" ? "alert" : "warn",
+      id: `${INFO_KINDS.has(b.kind) ? "info" : "alert"}-${b.kind}`,
+      label: b.card.label,
+      value: b.card.value,
+      note: b.card.note,
+      tone: manualSeverityToTone(b.severity),
+      wide: b.card.value === "",
     });
-  }
-
-  for (const b of input.infoBanners ?? []) {
-    out.push({ id: `info-${b.kind}`, label: b.label, value: b.value, note: b.note, tone: "neutral" });
   }
 
   return out;

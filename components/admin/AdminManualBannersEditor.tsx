@@ -2,46 +2,23 @@
 
 import {
   createEmptyManualBanner,
+  ownManualBanners,
   type ProvinManualBanner,
   type ProvinManualBannerSeverity,
 } from "@/lib/provin-alert-banners";
-import { AlertTriangle, Info, Plus, Trash2 } from "lucide-react";
-
-const SEVERITY_OPTIONS: { id: ProvinManualBannerSeverity; label: string }[] = [
-  { id: "grey", label: "Pelēks (info)" },
-  { id: "yellow", label: "Dzeltens" },
-  { id: "red", label: "Sarkans" },
-];
-
-function severityChrome(severity: ProvinManualBannerSeverity) {
-  if (severity === "red") {
-    return {
-      bar: "border-l-[#FF4D4D] bg-[#FF4D4D]/[0.04]",
-      ico: "text-[#FF4D4D]",
-      Icon: AlertTriangle,
-    };
-  }
-  if (severity === "yellow") {
-    return {
-      bar: "border-l-[#FFC107] bg-[#FFC107]/[0.04]",
-      ico: "text-[#FFC107]",
-      Icon: AlertTriangle,
-    };
-  }
-  return {
-    bar: "border-l-[#8e8e93] bg-[#8e8e93]/[0.08]",
-    ico: "text-[#8e8e93]",
-    Icon: Info,
-  };
-}
+import { BANNER_SEVERITY_OPTIONS as SEVERITY_OPTIONS, bannerSeverityChrome } from "@/components/admin/admin-banner-chrome";
+import { Plus, Trash2 } from "lucide-react";
 
 export function AdminManualBannersEditor({
   banners,
   onChange,
 }: {
+  /** Pilns saraksts; šeit rediģē tikai patstāvīgos ierakstus (bez aprēķināto labojumiem). */
   banners: ProvinManualBanner[];
   onChange: (next: ProvinManualBanner[]) => void;
 }) {
+  const own = ownManualBanners(banners);
+
   const patch = (id: string, patchFields: Partial<ProvinManualBanner>) => {
     onChange(banners.map((b) => (b.id === id ? { ...b, ...patchFields } : b)));
   };
@@ -75,8 +52,8 @@ export function AdminManualBannersEditor({
         </div>
       </div>
 
-      {banners.map((b) => {
-        const chrome = severityChrome(b.severity);
+      {own.map((b) => {
+        const chrome = bannerSeverityChrome(b.severity);
         const Icon = chrome.Icon;
         return (
           <div

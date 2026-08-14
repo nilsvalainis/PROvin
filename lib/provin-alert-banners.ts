@@ -55,6 +55,11 @@ export type ProvinManualBanner = {
   value?: string;
   /** `false` = nerādīt PDF; trūkstošs vai `true` = rādīt. */
   includeInPdf?: boolean;
+  /**
+   * Ja aizpildīts, ieraksts nav patstāvīgs baneris, bet **aprēķinātā** brīdinājuma labojums:
+   * tukšie lauki paliek pēc noklusējuma, aizpildītie pārraksta aprēķināto tekstu / krāsu.
+   */
+  kind?: ProvinBannerKind;
 };
 
 /** `false` = neiekļaut PDF; trūkstošs vai `true` = rādīt (noklusējums). */
@@ -73,6 +78,20 @@ export const PROVIN_INFO_BANNER_KINDS = [
 ] as const satisfies readonly ProvinInfoBannerKind[];
 
 const MANUAL_BANNER_SEVERITIES = new Set<ProvinManualBannerSeverity>(["grey", "yellow", "red"]);
+
+const PROVIN_BANNER_KINDS = new Set<ProvinBannerKind>([
+  ...PROVIN_ALERT_BANNER_KINDS,
+  ...PROVIN_INFO_BANNER_KINDS,
+]);
+
+/** Aprēķinātā brīdinājuma labojums glabājas tajā pašā sarakstā ar šādu id. */
+export function provinBannerOverrideId(kind: ProvinBannerKind): string {
+  return `kind:${kind}`;
+}
+
+export function isProvinBannerOverride(b: ProvinManualBanner): boolean {
+  return typeof b.kind === "string" && PROVIN_BANNER_KINDS.has(b.kind);
+}
 
 export function isProvinBannerIncludedInPdf(
   kind: ProvinBannerKind,
@@ -94,13 +113,19 @@ export function mergeProvinBannerPdfInclude(raw: unknown): ProvinBannerPdfInclud
 export function mergeProvinManualBanners(raw: unknown): ProvinManualBanner[] {
   if (!Array.isArray(raw)) return [];
   const out: ProvinManualBanner[] = [];
+  const seenKinds = new Set<ProvinBannerKind>();
   for (const item of raw) {
     if (!item || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
-    const id = typeof o.id === "string" ? o.id.trim() : "";
+    const kind =
+      typeof o.kind === "string" && PROVIN_BANNER_KINDS.has(o.kind as ProvinBannerKind)
+        ? (o.kind as ProvinBannerKind)
+        : null;
+    const id = kind ? provinBannerOverrideId(kind) : typeof o.id === "string" ? o.id.trim() : "";
     const text = typeof o.text === "string" ? o.text : "";
     const severity = o.severity;
     if (!id) continue;
+    if (kind && seenKinds.has(kind)) continue;
     if (typeof severity !== "string" || !MANUAL_BANNER_SEVERITIES.has(severity as ProvinManualBannerSeverity)) {
       continue;
     }
@@ -112,17 +137,52 @@ export function mergeProvinManualBanners(raw: unknown): ProvinManualBanner[] {
     if (typeof o.title === "string" && o.title.trim()) banner.title = o.title.trim().slice(0, 80);
     if (typeof o.value === "string" && o.value.trim()) banner.value = o.value.trim().slice(0, 80);
     if (typeof o.includeInPdf === "boolean") banner.includeInPdf = o.includeInPdf;
+    if (kind) {
+      banner.kind = kind;
+      seenKinds.add(kind);
+    }
     out.push(banner);
   }
-  return out.slice(0, 20);
+  return out.slice(0, 32);
+}
+
+/** Tikai operatora pašrocīgi veidotie baneri (bez aprēķināto brīdinājumu labojumiem). */
+export function ownManualBanners(banners: ProvinManualBanner[]): ProvinManualBanner[] {
+  return banners.filter((b) => !isProvinBannerOverride(b));
 }
 
 export function filterManualBannersForPdf(banners: ProvinManualBanner[]): ProvinManualBanner[] {
-  return banners.filter(
+  return ownManualBanners(banners).filter(
     (b) =>
       b.includeInPdf !== false &&
       (b.text.trim().length > 0 || (b.value ?? "").trim().length > 0 || (b.title ?? "").trim().length > 0),
   );
+}
+
+/** Aprēķinātā brīdinājuma labojums pēc veida. */
+export function provinBannerOverrideFor(
+  banners: ProvinManualBanner[] | null | undefined,
+  kind: ProvinBannerKind,
+): ProvinManualBanner | null {
+  return (banners ?? []).find((b) => b.kind === kind) ?? null;
+}
+
+/** Izveido vai atjauno aprēķinātā brīdinājuma labojumu; `null` patch → noklusējums (labojums tiek dzēsts). */
+export function upsertProvinBannerOverride(
+  banners: ProvinManualBanner[],
+  kind: ProvinBannerKind,
+  patch: Partial<Omit<ProvinManualBanner, "id" | "kind">> | null,
+): ProvinManualBanner[] {
+  if (patch === null) return banners.filter((b) => b.kind !== kind);
+  const existing = provinBannerOverrideFor(banners, kind);
+  const next: ProvinManualBanner = {
+    ...(existing ?? { id: provinBannerOverrideId(kind), text: "", severity: "grey" }),
+    ...patch,
+    id: provinBannerOverrideId(kind),
+    kind,
+  };
+  if (existing) return banners.map((b) => (b.kind === kind ? next : b));
+  return [...banners, next];
 }
 
 export function createEmptyManualBanner(severity: ProvinManualBannerSeverity = "grey"): ProvinManualBanner {
@@ -178,6 +238,138 @@ export const PROVIN_ALERT_TEXT = {
   inspection:
     "Brīdinājums: Transportlīdzeklim nav derīgas tehniskās apskates vai tās termiņš drīzumā beidzas.",
 } as const;
+
+/** Kopsavilkuma kartītes teksti. */
+export type ProvinBannerCardCopy = { label: string; value: string; note: string };
+
+/**
+ * Noklusējuma kartīte katram aprēķinātajam brīdinājumam kopsavilkumā.
+ * `null` — kartīti nerāda, jo tie paši dati jau ir bāzes plāksnītē (odometrs, negadījumi).
+ */
+export const PROVIN_ALERT_CARD_DEFAULTS: Record<ProvinAlertBannerKind, ProvinBannerCardCopy | null> = {
+  odometer: null,
+  incidents: null,
+  tirgus_high_supply: {
+    label: "Sludinājuma vecums",
+    value: "Ilgi pārdošanā",
+    note: "Tirgū virs 200 dienām — iespējama zema likviditāte vai slēpti defekti",
+  },
+  particulate: {
+    label: "Izplūdes cietās daļiņas",
+    value: "Paaugstināts līmenis",
+    note: "Pēdējā apskatē fiksēts pārsniegums — iespējami izplūdes sistēmas defekti",
+  },
+  inspection: {
+    label: "Tehniskā apskate",
+    value: "Termiņš beidzas",
+    note: "Nav derīgas apskates vai tās termiņš tuvojas beigām",
+  },
+};
+
+/** Kartītes virsraksts, ja ne noklusējums, ne operators to nav norādījis. */
+export const PROVIN_BANNER_DEFAULT_LABEL: Record<ProvinManualBannerSeverity, string> = {
+  grey: "Informācija",
+  yellow: "Brīdinājums",
+  red: "Svarīgi",
+};
+
+/** Aprēķinātais brīdinājums pēc operatora labojumiem — vienots skats admin joslai un PDF kartītei. */
+export type ProvinResolvedBanner = {
+  kind: ProvinBannerKind;
+  /** Joslas teksts admin panelī (labojums vai aprēķinātais teikums). */
+  text: string;
+  severity: ProvinManualBannerSeverity;
+  /** Kopsavilkuma kartīte; `null` — kartīti nerāda. */
+  card: ProvinBannerCardCopy | null;
+  /** Aprēķinātie noklusējumi (redaktora placeholderiem un „atjaunot noklusējumu”). */
+  defaults: { text: string; severity: ProvinManualBannerSeverity; card: ProvinBannerCardCopy | null };
+  /** Operatora labojums, ja tāds ir saglabāts. */
+  override: ProvinManualBanner | null;
+  /** Labojums tiešām maina saturu (nevis tikai tukšs ieraksts). */
+  edited: boolean;
+};
+
+function bannerOverrideChangesAnything(
+  override: ProvinManualBanner | null,
+  computedSeverity: ProvinManualBannerSeverity,
+): boolean {
+  if (!override) return false;
+  if (override.severity !== computedSeverity) return true;
+  return Boolean((override.title ?? "").trim() || (override.value ?? "").trim() || override.text.trim());
+}
+
+function alertSeverityToManual(s: ProvinAlertSeverity): ProvinManualBannerSeverity {
+  return s === "red" ? "red" : "yellow";
+}
+
+function resolveBannerCard(
+  defaults: ProvinBannerCardCopy | null,
+  override: ProvinManualBanner | null,
+  severity: ProvinManualBannerSeverity,
+): ProvinBannerCardCopy | null {
+  const title = (override?.title ?? "").trim();
+  const value = (override?.value ?? "").trim();
+  const note = (override?.text ?? "").trim();
+  if (!defaults && !title && !value && !note) return null;
+  return {
+    label: title || defaults?.label || PROVIN_BANNER_DEFAULT_LABEL[severity],
+    value: value || defaults?.value || "",
+    note: note || defaults?.note || "",
+  };
+}
+
+/**
+ * Aprēķinātie brīdinājumi + informatīvie ieraksti vienā sarakstā tādā secībā, kādā tie drukājas PDF.
+ * Labojumi (`manualBanners` ieraksti ar `kind`) pārraksta tekstu, kartītes laukus un krāsu.
+ */
+export function resolveProvinBanners(args: {
+  alertBanners?: ProvinAlertBanner[] | null;
+  infoBanners?: ProvinInfoBanner[] | null;
+  manualBanners?: ProvinManualBanner[] | null;
+}): ProvinResolvedBanner[] {
+  const out: ProvinResolvedBanner[] = [];
+
+  for (const kind of PROVIN_ALERT_BANNER_KINDS) {
+    const computed = (args.alertBanners ?? []).find((b) => b.kind === kind);
+    if (!computed) continue;
+    const override = provinBannerOverrideFor(args.manualBanners, kind);
+    const computedSeverity = alertSeverityToManual(computed.severity);
+    const severity = override?.severity ?? computedSeverity;
+    const defaultCard = PROVIN_ALERT_CARD_DEFAULTS[kind];
+    out.push({
+      kind,
+      text: (override?.text ?? "").trim() || computed.text,
+      severity,
+      card: resolveBannerCard(defaultCard, override, severity),
+      defaults: { text: computed.text, severity: computedSeverity, card: defaultCard },
+      override,
+      edited: bannerOverrideChangesAnything(override, computedSeverity),
+    });
+  }
+
+  for (const kind of PROVIN_INFO_BANNER_KINDS) {
+    const computed = (args.infoBanners ?? []).find((b) => b.kind === kind);
+    if (!computed) continue;
+    const override = provinBannerOverrideFor(args.manualBanners, kind);
+    const severity = override?.severity ?? "grey";
+    const defaultCard: ProvinBannerCardCopy = {
+      label: computed.label,
+      value: computed.value,
+      note: computed.note,
+    };
+    out.push({
+      kind,
+      text: (override?.text ?? "").trim() || computed.text,
+      severity,
+      card: resolveBannerCard(defaultCard, override, severity),
+      defaults: { text: computed.text, severity: "grey", card: defaultCard },
+      override,
+      edited: bannerOverrideChangesAnything(override, "grey"),
+    });
+  }
+
+  return out;
+}
 
 function flagToSeverity(f: Exclude<CsddFieldUiFlag, "none">): ProvinAlertSeverity {
   return f === "red" ? "red" : "yellow";

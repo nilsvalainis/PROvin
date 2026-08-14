@@ -3037,6 +3037,8 @@ export function OrderDetailWorkspace({
             infoBanners={provinInfoBanners}
             pdfInclude={pdfBannerInclude}
             onPdfIncludeChange={patchBannerPdfInclude}
+            manualBanners={manualBanners}
+            onManualBannersChange={setManualBanners}
           />
           <AdminManualBannersEditor banners={manualBanners} onChange={setManualBanners} />
         </div>
