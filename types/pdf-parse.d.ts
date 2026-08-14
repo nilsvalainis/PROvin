@@ -12,3 +12,10 @@ declare module "pdf-parse" {
 
   export default pdfParse;
 }
+
+/** Kodola modulis bez pakotnes iegājiena demo režīma (tas ESM vidē met ENOENT). */
+declare module "pdf-parse/lib/pdf-parse.js" {
+  import pdfParse from "pdf-parse";
+
+  export default pdfParse;
+}

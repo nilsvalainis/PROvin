@@ -194,8 +194,10 @@ export async function runLtabPdfAgent(opts: {
   fileName: string;
   buffer: ArrayBuffer;
 }): Promise<LtabPdfAgentResult> {
-  const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch(() => ({
+  const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch((e) => ({
     text: "",
+    backend: "none" as const,
+    errorMessage: e instanceof Error ? e.message : "unknown",
   }));
   const text = pdfText.text ?? "";
   const notes: string[] = [];
@@ -204,10 +206,27 @@ export async function runLtabPdfAgent(opts: {
   }
   const certificate = extractLtabCertificate(text);
   if (!certificate || !ltabCertificateHasContent(certificate)) {
+    const backend = "backend" in pdfText ? pdfText.backend : "none";
+    const extractError = "errorMessage" in pdfText ? (pdfText.errorMessage ?? "") : "";
+    const emptyLayer = !text.trim();
+    console.warn(`${LOG_PREFIX} ltab_extract_failed`, {
+      fileName: opts.fileName,
+      backend,
+      textChars: text.replace(/\s/g, "").length,
+      extractError: extractError.slice(0, 200),
+    });
     return {
       actions: [],
-      summary: `LTAB „${opts.fileName}”: izziņas struktūra netika nolasīta.`,
-      notes: notes.length ? notes : ["PDF teksta slānis nedeva LTAB izziņas laukus."],
+      summary: emptyLayer
+        ? `LTAB „${opts.fileName}”: PDF teksta slāni neizdevās nolasīt (${backend}${extractError ? `: ${extractError.slice(0, 120)}` : ""}).`
+        : `LTAB „${opts.fileName}”: izziņas struktūra netika nolasīta.`,
+      notes: notes.length
+        ? notes
+        : [
+            emptyLayer
+              ? "PDF teksta slānis bija tukšs — serverī neizdevās neviena teksta izvilkšanas metode."
+              : "PDF teksta slānis nedeva LTAB izziņas laukus.",
+          ],
     };
   }
   const claims = certificate.claims.length;

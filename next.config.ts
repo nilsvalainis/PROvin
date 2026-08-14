@@ -36,6 +36,10 @@ const nextConfig: NextConfig = {
     "puppeteer-extra-plugin",
     "puppeteer-extra-plugin-user-preferences",
   ],
+  /** pdfjs worker tiek ielādēts pēc ceļa, tāpēc Next izsekošana to neatrod automātiski. */
+  outputFileTracingIncludes: {
+    "/api/admin/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+  },
   reactStrictMode: true,
   /** Server Actions + App Router pieprasījumu ķermeņa limits (multipart uz API maršrutiem).
    * Next.js noklusējums ~10 MB (`middlewareClientMaxBodySize`) — ar to par agru 413 „Nosūtīt atskaiti”.

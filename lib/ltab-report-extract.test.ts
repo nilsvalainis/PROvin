@@ -80,6 +80,25 @@ describe("LTAB izziņas parseris", () => {
     expect(cert!.footerNote).toContain("OCTA");
   });
 
+  it("nolasa izziņu bez negadījumiem (0 CSNg rindas)", () => {
+    const clean = `Transportlīdzekļa zaudējumu dati uz 14.08.2026 11:22:45
+Transportlīdzeklis FORD GALAXY, izlaiduma gads 2013. Valsts numura zīme OP4122.
+Negadījumu skaits: 0
+Laikā no 15.07.2026 līdz 14.08.2026 apdrošināts 31 dienas.
+Zaudējumu dati:
+Uz 14.08.2026 11:22:45 automašīnai ar valsts numura zīmi OP4122 nav reģistrēts neviens negadījums
+Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.`;
+    for (const text of [clean, normalizePdfExtractedText(clean)]) {
+      const cert = extractLtabCertificate(text);
+      expect(cert).not.toBeNull();
+      expect(cert!.issuedAt).toBe("14.08.2026 11:22:45");
+      expect(cert!.plate).toBe("OP4122");
+      expect(cert!.accidentCount).toBe("0");
+      expect(cert!.insuredDays).toBe("31");
+      expect(cert!.claims).toHaveLength(0);
+    }
+  });
+
   it("aizpilda LTAB tabulu: datums + summa ar centiem + Latvija", () => {
     const cert = extractLtabCertificate(LTAB_TEXT)!;
     const rows = ltabCertificateToIncidentRows(cert);

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { normalizePdfExtractedText } from "@/lib/pdf-text-normalize";
@@ -27,14 +28,35 @@ const MIN_USABLE_TEXT_CHARS = 80;
 
 let workerConfigured = false;
 
-function resolvePdfWorkerUrl(): string {
+/** Kopā ar deploy nonāk tikai tas, ko Next izseko — worker fails var arī neeksistēt. */
+function resolvePdfWorkerUrl(): string | null {
   const workerPath = join(process.cwd(), "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.mjs");
-  return pathToFileURL(workerPath).href;
+  return existsSync(workerPath) ? pathToFileURL(workerPath).href : null;
+}
+
+type PdfParseFn = (data: Buffer) => Promise<{ text?: unknown; numpages?: unknown }>;
+
+/**
+ * `pdf-parse` iegājiens (`index.js`) palaiž savu demo režīmu, kad `module.parent` nav definēts —
+ * ESM / serverless vidē tas mēģina atvērt `./test/data/05-versions-space.pdf` un met ENOENT.
+ * Kodola modulis ir tīra funkcija bez šī sānefekta.
+ */
+async function loadPdfParse(): Promise<PdfParseFn> {
+  try {
+    const core = (await import("pdf-parse/lib/pdf-parse.js")) as { default?: PdfParseFn };
+    if (typeof core.default === "function") return core.default;
+    if (typeof core === "function") return core as unknown as PdfParseFn;
+  } catch {
+    // Vecākas / citādi iepakotas versijas — atkāpjamies uz publisko iegājienu.
+  }
+  const mod = (await import("pdf-parse")) as { default?: PdfParseFn };
+  const fn = mod.default ?? (mod as unknown as PdfParseFn);
+  if (typeof fn !== "function") throw new Error("pdf-parse export is not callable");
+  return fn;
 }
 
 async function extractWithPdfParse(data: Uint8Array): Promise<{ text: string; pageCount: number }> {
-  const pdfParseMod = await import("pdf-parse");
-  const pdfParse = pdfParseMod.default ?? pdfParseMod;
+  const pdfParse = await loadPdfParse();
   const buf = Buffer.from(data);
   const result = await pdfParse(buf);
   return {
@@ -46,7 +68,9 @@ async function extractWithPdfParse(data: Uint8Array): Promise<{ text: string; pa
 async function extractWithPdfJs(data: Uint8Array): Promise<{ text: string; pageCount: number }> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   if (!workerConfigured) {
-    pdfjs.GlobalWorkerOptions.workerSrc = resolvePdfWorkerUrl();
+    // Ja worker faila nav, pdfjs Node vidē pats ielādē savu iebūvēto; nederīgs ceļš to nogalinātu.
+    const workerUrl = resolvePdfWorkerUrl();
+    if (workerUrl) pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
     workerConfigured = true;
   }
   const pdf = await pdfjs.getDocument({ data, useSystemFonts: true }).promise;
