@@ -1,7 +1,8 @@
 /** Claude modeļi admin AI automatizācijai (Anthropic Messages API). */
 export const CLAUDE_MODEL_OPUS = "claude-opus-5";
 export const CLAUDE_MODEL_SONNET = "claude-sonnet-5";
-export const CLAUDE_MODEL_HAIKU = "claude-haiku-4-5";
+/** Datēts ID: /v1/models neuzskaita īso `claude-haiku-4-5` aliasu. */
+export const CLAUDE_MODEL_HAIKU = "claude-haiku-4-5-20251001";
 
 /** Opus → Sonnet → Haiku; primārais modelis vienmēr pirmais mēģinājums. */
 export function aiFailoverModels(primary: string): string[] {
