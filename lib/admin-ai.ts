@@ -408,6 +408,16 @@ export async function aiGenerateTextWithVocabulary(opts: {
 /** Cik meklējumu drīkst vienā tirgus/cenas analīzē ($0,01 par meklējumu). */
 const WEB_SEARCH_MAX_USES = 6;
 
+/**
+ * Claude `web_search` noraida ISO kodu `LV` (400: Country code LV is not supported).
+ * Pilsēta + laika josla lokalizē rezultātus bez valsts koda.
+ */
+const WEB_SEARCH_USER_LOCATION = {
+  type: "approximate" as const,
+  city: "Riga",
+  timezone: "Europe/Riga",
+};
+
 async function aiGenerateTextWithWebSearchOnce(
   key: string,
   opts: {
@@ -431,7 +441,7 @@ async function aiGenerateTextWithWebSearchOnce(
         type: "web_search_20250305",
         name: "web_search",
         max_uses: opts.maxSearches ?? WEB_SEARCH_MAX_USES,
-        user_location: { type: "approximate", country: "LV", timezone: "Europe/Riga" },
+        user_location: WEB_SEARCH_USER_LOCATION,
       },
     ],
   });
