@@ -118,13 +118,32 @@ export function AdminManualBannersEditor({
                 <Trash2 className="h-3.5 w-3.5" aria-hidden />
               </button>
             </div>
+            <div className="mb-1.5 grid grid-cols-2 gap-1.5">
+              <input
+                className="w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
+                value={b.title ?? ""}
+                onChange={(e) => patch(b.id, { title: e.target.value })}
+                placeholder="Virsraksts, piem. Servisa grāmatiņa"
+                aria-label="Kartītes virsraksts"
+              />
+              <input
+                className="w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
+                value={b.value ?? ""}
+                onChange={(e) => patch(b.id, { value: e.target.value })}
+                placeholder="Galvenā vērtība, piem. Nav ierakstu"
+                aria-label="Kartītes galvenā vērtība"
+              />
+            </div>
             <textarea
               className="w-full min-h-[52px] resize-y rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
               value={b.text}
               onChange={(e) => patch(b.id, { text: e.target.value })}
-              placeholder="Ieraksti brīdinājuma tekstu…"
+              placeholder="Paskaidrojums zem vērtības…"
               aria-label="Manuālā brīdinājuma teksts"
             />
+            <p className="mt-1 text-[10px] leading-snug text-[var(--color-provin-muted)]">
+              PDF kopsavilkumā šis kļūst par kartīti: virsraksts · vērtība · paskaidrojums.
+            </p>
           </div>
         );
       })}

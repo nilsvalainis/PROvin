@@ -35,7 +35,12 @@ import {
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
-import { buildPdfReportSummaryTiles, PDF_REPORT_SUMMARY_TITLE } from "@/lib/pdf-report-summary";
+import {
+  buildPdfReportSummaryTiles,
+  buildPdfSummaryBannerTiles,
+  PDF_REPORT_SUMMARY_TITLE,
+  type PdfSummaryTile,
+} from "@/lib/pdf-report-summary";
 import {
   buildVehicleLifecycleEvents,
   PDF_LIFECYCLE_TITLE,
@@ -77,13 +82,11 @@ import {
 } from "@/lib/client-report-pdf-layout-draft";
 import { pdfCountryCodeLetters, pdfCountryFlagEmoji } from "@/lib/pdf-country-flags";
 import {
-  buildPdfAlertBannersHtml,
-  buildPdfInfoBannersHtml,
-  buildPdfManualBannersHtml,
   computeProvinAlertBannersFromPayloadSlice,
   computeProvinInfoBannersFromPayloadSlice,
   filterAlertBannersForPdf,
   filterInfoBannersForPdf,
+  filterManualBannersForPdf,
   mergeProvinManualBanners,
 } from "@/lib/provin-alert-banners";
 import {
@@ -467,27 +470,36 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-lifecycle-zone" role="region">${head}<ol class="pdf-life-list">${items.join("")}</ol>${legend}</div>`;
 }
 
-/** Atskaites kopsavilkums — statusa plāksnītes + visas brīdinājumu joslas vienā blokā zem galvas. */
-function buildPdfReportSummaryHtml(p: ClientReportPayload, bannersHtml = ""): string {
-  const tiles = buildPdfReportSummaryTiles({
-    csddForm: p.csddForm ?? null,
-    autoRecordsBlock: p.autoRecordsBlock ?? null,
-    manualVendorBlocks: p.manualVendorBlocks ?? null,
-    manualLtabBlock: p.manualLtabBlock ?? null,
-    citiAvoti: p.citiAvoti ?? null,
-  });
+/** Atskaites kopsavilkums — bāzes plāksnītes un brīdinājumu / manuālās kartītes vienā režģī. */
+function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummaryTile[] = []): string {
+  const tiles = [
+    ...buildPdfReportSummaryTiles({
+      csddForm: p.csddForm ?? null,
+      autoRecordsBlock: p.autoRecordsBlock ?? null,
+      manualVendorBlocks: p.manualVendorBlocks ?? null,
+      manualLtabBlock: p.manualLtabBlock ?? null,
+      citiAvoti: p.citiAvoti ?? null,
+    }),
+    ...extraTiles,
+  ];
   const items = tiles
-    .map(
-      (t) => `<li class="pdf-summary-tile pdf-summary-tile--${t.tone}">
+    .map((t) => {
+      const cls = [
+        "pdf-summary-tile",
+        `pdf-summary-tile--${t.tone}`,
+        t.wide ? "pdf-summary-tile--wide" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return `<li class="${cls}">
       <p class="pdf-summary-tile__label">${escapeHtml(t.label)}</p>
-      <p class="pdf-summary-tile__value">${escapeHtml(t.value)}</p>
+      ${t.value ? `<p class="pdf-summary-tile__value">${escapeHtml(t.value)}</p>` : ""}
       ${t.note ? `<p class="pdf-summary-tile__note">${escapeHtml(t.note)}</p>` : ""}
-    </li>`,
-    )
+    </li>`;
+    })
     .join("");
   const head = sectionHeadBrand(sectionIconPdfHtml("listChecks"), PDF_REPORT_SUMMARY_TITLE);
-  const banners = bannersHtml ? `<div class="pdf-summary-banners">${bannersHtml}</div>` : "";
-  return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul>${banners}</section>`;
+  return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul></section>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string): string {
@@ -1504,8 +1516,7 @@ function clientReportPrintCss(): string {
         -webkit-font-smoothing:antialiased;
       }
       .provin-report-doc .pdf-v1-panel--clean,
-      .provin-report-doc .pdf-alert-banners-stack,
-      .provin-report-doc .pdf-info-banners-stack,
+      .provin-report-doc .pdf-summary-tile,
       .provin-report-doc .pdf-site-footer{
         break-inside:avoid;
         page-break-inside:avoid;
@@ -1561,9 +1572,6 @@ function clientReportPrintCss(): string {
         background:#E3EAF3;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-life-list > li:first-child .pdf-life-rail{background:linear-gradient(transparent 0 22px,#E3EAF3 22px 100%);}
-      .pdf-life-list > li:first-child.pdf-life-year .pdf-life-rail{background:linear-gradient(transparent 0 8px,#E3EAF3 8px 100%);}
-      .pdf-life-list > li:last-child .pdf-life-rail{background:linear-gradient(#E3EAF3 0 19px,transparent 19px 100%);}
       .pdf-life-year > *:not(.pdf-life-rail){padding:16px 0 7px;}
       .pdf-life-list > li:first-child.pdf-life-year > *:not(.pdf-life-rail){padding-top:0;}
       .pdf-life-year__num{
@@ -1637,12 +1645,11 @@ function clientReportPrintCss(): string {
         margin:6px 0 0;font-size:18px;font-weight:700;color:#0f172a;line-height:1.2;letter-spacing:-0.01em;
       }
       .pdf-summary-tile__note{margin:4px 0 0;font-size:var(--pdf-fs-table);color:#64748b;line-height:1.4;}
-      .pdf-summary-banners{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--pdf-line);}
-      .pdf-summary-banners .pdf-alert-banners-stack,
-      .pdf-summary-banners .pdf-info-banners-stack{margin:0;}
-      .pdf-summary-banners > * + *{margin-top:8px;}
-      .pdf-summary-banners .pdf-alert-banner,
-      .pdf-summary-banners .pdf-info-banner{box-shadow:none;}
+      /* Gara teksta kartīte (manuālie ieraksti) — abas kolonnas, teksts vērtības vietā. */
+      .pdf-summary-tile--wide{grid-column:1 / -1;}
+      .pdf-summary-tile--wide .pdf-summary-tile__note{
+        margin-top:6px;font-size:var(--pdf-fs-base);color:#3f4750;
+      }
       .pdf-sources-checked-label{margin:14px 0 6px;}
       .pdf-sources-checked-grid{margin:0;padding:0;list-style:none;}
       .pdf-sources-checked-item{
@@ -1980,43 +1987,6 @@ ${sourceDotColorCss()}
         flex-shrink:0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-alert-banners-stack{
-        display:flex;flex-direction:column;gap:8px;margin:0 0 10px;
-      }
-      .pdf-alert-banner{
-        display:flex;align-items:flex-start;gap:12px;padding:8px 12px 8px 14px;border-radius:var(--pdf-radius-inner);
-        box-shadow:var(--pdf-shadow);
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-alert-banner--red{
-        background:rgba(255,77,77,0.04);border-left:2px solid #FF4D4D;color:#FF4D4D;
-      }
-      .pdf-alert-banner--yellow{
-        background:rgba(255,193,7,0.04);border-left:2px solid #FFC107;color:#FFC107;
-      }
-      .pdf-alert-banner-text{
-        flex:1;margin:0;font-size:var(--pdf-fs-base);line-height:1.4;color:#1d1d1f;font-weight:400;font-family:Inter,sans-serif!important;
-      }
-      .pdf-alert-banner-ico{flex-shrink:0;display:block;width:18px;height:18px;margin-top:1px;}
-      .pdf-alert-banner--red .pdf-alert-banner-ico{color:#FF4D4D;}
-      .pdf-alert-banner--yellow .pdf-alert-banner-ico{color:#FFC107;}
-      .pdf-alert-banner--red .pdf-alert-banner-text{color:#1d1d1f;}
-      .pdf-alert-banner--yellow .pdf-alert-banner-text{color:#1d1d1f;}
-      .pdf-info-banners-stack{
-        display:flex;flex-direction:column;gap:8px;margin:0 0 10px;
-      }
-      .pdf-info-banner{
-        display:flex;align-items:flex-start;gap:12px;padding:8px 12px 8px 14px;border-radius:var(--pdf-radius-inner);
-        box-shadow:var(--pdf-shadow);
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-info-banner--grey{
-        background:rgba(142,142,147,0.08);border-left:2px solid #8e8e93;color:#636366;
-      }
-      .pdf-info-banner-text{
-        flex:1;margin:0;font-size:var(--pdf-fs-base);line-height:1.4;color:#3a3a3c;font-weight:400;font-family:Inter,sans-serif!important;
-      }
-      .pdf-info-banner-ico{flex-shrink:0;display:block;width:18px;height:18px;margin-top:1px;color:#8e8e93;}
       .pdf-data-alert-wrap{
         display:inline-flex;align-items:center;gap:8px;max-width:100%;vertical-align:middle;
       }
@@ -2279,7 +2249,7 @@ ${sourceDotColorCss()}
         .no-print{display:none!important;}
         thead{display:table-header-group;}
         tfoot{display:table-footer-group;}
-        .pdf-v1-panel--clean,.pdf-alert-banners-stack,.pdf-info-banners-stack,.pdf-site-footer,.pdf-page-flow-chunk--avoid{
+        .pdf-v1-panel--clean,.pdf-summary-tile,.pdf-site-footer,.pdf-page-flow-chunk--avoid{
           break-inside:avoid-page!important;
           page-break-inside:avoid!important;
         }
@@ -2336,28 +2306,11 @@ export function buildClientReportDocumentHtml(args: {
   }
   lines.push("</div></div></header>");
 
-  const infoBannersHtml = vis.alerts
-    ? buildPdfInfoBannersHtml(
-        filterInfoBannersForPdf(
-          computeProvinInfoBannersFromPayloadSlice({
-            csddForm: p.csddForm,
-            autoRecordsBlock: p.autoRecordsBlock ?? null,
-            manualVendorBlocks: p.manualVendorBlocks ?? null,
-            manualLtabBlock: p.manualLtabBlock ?? null,
-            citiAvotiBlock: p.citiAvoti ?? null,
-          }),
-          p.pdfBannerInclude,
-        ),
-      )
-    : "";
-
-  const manualBannersHtml = vis.alerts
-    ? buildPdfManualBannersHtml(mergeProvinManualBanners(p.manualBanners))
-    : "";
-
-  const alertBannersHtml = vis.alerts
-    ? buildPdfAlertBannersHtml(
-        filterAlertBannersForPdf(
+  // Viena kartīšu valoda kopsavilkumā: manuālās (admin) → automātiskie brīdinājumi → informatīvās.
+  const summaryBannerTiles = vis.alerts
+    ? buildPdfSummaryBannerTiles({
+        manualBanners: filterManualBannersForPdf(mergeProvinManualBanners(p.manualBanners)),
+        alertBanners: filterAlertBannersForPdf(
           computeProvinAlertBannersFromPayloadSlice({
             csddForm: p.csddForm,
             autoRecordsBlock: p.autoRecordsBlock ?? null,
@@ -2368,12 +2321,19 @@ export function buildClientReportDocumentHtml(args: {
           }),
           p.pdfBannerInclude,
         ),
-      )
-    : "";
-
-  // Viena banneru vieta: manuālie (mani) → automātiskie brīdinājumi → informatīvie.
-  const bannersHtml = [manualBannersHtml, alertBannersHtml, infoBannersHtml].filter(Boolean).join("");
-  lines.push(buildPdfReportSummaryHtml(p, bannersHtml));
+        infoBanners: filterInfoBannersForPdf(
+          computeProvinInfoBannersFromPayloadSlice({
+            csddForm: p.csddForm,
+            autoRecordsBlock: p.autoRecordsBlock ?? null,
+            manualVendorBlocks: p.manualVendorBlocks ?? null,
+            manualLtabBlock: p.manualLtabBlock ?? null,
+            citiAvotiBlock: p.citiAvoti ?? null,
+          }),
+          p.pdfBannerInclude,
+        ),
+      })
+    : [];
+  lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
 
   const vehicleSpecHtml = buildPdfVehicleSpecSectionHtml(p.csddForm, p.vin, vis);
   if (vehicleSpecHtml) lines.push(vehicleSpecHtml);

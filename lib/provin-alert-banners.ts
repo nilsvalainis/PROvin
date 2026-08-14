@@ -49,6 +49,10 @@ export type ProvinManualBanner = {
   id: string;
   text: string;
   severity: ProvinManualBannerSeverity;
+  /** Kartītes virsraksts kopsavilkumā; tukšs → noklusējums pēc krāsas. */
+  title?: string;
+  /** Kartītes galvenā vērtība (īsa atbilde, piem. „Nav ierakstu”). */
+  value?: string;
   /** `false` = nerādīt PDF; trūkstošs vai `true` = rādīt. */
   includeInPdf?: boolean;
 };
@@ -105,6 +109,8 @@ export function mergeProvinManualBanners(raw: unknown): ProvinManualBanner[] {
       text: text.slice(0, 2000),
       severity: severity as ProvinManualBannerSeverity,
     };
+    if (typeof o.title === "string" && o.title.trim()) banner.title = o.title.trim().slice(0, 80);
+    if (typeof o.value === "string" && o.value.trim()) banner.value = o.value.trim().slice(0, 80);
     if (typeof o.includeInPdf === "boolean") banner.includeInPdf = o.includeInPdf;
     out.push(banner);
   }
@@ -112,7 +118,11 @@ export function mergeProvinManualBanners(raw: unknown): ProvinManualBanner[] {
 }
 
 export function filterManualBannersForPdf(banners: ProvinManualBanner[]): ProvinManualBanner[] {
-  return banners.filter((b) => b.includeInPdf !== false && b.text.trim().length > 0);
+  return banners.filter(
+    (b) =>
+      b.includeInPdf !== false &&
+      (b.text.trim().length > 0 || (b.value ?? "").trim().length > 0 || (b.title ?? "").trim().length > 0),
+  );
 }
 
 export function createEmptyManualBanner(severity: ProvinManualBannerSeverity = "grey"): ProvinManualBanner {
@@ -120,7 +130,7 @@ export function createEmptyManualBanner(severity: ProvinManualBannerSeverity = "
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `mb-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  return { id, text: "", severity, includeInPdf: true };
+  return { id, title: "", value: "", text: "", severity, includeInPdf: true };
 }
 
 export function filterAlertBannersForPdf(
@@ -139,7 +149,12 @@ export function filterInfoBannersForPdf(
 
 export type ProvinInfoBanner = {
   kind: ProvinInfoBannerKind;
+  /** Pilns teikums (admin saraksts). */
   text: string;
+  /** Kopsavilkuma kartīte PDF: virsraksts, galvenā vērtība, paskaidrojums. */
+  label: string;
+  value: string;
+  note: string;
 };
 
 /** Banera vizuālais līmenis — sakrīt ar avotu dzelteno/sarkano. */
@@ -276,52 +291,6 @@ export function computeProvinAlertBannersFromPayloadSlice(
   });
 }
 
-/** PDF: 16px → ~21px (+30%); sarkans/dzeltens — vienāds trijstūnis ar izsaukumu. */
-function pdfAlertBannerTriangleIconHtml(): string {
-  return `<svg class="pdf-alert-banner-ico pdf-alert-banner-ico--triangle" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-}
-
-function pdfAlertBannerIconsHtml(): string {
-  return pdfAlertBannerTriangleIconHtml();
-}
-
-/** PDF HTML: 8px atstarpe starp joslām; ikonas — trijstūņi (admin UI atšķirīgs). */
-export function buildPdfAlertBannersHtml(banners: ProvinAlertBanner[]): string {
-  if (banners.length === 0) return "";
-  const blocks = banners.map(
-    (b) =>
-      `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-alert="${b.kind}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml()}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p></div>`,
-  );
-  return `<div class="pdf-alert-banners-stack">${blocks.join("\n")}</div>`;
-}
-
-function pdfInfoBannerIconHtml(): string {
-  return `<svg class="pdf-info-banner-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 10v6M12 7h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-}
-
-/** PDF HTML: pelēks informatīvs bloks (reģistrācijas ilgums u.c.). */
-export function buildPdfInfoBannersHtml(banners: ProvinInfoBanner[]): string {
-  if (banners.length === 0) return "";
-  const blocks = banners.map(
-    (b) =>
-      `<div class="pdf-info-banner pdf-info-banner--grey" role="note" data-provin-info="${b.kind}">${pdfInfoBannerIconHtml()}<p class="pdf-info-banner-text">${escapeHtmlPdf(b.text)}</p></div>`,
-  );
-  return `<div class="pdf-info-banners-stack">${blocks.join("\n")}</div>`;
-}
-
-/** PDF HTML: manuālie baneri — pelēks kā info, dzeltens/sarkans kā brīdinājumi. */
-export function buildPdfManualBannersHtml(banners: ProvinManualBanner[]): string {
-  const forPdf = filterManualBannersForPdf(banners);
-  if (forPdf.length === 0) return "";
-  const blocks = forPdf.map((b) => {
-    if (b.severity === "grey") {
-      return `<div class="pdf-info-banner pdf-info-banner--grey" role="note" data-provin-manual="${escapeHtmlPdf(b.id)}">${pdfInfoBannerIconHtml()}<p class="pdf-info-banner-text">${escapeHtmlPdf(b.text)}</p></div>`;
-    }
-    return `<div class="pdf-alert-banner pdf-alert-banner--${b.severity}" role="alert" data-provin-manual="${escapeHtmlPdf(b.id)}" data-provin-severity="${b.severity}">${pdfAlertBannerIconsHtml()}<p class="pdf-alert-banner-text">${escapeHtmlPdf(b.text)}</p></div>`;
-  });
-  return `<div class="pdf-alert-banners-stack pdf-manual-banners-stack">${blocks.join("\n")}</div>`;
-}
-
 export function computeProvinInfoBannersFromPayloadSlice(
   p: UnifiedMileageSourcePayload & {
     csddForm?: CsddFormFields | null;
@@ -342,7 +311,16 @@ export function computeProvinInfoBannersFromPayloadSlice(
     referenceDate,
   });
   if (tenure) {
-    out.push({ kind: "lv_registration_tenure", text: tenure.sentence });
+    const days = tenure.daysRegistered;
+    out.push({
+      kind: "lv_registration_tenure",
+      text: tenure.sentence,
+      label: "Reģistrācija Latvijā",
+      value: `${days} ${days === 1 ? "diena" : "dienas"}`,
+      note: tenure.firstDateDisplay
+        ? `Pēc mūsu rīcībā esošajiem datiem — kopš ${tenure.firstDateDisplay}`
+        : "Pēc mūsu rīcībā esošajiem datiem",
+    });
   }
 
   return out;
@@ -362,14 +340,6 @@ export function computeProvinInfoBannersFromWorkspace(
     },
     referenceDate,
   );
-}
-
-function escapeHtmlPdf(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 export function computeProvinAlertBannersFromWorkspace(

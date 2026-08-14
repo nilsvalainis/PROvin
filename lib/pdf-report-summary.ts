@@ -13,6 +13,13 @@ import type {
   CsddFormFields,
 } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
+import type {
+  ProvinAlertBanner,
+  ProvinAlertBannerKind,
+  ProvinInfoBanner,
+  ProvinManualBanner,
+  ProvinManualBannerSeverity,
+} from "@/lib/provin-alert-banners";
 import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
@@ -28,11 +35,14 @@ import {
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
 
 export type PdfSummaryTile = {
-  id: "incidents" | "mileage" | "registration" | "service";
+  /** Bāzes plāksnītes — fiksēti id; brīdinājumu un manuālās kartītes — `alert-…`, `manual-…`. */
+  id: string;
   label: string;
   value: string;
   note: string;
   tone: PdfSummaryTileTone;
+  /** Gara teksta kartīte — režģī aizņem abas kolonnas. */
+  wide?: boolean;
 };
 
 export type PdfSummaryInput = {
@@ -165,4 +175,85 @@ export function buildPdfReportSummaryTiles(input: PdfSummaryInput): PdfSummaryTi
     buildRegistrationTile(input),
     buildServiceTile(input),
   ];
+}
+
+/**
+ * Automātiskie brīdinājumi kā kartītes. Odometrs un negadījumi jau ir bāzes plāksnītēs
+ * (tie paši aprēķini), tāpēc tos neatkārtojam.
+ */
+const ALERT_CARD_COPY: Record<ProvinAlertBannerKind, { label: string; value: string; note: string } | null> = {
+  odometer: null,
+  incidents: null,
+  tirgus_high_supply: {
+    label: "Sludinājuma vecums",
+    value: "Ilgi pārdošanā",
+    note: "Tirgū virs 200 dienām — iespējama zema likviditāte vai slēpti defekti",
+  },
+  particulate: {
+    label: "Izplūdes cietās daļiņas",
+    value: "Paaugstināts līmenis",
+    note: "Pēdējā apskatē fiksēts pārsniegums — iespējami izplūdes sistēmas defekti",
+  },
+  inspection: {
+    label: "Tehniskā apskate",
+    value: "Termiņš beidzas",
+    note: "Nav derīgas apskates vai tās termiņš tuvojas beigām",
+  },
+};
+
+const MANUAL_CARD_DEFAULT_LABEL: Record<ProvinManualBannerSeverity, string> = {
+  grey: "Informācija",
+  yellow: "Brīdinājums",
+  red: "Svarīgi",
+};
+
+/** Īsāks teksts iztiek bez atsevišķas paskaidrojuma rindas — tas kļūst par kartītes vērtību. */
+const MANUAL_CARD_VALUE_MAX_CHARS = 42;
+
+function manualSeverityToTone(severity: ProvinManualBannerSeverity): PdfSummaryTileTone {
+  if (severity === "red") return "alert";
+  if (severity === "yellow") return "warn";
+  return "neutral";
+}
+
+/** Brīdinājumu, informatīvās un manuālās kartītes — tāds pats formāts kā bāzes plāksnītēm. */
+export function buildPdfSummaryBannerTiles(input: {
+  manualBanners?: ProvinManualBanner[];
+  alertBanners?: ProvinAlertBanner[];
+  infoBanners?: ProvinInfoBanner[];
+}): PdfSummaryTile[] {
+  const out: PdfSummaryTile[] = [];
+
+  for (const b of input.manualBanners ?? []) {
+    const text = b.text.trim();
+    const explicitValue = (b.value ?? "").trim();
+    const value = explicitValue || (text.length <= MANUAL_CARD_VALUE_MAX_CHARS ? text : "");
+    const note = value === text ? "" : text;
+    out.push({
+      id: `manual-${b.id}`,
+      label: (b.title ?? "").trim() || MANUAL_CARD_DEFAULT_LABEL[b.severity],
+      value,
+      note,
+      tone: manualSeverityToTone(b.severity),
+      wide: value === "",
+    });
+  }
+
+  for (const b of input.alertBanners ?? []) {
+    const copy = ALERT_CARD_COPY[b.kind];
+    if (!copy) continue;
+    out.push({
+      id: `alert-${b.kind}`,
+      label: copy.label,
+      value: copy.value,
+      note: copy.note,
+      tone: b.severity === "red" ? "alert" : "warn",
+    });
+  }
+
+  for (const b of input.infoBanners ?? []) {
+    out.push({ id: `info-${b.kind}`, label: b.label, value: b.value, note: b.note, tone: "neutral" });
+  }
+
+  return out;
 }
