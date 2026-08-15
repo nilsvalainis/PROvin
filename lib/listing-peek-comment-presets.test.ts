@@ -5,6 +5,7 @@ import {
   LISTING_PEEK_TOPICS,
   assembleListingPeekCustomerComment,
   listingPeekPhraseByTone,
+  parseListingPeekCustomerComment,
 } from "@/lib/listing-peek-comment-presets";
 
 describe("assembleListingPeekCustomerComment", () => {
@@ -49,6 +50,41 @@ describe("assembleListingPeekCustomerComment", () => {
       lines: { technical: listingPeekPhraseByTone("technical", "caution") },
     });
     expect(comment.endsWith(LISTING_PEEK_COMMENT_CLOSER)).toBe(true);
+  });
+
+  it("maps known phrases even when some topics were skipped", () => {
+    const parsed = parseListingPeekCustomerComment(
+      assembleListingPeekCustomerComment({
+        lines: {
+          incidents: listingPeekPhraseByTone("incidents", "caution"),
+          photos: listingPeekPhraseByTone("photos", "concern"),
+        },
+      }),
+    );
+    expect(parsed.lines.incidents).toBe(listingPeekPhraseByTone("incidents", "caution"));
+    expect(parsed.lines.photos).toBe(listingPeekPhraseByTone("photos", "concern"));
+    expect(parsed.lines.odometer).toBe("");
+  });
+
+  it("round-trips a sent letter back into the five topic fields", () => {
+    const lines = {
+      odometer: listingPeekPhraseByTone("odometer", "positive"),
+      incidents: listingPeekPhraseByTone("incidents", "caution"),
+      technical: listingPeekPhraseByTone("technical", "caution"),
+      seller: listingPeekPhraseByTone("seller", "positive"),
+      photos: listingPeekPhraseByTone("photos", "positive"),
+    };
+    const parsed = parseListingPeekCustomerComment(
+      assembleListingPeekCustomerComment({ closer: true, lines }),
+    );
+    expect(parsed.closer).toBe(true);
+    expect(parsed.lines).toEqual({
+      odometer: lines.odometer,
+      incidents: lines.incidents,
+      technical: lines.technical,
+      seller: lines.seller,
+      photos: lines.photos,
+    });
   });
 });
 

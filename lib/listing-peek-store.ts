@@ -24,6 +24,9 @@ export type ListingPeekEntry = {
   createdAt: string;
   status: ListingPeekStatus;
   source: "risk_audit_guide" | "listing_peek";
+  /** Pēdējā nosūtītā klienta vēstule — lai var nolasīt un papildināt. */
+  comment?: string;
+  commentSentAt?: string;
 };
 
 type ListingPeekDoc = {
@@ -86,6 +89,11 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
   }
   const source =
     o.source === "listing_peek" || o.source === "risk_audit_guide" ? o.source : "listing_peek";
+  const comment = typeof o.comment === "string" && o.comment.trim() ? o.comment.trim() : undefined;
+  const commentSentAt =
+    typeof o.commentSentAt === "string" && o.commentSentAt.trim()
+      ? o.commentSentAt.trim()
+      : undefined;
   return {
     id,
     email,
@@ -95,6 +103,8 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
     createdAt,
     status: o.status,
     source,
+    ...(comment ? { comment } : {}),
+    ...(commentSentAt ? { commentSentAt } : {}),
   };
 }
 
@@ -280,6 +290,29 @@ export async function getListingPeekById(id: string): Promise<ListingPeekEntry |
   if (!trimmed) return null;
   const doc = await readDoc();
   return doc.entries.find((e) => e.id === trimmed) ?? null;
+}
+
+export async function markListingPeekCommentSent(
+  id: string,
+  comment: string,
+): Promise<ListingPeekEntry | null> {
+  const trimmed = id.trim();
+  const text = comment.trim();
+  if (!trimmed || text.length < 8) return null;
+  const doc = await readDoc();
+  const idx = doc.entries.findIndex((e) => e.id === trimmed);
+  if (idx < 0) return null;
+  const sentAt = new Date().toISOString();
+  const next: ListingPeekEntry = {
+    ...doc.entries[idx],
+    status: "completed",
+    comment: text,
+    commentSentAt: sentAt,
+  };
+  doc.entries[idx] = next;
+  doc.updatedAt = sentAt;
+  await writeDoc(doc);
+  return next;
 }
 
 export async function updateListingPeekStatus(

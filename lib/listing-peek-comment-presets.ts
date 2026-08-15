@@ -156,3 +156,52 @@ export function assembleListingPeekCustomerComment(input: {
   if (input.closer) blocks.push(LISTING_PEEK_COMMENT_CLOSER);
   return blocks.join("\n\n").trim();
 }
+
+const emptyPeekLines = (): Record<ListingPeekTopicId, string> => ({
+  odometer: "",
+  incidents: "",
+  technical: "",
+  seller: "",
+  photos: "",
+});
+
+/** Atver jau nosūtīto vēstuli atpakaļ piecu tēmu laukos, lai var papildināt. */
+export function parseListingPeekCustomerComment(raw: string): {
+  closer: boolean;
+  lines: Record<ListingPeekTopicId, string>;
+} {
+  const lines = emptyPeekLines();
+  const t = raw.replace(/\r/g, "").trim();
+  if (!t) return { closer: false, lines };
+
+  const closer = t.includes(LISTING_PEEK_COMMENT_CLOSER);
+  const withoutCloser = closer ? t.replace(LISTING_PEEK_COMMENT_CLOSER, "").trim() : t;
+  const numbered = [...withoutCloser.matchAll(/^\s*\d+\.\s+(.+?)\s*$/gm)].map((m) => (m[1] ?? "").trim());
+
+  const unused = new Set(LISTING_PEEK_TOPIC_IDS);
+  for (const text of numbered) {
+    const hit = LISTING_PEEK_TOPICS.find(
+      (topic) => unused.has(topic.id) && topic.phrases.some((p) => p.text === text),
+    );
+    if (hit) {
+      lines[hit.id] = text;
+      unused.delete(hit.id);
+    }
+  }
+  for (const text of numbered) {
+    if (LISTING_PEEK_TOPIC_IDS.some((id) => lines[id] === text)) continue;
+    const nextId = LISTING_PEEK_TOPIC_IDS.find((id) => unused.has(id));
+    if (!nextId) break;
+    lines[nextId] = text;
+    unused.delete(nextId);
+  }
+
+  if (numbered.length === 0) {
+    const leftover = withoutCloser
+      .replace(new RegExp(`^${LISTING_PEEK_COMMENT_GREETING}\\s*`, "i"), "")
+      .trim();
+    if (leftover) lines.odometer = leftover;
+  }
+
+  return { closer, lines };
+}

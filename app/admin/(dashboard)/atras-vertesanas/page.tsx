@@ -2,11 +2,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
+import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
+import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
   getListingPeekById,
   listListingPeeks,
+  markListingPeekCommentSent,
   updateListingPeekContact,
   updateListingPeekStatus,
   type ListingPeekStatus,
@@ -65,7 +68,7 @@ async function sendComment(formData: FormData) {
 
   try {
     await sendListingPeekCustomerCommentEmail({ to: entry.email, comment });
-    await updateListingPeekStatus(id, "completed");
+    await markListingPeekCommentSent(id, comment);
   } catch (e) {
     console.error("[atras-vertesanas] send comment failed:", e);
     redirect("/admin/atras-vertesanas?mail=error");
@@ -263,12 +266,15 @@ function PeekCard({
           </form>
 
           {e.phone ? (
-            <a
-              href={`tel:${e.phone.replace(/\s/g, "")}`}
-              className="mt-0.5 block text-[13px] text-[var(--color-provin-muted)] hover:underline"
-            >
-              {e.phone}
-            </a>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <a
+                href={`tel:${e.phone.replace(/\s/g, "")}`}
+                className="text-[13px] text-[var(--color-provin-muted)] hover:underline"
+              >
+                {e.phone}
+              </a>
+              <AdminWhatsAppOpenButton phone={e.phone} />
+            </div>
           ) : null}
           <a
             href={e.listingUrl}
@@ -309,7 +315,52 @@ function PeekCard({
           <input type="hidden" name="id" value={e.id} />
           <AdminListingPeekCommentComposer fieldId={`peek-${e.id}`} smtpOk={smtpOk} />
         </form>
+      ) : isDone ? (
+        <PeekSentFollowUp entry={e} smtpOk={smtpOk} sendComment={sendComment} />
       ) : null}
     </li>
+  );
+}
+
+function PeekSentFollowUp({
+  entry: e,
+  smtpOk,
+  sendComment,
+}: {
+  entry: Awaited<ReturnType<typeof listListingPeeks>>[number];
+  smtpOk: boolean;
+  sendComment: (formData: FormData) => Promise<void>;
+}) {
+  const parsed = e.comment ? parseListingPeekCustomerComment(e.comment) : null;
+  return (
+    <details className="mt-3 border-t border-emerald-100/90 pt-3">
+      <summary className="cursor-pointer text-[12px] font-semibold text-[var(--color-provin-accent)]">
+        {e.comment ? "Lasīt nosūtīto / sūtīt vēlreiz" : "Sūtīt jaunu ziņu"}
+        {e.commentSentAt ? (
+          <span className="ml-2 font-normal text-[var(--color-provin-muted)]">
+            {formatWhen(e.commentSentAt)}
+          </span>
+        ) : null}
+      </summary>
+      {e.comment ? (
+        <pre className="mt-2 whitespace-pre-wrap rounded-xl border border-emerald-100 bg-white px-3 py-2 text-[12px] leading-relaxed text-[var(--color-apple-text)]">
+          {e.comment}
+        </pre>
+      ) : (
+        <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">
+          Iepriekšējā vēstule nav saglabāta (vecāks ieraksts). Vari sastādīt jaunu.
+        </p>
+      )}
+      <form action={sendComment} className="mt-3">
+        <input type="hidden" name="id" value={e.id} />
+        <AdminListingPeekCommentComposer
+          fieldId={`peek-${e.id}-followup`}
+          smtpOk={smtpOk}
+          initialLines={parsed?.lines}
+          initialCloser={parsed?.closer}
+          submitLabel="Nosūtīt vēlreiz"
+        />
+      </form>
+    </details>
   );
 }

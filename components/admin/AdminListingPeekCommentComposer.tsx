@@ -10,6 +10,19 @@ import {
   type ListingPeekTopicId,
 } from "@/lib/listing-peek-comment-presets";
 
+function inferTones(
+  lines: Record<ListingPeekTopicId, string>,
+): Partial<Record<ListingPeekTopicId, ListingPeekTone>> {
+  const tones: Partial<Record<ListingPeekTopicId, ListingPeekTone>> = {};
+  for (const topic of LISTING_PEEK_TOPICS) {
+    const text = lines[topic.id]?.trim();
+    if (!text) continue;
+    const hit = topic.phrases.find((p) => p.text === text);
+    if (hit) tones[topic.id] = hit.tone;
+  }
+  return tones;
+}
+
 const TONE_BTN: Record<ListingPeekTone, string> = {
   positive:
     "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 data-[on=true]:border-emerald-500 data-[on=true]:bg-emerald-600 data-[on=true]:text-white",
@@ -30,14 +43,23 @@ const emptyLines = (): Record<ListingPeekTopicId, string> => ({
 export function AdminListingPeekCommentComposer({
   fieldId,
   smtpOk,
+  initialLines,
+  initialCloser = false,
+  submitLabel = "Nosūtīt e-pastu",
 }: {
   fieldId: string;
   smtpOk: boolean;
+  initialLines?: Partial<Record<ListingPeekTopicId, string>>;
+  initialCloser?: boolean;
+  submitLabel?: string;
 }) {
-  const [openId, setOpenId] = useState<ListingPeekTopicId | null>("odometer");
-  const [lines, setLines] = useState(emptyLines);
-  const [tones, setTones] = useState<Partial<Record<ListingPeekTopicId, ListingPeekTone>>>({});
-  const [closer, setCloser] = useState(false);
+  const [lines, setLines] = useState(() => ({ ...emptyLines(), ...initialLines }));
+  const [tones, setTones] = useState(() => inferTones({ ...emptyLines(), ...initialLines }));
+  const [closer, setCloser] = useState(initialCloser);
+  const [openId, setOpenId] = useState<ListingPeekTopicId | null>(() => {
+    const filled = LISTING_PEEK_TOPICS.find((t) => (initialLines?.[t.id] ?? "").trim());
+    return filled?.id ?? "odometer";
+  });
 
   const comment = useMemo(
     () => assembleListingPeekCustomerComment({ closer, lines }),
@@ -156,7 +178,7 @@ export function AdminListingPeekCommentComposer({
           disabled={!smtpOk || comment.trim().length < 8}
           className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Nosūtīt e-pastu
+          {submitLabel}
         </button>
         {!smtpOk ? (
           <p className="text-[12px] text-amber-700">SMTP nav konfigurēts.</p>
