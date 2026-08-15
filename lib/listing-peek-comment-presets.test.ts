@@ -4,7 +4,9 @@ import {
   LISTING_PEEK_COMMENT_GREETING,
   LISTING_PEEK_TOPICS,
   assembleListingPeekCustomerComment,
+  insertListingPeekLetterSentence,
   listingPeekPhraseByTone,
+  parseListingPeekAiPayload,
   parseListingPeekCustomerComment,
 } from "@/lib/listing-peek-comment-presets";
 
@@ -85,6 +87,60 @@ describe("assembleListingPeekCustomerComment", () => {
       seller: lines.seller,
       photos: lines.photos,
     });
+  });
+});
+
+describe("parseListingPeekAiPayload", () => {
+  it("reads Flash/Gemini JSON including a fenced block", () => {
+    const parsed = parseListingPeekAiPayload(
+      "```json\n" +
+        JSON.stringify({
+          odometer: listingPeekPhraseByTone("odometer", "caution"),
+          incidents: "",
+          technical: listingPeekPhraseByTone("technical", "positive"),
+          seller: "",
+          photos: listingPeekPhraseByTone("photos", "caution"),
+          closer: true,
+        }) +
+        "\n```",
+    );
+    expect(parsed?.closer).toBe(true);
+    expect(parsed?.lines.odometer).toBe(listingPeekPhraseByTone("odometer", "caution"));
+    expect(parsed?.lines.technical).toBe(listingPeekPhraseByTone("technical", "positive"));
+    expect(parsed?.lines.photos).toBe(listingPeekPhraseByTone("photos", "caution"));
+    expect(parsed?.lines.incidents).toBe("");
+  });
+
+  it("keeps the full letter field so Gemini can process operator extras", () => {
+    const letter = [
+      LISTING_PEEK_COMMENT_GREETING,
+      "",
+      "1. Ticamība odometra rādījumiem sludinājuma datos izskatās ļoti augsta.",
+      "",
+      "VIN no Vācijas, 2018. gads, 189 000 km.",
+      "",
+      LISTING_PEEK_COMMENT_CLOSER,
+    ].join("\n");
+    const parsed = parseListingPeekAiPayload({
+      odometer: listingPeekPhraseByTone("odometer", "positive"),
+      closer: true,
+      letter,
+    });
+    expect(parsed?.letter).toBe(letter);
+    expect(parsed?.closer).toBe(true);
+  });
+});
+
+describe("insertListingPeekLetterSentence", () => {
+  it("inserts a specific sentence before the closer", () => {
+    const base = assembleListingPeekCustomerComment({
+      closer: true,
+      lines: { technical: listingPeekPhraseByTone("technical", "caution") },
+    });
+    const next = insertListingPeekLetterSentence(base, "VIN no Vācijas, 2018. gads.");
+    expect(next).toContain("VIN no Vācijas, 2018. gads.");
+    expect(next.endsWith(LISTING_PEEK_COMMENT_CLOSER)).toBe(true);
+    expect(next.indexOf("VIN no Vācijas")).toBeLessThan(next.indexOf(LISTING_PEEK_COMMENT_CLOSER));
   });
 });
 

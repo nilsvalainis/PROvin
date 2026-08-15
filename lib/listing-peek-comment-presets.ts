@@ -157,6 +157,30 @@ export function assembleListingPeekCustomerComment(input: {
   return blocks.join("\n\n").trim();
 }
 
+/** Ieliek teikumu vēstulē pirms AUDITS closer — sagatave + operatora papildinājumi. */
+export function insertListingPeekLetterSentence(letter: string, sentence: string): string {
+  const add = sentence.trim();
+  const current = letter.replace(/\r/g, "").trim();
+  if (!add) return current;
+  if (current.includes(add)) return current;
+  if (current.includes(LISTING_PEEK_COMMENT_CLOSER)) {
+    return current.replace(LISTING_PEEK_COMMENT_CLOSER, `${add}\n\n${LISTING_PEEK_COMMENT_CLOSER}`).trim();
+  }
+  return current ? `${current}\n\n${add}` : add;
+}
+
+export function applyListingPeekLetterCloser(letter: string, closer: boolean): string {
+  const current = letter.replace(/\r/g, "").trim();
+  const has = current.includes(LISTING_PEEK_COMMENT_CLOSER);
+  if (closer && !has) {
+    return current ? `${current}\n\n${LISTING_PEEK_COMMENT_CLOSER}` : LISTING_PEEK_COMMENT_CLOSER;
+  }
+  if (!closer && has) {
+    return current.replace(LISTING_PEEK_COMMENT_CLOSER, "").trim();
+  }
+  return current;
+}
+
 const emptyPeekLines = (): Record<ListingPeekTopicId, string> => ({
   odometer: "",
   incidents: "",
@@ -204,4 +228,56 @@ export function parseListingPeekCustomerComment(raw: string): {
   }
 
   return { closer, lines };
+}
+
+function coerceJsonObject(raw: unknown): Record<string, unknown> | null {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  if (typeof raw !== "string") return null;
+  const t = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
+  const tryParse = (s: string): Record<string, unknown> | null => {
+    try {
+      const p: unknown = JSON.parse(s);
+      return p && typeof p === "object" && !Array.isArray(p) ? (p as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  };
+  return tryParse(t) ?? (() => {
+    const m = t.match(/\{[\s\S]*\}/);
+    return m ? tryParse(m[0]) : null;
+  })();
+}
+
+/** Flash / Gemini izejas JSON → piecu tēmu lauki + pilnā vēstule. */
+export function parseListingPeekAiPayload(raw: unknown): {
+  closer: boolean;
+  lines: Record<ListingPeekTopicId, string>;
+  letter?: string;
+} | null {
+  const obj = coerceJsonObject(raw);
+  if (!obj) return null;
+  const lines = emptyPeekLines();
+  let any = false;
+  for (const id of LISTING_PEEK_TOPIC_IDS) {
+    const v = obj[id];
+    if (typeof v === "string" && v.trim()) {
+      lines[id] = v.trim().slice(0, 400);
+      any = true;
+    }
+  }
+  const letterRaw =
+    (typeof obj.letter === "string" && obj.letter.trim()) ||
+    (typeof obj.text === "string" && obj.text.trim()) ||
+    "";
+  if (!any && !letterRaw && !("closer" in obj)) return null;
+  return {
+    closer: obj.closer === true || obj.closer === "true" || letterRaw.includes(LISTING_PEEK_COMMENT_CLOSER),
+    lines,
+    ...(letterRaw ? { letter: letterRaw } : {}),
+  };
 }

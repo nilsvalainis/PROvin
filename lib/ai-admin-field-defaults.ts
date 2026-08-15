@@ -16,6 +16,7 @@ export type AiAdminFieldKind =
   | "technical_risks"
   | "summary"
   | "sources_comparison"
+  | "listing_peek"
   | "extract";
 
 export const AI_ADMIN_FIELD_DEFAULT_TIER: Record<AiAdminFieldKind, AiAdminModelTier> = {
@@ -30,6 +31,7 @@ export const AI_ADMIN_FIELD_DEFAULT_TIER: Record<AiAdminFieldKind, AiAdminModelT
   technical_risks: "flash",
   summary: "pro",
   sources_comparison: "flash",
+  listing_peek: "gemini-flash",
   extract: "flash",
 };
 

@@ -17,6 +17,8 @@ type Props = {
   dialogHint?: string;
   /** Ieteicamais līmenis šim laukam — pirmā poga; Opus paliek pieejams, bet nav noklusējums. */
   recommendedTier?: AiAdminModelTier;
+  /** Ja norādīts — rāda tikai šīs pogas (piem. ātrajiem vērtējumiem tikai Gemini + Flash). */
+  tiers?: readonly AiAdminModelTier[];
   onGenerate: (operatorNotes: string, modelTier: AiAdminModelTier) => void | Promise<void>;
 };
 
@@ -49,6 +51,7 @@ export function AdminAiGenerateWithPrefill({
   dialogTitle = "Papildu piezīmes AI",
   dialogHint = "Ievadi korekcijas vai pilnu eksperta tekstu. AI drīkst pārkārtot PROVIN stilā un papildināt, bet nedrīkst apgraizīt tavu detalizāciju — datumi, km, servisi un secinājumi jāsaglabā.",
   recommendedTier = "gemini-flash",
+  tiers: tiersProp,
   onGenerate,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -56,7 +59,7 @@ export function AdminAiGenerateWithPrefill({
   const [pendingTier, setPendingTier] = useState<AiAdminModelTier>(recommendedTier);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleId = useId();
-  const tiers = aiAdminButtonOrder(recommendedTier);
+  const tiers = tiersProp?.length ? [...tiersProp] : aiAdminButtonOrder(recommendedTier);
 
   useEffect(() => {
     if (!open) return;

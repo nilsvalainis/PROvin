@@ -614,6 +614,22 @@ Rezultāts (šī lauka mandāts — atšķirībā no avotu komentāriem):
 - GARUMS: šis ir vienīgais lauks pilnai nobraukuma sintēzei, tāpēc drīkst būt nedaudz plašāks par avota komentāru — tipiski **3–5 rindkopas**, ne eseja`,
 );
 
+export const AI_LISTING_PEEK_COMMENT_SYSTEM = provinFieldAgentPrompt(
+  "LISTING PEEK COMMENT (Ātrais sludinājuma vērtējums — e-pasts klientam)",
+  `Uzdevums: sagatavot vai APSTRĀDĀT bezmaksas sludinājuma e-pastu klientam. Šis NAV pilns PROVIN AUDITS — tikai tas, ko var teikt no sludinājuma + operatora teksta.
+
+IZEJA — tikai JSON, bez Markdown:
+{"odometer":"","incidents":"","technical":"","seller":"","photos":"","closer":true,"letter":"Sveiki!\\n\\n1. ..."}
+
+- letter = PILNĀ vēstule, ko klients saņems (Sveiki + punkti + operatora papildinājumi + closer, ja closer=true).
+- Ja promptā ir esošais melnraksts / operatora teikumi — tie ir AVOTS: saglabā faktus, specifiškos teikumus, VIN, cenas, km, gadu. Drīksti pārkārtot PROVIN stilā, NEDRĪKSTI izmest operatora detaļas.
+- odometer / incidents / technical / seller / photos — īsi kopsavilkumi tēmām (var palikt tukši, ja saturs ir tikai letter).
+- closer: true, ja vērts atgādināt, ka pilnā aina ir PROVIN AUDITS (parasti true).
+
+TONIS: atturīgs, pārdod AUDITS bez panikas. Aizliegti: kritisks, anomālija, katastrofāls, nepērc, izsaukuma zīmes.
+Neizdomā faktus ārpus nolasītā sludinājuma un operatora piezīmēm.`,
+);
+
 export const AI_SOURCES_COMPARISON_SYSTEM = `${provinFieldAgentPrompt(
   "SOURCES COMPARISON (Avotu salīdzinājums — iekšējs, nav PDF)",
   `Uzdevums: sagatavot iekšēju, blogam derīgu stāstu laukam „AVOTU SALĪDZINĀJUMS” — šis teksts NEKAD netiek drukāts klienta PDF; to izmanto PROVIN mārketingam un pārdevēja dienasgrāmatas stilā.

@@ -110,8 +110,8 @@ export default async function AdminListingPeeksPage({
           Ātrie vērtējumi
         </h1>
         <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
-          Bezmaksas sludinājuma komentāri. Pie katras tēmas ikona atver sagataves; e-pasts
-          saliekas numurēti + PROVIN AUDITS CTA. Gmail Reply = parasts teksts.
+          Bezmaksas sludinājuma komentāri. Sagataves saliekas vēstulē, ko vari papildināt;
+          Flash / Gemini apstrādā visu tekstu. Gmail Reply = parasts teksts.
         </p>
       </AdminDashboardHeaderWithMenu>
 
@@ -313,7 +313,11 @@ function PeekCard({
       {showSend ? (
         <form action={sendComment} className="mt-3 border-t border-slate-100 pt-3">
           <input type="hidden" name="id" value={e.id} />
-          <AdminListingPeekCommentComposer fieldId={`peek-${e.id}`} smtpOk={smtpOk} />
+          <AdminListingPeekCommentComposer
+            fieldId={`peek-${e.id}`}
+            listingUrl={e.listingUrl}
+            smtpOk={smtpOk}
+          />
         </form>
       ) : isDone ? (
         <PeekSentFollowUp entry={e} smtpOk={smtpOk} sendComment={sendComment} />
@@ -355,9 +359,11 @@ function PeekSentFollowUp({
         <input type="hidden" name="id" value={e.id} />
         <AdminListingPeekCommentComposer
           fieldId={`peek-${e.id}-followup`}
+          listingUrl={e.listingUrl}
           smtpOk={smtpOk}
           initialLines={parsed?.lines}
           initialCloser={parsed?.closer}
+          initialLetter={e.comment}
           submitLabel="Nosūtīt vēlreiz"
         />
       </form>

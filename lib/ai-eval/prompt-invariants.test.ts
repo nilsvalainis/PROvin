@@ -276,6 +276,9 @@ describe("PROVIN AI prompt invariants", () => {
   it("admin AI routes attach usage to JSON responses", () => {
     expect(readRepo("app/api/admin/ai/source-comment/route.ts")).toMatch(/nextJsonWithAiUsage/);
     expect(readRepo("app/api/admin/ai/tirgus-market/route.ts")).toMatch(/nextJsonBodyWithAiUsage/);
+    expect(readRepo("app/api/admin/ai/listing-peek-comment/route.ts")).toMatch(
+      /nextJsonBodyWithAiUsage/,
+    );
     expect(readRepo("app/api/admin/prepare-draft/route.ts")).toMatch(/nextJsonBodyWithAiUsage/);
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/AdminAiSessionCostBar/);
   });
@@ -314,6 +317,7 @@ describe("PROVIN AI prompt invariants", () => {
       "components/admin/AdminListingAnalysisSourceBlock.tsx",
       "components/admin/AdminSourceCommentField.tsx",
       "components/admin/AdminTirgusSourceBlock.tsx",
+      "components/admin/AdminListingPeekCommentComposer.tsx",
     ]) {
       const src = readRepo(file);
       expect(src).toMatch(/AdminAiFieldError/);

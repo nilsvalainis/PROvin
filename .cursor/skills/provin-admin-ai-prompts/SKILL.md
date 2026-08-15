@@ -50,6 +50,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 | `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs | `admin-ai-mileage-comment.ts` |
 | `AI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums | `admin-ai-incidents-summary.ts` |
 | `aiSourceCommentSystemPrompt(label)` | Avota „Komentāri” | `admin-ai-source-comment.ts` |
+| `AI_LISTING_PEEK_COMMENT_SYSTEM` | Ātrais sludinājuma vērtējums | `admin-ai-listing-peek.ts` — Gemini Flash / Gemini JSON |
 | `AI_LV_POLISH_SYSTEM` | Gramatika (✨ polish) | `admin-ai-polish.ts` → [provin-lv-polish](../provin-lv-polish/SKILL.md) |
 
 `AI_CLIENT_EMAIL_FORMAT_RULES` applies only to **3. Kopsavilkums** (plain text, end with `APPROVED BY IRISS`).
