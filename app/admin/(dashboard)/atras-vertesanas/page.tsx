@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
@@ -106,8 +107,8 @@ export default async function AdminListingPeeksPage({
           Ātrie vērtējumi
         </h1>
         <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
-          Bezmaksas sludinājuma komentāri. Atbildi ar «Nosūtīt e-pastu» — HTML ar PROVIN AUDITS CTA.
-          Gmail Reply = parasts teksts. Kļūdainu e-pastu labo rindā un saglabā.
+          Bezmaksas sludinājuma komentāri. Pie katras tēmas ikona atver sagataves; e-pasts
+          saliekas numurēti + PROVIN AUDITS CTA. Gmail Reply = parasts teksts.
         </p>
       </AdminDashboardHeaderWithMenu>
 
@@ -306,33 +307,7 @@ function PeekCard({
       {showSend ? (
         <form action={sendComment} className="mt-3 border-t border-slate-100 pt-3">
           <input type="hidden" name="id" value={e.id} />
-          <label
-            htmlFor={`comment-${e.id}`}
-            className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
-          >
-            Komentārs klientam (e-pastā + AUDITS CTA)
-          </label>
-          <textarea
-            id={`comment-${e.id}`}
-            name="comment"
-            required
-            minLength={8}
-            rows={3}
-            placeholder="Īss komentārs tikai par to, kas redzams sludinājumā…"
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
-          />
-          <div className="mt-2.5 flex flex-wrap items-center gap-3">
-            <button
-              type="submit"
-              disabled={!smtpOk}
-              className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Nosūtīt e-pastu
-            </button>
-            {!smtpOk ? (
-              <p className="text-[12px] text-amber-700">SMTP nav konfigurēts.</p>
-            ) : null}
-          </div>
+          <AdminListingPeekCommentComposer fieldId={`peek-${e.id}`} smtpOk={smtpOk} />
         </form>
       ) : null}
     </li>

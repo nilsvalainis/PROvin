@@ -5,6 +5,7 @@ import type { SourceBlockKey } from "@/lib/admin-source-blocks";
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
+  Camera,
   CarFront,
   ChartColumn,
   CircleUser,
@@ -12,6 +13,7 @@ import {
   Database,
   FileSearch,
   FileText,
+  Gauge,
   Globe,
   History,
   Landmark,
@@ -83,4 +85,12 @@ export const SUBHEADING_LUCIDE = {
   listingHistory: History,
   serviceWorks: Wrench,
   ltabCertificate: FileText,
+} as const;
+
+export const LISTING_PEEK_TOPIC_LUCIDE = {
+  odometer: Gauge,
+  incidents: Shield,
+  technical: Wrench,
+  seller: CircleUser,
+  photos: Camera,
 } as const;
