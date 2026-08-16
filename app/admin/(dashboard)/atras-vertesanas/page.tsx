@@ -2,6 +2,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
+import {
+  AdminListingPeekCardShell,
+  AdminListingPeekSla,
+} from "@/components/admin/AdminListingPeekSla";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
@@ -221,30 +225,10 @@ function PeekCard({
   const isRejected = e.status === "rejected";
 
   return (
-    <li
-      className={`rounded-2xl border bg-white p-3 shadow-sm sm:p-4 ${
-        isDone
-          ? "border-emerald-200/90 bg-emerald-50/40"
-          : isRejected
-            ? "border-slate-200/90 bg-slate-50/80 opacity-80"
-            : "border-slate-200/90"
-      }`}
-    >
+    <AdminListingPeekCardShell createdAt={e.createdAt} complete={isDone} rejected={isRejected}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[12px] text-[var(--color-provin-muted)]">{formatWhen(e.createdAt)}</p>
-            {isDone ? (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-emerald-800">
-                E-pasts nosūtīts
-              </span>
-            ) : null}
-            {isRejected ? (
-              <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-600">
-                Noraidīts
-              </span>
-            ) : null}
-          </div>
+          <AdminListingPeekSla createdAt={e.createdAt} complete={isDone} rejected={isRejected} />
 
           <form action={saveEmail} className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <input type="hidden" name="id" value={e.id} />
@@ -322,7 +306,7 @@ function PeekCard({
       ) : isDone ? (
         <PeekSentFollowUp entry={e} smtpOk={smtpOk} sendComment={sendComment} />
       ) : null}
-    </li>
+    </AdminListingPeekCardShell>
   );
 }
 
