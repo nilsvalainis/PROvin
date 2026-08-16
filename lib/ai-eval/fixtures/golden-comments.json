@@ -3,7 +3,7 @@
     "id": "source-csdd-ta-ok",
     "field": "source",
     "expectPass": true,
-    "text": "**Tehnisko apskašu tendence.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **sešas reizes**; hroniski atkārtojas korozija un eļļas noplūdes.\n\n**Īss km salīdzinājums.** CSDD pēdējais fiksējums sakrīt ar AutoDNA — detalizēto nobraukuma forenziku atstāj nobraukuma komentāram."
+    "text": "**Tehnisko apskašu tendence.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **sešas reizes**; hroniski atkārtojas korozija un eļļas noplūdes.\n\n**Īss km salīdzinājums.** CSDD pēdējais fiksējums sakrīt ar AutoDNA - detalizēto nobraukuma forenziku atstāj nobraukuma komentāram."
   },
   {
     "id": "source-bad-automobilis",
