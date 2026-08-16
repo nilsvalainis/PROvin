@@ -22,7 +22,7 @@ describe("assembleListingPeekCustomerComment", () => {
       },
     });
     expect(comment.startsWith(`${LISTING_PEEK_COMMENT_GREETING}\n\n`)).toBe(true);
-    expect(comment).toContain("1. Ticamība odometra rādījumiem");
+    expect(comment).toContain("1. Pēc sākotnējo datu apstrādes odometra rādījumi");
     expect(comment).toContain("2. Negadījumi padziļināti jāpēta maksas datubāzēs.");
     expect(comment).toContain("3. Tehniski ir nianses, kas būs jāpēta klātienē.");
     expect(comment).toContain("4. Pārdevējs ar salīdzinoši labu reputāciju");
@@ -115,7 +115,7 @@ describe("parseListingPeekAiPayload", () => {
     const letter = [
       LISTING_PEEK_COMMENT_GREETING,
       "",
-      "1. Ticamība odometra rādījumiem sludinājuma datos izskatās ļoti augsta.",
+      "1. Pēc sākotnējo datu apstrādes odometra rādījumi izskatās ticami, tomēr bez padziļinātas izpētes mēs to nevaram droši apgalvot.",
       "",
       "VIN no Vācijas, 2018. gads, 189 000 km.",
       "",

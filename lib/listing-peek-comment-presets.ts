@@ -32,17 +32,17 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
       {
         tone: "positive",
         label: "Labs",
-        text: "Ticamība odometra rādījumiem sludinājuma datos izskatās ļoti augsta.",
+        text: "Pēc sākotnējo datu apstrādes odometra rādījumi izskatās ticami, tomēr bez padziļinātas izpētes mēs to nevaram droši apgalvot.",
       },
       {
         tone: "caution",
         label: "Jāpēta",
-        text: "Pēc sludinājuma vien nobraukuma ticamību apstiprināt nevar — to var salīdzināt tikai vairākos avotos.",
+        text: "Odometra rādījumu ticamību šajā gadījumā nav iespējams izvērtēt bez padziļinātas pārbaudes.",
       },
       {
         tone: "concern",
         label: "Neskaidrs",
-        text: "Nobraukuma stāsts sludinājumā ir neskaidrs; precīzu ķēdi redz tikai maksas datubāzēs un dīlera vēsturē.",
+        text: "Sludinājuma dati nesniedz skaidru priekšstatu par nobraukumu. Lai redzētu pilnu vēsturi, nepieciešama pārbaude maksas reģistros un pie oficiālā dīlera.",
       },
     ],
   },
@@ -53,7 +53,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
       {
         tone: "positive",
         label: "Nav redzams",
-        text: "Sludinājumā nav redzamu norāžu uz smagu negadījumu — tas vēl nav apstiprinājums.",
+        text: "Negadījuma pazīmes netika konstatētas, taču pilnīgai pārliecībai ir nepieciešama pārbaude maksas datubāzēs.",
       },
       {
         tone: "caution",
@@ -63,7 +63,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
       {
         tone: "concern",
         label: "Pazīmes",
-        text: "Ir pazīmes, ka auto varētu būt bijis remonta objekts; sludinājums to neizslēdz.",
+        text: "Sākotnējie dati liecina par iespējamu dalību negadījumā, tāpēc iesakām veikt padziļinātu pārbaudi.",
       },
     ],
   },
