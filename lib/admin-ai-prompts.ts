@@ -616,7 +616,11 @@ Rezultāts (šī lauka mandāts — atšķirībā no avotu komentāriem):
 
 export const AI_LISTING_PEEK_COMMENT_SYSTEM = provinFieldAgentPrompt(
   "LISTING PEEK COMMENT (Ātrais sludinājuma vērtējums — e-pasts klientam)",
-  `Uzdevums: sagatavot vai APSTRĀDĀT bezmaksas sludinājuma e-pastu klientam. Šis NAV pilns PROVIN AUDITS — tikai tas, ko var teikt no sludinājuma + operatora teksta.
+  `${AI_CLIENT_EMAIL_FORMAT_RULES}
+
+OVERRIDE: šis ir parasta teksta e-pasts. Field-agent „**bold** topic opener” šeit NEDER. NEKAD neizvadi **, *, __, \` vai jebkādu Markdown — ne letter, ne tēmu laukos. Tēmu nosaukumus raksti kā parastu tekstu (piem. „Tehniskais salikums. …”).
+
+Uzdevums: sagatavot vai APSTRĀDĀT bezmaksas sludinājuma e-pastu klientam. Šis NAV pilns PROVIN AUDITS — tikai tas, ko var teikt no sludinājuma + operatora teksta.
 
 IZEJA — tikai JSON, bez Markdown:
 {"odometer":"","incidents":"","technical":"","seller":"","photos":"","closer":true,"letter":"Sveiki!\\n\\n1. ..."}

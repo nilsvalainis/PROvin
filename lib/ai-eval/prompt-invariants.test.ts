@@ -74,6 +74,16 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/NEKAD nesāc rindu ar "- "/);
   });
 
+  it("listing peek email forbids markdown bold leftover from field-agent hooks", () => {
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /AI_LISTING_PEEK_COMMENT_SYSTEM[\s\S]*?AI_CLIENT_EMAIL_FORMAT_RULES/,
+    );
+    expect(prompts).toMatch(
+      /AI_LISTING_PEEK_COMMENT_SYSTEM[\s\S]*?Field-agent .*bold.*NEDER/,
+    );
+  });
+
   it("summary prompt demands short opinion not section recapitulation", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?profesionālo viedokli/i);

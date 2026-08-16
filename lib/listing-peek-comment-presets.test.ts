@@ -8,6 +8,7 @@ import {
   listingPeekPhraseByTone,
   parseListingPeekAiPayload,
   parseListingPeekCustomerComment,
+  stripListingPeekMarkdown,
 } from "@/lib/listing-peek-comment-presets";
 
 describe("assembleListingPeekCustomerComment", () => {
@@ -111,6 +112,25 @@ describe("parseListingPeekAiPayload", () => {
     expect(parsed?.lines.incidents).toBe("");
   });
 
+  it("strips Gemini markdown bold from letter and topic lines", () => {
+    const parsed = parseListingPeekAiPayload({
+      technical: "**Tehniskais salikums.** Šai automašīnai ir nianses.",
+      closer: true,
+      letter: [
+        LISTING_PEEK_COMMENT_GREETING,
+        "",
+        "1. **Tehniskais salikums.** Šai automašīnai ir nianses.",
+        "2. **Vēsture un pārdevējs.** Jāpēta, kā auto nonācis tirgū.",
+        "",
+        LISTING_PEEK_COMMENT_CLOSER,
+      ].join("\n"),
+    });
+    expect(parsed?.lines.technical).toBe("Tehniskais salikums. Šai automašīnai ir nianses.");
+    expect(parsed?.letter).toContain("1. Tehniskais salikums. Šai automašīnai ir nianses.");
+    expect(parsed?.letter).toContain("2. Vēsture un pārdevējs. Jāpēta, kā auto nonācis tirgū.");
+    expect(parsed?.letter).not.toContain("**");
+  });
+
   it("keeps the full letter field so Gemini can process operator extras", () => {
     const letter = [
       LISTING_PEEK_COMMENT_GREETING,
@@ -141,6 +161,15 @@ describe("insertListingPeekLetterSentence", () => {
     expect(next).toContain("VIN no Vācijas, 2018. gads.");
     expect(next.endsWith(LISTING_PEEK_COMMENT_CLOSER)).toBe(true);
     expect(next.indexOf("VIN no Vācijas")).toBeLessThan(next.indexOf(LISTING_PEEK_COMMENT_CLOSER));
+  });
+});
+
+describe("stripListingPeekMarkdown", () => {
+  it("removes paired and leftover bold markers", () => {
+    expect(stripListingPeekMarkdown("1. **Tehniskais salikums.** Teksts.")).toBe(
+      "1. Tehniskais salikums. Teksts.",
+    );
+    expect(stripListingPeekMarkdown("Atlikušas ** zvaigznes")).toBe("Atlikušas  zvaigznes");
   });
 });
 

@@ -142,6 +142,18 @@ export function listingPeekPhraseByTone(
   return topic?.phrases.find((p) => p.tone === tone)?.text ?? "";
 }
 
+/** Klienta e-pasts ir parasts teksts — Gemini citādi atstāj field-agent `**bold**`. */
+export function stripListingPeekMarkdown(text: string): string {
+  return text
+    .replace(/\r/g, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/(?<![\w*])\*(?!\*)([^*\n]+?)\*(?!\*)/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*\*/g, "")
+    .replace(/__/g, "");
+}
+
 export function assembleListingPeekCustomerComment(input: {
   greeting?: boolean;
   closer?: boolean;
@@ -266,7 +278,7 @@ export function parseListingPeekAiPayload(raw: unknown): {
   for (const id of LISTING_PEEK_TOPIC_IDS) {
     const v = obj[id];
     if (typeof v === "string" && v.trim()) {
-      lines[id] = v.trim().slice(0, 400);
+      lines[id] = stripListingPeekMarkdown(v.trim()).slice(0, 400);
       any = true;
     }
   }
@@ -274,10 +286,11 @@ export function parseListingPeekAiPayload(raw: unknown): {
     (typeof obj.letter === "string" && obj.letter.trim()) ||
     (typeof obj.text === "string" && obj.text.trim()) ||
     "";
-  if (!any && !letterRaw && !("closer" in obj)) return null;
+  const letter = letterRaw ? stripListingPeekMarkdown(letterRaw) : "";
+  if (!any && !letter && !("closer" in obj)) return null;
   return {
-    closer: obj.closer === true || obj.closer === "true" || letterRaw.includes(LISTING_PEEK_COMMENT_CLOSER),
+    closer: obj.closer === true || obj.closer === "true" || letter.includes(LISTING_PEEK_COMMENT_CLOSER),
     lines,
-    ...(letterRaw ? { letter: letterRaw } : {}),
+    ...(letter ? { letter } : {}),
   };
 }
