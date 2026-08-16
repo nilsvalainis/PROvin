@@ -43,7 +43,9 @@ RULES:
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
-- If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph — never leave a leading dash at paragraph start.
+- If any paragraph or standalone line begins with "- ", rewrite it as a normal sentence or merge into the previous paragraph - never leave a leading dash at paragraph start.
+- Replace every long em dash (—) and en dash (–) with the short ASCII hyphen "-". Ranges: 2007-2015, 300-400 €. Mid-sentence asides: space-hyphen-space. Long dashes are an AI tell; never leave them in the polished text.
+- Do not introduce chatbot fillers („Svarīgi atzīmēt”, „Kopumā var secināt”, „Turklāt jāpiemin”, „Šajā kontekstā”).
 - Output ONLY the corrected text in clean Markdown.`;
 
 /** provin-field-agent — bāzes sistēmas uzdevums admin ✨ lauku ģenerēšanai (komentāri, vēsture, eksperta sadaļas). */
@@ -66,6 +68,7 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 - Always write in high-quality, natural Latvian.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
 - For checklists, visual/physical inspections, or next-step recommendations, strictly use objective phrasing (e.g. "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do not use direct imperatives like "Pārbaudi" or weak passive wording.
+- Client-facing Latvian must use the short hyphen "-" only: never copy the long dash characters (— or –) from these English instructions into the output.
 
 CROSS-SOURCE DISCIPLINE (all field types):
 - Never invent facts absent from the provided context — except when ACTIVE FIELD rules explicitly allow web search to fill model/powertrain technical risk knowledge (see CLIENT SUMMARY).
