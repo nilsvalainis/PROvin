@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { LayoutDashboard, ListChecks, ListOrdered } from "lucide-react";
+import { AdminAdifyHistoryButton } from "@/components/admin/AdminAdifyHistoryButton";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminConsultationSlotPhotos } from "@/components/admin/AdminConsultationSlotPhotos";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
@@ -548,12 +549,15 @@ export function ConsultationDetailWorkspace({
         <h2 className={`${sectionTitle} px-0.5`}>Nr. {n}</h2>
         <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
           Sludinājuma links
-          <input
-            type="url"
-            className="mt-0.5 w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)]"
-            value={slot.listingUrl}
-            onChange={(e) => updateSlotField(idx, "listingUrl", e.target.value)}
-          />
+          <span className="mt-0.5 flex items-center gap-1.5">
+            <input
+              type="url"
+              className="min-w-0 flex-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)]"
+              value={slot.listingUrl}
+              onChange={(e) => updateSlotField(idx, "listingUrl", e.target.value)}
+            />
+            <AdminAdifyHistoryButton listingUrl={slot.listingUrl} />
+          </span>
         </label>
         <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
           Pārdošanas cena

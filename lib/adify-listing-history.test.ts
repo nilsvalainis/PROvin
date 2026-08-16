@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  adifyChronologicalPriceRows,
   adifyDurationDays,
   applyAdifyHistoryToTirgus,
+  formatAdifyDurationLabel,
   formatAdifySignedEur,
   normalizeAdifyHistoryItems,
   parseAdifyHistoryUrl,
@@ -85,5 +87,26 @@ describe("normalizeAdifyHistoryItems — Audi Q7 bcdpnx fixture", () => {
 describe("adifyDurationDays", () => {
   it("is at least 1 for a same-day listing", () => {
     expect(adifyDurationDays("2026-08-13T12:00:00", new Date(2026, 7, 13))).toBe(1);
+  });
+});
+
+describe("formatAdifyDurationLabel", () => {
+  it("uses Latvian singular after 21", () => {
+    expect(formatAdifyDurationLabel(1)).toBe("1 diena");
+    expect(formatAdifyDurationLabel(11)).toBe("11 dienas");
+    expect(formatAdifyDurationLabel(21)).toBe("21 diena");
+    expect(formatAdifyDurationLabel(85)).toBe("85 dienas");
+  });
+});
+
+describe("adifyChronologicalPriceRows", () => {
+  it("puts the first listing day first", () => {
+    const snap = normalizeAdifyHistoryItems(
+      [[{ price: 100, created: "2026-08-10" }, { price: 90, created: "2026-08-01" }]],
+      new Date(2026, 7, 13),
+    );
+    const chrono = adifyChronologicalPriceRows(snap.rows);
+    expect(chrono[0]?.price).toBe(90);
+    expect(chrono[chrono.length - 1]?.price).toBe(100);
   });
 });

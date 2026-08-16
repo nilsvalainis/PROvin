@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { AdminAdifyHistoryButton } from "@/components/admin/AdminAdifyHistoryButton";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
 import {
@@ -260,16 +261,19 @@ function PeekCard({
               <AdminWhatsAppOpenButton phone={e.phone} />
             </div>
           ) : null}
-          <a
-            href={e.listingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`mt-1.5 block break-all text-[var(--color-provin-accent)] hover:underline ${
-              compact ? "text-[12px] line-clamp-1" : "text-[13px]"
-            }`}
-          >
-            {e.listingUrl}
-          </a>
+          <div className="mt-1.5 flex items-start gap-1.5">
+            <a
+              href={e.listingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`min-w-0 flex-1 break-all text-[var(--color-provin-accent)] hover:underline ${
+                compact ? "text-[12px] line-clamp-1" : "text-[13px]"
+              }`}
+            >
+              {e.listingUrl}
+            </a>
+            <AdminAdifyHistoryButton listingUrl={e.listingUrl} />
+          </div>
         </div>
 
         <form action={setStatus} className="flex items-center gap-2">

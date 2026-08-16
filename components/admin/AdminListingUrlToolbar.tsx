@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminAdifyHistoryButton } from "@/components/admin/AdminAdifyHistoryButton";
 import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
 import { buildTirgusDatiOpenUrl } from "@/lib/admin-tirgusdati-url";
 
@@ -12,7 +13,7 @@ type Props = {
   onCopySuccess?: () => void;
 };
 
-/** Blakus sludinājuma URL laukam: Copy + Tirgus dati (sākumlapa; TM hand-off). */
+/** Blakus sludinājuma URL laukam: Copy + Tirgus dati + Adify vēsture. */
 export function AdminListingUrlEndAdornment({ listingUrl, onCopySuccess }: Props) {
   const tdHref = buildTirgusDatiOpenUrl(listingUrl);
   const hasUrl = Boolean(tdHref);
@@ -46,6 +47,7 @@ export function AdminListingUrlEndAdornment({ listingUrl, onCopySuccess }: Props
           Tirgus
         </span>
       )}
+      <AdminAdifyHistoryButton listingUrl={listingUrl} />
     </div>
   );
 }

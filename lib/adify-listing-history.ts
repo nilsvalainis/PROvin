@@ -110,6 +110,21 @@ export function formatAdifyLvDate(raw: string): string {
   return `${dd}.${mm}.${dt.getFullYear()}`;
 }
 
+/** 1 diena, 11 dienas, 21 diena. */
+export function formatAdifyDurationLabel(days: number): string {
+  const n = Math.round(days);
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  const word = mod10 === 1 && mod100 !== 11 ? "diena" : "dienas";
+  return `${n} ${word}`;
+}
+
+/** Vecākais ieraksts vispirms — cenu soļi no pirmās dienas. */
+export function adifyChronologicalPriceRows(rows: TirgusPriceHistoryRow[]): TirgusPriceHistoryRow[] {
+  return [...rows].reverse();
+}
+
 /** Kalendārās dienas (kā adify `differenceInDays` + vismaz 1, ja ir vēsture). */
 export function adifyDurationDays(oldestRaw: string, now: Date = new Date()): number {
   const from = parseAdifyDay(oldestRaw);
