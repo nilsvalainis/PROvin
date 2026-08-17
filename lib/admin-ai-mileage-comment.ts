@@ -2,7 +2,7 @@ import "server-only";
 
 import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_MILEAGE_COMMENT_SYSTEM } from "@/lib/admin-ai-prompts";
-import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
+import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
   buildFullAiOrderContextText,
   type AiOrderContextInput,
@@ -44,6 +44,5 @@ Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu, tehnisko risku eseju va
     systemInstruction: AI_MILEAGE_COMMENT_SYSTEM,
     userPrompt,
     temperature: 0.35,
-    maxLen: aiMaxLenForOperatorNotes(input.operatorNotes, 4000),
   });
 }

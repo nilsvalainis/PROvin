@@ -5,7 +5,7 @@ import {
   AI_LISTING_PHOTO_ANALYSIS_SYSTEM,
   AI_LISTING_SALES_CONTEXT_SYSTEM,
 } from "@/lib/admin-ai-prompts";
-import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
+import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
   buildFullAiOrderContextText,
   type AiOrderContextInput,
@@ -80,7 +80,6 @@ ${focusBlock}`,
     systemInstruction,
     userPrompt,
     temperature: 0.3,
-    maxLen: aiMaxLenForOperatorNotes(input.operatorNotes, 2800),
   });
   return applyProvinReportCopyVocabulary(raw);
 }

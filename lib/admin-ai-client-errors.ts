@@ -6,6 +6,8 @@ export type AdminAiApiErrorBody = {
   error?: string;
   detail?: string;
   message?: string;
+  text?: string;
+  incomplete?: boolean;
 };
 
 const ERROR_MESSAGES_LV: Record<string, string> = {
@@ -30,6 +32,8 @@ const ERROR_MESSAGES_LV: Record<string, string> = {
     "AI atgrieza tukšu atbildi — tokeni tika tērēti, bet teksts nepienāca. Mēģini vēlreiz.",
   ai_empty_content_max_tokens:
     "Claude iztērēja tokenu limitu thinking posmā un neatgrieza tekstu — mēģini vēlreiz.",
+  ai_incomplete_comment:
+    "Komentārs nav pabeigts (timeout vai tokenu limits) — daļa teksta ir ielikta laukā, bet tas NAV gatavs. Ģenerē vēlreiz, lai pabeigtu; pretējā gadījumā tokeni paliek iztērēti pa tukšo.",
   gemini_empty_content:
     "AI atgrieza tukšu atbildi — tokeni tika tērēti, bet teksts nepienāca. Mēģini vēlreiz.",
   ai_invalid_json: "AI atgrieza nevalīdu JSON — mēģini vēlreiz",
@@ -121,21 +125,34 @@ export function formatAdminAiFetchError(
 }
 
 /** HTTP 200 ar tukšu `text` nozīmē, ka AI jau iekasēja tokenus, bet UI to klusi ignorēja. */
+export type GeneratedAdminAiText =
+  | { ok: true; text: string }
+  | { ok: false; error: string; text?: string };
+
 export function readGeneratedAdminAiText(
   res: Pick<Response, "ok" | "status">,
-  data: AdminAiApiErrorBody & { text?: string },
+  data: AdminAiApiErrorBody & { text?: string; incomplete?: boolean },
   parseFailed: boolean,
   httpFallback: string,
-): { ok: true; text: string } | { ok: false; error: string } {
+): GeneratedAdminAiText {
+  const text = typeof data.text === "string" ? data.text.trim() : "";
+  const incomplete = data.incomplete === true || data.error === "ai_incomplete_comment";
+  if (incomplete) {
+    return {
+      ok: false,
+      error: ERROR_MESSAGES_LV.ai_incomplete_comment,
+      text: text || undefined,
+    };
+  }
   if (!res.ok) {
     return {
       ok: false,
       error: parseFailed
         ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
         : formatAdminAiFetchError(data, res, httpFallback),
+      text: text || undefined,
     };
   }
-  const text = typeof data.text === "string" ? data.text.trim() : "";
   if (text) return { ok: true, text };
   return {
     ok: false,
@@ -143,6 +160,20 @@ export function readGeneratedAdminAiText(
       ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
       : ERROR_MESSAGES_LV.ai_empty_content,
   };
+}
+
+/** Ieliek apmaksāto tekstu (arī nepabeigtu), bet nepabeigtu nekad neuzskata par veiksmi. */
+export function applyGeneratedAdminAiText(
+  generated: GeneratedAdminAiText,
+  applyText: (text: string) => void,
+  setError: (error: string) => void,
+): boolean {
+  if (generated.text) applyText(generated.text);
+  if (!generated.ok) {
+    setError(generated.error);
+    return false;
+  }
+  return true;
 }
 
 export async function parseAdminAiResponse(res: Response): Promise<{

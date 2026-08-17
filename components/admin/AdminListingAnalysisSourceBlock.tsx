@@ -30,6 +30,7 @@ import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
 import { LISTING_PEEK_TOPICS, type ListingPeekTone } from "@/lib/listing-peek-comment-presets";
 import {
+  applyGeneratedAdminAiText,
   parseAdminAiResponse,
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
@@ -176,16 +177,22 @@ export function AdminListingAnalysisSourceBlock({
           parseFailed,
           "AI: neizdevās ģenerēt komentāru",
         );
-        if (!generated.ok) {
-          setListingFieldErr({ field, msg: generated.error });
+        if (
+          !applyGeneratedAdminAiText(
+            generated,
+            (text) => {
+              const html = aiExpertSourceCommentToRichHtml(text);
+              onChange(
+                field === "photoAnalysis"
+                  ? { ...v, photoAnalysis: html }
+                  : { ...v, listingSalesContext: html },
+              );
+            },
+            (error) => setListingFieldErr({ field, msg: error }),
+          )
+        ) {
           return;
         }
-        const html = aiExpertSourceCommentToRichHtml(generated.text);
-        onChange(
-          field === "photoAnalysis"
-            ? { ...v, photoAnalysis: html }
-            : { ...v, listingSalesContext: html },
-        );
       } catch {
         setListingFieldErr({ field, msg: "AI: neizdevās savienoties" });
       } finally {
@@ -230,11 +237,15 @@ export function AdminListingAnalysisSourceBlock({
           parseFailed,
           "AI: neizdevās analizēt pārdevēju",
         );
-        if (!generated.ok) {
-          setSellerAnalyzeErr(generated.error);
+        if (
+          !applyGeneratedAdminAiText(
+            generated,
+            (text) => onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(text) }),
+            setSellerAnalyzeErr,
+          )
+        ) {
           return;
         }
-        onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(generated.text) });
       } catch {
         setSellerAnalyzeErr("AI: neizdevās savienoties");
       } finally {

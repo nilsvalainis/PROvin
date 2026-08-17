@@ -16,7 +16,8 @@ ${taskBlock}
 
 | Export | Admin field |
 |--------|-------------|
-| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei |
+| `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze (flagship, 8–12 rindkopas) |
+| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei (6–9 pārbaudes) |
 | `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums |
 | `AI_SUMMARY_ANALYSIS_SYSTEM` | 2. Kopsavilkums (+ email rules) |

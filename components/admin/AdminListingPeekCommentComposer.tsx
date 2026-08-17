@@ -7,8 +7,8 @@ import { AdminListingPeekTopicChips } from "@/components/admin/AdminListingPeekT
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { LISTING_PEEK_TOPIC_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
-  formatAdminAiFetchError,
   parseAdminAiResponse,
+  readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -124,17 +124,25 @@ export function AdminListingPeekCommentComposer({
         }),
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setAiError(formatAdminAiFetchError(data, res, "AI: neizdevās sagatavot komentāru"));
-        return;
-      }
+      const generated = readGeneratedAdminAiText(
+        res,
+        data,
+        parseFailed,
+        "AI: neizdevās sagatavot komentāru",
+      );
       const parsed =
         parseListingPeekAiPayload(data) ??
-        (typeof data.text === "string" ? parseListingPeekAiPayload(data.text) : null);
+        (typeof generated.text === "string" ? parseListingPeekAiPayload(generated.text) : null);
       const nextLetter =
-        (typeof data.text === "string" && data.text.trim()) || parsed?.letter?.trim() || "";
+        generated.text || parsed?.letter?.trim() || "";
       if (!nextLetter && !Object.values(parsed?.lines ?? {}).some((v) => v.trim())) {
-        setAiError(parseFailed ? `AI: servera atbilde nav lasāma (HTTP ${res.status})` : "AI atgrieza tukšu atbildi.");
+        setAiError(
+          generated.ok
+            ? parseFailed
+              ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
+              : "AI atgrieza tukšu atbildi."
+            : generated.error,
+        );
         return;
       }
       const nextLines = parsed?.lines ?? emptyLines();
@@ -144,6 +152,10 @@ export function AdminListingPeekCommentComposer({
         nextCloser,
         nextLetter || assembleListingPeekCustomerComment({ closer: nextCloser, lines: nextLines }),
       );
+      if (!generated.ok) {
+        setAiError(generated.error);
+        return;
+      }
     } catch {
       setAiError("AI: tīkla kļūda — mēģini vēlreiz");
     } finally {

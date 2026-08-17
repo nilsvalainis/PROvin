@@ -49,14 +49,15 @@ export function appendAiOperatorNotesSection(
   return parts.filter(Boolean).join("\n\n");
 }
 
-/** Kad operators iedod garu tekstu — izejas maxLen nedrīkst to nogriezt. */
+/** Kad operators iedod garu tekstu vai jau ir garš melnraksts — izejas maxLen nedrīkst to nogriezt. */
 export function aiMaxLenForOperatorNotes(
   operatorNotes: string | null | undefined,
   baseMaxLen = 2400,
+  extraText?: string | null,
 ): number {
-  const n = operatorNotes?.trim().length ?? 0;
+  const n = Math.max(operatorNotes?.trim().length ?? 0, extraText?.trim().length ?? 0);
   if (n < 400) return baseMaxLen;
-  return Math.min(14_000, Math.max(baseMaxLen, Math.ceil(n * 1.4) + 1200));
+  return Math.min(16_000, Math.max(baseMaxLen, Math.ceil(n * 1.4) + 1200));
 }
 
 export function strFromBody(v: unknown): string {

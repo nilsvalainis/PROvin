@@ -32,6 +32,57 @@ describe("buildAggregateIdentificationBrief", () => {
     expect(brief).toMatch(/Jaunākais nobraukuma ieraksts: 245 000 km/);
     expect(brief).toMatch(/~24 500 km\/gadā/);
     expect(brief).toMatch(/1–2 kandidātus/);
+    expect(brief).toMatch(/Aprīkojuma SA saraksts: nav/);
+  });
+
+  it("lists dealer equipment and flags expensive age options when present", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "BMW 525" },
+      auto_records: {
+        outvinReport: {
+          vehicleInfo: {
+            model: "BMW E61",
+            modelSeries: "E61",
+            vinCode: "",
+            vehicleType: "PX61",
+            transmission: "AUT",
+            steeringSide: "LL",
+            engineCode: "M57/T2",
+            engineNumber: "",
+            body: "TOU",
+            drive: "HECK",
+            power: "145 kW",
+            integrationLevel: "",
+            currentILevel: "",
+            developmentCode: "E61",
+            modelCode: "PX61",
+            productionDate: "",
+            firstRegistration: "",
+            warrantyStartDate: "",
+            countryRegion: "",
+            color: "",
+            colorCode: "",
+            interior: "",
+            interiorCode: "",
+          },
+          accidentCheck: "",
+          stolenCheck: "",
+          equipment: [
+            { code: "0205", description: "Automatic transmission" },
+            { code: "0255", description: "Sports leather steering wheel" },
+            { code: "0217", description: "Active steering" },
+            { code: "0677", description: "HiFi Professional DSP" },
+            { code: "02BY", description: "BMW LA wheel" },
+            { code: "0403", description: "Glass roof" },
+          ],
+        },
+      },
+    });
+    const brief = buildAggregateIdentificationBrief({ sourceBlocks: blocks, nowYear: 2026 });
+    expect(brief).toMatch(/Piedziņa \(dīleris\): HECK \(aizmugures piedziņa\)/);
+    expect(brief).toMatch(/Virsbūve \(dīleris\): TOU/);
+    expect(brief).toMatch(/0217 — Active steering/);
+    expect(brief).toMatch(/Dārgas vecuma pozīcijas sarakstā: Active steering/);
   });
 
   it("returns empty text when no vehicle parameters are known", () => {

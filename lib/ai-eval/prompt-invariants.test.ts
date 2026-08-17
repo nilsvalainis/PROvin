@@ -8,6 +8,9 @@ import {
   AI_EXPERT_PARAGRAPH_PRESENTATION,
   AI_MILEAGE_BAND_RISK_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_TECHNICAL_RISKS_FEW_SHOTS,
+  AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
+  AI_TECHNICAL_RISKS_RESEARCH_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -28,6 +31,8 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("vocabulary forbids automobīlis", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER "automobīlis"/i);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/HUMAN DASHES|ASCII hyphen/i);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
   });
 
   it("damage claim rules require contextual EUR interpretation", () => {
@@ -89,6 +94,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?profesionālo viedokli/i);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NEKĀDĀ GADĪJUMĀ nepārraksti/i);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?3–5 īsas rindkopas/);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NERAKSTI sludinājuma cenu/);
   });
 
   it("field-agent prompts encode client value density and institutional memory", () => {
@@ -144,21 +150,59 @@ describe("PROVIN AI prompt invariants", () => {
     );
   });
 
+  it("technical risks flagship rules demand detail and equipment-absent analysis", () => {
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/8–12 rindkopas/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Active Steering/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/M57/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/\*\*NAV\*\* dārgs risks/);
+  });
+
+  it("technical risks research rules require European forum search when packs are thin", () => {
+    expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/WEB RESEARCH/);
+    expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/Motor-Talk/);
+    expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/Neizdomā/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs C/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    const block = prompts.slice(
+      prompts.indexOf("AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM"),
+      prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
+    );
+    expect(block).toMatch(/AI_TECHNICAL_RISKS_RESEARCH_RULES/);
+    expect(block).toMatch(/AI_TECHNICAL_RISKS_FEW_SHOTS/);
+    const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/maxSearches:\s*6/);
+    expect(tech).toMatch(/16_000/);
+  });
+
   it("technical risk analysis is the flagship field with identification-first structure", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     const block = prompts.slice(
       prompts.indexOf("AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM"),
       prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
     );
-    expect(block).toMatch(/Agregātu identifikācija/);
-    expect(block).toMatch(/varbūtības × izmaksām/);
-    expect(block).toMatch(/maksimāli 1–2 pozīcijas/);
+    expect(block).toMatch(/8–12 rindkopas/);
+    expect(block).toMatch(/AI_TECHNICAL_RISKS_FLAGSHIP_RULES/);
     expect(block).toMatch(/NAV risks/);
-    expect(block).toMatch(/5–7 rindkopas/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Agregātu identifikācija/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/maksimāli 1–2/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);
     expect(tech).toMatch(/Nepārspīlē/);
     expect(tech).toMatch(/20–40 tūkst\. km/);
+    expect(tech).toMatch(/varbūtības × izmaksām/);
+    expect(tech).toMatch(/8–12 rindkopas/);
+  });
+
+  it("inspection recommendations convert each tech-risk system into a check", () => {
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    const block = prompts.slice(
+      prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
+      prompts.indexOf("AI_SELLER_ANALYSIS_SYSTEM"),
+    );
+    expect(block).toMatch(/6–9 rindkopas/);
+    expect(block).toMatch(/350–800 šim laukam NEATTIECAS/);
+    const insp = readRepo("lib/admin-ai-inspection.ts");
+    expect(insp).toMatch(/6–9 rindkopas/);
   });
 
   it("operator notes are prepended with highest priority", () => {
@@ -186,6 +230,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/BREVITY & FOCUS/);
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/2–4 paragraphs/);
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/ONE short sentence/i);
+    expect(PROVIN_COMMENT_BREVITY_RULES).not.toMatch(/FLAGSHIP EXCEPTION/);
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/flagship fields live only/);
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/3\. Kopsavilkums/);
   });
 
@@ -226,6 +272,7 @@ describe("PROVIN AI prompt invariants", () => {
   it("polish uses Sonnet, not Haiku or Opus", () => {
     const polish = readRepo("lib/admin-ai-polish.ts");
     expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
+    expect(polish).toMatch(/applyProvinReportCopyVocabulary/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_HAIKU/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_OPUS/);
   });
@@ -318,7 +365,19 @@ describe("PROVIN AI prompt invariants", () => {
     const ai = readRepo("lib/admin-ai.ts");
     expect(ai).toMatch(/messages\.stream\(/);
     expect(ai).toMatch(/partial_text_salvaged/);
+    expect(ai).toMatch(/TEXT_REQUEST_TIMEOUT_MS = 88_000/);
     expect(ai).toMatch(/WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000/);
+    expect(ai).toMatch(/AiIncompleteCommentError/);
+    expect(ai).not.toMatch(/return salvaged;/);
+    const gemini = readRepo("lib/admin-gemini.ts");
+    expect(gemini).toMatch(/generateContentStream/);
+    expect(gemini).toMatch(/partial_text_salvaged/);
+    expect(gemini).toMatch(/maxOutputTokens/);
+    expect(gemini).toMatch(/thinkingBudget/);
+    expect(gemini).toMatch(/streamGenerateContent/);
+    expect(gemini).toMatch(/AiIncompleteCommentError/);
+    expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_empty_content/);
+    expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_incomplete_comment/);
   });
 
   it("AI field errors are rendered visibly, not as 9px amber whispers", () => {

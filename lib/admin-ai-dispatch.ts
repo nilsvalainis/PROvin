@@ -31,6 +31,7 @@ type GenerateOpts = {
   temperature?: number;
   maxLen?: number;
   maxTokens?: number;
+  maxSearches?: number;
 };
 
 /** Vieglie uzdevumi — Gemini; smagie — Claude. Izvēle nāk no admin pogas. */
@@ -87,6 +88,7 @@ export async function adminGenerateTextWithWebSearch(opts: GenerateOpts): Promis
     userPrompt: opts.userPrompt,
     temperature: opts.temperature,
     maxTokens: opts.maxTokens,
+    maxSearches: opts.maxSearches,
   });
 }
 

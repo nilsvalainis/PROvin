@@ -18,6 +18,13 @@ describe("aiMaxLenForOperatorNotes", () => {
     const long = "x".repeat(5000);
     const max = aiMaxLenForOperatorNotes(long, 2400);
     expect(max).toBeGreaterThan(5000);
-    expect(max).toBeLessThanOrEqual(14_000);
+    expect(max).toBeLessThanOrEqual(16_000);
+  });
+
+  it("raises maxLen for a long existing draft even with short notes", async () => {
+    const { aiMaxLenForOperatorNotes } = await import("@/lib/admin-ai-operator-notes");
+    const max = aiMaxLenForOperatorNotes("īss", 2400, "x".repeat(5000));
+    expect(max).toBeGreaterThan(5000);
+    expect(max).toBeLessThanOrEqual(16_000);
   });
 });

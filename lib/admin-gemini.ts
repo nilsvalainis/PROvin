@@ -14,6 +14,12 @@ import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 import { recordAiUsage } from "@/lib/ai-usage-meter";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
+  AiIncompleteCommentError,
+  isAiIncompleteCommentError,
+  throwIfBlankGeneratedComment,
+  throwIncompleteOrEmptyComment,
+} from "@/lib/admin-ai-incomplete";
+import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
@@ -49,12 +55,44 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Komentāru maršrutu `maxDuration` ir 90s — nogrist ar rezervi atbildes noformēšanai. */
+const TEXT_REQUEST_TIMEOUT_MS = 88_000;
+/** Web search aģenti — maršruti ar `maxDuration = 120`. */
+const SEARCH_REQUEST_TIMEOUT_MS = 105_000;
+/** Thinking + redzamais teksts dala šo limitu; bez tā 2.5/3 thinking apēd izeju. */
+const GEMINI_MAX_OUTPUT_TOKENS = 8192;
+
 function isGemini3Model(model: string): boolean {
   return /gemini-3/i.test(model);
 }
 
-function geminiThinkingExtra(model: string): { thinkingConfig: { thinkingLevel: "low" } } | Record<string, never> {
-  return isGemini3Model(model) ? { thinkingConfig: { thinkingLevel: "low" } } : {};
+function isGemini25Model(model: string): boolean {
+  return /gemini-2\.5/i.test(model);
+}
+
+function geminiWantsThinking(model: string): boolean {
+  return isGemini3Model(model) || isGemini25Model(model);
+}
+
+function geminiThinkingExtra(
+  model: string,
+  enabled: boolean,
+): { thinkingConfig: { thinkingLevel?: "low"; thinkingBudget: number } } | Record<string, never> {
+  if (!enabled) {
+    return isGemini25Model(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {};
+  }
+  if (isGemini3Model(model)) {
+    return { thinkingConfig: { thinkingLevel: "low", thinkingBudget: 512 } };
+  }
+  if (isGemini25Model(model)) {
+    return { thinkingConfig: { thinkingBudget: 512 } };
+  }
+  return {};
+}
+
+function isAbortError(e: unknown): boolean {
+  const msg = geminiErrorMessage(e);
+  return (e instanceof Error && e.name === "AbortError") || /aborted|abort/i.test(msg);
 }
 
 function isGeminiThinkingUnsupported(e: unknown): boolean {
@@ -101,6 +139,12 @@ export function formatGeminiSdkError(e: unknown): string {
     if (/gemini_empty_content/i.test(msg)) {
       return "Gemini atgrieza tukšu atbildi — mēģini vēlreiz";
     }
+    if (/ai_incomplete_comment/i.test(msg)) {
+      return "Gemini komentārs nav pabeigts — tokeni ir apmaksāti. Mēģini vēlreiz, lai pabeigtu.";
+    }
+    if (/timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED|aborted/i.test(msg)) {
+      return "Gemini pieprasījums pārsniedza laika limitu — mēģini vēlreiz";
+    }
     return msg || "unknown";
   }
   return "unknown";
@@ -137,7 +181,13 @@ export async function runGeminiWithModelFailover<T>(opts: {
       });
       return result;
     } catch (e) {
-      if (!isGeminiTransientError(e) || /timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED/i.test(geminiErrorMessage(e))) {
+      if (isAiIncompleteCommentError(e)) throw e;
+      if (
+        !isGeminiTransientError(e) ||
+        /timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED|aborted|ai_incomplete_comment/i.test(
+          geminiErrorMessage(e),
+        )
+      ) {
         throw new Error(formatGeminiSdkError(e));
       }
       lastTransient = e;
@@ -176,24 +226,29 @@ async function geminiGenerateJsonFromPartsOnce(
       model: opts.model,
       systemInstruction: opts.systemInstruction,
     });
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: opts.parts }],
-      generationConfig: {
-        temperature: opts.temperature ?? 0.2,
-        responseMimeType: "application/json",
-        ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
-        ...(withThinking ? geminiThinkingExtra(opts.model) : {}),
-      } as never,
-    });
+    const result = await model.generateContent(
+      {
+        contents: [{ role: "user", parts: opts.parts }],
+        generationConfig: {
+          temperature: opts.temperature ?? 0.2,
+          maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
+          responseMimeType: "application/json",
+          ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
+          ...geminiThinkingExtra(opts.model, withThinking),
+        } as never,
+      },
+      { timeout: TEXT_REQUEST_TIMEOUT_MS },
+    );
     const text = result.response.text()?.trim();
     if (!text) throw new Error("gemini_empty_content");
     recordGeminiUsage(opts.model, result.response.usageMetadata);
     return text;
   };
   try {
-    return await run(isGemini3Model(opts.model));
+    return await run(geminiWantsThinking(opts.model));
   } catch (e) {
-    if (isGemini3Model(opts.model) && isGeminiThinkingUnsupported(e)) {
+    if (isAbortError(e)) throw new Error("timeout");
+    if (geminiWantsThinking(opts.model) && isGeminiThinkingUnsupported(e)) {
       return await run(false);
     }
     throw e;
@@ -252,6 +307,96 @@ export async function geminiGenerateJsonWithSchema(opts: {
   });
 }
 
+type GeminiContentPart = { text?: string; thought?: boolean };
+
+function geminiFinishIsTruncated(finishReason: string | undefined): boolean {
+  return /MAX_TOKENS|LENGTH/i.test(finishReason ?? "");
+}
+
+function geminiVisibleTextFromParts(parts: GeminiContentPart[] | undefined): string {
+  if (!parts?.length) return "";
+  return parts
+    .filter((p) => p.text && !p.thought)
+    .map((p) => p.text!)
+    .join("");
+}
+
+function geminiVisibleTextFromSdkChunk(chunk: {
+  candidates?: { content?: { parts?: GeminiContentPart[] } }[];
+  text?: () => string;
+}): string {
+  const fromParts = geminiVisibleTextFromParts(chunk.candidates?.[0]?.content?.parts);
+  if (fromParts) return fromParts;
+  try {
+    return chunk.text?.() ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Straumē tekstu. Timeout/pārtraukumā jau ģenerētais (un apmaksātais) teksts
+ * tiek atgriezts, nevis izmests.
+ */
+async function geminiStreamGenerateText(
+  key: string,
+  opts: {
+    model: string;
+    systemInstruction: string;
+    userPrompt: string;
+    temperature?: number;
+  },
+  withThinking: boolean,
+): Promise<string> {
+  const genAI = new GoogleGenerativeAI(key);
+  const model = genAI.getGenerativeModel({
+    model: opts.model,
+    systemInstruction: opts.systemInstruction,
+  });
+  let partial = "";
+  try {
+    const streaming = await model.generateContentStream(
+      {
+        contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
+        generationConfig: {
+          temperature: opts.temperature ?? 0.35,
+          maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
+          ...geminiThinkingExtra(opts.model, withThinking),
+        } as never,
+      },
+      { timeout: TEXT_REQUEST_TIMEOUT_MS },
+    );
+    for await (const chunk of streaming.stream) {
+      partial += geminiVisibleTextFromSdkChunk(chunk as never);
+    }
+    const response = await streaming.response;
+    recordGeminiUsage(opts.model, response.usageMetadata);
+    const text = geminiVisibleTextFromSdkChunk(response as never).trim() || partial.trim();
+    const finishReason = (response as { candidates?: { finishReason?: string }[] }).candidates?.[0]
+      ?.finishReason;
+    if (geminiFinishIsTruncated(finishReason)) {
+      throwIncompleteOrEmptyComment(text, "max_tokens");
+    }
+    if (!text) throw new Error("gemini_empty_content");
+    return text;
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) throw e;
+    const salvaged = partial.trim();
+    if (salvaged) {
+      console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
+        label: "text",
+        model: opts.model,
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        chars: salvaged.length,
+        message: geminiErrorMessage(e).slice(0, 240),
+      });
+      throw new AiIncompleteCommentError(salvaged, "timeout");
+    }
+    if (isAbortError(e)) throw new Error("timeout");
+    throw e;
+  }
+}
+
 async function geminiGenerateTextOnce(
   key: string,
   opts: {
@@ -261,29 +406,12 @@ async function geminiGenerateTextOnce(
     temperature?: number;
   },
 ): Promise<string> {
-  const run = async (withThinking: boolean) => {
-    const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({
-      model: opts.model,
-      systemInstruction: opts.systemInstruction,
-    });
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
-      generationConfig: {
-        temperature: opts.temperature ?? 0.35,
-        ...(withThinking ? geminiThinkingExtra(opts.model) : {}),
-      } as never,
-    });
-    const text = result.response.text()?.trim();
-    if (!text) throw new Error("gemini_empty_content");
-    recordGeminiUsage(opts.model, result.response.usageMetadata);
-    return text;
-  };
   try {
-    return await run(isGemini3Model(opts.model));
+    return await geminiStreamGenerateText(key, opts, geminiWantsThinking(opts.model));
   } catch (e) {
-    if (isGemini3Model(opts.model) && isGeminiThinkingUnsupported(e)) {
-      return await run(false);
+    if (isAiIncompleteCommentError(e)) throw e;
+    if (geminiWantsThinking(opts.model) && isGeminiThinkingUnsupported(e)) {
+      return await geminiStreamGenerateText(key, opts, false);
     }
     throw e;
   }
@@ -314,8 +442,18 @@ export async function geminiGenerateExpertText(opts: {
   temperature?: number;
   maxLen?: number;
 }): Promise<string> {
-  const raw = await geminiGenerateText(opts);
-  return normalizeProvinExpertAiComment(raw, opts.maxLen ?? 2400);
+  try {
+    const raw = await geminiGenerateText(opts);
+    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) {
+      throw new AiIncompleteCommentError(
+        throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(e.partialText)),
+        e.reason,
+      );
+    }
+    throw e;
+  }
 }
 
 /** Vārdu krājums bez rindkopu pārformatēšanas — e-pasts, checklist u.c. */
@@ -325,15 +463,128 @@ export async function geminiGenerateTextWithVocabulary(opts: {
   userPrompt: string;
   temperature?: number;
 }): Promise<string> {
-  const raw = await geminiGenerateText(opts);
-  return applyProvinReportCopyVocabulary(raw);
+  try {
+    const raw = await geminiGenerateText(opts);
+    return throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(raw));
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) {
+      throw new AiIncompleteCommentError(
+        throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(e.partialText)),
+        e.reason,
+      );
+    }
+    throw e;
+  }
 }
 
 type GenerateContentApiResponse = {
-  candidates?: { content?: { parts?: { text?: string }[] } }[];
+  candidates?: { content?: { parts?: GeminiContentPart[] }; finishReason?: string }[];
   error?: { message?: string };
   usageMetadata?: GeminiUsageMeta;
 };
+
+function consumeGeminiSseBuffer(
+  buf: string,
+  onEvent: (json: GenerateContentApiResponse) => void,
+): string {
+  const normalized = buf.replace(/\r\n/g, "\n");
+  const chunks = normalized.split("\n\n");
+  const rest = chunks.pop() ?? "";
+  for (const event of chunks) {
+    for (const line of event.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) {
+        if (trimmed.startsWith("{")) {
+          try {
+            onEvent(JSON.parse(trimmed) as GenerateContentApiResponse);
+          } catch {
+            // ignore malformed chunks
+          }
+        }
+        continue;
+      }
+      const json = trimmed.slice(5).trim();
+      if (!json || json === "[DONE]") continue;
+      try {
+        onEvent(JSON.parse(json) as GenerateContentApiResponse);
+      } catch {
+        // ignore malformed chunks
+      }
+    }
+  }
+  return rest;
+}
+
+async function geminiRestStreamSearchText(opts: {
+  url: string;
+  body: unknown;
+  timeoutMs: number;
+  model: string;
+}): Promise<{ text: string; lastErr: string; httpStatus?: number }> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs);
+  let partial = "";
+  let usage: GeminiUsageMeta | undefined;
+  let finishReason = "";
+  try {
+    const res = await fetch(opts.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(opts.body),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      const raw = (await res.json().catch(() => ({}))) as GenerateContentApiResponse;
+      const lastErr = raw.error?.message?.trim() || `http_${res.status}`;
+      return { text: "", lastErr, httpStatus: res.status };
+    }
+    if (!res.body) return { text: "", lastErr: "gemini_empty_content" };
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      buf = consumeGeminiSseBuffer(buf, (parsed) => {
+        if (parsed.usageMetadata) usage = parsed.usageMetadata;
+        const fr = parsed.candidates?.[0]?.finishReason;
+        if (fr) finishReason = fr;
+        partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
+      });
+    }
+    consumeGeminiSseBuffer(`${buf}\n\n`, (parsed) => {
+      if (parsed.usageMetadata) usage = parsed.usageMetadata;
+      const fr = parsed.candidates?.[0]?.finishReason;
+      if (fr) finishReason = fr;
+      partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
+    });
+    const text = partial.trim();
+    if (text && usage) recordGeminiUsage(opts.model, usage);
+    if (geminiFinishIsTruncated(finishReason)) {
+      throwIncompleteOrEmptyComment(text, "max_tokens");
+    }
+    return { text, lastErr: text ? "" : "gemini_empty_content" };
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) throw e;
+    const salvaged = partial.trim();
+    if (salvaged) {
+      if (usage) recordGeminiUsage(opts.model, usage);
+      console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
+        label: "grounding",
+        model: opts.model,
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        chars: salvaged.length,
+        message: geminiErrorMessage(e).slice(0, 240),
+      });
+      throw new AiIncompleteCommentError(salvaged, "timeout");
+    }
+    if (isAbortError(e)) throw new Error("timeout");
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function geminiGenerateTextWithGoogleSearchOnce(
   key: string,
@@ -344,40 +595,33 @@ async function geminiGenerateTextWithGoogleSearchOnce(
     temperature?: number;
   },
 ): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:generateContent?key=${encodeURIComponent(key)}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
   const toolVariants: Record<string, unknown>[][] = [[{ google_search: {} }], [{ googleSearch: {} }]];
-  const thinkingPasses = isGemini3Model(opts.model) ? [true, false] : [false];
+  const thinkingPasses = geminiWantsThinking(opts.model) ? [true, false] : [false];
 
   let lastErr = "gemini_grounding_failed";
   for (const withThinking of thinkingPasses) {
     for (const tools of toolVariants) {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const result = await geminiRestStreamSearchText({
+        url,
+        timeoutMs: SEARCH_REQUEST_TIMEOUT_MS,
+        model: opts.model,
+        body: {
           systemInstruction: { parts: [{ text: opts.systemInstruction }] },
           contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
           tools,
           generationConfig: {
             temperature: opts.temperature ?? 0.35,
-            ...(withThinking ? geminiThinkingExtra(opts.model) : {}),
+            maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
+            ...geminiThinkingExtra(opts.model, withThinking),
           },
-        }),
+        },
       });
-      const raw = (await res.json()) as GenerateContentApiResponse;
-      if (!res.ok) {
-        lastErr = raw.error?.message?.trim() || `http_${res.status}`;
-        if (isTransientHttpStatus(res.status)) {
-          throw new Error(`[${res.status} Service Unavailable] ${lastErr}`);
-        }
-        continue;
+      if (result.text) return result.text;
+      lastErr = result.lastErr || lastErr;
+      if (result.httpStatus && isTransientHttpStatus(result.httpStatus)) {
+        throw new Error(`[${result.httpStatus} Service Unavailable] ${lastErr}`);
       }
-      const text = raw.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim();
-      if (text) {
-        recordGeminiUsage(opts.model, raw.usageMetadata);
-        return text;
-      }
-      lastErr = "gemini_empty_content";
     }
   }
   throw new Error(lastErr);

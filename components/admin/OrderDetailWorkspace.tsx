@@ -190,6 +190,7 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import {
+  applyGeneratedAdminAiText,
   formatAdminAiFetchError,
   parseAdminAiResponse,
   readGeneratedAdminAiText,
@@ -1055,11 +1056,15 @@ export function OrderDetailWorkspace({
         parseFailed,
         "AI: neizdevās ģenerēt tehnisko risku analīzi",
       );
-      if (!generated.ok) {
-        setAiTechnicalRisksErr(generated.error);
+      if (
+        !applyGeneratedAdminAiText(
+          generated,
+          (text) => updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text) }),
+          setAiTechnicalRisksErr,
+        )
+      ) {
         return;
       }
-      updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(generated.text) });
     } catch {
       setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
@@ -1087,11 +1092,15 @@ export function OrderDetailWorkspace({
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
       const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās ģenerēt");
-      if (!generated.ok) {
-        setAiInspectionErr(generated.error);
+      if (
+        !applyGeneratedAdminAiText(
+          generated,
+          (text) => updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(text) }),
+          setAiInspectionErr,
+        )
+      ) {
         return;
       }
-      updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(generated.text) });
     } catch {
       setAiInspectionErr("AI: neizdevās savienoties");
     } finally {
@@ -1119,11 +1128,15 @@ export function OrderDetailWorkspace({
       });
       const { data, parseFailed } = await parseAdminAiResponse(res);
       const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās analizēt cenu");
-      if (!generated.ok) {
-        setAiPriceErr(generated.error);
+      if (
+        !applyGeneratedAdminAiText(
+          generated,
+          (text) => updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(text) }),
+          setAiPriceErr,
+        )
+      ) {
         return;
       }
-      updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(generated.text) });
     } catch {
       setAiPriceErr("AI: neizdevās savienoties");
     } finally {
@@ -1156,11 +1169,15 @@ export function OrderDetailWorkspace({
         parseFailed,
         "AI: neizdevās sagatavot atbildi",
       );
-      if (!generated.ok) {
-        setAiSummaryErr(generated.error);
+      if (
+        !applyGeneratedAdminAiText(
+          generated,
+          (text) => setIrissSummary(aiExpertSourceCommentToRichHtml(text)),
+          setAiSummaryErr,
+        )
+      ) {
         return;
       }
-      setIrissSummary(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiSummaryErr("AI: neizdevās savienoties");
     } finally {
@@ -1192,11 +1209,15 @@ export function OrderDetailWorkspace({
         parseFailed,
         "AI: neizdevās sagatavot atbildi",
       );
-      if (!generated.ok) {
-        setAiIncidentsSummaryErr(generated.error);
+      if (
+        !applyGeneratedAdminAiText(
+          generated,
+          (text) => onInternalCommentChange(aiExpertSourceCommentToRichHtml(text)),
+          setAiIncidentsSummaryErr,
+        )
+      ) {
         return;
       }
-      onInternalCommentChange(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiIncidentsSummaryErr("AI: neizdevās savienoties");
     } finally {
@@ -1234,11 +1255,15 @@ export function OrderDetailWorkspace({
         parseFailed,
         "AI: neizdevās sagatavot atbildi",
       );
-      if (!generated.ok) {
-        setAiMileageCommentErr(generated.error);
+      if (
+        !applyGeneratedAdminAiText(
+          generated,
+          (text) => onMileageCommentChange(aiExpertSourceCommentToRichHtml(text)),
+          setAiMileageCommentErr,
+        )
+      ) {
         return;
       }
-      onMileageCommentChange(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiMileageCommentErr("AI: neizdevās savienoties");
     } finally {
@@ -1276,11 +1301,15 @@ export function OrderDetailWorkspace({
         parseFailed,
         "AI: neizdevās sagatavot avotu salīdzinājumu",
       );
-      if (!generated.ok) {
-        setAiSourcesComparisonErr(generated.error);
+      if (
+        !applyGeneratedAdminAiText(
+          generated,
+          (text) => onSourcesComparisonCommentChange(aiExpertSourceCommentToRichHtml(text)),
+          setAiSourcesComparisonErr,
+        )
+      ) {
         return;
       }
-      onSourcesComparisonCommentChange(aiExpertSourceCommentToRichHtml(generated.text));
     } catch {
       setAiSourcesComparisonErr("AI: neizdevās savienoties");
     } finally {
@@ -1541,17 +1570,23 @@ export function OrderDetailWorkspace({
           parseFailed,
           "AI: neizdevās ģenerēt komentāru",
         );
-        if (!generated.ok) {
-          setAiSourceCommentErr({ key: busyKey, msg: generated.error });
+        if (
+          !applyGeneratedAdminAiText(
+            generated,
+            (text) => {
+              const html = aiExpertSourceCommentToRichHtml(text);
+              const prevBlock = cur.sourceBlocks[blockKey];
+              const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
+                citiAvotiSectionIndex,
+                targetField,
+              });
+              updateSourceBlock(blockKey, nextBlock);
+            },
+            (error) => setAiSourceCommentErr({ key: busyKey, msg: error }),
+          )
+        ) {
           return;
         }
-        const html = aiExpertSourceCommentToRichHtml(generated.text);
-        const prevBlock = cur.sourceBlocks[blockKey];
-        const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
-          citiAvotiSectionIndex,
-          targetField,
-        });
-        updateSourceBlock(blockKey, nextBlock);
       } catch {
         setAiSourceCommentErr({ key: busyKey, msg: "AI: neizdevās savienoties" });
       } finally {
@@ -4023,6 +4058,11 @@ export function OrderDetailWorkspace({
                         void runAiInspectionRecommendations(operatorNotes, modelTier)}
                     />
                   </div>
+                  {!adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ? (
+                    <p className="mb-2 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                      Vispirms ģenerē 1. Tehnisko risku analīzi — apskate tad kļūst konkrēta šim agregātam.
+                    </p>
+                  ) : null}
                   <AdminAiFieldError message={aiInspectionErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns ?? ""}

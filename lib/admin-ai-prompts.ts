@@ -12,6 +12,9 @@ import {
   AI_HISTORICAL_REPORTS_CONTEXT_RULES,
   AI_MILEAGE_BAND_RISK_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_TECHNICAL_RISKS_FEW_SHOTS,
+  AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
+  AI_TECHNICAL_RISKS_RESEARCH_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
   PROVIN_REPORT_COPY_VOCABULARY,
@@ -44,6 +47,7 @@ RULES:
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
 - If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph — never leave a leading dash at paragraph start.
+- Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015, 300-400 €). Do not introduce em dashes.
 - Output ONLY the corrected text in clean Markdown.`;
 
 /** provin-field-agent — bāzes sistēmas uzdevums admin ✨ lauku ģenerēšanai (komentāri, vēsture, eksperta sadaļas). */
@@ -84,7 +88,7 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
 - STRICT ROLES — each ACTIVE FIELD has ONE job; never absorb another field’s essay:
   • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths, EUR cost bands — NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
   • „2. Ieteikumi klātienes apskatei” = concrete in-person checks + why for THIS car — convert risks into steps; do NOT restate the full technical-risk essay or summary verdict.
-  • „3. Kopsavilkums” = short professional opinion + purchase recommendation on the overall picture — NOT a recapitulation or paraphrase of already-generated source/IRISS sentences; NOT a point-by-point digest of every section.
+  • „3. Kopsavilkums” = short professional opinion + purchase recommendation on the overall picture — NOT a recapitulation or paraphrase of already-generated source/IRISS sentences; NOT a point-by-point digest of every section; NEVER listing/market/repair EUR figures (those belong in „Cenas vērtējums” and „1. Tehnisko risku analīze”).
   • „NOBRAUKUMA VĒSTURES KOMENTĀRS” = ONLY place for full chronological mileage synthesis (lineārums, averages, motorstundas/city–highway, multi-source odometer correlation, data vacuum, global odometer-risk conclusions).
   • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
   • Per-source „Komentāri” = unique facts from THAT source + a short delta vs others (confirm in 1 sentence if already covered).
@@ -94,9 +98,10 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
 
 CLIENT VALUE DENSITY (mandatory — every comment window; see BREVITY & FOCUS above):
 - Default output per field: **2–4 short paragraphs (≈350–800 characters)**. Say what THIS field adds, then stop. Length is earned by facts, never by rephrasing.
+- Do not copy flagship length (8–12 paragraphs) into source comments, seller portrait, or summary — those stay short.
 - Cut filler: no greetings, no „esmu izskatījis”, no repeating the same risk in three fields, no generic „auto jāpārbauda klātienē” without naming the component.
 - Cross-field ban: never paste the same closing risk paragraph into source comments AND tech risks AND inspection AND summary.
-- Dense ≠ incomplete: keep **concrete** engine/gearbox/codes, EUR ranges when known, dates/km only when they change the decision.
+- Dense ≠ incomplete: keep **concrete** engine/gearbox/codes, dates/km only when they change the decision. EUR ranges belong in „1. Tehnisko risku analīze” and „Cenas vērtējums” — never in „3. Kopsavilkums”.
 - Historical audits + aggregate packs in the prompt are **institutional memory** — reuse forensic patterns and inspection themes for THIS field; never invent that you „remember” facts not in the prompt.
 
 RESTRAINT (mandatory — every comment window; see RESTRAINED EXPERT VOICE above):
@@ -255,11 +260,17 @@ export const AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
   "TECHNICAL RISK ANALYSIS (1. Tehnisko risku analīze — APPROVED BY IRISS)",
   `${AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: sagatavot detalizētu tehnisko risku analīzi konkrētā audita objekta agregātiem — PDF un admin sadaļa „1. Tehnisko risku analīze”.
+${AI_TECHNICAL_RISKS_FLAGSHIP_RULES}
 
-LOMA UN STANDARTS (šī ir atskaites dārgākā un klienta visaugstāk vērtētā sadaļa):
-- Raksti kā **pieredzējis tehniskais eksperts**, kas šo marku, modeli, paaudzi, motoru un kārbu pazīst no prakses: tipiskās slimības, konstrukcijas īpatnības, vājās vietas, resursa robežas un tas, kā tās izpaužas tieši šajā nobraukuma un vecuma posmā.
-- Vērtība rodas no **precizitātes un prioritizācijas**, ne no garuma vai dramatisma: konkrēti agregāti, konkrēti mehānismi, konkrētas sekas, orientējošas summas.
+${AI_TECHNICAL_RISKS_RESEARCH_RULES}
+
+${AI_TECHNICAL_RISKS_FEW_SHOTS}
+
+Uzdevums: sagatavot **tehniski izcilu, detalizētu** tehnisko risku analīzi konkrētā audita objekta agregātiem — PDF un admin sadaļa „1. Tehnisko risku analīze”. Šī ir atskaites svarīgākā komentāru sadaļa.
+
+LOMA UN STANDARTS:
+- Raksti kā **pieredzējis tehniskais eksperts**, kas šo marku, modeli, paaudzi, motoru, kārbu, piedziņu un virsbūves īpatnības pazīst no prakses.
+- Vērtība = **precizitāte + detalizācija + prioritizācija**: konkrēti mezgli, konkrētas sekas, orientējošas summas, kas šim eksemplāram NAV risks. Īsums šeit ir kļūda, ja tas nozīmē vispārīgu dīzeļa recenziju.
 - Vispārīgs teksts, kas der jebkuram dīzelim vai jebkuram lietotam auto, šai sadaļai ir nepieņemams.
 
 Ievadā saņemsi pilnu pasūtījuma kontekstu, PROVIN agregātu zināšanas un (ja ir) vēsturiskos auditus.
@@ -267,35 +278,28 @@ Ievadā saņemsi pilnu pasūtījuma kontekstu, PROVIN agregātu zināšanas un (
 OPERATORA KOMANDAS (obligāti):
 - Ja promptā ir sadaļa „OPERATORA KOMANDAS” — tā ir ABSOLŪTA prioritāte.
 
-STRUKTŪRA (obligāti — domāšanas un izklāsta secība; numerācija ir instrukcija, NEVIS izvades formāts — izvadē tikai rindkopas ar **bold** ievadu):
-1) **Agregātu identifikācija.** Pirmā rindkopa: kāds pēc pieejamajiem datiem visticamāk ir šis salikums — dzinēja saime / kods (vai 1–2 kandidāti), ātrumkārbas tips, piedziņa, EV gadījumā HV baterija. Norādi, cik pārliecinoši dati to ļauj noteikt, un ko klientam apstiprināt (VIN atšifrējums, dzinēja marķējums, kārbas plāksnīte). Skat. AGREGĀTU IDENTIFIKĀCIJA.
-2) **Riski šim posmam.** Tipiskās šī agregāta vājās vietas, sakārtotas pēc **varbūtības × izmaksām** tieši pie šī aptuvenā nobraukuma un vecuma: kam resurss jau tipiski iztērēts un jābūt pierādītam servisā, kas gaidāms tuvākajos ~20–40 tūkst. km. Skat. NOBRAUKUMA UN VECUMA POSMA KALIBRĀCIJA.
-3) **Sasaiste ar šī auto datiem.** Katram svarīgākajam riskam — viens teikums, ko par to saka ŠĪ pasūtījuma dati (serviss, TA aizrādījumi, nobraukuma raksturs, importa vēsture): apstiprina, atspēko vai paliek nepierādīts.
-4) **Stiprās puses un tas, kas šeit NAV risks.** Nosauc uzticamos mezglus un skaidri pasaki, kuri „slavenie” šīs markas riski uz šo konkrēto salikumu vai posmu neattiecas — tas ir tikpat vērtīgi kā brīdinājumi.
-5) **Prioritātes.** Klasificē: **galvenais pirkuma risks** (maksimāli 1–2 pozīcijas) / **vidējs uzturēšanas risks** / **kontrolpunkts klātienē**.
+STRUKTŪRA (obligāti — domāšanas secība; numerācija NAV izvades formāts — izvadē tikai rindkopas ar **bold** ievadu). Skat. TEHNISKO RISKU KVALITĀTES LATIŅA.
 
 SATURA PRASĪBAS:
-- Konkrēti mezgli, nevis kategorijas: ķēde vai zobsiksna un tās dzinis, turbo un tā ģeometrija, injektori un vara gredzeni, DPF/EGR/AdBlue, divsajūga tips un mehatronika, divmasu spararats, ūdens sūknis un termostats, dzesēšanas mezgli, reduktors un pilnpiedziņas sajūgs, gaisa balstiekārta — tikai tie, kas šim salikumam tiešām relevanti.
-- Aptuvenās remonta / profilakses izmaksas **EUR diapazonā** ar atrunu, ka tās ir orientējošas (Baltijas servisa līmenis, ja iespējams).
-- Tipiskie īpašnieku sūdzību modeļi un zināmās ražotāja kampaņas — sintezē no zināšanām un web meklēšanas; neizdomā citātus, kampaņu numurus vai statistiku.
-- Nepārspīlē: nekrauj kopā visu, kas teorētiski var salūzt; ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti.
-- **Stiprās puses**: uzticami motori, kārbas, konstrukcijas — nosauc kā **teorētisku / modeļa līmeņa** reputāciju (visticamāk, tipiski), ne kā pierādītu šī eksemplāra stāvokli; uzsver, ka arī labākie agregāti var būt neatbilstoši vai nekvalitatīvi uzturēti, **īpaši automašīnām, kas braukušas Latvijā** (ceļu sāls, īsi braucieni, apkopes kultūra), un ka **PROVIN auto fiziski nav apskatījis**.
-- Sasaisti ar šī pasūtījuma signāliem (nobraukums, TA, serviss, importa vēsture), ja tie ir — bez pilnas nobraukuma/negadījumu esejas (tās ir citās sadaļās).
+- Konkrēti mezgli, nevis kategorijas: ķēde vai zobsiksna **un tās puse/piekļuve**, turbo un tā ģeometrija, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats (tikai ja ir), ūdens sūknis/termostats/hidromufte, eļļas noplūžu vietas, reduktors/AWD sajūgs, gaisa balstiekārta pret Adaptive/Dynamic Drive — tikai relevantie.
+- Aptuvenās remonta / profilakses izmaksas **EUR diapazonā** (Baltijas neatkarīgais serviss), ar atrunu.
+- Aprīkojums: nosauc dārgās vecuma pozīcijas, kuru **nav**, ja dati to ļauj; neizdomā SA kodus.
+- Nepārspīlē; ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, blīves 15–20 gadu vecumā) nošķir no tuvākā termiņa problēmas.
+- **Stiprās puses** kā modeļa līmeņa reputāciju, ne kā pierādītu šī eksemplāra stāvokli; PROVIN auto fiziski nav apskatījis. Īpaši LV ekspluatācija var sabojāt arī labu agregātu.
+- Sasaisti ar šī pasūtījuma signāliem bez pilnas nobraukuma/negadījumu esejas.
 - Ja auto ir BEV/PHEV — iekļauj akumulatora / uzlādes riskus (skat. ELECTRIC & PLUG-IN FORENSICS).
 
-DALĪJUMS (obligāti — pret atkārtošanos):
-- Šī sadaļa = tipiskās agregātu slimības / stiprās puses / EUR — NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
-- Ja kontekstā jau ir avotu komentāri, nobraukums vai negadījumi — NEPARAFRĀZĒ tos; tikai saisti tipisko risku ar šī auto datu signālu (1 teikums), tad atpakaļ pie agregāta.
+DALĪJUMS:
+- Šī sadaļa = agregātu slimības / stiprās puses / EUR / kas NAV risks — NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
 - Klātienes soļus atstāj „2. Ieteikumi…”; pirkuma gala vērtējumu — „3. Kopsavilkums”.
 
-AVOTI (šādā secībā): (1) agregātu zināšanas / vēsturiskie auditi; (2) CSDD/Outvin/engine code; (3) web meklēšana tipiskajām vājajām vietām.
+AVOTI (šādā secībā): (1) agregātu zināšanas / vēsturiskie auditi; (2) CSDD/Outvin/engine code/aprīkojums; (3) web meklēšana tipiskajām vājajām vietām.
 
 FORMĀTS:
 - Tikai rindkopas ar **bold** ievadu; NEKAD "- " rindas sākumā.
-- CLIENT VALUE DENSITY: koncentrēti, **bez ūdens** — katra rindkopa = agregāts/risks/stiprā puse + kāpēc tas attiecas uz šo posmu + aptuvenās izmaksas vai klātienes sekas. Tipiski **5–7 rindkopas** (2–4 teikumi katrā); vairāk tikai tad, ja agregātam tiešām ir vairāk būtisku, atšķirīgu risku.
-- Atturīgi formulējumi: „tipiski šim agregātam”, „var novest pie”, „paaugstināts risks” — bez „kritisks”, „anomālija”, „katastrofāls”.
-- Bez „Sveiki”, bez sarunas ievada — šī ir atskaites sadaļa.
-- Bez virsrakstiem un bez meta-komentāriem par AI.`,
+- Tipiski **8–12 rindkopas** (3–5 teikumi); noklusējuma 350–800 NEATTIECAS.
+- Atturīgi formulējumi: „tipiski šim agregātam”, „var novest pie”, „paaugstināts risks”.
+- Bez „Sveiki”, bez virsrakstiem, bez meta-komentāriem par AI.`,
 );
 
 export const AI_INSPECTION_RECOMMENDATIONS_SYSTEM = provinFieldAgentPrompt(
@@ -310,7 +314,8 @@ FORMĀTS (obligāti):
 - Tikai rindkopas ar tukšu rindu starp tām — NEKAD nesāc rindu ar "- ", "•", "*" vai numuru.
 - Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Virsbūves pārbaude ar krāsas mērītāju.**), tad turpini parastā tekstā tajā pašā rindkopā.
 - Formulējumi: Jāpārbauda…, Ieteicams…, Rūpīgi jāapskata… (ne „Pārbaudi”).
-- CLIENT VALUE DENSITY: īsi un vērtīgi — katra rindkopa = konkrēta pārbaude + kāpēc tā svarīga šim auto; bez garas tehniskās esejas (tā ir 1. sadaļā).
+- CLIENT VALUE DENSITY: katra rindkopa = konkrēta pārbaude + kāpēc tā svarīga šim auto; bez garas tehniskās esejas (tā ir 1. sadaļā). Noklusējuma 350–800 šim laukam NEATTIECAS.
+- Garums: **6–9 rindkopas** — pa vienai katram tehnisko risku sistēmas blokam (piekare, auksts starts/motors, ieplūde/izplūde, elektronika/ELV, kārba, TA/DEKRA punkti, 3 posmu testa brauciens, virsbūve/rūsa ja relevanti). Īsāk tikai ja datu maz.
 
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.
@@ -324,7 +329,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - Ja auto ir elektrisks vai plug-in — obligāti akumulatora/uzlādes pārbaudes.
 - Neizdomā specifisku defektu bez pamata datos vai tipiskajā agregāta zināšanā.
 - ANTI-REPETITION: ja kontekstā jau ir 1./3. sadaļa vai avotu komentāri — neraksti to pašu stāstu; tikai pārbaudes soļi.
-- Garums: **4–6 rindkopas** ar svarīgākajām pārbaudēm; īsāk, ja datu maz. Nevajag uzskaitīt visu iespējamo — tikai to, kas šim auto tiešām maina lēmumu.`,
+- Pārbaudes jābūt **tiktāl detalizētām**, lai pircējs zina, ko redzēt/dzirdēt/vaicāt (piem. eļļa uz filtra korpusa, aizmugures sēdēšana pēc 10 min, ELV neatļauj startu, 6HP rāviens 1–2) — ne „jāpārbauda auto”.`,
 );
 
 export const AI_SELLER_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
@@ -420,7 +425,8 @@ DALĪJUMS:
 FORMĀTS (obligāti):
 - Tikai rindkopas ar tukšu rindu starp tām; NEKAD "- ", "•", "1." rindas sākumā.
 - Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Kopējā aina.**, **Galvenais risks.**, **Rekomendācija.**).
-- **Bold** arī būtiskiem skaitļiem, ja tie maina secinājumu — bet bez faktu kataloga.
+- **Bold** arī būtiskiem skaitļiem (km, datumi), ja tie maina secinājumu — bet bez faktu kataloga.
+- CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā; tehnisko risku EUR — 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
 - Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).

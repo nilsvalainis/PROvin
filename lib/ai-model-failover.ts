@@ -1,4 +1,5 @@
 /** Claude modeļi admin AI automatizācijai (Anthropic Messages API). */
+import { isAiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
 export const CLAUDE_MODEL_OPUS = "claude-opus-5";
 export const CLAUDE_MODEL_SONNET = "claude-sonnet-5";
 /** Datēts ID: /v1/models neuzskaita īso `claude-haiku-4-5` aliasu. */
@@ -47,8 +48,11 @@ export function isAiTimeoutError(e: unknown): boolean {
   return /timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED/i.test(aiErrorMessage(e));
 }
 
-/** Pagaidu kļūdas, kurās drīkst pāriet uz lētāku modeli (529, 429) — ne tukša atbilde, ne timeout. */
+/** Pagaidu kļūdas, kurās drīkst pāriet uz lētāku modeli (529, 429) — ne tukša atbilde, ne timeout, ne nepabeigts teksts. */
 export function shouldAiModelFailover(e: unknown): boolean {
+  if (isAiIncompleteCommentError(e) || /ai_incomplete_comment|ai_empty_content/i.test(aiErrorMessage(e))) {
+    return false;
+  }
   return isAiTransientError(e) && !isAiTimeoutError(e);
 }
 

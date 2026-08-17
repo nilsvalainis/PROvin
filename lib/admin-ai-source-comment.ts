@@ -5,7 +5,7 @@ import {
   aiAutoRecordsServiceHistorySystemPrompt,
   aiSourceCommentSystemPrompt,
 } from "@/lib/admin-ai-prompts";
-import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
+import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import { buildFullAiOrderContextText } from "@/lib/admin-ai-order-context";
 import {
   buildPreviouslyGeneratedSourceCommentsContext,
@@ -129,7 +129,6 @@ Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā ga
       : aiSourceCommentSystemPrompt(blockLabel),
     userPrompt,
     temperature: 0.25,
-    maxLen: aiMaxLenForOperatorNotes(input.operatorNotes, isServiceHistory ? 2400 : 3200),
   });
 }
 

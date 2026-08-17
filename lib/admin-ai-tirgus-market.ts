@@ -30,8 +30,7 @@ function parseTirgusMarketJson(raw: string): TirgusMarketAiResult {
     listingCreated: clipField(typeof payload.listingCreated === "string" ? payload.listingCreated : "", 64),
     priceDrop: clipField(typeof payload.priceDrop === "string" ? payload.priceDrop : "", 32),
     comments: normalizeProvinExpertAiComment(
-      clipField(typeof payload.comments === "string" ? payload.comments : "", 4000),
-      4000,
+      typeof payload.comments === "string" ? payload.comments : "",
     ),
   };
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { AI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
-import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
+import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
   buildFullAiOrderContextText,
   type AiOrderContextInput,
@@ -11,6 +11,10 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
 import { ADMIN_TECHNICAL_RISKS_LABEL } from "@/lib/admin-workspace-field-labels";
+import {
+  throwIfBlankGeneratedComment,
+  rethrowNormalizedIncompleteComment,
+} from "@/lib/admin-ai-incomplete";
 import { normalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
 
 function expertSection(label: string, html: string): string {
@@ -74,6 +78,7 @@ OBLIGĀTI:
 - Tipiski 3–5 īsas rindkopas + APPROVED BY IRISS.
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; rekomendācija kalibrēta, jo pamatā ir digitāli dati, kas var būt nepilnīgi.
 - NESĀC ar „Sveiki” vai sarunas uzrunu.
+- NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
 - Beigās: APPROVED BY IRISS.`,
     {
       operatorNotes: input.operatorNotes,
@@ -84,14 +89,15 @@ OBLIGĀTI:
     },
   );
 
-  const raw = await adminGenerateTextWithWebSearch({
-    modelTier: input.modelTier,
-    systemInstruction: AI_SUMMARY_ANALYSIS_SYSTEM,
-    userPrompt,
-    temperature: 0.3,
-  });
-  return normalizeProvinExpertAiComment(
-    raw,
-    aiMaxLenForOperatorNotes(input.operatorNotes, 2200),
-  );
+  try {
+    const raw = await adminGenerateTextWithWebSearch({
+      modelTier: input.modelTier,
+      systemInstruction: AI_SUMMARY_ANALYSIS_SYSTEM,
+      userPrompt,
+      temperature: 0.3,
+    });
+    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
+  } catch (e) {
+    rethrowNormalizedIncompleteComment(e, normalizeProvinExpertAiComment);
+  }
 }

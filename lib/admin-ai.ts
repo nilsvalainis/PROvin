@@ -15,6 +15,12 @@ import { AI_LV_POLISH_SYSTEM } from "@/lib/admin-ai-prompts";
 import { recordAiUsage } from "@/lib/ai-usage-meter";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
+  AiIncompleteCommentError,
+  isAiIncompleteCommentError,
+  throwIfBlankGeneratedComment,
+  throwIncompleteOrEmptyComment,
+} from "@/lib/admin-ai-incomplete";
+import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
@@ -48,7 +54,7 @@ const FAILOVER_STEP_MS = 800;
 const MAX_TOKENS_TEXT = 32_000;
 const MAX_TOKENS_JSON = 32_000;
 /** Komentāru maršrutu `maxDuration` ir 90s — nogrist ar rezervi atbildes noformēšanai. */
-const TEXT_REQUEST_TIMEOUT_MS = 80_000;
+const TEXT_REQUEST_TIMEOUT_MS = 88_000;
 /** Web search aģenti (kopsavilkums, riski, pārdevējs) — maršruti ar `maxDuration = 120`. */
 const WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000;
 const JSON_REQUEST_TIMEOUT_MS = 150_000;
@@ -170,6 +176,9 @@ export function formatAiSdkError(e: unknown): string {
     if (/credit balance is too low|billing/i.test(msg)) {
       return "Anthropic kontā nepietiek kredīta — papildini Anthropic Console → Billing";
     }
+    if (/ai_incomplete_comment/i.test(msg)) {
+      return "Claude komentārs nav pabeigts — tokeni ir apmaksāti. Mēģini vēlreiz, lai pabeigtu.";
+    }
     if (/ai_empty_content_max_tokens/i.test(msg)) {
       return "Claude iztērēja tokenu limitu thinking posmā un neatgrieza tekstu — mēģini vēlreiz";
     }
@@ -217,6 +226,7 @@ export async function runAiWithModelFailover<T>(opts: {
       return result;
     } catch (e) {
       if (!shouldAiModelFailover(e)) {
+        if (isAiIncompleteCommentError(e)) throw e;
         throw new Error(formatAiSdkError(e));
       }
       lastTransient = e;
@@ -288,10 +298,10 @@ function textFromMessage(message: Anthropic.Message): string {
 
 function requireAssistantText(message: Anthropic.Message): string {
   const text = textFromMessage(message);
-  if (text) return text;
   if (message.stop_reason === "max_tokens") {
-    throw new Error("ai_empty_content_max_tokens");
+    throwIncompleteOrEmptyComment(text, "max_tokens");
   }
+  if (text) return text;
   throw new Error("ai_empty_content");
 }
 
@@ -453,7 +463,7 @@ async function claudeStreamText(
       chars: salvaged.length,
       message: aiErrorMessage(e).slice(0, 240),
     });
-    return salvaged;
+    throw new AiIncompleteCommentError(salvaged, "timeout");
   }
 }
 
@@ -533,8 +543,18 @@ export async function aiGenerateExpertText(opts: {
   maxLen?: number;
   maxTokens?: number;
 }): Promise<string> {
-  const raw = await aiGenerateText(opts);
-  return normalizeProvinExpertAiComment(raw, opts.maxLen ?? 2400);
+  try {
+    const raw = await aiGenerateText(opts);
+    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) {
+      throw new AiIncompleteCommentError(
+        throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(e.partialText)),
+        e.reason,
+      );
+    }
+    throw e;
+  }
 }
 
 /** Vārdu krājums bez rindkopu pārformatēšanas — e-pasts, checklist u.c. */
@@ -545,8 +565,18 @@ export async function aiGenerateTextWithVocabulary(opts: {
   temperature?: number;
   maxTokens?: number;
 }): Promise<string> {
-  const raw = await aiGenerateText(opts);
-  return applyProvinReportCopyVocabulary(raw);
+  try {
+    const raw = await aiGenerateText(opts);
+    return throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(raw));
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) {
+      throw new AiIncompleteCommentError(
+        throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(e.partialText)),
+        e.reason,
+      );
+    }
+    throw e;
+  }
 }
 
 /**

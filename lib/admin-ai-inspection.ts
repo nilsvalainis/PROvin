@@ -1,6 +1,6 @@
 import "server-only";
 
-import { adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
+import { adminGenerateTextWithVocabulary, adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-identification";
 import { AI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
@@ -46,7 +46,8 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 - nobraukums, negadījumi, TA, dīleris, pārdevējs, cena;
 - vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
 
-Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: **4–6 rindkopas**, īsi un bez ūdens; tikai tas, kas maina lēmumu.
+Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: **6–9 rindkopas** (noklusējuma 350–800 NEATTIECAS); pa vienai katram tehnisko risku sistēmas blokam. Pircējam jāsaprot, ko redzēt, dzirdēt un vaicāt pārdevējam.
+${!techPlain ? "Tehnisko risku sadaļas vēl nav — vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls” un bez izsaukuma zīmēm.
 NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu — tikai pārvērt signālus par klātienes soļiem.`,
     {
@@ -58,10 +59,12 @@ NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/n
     },
   );
 
-  return adminGenerateTextWithVocabulary({
+  const generate = techPlain ? adminGenerateTextWithVocabulary : adminGenerateTextWithWebSearch;
+  return generate({
     modelTier: input.modelTier,
     systemInstruction: AI_INSPECTION_RECOMMENDATIONS_SYSTEM,
     userPrompt,
     temperature: 0.35,
+    ...(techPlain ? {} : { maxSearches: 4 }),
   });
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
-import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
+import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
   buildFullAiOrderContextText,
   type AiOrderContextInput,
@@ -41,6 +41,5 @@ Novērtē cenas atbilstību Latvijas lietotu auto tirgum (ss.lv), salīdzinot ar
     systemInstruction: AI_PRICE_ANALYSIS_SYSTEM,
     userPrompt,
     temperature: 0.35,
-    maxLen: aiMaxLenForOperatorNotes(input.operatorNotes, 3200),
   });
 }

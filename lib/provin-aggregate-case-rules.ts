@@ -50,7 +50,8 @@ function engineScore(fp: VehicleReportFingerprint, codes: string[]): number {
 const PACK_BODY_HEADER = `Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
 - Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / vidējs uzturēšanas risks / tikai kontrolpunkts).
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
-- Raksti **blīvi** — EUR diapazoni un tipiskās slimības bez garas ievada esejas.`;
+- **1. Tehnisko risku analīze** — DETALIZĒTI (8–12 rindkopas): katrs relevantais mezgls, EUR, kas NAV risks, nobraukuma kalibrācija. Blīvums ≠ īsums.
+- EUR joslas tikai tehniskajos riskos un cenas vērtējumā. **3. Kopsavilkumā** cenas un EUR summas neraksta.`;
 
 export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
   {
@@ -132,10 +133,55 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 **Klātienē:** vibrācijas tukšgaitā; pārslēgšanās plūdenums; AdBlue kļūdas; eļļas noplūdes pie kartera; W206 vs A-klases arhitektūras mītu neizplatīt bez pamata.`,
   },
   {
+    id: "bmw_m57_e60_e61",
+    minScore: 14,
+    title: "BMW — M57 (E60/E61 525d/530d): ķēde priekšā, ne N57",
+    score: (fp, hay) => {
+      if (/N47|N57|B47/.test(hay) || /^(N47|N57|B47)/.test(fp.engineCode || "")) return 0;
+      const m57hit = /M57/.test(hay) || /^M57/.test(fp.engineCode || "");
+      const chassisHit =
+        /\bE60\b|\bE61\b|PX61|PX51/.test(hay) || /^PX/.test(fp.typeCode || "");
+      const preF10DieselSix =
+        fp.year != null &&
+        fp.year <= 2010 &&
+        /\b525\b|\b530\b|\b535\b/.test(hay) &&
+        /DIESEL|DĪZEL/.test(hay);
+      if (!m57hit && !chassisHit && !preF10DieselSix) return 0;
+      let s = brandScore(fp, ["BMW"], hay);
+      if (m57hit) s += 30;
+      if (chassisHit) s += 14;
+      if (preF10DieselSix) s += 12;
+      if (
+        (fp.year == null || fp.year <= 2010) &&
+        (fp.engineDisplacementCm3 === "2993" || /2993/.test(hay))
+      ) {
+        s += 8;
+      }
+      return s + engineScore(fp, ["M57"]);
+    },
+    body: `${PACK_BODY_HEADER}
+
+**M57 / M57TU / M57T2 pret N47/N57:** sadales **ķēde dzinēja priekšpusē** (ne aizmugurē). Labi uzturēts M57 pie **300 tūkst. km ir ierasts darba mūžs**, ne resursa gals (bieži 400–500 tūkst.). Ķēdes komplekts neatkarīgā servisā orientējoši **900–1600 €**. **Aizliegts** likt N57 „ķēde lūzt / eļļas sūknis” naratīvu uz M57.
+
+**525d M57T2 (145 kW, Euro 4) + ZF 6HP19 + HECK:** viens no izturīgākajiem E60/E61 salikumiem. Automāts bez divsajūga; **nav divmasu spararata**. 6HP „mūža eļļa” ir mīts — ATF+filtrs ik **60–80 tūkst. km** (**280–450 €**); mehatronika, ja kadreiz, **800–1800 €**.
+
+**E61 Touring:** visiem rūpnīcā **aizmugures pneimatika (EHC)** — tas nav Dynamic Drive. Spilveni + korodējis kompresors = tipiskais tuvākā laika rēķins (**spilveni 400–800 €**, kompresors **250–500 €**, komplekss **800–1600 €**). E60 sedans bez EHC šo rindkopu neliek kā galveno.
+
+**Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
+
+**M57 mehānika pie 250–350 tūkst. km (vidējs uzturēšanas risks, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/injektori statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
+
+**Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (tuvākais rēķins) no paaudzes kaprīzes.
+
+**Klātienē:** aizmugure pēc 10 min stāvēšanas (E61); eļļa uz filtra korpusa/startera; hidromufte (troksnis/sasilšana); auksts starts bez ķēdes klaboņas; 6HP 1–2 un 4–5; ELV starta cikls; pusass puteklis; parastās stūres brīvkustība (ne Active Steering cena); EMF stāvbremze; virpuļvārstu kodi.`,
+  },
+  {
     id: "bmw_diesel_chains",
     minScore: 12,
     title: "BMW — N47 / N57 / B47 ķēdes un eļļas sistēma",
     score: (fp, hay) => {
+      if (/M57/.test(hay) || /^M57/.test(fp.engineCode || "")) return 0;
+      if (/\bE60\b|\bE61\b/.test(hay)) return 0;
       let s = brandScore(fp, ["BMW"], hay);
       if (/DIESEL|DĪZEL/.test(hay)) s += 6;
       return s + engineScore(fp, ["N47", "N57", "B47", "M47"]);

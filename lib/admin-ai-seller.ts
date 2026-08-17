@@ -9,6 +9,10 @@ import {
 } from "@/lib/admin-ai-order-context";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import {
+  throwIfBlankGeneratedComment,
+  rethrowNormalizedIncompleteComment,
+} from "@/lib/admin-ai-incomplete";
 import { applyProvinReportCopyVocabulary } from "@/lib/source-summary-comment-format";
 
 export async function generateSellerAnalysisWithAi(input: AiOrderContextInput): Promise<string> {
@@ -51,11 +55,15 @@ ${taskBlock}`,
     },
   );
 
-  const raw = await adminGenerateTextWithWebSearch({
-    modelTier: input.modelTier,
-    systemInstruction: AI_SELLER_ANALYSIS_SYSTEM,
-    userPrompt,
-    temperature: 0.35,
-  });
-  return applyProvinReportCopyVocabulary(raw);
+  try {
+    const raw = await adminGenerateTextWithWebSearch({
+      modelTier: input.modelTier,
+      systemInstruction: AI_SELLER_ANALYSIS_SYSTEM,
+      userPrompt,
+      temperature: 0.35,
+    });
+    return throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(raw));
+  } catch (e) {
+    rethrowNormalizedIncompleteComment(e, applyProvinReportCopyVocabulary);
+  }
 }

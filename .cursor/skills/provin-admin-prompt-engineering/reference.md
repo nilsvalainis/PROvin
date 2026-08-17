@@ -38,6 +38,7 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
 ### C. HIGH FINANCIAL RISK ENGINE SEGMENTS (RED FLAGS)
 
 - **BMW N57 (3.0D Single/Twin Turbo):** Strict financial red flag for used buyers. Disastrous rates of catastrophic timing chain snaps and rapid spun rod bearings. *Critical Mechanic Error:* When doing preventative chain repairs, mechanics routinely omit replacing the oil pump. A worn oil pump causes immediate low oil pressure and total block destruction (5,000–10,000 EUR loss) shortly after the repair. Advise switching to Volvo or Mercedes alternatives rather than absorbing N57 risks.
+- **BMW M57 / M57TU / M57T2 (E60/E61 525d/530d, 3.0D, chain at FRONT):** Do NOT apply N47/N57 rear-chain narrative. 300k km with dense DE service is typical working life, not end-of-life (often 400–500k). Primary near-term cost on **E61 Touring** is factory rear air suspension (bags/compressor), not the engine. Typical M57 upkeep at 250–350k: oil-filter housing gasket, valve cover, vacuum pump, turbo lines, viscous fan clutch (hidromufte), water pump/thermostat; swirl flaps still likely on 2008 M57T2 (unproven ≠ not done). ZF 6HP19 “lifetime” ATF is a myth — fluid+filter every 60–80k. Age-related E60/E61 electronics (ELV, FRM, CIC) are long-term fussiness, not proof the car is failing now. If equipment list supports it, name **absent** expensive options as a TCO strength: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive. Lifestyle Edition = leather/comfort, not chassis hydraulics.
 - **BMW M47 vs N47 (2.0D):** While N47 chains stretch early (100k-150k km), a clean, well-maintained N47 requiring a chain service is mechanically superior to a completely run-down, end-of-life M47 unit.
 - **VW/Audi 1.8 & 2.0 TFSI (2008-2013):** Massive structural design flaw leading to extreme oil consumption ("rij eļļu nejēgā"), skipped timing chains, and premature cylinder head cracking. Avoid entirely.
 - **Volvo 2.4 D5 Biturbo (2009+ / Black Engine Cover - 151kW, 158kW, 162kW):** High risk of structural engine block cracks between cylinders. Silent symptoms: continuous unexplained coolant loss and the vehicle's heating system suddenly blowing cold air during active driving. Results in a write-off of the engine block.
@@ -58,7 +59,7 @@ Sync full deployed text from `AI_EV_BEV_FORENSICS_RULES` in `lib/source-summary-
 
 Deployed runtime selection: `selectAggregateCasePacks()` in `lib/provin-aggregate-case-rules.ts` + per-report learnings in `provin_audit_aggregate_learnings.json`.
 
-Covers: VAG (3.0 TDI matrix, 2.0 TDI DSG, TFSI), Mercedes OM642/651, BMW N47/N57, Volvo D5/Haldex, PSA wet belt/PureTech, Renault/Nissan, Toyota/Lexus hybrid, Ford EcoBoost/Powershift, Hyundai/Kia incl. E-GMP, Tesla, generic EV, Japanese brands, generic DE→LV ICE fallback.
+Covers: VAG (3.0 TDI matrix, 2.0 TDI DSG, TFSI), Mercedes OM642/651, BMW M57/E60/E61, BMW N47/N57, Volvo D5/Haldex, PSA wet belt/PureTech, Renault/Nissan, Toyota/Lexus hybrid, Ford EcoBoost/Powershift, Hyundai/Kia incl. E-GMP, Tesla, generic EV, Japanese brands, generic DE→LV ICE fallback.
 
 Each pack must drive **summary verdict** + **inspection actions** per §1b.
 
@@ -72,13 +73,13 @@ Whenever prompts generate **2. Kopsavilkums** or **Ieteikumi klātienes apskatei
   - **medium maintenance risk**
   - **inspection control point only**
 - Tie every important aggregate risk to a **specific verification action** in the inspection field: cold-start noise, shift quality, vibration, leak traces, thermal behavior, fault scan, boost pull, HV diagnostics, DC charging test, underbody inspection, etc.
-- In summary, explain which aggregate is most likely to generate the biggest near-term cost and whether that changes the buy / inspect / avoid recommendation.
+- In summary, name which aggregate is most likely to generate the biggest near-term cost and whether that changes the buy / inspect / avoid recommendation — **without EUR figures**. Listing/market/repair prices stay in the price field and technical-risks section.
 
 ## 1c. AGGREGATE IDENTIFICATION & MILEAGE-BAND CALIBRATION (mandatory)
 
 Deployed text: `AI_POWERTRAIN_IDENTIFICATION_RULES` + `AI_MILEAGE_BAND_RISK_RULES` in `lib/source-summary-comment-format.ts`, injected into `PROVIN_FIELD_AGENT_SYSTEM` and `PROVIN_EXPERT_SYSTEM_PROMPT`. Pre-digested vehicle parameters: `buildAggregateIdentificationBrief()` in `lib/admin-ai-aggregate-identification.ts` (used by technical risks + inspection prompts).
 
-**1. Tehnisko risku analīze is the highest-value comment in the report** — the agent must behave like a senior technical expert on that exact brand/model/generation/engine/gearbox, not a generic used-car reviewer.
+**1. Tehnisko risku analīze is the highest-value comment in the report** — the agent must behave like a senior technical expert on that exact brand/model/generation/engine/gearbox, not a generic used-car reviewer. Default 350–800 character brevity **does not apply**. Target **8–12 detailed paragraphs** (see `AI_TECHNICAL_RISKS_FLAGSHIP_RULES`). Static packs cover only a few families; for everything else **web-search European forums first** (`AI_TECHNICAL_RISKS_RESEARCH_RULES`), then write. Weak output = generic EGR/DPF/turbo blurb. Strong output = identified aggregate, mileage-band meaning for THAT family, expensive options that are **absent**, 1–2 near-term cost drivers, each distinct system with EUR, long-term age fussiness separated from “this car will fail soon”, hedged outlook from THIS car’s data.
 
 Identification before risk:
 

@@ -23,7 +23,7 @@ Field agent prompts are for **data processing and Latvian expert copy** on admin
 1. **Backfill (no LLM):** `POST /api/admin/audit-knowledge` `{ "action": "backfill", "limit": 120 }` — scans drafts → anonymized snippets → `provin_audit_aggregate_learnings.json`.
 2. **Promote (no LLM):** `{ "action": "promote" }` or `npm run audit:knowledge:promote` → `.data/…/audit-knowledge-candidates.md` (hard-capped ~12k chars).
 3. **Expensive agent:** review **only** that candidates MD → inject durable rules into [provin-admin-prompt-engineering/reference.md](../provin-admin-prompt-engineering/reference.md) + `lib/provin-aggregate-case-rules.ts` → sync prompts.
-4. **Runtime ✨ budget:** `buildAggregateKnowledgeAiContext` caps packs (3), learning keys (3), snippets/key (4), total ~5500 chars.
+4. **Runtime ✨ budget:** `buildAggregateKnowledgeAiContext` caps packs (3), learning keys (3), snippets/key (4), total ~7500 chars.
 
 Code: `lib/admin-audit-learning-extract.ts`, `lib/admin-audit-knowledge-promote.ts`, `lib/admin-ai-aggregate-knowledge.ts`, `app/api/admin/audit-knowledge/route.ts`.
 
@@ -42,11 +42,11 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 | Export | Active field | Consumer |
 |--------|--------------|----------|
 | `PROVIN_FIELD_AGENT_SYSTEM` | Base | All field-agent prompts |
-| `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze | `admin-ai-technical-risks.ts` — Claude web search + aggregate knowledge |
+| `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze | `admin-ai-technical-risks.ts` — Claude web search (Eiropas forumi, ja paka nesedz) + aggregate knowledge |
 | `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-ai-inspection.ts` — **expert markdown** (bold hooks, no `- `); uses technical-risks section |
 | `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-ai-seller.ts` — **expert markdown** |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums | `admin-ai-price.ts` |
-| `AI_SUMMARY_ANALYSIS_SYSTEM` | 3. Kopsavilkums | `admin-ai-summary.ts` — free-form synthesis, no „Sveiki”, avoid duplicating technical risks |
+| `AI_SUMMARY_ANALYSIS_SYSTEM` | 3. Kopsavilkums | `admin-ai-summary.ts` — free-form synthesis, no „Sveiki”, no EUR prices, avoid duplicating technical risks |
 | `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs | `admin-ai-mileage-comment.ts` |
 | `AI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums | `admin-ai-incidents-summary.ts` |
 | `aiSourceCommentSystemPrompt(label)` | Avota „Komentāri” | `admin-ai-source-comment.ts` |

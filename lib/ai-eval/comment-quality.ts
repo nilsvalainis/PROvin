@@ -10,7 +10,14 @@ export type CommentQualityIssue = {
 
 export type CommentQualityOptions = {
   /** Per-source comments must not contain a full mileage-synthesis essay. */
-  field?: "source" | "mileage" | "incidents" | "generic";
+  field?:
+    | "source"
+    | "mileage"
+    | "incidents"
+    | "generic"
+    | "technical_risks"
+    | "inspection"
+    | "summary";
 };
 
 const AUTOMIBILIS_RE = /\bautomobīl/i;
@@ -27,6 +34,18 @@ const MAX_CHARS_BY_FIELD: Record<string, number> = {
   incidents: 1800,
   mileage: 2400,
   generic: 1800,
+  technical_risks: 16_000,
+  inspection: 10_000,
+};
+
+const MIN_PARAS_BY_FIELD: Partial<Record<string, number>> = {
+  technical_risks: 7,
+  inspection: 5,
+};
+
+const MIN_CHARS_BY_FIELD: Partial<Record<string, number>> = {
+  technical_risks: 1800,
+  inspection: 650,
 };
 
 /** Heuristics for a full mileage essay that belongs only in NOBRAUKUMA VĒSTURES KOMENTĀRS. */
@@ -53,6 +72,13 @@ export function evaluateExpertCommentQuality(
     issues.push({
       code: "vocabulary_automobilis",
       message: 'Nedrīkst lietot „automobīlis” — izmanto „automašīna”',
+    });
+  }
+
+  if (/[\u2012\u2013\u2014\u2015\u2212]/.test(t)) {
+    issues.push({
+      code: "unicode_dash",
+      message: "Klientam redzamā tekstā lieto īso ASCII defisi „-”, ne garo/vidējo domuzīmi",
     });
   }
 
@@ -104,6 +130,55 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "mileage_missing_focus",
         message: "Nobraukuma komentāram jābūt ar km / nobraukuma fokusu",
+      });
+    }
+  }
+
+  const paraCount = t.split(/\n\s*\n/).filter((p) => p.trim().length > 40).length;
+  const minParas = MIN_PARAS_BY_FIELD[field];
+  if (minParas != null && paraCount < minParas) {
+    issues.push({
+      code: "too_short",
+      message: `Flagship laukam par maz rindkopu (${paraCount}, mērķis ≥ ${minParas})`,
+    });
+  }
+  const minChars = MIN_CHARS_BY_FIELD[field];
+  if (minChars != null && t.length < minChars) {
+    issues.push({
+      code: "too_short",
+      message: `Flagship laukam par īsu (${t.length} rakstzīmes, mērķis ≥ ${minChars})`,
+    });
+  }
+
+  if (field === "technical_risks") {
+    if (!/€/.test(t) && !/\bEUR\b/.test(t)) {
+      issues.push({
+        code: "missing_eur",
+        message: "Tehnisko risku analīzē jābūt orientējošām EUR izmaksām",
+      });
+    }
+    if (!/identifik|dzinēj|ātrumkārb|kārba|ķēd|zobsiksn|piedziņ/i.test(t)) {
+      issues.push({
+        code: "missing_aggregate",
+        message: "Tehnisko risku analīzē jāidentificē agregāts (dzinējs/kārba/ķēde), ne vispārīgs dīzelis",
+      });
+    }
+  }
+
+  if (field === "inspection") {
+    if (!/jāpārbauda|ieteicams|rūpīgi jā/i.test(t)) {
+      issues.push({
+        code: "missing_inspection_verb",
+        message: "Apskates ieteikumos jālieto „Jāpārbauda” / „Ieteicams” / „Rūpīgi jā…”",
+      });
+    }
+  }
+
+  if (field === "summary") {
+    if (/€/.test(t) || /\bEUR\b/.test(t)) {
+      issues.push({
+        code: "summary_price",
+        message: "Kopsavilkumā neraksta cenas / EUR summas — tās ir cenas vērtējumā un tehniskajos riskos",
       });
     }
   }

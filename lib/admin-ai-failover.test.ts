@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { AiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
 import {
   CLAUDE_MODEL_SONNET,
   CLAUDE_MODEL_HAIKU,
@@ -53,6 +54,8 @@ describe("isAiTransientError", () => {
     expect(shouldAiModelFailover(new Error("Request timed out"))).toBe(false);
     expect(shouldAiModelFailover(Object.assign(new Error("timeout"), { status: 408 }))).toBe(false);
     expect(shouldAiModelFailover(new Error("529 overloaded_error"))).toBe(true);
+    expect(shouldAiModelFailover(new Error("ai_incomplete_comment"))).toBe(false);
+    expect(shouldAiModelFailover(new AiIncompleteCommentError("daļa", "timeout"))).toBe(false);
   });
 
   it("rejects invalid API key", () => {

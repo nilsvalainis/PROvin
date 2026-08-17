@@ -3,7 +3,7 @@
     "id": "source-csdd-ta-ok",
     "field": "source",
     "expectPass": true,
-    "text": "**Tehnisko apskašu tendence.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **sešas reizes**; hroniski atkārtojas korozija un eļļas noplūdes.\n\n**Īss km salīdzinājums.** CSDD pēdējais fiksējums sakrīt ar AutoDNA — detalizēto nobraukuma forenziku atstāj nobraukuma komentāram."
+    "text": "**Tehnisko apskašu tendence.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **sešas reizes**; hroniski atkārtojas korozija un eļļas noplūdes.\n\n**Īss km salīdzinājums.** CSDD pēdējais fiksējums sakrīt ar AutoDNA - detalizēto nobraukuma forenziku atstāj nobraukuma komentāram."
   },
   {
     "id": "source-bad-automobilis",
@@ -17,13 +17,13 @@
     "field": "source",
     "expectPass": false,
     "codes": ["source_mileage_essay"],
-    "text": "**Nobraukuma līkne.** Automašīnas nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā**. Braukšanas profils atbilst šosejas režīmam ar zemāku motorstundu slodzi, un pirms importa ir datu vakuums."
+    "text": "**Nobraukuma līkne.** Automašīnas nobraukuma līkne ir lineāra ar vidēji **22 000-24 000 km gadā**. Braukšanas profils atbilst šosejas režīmam ar zemāku motorstundu slodzi, un pirms importa ir datu vakuums."
   },
   {
     "id": "mileage-synthesis-ok",
     "field": "mileage",
     "expectPass": true,
-    "text": "**Hronoloģija un lineārums.** Visos avotos nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā**; izteikti kritumi nav fiksēti.\n\n**Datu blīvums.** Ieraksti ir regulāri, kas ļauj secināt par šosejas profilu ar zemāku motorstundu slodzi."
+    "text": "**Hronoloģija un lineārums.** Visos avotos nobraukuma līkne ir lineāra ar vidēji **22 000-24 000 km gadā**; izteikti kritumi nav fiksēti.\n\n**Datu blīvums.** Ieraksti ir regulāri, kas ļauj secināt par šosejas profilu ar zemāku motorstundu slodzi."
   },
   {
     "id": "source-bad-hyperbole",
@@ -50,7 +50,7 @@
     "id": "incidents-claim-context-ok",
     "field": "incidents",
     "expectPass": true,
-    "text": "**Zaudējumu apjoms kontekstā.** AutoDNA fiksē **6 840 €** Vācijā, kad automašīnai bija **~1 gads** un tā ir premium klase — summa bieži atspoguļo dārgas OEM detaļas, ne obligāti total loss.\n\n**Avotu asinhronija.** LTAB šim periodam izmaksu neuzrāda."
+    "text": "**Zaudējumu apjoms kontekstā.** AutoDNA fiksē **6 840 €** Vācijā, kad automašīnai bija **~1 gads** un tā ir premium klase - summa bieži atspoguļo dārgas OEM detaļas, ne obligāti total loss.\n\n**Avotu asinhronija.** LTAB šim periodam izmaksu neuzrāda."
   },
   {
     "id": "source-bad-bullets",
@@ -58,5 +58,51 @@
     "expectPass": false,
     "codes": ["list_prefix"],
     "text": "- **Bojājums.** Priekšējais buferis.\n\n- Otrā rinda."
+  },
+  {
+    "id": "tech-risks-too-short-generic-diesel",
+    "field": "technical_risks",
+    "expectPass": false,
+    "codes": ["too_short"],
+    "text": "**Dīzeļa tipiskās kaites.** Šādiem auto bieži ir EGR un DPF problēmas, tāpēc jāpārbauda klātienē.\n\n**Turbo.** Turbīna var būt nolietota, un eļļas maiņas intervāls jāsaīsina."
+  },
+  {
+    "id": "tech-risks-structure-ok",
+    "field": "technical_risks",
+    "expectPass": true,
+    "text": "**Agregātu identifikācija.** Dīlera datos dzinējs ir rindas sešinieka dīzelis ar sadales ķēdi priekšpusē, hidrotransformatora automātisko kārbu un aizmugures piedziņu. Šajā nobraukuma posmā tas ir ierasts darba mūžs šai saimei, ne resursa gals, ja eļļas intervāli bijuši šosejas profilam atbilstoši.\n\n**Kas NAV dārgs risks.** Šīs paaudzes slavenā aizmugurējās ķēdes kaite uz šo motoru neattiecas. Aprīkojuma sarakstā nav aktīvās stūres, hidraulisko stabilizatoru un premium audio pastiprinātāja, kas 15-20 gadu vecumā kļūst uzturēšanā nesamērīgi dārgi.\n\n**Tuvākais izmaksu punkts.** Universāļa rūpnīcas aizmugures pneimatika šajā vecumā ir galvenais rēķins: spilveni un kompresors orientējoši **400-800 €** un **250-500 €**. Ja diagnostikā tas jau fiksēts, tas ir pirmais jautājums pārdevējam, ne arguments pret pašu motoru.\n\n**Motora mehānika.** Tipiski eļļas filtra korpusa un vāka blīves, dzesēšanas plastmasa un ventilatora hidromufte (**100-350 €** joslā). Dokumentēta skriemeļa maiņa ir labvēlīgs signāls datos; trūkstošu ATF maiņu formulē kā nepierādītu.\n\n**Ieplūde un izplūde.** Virpuļvārsti un EGR paliek vidējs uzturēšanas risks; zema dūmainība tehniskajā apskatē ir labs fona signāls par DPF un turbīnu, ne garantija.\n\n**Kārba.** Hidrotransformators ir uzticamāks par divsajūgu, bet „mūža eļļa” šajā posmā ir paaugstināts risks. Profilakse **280-450 €**; mehatronika, ja kadreiz, krietni dārgāka.\n\n**Elektronika kā vecuma īpatnība.** Stūres slēdzene, gaismas un logu moduļi šajā paaudzē kaprīzē pēc laika, ne pēc km. Tas ir ilgtermiņa raksturs, ne pierādījums, ka šis eksemplārs tuvākajā laikā būs problemātisks.\n\n**Prioritātes.** Galvenais pirkuma punkts ir piekare, ja nav novērsta; motors pēc datiem ir kontrolpunkts. Pēc pieejamajiem datiem auto izskatās kopts, ar atrunu ka PROVIN to fiziski nav apskatījis."
+  },
+  {
+    "id": "inspection-too-short",
+    "field": "inspection",
+    "expectPass": false,
+    "codes": ["too_short"],
+    "text": "**Virsbūve.** Jāpārbauda krāsa.\n\n**Brauciens.** Ieteicams izbraukt."
+  },
+  {
+    "id": "inspection-structure-ok",
+    "field": "inspection",
+    "expectPass": true,
+    "text": "**Piekare.** Jānovērtē, vai aizmugure stāv līmenī un vai pēc iedarbināšanas paceļas bez gariem kompresora cikliem. Jālūdz dokumenti, ja diagnostikā jau fiksēta nosēšanās.\n\n**Auksts starts.** Ieteicams klausīties ķēdi pirmajās sekundēs un rūpīgi jāapskata eļļas filtra korpuss pret tecējumiem.\n\n**Kārba.** Jāpārbauda 1-2 un 4-5 pārslēgumi aukstā un siltā, bez rāviena.\n\n**Elektronika.** Jāveic vairāki starta cikli un jānovērtē, vai stūres slēdzene neliedz iedarbināšanu.\n\n**Testa brauciens.** Ieteicams 20-30 min klusais brauciens pilsētā, šosejā 90-110 km/h un viens kick-down bez kļūdu lampiņām.\n\n**Virsbūve.** Rūpīgi jāapskata arkas un jāizmēra krāsa zonās, kur avotos ir neliels zaudējums."
+  },
+  {
+    "id": "source-bad-em-dash",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["unicode_dash"],
+    "text": "**Reģistrācija.** Automašīna Latvijā reģistrēta 2016. gadā \u2014 īpašnieku maiņa ir īsa."
+  },
+  {
+    "id": "summary-no-price-ok",
+    "field": "summary",
+    "expectPass": true,
+    "text": "**Kopējā aina.** Pēc pieejamajiem datiem automašīna izskatās koptāka nekā tipisks imports šajā vecumā, ar atrunu ka PROVIN to fiziski nav apskatījis.\n\n**Galvenais punkts.** Tuvākais izmaksu draiveris ir piekare, ne motors - tas ir kontrolpunkts, ne pirkuma šķērslis.\n\n**Rekomendācija.** Ieteicams turpināt pēc klātienes pārbaudes."
+  },
+  {
+    "id": "summary-bad-price",
+    "field": "summary",
+    "expectPass": false,
+    "codes": ["summary_price"],
+    "text": "**Cena.** Sludinājuma cena 14 900 € atbilst tirgum.\n\n**Rekomendācija.** Ieteicams pirkt pēc apskates."
   }
 ]

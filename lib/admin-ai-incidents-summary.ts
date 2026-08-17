@@ -2,7 +2,7 @@ import "server-only";
 
 import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_INCIDENTS_SUMMARY_SYSTEM } from "@/lib/admin-ai-prompts";
-import { appendAiOperatorNotesSection, aiMaxLenForOperatorNotes } from "@/lib/admin-ai-operator-notes";
+import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
   buildFullAiOrderContextText,
   type AiOrderContextInput,
@@ -52,6 +52,5 @@ Garums: **2–4 rindkopas**. Tonis atturīgs: bez „kritisks”, „anomālija�
     systemInstruction: AI_INCIDENTS_SUMMARY_SYSTEM,
     userPrompt,
     temperature: 0.35,
-    maxLen: aiMaxLenForOperatorNotes(input.operatorNotes, 3200),
   });
 }
