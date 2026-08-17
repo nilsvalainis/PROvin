@@ -1272,7 +1272,7 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
     drawPage1Panel(page, x, y, w, h);
     const ix = x + PAGE1_PAD + PAGE1_RAIL + 6;
     const iw = w - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
-    let cy = drawPage1SectionTitle(page, titleText, ix, y - PAGE1_PAD, fontBold);
+    const cy = drawPage1SectionTitle(page, titleText, ix, y - PAGE1_PAD, fontBold);
     drawBody(ix, cy, iw);
   };
 
