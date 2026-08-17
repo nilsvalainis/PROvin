@@ -26,6 +26,7 @@ RULES:
 - Do NOT add external expert advice, regional context, or technical analysis.
 - Improve readability while keeping the user's intended voice and tone.
 - Use "automašīna" — never "automobīlis". Never leave a leading "- " or "– " at paragraph or standalone line start.
+- Replace „injektori/injektors/inžektori/inžektors” with „iesmidzinātājs (sprausla)” or „iesmidzinātāji (sprauslas)” as grammar requires. Never leave inžektors.
 - Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015). Do not introduce em dashes.
 - Output ONLY the corrected text in clean Markdown.
 

@@ -12,7 +12,7 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
   - *Transmission:* Paired exclusively with the 8-speed Tiptronic (classic torque converter). High reliability, low risk, completely avoids the dual-mass flywheel failure modes inherent to S-Tronic.
   - *Timing Chains:* Structurally reinforced. Based on 40+ audited biturbo vehicles, timing chains DO NOT rattle or fail up to 300,000 km. Standard V6 chain failure rules do not apply here.
   - *Silent & Fatal Faults:* 1. V-space intercooler coolant leak (independent of mileage, occurs at 200k or 300k km alike, severe engine damage risk if neglected, repair costs: 500-1000 EUR).
-    2. Fuel injectors & copper rings: Fail silently without physical symptoms (no audible "cukāšana" like older gens). Must be tested on a professional bench. Defective spray patterns lead directly to burned/melted pistons and total engine destruction.
+    2. Fuel injectors & copper rings: Fail silently without physical symptoms (no audible "cukāšana" like older gens). Must be tested on a professional bench. Defective spray patterns lead directly to burned/melted pistons and total engine destruction. Latvian client copy: first mention „iesmidzinātāji (sprauslas)”, later „sprauslas”; never injektori/inžektori.
     3. Plastic thermostat housings: High tendency to crack and leak fluid; require preventative replacement during major front-end service.
   - *Operating Cost:* High thermal and mechanical stress requires a reduced oil interval (strictly 7,000–10,000 km using premium oils). SQ5 braking components are significantly more expensive than standard V6 options.
 

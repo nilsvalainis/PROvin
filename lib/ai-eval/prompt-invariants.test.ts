@@ -36,6 +36,14 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
   });
 
+  it("vocabulary prefers iesmidzinātājs (sprausla) over injektori", () => {
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/iesmidzinātājs \(sprausla\)/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER „injektori”/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/inžektor/);
+    expect(readRepo("lib/provin-aggregate-case-rules.ts")).not.toMatch(/\binjektor/i);
+    expect(readRepo("lib/admin-ai-technical-risks.ts")).not.toMatch(/\binjektor/i);
+  });
+
   it("damage claim rules require contextual EUR interpretation", () => {
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/age at incident/i);
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/premium/i);

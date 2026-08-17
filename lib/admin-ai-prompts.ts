@@ -46,6 +46,7 @@ RULES:
 - Do NOT add external expert advice, regional context, or technical analysis.
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
+- Replace „injektori/injektors/inžektori/inžektors” with „iesmidzinātājs (sprausla)” / „iesmidzinātāji (sprauslas)” as grammar requires; never leave the ž form.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
 - If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph — never leave a leading dash at paragraph start.
 - Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015, 300-400 €). Do not introduce em dashes.
@@ -287,7 +288,7 @@ OPERATORA KOMANDAS (obligāti):
 STRUKTŪRA (obligāti — domāšanas secība; numerācija NAV izvades formāts — izvadē tikai rindkopas ar **bold** ievadu). Skat. TEHNISKO RISKU KVALITĀTES LATIŅA.
 
 SATURA PRASĪBAS:
-- Konkrēti mezgli, nevis kategorijas: ķēde vai zobsiksna **un tās puse/piekļuve**, turbo un tā ģeometrija, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats (tikai ja ir), ūdens sūknis/termostats/hidromufte, eļļas noplūžu vietas, reduktors/AWD sajūgs, gaisa balstiekārta pret Adaptive/Dynamic Drive — tikai relevantie.
+- Konkrēti mezgli, nevis kategorijas: ķēde vai zobsiksna **un tās puse/piekļuve**, turbo un tā ģeometrija, iesmidzinātāji (sprauslas), DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats (tikai ja ir), ūdens sūknis/termostats/hidromufte, eļļas noplūžu vietas, reduktors/AWD sajūgs, gaisa balstiekārta pret Adaptive/Dynamic Drive — tikai relevantie.
 - Aptuvenās remonta / profilakses izmaksas **EUR diapazonā** (Baltijas neatkarīgais serviss), ar atrunu.
 - Aprīkojums: nosauc dārgās vecuma pozīcijas, kuru **nav**, ja dati to ļauj; neizdomā SA kodus.
 - Nepārspīlē; ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, blīves 15–20 gadu vecumā) nošķir no tuvākā termiņa problēmas.

@@ -68,9 +68,9 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     },
     body: `${PACK_BODY_HEADER}
 
-**Biturbo 3.0 TDI (~230 kW) + 8AT Tiptronic:** ķēdes parasti nav galvenais risks; fokuss - **V-intercooler dzesēšanas noplūde**, **injektori un vara gredzeni** (klusā bojāejuma risks), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000-10 000 km** premium eļļai. Nav 7DSG/divmasu protokola.
+**Biturbo 3.0 TDI (~230 kW) + 8AT Tiptronic:** ķēdes parasti nav galvenais risks; fokuss - **V-intercooler dzesēšanas noplūde**, **iesmidzinātāji (sprauslas) un vara gredzeni** (klusā bojāejuma risks), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000-10 000 km** premium eļļai. Nav 7DSG/divmasu protokola.
 
-**3.0 TDI 150 vs 180 kW + 7DSG/S-Tronic (no ~2012; arī 190/200/210 kW):** vienāds risku saraksts - **ķēdes**, **kārba**, **divmasu spararats**, **injektori + vara gredzeni**, **eļļas un dzesēšanas noplūdes** (starpdzesētājs, termostats). 150 kW - mazāka termiskā slodze, tās pašas kaites bieži vēlāk; 180 kW - karstāks brālis, ķēde/injektori/dzesēšana pie līdzīga km biežāk. **Kārba 2 000-4 000 €** (neliela raustīšanās uzsākot = pirmā pazīme). **Divmasu 700-1 200 €** (tukšgaita pie priekšējiem riteņiem, izzūd D/R; klausīties pirms un pēc brauciena). Ķēde orientējoši **1 500-3 000 €**. Skat. VW GROUP 3.0 TDI + 7DSG PROTOCOL.
+**3.0 TDI 150 vs 180 kW + 7DSG/S-Tronic (no ~2012; arī 190/200/210 kW):** vienāds risku saraksts - **ķēdes**, **kārba**, **divmasu spararats**, **iesmidzinātāji (sprauslas) + vara gredzeni**, **eļļas un dzesēšanas noplūdes** (starpdzesētājs, termostats). 150 kW - mazāka termiskā slodze, tās pašas kaites bieži vēlāk; 180 kW - karstāks brālis, ķēde/sprauslas/dzesēšana pie līdzīga km biežāk. **Kārba 2 000-4 000 €** (neliela raustīšanās uzsākot = pirmā pazīme). **Divmasu 700-1 200 €** (tukšgaita pie priekšējiem riteņiem, izzūd D/R; klausīties pirms un pēc brauciena). Ķēde orientējoši **1 500-3 000 €**. Skat. VW GROUP 3.0 TDI + 7DSG PROTOCOL.
 
 **C6 3.0 TDI 176 kW + Tiptronic 6:** bieži uzticamākais V6 komplekts; **izteiktu ķēžu problēmu nav līdz īstiem ~350 000 km**; **ķēdes maiņa pie ~250 000 km** - augsts odometra rollback signāls. Tiptronic 6/8 testē parastā braucienā, bez divmasu sajūga protokola.
 
@@ -170,7 +170,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 
-**M57 mehānika pie 250–350 tūkst. km (vidējs uzturēšanas risks, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/injektori statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
+**M57 mehānika pie 250–350 tūkst. km (vidējs uzturēšanas risks, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/iesmidzinātāji (sprauslas) statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
 
 **Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (tuvākais rēķins) no paaudzes kaprīzes.
 
@@ -256,7 +256,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     },
     body: `${PACK_BODY_HEADER}
 
-**1.5/1.6 dCi:** turbo un injektoru nolietojums; EGR/DPF pilsētā.
+**1.5/1.6 dCi:** turbo un iesmidzinātāju (sprauslu) nolietojums; EGR/DPF pilsētā.
 
 **Nissan CVT (benzīns):** vibrācija un pārkaršana — **vidējs risks**.
 

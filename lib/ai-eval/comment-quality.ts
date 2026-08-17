@@ -21,6 +21,7 @@ export type CommentQualityOptions = {
 };
 
 const AUTOMIBILIS_RE = /\bautomobīl/i;
+const INJEKTOR_RE = /\bin(?:j|ž)ektor/i;
 const LEADING_DASH_PARA_RE = /(^|\n\n)\s*[-–•]\s+/;
 const LIST_LINE_RE = /^\s*[-•*]\s+/m;
 
@@ -72,6 +73,14 @@ export function evaluateExpertCommentQuality(
     issues.push({
       code: "vocabulary_automobilis",
       message: 'Nedrīkst lietot „automobīlis” — izmanto „automašīna”',
+    });
+  }
+
+  if (INJEKTOR_RE.test(t)) {
+    issues.push({
+      code: "vocabulary_injektors",
+      message:
+        "Nedrīkst lietot „injektors/inžektors” — pirmā pieminēšana: „iesmidzinātājs (sprausla)”",
     });
   }
 
