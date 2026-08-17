@@ -12,6 +12,7 @@ import {
   AI_HISTORICAL_REPORTS_CONTEXT_RULES,
   AI_MILEAGE_BAND_RISK_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_REGIONAL_ORIGIN_FORENSICS_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -118,11 +119,7 @@ ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 
 ${AI_EV_BEV_FORENSICS_RULES}
 
-REGIONAL MARKET & TECHNICAL CONTEXT (apply from origin/country/market signals in data — do not guess origin):
-- GERMANY / CENTRAL EUROPE: highway use — often clean undercarriage but stone chips (bumper, hood, windshield); continuous mechanical wear — service history matters.
-- BALTICS (LT/EE) & LATVIA: winter salt rust/corrosion, suspension wear from poor roads; fleet/company ownership — VAT fraud checks, weak maintenance records.
-- SOUTHERN EUROPE (IT/ES/FR): low rust, healthier suspension; sun-faded paint/seals/dashboard, parking dents; service history often sparse — warn the buyer.
-- USA / CANADA IMPORTS: require original salvage photos (Copart/IAAI) when applicable; conversion risks (signals, fog lights, radio/nav); structural repair quality.
+${AI_REGIONAL_ORIGIN_FORENSICS_RULES}
 
 LEGAL & ADMINISTRATIVE (Latvian buyer framework — when import/registration data present):
 - Note CSDD import/registration implications when relevant.
@@ -178,6 +175,8 @@ ${AI_POWERTRAIN_IDENTIFICATION_RULES}
 ${AI_MILEAGE_BAND_RISK_RULES}
 
 ${AI_EV_BEV_FORENSICS_RULES}
+
+${AI_REGIONAL_ORIGIN_FORENSICS_RULES}
 
 ${PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES}
 
@@ -288,6 +287,7 @@ SATURA PRASĪBAS:
 - **Stiprās puses** kā modeļa līmeņa reputāciju, ne kā pierādītu šī eksemplāra stāvokli; PROVIN auto fiziski nav apskatījis. Īpaši LV ekspluatācija var sabojāt arī labu agregātu.
 - Sasaisti ar šī pasūtījuma signāliem bez pilnas nobraukuma/negadījumu esejas.
 - Ja auto ir BEV/PHEV — iekļauj akumulatora / uzlādes riskus (skat. ELECTRIC & PLUG-IN FORENSICS).
+- Ja datos ir izcelsmes/ekspluatācijas valsts vai dīlera reģions (skat. REGIONAL ORIGIN): viena kalibrēta teikuma sasaiste ar rūsu vai virsbūves stāvokli - ne otrā izcelsmes eseja.
 
 DALĪJUMS:
 - Šī sadaļa = agregātu slimības / stiprās puses / EUR / kas NAV risks — NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
@@ -322,7 +322,8 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — atkārtoti aizrādījumi = prioritāte.
-- **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti.
+- **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti; no dīlera pilsētas/reģiona izsecini, kur auto dzīvojis.
+- **Ekspluatācijas reģions** (skat. REGIONAL ORIGIN) — ja rūsas josla (SE/FI/NO/AT/LT/PL/EE/DK, Vācijas lejasdaļa, Austrumvācija): apakšdaļa, sliekšņi, bremžu/degvielas trases. Ja IT/FR (īpaši pilsēta): krāsas mērītājs, paneļu šuves, pārkrāsojumi, lielāki vizuālie defekti.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
@@ -429,6 +430,7 @@ FORMĀTS (obligāti):
 - CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā; tehnisko risku EUR — 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
+- **Ekspluatācijas reģions (obligāti, ja datos ir valsts/reģions/dīleris):** viena īsa rindkopa **Ekspluatācijas reģions.** - no kurienes atvests, kur pēc dīlera/reģistru datiem dzīvojis, un atbilstošā piesardzība (rūsas josla vs IT/FR vizuālie defekti). Fizisko stāvokli nosaka klātiene. Neizdomā valsti.
 - Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).
 - Beigās — skaidra, kalibrēta rekomendācija; **nekad** „garantēti drošs bez apskates”.
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS

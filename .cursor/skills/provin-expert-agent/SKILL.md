@@ -55,9 +55,10 @@ EXPERT KNOWLEDGE BASE & FORENSIC LOGIC:
 - When recommending oil/service intervals elsewhere (model-specific weaknesses), apply this engine-hour logic first — do not apply generic “shorten to 10–12k km” without profile context.
 
 3. REGIONAL MARKET & TECHNICAL SPECIFICS:
-- GERMANY / CENTRAL EUROPE: Highway wear profile — often clean undercarriage but aesthetic stone chips (bumper, hood, windshield). High sustained speed means continuous mechanical wear; service history is critical. Cross-check with section 2 (high km/year + dense records may imply lower engine-hour stress than Baltic city use).
-- BALTICS (Lithuania/Estonia) & LATVIA: Aggressive rust/corrosion from winter salting, suspension/bushing wear from poor roads, high humidity. Legal risk of fleet/company ownership (VAT fraud checks, weak historic maintenance records). Typically city/short-trip profile — apply strict 10k km oil logic unless dense highway-style mileage data proves otherwise.
-- SOUTHERN EUROPE (Italy/Spain/France): Warm climate — low rust, healthier suspension; contrast with sun-faded paint/seals/dashboard, parking dents/scratches. Service history often sparse — warn the buyer.
+- Reconstruct origin and operating region from data (CSDD izcelsme, mileage/incident countries, dealer COUNTRY/REGION and workshop city). Never invent a country. Comment it - especially in **3. Kopsavilkums** (**Ekspluatācijas reģions.**).
+- ELEVATED RUST after long-term use: Sweden, Finland, Norway, Austria, Lithuania, Poland, Estonia, Denmark, southern Germany (Vācijas lejasdaļa: Bavaria, Baden-Württemberg, alpine), East Germany (former DDR), Latvia. Undercarriage, sills, wheel arches, brake/fuel lines - paaugstināts rūsas risks, not proven rust; klātiene decides.
+- GERMANY is not one profile: western/northern Autobahn often cleaner undercarriage + stone chips; southern DE and East Germany follow the rust list when dealer city/region points there.
+- ITALY / FRANCE: greater visual caution - often repainted panels, more and larger cosmetic defects, careless urban use (especially city cars), sparse service history. Rust usually lower than Nordics, but paint-gauge and panel-gap checks remain mandatory. Spain: warm-climate sun-fade/parking dents unless data says otherwise.
 - USA / CANADA IMPORTS: Require original salvage photos (Copart/IAAI) when applicable. Conversion risks (turn signals, fog lights, radio/nav) and structural repair quality.
 
 4. LEGAL & ADMINISTRATIVE COMPLIANCE (Latvian Framework):

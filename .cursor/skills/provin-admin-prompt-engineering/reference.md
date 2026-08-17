@@ -111,7 +111,9 @@ Instruct the backend agent to always run this factual analysis when calculating 
 
 ## 3. REGIONAL & FORENSIC SIGNATURES
 
-- **DE (Germany):** Autobahn stress profile. Pristine undercarriages (no rust except alpine regions), but heavy stone-chip density on front fascia/windshields. If completely flawless, check for post-accident resprays.
-- **Baltics (LV, LT, EE):** Corrosion and structural stress profile. Heavy salt rust on brake lines and suspension components. Extreme wear on bushings from poor roads. High risk of commercial fleet history and VAT rotation schemes. Lithuania is a high-risk hub for fast-turnaround rebuilds of USA salvage imports.
-- **Southern EU (FR, IT, ES):** Cosmetic and thermal wear profile. Clear coat failure, brittle door weatherstrips, dried interior plastics/Artico trim. High density of parking scrapes, missing service history/gaps, but absolute zero rust and immaculate suspension links.
+- **Origin first:** Reconstruct import country and operating region from CSDD izcelsme, mileage/incident country rows, VIN registries, and dealer COUNTRY/REGION / workshop city. Comment this in every relevant field; **3. Kopsavilkums** must include **Ekspluatācijas reģions.** Never invent a country.
+- **Rust belt (long-term operation):** SE, FI, NO, AT, LT, PL, EE, DK, southern Germany (Bavaria / Baden-Württemberg / alpine), East Germany (former DDR), LV. Raised-probability underbody rust (sills, arches, brake/fuel lines, subframe) - not proven rust; inspect in person.
+- **DE (Germany) is split:** Western/northern Autobahn - stone chips, mechanical wear, often cleaner undercarriage. Southern DE and East Germany - do not assume pristine undercarriage.
+- **IT / FR:** Greater visual caution - repainted panels, more and larger cosmetic defects, careless city use, sparse service. Not "zero rust / perfect body". ES remains warm-climate sun-fade/parking unless data says otherwise.
+- **Baltics extra:** fleet/company ownership, VAT rotation; Lithuania is a hub for fast-turnaround USA salvage rebuilds.
 - **USA/Canada:** Salvage framework. Mandate verification of raw Copart/IAAI auction photos to evaluate structural repair integrity and lighting/navigation conversion codes.

@@ -8,6 +8,7 @@ import {
   AI_EXPERT_PARAGRAPH_PRESENTATION,
   AI_MILEAGE_BAND_RISK_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_REGIONAL_ORIGIN_FORENSICS_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -61,6 +62,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toContain("STRICT ROLES");
     expect(prompts).toContain("AI_DAMAGE_CLAIM_CONTEXT_RULES");
     expect(prompts).toContain("AI_EV_BEV_FORENSICS_RULES");
+    expect(prompts).toContain("AI_REGIONAL_ORIGIN_FORENSICS_RULES");
     expect(prompts).toContain("AI_AGGREGATE_KNOWLEDGE_RULES");
     expect(prompts).toContain("PROVIN_AI_PROMPT_VERSION");
     expect(prompts).toMatch(/NOBRAUKUMA VĒSTURES KOMENTĀRS/);
@@ -95,6 +97,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NEKĀDĀ GADĪJUMĀ nepārraksti/i);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?3–5 īsas rindkopas/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NERAKSTI sludinājuma cenu/);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?Ekspluatācijas reģions/);
   });
 
   it("field-agent prompts encode client value density and institutional memory", () => {
@@ -315,6 +318,23 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_EV_BEV_FORENSICS_RULES).toMatch(/SOH/i);
     expect(AI_EV_BEV_FORENSICS_RULES).toMatch(/20.?80/i);
     expect(AI_EV_BEV_FORENSICS_RULES).toMatch(/DC|ātrā/i);
+  });
+
+  it("regional origin rules flag rust-belt countries and IT/FR visual caution", () => {
+    expect(AI_REGIONAL_ORIGIN_FORENSICS_RULES).toMatch(/Sweden/);
+    expect(AI_REGIONAL_ORIGIN_FORENSICS_RULES).toMatch(/East Germany|former DDR/i);
+    expect(AI_REGIONAL_ORIGIN_FORENSICS_RULES).toMatch(/southern Germany|Vācijas lejasdaļa/i);
+    expect(AI_REGIONAL_ORIGIN_FORENSICS_RULES).toMatch(/ITALY \/ FRANCE/);
+    expect(AI_REGIONAL_ORIGIN_FORENSICS_RULES).toMatch(/Ekspluatācijas reģions/);
+    expect(AI_REGIONAL_ORIGIN_FORENSICS_RULES).toMatch(/COUNTRY\/REGION/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_REGIONAL_ORIGIN_FORENSICS_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_REGIONAL_ORIGIN_FORENSICS_RULES\}/,
+    );
+    expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/Ekspluatācijas reģions/);
   });
 
   it("prepare-draft parallelizes source comments", () => {
