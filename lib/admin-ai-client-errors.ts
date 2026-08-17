@@ -36,7 +36,7 @@ const ERROR_MESSAGES_LV: Record<string, string> = {
     "Komentārs nav pabeigts (timeout vai tokenu limits) — daļa teksta ir ielikta laukā, bet tas NAV gatavs. Ģenerē vēlreiz, lai pabeigtu; pretējā gadījumā tokeni paliek iztērēti pa tukšo.",
   gemini_empty_content:
     "AI atgrieza tukšu atbildi — tokeni tika tērēti, bet teksts nepienāca. Mēģini vēlreiz.",
-  ai_invalid_json: "AI atgrieza nevalīdu JSON — mēģini vēlreiz",
+  empty_tirgus_comment: "AI atgrieza tukšu tirgus komentāru — mēģini vēlreiz",
   missing_files: "Pievieno vismaz vienu PDF",
   extraction_failed: "Neizdevās izvilkt datus no PDF",
   pdf_extract_failed: "Neizdevās nolasīt PDF tekstu",
@@ -126,21 +126,41 @@ export function formatAdminAiFetchError(
 
 /** HTTP 200 ar tukšu `text` nozīmē, ka AI jau iekasēja tokenus, bet UI to klusi ignorēja. */
 export type GeneratedAdminAiText =
-  | { ok: true; text: string }
-  | { ok: false; error: string; text?: string };
+  | { ok: true; text: string; data?: Record<string, unknown> }
+  | { ok: false; error: string; text?: string; data?: Record<string, unknown> };
+
+/** 90s maršruti — klients gaida nedaudz ilgāk par serveri, tad saglabā jau saņemto. */
+export const ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS = 100_000;
+/** 120s web-search maršruti (kopsavilkums, riski, pārdevējs). */
+export const ADMIN_AI_WEBSEARCH_CLIENT_TIMEOUT_MS = 125_000;
+/** Prepare-draft `maxDuration` ir 300s. */
+export const ADMIN_AI_PREPARE_DRAFT_CLIENT_TIMEOUT_MS = 310_000;
 
 export function readGeneratedAdminAiText(
   res: Pick<Response, "ok" | "status">,
-  data: AdminAiApiErrorBody & { text?: string; incomplete?: boolean },
+  data: AdminAiApiErrorBody & { text?: string; comments?: string; letter?: string; incomplete?: boolean },
   parseFailed: boolean,
   httpFallback: string,
 ): GeneratedAdminAiText {
-  const text = typeof data.text === "string" ? data.text.trim() : "";
+  const textCandidate = [data.text, data.comments, data.letter].find(
+    (v) => typeof v === "string" && v.trim(),
+  );
+  const text = typeof textCandidate === "string" ? textCandidate.trim() : "";
   const incomplete = data.incomplete === true || data.error === "ai_incomplete_comment";
   if (incomplete) {
     return {
       ok: false,
       error: ERROR_MESSAGES_LV.ai_incomplete_comment,
+      text: text || undefined,
+    };
+  }
+  const code = typeof data.error === "string" ? data.error.trim() : "";
+  if (code) {
+    return {
+      ok: false,
+      error: parseFailed
+        ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
+        : formatAdminAiFetchError(data, { status: res.status || 502 }, httpFallback),
       text: text || undefined,
     };
   }
@@ -186,5 +206,195 @@ export async function parseAdminAiResponse(res: Response): Promise<{
     return { data, parseFailed: false };
   } catch {
     return { data: {}, parseFailed: true };
+  }
+}
+
+type SseCommentEvent = AdminAiApiErrorBody & {
+  text?: string;
+  comments?: string;
+  letter?: string;
+  incomplete?: boolean;
+  done?: boolean;
+  usage?: unknown;
+  ok?: boolean;
+};
+
+function displayTextFromSseEvent(ev: SseCommentEvent): string {
+  for (const v of [ev.text, ev.comments, ev.letter]) {
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return "";
+}
+
+/** Pārveido vienu SSE `data:` bloku. Eksportēts testiem. */
+export function applyAdminAiSseDataLine(
+  json: string,
+  acc: { text: string; last: SseCommentEvent },
+): void {
+  const ev = JSON.parse(json) as SseCommentEvent;
+  const next = displayTextFromSseEvent(ev);
+  if (next) acc.text = next;
+  if (isAiUsageSummary(ev.usage)) emitAdminAiUsage(ev.usage);
+  acc.last = ev;
+}
+
+function withSseData(generated: GeneratedAdminAiText, last: object): GeneratedAdminAiText {
+  return { ...generated, data: last as Record<string, unknown> };
+}
+
+/**
+ * Admin ✨: SSE (teksts parādās ģenerēšanas laikā) ar JSON fallback.
+ * Timeout/pārtraukumā jau saņemtais teksts paliek — nauda nav pazudusi tukšā spinnerī.
+ */
+export async function fetchAdminAiRequest(
+  url: string,
+  init: RequestInit,
+  opts: {
+    onDelta?: (text: string) => void;
+    timeoutMs?: number;
+    fallbackError: string;
+  },
+): Promise<GeneratedAdminAiText> {
+  const ctrl = new AbortController();
+  const timeoutMs = opts.timeoutMs ?? ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS;
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let streamed = "";
+  try {
+    const headers = new Headers(init.headers);
+    if (!headers.has("Accept")) headers.set("Accept", "text/event-stream");
+    const res = await fetch(url, {
+      ...init,
+      credentials: init.credentials ?? "include",
+      headers,
+      signal: ctrl.signal,
+    });
+    const ct = res.headers.get("content-type") ?? "";
+    if (ct.includes("text/event-stream") && res.body) {
+      return await readAdminAiSseResponse(res, {
+        fallbackError: opts.fallbackError,
+        onDelta: (text) => {
+          streamed = text;
+          opts.onDelta?.(text);
+        },
+      });
+    }
+    const { data, parseFailed } = await parseAdminAiResponse(res);
+    const record = data as AdminAiApiErrorBody & { ok?: boolean; text?: string };
+    if (record.ok === true && !record.error) {
+      return {
+        ok: true,
+        text: typeof record.text === "string" ? record.text.trim() : "",
+        data: record as Record<string, unknown>,
+      };
+    }
+    return withSseData(
+      readGeneratedAdminAiText(res, data, parseFailed, opts.fallbackError),
+      data,
+    );
+  } catch (e) {
+    if (streamed) {
+      return {
+        ok: false,
+        error: ERROR_MESSAGES_LV.ai_incomplete_comment,
+        text: streamed,
+      };
+    }
+    if (e instanceof DOMException && e.name === "AbortError") {
+      return { ok: false, error: "AI: pieprasījums pārāk ilgs (timeout) — mēģini vēlreiz" };
+    }
+    if (e instanceof Error && e.name === "AbortError") {
+      return { ok: false, error: "AI: pieprasījums pārāk ilgs (timeout) — mēģini vēlreiz" };
+    }
+    return { ok: false, error: "AI: neizdevās savienoties" };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function fetchAdminAiComment(
+  url: string,
+  body: unknown,
+  opts: {
+    onDelta?: (text: string) => void;
+    timeoutMs?: number;
+    fallbackError: string;
+  },
+): Promise<GeneratedAdminAiText> {
+  return fetchAdminAiRequest(
+    url,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    opts,
+  );
+}
+
+async function readAdminAiSseResponse(
+  res: Response,
+  opts: { onDelta: (text: string) => void; fallbackError: string },
+): Promise<GeneratedAdminAiText> {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  const acc = { text: "", last: {} as SseCommentEvent };
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const parts = buf.split("\n\n");
+    buf = parts.pop() ?? "";
+    for (const part of parts) {
+      consumeSsePart(part, acc, opts.onDelta);
+    }
+  }
+  if (buf.trim()) consumeSsePart(buf, acc, opts.onDelta);
+  if (acc.last.done) {
+    if (acc.last.ok === true && !acc.last.error) {
+      return {
+        ok: true,
+        text: acc.text,
+        data: acc.last as Record<string, unknown>,
+      };
+    }
+    return withSseData(
+      readGeneratedAdminAiText(
+        { ok: !acc.last.error, status: acc.last.error ? 422 : 200 },
+        acc.last,
+        false,
+        opts.fallbackError,
+      ),
+      acc.last,
+    );
+  }
+  if (acc.text) {
+    return {
+      ok: false,
+      error: ERROR_MESSAGES_LV.ai_incomplete_comment,
+      text: acc.text,
+      data: acc.last as Record<string, unknown>,
+    };
+  }
+  return { ok: false, error: opts.fallbackError, data: acc.last as Record<string, unknown> };
+}
+
+function consumeSsePart(
+  part: string,
+  acc: { text: string; last: SseCommentEvent },
+  onDelta: (text: string) => void,
+): void {
+  const data = part
+    .split("\n")
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.slice(5).trim())
+    .join("");
+  if (!data) return;
+  try {
+    applyAdminAiSseDataLine(data, acc);
+    if (acc.text) onDelta(acc.text);
+  } catch {
+    /* keepalive / malformed */
   }
 }

@@ -23,6 +23,8 @@ import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
+import { liveAdminCommentFromPartialJson } from "@/lib/admin-ai-json-live-text";
+import { emitAiCommentDelta, flushAiCommentDelta } from "@/lib/admin-ai-text-sink";
 
 export {
   GEMINI_MODEL_FLASH,
@@ -70,16 +72,12 @@ function isGemini25Model(model: string): boolean {
   return /gemini-2\.5/i.test(model);
 }
 
-function geminiWantsThinking(model: string): boolean {
-  return isGemini3Model(model) || isGemini25Model(model);
-}
-
 function geminiThinkingExtra(
   model: string,
   enabled: boolean,
 ): { thinkingConfig: { thinkingLevel?: "low"; thinkingBudget: number } } | Record<string, never> {
   if (!enabled) {
-    return isGemini25Model(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {};
+    return { thinkingConfig: { thinkingBudget: 0 } };
   }
   if (isGemini3Model(model)) {
     return { thinkingConfig: { thinkingLevel: "low", thinkingBudget: 512 } };
@@ -220,13 +218,36 @@ async function geminiGenerateJsonFromPartsOnce(
     responseSchema?: GeminiJsonSchema;
   },
 ): Promise<string> {
-  const run = async (withThinking: boolean) => {
-    const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({
-      model: opts.model,
-      systemInstruction: opts.systemInstruction,
-    });
-    const result = await model.generateContent(
+  try {
+    return await geminiStreamGenerateJson(key, opts, false);
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) throw e;
+    if (isGeminiThinkingUnsupported(e)) {
+      return await geminiStreamGenerateJson(key, opts, true);
+    }
+    throw e;
+  }
+}
+
+async function geminiStreamGenerateJson(
+  key: string,
+  opts: {
+    model: string;
+    systemInstruction: string;
+    parts: GeminiUserPart[];
+    temperature?: number;
+    responseSchema?: GeminiJsonSchema;
+  },
+  withThinking: boolean,
+): Promise<string> {
+  const genAI = new GoogleGenerativeAI(key);
+  const model = genAI.getGenerativeModel({
+    model: opts.model,
+    systemInstruction: opts.systemInstruction,
+  });
+  let partial = "";
+  try {
+    const streaming = await model.generateContentStream(
       {
         contents: [{ role: "user", parts: opts.parts }],
         generationConfig: {
@@ -239,18 +260,42 @@ async function geminiGenerateJsonFromPartsOnce(
       },
       { timeout: TEXT_REQUEST_TIMEOUT_MS },
     );
-    const text = result.response.text()?.trim();
-    if (!text) throw new Error("gemini_empty_content");
-    recordGeminiUsage(opts.model, result.response.usageMetadata);
-    return text;
-  };
-  try {
-    return await run(geminiWantsThinking(opts.model));
-  } catch (e) {
-    if (isAbortError(e)) throw new Error("timeout");
-    if (geminiWantsThinking(opts.model) && isGeminiThinkingUnsupported(e)) {
-      return await run(false);
+    for await (const chunk of streaming.stream) {
+      partial += geminiVisibleTextFromSdkChunk(chunk as never);
+      const live = liveAdminCommentFromPartialJson(partial);
+      if (live) emitAiCommentDelta(live);
     }
+    const response = await streaming.response;
+    recordGeminiUsage(opts.model, response.usageMetadata);
+    const text =
+      geminiVisibleTextFromSdkChunk(response as never).trim() || partial.trim();
+    const finishReason = (response as { candidates?: { finishReason?: string }[] }).candidates?.[0]
+      ?.finishReason;
+    if (geminiFinishIsTruncated(finishReason)) {
+      throwIncompleteOrEmptyComment(text, "max_tokens");
+    }
+    if (!text) throw new Error("gemini_empty_content");
+    const live = liveAdminCommentFromPartialJson(text);
+    if (live) emitAiCommentDelta(live, true);
+    flushAiCommentDelta();
+    return text;
+  } catch (e) {
+    flushAiCommentDelta();
+    if (isAiIncompleteCommentError(e)) throw e;
+    const salvaged = partial.trim();
+    if (salvaged) {
+      const live = liveAdminCommentFromPartialJson(salvaged);
+      if (live) emitAiCommentDelta(live, true);
+      console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
+        label: "json",
+        model: opts.model,
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        chars: salvaged.length,
+        message: geminiErrorMessage(e).slice(0, 240),
+      });
+      throw new AiIncompleteCommentError(salvaged, "timeout");
+    }
+    if (isAbortError(e)) throw new Error("timeout");
     throw e;
   }
 }
@@ -368,6 +413,7 @@ async function geminiStreamGenerateText(
     );
     for await (const chunk of streaming.stream) {
       partial += geminiVisibleTextFromSdkChunk(chunk as never);
+      if (partial) emitAiCommentDelta(partial);
     }
     const response = await streaming.response;
     recordGeminiUsage(opts.model, response.usageMetadata);
@@ -378,11 +424,15 @@ async function geminiStreamGenerateText(
       throwIncompleteOrEmptyComment(text, "max_tokens");
     }
     if (!text) throw new Error("gemini_empty_content");
+    emitAiCommentDelta(text, true);
+    flushAiCommentDelta();
     return text;
   } catch (e) {
+    flushAiCommentDelta();
     if (isAiIncompleteCommentError(e)) throw e;
     const salvaged = partial.trim();
     if (salvaged) {
+      emitAiCommentDelta(salvaged, true);
       console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
         label: "text",
         model: opts.model,
@@ -407,11 +457,11 @@ async function geminiGenerateTextOnce(
   },
 ): Promise<string> {
   try {
-    return await geminiStreamGenerateText(key, opts, geminiWantsThinking(opts.model));
+    return await geminiStreamGenerateText(key, opts, false);
   } catch (e) {
     if (isAiIncompleteCommentError(e)) throw e;
-    if (geminiWantsThinking(opts.model) && isGeminiThinkingUnsupported(e)) {
-      return await geminiStreamGenerateText(key, opts, false);
+    if (isGeminiThinkingUnsupported(e)) {
+      return await geminiStreamGenerateText(key, opts, true);
     }
     throw e;
   }
@@ -551,6 +601,7 @@ async function geminiRestStreamSearchText(opts: {
         const fr = parsed.candidates?.[0]?.finishReason;
         if (fr) finishReason = fr;
         partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
+        if (partial) emitAiCommentDelta(partial);
       });
     }
     consumeGeminiSseBuffer(`${buf}\n\n`, (parsed) => {
@@ -558,8 +609,11 @@ async function geminiRestStreamSearchText(opts: {
       const fr = parsed.candidates?.[0]?.finishReason;
       if (fr) finishReason = fr;
       partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
+      if (partial) emitAiCommentDelta(partial);
     });
     const text = partial.trim();
+    if (text) emitAiCommentDelta(text, true);
+    flushAiCommentDelta();
     if (text && usage) recordGeminiUsage(opts.model, usage);
     if (geminiFinishIsTruncated(finishReason)) {
       throwIncompleteOrEmptyComment(text, "max_tokens");
@@ -569,6 +623,8 @@ async function geminiRestStreamSearchText(opts: {
     if (isAiIncompleteCommentError(e)) throw e;
     const salvaged = partial.trim();
     if (salvaged) {
+      emitAiCommentDelta(salvaged, true);
+      flushAiCommentDelta();
       if (usage) recordGeminiUsage(opts.model, usage);
       console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
         label: "grounding",
@@ -597,7 +653,7 @@ async function geminiGenerateTextWithGoogleSearchOnce(
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
   const toolVariants: Record<string, unknown>[][] = [[{ google_search: {} }], [{ googleSearch: {} }]];
-  const thinkingPasses = geminiWantsThinking(opts.model) ? [true, false] : [false];
+  const thinkingPasses = [false];
 
   let lastErr = "gemini_grounding_failed";
   for (const withThinking of thinkingPasses) {

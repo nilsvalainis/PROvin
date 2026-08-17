@@ -2,7 +2,7 @@
  * Admin: AI — tirgus dati (ss.lv + IRISS EU izsoles + Latvijas tirgus).
  */
 import { NextResponse } from "next/server";
-import { nextJsonBodyWithAiUsage } from "@/lib/admin-ai-route-response";
+import { nextJsonObjectWithAiUsage } from "@/lib/admin-ai-route-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -44,9 +44,10 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
 
   try {
-    return await nextJsonBodyWithAiUsage(() =>
-      generateTirgusMarketWithAi(parseAiOrderContextFromBody(b, sourceBlocks)),
-    );
+    return await nextJsonObjectWithAiUsage(async () => {
+      const result = await generateTirgusMarketWithAi(parseAiOrderContextFromBody(b, sourceBlocks));
+      return { ...result, text: result.comments };
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error("[ai/tirgus-market]", msg);

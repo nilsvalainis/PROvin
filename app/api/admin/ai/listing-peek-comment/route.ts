@@ -2,7 +2,7 @@
  * Admin: AI — ātrā sludinājuma komentārs (Gemini Flash / Gemini).
  */
 import { NextResponse } from "next/server";
-import { nextJsonBodyWithAiUsage } from "@/lib/admin-ai-route-response";
+import { nextJsonObjectWithAiUsage } from "@/lib/admin-ai-route-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    return await nextJsonBodyWithAiUsage(async () => {
+    return await nextJsonObjectWithAiUsage(async () => {
       const result = await generateListingPeekCommentWithAi({
         listingUrl,
         operatorNotes: str(b.operatorNotes),

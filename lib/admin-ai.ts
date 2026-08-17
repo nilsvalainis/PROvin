@@ -24,6 +24,8 @@ import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
+import { liveAdminCommentFromPartialJson } from "@/lib/admin-ai-json-live-text";
+import { emitAiCommentDelta, flushAiCommentDelta } from "@/lib/admin-ai-text-sink";
 
 export {
   CLAUDE_MODEL_HAIKU,
@@ -57,7 +59,13 @@ const MAX_TOKENS_JSON = 32_000;
 const TEXT_REQUEST_TIMEOUT_MS = 88_000;
 /** Web search aģenti (kopsavilkums, riski, pārdevējs) — maršruti ar `maxDuration = 120`. */
 const WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000;
-const JSON_REQUEST_TIMEOUT_MS = 150_000;
+/**
+ * JSON komentāru maršruti ir 90s — nogrist pirms Vercel, lai varētu saglabāt
+ * jau apmaksāto daļu. PDF izvilkšana (120s maršruti) padod `timeoutMs`.
+ */
+const JSON_REQUEST_TIMEOUT_MS = 88_000;
+/** PDF / CSDD strukturētā ielase — 120s maršrutu rezerve. */
+export const JSON_EXTRACT_TIMEOUT_MS = 105_000;
 /** SDK noklusējums PDF/gariem izsaukumiem. */
 const REQUEST_TIMEOUT_MS = 180_000;
 
@@ -104,8 +112,9 @@ function logClaudeUsage(label: string, model: string, message: Anthropic.Message
 }
 
 /**
- * Opus 5 / Sonnet 5: `effort: low` saīsina adaptive thinking, lai tas neapēd
- * `max_tokens` un neatstātu tukšu komentāru (bet rēķinu). Haiku effort neatbalsta.
+ * Opus 5 / Sonnet 5: `effort: low` + `thinking: disabled` — adaptive thinking
+ * pēc noklusējuma var minūtēm „domāt”, iekasēt tokenus un neatgriezt komentāru,
+ * pirms Vercel nogriež maršrutu. Haiku effort/thinking noraida.
  */
 function claudeOutputControls(
   model: string,
@@ -128,6 +137,15 @@ function claudeOutputControls(
       ...(format ? { format } : {}),
     },
   };
+}
+
+function claudeCommentThinking(model: string): { thinking?: { type: "disabled" } } {
+  if (model.includes("haiku")) return {};
+  return { thinking: { type: "disabled" } };
+}
+
+function isThinkingDisabledRejected(e: unknown): boolean {
+  return /thinking|effort/i.test(aiErrorMessage(e)) && /disabled|invalid_request|400/i.test(aiErrorMessage(e));
 }
 
 export function getAnthropicApiKeyFromEnv(): string | null {
@@ -335,12 +353,13 @@ async function aiGenerateJsonFromPartsOnce(
     temperature?: number;
     responseSchema?: AiJsonSchema;
     maxTokens?: number;
+    timeoutMs?: number;
   },
 ): Promise<string> {
   const client = anthropicClient(key);
   const hasSchema = Boolean(opts.responseSchema);
-  /** Opus 5 / Sonnet 5 noraida `temperature` — 400 invalid_request_error. */
-  const message = await client.messages.create(
+  const raw = await claudeStreamText(
+    client,
     {
       model: opts.model,
       max_tokens: opts.maxTokens ?? MAX_TOKENS_JSON,
@@ -352,11 +371,13 @@ async function aiGenerateJsonFromPartsOnce(
       messages: [{ role: "user", content: toContentBlocks(opts.parts) }],
       ...claudeOutputControls(opts.model, opts.responseSchema),
     },
-    { timeout: JSON_REQUEST_TIMEOUT_MS },
+    {
+      label: "json",
+      timeoutMs: opts.timeoutMs ?? JSON_REQUEST_TIMEOUT_MS,
+      emitFromPartial: liveAdminCommentFromPartialJson,
+    },
   );
-
-  logClaudeUsage("json", opts.model, message);
-  const text = stripJsonFences(requireAssistantText(message));
+  const text = stripJsonFences(raw);
   if (!text) throw new Error("ai_empty_content");
   return text;
 }
@@ -370,6 +391,7 @@ export async function aiGenerateJsonText(opts: {
   /** Papildus daļas (piem. inline PDF) pirms `userPrompt` teksta. */
   extraParts?: AiUserPart[];
   maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<string> {
   const parts: AiUserPart[] = [...(opts.extraParts ?? []), { text: opts.userPrompt }];
   return aiGenerateJsonFromParts({
@@ -378,6 +400,7 @@ export async function aiGenerateJsonText(opts: {
     parts,
     temperature: opts.temperature,
     maxTokens: opts.maxTokens,
+    timeoutMs: opts.timeoutMs,
   });
 }
 
@@ -392,6 +415,7 @@ export async function aiGenerateJsonFromParts(opts: {
   temperature?: number;
   responseSchema?: AiJsonSchema;
   maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<string> {
   const key = getAnthropicApiKeyFromEnv();
   if (!key) throw new Error("missing_ai_key");
@@ -425,6 +449,7 @@ export async function aiGenerateJsonWithSchema(opts: {
   responseSchema: AiJsonSchema;
   temperature?: number;
   maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<string> {
   return aiGenerateJsonFromParts({
     ...opts,
@@ -435,27 +460,83 @@ export async function aiGenerateJsonWithSchema(opts: {
 /**
  * Straumē tekstu, nevis gaida vienu atbildi. Ja pieprasījums nogriežas (timeout,
  * savienojums), jau ģenerētais teksts ir apmaksāts — to atgriež, nevis izmet.
+ * Komentāriem thinking ir izslēgts: citādi Opus 5 iekasē par „domāšanu” un
+ * lauks paliek tukšs.
  */
 async function claudeStreamText(
   client: Anthropic,
   params: Anthropic.MessageCreateParamsNonStreaming,
-  opts: { label: string; timeoutMs: number },
+  opts: {
+    label: string;
+    timeoutMs: number;
+    emitFromPartial?: (partial: string) => string;
+  },
+): Promise<string> {
+  const withThinkingOff: Anthropic.MessageCreateParamsNonStreaming = {
+    ...params,
+    ...claudeCommentThinking(params.model),
+  };
+  try {
+    return await claudeStreamTextOnce(client, withThinkingOff, opts);
+  } catch (e) {
+    if (isAiIncompleteCommentError(e) || !isThinkingDisabledRejected(e)) throw e;
+    console.warn(`${LOG_PREFIX} thinking_disabled_rejected`, {
+      label: opts.label,
+      model: params.model,
+      promptVersion: PROVIN_AI_PROMPT_VERSION,
+      message: aiErrorMessage(e).slice(0, 240),
+    });
+    return claudeStreamTextOnce(client, params, opts);
+  }
+}
+
+function emitStreamedVisible(
+  raw: string,
+  force: boolean,
+  emitFromPartial?: (partial: string) => string,
+): void {
+  const visible = emitFromPartial ? emitFromPartial(raw) : raw;
+  if (visible) emitAiCommentDelta(visible, force);
+}
+
+async function claudeStreamTextOnce(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  opts: {
+    label: string;
+    timeoutMs: number;
+    emitFromPartial?: (partial: string) => string;
+  },
 ): Promise<string> {
   const stream = client.messages.stream(params, { timeout: opts.timeoutMs });
   let partial = "";
   stream.on("text", (delta) => {
     partial += delta;
+    emitStreamedVisible(partial, false, opts.emitFromPartial);
   });
   // Bez šī klausītāja straumes kļūda kļūst par neapstrādātu notikumu; `finalMessage()` to tāpat noraida.
   stream.on("error", () => {});
 
+  const abortTimer = setTimeout(() => {
+    try {
+      stream.abort();
+    } catch {
+      /* already closed */
+    }
+  }, opts.timeoutMs);
+
   try {
     const message = await stream.finalMessage();
     logClaudeUsage(opts.label, params.model, message);
-    return requireAssistantText(message);
+    const text = requireAssistantText(message);
+    emitStreamedVisible(text, true, opts.emitFromPartial);
+    flushAiCommentDelta();
+    return text;
   } catch (e) {
+    flushAiCommentDelta();
     const salvaged = partial.trim();
     if (!salvaged) throw e;
+    emitStreamedVisible(salvaged, true, opts.emitFromPartial);
     console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
       label: opts.label,
       model: params.model,
@@ -464,6 +545,8 @@ async function claudeStreamText(
       message: aiErrorMessage(e).slice(0, 240),
     });
     throw new AiIncompleteCommentError(salvaged, "timeout");
+  } finally {
+    clearTimeout(abortTimer);
   }
 }
 

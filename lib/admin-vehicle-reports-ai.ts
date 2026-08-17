@@ -1,6 +1,11 @@
 import "server-only";
 
-import { CLAUDE_MODEL_EXTRACT, aiGenerateJsonText, type AiUserPart } from "@/lib/admin-ai";
+import {
+  CLAUDE_MODEL_EXTRACT,
+  JSON_EXTRACT_TIMEOUT_MS,
+  aiGenerateJsonText,
+  type AiUserPart,
+} from "@/lib/admin-ai";
 import { parseVehicleAIExtraction } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction } from "@/lib/vehicle-ai-extraction-types";
 
@@ -110,6 +115,7 @@ export async function extractVehicleDataWithAi(input: {
     extraParts,
     userPrompt: buildVehicleReportsUserPrompt(input.textBundles, pdfs.length),
     temperature: 0.15,
+    timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
   });
   return parseVehicleAIExtraction(raw);
 }

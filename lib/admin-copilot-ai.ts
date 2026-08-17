@@ -5,6 +5,7 @@ import "server-only";
 
 import {
   CLAUDE_MODEL_EXTRACT,
+  JSON_EXTRACT_TIMEOUT_MS,
   aiGenerateJsonWithSchema,
   type AiUserPart,
 } from "@/lib/admin-ai";
@@ -211,6 +212,7 @@ export async function runOrderCopilotAi(opts: {
     parts,
     responseSchema: ADMIN_COPILOT_RESPONSE_SCHEMA,
     temperature: 0.1,
+    timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
   });
 
   return parseCopilotAiPayload(raw);

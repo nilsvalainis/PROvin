@@ -7,7 +7,12 @@
  */
 import "server-only";
 
-import { CLAUDE_MODEL_EXTRACT, aiGenerateJsonWithSchema, type AiUserPart } from "@/lib/admin-ai";
+import {
+  CLAUDE_MODEL_EXTRACT,
+  JSON_EXTRACT_TIMEOUT_MS,
+  aiGenerateJsonWithSchema,
+  type AiUserPart,
+} from "@/lib/admin-ai";
 import type { CopilotAction } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
@@ -103,6 +108,7 @@ async function runAiExtract(opts: {
     parts,
     responseSchema: VENDOR_PDF_AGENT_SCHEMA,
     temperature: 0,
+    timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
   });
   return parseVendorPdfAgentPayload(raw, opts.vendor);
 }
