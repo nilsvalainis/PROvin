@@ -954,6 +954,8 @@ const PAGE1_PAD = 12;
 const PAGE1_RADIUS = 8;
 const PAGE1_GAP = 10;
 const PAGE1_CHECK_W = 14;
+/** Sadaļas virsraksts + līnija + atstarpe līdz pirmajai rindai. */
+const PAGE1_TITLE_H = 22;
 
 function formatPasutijumsDocDate(record: IrissPasutijumsRecord): string {
   const raw = (record.orderDate || record.createdAt || "").trim();
@@ -1047,7 +1049,7 @@ function measurePage1Wrapped(text: string, innerW: number, fs: number, font: PDF
 }
 
 function cardChromeH(bodyH: number): number {
-  return PAGE1_PAD + 16 + 6 + bodyH + PAGE1_PAD;
+  return PAGE1_PAD + PAGE1_TITLE_H + bodyH + PAGE1_PAD;
 }
 
 function drawPage1Panel(page: PDFPage, x: number, yTop: number, w: number, h: number): void {
@@ -1069,6 +1071,7 @@ function drawPage1SectionTitle(
   title: string,
   x: number,
   y: number,
+  innerW: number,
   fontBold: PDFFont,
 ): number {
   const size = 8;
@@ -1079,7 +1082,14 @@ function drawPage1SectionTitle(
     font: fontBold,
     color: PRO_PAGE_MUTED,
   });
-  return y - 16;
+  const ruleY = y - size - 4;
+  page.drawLine({
+    start: { x, y: ruleY },
+    end: { x: x + innerW, y: ruleY },
+    thickness: 0.7,
+    color: PANEL_BORDER,
+  });
+  return y - PAGE1_TITLE_H;
 }
 
 function drawPage1Check(page: PDFPage, rightX: number, baselineY: number, fontBold: PDFFont, fs: number): void {
@@ -1308,7 +1318,7 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
     drawPage1Panel(page, x, y, w, h);
     const ix = x + PAGE1_PAD;
     const iw = w - PAGE1_PAD * 2;
-    const cy = drawPage1SectionTitle(page, titleText, ix, y - PAGE1_PAD, fontBold);
+    const cy = drawPage1SectionTitle(page, titleText, ix, y - PAGE1_PAD, iw, fontBold);
     drawBody(ix, cy, iw);
   };
 

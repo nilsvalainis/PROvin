@@ -141,7 +141,7 @@ export function drawPremiumFooter3ColDz(
   const col3 = "www.dzintarzemeauto.lv";
   const brand = "Dzintarzeme Auto";
   const fs = 7.5;
-  const lh = premiumLineHeight(fs);
+  const phoneLh = fs + 3;
   const brandFs = 8;
   const lhBrand = premiumLineHeight(brandFs);
   let logoW = 0;
@@ -151,8 +151,9 @@ export function drawPremiumFooter3ColDz(
     logoW = logo.dw * s;
     logoH = logo.dh * s;
   }
-  const colRows = Math.max(col1.split("\n").length, 1, col2.split("\n").length, col3.split("\n").length);
-  const colsH = colRows * lh + 4;
+  const phoneLines = col1.split("\n").filter((p) => p.trim());
+  const phoneBlockH = phoneLines.length > 0 ? (phoneLines.length - 1) * phoneLh + fs : fs;
+  const colsH = phoneBlockH + 4;
   const blockH = Math.max(colsH + lhBrand + 6, logoH + 8);
   let tx = m;
   if (logo) {
@@ -175,14 +176,15 @@ export function drawPremiumFooter3ColDz(
     color: PREMIUM_SLATE,
     tracking: 0.06,
   });
-  const colStartY = ty - lhBrand - 6;
-  /** Vertikālās līnijas tikai kolonnu teksta augstumā (bez liekas „kājas”). */
-  const divH = colRows * lh;
-  const divY = colStartY - divH;
+  const contactTop = ty - lhBrand - 6;
+  const contactBot = contactTop - phoneBlockH;
+  const oneLineH = fs + 1.5;
+  const divH = oneLineH;
+  const divY = contactBot + (phoneBlockH - divH) / 2;
 
-  const drawCol = (text: string, x0: number) => {
-    let tyy = colStartY;
-    for (const part of text.split("\n")) {
+  const drawPhoneCol = (x0: number) => {
+    let tyy = contactTop;
+    for (const part of phoneLines) {
       drawTrackedText(page, part, {
         x: x0 + 4,
         y: tyy - fs,
@@ -191,10 +193,21 @@ export function drawPremiumFooter3ColDz(
         color: PREMIUM_MUTED,
         tracking: 0.04,
       });
-      tyy -= lh;
+      tyy -= phoneLh;
     }
   };
-  drawCol(col1, tx);
+  const drawOneLineCentered = (text: string, x0: number) => {
+    const baseline = contactTop - (phoneBlockH - fs) / 2 - fs;
+    drawTrackedText(page, text, {
+      x: x0 + 4,
+      y: baseline,
+      size: fs,
+      font,
+      color: PREMIUM_MUTED,
+      tracking: 0.04,
+    });
+  };
+  drawPhoneCol(tx);
   page.drawRectangle({
     x: x1,
     y: divY,
@@ -202,7 +215,7 @@ export function drawPremiumFooter3ColDz(
     height: divH,
     color: divColor,
   });
-  drawCol(col2, x1);
+  drawOneLineCentered(col2, x1);
   page.drawRectangle({
     x: x2,
     y: divY,
@@ -210,7 +223,7 @@ export function drawPremiumFooter3ColDz(
     height: divH,
     color: divColor,
   });
-  drawCol(col3, x2);
+  drawOneLineCentered(col3, x2);
 }
 
 function splitIrissFooterIntoCols(lines: string[]): { c1: string; c2: string; c3: string } {

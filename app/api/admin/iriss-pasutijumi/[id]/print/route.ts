@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { buildIrissPasutijumsPrintHtml } from "@/lib/iriss-pasutijums-pdf-html";
 import { buildIrissPasutijumsPdfBytes } from "@/lib/iriss-pasutijums-pdf";
+import { irissPasutijumsPdfContentDisposition } from "@/lib/iriss-pasutijumi-list-overview";
 import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
@@ -35,9 +36,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     url.searchParams.get("inline") === "1" ||
     url.searchParams.get("disposition") === "inline" ||
     url.searchParams.get("view") === "1";
-  const disposition = inline
-    ? `inline; filename="pasutijums.pdf"`
-    : `attachment; filename="pasutijums.pdf"`;
+  const disposition = irissPasutijumsPdfContentDisposition(rec, inline);
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {

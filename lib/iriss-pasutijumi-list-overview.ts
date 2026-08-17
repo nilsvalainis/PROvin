@@ -35,6 +35,37 @@ export function irissPasutijumiListPdfFilename(d = new Date()): string {
   return `provin-pasutijumu-saraksts-${d.toISOString().slice(0, 10)}.pdf`;
 }
 
+function orderDateIso(record: IrissPasutijumsRecord): string {
+  const raw = (record.orderDate || record.createdAt || "").trim();
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m?.[1] ?? "";
+}
+
+/** Viena pasūtījuma PDF fails: marka/modelis + klienta vārds + datums. */
+export function irissPasutijumsPdfFilename(record: IrissPasutijumsRecord): string {
+  const parts = [val(record.brandModel), val(record.clientFirstName), orderDateIso(record) || null].filter(
+    (p): p is string => Boolean(p),
+  );
+  const base = (parts.join(" ") || "pasutijums")
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
+  return `${base}.pdf`;
+}
+
+export function irissPasutijumsPdfContentDisposition(record: IrissPasutijumsRecord, inline: boolean): string {
+  const name = irissPasutijumsPdfFilename(record);
+  const type = inline ? "inline" : "attachment";
+  const ascii = name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/["\\]/g, "_");
+  const encoded = encodeURIComponent(name);
+  return `${type}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
 /** Saraksta PDF — tikai aktīvie; izpildītie un neaktīvie paliek ZIP/JSON kopijā. */
 export function isIrissRecordActiveForListPdf(record: IrissPasutijumsRecord): boolean {
   return (record.listStatus ?? "active") === "active";

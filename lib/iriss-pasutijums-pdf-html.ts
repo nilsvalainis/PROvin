@@ -221,9 +221,11 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
       border-left: none;
       background: transparent;
       border-radius: 0;
-      padding: 0 0 8px;
+      padding: 0 0 7px;
+      margin-bottom: 10px;
       color: #64748b;
       font-weight: 700;
+      border-bottom: 1px solid #e2e8f0;
     }
     .ipdf-blk {
       margin-bottom: 18px;

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   collectIrissPasutijumsOverview,
   irissPasutijumiListPdfFilename,
+  irissPasutijumsPdfContentDisposition,
+  irissPasutijumsPdfFilename,
   irissPasutijumsOverviewHasContent,
   orderIrissRecordsForList,
   orderIrissRecordsForListPdf,
@@ -76,6 +78,17 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
     expect(irissPasutijumiListPdfFilename(new Date("2026-08-17T12:00:00.000Z"))).toBe(
       "provin-pasutijumu-saraksts-2026-08-17.pdf",
     );
+  });
+
+  it("names a single-order PDF with brand, first name and date", () => {
+    const r = rec("x", "2026-08-17T12:00:00.000Z", {
+      brandModel: "VW ID.3",
+      clientFirstName: "Aigars",
+      orderDate: "2026-08-08",
+    });
+    expect(irissPasutijumsPdfFilename(r)).toBe("VW ID.3 Aigars 2026-08-08.pdf");
+    expect(irissPasutijumsPdfContentDisposition(r, false)).toContain("filename*=UTF-8''");
+    expect(irissPasutijumsPdfContentDisposition(r, false)).toContain("VW%20ID.3%20Aigars%202026-08-08.pdf");
   });
 
   it("keeps only active records for the list PDF", () => {
