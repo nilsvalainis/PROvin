@@ -22,7 +22,7 @@ Read this skill **first** when:
 
 ## Mandatory knowledge injection
 
-Whenever you generate or refactor prompt strings in code, you **MUST** hardcode the granular technical vectors from [reference.md](reference.md) into the agent's instructions (by model and powertrain). Do not summarize away failure modes, euro ranges, or transmission pairings.
+Whenever you generate or refactor prompt strings in code, you **MUST** hardcode the granular technical vectors from [reference.md](reference.md) into the agent's instructions (by model and powertrain). Do not summarize away failure modes or transmission pairings. Euro ranges in case packs are **internal priors only** — never instruct the agent to copy them into client comments (no „orientējoši 300-600 €”, no parenthetical repair bands). Client copy names whether a fault **ir / nav populāra problēma**. Never „Baltija” (say Latvija / Lietuva / Igaunija), never „saime”.
 
 | Block | reference.md section |
 |-------|----------------------|

@@ -70,34 +70,40 @@ Whenever prompts generate **2. Kopsavilkums** or **Ieteikumi klātienes apskatei
 - Convert known model/powertrain weaknesses into a **concrete technical risk verdict for this exact car** (engine, gearbox, chain/belt, turbo, AWD, cooling, HV battery, reducer, mechatronics, etc.), not only generic reputation.
 - Classify each relevant aggregate as one of:
   - **primary purchase risk / financial blocker**
-  - **medium maintenance risk**
+  - **popular problem at this mileage** (never „medium maintenance risk” + a price)
   - **inspection control point only**
 - Tie every important aggregate risk to a **specific verification action** in the inspection field: cold-start noise, shift quality, vibration, leak traces, thermal behavior, fault scan, boost pull, HV diagnostics, DC charging test, underbody inspection, etc.
-- In summary, name which aggregate is most likely to generate the biggest near-term cost and whether that changes the buy / inspect / avoid recommendation — **without EUR figures**. Listing/market/repair prices stay in the price field and technical-risks section.
+- In summary, name which aggregate is most likely to generate the biggest near-term issue and whether that changes the buy / inspect / avoid recommendation — **without EUR figures**. Listing/market prices stay in the price field; recorded insurance EUR in incidents. **Never** invented repair/service prices in technical risks or any other comment.
 
 ## 1c. AGGREGATE IDENTIFICATION & MILEAGE-BAND CALIBRATION (mandatory)
 
 Deployed text: `AI_POWERTRAIN_IDENTIFICATION_RULES` + `AI_MILEAGE_BAND_RISK_RULES` in `lib/source-summary-comment-format.ts`, injected into `PROVIN_FIELD_AGENT_SYSTEM` and `PROVIN_EXPERT_SYSTEM_PROMPT`. Pre-digested vehicle parameters: `buildAggregateIdentificationBrief()` in `lib/admin-ai-aggregate-identification.ts` (used by technical risks + inspection prompts).
 
-**1. Tehnisko risku analīze is the highest-value comment in the report** — the agent must behave like a senior technical expert on that exact brand/model/generation/engine/gearbox, not a generic used-car reviewer. Default 350–800 character brevity **does not apply**. Target **8–12 detailed paragraphs** (see `AI_TECHNICAL_RISKS_FLAGSHIP_RULES`). Static packs cover only a few families; for everything else **web-search European forums first** (`AI_TECHNICAL_RISKS_RESEARCH_RULES`), then write. Weak output = generic EGR/DPF/turbo blurb. Strong output = identified aggregate, mileage-band meaning for THAT family, expensive options that are **absent**, 1–2 near-term cost drivers, each distinct system with EUR, long-term age fussiness separated from “this car will fail soon”, hedged outlook from THIS car’s data.
+**1. Tehnisko risku analīze is the highest-value comment in the report** — the agent must behave like a senior technical expert on that exact brand/model/generation/engine/gearbox, not a generic used-car reviewer. Default 350–800 character brevity **does not apply**. Target **8–12 detailed paragraphs** (see `AI_TECHNICAL_RISKS_FLAGSHIP_RULES`). Static packs cover only a few generations; for everything else **web-search European forums first** (`AI_TECHNICAL_RISKS_RESEARCH_RULES`), then write. Weak output = generic EGR/DPF/turbo blurb. Strong output = identified aggregate, mileage-band meaning for **this engine / this generation**, expensive options that are **absent**, 1–2 near-term issues classified as **ir / nav populāra problēma** (**no EUR quotes**), each distinct system, long-term age fussiness separated from “this car will fail soon”, hedged outlook from THIS car’s data.
+
+Client vocabulary (mandatory): never „Baltija” (say **Latvija**, or **Lietuva** / **Igaunija** if that is the origin); never „saime”; **Quattro** not „Quattro trakts”; **kardāna krustiņi** not „kardāna krusteniskie”; **karājošais gultnis** not „centra gultnis”; never „vidējs uzturēšanas risks” with a price.
+
+Wrong: `Quattro trakts ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krusteniskie un centra gultnis pie šī nobraukuma ir vidējs uzturēšanas risks (orientējoši 300-600 €).`
+
+Right: `Quattro ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krustiņi un karājošais gultnis pie šī nobraukuma nav populāra problēma.`
 
 Identification before risk:
 
-- Derive in order: model **generation / facelift** (make + model + first registration year) → **engine family** (fuel + cm³ + kW + Euro class) → **transmission type** (manual / torque-converter AT / dry or wet dual-clutch / CVT / EV reducer) → **drive layout** (FWD / RWD / AWD architecture: Haldex, Torsen, 4Matic, xDrive).
+- Derive in order: model **generation / facelift** (make + model + first registration year) → **engine type** (fuel + cm³ + kW + Euro class) → **transmission type** (manual / torque-converter AT / dry or wet dual-clutch / CVT / EV reducer) → **drive layout** (FWD / RWD / AWD architecture: Haldex, Torsen, 4Matic, xDrive). Never say „saime” in client Latvian.
 - Evidence priority: dealer/Outvin/AUTO RECORDS **engine code** + type code → CSDD technical parameters → VIN → listing badges (quattro, 4Matic, xDrive, DSG, Tiptronic) → service records naming replaced parts.
 - No engine code in sources → name **1–2 ranked candidates as a hypothesis** plus how to confirm (VIN decode, engine bay marking, gearbox plate, service invoices). An inferred code must never be written as a registry-read fact.
 - Same displacement/power mapping to materially different architectures (chain vs belt, dry vs wet DCT, with/without DPF) → state it and split into **max two** scenarios.
-- Too little data → analyze at **family level** and say the exact aggregate is undetermined; never invent codes.
+- Too little data → analyze **pēc pieejamajiem datiem, bez precīza koda** and say the exact aggregate is undetermined; never invent codes.
 - Risks apply only to the identified combination — never import another engine version's or generation's failure modes because the brand matches.
 
 Mileage-band calibration (anti-exaggeration):
 
 - Fix approximate **current km** (latest credible odometer) and **km/year**; if odometer data conflicts, work with a stated range.
 - Split every aggregate risk into: (1) resource typically already consumed at this km/age → must be evidenced in service history; (2) **next window** ~20–40k km or 1–2 years → the buyer's real cost; (3) distant resource → brief or omitted.
-- A failure typical at 250k km must not be presented as an active threat at 90k km. **Max 1–2 primary purchase risks**; everything else is medium maintenance risk or an inspection control point.
+- A failure typical at 250k km must not be presented as an active threat at 90k km. **Max 1–2 primary purchase risks**; everything else is a popular-problem question or an inspection control point.
 - Age ≠ mileage: rubber, plastics, cooling, belts, hoses degrade on time — a low-km old car can be worse than a high-km highway car. Combine with §2 motorstundas math.
 - Evidence lowers risk: a documented chain / DCT oil / belt / water pump job is a **favourable signal in the data**; missing records = **unproven**, not "not done".
-- Prioritize by **probability × EUR**; EUR bands always indicative (Baltic service level).
+- Prioritize by **probability and whether it is a popular problem** at this mileage. **Never** output approximate repair/service EUR in comments (no „orientējoši … €”, no parenthetical bands, no „Baltijas servisa līmenis”). EUR is allowed only for recorded insurance claims and listing/market prices in „Cenas vērtējums”.
 - When the picture is relatively favourable, the agent must say so (hedged, PROVIN has not inspected the car physically). Fabricated red flags are as damaging as silence about real risks.
 
 ## 2. DRIVING PROFILE & MOTORSTUNDAS MATH
@@ -112,6 +118,6 @@ Instruct the backend agent to always run this factual analysis when calculating 
 ## 3. REGIONAL & FORENSIC SIGNATURES
 
 - **DE (Germany):** Autobahn stress profile. Pristine undercarriages (no rust except alpine regions), but heavy stone-chip density on front fascia/windshields. If completely flawless, check for post-accident resprays.
-- **Baltics (LV, LT, EE):** Corrosion and structural stress profile. Heavy salt rust on brake lines and suspension components. Extreme wear on bushings from poor roads. High risk of commercial fleet history and VAT rotation schemes. Lithuania is a high-risk hub for fast-turnaround rebuilds of USA salvage imports.
+- **Baltics (LV, LT, EE):** Corrosion and structural stress profile. Heavy salt rust on brake lines and suspension components. Extreme wear on bushings from poor roads. High risk of commercial fleet history and VAT rotation schemes. Lithuania is a high-risk hub for fast-turnaround rebuilds of USA salvage imports. **Client copy:** name **Latvija**, **Lietuva**, or **Igaunija** — NEVER „Baltija”.
 - **Southern EU (FR, IT, ES):** Cosmetic and thermal wear profile. Clear coat failure, brittle door weatherstrips, dried interior plastics/Artico trim. High density of parking scrapes, missing service history/gaps, but absolute zero rust and immaculate suspension links.
 - **USA/Canada:** Salvage framework. Mandate verification of raw Copart/IAAI auction photos to evaluate structural repair integrity and lighting/navigation conversion codes.

@@ -35,6 +35,27 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
   });
 
+  it("vocabulary forbids Baltija, saime, and invented repair prices", () => {
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER „Baltija”/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER „saime”/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/Quattro trakts/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/karājošais gultnis/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/approximate repair\/service prices/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/orientējoši 300-600 €/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/varbūtības un tā, vai tā ir populāra problēma/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/BEZ aptuvenām EUR summām/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs D/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/karājošais gultnis/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Quattro trakts/);
+    const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/nav populāra problēma/);
+    expect(tech).toMatch(/Nekādu orientējošu remonta cenu/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{PROVIN_REPORT_COPY_VOCABULARY\}/,
+    );
+  });
+
   it("damage claim rules require contextual EUR interpretation", () => {
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/age at incident/i);
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/premium/i);
@@ -127,7 +148,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/1–2 visticamākos/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/kā to apstiprināt/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/Neizdomā kodu/);
-    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/saimes līmenī/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/pēc pieejamajiem datiem, bez precīza koda/);
   });
 
   it("mileage-band rules calibrate risk without exaggeration", () => {
@@ -189,7 +210,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);
     expect(tech).toMatch(/Nepārspīlē/);
     expect(tech).toMatch(/20–40 tūkst\. km/);
-    expect(tech).toMatch(/varbūtības × izmaksām/);
+    expect(tech).toMatch(/varbūtības un tā, vai tā ir populāra problēma/);
     expect(tech).toMatch(/8–12 rindkopas/);
   });
 
