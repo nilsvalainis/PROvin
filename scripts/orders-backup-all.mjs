@@ -96,6 +96,7 @@ async function main() {
     { key: "admin-consultation-drafts", dir: path.join(root, ".data", "admin-consultation-drafts") },
     { key: "iriss-pasutijumi", dir: path.join(root, ".data", "iriss-pasutijumi") },
     { key: "iriss-pasutijumi-backups", dir: path.join(root, ".data", "iriss-pasutijumi-backups") },
+    { key: "iriss-pasutijumi-local-mirror", dir: path.join(root, ".data", "iriss-pasutijumi-local-mirror") },
     { key: "daily-admin-draft-backups", dir: path.join(root, ".data", "daily-admin-draft-backups") },
   ];
 

@@ -34,7 +34,13 @@ import {
   PREMIUM_HEADER_LOGO_LIFT_Y,
   stampOfferLogoTopRight,
 } from "@/lib/iriss-premium-pdf-ui";
-import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import {
+  collectIrissPasutijumsOverview,
+  irissPasutijumsOverviewHasContent,
+  isIrissRecordActiveForListPdf,
+  type IrissPasutijumsOverview,
+} from "@/lib/iriss-pasutijumi-list-overview";
 import { internalCommentHtmlToPdfPlain } from "@/lib/admin-internal-comment-pdf";
 import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
 
@@ -544,10 +550,6 @@ function parseMoney(value: string | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function selectedDealDetailLabels(record: IrissPasutijumsRecord): string[] {
-  return IRISS_DEAL_DETAIL_OPTIONS.filter((opt) => Boolean(record[opt.key])).map((opt) => opt.label);
-}
-
 const MAX_IMAGE_DATAURL_BASE64_CHARS = 1_800_000;
 const MAX_RAW_IMAGE_BYTES = 1_200_000;
 
@@ -708,6 +710,63 @@ async function drawPasutijumsDzTameHero(ctx: Ctx, record: IrissPasutijumsRecord)
   };
   drawPremiumInvoiceHeader(hctx, ctx.offerLogo, docTitle, sublines, { titleMax: 11, titleMin: 8 });
   ctx.y = hctx.y;
+}
+
+function drawPasutijumsOverviewSections(ctx: Ctx, overview: IrissPasutijumsOverview): void {
+  if (overview.clientLines.length) {
+    drawDzGraySection(
+      ctx,
+      "KLIENTA DATI",
+      (iw) => measureColonLabeledLinesHeight(overview.clientLines, DZ_PAS_BODY_FS, iw, ctx),
+      ({ x, w }) => {
+        for (const ln of overview.clientLines) drawColonLabeledLine(ctx, ln, DZ_PAS_BODY_FS, x, w);
+      },
+    );
+  }
+
+  if (overview.specLines.length) {
+    drawDzGraySection(
+      ctx,
+      "TRANSPORTLĪDZEKĻA SPECIFIKĀCIJA",
+      (iw) => measureTwoColSpecLinesHeight(overview.specLines, DZ_PAS_BODY_FS, iw, ctx),
+      ({ x, w }) => {
+        drawTwoColSpecLines(ctx, overview.specLines, DZ_PAS_BODY_FS, x, w);
+      },
+    );
+  }
+
+  if (overview.equipmentRequired) {
+    drawDzGraySection(
+      ctx,
+      "OBLIGĀTĀS PRASĪBAS (APRĪKOJUMS)",
+      (iw) => measureWrappedBlockHeight(overview.equipmentRequired!, ctx.font, DZ_PAS_BODY_FS, iw),
+      ({ x, w }) => drawParagraph(ctx, overview.equipmentRequired!, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
+      { bodyLeftAccent: true },
+    );
+  }
+  if (overview.equipmentDesired) {
+    drawDzGraySection(
+      ctx,
+      "VĒLAMĀS PRASĪBAS (APRĪKOJUMS)",
+      (iw) => measureWrappedBlockHeight(overview.equipmentDesired!, ctx.font, DZ_PAS_BODY_FS, iw),
+      ({ x, w }) => drawParagraph(ctx, overview.equipmentDesired!, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
+    );
+  }
+
+  if (overview.notes) {
+    drawDzGraySection(
+      ctx,
+      "PIEZĪMES",
+      (iw) => measureWrappedBlockHeight(overview.notes!, ctx.font, DZ_PAS_BODY_FS, iw),
+      ({ x, w }) => drawParagraph(ctx, overview.notes!, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
+    );
+  }
+}
+
+function stampListFooters(ctx: Ctx): void {
+  for (const page of ctx.pdfDoc.getPages()) {
+    drawPremiumFooter3ColDz(page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, ctx.offerLogo);
+  }
 }
 
 function measureDzTermsHeight(contentW: number, font: PDFFont, fontBold: PDFFont, fsP: number, fsH: number, gap: number): number {
@@ -910,96 +969,7 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
   ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc);
 
   await drawPasutijumsDzTameHero(ctx, record);
-
-  const clientLines: string[] = [];
-  const vFn = val(record.clientFirstName);
-  const vLn = val(record.clientLastName);
-  if (vFn) clientLines.push(`Vārds: ${vFn}`);
-  if (vLn) clientLines.push(`Uzvārds: ${vLn}`);
-  const vPh = val(record.phone);
-  if (vPh) clientLines.push(`Tālrunis: ${vPh}`);
-  const vEm = val(record.email);
-  if (vEm) clientLines.push(`E-pasts: ${vEm}`);
-  const vOd = val(record.orderDate);
-  if (vOd) clientLines.push(`Pasūtījuma datums: ${vOd}`);
-  if (clientLines.length) {
-    drawDzGraySection(
-      ctx,
-      "KLIENTA DATI",
-      (iw) => measureColonLabeledLinesHeight(clientLines, DZ_PAS_BODY_FS, iw, ctx),
-      ({ x, w }) => {
-        for (const ln of clientLines) drawColonLabeledLine(ctx, ln, DZ_PAS_BODY_FS, x, w);
-      },
-    );
-  }
-
-  const pamatLines: string[] = [];
-  const pushP = (label: string, s: string | undefined) => {
-    const v = val(s);
-    if (v) pamatLines.push(`${label}: ${v}`);
-  };
-  pushP("Gads / periods", record.productionYears);
-  pushP("Maks. nobraukums", record.maxMileage);
-  pushP("Transmisija", record.transmission);
-  pushP("Dzinēja tips", record.engineType);
-
-  const specLines: string[] = [];
-  const bm = val(record.brandModel);
-  if (bm) specLines.push(`Marka / modelis: ${bm}`);
-  specLines.push(...pamatLines);
-  const pushSpec = (label: string, s: string | undefined) => {
-    const v = val(s);
-    if (v) specLines.push(`${label}: ${v}`);
-  };
-  pushSpec("Kopējais budžets", record.totalBudget);
-  pushSpec("Vēlamās krāsas", record.preferredColors);
-  pushSpec("Nevēlamās krāsas", record.nonPreferredColors);
-  pushSpec("Salona apdare", record.interiorFinish);
-  const selectedDealDetails = selectedDealDetailLabels(record);
-  if (selectedDealDetails.length) {
-    specLines.push("Darījuma detaļas:");
-    for (const label of selectedDealDetails) specLines.push(`${label}: Jā`);
-  }
-  if (specLines.length) {
-    drawDzGraySection(
-      ctx,
-      "TRANSPORTLĪDZEKĻA SPECIFIKĀCIJA",
-      (iw) => measureTwoColSpecLinesHeight(specLines, DZ_PAS_BODY_FS, iw, ctx),
-      ({ x, w }) => {
-        drawTwoColSpecLines(ctx, specLines, DZ_PAS_BODY_FS, x, w);
-      },
-    );
-  }
-
-  const req = val(record.equipmentRequired);
-  if (req) {
-    drawDzGraySection(
-      ctx,
-      "OBLIGĀTĀS PRASĪBAS (APRĪKOJUMS)",
-      (iw) => measureWrappedBlockHeight(req, ctx.font, DZ_PAS_BODY_FS, iw),
-      ({ x, w }) => drawParagraph(ctx, req, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
-      { bodyLeftAccent: true },
-    );
-  }
-  const des = val(record.equipmentDesired);
-  if (des) {
-    drawDzGraySection(
-      ctx,
-      "VĒLAMĀS PRASĪBAS (APRĪKOJUMS)",
-      (iw) => measureWrappedBlockHeight(des, ctx.font, DZ_PAS_BODY_FS, iw),
-      ({ x, w }) => drawParagraph(ctx, des, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
-    );
-  }
-
-  const n = val(record.notes);
-  if (n) {
-    drawDzGraySection(
-      ctx,
-      "PIEZĪMES",
-      (iw) => measureWrappedBlockHeight(n, ctx.font, DZ_PAS_BODY_FS, iw),
-      ({ x, w }) => drawParagraph(ctx, n, DZ_PAS_BODY_FS, INK, ctx.font, { x, maxW: w }),
-    );
-  }
+  drawPasutijumsOverviewSections(ctx, collectIrissPasutijumsOverview(record));
 
   drawPremiumFooter3ColDz(
     ctx.page,
@@ -1018,6 +988,57 @@ export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord
 
   drawPremiumFooter3ColDz(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, ctx.offerLogo);
 
+  return ctx.pdfDoc.save();
+}
+
+export async function buildIrissPasutijumiListPdfBytes(records: IrissPasutijumsRecord[]): Promise<Uint8Array> {
+  const active = records.filter(isIrissRecordActiveForListPdf);
+  const ctx = await createPdfCtx();
+  ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc);
+
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  const countLabel =
+    active.length === 1 ? "1 aktīvs pasūtījums" : `${active.length} aktīvie pasūtījumi`;
+  const hctx = {
+    page: ctx.page,
+    pageW: ctx.pageW,
+    pageH: ctx.pageH,
+    margin: ctx.margin,
+    contentW: ctx.contentW,
+    font: ctx.font,
+    fontBold: ctx.fontBold,
+    y: ctx.y,
+  };
+  drawPremiumInvoiceHeader(hctx, ctx.offerLogo, "PASŪTĪJUMU SARAKSTS", [dateStr, countLabel], {
+    titleMax: 12,
+    titleMin: 8,
+  });
+  ctx.y = hctx.y;
+
+  if (active.length === 0) {
+    drawParagraph(ctx, "Nav aktīvu pasūtījumu.", DZ_PAS_BODY_FS, MUTED, ctx.font);
+    stampListFooters(ctx);
+    return ctx.pdfDoc.save();
+  }
+
+  active.forEach((record, index) => {
+    const overview = collectIrissPasutijumsOverview(record);
+    const title = `${index + 1}. ${overview.heading}`;
+    const titleH = lineHeight(11) + (overview.subheading ? lineHeight(8) : 0) + 8;
+    ensureRoomForBlock(ctx, titleH + 48);
+    ctx.y -= 6;
+    drawTextLine(ctx, title, 11, { font: ctx.fontBold, color: IRISS_ACCENT });
+    if (overview.subheading) {
+      drawTextLine(ctx, overview.subheading, 8, { font: ctx.font, color: MUTED });
+    }
+    if (irissPasutijumsOverviewHasContent(overview)) {
+      drawPasutijumsOverviewSections(ctx, overview);
+    } else {
+      drawParagraph(ctx, "Nav aizpildītu lauku.", DZ_PAS_BODY_FS, MUTED, ctx.font);
+    }
+  });
+
+  stampListFooters(ctx);
   return ctx.pdfDoc.save();
 }
 

@@ -22,17 +22,21 @@ export function AdminOrdersExportButton() {
         credentials: "include",
       });
       if (!res.ok) {
-        let detail = res.statusText;
-        try {
-          const j = (await res.json()) as { message?: string; error?: string };
-          if (j.message) detail = j.message;
-          else if (j.error) detail = j.error;
-        } catch {
-          /* ignore */
+        let detail = `HTTP ${res.status}`;
+        const ct = res.headers.get("content-type") ?? "";
+        if (ct.includes("application/json")) {
+          try {
+            const j = (await res.json()) as { message?: string; error?: string };
+            if (j.message) detail = j.message;
+            else if (j.error) detail = j.error;
+          } catch {
+            /* ignore */
+          }
         }
-        throw new Error(detail || `HTTP ${res.status}`);
+        throw new Error(detail);
       }
       const blob = await res.blob();
+      if (blob.size < 32) throw new Error("Tukšs fails — eksports neizdevās.");
       const fromHeader = parseFilenameFromDisposition(res.headers.get("Content-Disposition"));
       const fallback =
         format === "zip"
@@ -76,7 +80,7 @@ export function AdminOrdersExportButton() {
           disabled={phase === "loading"}
           onClick={() => void runExport("json")}
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50/90 disabled:opacity-55"
-          title="Viens JSON fails (tā pati satura struktūra kā ZIP arhīvā)"
+          title="Viens JSON fails ar pasūtījumu melnrakstiem"
         >
           Vienā JSON
         </button>
@@ -87,7 +91,8 @@ export function AdminOrdersExportButton() {
         </p>
       ) : (
         <p className="max-w-md text-right text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          Rezerves kopija: melnraksts, rēķinu PDF (ja ir), Stripe apmaksātās sesijas, demo (ja ieslēgts).
+          Rezerves kopija: pasūtījumu melnraksti un indeksi. Stripe sesijas — ja paspēj ielādēties; rēķinu PDF ZIP
+          arhīvā, ja ir.
         </p>
       )}
     </div>

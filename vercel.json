@@ -20,6 +20,9 @@
     "app/api/admin/notify-report-ready/route.ts": {
       "maxDuration": 60
     },
+    "app/api/admin/orders/export/route.ts": {
+      "maxDuration": 120
+    },
     "app/api/admin/iriss-pasutijumi/**/*.ts": {
       "maxDuration": 120
     },

@@ -8,8 +8,7 @@ import {
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-/** Liels Stripe saraksts + ZIP — Vercel Hobby: pēc vajadzības palielināt Pro plānā. */
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function GET(req: Request) {
   const ok = await getAdminSession();

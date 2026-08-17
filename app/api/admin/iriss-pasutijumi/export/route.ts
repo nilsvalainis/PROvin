@@ -3,6 +3,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import {
   buildIrissOrdersBackupJsonString,
   buildIrissOrdersBackupZipBuffer,
+  buildIrissPasutijumiListPdfBuffer,
   irissOrdersBackupFilename,
 } from "@/lib/admin-iriss-pasutijumi-backup";
 
@@ -10,12 +11,18 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+function parseFormat(raw: string | null): "zip" | "json" | "pdf" {
+  if (raw === "json") return "json";
+  if (raw === "pdf") return "pdf";
+  return "zip";
+}
+
 export async function GET(req: Request) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const url = new URL(req.url);
-  const format = url.searchParams.get("format") === "json" ? "json" : "zip";
+  const format = parseFormat(url.searchParams.get("format"));
   const filename = irissOrdersBackupFilename(format);
 
   try {
@@ -25,6 +32,18 @@ export async function GET(req: Request) {
         status: 200,
         headers: {
           "Content-Type": "application/json; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+          "Cache-Control": "private, no-store",
+        },
+      });
+    }
+
+    if (format === "pdf") {
+      const bytes = await buildIrissPasutijumiListPdfBuffer();
+      return new NextResponse(Buffer.from(bytes), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="${filename}"`,
           "Cache-Control": "private, no-store",
         },

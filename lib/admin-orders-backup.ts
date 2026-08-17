@@ -6,15 +6,17 @@ import fs from "fs/promises";
 import path from "path";
 import { PassThrough } from "node:stream";
 import { finished } from "node:stream/promises";
-import { get, list } from "@vercel/blob";
+import { list } from "@vercel/blob";
 import { getOrderDraftStorageDir, isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { resolveInvoiceDir } from "@/lib/invoice-storage";
 import { getDemoConsultationRows, getDemoOrderRows } from "@/lib/demo-orders";
 import { isDemoOrdersEnabled } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
 
-const STRIPE_PAGE_TIMEOUT_MS = 12_000;
-const STRIPE_MAX_PAGES = 80;
+const STRIPE_PAGE_TIMEOUT_MS = 8_000;
+const STRIPE_MAX_PAGES = 8;
+const STRIPE_OVERALL_BUDGET_MS = 12_000;
+const BLOB_FETCH_CONCURRENCY = 8;
 
 export type OrdersBackupMeta = {
   exportedAt: string;
@@ -34,6 +36,13 @@ export function ordersBackupFilename(ext: "zip" | "json"): string {
   return `provin-orders-backup-${backupDateSlug()}.${ext}`;
 }
 
+/** Saknes JSON (sesijas + indeksi). Nav ceļa traversija, atļauj defisi indeksu failos. */
+export function isSafeOrderDraftBackupJsonName(name: string): boolean {
+  if (!name.endsWith(".json")) return false;
+  if (name.includes("/") || name.includes("\\") || name.includes("..")) return false;
+  return /^[a-zA-Z0-9_.-]+$/.test(name);
+}
+
 async function collectDraftJsonFromFs(): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   const dir = getOrderDraftStorageDir();
@@ -45,9 +54,7 @@ async function collectDraftJsonFromFs(): Promise<Map<string, string>> {
     return out;
   }
   for (const name of names) {
-    if (!name.endsWith(".json")) continue;
-    const sessionId = name.slice(0, -5);
-    if (!isSafeOrderDraftSessionId(sessionId)) continue;
+    if (!isSafeOrderDraftBackupJsonName(name)) continue;
     try {
       const raw = await fs.readFile(path.join(dir, name), "utf8");
       out.set(name, raw);
@@ -58,36 +65,63 @@ async function collectDraftJsonFromFs(): Promise<Map<string, string>> {
   return out;
 }
 
+async function fetchBlobText(url: string, token: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+async function mapPool<T>(items: T[], concurrency: number, fn: (item: T) => Promise<void>): Promise<void> {
+  if (items.length === 0) return;
+  let i = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (i < items.length) {
+      const idx = i;
+      i += 1;
+      const item = items[idx];
+      if (item === undefined) return;
+      await fn(item);
+    }
+  });
+  await Promise.all(workers);
+}
+
 /**
  * Ja `ADMIN_ORDER_DRAFT_BLOB_PREFIX` (piem. `admin-order-drafts/`) + `BLOB_READ_WRITE_TOKEN`,
- * nolasa melnrakstu JSON no Vercel Blob (`list` + `get`, kā IRISS modulis).
+ * nolasa saknes JSON no Vercel Blob (`list` + URL, ne `get(pathname)`).
  */
 async function collectDraftJsonFromBlob(): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  const prefix = (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX ?? "").trim();
+  const prefixRaw = (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX ?? "").trim();
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
-  if (!prefix || !token) return out;
+  if (!prefixRaw || !token) return out;
+  const prefix = prefixRaw.endsWith("/") ? prefixRaw : `${prefixRaw}/`;
 
+  const pending: { name: string; url: string }[] = [];
   let cursor: string | undefined;
   do {
     const page = await list({ prefix, token, cursor, limit: 1000 });
     for (const b of page.blobs) {
       if (!b.pathname.endsWith(".json")) continue;
-      const base = path.basename(b.pathname);
-      const sessionId = base.slice(0, -5);
-      if (!isSafeOrderDraftSessionId(sessionId)) continue;
-      try {
-        const res = await get(b.pathname, { access: "private", token, useCache: false });
-        if (!res || res.statusCode !== 200 || !res.stream) continue;
-        const text = await new Response(res.stream).text();
-        out.set(base, text);
-      } catch {
-        /* skip */
-      }
+      const rel = b.pathname.startsWith(prefix) ? b.pathname.slice(prefix.length) : path.basename(b.pathname);
+      if (rel.includes("/")) continue;
+      if (!isSafeOrderDraftBackupJsonName(rel)) continue;
+      const url = ("downloadUrl" in b && typeof b.downloadUrl === "string" && b.downloadUrl) || b.url;
+      if (!url) continue;
+      pending.push({ name: rel, url });
     }
     if (page.hasMore && !page.cursor) break;
     cursor = page.hasMore && page.cursor ? page.cursor : undefined;
   } while (cursor);
+
+  await mapPool(pending, BLOB_FETCH_CONCURRENCY, async ({ name, url }) => {
+    const text = await fetchBlobText(url, token);
+    if (text != null) out.set(name, text);
+  });
 
   return out;
 }
@@ -134,10 +168,15 @@ function serializeCheckoutSession(s: Stripe.Checkout.Session): unknown {
 async function collectPaidStripeSessions(): Promise<{ sessions: unknown[]; error: string | null }> {
   const sessions: unknown[] = [];
   let stripeError: string | null = null;
+  const started = Date.now();
   try {
     const stripe = getStripe();
     let startingAfter: string | undefined;
     for (let page = 0; page < STRIPE_MAX_PAGES; page++) {
+      if (Date.now() - started > STRIPE_OVERALL_BUDGET_MS) {
+        stripeError = "stripe_list_budget_exceeded";
+        break;
+      }
       const res = await stripe.checkout.sessions.list(
         { limit: 100, starting_after: startingAfter },
         { timeout: STRIPE_PAGE_TIMEOUT_MS },
@@ -153,7 +192,7 @@ async function collectPaidStripeSessions(): Promise<{ sessions: unknown[]; error
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    stripeError = msg;
+    stripeError = stripeError ? `${stripeError}; ${msg}` : msg;
   }
   return { sessions, error: stripeError };
 }
@@ -170,12 +209,21 @@ type Gathered = {
 async function gatherBackupParts(): Promise<Gathered> {
   const { map: drafts, sources } = await collectAllDraftJson();
   const pdfs = await collectInvoicePdfs();
-  const { sessions, error: stripeError } = await collectPaidStripeSessions();
+  const stripeFallback = { sessions: [] as unknown[], error: "stripe_list_budget_exceeded" };
+  const stripe = await Promise.race([
+    collectPaidStripeSessions().catch((e) => ({
+      sessions: [] as unknown[],
+      error: e instanceof Error ? e.message : String(e),
+    })),
+    new Promise<typeof stripeFallback>((resolve) => {
+      setTimeout(() => resolve(stripeFallback), STRIPE_OVERALL_BUDGET_MS + 1500);
+    }),
+  ]);
   return {
     drafts,
     pdfs,
-    stripeSessions: sessions,
-    stripeError,
+    stripeSessions: stripe.sessions,
+    stripeError: stripe.error,
     sources,
     demoOn: isDemoOrdersEnabled(),
   };
@@ -205,15 +253,9 @@ export async function buildOrdersBackupJsonString(): Promise<string> {
   const orderDrafts: Record<string, string> = {};
   for (const [name, body] of g.drafts) orderDrafts[name] = body;
 
-  const invoicePdfsBase64: Record<string, string> = {};
-  for (const [name, bytes] of g.pdfs) {
-    invoicePdfsBase64[name] = Buffer.from(bytes).toString("base64");
-  }
-
   const payload: OrdersBackupPayload = {
     meta,
     orderDrafts,
-    ...(g.pdfs.size > 0 ? { invoicePdfsBase64 } : {}),
     stripePaidCheckoutSessions: g.stripeSessions,
   };
 
