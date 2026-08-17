@@ -26,6 +26,7 @@ import {
   PROVIN_INFO_BANNER_KINDS,
   resolveProvinBanners,
 } from "@/lib/provin-alert-banners";
+import { synthesizeOwnerCountsFromPdfInput } from "@/lib/owner-count-synthesis";
 import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
@@ -139,7 +140,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
 
 function buildRegistrationTile(input: PdfSummaryInput): PdfSummaryTile {
   const status = (input.csddForm?.registrationStatus ?? "").trim();
-  const owners = (input.csddForm?.ownerCountLatvia ?? "").trim();
+  const ownerNote = synthesizeOwnerCountsFromPdfInput(input).noteLine;
   const lower = status.toLowerCase();
   let tone: PdfSummaryTileTone = "neutral";
   if (/(arest|aizliegum|meklē|zādzīb)/.test(lower)) tone = "alert";
@@ -149,7 +150,7 @@ function buildRegistrationTile(input: PdfSummaryInput): PdfSummaryTile {
     id: "registration",
     label: "Reģistrācija",
     value: status || "Nav ierakstu",
-    note: owners ? `Īpašnieki Latvijā: ${owners}` : "CSDD reģistrācijas statuss",
+    note: ownerNote || "CSDD reģistrācijas statuss",
     tone,
   };
 }

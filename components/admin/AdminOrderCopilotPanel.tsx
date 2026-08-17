@@ -69,7 +69,7 @@ const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   tjekbil: "Tjekbil",
   mnt_ee: "MNT",
   lkf_ee: "LKF",
-  carinfo: "INFO",
+  carinfo: "SE",
 };
 const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,

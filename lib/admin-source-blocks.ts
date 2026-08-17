@@ -155,7 +155,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   tjekbil: "TJEKBIL.DK — Dānijas reģistrs",
   mnt_ee: "MNT.EE — Igaunijas reģistrs",
   lkf_ee: "LKF.EE — Igaunijas OCTA",
-  carinfo: "CAR.INFO",
+  carinfo: "ZVIEDRIJAS REĢISTRI",
   ltab: "LTAB",
   citi_avoti: "CITI AVOTI",
   listing_analysis: "Sludinājuma analīze",
@@ -1017,7 +1017,7 @@ export function vinRegistryBlockToPlainText(b: VinRegistryBlockState | null | un
   }
 
   if (safe.ownersSummary.trim()) {
-    lines.push(`Īpašnieki un reģistrācijas darbības\n${safe.ownersSummary.trim()}`);
+    lines.push(`Īpašnieku skaits un reģistrācijas darbības\n${safe.ownersSummary.trim()}`);
   }
   if (safe.statusRecords.trim()) {
     lines.push(`Statusi (TAXI, īre, autoskola, līzings)\n${safe.statusRecords.trim()}`);

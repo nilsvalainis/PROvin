@@ -427,6 +427,7 @@ FORMĀTS (obligāti):
 - Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Kopējā aina.**, **Galvenais risks.**, **Rekomendācija.**).
 - **Bold** arī būtiskiem skaitļiem (km, datumi), ja tie maina secinājumu — bet bez faktu kataloga.
 - CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā; tehnisko risku EUR — 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
+- ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = tjekbil. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
 - Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).

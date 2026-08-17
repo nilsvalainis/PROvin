@@ -56,7 +56,7 @@ const SOURCE_HINT: Record<VinRegistryBlockKey, string> = {
   lkf_ee:
     "Igaunijas Liikluskindlustuse Fond „Kahjukontroll”: OCTA atlīdzības gadījumi. Summas publiski netiek rādītas; prasa reCAPTCHA.",
   carinfo:
-    "car.info: Atvērt vai ielīmē lapas tekstu RAW / Copilot — nobraukums, īpašnieki, statusi un RED FLAG aizpildās. Captcha nav vajadzīga.",
+    "ZVIEDRIJAS REĢISTRI (car.info): Atvērt vai ielīmē lapas tekstu RAW / Copilot — nobraukums, īpašnieku skaits, statusi un RED FLAG aizpildās. Captcha nav vajadzīga.",
 };
 
 type Props = {

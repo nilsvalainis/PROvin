@@ -33,6 +33,10 @@ import {
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
+import {
+  formatOwnerCountAiContext,
+  synthesizeOwnerCountsFromBlocks,
+} from "@/lib/owner-count-synthesis";
 import { buildHistoricalReportsAiContext } from "@/lib/admin-ai-historical-context";
 import { buildAggregateKnowledgeAiContext } from "@/lib/admin-ai-aggregate-knowledge";
 
@@ -242,7 +246,9 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     if (section) parts.push(section);
   }
 
+  const ownerCountContext = formatOwnerCountAiContext(synthesizeOwnerCountsFromBlocks(blocks));
   const crossSource = [
+    block("Īpašnieku skaits (reconcilēts — neskaitīt avotus kopā)", ownerCountContext),
     block("Apvienotais nobraukums (visi avoti)", unifiedMileagePlainText(blocks)),
     block("Visi negadījumu ieraksti (visi avoti)", allIncidentRowsPlainText(blocks)),
     block("Apvienotie negadījumi ar zaudējumu summu", unifiedIncidentsWithLossPlainText(blocks)),

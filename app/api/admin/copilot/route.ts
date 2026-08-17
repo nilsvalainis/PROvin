@@ -362,7 +362,7 @@ export async function POST(req: Request) {
       ? {
           reply:
             carinfoPasteActions.length > 0
-              ? "car.info teksts ielasīts: nobraukums, īpašnieki, statusi un RED FLAG. Pārbaudi CAR.INFO bloku."
+              ? "car.info teksts ielasīts: nobraukums, īpašnieki, statusi un RED FLAG. Pārbaudi ZVIEDRIJAS REĢISTRI bloku."
               : [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
                 "PDF apstrādāts — pārbaudi avota laukus, ja kaut kas trūkst.",
           actions: carinfoPasteActions,

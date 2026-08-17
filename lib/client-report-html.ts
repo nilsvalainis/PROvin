@@ -1261,7 +1261,7 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisib
     sourceRecordCountBadgeHtml(b.mileageRows.length + b.incidentRows.length),
   );
   const bodyParts: string[] = [];
-  if (owners) bodyParts.push(pdfReportCommentBox(owners, "Īpašnieki"));
+  if (owners) bodyParts.push(pdfReportCommentBox(owners, "Īpašnieku skaits"));
   if (status) bodyParts.push(pdfReportCommentBox(status, "Statuss"));
   if (notes) bodyParts.push(pdfReportCommentBox(notes, "Piezīmes"));
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));

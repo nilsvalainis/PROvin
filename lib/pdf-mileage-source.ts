@@ -94,7 +94,12 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
   ) {
     return "ee";
   }
-  if (t === normLabel(SOURCE_BLOCK_LABELS.carinfo) || sq.includes("car.info") || sq === "carinfo") {
+  if (
+    t === normLabel(SOURCE_BLOCK_LABELS.carinfo) ||
+    sq.includes("car.info") ||
+    sq === "carinfo" ||
+    sq.includes("zviedrijasregistri")
+  ) {
     return "carinfo";
   }
 
@@ -119,7 +124,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   dealer: { full: "DĪLERA DATI", abbrev: "DEALER" },
   tjekbil: { full: SOURCE_BLOCK_LABELS.tjekbil, abbrev: "DK" },
   ee: { full: "Igaunijas reģistri", abbrev: "EE" },
-  carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "INFO" },
+  carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "SE" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
   intl: { full: CC_VIN_PDF_SOURCE_LABEL, abbrev: "INTL" },
   cits: { full: "Citi avoti", abbrev: "CITS" },

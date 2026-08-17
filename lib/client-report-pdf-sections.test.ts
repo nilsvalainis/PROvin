@@ -106,6 +106,41 @@ describe("PDF design system", () => {
     expect(html.indexOf("PAR ŠO ATSKAITI")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 
+  it("puts reconciled Latvia + Sweden owner counts on the registration tile", () => {
+    const csdd = emptyCsddFields();
+    csdd.registrationStatus = "Uzskaitē";
+    csdd.ownerCountLatvia = "2";
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.carinfo,
+            mileageRows: [],
+            incidentRows: [],
+            comments: "",
+            ownersSummary: "6 īpašnieki",
+          },
+          {
+            title: SOURCE_BLOCK_LABELS.carvertical,
+            mileageRows: [],
+            incidentRows: [],
+            comments: "3 īpašnieki",
+          },
+        ],
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("Reģistrācija");
+    expect(html).toContain("Uzskaitē");
+    expect(html).toContain("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6");
+    expect(html).not.toContain("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6 + ");
+    expect(html).toContain(SOURCE_BLOCK_LABELS.carinfo);
+  });
+
   it("keeps payment, vehicle, client and notes in one about block", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
@@ -836,7 +871,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("6 īpašnieki");
     expect(doc).toContain("Satiksmē: nē");
     expect(doc).toContain("Eksportēts no Zviedrijas");
-    expect(doc).toContain("Īpašnieki");
+    expect(doc).toContain("Īpašnieku skaits");
     expect(doc).toContain("Statuss");
     expect(doc).toContain("Piezīmes");
     expect(doc).not.toContain("⚠");
@@ -866,7 +901,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain(SOURCE_BLOCK_LABELS.tjekbil);
     expect(doc).toContain("2 īpašnieki");
     expect(doc).toContain("TAKSOMETRS");
-    expect(doc).toContain("Īpašnieki");
+    expect(doc).toContain("Īpašnieku skaits");
     expect(doc).toContain("Statuss");
     expect(doc).toContain("Piezīmes");
     expect(doc).not.toContain("⚠");
