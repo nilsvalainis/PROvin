@@ -12,6 +12,7 @@ import {
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
   HYBRID_COMMENT_RULES,
+  PROVIN_CLAUDE_LV_SURFACE,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
   PROVIN_REPORT_COPY_VOCABULARY,
@@ -33,6 +34,27 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER "automobīlis"/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/HUMAN DASHES|ASCII hyphen/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
+  });
+
+  it("vocabulary forbids Baltija, saime, and invented repair prices", () => {
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER „Baltija”/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER „saime”/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/Quattro trakts/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/karājošais gultnis/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/approximate repair\/service prices/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/orientējoši 300-600 €/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/varbūtības un tā, vai tā ir populāra problēma/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/BEZ aptuvenām EUR summām/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs D/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/karājošais gultnis/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Quattro trakts/);
+    const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/nav populāra problēma/);
+    expect(tech).toMatch(/Nekādu orientējošu remonta cenu/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{PROVIN_REPORT_COPY_VOCABULARY\}/,
+    );
   });
 
   it("damage claim rules require contextual EUR interpretation", () => {
@@ -127,7 +149,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/1–2 visticamākos/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/kā to apstiprināt/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/Neizdomā kodu/);
-    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/saimes līmenī/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/pēc pieejamajiem datiem, bez precīza koda/);
   });
 
   it("mileage-band rules calibrate risk without exaggeration", () => {
@@ -189,7 +211,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);
     expect(tech).toMatch(/Nepārspīlē/);
     expect(tech).toMatch(/20–40 tūkst\. km/);
-    expect(tech).toMatch(/varbūtības × izmaksām/);
+    expect(tech).toMatch(/varbūtības un tā, vai tā ir populāra problēma/);
     expect(tech).toMatch(/8–12 rindkopas/);
   });
 
@@ -273,15 +295,23 @@ describe("PROVIN AI prompt invariants", () => {
     const polish = readRepo("lib/admin-ai-polish.ts");
     expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
     expect(polish).toMatch(/applyProvinReportCopyVocabulary/);
+    expect(polish).toMatch(/skipLvPolish:\s*true/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_HAIKU/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_OPUS/);
   });
 
-  it("Haiku Latvian prose is post-edited by Sonnet grammar polish", () => {
+  it("all Claude Latvian expert copy is post-edited by Sonnet grammar polish", () => {
     const ai = readRepo("lib/admin-ai.ts");
-    expect(ai).toMatch(/polishHaikuLatvianProse/);
+    expect(ai).toMatch(/polishClaudeLatvianProse/);
+    expect(ai).not.toMatch(/polishHaikuLatvianProse/);
     expect(ai).toMatch(/AI_LV_POLISH_SYSTEM/);
     expect(ai).toMatch(/model:\s*CLAUDE_MODEL_SONNET/);
+    expect(ai).toMatch(/skipLvPolish/);
+    expect(ai).toMatch(/PROVIN_CLAUDE_LV_SURFACE/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/workshop Latvian/i);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/saime/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/iesmidzinātājs/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/WORKSHOP LATVIAN/);
   });
 
   it("comment generation can dispatch to Gemini for light tiers", () => {
