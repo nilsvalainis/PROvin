@@ -481,6 +481,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
         ? `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="tabular pdf-num-warn-digits">${odo}</span></span>`
         : odo;
     items.push(`<li class="pdf-life-item pdf-life-item--${e.tone}"${isAlert ? ' role="alert"' : ""}>
+      ${isAlert ? '<span class="pdf-life-alert-edge" aria-hidden="true"></span>' : ""}
       <span class="pdf-life-date">${escapeHtml(e.date)}</span>
       <span class="pdf-life-rail" aria-hidden="true"><span class="pdf-life-dot"></span></span>
       <span class="pdf-life-body">
@@ -1684,20 +1685,25 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-list > li:first-child.pdf-life-year .pdf-life-year__mark{top:8px;}
       .pdf-life-item{break-inside:avoid;page-break-inside:avoid;}
-      .pdf-life-item > *:not(.pdf-life-rail){padding:11px 0;}
+      .pdf-life-item > *:not(.pdf-life-rail):not(.pdf-life-alert-edge){padding:11px 0;}
       .pdf-life-dot{
         position:absolute;left:50%;top:15px;width:7px;height:7px;margin-left:-3.5px;
         border-radius:999px;background:#fff;border:2px solid #C4D0DE;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item--warn .pdf-life-dot{border-color:#FFC107;}
+      /* Kreisā josla kartes paddingā; pretējais padding notur datumu uz tās pašas kolonnu līnijas. */
       .pdf-life-item--alert{
+        position:relative;
         background:#FFF1F2;
         border-radius:8px;
-        border-left:3px solid #FF4D4D;
-        border-right:3px solid #FF4D4D;
+        margin-left:-10px;
         padding-left:10px;
-        padding-right:10px;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-life-alert-edge{
+        position:absolute;top:6px;bottom:6px;left:0;width:3px;background:#FF4D4D;border-radius:2px;
+        pointer-events:none;z-index:1;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item--alert .pdf-life-dot{

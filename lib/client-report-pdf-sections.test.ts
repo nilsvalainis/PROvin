@@ -351,10 +351,11 @@ describe("Ekspluatācijas hronoloģija", () => {
     expect(html).toContain("pdf-mileage-history-row--anomaly");
     expect(html).toContain("pdf-num-warn--red");
     expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*background:#FFF1F2/);
+    expect(html).toContain("pdf-life-alert-edge");
+    expect(html).not.toContain("pdf-life-alert-edge--end");
+    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*margin-left:-10px/);
     expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*padding-left:10px/);
-    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*padding-right:10px/);
-    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*border-left:3px solid #FF4D4D/);
-    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*border-right:3px solid #FF4D4D/);
+    expect(html).not.toMatch(/\.pdf-life-alert-edge--end/);
     expect(html).toMatch(/\.pdf-mileage-history-row--anomaly td\{[^}]*background:#FFF1F2/);
   });
 
