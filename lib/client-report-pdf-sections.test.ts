@@ -978,7 +978,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });
 
-  it("auto records photos render in the same two-column PDF grid", () => {
+  it("auto records photos span the full source section width", () => {
     const dataUrls = new Map<string, string>([
       ["ar_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],
       ["ar_ph_112233445566778899aabbcc", "data:image/jpeg;base64,/9j/4AAQ"],
@@ -1013,9 +1013,9 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
       autoRecordsPhotoDataUrls: dataUrls,
     });
-    expect(doc).toContain("pdf-listing-photo-grid");
-    expect(doc).not.toContain("pdf-source-photo-stack");
-    expect(doc).not.toContain("pdf-listing-photo-img--wide");
+    expect(doc).toContain("pdf-listing-photo-grid--full");
+    expect(doc).toMatch(/\.pdf-listing-photo-grid--full\{[^}]*grid-template-columns:1fr/);
+    expect(doc).toMatch(/\.pdf-listing-photo-grid--full \.pdf-listing-photo-img\{[^}]*max-height:none/);
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(3);
   });
 
