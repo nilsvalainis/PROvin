@@ -3,7 +3,7 @@
     "id": "source-csdd-ta-ok",
     "field": "source",
     "expectPass": true,
-    "text": "**Tehnisko apskašu tendence.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **sešas reizes**; hroniski atkārtojas korozija un eļļas noplūdes.\n\n**Īss km salīdzinājums.** CSDD pēdējais fiksējums sakrīt ar AutoDNA — detalizēto nobraukuma forenziku atstāj nobraukuma komentāram."
+    "text": "**Tehnisko apskašu tendence.** Automašīna nav izgājusi pamatpārbaudi ar pirmo reizi **sešas reizes**; hroniski atkārtojas korozija un eļļas noplūdes.\n\n**Īss km salīdzinājums.** CSDD pēdējais fiksējums sakrīt ar AutoDNA - detalizēto nobraukuma forenziku atstāj nobraukuma komentāram."
   },
   {
     "id": "source-bad-automobilis",
@@ -17,13 +17,13 @@
     "field": "source",
     "expectPass": false,
     "codes": ["source_mileage_essay"],
-    "text": "**Nobraukuma līkne.** Automašīnas nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā**. Braukšanas profils atbilst šosejas režīmam ar zemāku motorstundu slodzi, un pirms importa ir datu vakuums."
+    "text": "**Nobraukuma līkne.** Automašīnas nobraukuma līkne ir lineāra ar vidēji **22 000-24 000 km gadā**. Braukšanas profils atbilst šosejas režīmam ar zemāku motorstundu slodzi, un pirms importa ir datu vakuums."
   },
   {
     "id": "mileage-synthesis-ok",
     "field": "mileage",
     "expectPass": true,
-    "text": "**Hronoloģija un lineārums.** Visos avotos nobraukuma līkne ir lineāra ar vidēji **22 000–24 000 km gadā**; izteikti kritumi nav fiksēti.\n\n**Datu blīvums.** Ieraksti ir regulāri, kas ļauj secināt par šosejas profilu ar zemāku motorstundu slodzi."
+    "text": "**Hronoloģija un lineārums.** Visos avotos nobraukuma līkne ir lineāra ar vidēji **22 000-24 000 km gadā**; izteikti kritumi nav fiksēti.\n\n**Datu blīvums.** Ieraksti ir regulāri, kas ļauj secināt par šosejas profilu ar zemāku motorstundu slodzi."
   },
   {
     "id": "source-bad-hyperbole",
@@ -50,7 +50,7 @@
     "id": "incidents-claim-context-ok",
     "field": "incidents",
     "expectPass": true,
-    "text": "**Zaudējumu apjoms kontekstā.** AutoDNA fiksē **6 840 €** Vācijā, kad automašīnai bija **~1 gads** un tā ir premium klase — summa bieži atspoguļo dārgas OEM detaļas, ne obligāti total loss.\n\n**Avotu asinhronija.** LTAB šim periodam izmaksu neuzrāda."
+    "text": "**Zaudējumu apjoms kontekstā.** AutoDNA fiksē **6 840 €** Vācijā, kad automašīnai bija **~1 gads** un tā ir premium klase - summa bieži atspoguļo dārgas OEM detaļas, ne obligāti total loss.\n\n**Avotu asinhronija.** LTAB šim periodam izmaksu neuzrāda."
   },
   {
     "id": "source-bad-bullets",
@@ -58,5 +58,19 @@
     "expectPass": false,
     "codes": ["list_prefix"],
     "text": "- **Bojājums.** Priekšējais buferis.\n\n- Otrā rinda."
+  },
+  {
+    "id": "source-bad-emdash",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["long_dash"],
+    "text": "**Reģistrācija.** Automašīna Latvijā reģistrēta 2016. gadā — izcelsme Vācija."
+  },
+  {
+    "id": "source-bad-endash-range",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["long_dash"],
+    "text": "**Cena.** Tirgus diapazons ir **11 500–12 800 €**."
   }
 ]

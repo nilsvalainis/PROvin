@@ -9,6 +9,16 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("Šis automobīlis ir labs.")).toBe("Šis automašīna ir labs.");
     expect(applyProvinReportCopyVocabulary("Automobīļa vēsture.")).toBe("Automašīnas vēsture.");
   });
+
+  it("replaces long dashes with the short ASCII hyphen", () => {
+    expect(applyProvinReportCopyVocabulary("Klātienē — krāsas biezums.")).toBe(
+      "Klātienē - krāsas biezums.",
+    );
+    expect(applyProvinReportCopyVocabulary("Diapazons 11 500–12 800 €.")).toBe(
+      "Diapazons 11 500-12 800 €.",
+    );
+    expect(applyProvinReportCopyVocabulary("Gadi 2007–2015.")).toBe("Gadi 2007-2015.");
+  });
 });
 
 describe("normalizeProvinExpertAiComment", () => {

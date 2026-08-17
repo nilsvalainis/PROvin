@@ -16,6 +16,8 @@ export type CommentQualityOptions = {
 const AUTOMIBILIS_RE = /\bautomobīl/i;
 const LEADING_DASH_PARA_RE = /(^|\n\n)\s*[-–•]\s+/;
 const LIST_LINE_RE = /^\s*[-•*]\s+/m;
+/** Garā / vidējā domuzīme - AI stila pazīme; klientam tikai īsā "-". */
+const LONG_DASH_RE = /[\u2012\u2013\u2014\u2015\u2212]/;
 
 /** Pārspīlējumi un absolūti apgalvojumi — PROVIN raksta atturīgi. */
 const HYPERBOLE_RE =
@@ -52,7 +54,14 @@ export function evaluateExpertCommentQuality(
   if (AUTOMIBILIS_RE.test(t)) {
     issues.push({
       code: "vocabulary_automobilis",
-      message: 'Nedrīkst lietot „automobīlis” — izmanto „automašīna”',
+      message: 'Nedrīkst lietot „automobīlis” - izmanto „automašīna”',
+    });
+  }
+
+  if (LONG_DASH_RE.test(t)) {
+    issues.push({
+      code: "long_dash",
+      message: "Eksperta komentārā nelieto garo (—) vai vidējo (–) domuzīmi - izmanto īso „-”",
     });
   }
 

@@ -30,6 +30,14 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER "automobīlis"/i);
   });
 
+  it("vocabulary forbids long dashes and chatbot fillers in client copy", () => {
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/ASCII hyphen/i);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/ANTI-AI PHRASING/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/Svarīgi atzīmēt/);
+    expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).not.toMatch(/[—–]/);
+  });
+
   it("damage claim rules require contextual EUR interpretation", () => {
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/age at incident/i);
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/premium/i);
@@ -45,7 +53,7 @@ describe("PROVIN AI prompt invariants", () => {
   it("few-shots include claim-context and mileage-only synthesis examples", () => {
     expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).toMatch(/Zaudējumu apjoms kontekstā/i);
     expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).toMatch(
-      /NOBRAUKUMA VĒSTURES KOMENTĀRS — vienīgā vieta/i,
+      /NOBRAUKUMA VĒSTURES KOMENTĀRS - vienīgā vieta/i,
     );
   });
 
@@ -228,6 +236,15 @@ describe("PROVIN AI prompt invariants", () => {
     expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_HAIKU/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_OPUS/);
+    expect(polish).toMatch(/applyProvinReportCopyVocabulary/);
+  });
+
+  it("polish and field-agent prompts ban long dashes in generated Latvian", () => {
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(/AI_LV_POLISH_SYSTEM[\s\S]*?em dash/);
+    expect(prompts).toMatch(/never copy the long dash characters/);
+    expect(readRepo(".cursor/skills/provin-field-agent/SKILL.md")).toMatch(/Short hyphen only/);
+    expect(readRepo(".cursor/skills/provin-lv-polish/SKILL.md")).toMatch(/em dash/);
   });
 
   it("Haiku Latvian prose is post-edited by Sonnet grammar polish", () => {
