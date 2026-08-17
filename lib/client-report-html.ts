@@ -97,6 +97,7 @@ import {
   filterInfoBannersForPdf,
   mergeProvinManualBanners,
 } from "@/lib/provin-alert-banners";
+import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
 import {
   sectionIconPdfHtml,
   vendorPdfTitleToIconId,
@@ -545,7 +546,8 @@ function buildPdfCountryFlagCellHtml(countryLabel: string): string {
 }
 
 function sectionHeadBrand(icon: string, title: string, badgeHtml = ""): string {
-  return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2>${badgeHtml}</div>`;
+  const brandWrap = icon.includes("pdf-ico--brand-logo") ? " pdf-sec-ico-wrap--brand-logo" : "";
+  return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap${brandWrap}" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2>${badgeHtml}</div>`;
 }
 
 /** Avota sadaļas ārējā klase — augšmalas akcents avota krāsā (tā pati krāsa kā nobraukuma svītriņai). */
@@ -562,7 +564,19 @@ function formatSourceRecordCountLv(count: number): string {
 /** Ierakstu skaita plāksnīte pie avota virsraksta (kā konkurentu „Ierakstu skaits”). */
 function sourceRecordCountBadgeHtml(count: number): string {
   if (count <= 0) return "";
-  return `<span class="pdf-src-count-badge">${escapeHtml(formatSourceRecordCountLv(count))}</span>`;
+  return `<span class="pdf-src-count-badge pdf-src-count-badge--ok">${escapeHtml(formatSourceRecordCountLv(count))}</span>`;
+}
+
+/** AutoDNA / CarVertical — tie paši hero logotipi, 16×16 kā pārējās PDF sadaļu ikonas. */
+function vendorSectionIconHtml(title: string): string {
+  const L = SOURCE_BLOCK_LABELS;
+  if (title === L.autodna) {
+    return `<img class="pdf-ico pdf-ico--brand-logo" src="${PDF_HERO_BRAND_LOGO_DATA_URI.autodna}" alt="" width="16" height="16"/>`;
+  }
+  if (title === L.carvertical) {
+    return `<img class="pdf-ico pdf-ico--brand-logo" src="${PDF_HERO_BRAND_LOGO_DATA_URI.carvertical}" alt="" width="16" height="16"/>`;
+  }
+  return sectionIconPdfHtml(vendorPdfTitleToIconId(title));
 }
 
 function pdfFieldLabelWithIcon(iconHtml: string, label: string): string {
@@ -1257,7 +1271,7 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisib
   const hasComments = commentBlock.trim().length > 0;
   if (!hasComments && !owners && !status && !notes) return "";
   const head = sectionHeadBrand(
-    sectionIconPdfHtml(vendorPdfTitleToIconId(b.title)),
+    vendorSectionIconHtml(b.title),
     b.title,
     sourceRecordCountBadgeHtml(b.mileageRows.length + b.incidentRows.length),
   );
@@ -1790,6 +1804,7 @@ function clientReportPrintCss(): string {
         font-size:var(--pdf-fs-label);font-weight:600;letter-spacing:0.01em;line-height:1.3;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-src-count-badge--ok{background:#F5FBF7;color:#16a34a;}
       .provin-report-doc .pdf-src-zone{border-top:2px solid #94a3b8;}
       .pdf-sec-ico-wrap,
       .pdf-v1-panel-ico-wrap{
@@ -1798,6 +1813,8 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-sec-ico-wrap .pdf-ico{width:16px;height:16px;}
+      .pdf-sec-ico-wrap--brand-logo{background:#fff;}
+      .pdf-sec-ico-wrap .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-ltab-izzi{
         margin:0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-line);

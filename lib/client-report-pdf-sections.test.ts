@@ -15,6 +15,7 @@ import {
 } from "@/lib/client-report-html";
 import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
+import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 
 function minimalPayload(overrides: Partial<ClientReportPayload> = {}): ClientReportPayload {
@@ -181,9 +182,36 @@ describe("PDF design system", () => {
       formatBytes: () => "0 B",
     });
     expect(html).toContain("pdf-src-zone pdf-src-zone--autodna");
-    expect(html).toContain("pdf-src-count-badge");
+    expect(html).toContain("pdf-src-count-badge pdf-src-count-badge--ok");
     expect(html).toContain("2 ieraksti");
+    expect(html).toContain(".pdf-src-count-badge--ok{background:#F5FBF7;color:#16a34a;}");
     expect(html).toContain(".pdf-src-zone--autodna{border-top-color:#1E3A8A;}");
+    expect(html).toContain('class="pdf-ico pdf-ico--brand-logo"');
+    expect(html).toContain("pdf-sec-ico-wrap--brand-logo");
+    expect(html).toContain(PDF_HERO_BRAND_LOGO_DATA_URI.autodna);
+  });
+
+  it("uses the homepage hero CarVertical logo and greens the record count when there is at least one row", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.carvertical,
+            mileageRows: [{ date: "2021-03-01", odometer: "90000", country: "LT" }],
+            incidentRows: [],
+            comments: "CarVertical komentārs",
+          },
+        ],
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("pdf-src-zone pdf-src-zone--carvertical");
+    expect(html).toContain("1 ieraksts");
+    expect(html).toContain("pdf-src-count-badge--ok");
+    expect(html).toContain(PDF_HERO_BRAND_LOGO_DATA_URI.carvertical);
   });
 
   it("renders every section head with the same icon bubble and title style", () => {
