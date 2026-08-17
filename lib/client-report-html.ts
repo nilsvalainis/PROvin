@@ -1694,7 +1694,10 @@ function clientReportPrintCss(): string {
       .pdf-life-item--alert{
         background:#FFF1F2;
         border-radius:8px;
-        box-shadow:inset 3px 0 0 #FF4D4D;
+        border-left:3px solid #FF4D4D;
+        border-right:3px solid #FF4D4D;
+        padding-left:10px;
+        padding-right:10px;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item--alert .pdf-life-dot{
