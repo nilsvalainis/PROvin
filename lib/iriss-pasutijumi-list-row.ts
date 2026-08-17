@@ -1,4 +1,13 @@
-import type { IrissPasutijumsListRow, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { IRISS_DEAL_DETAIL_OPTIONS, type IrissPasutijumsListRow, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+
+const DEAL_LIST_LABEL: Record<(typeof IRISS_DEAL_DETAIL_OPTIONS)[number]["key"], string> = {
+  dealLeasingOrCredit: "Līzings",
+  dealClientFinancing100: "Fin. 100%",
+  dealClientFinancing20: "Fin. 20%",
+  dealVat21Required: "PVN 21%",
+  dealServiceStartDeposit: "Depozīts",
+  dealEkki: "EKKI",
+};
 
 export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
   return {
@@ -13,12 +22,46 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     brandModel: rec.brandModel.trim() || "—",
     totalBudget: rec.totalBudget.trim() || "—",
     phone: rec.phone.trim() || "—",
+    productionYears: rec.productionYears.trim(),
+    engineType: rec.engineType.trim(),
+    transmission: rec.transmission.trim(),
+    maxMileage: rec.maxMileage.trim(),
+    preferredColors: rec.preferredColors.trim(),
+    nonPreferredColors: rec.nonPreferredColors.trim(),
+    interiorFinish: rec.interiorFinish.trim(),
+    dealLeasingOrCredit: Boolean(rec.dealLeasingOrCredit),
+    dealClientFinancing100: Boolean(rec.dealClientFinancing100),
+    dealClientFinancing20: Boolean(rec.dealClientFinancing20),
+    dealVat21Required: Boolean(rec.dealVat21Required),
+    dealServiceStartDeposit: Boolean(rec.dealServiceStartDeposit),
+    dealEkki: Boolean(rec.dealEkki),
+    equipmentRequired: rec.equipmentRequired.trim(),
     listingLinkMobile: rec.listingLinkMobile,
     listingLinkAutobid: rec.listingLinkAutobid,
     listingLinkOpenline: rec.listingLinkOpenline,
     listingLinkAuto1: rec.listingLinkAuto1,
     listingLinksOther: rec.listingLinksOther,
   };
+}
+
+/** Aizpildītie specifikācijas lauki sarakstam (bez markas — tā ir virsraksts). */
+export function formatIrissListSpecSummary(row: IrissPasutijumsListRow): string {
+  const parts: string[] = [];
+  const push = (s: string) => {
+    const t = s.trim();
+    if (t) parts.push(t);
+  };
+  push(row.productionYears);
+  push(row.engineType);
+  push(row.transmission);
+  push(row.maxMileage);
+  push(row.preferredColors);
+  if (row.nonPreferredColors.trim()) parts.push(`ne ${row.nonPreferredColors.trim()}`);
+  push(row.interiorFinish);
+  for (const opt of IRISS_DEAL_DETAIL_OPTIONS) {
+    if (row[opt.key as keyof IrissPasutijumsListRow]) parts.push(DEAL_LIST_LABEL[opt.key]);
+  }
+  return parts.join(" · ");
 }
 
 export function formatIrissClientName(row: Pick<IrissPasutijumsListRow, "clientFirstName" | "clientLastName">): string {
@@ -54,7 +97,17 @@ export function irissListRowMatchesQuery(row: IrissPasutijumsListRow, query: str
   const q = query.trim().toLowerCase();
   if (!q) return true;
   const name = formatIrissClientName(row);
-  const hay = [name, row.brandModel, row.phone, row.clientFirstName, row.clientLastName].join(" ").toLowerCase();
+  const hay = [
+    name,
+    row.brandModel,
+    row.phone,
+    row.clientFirstName,
+    row.clientLastName,
+    formatIrissListSpecSummary(row),
+    row.equipmentRequired ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
   return hay.includes(q);
 }
 

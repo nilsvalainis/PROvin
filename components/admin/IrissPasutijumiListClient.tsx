@@ -17,10 +17,12 @@ import {
   countIrissListStatuses,
   formatIrissClientName,
   formatIrissListDate,
+  formatIrissListSpecSummary,
   irissListRowMatchesQuery,
   irissPasutijumsToListRow,
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
+import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
 import type {
   IrissPasutijumiListOrder,
   IrissPasutijumsListRow,
@@ -80,20 +82,6 @@ function useNarrowIrissSwipeViewport(): boolean {
     () => (typeof window !== "undefined" ? window.matchMedia("(max-width: 767.98px)").matches : false),
     () => false,
   );
-}
-
-function getBrandToken(brandModel: string): string {
-  return brandModel
-    .trim()
-    .split(/\s+/)[0]
-    ?.toLowerCase()
-    .replace(/[^a-z0-9-]/g, "");
-}
-
-function getBrandFallbackLabel(brandModel: string): string {
-  const token = getBrandToken(brandModel).toUpperCase();
-  if (!token || token === "—") return "AU";
-  return token.length >= 2 ? token.slice(0, 2) : token;
 }
 
 function budgetToNumber(v: string): number {
@@ -243,7 +231,10 @@ const IrissRowCard = memo(function IrissRowCard({
     },
     5,
   );
-  const brandFallback = getBrandFallbackLabel(row.brandModel);
+  const brandFallback = irissBrandFallbackLabel(row.brandModel);
+  const brandLogoSrc = irissBrandLogoSrc(row.brandModel);
+  const specSummary = formatIrissListSpecSummary(row);
+  const equipmentRequired = (row.equipmentRequired ?? "").trim();
   const isPinned = Boolean(row.pinnedAt);
   const statusBusy = actionBusy === row.id;
   const curStatus = row.listStatus ?? "active";
@@ -358,11 +349,11 @@ const IrissRowCard = memo(function IrissRowCard({
     ) : null;
 
   const frontInner = (
-    <div className="relative flex min-h-[46px] items-center gap-2 py-1 pl-3 pr-1.5 md:h-12 md:min-h-12 md:py-0">
+    <div className="relative flex min-h-[76px] items-center gap-2.5 py-2 pl-3 pr-2 md:min-h-[82px]">
       <Link
         href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
         prefetch
-        aria-label={`Atvērt pasūtījumu: ${clientName}`}
+        aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
         className="absolute inset-0 z-0 rounded-lg"
       />
       <span className={`absolute inset-y-0 left-0 z-10 w-[3px] ${statusBarClass(row)}`} aria-hidden />
@@ -374,12 +365,12 @@ const IrissRowCard = memo(function IrissRowCard({
             e.stopPropagation();
             setStatusMenuOpen((v) => !v);
           }}
-          className={`inline-flex h-6 items-center gap-0.5 rounded px-1.5 text-[10px] font-semibold ${statusBadgeClass(curStatus)}`}
+          className={`inline-flex h-7 items-center gap-0.5 rounded px-1.5 text-[11px] font-semibold ${statusBadgeClass(curStatus)}`}
           aria-haspopup="menu"
           aria-expanded={statusMenuOpen}
         >
           {STATUS_LABEL[curStatus]}
-          <ChevronDown className="h-3 w-3 opacity-70" aria-hidden />
+          <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
         </button>
         {statusMenuOpen ? (
           <div
@@ -406,20 +397,56 @@ const IrissRowCard = memo(function IrissRowCard({
           </div>
         ) : null}
       </div>
-      <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-2">
-        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-slate-200/90 bg-slate-50 text-[9px] font-bold text-slate-600">
-          {brandFallback}
-        </span>
+      <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-start gap-2.5">
+        {brandLogoSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={brandLogoSrc}
+            alt=""
+            width={36}
+            height={36}
+            className="mt-0.5 h-9 w-9 shrink-0 rounded-md border border-slate-200/90 bg-white object-contain p-[3px]"
+          />
+        ) : (
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200/90 bg-slate-50 text-[11px] font-bold text-slate-600">
+            {brandFallback}
+          </span>
+        )}
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-[13px] font-semibold leading-tight text-[var(--color-apple-text)]">{clientName}</span>
-            {isPinned ? <Pin className="h-3 w-3 shrink-0 text-black" aria-hidden /> : null}
+            <span className="truncate text-[16px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[17px]">
+              {row.brandModel}
+            </span>
+            {isPinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-black" aria-hidden /> : null}
           </span>
-          <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 text-[11px] leading-tight text-[var(--color-provin-muted)]">
-            <span className="truncate">{row.brandModel}</span>
+          <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 text-[12px] leading-snug text-[var(--color-provin-muted)]">
+            <span className="truncate">{clientName}</span>
             <span className="tabular-nums">{listDate}</span>
             <span className="truncate">{row.totalBudget}</span>
+            {telHref ? (
+              <a
+                href={telHref}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="pointer-events-auto font-medium text-[var(--color-provin-accent)] hover:underline md:hidden"
+              >
+                {row.phone}
+              </a>
+            ) : row.phone && row.phone !== "—" ? (
+              <span className="md:hidden">{row.phone}</span>
+            ) : null}
           </span>
+          {equipmentRequired ? (
+            <span className="mt-0.5 block truncate text-[12px] font-medium leading-snug text-[var(--color-apple-text)]">
+              <span className="text-[var(--color-provin-muted)]">Obligāti: </span>
+              {equipmentRequired}
+            </span>
+          ) : null}
+          {specSummary ? (
+            <span className={`mt-0.5 block truncate text-[12px] leading-snug text-[var(--color-provin-muted)]`}>
+              {specSummary}
+            </span>
+          ) : null}
         </span>
       </div>
       {telHref ? (
@@ -427,12 +454,12 @@ const IrissRowCard = memo(function IrissRowCard({
           href={telHref}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          className="relative z-10 shrink-0 text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline"
+          className="relative z-10 hidden shrink-0 text-[12px] font-medium text-[var(--color-provin-accent)] hover:underline md:inline"
         >
           {row.phone}
         </a>
       ) : row.phone && row.phone !== "—" ? (
-        <span className="relative z-10 shrink-0 text-[11px] text-[var(--color-provin-muted)]">{row.phone}</span>
+        <span className="relative z-10 hidden shrink-0 text-[12px] text-[var(--color-provin-muted)] md:inline">{row.phone}</span>
       ) : null}
       {chipsRow ? <div className="relative z-10 hidden min-w-0 max-w-[11rem] shrink md:block">{chipsRow}</div> : null}
       <div className="relative z-10 hidden shrink-0 items-center md:flex md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
@@ -615,6 +642,14 @@ export function IrissPasutijumiListClient({
         clientFirstName: r.clientFirstName ?? "",
         clientLastName: r.clientLastName ?? "",
         orderDate: r.orderDate ?? "",
+        productionYears: r.productionYears ?? "",
+        engineType: r.engineType ?? "",
+        transmission: r.transmission ?? "",
+        maxMileage: r.maxMileage ?? "",
+        preferredColors: r.preferredColors ?? "",
+        nonPreferredColors: r.nonPreferredColors ?? "",
+        interiorFinish: r.interiorFinish ?? "",
+        equipmentRequired: r.equipmentRequired ?? "",
       })),
     );
   }, [rows]);
@@ -874,7 +909,7 @@ export function IrissPasutijumiListClient({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         {visibleRows.length === 0 ? (
           <p className="rounded-lg border border-dashed border-slate-200 bg-white px-3 py-8 text-center text-[13px] text-black/60">
             {searching ? "Nekas neatbilst meklējumam." : "Nav pasūtījumu šajā filtrā."}
@@ -883,21 +918,21 @@ export function IrissPasutijumiListClient({
 
         {pinnedRows.length > 0 ? (
           dragReorderEnabled ? (
-            <Reorder.Group axis="y" values={pinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-1">
+            <Reorder.Group axis="y" values={pinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-2">
               {pinnedRows.map(renderRow)}
             </Reorder.Group>
           ) : (
-            <div className="flex flex-col gap-1">{pinnedRows.map(renderRow)}</div>
+            <div className="flex flex-col gap-2">{pinnedRows.map(renderRow)}</div>
           )
         ) : null}
 
         {unpinnedRows.length > 0 ? (
           dragReorderEnabled ? (
-            <Reorder.Group axis="y" values={unpinnedRows.map((r) => r.id)} onReorder={onReorderUnpinned} className="flex flex-col gap-1">
+            <Reorder.Group axis="y" values={unpinnedRows.map((r) => r.id)} onReorder={onReorderUnpinned} className="flex flex-col gap-2">
               {unpinnedRows.map(renderRow)}
             </Reorder.Group>
           ) : (
-            <div className="flex flex-col gap-1">{unpinnedRows.map(renderRow)}</div>
+            <div className="flex flex-col gap-2">{unpinnedRows.map(renderRow)}</div>
           )
         ) : null}
       </div>

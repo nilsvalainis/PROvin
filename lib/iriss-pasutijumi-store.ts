@@ -466,7 +466,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
   if (!Array.isArray(raw)) return null;
   if (raw.length > 0) {
     const first = raw[0];
-    if (!first || typeof first !== "object" || !("clientFirstName" in first)) return null;
+    if (!first || typeof first !== "object" || !("equipmentRequired" in first)) return null;
   }
   const rows: IrissPasutijumsListRow[] = [];
   for (const item of raw) {
@@ -486,6 +486,20 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "—", 400) || "—",
       totalBudget: sanitizeDraftTextForStorage(typeof o.totalBudget === "string" ? o.totalBudget : "—", 120) || "—",
       phone: sanitizeDraftTextForStorage(typeof o.phone === "string" ? o.phone : "—", 64) || "—",
+      productionYears: sanitizeDraftTextForStorage(typeof o.productionYears === "string" ? o.productionYears : "", 80),
+      engineType: sanitizeDraftTextForStorage(typeof o.engineType === "string" ? o.engineType : "", 80),
+      transmission: sanitizeDraftTextForStorage(typeof o.transmission === "string" ? o.transmission : "", 80),
+      maxMileage: sanitizeDraftTextForStorage(typeof o.maxMileage === "string" ? o.maxMileage : "", 80),
+      preferredColors: sanitizeDraftTextForStorage(typeof o.preferredColors === "string" ? o.preferredColors : "", 200),
+      nonPreferredColors: sanitizeDraftTextForStorage(typeof o.nonPreferredColors === "string" ? o.nonPreferredColors : "", 200),
+      interiorFinish: sanitizeDraftTextForStorage(typeof o.interiorFinish === "string" ? o.interiorFinish : "", 120),
+      dealLeasingOrCredit: Boolean(o.dealLeasingOrCredit),
+      dealClientFinancing100: Boolean(o.dealClientFinancing100),
+      dealClientFinancing20: Boolean(o.dealClientFinancing20),
+      dealVat21Required: Boolean(o.dealVat21Required),
+      dealServiceStartDeposit: Boolean(o.dealServiceStartDeposit),
+      dealEkki: Boolean(o.dealEkki),
+      equipmentRequired: sanitizeDraftTextForStorage(typeof o.equipmentRequired === "string" ? o.equipmentRequired : "", 800),
       listingLinkMobile: sanitizeDraftTextForStorage(typeof o.listingLinkMobile === "string" ? o.listingLinkMobile : "", 2048),
       listingLinkAutobid: sanitizeDraftTextForStorage(typeof o.listingLinkAutobid === "string" ? o.listingLinkAutobid : "", 2048),
       listingLinkOpenline: sanitizeDraftTextForStorage(typeof o.listingLinkOpenline === "string" ? o.listingLinkOpenline : "", 2048),

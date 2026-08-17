@@ -3,11 +3,14 @@ import {
   countIrissListStatuses,
   formatIrissClientName,
   formatIrissListDate,
+  formatIrissListSpecSummary,
   irissListRowMatchesQuery,
   irissPasutijumsToListRow,
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
+import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
+
 import { parseIrissListStatusFilter, IRISS_LIST_STATUS_DEFAULT_FILTER } from "@/lib/iriss-pasutijumi-status-filter";
 import {
   mergeIrissOfferImageDataUrls,
@@ -23,17 +26,34 @@ describe("IRISS saraksta rinda", () => {
     rec.orderDate = "2026-04-22";
     rec.brandModel = "VW Golf";
     rec.phone = "20000000";
+    rec.engineType = "2.0D";
+    rec.transmission = "Mehānika";
+    rec.equipmentRequired = "ACC";
+    rec.dealEkki = true;
     const row = irissPasutijumsToListRow(rec);
     expect(row.clientFirstName).toBe("Anna");
     expect(row.clientLastName).toBe("Bērziņa");
     expect(row.orderDate).toBe("2026-04-22");
+    expect(row.equipmentRequired).toBe("ACC");
     expect(formatIrissClientName(row)).toBe("Anna Bērziņa");
     expect(formatIrissListDate(row)).toBe("22.04");
+    expect(formatIrissListSpecSummary(row)).toContain("2.0D");
+    expect(formatIrissListSpecSummary(row)).toContain("Mehānika");
+    expect(formatIrissListSpecSummary(row)).toContain("EKKI");
+    expect(formatIrissListSpecSummary(row)).not.toContain("VW Golf");
     expect(irissPhoneTelHref(row.phone)).toBe("tel:+37120000000");
     expect(irissListRowMatchesQuery(row, "bērzi")).toBe(true);
     expect(irissListRowMatchesQuery(row, "golf")).toBe(true);
     expect(irissListRowMatchesQuery(row, "20000000")).toBe(true);
-    expect(irissListRowMatchesQuery(row, "bmw")).toBe(false);
+    expect(irissListRowMatchesQuery(row, "acc")).toBe(true);
+  });
+
+  it("resolves local brand logos without a CDN", () => {
+    expect(irissBrandLogoSrc("BMW 840i")).toBe("/brand-logos/bmw.svg");
+    expect(irissBrandLogoSrc("Škoda Kodiaq")).toBe("/brand-logos/skoda.svg");
+    expect(irissBrandLogoSrc("VW Golf")).toBe("/brand-logos/volkswagen.svg");
+    expect(irissBrandLogoSrc("Toyota")).toBeNull();
+    expect(irissBrandFallbackLabel("Toyota")).toBe("TO");
   });
 
   it("counts statuses", () => {
