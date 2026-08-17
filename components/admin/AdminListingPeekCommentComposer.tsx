@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
+import { AdminListingPeekTopicChips } from "@/components/admin/AdminListingPeekTopicChips";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { LISTING_PEEK_TOPIC_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
@@ -33,15 +34,6 @@ function inferTones(
   }
   return tones;
 }
-
-const TONE_BTN: Record<ListingPeekTone, string> = {
-  positive:
-    "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 data-[on=true]:border-emerald-500 data-[on=true]:bg-emerald-600 data-[on=true]:text-white",
-  caution:
-    "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 data-[on=true]:border-amber-500 data-[on=true]:bg-amber-500 data-[on=true]:text-white",
-  concern:
-    "border-red-200 bg-red-50 text-red-800 hover:bg-red-100 data-[on=true]:border-red-500 data-[on=true]:bg-red-600 data-[on=true]:text-white",
-};
 
 const emptyLines = (): Record<ListingPeekTopicId, string> => ({
   odometer: "",
@@ -227,22 +219,12 @@ export function AdminListingPeekCommentComposer({
                 />
               </div>
               {open ? (
-                <div
-                  id={`${fieldId}-${topic.id}-panel`}
-                  className="mt-2 flex flex-wrap gap-1.5 pl-10"
-                >
-                  {topic.phrases.map((phrase) => (
-                    <button
-                      key={phrase.tone}
-                      type="button"
-                      data-on={tones[topic.id] === phrase.tone}
-                      title={phrase.text}
-                      onClick={() => applyPhrase(topic.id, phrase.tone, phrase.text)}
-                      className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${TONE_BTN[phrase.tone]}`}
-                    >
-                      {phrase.label}
-                    </button>
-                  ))}
+                <div id={`${fieldId}-${topic.id}-panel`} className="mt-2 pl-10">
+                  <AdminListingPeekTopicChips
+                    topicId={topic.id}
+                    selectedTone={tones[topic.id]}
+                    onSelect={(tone, text) => applyPhrase(topic.id, tone, text)}
+                  />
                 </div>
               ) : null}
             </div>

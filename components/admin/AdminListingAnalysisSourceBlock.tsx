@@ -11,6 +11,7 @@ import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishText
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
+import { AdminListingPeekTopicChips } from "@/components/admin/AdminListingPeekTopicChips";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -26,7 +27,8 @@ import {
 } from "@/lib/admin-source-blocks";
 import { ADMIN_LISTING_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
-import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
+import { LISTING_PEEK_TOPICS, type ListingPeekTone } from "@/lib/listing-peek-comment-presets";
 import {
   parseAdminAiResponse,
   readGeneratedAdminAiText,
@@ -37,6 +39,21 @@ import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
+
+const PHOTO_PEEK_PHRASES = LISTING_PEEK_TOPICS.find((t) => t.id === "photos")!.phrases;
+
+function photoPeekSelectedTone(html: string): ListingPeekTone | null {
+  const plain = adminRichHtmlToPlainText(html).trim();
+  return PHOTO_PEEK_PHRASES.find((p) => p.text === plain || plain.includes(p.text))?.tone ?? null;
+}
+
+function applyPhotoPeekPhrase(currentHtml: string, phrase: string): string {
+  const plain = adminRichHtmlToPlainText(currentHtml).trim();
+  const presets = PHOTO_PEEK_PHRASES.map((p) => p.text);
+  if (!plain || presets.includes(plain)) return plainTextToMinimalRichHtml(phrase);
+  if (plain.includes(phrase)) return currentHtml;
+  return `${currentHtml.trim()}<br /><br />${plainTextToMinimalRichHtml(phrase)}`;
+}
 
 export type AiListingAnalysisPayload = {
   sessionId: string;
@@ -379,20 +396,32 @@ export function AdminListingAnalysisSourceBlock({
               <AdminRichCommentReadonly html={v.photoAnalysis} className={pri ? roBox(!!dense) : roDefault} />
             </>
           ) : (
-            <AdminSourceCommentField
-              value={v.photoAnalysis}
-              onChange={(next) => onChange({ ...v, photoAnalysis: next })}
-              disabled={disabled}
-              compact={pri && dense}
-              aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-              ai={{
-                allowed: aiAllowed,
-                busy: listingFieldBusy === "photoAnalysis",
-                error: listingFieldErr?.field === "photoAnalysis" ? listingFieldErr.msg : null,
-                hasSourceData: canRunPhotoAi,
-                onGenerate: (notes, tier) => void runListingFieldAi("photoAnalysis", notes, tier),
-              }}
-            />
+            <>
+              <div className="mb-2">
+                <AdminListingPeekTopicChips
+                  topicId="photos"
+                  selectedTone={photoPeekSelectedTone(v.photoAnalysis)}
+                  disabled={disabled}
+                  onSelect={(_tone, text) =>
+                    onChange({ ...v, photoAnalysis: applyPhotoPeekPhrase(v.photoAnalysis, text) })
+                  }
+                />
+              </div>
+              <AdminSourceCommentField
+                value={v.photoAnalysis}
+                onChange={(next) => onChange({ ...v, photoAnalysis: next })}
+                disabled={disabled}
+                compact={pri && dense}
+                aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+                ai={{
+                  allowed: aiAllowed,
+                  busy: listingFieldBusy === "photoAnalysis",
+                  error: listingFieldErr?.field === "photoAnalysis" ? listingFieldErr.msg : null,
+                  hasSourceData: canRunPhotoAi,
+                  onGenerate: (notes, tier) => void runListingFieldAi("photoAnalysis", notes, tier),
+                }}
+              />
+            </>
           )}
           {sessionId && onListingPhotoGroupsStructuralCommit ? (
             <AdminListingAnalysisPhotos
