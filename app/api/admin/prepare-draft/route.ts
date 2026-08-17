@@ -7,7 +7,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
 import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
-import { nextJsonBodyWithAiUsage } from "@/lib/admin-ai-route-response";
+import { nextJsonObjectWithAiUsage } from "@/lib/admin-ai-route-response";
 import { runPrepareDraftPipeline, type PrepareDraftPdfInput } from "@/lib/admin-prepare-draft";
 import { detectSourcePdfIngestTarget } from "@/lib/admin-source-pdf-detect";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
@@ -155,21 +155,23 @@ export async function POST(req: Request) {
   });
 
   try {
-    const res = await nextJsonBodyWithAiUsage(async () => {
-      const result = await runPrepareDraftPipeline({
-        pdfs,
-        context,
-        generateComments,
-      });
-      const imported = result.steps.filter((s) => s.id.startsWith("pdf:") && s.status === "ok").length;
-      console.info(`${LOG_PREFIX} ok`, { sessionId, imported, steps: result.steps.length });
-      return {
-        ok: true,
-        promptVersion: PROVIN_AI_PROMPT_VERSION,
-        ...result,
-      };
-    });
-    return res;
+    return await nextJsonObjectWithAiUsage(
+      async () => {
+        const result = await runPrepareDraftPipeline({
+          pdfs,
+          context,
+          generateComments,
+        });
+        const imported = result.steps.filter((s) => s.id.startsWith("pdf:") && s.status === "ok").length;
+        console.info(`${LOG_PREFIX} ok`, { sessionId, imported, steps: result.steps.length });
+        return {
+          ok: true,
+          promptVersion: PROVIN_AI_PROMPT_VERSION,
+          ...result,
+        };
+      },
+      { streamText: false },
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     console.error(`${LOG_PREFIX} failed`, { sessionId, msg });

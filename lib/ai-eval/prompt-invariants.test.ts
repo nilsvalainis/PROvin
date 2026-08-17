@@ -332,11 +332,11 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("admin AI routes attach usage to JSON responses", () => {
     expect(readRepo("app/api/admin/ai/source-comment/route.ts")).toMatch(/nextJsonWithAiUsage/);
-    expect(readRepo("app/api/admin/ai/tirgus-market/route.ts")).toMatch(/nextJsonBodyWithAiUsage/);
+    expect(readRepo("app/api/admin/ai/tirgus-market/route.ts")).toMatch(/nextJsonObjectWithAiUsage/);
     expect(readRepo("app/api/admin/ai/listing-peek-comment/route.ts")).toMatch(
-      /nextJsonBodyWithAiUsage/,
+      /nextJsonObjectWithAiUsage/,
     );
-    expect(readRepo("app/api/admin/prepare-draft/route.ts")).toMatch(/nextJsonBodyWithAiUsage/);
+    expect(readRepo("app/api/admin/prepare-draft/route.ts")).toMatch(/nextJsonObjectWithAiUsage/);
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/AdminAiSessionCostBar/);
   });
 
@@ -369,6 +369,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(ai).toMatch(/partial_text_salvaged/);
     expect(ai).toMatch(/TEXT_REQUEST_TIMEOUT_MS = 88_000/);
     expect(ai).toMatch(/WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000/);
+    expect(ai).toMatch(/JSON_REQUEST_TIMEOUT_MS = 88_000/);
+    expect(ai).toMatch(/JSON_EXTRACT_TIMEOUT_MS = 105_000/);
     expect(ai).toMatch(/AiIncompleteCommentError/);
     expect(ai).not.toMatch(/return salvaged;/);
     const gemini = readRepo("lib/admin-gemini.ts");
@@ -383,6 +385,18 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_incomplete_comment/);
     expect(ai).toMatch(/emitAiCommentDelta/);
     expect(ai).toMatch(/stream\.abort\(/);
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(
+      /fetchAdminAiComment/,
+    );
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(
+      /fetchAdminAiRequest/,
+    );
+    expect(readRepo("components/admin/AdminListingPeekCommentComposer.tsx")).toMatch(
+      /fetchAdminAiComment/,
+    );
+    expect(ai).toMatch(/liveAdminCommentFromPartialJson/);
+    expect(gemini).toMatch(/liveAdminCommentFromPartialJson/);
+    expect(readRepo("lib/admin-ai.ts")).not.toMatch(/messages\.create\(/);
   });
 
   it("AI field errors are rendered visibly, not as 9px amber whispers", () => {

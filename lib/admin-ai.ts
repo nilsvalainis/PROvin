@@ -24,6 +24,7 @@ import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
+import { liveAdminCommentFromPartialJson } from "@/lib/admin-ai-json-live-text";
 import { emitAiCommentDelta, flushAiCommentDelta } from "@/lib/admin-ai-text-sink";
 
 export {
@@ -58,7 +59,13 @@ const MAX_TOKENS_JSON = 32_000;
 const TEXT_REQUEST_TIMEOUT_MS = 88_000;
 /** Web search aģenti (kopsavilkums, riski, pārdevējs) — maršruti ar `maxDuration = 120`. */
 const WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000;
-const JSON_REQUEST_TIMEOUT_MS = 150_000;
+/**
+ * JSON komentāru maršruti ir 90s — nogrist pirms Vercel, lai varētu saglabāt
+ * jau apmaksāto daļu. PDF izvilkšana (120s maršruti) padod `timeoutMs`.
+ */
+const JSON_REQUEST_TIMEOUT_MS = 88_000;
+/** PDF / CSDD strukturētā ielase — 120s maršrutu rezerve. */
+export const JSON_EXTRACT_TIMEOUT_MS = 105_000;
 /** SDK noklusējums PDF/gariem izsaukumiem. */
 const REQUEST_TIMEOUT_MS = 180_000;
 
@@ -346,12 +353,13 @@ async function aiGenerateJsonFromPartsOnce(
     temperature?: number;
     responseSchema?: AiJsonSchema;
     maxTokens?: number;
+    timeoutMs?: number;
   },
 ): Promise<string> {
   const client = anthropicClient(key);
   const hasSchema = Boolean(opts.responseSchema);
-  /** Opus 5 / Sonnet 5 noraida `temperature` — 400 invalid_request_error. */
-  const message = await client.messages.create(
+  const raw = await claudeStreamText(
+    client,
     {
       model: opts.model,
       max_tokens: opts.maxTokens ?? MAX_TOKENS_JSON,
@@ -363,11 +371,13 @@ async function aiGenerateJsonFromPartsOnce(
       messages: [{ role: "user", content: toContentBlocks(opts.parts) }],
       ...claudeOutputControls(opts.model, opts.responseSchema),
     },
-    { timeout: JSON_REQUEST_TIMEOUT_MS },
+    {
+      label: "json",
+      timeoutMs: opts.timeoutMs ?? JSON_REQUEST_TIMEOUT_MS,
+      emitFromPartial: liveAdminCommentFromPartialJson,
+    },
   );
-
-  logClaudeUsage("json", opts.model, message);
-  const text = stripJsonFences(requireAssistantText(message));
+  const text = stripJsonFences(raw);
   if (!text) throw new Error("ai_empty_content");
   return text;
 }
@@ -381,6 +391,7 @@ export async function aiGenerateJsonText(opts: {
   /** Papildus daļas (piem. inline PDF) pirms `userPrompt` teksta. */
   extraParts?: AiUserPart[];
   maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<string> {
   const parts: AiUserPart[] = [...(opts.extraParts ?? []), { text: opts.userPrompt }];
   return aiGenerateJsonFromParts({
@@ -389,6 +400,7 @@ export async function aiGenerateJsonText(opts: {
     parts,
     temperature: opts.temperature,
     maxTokens: opts.maxTokens,
+    timeoutMs: opts.timeoutMs,
   });
 }
 
@@ -403,6 +415,7 @@ export async function aiGenerateJsonFromParts(opts: {
   temperature?: number;
   responseSchema?: AiJsonSchema;
   maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<string> {
   const key = getAnthropicApiKeyFromEnv();
   if (!key) throw new Error("missing_ai_key");
@@ -436,6 +449,7 @@ export async function aiGenerateJsonWithSchema(opts: {
   responseSchema: AiJsonSchema;
   temperature?: number;
   maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<string> {
   return aiGenerateJsonFromParts({
     ...opts,
@@ -452,7 +466,11 @@ export async function aiGenerateJsonWithSchema(opts: {
 async function claudeStreamText(
   client: Anthropic,
   params: Anthropic.MessageCreateParamsNonStreaming,
-  opts: { label: string; timeoutMs: number },
+  opts: {
+    label: string;
+    timeoutMs: number;
+    emitFromPartial?: (partial: string) => string;
+  },
 ): Promise<string> {
   const withThinkingOff: Anthropic.MessageCreateParamsNonStreaming = {
     ...params,
@@ -472,16 +490,29 @@ async function claudeStreamText(
   }
 }
 
+function emitStreamedVisible(
+  raw: string,
+  force: boolean,
+  emitFromPartial?: (partial: string) => string,
+): void {
+  const visible = emitFromPartial ? emitFromPartial(raw) : raw;
+  if (visible) emitAiCommentDelta(visible, force);
+}
+
 async function claudeStreamTextOnce(
   client: Anthropic,
   params: Anthropic.MessageCreateParamsNonStreaming,
-  opts: { label: string; timeoutMs: number },
+  opts: {
+    label: string;
+    timeoutMs: number;
+    emitFromPartial?: (partial: string) => string;
+  },
 ): Promise<string> {
   const stream = client.messages.stream(params, { timeout: opts.timeoutMs });
   let partial = "";
   stream.on("text", (delta) => {
     partial += delta;
-    emitAiCommentDelta(partial);
+    emitStreamedVisible(partial, false, opts.emitFromPartial);
   });
   // Bez šī klausītāja straumes kļūda kļūst par neapstrādātu notikumu; `finalMessage()` to tāpat noraida.
   stream.on("error", () => {});
@@ -498,14 +529,14 @@ async function claudeStreamTextOnce(
     const message = await stream.finalMessage();
     logClaudeUsage(opts.label, params.model, message);
     const text = requireAssistantText(message);
-    emitAiCommentDelta(text, true);
+    emitStreamedVisible(text, true, opts.emitFromPartial);
     flushAiCommentDelta();
     return text;
   } catch (e) {
     flushAiCommentDelta();
     const salvaged = partial.trim();
     if (!salvaged) throw e;
-    emitAiCommentDelta(salvaged, true);
+    emitStreamedVisible(salvaged, true, opts.emitFromPartial);
     console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
       label: opts.label,
       model: params.model,

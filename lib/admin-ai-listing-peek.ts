@@ -3,6 +3,8 @@ import "server-only";
 import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
 import { AI_LISTING_PEEK_COMMENT_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
+import { AiIncompleteCommentError, isAiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
+import { extractPartialJsonBoolean, extractPartialJsonString } from "@/lib/admin-ai-json-live-text";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import {
   LISTING_PEEK_TOPICS,
@@ -28,6 +30,45 @@ function polishPeekLines(lines: Record<ListingPeekTopicId, string>): Record<List
     next[id] = t ? applyProvinReportCopyVocabulary(stripListingPeekMarkdown(t)) : "";
   }
   return next;
+}
+
+function peekFromPartialJson(raw: string): {
+  closer: boolean;
+  lines: Record<ListingPeekTopicId, string>;
+  letter?: string;
+} | null {
+  const parsed = parseListingPeekAiPayload(raw);
+  if (parsed) return parsed;
+  const lines = {
+    odometer: extractPartialJsonString(raw, "odometer"),
+    incidents: extractPartialJsonString(raw, "incidents"),
+    technical: extractPartialJsonString(raw, "technical"),
+    seller: extractPartialJsonString(raw, "seller"),
+    photos: extractPartialJsonString(raw, "photos"),
+  };
+  const letter =
+    extractPartialJsonString(raw, "letter").trim() || extractPartialJsonString(raw, "text").trim();
+  if (!letter && !Object.values(lines).some((v) => v.trim())) return null;
+  return {
+    closer: extractPartialJsonBoolean(raw, "closer") ?? false,
+    lines,
+    ...(letter ? { letter } : {}),
+  };
+}
+
+function finalizePeekPayload(parsed: {
+  closer: boolean;
+  lines: Record<ListingPeekTopicId, string>;
+  letter?: string;
+}): { closer: boolean; lines: Record<ListingPeekTopicId, string>; text: string } | null {
+  const lines = polishPeekLines(parsed.lines);
+  if (!Object.values(lines).some((v) => v.trim()) && !parsed.letter?.trim()) return null;
+  const closer = parsed.closer;
+  const text = stripListingPeekMarkdown(
+    parsed.letter?.trim() || assembleListingPeekCustomerComment({ closer, lines }),
+  ).trim();
+  if (!text) return null;
+  return { closer, lines, text };
 }
 
 export async function generateListingPeekCommentWithAi(input: {
@@ -64,28 +105,31 @@ export async function generateListingPeekCommentWithAi(input: {
     },
   );
 
-  const raw = await adminGenerateJsonText({
-    modelTier: input.modelTier,
-    systemInstruction: AI_LISTING_PEEK_COMMENT_SYSTEM,
-    userPrompt,
-    temperature: 0.25,
-  });
-
-  const parsed = parseListingPeekAiPayload(raw);
-  if (!parsed) throw new Error("ai_invalid_json");
-  const lines = polishPeekLines(parsed.lines);
-  if (!Object.values(lines).some((v) => v.trim()) && !parsed.letter?.trim()) {
-    throw new Error("ai_invalid_json");
+  let raw: string;
+  try {
+    raw = await adminGenerateJsonText({
+      modelTier: input.modelTier,
+      systemInstruction: AI_LISTING_PEEK_COMMENT_SYSTEM,
+      userPrompt,
+      temperature: 0.25,
+    });
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) {
+      const parsed = peekFromPartialJson(e.partialText);
+      const finalized = parsed ? finalizePeekPayload(parsed) : null;
+      if (finalized) {
+        throw new AiIncompleteCommentError(finalized.text, e.reason, {
+          ...finalized.lines,
+          closer: finalized.closer,
+          text: finalized.text,
+        });
+      }
+    }
+    throw e;
   }
 
-  const closer = parsed.closer;
-  const text = stripListingPeekMarkdown(
-    parsed.letter?.trim() || assembleListingPeekCustomerComment({ closer, lines }),
-  ).trim();
-  if (!text) throw new Error("ai_invalid_json");
-  return {
-    closer,
-    lines,
-    text,
-  };
+  const parsed = peekFromPartialJson(raw);
+  const finalized = parsed ? finalizePeekPayload(parsed) : null;
+  if (!finalized) throw new Error("ai_invalid_json");
+  return finalized;
 }

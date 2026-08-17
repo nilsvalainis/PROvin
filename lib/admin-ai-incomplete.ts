@@ -5,12 +5,18 @@
 export class AiIncompleteCommentError extends Error {
   readonly partialText: string;
   readonly reason: "timeout" | "max_tokens";
+  readonly extra?: Record<string, unknown>;
 
-  constructor(partialText: string, reason: "timeout" | "max_tokens") {
+  constructor(
+    partialText: string,
+    reason: "timeout" | "max_tokens",
+    extra?: Record<string, unknown>,
+  ) {
     super("ai_incomplete_comment");
     this.name = "AiIncompleteCommentError";
     this.partialText = partialText.trim();
     this.reason = reason;
+    this.extra = extra;
   }
 }
 
@@ -32,6 +38,7 @@ export function rethrowNormalizedIncompleteComment(
     throw new AiIncompleteCommentError(
       throwIfBlankGeneratedComment(normalize(e.partialText)),
       e.reason,
+      e.extra,
     );
   }
   throw e;

@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   CLAUDE_MODEL_EXTRACT,
+  JSON_EXTRACT_TIMEOUT_MS,
   aiGenerateJsonText,
   type AiUserPart,
 } from "@/lib/admin-ai";
@@ -431,6 +432,7 @@ export async function classifyPdfIngestTargetWithAi(opts: {
       extraParts,
       userPrompt: `Classify this PDF.${textSection}`,
       temperature: 0,
+      timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
     });
     const payload = asRecord(JSON.parse(raw));
     const targetRaw = asString(payload?.target, 32).toLowerCase();
@@ -491,6 +493,7 @@ export async function extractSourcePdfWithAi(opts: {
       extraParts,
       userPrompt: `Extract AUTO RECORDS fields from this PDF.${textSection}`,
       temperature: 0.1,
+      timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
     });
     let payload: Record<string, unknown> | null;
     try {
@@ -515,6 +518,7 @@ export async function extractSourcePdfWithAi(opts: {
     extraParts,
     userPrompt: `${userIntro}\n\nExtract all fields.${textSection}`,
     temperature: 0.1,
+    timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
   });
   let payload: Record<string, unknown> | null;
   try {

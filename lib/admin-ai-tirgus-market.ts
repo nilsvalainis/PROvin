@@ -10,6 +10,8 @@ import {
 import { buildMarketAnalysisAiContext } from "@/lib/admin-market-ai-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
+import { isAiIncompleteCommentError, AiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
+import { extractPartialJsonString } from "@/lib/admin-ai-json-live-text";
 import { normalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
 
 export type TirgusMarketAiResult = {
@@ -33,6 +35,45 @@ function parseTirgusMarketJson(raw: string): TirgusMarketAiResult {
       typeof payload.comments === "string" ? payload.comments : "",
     ),
   };
+}
+
+function parseTirgusMarketJsonLenient(raw: string): TirgusMarketAiResult | null {
+  const t = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  try {
+    const parsed = parseTirgusMarketJson(t);
+    if (parsed.comments.trim()) return parsed;
+  } catch {
+    /* partial JSON */
+  }
+  const comments = normalizeProvinExpertAiComment(extractPartialJsonString(t, "comments"));
+  if (!comments.trim()) return null;
+  return {
+    listedForSale: clipField(extractPartialJsonString(t, "listedForSale"), 32),
+    listingCreated: clipField(extractPartialJsonString(t, "listingCreated"), 64),
+    priceDrop: clipField(extractPartialJsonString(t, "priceDrop"), 32),
+    comments,
+  };
+}
+
+function fillTirgusFromListingSnapshot(
+  parsed: TirgusMarketAiResult,
+  listingSnapshot: Awaited<ReturnType<typeof buildMarketAnalysisAiContext>>["listingSnapshot"],
+): TirgusMarketAiResult {
+  let next = parsed;
+  if (!next.listedForSale && listingSnapshot?.ok && listingSnapshot.daysListed != null) {
+    next = { ...next, listedForSale: String(listingSnapshot.daysListed) };
+  }
+  if (!next.listingCreated && listingSnapshot?.ok && listingSnapshot.postedDateRaw?.trim()) {
+    next = { ...next, listingCreated: listingSnapshot.postedDateRaw.trim() };
+  }
+  return next;
+}
+
+function throwIncompleteTirgus(parsed: TirgusMarketAiResult, reason: "timeout" | "max_tokens"): never {
+  throw new AiIncompleteCommentError(parsed.comments, reason, {
+    ...parsed,
+    text: parsed.comments,
+  });
 }
 
 export async function generateTirgusMarketWithAi(
@@ -71,21 +112,27 @@ Ja ss.lv datos ir dienas platformā — izmanto to listedForSale; ja ir cenu vē
     },
   );
 
-  const raw = await adminGenerateJsonText({
-    modelTier: input.modelTier,
-    systemInstruction: AI_TIRGUS_MARKET_SYSTEM,
-    userPrompt,
-    temperature: 0.25,
-  });
-
-  let parsed = parseTirgusMarketJson(raw);
-
-  if (!parsed.listedForSale && listingSnapshot?.ok && listingSnapshot.daysListed != null) {
-    parsed = { ...parsed, listedForSale: String(listingSnapshot.daysListed) };
+  let raw: string;
+  try {
+    raw = await adminGenerateJsonText({
+      modelTier: input.modelTier,
+      systemInstruction: AI_TIRGUS_MARKET_SYSTEM,
+      userPrompt,
+      temperature: 0.25,
+    });
+  } catch (e) {
+    if (isAiIncompleteCommentError(e)) {
+      const parsed = parseTirgusMarketJsonLenient(e.partialText);
+      if (parsed) {
+        throwIncompleteTirgus(fillTirgusFromListingSnapshot(parsed, listingSnapshot), e.reason);
+      }
+    }
+    throw e;
   }
-  if (!parsed.listingCreated && listingSnapshot?.ok && listingSnapshot.postedDateRaw?.trim()) {
-    parsed = { ...parsed, listingCreated: listingSnapshot.postedDateRaw.trim() };
-  }
+
+  let parsed = parseTirgusMarketJsonLenient(raw);
+  if (!parsed) throw new Error("empty_tirgus_comment");
+  parsed = fillTirgusFromListingSnapshot(parsed, listingSnapshot);
 
   if (!parsed.comments.trim()) {
     throw new Error("empty_tirgus_comment");

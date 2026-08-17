@@ -22,6 +22,22 @@ function sseData(obj: object): string {
  * Ja Vercel/proxy nogriež savienojumu, klients jau ir saņēmis deltu.
  */
 export async function nextJsonWithAiUsage(fn: () => Promise<string>): Promise<Response> {
+  return nextJsonObjectWithAiUsage(async () => {
+    const text = await fn();
+    return { text };
+  });
+}
+
+/**
+ * Strukturēta AI atbilde (tirgus, peek, melnraksts) ar to pašu SSE + heartbeat.
+ * `streamText: false` — tikai heartbeat un gala JSON (prepare-draft, lai
+ * jauktie lauku delti nekrāsotu vienu lauku).
+ */
+export async function nextJsonObjectWithAiUsage<T extends Record<string, unknown>>(
+  fn: () => Promise<T>,
+  opts?: { streamText?: boolean },
+): Promise<Response> {
+  const streamText = opts?.streamText !== false;
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -40,18 +56,20 @@ export async function nextJsonWithAiUsage(fn: () => Promise<string>): Promise<Re
       try {
         const { result, usage } = await withAiUsageMeter(async () => {
           try {
-            const text = await withAiCommentDeltaSink((full) => {
-              lastText = full;
-              send({ text: full });
-            }, fn);
+            const payload = streamText
+              ? await withAiCommentDeltaSink((full) => {
+                  lastText = full;
+                  send({ text: full });
+                }, fn)
+              : await fn();
             flushAiCommentDelta();
-            return { ok: true as const, text: text.trim() };
+            return { ok: true as const, payload };
           } catch (e) {
             flushAiCommentDelta();
             return { ok: false as const, error: e };
           }
         });
-        finishSseComment(send, result, usage, lastText);
+        finishSsePayload(send, result, usage, lastText);
       } catch (e) {
         const salvaged = lastText.trim();
         if (salvaged) {
@@ -78,22 +96,42 @@ export async function nextJsonWithAiUsage(fn: () => Promise<string>): Promise<Re
   return new Response(stream, { headers: SSE_HEADERS });
 }
 
-function finishSseComment(
+function liveTextFromPayload(payload: Record<string, unknown>, lastText: string): string {
+  for (const key of ["text", "comments", "letter"]) {
+    const v = payload[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return lastText.trim();
+}
+
+function ssePayloadIsEmpty(payload: Record<string, unknown>, text: string): boolean {
+  if (text) return false;
+  if (payload.ok === true) return false;
+  for (const [k, v] of Object.entries(payload)) {
+    if (k === "text" || k === "done" || k === "usage") continue;
+    if (typeof v === "string" && v.trim()) return false;
+    if (typeof v === "boolean") return false;
+    if (v && typeof v === "object") return false;
+  }
+  return true;
+}
+
+function finishSsePayload(
   send: (obj: object) => void,
   result:
-    | { ok: true; text: string }
+    | { ok: true; payload: Record<string, unknown> }
     | { ok: false; error: unknown },
   usage: AiUsageSummary,
   lastText: string,
 ): void {
   const usageField = usage.calls > 0 ? { usage } : {};
   if (result.ok) {
-    const text = result.text || lastText.trim();
-    if (!text) {
+    const text = liveTextFromPayload(result.payload, lastText);
+    if (ssePayloadIsEmpty(result.payload, text)) {
       send({ error: "ai_empty_content", done: true, ...usageField });
       return;
     }
-    send({ text, done: true, ...usageField });
+    send({ ...result.payload, ...(text ? { text } : {}), done: true, ...usageField });
     return;
   }
   const e = result.error;
@@ -103,6 +141,7 @@ function finishSseComment(
       text: e.partialText,
       incomplete: true,
       done: true,
+      ...(e.extra ?? {}),
       ...usageField,
     });
     return;
@@ -139,6 +178,7 @@ export async function nextJsonBodyWithAiUsage<T extends object>(
             error: "ai_incomplete_comment",
             text: e.partialText,
             incomplete: true,
+            ...(e.extra ?? {}),
           },
           { status: 422 },
         );

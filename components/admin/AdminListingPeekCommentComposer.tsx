@@ -7,8 +7,8 @@ import { AdminListingPeekTopicChips } from "@/components/admin/AdminListingPeekT
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { LISTING_PEEK_TOPIC_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
-  parseAdminAiResponse,
-  readGeneratedAdminAiText,
+  ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+  fetchAdminAiComment,
 } from "@/lib/admin-ai-client-errors";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -113,34 +113,31 @@ export function AdminListingPeekCommentComposer({
     setBusy(true);
     setAiError(null);
     try {
-      const res = await fetch("/api/admin/ai/listing-peek-comment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/listing-peek-comment",
+        {
           listingUrl,
           operatorNotes,
           existingDraftPlain: letter.trim() || undefined,
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
-        "AI: neizdevās sagatavot komentāru",
+        },
+        {
+          fallbackError: "AI: neizdevās sagatavot komentāru",
+          timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+          onDelta: (text) => {
+            setLetter(text);
+            setLetterTouched(true);
+          },
+        },
       );
       const parsed =
-        parseListingPeekAiPayload(data) ??
+        parseListingPeekAiPayload(generated.data ?? {}) ??
         (typeof generated.text === "string" ? parseListingPeekAiPayload(generated.text) : null);
-      const nextLetter =
-        generated.text || parsed?.letter?.trim() || "";
+      const nextLetter = generated.text || parsed?.letter?.trim() || "";
       if (!nextLetter && !Object.values(parsed?.lines ?? {}).some((v) => v.trim())) {
         setAiError(
           generated.ok
-            ? parseFailed
-              ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
-              : "AI atgrieza tukšu atbildi."
+            ? "AI atgrieza tukšu atbildi."
             : generated.error,
         );
         return;
@@ -154,7 +151,6 @@ export function AdminListingPeekCommentComposer({
       );
       if (!generated.ok) {
         setAiError(generated.error);
-        return;
       }
     } catch {
       setAiError("AI: tīkla kļūda — mēģini vēlreiz");

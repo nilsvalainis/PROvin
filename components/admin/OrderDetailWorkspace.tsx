@@ -191,28 +191,17 @@ import {
 } from "@/lib/admin-notify-report-ready-client";
 import {
   ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+  ADMIN_AI_PREPARE_DRAFT_CLIENT_TIMEOUT_MS,
   ADMIN_AI_WEBSEARCH_CLIENT_TIMEOUT_MS,
   applyGeneratedAdminAiText,
   fetchAdminAiComment,
-  formatAdminAiFetchError,
-  parseAdminAiResponse,
+  fetchAdminAiRequest,
 } from "@/lib/admin-ai-client-errors";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
-import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
-
-function aiFetchErrorMessage(
-  res: Response,
-  data: { error?: string; detail?: string; text?: string },
-  parseFailed: boolean,
-  fallback: string,
-): string {
-  if (parseFailed) return `AI: servera atbilde nav lasāma (HTTP ${res.status})`;
-  return formatAdminAiFetchError(data, res, fallback);
-}
 
 export type OrderWorkspacePayload = {
   sessionId: string;
@@ -1409,53 +1398,52 @@ export function OrderDetailWorkspace({
       setAiTirgusMarketErr(null);
       try {
         const cur = wsPersistRef.current;
-        const res = await fetch("/api/admin/ai/tirgus-market", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const applyComments = (text: string) => {
+          const prev = wsPersistRef.current.sourceBlocks.tirgus;
+          updateSourceBlock("tirgus", {
+            ...prev,
+            comments: aiExpertSourceCommentToRichHtml(text),
+          });
+        };
+        const generated = await fetchAdminAiComment(
+          "/api/admin/ai/tirgus-market",
+          {
             ...buildAiOrderPayload({
               operatorNotes,
               existingDraftPlain: adminRichHtmlToPlainText(cur.sourceBlocks.tirgus.comments).trim(),
             }),
             modelTier,
-          }),
-        });
-        const { data, parseFailed } = await parseAdminAiResponse(res);
-        if (!res.ok) {
-          setAiTirgusMarketErr(
-            aiFetchErrorMessage(res, data, parseFailed, "AI: neizdevās analizēt tirgu"),
-          );
-          return;
-        }
-        const market = data as {
-          comments?: string;
-          listedForSale?: string;
-          listingCreated?: string;
-          priceDrop?: string;
-        };
-        const comments = typeof market.comments === "string" ? market.comments.trim() : "";
-        if (!comments) {
-          setAiTirgusMarketErr("AI: tukšs komentārs");
-          return;
-        }
-        const prev = cur.sourceBlocks.tirgus;
-        updateSourceBlock("tirgus", {
-          ...prev,
-          listedForSale:
-            typeof market.listedForSale === "string" && market.listedForSale.trim()
-              ? market.listedForSale.trim()
-              : prev.listedForSale,
-          listingCreated:
-            typeof market.listingCreated === "string" && market.listingCreated.trim()
-              ? market.listingCreated.trim()
-              : prev.listingCreated,
-          priceDrop:
-            typeof market.priceDrop === "string" && market.priceDrop.trim()
-              ? market.priceDrop.trim()
-              : prev.priceDrop,
-          comments: aiExpertSourceCommentToRichHtml(comments),
-        });
+          },
+          {
+            fallbackError: "AI: neizdevās analizēt tirgu",
+            timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+            onDelta: applyComments,
+          },
+        );
+        const market = generated.data ?? {};
+        applyGeneratedAdminAiText(
+          generated,
+          (text) => {
+            const prev = wsPersistRef.current.sourceBlocks.tirgus;
+            updateSourceBlock("tirgus", {
+              ...prev,
+              listedForSale:
+                typeof market.listedForSale === "string" && market.listedForSale.trim()
+                  ? market.listedForSale.trim()
+                  : prev.listedForSale,
+              listingCreated:
+                typeof market.listingCreated === "string" && market.listingCreated.trim()
+                  ? market.listingCreated.trim()
+                  : prev.listingCreated,
+              priceDrop:
+                typeof market.priceDrop === "string" && market.priceDrop.trim()
+                  ? market.priceDrop.trim()
+                  : prev.priceDrop,
+              comments: aiExpertSourceCommentToRichHtml(text),
+            });
+          },
+          setAiTirgusMarketErr,
+        );
       } catch {
         setAiTirgusMarketErr("AI: neizdevās savienoties");
       } finally {
@@ -1559,16 +1547,22 @@ export function OrderDetailWorkspace({
           new File([blob], p.name, { type: p.mime || "application/pdf" }),
         );
       }
-      const res = await fetch("/api/admin/prepare-draft", {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-      });
-      const data = (await res.json().catch(() => ({}))) as {
+      const generated = await fetchAdminAiRequest(
+        "/api/admin/prepare-draft",
+        {
+          method: "POST",
+          body: fd,
+          credentials: "include",
+        },
+        {
+          timeoutMs: ADMIN_AI_PREPARE_DRAFT_CLIENT_TIMEOUT_MS,
+          fallbackError: "Neizdevās sagatavot melnrakstu",
+        },
+      );
+      const data = (generated.data ?? {}) as {
         ok?: boolean;
         error?: string;
         detail?: string;
-        usage?: unknown;
         sourceBlocks?: WorkspaceSourceBlocks;
         orderEdits?: {
           internalComment?: string;
@@ -1578,17 +1572,6 @@ export function OrderDetailWorkspace({
         steps?: { status: string }[];
         warnings?: string[];
       };
-      if (isAiUsageSummary(data.usage)) emitAdminAiUsage(data.usage);
-      if (!res.ok) {
-        setPrepareDraftErr(
-          typeof data.detail === "string" && data.detail.trim()
-            ? data.detail
-            : data.error === "missing_ai_key"
-              ? "Nav ANTHROPIC_API_KEY serverī"
-              : "Neizdevās sagatavot melnrakstu",
-        );
-        return;
-      }
       if (data.sourceBlocks) {
         updateWs({ sourceBlocks: mergeSourceBlocksWithDefaults(data.sourceBlocks) });
       }
@@ -1603,6 +1586,18 @@ export function OrderDetailWorkspace({
         data.orderEdits.sourcesComparisonComment.trim()
       ) {
         onSourcesComparisonCommentChange(data.orderEdits.sourcesComparisonComment);
+      }
+      if (!generated.ok || data.error) {
+        setPrepareDraftErr(
+          typeof data.detail === "string" && data.detail.trim()
+            ? data.detail
+            : data.error === "missing_ai_key"
+              ? "Nav ANTHROPIC_API_KEY serverī"
+              : generated.ok
+                ? "Neizdevās sagatavot melnrakstu"
+                : generated.error,
+        );
+        if (!data.sourceBlocks) return;
       }
       const okSteps = (data.steps ?? []).filter((s) => s.status === "ok").length;
       const warn = (data.warnings ?? [])[0];

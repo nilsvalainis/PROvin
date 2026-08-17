@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   CLAUDE_MODEL_EXTRACT,
+  JSON_EXTRACT_TIMEOUT_MS,
   aiGenerateJsonWithSchema,
   type AiUserPart,
 } from "@/lib/admin-ai";
@@ -76,6 +77,7 @@ export async function extractCsddPdfWithAiStructured(opts: {
     parts: extraParts,
     responseSchema: CSDD_AI_RESPONSE_SCHEMA,
     temperature: 0,
+    timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
   });
 
   let payload: Record<string, unknown> | null;
@@ -119,6 +121,7 @@ export async function extractCsddPdfWithAiStructured(opts: {
       parts: taParts,
       responseSchema: CSDD_TA_AI_RESPONSE_SCHEMA,
       temperature: 0,
+      timeoutMs: JSON_EXTRACT_TIMEOUT_MS,
     });
 
     let taPayload: Record<string, unknown> | null;
