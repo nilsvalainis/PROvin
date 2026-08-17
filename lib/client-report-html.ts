@@ -560,13 +560,12 @@ function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
     const toLabel = e.country.trim() || e.detail.split(" → ")[1]?.trim() || "";
     return `<li class="pdf-life-break pdf-life-break--import">
       <span class="pdf-life-rail pdf-life-rail--dash" aria-hidden="true"></span>
-      <div class="pdf-life-break__chip">
+      <div class="pdf-life-break__chip" role="img" aria-label="${escapeHtml(e.title)}">
         <span class="pdf-life-break__flags">
           ${buildPdfCountryFlagCellHtml(fromLabel, "pdf-life-break__flag")}
           <span class="pdf-life-break__arrow" aria-hidden="true">→</span>
           ${buildPdfCountryFlagCellHtml(toLabel, "pdf-life-break__flag")}
         </span>
-        <span class="pdf-life-break__title">${escapeHtml(e.title)}</span>
       </div>
     </li>`;
   }
@@ -577,7 +576,6 @@ function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
         <span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow", "lg")}</span>
         <span class="pdf-life-break__title">${escapeHtml(e.title)}</span>
       </span>
-      ${e.detail ? `<span class="pdf-life-break__detail">${escapeHtml(e.detail)}</span>` : ""}
     </div>
   </li>`;
 }
@@ -1847,16 +1845,13 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-break__title{
         font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;text-align:center;
+        white-space:nowrap;
       }
-      .pdf-life-break__detail{
-        font-size:var(--pdf-fs-table);font-weight:600;line-height:1.4;text-align:center;color:#92400E;
-      }
-      .pdf-life-break--import .pdf-life-break__title{color:#1e3a5f;}
       .pdf-life-break__flags{
-        display:flex;align-items:center;justify-content:center;gap:14px;
+        display:flex;align-items:center;justify-content:center;gap:16px;
       }
       .pdf-life-break__arrow{
-        font-size:18px;font-weight:700;color:#64748b;line-height:1;
+        font-size:20px;font-weight:700;color:#64748b;line-height:1;
       }
       .pdf-lifecycle-zone .pdf-src-legend{
         margin-top:14px;padding-top:12px;border-top:1px solid var(--pdf-line);
@@ -2193,12 +2188,12 @@ ${sourceDotColorCss()}
         color:#374151!important;
       }
       .pdf-country-flag-wrap.pdf-life-break__flag{
-        flex-direction:column;align-items:center;justify-content:center;gap:4px;
+        flex-direction:column;align-items:center;justify-content:center;gap:5px;
         font-size:13px!important;font-weight:700!important;
       }
-      .pdf-country-flag-wrap.pdf-life-break__flag .pdf-country-flag{font-size:26px;line-height:1;}
+      .pdf-country-flag-wrap.pdf-life-break__flag .pdf-country-flag{font-size:34px;line-height:1;}
       .pdf-country-flag-wrap.pdf-life-break__flag .pdf-country-code{
-        font-size:12px!important;font-weight:700!important;letter-spacing:0.06em;color:#1e3a5f!important;
+        font-size:13px!important;font-weight:700!important;letter-spacing:0.06em;color:#1e3a5f!important;
       }
       .pdf-mileage-chart-wrap{
         margin:0 0 10px;padding:8px 10px 4px;border-radius:8px;border:1px solid #f1f5f9;background:#fff;
