@@ -78,7 +78,7 @@ OBLIGĀTI:
 - Tipiski 3–5 īsas rindkopas + APPROVED BY IRISS.
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; rekomendācija kalibrēta, jo pamatā ir digitāli dati, kas var būt nepilnīgi.
 - NESĀC ar „Sveiki” vai sarunas uzrunu.
-- NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
+- NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums”. 1. sadaļā arī neraksta aptuvenas remonta cenas. Bez € / EUR skaitļiem.
 - Beigās: APPROVED BY IRISS.`,
     {
       operatorNotes: input.operatorNotes,

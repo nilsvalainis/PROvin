@@ -151,16 +151,43 @@ export function evaluateExpertCommentQuality(
   }
 
   if (field === "technical_risks") {
-    if (!/€/.test(t) && !/\bEUR\b/.test(t)) {
+    if (/orientējoši[\s\S]{0,50}€/i.test(t) || /\(\s*\d{2,5}\s*-\s*\d{2,5}\s*€/.test(t)) {
       issues.push({
-        code: "missing_eur",
-        message: "Tehnisko risku analīzē jābūt orientējošām EUR izmaksām",
+        code: "approximate_repair_price",
+        message: "Tehnisko risku analīzē neraksta aptuvenas remonta EUR summas",
       });
     }
     if (!/identifik|dzinēj|ātrumkārb|kārba|ķēd|zobsiksn|piedziņ/i.test(t)) {
       issues.push({
         code: "missing_aggregate",
         message: "Tehnisko risku analīzē jāidentificē agregāts (dzinējs/kārba/ķēde), ne vispārīgs dīzelis",
+      });
+    }
+  }
+
+  if (field !== "incidents") {
+    if (/\bsaime(?:s|i|m)?\b/i.test(t)) {
+      issues.push({
+        code: "vocabulary_saime",
+        message: "Klientam redzamā tekstā nelieto „saime” — saki dzinējs / paaudze / agregāts",
+      });
+    }
+    if (/\bBaltij/i.test(t)) {
+      issues.push({
+        code: "vocabulary_baltija",
+        message: "Klientam redzamā tekstā nelieto „Baltija” — saki Latvija (vai Lietuva / Igaunija, ja tā ir izcelsme)",
+      });
+    }
+    if (/Quattro\s+trakts|kardāna\s+krusteniskie|centra\s+gultnis/i.test(t)) {
+      issues.push({
+        code: "vocabulary_drivetrain",
+        message: "Quattro (ne „trakts”); kardāna krustiņi; karājošais gultnis — ne „krusteniskie” / „centra gultnis”",
+      });
+    }
+    if (/\bvidējs uzturēšanas risks\b/i.test(t)) {
+      issues.push({
+        code: "vocabulary_maintenance_risk",
+        message: "Nelieto „vidējs uzturēšanas risks” — saki, vai tā ir / nav populāra problēma",
       });
     }
   }
@@ -178,7 +205,7 @@ export function evaluateExpertCommentQuality(
     if (/€/.test(t) || /\bEUR\b/.test(t)) {
       issues.push({
         code: "summary_price",
-        message: "Kopsavilkumā neraksta cenas / EUR summas — tās ir cenas vērtējumā un tehniskajos riskos",
+        message: "Kopsavilkumā neraksta cenas / EUR summas — tās ir cenas vērtējumā; aptuvenas remonta cenas neraksta vispār",
       });
     }
   }
