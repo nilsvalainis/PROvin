@@ -52,6 +52,8 @@ export type LifecycleEvent = {
   title: string;
   detail: string;
   country: string;
+  /** Tikai `import`: iepriekšējā valsts (mērķa valsts paliek `country`). */
+  fromCountry?: string;
   odometer: string;
   sources: string[];
   tone: LifecycleEventTone;
@@ -361,6 +363,7 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
         title: "Valsts maiņa",
         detail: `${prevCountry} → ${e.country}`,
         country: e.country,
+        fromCountry: prevCountry,
         odometer: "",
         sources: [...e.sources],
         tone: "warn",

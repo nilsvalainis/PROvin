@@ -387,6 +387,68 @@ describe("Ekspluatācijas hronoloģija", () => {
     expect(html).toMatch(/\.pdf-mileage-history-row--anomaly td\{[^}]*background:#FFF1F2/);
   });
 
+  it("highlights a long record gap as an amber warning on the timeline", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.autodna,
+            mileageRows: [
+              { date: "01.01.2016", odometer: "10000", country: "Vācija" },
+              { date: "01.01.2021", odometer: "80000", country: "Vācija" },
+            ],
+            incidentRows: [],
+            comments: "",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("Bez ierakstiem");
+    expect(html).toContain("pdf-life-break--gap");
+    expect(html).toContain("pdf-life-break__chip");
+    expect(html).toContain("pdf-life-break__title");
+    expect(html).toMatch(/\.pdf-life-break--gap \.pdf-life-break__chip\{[^}]*background:#FFFCF3/);
+    expect(html).not.toContain("pdf-life-gap-edge");
+    const gapLi = html.match(/<li class="pdf-life-break pdf-life-break--gap">[\s\S]*?<\/li>/);
+    expect(gapLi?.[0]).not.toContain("pdf-life-rail");
+  });
+
+  it("renders a country change as a centered flag divider that breaks the timeline rail", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.autodna,
+            mileageRows: [
+              { date: "01.01.2020", odometer: "100000", country: "Zviedrija" },
+              { date: "01.06.2021", odometer: "120000", country: "Latvija" },
+            ],
+            incidentRows: [],
+            comments: "",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("Valsts maiņa");
+    expect(html).toContain("pdf-life-break--import");
+    expect(html).toContain("pdf-life-break__flag");
+    expect(html).toMatch(/aria-label="Zviedrija"/);
+    expect(html).toMatch(/aria-label="Latvija"/);
+    expect(html).toMatch(/\.pdf-life-break--import \.pdf-life-break__chip\{[^}]*background:#F4F8FC/);
+    const importLi = html.match(/<li class="pdf-life-break pdf-life-break--import">[\s\S]*?<\/li>/);
+    expect(importLi?.[0]).not.toContain("pdf-life-rail");
+    expect(importLi?.[0]).toContain("SE");
+    expect(importLi?.[0]).toContain("LV");
+  });
+
   it("omits opaque dealer ID codes from the lifecycle caption", () => {
     const events = buildVehicleLifecycleEvents({
       autoRecordsBlock: {

@@ -456,10 +456,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
   let lastYear = "";
   for (const e of events) {
     if (e.kind === "gap") {
-      items.push(`<li class="pdf-life-gap">
-        <span class="pdf-life-rail" aria-hidden="true"></span>
-        <span class="pdf-life-gap__text">${escapeHtml(`${e.title} · ${e.detail}`)}</span>
-      </li>`);
+      items.push(buildPdfLifeBreakHtml(e));
       continue;
     }
     if (e.year !== lastYear) {
@@ -468,6 +465,10 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
         <span class="pdf-life-rail pdf-life-rail--year" aria-hidden="true"><span class="pdf-life-year__mark"></span></span>
       </li>`);
       lastYear = e.year;
+    }
+    if (e.kind === "import") {
+      items.push(buildPdfLifeBreakHtml(e));
+      continue;
     }
     const dots = e.sources.map((s) => pdfSourceDotHtml(s)).join("");
     const flag = e.country ? buildPdfCountryFlagCellHtml(e.country) : "";
@@ -499,7 +500,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
   const head = sectionHeadBrand(
     sectionIconPdfHtml("history"),
     PDF_LIFECYCLE_TITLE,
-    sourceRecordCountBadgeHtml(events.filter((e) => e.kind !== "gap").length),
+    sourceRecordCountBadgeHtml(events.filter((e) => e.kind !== "gap" && e.kind !== "import").length),
   );
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-lifecycle-zone" role="region">${head}<ol class="pdf-life-list">${items.join("")}</ol>${legend}</div>`;
 }
@@ -537,12 +538,40 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
   return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul></section>`;
 }
 
-function buildPdfCountryFlagCellHtml(countryLabel: string): string {
+function buildPdfCountryFlagCellHtml(countryLabel: string, extraWrapClass = ""): string {
   const flag = pdfCountryFlagEmoji(countryLabel);
   const code = pdfCountryCodeLetters(countryLabel);
   const ariaLabel = escapeHtml(countryLabel.trim() || "—");
   const codeEsc = escapeHtml(code);
-  return `<span class="pdf-country-flag-wrap" role="img" aria-label="${ariaLabel}"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span class="pdf-country-code">${codeEsc}</span></span>`;
+  const wrapCls = extraWrapClass ? ` pdf-country-flag-wrap ${extraWrapClass}` : " pdf-country-flag-wrap";
+  return `<span class="${wrapCls.trim()}" role="img" aria-label="${ariaLabel}"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span class="pdf-country-code">${codeEsc}</span></span>`;
+}
+
+/** Robs un valsts maiņa — centrēti čipi, kas pārtrauc sliedi (ne fakta rindas). */
+function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
+  if (e.kind === "import") {
+    const fromLabel = e.fromCountry?.trim() || e.detail.split(" → ")[0]?.trim() || "";
+    const toLabel = e.country.trim() || e.detail.split(" → ")[1]?.trim() || "";
+    return `<li class="pdf-life-break pdf-life-break--import">
+      <div class="pdf-life-break__chip">
+        <span class="pdf-life-break__flags">
+          ${buildPdfCountryFlagCellHtml(fromLabel, "pdf-life-break__flag")}
+          <span class="pdf-life-break__arrow" aria-hidden="true">→</span>
+          ${buildPdfCountryFlagCellHtml(toLabel, "pdf-life-break__flag")}
+        </span>
+        <span class="pdf-life-break__title">${escapeHtml(e.title)}</span>
+      </div>
+    </li>`;
+  }
+  return `<li class="pdf-life-break pdf-life-break--gap">
+    <div class="pdf-life-break__chip">
+      <span class="pdf-life-break__lead">
+        <span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow", "lg")}</span>
+        <span class="pdf-life-break__title">${escapeHtml(e.title)}</span>
+      </span>
+      ${e.detail ? `<span class="pdf-life-break__detail">${escapeHtml(e.detail)}</span>` : ""}
+    </div>
+  </li>`;
 }
 
 function sectionHeadBrand(icon: string, title: string, badgeHtml = ""): string {
@@ -1675,8 +1704,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-list{margin:0;padding:0;list-style:none;}
       .pdf-life-item,
-      .pdf-life-year,
-      .pdf-life-gap{
+      .pdf-life-year{
         display:grid;grid-template-columns:74px 20px minmax(0,1fr) auto 44px 44px;gap:0 12px;
         align-items:stretch;margin:0;
       }
@@ -1716,8 +1744,8 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-alert-edge{
-        position:absolute;top:6px;bottom:6px;left:0;width:3px;background:#FF4D4D;border-radius:2px;
-        pointer-events:none;z-index:1;
+        position:absolute;top:6px;bottom:6px;left:0;width:3px;border-radius:2px;
+        background:#FF4D4D;pointer-events:none;z-index:1;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item--alert .pdf-life-dot{
@@ -1752,10 +1780,38 @@ function clientReportPrintCss(): string {
         gap:4px;flex-wrap:wrap;max-width:44px;line-height:1;box-sizing:border-box;
       }
       .pdf-life-flag{display:flex;align-items:center;justify-content:flex-end;line-height:1;}
-      .pdf-life-gap .pdf-life-rail{grid-column:2;}
-      .pdf-life-gap__text{
-        grid-column:3 / -1;align-self:center;padding:9px 0;font-size:var(--pdf-fs-table);color:#94a3b8;
-        font-style:italic;
+      .pdf-life-break{
+        display:flex;justify-content:center;align-items:center;
+        padding:12px 0 14px;margin:0;
+        break-inside:avoid;page-break-inside:avoid;
+      }
+      .pdf-life-break__chip{
+        display:flex;flex-direction:column;align-items:center;gap:5px;
+        max-width:92%;padding:12px 22px;border-radius:12px;
+        box-shadow:0 1px 3px rgba(15,23,42,.08);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-life-break--gap .pdf-life-break__chip{
+        background:#FFFCF3;border:1.5px solid #F5D07A;color:#B45309;
+      }
+      .pdf-life-break--import .pdf-life-break__chip{
+        background:#F4F8FC;border:1.5px solid #C5D7EA;color:#0f172a;
+      }
+      .pdf-life-break__lead{
+        display:flex;align-items:center;justify-content:center;gap:8px;
+      }
+      .pdf-life-break__title{
+        font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;text-align:center;
+      }
+      .pdf-life-break__detail{
+        font-size:var(--pdf-fs-table);font-weight:600;line-height:1.4;text-align:center;color:#92400E;
+      }
+      .pdf-life-break--import .pdf-life-break__title{color:#1e3a5f;}
+      .pdf-life-break__flags{
+        display:flex;align-items:center;justify-content:center;gap:14px;
+      }
+      .pdf-life-break__arrow{
+        font-size:18px;font-weight:700;color:#64748b;line-height:1;
       }
       .pdf-lifecycle-zone .pdf-src-legend{
         margin-top:14px;padding-top:12px;border-top:1px solid var(--pdf-line);
@@ -2086,6 +2142,14 @@ ${sourceDotColorCss()}
         letter-spacing:0.04em;font-variant-numeric:tabular-nums;text-transform:uppercase;
         font-family:Inter,sans-serif!important;font-size:11px!important;font-weight:500!important;
         color:#374151!important;
+      }
+      .pdf-country-flag-wrap.pdf-life-break__flag{
+        flex-direction:column;align-items:center;justify-content:center;gap:4px;
+        font-size:13px!important;font-weight:700!important;
+      }
+      .pdf-country-flag-wrap.pdf-life-break__flag .pdf-country-flag{font-size:26px;line-height:1;}
+      .pdf-country-flag-wrap.pdf-life-break__flag .pdf-country-code{
+        font-size:12px!important;font-weight:700!important;letter-spacing:0.06em;color:#1e3a5f!important;
       }
       .pdf-mileage-chart-wrap{
         margin:0 0 10px;padding:8px 10px 4px;border-radius:8px;border:1px solid #f1f5f9;background:#fff;
