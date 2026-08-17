@@ -30,9 +30,10 @@ import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
 import { LISTING_PEEK_TOPICS, type ListingPeekTone } from "@/lib/listing-peek-comment-presets";
 import {
+  ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+  ADMIN_AI_WEBSEARCH_CLIENT_TIMEOUT_MS,
   applyGeneratedAdminAiText,
-  parseAdminAiResponse,
-  readGeneratedAdminAiText,
+  fetchAdminAiComment,
 } from "@/lib/admin-ai-client-errors";
 import type { AiListingCommentField } from "@/lib/admin-ai-listing-field";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
@@ -158,41 +159,32 @@ export function AdminListingAnalysisSourceBlock({
           field === "photoAnalysis"
             ? adminRichHtmlToPlainText(v.photoAnalysis).trim()
             : adminRichHtmlToPlainText(v.listingSalesContext).trim();
-        const res = await fetch("/api/admin/ai/listing-field-comment", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const apply = (text: string) => {
+          const html = aiExpertSourceCommentToRichHtml(text);
+          onChange(
+            field === "photoAnalysis"
+              ? { ...v, photoAnalysis: html }
+              : { ...v, listingSalesContext: html },
+          );
+        };
+        const generated = await fetchAdminAiComment(
+          "/api/admin/ai/listing-field-comment",
+          {
             ...base,
             field,
             operatorNotes,
             existingDraftPlain: existing,
             modelTier,
-          }),
-        });
-        const { data, parseFailed } = await parseAdminAiResponse(res);
-        const generated = readGeneratedAdminAiText(
-          res,
-          data,
-          parseFailed,
-          "AI: neizdevās ģenerēt komentāru",
+          },
+          {
+            fallbackError: "AI: neizdevās ģenerēt komentāru",
+            timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+            onDelta: apply,
+          },
         );
-        if (
-          !applyGeneratedAdminAiText(
-            generated,
-            (text) => {
-              const html = aiExpertSourceCommentToRichHtml(text);
-              onChange(
-                field === "photoAnalysis"
-                  ? { ...v, photoAnalysis: html }
-                  : { ...v, listingSalesContext: html },
-              );
-            },
-            (error) => setListingFieldErr({ field, msg: error }),
-          )
-        ) {
-          return;
-        }
+        applyGeneratedAdminAiText(generated, apply, (error) =>
+          setListingFieldErr({ field, msg: error }),
+        );
       } catch {
         setListingFieldErr({ field, msg: "AI: neizdevās savienoties" });
       } finally {
@@ -218,34 +210,24 @@ export function AdminListingAnalysisSourceBlock({
       setSellerAnalyzeErr(null);
       try {
         const base = buildAiPayload();
-        const res = await fetch("/api/admin/ai/seller-analysis", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const apply = (text: string) =>
+          onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(text) });
+        const generated = await fetchAdminAiComment(
+          "/api/admin/ai/seller-analysis",
+          {
             ...base,
             extraSellerName: v.extraSellerName,
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(v.sellerPortrait).trim(),
             modelTier,
-          }),
-        });
-        const { data, parseFailed } = await parseAdminAiResponse(res);
-        const generated = readGeneratedAdminAiText(
-          res,
-          data,
-          parseFailed,
-          "AI: neizdevās analizēt pārdevēju",
+          },
+          {
+            fallbackError: "AI: neizdevās analizēt pārdevēju",
+            timeoutMs: ADMIN_AI_WEBSEARCH_CLIENT_TIMEOUT_MS,
+            onDelta: apply,
+          },
         );
-        if (
-          !applyGeneratedAdminAiText(
-            generated,
-            (text) => onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(text) }),
-            setSellerAnalyzeErr,
-          )
-        ) {
-          return;
-        }
+        applyGeneratedAdminAiText(generated, apply, setSellerAnalyzeErr);
       } catch {
         setSellerAnalyzeErr("AI: neizdevās savienoties");
       } finally {

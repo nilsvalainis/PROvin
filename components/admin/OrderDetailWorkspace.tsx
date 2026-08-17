@@ -190,10 +190,12 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import {
+  ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+  ADMIN_AI_WEBSEARCH_CLIENT_TIMEOUT_MS,
   applyGeneratedAdminAiText,
+  fetchAdminAiComment,
   formatAdminAiFetchError,
   parseAdminAiResponse,
-  readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
@@ -1037,34 +1039,24 @@ export function OrderDetailWorkspace({
     setAiTechnicalRisksErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/technical-risk-analysis", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const apply = (text: string) =>
+        updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text) });
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/technical-risk-analysis",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
-        "AI: neizdevās ģenerēt tehnisko risku analīzi",
+        },
+        {
+          fallbackError: "AI: neizdevās ģenerēt tehnisko risku analīzi",
+          timeoutMs: ADMIN_AI_WEBSEARCH_CLIENT_TIMEOUT_MS,
+          onDelta: apply,
+        },
       );
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text) }),
-          setAiTechnicalRisksErr,
-        )
-      ) {
-        return;
-      }
+      applyGeneratedAdminAiText(generated, apply, setAiTechnicalRisksErr);
     } catch {
       setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
@@ -1078,29 +1070,23 @@ export function OrderDetailWorkspace({
     setAiInspectionErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/inspection-recommendations", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const apply = (text: string) => updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(text) });
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/inspection-recommendations",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.apskatesPlāns).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās ģenerēt");
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(text) }),
-          setAiInspectionErr,
-        )
-      ) {
-        return;
-      }
+        },
+        {
+          fallbackError: "AI: neizdevās ģenerēt",
+          timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+          onDelta: apply,
+        },
+      );
+      applyGeneratedAdminAiText(generated, apply, setAiInspectionErr);
     } catch {
       setAiInspectionErr("AI: neizdevās savienoties");
     } finally {
@@ -1114,29 +1100,23 @@ export function OrderDetailWorkspace({
     setAiPriceErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/price-analysis", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const apply = (text: string) => updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(text) });
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/price-analysis",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.cenasAtbilstiba).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās analizēt cenu");
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(text) }),
-          setAiPriceErr,
-        )
-      ) {
-        return;
-      }
+        },
+        {
+          fallbackError: "AI: neizdevās analizēt cenu",
+          timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+          onDelta: apply,
+        },
+      );
+      applyGeneratedAdminAiText(generated, apply, setAiPriceErr);
     } catch {
       setAiPriceErr("AI: neizdevās savienoties");
     } finally {
@@ -1150,34 +1130,23 @@ export function OrderDetailWorkspace({
     setAiSummaryErr(null);
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/summary-analysis", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const apply = (text: string) => setIrissSummary(aiExpertSourceCommentToRichHtml(text));
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/summary-analysis",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.iriss).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
-        "AI: neizdevās sagatavot atbildi",
+        },
+        {
+          fallbackError: "AI: neizdevās sagatavot atbildi",
+          timeoutMs: ADMIN_AI_WEBSEARCH_CLIENT_TIMEOUT_MS,
+          onDelta: apply,
+        },
       );
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => setIrissSummary(aiExpertSourceCommentToRichHtml(text)),
-          setAiSummaryErr,
-        )
-      ) {
-        return;
-      }
+      applyGeneratedAdminAiText(generated, apply, setAiSummaryErr);
     } catch {
       setAiSummaryErr("AI: neizdevās savienoties");
     } finally {
@@ -1190,34 +1159,23 @@ export function OrderDetailWorkspace({
     setAiIncidentsSummaryBusy(true);
     setAiIncidentsSummaryErr(null);
     try {
-      const res = await fetch("/api/admin/ai/incidents-summary", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const apply = (text: string) => onInternalCommentChange(aiExpertSourceCommentToRichHtml(text));
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/incidents-summary",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(internalCommentDraft).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
-        "AI: neizdevās sagatavot atbildi",
+        },
+        {
+          fallbackError: "AI: neizdevās sagatavot atbildi",
+          timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+          onDelta: apply,
+        },
       );
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => onInternalCommentChange(aiExpertSourceCommentToRichHtml(text)),
-          setAiIncidentsSummaryErr,
-        )
-      ) {
-        return;
-      }
+      applyGeneratedAdminAiText(generated, apply, setAiIncidentsSummaryErr);
     } catch {
       setAiIncidentsSummaryErr("AI: neizdevās savienoties");
     } finally {
@@ -1236,34 +1194,23 @@ export function OrderDetailWorkspace({
     setAiMileageCommentBusy(true);
     setAiMileageCommentErr(null);
     try {
-      const res = await fetch("/api/admin/ai/mileage-comment", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const apply = (text: string) => onMileageCommentChange(aiExpertSourceCommentToRichHtml(text));
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/mileage-comment",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(mileageCommentDraft).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
-        "AI: neizdevās sagatavot atbildi",
+        },
+        {
+          fallbackError: "AI: neizdevās sagatavot atbildi",
+          timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+          onDelta: apply,
+        },
       );
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => onMileageCommentChange(aiExpertSourceCommentToRichHtml(text)),
-          setAiMileageCommentErr,
-        )
-      ) {
-        return;
-      }
+      applyGeneratedAdminAiText(generated, apply, setAiMileageCommentErr);
     } catch {
       setAiMileageCommentErr("AI: neizdevās savienoties");
     } finally {
@@ -1282,34 +1229,24 @@ export function OrderDetailWorkspace({
     setAiSourcesComparisonBusy(true);
     setAiSourcesComparisonErr(null);
     try {
-      const res = await fetch("/api/admin/ai/sources-comparison", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const apply = (text: string) =>
+        onSourcesComparisonCommentChange(aiExpertSourceCommentToRichHtml(text));
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai/sources-comparison",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(sourcesComparisonCommentDraft).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
-        "AI: neizdevās sagatavot avotu salīdzinājumu",
+        },
+        {
+          fallbackError: "AI: neizdevās sagatavot avotu salīdzinājumu",
+          timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+          onDelta: apply,
+        },
       );
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => onSourcesComparisonCommentChange(aiExpertSourceCommentToRichHtml(text)),
-          setAiSourcesComparisonErr,
-        )
-      ) {
-        return;
-      }
+      applyGeneratedAdminAiText(generated, apply, setAiSourcesComparisonErr);
     } catch {
       setAiSourcesComparisonErr("AI: neizdevās savienoties");
     } finally {
@@ -1548,11 +1485,18 @@ export function OrderDetailWorkspace({
           citiAvotiSectionIndex,
           targetField,
         );
-        const res = await fetch("/api/admin/ai/source-comment", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const apply = (text: string) => {
+          const html = aiExpertSourceCommentToRichHtml(text);
+          const prevBlock = cur.sourceBlocks[blockKey];
+          const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
+            citiAvotiSectionIndex,
+            targetField,
+          });
+          updateSourceBlock(blockKey, nextBlock);
+        };
+        const generated = await fetchAdminAiComment(
+          "/api/admin/ai/source-comment",
+          {
             ...buildAiOrderPayload({
               operatorNotes,
               existingDraftPlain: adminRichHtmlToPlainText(existingComments).trim(),
@@ -1561,32 +1505,16 @@ export function OrderDetailWorkspace({
             targetField,
             ...(citiAvotiSectionIndex != null ? { citiAvotiSectionIndex } : {}),
             modelTier,
-          }),
-        });
-        const { data, parseFailed } = await parseAdminAiResponse(res);
-        const generated = readGeneratedAdminAiText(
-          res,
-          data,
-          parseFailed,
-          "AI: neizdevās ģenerēt komentāru",
+          },
+          {
+            fallbackError: "AI: neizdevās ģenerēt komentāru",
+            timeoutMs: ADMIN_AI_COMMENT_CLIENT_TIMEOUT_MS,
+            onDelta: apply,
+          },
         );
-        if (
-          !applyGeneratedAdminAiText(
-            generated,
-            (text) => {
-              const html = aiExpertSourceCommentToRichHtml(text);
-              const prevBlock = cur.sourceBlocks[blockKey];
-              const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
-                citiAvotiSectionIndex,
-                targetField,
-              });
-              updateSourceBlock(blockKey, nextBlock);
-            },
-            (error) => setAiSourceCommentErr({ key: busyKey, msg: error }),
-          )
-        ) {
-          return;
-        }
+        applyGeneratedAdminAiText(generated, apply, (error) =>
+          setAiSourceCommentErr({ key: busyKey, msg: error }),
+        );
       } catch {
         setAiSourceCommentErr({ key: busyKey, msg: "AI: neizdevās savienoties" });
       } finally {

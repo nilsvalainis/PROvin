@@ -23,6 +23,7 @@ import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
+import { emitAiCommentDelta, flushAiCommentDelta } from "@/lib/admin-ai-text-sink";
 
 export {
   GEMINI_MODEL_FLASH,
@@ -79,7 +80,7 @@ function geminiThinkingExtra(
   enabled: boolean,
 ): { thinkingConfig: { thinkingLevel?: "low"; thinkingBudget: number } } | Record<string, never> {
   if (!enabled) {
-    return isGemini25Model(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {};
+    return { thinkingConfig: { thinkingBudget: 0 } };
   }
   if (isGemini3Model(model)) {
     return { thinkingConfig: { thinkingLevel: "low", thinkingBudget: 512 } };
@@ -368,6 +369,7 @@ async function geminiStreamGenerateText(
     );
     for await (const chunk of streaming.stream) {
       partial += geminiVisibleTextFromSdkChunk(chunk as never);
+      if (partial) emitAiCommentDelta(partial);
     }
     const response = await streaming.response;
     recordGeminiUsage(opts.model, response.usageMetadata);
@@ -378,11 +380,15 @@ async function geminiStreamGenerateText(
       throwIncompleteOrEmptyComment(text, "max_tokens");
     }
     if (!text) throw new Error("gemini_empty_content");
+    emitAiCommentDelta(text, true);
+    flushAiCommentDelta();
     return text;
   } catch (e) {
+    flushAiCommentDelta();
     if (isAiIncompleteCommentError(e)) throw e;
     const salvaged = partial.trim();
     if (salvaged) {
+      emitAiCommentDelta(salvaged, true);
       console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
         label: "text",
         model: opts.model,
@@ -407,11 +413,11 @@ async function geminiGenerateTextOnce(
   },
 ): Promise<string> {
   try {
-    return await geminiStreamGenerateText(key, opts, geminiWantsThinking(opts.model));
+    return await geminiStreamGenerateText(key, opts, false);
   } catch (e) {
     if (isAiIncompleteCommentError(e)) throw e;
-    if (geminiWantsThinking(opts.model) && isGeminiThinkingUnsupported(e)) {
-      return await geminiStreamGenerateText(key, opts, false);
+    if (isGeminiThinkingUnsupported(e)) {
+      return await geminiStreamGenerateText(key, opts, true);
     }
     throw e;
   }
@@ -551,6 +557,7 @@ async function geminiRestStreamSearchText(opts: {
         const fr = parsed.candidates?.[0]?.finishReason;
         if (fr) finishReason = fr;
         partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
+        if (partial) emitAiCommentDelta(partial);
       });
     }
     consumeGeminiSseBuffer(`${buf}\n\n`, (parsed) => {
@@ -558,8 +565,11 @@ async function geminiRestStreamSearchText(opts: {
       const fr = parsed.candidates?.[0]?.finishReason;
       if (fr) finishReason = fr;
       partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
+      if (partial) emitAiCommentDelta(partial);
     });
     const text = partial.trim();
+    if (text) emitAiCommentDelta(text, true);
+    flushAiCommentDelta();
     if (text && usage) recordGeminiUsage(opts.model, usage);
     if (geminiFinishIsTruncated(finishReason)) {
       throwIncompleteOrEmptyComment(text, "max_tokens");
@@ -569,6 +579,8 @@ async function geminiRestStreamSearchText(opts: {
     if (isAiIncompleteCommentError(e)) throw e;
     const salvaged = partial.trim();
     if (salvaged) {
+      emitAiCommentDelta(salvaged, true);
+      flushAiCommentDelta();
       if (usage) recordGeminiUsage(opts.model, usage);
       console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
         label: "grounding",
@@ -597,7 +609,7 @@ async function geminiGenerateTextWithGoogleSearchOnce(
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
   const toolVariants: Record<string, unknown>[][] = [[{ google_search: {} }], [{ googleSearch: {} }]];
-  const thinkingPasses = geminiWantsThinking(opts.model) ? [true, false] : [false];
+  const thinkingPasses = [false];
 
   let lastErr = "gemini_grounding_failed";
   for (const withThinking of thinkingPasses) {

@@ -24,6 +24,7 @@ import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
+import { emitAiCommentDelta, flushAiCommentDelta } from "@/lib/admin-ai-text-sink";
 
 export {
   CLAUDE_MODEL_HAIKU,
@@ -104,8 +105,9 @@ function logClaudeUsage(label: string, model: string, message: Anthropic.Message
 }
 
 /**
- * Opus 5 / Sonnet 5: `effort: low` saīsina adaptive thinking, lai tas neapēd
- * `max_tokens` un neatstātu tukšu komentāru (bet rēķinu). Haiku effort neatbalsta.
+ * Opus 5 / Sonnet 5: `effort: low` + `thinking: disabled` — adaptive thinking
+ * pēc noklusējuma var minūtēm „domāt”, iekasēt tokenus un neatgriezt komentāru,
+ * pirms Vercel nogriež maršrutu. Haiku effort/thinking noraida.
  */
 function claudeOutputControls(
   model: string,
@@ -128,6 +130,15 @@ function claudeOutputControls(
       ...(format ? { format } : {}),
     },
   };
+}
+
+function claudeCommentThinking(model: string): { thinking?: { type: "disabled" } } {
+  if (model.includes("haiku")) return {};
+  return { thinking: { type: "disabled" } };
+}
+
+function isThinkingDisabledRejected(e: unknown): boolean {
+  return /thinking|effort/i.test(aiErrorMessage(e)) && /disabled|invalid_request|400/i.test(aiErrorMessage(e));
 }
 
 export function getAnthropicApiKeyFromEnv(): string | null {
@@ -435,8 +446,33 @@ export async function aiGenerateJsonWithSchema(opts: {
 /**
  * Straumē tekstu, nevis gaida vienu atbildi. Ja pieprasījums nogriežas (timeout,
  * savienojums), jau ģenerētais teksts ir apmaksāts — to atgriež, nevis izmet.
+ * Komentāriem thinking ir izslēgts: citādi Opus 5 iekasē par „domāšanu” un
+ * lauks paliek tukšs.
  */
 async function claudeStreamText(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  opts: { label: string; timeoutMs: number },
+): Promise<string> {
+  const withThinkingOff: Anthropic.MessageCreateParamsNonStreaming = {
+    ...params,
+    ...claudeCommentThinking(params.model),
+  };
+  try {
+    return await claudeStreamTextOnce(client, withThinkingOff, opts);
+  } catch (e) {
+    if (isAiIncompleteCommentError(e) || !isThinkingDisabledRejected(e)) throw e;
+    console.warn(`${LOG_PREFIX} thinking_disabled_rejected`, {
+      label: opts.label,
+      model: params.model,
+      promptVersion: PROVIN_AI_PROMPT_VERSION,
+      message: aiErrorMessage(e).slice(0, 240),
+    });
+    return claudeStreamTextOnce(client, params, opts);
+  }
+}
+
+async function claudeStreamTextOnce(
   client: Anthropic,
   params: Anthropic.MessageCreateParamsNonStreaming,
   opts: { label: string; timeoutMs: number },
@@ -445,17 +481,31 @@ async function claudeStreamText(
   let partial = "";
   stream.on("text", (delta) => {
     partial += delta;
+    emitAiCommentDelta(partial);
   });
   // Bez šī klausītāja straumes kļūda kļūst par neapstrādātu notikumu; `finalMessage()` to tāpat noraida.
   stream.on("error", () => {});
 
+  const abortTimer = setTimeout(() => {
+    try {
+      stream.abort();
+    } catch {
+      /* already closed */
+    }
+  }, opts.timeoutMs);
+
   try {
     const message = await stream.finalMessage();
     logClaudeUsage(opts.label, params.model, message);
-    return requireAssistantText(message);
+    const text = requireAssistantText(message);
+    emitAiCommentDelta(text, true);
+    flushAiCommentDelta();
+    return text;
   } catch (e) {
+    flushAiCommentDelta();
     const salvaged = partial.trim();
     if (!salvaged) throw e;
+    emitAiCommentDelta(salvaged, true);
     console.warn(`${LOG_PREFIX} partial_text_salvaged`, {
       label: opts.label,
       model: params.model,
@@ -464,6 +514,8 @@ async function claudeStreamText(
       message: aiErrorMessage(e).slice(0, 240),
     });
     throw new AiIncompleteCommentError(salvaged, "timeout");
+  } finally {
+    clearTimeout(abortTimer);
   }
 }
 

@@ -171,7 +171,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(block).toMatch(/AI_TECHNICAL_RISKS_FEW_SHOTS/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/maxSearches:\s*6/);
-    expect(tech).toMatch(/16_000/);
+    expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/16_000/);
   });
 
   it("technical risk analysis is the flagship field with identification-first structure", () => {
@@ -357,8 +357,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(ai).not.toMatch(/FAILOVER_BACKOFF_MS/);
     expect(readRepo("lib/admin-gemini.ts")).not.toMatch(/FAILOVER_BACKOFF_MS/);
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(
-      /readGeneratedAdminAiText/,
+      /fetchAdminAiComment/,
     );
+    expect(ai).toMatch(/thinking:\s*\{\s*type:\s*"disabled"/);
+    expect(ai).toMatch(/claudeCommentThinking/);
   });
 
   it("text generation streams so a paid-but-cut-off answer is still salvaged", () => {
@@ -376,8 +378,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(gemini).toMatch(/thinkingBudget/);
     expect(gemini).toMatch(/streamGenerateContent/);
     expect(gemini).toMatch(/AiIncompleteCommentError/);
+    expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/text\/event-stream/);
     expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_empty_content/);
     expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_incomplete_comment/);
+    expect(ai).toMatch(/emitAiCommentDelta/);
+    expect(ai).toMatch(/stream\.abort\(/);
   });
 
   it("AI field errors are rendered visibly, not as 9px amber whispers", () => {

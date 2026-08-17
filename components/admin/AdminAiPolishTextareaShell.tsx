@@ -19,7 +19,7 @@ import {
   ADMIN_AI_POLISH_SPARKLE_CLASS,
   ADMIN_AI_POLISH_SPINNER_CLASS,
 } from "@/components/admin/admin-ai-polish-ui";
-import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import { fetchAdminAiComment } from "@/lib/admin-ai-client-errors";
 
 type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 
@@ -51,24 +51,20 @@ export function AdminAiPolishTextareaShell({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/ai-polish-lv", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: t }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setError(
-          parseFailed
-            ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
-            : formatAdminAiFetchError(data, res, "AI: neizdevās labot gramatiku"),
-        );
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai-polish-lv",
+        { text: t },
+        {
+          fallbackError: "AI: neizdevās labot gramatiku",
+          onDelta: onPolished,
+        },
+      );
+      if (!generated.ok) {
+        setError(generated.error);
+        if (generated.text) onPolished(generated.text);
         return;
       }
-      if (typeof data.text === "string") {
-        onPolished(data.text);
-      }
+      onPolished(generated.text);
     } catch {
       setError("AI: neizdevās savienoties");
     } finally {

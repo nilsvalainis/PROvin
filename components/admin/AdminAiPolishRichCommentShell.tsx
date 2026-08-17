@@ -14,7 +14,7 @@ import {
   ADMIN_AI_POLISH_SPINNER_CLASS,
 } from "@/components/admin/admin-ai-polish-ui";
 import { adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
-import { formatAdminAiFetchError, parseAdminAiResponse } from "@/lib/admin-ai-client-errors";
+import { fetchAdminAiComment } from "@/lib/admin-ai-client-errors";
 
 type Props = {
   value: string;
@@ -48,24 +48,21 @@ export function AdminAiPolishRichCommentShell({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/ai-polish-lv", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: t }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      if (!res.ok) {
-        setError(
-          parseFailed
-            ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
-            : formatAdminAiFetchError(data, res, "AI: neizdevās labot gramatiku"),
-        );
+      const apply = (text: string) => onChange(plainTextToMinimalRichHtml(text));
+      const generated = await fetchAdminAiComment(
+        "/api/admin/ai-polish-lv",
+        { text: t },
+        {
+          fallbackError: "AI: neizdevās labot gramatiku",
+          onDelta: apply,
+        },
+      );
+      if (!generated.ok) {
+        setError(generated.error);
+        if (generated.text) apply(generated.text);
         return;
       }
-      if (typeof data.text === "string") {
-        onChange(plainTextToMinimalRichHtml(data.text));
-      }
+      apply(generated.text);
     } catch {
       setError("AI: neizdevās savienoties");
     } finally {
