@@ -493,7 +493,7 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     )
     .join("");
   const dealDetailsInner = selectedDealDetails.length
-    ? `<div class="ipdf-card" style="margin-top:10px"><table class="ipdf-kv">${dealDetailRows}</table></div>`
+    ? wrapTable(dealDetailRows)
     : "";
   const pamatAfterMarka =
     pamat.trim() === ""
@@ -503,7 +503,7 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     specRestTable === ""
       ? ""
       : `<div style="margin-top:${markaTable || pamat.trim() ? "10px" : "0"}">${specRestTable}</div>`;
-  const mergedVehicleSpecInner = [markaTable, pamatAfterMarka, specRestHtml, dealDetailsInner]
+  const mergedVehicleSpecInner = [markaTable, pamatAfterMarka, specRestHtml]
     .filter((s) => s.trim())
     .join("");
 
@@ -523,6 +523,7 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   const body = `${header}
     ${blockIf("Klienta dati", clientTable)}
     ${mergedVehicleSpecInner.trim() ? blockIf("Transportlīdzekļa specifikācija", mergedVehicleSpecInner) : ""}
+    ${blockIf("Darījuma detaļas", dealDetailsInner)}
     ${blockIf("Aprīkojums", equip)}
     ${blockIf("Piezīmes", notes)}
     ${buildIrissPrintFooterHtml(accent)}`;

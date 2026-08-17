@@ -210,7 +210,7 @@ function engineLv(raw: string): string {
 }
 
 function transmissionLv(raw: string): string {
-  let s = raw.replace(/\s+/g, " ").trim();
+  const s = raw.replace(/\s+/g, " ").trim();
   if (/automatic/i.test(s) && /dual-?clutch|s\s*tronic|dsg/i.test(s)) {
     const gears = /(\d+)\s*-?\s*speed/i.exec(s)?.[1];
     return gears ? `automātiskā, ${gears} pakāpju, dubultsajūgs` : "automātiskā, dubultsajūgs";

@@ -20,6 +20,7 @@ export type IrissPasutijumsOverview = {
   subheading: string | null;
   clientLines: string[];
   specLines: string[];
+  dealLines: string[];
   equipmentRequired: string | null;
   equipmentDesired: string | null;
   notes: string | null;
@@ -136,18 +137,18 @@ export function collectIrissPasutijumsOverview(record: IrissPasutijumsRecord): I
   pushSpec("Vēlamās krāsas", record.preferredColors);
   pushSpec("Nevēlamās krāsas", record.nonPreferredColors);
   pushSpec("Salona apdare", record.interiorFinish);
+  const dealLines: string[] = [];
   const selectedDealDetails = IRISS_DEAL_DETAIL_OPTIONS.filter((opt) => Boolean(record[opt.key])).map(
     (opt) => opt.label,
   );
-  if (selectedDealDetails.length) {
-    for (const label of selectedDealDetails) specLines.push(`${label}: Jā`);
-  }
+  for (const label of selectedDealDetails) dealLines.push(`${label}: Jā`);
 
   return {
     heading,
     subheading,
     clientLines,
     specLines,
+    dealLines,
     equipmentRequired: val(record.equipmentRequired),
     equipmentDesired: val(record.equipmentDesired),
     notes: val(record.notes),
@@ -158,6 +159,7 @@ export function irissPasutijumsOverviewHasContent(o: IrissPasutijumsOverview): b
   return (
     o.clientLines.length > 0 ||
     o.specLines.length > 0 ||
+    o.dealLines.length > 0 ||
     Boolean(o.equipmentRequired) ||
     Boolean(o.equipmentDesired) ||
     Boolean(o.notes)

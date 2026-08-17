@@ -59,7 +59,8 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
     ]);
     expect(o.specLines).toContain("Marka / modelis: BMW iX40");
     expect(o.specLines).toContain("Dzinēja tips: Elektriskais");
-    expect(o.specLines).toContain("EKKI: Jā");
+    expect(o.specLines).not.toContain("EKKI: Jā");
+    expect(o.dealLines).toEqual(["EKKI: Jā"]);
     expect(o.equipmentRequired).toBe("Adaptīvā kruīza kontrole");
     expect(o.equipmentDesired).toBe("Harman Kardon");
     expect(o.notes).toBe("Steidzams");
@@ -70,6 +71,7 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
     const o = collectIrissPasutijumsOverview(rec("empty", "2026-01-01T00:00:00.000Z"));
     expect(o.clientLines.some((l) => l.startsWith("Pasūtījuma datums:"))).toBe(true);
     expect(o.specLines).toEqual([]);
+    expect(o.dealLines).toEqual([]);
     expect(o.equipmentRequired).toBeNull();
     expect(o.notes).toBeNull();
   });

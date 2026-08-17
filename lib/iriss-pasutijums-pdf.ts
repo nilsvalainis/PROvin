@@ -716,6 +716,17 @@ function drawPasutijumsOverviewSections(ctx: Ctx, overview: IrissPasutijumsOverv
     );
   }
 
+  if (overview.dealLines.length) {
+    drawDzGraySection(
+      ctx,
+      "DARĪJUMA DETAĻAS",
+      (iw) => measureColonLabeledLinesHeight(overview.dealLines, DZ_PAS_BODY_FS, iw, ctx),
+      ({ x, w }) => {
+        for (const ln of overview.dealLines) drawColonLabeledLine(ctx, ln, DZ_PAS_BODY_FS, x, w);
+      },
+    );
+  }
+
   if (overview.equipmentRequired) {
     drawDzGraySection(
       ctx,
@@ -1243,6 +1254,7 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
   const docDate = formatPasutijumsDocDate(record);
   const clientKv = overviewLinesToKv(overview.clientLines);
   const specKv = overviewLinesToKv(overview.specLines);
+  const dealKv = overviewLinesToKv(overview.dealLines);
 
   if (ctx.offerLogo) {
     stampOfferLogoTopRight(page, pageW, pageH, margin, ctx.offerLogo, 8);
@@ -1284,6 +1296,11 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
     const leftBody = clientKv.length ? measurePage1KvHeight(clientKv, innerW, size, font, fontBold) : 0;
     const rightBody = specKv.length ? measurePage1KvHeight(specKv, innerW, size, font, fontBold) : 0;
     const pairH = clientKv.length || specKv.length ? cardChromeH(Math.max(leftBody, rightBody, 24)) : 0;
+    let dealH = 0;
+    if (dealKv.length) {
+      const dealInner = contentW - PAGE1_PAD * 2;
+      dealH = cardChromeH(measurePage1KvHeight(dealKv, dealInner, size, font, fontBold));
+    }
     let eqH = 0;
     if (hasEq) {
       const eqInner = contentW - PAGE1_PAD * 2;
@@ -1302,9 +1319,10 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
       notesH = cardChromeH(measurePage1Wrapped(overview.notes, nInner, size, font));
     }
     let total = pairH;
+    if (dealH) total += PAGE1_GAP + dealH;
     if (eqH) total += PAGE1_GAP + eqH;
     if (notesH) total += PAGE1_GAP + notesH;
-    return { pairH, eqH, notesH, total, leftBody, rightBody };
+    return { pairH, dealH, eqH, notesH, total, leftBody, rightBody };
   };
 
   let layout = measureStack(fs);
@@ -1336,6 +1354,14 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
       });
     }
     y = startY - layout.pairH - PAGE1_GAP;
+  }
+
+  if (dealKv.length && layout.dealH > 0 && y - layout.dealH >= floorY) {
+    const startY = y;
+    drawCard(margin, contentW, layout.dealH, "Darījuma detaļas", (ix, iy, iw) => {
+      drawPage1KvRows(page, dealKv, ix, iy, iw, fs, font, fontBold, startY - layout.dealH + PAGE1_PAD);
+    });
+    y -= layout.dealH + PAGE1_GAP;
   }
 
   if (hasEq && layout.eqH > 0 && y - layout.eqH >= floorY) {
