@@ -584,10 +584,8 @@ export function computeProvinInfoBannersFromPayloadSlice(
       kind: "lv_registration_tenure",
       text: tenure.sentence,
       label: "Reģistrācija Latvijā",
-      value: `${days} ${days === 1 ? "diena" : "dienas"}`,
-      note: tenure.firstDateDisplay
-        ? `Pēc mūsu rīcībā esošajiem datiem — kopš ${tenure.firstDateDisplay}`
-        : "Pēc mūsu rīcībā esošajiem datiem",
+      value: tenure.firstDateDisplay ? `Kopš ${tenure.firstDateDisplay}` : `${days} ${days === 1 ? "diena" : "dienas"}`,
+      note: `${days} ${days === 1 ? "diena" : "dienas"}`,
     });
   }
 

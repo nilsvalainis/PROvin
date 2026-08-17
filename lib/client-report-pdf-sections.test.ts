@@ -100,7 +100,8 @@ describe("PDF design system", () => {
     expect(html).toContain("Negadījumi un bojājumi");
     expect(html).toContain("1 negadījums");
     expect(html).toContain("120000 km");
-    expect(html).toContain("Īpašnieki Latvijā: 2");
+    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain("Latvijā: 2");
     expect(html).toContain("Kas tika pārbaudīts");
     expect(html).toContain("pdf-src-dot pdf-src-dot--autodna");
     expect(html).toContain("PAR ŠO ATSKAITI");
@@ -109,7 +110,7 @@ describe("PDF design system", () => {
     expect(html.indexOf("PAR ŠO ATSKAITI")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 
-  it("puts reconciled Latvia + Sweden owner counts on the registration tile", () => {
+  it("puts reconciled Latvia + Sweden owner counts on the owner-count tile", () => {
     const csdd = emptyCsddFields();
     csdd.registrationStatus = "Uzskaitē";
     csdd.ownerCountLatvia = "2";
@@ -137,10 +138,12 @@ describe("PDF design system", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("Reģistrācija");
-    expect(html).toContain("Uzskaitē");
-    expect(html).toContain("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6");
-    expect(html).not.toContain("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6 + ");
+    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain(">8<");
+    expect(html).toContain("Latvijā: 2");
+    expect(html).toContain("Zviedrijā: 6");
+    expect(html).toContain("pdf-summary-tile__sep");
+    expect(html).not.toContain("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6");
     expect(html).toContain(SOURCE_BLOCK_LABELS.carinfo);
   });
 
@@ -1079,7 +1082,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("Eksportēts no Zviedrijas");
     expect(doc).toContain("Statuss");
     expect(doc).toContain("Piezīmes");
-    expect(doc).not.toContain("Īpašnieku skaits");
+    expect(doc).toContain("Īpašnieku skaits");
+    expect(doc).not.toContain("6 īpašnieki");
     expect(doc).not.toContain("⚠");
     expect(doc).not.toContain("RED FLAG");
   });

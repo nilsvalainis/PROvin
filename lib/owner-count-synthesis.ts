@@ -24,8 +24,10 @@ export type OwnerCountCandidate = {
 export type OwnerCountSynthesis = {
   chosen: Partial<Record<OwnerCountryId, OwnerCountCandidate>>;
   candidates: OwnerCountCandidate[];
-  /** Kartītes trešā rinda, piem. „Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6”. Tukšs, ja nav skaitļu. */
+  /** Kartītes trešā rinda, piem. „Latvijā: 2 | Zviedrijā: 6”. Tukšs, ja nav skaitļu. */
   noteLine: string;
+  /** Summa pa valstīm (Latvija + Zviedrija, …) — neskaita to pašu tirgu divreiz. */
+  totalCount: number;
 };
 
 const COUNTRY_LOCATIVE: Record<OwnerCountryId, string> = {
@@ -112,22 +114,39 @@ function choosePerCountry(candidates: OwnerCountCandidate[]): Partial<Record<Own
   return chosen;
 }
 
-export function formatOwnerCountBannerNote(
+export function formatOwnerCountBannerNoteParts(
   chosen: Partial<Record<OwnerCountryId, OwnerCountCandidate>>,
-): string {
+): string[] {
   const parts: string[] = [];
   for (const id of DISPLAY_ORDER) {
     const row = chosen[id];
     if (!row) continue;
-    parts.push(`Īpašnieki ${COUNTRY_LOCATIVE[id]}: ${row.count}`);
+    parts.push(`${COUNTRY_LOCATIVE[id]}: ${row.count}`);
   }
-  return parts.join(" + ");
+  return parts;
+}
+
+export function formatOwnerCountBannerNote(
+  chosen: Partial<Record<OwnerCountryId, OwnerCountCandidate>>,
+): string {
+  return formatOwnerCountBannerNoteParts(chosen).join(" | ");
+}
+
+export function ownerCountTotal(chosen: Partial<Record<OwnerCountryId, OwnerCountCandidate>>): number {
+  let n = 0;
+  for (const id of DISPLAY_ORDER) {
+    n += chosen[id]?.count ?? 0;
+  }
+  return n;
 }
 
 export function formatOwnerCountAiContext(synthesis: OwnerCountSynthesis): string {
   if (synthesis.candidates.length === 0) return "";
   const lines = [
-    "Kartītes rinda (reģistrācijas plāksnīte): " + (synthesis.noteLine || "nav skaitļu"),
+    "Kartītes rinda (īpašnieku skaits): " +
+      (synthesis.totalCount > 0
+        ? `${synthesis.totalCount} — ${synthesis.noteLine || "nav sadalījuma"}`
+        : "nav skaitļu"),
     "Avotu kandidāti — reconcilē pa valstīm; NEsummē AutoDNA+CarVertical+reģistru par to pašu tirgu:",
   ];
   for (const c of synthesis.candidates) {
@@ -205,7 +224,12 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
     pushCandidate(candidates, country, ccCount, "cc.vin", country === "other" ? 2 : 2);
   }
   const chosen = choosePerCountry(candidates);
-  return { chosen, candidates, noteLine: formatOwnerCountBannerNote(chosen) };
+  return {
+    chosen,
+    candidates,
+    noteLine: formatOwnerCountBannerNote(chosen),
+    totalCount: ownerCountTotal(chosen),
+  };
 }
 
 export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): OwnerCountSynthesis {
@@ -248,5 +272,10 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
   }
 
   const chosen = choosePerCountry(candidates);
-  return { chosen, candidates, noteLine: formatOwnerCountBannerNote(chosen) };
+  return {
+    chosen,
+    candidates,
+    noteLine: formatOwnerCountBannerNote(chosen),
+    totalCount: ownerCountTotal(chosen),
+  };
 }

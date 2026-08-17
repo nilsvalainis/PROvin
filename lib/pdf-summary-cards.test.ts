@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { emptyCsddFields } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
 import {
@@ -9,6 +10,7 @@ import {
   upsertProvinBannerOverride,
   computeCcVinAlertBanners,
   ccVinBannerKindFromLabel,
+  computeProvinInfoBannersFromPayloadSlice,
   type ProvinManualBanner,
 } from "@/lib/provin-alert-banners";
 
@@ -72,12 +74,27 @@ describe("kopsavilkuma kartītes", () => {
           kind: "lv_registration_tenure",
           text: "Saskaņā ar mūsu rīcībā esošajiem datiem…",
           label: "Reģistrācija Latvijā",
-          value: "30 dienas",
-          note: "Pēc mūsu rīcībā esošajiem datiem — kopš 14.07.2026",
+          value: "Kopš 14.07.2026",
+          note: "30 dienas",
         },
       ],
     });
-    expect(tiles[0]).toMatchObject({ label: "Reģistrācija Latvijā", value: "30 dienas", tone: "neutral" });
+    expect(tiles[0]).toMatchObject({ label: "Reģistrācija Latvijā", value: "Kopš 14.07.2026", tone: "neutral" });
+  });
+
+  it("Reģistrācija Latvijā rāda Kopš datumu, ne dienu skaitu", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [{ date: "01.10.2023", odometer: "100000", country: "Latvija" }];
+    const [banner] = computeProvinInfoBannersFromPayloadSlice(
+      { csddForm: csdd },
+      new Date("2023-10-31T12:00:00Z"),
+    );
+    expect(banner).toMatchObject({
+      kind: "lv_registration_tenure",
+      label: "Reģistrācija Latvijā",
+      value: "Kopš 01.10.2023",
+      note: "30 dienas",
+    });
   });
 
   it("virsraksts un vērtība saglabājas pēc hidratācijas", () => {

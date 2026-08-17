@@ -1,6 +1,6 @@
 /**
  * Klienta PDF — atskaites kopsavilkuma plāksnītes (pirmā lapa).
- * Tikai jau savākto datu interpretācija: negadījumi, nobraukums, reģistrācija, servisa dziļums.
+ * Tikai jau savākto datu interpretācija: negadījumi, nobraukums, īpašnieku skaits, servisa dziļums.
  */
 
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
@@ -26,7 +26,10 @@ import {
   PROVIN_INFO_BANNER_KINDS,
   resolveProvinBanners,
 } from "@/lib/provin-alert-banners";
-import { synthesizeOwnerCountsFromPdfInput } from "@/lib/owner-count-synthesis";
+import {
+  formatOwnerCountBannerNoteParts,
+  synthesizeOwnerCountsFromPdfInput,
+} from "@/lib/owner-count-synthesis";
 import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
@@ -47,6 +50,8 @@ export type PdfSummaryTile = {
   label: string;
   value: string;
   note: string;
+  /** Ja ir, piezīmi drukā ar cap-height strīpiņu starp daļām (ne „+”). */
+  noteSegments?: string[];
   tone: PdfSummaryTileTone;
   /** Gara teksta kartīte — režģī aizņem abas kolonnas. */
   wide?: boolean;
@@ -138,20 +143,25 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
-function buildRegistrationTile(input: PdfSummaryInput): PdfSummaryTile {
-  const status = (input.csddForm?.registrationStatus ?? "").trim();
-  const ownerNote = synthesizeOwnerCountsFromPdfInput(input).noteLine;
-  const lower = status.toLowerCase();
-  let tone: PdfSummaryTileTone = "neutral";
-  if (/(arest|aizliegum|meklē|zādzīb)/.test(lower)) tone = "alert";
-  else if (/(noņemts|atsavināt|norakstīt|utilizēt)/.test(lower)) tone = "warn";
-  else if (/reģistrēt/.test(lower)) tone = "ok";
+function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
+  const syn = synthesizeOwnerCountsFromPdfInput(input);
+  const parts = formatOwnerCountBannerNoteParts(syn.chosen);
+  if (syn.totalCount === 0) {
+    return {
+      id: "owners",
+      label: "Īpašnieku skaits",
+      value: "Nav ierakstu",
+      note: "Avotos nav fiksēta īpašnieku skaita",
+      tone: "neutral",
+    };
+  }
   return {
-    id: "registration",
-    label: "Reģistrācija",
-    value: status || "Nav ierakstu",
-    note: ownerNote || "CSDD reģistrācijas statuss",
-    tone,
+    id: "owners",
+    label: "Īpašnieku skaits",
+    value: String(syn.totalCount),
+    note: syn.noteLine,
+    noteSegments: parts,
+    tone: "ok",
   };
 }
 
@@ -182,7 +192,7 @@ export function buildPdfReportSummaryTiles(input: PdfSummaryInput): PdfSummaryTi
   return [
     buildIncidentsTile(input),
     buildMileageTile(input),
-    buildRegistrationTile(input),
+    buildOwnerCountTile(input),
     buildServiceTile(input),
   ];
 }

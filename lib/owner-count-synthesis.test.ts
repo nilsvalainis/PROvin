@@ -41,7 +41,8 @@ describe("synthesizeOwnerCountsFromBlocks", () => {
     blocks.carvertical = { ...emptyVendorAvotuBlock(), comments: "3 īpašnieki Zviedrijā" };
     blocks.autodna = { ...emptyVendorAvotuBlock(), comments: "2 īpašnieku maiņas" };
     const syn = synthesizeOwnerCountsFromBlocks(blocks);
-    expect(syn.noteLine).toBe("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6");
+    expect(syn.noteLine).toBe("Latvijā: 2 | Zviedrijā: 6");
+    expect(syn.totalCount).toBe(8);
     expect(syn.chosen.sweden?.count).toBe(6);
     expect(syn.chosen.other).toBeUndefined();
   });
@@ -51,13 +52,14 @@ describe("synthesizeOwnerCountsFromBlocks", () => {
     blocks.carvertical = { ...emptyVendorAvotuBlock(), comments: "3 īpašnieki" };
     blocks.autodna = { ...emptyVendorAvotuBlock(), comments: "2 īpašnieki" };
     const syn = synthesizeOwnerCountsFromBlocks(blocks);
-    expect(syn.noteLine).toBe("Īpašnieki ārvalstīs: 3");
+    expect(syn.noteLine).toBe("ārvalstīs: 3");
+    expect(syn.totalCount).toBe(3);
     expect(syn.noteLine).not.toMatch(/5/);
   });
 });
 
 describe("synthesizeOwnerCountsFromPdfInput", () => {
-  it("builds the registration-tile note from CSDD + ZVIEDRIJAS REĢISTRI", () => {
+  it("builds the owner-count tile note from CSDD + ZVIEDRIJAS REĢISTRI", () => {
     const syn = synthesizeOwnerCountsFromPdfInput({
       csddForm: { ...createDefaultSourceBlocks().csdd, ownerCountLatvia: "2", registrationStatus: "Uzskaitē" },
       ccVinBlock: emptyCcVinBlock(),
@@ -77,6 +79,7 @@ describe("synthesizeOwnerCountsFromPdfInput", () => {
         },
       ],
     });
-    expect(formatOwnerCountBannerNote(syn.chosen)).toBe("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6");
+    expect(formatOwnerCountBannerNote(syn.chosen)).toBe("Latvijā: 2 | Zviedrijā: 6");
+    expect(syn.totalCount).toBe(8);
   });
 });
