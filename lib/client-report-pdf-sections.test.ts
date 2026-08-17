@@ -196,6 +196,35 @@ describe("PDF design system", () => {
     expect(html).toContain(PDF_HERO_BRAND_LOGO_DATA_URI.autodna);
   });
 
+  it("embeds a shared-scale mileage spark in the AutoDNA source zone", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory.push({ date: "01.06.2020", odometer: "120000", country: "LV" });
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        manualVendorBlocks: [
+          {
+            title: "AutoDNA",
+            mileageRows: [{ date: "01.03.2016", odometer: "80000", country: "DE" }],
+            incidentRows: [],
+            comments: "AutoDNA komentārs",
+          },
+        ],
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("pdf-src-mileage-spark");
+    expect(html).toContain('data-src-spark="autodna"');
+    expect(html).toContain('data-src-spark="csdd"');
+    const autodnaZone = html.slice(html.indexOf("pdf-src-zone--autodna"));
+    expect(autodnaZone).toContain('data-src-spark="autodna"');
+    expect(autodnaZone).toContain("01.03.2016");
+    expect(html).toContain(".pdf-src-mileage-spark-ghost");
+  });
+
   it("uses the homepage hero CarVertical logo and greens the record count when there is at least one row", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({

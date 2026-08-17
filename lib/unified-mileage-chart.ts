@@ -8,8 +8,14 @@ import {
   analyzeUnifiedMileageAnomalies,
   sortMileageChronological,
   parseOdometerKm,
+  type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
+import {
+  MILEAGE_PDF_SOURCE_COLOR,
+  mileageSourceLabelToPdfKey,
+  type MileagePdfSourceKey,
+} from "@/lib/pdf-mileage-source";
 
 import { PDF_BRAND_BLUE_HEX } from "@/lib/client-report-pdf-layout-draft";
 
@@ -176,41 +182,40 @@ type ChartPlotPoint = {
   isAnomaly: boolean;
 };
 
-/**
- * @param anomalyBySourceOrder — no `analyzeUnifiedMileageAnomalies` / `computeOdometerAnomalyBySourceOrder`
- */
-export function buildUnifiedMileageChartWrapHtml(
-  rows: UnifiedMileageRow[],
-  anomalyBySourceOrder: Map<number, boolean>,
-  opts?: { compact?: boolean; chartExcludeSourceOrders?: Set<number> },
-): string {
-  const compact = opts?.compact === true;
-  const chartExclude =
-    opts?.chartExcludeSourceOrders ?? analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
-  const chrono = sortMileageChronological(rows);
-  const series = chrono
+type ChartSeriesPoint = {
+  year: number;
+  time: number;
+  km: number;
+  sourceOrder: number;
+  dateDisplay: string;
+  sourceKeys: MileagePdfSourceKey[];
+};
+
+function rowSourceLabels(r: UnifiedMileageRow): string[] {
+  const labels = (r as UnifiedMileageDisplayRow).sourceLabels;
+  if (labels?.length) return labels;
+  return [r.sourceLabel];
+}
+
+function chartSeriesFromRows(rows: UnifiedMileageRow[], chartExclude: Set<number>): ChartSeriesPoint[] {
+  return sortMileageChronological(rows)
     .map((r) => {
       if (chartExclude.has(r.sourceOrder)) return null;
       const km = parseOdometerKm(r.odometer);
       if (km == null || r.sortableTime === Number.NEGATIVE_INFINITY) return null;
-      const display = r.date.trim();
       return {
         year: new Date(r.sortableTime).getUTCFullYear(),
         time: r.sortableTime,
         km,
         sourceOrder: r.sourceOrder,
-        dateDisplay: display,
+        dateDisplay: r.date.trim(),
+        sourceKeys: rowSourceLabels(r).map(mileageSourceLabelToPdfKey),
       };
     })
-    .filter((x): x is { year: number; time: number; km: number; sourceOrder: number; dateDisplay: string } => x != null);
+    .filter((x): x is ChartSeriesPoint => x != null);
+}
 
-  if (series.length === 0) return "";
-
-  const tMin = series[0]!.time;
-  const tMax = series[series.length - 1]!.time;
-  const yStart = series[0]!.year;
-  const yEnd = series[series.length - 1]!.year;
-
+function chartKmDomain(series: ChartSeriesPoint[]): { kmMin: number; kmMax: number } {
   let kmMin = Number.POSITIVE_INFINITY;
   let kmMax = Number.NEGATIVE_INFINITY;
   for (const s of series) {
@@ -222,8 +227,33 @@ export function buildUnifiedMileageChartWrapHtml(
     kmMax += 1;
   }
   const kmPad = (kmMax - kmMin) * 0.06;
-  kmMin -= kmPad;
-  kmMax += kmPad;
+  return { kmMin: kmMin - kmPad, kmMax: kmMax + kmPad };
+}
+
+function escChartText(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * @param anomalyBySourceOrder — no `analyzeUnifiedMileageAnomalies` / `computeOdometerAnomalyBySourceOrder`
+ */
+export function buildUnifiedMileageChartWrapHtml(
+  rows: UnifiedMileageRow[],
+  anomalyBySourceOrder: Map<number, boolean>,
+  opts?: { compact?: boolean; chartExcludeSourceOrders?: Set<number> },
+): string {
+  const compact = opts?.compact === true;
+  const chartExclude =
+    opts?.chartExcludeSourceOrders ?? analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
+  const series = chartSeriesFromRows(rows, chartExclude);
+
+  if (series.length === 0) return "";
+
+  const tMin = series[0]!.time;
+  const tMax = series[series.length - 1]!.time;
+  const yStart = series[0]!.year;
+  const yEnd = series[series.length - 1]!.year;
+  const { kmMin, kmMax } = chartKmDomain(series);
 
   const W = compact ? 480 : 520;
   const H = compact ? 112 : 172;
@@ -341,6 +371,86 @@ export function buildUnifiedMileageChartWrapHtml(
   const wrapCls = compact ? "pdf-mileage-chart-wrap pdf-mileage-chart-wrap--compact" : "pdf-mileage-chart-wrap";
   const anomalyCls = hasAnomaly ? " pdf-mileage-chart-wrap--has-anomaly" : "";
   return `<div class="${wrapCls}${anomalyCls}">${svgInner}</div>`;
+}
+
+/**
+ * Avota sadaļas mazā līkne — tā pati laika/km ass kā galvenajai NOBRAUKUMA VĒSTUREI.
+ * Fonā blāva kopējā līkne; priekšplānā šī avota krāsa; malās šī avota sākuma/beigu datums.
+ */
+export function buildSourceMileageSparkHtml(
+  rows: UnifiedMileageRow[],
+  sourceKey: MileagePdfSourceKey,
+  opts?: { chartExcludeSourceOrders?: Set<number> },
+): string {
+  const chartExclude =
+    opts?.chartExcludeSourceOrders ?? analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
+  const series = chartSeriesFromRows(rows, chartExclude);
+  if (series.length === 0) return "";
+  const mine = series.filter((s) => s.sourceKeys.includes(sourceKey));
+  if (mine.length === 0) return "";
+
+  const tMin = series[0]!.time;
+  const tMax = series[series.length - 1]!.time;
+  const { kmMin, kmMax } = chartKmDomain(series);
+  const color = MILEAGE_PDF_SOURCE_COLOR[sourceKey];
+
+  const W = 480;
+  const H = 86;
+  const padL = 10;
+  const padR = 10;
+  const padT = 8;
+  const padB = 18;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const xOf = (time: number) => {
+    if (tMax === tMin) return padL + plotW / 2;
+    return padL + ((time - tMin) / (tMax - tMin)) * plotW;
+  };
+  const yOf = (km: number) => padT + plotH - ((km - kmMin) / (kmMax - kmMin)) * plotH;
+
+  const allPts = series.map((s) => ({ x: xOf(s.time), y: yOf(s.km) }));
+  const minePts = mine.map((s) => ({ x: xOf(s.time), y: yOf(s.km) }));
+  const ghostD = monotoneCubicSvgPath(allPts);
+  const mineD = monotoneCubicSvgPath(minePts);
+
+  const yStart = series[0]!.year;
+  const yEnd = series[series.length - 1]!.year;
+  const yearSpan = Math.max(0, yEnd - yStart);
+  const yearStep = yearSpan <= 10 ? 2 : 3;
+  const tickSet = new Set<number>();
+  for (let y = yStart; y <= yEnd; y += yearStep) tickSet.add(y);
+  tickSet.add(yEnd);
+  const gridLines: string[] = [];
+  for (const y of [...tickSet].sort((a, b) => a - b)) {
+    const gx = yearLabelXInRange(y, tMin, tMax, xOf, padL, plotW);
+    if (gx == null) continue;
+    gridLines.push(
+      `<line class="pdf-src-mileage-spark-grid" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" />`,
+    );
+  }
+
+  const ghostPath = ghostD
+    ? `<path class="pdf-src-mileage-spark-ghost" fill="none" d="${ghostD}" />`
+    : "";
+  const sourcePath =
+    minePts.length === 1
+      ? `<circle class="pdf-src-mileage-spark-dot" cx="${minePts[0]!.x.toFixed(1)}" cy="${minePts[0]!.y.toFixed(1)}" r="3.5" fill="${color}" />`
+      : mineD
+        ? `<path class="pdf-src-mileage-spark-path" fill="none" stroke="${color}" d="${mineD}" />`
+        : "";
+  const start = escChartText(mine[0]!.dateDisplay);
+  const end = escChartText(mine[mine.length - 1]!.dateDisplay);
+  const dateFill = color;
+
+  return `<div class="pdf-src-mileage-spark" data-src-spark="${sourceKey}">
+<svg class="pdf-src-mileage-spark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nobraukuma līkne: ${escChartText(sourceKey)}">
+  ${gridLines.join("\n  ")}
+  ${ghostPath}
+  ${sourcePath}
+  <text class="pdf-src-mileage-spark-date" x="${padL}" y="${H - 4}" text-anchor="start" fill="${dateFill}">${start}</text>
+  <text class="pdf-src-mileage-spark-date" x="${W - padR}" y="${H - 4}" text-anchor="end" fill="${dateFill}">${end}</text>
+</svg>
+</div>`;
 }
 
 export { PDF_MILEAGE_CHART_LINE, PDF_MILEAGE_CHART_GRID, PDF_MILEAGE_CHART_AXIS };

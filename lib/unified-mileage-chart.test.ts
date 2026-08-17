@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSourceMileageSparkHtml,
   buildUnifiedMileageChartWrapHtml,
   monotoneCubicSvgPath,
   pickNonOverlappingYearTicks,
@@ -254,6 +255,66 @@ describe("monotoneCubicSvgPath", () => {
     const ys = nums.filter((_, i) => i % 2 === 1);
     expect(Math.min(...ys)).toBeGreaterThanOrEqual(10 - 0.05);
     expect(Math.max(...ys)).toBeLessThanOrEqual(40 + 0.05);
+  });
+});
+
+describe("buildSourceMileageSparkHtml", () => {
+  const dnaEarly: UnifiedMileageRow = {
+    date: "01.03.2016",
+    odometer: "50000",
+    country: "DE",
+    sortableTime: Date.UTC(2016, 2, 1),
+    sourceOrder: 0,
+    sourceLabel: "AutoDNA",
+  };
+  const dnaMid: UnifiedMileageRow = {
+    date: "01.06.2018",
+    odometer: "80000",
+    country: "DE",
+    sortableTime: Date.UTC(2018, 5, 1),
+    sourceOrder: 1,
+    sourceLabel: "AutoDNA",
+  };
+  const csddLate: UnifiedMileageRow = {
+    date: "01.06.2020",
+    odometer: "120000",
+    country: "LV",
+    sortableTime: Date.UTC(2020, 5, 1),
+    sourceOrder: 2,
+    sourceLabel: "CSDD",
+  };
+
+  it("returns empty when the source has no chartable km", () => {
+    expect(buildSourceMileageSparkHtml([csddLate], "autodna")).toBe("");
+    expect(buildSourceMileageSparkHtml([], "csdd")).toBe("");
+  });
+
+  it("draws a ghost unified curve and a source path in AutoDNA blue", () => {
+    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna");
+    expect(html).toContain("pdf-src-mileage-spark");
+    expect(html).toContain('data-src-spark="autodna"');
+    expect(html).toContain("pdf-src-mileage-spark-ghost");
+    expect(html).toContain('class="pdf-src-mileage-spark-path"');
+    expect(html).toContain('stroke="#1E3A8A"');
+    expect(html).not.toContain("pdf-mileage-chart-rollback");
+    expect(html).not.toContain("Nobraukums");
+  });
+
+  it("labels this source start and end dates, not year ticks", () => {
+    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna");
+    expect(html).toContain("01.03.2016");
+    expect(html).toContain("01.06.2018");
+    expect(html).not.toContain("pdf-mileage-chart-year");
+    expect(html).not.toContain(">2020<");
+  });
+
+  it("shares the unified time scale so an early DNA point sits left of a late CSDD point", () => {
+    const rows = [dnaEarly, csddLate];
+    const dna = buildSourceMileageSparkHtml(rows, "autodna");
+    const csdd = buildSourceMileageSparkHtml(rows, "csdd");
+    const dnaX = Number.parseFloat(dna.match(/class="pdf-src-mileage-spark-dot" cx="([\d.]+)"/)![1]!);
+    const csddX = Number.parseFloat(csdd.match(/class="pdf-src-mileage-spark-dot" cx="([\d.]+)"/)![1]!);
+    expect(dnaX).toBeLessThan(csddX);
   });
 });
 
