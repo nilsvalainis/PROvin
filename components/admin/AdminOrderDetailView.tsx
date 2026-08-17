@@ -11,6 +11,7 @@ import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlT
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
+import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
@@ -693,6 +694,7 @@ export function AdminOrderDetailView({
     <div
       className={`admin-order-page min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
     >
+      <AdminVinHandoffBinder vin={mergedVin} />
       <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-3 pt-0 sm:px-5">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <AdminCollapsedMenuButton />

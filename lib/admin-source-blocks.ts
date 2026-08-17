@@ -9,6 +9,11 @@ import {
   type CarVerticalDamageDetailRow,
   type CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
+import {
+  AUTODNA_LV_HOME_URL,
+  AUTORECORDS_BASE_URL,
+  CARVERTICAL_REPORTS_URL,
+} from "@/lib/admin-vin-urls";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
@@ -159,9 +164,9 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   csdd: "https://e.csdd.lv/tadati/",
   ltab: "https://services.ltab.lv/lv/VehicleInsAndAcc",
   tirgus: "https://tirgusdati.lv/app/listings/history",
-  autodna: "https://www.autodna.com",
-  carvertical: "https://www.carvertical.lv",
-  auto_records: "https://www.auto-records.com",
+  autodna: AUTODNA_LV_HOME_URL,
+  carvertical: CARVERTICAL_REPORTS_URL,
+  auto_records: AUTORECORDS_BASE_URL.replace(/\/$/, ""),
   cc_vin: "https://cc.vin",
   tjekbil: "https://www.tjekbil.dk",
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",

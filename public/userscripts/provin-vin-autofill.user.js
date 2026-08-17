@@ -1,8 +1,10 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.3.0
-// @description  Admin: GM_setValue no saitēm ar data-provin-handoff-*. Mērķi: GM_getValue / ?vin= / ?url=; React-friendly ievade.
+// @version      1.4.0
+// @description  Admin MENU: GM_setValue no data-provin-handoff-*. AutoDNA / CarVertical / Auto-Records / CheckThisReg VIN aizpilde; Tirgus dati URL.
+// @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
+// @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
 // @match        http://127.0.0.1:*/admin*
 // @match        https://provin.lv/admin*
@@ -12,6 +14,12 @@
 // @match        https://carvertical.com/*
 // @match        https://www.auto-records.com/*
 // @match        https://auto-records.com/*
+// @match        https://www.autodna.lv/*
+// @match        https://autodna.lv/*
+// @match        https://www.autodna.com/*
+// @match        https://autodna.com/*
+// @match        https://www.checkthisreg.com/*
+// @match        https://checkthisreg.com/*
 // @match        https://tirgusdati.lv/*
 // @match        https://www.tirgusdati.lv/*
 // @grant        GM_getValue
@@ -39,9 +47,8 @@
         if (!t || typeof t.closest !== "function") return;
         const a = t.closest("a[href]");
         if (!a || !(a instanceof HTMLAnchorElement)) return;
-        const href = a.getAttribute("href") || "";
         const vin = (a.dataset.provinHandoffVin || "").trim();
-        if (vin && /carvertical\.com/i.test(href)) {
+        if (vin) {
           try {
             GM_setValue(GM_PENDING_VIN, vin);
           } catch (e) {
@@ -49,7 +56,7 @@
           }
         }
         const listingUrl = (a.dataset.provinHandoffListingUrl || "").trim();
-        if (listingUrl && /tirgusdati\.lv/i.test(href)) {
+        if (listingUrl && /tirgusdati\.lv/i.test(a.getAttribute("href") || "")) {
           try {
             GM_setValue(GM_PENDING_URL, listingUrl);
           } catch (e) {
@@ -64,9 +71,6 @@
 
   console.log("PROVIN skripts ielādēts: " + window.location.href);
 
-  /**
-   * Imitē reālu ievadi — apiet React 16+ _valueTracker.
-   */
   function setNativeValue(element, value) {
     if (!element || (element.tagName !== "INPUT" && element.tagName !== "TEXTAREA")) return;
     const lastValue = element.value;
@@ -93,6 +97,20 @@
     if (st.display === "none" || st.visibility === "hidden" || st.opacity === "0") return false;
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0;
+  }
+
+  function clickByText(pattern) {
+    const buttons = Array.from(document.querySelectorAll("button, [role='button'], a[role='button'], input[type='submit']"));
+    const byText = buttons.find((b) => {
+      if (!isVisible(b) || b.disabled) return false;
+      const t = ((b.textContent || b.value || "") + "").trim();
+      return pattern.test(t);
+    });
+    if (byText) {
+      byText.click();
+      return true;
+    }
+    return false;
   }
 
   function consumePendingUrl() {
@@ -179,7 +197,6 @@
     tirgusObs.observe(document.documentElement, { childList: true, subtree: true });
 
     let tries = 0;
-    /** 250 ms solis — pirmais ~2 s (8×) + turpinājums līdz lauks parādās */
     const interval = window.setInterval(() => {
       tries += 1;
       tryFillTirgus();
@@ -196,7 +213,12 @@
     return;
   }
 
-  function consumePendingVin() {
+  function vinFromAutodnaPath() {
+    const m = path.match(/\/vin\/([A-HJ-NPR-Z0-9]{11,17})/i);
+    return m ? String(m[1]).toUpperCase() : "";
+  }
+
+  function peekPendingVin() {
     let vin = "";
     try {
       const g = GM_getValue(GM_PENDING_VIN, "");
@@ -204,7 +226,6 @@
         vin = String(g)
           .replace(/[\s-]/g, "")
           .toUpperCase();
-        GM_deleteValue(GM_PENDING_VIN);
       }
     } catch {
       /* ignore */
@@ -215,7 +236,6 @@
         vin = String(ls)
           .replace(/[\s-]/g, "")
           .toUpperCase();
-        localStorage.removeItem("provin_pending_vin");
       }
     }
     if (!vin) {
@@ -226,70 +246,91 @@
           .toUpperCase();
       }
     }
+    if (!vin) vin = vinFromAutodnaPath();
     return vin;
   }
 
-  const vin = consumePendingVin();
-  if (!vin) return;
-
-  function findCarVerticalVinInput(extended) {
-    const bySelector = [
-      "#vin-input",
-      'input[name="vin"]',
-      'input[autocomplete="off"][name="vin"]',
-      'input[placeholder*="VIN"]',
-      'input[placeholder*="vin"]',
-      "input[type=search]",
-    ];
-    for (const sel of bySelector) {
-      try {
-        const el = document.querySelector(sel);
-        if (el && isVisible(el) && !el.disabled && el.tagName === "INPUT") return el;
-      } catch {
-        /* nederīgs selektors */
-      }
-    }
-    for (const el of document.querySelectorAll("input[data-testid]")) {
-      if (!isVisible(el) || el.disabled) continue;
-      const t = (el.getAttribute("data-testid") || "").toLowerCase();
-      if (t.includes("vin")) return el;
-    }
-    for (const el of document.querySelectorAll("input[aria-label]")) {
-      if (!isVisible(el) || el.disabled) continue;
-      const t = (el.getAttribute("aria-label") || "").toLowerCase();
-      if (t.includes("vin")) return el;
-    }
-    if (extended) {
-      for (const el of document.querySelectorAll('input[type="text"], input[type="search"]')) {
-        if (!isVisible(el) || el.disabled) continue;
-        const n = (el.name || "").toLowerCase();
-        const id = (el.id || "").toLowerCase();
-        const ph = (el.getAttribute("placeholder") || "").toLowerCase();
-        if (n.includes("vin") || id.includes("vin") || ph.includes("vin")) return el;
-      }
-    }
-    return null;
-  }
-
-  function primeCarVerticalInput(el) {
+  function clearPendingVin() {
     try {
-      el.focus();
-      el.click();
+      GM_deleteValue(GM_PENDING_VIN);
+    } catch {
+      /* ignore */
+    }
+    try {
+      localStorage.removeItem("provin_pending_vin");
     } catch {
       /* ignore */
     }
   }
 
-  function clickCarVerticalCheck() {
-    const buttons = Array.from(document.querySelectorAll("button, [role='button'], a[role='button']"));
-    const byText = buttons.find((b) => {
-      const t = (b.textContent || "").trim();
-      return /pārbaudīt|check|verify|turpin|continue|search|meklēt/i.test(t);
-    });
-    if (byText) {
-      byText.click();
-      return;
+  const vin = peekPendingVin();
+  if (!vin) return;
+
+  function fieldAlreadyHasVin(el) {
+    return String(el.value || "")
+      .replace(/[\s-]/g, "")
+      .toUpperCase() === vin;
+  }
+
+  function fillAndClear(el) {
+    if (!fieldAlreadyHasVin(el)) {
+      try {
+        el.focus();
+        el.click();
+      } catch {
+        /* ignore */
+      }
+      setNativeValue(el, vin);
     }
+    clearPendingVin();
+    console.log("PROVIN: aizpildīts VIN lauks", el);
+  }
+
+  function findCarVerticalVinInput(extended) {
+    const nodes = document.querySelectorAll("input, textarea");
+    const bySelector = [
+      "#vin-input",
+      'input[name="vin"]',
+      'textarea[name="vin"]',
+      'input[placeholder*="VIN"]',
+      'textarea[placeholder*="VIN"]',
+      'input[placeholder*="vin"]',
+      'textarea[placeholder*="vin"]',
+      "input[type=search]",
+    ];
+    for (const sel of bySelector) {
+      try {
+        const el = document.querySelector(sel);
+        if (el && isVisible(el) && !el.disabled) return el;
+      } catch {
+        /* nederīgs selektors */
+      }
+    }
+    for (const el of nodes) {
+      if (!isVisible(el) || el.disabled) continue;
+      const t = (
+        (el.getAttribute("data-testid") || "") +
+        " " +
+        (el.getAttribute("aria-label") || "") +
+        " " +
+        (el.getAttribute("placeholder") || "")
+      ).toLowerCase();
+      if (t.includes("vin")) return el;
+    }
+    if (extended) {
+      for (const el of document.querySelectorAll('input[type="text"], input[type="search"], textarea')) {
+        if (!isVisible(el) || el.disabled) continue;
+        const n = (el.name || "").toLowerCase();
+        const id = (el.id || "").toLowerCase();
+        const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+        if (n.includes("vin") || id.includes("vin") || ph.includes("vin") || ph.includes("numur")) return el;
+      }
+    }
+    return null;
+  }
+
+  function clickCarVerticalCheck() {
+    if (clickByText(/sākt pārbaudi|pārbaudīt|pārbaudi|check|verify|turpin|continue|search|meklēt/i)) return;
     const submit = document.querySelector('form button[type="submit"], button[type="submit"]');
     submit?.click();
   }
@@ -310,14 +351,105 @@
     );
   }
 
+  function findAutodnaVinInput() {
+    const list = document.querySelectorAll("input, textarea");
+    for (const el of list) {
+      if (!isVisible(el) || el.disabled || el.type === "password" || el.type === "email") continue;
+      const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+      const n = (el.name || "").toLowerCase();
+      const id = (el.id || "").toLowerCase();
+      if (ph.includes("ievadi vin") || ph.includes("ieavadi vin")) return el;
+      if (ph.includes("vin") && !ph.includes("e-past")) return el;
+      if (n === "vin" || id.includes("vin")) return el;
+    }
+    return null;
+  }
+
+  function autodnaLoginModalOpen() {
+    const title = Array.from(document.querySelectorAll("h1, h2, h3, div, span")).find((el) => {
+      if (!isVisible(el)) return false;
+      return /^(ienākt|log in|login)$/i.test((el.textContent || "").trim());
+    });
+    const pass = document.querySelector('input[type="password"]');
+    return Boolean(title && pass && isVisible(pass));
+  }
+
+  function tryAutodnaLogin() {
+    let email = "";
+    let password = "";
+    try {
+      email = String(GM_getValue("provin_autodna_email", "") || "").trim();
+      password = String(GM_getValue("provin_autodna_password", "") || "");
+    } catch {
+      /* ignore */
+    }
+    if (!email || !password) return false;
+    const inputs = Array.from(document.querySelectorAll("input")).filter((el) => isVisible(el) && !el.disabled);
+    const emailEl = inputs.find((el) => {
+      const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+      return el.type === "email" || ph.includes("e-past") || ph.includes("email");
+    });
+    const passEl = inputs.find((el) => el.type === "password");
+    if (!emailEl || !passEl) return false;
+    setNativeValue(emailEl, email);
+    setNativeValue(passEl, password);
+    const boxes = Array.from(document.querySelectorAll('input[type="checkbox"]')).filter(isVisible);
+    for (const box of boxes) {
+      if (!box.checked) box.click();
+    }
+    window.setTimeout(() => {
+      clickByText(/^(ienākt|log in|login)$/i);
+    }, 120);
+    return true;
+  }
+
+  function clickAutodnaCheck() {
+    clickByText(/pārbaudi vin|pārbaudīt vin|check vin|pārbaudi/i);
+  }
+
+  function clickCheckThisRegVinTab() {
+    const candidates = document.querySelectorAll("button, [role='tab'], a, label, span, div");
+    for (const el of candidates) {
+      if (!isVisible(el)) continue;
+      const t = (el.textContent || "").trim();
+      if (/^VIN$/i.test(t)) {
+        el.click();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function findCheckThisRegVinInput() {
+    const list = document.querySelectorAll("input, textarea");
+    for (const el of list) {
+      if (!isVisible(el) || el.disabled) continue;
+      const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+      const n = (el.name || "").toLowerCase();
+      const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+      if (ph.includes("registration") || n.includes("reg") || aria.includes("registration")) continue;
+      if (ph.includes("vin") || n.includes("vin") || aria.includes("vin")) return el;
+    }
+    return null;
+  }
+
+  function clickCheckThisRegSubmit() {
+    clickByText(/get report|check my car|pārbaudīt/i);
+  }
+
   const isCV = host.endsWith("carvertical.com");
   const isAR = host.endsWith("auto-records.com");
+  const isDNA = host.endsWith("autodna.lv") || host.endsWith("autodna.com");
+  const isCTR = host.endsWith("checkthisreg.com");
 
-  if (!isCV && !isAR) return;
+  if (!isCV && !isAR && !isDNA && !isCTR) return;
 
   let tries = 0;
-  const maxTries = 120;
+  const maxTries = 140;
   let done = false;
+  let ctrTabClicked = false;
+  let dnaLoginAttempted = false;
+
   const interval = window.setInterval(() => {
     tries += 1;
     if (done || tries >= maxTries) {
@@ -325,25 +457,56 @@
       return;
     }
     const elapsed1s = tries >= 4;
+
     if (isCV) {
       const el = findCarVerticalVinInput(elapsed1s);
       if (el && !el.disabled && !done) {
         done = true;
         window.clearInterval(interval);
-        primeCarVerticalInput(el);
-        window.setTimeout(() => {
-          setNativeValue(el, vin);
-          console.log("PROVIN CarVertical: aizpildīts VIN lauks", el);
-          window.setTimeout(clickCarVerticalCheck, 400);
-        }, 50);
+        fillAndClear(el);
+        window.setTimeout(clickCarVerticalCheck, 400);
       }
-    } else if (isAR) {
+      return;
+    }
+
+    if (isAR) {
       const el = findAutoRecordsVinInput();
       if (el && !el.disabled) {
-        setNativeValue(el, vin);
+        fillAndClear(el);
         done = true;
         window.clearInterval(interval);
-        console.log("PROVIN Auto-Records: aizpildīts VIN lauks", el);
+      }
+      return;
+    }
+
+    if (isDNA) {
+      if (autodnaLoginModalOpen()) {
+        if (!dnaLoginAttempted) {
+          dnaLoginAttempted = true;
+          tryAutodnaLogin();
+        }
+        return;
+      }
+      const el = findAutodnaVinInput();
+      if (el && !el.disabled && !done) {
+        done = true;
+        window.clearInterval(interval);
+        fillAndClear(el);
+        window.setTimeout(clickAutodnaCheck, 350);
+      }
+      return;
+    }
+
+    if (isCTR) {
+      if (!ctrTabClicked) {
+        ctrTabClicked = clickCheckThisRegVinTab();
+      }
+      const el = findCheckThisRegVinInput();
+      if (el && !el.disabled && !done) {
+        done = true;
+        window.clearInterval(interval);
+        fillAndClear(el);
+        window.setTimeout(clickCheckThisRegSubmit, 400);
       }
     }
   }, 250);

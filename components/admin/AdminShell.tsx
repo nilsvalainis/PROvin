@@ -11,6 +11,8 @@ import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
 import { LogoutButton } from "./LogoutButton";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
+import { AdminVinHandoffProvider, useAdminVinHandoff } from "./AdminVinHandoffContext";
+import { AdminVinSourcesMenuBar } from "./AdminVinSourcesMenuBar";
 
 /** Mobilajā admin augšējā joslā — tās pašas 3 strīpiņas kā publiskajā HeaderClient. */
 function AdminMobileMenuIcon({ lineClass }: { lineClass: string }) {
@@ -45,6 +47,13 @@ type Props = {
 };
 
 const MOBILE_NAV_TOP_REM = 3.5;
+
+function AdminProVinMenu({ force }: { force: boolean }) {
+  const ctx = useAdminVinHandoff();
+  const vin = ctx?.vin ?? "";
+  if (!force && !vin) return null;
+  return <AdminVinSourcesMenuBar vin={vin} />;
+}
 
 export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Props) {
   const pathname = usePathname() ?? "";
@@ -86,9 +95,13 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
     ? "max-md:fixed max-md:right-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(14rem,74vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-l max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
     : "max-md:hidden";
 
+  const isOrderDetail = /^\/admin\/orders\/[^/]+$/.test(pathname);
+
   return (
+    <AdminVinHandoffProvider>
     <div className="flex min-h-dvh flex-col bg-white">
-      <header className="sticky top-0 z-[45] flex shrink-0 items-center gap-2 border-b border-black/35 bg-[var(--color-provin-accent-soft)]/50 px-3 py-2 shadow-sm sm:px-4">
+      <header className="sticky top-0 z-[45] shrink-0 border-b border-black/35 bg-[var(--color-provin-accent-soft)]/50 shadow-sm">
+        <div className="flex items-center gap-2 px-3 py-2 sm:px-4">
         <div className="min-w-0 flex flex-1 items-center gap-2">
           <AdminWorkspaceSwitcher />
           <AdminUnreadOrdersBadge />
@@ -125,6 +138,8 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
             <AdminMobileMenuIcon lineClass="bg-black" />
           </button>
         </div>
+        </div>
+        {isProWorkspace ? <AdminProVinMenu force={isOrderDetail} /> : null}
       </header>
 
       {mobileNavOpen ? (
@@ -174,5 +189,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
         </AdminShellLayoutContext.Provider>
       </div>
     </div>
+    </AdminVinHandoffProvider>
   );
 }
