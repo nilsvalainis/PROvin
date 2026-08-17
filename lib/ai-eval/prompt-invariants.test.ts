@@ -12,6 +12,7 @@ import {
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
   HYBRID_COMMENT_RULES,
+  PROVIN_CLAUDE_LV_SURFACE,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
   PROVIN_REPORT_COPY_VOCABULARY,
@@ -296,15 +297,23 @@ describe("PROVIN AI prompt invariants", () => {
     const polish = readRepo("lib/admin-ai-polish.ts");
     expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
     expect(polish).toMatch(/applyProvinReportCopyVocabulary/);
+    expect(polish).toMatch(/skipLvPolish:\s*true/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_HAIKU/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_OPUS/);
   });
 
-  it("Haiku Latvian prose is post-edited by Sonnet grammar polish", () => {
+  it("all Claude Latvian expert copy is post-edited by Sonnet grammar polish", () => {
     const ai = readRepo("lib/admin-ai.ts");
-    expect(ai).toMatch(/polishHaikuLatvianProse/);
+    expect(ai).toMatch(/polishClaudeLatvianProse/);
+    expect(ai).not.toMatch(/polishHaikuLatvianProse/);
     expect(ai).toMatch(/AI_LV_POLISH_SYSTEM/);
     expect(ai).toMatch(/model:\s*CLAUDE_MODEL_SONNET/);
+    expect(ai).toMatch(/skipLvPolish/);
+    expect(ai).toMatch(/PROVIN_CLAUDE_LV_SURFACE/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/workshop Latvian/i);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/saime/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/iesmidzinātājs/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/WORKSHOP LATVIAN/);
   });
 
   it("comment generation can dispatch to Gemini for light tiers", () => {

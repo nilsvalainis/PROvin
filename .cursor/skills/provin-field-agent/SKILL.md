@@ -38,6 +38,8 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 - For checklists, visual/physical inspections, or next-step recommendations, write **paragraphs with bold topic openers** (same as other expert comments) — e.g. **Virsbūves pārbaude.** Jāpārbauda… — never hyphen bullet lists.
 - Strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do NOT use direct conversational imperatives like "Pārbaudi" or passive/weak wording.
 
+Claude (Opus/Sonnet) additionally receives `PROVIN_CLAUDE_LV_SURFACE` at the end of the system prompt and a Sonnet grammar pass. Gemini Flash/Pro use the same vocabulary without that extra pass. Do **not** put Gemini-only rules in dispatch — keep one curriculum.
+
 ## Sync workflow
 
 1. Change **tone / LV grammar / role** here first.

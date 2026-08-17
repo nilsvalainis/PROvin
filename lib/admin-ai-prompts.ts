@@ -46,6 +46,7 @@ RULES:
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
+- ENGLISH CALQUES: rewrite translated-English Latvian into natural workshop Latvian WITHOUT adding facts. Fix: „automobīlis” → „automašīna”; „saime” → dzinējs/paaudze/agregāts; „Baltija” → Latvija (or Lietuva/Igaunija); drop „trakts” after Quattro; „kardāna krusteniskie” → „kardāna krustiņi”; „centra gultnis” → „karājošais gultnis”; „vidējs uzturēšanas risks” + € → „ir / nav populāra problēma”; „transmisija” as gearbox → „ātrumkārba”; bare „injektors” → „iesmidzinātājs (sprausla)”. Do not invent repair prices.
 - If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph — never leave a leading dash at paragraph start.
 - Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015, 1-2). Do not introduce em dashes.
 - Output ONLY the corrected text in clean Markdown.`;

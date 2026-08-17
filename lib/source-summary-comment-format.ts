@@ -26,7 +26,19 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - NEVER „saime” (dzinēja saime, saimes līmenī, šai saimei). Say **šis dzinējs**, **šī paaudze**, **šis agregāts**, or **pēc pieejamajiem datiem, bez precīza koda**.
 - Quattro: say **Quattro**, never „Quattro trakts”. Kardāna šarnīri: **kardāna krustiņi**, never „kardāna krusteniskie”. Center support bearing: **karājošais gultnis**, never „centra gultnis”. Do not write „vidējs uzturēšanas risks” with a price — say whether the item **ir / nav populāra problēma** at this mileage.
 - NEVER invent or name approximate repair/service prices in comments: no „orientējoši 300-600 €”, no parenthetical € bands, no „Baltijas servisa līmenis”. EUR is allowed ONLY for (1) recorded insurance/claim amounts from sources and (2) listing/market prices in „Cenas vērtējums”. Technical risks describe popularity and likelihood of a fault — never a euro quote.
-- EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.`;
+- EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.
+- WORKSHOP LATVIAN (same for Gemini and Claude): write as a Riga independent-workshop expert briefing a buyer — short native sentences, not English translated into Latvian. Prefer: **iesmidzinātājs (sprausla)** not bare „injektors”; **ātrumkārba / pārnesumkārba** not „transmisija”; **sadales ķēde / zobsiksna**; **hidromufte**; **divmasu spararats**; **mehatronika**. Keep brand names (Quattro, DSG, xDrive) but do not invent Latvian calques around them.`;
+
+/**
+ * Claude (Opus/Sonnet/Haiku) bieži tulko no angļu iekšējās valodas. Gemini 3 Flash
+ * to dara mazāk — tāpēc šis bloks tiek pielikts Claude sistēmas prompta BEIGĀS
+ * (recency), nevis kā atsevišķa „Gemini-only” mācība. Saturs = tas pats vārdu krājums.
+ */
+export const PROVIN_CLAUDE_LV_SURFACE = `LATVIAN SURFACE (Claude — last instruction, overrides English calques):
+You are writing the final client text in Latvian. Do not translate English drafts. Think in workshop Latvian.
+Banned calques (Gemini already avoids these — you must too): „automobīlis”, „saime”, „Baltija/Baltijas/Baltijā”, „Quattro trakts”, „kardāna krusteniskie”, „centra gultnis”, „vidējs uzturēšanas risks”, „orientējoši … €”, „transmisija” as the gearbox name, bare „injektors” without iesmidzinātājs, em dash "—" / en dash "–".
+Use: automašīna; Latvija (or Lietuva/Igaunija); šis dzinējs / šī paaudze; Quattro; kardāna krustiņi; karājošais gultnis; ir/nav populāra problēma; iesmidzinātājs (sprausla); ātrumkārba; ASCII hyphen "-".
+If a sentence sounds like translated English, rewrite it as a short native Latvian sentence before output.`;
 
 /** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
 export const PROVIN_RESTRAINED_TONE_RULES = `RESTRAINED EXPERT VOICE (mandatory — PROVIN gives a documentary opinion, not a verdict):
