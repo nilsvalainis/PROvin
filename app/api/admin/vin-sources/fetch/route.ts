@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { fetchVinSource } from "@/lib/vin-sources";
+import { VIN_SOURCES_BROWSER_UNAVAILABLE, isVinSourcesBrowserAllowed } from "@/lib/vin-sources/browser";
+import { fetchVinSource, VIN_SOURCE_NEEDS_BROWSER } from "@/lib/vin-sources";
 import { vinSourceResultToBlock } from "@/lib/vin-sources/to-block";
 import { isVinSourceId } from "@/lib/vin-sources/types";
+import { buildCarinfoVinCheckUrl } from "@/lib/admin-vin-urls";
 
 export const runtime = "nodejs";
 /** lkf.ee reCAPTCHA var prasīt operatora klikšķi — atļaujam ilgu pieprasījumu. */
@@ -28,6 +30,17 @@ export async function POST(req: Request) {
   if (!isValidVin(vin)) return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
 
   const regMark = String(body.regMark ?? "").trim().slice(0, 20);
+
+  if (VIN_SOURCE_NEEDS_BROWSER[source] && !isVinSourcesBrowserAllowed()) {
+    return NextResponse.json(
+      {
+        error: "browser_required",
+        detail: VIN_SOURCES_BROWSER_UNAVAILABLE,
+        openUrl: source === "carinfo" ? buildCarinfoVinCheckUrl(vin) : null,
+      },
+      { status: 409 },
+    );
+  }
 
   try {
     const result = await fetchVinSource(source, vin, regMark);

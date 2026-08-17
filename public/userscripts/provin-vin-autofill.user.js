@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.4.0
-// @description  Admin MENU: GM_setValue no data-provin-handoff-*. AutoDNA / CarVertical / Auto-Records / CheckThisReg VIN aizpilde; Tirgus dati URL.
+// @version      1.5.0
+// @description  Admin MENU: GM_setValue no data-provin-handoff-*. AutoDNA / CarVertical / Auto-Records / CheckThisReg / car.info VIN aizpilde; Tirgus dati URL.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -20,6 +20,8 @@
 // @match        https://autodna.com/*
 // @match        https://www.checkthisreg.com/*
 // @match        https://checkthisreg.com/*
+// @match        https://www.car.info/*
+// @match        https://car.info/*
 // @match        https://tirgusdati.lv/*
 // @match        https://www.tirgusdati.lv/*
 // @grant        GM_getValue
@@ -239,7 +241,7 @@
       }
     }
     if (!vin) {
-      const vinRaw = params.get("vin");
+      const vinRaw = params.get("vin") || params.get("q");
       if (vinRaw && String(vinRaw).trim()) {
         vin = String(vinRaw)
           .replace(/[\s-]/g, "")
@@ -437,12 +439,39 @@
     clickByText(/get report|check my car|pārbaudīt/i);
   }
 
+  function findCarinfoSearchInput() {
+    const list = document.querySelectorAll("input");
+    for (const el of list) {
+      if (!isVisible(el) || el.disabled || el.type === "password" || el.type === "hidden") continue;
+      const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+      const n = (el.name || "").toLowerCase();
+      const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+      if (n === "q" || el.type === "search") return el;
+      if (ph.includes("search") || ph.includes("vin") || ph.includes("license") || ph.includes("reg")) return el;
+      if (aria.includes("search") || aria.includes("vin")) return el;
+    }
+    return document.querySelector('input[name="q"], input[type="search"]');
+  }
+
+  function clickCarinfoSearch() {
+    clickByText(/search|sök|søg|suchen|meklēt/i);
+    const form = document.querySelector("form");
+    if (form && typeof form.requestSubmit === "function") {
+      try {
+        form.requestSubmit();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   const isCV = host.endsWith("carvertical.com");
   const isAR = host.endsWith("auto-records.com");
   const isDNA = host.endsWith("autodna.lv") || host.endsWith("autodna.com");
   const isCTR = host.endsWith("checkthisreg.com");
+  const isInfo = host.endsWith("car.info");
 
-  if (!isCV && !isAR && !isDNA && !isCTR) return;
+  if (!isCV && !isAR && !isDNA && !isCTR && !isInfo) return;
 
   let tries = 0;
   const maxTries = 140;
@@ -507,6 +536,20 @@
         window.clearInterval(interval);
         fillAndClear(el);
         window.setTimeout(clickCheckThisRegSubmit, 400);
+      }
+      return;
+    }
+
+    if (isInfo) {
+      const el = findCarinfoSearchInput();
+      if (el && !el.disabled && !done) {
+        const already = fieldAlreadyHasVin(el);
+        fillAndClear(el);
+        done = true;
+        window.clearInterval(interval);
+        if (!already && !params.get("q")) {
+          window.setTimeout(clickCarinfoSearch, 350);
+        }
       }
     }
   }, 250);

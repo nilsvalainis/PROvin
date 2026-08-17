@@ -35,6 +35,8 @@ import {
   clearVinRegistryOdometerReadings,
   countVinRegistryOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
+import { buildCarinfoVinCheckUrl } from "@/lib/admin-vin-urls";
+import { parseCarinfoPastedText } from "@/lib/vin-sources/carinfo-parse";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -51,7 +53,8 @@ const SOURCE_HINT: Record<VinRegistryBlockKey, string> = {
     "Igaunijas Transpordiamet „Sõiduki taustakontroll”: nobraukums, izmantošanas vēsture, ierobežojumi. Prasa reCAPTCHA — ielāde tikai lokāli.",
   lkf_ee:
     "Igaunijas Liikluskindlustuse Fond „Kahjukontroll”: OCTA atlīdzības gadījumi. Summas publiski netiek rādītas; prasa reCAPTCHA.",
-  carinfo: "car.info agregators (Skandināvija, DACH): nobraukums pa valstīm, īpašnieki, statusi — bezmaksas daļa.",
+  carinfo:
+    "car.info (Skandināvija, DACH) — bezmaksas daļa. Vercel nevar apiet Cloudflare/reCAPTCHA. Atver lapu ar VIN, nokopē tekstu (Cmd+A, Cmd+C) un ielīmē RAW laukā — tabulas aizpildās šeit.",
 };
 
 type Props = {
@@ -73,7 +76,10 @@ export async function requestVinRegistryFetch(
   source: VinRegistryBlockKey,
   vin: string,
   regMark = "",
-): Promise<{ ok: true; found: boolean; message: string; block: VinRegistryBlockState } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; found: boolean; message: string; block: VinRegistryBlockState }
+  | { ok: false; error: string; browserRequired?: boolean; openUrl?: string | null }
+> {
   const res = await fetch("/api/admin/vin-sources/fetch", {
     method: "POST",
     credentials: "include",
@@ -87,7 +93,16 @@ export async function requestVinRegistryFetch(
     block?: VinRegistryBlockState;
     error?: string;
     detail?: string;
+    openUrl?: string | null;
   };
+  if (data.error === "browser_required") {
+    return {
+      ok: false,
+      error: data.detail ?? data.error ?? "Nepieciešams atvērt avotu pārlūkā",
+      browserRequired: true,
+      openUrl: data.openUrl,
+    };
+  }
   if (!res.ok || !data.ok || !data.block) {
     return { ok: false, error: data.detail ?? data.error ?? `Ielāde neizdevās (HTTP ${res.status})` };
   }
@@ -143,10 +158,22 @@ export function AdminVinRegistrySourceBlock({
       setError("Pasūtījumā nav VIN — ievadi to pārskata sadaļā.");
       return;
     }
+    if (blockKey === "carinfo") {
+      const href = buildCarinfoVinCheckUrl(cleanVin);
+      if (href) window.open(href, "_blank", "noopener,noreferrer");
+      setStatus("car.info atvērts. Nokopē lapas tekstu (Cmd+A, Cmd+C) un ielīmē RAW laukā — tabulas aizpildīsies pašas.");
+      window.setTimeout(() => {
+        document.getElementById(`${blockKey}-rawUnprocessedData`)?.focus();
+      }, 200);
+      return;
+    }
     setBusy(true);
     try {
       const data = await requestVinRegistryFetch(blockKey, cleanVin);
       if (!data.ok) {
+        if (data.browserRequired && data.openUrl) {
+          window.open(data.openUrl, "_blank", "noopener,noreferrer");
+        }
         setError(data.error);
         return;
       }
@@ -162,6 +189,38 @@ export function AdminVinRegistrySourceBlock({
     } finally {
       setBusy(false);
     }
+  };
+
+  const applyCarinfoPaste = (raw: string) => {
+    const clipped = raw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
+    if (blockKey !== "carinfo") {
+      onChange({ ...block, rawUnprocessedData: clipped });
+      return;
+    }
+    const parsed = parseCarinfoPastedText(clipped);
+    if (!parsed.found) {
+      onChange({ ...block, rawUnprocessedData: clipped });
+      setError(null);
+      setStatus("RAW saglabāts. Ja nav nobraukuma rindu — nokopē visu car.info rezultātu lapu (ne tikai izvēlni).");
+      return;
+    }
+    onChange({
+      ...block,
+      rawUnprocessedData: clipped,
+      mileage: parsed.mileage.map((r) => ({
+        date: r.date,
+        odometer: r.odometer,
+        country: r.country,
+        origin: r.origin ?? "car.info",
+      })),
+      ownersSummary: parsed.ownersSummary.trim() ? parsed.ownersSummary : block.ownersSummary,
+      statusRecords: parsed.statusRecords.trim() ? parsed.statusRecords : block.statusRecords,
+      autoNotes: parsed.notes.length > 0 ? parsed.notes.join("\n") : block.autoNotes,
+      fetchedAt: new Date().toISOString(),
+      fetchMessage: `Ielīmēts no car.info (${parsed.mileage.length} nobraukuma ieraksti)`,
+    });
+    setError(null);
+    setStatus(`Ielasīti ${parsed.mileage.length} nobraukuma ieraksti no iekopētā teksta.`);
   };
 
   const textField = (
@@ -207,8 +266,23 @@ export function AdminVinRegistrySourceBlock({
               onClick={() => void loadByVin()}
               className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
             >
-              {busy ? "Ielasu…" : "Ielasīt pēc VIN"}
+              {blockKey === "carinfo"
+                ? "Atvērt car.info"
+                : busy
+                  ? "Ielasu…"
+                  : "Ielasīt pēc VIN"}
             </button>
+            {blockKey === "carinfo" && vin.trim() ? (
+              <a
+                href={buildCarinfoVinCheckUrl(vin) ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
+                data-provin-handoff-vin={vin.trim()}
+              >
+                MENU saite →
+              </a>
+            ) : null}
             <span className="font-mono text-[10px] text-slate-500">{vin.trim() || "— nav VIN —"}</span>
             {block.fetchedAt ? (
               <span className="text-[10px] text-slate-400">
@@ -457,7 +531,47 @@ export function AdminVinRegistrySourceBlock({
           "Automātiski atrastie brīdinājumi; var papildināt manuāli…",
           4,
         )}
-        {textField("rawUnprocessedData", "RAW dati (avota valodā)", "Neapstrādātā avota atbilde…", 5)}
+        <div className="mt-3">
+          <label className={labelCls} htmlFor={`${blockKey}-rawUnprocessedData`}>
+            {blockKey === "carinfo" ? "RAW — ielīmē car.info lapas tekstu" : "RAW dati (avota valodā)"}
+          </label>
+          {readOnly ? (
+            <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
+              {block.rawUnprocessedData.trim() || "—"}
+            </div>
+          ) : (
+            <textarea
+              id={`${blockKey}-rawUnprocessedData`}
+              className={areaCls}
+              rows={5}
+              disabled={disabled}
+              placeholder={
+                blockKey === "carinfo"
+                  ? "Cmd+A, Cmd+C car.info lapā → ielīmē šeit. Nobraukuma rindas (datums + km) aizpildīs tabulu."
+                  : "Neapstrādātā avota atbilde…"
+              }
+              value={block.rawUnprocessedData}
+              onChange={(e) => onChange({ ...block, rawUnprocessedData: e.target.value.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) })}
+              onPaste={
+                blockKey === "carinfo"
+                  ? (e) => {
+                      const text = e.clipboardData.getData("text");
+                      if (!text.trim()) return;
+                      e.preventDefault();
+                      applyCarinfoPaste(text);
+                    }
+                  : undefined
+              }
+              onBlur={
+                blockKey === "carinfo"
+                  ? (e) => {
+                      if (e.currentTarget.value.trim()) applyCarinfoPaste(e.currentTarget.value);
+                    }
+                  : undefined
+              }
+            />
+          )}
+        </div>
       </div>
 
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">

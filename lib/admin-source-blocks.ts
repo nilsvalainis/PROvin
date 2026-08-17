@@ -12,6 +12,7 @@ import {
 import {
   AUTODNA_LV_HOME_URL,
   AUTORECORDS_BASE_URL,
+  CARINFO_HOME_URL,
   CARVERTICAL_REPORTS_URL,
 } from "@/lib/admin-vin-urls";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
@@ -171,7 +172,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   tjekbil: "https://www.tjekbil.dk",
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
   lkf_ee: "https://lkf.ee/et/kahjukontroll",
-  carinfo: "https://www.car.info",
+  carinfo: CARINFO_HOME_URL.replace(/\/$/, ""),
   citi_avoti: "https://www.provin.lv",
   listing_analysis: "https://www.ss.lv",
 };

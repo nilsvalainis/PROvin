@@ -40,7 +40,10 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
   const label = SOURCE_BLOCK_LABELS[blockKey];
   const vin = useAdminVinHandoff()?.vin ?? "";
   const vinAware =
-    blockKey === "autodna" || blockKey === "carvertical" || blockKey === "auto_records"
+    blockKey === "autodna" ||
+    blockKey === "carvertical" ||
+    blockKey === "auto_records" ||
+    blockKey === "carinfo"
       ? resolveSourceBlockExternalOpen(blockKey, vin)
       : null;
   const href = vinAware?.href ?? SOURCE_BLOCK_EXTERNAL_URL[blockKey];
