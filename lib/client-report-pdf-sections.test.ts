@@ -291,6 +291,34 @@ describe("Ekspluatācijas hronoloģija", () => {
     expect(html.indexOf(PDF_LIFECYCLE_TITLE)).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 
+  it("highlights an odometer contradiction as a red alert in the timeline and mileage table", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.autodna,
+            mileageRows: [
+              { date: "01.01.2020", odometer: "150000", country: "Nīderlande" },
+              { date: "01.01.2022", odometer: "80000", country: "Latvija" },
+            ],
+            incidentRows: [],
+            comments: "",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("Iespējama odometra pretruna");
+    expect(html).toContain("pdf-life-item--alert");
+    expect(html).toContain("pdf-mileage-history-row--anomaly");
+    expect(html).toContain("pdf-num-warn--red");
+    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*background:#FFF1F2/);
+    expect(html).toMatch(/\.pdf-mileage-history-row--anomaly td\{[^}]*background:#FFF1F2/);
+  });
+
   it("omits opaque dealer ID codes from the lifecycle caption", () => {
     const events = buildVehicleLifecycleEvents({
       autoRecordsBlock: {

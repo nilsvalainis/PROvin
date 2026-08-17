@@ -472,14 +472,22 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
     const flag = e.country ? buildPdfCountryFlagCellHtml(e.country) : "";
     const odo = e.odometer.trim() ? `${escapeHtml(e.odometer.trim())} km` : "";
     const srcsWrap = e.sources.length > 4 ? " pdf-life-srcs--wrap" : "";
-    items.push(`<li class="pdf-life-item pdf-life-item--${e.tone}">
+    const isAlert = e.tone === "alert";
+    const titleIco = isAlert
+      ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
+      : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>`;
+    const odoHtml =
+      isAlert && odo
+        ? `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="tabular pdf-num-warn-digits">${odo}</span></span>`
+        : odo;
+    items.push(`<li class="pdf-life-item pdf-life-item--${e.tone}"${isAlert ? ' role="alert"' : ""}>
       <span class="pdf-life-date">${escapeHtml(e.date)}</span>
       <span class="pdf-life-rail" aria-hidden="true"><span class="pdf-life-dot"></span></span>
       <span class="pdf-life-body">
-        <span class="pdf-life-title"><span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>${escapeHtml(e.title)}</span>
+        <span class="pdf-life-title">${titleIco}${escapeHtml(e.title)}</span>
         ${e.detail ? `<span class="pdf-life-detail">${escapeHtml(e.detail)}</span>` : ""}
       </span>
-      <span class="pdf-life-odo">${odo}</span>
+      <span class="pdf-life-odo">${odoHtml}</span>
       <span class="pdf-life-srcs${srcsWrap}">${dots}</span>
       <span class="pdf-life-flag">${flag}</span>
     </li>`);
@@ -1683,7 +1691,24 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item--warn .pdf-life-dot{border-color:#FFC107;}
-      .pdf-life-item--alert .pdf-life-dot{border-color:#DC2626;}
+      .pdf-life-item--alert{
+        background:#FFF1F2;
+        border-radius:8px;
+        box-shadow:inset 3px 0 0 #FF4D4D;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-life-item--alert .pdf-life-dot{
+        background:#FF4D4D;border-color:#FF4D4D;
+      }
+      .pdf-life-item--alert .pdf-life-date,
+      .pdf-life-item--alert .pdf-life-title{
+        color:#B91C1C;
+      }
+      .pdf-life-item--alert .pdf-life-odo,
+      .pdf-life-item--alert .pdf-num-warn-digits{
+        color:#B91C1C!important;font-weight:700;
+      }
+      .pdf-life-item--alert .pdf-life-title .pdf-data-alert-ico{flex-shrink:0;}
       .pdf-life-date{
         font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;white-space:nowrap;
         font-variant-numeric:tabular-nums;line-height:1.4;
@@ -1931,6 +1956,13 @@ function clientReportPrintCss(): string {
         background:#f9fafb!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-mileage-history-row--anomaly td{
+        background:#FFF1F2!important;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-mileage-history-row--anomaly td.pdf-mileage-cell-date{
+        box-shadow:inset 3px 0 0 #FF4D4D;
+      }
       .pdf-mileage-history-table th.pdf-mileage-th-date{text-align:left!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-odo{text-align:center!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-src{text-align:center!important;}
@@ -2109,8 +2141,11 @@ ${sourceDotColorCss()}
         display:flex;align-items:center;gap:8px;width:100%;
       }
       .pdf-num-warn{font-size:var(--pdf-fs-table)!important;line-height:1.2;font-family:Inter,sans-serif!important;vertical-align:middle;}
-      .pdf-num-warn--red .pdf-num-warn-digits,.pdf-num-warn--yellow .pdf-num-warn-digits{
+      .pdf-num-warn--yellow .pdf-num-warn-digits{
         color:#000!important;font-weight:600!important;
+      }
+      .pdf-num-warn--red .pdf-num-warn-digits{
+        color:#B91C1C!important;font-weight:700!important;
       }
       .pdf-loss-amt-ico,.pdf-warn-tri-ico{flex-shrink:0;display:block;width:13px;height:13px;}
       .pdf-warn-tri-ico--lg{width:17px!important;height:17px!important;}
