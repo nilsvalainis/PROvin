@@ -3,6 +3,7 @@
  * Motorstyrelsen odometra ieraksti, Bilbogen ķīlas, meklēto TL saraksts.
  * Publisks JSON bez autorizācijas un bez captcha — browsers nav vajadzīgs.
  */
+import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 import { emptyVinSourceResult, type VinSourceFetchResult, type VinSourceIncidentRow, type VinSourceMileageRow } from "@/lib/vin-sources/types";
 import { detectSpecialUseLabels, translateTermLv, translateTextLv } from "@/lib/vin-sources/translate-lv";
 
@@ -79,22 +80,23 @@ function buildOwnersSummary(dmr: DmrResponse): string {
 
   const lines: string[] = [];
   const firstReg = isoDay(basic.foersteRegistreringDato);
-  if (firstReg) lines.push(`Pirmā reģistrācija: ${firstReg}`);
+  if (firstReg) lines.push(`Pirmā reģistrācija: ${formatRegistryDateLv(firstReg)}`);
 
   const statusDate = isoDay(basic.statusDato);
   const status = translateTermLv(str(basic.status), "da");
-  if (status) lines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${statusDate})` : ""}`);
+  if (status) {
+    lines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
+  }
 
   // DMR publiskajos datos īpašnieku vārdu nav; polišu maiņas ir tuvākā pieejamā aizvietotājvērtība
   const policyDates = [...new Set(history.map((h) => isoDay(h.oprettet)).filter(Boolean))];
   if (policyDates.length > 0) {
     const owners = policyDates.length;
-    lines.push(
-      `Aplēstais īpašnieku skaits: ${owners} (${owners - 1} iepriekšēj${owners - 1 === 1 ? "ais" : "ie"}) — pēc OCTA polišu maiņām`,
-    );
+    lines.push(`${owners} īpašnieki (pēc OCTA polišu maiņām)`);
     for (const h of history) {
-      const parts = [isoDay(h.oprettet), str(h.selskab), translateTermLv(str(h.status), "da")].filter(Boolean);
-      if (parts.length) lines.push(`  · ${parts.join(" · ")}`);
+      const when = formatRegistryDateLv(isoDay(h.oprettet));
+      const parts = [when, str(h.selskab), translateTermLv(str(h.status), "da")].filter(Boolean);
+      if (parts.length) lines.push(parts.join(", "));
     }
   }
 
@@ -111,7 +113,7 @@ function buildStatusRecords(dmr: DmrResponse): { text: string; specialUse: strin
   const lines: string[] = [];
 
   const use = str(basic.koeretoejAnvendelseNavn) || str(general.koeretoejAnvendelse);
-  if (use) lines.push(`Izmantošanas veids: ${translateTermLv(use, "da")} (oriģinālā: ${use})`);
+  if (use) lines.push(`Izmantošanas veids: ${translateTermLv(use, "da")}`);
 
   const secondary = str(general.sekundaerStatus);
   if (secondary) lines.push(`Sekundārais statuss: ${translateTermLv(secondary, "da")}`);
@@ -119,9 +121,10 @@ function buildStatusRecords(dmr: DmrResponse): { text: string; specialUse: strin
   if (basic.bilLeaset === true) {
     const from = isoDay(basic.leasingGyldigFra);
     const to = isoDay(basic.leasingGyldigTil);
-    lines.push(`Līzings: aktīvs${from || to ? ` (${[from, to].filter(Boolean).join(" – ")})` : ""}`);
+    const span = [from, to].filter(Boolean).map(formatRegistryDateLv).join(" - ");
+    lines.push(`Līzings: aktīvs${span ? ` (${span})` : ""}`);
   }
-  if (general.blockedStatus === true) lines.push("Reģistrā bloķēts (blockedStatus)");
+  if (general.blockedStatus === true) lines.push("Reģistrā bloķēts");
 
   const importCondition = str(general.standEfterImport);
   if (importCondition) lines.push(`Stāvoklis pēc importa: ${translateTextLv(importCondition, "da")}`);
@@ -231,7 +234,7 @@ function buildNotes(
     const peakKm = peak ? Number(peak.odometer) : -1;
     if (peak && km < peakKm - 1000) {
       notes.push(
-        `⚠ Odometra pretruna: ${peakKm.toLocaleString("lv-LV")} km (${peak.date}) → ${km.toLocaleString("lv-LV")} km (${row.date}), mīnus ${(peakKm - km).toLocaleString("lv-LV")} km`,
+        `Odometra pretruna: ${peakKm.toLocaleString("lv-LV")} km (${formatRegistryDateLv(peak.date)}), pēc tam ${km.toLocaleString("lv-LV")} km (${formatRegistryDateLv(row.date)}).`,
       );
     }
     if (!peak || km > peakKm) peak = row;
@@ -244,28 +247,28 @@ function buildNotes(
     const delta = Number(last.odometer) - Number(first.odometer);
     if (years > 0.5) {
       const perYear = Math.round(delta / years);
-      notes.push(`Vidējais nobraukums: ~${perYear.toLocaleString("lv-LV")} km/gadā`);
-      if (perYear > 40000) notes.push("⚠ Ļoti liels gada nobraukums — iespējama komerciāla ekspluatācija");
+      notes.push(`Vidējais nobraukums: ap ${perYear.toLocaleString("lv-LV")} km gadā.`);
+      if (perYear > 40000) notes.push("Liels gada nobraukums, iespējama komerciāla izmantošana.");
     }
     const staleYears = (Date.now() - new Date(last.date).getTime()) / (365.25 * 24 * 3600 * 1000);
     if (staleYears > 1.5) {
-      notes.push(`⚠ Jaunākais odometra ieraksts ir ${staleYears.toFixed(1)} gadus vecs — starplaiks nav dokumentēts`);
+      notes.push(`Jaunākais odometra ieraksts ir ${staleYears.toFixed(1)} gadus vecs.`);
     }
   }
 
-  for (const label of specialUse) notes.push(`⚠ Īpašs izmantošanas statuss: ${label}`);
+  for (const label of specialUse) notes.push(`Īpašais statuss: ${label}.`);
 
   const failed = inspections.filter((r) => {
     const result = str(r.synsresultat);
     return result && !/godkendt$/i.test(result.trim());
   });
-  if (failed.length > 0) notes.push(`⚠ Neizturētas apskates: ${failed.length}`);
+  if (failed.length > 0) notes.push(`Neizturētas apskates: ${failed.length}.`);
 
   const debtCount = Array.isArray(dmr.debtData?.laaneDokumenter) ? dmr.debtData.laaneDokumenter.length : 0;
-  if (debtCount > 0) notes.push("⚠ Bilbogen reģistrēta ķīla / parāds — jāpārbauda pirms pirkuma");
-  if (dmr.debtData?.konkurs) notes.push("⚠ Saistīta maksātnespējas atzīme");
-  if (Array.isArray(wanted) && wanted.length > 0) notes.push("⚠ Ieraksts meklēto transportlīdzekļu vēsturē");
-  if (dmr.extended?.general?.blockedStatus === true) notes.push("⚠ Transportlīdzeklis reģistrā bloķēts");
+  if (debtCount > 0) notes.push("Reģistrēta ķīla (Bilbogen).");
+  if (dmr.debtData?.konkurs) notes.push("Maksātnespējas atzīme.");
+  if (Array.isArray(wanted) && wanted.length > 0) notes.push("Ieraksts meklēto transportlīdzekļu vēsturē.");
+  if (dmr.extended?.general?.blockedStatus === true) notes.push("Reģistrā bloķēts.");
 
   return notes;
 }

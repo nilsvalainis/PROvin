@@ -8,6 +8,7 @@
  */
 import { detectSpecialUseLabels } from "@/lib/vin-sources/translate-lv";
 import type { VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
+import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 
 const COUNTRY_BY_CODE: Record<string, string> = {
   se: "Zviedrija",
@@ -147,14 +148,6 @@ function pairsFromText(text: string): { label: string; value: string }[] {
   return pairs;
 }
 
-function gluedField(text: string, label: string): string {
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(`${escaped}\\s*[:–-]?\\s*([^\\n]{1,80}?)(?=\\s*(?:[A-ZÅÄÖ][a-zåäö]+(?:\\s+[A-ZÅÄÖa-zåäö]+){0,4}\\s*[:–-]|\\n|$))`, "i");
-  const m = re.exec(text);
-  if (!m) return "";
-  return m[1]!.replace(/\s+/g, " ").trim();
-}
-
 function gluedSimple(text: string, label: string, valueRe: RegExp): string {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(`${escaped}\\s*[:–-]?\\s*(${valueRe.source})`, "i");
@@ -171,16 +164,68 @@ function formatKmLv(km: string): string {
 function yesNoLv(raw: string): string {
   const key = raw.trim().toLowerCase();
   if (YES_NO[key]) return YES_NO[key]!;
-  if (/^log in|^become a professional|^restricted|^-$/i.test(raw.trim())) return "nav publisks";
+  if (/^log in|^become a professional|^restricted|^-$/i.test(raw.trim())) return "";
   return raw.trim();
+}
+
+function colourLv(raw: string): string {
+  const key = raw.trim().toLowerCase();
+  const map: Record<string, string> = {
+    black: "melna",
+    white: "balta",
+    grey: "pelēka",
+    gray: "pelēka",
+    silver: "sudraba",
+    blue: "zila",
+    red: "sarkana",
+    brown: "brūna",
+    green: "zaļa",
+    orange: "oranža",
+    yellow: "dzeltena",
+    beige: "bēša",
+  };
+  return map[key] ?? raw.trim().toLowerCase();
+}
+
+function finishLv(raw: string): string {
+  const key = raw.trim().toLowerCase();
+  if (key === "metallic") return "metālika";
+  if (key === "solid") return "vienkrāsaina";
+  if (key === "pearl") return "pērļu";
+  if (key === "matt" || key === "matte") return "matēta";
+  return raw.trim().toLowerCase();
+}
+
+function engineLv(raw: string): string {
+  return raw
+    .replace(/\s+/g, " ")
+    .replace(/\bDiesel\b/gi, "dīzelis")
+    .replace(/\bPetrol\b/gi, "benzīns")
+    .replace(/\bGasoline\b/gi, "benzīns")
+    .replace(/\bElectric\b/gi, "elektrisks")
+    .replace(/\bHybrid\b/gi, "hibrīds")
+    .replace(/\((\d+)\s*hp\)/gi, "$1 ZS")
+    .replace(/\bhp\b/gi, "ZS")
+    .trim();
+}
+
+function transmissionLv(raw: string): string {
+  let s = raw.replace(/\s+/g, " ").trim();
+  if (/automatic/i.test(s) && /dual-?clutch|s\s*tronic|dsg/i.test(s)) {
+    const gears = /(\d+)\s*-?\s*speed/i.exec(s)?.[1];
+    return gears ? `automātiskā, ${gears} pakāpju, dubultsajūgs` : "automātiskā, dubultsajūgs";
+  }
+  if (/automatic/i.test(s)) return "automātiskā";
+  if (/manual/i.test(s)) return "mehāniskā";
+  return s;
 }
 
 function originFromEvent(event: string): string {
   const t = event.trim();
   if (!t) return "car.info";
-  if (/subsequent inspection/i.test(t)) return "car.info · Subsequent inspection";
-  if (/inspection/i.test(t)) return "car.info · Inspection";
-  return `car.info · ${t}`;
+  if (/subsequent inspection/i.test(t)) return "car.info, atkārtota apskate";
+  if (/inspection/i.test(t)) return "car.info, apskate";
+  return "car.info";
 }
 
 function sliceSection(text: string, start: RegExp, end: RegExp): string {
@@ -240,25 +285,24 @@ function parseMileageHistoryBlocks(text: string, country: string): VinSourceMile
 
 function parseOwnerChangeEvents(text: string): string[] {
   const lines: string[] = [];
-  const glued = /(?:change of owner|ägarebyte|owner change)\s*[:\n]?\s*([^\n]{4,160})/gi;
-  for (const m of text.matchAll(glued)) {
-    const who = (m[1] ?? "").replace(/\s+/g, " ").trim();
-    if (!who || /company information|log in/i.test(who)) continue;
-    const before = text.slice(Math.max(0, (m.index ?? 0) - 40), m.index);
-    const date = normalizeDate(before) || normalizeDate(text.slice(0, m.index).slice(-30));
-    lines.push(date ? `${date}: īpašnieka maiņa — ${who}` : `Īpašnieka maiņa — ${who}`);
-  }
-
   const rawLines = text.split(/\n/).map((l) => l.trim());
   for (let i = 0; i < rawLines.length; i += 1) {
     if (!/^(change of owner|ägarebyte)$/i.test(rawLines[i]!)) continue;
     const date = normalizeDate(rawLines[i - 1] ?? "") || normalizeDate(rawLines[i - 2] ?? "");
     const who = (rawLines[i + 1] ?? "").replace(/\s+/g, " ").trim();
-    if (!who || /company information|log in/i.test(who)) continue;
-    const line = date ? `${date}: īpašnieka maiņa — ${who}` : `Īpašnieka maiņa — ${who}`;
+    if (!who || isJunkOwnerName(who)) continue;
+    const line = date
+      ? `${formatRegistryDateLv(date)} īpašnieka maiņa: ${who}`
+      : `Īpašnieka maiņa: ${who}`;
     if (!lines.some((l) => l.includes(who))) lines.push(line);
   }
   return lines;
+}
+
+function isJunkOwnerName(who: string): boolean {
+  return /company information|log in|in traffic|inspections was last updated|transportstyrelsen|next update/i.test(
+    who,
+  );
 }
 
 function parseExportEvents(text: string): { date: string; country: string; line: string }[] {
@@ -270,7 +314,7 @@ function parseExportEvents(text: string): { date: string; country: string; line:
     const from = m[1] || (/sweden|sverige/i.test(m[0] + text.slice(m.index ?? 0, (m.index ?? 0) + 40)) ? "Sweden" : "");
     const country = detectCountry([from]) || inferPageCountry(text);
     const line = date
-      ? `${date}: eksportēts${country ? ` no ${country}` : ""}`
+      ? `${formatRegistryDateLv(date)} eksportēts${country ? ` no ${country}` : ""}`
       : `Eksportēts${country ? ` no ${country}` : ""}`;
     if (!out.some((x) => x.line === line)) out.push({ date, country, line });
   }
@@ -283,7 +327,7 @@ function parseExportEvents(text: string): { date: string; country: string; line:
     const from = /from\s+([A-Za-zÅÄÖåäö]+)/i.exec(fromLine)?.[1] ?? "";
     const country = detectCountry([from]) || inferPageCountry(text);
     const line = date
-      ? `${date}: eksportēts${country ? ` no ${country}` : ""}`
+      ? `${formatRegistryDateLv(date)} eksportēts${country ? ` no ${country}` : ""}`
       : `Eksportēts${country ? ` no ${country}` : ""}`;
     if (!out.some((x) => x.line === line)) out.push({ date, country, line });
   }
@@ -302,22 +346,6 @@ function parseClassifiedZeroKm(text: string): { date: string; price: string } | 
   return { date, price: euro.includes("EUR") ? euro : `${price} EUR` };
 }
 
-function parseInTrafficEvents(text: string): string[] {
-  const lines: string[] = [];
-  const rawLines = text.split(/\n/).map((l) => l.trim());
-  for (let i = 0; i < rawLines.length; i += 1) {
-    if (!/^not in traffic$/i.test(rawLines[i]!)) continue;
-    const date = normalizeDate(rawLines[i - 1] ?? "");
-    const extra = rawLines[i + 1] && !normalizeDate(rawLines[i + 1]!) ? rawLines[i + 1] : "";
-    lines.push(
-      date
-        ? `${date}: nav satiksmē${extra ? ` (${extra})` : ""}`
-        : `Nav satiksmē${extra ? ` (${extra})` : ""}`,
-    );
-  }
-  return lines;
-}
-
 function buildRedFlags(opts: {
   text: string;
   owners: number | null;
@@ -329,24 +357,23 @@ function buildRedFlags(opts: {
   const notes: string[] = [];
   if (opts.exports.length > 0 || /previously been exported/i.test(opts.text)) {
     const first = opts.exports[0];
-    notes.push(
-      first
-        ? `⚠ RED FLAG: auto iepriekš eksportēts${first.country ? ` no ${first.country}` : ""}${first.date ? ` (${first.date})` : ""}.`
-        : "⚠ RED FLAG: auto iepriekš eksportēts.",
-    );
+    const when = first?.date ? ` (${formatRegistryDateLv(first.date)})` : "";
+    const from = first?.country ? ` no ${first.country}` : "";
+    notes.push(`Eksportēts${from}${when}.`);
   }
   if (opts.classified) {
     const peak = [...opts.mileage].map((r) => Number(r.odometer)).filter((n) => Number.isFinite(n)).sort((a, b) => b - a)[0];
     const peakTxt = peak ? `${formatKmLv(String(peak))} km` : "";
+    const when = opts.classified.date ? ` ${formatRegistryDateLv(opts.classified.date)}` : "";
     notes.push(
-      `⚠ RED FLAG: sludinājumā${opts.classified.date ? ` ${opts.classified.date}` : ""} norādīts 0 km / ${opts.classified.price}${peakTxt ? `, kamēr reģistrā ir ${peakTxt}` : ""}.`,
+      `Sludinājumā${when} norādīts 0 km (${opts.classified.price})${peakTxt ? `; reģistrā ${peakTxt}` : ""}.`,
     );
   }
   if (opts.owners != null && opts.owners >= 5) {
-    notes.push(`⚠ Paaugstināts īpašnieku skaits: ${opts.owners}.`);
+    notes.push(`${opts.owners} īpašnieki.`);
   }
   if (/^yes|ja|stulen|stolen$/i.test(opts.stolen.trim())) {
-    notes.push("⚠ RED FLAG: reģistrā atzīmēts kā zagts.");
+    notes.push("Reģistrā atzīmēts kā zagts.");
   }
   return notes;
 }
@@ -372,7 +399,9 @@ function odometerNotes(mileage: VinSourceMileageRow[]): string[] {
   for (const row of asc) {
     const km = Number(row.odometer);
     if (peak > 0 && km < peak - 1000) {
-      notes.push(`⚠ Odometra pretruna: ${peak.toLocaleString("lv-LV")} km → ${km.toLocaleString("lv-LV")} km (${row.date})`);
+      notes.push(
+        `Odometra pretruna: ${peak.toLocaleString("lv-LV")} km, pēc tam ${km.toLocaleString("lv-LV")} km (${formatRegistryDateLv(row.date)}).`,
+      );
     }
     if (km > peak) peak = km;
   }
@@ -414,47 +443,41 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
   const ownersCount = /(\d{1,2})/.exec(ownersCountRaw)?.[1] ?? "";
   const ownerEvents = parseOwnerChangeEvents(text);
   const ownerLines = [
-    ownersCount ? `Īpašnieku skaits: ${ownersCount}` : "",
+    ownersCount ? `${ownersCount} īpašnieki` : "",
     ...ownerEvents,
-    ...pairs
-      .filter((p) => /owner|ägare|besitzer|registration|registered|first reg|īpašniek/i.test(p.label))
-      .slice(0, 8)
-      .map((p) => `${p.label}: ${p.value}`),
   ].filter(Boolean);
 
   const inTraffic = gluedSimple(text, "In Traffic", /Yes|No|Ja|Nej/i);
   const domestic = gluedSimple(text, "Domestic", /Yes|No|Ja|Nej/i);
-  const colour = gluedSimple(text, "Colour", /[A-Za-zÅÄÖåäö][A-Za-zÅÄÖåäö\s-]{1,40}/) || gluedSimple(text, "Color", /[A-Za-z]{3,40}/);
+  const colour = gluedSimple(text, "Colour", /[A-Za-zÅÄÖåäö]+/) || gluedSimple(text, "Color", /[A-Za-z]+/);
   const colourFinish = gluedSimple(text, "Finish", /Metallic|Solid|Pearl|Matt/i);
   const stolen = gluedSimple(text, "Reported stolen", /Yes|No|Ja|Nej|-|Log in/i);
-  const engine = gluedField(text, "Engine") || gluedSimple(text, "Engine", /[^\\n]{4,80}/);
+  const engine = gluedSimple(text, "Engine", /(?:Diesel|Petrol|Gasoline|Electric|Hybrid)[^\n]{0,48}/i);
   const engineCode = gluedSimple(text, "Engine Code", /[A-Z0-9]{3,8}/);
-  const transmission =
-    gluedField(text, "Transmission") || gluedSimple(text, "Transmission", /Automatic[^\\n]{0,40}|Manual[^\\n]{0,40}/);
+  const transmission = gluedSimple(text, "Transmission", /Automatic[^\n]{0,48}|Manual[^\n]{0,24}/i);
   const drivetrain = gluedSimple(text, "Drivetrain", /AWD|FWD|RWD|4WD|Quattro/i);
-  const chassis = gluedField(text, "Chassis");
   const exports = parseExportEvents(text);
-  const trafficEvents = parseInTrafficEvents(text);
   const classified = parseClassifiedZeroKm(text);
 
   const specialUse = detectSpecialUseLabels(text);
+  const inTrafficLv = yesNoLv(inTraffic);
+  const domesticLv = yesNoLv(domestic);
+  const stolenLv = stolen && stolen !== "-" ? yesNoLv(stolen) : "";
+  const colourLine = colour
+    ? `Krāsa: ${colourLv(colour)}${colourFinish ? `, ${finishLv(colourFinish)}` : ""}`
+    : "";
+  const engineLine = engine
+    ? `Dzinējs: ${engineLv(engine)}${engineCode ? `, kods ${engineCode}` : ""}`
+    : "";
   const statusLines = [
-    inTraffic ? `Satiksmē: ${yesNoLv(inTraffic)}` : "",
-    domestic ? `Iekšzemes${pageCountry ? ` (${pageCountry})` : ""}: ${yesNoLv(domestic)}` : "",
-    colour ? `Krāsa: ${colour}${colourFinish ? ` (${colourFinish})` : ""}` : "",
-    stolen ? `Zagts: ${stolen === "-" ? "nav ziņu" : yesNoLv(stolen)}` : "",
-    engine ? `Dzinējs: ${engine.replace(/\s+/g, " ").slice(0, 80)}${engineCode ? `, kods ${engineCode}` : ""}` : "",
-    transmission ? `Ātrumkārba: ${transmission.replace(/\s+/g, " ").slice(0, 80)}` : "",
+    inTrafficLv ? `Satiksmē: ${inTrafficLv}` : "",
+    domesticLv ? `Iekšzemes${pageCountry ? ` (${pageCountry})` : ""}: ${domesticLv}` : "",
+    colourLine,
+    stolenLv ? `Zagts: ${stolenLv}` : "",
+    engineLine,
+    transmission ? `Ātrumkārba: ${transmissionLv(transmission)}` : "",
     drivetrain ? `Piedziņa: ${drivetrain}` : "",
-    chassis ? `Virsbūve: ${chassis.replace(/\s+/g, " ").slice(0, 60)}` : "",
-    ...exports.map((e) => e.line),
-    ...trafficEvents,
-    classified ? `${classified.date ? `${classified.date}: ` : ""}sludinājums ${classified.price} / 0 km` : "",
-    ...pairs
-      .filter((p) => /status|usage|use|taxi|leasing|inspection|izmantošan|in traffic|engine/i.test(p.label))
-      .slice(0, 12)
-      .map((p) => `${p.label}: ${p.value}`),
-    specialUse.length > 0 ? `Īpašie statusi: ${specialUse.join(", ")}` : "",
+    specialUse.length > 0 ? `Īpašais statuss: ${specialUse.join(", ")}` : "",
   ].filter(Boolean);
 
   const notes = [
@@ -466,7 +489,7 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
       classified,
       stolen,
     }),
-    ...specialUse.map((label) => `⚠ Īpašs izmantošanas statuss: ${label}`),
+    ...specialUse.map((label) => `Īpašais statuss: ${label}.`),
     ...odometerNotes(uniqueMileage),
   ];
 

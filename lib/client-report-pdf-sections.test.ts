@@ -779,4 +779,64 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(iSum).toBeGreaterThan(iInsp);
     expect(doc).toContain("Tech risks body");
   });
+
+  it("prints car.info owners, status and notes in the source PDF section", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.carinfo,
+            mileageRows: [{ date: "09.06.2023", odometer: "298540", country: "Zviedrija" }],
+            incidentRows: [],
+            comments: "",
+            ownersSummary: "6 īpašnieki",
+            statusRecords: "Satiksmē: nē\nKrāsa: melna, metālika",
+            autoNotes: "Eksportēts no Zviedrijas (11.10.2023).",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain(SOURCE_BLOCK_LABELS.carinfo);
+    expect(doc).toContain("6 īpašnieki");
+    expect(doc).toContain("Satiksmē: nē");
+    expect(doc).toContain("Eksportēts no Zviedrijas");
+    expect(doc).toContain("Īpašnieki");
+    expect(doc).toContain("Statuss");
+    expect(doc).toContain("Piezīmes");
+    expect(doc).not.toContain("⚠");
+    expect(doc).not.toContain("RED FLAG");
+  });
+
+  it("prints tjekbil owners, status and notes in the source PDF section", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.tjekbil,
+            mileageRows: [{ date: "19.09.2024", odometer: "106869", country: "Dānija" }],
+            incidentRows: [],
+            comments: "",
+            ownersSummary: "2 īpašnieki (pēc OCTA polišu maiņām)",
+            statusRecords: "Izmantošanas veids: TAKSOMETRS",
+            autoNotes: "Īpašais statuss: TAKSOMETRS.",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain(SOURCE_BLOCK_LABELS.tjekbil);
+    expect(doc).toContain("2 īpašnieki");
+    expect(doc).toContain("TAKSOMETRS");
+    expect(doc).toContain("Īpašnieki");
+    expect(doc).toContain("Statuss");
+    expect(doc).toContain("Piezīmes");
+    expect(doc).not.toContain("⚠");
+  });
 });

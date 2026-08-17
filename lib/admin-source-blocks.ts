@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin-vin-urls";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
+import { sanitizeVinRegistryClientText } from "@/lib/vin-registry-client-text";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
   mergeProvinBannerPdfInclude,
@@ -1047,10 +1048,10 @@ export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): Vi
   return {
     mileage: mileage.length > 0 ? mileage : e.mileage,
     incidents: incidents.length > 0 ? incidents : e.incidents,
-    ownersSummary: wsStr(b.ownersSummary).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
-    statusRecords: wsStr(b.statusRecords).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    ownersSummary: sanitizeVinRegistryClientText(wsStr(b.ownersSummary)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    statusRecords: sanitizeVinRegistryClientText(wsStr(b.statusRecords)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     rawUnprocessedData: wsStr(b.rawUnprocessedData).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
-    autoNotes: wsStr(b.autoNotes).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    autoNotes: sanitizeVinRegistryClientText(wsStr(b.autoNotes)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     comments: wsStr(b.comments).slice(0, 12000),
     aiContextRaw: clipAiContextRaw(b.aiContextRaw),
     ...(wsStr(b.fetchedAt).trim() ? { fetchedAt: wsStr(b.fetchedAt).slice(0, 40) } : {}),
@@ -1437,6 +1438,10 @@ export type ClientManualVendorBlockPdf = {
   damageDetails?: CarVerticalDamageDetailRow[];
   /** AutoDNA / CarVertical iekopētais RAW — zonu hidratācijai, netiek drukāts. */
   sourceRaw?: string;
+  /** Publisko reģistru (tjekbil / mnt / lkf / car.info) īsie fakti PDF. */
+  ownersSummary?: string;
+  statusRecords?: string;
+  autoNotes?: string;
 };
 
 /** Strukturēts LTAB bloks PDF — atsevišķi panelī pēc AutoDNA / CV / Auto-Records (kā admin režģī). */
@@ -1473,6 +1478,9 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
   for (const k of VIN_REGISTRY_BLOCK_KEYS) {
     const b = blocks[k];
     if (!vinRegistryBlockHasContent(b)) continue;
+    const ownersSummary = sanitizeVinRegistryClientText(b.ownersSummary ?? "");
+    const statusRecords = sanitizeVinRegistryClientText(b.statusRecords ?? "");
+    const autoNotes = sanitizeVinRegistryClientText(b.autoNotes ?? "");
     out.push({
       title: SOURCE_BLOCK_LABELS[k],
       mileageRows: (b.mileage ?? []).filter(vinRegistryMileageRowHasData).map((r) => ({
@@ -1486,6 +1494,9 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
         incidentNo: r.country,
       })),
       comments: (b.comments ?? "").trim(),
+      ...(ownersSummary ? { ownersSummary } : {}),
+      ...(statusRecords ? { statusRecords } : {}),
+      ...(autoNotes ? { autoNotes } : {}),
     });
   }
   const citiSections = blocks.citi_avoti.sections ?? [];

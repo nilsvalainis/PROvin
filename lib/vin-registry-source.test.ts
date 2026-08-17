@@ -31,21 +31,29 @@ describe("vinSourceResultToBlock", () => {
     expect(block.ownersSummary).toContain("īpašnieku");
     expect(block.statusRecords).toContain("TAKSOMETRS");
     expect(block.autoNotes).toContain("TAKSOMETRS");
+    expect(block.autoNotes).not.toMatch(/⚠|RED FLAG/i);
     expect(block.rawUnprocessedData).toContain("ok");
     expect(block.comments).toBe("");
   });
 });
 
 describe("toPdfManualVendorBlocks — reģistru avoti", () => {
-  it("iekļauj tjekbil nobraukuma rindas apvienotajā tabulā", () => {
+  it("iekļauj tjekbil nobraukuma rindas un faktu laukus PDF", () => {
     const blocks = createDefaultSourceBlocks();
     blocks.tjekbil.mileage = [{ date: "2024-09-19", odometer: "106869", country: "Dānija", origin: "apskate" }];
+    blocks.tjekbil.ownersSummary = "Aplēstais īpašnieku skaits: 2";
+    blocks.tjekbil.statusRecords = "Izmantošanas veids: TAKSOMETRS";
+    blocks.tjekbil.autoNotes = "⚠ Īpašs izmantošanas statuss: TAKSOMETRS";
     blocks.tjekbil.comments = "Dānijas reģistrs apstiprina nobraukumu.";
     const vendors = toPdfManualVendorBlocks(blocks);
     const tjek = vendors.find((v) => v.title === SOURCE_BLOCK_LABELS.tjekbil);
     expect(tjek).toBeDefined();
     expect(tjek?.mileageRows).toEqual([{ date: "2024-09-19", odometer: "106869", country: "Dānija" }]);
     expect(tjek?.comments).toContain("nobraukumu");
+    expect(tjek?.ownersSummary).toContain("īpašnieku");
+    expect(tjek?.statusRecords).toContain("TAKSOMETRS");
+    expect(tjek?.autoNotes).toMatch(/TAKSOMETRS/);
+    expect(tjek?.autoNotes).not.toMatch(/⚠/);
   });
 });
 

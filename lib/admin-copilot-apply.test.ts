@@ -44,7 +44,7 @@ describe("applyCopilotActions", () => {
           source: "carinfo",
           ownersSummary: "Īpašnieku skaits: 6",
           statusRecords: "Satiksmē: nē\n2023-10-11: eksportēts no Zviedrijas",
-          autoNotes: "⚠ RED FLAG: auto iepriekš eksportēts no Zviedrijas (2023-10-11).",
+          autoNotes: "Eksportēts no Zviedrijas (11.10.2023).",
           confidence: "high",
         },
       ],
@@ -53,7 +53,9 @@ describe("applyCopilotActions", () => {
     expect(result.changedKeys).toContain("carinfo");
     expect(result.sourceBlocks.carinfo.mileage.some((r) => r.odometer === "298540")).toBe(true);
     expect(result.sourceBlocks.carinfo.ownersSummary).toMatch(/6/);
-    expect(result.sourceBlocks.carinfo.autoNotes).toMatch(/RED FLAG/);
+    expect(result.sourceBlocks.carinfo.statusRecords).toMatch(/11\.10\.2023/);
+    expect(result.sourceBlocks.carinfo.statusRecords).not.toMatch(/2023-10-11/);
+    expect(result.sourceBlocks.carinfo.autoNotes).toMatch(/Eksportēts/);
   });
 
   it("skips medium confidence when onlyAuto", () => {
@@ -287,7 +289,7 @@ describe("parseCopilotAiPayload", () => {
             source: "carinfo",
             ownersSummary: "Īpašnieku skaits: 6",
             statusRecords: "Satiksmē: nē",
-            autoNotes: "⚠ RED FLAG: auto iepriekš eksportēts no Zviedrijas (2023-10-11).",
+            autoNotes: "Eksportēts no Zviedrijas (11.10.2023).",
             confidence: "high",
           },
         ],

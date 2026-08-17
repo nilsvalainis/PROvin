@@ -14,6 +14,7 @@ import {
   sleep,
   type VinSourcePage,
 } from "@/lib/vin-sources/browser";
+import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 import { detectSpecialUseLabels, translateTermLv, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import {
   emptyVinSourceResult,
@@ -82,7 +83,7 @@ function mileageNotes(mileage: VinSourceMileageRow[]): string[] {
     const peakKm = peak ? Number(peak.odometer) : -1;
     if (peak && km < peakKm - 1000) {
       notes.push(
-        `⚠ Odometra pretruna: ${peakKm.toLocaleString("lv-LV")} km (${peak.date}) → ${km.toLocaleString("lv-LV")} km (${row.date})`,
+        `Odometra pretruna: ${peakKm.toLocaleString("lv-LV")} km (${formatRegistryDateLv(peak.date)}), pēc tam ${km.toLocaleString("lv-LV")} km (${formatRegistryDateLv(row.date)}).`,
       );
     }
     if (!peak || km > peakKm) peak = row;
@@ -143,18 +144,18 @@ export async function fetchMnt(vin: string, regMark = ""): Promise<VinSourceFetc
     );
     if (historyTable) {
       ownerLines.push(
-        `Reģistrācijas / izmantošanas ieraksti: ${historyTable.rows.length}`,
-        ...historyTable.rows.slice(0, 25).map((cells) => `  · ${translateTextLv(cells.filter(Boolean).join(" · "), "et")}`),
+        `Reģistrācijas ieraksti: ${historyTable.rows.length}`,
+        ...historyTable.rows.slice(0, 25).map((cells) => translateTextLv(cells.filter(Boolean).join(", "), "et")),
       );
     }
 
     const specialUse = detectSpecialUseLabels(data.text);
     if (specialUse.length > 0) {
       statusLines.push(`Īpašie statusi: ${specialUse.join(", ")}`);
-      for (const label of specialUse) notes.push(`⚠ Īpašs izmantošanas statuss: ${label}`);
+      for (const label of specialUse) notes.push(`Īpašais statuss: ${label}.`);
     }
-    if (/arestitud|pant\b/i.test(data.text)) notes.push("⚠ Reģistrā norādīts arests vai ķīla");
-    if (/registrist kustutatud/i.test(data.text)) notes.push("⚠ Transportlīdzeklis izslēgts no Igaunijas reģistra");
+    if (/arestitud|pant\b/i.test(data.text)) notes.push("Reģistrā norādīts arests vai ķīla.");
+    if (/registrist kustutatud/i.test(data.text)) notes.push("Izslēgts no Igaunijas reģistra.");
 
     return {
       source: "mnt_ee",
@@ -278,13 +279,13 @@ export async function fetchLkf(vin: string, captchaTimeoutMs = 240000): Promise<
     }
 
     const notes: string[] = [];
-    if (incidents.length > 0) notes.push(`⚠ Igaunijas OCTA reģistrā atrasti atlīdzības gadījumi: ${incidents.length}`);
+    if (incidents.length > 0) notes.push(`Igaunijas OCTA reģistrā ${incidents.length} atlīdzības gadījumi.`);
     if (/hävinud|total|hukkunud/i.test(data.text)) {
-      notes.push("⚠ Norāde uz pilnīgu bojāeju (total loss) — obligāti jāpārbauda remonta kvalitāte");
+      notes.push("Norāde uz pilnīgu bojāeju.");
     }
     const withoutAmount = incidents.filter((i) => !i.amount).length;
     if (incidents.length > 0 && withoutAmount === incidents.length) {
-      notes.push("Atlīdzības summas publiski netiek rādītas — apjoms jānovērtē pēc bojājumu apraksta");
+      notes.push("Atlīdzības summas publiski netiek rādītas.");
     }
 
     const noClaims =

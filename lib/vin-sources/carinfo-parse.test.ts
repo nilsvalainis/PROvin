@@ -91,7 +91,7 @@ Combined consumption: 6.1 l/100km
     expect(parsed.statusRecords).toMatch(/Satiksmē/i);
   });
 
-  it("fills registry fields and RED FLAGs from a full car.info dump (glued labels + 3-line history)", () => {
+  it("fills short Latvian facts and notes from a full car.info dump", () => {
     expect(looksLikeCarinfoDump(CARINFO_ORH035)).toBe(true);
     const parsed = parseCarinfoPastedText(CARINFO_ORH035);
     expect(parsed.found).toBe(true);
@@ -102,13 +102,18 @@ Combined consumption: 6.1 l/100km
         expect.objectContaining({ date: "2022-02-09", odometer: "244950" }),
       ]),
     );
-    expect(parsed.ownersSummary).toMatch(/Īpašnieku skaits: 6/);
-    expect(parsed.ownersSummary).toMatch(/AutoEtt European Cars/);
+    expect(parsed.ownersSummary).toMatch(/^6 īpašnieki$/m);
+    expect(parsed.ownersSummary).toMatch(/04\.09\.2023 īpašnieka maiņa: AutoEtt European Cars/);
+    expect(parsed.ownersSummary).not.toMatch(/in traffic|last updated/i);
     expect(parsed.statusRecords).toMatch(/Satiksmē: nē/);
-    expect(parsed.statusRecords).toMatch(/eksportēts/);
-    expect(parsed.notes.some((n) => /RED FLAG/i.test(n) && /eksport/i.test(n))).toBe(true);
+    expect(parsed.statusRecords).toMatch(/Iekšzemes \(Zviedrija\): jā/);
+    expect(parsed.statusRecords).toMatch(/Krāsa: melna/);
+    expect(parsed.statusRecords).not.toMatch(/eksportēts/i);
+    expect(parsed.statusRecords).not.toMatch(/Number of Owners|Metallic|In TrafficNo/i);
+    expect(parsed.notes.join("\n")).not.toMatch(/⚠|RED FLAG/i);
+    expect(parsed.notes.join("\n")).toMatch(/eksportēts/i);
     expect(parsed.notes.some((n) => /0 km/i.test(n))).toBe(true);
-    expect(parsed.notes.some((n) => /īpašnieku skaits/i.test(n))).toBe(true);
+    expect(parsed.notes.some((n) => /6 īpašnieki/i.test(n))).toBe(true);
   });
 
   it("returns empty when paste has no dates or odometer", () => {

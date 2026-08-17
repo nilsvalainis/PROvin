@@ -37,6 +37,7 @@ import {
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { sanitizeVinRegistryClientText } from "@/lib/vin-registry-client-text";
 import {
   ltabCertificateHasContent,
   ltabCertificateToIncidentRows,
@@ -310,13 +311,13 @@ function mergeVinRegistryIncidents(
 }
 
 function mergeRegistryText(existing: string, incoming: string): string {
-  const inc = incoming.trim();
-  if (!inc) return existing;
-  const cur = existing.trim();
+  const inc = sanitizeVinRegistryClientText(incoming);
+  if (!inc) return sanitizeVinRegistryClientText(existing);
+  const cur = sanitizeVinRegistryClientText(existing);
   if (!cur) return inc;
   if (cur.includes(inc)) return cur;
   if (inc.includes(cur) && inc.length >= cur.length) return inc;
-  return `${cur}\n${inc}`;
+  return sanitizeVinRegistryClientText(`${cur}\n${inc}`);
 }
 
 function applyVinRegistryMileage(

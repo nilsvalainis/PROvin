@@ -262,6 +262,9 @@ function vendorPdfBlockHasData(b: ClientManualVendorBlockPdf | undefined): boole
     b.mileageRows.length > 0 ||
     b.incidentRows.length > 0 ||
     b.comments.trim().length > 0 ||
+    Boolean(b.ownersSummary?.trim()) ||
+    Boolean(b.statusRecords?.trim()) ||
+    Boolean(b.autoNotes?.trim()) ||
     sourcePdfChecklistHasAny(b.pdfChecklist)
   );
 }
@@ -1229,7 +1232,7 @@ function buildCcVinAvotuSubsection(
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(CC_VIN_PDF_SOURCE_LABEL)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
 }
 
-/** Trešās puses avots — tikai komentāri PDF (laikposms paliek AI kontekstam, nav drukāts). */
+/** Trešās puses avots — komentāri + reģistru īsie fakti (īpašnieki, statuss, piezīmes). */
 function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisibilitySettings): string {
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";
@@ -1239,14 +1242,22 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisib
   if (b.title === L.lkf_ee && !vis.lkf_ee) return "";
   if (b.title === L.carinfo && !vis.carinfo) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
+  const owners = (b.ownersSummary ?? "").trim();
+  const status = (b.statusRecords ?? "").trim();
+  const notes = (b.autoNotes ?? "").trim();
   const hasComments = commentBlock.trim().length > 0;
-  if (!hasComments) return "";
+  if (!hasComments && !owners && !status && !notes) return "";
   const head = sectionHeadBrand(
     sectionIconPdfHtml(vendorPdfTitleToIconId(b.title)),
     b.title,
     sourceRecordCountBadgeHtml(b.mileageRows.length + b.incidentRows.length),
   );
-  const body = `<div class="pdf-source-section-body">${pdfAvotuCommentIsland(commentBlock)}</div>`;
+  const bodyParts: string[] = [];
+  if (owners) bodyParts.push(pdfReportCommentBox(owners, "Īpašnieki"));
+  if (status) bodyParts.push(pdfReportCommentBox(status, "Statuss"));
+  if (notes) bodyParts.push(pdfReportCommentBox(notes, "Piezīmes"));
+  if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
+  const body = `<div class="pdf-source-section-body">${bodyParts.join("\n")}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(b.title)}" role="region">${head}${body}</div>`;
 }
 

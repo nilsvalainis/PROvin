@@ -101,7 +101,7 @@ export type CopilotAppendRawAction = {
   note?: string;
 };
 
-/** tjekbil / mnt / lkf / car.info — īpašnieki, statusi, RED FLAG piezīmes. */
+/** tjekbil / mnt / lkf / car.info — īpašnieki, statusi, īsas piezīmes. */
 export type CopilotRegistryFieldsAction = {
   type: "set_registry_fields";
   source: VinRegistryCopilotSource;
