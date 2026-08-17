@@ -944,9 +944,16 @@ async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void
   ctx.y = hctx.y;
 }
 
-const PRO_PAGE_MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
-const PRO_PAGE_LH = (size: number) => Math.round(size * 1.32);
-const PASUTIJUMS_SIGNATURE_H = 78;
+const PRO_PAGE_MUTED = rgb(100 / 255, 116 / 255, 139 / 255);
+const PRO_PAGE_LH = (size: number) => Math.round(size * 1.38);
+const PANEL_FILL = rgb(248 / 255, 250 / 255, 252 / 255);
+const PANEL_BORDER = rgb(226 / 255, 232 / 255, 240 / 255);
+const PANEL_RULE = rgb(241 / 255, 245 / 255, 249 / 255);
+const PASUTIJUMS_SIGNATURE_H = 92;
+const PAGE1_PAD = 11;
+const PAGE1_RADIUS = 7;
+const PAGE1_GAP = 9;
+const PAGE1_RAIL = 3;
 
 function formatPasutijumsDocDate(record: IrissPasutijumsRecord): string {
   const raw = (record.orderDate || record.createdAt || "").trim();
@@ -979,19 +986,141 @@ function drawPasutijumsPageIndex(
   });
 }
 
-function drawProMutedHeading(page: PDFPage, text: string, x: number, y: number, font: PDFFont): number {
-  const size = 7.5;
-  page.drawText(text.toLocaleUpperCase("lv-LV"), {
+function wrapPage1(text: string, font: PDFFont, size: number, maxW: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (font.widthOfTextAtSize(test, size) <= maxW) line = test;
+    else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.length ? lines : [""];
+}
+
+type Page1Kv = { label: string; value: string };
+
+function overviewLinesToKv(lines: string[]): Page1Kv[] {
+  return lines.map((ln) => {
+    const p = splitColonLabelValue(ln);
+    if (p.kind === "kv") return { label: p.label.replace(/:$/, "").trim(), value: p.value };
+    return { label: "", value: p.text };
+  });
+}
+
+function measurePage1KvHeight(rows: Page1Kv[], innerW: number, fs: number, font: PDFFont): number {
+  const labelW = Math.min(108, Math.round(innerW * 0.4));
+  const valueW = Math.max(48, innerW - labelW - 10);
+  const lh = PRO_PAGE_LH(fs);
+  let h = 0;
+  for (const row of rows) {
+    const n = wrapPage1(row.value || " ", font, fs, valueW).length;
+    h += Math.max(lh, n * lh) + 5;
+  }
+  return h;
+}
+
+function measurePage1Wrapped(text: string, innerW: number, fs: number, font: PDFFont): number {
+  return wrapPage1(text, font, fs, innerW).length * PRO_PAGE_LH(fs);
+}
+
+function cardChromeH(bodyH: number): number {
+  return PAGE1_PAD + 16 + 6 + bodyH + PAGE1_PAD;
+}
+
+function drawPage1Panel(page: PDFPage, x: number, yTop: number, w: number, h: number): void {
+  const yBot = yTop - h;
+  drawRoundedRect(page, {
+    x,
+    y: yBot,
+    width: w,
+    height: h,
+    radius: PAGE1_RADIUS,
+    color: PANEL_FILL,
+    borderColor: PANEL_BORDER,
+    borderWidth: 0.85,
+  });
+  page.drawRectangle({
+    x: x + 1.2,
+    y: yBot + PAGE1_RADIUS,
+    width: PAGE1_RAIL,
+    height: Math.max(8, h - PAGE1_RADIUS * 2),
+    color: PREMIUM_ORANGE,
+  });
+}
+
+function drawPage1SectionTitle(
+  page: PDFPage,
+  title: string,
+  x: number,
+  y: number,
+  fontBold: PDFFont,
+): number {
+  const size = 8;
+  page.drawText(title.toLocaleUpperCase("lv-LV"), {
     x,
     y: y - size,
     size,
-    font,
-    color: PRO_PAGE_MUTED,
+    font: fontBold,
+    color: PREMIUM_ORANGE,
   });
-  return y - PRO_PAGE_LH(size) - 3;
+  return y - 16;
 }
 
-function drawWrappedPlain(
+function drawPage1KvRows(
+  page: PDFPage,
+  rows: Page1Kv[],
+  x: number,
+  y: number,
+  innerW: number,
+  fs: number,
+  font: PDFFont,
+  fontBold: PDFFont,
+  floorY: number,
+): number {
+  const labelW = Math.min(108, Math.round(innerW * 0.4));
+  const valueX = x + labelW + 10;
+  const valueW = Math.max(48, innerW - labelW - 10);
+  const lh = PRO_PAGE_LH(fs);
+  let cy = y;
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const valueLines = wrapPage1(row.value || " ", font, fs, valueW);
+    const rowH = Math.max(lh, valueLines.length * lh);
+    if (cy - rowH < floorY) break;
+    if (row.label) {
+      page.drawText(row.label, {
+        x,
+        y: cy - fs,
+        size: Math.max(7, fs - 0.5),
+        font: fontBold,
+        color: PRO_PAGE_MUTED,
+      });
+    }
+    let vy = cy;
+    for (const ln of valueLines) {
+      page.drawText(ln, { x: valueX, y: vy - fs, size: fs, font, color: INK });
+      vy -= lh;
+    }
+    cy -= rowH;
+    if (i < rows.length - 1 && cy - 4 > floorY) {
+      page.drawLine({
+        start: { x, y: cy - 1.5 },
+        end: { x: x + innerW, y: cy - 1.5 },
+        thickness: 0.4,
+        color: PANEL_RULE,
+      });
+      cy -= 5;
+    }
+  }
+  return cy;
+}
+
+function drawPage1Wrapped(
   page: PDFPage,
   text: string,
   x: number,
@@ -999,53 +1128,53 @@ function drawWrappedPlain(
   maxW: number,
   fs: number,
   font: PDFFont,
-  color: PdfColor,
   floorY: number,
 ): number {
   let cy = y;
-  for (const ln of wrapText(text, font, fs, maxW)) {
-    if (cy - PRO_PAGE_LH(fs) < floorY) break;
-    page.drawText(ln, { x, y: cy - fs, size: fs, font, color });
-    cy -= PRO_PAGE_LH(fs);
+  const lh = PRO_PAGE_LH(fs);
+  for (const ln of wrapPage1(text, font, fs, maxW)) {
+    if (cy - lh < floorY) break;
+    page.drawText(ln, { x, y: cy - fs, size: fs, font, color: INK });
+    cy -= lh;
   }
   return cy;
 }
 
-function drawPasutijumsSignatureStrip(
-  ctx: Ctx,
-  record: IrissPasutijumsRecord,
-  yTop: number,
-): void {
+function drawPasutijumsSignatureStrip(ctx: Ctx, record: IrissPasutijumsRecord, yTop: number): void {
   const { page, margin, contentW, font, fontBold } = ctx;
+  const h = PASUTIJUMS_SIGNATURE_H - 6;
+  drawPage1Panel(page, margin, yTop, contentW, h);
+  const ix = margin + PAGE1_PAD + PAGE1_RAIL + 6;
+  const iw = contentW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
   const gap = 22;
-  const colW = (contentW - gap) / 2;
+  const colW = (iw - gap) / 2;
   const clientName = [val(record.clientFirstName), val(record.clientLastName)].filter(Boolean).join(" ") || " ";
-  let cy = yTop;
+  let cy = yTop - PAGE1_PAD;
   page.drawText("Ar 2. lapas noteikumiem esmu iepazinies.", {
-    x: margin,
+    x: ix,
     y: cy - 8,
     size: 8,
     font,
     color: PRO_PAGE_MUTED,
   });
-  cy -= 18;
+  cy -= 20;
   const cols: { x: number; label: string; name: string }[] = [
-    { x: margin, label: "Klienta paraksts", name: clientName },
-    { x: margin + colW + gap, label: "Pakalpojuma sniedzēja paraksts", name: "Dzintarzeme Auto" },
+    { x: ix, label: "Klienta paraksts", name: clientName },
+    { x: ix + colW + gap, label: "Pakalpojuma sniedzēja paraksts", name: "Dzintarzeme Auto" },
   ];
   for (const col of cols) {
     page.drawText(col.label, { x: col.x, y: cy - 8, size: 8, font: fontBold, color: INK });
-    const lineY = cy - 28;
+    const lineY = cy - 30;
     page.drawLine({
       start: { x: col.x, y: lineY },
       end: { x: col.x + colW, y: lineY },
-      thickness: 0.75,
-      color: rgb(0.55, 0.55, 0.58),
+      thickness: 0.9,
+      color: rgb(0.45, 0.47, 0.5),
     });
     page.drawText(col.name.trim() || " ", {
       x: col.x,
       y: lineY - 14,
-      size: 8,
+      size: 8.5,
       font,
       color: INK,
     });
@@ -1062,81 +1191,150 @@ function drawPasutijumsSignatureStrip(
 function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
   const overview = collectIrissPasutijumsOverview(record);
   const { page, pageW, pageH, margin, contentW, font, fontBold } = ctx;
-  const floorY = margin + FOOTER_SAFE + PASUTIJUMS_SIGNATURE_H;
+  const sigTop = margin + FOOTER_SAFE + PASUTIJUMS_SIGNATURE_H;
+  const floorY = sigTop + 8;
   const title = overview.heading || "Pasūtījums";
   const docDate = formatPasutijumsDocDate(record);
+  const clientKv = overviewLinesToKv(overview.clientLines);
+  const specKv = overviewLinesToKv(overview.specLines);
 
   if (ctx.offerLogo) {
     stampOfferLogoTopRight(page, pageW, pageH, margin, ctx.offerLogo, 8);
   }
 
   let y = ctx.y;
-  page.drawText("PASŪTĪJUMS", { x: margin, y: y - 10, size: 10, font: fontBold, color: PRO_PAGE_MUTED });
-  y -= 22;
+  page.drawText("PASŪTĪJUMS", { x: margin, y: y - 9, size: 9, font: fontBold, color: PRO_PAGE_MUTED });
+  y -= 20;
   const titleW = Math.max(160, contentW - (ctx.offerLogo ? ctx.offerLogo.dw + 16 : 0));
-  let titleSize = 16;
-  let titleLines = wrapText(title, fontBold, titleSize, titleW);
+  let titleSize = 15;
+  let titleLines = wrapPage1(title, fontBold, titleSize, titleW);
   while (titleSize > 11 && titleLines.length > 2) {
     titleSize -= 1;
-    titleLines = wrapText(title, fontBold, titleSize, titleW);
+    titleLines = wrapPage1(title, fontBold, titleSize, titleW);
   }
   for (const ln of titleLines) {
     page.drawText(ln, { x: margin, y: y - titleSize, size: titleSize, font: fontBold, color: INK });
     y -= PRO_PAGE_LH(titleSize);
   }
-  y -= 4;
-  page.drawText(`Datums: ${docDate}`, { x: margin, y: y - 9, size: 9, font, color: INK });
-  y -= 14;
+  y -= 3;
+  page.drawText(docDate, { x: margin, y: y - 9, size: 9, font, color: PRO_PAGE_MUTED });
+  y -= 16;
   page.drawLine({
     start: { x: margin, y },
     end: { x: pageW - margin, y },
-    thickness: 1.5,
+    thickness: 1.75,
     color: PREMIUM_ORANGE,
   });
-  y -= 16;
+  y -= 14;
 
-  const colGap = 20;
+  const colGap = 10;
   const colW = (contentW - colGap) / 2;
-  const leftX = margin;
-  const rightX = margin + colW + colGap;
-  const fs = 8.25;
+  const innerW = colW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+  let fs = 8.4;
+  const hasEq = Boolean(overview.equipmentRequired || overview.equipmentDesired);
+  const hasNotes = Boolean(overview.notes);
 
-  const drawCol = (x: number, heading: string, lines: string[], startY: number): number => {
-    if (lines.length === 0) return startY;
-    let cy = drawProMutedHeading(page, heading, x, startY, fontBold);
-    for (const ln of lines) {
-      cy = drawWrappedPlain(page, ln, x, cy, colW, fs, font, INK, floorY);
+  const measureStack = (size: number) => {
+    const leftBody = clientKv.length ? measurePage1KvHeight(clientKv, innerW, size, font) : 0;
+    const rightBody = specKv.length ? measurePage1KvHeight(specKv, innerW, size, font) : 0;
+    const pairH = clientKv.length || specKv.length ? cardChromeH(Math.max(leftBody, rightBody, 24)) : 0;
+    let eqH = 0;
+    if (hasEq) {
+      const eqInner = contentW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+      const half = (eqInner - 12) / 2;
+      const reqH = overview.equipmentRequired
+        ? 12 + measurePage1Wrapped(overview.equipmentRequired, overview.equipmentDesired ? half : eqInner, size, font)
+        : 0;
+      const desH = overview.equipmentDesired
+        ? 12 + measurePage1Wrapped(overview.equipmentDesired, overview.equipmentRequired ? half : eqInner, size, font)
+        : 0;
+      eqH = cardChromeH(Math.max(reqH, desH, 16));
     }
-    return cy;
+    let notesH = 0;
+    if (hasNotes && overview.notes) {
+      const nInner = contentW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+      notesH = cardChromeH(measurePage1Wrapped(overview.notes, nInner, size, font));
+    }
+    let total = pairH;
+    if (eqH) total += PAGE1_GAP + eqH;
+    if (notesH) total += PAGE1_GAP + notesH;
+    return { pairH, eqH, notesH, total, leftBody, rightBody };
   };
 
-  const leftEnd = drawCol(leftX, "Klients", overview.clientLines, y);
-  const rightEnd = drawCol(rightX, "Specifikācija", overview.specLines, y);
-  y = Math.min(leftEnd, rightEnd) - 10;
-
-  const hasEq = Boolean(overview.equipmentRequired || overview.equipmentDesired);
-  if (hasEq && y > floorY + 24) {
-    y = drawProMutedHeading(page, "Aprīkojums", margin, y, fontBold);
-    if (overview.equipmentRequired) {
-      page.drawText("Obligātais", { x: margin, y: y - 8, size: 8, font: fontBold, color: INK });
-      y -= PRO_PAGE_LH(8) + 1;
-      y = drawWrappedPlain(page, overview.equipmentRequired, margin, y, contentW, fs, font, INK, floorY);
-      y -= 4;
-    }
-    if (overview.equipmentDesired && y > floorY + 16) {
-      page.drawText("Vēlamais", { x: margin, y: y - 8, size: 8, font: fontBold, color: INK });
-      y -= PRO_PAGE_LH(8) + 1;
-      y = drawWrappedPlain(page, overview.equipmentDesired, margin, y, contentW, fs, font, INK, floorY);
-      y -= 4;
-    }
+  let layout = measureStack(fs);
+  while (fs > 7 && y - layout.total < floorY) {
+    fs -= 0.2;
+    layout = measureStack(fs);
   }
 
-  if (overview.notes && y > floorY + 20) {
-    y = drawProMutedHeading(page, "Piezīmes", margin, y, fontBold);
-    drawWrappedPlain(page, overview.notes, margin, y, contentW, fs, font, INK, floorY);
+  const drawCard = (x: number, w: number, h: number, titleText: string, drawBody: (ix: number, iy: number, iw: number) => void) => {
+    if (h <= 0) return;
+    drawPage1Panel(page, x, y, w, h);
+    const ix = x + PAGE1_PAD + PAGE1_RAIL + 6;
+    const iw = w - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+    let cy = drawPage1SectionTitle(page, titleText, ix, y - PAGE1_PAD, fontBold);
+    drawBody(ix, cy, iw);
+  };
+
+  if (layout.pairH > 0) {
+    const startY = y;
+    if (clientKv.length) {
+      drawCard(margin, colW, layout.pairH, "Klients", (ix, iy, iw) => {
+        drawPage1KvRows(page, clientKv, ix, iy, iw, fs, font, fontBold, startY - layout.pairH + PAGE1_PAD);
+      });
+    }
+    if (specKv.length) {
+      y = startY;
+      drawCard(margin + colW + colGap, colW, layout.pairH, "Specifikācija", (ix, iy, iw) => {
+        drawPage1KvRows(page, specKv, ix, iy, iw, fs, font, fontBold, startY - layout.pairH + PAGE1_PAD);
+      });
+    }
+    y = startY - layout.pairH - PAGE1_GAP;
   }
 
-  const sigTop = margin + FOOTER_SAFE + PASUTIJUMS_SIGNATURE_H - 4;
+  if (hasEq && layout.eqH > 0 && y - layout.eqH >= floorY) {
+    const startY = y;
+    drawCard(margin, contentW, layout.eqH, "Aprīkojums", (ix, iy, iw) => {
+      const both = Boolean(overview.equipmentRequired && overview.equipmentDesired);
+      const half = (iw - 16) / 2;
+      if (both) {
+        page.drawLine({
+          start: { x: ix + half + 8, y: iy + 4 },
+          end: { x: ix + half + 8, y: startY - layout.eqH + PAGE1_PAD },
+          thickness: 0.6,
+          color: PANEL_BORDER,
+        });
+      }
+      if (overview.equipmentRequired) {
+        page.drawText("Obligātais", { x: ix, y: iy - 8, size: 8, font: fontBold, color: INK });
+        drawPage1Wrapped(
+          page,
+          overview.equipmentRequired,
+          ix,
+          iy - 12,
+          both ? half : iw,
+          fs,
+          font,
+          startY - layout.eqH + PAGE1_PAD,
+        );
+      }
+      if (overview.equipmentDesired) {
+        const dx = both ? ix + half + 16 : ix;
+        const dy = both ? iy : overview.equipmentRequired ? iy - 12 - measurePage1Wrapped(overview.equipmentRequired, iw, fs, font) - 8 : iy;
+        page.drawText("Vēlamais", { x: dx, y: dy - 8, size: 8, font: fontBold, color: INK });
+        drawPage1Wrapped(page, overview.equipmentDesired, dx, dy - 12, both ? half : iw, fs, font, startY - layout.eqH + PAGE1_PAD);
+      }
+    });
+    y -= layout.eqH + PAGE1_GAP;
+  }
+
+  if (hasNotes && overview.notes && layout.notesH > 0 && y - layout.notesH >= floorY) {
+    const startY = y;
+    drawCard(margin, contentW, layout.notesH, "Piezīmes", (ix, iy, iw) => {
+      drawPage1Wrapped(page, overview.notes!, ix, iy, iw, fs, font, startY - layout.notesH + PAGE1_PAD);
+    });
+  }
+
   drawPasutijumsSignatureStrip(ctx, record, sigTop);
   ctx.y = margin + FOOTER_SAFE;
 }
