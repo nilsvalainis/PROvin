@@ -12,6 +12,7 @@ import {
   AI_HISTORICAL_REPORTS_CONTEXT_RULES,
   AI_MILEAGE_BAND_RISK_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_VAG_30TDI_7DSG_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -131,11 +132,14 @@ LEGAL & ADMINISTRATIVE (Latvian buyer framework — when import/registration dat
 
 TEST DRIVE FRAMEWORK (inspection / summary fields — when recommending klātienes apskate or testa brauciens):
 - ICE / classic hybrid: 3 stages, 20–30 min quiet test: (1) City — cold start chain/valve sounds, mild-hybrid ISG smoothness, low-speed vibrations (mounts, axles); (2) Highway 90–110 km/h — tracking, wind noise/seals, light-brake steering shake (warped rotors); (3) Dynamics — kick-down 0–100 km/h, turbo/trans response without lag or cluster fault codes.
+- If the car is VW Group **3.0 TDI V6 + 7-speed DSG/S-Tronic** (from ~2012, 150/180/190/200/210 kW): follow **VW GROUP 3.0 TDI + 7DSG PROTOCOL** in addition to the 3-stage test - not a generic drive only.
 - BEV / PHEV electric-focused checks: follow ELECTRIC & PLUG-IN FORENSICS (SOH, charging habits 20–80 %, DC vs AC, thermal context, HV warranty, 12 V aux, regen, range realism) — do not substitute only ICE oil/DPF advice when the vehicle is primarily electric.
 
 ${AI_POWERTRAIN_IDENTIFICATION_RULES}
 
 ${AI_MILEAGE_BAND_RISK_RULES}
+
+${AI_VAG_30TDI_7DSG_RULES}
 
 MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 - Engine codes, thermal stress on downsized engines; advise realistic oil intervals (e.g. shorten 25–30k km OEM intervals toward 10–12k km when justified).
@@ -178,6 +182,8 @@ ${AI_POWERTRAIN_IDENTIFICATION_RULES}
 ${AI_MILEAGE_BAND_RISK_RULES}
 
 ${AI_EV_BEV_FORENSICS_RULES}
+
+${AI_VAG_30TDI_7DSG_RULES}
 
 ${PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES}
 
@@ -288,6 +294,7 @@ SATURA PRASĪBAS:
 - **Stiprās puses** kā modeļa līmeņa reputāciju, ne kā pierādītu šī eksemplāra stāvokli; PROVIN auto fiziski nav apskatījis. Īpaši LV ekspluatācija var sabojāt arī labu agregātu.
 - Sasaisti ar šī pasūtījuma signāliem bez pilnas nobraukuma/negadījumu esejas.
 - Ja auto ir BEV/PHEV — iekļauj akumulatora / uzlādes riskus (skat. ELECTRIC & PLUG-IN FORENSICS).
+- Ja šis ir VW grupas **3.0 TDI V6 + 7DSG/S-Tronic** (no ~2012, 150/180/190/200/210 kW): skat. VW GROUP 3.0 TDI + 7DSG PROTOCOL. Obligāti izskaidro 150 vs 180 kW atšķirības; kārba **2 000-4 000 €**; divmasu spararats **700-1 200 €**. 176 kW un Tiptronic 6/8 - izņēmumi.
 
 DALĪJUMS:
 - Šī sadaļa = agregātu slimības / stiprās puses / EUR / kas NAV risks — NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
@@ -326,6 +333,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
+- Ja VW grupas **3.0 TDI V6 + 7DSG/S-Tronic** (no ~2012): skat. 7DSG PROTOCOL - aukstais starts, dzesēšana uz eļļas piejaukumu, pēc agresīva brauciena antifrīza noplūdes, kārbas pludena uzsākšana (raustīšanās = 2 000-4 000 €), divmasu tukšgaita pie priekšējiem riteņiem pirms un pēc brauciena (700-1 200 €).
 - Ja auto ir elektrisks vai plug-in — obligāti akumulatora/uzlādes pārbaudes.
 - Neizdomā specifisku defektu bez pamata datos vai tipiskajā agregāta zināšanā.
 - ANTI-REPETITION: ja kontekstā jau ir 1./3. sadaļa vai avotu komentāri — neraksti to pašu stāstu; tikai pārbaudes soļi.

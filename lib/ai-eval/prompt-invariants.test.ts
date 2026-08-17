@@ -8,6 +8,7 @@ import {
   AI_EXPERT_PARAGRAPH_PRESENTATION,
   AI_MILEAGE_BAND_RISK_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_VAG_30TDI_7DSG_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -141,6 +142,7 @@ describe("PROVIN AI prompt invariants", () => {
   it("both base system prompts train aggregate identification and mileage calibration", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toContain("AI_POWERTRAIN_IDENTIFICATION_RULES");
+    expect(prompts).toContain("AI_VAG_30TDI_7DSG_RULES");
     expect(prompts).toContain("AI_MILEAGE_BAND_RISK_RULES");
     expect(prompts).toMatch(
       /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_POWERTRAIN_IDENTIFICATION_RULES\}/,
@@ -315,6 +317,29 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_EV_BEV_FORENSICS_RULES).toMatch(/SOH/i);
     expect(AI_EV_BEV_FORENSICS_RULES).toMatch(/20.?80/i);
     expect(AI_EV_BEV_FORENSICS_RULES).toMatch(/DC|ātrā/i);
+  });
+
+  it("VAG 3.0 TDI 7DSG protocol is in every field-agent prompt with 150/180 split and EUR", () => {
+    expect(AI_VAG_30TDI_7DSG_RULES).toMatch(/150 \/ 180 \/ 190 \/ 200 \/ 210 kW/);
+    expect(AI_VAG_30TDI_7DSG_RULES).toMatch(/2 000-4 000/);
+    expect(AI_VAG_30TDI_7DSG_RULES).toMatch(/700-1 200/);
+    expect(AI_VAG_30TDI_7DSG_RULES).toMatch(/176 kW/);
+    expect(AI_VAG_30TDI_7DSG_RULES).toMatch(/Tiptronic/);
+    expect(AI_VAG_30TDI_7DSG_RULES).toMatch(/front-wheel/);
+    expect(AI_VAG_30TDI_7DSG_RULES).not.toMatch(/AI_LV_POLISH/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_VAG_30TDI_7DSG_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_VAG_30TDI_7DSG_RULES\}/,
+    );
+    expect(prompts).toMatch(/AI_LV_POLISH_SYSTEM[\s\S]*?AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM/);
+    const polishBlock = prompts.slice(
+      prompts.indexOf("AI_LV_POLISH_SYSTEM"),
+      prompts.indexOf("PROVIN_FIELD_AGENT_SYSTEM"),
+    );
+    expect(polishBlock).not.toMatch(/AI_VAG_30TDI_7DSG_RULES/);
   });
 
   it("prepare-draft parallelizes source comments", () => {
