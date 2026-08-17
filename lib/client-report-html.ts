@@ -99,6 +99,12 @@ import {
 } from "@/lib/provin-alert-banners";
 import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
 import {
+  pdfBrandLogoImgHtml,
+  pdfDealerLogoDataUri,
+  pdfListingPortalLogoDataUri,
+  PDF_SOURCE_LOGO_DATA_URI,
+} from "@/lib/pdf-source-brand-logos";
+import {
   sectionIconPdfHtml,
   vendorPdfTitleToIconId,
   type SectionIconId,
@@ -598,16 +604,47 @@ function sourceRecordCountBadgeHtml(count: number): string {
   return `<span class="pdf-src-count-badge pdf-src-count-badge--ok">${escapeHtml(formatSourceRecordCountLv(count))}</span>`;
 }
 
-/** AutoDNA / CarVertical — tie paši hero logotipi, 16×16 kā pārējās PDF sadaļu ikonas. */
+/** AutoDNA / CarVertical / CAR INFO — zīmolu logotipi, 16×16 kā pārējās PDF sadaļu ikonas. */
 function vendorSectionIconHtml(title: string): string {
   const L = SOURCE_BLOCK_LABELS;
   if (title === L.autodna) {
-    return `<img class="pdf-ico pdf-ico--brand-logo" src="${PDF_HERO_BRAND_LOGO_DATA_URI.autodna}" alt="" width="16" height="16"/>`;
+    return pdfBrandLogoImgHtml(PDF_HERO_BRAND_LOGO_DATA_URI.autodna);
   }
   if (title === L.carvertical) {
-    return `<img class="pdf-ico pdf-ico--brand-logo" src="${PDF_HERO_BRAND_LOGO_DATA_URI.carvertical}" alt="" width="16" height="16"/>`;
+    return pdfBrandLogoImgHtml(PDF_HERO_BRAND_LOGO_DATA_URI.carvertical);
+  }
+  if (title === L.carinfo) {
+    return pdfBrandLogoImgHtml(PDF_SOURCE_LOGO_DATA_URI.carinfo);
   }
   return sectionIconPdfHtml(vendorPdfTitleToIconId(title));
+}
+
+function csddSectionIconHtml(): string {
+  return pdfBrandLogoImgHtml(PDF_SOURCE_LOGO_DATA_URI.csdd);
+}
+
+function ltabSectionIconHtml(): string {
+  return pdfBrandLogoImgHtml(PDF_SOURCE_LOGO_DATA_URI.ltab);
+}
+
+function dealerSectionIconHtml(makeModel: string): string {
+  const uri = pdfDealerLogoDataUri(makeModel);
+  return uri ? pdfBrandLogoImgHtml(uri) : sectionIconPdfHtml("shieldCheck");
+}
+
+function listingAnalysisSectionIconHtml(listingUrl: string | null | undefined): string {
+  const uri = pdfListingPortalLogoDataUri(listingUrl);
+  return uri ? pdfBrandLogoImgHtml(uri) : sectionIconPdfHtml("search");
+}
+
+function reportVehicleMakeHint(p: ClientReportPayload): string {
+  return (
+    p.csddForm?.makeModel?.trim() ||
+    extractVehicleMakeModel(p.csddForm?.rawUnprocessedData ?? "") ||
+    extractVehicleMakeModel(p.csdd) ||
+    p.manualLtabBlock?.certificate?.makeModel?.trim() ||
+    ""
+  );
 }
 
 function pdfFieldLabelWithIcon(iconHtml: string, label: string): string {
@@ -999,7 +1036,7 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields): string {
     (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
     (form.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length;
   const head = sectionHeadBrand(
-    sectionIconPdfHtml("scrollText"),
+    csddSectionIconHtml(),
     PDF_SUB_CSDD,
     sourceRecordCountBadgeHtml(csddRecords),
   );
@@ -1069,13 +1106,13 @@ function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySett
     const zone = buildCsddAvotuZoneHtml(form);
     if (zone) return zone;
     if (hasRaw) {
-      const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
+      const head = sectionHeadBrand(csddSectionIconHtml(), PDF_SUB_CSDD);
       return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(PDF_SUB_CSDD)}" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
     }
     return "";
   }
 
-  const head = sectionHeadBrand(sectionIconPdfHtml("scrollText"), PDF_SUB_CSDD);
+  const head = sectionHeadBrand(csddSectionIconHtml(), PDF_SUB_CSDD);
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(PDF_SUB_CSDD)}" role="region">${head}<div class="pdf-source-section-body"><pre class="mirror-pre">${escapeHtml(p.csdd.trim())}</pre></div></div>`;
 }
 
@@ -1181,11 +1218,14 @@ function buildSourcePhotoGroupsPdfHtml(
     groups: unknown,
     legacy: unknown,
   ) => { title: string; photos: { id: string }[] }[],
+  layout: "grid" | "stack" = "grid",
 ): string {
   if (!dataUrls?.size) return "";
 
   const groups = normalizeGroups(photoGroups, legacyPhotos);
   if (groups.length === 0) return "";
+  const gridCls =
+    layout === "stack" ? "pdf-listing-photo-grid pdf-listing-photo-grid--full" : "pdf-listing-photo-grid";
 
   const sections: string[] = [];
   for (const group of groups) {
@@ -1202,7 +1242,7 @@ function buildSourcePhotoGroupsPdfHtml(
       ? `<p class="pdf-subhead pdf-subhead--photo">${escapeHtml(group.title.trim())}</p>`
       : "";
     sections.push(
-      `<section class="pdf-listing-photo-group">${titleHtml}<div class="pdf-listing-photo-grid">${cells.join("")}</div></section>`,
+      `<section class="pdf-listing-photo-group">${titleHtml}<div class="${gridCls}">${cells.join("")}</div></section>`,
     );
   }
   return sections.join("");
@@ -1213,6 +1253,7 @@ function buildAutoRecordsAvotuSubsection(
   b: AutoRecordsBlockState | null | undefined,
   vis: PdfVisibilitySettings,
   autoRecordsPhotoDataUrls?: Map<string, string>,
+  makeModel = "",
 ): string {
   if (!vis.auto_records) return "";
   if (!b || !autoRecordsBlockHasContent(b)) return "";
@@ -1237,6 +1278,7 @@ function buildAutoRecordsAvotuSubsection(
     b.photos,
     autoRecordsPhotoDataUrls,
     normalizeAutoRecordsPhotoGroups,
+    "stack",
   );
   const hasPhotos = photosHtml.length > 0;
   const hasServiceWorks = serviceWorksTable.length > 0;
@@ -1247,7 +1289,7 @@ function buildAutoRecordsAvotuSubsection(
     (b.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
     (b.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length;
   const head = sectionHeadBrand(
-    sectionIconPdfHtml("shieldCheck"),
+    dealerSectionIconHtml(makeModel),
     PDF_SOURCE_DEALER_TITLE,
     sourceRecordCountBadgeHtml(recordCount),
   );
@@ -1375,7 +1417,7 @@ function buildLtabAvotuSubsection(
   const certHtml = ltabCertificateHasContent(b.certificate) ? buildLtabCertificateHtml(b.certificate!) : "";
   if (!hasComments && !certHtml) return "";
   const head = sectionHeadBrand(
-    sectionIconPdfHtml("shield"),
+    ltabSectionIconHtml(),
     SOURCE_BLOCK_LABELS.ltab,
     sourceRecordCountBadgeHtml(b.rows.filter(ltabRowHasData).length),
   );
@@ -1443,7 +1485,7 @@ function buildListingAnalysisPriorityHtml(
   if (inner.length === 0) return "";
   const parts: string[] = [];
   parts.push(`<div class="pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root" role="region">`);
-  parts.push(sectionHeadBrand(sectionIconPdfHtml("search"), PDF_SECTION_LISTING_ANALYSIS));
+  parts.push(sectionHeadBrand(listingAnalysisSectionIconHtml(p.listingUrl), PDF_SECTION_LISTING_ANALYSIS));
   parts.push(`<div class="pdf-source-section-body pdf-listing-analysis-stack">${inner.join("\n")}</div>`);
   parts.push(`</div>`);
   return parts.join("\n");
@@ -1509,6 +1551,7 @@ function buildAvotuDatiSectionHtml(
     p.autoRecordsBlock ?? null,
     vis,
     autoRecordsPhotoDataUrls,
+    reportVehicleMakeHint(p),
   );
   const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls);
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
@@ -1901,6 +1944,7 @@ function clientReportPrintCss(): string {
       .pdf-listing-photo-grid{
         display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 8px;
       }
+      .pdf-listing-photo-grid--full{grid-template-columns:1fr;gap:12px;}
       .pdf-listing-photo-group{margin:0 0 14px;}
       .pdf-listing-photo-group:last-child{margin-bottom:0;}
       .pdf-subhead--photo{margin:0 0 6px;}
@@ -1908,6 +1952,9 @@ function clientReportPrintCss(): string {
       .pdf-listing-photo-img{
         width:100%;height:auto;max-height:220px;object-fit:contain;
         border-radius:6px;border:1px solid #e2e8f0;display:block;background:#f8fafc;
+      }
+      .pdf-listing-photo-grid--full .pdf-listing-photo-img{
+        max-height:none;width:100%;height:auto;object-fit:contain;
       }
       .pdf-listing-history-frame{
         border:1px solid var(--pdf-line);

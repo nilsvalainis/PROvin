@@ -16,6 +16,8 @@ import {
 import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
 import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
+import { PDF_DEALER_LOGO_DATA_URI, PDF_SOURCE_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logos";
+import { emptyLtabCertificate } from "@/lib/ltab-report-extract";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 
 function minimalPayload(overrides: Partial<ClientReportPayload> = {}): ClientReportPayload {
@@ -217,9 +219,118 @@ describe("PDF design system", () => {
   it("renders every section head with the same icon bubble and title style", () => {
     const html = doc();
     expect(html).toContain("font-size:var(--pdf-fs-sec);font-weight:700");
-    // Paneļu galvai vairs nav atsevišķas zilās kreisās strīpas
+    // Paneļu galvai vairs nav atsevišķas zilās strīpas
     const panelHead = html.slice(html.indexOf(".pdf-v1-panel-head{"));
     expect(panelHead.slice(0, 160)).not.toContain("border-left");
+  });
+});
+
+describe("PDF source-section brand logos", () => {
+  it("uses the CSDD, CAR INFO, and LTAB marks on those source heads", () => {
+    const csdd = emptyCsddFields();
+    csdd.registrationStatus = "Reģistrēts";
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.carinfo,
+            mileageRows: [],
+            incidentRows: [],
+            comments: "Zviedrijas reģistrs",
+          },
+        ],
+        manualLtabBlock: {
+          rows: [],
+          comments: "LTAB komentārs",
+          certificate: { ...emptyLtabCertificate(), accidentCount: "0" },
+        },
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain(PDF_SOURCE_LOGO_DATA_URI.csdd);
+    expect(html).toContain(PDF_SOURCE_LOGO_DATA_URI.carinfo);
+    expect(html).toContain(PDF_SOURCE_LOGO_DATA_URI.ltab);
+  });
+
+  it("puts the hero dealer manufacturer logo on DĪLERA DATI when make is known", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "AUDI A6";
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        autoRecordsBlock: {
+          ...emptyAutoRecordsBlock(),
+          comments: "Dīlera servisa vēsture",
+        },
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("DĪLERA DATI");
+    expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.audi);
+  });
+
+  it("uses ss.lv / auto24.ee / mobile.de logos from the listing URL, otherwise the search icon", () => {
+    const listing = {
+      ...createDefaultSourceBlocks().listing_analysis,
+      sellerPortrait: "Privāts pārdevējs.",
+    };
+    const sslv = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingUrl: "https://www.ss.lv/msg/lv/transport/cars/audi/a6/abcd.html",
+        listingAnalysis: listing,
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(sslv).toContain(PDF_SOURCE_LOGO_DATA_URI.sslv);
+
+    const auto24 = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingUrl: "https://www.auto24.ee/used/12345",
+        listingAnalysis: listing,
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(auto24).toContain(PDF_SOURCE_LOGO_DATA_URI.auto24);
+
+    const mobile = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingUrl: "https://suchen.mobile.de/fahrzeuge/details.html?id=1",
+        listingAnalysis: listing,
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(mobile).toContain(PDF_SOURCE_LOGO_DATA_URI.mobilede);
+
+    const other = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingUrl: "https://www.andelemandele.lv/item/1",
+        listingAnalysis: listing,
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(other).not.toContain(PDF_SOURCE_LOGO_DATA_URI.sslv);
+    expect(other).not.toContain(PDF_SOURCE_LOGO_DATA_URI.auto24);
+    expect(other).not.toContain(PDF_SOURCE_LOGO_DATA_URI.mobilede);
+    expect(other).toContain("SLUDINĀJUMA ANALĪZE");
   });
 });
 
