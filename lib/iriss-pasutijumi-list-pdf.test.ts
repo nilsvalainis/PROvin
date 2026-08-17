@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { PDFDocument } from "pdf-lib";
 
 vi.mock("server-only", () => ({}));
 
-import { buildIrissPasutijumiListPdfBytes } from "@/lib/iriss-pasutijums-pdf";
+import { buildIrissPasutijumiListPdfBytes, buildIrissPasutijumsPdfBytes } from "@/lib/iriss-pasutijums-pdf";
 import { emptyIrissPasutijums, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 describe("IRISS pasūtījumu saraksta PDF", () => {
@@ -39,5 +40,24 @@ describe("IRISS pasūtījumu saraksta PDF", () => {
     const bytes = await buildIrissPasutijumiListPdfBytes(records);
     expect(bytes.byteLength).toBeGreaterThan(1000);
     expect(Buffer.from(bytes.subarray(0, 5)).toString("latin1")).toBe("%PDF-");
+  });
+});
+
+describe("IRISS viena pasūtījuma PDF", () => {
+  it("stays two pages (data + terms) with a signature strip on page 1", async () => {
+    const rec = emptyIrissPasutijums("order-pdf-test", "2026-08-17T12:00:00.000Z");
+    rec.clientFirstName = "Anna";
+    rec.clientLastName = "Bērziņa";
+    rec.phone = "20000000";
+    rec.orderDate = "2026-04-22";
+    rec.brandModel = "VW Golf";
+    rec.engineType = "Benzīns";
+    rec.equipmentRequired = "ACC";
+    rec.equipmentDesired = "Kamera";
+    rec.notes = "Pārbaudīt VIN";
+    const bytes = await buildIrissPasutijumsPdfBytes(rec);
+    expect(Buffer.from(bytes.subarray(0, 5)).toString("latin1")).toBe("%PDF-");
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.getPageCount()).toBe(2);
   });
 });

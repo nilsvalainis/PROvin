@@ -8,8 +8,6 @@ import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
 import { AdminUnreadOrdersBadge } from "./AdminUnreadOrdersBadge";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
-import { IrissOrderSortSelect } from "./IrissOrderSortSelect";
-import { IrissPasutijumiStatusFilter } from "./IrissPasutijumiStatusFilter";
 import { LogoutButton } from "./LogoutButton";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
@@ -84,7 +82,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
 
   const isProWorkspace = workspace === "pro";
   const isDetailScreen = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice)\/[^/]+$/.test(pathname);
-  const showIrissSortInHeader = pathname === "/admin/iriss/pasutijumi";
   const asideMobileClasses = mobileNavOpen
     ? "max-md:fixed max-md:right-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(14rem,74vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-l max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
     : "max-md:hidden";
@@ -105,13 +102,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           </div>
         </div>
         <div className="hidden items-center gap-3 md:flex">
-          {showIrissSortInHeader ? (
-            <>
-              <IrissOrderSortSelect />
-              <div className="hidden h-5 w-px shrink-0 bg-black/25 lg:block" aria-hidden />
-              <IrissPasutijumiStatusFilter />
-            </>
-          ) : null}
           <LogoutButton className="md:w-auto" />
         </div>
         <div className="flex shrink-0 items-center gap-1.5 md:hidden">

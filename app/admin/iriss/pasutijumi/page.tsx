@@ -66,7 +66,11 @@ export default async function IrissPasutijumiListPage() {
         <IrissPasutijumiListClient rows={rows} initialListOrder={initialListOrder} />
       ) : null}
 
-      {storeEnabled ? <div className="mt-6"><AdminIrissOrdersExportButton /></div> : null}
+      {storeEnabled && rows.length === 0 && !loadError ? (
+        <div className="mt-4">
+          <AdminIrissOrdersExportButton compact />
+        </div>
+      ) : null}
 
       {storeEnabled && rows.length === 0 ? <IrissPasutijumiNewFab /> : null}
     </div>

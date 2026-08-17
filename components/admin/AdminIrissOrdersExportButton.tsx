@@ -18,7 +18,7 @@ function fallbackName(format: ExportFormat): string {
   return `provin-iriss-pasutijumi-backup-${day}.zip`;
 }
 
-export function AdminIrissOrdersExportButton() {
+export function AdminIrissOrdersExportButton({ compact = false }: { compact?: boolean }) {
   const [phase, setPhase] = useState<"idle" | "loading" | "error">("idle");
   const [loadingFormat, setLoadingFormat] = useState<ExportFormat | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -70,53 +70,60 @@ export function AdminIrissOrdersExportButton() {
 
   const busy = phase === "loading";
 
+  const btnClass = compact
+    ? "inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50/90 disabled:opacity-55"
+    : "inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50/90 disabled:opacity-55";
+  const iconClass = compact ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4 shrink-0";
+
   return (
-    <div className="mb-3 flex flex-col items-end gap-1.5">
-      <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className={compact ? "flex flex-col items-end gap-1" : "mb-3 flex flex-col items-end gap-1.5"}>
+      <div className="flex flex-wrap items-center justify-end gap-1.5">
         <button
           type="button"
           disabled={busy}
           onClick={() => void runExport("pdf")}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50/90 disabled:opacity-55"
+          className={btnClass}
+          title="PDF — tikai aktīvie pasūtījumi"
         >
           {loadingFormat === "pdf" ? (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
+            <Loader2 className={`${iconClass} animate-spin text-[var(--color-provin-accent)]`} aria-hidden />
           ) : (
-            <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-accent)]" aria-hidden />
+            <FileText className={`${iconClass} text-[var(--color-provin-accent)]`} aria-hidden />
           )}
-          Saraksts PDF
+          {compact ? "PDF" : "Saraksts PDF"}
         </button>
         <button
           type="button"
           disabled={busy}
           onClick={() => void runExport("zip")}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50/90 disabled:opacity-55"
+          className={btnClass}
+          title="ZIP rezerves kopija ar visiem melnrakstiem"
         >
           {loadingFormat === "zip" ? (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
+            <Loader2 className={`${iconClass} animate-spin text-[var(--color-provin-accent)]`} aria-hidden />
           ) : (
-            <Download className="h-4 w-4 shrink-0 text-[var(--color-provin-accent)]" aria-hidden />
+            <Download className={`${iconClass} text-[var(--color-provin-accent)]`} aria-hidden />
           )}
-          Eksportēt visus pasūtījumus
+          {compact ? "ZIP" : "Eksportēt visus pasūtījumus"}
         </button>
         <button
           type="button"
           disabled={busy}
           onClick={() => void runExport("json")}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50/90 disabled:opacity-55"
+          className={btnClass}
           title="Rezerves kopija: visi pasūtījumu JSON melnraksti vienā failā"
         >
           {loadingFormat === "json" ? (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
+            <Loader2 className={`${iconClass} animate-spin text-[var(--color-provin-accent)]`} aria-hidden />
           ) : null}
-          Vienā JSON
+          JSON
         </button>
       </div>
       {phase === "error" && errMsg ? (
         <p className="max-w-md text-right text-[11px] leading-snug text-red-600" role="alert">
           {errMsg}
         </p>
-      ) : (
+      ) : compact ? null : (
         <p className="max-w-lg text-right text-[10px] leading-snug text-[var(--color-provin-muted)]">
           PDF — tikai aktīvie pasūtījumi (klients, specifikācija, aprīkojums, piezīmes). ZIP/JSON — rezerves kopija
           ar visiem melnrakstiem.

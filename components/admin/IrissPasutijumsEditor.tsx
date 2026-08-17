@@ -23,6 +23,10 @@ import {
 } from "@/lib/iriss-listing-links";
 import { fileToCompressedOfferAttachment } from "@/lib/iriss-offer-image-compress";
 import { patchJsonWithUploadProgress, type JsonPatchResult } from "@/lib/iriss-json-patch-upload";
+import {
+  irissRecordNeedsOfferImageHydration,
+  mergeIrissOfferImageDataUrls,
+} from "@/lib/iriss-pasutijums-offer-images";
 
 /** Mobilajā — kvadrātveida FAB (`rounded-xl`); no `sm:` — apaļas pogas ar tekstu. */
 const toolbarBtnBase =
@@ -499,6 +503,8 @@ export function IrissPasutijumsEditor({
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
+  const imagesHydrating = useRef(irissRecordNeedsOfferImageHydration(initialRecord));
+  const [imagesReady, setImagesReady] = useState(!imagesHydrating.current);
 
   const [pdfRetryBar, setPdfRetryBar] = useState<{ href: string; name: string } | null>(null);
   const [orderPdfRetryOpen, setOrderPdfRetryOpen] = useState(false);
@@ -528,6 +534,7 @@ export function IrissPasutijumsEditor({
       if (!silent) setBusy(true);
       if (!silent) setSaveMsg(null);
       if (silent && autosaveInFlight.current) return { ok: false, error: "Saglabāšana jau notiek (race)." };
+      if (imagesHydrating.current) return { ok: false, error: "Ielādē attēlus." };
       if (silent) autosaveInFlight.current = true;
 
       const url = `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
@@ -596,6 +603,34 @@ export function IrissPasutijumsEditor({
   }, [save]);
 
   useEffect(() => {
+    if (!imagesHydrating.current) return;
+    let cancelled = false;
+    const id = initialRecord.id;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include" });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { record?: IrissPasutijumsRecord };
+        if (!data.record || cancelled) return;
+        setRec((prev) => {
+          const merged = mergeIrissOfferImageDataUrls(prev, data.record!);
+          lastSavedSnapshot.current = JSON.stringify(merged);
+          return merged;
+        });
+      } finally {
+        if (!cancelled) {
+          imagesHydrating.current = false;
+          setImagesReady(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialRecord.id]);
+
+  useEffect(() => {
+    if (!imagesReady) return;
     const snap = JSON.stringify(rec);
     if (snap === lastSavedSnapshot.current) return;
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
@@ -605,7 +640,7 @@ export function IrissPasutijumsEditor({
     return () => {
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
-  }, [rec, save]);
+  }, [rec, save, imagesReady]);
 
   const openPdf = useCallback(async () => {
     setPdfRetryBar(null);

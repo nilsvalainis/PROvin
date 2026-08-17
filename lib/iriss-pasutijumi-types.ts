@@ -184,6 +184,9 @@ export type IrissPasutijumsListRow = {
   updatedAt: string;
   pinnedAt: string;
   listStatus: IrissPasutijumsListStatus;
+  clientFirstName: string;
+  clientLastName: string;
+  orderDate: string;
   brandModel: string;
   totalBudget: string;
   phone: string;

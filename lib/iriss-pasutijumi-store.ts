@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
+import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
   emptyIrissPasutijums,
   IRISS_MAX_OFFER_ATTACHMENTS,
@@ -453,21 +454,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
 }
 
 function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
-  return {
-    id: rec.id,
-    createdAt: rec.createdAt,
-    updatedAt: rec.updatedAt,
-    pinnedAt: rec.pinnedAt,
-    listStatus: rec.listStatus ?? "active",
-    brandModel: rec.brandModel.trim() || "—",
-    totalBudget: rec.totalBudget.trim() || "—",
-    phone: rec.phone.trim() || "—",
-    listingLinkMobile: rec.listingLinkMobile,
-    listingLinkAutobid: rec.listingLinkAutobid,
-    listingLinkOpenline: rec.listingLinkOpenline,
-    listingLinkAuto1: rec.listingLinkAuto1,
-    listingLinksOther: rec.listingLinksOther,
-  };
+  return irissPasutijumsToListRow(rec);
 }
 
 function sortRowsByUpdatedDesc(rows: IrissPasutijumsListRow[]): IrissPasutijumsListRow[] {
@@ -477,6 +464,10 @@ function sortRowsByUpdatedDesc(rows: IrissPasutijumsListRow[]): IrissPasutijumsL
 
 function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
   if (!Array.isArray(raw)) return null;
+  if (raw.length > 0) {
+    const first = raw[0];
+    if (!first || typeof first !== "object" || !("clientFirstName" in first)) return null;
+  }
   const rows: IrissPasutijumsListRow[] = [];
   for (const item of raw) {
     if (!item || typeof item !== "object") continue;
@@ -489,6 +480,9 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       updatedAt: sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64),
       pinnedAt: sanitizeDraftTextForStorage(typeof o.pinnedAt === "string" ? o.pinnedAt : "", 64),
       listStatus: normalizeListStatus(o.listStatus),
+      clientFirstName: sanitizeDraftTextForStorage(typeof o.clientFirstName === "string" ? o.clientFirstName : "", 120),
+      clientLastName: sanitizeDraftTextForStorage(typeof o.clientLastName === "string" ? o.clientLastName : "", 120),
+      orderDate: sanitizeDraftTextForStorage(typeof o.orderDate === "string" ? o.orderDate : "", 32),
       brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "—", 400) || "—",
       totalBudget: sanitizeDraftTextForStorage(typeof o.totalBudget === "string" ? o.totalBudget : "—", 120) || "—",
       phone: sanitizeDraftTextForStorage(typeof o.phone === "string" ? o.phone : "—", 64) || "—",

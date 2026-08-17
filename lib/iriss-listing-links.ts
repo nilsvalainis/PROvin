@@ -88,6 +88,12 @@ export function buildListingPlatformChips(src: IrissListingLinksInput, max = 5):
 export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS =
   "flex min-w-0 flex-nowrap items-center gap-2.5 overflow-x-auto overscroll-x-contain px-1 py-1.5 [-webkit-overflow-scrolling:touch]";
 
+export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_COMPACT_CLASS =
+  "flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]";
+
 /** Kompakts noapaļots taisnstūris ar burtu; krāsas — `style={chipStyle}` no `buildListingPlatformChips`. */
 export const LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS =
   "iriss-listing-platform-chip inline-flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl px-2.5 text-[11px] font-semibold leading-none tracking-tight shadow-sm transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.6rem] sm:px-2.5";
+
+export const LISTING_PLATFORM_CHIP_ANCHOR_COMPACT_CLASS =
+  "iriss-listing-platform-chip inline-flex h-6 min-w-[1.35rem] shrink-0 items-center justify-center rounded-md px-1.5 text-[9px] font-semibold leading-none tracking-tight transition-transform active:scale-[0.96]";

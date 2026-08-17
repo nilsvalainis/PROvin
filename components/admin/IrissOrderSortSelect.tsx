@@ -36,10 +36,12 @@ export function readIrissOrderSort(): IrissOrderSortMode {
 export function IrissOrderSortSelect({
   className = "",
   selectClassName = "",
+  compact = false,
 }: {
   className?: string;
   /** Papildu Tailwind klasei `<select>` (piem. `w-full` mobilajam). */
   selectClassName?: string;
+  compact?: boolean;
 }) {
   const [value, setValue] = useState<IrissOrderSortMode>("created_desc");
 
@@ -48,10 +50,10 @@ export function IrissOrderSortSelect({
   }, []);
 
   return (
-    <label className={`inline-flex items-center gap-2 text-xs text-black ${className}`}>
-      <span className="hidden lg:inline">Kārtot:</span>
+    <label className={`inline-flex items-center gap-1.5 text-xs text-black ${className}`}>
+      <span className="hidden shrink-0 lg:inline">Kārtot:</span>
       <select
-        className={`min-h-[38px] appearance-none rounded-lg border-0 bg-transparent px-3 py-1.5 text-[12px] font-semibold text-black shadow-none outline-none transition focus:ring-2 focus:ring-black/20 ${selectClassName}`}
+        className={`${compact ? "h-8 min-h-8 py-0 text-[11px]" : "min-h-[38px] py-1.5 text-[12px]"} appearance-none rounded-md border-0 bg-transparent px-2 font-semibold text-black shadow-none outline-none transition focus:ring-2 focus:ring-black/20 ${selectClassName}`}
         value={value}
         onChange={(e) => {
           const next = e.target.value as IrissOrderSortMode;

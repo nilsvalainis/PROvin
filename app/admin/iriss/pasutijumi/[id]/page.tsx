@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor";
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
+import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
 
 export const dynamic = "force-dynamic";
 
@@ -24,5 +25,5 @@ export default async function IrissPasutijumsDetailPage({
   const sp = (await searchParams) ?? {};
   const autoOpenNewOffer = sp.newOffer === "1";
   const forceNoClientPdf = sp.noClientPdf === "1";
-  return <IrissPasutijumsEditor initialRecord={rec} autoOpenNewOffer={autoOpenNewOffer} forceNoClientPdf={forceNoClientPdf} />;
+  return <IrissPasutijumsEditor initialRecord={stripIrissOfferImageDataUrls(rec)} autoOpenNewOffer={autoOpenNewOffer} forceNoClientPdf={forceNoClientPdf} />;
 }

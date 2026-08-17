@@ -2,59 +2,36 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import {
+  dispatchIrissListStatusFilter,
+  IRISS_LIST_STATUS_FILTER_ALL,
+  IRISS_LIST_STATUS_FILTER_EVENT,
+  readIrissListStatusFilter,
+  type IrissListStatusFilterState,
+} from "@/lib/iriss-pasutijumi-status-filter";
 
-export const IRISS_LIST_STATUS_FILTER_KEY = "iriss-pasutijumi-list-status-filter-v1";
-export const IRISS_LIST_STATUS_FILTER_EVENT = "iriss-pasutijumi-list-status-filter-change";
-
-export type IrissListStatusFilterState = Record<IrissPasutijumsListStatus, boolean>;
-
-const DEFAULT_FILTER: IrissListStatusFilterState = {
-  active: true,
-  completed: true,
-  inactive: true,
-};
+export {
+  IRISS_LIST_STATUS_DEFAULT_FILTER,
+  IRISS_LIST_STATUS_FILTER_ALL,
+  IRISS_LIST_STATUS_FILTER_EVENT,
+  IRISS_LIST_STATUS_FILTER_KEY,
+  parseIrissListStatusFilter,
+  readIrissListStatusFilter,
+  type IrissListStatusFilterState,
+} from "@/lib/iriss-pasutijumi-status-filter";
 
 const LABELS: Record<IrissPasutijumsListStatus, string> = {
-  active: "Aktīvs",
-  completed: "Izpildīts",
-  inactive: "Neaktīvs",
+  active: "Aktīvi",
+  completed: "Izpildīti",
+  inactive: "Neaktīvi",
 };
-
-function parseFilter(raw: string | null): IrissListStatusFilterState {
-  if (!raw) return { ...DEFAULT_FILTER };
-  try {
-    const o = JSON.parse(raw) as Partial<IrissListStatusFilterState>;
-    return {
-      active: o.active !== false,
-      completed: o.completed !== false,
-      inactive: o.inactive !== false,
-    };
-  } catch {
-    return { ...DEFAULT_FILTER };
-  }
-}
-
-export function readIrissListStatusFilter(): IrissListStatusFilterState {
-  if (typeof window === "undefined") return { ...DEFAULT_FILTER };
-  return parseFilter(localStorage.getItem(IRISS_LIST_STATUS_FILTER_KEY));
-}
-
-function dispatchFilter(next: IrissListStatusFilterState) {
-  try {
-    localStorage.setItem(IRISS_LIST_STATUS_FILTER_KEY, JSON.stringify(next));
-  } catch {
-    /* ignore */
-  }
-  window.dispatchEvent(new CustomEvent(IRISS_LIST_STATUS_FILTER_EVENT, { detail: next }));
-}
 
 type Props = {
   className?: string;
-  /** `stacked` — mobilajam (etiķetes virs ķekšiem). */
-  variant?: "inline" | "stacked";
+  counts?: { active: number; completed: number; inactive: number };
 };
 
-export function IrissPasutijumiStatusFilter({ className = "", variant = "inline" }: Props) {
+export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
   const [filter, setFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
 
   useEffect(() => {
@@ -66,9 +43,9 @@ export function IrissPasutijumiStatusFilter({ className = "", variant = "inline"
       const d = (e as CustomEvent<IrissListStatusFilterState>).detail;
       if (!d || typeof d !== "object") return;
       setFilter({
-        active: d.active !== false,
-        completed: d.completed !== false,
-        inactive: d.inactive !== false,
+        active: Boolean(d.active),
+        completed: Boolean(d.completed),
+        inactive: Boolean(d.inactive),
       });
     };
     window.addEventListener(IRISS_LIST_STATUS_FILTER_EVENT, onEv as EventListener);
@@ -80,59 +57,52 @@ export function IrissPasutijumiStatusFilter({ className = "", variant = "inline"
       const next = { ...prev, [key]: !prev[key] };
       const countOn = (["active", "completed", "inactive"] as const).filter((k) => next[k]).length;
       if (countOn === 0) return prev;
-      dispatchFilter(next);
+      dispatchIrissListStatusFilter(next);
       return next;
     });
   }, []);
 
   const selectAll = useCallback(() => {
-    const next = { ...DEFAULT_FILTER };
-    dispatchFilter(next);
-    setFilter(next);
+    dispatchIrissListStatusFilter(IRISS_LIST_STATUS_FILTER_ALL);
+    setFilter(IRISS_LIST_STATUS_FILTER_ALL);
   }, []);
 
   const isAllOn = filter.active && filter.completed && filter.inactive;
 
-  const boxes = (
-    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 ${variant === "stacked" ? "justify-start" : ""}`}>
-      {(["active", "completed", "inactive"] as const).map((key) => (
-        <label
-          key={key}
-          className="inline-flex cursor-pointer select-none items-center gap-1.5 rounded-lg border border-black/15 bg-white/90 px-2 py-1 text-[11px] font-semibold text-black shadow-sm transition hover:border-black/25 hover:bg-white sm:text-[12px]"
-        >
-          <input
-            type="checkbox"
-            checked={filter[key]}
-            onChange={() => toggle(key)}
-            className="h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-black accent-black"
-          />
-          <span>{LABELS[key]}</span>
-        </label>
-      ))}
+  return (
+    <div className={`flex flex-wrap items-center gap-1 ${className}`} role="group" aria-label="Statusa filtrs">
+      {(["active", "completed", "inactive"] as const).map((key) => {
+        const on = filter[key];
+        const n = counts?.[key];
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => toggle(key)}
+            aria-pressed={on}
+            className={`inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold tabular-nums transition ${
+              on
+                ? key === "completed"
+                  ? "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-700/30"
+                  : key === "inactive"
+                    ? "bg-red-100 text-red-950 ring-1 ring-red-700/30"
+                    : "bg-slate-900 text-white"
+                : "bg-black/[0.04] text-black/70 hover:bg-black/[0.08] hover:text-black"
+            }`}
+          >
+            {LABELS[key]}
+            {typeof n === "number" ? <span className="ml-1 opacity-80">{n}</span> : null}
+          </button>
+        );
+      })}
       <button
         type="button"
         onClick={selectAll}
         disabled={isAllOn}
-        className="rounded-lg border border-dashed border-black/20 px-2 py-1 text-[11px] font-semibold text-black/70 transition hover:border-black/35 hover:bg-black/[0.04] hover:text-black disabled:cursor-default disabled:opacity-40 sm:text-[12px]"
+        className="inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold text-black/60 transition hover:bg-black/[0.06] hover:text-black disabled:cursor-default disabled:opacity-40"
       >
         Visi
       </button>
-    </div>
-  );
-
-  if (variant === "stacked") {
-    return (
-      <div className={`space-y-1.5 ${className}`}>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-black/55">Rādīt sarakstā</p>
-        {boxes}
-      </div>
-    );
-  }
-
-  return (
-    <div className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-black ${className}`}>
-      <span className="hidden shrink-0 font-semibold lg:inline">Rādīt:</span>
-      {boxes}
     </div>
   );
 }
