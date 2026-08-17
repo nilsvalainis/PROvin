@@ -104,5 +104,18 @@
     "expectPass": false,
     "codes": ["summary_price"],
     "text": "**Cena.** Sludinājuma cena 14 900 € atbilst tirgum.\n\n**Rekomendācija.** Ieteicams pirkt pēc apskates."
+  },
+  {
+    "id": "source-bad-injektori",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["vocabulary_injektors"],
+    "text": "**Dzinējs.** Jāpārbauda injektori un vara gredzeni."
+  },
+  {
+    "id": "source-ok-iesmidzinatajs",
+    "field": "source",
+    "expectPass": true,
+    "text": "**Dzinējs.** Jāpārbauda iesmidzinātāji (sprauslas) un vara gredzeni; turpmāk sprauslu stenda tests."
   }
 ]

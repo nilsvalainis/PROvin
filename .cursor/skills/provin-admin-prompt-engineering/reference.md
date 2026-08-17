@@ -12,13 +12,20 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
   - *Transmission:* Paired exclusively with the 8-speed Tiptronic (classic torque converter). High reliability, low risk, completely avoids the dual-mass flywheel failure modes inherent to S-Tronic.
   - *Timing Chains:* Structurally reinforced. Based on 40+ audited biturbo vehicles, timing chains DO NOT rattle or fail up to 300,000 km. Standard V6 chain failure rules do not apply here.
   - *Silent & Fatal Faults:* 1. V-space intercooler coolant leak (independent of mileage, occurs at 200k or 300k km alike, severe engine damage risk if neglected, repair costs: 500-1000 EUR).
-    2. Fuel injectors & copper rings: Fail silently without physical symptoms (no audible "cukāšana" like older gens). Must be tested on a professional bench. Defective spray patterns lead directly to burned/melted pistons and total engine destruction.
+    2. Fuel injectors & copper rings: Fail silently without physical symptoms (no audible "cukāšana" like older gens). Must be tested on a professional bench. Defective spray patterns lead directly to burned/melted pistons and total engine destruction. Latvian client copy: first mention „iesmidzinātāji (sprauslas)”, later „sprauslas”; never injektori/inžektori.
     3. Plastic thermostat housings: High tendency to crack and leak fluid; require preventative replacement during major front-end service.
   - *Operating Cost:* High thermal and mechanical stress requires a reduced oil interval (strictly 7,000–10,000 km using premium oils). SQ5 braking components are significantly more expensive than standard V6 options.
 
-- **3.0 TDI Single-Turbo Standard (150kW & 180kW - A4, A5, A6 C7, Q5):**
-  - *Transmission:* Paired with the high-risk 7-speed S-Tronic (dual-clutch DSG) with a dual-mass flywheel. High probability of internal wear, clutch jerkiness, and mechatronic failure. Deemed a blind risk for remote auction/buying structures unless physically tested.
-  - *Timing Chains:* Major structural weakness. Rattle/stretch occurs early, frequently manifesting right around the 200,000 km threshold. High financial entry risk.
+- **3.0 TDI Single-Turbo (150 kW vs 180 kW; also 190/200/210 kW from ~2012) + 7-speed DSG / S-Tronic:**
+  - *Same risk list:* timing **chains**, **7DSG/S-Tronic**, **dual-mass flywheel**, **injectors + copper rings**, **oil and coolant leaks** (V-intercooler, thermostat). Decide in person.
+  - *150 kW:* lower thermal/boost load; same parts, faults often later. Still chain ~200k class + same 7DSG+DMF. Not "safe".
+  - *180 kW:* hotter sibling - chain, injector/copper-ring silent fail, intercooler/thermostat leaks more likely at similar km.
+  - *190/200/210 kW:* same 7DSG protocol unless Tiptronic 6/8 is proven.
+  - *Gearbox test:* pull-away and firmer stops must be smooth. Slight jerk on takeoff = first sign of 7DSG trouble. **MUST state 2 000-4 000 €** in tech risks and inspection.
+  - *DMF test:* idle irregular knock at **front wheels**, gone in D or R; listen **before and after** the drive. **MUST state 700-1 200 €**.
+  - *Cold start + cooling:* chain tick vs DMF; expansion tank for oil-in-coolant; after an aggressive drive hunt antifreeze leaks (intercooler/thermostat) while hot.
+  - *Chain EUR:* typically **1 500-3 000 €**. Do not conflate chain rattle with DMF idle knock.
+  - *Exceptions:* **176 kW** (usually C6 + Tiptronic 6) - no pronounced chain issues at honest ~350 000 km. **Tiptronic 6/8** (no dual-mass clutch pack) - normal test drive only. Biturbo ~230 kW is typically 8AT, not this script.
 
 - **Older 3.0 TDI Generation (up to 2010/2011 - e.g., Audi A6 C6 Facelift 176kW):**
   - *Powertrain:* 176kW engine + Quattro + 6-speed Tiptronic. Historically the most reliable V6 TDI configuration with minimal electronics overhead.

@@ -113,7 +113,7 @@ const TERM_LV: TermRule[] = [
   { re: /^(spark\s+plug|z[üu]ndkerze)$/i, lv: "Aizdedzes svece" },
   { re: /^(set\s+of\s+spark\s+plugs|z[üu]ndkerzensatz)$/i, lv: "Aizdedzes sveču komplekts" },
   { re: /^(glow\s+plug|gl[üu]hkerze)$/i, lv: "Kvēlsvece" },
-  { re: /^(injector|einspritzd[üu]se|injektor)$/i, lv: "Iesmidzinātājs" },
+  { re: /^(injector|einspritzd[üu]se|injektor)$/i, lv: "Iesmidzinātājs (sprausla)" },
   { re: /^(turbocharger|turbolader)$/i, lv: "Turbokompresors" },
   { re: /^(egr[- ]valve|agr[- ]ventil)$/i, lv: "EGR vārsts" },
   { re: /^(lambda|oxygen)\s+(sensor|probe)$/i, lv: "Lambda zonde" },

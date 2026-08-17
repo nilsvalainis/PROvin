@@ -15,6 +15,21 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("Labs auto — kopts.")).toBe("Labs auto - kopts.");
     expect(applyProvinReportCopyVocabulary("2007–2015, 300–400 €")).toBe("2007-2015, 300-400 €");
   });
+
+  it("replaces injektori/inžektori with iesmidzinātājs (sprausla)", () => {
+    expect(applyProvinReportCopyVocabulary("Jāpārbauda injektori un vara gredzeni.")).toBe(
+      "Jāpārbauda iesmidzinātāji (sprauslas) un vara gredzeni.",
+    );
+    expect(applyProvinReportCopyVocabulary("Inžektoru nolietojums.")).toBe(
+      "Iesmidzinātāju (sprauslu) nolietojums.",
+    );
+    expect(applyProvinReportCopyVocabulary("injektoriem jāveic stenda tests.")).toBe(
+      "iesmidzinātājiem (sprauslām) jāveic stenda tests.",
+    );
+    expect(applyProvinReportCopyVocabulary("ķēde/injektori/dzesēšana")).toBe(
+      "ķēde/iesmidzinātāji (sprauslas)/dzesēšana",
+    );
+  });
 });
 
 describe("normalizeProvinExpertAiComment", () => {

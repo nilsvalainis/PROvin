@@ -12,6 +12,7 @@ describe("servisa terminu tulkojums latviski", () => {
       "Salona filtrs (ar aktivēto ogli)",
     );
     expect(serviceWorkTermLv("Oil service")).toBe("Eļļas maiņa");
+    expect(serviceWorkTermLv("Injector")).toBe("Iesmidzinātājs (sprausla)");
   });
 
   it("tulko vācu terminus", () => {

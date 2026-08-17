@@ -22,6 +22,7 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - Use "automašīna" (or "auto", "šī automašīna") when referring to the vehicle in buyer-facing prose — NEVER "automobīlis".
 - "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
 - HUMAN DASHES (anti-AI tell): in ALL client-facing Latvian text use only the short ASCII hyphen "-". Ranges: 2007-2015, 300-400 €, 1-2. NEVER Unicode em dash "—" or en dash "–" (mid-sentence or in ranges). NEVER start a paragraph or standalone sentence with "- " or "– ".
+- FUEL INJECTORS (client Latvian — official term + workshop word): first mention in a field is „iesmidzinātājs (sprausla)” (plural „iesmidzinātāji (sprauslas)”). Later in the same field, „sprausla” / „sprauslas” is preferred. NEVER „injektori”, „injektors”, „inžektori”, „inžektors” (the ž form is a Russian-influenced error). Keep the tone professional: official name first, then the simple word in parentheses — not slang alone on first mention.
 - EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.`;
 
 /** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
@@ -47,6 +48,29 @@ export function applyProvinHumanDashes(text: string): string {
   return text.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-");
 }
 
+/** Keep the first letter’s case when swapping a Latvian term. */
+function preserveInitialCase(sample: string, replacement: string): string {
+  const first = sample.charAt(0);
+  if (!first || first !== first.toLocaleUpperCase("lv")) return replacement;
+  return replacement.charAt(0).toLocaleUpperCase("lv") + replacement.slice(1);
+}
+
+/**
+ * injektors / inžektors (loanword + Russian-influenced misspelling) →
+ * iesmidzinātājs (sprausla). Longer inflected forms first.
+ */
+const INJEKTOR_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bin(?:j|ž)ektoriem\b/gi, "iesmidzinātājiem (sprauslām)"],
+  [/\bin(?:j|ž)ektoros\b/gi, "iesmidzinātājos (sprauslās)"],
+  [/\bin(?:j|ž)ektorus\b/gi, "iesmidzinātājus (sprauslas)"],
+  [/\bin(?:j|ž)ektoram\b/gi, "iesmidzinātājam (sprauslai)"],
+  [/\bin(?:j|ž)ektorā\b/gi, "iesmidzinātājā (sprauslā)"],
+  [/\bin(?:j|ž)ektora\b/gi, "iesmidzinātāja (sprauslas)"],
+  [/\bin(?:j|ž)ektori\b/gi, "iesmidzinātāji (sprauslas)"],
+  [/\bin(?:j|ž)ektoru\b/gi, "iesmidzinātāju (sprauslu)"],
+  [/\bin(?:j|ž)ektors\b/gi, "iesmidzinātājs (sprausla)"],
+];
+
 export function applyProvinReportCopyVocabulary(text: string): string {
   let out = applyProvinHumanDashes(text);
   const replacements: Array<[RegExp, string]> = [
@@ -62,6 +86,9 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bautomobīlis\b/g, "automašīna"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
+  for (const [re, rep] of INJEKTOR_REPLACEMENTS) {
+    out = out.replace(re, (match) => preserveInitialCase(match, rep));
+  }
   return out;
 }
 
@@ -186,7 +213,7 @@ export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCI
 - Katru agregāta risku sadali pēc posma: (1) **jau iztērēts resurss** — darbi, kas šim agregātam tipiski notiek līdz šim km un vecumam, tāpēc tiem jābūt pierādītiem servisa vēsturē; (2) **tuvākais logs** — kas tipiski gaidāms nākamajos ~20 000–40 000 km vai 1–2 gados (tas ir pircēja reālais izdevums); (3) **tālāks resurss** — piemin īsi vai nepiemin vispār.
 - **Nepārspīlē:** risku, kas šim agregātam tipiski parādās, piemēram, pie 250 000 km, nedrīkst pasniegt kā aktuālu draudu pie 90 000 km — tad tā ir tikai perspektīvas piezīme. Nekrauj kopā visus teorētiski iespējamos bojājumus; **galvenais pirkuma risks var būt tikai 1–2** pozīcijas, pārējais ir vidējs uzturēšanas risks vai kontrolpunkts klātienē.
 - **Vecums nav tas pats, kas nobraukums:** gumijas, plastmasas, dzesēšanas sistēmas, zobsiksnas un šļūteņu resurss iet pēc laika — vecs auto ar mazu nobraukumu var būt sliktākā stāvoklī nekā jaunāks auto ar lielu šosejas nobraukumu. Sasaisti ar motorstundu / pilsētas–šosejas loģiku, kad dati to atļauj.
-- **Pierādījumi maina risku:** ja servisa vēsturē ir attiecīgais darbs (ķēde, divsajūga eļļa, zobsiksna, ūdens sūknis, injektori), risks krīt — to pasaki klientam kā **labvēlīgu signālu datos**. Ierakstu trūkums nav pierādījums, ka darbs nav veikts — formulē kā **nepierādītu**, kas jānoskaidro.
+- **Pierādījumi maina risku:** ja servisa vēsturē ir attiecīgais darbs (ķēde, divsajūga eļļa, zobsiksna, ūdens sūknis, iesmidzinātāji (sprauslas)), risks krīt — to pasaki klientam kā **labvēlīgu signālu datos**. Ierakstu trūkums nav pierādījums, ka darbs nav veikts — formulē kā **nepierādītu**, kas jānoskaidro.
 - Izmaksas vērtē **varbūtības × summas** griezumā: pirmais nāk tas, kam ir gan reāla varbūtība šajā posmā, gan būtiska EUR ietekme. EUR diapazoni vienmēr orientējoši (Baltijas servisa līmenis), ar atrunu.
 - Ja nobraukums, vecums un apkopes aina šim agregātam ir **relatīvi labvēlīga**, to ir atļauts un vajag pateikt — kalibrēti, ar atrunu, ka PROVIN auto fiziski nav apskatījis. Mākslīgi „sarkanie karogi” bez datu pamata ir tāda pati kļūda kā risku noklusēšana.`;
 
@@ -202,7 +229,7 @@ export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LAT
   1) Agregātu identifikācija + ko ŠIS nobraukums/vecums nozīmē tieši šai saimei (ne vispārīgi „lietotam auto”).
   2) Kas šim eksemplāram **NAV** dārgs risks: slavenās markas/paaudzes kaites, kas neattiecas uz šo motoru/ķēdes pusi/kārbas tipu, UN dārgais vecuma ekstraprīkojums, kura **nav** (tikai ja to atbalsta SA kodi, dīlera aprīkojums, tipa kods, operators — neizdomā „nav”). Tipiski E60/E61: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive — ja saraksts to ļauj noliegt, tas ir klientam naudas arguments.
   3) Galvenais tuvākā laika izmaksu punkts (varbūtība × EUR) — maksimāli 1–2 pozīcijas.
-  4–N) Katrs atšķirīgais relevantais sistēmas bloks atsevišķā rindkopā: motora mehānika (ķēde/zobsiksna un tās **puse/piekļuve**, eļļas noplūdes, dzesēšana); ieplūde/EGR/DPF/AdBlue/turbo/injektori; kārba („mūža eļļa”, mehatronika, DCT tips); elektronika kā **vecuma** kaprīze; virsbūvei specifiskā piekare (rūpnīcas pneimatika ≠ dārgais Adaptive/Dynamic Drive, ja tas nav sarakstā).
+  4–N) Katrs atšķirīgais relevantais sistēmas bloks atsevišķā rindkopā: motora mehānika (ķēde/zobsiksna un tās **puse/piekļuve**, eļļas noplūdes, dzesēšana); ieplūde/EGR/DPF/AdBlue/turbo/iesmidzinātāji (sprauslas); kārba („mūža eļļa”, mehatronika, DCT tips); elektronika kā **vecuma** kaprīze; virsbūvei specifiskā piekare (rūpnīcas pneimatika ≠ dārgais Adaptive/Dynamic Drive, ja tas nav sarakstā).
   Beigas) Prioritātes + tuvākā termiņa aina pēc DATIEM (kopts / nepierādīts / jau fiksēts defekts). Ja dati rāda labu apkopi un nekas neliecina par tuvu problēmu — to PASAKI kalibrēti. Ilgtermiņa kaprīzi (blīves, elektronika 15–20 gadu vecumā) nošķir no „šis auto tūlīt sabruks”.
 - APRĪKOJUMA DISCIPLĪNA: lasi dīlera SA/aprīkojuma sarakstu. Dārgs, šajā vecumā riskants ekstraprīkojums **maina TCO** — ja tā nav, tas ir stiprā puse. Ja saraksts ir īss/nepilnīgs — saki, kas paliek nepierādīts; **meklē** šīs paaudzes tipisko dārgo ekstraprīkojumu (BMW: Active Steering / Dynamic Drive / Soft Close / Logic 7; Audi: Magnetic Ride / sport air; MB: Airmatic / ABC; citi: pneimatika, aktīvā stūre, nakts redzamība) un pārbaudi pret sarakstu. Neizdomā, ka kaut kā „nav”, ja saraksta nav.
 - NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo saimi nesedz — **meklē**, tad raksti.
@@ -235,6 +262,41 @@ Paraugs C — paka šo saimi nesedz:
 "**Agregātu identifikācija.** Precīzs kods nav paketē; pēc cm³/kW/gada 1–2 kandidāti, apstiprināms pēc marķējuma.
 **Meklēšanas sintēze.** Eiropas forumu un speciālistu raksti šai saimei uzrāda [konkrēti mezgli + km josla + EUR]; ASV avoti ņemti tikai kā sekundāri.
 **Kalibrācija šim auto.** Tikai tie riski, kas sakrīt ar šo nobraukumu, kārbas tipu un aprīkojumu — bez vispārīga dīzeļa saraksta."`;
+
+/** VW grupa 3.0 TDI V6 + 7DSG/S-Tronic - obligāts visiem field-agent ✨, kad salikums atbilst. */
+export const AI_VAG_30TDI_7DSG_RULES = `VW GROUP 3.0 TDI V6 + 7-SPEED DSG / S-TRONIC PROTOCOL (mandatory for ALL expert fields when this pairing is identified or is the ranked hypothesis):
+
+WHEN TO APPLY (do not skip; do not water down):
+- VW Group (Audi / VW / Skoda / Seat) **3.0 V6 diesel** (~2967 cm3) from **~2012**, power **150 / 180 / 190 / 200 / 210 kW**, paired with **7-speed DSG, DSG-type or S-Tronic** (wet dual-clutch, typically DL501 longitudinal or DQ500 transverse).
+- If kW is in this band and gearbox is unnamed: treat 7DSG/S-Tronic as the working hypothesis until dealer/type code/gearbox plate proves Tiptronic 6/8. State the hypothesis.
+- EUR bands belong in **1. Tehnisko risku analīze** and **2. Ieteikumi klātienes apskatei** (and price if relevant). **3. Kopsavilkums** names the aggregate without EUR.
+
+DO NOT APPLY (exceptions):
+- **176 kW** 3.0 TDI (typically C6 + Tiptronic 6): no pronounced chain problem at honest mileage up to ~**350 000 km**. Do not paste 7DSG/DMF protocol. If a chain job is documented near ~250 000 km on this generation, treat as possible odometer rollback.
+- **6- or 8-speed Tiptronic** (torque converter, no dual-mass clutch pack): no DMF idle test as the main gearbox check; test the auto on a normal drive only. Biturbo ~**230 kW** is typically 8AT Tiptronic - different cooling/injector focus, not this 7DSG script.
+- Q7 / Touareg 3.0 with proven 8AT: Tiptronic path, not 7DSG.
+
+150 kW vs 180 kW (same family, spell the difference; 190/200/210 kW = later tunes of the same 7DSG pairing):
+- **Same risk list for both:** timing **chains**, **7DSG/S-Tronic**, **dual-mass flywheel**, **injectors + copper seal rings**, **oil and coolant leaks** (V-intercooler, thermostat/housing). Everything is decided **in person**.
+- **150 kW:** lower boost/thermal load; failure modes are the same but often appear a bit later. Still not "safe" - chain around ~200 000 km class, same 7DSG+DMF package.
+- **180 kW:** same architecture under higher heat/boost - chain stretch, injector/copper-ring silent fail, V-intercooler and thermostat leaks are more likely at similar km. Treat as the hotter sibling of 150 kW.
+- **190 / 200 / 210 kW:** apply this full protocol unless Tiptronic 6/8 is proven.
+
+MAIN RISKS (calibrate to THIS car's km/age/service; max 1-2 as purchase blockers):
+- **Chains:** rattle/stretch often ~180 000-220 000 km on 150/180; city/motorstundas brings it earlier. Orientējoši **1 500-3 000 €** (Baltics). Cold-start chain tick vs DMF idle knock are different sounds - do not conflate.
+- **7DSG / S-Tronic (clutch pack + mechatronic):** takeoff and firmer stops must be **smooth**. A slight jerk/shudder on pull-away is the **first sign** that gearbox trouble is likely in the foreseeable future. Orientējoši **2 000-4 000 €** - **MUST state this range** in tech risks and inspection. Undocumented DSG oil/filter is unproven service, not proof it was skipped.
+- **Dual-mass flywheel (divmasu spararats):** idle, irregular knock/rumble **well heard in the front-wheel area**; should **disappear in D or R**. Listen **before and after** the test drive. Orientējoši **700-1 200 €** depending on maker - **MUST state**. Not the same as 7DSG takeoff shudder.
+- **Injectors + copper rings:** often silent (no old-gen "cukāšana"); bad spray can melt pistons. Bench test if in doubt. Latvian client copy: first mention „iesmidzinātāji (sprauslas)” (never injektori / inžektori); later „sprauslas”. Copper rings = vara gredzeni.
+- **Oil + cooling leaks:** V-space intercooler, plastic thermostat/housing, water pump. Emulsion in the expansion tank = oil in coolant. After an **aggressive** test drive, hunt **antifreeze leaks** while hot.
+
+KLĀTIENE / TESTA BRAUCIENS (this pairing - not a generic 3-stage only):
+1) **Cold start:** chain/valve tick at the engine; then idle DMF listen at the front wheels (N). Repeat idle listen after the drive.
+2) **Cooling:** expansion tank for oil contamination; after a hard pull, inspect intercooler/thermostat area for coolant.
+3) **Gearbox:** multiple smooth pull-aways from rest and firmer stops; any jerk on takeoff = flag 7DSG **2 000-4 000 €**.
+4) **DMF:** N idle irregular, gone in D/R, front-wheel wells, before+after; flag **700-1 200 €**.
+5) Everything above is probability until seen/heard - PROVIN has not inspected the car.
+
+FIELD SPLIT: tech risks = risks + EUR; inspection = the checks above; summary = one sentence that this 3.0 TDI+7DSG pairing is the drivetrain to verify, no EUR. Source comments / listing peek: one short caution if the pairing is identified - not the full test script.`;
 
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
 export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):
