@@ -23,6 +23,7 @@ import {
 import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
+  PROVIN_CLAUDE_LV_SURFACE,
 } from "@/lib/source-summary-comment-format";
 
 export {
@@ -64,11 +65,12 @@ const REQUEST_TIMEOUT_MS = 180_000;
 /** Strukturētā PDF/CSDD ielase — Sonnet; failover iet uz Haiku, ne Opus. */
 export const CLAUDE_MODEL_EXTRACT = CLAUDE_MODEL_SONNET;
 
-function claudeSystemWithCache(text: string): Anthropic.TextBlockParam[] {
+function claudeSystemWithCache(text: string, extra?: string): Anthropic.TextBlockParam[] {
+  const body = extra ? `${text.trim()}\n\n${extra}` : text;
   return [
     {
       type: "text",
-      text,
+      text: body,
       cache_control: { type: "ephemeral" },
     },
   ];
@@ -482,7 +484,7 @@ async function aiGenerateTextOnce(
     {
       model: opts.model,
       max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-      system: claudeSystemWithCache(opts.systemInstruction),
+      system: claudeSystemWithCache(opts.systemInstruction, PROVIN_CLAUDE_LV_SURFACE),
       messages: [{ role: "user", content: opts.userPrompt }],
       ...claudeOutputControls(opts.model),
     },
@@ -497,6 +499,8 @@ export async function aiGenerateText(opts: {
   userPrompt: string;
   temperature?: number;
   maxTokens?: number;
+  /** ✨ gramatikas poga jau IR slīpējums — neatgriezt otro Sonnet raundu. */
+  skipLvPolish?: boolean;
 }): Promise<string> {
   const key = getAnthropicApiKeyFromEnv();
   if (!key) throw new Error("missing_ai_key");
@@ -505,17 +509,25 @@ export async function aiGenerateText(opts: {
     primaryModel: opts.model,
     logLabel: "text",
     run: async (model) =>
-      polishHaikuLatvianProse(model, await aiGenerateTextOnce(key, { ...opts, model })),
+      polishClaudeLatvianProse(await aiGenerateTextOnce(key, { ...opts, model }), {
+        skip: opts.skipLvPolish,
+      }),
   });
 }
 
 /**
- * Haiku neder latviešu eksperta prozai (gramatika/stils). Ģenerē lēti, tad Sonnet
- * slīpē tikai īso izejas tekstu — nevis visu pasūtījuma kontekstu.
+ * Claude latviešu eksperta proza (Opus / Sonnet / Haiku) pēc ģenerēšanas iet caur
+ * Sonnet gramatiku — tas pats slīpējums, ko agrāk saņēma tikai Haiku. Gemini to
+ * nesaņem, jo Flash/Pro jau raksta dabiskāku LV. Slīpē tikai izejas tekstu, ne
+ * visu pasūtījuma kontekstu.
  */
-async function polishHaikuLatvianProse(model: string, text: string): Promise<string> {
+async function polishClaudeLatvianProse(
+  text: string,
+  opts?: { skip?: boolean },
+): Promise<string> {
   const t = text.trim();
-  if (!t || model !== CLAUDE_MODEL_HAIKU) return text;
+  if (!t || opts?.skip) return text;
+  if (t.startsWith("{") || t.startsWith("[")) return text;
   try {
     const key = getAnthropicApiKeyFromEnv();
     if (!key) return text;
@@ -526,7 +538,7 @@ async function polishHaikuLatvianProse(model: string, text: string): Promise<str
     });
     return polished.trim() || text;
   } catch (e) {
-    console.warn(`${LOG_PREFIX} haiku_lv_polish_failed`, {
+    console.warn(`${LOG_PREFIX} claude_lv_polish_failed`, {
       promptVersion: PROVIN_AI_PROMPT_VERSION,
       message: aiErrorMessage(e).slice(0, 240),
     });
@@ -612,7 +624,7 @@ async function aiGenerateTextWithWebSearchOnce(
     {
       model: opts.model,
       max_tokens: opts.maxTokens ?? MAX_TOKENS_TEXT,
-      system: claudeSystemWithCache(opts.systemInstruction),
+      system: claudeSystemWithCache(opts.systemInstruction, PROVIN_CLAUDE_LV_SURFACE),
       messages: [{ role: "user", content: opts.userPrompt }],
       tools: [
         {
@@ -644,9 +656,6 @@ export async function aiGenerateTextWithWebSearch(opts: {
     primaryModel: opts.model,
     logLabel: "web_search",
     run: async (model) =>
-      polishHaikuLatvianProse(
-        model,
-        await aiGenerateTextWithWebSearchOnce(key, { ...opts, model }),
-      ),
+      polishClaudeLatvianProse(await aiGenerateTextWithWebSearchOnce(key, { ...opts, model })),
   });
 }

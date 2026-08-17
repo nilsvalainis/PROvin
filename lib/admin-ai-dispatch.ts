@@ -34,7 +34,8 @@ type GenerateOpts = {
   maxSearches?: number;
 };
 
-/** Vieglie uzdevumi — Gemini; smagie — Claude. Izvēle nāk no admin pogas. */
+/** Vieglie uzdevumi — Gemini; smagie — Claude. Izvēle nāk no admin pogas.
+ * Prompts are identical. Claude Latvian surface + Sonnet polish live in `lib/admin-ai.ts`. */
 export async function adminGenerateExpertText(opts: GenerateOpts): Promise<string> {
   if (isGeminiAdminTier(opts.modelTier)) {
     return geminiGenerateExpertText({

@@ -13,6 +13,7 @@ export async function polishLatvianTextWithAi(raw: string): Promise<string> {
     systemInstruction: AI_LV_POLISH_SYSTEM,
     userPrompt: text,
     temperature: 0.2,
+    skipLvPolish: true,
   });
   return applyProvinReportCopyVocabulary(polished);
 }
