@@ -82,7 +82,7 @@ OBLIGĀTI:
       temperature: 0.32,
       maxSearches: 6,
     });
-    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw, 16_000));
+    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, normalizeProvinExpertAiComment);
   }
