@@ -35,7 +35,7 @@ import {
   clearVinRegistryOdometerReadings,
   countVinRegistryOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
-import { buildCarinfoVinCheckUrl } from "@/lib/admin-vin-urls";
+import { buildCarinfoVinCheckUrl, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
 import { parseCarinfoPastedText } from "@/lib/vin-sources/carinfo-parse";
 
 const inp =
@@ -54,7 +54,7 @@ const SOURCE_HINT: Record<VinRegistryBlockKey, string> = {
   lkf_ee:
     "Igaunijas Liikluskindlustuse Fond „Kahjukontroll”: OCTA atlīdzības gadījumi. Summas publiski netiek rādītas; prasa reCAPTCHA.",
   carinfo:
-    "car.info (Skandināvija, DACH) — bezmaksas daļa. Vercel nevar apiet Cloudflare/reCAPTCHA. Atver lapu ar VIN, nokopē tekstu (Cmd+A, Cmd+C) un ielīmē RAW laukā — tabulas aizpildās šeit.",
+    "car.info: Atvērt vai ielīmē lapas tekstu RAW / Copilot — nobraukums, īpašnieki, statusi un RED FLAG aizpildās. Captcha nav vajadzīga.",
 };
 
 type Props = {
@@ -160,8 +160,17 @@ export function AdminVinRegistrySourceBlock({
     }
     if (blockKey === "carinfo") {
       const href = buildCarinfoVinCheckUrl(cleanVin);
-      if (href) window.open(href, "_blank", "noopener,noreferrer");
-      setStatus("car.info atvērts. Nokopē lapas tekstu (Cmd+A, Cmd+C) un ielīmē RAW laukā — tabulas aizpildīsies pašas.");
+      if (href) {
+        const a = document.createElement("a");
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.dataset.provinHandoffVin = normalizeVinForServiceUrls(cleanVin);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setStatus("car.info atvērts. Pēc Read more teksts ir starpliktuvē — ielīmē RAW laukā (Cmd+V).");
       window.setTimeout(() => {
         document.getElementById(`${blockKey}-rawUnprocessedData`)?.focus();
       }, 200);
@@ -213,6 +222,15 @@ export function AdminVinRegistrySourceBlock({
         country: r.country,
         origin: r.origin ?? "car.info",
       })),
+      incidents:
+        parsed.incidents.length > 0
+          ? parsed.incidents.map((r) => ({
+              date: r.date,
+              amount: r.amount,
+              country: r.country,
+              note: r.note ?? "",
+            }))
+          : block.incidents,
       ownersSummary: parsed.ownersSummary.trim() ? parsed.ownersSummary : block.ownersSummary,
       statusRecords: parsed.statusRecords.trim() ? parsed.statusRecords : block.statusRecords,
       autoNotes: parsed.notes.length > 0 ? parsed.notes.join("\n") : block.autoNotes,
@@ -278,7 +296,7 @@ export function AdminVinRegistrySourceBlock({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
-                data-provin-handoff-vin={vin.trim()}
+                data-provin-handoff-vin={normalizeVinForServiceUrls(vin) || undefined}
               >
                 MENU saite →
               </a>
@@ -547,7 +565,7 @@ export function AdminVinRegistrySourceBlock({
               disabled={disabled}
               placeholder={
                 blockKey === "carinfo"
-                  ? "Cmd+A, Cmd+C car.info lapā → ielīmē šeit. Nobraukuma rindas (datums + km) aizpildīs tabulu."
+                  ? "Pēc car.info ielīmē šeit visu lapas tekstu (Cmd+V). Nobraukums, īpašnieki un RED FLAG aizpildās paši."
                   : "Neapstrādātā avota atbilde…"
               }
               value={block.rawUnprocessedData}

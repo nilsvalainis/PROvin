@@ -7,7 +7,7 @@ import type {
   CopilotAiResponse,
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
-import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
+import { isCopilotSourceKey, isVinRegistryCopilotSource } from "@/lib/admin-copilot-types";
 import {
   AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
@@ -117,6 +117,22 @@ function parseAction(raw: unknown): CopilotAction | null {
       type: "append_raw",
       source,
       text,
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "set_registry_fields") {
+    if (!isVinRegistryCopilotSource(source)) return null;
+    const ownersSummary = asString(o.ownersSummary, 4000);
+    const statusRecords = asString(o.statusRecords, 4000);
+    const autoNotes = asString(o.autoNotes, 4000);
+    if (!ownersSummary && !statusRecords && !autoNotes) return null;
+    return {
+      type: "set_registry_fields",
+      source,
+      ownersSummary,
+      statusRecords,
+      autoNotes,
       confidence,
       ...(note ? { note } : {}),
     };

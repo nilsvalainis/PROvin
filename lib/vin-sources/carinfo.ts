@@ -5,6 +5,7 @@ import "server-only";
  * un lapa ir aiz bot aizsardzības. Servera (Vercel) vidē Playwright nav pieejams —
  * operators atver VIN saiti un ielīmē lapas tekstu adminā (parseCarinfoPastedText).
  */
+import { CARINFO_HOME_URL } from "@/lib/admin-vin-urls";
 import { createVinSourceContext, extractPageData, sleep } from "@/lib/vin-sources/browser";
 import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
 import { emptyVinSourceResult, type VinSourceFetchResult } from "@/lib/vin-sources/types";
@@ -32,7 +33,7 @@ export async function fetchCarInfo(vin: string): Promise<VinSourceFetchResult> {
     }
 
     if (!loaded) {
-      const searchUrl = `https://www.car.info/en-se/search?q=${encodeURIComponent(vin)}`;
+      const searchUrl = CARINFO_HOME_URL;
       const res = await page.goto(searchUrl, { waitUntil: "domcontentloaded", timeout: 60000 }).catch(() => null);
       await sleep(2500);
       if (res && (res.status() ?? 0) < 400) {

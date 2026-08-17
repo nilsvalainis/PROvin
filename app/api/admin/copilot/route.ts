@@ -24,6 +24,7 @@ import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-ai-extract";
 import { detectVendorFromReport, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import { buildCarinfoCopilotActions, looksLikeCarinfoDump } from "@/lib/admin-copilot-vin-registry";
 import {
   parseSourcePdfBlobRefs,
   type SourcePdfBlobRef,
@@ -112,6 +113,9 @@ function describeAction(a: CopilotAction): string {
   if (a.type === "append_raw") {
     const preview = a.text.trim().slice(0, 60).replace(/\s+/g, " ");
     return `${a.source} · RAW · ${preview}${a.text.trim().length > 60 ? "…" : ""} (${a.confidence})`;
+  }
+  if (a.type === "set_registry_fields") {
+    return `${a.source} · īpašnieki/statusi/RED FLAG (${a.confidence})`;
   }
   if (a.type === "set_ltab_certificate") {
     const n = a.certificate.claims.length;
@@ -344,19 +348,24 @@ export async function POST(req: Request) {
 
     // Avota aģents jau izlasīja šos PDF — ģenēriskajam Copilot tos vairs nedodam (nedublējam rindas).
     const remainingPdfs = pdfs.filter((p) => !vendorHandledFiles.has(p.fileName));
+    const carinfoPasteActions =
+      allowedSet.has("carinfo") && looksLikeCarinfoDump(message) ? buildCarinfoCopilotActions(message) : [];
     const skipGenericCopilot =
       (allowedSet.has("csdd") &&
         allowedSources.length === 1 &&
         pdfs.length > 0 &&
         csddImportNotes.some((n) => n.includes("aizpildīti"))) ||
-      (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0);
+      (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0) ||
+      (carinfoPasteActions.length > 0 && remainingPdfs.length === 0);
 
     const ai = skipGenericCopilot
       ? {
           reply:
-            [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
-            "PDF apstrādāts — pārbaudi avota laukus, ja kaut kas trūkst.",
-          actions: [] as CopilotAction[],
+            carinfoPasteActions.length > 0
+              ? "car.info teksts ielasīts: nobraukums, īpašnieki, statusi un RED FLAG. Pārbaudi CAR.INFO bloku."
+              : [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
+                "PDF apstrādāts — pārbaudi avota laukus, ja kaut kas trūkst.",
+          actions: carinfoPasteActions,
           clarificationNeeded: "",
         }
       : await runOrderCopilotAi({

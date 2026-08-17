@@ -25,6 +25,37 @@ describe("applyCopilotActions", () => {
     expect(row?.lossAmount).toMatch(/5\s*000|5000/);
   });
 
+  it("fills car.info registry tables from Copilot actions", () => {
+    const blocks = createDefaultSourceBlocks();
+    const result = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "upsert_mileage",
+          source: "carinfo",
+          date: "2023-06-09",
+          odometer: "298540",
+          country: "Zviedrija",
+          confidence: "high",
+          note: "car.info · Subsequent inspection",
+        },
+        {
+          type: "set_registry_fields",
+          source: "carinfo",
+          ownersSummary: "Īpašnieku skaits: 6",
+          statusRecords: "Satiksmē: nē\n2023-10-11: eksportēts no Zviedrijas",
+          autoNotes: "⚠ RED FLAG: auto iepriekš eksportēts no Zviedrijas (2023-10-11).",
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: true },
+    );
+    expect(result.changedKeys).toContain("carinfo");
+    expect(result.sourceBlocks.carinfo.mileage.some((r) => r.odometer === "298540")).toBe(true);
+    expect(result.sourceBlocks.carinfo.ownersSummary).toMatch(/6/);
+    expect(result.sourceBlocks.carinfo.autoNotes).toMatch(/RED FLAG/);
+  });
+
   it("skips medium confidence when onlyAuto", () => {
     const blocks = createDefaultSourceBlocks();
     const actions: CopilotAction[] = [
@@ -234,5 +265,35 @@ describe("parseCopilotAiPayload", () => {
       expect(r.actions[1].source).toBe("auto_records");
     }
     expect(r.actions[2]?.type).toBe("append_raw");
+  });
+
+  it("parses VIN registry fields for car.info", () => {
+    const r = parseCopilotAiPayload(
+      JSON.stringify({
+        reply: "car.info ielasīts.",
+        clarificationNeeded: "",
+        actions: [
+          {
+            type: "upsert_mileage",
+            source: "carinfo",
+            date: "2023-06-09",
+            odometer: "298540",
+            country: "Zviedrija",
+            confidence: "high",
+            note: "car.info · Subsequent inspection",
+          },
+          {
+            type: "set_registry_fields",
+            source: "carinfo",
+            ownersSummary: "Īpašnieku skaits: 6",
+            statusRecords: "Satiksmē: nē",
+            autoNotes: "⚠ RED FLAG: auto iepriekš eksportēts no Zviedrijas (2023-10-11).",
+            confidence: "high",
+          },
+        ],
+      }),
+    );
+    expect(r.actions).toHaveLength(2);
+    expect(r.actions[1]?.type).toBe("set_registry_fields");
   });
 });

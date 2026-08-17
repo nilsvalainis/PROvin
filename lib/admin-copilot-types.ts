@@ -12,9 +12,20 @@ export const COPILOT_SOURCE_KEYS = [
   "auto_records",
   "cc_vin",
   "citi_avoti",
+  "tjekbil",
+  "mnt_ee",
+  "lkf_ee",
+  "carinfo",
 ] as const;
 
 export type CopilotSourceKey = (typeof COPILOT_SOURCE_KEYS)[number];
+
+export const VIN_REGISTRY_COPILOT_SOURCES = ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const;
+export type VinRegistryCopilotSource = (typeof VIN_REGISTRY_COPILOT_SOURCES)[number];
+
+export function isVinRegistryCopilotSource(v: string): v is VinRegistryCopilotSource {
+  return (VIN_REGISTRY_COPILOT_SOURCES as readonly string[]).includes(v);
+}
 
 export type CopilotConfidence = "high" | "medium" | "low";
 
@@ -90,6 +101,17 @@ export type CopilotAppendRawAction = {
   note?: string;
 };
 
+/** tjekbil / mnt / lkf / car.info — īpašnieki, statusi, RED FLAG piezīmes. */
+export type CopilotRegistryFieldsAction = {
+  type: "set_registry_fields";
+  source: VinRegistryCopilotSource;
+  ownersSummary: string;
+  statusRecords: string;
+  autoNotes: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
 /** LTAB OCTA izziņas strukturētā kopija + CSNg rindas (datums / summa / Latvija). */
 export type CopilotLtabCertificateAction = {
   type: "set_ltab_certificate";
@@ -106,6 +128,7 @@ export type CopilotAction =
   | CopilotServiceWorkAction
   | CopilotDealerVehicleInfoAction
   | CopilotAppendRawAction
+  | CopilotRegistryFieldsAction
   | CopilotLtabCertificateAction;
 
 export type CopilotChatMessage = {

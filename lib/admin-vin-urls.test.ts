@@ -3,6 +3,7 @@ import { SOURCE_BLOCK_EXTERNAL_URL } from "@/lib/admin-source-blocks";
 import {
   AUTODNA_LV_HOME_URL,
   AUTORECORDS_BASE_URL,
+  CARINFO_HOME_URL,
   CARVERTICAL_REPORTS_URL,
   CHECKTHISREG_HOME_URL,
   buildAutodnaVinCheckUrl,
@@ -37,9 +38,10 @@ describe("admin VIN service URLs", () => {
     expect(buildAutorecordsVinCheckUrl(vin)).toBe(`${AUTORECORDS_BASE_URL.replace(/\/$/, "")}/?vin=${vin}`);
   });
 
-  it("opens car.info search with the VIN in q=", () => {
-    expect(buildCarinfoVinCheckUrl(vin)).toBe(`https://www.car.info/en-se/search?q=${vin}`);
-    expect(buildVinAutofillHref("carinfo", vin)).toContain("car.info/en-se/search?q=");
+  it("opens car.info homepage (search?q= is a 404); VIN is filled in the header", () => {
+    expect(buildCarinfoVinCheckUrl(vin)).toBe(CARINFO_HOME_URL);
+    expect(buildVinAutofillHref("carinfo", vin)).not.toContain("search?q=");
+    expect(resolveSourceBlockExternalOpen("carinfo", vin).handoffVin).toBe(vin);
   });
 
   it("opens CheckThisReg homepage for Tampermonkey VIN tab fill", () => {
@@ -57,7 +59,7 @@ describe("admin VIN service URLs", () => {
   it("resolves source-block headers to the same live URLs", () => {
     expect(resolveSourceBlockExternalOpen("autodna", vin).href).toBe(`${AUTODNA_LV_HOME_URL}/vin/${vin}`);
     expect(resolveSourceBlockExternalOpen("carvertical", vin).href).toBe(CARVERTICAL_REPORTS_URL);
-    expect(resolveSourceBlockExternalOpen("carinfo", vin).href).toContain("search?q=");
+    expect(resolveSourceBlockExternalOpen("carinfo", vin).href).toBe(CARINFO_HOME_URL);
     expect(resolveSourceBlockExternalOpen("autodna", "").href).toBe(AUTODNA_LV_HOME_URL);
   });
 

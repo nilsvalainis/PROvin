@@ -65,11 +65,11 @@ export function buildCheckthisregVinCheckUrl(raw: string): string | null {
   return CHECKTHISREG_HOME_URL;
 }
 
-/** car.info meklēšana ar VIN — lapa pati prasa login/Cloudflare; Tampermonkey aizpilda lauku. */
+/** car.info — `/search?q=` ir 404; atveram EN/SE sākumu, VIN ieliek Tampermonkey header meklēšanā + Enter. */
 export function buildCarinfoVinCheckUrl(raw: string): string | null {
   const v = normalizeVinForServiceUrls(raw);
   if (!v) return null;
-  return `https://www.car.info/en-se/search?q=${encodeURIComponent(v)}`;
+  return CARINFO_HOME_URL;
 }
 
 export function buildVinAutofillHref(key: VinAutofillServiceKey, raw: string): string | null {

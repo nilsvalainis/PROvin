@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.5.0
-// @description  Admin MENU: GM_setValue no data-provin-handoff-*. AutoDNA / CarVertical / Auto-Records / CheckThisReg / car.info VIN aizpilde; Tirgus dati URL.
+// @version      1.5.2
+// @description  Admin MENU VIN auto-fill. car.info: sākumlapa, header meklēšana + Enter + Read more.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -27,6 +27,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
+// @grant        GM_setClipboard
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -440,29 +441,73 @@
   }
 
   function findCarinfoSearchInput() {
+    const preferred = document.querySelector(
+      'form.nav_search input.searchfield, input.searchfield[name="query"], input[name="query"][role="searchbox"]',
+    );
+    if (preferred && isVisible(preferred) && !preferred.disabled) return preferred;
     const list = document.querySelectorAll("input");
     for (const el of list) {
       if (!isVisible(el) || el.disabled || el.type === "password" || el.type === "hidden") continue;
       const ph = (el.getAttribute("placeholder") || "").toLowerCase();
       const n = (el.name || "").toLowerCase();
       const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+      const cls = (el.className || "").toLowerCase();
+      if (n === "query" || cls.includes("searchfield")) return el;
       if (n === "q" || el.type === "search") return el;
-      if (ph.includes("search") || ph.includes("vin") || ph.includes("license") || ph.includes("reg")) return el;
+      if (ph.includes("search") || ph.includes("vin") || ph.includes("licence") || ph.includes("license")) return el;
       if (aria.includes("search") || aria.includes("vin")) return el;
     }
-    return document.querySelector('input[name="q"], input[type="search"]');
+    return document.querySelector('input[name="query"], input[name="q"], input[type="search"]');
   }
 
-  function clickCarinfoSearch() {
-    clickByText(/search|sök|søg|suchen|meklēt/i);
-    const form = document.querySelector("form");
-    if (form && typeof form.requestSubmit === "function") {
-      try {
-        form.requestSubmit();
-      } catch {
-        /* ignore */
-      }
+  function pressEnter(el) {
+    try {
+      el.focus();
+    } catch {
+      /* ignore */
     }
+    const opts = { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true };
+    el.dispatchEvent(new KeyboardEvent("keydown", opts));
+    el.dispatchEvent(new KeyboardEvent("keypress", opts));
+    el.dispatchEvent(new KeyboardEvent("keyup", opts));
+    /* car.info meklēšana ir JS overlay — form.requestSubmit ved uz 404 /search?q= */
+  }
+
+  function clickCarinfoSearchIcon() {
+    const icon = document.querySelector("form.nav_search .form_search_common_icon");
+    if (icon && isVisible(icon)) {
+      icon.click();
+      return true;
+    }
+    return false;
+  }
+
+  function clickCarinfoReadMore() {
+    const nodes = Array.from(document.querySelectorAll("button, a, [role='button']"));
+    const btn = nodes.find((b) => isVisible(b) && /^read more$/i.test((b.textContent || "").trim()));
+    if (!btn) return false;
+    btn.click();
+    return true;
+  }
+
+  function carinfoHasVehicleInfo() {
+    const t = document.body.innerText || "";
+    return /vehicle info|mileage/i.test(t) && /\d[\d\s.,]{2,}\s+km/i.test(t);
+  }
+
+  function copyCarinfoPageText() {
+    const text = (document.body.innerText || "").replace(/[ \t]+/g, " ").trim();
+    if (text.length < 80) return false;
+    try {
+      if (typeof GM_setClipboard === "function") GM_setClipboard(text);
+    } catch {
+      /* ignore */
+    }
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      navigator.clipboard.writeText(text).catch(() => undefined);
+    }
+    console.log("PROVIN car.info: lapas teksts nokopēts starpliktuvē");
+    return true;
   }
 
   const isCV = host.endsWith("carvertical.com");
@@ -478,6 +523,10 @@
   let done = false;
   let ctrTabClicked = false;
   let dnaLoginAttempted = false;
+  let infoFilled = false;
+  let infoSubmitted = false;
+  let infoReadMore = false;
+  let infoCopied = false;
 
   const interval = window.setInterval(() => {
     tries += 1;
@@ -541,16 +590,31 @@
     }
 
     if (isInfo) {
+      if (carinfoHasVehicleInfo()) {
+        if (!infoReadMore && clickCarinfoReadMore()) infoReadMore = true;
+        if (!infoCopied) {
+          if (copyCarinfoPageText()) {
+            infoCopied = true;
+            done = true;
+            window.clearInterval(interval);
+          }
+        }
+        return;
+      }
       const el = findCarinfoSearchInput();
-      if (el && !el.disabled && !done) {
-        const already = fieldAlreadyHasVin(el);
+      if (el && !el.disabled && !infoFilled) {
         fillAndClear(el);
-        done = true;
-        window.clearInterval(interval);
-        if (!already && !params.get("q")) {
-          window.setTimeout(clickCarinfoSearch, 350);
+        infoFilled = true;
+      }
+      if (infoFilled && !infoSubmitted) {
+        const searchEl = el || findCarinfoSearchInput();
+        if (searchEl) {
+          pressEnter(searchEl);
+          clickCarinfoSearchIcon();
+          infoSubmitted = true;
         }
       }
+      if (!infoReadMore && clickCarinfoReadMore()) infoReadMore = true;
     }
   }, 250);
 })();

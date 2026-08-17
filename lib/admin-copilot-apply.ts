@@ -5,14 +5,23 @@ import {
   emptyLtabRow,
   emptyAutoRecordsServiceRow,
   emptyVendorAvotuBlock,
+  emptyVinRegistryIncidentRow,
+  emptyVinRegistryMileageRow,
   ltabRowHasData,
   mergeSourceBlocksWithDefaults,
+  repairVinRegistryBlock,
+  sortVinRegistryMileage,
+  vinRegistryIncidentRowHasData,
+  vinRegistryMileageRowHasData,
   type LtabIncidentRow,
   type WorkspaceSourceBlocks,
   type VendorAvotuBlockState,
   type LtabBlockState,
   type AutoRecordsBlockState,
   type CitiAvotiBlockState,
+  type VinRegistryBlockState,
+  type VinRegistryIncidentRow,
+  type VinRegistryMileageRow,
 } from "@/lib/admin-source-blocks";
 import {
   ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
@@ -54,10 +63,11 @@ import type {
   CopilotDealerVehicleInfoAction,
   CopilotIncidentAction,
   CopilotMileageAction,
+  CopilotRegistryFieldsAction,
   CopilotServiceHistoryAction,
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
-import { isCopilotSourceKey } from "@/lib/admin-copilot-types";
+import { isCopilotSourceKey, isVinRegistryCopilotSource } from "@/lib/admin-copilot-types";
 
 export type CopilotApplyResult = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -250,6 +260,114 @@ function applyMileageToVendor(b: VendorAvotuBlockState, row: AutoRecordsServiceR
   return {
     ...base,
     serviceHistory: mergeMileageRows(base.serviceHistory ?? [emptyAutoRecordsServiceRow()], row),
+  };
+}
+
+function vinRegistryMileageKey(r: VinRegistryMileageRow): string {
+  return `${r.date}|${r.odometer}|${r.country}`;
+}
+
+function vinRegistryIncidentKey(r: VinRegistryIncidentRow): string {
+  return `${r.date}|${r.amount}|${r.country}|${r.note}`;
+}
+
+function mergeVinRegistryMileage(
+  existing: VinRegistryMileageRow[],
+  incoming: VinRegistryMileageRow,
+): VinRegistryMileageRow[] {
+  const withData = existing.filter(vinRegistryMileageRowHasData);
+  const key = vinRegistryMileageKey(incoming);
+  if (withData.some((r) => vinRegistryMileageKey(r) === key)) {
+    return sortVinRegistryMileage(withData.length ? withData : [incoming]);
+  }
+  const emptyIdx = existing.findIndex((r) => !vinRegistryMileageRowHasData(r));
+  let next: VinRegistryMileageRow[];
+  if (emptyIdx >= 0) {
+    next = [...existing];
+    next[emptyIdx] = incoming;
+  } else {
+    next = [...withData, incoming];
+  }
+  return sortVinRegistryMileage(next);
+}
+
+function mergeVinRegistryIncidents(
+  existing: VinRegistryIncidentRow[],
+  incoming: VinRegistryIncidentRow,
+): VinRegistryIncidentRow[] {
+  const withData = existing.filter(vinRegistryIncidentRowHasData);
+  const key = vinRegistryIncidentKey(incoming);
+  if (withData.some((r) => vinRegistryIncidentKey(r) === key)) {
+    return withData.length ? existing : [incoming];
+  }
+  const emptyIdx = existing.findIndex((r) => !vinRegistryIncidentRowHasData(r));
+  if (emptyIdx >= 0) {
+    const next = [...existing];
+    next[emptyIdx] = incoming;
+    return next;
+  }
+  return [...withData, incoming];
+}
+
+function mergeRegistryText(existing: string, incoming: string): string {
+  const inc = incoming.trim();
+  if (!inc) return existing;
+  const cur = existing.trim();
+  if (!cur) return inc;
+  if (cur.includes(inc)) return cur;
+  if (inc.includes(cur) && inc.length >= cur.length) return inc;
+  return `${cur}\n${inc}`;
+}
+
+function applyVinRegistryMileage(
+  block: VinRegistryBlockState,
+  action: CopilotMileageAction,
+): VinRegistryBlockState | null {
+  const date = formatAutoRecordsDateForOutput(action.date.trim()) || action.date.trim();
+  const odometer = normalizeAutoRecordsOdometer(action.odometer.trim()) || action.odometer.replace(/\D/g, "");
+  const country = normalizeCountryNameLv(action.country.trim()) || action.country.trim();
+  if (!odometer) return null;
+  const row: VinRegistryMileageRow = {
+    date,
+    odometer,
+    country,
+    origin: action.note?.trim() || "",
+  };
+  if (!vinRegistryMileageRowHasData(row)) return null;
+  const base = repairVinRegistryBlock(block);
+  return {
+    ...base,
+    mileage: mergeVinRegistryMileage(base.mileage ?? [emptyVinRegistryMileageRow()], row),
+  };
+}
+
+function applyVinRegistryIncident(
+  block: VinRegistryBlockState,
+  action: CopilotIncidentAction,
+): VinRegistryBlockState | null {
+  const date = formatAutoRecordsDateForOutput(action.date.trim()) || action.date.trim();
+  const amount = normalizeLossAmountEurDisplay(action.lossAmount.trim()) || action.lossAmount.trim();
+  const country = normalizeCountryNameLv(action.country.trim()) || action.country.trim();
+  const note = action.note?.trim() || "";
+  const row: VinRegistryIncidentRow = { date, amount, country, note };
+  if (!vinRegistryIncidentRowHasData(row)) return null;
+  const base = repairVinRegistryBlock(block);
+  return {
+    ...base,
+    incidents: mergeVinRegistryIncidents(base.incidents ?? [emptyVinRegistryIncidentRow()], row),
+  };
+}
+
+function applyVinRegistryFields(
+  block: VinRegistryBlockState,
+  action: CopilotRegistryFieldsAction,
+): VinRegistryBlockState {
+  const base = repairVinRegistryBlock(block);
+  return {
+    ...base,
+    ownersSummary: mergeRegistryText(base.ownersSummary, action.ownersSummary),
+    statusRecords: mergeRegistryText(base.statusRecords, action.statusRecords),
+    autoNotes: mergeRegistryText(base.autoNotes, action.autoNotes),
   };
 }
 
@@ -476,6 +594,20 @@ function applyAppendRaw(
     }
     return { ok: true, blocks: { ...blocks, citi_avoti: { sections } } };
   }
+  if (isVinRegistryCopilotSource(action.source)) {
+    const key = action.source;
+    const cur = repairVinRegistryBlock(blocks[key]);
+    return {
+      ok: true,
+      blocks: {
+        ...blocks,
+        [key]: {
+          ...cur,
+          rawUnprocessedData: appendText(cur.rawUnprocessedData ?? "", text, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+        },
+      },
+    };
+  }
   return { blocks, ok: false, reason: "unknown_source" };
 }
 
@@ -514,6 +646,17 @@ export function applyCopilotActions(
         skipped.push({ action, reason: "auto_records_has_no_incidents" });
         continue;
       }
+      if (isVinRegistryCopilotSource(action.source)) {
+        const updated = applyVinRegistryIncident(next[action.source], action);
+        if (!updated) {
+          skipped.push({ action, reason: "invalid_incident_row" });
+          continue;
+        }
+        next = { ...next, [action.source]: updated };
+        applied.push(action);
+        changed.add(action.source);
+        continue;
+      }
       const row = normalizeIncidentRow(action);
       if (!row) {
         skipped.push({ action, reason: "invalid_incident_row" });
@@ -536,6 +679,17 @@ export function applyCopilotActions(
     if (action.type === "upsert_mileage") {
       if (action.source === "ltab") {
         skipped.push({ action, reason: "ltab_has_no_mileage" });
+        continue;
+      }
+      if (isVinRegistryCopilotSource(action.source)) {
+        const updated = applyVinRegistryMileage(next[action.source], action);
+        if (!updated) {
+          skipped.push({ action, reason: "invalid_mileage_row" });
+          continue;
+        }
+        next = { ...next, [action.source]: updated };
+        applied.push(action);
+        changed.add(action.source);
         continue;
       }
       const row = normalizeMileageRow(action);
@@ -610,6 +764,18 @@ export function applyCopilotActions(
       next = { ...next, ltab: applyLtabCertificate(next.ltab, action.certificate) };
       applied.push(action);
       changed.add("ltab");
+      continue;
+    }
+
+    if (action.type === "set_registry_fields") {
+      if (!isVinRegistryCopilotSource(action.source)) {
+        skipped.push({ action, reason: "unknown_source" });
+        continue;
+      }
+      const updated = applyVinRegistryFields(next[action.source], action);
+      next = { ...next, [action.source]: updated };
+      applied.push(action);
+      changed.add(action.source);
       continue;
     }
 
@@ -722,6 +888,32 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
     pushClippedNote(lines, "citi_avoti RAW", citi0.rawUnprocessedData ?? "");
   } else {
     lines.push("citi_avoti: (no sections)");
+  }
+
+  for (const key of ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const) {
+    const block = b[key];
+    const mile = (block.mileage ?? []).filter(vinRegistryMileageRowHasData);
+    if (mile.length === 0) {
+      lines.push(`${key} mileage: (empty)`);
+    } else {
+      lines.push(`${key} mileage:`);
+      for (const r of mile.slice(0, 40)) {
+        lines.push(`  - ${r.date} | ${r.odometer} km | ${r.country}`);
+      }
+    }
+    const inc = (block.incidents ?? []).filter(vinRegistryIncidentRowHasData);
+    if (inc.length === 0) {
+      lines.push(`${key} incidents: (empty)`);
+    } else {
+      lines.push(`${key} incidents:`);
+      for (const r of inc.slice(0, 20)) {
+        lines.push(`  - ${r.date} | ${r.amount} | ${r.country} | ${r.note}`);
+      }
+    }
+    pushClippedNote(lines, `${key} owners`, block.ownersSummary);
+    pushClippedNote(lines, `${key} status`, block.statusRecords);
+    pushClippedNote(lines, `${key} notes`, block.autoNotes);
+    pushClippedNote(lines, `${key} RAW`, block.rawUnprocessedData);
   }
 
   lines.push(

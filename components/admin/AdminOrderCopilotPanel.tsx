@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
-import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
+import { COPILOT_SOURCE_KEYS, VIN_REGISTRY_COPILOT_SOURCES, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import {
@@ -56,7 +56,7 @@ const WELCOME_MESSAGE: UiMessage = {
   id: "welcome",
   role: "system",
   content:
-    "Ieslēdz mērķa avotus, pievieno PDF un īsu komandu (piem. „izvelc datus”). Pēc sūtīšanas logs samazinās — Tu vari turpināt darbu. Sarakste saglabājas šim pasūtījumam.",
+    "Ieslēdz mērķa avotus. PDF vai ielīmē car.info / tjekbil / mnt / lkf lapas tekstu — Copilot aizpilda tabulas un RED FLAG. Pēc sūtīšanas logs samazinās. Sarakste saglabājas šim pasūtījumam.",
 };
 const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
@@ -66,6 +66,10 @@ const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   auto_records: "Dīleris",
   cc_vin: "Starptaut.",
   citi_avoti: "Citi",
+  tjekbil: "Tjekbil",
+  mnt_ee: "MNT",
+  lkf_ee: "LKF",
+  carinfo: "INFO",
 };
 const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
@@ -75,6 +79,10 @@ const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   auto_records: "Oficiālais dīleris",
   cc_vin: SOURCE_BLOCK_LABELS.cc_vin,
   citi_avoti: SOURCE_BLOCK_LABELS.citi_avoti,
+  tjekbil: SOURCE_BLOCK_LABELS.tjekbil,
+  mnt_ee: SOURCE_BLOCK_LABELS.mnt_ee,
+  lkf_ee: SOURCE_BLOCK_LABELS.lkf_ee,
+  carinfo: SOURCE_BLOCK_LABELS.carinfo,
 };
 
 function newId(): string {
@@ -254,7 +262,17 @@ export function AdminOrderCopilotPanel({
     const stored = loadStoredChat(sessionId);
     if (stored) {
       setMessages(stored.messages);
-      if (stored.allowedSources?.length) setAllowedSources(stored.allowedSources);
+      if (stored.allowedSources?.length) {
+        const prev = stored.allowedSources;
+        const hadRegistry = prev.some((s) =>
+          (VIN_REGISTRY_COPILOT_SOURCES as readonly string[]).includes(s),
+        );
+        setAllowedSources(
+          hadRegistry
+            ? COPILOT_SOURCE_KEYS.filter((k) => prev.includes(k))
+            : COPILOT_SOURCE_KEYS.filter((k) => prev.includes(k) || (VIN_REGISTRY_COPILOT_SOURCES as readonly string[]).includes(k)),
+        );
+      }
     } else {
       setMessages([WELCOME_MESSAGE]);
     }
@@ -824,7 +842,7 @@ export function AdminOrderCopilotPanel({
               aiAllowed
                 ? files.length
                   ? "Piem. izvelc datus no PDF…"
-                  : "Uzraksti uzdevumu vai pievieno PDF…"
+                  : "Uzraksti uzdevumu, ielīmē car.info / tjekbil tekstu vai pievieno PDF…"
                 : "AI nav pieejams šim pasūtījumam"
             }
             value={draft}
