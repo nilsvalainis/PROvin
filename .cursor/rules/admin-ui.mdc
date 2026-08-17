@@ -1,0 +1,15 @@
+---
+description: Admin workspace UI — source blocks, shells, persist queue, field reset. Do not i18n or fork persist.
+globs: components/admin/**
+alwaysApply: false
+---
+
+# Admin components
+
+- Reuse `AdminSourceBlockHeader`, `AdminCollapsibleShell`, `AdminSavableTextField`, `AdminAiPolish*Shell`, `AdminFieldResetButton`, `AdminPdfIncludeToggle`.
+- Labels/URLs/empty state: `lib/admin-source-blocks.ts` (`SOURCE_BLOCK_LABELS`, `empty*Block()`).
+- Persist via `enqueueWorkspacePersist` + `lib/admin-workspace-persist-client.ts`. Hydrate: localStorage wins if present. `credentials: "include"`.
+- Table rows: `dropOrResetRow` — never leave `[]`. Keep `data-provin-handoff-vin` / `listing-url`.
+- Admin stays Latvian hardcoded. Grammar ✨ → `/api/admin/ai-polish-lv`; expert ✨ → `/api/admin/ai/*`.
+
+Full workflow: `.cursor/skills/provin-admin-ui/SKILL.md`.

@@ -1,0 +1,14 @@
+---
+description: Public i18n — lv/en key parity, no hardcoded user-visible copy in messages and localized UI.
+globs: messages/**/*.json
+alwaysApply: false
+---
+
+# Messages JSON
+
+- Same key path and JSON shape in `messages/lv/` and `messages/en/` for every change.
+- New namespace file: register in `i18n/request.ts` **and** `lib/i18n/load-app-messages.ts`.
+- Public provider name: **PROVIN.LV**. LV: `automašīna`/`auto`, never `automobīlis`. ASCII hyphen `-` in client-facing text.
+- Legal/footer strings must stay consistent with `lib/company.ts` and `.cursor/rules/business-legal-lv.mdc`.
+
+Full workflow: `.cursor/skills/provin-i18n/SKILL.md`.
