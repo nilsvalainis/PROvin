@@ -183,5 +183,5 @@ export function buildAggregateIdentificationBrief(input: AggregateIdentification
   return `### Agregātu identifikācijas dati (izejas parametri — izsecinātu kodu nekad neraksti kā reģistrā nolasītu faktu)
 ${lines.join("\n")}
 
-Ar šiem parametriem nosaki visticamāko dzinēja saimi / kodu (vai 1–2 kandidātus), ātrumkārbas tipu un piedziņu, tad kalibrē riskus pret šo nobraukuma un vecuma posmu. Ja parametri pieļauj vairākas konstrukcijas ar būtiski atšķirīgu risku, to pasaki un norādi, kā apstiprināt. Ja šī saime nav paketē — vispirms meklē Eiropas forumos / speciālistu rakstos, tad raksti.`;
+Ar šiem parametriem nosaki visticamāko dzinēja tipu / kodu (vai 1–2 kandidātus), ātrumkārbas tipu un piedziņu, tad kalibrē riskus pret šo nobraukuma un vecuma posmu. Ja parametri pieļauj vairākas konstrukcijas ar būtiski atšķirīgu risku, to pasaki un norādi, kā apstiprināt. Ja šis dzinējs / paaudze nav paketē — vispirms meklē Eiropas forumos / speciālistu rakstos, tad raksti. Aptuvenās remonta EUR summas komentārā neraksti.`;
 }

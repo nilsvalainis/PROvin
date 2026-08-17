@@ -48,10 +48,10 @@ function engineScore(fp: VehicleReportFingerprint, codes: string[]): number {
 }
 
 const PACK_BODY_HEADER = `Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
-- Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / vidējs uzturēšanas risks / tikai kontrolpunkts).
+- Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / populāra problēma šajā posmā / tikai kontrolpunkts). Nelieto „vidējs uzturēšanas risks”.
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
-- **1. Tehnisko risku analīze** — DETALIZĒTI (8–12 rindkopas): katrs relevantais mezgls, EUR, kas NAV risks, nobraukuma kalibrācija. Blīvums ≠ īsums.
-- EUR joslas tikai tehniskajos riskos un cenas vērtējumā. **3. Kopsavilkumā** cenas un EUR summas neraksta.`;
+- **1. Tehnisko risku analīze** — DETALIZĒTI (8–12 rindkopas): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija, vai tā **ir / nav populāra problēma**. **Bez aptuvenām remonta EUR summām.** Blīvums ≠ īsums.
+- Pakas EUR skaitļi ir iekšēja kalibrācija — **nekopē tos klienta komentārā**. **3. Kopsavilkumā** cenas un EUR summas neraksta. Sludinājuma/tirgus cenas tikai „Cenas vērtējumā”; apdrošināšanas EUR — negadījumu sadaļā.`;
 
 export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
   {
@@ -169,7 +169,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 
-**M57 mehānika pie 250–350 tūkst. km (vidējs uzturēšanas risks, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/injektori statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
+**M57 mehānika pie 250–350 tūkst. km (kontrolpunkts / populāra problēma šajā posmā, ne bloķētājs; EUR tikai iekšējai kalibrācijai — komentārā neraksti):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/injektori statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
 
 **Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (tuvākais rēķins) no paaudzes kaprīzes.
 
@@ -354,7 +354,7 @@ Lietot arī vispārīgo **ELECTRIC & PLUG-IN FORENSICS** bloku: SOH + uzlādes r
 
 **Mazda Skyactiv dīzelis:** DPF pilsētā; EGR.
 
-**Baltijas rūsa:** virsbūve un šasija — kontrolpunkts pat „uzticamiem” zīmoliem.
+**Latvijas rūsa:** virsbūve un šasija — kontrolpunkts pat „uzticamiem” zīmoliem.
 
 **Klātienē:** CVT tests; rūsa uz arkām; servisa intervāli.`,
   },

@@ -51,18 +51,18 @@ ${orderContext}
 Sagatavo **tehniski izcilu, detalizētu** tehnisko risku analīzi laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”. Šī ir atskaites svarīgākā komentāru sadaļa — īss vispārīgs teksts šeit ir kļūda.
 
 OBLIGĀTI:
-- Sāc ar **agregātu identifikāciju**: pēc tilpuma, jaudas, degvielas, izmešu klases, gada un (ja ir) dzinēja koda nosaki visticamāko dzinēja saimi/kodu, ātrumkārbas tipu un piedziņu. Ja precīzs kods nav avotos — nosauc **1–2 kandidātus** kā hipotēzi un pasaki, kā to apstiprināt (VIN atšifrējums, dzinēja marķējums, kārbas plāksnīte). Nekad neuzdod izsecinātu kodu par reģistrā nolasītu faktu.
-- **Kalibrē riskus pret šī auto aptuveno nobraukumu un vecumu:** kam resurss šajā posmā tipiski jau iztērēts (un tāpēc jābūt pierādītam servisa vēsturē), kas gaidāms nākamajos ~20–40 tūkst. km, un kas ir tikai tāla perspektīva. Sakārto pēc **varbūtības × izmaksām**. Piemērs: 300 tūkst. km M57 ar blīvu DE servisu ir ierasts darba mūžs; tas pats km uz N57 ir pavisam cits stāsts.
+- Sāc ar **agregātu identifikāciju**: pēc tilpuma, jaudas, degvielas, izmešu klases, gada un (ja ir) dzinēja koda nosaki visticamāko dzinēja tipu/kodu, ātrumkārbas tipu un piedziņu. Ja precīzs kods nav avotos — nosauc **1–2 kandidātus** kā hipotēzi un pasaki, kā to apstiprināt (VIN atšifrējums, dzinēja marķējums, kārbas plāksnīte). Nekad neuzdod izsecinātu kodu par reģistrā nolasītu faktu.
+- **Kalibrē riskus pret šī auto aptuveno nobraukumu un vecumu:** kam resurss šajā posmā tipiski jau iztērēts (un tāpēc jābūt pierādītam servisa vēsturē), kas gaidāms nākamajos ~20–40 tūkst. km, un kas ir tikai tāla perspektīva. Sakārto pēc **varbūtības un tā, vai tā ir populāra problēma**. Piemērs: 300 tūkst. km M57 ar blīvu DE servisu ir ierasts darba mūžs; tas pats km uz N57 ir pavisam cits stāsts.
 - **Kas NAV risks:** nosauc slavenās markas/paaudzes kaites, kas šim motoram/kārba/piedziņai neattiecas, UN dārgo vecuma ekstraprīkojumu, kura nav (tikai ja SA/dīlera saraksts/tipa kods/operators to ļauj — neizdomā).
-- **Nepārspīlē:** neuzskaiti visu, kas teorētiski var salūzt, un nepasniedz pie 250 000 km tipisku problēmu kā draudu pie 90 000 km. **Galvenais pirkuma risks — maksimāli 1–2 pozīcijas**; pārējais ir vidējs uzturēšanas risks vai kontrolpunkts klātienē. Ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, eļļas noplūdes, hidromufte 15–20 gadu vecumā) nošķir no „šis auto tuvākajā laikā būs problemātisks”.
-- Ja šī dzinēja saime / paaudze nav pilnībā nosegta agregātu paketē — **vispirms web meklēšana** (Eiropas forumi, klubu wiki, speciālistu raksti), tad raksti. Neizdomā citātus un kampaņu numurus.
-- Garums: **8–12 rindkopas** (3–5 teikumi katrā). Noklusējuma 350–800 ŠEIT NEATTIECAS. Katra rindkopa = atšķirīgs mezgls + EUR + 1 teikums no šī auto datiem.
+- **Nepārspīlē:** neuzskaiti visu, kas teorētiski var salūzt, un nepasniedz pie 250 000 km tipisku problēmu kā draudu pie 90 000 km. **Galvenais pirkuma risks — maksimāli 1–2 pozīcijas**; pārējais ir kontrolpunkts klātienē vai jautājums, vai tā **ir / nav populāra problēma**. Ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, eļļas noplūdes, hidromufte 15–20 gadu vecumā) nošķir no „šis auto tuvākajā laikā būs problemātisks”.
+- Ja šis dzinējs / paaudze nav pilnībā nosegta agregātu paketē — **vispirms web meklēšana** (Eiropas forumi, klubu wiki, speciālistu raksti), tad raksti. Neizdomā citātus un kampaņu numurus.
+- Garums: **8–12 rindkopas** (3–5 teikumi katrā). Noklusējuma 350–800 ŠEIT NEATTIECAS. Katra rindkopa = atšķirīgs mezgls + vai tā ir populāra problēma + 1 teikums no šī auto datiem. **Bez aptuvenām remonta EUR summām.**
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; tipiskās vājās vietas apraksti kā varbūtību („tipiski šim agregātam”, „var novest pie”).
-- Konkrēti mezgli, ne kategorijas (ķēde/zobsiksna un tās puse, turbo, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats, ūdens sūknis/termostats/hidromufte, eļļas noplūdes, reduktors un pilnpiedziņas sajūgs, gaisa balstiekārta pret Dynamic Drive, EV baterija) — tikai tie, kas šim salikumam relevanti; aptuvenās remonta izmaksas EUR diapazonā, ja zināmas.
+- Konkrēti mezgli, ne kategorijas (ķēde/zobsiksna un tās puse, turbo, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats, ūdens sūknis/termostats/hidromufte, eļļas noplūdes, reduktors un pilnpiedziņas sajūgs, gaisa balstiekārta pret Dynamic Drive, EV baterija) — tikai tie, kas šim salikumam relevanti. **Neraksti aptuvenās remonta izmaksas EUR diapazonā.** Quattro — bez vārda „trakts”; kardāna **krustiņi** (ne „krusteniskie”); **karājošais gultnis** (ne „centra gultnis”). Labi: „Quattro ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krustiņi un karājošais gultnis pie šī nobraukuma nav populāra problēma.” Aizliegts: „Quattro trakts … kardāna krusteniskie un centra gultnis … vidējs uzturēšanas risks (orientējoši 300-600 €).”
 - Izmanto PROVIN agregātu zināšanas un vēsturiskos auditus no konteksta; ja trūkst — web meklēšana tipiskajām vājajām vietām, tad pielāgo AKTĪVAJAM auto. Neizdomā kampaņu numurus, statistiku vai citātus.
 - Norādi arī stiprās puses; vienlaikus uzsver, ka arī labākie agregāti var būt slikti uzturēti — īpaši Latvijā ekspluatētiem auto.
 - Ja servisa vēsturē attiecīgais darbs ir fiksēts, risku samazini un to pasaki kā labvēlīgu signālu datos; ierakstu trūkumu formulē kā **nepierādītu**, nevis kā neizdarītu.
-- Neizdomā VIN/km/EUR no šī pasūtījuma; aptuvenās izmaksas — orientējošas, ar atrunu.
+- Neizdomā VIN/km/EUR no šī pasūtījuma. **Nekādu orientējošu remonta cenu.**
 - NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
 - Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).`,
     {
@@ -81,6 +81,7 @@ OBLIGĀTI:
       userPrompt,
       temperature: 0.32,
       maxSearches: 6,
+      maxLen: 16_000,
     });
     return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
   } catch (e) {
