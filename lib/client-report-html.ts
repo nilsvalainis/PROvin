@@ -1336,7 +1336,8 @@ function buildVendorAvotuSubsection(b: ClientManualVendorBlockPdf, vis: PdfVisib
   if (b.title === L.lkf_ee && !vis.lkf_ee) return "";
   if (b.title === L.carinfo && !vis.carinfo) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
-  const owners = (b.ownersSummary ?? "").trim();
+  const omitOwners = b.title === L.carinfo;
+  const owners = omitOwners ? "" : (b.ownersSummary ?? "").trim();
   const status = (b.statusRecords ?? "").trim();
   const notes = (b.autoNotes ?? "").trim();
   const hasComments = commentBlock.trim().length > 0;

@@ -1075,12 +1075,11 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain(SOURCE_BLOCK_LABELS.carinfo);
-    expect(doc).toContain("6 īpašnieki");
     expect(doc).toContain("Satiksmē: nē");
     expect(doc).toContain("Eksportēts no Zviedrijas");
-    expect(doc).toContain("Īpašnieku skaits");
     expect(doc).toContain("Statuss");
     expect(doc).toContain("Piezīmes");
+    expect(doc).not.toContain("Īpašnieku skaits");
     expect(doc).not.toContain("⚠");
     expect(doc).not.toContain("RED FLAG");
   });
