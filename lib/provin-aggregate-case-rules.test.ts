@@ -63,6 +63,28 @@ describe("provin-aggregate-case-rules", () => {
     expect(packs.some((p) => p.id === "bmw_diesel_chains")).toBe(true);
   });
 
+  it("selects VAG 3.0 TDI pack with 7DSG EUR and 176 kW exception", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Audi A6",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "12.03.2013",
+        engineDisplacementCm3: "2967",
+        enginePowerKw: "180",
+        emissionStandard: "Euro 5",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.transmission = "S-Tronic";
+    const packs = selectAggregateCasePacks(fp);
+    const vag = packs.find((p) => p.id === "vag_audi_v6_tdi");
+    expect(vag).toBeTruthy();
+    expect(vag?.body).toMatch(/2 000-4 000/);
+    expect(vag?.body).toMatch(/700-1 200/);
+    expect(vag?.body).toMatch(/176 kW/);
+    expect(vag?.body).toMatch(/150 vs 180/);
+  });
+
   it("builds stable learning key from fingerprint", () => {
     const blocks = mergeSourceBlocksWithDefaults({
       csdd: { makeModel: "Audi A6", fuelType: "Dīzeļdegviela", firstRegistration: "2012" },
