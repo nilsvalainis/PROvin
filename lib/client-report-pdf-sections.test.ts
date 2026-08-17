@@ -411,10 +411,11 @@ describe("Ekspluatācijas hronoloģija", () => {
     expect(html).toContain("pdf-life-break--gap");
     expect(html).toContain("pdf-life-break__chip");
     expect(html).toContain("pdf-life-break__title");
-    expect(html).toMatch(/\.pdf-life-break--gap \.pdf-life-break__chip\{[^}]*background:#FFFCF3/);
+    expect(html).toContain("pdf-life-rail--dash");
     expect(html).not.toContain("pdf-life-gap-edge");
+    expect(html).not.toMatch(/\.pdf-life-break--gap \.pdf-life-break__chip\{[^}]*background:#FFFCF3/);
     const gapLi = html.match(/<li class="pdf-life-break pdf-life-break--gap">[\s\S]*?<\/li>/);
-    expect(gapLi?.[0]).not.toContain("pdf-life-rail");
+    expect(gapLi?.[0]).toContain("pdf-life-rail--dash");
   });
 
   it("renders a country change as a centered flag divider that breaks the timeline rail", () => {
@@ -442,9 +443,9 @@ describe("Ekspluatācijas hronoloģija", () => {
     expect(html).toContain("pdf-life-break__flag");
     expect(html).toMatch(/aria-label="Zviedrija"/);
     expect(html).toMatch(/aria-label="Latvija"/);
-    expect(html).toMatch(/\.pdf-life-break--import \.pdf-life-break__chip\{[^}]*background:#F4F8FC/);
+    expect(html).not.toMatch(/\.pdf-life-break--import \.pdf-life-break__chip\{[^}]*background:#F4F8FC/);
     const importLi = html.match(/<li class="pdf-life-break pdf-life-break--import">[\s\S]*?<\/li>/);
-    expect(importLi?.[0]).not.toContain("pdf-life-rail");
+    expect(importLi?.[0]).toContain("pdf-life-rail--dash");
     expect(importLi?.[0]).toContain("SE");
     expect(importLi?.[0]).toContain("LV");
   });

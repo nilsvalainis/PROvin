@@ -553,6 +553,7 @@ function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
     const fromLabel = e.fromCountry?.trim() || e.detail.split(" → ")[0]?.trim() || "";
     const toLabel = e.country.trim() || e.detail.split(" → ")[1]?.trim() || "";
     return `<li class="pdf-life-break pdf-life-break--import">
+      <span class="pdf-life-rail pdf-life-rail--dash" aria-hidden="true"></span>
       <div class="pdf-life-break__chip">
         <span class="pdf-life-break__flags">
           ${buildPdfCountryFlagCellHtml(fromLabel, "pdf-life-break__flag")}
@@ -564,6 +565,7 @@ function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
     </li>`;
   }
   return `<li class="pdf-life-break pdf-life-break--gap">
+    <span class="pdf-life-rail pdf-life-rail--dash" aria-hidden="true"></span>
     <div class="pdf-life-break__chip">
       <span class="pdf-life-break__lead">
         <span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow", "lg")}</span>
@@ -1704,7 +1706,8 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-list{margin:0;padding:0;list-style:none;}
       .pdf-life-item,
-      .pdf-life-year{
+      .pdf-life-year,
+      .pdf-life-break{
         display:grid;grid-template-columns:74px 20px minmax(0,1fr) auto 44px 44px;gap:0 12px;
         align-items:stretch;margin:0;
       }
@@ -1781,22 +1784,21 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-flag{display:flex;align-items:center;justify-content:flex-end;line-height:1;}
       .pdf-life-break{
-        display:flex;justify-content:center;align-items:center;
-        padding:12px 0 14px;margin:0;
+        padding:10px 0 12px;
         break-inside:avoid;page-break-inside:avoid;
       }
-      .pdf-life-break__chip{
-        display:flex;flex-direction:column;align-items:center;gap:5px;
-        max-width:92%;padding:12px 22px;border-radius:12px;
-        box-shadow:0 1px 3px rgba(15,23,42,.08);
+      .pdf-life-break .pdf-life-rail{grid-column:2;}
+      .pdf-life-rail--dash{
+        background:repeating-linear-gradient(to bottom,#E3EAF3 0,#E3EAF3 3px,transparent 3px,transparent 7px)!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-life-break--gap .pdf-life-break__chip{
-        background:#FFFCF3;border:1.5px solid #F5D07A;color:#B45309;
+      .pdf-life-break__chip{
+        grid-column:3 / -1;justify-self:center;
+        display:flex;flex-direction:column;align-items:center;gap:5px;
+        max-width:100%;padding:2px 0;
       }
-      .pdf-life-break--import .pdf-life-break__chip{
-        background:#F4F8FC;border:1.5px solid #C5D7EA;color:#0f172a;
-      }
+      .pdf-life-break--gap .pdf-life-break__chip{color:#B45309;}
+      .pdf-life-break--import .pdf-life-break__chip{color:#0f172a;}
       .pdf-life-break__lead{
         display:flex;align-items:center;justify-content:center;gap:8px;
       }
