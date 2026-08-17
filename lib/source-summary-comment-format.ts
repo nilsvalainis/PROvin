@@ -236,6 +236,35 @@ Paraugs C — paka šo saimi nesedz:
 **Meklēšanas sintēze.** Eiropas forumu un speciālistu raksti šai saimei uzrāda [konkrēti mezgli + km josla + EUR]; ASV avoti ņemti tikai kā sekundāri.
 **Kalibrācija šim auto.** Tikai tie riski, kas sakrīt ar šo nobraukumu, kārbas tipu un aprīkojumu — bez vispārīga dīzeļa saraksta."`;
 
+/** Izcelsme / ekspluatācijas reģions - rūsa vs vizuālie defekti. Obligāti kopsavilkumā. */
+export const AI_REGIONAL_ORIGIN_FORENSICS_RULES = `REGIONAL ORIGIN & OPERATING HISTORY (mandatory - reconstruct from data, never guess a country):
+
+IDENTIFY from available sources only:
+- Import / first-registration country (CSDD izcelsme, pirmā reģistrācija ārvalstīs).
+- Countries of use from mileage and incident rows (country column), VIN registries (Tjekbil, MNT, LKF, car.info), AutoDNA/CarVertical event countries.
+- Dealer / AUTO RECORDS: COUNTRY/REGION, workshop city, service stamps - strongest signal of WHERE the car actually lived, not only where it was last sold.
+- If signals conflict, name the conflict. If origin/region cannot be read from data, say that plainly.
+
+ELEVATED RUST / CORROSION after long-term operation (winter salt, coastal or alpine humidity):
+Sweden, Finland, Norway, Austria, Lithuania, Poland, Estonia, Denmark, southern Germany (Vācijas lejasdaļa: Bavaria, Baden-Württemberg, alpine), East Germany (former DDR / new federal states). Latvia has the same Baltic salt profile.
+When THIS car spent substantial time in any of these: treat underbody rust as a raised-probability risk (sills, wheel arches, brake and fuel lines, subframe, jacking points, exhaust). Phrase as paaugstināts rūsas risks pēc ilgstošas ekspluatācijas [valstī/reģionā] - not as proven rust. Physical inspection decides.
+
+GERMANY IS NOT ONE PROFILE:
+- Typical western/northern Autobahn DE: stone chips, mechanical wear; undercarriage often cleaner than Nordics.
+- Southern DE and East Germany: do NOT assume a clean undercarriage - apply the rust list when dealer city/region or registrations point there.
+
+ITALY / FRANCE (greater visual caution, especially city cars):
+Often more and larger cosmetic defects, repainted panels, careless urban use. Service history frequently sparse. Rust is usually lower than Nordics, but paint-gauge inspection, panel gaps and underbody still required. Do not treat "southern EU = perfect body". Spain remains warm-climate (sun-fade, parking dents) unless data says otherwise. Always evaluate factually in person.
+
+USA / CANADA: original salvage photos (Copart/IAAI) when applicable; conversion and structural repair quality.
+
+COMMENT OBLIGATION:
+- Name where the car was imported from and where it was operated whenever the data supports it (dealer region included).
+- **3. Kopsavilkums is mandatory:** one short paragraph with bold opener **Ekspluatācijas reģions.** covering origin + operating region + the matching caution (rust belt vs IT/FR visual) + that klātienes pārbaude izšķir. Never skip this when country/region signals exist.
+- Inspection recommendations: convert into concrete checks (undercarriage / brake lines vs paint meter / repaint).
+- Technical risks: one calibrated sentence on corrosion or body condition when origin matches - not a second origin essay.
+- Hedge: digital origin is not a physical diagnosis.`;
+
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
 export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):
 

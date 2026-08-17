@@ -79,6 +79,7 @@ OBLIGĀTI:
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; rekomendācija kalibrēta, jo pamatā ir digitāli dati, kas var būt nepilnīgi.
 - NESĀC ar „Sveiki” vai sarunas uzrunu.
 - NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
+- Ja datos ir izcelsme, ekspluatācijas valsts vai dīlera reģions: obligāti īsa rindkopa **Ekspluatācijas reģions.** (rūsas josla vs IT/FR vizuālā piesardzība). Neizdomā valsti.
 - Beigās: APPROVED BY IRISS.`,
     {
       operatorNotes: input.operatorNotes,
