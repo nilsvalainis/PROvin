@@ -950,10 +950,10 @@ const PANEL_FILL = rgb(248 / 255, 250 / 255, 252 / 255);
 const PANEL_BORDER = rgb(226 / 255, 232 / 255, 240 / 255);
 const PANEL_RULE = rgb(241 / 255, 245 / 255, 249 / 255);
 const PASUTIJUMS_SIGNATURE_H = 92;
-const PAGE1_PAD = 11;
-const PAGE1_RADIUS = 7;
-const PAGE1_GAP = 9;
-const PAGE1_RAIL = 3;
+const PAGE1_PAD = 12;
+const PAGE1_RADIUS = 8;
+const PAGE1_GAP = 10;
+const PAGE1_CHECK_W = 14;
 
 function formatPasutijumsDocDate(record: IrissPasutijumsRecord): string {
   const raw = (record.orderDate || record.createdAt || "").trim();
@@ -1002,24 +1002,42 @@ function wrapPage1(text: string, font: PDFFont, size: number, maxW: number): str
   return lines.length ? lines : [""];
 }
 
-type Page1Kv = { label: string; value: string };
+type Page1Kv = { label: string; value: string; check: boolean };
 
 function overviewLinesToKv(lines: string[]): Page1Kv[] {
-  return lines.map((ln) => {
+  const out: Page1Kv[] = [];
+  for (const ln of lines) {
     const p = splitColonLabelValue(ln);
-    if (p.kind === "kv") return { label: p.label.replace(/:$/, "").trim(), value: p.value };
-    return { label: "", value: p.text };
-  });
+    if (p.kind === "kv") {
+      const label = p.label.replace(/:$/, "").trim();
+      if (!label) continue;
+      const value = p.value.trim();
+      if (!value) continue;
+      out.push({ label, value, check: /^jā$/i.test(value) });
+      continue;
+    }
+    if (p.text.trim()) out.push({ label: "", value: p.text.trim(), check: false });
+  }
+  return out;
 }
 
-function measurePage1KvHeight(rows: Page1Kv[], innerW: number, fs: number, font: PDFFont): number {
-  const labelW = Math.min(108, Math.round(innerW * 0.4));
-  const valueW = Math.max(48, innerW - labelW - 10);
+function measurePage1KvHeight(rows: Page1Kv[], innerW: number, fs: number, font: PDFFont, fontBold: PDFFont): number {
   const lh = PRO_PAGE_LH(fs);
+  const labelFs = Math.max(7, fs - 0.5);
   let h = 0;
   for (const row of rows) {
-    const n = wrapPage1(row.value || " ", font, fs, valueW).length;
-    h += Math.max(lh, n * lh) + 5;
+    if (row.check) {
+      const n = wrapPage1(row.label || " ", fontBold, labelFs, Math.max(40, innerW - PAGE1_CHECK_W - 6)).length;
+      h += Math.max(lh, n * lh) + 5;
+      continue;
+    }
+    const labelW = Math.min(108, Math.round(innerW * 0.4));
+    const valueW = Math.max(48, innerW - labelW - 10);
+    const ln = Math.max(
+      wrapPage1(row.label || " ", fontBold, labelFs, labelW).length,
+      wrapPage1(row.value || " ", font, fs, valueW).length,
+    );
+    h += Math.max(lh, ln * lh) + 5;
   }
   return h;
 }
@@ -1042,14 +1060,7 @@ function drawPage1Panel(page: PDFPage, x: number, yTop: number, w: number, h: nu
     radius: PAGE1_RADIUS,
     color: PANEL_FILL,
     borderColor: PANEL_BORDER,
-    borderWidth: 0.85,
-  });
-  page.drawRectangle({
-    x: x + 1.2,
-    y: yBot + PAGE1_RADIUS,
-    width: PAGE1_RAIL,
-    height: Math.max(8, h - PAGE1_RADIUS * 2),
-    color: PREMIUM_ORANGE,
+    borderWidth: 0.75,
   });
 }
 
@@ -1066,9 +1077,22 @@ function drawPage1SectionTitle(
     y: y - size,
     size,
     font: fontBold,
-    color: PREMIUM_ORANGE,
+    color: PRO_PAGE_MUTED,
   });
   return y - 16;
+}
+
+function drawPage1Check(page: PDFPage, rightX: number, baselineY: number, fontBold: PDFFont, fs: number): void {
+  const glyph = "✓";
+  const size = Math.max(10, fs + 1.5);
+  const gw = fontBold.widthOfTextAtSize(glyph, size);
+  page.drawText(glyph, {
+    x: rightX - gw,
+    y: baselineY - 0.6,
+    size,
+    font: fontBold,
+    color: INK,
+  });
 }
 
 function drawPage1KvRows(
@@ -1082,31 +1106,43 @@ function drawPage1KvRows(
   fontBold: PDFFont,
   floorY: number,
 ): number {
-  const labelW = Math.min(108, Math.round(innerW * 0.4));
-  const valueX = x + labelW + 10;
-  const valueW = Math.max(48, innerW - labelW - 10);
+  const labelFs = Math.max(7, fs - 0.5);
   const lh = PRO_PAGE_LH(fs);
   let cy = y;
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
-    const valueLines = wrapPage1(row.value || " ", font, fs, valueW);
-    const rowH = Math.max(lh, valueLines.length * lh);
-    if (cy - rowH < floorY) break;
-    if (row.label) {
-      page.drawText(row.label, {
-        x,
-        y: cy - fs,
-        size: Math.max(7, fs - 0.5),
-        font: fontBold,
-        color: PRO_PAGE_MUTED,
-      });
+    if (row.check) {
+      const labelMax = Math.max(40, innerW - PAGE1_CHECK_W - 6);
+      const labelLines = wrapPage1(row.label || " ", fontBold, labelFs, labelMax);
+      const rowH = Math.max(lh, labelLines.length * lh);
+      if (cy - rowH < floorY) break;
+      let ly = cy;
+      for (const ln of labelLines) {
+        page.drawText(ln, { x, y: ly - fs, size: labelFs, font: fontBold, color: INK });
+        ly -= lh;
+      }
+      drawPage1Check(page, x + innerW, cy - fs, fontBold, fs);
+      cy -= rowH;
+    } else {
+      const labelW = Math.min(108, Math.round(innerW * 0.4));
+      const valueX = x + labelW + 10;
+      const valueW = Math.max(48, innerW - labelW - 10);
+      const labelLines = wrapPage1(row.label || " ", fontBold, labelFs, labelW);
+      const valueLines = wrapPage1(row.value || " ", font, fs, valueW);
+      const rowH = Math.max(lh, labelLines.length * lh, valueLines.length * lh);
+      if (cy - rowH < floorY) break;
+      let ly = cy;
+      for (const ln of labelLines) {
+        page.drawText(ln, { x, y: ly - fs, size: labelFs, font: fontBold, color: PRO_PAGE_MUTED });
+        ly -= lh;
+      }
+      let vy = cy;
+      for (const ln of valueLines) {
+        page.drawText(ln, { x: valueX, y: vy - fs, size: fs, font, color: INK });
+        vy -= lh;
+      }
+      cy -= rowH;
     }
-    let vy = cy;
-    for (const ln of valueLines) {
-      page.drawText(ln, { x: valueX, y: vy - fs, size: fs, font, color: INK });
-      vy -= lh;
-    }
-    cy -= rowH;
     if (i < rows.length - 1 && cy - 4 > floorY) {
       page.drawLine({
         start: { x, y: cy - 1.5 },
@@ -1144,8 +1180,8 @@ function drawPasutijumsSignatureStrip(ctx: Ctx, record: IrissPasutijumsRecord, y
   const { page, margin, contentW, font, fontBold } = ctx;
   const h = PASUTIJUMS_SIGNATURE_H - 6;
   drawPage1Panel(page, margin, yTop, contentW, h);
-  const ix = margin + PAGE1_PAD + PAGE1_RAIL + 6;
-  const iw = contentW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+  const ix = margin + PAGE1_PAD;
+  const iw = contentW - PAGE1_PAD * 2;
   const gap = 22;
   const colW = (iw - gap) / 2;
   const clientName = [val(record.clientFirstName), val(record.clientLastName)].filter(Boolean).join(" ") || " ";
@@ -1222,25 +1258,25 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
   page.drawLine({
     start: { x: margin, y },
     end: { x: pageW - margin, y },
-    thickness: 1.75,
-    color: PREMIUM_ORANGE,
+    thickness: 1,
+    color: PANEL_BORDER,
   });
   y -= 14;
 
   const colGap = 10;
   const colW = (contentW - colGap) / 2;
-  const innerW = colW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+  const innerW = colW - PAGE1_PAD * 2;
   let fs = 8.4;
   const hasEq = Boolean(overview.equipmentRequired || overview.equipmentDesired);
   const hasNotes = Boolean(overview.notes);
 
   const measureStack = (size: number) => {
-    const leftBody = clientKv.length ? measurePage1KvHeight(clientKv, innerW, size, font) : 0;
-    const rightBody = specKv.length ? measurePage1KvHeight(specKv, innerW, size, font) : 0;
+    const leftBody = clientKv.length ? measurePage1KvHeight(clientKv, innerW, size, font, fontBold) : 0;
+    const rightBody = specKv.length ? measurePage1KvHeight(specKv, innerW, size, font, fontBold) : 0;
     const pairH = clientKv.length || specKv.length ? cardChromeH(Math.max(leftBody, rightBody, 24)) : 0;
     let eqH = 0;
     if (hasEq) {
-      const eqInner = contentW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+      const eqInner = contentW - PAGE1_PAD * 2;
       const half = (eqInner - 12) / 2;
       const reqH = overview.equipmentRequired
         ? 12 + measurePage1Wrapped(overview.equipmentRequired, overview.equipmentDesired ? half : eqInner, size, font)
@@ -1252,7 +1288,7 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
     }
     let notesH = 0;
     if (hasNotes && overview.notes) {
-      const nInner = contentW - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+      const nInner = contentW - PAGE1_PAD * 2;
       notesH = cardChromeH(measurePage1Wrapped(overview.notes, nInner, size, font));
     }
     let total = pairH;
@@ -1270,8 +1306,8 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
   const drawCard = (x: number, w: number, h: number, titleText: string, drawBody: (ix: number, iy: number, iw: number) => void) => {
     if (h <= 0) return;
     drawPage1Panel(page, x, y, w, h);
-    const ix = x + PAGE1_PAD + PAGE1_RAIL + 6;
-    const iw = w - PAGE1_PAD * 2 - PAGE1_RAIL - 6;
+    const ix = x + PAGE1_PAD;
+    const iw = w - PAGE1_PAD * 2;
     const cy = drawPage1SectionTitle(page, titleText, ix, y - PAGE1_PAD, fontBold);
     drawBody(ix, cy, iw);
   };

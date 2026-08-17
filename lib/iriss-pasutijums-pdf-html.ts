@@ -154,7 +154,7 @@ function selectedDealDetailLabels(record: IrissPasutijumsRecord): string[] {
   return IRISS_DEAL_DETAIL_OPTIONS.filter((opt) => Boolean(record[opt.key])).map((opt) => opt.label);
 }
 
-function irissPrintShell(accent: string, title: string, body: string): string {
+function irissPrintShell(accent: string, title: string, body: string, opts?: { mutedSections?: boolean }): string {
   const css = `
     @page { size: A4; margin: 11mm; }
     * { box-sizing: border-box; }
@@ -216,6 +216,14 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       border-radius: 8px;
       border-left: 3px solid ${accent};
       padding: 7px 11px 7px 10px;
+    }
+    .ipdf-root--muted .ipdf-sec-title {
+      border-left: none;
+      background: transparent;
+      border-radius: 0;
+      padding: 0 0 8px;
+      color: #64748b;
+      font-weight: 700;
     }
     .ipdf-blk {
       margin-bottom: 18px;
@@ -329,6 +337,19 @@ function irissPrintShell(accent: string, title: string, body: string): string {
       box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
     }
     .ipdf-cl-item--off { opacity: 0.55; }
+    td.ipdf-check-end-cell {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: ${INK};
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    td.ipdf-check-end-cell .ipdf-check { width: 16px; height: 16px; margin-top: 0; flex-shrink: 0; }
     .ipdf-check { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
     .ipdf-check--off {
       display: inline-block;
@@ -417,7 +438,8 @@ function irissPrintShell(accent: string, title: string, body: string): string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&display=swap" rel="stylesheet"/>`;
 
-  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/>${fontLink}<title>${esc(title)}</title><style>${css}</style></head><body><div class="ipdf-root">${body}</div></body></html>`;
+  const rootClass = opts?.mutedSections ? "ipdf-root ipdf-root--muted" : "ipdf-root";
+  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/>${fontLink}<title>${esc(title)}</title><style>${css}</style></head><body><div class="${rootClass}">${body}</div></body></html>`;
 }
 
 /**
@@ -426,7 +448,7 @@ function irissPrintShell(accent: string, title: string, body: string): string {
  * Tukši lauki netiek iekļauti.
  */
 export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, generatedAtFormatted: string): string {
-  const accent = IRISS_BRAND_ORANGE_HEX;
+  const accent = "#64748b";
 
   const heroModel = record.brandModel.trim() || "PASŪTĪJUMS";
 
@@ -463,10 +485,13 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   const specRestTable = wrapTable(specRestRows);
   const selectedDealDetails = selectedDealDetailLabels(record);
   const dealDetailRows = selectedDealDetails
-    .map((label) => `<tr><th>${esc(label)}</th><td>Jā</td></tr>`)
+    .map(
+      (label) =>
+        `<tr><td colspan="2" class="ipdf-check-end-cell"><span>${esc(label)}</span>${svgCheck(INK)}</td></tr>`,
+    )
     .join("");
   const dealDetailsInner = selectedDealDetails.length
-    ? `<div class="ipdf-card" style="margin-top:10px"><h3>Darījuma detaļas</h3><table class="ipdf-kv">${dealDetailRows}</table></div>`
+    ? `<div class="ipdf-card" style="margin-top:10px"><table class="ipdf-kv">${dealDetailRows}</table></div>`
     : "";
   const pamatAfterMarka =
     pamat.trim() === ""
@@ -500,7 +525,7 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     ${blockIf("Piezīmes", notes)}
     ${buildIrissPrintFooterHtml(accent)}`;
 
-  return irissPrintShell(accent, "PASŪTĪJUMS", body);
+  return irissPrintShell(accent, "PASŪTĪJUMS", body, { mutedSections: true });
 }
 
 export function buildIrissOfferPrintHtml(

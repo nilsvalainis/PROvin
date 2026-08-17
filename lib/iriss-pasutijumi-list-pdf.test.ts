@@ -55,6 +55,8 @@ describe("IRISS viena pasūtījuma PDF", () => {
     rec.equipmentRequired = "ACC";
     rec.equipmentDesired = "Kamera";
     rec.notes = "Pārbaudīt VIN";
+    rec.dealServiceStartDeposit = true;
+    rec.dealEkki = true;
     const bytes = await buildIrissPasutijumsPdfBytes(rec);
     expect(Buffer.from(bytes.subarray(0, 5)).toString("latin1")).toBe("%PDF-");
     const doc = await PDFDocument.load(bytes);

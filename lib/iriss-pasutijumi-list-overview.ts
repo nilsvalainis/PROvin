@@ -109,7 +109,6 @@ export function collectIrissPasutijumsOverview(record: IrissPasutijumsRecord): I
     (opt) => opt.label,
   );
   if (selectedDealDetails.length) {
-    specLines.push("Darījuma detaļas:");
     for (const label of selectedDealDetails) specLines.push(`${label}: Jā`);
   }
 
