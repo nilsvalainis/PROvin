@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildUnifiedMileageChartWrapHtml,
+  monotoneCubicSvgPath,
   pickNonOverlappingYearTicks,
+  splitMileageChartRuns,
   yearLabelXInRange,
 } from "@/lib/unified-mileage-chart";
 import type { UnifiedMileageRow } from "@/lib/unified-mileage";
@@ -81,7 +83,7 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     }
   });
 
-  it("renders dramatic anomaly markers and rollback overlay", () => {
+  it("marks a rollback with a red segment and year band, without halo dots", () => {
     const rows: UnifiedMileageRow[] = [
       {
         date: "01.01.2020",
@@ -116,13 +118,15 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     const html = buildUnifiedMileageChartWrapHtml(rows, anomalyMap);
     expect(html).toContain("pdf-mileage-chart-wrap--has-anomaly");
     expect(html).toContain("pdf-mileage-chart-rollback");
-    expect(html).toContain("pdf-mileage-chart-anomaly-halo");
-    expect(html).toContain("pdf-mileage-chart-dot--anomaly");
+    expect(html).toContain("pdf-mileage-chart-year-band");
+    expect(html).toContain("pdf-mileage-chart-legend-rollback");
     expect(html).toContain("Odometra anomālija");
-    expect(html).toMatch(/r="5\.5"|r="6"/);
+    expect(html).not.toContain("pdf-mileage-chart-anomaly-halo");
+    expect(html).not.toContain("pdf-mileage-chart-dot--anomaly");
+    expect(html).not.toContain("pdf-mileage-chart-anomaly-pin");
   });
 
-  it("draws the main path through the raw rollback (proportional drop), not a corrected climb", () => {
+  it("keeps the rollback as a discrete drop: blue path stops, red segment falls", () => {
     const rows: UnifiedMileageRow[] = [
       {
         date: "01.01.2020",
@@ -148,21 +152,32 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
         sourceOrder: 2,
         sourceLabel: "CSDD",
       },
+      {
+        date: "01.01.2023",
+        odometer: "95000",
+        country: "LV",
+        sortableTime: Date.UTC(2023, 0, 1),
+        sourceOrder: 3,
+        sourceLabel: "CSDD",
+      },
     ];
     const anomalyMap = new Map<number, boolean>([
       [0, false],
       [1, false],
       [2, true],
+      [3, false],
     ]);
     const html = buildUnifiedMileageChartWrapHtml(rows, anomalyMap);
-    const pathMatch = html.match(/class="pdf-mileage-chart-path"[^>]*d="([^"]+)"/);
-    expect(pathMatch?.[1]).toBeTruthy();
-    const ys = [...pathMatch![1]!.matchAll(/[\d.]+ ([\d.]+)/g)].map((m) => Number.parseFloat(m[1]!));
-    expect(ys).toHaveLength(3);
-    // SVG Y grows downward: 150k is highest on chart (lowest Y), 80k drop is lowest (highest Y).
-    expect(ys[1]!).toBeLessThan(ys[0]!);
-    expect(ys[2]!).toBeGreaterThan(ys[1]!);
-    expect(ys[2]!).toBeGreaterThan(ys[0]!);
+    const paths = [...html.matchAll(/class="pdf-mileage-chart-path"[^>]*d="([^"]+)"/g)].map((m) => m[1]!);
+    expect(paths).toHaveLength(2);
+    const rollback = html.match(
+      /class="pdf-mileage-chart-rollback" x1="([\d.]+)" y1="([\d.]+)" x2="([\d.]+)" y2="([\d.]+)"/,
+    );
+    expect(rollback).toBeTruthy();
+    const y1 = Number.parseFloat(rollback![2]!);
+    const y2 = Number.parseFloat(rollback![4]!);
+    // SVG Y grows downward: 80k is below 150k.
+    expect(y2).toBeGreaterThan(y1);
   });
 
   it("omits extra-digit spike from chart path so Y scale stays sane", () => {
@@ -208,5 +223,57 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     expect(pathMatch?.[1]).toBeTruthy();
     // Only two vertices (25k → 49k); spike would add a third L segment.
     expect(pathMatch![1]!.match(/ L /g)?.length ?? 0).toBe(1);
+  });
+
+  it("uses a cubic path when there are several non-anomaly readings", () => {
+    const rows: UnifiedMileageRow[] = [2016, 2017, 2018, 2019].map((year, i) => ({
+      date: `01.06.${year}`,
+      odometer: String(50000 + i * 20000),
+      country: "LV",
+      sortableTime: Date.UTC(year, 5, 1),
+      sourceOrder: i,
+      sourceLabel: "CSDD",
+    }));
+    const html = buildUnifiedMileageChartWrapHtml(rows, new Map());
+    expect(html).toContain(" C ");
+    expect(html).not.toContain("pdf-mileage-chart-year-band");
+  });
+});
+
+describe("monotoneCubicSvgPath", () => {
+  it("does not overshoot the y-range of each segment", () => {
+    const d = monotoneCubicSvgPath([
+      { x: 0, y: 40 },
+      { x: 10, y: 20 },
+      { x: 20, y: 10 },
+      { x: 30, y: 30 },
+    ]);
+    expect(d.startsWith("M ")).toBe(true);
+    expect(d).toContain(" C ");
+    const nums = [...d.matchAll(/-?[\d.]+/g)].map((m) => Number.parseFloat(m[0]!));
+    const ys = nums.filter((_, i) => i % 2 === 1);
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(10 - 0.05);
+    expect(Math.max(...ys)).toBeLessThanOrEqual(40 + 0.05);
+  });
+});
+
+describe("splitMileageChartRuns", () => {
+  it("starts a new run at each anomaly so the drop is not smoothed", () => {
+    const runs = splitMileageChartRuns([
+      { x: 0, y: 10, isAnomaly: false },
+      { x: 1, y: 5, isAnomaly: false },
+      { x: 2, y: 20, isAnomaly: true },
+      { x: 3, y: 18, isAnomaly: false },
+    ]);
+    expect(runs).toEqual([
+      [
+        { x: 0, y: 10 },
+        { x: 1, y: 5 },
+      ],
+      [
+        { x: 2, y: 20 },
+        { x: 3, y: 18 },
+      ],
+    ]);
   });
 });

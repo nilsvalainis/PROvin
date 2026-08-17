@@ -1,6 +1,6 @@
 /**
- * PDF / UI — nobraukuma līknes SVG (zila līnija pa reālajiem km; anomāliju punkti sarkani).
- * Odometra kritumu rāda proporcionāli uz līknes (ne tikai ar sarkano punktu).
+ * PDF / UI — nobraukuma līknes SVG (plūdaina zila līnija pa reālajiem km).
+ * Odometra kritums: taisns sarkans posms + gada josla (ne halo/punkts).
  * Teoretiskā korekcija (`reconstructTheoreticalMileagePath`) paliek vidējā gada nobraukumam, ne grafikam.
  */
 
@@ -20,7 +20,9 @@ const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 /** Minimālā horizontālā atstarpe starp gada etiķetēm (px viewBox), lai „2016”/„2017” nepārklājas. */
 const YEAR_LABEL_MIN_GAP_PX = 34;
 
-function linearSvgPath(points: { x: number; y: number }[]): string {
+type ChartXY = { x: number; y: number };
+
+function linearSvgPath(points: ChartXY[]): string {
   if (points.length === 0) return "";
   let d = `M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)}`;
   for (let i = 1; i < points.length; i++) {
@@ -28,6 +30,89 @@ function linearSvgPath(points: { x: number; y: number }[]): string {
     d += ` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
   }
   return d;
+}
+
+/**
+ * Fritsch–Carlson monotone cubic — līkne iet caur punktiem bez km pāršaušanas.
+ * Divi punkti paliek taisni; viens punkts — tukšs path.
+ */
+export function monotoneCubicSvgPath(points: ChartXY[]): string {
+  if (points.length < 2) return "";
+  if (points.length === 2) return linearSvgPath(points);
+
+  const n = points.length;
+  const dx: number[] = [];
+  const slope: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const dxi = points[i + 1]!.x - points[i]!.x;
+    const dyi = points[i + 1]!.y - points[i]!.y;
+    dx.push(dxi);
+    slope.push(Math.abs(dxi) < 1e-9 ? 0 : dyi / dxi);
+  }
+
+  const m: number[] = new Array(n);
+  m[0] = slope[0]!;
+  m[n - 1] = slope[n - 2]!;
+  for (let i = 1; i < n - 1; i++) {
+    if (slope[i - 1]! * slope[i]! <= 0) {
+      m[i] = 0;
+    } else {
+      const w1 = 2 * dx[i]! + dx[i - 1]!;
+      const w2 = dx[i]! + 2 * dx[i - 1]!;
+      const den = w1 / slope[i - 1]! + w2 / slope[i]!;
+      m[i] = den === 0 ? 0 : (w1 + w2) / den;
+    }
+  }
+
+  for (let i = 0; i < n - 1; i++) {
+    if (Math.abs(slope[i]!) < 1e-12) {
+      m[i] = 0;
+      m[i + 1] = 0;
+      continue;
+    }
+    const a = m[i]! / slope[i]!;
+    const b = m[i + 1]! / slope[i]!;
+    const s = a * a + b * b;
+    if (s > 9) {
+      const t = 3 / Math.sqrt(s);
+      m[i] = t * a * slope[i]!;
+      m[i + 1] = t * b * slope[i]!;
+    }
+  }
+
+  let d = `M ${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = points[i]!;
+    const p1 = points[i + 1]!;
+    const dxi = dx[i]!;
+    if (Math.abs(dxi) < 1e-9) {
+      d += ` L ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+      continue;
+    }
+    const c1x = p0.x + dxi / 3;
+    const c1y = p0.y + (m[i]! * dxi) / 3;
+    const c2x = p1.x - dxi / 3;
+    const c2y = p1.y - (m[i + 1]! * dxi) / 3;
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+/** Zilās līknes gabali — pārtraukums pie anomālijas, lai kritums nebūtu nogludināts. */
+export function splitMileageChartRuns(points: { x: number; y: number; isAnomaly: boolean }[]): ChartXY[][] {
+  const runs: ChartXY[][] = [];
+  let current: ChartXY[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i]!;
+    if (p.isAnomaly && i > 0) {
+      if (current.length > 0) runs.push(current);
+      current = [{ x: p.x, y: p.y }];
+    } else {
+      current.push({ x: p.x, y: p.y });
+    }
+  }
+  if (current.length > 0) runs.push(current);
+  return runs;
 }
 
 /**
@@ -162,8 +247,6 @@ export function buildUnifiedMileageChartWrapHtml(
     isAnomaly: anomalyBySourceOrder.get(s.sourceOrder) === true,
   }));
 
-  const pathPts = plotPoints.map((p) => ({ x: p.x, y: p.y }));
-  const pathD = linearSvgPath(pathPts);
   const hasAnomaly = plotPoints.some((p) => p.isAnomaly);
 
   const yearSpan = Math.max(0, yEnd - yStart);
@@ -194,8 +277,26 @@ export function buildUnifiedMileageChartWrapHtml(
     );
   }
 
+  const yearBands: string[] = [];
+  const anomalyYears = new Set<number>();
+  for (let i = 0; i < plotPoints.length; i++) {
+    if (plotPoints[i]!.isAnomaly) anomalyYears.add(series[i]!.year);
+  }
+  for (const year of [...anomalyYears].sort((a, b) => a - b)) {
+    const y0 = Date.UTC(year, 0, 1);
+    const y1 = Date.UTC(year + 1, 0, 1);
+    const from = Math.max(tMin, y0);
+    const to = Math.min(tMax, y1);
+    if (to < from) continue;
+    const x1 = xOf(from);
+    const x2 = xOf(to);
+    const w = Math.max(x2 - x1, compact ? 8 : 10);
+    yearBands.push(
+      `<rect class="pdf-mileage-chart-year-band" x="${x1.toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${plotH}" />`,
+    );
+  }
+
   const rollbackOverlays: string[] = [];
-  const anomalyMarkers: string[] = [];
   for (let i = 0; i < plotPoints.length; i++) {
     const p = plotPoints[i]!;
     if (!p.isAnomaly) continue;
@@ -205,54 +306,30 @@ export function buildUnifiedMileageChartWrapHtml(
         `<line class="pdf-mileage-chart-rollback" x1="${prev.x.toFixed(1)}" y1="${prev.y.toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" />`,
       );
     }
-    const haloR = compact ? 10 : 11;
-    const dotR = compact ? 5.5 : 6;
-    anomalyMarkers.push(
-      `<line class="pdf-mileage-chart-anomaly-pin" x1="${p.x.toFixed(1)}" y1="${(p.y + haloR + 2).toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${(padT + plotH).toFixed(1)}" />`,
-      `<circle class="pdf-mileage-chart-anomaly-halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${haloR}" />`,
-      `<circle class="pdf-mileage-chart-dot pdf-mileage-chart-dot--anomaly" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR}" />`,
-    );
   }
 
-  const dotR = series.length === 1 ? 4 : 3;
-  const maxNormalDots = compact ? 6 : 7;
-  const visibleDotSourceOrders = new Set<number>();
-  if (hasAnomaly || plotPoints.length <= maxNormalDots) {
-    for (const p of plotPoints) visibleDotSourceOrders.add(p.sourceOrder);
-  } else {
-    visibleDotSourceOrders.add(plotPoints[0]!.sourceOrder);
-    visibleDotSourceOrders.add(plotPoints[plotPoints.length - 1]!.sourceOrder);
-    const midSlots = Math.max(0, maxNormalDots - 2);
-    for (let i = 1; i <= midSlots; i++) {
-      const idx = Math.round((i * (plotPoints.length - 1)) / (midSlots + 1));
-      visibleDotSourceOrders.add(plotPoints[idx]!.sourceOrder);
-    }
-  }
-  for (const p of plotPoints) {
-    if (p.isAnomaly) visibleDotSourceOrders.add(p.sourceOrder);
-  }
+  const pathHtml = splitMileageChartRuns(plotPoints)
+    .map((run) => monotoneCubicSvgPath(run))
+    .filter((d) => d.length > 0)
+    .map((d) => `<path class="pdf-mileage-chart-path" fill="none" d="${d}" />`)
+    .join("\n  ");
 
-  const normalDots = plotPoints
-    .filter((p) => visibleDotSourceOrders.has(p.sourceOrder) && !p.isAnomaly)
-    .map((p) => {
-      return `<circle class="pdf-mileage-chart-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR}" />`;
-    })
-    .join("");
-
-  const pathHtml =
-    series.length === 1 ? "" : `<path class="pdf-mileage-chart-path" fill="none" d="${pathD}" />`;
+  const loneDot =
+    series.length === 1
+      ? `<circle class="pdf-mileage-chart-dot" cx="${plotPoints[0]!.x.toFixed(1)}" cy="${plotPoints[0]!.y.toFixed(1)}" r="4" />`
+      : "";
 
   const legendAnomaly = hasAnomaly
-    ? `<span class="pdf-mileage-chart-legend-anomaly" aria-hidden="true"><span class="pdf-mileage-chart-legend-anomaly-dot"></span><span class="pdf-mileage-chart-legend-text">Odometra anomālija</span></span>`
+    ? `<span class="pdf-mileage-chart-legend-anomaly" aria-hidden="true"><span class="pdf-mileage-chart-legend-rollback"></span><span class="pdf-mileage-chart-legend-text">Odometra anomālija</span></span>`
     : "";
 
   const svgInner = `
 <svg class="pdf-mileage-chart-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nobraukuma līkne pēc gada">
+  ${yearBands.join("\n  ")}
   ${gridLines.join("\n  ")}
-  ${rollbackOverlays.join("\n  ")}
   ${pathHtml}
-  ${normalDots}
-  ${anomalyMarkers.join("\n  ")}
+  ${rollbackOverlays.join("\n  ")}
+  ${loneDot}
   ${yearLabels.join("\n  ")}
 </svg>
 <div class="pdf-mileage-chart-legend">

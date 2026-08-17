@@ -2162,6 +2162,10 @@ ${sourceDotColorCss()}
       .pdf-mileage-chart-path{
         stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
+      .pdf-mileage-chart-year-band{
+        fill:rgba(239,68,68,0.12);stroke:none;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-mileage-chart-dot{
         fill:#fff;stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:1.75;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -2175,7 +2179,7 @@ ${sourceDotColorCss()}
         font-size:var(--pdf-fs-table);color:#64748b;
       }
       .pdf-mileage-chart-legend-line{
-        display:inline-block;width:8px;height:8px;border-radius:999px;background:${PDF_MILEAGE_CHART_LINE};
+        display:inline-block;width:14px;height:3px;border-radius:2px;background:${PDF_MILEAGE_CHART_LINE};
         flex-shrink:0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2197,29 +2201,16 @@ ${sourceDotColorCss()}
         margin:0!important;
         font-weight:500!important;
       }
-      .pdf-mileage-chart-dot--anomaly{
-        fill:#ef4444!important;stroke:#7f1d1d!important;stroke-width:2.5!important;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-mileage-chart-anomaly-halo{
-        fill:rgba(239,68,68,0.22)!important;stroke:#ef4444!important;stroke-width:2!important;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
       .pdf-mileage-chart-rollback{
-        stroke:#ef4444!important;stroke-width:3!important;stroke-dasharray:6 4;fill:none;opacity:0.95;
+        stroke:#ef4444!important;stroke-width:3!important;stroke-linecap:round;fill:none;opacity:0.95;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-chart-anomaly-pin{
-        stroke:rgba(239,68,68,0.35)!important;stroke-width:1.5!important;stroke-dasharray:3 3;fill:none;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-mileage-chart-wrap--has-anomaly .pdf-mileage-chart-path{stroke-width:2.75;}
+      .pdf-mileage-chart-wrap--has-anomaly .pdf-mileage-chart-path{stroke-width:2.6;}
       .pdf-mileage-chart-legend-anomaly{
         display:inline-flex;align-items:center;gap:5px;margin-left:14px;
       }
-      .pdf-mileage-chart-legend-anomaly-dot{
-        display:inline-block;width:10px;height:10px;border-radius:50%;
-        background:#ef4444;border:2px solid #7f1d1d;box-shadow:0 0 0 2px rgba(239,68,68,0.25);
+      .pdf-mileage-chart-legend-rollback{
+        display:inline-block;width:14px;height:3px;border-radius:2px;background:#ef4444;
         flex-shrink:0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
