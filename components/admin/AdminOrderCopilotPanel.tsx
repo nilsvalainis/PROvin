@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
-import { COPILOT_SOURCE_KEYS, VIN_REGISTRY_COPILOT_SOURCES, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
+import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import {
@@ -163,7 +163,7 @@ function loadStoredChat(sessionId: string): { messages: UiMessage[]; allowedSour
     const allowedSources = Array.isArray(parsed.allowedSources)
       ? parsed.allowedSources.filter((s): s is CopilotSourceKey => typeof s === "string" && COPILOT_SOURCE_KEYS.includes(s as CopilotSourceKey))
       : undefined;
-    return { messages, allowedSources: allowedSources?.length ? allowedSources : undefined };
+    return { messages, allowedSources };
   } catch {
     return null;
   }
@@ -249,7 +249,7 @@ export function AdminOrderCopilotPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [undoSnapshot, setUndoSnapshot] = useState<WorkspaceSourceBlocks | null>(null);
-  const [allowedSources, setAllowedSources] = useState<CopilotSourceKey[]>([...COPILOT_SOURCE_KEYS]);
+  const [allowedSources, setAllowedSources] = useState<CopilotSourceKey[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -260,19 +260,9 @@ export function AdminOrderCopilotPanel({
   useEffect(() => {
     setChatHydrated(false);
     const stored = loadStoredChat(sessionId);
+    setAllowedSources([]);
     if (stored) {
       setMessages(stored.messages);
-      if (stored.allowedSources?.length) {
-        const prev = stored.allowedSources;
-        const hadRegistry = prev.some((s) =>
-          (VIN_REGISTRY_COPILOT_SOURCES as readonly string[]).includes(s),
-        );
-        setAllowedSources(
-          hadRegistry
-            ? COPILOT_SOURCE_KEYS.filter((k) => prev.includes(k))
-            : COPILOT_SOURCE_KEYS.filter((k) => prev.includes(k) || (VIN_REGISTRY_COPILOT_SOURCES as readonly string[]).includes(k)),
-        );
-      }
     } else {
       setMessages([WELCOME_MESSAGE]);
     }
@@ -304,6 +294,7 @@ export function AdminOrderCopilotPanel({
     if (open) {
       setMinimized(false);
       setUnreadDone(false);
+      setAllowedSources([]);
     }
   }, [open]);
 
@@ -395,9 +386,7 @@ export function AdminOrderCopilotPanel({
 
   const toggleSource = useCallback((source: CopilotSourceKey) => {
     setAllowedSources((prev) => {
-      if (prev.includes(source)) {
-        return prev.length === 1 ? prev : prev.filter((item) => item !== source);
-      }
+      if (prev.includes(source)) return prev.filter((item) => item !== source);
       const next = [...prev, source];
       return COPILOT_SOURCE_KEYS.filter((item) => next.includes(item));
     });
@@ -413,7 +402,7 @@ export function AdminOrderCopilotPanel({
   );
 
   const send = useCallback(async () => {
-    if (busy || !aiAllowed) return;
+    if (busy || !aiAllowed || allowedSources.length === 0) return;
     const text = draft.trim();
     if (!text && files.length === 0) return;
 

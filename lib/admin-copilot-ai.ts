@@ -165,7 +165,7 @@ export async function runOrderCopilotAi(opts: {
   pdf?: { fileName: string; buffer: ArrayBuffer };
 }): Promise<CopilotAiResponse> {
   const summary = buildCopilotBlocksSummary(opts.sourceBlocks);
-  const allowedSources = (opts.allowedSources?.length ? opts.allowedSources : [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
+  const allowedSources = (opts.allowedSources ?? [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
   const historyLines = (opts.history ?? [])
     .slice(-8)
     .map((m) => `${m.role === "user" ? "Operator" : "Copilot"}: ${m.content.slice(0, 1500)}`)

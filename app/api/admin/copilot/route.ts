@@ -89,7 +89,7 @@ function parseAllowedSources(raw: unknown): CopilotSourceKey[] {
     if (typeof item !== "string" || !isCopilotSourceKey(item) || out.includes(item)) continue;
     out.push(item);
   }
-  return out.length > 0 ? out : [...COPILOT_SOURCE_KEYS];
+  return out;
 }
 
 function describeAction(a: CopilotAction): string {
