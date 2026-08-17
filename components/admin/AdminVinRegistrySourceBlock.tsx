@@ -31,10 +31,12 @@ import {
 } from "@/lib/admin-source-blocks";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import {
   clearVinRegistryOdometerReadings,
   countVinRegistryOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
+import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { buildCarinfoVinCheckUrl, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
 import { parseCarinfoPastedText } from "@/lib/vin-sources/carinfo-parse";
 
@@ -145,9 +147,12 @@ export function AdminVinRegistrySourceBlock({
     onChange({ ...block, incidents: incidents.map((r, i) => (i === index ? { ...r, ...patch } : r)) });
   };
 
+  const removeMileageRow = (index: number) => {
+    onChange({ ...block, mileage: dropOrResetRow(mileage, index, emptyVinRegistryMileageRow) });
+  };
+
   const removeIncidentRow = (index: number) => {
-    if (incidents.length <= 1) return;
-    onChange({ ...block, incidents: incidents.filter((_, i) => i !== index) });
+    onChange({ ...block, incidents: dropOrResetRow(incidents, index, emptyVinRegistryIncidentRow) });
   };
 
   const loadByVin = async () => {
@@ -248,9 +253,19 @@ export function AdminVinRegistrySourceBlock({
     rows: number,
   ) => (
     <div className="mt-3">
-      <label className={labelCls} htmlFor={`${blockKey}-${key}`}>
-        {fieldLabel}
-      </label>
+      <div className="mb-0.5 flex items-center gap-1">
+        <label className={`${labelCls} mb-0`} htmlFor={`${blockKey}-${key}`}>
+          {fieldLabel}
+        </label>
+        {!readOnly ? (
+          <AdminFieldResetButton
+            disabled={disabled || !block[key].trim()}
+            title="Nodzēst lauku"
+            aria-label={`Nodzēst: ${fieldLabel}`}
+            onClick={() => onChange({ ...block, [key]: "" })}
+          />
+        ) : null}
+      </div>
       {readOnly ? (
         <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
           {block[key].trim() || "—"}
@@ -332,6 +347,7 @@ export function AdminVinRegistrySourceBlock({
                 <th className={cell}>Odometrs (km)</th>
                 <th className={cell}>Valsts</th>
                 <th className={cell}>Ieraksta avots</th>
+                {!readOnly ? <th className={`w-9 ${cell}`} aria-hidden /> : null}
               </tr>
             </thead>
             <tbody>
@@ -395,6 +411,16 @@ export function AdminVinRegistrySourceBlock({
                       />
                     )}
                   </td>
+                  {!readOnly ? (
+                    <td className={`${cell} align-top`}>
+                      <AdminFieldResetButton
+                        disabled={disabled}
+                        title="Nodzēst odometra rindu"
+                        aria-label={`${label} nodzēst odometra rindu ${i + 1}`}
+                        onClick={() => removeMileageRow(i)}
+                      />
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -502,17 +528,12 @@ export function AdminVinRegistrySourceBlock({
                     </td>
                     {!readOnly ? (
                       <td className={`${cell} align-top`}>
-                        {incidents.length > 1 ? (
-                          <button
-                            type="button"
-                            disabled={disabled}
-                            className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
-                            onClick={() => removeIncidentRow(i)}
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
-                        ) : null}
+                        <AdminFieldResetButton
+                          disabled={disabled}
+                          title="Nodzēst negadījuma rindu"
+                          aria-label={`${label} nodzēst negadījuma rindu ${i + 1}`}
+                          onClick={() => removeIncidentRow(i)}
+                        />
                       </td>
                     ) : null}
                   </tr>
@@ -550,9 +571,18 @@ export function AdminVinRegistrySourceBlock({
           4,
         )}
         <div className="mt-3">
-          <label className={labelCls} htmlFor={`${blockKey}-rawUnprocessedData`}>
-            {blockKey === "carinfo" ? "RAW — ielīmē car.info lapas tekstu" : "RAW dati (avota valodā)"}
-          </label>
+          <div className="mb-0.5 flex items-center gap-1">
+            <label className={`${labelCls} mb-0`} htmlFor={`${blockKey}-rawUnprocessedData`}>
+              {blockKey === "carinfo" ? "RAW — ielīmē car.info lapas tekstu" : "RAW dati (avota valodā)"}
+            </label>
+            {!readOnly ? (
+              <AdminFieldResetButton
+                disabled={disabled || !block.rawUnprocessedData.trim()}
+                title="Nodzēst RAW"
+                onClick={() => onChange({ ...block, rawUnprocessedData: "" })}
+              />
+            ) : null}
+          </div>
           {readOnly ? (
             <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
               {block.rawUnprocessedData.trim() || "—"}

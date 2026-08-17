@@ -3,8 +3,10 @@
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
@@ -42,7 +44,17 @@ export function AdminSourceCommentField({
   return (
     <div className="w-full min-w-0">
       <div className="mb-0.5 flex flex-wrap items-center justify-between gap-2">
-        <span className="block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
+          {!readOnly ? (
+            <AdminFieldResetButton
+              disabled={disabled || !adminRichHtmlToPlainText(value).trim()}
+              title="Nodzēst komentāru"
+              aria-label={`Nodzēst: ${label}`}
+              onClick={() => onChange("")}
+            />
+          ) : null}
+        </span>
         {ai && !readOnly ? (
           <AdminAiGenerateWithPrefill
             label="Ģenerēt komentāru"
@@ -69,6 +81,7 @@ export function AdminSourceCommentField({
           onChange={onChange}
           disabled={disabled}
           compact={compact}
+          showReset={false}
           aria-label={ariaLabel}
         />
       )}

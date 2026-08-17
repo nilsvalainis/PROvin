@@ -13,6 +13,7 @@ import {
   type ReactElement,
   type TextareaHTMLAttributes,
 } from "react";
+import { AdminFieldResetButton, ADMIN_FIELD_RESET_ABS_CLASS } from "@/components/admin/AdminFieldResetButton";
 import {
   ADMIN_AI_POLISH_BTN_CLASS,
   ADMIN_AI_POLISH_SPARKLE_CLASS,
@@ -25,11 +26,16 @@ type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 export function AdminAiPolishTextareaShell({
   value,
   onPolished,
+  onClear,
+  showReset = true,
   disabled,
   children,
 }: {
   value: string;
   onPolished: (next: string) => void;
+  /** Nodzēš tikai šo lauku; ja nav, izmanto `onPolished("")`. */
+  onClear?: () => void;
+  showReset?: boolean;
   disabled?: boolean;
   children: ReactElement<TextareaProps>;
 }) {
@@ -83,12 +89,27 @@ export function AdminAiPolishTextareaShell({
   }
 
   const ta = children as ReactElement<TextareaProps>;
-  const mergedClass = [ta.props.className, "pt-8 pr-9"].filter(Boolean).join(" ");
+  const mergedClass = [ta.props.className, showReset ? "pt-8 pr-14" : "pt-8 pr-9"].filter(Boolean).join(" ");
+  const canClear = Boolean(value.trim());
 
   return (
     <div className="w-full min-w-0">
       <div className="relative">
         {cloneElement(ta, { className: mergedClass })}
+        {showReset ? (
+          <span className={ADMIN_FIELD_RESET_ABS_CLASS}>
+            <AdminFieldResetButton
+              disabled={disabled || !canClear}
+              title="Nodzēst lauku"
+              onClick={() => {
+                if (onClear) onClear();
+                else onPolished("");
+                setOriginalText("");
+                setError(null);
+              }}
+            />
+          </span>
+        ) : null}
         <button
           type="button"
           className={ADMIN_AI_POLISH_BTN_CLASS}

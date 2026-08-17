@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import {
   AI_CONTEXT_RAW_FIELD_LABEL,
   AI_CONTEXT_RAW_MAX_LEN,
@@ -27,9 +28,18 @@ export function AdminAiContextRawField({
 }: Props) {
   return (
     <div className="mt-3 border-t border-slate-200/80 pt-3">
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-        {AI_CONTEXT_RAW_FIELD_LABEL}
-      </p>
+      <div className="mb-1 flex items-center gap-1">
+        <p className="min-w-0 flex-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          {AI_CONTEXT_RAW_FIELD_LABEL}
+        </p>
+        {!readOnly ? (
+          <AdminFieldResetButton
+            disabled={disabled || !value.trim()}
+            title="Nodzēst AI kontekstu"
+            onClick={() => onChange("")}
+          />
+        ) : null}
+      </div>
       <p className="mb-1.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
         Tiek nodots tikai AI ✨ ģenerēšanai; netiek drukāts klienta PDF.
       </p>

@@ -57,10 +57,12 @@ import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle"
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import {
   clearVendorOdometerReadings,
   countVendorOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
+import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -148,6 +150,12 @@ export function AdminVendorAvotuSourceBlock({
     });
   };
 
+  const removeMileageRow = (index: number) => {
+    const next = dropOrResetRow(serviceHistory, index, emptyAutoRecordsServiceRow);
+    const data = next.filter(autoRecordsRowHasData);
+    onChange({ ...block, serviceHistory: data.length > 0 ? next : [emptyAutoRecordsServiceRow()] });
+  };
+
   const setIncidentRow = (index: number, patch: Partial<LtabIncidentRow>) => {
     const rows = incidents.map((r, i) => (i === index ? { ...r, ...patch } : r));
     onChange({ ...block, incidents: rows });
@@ -158,8 +166,7 @@ export function AdminVendorAvotuSourceBlock({
   };
 
   const removeIncidentRow = (index: number) => {
-    if (incidents.length <= 1) return;
-    onChange({ ...block, incidents: incidents.filter((_, i) => i !== index) });
+    onChange({ ...block, incidents: dropOrResetRow(incidents, index, emptyLtabRow) });
   };
 
   const idBase = sectionIndex != null ? `${blockKey}-s${sectionIndex}` : blockKey;
@@ -219,14 +226,23 @@ export function AdminVendorAvotuSourceBlock({
               />
             ) : null}
             <div className="mb-2">
+            <div className="mb-0.5 flex items-center gap-1">
             <label
-              className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
+              className="block text-[10px] font-medium text-[var(--color-provin-muted)]"
               htmlFor={`${idBase}-mileage-paste-raw`}
             >
               {blockKey === "carvertical"
                 ? "CarVertical — odometra žurnāls (iekopēšanai)"
                 : "AutoDNA — transportlīdzekļa vēsture (iekopēšanai)"}
             </label>
+            {!readOnly ? (
+              <AdminFieldResetButton
+                disabled={disabled || !(block.mileagePasteRaw ?? "").trim()}
+                title="Nodzēst iekopējumu"
+                onClick={() => onChange({ ...block, mileagePasteRaw: "" })}
+              />
+            ) : null}
+            </div>
             {readOnly ? (
               <div
                 id={`${idBase}-mileage-paste-raw`}
@@ -305,6 +321,7 @@ export function AdminVendorAvotuSourceBlock({
                 <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
                   Valsts
                 </th>
+                {!readOnly ? <th className={`w-9 ${mileCell}`} aria-hidden /> : null}
               </tr>
             </thead>
             <tbody>
@@ -388,6 +405,16 @@ export function AdminVendorAvotuSourceBlock({
                       />
                     )}
                   </td>
+                  {!readOnly ? (
+                    <td className={`${mileCell} align-top`}>
+                      <AdminFieldResetButton
+                        disabled={disabled}
+                        title="Nodzēst odometra rindu"
+                        aria-label={`${blockKey} nodzēst odometra rindu ${i + 1}`}
+                        onClick={() => removeMileageRow(i)}
+                      />
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -565,17 +592,12 @@ export function AdminVendorAvotuSourceBlock({
                     </td>
                     {!readOnly ? (
                       <td className={`${mileCell} align-top`}>
-                        {incidents.length > 1 ? (
-                          <button
-                            type="button"
-                            disabled={disabled}
-                            className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
-                            onClick={() => removeIncidentRow(ri)}
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
-                        ) : null}
+                        <AdminFieldResetButton
+                          disabled={disabled}
+                          title="Nodzēst negadījuma rindu"
+                          aria-label={`Nodzēst negadījuma rindu, ${blockKey}, ${ri + 1}`}
+                          onClick={() => removeIncidentRow(ri)}
+                        />
                       </td>
                     ) : null}
                       </tr>

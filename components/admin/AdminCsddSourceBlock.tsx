@@ -45,10 +45,12 @@ import {
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import {
   clearCsddOdometerReadings,
   countCsddOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
+import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { AlertTriangle } from "lucide-react";
 
 const inp =
@@ -163,6 +165,14 @@ export function AdminCsddSourceBlock({
     });
   };
 
+  const removeMileageRow = (index: number) => {
+    const base = value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
+    onChange({
+      ...value,
+      mileageHistory: finalizeMileageHistory(dropOrResetRow(base, index, emptyCsddMileageRow)),
+    });
+  };
+
   return (
     <AdminCollapsibleShell
       sessionId={sessionId}
@@ -197,12 +207,21 @@ export function AdminCsddSourceBlock({
         />
       ) : null}
       <div className="mb-2 min-w-0">
+        <div className="mb-0.5 flex items-center gap-1">
         <label
-          className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
+          className="block text-[10px] font-medium text-[var(--color-provin-muted)]"
           htmlFor="csdd_raw_data"
         >
           CSDD Neapstrādātie dati (Paste here)
         </label>
+        {!readOnly ? (
+          <AdminFieldResetButton
+            disabled={disabled || !value.rawUnprocessedData.trim()}
+            title="Nodzēst RAW"
+            onClick={() => onChange({ ...value, rawUnprocessedData: "" })}
+          />
+        ) : null}
+        </div>
         {readOnly ? (
           <div className="max-h-[480px] min-h-[120px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
             {value.rawUnprocessedData.trim() ? (
@@ -215,6 +234,7 @@ export function AdminCsddSourceBlock({
           <AdminAiPolishTextareaShell
             value={value.rawUnprocessedData}
             onPolished={(next) => handleRawInput(next)}
+            showReset={false}
             disabled={disabled}
           >
             <textarea
@@ -379,6 +399,7 @@ export function AdminCsddSourceBlock({
                 <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
                   Valsts
                 </th>
+                {!readOnly ? <th className={`w-9 ${mileCell}`} aria-hidden /> : null}
               </tr>
             </thead>
             <tbody>
@@ -460,6 +481,16 @@ export function AdminCsddSourceBlock({
                       />
                     )}
                   </td>
+                  {!readOnly ? (
+                    <td className={`${mileCell} align-top`}>
+                      <AdminFieldResetButton
+                        disabled={disabled}
+                        title="Nodzēst odometra rindu"
+                        aria-label={`Nodzēst odometra rindu ${i + 1}`}
+                        onClick={() => removeMileageRow(i)}
+                      />
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

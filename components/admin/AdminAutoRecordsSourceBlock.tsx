@@ -66,10 +66,12 @@ import {
   emptyAutoRecordsPhotoGroup,
 } from "@/lib/auto-records-photo-types";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import {
   clearAutoRecordsOdometerReadings,
   countAutoRecordsOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
+import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 
 const DEALER_ARIA = "Oficiālā dīlera dati";
 
@@ -178,6 +180,13 @@ export function AdminAutoRecordsSourceBlock({
     });
   };
 
+  const removeRow = (index: number) => {
+    const rows = value.serviceHistory.length > 0 ? value.serviceHistory : [emptyAutoRecordsServiceRow()];
+    const next = dropOrResetRow(rows, index, emptyAutoRecordsServiceRow);
+    const data = next.filter(autoRecordsRowHasData);
+    onChange({ ...value, serviceHistory: data.length > 0 ? next : [emptyAutoRecordsServiceRow()] });
+  };
+
   const workRows =
     (value.serviceWorks ?? []).length > 0
       ? (value.serviceWorks ?? [])
@@ -229,9 +238,18 @@ export function AdminAutoRecordsSourceBlock({
               applyPatchedBlocks={applyPatchedBlocks}
             />
           ) : null}
-          <label className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+          <div className="mb-0.5 flex items-center gap-1">
+          <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
             Paste RAW data here
           </label>
+          {!readOnly ? (
+            <AdminFieldResetButton
+              disabled={disabled || !value.rawUnprocessedData.trim()}
+              title="Nodzēst RAW"
+              onClick={() => onChange({ ...value, rawUnprocessedData: "" })}
+            />
+          ) : null}
+          </div>
           {readOnly ? (
             <div className="mb-2 min-h-[72px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
               {value.rawUnprocessedData.trim() ? value.rawUnprocessedData : <span className="text-slate-400">—</span>}
@@ -240,6 +258,7 @@ export function AdminAutoRecordsSourceBlock({
             <AdminAiPolishTextareaShell
               value={value.rawUnprocessedData}
               onPolished={(next) => handleRaw(next)}
+              showReset={false}
               disabled={disabled}
             >
               <textarea
@@ -282,6 +301,7 @@ export function AdminAutoRecordsSourceBlock({
                   <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}>
                     Valsts
                   </th>
+                  {!readOnly ? <th className={`w-9 ${mileCell}`} aria-hidden /> : null}
                 </tr>
               </thead>
               <tbody>
@@ -365,6 +385,16 @@ export function AdminAutoRecordsSourceBlock({
                         />
                       )}
                     </td>
+                    {!readOnly ? (
+                      <td className={`${mileCell} align-top`}>
+                        <AdminFieldResetButton
+                          disabled={disabled}
+                          title="Nodzēst odometra rindu"
+                          aria-label={`${DEALER_ARIA} nodzēst odometra rindu ${i + 1}`}
+                          onClick={() => removeRow(i)}
+                        />
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -542,17 +572,12 @@ export function AdminAutoRecordsSourceBlock({
                     </td>
                     {!readOnly ? (
                       <td className={`${mileCell} align-top`}>
-                        {!disabled ? (
-                          <button
-                            type="button"
-                            disabled={disabled}
-                            className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
-                            onClick={() => removeWorkRow(i)}
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
-                        ) : null}
+                        <AdminFieldResetButton
+                          disabled={disabled}
+                          title="Nodzēst servisa rindu"
+                          aria-label={`${DEALER_ARIA} nodzēst servisa rindu ${i + 1}`}
+                          onClick={() => removeWorkRow(i)}
+                        />
                       </td>
                     ) : null}
                   </tr>

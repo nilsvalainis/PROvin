@@ -35,9 +35,11 @@ import {
   isIncidentDataUnavailableText,
 } from "@/lib/admin-incident-field-presets";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { emptyLtabRow } from "@/lib/admin-source-blocks";
+import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import {
   LTAB_COMMENT_TEMPLATES,
   applyLtabCommentTemplate,
@@ -88,8 +90,8 @@ export function AdminLtabSourceBlock({
   };
 
   const removeRow = (index: number) => {
-    if (value.rows.length <= 1) return;
-    onChange({ ...value, rows: value.rows.filter((_, i) => i !== index) });
+    const rows = value.rows.length > 0 ? value.rows : [emptyLtabRow()];
+    onChange({ ...value, rows: dropOrResetRow(rows, index, emptyLtabRow) });
   };
 
   const cert: LtabCertificate = value.certificate ?? {
@@ -121,7 +123,7 @@ export function AdminLtabSourceBlock({
   };
 
   const removeClaim = (index: number) => {
-    patchCert({ claims: cert.claims.filter((_, i) => i !== index) });
+    patchCert({ claims: dropOrResetRow(cert.claims, index, emptyLtabCertificateClaim) });
   };
 
   const showCertificate = ltabCertificateHasContent(value.certificate) || !readOnly;
@@ -250,17 +252,12 @@ export function AdminLtabSourceBlock({
                       </td>
                       {!readOnly ? (
                         <td className={`${mileCell} align-top`}>
-                          {value.rows.length > 1 ? (
-                            <button
-                              type="button"
-                              disabled={disabled}
-                              className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
-                              onClick={() => removeRow(ri)}
-                              title="Noņemt rindu"
-                            >
-                              ×
-                            </button>
-                          ) : null}
+                          <AdminFieldResetButton
+                            disabled={disabled}
+                            title="Nodzēst negadījuma rindu"
+                            aria-label={`Nodzēst LTAB rindu ${ri + 1}`}
+                            onClick={() => removeRow(ri)}
+                          />
                         </td>
                       ) : null}
                     </tr>
@@ -466,18 +463,12 @@ export function AdminLtabSourceBlock({
                                 </div>
                                 {!readOnly ? (
                                   <div>
-                                    {cert.claims.length > 1 ? (
-                                      <button
-                                        type="button"
-                                        disabled={disabled}
-                                        className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
-                                        onClick={() => removeClaim(ri)}
-                                        title="Noņemt rindu"
-                                        aria-label={`Noņemt LTAB izziņas rindu ${ri + 1}`}
-                                      >
-                                        ×
-                                      </button>
-                                    ) : null}
+                                    <AdminFieldResetButton
+                                      disabled={disabled}
+                                      title="Nodzēst izziņas rindu"
+                                      aria-label={`Nodzēst LTAB izziņas rindu ${ri + 1}`}
+                                      onClick={() => removeClaim(ri)}
+                                    />
                                   </div>
                                 ) : null}
                               </li>

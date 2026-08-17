@@ -6,6 +6,7 @@
 
 import { useCallback, useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
+import { AdminFieldResetButton, ADMIN_FIELD_RESET_ABS_CLASS } from "@/components/admin/AdminFieldResetButton";
 import { AdminRichCommentField } from "@/components/admin/AdminInternalRichCommentEditor";
 import {
   ADMIN_AI_POLISH_BTN_CLASS,
@@ -20,6 +21,8 @@ type Props = {
   onChange: (html: string) => void;
   disabled?: boolean;
   compact?: boolean;
+  /** False, ja × jau ir pie lauka etiķetes (piem. avota komentāri). */
+  showReset?: boolean;
   "aria-label"?: string;
 };
 
@@ -28,6 +31,7 @@ export function AdminAiPolishRichCommentShell({
   onChange,
   disabled,
   compact,
+  showReset = true,
   "aria-label": ariaLabel,
 }: Props) {
   const [loading, setLoading] = useState(false);
@@ -77,15 +81,31 @@ export function AdminAiPolishRichCommentShell({
     setOriginalHtml("");
   }, [originalHtml, onChange]);
 
+  const canClear = Boolean(plainForPolish.trim());
+
   return (
     <div className="w-full min-w-0">
-      <div className={`relative ${compact ? "rounded-md pt-8 pr-8" : "rounded-md pt-8 pr-9"}`}>
+      <div className={`relative rounded-md pt-8 ${showReset ? "pr-14" : compact ? "pr-8" : "pr-9"}`}>
         <AdminRichCommentField
           variant={compact ? "compact" : "default"}
           value={value}
           onChange={onChange}
           aria-label={ariaLabel}
         />
+        {showReset ? (
+          <span className={ADMIN_FIELD_RESET_ABS_CLASS}>
+            <AdminFieldResetButton
+              disabled={disabled || !canClear}
+              title="Nodzēst komentāru"
+              aria-label={ariaLabel ? `Nodzēst: ${ariaLabel}` : "Nodzēst komentāru"}
+              onClick={() => {
+                onChange("");
+                setOriginalHtml("");
+                setError(null);
+              }}
+            />
+          </span>
+        ) : null}
         <button
           type="button"
           className={ADMIN_AI_POLISH_BTN_CLASS}

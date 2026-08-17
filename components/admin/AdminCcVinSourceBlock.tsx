@@ -10,6 +10,7 @@
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
@@ -75,9 +76,6 @@ const headRow =
 
 const addBtn =
   "mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50";
-
-const removeBtn =
-  "rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40";
 
 type Props = {
   value: CcVinBlockState;
@@ -328,19 +326,16 @@ export function AdminCcVinSourceBlock({
                     {!readOnly ? (
                       <td className={`${cell} align-top`}>
                         {editable ? (
-                          <button
-                            type="button"
-                            className={removeBtn}
+                          <AdminFieldResetButton
+                            title="Nodzēst rindu"
+                            aria-label={`${ARIA} — nodzēst pārbaudi ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "checks",
                                 dropRow(checkRows, i, emptyCcVinCheckRow),
                               )
                             }
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
+                          />
                         ) : null}
                       </td>
                     ) : null}
@@ -509,19 +504,16 @@ export function AdminCcVinSourceBlock({
                     {!readOnly ? (
                       <td className={`${cell} align-top`}>
                         {editable ? (
-                          <button
-                            type="button"
-                            className={removeBtn}
+                          <AdminFieldResetButton
+                            title="Nodzēst odometra rindu"
+                            aria-label={`${ARIA} — nodzēst odometra rindu ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "mileage",
                                 dropRow(mileageRows, i, emptyCcVinMileageRow),
                               )
                             }
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
+                          />
                         ) : null}
                       </td>
                     ) : null}
@@ -622,19 +614,16 @@ export function AdminCcVinSourceBlock({
                     {!readOnly ? (
                       <td className={`${cell} align-top`}>
                         {editable ? (
-                          <button
-                            type="button"
-                            className={removeBtn}
+                          <AdminFieldResetButton
+                            title="Nodzēst rindu"
+                            aria-label={`${ARIA} — nodzēst bojājumu ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "damages",
                                 dropRow(damageRows, i, emptyCcVinDamageRow),
                               )
                             }
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
+                          />
                         ) : null}
                       </td>
                     ) : null}
@@ -725,19 +714,16 @@ export function AdminCcVinSourceBlock({
                         {!readOnly ? (
                           <td className={`${cell} align-top`}>
                             {editable ? (
-                              <button
-                                type="button"
-                                className={removeBtn}
+                              <AdminFieldResetButton
+                                title="Nodzēst rindu"
+                                aria-label={`${ARIA} — nodzēst ierakstu ${i + 1}`}
                                 onClick={() =>
                                   setRows(
                                     key,
                                     dropRow(rows, i, emptyCcVinRecordRow),
                                   )
                                 }
-                                title="Noņemt rindu"
-                              >
-                                ×
-                              </button>
+                              />
                             ) : null}
                           </td>
                         ) : null}
@@ -820,19 +806,16 @@ export function AdminCcVinSourceBlock({
                     {!readOnly ? (
                       <td className={`${cell} align-top`}>
                         {editable ? (
-                          <button
-                            type="button"
-                            className={removeBtn}
+                          <AdminFieldResetButton
+                            title="Nodzēst rindu"
+                            aria-label={`${ARIA} — nodzēst īpašumtiesības ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "titles",
                                 dropRow(titleRows, i, emptyCcVinTitleRow),
                               )
                             }
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
+                          />
                         ) : null}
                       </td>
                     ) : null}
@@ -927,19 +910,16 @@ export function AdminCcVinSourceBlock({
                     {!readOnly ? (
                       <td className={`${cell} align-top`}>
                         {editable ? (
-                          <button
-                            type="button"
-                            className={removeBtn}
+                          <AdminFieldResetButton
+                            title="Nodzēst rindu"
+                            aria-label={`${ARIA} — nodzēst pārdošanu ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "sales",
                                 dropRow(saleRows, i, emptyCcVinSaleRow),
                               )
                             }
-                            title="Noņemt rindu"
-                          >
-                            ×
-                          </button>
+                          />
                         ) : null}
                       </td>
                     ) : null}
