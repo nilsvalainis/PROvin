@@ -165,7 +165,7 @@ function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
   return {
     id: "owners",
     label: "Īpašnieku skaits",
-    value: String(syn.totalCount),
+    value: pluralLv(syn.totalCount, "īpašnieks", "īpašnieki"),
     note: syn.noteLine,
     countryStats: formatOwnerCountCountryStats(syn.chosen),
     tone: "ok",
