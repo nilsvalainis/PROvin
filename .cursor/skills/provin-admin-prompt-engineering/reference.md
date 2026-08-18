@@ -38,7 +38,7 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
 ### C. HIGH FINANCIAL RISK ENGINE SEGMENTS (RED FLAGS)
 
 - **BMW N57 (3.0D Single/Twin Turbo):** Strict financial red flag for used buyers. Disastrous rates of catastrophic timing chain snaps and rapid spun rod bearings. *Critical Mechanic Error:* When doing preventative chain repairs, mechanics routinely omit replacing the oil pump. A worn oil pump causes immediate low oil pressure and total block destruction (5,000–10,000 EUR loss) shortly after the repair. Advise switching to Volvo or Mercedes alternatives rather than absorbing N57 risks.
-- **BMW M57 / M57TU / M57T2 (E60/E61 525d/530d, 3.0D, chain at FRONT):** Do NOT apply N47/N57 rear-chain narrative. 300k km with dense DE service is typical working life, not end-of-life (often 400–500k). Primary near-term cost on **E61 Touring** is factory rear air suspension (bags/compressor), not the engine. Typical M57 upkeep at 250–350k: oil-filter housing gasket, valve cover, vacuum pump, turbo lines, viscous fan clutch (hidromufte), water pump/thermostat; swirl flaps still likely on 2008 M57T2 (unproven ≠ not done). ZF 6HP19 “lifetime” ATF is a myth — fluid+filter every 60–80k. Age-related E60/E61 electronics (ELV, FRM, CIC) are long-term fussiness, not proof the car is failing now. If equipment list supports it, name **absent** expensive options as a TCO strength: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive. Lifestyle Edition = leather/comfort, not chassis hydraulics.
+- **BMW M57 / M57TU / M57T2 (E60/E61 525d/530d, 3.0D, chain at FRONT):** Do NOT apply N47/N57 rear-chain narrative. 300k km with dense DE service is typical working life, not end-of-life (often 400–500k). Primary near-term cost on **E61 Touring** is factory rear air suspension (bags/compressor), not the engine. Typical M57 upkeep at 250–350k: oil-filter housing gasket, valve cover, vacuum pump, turbo lines, viscous fan clutch (hidromufte), water pump/thermostat; swirl flaps still likely on 2008 M57T2 (unproven ≠ not done). ZF 6HP19 “lifetime” ATF is a myth — fluid+filter every 60–80k. Age-related E60/E61 electronics (ELV, FRM, CIC) are long-term age peculiarities, not proof the car is failing now. If equipment list supports it, name **absent** expensive options as a TCO strength: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive. Lifestyle Edition = leather/comfort, not chassis hydraulics.
 - **BMW M47 vs N47 (2.0D):** While N47 chains stretch early (100k-150k km), a clean, well-maintained N47 requiring a chain service is mechanically superior to a completely run-down, end-of-life M47 unit.
 - **VW/Audi 1.8 & 2.0 TFSI (2008-2013):** Massive structural design flaw leading to extreme oil consumption ("rij eļļu nejēgā"), skipped timing chains, and premature cylinder head cracking. Avoid entirely.
 - **Volvo 2.4 D5 Biturbo (2009+ / Black Engine Cover - 151kW, 158kW, 162kW):** High risk of structural engine block cracks between cylinders. Silent symptoms: continuous unexplained coolant loss and the vehicle's heating system suddenly blowing cold air during active driving. Results in a write-off of the engine block.
@@ -70,34 +70,40 @@ Whenever prompts generate **2. Kopsavilkums** or **Ieteikumi klātienes apskatei
 - Convert known model/powertrain weaknesses into a **concrete technical risk verdict for this exact car** (engine, gearbox, chain/belt, turbo, AWD, cooling, HV battery, reducer, mechatronics, etc.), not only generic reputation.
 - Classify each relevant aggregate as one of:
   - **primary purchase risk / financial blocker**
-  - **medium maintenance risk**
-  - **inspection control point only**
+  - **popular problem at this mileage** (never „medium maintenance risk” + a price)
+  - **check in person only**
 - Tie every important aggregate risk to a **specific verification action** in the inspection field: cold-start noise, shift quality, vibration, leak traces, thermal behavior, fault scan, boost pull, HV diagnostics, DC charging test, underbody inspection, etc.
-- In summary, name which aggregate is most likely to generate the biggest near-term cost and whether that changes the buy / inspect / avoid recommendation — **without EUR figures**. Listing/market/repair prices stay in the price field and technical-risks section.
+- In summary, name which aggregate is most likely to generate the biggest near-term issue and whether that changes the buy / inspect / avoid recommendation — **without EUR figures**. Listing/market prices stay in the price field; recorded insurance EUR in incidents. **Never** invented repair/service prices in technical risks or any other comment.
 
 ## 1c. AGGREGATE IDENTIFICATION & MILEAGE-BAND CALIBRATION (mandatory)
 
 Deployed text: `AI_POWERTRAIN_IDENTIFICATION_RULES` + `AI_MILEAGE_BAND_RISK_RULES` in `lib/source-summary-comment-format.ts`, injected into `PROVIN_FIELD_AGENT_SYSTEM` and `PROVIN_EXPERT_SYSTEM_PROMPT`. Pre-digested vehicle parameters: `buildAggregateIdentificationBrief()` in `lib/admin-ai-aggregate-identification.ts` (used by technical risks + inspection prompts).
 
-**1. Tehnisko risku analīze is the highest-value comment in the report** — the agent must behave like a senior technical expert on that exact brand/model/generation/engine/gearbox, not a generic used-car reviewer. Default 350–800 character brevity **does not apply**. Target **8–12 detailed paragraphs** (see `AI_TECHNICAL_RISKS_FLAGSHIP_RULES`). Static packs cover only a few families; for everything else **web-search European forums first** (`AI_TECHNICAL_RISKS_RESEARCH_RULES`), then write. Weak output = generic EGR/DPF/turbo blurb. Strong output = identified aggregate, mileage-band meaning for THAT family, expensive options that are **absent**, 1–2 near-term cost drivers, each distinct system with EUR, long-term age fussiness separated from “this car will fail soon”, hedged outlook from THIS car’s data.
+**1. Tehnisko risku analīze is the highest-value comment in the report** — the agent must behave like a senior technical expert on that exact brand/model/generation/engine/gearbox, not a generic used-car reviewer. Default 350–800 character brevity **does not apply**. Target **8–12 detailed paragraphs** (see `AI_TECHNICAL_RISKS_FLAGSHIP_RULES`). Static packs cover only a few generations; for everything else **web-search European forums first** (`AI_TECHNICAL_RISKS_RESEARCH_RULES`), then write. Weak output = generic EGR/DPF/turbo blurb. Strong output = identified aggregate, mileage-band meaning for **this engine / this generation**, expensive options that are **absent**, 1–2 near-term issues classified as **ir / nav populāra problēma** (**no EUR quotes**), each distinct system, long-term age peculiarities separated from “this car will fail soon”, hedged outlook from THIS car’s data.
+
+Client vocabulary (mandatory): never „Baltija” (say **Latvija**, or **Lietuva** / **Igaunija** if that is the origin); never „saime”; never paper-calques („atteice”, „kontrolpunkts”, „sviedru sajūgs”, „tuvākā laika izdevums”, „vecuma logs”, „kaprīze”); **Quattro** not „Quattro trakts”; **kardāna krustiņi** not „kardāna krusteniskie”; **karājošais gultnis** not „centra gultnis”; never „vidējs uzturēšanas risks”.
+
+Wrong: `Quattro trakts ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krusteniskie un centra gultnis pie šī nobraukuma ir vidējs uzturēšanas risks (orientējoši 300-600 €).`
+
+Right: `Quattro ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krustiņi un karājošais gultnis pie šī nobraukuma nav populāra problēma.`
 
 Identification before risk:
 
-- Derive in order: model **generation / facelift** (make + model + first registration year) → **engine family** (fuel + cm³ + kW + Euro class) → **transmission type** (manual / torque-converter AT / dry or wet dual-clutch / CVT / EV reducer) → **drive layout** (FWD / RWD / AWD architecture: Haldex, Torsen, 4Matic, xDrive).
+- Derive in order: model **generation / facelift** (make + model + first registration year) → **engine type** (fuel + cm³ + kW + Euro class) → **transmission type** (manual / torque-converter AT / dry or wet dual-clutch / CVT / EV reducer) → **drive layout** (FWD / RWD / AWD architecture: Haldex, Torsen, 4Matic, xDrive). Never say „saime” in client Latvian.
 - Evidence priority: dealer/Outvin/AUTO RECORDS **engine code** + type code → CSDD technical parameters → VIN → listing badges (quattro, 4Matic, xDrive, DSG, Tiptronic) → service records naming replaced parts.
 - No engine code in sources → name **1–2 ranked candidates as a hypothesis** plus how to confirm (VIN decode, engine bay marking, gearbox plate, service invoices). An inferred code must never be written as a registry-read fact.
 - Same displacement/power mapping to materially different architectures (chain vs belt, dry vs wet DCT, with/without DPF) → state it and split into **max two** scenarios.
-- Too little data → analyze at **family level** and say the exact aggregate is undetermined; never invent codes.
+- Too little data → analyze **pēc pieejamajiem datiem, bez precīza koda** and say the exact aggregate is undetermined; never invent codes.
 - Risks apply only to the identified combination — never import another engine version's or generation's failure modes because the brand matches.
 
 Mileage-band calibration (anti-exaggeration):
 
 - Fix approximate **current km** (latest credible odometer) and **km/year**; if odometer data conflicts, work with a stated range.
-- Split every aggregate risk into: (1) resource typically already consumed at this km/age → must be evidenced in service history; (2) **next window** ~20–40k km or 1–2 years → the buyer's real cost; (3) distant resource → brief or omitted.
-- A failure typical at 250k km must not be presented as an active threat at 90k km. **Max 1–2 primary purchase risks**; everything else is medium maintenance risk or an inspection control point.
+- Split every aggregate risk into: (1) resource typically already consumed at this km/age → must be evidenced in service history; (2) **next stretch** ~20–40k km or 1–2 years → the work the buyer should expect next; (3) distant resource → brief or omitted.
+- A failure typical at 250k km must not be presented as an active threat at 90k km. **Max 1–2 primary purchase risks**; everything else is a popular-problem question or something to check in person.
 - Age ≠ mileage: rubber, plastics, cooling, belts, hoses degrade on time — a low-km old car can be worse than a high-km highway car. Combine with §2 motorstundas math.
 - Evidence lowers risk: a documented chain / DCT oil / belt / water pump job is a **favourable signal in the data**; missing records = **unproven**, not "not done".
-- Prioritize by **probability × EUR**; EUR bands always indicative (Baltic service level).
+- Prioritize by **probability and whether it is a popular problem** at this mileage. **Never** output approximate repair/service EUR in comments (no „orientējoši … €”, no parenthetical bands, no „Baltijas servisa līmenis”). EUR is allowed only for recorded insurance claims and listing/market prices in „Cenas vērtējums”.
 - When the picture is relatively favourable, the agent must say so (hedged, PROVIN has not inspected the car physically). Fabricated red flags are as damaging as silence about real risks.
 
 ## 2. DRIVING PROFILE & MOTORSTUNDAS MATH
@@ -112,6 +118,6 @@ Instruct the backend agent to always run this factual analysis when calculating 
 ## 3. REGIONAL & FORENSIC SIGNATURES
 
 - **DE (Germany):** Autobahn stress profile. Pristine undercarriages (no rust except alpine regions), but heavy stone-chip density on front fascia/windshields. If completely flawless, check for post-accident resprays.
-- **Baltics (LV, LT, EE):** Corrosion and structural stress profile. Heavy salt rust on brake lines and suspension components. Extreme wear on bushings from poor roads. High risk of commercial fleet history and VAT rotation schemes. Lithuania is a high-risk hub for fast-turnaround rebuilds of USA salvage imports.
+- **Baltics (LV, LT, EE):** Corrosion and structural stress profile. Heavy salt rust on brake lines and suspension components. Extreme wear on bushings from poor roads. High risk of commercial fleet history and VAT rotation schemes. Lithuania is a high-risk hub for fast-turnaround rebuilds of USA salvage imports. **Client copy:** name **Latvija**, **Lietuva**, or **Igaunija** — NEVER „Baltija”.
 - **Southern EU (FR, IT, ES):** Cosmetic and thermal wear profile. Clear coat failure, brittle door weatherstrips, dried interior plastics/Artico trim. High density of parking scrapes, missing service history/gaps, but absolute zero rust and immaculate suspension links.
 - **USA/Canada:** Salvage framework. Mandate verification of raw Copart/IAAI auction photos to evaluate structural repair integrity and lighting/navigation conversion codes.

@@ -70,7 +70,35 @@
     "id": "tech-risks-structure-ok",
     "field": "technical_risks",
     "expectPass": true,
-    "text": "**Agregātu identifikācija.** Dīlera datos dzinējs ir rindas sešinieka dīzelis ar sadales ķēdi priekšpusē, hidrotransformatora automātisko kārbu un aizmugures piedziņu. Šajā nobraukuma posmā tas ir ierasts darba mūžs šai saimei, ne resursa gals, ja eļļas intervāli bijuši šosejas profilam atbilstoši.\n\n**Kas NAV dārgs risks.** Šīs paaudzes slavenā aizmugurējās ķēdes kaite uz šo motoru neattiecas. Aprīkojuma sarakstā nav aktīvās stūres, hidraulisko stabilizatoru un premium audio pastiprinātāja, kas 15-20 gadu vecumā kļūst uzturēšanā nesamērīgi dārgi.\n\n**Tuvākais izmaksu punkts.** Universāļa rūpnīcas aizmugures pneimatika šajā vecumā ir galvenais rēķins: spilveni un kompresors orientējoši **400-800 €** un **250-500 €**. Ja diagnostikā tas jau fiksēts, tas ir pirmais jautājums pārdevējam, ne arguments pret pašu motoru.\n\n**Motora mehānika.** Tipiski eļļas filtra korpusa un vāka blīves, dzesēšanas plastmasa un ventilatora hidromufte (**100-350 €** joslā). Dokumentēta skriemeļa maiņa ir labvēlīgs signāls datos; trūkstošu ATF maiņu formulē kā nepierādītu.\n\n**Ieplūde un izplūde.** Virpuļvārsti un EGR paliek vidējs uzturēšanas risks; zema dūmainība tehniskajā apskatē ir labs fona signāls par DPF un turbīnu, ne garantija.\n\n**Kārba.** Hidrotransformators ir uzticamāks par divsajūgu, bet „mūža eļļa” šajā posmā ir paaugstināts risks. Profilakse **280-450 €**; mehatronika, ja kadreiz, krietni dārgāka.\n\n**Elektronika kā vecuma īpatnība.** Stūres slēdzene, gaismas un logu moduļi šajā paaudzē kaprīzē pēc laika, ne pēc km. Tas ir ilgtermiņa raksturs, ne pierādījums, ka šis eksemplārs tuvākajā laikā būs problemātisks.\n\n**Prioritātes.** Galvenais pirkuma punkts ir piekare, ja nav novērsta; motors pēc datiem ir kontrolpunkts. Pēc pieejamajiem datiem auto izskatās kopts, ar atrunu ka PROVIN to fiziski nav apskatījis."
+    "text": "**Agregātu identifikācija.** Dīlera datos dzinējs ir rindas sešinieka dīzelis ar sadales ķēdi priekšpusē, hidrotransformatora automātisko kārbu un aizmugures piedziņu. Šajā nobraukuma posmā tas ir ierasts darba mūžs šai paaudzei, ne resursa gals, ja eļļas intervāli bijuši šosejas profilam atbilstoši. Precīzs kods saskan ar CSDD tilpumu un jaudu, tāpēc hipotēzes par citu konstrukciju šeit nav vajadzīgas.\n\n**Kas NAV dārgs risks.** Šīs paaudzes slavenā aizmugurējās ķēdes kaite uz šo motoru neattiecas. Aprīkojuma sarakstā nav aktīvās stūres, hidraulisko stabilizatoru un premium audio pastiprinātāja, kas 15-20 gadu vecumā kļūst uzturēšanā nesamērīgi dārgi. Tas ir pircējam labvēlīgs signāls datos, ne pierādījums, ka auto ir bez tādām īpatnībām.\n\n**Tuvākais punkts.** Universāļa rūpnīcas aizmugures pneimatika šajā vecumā ir populāra problēma: spilveni un kompresors. Ja diagnostikā tas jau fiksēts, tas ir pirmais jautājums pārdevējam, ne arguments pret pašu motoru. Pārējā piekare jāpārbauda klātienē.\n\n**Motora mehānika.** Tipiski eļļas filtra korpusa un vāka blīves, dzesēšanas plastmasa un ventilatora hidromufte. Dokumentēta skriemeļa maiņa ir labvēlīgs signāls datos; trūkstošu ATF maiņu formulē kā nepierādītu. Šajā posmā tās nav galvenais pirkuma šķērslis, ja eļļas intervāli bijuši saprotami.\n\n**Ieplūde un izplūde.** Virpuļvārsti un EGR nav populāra problēma šajā posmā; zema dūmainība tehniskajā apskatē ir labs fona signāls par DPF un turbīnu, ne garantija. AdBlue sistēma šim agregātam nav relevants stāsts.\n\n**Kārba.** Hidrotransformators ir uzticamāks par divsajūgu, bet „mūža eļļa” šajā posmā ir paaugstināts risks. Profilakse ir eļļas un filtra maiņa; mehatronika, ja kadreiz, tālāk jāpārbauda klātienē. Pēc pieejamajiem datiem rāvieni nav fiksēti.\n\n**Elektronika kā vecuma īpatnība.** Stūres slēdzene, gaismas un logu moduļi šajā paaudzē sāk rādīt kļūdas pēc laika, ne pēc km. Tas ir ilgtermiņa raksturs, ne pierādījums, ka šis eksemplārs tuvākajā laikā būs problemātisks. Klātienē pietiek ar vairākiem starta cikliem.\n\n**Latvijas ekspluatācija.** Ja auto jau brauc Latvijas ziemās, arkas un bremžu caurules ir tipisks sāls konteksts, ne arguments pret šo dzinēju. Quattro ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krustiņi un karājošais gultnis pie šī nobraukuma nav populāra problēma.\n\n**Prioritātes.** Galvenais pirkuma punkts ir piekare, ja nav novērsta; motors pēc datiem jāpārbauda klātienē. Pēc pieejamajiem datiem auto izskatās kopts, ar atrunu ka PROVIN to fiziski nav apskatījis."
+  },
+  {
+    "id": "tech-risks-bad-approx-price",
+    "field": "technical_risks",
+    "expectPass": false,
+    "codes": ["approximate_repair_price"],
+    "text": "**Agregātu identifikācija.** Dīlera datos dzinējs ir rindas sešinieka dīzelis ar sadales ķēdi priekšpusē, hidrotransformatora automātisko kārbu un aizmugures piedziņu. Šajā nobraukuma posmā tas ir ierasts darba mūžs šai paaudzei, ne resursa gals, ja eļļas intervāli bijuši šosejas profilam atbilstoši.\n\n**Kas NAV dārgs risks.** Šīs paaudzes slavenā aizmugurējās ķēdes kaite uz šo motoru neattiecas. Aprīkojuma sarakstā nav aktīvās stūres un hidraulisko stabilizatoru.\n\n**Tuvākais punkts.** Universāļa rūpnīcas aizmugures pneimatika šajā vecumā ir galvenais rēķins: spilveni un kompresors orientējoši 400-800 €.\n\n**Motora mehānika.** Tipiski eļļas filtra korpusa un vāka blīves, dzesēšanas plastmasa un ventilatora hidromufte. Dokumentēta skriemeļa maiņa ir labvēlīgs signāls datos.\n\n**Ieplūde.** Virpuļvārsti paliek kontrolpunkts; zema dūmainība tehniskajā apskatē ir labs fona signāls par DPF.\n\n**Kārba.** Hidrotransformators ir uzticamāks par divsajūgu, bet mūža eļļa šajā posmā ir paaugstināts risks.\n\n**Elektronika.** Stūres slēdzene šajā paaudzē kaprīzē pēc laika, ne pēc km.\n\n**Prioritātes.** Galvenais pirkuma punkts ir piekare; motors pēc datiem ir kontrolpunkts. Pēc pieejamajiem datiem auto izskatās kopts."
+  },
+  {
+    "id": "tech-risks-bad-quattro-price-vocab",
+    "field": "technical_risks",
+    "expectPass": false,
+    "codes": ["approximate_repair_price", "vocabulary_drivetrain", "vocabulary_maintenance_risk"],
+    "text": "**Agregātu identifikācija.** Dīlera datos dzinējs ir V6 dīzelis ar Torsen pilnpiedziņu, hidrotransformatora automātisko kārbu un sadales ķēdi. Šajā nobraukuma posmā tas ir ierasts darba mūžs šai paaudzei, ja eļļas intervāli bijuši saprotami.\n\n**Pilnpiedziņa.** Quattro trakts ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krusteniskie un centra gultnis pie šī nobraukuma ir vidējs uzturēšanas risks (orientējoši 300-600 €).\n\n**Kas NAV dārgs risks.** Šīs paaudzes slavenā aizmugurējās ķēdes kaite uz šo motoru neattiecas.\n\n**Tuvākais punkts.** Piekare paliek kontrolpunkts klātienē, ne arguments pret pašu motoru.\n\n**Motora mehānika.** Tipiski eļļas filtra korpusa un vāka blīves, dzesēšanas plastmasa un ventilatora hidromufte.\n\n**Ieplūde.** Virpuļvārsti paliek kontrolpunkts; zema dūmainība tehniskajā apskatē ir labs fona signāls par DPF.\n\n**Kārba.** Hidrotransformators ir uzticamāks par divsajūgu, bet mūža eļļa šajā posmā ir paaugstināts risks.\n\n**Prioritātes.** Galvenais pirkuma punkts ir piekare; motors pēc datiem ir kontrolpunkts. Pēc pieejamajiem datiem auto izskatās kopts."
+  },
+  {
+    "id": "source-bad-saime-baltija",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["vocabulary_saime", "vocabulary_baltija"],
+    "text": "**Reģistrācija.** Automašīna Baltijā reģistrēta 2016. gadā. Šai dzinēja saimei tipiski ir pilsētas nobraukums."
+  },
+  {
+    "id": "source-bad-paper-lv",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["vocabulary_paper_lv"],
+    "text": "**Agregāts.** Dzinēja atteice paliek kontrolpunkts klātienē. DSG sviedru sajūgs ir vecuma kaprīze un tuvākā laika izdevums šajā vecuma logā."
   },
   {
     "id": "inspection-too-short",
@@ -96,7 +124,7 @@
     "id": "summary-no-price-ok",
     "field": "summary",
     "expectPass": true,
-    "text": "**Kopējā aina.** Pēc pieejamajiem datiem automašīna izskatās koptāka nekā tipisks imports šajā vecumā, ar atrunu ka PROVIN to fiziski nav apskatījis.\n\n**Galvenais punkts.** Tuvākais izmaksu draiveris ir piekare, ne motors - tas ir kontrolpunkts, ne pirkuma šķērslis.\n\n**Rekomendācija.** Ieteicams turpināt pēc klātienes pārbaudes."
+    "text": "**Kopējā aina.** Pēc pieejamajiem datiem automašīna izskatās koptāka nekā tipisks imports šajā vecumā, ar atrunu ka PROVIN to fiziski nav apskatījis.\n\n**Galvenais punkts.** Galvenais tuvākajā laikā gaidāmais darbs ir piekare, ne motors - to jāpārbauda klātienē, ne pirkuma šķērslis.\n\n**Rekomendācija.** Ieteicams turpināt pēc klātienes pārbaudes."
   },
   {
     "id": "summary-bad-price",

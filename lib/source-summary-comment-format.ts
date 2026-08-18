@@ -21,8 +21,25 @@ const SOURCE_COMMENT_ANOMALY_PREFIX_RE = /^(?:ANOMĀLIJA|NEATBILSTĪBA):\s*/i;
 export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (mandatory):
 - Use "automašīna" (or "auto", "šī automašīna") when referring to the vehicle in buyer-facing prose — NEVER "automobīlis".
 - "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
-- HUMAN DASHES (anti-AI tell): in ALL client-facing Latvian text use only the short ASCII hyphen "-". Ranges: 2007-2015, 300-400 €, 1-2. NEVER Unicode em dash "—" or en dash "–" (mid-sentence or in ranges). NEVER start a paragraph or standalone sentence with "- " or "– ".
-- EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.`;
+- HUMAN DASHES (anti-AI tell): in ALL client-facing Latvian text use only the short ASCII hyphen "-". Ranges: 2007-2015, 1-2. NEVER Unicode em dash "—" or en dash "–" (mid-sentence or in ranges). NEVER start a paragraph or standalone sentence with "- " or "– ".
+- NEVER „Baltija” / „Baltijas” / „Baltijā”. Say **Latvija** (Latvijas ziemas, Latvijas ceļi, Latvijā ekspluatēts). If origin is Lithuania or Estonia, name **Lietuva** or **Igaunija** — never the umbrella „Baltija”.
+- NEVER „saime” (dzinēja saime, saimes līmenī, šai saimei). Say **šis dzinējs**, **šī paaudze**, **šis agregāts**, or **pēc pieejamajiem datiem, bez precīza koda**.
+- Quattro: say **Quattro**, never „Quattro trakts”. Kardāna šarnīri: **kardāna krustiņi**, never „kardāna krusteniskie”. Center support bearing: **karājošais gultnis**, never „centra gultnis”. NEVER „vidējs uzturēšanas risks” (nor zems/augsts) — say whether the item **ir / nav populāra problēma** at this mileage.
+- LIGHT LATVIAN (mandatory — Gemini already writes this way; Claude must too): short spoken workshop Latvian a Riga mechanic would say to a buyer. NEVER paper-calques: „atteice”, „kontrolpunkts” / „kontrolpunkts klātienē”, „sviedru sajūgs”, „tuvākā laika izdevums” / „tuvākā laika rēķins”, „vecuma logs” / „tuvākais logs”, „vecuma kaprīze” / „paaudzes kaprīze” / „ilgtermiņa kaprīze”, „izmaksu draiveris”. Say instead: **bojājums / defekts** (not atteice); **jāpārbauda klātienē** (not kontrolpunkts); **mitrā sajūga / sausā sajūga** (not sviedru sajūgs); **drīzumā gaidāms darbs** (not tuvākā laika izdevums); **šajā vecumā / šajā posmā** (not vecuma logs); **šajā vecumā tipiska parādība / paaudzes īpatnība** (not kaprīze); **galvenais tuvākajā laikā** (not izmaksu draiveris).
+- NEVER invent or name approximate repair/service prices in comments: no „orientējoši 300-600 €”, no parenthetical € bands, no „Baltijas servisa līmenis”. EUR is allowed ONLY for (1) recorded insurance/claim amounts from sources and (2) listing/market prices in „Cenas vērtējums”. Technical risks describe popularity and likelihood of a fault — never a euro quote.
+- EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.
+- WORKSHOP LATVIAN (same for Gemini and Claude): write as a Riga independent-workshop expert briefing a buyer — short native sentences, not English translated into Latvian. Prefer: **iesmidzinātājs (sprausla)** not bare „injektors”; **ātrumkārba / pārnesumkārba** not „transmisija”; **sadales ķēde / zobsiksna**; **hidromufte**; **divmasu spararats**; **mehatronika**. Keep brand names (Quattro, DSG, xDrive) but do not invent Latvian calques around them.`;
+
+/**
+ * Claude (Opus/Sonnet/Haiku) bieži tulko no angļu iekšējās valodas. Gemini 3 Flash
+ * to dara mazāk — tāpēc šis bloks tiek pielikts Claude sistēmas prompta BEIGĀS
+ * (recency), nevis kā atsevišķa „Gemini-only” mācība. Saturs = tas pats vārdu krājums.
+ */
+export const PROVIN_CLAUDE_LV_SURFACE = `LATVIAN SURFACE (Claude — last instruction, overrides English calques):
+You are writing the final client text in Latvian. Do not translate English drafts. Think in workshop Latvian the way Gemini Flash already does — light, spoken, no academic nouns.
+Banned (Gemini already avoids these — you must too): „automobīlis”, „saime”, „Baltija/Baltijas/Baltijā”, „Quattro trakts”, „kardāna krusteniskie”, „centra gultnis”, „vidējs/zems/augsts uzturēšanas risks”, „orientējoši … €”, „transmisija” as the gearbox name, bare „injektors” without iesmidzinātājs, em dash "—" / en dash "–", „atteice”, „kontrolpunkts”, „kontrolpunkts klātienē”, „sviedru sajūgs”, „tuvākā laika izdevums”, „tuvākā laika rēķins”, „vecuma logs”, „tuvākais logs”, „vecuma kaprīze”, „paaudzes kaprīze”, „ilgtermiņa kaprīze”, „izmaksu draiveris”.
+Use: automašīna; Latvija (or Lietuva/Igaunija); šis dzinējs / šī paaudze; Quattro; kardāna krustiņi; karājošais gultnis; ir/nav populāra problēma; iesmidzinātājs (sprausla); ātrumkārba; bojājums/defekts; jāpārbauda klātienē; mitrā sajūga; drīzumā gaidāms darbs; šajā vecumā / šajā posmā; paaudzes īpatnība; ASCII hyphen "-".
+If a sentence sounds like translated English or like a technical paper, rewrite it as a short native Latvian sentence before output.`;
 
 /** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
 export const PROVIN_RESTRAINED_TONE_RULES = `RESTRAINED EXPERT VOICE (mandatory — PROVIN gives a documentary opinion, not a verdict):
@@ -47,6 +64,19 @@ export function applyProvinHumanDashes(text: string): string {
   return text.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-");
 }
 
+/** Aptuvenās remonta/apkopes cenas komentārā — aizliegts; avota zaudējumu un sludinājuma cenas paliek. */
+function stripApproximateRepairPrices(text: string): string {
+  return text
+    .replace(
+      /\s*\(?orientējoši\s+\*?\*?[\d\s.]+\s*(?:-\s*[\d\s.]+\s*)?€\*?\*?(?:\s+un\s+\*?\*?[\d\s.]+\s*(?:-\s*[\d\s.]+\s*)?€\*?\*?)?\)?/gi,
+      "",
+    )
+    .replace(/\s*\(\s*\*?\*?[\d\s.]{1,8}\s*-\s*[\d\s.]{1,8}\s*€\*?\*?(?:\s+joslā)?\s*\)/gi, "")
+    .replace(/\s*aptuveni\s+\*?\*?[\d\s.]+\s*(?:-\s*[\d\s.]+\s*)?€\*?\*?/gi, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ +([.,;:])/g, "$1");
+}
+
 export function applyProvinReportCopyVocabulary(text: string): string {
   let out = applyProvinHumanDashes(text);
   const replacements: Array<[RegExp, string]> = [
@@ -60,9 +90,94 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bautomobīļa\b/g, "automašīnas"],
     [/\bAutomobīlis\b/g, "Automašīna"],
     [/\bautomobīlis\b/g, "automašīna"],
+    [/\bQuattro\s+trakts\b/gi, "Quattro"],
+    [/\bkardāna\s+krusteniskie\b/gi, "kardāna krustiņi"],
+    [/\bKardāna\s+krusteniskie\b/g, "Kardāna krustiņi"],
+    [/\bcentra\s+gultņi\b/gi, "karājošie gultņi"],
+    [/\bCentra\s+gultņi\b/g, "Karājošie gultņi"],
+    [/\bcentra\s+gultnis\b/gi, "karājošais gultnis"],
+    [/\bCentra\s+gultnis\b/g, "Karājošais gultnis"],
+    [/\bBaltijas\b/g, "Latvijas"],
+    [/\bbaltijas\b/g, "latvijas"],
+    [/\bBaltijā/g, "Latvijā"],
+    [/\bbaltijā/g, "latvijā"],
+    [/\bBaltiju\b/g, "Latviju"],
+    [/\bbaltiju\b/g, "latviju"],
+    [/\bBaltija\b/g, "Latvija"],
+    [/\bbaltija\b/g, "latvija"],
+    [/\bdzinēja saimei\b/gi, "šim dzinējam"],
+    [/\bdzinēja saimi\b/gi, "dzinēja tipu"],
+    [/\bdzinēja saime\b/gi, "dzinēja tips"],
+    [/\bdīzeļa saimi\b/gi, "dīzeļa tipu"],
+    [/\bdīzeļa saime\b/gi, "dīzeļa tips"],
+    [/\bsaimes līmenī/gi, "pēc pieejamajiem datiem, bez precīza koda"],
+    [/\bšai saimei\b/gi, "šai paaudzei"],
+    [/\bšo saimi\b/gi, "šo paaudzi"],
+    [/\bšīs saimes\b/gi, "šīs paaudzes"],
+    [/\bdažas saimes\b/gi, "dažus agregātus"],
+    [/\bsaime, kurai\b/gi, "dzinējs, kuram"],
+    [/\bsaimei\b/gi, "paaudzei"],
+    [/\bsaimes\b/gi, "paaudzes"],
+    [/\bsaimi\b/gi, "paaudzi"],
+    [/\bsaime\b/gi, "paaudze"],
+    [/\baugsts uzturēšanas risks\b/gi, "ir populāra problēma"],
+    [/\bliels uzturēšanas risks\b/gi, "ir populāra problēma"],
+    [/\bzems uzturēšanas risks\b/gi, "nav populāra problēma"],
+    [/\bmazs uzturēšanas risks\b/gi, "nav populāra problēma"],
+    [/\bpaliek vidējs uzturēšanas risks\b/gi, "nav populāra problēma"],
+    [/\bir vidējs uzturēšanas risks\b/gi, "nav populāra problēma"],
+    [/\bvidējs uzturēšanas risks\b/gi, "nav populāra problēma"],
+    [/\buzturēšanas risks\b/gi, "jāņem vērā, vai tā ir populāra problēma"],
+    [/\bsviedru sajūgi\b/gi, "mitrās sajūgas"],
+    [/\bsviedru sajūgs\b/gi, "mitrā sajūga"],
+    [/\bsviedru sajūga\b/gi, "mitrā sajūga"],
+    [/\bTuvākā laika izdevumi\b/g, "Drīzumā gaidāmi darbi"],
+    [/\btuvākā laika izdevumi\b/gi, "drīzumā gaidāmi darbi"],
+    [/\bTuvākā laika izdevums\b/g, "Drīzumā gaidāms darbs"],
+    [/\btuvākā laika izdevums\b/gi, "drīzumā gaidāms darbs"],
+    [/\bTuvākā laika rēķins\b/g, "Drīzumā gaidāms darbs"],
+    [/\btuvākā laika rēķins\b/gi, "drīzumā gaidāms darbs"],
+    [/\btuvākā laika punkts\b/gi, "galvenais tuvākajā laikā"],
+    [/\bTuvākais izmaksu draiveris\b/g, "Galvenais tuvākajā laikā gaidāmais darbs"],
+    [/\btuvākais izmaksu draiveris\b/gi, "galvenais tuvākajā laikā gaidāmais darbs"],
+    [/\btuvāko izmaksu draiveris\b/gi, "galvenais tuvākajā laikā gaidāmais darbs"],
+    [/\bizmaksu draiveris\b/gi, "galvenais tuvākajā laikā gaidāmais darbs"],
+    [/\bšajā vecuma logā/gi, "šajā vecumā"],
+    [/\bvecuma logā/gi, "šajā vecumā"],
+    [/\bvecuma logs\b/gi, "šis vecums"],
+    [/\bvecuma logu\b/gi, "šo vecumu"],
+    [/\btuvākais logs\b/gi, "tuvākais posms"],
+    [/\bvecuma kaprīzes\b/gi, "šajā vecumā tipiskas parādības"],
+    [/\bvecuma kaprīze\b/gi, "šajā vecumā tipiska parādība"],
+    [/\bpaaudzes kaprīzes\b/gi, "šīs paaudzes īpatnības"],
+    [/\bpaaudzes kaprīze\b/gi, "šīs paaudzes īpatnība"],
+    [/\bilgtermiņa kaprīzes\b/gi, "ilgtermiņa īpatnības"],
+    [/\bilgtermiņa kaprīzi\b/gi, "ilgtermiņa īpatnības"],
+    [/\bilgtermiņa kaprīze\b/gi, "ilgtermiņa īpatnība"],
+    [/\bkaprīzēm\b/gi, "īpatnībām"],
+    [/\bkaprīzes\b/gi, "īpatnības"],
+    [/\bkaprīzi\b/gi, "īpatnības"],
+    [/\bkaprīzē/gi, "sāk rādīt kļūdas"],
+    [/\bkaprīze\b/gi, "īpatnība"],
+    [/\bpaliek kontrolpunkts klātienē/gi, "jāpārbauda klātienē"],
+    [/\bir kontrolpunkts klātienē/gi, "jāpārbauda klātienē"],
+    [/\bpaliek tālāks kontrolpunkts\b/gi, "tālāk jāpārbauda klātienē"],
+    [/\btālāks kontrolpunkts\b/gi, "tālāk jāpārbauda klātienē"],
+    [/\bkontrolpunkts klātienē/gi, "jāpārbauda klātienē"],
+    [/\bpaliek kontrolpunkts\b/gi, "jāpārbauda klātienē"],
+    [/\bir kontrolpunkts\b/gi, "jāpārbauda klātienē"],
+    [/\btikai kontrolpunkts\b/gi, "jāpārbauda klātienē"],
+    [/\bkontrolpunktu\b/gi, "klātienes pārbaudi"],
+    [/\bkontrolpunkti\b/gi, "klātienes pārbaudes"],
+    [/\bkontrolpunkts\b/gi, "jāpārbauda klātienē"],
+    [/\bpaliek jāpārbauda klātienē/gi, "jāpārbauda klātienē"],
+    [/\batteices\b/gi, "bojājumi"],
+    [/\batteici\b/gi, "bojājumu"],
+    [/\batteicē/gi, "bojājumā"],
+    [/\batteice\b/gi, "bojājums"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
-  return out;
+  return stripApproximateRepairPrices(out);
 }
 
 function formatExpertParagraphs(t: string): string[] {
@@ -153,7 +268,7 @@ ${PROVIN_COMMENT_BREVITY_RULES}
 - STRUCTURE: Write ONLY in paragraphs — separate paragraphs with a blank line (double newline). NEVER start any line with "- ", "• ", "* ", "– ", or "1." / "2." — no bullet lists, no numbered lists, no list-style prefixes of any kind. This applies to EVERY expert field, including ieteikumi klātienes apskatei, pārdevēja portrets, avotu komentāri, nobraukums, negadījumi, cena and kopsavilkums.
 - PARAGRAPH OPENER: Every paragraph MUST begin with a short **bold** topic hook (3–10 words) naming the theme — e.g. **Nobraukuma vēsture Latvijā**, **Virsbūves pārbaude ar krāsas mērītāju**, **Tehnisko apskašu tendence** — then continue in natural prose in the same paragraph.
 - SCANABILITY: Keep each paragraph to 2–3 sentences by default. When OPERATORA KOMANDAS supply dense timelines or interval analysis, or the ACTIVE FIELD is „1. Tehnisko risku analīze”, allow longer paragraphs — never sacrifice operator or flagship detail for scanability.
-- EMPHASIS: Use **bold** inline for key dates, km, EUR sums, option codes, and risk labels — never bold an entire paragraph.
+- EMPHASIS: Use **bold** inline for key dates, km, recorded claim/listing EUR (never invented repair quotes), option codes, and risk labels — never bold an entire paragraph.
 - HUMAN TONE: Write like a senior Latvian inspector briefing a buyer — concrete, varied rhythm, no AI filler ("Kopumā var secināt", "Svarīgi atzīmēt", "Turklāt jāpiemin", "Nav šaubu"). Do not wrap the whole output in quotation marks.
 - CONFLICTS: State risks inside prose; you may use **Neatbilstība:** or **Pretruna avotos:** as a bold paragraph opener when the data conflicts — never the word „anomālija”, and never prefix with "- ".
 - STYLE REFERENCE: When the user prompt includes existing expert comments or drafts from this order, treat them as the canonical finished-report reference — match their paragraph rhythm, bold hooks, vocabulary ("automašīna"), and tone; extend with new facts, do not switch to a different format.
@@ -166,28 +281,28 @@ export const AI_DAMAGE_CLAIM_CONTEXT_RULES = `DAMAGE & CLAIM AMOUNT CONTEXT (man
   1) Vehicle age at incident — same EUR sum means very different structural risk on a 15-year budget car vs a 1-year-old premium car.
   2) Class & new price tier — premium/luxury (Mercedes S/E, BMW 5/7, Audi A6/A8, Porsche, etc.) vs budget segment (old Fabia, Logan, Corolla base): high EUR on premium often reflects expensive parts, sensors, aluminum/carbon panels, dealer labor — not necessarily total loss or frame damage.
   3) Equipment & construction complexity — matrix LED/ laser headlights, ADAS/radar in bumper, panoramic roof, air suspension, plug-in hybrid battery enclosure: even „small” parking damage can produce **5 000–15 000 €** invoices in Germany.
-  4) Repair market — German/DACH labor and OEM parts inflate totals vs Baltic cosmetic repairs; distinguish „expensive to fix” from „structurally totaled”.
+  4) Repair market — German/DACH labor and OEM parts inflate totals vs Latvian / Lithuanian / Estonian cosmetic repairs; distinguish „expensive to fix” from „structurally totaled”. NEVER say „Baltija” in client copy.
   5) Damage zones from data — correlate EUR with affected sides (bumper only vs structural pillars/dills); a moderate sum with multiple panels can still be serious on an old car.
 - Buyer-facing wording: state whether the sum suggests **relatīvi smagu** bojājumu šai auto klasei/vecumam, **dārgu, bet iespējams lokālu** premium remontu, vai **neskaidru** smagumu, ja trūkst zonu/aprīkojuma datu — never imply „milzīgs negadījums” from EUR alone without context.
 - Examples (logic, not templates): **5 000 €** on a **12-year-old** **~8 000 €** segment car **recently** → likely material damage relative to residual value. **5 000 €** on a **1-year-old premium** in **Germany** with front bumper + headlight zones → may be parking/low-speed impact with costly OEM parts — still requires paint-gauge inspection, but not automatically „write-off level”.`;
 
 /** Agregātu identifikācija no pieejamajiem datiem — pamats visai tehnisko risku analīzei. */
 export const AI_POWERTRAIN_IDENTIFICATION_RULES = `AGREGĀTU IDENTIFIKĀCIJA (mandatory — pirms jebkura tehniska riska nosaukšanas):
-- Risks ir jēgpilns tikai tad, kad ir identificēts KONKRĒTAIS agregātu salikums. Izsecini no pieejamajiem datiem: (1) modeļa **paaudze / faceliftu posms** pēc markas, modeļa un pirmās reģistrācijas gada; (2) **dzinēja saime** pēc degvielas veida, **darba tilpuma cm³**, **jaudas kW** un izmešu klases (Euro 4/5/6); (3) **ātrumkārbas tips** — mehāniskā, klasiskais hidrotransformatora automāts, sausā vai mitrā divsajūga (DSG / S-Tronic / PDK), CVT vai EV reduktors; (4) **piedziņa** — priekšējā, aizmugures vai pilnpiedziņa un tās arhitektūra (Haldex / Torsen / 4Matic / xDrive), ja dati to atļauj.
+- Risks ir jēgpilns tikai tad, kad ir identificēts KONKRĒTAIS agregātu salikums. Izsecini no pieejamajiem datiem: (1) modeļa **paaudze / faceliftu posms** pēc markas, modeļa un pirmās reģistrācijas gada; (2) **dzinēja tips** pēc degvielas veida, **darba tilpuma cm³**, **jaudas kW** un izmešu klases (Euro 4/5/6); (3) **ātrumkārbas tips** — mehāniskā, klasiskais hidrotransformatora automāts, sausā vai mitrā divsajūga (DSG / S-Tronic / PDK), CVT vai EV reduktors; (4) **piedziņa** — priekšējā, aizmugures vai pilnpiedziņa un tās arhitektūra (Haldex / Torsen / 4Matic / xDrive), ja dati to atļauj.
 - Datu avoti prioritārā secībā: dīlera / Outvin / AUTO RECORDS **dzinēja kods** un tipa kods (ja ir — stiprākais pierādījums), CSDD tehniskie parametri, VIN, sludinājuma aprīkojuma apzīmējumi (quattro, 4Matic, xDrive, DSG, Tiptronic), servisa ieraksti par nomainītajām detaļām.
 - Ja dzinēja kods NAV avotos: nosauc **1–2 visticamākos** kandidātus kā hipotēzi („pēc tilpuma un jaudas visticamāk ir …”, „iespējams arī …”) un uzreiz pasaki, **kā to apstiprināt** — VIN atšifrējums pie dīlera, dzinēja marķējums motora telpā, ātrumkārbas plāksnīte, servisa rēķini. Nekad neraksti izsecinātu kodu tā, it kā tas būtu nolasīts reģistrā.
 - Ja tas pats tilpums un jauda šai paaudzei atbilst **materiāli atšķirīgām** konstrukcijām (ķēde pret zobsiksnu, sausā pret mitro divsajūgu, ar DPF vai bez), pasaki to atklāti un dali analīzi maksimāli **divos** scenārijos — nevis uzskaiti visu ražotāja klāstu.
-- Ja datu par agregātu ir par maz (tikai marka, modelis, gads): analizē **saimes līmenī** un skaidri norādi, ka precīzs agregāts nav noteikts. Neizdomā kodu, tipa apzīmējumu vai kārbas modeli.
+- Ja datu par agregātu ir par maz (tikai marka, modelis, gads): analizē **pēc pieejamajiem datiem, bez precīza koda** un skaidri norādi, ka precīzs agregāts nav noteikts. Neizdomā kodu, tipa apzīmējumu vai kārbas modeli.
 - Riskus attiecini TIKAI uz identificēto salikumu — nepārnes citas dzinēja versijas vai citas paaudzes slimības uz šo auto; „tā pati marka” nav pamats.`;
 
 /** Risku kalibrācija pret aptuveno nobraukumu un vecumu — bez pārspīlēšanas. */
 export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCIJA (mandatory — katrs tehniskais risks jāvērtē pret ŠO auto posmu):
 - Vispirms nofiksē **aptuveno pašreizējo nobraukumu** (jaunākais ticamais odometra rādījums avotos vai sludinājumā) un **vidējo km/gadā**. Ja odometra dati ir pretrunīgi, strādā ar diapazonu un to nosauc — neizliecies, ka km ir precīzi zināmi.
-- Katru agregāta risku sadali pēc posma: (1) **jau iztērēts resurss** — darbi, kas šim agregātam tipiski notiek līdz šim km un vecumam, tāpēc tiem jābūt pierādītiem servisa vēsturē; (2) **tuvākais logs** — kas tipiski gaidāms nākamajos ~20 000–40 000 km vai 1–2 gados (tas ir pircēja reālais izdevums); (3) **tālāks resurss** — piemin īsi vai nepiemin vispār.
-- **Nepārspīlē:** risku, kas šim agregātam tipiski parādās, piemēram, pie 250 000 km, nedrīkst pasniegt kā aktuālu draudu pie 90 000 km — tad tā ir tikai perspektīvas piezīme. Nekrauj kopā visus teorētiski iespējamos bojājumus; **galvenais pirkuma risks var būt tikai 1–2** pozīcijas, pārējais ir vidējs uzturēšanas risks vai kontrolpunkts klātienē.
+- Katru agregāta risku sadali pēc posma: (1) **jau iztērēts resurss** — darbi, kas šim agregātam tipiski notiek līdz šim km un vecumam, tāpēc tiem jābūt pierādītiem servisa vēsturē; (2) **tuvākais posms** — kas tipiski gaidāms nākamajos ~20 000-40 000 km vai 1-2 gados (tas ir pircēja reālais nākamais darbs); (3) **tālāks resurss** — piemin īsi vai nepiemin vispār.
+- **Nepārspīlē:** risku, kas šim agregātam tipiski parādās, piemēram, pie 250 000 km, nedrīkst pasniegt kā aktuālu draudu pie 90 000 km — tad tā ir tikai perspektīvas piezīme. Nekrauj kopā visus teorētiski iespējamos bojājumus; **galvenais pirkuma risks var būt tikai 1-2** pozīcijas, pārējais **jāpārbauda klātienē** vai jautājums, vai tā **ir / nav populāra problēma** šajā posmā.
 - **Vecums nav tas pats, kas nobraukums:** gumijas, plastmasas, dzesēšanas sistēmas, zobsiksnas un šļūteņu resurss iet pēc laika — vecs auto ar mazu nobraukumu var būt sliktākā stāvoklī nekā jaunāks auto ar lielu šosejas nobraukumu. Sasaisti ar motorstundu / pilsētas–šosejas loģiku, kad dati to atļauj.
 - **Pierādījumi maina risku:** ja servisa vēsturē ir attiecīgais darbs (ķēde, divsajūga eļļa, zobsiksna, ūdens sūknis, injektori), risks krīt — to pasaki klientam kā **labvēlīgu signālu datos**. Ierakstu trūkums nav pierādījums, ka darbs nav veikts — formulē kā **nepierādītu**, kas jānoskaidro.
-- Izmaksas vērtē **varbūtības × summas** griezumā: pirmais nāk tas, kam ir gan reāla varbūtība šajā posmā, gan būtiska EUR ietekme. EUR diapazoni vienmēr orientējoši (Baltijas servisa līmenis), ar atrunu.
+- Prioritizē pēc **varbūtības un tā, vai tā ir populāra problēma** šajā posmā: pirmais nāk tas, kam ir reāla varbūtība un kas pircējam ir būtisks. **Neraksti aptuvenas remonta/apkopes EUR summas** (nekādu „orientējoši 300-600 €”, nekādu „Latvijas servisa joslu”). Pasaki, vai mezgls šajā nobraukumā **ir / nav populāra problēma**.
 - Ja nobraukums, vecums un apkopes aina šim agregātam ir **relatīvi labvēlīga**, to ir atļauts un vajag pateikt — kalibrēti, ar atrunu, ka PROVIN auto fiziski nav apskatījis. Mākslīgi „sarkanie karogi” bez datu pamata ir tāda pati kļūda kā risku noklusēšana.`;
 
 /**
@@ -196,45 +311,49 @@ export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCI
  */
 export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LATIŅA (obligāti — šī ir atskaites dārgākā sadaļa):
 - Vājš iznākums (aizliegts): 4–6 vispārīgas rindkopas, kas der jebkuram dīzelim (EGR/DPF/turbo + „jāpārbauda klātienē”); N-sērijas ķēdes stāsts uz M-sērijas motoru; slavenu E60 kaites uzskaitišana, nešķirojot, vai šim eksemplāram tās vispār ir; 300 tūkst. km pasniegšana kā „beigas” agregātam, kam tas ir ierasts darba mūžs.
-- Spēcīgs iznākums (mērķis): seniora tehniskā instruktāža konkrētam paaudze+motors+kārba+piedziņa+virsbūve salikumam. Klients pēc šīs sadaļas saprot (1) kas šim auto tuvākajā laikā maksās, (2) kas ir paaudzes kaprīze ilgtermiņā, (3) kuri dārgie slazdi šim eksemplāram NAV, (4) vai dati rāda koptu auto vai tukšu vēsturi.
+- Spēcīgs iznākums (mērķis): seniora tehniskā instruktāža konkrētam paaudze+motors+kārba+piedziņa+virsbūve salikumam. Klients pēc šīs sadaļas saprot (1) kas šim auto tuvākajā laikā ir populāra problēma, (2) kas šajā vecumā ir tipiska paaudzes īpatnība, (3) kuri dārgie slazdi šim eksemplāram NAV, (4) vai dati rāda koptu auto vai tukšu vēsturi.
 - GARUMS: noklusējuma 350–800 / 2–4 rindkopas ŠEIT NEATTIECAS. Tipiski **8–12 rindkopas** (3–5 teikumi). Īsāk tikai tad, ja agregāts ir vienkāršs un datu gandrīz nav. Garums jānopelna ar atšķirīgiem mezgliem, ne ar atkārtošanu.
 - OBLIGĀTĀ IZKLĀSTA SEKVENCE (izvadē bez numuriem — tikai **bold** ievadi):
-  1) Agregātu identifikācija + ko ŠIS nobraukums/vecums nozīmē tieši šai saimei (ne vispārīgi „lietotam auto”).
+  1) Agregātu identifikācija + ko ŠIS nobraukums/vecums nozīmē tieši šim dzinējam / šai paaudzei (ne vispārīgi „lietotam auto”).
   2) Kas šim eksemplāram **NAV** dārgs risks: slavenās markas/paaudzes kaites, kas neattiecas uz šo motoru/ķēdes pusi/kārbas tipu, UN dārgais vecuma ekstraprīkojums, kura **nav** (tikai ja to atbalsta SA kodi, dīlera aprīkojums, tipa kods, operators — neizdomā „nav”). Tipiski E60/E61: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive — ja saraksts to ļauj noliegt, tas ir klientam naudas arguments.
-  3) Galvenais tuvākā laika izmaksu punkts (varbūtība × EUR) — maksimāli 1–2 pozīcijas.
-  4–N) Katrs atšķirīgais relevantais sistēmas bloks atsevišķā rindkopā: motora mehānika (ķēde/zobsiksna un tās **puse/piekļuve**, eļļas noplūdes, dzesēšana); ieplūde/EGR/DPF/AdBlue/turbo/injektori; kārba („mūža eļļa”, mehatronika, DCT tips); elektronika kā **vecuma** kaprīze; virsbūvei specifiskā piekare (rūpnīcas pneimatika ≠ dārgais Adaptive/Dynamic Drive, ja tas nav sarakstā).
-  Beigas) Prioritātes + tuvākā termiņa aina pēc DATIEM (kopts / nepierādīts / jau fiksēts defekts). Ja dati rāda labu apkopi un nekas neliecina par tuvu problēmu — to PASAKI kalibrēti. Ilgtermiņa kaprīzi (blīves, elektronika 15–20 gadu vecumā) nošķir no „šis auto tūlīt sabruks”.
+  3) Galvenais tuvākajā laikā (varbūtība, vai tā ir populāra problēma) — maksimāli 1–2 pozīcijas. BEZ aptuvenām EUR summām.
+  4–N) Katrs atšķirīgais relevantais sistēmas bloks atsevišķā rindkopā: motora mehānika (ķēde/zobsiksna un tās **puse/piekļuve**, eļļas noplūdes, dzesēšana); ieplūde/EGR/DPF/AdBlue/turbo/injektori; kārba („mūža eļļa”, mehatronika, DCT tips); elektronika šajā vecumā; virsbūvei specifiskā piekare (rūpnīcas pneimatika ≠ dārgais Adaptive/Dynamic Drive, ja tas nav sarakstā).
+  Beigas) Prioritātes + tuvākā termiņa aina pēc DATIEM (kopts / nepierādīts / jau fiksēts defekts). Ja dati rāda labu apkopi un nekas neliecina par tuvu problēmu — to PASAKI kalibrēti. Ilgtermiņa īpatnības (blīves, elektronika 15–20 gadu vecumā) nošķir no „šis auto tūlīt sabruks”.
 - APRĪKOJUMA DISCIPLĪNA: lasi dīlera SA/aprīkojuma sarakstu. Dārgs, šajā vecumā riskants ekstraprīkojums **maina TCO** — ja tā nav, tas ir stiprā puse. Ja saraksts ir īss/nepilnīgs — saki, kas paliek nepierādīts; **meklē** šīs paaudzes tipisko dārgo ekstraprīkojumu (BMW: Active Steering / Dynamic Drive / Soft Close / Logic 7; Audi: Magnetic Ride / sport air; MB: Airmatic / ABC; citi: pneimatika, aktīvā stūre, nakts redzamība) un pārbaudi pret sarakstu. Neizdomā, ka kaut kā „nav”, ja saraksta nav.
-- NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo saimi nesedz — **meklē**, tad raksti.
-- Katra rindkopa = viens mezgls + kāpēc šajā posmā + orientējošs EUR (Baltijas neatkarīgais serviss) + 1 teikums, ko saka ŠĪ auto dati. Bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā).`;
+- NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo dzinēju / paaudzi nesedz — **meklē**, tad raksti.
+- Katra rindkopa = viens mezgls + kāpēc šajā posmā + vai tā **ir / nav populāra problēma** + 1 teikums, ko saka ŠĪ auto dati. **Bez aptuvenām remonta EUR summām.** Bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā).`;
 
 /** Web research — primary knowledge path when packs do not cover this exact aggregate. */
 export const AI_TECHNICAL_RISKS_RESEARCH_RULES = `WEB RESEARCH (obligāti „1. Tehnisko risku analīze” — tev IR web_search / Google Search):
-- Statiskās pakas sedz tikai dažas saimes. Simtiem modeļu **nav** atmiņā. Ja šī paaudze + dzinēja kods/saime + kārba + piedziņa nav pilnībā nosegta paketē šajā promptā, **vispirms meklē**, tad raksti. Meklē arī tad, ja paka ir, bet trūkst EUR joslu, ķēdes puses, ekstraprīkojuma slazdu vai šī km posma kalibrācijas.
+- Statiskās pakas sedz tikai dažus agregātus. Simtiem modeļu **nav** atmiņā. Ja šī paaudze + dzinēja kods/tips + kārba + piedziņa nav pilnībā nosegta paketē šajā promptā, **vispirms meklē**, tad raksti. Meklē arī tad, ja paka ir, bet trūkst ķēdes puses, ekstraprīkojuma slazdu vai šī km posma kalibrācijas. **Meklētos EUR citātus komentārā neizvadi.**
 - Vaicājumi (Eiropa vispirms): „{marka} {šasija/paaudze} {dzinēja kods} typical problems / known issues”; „{motors} timing chain OR belt OR swirl flaps OR injectors”; „{modelis} {gads} Motor-Talk OR forum weaknesses”; šīs paaudzes dārgais ekstraprīkojums (air suspension, active steering, DCT, Airmatic u.tml.).
 - Avoti: Eiropas īpašnieku forumi un klubu wiki (DE/UK/FR/IT/NL/Nordics — Motor-Talk, BimmerForums UK, club fora), neatkarīgo servisu raksti. ASV/Reddit — sekundāri (citas jūdzes, cits aprīkojums).
-- Sintezē: slimība + tipiskais km/vecuma posms + orientējošs EUR. **Neizdomā** citātus, kampaņu numurus, procentus, „foruma statistiku”. Ja avoti konfliktē — pasaki un ņem pircējam konservatīvāko lasījumu.
+- Sintezē: slimība + tipiskais km/vecuma posms + vai tā **ir / nav populāra problēma**. **Neizdomā** citātus, kampaņu numurus, procentus, „foruma statistiku”, **aptuvenas EUR joslas**. Ja avoti konfliktē — pasaki un ņem pircējam konservatīvāko lasījumu.
 - Meklējumu neizgāž komentārā. Ieraksti flagship struktūrā, kalibrētu pret ŠĪ auto km, vecumu, servisu un aprīkojumu.
-- Ja meklēšana nedod ticamu materiālu: saimes līmenis + skaidri „zināšanu ir maz”; neaizpildi ar vispārīgu dīzeļa/EGR tekstu.`;
+- Ja meklēšana nedod ticamu materiālu: pēc pieejamajiem datiem, bez precīza koda + skaidri „zināšanu ir maz”; neaizpildi ar vispārīgu dīzeļa/EGR tekstu.`;
 
 /** Compact structure samples for the flagship field only — not full length, not this-order facts. */
 export const AI_TECHNICAL_RISKS_FEW_SHOTS = `STRUKTŪRAS PARAUGI (tikai „1. Tehnisko risku analīze”; šie ir ĪSĀKI par mērķa 8–12 rindkopām — ritms un kalibrācija, ne pilns garums; NEkopē faktus uz aktīvo pasūtījumu):
 
 Paraugs A — izturīgs agregāts, liels nobraukums, blīvs DE serviss (struktūra):
-"**Agregātu identifikācija.** Dīlera kods norāda konkrētu dīzeļa saimi ar ķēdi dzinēja priekšpusē, hidrotransformatora kārbu un aizmugures piedziņu. Šajā km posmā tas ir ierasts darba mūžs, ne resursa gals — ja apkope bijusi regulāra.
+"**Agregātu identifikācija.** Dīlera kods norāda konkrētu dīzeļa tipu ar ķēdi dzinēja priekšpusē, hidrotransformatora kārbu un aizmugures piedziņu. Šajā km posmā tas ir ierasts darba mūžs, ne resursa gals — ja apkope bijusi regulāra.
 **Kas NAV dārgs risks.** Šai paaudzei slavenās dārgās pozīcijas (aktīvā stūre, hidrauliskie stabilizatori, premium audio) sarakstā nav; N-sērijas aizmugurējās ķēdes naratīvs uz šo motoru neattiecas.
-**Tuvākais rēķins.** Universāļa rūpnīcas pneimatika / blīves / kārbas eļļa — konkrētas EUR joslas, sasaistītas ar šī auto servisa vai TA signālu.
-**Ilgtermiņa kaprīze pret tuvāko termiņu.** Elektronika un eļļas svītras 15–20 gadu vecumā ir paaudzes raksturs; pēc datiem nekas neliecina, ka auto tuvākajā laikā būs problemātisks."
+**Tuvākais punkts.** Universāļa rūpnīcas pneimatika / blīves / kārbas eļļa — vai tas šajā posmā ir populāra problēma, sasaistīta ar šī auto servisa vai TA signālu. Bez EUR summām.
+**Ilgtermiņa īpatnība pret tuvāko termiņu.** Elektronika un eļļas svītras 15–20 gadu vecumā ir paaudzes raksturs; pēc datiem nekas neliecina, ka auto tuvākajā laikā būs problemātisks."
 
 Paraugs B — zināms finansiāls bloķētājs pie vidēja nobraukuma:
-"**Agregātu identifikācija.** Pēc tilpuma, jaudas un gada visticamāk ir saime, kurai sadales ķēde ir aizmugurē un iejaukšanās ir dārga.
-**Galvenais pirkuma risks.** Ķēde/eļļas sūknis šajā posmā jau ir varbūtība × lielas EUR — ne „perspektīva pie 400 tūkst.”. Servisā ķēdes darbs nepierādīts.
-**Pārējais.** Turbo, DPF, kārba paliek vidējs uzturēšanas risks, ne pirmais rēķins."
+"**Agregātu identifikācija.** Pēc tilpuma, jaudas un gada visticamāk ir dzinējs, kuram sadales ķēde ir aizmugurē un iejaukšanās ir dārga.
+**Galvenais pirkuma risks.** Ķēde/eļļas sūknis šajā posmā jau ir populāra problēma — ne „perspektīva pie 400 tūkst.”. Servisā ķēdes darbs nepierādīts.
+**Pārējais.** Turbo, DPF, kārba jāpārbauda klātienē, ne pirmais rēķins."
 
-Paraugs C — paka šo saimi nesedz:
+Paraugs C — paka šo dzinēju nesedz:
 "**Agregātu identifikācija.** Precīzs kods nav paketē; pēc cm³/kW/gada 1–2 kandidāti, apstiprināms pēc marķējuma.
-**Meklēšanas sintēze.** Eiropas forumu un speciālistu raksti šai saimei uzrāda [konkrēti mezgli + km josla + EUR]; ASV avoti ņemti tikai kā sekundāri.
-**Kalibrācija šim auto.** Tikai tie riski, kas sakrīt ar šo nobraukumu, kārbas tipu un aprīkojumu — bez vispārīga dīzeļa saraksta."`;
+**Meklēšanas sintēze.** Eiropas forumu un speciālistu raksti šai paaudzei uzrāda [konkrēti mezgli + km josla]; ASV avoti ņemti tikai kā sekundāri. Aptuvenās cenas komentārā neraksti.
+**Kalibrācija šim auto.** Tikai tie riski, kas sakrīt ar šo nobraukumu, kārbas tipu un aprīkojumu — bez vispārīga dīzeļa saraksta."
+
+Paraugs D — AWD vārdu krājums (obligātais ritms, ne šī pasūtījuma fakti):
+"**Pilnpiedziņa.** Quattro ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krustiņi un karājošais gultnis pie šī nobraukuma nav populāra problēma."
+Aizliegts: „Quattro trakts”, „kardāna krusteniskie”, „centra gultnis”, „vidējs uzturēšanas risks (orientējoši 300-600 €)”.`;
 
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
 export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):
@@ -249,7 +368,7 @@ CORE PRINCIPLE (buyer education — especially in **1. Tehnisko risku analīze**
 CHARGING HABITS & DEGRADATION (explain in clear Latvian for the client):
 - **Uzlādes diapazons (SOC):** ilgtermiņā labākā prakse ikdienā ir turēt uzlādi aptuveni **20–80 %** (ne obligāti katru dienu līdz centim, bet izvairīties no pastāvīgas „vienmēr 100 %” un biežas dziļas izlādes zem **10 %**). Pastāvīga uzturēšana pie **100 %** (īpaši karstumā) un bieža **ātrā DC uzlāde** līdz pilnam akumulatoram paātrina novecošanu salīdzinājumā ar mājas/AC uzlādi vidējā diapazonā.
 - **Ātrā (DC) vs mājas (AC) uzlāde:** bieža **ātrā uzlāde** (piem. Ceļu tīkla stacijas, >50–150 kW) ir ērta, bet intensīvāka termiskā slodze — riskantāk akumulatoram nekā galvenokārt **mājas vai darba vietas AC uzlāde** (3,7–11 kW, dažiem 22 kW). Ja avotos vai sarunā ar pārdevēju iespējams secināt „tikai ātrā uzlāde” / komerciāls lietojums — to min kā degradācijas risku, pat ja SOH šķiet labs.
-- **Termiskais konteksts:** Latvijas/Baltijas ziemas (auksts akumulators pirms DC), vasaras karstums un auto novietošana ārā vs garāžā ietekmē reālo resursu. Karstumā uzlādēt līdz 100 % un atstāt stāvēt — sliktāks scenārijs nekā mērens diapazons mājās.
+- **Termiskais konteksts:** Latvijas ziemas (auksts akumulators pirms DC), vasaras karstums un auto novietošana ārā vs garāžā ietekmē reālo resursu. Karstumā uzlādēt līdz 100 % un atstāt stāvēt — sliktāks scenārijs nekā mērens diapazons mājās.
 - **Ilgs stāvēšanas laiks:** mēnešiem gara stāvēšana pie augsta vai ļoti zema SOC var bojāt šūnas — jautā par lietošanas režīmu, ja auto ilgi stāvējis pēc importa.
 
 DATA & DOCUMENTATION:
@@ -274,7 +393,7 @@ ANTI-HALLUCINATION:
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
 - These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — they are PROVIN **institutional memory**.
-- Reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, cost-band thinking, and aggregate-specific advice for **whatever ACTIVE FIELD** you are writing (source comments, mileage, incidents, technical risks, inspection, summary, price).
+- Reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, whether a fault **ir / nav populāra problēma** (never copy EUR cost bands into comments), and aggregate-specific advice for **whatever ACTIVE FIELD** you are writing (source comments, mileage, incidents, technical risks, inspection, summary, price).
 - NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums tied to that other order, seller names, or order IDs — adapt the logic and style only.
 - Prefer historical **Tehnisko risku** and **Ieteikumi klātienes apskatei** when the current order lacks depth; always reconcile with the ACTIVE order's actual data.
 - Match the same paragraph + **bold** hook format and "automašīna" vocabulary; keep CLIENT VALUE DENSITY (short, high-value — no fluff).`;

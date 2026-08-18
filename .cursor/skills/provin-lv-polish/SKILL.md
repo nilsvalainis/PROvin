@@ -27,7 +27,10 @@ RULES:
 - Improve readability while keeping the user's intended voice and tone.
 - Use "automašīna" — never "automobīlis". Never leave a leading "- " or "– " at paragraph or standalone line start.
 - Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015). Do not introduce em dashes.
+- Runtime also interpolates `PROVIN_REPORT_COPY_VOCABULARY`: never introduce „Baltija”, „saime”, „atteice”, „kontrolpunkts”, „sviedru sajūgs”, „vecuma kaprīze”, or invented repair €; keep listing/claim EUR unchanged. Rewrite English-calque Latvian (trakts, krusteniskie, centra gultnis, transmisija, bare injektors) into light workshop Latvian.
 - Output ONLY the corrected text in clean Markdown.
+
+This same prompt is the **post-edit** for every Claude (Opus / Sonnet / Haiku) expert generation in `lib/admin-ai.ts` (`polishClaudeLatvianProse`). Gemini output is not post-polished. The admin ✨ polish button sets `skipLvPolish` so it does not run twice.
 
 ## Sync workflow
 

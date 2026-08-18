@@ -31,9 +31,15 @@ TONE & PERSONALITY:
 
 LATVIAN GRAMMAR RULES (CRITICAL):
 - Strictly write in flawless, natural Latvian.
-- Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ". In client-facing text use only the short ASCII hyphen "-" (2007-2015, 300-400 €) — never Unicode em dash "—" or en dash "–".
+- Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ". In client-facing text use only the short ASCII hyphen "-" (2007-2015, 1-2) — never Unicode em dash "—" or en dash "–".
+- NEVER „Baltija” / „Baltijas” / „Baltijā” — say **Latvija** (or **Lietuva** / **Igaunija** if that is the origin). NEVER „saime” — say **šis dzinējs** / **šī paaudze** / **šis agregāts** / **pēc pieejamajiem datiem, bez precīza koda**.
+- NEVER paper-calques Opus loves: „atteice”, „kontrolpunkts” / „kontrolpunkts klātienē”, „sviedru sajūgs”, „tuvākā laika izdevums”, „vecuma logs”, „vecuma kaprīze”, „izmaksu draiveris”. Say **bojājums**, **jāpārbauda klātienē**, **mitrā sajūga**, **drīzumā gaidāms darbs**, **šajā vecumā**, **īpatnība**. Write light spoken workshop Latvian like Gemini Flash, not translated English.
+- NEVER invent approximate repair/service prices (no „orientējoši 300-600 €”, no parenthetical € bands). EUR is allowed only for recorded insurance claims and listing/market prices in „Cenas vērtējums”.
+- Quattro — not „Quattro trakts”. Kardāna **krustiņi** — not „krusteniskie”. **Karājošais gultnis** — not „centra gultnis”. Say whether a fault **ir / nav populāra problēma** — never „vidējs uzturēšanas risks”.
 - For checklists, visual/physical inspections, or next-step recommendations, write **paragraphs with bold topic openers** (same as other expert comments) — e.g. **Virsbūves pārbaude.** Jāpārbauda… — never hyphen bullet lists.
 - Strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do NOT use direct conversational imperatives like "Pārbaudi" or passive/weak wording.
+
+Claude (Opus/Sonnet) additionally receives `PROVIN_CLAUDE_LV_SURFACE` at the end of the system prompt and a Sonnet grammar pass. Gemini Flash/Pro use the same vocabulary without that extra pass. Do **not** put Gemini-only rules in dispatch — keep one curriculum.
 
 ## Sync workflow
 
@@ -57,4 +63,4 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 - **Anti-repetition / complementary sources:** each field has a strict job (tech risks ≠ inspection ≠ summary ≠ mileage ≠ incidents ≠ per-source comments). When generating any comment, treat already-generated expert comments in the prompt as covered ground — add deltas only; never paraphrase the same accident/km/ownership story at similar length across AutoDNA/CarVertical/LTAB/CSDD. Sources must **complement** each other (short confirm + unique facts), not repeat 4×.
 - Full mileage synthesis (lineārums, averages, motorstundas, periods without records) only in **NOBRAUKUMA VĒSTURES KOMENTĀRS** — and even there 3–5 paragraphs, not an essay.
 - Registry data is digital and can be incomplete or mis-entered: report what the records show („ierakstos fiksēts”, „avotos nav fiksēts”), never what they „prove” (manipulation, fraud, concealment). Canonical constants: `PROVIN_RESTRAINED_TONE_RULES` and `PROVIN_COMMENT_BREVITY_RULES` in `lib/source-summary-comment-format.ts`.
-- **3. Kopsavilkums:** short professional opinion + recommendation on the overall picture — never a point-by-point rehash of already-generated source/IRISS text, and **never listing/market/repair EUR figures** (those belong in „Cenas vērtējums” and „1. Tehnisko risku analīze”). Also apply `AI_CLIENT_EMAIL_FORMAT_RULES` (plain text, no Markdown in client email).
+- **3. Kopsavilkums:** short professional opinion + recommendation on the overall picture — never a point-by-point rehash of already-generated source/IRISS text, and **never listing/market/repair EUR figures** (listing/market belong only in „Cenas vērtējums”; recorded claims in incidents; never invent repair quotes in „1. Tehnisko risku analīze”). Also apply `AI_CLIENT_EMAIL_FORMAT_RULES` (plain text, no Markdown in client email).

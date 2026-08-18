@@ -67,10 +67,23 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Attach field-agent system text to grammar polish or non-admin AI callers.
 - Duplicate full report structure in single-field outputs.
 - Invent facts not present in order context (`lib/admin-ai-order-context.ts`).
+- Invent approximate repair/service EUR in any comment field (including technical risks). Never „Baltija”, „saime”, „atteice”, „kontrolpunkts”, „sviedru sajūgs”, „vecuma kaprīze” in client Latvian — write light workshop Latvian like Gemini Flash.
 - Let per-source ✨ comments restate the full mileage synthesis — that belongs in `AI_MILEAGE_COMMENT_SYSTEM` / „NOBRAUKUMA VĒSTURES KOMENTĀRS”.
 - Let tech risks, inspection recommendations, and summary absorb each other’s essays — keep strict field roles (complement, don’t 4×-repeat).
 
-## Prompt version & evals
+## Model parity (Gemini vs Claude)
+
+All ✨ fields share the same system + user prompts via `admin-ai-dispatch.ts`. There is **no Gemini-only curriculum**. Differences:
+
+| | Gemini Flash / Gemini | Claude Sonnet (`flash`) / Opus (`pro`) |
+|--|--|--|
+| Prompts | Same field-agent + task block | Same |
+| Post-process | `applyProvinReportCopyVocabulary` | Same + **Sonnet LV polish** of the output |
+| Extra | — | `PROVIN_CLAUDE_LV_SURFACE` appended last (Claude calques) |
+
+Default routing: source/listing comments → Gemini Flash; synthesis (risks, mileage, price) → Sonnet; summary → Opus. That is why Flash often *looks* more native — short constrained fields + stronger Latvian — not because it was taught extra facts.
+
+When adding vocabulary, put it in `PROVIN_REPORT_COPY_VOCABULARY` (all models) **and** `PROVIN_CLAUDE_LV_SURFACE` if Claude historically ignores it.
 
 - Bump `PROVIN_AI_PROMPT_VERSION` in `lib/ai-prompt-version.ts` when changing client-facing prompt rules.
 - Regression: `lib/ai-eval/` (golden comment fixtures + prompt invariant tests) — run via `npm test`.

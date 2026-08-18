@@ -46,7 +46,7 @@ export { draftQualifiesForAggregateLearning, extractLearningSnippetsFromDraft };
 
 export const AI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (statiskā bāze + mācījumi no iepriekšējām atskaitēm):
 - Kombinē zemāk esošās ražotāju/agregātu pakas ar AKTĪVĀ pasūtījuma datiem un (ja ir) vēsturisko auditu fragmentiem.
-- Katru agregāta risku klasificē: **galvenais pirkuma risks** / **vidējs uzturēšanas risks** / **kontrolpunkts klātienē**.
+- Katru agregāta risku klasificē: **galvenais pirkuma risks** / **populāra problēma šajā posmā** / **jāpārbauda klātienē**. Pakas EUR skaitļi ir iekšēja kalibrācija — **nekopē tos klienta komentārā**.
 - **1. Tehnisko risku analīze** — detalizēta agregātu forenzika (8–12 rindkopas, flagship; noklusējuma 350–800 NEATTIECAS); **2. Ieteikumi** — 6–9 pārbaužu rindkopas; **3. Kopsavilkums** — kopaina bez garas tehniskās dublikācijas un BEZ cenu/EUR summām; **avotu/nobraukuma/negadījumu komentāri** — arī lieto šīs zināšanas, kur relevantas.
 - Mācījumi no citām atskaitēm — tikai paraugi un forenzikas loģika; **nekopē** klienta VIN, km, datumus, EUR, pasūtījuma ID.
 - Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.

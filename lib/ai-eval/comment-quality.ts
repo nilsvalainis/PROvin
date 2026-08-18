@@ -151,16 +151,73 @@ export function evaluateExpertCommentQuality(
   }
 
   if (field === "technical_risks") {
-    if (!/€/.test(t) && !/\bEUR\b/.test(t)) {
+    if (/orientējoši[\s\S]{0,50}€/i.test(t) || /\(\s*\d{2,5}\s*-\s*\d{2,5}\s*€/.test(t)) {
       issues.push({
-        code: "missing_eur",
-        message: "Tehnisko risku analīzē jābūt orientējošām EUR izmaksām",
+        code: "approximate_repair_price",
+        message: "Tehnisko risku analīzē neraksta aptuvenas remonta EUR summas",
       });
     }
     if (!/identifik|dzinēj|ātrumkārb|kārba|ķēd|zobsiksn|piedziņ/i.test(t)) {
       issues.push({
         code: "missing_aggregate",
         message: "Tehnisko risku analīzē jāidentificē agregāts (dzinējs/kārba/ķēde), ne vispārīgs dīzelis",
+      });
+    }
+  }
+
+  if (field !== "incidents") {
+    if (/\bsaime(?:s|i|m)?\b/i.test(t)) {
+      issues.push({
+        code: "vocabulary_saime",
+        message: "Klientam redzamā tekstā nelieto „saime” — saki dzinējs / paaudze / agregāts",
+      });
+    }
+    if (/\bBaltij/i.test(t)) {
+      issues.push({
+        code: "vocabulary_baltija",
+        message: "Klientam redzamā tekstā nelieto „Baltija” — saki Latvija (vai Lietuva / Igaunija, ja tā ir izcelsme)",
+      });
+    }
+    if (/Quattro\s+trakts|kardāna\s+krusteniskie|centra\s+gultnis/i.test(t)) {
+      issues.push({
+        code: "vocabulary_drivetrain",
+        message: "Quattro (ne „trakts”); kardāna krustiņi; karājošais gultnis — ne „krusteniskie” / „centra gultnis”",
+      });
+    }
+    if (/\b(?:zems|vidējs|augsts|liels|mazs)\s+uzturēšanas risks\b/i.test(t) || /\buzturēšanas risks\b/i.test(t)) {
+      issues.push({
+        code: "vocabulary_maintenance_risk",
+        message: "Nelieto „uzturēšanas risks” — saki, vai tā ir / nav populāra problēma",
+      });
+    }
+    if (/\batteice/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „atteice” — saki bojājums / defekts",
+      });
+    }
+    if (/\bkontrolpunkt/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „kontrolpunkts” — saki jāpārbauda klātienē",
+      });
+    }
+    if (/\bsviedru sajūg/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „sviedru sajūgs” — saki mitrā sajūga / sausā sajūga",
+      });
+    }
+    if (/tuvākā laika (?:izdevum|rēķin)|izmaksu draiveris|vecuma logs|tuvākais logs/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „tuvākā laika izdevums”, „vecuma logs”, „izmaksu draiveris” — vieglāka latviešu valoda",
+      });
+    }
+    if (/kaprīz/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „kaprīze” — saki īpatnība / šajā vecumā tipiska parādība",
       });
     }
   }
@@ -178,7 +235,7 @@ export function evaluateExpertCommentQuality(
     if (/€/.test(t) || /\bEUR\b/.test(t)) {
       issues.push({
         code: "summary_price",
-        message: "Kopsavilkumā neraksta cenas / EUR summas — tās ir cenas vērtējumā un tehniskajos riskos",
+        message: "Kopsavilkumā neraksta cenas / EUR summas — tās ir cenas vērtējumā; aptuvenas remonta cenas neraksta vispār",
       });
     }
   }
