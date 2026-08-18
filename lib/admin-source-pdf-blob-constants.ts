@@ -7,6 +7,9 @@
 
 export const SOURCE_PDF_BLOB_PREFIX = "admin-source-pdf";
 
+/** POST `/api/admin/copilot/pdf-blob-upload` — serveris izsniedz client tokenu. */
+export const SOURCE_PDF_BLOB_CLIENT_TOKEN_ACTION = "client-token";
+
 /** Virs šī izmēra PDF ceļo caur Blob, nevis pieprasījuma ķermenī. */
 export const SOURCE_PDF_DIRECT_UPLOAD_MAX_BYTES = 3 * 1024 * 1024;
 
