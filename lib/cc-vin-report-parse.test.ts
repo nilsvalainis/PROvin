@@ -284,4 +284,42 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
       { date: "24.09.2025", venue: "AUTOROLA", odometer: "999 999", price: "7 662 EUR", status: "Pārdots" },
     ]);
   });
+
+  it("nolasa Eiropas CheckCar Accident #N ar CountryDE un remonta tāmi", () => {
+    const text = [
+      "Vehicle history report",
+      "BMW 535, 2015",
+      "VIN:",
+      "WBA5K71050G295219",
+      "Report ID:",
+      "dd7bb9b04cf7c69986ecf08414bef70c",
+      "Source: Checkcar.vin",
+      "Accident records",
+      "1 accident(s)",
+      "01/06/2016",
+      "Accident #1",
+      "CountryDE",
+      "Total Repair (es\u099emate) cost1,360 USD",
+      "Mileages",
+      "2 record(s)",
+      "01/05/2016",
+      "27000 km",
+      "01/06/2016",
+      "29000 km",
+    ].join("\n");
+    expect(looksLikeCcVinReport(text, "WBA5K71050G295219_BMW_535_2015_EN.pdf")).toBe(true);
+    const p = parseCcVinReportText(text);
+    expect(p.damages).toEqual([
+      {
+        date: "01.06.2016",
+        region: "Vācija",
+        amount: "1 360 USD",
+        description: "Negadījums",
+      },
+    ]);
+    expect(p.mileage).toEqual([
+      { date: "01.06.2016", odometer: "29000", country: "" },
+      { date: "01.05.2016", odometer: "27000", country: "" },
+    ]);
+  });
 });

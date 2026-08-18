@@ -140,12 +140,53 @@ describe("applyCopilotActions", () => {
     expect(result.applied).toHaveLength(1);
     expect(result.sourceBlocks.autodna.aiContextRaw).toContain("Type code: 8V");
   });
+
+  it("writes CheckCar.vin mileage and accidents onto cc_vin", () => {
+    const blocks = createDefaultSourceBlocks();
+    const result = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "upsert_mileage",
+          source: "cc_vin",
+          date: "01.05.2016",
+          odometer: "27000",
+          country: "Vācija",
+          confidence: "high",
+        },
+        {
+          type: "upsert_incident",
+          source: "cc_vin",
+          date: "01.06.2016",
+          lossAmount: "1360 USD",
+          country: "DE",
+          confidence: "high",
+        },
+        {
+          type: "append_raw",
+          source: "cc_vin",
+          text: "Report ID: dd7bb9b04cf7c69986ecf08414bef70c",
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: true },
+    );
+    expect(result.changedKeys).toContain("cc_vin");
+    expect(result.applied).toHaveLength(3);
+    expect(result.sourceBlocks.cc_vin.mileage.some((r) => r.odometer === "27000")).toBe(true);
+    const hit = result.sourceBlocks.cc_vin.damages.find((r) => r.date === "01.06.2016");
+    expect(hit?.region).toBe("Vācija");
+    expect(hit?.amount).toMatch(/1\s*360/);
+    expect(hit?.description).toBe("Negadījums");
+    expect(result.sourceBlocks.cc_vin.aiContextRaw).toContain("dd7bb9b04cf7c69986ecf08414bef70c");
+  });
 });
 
 describe("buildCopilotBlocksSummary", () => {
   it("mentions empty sources", () => {
     const s = buildCopilotBlocksSummary(createDefaultSourceBlocks());
     expect(s).toContain("autodna");
+    expect(s).toContain("cc_vin");
     expect(s).toContain("empty");
   });
 
@@ -267,6 +308,27 @@ describe("parseCopilotAiPayload", () => {
       expect(r.actions[1].source).toBe("auto_records");
     }
     expect(r.actions[2]?.type).toBe("append_raw");
+  });
+
+  it("accepts cc_vin as a Copilot source", () => {
+    const r = parseCopilotAiPayload(
+      JSON.stringify({
+        reply: "CC.VIN ielasīts.",
+        clarificationNeeded: "",
+        actions: [
+          {
+            type: "upsert_mileage",
+            source: "cc_vin",
+            date: "01.05.2016",
+            odometer: "27000",
+            country: "Vācija",
+            confidence: "high",
+          },
+        ],
+      }),
+    );
+    expect(r.actions).toHaveLength(1);
+    expect(r.actions[0]?.source).toBe("cc_vin");
   });
 
   it("parses VIN registry fields for car.info", () => {

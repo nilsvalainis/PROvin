@@ -23,7 +23,8 @@ import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-ai-extract";
-import { detectVendorFromReport, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import { detectVendorFromReport, runCcVinPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import { looksLikeCcVinReport } from "@/lib/cc-vin-report-parse";
 import { buildCarinfoCopilotActions, looksLikeCarinfoDump } from "@/lib/admin-copilot-vin-registry";
 import {
   parseSourcePdfBlobRefs,
@@ -292,26 +293,56 @@ export async function POST(req: Request) {
     const vendorHandledFiles = new Set<string>();
 
     for (const pdf of pdfs) {
-      const detected = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName })
-        .then((e) => detectVendorFromReport(e.text, pdf.fileName))
-        .catch(() => null);
-      if (!detected || !allowedSet.has(vendorSourceKey(detected))) continue;
+      let pdfText = "";
       try {
-        const agent = await runVendorPdfAgent({
-          target: detected,
-          fileName: pdf.fileName,
-          buffer: pdf.buffer,
-          sourceBlocks: workingBlocks,
-        });
-        const result = applyCopilotActions(workingBlocks, agent.actions, { onlyAuto: false });
-        workingBlocks = result.sourceBlocks;
-        vendorAgentApplied.push(...result.applied);
-        vendorAgentNotes.push(agent.summary, ...agent.notes.slice(0, 4));
-        vendorHandledFiles.add(pdf.fileName);
-      } catch (vendorErr) {
-        const detail = vendorErr instanceof Error ? vendorErr.message : "unknown";
-        console.warn(`${LOG_PREFIX} vendor_pdf_failed`, { fileName: pdf.fileName, detail });
-        vendorAgentNotes.push(`„${pdf.fileName}” — avota aģents neizdevās (${detail}).`);
+        const extracted = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
+        pdfText = extracted.text ?? "";
+      } catch {
+        pdfText = "";
+      }
+
+      const detected = detectVendorFromReport(pdfText, pdf.fileName);
+      if (detected && allowedSet.has(vendorSourceKey(detected))) {
+        try {
+          const agent = await runVendorPdfAgent({
+            target: detected,
+            fileName: pdf.fileName,
+            buffer: pdf.buffer,
+            sourceBlocks: workingBlocks,
+          });
+          const result = applyCopilotActions(workingBlocks, agent.actions, { onlyAuto: false });
+          workingBlocks = result.sourceBlocks;
+          vendorAgentApplied.push(...result.applied);
+          vendorAgentNotes.push(agent.summary, ...agent.notes.slice(0, 4));
+          vendorHandledFiles.add(pdf.fileName);
+        } catch (vendorErr) {
+          const detail = vendorErr instanceof Error ? vendorErr.message : "unknown";
+          console.warn(`${LOG_PREFIX} vendor_pdf_failed`, { fileName: pdf.fileName, detail });
+          vendorAgentNotes.push(`„${pdf.fileName}” — avota aģents neizdevās (${detail}).`);
+        }
+        continue;
+      }
+
+      if (allowedSet.has("cc_vin") && looksLikeCcVinReport(pdfText, pdf.fileName)) {
+        try {
+          const agent = await runCcVinPdfAgent({
+            fileName: pdf.fileName,
+            buffer: pdf.buffer,
+            previous: workingBlocks.cc_vin,
+          });
+          if (agent.block) {
+            workingBlocks = { ...workingBlocks, cc_vin: agent.block };
+            vendorAgentNotes.push(agent.summary, ...agent.notes.slice(0, 4));
+            // Servisa vizītes paliek ģenēriskajam Copilot (auto_records), ja tas ir ieslēgts.
+            if (!allowedSet.has("auto_records")) vendorHandledFiles.add(pdf.fileName);
+          } else if (agent.summary) {
+            vendorAgentNotes.push(agent.summary);
+          }
+        } catch (ccVinErr) {
+          const detail = ccVinErr instanceof Error ? ccVinErr.message : "unknown";
+          console.warn(`${LOG_PREFIX} cc_vin_pdf_failed`, { fileName: pdf.fileName, detail });
+          vendorAgentNotes.push(`„${pdf.fileName}” — CC.VIN parseris neizdevās (${detail}).`);
+        }
       }
     }
 

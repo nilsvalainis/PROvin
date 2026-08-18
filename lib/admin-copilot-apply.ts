@@ -57,6 +57,13 @@ import {
   mergeAutoRecordsServiceWorkRow,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
+import {
+  ccVinDamageRowHasData,
+  emptyCcVinDamageRow,
+  emptyCcVinMileageRow,
+  type CcVinBlockState,
+  type CcVinDamageRow,
+} from "@/lib/cc-vin-report";
 import type {
   CopilotAction,
   CopilotAppendRawAction,
@@ -169,12 +176,18 @@ function collectConfirmedCountryMaps(
     for (const r of citi0.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
   }
 
+  const ccVin0 = b.cc_vin;
+  for (const r of (ccVin0.damages ?? []).filter(ccVinDamageRowHasData)) {
+    putIncident(r.date, r.amount, r.region);
+  }
+
   const mileRows = [
     ...b.autodna.serviceHistory,
     ...b.carvertical.serviceHistory,
     ...b.auto_records.serviceHistory,
     ...(citi0?.serviceHistory ?? []),
     ...(b.csdd.mileageHistory ?? []),
+    ...(ccVin0.mileage ?? []),
   ];
   for (const r of mileRows) {
     if (autoRecordsMileageRowHasData(r)) putMileage(r.date, r.odometer, r.country);
@@ -411,6 +424,47 @@ function applyMileageToCiti(b: CitiAvotiBlockState, row: AutoRecordsServiceRow):
   return { sections };
 }
 
+function damageKey(r: CcVinDamageRow): string {
+  return `${r.date}|${r.amount}|${r.region}|${r.description}`.toLowerCase();
+}
+
+function mergeCcVinDamageRows(existing: CcVinDamageRow[], incoming: CcVinDamageRow): CcVinDamageRow[] {
+  const withData = existing.filter(ccVinDamageRowHasData);
+  const key = damageKey(incoming);
+  if (withData.some((r) => damageKey(r) === key)) return existing.length ? existing : [incoming];
+  const emptyIdx = existing.findIndex((r) => !ccVinDamageRowHasData(r));
+  if (emptyIdx >= 0) {
+    const next = [...existing];
+    next[emptyIdx] = incoming;
+    return next;
+  }
+  return [...withData, incoming];
+}
+
+function applyMileageToCcVin(b: CcVinBlockState, row: AutoRecordsServiceRow): CcVinBlockState {
+  return {
+    ...b,
+    mileage: mergeMileageRows(b.mileage ?? [emptyCcVinMileageRow()], row),
+  };
+}
+
+function applyIncidentToCcVin(
+  b: CcVinBlockState,
+  action: CopilotIncidentAction,
+  row: LtabIncidentRow,
+): CcVinBlockState {
+  const damage: CcVinDamageRow = {
+    date: row.csngDate,
+    region: row.incidentNo,
+    amount: row.lossAmount,
+    description: action.note?.trim() || "Negadījums",
+  };
+  return {
+    ...b,
+    damages: mergeCcVinDamageRows(b.damages ?? [emptyCcVinDamageRow()], damage),
+  };
+}
+
 function appendText(existing: string, incoming: string, maxLen: number): string {
   const add = incoming.trim();
   if (!add) return existing;
@@ -579,6 +633,20 @@ function applyAppendRaw(
       },
     };
   }
+  if (action.source === "cc_vin") {
+    return {
+      ok: true,
+      blocks: {
+        ...blocks,
+        cc_vin: {
+          ...blocks.cc_vin,
+          aiContextRaw: clipAiContextRaw(
+            appendText(blocks.cc_vin.aiContextRaw ?? "", text, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
+          ),
+        },
+      },
+    };
+  }
   if (action.source === "citi_avoti") {
     const sections = [...(blocks.citi_avoti.sections ?? [])];
     if (sections.length === 0) {
@@ -671,6 +739,11 @@ export function applyCopilotActions(
         next = { ...next, autodna: applyIncidentToVendor(next.autodna, row) };
       } else if (action.source === "carvertical") {
         next = { ...next, carvertical: applyIncidentToVendor(next.carvertical, row) };
+      } else if (action.source === "cc_vin") {
+        next = { ...next, cc_vin: applyIncidentToCcVin(next.cc_vin, action, row) };
+      } else {
+        skipped.push({ action, reason: "unknown_source" });
+        continue;
       }
       applied.push(action);
       changed.add(action.source);
@@ -706,6 +779,11 @@ export function applyCopilotActions(
         next = { ...next, autodna: applyMileageToVendor(next.autodna, row) };
       } else if (action.source === "carvertical") {
         next = { ...next, carvertical: applyMileageToVendor(next.carvertical, row) };
+      } else if (action.source === "cc_vin") {
+        next = { ...next, cc_vin: applyMileageToCcVin(next.cc_vin, row) };
+      } else {
+        skipped.push({ action, reason: "unknown_source" });
+        continue;
       }
       applied.push(action);
       changed.add(action.source);
@@ -880,6 +958,19 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   }
   pushClippedNote(lines, "auto_records comments", b.auto_records.comments);
   pushClippedNote(lines, "auto_records RAW", b.auto_records.rawUnprocessedData ?? "");
+
+  pushMile("cc_vin", b.cc_vin.mileage ?? []);
+  const ccDamages = (b.cc_vin.damages ?? []).filter(ccVinDamageRowHasData);
+  if (ccDamages.length === 0) {
+    lines.push("cc_vin incidents: (empty)");
+  } else {
+    lines.push("cc_vin incidents:");
+    for (const r of ccDamages.slice(0, 40)) {
+      lines.push(`  - ${r.date} | ${r.amount} | ${r.region} | ${r.description}`);
+    }
+  }
+  pushClippedNote(lines, "cc_vin comments", b.cc_vin.comments);
+  pushClippedNote(lines, "cc_vin RAW/AI", b.cc_vin.aiContextRaw || b.cc_vin.rawUnprocessedData);
 
   const citi0 = b.citi_avoti.sections[0];
   if (citi0) {

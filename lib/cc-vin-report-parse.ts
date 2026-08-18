@@ -16,6 +16,7 @@ import type {
   CcVinSaleRow,
   CcVinTitleRow,
 } from "@/lib/cc-vin-report";
+import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export type CcVinParsedReport = {
   vin: string;
@@ -494,6 +495,68 @@ function parseDamages(lines: string[], out: CcVinParsedReport): void {
       description: `Norakstīto auto izsole: ${description}`,
     });
   }
+
+  parseAccidentRecords(lines, out);
+}
+
+/**
+ * Eiropas CheckCar.vin: „Accident records” / „Accident #1” + CountryDE + remonta tāme.
+ * ASV atskaitēs šī sadaļa bieži ir „No records found” — tad rindu nav.
+ */
+function parseAccidentRecords(lines: string[], out: CcVinParsedReport): void {
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^accident\s*#\s*\d+$/i.test(lines[i]!)) continue;
+
+    let date = "";
+    for (let j = i - 1; j >= 0 && j >= i - 8; j--) {
+      if (DATE_RE.test(lines[j]!)) {
+        date = lvDate(lines[j]!);
+        break;
+      }
+    }
+
+    let region = "";
+    let amount = "";
+    for (let j = i + 1; j < Math.min(lines.length, i + 14); j++) {
+      const line = lines[j]!;
+      if (/^accident\s*#\s*\d+$/i.test(line)) break;
+      if (
+        /^(mileages|accident records|services records|vehicle damages|salvage auction records|title records)$/i.test(
+          line,
+        )
+      ) {
+        break;
+      }
+
+      const countryLine = line.match(/^country\s*:?\s*(.+)$/i);
+      if (countryLine) {
+        region = countryFromCcVinLabel(countryLine[1]!);
+        continue;
+      }
+
+      const cost = line.match(
+        /total\s+repair(?:\s*\([^)]*\))?\s*cost\s*:?\s*([\d.,\s]+)\s*(USD|EUR|GBP)/i,
+      );
+      if (cost) {
+        amount = moneyDisplay(`${cost[1]!.trim()} ${cost[2]!.toUpperCase()}`);
+      }
+    }
+
+    if (!date && !region && !amount) continue;
+    out.damages.push({
+      date,
+      region,
+      amount,
+      description: "Negadījums",
+    });
+  }
+}
+
+/** „CountryDE” / „DE” / „Germany” → latviskais nosaukums, ja atpazīstams. */
+function countryFromCcVinLabel(raw: string): string {
+  const t = raw.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  return normalizeCountryNameLv(t) || titleCase(t);
 }
 
 /** Apdrošinātāju / junk-salvage ieraksti: datums, uzņēmums, DETAILS, Location/Disposition. */

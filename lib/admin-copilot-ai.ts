@@ -33,7 +33,8 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 - LTAB / OCTA → ltab: insurance accident rows only (date + EUR + country). Leftover significant facts → append_raw on ltab.
 - Auto Records / ODOMETER CHECK → auto_records: mileage rows + set_service_history when service journal present
 - Official dealer / factory printout (BMW dealer portal export with MODEL SERIES … UPHOLSTERY CODE, „Specifications & Options”, „Key Read History”, „Repair History”; auto-records.com „VEHICLE INFORMATION”) → auto_records: set_dealer_vehicle_info (primary field source), Key Read History rows → upsert_mileage, Repair/Service History visits → upsert_service_work (location = dealer/workshop name, works = the parts in Latvian without part numbers), plus a factual set_service_history summary. Odometer values printed as „188,858 mi / 303,938 km” → ALWAYS store kilometres (convert miles × 1.609344 when km is missing).
-- Other foreign reports → citi_avoti (first section): mileage + incidents when present; leftover facts → append_raw on citi_avoti
+- CheckCar.vin / checkcar.vin / cc.vin „Vehicle history report” (Report ID, Attention marks, Source: Checkcar.vin) → ALWAYS cc_vin when enabled: odometer/mileage rows + Accident records / damages (date + country + repair/claim cost). NEVER dump CheckCar.vin into citi_avoti. If CURRENT TABLES already show cc_vin mileage/incidents, do not duplicate those rows. Service/repair visits in the same PDF („Services records”, Services #N, WORK PERFORMED) → upsert_service_work on auto_records when that source is enabled. Leftover significant facts → append_raw on cc_vin.
+- Other foreign reports (not CheckCar.vin / AutoDNA / CarVertical / dealer) → citi_avoti (first section): mileage + incidents when present; leftover facts → append_raw on citi_avoti
 - tjekbil.dk / DMR (Denmark) → tjekbil: odometer log, owners/registration summary, taxi/leasing/status, short Latvian notes (stolen, commercial use, export, km rollback)
 - mnt.ee / Transpordiamet (Estonia) → mnt_ee: mileage, usage history, restrictions; noteworthy facts into autoNotes
 - lkf.ee / Kahjukontroll (Estonia OCTA) → lkf_ee: insurance claims → upsert_incident (date + amount if shown + country Igaunija); leftover → status/notes
@@ -41,7 +42,7 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 
 Sources (must match exactly):
 - csdd is handled by dedicated CSDD PDF import when enabled — no JSON actions for csdd
-- autodna | carvertical | ltab | auto_records | citi_avoti | tjekbil | mnt_ee | lkf_ee | carinfo
+- autodna | carvertical | ltab | auto_records | cc_vin | citi_avoti | tjekbil | mnt_ee | lkf_ee | carinfo
 
 Actions:
 1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country. ONLY real accidents / insurance claims / damage-loss events. Never invent incidents. Never map vehicle value/price records into incidents.
@@ -58,7 +59,7 @@ Actions:
    Field set mirrors an official dealer / factory printout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE → engineCode, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY → interior, UPHOLSTERY CODE → interiorCode).
    Fill it from an official dealer printout when attached; otherwise from CarVertical „Transportlīdzekļa specifikācija” + PR/equipment code list and AutoDNA „Transportlīdzekļa tehniskie dati”. An official dealer / factory printout is the PRIMARY source for these fields — its values replace AutoDNA / CarVertical values.
    Prefer the LONGEST / most specific designation WITH its factory code: „Havana Black Metallic (LY8X)” over „Melns”; „Valcona leather (N5D)” over „Leather package”; transmission with gear count + code. Omit fields the PDFs do not show. Dates in these fields: DD.MM.YYYY.
-5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW; tjekbil/mnt_ee/lkf_ee/carinfo → RAW. Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
+5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical/cc_vin → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW; tjekbil/mnt_ee/lkf_ee/carinfo → RAW. Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
 6) set_registry_fields — ONLY tjekbil | mnt_ee | lkf_ee | carinfo. Short Latvian facts, one line per fact. No icons, no “RED FLAG”, no English leftovers, no em dashes. ownersSummary: owner count + owner-change dates. statusRecords: in traffic, colour, engine, export. autoNotes: the noteworthy facts in plain Latvian (export, 0 km classified vs registry km, stolen, commercial use, km rollback). Never invent facts the dump does not support.
 
 When multiple PDFs are attached:
@@ -113,7 +114,7 @@ const ACTION_ITEM_SCHEMA: AiJsonSchema = {
     },
     source: {
       type: JsonType.STRING,
-      enum: ["autodna", "carvertical", "ltab", "auto_records", "citi_avoti", "tjekbil", "mnt_ee", "lkf_ee", "carinfo"],
+      enum: COPILOT_SOURCE_KEYS.filter((k) => k !== "csdd"),
     },
     date: { type: JsonType.STRING },
     lossAmount: { type: JsonType.STRING },
