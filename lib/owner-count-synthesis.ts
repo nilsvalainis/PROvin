@@ -135,7 +135,7 @@ export function formatOwnerCountBannerNoteParts(
   return parts;
 }
 
-/** PDF kartītes valstu kolonnas (variants A) — ISO + lokatīvs, bez kopsummas varoņa. */
+/** PDF kartītes valstu fakti — lokatīvs + skaits, bez ISO. */
 export type OwnerCountCountryStat = {
   iso: string;
   name: string;
@@ -152,6 +152,19 @@ export function formatOwnerCountCountryStats(
     out.push({ iso: COUNTRY_ISO[id], name: COUNTRY_LOCATIVE[id], count: row.count });
   }
   return out;
+}
+
+/** Variants I: pirmā valsts treknajā rindā, pārējās piezīmē. */
+export function formatOwnerCountTileFacts(
+  chosen: Partial<Record<OwnerCountryId, OwnerCountCandidate>>,
+): { value: string; note: string } {
+  const stats = formatOwnerCountCountryStats(chosen);
+  if (stats.length === 0) return { value: "", note: "" };
+  const fact = (s: OwnerCountCountryStat) => `${s.name} ${s.count}`;
+  return {
+    value: fact(stats[0]!),
+    note: stats.slice(1).map(fact).join(", "),
+  };
 }
 
 export function formatOwnerCountBannerNote(

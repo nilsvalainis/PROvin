@@ -563,39 +563,24 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
         "pdf-summary-tile",
         `pdf-summary-tile--${t.tone}`,
         t.wide ? "pdf-summary-tile--wide" : "",
-        t.countryStats && t.countryStats.length > 0 ? "pdf-summary-tile--owners" : "",
       ]
         .filter(Boolean)
         .join(" ");
-      const stats = t.countryStats ?? [];
-      const chipsHtml =
-        stats.length > 0
-          ? `<div class="pdf-summary-tile__chips">${stats
-              .map((c) => {
-                const flag = pdfCountryFlagEmoji(c.iso || c.name);
-                const aria = escapeHtml(`${c.count} ${c.name}`);
-                return `<span class="pdf-summary-owner-chip" role="img" aria-label="${aria}"><span class="pdf-country-flag pdf-summary-owner-chip__flag" aria-hidden="true">${flag}</span><span class="pdf-summary-owner-chip__n">${escapeHtml(String(c.count))}</span></span>`;
-              })
-              .join("")}</div>`
-          : "";
-      const valueHtml = t.value ? `<p class="pdf-summary-tile__value">${escapeHtml(t.value)}</p>` : "";
       const noteHtml =
-        stats.length > 0
-          ? chipsHtml
-          : t.noteSegments && t.noteSegments.length > 0
-            ? `<p class="pdf-summary-tile__note">${t.noteSegments
-                .map((part, i) =>
-                  i === 0
-                    ? escapeHtml(part)
-                    : `<span class="pdf-summary-tile__sep" aria-hidden="true"></span>${escapeHtml(part)}`,
-                )
-                .join("")}</p>`
-            : t.note
-              ? `<p class="pdf-summary-tile__note">${escapeHtml(t.note)}</p>`
-              : "";
+        t.noteSegments && t.noteSegments.length > 0
+          ? `<p class="pdf-summary-tile__note">${t.noteSegments
+              .map((part, i) =>
+                i === 0
+                  ? escapeHtml(part)
+                  : `<span class="pdf-summary-tile__sep" aria-hidden="true"></span>${escapeHtml(part)}`,
+              )
+              .join("")}</p>`
+          : t.note
+            ? `<p class="pdf-summary-tile__note">${escapeHtml(t.note)}</p>`
+            : "";
       return `<li class="${cls}">
       <p class="pdf-summary-tile__label">${escapeHtml(t.label)}</p>
-      ${valueHtml}
+      ${t.value ? `<p class="pdf-summary-tile__value">${escapeHtml(t.value)}</p>` : ""}
       ${noteHtml}
     </li>`;
     })
@@ -1978,16 +1963,6 @@ function clientReportPrintCss(): string {
         display:inline-block;width:1px;height:0.75em;margin:0 0.7em;background:#94a3b8;vertical-align:0.14em;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-summary-tile__chips{
-        display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 0;
-      }
-      .pdf-summary-owner-chip{
-        display:inline-flex;align-items:center;gap:6px;padding:4px 8px 4px 7px;border-radius:6px;
-        background:#fff;border:1px solid #e8eef4;line-height:1;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-summary-owner-chip__flag{font-size:15px;line-height:1;}
-      .pdf-summary-owner-chip__n{font-size:13px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;}
       /* Gara teksta kartīte (manuālie ieraksti) — abas kolonnas, teksts vērtības vietā. */
       .pdf-summary-tile--wide{grid-column:1 / -1;}
       .pdf-summary-tile--wide .pdf-summary-tile__note{

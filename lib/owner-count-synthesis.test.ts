@@ -10,6 +10,7 @@ import {
   extractExplicitOwnerCount,
   formatOwnerCountBannerNote,
   formatOwnerCountCountryStats,
+  formatOwnerCountTileFacts,
   inferOwnerCountry,
   synthesizeOwnerCountsFromBlocks,
   synthesizeOwnerCountsFromPdfInput,
@@ -86,5 +87,9 @@ describe("synthesizeOwnerCountsFromPdfInput", () => {
       { iso: "LV", name: "Latvijā", count: 2 },
       { iso: "SE", name: "Zviedrijā", count: 6 },
     ]);
+    expect(formatOwnerCountTileFacts(syn.chosen)).toEqual({
+      value: "Latvijā 2",
+      note: "Zviedrijā 6",
+    });
   });
 });

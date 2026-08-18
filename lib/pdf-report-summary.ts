@@ -27,7 +27,7 @@ import {
   resolveProvinBanners,
 } from "@/lib/provin-alert-banners";
 import {
-  formatOwnerCountCountryStats,
+  formatOwnerCountTileFacts,
   synthesizeOwnerCountsFromPdfInput,
 } from "@/lib/owner-count-synthesis";
 import {
@@ -44,12 +44,6 @@ import {
 
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
 
-export type PdfSummaryCountryStat = {
-  iso: string;
-  name: string;
-  count: number;
-};
-
 export type PdfSummaryTile = {
   /** Bāzes plāksnītes — fiksēti id; brīdinājumu un manuālās kartītes — `alert-…`, `manual-…`. */
   id: string;
@@ -58,8 +52,6 @@ export type PdfSummaryTile = {
   note: string;
   /** Ja ir, piezīmi drukā ar cap-height strīpiņu starp daļām (ne „+”). */
   noteSegments?: string[];
-  /** Valstu sadalījums — īpašnieku kartīte: skaitlis + ISO, kopā paliek titula malā. */
-  countryStats?: PdfSummaryCountryStat[];
   tone: PdfSummaryTileTone;
   /** Gara teksta kartīte — režģī aizņem abas kolonnas. */
   wide?: boolean;
@@ -162,12 +154,12 @@ function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
       tone: "neutral",
     };
   }
+  const facts = formatOwnerCountTileFacts(syn.chosen);
   return {
     id: "owners",
     label: "Īpašnieku skaits",
-    value: pluralLv(syn.totalCount, "īpašnieks", "īpašnieki"),
-    note: syn.noteLine,
-    countryStats: formatOwnerCountCountryStats(syn.chosen),
+    value: facts.value,
+    note: facts.note,
     tone: "ok",
   };
 }
