@@ -32,6 +32,8 @@ type GenerateOpts = {
   maxLen?: number;
   maxTokens?: number;
   maxSearches?: number;
+  /** Claude web search: izlaist Sonnet gramatiku, ja klienta LV raksta Gemini. */
+  skipLvPolish?: boolean;
 };
 
 /** Vieglie uzdevumi — Gemini; smagie — Claude. Izvēle nāk no admin pogas.
@@ -90,6 +92,7 @@ export async function adminGenerateTextWithWebSearch(opts: GenerateOpts): Promis
     temperature: opts.temperature,
     maxTokens: opts.maxTokens,
     maxSearches: opts.maxSearches,
+    skipLvPolish: opts.skipLvPolish,
   });
 }
 

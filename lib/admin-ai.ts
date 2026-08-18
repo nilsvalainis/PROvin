@@ -518,8 +518,9 @@ export async function aiGenerateText(opts: {
 /**
  * Claude latviešu eksperta proza (Opus / Sonnet / Haiku) pēc ģenerēšanas iet caur
  * Sonnet gramatiku — tas pats slīpējums, ko agrāk saņēma tikai Haiku. Gemini to
- * nesaņem, jo Flash/Pro jau raksta dabiskāku LV. Slīpē tikai izejas tekstu, ne
- * visu pasūtījuma kontekstu.
+ * nesaņem, jo Flash/Pro jau raksta dabiskāku LV. Tehniskie riski: Sonnet slīpējumu
+ * izlaiž, ja klienta LV raksta Gemini Flash (`skipLvPolish`). Slīpē tikai izejas
+ * tekstu, ne visu pasūtījuma kontekstu.
  */
 async function polishClaudeLatvianProse(
   text: string,
@@ -648,6 +649,8 @@ export async function aiGenerateTextWithWebSearch(opts: {
   temperature?: number;
   maxTokens?: number;
   maxSearches?: number;
+  /** Tehniskie riski: Gemini raksta klienta LV — neatgriezt Sonnet slīpējumu pirms tam. */
+  skipLvPolish?: boolean;
 }): Promise<string> {
   const key = getAnthropicApiKeyFromEnv();
   if (!key) throw new Error("missing_ai_key");
@@ -656,6 +659,8 @@ export async function aiGenerateTextWithWebSearch(opts: {
     primaryModel: opts.model,
     logLabel: "web_search",
     run: async (model) =>
-      polishClaudeLatvianProse(await aiGenerateTextWithWebSearchOnce(key, { ...opts, model })),
+      polishClaudeLatvianProse(await aiGenerateTextWithWebSearchOnce(key, { ...opts, model }), {
+        skip: opts.skipLvPolish,
+      }),
   });
 }

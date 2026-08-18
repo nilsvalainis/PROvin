@@ -30,7 +30,7 @@ RULES:
 - Runtime also interpolates `PROVIN_REPORT_COPY_VOCABULARY`: never introduce „Baltija”, „saime”, „atteice”, „kontrolpunkts”, „sviedru sajūgs”, „vecuma kaprīze”, or invented repair €; keep listing/claim EUR unchanged. Rewrite English-calque Latvian (trakts, krusteniskie, centra gultnis, transmisija, bare injektors) into light workshop Latvian.
 - Output ONLY the corrected text in clean Markdown.
 
-This same prompt is the **post-edit** for every Claude (Opus / Sonnet / Haiku) expert generation in `lib/admin-ai.ts` (`polishClaudeLatvianProse`). Gemini output is not post-polished. The admin ✨ polish button sets `skipLvPolish` so it does not run twice.
+This same prompt is the **post-edit** for Claude (Opus / Sonnet / Haiku) expert generation in `lib/admin-ai.ts` (`polishClaudeLatvianProse`), except „1. Tehnisko risku analīze” when Gemini Flash rewrites client copy (`skipLvPolish`). Polish keeps the author’s voice — it cannot turn Claude paper-Latvian into Gemini workshop Latvian. Gemini output is not post-polished. The admin ✨ polish button sets `skipLvPolish` so it does not run twice.
 
 ## Sync workflow
 

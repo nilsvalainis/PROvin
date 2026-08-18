@@ -2,7 +2,10 @@ import "server-only";
 
 import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-identification";
-import { AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
+import {
+  AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM,
+  AI_TECHNICAL_RISKS_GEMINI_REWRITE_SYSTEM,
+} from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
   buildFullAiOrderContextText,
@@ -16,6 +19,40 @@ import {
   rethrowNormalizedIncompleteComment,
 } from "@/lib/admin-ai-incomplete";
 import { normalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
+import { polishLatvianTextWithAi } from "@/lib/admin-ai-polish";
+import {
+  geminiGenerateExpertText,
+  getGeminiApiKeyFromEnv,
+  resolveGeminiAdminModel,
+} from "@/lib/admin-gemini";
+import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
+import {
+  isTechnicalRisksClientRewriteTooThin,
+  shouldChainClaudeTechnicalRisksToGeminiWrite,
+  TECHNICAL_RISKS_ANALYST_THEN_WRITER_NOTE,
+} from "@/lib/admin-ai-technical-risks-write";
+
+const LOG_PREFIX = "[admin-ai-technical-risks]";
+
+async function rewriteTechnicalRisksClientCopyWithGemini(analystBrief: string): Promise<string> {
+  const userPrompt = `Pārraksti šo tehnisko risku analītiķa tekstu klienta latviešu valodā laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”. Saglabā visus tehniskos apgalvojumus, rangus, hipotēzes un „kas NAV risks”. Pārbūvē teikumus — tas nav gramatikas slīpējums.
+
+---
+ANALĪTIĶA TEKSTS:
+${analystBrief.trim()}`;
+
+  const rewritten = await geminiGenerateExpertText({
+    model: resolveGeminiAdminModel("flash"),
+    systemInstruction: AI_TECHNICAL_RISKS_GEMINI_REWRITE_SYSTEM,
+    userPrompt,
+    temperature: 0.28,
+    maxLen: 16_000,
+  });
+  if (isTechnicalRisksClientRewriteTooThin(analystBrief, rewritten)) {
+    throw new Error("gemini_rewrite_too_thin");
+  }
+  return rewritten;
+}
 
 export async function generateTechnicalRiskAnalysisWithAi(
   input: AiOrderContextInput,
@@ -38,6 +75,11 @@ export async function generateTechnicalRiskAnalysisWithAi(
     vin: input.vin,
   });
 
+  const chainGeminiWrite = shouldChainClaudeTechnicalRisksToGeminiWrite(
+    input.modelTier,
+    Boolean(getGeminiApiKeyFromEnv()),
+  );
+
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
@@ -49,7 +91,7 @@ ${orderContext}
 ---
 
 Sagatavo **tehniski izcilu, detalizētu** tehnisko risku analīzi laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”. Šī ir atskaites svarīgākā komentāru sadaļa — īss vispārīgs teksts šeit ir kļūda.
-
+${chainGeminiWrite ? `\n${TECHNICAL_RISKS_ANALYST_THEN_WRITER_NOTE}\n` : ""}
 OBLIGĀTI:
 - Sāc ar **agregātu identifikāciju**: pēc tilpuma, jaudas, degvielas, izmešu klases, gada un (ja ir) dzinēja koda nosaki visticamāko dzinēja tipu/kodu, ātrumkārbas tipu un piedziņu. Ja precīzs kods nav avotos — nosauc **1–2 kandidātus** kā hipotēzi un pasaki, kā to apstiprināt (VIN atšifrējums, dzinēja marķējums, kārbas plāksnīte). Nekad neuzdod izsecinātu kodu par reģistrā nolasītu faktu.
 - **Kalibrē riskus pret šī auto aptuveno nobraukumu un vecumu:** kam resurss šajā posmā tipiski jau iztērēts (un tāpēc jābūt pierādītam servisa vēsturē), kas gaidāms nākamajos ~20–40 tūkst. km, un kas ir tikai tāla perspektīva. Sakārto pēc **varbūtības un tā, vai tā ir populāra problēma**. Piemērs: 300 tūkst. km M57 ar blīvu DE servisu ir ierasts darba mūžs; tas pats km uz N57 ir pavisam cits stāsts.
@@ -82,8 +124,30 @@ OBLIGĀTI:
       temperature: 0.32,
       maxSearches: 6,
       maxLen: 16_000,
+      skipLvPolish: chainGeminiWrite,
     });
-    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
+    const analyzed = throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
+    if (!chainGeminiWrite) return analyzed;
+
+    try {
+      const rewritten = await rewriteTechnicalRisksClientCopyWithGemini(analyzed);
+      console.info(`${LOG_PREFIX} gemini_client_rewrite`, {
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        sourceChars: analyzed.length,
+        outChars: rewritten.length,
+      });
+      return throwIfBlankGeneratedComment(rewritten);
+    } catch (rewriteErr) {
+      console.warn(`${LOG_PREFIX} gemini_client_rewrite_failed`, {
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        message: rewriteErr instanceof Error ? rewriteErr.message.slice(0, 240) : "unknown",
+      });
+      try {
+        return throwIfBlankGeneratedComment(await polishLatvianTextWithAi(analyzed));
+      } catch {
+        return analyzed;
+      }
+    }
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, normalizeProvinExpertAiComment);
   }

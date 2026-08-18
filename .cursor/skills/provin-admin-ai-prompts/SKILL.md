@@ -42,7 +42,8 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 | Export | Active field | Consumer |
 |--------|--------------|----------|
 | `PROVIN_FIELD_AGENT_SYSTEM` | Base | All field-agent prompts |
-| `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze | `admin-ai-technical-risks.ts` — Claude web search (Eiropas forumi, ja paka nesedz) + aggregate knowledge |
+| `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze | `admin-ai-technical-risks.ts` — Claude web search (analīze); Gemini Flash pārraksta klienta LV (`AI_TECHNICAL_RISKS_GEMINI_REWRITE_SYSTEM`) |
+| `AI_TECHNICAL_RISKS_GEMINI_REWRITE_SYSTEM` | 1. Tehnisko risku analīze (klienta LV) | Gemini Flash rewrite after Claude — not grammar polish; must not drop mezgli |
 | `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-ai-inspection.ts` — **expert markdown** (bold hooks, no `- `); uses technical-risks section |
 | `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-ai-seller.ts` — **expert markdown** |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums | `admin-ai-price.ts` |
@@ -73,7 +74,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 
 ## Model parity (Gemini vs Claude)
 
-All ✨ fields share the same system + user prompts via `admin-ai-dispatch.ts`. There is **no Gemini-only curriculum**. Differences:
+Most ✨ fields share the same system + user prompts via `admin-ai-dispatch.ts`. Differences:
 
 | | Gemini Flash / Gemini | Claude Sonnet (`flash`) / Opus (`pro`) |
 |--|--|--|
@@ -81,7 +82,9 @@ All ✨ fields share the same system + user prompts via `admin-ai-dispatch.ts`. 
 | Post-process | `applyProvinReportCopyVocabulary` | Same + **Sonnet LV polish** of the output |
 | Extra | — | `PROVIN_CLAUDE_LV_SURFACE` appended last (Claude calques) |
 
-Default routing: source/listing comments → Gemini Flash; synthesis (risks, mileage, price) → Sonnet; summary → Opus. That is why Flash often *looks* more native — short constrained fields + stronger Latvian — not because it was taught extra facts.
+**Exception — „1. Tehnisko risku analīze”:** default `flash`/`pro` is a **two-step chain**. Claude (web search, flagship 8–12 paragraphs) analyzes; **Gemini Flash rewrites** client Latvian (`AI_TECHNICAL_RISKS_GEMINI_REWRITE_SYSTEM`). Sonnet polish is skipped on that path — polish keeps Claude’s paper voice („ne šis, ne tas”). If Gemini is missing or the rewrite is too thin, fall back to Sonnet polish. Operator Gemini-only buttons skip the chain (Gemini already writes). Do not dumb down Claude’s technical bar to fix language.
+
+Default routing: source/listing comments → Gemini Flash; synthesis (mileage, price) → Sonnet; **technical risks → Sonnet/Opus analysis + Gemini Flash write**; summary → Opus.
 
 When adding vocabulary, put it in `PROVIN_REPORT_COPY_VOCABULARY` (all models) **and** `PROVIN_CLAUDE_LV_SURFACE` if Claude historically ignores it.
 

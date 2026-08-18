@@ -3,6 +3,7 @@ import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 /**
  * Ieteicamais ✨ līmenis pēc lauka — dārgais Opus tikai verdiktam.
  * Gemini Flash = avotu/listing īsie komentāri; Sonnet = sintēze; Opus = kopsavilkums.
+ * Tehniskie riski (`flash`/`pro`): Claude analizē, Gemini Flash raksta klienta LV.
  */
 export type AiAdminFieldKind =
   | "source_comment"

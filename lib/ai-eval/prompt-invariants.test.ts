@@ -286,9 +286,13 @@ describe("PROVIN AI prompt invariants", () => {
     expect(summary).toMatch(/Tehnisko risku|NEATKĀRTO|nedublē|NEDUBLĒ/i);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/adminGenerateTextWithWebSearch/);
+    expect(tech).toMatch(/skipLvPolish:\s*chainGeminiWrite/);
+    expect(tech).toMatch(/rewriteTechnicalRisksClientCopyWithGemini/);
+    expect(tech).toMatch(/AI_TECHNICAL_RISKS_GEMINI_REWRITE_SYSTEM/);
     const dispatch = readRepo("lib/admin-ai-dispatch.ts");
     expect(dispatch).toMatch(/aiGenerateTextWithWebSearch/);
     expect(dispatch).toMatch(/geminiGenerateTextWithGoogleSearch/);
+    expect(dispatch).toMatch(/skipLvPolish/);
   });
 
   it("avg annual mileage banner is removed from info banners", () => {
@@ -437,12 +441,21 @@ describe("PROVIN AI prompt invariants", () => {
   });
 
   it("web search agents get a route budget longer than their request timeout", () => {
-    for (const route of [
-      "app/api/admin/ai/summary-analysis/route.ts",
-      "app/api/admin/ai/technical-risk-analysis/route.ts",
-      "app/api/admin/ai/seller-analysis/route.ts",
-    ]) {
-      expect(readRepo(route)).toMatch(/maxDuration = 120/);
-    }
+    expect(readRepo("app/api/admin/ai/summary-analysis/route.ts")).toMatch(/maxDuration = 120/);
+    expect(readRepo("app/api/admin/ai/seller-analysis/route.ts")).toMatch(/maxDuration = 120/);
+    expect(readRepo("app/api/admin/ai/technical-risk-analysis/route.ts")).toMatch(
+      /maxDuration = 180/,
+    );
+  });
+
+  it("technical risks keep Claude analysis and Gemini client Latvian", () => {
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(/AI_TECHNICAL_RISKS_GEMINI_REWRITE_SYSTEM/);
+    expect(prompts).toMatch(/THIS IS NOT A GRAMMAR PASS/);
+    expect(prompts).toMatch(/Do not summarise/);
+    const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/resolveGeminiAdminModel\("flash"\)/);
+    expect(tech).toMatch(/TECHNICAL_RISKS_ANALYST_THEN_WRITER_NOTE/);
+    expect(readRepo("lib/admin-ai.ts")).toMatch(/skipLvPolish/);
   });
 });

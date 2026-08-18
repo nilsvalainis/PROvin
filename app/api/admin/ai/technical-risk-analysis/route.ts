@@ -10,7 +10,8 @@ import { generateTechnicalRiskAnalysisWithAi } from "@/lib/admin-ai-technical-ri
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 
-export const maxDuration = 120;
+/** Claude web search + Gemini klienta LV pārraksts. */
+export const maxDuration = 180;
 export const runtime = "nodejs";
 
 type BodyShape = {
