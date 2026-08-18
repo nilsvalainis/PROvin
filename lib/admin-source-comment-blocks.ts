@@ -20,6 +20,7 @@ import {
   vendorAvotuBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
@@ -39,6 +40,7 @@ export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
   "autodna",
   "carvertical",
   "auto_records",
+  "cc_vin",
   "tjekbil",
   "mnt_ee",
   "lkf_ee",
@@ -85,6 +87,9 @@ export function sourceBlockPlainTextExcludingComments(
     case "auto_records":
       base = autoRecordsBlockToPlainText({ ...blocks.auto_records, comments: "" }).trim();
       return appendAiContextRawSection(base, blocks.auto_records.aiContextRaw);
+    case "cc_vin":
+      base = ccVinBlockToPlainText({ ...blocks.cc_vin, comments: "" }).trim();
+      return appendAiContextRawSection(base, blocks.cc_vin.aiContextRaw);
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -120,6 +125,8 @@ export function sourceBlockCommentsPlain(
         .join("\n\n");
     case "auto_records":
       return blocks.auto_records.comments;
+    case "cc_vin":
+      return blocks.cc_vin.comments;
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -250,6 +257,8 @@ export function applySourceBlockGeneratedComment(
         return { ...block, serviceHistoryNotes: html };
       }
       return { ...block, comments: html };
+    case "cc_vin":
+      return { ...(block as CcVinBlockState), comments: html };
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
