@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getAdminSession } from "@/lib/admin-auth";
-import { isSafeStripeCheckoutSessionId, notifyPortfolioPathPrefix } from "@/lib/admin-notify-blob-constants";
+import { isSafeNotifyOrderId, notifyPortfolioPathPrefix } from "@/lib/admin-notify-blob-constants";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
             /* ignore */
           }
         }
-        if (!isSafeStripeCheckoutSessionId(sessionId)) {
+        if (!isSafeNotifyOrderId(sessionId)) {
           throw new Error("Invalid clientPayload.sessionId");
         }
         const needPrefix = `${notifyPortfolioPathPrefix(sessionId)}/`;

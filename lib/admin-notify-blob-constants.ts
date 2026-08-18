@@ -1,3 +1,5 @@
+import { isSafeAdminOrderId } from "@/lib/admin-source-pdf-blob-constants";
+
 /** Vercel Blob pathname prefix — klienta augšupielāde pirms „notify-report-ready” e-pastam. */
 export const NOTIFY_PORTFOLIO_BLOB_PREFIX = "admin-notify-portfolio";
 
@@ -6,9 +8,14 @@ export function notifyPortfolioPathPrefix(sessionId: string): string {
   return `${NOTIFY_PORTFOLIO_BLOB_PREFIX}/${id}`;
 }
 
-/** Stripe Checkout Session id (`cs_…`). */
+/** Stripe `cs_…`, `demo_order_…`, `manual_order_…` — tas pats, ko avotu PDF Blob. */
+export function isSafeNotifyOrderId(id: string): boolean {
+  return isSafeAdminOrderId(id);
+}
+
+/** @deprecated Use `isSafeNotifyOrderId` — e-pasta Blob ceļš pieņem arī manuālos pasūtījumus. */
 export function isSafeStripeCheckoutSessionId(id: string): boolean {
-  return /^cs_[a-zA-Z0-9_]+$/.test(id.trim());
+  return isSafeNotifyOrderId(id);
 }
 
 export function isNotifyBlobHostname(hostname: string): boolean {

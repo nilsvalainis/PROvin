@@ -3,7 +3,7 @@ import "server-only";
 import { del, get } from "@vercel/blob";
 import {
   isNotifyBlobHostname,
-  isSafeStripeCheckoutSessionId,
+  isSafeNotifyOrderId,
   notifyPortfolioPathPrefix,
 } from "@/lib/admin-notify-blob-constants";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
@@ -44,7 +44,7 @@ export async function fetchNotifyBlobAttachmentsForEmail(
   blobToken: string,
 ): Promise<ReportReadyMailAttachment[]> {
   const sid = sessionId.trim();
-  if (!isSafeStripeCheckoutSessionId(sid)) {
+  if (!isSafeNotifyOrderId(sid)) {
     throw new Error("invalid_session_id");
   }
   const expectedNeedle = `/${notifyPortfolioPathPrefix(sid)}/`;
