@@ -1,0 +1,15 @@
+---
+description: Veci, nākamajās TA novērsti defekti nav klātienes medību saraksts; rūsa un cietās daļiņas paliek uzmanības punkts.
+alwaysApply: true
+---
+
+# Novērsti vēsturiskie TA defekti
+
+CSDD tehniskās apskates (un citi avoti) — visos komentāros:
+
+- Faktus drīkst konstatēt.
+- Nedrīkst likt klientam klātienē meklēt ~2+ gadus vecus defektus (lukturi, brīvkustība, slotiņas, bremzes, vienreizējas noplūdes), ja nākamā un/vai aiznākamā apskate tos vairs nerāda.
+- Klātienes saraksts = atkārtoti vai joprojām aktuāli punkti.
+- Izņēmums: **rūsa/korozija** un **cietās daļiņas / dūmainība** — ja kādreiz fiksētas, paliek uzmanības punkts arī vēlāk (kvalitatīvi novērst ir sarežģīti un dārgi).
+
+Kanons: `AI_RESOLVED_HISTORICAL_FINDINGS_RULES`.

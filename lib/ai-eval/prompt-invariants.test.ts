@@ -9,6 +9,7 @@ import {
   AI_MILEAGE_BAND_RISK_RULES,
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -231,6 +232,25 @@ describe("PROVIN AI prompt invariants", () => {
       /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_OPERATOR_NOTES_EXECUTION_RULES\}/,
     );
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/OPERATOR NOTES OVERRIDE/);
+  });
+
+  it("resolved historical TA findings are not an in-person hunt list", () => {
+    expect(AI_RESOLVED_HISTORICAL_FINDINGS_RULES).toMatch(/RESOLVED HISTORICAL FINDINGS/);
+    expect(AI_RESOLVED_HISTORICAL_FINDINGS_RULES).toMatch(/cietās daļiņas/);
+    expect(AI_RESOLVED_HISTORICAL_FINDINGS_RULES).toMatch(/rūsa/);
+    expect(AI_RESOLVED_HISTORICAL_FINDINGS_RULES).toMatch(/2\+ year/);
+    expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).toMatch(/datos jau novērstus defektus/);
+    expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).not.toMatch(
+      /viens mērījums ir situatīvs un jāpārbauda klātienē/,
+    );
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_RESOLVED_HISTORICAL_FINDINGS_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_RESOLVED_HISTORICAL_FINDINGS_RULES\}/,
+    );
+    expect(prompts).toMatch(/CSDD FOCUS:[\s\S]*?cietās daļiņas/);
   });
 
   it("hybrid comment rules waive short length when operator supplies detail", () => {

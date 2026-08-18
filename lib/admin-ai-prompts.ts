@@ -13,6 +13,7 @@ import {
   AI_MILEAGE_BAND_RISK_RULES,
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -112,6 +113,8 @@ DATA FORENSICS (mileage, incidents, source comments, summary — when timeline d
 - For incidents: cross-check all accident records (AutoDNA, CarVertical, LTAB, other) against km and ownership periods.
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 
+${AI_RESOLVED_HISTORICAL_FINDINGS_RULES}
+
 ${AI_EV_BEV_FORENSICS_RULES}
 
 REGIONAL MARKET & TECHNICAL CONTEXT (apply from origin/country/market signals in data — do not guess origin):
@@ -160,7 +163,7 @@ ${PROVIN_COMMENT_BREVITY_RULES}
 ANALYSIS GUIDELINES:
 1. Gaps in History: If there is a multi-year gap in mileage history (especially after initial registration abroad), name it as a period without records („iztrūkstoši dati”) and describe the rollback risk as a probability calibrated to typical usage (commercial use can reach 50–70k km/year) — never as an established fact.
 2. Taxi/Commercial Codes: Scan for factory options like 937 (Taxi/Rental package), Artico leather (140A/MB-Tex), or roof antennas. Explain how such usage can hide real wear.
-3. CSDD Failure Trends: Analyze repetitive failures (e.g. suspension play, oil leaks, elevated opacity/smoke coefficients above ~1.5–2.0). Repetition may indicate insufficient maintenance or components near the end of their service life — phrase it as an indication, not proof.
+3. CSDD Failure Trends: Analyze REPETITIVE or STILL-OPEN TA findings. One-off defects that the next (and following) inspection no longer lists are historical facts only — do not tell the buyer to hunt ~2+ year-old cleared items (lamps, play, wipers, brakes, leaks) in person. EXCEPTION: rust/corrosion and exhaust particulates / smoke opacity — remain cautious in later years even if a later TA is clean (quality repair is hard and expensive). See RESOLVED HISTORICAL FINDINGS.
 4. Source Asynchrony: If one database (e.g. LTAB/CarVertical) shows an accident but another (CSDD/AutoDNA) does not, note the discrepancy between sources and the need for a physical paint-gauge inspection.
 5. Engine Hours Logic: Distinguish highway vs city driving profiles — high km/year with dense records may imply lower engine-hour stress than sparse Baltic city use; apply when mileage data supports it.
 6. Data Sufficiency: If the dataset is too sparse for a definitive driving-profile conclusion, state that plainly and outline probabilistic risks only.
@@ -170,6 +173,8 @@ ANALYSIS GUIDELINES:
 10. Aggregate identification before risk: name the likely engine/transmission/drive combination from the available parameters before discussing any technical weakness, and calibrate every risk to the vehicle's approximate mileage and age band (see rules below).
 
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
+
+${AI_RESOLVED_HISTORICAL_FINDINGS_RULES}
 
 ${AI_POWERTRAIN_IDENTIFICATION_RULES}
 
@@ -319,7 +324,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.
 - **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
-- **CSDD TA / defekti / īpašniecība** — atkārtoti aizrādījumi = prioritāte.
+- **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
 - **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
@@ -444,6 +449,7 @@ function aiSourceBlockExtraRules(blockLabel: string): string {
 
 CSDD FOCUS:
 - Ownership chain, first registration in Latvia, TA history, defects, restrictions — CSDD-unique administrative facts.
+- TA timeline: state old defects as history; do NOT recommend hunting items that the next / following TA no longer lists (~2+ years, lamps, play, wipers, brakes, one-off leaks). EXCEPTION: rust/corrosion and cietās daļiņas / dūmainība stay a caution even after a later clean TA.
 - Brief note if CSDD km/TA dates conflict with other sources; do not rewrite the full multi-source odometer essay (that is the mileage comment).`;
   }
   if (blockLabel === L.autodna) {

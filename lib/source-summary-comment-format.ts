@@ -58,6 +58,18 @@ FORMAT:
 
 If there is no „OPERATORA KOMANDAS” section, ignore this block and follow the ACTIVE FIELD rules as usual.`;
 
+/**
+ * Veci, nākamajās apskatēs novērsti defekti nav klātienes medību saraksts.
+ * Izņēmums: rūsa un atgāzu cietās daļiņas / dūmainība.
+ */
+export const AI_RESOLVED_HISTORICAL_FINDINGS_RULES = `RESOLVED HISTORICAL FINDINGS (mandatory — every comment field, especially CSDD TA):
+- You MAY state old inspection/service facts. You MUST NOT tell the buyer to hunt in person a defect that later records show as cleared.
+- Read the TA / inspection timeline, not a single old row. If the next inspection (and especially the one after) no longer lists the same item, treat it as resolved in the data — not as an active klātienes checklist item.
+- Do not recommend carefully checking ~2+ year-old defects (lamps, wipers, brakes, play, leaks, etc.) that subsequent TA/DEKRA/service rows no longer show. That makes the expert look foolish.
+- REPEATING or STILL-OPEN findings on the latest inspections remain relevant.
+- EXCEPTION — rūsa / korozija AND exhaust measurements (cietās daļiņas, dūmainības koeficients / smoke opacity): if these were EVER recorded, stay cautious in later years even when a later TA is clean. Quality repair is difficult and expensive; a later pass does not erase the history. Note the later improvement if present, but do not dismiss the topic.
+- Same principle for other sources (dealer invoices, DEKRA, foreign TA): a one-off finding later documented as fixed is history, not a hunt list — unless it is rust or exhaust particulates/smoke.`;
+
 /** Īsi, koncentrēti lauki — apkopojumi un salīdzinājumi tikai kopsavilkumā. */
 export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
 - OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” are present, completeness and scope of those notes beat this brevity block. Do not drop operator topics to stay short; do not pad when the operator limited the job.
@@ -122,10 +134,10 @@ Example 1 (CSDD — avota fokuss, nevis pilna nobraukuma eseja):
 
 **Tehnisko apskašu tendence.** Pamata pārbaudi ar pirmo reizi nav izgājusi **sešas reizes**; atkārtojas korozija, eļļas noplūdes un priekšējā tilta brīvkustības. Šo atkārtoto defektu sēriju pārējie avoti nefiksē — tas ir CSDD ieguldījums šajā auditā."
 
-Example 2 (CSDD tehniskā apskate — atturīgs formulējums skaitļiem):
-"**Tehnisko apskašu vēsture.** Pamatpārbaudi ar pirmo reizi automašīna nav izgājusi **sešas reizes**, pēdējo reizi novērtējumu '2' saņemot **2025. gada 16. decembrī**. Atkārtojas vieni un tie paši defekti: nesošo elementu korozija, eļļas noplūdes un brīvkustības priekšējā tilta svirās.
+Example 2 (CSDD — novērsti veci defekti vs rūsa/atgāzes):
+"**Tehnisko apskašu vēsture.** 2023. gada apskatē fiksēta priekšējā tilta brīvkustība un nefunkcionējošs gabarītlukturis. Nākamajā un aiznākamajā apskatē šie punkti vairs nav atzīmēti — to drīkst konstatēt kā vēsturi, bet tas nav iemesls klātienē meklēt divus gadus vecus, datos jau novērstus defektus.
 
-**Dūmainības rādītāji.** Atgāzu mērījumi ir bijuši nevienmērīgi — iepriekšējos gados dūmainības koeficients sasniedzis **2.32** un **2.95**, pēdējā apskatē fiksēts **0.58**. Tas var norādīt uz dzinēja un degvielas sistēmas nolietojumu, tomēr viens mērījums ir situatīvs un jāpārbauda klātienē."
+**Rūsa un atgāzes.** Ja TA kādreiz fiksējusi nesošo elementu koroziju vai paaugstinātas cietās daļiņas / dūmainību, tas paliek uzmanības punkts arī vēlākos gados: kvalitatīvi novērst ir sarežģīti un dārgi, pat ja nākamā apskate ir tīra. Vēsturiski augsti dūmainības rādītāji (**2.32**, **2.95**) pret pēdējo **0.58** ir labvēlīgs signāls, bet ne pierādījums, ka DPF vai degvielas sistēma ir bez riska."
 
 Example 3 (negadījumi — kontekstuāla summas interpretācija):
 "**Apdrošināšanas ieraksts.** CarVertical fiksē **2019. gada jūlijā** Vācijā reģistrētu negadījumu ar zaudējumu diapazonu **5 001-10 000 €**; LTAB un AutoDNA šim periodam summu neuzrāda. Automašīna tobrīd bija **~8 gadus** vecs vidējā segmenta universālis, tāpēc šāda summa drīzāk liecina par **būtisku**, ne tikai kosmētisku remontu.
@@ -310,6 +322,7 @@ export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${AI_EXPERT_PARAGRAPH_PRESENTATION}
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
+${AI_RESOLVED_HISTORICAL_FINDINGS_RULES}
 - LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.
 - LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / eksperta piezīmes — IGNORE the 350–800 target if needed to cover every operator topic. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes are long.
 - STYLE: Analytical, professional, restrained automotive Latvian. Flexible structure — not one fixed template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
