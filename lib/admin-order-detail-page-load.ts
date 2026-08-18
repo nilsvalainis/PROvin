@@ -8,6 +8,8 @@ import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { safeJsonStringify } from "@/lib/safe-json-stringify";
 import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderDetailView";
 import { toAdminOrderDetailClientModel } from "@/lib/admin-order-detail-client-model";
+import { emptyCustomerHistory, type CustomerHistory } from "@/lib/admin-customer-history";
+import { loadCustomerHistoryForOrder } from "@/lib/admin-customer-history-load";
 
 export type { AdminOrderDetailClientModel };
 export { toAdminOrderDetailClientModel };
@@ -20,6 +22,7 @@ export type AdminOrderDetailPageLoadSuccess = {
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
+  customerHistory: CustomerHistory;
 };
 
 export type AdminOrderDetailPageLoadFailure = {
@@ -124,6 +127,19 @@ export async function loadAdminOrderDetailPageData(
 
     const serverWorkspaceJson = buildServerWorkspaceJson(serverOrderDraft);
     const clientOrder = toAdminOrderDetailClientModel(order as unknown as Record<string, unknown>);
+    const draftEdits = serverOrderDraft?.orderEdits ?? {};
+
+    let customerHistory = emptyCustomerHistory();
+    try {
+      customerHistory = await loadCustomerHistoryForOrder({
+        sessionId: sid,
+        emails: [clientOrder.customerEmail, clientOrder.customerDetailsEmail, draftEdits.customerEmail],
+        phones: [clientOrder.phone, clientOrder.customerDetailsPhone, draftEdits.customerPhone],
+        amountTotal: clientOrder.amountTotal,
+      });
+    } catch (e) {
+      console.warn("[admin-order-detail] customer history failed", e);
+    }
 
     return {
       ok: true,
@@ -133,6 +149,7 @@ export async function loadAdminOrderDetailPageData(
       serverWorkspaceJson,
       orderDraftPersistenceEnabled: isOrderDraftStorageDurable(),
       aiAllowed: aiAllowsOrder(Boolean(order.isDemo)),
+      customerHistory,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

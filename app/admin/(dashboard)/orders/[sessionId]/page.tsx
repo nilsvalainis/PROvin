@@ -55,6 +55,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
         serverWorkspaceJson={loaded.serverWorkspaceJson}
         orderDraftPersistenceEnabled={loaded.orderDraftPersistenceEnabled}
         aiAllowed={loaded.aiAllowed}
+        customerHistory={loaded.customerHistory}
       />
     </>
   );

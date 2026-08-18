@@ -4,6 +4,12 @@ import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
 import { randomUUID } from "crypto";
+import {
+  normalizeCustomerEmail as normalizePeekEmail,
+  normalizeCustomerPhoneKey as normalizePeekPhoneKey,
+} from "@/lib/admin-customer-identity";
+
+export { normalizePeekEmail, normalizePeekPhoneKey };
 
 const RELATIVE_DIR = ".data/listing-peeks";
 const FILENAME = "index.json";
@@ -41,17 +47,6 @@ const MAX_ENTRIES = 500;
 /** Operatora testkontakti — bez 7 dienu / kontaktlimits. */
 const LISTING_PEEK_RATE_LIMIT_EXEMPT_EMAILS = new Set(["nils.valainis@gmail.com"]);
 const LISTING_PEEK_RATE_LIMIT_EXEMPT_PHONE_KEYS = new Set(["26123193"]);
-
-export function normalizePeekEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
-/** Salīdzināšanai: tikai cipari, pēdējie 8 (+371 / atstarpes nesvarīgas). */
-export function normalizePeekPhoneKey(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length <= 8) return digits;
-  return digits.slice(-8);
-}
 
 export function isListingPeekRateLimitExempt(email: string, phone: string): boolean {
   if (LISTING_PEEK_RATE_LIMIT_EXEMPT_EMAILS.has(normalizePeekEmail(email))) return true;

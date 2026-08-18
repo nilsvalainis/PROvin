@@ -15,11 +15,13 @@ import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder"
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
+import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHistoryPanel";
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
 import { formatOrderTimestampSec } from "@/lib/format-order-datetime";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
+import type { CustomerHistory } from "@/lib/admin-customer-history";
 import {
   pickOrderEditsForHydration,
   serializeOrderEditsForLocalStorage,
@@ -105,12 +107,14 @@ export function AdminOrderDetailView({
   serverWorkspaceJson,
   orderDraftPersistenceEnabled,
   aiAllowed,
+  customerHistory,
 }: {
   order: AdminOrderDetailClientModel;
   serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
+  customerHistory: CustomerHistory | null;
 }) {
   const [edits, setEdits] = useState<OrderEdits>(() => orderEditsFromServerDraft(serverOrderDraft));
   const [hydrated, setHydrated] = useState(false);
@@ -634,6 +638,12 @@ export function AdminOrderDetailView({
             className="min-h-[120px] min-w-0 rounded-xl bg-white/80 shadow-sm ring-1 ring-slate-200/70 sm:min-h-[140px]"
           />
       </div>
+
+          <AdminCustomerHistoryPanel
+            sessionId={order.id}
+            history={customerHistory}
+            shellClassName={metaAccordionShellClass}
+          />
 
         <section id="admin-order-section-komentars" className="min-w-0">
           <AdminCollapsibleShell

@@ -5,6 +5,7 @@ import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderD
 import { AdminOrderWorkspaceErrorBoundary } from "@/components/admin/AdminOrderWorkspaceErrorBoundary";
 import { AdminOrderDetailLoading } from "@/components/admin/AdminOrderDetailLoading";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
+import type { CustomerHistory } from "@/lib/admin-customer-history";
 
 const AdminOrderDetailView = dynamic(
   () => import("@/components/admin/AdminOrderDetailView").then((m) => m.AdminOrderDetailView),
@@ -18,6 +19,7 @@ export function AdminOrderDetailPageClient({
   serverWorkspaceJson,
   orderDraftPersistenceEnabled,
   aiAllowed,
+  customerHistory,
 }: {
   sessionId: string;
   order: AdminOrderDetailClientModel;
@@ -25,6 +27,7 @@ export function AdminOrderDetailPageClient({
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
+  customerHistory: CustomerHistory;
 }) {
   return (
     <AdminOrderWorkspaceErrorBoundary sessionId={sessionId}>
@@ -35,6 +38,7 @@ export function AdminOrderDetailPageClient({
         serverWorkspaceJson={serverWorkspaceJson}
         orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
         aiAllowed={aiAllowed}
+        customerHistory={customerHistory}
       />
     </AdminOrderWorkspaceErrorBoundary>
   );

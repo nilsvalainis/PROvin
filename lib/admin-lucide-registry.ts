@@ -51,6 +51,7 @@ export const META_ORDER_LUCIDE = {
   payment: CreditCard,
   vehicle: CarFront,
   client: CircleUser,
+  history: History,
   notes: MessageSquare,
 } as const satisfies Record<string, LucideIcon>;
 
