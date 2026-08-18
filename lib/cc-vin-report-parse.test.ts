@@ -322,4 +322,46 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
       { date: "01.05.2016", odometer: "27000", country: "" },
     ]);
   });
+
+  it("nolasa CheckCar izsoli arī tad, ja cena, km, vieta un datums ir atsevišķās rindās", () => {
+    const glued = [
+      "Vehicle history report",
+      "Report ID:",
+      "abc",
+      "Source: Checkcar.vin",
+      "Auction sale history",
+      "1 record(s)",
+      "SOLD #1",
+      "3,989 USD",
+      "304,900 kmAUTOBID10/06/2026",
+    ].join("\n");
+    const split = [
+      "Vehicle history report",
+      "Report ID:",
+      "abc",
+      "Source: Checkcar.vin",
+      "Auction sale history",
+      "1 record(s)",
+      "SOLD #1",
+      "3,989 USD",
+      "304,900 km",
+      "AUTOBID",
+      "10/06/2026",
+      "VEHICLE INFO",
+      "MakeBMW",
+    ].join("\n");
+    for (const text of [glued, split]) {
+      const p = parseCcVinReportText(text);
+      expect(p.sales).toEqual([
+        {
+          date: "10.06.2026",
+          venue: "AUTOBID",
+          odometer: "304 900",
+          price: "3 989 USD",
+          status: "Pārdots",
+        },
+      ]);
+      expect(p.mileage).toEqual([{ date: "10.06.2026", odometer: "304900", country: "Vācija" }]);
+    }
+  });
 });

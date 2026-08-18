@@ -116,10 +116,17 @@ export function applyCcVinParsedReport(
     ),
   );
 
+  const salesIncoming = parsed.sales;
+  const existingSales = (base.sales ?? []).filter(ccVinSaleRowHasData);
+  const stubSales = existingSales.filter((r) => !r.date.trim() && !r.odometer.trim() && !r.venue.trim());
+  const keptSales = existingSales.filter((r) => r.date.trim() || r.odometer.trim() || r.venue.trim());
+  const incomingComplete = salesIncoming.some((r) => r.date.trim() || r.odometer.trim() || r.venue.trim());
+  const stubsToKeep = incomingComplete ? [] : stubSales;
+
   const sales = byDateDesc(
     mergeRows<CcVinSaleRow>(
-      base.sales ?? [],
-      parsed.sales,
+      [...keptSales, ...stubsToKeep],
+      salesIncoming,
       ccVinSaleRowHasData,
       (r) => `${r.date}|${r.odometer}|${squish(r.venue)}`,
       emptyCcVinSaleRow,

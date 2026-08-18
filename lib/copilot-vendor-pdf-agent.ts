@@ -245,6 +245,18 @@ export async function runCcVinPdfAgent(opts: {
     };
   }
 
+  const odometerCheck = parsed.checks.find((c) => c.label === "Odometra ieraksti");
+  const mileageRequired = Boolean(odometerCheck && odometerCheck.severity !== "ok");
+  if (mileageRequired && parsed.mileage.length === 0) {
+    notes.push(
+      "Nobraukuma tabula ir obligāta: atskaitē ir odometra ieraksti, bet datums+km pārus neizdevās nolasīt.",
+    );
+  }
+  const incompleteSales = parsed.sales.filter((s) => !s.date.trim() || !s.odometer.trim());
+  if (incompleteSales.length > 0) {
+    notes.push("Dažām izsoļu rindām trūkst datuma vai odometra — pārbaudi PĀRDOŠANAS UN IZSOĻU VĒSTURE tabulu.");
+  }
+
   return {
     block: applyCcVinParsedReport(parsed, opts.previous),
     rows,

@@ -48,7 +48,7 @@ const REPORT = [
 ].join("\n");
 
 function blockFromReport(): CcVinBlockState {
-  return applyCcVinParsedReport(emptyCcVinBlock(), parseCcVinReportText(REPORT));
+  return applyCcVinParsedReport(parseCcVinReportText(REPORT), emptyCcVinBlock());
 }
 
 describe("starptautiskās vēstures PDF sadaļa", () => {
@@ -90,5 +90,29 @@ describe("starptautiskās vēstures PDF sadaļa", () => {
     const rows = collectUnifiedIncidentRows({ ccVinBlock: b });
     expect(rows).toHaveLength(1);
     expect(rows[0]!.sourceLabel).toBe("Starptautiskā vēsture");
+  });
+
+  it("atkārtota PDF ielāde aizstāj izsoļu stub rindu, kurai bija tikai cena", () => {
+    const prev = emptyCcVinBlock();
+    prev.sales = [{ date: "", venue: "", odometer: "", price: "7 662 EUR", status: "Pārdots" }];
+    const parsed = parseCcVinReportText(
+      [
+        "Vehicle history report",
+        "Report ID: x",
+        "SOLD #1",
+        "3,989 USD",
+        "304,900 kmAUTOBID10/06/2026",
+      ].join("\n"),
+    );
+    const next = applyCcVinParsedReport(parsed, prev);
+    expect(next.sales).toEqual([
+      {
+        date: "10.06.2026",
+        venue: "AUTOBID",
+        odometer: "304 900",
+        price: "3 989 USD",
+        status: "Pārdots",
+      },
+    ]);
   });
 });

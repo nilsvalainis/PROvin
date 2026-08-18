@@ -415,14 +415,21 @@ function calibrateCheckSeverity(out: CcVinParsedReport): void {
  * apvienojam pēc datuma + km.
  */
 function parseMileage(lines: string[], out: CcVinParsedReport): void {
-  for (let i = 0; i < lines.length - 1; i++) {
-    const date = lines[i]!;
-    if (!DATE_RE.test(date)) continue;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const same = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+([\d.,\s]+)\s*km$/i);
+    if (same) {
+      const odometer = normalizeAutoRecordsOdometer(same[2]!);
+      if (odometer) out.mileage.push({ date: lvDate(same[1]!), odometer, country: "" });
+      continue;
+    }
+    if (i >= lines.length - 1) continue;
+    if (!DATE_RE.test(line)) continue;
     const km = lines[i + 1]!.match(KM_LINE_RE);
     if (!km) continue;
     const odometer = normalizeAutoRecordsOdometer(km[1]!);
     if (!odometer) continue;
-    out.mileage.push({ date: lvDate(date), odometer, country: "" });
+    out.mileage.push({ date: lvDate(line), odometer, country: "" });
   }
 }
 
@@ -430,6 +437,7 @@ function parseMileage(lines: string[], out: CcVinParsedReport): void {
 function isSectionHeading(line: string): boolean {
   const key = line.trim().toLowerCase();
   if (CHECK_LABEL_LV[key]) return true;
+  if (/^vehicle\s+info$/i.test(key)) return true;
   return /\b(records?|history|checks?|informa(?:tion)?|campaigns|details|photos)$/i.test(key);
 }
 
@@ -603,7 +611,42 @@ function parseTitleRecords(lines: string[], out: CcVinParsedReport): void {
   }
 }
 
-/** „SOLD #1” + cena + „5,660 kmBmw Of Murrieta (Murrieta, CA)20/11/2019”; arī „Not Sold”. */
+const SALE_COMBO_RE = /^([\d.,\s]+)\s*km\s*(.*?)(\d{2}\/\d{2}\/\d{4})$/i;
+const SALE_KM_VENUE_RE = /^([\d.,\s]+)\s*km\s+(.+)$/i;
+const SALE_MONEY_RE = /^([\d.,\s]+)\s*(USD|EUR|GBP)$/i;
+const SALE_STOP_RE =
+  /^(vehicle\s+info|safety\s+ratings|complaints|materials\s+installed|work\s+performed|found\s+\d+\s+photos|make[a-z]|model[a-z]|year\d{4})/i;
+
+const AUCTION_VENUE_COUNTRY: Record<string, string> = {
+  autobid: "Vācija",
+  iaai: "ASV",
+  iaa: "ASV",
+};
+
+function countryFromAuctionVenue(venue: string): string {
+  const key = squish(venue);
+  if (AUCTION_VENUE_COUNTRY[key]) return AUCTION_VENUE_COUNTRY[key]!;
+  if (key.startsWith("autobid")) return "Vācija";
+  return "";
+}
+
+function isSaleBlockStop(line: string): boolean {
+  return isSectionHeading(line) || SALE_STOP_RE.test(line);
+}
+
+function isSaleVenueLine(line: string): boolean {
+  const t = line.trim();
+  if (!t || t.length > 60) return false;
+  if (DATE_RE.test(t) || KM_LINE_RE.test(t) || SALE_MONEY_RE.test(t)) return false;
+  if (isSaleBlockStop(t)) return false;
+  if (/\(\d{5,}\)/.test(t)) return false;
+  return /^[A-Za-z][A-Za-z0-9.&'’()\-/, ]{1,60}$/.test(t);
+}
+
+/**
+ * „SOLD #1” + cena + „5,660 kmBmw Of Murrieta (Murrieta, CA)20/11/2019”.
+ * Eiropas CheckCar bieži sadala ikonu laukus pa rindām: cena, km, AUTOBID, datums.
+ */
 function parseSales(lines: string[], out: CcVinParsedReport): void {
   const soldLine = /^(sold|not\s+sold)\s*#?\s*(\d+)?$/i;
   for (let i = 0; i < lines.length; i++) {
@@ -612,24 +655,55 @@ function parseSales(lines: string[], out: CcVinParsedReport): void {
     let odometer = "";
     let venue = "";
     let date = "";
-    for (let j = i + 1; j < Math.min(lines.length, i + 5); j++) {
+    for (let j = i + 1; j < Math.min(lines.length, i + 24); j++) {
       const line = lines[j]!;
-      if (soldLine.test(line)) break;
-      const money = line.match(/^([\d.,\s]+)\s*(USD|EUR|GBP)$/i);
+      if (soldLine.test(line) || isSaleBlockStop(line)) break;
+
+      const combo = line.match(SALE_COMBO_RE);
+      if (combo) {
+        odometer = normalizeAutoRecordsOdometer(combo[1]!) || odometer;
+        venue = combo[2]!.trim() || venue;
+        date = lvDate(combo[3]!);
+        if (price && odometer && venue && date) break;
+        continue;
+      }
+
+      const money = line.match(SALE_MONEY_RE);
       if (money && !price) {
         price = moneyDisplay(line);
         continue;
       }
-      const combo = line.match(/^([\d.,\s]+)\s*km\s*(.*?)(\d{2}\/\d{2}\/\d{4})$/i);
-      if (combo) {
-        odometer = normalizeAutoRecordsOdometer(combo[1]!);
-        venue = combo[2]!.trim();
-        date = lvDate(combo[3]!);
-        break;
+
+      const kmOnly = line.match(KM_LINE_RE);
+      if (kmOnly && !odometer) {
+        odometer = normalizeAutoRecordsOdometer(kmOnly[1]!) || odometer;
+        continue;
       }
+
+      const kmVenue = line.match(SALE_KM_VENUE_RE);
+      if (kmVenue && !odometer) {
+        odometer = normalizeAutoRecordsOdometer(kmVenue[1]!) || odometer;
+        venue = kmVenue[2]!.trim() || venue;
+        continue;
+      }
+
+      const gluedKmVenue = line.match(/^([\d.,\s]+)\s*km([A-Za-z].+)$/i);
+      if (gluedKmVenue && !odometer) {
+        odometer = normalizeAutoRecordsOdometer(gluedKmVenue[1]!) || odometer;
+        venue = gluedKmVenue[2]!.trim() || venue;
+        continue;
+      }
+
+      if (DATE_RE.test(line) && !date) {
+        date = lvDate(line);
+        continue;
+      }
+
+      if (!venue && isSaleVenueLine(line)) venue = line.trim();
     }
     if (!price && !odometer && !date) continue;
-    if (odometer && date) out.mileage.push({ date, odometer, country: "" });
+    const country = countryFromAuctionVenue(venue);
+    if (odometer && date) out.mileage.push({ date, odometer, country });
     out.sales.push({
       date,
       venue,
