@@ -1,0 +1,14 @@
+---
+description: Klienta komentāros nav izdomātu remonta/apkopes EUR joslu — tikai avotos fiksētās summas un cenas vērtējums.
+alwaysApply: true
+---
+
+# Bez remonta EUR tāmēm
+
+✨ komentāros (tehniskie riski, avoti, apskate, kopsavilkums, nobraukums):
+
+- Aizliegts: „orientējoši 400-800 €”, „remonta izmaksas”, Baltijas servisa joslas, paku/forumu cenas.
+- Pakas drīkst saturēt EUR kalibrācijai — **nekopē** klientam.
+- Atļauts: apdrošināšanas/zaudējumu summas no avota; sludinājuma/tirgus cena tikai laukā **Cenas vērtējums**.
+
+Kanons: `AI_NO_ESTIMATED_REPAIR_EUR_RULES`.

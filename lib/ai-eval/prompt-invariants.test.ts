@@ -7,6 +7,7 @@ import {
   AI_EV_BEV_FORENSICS_RULES,
   AI_EXPERT_PARAGRAPH_PRESENTATION,
   AI_MILEAGE_BAND_RISK_RULES,
+  AI_NO_ESTIMATED_REPAIR_EUR_RULES,
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
@@ -251,6 +252,24 @@ describe("PROVIN AI prompt invariants", () => {
       /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_RESOLVED_HISTORICAL_FINDINGS_RULES\}/,
     );
     expect(prompts).toMatch(/CSDD FOCUS:[\s\S]*?cietās daļiņas/);
+  });
+
+  it("estimated repair EUR is banned from expert comments", () => {
+    expect(AI_NO_ESTIMATED_REPAIR_EUR_RULES).toMatch(/NO ESTIMATED REPAIR EUR/);
+    expect(AI_NO_ESTIMATED_REPAIR_EUR_RULES).toMatch(/orientējoši 400-800 €/);
+    expect(AI_NO_ESTIMATED_REPAIR_EUR_RULES).toMatch(/ZERO estimated EUR/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Bez orientējošām EUR joslām/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_NO_ESTIMATED_REPAIR_EUR_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_NO_ESTIMATED_REPAIR_EUR_RULES\}/,
+    );
+    expect(prompts).toMatch(/NERAKSTI aptuvenās remonta/);
+    const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/NERAKSTI aptuvenās remonta izmaksas eiro/);
+    expect(tech).not.toMatch(/aptuvenās remonta izmaksas EUR diapazonā/);
   });
 
   it("hybrid comment rules waive short length when operator supplies detail", () => {

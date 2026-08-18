@@ -56,13 +56,13 @@ OBLIGĀTI:
 - **Kas NAV risks:** nosauc slavenās markas/paaudzes kaites, kas šim motoram/kārba/piedziņai neattiecas, UN dārgo vecuma ekstraprīkojumu, kura nav (tikai ja SA/dīlera saraksts/tipa kods/operators to ļauj — neizdomā).
 - **Nepārspīlē:** neuzskaiti visu, kas teorētiski var salūzt, un nepasniedz pie 250 000 km tipisku problēmu kā draudu pie 90 000 km. **Galvenais pirkuma risks — maksimāli 1–2 pozīcijas**; pārējais ir vidējs uzturēšanas risks vai kontrolpunkts klātienē. Ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, eļļas noplūdes, hidromufte 15–20 gadu vecumā) nošķir no „šis auto tuvākajā laikā būs problemātisks”.
 - Ja šī dzinēja saime / paaudze nav pilnībā nosegta agregātu paketē — **vispirms web meklēšana** (Eiropas forumi, klubu wiki, speciālistu raksti), tad raksti. Neizdomā citātus un kampaņu numurus.
-- Garums: **8–12 rindkopas** (3–5 teikumi katrā). Noklusējuma 350–800 ŠEIT NEATTIECAS. Katra rindkopa = atšķirīgs mezgls + EUR + 1 teikums no šī auto datiem.
+- Garums: **8–12 rindkopas** (3–5 teikumi katrā). Noklusējuma 350–800 ŠEIT NEATTIECAS. Katra rindkopa = atšķirīgs mezgls + 1 teikums no šī auto datiem. BEZ orientējošām EUR joslām.
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; tipiskās vājās vietas apraksti kā varbūtību („tipiski šim agregātam”, „var novest pie”).
-- Konkrēti mezgli, ne kategorijas (ķēde/zobsiksna un tās puse, turbo, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats, ūdens sūknis/termostats/hidromufte, eļļas noplūdes, reduktors un pilnpiedziņas sajūgs, gaisa balstiekārta pret Dynamic Drive, EV baterija) — tikai tie, kas šim salikumam relevanti; aptuvenās remonta izmaksas EUR diapazonā, ja zināmas.
+- Konkrēti mezgli, ne kategorijas (ķēde/zobsiksna un tās puse, turbo, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats, ūdens sūknis/termostats/hidromufte, eļļas noplūdes, reduktors un pilnpiedziņas sajūgs, gaisa balstiekārta pret Dynamic Drive, EV baterija) — tikai tie, kas šim salikumam relevanti. NERAKSTI aptuvenās remonta izmaksas eiro.
 - Izmanto PROVIN agregātu zināšanas un vēsturiskos auditus no konteksta; ja trūkst — web meklēšana tipiskajām vājajām vietām, tad pielāgo AKTĪVAJAM auto. Neizdomā kampaņu numurus, statistiku vai citātus.
 - Norādi arī stiprās puses; vienlaikus uzsver, ka arī labākie agregāti var būt slikti uzturēti — īpaši Latvijā ekspluatētiem auto.
 - Ja servisa vēsturē attiecīgais darbs ir fiksēts, risku samazini un to pasaki kā labvēlīgu signālu datos; ierakstu trūkumu formulē kā **nepierādītu**, nevis kā neizdarītu.
-- Neizdomā VIN/km/EUR no šī pasūtījuma; aptuvenās izmaksas — orientējošas, ar atrunu.
+- Neizdomā VIN/km/EUR no šī pasūtījuma. NERAKSTI orientējošas remonta/apkopes EUR joslas.
 - NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
 - Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).`,
     {
@@ -81,6 +81,7 @@ OBLIGĀTI:
       userPrompt,
       temperature: 0.32,
       maxSearches: 6,
+      maxTokens: 16_000,
     });
     return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
   } catch (e) {

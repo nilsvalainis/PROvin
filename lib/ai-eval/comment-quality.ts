@@ -150,13 +150,25 @@ export function evaluateExpertCommentQuality(
     });
   }
 
-  if (field === "technical_risks") {
-    if (!/€/.test(t) && !/\bEUR\b/.test(t)) {
+  if (field === "technical_risks" || field === "inspection") {
+    if (/€/.test(t) || /\bEUR\b/.test(t) || /orientējoš[\w]*\s+[^\n]{0,60}eiro/i.test(t)) {
       issues.push({
-        code: "missing_eur",
-        message: "Tehnisko risku analīzē jābūt orientējošām EUR izmaksām",
+        code: "invented_repair_eur",
+        message: "Tehnisko risku un apskates komentāros nav orientējošu remonta EUR joslu",
       });
     }
+  }
+
+  if (field === "source" || field === "mileage") {
+    if (/orientējoš[\w]*\s+[^\n]{0,80}(?:€|EUR|eiro)|remonta izmaks|profilakses izmaks|Baltijas neatkarīg/i.test(t)) {
+      issues.push({
+        code: "invented_repair_eur",
+        message: "Avotu/nobraukuma komentāros nav izdomātu remonta EUR tāmju",
+      });
+    }
+  }
+
+  if (field === "technical_risks") {
     if (!/identifik|dzinēj|ātrumkārb|kārba|ķēd|zobsiksn|piedziņ/i.test(t)) {
       issues.push({
         code: "missing_aggregate",
@@ -178,7 +190,7 @@ export function evaluateExpertCommentQuality(
     if (/€/.test(t) || /\bEUR\b/.test(t)) {
       issues.push({
         code: "summary_price",
-        message: "Kopsavilkumā neraksta cenas / EUR summas — tās ir cenas vērtējumā un tehniskajos riskos",
+        message: "Kopsavilkumā neraksta cenas / EUR summas — sludinājuma cena ir cenas vērtējumā, remonta tāmes nav nevienā komentārā",
       });
     }
   }

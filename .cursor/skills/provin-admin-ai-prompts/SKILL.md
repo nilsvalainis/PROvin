@@ -71,6 +71,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Let tech risks, inspection recommendations, and summary absorb each other’s essays — keep strict field roles (complement, don’t 4×-repeat).
 - Let brevity or anti-repetition skip topics from admin „Papildu piezīmes AI” (`OPERATORA KOMANDAS`). Those notes are a binding work order (`AI_OPERATOR_NOTES_EXECUTION_RULES`): every topic in, no cherry-pick, no extra lines when the operator limited the job.
 - Tell the client to hunt CSDD TA defects that later inspections already show as cleared (~2+ years, lamps, play, etc.). Exception: rust and exhaust particulates/smoke stay cautious. Canonical: `AI_RESOLVED_HISTORICAL_FINDINGS_RULES`.
+- Put approximate repair/service EUR bands („orientējoši … €”) into any ✨ comment. Canonical: `AI_NO_ESTIMATED_REPAIR_EUR_RULES`.
 
 ## Prompt version & evals
 
