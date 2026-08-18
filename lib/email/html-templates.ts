@@ -1,4 +1,4 @@
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 
 /** Minimālistisks HTML — balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
@@ -100,6 +100,7 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
 export function listingPeekCustomerCommentHtml(opts: {
   comment: string;
   auditsUrl: string;
+  listingUrl?: string | null;
 }): string {
   const paragraphs = opts.comment
     .trim()
@@ -119,6 +120,13 @@ export function listingPeekCustomerCommentHtml(opts: {
     )
     .join("");
 
+  const listingRaw = (opts.listingUrl ?? "").trim();
+  const listingHref = isValidHttpUrl(listingRaw) ? listingRaw : "";
+  const listingBlock = listingHref
+    ? `<p style="margin:0 0 18px;font-size:13px;line-height:1.5;color:${MUTED};">Sludinājums<br/>
+<a href="${esc(listingHref)}" target="_blank" style="color:${BRAND};text-decoration:underline;word-break:break-all;">${esc(listingHref)}</a></p>`
+    : "";
+
   const auditsHref = esc(opts.auditsUrl);
   const cta = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 10px;">
 <tr><td align="left" bgcolor="${BRAND}" style="border-radius:9999px;background-color:${BRAND};">
@@ -129,7 +137,8 @@ export function listingPeekCustomerCommentHtml(opts: {
 
   const inner = `
 <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV · Bezmaksas komentārs</p>
-<p style="margin:0 0 18px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:${INK};">Īss skatījums uz tavu sludinājumu</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:${INK};">Īss skatījums uz tavu sludinājumu</p>
+${listingBlock}
 ${bodyHtml}
 <p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Noskaidro visu par savu topošo auto.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:${MUTED};">PROVIN AUDITS — visaptveroša auto vēstures un risku izpēte.</p>

@@ -360,10 +360,11 @@ export async function sendListingPeekLeadEmail(opts: {
   });
 }
 
-/** Klientam: īss komentārs + CTA uz PROVIN AUDITS (HTML ar pogu; text kā fallback). */
+/** Klientam: īss komentārs + sludinājuma saite + CTA uz PROVIN AUDITS (HTML ar pogu; text kā fallback). */
 export async function sendListingPeekCustomerCommentEmail(opts: {
   to: string;
   comment: string;
+  listingUrl?: string | null;
 }): Promise<void> {
   const origin = getSiteOrigin().replace(/\/$/, "");
   const auditsUrl =
@@ -371,11 +372,13 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
       ? "https://provin.lv/?plan=audits#home-hero"
       : `${origin}/?plan=audits#home-hero`;
   const comment = opts.comment.trim();
+  const listingUrl = (opts.listingUrl ?? "").trim();
   const subject = "PROVIN — īss komentārs par tavu sludinājumu";
   const text = [
     "Labdien!",
     "",
     "Īss skatījums uz tavu sludinājumu:",
+    ...(listingUrl ? ["", listingUrl] : []),
     "",
     comment,
     "",
@@ -388,7 +391,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     "Ar cieņu,",
     "PROVIN.LV",
   ].join("\n");
-  const html = listingPeekCustomerCommentHtml({ comment, auditsUrl });
+  const html = listingPeekCustomerCommentHtml({ comment, auditsUrl, listingUrl });
 
   await sendSmtpMail({
     to: opts.to,

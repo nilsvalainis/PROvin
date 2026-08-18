@@ -72,7 +72,11 @@ async function sendComment(formData: FormData) {
   }
 
   try {
-    await sendListingPeekCustomerCommentEmail({ to: entry.email, comment });
+    await sendListingPeekCustomerCommentEmail({
+      to: entry.email,
+      comment,
+      listingUrl: entry.listingUrl,
+    });
     await markListingPeekCommentSent(id, comment);
   } catch (e) {
     console.error("[atras-vertesanas] send comment failed:", e);
