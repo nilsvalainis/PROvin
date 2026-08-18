@@ -11,6 +11,7 @@ import {
   AI_EXPERT_PARAGRAPH_PRESENTATION,
   AI_HISTORICAL_REPORTS_CONTEXT_RULES,
   AI_MILEAGE_BAND_RISK_RULES,
+  AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
@@ -75,16 +76,10 @@ CROSS-SOURCE DISCIPLINE (all field types):
 - Never invent facts absent from the provided context — except when ACTIVE FIELD rules explicitly allow web search to fill model/powertrain technical risk knowledge (see CLIENT SUMMARY).
 - Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and expert notes; state conflicts clearly for the client.
 
-OPERATOR COMMANDS (when the user prompt contains „OPERATORA KOMANDAS” / eksperta piezīmes pirms ģenerēšanas):
-- These are the HIGHEST PRIORITY instructions / source material from the PROVIN admin operator for THIS generation.
-- You MAY reorganize into PROVIN paragraph format with **bold** topic hooks.
-- You MAY supplement briefly from the order portfolio.
-- You MUST NOT truncate, compress into a rigid short template, or drop dates, km figures, dealer/service names, oil specs, interval math, or conclusions the operator provided.
-- If the operator paste is long/detailed, output must stay equally rich (or richer). Default short length targets (e.g. 600–1100 chars) are WAIVED.
-- If they conflict with default length/style preferences, follow the operator.
-- Do NOT ignore, paraphrase away, or bury operator-requested content under generic filler.
+${AI_OPERATOR_NOTES_EXECUTION_RULES}
 
 FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NOT copy-paste the same story across sources):
+- OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” ask you to cover a theme that would normally live in another field, write it HERE and process every operator topic. Anti-repetition must not delete an operator theme.
 - STRICT ROLES — each ACTIVE FIELD has ONE job; never absorb another field’s essay:
   • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths, EUR cost bands — NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
   • „2. Ieteikumi klātienes apskatei” = concrete in-person checks + why for THIS car — convert risks into steps; do NOT restate the full technical-risk essay or summary verdict.
@@ -93,10 +88,11 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
   • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
   • Per-source „Komentāri” = unique facts from THAT source + a short delta vs others (confirm in 1 sentence if already covered).
 - COMPLEMENTARY SOURCES (not 4× the same text): If AutoDNA, CarVertical, LTAB, CSDD, or dealer already state the same accident/km/ownership fact in a previously generated comment in the prompt, do NOT rewrite it at similar length. Write one short confirmation („Saskan ar …”) or a single new conflict, then move to what THIS source uniquely adds.
-- ALREADY GENERATED = COVERED GROUND: When the user prompt includes other expert comments / IRISS sections / mileage / incidents text, treat them as written. Add only deltas. Never paraphrase the same facts across blocks at similar length. Prefer brevity when overlapping.
+- ALREADY GENERATED = COVERED GROUND: When the user prompt includes other expert comments / IRISS sections / mileage / incidents text, treat them as written. Add only deltas. Never paraphrase the same facts across blocks at similar length. Prefer brevity when overlapping. Exception: OPERATORA KOMANDAS still require every operator topic in THIS output even if another field already mentioned it.
 - If THIS source’s data largely duplicates another source with no new buyer-relevant signal: 1–3 short paragraphs max — never a second full forensic essay.
 
 CLIENT VALUE DENSITY (mandatory — every comment window; see BREVITY & FOCUS above):
+- Waived when „OPERATORA KOMANDAS” are present — then follow operator completeness and scope (no skipped topics; no padding if the operator limited the job).
 - Default output per field: **2–4 short paragraphs (≈350–800 characters)**. Say what THIS field adds, then stop. Length is earned by facts, never by rephrasing.
 - Do not copy flagship length (8–12 paragraphs) into source comments, seller portrait, or summary — those stay short.
 - Cut filler: no greetings, no „esmu izskatījis”, no repeating the same risk in three fields, no generic „auto jāpārbauda klātienē” without naming the component.
@@ -172,6 +168,8 @@ ANALYSIS GUIDELINES:
 8. Electric vehicles: When fuel type or model indicates BEV/PHEV, apply full ELECTRIC & PLUG-IN FORENSICS — SOH alone is insufficient; explain charging habits (AC home vs frequent DC fast charge), optimal daily SOC band (~20–80 %), thermal/climate and warranty context; in client summary always include battery/charging buyer guidance when the audited car is electric.
 9. Epistemic humility: This is documentary analysis, not a physical inspection. Hedge condition and risk language (visticamāk / ļoti iespējams / pēc datiem); never declare the car technically perfect or risk-free from digital sources alone.
 10. Aggregate identification before risk: name the likely engine/transmission/drive combination from the available parameters before discussing any technical weakness, and calibrate every risk to the vehicle's approximate mileage and age band (see rules below).
+
+${AI_OPERATOR_NOTES_EXECUTION_RULES}
 
 ${AI_POWERTRAIN_IDENTIFICATION_RULES}
 
@@ -276,7 +274,7 @@ LOMA UN STANDARTS:
 Ievadā saņemsi pilnu pasūtījuma kontekstu, PROVIN agregātu zināšanas un (ja ir) vēsturiskos auditus.
 
 OPERATORA KOMANDAS (obligāti):
-- Ja promptā ir sadaļa „OPERATORA KOMANDAS” — tā ir ABSOLŪTA prioritāte.
+- Ja promptā ir sadaļa „OPERATORA KOMANDAS” — izpildi AI_OPERATOR_NOTES_EXECUTION_RULES: visām tēmām, bez cherry-pick, bez liekām rindām ja operators ierobežoja apjomu.
 
 STRUKTŪRA (obligāti — domāšanas secība; numerācija NAV izvades formāts — izvadē tikai rindkopas ar **bold** ievadu). Skat. TEHNISKO RISKU KVALITĀTES LATIŅA.
 
@@ -416,7 +414,7 @@ KAS ŠIS NAV (obligāti — pret atkārtošanos):
 - Nav „īssāka versija” no iepriekšējām esejām — ir **jauns, kompakts viedoklis**.
 
 OPERATORA KOMANDAS (obligāti):
-- Ja promptā ir sadaļa „OPERATORA KOMANDAS” — tā ir ABSOLŪTA prioritāte. Precīzi izpildi, ko eksperts prasa.
+- Ja promptā ir sadaļa „OPERATORA KOMANDAS” — izpildi AI_OPERATOR_NOTES_EXECUTION_RULES: visām tēmām, bez cherry-pick, bez liekām rindām ja operators ierobežoja apjomu.
 
 DALĪJUMS:
 - „1. Tehnisko risku analīze” / „2. Ieteikumi…” / avotu komentāri = detalizācija citur; kopsavilkumā max 1 īsa atsaukšanās, ja vajag.
@@ -526,7 +524,7 @@ DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay)
 - Open with the single most important thing ${blockLabel} adds to this audit; the whole comment answers that one question.
 - Primary content = facts, tables, and signals that THIS source uniquely provides (damage zones, TA defects, dealer codes, claims, Status Center, etc.).
 - Comparison = at most ONE sentence, and only when a conflict changes the conclusion. The full cross-source picture is built in „3. Kopsavilkums”, not here.
-- LENGTH: **2–4 short paragraphs (≈350–800 characters)** unless OPERATORA KOMANDAS supply more material.
+- LENGTH: **2–4 short paragraphs (≈350–800 characters)** unless OPERATORA KOMANDAS are present — then cover every operator topic (and only the scoped ones if the operator limited the job); do not skip a theme to stay inside 350–800.
 - If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary) appear in the user prompt: those facts are COVERED. Do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
 - If THIS source largely repeats another source with no new buyer signal: keep output very short (1–3 paragraphs) — never rewrite the same accident/km/ownership story.
 - Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.

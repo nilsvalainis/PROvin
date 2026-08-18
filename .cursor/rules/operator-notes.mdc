@@ -1,0 +1,16 @@
+---
+description: Admin „Papildu piezīmes AI” ir saistošs darba uzdevums visiem PROVIN aģentiem — visas tēmas, bez cherry-pick, bez liekām rindām ja operators ierobežoja apjomu.
+alwaysApply: true
+---
+
+# Papildu piezīmes AI (visi aģenti)
+
+Ja admin dialogā „Papildu piezīmes AI” (runtime: `OPERATORA KOMANDAS`) ir teksts:
+
+- Apstrādā **katru** tēmu / norādi / nosaukto mezglu. Nedrīkst izvēlēties, ko rakstīt un ko nē.
+- Vairākas tēmas vienā ielīmējumā = visas tēmas izejā.
+- Ja operators saka „tikai par…”, „neraksti par…”, „nepapildi” — raksti **tikai** to; bez noklusējuma lauka esejas un bez palīdzīgām liekām rindām.
+- Drīkst pārkārtot PROVIN stilā; nedrīkst izmest faktus, datumus, km, secinājumus.
+- Īsuma limiti un anti-atkārtošanās **ne** attaisno izlaistu operatora tēmu.
+
+Kanons: `AI_OPERATOR_NOTES_EXECUTION_RULES` (`lib/source-summary-comment-format.ts`).

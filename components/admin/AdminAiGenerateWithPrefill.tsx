@@ -49,7 +49,7 @@ export function AdminAiGenerateWithPrefill({
   demoOnly,
   title,
   dialogTitle = "Papildu piezīmes AI",
-  dialogHint = "Ievadi korekcijas vai pilnu eksperta tekstu. AI drīkst pārkārtot PROVIN stilā un papildināt, bet nedrīkst apgraizīt tavu detalizāciju — datumi, km, servisi un secinājumi jāsaglabā.",
+  dialogHint = "Ievadi norādes vai pilnu eksperta tekstu. AI apstrādā VISAS tēmas, ko tu ieliec — nedrīkst izlaist un nedrīkst izvēlēties, ko rakstīt. Ja liec rakstīt tikai par konkrētu, liekas rindas netiek pievienotas. Drīkst pārkārtot PROVIN stilā; faktus, datumus un secinājumus nedrīkst apgraizīt.",
   recommendedTier = "gemini-flash",
   tiers: tiersProp,
   onGenerate,

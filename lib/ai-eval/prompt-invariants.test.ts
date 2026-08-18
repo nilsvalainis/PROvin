@@ -7,6 +7,7 @@ import {
   AI_EV_BEV_FORENSICS_RULES,
   AI_EXPERT_PARAGRAPH_PRESENTATION,
   AI_MILEAGE_BAND_RISK_RULES,
+  AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
@@ -209,10 +210,27 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("operator notes are prepended with highest priority", () => {
     const notes = readRepo("lib/admin-ai-operator-notes.ts");
-    expect(notes).toMatch(/AUGSTĀKĀ PRIORITĀTE/);
-    expect(notes).toMatch(/NEDRĪKSTI APGRAIZĪT/);
+    expect(notes).toMatch(/SAISTOŠS DARBA UZDEVUMS/);
+    expect(notes).toMatch(/NEDRĪKSTI izmest faktus|NEDRĪKSTI APGRAIZĪT/);
+    expect(notes).toMatch(/AI_OPERATOR_NOTES_EXECUTION_RULES/);
     expect(notes).toMatch(/aiMaxLenForOperatorNotes/);
     expect(notes).toMatch(/parts\.push\(userPrompt/);
+  });
+
+  it("operator notes execution forbids cherry-picking and padding", () => {
+    expect(AI_OPERATOR_NOTES_EXECUTION_RULES).toMatch(/BINDING WORK ORDER/);
+    expect(AI_OPERATOR_NOTES_EXECUTION_RULES).toMatch(/never cherry-pick/);
+    expect(AI_OPERATOR_NOTES_EXECUTION_RULES).toMatch(/tikai par/);
+    expect(AI_OPERATOR_NOTES_EXECUTION_RULES).toMatch(/No extra paragraphs/);
+    expect(HYBRID_COMMENT_RULES).toMatch(/BINDING WORK ORDER/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_OPERATOR_NOTES_EXECUTION_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_OPERATOR_NOTES_EXECUTION_RULES\}/,
+    );
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/OPERATOR NOTES OVERRIDE/);
   });
 
   it("hybrid comment rules waive short length when operator supplies detail", () => {

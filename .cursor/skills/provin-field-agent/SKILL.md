@@ -25,7 +25,7 @@ TONE & PERSONALITY:
 - Calm, professional, direct and informative — a senior expert stating an opinion, never a salesman and never an alarmist.
 - Strictly NO generic marketing fluff, NO placeholders, and NO AI clichés.
 - **Restrained wording:** never „kritisks”, „anomālija”, „katastrofāls”, „šokējošs”, „milzīgs”, „pierāda”, „garantēti”; no exclamation marks or ALL-CAPS emphasis. Use „neatbilstība”, „pretruna avotos”, „būtisks”, „paaugstināts risks”.
-- **Brevity:** 2–4 short paragraphs (≈350–800 characters) per field, **except** „1. Tehnisko risku analīze” (flagship: typically **8–12 detailed paragraphs**; density ≠ shortness) and „2. Ieteikumi klātienes apskatei” (**6–9** check-paragraphs). Say what THIS field adds, then stop; cross-source comparison is at most one sentence — the aggregate picture belongs to „3. Kopsavilkums”.
+- **Brevity:** 2–4 short paragraphs (≈350–800 characters) per field, **except** „1. Tehnisko risku analīze” (flagship: typically **8–12 detailed paragraphs**; density ≠ shortness) and „2. Ieteikumi klātienes apskatei” (**6–9** check-paragraphs). **Waived when „Papildu piezīmes AI” / OPERATORA KOMANDAS are present** — then cover every operator topic (and only the scoped ones if the operator limited the job). Say what THIS field adds, then stop; cross-source comparison is at most one sentence — the aggregate picture belongs to „3. Kopsavilkums”.
 - Never use LaTeX formatting. Use clean text and standard Markdown (**bold** topic openers) only — never hyphen bullet lists.
 - **Epistemic hedging:** PROVIN sees digital data only — not a physical car. Prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”. Never claim the car is technically perfect or risk-free without in-person inspection.
 
@@ -34,6 +34,9 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 - Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ". In client-facing text use only the short ASCII hyphen "-" (2007-2015, 300-400 €) — never Unicode em dash "—" or en dash "–".
 - For checklists, visual/physical inspections, or next-step recommendations, write **paragraphs with bold topic openers** (same as other expert comments) — e.g. **Virsbūves pārbaude.** Jāpārbauda… — never hyphen bullet lists.
 - Strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do NOT use direct conversational imperatives like "Pārbaudi" or passive/weak wording.
+
+OPERATOR NOTES / PAPILDU PIEZĪMES AI (absolute):
+- When the request includes operator notes, they are a BINDING WORK ORDER: process every distinct topic; do not cherry-pick; if the operator limited scope („tikai par…”, „nepapildi”), write only those topics — no extra padding. Canonical: `AI_OPERATOR_NOTES_EXECUTION_RULES`.
 
 ## Sync workflow
 
@@ -54,7 +57,7 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 
 - One **ACTIVE FIELD** per generation — no full report skeleton in a single field.
 - Never invent facts absent from order context (`lib/admin-ai-order-context.ts`).
-- **Anti-repetition / complementary sources:** each field has a strict job (tech risks ≠ inspection ≠ summary ≠ mileage ≠ incidents ≠ per-source comments). When generating any comment, treat already-generated expert comments in the prompt as covered ground — add deltas only; never paraphrase the same accident/km/ownership story at similar length across AutoDNA/CarVertical/LTAB/CSDD. Sources must **complement** each other (short confirm + unique facts), not repeat 4×.
+- **Anti-repetition / complementary sources:** each field has a strict job (tech risks ≠ inspection ≠ summary ≠ mileage ≠ incidents ≠ per-source comments). When generating any comment, treat already-generated expert comments in the prompt as covered ground — add deltas only; never paraphrase the same accident/km/ownership story at similar length across AutoDNA/CarVertical/LTAB/CSDD. Sources must **complement** each other (short confirm + unique facts), not repeat 4×. **Exception:** admin „Papildu piezīmes AI” / `OPERATORA KOMANDAS` are a binding work order — process every operator topic even if it would normally belong in another field; if the operator limited scope („tikai par…”), do not add extra default paragraphs. Canonical: `AI_OPERATOR_NOTES_EXECUTION_RULES`.
 - Full mileage synthesis (lineārums, averages, motorstundas, periods without records) only in **NOBRAUKUMA VĒSTURES KOMENTĀRS** — and even there 3–5 paragraphs, not an essay.
 - Registry data is digital and can be incomplete or mis-entered: report what the records show („ierakstos fiksēts”, „avotos nav fiksēts”), never what they „prove” (manipulation, fraud, concealment). Canonical constants: `PROVIN_RESTRAINED_TONE_RULES` and `PROVIN_COMMENT_BREVITY_RULES` in `lib/source-summary-comment-format.ts`.
 - **3. Kopsavilkums:** short professional opinion + recommendation on the overall picture — never a point-by-point rehash of already-generated source/IRISS text, and **never listing/market/repair EUR figures** (those belong in „Cenas vērtējums” and „1. Tehnisko risku analīze”). Also apply `AI_CLIENT_EMAIL_FORMAT_RULES` (plain text, no Markdown in client email).

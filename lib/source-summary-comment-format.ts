@@ -33,8 +33,34 @@ export const PROVIN_RESTRAINED_TONE_RULES = `RESTRAINED EXPERT VOICE (mandatory 
 - One calibrated sentence outweighs three emphatic ones: never repeat the same warning inside one field and never add a dramatic closing paragraph.
 - The client should feel he is reading a calm senior expert opinion — informative, not pushy, no sales pressure and no scare tactics.`;
 
+/**
+ * Admin dialogs „Papildu piezīmes AI” → user-prompt section „OPERATORA KOMANDAS”.
+ * Binding work order for every PROVIN agent (field-agent, expert, listing peek, Cursor skills).
+ */
+export const AI_OPERATOR_NOTES_EXECUTION_RULES = `OPERATOR NOTES / PAPILDU PIEZĪMES AI (absolute — every PROVIN agent, every ACTIVE FIELD):
+When the user prompt contains „OPERATORA KOMANDAS” (admin dialog „Papildu piezīmes AI”), that text is a BINDING WORK ORDER for THIS generation. It is not a hint, not optional flavour, and you do not triage it.
+
+COMPLETENESS (never skip, never cherry-pick):
+- Before writing, enumerate every distinct topic, instruction, question, named system/part, date, km figure, and requested phrase in the notes (lists, commas, numbered items, and separate sentences all count).
+- Every enumerated item MUST appear in the output as processed expert copy. Omitting even one is a failure.
+- Forbidden reasons to skip: brevity / 350–800 targets, anti-repetition, „belongs in another field”, „already covered elsewhere”, „not important for the buyer”, „the source data already says it”, default field structure, or token budget.
+- Several themes in one paste = ALL themes. You do not choose a subset on the operator's behalf.
+
+SCOPE (never pad when the operator limited the job):
+- If the notes restrict scope („tikai par…”, „raksti tikai…”, „neraksti par…”, „nepapildi”, „bez …”, „only write about”, a closed list of allowed topics) — write ONLY those topics. No extra paragraphs, no default field essay, no helpful portfolio fill, no extra systems, no closing filler.
+- If the notes do NOT restrict scope: process EVERY operator topic first. Default ACTIVE FIELD work may follow only after all operator topics are covered, and must not bury or replace them.
+- Do not invent extra themes the operator did not ask for. Use portfolio facts only to execute the notes accurately (correct dates / km / names the notes refer to) — not to add new storylines.
+
+FORMAT:
+- You MAY rewrite into PROVIN Latvian expert style (paragraphs, **bold** hooks, hedging vocabulary).
+- You MUST NOT drop facts, numbers, dates, named parts, service names, or conclusions from the notes.
+- Operator notes beat CLIENT VALUE DENSITY, default length, FIELD DIVISION / anti-repetition, and „already generated = covered ground” for THIS generation.
+
+If there is no „OPERATORA KOMANDAS” section, ignore this block and follow the ACTIVE FIELD rules as usual.`;
+
 /** Īsi, koncentrēti lauki — apkopojumi un salīdzinājumi tikai kopsavilkumā. */
 export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
+- OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” are present, completeness and scope of those notes beat this brevity block. Do not drop operator topics to stay short; do not pad when the operator limited the job.
 - Each comment answers ONE question: what does THIS source / THIS field add to the audit? Say it in the first paragraph.
 - DEFAULT LENGTH: 2–4 paragraphs, 2–3 sentences each (≈350–800 characters). Thin data → shorter. Only OPERATORA KOMANDAS may extend this. (Length exceptions for flagship fields live only in those fields' task blocks — do not copy 8–12 paragraphs into source/seller/summary.)
 - Cross-source comparison is NOT this field's job: at most ONE short sentence, and only when a conflict changes the conclusion. The aggregate picture, source-by-source comparison, and the purchase verdict belong to „3. Kopsavilkums”.
@@ -283,12 +309,13 @@ export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cr
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${AI_EXPERT_PARAGRAPH_PRESENTATION}
+${AI_OPERATOR_NOTES_EXECUTION_RULES}
 - LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.
-- LENGTH OVERRIDE: When the user prompt includes substantial OPERATORA KOMANDAS / eksperta piezīmes with detailed prose, dates, km, service history, or interval analysis — IGNORE the 350–800 target. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula. Output may be long.
+- LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / eksperta piezīmes — IGNORE the 350–800 target if needed to cover every operator topic. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes are long.
 - STYLE: Analytical, professional, restrained automotive Latvian. Flexible structure — not one fixed template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
 - LOGIC: Interpret what the findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
-- ANTI-REPETITION (mandatory): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, missing-data narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here. Per-source text = unique facts from THIS source + at most ONE cross-check sentence vs other sources when generating from data alone. If another source comment already covered the same fact: one short confirmation only — never a near-duplicate essay.
+- ANTI-REPETITION (mandatory): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, missing-data narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here and process EVERY operator topic (anti-repetition must not delete an operator theme). Per-source text = unique facts from THIS source + at most ONE cross-check sentence vs other sources when generating from data alone. If another source comment already covered the same fact AND the operator did not ask you to write it here: one short confirmation only — never a near-duplicate essay.
 `;
 
 /** AI PDF extract JSON — eksperta komentārs (visi avoti). */

@@ -86,9 +86,12 @@ EXPERT KNOWLEDGE BASE & FORENSIC LOGIC:
 - In **2. Kopsavilkums** and inspection recommendations: always include buyer-facing battery/charging guidance for electric audits; do not replace with ICE-only motorstundas narrative.
 - Never invent SOH or charging history absent from context — state what to verify klātienē and ask the seller.
 
-8. OPERATOR COMMANDS & SUMMARY TECHNICAL RISKS:
-- When the admin provides pre-generation notes („OPERATORA KOMANDAS”), treat them as highest priority and execute precisely.
-- You may reorganize into PROVIN paragraph format; you must NOT truncate or drop dates/km/service/interval detail the operator supplied. Default short length targets are waived for long operator pastes.
+8. OPERATOR COMMANDS / PAPILDU PIEZĪMES AI (all agents — never skip, never pad):
+- When the admin provides pre-generation notes („OPERATORA KOMANDAS” from dialog „Papildu piezīmes AI”), they are a BINDING WORK ORDER, not a hint.
+- Enumerate every distinct topic in the notes and process ALL of them. You do not choose which sentences matter.
+- If the operator limits scope („tikai par…”, „neraksti par…”, „nepapildi”) — write ONLY those topics; no extra default-field paragraphs.
+- You may reorganize into PROVIN paragraph format; you must NOT truncate, drop dates/km/service detail, or skip a theme because of brevity or anti-repetition.
+- Canonical runtime text: `AI_OPERATOR_NOTES_EXECUTION_RULES` in `lib/source-summary-comment-format.ts`.
 - **3. Kopsavilkums** is a compact professional opinion + recommendation — not a recap of every section, and **never listing/market/repair EUR**. Search if needed for the one-sentence aggregate verdict only.
 
 OUTPUT CONSTRAINT:
@@ -97,6 +100,7 @@ Generate text strictly for the active input field/section requested by the admin
 ANTI-REPETITION / FIELD DIVISION:
 - „NOBRAUKUMA VĒSTURES KOMENTĀRS” owns the full chronological mileage synthesis across sources.
 - Per-source „Komentāri” and incident summary emphasize source-unique facts plus a brief comparison — do not copy-paste the same mileage/risk essay into every section.
+- Exception: „Papildu piezīmes AI” / OPERATORA KOMANDAS override this division for the current generation — every operator topic in, no padding when scoped.
 
 ## Field-specific tasks
 

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { AI_OPERATOR_NOTES_EXECUTION_RULES } from "@/lib/source-summary-comment-format";
+
 /**
  * Papildina AI lietotāja promptu ar eksperta piezīmēm un esošo melnrakstu.
  * Operatora komandas iet **pirms** konteksta — citādi milzīgs portfelis tās pārspēj.
@@ -14,22 +16,16 @@ export function appendAiOperatorNotesSection(
   const parts: string[] = [];
   const notes = options?.operatorNotes?.trim();
   if (notes) {
-    const substantial = notes.length >= 400;
     parts.push(
       [
-        "=== OPERATORA KOMANDAS (AUGSTĀKĀ PRIORITĀTE — PRECĪZI IZPILDĪT) ===",
-        "Šīs ir admin eksperta tiešās instrukcijas / materiāls šim ģenerējumam.",
-        "Tās OVERWRITE / pārspēj noklusējuma stilu, GARUMU un satura uzsvaru, ja ir konflikts.",
+        "=== OPERATORA KOMANDAS (SAISTOŠS DARBA UZDEVUMS — NAV IETEIKUMS) ===",
+        "Šis teksts ir no admin lauka „Papildu piezīmes AI”. Tu NEDRĪKSTI izvēlēties, ko apstrādāt un ko nē.",
         "",
-        "KĀ RĪKOTIES AR OPERATORA TEKSTU:",
-        "- Drīksti PĀRKĀRTOT un noformēt PROVIN stilā (rindkopas, **bold** ievadi).",
-        "- Drīksti PAPILDINĀT ar īsu kontekstu no pasūtījuma portfeļa, ja tas palīdz.",
-        "- NEDRĪKSTI APGRAIZĪT, saspiest „formulā” vai izmest detalizāciju, ko operators iedeva.",
-        "- Saglabā konkrētus faktus: datumus, km, servisa nosaukumus, eļļas tipus, intervālu aprēķinus, secinājumus, skaitļus.",
-        substantial
-          ? "- Šis ir PLAŠS operators materiāls — izejas tekstam jābūt TIKPAT BAGĀTAM (vai bagātākam). Noklusējuma īsais 350–800 rakstzīmju limits ŠEIT NEATTIECAS."
-          : "- Iekļauj pieprasītos faktus un formulējumus; neaizstāj ar vispārīgu tekstu.",
-        "Ja komanda liek rakstīt par tehniskajiem riskiem, intervāliem vai konkrētu frāzi — TAS JĀBŪT izejas tekstā.",
+        AI_OPERATOR_NOTES_EXECUTION_RULES,
+        "",
+        "PIRMS rakstīšanas saskaiti KATRU atsevišķo tēmu / norādi / jautājumu / nosaukto mezglu no teksta zemāk. Katrai jābūt izejā. Izlaist kaut vienu = kļūda.",
+        "JA operators saka „tikai par…”, „raksti tikai…”, „neraksti par…”, „nepapildi”, „bez …” — raksti TIKAI to. Bez liekām rindām un bez noklusējuma lauka esejas.",
+        "Drīksti pārkārtot PROVIN stilā (**bold** ievadi). NEDRĪKSTI izmest faktus, datumus, km, nosaukumus, secinājumus.",
         "",
         notes,
         "",
