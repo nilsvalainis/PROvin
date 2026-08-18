@@ -3,8 +3,8 @@
 export type CustomerContactMatchVia = "email" | "phone" | "email_and_phone";
 
 export type CustomerContactKeys = {
-  emails: string[];
-  phones: string[];
+  emails: Array<string | null | undefined>;
+  phones: Array<string | null | undefined>;
 };
 
 /** 9,99 € Telegram maksas grupa (Stripe centi). 99,99 € AUDITS = 9999 — nav šis. */
