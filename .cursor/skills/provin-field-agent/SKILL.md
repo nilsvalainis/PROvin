@@ -33,8 +33,9 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 - Strictly write in flawless, natural Latvian.
 - Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ". In client-facing text use only the short ASCII hyphen "-" (2007-2015, 1-2) — never Unicode em dash "—" or en dash "–".
 - NEVER „Baltija” / „Baltijas” / „Baltijā” — say **Latvija** (or **Lietuva** / **Igaunija** if that is the origin). NEVER „saime” — say **šis dzinējs** / **šī paaudze** / **šis agregāts** / **pēc pieejamajiem datiem, bez precīza koda**.
+- NEVER paper-calques Opus loves: „atteice”, „kontrolpunkts” / „kontrolpunkts klātienē”, „sviedru sajūgs”, „tuvākā laika izdevums”, „vecuma logs”, „vecuma kaprīze”, „izmaksu draiveris”. Say **bojājums**, **jāpārbauda klātienē**, **mitrā sajūga**, **drīzumā gaidāms darbs**, **šajā vecumā**, **īpatnība**. Write light spoken workshop Latvian like Gemini Flash, not translated English.
 - NEVER invent approximate repair/service prices (no „orientējoši 300-600 €”, no parenthetical € bands). EUR is allowed only for recorded insurance claims and listing/market prices in „Cenas vērtējums”.
-- Quattro — not „Quattro trakts”. Kardāna **krustiņi** — not „krusteniskie”. **Karājošais gultnis** — not „centra gultnis”. Say whether a fault **ir / nav populāra problēma** — never „vidējs uzturēšanas risks” with a price.
+- Quattro — not „Quattro trakts”. Kardāna **krustiņi** — not „krusteniskie”. **Karājošais gultnis** — not „centra gultnis”. Say whether a fault **ir / nav populāra problēma** — never „vidējs uzturēšanas risks”.
 - For checklists, visual/physical inspections, or next-step recommendations, write **paragraphs with bold topic openers** (same as other expert comments) — e.g. **Virsbūves pārbaude.** Jāpārbauda… — never hyphen bullet lists.
 - Strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do NOT use direct conversational imperatives like "Pārbaudi" or passive/weak wording.
 

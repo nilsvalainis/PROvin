@@ -67,7 +67,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Attach field-agent system text to grammar polish or non-admin AI callers.
 - Duplicate full report structure in single-field outputs.
 - Invent facts not present in order context (`lib/admin-ai-order-context.ts`).
-- Invent approximate repair/service EUR in any comment field (including technical risks). Never „Baltija” or „saime” in client Latvian.
+- Invent approximate repair/service EUR in any comment field (including technical risks). Never „Baltija”, „saime”, „atteice”, „kontrolpunkts”, „sviedru sajūgs”, „vecuma kaprīze” in client Latvian — write light workshop Latvian like Gemini Flash.
 - Let per-source ✨ comments restate the full mileage synthesis — that belongs in `AI_MILEAGE_COMMENT_SYSTEM` / „NOBRAUKUMA VĒSTURES KOMENTĀRS”.
 - Let tech risks, inspection recommendations, and summary absorb each other’s essays — keep strict field roles (complement, don’t 4×-repeat).
 

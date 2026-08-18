@@ -46,7 +46,7 @@ RULES:
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
-- ENGLISH CALQUES: rewrite translated-English Latvian into natural workshop Latvian WITHOUT adding facts. Fix: „automobīlis” → „automašīna”; „saime” → dzinējs/paaudze/agregāts; „Baltija” → Latvija (or Lietuva/Igaunija); drop „trakts” after Quattro; „kardāna krusteniskie” → „kardāna krustiņi”; „centra gultnis” → „karājošais gultnis”; „vidējs uzturēšanas risks” + € → „ir / nav populāra problēma”; „transmisija” as gearbox → „ātrumkārba”; bare „injektors” → „iesmidzinātājs (sprausla)”. Do not invent repair prices.
+- ENGLISH CALQUES: rewrite translated-English Latvian into natural workshop Latvian WITHOUT adding facts. Fix: „automobīlis” → „automašīna”; „saime” → dzinējs/paaudze/agregāts; „Baltija” → Latvija (or Lietuva/Igaunija); drop „trakts” after Quattro; „kardāna krusteniskie” → „kardāna krustiņi”; „centra gultnis” → „karājošais gultnis”; „uzturēšanas risks” → „ir / nav populāra problēma”; „transmisija” as gearbox → „ātrumkārba”; bare „injektors” → „iesmidzinātājs (sprausla)”; „atteice” → „bojājums”; „kontrolpunkts” → „jāpārbauda klātienē”; „sviedru sajūgs” → „mitrā sajūga”; „tuvākā laika izdevums/rēķins” → „drīzumā gaidāms darbs”; „vecuma logs” → „šajā vecumā”; „kaprīze” → „īpatnība / šajā vecumā tipiska parādība”; „izmaksu draiveris” → „galvenais tuvākajā laikā”. Do not invent repair prices.
 - If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph — never leave a leading dash at paragraph start.
 - Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015, 1-2). Do not introduce em dashes.
 - Output ONLY the corrected text in clean Markdown.`;
@@ -286,7 +286,7 @@ SATURA PRASĪBAS:
 - Konkrēti mezgli, nevis kategorijas: ķēde vai zobsiksna **un tās puse/piekļuve**, turbo un tā ģeometrija, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats (tikai ja ir), ūdens sūknis/termostats/hidromufte, eļļas noplūžu vietas, reduktors/AWD sajūgs, gaisa balstiekārta pret Adaptive/Dynamic Drive — tikai relevantie.
 - **Neraksti aptuvenās remonta / profilakses izmaksas EUR diapazonā.** Pasaki, vai tā ir / nav populāra problēma šajā posmā.
 - Aprīkojums: nosauc dārgās vecuma pozīcijas, kuru **nav**, ja dati to ļauj; neizdomā SA kodus.
-- Nepārspīlē; ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, blīves 15–20 gadu vecumā) nošķir no tuvākā termiņa problēmas.
+- Nepārspīlē; ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa īpatnības (elektronika, blīves 15-20 gadu vecumā) nošķir no tuvākā termiņa problēmas.
 - **Stiprās puses** kā modeļa līmeņa reputāciju, ne kā pierādītu šī eksemplāra stāvokli; PROVIN auto fiziski nav apskatījis. Īpaši LV ekspluatācija var sabojāt arī labu agregātu.
 - Sasaisti ar šī pasūtījuma signāliem bez pilnas nobraukuma/negadījumu esejas.
 - Ja auto ir BEV/PHEV — iekļauj akumulatora / uzlādes riskus (skat. ELECTRIC & PLUG-IN FORENSICS).
@@ -432,7 +432,7 @@ FORMĀTS (obligāti):
 - ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = tjekbil. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
-- Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).
+- Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvākajā laikā gaidāmais darbs un vai tas ir pirkuma šķērslis vai tikai jāpārbauda klātienē — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).
 - Beigās — skaidra, kalibrēta rekomendācija; **nekad** „garantēti drošs bez apskates”.
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS
 

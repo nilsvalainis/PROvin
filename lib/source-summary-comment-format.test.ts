@@ -34,6 +34,21 @@ describe("applyProvinReportCopyVocabulary", () => {
     );
   });
 
+  it("rewrites paper-Latvian calques Opus copies from English", () => {
+    expect(applyProvinReportCopyVocabulary("Dzinēja atteice paliek kontrolpunkts klātienē.")).toBe(
+      "Dzinēja bojājums jāpārbauda klātienē.",
+    );
+    expect(applyProvinReportCopyVocabulary("DSG sviedru sajūgs ir vecuma kaprīze.")).toBe(
+      "DSG mitrā sajūga ir šajā vecumā tipiska parādība.",
+    );
+    expect(applyProvinReportCopyVocabulary("Tuvākā laika izdevums vecuma logā.")).toBe(
+      "Drīzumā gaidāms darbs šajā vecumā.",
+    );
+    expect(applyProvinReportCopyVocabulary("Tuvākais izmaksu draiveris ir piekare.")).toBe(
+      "Galvenais tuvākajā laikā gaidāmais darbs ir piekare.",
+    );
+  });
+
   it("strips invented repair prices but keeps listing and claim EUR", () => {
     expect(
       applyProvinReportCopyVocabulary(
@@ -41,7 +56,7 @@ describe("applyProvinReportCopyVocabulary", () => {
       ),
     ).toBe("Kardāna krustiņi pie šī nobraukuma nav populāra problēma.");
     expect(applyProvinReportCopyVocabulary("Blīve (100-350 €) paliek kontrolpunkts.")).toBe(
-      "Blīve paliek kontrolpunkts.",
+      "Blīve jāpārbauda klātienē.",
     );
     expect(applyProvinReportCopyVocabulary("Sludinājuma cena 14 900 € atbilst tirgum.")).toBe(
       "Sludinājuma cena 14 900 € atbilst tirgum.",

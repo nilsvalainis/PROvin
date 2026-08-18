@@ -48,7 +48,7 @@ function engineScore(fp: VehicleReportFingerprint, codes: string[]): number {
 }
 
 const PACK_BODY_HEADER = `Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
-- Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / populāra problēma šajā posmā / tikai kontrolpunkts). Nelieto „vidējs uzturēšanas risks”.
+- Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / populāra problēma šajā posmā / tikai jāpārbauda klātienē). Nelieto „vidējs uzturēšanas risks”.
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
 - **1. Tehnisko risku analīze** — DETALIZĒTI (8–12 rindkopas): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija, vai tā **ir / nav populāra problēma**. **Bez aptuvenām remonta EUR summām.** Blīvums ≠ īsums.
 - Pakas EUR skaitļi ir iekšēja kalibrācija — **nekopē tos klienta komentārā**. **3. Kopsavilkumā** cenas un EUR summas neraksta. Sludinājuma/tirgus cenas tikai „Cenas vērtējumā”; apdrošināšanas EUR — negadījumu sadaļā.`;
@@ -91,7 +91,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **DQ250/DQ500 (mitrā, smagāki auto):** izturīgāka, bet joprojām obligāts testa brauciens un eļļas maiņas vēsture.
 
-**DPF/EGR/AdBlue:** pilsētas profils = **vidējs/liels risks**; šosejas profils ar pierādījumiem — kontrolpunkts.
+**DPF/EGR/AdBlue:** pilsētas profils = **vidējs/liels risks**; šosejas profils ar pierādījumiem — jāpārbauda klātienē.
 
 **Klātienē:** slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; ūdens sūknis/termostats.`,
   },
@@ -165,13 +165,13 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **525d M57T2 (145 kW, Euro 4) + ZF 6HP19 + HECK:** viens no izturīgākajiem E60/E61 salikumiem. Automāts bez divsajūga; **nav divmasu spararata**. 6HP „mūža eļļa” ir mīts — ATF+filtrs ik **60–80 tūkst. km** (**280–450 €**); mehatronika, ja kadreiz, **800–1800 €**.
 
-**E61 Touring:** visiem rūpnīcā **aizmugures pneimatika (EHC)** — tas nav Dynamic Drive. Spilveni + korodējis kompresors = tipiskais tuvākā laika rēķins (**spilveni 400–800 €**, kompresors **250–500 €**, komplekss **800–1600 €**). E60 sedans bez EHC šo rindkopu neliek kā galveno.
+**E61 Touring:** visiem rūpnīcā **aizmugures pneimatika (EHC)** — tas nav Dynamic Drive. Spilveni + korodējis kompresors = tipiskais drīzumā gaidāmais darbs (**spilveni 400–800 €**, kompresors **250–500 €**, komplekss **800–1600 €**). E60 sedans bez EHC šo rindkopu neliek kā galveno.
 
 **Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 
-**M57 mehānika pie 250–350 tūkst. km (kontrolpunkts / populāra problēma šajā posmā, ne bloķētājs; EUR tikai iekšējai kalibrācijai — komentārā neraksti):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/injektori statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
+**M57 mehānika pie 250–350 tūkst. km (jāpārbauda klātienē / populāra problēma šajā posmā, ne bloķētājs; EUR tikai iekšējai kalibrācijai — komentārā neraksti):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/injektori statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
 
-**Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (tuvākais rēķins) no paaudzes kaprīzes.
+**Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (drīzumā gaidāms darbs) no šīs paaudzes īpatnības.
 
 **Klātienē:** aizmugure pēc 10 min stāvēšanas (E61); eļļa uz filtra korpusa/startera; hidromufte (troksnis/sasilšana); auksts starts bez ķēdes klaboņas; 6HP 1–2 un 4–5; ELV starta cikls; pusass puteklis; parastās stūres brīvkustība (ne Active Steering cena); EMF stāvbremze; virpuļvārstu kodi.`,
   },
@@ -354,7 +354,7 @@ Lietot arī vispārīgo **ELECTRIC & PLUG-IN FORENSICS** bloku: SOH + uzlādes r
 
 **Mazda Skyactiv dīzelis:** DPF pilsētā; EGR.
 
-**Latvijas rūsa:** virsbūve un šasija — kontrolpunkts pat „uzticamiem” zīmoliem.
+**Latvijas rūsa:** virsbūve un šasija — jāpārbauda klātienē pat „uzticamiem” zīmoliem.
 
 **Klātienē:** CVT tests; rūsa uz arkām; servisa intervāli.`,
   },

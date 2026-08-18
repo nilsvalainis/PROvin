@@ -184,10 +184,40 @@ export function evaluateExpertCommentQuality(
         message: "Quattro (ne „trakts”); kardāna krustiņi; karājošais gultnis — ne „krusteniskie” / „centra gultnis”",
       });
     }
-    if (/\bvidējs uzturēšanas risks\b/i.test(t)) {
+    if (/\b(?:zems|vidējs|augsts|liels|mazs)\s+uzturēšanas risks\b/i.test(t) || /\buzturēšanas risks\b/i.test(t)) {
       issues.push({
         code: "vocabulary_maintenance_risk",
-        message: "Nelieto „vidējs uzturēšanas risks” — saki, vai tā ir / nav populāra problēma",
+        message: "Nelieto „uzturēšanas risks” — saki, vai tā ir / nav populāra problēma",
+      });
+    }
+    if (/\batteice/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „atteice” — saki bojājums / defekts",
+      });
+    }
+    if (/\bkontrolpunkt/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „kontrolpunkts” — saki jāpārbauda klātienē",
+      });
+    }
+    if (/\bsviedru sajūg/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „sviedru sajūgs” — saki mitrā sajūga / sausā sajūga",
+      });
+    }
+    if (/tuvākā laika (?:izdevum|rēķin)|izmaksu draiveris|vecuma logs|tuvākais logs/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „tuvākā laika izdevums”, „vecuma logs”, „izmaksu draiveris” — vieglāka latviešu valoda",
+      });
+    }
+    if (/kaprīz/i.test(t)) {
+      issues.push({
+        code: "vocabulary_paper_lv",
+        message: "Nelieto „kaprīze” — saki īpatnība / šajā vecumā tipiska parādība",
       });
     }
   }

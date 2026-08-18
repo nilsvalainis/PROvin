@@ -39,6 +39,11 @@ describe("PROVIN AI prompt invariants", () => {
   it("vocabulary forbids Baltija, saime, and invented repair prices", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER „Baltija”/);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER „saime”/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/LIGHT LATVIAN/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/atteice/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/kontrolpunkts/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/sviedru sajūgs/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/vecuma kaprīze/);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/Quattro trakts/);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/karājošais gultnis/);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/approximate repair\/service prices/);
@@ -156,8 +161,8 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("mileage-band rules calibrate risk without exaggeration", () => {
     expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/Nepārspīlē/);
-    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/maksimāli 1–2|tikai 1–2/);
-    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/20 000–40 000 km/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/maksimāli 1[-–]2|tikai 1[-–]2/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/20 000[-–]40 000 km/);
     expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/nepierādītu/);
     expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/Vecums nav tas pats/);
   });
@@ -312,6 +317,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(ai).toMatch(/PROVIN_CLAUDE_LV_SURFACE/);
     expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/workshop Latvian/i);
     expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/saime/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/atteice/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/kontrolpunkts/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/sviedru sajūgs/);
+    expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/kaprīze/);
     expect(PROVIN_CLAUDE_LV_SURFACE).toMatch(/iesmidzinātājs/);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/WORKSHOP LATVIAN/);
   });
