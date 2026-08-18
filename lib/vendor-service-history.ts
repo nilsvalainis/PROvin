@@ -5,6 +5,8 @@
  * Formāts vienā rindā: `DD.MM.YYYY | 47 521 km | Regulārā apkope: eļļas maiņa, filtri`.
  */
 
+import { looksLikeUntranslatedServiceWork } from "@/lib/service-work-term-lv";
+
 export type VendorServiceEntry = {
   /** DD.MM.YYYY (ja atskaitē tikai MM.YYYY — diena „01”). */
   date: string;
@@ -127,11 +129,35 @@ export function mergeVendorServiceEntries(
       country: prev.country || entry.country,
       category: prev.category || entry.category,
       location: prev.location || entry.location,
-      works: dedupeWorks([...prev.works, ...entry.works]),
+      works: mergeWorksPreferLatvian(prev.works, entry.works),
     };
     byKey.set(key, merged);
   }
   return sortVendorServiceEntries([...byKey.values()]);
+}
+
+function worksForeignCount(works: string[]): number {
+  return works.filter(looksLikeUntranslatedServiceWork).length;
+}
+
+/**
+ * Ja viens saraksts ir skaidri latviskāks, ņem to (nejauc EN rindu ar tās LV tulkojumu).
+ * Citādi apvieno, izlaižot dublikātus.
+ */
+function mergeWorksPreferLatvian(prev: string[], next: string[]): string[] {
+  if (next.length === 0) return dedupeWorks(prev);
+  if (prev.length === 0) return dedupeWorks(next);
+  const prevForeign = worksForeignCount(prev);
+  const nextForeign = worksForeignCount(next);
+  const prevRatio = prevForeign / prev.length;
+  const nextRatio = nextForeign / next.length;
+  if (nextRatio + 0.08 < prevRatio && next.length >= Math.min(prev.length, 1)) {
+    return dedupeWorks([...next, ...prev.filter((w) => !looksLikeUntranslatedServiceWork(w))]);
+  }
+  if (prevRatio + 0.08 < nextRatio) {
+    return dedupeWorks([...prev, ...next.filter((w) => !looksLikeUntranslatedServiceWork(w))]);
+  }
+  return dedupeWorks([...prev, ...next]);
 }
 
 function dedupeWorks(works: string[]): string[] {

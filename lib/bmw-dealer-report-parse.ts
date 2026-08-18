@@ -278,14 +278,19 @@ function looksLikeDealerName(rest: string): boolean {
  */
 const PART_CODE_TAIL_RE = /\s*F[A-Z]+\d[\dA-Z]*\s*-?\d{0,3}$/;
 const PART_NUMBER_TAIL_RE = /\s*\d{6,}\s*-?\d{0,3}$/;
+/** BMW ETK alfanumerisks numurs („83125A66D571”, „32305A66F661”). */
+const ETK_PART_TAIL_RE = /\s*\d{4,}[A-Z][A-Z0-9]{4,}\s*-?\d{0,3}$/;
 
 function parsePartName(line: string): string {
   const name = normalizeSpace(line)
+    .replace(ETK_PART_TAIL_RE, "")
     .replace(PART_CODE_TAIL_RE, "")
     .replace(PART_NUMBER_TAIL_RE, "")
     .replace(/[-–\s]+$/, "")
     .trim();
-  if (!name || /^part\s*name/i.test(name)) return "";
+  if (!name || /^part\s*name/i.test(name) || /^order$/i.test(name) || /^set$/i.test(name)) {
+    return "";
+  }
   return name.replace(/[,;]+$/, "");
 }
 

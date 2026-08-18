@@ -88,6 +88,17 @@ Repair History
 
 12/05/2026188,658 mi / 303,616 kmDealer ID: 00863-3Order: 140893-00|1260512
 No additional details available.
+08/01/202596,332 mi / 155,000 kmNiederlassung Bonn BMW AG, BonnOrder: 221100
+Part NamePart NumberQuantity
+BMW cleaning fluid with antifreeze83125A66D571
+Order
+Set, microfilter/carbon canister643191718582
+Ölzuschlag für Service Inclusive
+Nachrüstung Service-Inclusive
+Kundenloyalisiereung siehe Mail
+Relay, make contact, white green
+Original BMW AGM-battery
+Pipe, Exhaust gas radiator high temperature
 05/09/2019123,549 mi / 198,833 kmB&K Deutschland GmbH, OsnabrückOrder: WAU19508516
 Part NamePart NumberQuantity
 Kontaktschutzfett KF1FT999922952127/07/2019122,513 mi / 197,165 kmBMW Mobiler Service Einsatzleitzentrale, MünchenOrder: 5582973
@@ -217,6 +228,23 @@ describe("BMW dealer PDF", () => {
     // Ķeksītis ir tikai motoreļļai un salona filtram; priekšējām bremzēm tā nav.
     expect(visit?.works).toEqual(["Motoreļļa", "Salona filtrs"]);
     expect(visit?.works.join(" ")).not.toContain("Icon");
+  });
+
+  it("tulko BMW ETK darbu rindas latviski un izmet Order/numurus", () => {
+    const visit = extractDealerReport(BMW_TEXT).serviceHistory.find((e) => e.date === "08.01.2025");
+    expect(visit?.odometer).toBe("155000");
+    expect(visit?.location).toBe("Niederlassung Bonn BMW AG, Bonn");
+    expect(visit?.works).toEqual([
+      "BMW stiklu mazgāšanas šķidrums ar pretfrostu",
+      "Salona filtrs (ar aktivēto ogli)",
+      "Eļļas piemaksa (Service Inclusive)",
+      "Service Inclusive pievienošana",
+      "Klienta lojalitātes akcija (sk. e-pastu)",
+      "Relejs (slēdzošais, balti zaļš)",
+      "Oriģinālais BMW AGM akumulators",
+      "Izplūdes gāzu radiatora caurule (augsta temperatūra)",
+    ]);
+    expect(visit?.works.join(" ")).not.toMatch(/Order|83125|cleaning fluid|microfilter/i);
   });
 
   it("keeps a visit that has no odometer and strips part numbers with quantity", () => {

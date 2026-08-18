@@ -8,6 +8,13 @@
 import "server-only";
 
 import { CLAUDE_MODEL_EXTRACT, aiGenerateJsonWithSchema, type AiUserPart } from "@/lib/admin-ai";
+import {
+  DEALER_SERVICE_WORKS_LV_SCHEMA,
+  DEALER_SERVICE_WORKS_LV_SYSTEM,
+  applyDealerServiceWorksLvPayload,
+  collectUntranslatedServiceWorks,
+} from "@/lib/dealer-service-works-lv";
+import { serviceHistoryNeedsLvTranslation } from "@/lib/service-work-term-lv";
 import type { CopilotAction } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
@@ -134,8 +141,8 @@ export async function runVendorPdfAgent(opts: {
 
   const local = extractDeterministic(vendor, text);
 
-  // Dīlera / rūpnīcas izdrukas struktūra ir stabila: AI tur ir tikai rezerve, ja teksta
-  // slānis nedeva ne laukus, ne rindas (skenēts vai vēl neredzēts izkārtojums).
+  // Dīlera / rūpnīcas izdrukas struktūra ir stabila: pilnais PDF AI ir rezerve, ja
+  // teksta slānis nedeva ne laukus, ne rindas. Darbu EN/DE tulkojums ir atsevišķs solis zemāk.
   const dealerLocalIsEnough =
     vendor === "dealer" && (Object.keys(local.vehicleInfo).length > 0 || local.mileage.length > 0);
 
@@ -150,7 +157,48 @@ export async function runVendorPdfAgent(opts: {
     }
   }
 
-  const merged = mergeVendorReportExtracts(local, ai);
+  let merged = mergeVendorReportExtracts(local, ai);
+
+  // Dīlera struktūra ir stabila, bet ETK darbu nosaukumi paliek EN/DE — atsevišķs tulkojums.
+  if (
+    opts.useAi !== false &&
+    vendor === "dealer" &&
+    serviceHistoryNeedsLvTranslation(merged.serviceHistory)
+  ) {
+    const pending = collectUntranslatedServiceWorks(merged.serviceHistory);
+    if (pending.length > 0) {
+      try {
+        const raw = await aiGenerateJsonWithSchema({
+          model: CLAUDE_MODEL_EXTRACT,
+          systemInstruction: DEALER_SERVICE_WORKS_LV_SYSTEM,
+          parts: [
+            {
+              text: [
+                `Translate these ${pending.length} dealer service/repair work items to Latvian.`,
+                "JSON array field items[].original must copy each string exactly; items[].lv is the Latvian translation.",
+                JSON.stringify({ items: pending.map((original) => ({ original })) }),
+              ].join("\n"),
+            },
+          ],
+          responseSchema: DEALER_SERVICE_WORKS_LV_SCHEMA,
+          temperature: 0,
+        });
+        merged = {
+          ...merged,
+          serviceHistory: applyDealerServiceWorksLvPayload(merged.serviceHistory, raw),
+        };
+      } catch (e) {
+        const detail = e instanceof Error ? e.message : "unknown";
+        console.warn(`${LOG_PREFIX} works_lv_failed`, {
+          fileName: opts.fileName,
+          detail,
+          pending: pending.length,
+        });
+        notes.push(`Darbu tulkojums latviski neizdevās (${detail}) — paliek vārdnīcas slānis.`);
+      }
+    }
+  }
+
   const resolved = resolveExtractCountries(merged, collectWorkspaceCountryTimeline(opts.sourceBlocks));
   const actions = buildVendorCopilotActions(resolved, vendorSourceKey(vendor));
 

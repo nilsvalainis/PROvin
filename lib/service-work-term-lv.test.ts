@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { serviceWorkTermLv, serviceWorkTermsLv } from "@/lib/service-work-term-lv";
+import {
+  applyServiceWorkTranslations,
+  collectUntranslatedServiceWorks,
+  looksLikeUntranslatedServiceWork,
+  serviceHistoryNeedsLvTranslation,
+  serviceWorkTermLv,
+  serviceWorkTermsLv,
+} from "@/lib/service-work-term-lv";
 
 describe("servisa terminu tulkojums latviski", () => {
   it("tulko angļu apkopes terminus pēc nozīmes", () => {
@@ -42,5 +49,67 @@ describe("servisa terminu tulkojums latviski", () => {
     expect(serviceWorkTermsLv(["Air filter element", "Luftfilter", "", "  "])).toEqual([
       "Gaisa filtrs",
     ]);
+  });
+
+  it("BMW ETK rindas tulko pēc nozīmes, nogriež numurus un Order/Set priedēkļus", () => {
+    expect(serviceWorkTermLv("BMW cleaning fluid with antifreeze 83125A66D571")).toBe(
+      "BMW stiklu mazgāšanas šķidrums ar pretfrostu",
+    );
+    expect(serviceWorkTermLv("Set, microfilter/carbon canister")).toBe(
+      "Salona filtrs (ar aktivēto ogli)",
+    );
+    expect(serviceWorkTermLv("Order")).toBe("");
+    expect(serviceWorkTermLv("Relay, make contact, white green")).toBe(
+      "Relejs (slēdzošais, balti zaļš)",
+    );
+    expect(serviceWorkTermLv("Original BMW AGM-battery")).toBe("Oriģinālais BMW AGM akumulators");
+    expect(serviceWorkTermLv("Pipe, Exhaust gas radiator high temperature")).toBe(
+      "Izplūdes gāzu radiatora caurule (augsta temperatūra)",
+    );
+    expect(serviceWorkTermLv("Airbag module, driver's side 32305A66F661")).toBe(
+      "Drošības spilvena modulis (vadītāja pusē)",
+    );
+    expect(serviceWorkTermLv("Skrūve (self tapping)")).toBe("Skrūve (pašvītņojoša)");
+    expect(serviceWorkTermLv("Brake fluid LOW VISCOSITY")).toBe("Bremžu šķidrums (zema viskozitāte)");
+  });
+
+  it("tulko BMW darbnīcas vācu piezīmes pēc nozīmes", () => {
+    expect(serviceWorkTermLv("Ölzuschlag für Service Inclusive")).toBe(
+      "Eļļas piemaksa (Service Inclusive)",
+    );
+    expect(serviceWorkTermLv("Nachrüstung Service-Inclusive")).toBe("Service Inclusive pievienošana");
+    expect(serviceWorkTermLv("Kundenloyalisiereung siehe Mail")).toBe(
+      "Klienta lojalitātes akcija (sk. e-pastu)",
+    );
+    expect(serviceWorkTermLv("Serviceväsche Upgrade")).toBe("Servisa mazgāšana (paplašinātā)");
+  });
+});
+
+describe("netulkotu darbu noteikšana", () => {
+  it("atzīmē palikušo angļu / vācu, bet ne zīmolu un latviešu tekstu", () => {
+    expect(looksLikeUntranslatedServiceWork("Unknown hex housing bracket")).toBe(true);
+    expect(looksLikeUntranslatedServiceWork("Eļļas filtra komplekts")).toBe(false);
+    expect(looksLikeUntranslatedServiceWork("Castrol Magnatec Prof. MP 5W-30 LL04")).toBe(false);
+    expect(looksLikeUntranslatedServiceWork("Eļļas piemaksa (Service Inclusive)")).toBe(false);
+    expect(
+      serviceHistoryNeedsLvTranslation([
+        { works: ["Eļļas filtra komplekts", "Unknown hex housing bracket"] },
+      ]),
+    ).toBe(true);
+    expect(serviceHistoryNeedsLvTranslation([{ works: ["Gaisa filtrs"] }])).toBe(false);
+  });
+
+  it("AI karti uzliek tikai palikušajiem nosaukumiem", () => {
+    const entries = [
+      {
+        works: ["Eļļas filtra komplekts", "Unknown hex housing bracket"],
+      },
+    ];
+    expect(collectUntranslatedServiceWorks(entries)).toEqual(["Unknown hex housing bracket"]);
+    expect(
+      applyServiceWorkTranslations(entries, {
+        "Unknown hex housing bracket": "Korpusa kronšteins",
+      })[0]?.works,
+    ).toEqual(["Eļļas filtra komplekts", "Korpusa kronšteins"]);
   });
 });

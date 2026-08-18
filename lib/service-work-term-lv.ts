@@ -25,6 +25,15 @@ const QUALIFIER_LV: TermRule[] = [
   { re: /^rain\/light(\/solar)?(\/(condens\.?s?\.?|misting))?.*$/i, lv: "ar lietus un gaismas sensoru" },
   { re: /^(winter|winterr[äa]der)$/i, lv: "ziemai" },
   { re: /^(asbestos[- ]free|asbestfrei)$/i, lv: "bez azbesta" },
+  { re: /^(self[- ]tapping|selbstschneidend)$/i, lv: "pašvītņojoša" },
+  { re: /^(lightweight|leichtbau)$/i, lv: "viegls" },
+  { re: /^(make\s+contact|schlie[ßs]er)$/i, lv: "slēdzošais" },
+  { re: /^(white\s+green|wei[ßs]gr[üu]n)$/i, lv: "balti zaļš" },
+  { re: /^(black|schwarz)$/i, lv: "melna" },
+  { re: /^(high\s+temperature|hochtemperatur)$/i, lv: "augsta temperatūra" },
+  { re: /^(driver'?s?\s+side|fahrerseite)$/i, lv: "vadītāja pusē" },
+  { re: /^(low\s+viscosity)$/i, lv: "zema viskozitāte" },
+  { re: /^(with\s+antifreeze|mit\s+frostschutz)$/i, lv: "ar pretfrostu" },
 ];
 
 /**
@@ -47,7 +56,11 @@ const TERM_LV: TermRule[] = [
   { re: /^(ersatzfahrzeug|replacement\s+vehicle|courtesy\s+car)(\s*\(.*\))?$/i, lv: "Maiņas auto" },
   { re: /^(t[üu]v\s+geb[üu]hren\b.*|t[üu]v\s+fee)$/i, lv: "TÜV apskates nodeva" },
   { re: /^(kostenlose\s+)?fahrzeugoberw[äa]sche$/i, lv: "Virsbūves mazgāšana" },
-  { re: /^servicew[äa]sche(\s+plus)?$/i, lv: "Servisa mazgāšana" },
+  { re: /^service[vw][äae]sche\s+upgrade$/i, lv: "Servisa mazgāšana (paplašinātā)" },
+  { re: /^service[vw][äae]sche(\s+plus)?$/i, lv: "Servisa mazgāšana" },
+  { re: /^[öo]lzuschlag\s+f[üu]r\s+service[-\s]?inclusive$/i, lv: "Eļļas piemaksa (Service Inclusive)" },
+  { re: /^nachr[üu]stung\s+service[-\s]?inclusive$/i, lv: "Service Inclusive pievienošana" },
+  { re: /^kundenloyali[a-zäöü]+\s+siehe\s+mail$/i, lv: "Klienta lojalitātes akcija (sk. e-pastu)" },
   { re: /^fahrzeug\s+nicht\s+waschen\.?$/i, lv: "Norāde: automašīnu nemazgāt" },
   { re: /^schleifvlies\s+und\s+hohlraumspray$/i, lv: "Slīpēšanas vate un dobumu aizsargaerosols" },
   { re: /^(feinstaub[- ]plakette(\s+gr[üu]n)?|umweltplakette)$/i, lv: "Vācijas ekoloģiskā uzlīme (zaļā)" },
@@ -89,7 +102,7 @@ const TERM_LV: TermRule[] = [
   { re: /^(air\s+filter(\s+element)?|luftfilter)$/i, lv: "Gaisa filtrs" },
   { re: /^(fuel\s+filter(\s+cartridge)?|(kraft|die)stofffilter)$/i, lv: "Degvielas filtrs" },
   {
-    re: /^(microfilter\/activated\s+carbon\s+container|activated\s+carbon\s+(micro)?filter)$/i,
+    re: /^(microfilter\/(activated\s+)?carbon\s+(container|canister)|activated\s+carbon\s+(micro)?filter)$/i,
     lv: "Salona filtrs (ar aktivēto ogli)",
   },
   { re: /^(microfilter|cabin\s+(air\s+)?filter|innenraumfilter|pollenfilter)$/i, lv: "Salona filtrs" },
@@ -102,7 +115,7 @@ const TERM_LV: TermRule[] = [
     lv: "Bremžu kluču nodiluma sensors",
   },
   { re: /^(brake[- ]pad\s+paste|bremsenpaste)$/i, lv: "Bremžu kluču pasta" },
-  { re: /^(brake\s+disc|bremsscheibe)$/i, lv: "Bremžu disks" },
+  { re: /^(brake\s+discs?|bremsscheibe)$/i, lv: "Bremžu disks" },
   { re: /^(brake\s+discs?,\s*ventilated|bremsscheibe\s+innenbel[üu]ftet)$/i, lv: "Bremžu disks (ventilēts)" },
   { re: /^(brake\s+caliper|bremssattel)$/i, lv: "Bremžu suports" },
   { re: /^(front\s+brake|bremse\s+vorne)$/i, lv: "Priekšējās bremzes" },
@@ -181,6 +194,36 @@ const TERM_LV: TermRule[] = [
     lv: "Stiklu mazgāšanas šķidrums (ziemas)",
   },
   { re: /^bmw\s+high[- ]visibility\s+jacket$/i, lv: "BMW atstarojošā veste" },
+  { re: /^bmw\s+cleaning\s+fluid(\s+with\s+antifreeze)?$/i, lv: "BMW stiklu mazgāšanas šķidrums ar pretfrostu" },
+  { re: /^cleaning\s+fluid(\s+with\s+antifreeze)?$/i, lv: "Stiklu mazgāšanas šķidrums ar pretfrostu" },
+  { re: /^bmw\s+group\s+ll[- ]?0?4-?0?w$/i, lv: "Motoreļļa BMW Group LL-04 0W" },
+  { re: /^(original\s+)?bmw\s+agm[- ]?batter(y|ie)$/i, lv: "Oriģinālais BMW AGM akumulators" },
+  { re: /^(egr\s+small\s+parts\s+set|agr[- ]kleinteilesatz)$/i, lv: "EGR sīkdetaļu komplekts" },
+  { re: /^(exhaust\s+gas\s+radiator(\s+high\s+temperature)?|abgask[üu]hler)$/i, lv: "Izplūdes gāzu radiators" },
+  {
+    re: /^pipe,?\s*exhaust\s+gas\s+radiator(\s+high\s+temperature)?$/i,
+    lv: "Izplūdes gāzu radiatora caurule (augsta temperatūra)",
+  },
+  { re: /^(vacuum\s+hose|unterdruckschlauch)$/i, lv: "Vakuuma šļūtene" },
+  { re: /^(acoustic\s+cover|akustikabdeckung)$/i, lv: "Akustiskais pārsegs" },
+  { re: /^(pipe\s+union|rohrverschraubung)$/i, lv: "Caurules savienojums" },
+  { re: /^(airbag\s+module|airbagmodul)$/i, lv: "Drošības spilvena modulis" },
+  { re: /^(relay|relais)$/i, lv: "Relejs" },
+  { re: /^(fastening\s+set|befestigungssatz)$/i, lv: "Stiprinājumu komplekts" },
+  { re: /^(inner\s+hex\s+bolt|innensechskantschraube)$/i, lv: "Iekšējā sešstūra skrūve" },
+  { re: /^(nitrogen\s+oxide\s+sensor|nox[- ]?sensor|stickoxidsensor)$/i, lv: "Slāpekļa oksīdu sensors (NOx)" },
+  { re: /^(safety\s+cleaner(\s+\d+)?|sicherheitsreiniger)$/i, lv: "Drošības tīrītājs" },
+  { re: /^(holder|halter)$/i, lv: "Turētājs" },
+  { re: /^(o[- ]?ring|o[- ]ring)$/i, lv: "O-gredzens" },
+  { re: /^(pipe|rohr|leitung)$/i, lv: "Caurule" },
+  {
+    re: /^line\s+cylinder\s+head\s*[-–—]\s*scr\s+metering\s+module$/i,
+    lv: "Cauruļvads: cilindra galva – SCR dozēšanas modulis",
+  },
+  {
+    re: /^hose\s+scr\s+metering\s+module\s+coolant\s+pump$/i,
+    lv: "Šļūtene: SCR dozēšanas modulis – dzesēšanas šķidruma sūknis",
+  },
 ];
 
 /** Motoreļļas apzīmējums ar specifikāciju („MOTOROEL 5W-30 LL04”) — zīmols paliek. */
@@ -193,6 +236,21 @@ function normalize(raw: string): string {
   return raw.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim().replace(/[,;.]+$/, "");
 }
 
+/** BMW ETK / pasūtījuma numurs rindas beigās vai atsevišķs tokens („83125A66D571”). */
+const ETK_PART_NO_RE = /\b\d{4,}[A-Z][A-Z0-9]{4,}\b/g;
+const LONG_DIGIT_PART_RE = /\b\d{8,}\b/g;
+
+function stripPartCodes(name: string): string {
+  return name.replace(ETK_PART_NO_RE, " ").replace(LONG_DIGIT_PART_RE, " ").replace(/\s+/g, " ").trim();
+}
+
+function preprocess(raw: string): string {
+  let name = stripPartCodes(normalize(raw)).replace(/[-–—\s]+$/, "").trim();
+  name = name.replace(/^(order|set)\s*[,:]\s*/i, "").trim();
+  if (/^(order|set)$/i.test(name)) return "";
+  return name.replace(/[,;.]+$/, "").trim();
+}
+
 function matchTerm(name: string): string {
   const hit = TERM_LV.find(({ re }) => re.test(name));
   return hit ? hit.lv : "";
@@ -203,46 +261,86 @@ function matchQualifier(name: string): string {
   return hit ? hit.lv : "";
 }
 
-/**
- * Viens darba / detaļas nosaukums latviski.
- * Zināmais termins tiek tulkots pēc nozīmes; nezināmais paliek oriģinālvalodā.
- */
-export function serviceWorkTermLv(raw: string): string {
-  const name = normalize(raw);
-  if (!name) return "";
+function capitalizeLv(value: string): string {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
 
+function translateCore(name: string): string {
   const direct = matchTerm(name);
   if (direct) return direct;
 
-  // „Brake disc, ventilated, front” → bāze + precizējumi iekavās.
-  const parts = name.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length > 1) {
-    const base = matchTerm(parts[0]!);
-    if (base) {
-      const quals = parts.slice(1).map(matchQualifier);
-      if (quals.every(Boolean)) return `${base} (${quals.join(", ")})`;
-      const tail = parts.slice(1).join(", ");
-      return `${base} (${tail})`;
-    }
-  }
-
-  // „Brake pads front” / „Bremsbeläge vorne” → precizējums vārda beigās.
-  const trailing = name.match(/^(.*?)\s+(front|rear|vorne|hinten|links|rechts|left|right)$/i);
+  const trailing = name.match(
+    /^(.*?)\s+(front|rear|vorne|hinten|links|rechts|left|right|vorn|oben|unten|black|schwarz)$/i,
+  );
   if (trailing) {
     const base = matchTerm(trailing[1]!.trim());
     const qual = matchQualifier(trailing[2]!);
     if (base && qual) return `${base} (${qual})`;
   }
 
-  // „MOTOROEL 5W-30 LL04”, „Castrol Magnatec 5W-30” — specifikācija un zīmols nav tulkojami.
   if (OIL_PREFIX_RE.test(name)) {
     const spec = name.replace(OIL_PREFIX_RE, "").trim();
     return spec ? `Motoreļļa ${spec}` : "Motoreļļa";
   }
   if (BRAKE_FLUID_PREFIX_RE.test(name)) {
     const spec = name.replace(BRAKE_FLUID_PREFIX_RE, "").trim();
-    return spec ? `Bremžu šķidrums ${spec.toUpperCase()}` : "Bremžu šķidrums";
+    if (!spec) return "Bremžu šķidrums";
+    const specLv = matchQualifier(spec) || matchTerm(spec);
+    return specLv ? `Bremžu šķidrums (${specLv})` : `Bremžu šķidrums ${spec.toUpperCase()}`;
   }
+
+  return name;
+}
+
+function translateCommaList(name: string): string {
+  const parts = name.split(/\s*[,;]\s*/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return "";
+
+  const base = matchTerm(parts[0]!);
+  const quals = parts.slice(1).map(matchQualifier);
+  if (base && quals.every(Boolean)) return `${base} (${quals.join(", ")})`;
+
+  const translated = parts.map((part) => {
+    const qual = matchQualifier(part);
+    const term = translateCore(part);
+    if (qual && term === part) return qual;
+    return term;
+  });
+  if (translated.every((t, i) => t === parts[i])) return "";
+  return translated
+    .map((t, i) => (i === 0 ? capitalizeLv(t) : t))
+    .join(", ");
+}
+
+function translateParenthetical(name: string): string {
+  const m = name.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if (!m) return "";
+  const outerRaw = m[1]!.trim();
+  const innerRaw = m[2]!.trim();
+  if (!outerRaw || !innerRaw) return "";
+  const outer = translateCore(outerRaw);
+  const innerParts = innerRaw.split(/\s*,\s*/).map((p) => p.trim()).filter(Boolean);
+  const inner = innerParts.map((part) => matchQualifier(part) || translateCore(part));
+  if (outer === outerRaw && inner.every((t, i) => t === innerParts[i])) return "";
+  return `${outer} (${inner.join(", ")})`;
+}
+
+/**
+ * Viens darba / detaļas nosaukums latviski.
+ * Zināmais termins tiek tulkots pēc nozīmes; nezināmais paliek oriģinālvalodā (AI slānis).
+ */
+export function serviceWorkTermLv(raw: string): string {
+  const name = preprocess(raw);
+  if (!name) return "";
+
+  const direct = translateCore(name);
+  if (direct !== name) return direct;
+
+  const comma = translateCommaList(name);
+  if (comma) return comma;
+
+  const paren = translateParenthetical(name);
+  if (paren) return paren;
 
   return name;
 }
@@ -260,4 +358,82 @@ export function serviceWorkTermsLv(raw: string[]): string[] {
     out.push(value);
   }
   return out;
+}
+
+/** Zīmola eļļa / specifikācija — paliek kā izdrukā, nav „netulkots darbs”. */
+const BRAND_OR_SPEC_RE =
+  /^(castrol|mobil|shell|liqui\s*molly|total|elf|motul|valvoline|pentosin|ate\b|dot\s*[34]|agm\b)/i;
+
+function looksLikeBrandOrSpec(name: string): boolean {
+  if (BRAND_OR_SPEC_RE.test(name)) return true;
+  if (/\b\d{1,2}w-\d{2}\b/i.test(name) && name.length < 80) return true;
+  if (/^bmw\s+group\s+ll/i.test(name)) return true;
+  return false;
+}
+
+/**
+ * Angļu / vācu paliekas pēc vārdnīcas. „Service Inclusive”, BMW, AGM, viskozitāte
+ * zīmola nosaukumā nav tulkojuma caurums.
+ */
+const FOREIGN_LEFTOVER_RE =
+  /\b(with|without|from|into|onto|the|and|or|order|cleaning|fluid|antifreeze|exhaust|radiator|vacuum|holder|cover|module|metering|coolant|gasket|bolt|hex|inner|safety|cleaner|upgrade|see|mail|temperature|acoustic|airbag|union|nitrogen|oxide|fastening|tapping|lightweight|ventilated|canister|microfilter|element|pipe|hose|relay|contact|white|green|cylinder|head|pump|sensor|driver'?s|original|battery|washer|antifreeze|kit|repair|inspection|vehicle|check|brake|disc|pad|engine|spark|plug|wiper|blade|screw|clamp|ring|valve|cable|bracket|housing|seal|nut|clip|make|black|front|rear|side|small|parts|high|low|viscosity)\b/i;
+
+const GERMAN_LEFTOVER_RE =
+  /\b(f[üu]r|siehe|nachr[üu]stung|[öo]lzuschlag|kundenloyal|schlauchschelle|dichtung|schraube|reparatur|wartung|fahrzeug|halter|relais)\b|[äöüßÄÖÜ]/i;
+
+const KEEP_PROPER_RE = /\b(service\s+inclusive|bmw(\s+group)?|agm|dot\s*[34]|ll[- ]?\d+\w*)\b/gi;
+
+/**
+ * Vai pēc vārdnīcas darba teksts joprojām ir angļu / vācu (nevis latviski noslīpēts).
+ * Tukšs un zīmola specifikācija — nē.
+ */
+export function looksLikeUntranslatedServiceWork(raw: string): boolean {
+  const name = serviceWorkTermLv(raw);
+  if (!name) return false;
+  if (/detalizēts darbu saraksts/i.test(name)) return false;
+  if (looksLikeBrandOrSpec(name) && !FOREIGN_LEFTOVER_RE.test(name.replace(KEEP_PROPER_RE, " "))) {
+    return false;
+  }
+  if (GERMAN_LEFTOVER_RE.test(name)) return true;
+  const stripped = name.replace(KEEP_PROPER_RE, " ");
+  return FOREIGN_LEFTOVER_RE.test(stripped);
+}
+
+/** Vai servisa vēsturē palikuši netulkoti darbu nosaukumi. */
+export function serviceHistoryNeedsLvTranslation(entries: { works: string[] }[]): boolean {
+  return entries.some((e) => e.works.some(looksLikeUntranslatedServiceWork));
+}
+
+/** Unikālie netulkotie darbi (pēc vārdnīcas), AI slānim. */
+export function collectUntranslatedServiceWorks(entries: { works: string[] }[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const entry of entries) {
+    for (const raw of entry.works) {
+      const name = serviceWorkTermLv(raw);
+      if (!name || !looksLikeUntranslatedServiceWork(name)) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(name);
+    }
+  }
+  return out;
+}
+
+/** AI tulkojumu karte → latviski noslīpēti darbi (tukšie izmesti). */
+export function applyServiceWorkTranslations<T extends { works: string[] }>(
+  entries: T[],
+  translations: Record<string, string>,
+): T[] {
+  const map = new Map<string, string>();
+  for (const [from, to] of Object.entries(translations)) {
+    const key = from.replace(/\s+/g, " ").trim().toLowerCase();
+    const lv = to.replace(/\s+/g, " ").trim();
+    if (key && lv) map.set(key, lv);
+  }
+  return entries.map((entry) => ({
+    ...entry,
+    works: serviceWorkTermsLv(entry.works.map((w) => map.get(serviceWorkTermLv(w).toLowerCase()) ?? w)),
+  }));
 }
