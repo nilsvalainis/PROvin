@@ -179,11 +179,17 @@ describe("PROVIN AI prompt invariants", () => {
     );
   });
 
-  it("technical risks flagship rules demand detail and equipment-absent analysis", () => {
+  it("technical risks flagship rules demand detail and chassis-gated equipment-absent analysis", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/8–12 rindkopas/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Active Steering/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/E90\/E91\/E92/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/M57/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/\*\*NAV\*\* dārgs risks/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs E/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/3\. sērija E90/);
+    const ident = readRepo("lib/admin-ai-aggregate-identification.ts");
+    expect(ident).not.toMatch(/Šie dārgie vecuma slazdi sarakstā NAV minēti/);
+    expect(ident).toMatch(/isBmw3SeriesChassis/);
   });
 
   it("technical risks research rules require European forum search when packs are thin", () => {
@@ -284,6 +290,8 @@ describe("PROVIN AI prompt invariants", () => {
     const summary = readRepo("lib/admin-ai-summary.ts");
     expect(summary).toMatch(/adminGenerateTextWithWebSearch/);
     expect(summary).toMatch(/Tehnisko risku|NEATKĀRTO|nedublē|NEDUBLĒ/i);
+    expect(summary).toMatch(/3\. sēriju/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/E60 šablons/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/adminGenerateTextWithWebSearch/);
     expect(tech).toMatch(/skipLvPolish:\s*chainGeminiWrite/);

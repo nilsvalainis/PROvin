@@ -74,6 +74,7 @@ Uzdevums: īss, skaidrs **profesionāls viedoklis** par datu **kopainu** + **rek
 OBLIGĀTI:
 - Šī ir vieta, kur avotu dati tiek sasaistīti kopainā — pārējos laukos katrs avots pastāsta tikai savu daļu.
 - NEATKĀRTO un neapkopo jau ģenerētos teikumus no avotiem / nobraukuma / negadījumiem / „${ADMIN_TECHNICAL_RISKS_LABEL}” / apskates.
+- Neveido 8–12 rindkopu tehnisko risku eseju un nenoslauki E60 slazdu sarakstu (Active Steering, Dynamic Drive, Soft Close, pneimatika) uz 3. sēriju.
 - Neveido „CSDD… AutoDNA… CarVertical…” katalogu.
 - Tipiski 3–5 īsas rindkopas + APPROVED BY IRISS.
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; rekomendācija kalibrēta, jo pamatā ir digitāli dati, kas var būt nepilnīgi.

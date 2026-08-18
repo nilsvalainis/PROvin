@@ -324,6 +324,7 @@ HARD RULES:
 - Same structure as the brief: identification → what is NOT a risk → main 1–2 purchase risks → remaining relevant systems → data-calibrated near-term picture.
 - Keep every engine/gearbox/drive code, candidate hypothesis, chain side, equipment present/absent, and „ir / nav populāra problēma” judgment. If the brief is unsure, stay unsure.
 - Do not add facts, forum quotes, campaign numbers, or approximate repair/service EUR. Do not invent mezgli the brief did not name.
+- Chassis-wrong equipment: if the car is a BMW 3-series (E90/E91/E92/E93/F30) and the brief praises the absence of Active Steering, Dynamic Drive, Soft Close or factory air suspension, DROP that claim. Those are E60/E61 traps, not this model's catalogue.
 - Do not write the inspection checklist (section 2) or the buy/don't-buy verdict (section 3).
 - Light spoken workshop Latvian — like Gemini Flash source comments — never translated English. Forbidden surface: saime, Baltija, atteice, kontrolpunkts, sviedru sajūgs, vecuma logs, vecuma kaprīze, izmaksu draiveris, Quattro trakts, krusteniskie, centra gultnis, uzturēšanas risks, automobīlis, em dash.
 - Output ONLY the client Markdown. No preamble.
@@ -446,6 +447,8 @@ KAS ŠIS NAV (obligāti — pret atkārtošanos):
 - Neveido punktu-pa-punktam kopsavilkumu („CSDD saka… AutoDNA saka… CarVertical saka…”).
 - Nedetalizē katru faktu, km līniju, negadījumu vai tipisko slimību — tas jau ir citās sadaļās.
 - Nav „īssāka versija” no iepriekšējām esejām — ir **jauns, kompakts viedoklis**.
+- NEKAD nepārraksti „1. Tehnisko risku analīzi” ar 8–12 rindkopām, mezglu katalogu vai remonta €. Max 1 teikums par galveno agregātu.
+- NEKAD neslavē, ka 3. sērijai (E90/E91/E92) „nav” Active Steering / Dynamic Drive / Soft Close / pneimatikas — tas ir E60 šablons, ne šīs mašīnas zināšana.
 
 OPERATORA KOMANDAS (obligāti):
 - Ja promptā ir sadaļa „OPERATORA KOMANDAS” — tā ir ABSOLŪTA prioritāte. Precīzi izpildi, ko eksperts prasa.

@@ -315,11 +315,11 @@ export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LAT
 - GARUMS: noklusējuma 350–800 / 2–4 rindkopas ŠEIT NEATTIECAS. Tipiski **8–12 rindkopas** (3–5 teikumi). Īsāk tikai tad, ja agregāts ir vienkāršs un datu gandrīz nav. Garums jānopelna ar atšķirīgiem mezgliem, ne ar atkārtošanu.
 - OBLIGĀTĀ IZKLĀSTA SEKVENCE (izvadē bez numuriem — tikai **bold** ievadi):
   1) Agregātu identifikācija + ko ŠIS nobraukums/vecums nozīmē tieši šim dzinējam / šai paaudzei (ne vispārīgi „lietotam auto”).
-  2) Kas šim eksemplāram **NAV** dārgs risks: slavenās markas/paaudzes kaites, kas neattiecas uz šo motoru/ķēdes pusi/kārbas tipu, UN dārgais vecuma ekstraprīkojums, kura **nav** (tikai ja to atbalsta SA kodi, dīlera aprīkojums, tipa kods, operators — neizdomā „nav”). Tipiski E60/E61: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive — ja saraksts to ļauj noliegt, tas ir klientam naudas arguments.
+  2) Kas šim eksemplāram **NAV** dārgs risks: slavenās **šīs šasijas/šī motora** kaites, kas neattiecas (cita ķēdes puse, cits kārbas tips) — UN dārgais vecuma ekstraprīkojums, kura nav, **tikai ja šī paaudze to vispār piedāvāja**. Tipiski **tikai E60/E61 5. sērija**: Active Steering, Dynamic Drive, Soft Close, Logic 7, E61 aizmugures pneimatika. **Aizliegts** to pašu sarakstu uz E90/E91/E92/E93 3. sēriju (vai F30) — tur tās nav kataloga slazdi, un „nav pneimo piekares” nav TCO arguments. 3. sērijas N52: raksti atmosfērisko motora realitāti (blīves, elektriskais ūdens sūknis, VANOS), ne E60 hidrauliku.
   3) Galvenais tuvākajā laikā (varbūtība, vai tā ir populāra problēma) — maksimāli 1–2 pozīcijas. BEZ aptuvenām EUR summām.
   4–N) Katrs atšķirīgais relevantais sistēmas bloks atsevišķā rindkopā: motora mehānika (ķēde/zobsiksna un tās **puse/piekļuve**, eļļas noplūdes, dzesēšana); ieplūde/EGR/DPF/AdBlue/turbo/injektori; kārba („mūža eļļa”, mehatronika, DCT tips); elektronika šajā vecumā; virsbūvei specifiskā piekare (rūpnīcas pneimatika ≠ dārgais Adaptive/Dynamic Drive, ja tas nav sarakstā).
   Beigas) Prioritātes + tuvākā termiņa aina pēc DATIEM (kopts / nepierādīts / jau fiksēts defekts). Ja dati rāda labu apkopi un nekas neliecina par tuvu problēmu — to PASAKI kalibrēti. Ilgtermiņa īpatnības (blīves, elektronika 15–20 gadu vecumā) nošķir no „šis auto tūlīt sabruks”.
-- APRĪKOJUMA DISCIPLĪNA: lasi dīlera SA/aprīkojuma sarakstu. Dārgs, šajā vecumā riskants ekstraprīkojums **maina TCO** — ja tā nav, tas ir stiprā puse. Ja saraksts ir īss/nepilnīgs — saki, kas paliek nepierādīts; **meklē** šīs paaudzes tipisko dārgo ekstraprīkojumu (BMW: Active Steering / Dynamic Drive / Soft Close / Logic 7; Audi: Magnetic Ride / sport air; MB: Airmatic / ABC; citi: pneimatika, aktīvā stūre, nakts redzamība) un pārbaudi pret sarakstu. Neizdomā, ka kaut kā „nav”, ja saraksta nav.
+- APRĪKOJUMA DISCIPLĪNA: vispirms **šasija/paaudze**, tad SA saraksts. Dārgs ekstraprīkojums kā „NAV” ir TCO arguments tikai tad, ja šī paaudze to **reāli piedāvāja** kā slazdu. BMW E60/E61: Active Steering / Dynamic Drive / Soft Close / Logic 7 / E61 pneimatika. BMW 3. sērija E90–E93 / F30: **neraksti** Active Steering, Dynamic Drive, Soft Close, rūpnīcas pneimatiku kā izslēgtus riskus. Audi Magnetic Ride / sport air — A6/Q5 paaudzēm, kas to piedāvāja, ne A3 pēc noklusējuma. MB Airmatic/ABC — W211/W221/X164 utt., ne visiem C-Class. Ja saraksts īss — saki, kas paliek nepierādīts; **neizdomā „nav”**, ja opcija šai šasijai nebija.
 - NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo dzinēju / paaudzi nesedz — **meklē**, tad raksti.
 - Katra rindkopa = viens mezgls + kāpēc šajā posmā + vai tā **ir / nav populāra problēma** + 1 teikums, ko saka ŠĪ auto dati. **Bez aptuvenām remonta EUR summām.** Bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā).`;
 
@@ -335,9 +335,9 @@ export const AI_TECHNICAL_RISKS_RESEARCH_RULES = `WEB RESEARCH (obligāti „1. 
 /** Compact structure samples for the flagship field only — not full length, not this-order facts. */
 export const AI_TECHNICAL_RISKS_FEW_SHOTS = `STRUKTŪRAS PARAUGI (tikai „1. Tehnisko risku analīze”; šie ir ĪSĀKI par mērķa 8–12 rindkopām — ritms un kalibrācija, ne pilns garums; NEkopē faktus uz aktīvo pasūtījumu):
 
-Paraugs A — izturīgs agregāts, liels nobraukums, blīvs DE serviss (struktūra):
+Paraugs A — E61 5. sērija, izturīgs agregāts, liels nobraukums, blīvs DE serviss (struktūra):
 "**Agregātu identifikācija.** Dīlera kods norāda konkrētu dīzeļa tipu ar ķēdi dzinēja priekšpusē, hidrotransformatora kārbu un aizmugures piedziņu. Šajā km posmā tas ir ierasts darba mūžs, ne resursa gals — ja apkope bijusi regulāra.
-**Kas NAV dārgs risks.** Šai paaudzei slavenās dārgās pozīcijas (aktīvā stūre, hidrauliskie stabilizatori, premium audio) sarakstā nav; N-sērijas aizmugurējās ķēdes naratīvs uz šo motoru neattiecas.
+**Kas NAV dārgs risks.** Šai **5. sērijas E60/E61** paaudzei slavenās dārgās pozīcijas (aktīvā stūre, Dynamic Drive, Soft Close) sarakstā nav; N-sērijas aizmugurējās ķēdes naratīvs uz šo motoru neattiecas.
 **Tuvākais punkts.** Universāļa rūpnīcas pneimatika / blīves / kārbas eļļa — vai tas šajā posmā ir populāra problēma, sasaistīta ar šī auto servisa vai TA signālu. Bez EUR summām.
 **Ilgtermiņa īpatnība pret tuvāko termiņu.** Elektronika un eļļas svītras 15–20 gadu vecumā ir paaudzes raksturs; pēc datiem nekas neliecina, ka auto tuvākajā laikā būs problemātisks."
 
@@ -353,7 +353,11 @@ Paraugs C — paka šo dzinēju nesedz:
 
 Paraugs D — AWD vārdu krājums (obligātais ritms, ne šī pasūtījuma fakti):
 "**Pilnpiedziņa.** Quattro ar Torsen centrālo diferenciāli šai paaudzei ir salīdzinoši izturīgs; kardāna krustiņi un karājošais gultnis pie šī nobraukuma nav populāra problēma."
-Aizliegts: „Quattro trakts”, „kardāna krusteniskie”, „centra gultnis”, „vidējs uzturēšanas risks (orientējoši 300-600 €)”.`;
+Aizliegts: „Quattro trakts”, „kardāna krusteniskie”, „centra gultnis”, „vidējs uzturēšanas risks (orientējoši 300-600 €)”.
+
+Paraugs E — BMW 3. sērija E90/E91 N52 (aizliegtais šablons):
+Aizliegts: „Dīlera sarakstā nav Active Steering, Dynamic Drive, Soft Close vai pneimatiskās piekares, kas ir būtisks faktors uzturēšanas izmaksām.”
+Labi: „N52 ir atmosfērisks — nav turbo un N20 ķēdes stāsta. Šai 3. sērijas paaudzei E60 hidraulisko šasijas slazdu katalogs neattiecas; relevanti ir eļļas noplūdes, elektriskais ūdens sūknis, VANOS un (ja xDrive) ATC.”`;
 
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
 export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):
