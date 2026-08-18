@@ -334,24 +334,22 @@ function mergeClusterDamage(details: UnifiedIncidentDamageInput[]): UnifiedIncid
   if (details.length === 0) return null;
   const zoneIds: DamageZoneId[] = [];
   const zoneLabels: string[] = [];
-  const zoneSeen = new Set<string>();
+  const zoneIdSeen = new Set<DamageZoneId>();
+  const zoneLabelSeen = new Set<string>();
   const groupLabels: string[] = [];
   const groupSeen = new Set<string>();
   for (const d of details) {
     const hits = parseDamageZoneHits(d.damagedSides);
     for (const h of hits) {
-      if (zoneSeen.has(h.id)) continue;
-      zoneSeen.add(h.id);
+      if (zoneIdSeen.has(h.id)) continue;
+      zoneIdSeen.add(h.id);
       zoneIds.push(h.id);
-      zoneLabels.push(h.label);
     }
-    if (hits.length === 0) {
-      for (const label of damageZoneDisplayLabels(d.damagedSides)) {
-        const k = label.toLowerCase();
-        if (zoneSeen.has(k)) continue;
-        zoneSeen.add(k);
-        zoneLabels.push(label);
-      }
+    for (const label of damageZoneDisplayLabels(d.damagedSides)) {
+      const k = label.toLowerCase();
+      if (zoneLabelSeen.has(k)) continue;
+      zoneLabelSeen.add(k);
+      zoneLabels.push(label);
     }
     for (const g of damageGroupDisplayLabels(d.damageGroups)) {
       const k = g.toLowerCase();

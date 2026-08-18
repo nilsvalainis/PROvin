@@ -75,6 +75,8 @@ describe.skipIf(!hasE91Pdfs)("BMW E91 live vendor PDFs — damage zones", () => 
     expect(y2012?.damagedSides).toMatch(/Labā priekšējā daļa/i);
     expect(y2012?.damagedSides).toMatch(/Labā puse/i);
     expect(y2012?.damageGroups).toMatch(/virsbūves/i);
+    expect(y2012?.damageGroups).not.toMatch(/VIN/i);
+    expect(y2012?.damageGroups).not.toMatch(/Ģenerē/i);
     expect(y2012?.date).not.toMatch(/2026/);
     expect(y2015?.lossAmount).toMatch(/1001/);
     expect(y2015?.damagedSides ?? "").toBe("");

@@ -13,6 +13,7 @@ import {
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL } from "@/lib/admin-source-blocks";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { clipVendorDamageField } from "@/lib/damage-zones";
 import { reattachLatvianPdfDiacritics } from "@/lib/pdf-text-normalize";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 
@@ -452,12 +453,13 @@ function normalizeCarVerticalDamageText(text: string): string {
 }
 
 function flattenDamageGroups(raw: string): string {
-  return raw
+  const clipped = clipVendorDamageField(raw);
+  return clipped
     .split(/\n/)
     .map((l) => l.replace(/\s+/g, " ").trim())
     .filter((l) => l.length > 2 && !/^\d+$/.test(l))
     .join("; ")
-    .replace(/\s+(Ārējās|Ārējais|Virsbūves)/g, "; $1")
+    .replace(/\s+(Ārējās|Ārējais|Virsbūves|Dzesēšanas|Dabas|Stikli|Piekare|Dzinējs|Salons|Šasija|Elektro)/g, "; $1")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -469,9 +471,9 @@ const DAMAGE_LEGEND_RE =
   /sadaļas skaidrojums|Ja transportlīdzeklim ir fiks[eē]ti boj[āa]jumi, tad remontdarbu/i;
 
 function cleanCarVerticalDamagedSides(raw: string): string {
-  const t = raw.replace(/\s+/g, " ").replace(/\bA\b/g, "").trim();
+  const t = clipVendorDamageField(raw.replace(/\bA\b/g, " "));
   if (!t || NO_MARKED_PARTS_RE.test(t)) return "";
-  return t.replace(NO_MARKED_PARTS_RE, "").replace(/\s+/g, " ").trim();
+  return clipVendorDamageField(t.replace(NO_MARKED_PARTS_RE, ""));
 }
 
 function extractCarVerticalLossAmount(block: string): string {
@@ -482,16 +484,29 @@ function extractCarVerticalLossAmount(block: string): string {
   return /\d/.test(lossAmount) ? lossAmount : "";
 }
 
+function extractCarVerticalVisualMapParts(block: string): string {
+  const parts: string[] = [];
+  const re =
+    /((?:Kreis[āa]s|Lab[āa]s)\s+puses|Priekšpuses|Aizmugures|Jumta)\s+bojājumi\s*:\s*([^]+?)(?=(?:Kreis[āa]s|Lab[āa]s)\s+puses\s+bojājumi|Priekšpuses\s+bojājumi|Aizmugures\s+bojājumi|Jumta\s+bojājumi|Nov[eē]rt[eē]jums|Boj[āa]t[āa]|Aptuven|Fiks[eē]tie|$)/gi;
+  for (const m of block.matchAll(re)) {
+    const tag = (m[2] ?? "").replace(/\s+/g, " ").trim();
+    if (tag.length > 1) parts.push(tag);
+  }
+  return parts.join(" ");
+}
+
 function extractCarVerticalSides(block: string): string {
   const sidesM = block.match(
-    /Boj[āa]t[āa]s?\s+(?:puse|zonas?|deta[ļl]as)\s*([\s\S]{0,400}?)(?:Aptuven|Boj[āa]jumu\s*grupas?|Tirgus|Remonta\s+izmaksu|$)/i,
+    /Boj[āa]t[āa]s?\s+(?:puse|zonas?|deta[ļl]as)\s*([\s\S]{0,800}?)(?:Aptuven|Boj[āa]jumu\s*grupas?|Tirgus|Remonta\s+izmaksu|$)/i,
   );
-  return cleanCarVerticalDamagedSides(sidesM?.[1] ?? "");
+  const fromHeading = cleanCarVerticalDamagedSides(sidesM?.[1] ?? "");
+  if (fromHeading) return fromHeading;
+  return cleanCarVerticalDamagedSides(extractCarVerticalVisualMapParts(block));
 }
 
 function extractCarVerticalGroups(block: string): string {
   const groupsM = block.match(
-    /Boj[āa]jumu\s*grupas?\s*([\s\S]{0,800}?)(?:\d{1,2}(?:\.\d{1,2})?\.\d{4}|Dabas stih|Tirgus|Remonta\s+izmaksu|VIN\s+numurs|$)/i,
+    /Boj[āa]jumu\s*grupas?\s*([\s\S]{0,800}?)(?:VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|sadaļas\s+skaidrojums|Dabas stih|Tirgus|Remonta\s+izmaksu|\d{1,2}\.\d{1,2}\.\d{4}|\d{1,2}\.\d{4}|$)/i,
   );
   return flattenDamageGroups(groupsM?.[1] ?? "");
 }
@@ -560,7 +575,7 @@ function pushDamageRecord(
   damageDetails.push(row);
 }
 
-/** Bojājumu / novērtējumu ieraksti. */
+/** Bojājumu / novērtējumu ieraksti — Bojātās detaļas / zonas / grupas kā sadaļa, neatkarīgi no tā, kuras daļas tur ir. */
 export function parseCarverticalDamagesFromText(text: string): {
   incidents: LtabIncidentRow[];
   damageDetails: CarVerticalDamageDetailRow[];

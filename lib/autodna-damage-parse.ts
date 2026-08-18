@@ -104,7 +104,7 @@ export function parseAutodnaDamageEvents(raw: string): LtabIncidentRow[] {
   return dedupeIncidents(rows);
 }
 
-/** AutoDNA „Bojājumu zona” / „Detaļu grupa” — tās pašas rindas kā zaudējumu apjoms. */
+/** AutoDNA „Bojājumu zona” / „Detaļu grupa” — visa saraksta saturs, ne tikai zināmas zonas. */
 export function parseAutodnaDamageDetails(raw: string): CarVerticalDamageDetailRow[] {
   const text = sanitizePdfTextForParsing(raw);
   if (!autodnaDamageSectionDetected(text)) return [];

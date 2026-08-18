@@ -1,8 +1,8 @@
 /**
- * Bojājumu zonas — atpazīšana no AutoDNA / CarVertical tekstiem un PDF siluets no augšas.
+ * Bojājumu zonas — ielasīšana pēc avota SADALAS, nevis pēc konkrēta VIN detaļu saraksta.
+ * Siluets: kreisā/labā × priekšpuse/aizmugure/jumts. Etiķetes: avota teksts kā ir (buferis, durvis, lukturi…).
  */
 import { reattachLatvianPdfDiacritics } from "@/lib/pdf-text-normalize";
-
 
 export type DamageZoneId =
   | "front"
@@ -20,72 +20,86 @@ export type DamageZoneHit = {
   label: string;
 };
 
-/** Garākie vispirms, lai „labā sāna priekšpuse” nekrīt uz vispārīgo „priekšpuse”. */
-const ZONE_KEYWORDS: { id: DamageZoneId; label: string; re: RegExp }[] = [
-  { id: "front_right", label: "Labais priekšējais spārns", re: /lab(?:ais|[āa])\s+priek[šs]ējais\s+sp[āa]rns/i },
-  { id: "front_left", label: "Kreisais priekšējais spārns", re: /kreis(?:ais|[āa])\s+priek[šs]ējais\s+sp[āa]rns/i },
-  { id: "front_right", label: "Lukturis priekšā pa labi", re: /lukturis\s+priek[šs][āa]\s+pa\s+labi/i },
-  { id: "front_left", label: "Lukturis priekšā pa kreisi", re: /lukturis\s+priek[šs][āa]\s+pa\s+kreisi/i },
-  { id: "front_right", label: "Priekšpuse pa labi", re: /priek[šs]puse\s*(?:\(\s*)?pa\s+labi/i },
-  { id: "front_left", label: "Priekšpuse pa kreisi", re: /priek[šs]puse\s*(?:\(\s*)?pa\s+kreisi/i },
-  { id: "front_left", label: "Kreisā sāna priekšpuse", re: /kreis(?:ā|a)\s+(?:s[āa]na\s+)?priek[šs](?:ēj[āa]\s+da[ļl]a|puse)/i },
-  { id: "front_right", label: "Labā sāna priekšpuse", re: /lab(?:ā|a)\s+(?:s[āa]na\s+)?priek[šs](?:ēj[āa]\s+da[ļl]a|puse)/i },
-  { id: "rear_left", label: "Kreisā sāna aizmugure", re: /kreis(?:ā|a)\s+(?:s[āa]na\s+)?aizmugur/i },
-  { id: "rear_right", label: "Labā sāna aizmugure", re: /lab(?:ā|a)\s+(?:s[āa]na\s+)?aizmugur/i },
-  { id: "front_left", label: "Kreisā priekšējā daļa", re: /kreis(?:ā|a)\s+priek[šs]ēj/i },
-  { id: "front_right", label: "Labā priekšējā daļa", re: /lab(?:ā|a)\s+priek[šs]ēj/i },
-  { id: "left", label: "Kreisais sāns", re: /kreisais\s+s[āa]ns/i },
-  { id: "right", label: "Labais sāns", re: /labais\s+s[āa]ns/i },
-  { id: "left", label: "Kreisā puse", re: /kreis(?:ā|a)\s+(?:puse|s[āa]na)/i },
-  { id: "right", label: "Labā puse", re: /lab(?:ā|a)\s+(?:puse|s[āa]na)/i },
-  { id: "front", label: "Priekšpuse", re: /priek[šs]puse|priek[šs]ēj(?:ā|a)\s+da[ļl]a/i },
-  { id: "rear", label: "Aizmugure", re: /aizmugure|aizmugurēj(?:ā|a)\s+da[ļl]a/i },
-  { id: "roof", label: "Jumts", re: /jumts|virs-virsb[ūu]ve|virsvirsb[ūu]ve/i },
-];
+const ZONE_LABEL: Record<DamageZoneId, string> = {
+  front: "Priekšpuse",
+  front_left: "Kreisā sāna priekšpuse",
+  front_right: "Labā sāna priekšpuse",
+  left: "Kreisais sāns",
+  right: "Labais sāns",
+  rear: "Aizmugure",
+  rear_left: "Kreisā sāna aizmugure",
+  rear_right: "Labā sāna aizmugure",
+  roof: "Jumts",
+};
+
+const LV_WORD = "A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž";
+/** JS `\b` nestrādā pēc ā/č/… — tie nav ASCII `\w`. */
+const LV_WORD_END = `(?![${LV_WORD}])`;
+
+/** Jauns ieraksts: Labā/Kreisā/Aizmugure/Jumts; Priekšpuse — tikai ja tā nav „sāna priekšpuse”. */
+const DAMAGE_AREA_SPLIT_RE = new RegExp(
+  `(?=\\s+(?:Lab(?:ā|ais)|Kreis(?:ā|ais)|Aizmugure|Jumts)${LV_WORD_END})|(?<!s[āa]na)(?=\\s+Priekšpuse${LV_WORD_END})|(?:\\s+[-–—•]\\s+)`,
+  "i",
+);
 
 const ZONE_LIST_HEADING_RE =
   /Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+(?:deta[ļl]as|zonas)|Boj[āa]t[āa]\s+puse|Fiks[eē]tie\s+boj[āa]jumi/i;
 
 const GROUP_LIST_HEADING_RE = /Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas/i;
 
-export function parseDamageZoneHits(raw: string): DamageZoneHit[] {
-  const t = reattachLatvianPdfDiacritics(raw).replace(/\s+/g, " ").trim();
+/** PDF kājene / leģenda — nav bojājumu grupa. */
+const DAMAGE_META_CUT_RE =
+  /VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|"?Boj[āa]jumu"?\s+sadaļas\s+skaidrojums|carVertical/i;
+
+export function clipVendorDamageField(raw: string): string {
+  let t = reattachLatvianPdfDiacritics(raw).replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const cut = t.search(DAMAGE_META_CUT_RE);
+  if (cut >= 0) t = t.slice(0, cut);
+  t = t.replace(/\b[A-HJ-NPR-Z0-9]{17}\b/g, " ");
+  return t.replace(/\s+/g, " ").replace(/[;·,./:\s-]+$/g, "").trim();
+}
+
+function isDamageLabelNoise(s: string): boolean {
+  const t = s.trim();
+  if (t.length < 2) return true;
+  return DAMAGE_META_CUT_RE.test(t) || /^[A-HJ-NPR-Z0-9]{11,17}$/.test(t.replace(/\s/g, ""));
+}
+
+function classifyDamageSegment(seg: string): DamageZoneId[] {
+  const t = reattachLatvianPdfDiacritics(seg).replace(/\s+/g, " ").trim().toLowerCase();
   if (!t) return [];
-  const hits: DamageZoneHit[] = [];
-  const seen = new Set<DamageZoneId>();
-  const consumed: { start: number; end: number }[] = [];
-  for (const z of ZONE_KEYWORDS) {
-    const re = new RegExp(z.re.source, "gi");
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(t)) !== null) {
-      const start = m.index;
-      const end = start + m[0].length;
-      if (consumed.some((c) => start < c.end && end > c.start)) continue;
-      consumed.push({ start, end });
-      if (seen.has(z.id)) continue;
-      seen.add(z.id);
-      hits.push({ id: z.id, label: z.label });
-    }
-  }
-  return hits;
+  if (/jumts|virs-?virsb[ūu]ve/.test(t)) return ["roof"];
+
+  const left = /kreis/.test(t);
+  const right = new RegExp(`lab(?:ais|[āa])${LV_WORD_END}`).test(t) || /pa\s+labi/.test(t);
+  const front = /priek[šs]/.test(t);
+  const rear = /aizmugur|bag[āa]žniek/.test(t);
+
+  const cornerFront =
+    /s[āa]na\s+priek|priek[šs]ēj[āa]\s+da[ļl]a|priek[šs]ējais\s+sp[āa]rns|lukturis\s+priek/.test(t);
+  const cornerRear = /s[āa]na\s+aizmugur|aizmugurēj[āa]\s+da[ļl]a|aizmugurējais\s+sp[āa]rns/.test(t);
+  const sidePanel =
+    new RegExp(`(?<![${LV_WORD}])(?:puse|s[āa]ns)${LV_WORD_END}`).test(t) && !cornerFront && !cornerRear;
+
+  if (left && (rear || cornerRear)) return ["rear_left"];
+  if (right && (rear || cornerRear)) return ["rear_right"];
+  if (left && (front || cornerFront) && !sidePanel) return ["front_left"];
+  if (right && (front || cornerFront) && !sidePanel) return ["front_right"];
+  if (left) return ["left"];
+  if (right) return ["right"];
+  if (front) return ["front"];
+  if (rear) return ["rear"];
+  if (/motora\s+p[āa]rsegs/.test(t)) return ["front"];
+  return [];
 }
 
-/** Saraksta etiķetes attēlošanai — atpazītās zonas, citādi dalīts izejas teksts. */
-export function damageZoneDisplayLabels(raw: string): string[] {
-  const hits = parseDamageZoneHits(raw);
-  if (hits.length > 0) return hits.map((h) => h.label);
-  return splitLooseLabels(raw);
-}
-
-export function damageGroupDisplayLabels(raw: string): string[] {
-  return splitLooseLabels(raw);
-}
-
-function splitLooseLabels(raw: string): string[] {
-  const t = raw.replace(/\s+/g, " ").trim();
+/** Avota birkas (CarVertical `Zona / Detaļa`, AutoDNA `- zona`) — jebkuras nākamās daļas, ne tikai šī VIN. */
+export function splitDamageSegments(raw: string): string[] {
+  const t = clipVendorDamageField(raw);
   if (!t || t === "—") return [];
   const parts = t
-    .split(/\s*(?:[•·;,]|\n|(?:\s+[-–—]\s+)|(?:\s+\/\s+))\s*/)
+    .split(DAMAGE_AREA_SPLIT_RE)
     .map((s) => s.replace(/^[-–—•]\s*/, "").trim())
     .filter((s) => s.length > 1 && !ZONE_LIST_HEADING_RE.test(s) && !GROUP_LIST_HEADING_RE.test(s));
   const seen = new Set<string>();
@@ -99,18 +113,67 @@ function splitLooseLabels(raw: string): string[] {
   return out;
 }
 
+export function parseDamageZoneHits(raw: string): DamageZoneHit[] {
+  const t = reattachLatvianPdfDiacritics(raw).replace(/\s+/g, " ").trim();
+  if (!t) return [];
+  const hits: DamageZoneHit[] = [];
+  const seen = new Set<DamageZoneId>();
+  const push = (id: DamageZoneId) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    hits.push({ id, label: ZONE_LABEL[id] });
+  };
+  const segs = splitDamageSegments(t);
+  for (const seg of segs.length > 0 ? segs : [t]) {
+    for (const id of classifyDamageSegment(seg)) push(id);
+  }
+  if (hits.length === 0) {
+    for (const id of classifyDamageSegment(t)) push(id);
+  }
+  return hits;
+}
+
+/** Sarakstam — avota birkas (buferis, durvis, lukturi), siluetam — parseDamageZoneHits. */
+export function damageZoneDisplayLabels(raw: string): string[] {
+  const segs = splitDamageSegments(raw);
+  if (segs.length > 0) return segs;
+  return parseDamageZoneHits(raw).map((h) => h.label);
+}
+
+export function damageGroupDisplayLabels(raw: string): string[] {
+  return splitLooseLabels(raw);
+}
+
+function splitLooseLabels(raw: string): string[] {
+  const t = clipVendorDamageField(raw);
+  if (!t || t === "—") return [];
+  const parts = t
+    .split(/\s*(?:[•·;,]|\n|(?:\s+[-–—]\s+)|(?:\s+\/\s+))\s*/)
+    .map((s) => s.replace(/^[-–—•]\s*/, "").trim())
+    .filter((s) => s.length > 1 && !ZONE_LIST_HEADING_RE.test(s) && !GROUP_LIST_HEADING_RE.test(s) && !isDamageLabelNoise(s));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const k = p.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(p);
+  }
+  return out;
+}
+
 export function extractZoneListFromBlock(block: string): string {
   const m = block.match(
-    /(?:Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+(?:deta[ļl]as|zonas)|Boj[āa]t[āa]\s+puse)\s*[:\-–]?\s*([\s\S]{0,500}?)(?=Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas|Valsts|Summa|Rezult[āa]ts|Aptuven|\d{1,2}\.\d{4}|$)/i,
+    /(?:Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+(?:deta[ļl]as|zonas)|Boj[āa]t[āa]\s+puse)\s*[:\-–]?\s*([\s\S]{0,800}?)(?=Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas|Valsts|Summa|Rezult[āa]ts|Aptuven|\d{1,2}\.\d{4}|$)/i,
   );
-  return (m?.[1] ?? "").replace(/\s+/g, " ").trim();
+  return clipVendorDamageField(m?.[1] ?? "");
 }
 
 export function extractGroupListFromBlock(block: string): string {
   const m = block.match(
-    /(?:Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas)\s*[:\-–]?\s*([\s\S]{0,400}?)(?=Boj[āa]jumu\s+zona|Boj[āa]t[āa]s\s+deta[ļl]as|Valsts|Summa|Rezult[āa]ts|Aptuven|\d{1,2}\.\d{4}|$)/i,
+    /(?:Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas)\s*[:\-–]?\s*([\s\S]{0,800}?)(?=Boj[āa]jumu\s+zona|Boj[āa]t[āa]s\s+deta[ļl]as|Valsts|Summa|Rezult[āa]ts|Aptuven|VIN\s*numurs|Ģenerē[sš]anas|\d{1,2}\.\d{4}|$)/i,
   );
-  return (m?.[1] ?? "").replace(/\s+/g, " ").trim();
+  return clipVendorDamageField(m?.[1] ?? "");
 }
 
 /**

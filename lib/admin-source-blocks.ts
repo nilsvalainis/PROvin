@@ -1728,7 +1728,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
                 date: String(x.date ?? "").slice(0, 40),
                 country: String(x.country ?? "").slice(0, 120),
                 lossAmount: normalizeLossAmountEurDisplay(String(x.lossAmount ?? "")).slice(0, 120),
-                damagedSides: String(x.damagedSides ?? "").slice(0, 200),
+                damagedSides: String(x.damagedSides ?? "").slice(0, 500),
                 damageGroups: String(x.damageGroups ?? "").slice(0, 600),
               };
             }),

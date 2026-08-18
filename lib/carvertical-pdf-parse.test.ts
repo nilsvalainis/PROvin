@@ -111,6 +111,8 @@ Remonta izmaksu reitings
     expect(damageDetails[0]?.damagedSides).not.toMatch(/18\.08\.2026/);
     expect(damageDetails[0]?.lossAmount).toMatch(/2001/);
     expect(damageDetails[0]?.damageGroups).toMatch(/Ārējās virsbūves/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/VIN/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/Ģenerē/i);
     expect(damageDetails[1]?.date).toBe("01.10.2015");
     expect(damageDetails[1]?.lossAmount).toMatch(/1001/);
     expect(damageDetails[1]?.damagedSides).toBe("");
@@ -161,6 +163,45 @@ Aptuvenā remonta darbu izmaksu vērtība
     expect(damageDetails.length).toBe(1);
     expect(damageDetails[0]?.damagedSides).toMatch(/Jumts/i);
     expect(damageDetails[0]?.lossAmount).toMatch(/1501/);
+  });
+
+  it("copies any Bojātās detaļas list (rear, left, lights) and damage groups", () => {
+    const raw = `
+03.2021. Latvija
+Novērtējums
+Bojātās detaļas
+Kreisā puse / Aizmugurējās durvis Aizmugure / Buferis Priekšpuse / Lukturi
+Aptuvenā iepriekš gūto bojājumu vērtība
+1501 € – 2000 €
+Bojājumu grupas
+Ārējais apgaismojums
+Ārējās virsbūves detaļas
+`;
+    const { damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails).toHaveLength(1);
+    expect(damageDetails[0]?.damagedSides).toMatch(/Aizmugurējās durvis/i);
+    expect(damageDetails[0]?.damagedSides).toMatch(/Aizmugure/i);
+    expect(damageDetails[0]?.damagedSides).toMatch(/Lukturi/i);
+    expect(damageDetails[0]?.damageGroups).toMatch(/apgaismoj/i);
+    expect(damageDetails[0]?.damageGroups).toMatch(/virsbūves/i);
+  });
+
+  it("does not glue PDF footer onto Bojājumu grupas", () => {
+    const raw = `
+07.2012. Vācija
+Novērtējums
+Bojātās detaļas
+Labā priekšējā daļa / Buferis
+Aptuvenā iepriekš gūto bojājumu vērtība
+2001 € – 2500 €
+Bojājumu grupas
+Ārējās virsbūves detaļasVIN numurs: WBAVT11010KW00321 Ģenerēšanas datums: 18.08.2026
+`;
+    const { damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails[0]?.damageGroups).toMatch(/Ārējās virsbūves detaļas/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/VIN/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/WBAVT/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/Ģenerē/i);
   });
 });
 

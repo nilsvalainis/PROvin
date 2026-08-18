@@ -85,7 +85,7 @@ function normalizeDamageDetailRow(raw: unknown): CarVerticalDamageDetailRow | nu
     date: formatAutoRecordsDateForOutput(asString(o.date, 32)),
     country: normalizeCountryNameLv(asString(o.country, 80)),
     lossAmount: asString(o.lossAmount ?? o.amount, 64),
-    damagedSides: asString(o.damagedSides ?? o.sides, 200),
+    damagedSides: asString(o.damagedSides ?? o.sides, 500),
     damageGroups: asString(o.damageGroups ?? o.groups, 600),
   };
   if (!row.date.trim() && !row.lossAmount.trim() && !row.damagedSides.trim()) return null;

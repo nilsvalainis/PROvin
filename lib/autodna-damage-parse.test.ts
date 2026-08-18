@@ -77,4 +77,22 @@ Valsts Vācija
     expect(details.find((d) => d.date === "01.07.2012")?.damageGroups).toMatch(/Virsbūves ārējās daļas/i);
     expect(details.find((d) => d.date === "01.10.2015")?.damagedSides ?? "").toBe("");
   });
+
+  it("copies whatever AutoDNA lists under Bojājumu zona (rear, left side)", () => {
+    const raw = `
+03.2021
+Transportlīdzekļa zaudējumu apjoms
+Summa 1 500 - 1 600 EUR
+Detaļu grupa - Ārējais apgaismojums
+Valsts Latvija
+Bojājumu zona
+- Aizmugure
+- Kreisais sāns
+`;
+    const details = parseAutodnaDamageDetails(raw);
+    expect(details).toHaveLength(1);
+    expect(details[0]?.damagedSides).toMatch(/Aizmugure/i);
+    expect(details[0]?.damagedSides).toMatch(/Kreisais sāns/i);
+    expect(details[0]?.damageGroups).toMatch(/apgaismoj/i);
+  });
 });
