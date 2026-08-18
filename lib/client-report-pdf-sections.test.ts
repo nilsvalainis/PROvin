@@ -101,7 +101,9 @@ describe("PDF design system", () => {
     expect(html).toContain("1 negadījums");
     expect(html).toContain("120000 km");
     expect(html).toContain("Īpašnieku skaits");
-    expect(html).toContain("Latvijā: 2");
+    expect(html).toContain("pdf-summary-tile__iso");
+    expect(html).toContain("Latvijā");
+    expect(html).not.toContain("Latvijā: 2");
     expect(html).toContain("Kas tika pārbaudīts");
     expect(html).toContain("pdf-src-dot pdf-src-dot--autodna");
     expect(html).toContain("PAR ŠO ATSKAITI");
@@ -139,10 +141,17 @@ describe("PDF design system", () => {
       formatBytes: () => "0 B",
     });
     expect(html).toContain("Īpašnieku skaits");
-    expect(html).toContain(">8<");
-    expect(html).toContain("Latvijā: 2");
-    expect(html).toContain("Zviedrijā: 6");
-    expect(html).toContain("pdf-summary-tile__sep");
+    expect(html).toContain("pdf-summary-tile--owners");
+    expect(html).toContain("pdf-summary-tile__total");
+    expect(html).toContain("kopā 8");
+    expect(html).toContain(">2<");
+    expect(html).toContain(">6<");
+    expect(html).toContain(">LV<");
+    expect(html).toContain(">SE<");
+    expect(html).toContain("Latvijā");
+    expect(html).toContain("Zviedrijā");
+    expect(html).not.toContain("Latvijā: 2");
+    expect(html).not.toContain('class="pdf-summary-tile__sep"');
     expect(html).not.toContain("Īpašnieki Latvijā: 2 + Īpašnieki Zviedrijā: 6");
     expect(html).toContain(SOURCE_BLOCK_LABELS.carinfo);
   });

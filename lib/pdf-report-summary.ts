@@ -27,7 +27,7 @@ import {
   resolveProvinBanners,
 } from "@/lib/provin-alert-banners";
 import {
-  formatOwnerCountBannerNoteParts,
+  formatOwnerCountCountryStats,
   synthesizeOwnerCountsFromPdfInput,
 } from "@/lib/owner-count-synthesis";
 import {
@@ -44,6 +44,12 @@ import {
 
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
 
+export type PdfSummaryCountryStat = {
+  iso: string;
+  name: string;
+  count: number;
+};
+
 export type PdfSummaryTile = {
   /** Bāzes plāksnītes — fiksēti id; brīdinājumu un manuālās kartītes — `alert-…`, `manual-…`. */
   id: string;
@@ -52,6 +58,8 @@ export type PdfSummaryTile = {
   note: string;
   /** Ja ir, piezīmi drukā ar cap-height strīpiņu starp daļām (ne „+”). */
   noteSegments?: string[];
+  /** Valstu sadalījums — īpašnieku kartīte: skaitlis + ISO, kopā paliek titula malā. */
+  countryStats?: PdfSummaryCountryStat[];
   tone: PdfSummaryTileTone;
   /** Gara teksta kartīte — režģī aizņem abas kolonnas. */
   wide?: boolean;
@@ -145,7 +153,6 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
 
 function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
   const syn = synthesizeOwnerCountsFromPdfInput(input);
-  const parts = formatOwnerCountBannerNoteParts(syn.chosen);
   if (syn.totalCount === 0) {
     return {
       id: "owners",
@@ -160,7 +167,7 @@ function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
     label: "Īpašnieku skaits",
     value: String(syn.totalCount),
     note: syn.noteLine,
-    noteSegments: parts,
+    countryStats: formatOwnerCountCountryStats(syn.chosen),
     tone: "ok",
   };
 }

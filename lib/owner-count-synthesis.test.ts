@@ -9,6 +9,7 @@ import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import {
   extractExplicitOwnerCount,
   formatOwnerCountBannerNote,
+  formatOwnerCountCountryStats,
   inferOwnerCountry,
   synthesizeOwnerCountsFromBlocks,
   synthesizeOwnerCountsFromPdfInput,
@@ -81,5 +82,9 @@ describe("synthesizeOwnerCountsFromPdfInput", () => {
     });
     expect(formatOwnerCountBannerNote(syn.chosen)).toBe("Latvijā: 2 | Zviedrijā: 6");
     expect(syn.totalCount).toBe(8);
+    expect(formatOwnerCountCountryStats(syn.chosen)).toEqual([
+      { iso: "LV", name: "Latvijā", count: 2 },
+      { iso: "SE", name: "Zviedrijā", count: 6 },
+    ]);
   });
 });

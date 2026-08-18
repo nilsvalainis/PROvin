@@ -39,6 +39,15 @@ const COUNTRY_LOCATIVE: Record<OwnerCountryId, string> = {
   other: "ārvalstīs",
 };
 
+const COUNTRY_ISO: Record<OwnerCountryId, string> = {
+  latvia: "LV",
+  sweden: "SE",
+  denmark: "DK",
+  estonia: "EE",
+  germany: "DE",
+  other: "",
+};
+
 const DISPLAY_ORDER: OwnerCountryId[] = ["latvia", "sweden", "denmark", "estonia", "germany", "other"];
 
 const TITLE = {
@@ -124,6 +133,25 @@ export function formatOwnerCountBannerNoteParts(
     parts.push(`${COUNTRY_LOCATIVE[id]}: ${row.count}`);
   }
   return parts;
+}
+
+/** PDF kartītes valstu kolonnas (variants A) — ISO + lokatīvs, bez kopsummas varoņa. */
+export type OwnerCountCountryStat = {
+  iso: string;
+  name: string;
+  count: number;
+};
+
+export function formatOwnerCountCountryStats(
+  chosen: Partial<Record<OwnerCountryId, OwnerCountCandidate>>,
+): OwnerCountCountryStat[] {
+  const out: OwnerCountCountryStat[] = [];
+  for (const id of DISPLAY_ORDER) {
+    const row = chosen[id];
+    if (!row) continue;
+    out.push({ iso: COUNTRY_ISO[id], name: COUNTRY_LOCATIVE[id], count: row.count });
+  }
+  return out;
 }
 
 export function formatOwnerCountBannerNote(
