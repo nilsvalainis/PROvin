@@ -1,6 +1,8 @@
 /**
  * Bojājumu zonas — atpazīšana no AutoDNA / CarVertical tekstiem un PDF siluets no augšas.
  */
+import { reattachLatvianPdfDiacritics } from "@/lib/pdf-text-normalize";
+
 
 export type DamageZoneId =
   | "front"
@@ -32,6 +34,8 @@ const ZONE_KEYWORDS: { id: DamageZoneId; label: string; re: RegExp }[] = [
   { id: "rear_right", label: "Labā sāna aizmugure", re: /lab(?:ā|a)\s+(?:s[āa]na\s+)?aizmugur/i },
   { id: "front_left", label: "Kreisā priekšējā daļa", re: /kreis(?:ā|a)\s+priek[šs]ēj/i },
   { id: "front_right", label: "Labā priekšējā daļa", re: /lab(?:ā|a)\s+priek[šs]ēj/i },
+  { id: "left", label: "Kreisais sāns", re: /kreisais\s+s[āa]ns/i },
+  { id: "right", label: "Labais sāns", re: /labais\s+s[āa]ns/i },
   { id: "left", label: "Kreisā puse", re: /kreis(?:ā|a)\s+(?:puse|s[āa]na)/i },
   { id: "right", label: "Labā puse", re: /lab(?:ā|a)\s+(?:puse|s[āa]na)/i },
   { id: "front", label: "Priekšpuse", re: /priek[šs]puse|priek[šs]ēj(?:ā|a)\s+da[ļl]a/i },
@@ -45,7 +49,7 @@ const ZONE_LIST_HEADING_RE =
 const GROUP_LIST_HEADING_RE = /Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas/i;
 
 export function parseDamageZoneHits(raw: string): DamageZoneHit[] {
-  const t = raw.replace(/\s+/g, " ").trim();
+  const t = reattachLatvianPdfDiacritics(raw).replace(/\s+/g, " ").trim();
   if (!t) return [];
   const hits: DamageZoneHit[] = [];
   const seen = new Set<DamageZoneId>();

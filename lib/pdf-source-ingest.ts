@@ -14,6 +14,7 @@ import {
 } from "@/lib/csdd-pdf-ingest";
 import { extractCsddPdfWithAiStructured } from "@/lib/csdd-ai-structured";
 import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
+import { mergeDamageDetailRows } from "@/lib/vendor-damage-hydrate";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import {
   autoRecordsParseHasData,
@@ -62,14 +63,13 @@ function enrichCarverticalAiResult(
   const hint = textHint.trim();
   if (!hint) return result;
   const cv = parseCarverticalPdfText(hint);
+  const damageDetails = mergeDamageDetailRows(result.damageDetails ?? [], cv.damageDetails);
   return {
     ...result,
     ...(cv.timeline.length > 0 && !(result.vehicleHistoryTimeline ?? []).length
       ? { vehicleHistoryTimeline: cv.timeline }
       : {}),
-    ...(cv.damageDetails.length > 0 && !(result.damageDetails ?? []).length
-      ? { damageDetails: cv.damageDetails }
-      : {}),
+    ...(damageDetails.length > 0 ? { damageDetails } : {}),
     ...(result.serviceHistory.length === 0 && cv.serviceHistory.length > 0
       ? { serviceHistory: cv.serviceHistory }
       : {}),
@@ -98,9 +98,10 @@ function enrichAutodnaAiResult(
       ? { serviceHistory: local.serviceHistory }
       : {}),
     incidents,
-    ...(local.damageDetails?.length && !(result.damageDetails ?? []).length
-      ? { damageDetails: local.damageDetails }
-      : {}),
+    ...(() => {
+      const damageDetails = mergeDamageDetailRows(result.damageDetails ?? [], local.damageDetails ?? []);
+      return damageDetails.length > 0 ? { damageDetails } : {};
+    })(),
     ...(local.vehicleHistoryTimeline?.length && !(result.vehicleHistoryTimeline ?? []).length
       ? { vehicleHistoryTimeline: local.vehicleHistoryTimeline }
       : {}),

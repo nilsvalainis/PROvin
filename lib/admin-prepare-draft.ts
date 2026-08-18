@@ -43,6 +43,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import { mergeLtabIncidentRows, mergeVendorServiceHistory } from "@/lib/history-vendor-pdf-import";
+import { mergeDamageDetailRows } from "@/lib/vendor-damage-hydrate";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
@@ -100,7 +101,9 @@ function applyVendorImport(
     ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
     ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
     ...(result.vehicleHistoryTimeline?.length ? { vehicleHistoryTimeline: result.vehicleHistoryTimeline } : {}),
-    ...(result.damageDetails?.length ? { damageDetails: result.damageDetails } : {}),
+    ...(result.damageDetails?.length
+      ? { damageDetails: mergeDamageDetailRows(existing.damageDetails ?? [], result.damageDetails) }
+      : {}),
     ...(sourcePdfChecklistHasAny(checklist) ? { pdfChecklist: checklist } : {}),
   };
 }

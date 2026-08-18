@@ -22,7 +22,7 @@ export function parseDamageDetailsFromVendorRaw(raw: string): CarVerticalDamageD
   return parseCarverticalDamagesFromText(text).damageDetails.filter(damageDetailRowHasZones);
 }
 
-function parseDamageDetailsForVendorTitle(title: string, raw: string): CarVerticalDamageDetailRow[] {
+export function parseDamageDetailsForVendorTitle(title: string, raw: string): CarVerticalDamageDetailRow[] {
   const text = raw.replace(/<[^>]+>/g, " ").trim();
   if (!text) return [];
   if (/autodna/i.test(title)) return parseAutodnaDamageDetails(text).filter(damageDetailRowHasZones);

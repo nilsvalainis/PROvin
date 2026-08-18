@@ -4,7 +4,7 @@
 import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import type { CarVerticalDamageDetailRow, CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
-import { parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
+import { parseAutodnaDamageDetails, parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
   autoRecordsMileageRowHasData,
@@ -143,6 +143,7 @@ export function parseHistoryVendorPdfText(
 
   const claims = extractClaimRowsForPdfInsight(trimmed, 1);
   const autodnaDamage = target === "autodna" ? parseAutodnaDamageEvents(trimmed) : [];
+  const autodnaDetails = target === "autodna" ? parseAutodnaDamageDetails(trimmed) : [];
   const incidents =
     autodnaDamage.length > 0 ? autodnaDamage : claimRowsToLtabRows(claims);
 
@@ -156,6 +157,7 @@ export function parseHistoryVendorPdfText(
     rawText,
     serviceHistory,
     incidents,
+    ...(autodnaDetails.length > 0 ? { damageDetails: autodnaDetails } : {}),
     suggestedPdfChecklist: suggestChecklist(trimmed, serviceHistory, incidents),
     warnings,
     meta: {

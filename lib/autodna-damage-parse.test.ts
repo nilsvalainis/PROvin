@@ -44,4 +44,37 @@ Bojājumu zona
     expect(details[0]?.country).toMatch(/Latvij/i);
     expect(details[0]?.country).not.toMatch(/Bojājumu/i);
   });
+
+  it("parses zones when Valsts is after Bojājumu zona and an odometer sits between years", () => {
+    const raw = `
+2015
+10.2015
+Transportlīdzekļa zaudējumu apjoms
+Summa 1 000 - 1 100 EUR
+Valsts Vācija
+2012
+07.2012
+Ziņots par odometra rādījumu
+Odometra rādījums
+116 500 km
+07.2012
+Transportlīdzekļa zaudējumu apjoms
+Summa 2 200 - 2 400 EUR
+Rezultāts
+VIRSBŪVES BOJĀJUMS
+Detaļu grupa
+- Virsbūves ārējās daļas
+Bojājumu zona
+- Labā sāna priekšpuse
+- Labais sāns
+Valsts Vācija
+`;
+    const events = parseAutodnaDamageEvents(raw);
+    const details = parseAutodnaDamageDetails(raw);
+    expect(events).toHaveLength(2);
+    expect(details.find((d) => d.date === "01.07.2012")?.damagedSides).toMatch(/Labā sāna priekšpuse/i);
+    expect(details.find((d) => d.date === "01.07.2012")?.damagedSides).toMatch(/Labais sāns/i);
+    expect(details.find((d) => d.date === "01.07.2012")?.damageGroups).toMatch(/Virsbūves ārējās daļas/i);
+    expect(details.find((d) => d.date === "01.10.2015")?.damagedSides ?? "").toBe("");
+  });
 });

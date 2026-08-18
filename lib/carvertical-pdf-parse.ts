@@ -13,6 +13,7 @@ import {
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL } from "@/lib/admin-source-blocks";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { reattachLatvianPdfDiacritics } from "@/lib/pdf-text-normalize";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 
 export const CARVERTICAL_TIMELINE_TITLE = "Transportlīdzekļa ierakstu laikposms";
@@ -440,7 +441,7 @@ function parseDamageDate(raw: string): string {
 }
 
 function normalizeCarVerticalDamageText(text: string): string {
-  let t = text;
+  let t = reattachLatvianPdfDiacritics(text);
   t = t.replace(/Priek\s+š\s+puse/gi, "Priekšpuse");
   t = t.replace(/iepriek\s+š/gi, "iepriekš");
   t = t.replace(/Dzesē\s+š\s+anas/gi, "Dzesēšanas");
@@ -459,6 +460,90 @@ function flattenDamageGroups(raw: string): string {
     .replace(/\s+(Ārējās|Ārējais|Virsbūves)/g, "; $1")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+const NO_MARKED_PARTS_RE =
+  /Fiks[eē]ti boj[āa]jumi\s*,?\s*taču nav atz[īi]m[eē]tas boj[āa]t[āa]s deta[ļl]as/i;
+
+const DAMAGE_LEGEND_RE =
+  /sadaļas skaidrojums|Ja transportlīdzeklim ir fiks[eē]ti boj[āa]jumi, tad remontdarbu/i;
+
+function cleanCarVerticalDamagedSides(raw: string): string {
+  const t = raw.replace(/\s+/g, " ").replace(/\bA\b/g, "").trim();
+  if (!t || NO_MARKED_PARTS_RE.test(t)) return "";
+  return t.replace(NO_MARKED_PARTS_RE, "").replace(/\s+/g, " ").trim();
+}
+
+function extractCarVerticalLossAmount(block: string): string {
+  const lossM = block.match(
+    /Aptuven[āa]\s+(?:iepriek[sš][\s\S]{0,80}vērt[īi]ba|remonta[\s\S]{0,80}vērt[īi]ba)\s*([\s\S]{0,160}?)(?:Boj[āa]jumu\s*grupas?|Remonta\s+izmaksu|Tirgus|Dabas stih|$)/i,
+  );
+  const lossAmount = (lossM?.[1] ?? "").replace(/\s+/g, " ").trim();
+  return /\d/.test(lossAmount) ? lossAmount : "";
+}
+
+function extractCarVerticalSides(block: string): string {
+  const sidesM = block.match(
+    /Boj[āa]t[āa]s?\s+(?:puse|zonas?|deta[ļl]as)\s*([\s\S]{0,400}?)(?:Aptuven|Boj[āa]jumu\s*grupas?|Tirgus|Remonta\s+izmaksu|$)/i,
+  );
+  return cleanCarVerticalDamagedSides(sidesM?.[1] ?? "");
+}
+
+function extractCarVerticalGroups(block: string): string {
+  const groupsM = block.match(
+    /Boj[āa]jumu\s*grupas?\s*([\s\S]{0,800}?)(?:\d{1,2}(?:\.\d{1,2})?\.\d{4}|Dabas stih|Tirgus|Remonta\s+izmaksu|VIN\s+numurs|$)/i,
+  );
+  return flattenDamageGroups(groupsM?.[1] ?? "");
+}
+
+function parseDamageRowFromBlock(
+  block: string,
+  dateHint: string,
+  countryHint: string,
+): CarVerticalDamageDetailRow | null {
+  if (DAMAGE_LEGEND_RE.test(block) && !/€|EUR/i.test(block.slice(0, 500))) return null;
+  const lossAmount = extractCarVerticalLossAmount(block);
+  const damagedSides = extractCarVerticalSides(block);
+  const damageGroups = extractCarVerticalGroups(block);
+  if (!lossAmount && !damagedSides && !damageGroups) return null;
+  let date = dateHint;
+  let country = countryHint;
+  if (!date) {
+    const headDate = block.match(/^(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?/);
+    date = headDate?.[1] ? parseDamageDate(headDate[1]) : "";
+  }
+  if (!country) {
+    const afterDate = date
+      ? block.slice(block.search(/\d{1,2}(?:\.\d{1,2})?\.\d{4}/), 120)
+      : block.slice(0, 80);
+    country = splitTimelineCountryAndDescription(afterDate.replace(/^\d{1,2}(?:\.\d{1,2})?\.\d{4}\.?\s*/, "")).country;
+  }
+  return { date, country, lossAmount, damagedSides, damageGroups };
+}
+
+/** MM.YYYY. Valsts tieši pirms Novērtējums — ne kājenes ģenerēšanas datums. */
+function parseCarverticalDamageEventBlocks(norm: string): CarVerticalDamageDetailRow[] {
+  const headRe =
+    /(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s*([A-Za-zĀČĒĢĪĶĻŅŠŪŽ][A-Za-zĀČĒĢĪĶĻŅŠŪŽ\s-]{0,40}?)\s*(?=Nov[eē]rt[eē]jums|Fiks[eē]tie\s+boj[āa]jumi)/gi;
+  const heads: { index: number; date: string; country: string }[] = [];
+  let hm: RegExpExecArray | null;
+  while ((hm = headRe.exec(norm)) !== null) {
+    const date = parseDamageDate(hm[1] ?? "");
+    const country = splitTimelineCountryAndDescription((hm[2] ?? "").trim()).country || (hm[2] ?? "").trim();
+    if (!date) continue;
+    heads.push({ index: hm.index ?? 0, date, country });
+  }
+  const out: CarVerticalDamageDetailRow[] = [];
+  for (let i = 0; i < heads.length; i++) {
+    const head = heads[i]!;
+    const from = head.index;
+    const to = heads[i + 1]?.index ?? Math.min(norm.length, from + 3500);
+    const block = norm.slice(from, to);
+    if (DAMAGE_LEGEND_RE.test(block) && !extractCarVerticalLossAmount(block)) continue;
+    const row = parseDamageRowFromBlock(block, head.date, head.country);
+    if (row) out.push(row);
+  }
+  return out;
 }
 
 function pushDamageRecord(
@@ -484,7 +569,9 @@ export function parseCarverticalDamagesFromText(text: string): {
 
   const hasExplicitDamage =
     (/Nov[eē]rt[eē]jums/i.test(norm) || /Fiks[eē]tie\s+boj[āa]jumi/i.test(norm)) &&
-    (/Aptuven[āa]/i.test(norm) || /Boj[āa]t[āa]\s+puse/i.test(norm) || /Boj[āa]t[āa]s\s+zonas/i.test(norm));
+    (/Aptuven[āa]/i.test(norm) ||
+      /Boj[āa]t[āa]\s+puse/i.test(norm) ||
+      /Boj[āa]t[āa]s\s+(?:zonas|deta[ļl]as)/i.test(norm));
 
   if (
     /Nav atrasti boj[āa]jumu/i.test(norm) &&
@@ -497,32 +584,34 @@ export function parseCarverticalDamagesFromText(text: string): {
   const incidents: LtabIncidentRow[] = [];
   const damageDetails: CarVerticalDamageDetailRow[] = [];
 
-  // pdf.js / RAW: Novērtējums vai Fiksētie bojājumi
+  const fromHeads = parseCarverticalDamageEventBlocks(norm);
+  if (fromHeads.length > 0) {
+    for (const row of fromHeads) pushDamageRecord(incidents, damageDetails, row);
+    return { incidents, damageDetails };
+  }
+
+  // Fragmentēts pdf.js / RAW: Novērtējums bez „MM.YYYY. Valsts” galvenes.
   for (const m of norm.matchAll(/Nov[eē]rt[eē]jums|Fiks[eē]tie\s+boj[āa]jumi/gi)) {
-    const start = Math.max(0, (m.index ?? 0) - 220);
-    const block = norm.slice(start, (m.index ?? 0) + 4000);
-    if (!/Aptuven[āa]/i.test(block) && !/Boj[āa]t[āa]s?\s+(?:puse|zonas)/i.test(block)) continue;
-
-    const lossM = block.match(
-      /Aptuven[āa]\s+(?:iepriek[sš][\s\S]{0,60}vērt[īi]ba|remonta[\s\S]{0,80}vērt[īi]ba)\s*([\s\S]{0,120}?)(?:Boj[āa]jumu\s*grupas|Tirgus|\d{1,2}\.\d{4}|Dabas stih|$)/i,
-    );
-    const lossAmount = (lossM?.[1] ?? "").replace(/\s+/g, " ").trim();
-    if (!lossAmount || !/\d/.test(lossAmount)) continue;
-
-    const dateM = block.match(/(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s+/);
-    const date = dateM?.[1] ? parseDamageDate(dateM[1]) : "";
-    const afterDate = dateM ? block.slice((dateM.index ?? 0) + dateM[0].length, (dateM.index ?? 0) + dateM[0].length + 80) : "";
+    const headingAt = m.index ?? 0;
+    const lookback = norm.slice(Math.max(0, headingAt - 80), headingAt);
+    const nearDates = [...lookback.matchAll(/(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s*/g)];
+    const dateTok = nearDates[nearDates.length - 1];
+    const start = dateTok?.index != null ? headingAt - lookback.length + dateTok.index : Math.max(0, headingAt - 80);
+    const block = norm.slice(start, headingAt + 4000);
+    if (
+      !/Aptuven[āa]/i.test(block) &&
+      !/Boj[āa]t[āa]s?\s+(?:puse|zonas|deta[ļl]as)/i.test(block)
+    ) {
+      continue;
+    }
+    if (DAMAGE_LEGEND_RE.test(block) && !extractCarVerticalLossAmount(block)) continue;
+    const date = dateTok?.[1] ? parseDamageDate(dateTok[1]) : "";
+    const afterDate = dateTok
+      ? lookback.slice((dateTok.index ?? 0) + dateTok[0].length)
+      : "";
     const { country } = splitTimelineCountryAndDescription(afterDate.trim());
-
-    const sidesM = block.match(
-      /Boj[āa]t[āa]s?\s+(?:puse|zonas?|deta[ļl]as)\s*([\s\S]{0,400}?)(?:Aptuven|Boj[āa]jumu\s*grupas|Tirgus|$)/i,
-    );
-    const damagedSides = (sidesM?.[1] ?? "").replace(/\s+/g, " ").replace(/\bA\b/g, "").trim();
-
-    const groupsM = block.match(/Boj[āa]jumu\s*grupas\s*([\s\S]{0,800}?)(?:\d{1,2}(?:\.\d{1,2})?\.\d{4}|Dabas stih|Tirgus|$)/i);
-    const damageGroups = flattenDamageGroups(groupsM?.[1] ?? "");
-
-    pushDamageRecord(incidents, damageDetails, { date, country, lossAmount, damagedSides, damageGroups });
+    const row = parseDamageRowFromBlock(block, date, country);
+    if (row) pushDamageRecord(incidents, damageDetails, row);
   }
 
   return { incidents, damageDetails };

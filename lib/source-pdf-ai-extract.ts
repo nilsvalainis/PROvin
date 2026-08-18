@@ -30,6 +30,7 @@ import {
   type HistoryVendorPdfParseResult,
   type HistoryVendorPdfTarget,
 } from "@/lib/history-vendor-pdf-import";
+import { mergeDamageDetailRows } from "@/lib/vendor-damage-hydrate";
 import { PDF_AI_INLINE_MAX_BYTES } from "@/lib/pdf-api-limits";
 import {
   AUTO_RECORDS_PDF_COMMENT_AI_RULES,
@@ -84,8 +85,8 @@ function normalizeDamageDetailRow(raw: unknown): CarVerticalDamageDetailRow | nu
     date: formatAutoRecordsDateForOutput(asString(o.date, 32)),
     country: normalizeCountryNameLv(asString(o.country, 80)),
     lossAmount: asString(o.lossAmount ?? o.amount, 64),
-    damagedSides: asString(o.damagedSides ?? o.sides, 120),
-    damageGroups: asString(o.damageGroups ?? o.groups, 200),
+    damagedSides: asString(o.damagedSides ?? o.sides, 200),
+    damageGroups: asString(o.damageGroups ?? o.groups, 600),
   };
   if (!row.date.trim() && !row.lossAmount.trim() && !row.damagedSides.trim()) return null;
   return row;
@@ -296,9 +297,10 @@ function vendorResultFromAi(
     rawText: rawText || mileagePasteRaw || base.rawText,
     serviceHistory: serviceHistory.length > 0 ? serviceHistory : base.serviceHistory,
     incidents: incidents.length > 0 ? incidents : base.incidents,
-    ...(damageDetails.length > 0 || (base.damageDetails ?? []).length > 0
-      ? { damageDetails: damageDetails.length > 0 ? damageDetails : base.damageDetails }
-      : {}),
+    ...(() => {
+      const merged = mergeDamageDetailRows(base.damageDetails ?? [], damageDetails);
+      return merged.length > 0 ? { damageDetails: merged } : {};
+    })(),
     ...(vehicleHistoryTimeline.length > 0 || (base.vehicleHistoryTimeline ?? []).length > 0
       ? {
           vehicleHistoryTimeline:

@@ -225,4 +225,53 @@ Bojājumu zona
     const agg = aggregateUnifiedIncidents(rows, details);
     expect(agg.clusters[0]?.damage?.zoneIds.sort()).toEqual(["front", "front_left", "front_right"]);
   });
+
+  it("hidratē CarVertical Bojātās detaļas no RAW, ignorējot kājenes datumu", () => {
+    const details = collectUnifiedIncidentDamageDetails([
+      {
+        title: "CarVertical",
+        mileageRows: [],
+        incidentRows: [{ csngDate: "01.07.2012", lossAmount: "2001 € – 2500 €", incidentNo: "Vācija" }],
+        comments: "",
+        sourceRaw: `
+VIN numurs: WBAVT11010KW00321 Ģenerēšanas datums: 18.08.2026
+07.2012. Vācija
+Novērtējums
+Bojātās detaļas
+Labā priekšējā daļa / Buferis Labā puse / Priekšējās durvis
+Aptuvenā iepriekš gūto bojājumu vērtība
+2001 € – 2500 €
+Bojājumu grupas
+Ārējās virsbūves detaļas
+10.2015. Vācija
+Novērtējums
+Bojātās detaļas
+Fiksēti bojājumi, taču nav atzīmētas bojātās detaļas
+Aptuvenā iepriekš gūto bojājumu vērtība
+1001 € – 1500 €
+`,
+      },
+    ]);
+    expect(details).toHaveLength(1);
+    expect(details[0]?.date).toBe("01.07.2012");
+    expect(details[0]?.damagedSides).toMatch(/Labā priekšējā daļa/i);
+    const rows = collectUnifiedIncidentRows({
+      manualVendorBlocks: [
+        {
+          title: "CarVertical",
+          mileageRows: [],
+          incidentRows: [
+            { csngDate: "01.07.2012", lossAmount: "2001 € – 2500 €", incidentNo: "Vācija" },
+            { csngDate: "01.10.2015", lossAmount: "1001 € – 1500 €", incidentNo: "Vācija" },
+          ],
+          comments: "",
+        },
+      ],
+    });
+    const agg = aggregateUnifiedIncidents(rows, details);
+    const y2012 = agg.clusters.find((c) => c.date.includes("2012"));
+    const y2015 = agg.clusters.find((c) => c.date.includes("2015"));
+    expect(y2012?.damage?.zoneIds.sort()).toEqual(["front_right", "right"]);
+    expect(y2015?.damage).toBeNull();
+  });
 });

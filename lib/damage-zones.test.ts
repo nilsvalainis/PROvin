@@ -19,6 +19,16 @@ describe("parseDamageZoneHits", () => {
     expect(hits.map((h) => h.id).sort()).toEqual(["front", "front_left", "front_right"]);
   });
 
+  it("atpazīst pdf.js izgrieztu Labā priekšējā daļa", () => {
+    const hits = parseDamageZoneHits("Labā priek š ējā da ļ a / Buferis Labā puse / Priekšējās durvis");
+    expect(hits.map((h) => h.id).sort()).toEqual(["front_right", "right"]);
+  });
+
+  it("atpazīst Labais sāns kā labo pusi", () => {
+    const hits = parseDamageZoneHits("Labā sāna priekšpuse Labais sāns");
+    expect(hits.map((h) => h.id).sort()).toEqual(["front_right", "right"]);
+  });
+
   it("atpazīst Jumts un priekšpusi pa labi", () => {
     const hits = parseDamageZoneHits(
       "Jumts / Virs-virsbūve Priekšpuse (Pa labi / Buferis) Labais priekšējais spārns",

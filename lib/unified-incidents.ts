@@ -14,7 +14,7 @@ import {
   parseDamageZoneHits,
   type DamageZoneId,
 } from "@/lib/damage-zones";
-import { damageDetailRowHasZones, mergeDamageDetailRows, parseDamageDetailsFromVendorRaw } from "@/lib/vendor-damage-hydrate";
+import { damageDetailRowHasZones, mergeDamageDetailRows, parseDamageDetailsForVendorTitle } from "@/lib/vendor-damage-hydrate";
 import {
   formatLossEurWholeDisplay,
   normalizeLossAmountEurDisplay,
@@ -132,7 +132,7 @@ export function collectUnifiedIncidentDamageDetails(
   for (const b of manualVendorBlocks ?? []) {
     if (omitTitles?.has(b.title)) continue;
     const saved = b.damageDetails ?? [];
-    const fromRaw = parseDamageDetailsFromVendorRaw(`${b.sourceRaw ?? ""}\n${b.comments ?? ""}`);
+    const fromRaw = parseDamageDetailsForVendorTitle(b.title, `${b.sourceRaw ?? ""}\n${b.comments ?? ""}`);
     const rows = mergeDamageDetailRows(saved, fromRaw).filter(damageDetailRowHasZones);
     for (const d of rows) {
       push({

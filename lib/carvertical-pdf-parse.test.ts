@@ -74,6 +74,80 @@ describe("parseCarverticalDamagesFromText", () => {
     expect(damageDetails[0]?.damageGroups).toMatch(/Dzesēšanas/i);
   });
 
+  it("parses Bojātās detaļas with MM.YYYY.Country and ignores PDF footer dates", () => {
+    const raw = `
+VIN numurs: WBAVT11010KW00321 Ģenerēšanas datums: 18.08.2026 Derīguma termiņš beidzas 17.09.2026
+07.2012. Vācija
+Novērtējums
+Šis ieraksts norāda uz to, ka transportlīdzekli pārbaudīja vai apkopa profesionālis.
+Bojātās detaļas
+Labā priekšējā daļa / Buferis Labā puse / Priekšējās durvis
+Aptuvenā iepriekš gūto bojājumu vērtība
+2001 € – 2500 €
+Remonta izmaksu reitings
+Mazs 11 % no transportlīdzekļa vērtības tajā laikā
+Bojājumu grupas
+Ārējās virsbūves detaļas
+"Bojājumu" sadaļas skaidrojums
+Aptuvenā iepriekš gūto bojājumu vērtība
+Ja transportlīdzeklim ir fiksēti bojājumi, tad remontdarbu izmaksas ir aprēķinātas.
+10.2015. Vācija
+Novērtējums
+Šis ieraksts norāda uz to, ka transportlīdzekli pārbaudīja vai apkopa profesionālis.
+Bojātās detaļas
+Fiksēti bojājumi, taču nav atzīmētas bojātās detaļas
+Aptuvenā iepriekš gūto bojājumu vērtība
+1001 € – 1500 €
+Remonta izmaksu reitings
+Ļoti zems 7 % no transportlīdzekļa vērtības tajā laikā
+`;
+    const { incidents, damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(incidents).toHaveLength(2);
+    expect(damageDetails).toHaveLength(2);
+    expect(damageDetails[0]?.date).toBe("01.07.2012");
+    expect(damageDetails[0]?.country).toMatch(/Vācij/i);
+    expect(damageDetails[0]?.damagedSides).toMatch(/Labā priekšējā daļa/i);
+    expect(damageDetails[0]?.damagedSides).toMatch(/Labā puse/i);
+    expect(damageDetails[0]?.damagedSides).not.toMatch(/18\.08\.2026/);
+    expect(damageDetails[0]?.lossAmount).toMatch(/2001/);
+    expect(damageDetails[0]?.damageGroups).toMatch(/Ārējās virsbūves/i);
+    expect(damageDetails[1]?.date).toBe("01.10.2015");
+    expect(damageDetails[1]?.lossAmount).toMatch(/1001/);
+    expect(damageDetails[1]?.damagedSides).toBe("");
+  });
+
+  it("treats unmarked parts as empty even with pdf.js spaces around the comma", () => {
+    const raw = `
+10.2015. Vācija
+Novērtējums
+Bojātās detaļas
+Fiksēti bojājumi , taču nav atzīmētas bojātās detaļas
+Aptuvenā iepriekš gūto bojājumu vērtība
+1001 € – 1500 €
+`;
+    const { damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails[0]?.date).toBe("01.10.2015");
+    expect(damageDetails[0]?.damagedSides).toBe("");
+  });
+
+  it("parses glued MM.YYYY.Country without spaces before Novērtējums", () => {
+    const raw = `
+VIN 18.08.2026
+07.2012.VācijaNovērtējums
+Bojātās detaļas
+Labā priekšējā daļa / Buferis
+Aptuvenā iepriekš gūto bojājumu vērtība
+2001 € – 2500 €
+Remonta izmaksu reitings
+Mazs
+`;
+    const { damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails).toHaveLength(1);
+    expect(damageDetails[0]?.date).toBe("01.07.2012");
+    expect(damageDetails[0]?.country).toMatch(/Vācij/i);
+    expect(damageDetails[0]?.damagedSides).toMatch(/Labā priekšējā daļa/i);
+  });
+
   it("parses Fiksētie bojājumi and Bojātās zonas", () => {
     const raw = `
 10.2020 Latvija
