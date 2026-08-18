@@ -3,6 +3,17 @@ import { isSafeAdminOrderId } from "@/lib/admin-source-pdf-blob-constants";
 /** Vercel Blob pathname prefix — klienta augšupielāde pirms „notify-report-ready” e-pastam. */
 export const NOTIFY_PORTFOLIO_BLOB_PREFIX = "admin-notify-portfolio";
 
+/** POST `/api/admin/notify-blob-upload` — serveris izsniedz client tokenu (ne SDK `retrieveClientToken`). */
+export const NOTIFY_BLOB_CLIENT_TOKEN_ACTION = "client-token";
+
+export const NOTIFY_BLOB_ALLOWED_CONTENT_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const;
+
 export function notifyPortfolioPathPrefix(sessionId: string): string {
   const id = sessionId.trim();
   return `${NOTIFY_PORTFOLIO_BLOB_PREFIX}/${id}`;

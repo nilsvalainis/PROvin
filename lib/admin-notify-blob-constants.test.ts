@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isSafeNotifyOrderId,
   isSafeStripeCheckoutSessionId,
+  NOTIFY_BLOB_CLIENT_TOKEN_ACTION,
   notifyPortfolioPathPrefix,
 } from "@/lib/admin-notify-blob-constants";
 
@@ -21,5 +22,9 @@ describe("notify portfolio Blob order ids", () => {
 
   it("builds a pathname prefix from the order id", () => {
     expect(notifyPortfolioPathPrefix(" manual_order_1 ")).toBe("admin-notify-portfolio/manual_order_1");
+  });
+
+  it("exports the client-token action used by the email upload route", () => {
+    expect(NOTIFY_BLOB_CLIENT_TOKEN_ACTION).toBe("client-token");
   });
 });
