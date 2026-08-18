@@ -415,22 +415,39 @@ function calibrateCheckSeverity(out: CcVinParsedReport): void {
  * apvienojam pēc datuma + km.
  */
 function parseMileage(lines: string[], out: CcVinParsedReport): void {
+  const sameLine = /^(\d{2}\/\d{2}\/\d{4})\s*([\d.,\s]+)\s*km$/i;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
-    const same = line.match(/^(\d{2}\/\d{2}\/\d{4})\s+([\d.,\s]+)\s*km$/i);
+    const same = line.match(sameLine);
     if (same) {
       const odometer = normalizeAutoRecordsOdometer(same[2]!);
       if (odometer) out.mileage.push({ date: lvDate(same[1]!), odometer, country: "" });
       continue;
     }
-    if (i >= lines.length - 1) continue;
     if (!DATE_RE.test(line)) continue;
-    const km = lines[i + 1]!.match(KM_LINE_RE);
-    if (!km) continue;
-    const odometer = normalizeAutoRecordsOdometer(km[1]!);
+    let odometer = "";
+    for (let j = i + 1; j < Math.min(lines.length, i + 8); j++) {
+      const nxt = lines[j]!;
+      if (DATE_RE.test(nxt)) break;
+      if (isMileageNoiseLine(nxt)) continue;
+      const km = nxt.match(KM_LINE_RE);
+      if (!km) break;
+      odometer = normalizeAutoRecordsOdometer(km[1]!) || "";
+      break;
+    }
     if (!odometer) continue;
     out.mileage.push({ date: lvDate(line), odometer, country: "" });
   }
+}
+
+function isMileageNoiseLine(line: string): boolean {
+  return (
+    isSectionHeading(line) ||
+    /^vehicle\s+value/i.test(line) ||
+    /^(no\s+records?\s+found|no\s+problems\s+found|no\s+found\s+records)$/i.test(line) ||
+    /^\d+\s+record\(s\)$/i.test(line) ||
+    /^mileages$/i.test(line)
+  );
 }
 
 /** Sadaļu virsraksti nav ne izsoles vieta, ne uzņēmums — teksta slānī tie stāv līdzās ierakstiem. */

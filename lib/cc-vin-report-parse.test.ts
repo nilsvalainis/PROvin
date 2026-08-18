@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { looksLikeCcVinReport, parseCcVinReportText } from "@/lib/cc-vin-report-parse";
+import { normalizePdfExtractedText } from "@/lib/pdf-text-normalize";
 
 /**
  * Fikstūra atkārto reālo PDF teksta slāni: salauztās ligatūras (`ti` → U+099E, `ft` → `[`),
@@ -363,5 +364,49 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
       ]);
       expect(p.mileage).toEqual([{ date: "10.06.2026", odometer: "304900", country: "Vācija" }]);
     }
+  });
+
+  it("pēc PDF normalizācijas joprojām nolasa datums+km pārus no atsevišķām rindām", () => {
+    const raw = [
+      "Vehicle history report",
+      "Report ID:",
+      "abc",
+      "Source: Checkcar.vin",
+      "Odometer records",
+      "304,900 km",
+      "Mileages",
+      "3 record(s)",
+      "01/05/2016",
+      "27000 km",
+      "01/06/2016",
+      "29000 km",
+      "10/06/2026",
+      "304900 km",
+    ].join("\n");
+    const p = parseCcVinReportText(normalizePdfExtractedText(raw));
+    expect(p.mileage.map((r) => `${r.date}|${r.odometer}`)).toEqual([
+      "10.06.2026|304900",
+      "01.06.2016|29000",
+      "01.05.2016|27000",
+    ]);
+  });
+
+  it("saslēdz odometra pāri pāri lapas pārtraukumam un sadaļu virsrakstiem", () => {
+    const text = [
+      "Vehicle history report",
+      "Report ID: x",
+      "01/09/2023",
+      "Source: Checkcar.vin",
+      "Vehicle value information",
+      "No records found",
+      "226500 km",
+      "01/10/2023",
+      "227500 km",
+    ].join("\n");
+    const p = parseCcVinReportText(normalizePdfExtractedText(text));
+    expect(p.mileage).toEqual([
+      { date: "01.10.2023", odometer: "227500", country: "" },
+      { date: "01.09.2023", odometer: "226500", country: "" },
+    ]);
   });
 });

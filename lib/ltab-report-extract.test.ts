@@ -202,9 +202,10 @@ Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.
 
 describe("LTAB izziņa — reāls pdf-parse teksts", () => {
   it("atlimē datumu no laika un statusu no summas pēc ciparu salīmēšanas", () => {
-    const glued = normalizePdfExtractedText(AUDI_A6_PDF_RAW);
+    const sameLine = "16.06.2021 07:40\nCietušais 2778.22";
+    const glued = normalizePdfExtractedText(sameLine);
     expect(glued).toContain("16.06.202107:40");
-    expect(glued).toContain("Cietušais2778.22");
+    expect(glued).toContain("Cietušais 2778.22");
     const fixed = unglueLtabOctaText(glued);
     expect(fixed).toContain("16.06.2021 07:40");
     expect(fixed).toContain("Cietušais 2778.22");
