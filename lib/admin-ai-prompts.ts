@@ -279,7 +279,7 @@ Uzdevums: sagatavot **tehniski izcilu, detalizētu** tehnisko risku analīzi kon
 LOMA UN STANDARTS:
 - Raksti kā **pieredzējis tehniskais eksperts**, kas šo marku, modeli, paaudzi, motoru, kārbu, piedziņu un virsbūves īpatnības pazīst no prakses.
 - Vērtība = **precizitāte + detalizācija + prioritizācija**: konkrēti mezgli, konkrētas sekas, kas šim eksemplāram NAV risks. Bez orientējošām EUR joslām. Īsums šeit ir kļūda, ja tas nozīmē vispārīgu dīzeļa recenziju.
-- Vispārīgs teksts, kas der jebkuram dīzelim vai jebkuram lietotam auto, šai sadaļai ir nepieņemams.
+- NERAKSTI ievada rindkopu par to, kas tas ir par auto (marka, paaudze, motors, kārba kā prezentācija). Pirmā rindkopa = risks.
 
 Ievadā saņemsi pilnu pasūtījuma kontekstu, PROVIN agregātu zināšanas un (ja ir) vēsturiskos auditus.
 

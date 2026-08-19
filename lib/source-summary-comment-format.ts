@@ -279,13 +279,14 @@ export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LAT
 - Spēcīgs iznākums (mērķis): seniora tehniskā instruktāža konkrētam paaudze+motors+kārba+piedziņa+virsbūve salikumam. Klients pēc šīs sadaļas saprot (1) kas šim auto ir tuvākā laika naudas punkts (bez € skaitļiem), (2) kas ir paaudzes kaprīze ilgtermiņā, (3) kuri dārgie slazdi šim eksemplāram NAV, (4) vai dati rāda koptu auto vai tukšu vēsturi.
 - GARUMS: noklusējuma 350–800 / 2–4 rindkopas ŠEIT NEATTIECAS. Tipiski **8–12 rindkopas** (3–5 teikumi). Īsāk tikai tad, ja agregāts ir vienkāršs un datu gandrīz nav. Garums jānopelna ar atšķirīgiem mezgliem, ne ar atkārtošanu.
 - OBLIGĀTĀ IZKLĀSTA SEKVENCE (izvadē bez numuriem — tikai **bold** ievadi):
-  1) Agregātu identifikācija + ko ŠIS nobraukums/vecums nozīmē tieši šim agregātam (ne vispārīgi „lietotam auto”).
-  2) Kas šim eksemplāram **NAV** dārgs risks: slavenās markas/paaudzes kaites, kas neattiecas uz šo motoru/ķēdes pusi/kārbas tipu, UN dārgais vecuma ekstraprīkojums, kura **nav** (tikai ja to atbalsta SA kodi, dīlera aprīkojums, tipa kods, operators — neizdomā „nav”). Tipiski E60/E61: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive — ja saraksts to ļauj noliegt, tas ir klientam naudas arguments.
-  3) Galvenais tuvākā laika izmaksu punkts (varbūtība × ietekme, BEZ EUR skaitļiem) — maksimāli 1–2 pozīcijas.
+  0) Identifikācija ir **iekšēja**, ne izvades ievads. Nosaki paaudzi+motoru+kārbu+piedziņu no datiem, BET NERAKSTI pirmo rindkopu „kas tas ir par auto”, „Agregātu identifikācija” vai markas/motora/kārbas tūri — tas jau ir citās atskaites sadaļās. Dzinēja/kārbas fakti minami tikai tad, kad tie **izskaidro risku**.
+  1) Pirmā rindkopa = konkrēts **riska fakts**: kas šim eksemplāram **NAV** dārgs risks UN/VAI tuvākais izmaksu punkts. Km/vecuma kalibrāciju ievij šajā rindkopā, ne vispārīgā auto prezentācijā.
+  2) Kas šim eksemplāram **NAV** dārgs risks (ja tas vēl nav 1. rindkopā): slavenās markas/paaudzes kaites, kas neattiecas uz šo motoru/ķēdes pusi/kārbas tipu, UN dārgais vecuma ekstraprīkojums, kura **nav** (tikai ja to atbalsta SA kodi, dīlera aprīkojums, tipa kods, operators — neizdomā „nav”). Tipiski E60/E61: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive — ja saraksts to ļauj noliegt, tas ir klientam naudas arguments.
+  3) Galvenais tuvākā laika izmaksu punkts (varbūtība × ietekme, BEZ EUR skaitļiem) — maksimāli 1–2 pozīcijas — ja tas vēl nav 1. rindkopā.
   4–N) Katrs atšķirīgais relevantais sistēmas bloks atsevišķā rindkopā: motora mehānika (ķēde/zobsiksna un tās **puse/piekļuve**, eļļas noplūdes, dzesēšana); ieplūde/EGR/DPF/AdBlue/turbo/iesmidzinātāji (sprauslas); kārba („mūža eļļa”, mehatronika, DCT tips); elektronika kā **vecuma** kaprīze; virsbūvei specifiskā piekare (rūpnīcas pneimatika ≠ dārgais Adaptive/Dynamic Drive, ja tas nav sarakstā).
   Beigas) Prioritātes + tuvākā termiņa aina pēc DATIEM (kopts / nepierādīts / jau fiksēts defekts). Ja dati rāda labu apkopi un nekas neliecina par tuvu problēmu — to PASAKI kalibrēti. Ilgtermiņa kaprīzi (blīves, elektronika 15–20 gadu vecumā) nošķir no „šis auto tūlīt sabruks”.
 - APRĪKOJUMA DISCIPLĪNA: lasi dīlera SA/aprīkojuma sarakstu. Dārgs, šajā vecumā riskants ekstraprīkojums **maina TCO** — ja tā nav, tas ir stiprā puse. Ja saraksts ir īss/nepilnīgs — saki, kas paliek nepierādīts; **meklē** šīs paaudzes tipisko dārgo ekstraprīkojumu (BMW: Active Steering / Dynamic Drive / Soft Close / Logic 7; Audi: Magnetic Ride / sport air; MB: Airmatic / ABC; citi: pneimatika, aktīvā stūre, nakts redzamība) un pārbaudi pret sarakstu. Neizdomā, ka kaut kā „nav”, ja saraksta nav.
-- NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo saimi nesedz — **meklē**, tad raksti.
+- NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo konstrukciju nesedz — **meklē**, tad raksti.
 - Katra rindkopa = viens mezgls + kāpēc šajā posmā + 1 teikums, ko saka ŠĪ auto dati. Bez orientējošām EUR joslām, bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā).`;
 
 /** Web research — primary knowledge path when packs do not cover this exact aggregate. */
@@ -301,20 +302,17 @@ export const AI_TECHNICAL_RISKS_RESEARCH_RULES = `WEB RESEARCH (obligāti „1. 
 export const AI_TECHNICAL_RISKS_FEW_SHOTS = `STRUKTŪRAS PARAUGI (tikai „1. Tehnisko risku analīze”; šie ir ĪSĀKI par mērķa 8–12 rindkopām — ritms un kalibrācija, ne pilns garums; NEkopē faktus uz aktīvo pasūtījumu):
 
 Paraugs A — izturīgs agregāts, liels nobraukums, blīvs DE serviss (struktūra):
-"**Agregātu identifikācija.** Dīlera kods norāda konkrētu dīzeļa saimi ar ķēdi dzinēja priekšpusē, hidrotransformatora kārbu un aizmugures piedziņu. Šajā km posmā tas ir ierasts darba mūžs, ne resursa gals — ja apkope bijusi regulāra.
-**Kas NAV dārgs risks.** Šai paaudzei slavenās dārgās pozīcijas (aktīvā stūre, hidrauliskie stabilizatori, premium audio) sarakstā nav; N-sērijas aizmugurējās ķēdes naratīvs uz šo motoru neattiecas.
+"**Kas NAV dārgs risks.** N-sērijas aizmugurējās ķēdes naratīvs uz šo motoru neattiecas; slavenās dārgās pozīcijas (aktīvā stūre, hidrauliskie stabilizatori, premium audio) sarakstā nav. Šajā km posmā tas ir ierasts darba mūžs, ne resursa gals — ja apkope bijusi regulāra.
 **Tuvākais rēķins.** Universāļa rūpnīcas pneimatika / blīves / kārbas eļļa — kvalitatīvi kā dārgākais tuvākā laika punkts, sasaistīts ar šī auto servisa vai TA signālu; bez € skaitļiem.
 **Ilgtermiņa kaprīze pret tuvāko termiņu.** Elektronika un eļļas svītras 15–20 gadu vecumā ir paaudzes raksturs; pēc datiem nekas neliecina, ka auto tuvākajā laikā būs problemātisks."
 
 Paraugs B — zināms finansiāls bloķētājs pie vidēja nobraukuma:
-"**Agregātu identifikācija.** Pēc tilpuma, jaudas un gada visticamāk ir konstrukcija, kurai sadales ķēde ir aizmugurē un iejaukšanās ir dārga.
-**Galvenais pirkuma risks.** Ķēde/eļļas sūknis šajā posmā jau ir varbūtība × liela naudas ietekme — ne „perspektīva pie 400 tūkst.”. Servisā ķēdes darbs nepierādīts.
+"**Galvenais pirkuma risks.** Sadales ķēde ir aizmugurē un iejaukšanās ir dārga; šajā posmā tas jau ir varbūtība × liela naudas ietekme — ne „perspektīva pie 400 tūkst.”. Servisā ķēdes darbs nepierādīts.
 **Pārējais.** Turbo, DPF, kārba paliek ierasta uzturēšanas izmaksa, ne pirmais rēķins."
 
 Paraugs C — paka šo konstrukciju nesedz:
-"**Agregātu identifikācija.** Precīzs kods nav paketē; pēc cm³/kW/gada 1–2 kandidāti, apstiprināms pēc marķējuma.
-**Meklēšanas sintēze.** Eiropas forumu un speciālistu raksti šai konstrukcijai uzrāda [konkrēti mezgli + km josla]; ASV avoti ņemti tikai kā sekundāri. Bez EUR skaitļiem.
-**Kalibrācija šim auto.** Tikai tie riski, kas sakrīt ar šo nobraukumu, kārbas tipu un aprīkojumu — bez vispārīga dīzeļa saraksta."`;
+"**Tuvākais rēķins pēc meklēšanas.** Precīzs kods nav paketē; Eiropas forumu un speciālistu raksti šai konstrukcijai (pēc cm³/kW/gada 1–2 kandidātiem) uzrāda [konkrēti mezgli + km josla]. Apstiprināms pēc marķējuma. Bez EUR skaitļiem.
+**Kalibrācija šim auto.** Tikai tie riski, kas sakrīt ar šo nobraukumu, kārbas tipu un aprīkojumu — bez vispārīga dīzeļa saraksta un bez auto prezentācijas ievada."`;
 
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
 export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):

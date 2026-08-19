@@ -183,6 +183,17 @@ export function evaluateExpertCommentQuality(
         message: "Tehnisko risku analīzē jāidentificē agregāts (dzinējs/kārba/ķēde), ne vispārīgs dīzelis",
       });
     }
+    const firstPara = t.split(/\n\s*\n/)[0] ?? "";
+    if (
+      /\*\*[^*]*identifikācij[^*]*\*\*/i.test(firstPara) ||
+      (/\b(šis ir|šī ir)\b/i.test(firstPara) &&
+        /(bmw|audi|volkswagen|\bvw\b|mercedes|renault|volvo|škoda|toyota)/i.test(firstPara))
+    ) {
+      issues.push({
+        code: "tech_risks_identity_intro",
+        message: "Pirmā rindkopa nedrīkst būt auto prezentācija — sāc ar riska faktu",
+      });
+    }
   }
 
   if (field === "inspection") {

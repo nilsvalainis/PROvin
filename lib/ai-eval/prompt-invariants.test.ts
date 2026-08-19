@@ -181,7 +181,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(tech).toMatch(/16_000/);
   });
 
-  it("technical risk analysis is the flagship field with identification-first structure", () => {
+  it("technical risk analysis starts with risk facts, not a car-identity intro", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     const block = prompts.slice(
       prompts.indexOf("AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM"),
@@ -190,10 +190,12 @@ describe("PROVIN AI prompt invariants", () => {
     expect(block).toMatch(/8–12 rindkopas/);
     expect(block).toMatch(/AI_TECHNICAL_RISKS_FLAGSHIP_RULES/);
     expect(block).toMatch(/NAV risks/);
-    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Agregātu identifikācija/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/iekšēja/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Pirmā rindkopa/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/maksimāli 1–2/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);
+    expect(tech).toMatch(/Pirmā rindkopa/);
     expect(tech).toMatch(/Nepārspīlē/);
     expect(tech).toMatch(/20–40 tūkst\. km/);
     expect(tech).toMatch(/varbūtības × izmaksām/);

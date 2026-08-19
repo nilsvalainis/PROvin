@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-19.1 — Tehnisko risku analīze: pirmā rindkopa ir riska fakts,
+ *   ne auto/agregāta prezentācija. Identifikācija paliek iekšēja.
  * - 2026-08-18.6 — Vienotais avots (lib/provin-banned-vocabulary.ts) aizliegtajam
  *   vārdu krājumam: prompts (PROVIN_REPORT_COPY_VOCABULARY) un eval
  *   (comment-quality.ts) tagad lasa TO PAŠU sarakstu. Self-correction retry:
@@ -18,4 +20,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-18.6";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-19.1";
