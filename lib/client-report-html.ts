@@ -999,7 +999,7 @@ function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string 
   const body = agg.clusters.map((c, i) => buildIncidentClusterCardHtml(c, i)).join("\n");
   return `<div class="pdf-listing-price-history pdf-incident-history-card">
     <div class="pdf-listing-price-history-foot">
-      <span>Negadījumi: <strong>${escapeHtml(String(agg.uniqueCount))}</strong></span>
+      <span>Negadījumi: <strong class="pdf-stat-tone--alert">${escapeHtml(String(agg.uniqueCount))}</strong></span>
     </div>
     ${body}
   </div>`;
@@ -1190,12 +1190,14 @@ function buildTirgusPriceHistoryTableHtml(f: TirgusFormFields): string {
     })
     .join("\n");
   const duration = days != null ? `${days} diena(s)` : "—";
-  return `<div class="pdf-listing-price-history">
+  const priceChangeTone =
+    priceChange < 0 ? "pdf-stat-tone--down" : priceChange > 0 ? "pdf-stat-tone--up" : "";
+  return `<div class="pdf-listing-price-history pdf-listing-price-history--tirgus">
     <p class="pdf-subhead pdf-subhead--boxed">Cenas izmaiņas šajā sludinājumā</p>
     <table class="pdf-listing-price-history-table" role="table">${body}</table>
     <div class="pdf-listing-price-history-foot">
-      <span>Cenas izmaiņa: <strong>${escapeHtml(formatAdifySignedEur(priceChange))}</strong></span>
-      <span>Ilgums: <strong>${escapeHtml(duration)}</strong></span>
+      <span>Cenas izmaiņa: <strong class="${priceChangeTone}">${escapeHtml(formatAdifySignedEur(priceChange))}</strong></span>
+      <span>Ilgums tirgū: <strong>${escapeHtml(duration)}</strong></span>
     </div>
   </div>`;
 }
@@ -1208,10 +1210,16 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
   const parts: string[] = [];
   if (hasForm && p.tirgusForm) {
     const f = p.tirgusForm;
-    const historyHtml = buildTirgusPriceHistoryTableHtml(f);
+    const hasHistoryRows = tirgusPriceHistoryHasRows(f.priceHistory);
+    const historyHtml = hasHistoryRows ? buildTirgusPriceHistoryTableHtml(f) : "";
     if (historyHtml) parts.push(historyHtml);
     const rows: string[] = [];
-    if (f.listedForSale.trim()) {
+    // „Ilgums” jau parādās vēstures kartītes apakšā — rindu atkārto tikai, ja iedegas
+    // kritiskais brīdinājums (>200 dienas), jo tad tas nes jaunu informāciju.
+    const showListedRow =
+      f.listedForSale.trim() &&
+      (!hasHistoryRows || shouldShowListedForSaleCriticalBanner(f.listedForSale));
+    if (showListedRow) {
       rows.push(
         `<tr><td>${escapeHtml(TIRGUS_LABEL_LISTED)}</td><td>${formatListedForSaleDaysCellHtml(f.listedForSale)}</td></tr>`,
       );
@@ -1221,7 +1229,8 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
         `<tr><td>${escapeHtml(TIRGUS_LABEL_CREATED)}</td><td>${escapeHtml(f.listingCreated.trim())}</td></tr>`,
       );
     }
-    if (f.priceDrop.trim()) {
+    // „Cenas izmaiņa” jau parādās vēstures kartītes apakšā, aprēķināta no tām pašām rindām.
+    if (f.priceDrop.trim() && !hasHistoryRows) {
       rows.push(
         `<tr><td>${escapeHtml(TIRGUS_LABEL_PRICE_DROP)}</td><td>${formatTirgusPriceDropCellHtml(f.priceDrop)}</td></tr>`,
       );
@@ -1506,8 +1515,8 @@ function buildLtabCertificateHtml(cert: NonNullable<ClientManualLtabBlockPdf["ce
     <p class="pdf-subhead pdf-subhead--boxed">Zaudējumu dati</p>
     <table class="pdf-listing-price-history-table" role="table">${body}</table>
     <div class="pdf-listing-price-history-foot">
-      <span>Kopā: <strong>${escapeHtml(totalLabel)}</strong></span>
-      <span>Negadījumi: <strong>${claims.length}</strong></span>
+      <span>Kopā: <strong class="pdf-stat-tone--alert">${escapeHtml(totalLabel)}</strong></span>
+      <span>Negadījumi: <strong class="pdf-stat-tone--alert">${claims.length}</strong></span>
     </div>
   </div>`;
   }
@@ -2429,6 +2438,18 @@ ${sourceDotColorCss()}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
       .pdf-listing-price-history,.pdf-ltab-loss-history{margin:0 0 10px;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);overflow:hidden;background:#fff;}
+      /* Sludinājuma cenu vēsture — smalks zaļgans tonis (ss.lv iedvesmots), bez pilna fona akcenta. */
+      .pdf-listing-price-history--tirgus{
+        border-color:#DCEFE1;background:#FBFEFC;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-listing-price-history--tirgus .pdf-subhead--boxed{color:#15803D;}
+      /* LTAB zaudējumu tabula — smalks sarkans tonis, jo rinda parādās tikai ar fiksētu negadījumu. */
+      .pdf-ltab-loss-history{
+        border-color:#F6D9D9;background:#FFFBFB;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-ltab-loss-history .pdf-subhead--boxed{color:#B91C1C;}
       .pdf-subhead--boxed{margin:10px 12px 2px;}
       .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);font-weight:600;color:#0f172a;}
       .pdf-listing-price-history-table td{padding:7px 12px;border-bottom:1px solid var(--pdf-line-soft);width:33.33%;font-variant-numeric:tabular-nums;}
@@ -2468,11 +2489,22 @@ ${sourceDotColorCss()}
       }
       .pdf-dmg-list__text{margin:0;font-size:var(--pdf-fs-base);color:#0f172a;line-height:1.45;}
       .pdf-listing-price-history-foot{
-        display:flex;justify-content:space-between;background:${PDF_BRAND_BLUE_HEX};color:#fff;
-        padding:8px 12px;font-size:var(--pdf-fs-table);
+        display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+        background:#F7F9FC;border-top:1px solid var(--pdf-line-soft);
+        padding:8px 12px;font-size:var(--pdf-fs-table);color:#64748b;font-weight:500;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-listing-price-history-foot strong{font-weight:700;}
+      .pdf-listing-price-history-foot strong{font-weight:700;color:#0f172a;}
+      .pdf-listing-price-history-foot strong.pdf-stat-tone--down{color:#059669;}
+      .pdf-listing-price-history-foot strong.pdf-stat-tone--up{color:#dc2626;}
+      .pdf-listing-price-history-foot strong.pdf-stat-tone--alert{color:#B91C1C;}
+      .pdf-listing-price-history--tirgus .pdf-listing-price-history-foot{
+        background:#F2FBF6;border-top-color:#DCEFE1;
+      }
+      .pdf-ltab-loss-history .pdf-listing-price-history-foot,
+      .pdf-incident-history-card .pdf-listing-price-history-foot{
+        background:#FDF4F4;border-top-color:#F6D9D9;
+      }
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
       .mirror-block-head{display:flex;align-items:center;gap:8px;margin:0 0 6px;}
