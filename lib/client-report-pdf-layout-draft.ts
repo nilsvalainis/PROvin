@@ -192,7 +192,7 @@ export function buildPdfAdminMirrorClientBlock(
   return `<div class="pdf-v1-panel pdf-v1-panel--clean pdf-surface-card" role="region">${head}<table class="pdf-v1-kv"><tbody>${body}</tbody></table></div>`;
 }
 
-export const PDF_ABOUT_REPORT_TITLE = "PAR ŠO ATSKAITI";
+export const PDF_ABOUT_REPORT_TITLE = "PASŪTĪJUMA DATI";
 
 /**
  * Maksājums, transportlīdzeklis, klients un piezīmes vienā kompaktā blokā —

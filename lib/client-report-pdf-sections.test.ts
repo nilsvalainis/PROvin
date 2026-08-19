@@ -106,10 +106,10 @@ describe("PDF design system", () => {
     expect(html).not.toContain("2 īpašnieki");
     expect(html).toContain("Kas tika pārbaudīts");
     expect(html).toContain("pdf-src-dot pdf-src-dot--autodna");
-    expect(html).toContain("PAR ŠO ATSKAITI");
+    expect(html).toContain("PASŪTĪJUMA DATI");
     expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
-    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PAR ŠO ATSKAITI"));
-    expect(html.indexOf("PAR ŠO ATSKAITI")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
+    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
+    expect(html.indexOf("PASŪTĪJUMA DATI")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 
   it("puts reconciled Latvia + Sweden owner counts on the owner-count tile", () => {
