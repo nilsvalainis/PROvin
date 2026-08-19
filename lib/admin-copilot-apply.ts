@@ -53,6 +53,7 @@ import {
 } from "@/lib/outvin-dealer-types";
 import { mergeServiceHistoryFieldText } from "@/lib/vendor-service-history";
 import {
+  autoRecordsServiceWorkRowHasData,
   autoRecordsServiceWorkRowsToPlainText,
   mergeAutoRecordsServiceWorkRow,
   type AutoRecordsServiceWorkRow,
@@ -791,6 +792,13 @@ export function applyCopilotActions(
     }
 
     if (action.type === "set_service_history") {
+      const tableFilled =
+        (next.auto_records.serviceWorks ?? []).some(autoRecordsServiceWorkRowHasData) ||
+        enrichedActions.some((a) => a.type === "upsert_service_work");
+      if (tableFilled) {
+        skipped.push({ action, reason: "service_works_table_filled" });
+        continue;
+      }
       const updated = applyServiceHistoryNotes(next.auto_records, action);
       if (updated.serviceHistoryNotes === next.auto_records.serviceHistoryNotes) {
         skipped.push({ action, reason: "service_history_already_filled" });

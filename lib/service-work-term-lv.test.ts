@@ -22,6 +22,9 @@ describe("servisa terminu tulkojums latviski", () => {
       "Automašīnas pārbaudes papildu apjoms",
     );
     expect(serviceWorkTermLv("Hood gas spring check")).toBe("Motora pārsega gāzes atsperu pārbaude");
+    expect(serviceWorkTermLv("Check gas pressure springs for bonnet")).toBe(
+      "Motora pārsega gāzes atsperu pārbaude",
+    );
     expect(serviceWorkTermLv("Pre-delivery inspection")).toBe("Pirmspiegādes apskate");
     expect(serviceWorkTermLv("Automobiļa pārbaudes papildu apjoms")).toBe(
       "Automašīnas pārbaudes papildu apjoms",

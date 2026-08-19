@@ -63,6 +63,10 @@ const TERM_LV: TermRule[] = [
     lv: "Tehniskās apskates papildu apjoms",
   },
   {
+    re: /^(check\s+)?gas\s+pressure\s+springs?\s+for\s+(hood|bonnet)$/i,
+    lv: "Motora pārsega gāzes atsperu pārbaude",
+  },
+  {
     re: /^(hood|bonnet)\s+gas\s+spring(s)?(\s+(check|inspection))?$/i,
     lv: "Motora pārsega gāzes atsperu pārbaude",
   },

@@ -85,39 +85,11 @@ function visitToServiceEntry(visit: BmwDealerVisit): VendorServiceEntry {
 
 /**
  * Key Read History nav remonts — tas ir CBS nolasījums (datums, km, termiņi).
- * Tabulā paliek tikai nolasījumi, kuru termiņu kopa atšķiras no iepriekšējā
- * (plato ar identiskiem termiņiem → jaunākais). Tukši nolasījumi paliek tikai nobraukumā.
+ * Tabulā paliek nolasījumi, kas nav tas pats datums+km kā servisa apmeklējums
+ * (apmeklējuma rinda jau rāda veiktos darbus). Identiski termiņi starp nolasījumiem
+ * ir īsti CBS dati — tos neizmetam, citādi pēdējais plato nolasījums pazūd, kad
+ * tas sakrīt ar apkopes vizīti.
  */
-function keyReadDueSignature(read: BmwDealerKeyRead): string {
-  return [...read.dueDates]
-    .map(({ component, dueDate }) => `${component}|${dueDate}`)
-    .sort()
-    .join(";");
-}
-
-function dedupeKeyReadPlateaus(reads: BmwDealerKeyRead[]): BmwDealerKeyRead[] {
-  const sorted = [...reads].sort((a, b) => {
-    const byDate = dateSortKey(a.date) - dateSortKey(b.date);
-    if (byDate !== 0) return byDate;
-    return (
-      Number.parseInt(a.odometer.replace(/\D/g, ""), 10) -
-      Number.parseInt(b.odometer.replace(/\D/g, ""), 10)
-    );
-  });
-  const kept: BmwDealerKeyRead[] = [];
-  for (const read of sorted) {
-    if (read.dueDates.length === 0) continue;
-    const sig = keyReadDueSignature(read);
-    const prev = kept[kept.length - 1];
-    if (prev && keyReadDueSignature(prev) === sig) {
-      kept[kept.length - 1] = read;
-      continue;
-    }
-    kept.push(read);
-  }
-  return kept;
-}
-
 function keyReadToServiceEntry(read: BmwDealerKeyRead): VendorServiceEntry {
   const works = read.dueDates
     .map(({ component, dueDate }) => {
@@ -253,8 +225,8 @@ function extractBmw(text: string): VendorReportExtract {
   out.countryTimeline = timelineFromBmw(parse);
   const visitEntries = parse.visits.filter((v) => v.date).map(visitToServiceEntry);
   const visitKeys = new Set(visitEntries.map((e) => visitIdentityKey(e.date, e.odometer)));
-  const keyReadEntries = dedupeKeyReadPlateaus(parse.keyReads)
-    .filter((r) => r.date && !visitKeys.has(visitIdentityKey(r.date, r.odometer)))
+  const keyReadEntries = parse.keyReads
+    .filter((r) => r.date && r.dueDates.length > 0 && !visitKeys.has(visitIdentityKey(r.date, r.odometer)))
     .map(keyReadToServiceEntry)
     .filter((e) => e.works.length > 0);
   out.serviceHistory = [...visitEntries, ...keyReadEntries].sort(

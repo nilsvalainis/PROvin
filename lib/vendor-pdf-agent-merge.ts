@@ -188,7 +188,11 @@ export function buildVendorCopilotActions(
   }
 
   const serviceFacts = extract.serviceHistoryNotes.trim();
-  if (serviceFacts) {
+  const hasStructuredService = extract.serviceHistory.some(
+    (e) => e.date.trim() && (e.works.length > 0 || e.category.trim()),
+  );
+  // Strukturētā tabula ir primārā — brīvais „Servisa vēsture” lauks tikai tad, ja rindu nav.
+  if (serviceFacts && !hasStructuredService) {
     actions.push({
       type: "set_service_history",
       source: "auto_records",

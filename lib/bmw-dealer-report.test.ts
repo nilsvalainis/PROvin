@@ -303,7 +303,7 @@ describe("BMW dealer PDF", () => {
     expect(visitSameDay?.works.join(" ")).not.toMatch(/Atslēgas nolasījums|CBS nolasījums/);
   });
 
-  it("salipušu dīlera nosaukumu Key Read galvenē nolasa un identiskus termiņus tabulā nedublē", () => {
+  it("salipušu dīlera nosaukumu Key Read galvenē nolasa; visus nolasījumus atstāj tabulā", () => {
     const text = `BMW i4
 MODEL SERIES
 G26
@@ -344,8 +344,7 @@ Brake FluidFT1
       ]),
     );
     const cbsRows = extract.serviceHistory.filter((e) => e.category === "CBS nolasījums");
-    expect(cbsRows).toHaveLength(2);
-    expect(cbsRows.some((e) => e.date === "27.09.2023")).toBe(false);
+    expect(cbsRows.map((e) => e.date).sort()).toEqual(["01.04.2025", "27.05.2024", "27.09.2023"]);
     const plateau = cbsRows.find((e) => e.date === "27.05.2024");
     expect(plateau?.location).toBe("Niederlassung Bonn BMW AG, Bonn");
     expect(plateau?.works).toEqual([
@@ -356,6 +355,75 @@ Brake FluidFT1
     const later = cbsRows.find((e) => e.date === "01.04.2025");
     expect(later?.works).toContain("Bremžu šķidrums (līdz 01.06.2026)");
     expect(extract.serviceHistory.some((e) => e.date === "01.06.2024")).toBe(false);
+  });
+
+  it("neizmet CBS nolasījumu, ja identiski termiņi sakrīt ar vēlāku apkopes vizīti", () => {
+    // BMW i4 WBY31AW04NFN09888: Key Read 01.04.2025 un 10.04.2026 abi rāda 01.06.2026;
+    // 10.04.2026 ir arī Service History vizīte. Plato „paturēt jaunāko” izmeta abus.
+    const text = `BMW i4
+MODEL SERIES
+G26
+Service History
+10/04/202683,172 mi / 133,852 kmBilia BMU AB, Nacka, Nacka
+IconComponentStatusServicedDue DateRemaining Distance
+Brake FluidNot due
+✓
+01/06/2026-
+Vehicle checkNot due
+✓
+01/06/2026-
+24/06/202451,220 mi / 82,431 kmAutowåx Bil AB, Karlstad
+IconComponentStatusServicedDue DateRemaining Distance
+Brake FluidOverdue
+✓
+01/06/2024-
+Vehicle checkOverdue
+✓
+01/06/2024-
+Key Read History
+10/04/202683,172 mi / 133,852 km
+IconComponentStatusDue DateRemaining Distance
+Vehicle checkNot due
+01/06/2026-
+Brake FluidNot due01/06/2026-
+01/04/202567,798 mi / 109,110 km
+IconComponentStatusDue DateRemaining Distance
+Vehicle checkNot due
+01/06/2026-
+Brake FluidNot due01/06/2026-
+24/06/202451,220 mi / 82,431 km
+IconComponentStatusDue DateRemaining Distance
+Vehicle checkOverdue
+01/06/2024-
+Brake FluidOverdue
+01/06/2024-
+27/05/202449,723 mi / 80,021 km
+IconComponentStatusDue DateRemaining Distance
+Vehicle checkDue soon
+01/06/2024-
+Brake FluidDue soon01/06/2024-
+18/06/20224 mi / 6 km
+IconComponentStatusDue DateRemaining Distance
+Pre Delivery InspectionOverdue
+01/06/2022-
+Repair History
+No repair history found.
+`;
+    const history = extractDealerReport(text).serviceHistory;
+    const cbs = history.filter((e) => e.category === "CBS nolasījums");
+    expect(history.some((e) => e.date === "10.04.2026" && e.location.includes("Bilia"))).toBe(true);
+    expect(history.some((e) => e.date === "10.04.2026" && e.category === "CBS nolasījums")).toBe(false);
+    expect(cbs.some((e) => e.date === "01.04.2025" && e.odometer === "109110")).toBe(true);
+    expect(history.some((e) => e.date === "24.06.2024" && e.location.includes("Autowåx"))).toBe(true);
+    expect(history.some((e) => e.date === "24.06.2024" && e.category === "CBS nolasījums")).toBe(false);
+    expect(cbs.some((e) => e.date === "27.05.2024" && e.odometer === "80021")).toBe(true);
+    expect(cbs.some((e) => e.date === "18.06.2022" && e.odometer === "6")).toBe(true);
+    expect(cbs.find((e) => e.date === "01.04.2025")?.works).toEqual(
+      expect.arrayContaining([
+        "Tehniskā pārbaude servisā (līdz 01.06.2026)",
+        "Bremžu šķidrums (līdz 01.06.2026)",
+      ]),
+    );
   });
 
   it("overwrites AutoDNA / CarVertical dealer fields and fills the service table", () => {
@@ -379,7 +447,8 @@ Brake FluidFT1
     expect(visitRow?.location).toBe("B&K Deutschland GmbH, Osnabrück");
     expect(visitRow?.works).toContain("Eļļas filtra komplekts");
     expect(visitRow?.works).not.toContain("Osnabrück");
-    expect(sourceBlocks.auto_records.serviceHistoryNotes).toContain("Oficiālā dīlera dati");
+    expect(sourceBlocks.auto_records.serviceHistoryNotes).toBe("");
+    expect(actions.some((a) => a.type === "set_service_history")).toBe(false);
   });
 
   it("splits glued auto-records.com equipment columns", () => {

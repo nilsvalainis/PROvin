@@ -126,6 +126,31 @@ describe("applyCopilotActions", () => {
     expect(result.sourceBlocks.auto_records.serviceHistoryNotes).toContain("102300");
   });
 
+  it("nedublē Servisa vēsture, ja SERVISA UN REMONTU VĒSTURE tabula tiek aizpildīta", () => {
+    const blocks = createDefaultSourceBlocks();
+    const actions: CopilotAction[] = [
+      {
+        type: "upsert_service_work",
+        source: "auto_records",
+        date: "10.04.2026",
+        odometer: "133852",
+        location: "Bilia BMU AB, Nacka, Nacka",
+        works: "Bremžu šķidrums, Tehniskā pārbaude servisā",
+        confidence: "high",
+      },
+      {
+        type: "set_service_history",
+        source: "auto_records",
+        text: "Oficiālā dīlera dati: BMW i4 · VIN WBY31AW04NFN09888.",
+        confidence: "high",
+      },
+    ];
+    const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
+    expect(result.sourceBlocks.auto_records.serviceWorks.some((r) => r.date === "10.04.2026")).toBe(true);
+    expect(result.sourceBlocks.auto_records.serviceHistoryNotes).toBe("");
+    expect(result.skipped.map((s) => s.reason)).toContain("service_works_table_filled");
+  });
+
   it("appends significant facts to source RAW", () => {
     const blocks = createDefaultSourceBlocks();
     const actions: CopilotAction[] = [
