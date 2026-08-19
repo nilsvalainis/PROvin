@@ -4022,6 +4022,70 @@ export function OrderDetailWorkspace({
               />
               <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
                 <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.internalNote}
+                  title={ADMIN_INCIDENTS_SUMMARY_LABEL}
+                >
+                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
+                    Glabājas pasūtījuma melnrakstā; PDF drukā zem „Negadījumu vēstures” kā plakans teksts (bez vizuālā
+                    formatējuma).
+                    Saglabājas automātiski.
+                  </p>
+                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminAiGenerateWithPrefill
+                      label="Sagatavot atbildi"
+                      busy={aiIncidentsSummaryBusy}
+                      disabled={!payload.aiAllowed}
+                      demoOnly={!payload.aiAllowed}
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.incidents}
+                      onGenerate={(operatorNotes, modelTier) =>
+                        void runAiIncidentsSummary(operatorNotes, modelTier)}
+                    />
+                  </div>
+                  <AdminAiFieldError message={aiIncidentsSummaryErr} />
+                  <div className="mt-2">
+                    <AdminAiPolishRichCommentShell
+                      compact
+                      value={internalCommentDraft}
+                      onChange={onInternalCommentChange}
+                      aria-label={ADMIN_INCIDENTS_SUMMARY_LABEL}
+                    />
+                  </div>
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading
+                  icon={IRISS_CHROME_LUCIDE.internalNote}
+                  title={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
+                >
+                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
+                    Glabājas pasūtījuma melnrakstā; PDF drukā zem nobraukuma grafika kā komentārs. Saglabājas automātiski.
+                  </p>
+                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
+                    <AdminAiGenerateWithPrefill
+                      label="Sagatavot atbildi"
+                      busy={aiMileageCommentBusy}
+                      disabled={!payload.aiAllowed || !hasMileageDataForAi}
+                      demoOnly={!payload.aiAllowed}
+                      title={
+                        !payload.aiAllowed
+                          ? undefined
+                          : !hasMileageDataForAi
+                            ? "Vispirms aizpildi nobraukuma tabulas avotos"
+                            : undefined
+                      }
+                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.mileage}
+                      onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
+                    />
+                  </div>
+                  <AdminAiFieldError message={aiMileageCommentErr} />
+                  <div className="mt-2">
+                    <AdminAiPolishRichCommentShell
+                      compact
+                      value={mileageCommentDraft}
+                      onChange={onMileageCommentChange}
+                      aria-label={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
+                    />
+                  </div>
+                </ListingAnalysisSubsectionHeading>
+                <ListingAnalysisSubsectionHeading
                   icon={IRISS_CHROME_LUCIDE.technicalRisks}
                   title={`1. ${ADMIN_TECHNICAL_RISKS_LABEL}`}
                 >
@@ -4107,70 +4171,6 @@ export function OrderDetailWorkspace({
                     onChange={setIrissSummary}
                     aria-label="Galvenais kopsavilkums klientam"
                   />
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.internalNote}
-                  title={ADMIN_INCIDENTS_SUMMARY_LABEL}
-                >
-                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                    Glabājas pasūtījuma melnrakstā; PDF drukā zem „Negadījumu vēstures” kā plakans teksts (bez vizuālā
-                    formatējuma).
-                    Saglabājas automātiski.
-                  </p>
-                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Sagatavot atbildi"
-                      busy={aiIncidentsSummaryBusy}
-                      disabled={!payload.aiAllowed}
-                      demoOnly={!payload.aiAllowed}
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.incidents}
-                      onGenerate={(operatorNotes, modelTier) =>
-                        void runAiIncidentsSummary(operatorNotes, modelTier)}
-                    />
-                  </div>
-                  <AdminAiFieldError message={aiIncidentsSummaryErr} />
-                  <div className="mt-2">
-                    <AdminAiPolishRichCommentShell
-                      compact
-                      value={internalCommentDraft}
-                      onChange={onInternalCommentChange}
-                      aria-label={ADMIN_INCIDENTS_SUMMARY_LABEL}
-                    />
-                  </div>
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.internalNote}
-                  title={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
-                >
-                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                    Glabājas pasūtījuma melnrakstā; PDF drukā zem nobraukuma grafika kā komentārs. Saglabājas automātiski.
-                  </p>
-                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Sagatavot atbildi"
-                      busy={aiMileageCommentBusy}
-                      disabled={!payload.aiAllowed || !hasMileageDataForAi}
-                      demoOnly={!payload.aiAllowed}
-                      title={
-                        !payload.aiAllowed
-                          ? undefined
-                          : !hasMileageDataForAi
-                            ? "Vispirms aizpildi nobraukuma tabulas avotos"
-                            : undefined
-                      }
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.mileage}
-                      onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
-                    />
-                  </div>
-                  <AdminAiFieldError message={aiMileageCommentErr} />
-                  <div className="mt-2">
-                    <AdminAiPolishRichCommentShell
-                      compact
-                      value={mileageCommentDraft}
-                      onChange={onMileageCommentChange}
-                      aria-label={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
-                    />
-                  </div>
                 </ListingAnalysisSubsectionHeading>
                 <ListingAnalysisSubsectionHeading
                   icon={IRISS_CHROME_LUCIDE.sourcesComparison}
