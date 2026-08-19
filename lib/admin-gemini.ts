@@ -59,8 +59,8 @@ function sleep(ms: number): Promise<void> {
 const TEXT_REQUEST_TIMEOUT_MS = 88_000;
 /** Web search aģenti — maršruti ar `maxDuration = 120`. */
 const SEARCH_REQUEST_TIMEOUT_MS = 105_000;
-/** Thinking + redzamais teksts dala šo limitu; bez tā 2.5/3 thinking apēd izeju. */
-const GEMINI_MAX_OUTPUT_TOKENS = 8192;
+/** Thinking + redzamais teksts dala šo limitu; 8192 pie Gemini 3 + Search apēda izeju (MAX_TOKENS). */
+const GEMINI_MAX_OUTPUT_TOKENS = 32_000;
 
 function isGemini3Model(model: string): boolean {
   return /gemini-3/i.test(model);
@@ -409,6 +409,14 @@ async function geminiGenerateTextOnce(
   try {
     return await geminiStreamGenerateText(key, opts, geminiWantsThinking(opts.model));
   } catch (e) {
+    if (isAiIncompleteCommentError(e) && geminiWantsThinking(opts.model)) {
+      console.warn(`${LOG_PREFIX} text_truncated_retry_no_thinking`, {
+        model: opts.model,
+        promptVersion: PROVIN_AI_PROMPT_VERSION,
+        chars: e.partialText.length,
+      });
+      return await geminiStreamGenerateText(key, opts, false);
+    }
     if (isAiIncompleteCommentError(e)) throw e;
     if (geminiWantsThinking(opts.model) && isGeminiThinkingUnsupported(e)) {
       return await geminiStreamGenerateText(key, opts, false);
@@ -593,37 +601,54 @@ async function geminiGenerateTextWithGoogleSearchOnce(
     systemInstruction: string;
     userPrompt: string;
     temperature?: number;
+    maxOutputTokens?: number;
   },
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
   const toolVariants: Record<string, unknown>[][] = [[{ google_search: {} }], [{ googleSearch: {} }]];
   const thinkingPasses = geminiWantsThinking(opts.model) ? [true, false] : [false];
+  const maxOutputTokens = opts.maxOutputTokens ?? GEMINI_MAX_OUTPUT_TOKENS;
 
   let lastErr = "gemini_grounding_failed";
+  let lastIncomplete: AiIncompleteCommentError | null = null;
   for (const withThinking of thinkingPasses) {
     for (const tools of toolVariants) {
-      const result = await geminiRestStreamSearchText({
-        url,
-        timeoutMs: SEARCH_REQUEST_TIMEOUT_MS,
-        model: opts.model,
-        body: {
-          systemInstruction: { parts: [{ text: opts.systemInstruction }] },
-          contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
-          tools,
-          generationConfig: {
-            temperature: opts.temperature ?? 0.35,
-            maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
-            ...geminiThinkingExtra(opts.model, withThinking),
+      try {
+        const result = await geminiRestStreamSearchText({
+          url,
+          timeoutMs: SEARCH_REQUEST_TIMEOUT_MS,
+          model: opts.model,
+          body: {
+            systemInstruction: { parts: [{ text: opts.systemInstruction }] },
+            contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
+            tools,
+            generationConfig: {
+              temperature: opts.temperature ?? 0.35,
+              maxOutputTokens,
+              ...geminiThinkingExtra(opts.model, withThinking),
+            },
           },
-        },
-      });
-      if (result.text) return result.text;
-      lastErr = result.lastErr || lastErr;
-      if (result.httpStatus && isTransientHttpStatus(result.httpStatus)) {
-        throw new Error(`[${result.httpStatus} Service Unavailable] ${lastErr}`);
+        });
+        if (result.text) return result.text;
+        lastErr = result.lastErr || lastErr;
+        if (result.httpStatus && isTransientHttpStatus(result.httpStatus)) {
+          throw new Error(`[${result.httpStatus} Service Unavailable] ${lastErr}`);
+        }
+      } catch (e) {
+        if (isAiIncompleteCommentError(e) && withThinking) {
+          lastIncomplete = e;
+          console.warn(`${LOG_PREFIX} search_truncated_retry_no_thinking`, {
+            model: opts.model,
+            promptVersion: PROVIN_AI_PROMPT_VERSION,
+            chars: e.partialText.length,
+          });
+          break;
+        }
+        throw e;
       }
     }
   }
+  if (lastIncomplete) throw lastIncomplete;
   throw new Error(lastErr);
 }
 
@@ -633,6 +658,7 @@ export async function geminiGenerateTextWithGoogleSearch(opts: {
   systemInstruction: string;
   userPrompt: string;
   temperature?: number;
+  maxOutputTokens?: number;
 }): Promise<string> {
   const key = getGeminiApiKeyFromEnv();
   if (!key) throw new Error("missing_gemini_key");

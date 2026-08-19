@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
+import { PROVIN_BANNED_VOCABULARY } from "@/lib/provin-banned-vocabulary";
 import {
   AI_DAMAGE_CLAIM_CONTEXT_RULES,
   AI_EV_BEV_FORENSICS_RULES,
@@ -19,6 +20,7 @@ import {
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
   PROVIN_REPORT_COPY_VOCABULARY,
   PROVIN_RESTRAINED_TONE_RULES,
+  stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
 
 const root = process.cwd();
@@ -132,7 +134,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/1–2 visticamākos/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/kā to apstiprināt/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/Neizdomā kodu/);
-    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/saimes līmenī/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/vispārīgā, modeļa līmenī/);
   });
 
   it("mileage-band rules calibrate risk without exaggeration", () => {
@@ -310,9 +312,9 @@ describe("PROVIN AI prompt invariants", () => {
     );
   });
 
-  it("summary generation uses web search dispatch", () => {
+  it("summary generation synthesizes already-generated sections without web search", () => {
     const summary = readRepo("lib/admin-ai-summary.ts");
-    expect(summary).toMatch(/adminGenerateTextWithWebSearch/);
+    expect(summary).toMatch(/adminGenerateExpertText/);
     expect(summary).toMatch(/Tehnisko risku|NEATKĀRTO|nedublē|NEDUBLĒ/i);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/adminGenerateTextWithWebSearch/);
@@ -368,6 +370,47 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-copilot-ai.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
     expect(readRepo("lib/copilot-vendor-pdf-agent.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
     expect(readRepo("lib/admin-vehicle-reports-ai.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
+  });
+
+  it("banned client-facing vocabulary (saime, Baltija, injektori, kancelejisms) is absent from prompt sources", () => {
+    const filesToScan = [
+      "lib/source-summary-comment-format.ts",
+      "lib/admin-ai-prompts.ts",
+      "lib/admin-ai-technical-risks.ts",
+      "lib/admin-ai-aggregate-identification.ts",
+      "lib/admin-ai-aggregate-knowledge.ts",
+      "lib/provin-aggregate-case-rules.ts",
+    ];
+    for (const file of filesToScan) {
+      const src = readRepo(file);
+      for (const entry of PROVIN_BANNED_VOCABULARY) {
+        expect(src, `${file} must not use "${entry.label}" (banned vocabulary)`).not.toMatch(
+          entry.pattern,
+        );
+      }
+    }
+  });
+
+  it("banned vocabulary single source of truth feeds both prompt and eval", () => {
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(
+      /buildBannedVocabularyPromptRules/,
+    );
+    expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/findBannedVocabularyHits/);
+  });
+
+  it("stripUnauthorizedEuroAmounts drops only the sentence carrying € / EUR", () => {
+    const input =
+      "Šis ir teikums bez naudas pieminēšanas. Nomaiņa izmaksā apmēram 250-500 € servisā. Trešais teikums turpinās normāli.";
+    const out = stripUnauthorizedEuroAmounts(input);
+    expect(out).not.toMatch(/€/);
+    expect(out).toMatch(/Šis ir teikums bez naudas pieminēšanas/);
+    expect(out).toMatch(/Trešais teikums turpinās normāli/);
+  });
+
+  it("technical risks and inspection generators apply the EUR safety-net filter", () => {
+    expect(readRepo("lib/admin-ai-technical-risks.ts")).toMatch(/stripUnauthorizedEuroAmounts/);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/stripUnauthorizedEuroAmounts/);
+    expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/stripUnauthorizedEuroAmounts/);
   });
 
   it("EV forensics rules cover SOH and charging habits", () => {

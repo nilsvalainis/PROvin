@@ -43,6 +43,7 @@ Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu, tehnisko risku eseju va
     modelTier: input.modelTier,
     systemInstruction: AI_MILEAGE_COMMENT_SYSTEM,
     userPrompt,
+    qualityField: "mileage",
     temperature: 0.35,
   });
 }

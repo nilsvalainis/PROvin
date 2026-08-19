@@ -47,11 +47,13 @@ function engineScore(fp: VehicleReportFingerprint, codes: string[]): number {
   return 0;
 }
 
-const PACK_BODY_HEADER = `Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
-- Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / vidējs uzturēšanas risks / tikai kontrolpunkts).
+const PACK_BODY_HEADER = `INTERNĀ KALIBRĀCIJA — šīs pakas € summas ir TIKAI tavai iekšējai smaguma/varbūtības kalibrācijai, NEKAD nekopē tās klienta tekstā (skat. NO ESTIMATED REPAIR EUR); ja tās tomēr paslīd, tās izfiltrē pēcapstrāde, bet tas ir drošības tīkls, ne atļauja.
+
+Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
+- Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / ierasta uzturēšanas izmaksa / tikai pārbaudāms klātienē).
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
-- **1. Tehnisko risku analīze** — DETALIZĒTI (8–12 rindkopas): katrs relevantais mezgls, EUR, kas NAV risks, nobraukuma kalibrācija. Blīvums ≠ īsums.
-- EUR joslas tikai tehniskajos riskos un cenas vērtējumā. **3. Kopsavilkumā** cenas un EUR summas neraksta.`;
+- **1. Tehnisko risku analīze** — DETALIZĒTI (8–12 rindkopas): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija — BEZ € skaitļiem klientam. Blīvums ≠ īsums.
+- EUR skaitļi klientam drīkst parādīties tikai cenas vērtējumā/tirgus laukā. **3. Kopsavilkumā** un **1. sadaļā** cenas un EUR summas neraksta — pat ne no šīs pakas.`;
 
 export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
   {
@@ -67,13 +69,19 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     },
     body: `${PACK_BODY_HEADER}
 
-**Biturbo 3.0 TDI (~230 kW) + 8AT Tiptronic:** ķēdes parasti nav galvenais risks; fokuss — **V-intercooler dzesēšanas noplūde**, **injektori un vara gredzeni** (klusā bojāejuma risks), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000–10 000 km** premium eļļai.
+**Vispirms nošķir kārbas tipu — tas maina visu risku profilu:** šai V6 3.0 TDI konstrukcijai VW grupa lietojusi divus principiāli atšķirīgus risinājumus, un tos NEDRĪKST sajaukt: (a) **klasiskais hidrotransformatora automāts** (Tiptronic 6 vai 8AT/8HP) — nav sausā/mitrā sajūga, nav mehatronikas kļūmes riska, dubultsajūga trīcēšanas tēma **UZ ŠO VARIANTU NEATTIECAS**; (b) **S-Tronic 7 (DL501, mitrais divsajūgs)** — te tieši mehatronika un sajūgs ir galvenais finansiālais risks.
 
-**Vienkāršais 3.0 TDI (150/180 kW) + S-Tronic 7:** **Galvenais risks — DSG/S-Tronic + divmasu spararats** (trīcēšana, aizkaves, mehatronika). Ķēde bieži problēma pie **~200 000 km** — klasificēt kā finansiālu ieejas risku bez klātienes testa.
+**150/180 kW + S-Tronic 7 (DL501):** **galvenais pirkuma risks — S-Tronic mehatronika un divsajūgs** (trīcēšana zemos apgriezienos, aizkaves pārslēdzot, kļūdu kodi). Ķēde šajā variantā bieži problemātiska pie **~200 000 km** — klasificēt kā finansiālu ieejas risku, kas jāapstiprina ar klātienes testu.
 
-**C6 3.0 TDI 176 kW + Tiptronic 6:** bieži uzticamākais V6 komplekts; **ķēdes maiņa pie ~250 000 km** — augsts odometra rollback signāls (reālais >500 000 km).
+**176 kW + Tiptronic 6 (piem. C6 posms) — IZŅĒMUMS:** hidrotransformatora automāts, nav S-Tronic sajūga riska; parasti uzticamākais šīs konstrukcijas komplekts. **Ķēdes maiņa pie ~250 000 km** — ja odometrs rāda mazāk un ķēde jau mainīta, tas ir augsts rollback signāls (reālais nobraukums visticamāk >500 000 km).
 
-**Klātienē:** auksts/patērēts starta tests S-Tronic; intercooler/termiskā stabilitāte; dūmi un spiedības lasījumi; servisa pierādījumi par eļļu un dzesēšanu.`,
+**Biturbo ~230 kW + 8AT/8HP Tiptronic:** hidrotransformatora automāts (nav S-Tronic riska); fokuss — **V-intercooler dzesēšanas noplūde**, **iesmidzinātāji un vara blīvgredzeni** (klusā bojāejuma risks — motors turpina strādāt, defekts pamanāms tikai pēc patēriņa/dūmu izmaiņām), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000–10 000 km** premium eļļai — īsāks intervāls ir labvēlīgs signāls.
+
+**204 kW un jaunākas biturbo versijas (Euro 6, ap 2015+):** tehniski tuvākas biturbo variantam; papildus kontrolē EGR dzesētāja blīvumu un AdBlue sistēmas kļūdu vēsturi, ja pieejama.
+
+**Quattro pilnpiedziņa (visos variantos):** aizmugurējās kardānvārpstas **krustiņi** un **karājošais gultnis** ir dilstoša daļa neatkarīgi no dzinēja/kārbas kombinācijas — tipiska pazīme ir vibrācija vai dobjš troksnis paātrinoties pēc **150 000+ km**; tas ir mehānisks nodilums, ne dzinēja/kārbas defekts, un jāvērtē atsevišķi no ķēdes/sajūga riska.
+
+**Klātienē:** auksts/patērēts starta tests (S-Tronic variantam — sajūga tvēriens un trīcēšana zemos apgriezienos; Tiptronic variantam — pārslēgšanās plūdenums); intercooler/termiskā stabilitāte; dūmi un spiedības lasījumi; klausīties troksni/vibrāciju no kardānvārpstas paātrinoties un asos pagriezienos; servisa pierādījumi par eļļu, dzesēšanu un (S-Tronic gadījumā) mehatronikas programmatūru.`,
   },
   {
     id: "vag_2_0_tdi_dsg",
@@ -91,7 +99,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **DQ250/DQ500 (mitrā, smagāki auto):** izturīgāka, bet joprojām obligāts testa brauciens un eļļas maiņas vēsture.
 
-**DPF/EGR/AdBlue:** pilsētas profils = **vidējs/liels risks**; šosejas profils ar pierādījumiem — kontrolpunkts.
+**DPF/EGR/AdBlue:** pilsētas profils = **vidējs/liels risks**; šosejas profils ar pierādījumiem — tikai pārbaudes punkts.
 
 **Klātienē:** slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; ūdens sūknis/termostats.`,
   },
@@ -169,7 +177,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 
-**M57 mehānika pie 250–350 tūkst. km (vidējs uzturēšanas risks, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/injektori statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
+**M57 mehānika pie 250–350 tūkst. km (ierasta uzturēšanas izmaksa, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve — INTERNĀ KALIBRĀCIJA, nekopē klientam); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/iesmidzinātāji statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
 
 **Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (tuvākais rēķins) no paaudzes kaprīzes.
 
@@ -255,7 +263,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     },
     body: `${PACK_BODY_HEADER}
 
-**1.5/1.6 dCi:** turbo un injektoru nolietojums; EGR/DPF pilsētā.
+**1.5/1.6 dCi:** turbo un iesmidzinātāju nolietojums; EGR/DPF pilsētā.
 
 **Nissan CVT (benzīns):** vibrācija un pārkaršana — **vidējs risks**.
 
@@ -354,7 +362,7 @@ Lietot arī vispārīgo **ELECTRIC & PLUG-IN FORENSICS** bloku: SOH + uzlādes r
 
 **Mazda Skyactiv dīzelis:** DPF pilsētā; EGR.
 
-**Baltijas rūsa:** virsbūve un šasija — kontrolpunkts pat „uzticamiem” zīmoliem.
+**Rūsa Latvijā, Lietuvā un Igaunijā:** virsbūve un šasija — pārbaudes punkts pat „uzticamiem” zīmoliem.
 
 **Klātienē:** CVT tests; rūsa uz arkām; servisa intervāli.`,
   },

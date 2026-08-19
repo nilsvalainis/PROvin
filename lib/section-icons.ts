@@ -43,7 +43,14 @@ export type SectionIconId =
   | "route"
   | "scanSearch"
   | "globe"
-  | "award";
+  | "award"
+  | "oilDrop"
+  | "brakeDisc"
+  | "tire"
+  | "battery"
+  | "filter"
+  | "coolant"
+  | "bulb";
 
 /**
  * SVG iekšējais saturs (bez <svg>), stroke caur currentColor.
@@ -83,6 +90,20 @@ export const SECTION_ICON_INNER: Record<SectionIconId, string> = {
   globe: `<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M3.6 9h16.8M3.6 15h16.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`,
   scanSearch: `<path d="M3 7V5a2 2 0 0 1 2-2h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 17v2a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 21H5a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m16 16-1.9-1.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
   award: `<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>`,
+  /** Servisa darbu ikonas: eļļa / šķidrumi. */
+  oilDrop: `<path d="M12 3c3 4 6 7.6 6 11a6 6 0 1 1-12 0c0-3.4 3-7 6-11z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`,
+  /** Servisa darbu ikonas: bremzes. */
+  brakeDisc: `<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="6.3" r="1" fill="currentColor"/><circle cx="17.7" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="17.7" r="1" fill="currentColor"/><circle cx="6.3" cy="12" r="1" fill="currentColor"/>`,
+  /** Servisa darbu ikonas: riepas / riteņi. */
+  tire: `<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  /** Servisa darbu ikonas: akumulators. */
+  battery: `<rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="22" y1="10" x2="22" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 10v4M10 10v4M14 10v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  /** Servisa darbu ikonas: filtri. */
+  filter: `<path d="M4 4h16l-6.2 7.6V19l-3.6 2v-9.4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`,
+  /** Servisa darbu ikonas: dzesēšana / kondicionētājs. */
+  coolant: `<path d="M12 2v20M4.2 7l15.6 10M4.2 17l15.6-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  /** Servisa darbu ikonas: apgaismojums / elektrika. */
+  bulb: `<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 18h6M10 22h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
 };
 
 export function sectionIconPdfHtml(id: SectionIconId): string {
@@ -118,6 +139,8 @@ export const SUBHEADING_ICON = {
   mileage: "route" as const,
   incidents: "shield" as const,
   listingHistory: "history" as const,
+  serviceWorks: "wrench" as const,
+  ltabCertificate: "fileText" as const,
 };
 
 /** PDF manuālā bloka virsraksts → ikona (AutoDNA, CarVertical, …). */

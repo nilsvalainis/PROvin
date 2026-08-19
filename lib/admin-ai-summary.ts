@@ -1,6 +1,6 @@
 import "server-only";
 
-import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
+import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
@@ -15,7 +15,14 @@ import {
   throwIfBlankGeneratedComment,
   rethrowNormalizedIncompleteComment,
 } from "@/lib/admin-ai-incomplete";
-import { normalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
+import {
+  normalizeProvinExpertAiComment,
+  stripUnauthorizedEuroAmounts,
+} from "@/lib/source-summary-comment-format";
+
+function finalizeSummaryComment(text: string): string {
+  return stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text));
+}
 
 function expertSection(label: string, html: string): string {
   const t = adminRichHtmlToPlainText(html).trim();
@@ -91,14 +98,18 @@ OBLIGĀTI:
   );
 
   try {
-    const raw = await adminGenerateTextWithWebSearch({
+    // Bez tīmekļa meklēšanas: kopsavilkums sintezē jau sagatavotās sadaļas.
+    // Gemini Flash + Google Search + thinking pie 8192 izejas tokeniem nogrieza
+    // tekstu (MAX_TOKENS) — daļa palika laukā ar ai_incomplete_comment.
+    const raw = await adminGenerateExpertText({
       modelTier: input.modelTier,
       systemInstruction: AI_SUMMARY_ANALYSIS_SYSTEM,
       userPrompt,
+      qualityField: "summary",
       temperature: 0.3,
     });
-    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
+    return throwIfBlankGeneratedComment(finalizeSummaryComment(raw));
   } catch (e) {
-    rethrowNormalizedIncompleteComment(e, normalizeProvinExpertAiComment);
+    rethrowNormalizedIncompleteComment(e, finalizeSummaryComment);
   }
 }

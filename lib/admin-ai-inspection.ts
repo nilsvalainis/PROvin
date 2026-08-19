@@ -10,6 +10,18 @@ import {
 } from "@/lib/admin-ai-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { ADMIN_TECHNICAL_RISKS_LABEL } from "@/lib/admin-workspace-field-labels";
+import {
+  throwIfBlankGeneratedComment,
+  rethrowNormalizedIncompleteComment,
+} from "@/lib/admin-ai-incomplete";
+import {
+  normalizeProvinExpertAiComment,
+  stripUnauthorizedEuroAmounts,
+} from "@/lib/source-summary-comment-format";
+
+function finalizeInspectionComment(text: string): string {
+  return stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text));
+}
 
 export async function generateInspectionRecommendationsWithAi(
   input: AiOrderContextInput,
@@ -60,11 +72,17 @@ NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/n
   );
 
   const generate = techPlain ? adminGenerateTextWithVocabulary : adminGenerateTextWithWebSearch;
-  return generate({
-    modelTier: input.modelTier,
-    systemInstruction: AI_INSPECTION_RECOMMENDATIONS_SYSTEM,
-    userPrompt,
-    temperature: 0.35,
-    ...(techPlain ? {} : { maxSearches: 4 }),
-  });
+  try {
+    const raw = await generate({
+      modelTier: input.modelTier,
+      systemInstruction: AI_INSPECTION_RECOMMENDATIONS_SYSTEM,
+      userPrompt,
+      qualityField: "inspection",
+      temperature: 0.35,
+      ...(techPlain ? {} : { maxSearches: 4 }),
+    });
+    return throwIfBlankGeneratedComment(finalizeInspectionComment(raw));
+  } catch (e) {
+    rethrowNormalizedIncompleteComment(e, finalizeInspectionComment);
+  }
 }

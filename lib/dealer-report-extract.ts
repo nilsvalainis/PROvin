@@ -133,12 +133,16 @@ export function buildBmwDealerServiceFacts(parse: BmwDealerReportParse): string 
     lines.push(
       `Atslēgas nolasījumi (Key Read History): ${keyReads.length} — pēdējais ${latest.date} · ${kmLabel(latest.odometer)}.`,
     );
-    if (latest.dueDates.length > 0) {
-      const due = latest.dueDates
+    // Tendence, ne tikai pēdējais nolasījums: pilna Key Read vēsture var sniegt līdz pat
+    // vairākiem desmitiem nolasījumu — atlikušie 3 jaunākie parāda, kā termiņi mainījušies,
+    // nevis atmet vēsturi uz vienu momentuzņēmumu.
+    for (const read of keyReads.slice(0, 3)) {
+      if (read.dueDates.length === 0) continue;
+      const due = read.dueDates
         .slice(0, 4)
         .map(({ component, dueDate }) => `${component} — ${dueDate}`)
         .join("; ");
-      lines.push(`Termiņi pēc pēdējā nolasījuma: ${due}.`);
+      lines.push(`Termiņi (${read.date} · ${kmLabel(read.odometer)}): ${due}.`);
     }
   }
 

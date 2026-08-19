@@ -9,6 +9,11 @@ import "server-only";
 
 import { CLAUDE_MODEL_EXTRACT, aiGenerateJsonWithSchema, type AiUserPart } from "@/lib/admin-ai";
 import {
+  GEMINI_MODEL_PRO,
+  geminiGenerateJsonWithSchema,
+  type GeminiJsonSchema,
+} from "@/lib/admin-gemini";
+import {
   DEALER_SERVICE_WORKS_LV_SCHEMA,
   DEALER_SERVICE_WORKS_LV_SYSTEM,
   applyDealerServiceWorksLvPayload,
@@ -115,6 +120,41 @@ async function runAiExtract(opts: {
 }
 
 /**
+ * Dīlera darbu nosaukumu tulkojums latviski: Gemini raksta dabiskāku latviešu valodu par
+ * Claude šim „brīvā teksta” uzdevumam, tāpēc ir primārais; Claude paliek rezerve, ja Gemini
+ * atsakās (kvota, tīkla kļūda) — labāk tulkots ar otru modeli nekā netulkots vispār.
+ */
+async function translateDealerServiceWorksLv(pending: string[]): Promise<string> {
+  const userText = [
+    `Translate these ${pending.length} dealer service/repair work items to Latvian.`,
+    "JSON array field items[].original must copy each string exactly; items[].lv is the Latvian translation.",
+    JSON.stringify({ items: pending.map((original) => ({ original })) }),
+  ].join("\n");
+
+  try {
+    return await geminiGenerateJsonWithSchema({
+      model: GEMINI_MODEL_PRO,
+      systemInstruction: DEALER_SERVICE_WORKS_LV_SYSTEM,
+      parts: [{ text: userText }],
+      responseSchema: DEALER_SERVICE_WORKS_LV_SCHEMA as unknown as GeminiJsonSchema,
+      temperature: 0,
+    });
+  } catch (e) {
+    console.warn(`${LOG_PREFIX} works_lv_gemini_failed`, {
+      detail: e instanceof Error ? e.message : "unknown",
+      pending: pending.length,
+    });
+    return aiGenerateJsonWithSchema({
+      model: CLAUDE_MODEL_EXTRACT,
+      systemInstruction: DEALER_SERVICE_WORKS_LV_SYSTEM,
+      parts: [{ text: userText }],
+      responseSchema: DEALER_SERVICE_WORKS_LV_SCHEMA,
+      temperature: 0,
+    });
+  }
+}
+
+/**
  * Viena avota PDF → Copilot darbības. AI kļūme nav fatāla: paliek deterministiskais rezultāts.
  */
 export async function runVendorPdfAgent(opts: {
@@ -168,21 +208,7 @@ export async function runVendorPdfAgent(opts: {
     const pending = collectUntranslatedServiceWorks(merged.serviceHistory);
     if (pending.length > 0) {
       try {
-        const raw = await aiGenerateJsonWithSchema({
-          model: CLAUDE_MODEL_EXTRACT,
-          systemInstruction: DEALER_SERVICE_WORKS_LV_SYSTEM,
-          parts: [
-            {
-              text: [
-                `Translate these ${pending.length} dealer service/repair work items to Latvian.`,
-                "JSON array field items[].original must copy each string exactly; items[].lv is the Latvian translation.",
-                JSON.stringify({ items: pending.map((original) => ({ original })) }),
-              ].join("\n"),
-            },
-          ],
-          responseSchema: DEALER_SERVICE_WORKS_LV_SCHEMA,
-          temperature: 0,
-        });
+        const raw = await translateDealerServiceWorksLv(pending);
         merged = {
           ...merged,
           serviceHistory: applyDealerServiceWorksLvPayload(merged.serviceHistory, raw),

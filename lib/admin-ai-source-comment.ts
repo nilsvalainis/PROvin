@@ -128,6 +128,7 @@ Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā ga
       ? aiAutoRecordsServiceHistorySystemPrompt()
       : aiSourceCommentSystemPrompt(blockLabel),
     userPrompt,
+    qualityField: "source",
     temperature: 0.25,
   });
 }

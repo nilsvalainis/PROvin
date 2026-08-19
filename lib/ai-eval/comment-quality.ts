@@ -2,6 +2,7 @@
  * Deterministic quality checks for PROVIN expert AI comments (no API calls).
  * Used by golden fixtures and as a regression harness when prompts change.
  */
+import { findBannedVocabularyHits } from "@/lib/provin-banned-vocabulary";
 
 export type CommentQualityIssue = {
   code: string;
@@ -72,6 +73,13 @@ export function evaluateExpertCommentQuality(
     issues.push({
       code: "vocabulary_automobilis",
       message: 'Nedrīkst lietot „automobīlis” — izmanto „automašīna”',
+    });
+  }
+
+  for (const hit of findBannedVocabularyHits(t)) {
+    issues.push({
+      code: hit.code,
+      message: `Nedrīkst lietot „${hit.label}” — izmanto: ${hit.replacement}`,
     });
   }
 

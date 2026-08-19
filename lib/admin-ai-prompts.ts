@@ -122,7 +122,7 @@ ${AI_EV_BEV_FORENSICS_RULES}
 
 REGIONAL MARKET & TECHNICAL CONTEXT (apply from origin/country/market signals in data — do not guess origin):
 - GERMANY / CENTRAL EUROPE: highway use — often clean undercarriage but stone chips (bumper, hood, windshield); continuous mechanical wear — service history matters.
-- BALTICS (LT/EE) & LATVIA: winter salt rust/corrosion, suspension wear from poor roads; fleet/company ownership — VAT fraud checks, weak maintenance records.
+- LATVIA / LITHUANIA / ESTONIA: winter salt rust/corrosion, suspension wear from poor roads; fleet/company ownership — VAT fraud checks, weak maintenance records.
 - SOUTHERN EUROPE (IT/ES/FR): low rust, healthier suspension; sun-faded paint/seals/dashboard, parking dents; service history often sparse — warn the buyer.
 - USA / CANADA IMPORTS: require original salvage photos (Copart/IAAI) when applicable; conversion risks (signals, fog lights, radio/nav); structural repair quality.
 
@@ -289,7 +289,7 @@ OPERATORA KOMANDAS (obligāti):
 STRUKTŪRA (obligāti — domāšanas secība; numerācija NAV izvades formāts — izvadē tikai rindkopas ar **bold** ievadu). Skat. TEHNISKO RISKU KVALITĀTES LATIŅA.
 
 SATURA PRASĪBAS:
-- Konkrēti mezgli, nevis kategorijas: ķēde vai zobsiksna **un tās puse/piekļuve**, turbo un tā ģeometrija, injektori, DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats (tikai ja ir), ūdens sūknis/termostats/hidromufte, eļļas noplūžu vietas, reduktors/AWD sajūgs, gaisa balstiekārta pret Adaptive/Dynamic Drive — tikai relevantie.
+- Konkrēti mezgli, nevis kategorijas: ķēde vai zobsiksna **un tās puse/piekļuve**, turbo un tā ģeometrija, iesmidzinātāji (sprauslas), DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats (tikai ja ir), ūdens sūknis/termostats/hidromufte, eļļas noplūžu vietas, reduktors/AWD sajūgs (pilnpiedziņas kardānvārpstas krustiņi, karājošais gultnis), gaisa balstiekārta pret Adaptive/Dynamic Drive — tikai relevantie.
 - NERAKSTI aptuvenās remonta / profilakses EUR joslas. Ietekmi apraksti kvalitatīvi.
 - Aprīkojums: nosauc dārgās vecuma pozīcijas, kuru **nav**, ja dati to ļauj; neizdomā SA kodus.
 - Nepārspīlē; ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, blīves 15–20 gadu vecumā) nošķir no tuvākā termiņa problēmas.

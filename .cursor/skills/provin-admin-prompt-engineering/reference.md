@@ -12,7 +12,7 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
   - *Transmission:* Paired exclusively with the 8-speed Tiptronic (classic torque converter). High reliability, low risk, completely avoids the dual-mass flywheel failure modes inherent to S-Tronic.
   - *Timing Chains:* Structurally reinforced. Based on 40+ audited biturbo vehicles, timing chains DO NOT rattle or fail up to 300,000 km. Standard V6 chain failure rules do not apply here.
   - *Silent & Fatal Faults:* 1. V-space intercooler coolant leak (independent of mileage, occurs at 200k or 300k km alike, severe engine damage risk if neglected, repair costs: 500-1000 EUR).
-    2. Fuel injectors & copper rings: Fail silently without physical symptoms (no audible "cukāšana" like older gens). Must be tested on a professional bench. Defective spray patterns lead directly to burned/melted pistons and total engine destruction.
+    2. Fuel injectors & copper rings (LV client term: "iesmidzinātāji (sprauslas)", never "injektori"): Fail silently without physical symptoms (no audible "cukāšana" like older gens). Must be tested on a professional bench. Defective spray patterns lead directly to burned/melted pistons and total engine destruction.
     3. Plastic thermostat housings: High tendency to crack and leak fluid; require preventative replacement during major front-end service.
   - *Operating Cost:* High thermal and mechanical stress requires a reduced oil interval (strictly 7,000–10,000 km using premium oils). SQ5 braking components are significantly more expensive than standard V6 options.
 
@@ -87,17 +87,17 @@ Identification before risk:
 - Evidence priority: dealer/Outvin/AUTO RECORDS **engine code** + type code → CSDD technical parameters → VIN → listing badges (quattro, 4Matic, xDrive, DSG, Tiptronic) → service records naming replaced parts.
 - No engine code in sources → name **1–2 ranked candidates as a hypothesis** plus how to confirm (VIN decode, engine bay marking, gearbox plate, service invoices). An inferred code must never be written as a registry-read fact.
 - Same displacement/power mapping to materially different architectures (chain vs belt, dry vs wet DCT, with/without DPF) → state it and split into **max two** scenarios.
-- Too little data → analyze at **family level** and say the exact aggregate is undetermined; never invent codes.
+- Too little data → analyze at **general model level** and say the exact aggregate is undetermined; never invent codes. (Never label this "family"/"saime" in LV client copy — use "konstrukcija" or "agregāts".)
 - Risks apply only to the identified combination — never import another engine version's or generation's failure modes because the brand matches.
 
 Mileage-band calibration (anti-exaggeration):
 
 - Fix approximate **current km** (latest credible odometer) and **km/year**; if odometer data conflicts, work with a stated range.
 - Split every aggregate risk into: (1) resource typically already consumed at this km/age → must be evidenced in service history; (2) **next window** ~20–40k km or 1–2 years → the buyer's real cost; (3) distant resource → brief or omitted.
-- A failure typical at 250k km must not be presented as an active threat at 90k km. **Max 1–2 primary purchase risks**; everything else is medium maintenance risk or an inspection control point.
+- A failure typical at 250k km must not be presented as an active threat at 90k km. **Max 1–2 primary purchase risks**; everything else is a routine maintenance cost ("ierasta uzturēšanas izmaksa") or something to check in person, not a deal-breaker ("jāpārbauda klātienē, nav pirkuma šķērslis"). Do not use the LV phrases "vidējs uzturēšanas risks" or "kontrolpunkts klātienē" — they read as bureaucratic.
 - Age ≠ mileage: rubber, plastics, cooling, belts, hoses degrade on time — a low-km old car can be worse than a high-km highway car. Combine with §2 motorstundas math.
 - Evidence lowers risk: a documented chain / DCT oil / belt / water pump job is a **favourable signal in the data**; missing records = **unproven**, not "not done".
-- Prioritize by **probability × EUR**; EUR bands always indicative (Baltic service level).
+- Prioritize by **probability × EUR**; EUR bands always indicative (local LV/LT/EE independent-service level) and are for YOUR internal calibration only — never copy € figures into "1. Tehnisko risku analīze", inspection, or "3. Kopsavilkums" (see AI_NO_ESTIMATED_REPAIR_EUR_RULES; a runtime filter also strips stray € as a safety net).
 - When the picture is relatively favourable, the agent must say so (hedged, PROVIN has not inspected the car physically). Fabricated red flags are as damaging as silence about real risks.
 
 ## 2. DRIVING PROFILE & MOTORSTUNDAS MATH
@@ -112,6 +112,6 @@ Instruct the backend agent to always run this factual analysis when calculating 
 ## 3. REGIONAL & FORENSIC SIGNATURES
 
 - **DE (Germany):** Autobahn stress profile. Pristine undercarriages (no rust except alpine regions), but heavy stone-chip density on front fascia/windshields. If completely flawless, check for post-accident resprays.
-- **Baltics (LV, LT, EE):** Corrosion and structural stress profile. Heavy salt rust on brake lines and suspension components. Extreme wear on bushings from poor roads. High risk of commercial fleet history and VAT rotation schemes. Lithuania is a high-risk hub for fast-turnaround rebuilds of USA salvage imports.
+- **Latvia / Lithuania / Estonia (name each country — never bundle as "Baltics"/"Baltija" in client copy):** Corrosion and structural stress profile. Heavy salt rust on brake lines and suspension components. Extreme wear on bushings from poor roads. High risk of commercial fleet history and VAT rotation schemes. Lithuania is a high-risk hub for fast-turnaround rebuilds of USA salvage imports.
 - **Southern EU (FR, IT, ES):** Cosmetic and thermal wear profile. Clear coat failure, brittle door weatherstrips, dried interior plastics/Artico trim. High density of parking scrapes, missing service history/gaps, but absolute zero rust and immaculate suspension links.
 - **USA/Canada:** Salvage framework. Mandate verification of raw Copart/IAAI auction photos to evaluate structural repair integrity and lighting/navigation conversion codes.

@@ -5,19 +5,25 @@ import type { SourceBlockKey } from "@/lib/admin-source-blocks";
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
+  Battery,
   Camera,
   CarFront,
   ChartColumn,
   CircleUser,
   CreditCard,
   Database,
+  Disc,
+  Disc2,
+  Droplet,
   FileSearch,
   FileText,
+  Filter,
   Gauge,
   Globe,
   History,
   Landmark,
   Layers,
+  Lightbulb,
   MessageSquare,
   Route,
   ScanSearch,
@@ -25,6 +31,7 @@ import {
   Search,
   Shield,
   ShieldCheck,
+  Snowflake,
   Tag,
   ClipboardPaste,
   GitCompareArrows,
@@ -87,6 +94,17 @@ export const SUBHEADING_LUCIDE = {
   serviceWorks: Wrench,
   ltabCertificate: FileText,
 } as const;
+
+/** Servisa darbu ikonas (`lib/service-work-icon.ts` ID sinhronizēti ar `lib/section-icons.ts`). */
+export const SERVICE_WORK_LUCIDE = {
+  oilDrop: Droplet,
+  brakeDisc: Disc,
+  tire: Disc2,
+  battery: Battery,
+  filter: Filter,
+  coolant: Snowflake,
+  bulb: Lightbulb,
+} as const satisfies Record<string, LucideIcon>;
 
 export const LISTING_PEEK_TOPIC_LUCIDE = {
   odometer: Gauge,

@@ -73,6 +73,17 @@ describe("servisa terminu tulkojums latviski", () => {
     expect(serviceWorkTermLv("Brake fluid LOW VISCOSITY")).toBe("Bremžu šķidrums (zema viskozitāte)");
   });
 
+  it("divvārdu pozīciju precizējumus („front left”) neatstāj daļēji netulkotus", () => {
+    // Reāls defekts: „Brake pad wear sensor, front left” pirms tam palika
+    // „Bremžu kluču nodiluma sensors, front left” — precizējums netika tulkots.
+    expect(serviceWorkTermLv("Brake pad wear sensor, front left")).toBe(
+      "Bremžu kluču nodiluma sensors (priekšā kreisajā pusē)",
+    );
+    expect(serviceWorkTermLv("Airbag module, rear right")).toBe(
+      "Drošības spilvena modulis (aizmugurē labajā pusē)",
+    );
+  });
+
   it("tulko BMW darbnīcas vācu piezīmes pēc nozīmes", () => {
     expect(serviceWorkTermLv("Ölzuschlag für Service Inclusive")).toBe(
       "Eļļas piemaksa (Service Inclusive)",

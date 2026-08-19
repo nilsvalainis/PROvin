@@ -275,8 +275,13 @@ function looksLikeDealerName(rest: string): boolean {
 /**
  * Detaļas numurs un daudzums rindas beigās (`…FTT361`, `…FL001111`, `…659024568861`,
  * `…65902456886-1`) — klientam vērtīgs ir tikai nosaukums.
+ *
+ * `[A-Z]{1,2}` (nevis atklāts `[A-Z]+`) un `\d{3,}` liedz sākt sakritību pusvārdā, kad
+ * nosaukums pats ir VISI LIELIE BURTI un satur „F” (piem. „REIFEN” — vācu „riepa”): bez šī
+ * ierobežojuma alkatīgā sakritība sāktos no nosaukuma „F” un norietu daļu nosaukumā (defekts:
+ * „ENTSORGUNG REIFEN” + kods „FT9999000054” glāzti bez atstarpes → nogriezts uz „ENTSORGUNG REI”).
  */
-const PART_CODE_TAIL_RE = /\s*F[A-Z]+\d[\dA-Z]*\s*-?\d{0,3}$/;
+const PART_CODE_TAIL_RE = /\s*F[A-Z]{1,2}\d{2,}[\dA-Z]*\s*-?\d{0,3}$/;
 const PART_NUMBER_TAIL_RE = /\s*\d{6,}\s*-?\d{0,3}$/;
 /** BMW ETK alfanumerisks numurs („83125A66D571”, „32305A66F661”). */
 const ETK_PART_TAIL_RE = /\s*\d{4,}[A-Z][A-Z0-9]{4,}\s*-?\d{0,3}$/;

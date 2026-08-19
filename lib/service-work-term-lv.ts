@@ -11,6 +11,12 @@ type TermRule = { re: RegExp; lv: string };
 
 /** Precizējumi pēc komata („…, front”, „…, ventilated”) → iekavas latviskajā nosaukumā. */
 const QUALIFIER_LV: TermRule[] = [
+  // Divvārdu pozīcijas („front left”, „vorne links”) — pirms atsevišķajiem front/rear/left/right,
+  // citādi „Brake pad wear sensor, front left” paliktu daļēji netulkots („…, front left”).
+  { re: /^(front[\s-]+left|vorne[\s-]+links)$/i, lv: "priekšā kreisajā pusē" },
+  { re: /^(front[\s-]+right|vorne[\s-]+rechts)$/i, lv: "priekšā labajā pusē" },
+  { re: /^(rear[\s-]+left|hinten[\s-]+links)$/i, lv: "aizmugurē kreisajā pusē" },
+  { re: /^(rear[\s-]+right|hinten[\s-]+rechts)$/i, lv: "aizmugurē labajā pusē" },
   { re: /^(front|vorne|vorn|vorderachse)$/i, lv: "priekšā" },
   { re: /^(rear|hinten|hinterachse)$/i, lv: "aizmugurē" },
   { re: /^(left|links)$/i, lv: "kreisajā pusē" },

@@ -34,6 +34,7 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 - Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ". In client-facing text use only the short ASCII hyphen "-" (2007-2015, 300-400 €) — never Unicode em dash "—" or en dash "–".
 - For checklists, visual/physical inspections, or next-step recommendations, write **paragraphs with bold topic openers** (same as other expert comments) — e.g. **Virsbūves pārbaude.** Jāpārbauda… — never hyphen bullet lists.
 - Strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do NOT use direct conversational imperatives like "Pārbaudi" or passive/weak wording.
+- **Banned kancelejisks/AI-tell vocabulary** (never in client copy): „saime”/„saimes līmenī” (use „agregāts”, „konstrukcija”, „paaudze”); „Baltija”/„Baltijas” (name the countries: Latvija, Lietuva, Igaunija); „injektori” (use „iesmidzinātājs (sprausla)”); „vidējs uzturēšanas risks” (use „ierasta uzturēšanas izmaksa”); „kontrolpunkts klātienē” (use „jāpārbauda klātienē” / „pārbaudes punkts”). Checked by `lib/ai-eval/prompt-invariants.test.ts` and `lib/ai-eval/comment-quality.ts`.
 
 OPERATOR NOTES / PAPILDU PIEZĪMES AI (absolute):
 - When the request includes operator notes, they are a BINDING WORK ORDER: process every distinct topic; do not cherry-pick; if the operator limited scope („tikai par…”, „nepapildi”), write only those topics — no extra padding. Canonical: `AI_OPERATOR_NOTES_EXECUTION_RULES`.

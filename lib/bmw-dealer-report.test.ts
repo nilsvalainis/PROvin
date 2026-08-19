@@ -83,6 +83,10 @@ Statutory vehicle inspectionNot due
 Engine oilOverdue
 01/05/2025-11185 mi
 Fuel filterNot due01/05/20256835 mi
+27/10/2024278,484 mi / 448,142 km
+IconComponentStatusDue DateRemaining Distance
+Brake FluidNot due
+15/11/2024-
 
 Repair History
 
@@ -112,6 +116,11 @@ Microfilter/activated Carbon container643191718582
 02/01/2013-Autohaus Karl + Co. GmbH & Co. KG, RüsselsheimOrder: 620527
 Part NamePart NumberQuantity
 Cover, windshield, top51317258053-1
+20/07/2018321,869 kmB&K Deutschland GmbH, OsnabrückOrder: WAU18099999
+Part NamePart NumberQuantity
+GEWICHTEFT9999901114
+ENTSORGUNG REIFENFT9999000054
+FunktionssicherungFTT21
 `;
 
 /** auto-records.com izdruka: divas komplektācijas kolonnas salīp vienā rindā. */
@@ -254,11 +263,32 @@ describe("BMW dealer PDF", () => {
     expect(visit?.works).toEqual(["Vējstikla augšējā apdare"]);
   });
 
+  it("nenogriež nosaukumu, kad tas VISS AUGŠĒJAIS un satur „F” pirms glāzta detaļas koda", () => {
+    // Reāls defekts no BMW 525 atskaites: „ENTSORGUNG REIFEN” + kods „FT9999000054” PDF teksta
+    // slānī salīp bez atstarpes; alkatīga regeksa sakritība sākās no „F” vārdā „REIFEN” pašā un
+    // nogrieza „ENTSORGUNG REI”. Tāpat īsāki kodi („FTT21”, ne tikai „FTT361”) jāatpazīst pareizi.
+    const visit = extractDealerReport(BMW_TEXT).serviceHistory.find((e) => e.date === "20.07.2018");
+    expect(visit?.works).toEqual([
+      "Balansēšanas atsvari",
+      "Riepu utilizācija",
+      "Funktionssicherung",
+    ]);
+  });
+
   it("summarises only facts into the service history comment", () => {
     const notes = extractDealerReport(BMW_TEXT).serviceHistoryNotes;
     expect(notes).toContain("VIN WBAPX51050CU09550");
     expect(notes).toContain("pirmā reģistrācija 29.07.2008");
     expect(notes).toContain("Bremžu šķidrums — 10.08.2026");
+  });
+
+  it("rāda termiņu tendenci pāris jaunāko Key Read nolasījumu, nevis tikai pēdējo", () => {
+    // Reāls defekts: BMW 525 atskaitē bija 39 Key Read nolasījumi, bet kopsavilkumā
+    // izmantoja tikai pēdējo — visa vēsture tika atmesta.
+    const notes = extractDealerReport(BMW_TEXT).serviceHistoryNotes;
+    expect(notes).toContain("Key Read History): 2 —");
+    expect(notes).toContain("Termiņi (12.05.2026 · 303 938 km): Bremžu šķidrums — 10.08.2026");
+    expect(notes).toContain("Termiņi (27.10.2024 · 448 142 km): Bremžu šķidrums — 15.11.2024");
   });
 
   it("overwrites AutoDNA / CarVertical dealer fields and fills the service table", () => {

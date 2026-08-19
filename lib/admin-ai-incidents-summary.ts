@@ -51,6 +51,7 @@ Garums: **2–4 rindkopas**. Tonis atturīgs: bez „kritisks”, „anomālija�
     modelTier: input.modelTier,
     systemInstruction: AI_INCIDENTS_SUMMARY_SYSTEM,
     userPrompt,
+    qualityField: "incidents",
     temperature: 0.35,
   });
 }

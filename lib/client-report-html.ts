@@ -106,9 +106,11 @@ import {
 } from "@/lib/pdf-source-brand-logos";
 import {
   sectionIconPdfHtml,
+  sectionIconPdfHtmlSized,
   vendorPdfTitleToIconId,
   type SectionIconId,
 } from "@/lib/section-icons";
+import { serviceWorkIconId } from "@/lib/service-work-icon";
 import {
   getClientReportLegalFooterBlocks,
 } from "@/lib/report-pdf-standards";
@@ -1241,6 +1243,45 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
 const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 
+/** „Regulārā apkope: eļļas maiņa, salona filtrs” → kategorijas prefikss atsevišķi no darbiem. */
+const SERVICE_WORKS_CATEGORY_PREFIX_RE = /^([^:]{2,40}):\s*(.+)$/;
+
+/**
+ * Viena „Veiktie darbi” rinda → kompaktas ikonu shēmas ar mazu ikonu pazīstamām kategorijām
+ * (eļļa, bremzes, riepas, akumulators, filtri, dzesēšana, spuldzes). Nezināms darbs paliek bez
+ * ikonas — nekas netiek uzminēts.
+ */
+function serviceWorksLineHtml(line: string): string {
+  const text = line.trim();
+  if (!text) return "";
+  const catMatch = text.match(SERVICE_WORKS_CATEGORY_PREFIX_RE);
+  const category = catMatch ? catMatch[1]!.trim() : "";
+  const rest = catMatch ? catMatch[2]!.trim() : text;
+  const items = rest
+    .split(/,\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (items.length === 0) return escapeHtml(text);
+  const prefix = category
+    ? `<span class="pdf-service-chip-cat">${escapeHtml(category)}:</span> `
+    : "";
+  const chips = items
+    .map((item) => {
+      const icon = serviceWorkIconId(item);
+      const iconHtml = icon
+        ? `<span class="pdf-service-chip-ico" aria-hidden="true">${sectionIconPdfHtmlSized(icon, 11)}</span>`
+        : "";
+      return `<span class="pdf-service-chip">${iconHtml}${escapeHtml(item)}</span>`;
+    })
+    .join("");
+  return `${prefix}${chips}`;
+}
+
+function serviceWorksCellHtml(raw: string): string {
+  const lines = raw.replace(/\r\n?/g, "\n").split("\n").map(serviceWorksLineHtml).filter(Boolean);
+  return lines.length > 0 ? lines.join("<br/>") : "—";
+}
+
 /** OFICIĀLĀ DĪLERA DATI — apkopju tabula: datums, odometrs, veiktie darbi. */
 function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]): string {
   const printable = sortAutoRecordsServiceWorkRows(
@@ -1255,11 +1296,12 @@ function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]
     .map((r) => {
       const odo = formatServiceWorkOdometer(r.odometer);
       const place = r.location.trim() ? escapeHtml(r.location.trim()) : "—";
-      const works = r.works.trim() ? escapeHtml(r.works).replace(/\r?\n/g, "<br/>") : "—";
+      const works = r.works.trim() ? serviceWorksCellHtml(r.works) : "—";
       return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${odo ? escapeHtml(odo) : "—"}</td><td class="pdf-service-cell-place">${place}</td><td class="pdf-service-cell-works">${works}</td></tr>`;
     })
     .join("\n");
-  return `<section class="pdf-service-works-zone"><p class="pdf-subhead">${escapeHtml(PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL)}</p><div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--service" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div></section>`;
+  const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL);
+  return `<section class="pdf-service-works-zone">${subheadHtml}<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--service" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div></section>`;
 }
 
 function buildSourcePhotoGroupsPdfHtml(
@@ -2251,6 +2293,17 @@ ${sourceDotColorCss()}
         line-height:1.5!important;overflow-wrap:break-word;word-break:break-word;
       }
       .pdf-mileage-history-table--service tbody tr{page-break-inside:avoid;break-inside:avoid;}
+      .pdf-service-chip-cat{color:#64748B!important;font-weight:500;}
+      .pdf-service-chip{
+        display:inline-flex!important;align-items:center;gap:3px;
+        margin:0 6px 2px 0;white-space:nowrap;
+      }
+      .pdf-service-chip:not(:last-child)::after{content:",";margin-left:-3px;color:#0f172a;}
+      .pdf-service-chip-ico{
+        display:inline-flex!important;align-items:center;justify-content:center;
+        color:#0061D2!important;flex:none;
+      }
+      .pdf-service-chip-ico svg{display:block;}
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
       .pdf-country-flag-wrap{
         display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;
