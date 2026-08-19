@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { AdminProvinLucide, ADMIN_LUCIDE_SIZE } from "@/components/admin/AdminProvinLucide";
 
@@ -32,12 +33,14 @@ export function ListingAnalysisSubsectionHeading({
   icon: Icon,
   title,
   compact,
+  action,
   children,
 }: {
   icon: LucideIcon;
   title: string;
   compact?: boolean;
-  children: React.ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
 }) {
   const titleClass = compact
     ? "text-[9px] font-medium uppercase tracking-wide text-slate-600"
@@ -47,6 +50,7 @@ export function ListingAnalysisSubsectionHeading({
       <div className={`flex items-center gap-2 ${compact ? "gap-1.5" : ""}`}>
         <AdminProvinLucide icon={Icon} />
         <span className={titleClass}>{title}</span>
+        {action ? <div className="ml-auto shrink-0">{action}</div> : null}
       </div>
       <div className="mt-2 border-t border-slate-200/55" />
       <div className={`min-w-0 ${compact ? "pt-1.5" : "pt-2"}`}>{children}</div>

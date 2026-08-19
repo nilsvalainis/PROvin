@@ -3976,6 +3976,7 @@ export function OrderDetailWorkspace({
                     sessionId={payload.sessionId}
                     photosPersistenceEnabled={orderDraftPersistenceEnabled}
                     onListingPhotoGroupsStructuralCommit={commitListingPhotoGroupsStructural}
+                    listingUrl={payload.listingUrl}
                   />
                 </div>
                 <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">

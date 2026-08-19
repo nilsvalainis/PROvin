@@ -4,7 +4,7 @@
  * Sludinājuma analīze: Groq pārdošanas konteksts + AI pārdevēja analīze (DEMO).
  */
 
-import { Loader2 } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
@@ -37,6 +37,7 @@ import {
 import type { AiListingCommentField } from "@/lib/admin-ai-listing-field";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import { isValidHttpUrl } from "@/lib/order-field-validation";
 
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
@@ -88,6 +89,8 @@ type Props = {
   sessionId?: string;
   photosPersistenceEnabled?: boolean;
   onListingPhotoGroupsStructuralCommit?: (next: ListingAnalysisBlockState["photoGroups"]) => void;
+  /** Pasūtījuma sludinājuma saite — atvēršanai jaunā cilnē pie fotogrāfiju analīzes. */
+  listingUrl?: string | null;
 };
 
 export function AdminListingAnalysisSourceBlock({
@@ -103,9 +106,23 @@ export function AdminListingAnalysisSourceBlock({
   sessionId,
   photosPersistenceEnabled = false,
   onListingPhotoGroupsStructuralCommit,
+  listingUrl,
 }: Props) {
   const v = value ?? emptyListingAnalysisBlock();
   const L = LISTING_ANALYSIS_SUBSECTIONS;
+  const listingOpenHref = listingUrl?.trim() && isValidHttpUrl(listingUrl.trim()) ? listingUrl.trim() : null;
+  const openListingAction = listingOpenHref ? (
+    <a
+      href={listingOpenHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={listingOpenHref}
+      className="inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] hover:bg-black/[0.03]"
+    >
+      <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+      Atvērt sludinājumu
+    </a>
+  ) : null;
 
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
@@ -392,6 +409,7 @@ export function AdminListingAnalysisSourceBlock({
           icon={LISTING_ANALYSIS_FIELD_LUCIDE.photoAnalysis}
           title={L.photoAnalysis}
           compact={dense}
+          action={openListingAction}
         >
           {readOnly ? (
             <>
