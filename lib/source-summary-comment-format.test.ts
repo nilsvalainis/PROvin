@@ -18,12 +18,22 @@ describe("applyProvinReportCopyVocabulary", () => {
 });
 
 describe("normalizeProvinExpertAiComment", () => {
-  it("strips leading dash from paragraph openers and keeps bold hooks", () => {
+  it("converts markdown bold hooks to heading-on-own-line and strips leftover asterisks", () => {
     const raw = `- **Nobraukums.** Automašīna ar **120 000 km**.\n\n- Otrā rindkopa bez treknraksta.`;
     const out = normalizeProvinExpertAiComment(raw);
-    expect(out).toContain("**Nobraukums.**");
+    expect(out).toContain("Nobraukums\nAutomašīna ar 120 000 km.");
+    expect(out).not.toMatch(/\*/);
     expect(out).not.toMatch(/^-\s/m);
     expect(out).not.toMatch(/\n\n-\s/);
+  });
+
+  it("strips Gemini leftover ** prefixes", () => {
+    const out = normalizeProvinExpertAiComment(
+      "** Šī automašīna ir koptāka.\n\n** Tuvākais rēķins ir piekare.",
+    );
+    expect(out).not.toMatch(/\*/);
+    expect(out).toContain("Šī automašīna ir koptāka.");
+    expect(out).toContain("Tuvākais rēķins ir piekare.");
   });
 
   it("replaces automobīlis inside normalized paragraphs", () => {
@@ -32,6 +42,7 @@ describe("normalizeProvinExpertAiComment", () => {
     expect(out).not.toContain("automobīlis");
     expect(out).not.toMatch(/[\u2013\u2014]/);
     expect(out).toContain("ok - 2007-2015");
+    expect(out).not.toMatch(/\*/);
   });
 
   it("keeps more than 8 paragraphs for expert comments", () => {
@@ -45,8 +56,9 @@ describe("normalizeProvinExpertAiComment", () => {
     const out = normalizeProvinExpertAiComment(long);
     expect(out).not.toMatch(/…$/);
     expect(out.split(/\n\n+/).length).toBe(20);
-    expect(out).toContain("**P0.**");
-    expect(out).toContain("**P19.**");
+    expect(out).toContain("P0\n");
+    expect(out).toContain("P19\n");
+    expect(out).not.toMatch(/\*/);
   });
 });
 

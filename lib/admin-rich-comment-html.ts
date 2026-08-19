@@ -1,5 +1,6 @@
 import { sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { ADMIN_RICH_PDF_FONT_WHITELIST } from "@/lib/admin-rich-comment-fonts";
+import { toExpertHeadingBodyPlain } from "@/lib/source-summary-comment-format";
 
 /**
  * Dekodē biežākos HTML entītiju fragmentus pēc tagu noņemšanas
@@ -29,13 +30,14 @@ function escapeHtmlPlain(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/** No AI / Markdown atbildes — nekad neielikt `*` kā punktus PDF laukā. */
+/** No AI / Markdown atbildes — nekad neielikt `*` kā punktus vai treknraksta marķierus PDF laukā. */
 export function normalizeAiClientPlainText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
-  t = t.replace(/\*\*([^*]+)\*\*/g, "$1");
-  t = t.replace(/__([^_]+)__/g, "$1");
   t = t.replace(/^\s*\*\s+/gm, "- ");
   t = t.replace(/^\s*•\s+/gm, "- ");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "$1");
+  t = t.replace(/__([^_]+)__/g, "$1");
+  t = t.replace(/\*/g, "");
   t = t.replace(/\r\n/g, "\n");
   return t.trim();
 }
@@ -51,69 +53,46 @@ export function aiPlainTextToRichHtml(text: string): string {
   return plainTextToMinimalRichHtml(normalizeAiClientPlainText(text));
 }
 
-const EXPERT_BOLD_OPEN = "\uE010";
-const EXPERT_BOLD_CLOSE = "\uE011";
-
 /**
- * Ja rindkopai trūkst **bold** ievada, ietin pirmo teikumu (vai pirmos vārdus) **…**.
- * Nodrošina vienotu vizuālo stilu, pat ja modelis aizmirst Markdown.
+ * Veco **bold** ievadu pārveido par virsrakstu savā rindā un noņem Markdown *.
+ * Eksporta vārds paliek, lai vecie testi/importi nesaplīstu.
  */
 export function ensureExpertBoldParagraphOpeners(text: string): string {
-  const blocks = text
-    .split(/\n\n+/)
-    .flatMap((block) => {
-      const lines = block
-        .split(/\n/)
-        .map((l) => l.trim())
-        .filter(Boolean);
-      if (lines.length > 1) return lines;
-      return block.trim() ? [block.trim()] : [];
-    });
-
-  return blocks
-    .map((para) => {
-      const p = para.trim();
-      if (!p) return p;
-      if (/^\*\*[^*\n]+?\*\*/.test(p)) return p;
-
-      const sentence = p.match(/^([^.!?\n]{2,110}?[.!?])(\s+|$)([\s\S]*)/);
-      if (sentence) {
-        const hook = sentence[1]!.replace(/^\*\*|\*\*$/g, "").trim();
-        const rest = (sentence[3] ?? "").trimStart();
-        if (!hook) return p;
-        return rest ? `**${hook}** ${rest}` : `**${hook}**`;
-      }
-
-      const words = p.split(/\s+/).filter(Boolean);
-      if (words.length === 0) return p;
-      const hookLen = Math.min(Math.max(3, Math.ceil(words.length / 4)), Math.min(8, words.length));
-      const hook = words.slice(0, hookLen).join(" ");
-      const rest = words.slice(hookLen).join(" ");
-      return rest ? `**${hook}** ${rest}` : `**${hook}**`;
-    })
-    .join("\n\n");
+  return toExpertHeadingBodyPlain(text);
 }
 
-/** Noņem sarakstu prefiksus no AI eksperta komentāra (ja modelis tomēr izmanto "- "). */
+/** Noņem sarakstu prefiksus un Markdown * no AI eksperta komentāra. */
 export function normalizeAiExpertParagraphText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
-  t = t.replace(/^\s*[-•*–]\s+/gm, "");
-  t = t.replace(/^\s*\d+[\.)]\s+/gm, "");
-  t = t.replace(/^(?:ANOMĀLIJA|NEATBILSTĪBA):\s*/gim, "**Neatbilstība:** ");
+  t = t.replace(/^(?:ANOMĀLIJA|NEATBILSTĪBA):\s*/gim, "Neatbilstība\n");
   t = t.replace(/\r\n/g, "\n");
-  t = t.trim();
-  return ensureExpertBoldParagraphOpeners(t);
+  return toExpertHeadingBodyPlain(t.trim());
 }
 
-/** Dziļās avotu analīzes ✨ — saglabā **bold** kā <strong> admin redaktoram un PDF. */
+function expertBlockToRichHtml(block: string): string {
+  const nl = block.indexOf("\n");
+  if (nl > 0 && nl <= 90) {
+    const heading = block.slice(0, nl).trim();
+    const body = block.slice(nl + 1).trim();
+    if (heading && body && !/[.!?].+/.test(heading)) {
+      return `<strong>${escapeHtmlPlain(heading)}</strong><br />${escapeHtmlPlain(body)}`;
+    }
+  }
+  const single = block.trim();
+  if (single.length > 0 && single.length <= 90 && !/[.!?].+/.test(single) && !/[.!?]$/.test(single)) {
+    return `<strong>${escapeHtmlPlain(single)}</strong>`;
+  }
+  return escapeHtmlPlain(block).replace(/\r?\n/g, "<br />");
+}
+
+/** Dziļās avotu analīzes ✨ — virsraksts kā <strong>, bez redzamiem * simboliem. */
 export function aiExpertSourceCommentToRichHtml(text: string): string {
-  let t = normalizeAiExpertParagraphText(text);
-  t = t.replace(/\*\*([^*\n]+)\*\*/g, `${EXPERT_BOLD_OPEN}$1${EXPERT_BOLD_CLOSE}`);
-  t = escapeHtmlPlain(t);
-  t = t
-    .replace(/\uE010/g, "<strong>")
-    .replace(/\uE011/g, "</strong>");
-  return t.replace(/\r?\n/g, "<br />");
+  const t = normalizeAiExpertParagraphText(text);
+  return t
+    .split(/\n\n+/)
+    .filter(Boolean)
+    .map(expertBlockToRichHtml)
+    .join("<br /><br />");
 }
 
 function parseCssDeclarations(styleRaw: string): Record<string, string> {

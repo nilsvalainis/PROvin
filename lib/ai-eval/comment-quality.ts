@@ -112,6 +112,13 @@ export function evaluateExpertCommentQuality(
     });
   }
 
+  if (/\*/.test(t)) {
+    issues.push({
+      code: "markdown_asterisk",
+      message: "Klientam redzamā tekstā nelieto * vai ** — virsraksts savā rindā, tad rindkopa",
+    });
+  }
+
   const field = opts.field ?? "generic";
   const maxChars = MAX_CHARS_BY_FIELD[field] ?? MAX_CHARS_BY_FIELD.generic;
   if (t.length > maxChars) {
@@ -184,9 +191,11 @@ export function evaluateExpertCommentQuality(
       });
     }
     const firstPara = t.split(/\n\s*\n/)[0] ?? "";
+    const firstLine = firstPara.split("\n")[0] ?? "";
     if (
+      /identifikācij/i.test(firstLine) ||
       /\*\*[^*]*identifikācij[^*]*\*\*/i.test(firstPara) ||
-      (/\b(šis ir|šī ir)\b/i.test(firstPara) &&
+      (/\b(šis ir|šī ir|šī automašīna ir|šis auto ir)\b/i.test(firstPara) &&
         /(bmw|audi|volkswagen|\bvw\b|mercedes|renault|volvo|škoda|toyota)/i.test(firstPara))
     ) {
       issues.push({

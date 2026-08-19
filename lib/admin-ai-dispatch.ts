@@ -56,6 +56,7 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "invented_repair_eur",
   "summary_price",
   "tech_risks_identity_intro",
+  "markdown_asterisk",
 ]);
 
 function buildSelfCorrectionPrompt(

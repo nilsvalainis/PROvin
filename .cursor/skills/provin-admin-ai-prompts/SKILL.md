@@ -43,8 +43,8 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 |--------|--------------|----------|
 | `PROVIN_FIELD_AGENT_SYSTEM` | Base | All field-agent prompts |
 | `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze | `admin-ai-technical-risks.ts` — Claude web search (Eiropas forumi, ja paka nesedz) + aggregate knowledge |
-| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-ai-inspection.ts` — **expert markdown** (bold hooks, no `- `); uses technical-risks section |
-| `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-ai-seller.ts` — **expert markdown** |
+| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-ai-inspection.ts` — heading then paragraph, no `*`; uses technical-risks section |
+| `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-ai-seller.ts` — heading then paragraph, no `*` |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums | `admin-ai-price.ts` |
 | `AI_SUMMARY_ANALYSIS_SYSTEM` | 3. Kopsavilkums | `admin-ai-summary.ts` — free-form synthesis, no „Sveiki”, no EUR prices, avoid duplicating technical risks |
 | `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs | `admin-ai-mileage-comment.ts` |

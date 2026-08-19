@@ -208,39 +208,51 @@ describe("aiPlainTextToRichHtml", () => {
 describe("normalizeAiExpertParagraphText", () => {
   it("strips leading hyphen bullets", () => {
     expect(normalizeAiExpertParagraphText("- Pirmais punkts. Turpinājums.\n- Otrais punkts. Teksts.")).toContain(
-      "**Pirmais punkts.**",
+      "Pirmais punkts",
     );
     expect(normalizeAiExpertParagraphText("- Pirmais punkts. Turpinājums.")).not.toMatch(/^- /m);
+    expect(normalizeAiExpertParagraphText("- Pirmais punkts. Turpinājums.")).not.toMatch(/\*/);
   });
 
-  it("converts legacy and current mismatch prefixes to a neutral bold hook", () => {
-    expect(normalizeAiExpertParagraphText("ANOMĀLIJA: nobraukums")).toContain("**Neatbilstība:**");
-    expect(normalizeAiExpertParagraphText("NEATBILSTĪBA: nobraukums")).toContain("**Neatbilstība:**");
+  it("converts legacy mismatch prefixes to a heading line", () => {
+    expect(normalizeAiExpertParagraphText("ANOMĀLIJA: nobraukums")).toContain("Neatbilstība");
+    expect(normalizeAiExpertParagraphText("NEATBILSTĪBA: nobraukums")).toContain("Neatbilstība");
+    expect(normalizeAiExpertParagraphText("ANOMĀLIJA: nobraukums")).not.toMatch(/\*/);
   });
 
-  it("auto-bolds first sentence when markdown hooks are missing", () => {
+  it("does not inject markdown asterisks when hooks are missing", () => {
     const out = normalizeAiExpertParagraphText(
       "Virsbūves pārbaude ar krāsas mērītāju. Automašīnai jāveic mērījumi uz šuvēm.",
     );
-    expect(out).toMatch(/^\*\*Virsbūves pārbaude ar krāsas mērītāju\.\*\*/);
-    expect(out).toContain("Automašīnai jāveic");
+    expect(out).not.toMatch(/\*/);
+    expect(out).toContain("Virsbūves pārbaude ar krāsas mērītāju");
   });
 });
 
 describe("aiExpertSourceCommentToRichHtml", () => {
-  it("preserves bold and strips list prefixes at line start", () => {
+  it("turns heading-then-body into strong without leftover asterisks", () => {
     const html = aiExpertSourceCommentToRichHtml("**Nobraukums.**\n\n- Fakts bez saraksta.");
-    expect(html).toContain("<strong>Nobraukums.</strong>");
+    expect(html).toContain("<strong>Nobraukums</strong>");
+    expect(html).not.toContain("*");
     expect(html).not.toMatch(/<br \/>- Fakts/);
     expect(html).toContain("Fakts bez saraksta.");
   });
 
-  it("formats inspection-style hyphen lists into bold openers", () => {
+  it("formats inspection-style hyphen lists into heading lines", () => {
     const html = aiExpertSourceCommentToRichHtml(
       "- Virsbūves pārbaude ar krāsas mērītāju. Jāmēra šuves.\n- Neatkarīga diagnostika servisā. Jāpārbauda kļūdu kodi.",
     );
-    expect(html).toContain("<strong>Virsbūves pārbaude ar krāsas mērītāju.</strong>");
-    expect(html).toContain("<strong>Neatkarīga diagnostika servisā.</strong>");
+    expect(html).toContain("<strong>Virsbūves pārbaude ar krāsas mērītāju</strong>");
+    expect(html).toContain("<strong>Neatkarīga diagnostika servisā</strong>");
     expect(html).not.toContain("- Virsbūves");
+    expect(html).not.toContain("*");
+  });
+
+  it("strips Gemini leftover ** prefixes", () => {
+    const html = aiExpertSourceCommentToRichHtml(
+      "** Šī automašīna ir koptāka nekā tipisks imports.\n\n** Tuvākais rēķins ir piekare.",
+    );
+    expect(html).not.toContain("*");
+    expect(html).toContain("Šī automašīna ir koptāka");
   });
 });

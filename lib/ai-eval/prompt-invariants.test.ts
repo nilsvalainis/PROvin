@@ -187,7 +187,7 @@ describe("PROVIN AI prompt invariants", () => {
       prompts.indexOf("AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM"),
       prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
     );
-    expect(block).toMatch(/8–12 rindkopas/);
+    expect(block).toMatch(/8-12 sadaļas/);
     expect(block).toMatch(/AI_TECHNICAL_RISKS_FLAGSHIP_RULES/);
     expect(block).toMatch(/NAV risks/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/iekšēja/);
@@ -195,11 +195,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/maksimāli 1–2/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);
-    expect(tech).toMatch(/Pirmā rindkopa/);
+    expect(tech).toMatch(/Pirmā sadaļa/);
     expect(tech).toMatch(/Nepārspīlē/);
     expect(tech).toMatch(/20–40 tūkst\. km/);
     expect(tech).toMatch(/varbūtības × izmaksām/);
-    expect(tech).toMatch(/8–12 rindkopas/);
+    expect(tech).toMatch(/8–12 sadaļas/);
   });
 
   it("inspection recommendations convert each tech-risk system into a check", () => {

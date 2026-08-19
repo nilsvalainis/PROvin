@@ -182,7 +182,7 @@ export function buildFinishedReportStyleReferenceSection(input: {
   }
 
   if (parts.length === 0) return "";
-  return `### Gatavo PROVIN audita komentāru stila reference (obligāti atdarini rindkopu ritmu, **bold** ievadu, vārdu krājumu „automašīna”, bez domuzīmes rindkopu sākumā)
+  return `### Gatavo PROVIN audita komentāru stila reference (obligāti atdarini rindkopu ritmu, virsrakstu savā rindā, vārdu krājumu „automašīna”, bez * un bez domuzīmes rindkopu sākumā)
 ${parts.join("\n\n")}`;
 }
 
