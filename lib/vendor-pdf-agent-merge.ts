@@ -24,6 +24,7 @@ import {
 } from "@/lib/vendor-report-extract";
 import {
   formatVendorServiceWorksText,
+  looksLikeCbsKeyReadServiceEntry,
   mergeVendorServiceEntries,
   sortVendorServiceEntries,
 } from "@/lib/vendor-service-history";
@@ -71,7 +72,12 @@ export function mergeVendorReportExtracts(
     vendor: primary.vendor,
     mileage,
     incidents,
-    serviceHistory: mergeVendorServiceEntries(primary.serviceHistory, secondary.serviceHistory),
+    serviceHistory: mergeVendorServiceEntries(
+      primary.serviceHistory,
+      primary.vendor === "dealer" || secondary.vendor === "dealer"
+        ? secondary.serviceHistory.filter((e) => !looksLikeCbsKeyReadServiceEntry(e))
+        : secondary.serviceHistory,
+    ),
     countryTimeline: [...primary.countryTimeline, ...secondary.countryTimeline],
     vehicleInfo: mergeVehicleInfoPreferSpecific(primary.vehicleInfo, secondary.vehicleInfo),
     equipment: primary.equipment.length > 0 ? primary.equipment : secondary.equipment,

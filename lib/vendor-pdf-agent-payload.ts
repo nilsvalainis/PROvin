@@ -27,6 +27,7 @@ import {
 import {
   isVendorServiceCategoryLine,
   isVendorServiceEventTitle,
+  looksLikeCbsKeyReadServiceEntry,
   mergeVendorServiceEntries,
   type VendorServiceEntry,
 } from "@/lib/vendor-service-history";
@@ -82,7 +83,8 @@ ABSOLUTE RULES
 
 8) OFFICIAL DEALER / FACTORY PRINTOUTS (vendor "dealer")
 - Field list layout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY, UPHOLSTERY CODE) → vehicleInfo, one value per label, copied exactly.
-- „Key Read History” and auto-records.com „ODOMETER CHECK” rows → mileage. „Repair History” / „Service History” visits (date + odometer + dealer + parts) → serviceHistory: location = the dealer/workshop name as printed, works = the part / work names in Latvian without part numbers and quantities, category = "".
+- „Key Read History” and auto-records.com „ODOMETER CHECK” rows → mileage ONLY (date + km). Do NOT put Key Read / CBS snapshots into serviceHistory. Do NOT copy one due-date list onto every odometer row. Do NOT treat due dates („01/06/2024-”) as workshop visits.
+- „Repair History” / „Service History” visits (date + odometer + dealer + serviced parts / checkmarks) → serviceHistory: location = the dealer/workshop name as printed, works = the part / work names in Latvian without part numbers and quantities, category = "".
 - Odometer values are often „188,858 mi / 303,938 km” — ALWAYS return kilometres (convert miles × 1.609344 and round when only miles are printed).
 - A dealer/workshop name that names its country („B&K Deutschland GmbH, Osnabrück”) is a countryTimeline entry for that visit date.
 
@@ -266,14 +268,17 @@ export function parseVendorPdfAgentPayload(
     const location = rawLocation || (dealerReport ? rawCategory : "");
     const category = !dealerReport && isVendorServiceCategoryLine(rawCategory) ? rawCategory : "";
     if (works.length === 0 && !category) continue;
-    serviceHistory.push({
+    const entry: VendorServiceEntry = {
       date,
       odometer: normalizeAutoRecordsOdometer(asString(o.odometer, 32)),
       country: normalizeCountry(asString(o.country, 80)),
       category,
       location,
       works,
-    });
+    };
+    // CBS / Key Read termiņi nav veikti darbi — nobraukumā tie paliek no mileage.
+    if (dealerReport && looksLikeCbsKeyReadServiceEntry(entry)) continue;
+    serviceHistory.push(entry);
   }
 
   const vehicleInfoRaw = asRecord(payload.vehicleInfo);

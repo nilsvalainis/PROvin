@@ -9,6 +9,9 @@ describe("applyProvinReportCopyVocabulary", () => {
   it("replaces automobīlis forms with automašīna", () => {
     expect(applyProvinReportCopyVocabulary("Šis automobīlis ir labs.")).toBe("Šis automašīna ir labs.");
     expect(applyProvinReportCopyVocabulary("Automobīļa vēsture.")).toBe("Automašīnas vēsture.");
+    expect(applyProvinReportCopyVocabulary("Automobiļa pārbaudes papildu apjoms")).toBe(
+      "Automašīnas pārbaudes papildu apjoms",
+    );
   });
 
   it("replaces em and en dashes with ASCII hyphen", () => {

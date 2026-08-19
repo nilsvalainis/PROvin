@@ -85,20 +85,54 @@ function visitToServiceEntry(visit: BmwDealerVisit): VendorServiceEntry {
 
 /**
  * Key Read History nav remonts — tas ir CBS nolasījums (datums, km, termiņi).
- * Tabulā tas paliek kā atsevišķa rinda, lai i4 tipa atskaites (3 apmeklējumi, 10 nolasījumi)
- * nezaudētu visus nolasījumus ārpus kopsavilkuma teksta.
+ * Tabulā paliek tikai nolasījumi, kuru termiņu kopa atšķiras no iepriekšējā
+ * (plato ar identiskiem termiņiem → jaunākais). Tukši nolasījumi paliek tikai nobraukumā.
  */
+function keyReadDueSignature(read: BmwDealerKeyRead): string {
+  return [...read.dueDates]
+    .map(({ component, dueDate }) => `${component}|${dueDate}`)
+    .sort()
+    .join(";");
+}
+
+function dedupeKeyReadPlateaus(reads: BmwDealerKeyRead[]): BmwDealerKeyRead[] {
+  const sorted = [...reads].sort((a, b) => {
+    const byDate = dateSortKey(a.date) - dateSortKey(b.date);
+    if (byDate !== 0) return byDate;
+    return (
+      Number.parseInt(a.odometer.replace(/\D/g, ""), 10) -
+      Number.parseInt(b.odometer.replace(/\D/g, ""), 10)
+    );
+  });
+  const kept: BmwDealerKeyRead[] = [];
+  for (const read of sorted) {
+    if (read.dueDates.length === 0) continue;
+    const sig = keyReadDueSignature(read);
+    const prev = kept[kept.length - 1];
+    if (prev && keyReadDueSignature(prev) === sig) {
+      kept[kept.length - 1] = read;
+      continue;
+    }
+    kept.push(read);
+  }
+  return kept;
+}
+
 function keyReadToServiceEntry(read: BmwDealerKeyRead): VendorServiceEntry {
-  const dues = read.dueDates
-    .map(({ component, dueDate }) => `${component} — ${dueDate}`)
+  const works = read.dueDates
+    .map(({ component, dueDate }) => {
+      const name = dealerPartNameLv(component);
+      if (!name) return "";
+      return dueDate ? `${name} (līdz ${dueDate})` : name;
+    })
     .filter(Boolean);
   return {
     date: read.date,
     odometer: read.odometer,
-    country: "",
-    category: "",
-    location: "",
-    works: dues.length > 0 ? [`Atslēgas nolasījums (CBS): ${dues.join("; ")}`] : ["Atslēgas nolasījums (CBS)"],
+    country: countryFromDealerName(read.dealer),
+    category: "CBS nolasījums",
+    location: read.dealer.trim(),
+    works,
   };
 }
 
@@ -134,7 +168,7 @@ export function buildBmwDealerServiceFacts(parse: BmwDealerReportParse): string 
       `${first.date}${first.odometer ? ` (${kmLabel(first.odometer)})` : ""}`,
       `${last.date}${last.odometer ? ` (${kmLabel(last.odometer)})` : ""}`,
     ];
-    lines.push(`Servisa un remontu ieraksti: ${visits.length} — no ${span[0]} līdz ${span[1]}.`);
+    lines.push(`Servisa un remontu ieraksti: ${visits.length} - no ${span[0]} līdz ${span[1]}.`);
 
     const byDealer = new Map<string, number>();
     for (const visit of visits) {
@@ -145,7 +179,7 @@ export function buildBmwDealerServiceFacts(parse: BmwDealerReportParse): string 
     const dealerParts = [...byDealer.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
-      .map(([dealer, count]) => `${dealer} — ${count}`);
+      .map(([dealer, count]) => `${dealer} - ${count}`);
     if (dealerParts.length > 0) lines.push(`Servisa punkti: ${dealerParts.join("; ")}.`);
   } else if (parse.serviceHistoryEmpty) {
     lines.push("Servisa vēstures sadaļa atskaitē: ierakstu nav.");
@@ -155,7 +189,7 @@ export function buildBmwDealerServiceFacts(parse: BmwDealerReportParse): string 
   const latest = keyReads[0];
   if (latest) {
     lines.push(
-      `Atslēgas nolasījumi (Key Read History): ${keyReads.length} — pēdējais ${latest.date} · ${kmLabel(latest.odometer)}.`,
+      `Atslēgas nolasījumi (Key Read History): ${keyReads.length} - pēdējais ${latest.date} · ${kmLabel(latest.odometer)}.`,
     );
     // Tendence, ne tikai pēdējais nolasījums: pilna Key Read vēsture var sniegt līdz pat
     // vairākiem desmitiem nolasījumu — atlikušie 3 jaunākie parāda, kā termiņi mainījušies,
@@ -164,7 +198,7 @@ export function buildBmwDealerServiceFacts(parse: BmwDealerReportParse): string 
       if (read.dueDates.length === 0) continue;
       const due = read.dueDates
         .slice(0, 4)
-        .map(({ component, dueDate }) => `${component} — ${dueDate}`)
+        .map(({ component, dueDate }) => `${component} - ${dueDate}`)
         .join("; ");
       lines.push(`Termiņi (${read.date} · ${kmLabel(read.odometer)}): ${due}.`);
     }
@@ -219,9 +253,10 @@ function extractBmw(text: string): VendorReportExtract {
   out.countryTimeline = timelineFromBmw(parse);
   const visitEntries = parse.visits.filter((v) => v.date).map(visitToServiceEntry);
   const visitKeys = new Set(visitEntries.map((e) => visitIdentityKey(e.date, e.odometer)));
-  const keyReadEntries = parse.keyReads
+  const keyReadEntries = dedupeKeyReadPlateaus(parse.keyReads)
     .filter((r) => r.date && !visitKeys.has(visitIdentityKey(r.date, r.odometer)))
-    .map(keyReadToServiceEntry);
+    .map(keyReadToServiceEntry)
+    .filter((e) => e.works.length > 0);
   out.serviceHistory = [...visitEntries, ...keyReadEntries].sort(
     (a, b) => dateSortKey(b.date) - dateSortKey(a.date),
   );
@@ -282,7 +317,7 @@ function extractAutoRecordsDealer(text: string): VendorReportExtract {
     const first = chrono[0]!;
     const last = chrono[chrono.length - 1]!;
     facts.push(
-      `Servisa apmeklējumu odometra ieraksti: ${chrono.length} — no ${first.date} (${kmLabel(first.odometer)}) līdz ${last.date} (${kmLabel(last.odometer)}).`,
+      `Servisa apmeklējumu odometra ieraksti: ${chrono.length} - no ${first.date} (${kmLabel(first.odometer)}) līdz ${last.date} (${kmLabel(last.odometer)}).`,
     );
     const countries = [...new Set(chrono.map((r) => r.country).filter(Boolean))];
     if (countries.length > 0) facts.push(`Ierakstos norādītās valstis: ${countries.join(", ")}.`);

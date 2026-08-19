@@ -259,6 +259,29 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
       },
     ]);
   });
+
+  it("dīlera Key Read / CBS termiņus no AI servisa vēstures atmet", () => {
+    const payload = parseVendorPdfAgentPayload(
+      JSON.stringify({
+        vendor: "dealer",
+        mileage: [{ date: "27.05.2024", odometer: "80021", country: "" }],
+        incidents: [],
+        countryTimeline: [],
+        serviceHistory: [
+          {
+            date: "27.05.2024",
+            odometer: "80021",
+            location: "Niederlassung Bonn BMW AG, Bonn",
+            works: [
+              "Atslēgas nolasījums (CBS): Tehniskā pārbaude servisā — 01.06.2024; Bremžu šķidrums — 01.06.2024",
+            ],
+          },
+        ],
+      }),
+      "dealer",
+    );
+    expect(payload.serviceHistory).toEqual([]);
+  });
 });
 
 describe("CarVertical deterministiskā ekstrakcija", () => {

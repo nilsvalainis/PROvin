@@ -18,7 +18,14 @@ describe("servisa terminu tulkojums latviski", () => {
     expect(serviceWorkTermLv("Microfilter/activated Carbon container")).toBe(
       "Salona filtrs (ar aktivēto ogli)",
     );
-    expect(serviceWorkTermLv("Oil service")).toBe("Eļļas maiņa");
+    expect(serviceWorkTermLv("Vehicle check additional scope")).toBe(
+      "Automašīnas pārbaudes papildu apjoms",
+    );
+    expect(serviceWorkTermLv("Hood gas spring check")).toBe("Motora pārsega gāzes atsperu pārbaude");
+    expect(serviceWorkTermLv("Pre-delivery inspection")).toBe("Pirmspiegādes apskate");
+    expect(serviceWorkTermLv("Automobiļa pārbaudes papildu apjoms")).toBe(
+      "Automašīnas pārbaudes papildu apjoms",
+    );
   });
 
   it("tulko vācu terminus", () => {

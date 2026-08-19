@@ -21,10 +21,13 @@ TASK
 
 STYLE
 - Natural Latvian: „Eļļas filtra komplekts”, not „Komplekts eļļas filtra elements”.
+- Always „automašīna” / „Automašīnas” — never „automobilis”, „automobīlis”, „Automobiļa”.
 - Qualifiers in parentheses: front → (priekšā), rear → (aizmugurē), ventilated → (ventilēts).
+- „Vehicle check additional scope” / „additional vehicle check” → „Automašīnas pārbaudes papildu apjoms”; hood/bonnet gas spring check → „Motora pārsega gāzes atsperu pārbaude”; pre-delivery inspection → „Pirmspiegādes apskate”.
 - Keep brand names and oil/fluid specifications as printed (Castrol, BMW Group LL-04, 5W-30, DOT4, AGM, Service Inclusive).
 - Internal workshop notes still get a clear Latvian meaning: „Kundenloyalisierung siehe Mail” → „Klienta lojalitātes akcija (sk. e-pastu)”; „Nachrüstung Service-Inclusive” → „Service Inclusive pievienošana”; „Ölzuschlag für Service Inclusive” → „Eļļas piemaksa (Service Inclusive)”.
 - Do not leave English or German words except brands/specs.
+- Never use *, ** or em/en dashes (— –). ASCII hyphen only if a hyphen is needed.
 
 Return JSON only.`;
 

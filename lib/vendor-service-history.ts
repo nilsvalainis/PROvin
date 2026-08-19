@@ -49,6 +49,24 @@ export function isVendorServiceEventTitle(title: string): boolean {
 const CATEGORY_RE =
   /^(regul[āa]r[āa]\s+apkope|neregul[āa]r[āa]\s+apkope|papildu\s+apkope|apkope|remonts|garantijas\s+remonts|remontdarbi|servisa\s+darbi)$/i;
 
+const CBS_CATEGORY_RE = /^(cbs\s*nolasījums|atslēgas nolasījums(\s*\(cbs\))?|key\s*read(\s*history)?)$/i;
+const CBS_DUE_ITEM_RE =
+  /^.+\s*(\([Ll]īdz\s+\d{1,2}\.\d{1,2}\.\d{4}\)|[—–-]\s*\d{1,2}\.\d{1,2}\.\d{4})\s*$/;
+const CBS_DUMP_RE = /atslēgas nolasījums\s*\(?cbs\)?/i;
+
+/** CBS atslēgas nolasījums (termiņu saraksts), nevis veikts servisa apmeklējums. */
+export function looksLikeCbsKeyReadServiceEntry(entry: VendorServiceEntry): boolean {
+  if (CBS_CATEGORY_RE.test(entry.category.trim())) return true;
+  const works = entry.works.map((w) => w.trim()).filter(Boolean);
+  if (works.length === 0) return false;
+  if (works.some((w) => CBS_DUMP_RE.test(w))) return true;
+  return works.every((w) => CBS_DUE_ITEM_RE.test(w) || CBS_DUMP_RE.test(w));
+}
+
+function looksLikeCbsDumpWorks(works: string[]): boolean {
+  return works.some((w) => CBS_DUMP_RE.test(w) || (/;/.test(w) && /[—–]/.test(w)));
+}
+
 /** Vai rinda ir darbu kategorija („Regulārā apkope”), nevis konkrēts darbs. */
 export function isVendorServiceCategoryLine(line: string): boolean {
   return CATEGORY_RE.test(line.trim().replace(/[:.]$/, ""));
@@ -129,7 +147,7 @@ export function mergeVendorServiceEntries(
       country: prev.country || entry.country,
       category: prev.category || entry.category,
       location: prev.location || entry.location,
-      works: mergeWorksPreferLatvian(prev.works, entry.works),
+      works: mergeServiceWorks(prev.works, entry.works),
     };
     byKey.set(key, merged);
   }
@@ -144,6 +162,12 @@ function worksForeignCount(works: string[]): number {
  * Ja viens saraksts ir skaidri latviskāks, ņem to (nejauc EN rindu ar tās LV tulkojumu).
  * Citādi apvieno, izlaižot dublikātus.
  */
+function mergeServiceWorks(prev: string[], next: string[]): string[] {
+  if (looksLikeCbsDumpWorks(next) && !looksLikeCbsDumpWorks(prev)) return dedupeWorks(prev);
+  if (looksLikeCbsDumpWorks(prev) && !looksLikeCbsDumpWorks(next)) return dedupeWorks(next);
+  return mergeWorksPreferLatvian(prev, next);
+}
+
 function mergeWorksPreferLatvian(prev: string[], next: string[]): string[] {
   if (next.length === 0) return dedupeWorks(prev);
   if (prev.length === 0) return dedupeWorks(next);

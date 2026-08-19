@@ -7,6 +7,8 @@
  * netiek izdomāts.
  */
 
+import { applyProvinReportCopyVocabulary } from "@/lib/source-summary-comment-format";
+
 type TermRule = { re: RegExp; lv: string };
 
 /** Precizējumi pēc komata („…, front”, „…, ventilated”) → iekavas latviskajā nosaukumā. */
@@ -51,6 +53,25 @@ const TERM_LV: TermRule[] = [
   { re: /^(oil\s+service|[öo]lservice|[öo]lwechsel|oil\s+change)$/i, lv: "Eļļas maiņa" },
   { re: /^(vehicle\s+check|fahrzeug[- ]?check)$/i, lv: "Tehniskā pārbaude servisā" },
   { re: /^(standard\s+scope|standardumfang)$/i, lv: "Standarta apkopes apjoms" },
+  {
+    re: /^(additional\s+vehicle\s+check(\s+scope)?|vehicle\s+check\s+additional(\s+scope)?|erweiterte[r]?\s+fahrzeugcheck)$/i,
+    lv: "Automašīnas pārbaudes papildu apjoms",
+  },
+  { re: /^(additional\s+scope|zusatzumfang)$/i, lv: "Papildu apkopes apjoms" },
+  {
+    re: /^(statutory\s+vehicle\s+inspection\s+additional(\s+scope)?)$/i,
+    lv: "Tehniskās apskates papildu apjoms",
+  },
+  {
+    re: /^(hood|bonnet)\s+gas\s+spring(s)?(\s+(check|inspection))?$/i,
+    lv: "Motora pārsega gāzes atsperu pārbaude",
+  },
+  {
+    re: /^motorhauben[- ]?gasfeder(n)?(\s*pr[üu]fung)?$/i,
+    lv: "Motora pārsega gāzes atsperu pārbaude",
+  },
+  { re: /^(pre[- ]delivery\s+inspection|pdi|auslieferungsinspektion)$/i, lv: "Pirmspiegādes apskate" },
+  { re: /^(pre[- ]sale\s+inspection|verkaufsinspektion)$/i, lv: "Pirmspārdošanas apskate" },
   { re: /^(statutory\s+vehicle\s+inspection|hauptuntersuchung|hu)$/i, lv: "Obligātā tehniskā apskate" },
   { re: /^(statutory\s+emissions\s+test|abgasuntersuchung|au)$/i, lv: "Obligātā izplūdes gāzu pārbaude" },
   {
@@ -340,15 +361,15 @@ export function serviceWorkTermLv(raw: string): string {
   if (!name) return "";
 
   const direct = translateCore(name);
-  if (direct !== name) return direct;
+  if (direct !== name) return applyProvinReportCopyVocabulary(direct);
 
   const comma = translateCommaList(name);
-  if (comma) return comma;
+  if (comma) return applyProvinReportCopyVocabulary(comma);
 
   const paren = translateParenthetical(name);
-  if (paren) return paren;
+  if (paren) return applyProvinReportCopyVocabulary(paren);
 
-  return name;
+  return applyProvinReportCopyVocabulary(name);
 }
 
 /** Darbu saraksts latviski (tukšie un dublikāti izmesti). */

@@ -227,7 +227,7 @@ describe("BMW dealer PDF", () => {
     expect(extract.mileage.map((r) => r.odometer)).not.toContain("18001");
     expect(extract.mileage.map((r) => r.odometer)).not.toContain("11000");
     // Termiņa datums no tās pašas rindas joprojām tiek nolasīts.
-    expect(extract.serviceHistoryNotes).toContain("Motoreļļa — 01.05.2025");
+    expect(extract.serviceHistoryNotes).toContain("Motoreļļa - 01.05.2025");
   });
 
   it("reads the Service History table as serviced components, not as table text", () => {
@@ -279,28 +279,83 @@ describe("BMW dealer PDF", () => {
     const notes = extractDealerReport(BMW_TEXT).serviceHistoryNotes;
     expect(notes).toContain("VIN WBAPX51050CU09550");
     expect(notes).toContain("pirmā reģistrācija 29.07.2008");
-    expect(notes).toContain("Bremžu šķidrums — 10.08.2026");
+    expect(notes).toContain("Bremžu šķidrums - 10.08.2026");
   });
 
   it("rāda termiņu tendenci pāris jaunāko Key Read nolasījumu, nevis tikai pēdējo", () => {
     // Reāls defekts: BMW 525 atskaitē bija 39 Key Read nolasījumi, bet kopsavilkumā
     // izmantoja tikai pēdējo — visa vēsture tika atmesta.
     const notes = extractDealerReport(BMW_TEXT).serviceHistoryNotes;
-    expect(notes).toContain("Key Read History): 2 —");
-    expect(notes).toContain("Termiņi (12.05.2026 · 303 938 km): Bremžu šķidrums — 10.08.2026");
-    expect(notes).toContain("Termiņi (27.10.2024 · 448 142 km): Bremžu šķidrums — 15.11.2024");
+    expect(notes).toContain("Key Read History): 2 -");
+    expect(notes).toContain("Termiņi (12.05.2026 · 303 938 km): Bremžu šķidrums - 10.08.2026");
+    expect(notes).toContain("Termiņi (27.10.2024 · 448 142 km): Bremžu šķidrums - 15.11.2024");
   });
 
-  it("Key Read nolasījumus, kas nav tas pats apmeklējums, liek servisa tabulā", () => {
+  it("Key Read nolasījumus, kas nav tas pats apmeklējums, liek servisa tabulā kā čipus", () => {
     // BMW i4: Repair History tukšs, Service History 3 apmeklējumi, Key Read History 10 —
     // iepriekš tabulā palika tikai 3 rindas. Nolasījums ar citu km paliek atsevišķa rinda.
     const history = extractDealerReport(BMW_TEXT).serviceHistory;
     const keyRow = history.find((e) => e.date === "27.10.2024" && e.odometer === "448142");
-    expect(keyRow?.location).toBe("");
-    expect(keyRow?.works[0]).toMatch(/^Atslēgas nolasījums \(CBS\):/);
-    expect(keyRow?.works[0]).toContain("Bremžu šķidrums — 15.11.2024");
+    expect(keyRow?.category).toBe("CBS nolasījums");
+    expect(keyRow?.works).toEqual(["Bremžu šķidrums (līdz 15.11.2024)"]);
+    expect(keyRow?.works.join(" ")).not.toMatch(/Atslēgas nolasījums/);
     const visitSameDay = history.find((e) => e.date === "12.05.2026" && e.odometer === "303616");
-    expect(visitSameDay?.works.join(" ")).not.toMatch(/Atslēgas nolasījums/);
+    expect(visitSameDay?.works.join(" ")).not.toMatch(/Atslēgas nolasījums|CBS nolasījums/);
+  });
+
+  it("salipušu dīlera nosaukumu Key Read galvenē nolasa un identiskus termiņus tabulā nedublē", () => {
+    const text = `BMW i4
+MODEL SERIES
+G26
+Key Read History
+27/05/202480,021 kmNiederlassung Bonn BMW AG, Bonn
+IconComponentStatusDue DateRemaining Distance
+Vehicle checkNot due
+01/06/2024-
+Brake FluidNot due
+01/06/2024-
+Hood gas spring checkNot due
+01/06/2024-
+27/09/202357,954 kmNiederlassung Bonn BMW AG, Bonn
+IconComponentStatusDue DateRemaining Distance
+Vehicle checkNot due
+01/06/2024-
+Brake FluidNot due
+01/06/2024-
+Hood gas spring checkNot due
+01/06/2024-
+01/04/2025109,110 kmNiederlassung Bonn BMW AG, Bonn
+IconComponentStatusDue DateRemaining Distance
+Vehicle checkNot due
+01/06/2026-
+Brake FluidNot due
+01/06/2026-
+Repair History
+24/06/202482,431 kmAutowåx Bil AB, KarlstadOrder: 1
+Part NamePart NumberQuantity
+Brake FluidFT1
+`;
+    const extract = extractDealerReport(text);
+    expect(extract.mileage).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ date: "27.09.2023", odometer: "57954" }),
+        expect.objectContaining({ date: "27.05.2024", odometer: "80021" }),
+        expect.objectContaining({ date: "01.04.2025", odometer: "109110" }),
+      ]),
+    );
+    const cbsRows = extract.serviceHistory.filter((e) => e.category === "CBS nolasījums");
+    expect(cbsRows).toHaveLength(2);
+    expect(cbsRows.some((e) => e.date === "27.09.2023")).toBe(false);
+    const plateau = cbsRows.find((e) => e.date === "27.05.2024");
+    expect(plateau?.location).toBe("Niederlassung Bonn BMW AG, Bonn");
+    expect(plateau?.works).toEqual([
+      "Tehniskā pārbaude servisā (līdz 01.06.2024)",
+      "Bremžu šķidrums (līdz 01.06.2024)",
+      "Motora pārsega gāzes atsperu pārbaude (līdz 01.06.2024)",
+    ]);
+    const later = cbsRows.find((e) => e.date === "01.04.2025");
+    expect(later?.works).toContain("Bremžu šķidrums (līdz 01.06.2026)");
+    expect(extract.serviceHistory.some((e) => e.date === "01.06.2024")).toBe(false);
   });
 
   it("overwrites AutoDNA / CarVertical dealer fields and fills the service table", () => {

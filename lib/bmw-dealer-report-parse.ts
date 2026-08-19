@@ -30,7 +30,9 @@ export type BmwDealerVisit = {
 export type BmwDealerKeyRead = {
   date: string;
   odometer: string;
-  /** Nākamie termiņi no atslēgas nolasījuma: „Bremžu šķidrums — 10.08.2026”. */
+  /** Dīleris / servisa punkts, ja tas ir nolasījuma galvenē. */
+  dealer: string;
+  /** Nākamie termiņi no atslēgas nolasījuma: „Bremžu šķidrums (līdz 10.08.2026)”. */
   dueDates: { component: string; dueDate: string }[];
 };
 
@@ -133,13 +135,37 @@ export function bmwOdometerToKm(fragment: string): string {
  */
 export function bmwOdometerReadingKm(fragment: string, opts?: { allowMilesOnly?: boolean }): string {
   const value = normalizeSpace(fragment);
-  const pair = value.match(/^([\d.,]+)\s*mi\s*\/\s*([\d.,]+)\s*km\b/i);
+  // Bez `\b` pēc km/mi: izdrukā bieži salīp „155,000 kmNiederlassung …”.
+  const pair = value.match(/^([\d.,]+)\s*mi\s*\/\s*([\d.,]+)\s*km/i);
   if (pair) return digitsOnly(pair[2] ?? "");
-  const km = value.match(/^([\d.,]+)\s*km\b/i);
+  const km = value.match(/^([\d.,]+)\s*km/i);
   if (km) return digitsOnly(km[1] ?? "");
   if (!opts?.allowMilesOnly) return "";
-  const mi = value.match(/^([\d.,]+)\s*mi\b/i);
+  const mi = value.match(/^([\d.,]+)\s*mi/i);
   return mi ? milesToKm(mi[1] ?? "") : "";
+}
+
+/** Odometrs no nolasījuma galvenes sākuma + atlikums (dīleris). */
+function keyReadOdometerAndRest(
+  fragment: string,
+  opts?: { allowMilesOnly?: boolean },
+): { odometer: string; rest: string } {
+  const value = normalizeSpace(fragment);
+  const pair = value.match(/^([\d.,]+)\s*mi\s*\/\s*([\d.,]+)\s*km/i);
+  if (pair) {
+    return { odometer: digitsOnly(pair[2] ?? ""), rest: normalizeSpace(value.slice(pair[0].length)) };
+  }
+  const km = value.match(/^([\d.,]+)\s*km/i);
+  if (km) {
+    return { odometer: digitsOnly(km[1] ?? ""), rest: normalizeSpace(value.slice(km[0].length)) };
+  }
+  if (opts?.allowMilesOnly) {
+    const mi = value.match(/^([\d.,]+)\s*mi/i);
+    if (mi) {
+      return { odometer: milesToKm(mi[1] ?? ""), rest: normalizeSpace(value.slice(mi[0].length)) };
+    }
+  }
+  return { odometer: "", rest: value };
 }
 
 function parseVehicleInfo(lines: string[]): Partial<OutvinVehicleInfo> {
@@ -210,11 +236,22 @@ export function bmwComponentLabelLv(raw: string): string {
 }
 
 const KEY_READ_HEAD_RE = /^(\d{2}\/\d{2}\/\d{4})\s*(.*)$/;
+/** Termiņa datums atsevišķā rindā („01/06/2024-” / „01/06/2024-11185 mi”) — tas nav jauns nolasījums. */
+const KEY_READ_DUE_ONLY_RE = /^\d{2}\/\d{2}\/\d{4}\s*-?\s*(?:[\d.,]+\s*(?:mi|km)\s*)?$/i;
 const KEY_READ_COMPONENT_RE = /^(.+?)(Not due|Due soon|Overdue|-)?\s*(\d{2}\/\d{2}\/\d{4})?\s*-?\s*$/;
 /** Aiz katra nolasījuma seko tabulas galva — pēc tās atpazīstam arī izdrukas, kur ir tikai jūdzes. */
 const COMPONENT_TABLE_HEAD_RE = /^Icon\s*Component/i;
 /** „…01/05/2025-11185 mi” → nogriež atlikuma kolonnu, lai paliek tikai termiņa datums. */
 const REMAINING_DISTANCE_TAIL_RE = /\s*-?[\d.,]+\s*(?:mi|km)\s*$/i;
+
+function dealerFromKeyReadRest(rest: string): string {
+  const stripped = normalizeSpace(rest)
+    .replace(/^[-–—]\s*/, "")
+    .replace(/\bDealer\s*ID:.*$/i, "")
+    .replace(/\bOrder:.*$/i, "")
+    .trim();
+  return looksLikeDealerName(stripped) ? stripped.slice(0, 200) : "";
+}
 
 function parseKeyReadHistory(lines: string[]): BmwDealerKeyRead[] {
   const start = lines.findIndex((l) => /^Key\s+Read\s+History$/i.test(normalizeSpace(l)));
@@ -231,11 +268,18 @@ function parseKeyReadHistory(lines: string[]): BmwDealerKeyRead[] {
 
     const head = line.match(KEY_READ_HEAD_RE);
     if (head) {
-      const odometer = bmwOdometerReadingKm(head[2] ?? "", {
+      // Termiņa datums nākamajā rindā pēc komponentes — nav jauns Key Read.
+      if (KEY_READ_DUE_ONLY_RE.test(line)) continue;
+      const parsed = keyReadOdometerAndRest(head[2] ?? "", {
         allowMilesOnly: COMPONENT_TABLE_HEAD_RE.test(normalizeSpace(lines[i + 1] ?? "")),
       });
-      if (odometer) {
-        current = { date: normalizeSlashDate(head[1] ?? ""), odometer, dueDates: [] };
+      if (parsed.odometer) {
+        current = {
+          date: normalizeSlashDate(head[1] ?? ""),
+          odometer: parsed.odometer,
+          dealer: dealerFromKeyReadRest(parsed.rest),
+          dueDates: [],
+        };
         out.push(current);
         continue;
       }

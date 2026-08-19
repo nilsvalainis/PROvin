@@ -140,6 +140,16 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bautomobīļa\b/g, "automašīnas"],
     [/\bAutomobīlis\b/g, "Automašīna"],
     [/\bautomobīlis\b/g, "automašīna"],
+    [/\bAutomobiļiem\b/g, "Automašīnām"],
+    [/\bautomobiļiem\b/g, "automašīnām"],
+    [/\bAutomobiļu\b/g, "Automašīnu"],
+    [/\bautomobiļu\b/g, "automašīnu"],
+    [/\bAutomobilim\b/g, "Automašīnai"],
+    [/\bautomobilim\b/g, "automašīnai"],
+    [/\bAutomobiļa\b/g, "Automašīnas"],
+    [/\bautomobiļa\b/g, "automašīnas"],
+    [/\bAutomobilis\b/g, "Automašīna"],
+    [/\bautomobilis\b/g, "automašīna"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
   return out;
