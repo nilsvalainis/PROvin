@@ -16,6 +16,7 @@ import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-ve
 import {
   looksLikeBmwDealerReport,
   parseBmwDealerReport,
+  type BmwDealerKeyRead,
   type BmwDealerReportParse,
   type BmwDealerVisit,
 } from "@/lib/bmw-dealer-report-parse";
@@ -80,6 +81,29 @@ function visitToServiceEntry(visit: BmwDealerVisit): VendorServiceEntry {
     location: visit.dealer,
     works: works.length > 0 ? works : ["detalizēts darbu saraksts atskaitē nav pieejams"],
   };
+}
+
+/**
+ * Key Read History nav remonts — tas ir CBS nolasījums (datums, km, termiņi).
+ * Tabulā tas paliek kā atsevišķa rinda, lai i4 tipa atskaites (3 apmeklējumi, 10 nolasījumi)
+ * nezaudētu visus nolasījumus ārpus kopsavilkuma teksta.
+ */
+function keyReadToServiceEntry(read: BmwDealerKeyRead): VendorServiceEntry {
+  const dues = read.dueDates
+    .map(({ component, dueDate }) => `${component} — ${dueDate}`)
+    .filter(Boolean);
+  return {
+    date: read.date,
+    odometer: read.odometer,
+    country: "",
+    category: "",
+    location: "",
+    works: dues.length > 0 ? [`Atslēgas nolasījums (CBS): ${dues.join("; ")}`] : ["Atslēgas nolasījums (CBS)"],
+  };
+}
+
+function visitIdentityKey(date: string, odometer: string): string {
+  return `${date.trim()}|${odometer.replace(/\D/g, "")}`;
 }
 
 function dateSortKey(date: string): number {
@@ -193,10 +217,14 @@ function extractBmw(text: string): VendorReportExtract {
   out.equipment = parse.equipment;
   out.mileage = mileageFromBmw(parse);
   out.countryTimeline = timelineFromBmw(parse);
-  out.serviceHistory = parse.visits
-    .filter((v) => v.date)
-    .map(visitToServiceEntry)
-    .sort((a, b) => dateSortKey(b.date) - dateSortKey(a.date));
+  const visitEntries = parse.visits.filter((v) => v.date).map(visitToServiceEntry);
+  const visitKeys = new Set(visitEntries.map((e) => visitIdentityKey(e.date, e.odometer)));
+  const keyReadEntries = parse.keyReads
+    .filter((r) => r.date && !visitKeys.has(visitIdentityKey(r.date, r.odometer)))
+    .map(keyReadToServiceEntry);
+  out.serviceHistory = [...visitEntries, ...keyReadEntries].sort(
+    (a, b) => dateSortKey(b.date) - dateSortKey(a.date),
+  );
   out.serviceHistoryNotes = buildBmwDealerServiceFacts(parse);
   return out;
 }

@@ -291,6 +291,18 @@ describe("BMW dealer PDF", () => {
     expect(notes).toContain("Termiņi (27.10.2024 · 448 142 km): Bremžu šķidrums — 15.11.2024");
   });
 
+  it("Key Read nolasījumus, kas nav tas pats apmeklējums, liek servisa tabulā", () => {
+    // BMW i4: Repair History tukšs, Service History 3 apmeklējumi, Key Read History 10 —
+    // iepriekš tabulā palika tikai 3 rindas. Nolasījums ar citu km paliek atsevišķa rinda.
+    const history = extractDealerReport(BMW_TEXT).serviceHistory;
+    const keyRow = history.find((e) => e.date === "27.10.2024" && e.odometer === "448142");
+    expect(keyRow?.location).toBe("");
+    expect(keyRow?.works[0]).toMatch(/^Atslēgas nolasījums \(CBS\):/);
+    expect(keyRow?.works[0]).toContain("Bremžu šķidrums — 15.11.2024");
+    const visitSameDay = history.find((e) => e.date === "12.05.2026" && e.odometer === "303616");
+    expect(visitSameDay?.works.join(" ")).not.toMatch(/Atslēgas nolasījums/);
+  });
+
   it("overwrites AutoDNA / CarVertical dealer fields and fills the service table", () => {
     const blocks = createDefaultSourceBlocks();
     const before = emptyOutvinDealerReport();
