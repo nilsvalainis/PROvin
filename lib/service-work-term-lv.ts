@@ -422,6 +422,7 @@ export function looksLikeUntranslatedServiceWork(raw: string): boolean {
   const name = serviceWorkTermLv(raw);
   if (!name) return false;
   if (/detalizēts darbu saraksts/i.test(name)) return false;
+  if (/^key\s*read(\s*history)?$/i.test(name)) return false;
   if (looksLikeBrandOrSpec(name) && !FOREIGN_LEFTOVER_RE.test(name.replace(KEEP_PROPER_RE, " "))) {
     return false;
   }

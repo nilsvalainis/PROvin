@@ -4,6 +4,7 @@ import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { extractDealerReport, looksLikeDealerReport } from "@/lib/dealer-report-extract";
 import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 import { buildVendorCopilotActions } from "@/lib/vendor-pdf-agent-merge";
+import { KEY_READ_HISTORY_LABEL } from "@/lib/vendor-service-history";
 
 /** BMW dīlera portāla izdrukas teksts — kolonnas un rindas salīp tāpat kā īstajā PDF. */
 const BMW_TEXT = `BMW E61
@@ -291,16 +292,14 @@ describe("BMW dealer PDF", () => {
     expect(notes).toContain("Termiņi (27.10.2024 · 448 142 km): Bremžu šķidrums - 15.11.2024");
   });
 
-  it("Key Read nolasījumus, kas nav tas pats apmeklējums, liek servisa tabulā kā čipus", () => {
+  it("Key Read nolasījumus bez remonta tabulā marķē kā Key Read History", () => {
     // BMW i4: Repair History tukšs, Service History 3 apmeklējumi, Key Read History 10 —
     // iepriekš tabulā palika tikai 3 rindas. Nolasījums ar citu km paliek atsevišķa rinda.
     const history = extractDealerReport(BMW_TEXT).serviceHistory;
     const keyRow = history.find((e) => e.date === "27.10.2024" && e.odometer === "448142");
-    expect(keyRow?.category).toBe("CBS nolasījums");
-    expect(keyRow?.works).toEqual(["Bremžu šķidrums (līdz 15.11.2024)"]);
-    expect(keyRow?.works.join(" ")).not.toMatch(/Atslēgas nolasījums/);
+    expect(keyRow?.works).toEqual([KEY_READ_HISTORY_LABEL]);
     const visitSameDay = history.find((e) => e.date === "12.05.2026" && e.odometer === "303616");
-    expect(visitSameDay?.works.join(" ")).not.toMatch(/Atslēgas nolasījums|CBS nolasījums/);
+    expect(visitSameDay?.works.join(" ")).not.toMatch(/Atslēgas nolasījums|Key Read History/);
   });
 
   it("salipušu dīlera nosaukumu Key Read galvenē nolasa; visus nolasījumus atstāj tabulā", () => {
@@ -343,17 +342,11 @@ Brake FluidFT1
         expect.objectContaining({ date: "01.04.2025", odometer: "109110" }),
       ]),
     );
-    const cbsRows = extract.serviceHistory.filter((e) => e.category === "CBS nolasījums");
+    const cbsRows = extract.serviceHistory.filter((e) => e.works.includes(KEY_READ_HISTORY_LABEL));
     expect(cbsRows.map((e) => e.date).sort()).toEqual(["01.04.2025", "27.05.2024", "27.09.2023"]);
     const plateau = cbsRows.find((e) => e.date === "27.05.2024");
     expect(plateau?.location).toBe("Niederlassung Bonn BMW AG, Bonn");
-    expect(plateau?.works).toEqual([
-      "Tehniskā pārbaude servisā (līdz 01.06.2024)",
-      "Bremžu šķidrums (līdz 01.06.2024)",
-      "Motora pārsega gāzes atsperu pārbaude (līdz 01.06.2024)",
-    ]);
-    const later = cbsRows.find((e) => e.date === "01.04.2025");
-    expect(later?.works).toContain("Bremžu šķidrums (līdz 01.06.2026)");
+    expect(plateau?.works).toEqual([KEY_READ_HISTORY_LABEL]);
     expect(extract.serviceHistory.some((e) => e.date === "01.06.2024")).toBe(false);
   });
 
@@ -410,20 +403,15 @@ Repair History
 No repair history found.
 `;
     const history = extractDealerReport(text).serviceHistory;
-    const cbs = history.filter((e) => e.category === "CBS nolasījums");
+    const cbs = history.filter((e) => e.works.includes(KEY_READ_HISTORY_LABEL));
     expect(history.some((e) => e.date === "10.04.2026" && e.location.includes("Bilia"))).toBe(true);
-    expect(history.some((e) => e.date === "10.04.2026" && e.category === "CBS nolasījums")).toBe(false);
+    expect(history.some((e) => e.date === "10.04.2026" && e.works.includes(KEY_READ_HISTORY_LABEL))).toBe(false);
     expect(cbs.some((e) => e.date === "01.04.2025" && e.odometer === "109110")).toBe(true);
     expect(history.some((e) => e.date === "24.06.2024" && e.location.includes("Autowåx"))).toBe(true);
-    expect(history.some((e) => e.date === "24.06.2024" && e.category === "CBS nolasījums")).toBe(false);
+    expect(history.some((e) => e.date === "24.06.2024" && e.works.includes(KEY_READ_HISTORY_LABEL))).toBe(false);
     expect(cbs.some((e) => e.date === "27.05.2024" && e.odometer === "80021")).toBe(true);
     expect(cbs.some((e) => e.date === "18.06.2022" && e.odometer === "6")).toBe(true);
-    expect(cbs.find((e) => e.date === "01.04.2025")?.works).toEqual(
-      expect.arrayContaining([
-        "Tehniskā pārbaude servisā (līdz 01.06.2026)",
-        "Bremžu šķidrums (līdz 01.06.2026)",
-      ]),
-    );
+    expect(cbs.find((e) => e.date === "01.04.2025")?.works).toEqual([KEY_READ_HISTORY_LABEL]);
   });
 
   it("overwrites AutoDNA / CarVertical dealer fields and fills the service table", () => {

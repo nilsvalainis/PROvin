@@ -26,7 +26,10 @@ import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import { serviceWorkTermLv, serviceWorkTermsLv } from "@/lib/service-work-term-lv";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
 import { emptyVendorReportExtract, type VendorReportExtract } from "@/lib/vendor-report-extract";
-import type { VendorServiceEntry } from "@/lib/vendor-service-history";
+import {
+  KEY_READ_HISTORY_LABEL,
+  type VendorServiceEntry,
+} from "@/lib/vendor-service-history";
 
 /** Vai teksts ir oficiālā dīlera / rūpnīcas izdruka (nevis vēstures portāla atskaite). */
 export function looksLikeDealerReport(text: string): boolean {
@@ -84,27 +87,18 @@ function visitToServiceEntry(visit: BmwDealerVisit): VendorServiceEntry {
 }
 
 /**
- * Key Read History nav remonts — tas ir CBS nolasījums (datums, km, termiņi).
- * Tabulā paliek nolasījumi, kas nav tas pats datums+km kā servisa apmeklējums
- * (apmeklējuma rinda jau rāda veiktos darbus). Identiski termiņi starp nolasījumiem
- * ir īsti CBS dati — tos neizmetam, citādi pēdējais plato nolasījums pazūd, kad
- * tas sakrīt ar apkopes vizīti.
+ * Key Read History nav remonts — tas ir CBS nolasījums (datums, km).
+ * Tabulā paliek nolasījumi, kas nav tas pats datums+km kā servisa apmeklējums.
+ * Veiktie darbi: tikai „Key Read History”, ne CBS termiņi kā fiktīva apkope.
  */
 function keyReadToServiceEntry(read: BmwDealerKeyRead): VendorServiceEntry {
-  const works = read.dueDates
-    .map(({ component, dueDate }) => {
-      const name = dealerPartNameLv(component);
-      if (!name) return "";
-      return dueDate ? `${name} (līdz ${dueDate})` : name;
-    })
-    .filter(Boolean);
   return {
     date: read.date,
     odometer: read.odometer,
     country: countryFromDealerName(read.dealer),
-    category: "CBS nolasījums",
+    category: "",
     location: read.dealer.trim(),
-    works,
+    works: [KEY_READ_HISTORY_LABEL],
   };
 }
 
@@ -226,9 +220,8 @@ function extractBmw(text: string): VendorReportExtract {
   const visitEntries = parse.visits.filter((v) => v.date).map(visitToServiceEntry);
   const visitKeys = new Set(visitEntries.map((e) => visitIdentityKey(e.date, e.odometer)));
   const keyReadEntries = parse.keyReads
-    .filter((r) => r.date && r.dueDates.length > 0 && !visitKeys.has(visitIdentityKey(r.date, r.odometer)))
-    .map(keyReadToServiceEntry)
-    .filter((e) => e.works.length > 0);
+    .filter((r) => r.date && !visitKeys.has(visitIdentityKey(r.date, r.odometer)))
+    .map(keyReadToServiceEntry);
   out.serviceHistory = [...visitEntries, ...keyReadEntries].sort(
     (a, b) => dateSortKey(b.date) - dateSortKey(a.date),
   );

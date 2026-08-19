@@ -49,18 +49,22 @@ export function isVendorServiceEventTitle(title: string): boolean {
 const CATEGORY_RE =
   /^(regul[āa]r[āa]\s+apkope|neregul[āa]r[āa]\s+apkope|papildu\s+apkope|apkope|remonts|garantijas\s+remonts|remontdarbi|servisa\s+darbi)$/i;
 
+/** BMW Key Read History rinda, kur nav veikti remonti — tikai nolasījums. */
+export const KEY_READ_HISTORY_LABEL = "Key Read History";
+
 const CBS_CATEGORY_RE = /^(cbs\s*nolasījums|atslēgas nolasījums(\s*\(cbs\))?|key\s*read(\s*history)?)$/i;
 const CBS_DUE_ITEM_RE =
   /^.+\s*(\([Ll]īdz\s+\d{1,2}\.\d{1,2}\.\d{4}\)|[—–-]\s*\d{1,2}\.\d{1,2}\.\d{4})\s*$/;
 const CBS_DUMP_RE = /atslēgas nolasījums\s*\(?cbs\)?/i;
+const KEY_READ_LABEL_RE = /^key\s*read(\s*history)?$/i;
 
 /** CBS atslēgas nolasījums (termiņu saraksts), nevis veikts servisa apmeklējums. */
 export function looksLikeCbsKeyReadServiceEntry(entry: VendorServiceEntry): boolean {
   if (CBS_CATEGORY_RE.test(entry.category.trim())) return true;
   const works = entry.works.map((w) => w.trim()).filter(Boolean);
   if (works.length === 0) return false;
-  if (works.some((w) => CBS_DUMP_RE.test(w))) return true;
-  return works.every((w) => CBS_DUE_ITEM_RE.test(w) || CBS_DUMP_RE.test(w));
+  if (works.some((w) => CBS_DUMP_RE.test(w) || KEY_READ_LABEL_RE.test(w))) return true;
+  return works.every((w) => CBS_DUE_ITEM_RE.test(w) || CBS_DUMP_RE.test(w) || KEY_READ_LABEL_RE.test(w));
 }
 
 function looksLikeCbsDumpWorks(works: string[]): boolean {
