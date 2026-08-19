@@ -74,15 +74,15 @@ describe("kopsavilkuma kartītes", () => {
           kind: "lv_registration_tenure",
           text: "Saskaņā ar mūsu rīcībā esošajiem datiem…",
           label: "Reģistrācija Latvijā",
-          value: "Kopš 14.07.2026",
-          note: "30 dienas",
+          value: "30 dienas",
+          note: "Kopš 14.07.2026",
         },
       ],
     });
-    expect(tiles[0]).toMatchObject({ label: "Reģistrācija Latvijā", value: "Kopš 14.07.2026", tone: "neutral" });
+    expect(tiles[0]).toMatchObject({ label: "Reģistrācija Latvijā", value: "30 dienas", tone: "neutral" });
   });
 
-  it("Reģistrācija Latvijā rāda Kopš datumu, ne dienu skaitu", () => {
+  it("Reģistrācija Latvijā rāda dienu skaitu, tad Kopš datumu", () => {
     const csdd = emptyCsddFields();
     csdd.mileageHistory = [{ date: "01.10.2023", odometer: "100000", country: "Latvija" }];
     const [banner] = computeProvinInfoBannersFromPayloadSlice(
@@ -92,8 +92,8 @@ describe("kopsavilkuma kartītes", () => {
     expect(banner).toMatchObject({
       kind: "lv_registration_tenure",
       label: "Reģistrācija Latvijā",
-      value: "Kopš 01.10.2023",
-      note: "30 dienas",
+      value: "30 dienas",
+      note: "Kopš 01.10.2023",
     });
   });
 
