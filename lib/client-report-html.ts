@@ -2046,7 +2046,7 @@ function clientReportPrintCss(): string {
       .pdf-sec-ico-wrap .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-ltab-izzi{
-        margin:0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-line);
+        margin:0;padding:16px 14px 14px;border:1px solid var(--pdf-line);
         border-radius:var(--pdf-radius-inner);background:#FCFDFF;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2059,7 +2059,7 @@ function clientReportPrintCss(): string {
         font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
         letter-spacing:0.07em;text-transform:uppercase;line-height:1.3;
       }
-      .pdf-subhead:first-child{margin-top:0;}
+      .pdf-subhead:first-child:not(.pdf-subhead--boxed){margin-top:0;}
       .pdf-subhead--flush{margin-top:0;}
       .pdf-subhead__ico{flex-shrink:0;line-height:0;color:#94a3b8;}
       .pdf-subhead__ico .pdf-ico{width:13px;height:13px;}
@@ -2450,7 +2450,8 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-ltab-loss-history .pdf-subhead--boxed{color:#B91C1C;}
-      .pdf-subhead--boxed{margin:10px 12px 2px;}
+      /* Specifiskāks par .pdf-subhead:first-child — citādi virsraksts pielīp pie kartītes malas. */
+      .pdf-subhead.pdf-subhead--boxed{margin:14px 12px 6px;}
       .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);font-weight:600;color:#0f172a;}
       .pdf-listing-price-history-table td{padding:7px 12px;border-bottom:1px solid var(--pdf-line-soft);width:33.33%;font-variant-numeric:tabular-nums;}
       .pdf-listing-price-history-table tr:last-child td{border-bottom:none;}
