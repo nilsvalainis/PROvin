@@ -14,6 +14,7 @@ import {
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_NO_ESTIMATED_REPAIR_EUR_RULES,
+  AI_REGIONAL_CORROSION_INSPECTION_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
@@ -125,6 +126,7 @@ REGIONAL MARKET & TECHNICAL CONTEXT (apply from origin/country/market signals in
 - LATVIA / LITHUANIA / ESTONIA: winter salt rust/corrosion, suspension wear from poor roads; fleet/company ownership — VAT fraud checks, weak maintenance records.
 - SOUTHERN EUROPE (IT/ES/FR): low rust, healthier suspension; sun-faded paint/seals/dashboard, parking dents; service history often sparse — warn the buyer.
 - USA / CANADA IMPORTS: require original salvage photos (Copart/IAAI) when applicable; conversion risks (signals, fog lights, radio/nav); structural repair quality.
+${AI_REGIONAL_CORROSION_INSPECTION_RULES}
 
 LEGAL & ADMINISTRATIVE (Latvian buyer framework — when import/registration data present):
 - Note CSDD import/registration implications when relevant.
@@ -338,7 +340,9 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - Ja auto ir elektrisks vai plug-in — obligāti akumulatora/uzlādes pārbaudes.
 - Neizdomā specifisku defektu bez pamata datos vai tipiskajā agregāta zināšanā.
 - ANTI-REPETITION: ja kontekstā jau ir 1./3. sadaļa vai avotu komentāri — neraksti to pašu stāstu; tikai pārbaudes soļi.
-- Pārbaudes jābūt **tiktāl detalizētām**, lai pircējs zina, ko redzēt/dzirdēt/vaicāt (piem. eļļa uz filtra korpusa, aizmugures sēdēšana pēc 10 min, ELV neatļauj startu, 6HP rāviens 1–2) — ne „jāpārbauda auto”.`,
+- Pārbaudes jābūt **tiktāl detalizētām**, lai pircējs zina, ko redzēt/dzirdēt/vaicāt (piem. eļļa uz filtra korpusa, aizmugures sēdēšana pēc 10 min, ELV neatļauj startu, 6HP rāviens 1–2) — ne „jāpārbauda auto”.
+${AI_REGIONAL_CORROSION_INSPECTION_RULES}
+- Ja REGIONAL CORROSION INSPECTION trigeris sakrīt — atsevišķa sadaļa ar visām obligātajām zonām (grīda, sliekšņu gali, durvju apakša, zem rokturiem, bagāžnieka vāks, aizmugurējā spārna/durvju atvēruma iekšējais stūris pie sliekšņa). Neizlaist nevienu.`,
 );
 
 export const AI_SELLER_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
@@ -440,6 +444,7 @@ FORMĀTS (obligāti):
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
 - Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).
+- Ja auto atbilst reģionālajam korozijas trigerim (SUV/Crossover/SAV vai VW grupa/Volvo >10 gadi + ilgstoša LV/LT/EE, Skandināvija, Austrija vai Polija) — viens teikums, ka klātienē jāveic virsbūves un apakšas korozijas pārbaude. Zonu sarakstu atstāj 2. sadaļai. Nosauc valsti; nekad reģiona saišķa etiķeti.
 - Beigās — skaidra, kalibrēta rekomendācija; **nekad** „garantēti drošs bez apskates”.
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS
 

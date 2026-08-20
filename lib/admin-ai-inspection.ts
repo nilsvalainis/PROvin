@@ -59,6 +59,7 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 - vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
 
 Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: **6–9 rindkopas** (noklusējuma 350–800 NEATTIECAS); pa vienai katram tehnisko risku sistēmas blokam. Pircējam jāsaprot, ko redzēt, dzirdēt un vaicāt pārdevējam.
+Ja auto ir SUV/Crossover/SAV VAI VW grupa/Volvo vecāks par 10 gadiem, UN ilgstoši reģistrēts/ekspluatēts Latvijā, Lietuvā, Igaunijā, Skandināvijā, Austrijā vai Polijā — OBLIGĀTI atsevišķa korozijas sadaļa ar visām zonām (grīda, sliekšņu gali, durvju apakša, zem rokturiem, bagāžnieka vāks, aizmugurējā spārna un durvju atvēruma iekšējais stūris pie sliekšņa). Nosauc valsti no datiem; nekad reģiona saišķa etiķeti.
 ${!techPlain ? "Tehnisko risku sadaļas vēl nav — vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls” un bez izsaukuma zīmēm.
 NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu — tikai pārvērt signālus par klātienes soļiem.`,
