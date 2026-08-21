@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { adminActionPillBase } from "@/components/admin/adminActionPill";
 import { adminCompactCopyBtnClass } from "@/components/admin/AdminClipboardButton";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 
@@ -16,15 +17,44 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 const whatsappBtnClass = `${adminCompactCopyBtnClass} border-emerald-200/90 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100/80 hover:text-emerald-800`;
+const whatsappPillClass = `${adminActionPillBase} bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-600`;
+const whatsappPillDisabledClass = `${adminActionPillBase} cursor-not-allowed bg-emerald-800/35 text-white/80`;
 
 /** Blakus klienta tālrunim — atver WhatsApp sarunu (desktop app, tad wa.me). */
-export function AdminWhatsAppOpenButton({ phone }: { phone: string }) {
+export function AdminWhatsAppOpenButton({
+  phone,
+  variant = "icon",
+}: {
+  phone: string;
+  variant?: "icon" | "pill";
+}) {
   const digits = useMemo(() => normalizeWhatsAppPhoneDigits(phone), [phone]);
 
   const onClick = useCallback(() => {
     if (!digits) return;
     openWhatsAppChat(digits);
   }, [digits]);
+
+  if (variant === "pill") {
+    if (!digits) {
+      return (
+        <span className={whatsappPillDisabledClass} title="Nav derīga tālruņa numura WhatsApp atvēršanai">
+          WA
+        </span>
+      );
+    }
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={whatsappPillClass}
+        title={`Atvērt WhatsApp: ${phone.trim()}`}
+        aria-label="Atvērt WhatsApp sarunu ar klientu"
+      >
+        WA
+      </button>
+    );
+  }
 
   if (!digits) {
     return (

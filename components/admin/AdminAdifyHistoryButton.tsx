@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
+import { adminActionPillBase } from "@/components/admin/adminActionPill";
 import {
   ADIFY_HISTORY_PAGE_URL,
   adifyChronologicalPriceRows,
@@ -12,8 +13,7 @@ import {
   type AdifyListingHistorySnapshot,
 } from "@/lib/adify-listing-history";
 
-const adifyPillClass =
-  "inline-flex h-[28px] shrink-0 items-center justify-center rounded-md bg-teal-800 px-2 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-teal-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40";
+const adifyPillClass = `${adminActionPillBase} bg-teal-800 hover:bg-teal-900 focus-visible:ring-teal-700`;
 
 type Props = {
   listingUrl: string;

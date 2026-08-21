@@ -1,10 +1,14 @@
 /**
- * adify.lv/history — publiskā sludinājuma cenu vēsture (bez pārlūka).
- * API: GET https://api.adify.lv/api/v1/history/{source}/{type}/{id}
+ * adify.lv/history — publiskā sludinājuma cenu vēsture.
+ * Kopš 2026. gada API `api.adify.lv/api/v1/history/...` atgriež HTTP 403.
+ * Vēsture tiek lasīta no Next.js SSR lapas `/history?url=` (`__NEXT_DATA__`).
  */
 
 export const ADIFY_HISTORY_PAGE_URL = "https://adify.lv/history";
 export const ADIFY_HISTORY_API_BASE = "https://api.adify.lv/api/v1";
+
+const ADIFY_HISTORY_PAGE_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 
 const ADIFY_SOURCE = {
   ss: 0,
@@ -173,6 +177,34 @@ export function adifyHistoryApiUrl(ref: AdifyHistoryUrlRef): string {
   return `${ADIFY_HISTORY_API_BASE}/history/${ref.source}/${ref.kind}/${encodeURIComponent(ref.id)}`;
 }
 
+export function adifyHistoryPageLookupUrl(listingUrl: string): string {
+  return `${ADIFY_HISTORY_PAGE_URL}?url=${encodeURIComponent(listingUrl.trim())}`;
+}
+
+type AdifySsrPageProps = {
+  items?: unknown;
+  retryAfter?: unknown;
+};
+
+/** Next.js `__NEXT_DATA__` no adify.lv/history?url= — tīra funkcija testiem. */
+export function extractAdifyHistorySsrPayload(html: string): {
+  items: unknown;
+  retryAfter: number | null;
+} {
+  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+  if (!m?.[1]) return { items: null, retryAfter: null };
+  try {
+    const data = JSON.parse(m[1]) as { props?: { pageProps?: AdifySsrPageProps } };
+    const page = data.props?.pageProps ?? {};
+    const retryRaw = page.retryAfter;
+    const retryAfter =
+      typeof retryRaw === "number" && Number.isFinite(retryRaw) && retryRaw > 0 ? Math.ceil(retryRaw) : null;
+    return { items: page.items ?? null, retryAfter };
+  } catch {
+    return { items: null, retryAfter: null };
+  }
+}
+
 function numOrNull(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string" && v.trim()) {
@@ -311,15 +343,15 @@ export async function fetchAdifyListingHistory(
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 18_000);
   try {
-    const res = await fetch(adifyHistoryApiUrl(ref), {
+    const res = await fetch(adifyHistoryPageLookupUrl(listingUrl), {
       method: "GET",
       signal: ctrl.signal,
       headers: {
-        Accept: "application/json",
-        Origin: "https://adify.lv",
-        Referer: "https://adify.lv/history",
-        "User-Agent": "PROVIN.LV admin listing-history",
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "lv-LV,lv;q=0.9,en;q=0.8",
+        "User-Agent": ADIFY_HISTORY_PAGE_UA,
       },
+      redirect: "follow",
     });
     if (!res.ok) {
       return {
@@ -327,8 +359,21 @@ export async function fetchAdifyListingHistory(
         message: `Adify neatbildēja (HTTP ${res.status})`,
       };
     }
-    const json: unknown = await res.json();
-    return normalizeAdifyHistoryItems(json, now);
+    const html = await res.text();
+    const { items, retryAfter } = extractAdifyHistorySsrPayload(html);
+    if (retryAfter != null) {
+      return {
+        ...normalizeAdifyHistoryItems([], now),
+        message: `Adify ierobežo pieprasījumus (mēģini pēc ${retryAfter} s)`,
+      };
+    }
+    if (items == null) {
+      return {
+        ...normalizeAdifyHistoryItems([], now),
+        message: "Adify lapas formāts mainījies",
+      };
+    }
+    return normalizeAdifyHistoryItems(items, now);
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
     return {

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   adifyChronologicalPriceRows,
   adifyDurationDays,
+  adifyHistoryPageLookupUrl,
   applyAdifyHistoryToTirgus,
+  extractAdifyHistorySsrPayload,
   formatAdifyDurationLabel,
   formatAdifySignedEur,
   normalizeAdifyHistoryItems,
@@ -96,6 +98,48 @@ describe("formatAdifyDurationLabel", () => {
     expect(formatAdifyDurationLabel(11)).toBe("11 dienas");
     expect(formatAdifyDurationLabel(21)).toBe("21 diena");
     expect(formatAdifyDurationLabel(85)).toBe("85 dienas");
+  });
+});
+
+describe("adifyHistoryPageLookupUrl", () => {
+  it("encodes the listing URL as the history page query", () => {
+    expect(adifyHistoryPageLookupUrl(Q7_URL)).toBe(
+      "https://adify.lv/history?url=https%3A%2F%2Fwww.ss.lv%2Fmsg%2Flv%2Ftransport%2Fcars%2Faudi%2Fq7%2Fbcdpnx.html",
+    );
+  });
+});
+
+describe("extractAdifyHistorySsrPayload", () => {
+  const series = [
+    { price: 23950, mileage: 233000, year: 2015, created: "2026-08-13T15:33:01" },
+    { price: 24500, mileage: 233000, year: 2015, created: "2026-07-30T14:57:02" },
+  ];
+
+  it("reads items from Next.js __NEXT_DATA__", () => {
+    const html = `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: { pageProps: { items: series, retryAfter: null, url: Q7_URL } },
+    })}</script></html>`;
+    const payload = extractAdifyHistorySsrPayload(html);
+    expect(payload.retryAfter).toBeNull();
+    expect(payload.items).toEqual(series);
+    const snap = normalizeAdifyHistoryItems(payload.items, new Date(2026, 7, 13));
+    expect(snap.found).toBe(true);
+    expect(snap.rows).toHaveLength(2);
+    expect(snap.priceChangeEur).toBe(-550);
+  });
+
+  it("surfaces Adify retryAfter", () => {
+    const html = `<html><script id="__NEXT_DATA__">${JSON.stringify({
+      props: { pageProps: { items: null, retryAfter: 12.2 } },
+    })}</script></html>`;
+    expect(extractAdifyHistorySsrPayload(html)).toEqual({ items: null, retryAfter: 13 });
+  });
+
+  it("returns empty payload when the script is missing", () => {
+    expect(extractAdifyHistorySsrPayload("<html><body>nav datu</body></html>")).toEqual({
+      items: null,
+      retryAfter: null,
+    });
   });
 });
 

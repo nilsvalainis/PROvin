@@ -45,14 +45,39 @@ export function isValidHttpUrl(s: string): boolean {
 }
 
 /**
+ * Mobilā ss.lv (`m.ss.lv`) → desktop `ss.lv`. Pārējās saites nemaina.
+ */
+export function canonicalizeListingUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return t;
+  const withProto = /^[a-z][a-z0-9+.-]*:/i.test(t) ? t : `https://${t}`;
+  try {
+    const u = new URL(withProto);
+    const host = u.hostname.toLowerCase();
+    if (host === "m.ss.lv") {
+      u.hostname = "ss.lv";
+      return u.toString();
+    }
+    if (host.endsWith(".m.ss.lv")) {
+      u.hostname = `${host.slice(0, -".m.ss.lv".length)}.ss.lv`;
+      return u.toString();
+    }
+    return /^[a-z][a-z0-9+.-]*:/i.test(t) ? t : u.toString();
+  } catch {
+    return t.replace(/(^https?:\/\/)m\.ss\.lv\b/i, "$1ss.lv").replace(/^m\.ss\.lv\b/i, "ss.lv");
+  }
+}
+
+/**
  * Saite uz konkrētu sludinājumu: ne tikai saknes lapa (pathname nav tikai "/"),
  * vai ir vaicājuma parametri (piem. ?id=).
  */
 export function isPlausibleListingUrl(s: string): boolean {
-  if (!isValidHttpUrl(s)) return false;
+  const canonical = canonicalizeListingUrl(s);
+  if (!isValidHttpUrl(canonical)) return false;
   let u: URL;
   try {
-    u = new URL(s.trim());
+    u = new URL(canonical);
   } catch {
     return false;
   }

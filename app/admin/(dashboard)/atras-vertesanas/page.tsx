@@ -1,16 +1,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AdminAdifyHistoryButton } from "@/components/admin/AdminAdifyHistoryButton";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminListingPeekActionRow } from "@/components/admin/AdminListingPeekActionRow";
 import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
 import {
   AdminListingPeekCardShell,
   AdminListingPeekSla,
 } from "@/components/admin/AdminListingPeekSla";
-import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
-import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
 import {
   getListingPeekById,
   listListingPeeks,
@@ -40,14 +39,18 @@ async function setStatus(formData: FormData) {
   revalidatePath("/admin/atras-vertesanas");
 }
 
-async function saveEmail(formData: FormData) {
+async function saveContact(formData: FormData) {
   "use server";
   const id = String(formData.get("id") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
   if (!id || !isValidOrderEmail(email)) {
     redirect("/admin/atras-vertesanas?contact=invalid");
   }
-  const updated = await updateListingPeekContact(id, { email });
+  if (phone && !isValidOrderPhone(phone)) {
+    redirect("/admin/atras-vertesanas?contact=invalid");
+  }
+  const updated = await updateListingPeekContact(id, { email, phone });
   if (!updated) {
     redirect("/admin/atras-vertesanas?contact=missing");
   }
@@ -126,7 +129,7 @@ export default async function AdminListingPeeksPage({
 
       {contact === "saved" ? (
         <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          E-pasts saglabāts.
+          E-pasts un tālrunis saglabāti.
         </p>
       ) : null}
       {contact === "invalid" || contact === "missing" ? (
@@ -173,7 +176,7 @@ export default async function AdminListingPeeksPage({
                     entry={e}
                     smtpOk={smtpOk}
                     setStatus={setStatus}
-                    saveEmail={saveEmail}
+                    saveContact={saveContact}
                     sendComment={sendComment}
                     showSend
                   />
@@ -194,7 +197,7 @@ export default async function AdminListingPeeksPage({
                     entry={e}
                     smtpOk={smtpOk}
                     setStatus={setStatus}
-                    saveEmail={saveEmail}
+                    saveContact={saveContact}
                     sendComment={sendComment}
                     showSend={false}
                     compact
@@ -213,7 +216,7 @@ function PeekCard({
   entry: e,
   smtpOk,
   setStatus,
-  saveEmail,
+  saveContact,
   sendComment,
   showSend,
   compact = false,
@@ -221,13 +224,14 @@ function PeekCard({
   entry: Awaited<ReturnType<typeof listListingPeeks>>[number];
   smtpOk: boolean;
   setStatus: (formData: FormData) => Promise<void>;
-  saveEmail: (formData: FormData) => Promise<void>;
+  saveContact: (formData: FormData) => Promise<void>;
   sendComment: (formData: FormData) => Promise<void>;
   showSend: boolean;
   compact?: boolean;
 }) {
   const isDone = e.status === "completed";
   const isRejected = e.status === "rejected";
+  const listingUrl = canonicalizeListingUrl(e.listingUrl);
 
   return (
     <AdminListingPeekCardShell createdAt={e.createdAt} complete={isDone} rejected={isRejected}>
@@ -235,48 +239,56 @@ function PeekCard({
         <div className="min-w-0 flex-1">
           <AdminListingPeekSla createdAt={e.createdAt} complete={isDone} rejected={isRejected} />
 
-          <form action={saveEmail} className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <form action={saveContact} className="mt-2 grid gap-1.5 sm:grid-cols-2">
             <input type="hidden" name="id" value={e.id} />
-            <input
-              type="email"
-              name="email"
-              required
-              defaultValue={e.email}
-              aria-label="E-pasts"
-              autoComplete="off"
-              className="min-w-[14rem] flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
-            />
+            <label className="min-w-0">
+              <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                E-pasts
+              </span>
+              <input
+                type="email"
+                name="email"
+                required
+                defaultValue={e.email}
+                aria-label="E-pasts"
+                autoComplete="off"
+                className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
+              />
+            </label>
+            <label className="min-w-0">
+              <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
+                Tālrunis
+              </span>
+              <input
+                type="tel"
+                name="phone"
+                defaultValue={e.phone}
+                aria-label="Tālrunis"
+                autoComplete="off"
+                placeholder="Nav tālruņa"
+                className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
+              />
+            </label>
             <button
               type="submit"
-              className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50 sm:col-span-2 sm:w-fit"
             >
               Labot
             </button>
           </form>
 
-          {e.phone ? (
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <a
-                href={`tel:${e.phone.replace(/\s/g, "")}`}
-                className="text-[13px] text-[var(--color-provin-muted)] hover:underline"
-              >
-                {e.phone}
-              </a>
-              <AdminWhatsAppOpenButton phone={e.phone} />
-            </div>
-          ) : null}
-          <div className="mt-1.5 flex items-start gap-1.5">
+          <div className="mt-2 space-y-1.5">
             <a
-              href={e.listingUrl}
+              href={listingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className={`min-w-0 flex-1 break-all text-[var(--color-provin-accent)] hover:underline ${
+              className={`block min-w-0 break-all text-[var(--color-provin-accent)] hover:underline ${
                 compact ? "text-[12px] line-clamp-1" : "text-[13px]"
               }`}
             >
-              {e.listingUrl}
+              {listingUrl}
             </a>
-            <AdminAdifyHistoryButton listingUrl={e.listingUrl} />
+            <AdminListingPeekActionRow listingUrl={listingUrl} phone={e.phone} />
           </div>
         </div>
 
@@ -307,7 +319,7 @@ function PeekCard({
           <input type="hidden" name="id" value={e.id} />
           <AdminListingPeekCommentComposer
             fieldId={`peek-${e.id}`}
-            listingUrl={e.listingUrl}
+            listingUrl={listingUrl}
             smtpOk={smtpOk}
           />
         </form>
@@ -351,7 +363,7 @@ function PeekSentFollowUp({
         <input type="hidden" name="id" value={e.id} />
         <AdminListingPeekCommentComposer
           fieldId={`peek-${e.id}-followup`}
-          listingUrl={e.listingUrl}
+          listingUrl={canonicalizeListingUrl(e.listingUrl)}
           smtpOk={smtpOk}
           initialLines={parsed?.lines}
           initialCloser={parsed?.closer}

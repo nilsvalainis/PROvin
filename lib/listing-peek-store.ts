@@ -8,6 +8,7 @@ import {
   normalizeCustomerEmail as normalizePeekEmail,
   normalizeCustomerPhoneKey as normalizePeekPhoneKey,
 } from "@/lib/admin-customer-identity";
+import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 
 export { normalizePeekEmail, normalizePeekPhoneKey };
 
@@ -76,7 +77,7 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
   const id = typeof o.id === "string" && o.id.trim() ? o.id.trim() : null;
   const email = typeof o.email === "string" ? normalizePeekEmail(o.email) : "";
   const phone = typeof o.phone === "string" ? o.phone.trim() : "";
-  const listingUrl = typeof o.listingUrl === "string" ? o.listingUrl.trim() : "";
+  const listingUrl = typeof o.listingUrl === "string" ? canonicalizeListingUrl(o.listingUrl) : "";
   const createdAt =
     typeof o.createdAt === "string" && o.createdAt.trim() ? o.createdAt.trim() : null;
   if (!id || !email || !listingUrl || !createdAt || !isStatus(o.status)) {
@@ -217,7 +218,7 @@ export async function createListingPeek(input: {
   const email = normalizePeekEmail(input.email);
   const phone = input.phone.trim();
   const phoneKey = normalizePeekPhoneKey(phone);
-  const listingUrl = input.listingUrl.trim();
+  const listingUrl = canonicalizeListingUrl(input.listingUrl);
   const now = Date.now();
   const doc = await readDoc();
   const exempt = isListingPeekRateLimitExempt(email, phone);

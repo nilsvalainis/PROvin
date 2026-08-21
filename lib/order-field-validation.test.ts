@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canonicalizeListingUrl,
   isValidPlateNumber,
   isValidVin,
   isValidVinOrPlate,
@@ -53,5 +54,23 @@ describe("order field validation — VIN vai numurzīme", () => {
         phone: "+371 21234567",
       }),
     ).toBe("listing");
+  });
+});
+
+describe("canonicalizeListingUrl", () => {
+  it("rewrites m.ss.lv to ss.lv and keeps the path", () => {
+    expect(canonicalizeListingUrl("https://m.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html")).toBe(
+      "https://ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html",
+    );
+    expect(canonicalizeListingUrl("http://m.ss.lv/msg/lv/transport/cars/bmw/x.html")).toBe(
+      "http://ss.lv/msg/lv/transport/cars/bmw/x.html",
+    );
+  });
+
+  it("leaves desktop ss.lv and other hosts unchanged", () => {
+    const desktop = "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html";
+    expect(canonicalizeListingUrl(desktop)).toBe(desktop);
+    const auto24 = "https://www.auto24.ee/used/123";
+    expect(canonicalizeListingUrl(auto24)).toBe(auto24);
   });
 });

@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isSmtpConfigured, sendListingPeekLeadEmail } from "@/lib/email/send-transactional";
-import {
-  isPlausibleListingUrl,
-  isValidOrderEmail,
-  isValidOrderPhone,
-} from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { createListingPeek, isListingPeekRateLimitExempt } from "@/lib/listing-peek-store";
@@ -45,7 +41,8 @@ export async function POST(req: Request) {
   const o = body as Record<string, unknown>;
   const email = typeof o.email === "string" ? clip(o.email, 200) : "";
   const phone = typeof o.phone === "string" ? clip(o.phone, 40) : "";
-  const listingUrl = typeof o.listingUrl === "string" ? clip(o.listingUrl, 2000) : "";
+  const listingUrl =
+    typeof o.listingUrl === "string" ? canonicalizeListingUrl(clip(o.listingUrl, 2000)) : "";
 
   if (!email || !isValidOrderEmail(email)) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });
