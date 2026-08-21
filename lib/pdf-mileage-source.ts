@@ -15,6 +15,7 @@ export type MileagePdfSourceKey =
   | "carinfo"
   | "ltab"
   | "intl"
+  | "sslv"
   | "cits";
 
 function normLabel(raw: string): string {
@@ -112,6 +113,17 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     return "cits";
   }
 
+  if (
+    sq === "sslv" ||
+    sq === "ss.com" ||
+    sq.includes("ss.lv") ||
+    t === "sludinājums" ||
+    t === normLabel(SOURCE_BLOCK_LABELS.listing_analysis) ||
+    t === "tirgus dati"
+  ) {
+    return "sslv";
+  }
+
   // Neatpazīts nosaukums (pielāgots „Citi avoti” label, brīvs teksts u.c.) → CITS.
   return "cits";
 }
@@ -127,6 +139,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "SE" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
   intl: { full: CC_VIN_PDF_SOURCE_LABEL, abbrev: "INTL" },
+  sslv: { full: "ss.lv", abbrev: "SS.LV" },
   cits: { full: "Citi avoti", abbrev: "CITS" },
 };
 
@@ -144,6 +157,7 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   carinfo: "#0F766E",
   ltab: "#DC2626",
   intl: "#7C3AED",
+  sslv: "#059669",
   cits: "#94A3B8",
 };
 
@@ -158,6 +172,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "carinfo",
   "ltab",
   "intl",
+  "sslv",
   "cits",
 ];
 

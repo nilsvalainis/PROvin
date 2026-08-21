@@ -87,6 +87,7 @@ export type LifecycleInput = {
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
   tirgusForm?: TirgusFormFields | null;
+  listingUrl?: string | null;
 };
 
 function displayDate(raw: string, ms: number): string {
@@ -265,6 +266,8 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
       ccVinBlock: input.ccVinBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,
+      tirgusForm: input.tirgusForm ?? null,
+      listingUrl: input.listingUrl ?? null,
     }),
   );
   if (rows.length === 0) return [];

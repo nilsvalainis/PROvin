@@ -23,6 +23,7 @@ import {
   sourcePdfChecklistHasAny,
   TIRGUS_LABEL_CREATED,
   TIRGUS_LABEL_LISTED,
+  TIRGUS_LABEL_LISTING_ODOMETER,
   TIRGUS_LABEL_PRICE_DROP,
   tirgusFormHasContent,
   tirgusPriceHistoryHasRows,
@@ -205,12 +206,15 @@ function collectPdfMileageSparkContext(
       ccVinBlock: p.ccVinBlock ?? null,
       manualVendorBlocks: p.manualVendorBlocks,
       citiAvotiBlock: p.citiAvoti ?? null,
+      tirgusForm: p.tirgusForm ?? null,
+      listingUrl: p.listingUrl ?? null,
     },
     {
       omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
       omitAutoRecords: !vis.auto_records,
       omitCcVin: !vis.cc_vin,
       omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
+      omitListingMileage: !vis.sludinajums,
     },
   );
   const rows = prepareUnifiedMileageDisplayRows(collected);
@@ -490,6 +494,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
     manualLtabBlock: p.manualLtabBlock ?? null,
     citiAvoti: p.citiAvoti ?? null,
     tirgusForm: p.tirgusForm ?? null,
+    listingUrl: p.listingUrl ?? null,
   });
   if (events.length === 0) return "";
 
@@ -556,6 +561,8 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
       manualVendorBlocks: p.manualVendorBlocks ?? null,
       manualLtabBlock: p.manualLtabBlock ?? null,
       citiAvoti: p.citiAvoti ?? null,
+      tirgusForm: p.tirgusForm ?? null,
+      listingUrl: p.listingUrl ?? null,
     }),
     ...extraTiles,
   ];
@@ -845,7 +852,7 @@ function buildPdfMileageSourceLegendHtml(mileageRows: UnifiedMileageDisplayRow[]
 
 /** Skaidrojums zem tabulas, ja kāds rādījums nāk no vēlāk datēta dokumenta. */
 const PDF_MILEAGE_STALE_DOCUMENT_NOTE =
-  "Dokumenta datums ≠ nolasījuma datums: dīlera remonta vai apkopes pasūtījumā odometrs saglabāts no pasūtījuma atvēršanas brīža, tāpēc tas ir zemāks par tuvākajiem faktiskajiem nolasījumiem. Šāds ieraksts nav odometra pretruna un netiek iekļauts grafikā.";
+  "Ieraksts atspoguļo dokumenta grāmatošanas brīdi vai cilvēka kļūdu datu ievadē, radot mākslīgu nobraukuma kritumu. Tas nav nobraukuma viltojums, tāpēc grafikā netiek attēlots.";
 
 function buildUnifiedMileageTableRowHtml(
   r: UnifiedMileageDisplayRow,
@@ -897,6 +904,8 @@ export function buildUnifiedMileageTableHtml(
       ccVinBlock: p.ccVinBlock ?? null,
       manualVendorBlocks: p.manualVendorBlocks,
       citiAvotiBlock: "citiAvoti" in p ? (p as ClientReportPayload).citiAvoti ?? null : p.citiAvotiBlock ?? null,
+      tirgusForm: p.tirgusForm ?? ("tirgusForm" in p ? (p as ClientReportPayload).tirgusForm ?? null : null),
+      listingUrl: "listingUrl" in p ? (p as ClientReportPayload).listingUrl ?? null : p.listingUrl ?? null,
     },
     mileageOpts,
   );
@@ -1227,6 +1236,14 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
     if (f.listingCreated.trim()) {
       rows.push(
         `<tr><td>${escapeHtml(TIRGUS_LABEL_CREATED)}</td><td>${escapeHtml(f.listingCreated.trim())}</td></tr>`,
+      );
+    }
+    if (f.listingMileageOdometer.trim()) {
+      const odoBits = [f.listingMileageOdometer.trim(), f.listingMileageCountry.trim() || (f.listingCreated.trim() ? "Latvija" : "")]
+        .filter(Boolean)
+        .join(" · ");
+      rows.push(
+        `<tr><td>${escapeHtml(TIRGUS_LABEL_LISTING_ODOMETER)}</td><td>${escapeHtml(odoBits)}</td></tr>`,
       );
     }
     // „Cenas izmaiņa” jau parādās vēstures kartītes apakšā, aprēķināta no tām pašām rindām.
@@ -2790,6 +2807,7 @@ export function buildClientReportDocumentHtml(args: {
             citiAvotiBlock: p.citiAvoti ?? null,
             manualLtabBlock: p.manualLtabBlock ?? null,
             tirgusForm: p.tirgusForm ?? null,
+            listingUrl: p.listingUrl ?? null,
           }),
           p.pdfBannerInclude,
         ),
@@ -2833,6 +2851,7 @@ export function buildClientReportDocumentHtml(args: {
         omitAutoRecords: !vis.auto_records,
         omitCcVin: !vis.cc_vin,
         omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
+        omitListingMileage: !vis.sludinajums,
       }
     : undefined;
   const unifiedMileageHtml = vis.unifiedMileage ? buildUnifiedMileageTableHtml(p, mileageOpts) : "";

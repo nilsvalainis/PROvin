@@ -122,14 +122,26 @@ function listingOptionsFromMap(opts: Map<string, string>): { label: string; valu
   return [...opts.entries()].map(([label, value]) => ({ label, value }));
 }
 
+function groupKm(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
 function resolveListingKm(opts: Map<string, string>): string | null {
-  const kmRaw =
-    opts.get("Nobraukums, km") ??
-    opts.get("Nobraukums") ??
-    opts.get("Nobraukums, tūkst. km") ??
-    opts.get("Odometrs") ??
-    null;
+  const thousandsRaw = opts.get("Nobraukums, tūkst. km");
+  if (thousandsRaw) {
+    const n = Number.parseFloat(thousandsRaw.replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(n) && n > 0) {
+      const km = n < 10_000 ? Math.round(n * 1000) : Math.round(n);
+      return `${groupKm(km)} km`;
+    }
+  }
+  const kmRaw = opts.get("Nobraukums, km") ?? opts.get("Nobraukums") ?? opts.get("Odometrs") ?? null;
   if (!kmRaw) return null;
+  const digits = kmRaw.replace(/\D/g, "");
+  if (digits.length >= 3) {
+    const n = Number.parseInt(digits, 10);
+    if (Number.isFinite(n) && n >= 100) return `${groupKm(n)} km`;
+  }
   return kmRaw
     .replace(/\s+/g, " ")
     .replace(/,\s*km$/i, " km")

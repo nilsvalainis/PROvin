@@ -81,6 +81,7 @@ export function orderHasMileageDataForAi(sourceBlocks: WorkspaceSourceBlocks): b
       ccVinBlock: blocks.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,
+      tirgusForm: blocks.tirgus,
     }).length > 0
   );
 }

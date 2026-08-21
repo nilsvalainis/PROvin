@@ -37,6 +37,7 @@ function latestOdometerReading(blocks: WorkspaceSourceBlocks): LatestOdometer {
     ccVinBlock: blocks.cc_vin,
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     citiAvotiBlock: blocks.citi_avoti,
+    tirgusForm: blocks.tirgus,
   });
   let best: LatestOdometer = null;
   let bestTime = Number.NEGATIVE_INFINITY;

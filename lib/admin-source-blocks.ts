@@ -392,11 +392,20 @@ export type TirgusFormFields = {
   aiContextRaw: string;
   /** Adify / sludinājuma cenu vēsture (jaunākais augšā). */
   priceHistory: TirgusPriceHistoryRow[];
+  /** Sludinājumā norādītais odometrs (kopējam nobraukuma grafikam). */
+  listingMileageOdometer: string;
+  /** Odometra datums — SS.LV vienmēr pirmā publicēšana (`listingCreated`). */
+  listingMileageDate: string;
+  /** Odometra valsts — SS.LV vienmēr Latvija. */
+  listingMileageCountry: string;
 };
 
 export const TIRGUS_LABEL_LISTED = "Auto pārdošanā (dienas):";
 export const TIRGUS_LABEL_CREATED = "Izveidots:";
 export const TIRGUS_LABEL_PRICE_DROP = "Cenas izmaiņas (eiro):";
+export const TIRGUS_LABEL_LISTING_ODOMETER = "Odometrs, km:";
+export const TIRGUS_LABEL_LISTING_ODO_DATE = "Datums";
+export const TIRGUS_LABEL_LISTING_ODO_COUNTRY = "Valsts";
 /** Senā atsauce; jaunajā UI izmanto LISTING_ANALYSIS_COMMENT_LABEL. */
 export const TIRGUS_LABEL_COMMENTS = "Komentāri:";
 
@@ -408,6 +417,9 @@ export function emptyTirgusFields(): TirgusFormFields {
     comments: "",
     aiContextRaw: "",
     priceHistory: [],
+    listingMileageOdometer: "",
+    listingMileageDate: "",
+    listingMileageCountry: "",
   };
 }
 
@@ -448,6 +460,9 @@ export function tirgusFormHasContent(f: TirgusFormFields | null | undefined): bo
     wsStr(f.listingCreated).trim().length > 0 ||
     wsStr(f.priceDrop).trim().length > 0 ||
     wsStr(f.comments).trim().length > 0 ||
+    wsStr(f.listingMileageOdometer).trim().length > 0 ||
+    wsStr(f.listingMileageDate).trim().length > 0 ||
+    wsStr(f.listingMileageCountry).trim().length > 0 ||
     tirgusPriceHistoryHasRows(f.priceHistory)
   );
 }
@@ -457,6 +472,18 @@ export function tirgusFormToPlainText(f: TirgusFormFields): string {
   if (f.listedForSale.trim()) lines.push(`${TIRGUS_LABEL_LISTED} ${f.listedForSale.trim()}`);
   if (f.listingCreated.trim()) lines.push(`${TIRGUS_LABEL_CREATED} ${f.listingCreated.trim()}`);
   if (f.priceDrop.trim()) lines.push(`${TIRGUS_LABEL_PRICE_DROP} ${f.priceDrop.trim()}`);
+  if (f.listingMileageOdometer.trim()) {
+    lines.push(
+      [
+        TIRGUS_LABEL_LISTING_ODOMETER,
+        f.listingMileageOdometer.trim(),
+        f.listingMileageDate.trim(),
+        f.listingMileageCountry.trim(),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
+  }
   if (tirgusPriceHistoryHasRows(f.priceHistory)) {
     lines.push("Cenas izmaiņas šajā sludinājumā:");
     for (const row of f.priceHistory) {
@@ -1989,7 +2016,13 @@ function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {
 
 function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
   const clip = (v: unknown) => String(v ?? "").slice(0, 4000);
-  if ("listedForSale" in raw || "listingCreated" in raw || "priceDrop" in raw || "priceHistory" in raw) {
+  if (
+    "listedForSale" in raw ||
+    "listingCreated" in raw ||
+    "priceDrop" in raw ||
+    "priceHistory" in raw ||
+    "listingMileageOdometer" in raw
+  ) {
     return {
       listedForSale: clip(raw.listedForSale),
       listingCreated: clip(raw.listingCreated),
@@ -1997,6 +2030,9 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
       comments: typeof raw.comments === "string" ? raw.comments : "",
       aiContextRaw: clip(raw.aiContextRaw),
       priceHistory: parseTirgusPriceHistoryRaw(raw.priceHistory),
+      listingMileageOdometer: clip(raw.listingMileageOdometer).slice(0, 40),
+      listingMileageDate: clip(raw.listingMileageDate).slice(0, 40),
+      listingMileageCountry: clip(raw.listingMileageCountry).slice(0, 120),
     };
   }
   if ("rows" in raw || "comments" in raw) {
@@ -2129,6 +2165,9 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       comments: wsStr(blocks.tirgus?.comments),
       aiContextRaw: wsStr(blocks.tirgus?.aiContextRaw),
       priceHistory: parseTirgusPriceHistoryRaw(blocks.tirgus?.priceHistory),
+      listingMileageOdometer: wsStr(blocks.tirgus?.listingMileageOdometer).slice(0, 40),
+      listingMileageDate: wsStr(blocks.tirgus?.listingMileageDate).slice(0, 40),
+      listingMileageCountry: wsStr(blocks.tirgus?.listingMileageCountry).slice(0, 120),
     },
     citi_avoti: {
       sections: (blocks.citi_avoti?.sections ?? d.citi_avoti.sections).map(repairCitiSection),

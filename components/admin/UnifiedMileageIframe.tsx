@@ -12,6 +12,7 @@ export function UnifiedMileageIframe({ blocks }: { blocks: WorkspaceSourceBlocks
       ccVinBlock: blocks.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,
+      tirgusForm: blocks.tirgus,
     });
     if (!html) return "";
     return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/><style>${getClientReportPrintCss()}</style></head><body class="provin-report-doc">${html}</body></html>`;

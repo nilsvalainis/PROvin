@@ -233,3 +233,40 @@ describe("collectUnifiedMileageRows — dokumenta rādījumi", () => {
     expect(byOdometer.get("33472")?.documentValue).toBe(true);
   });
 });
+
+describe("collectUnifiedMileageRows — sludinājuma odometrs", () => {
+  it("adds SS.LV listing km on first publication date with Latvia", () => {
+    const collected = collectUnifiedMileageRows({
+      listingUrl: "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html",
+      tirgusForm: {
+        ...createDefaultSourceBlocks().tirgus,
+        listingCreated: "16.07.2026",
+        listingMileageDate: "01.08.2026",
+        listingMileageOdometer: "233 000",
+        listingMileageCountry: "Vācija",
+      },
+    });
+    expect(collected).toHaveLength(1);
+    expect(collected[0]).toMatchObject({
+      date: "16.07.2026",
+      odometer: "233 000",
+      country: "Latvija",
+      sourceLabel: "ss.lv",
+    });
+  });
+
+  it("omits listing mileage when asked", () => {
+    const collected = collectUnifiedMileageRows(
+      {
+        listingUrl: "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html",
+        tirgusForm: {
+          ...createDefaultSourceBlocks().tirgus,
+          listingCreated: "16.07.2026",
+          listingMileageOdometer: "233000",
+        },
+      },
+      { omitListingMileage: true },
+    );
+    expect(collected).toHaveLength(0);
+  });
+});

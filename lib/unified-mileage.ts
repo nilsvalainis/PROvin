@@ -5,12 +5,13 @@
 import {
   CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   csddMileageRowHasData,
+  citiAvotiSectionHasContent,
+  citiAvotiSectionLabel,
   type AutoRecordsBlockState,
   type CitiAvotiBlockState,
-  citiAvotiSectionLabel,
-  citiAvotiSectionHasContent,
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
+  type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
@@ -19,6 +20,7 @@ import {
   normalizeAutoRecordsOdometer,
 } from "@/lib/auto-records-paste-parse";
 import { CC_VIN_PDF_SOURCE_LABEL, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { resolveListingMileageChartRow } from "@/lib/listing-odometer";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export type UnifiedMileageRow = {
@@ -49,6 +51,8 @@ export type UnifiedMileageSourcePayload = {
   ccVinBlock?: CcVinBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   citiAvotiBlock?: CitiAvotiBlockState | null;
+  tirgusForm?: TirgusFormFields | null;
+  listingUrl?: string | null;
 };
 
 export function parseMileageDateForSort(raw: string): number {
@@ -367,6 +371,8 @@ export type CollectUnifiedMileageOptions = {
   omitCcVin?: boolean;
   /** Neiekļaut konkrētus trešās puses avotus pēc nosaukuma (`SOURCE_BLOCK_LABELS`). */
   omitVendorBlockTitles?: Set<string>;
+  /** Neiekļaut sludinājuma odometra rindu. */
+  omitListingMileage?: boolean;
 };
 
 function dealerDocumentKey(dateRaw: string, odometerRaw: string): string {
@@ -404,7 +410,7 @@ export function collectUnifiedMileageRows(
     const date = dateRaw.trim();
     const odometer = odometerRaw.trim();
     if (!date || !odometer) return;
-    const countryNorm = normalizeCountryNameLv(countryRaw);
+    const countryNorm = normalizeCountryNameLv(countryRaw ?? "");
     rows.push({
       date,
       odometer,
@@ -474,6 +480,13 @@ export function collectUnifiedMileageRows(
           pushRow(dateOut, odoOut, r.country, sourceLabel);
         }
       }
+    }
+  }
+
+  if (!options?.omitListingMileage) {
+    const listing = resolveListingMileageChartRow(p.tirgusForm, p.listingUrl);
+    if (listing) {
+      pushRow(listing.date, listing.odometer, listing.country, listing.sourceLabel);
     }
   }
 

@@ -79,6 +79,7 @@ function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
     ccVinBlock: blocks.cc_vin,
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     citiAvotiBlock: blocks.citi_avoti,
+    tirgusForm: blocks.tirgus,
   });
   if (rows.length === 0) return "";
   const lines = rows.map((r) => [r.date, r.odometer, r.country, r.sourceLabel].join("\t"));

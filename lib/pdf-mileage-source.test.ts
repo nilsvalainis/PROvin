@@ -23,6 +23,9 @@ describe("mileageSourceLabelToPdfKey", () => {
     expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.lkf_ee)).toBe("ee");
     expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.carinfo)).toBe("carinfo");
     expect(mileageSourceLabelToPdfKey("CITI AVOTI")).toBe("cits");
+    expect(mileageSourceLabelToPdfKey("ss.lv")).toBe("sslv");
+    expect(mileageSourceLabelToPdfKey("Sludinājums")).toBe("sslv");
+    expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.listing_analysis)).toBe("sslv");
   });
 
   it("maps unrecognized and empty labels to cits (never ?)", () => {

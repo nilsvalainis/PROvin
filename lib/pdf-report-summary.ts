@@ -12,6 +12,7 @@ import type {
   ClientManualLtabBlockPdf,
   ClientManualVendorBlockPdf,
   CsddFormFields,
+  TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import type {
@@ -64,6 +65,8 @@ export type PdfSummaryInput = {
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
+  tirgusForm?: TirgusFormFields | null;
+  listingUrl?: string | null;
 };
 
 export const PDF_REPORT_SUMMARY_TITLE = "ATSKAITES KOPSAVILKUMS";
@@ -115,6 +118,8 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
       ccVinBlock: input.ccVinBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,
+      tirgusForm: input.tirgusForm ?? null,
+      listingUrl: input.listingUrl ?? null,
     }),
   );
   if (rows.length === 0) {

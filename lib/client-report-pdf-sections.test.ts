@@ -4,6 +4,7 @@ import {
   emptyAutoRecordsBlock,
   emptyCsddFields,
   emptyCitiAvotiSection,
+  emptyTirgusFields,
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import { buildVehicleLifecycleEvents, PDF_LIFECYCLE_TITLE } from "@/lib/vehicle-lifecycle-timeline";
@@ -714,6 +715,24 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-src-dots");
     expect(html).toContain("pdf-src-dot--csdd");
     expect(html).toContain("pdf-src-dot--autodna");
+  });
+
+  it("plots ss.lv listing odometer on first publication date in the unified chart", () => {
+    const html = buildUnifiedMileageTableHtml({
+      listingUrl: "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html",
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "16.07.2026",
+        listingMileageDate: "01.08.2026",
+        listingMileageOdometer: "233 000",
+        listingMileageCountry: "Vācija",
+      },
+    });
+    expect(html).toContain("16.07.2026");
+    expect(html).toContain("233");
+    expect(html).toContain("ss.lv");
+    expect(html).toContain("pdf-src-dot--sslv");
+    expect(html).not.toContain("01.08.2026");
   });
 
   it("incidents zone is one card: table, source count, kopsavilkums", () => {
