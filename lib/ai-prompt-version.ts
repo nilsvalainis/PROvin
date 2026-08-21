@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-21.1 — Ja aprīkojumā/sludinājumā ir lūka vai panorāmas lūka,
+ *   „2. Ieteikumi klātienes apskatei” obligāti min grīdas paklājus, mitrumu
+ *   un aizsērējušas drenāžas; VW grupā, īpaši Volkswagen, tā ir tipiska problēma.
  * - 2026-08-19.2 — Klienta komentāros nav * / **. Virsraksts savā rindā,
  *   tad rindkopa. Nenoslēgtus Gemini „** ” prefiksus noņem pēcapstrāde.
  * - 2026-08-19.1 — Tehnisko risku analīze: pirmā rindkopa ir riska fakts,
@@ -22,4 +25,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-19.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-21.1";

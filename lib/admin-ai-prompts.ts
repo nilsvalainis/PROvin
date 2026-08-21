@@ -15,6 +15,7 @@ import {
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_NO_ESTIMATED_REPAIR_EUR_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
+  AI_SUNROOF_DRAINAGE_INSPECTION_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -315,6 +316,8 @@ export const AI_INSPECTION_RECOMMENDATIONS_SYSTEM = provinFieldAgentPrompt(
   "VEHICLE INSPECTION & TEST DRIVE (2. Ieteikumi klātienes apskatei)",
   `${AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
+${AI_SUNROOF_DRAINAGE_INSPECTION_RULES}
+
 Uzdevums: sagatavot ieteikumus klātienes apskatei konkrētam auto — tāds pats vizuālais formāts kā avotu komentāros.
 
 Ievadā saņemsi **pilnu** pasūtījuma kontekstu: VISUS avotu blokus (CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, tirgus, sludinājums u.c.), tabulas, esošos komentārus, eksperta sadaļas, **vēsturiskos līdzīgo auto auditus** un **agregātu zināšanas/mācījumus**.
@@ -336,6 +339,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
 - Ja auto ir elektrisks vai plug-in — obligāti akumulatora/uzlādes pārbaudes.
+- Ja aprīkojumā, sludinājumā vai identifikācijas datos ir **lūka vai panorāmas lūka** — OBLIGĀTI atsevišķa rindkopa: grīdas paklāji (paceļot), mitrums, aizsērējušas jumta lūkas drenāžas. VW grupā, īpaši Volkswagen, tā ir izteikti tipiska problēma. Skat. SUNROOF / PANORAMIC ROOF DRAINAGE. Ja lūkas datos nav — šo rindkopu NERAKSTI.
 - Neizdomā specifisku defektu bez pamata datos vai tipiskajā agregāta zināšanā.
 - ANTI-REPETITION: ja kontekstā jau ir 1./3. sadaļa vai avotu komentāri — neraksti to pašu stāstu; tikai pārbaudes soļi.
 - Pārbaudes jābūt **tiktāl detalizētām**, lai pircējs zina, ko redzēt/dzirdēt/vaicāt (piem. eļļa uz filtra korpusa, aizmugures sēdēšana pēc 10 min, ELV neatļauj startu, 6HP rāviens 1–2) — ne „jāpārbauda auto”.`,
