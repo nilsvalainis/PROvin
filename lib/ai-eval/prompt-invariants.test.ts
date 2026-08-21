@@ -12,6 +12,7 @@ import {
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
+  AI_SUNROOF_DRAINAGE_INSPECTION_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -210,8 +211,21 @@ describe("PROVIN AI prompt invariants", () => {
     );
     expect(block).toMatch(/6–9 rindkopas/);
     expect(block).toMatch(/350–800 šim laukam NEATTIECAS/);
+    expect(block).toMatch(/AI_SUNROOF_DRAINAGE_INSPECTION_RULES/);
+    expect(block).toMatch(/lūka vai panorāmas lūka/);
     const insp = readRepo("lib/admin-ai-inspection.ts");
     expect(insp).toMatch(/6–9 rindkopas/);
+    expect(insp).toMatch(/grīdas paklājiem/);
+  });
+
+  it("sunroof drainage is mandatory in inspection when equipment lists a roof", () => {
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/SUNROOF \/ PANORAMIC ROOF DRAINAGE/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/grīdas paklāji/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/drenāžas/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/Volkswagen/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/Do NOT invent a sunroof/);
+    const ident = readRepo("lib/admin-ai-aggregate-identification.ts");
+    expect(ident).toMatch(/sunroofInspectionFlagLine/);
   });
 
   it("operator notes are prepended with highest priority", () => {
@@ -382,6 +396,7 @@ describe("PROVIN AI prompt invariants", () => {
       "lib/admin-ai-aggregate-identification.ts",
       "lib/admin-ai-aggregate-knowledge.ts",
       "lib/provin-aggregate-case-rules.ts",
+      "lib/sunroof-equipment.ts",
     ];
     for (const file of filesToScan) {
       const src = readRepo(file);

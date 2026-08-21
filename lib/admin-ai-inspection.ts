@@ -59,6 +59,7 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 - vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
 
 Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: **6–9 rindkopas** (noklusējuma 350–800 NEATTIECAS); pa vienai katram tehnisko risku sistēmas blokam. Pircējam jāsaprot, ko redzēt, dzirdēt un vaicāt pārdevējam.
+Ja aprīkojumā / sludinājumā / identifikācijas datos ir lūka vai panorāmas lūka — OBLIGĀTI atsevišķa rindkopa par grīdas paklājiem, mitrumu un iespējami cietām jumta lūkas drenāžām (VW grupā, īpaši Volkswagen, tas ir tipiski). Ja lūkas datos nav — šo tēmu neizdomā.
 ${!techPlain ? "Tehnisko risku sadaļas vēl nav — vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls” un bez izsaukuma zīmēm.
 NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu — tikai pārvērt signālus par klātienes soļiem.`,

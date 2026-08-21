@@ -33,6 +33,7 @@ describe("buildAggregateIdentificationBrief", () => {
     expect(brief).toMatch(/~24 500 km\/gadā/);
     expect(brief).toMatch(/1–2 kandidātus/);
     expect(brief).toMatch(/Aprīkojuma SA saraksts: nav/);
+    expect(brief).not.toMatch(/LŪKA \/ PANORĀMAS LŪKA/);
   });
 
   it("lists dealer equipment and flags expensive age options when present", () => {
@@ -83,6 +84,47 @@ describe("buildAggregateIdentificationBrief", () => {
     expect(brief).toMatch(/Virsbūve \(dīleris\): TOU/);
     expect(brief).toMatch(/0217 — Active steering/);
     expect(brief).toMatch(/Dārgas vecuma pozīcijas sarakstā: Active steering/);
+    expect(brief).toMatch(/LŪKA \/ PANORĀMAS LŪKA datos: Glass roof/);
+    expect(brief).toMatch(/grīdas paklāji/);
+    expect(brief).not.toMatch(/īpaši Volkswagen/);
+  });
+
+  it("flags a VW panoramic roof as a typical clogged-drain inspection item", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "VW Tiguan" },
+      auto_records: {
+        outvinReport: {
+          vehicleInfo: { model: "Tiguan" },
+          accidentCheck: "",
+          stolenCheck: "",
+          equipment: [{ code: "4F2", description: "Panoramadach" }],
+        },
+      },
+    });
+    const brief = buildAggregateIdentificationBrief({ sourceBlocks: blocks, nowYear: 2026 });
+    expect(brief).toMatch(/LŪKA \/ PANORĀMAS LŪKA datos: Panoramadach/);
+    expect(brief).toMatch(/īpaši Volkswagen/);
+    expect(brief).toMatch(/drenāžas/);
+  });
+
+  it("flags a sunroof mentioned only in the listing paste", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "VW Golf" },
+      listing_analysis: {
+        listingPasteRaw: "Pilna aprīkojuma Golf ar panorāmas lūku, ACC un LED.",
+      },
+    });
+    const brief = buildAggregateIdentificationBrief({ sourceBlocks: blocks, nowYear: 2026 });
+    expect(brief).toMatch(/LŪKA \/ PANORĀMAS LŪKA datos: sludinājuma apraksts/);
+  });
+
+  it("does not flag roof rails as a sunroof", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "VW Passat" },
+      listing_analysis: { listingPasteRaw: "Jumta relingi, saulessargi, panorāmas kamera." },
+    });
+    const brief = buildAggregateIdentificationBrief({ sourceBlocks: blocks, nowYear: 2026 });
+    expect(brief).not.toMatch(/LŪKA \/ PANORĀMAS LŪKA/);
   });
 
   it("returns empty text when no vehicle parameters are known", () => {

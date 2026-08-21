@@ -73,6 +73,7 @@ Whenever prompts generate **2. Kopsavilkums** or **Ieteikumi klātienes apskatei
   - **medium maintenance risk**
   - **inspection control point only**
 - Tie every important aggregate risk to a **specific verification action** in the inspection field: cold-start noise, shift quality, vibration, leak traces, thermal behavior, fault scan, boost pull, HV diagnostics, DC charging test, underbody inspection, etc.
+- **Sunroof / panoramic roof (equipment-triggered):** if dealer/listing data shows lūka, panorāmas lūka, Schiebedach, Panoramadach, glass roof, or sunroof, **Ieteikumi klātienes apskatei** MUST include a dedicated check: lift floor carpets, moisture/smell in footwells, clogged sunroof drains. VW group (especially Volkswagen) — typical problem. Skip entirely when no sunroof is in the data. Deployed: `AI_SUNROOF_DRAINAGE_INSPECTION_RULES` + `lib/sunroof-equipment.ts`.
 - In summary, name which aggregate is most likely to generate the biggest near-term cost and whether that changes the buy / inspect / avoid recommendation — **without EUR figures**. Listing/market/repair prices stay in the price field and technical-risks section.
 
 ## 1c. AGGREGATE IDENTIFICATION & MILEAGE-BAND CALIBRATION (mandatory)

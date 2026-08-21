@@ -15,6 +15,10 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import {
+  sunroofInspectionFlagLine,
+  textIndicatesSunroof,
+} from "@/lib/sunroof-equipment";
+import {
   collectUnifiedMileageRows,
   parseMileageDateForSort,
   parseOdometerKm,
@@ -92,6 +96,30 @@ function formatDriveHint(raw: string): string {
   return t;
 }
 
+function collectSunroofEvidence(
+  blocks: WorkspaceSourceBlocks,
+  equipment: OutvinEquipmentLine[],
+): string | null {
+  const hits: string[] = [];
+  for (const line of equipment) {
+    const blob = `${line.code} ${line.description}`.trim();
+    if (!textIndicatesSunroof(blob)) continue;
+    hits.push(line.description.trim() || line.code.trim());
+  }
+  const listingHay = [
+    blocks.listing_analysis.listingPasteRaw,
+    blocks.listing_analysis.listingSalesContext,
+    blocks.listing_analysis.aiContextRaw,
+  ]
+    .filter((s) => s.trim())
+    .join("\n");
+  if (hits.length === 0 && textIndicatesSunroof(listingHay)) {
+    hits.push("sludinājuma apraksts");
+  }
+  if (hits.length === 0) return null;
+  return [...new Set(hits)].slice(0, 4).join("; ");
+}
+
 function formatEquipmentBrief(lines: OutvinEquipmentLine[]): string[] {
   if (lines.length === 0) {
     return [
@@ -166,6 +194,16 @@ export function buildAggregateIdentificationBrief(input: AggregateIdentification
   const equipment = collectEquipmentLines(blocks, input.vin);
   if (equipment.length > 0 || lines.length > 0) {
     lines.push(...formatEquipmentBrief(equipment));
+  }
+  const sunroofEvidence = collectSunroofEvidence(blocks, equipment);
+  if (sunroofEvidence) {
+    lines.push(
+      sunroofInspectionFlagLine({
+        evidence: sunroofEvidence,
+        makeModel: fp.makeModel,
+        makeTokens: fp.makeTokens,
+      }),
+    );
   }
 
   const latest = latestOdometerReading(blocks);

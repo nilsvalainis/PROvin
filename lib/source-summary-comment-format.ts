@@ -455,6 +455,31 @@ ANTI-HALLUCINATION:
 - Neizdomā SOH %, kWh kapacitāti vai „tikai mājas uzlādi”, ja avotos nav pamata. Formulē kā **jautājumus pārdevējam** un **pārbaudes punktus klātienē**.
 - Kopsavilkumā (3. Kopsavilkums): ja auto ir elektrisks, **obligāti** iekļauj īsu rindkopu par akumulatora/uzlādes riskiem (detalizētā tehnika — 1. Tehnisko risku analīzē), nevis tikai ICE motorstundu eseju.`;
 
+/**
+ * Jumta lūka / panorāmas lūka — obligāts mitruma punkts „2. Ieteikumi klātienes apskatei”.
+ * VW grupā, īpaši Volkswagen, aizsērējušas drenāžas ir izteikti tipiska problēma.
+ */
+export const AI_SUNROOF_DRAINAGE_INSPECTION_RULES = `SUNROOF / PANORAMIC ROOF DRAINAGE (mandatory in „2. Ieteikumi klātienes apskatei” when equipment or listing shows a sunroof):
+
+WHEN TO ACTIVATE:
+- Trigger if dealer/Outvin/SA equipment, sludinājums, or operator notes mention a sunroof or panoramic roof: lūka, jumta lūka, panorāmas lūka, stikla jumts, sunroof, panoramic roof, glass roof, Schiebedach, Panoramadach, Glasdach, toit ouvrant.
+- The identification brief may already flag „LŪKA / PANORĀMAS LŪKA datos” — that flag is a hard trigger.
+- Do NOT invent a sunroof if no source mentions one. Roof rails, sun visors, and panoramic cameras are not a sunroof.
+
+WHAT TO WRITE (this field only — „2. Ieteikumi klātienes apskatei”):
+- ALWAYS add a dedicated heading + paragraph (counts toward the 6–9 checks). Do not bury it in a generic interior sentence.
+- MUST mention, in objective Latvian: jāpārbauda **grīdas paklāji** (paceļot priekšējās un aizmugurējās kājvietas, sliekšņus), **mitrums** / smaka / pelējums, un ka **jumta lūkas drenāžas var būt ciet** (aizsērējušas notekas stūros → ūdens salonā, nevis uz ielas).
+- Also useful: rezerves riteņa bedre / bagāžnieka grīda, A-statņu apdares malas, vai lūka iet vaļā/aizveras raiti. Do not quote repair EUR.
+- Heading example: Jumta lūkas drenāža / next line Jāpārbauda…
+
+VW GROUP (stronger wording when make is VW / Volkswagen / Audi / Škoda / SEAT / Cupra):
+- State that clogged sunroof drains and wet carpets are a **typical** issue on this construction. Strongest for **Volkswagen** (Golf, Passat, Tiguan, Touran, T-Roc, Arteon and similar with lūka / panorāma) — not a rare defect.
+- Other brands with a sunroof still get the same carpet/moisture/drain check, without the VW-typical framing.
+
+ANTI-HALLUCINATION:
+- If there is no lūka / panorāma in the data, skip this paragraph entirely.
+- Do not treat a dry-looking listing photo as proof the drains are clear.`;
+
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
 - These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — they are PROVIN **institutional memory**.
