@@ -39,6 +39,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER "automobīlis"/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/HUMAN DASHES|ASCII hyphen/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/kloķvārpstas skriemelis \(demferis\)/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/datu neesamība/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/trūkums/);
   });
 
   it("damage claim rules require contextual EUR interpretation", () => {
@@ -413,6 +416,8 @@ describe("PROVIN AI prompt invariants", () => {
       "lib/admin-ai-aggregate-identification.ts",
       "lib/admin-ai-aggregate-knowledge.ts",
       "lib/provin-aggregate-case-rules.ts",
+      "lib/dealer-service-works-lv.ts",
+      "lib/admin-copilot-ai.ts",
     ];
     for (const file of filesToScan) {
       const src = readRepo(file);

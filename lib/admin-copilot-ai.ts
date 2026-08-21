@@ -14,6 +14,7 @@ import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 import { COPILOT_SOURCE_KEYS, type CopilotChatMessage, type CopilotAiResponse, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { OUTVIN_VEHICLE_INFO_ROWS } from "@/lib/outvin-dealer-types";
+import { buildBannedVocabularyPromptRules } from "@/lib/provin-banned-vocabulary";
 
 export { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 
@@ -50,7 +51,7 @@ Actions:
 3) upsert_service_work — PREFERRED for maintenance/repair history: one action per service visit into the structured table „SERVISA UN REMONTU VĒSTURE” (ALWAYS source=auto_records). Fields: date (DD.MM.YYYY), odometer (digits only), location, works.
    works = category + every printed work item in Latvian, e.g. „Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa”.
    location = the workshop / dealer / place of that visit, exactly as printed („Niederlassung Bonn BMW AG, Bonn”, „B&K Deutschland GmbH, Osnabrück”, AutoDNA „Atrašanās vieta Rīga” → „Rīga”). It is a SEPARATE column — the place must NEVER be written inside works. Leave "" when no place is printed.
-   Latvian works: copy Latvian reports as printed; translate English / German dealer wording by MEANING („Set oil-filter element” → „Eļļas filtra komplekts”, „Repair kit, brake pads front” → „Bremžu kluču komplekts (priekšā)”, „Vehicle check” → „Tehniskā pārbaude servisā”, „Bremsflüssigkeit” → „Bremžu šķidrums”). Keep brands and oil specifications as printed („Castrol Magnatec Prof. MP 5W-30 LL04”).
+   Latvian works: copy Latvian reports as printed; translate English / German dealer wording by MEANING („Set oil-filter element” → „Eļļas filtra komplekts”, „Repair kit, brake pads front” → „Bremžu kluču komplekts (priekšā)”, „Vehicle check” → „Tehniskā pārbaude servisā”, „Bremsflüssigkeit” → „Bremžu šķidrums”). Keep brands and oil specifications as printed („Castrol Magnatec Prof. MP 5W-30 LL04”). Crankshaft pulley / harmonic balancer → „kloķvārpstas skriemelis (demferis)”. Missing records: „trūkums” / „datu neesamība”. ${buildBannedVocabularyPromptRules()}
    Never summarise or drop a work item; a work list may continue on the NEXT PAGE — include those items in the same visit. Long lists are fine (the field is large).
    NEVER emit here: technical inspections („Veikta tehniskā apskate”, periodiska/papildus TA, emission checks), odometer-only records, registrations, damage records, or CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (recommended, not performed).
 3b) set_service_history — the FALLBACK free-text field „Servisa vēsture” (ALWAYS source=auto_records). Use it ONLY when the service data has no per-visit date+works structure (e.g. a narrative dealer note). If you can produce upsert_service_work rows, do NOT also emit set_service_history for the same data.

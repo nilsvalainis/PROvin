@@ -13,6 +13,9 @@ describe("servisa terminu tulkojums latviski", () => {
   it("tulko angļu apkopes terminus pēc nozīmes", () => {
     expect(serviceWorkTermLv("Set oil-filter element")).toBe("Eļļas filtra komplekts");
     expect(serviceWorkTermLv("Air filter element")).toBe("Gaisa filtrs");
+    expect(serviceWorkTermLv("Harmonic balancer")).toBe("Kloķvārpstas skriemelis (demferis)");
+    expect(serviceWorkTermLv("Crankshaft pulley damper")).toBe("Kloķvārpstas skriemelis (demferis)");
+    expect(serviceWorkTermLv("Schwingungsdämpfer")).toBe("Kloķvārpstas skriemelis (demferis)");
     expect(serviceWorkTermLv("Vehicle check")).toBe("Tehniskā pārbaude servisā");
     expect(serviceWorkTermLv("Statutory vehicle inspection")).toBe("Obligātā tehniskā apskate");
     expect(serviceWorkTermLv("Microfilter/activated Carbon container")).toBe(

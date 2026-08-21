@@ -330,7 +330,7 @@ FORMĀTS (obligāti):
 
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.
-- **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
+- **Nobraukums / neatbilstības / datu trūkums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
 - **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti.
@@ -669,7 +669,7 @@ STILS (pārdevēja dienasgrāmata):
 SATURS (obligāti):
 1) AVOTU KARTOŠANA — katram avotam (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, Citi avoti, sludinājums): ko tie deva unikāli, kas pārklājās, kas trūka.
 2) UNIKĀLĀ VĒRTĪBA — īpaši izceļ „Citi avoti” un citus avotus, ko viena atskaite neaptver; skaidri norādi, kas būtu palicis neredzēts tikai ar CarVertical vai tikai ar AutoDNA.
-3) IZŠĶIROŠAIS AVOTS — kurš avots „izlēma” galvenos secinājumus (nopietns negadījums, odometra neatbilstība, taksometrs/komerciāls lietojums, datu vakuums u.c.).
+3) IZŠĶIROŠAIS AVOTS — kurš avots „izlēma” galvenos secinājumus (nopietns negadījums, odometra neatbilstība, taksometrs/komerciāls lietojums, datu neesamība u.c.).
 4) PIETIEKAMĪBA — vai CarVertical vai AutoDNA ATSEVIŠĶI būtu pietiekami pilnai kopbildei; argumentē ar konkrētiem piemēriem no datiem.
 5) PROVIN PRIEKŠROCĪBA — mārketingiski, bet godīgi: kāpēc vairāku avotu apkopojums ir tas, ko PROVIN pircējam dod virs „vienu PDF nopirku un gatavs”.
 6) Eksperta jau ģenerētos komentārus (avotu „Komentāri”, negadījumu/nobraukuma kopsavilkumus) izmanto kā izeju, bet neatkārto vārds vārdā — sintezē jaunu stāstu.

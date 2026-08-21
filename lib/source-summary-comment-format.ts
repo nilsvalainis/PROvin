@@ -9,7 +9,10 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
-import { buildBannedVocabularyPromptRules } from "@/lib/provin-banned-vocabulary";
+import {
+  applyBannedVocabularyReplacements,
+  buildBannedVocabularyPromptRules,
+} from "@/lib/provin-banned-vocabulary";
 
 export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
@@ -24,6 +27,8 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
 - HUMAN DASHES (anti-AI tell): in ALL client-facing Latvian text use only the short ASCII hyphen "-". Ranges: 2007-2015, 300-400 €, 1-2. NEVER Unicode em dash "—" or en dash "–" (mid-sentence or in ranges). NEVER start a paragraph or standalone sentence with "- " or "– ".
 - EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.
+- Missing records: „trūkums”, „datu neesamība”, „iztrūkstoši dati”, „avotos nav fiksēts” — never a vacuum metaphor for gaps.
+- Crankshaft pulley / harmonic balancer: always „kloķvārpstas skriemelis (demferis)”.
 - ${buildBannedVocabularyPromptRules()}`;
 
 /** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
@@ -174,7 +179,7 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bautomobilis\b/g, "automašīna"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
-  return out;
+  return applyBannedVocabularyReplacements(out);
 }
 
 function stripClientMarkdownMarkers(text: string): string {

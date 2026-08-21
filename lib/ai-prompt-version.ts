@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-19.4 — Aizliegts „vakuums” (→ trūkums / datu neesamība); vibrāciju /
+ *   svārstību slāpētājs → kloķvārpstas skriemelis (demferis). Visi ✨ aģenti.
  * - 2026-08-19.3 — Reģionālā korozijas apskate: SUV/Crossover/SAV vai VW grupa/Volvo
  *   >10 gadi + ilgstoša LV/LT/EE, Skandināvija, Austrija, Polija. Obligāta zonu
  *   rindkopa 2. sadaļā (grīda, sliekšņi, durvis, rokturi, bagāžnieks, aizmugures aile).
@@ -25,4 +27,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-19.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-19.4";

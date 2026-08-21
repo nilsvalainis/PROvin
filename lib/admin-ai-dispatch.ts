@@ -53,6 +53,8 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "vocabulary_injektori",
   "vocabulary_videjs_risks",
   "vocabulary_kontrolpunkts",
+  "vocabulary_vakuums",
+  "vocabulary_vibraciju_slapetajs",
   "invented_repair_eur",
   "summary_price",
   "tech_risks_identity_intro",
