@@ -18,6 +18,22 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("Labs auto — kopts.")).toBe("Labs auto - kopts.");
     expect(applyProvinReportCopyVocabulary("2007–2015, 300–400 €")).toBe("2007-2015, 300-400 €");
   });
+
+  it("replaces vacuum-metaphor and damper calques", () => {
+    expect(applyProvinReportCopyVocabulary("Pirms importa ir datu vakuums.")).toBe(
+      "Pirms importa ir datu neesamība.",
+    );
+    expect(applyProvinReportCopyVocabulary("Vakuums datos.")).toBe("Trūkums datos.");
+    expect(applyProvinReportCopyVocabulary("Jāmaina vibrāciju slāpētājs.")).toBe(
+      "Jāmaina kloķvārpstas skriemelis (demferis).",
+    );
+    expect(
+      applyProvinReportCopyVocabulary("kloķvārpstas svārstību slāpētājs (skriemelis)"),
+    ).toBe("kloķvārpstas skriemelis (demferis)");
+    expect(applyProvinReportCopyVocabulary("vakuumsūknis un vakuma šļūtene")).toBe(
+      "vakuumsūknis un vakuma šļūtene",
+    );
+  });
 });
 
 describe("normalizeProvinExpertAiComment", () => {

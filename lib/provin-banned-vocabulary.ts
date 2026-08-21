@@ -48,6 +48,18 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "jāpārbauda klātienē / pārbaudes punkts",
     code: "vocabulary_kontrolpunkts",
   },
+  {
+    label: "vakuums",
+    pattern: /datu\s+vakuum|informācijas\s+vakuum|\bvakuums(?!ūkn)/i,
+    replacement: "trūkums / datu neesamība",
+    code: "vocabulary_vakuums",
+  },
+  {
+    label: "vibrāciju slāpētājs",
+    pattern: /(?:vibrācij[au]|svārstību)\s+slāpētāj/i,
+    replacement: "kloķvārpstas skriemelis (demferis)",
+    code: "vocabulary_vibraciju_slapetajs",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */
@@ -60,4 +72,36 @@ export function buildBannedVocabularyPromptRules(): string {
 export function findBannedVocabularyHits(text: string): BannedVocabularyEntry[] {
   if (!text) return [];
   return PROVIN_BANNED_VOCABULARY.filter((e) => e.pattern.test(text));
+}
+
+/**
+ * Mehāniskais drošības tīkls pēc ģenerēšanas. Vakuma sūknis / vakuumsūknis paliek
+ * (tas ir mezgls, ne datu metafora).
+ */
+export function applyBannedVocabularyReplacements(text: string): string {
+  if (!text) return text;
+  let out = text;
+  out = out.replace(/kloķvārpstas\s+(?:vibrācij[au]|svārstību)\s+slāpētāj\p{L}*(?:\s*\(\s*skriemelis\s*\))?/giu, (
+    match,
+  ) => preserveLeadingCase(match, "kloķvārpstas skriemelis (demferis)"));
+  out = out.replace(/(?:vibrācij[au]|svārstību)\s+slāpētāj\p{L}*/giu, (match) =>
+    preserveLeadingCase(match, "kloķvārpstas skriemelis (demferis)"),
+  );
+  out = out.replace(/datu\s+vakuum[aāusm]*/gi, (match) =>
+    preserveLeadingCase(match, "datu neesamība"),
+  );
+  out = out.replace(/informācijas\s+vakuum[aāusm]*/gi, (match) =>
+    preserveLeadingCase(match, "datu neesamība"),
+  );
+  out = out.replace(/\bVakuums(?!ūkn)/g, "Trūkums");
+  out = out.replace(/\bvakuums(?!ūkn)/g, "trūkums");
+  return out;
+}
+
+function preserveLeadingCase(original: string, replacement: string): string {
+  const first = original.trimStart()[0];
+  if (first && first === first.toUpperCase() && first !== first.toLowerCase()) {
+    return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  }
+  return replacement;
 }

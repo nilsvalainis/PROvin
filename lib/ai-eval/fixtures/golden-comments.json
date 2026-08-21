@@ -26,6 +26,20 @@
     "text": "Hronoloģija un lineārums\nVisos avotos nobraukuma līkne ir lineāra ar vidēji 22 000-24 000 km gadā; izteikti kritumi nav fiksēti.\n\nDatu blīvums\nIeraksti ir regulāri, kas ļauj secināt par šosejas profilu ar zemāku motorstundu slodzi."
   },
   {
+    "id": "source-bad-vakuums",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["vocabulary_vakuums"],
+    "text": "Nobraukums\nPirms importa ir datu vakuums, tāpēc līkni nevar kalibrēt."
+  },
+  {
+    "id": "source-bad-vibraciju-slapetajs",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["vocabulary_vibraciju_slapetajs"],
+    "text": "Apkope\nServisā mainīts vibrāciju slāpētājs, kas ir labvēlīgs signāls datos."
+  },
+  {
     "id": "source-bad-hyperbole",
     "field": "source",
     "expectPass": false,

@@ -9,7 +9,10 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
-import { buildBannedVocabularyPromptRules } from "@/lib/provin-banned-vocabulary";
+import {
+  applyBannedVocabularyReplacements,
+  buildBannedVocabularyPromptRules,
+} from "@/lib/provin-banned-vocabulary";
 
 export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
@@ -24,6 +27,8 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
 - HUMAN DASHES (anti-AI tell): in ALL client-facing Latvian text use only the short ASCII hyphen "-". Ranges: 2007-2015, 300-400 €, 1-2. NEVER Unicode em dash "—" or en dash "–" (mid-sentence or in ranges). NEVER start a paragraph or standalone sentence with "- " or "– ".
 - EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labvēlīgs signāls datos”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection.
+- Missing records: „trūkums”, „datu neesamība”, „iztrūkstoši dati”, „avotos nav fiksēts” — never a vacuum metaphor for gaps.
+- Crankshaft pulley / harmonic balancer: always „kloķvārpstas skriemelis (demferis)”.
 - ${buildBannedVocabularyPromptRules()}`;
 
 /** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
@@ -83,6 +88,28 @@ export const AI_RESOLVED_HISTORICAL_FINDINGS_RULES = `RESOLVED HISTORICAL FINDIN
 - REPEATING or STILL-OPEN findings on the latest inspections remain relevant.
 - EXCEPTION — rūsa / korozija AND exhaust measurements (cietās daļiņas, dūmainības koeficients / smoke opacity): if these were EVER recorded, stay cautious in later years even when a later TA is clean. Quality repair is difficult and expensive; a later pass does not erase the history. Note the later improvement if present, but do not dismiss the topic.
 - Same principle for other sources (dealer invoices, DEKRA, foreign TA): a one-off finding later documented as fixed is history, not a hunt list — unless it is rust or exhaust particulates/smoke.`;
+
+/**
+ * Reģionālā korozijas apskate — SUV/Crossover/SAV, kā arī VW grupa un Volvo >10 gadi,
+ * ja ilgstoša ekspluatācija LV/LT/EE, Skandināvijā, Austrijā vai Polijā.
+ * Pilnais zonu saraksts pieder „2. Ieteikumi klātienes apskatei”.
+ */
+export const AI_REGIONAL_CORROSION_INSPECTION_RULES = `REGIONAL CORROSION INSPECTION (mandatory when BOTH vehicle class AND region match — do not guess origin):
+
+TRIGGER — vehicle class (either):
+- Body type SUV, Crossover, or SAV (BMW Sports Activity Vehicle / X-line), any brand; OR
+- Volkswagen Group (Volkswagen, Audi, Škoda, SEAT, Cupra) or Volvo, ANY body type, first registration / manufacture year older than 10 years.
+
+TRIGGER — region (required): long-term registration or operation (not a short transit) in Latvia, Lithuania, Estonia, Sweden, Norway, Finland, Denmark, Austria, or Poland — from CSDD, dealer/Outvin country, mileage-row countries, foreign registries. Name the actual country in client copy. Never a regional-bundle label; say Latvija, Lietuva, Igaunija (or the Nordic/AT/PL country from the data).
+
+WHEN BOTH MATCH:
+- ACTIVE FIELD „2. Ieteikumi klātienes apskatei”: you MUST append a dedicated standalone paragraph. Heading on its own line, then the paragraph. Do not omit any listed zone. Tone: professional, peer, analytical. Never „kritisks”.
+- Canonical Latvian paragraph (adapt only the country name to the data; keep every inspection zone):
+Korozijas pārbaude pēc reģiona
+Tā kā automašīna ir ilgstoši ekspluatēta [Latvijā / Lietuvā / Igaunijā / Zviedrijā / Norvēģijā / Somijā / Dānijā / Austrijā / Polijā - nosauc no datiem] ar augstu mitrumu un ceļu reaģentu slodzi, pirms pirkšanas ir obligāti jāveic virsbūves un apakšas detalizēta korozijas pārbaude. Īpaša uzmanība jāpievērš šādām vietām: virsbūves grīdai, sliekšņu galiem, durvju apakšējām malām, zonām zem durvju rokturiem, bagāžnieka vākam, kā arī aizmugurējā spārna un durvju atvēruma iekšējai ailei apakšējā stūrī pie sliekšņa.
+- „3. Kopsavilkums”: one sentence that this origin requires an in-person body/undercarriage corrosion check — do not paste the zone list (that is section 2).
+- Other fields: do not copy the full paragraph. Technical risks may name regional rust as a body-age factor without the zone catalogue.
+- If class or region does not match, do not invent this paragraph.`;
 
 /** Īsi, koncentrēti lauki — apkopojumi un salīdzinājumi tikai kopsavilkumā. */
 export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
@@ -152,7 +179,7 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bautomobilis\b/g, "automašīna"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
-  return out;
+  return applyBannedVocabularyReplacements(out);
 }
 
 function stripClientMarkdownMarkers(text: string): string {

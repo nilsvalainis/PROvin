@@ -43,7 +43,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 |--------|--------------|----------|
 | `PROVIN_FIELD_AGENT_SYSTEM` | Base | All field-agent prompts |
 | `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze | `admin-ai-technical-risks.ts` — Claude web search (Eiropas forumi, ja paka nesedz) + aggregate knowledge |
-| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-ai-inspection.ts` — heading then paragraph, no `*`; uses technical-risks section |
+| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-ai-inspection.ts` — heading then paragraph, no `*`; uses technical-risks section; regional corrosion paragraph when SUV/VW/Volvo + salt-belt origin |
 | `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-ai-seller.ts` — heading then paragraph, no `*` |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums | `admin-ai-price.ts` |
 | `AI_SUMMARY_ANALYSIS_SYSTEM` | 3. Kopsavilkums | `admin-ai-summary.ts` — free-form synthesis, no „Sveiki”, no EUR prices, avoid duplicating technical risks |
@@ -72,7 +72,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Let brevity or anti-repetition skip topics from admin „Papildu piezīmes AI” (`OPERATORA KOMANDAS`). Those notes are a binding work order (`AI_OPERATOR_NOTES_EXECUTION_RULES`): every topic in, no cherry-pick, no extra lines when the operator limited the job.
 - Tell the client to hunt CSDD TA defects that later inspections already show as cleared (~2+ years, lamps, play, etc.). Exception: rust and exhaust particulates/smoke stay cautious. Canonical: `AI_RESOLVED_HISTORICAL_FINDINGS_RULES`.
 - Put approximate repair/service EUR bands („orientējoši … €”) into any ✨ comment. Canonical: `AI_NO_ESTIMATED_REPAIR_EUR_RULES`. Aggregate packs may hold € for internal calibration only — `stripUnauthorizedEuroAmounts()` is a runtime safety net on technical-risks/inspection/summary, not a substitute for correct prompting.
-- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, or „kontrolpunkts klātienē” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē” instead.
+- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, „kontrolpunkts klātienē”, „vakuums” (for missing records), or „vibrāciju slāpētājs” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē”, „trūkums”/„datu neesamība”, „kloķvārpstas skriemelis (demferis)” instead.
 
 ## Prompt version & evals
 

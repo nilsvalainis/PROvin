@@ -11,6 +11,7 @@ import {
   AI_NO_ESTIMATED_REPAIR_EUR_RULES,
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_REGIONAL_CORROSION_INSPECTION_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
@@ -38,6 +39,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER "automobīlis"/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/HUMAN DASHES|ASCII hyphen/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/kloķvārpstas skriemelis \(demferis\)/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/datu neesamība/);
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/trūkums/);
   });
 
   it("damage claim rules require contextual EUR interpretation", () => {
@@ -214,6 +218,36 @@ describe("PROVIN AI prompt invariants", () => {
     expect(insp).toMatch(/6–9 rindkopas/);
   });
 
+  it("regional SUV/VW/Volvo corrosion inspection lists every mandatory zone", () => {
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/SUV, Crossover, or SAV/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/Volkswagen Group/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/Volvo/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/older than 10 years/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/Austria, or Poland/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/virsbūves grīdai/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/sliekšņu galiem/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/durvju apakšējām malām/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/zem durvju rokturiem/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/bagāžnieka vākam/);
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(
+      /aizmugurējā spārna un durvju atvēruma iekšējai ailei/,
+    );
+    expect(AI_REGIONAL_CORROSION_INSPECTION_RULES).toMatch(/Never a regional-bundle label/);
+    const lvPara = AI_REGIONAL_CORROSION_INSPECTION_RULES.slice(
+      AI_REGIONAL_CORROSION_INSPECTION_RULES.indexOf("Korozijas pārbaude pēc reģiona"),
+    );
+    expect(lvPara).not.toMatch(/baltij/i);
+    expect(lvPara).not.toMatch(/kritisk/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toContain("AI_REGIONAL_CORROSION_INSPECTION_RULES");
+    const block = prompts.slice(
+      prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
+      prompts.indexOf("AI_SELLER_ANALYSIS_SYSTEM"),
+    );
+    expect(block).toMatch(/AI_REGIONAL_CORROSION_INSPECTION_RULES/);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/korozijas sadaļa/);
+  });
+
   it("operator notes are prepended with highest priority", () => {
     const notes = readRepo("lib/admin-ai-operator-notes.ts");
     expect(notes).toMatch(/SAISTOŠS DARBA UZDEVUMS/);
@@ -382,6 +416,8 @@ describe("PROVIN AI prompt invariants", () => {
       "lib/admin-ai-aggregate-identification.ts",
       "lib/admin-ai-aggregate-knowledge.ts",
       "lib/provin-aggregate-case-rules.ts",
+      "lib/dealer-service-works-lv.ts",
+      "lib/admin-copilot-ai.ts",
     ];
     for (const file of filesToScan) {
       const src = readRepo(file);
