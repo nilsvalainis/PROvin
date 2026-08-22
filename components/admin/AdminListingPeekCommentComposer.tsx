@@ -13,6 +13,7 @@ import {
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import {
+  LISTING_PEEK_COMMENT_CLOSER,
   LISTING_PEEK_TOPICS,
   applyListingPeekLetterCloser,
   assembleListingPeekCustomerComment,
@@ -48,7 +49,7 @@ export function AdminListingPeekCommentComposer({
   smtpOk,
   listingUrl,
   initialLines,
-  initialCloser = false,
+  initialCloser = true,
   initialLetter,
   submitLabel = "Nosūtīt e-pastu",
 }: {
@@ -255,7 +256,7 @@ export function AdminListingPeekCommentComposer({
           }}
           className="mt-0.5"
         />
-        Pievienot teikumu par sludinājuma robežu un AUDITS (pirms pogas e-pastā).
+        <span>{LISTING_PEEK_COMMENT_CLOSER}</span>
       </label>
 
       <div>

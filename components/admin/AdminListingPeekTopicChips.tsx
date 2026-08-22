@@ -13,6 +13,10 @@ export const LISTING_PEEK_TONE_BTN_CLASS: Record<ListingPeekTone, string> = {
     "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 data-[on=true]:border-amber-500 data-[on=true]:bg-amber-500 data-[on=true]:text-white disabled:opacity-40",
   concern:
     "border-red-200 bg-red-50 text-red-800 hover:bg-red-100 data-[on=true]:border-red-500 data-[on=true]:bg-red-600 data-[on=true]:text-white disabled:opacity-40",
+  critical:
+    "border-rose-300 bg-rose-50 text-rose-950 hover:bg-rose-100 data-[on=true]:border-rose-800 data-[on=true]:bg-rose-800 data-[on=true]:text-white disabled:opacity-40",
+  info:
+    "border-slate-300 bg-slate-50 text-slate-800 hover:bg-slate-100 data-[on=true]:border-slate-700 data-[on=true]:bg-slate-700 data-[on=true]:text-white disabled:opacity-40",
 };
 
 /** Zaļā / dzeltenā / sarkanā sagatave — tā pati rinda kā ātajos vērtējumos. */
@@ -33,7 +37,7 @@ export function AdminListingPeekTopicChips({
     <div className="flex flex-wrap gap-1.5">
       {topic.phrases.map((phrase) => (
         <button
-          key={phrase.tone}
+          key={phrase.id}
           type="button"
           data-on={selectedTone === phrase.tone}
           title={phrase.text}

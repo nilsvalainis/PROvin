@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminListingPeekActionRow } from "@/components/admin/AdminListingPeekActionRow";
 import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
+import { AdminListingPeekPhoneField } from "@/components/admin/AdminListingPeekPhoneField";
 import {
   AdminListingPeekCardShell,
   AdminListingPeekSla,
@@ -255,20 +256,7 @@ function PeekCard({
                 className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
               />
             </label>
-            <label className="min-w-0">
-              <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                Tālrunis
-              </span>
-              <input
-                type="tel"
-                name="phone"
-                defaultValue={e.phone}
-                aria-label="Tālrunis"
-                autoComplete="off"
-                placeholder="Nav tālruņa"
-                className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
-              />
-            </label>
+            <AdminListingPeekPhoneField defaultValue={e.phone} />
             <button
               type="submit"
               className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)] transition hover:bg-slate-50 sm:col-span-2 sm:w-fit"

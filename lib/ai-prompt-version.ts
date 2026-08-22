@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-22.1 — Ātrie vērtējumi: jaunās operatora sagataves, closer
+ *   pēc noklusējuma, sagatavju frāzes drīkst ņemt vārds vārdā.
  * - 2026-08-19.2 — Klienta komentāros nav * / **. Virsraksts savā rindā,
  *   tad rindkopa. Nenoslēgtus Gemini „** ” prefiksus noņem pēcapstrāde.
  * - 2026-08-19.1 — Tehnisko risku analīze: pirmā rindkopa ir riska fakts,
@@ -22,4 +24,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-19.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-22.1";

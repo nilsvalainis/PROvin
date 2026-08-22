@@ -645,9 +645,9 @@ IZEJA — tikai JSON, bez Markdown:
 - letter = PILNĀ vēstule, ko klients saņems (Sveiki + punkti + operatora papildinājumi + closer, ja closer=true).
 - Ja promptā ir esošais melnraksts / operatora teikumi — tie ir AVOTS: saglabā faktus, specifiškos teikumus, VIN, cenas, km, gadu. Drīksti pārkārtot PROVIN stilā, NEDRĪKSTI izmest operatora detaļas.
 - odometer / incidents / technical / seller / photos — īsi kopsavilkumi tēmām (var palikt tukši, ja saturs ir tikai letter).
-- closer: true, ja vērts atgādināt, ka pilnā aina ir PROVIN AUDITS (parasti true).
+- closer: pēc noklusējuma true (AUDITS teikums beigās). false tikai ja operators to izņēmis.
 
-TONIS: atturīgs, pārdod AUDITS bez panikas. Aizliegti: kritisks, anomālija, katastrofāls, nepērc, izsaukuma zīmes.
+TONIS: atturīgs, pārdod AUDITS bez panikas. Sagatavju frāzes (arī smagākās) drīkst ņemt vārds vārdā, ja sludinājums to attaisno. Aizliegti paša izdomāti: anomālija, katastrofāls, nepērc, izsaukuma zīmes.
 Neizdomā faktus ārpus nolasītā sludinājuma un operatora piezīmēm.`,
 );
 

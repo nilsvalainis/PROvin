@@ -1,6 +1,6 @@
 /**
- * Ātrie vērtējumi — sagataves klientam. Palīdz ar īsu sludinājuma komentāru
- * un atstāj vietu PROVIN AUDITS, bez panikas un bez solījumiem par maksas avotiem.
+ * Ātrie vērtējumi — sagataves klientam. Operatora frāzes: īss vērtējums,
+ * vieta PROVIN AUDITS. Bez panikas un bez remonta EUR.
  */
 
 export const LISTING_PEEK_COMMENT_GREETING = "Sveiki!";
@@ -10,9 +10,10 @@ export const LISTING_PEEK_COMMENT_CLOSER =
 
 export type ListingPeekTopicId = "odometer" | "incidents" | "technical" | "seller" | "photos";
 
-export type ListingPeekTone = "positive" | "caution" | "concern";
+export type ListingPeekTone = "positive" | "caution" | "concern" | "critical" | "info";
 
 export type ListingPeekPhrase = {
+  id: string;
   tone: ListingPeekTone;
   label: string;
   text: string;
@@ -21,7 +22,7 @@ export type ListingPeekPhrase = {
 export type ListingPeekTopic = {
   id: ListingPeekTopicId;
   title: string;
-  phrases: readonly [ListingPeekPhrase, ListingPeekPhrase, ListingPeekPhrase];
+  phrases: readonly ListingPeekPhrase[];
 };
 
 export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
@@ -30,19 +31,28 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
     title: "Nobraukums",
     phrases: [
       {
+        id: "odometer-labs",
         tone: "positive",
         label: "Labs",
-        text: "Pēc sākotnējo datu apstrādes odometra rādījumi izskatās ticami, tomēr bez padziļinātas izpētes to nevaram droši apgalvot.",
+        text: "Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. Vienlaikus tas ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
       },
       {
+        id: "odometer-japeta",
         tone: "caution",
         label: "Jāpēta",
-        text: "Odometra rādījumu ticamību šajā gadījumā nav iespējams izvērtēt bez padziļinātas pārbaudes.",
+        text: "Odometra rādījumu ticamību nav iespējams pilnvērtīgi izvērtēt bez padziļinātas pārbaudes. Vienlaikus tā ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
       },
       {
+        id: "odometer-neskaidrs",
         tone: "concern",
         label: "Neskaidrs",
-        text: "Sludinājuma dati nesniedz skaidru priekšstatu par nobraukumu. Lai redzētu pilnu vēsturi, nepieciešama pārbaude maksas reģistros un pie dīlera.",
+        text: "Pieejamie dati nevar garantēt nobraukuma atbilstību, tāpēc padziļināta pārbaude maksas datubāzēs vērtējama kā obligāta. Vienlaikus tā ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
+      },
+      {
+        id: "odometer-kritisks",
+        tone: "critical",
+        label: "Kritisks",
+        text: "Dati norāda uz iespējamu odometra rādījumu manipulāciju vai būtiskām nesakritībām vēsturē. Nepieciešama detalizēta analīze. Vienlaikus tā ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
       },
     ],
   },
@@ -51,19 +61,34 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
     title: "Negadījumi",
     phrases: [
       {
+        id: "incidents-nav-redzams",
         tone: "positive",
         label: "Nav redzams",
-        text: "Pēc sākotnējo datu apstrādes negadījuma pazīmes netika konstatētas, tomēr bez pārbaudes maksas datubāzēs to nevaram droši apgalvot.",
+        text: "Negadījumu pazīmes netika konstatētas, taču to var apstiprināt, tikai veicot padziļinātu pārbaudi dažādās datubāzēs.",
       },
       {
+        id: "incidents-japeta",
         tone: "caution",
         label: "Jāpēta",
-        text: "Negadījumu vēsturi šajā gadījumā nav iespējams izvērtēt bez padziļinātas pārbaudes maksas reģistros.",
+        text: "Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.",
       },
       {
+        id: "incidents-pazimes",
         tone: "concern",
         label: "Pazīmes",
-        text: "Sākotnējie dati liecina par iespējamu dalību negadījumā. Lai to apstiprinātu vai izslēgtu, nepieciešama padziļināta pārbaude.",
+        text: "Sākotnējie dati liecina par iespējamu dalību negadījumā; negadījumu raksturs un sekas jāanalizē padziļināti.",
+      },
+      {
+        id: "incidents-butiski",
+        tone: "critical",
+        label: "Būtiski bojājumi",
+        text: "Pieejamā informācija liecina par nopietnu negadījumu vēsturē. Nepieciešams noskaidrot remonta kvalitāti un skartos mezglus.",
+      },
+      {
+        id: "incidents-octa",
+        tone: "info",
+        label: "OCTA",
+        text: "OCTA atlīdzību pieteikumi Latvijā nav fiksēti (KASKO un ārvalstīs fiksētajiem negadījumu datiem bez padziļinātas pārbaudes piekļūt nav iespējams).",
       },
     ],
   },
@@ -72,19 +97,28 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
     title: "Tehnika",
     phrases: [
       {
+        id: "technical-merens",
         tone: "positive",
         label: "Mērens",
-        text: "Pēc sākotnējo datu apstrādes tehniskie riski izskatās mēreni, tomēr ir nianses, kuras noteikti būs jāņem vērā, apskatot auto klātienē.",
+        text: "Konceptuāli uzticams auto, tomēr ir nianses, kuras noteikti būs jāņem vērā gan apskatē klātienē, gan turpmākās ekspluatācijas laikā.",
       },
       {
+        id: "technical-nianses",
         tone: "caution",
         label: "Nianses",
-        text: "Tehniskās nianses šajā gadījumā nav iespējams pilnībā izvērtēt bez klātienes pārbaudes.",
+        text: "Tehniski šim modelim ir nianses, kuras noteikti būs jāņem vērā gan apskatē klātienē, gan turpmākās ekspluatācijas laikā.",
       },
       {
+        id: "technical-jaskata",
         tone: "concern",
         label: "Jāskata",
-        text: "Šajā auto ir agregāti, no kuriem ieteicams izvairīties vai pret kuriem jāizturas ar īpašu piesardzību.",
+        text: "Šim modelim ir agregāti, pret kuriem jāizturas ar īpašu piesardzību. Svarīga būs ne tikai auto vēstures izpēte, bet arī rūpīga pārbaude klātienē un pareiza turpmākā ekspluatācija auto iegādes gadījumā.",
+      },
+      {
+        id: "technical-problematisks",
+        tone: "critical",
+        label: "Problemātisks",
+        text: "Nopietni izskatot šādu auto, jārēķinās ar zināmiem riskiem, jo konkrētajam modelim ir raksturīgas dārgi novēršamas problēmas. Rūpīga diagnostika un datu pārbaude ir obligāta.",
       },
     ],
   },
@@ -93,19 +127,28 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
     title: "Pārdevējs",
     phrases: [
       {
+        id: "seller-labs",
         tone: "positive",
         label: "Labs",
-        text: "Pēc sākotnējo datu apstrādes pārdevēja profils izskatās labs, tomēr bez vēstures pārbaudes nevaram droši apgalvot, ka sludinājums pilnībā atbilst datiem.",
+        text: "Pārdevējs ar salīdzinoši labu reputāciju un caurspīdīgu profilu, tomēr tas šajā sfērā neko negarantē un pilnībā neatbrīvo no paša auto pārbaudes.",
       },
       {
+        id: "seller-neitrals",
         tone: "caution",
         label: "Neitrāls",
-        text: "Pārdevēja profilu šajā gadījumā nav iespējams izvērtēt bez padziļinātas pārbaudes — izšķiroši būs tas, vai sludinājums saskan ar auto vēsturi.",
+        text: "Informācija par pārdevēju ir ierobežota, tāpēc riski jāvērtē kopsakarā ar konkrētā auto vēsturi.",
       },
       {
+        id: "seller-jautajumi",
         tone: "concern",
         label: "Jautājumi",
-        text: "Sākotnējie dati par pārdevēju rada jautājumus. Lai gūtu skaidrību, nepieciešama pārbaude kopsakarā ar auto vēsturi.",
+        text: "Pārdevēja reputācija un darbības stils rada jautājumus, tāpēc auto stāvoklis un vēsture jāvērtē piesardzīgi.",
+      },
+      {
+        id: "seller-risks",
+        tone: "critical",
+        label: "Paaugstināts risks",
+        text: "Pārdevējs, iespējams, ir ar paaugstināta riska profilu, tāpēc auto stāvoklis un vēsture jāvērtē īpaši piesardzīgi.",
       },
     ],
   },
@@ -114,19 +157,28 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
     title: "Bildes",
     phrases: [
       {
+        id: "photos-tiras",
         tone: "positive",
         label: "Tīras",
-        text: "Virspusēji apskatot, bildēs būtiski trūkumi netika konstatēti.",
+        text: "Virspusēji apskatot sludinājuma fotogrāfijas, būtiski vizuāli trūkumi netika konstatēti — novērojamas tikai deklarētajam nobraukumam un vecumam atbilstošas lietošanas pazīmes.",
       },
       {
+        id: "photos-maz",
         tone: "caution",
         label: "Maz",
-        text: "Pēc sludinājumā pieejamajām bildēm pilnvērtīgu vizuālo analīzi veikt nebija iespējams.",
+        text: "Pēc sludinājumā pievienotajām fotogrāfijām pilnvērtīgu vizuālo analīzi veikt nebija iespējams.",
       },
       {
+        id: "photos-tuvplani",
         tone: "concern",
         label: "Tuvplāni",
-        text: "Sludinājuma bildēs tika pamanītas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
+        text: "Sludinājuma attēlos tika konstatētas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
+      },
+      {
+        id: "photos-aizdomigas",
+        tone: "critical",
+        label: "Aizdomīgas",
+        text: "Sludinājuma attēli, iespējams, ir uzņemti tā, lai apzināti slēptu defektus (rakursi, kvalitāte utt.).",
       },
     ],
   },
@@ -278,7 +330,7 @@ export function parseListingPeekAiPayload(raw: unknown): {
   for (const id of LISTING_PEEK_TOPIC_IDS) {
     const v = obj[id];
     if (typeof v === "string" && v.trim()) {
-      lines[id] = stripListingPeekMarkdown(v.trim()).slice(0, 400);
+      lines[id] = stripListingPeekMarkdown(v.trim()).slice(0, 700);
       any = true;
     }
   }

@@ -23,11 +23,11 @@ describe("assembleListingPeekCustomerComment", () => {
       },
     });
     expect(comment.startsWith(`${LISTING_PEEK_COMMENT_GREETING}\n\n`)).toBe(true);
-    expect(comment).toContain("1. Pēc sākotnējo datu apstrādes odometra rādījumi");
-    expect(comment).toContain("2. Negadījumu vēsturi šajā gadījumā nav iespējams izvērtēt");
-    expect(comment).toContain("3. Tehniskās nianses šajā gadījumā nav iespējams pilnībā izvērtēt");
-    expect(comment).toContain("4. Pēc sākotnējo datu apstrādes pārdevēja profils izskatās labs");
-    expect(comment).toContain("5. Virspusēji apskatot, bildēs būtiski trūkumi netika konstatēti.");
+    expect(comment).toContain("1. Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta");
+    expect(comment).toContain("2. Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.");
+    expect(comment).toContain("3. Tehniski šim modelim ir nianses, kuras noteikti būs jāņem vērā");
+    expect(comment).toContain("4. Pārdevējs ar salīdzinoši labu reputāciju un caurspīdīgu profilu");
+    expect(comment).toContain("5. Virspusēji apskatot sludinājuma fotogrāfijas, būtiski vizuāli trūkumi netika konstatēti");
     expect(comment).not.toContain(LISTING_PEEK_COMMENT_CLOSER);
   });
 
@@ -41,8 +41,8 @@ describe("assembleListingPeekCustomerComment", () => {
     });
     expect(comment).toBe(
       [
-        "1. Negadījumu vēsturi šajā gadījumā nav iespējams izvērtēt bez padziļinātas pārbaudes maksas reģistros.",
-        "2. Sludinājuma bildēs tika pamanītas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
+        "1. Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.",
+        "2. Sludinājuma attēlos tika konstatētas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
       ].join("\n"),
     );
   });
@@ -135,7 +135,7 @@ describe("parseListingPeekAiPayload", () => {
     const letter = [
       LISTING_PEEK_COMMENT_GREETING,
       "",
-      "1. Pēc sākotnējo datu apstrādes odometra rādījumi izskatās ticami, tomēr bez padziļinātas izpētes to nevaram droši apgalvot.",
+      "1. Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. Vienlaikus tas ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
       "",
       "VIN no Vācijas, 2018. gads, 189 000 km.",
       "",
@@ -174,12 +174,18 @@ describe("stripListingPeekMarkdown", () => {
 });
 
 describe("LISTING_PEEK_TOPICS", () => {
-  it("keeps a restrained sales tone", () => {
+  it("keeps operator phrases without repair EUR or panic closers", () => {
     const all = LISTING_PEEK_TOPICS.flatMap((t) => t.phrases.map((p) => p.text)).join("\n");
-    expect(all).not.toMatch(/kritisks|anomālij|nepērc|katastrof/i);
+    expect(all).not.toMatch(/€|EUR|anomālij|nepērc|katastrof/i);
     expect(LISTING_PEEK_TOPICS).toHaveLength(5);
+    expect(LISTING_PEEK_TOPICS.map((t) => t.phrases.length)).toEqual([4, 5, 4, 4, 4]);
     for (const topic of LISTING_PEEK_TOPICS) {
-      expect(topic.phrases.map((p) => p.tone)).toEqual(["positive", "caution", "concern"]);
+      const ids = topic.phrases.map((p) => p.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(topic.phrases[0]?.tone).toBe("positive");
     }
+    expect(listingPeekPhraseByTone("odometer", "critical")).toContain("nesakritībām vēsturē");
+    expect(listingPeekPhraseByTone("incidents", "info")).toContain("OCTA atlīdzību pieteikumi Latvijā nav fiksēti");
+    expect(listingPeekPhraseByTone("photos", "critical")).toContain("apzināti slēptu defektus");
   });
 });
