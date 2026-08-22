@@ -341,13 +341,25 @@ export function AdminListingAnalysisSourceBlock({
       {variant === "default" ? (
         <AdminSourceBlockHeader blockKey="listing_analysis" className="mb-1.5" />
       ) : null}
-      <div className={dense ? "space-y-3" : "space-y-4"}>
+      <div className={dense ? "space-y-2" : "space-y-2.5"}>
         <ListingAnalysisSubsectionHeading
           icon={LISTING_ANALYSIS_FIELD_LUCIDE.sellerPortrait}
           title={L.sellerPortrait}
           compact={dense}
+          action={
+            !readOnly ? (
+              <AdminAiGenerateWithPrefill
+                label="Analizēt Pārdevēju"
+                busy={sellerAnalyzing}
+                disabled={!canRunSellerAi || readOnly || disabled}
+                demoOnly={!aiAllowed}
+                recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.seller}
+                onGenerate={(operatorNotes, modelTier) => void runSellerAiAnalyze(operatorNotes, modelTier)}
+              />
+            ) : undefined
+          }
         >
-          <label className="mb-2 block min-w-0">
+          <label className="mb-1.5 block min-w-0">
             <span
               className={
                 dense
@@ -372,26 +384,7 @@ export function AdminListingAnalysisSourceBlock({
               />
             )}
           </label>
-          <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-            <AdminAiGenerateWithPrefill
-              label="Analizēt Pārdevēju"
-              busy={sellerAnalyzing}
-              disabled={!canRunSellerAi || readOnly || disabled}
-              demoOnly={!aiAllowed}
-              recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.seller}
-              onGenerate={(operatorNotes, modelTier) => void runSellerAiAnalyze(operatorNotes, modelTier)}
-            />
-          </div>
           <AdminAiFieldError message={sellerAnalyzeErr} />
-          <p
-            className={
-              dense
-                ? "mb-0.5 text-[9px] font-medium text-slate-400"
-                : "mb-0.5 text-[10px] font-medium text-slate-400"
-            }
-          >
-            {LISTING_ANALYSIS_COMMENT_LABEL}
-          </p>
           {readOnly ? (
             <AdminRichCommentReadonly html={v.sellerPortrait} className={pri ? roBox(!!dense) : roDefault} />
           ) : (
@@ -412,21 +405,10 @@ export function AdminListingAnalysisSourceBlock({
           action={openListingAction}
         >
           {readOnly ? (
-            <>
-              <p
-                className={
-                  dense
-                    ? "mb-0.5 text-[9px] font-medium text-slate-400"
-                    : "mb-0.5 text-[10px] font-medium text-slate-400"
-                }
-              >
-                {LISTING_ANALYSIS_COMMENT_LABEL}
-              </p>
-              <AdminRichCommentReadonly html={v.photoAnalysis} className={pri ? roBox(!!dense) : roDefault} />
-            </>
+            <AdminRichCommentReadonly html={v.photoAnalysis} className={pri ? roBox(!!dense) : roDefault} />
           ) : (
             <>
-              <div className="mb-2">
+              <div className="mb-1.5">
                 <AdminListingPeekTopicChips
                   topicId="photos"
                   selectedTone={photoPeekSelectedTone(v.photoAnalysis)}
@@ -437,6 +419,7 @@ export function AdminListingAnalysisSourceBlock({
                 />
               </div>
               <AdminSourceCommentField
+                label=""
                 value={v.photoAnalysis}
                 onChange={(next) => onChange({ ...v, photoAnalysis: next })}
                 disabled={disabled}
@@ -467,21 +450,6 @@ export function AdminListingAnalysisSourceBlock({
           title={LISTING_ANALYSIS_LISTING_PASTE_LABEL}
           compact={dense}
         >
-          <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-700 bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={readOnly || disabled || analyzing || !v.listingPasteRaw.trim()}
-              onClick={() => void runListingAnalyze()}
-              title="No iekopētā apraksta ģenerē profesionālu tekstu laukā „Pārdošanas sludinājuma konteksts” (Groq)"
-              aria-busy={analyzing}
-            >
-              {analyzing ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-              ) : null}
-              Ģenerēt pārdošanas kontekstu
-            </button>
-          </div>
           <AdminAiFieldError message={analyzeErr} />
           {readOnly ? (
             <div
@@ -499,6 +467,21 @@ export function AdminListingAnalysisSourceBlock({
             <AdminAiPolishTextareaShell
               value={v.listingPasteRaw}
               disabled={disabled}
+              toolbarStart={
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-700 bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={readOnly || disabled || analyzing || !v.listingPasteRaw.trim()}
+                  onClick={() => void runListingAnalyze()}
+                  title="No iekopētā apraksta ģenerē profesionālu tekstu laukā „Pārdošanas sludinājuma konteksts” (Groq)"
+                  aria-busy={analyzing}
+                >
+                  {analyzing ? (
+                    <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                  ) : null}
+                  Ģenerēt pārdošanas kontekstu
+                </button>
+              }
               onPolished={(next) =>
                 onChange({ ...v, listingPasteRaw: next.slice(0, ADMIN_LISTING_PASTE_RAW_MAX_LEN) })
               }
@@ -529,23 +512,13 @@ export function AdminListingAnalysisSourceBlock({
           compact={dense}
         >
           {readOnly ? (
-            <>
-              <p
-                className={
-                  dense
-                    ? "mb-0.5 text-[9px] font-medium text-slate-400"
-                    : "mb-0.5 text-[10px] font-medium text-slate-400"
-                }
-              >
-                {LISTING_ANALYSIS_COMMENT_LABEL}
-              </p>
-              <AdminRichCommentReadonly
-                html={v.listingSalesContext}
-                className={pri ? roBox(!!dense) : roDefault}
-              />
-            </>
+            <AdminRichCommentReadonly
+              html={v.listingSalesContext}
+              className={pri ? roBox(!!dense) : roDefault}
+            />
           ) : (
             <AdminSourceCommentField
+              label=""
               value={v.listingSalesContext}
               onChange={(next) => onChange({ ...v, listingSalesContext: next })}
               disabled={disabled}

@@ -76,11 +76,6 @@ export function AdminCustomerHistoryPanel({
         }
       >
         <div className="space-y-3 px-2 pb-3">
-          <p className="text-[10px] leading-relaxed text-[var(--color-provin-muted)]">
-            Tikai operatoram — nav PDF. Sakritība pēc e-pasta vai tālruņa. Šeit ir teksts, ko klients jau ir
-            saņēmis ātrajā vērtējumā.
-          </p>
-
           {data ? (
             <div className="flex flex-wrap gap-1.5">
               {data.flags.telegramGroup ? <Badge tone="telegram">Telegram grupa (9,99 €)</Badge> : null}

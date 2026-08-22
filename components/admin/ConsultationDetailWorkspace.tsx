@@ -601,31 +601,39 @@ export function ConsultationDetailWorkspace({
           onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
         />
         <div className="block min-w-0">
-          <span className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-            IETEIKUMI KLĀTIENES APSKATEI
-          </span>
           <AdminAiPolishRichCommentShell
             compact
             value={slot.ieteikumiApskatei}
             onChange={(next) => updateSlotField(idx, "ieteikumiApskatei", next)}
+            label={
+              <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                Ieteikumi klātienes apskatei
+              </span>
+            }
           />
         </div>
         <div className="block min-w-0">
-          <span className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-            CENAS ATBILSTĪBA
-          </span>
           <AdminAiPolishRichCommentShell
             compact
             value={slot.cenasAtbilstiba}
             onChange={(next) => updateSlotField(idx, "cenasAtbilstiba", next)}
+            label={
+              <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                Cenas atbilstība
+              </span>
+            }
           />
         </div>
         <div className="block min-w-0">
-          <span className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">KOPSAVILKUMS</span>
           <AdminAiPolishRichCommentShell
             compact
             value={slot.kopsavilkums}
             onChange={(next) => updateSlotField(idx, "kopsavilkums", next)}
+            label={
+              <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                Kopsavilkums
+              </span>
+            }
           />
         </div>
         <AdminConsultationSlotPhotos
@@ -724,17 +732,17 @@ export function ConsultationDetailWorkspace({
 
         {consultationStep === CONSULTATION_WIZARD_STEP_COUNT - 1 ? (
           <div className="min-w-0 space-y-2 rounded-xl bg-[var(--admin-surface-elevated)] p-3 shadow-sm ring-1 ring-[var(--admin-border-subtle)]">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className={`${sectionTitle}`}>Approved by IRISS</h2>
-              <AdminPdfIncludeToggle
-                checked={pdfVisibility.iriss}
-                onChange={(next) => onPdfVisibilityChange({ iriss: next })}
-              />
-            </div>
             <AdminAiPolishRichCommentShell
               value={ws.irissApproved}
               onChange={(next) => setWs((p) => ({ ...p, irissApproved: next }))}
               aria-label="APPROVED BY IRISS — galīgais kopsavilkums"
+              label={<h2 className={sectionTitle}>Approved by IRISS</h2>}
+              actions={
+                <AdminPdfIncludeToggle
+                  checked={pdfVisibility.iriss}
+                  onChange={(next) => onPdfVisibilityChange({ iriss: next })}
+                />
+              }
             />
           </div>
         ) : null}

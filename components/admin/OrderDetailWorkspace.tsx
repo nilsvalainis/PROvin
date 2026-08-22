@@ -137,8 +137,10 @@ import {
   Send,
   ShieldAlert,
   Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
@@ -283,6 +285,15 @@ const wizardFooterBtnBase =
 const wizardFooterNav = `${wizardFooterBtnBase} border border-slate-300 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700`;
 const wizardFooterPreview = `${wizardFooterBtnBase} border border-amber-600/35 bg-[#FFD700] text-amber-950 shadow-sm hover:bg-[#ffe033]`;
 const wizardFooterPdf = `${wizardFooterBtnBase} border border-emerald-800/40 bg-[#22C55E] text-white shadow-sm hover:bg-[#16a34a]`;
+
+function adminCommentFieldLabel(icon: LucideIcon, title: string) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <AdminProvinLucide icon={icon} />
+      <span className="text-[10px] font-medium uppercase tracking-wide text-slate-600">{title}</span>
+    </span>
+  );
+}
 
 const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--color-provin-muted)] ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS}`;
 
@@ -3964,7 +3975,7 @@ export function OrderDetailWorkspace({
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>
-                <div className="min-w-0 border-t border-slate-200/75 pt-4">
+                <div className="min-w-0 border-t border-slate-200/75 pt-2">
                   <AdminListingAnalysisSourceBlock
                     value={blocksDisplaySafe.listing_analysis}
                     readOnly={false}
@@ -3979,24 +3990,25 @@ export function OrderDetailWorkspace({
                     listingUrl={payload.listingUrl}
                   />
                 </div>
-                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.priceFit} title="3. Cenas atbilstība">
-                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Analizēt cenu"
-                      busy={aiPriceBusy}
-                      disabled={!payload.aiAllowed}
-                      demoOnly={!payload.aiAllowed}
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.price}
-                      onGenerate={(operatorNotes, modelTier) => void runAiPriceAnalysis(operatorNotes, modelTier)}
-                    />
-                  </div>
+                <div className="min-w-0">
                   <AdminAiFieldError message={aiPriceErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.cenasAtbilstiba ?? ""}
                     onChange={(next) => updateWs({ cenasAtbilstiba: next })}
                     aria-label="Cenas atbilstība"
+                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.priceFit, "3. Cenas atbilstība")}
+                    actions={
+                      <AdminAiGenerateWithPrefill
+                        label="Analizēt cenu"
+                        busy={aiPriceBusy}
+                        disabled={!payload.aiAllowed}
+                        demoOnly={!payload.aiAllowed}
+                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.price}
+                        onGenerate={(operatorNotes, modelTier) => void runAiPriceAnalysis(operatorNotes, modelTier)}
+                      />
+                    }
                   />
-                </ListingAnalysisSubsectionHeading>
+                </div>
               </div>
             </div>
           </section>
@@ -4021,194 +4033,169 @@ export function OrderDetailWorkspace({
                 title="APPROVED BY IRISS"
                 trafficStripClass=""
               />
-              <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.internalNote}
-                  title={ADMIN_INCIDENTS_SUMMARY_LABEL}
-                >
-                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                    Glabājas pasūtījuma melnrakstā; PDF drukā zem „Negadījumu vēstures” kā plakans teksts (bez vizuālā
-                    formatējuma).
-                    Saglabājas automātiski.
-                  </p>
-                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Sagatavot atbildi"
-                      busy={aiIncidentsSummaryBusy}
-                      disabled={!payload.aiAllowed}
-                      demoOnly={!payload.aiAllowed}
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.incidents}
-                      onGenerate={(operatorNotes, modelTier) =>
-                        void runAiIncidentsSummary(operatorNotes, modelTier)}
-                    />
-                  </div>
+              <div className="space-y-2 bg-transparent px-2 pb-2 pt-1.5">
+                <div className="min-w-0">
                   <AdminAiFieldError message={aiIncidentsSummaryErr} />
-                  <div className="mt-2">
-                    <AdminAiPolishRichCommentShell
-                      compact
-                      value={internalCommentDraft}
-                      onChange={onInternalCommentChange}
-                      aria-label={ADMIN_INCIDENTS_SUMMARY_LABEL}
-                    />
-                  </div>
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.internalNote}
-                  title={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
-                >
-                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                    Glabājas pasūtījuma melnrakstā; PDF drukā zem nobraukuma grafika kā komentārs. Saglabājas automātiski.
-                  </p>
-                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Sagatavot atbildi"
-                      busy={aiMileageCommentBusy}
-                      disabled={!payload.aiAllowed || !hasMileageDataForAi}
-                      demoOnly={!payload.aiAllowed}
-                      title={
-                        !payload.aiAllowed
-                          ? undefined
-                          : !hasMileageDataForAi
-                            ? "Vispirms aizpildi nobraukuma tabulas avotos"
-                            : undefined
-                      }
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.mileage}
-                      onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
-                    />
-                  </div>
+                  <AdminAiPolishRichCommentShell
+                    compact
+                    value={internalCommentDraft}
+                    onChange={onInternalCommentChange}
+                    aria-label={ADMIN_INCIDENTS_SUMMARY_LABEL}
+                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.internalNote, ADMIN_INCIDENTS_SUMMARY_LABEL)}
+                    actions={
+                      <AdminAiGenerateWithPrefill
+                        label="Sagatavot atbildi"
+                        busy={aiIncidentsSummaryBusy}
+                        disabled={!payload.aiAllowed}
+                        demoOnly={!payload.aiAllowed}
+                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.incidents}
+                        onGenerate={(operatorNotes, modelTier) =>
+                          void runAiIncidentsSummary(operatorNotes, modelTier)}
+                      />
+                    }
+                  />
+                </div>
+                <div className="min-w-0">
                   <AdminAiFieldError message={aiMileageCommentErr} />
-                  <div className="mt-2">
-                    <AdminAiPolishRichCommentShell
-                      compact
-                      value={mileageCommentDraft}
-                      onChange={onMileageCommentChange}
-                      aria-label={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
-                    />
-                  </div>
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.technicalRisks}
-                  title={`1. ${ADMIN_TECHNICAL_RISKS_LABEL}`}
-                >
-                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Ģenerēt analīzi"
-                      busy={aiTechnicalRisksBusy}
-                      disabled={!payload.aiAllowed}
-                      demoOnly={!payload.aiAllowed}
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks}
-                      onGenerate={(operatorNotes, modelTier) =>
-                        void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
-                    />
-                  </div>
+                  <AdminAiPolishRichCommentShell
+                    compact
+                    value={mileageCommentDraft}
+                    onChange={onMileageCommentChange}
+                    aria-label={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
+                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.internalNote, ADMIN_MILEAGE_HISTORY_COMMENT_LABEL)}
+                    actions={
+                      <AdminAiGenerateWithPrefill
+                        label="Sagatavot atbildi"
+                        busy={aiMileageCommentBusy}
+                        disabled={!payload.aiAllowed || !hasMileageDataForAi}
+                        demoOnly={!payload.aiAllowed}
+                        title={
+                          !payload.aiAllowed
+                            ? undefined
+                            : !hasMileageDataForAi
+                              ? "Vispirms aizpildi nobraukuma tabulas avotos"
+                              : undefined
+                        }
+                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.mileage}
+                        onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
+                      />
+                    }
+                  />
+                </div>
+                <div className="min-w-0">
                   <AdminAiFieldError message={aiTechnicalRisksErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.tehniskoRiskuAnalize ?? ""}
                     onChange={(next) => updateWs({ tehniskoRiskuAnalize: next })}
                     aria-label={ADMIN_TECHNICAL_RISKS_LABEL}
+                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.technicalRisks, `1. ${ADMIN_TECHNICAL_RISKS_LABEL}`)}
+                    actions={
+                      <AdminAiGenerateWithPrefill
+                        label="Ģenerēt analīzi"
+                        busy={aiTechnicalRisksBusy}
+                        disabled={!payload.aiAllowed}
+                        demoOnly={!payload.aiAllowed}
+                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks}
+                        onGenerate={(operatorNotes, modelTier) =>
+                          void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
+                      />
+                    }
                   />
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.inspection}
-                  title="2. Ieteikumi klātienes apskatei"
-                >
-                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Ģenerēt ieteikumus"
-                      busy={aiInspectionBusy}
-                      disabled={!payload.aiAllowed}
-                      demoOnly={!payload.aiAllowed}
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.inspection}
-                      onGenerate={(operatorNotes, modelTier) =>
-                        void runAiInspectionRecommendations(operatorNotes, modelTier)}
-                    />
-                  </div>
-                  {!adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ? (
-                    <p className="mb-2 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
-                      Vispirms ģenerē 1. Tehnisko risku analīzi — apskate tad kļūst konkrēta šim agregātam.
-                    </p>
-                  ) : null}
+                </div>
+                <div className="min-w-0">
                   <AdminAiFieldError message={aiInspectionErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns ?? ""}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
                     aria-label="Ieteikumi klātienes apskatei"
+                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.inspection, "2. Ieteikumi klātienes apskatei")}
+                    actions={
+                      <AdminAiGenerateWithPrefill
+                        label="Ģenerēt ieteikumus"
+                        busy={aiInspectionBusy}
+                        disabled={!payload.aiAllowed}
+                        demoOnly={!payload.aiAllowed}
+                        title={
+                          !payload.aiAllowed
+                            ? undefined
+                            : !adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim()
+                              ? "Vispirms ģenerē 1. Tehnisko risku analīzi"
+                              : undefined
+                        }
+                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.inspection}
+                        onGenerate={(operatorNotes, modelTier) =>
+                          void runAiInspectionRecommendations(operatorNotes, modelTier)}
+                      />
+                    }
                   />
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading icon={IRISS_CHROME_LUCIDE.summary} title="3. Kopsavilkums">
-                  <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Sagatavot atbildi"
-                      busy={aiSummaryBusy}
-                      disabled={
-                        !payload.aiAllowed ||
-                        !(
-                          adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
-                          adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
-                          adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
-                          adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
-                        )
-                      }
-                      demoOnly={!payload.aiAllowed}
-                      title={
-                        !payload.aiAllowed
-                          ? undefined
-                          : !(
-                                adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
-                                adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
-                                adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
-                                adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
-                              )
-                            ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja, ieteikumu vai cenas sadaļu"
-                            : undefined
-                      }
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.summary}
-                      onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
-                    />
-                  </div>
+                </div>
+                <div className="min-w-0">
                   <AdminAiFieldError message={aiSummaryErr} />
                   <AdminAiPolishRichCommentShell
                     value={ws.iriss ?? ""}
                     onChange={setIrissSummary}
                     aria-label="Galvenais kopsavilkums klientam"
+                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.summary, "3. Kopsavilkums")}
+                    actions={
+                      <AdminAiGenerateWithPrefill
+                        label="Sagatavot atbildi"
+                        busy={aiSummaryBusy}
+                        disabled={
+                          !payload.aiAllowed ||
+                          !(
+                            adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
+                            adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
+                            adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
+                            adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
+                          )
+                        }
+                        demoOnly={!payload.aiAllowed}
+                        title={
+                          !payload.aiAllowed
+                            ? undefined
+                            : !(
+                                  adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
+                                  adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
+                                  adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
+                                  adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
+                                )
+                              ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja, ieteikumu vai cenas sadaļu"
+                              : undefined
+                        }
+                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.summary}
+                        onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
+                      />
+                    }
                   />
-                </ListingAnalysisSubsectionHeading>
-                <ListingAnalysisSubsectionHeading
-                  icon={IRISS_CHROME_LUCIDE.sourcesComparison}
-                  title={ADMIN_SOURCES_COMPARISON_LABEL}
-                >
-                  <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-                    Iekšējs materiāls blogam un mārketingam — netiek iekļauts klienta PDF. Ģenerē pēc visu avotu
-                    apkopošanas. Saglabājas automātiski.
-                  </p>
-                  <div className="mb-2 mt-2 flex flex-wrap items-center justify-end gap-2">
-                    <AdminAiGenerateWithPrefill
-                      label="Salīdzināt avotus"
-                      busy={aiSourcesComparisonBusy}
-                      disabled={!payload.aiAllowed || !hasSourceDataForAi}
-                      demoOnly={!payload.aiAllowed}
-                      title={
-                        !payload.aiAllowed
-                          ? undefined
-                          : !hasSourceDataForAi
-                            ? "Vispirms aizpildi avotu sadaļas"
-                            : undefined
-                      }
-                      recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison}
-                      onGenerate={(operatorNotes, modelTier) =>
-                        void runAiSourcesComparison(operatorNotes, modelTier)}
-                    />
-                  </div>
+                </div>
+                <div className="min-w-0">
                   <AdminAiFieldError message={aiSourcesComparisonErr} />
-                  <div className="mt-2">
-                    <AdminAiPolishRichCommentShell
-                      compact
-                      value={sourcesComparisonCommentDraft}
-                      onChange={onSourcesComparisonCommentChange}
-                      aria-label={ADMIN_SOURCES_COMPARISON_LABEL}
-                    />
-                  </div>
-                </ListingAnalysisSubsectionHeading>
+                  <AdminAiPolishRichCommentShell
+                    compact
+                    value={sourcesComparisonCommentDraft}
+                    onChange={onSourcesComparisonCommentChange}
+                    aria-label={ADMIN_SOURCES_COMPARISON_LABEL}
+                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.sourcesComparison, ADMIN_SOURCES_COMPARISON_LABEL)}
+                    actions={
+                      <AdminAiGenerateWithPrefill
+                        label="Salīdzināt avotus"
+                        busy={aiSourcesComparisonBusy}
+                        disabled={!payload.aiAllowed || !hasSourceDataForAi}
+                        demoOnly={!payload.aiAllowed}
+                        title={
+                          !payload.aiAllowed
+                            ? undefined
+                            : !hasSourceDataForAi
+                              ? "Vispirms aizpildi avotu sadaļas"
+                              : undefined
+                        }
+                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison}
+                        onGenerate={(operatorNotes, modelTier) =>
+                          void runAiSourcesComparison(operatorNotes, modelTier)}
+                      />
+                    }
+                  />
+                </div>
               </div>
             </div>
           </section>

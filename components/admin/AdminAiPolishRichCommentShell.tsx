@@ -4,9 +4,9 @@
  * ✨ gramatikas labošana (AI) + bagātinātais teksts (`AdminRichCommentField`).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
-import { AdminFieldResetButton, ADMIN_FIELD_RESET_ABS_CLASS } from "@/components/admin/AdminFieldResetButton";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import { AdminRichCommentField } from "@/components/admin/AdminInternalRichCommentEditor";
 import {
   ADMIN_AI_POLISH_BTN_CLASS,
@@ -24,6 +24,10 @@ type Props = {
   /** False, ja × jau ir pie lauka etiķetes (piem. avota komentāri). */
   showReset?: boolean;
   "aria-label"?: string;
+  /** Virsraksts formatēšanas rindā. */
+  label?: ReactNode;
+  /** Ģenerēšanas pogas tajā pašā rindā. */
+  actions?: ReactNode;
 };
 
 export function AdminAiPolishRichCommentShell({
@@ -33,6 +37,8 @@ export function AdminAiPolishRichCommentShell({
   compact,
   showReset = true,
   "aria-label": ariaLabel,
+  label,
+  actions,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,68 +89,67 @@ export function AdminAiPolishRichCommentShell({
 
   const canClear = Boolean(plainForPolish.trim());
 
-  return (
-    <div className="w-full min-w-0">
-      <div className={`relative rounded-md pt-8 ${showReset ? "pr-14" : compact ? "pr-8" : "pr-9"}`}>
-        <AdminRichCommentField
-          variant={compact ? "compact" : "default"}
-          value={value}
-          onChange={onChange}
-          aria-label={ariaLabel}
-        />
-        {showReset ? (
-          <span className={ADMIN_FIELD_RESET_ABS_CLASS}>
-            <AdminFieldResetButton
-              disabled={disabled || !canClear}
-              title="Nodzēst komentāru"
-              aria-label={ariaLabel ? `Nodzēst: ${ariaLabel}` : "Nodzēst komentāru"}
-              onClick={() => {
-                onChange("");
-                setOriginalHtml("");
-                setError(null);
-              }}
-            />
-          </span>
-        ) : null}
+  const toolbarEnd = (
+    <>
+      {actions}
+      {canUndo ? (
         <button
           type="button"
-          className={ADMIN_AI_POLISH_BTN_CLASS}
-          onClick={() => void run()}
-          disabled={disabled || loading || !plainForPolish.trim()}
-          title="Labot gramatiku (AI)"
-          aria-busy={loading}
-          aria-label="Labot gramatiku"
+          onClick={handleUndo}
+          disabled={disabled}
+          className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-transparent px-2 py-0.5 text-[10px] font-medium text-slate-500 shadow-none transition hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+          title="Atgriezt tekstu pirms pēdējās AI labošanas"
         >
-          {loading ? (
-            <Loader2 className={ADMIN_AI_POLISH_SPINNER_CLASS} aria-hidden />
-          ) : (
-            <span className={ADMIN_AI_POLISH_SPARKLE_CLASS} aria-hidden>
-              ✨
-            </span>
-          )}
+          <RotateCcw className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
+          Atgriezt
         </button>
-        {error ? (
-          <p
-            className="pointer-events-none absolute bottom-1 left-0 right-10 truncate text-[9px] text-amber-800/90"
-            title="Projektā nepieciešams ANTHROPIC_API_KEY."
-          >
-            {error}
-          </p>
-        ) : null}
-      </div>
-      {canUndo ? (
-        <div className="mt-1 flex justify-end">
-          <button
-            type="button"
-            onClick={handleUndo}
-            disabled={disabled}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-transparent px-2 py-0.5 text-[10px] font-medium text-slate-500 shadow-none transition hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-            title="Atgriezt tekstu pirms pēdējās AI labošanas"
-          >
-            <RotateCcw className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
-            Atgriezt oriģinālu
-          </button>
-        </div>
+      ) : null}
+      {showReset ? (
+        <AdminFieldResetButton
+          disabled={disabled || !canClear}
+          title="Nodzēst komentāru"
+          aria-label={ariaLabel ? `Nodzēst: ${ariaLabel}` : "Nodzēst komentāru"}
+          onClick={() => {
+            onChange("");
+            setOriginalHtml("");
+            setError(null);
+          }}
+        />
+      ) : null}
+      <button
+        type="button"
+        className={ADMIN_AI_POLISH_BTN_CLASS}
+        onClick={() => void run()}
+        disabled={disabled || loading || !plainForPolish.trim()}
+        title="Labot gramatiku (AI)"
+        aria-busy={loading}
+        aria-label="Labot gramatiku"
+      >
+        {loading ? (
+          <Loader2 className={ADMIN_AI_POLISH_SPINNER_CLASS} aria-hidden />
+        ) : (
+          <span className={ADMIN_AI_POLISH_SPARKLE_CLASS} aria-hidden>
+            ✨
+          </span>
+        )}
+      </button>
+    </>
+  );
+
+  return (
+    <div className="w-full min-w-0">
+      <AdminRichCommentField
+        variant={compact ? "compact" : "default"}
+        value={value}
+        onChange={onChange}
+        aria-label={ariaLabel}
+        label={label}
+        toolbarEnd={toolbarEnd}
+      />
+      {error ? (
+        <p className="mt-0.5 truncate text-[9px] text-amber-800/90" title="Projektā nepieciešams ANTHROPIC_API_KEY.">
+          {error}
+        </p>
       ) : null}
     </div>
   );

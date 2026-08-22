@@ -11,9 +11,10 @@ import {
   useCallback,
   useState,
   type ReactElement,
+  type ReactNode,
   type TextareaHTMLAttributes,
 } from "react";
-import { AdminFieldResetButton, ADMIN_FIELD_RESET_ABS_CLASS } from "@/components/admin/AdminFieldResetButton";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import {
   ADMIN_AI_POLISH_BTN_CLASS,
   ADMIN_AI_POLISH_SPARKLE_CLASS,
@@ -29,6 +30,7 @@ export function AdminAiPolishTextareaShell({
   onClear,
   showReset = true,
   disabled,
+  toolbarStart,
   children,
 }: {
   value: string;
@@ -37,6 +39,7 @@ export function AdminAiPolishTextareaShell({
   onClear?: () => void;
   showReset?: boolean;
   disabled?: boolean;
+  toolbarStart?: ReactNode;
   children: ReactElement<TextareaProps>;
 }) {
   const [loading, setLoading] = useState(false);
@@ -89,26 +92,35 @@ export function AdminAiPolishTextareaShell({
   }
 
   const ta = children as ReactElement<TextareaProps>;
-  const mergedClass = [ta.props.className, showReset ? "pt-8 pr-14" : "pt-8 pr-9"].filter(Boolean).join(" ");
   const canClear = Boolean(value.trim());
 
   return (
     <div className="w-full min-w-0">
-      <div className="relative">
-        {cloneElement(ta, { className: mergedClass })}
+      <div className="mb-1 flex min-w-0 flex-wrap items-center justify-end gap-1">
+        {toolbarStart}
+        {canUndo ? (
+          <button
+            type="button"
+            onClick={handleUndo}
+            disabled={disabled}
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-transparent px-2 py-0.5 text-[10px] font-medium text-slate-500 shadow-none transition hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+            title="Atgriezt tekstu pirms pēdējās AI labošanas"
+          >
+            <RotateCcw className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
+            Atgriezt
+          </button>
+        ) : null}
         {showReset ? (
-          <span className={ADMIN_FIELD_RESET_ABS_CLASS}>
-            <AdminFieldResetButton
-              disabled={disabled || !canClear}
-              title="Nodzēst lauku"
-              onClick={() => {
-                if (onClear) onClear();
-                else onPolished("");
-                setOriginalText("");
-                setError(null);
-              }}
-            />
-          </span>
+          <AdminFieldResetButton
+            disabled={disabled || !canClear}
+            title="Nodzēst lauku"
+            onClick={() => {
+              if (onClear) onClear();
+              else onPolished("");
+              setOriginalText("");
+              setError(null);
+            }}
+          />
         ) : null}
         <button
           type="button"
@@ -127,28 +139,15 @@ export function AdminAiPolishTextareaShell({
             </span>
           )}
         </button>
-        {error ? (
-          <p
-            className="pointer-events-none absolute bottom-0 left-0 right-8 truncate text-[9px] text-amber-800/90"
-            title="Projektā nepieciešams ANTHROPIC_API_KEY (.env.local / Vercel)."
-          >
-            {error}
-          </p>
-        ) : null}
       </div>
-      {canUndo ? (
-        <div className="mt-1 flex justify-end">
-          <button
-            type="button"
-            onClick={handleUndo}
-            disabled={disabled}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-transparent px-2 py-0.5 text-[10px] font-medium text-slate-500 shadow-none transition hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-            title="Atgriezt tekstu pirms pēdējās AI labošanas"
-          >
-            <RotateCcw className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
-            Atgriezt oriģinālu
-          </button>
-        </div>
+      {cloneElement(ta)}
+      {error ? (
+        <p
+          className="mt-0.5 truncate text-[9px] text-amber-800/90"
+          title="Projektā nepieciešams ANTHROPIC_API_KEY (.env.local / Vercel)."
+        >
+          {error}
+        </p>
       ) : null}
     </div>
   );

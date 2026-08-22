@@ -3,10 +3,8 @@
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
-import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
-import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
@@ -41,47 +39,47 @@ export function AdminSourceCommentField({
   readonlyClassName = "min-h-[40px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]",
   ai,
 }: Props) {
+  const title = label.trim();
+  const generate =
+    ai && !readOnly ? (
+      <AdminAiGenerateWithPrefill
+        label="Ģenerēt komentāru"
+        busy={ai.busy}
+        disabled={!ai.allowed || !ai.hasSourceData || disabled}
+        demoOnly={!ai.allowed}
+        title={
+          !ai.allowed
+            ? undefined
+            : !ai.hasSourceData
+              ? "Vispirms aizpildi šī avota datus (tabulas, laukus u.c.)"
+              : "No šī avota datiem ģenerē komentāru ar AI"
+        }
+        onGenerate={ai.onGenerate}
+      />
+    ) : null;
+
   return (
     <div className="w-full min-w-0">
-      <div className="mb-0.5 flex flex-wrap items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-1">
-          <span className="block text-[10px] font-medium text-[var(--color-provin-muted)]">{label}</span>
-          {!readOnly ? (
-            <AdminFieldResetButton
-              disabled={disabled || !adminRichHtmlToPlainText(value).trim()}
-              title="Nodzēst komentāru"
-              aria-label={`Nodzēst: ${label}`}
-              onClick={() => onChange("")}
-            />
-          ) : null}
-        </span>
-        {ai && !readOnly ? (
-          <AdminAiGenerateWithPrefill
-            label="Ģenerēt komentāru"
-            busy={ai.busy}
-            disabled={!ai.allowed || !ai.hasSourceData || disabled}
-            demoOnly={!ai.allowed}
-            title={
-              !ai.allowed
-                ? undefined
-                : !ai.hasSourceData
-                  ? "Vispirms aizpildi šī avota datus (tabulas, laukus u.c.)"
-                  : "No šī avota datiem ģenerē komentāru ar AI"
-            }
-            onGenerate={ai.onGenerate}
-          />
-        ) : null}
-      </div>
       <AdminAiFieldError message={ai?.error} />
       {readOnly ? (
-        <AdminRichCommentReadonly html={value} className={readonlyClassName} />
+        <>
+          {title ? (
+            <span className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]">{title}</span>
+          ) : null}
+          <AdminRichCommentReadonly html={value} className={readonlyClassName} />
+        </>
       ) : (
         <AdminAiPolishRichCommentShell
           value={value}
           onChange={onChange}
           disabled={disabled}
           compact={compact}
-          showReset={false}
+          label={
+            title ? (
+              <span className="text-[10px] font-medium text-[var(--color-provin-muted)]">{title}</span>
+            ) : undefined
+          }
+          actions={generate}
           aria-label={ariaLabel}
         />
       )}

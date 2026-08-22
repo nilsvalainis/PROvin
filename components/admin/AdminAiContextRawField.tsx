@@ -40,9 +40,6 @@ export function AdminAiContextRawField({
           />
         ) : null}
       </div>
-      <p className="mb-1.5 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-        Tiek nodots tikai AI ✨ ģenerēšanai; netiek drukāts klienta PDF.
-      </p>
       {readOnly ? (
         <div className="whitespace-pre-wrap rounded-md border border-slate-200/90 bg-slate-50/70 px-2 py-1.5 text-[11px] text-[var(--color-apple-text)]">
           {value.trim() ? value : <span className="text-slate-400">—</span>}

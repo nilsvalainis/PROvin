@@ -47,18 +47,6 @@ const areaCls =
   "w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20";
 const labelCls = "mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]";
 
-/** Katram avotam — ko tas praktiski dod un kur ir robežas. */
-const SOURCE_HINT: Record<VinRegistryBlockKey, string> = {
-  tjekbil:
-    "Dānijas reģistrs (DMR, Færdselsstyrelsen, Motorstyrelsen): odometra žurnāls, apskates, izmantošanas veids, līzings, Bilbogen ķīlas. Publiski nav īpašnieku vārdu.",
-  mnt_ee:
-    "Igaunijas Transpordiamet „Sõiduki taustakontroll”: nobraukums, izmantošanas vēsture, ierobežojumi. Prasa reCAPTCHA — ielāde tikai lokāli.",
-  lkf_ee:
-    "Igaunijas Liikluskindlustuse Fond „Kahjukontroll”: OCTA atlīdzības gadījumi. Summas publiski netiek rādītas; prasa reCAPTCHA.",
-  carinfo:
-    "ZVIEDRIJAS REĢISTRI (car.info): Atvērt vai ielīmē lapas tekstu RAW / Copilot — nobraukums, īpašnieku skaits, statusi un RED FLAG aizpildās. Captcha nav vajadzīga.",
-};
-
 type Props = {
   blockKey: VinRegistryBlockKey;
   value: VinRegistryBlockState;
@@ -287,10 +275,6 @@ export function AdminVinRegistrySourceBlock({
   const inner = (
     <div className="flex min-h-0 flex-col overflow-hidden p-2">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <p className="mb-1.5 rounded-md border border-slate-200/90 bg-slate-50/90 px-2 py-1.5 text-[10px] leading-snug text-slate-600">
-          {SOURCE_HINT[blockKey]}
-        </p>
-
         {!readOnly ? (
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button

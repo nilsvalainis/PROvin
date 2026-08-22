@@ -118,9 +118,6 @@ export function AdminManualBannersEditor({
               placeholder="Paskaidrojums zem vērtības…"
               aria-label="Manuālā brīdinājuma teksts"
             />
-            <p className="mt-1 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-              PDF kopsavilkumā šis kļūst par kartīti: virsraksts · vērtība · paskaidrojums.
-            </p>
           </div>
         );
       })}

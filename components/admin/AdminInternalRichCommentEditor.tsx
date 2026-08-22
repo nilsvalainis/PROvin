@@ -8,6 +8,7 @@ import {
   type ClipboardEvent,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactNode,
 } from "react";
 import { Baseline, Highlighter, RemoveFormatting } from "lucide-react";
 import {
@@ -96,6 +97,10 @@ type AdminInternalRichCommentEditorProps = {
   className?: string;
   variant?: "default" | "compact";
   "aria-label"?: string;
+  /** Virsraksts tajā pašā rindā ar formatēšanu / ✨. */
+  label?: ReactNode;
+  /** Ģenerēt, ✨, × — rindas labajā pusē. */
+  toolbarEnd?: ReactNode;
 };
 
 type ActiveMarks = {
@@ -113,6 +118,8 @@ export function AdminInternalRichCommentEditor({
   className = "",
   variant = "default",
   "aria-label": ariaLabel = "Iekšējais komentārs",
+  label,
+  toolbarEnd,
 }: AdminInternalRichCommentEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
   const syncingFromParent = useRef(false);
@@ -377,9 +384,11 @@ export function AdminInternalRichCommentEditor({
 
   return (
     <div className={className}>
+      <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      {label ? <div className="min-w-0 shrink-0">{label}</div> : null}
       <div
         data-rich-toolbar
-        className="relative mb-1.5 flex flex-wrap items-center gap-1"
+        className="relative flex min-w-0 flex-1 flex-wrap items-center gap-1"
         onMouseDown={onToolbarMouseDown}
         role="toolbar"
         aria-label="Teksta formatējums"
@@ -492,6 +501,10 @@ export function AdminInternalRichCommentEditor({
             </div>
           </div>
         ) : null}
+      </div>
+      {toolbarEnd ? (
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">{toolbarEnd}</div>
+      ) : null}
       </div>
       <div
         ref={ref}
