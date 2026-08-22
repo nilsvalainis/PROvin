@@ -61,6 +61,7 @@ ${taskBlock}`,
       systemInstruction: AI_SELLER_ANALYSIS_SYSTEM,
       userPrompt,
       temperature: 0.35,
+      stream: input.stream,
     });
     return throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(raw));
   } catch (e) {

@@ -18,6 +18,7 @@ import {
   normalizeProvinExpertAiComment,
   stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
+import { AI_ROUTE_BUDGET_MS, createAiRequestBudget } from "@/lib/ai-request-budget";
 
 function finalizeInspectionComment(text: string): string {
   return stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text));
@@ -79,6 +80,8 @@ NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/n
       userPrompt,
       qualityField: "inspection",
       temperature: 0.35,
+      stream: input.stream,
+      budget: createAiRequestBudget(AI_ROUTE_BUDGET_MS.text),
       ...(techPlain ? {} : { maxSearches: 4 }),
     });
     return throwIfBlankGeneratedComment(finalizeInspectionComment(raw));

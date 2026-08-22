@@ -15,6 +15,12 @@ import { AI_LV_POLISH_SYSTEM } from "@/lib/admin-ai-prompts";
 import { recordAiUsage } from "@/lib/ai-usage-meter";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
+  aiAttemptTimeoutMs,
+  aiBudgetAllowsRetry,
+  type AiRequestBudget,
+} from "@/lib/ai-request-budget";
+import type { AiTextStream } from "@/lib/ai-text-stream";
+import {
   AiIncompleteCommentError,
   isAiIncompleteCommentError,
   throwIfBlankGeneratedComment,
@@ -201,6 +207,7 @@ export function formatAiSdkError(e: unknown): string {
 export async function runAiWithModelFailover<T>(opts: {
   primaryModel: string;
   logLabel?: string;
+  budget?: AiRequestBudget;
   run: (model: string) => Promise<T>;
 }): Promise<T> {
   const key = getAnthropicApiKeyFromEnv();
@@ -212,7 +219,16 @@ export async function runAiWithModelFailover<T>(opts: {
 
   for (let i = 0; i < models.length; i++) {
     const model = models[i]!;
-    if (i > 0) await sleep(FAILOVER_STEP_MS);
+    if (i > 0) {
+      if (!aiBudgetAllowsRetry(opts.budget)) {
+        console.warn(`${LOG_PREFIX} failover_skipped_no_budget`, {
+          label: opts.logLabel ?? "claude",
+          nextModel: model,
+        });
+        break;
+      }
+      await sleep(FAILOVER_STEP_MS);
+    }
     try {
       const result = await opts.run(model);
       console.info(`${LOG_PREFIX} ok`, {
@@ -439,12 +455,14 @@ export async function aiGenerateJsonWithSchema(opts: {
 async function claudeStreamText(
   client: Anthropic,
   params: Anthropic.MessageCreateParamsNonStreaming,
-  opts: { label: string; timeoutMs: number },
+  opts: { label: string; timeoutMs: number; textStream?: AiTextStream },
 ): Promise<string> {
   const stream = client.messages.stream(params, { timeout: opts.timeoutMs });
   let partial = "";
+  opts.textStream?.onRestart?.();
   stream.on("text", (delta) => {
     partial += delta;
+    opts.textStream?.onDelta(delta);
   });
   // Bez šī klausītāja straumes kļūda kļūst par neapstrādātu notikumu; `finalMessage()` to tāpat noraida.
   stream.on("error", () => {});
@@ -469,13 +487,7 @@ async function claudeStreamText(
 
 async function aiGenerateTextOnce(
   key: string,
-  opts: {
-    model: string;
-    systemInstruction: string;
-    userPrompt: string;
-    temperature?: number;
-    maxTokens?: number;
-  },
+  opts: AiTextOptions & { model: string },
 ): Promise<string> {
   return claudeStreamText(
     anthropicClient(key),
@@ -486,26 +498,39 @@ async function aiGenerateTextOnce(
       messages: [{ role: "user", content: opts.userPrompt }],
       ...claudeOutputControls(opts.model),
     },
-    { label: "text", timeoutMs: TEXT_REQUEST_TIMEOUT_MS },
+    {
+      label: "text",
+      timeoutMs: aiAttemptTimeoutMs(opts.budget, TEXT_REQUEST_TIMEOUT_MS),
+      textStream: opts.stream,
+    },
   );
 }
 
-/** Brīva teksta ģenerēšana ar automātisku modeļu failover (529 u.c.). */
-export async function aiGenerateText(opts: {
+export type AiTextOptions = {
   model: string;
   systemInstruction: string;
   userPrompt: string;
   temperature?: number;
   maxTokens?: number;
-}): Promise<string> {
+  budget?: AiRequestBudget;
+  stream?: AiTextStream;
+};
+
+/** Brīva teksta ģenerēšana ar automātisku modeļu failover (529 u.c.). */
+export async function aiGenerateText(opts: AiTextOptions): Promise<string> {
   const key = getAnthropicApiKeyFromEnv();
   if (!key) throw new Error("missing_ai_key");
 
   return runAiWithModelFailover({
     primaryModel: opts.model,
     logLabel: "text",
+    budget: opts.budget,
     run: async (model) =>
-      polishHaikuLatvianProse(model, await aiGenerateTextOnce(key, { ...opts, model })),
+      polishHaikuLatvianProse(
+        model,
+        await aiGenerateTextOnce(key, { ...opts, model }),
+        opts.budget,
+      ),
   });
 }
 
@@ -513,9 +538,14 @@ export async function aiGenerateText(opts: {
  * Haiku neder latviešu eksperta prozai (gramatika/stils). Ģenerē lēti, tad Sonnet
  * slīpē tikai īso izejas tekstu — nevis visu pasūtījuma kontekstu.
  */
-async function polishHaikuLatvianProse(model: string, text: string): Promise<string> {
+async function polishHaikuLatvianProse(
+  model: string,
+  text: string,
+  budget?: AiRequestBudget,
+): Promise<string> {
   const t = text.trim();
   if (!t || model !== CLAUDE_MODEL_HAIKU) return text;
+  if (!aiBudgetAllowsRetry(budget)) return text;
   try {
     const key = getAnthropicApiKeyFromEnv();
     if (!key) return text;
@@ -535,14 +565,9 @@ async function polishHaikuLatvianProse(model: string, text: string): Promise<str
 }
 
 /** Eksperta PDF komentāri — pēc ģenerēšanas normalizē vārdu krājumu un rindkopu formātu. */
-export async function aiGenerateExpertText(opts: {
-  model: string;
-  systemInstruction: string;
-  userPrompt: string;
-  temperature?: number;
-  maxLen?: number;
-  maxTokens?: number;
-}): Promise<string> {
+export async function aiGenerateExpertText(
+  opts: AiTextOptions & { maxLen?: number },
+): Promise<string> {
   try {
     const raw = await aiGenerateText(opts);
     return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
@@ -558,13 +583,7 @@ export async function aiGenerateExpertText(opts: {
 }
 
 /** Vārdu krājums bez rindkopu pārformatēšanas — e-pasts, checklist u.c. */
-export async function aiGenerateTextWithVocabulary(opts: {
-  model: string;
-  systemInstruction: string;
-  userPrompt: string;
-  temperature?: number;
-  maxTokens?: number;
-}): Promise<string> {
+export async function aiGenerateTextWithVocabulary(opts: AiTextOptions): Promise<string> {
   try {
     const raw = await aiGenerateText(opts);
     return throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(raw));
@@ -598,14 +617,7 @@ const WEB_SEARCH_USER_LOCATION = {
 
 async function aiGenerateTextWithWebSearchOnce(
   key: string,
-  opts: {
-    model: string;
-    systemInstruction: string;
-    userPrompt: string;
-    temperature?: number;
-    maxTokens?: number;
-    maxSearches?: number;
-  },
+  opts: AiTextOptions & { model: string; maxSearches?: number },
 ): Promise<string> {
   return claudeStreamText(
     anthropicClient(key),
@@ -624,29 +636,30 @@ async function aiGenerateTextWithWebSearchOnce(
       ],
       ...claudeOutputControls(opts.model),
     },
-    { label: "web_search", timeoutMs: WEB_SEARCH_REQUEST_TIMEOUT_MS },
+    {
+      label: "web_search",
+      timeoutMs: aiAttemptTimeoutMs(opts.budget, WEB_SEARCH_REQUEST_TIMEOUT_MS),
+      textStream: opts.stream,
+    },
   );
 }
 
 /** Web meklēšana (Claude server-side tool) — tirgus un cenu analīzei ar modeļu failover. */
-export async function aiGenerateTextWithWebSearch(opts: {
-  model: string;
-  systemInstruction: string;
-  userPrompt: string;
-  temperature?: number;
-  maxTokens?: number;
-  maxSearches?: number;
-}): Promise<string> {
+export async function aiGenerateTextWithWebSearch(
+  opts: AiTextOptions & { maxSearches?: number },
+): Promise<string> {
   const key = getAnthropicApiKeyFromEnv();
   if (!key) throw new Error("missing_ai_key");
 
   return runAiWithModelFailover({
     primaryModel: opts.model,
     logLabel: "web_search",
+    budget: opts.budget,
     run: async (model) =>
       polishHaikuLatvianProse(
         model,
         await aiGenerateTextWithWebSearchOnce(key, { ...opts, model }),
+        opts.budget,
       ),
   });
 }

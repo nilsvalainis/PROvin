@@ -20,6 +20,12 @@ import {
   throwIncompleteOrEmptyComment,
 } from "@/lib/admin-ai-incomplete";
 import {
+  aiAttemptTimeoutMs,
+  aiBudgetAllowsRetry,
+  type AiRequestBudget,
+} from "@/lib/ai-request-budget";
+import type { AiTextStream } from "@/lib/ai-text-stream";
+import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
@@ -55,7 +61,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Komentāru maršrutu `maxDuration` ir 90s — nogrist ar rezervi atbildes noformēšanai. */
+/** Viena mēģinājuma griesti; faktisko laiku vēl saīsina pieprasījuma budžets. */
 const TEXT_REQUEST_TIMEOUT_MS = 88_000;
 /** Web search aģenti — maršruti ar `maxDuration = 120`. */
 const SEARCH_REQUEST_TIMEOUT_MS = 105_000;
@@ -157,6 +163,7 @@ export function formatGeminiSdkError(e: unknown): string {
 export async function runGeminiWithModelFailover<T>(opts: {
   primaryModel: string;
   logLabel?: string;
+  budget?: AiRequestBudget;
   run: (model: string) => Promise<T>;
 }): Promise<T> {
   const key = getGeminiApiKeyFromEnv();
@@ -168,7 +175,16 @@ export async function runGeminiWithModelFailover<T>(opts: {
 
   for (let i = 0; i < models.length; i++) {
     const model = models[i]!;
-    if (i > 0) await sleep(FAILOVER_STEP_MS);
+    if (i > 0) {
+      if (!aiBudgetAllowsRetry(opts.budget)) {
+        console.warn(`${LOG_PREFIX} failover_skipped_no_budget`, {
+          label: opts.logLabel ?? "gemini",
+          nextModel: model,
+        });
+        break;
+      }
+      await sleep(FAILOVER_STEP_MS);
+    }
     try {
       const result = await opts.run(model);
       console.info(`${LOG_PREFIX} ok`, {
@@ -345,6 +361,8 @@ async function geminiStreamGenerateText(
     systemInstruction: string;
     userPrompt: string;
     temperature?: number;
+    budget?: AiRequestBudget;
+    stream?: AiTextStream;
   },
   withThinking: boolean,
 ): Promise<string> {
@@ -354,6 +372,7 @@ async function geminiStreamGenerateText(
     systemInstruction: opts.systemInstruction,
   });
   let partial = "";
+  opts.stream?.onRestart?.();
   try {
     const streaming = await model.generateContentStream(
       {
@@ -364,10 +383,13 @@ async function geminiStreamGenerateText(
           ...geminiThinkingExtra(opts.model, withThinking),
         } as never,
       },
-      { timeout: TEXT_REQUEST_TIMEOUT_MS },
+      { timeout: aiAttemptTimeoutMs(opts.budget, TEXT_REQUEST_TIMEOUT_MS) },
     );
     for await (const chunk of streaming.stream) {
-      partial += geminiVisibleTextFromSdkChunk(chunk as never);
+      const delta = geminiVisibleTextFromSdkChunk(chunk as never);
+      if (!delta) continue;
+      partial += delta;
+      opts.stream?.onDelta(delta);
     }
     const response = await streaming.response;
     recordGeminiUsage(opts.model, response.usageMetadata);
@@ -404,12 +426,18 @@ async function geminiGenerateTextOnce(
     systemInstruction: string;
     userPrompt: string;
     temperature?: number;
+    budget?: AiRequestBudget;
+    stream?: AiTextStream;
   },
 ): Promise<string> {
   try {
     return await geminiStreamGenerateText(key, opts, geminiWantsThinking(opts.model));
   } catch (e) {
-    if (isAiIncompleteCommentError(e) && geminiWantsThinking(opts.model)) {
+    if (
+      isAiIncompleteCommentError(e) &&
+      geminiWantsThinking(opts.model) &&
+      aiBudgetAllowsRetry(opts.budget)
+    ) {
       console.warn(`${LOG_PREFIX} text_truncated_retry_no_thinking`, {
         model: opts.model,
         promptVersion: PROVIN_AI_PROMPT_VERSION,
@@ -425,29 +453,30 @@ async function geminiGenerateTextOnce(
   }
 }
 
-/** Brīva teksta ģenerēšana ar automātisku modeļu failover (503 u.c.). */
-export async function geminiGenerateText(opts: {
+export type GeminiTextOptions = {
   model: string;
   systemInstruction: string;
   userPrompt: string;
   temperature?: number;
-}): Promise<string> {
+  budget?: AiRequestBudget;
+  stream?: AiTextStream;
+};
+
+/** Brīva teksta ģenerēšana ar automātisku modeļu failover (503 u.c.). */
+export async function geminiGenerateText(opts: GeminiTextOptions): Promise<string> {
   const key = getGeminiApiKeyFromEnv();
   if (!key) throw new Error("missing_gemini_key");
 
   return runGeminiWithModelFailover({
     primaryModel: opts.model,
     logLabel: "text",
+    budget: opts.budget,
     run: (model) => geminiGenerateTextOnce(key, { ...opts, model }),
   });
 }
 
 /** Eksperta PDF komentāri — pēc ģenerēšanas normalizē vārdu krājumu un rindkopu formātu. */
-export async function geminiGenerateExpertText(opts: {
-  model: string;
-  systemInstruction: string;
-  userPrompt: string;
-  temperature?: number;
+export async function geminiGenerateExpertText(opts: GeminiTextOptions & {
   maxLen?: number;
 }): Promise<string> {
   try {
@@ -465,12 +494,9 @@ export async function geminiGenerateExpertText(opts: {
 }
 
 /** Vārdu krājums bez rindkopu pārformatēšanas — e-pasts, checklist u.c. */
-export async function geminiGenerateTextWithVocabulary(opts: {
-  model: string;
-  systemInstruction: string;
-  userPrompt: string;
-  temperature?: number;
-}): Promise<string> {
+export async function geminiGenerateTextWithVocabulary(
+  opts: GeminiTextOptions,
+): Promise<string> {
   try {
     const raw = await geminiGenerateText(opts);
     return throwIfBlankGeneratedComment(applyProvinReportCopyVocabulary(raw));
@@ -528,12 +554,23 @@ async function geminiRestStreamSearchText(opts: {
   body: unknown;
   timeoutMs: number;
   model: string;
+  stream?: AiTextStream;
 }): Promise<{ text: string; lastErr: string; httpStatus?: number }> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs);
   let partial = "";
   let usage: GeminiUsageMeta | undefined;
   let finishReason = "";
+  const onParsedEvent = (parsed: GenerateContentApiResponse) => {
+    if (parsed.usageMetadata) usage = parsed.usageMetadata;
+    const fr = parsed.candidates?.[0]?.finishReason;
+    if (fr) finishReason = fr;
+    const delta = geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
+    if (!delta) return;
+    partial += delta;
+    opts.stream?.onDelta(delta);
+  };
+  opts.stream?.onRestart?.();
   try {
     const res = await fetch(opts.url, {
       method: "POST",
@@ -554,19 +591,9 @@ async function geminiRestStreamSearchText(opts: {
       const { done, value } = await reader.read();
       if (done) break;
       buf += decoder.decode(value, { stream: true });
-      buf = consumeGeminiSseBuffer(buf, (parsed) => {
-        if (parsed.usageMetadata) usage = parsed.usageMetadata;
-        const fr = parsed.candidates?.[0]?.finishReason;
-        if (fr) finishReason = fr;
-        partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
-      });
+      buf = consumeGeminiSseBuffer(buf, onParsedEvent);
     }
-    consumeGeminiSseBuffer(`${buf}\n\n`, (parsed) => {
-      if (parsed.usageMetadata) usage = parsed.usageMetadata;
-      const fr = parsed.candidates?.[0]?.finishReason;
-      if (fr) finishReason = fr;
-      partial += geminiVisibleTextFromParts(parsed.candidates?.[0]?.content?.parts);
-    });
+    consumeGeminiSseBuffer(`${buf}\n\n`, onParsedEvent);
     const text = partial.trim();
     if (text && usage) recordGeminiUsage(opts.model, usage);
     if (geminiFinishIsTruncated(finishReason)) {
@@ -602,6 +629,8 @@ async function geminiGenerateTextWithGoogleSearchOnce(
     userPrompt: string;
     temperature?: number;
     maxOutputTokens?: number;
+    budget?: AiRequestBudget;
+    stream?: AiTextStream;
   },
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
@@ -611,13 +640,21 @@ async function geminiGenerateTextWithGoogleSearchOnce(
 
   let lastErr = "gemini_grounding_failed";
   let lastIncomplete: AiIncompleteCommentError | null = null;
+  let attempts = 0;
   for (const withThinking of thinkingPasses) {
     for (const tools of toolVariants) {
+      if (attempts > 0 && !aiBudgetAllowsRetry(opts.budget)) {
+        console.warn(`${LOG_PREFIX} search_retry_skipped_no_budget`, { model: opts.model });
+        if (lastIncomplete) throw lastIncomplete;
+        throw new Error(lastErr);
+      }
+      attempts++;
       try {
         const result = await geminiRestStreamSearchText({
           url,
-          timeoutMs: SEARCH_REQUEST_TIMEOUT_MS,
+          timeoutMs: aiAttemptTimeoutMs(opts.budget, SEARCH_REQUEST_TIMEOUT_MS),
           model: opts.model,
+          stream: opts.stream,
           body: {
             systemInstruction: { parts: [{ text: opts.systemInstruction }] },
             contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
@@ -653,19 +690,16 @@ async function geminiGenerateTextWithGoogleSearchOnce(
 }
 
 /** Google Search Grounding — REST v1beta ar modeļu failover. */
-export async function geminiGenerateTextWithGoogleSearch(opts: {
-  model: string;
-  systemInstruction: string;
-  userPrompt: string;
-  temperature?: number;
-  maxOutputTokens?: number;
-}): Promise<string> {
+export async function geminiGenerateTextWithGoogleSearch(
+  opts: GeminiTextOptions & { maxOutputTokens?: number },
+): Promise<string> {
   const key = getGeminiApiKeyFromEnv();
   if (!key) throw new Error("missing_gemini_key");
 
   return runGeminiWithModelFailover({
     primaryModel: opts.model,
     logLabel: "grounding",
+    budget: opts.budget,
     run: (model) => geminiGenerateTextWithGoogleSearchOnce(key, { ...opts, model }),
   });
 }

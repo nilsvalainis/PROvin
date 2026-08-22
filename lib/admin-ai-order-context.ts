@@ -31,6 +31,7 @@ import {
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import type { AiTextStream } from "@/lib/ai-text-stream";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 import {
@@ -64,6 +65,8 @@ export type AiOrderContextInput = {
   existingDraftPlain?: string;
   /** Pro (noklusējums) vai Flash — admin ✨ pogas izvēle. */
   modelTier?: AiAdminModelTier;
+  /** Dzīvais teksta priekšskatījums admin UI (SSE); nav gala teksts. */
+  stream?: AiTextStream;
 };
 
 function block(label: string, body: string): string {

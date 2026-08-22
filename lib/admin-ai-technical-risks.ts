@@ -87,6 +87,7 @@ OBLIGĀTI:
       temperature: 0.32,
       maxSearches: 6,
       maxTokens: 16_000,
+      stream: input.stream,
     });
     return throwIfBlankGeneratedComment(
       stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(raw)),

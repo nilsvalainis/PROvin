@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
+import { aiStreamResponse, wantsAiStream } from "@/lib/admin-ai-stream-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -69,17 +70,32 @@ export async function POST(req: Request) {
   const extraSellerName =
     str(b.extraSellerName).trim() || sourceBlocks.listing_analysis.extraSellerName.trim();
 
-  try {
-    return await nextJsonWithAiUsage(() => generateSellerAnalysisWithAi({
-      ...ctx,
-      extraSellerName: extraSellerName || ctx.extraSellerName || undefined,
-    }));
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[ai/seller-analysis]", msg);
-    if (msg === "missing_seller_input") {
-      return NextResponse.json({ error: "missing_seller_input" }, { status: 400 });
-    }
-    return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
+  const context = {
+    ...ctx,
+    extraSellerName: extraSellerName || ctx.extraSellerName || undefined,
+  };
+
+  if (wantsAiStream(req)) {
+    return aiStreamResponse(
+      (stream) => generateSellerAnalysisWithAi({ ...context, stream }),
+      failureEvent,
+    );
   }
+
+  try {
+    return await nextJsonWithAiUsage(() => generateSellerAnalysisWithAi(context));
+  } catch (e) {
+    const { error, detail } = failureEvent(e);
+    return NextResponse.json(
+      { error, ...(detail ? { detail } : {}) },
+      { status: error === "missing_seller_input" ? 400 : 502 },
+    );
+  }
+}
+
+function failureEvent(e: unknown): { error: string; detail?: string } {
+  const msg = e instanceof Error ? e.message : "unknown";
+  console.error("[ai/seller-analysis]", msg);
+  if (msg === "missing_seller_input") return { error: "missing_seller_input" };
+  return { error: "generation_failed", detail: msg };
 }

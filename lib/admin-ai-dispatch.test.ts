@@ -53,4 +53,18 @@ describe("admin-ai-dispatch self-correction retry", () => {
     expect(text).toBe("Tīrs teksts bez aizliegtiem vārdiem un bez € summām.");
     expect(aiGenerateTextWithVocabulary).toHaveBeenCalledTimes(1);
   });
+
+  it("does not pay for a second generation just to strip leftover Markdown asterisks", async () => {
+    vi.clearAllMocks();
+    vi.mocked(aiGenerateExpertText).mockResolvedValueOnce(
+      "**Eļļas sūkņa ass**\n2.0 TDI dzinējiem šis mezgls ir tipisks uzturēšanas punkts.",
+    );
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: "sākotnējais prompts",
+      qualityField: "technical_risks",
+    });
+    expect(text).toContain("2.0 TDI");
+    expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+  });
 });

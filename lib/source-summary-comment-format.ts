@@ -99,9 +99,26 @@ export function applyProvinHumanDashes(text: string): string {
   return text.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-");
 }
 
-/** Teikumu robežas (rupji, bet drošas — pārāk agresīva izgriešana ir labāka par € noplūdi). */
-function splitIntoSentences(text: string): string[] {
-  return text.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) ?? [text];
+/**
+ * Teikumu robežas. Sadalījums ir bezzudumu: gabalu salikšana atpakaļ dod
+ * sākotnējo tekstu. Punkts skaitās teikuma beigas tikai tad, ja tam seko
+ * atstarpe vai teksta beigas — citādi „2.0 TDI” un „0.03” sadalītu ciparu vidū.
+ */
+export function splitIntoSentences(text: string): string[] {
+  const out: string[] = [];
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (!".!?".includes(text[i]!)) continue;
+    let end = i + 1;
+    while (end < text.length && ".!?".includes(text[end]!)) end++;
+    if (end < text.length && !/\s/.test(text[end]!)) continue;
+    while (end < text.length && /\s/.test(text[end]!)) end++;
+    out.push(text.slice(start, end));
+    start = end;
+    i = end - 1;
+  }
+  if (start < text.length) out.push(text.slice(start));
+  return out.length > 0 ? out : [text];
 }
 
 const SENTENCE_HAS_EURO_RE = /€|\bEUR\b/;
@@ -117,12 +134,18 @@ export function stripUnauthorizedEuroAmounts(text: string): string {
   if (!text) return text;
   return text
     .split(/\n\n+/)
-    .map((para) =>
-      splitIntoSentences(para)
-        .filter((s) => !SENTENCE_HAS_EURO_RE.test(s))
-        .join("")
-        .trim(),
-    )
+    .map((para) => {
+      const lines = para.split("\n");
+      const kept = lines.map((line) =>
+        splitIntoSentences(line)
+          .filter((s) => !SENTENCE_HAS_EURO_RE.test(s))
+          .join("")
+          .trim(),
+      );
+      // Rindkopa bez satura zem virsraksta vairs neko nedod — met ārā visu.
+      if (lines.length > 1 && !kept.slice(1).some(Boolean)) return "";
+      return kept.filter(Boolean).join("\n");
+    })
     .filter(Boolean)
     .join("\n\n");
 }

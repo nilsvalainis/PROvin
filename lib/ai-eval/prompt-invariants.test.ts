@@ -400,6 +400,19 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/findBannedVocabularyHits/);
   });
 
+  it("EUR safety net keeps 2.0 TDI / 0.03 headings instead of chopping the paragraph start", () => {
+    const input = [
+      "Eļļas sūkņa piedziņas ass",
+      "2.0 TDI dzinējiem ar CAHA kodu ass nodilums ir tipisks.",
+      "",
+      "Cieto daļiņu rādītājs",
+      "Dūmainības koeficients 0.03 ir labvēlīgs signāls datos.",
+    ].join("\n");
+    const out = stripUnauthorizedEuroAmounts(input);
+    expect(out).toContain("Eļļas sūkņa piedziņas ass\n2.0 TDI");
+    expect(out).toContain("Cieto daļiņu rādītājs\nDūmainības koeficients 0.03");
+  });
+
   it("stripUnauthorizedEuroAmounts drops only the sentence carrying € / EUR", () => {
     const input =
       "Šis ir teikums bez naudas pieminēšanas. Nomaiņa izmaksā apmēram 250-500 € servisā. Trešais teikums turpinās normāli.";
@@ -482,6 +495,29 @@ describe("PROVIN AI prompt invariants", () => {
     expect(gemini).toMatch(/AiIncompleteCommentError/);
     expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_empty_content/);
     expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_incomplete_comment/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/SELF_CORRECTION_RETRY_CODES/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).not.toMatch(
+      /SELF_CORRECTION_RETRY_CODES = new Set\(\[[\s\S]*markdown_asterisk/,
+    );
+    expect(readRepo("lib/admin-ai.ts")).toMatch(/aiBudgetAllowsRetry/);
+    expect(readRepo("lib/admin-gemini.ts")).toMatch(/aiBudgetAllowsRetry/);
+  });
+
+  it("heavy comment routes stream tokens to the admin UI", () => {
+    for (const route of [
+      "app/api/admin/ai/technical-risk-analysis/route.ts",
+      "app/api/admin/ai/inspection-recommendations/route.ts",
+      "app/api/admin/ai/summary-analysis/route.ts",
+      "app/api/admin/ai/seller-analysis/route.ts",
+    ]) {
+      expect(readRepo(route)).toMatch(/wantsAiStream/);
+      expect(readRepo(route)).toMatch(/aiStreamResponse/);
+    }
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/generateAdminAiText/);
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/AdminAiStreamPreview/);
+    expect(readRepo("components/admin/AdminListingAnalysisSourceBlock.tsx")).toMatch(
+      /generateAdminAiText/,
+    );
   });
 
   it("AI field errors are rendered visibly, not as 9px amber whispers", () => {

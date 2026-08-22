@@ -3,6 +3,7 @@
  */
 import { NextResponse } from "next/server";
 import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
+import { aiStreamResponse, wantsAiStream } from "@/lib/admin-ai-stream-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -63,15 +64,29 @@ export async function POST(req: Request) {
   }
 
   const sourceBlocks = mergeSourceBlocksFromBody(b);
+  const context = parseAiOrderContextFromBody(b, sourceBlocks);
+
+  if (wantsAiStream(req)) {
+    return aiStreamResponse(
+      (stream) => generateTechnicalRiskAnalysisWithAi({ ...context, stream }),
+      failureEvent,
+    );
+  }
 
   try {
-    return await nextJsonWithAiUsage(() => generateTechnicalRiskAnalysisWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
+    return await nextJsonWithAiUsage(() => generateTechnicalRiskAnalysisWithAi(context));
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[ai/technical-risk-analysis]", msg);
-    if (msg === "empty_order_context") {
-      return NextResponse.json({ error: "empty_order_context" }, { status: 400 });
-    }
-    return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
+    const { error, detail } = failureEvent(e);
+    return NextResponse.json(
+      { error, ...(detail ? { detail } : {}) },
+      { status: error === "empty_order_context" ? 400 : 502 },
+    );
   }
+}
+
+function failureEvent(e: unknown): { error: string; detail?: string } {
+  const msg = e instanceof Error ? e.message : "unknown";
+  console.error("[ai/technical-risk-analysis]", msg);
+  if (msg === "empty_order_context") return { error: "empty_order_context" };
+  return { error: "generation_failed", detail: msg };
 }

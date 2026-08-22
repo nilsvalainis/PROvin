@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
+import { aiStreamResponse, wantsAiStream } from "@/lib/admin-ai-stream-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
@@ -64,15 +65,29 @@ export async function POST(req: Request) {
   }
 
   const sourceBlocks = mergeSourceBlocksFromBody(b);
+  const context = parseAiOrderContextFromBody(b, sourceBlocks);
+
+  if (wantsAiStream(req)) {
+    return aiStreamResponse(
+      (stream) => generateSummaryAnalysisWithAi({ ...context, stream }),
+      failureEvent,
+    );
+  }
 
   try {
-    return await nextJsonWithAiUsage(() => generateSummaryAnalysisWithAi(parseAiOrderContextFromBody(b, sourceBlocks)));
+    return await nextJsonWithAiUsage(() => generateSummaryAnalysisWithAi(context));
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "unknown";
-    console.error("[ai/summary-analysis]", msg);
-    if (msg === "missing_expert_sections") {
-      return NextResponse.json({ error: "missing_expert_sections" }, { status: 400 });
-    }
-    return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
+    const { error, detail } = failureEvent(e);
+    return NextResponse.json(
+      { error, ...(detail ? { detail } : {}) },
+      { status: error === "missing_expert_sections" ? 400 : 502 },
+    );
   }
+}
+
+function failureEvent(e: unknown): { error: string; detail?: string } {
+  const msg = e instanceof Error ? e.message : "unknown";
+  console.error("[ai/summary-analysis]", msg);
+  if (msg === "missing_expert_sections") return { error: "missing_expert_sections" };
+  return { error: "generation_failed", detail: msg };
 }

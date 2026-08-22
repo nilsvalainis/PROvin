@@ -107,6 +107,7 @@ OBLIGĀTI:
       userPrompt,
       qualityField: "summary",
       temperature: 0.3,
+      stream: input.stream,
     });
     return throwIfBlankGeneratedComment(finalizeSummaryComment(raw));
   } catch (e) {

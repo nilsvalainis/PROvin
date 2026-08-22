@@ -197,6 +197,8 @@ import {
   parseAdminAiResponse,
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
+import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
+import { AdminAiStreamPreview } from "@/components/admin/AdminAiStreamPreview";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
@@ -703,14 +705,17 @@ export function OrderDetailWorkspace({
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
   const [aiInspectionBusy, setAiInspectionBusy] = useState(false);
   const [aiInspectionErr, setAiInspectionErr] = useState<string | null>(null);
+  const [aiInspectionPreview, setAiInspectionPreview] = useState("");
   const [aiTechnicalRisksBusy, setAiTechnicalRisksBusy] = useState(false);
   const [aiTechnicalRisksErr, setAiTechnicalRisksErr] = useState<string | null>(null);
+  const [aiTechnicalRisksPreview, setAiTechnicalRisksPreview] = useState("");
   const [aiPriceBusy, setAiPriceBusy] = useState(false);
   const [aiTirgusMarketBusy, setAiTirgusMarketBusy] = useState(false);
   const [aiTirgusMarketErr, setAiTirgusMarketErr] = useState<string | null>(null);
   const [aiPriceErr, setAiPriceErr] = useState<string | null>(null);
   const [aiSummaryBusy, setAiSummaryBusy] = useState(false);
   const [aiSummaryErr, setAiSummaryErr] = useState<string | null>(null);
+  const [aiSummaryPreview, setAiSummaryPreview] = useState("");
   const [aiIncidentsSummaryBusy, setAiIncidentsSummaryBusy] = useState(false);
   const [aiIncidentsSummaryErr, setAiIncidentsSummaryErr] = useState<string | null>(null);
   const [aiMileageCommentBusy, setAiMileageCommentBusy] = useState(false);
@@ -1046,39 +1051,30 @@ export function OrderDetailWorkspace({
     if (!payload.aiAllowed || aiTechnicalRisksBusy) return;
     setAiTechnicalRisksBusy(true);
     setAiTechnicalRisksErr(null);
+    setAiTechnicalRisksPreview("");
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/technical-risk-analysis", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const generated = await generateAdminAiText(
+        "/api/admin/ai/technical-risk-analysis",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
+        },
         "AI: neizdevās ģenerēt tehnisko risku analīzi",
+        { onPreview: setAiTechnicalRisksPreview },
       );
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text) }),
-          setAiTechnicalRisksErr,
-        )
-      ) {
-        return;
-      }
+      applyGeneratedAdminAiText(
+        generated,
+        (text) => updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text) }),
+        setAiTechnicalRisksErr,
+      );
     } catch {
       setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
+      setAiTechnicalRisksPreview("");
       setAiTechnicalRisksBusy(false);
     }
   }, [buildAiOrderPayload, aiTechnicalRisksBusy, payload.aiAllowed, updateWs]);
@@ -1087,34 +1083,30 @@ export function OrderDetailWorkspace({
     if (!payload.aiAllowed || aiInspectionBusy) return;
     setAiInspectionBusy(true);
     setAiInspectionErr(null);
+    setAiInspectionPreview("");
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/inspection-recommendations", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const generated = await generateAdminAiText(
+        "/api/admin/ai/inspection-recommendations",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.apskatesPlāns).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās ģenerēt");
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(text) }),
-          setAiInspectionErr,
-        )
-      ) {
-        return;
-      }
+        },
+        "AI: neizdevās ģenerēt",
+        { onPreview: setAiInspectionPreview },
+      );
+      applyGeneratedAdminAiText(
+        generated,
+        (text) => updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(text) }),
+        setAiInspectionErr,
+      );
     } catch {
       setAiInspectionErr("AI: neizdevās savienoties");
     } finally {
+      setAiInspectionPreview("");
       setAiInspectionBusy(false);
     }
   }, [buildAiOrderPayload, aiInspectionBusy, payload.aiAllowed, updateWs]);
@@ -1159,39 +1151,30 @@ export function OrderDetailWorkspace({
     if (!payload.aiAllowed || aiSummaryBusy) return;
     setAiSummaryBusy(true);
     setAiSummaryErr(null);
+    setAiSummaryPreview("");
     try {
       const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/summary-analysis", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const generated = await generateAdminAiText(
+        "/api/admin/ai/summary-analysis",
+        {
           ...buildAiOrderPayload({
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(cur.iriss).trim(),
           }),
           modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(
-        res,
-        data,
-        parseFailed,
+        },
         "AI: neizdevās sagatavot atbildi",
+        { onPreview: setAiSummaryPreview },
       );
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => setIrissSummary(aiExpertSourceCommentToRichHtml(text)),
-          setAiSummaryErr,
-        )
-      ) {
-        return;
-      }
+      applyGeneratedAdminAiText(
+        generated,
+        (text) => setIrissSummary(aiExpertSourceCommentToRichHtml(text)),
+        setAiSummaryErr,
+      );
     } catch {
       setAiSummaryErr("AI: neizdevās savienoties");
     } finally {
+      setAiSummaryPreview("");
       setAiSummaryBusy(false);
     }
   }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, setIrissSummary]);
@@ -4084,6 +4067,7 @@ export function OrderDetailWorkspace({
                 </div>
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiTechnicalRisksErr} />
+                  <AdminAiStreamPreview text={aiTechnicalRisksPreview} />
                   <AdminAiPolishRichCommentShell
                     value={ws.tehniskoRiskuAnalize ?? ""}
                     onChange={(next) => updateWs({ tehniskoRiskuAnalize: next })}
@@ -4104,6 +4088,7 @@ export function OrderDetailWorkspace({
                 </div>
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiInspectionErr} />
+                  <AdminAiStreamPreview text={aiInspectionPreview} />
                   <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns ?? ""}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
@@ -4131,6 +4116,7 @@ export function OrderDetailWorkspace({
                 </div>
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiSummaryErr} />
+                  <AdminAiStreamPreview text={aiSummaryPreview} />
                   <AdminAiPolishRichCommentShell
                     value={ws.iriss ?? ""}
                     onChange={setIrissSummary}

@@ -34,6 +34,8 @@ import {
   parseAdminAiResponse,
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
+import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
+import { AdminAiStreamPreview } from "@/components/admin/AdminAiStreamPreview";
 import type { AiListingCommentField } from "@/lib/admin-ai-listing-field";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -127,6 +129,7 @@ export function AdminListingAnalysisSourceBlock({
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
   const [sellerAnalyzing, setSellerAnalyzing] = useState(false);
+  const [sellerAnalyzePreview, setSellerAnalyzePreview] = useState("");
   const [sellerAnalyzeErr, setSellerAnalyzeErr] = useState<string | null>(null);
   const [listingFieldBusy, setListingFieldBusy] = useState<AiListingCommentField | null>(null);
   const [listingFieldErr, setListingFieldErr] = useState<{
@@ -233,39 +236,29 @@ export function AdminListingAnalysisSourceBlock({
       if (!canRunSellerAi || sellerAnalyzing || disabled || readOnly || !buildAiPayload) return;
       setSellerAnalyzing(true);
       setSellerAnalyzeErr(null);
+      setSellerAnalyzePreview("");
       try {
-        const base = buildAiPayload();
-        const res = await fetch("/api/admin/ai/seller-analysis", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...base,
+        const generated = await generateAdminAiText(
+          "/api/admin/ai/seller-analysis",
+          {
+            ...buildAiPayload(),
             extraSellerName: v.extraSellerName,
             operatorNotes,
             existingDraftPlain: adminRichHtmlToPlainText(v.sellerPortrait).trim(),
             modelTier,
-          }),
-        });
-        const { data, parseFailed } = await parseAdminAiResponse(res);
-        const generated = readGeneratedAdminAiText(
-          res,
-          data,
-          parseFailed,
+          },
           "AI: neizdevās analizēt pārdevēju",
+          { onPreview: setSellerAnalyzePreview },
         );
-        if (
-          !applyGeneratedAdminAiText(
-            generated,
-            (text) => onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(text) }),
-            setSellerAnalyzeErr,
-          )
-        ) {
-          return;
-        }
+        applyGeneratedAdminAiText(
+          generated,
+          (text) => onChange({ ...v, sellerPortrait: aiExpertSourceCommentToRichHtml(text) }),
+          setSellerAnalyzeErr,
+        );
       } catch {
         setSellerAnalyzeErr("AI: neizdevās savienoties");
       } finally {
+        setSellerAnalyzePreview("");
         setSellerAnalyzing(false);
       }
     },
@@ -385,6 +378,7 @@ export function AdminListingAnalysisSourceBlock({
             )}
           </label>
           <AdminAiFieldError message={sellerAnalyzeErr} />
+          <AdminAiStreamPreview text={sellerAnalyzePreview} />
           {readOnly ? (
             <AdminRichCommentReadonly html={v.sellerPortrait} className={pri ? roBox(!!dense) : roDefault} />
           ) : (
