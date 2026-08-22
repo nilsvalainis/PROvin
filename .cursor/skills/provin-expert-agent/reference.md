@@ -7,8 +7,8 @@ Runtime AI calls use constants in `lib/admin-ai-prompts.ts`:
 | Constant | Active field |
 |----------|----------------|
 | `PROVIN_FIELD_AGENT_SYSTEM` | Base tone/LV grammar (synced with `provin-field-agent` skill) + domain blocks from this skill |
-| `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze (flagship: `AI_TECHNICAL_RISKS_FLAGSHIP_RULES`, 8–12 paragraphs) |
-| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei (6–9 check-paragraphs) |
+| `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze (flagship: `AI_TECHNICAL_RISKS_FLAGSHIP_RULES`, nosacīts garums) |
+| `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei (pircēja soļi, ne risku spogulis) |
 | `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums |
 | `AI_SUMMARY_ANALYSIS_SYSTEM` | 2. Kopsavilkums |

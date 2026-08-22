@@ -48,6 +48,24 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "jāpārbauda klātienē / pārbaudes punkts",
     code: "vocabulary_kontrolpunkts",
   },
+  {
+    label: "jaudas pārveidotājs",
+    pattern: /jaudas\s+pārveidotāj/i,
+    replacement: "divmasu spararats (vai hidrotransformators, ja runa par kārbas sajūgu)",
+    code: "vocabulary_jaudas_parveidotajs",
+  },
+  {
+    label: "virpuļvārsts",
+    pattern: /virpuļvārst/i,
+    replacement: "ieplūdes kolektors",
+    code: "vocabulary_virpulyvarsts",
+  },
+  {
+    label: "swirl flap",
+    pattern: /swirl\s+flap/i,
+    replacement: "ieplūdes kolektors",
+    code: "vocabulary_swirl_flap",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */

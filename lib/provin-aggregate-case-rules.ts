@@ -52,7 +52,7 @@ const PACK_BODY_HEADER = `INTERNĀ KALIBRĀCIJA — šīs pakas € summas ir TI
 Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
 - Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / ierasta uzturēšanas izmaksa / tikai pārbaudāms klātienē).
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
-- **1. Tehnisko risku analīze** — DETALIZĒTI (8–12 rindkopas): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija — BEZ € skaitļiem klientam. Blīvums ≠ īsums.
+- **1. Tehnisko risku analīze** — DETALIZĒTI (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija — BEZ € skaitļiem klientam. Blīvums ≠ īsums. TA nosegts nodilums nav šīs sadaļas saturs.
 - EUR skaitļi klientam drīkst parādīties tikai cenas vērtējumā/tirgus laukā. **3. Kopsavilkumā** un **1. sadaļā** cenas un EUR summas neraksta — pat ne no šīs pakas.`;
 
 export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
@@ -177,11 +177,11 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 
-**M57 mehānika pie 250–350 tūkst. km (ierasta uzturēšanas izmaksa, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve — INTERNĀ KALIBRĀCIJA, nekopē klientam); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Virpuļvārsti (swirl flaps) 2008. gada M57T2 visticamāk vēl ir — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/iesmidzinātāji statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
+**M57 mehānika pie 250–350 tūkst. km (ierasta uzturēšanas izmaksa, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve — INTERNĀ KALIBRĀCIJA, nekopē klientam); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Ieplūdes kolektors 2008. gada M57T2 visticamāk vēl ir oriģinālais — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/iesmidzinātāji statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
 
 **Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (tuvākais rēķins) no paaudzes kaprīzes.
 
-**Klātienē:** aizmugure pēc 10 min stāvēšanas (E61); eļļa uz filtra korpusa/startera; hidromufte (troksnis/sasilšana); auksts starts bez ķēdes klaboņas; 6HP 1–2 un 4–5; ELV starta cikls; pusass puteklis; parastās stūres brīvkustība (ne Active Steering cena); EMF stāvbremze; virpuļvārstu kodi.`,
+**Klātienē:** aizmugure pēc 10 min stāvēšanas (E61); eļļa uz filtra korpusa/startera; hidromufte (troksnis/sasilšana); auksts starts bez ķēdes klaboņas; 6HP 1–2 un 4–5; ELV starta cikls; pusass puteklis; parastās stūres brīvkustība (ne Active Steering cena); EMF stāvbremze; ieplūdes kolektora kodi.`,
   },
   {
     id: "bmw_diesel_chains",

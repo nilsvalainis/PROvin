@@ -84,6 +84,31 @@ export const AI_RESOLVED_HISTORICAL_FINDINGS_RULES = `RESOLVED HISTORICAL FINDIN
 - EXCEPTION — rūsa / korozija AND exhaust measurements (cietās daļiņas, dūmainības koeficients / smoke opacity): if these were EVER recorded, stay cautious in later years even when a later TA is clean. Quality repair is difficult and expensive; a later pass does not erase the history. Note the later improvement if present, but do not dismiss the topic.
 - Same principle for other sources (dealer invoices, DEKRA, foreign TA): a one-off finding later documented as fixed is history, not a hunt list — unless it is rust or exhaust particulates/smoke.`;
 
+/**
+ * Nesen / spēkā esoša CSDD TA izslēdz ikdienas nodilumu kā pirkuma risku.
+ * Līmeni (fresh / valid / expired / none) iedod `buildTechnicalInspectionCoverageBrief`.
+ */
+export const AI_TA_COVERED_WEAR_RULES = `CSDD TA COVERED WEAR (mandatory — every agent, every field):
+- Latvian state inspection (MK 295) already checks brakes, steering, axles/wheels/tyres/suspension (sviras, bukses, lodbalsti, amortizatori, gultņi), lights/wipers, and visible oil/fuel leaks. A passed TA is documentary proof that those items met the legal threshold ON THAT DATE — not a physical PROVIN inspection.
+- Read the prompt block „CSDD tehniskās apskates nosegums”. Obey its LĪMENIS exactly:
+  • SVAIGA (≤ 3 months): do NOT mention those wear items as a purchase risk in „1. Tehnisko risku analīze”. Do not write „pie šī nobraukuma bieži nepieciešama … nomaiņa” for sviras/bukses/lodbalsti/bremzes. Inspection field: no separate paragraphs for those items unless OPERATORA KOMANDAS demand them.
+  • SPĒKĀ, BET NAV SVAIGA: do not claim them as a risk and do not claim they are fine. One short inspection line at most.
+  • BEIGUSIES / NAV DATU: coverage is off; still do not pad technical risks with generic wear — those belong in inspection as checks, not as model risks.
+- Technical-risk field = model/powertrain specifics (engine construction, ķēde/zobsiksna, kārba, divmasu spararats, dārgie mezgli, rūsa per rust rules). Everyday service wear is not a purchase risk.
+- NEVER write that suspension/brakes „ir kārtībā” as a physical fact. Say only that the inspection record on that date showed they met the requirement.
+- Rust/corrosion and exhaust particulates / smoke opacity stay a caution even after a later clean TA (RESOLVED HISTORICAL FINDINGS exception).`;
+
+/** Nezināmais nav risks — tas ir klātienes uzdevums. */
+export const AI_UNKNOWN_IS_NOT_A_RISK_RULES = `UNKNOWN IS NOT A RISK (mandatory — every agent):
+- Missing prior use, unknown part quality, unknown wear, empty service history → one short in-person check, NOT a technical-risk paragraph and NOT a „vērā ņemams risks”.
+- A CSDD rating-1 / maznozīmīgs finding (e.g. a slight oil seep) on a 15+ year Latvia-used car is ONE sentence of on-site attention — never a dramatic defect essay.
+- Do not invent certainty. If data are thin, say so briefly and tell the buyer what to look at, listen for, measure, or ask — then stop.
+- Over-dramatizing routine age items is a failure. Under-stating a real aggregate fault (ķēde, kārba, dārgs mezgls, rūsa) is also a failure.`;
+
+/** Sarunvalodas termini — labie vārdi; sliktie ir BANNED VOCABULARY. */
+export const AI_PLAIN_LANGUAGE_TERMS = `PLAIN LATVIAN WORKSHOP TERMS (mandatory — every agent, especially Flash):
+Write parts the way a Latvian workshop and a buyer actually say them, not as calqued textbook compounds. Preferred: divmasu spararats, ieplūdes kolektors, hidrotransformators, turbīna, sadales ķēde, zobsiksna, iesmidzinātājs (sprausla), eļļas vāks, EGR, DPF. If a term sounds translated, replace it with the short workshop word. Banned calques are listed in BANNED VOCABULARY and must never appear.`;
+
 /** Īsi, koncentrēti lauki — apkopojumi un salīdzinājumi tikai kopsavilkumā. */
 export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
 - OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” are present, completeness and scope of those notes beat this brevity block. Do not drop operator topics to stay short; do not pad when the operator limited the job.
@@ -386,9 +411,9 @@ export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCI
  * excellent and detailed. Injected into the technical-risks (and inspection) task blocks.
  */
 export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LATIŅA (obligāti — šī ir atskaites dārgākā sadaļa):
-- Vājš iznākums (aizliegts): 4–6 vispārīgas rindkopas, kas der jebkuram dīzelim (EGR/DPF/turbo + „jāpārbauda klātienē”); N-sērijas ķēdes stāsts uz M-sērijas motoru; slavenu E60 kaites uzskaitišana, nešķirojot, vai šim eksemplāram tās vispār ir; 300 tūkst. km pasniegšana kā „beigas” agregātam, kam tas ir ierasts darba mūžs.
+- Vājš iznākums (aizliegts): vispārīgas rindkopas, kas der jebkuram dīzelim (EGR/DPF/turbo + „jāpārbauda klātienē”); TA nosegtu sviru/bušu eseja; N-sērijas ķēdes stāsts uz M-sērijas motoru; slavenu E60 kaites uzskaitišana, nešķirojot, vai šim eksemplāram tās vispār ir; 300 tūkst. km pasniegšana kā „beigas” agregātam, kam tas ir ierasts darba mūžs.
 - Spēcīgs iznākums (mērķis): seniora tehniskā instruktāža konkrētam paaudze+motors+kārba+piedziņa+virsbūve salikumam. Klients pēc šīs sadaļas saprot (1) kas šim auto ir tuvākā laika naudas punkts (bez € skaitļiem), (2) kas ir paaudzes kaprīze ilgtermiņā, (3) kuri dārgie slazdi šim eksemplāram NAV, (4) vai dati rāda koptu auto vai tukšu vēsturi.
-- GARUMS: noklusējuma 350–800 / 2–4 rindkopas ŠEIT NEATTIECAS. Tipiski **8–12 rindkopas** (3–5 teikumi). Īsāk tikai tad, ja agregāts ir vienkāršs un datu gandrīz nav. Garums jānopelna ar atšķirīgiem mezgliem, ne ar atkārtošanu.
+- GARUMS: noklusējuma 350–800 / 2–4 rindkopas ŠEIT NEATTIECAS. Kvota ir NOSACĪTA: tik sadaļu, cik ir atšķirīga agregāta materiāla. Tipiski **4–10 rindkopas**; **8–12 rindkopas** tikai tad, ja katra sadaļa ir cits mezgls. Īsāka analīze NAV kļūda. Aizliegts aizpildīt garumu ar TA nosegtiem nodiluma mezgliem (sviras, bukses, lodbalsti, bremzes).
 - OBLIGĀTĀ IZKLĀSTA SEKVENCE (izvadē bez numuriem — virsraksts savā rindā, tad rindkopa; NEKAD *, **):
   0) Identifikācija ir **iekšēja**, ne izvades ievads. Nosaki paaudzi+motoru+kārbu+piedziņu no datiem, BET NERAKSTI pirmo rindkopu „kas tas ir par auto”, „Agregātu identifikācija” vai markas/motora/kārbas tūri — tas jau ir citās atskaites sadaļās. Dzinēja/kārbas fakti minami tikai tad, kad tie **izskaidro risku**.
   1) Pirmā rindkopa = konkrēts **riska fakts**: kas šim eksemplāram **NAV** dārgs risks UN/VAI tuvākais izmaksu punkts. Km/vecuma kalibrāciju ievij šajā rindkopā, ne vispārīgā auto prezentācijā.
@@ -398,12 +423,13 @@ export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LAT
   Beigas) Prioritātes + tuvākā termiņa aina pēc DATIEM (kopts / nepierādīts / jau fiksēts defekts). Ja dati rāda labu apkopi un nekas neliecina par tuvu problēmu — to PASAKI kalibrēti. Ilgtermiņa kaprīzi (blīves, elektronika 15–20 gadu vecumā) nošķir no „šis auto tūlīt sabruks”.
 - APRĪKOJUMA DISCIPLĪNA: lasi dīlera SA/aprīkojuma sarakstu. Dārgs, šajā vecumā riskants ekstraprīkojums **maina TCO** — ja tā nav, tas ir stiprā puse. Ja saraksts ir īss/nepilnīgs — saki, kas paliek nepierādīts; **meklē** šīs paaudzes tipisko dārgo ekstraprīkojumu (BMW: Active Steering / Dynamic Drive / Soft Close / Logic 7; Audi: Magnetic Ride / sport air; MB: Airmatic / ABC; citi: pneimatika, aktīvā stūre, nakts redzamība) un pārbaudi pret sarakstu. Neizdomā, ka kaut kā „nav”, ja saraksta nav.
 - NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo konstrukciju nesedz — **meklē**, tad raksti.
-- Katra rindkopa = viens mezgls + kāpēc šajā posmā + 1 teikums, ko saka ŠĪ auto dati. Bez orientējošām EUR joslām, bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā).`;
+- Katra rindkopa = viens mezgls + kāpēc šajā posmā + 1 teikums, ko saka ŠĪ auto dati. Bez orientējošām EUR joslām, bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā).
+- TA COVERED WEAR: ja promptā LĪMENIS ir SVAIGA vai SPĒKĀ — sviras/bukses/lodbalsti/bremzes NAV riska sadaļa. Unknown history is a one-line inspection note, not a risk.`;
 
 /** Web research — primary knowledge path when packs do not cover this exact aggregate. */
 export const AI_TECHNICAL_RISKS_RESEARCH_RULES = `WEB RESEARCH (obligāti „1. Tehnisko risku analīze” — tev IR web_search / Google Search):
 - Statiskās pakas sedz tikai dažas agregātu grupas. Simtiem modeļu **nav** atmiņā. Ja šī paaudze + dzinēja kods/konstrukcija + kārba + piedziņa nav pilnībā nosegta paketē šajā promptā, **vispirms meklē**, tad raksti. Meklē arī tad, ja paka ir, bet trūkst ķēdes puses, ekstraprīkojuma slazdu vai šī km posma kalibrācijas.
-- Vaicājumi (Eiropa vispirms): „{marka} {šasija/paaudze} {dzinēja kods} typical problems / known issues”; „{motors} timing chain OR belt OR swirl flaps OR injectors”; „{modelis} {gads} Motor-Talk OR forum weaknesses”; šīs paaudzes dārgais ekstraprīkojums (air suspension, active steering, DCT, Airmatic u.tml.).
+- Vaicājumi (Eiropa vispirms): „{marka} {šasija/paaudze} {dzinēja kods} typical problems / known issues”; „{motors} timing chain OR belt OR intake manifold OR injectors”; „{modelis} {gads} Motor-Talk OR forum weaknesses”; šīs paaudzes dārgais ekstraprīkojums (air suspension, active steering, DCT, Airmatic u.tml.).
 - Avoti: Eiropas īpašnieku forumi un klubu wiki (DE/UK/FR/IT/NL/Nordics — Motor-Talk, BimmerForums UK, club fora), neatkarīgo servisu raksti. ASV/Reddit — sekundāri (citas jūdzes, cits aprīkojums).
 - Sintezē: slimība + tipiskais km/vecuma posms, **bez** orientējošām EUR joslām klientam. **Neizdomā** citātus, kampaņu numurus, procentus, „foruma statistiku”. Ja avoti konfliktē — pasaki un ņem pircējam konservatīvāko lasījumu.
 - Meklējumu neizgāž komentārā. Ieraksti flagship struktūrā, kalibrētu pret ŠĪ auto km, vecumu, servisu un aprīkojumu.
@@ -481,10 +507,11 @@ ANTI-HALLUCINATION:
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
 - These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — they are PROVIN **institutional memory**.
-- Reuse model-specific forensic patterns, inspection checklist themes, phrasing rhythm, and aggregate-specific advice for **whatever ACTIVE FIELD** you are writing (source comments, mileage, incidents, technical risks, inspection, summary, price). Do not copy historical or pack EUR repair bands into the output.
-- NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums tied to that other order, seller names, or order IDs — adapt the logic and style only.
-- Prefer historical **Tehnisko risku** and **Ieteikumi klātienes apskatei** when the current order lacks depth; always reconcile with the ACTIVE order's actual data.
-- Match the same paragraph + **bold** hook format and "automašīna" vocabulary; keep CLIENT VALUE DENSITY (short, high-value — no fluff).`;
+- ADAPT / SUPPLEMENT / CONNECT: reuse forensic patterns, inspection themes, phrasing, and aggregate advice for THIS ACTIVE FIELD — then bind them to THIS order's facts and to OPERATORA KOMANDAS. If the sample is thinner than this audit, add the missing point in the same voice. Never paste a historical paragraph unchanged.
+- NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums tied to that other order, seller names, or order IDs.
+- Prefer historical **Tehnisko risku** and **Ieteikumi klātienes apskatei** when the current order lacks depth; always reconcile with the ACTIVE order's actual data and with the TA nosegums block.
+- OPERATOR NOTES WIN over any historical excerpt.
+- Match paragraph rhythm and "automašīna" vocabulary; keep CLIENT VALUE DENSITY (short, high-value — no fluff).`;
 
 /** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
 export const HYBRID_COMMENT_RULES = `
@@ -492,6 +519,9 @@ COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${AI_EXPERT_PARAGRAPH_PRESENTATION}
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
 ${AI_RESOLVED_HISTORICAL_FINDINGS_RULES}
+${AI_TA_COVERED_WEAR_RULES}
+${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
+${AI_PLAIN_LANGUAGE_TERMS}
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 - LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.
 - LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / eksperta piezīmes — IGNORE the 350–800 target if needed to cover every operator topic. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes are long.

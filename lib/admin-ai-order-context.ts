@@ -40,6 +40,8 @@ import {
 } from "@/lib/owner-count-synthesis";
 import { buildHistoricalReportsAiContext } from "@/lib/admin-ai-historical-context";
 import { buildAggregateKnowledgeAiContext } from "@/lib/admin-ai-aggregate-knowledge";
+import { buildStyleCorpusAiContext } from "@/lib/admin-ai-style-corpus";
+import { buildTechnicalInspectionCoverageBrief } from "@/lib/admin-ai-ta-coverage";
 
 export type AiOrderContextInput = {
   sessionId: string;
@@ -186,7 +188,7 @@ export function buildFinishedReportStyleReferenceSection(input: {
   }
 
   if (parts.length === 0) return "";
-  return `### Gatavo PROVIN audita komentāru stila reference (obligāti atdarini rindkopu ritmu, virsrakstu savā rindā, vārdu krājumu „automašīna”, bez * un bez domuzīmes rindkopu sākumā)
+  return `### Gatavo PROVIN audita komentāru stila reference (ŠĪ pasūtījuma jau uzrakstītie lauki — atdarini ritmu, BET pielāgo AKTĪVAJAM laukam, šī audita datiem un OPERATORA KOMANDĀM; nekopē rindkopas un neaizstāj operatora tēmas)
 ${parts.join("\n\n")}`;
 }
 
@@ -299,6 +301,12 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
   });
   if (styleReference) parts.push(styleReference);
 
+  const taCoverage = buildTechnicalInspectionCoverageBrief({
+    csdd: blocks.csdd,
+    sourceBlocks: blocks,
+  });
+  if (taCoverage) parts.push(taCoverage);
+
   return parts.filter(Boolean).join("\n\n");
 }
 
@@ -347,7 +355,8 @@ export async function buildFullAiOrderContextText(input: AiOrderContextInput): P
     sourceBlocks: blocks,
     vin: input.vin,
   });
-  const sections = [base, historical, aggregateKnowledge].filter((s) => s.trim());
+  const styleCorpus = buildStyleCorpusAiContext();
+  const sections = [base, styleCorpus, historical, aggregateKnowledge].filter((s) => s.trim());
   const text = sections.join("\n\n");
   orderContextCache.set(cacheKey, { text, expiresAt: Date.now() + ORDER_CONTEXT_CACHE_TTL_MS });
   return text;

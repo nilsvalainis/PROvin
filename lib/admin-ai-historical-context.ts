@@ -122,59 +122,73 @@ function draftToIndexEntry(sessionId: string, draft: OrderDraftState): Historica
   };
 }
 
-async function listOrderDraftSessionIdsFromFs(dir: string): Promise<string[]> {
+type DraftIdHit = { id: string; mtimeMs: number };
+
+async function listOrderDraftSessionIdsFromFs(dir: string): Promise<DraftIdHit[]> {
   let names: string[] = [];
   try {
     names = await fs.readdir(dir);
   } catch {
     return [];
   }
-  const ids: string[] = [];
+  const ids: DraftIdHit[] = [];
   for (const name of names) {
     if (!name.endsWith(".json")) continue;
     if (name.startsWith("_")) continue;
     const id = name.slice(0, -5);
-    if (isSafeOrderDraftSessionId(id)) ids.push(id);
+    if (!isSafeOrderDraftSessionId(id)) continue;
+    try {
+      const st = await fs.stat(path.join(dir, name));
+      ids.push({ id, mtimeMs: st.mtimeMs });
+    } catch {
+      ids.push({ id, mtimeMs: 0 });
+    }
   }
   return ids;
 }
 
-async function listOrderDraftSessionIdsFromBlob(prefix: string, token: string): Promise<string[]> {
-  const ids: string[] = [];
+async function listOrderDraftSessionIdsFromBlob(prefix: string, token: string): Promise<DraftIdHit[]> {
+  const ids: DraftIdHit[] = [];
   let cursor: string | undefined;
   do {
     const page = await list({ prefix, token, cursor, limit: 1000, mode: "expanded" });
     for (const b of page.blobs) {
       if (!b.pathname.endsWith(".json")) continue;
       const id = b.pathname.slice(prefix.length, -".json".length);
-      if (isSafeOrderDraftSessionId(id)) ids.push(id);
+      if (!isSafeOrderDraftSessionId(id)) continue;
+      const uploaded = "uploadedAt" in b ? b.uploadedAt : undefined;
+      const mtimeMs = uploaded ? new Date(uploaded as string | Date).getTime() : 0;
+      ids.push({ id, mtimeMs: Number.isFinite(mtimeMs) ? mtimeMs : 0 });
     }
     cursor = page.hasMore && page.cursor ? page.cursor : undefined;
   } while (cursor);
   return ids;
 }
 
-async function listAllOrderDraftSessionIds(): Promise<string[]> {
-  const seen = new Set<string>();
+async function listNewestOrderDraftSessionIds(limit: number): Promise<string[]> {
+  const byId = new Map<string, number>();
+  const remember = (hits: DraftIdHit[]) => {
+    for (const hit of hits) {
+      if (hit.id.startsWith("demo_order_")) continue;
+      const prev = byId.get(hit.id) ?? 0;
+      if (hit.mtimeMs >= prev) byId.set(hit.id, hit.mtimeMs);
+    }
+  };
   const dir = getOrderDraftStorageDir();
-  if (dir) {
-    for (const id of await listOrderDraftSessionIdsFromFs(dir)) seen.add(id);
-  }
+  if (dir) remember(await listOrderDraftSessionIdsFromFs(dir));
   const blob = getOrderDraftBlobConfig();
-  if (blob) {
-    for (const id of await listOrderDraftSessionIdsFromBlob(blob.prefix, blob.token)) seen.add(id);
-  }
-  return [...seen];
+  if (blob) remember(await listOrderDraftSessionIdsFromBlob(blob.prefix, blob.token));
+  return [...byId.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([id]) => id);
 }
 
 async function buildHistoricalReportIndex(): Promise<HistoricalReportIndexEntry[]> {
   const now = Date.now();
   if (indexCache && now - indexCache.at < CACHE_TTL_MS) return indexCache.entries;
 
-  const ids = await listAllOrderDraftSessionIds();
-  const sortedIds = ids
-    .filter((id) => !id.startsWith("demo_order_"))
-    .slice(0, MAX_DRAFTS_TO_INDEX);
+  const sortedIds = await listNewestOrderDraftSessionIds(MAX_DRAFTS_TO_INDEX);
 
   const entries: HistoricalReportIndexEntry[] = [];
   for (const sessionId of sortedIds) {

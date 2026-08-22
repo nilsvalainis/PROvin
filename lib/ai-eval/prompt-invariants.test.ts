@@ -7,14 +7,18 @@ import {
   AI_DAMAGE_CLAIM_CONTEXT_RULES,
   AI_EV_BEV_FORENSICS_RULES,
   AI_EXPERT_PARAGRAPH_PRESENTATION,
+  AI_HISTORICAL_REPORTS_CONTEXT_RULES,
   AI_MILEAGE_BAND_RISK_RULES,
   AI_NO_ESTIMATED_REPAIR_EUR_RULES,
   AI_OPERATOR_NOTES_EXECUTION_RULES,
+  AI_PLAIN_LANGUAGE_TERMS,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
+  AI_TA_COVERED_WEAR_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
+  AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -187,31 +191,32 @@ describe("PROVIN AI prompt invariants", () => {
       prompts.indexOf("AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM"),
       prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
     );
-    expect(block).toMatch(/8-12 sadaļas/);
+    expect(block).toMatch(/Īsāka analīze nav kļūda/);
     expect(block).toMatch(/AI_TECHNICAL_RISKS_FLAGSHIP_RULES/);
     expect(block).toMatch(/NAV risks/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/iekšēja/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Pirmā rindkopa/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/maksimāli 1–2/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/NOSACĪTA/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);
     expect(tech).toMatch(/Pirmā sadaļa/);
     expect(tech).toMatch(/Nepārspīlē/);
     expect(tech).toMatch(/20–40 tūkst\. km/);
     expect(tech).toMatch(/varbūtības × izmaksām/);
-    expect(tech).toMatch(/8–12 sadaļas/);
+    expect(tech).toMatch(/Īsāka analīze nav kļūda/);
   });
 
-  it("inspection recommendations convert each tech-risk system into a check", () => {
+  it("inspection recommendations convert remaining uncertainty into buyer actions", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     const block = prompts.slice(
       prompts.indexOf("AI_INSPECTION_RECOMMENDATIONS_SYSTEM"),
       prompts.indexOf("AI_SELLER_ANALYSIS_SYSTEM"),
     );
-    expect(block).toMatch(/6–9 rindkopas/);
+    expect(block).toMatch(/NE pa vienai rindkopai katram risku blokam/);
     expect(block).toMatch(/350–800 šim laukam NEATTIECAS/);
     const insp = readRepo("lib/admin-ai-inspection.ts");
-    expect(insp).toMatch(/6–9 rindkopas/);
+    expect(insp).toMatch(/NE pa vienai rindkopai katram risku blokam/);
   });
 
   it("operator notes are prepended with highest priority", () => {
@@ -237,6 +242,31 @@ describe("PROVIN AI prompt invariants", () => {
       /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_OPERATOR_NOTES_EXECUTION_RULES\}/,
     );
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/OPERATOR NOTES OVERRIDE/);
+  });
+
+  it("TA covered wear, unknown-is-not-risk, and workshop terms apply to every field agent", () => {
+    expect(AI_TA_COVERED_WEAR_RULES).toMatch(/CSDD TA COVERED WEAR/);
+    expect(AI_TA_COVERED_WEAR_RULES).toMatch(/SVAIGA/);
+    expect(AI_TA_COVERED_WEAR_RULES).toMatch(/MK 295/);
+    expect(AI_UNKNOWN_IS_NOT_A_RISK_RULES).toMatch(/UNKNOWN IS NOT A RISK/);
+    expect(AI_UNKNOWN_IS_NOT_A_RISK_RULES).toMatch(/15\+/);
+    expect(AI_PLAIN_LANGUAGE_TERMS).toMatch(/divmasu spararats/);
+    expect(AI_PLAIN_LANGUAGE_TERMS).toMatch(/ieplūdes kolektors/);
+    expect(AI_HISTORICAL_REPORTS_CONTEXT_RULES).toMatch(/ADAPT \/ SUPPLEMENT \/ CONNECT/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_TA_COVERED_WEAR_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_UNKNOWN_IS_NOT_A_RISK_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_PLAIN_LANGUAGE_TERMS\}/,
+    );
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildTechnicalInspectionCoverageBrief/);
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildStyleCorpusAiContext/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/code\.startsWith\("vocabulary_"\)/);
+    expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/listNewestOrderDraftSessionIds/);
   });
 
   it("resolved historical TA findings are not an in-person hunt list", () => {

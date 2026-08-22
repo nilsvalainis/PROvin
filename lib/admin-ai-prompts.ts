@@ -14,7 +14,10 @@ import {
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_NO_ESTIMATED_REPAIR_EUR_RULES,
+  AI_PLAIN_LANGUAGE_TERMS,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
+  AI_TA_COVERED_WEAR_RULES,
+  AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -83,8 +86,8 @@ ${AI_OPERATOR_NOTES_EXECUTION_RULES}
 FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NOT copy-paste the same story across sources):
 - OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” ask you to cover a theme that would normally live in another field, write it HERE and process every operator topic. Anti-repetition must not delete an operator theme.
 - STRICT ROLES — each ACTIVE FIELD has ONE job; never absorb another field’s essay:
-  • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths — NOT EUR repair quotes, NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
-  • „2. Ieteikumi klātienes apskatei” = concrete in-person checks + why for THIS car — convert risks into steps; do NOT restate the full technical-risk essay or summary verdict.
+  • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths (kārba, motors, ķēde/zobsiksna, divmasu spararats, dārgie mezgli, rūsa) — NOT everyday TA-covered wear (sviras, bukses, bremzes), NOT EUR repair quotes, NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
+  • „2. Ieteikumi klātienes apskatei” = what the buyer should see, hear, measure, or ask — convert remaining uncertainties into steps; do NOT restate the technical-risk essay or write one paragraph per risk block.
   • „3. Kopsavilkums” = short professional opinion + purchase recommendation on the overall picture — NOT a recapitulation or paraphrase of already-generated source/IRISS sentences; NOT a point-by-point digest of every section; NEVER listing/market/repair EUR figures (those belong in „Cenas vērtējums” and „1. Tehnisko risku analīze”).
   • „NOBRAUKUMA VĒSTURES KOMENTĀRS” = ONLY place for full chronological mileage synthesis (lineārums, averages, motorstundas/city–highway, multi-source odometer correlation, data vacuum, global odometer-risk conclusions).
   • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
@@ -115,6 +118,12 @@ DATA FORENSICS (mileage, incidents, source comments, summary — when timeline d
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 
 ${AI_RESOLVED_HISTORICAL_FINDINGS_RULES}
+
+${AI_TA_COVERED_WEAR_RULES}
+
+${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
+
+${AI_PLAIN_LANGUAGE_TERMS}
 
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 
@@ -178,6 +187,12 @@ ANALYSIS GUIDELINES:
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
 
 ${AI_RESOLVED_HISTORICAL_FINDINGS_RULES}
+
+${AI_TA_COVERED_WEAR_RULES}
+
+${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
+
+${AI_PLAIN_LANGUAGE_TERMS}
 
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 
@@ -300,13 +315,14 @@ SATURA PRASĪBAS:
 
 DALĪJUMS:
 - Šī sadaļa = agregātu slimības / stiprās puses / kas NAV risks — BEZ EUR tāmēm, NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
+- TA nosegtie nodiluma mezgli (sviras, bukses, lodbalsti, bremzes) NAV šīs sadaļas saturs, ja noseguma LĪMENIS to aizliedz.
 - Klātienes soļus atstāj „2. Ieteikumi…”; pirkuma gala vērtējumu — „3. Kopsavilkums”.
 
 AVOTI (šādā secībā): (1) agregātu zināšanas / vēsturiskie auditi; (2) CSDD/Outvin/engine code/aprīkojums; (3) web meklēšana tipiskajām vājajām vietām.
 
 FORMĀTS:
 - Virsraksts savā rindā, tad 2-4 teikumu rindkopa. NEKAD "*", "**", "__" vai "- " rindas sākumā.
-- Tipiski 8-12 sadaļas; noklusējuma 350-800 NEATTIECAS.
+- Tik sadaļu, cik ir atšķirīga agregāta materiāla (tipiski 4-10; 8-12 tikai ja katra sadaļa ir cits mezgls). Īsāka analīze nav kļūda. Noklusējuma 350-800 NEATTIECAS.
 - Atturīgi formulējumi: „tipiski šim agregātam”, „var novest pie”, „paaugstināts risks”.
 - Bez „Sveiki”, bez atskaites sadaļu dublikātiem, bez meta-komentāriem par AI.`,
 );
@@ -324,7 +340,7 @@ FORMĀTS (obligāti):
 - Virsraksts savā rindā (piem. Virsbūves pārbaude ar krāsas mērītāju), tad rindkopa nākamajā rindā. NEKAD *, **.
 - Formulējumi: Jāpārbauda…, Ieteicams…, Rūpīgi jāapskata… (ne „Pārbaudi”).
 - CLIENT VALUE DENSITY: katra rindkopa = konkrēta pārbaude + kāpēc tā svarīga šim auto; bez garas tehniskās esejas (tā ir 1. sadaļā). Noklusējuma 350–800 šim laukam NEATTIECAS.
-- Garums: **6–9 rindkopas** — pa vienai katram tehnisko risku sistēmas blokam (piekare, auksts starts/motors, ieplūde/izplūde, elektronika/ELV, kārba, TA/DEKRA punkti, 3 posmu testa brauciens, virsbūve/rūsa ja relevanti). Īsāk tikai ja datu maz.
+- Garums: tik pārbaužu, cik šim auto ir darāmu soļu (tipiski 4–8). NE pa vienai rindkopai katram risku blokam — grupē pēc pircēja darbības (ko redzēt, dzirdēt, izmērīt, vaicāt). Īsāk, ja datu maz.
 
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.

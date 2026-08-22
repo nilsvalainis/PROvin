@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-23.1 — Visiem aģentiem: CSDD TA nosegums (svaiga ≤3 mēn. / spēkā /
+ *   beigusies), nezināmais nav risks, nosacīta risku kvota, riski ≠ apskate,
+ *   sarunvalodas termini ar self-correction, stila korpuss (adaptē, nekopē).
  * - 2026-08-22.1 — Ātrie vērtējumi: jaunās operatora sagataves, closer
  *   pēc noklusējuma, sagatavju frāzes drīkst ņemt vārds vārdā.
  * - 2026-08-19.2 — Klienta komentāros nav * / **. Virsraksts savā rindā,
@@ -24,4 +27,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-22.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-23.1";

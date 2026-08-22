@@ -24,6 +24,7 @@
     "test:watch": "vitest",
     "test:ai-eval": "vitest run lib/ai-eval",
     "eval:prod-sample": "node scripts/eval-prod-sample.mjs --load-env-local",
+    "style:corpus:mine": "node scripts/mine-style-corpus.mjs --load-env-local",
     "audit:knowledge:promote": "node scripts/audit-knowledge-pipeline.mjs --load-env-local promote",
     "vin:fetch": "node scripts/vin-fetch.mjs",
     "screenshot:mobile": "node scripts/mobile-screenshot.mjs",

@@ -101,8 +101,8 @@ async function withSelfCorrection(
   };
   const raw = await generateOnce(withBudget);
   const field = opts.qualityField ?? "generic";
-  const issues = evaluateExpertCommentQuality(raw, { field }).filter((i) =>
-    SELF_CORRECTION_RETRY_CODES.has(i.code),
+  const issues = evaluateExpertCommentQuality(raw, { field }).filter(
+    (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );
   if (issues.length === 0) return raw;
   if (!aiBudgetAllowsRetry(withBudget.budget)) {

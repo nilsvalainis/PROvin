@@ -1,0 +1,19 @@
+---
+description: CSDD TA nosedz ikdienas nodilumu — tas nav pirkuma risks
+alwaysApply: true
+---
+
+# CSDD TA nosegtie nodiluma mezgli
+
+Latvijas valsts tehniskā apskate (MK 295) pārbauda bremzes, stūri, asis/riteņus/riepas/balstiekārtu (sviras, bukses, lodbalsti, amortizatori, gultņi), apgaismojumu un redzamas noplūdes.
+
+Visos klienta komentāros:
+
+- **Svaiga apskate (≤ 3 mēneši):** šos mezglus neraksta kā pirkuma risku „1. Tehnisko risku analīzē”. Aizliegts „pie šī nobraukuma bieži nepieciešama … nomaiņa”.
+- **Spēkā, bet vecāka:** nav apgalvojuma, ka ir bojāti, un nav apgalvojuma, ka ir kārtībā. Klātienē — vismaz viena rindiņa.
+- **Beigusies / nav datu:** nosegums neieslēdzas; ikdienas nodilums joprojām nav modeļa risks.
+- Nezināma vēsture, detaļu kvalitāte, nolietojums = īss klātienes ieteikums, ne riska rindkopa.
+- 1. līmeņa TA piezīme (piem. eļļas noplūde) uz 15+ gadus veca LV auto = viens teikums, nav dramatisks defekts.
+- Izņēmums paliek: **rūsa/korozija** un **cietās daļiņas / dūmainība**.
+
+Kanons: `AI_TA_COVERED_WEAR_RULES`, `AI_UNKNOWN_IS_NOT_A_RISK_RULES`, `buildTechnicalInspectionCoverageBrief()`.

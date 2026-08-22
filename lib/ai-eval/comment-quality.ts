@@ -19,6 +19,8 @@ export type CommentQualityOptions = {
     | "technical_risks"
     | "inspection"
     | "summary";
+  /** Deterministiskais TA noseguma līmenis — pastiprina nodiluma-kā-riska pārbaudi. */
+  taCoverageLevel?: "fresh" | "valid" | "expired" | "none";
 };
 
 const AUTOMIBILIS_RE = /\bautomobīl/i;
@@ -40,14 +42,18 @@ const MAX_CHARS_BY_FIELD: Record<string, number> = {
 };
 
 const MIN_PARAS_BY_FIELD: Partial<Record<string, number>> = {
-  technical_risks: 7,
-  inspection: 5,
+  technical_risks: 3,
+  inspection: 3,
 };
 
 const MIN_CHARS_BY_FIELD: Partial<Record<string, number>> = {
-  technical_risks: 1800,
-  inspection: 650,
+  technical_risks: 800,
+  inspection: 400,
 };
+
+/** Nodilums kā pirkuma risks — neatkarīgi no TA, šis nav modeļa risks. */
+const TA_WEAR_AS_RISK_RE =
+  /(?:bieži nepieciešam\w*.{0,80}(?:buš|bukš|lodbalst|svir)|(?:buš|bukš|lodbalst|sviru).{0,50}nomaiņ)/i;
 
 /** Heuristics for a full mileage essay that belongs only in NOBRAUKUMA VĒSTURES KOMENTĀRS. */
 const MILEAGE_ESSAY_SIGNALS = [
@@ -201,6 +207,13 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "tech_risks_identity_intro",
         message: "Pirmā rindkopa nedrīkst būt auto prezentācija — sāc ar riska faktu",
+      });
+    }
+    if (TA_WEAR_AS_RISK_RE.test(t) || (opts.taCoverageLevel === "fresh" && /galvenais (?:pirkuma )?risks.{0,60}(?:svir|buš|lodbalst|bremž)/i.test(t))) {
+      issues.push({
+        code: "ta_wear_as_risk",
+        message:
+          "Tehnisko risku sadaļā nedrīkst pasniegt TA nosegtu nodilumu (sviras, bukses, lodbalsti, bremzes) kā pirkuma risku — tas ir klātienes punkts vai vispār nav jāmin",
       });
     }
   }

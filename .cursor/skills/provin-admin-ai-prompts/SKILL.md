@@ -71,6 +71,8 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Let tech risks, inspection recommendations, and summary absorb each other’s essays — keep strict field roles (complement, don’t 4×-repeat).
 - Let brevity or anti-repetition skip topics from admin „Papildu piezīmes AI” (`OPERATORA KOMANDAS`). Those notes are a binding work order (`AI_OPERATOR_NOTES_EXECUTION_RULES`): every topic in, no cherry-pick, no extra lines when the operator limited the job.
 - Tell the client to hunt CSDD TA defects that later inspections already show as cleared (~2+ years, lamps, play, etc.). Exception: rust and exhaust particulates/smoke stay cautious. Canonical: `AI_RESOLVED_HISTORICAL_FINDINGS_RULES`.
+- Treat everyday TA-covered wear (sviras, bukses, lodbalsti, bremzes) as a purchase risk when the TA coverage brief is SVAIGA or SPĒKĀ. Canonical: `AI_TA_COVERED_WEAR_RULES`. Unknown history is an in-person line, not a risk — `AI_UNKNOWN_IS_NOT_A_RISK_RULES`.
+- Copy historical / style-corpus excerpts instead of adapting them to THIS order and OPERATORA KOMANDAS.
 - Put approximate repair/service EUR bands („orientējoši … €”) into any ✨ comment. Canonical: `AI_NO_ESTIMATED_REPAIR_EUR_RULES`. Aggregate packs may hold € for internal calibration only — `stripUnauthorizedEuroAmounts()` is a runtime safety net on technical-risks/inspection/summary, not a substitute for correct prompting.
 - Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, or „kontrolpunkts klātienē” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē” instead.
 
