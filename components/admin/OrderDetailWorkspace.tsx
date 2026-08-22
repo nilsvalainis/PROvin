@@ -709,10 +709,8 @@ export function OrderDetailWorkspace({
   const [aiTechnicalRisksBusy, setAiTechnicalRisksBusy] = useState(false);
   const [aiTechnicalRisksErr, setAiTechnicalRisksErr] = useState<string | null>(null);
   const [aiTechnicalRisksPreview, setAiTechnicalRisksPreview] = useState("");
-  const [aiPriceBusy, setAiPriceBusy] = useState(false);
   const [aiTirgusMarketBusy, setAiTirgusMarketBusy] = useState(false);
   const [aiTirgusMarketErr, setAiTirgusMarketErr] = useState<string | null>(null);
-  const [aiPriceErr, setAiPriceErr] = useState<string | null>(null);
   const [aiSummaryBusy, setAiSummaryBusy] = useState(false);
   const [aiSummaryErr, setAiSummaryErr] = useState<string | null>(null);
   const [aiSummaryPreview, setAiSummaryPreview] = useState("");
@@ -1110,42 +1108,6 @@ export function OrderDetailWorkspace({
       setAiInspectionBusy(false);
     }
   }, [buildAiOrderPayload, aiInspectionBusy, payload.aiAllowed, updateWs]);
-
-  const runAiPriceAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.price) => {
-    if (!payload.aiAllowed || aiPriceBusy) return;
-    setAiPriceBusy(true);
-    setAiPriceErr(null);
-    try {
-      const cur = wsPersistRef.current;
-      const res = await fetch("/api/admin/ai/price-analysis", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...buildAiOrderPayload({
-            operatorNotes,
-            existingDraftPlain: adminRichHtmlToPlainText(cur.cenasAtbilstiba).trim(),
-          }),
-          modelTier,
-        }),
-      });
-      const { data, parseFailed } = await parseAdminAiResponse(res);
-      const generated = readGeneratedAdminAiText(res, data, parseFailed, "AI: neizdevās analizēt cenu");
-      if (
-        !applyGeneratedAdminAiText(
-          generated,
-          (text) => updateWs({ cenasAtbilstiba: aiExpertSourceCommentToRichHtml(text) }),
-          setAiPriceErr,
-        )
-      ) {
-        return;
-      }
-    } catch {
-      setAiPriceErr("AI: neizdevās savienoties");
-    } finally {
-      setAiPriceBusy(false);
-    }
-  }, [buildAiOrderPayload, aiPriceBusy, payload.aiAllowed, updateWs]);
 
   const runAiSummaryAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.summary) => {
     if (!payload.aiAllowed || aiSummaryBusy) return;
@@ -2466,7 +2428,6 @@ export function OrderDetailWorkspace({
         iriss: ws.iriss ?? "",
         apskatesPlāns: ws.apskatesPlāns ?? "",
         tehniskoRiskuAnalize: ws.tehniskoRiskuAnalize ?? "",
-        cenasAtbilstiba: ws.cenasAtbilstiba ?? "",
         previewConfirmed: ws.previewConfirmed,
       });
     } catch {
@@ -3247,7 +3208,6 @@ export function OrderDetailWorkspace({
       { title: "Kopsavilkums", text: ws.iriss ?? "" },
       { title: ADMIN_TECHNICAL_RISKS_LABEL, text: ws.tehniskoRiskuAnalize ?? "" },
       { title: "Apskates plāns", text: ws.apskatesPlāns ?? "" },
-      { title: "Cenas atbilstība", text: ws.cenasAtbilstiba ?? "" },
     ];
 
     drawHeading(
@@ -3291,7 +3251,6 @@ export function OrderDetailWorkspace({
     payload.customerPhone,
     payload.vin,
     ws.apskatesPlāns,
-    ws.cenasAtbilstiba,
     ws.iriss,
     ws.tehniskoRiskuAnalize,
   ]);
@@ -3973,25 +3932,6 @@ export function OrderDetailWorkspace({
                     listingUrl={payload.listingUrl}
                   />
                 </div>
-                <div className="min-w-0">
-                  <AdminAiFieldError message={aiPriceErr} />
-                  <AdminAiPolishRichCommentShell
-                    value={ws.cenasAtbilstiba ?? ""}
-                    onChange={(next) => updateWs({ cenasAtbilstiba: next })}
-                    aria-label="Cenas atbilstība"
-                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.priceFit, "3. Cenas atbilstība")}
-                    actions={
-                      <AdminAiGenerateWithPrefill
-                        label="Analizēt cenu"
-                        busy={aiPriceBusy}
-                        disabled={!payload.aiAllowed}
-                        demoOnly={!payload.aiAllowed}
-                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.price}
-                        onGenerate={(operatorNotes, modelTier) => void runAiPriceAnalysis(operatorNotes, modelTier)}
-                      />
-                    }
-                  />
-                </div>
               </div>
             </div>
           </section>
@@ -4131,8 +4071,7 @@ export function OrderDetailWorkspace({
                           !(
                             adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
                             adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
-                            adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
-                            adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
+                            adminRichHtmlToPlainText(ws.apskatesPlāns).trim()
                           )
                         }
                         demoOnly={!payload.aiAllowed}
@@ -4142,10 +4081,9 @@ export function OrderDetailWorkspace({
                             : !(
                                   adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
                                   adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
-                                  adminRichHtmlToPlainText(ws.apskatesPlāns).trim() ||
-                                  adminRichHtmlToPlainText(ws.cenasAtbilstiba).trim()
+                                  adminRichHtmlToPlainText(ws.apskatesPlāns).trim()
                                 )
-                              ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja, ieteikumu vai cenas sadaļu"
+                              ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja vai ieteikumu sadaļu"
                               : undefined
                         }
                         recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.summary}

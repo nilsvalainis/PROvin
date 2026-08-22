@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Sludinājuma analīze: Groq pārdošanas konteksts + AI pārdevēja analīze (DEMO).
+ * Sludinājuma analīze: pārdevēja portrets, foto un iekopētais apraksts.
  */
 
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
@@ -126,8 +126,6 @@ export function AdminListingAnalysisSourceBlock({
     </a>
   ) : null;
 
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
   const [sellerAnalyzing, setSellerAnalyzing] = useState(false);
   const [sellerAnalyzePreview, setSellerAnalyzePreview] = useState("");
   const [sellerAnalyzeErr, setSellerAnalyzeErr] = useState<string | null>(null);
@@ -158,8 +156,6 @@ export function AdminListingAnalysisSourceBlock({
   const photoCount = (v.photoGroups ?? []).reduce((n, g) => n + (g.photos?.length ?? 0), 0);
   const canRunPhotoAi =
     aiAllowed && Boolean(buildAiPayload) && (v.listingPasteRaw.trim().length > 0 || photoCount > 0);
-  const canRunSalesContextAi =
-    aiAllowed && Boolean(buildAiPayload) && v.listingPasteRaw.trim().length > 0;
 
   const runListingFieldAi = useCallback(
     async (
@@ -168,16 +164,12 @@ export function AdminListingAnalysisSourceBlock({
       modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.listing,
     ) => {
       if (!buildAiPayload || disabled || readOnly || listingFieldBusy) return;
-      if (field === "photoAnalysis" && !canRunPhotoAi) return;
-      if (field === "listingSalesContext" && !canRunSalesContextAi) return;
+      if (field !== "photoAnalysis" || !canRunPhotoAi) return;
       setListingFieldBusy(field);
       setListingFieldErr(null);
       try {
         const base = buildAiPayload();
-        const existing =
-          field === "photoAnalysis"
-            ? adminRichHtmlToPlainText(v.photoAnalysis).trim()
-            : adminRichHtmlToPlainText(v.listingSalesContext).trim();
+        const existing = adminRichHtmlToPlainText(v.photoAnalysis).trim();
         const res = await fetch("/api/admin/ai/listing-field-comment", {
           method: "POST",
           credentials: "include",
@@ -200,14 +192,7 @@ export function AdminListingAnalysisSourceBlock({
         if (
           !applyGeneratedAdminAiText(
             generated,
-            (text) => {
-              const html = aiExpertSourceCommentToRichHtml(text);
-              onChange(
-                field === "photoAnalysis"
-                  ? { ...v, photoAnalysis: html }
-                  : { ...v, listingSalesContext: html },
-              );
-            },
+            (text) => onChange({ ...v, photoAnalysis: aiExpertSourceCommentToRichHtml(text) }),
             (error) => setListingFieldErr({ field, msg: error }),
           )
         ) {
@@ -222,7 +207,6 @@ export function AdminListingAnalysisSourceBlock({
     [
       buildAiPayload,
       canRunPhotoAi,
-      canRunSalesContextAi,
       disabled,
       listingFieldBusy,
       onChange,
@@ -264,46 +248,6 @@ export function AdminListingAnalysisSourceBlock({
     },
     [buildAiPayload, canRunSellerAi, disabled, onChange, readOnly, sellerAnalyzing, v],
   );
-
-  const runListingAnalyze = useCallback(async () => {
-    const t = v.listingPasteRaw.trim();
-    if (!t || disabled || analyzing) return;
-    setAnalyzing(true);
-    setAnalyzeErr(null);
-    try {
-      const res = await fetch("/api/ai/analyze", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: t }),
-      });
-      const data = (await res.json()) as { text?: string; error?: string; detail?: string };
-      if (!res.ok) {
-        const detail = typeof data.detail === "string" ? data.detail.trim() : "";
-        if (data.error === "missing_groq_key") {
-          setAnalyzeErr("Nav GROQ_API_KEY");
-        } else if (res.status === 401 || data.error === "unauthorized") {
-          setAnalyzeErr("Groq: nav admin piekļuves");
-        } else if (data.error === "analysis_failed") {
-          setAnalyzeErr(
-            detail
-              ? `Groq: neizdevās ģenerēt pārdošanas kontekstu — ${detail}`
-              : "Groq: neizdevās ģenerēt pārdošanas kontekstu",
-          );
-        } else {
-          setAnalyzeErr(detail ? `Groq: ${detail}` : "Groq: neizdevās");
-        }
-        return;
-      }
-      if (typeof data.text === "string") {
-        onChange({ ...v, listingSalesContext: aiExpertSourceCommentToRichHtml(data.text) });
-      }
-    } catch {
-      setAnalyzeErr("Groq: neizdevās savienoties");
-    } finally {
-      setAnalyzing(false);
-    }
-  }, [analyzing, disabled, onChange, v]);
 
   const shell =
     variant === "priority"
@@ -444,7 +388,6 @@ export function AdminListingAnalysisSourceBlock({
           title={LISTING_ANALYSIS_LISTING_PASTE_LABEL}
           compact={dense}
         >
-          <AdminAiFieldError message={analyzeErr} />
           {readOnly ? (
             <div
               className={
@@ -461,21 +404,6 @@ export function AdminListingAnalysisSourceBlock({
             <AdminAiPolishTextareaShell
               value={v.listingPasteRaw}
               disabled={disabled}
-              toolbarStart={
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-700 bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={readOnly || disabled || analyzing || !v.listingPasteRaw.trim()}
-                  onClick={() => void runListingAnalyze()}
-                  title="No iekopētā apraksta ģenerē profesionālu tekstu laukā „Pārdošanas sludinājuma konteksts” (Groq)"
-                  aria-busy={analyzing}
-                >
-                  {analyzing ? (
-                    <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                  ) : null}
-                  Ģenerēt pārdošanas kontekstu
-                </button>
-              }
               onPolished={(next) =>
                 onChange({ ...v, listingPasteRaw: next.slice(0, ADMIN_LISTING_PASTE_RAW_MAX_LEN) })
               }
@@ -497,37 +425,6 @@ export function AdminListingAnalysisSourceBlock({
                 aria-label={`${LISTING_ANALYSIS_LISTING_PASTE_LABEL} — ievade analīzei (nav PDF)`}
               />
             </AdminAiPolishTextareaShell>
-          )}
-        </ListingAnalysisSubsectionHeading>
-
-        <ListingAnalysisSubsectionHeading
-          icon={LISTING_ANALYSIS_FIELD_LUCIDE.listingSalesContext}
-          title={L.listingSalesContext}
-          compact={dense}
-        >
-          {readOnly ? (
-            <AdminRichCommentReadonly
-              html={v.listingSalesContext}
-              className={pri ? roBox(!!dense) : roDefault}
-            />
-          ) : (
-            <AdminSourceCommentField
-              label=""
-              value={v.listingSalesContext}
-              onChange={(next) => onChange({ ...v, listingSalesContext: next })}
-              disabled={disabled}
-              compact={pri && dense}
-              aria-label={`${L.listingSalesContext} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
-              ai={{
-                allowed: aiAllowed,
-                busy: listingFieldBusy === "listingSalesContext",
-                error:
-                  listingFieldErr?.field === "listingSalesContext" ? listingFieldErr.msg : null,
-                hasSourceData: canRunSalesContextAi,
-                onGenerate: (notes, tier) =>
-                  void runListingFieldAi("listingSalesContext", notes, tier),
-              }}
-            />
           )}
         </ListingAnalysisSubsectionHeading>
       </div>

@@ -1165,11 +1165,9 @@ export function listingAnalysisToPlainText(b: ListingAnalysisBlockState): string
   const extra = wsStr(b.extraSellerName).trim();
   const portrait = wsStr(b.sellerPortrait).trim();
   const photos = wsStr(b.photoAnalysis).trim();
-  const sales = wsStr(b.listingSalesContext).trim();
   if (extra) parts.push(`${LISTING_ANALYSIS_EXTRA_SELLER_LABEL}\n${extra}`);
   if (portrait) parts.push(`${L.sellerPortrait}\nKomentāri\n${portrait}`);
   if (photos) parts.push(`${L.photoAnalysis}\nKomentāri\n${photos}`);
-  if (sales) parts.push(`${L.listingSalesContext}\nKomentāri\n${sales}`);
   return parts.join("\n\n");
 }
 

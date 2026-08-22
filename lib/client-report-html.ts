@@ -173,7 +173,6 @@ import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
-const PDF_LISTING_SECTION_PRICE = "Cenas atbilstība";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
 /** Vienots komentāru bloka virsraksts visā PDF atskaitē (kā NEGADĪJUMU VĒSTURE). */
 const PDF_REPORT_COMMENT_LABEL = PDF_INCIDENT_INTERNAL_COMMENT_LABEL;
@@ -1611,12 +1610,6 @@ function buildListingAnalysisPriorityHtml(
       if (photoCommentBox) inner.push(photoCommentBox);
       if (photosHtml) inner.push(photosHtml);
     }
-    cat(L.listingSalesContext, b.listingSalesContext);
-  }
-  const priceFitBox = pdfReportCommentBox(p.cenasAtbilstiba ?? "");
-  if (priceFitBox) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("priceTag"), PDF_LISTING_SECTION_PRICE));
-    inner.push(priceFitBox);
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];

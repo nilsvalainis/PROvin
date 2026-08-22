@@ -192,11 +192,7 @@ export function tirgusTrafficLevel(f: TirgusFormFields | null | undefined): Traf
 }
 
 function listingAnalysisComplete(b: ListingAnalysisBlockState): boolean {
-  return (
-    wsStr(b.sellerPortrait).trim().length > 0 &&
-    wsStr(b.photoAnalysis).trim().length > 0 &&
-    wsStr(b.listingSalesContext).trim().length > 0
-  );
+  return wsStr(b.sellerPortrait).trim().length > 0 && wsStr(b.photoAnalysis).trim().length > 0;
 }
 
 export function listingAnalysisTrafficLevel(b: ListingAnalysisBlockState | null | undefined): TrafficFillLevel {
@@ -231,21 +227,19 @@ export function portfolioFilesTrafficLevel(fileCount: number): TrafficFillLevel 
   return "complete";
 }
 
-/** 4. sadaļa — Kopsavilkums / IRISS (tehniskie riski + apskate + kopsavilkums + cena/priekšskats). */
+/** 4. sadaļa — Kopsavilkums / IRISS (tehniskie riski + apskate + kopsavilkums + priekšskats). */
 export function expertSummaryTrafficLevel(p: {
   iriss?: string | null;
   apskatesPlāns?: string | null;
   tehniskoRiskuAnalize?: string | null;
-  cenasAtbilstiba?: string | null;
   previewConfirmed?: boolean;
 } | null | undefined): TrafficFillLevel {
   try {
     const a = wsStr(p?.iriss).trim();
     const b = wsStr(p?.apskatesPlāns).trim();
     const tech = wsStr(p?.tehniskoRiskuAnalize).trim();
-    const c = wsStr(p?.cenasAtbilstiba).trim();
-    if (!a && !b && !c && !tech) return "empty";
-    if (a && b && c && tech && p?.previewConfirmed) return "complete";
+    if (!a && !b && !tech) return "empty";
+    if (a && b && tech && p?.previewConfirmed) return "complete";
     return "partial";
   } catch {
     return "empty";

@@ -3,7 +3,7 @@
  *
  * Galvenie principi:
  * - Nav trešo pušu zīmolu logotipu; tikai PROVIN identitāte.
- * - Galvenais kopsavilkuma bloks „APPROVED BY IRISS” (apakšsadaļas: Tehnisko risku analīze, Ieteikumi klātienes apskatei, Kopsavilkums; Cenas atbilstība — sludinājuma zonā).
+ * - Galvenais kopsavilkuma bloks „APPROVED BY IRISS” (apakšsadaļas: Tehnisko risku analīze, Ieteikumi klātienes apskatei, Kopsavilkums).
  * - Datu avotu virsraksti PDF klientam — vispārināti, bez oficiālo institūciju precīziem nosaukumiem.
  * - Tekstā nelietot trešo pušu komerciālu pakalpojumu nosaukumus, kamēr nav līgumiskas tiesības tos piesaistīt.
  * - Krāsas / fonti saskaņā ar provin.lv (ne trešo pušu UI krāsas kā „oficiālas”).
