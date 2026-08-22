@@ -19,6 +19,7 @@ import {
 import { isGeminiAdminTier, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import {
   evaluateExpertCommentQuality,
+  mentionsVehicleWrap,
   type CommentQualityIssue,
   type CommentQualityOptions,
 } from "@/lib/ai-eval/comment-quality";
@@ -69,6 +70,8 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "invented_repair_eur",
   "summary_price",
   "tech_risks_identity_intro",
+  "wrap_film_missing",
+  "wrap_film_risk_incomplete",
 ]);
 
 function buildSelfCorrectionPrompt(
@@ -101,7 +104,10 @@ async function withSelfCorrection(
   };
   const raw = await generateOnce(withBudget);
   const field = opts.qualityField ?? "generic";
-  const issues = evaluateExpertCommentQuality(raw, { field }).filter(
+  const issues = evaluateExpertCommentQuality(raw, {
+    field,
+    wrapPresentInContext: mentionsVehicleWrap(opts.userPrompt),
+  }).filter(
     (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );
   if (issues.length === 0) return raw;

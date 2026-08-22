@@ -21,7 +21,20 @@ export type CommentQualityOptions = {
     | "summary";
   /** Deterministiskais TA noseguma līmenis — pastiprina nodiluma-kā-riska pārbaudi. */
   taCoverageLevel?: "fresh" | "valid" | "expired" | "none";
+  /** Kontekstā (jebkurā laukā) minēta aplīmēšana — riskiem un kopsavilkumam jāpiemin. */
+  wrapPresentInContext?: boolean;
 };
+
+/** Aplīmēšana / plēve / PPF — ne CSS „wrap”. */
+export const VEHICLE_WRAP_MENTION_RE =
+  /aplīm|aizsargplēv|vinila\s+plēv|\bppf\b|plēv(?:e|es|i|ēm|ēm|ītes)?\b/i;
+
+const VEHICLE_WRAP_RISK_RE =
+  /zem plēves|bez (?:plēves )?demontāž|demontēj|neredz|nevar (?:novērtēt|konstatēt)|slēpj|nokopēt|tona maiņ|mainīt ton|ražotājs nav zināms|uzņem(?:ties|ts) risks|atjaunotā detaļa/i;
+
+export function mentionsVehicleWrap(text: string): boolean {
+  return VEHICLE_WRAP_MENTION_RE.test(text ?? "");
+}
 
 const AUTOMIBILIS_RE = /\bautomobīl/i;
 const LEADING_DASH_PARA_RE = /(^|\n\n)\s*[-–•]\s+/;
@@ -216,6 +229,19 @@ export function evaluateExpertCommentQuality(
           "Tehnisko risku sadaļā nedrīkst pasniegt TA nosegtu nodilumu (sviras, bukses, lodbalsti, bremzes) kā pirkuma risku — tas ir klātienes punkts vai vispār nav jāmin",
       });
     }
+    if (opts.wrapPresentInContext && !mentionsVehicleWrap(t)) {
+      issues.push({
+        code: "wrap_film_missing",
+        message:
+          "Kontekstā auto ir aplīmēts — tehnisko risku analīzē jāpiemin plēve un neredzamais darbs zem tās",
+      });
+    } else if (mentionsVehicleWrap(t) && !VEHICLE_WRAP_RISK_RE.test(t)) {
+      issues.push({
+        code: "wrap_film_risk_incomplete",
+        message:
+          "Aplīmēšanu nedrīkst atstāt kā faktu vien — jāpasaka, ka zem plēves kvalitāti nevar novērtēt bez demontāžas",
+      });
+    }
   }
 
   if (field === "inspection") {
@@ -232,6 +258,18 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "summary_price",
         message: "Kopsavilkumā neraksta cenas / EUR summas — sludinājuma cena ir cenas vērtējumā, remonta tāmes nav nevienā komentārā",
+      });
+    }
+    if (opts.wrapPresentInContext && !mentionsVehicleWrap(t)) {
+      issues.push({
+        code: "wrap_film_missing",
+        message: "Kontekstā auto ir aplīmēts — kopsavilkumā tas jāpiemin kā pircēja uzņemts risks",
+      });
+    } else if (mentionsVehicleWrap(t) && !VEHICLE_WRAP_RISK_RE.test(t)) {
+      issues.push({
+        code: "wrap_film_risk_incomplete",
+        message:
+          "Kopsavilkumā par plēvi jāpasaka, ka zem tās krāsojumu nevar novērtēt — ne tikai ka auto ir aplīmēts",
       });
     }
   }

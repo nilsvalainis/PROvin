@@ -103,7 +103,34 @@ export const AI_UNKNOWN_IS_NOT_A_RISK_RULES = `UNKNOWN IS NOT A RISK (mandatory 
 - Missing prior use, unknown part quality, unknown wear, empty service history → one short in-person check, NOT a technical-risk paragraph and NOT a „vērā ņemams risks”.
 - A CSDD rating-1 / maznozīmīgs finding (e.g. a slight oil seep) on a 15+ year Latvia-used car is ONE sentence of on-site attention — never a dramatic defect essay.
 - Do not invent certainty. If data are thin, say so briefly and tell the buyer what to look at, listen for, measure, or ask — then stop.
-- Over-dramatizing routine age items is a failure. Under-stating a real aggregate fault (ķēde, kārba, dārgs mezgls, rūsa) is also a failure.`;
+- Over-dramatizing routine age items is a failure. Under-stating a real aggregate fault (ķēde, kārba, dārgs mezgls, rūsa) is also a failure.
+- EXCEPTION: if ANY field says the car is wrapped / aplīmēta with film (plēve, PPF, vinils), that hidden painted surface IS a purchase risk — see WRAP / FILM.`;
+
+/**
+ * Aplīmēšana ar plēvi slēpj krāsoto virsmu — jāpiemin riskos un kopsavilkumā.
+ */
+export const AI_WRAP_FILM_RULES = `WRAP / FILM / APLĪMĒŠANA (mandatory — every agent, every field):
+- Trigger: ANY text in this prompt (listing, photos, source comments, incidents, operator notes, already-generated fields) says the car is wrapped / aplīmēta / under plēve / PPF / vinila plēve. Do not invent a wrap if nothing says so.
+- If triggered, BOTH „1. Tehnisko risku analīze” AND „3. Kopsavilkums” MUST mention it. Anti-repetition does not waive this — one calibrated paragraph in risks, one short sentence in the summary. Other fields mention wrap only if THIS source uniquely states it.
+- What the buyer needs to understand (workshop Latvian, no drama):
+  • Recorded damages on this class of car are often not structural (typically a front bumper). That does NOT cancel the wrap risk.
+  • Under the film there may be poorly painted panels, abrasive sanding marks done before wrapping so the film would not „copy” a local defect, and other work that cannot be judged with the film on.
+  • Those things cannot be confirmed without removing the film — so this is a risk the buyer accepts, not a proven defect and not a clean bill of paint.
+  • Client phrasing for later work (two sentences, not one semicolon line): „Ja plēves ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta. Tāpat plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.”
+- Do not write that the wrap „proves” hidden crash repair. Say what cannot be seen and what that means for purchase and for future paint/film work.
+- Inspection field: one line on what can still be checked with the film on (edges, orange peel through film, lift, mismatch) — do not pretend a paint gauge through film replaces removal.`;
+
+/**
+ * Eļļas maiņas intervālu matemātika — tikai dīlera laukā „Eļļas maiņas intervāli”.
+ * Pārējie aģenti: maksimums viens teikums, ja tas ir pirkuma risks.
+ */
+export const AI_OIL_CHANGE_INTERVAL_RULES = `OIL CHANGE INTERVALS (mandatory — every agent):
+- Detailed oil-change interval math belongs ONLY in „Eļļas maiņas intervāli” (OFICIĀLĀ DĪLERA DATI): how often oil was changed on THIS car, km and/or months between successive oil services, and how far those gaps deviate from the manufacturer interval.
+- Use ALL obtained data: dealer service-works table, AutoDNA / CarVertical / RAW service narratives, mileage timeline, driving profile / motorstundas (city vs highway), and OEM interval from context or aggregate packs. Do not invent oil changes that are not in the data.
+- City / short-trip / Baltic profile: treat ~10 000 km as the practical ceiling. Dense highway records: 15 000-20 000 km can be mechanically acceptable. Shorten OEM 25 000-30 000 km „long-life” when the profile or the recorded gaps demand it. BEV: do not invent ICE oil math.
+- If oil-change records are thin or absent: say the interval cannot be calculated and what is missing — never invent a schedule.
+- Other ACTIVE FIELDS (tech risks, mileage, inspection, summary, per-source comments, incidents): at most ONE sentence if oil policy is a purchase risk. Do NOT reprint the interval table or re-run the math. Anti-repetition does not delete this one-sentence risk when it matters.
+- No estimated oil/service EUR. Canonical: AI_NO_ESTIMATED_REPAIR_EUR_RULES.`;
 
 /** Sarunvalodas termini — labie vārdi; sliktie ir BANNED VOCABULARY. */
 export const AI_PLAIN_LANGUAGE_TERMS = `PLAIN LATVIAN WORKSHOP TERMS (mandatory — every agent, especially Flash):
@@ -522,13 +549,15 @@ ${AI_RESOLVED_HISTORICAL_FINDINGS_RULES}
 ${AI_TA_COVERED_WEAR_RULES}
 ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 ${AI_PLAIN_LANGUAGE_TERMS}
+${AI_WRAP_FILM_RULES}
+${AI_OIL_CHANGE_INTERVAL_RULES}
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 - LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.
 - LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / eksperta piezīmes — IGNORE the 350–800 target if needed to cover every operator topic. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes are long.
 - STYLE: Analytical, professional, restrained automotive Latvian. Flexible structure — not one fixed template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
 - LOGIC: Interpret what the findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
-- ANTI-REPETITION (mandatory): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, missing-data narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here and process EVERY operator topic (anti-repetition must not delete an operator theme). Per-source text = unique facts from THIS source + at most ONE cross-check sentence vs other sources when generating from data alone. If another source comment already covered the same fact AND the operator did not ask you to write it here: one short confirmation only — never a near-duplicate essay.
+- ANTI-REPETITION (mandatory): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, missing-data narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), oil-change interval math (that belongs in „Eļļas maiņas intervāli”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here and process EVERY operator topic (anti-repetition must not delete an operator theme). Per-source text = unique facts from THIS source + at most ONE cross-check sentence vs other sources when generating from data alone. If another source comment already covered the same fact AND the operator did not ask you to write it here: one short confirmation only — never a near-duplicate essay.
 `;
 
 /** AI PDF extract JSON — eksperta komentārs (visi avoti). */

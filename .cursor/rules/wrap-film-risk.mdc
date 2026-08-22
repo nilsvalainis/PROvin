@@ -1,0 +1,15 @@
+---
+description: Aplīmēšana ar plēvi slēpj krāsojumu — jāpiemin riskos un kopsavilkumā
+alwaysApply: true
+---
+
+# Aplīmēšana / plēve
+
+Ja jebkurā laukā (sludinājums, avots, operatora piezīmes, jau ģenerēts komentārs) auto ir aplīmēts:
+
+- **1. Tehnisko risku analīze** un **3. Kopsavilkums** to piemin. Anti-atkārtošanās to neatsauc.
+- Fiksētie bojājumi šādā klasē bieži nav konstrukcijas (tipiski bamperis) — tas neatceļ plēves risku.
+- Zem plēves var būt nekvalitatīvs krāsojums vai slīpēšanas pēdas; bez plēves noņemšanas to nevar konstatēt. Tas ir pircēja uzņemts risks, ne pierādīts defekts.
+- Ja plēves ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta. Tāpat plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.
+
+Kanons: `AI_WRAP_FILM_RULES`.

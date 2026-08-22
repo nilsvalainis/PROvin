@@ -12,6 +12,7 @@ type Fixture = {
   field: CommentQualityOptions["field"];
   expectPass: boolean;
   codes?: string[];
+  wrapPresentInContext?: boolean;
   text: string;
 };
 
@@ -21,7 +22,10 @@ const fixtures = JSON.parse(readFileSync(fixturesPath, "utf8")) as Fixture[];
 describe("ai-eval comment quality (golden fixtures)", () => {
   for (const fx of fixtures) {
     it(`${fx.id} (${fx.expectPass ? "pass" : "fail"})`, () => {
-      const issues = evaluateExpertCommentQuality(fx.text, { field: fx.field });
+      const issues = evaluateExpertCommentQuality(fx.text, {
+        field: fx.field,
+        wrapPresentInContext: fx.wrapPresentInContext,
+      });
       if (fx.expectPass) {
         expect(issues, JSON.stringify(issues)).toEqual([]);
       } else {

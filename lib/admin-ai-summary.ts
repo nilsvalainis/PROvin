@@ -87,7 +87,8 @@ OBLIGĀTI:
 - NESĀC ar „Sveiki” vai sarunas uzrunu.
 - NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
 - Īpašnieku skaitu ņem no sadaļas „Īpašnieku skaits (reconcilēts)” — neskaiti AutoDNA+CarVertical+reģistrus kopā.
-- Beigās: APPROVED BY IRISS.`,
+- Beigās: APPROVED BY IRISS.
+- Ja jebkurā laukā auto ir aplīmēts — vienā teikumā pasaki, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

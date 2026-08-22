@@ -19,6 +19,7 @@ import {
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
+  AI_WRAP_FILM_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -267,6 +268,23 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildStyleCorpusAiContext/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/code\.startsWith\("vocabulary_"\)/);
     expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/listNewestOrderDraftSessionIds/);
+  });
+
+  it("wrap / film rules force a mention in risks and summary when any field has a wrap", () => {
+    expect(AI_WRAP_FILM_RULES).toMatch(/WRAP \/ FILM/);
+    expect(AI_WRAP_FILM_RULES).toMatch(/aplīm/);
+    expect(AI_WRAP_FILM_RULES).toMatch(/zem (?:the )?film|zem plēves|without removing/i);
+    expect(AI_UNKNOWN_IS_NOT_A_RISK_RULES).toMatch(/WRAP \/ FILM/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_WRAP_FILM_RULES\}/,
+    );
+    expect(prompts).toMatch(/AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM[\s\S]*?WRAP \/ APLĪMĒŠANA/);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?WRAP \/ APLĪMĒŠANA/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/wrap_film_missing/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/mentionsVehicleWrap/);
+    expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/aplīmēts/);
+    expect(readRepo("lib/admin-ai-technical-risks.ts")).toMatch(/aplīmēts/);
   });
 
   it("resolved historical TA findings are not an in-person hunt list", () => {

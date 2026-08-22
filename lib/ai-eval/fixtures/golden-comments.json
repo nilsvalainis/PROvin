@@ -121,6 +121,27 @@
     "text": "Reģistrācija\nAutomašīna Latvijā reģistrēta 2016. gadā \u2014 īpašnieku maiņa ir īsa."
   },
   {
+    "id": "tech-risks-wrap-film-ok",
+    "field": "technical_risks",
+    "expectPass": true,
+    "text": "Kas NAV dārgs risks\nŠīs paaudzes slavenā ķēdes kaite uz šo motoru neattiecas. Fiksētie virsbūves zaudējumi šajā klasē pārsvarā ir priekšējā bampera līmenī un nav vērtējami kā konstrukcijas defekts. Tas neatceļ slēpto virsmu zem plēves.\n\nAplīmēšana\nAutomašīna ir aplīmēta ar plēvi, tāpēc veikto krāsošanas darbu kvalitāti zem tās nevar novērtēt bez demontāžas. Zem plēves var palikt nekvalitatīvi krāsoti elementi vai slīpēšanas pēdas, kuras plēve var nokopēt - pircējs šo risku uzņemas.\n\nAtjaunošana\nJa plēves ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta. Tāpat plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.\n\nKārba\nHidrotransformators paliek ierasta uzturēšanas izmaksa šajā posmā, ne pirmais pirkuma šķērslis pēc pieejamajiem datiem."
+  },
+  {
+    "id": "tech-risks-wrap-film-incomplete",
+    "field": "technical_risks",
+    "expectPass": false,
+    "codes": ["wrap_film_risk_incomplete"],
+    "text": "Piekare\nRūpnīcas pneimatika paliek tuvākais rēķins.\n\nIzskats\nAutomašīna ir aplīmēta ar plēvi un vizuāli izskatās koptāka par tipisku importu.\n\nKārba\nKārba paliek pārbaudes punkts klātienē."
+  },
+  {
+    "id": "summary-wrap-film-missing",
+    "field": "summary",
+    "expectPass": false,
+    "wrapPresentInContext": true,
+    "codes": ["wrap_film_missing"],
+    "text": "Kopējā aina\nPēc pieejamajiem datiem automašīna izskatās koptāka nekā tipisks imports, ar atrunu ka PROVIN to fiziski nav apskatījis.\n\nRekomendācija\nIeteicams turpināt pēc klātienes pārbaudes."
+  },
+  {
     "id": "summary-no-price-ok",
     "field": "summary",
     "expectPass": true,

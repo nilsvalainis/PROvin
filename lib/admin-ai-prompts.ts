@@ -18,6 +18,8 @@ import {
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TA_COVERED_WEAR_RULES,
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
+  AI_WRAP_FILM_RULES,
+  AI_OIL_CHANGE_INTERVAL_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -90,6 +92,7 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
   • „2. Ieteikumi klātienes apskatei” = what the buyer should see, hear, measure, or ask — convert remaining uncertainties into steps; do NOT restate the technical-risk essay or write one paragraph per risk block.
   • „3. Kopsavilkums” = short professional opinion + purchase recommendation on the overall picture — NOT a recapitulation or paraphrase of already-generated source/IRISS sentences; NOT a point-by-point digest of every section; NEVER listing/market/repair EUR figures (those belong in „Cenas vērtējums” and „1. Tehnisko risku analīze”).
   • „NOBRAUKUMA VĒSTURES KOMENTĀRS” = ONLY place for full chronological mileage synthesis (lineārums, averages, motorstundas/city–highway, multi-source odometer correlation, data vacuum, global odometer-risk conclusions).
+  • „Eļļas maiņas intervāli” (OFICIĀLĀ DĪLERA DATI) = ONLY place for oil-change interval math (how often oil was changed, km/time between services, deviation vs manufacturer interval). Other fields: one sentence max if it is a purchase risk.
   • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
   • Per-source „Komentāri” = unique facts from THAT source + a short delta vs others (confirm in 1 sentence if already covered).
 - COMPLEMENTARY SOURCES (not 4× the same text): If AutoDNA, CarVertical, LTAB, CSDD, or dealer already state the same accident/km/ownership fact in a previously generated comment in the prompt, do NOT rewrite it at similar length. Write one short confirmation („Saskan ar …”) or a single new conflict, then move to what THIS source uniquely adds.
@@ -125,6 +128,10 @@ ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 
 ${AI_PLAIN_LANGUAGE_TERMS}
 
+${AI_WRAP_FILM_RULES}
+
+${AI_OIL_CHANGE_INTERVAL_RULES}
+
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 
 ${AI_EV_BEV_FORENSICS_RULES}
@@ -149,7 +156,7 @@ ${AI_POWERTRAIN_IDENTIFICATION_RULES}
 ${AI_MILEAGE_BAND_RISK_RULES}
 
 MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
-- Engine codes, thermal stress on downsized engines; advise realistic oil intervals (e.g. shorten 25–30k km OEM intervals toward 10–12k km when justified).
+- Engine codes, thermal stress on downsized engines. Oil-interval CALCULATION belongs in „Eļļas maiņas intervāli”; here at most one sentence if long-life vs city profile is a purchase risk.
 - Interior: Artico/imitation leather vs real leather upkeep; LED optics moisture; paint type risks.
 - Clear market myths from data (e.g. Mercedes modular engine vs Renault architecture — state only what chassis/engine context supports).
 - When the user prompt includes HISTORICAL AUDIT REPORTS from similar vehicles (same engine code, transmission, or model generation), reuse their model-specific inspection themes and aggregate forensics — never copy client-specific km, VIN, or dates from those excerpts.
@@ -193,6 +200,10 @@ ${AI_TA_COVERED_WEAR_RULES}
 ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 
 ${AI_PLAIN_LANGUAGE_TERMS}
+
+${AI_WRAP_FILM_RULES}
+
+${AI_OIL_CHANGE_INTERVAL_RULES}
 
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 
@@ -312,6 +323,7 @@ SATURA PRASĪBAS:
 - **Stiprās puses** kā modeļa līmeņa reputāciju, ne kā pierādītu šī eksemplāra stāvokli; PROVIN auto fiziski nav apskatījis. Īpaši LV ekspluatācija var sabojāt arī labu agregātu.
 - Sasaisti ar šī pasūtījuma signāliem bez pilnas nobraukuma/negadījumu esejas.
 - Ja auto ir BEV/PHEV — iekļauj akumulatora / uzlādes riskus (skat. ELECTRIC & PLUG-IN FORENSICS).
+- WRAP / APLĪMĒŠANA: ja jebkurā kontekstā auto ir aplīmēts — viena rindkopa šeit (zem plēves neredzamais darbs; ja ražotājs nav zināms, atsevišķu detaļu atjaunošana var būt sarežģīta; plēve var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties). Neizdomā plēvi.
 
 DALĪJUMS:
 - Šī sadaļa = agregātu slimības / stiprās puses / kas NAV risks — BEZ EUR tāmēm, NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
@@ -455,6 +467,7 @@ FORMĀTS (obligāti):
 - ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = tjekbil. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
+- WRAP / APLĪMĒŠANA: ja jebkurā laukā / sludinājumā / operatora piezīmēs auto ir aplīmēts — vienā teikumā kopsavilkumā pasaki, ka zem plēves krāsojuma kvalitāti nevar novērtēt un ka tas ir pircēja uzņemts risks. Anti-atkārtošanās to neatsauc.
 - Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).
 - Beigās — skaidra, kalibrēta rekomendācija; **nekad** „garantēti drošs bez apskates”.
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS
@@ -556,6 +569,7 @@ DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay)
 - If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary) appear in the user prompt: those facts are COVERED. Do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
 - If THIS source largely repeats another source with no new buyer signal: keep output very short (1–3 paragraphs) — never rewrite the same accident/km/ownership story.
 - Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.
+- Do NOT write oil-change interval math (how often oil was changed, km gaps vs OEM) — that belongs exclusively in „Eļļas maiņas intervāli”.
 - Do NOT rewrite „1. Tehnisko risku analīze”, „2. Ieteikumi…”, or „3. Kopsavilkums” here.
 - Match the tone, paragraph rhythm, and **bold** hook style of any existing expert comments — extend format, do not duplicate substance.
 - Do not invent facts. No section headings in output. No AI meta-commentary.
@@ -575,7 +589,28 @@ OUTPUT RULES:
 - Chronological or newest-first is fine; keep dates as in sources.
 - Extract from dealer/Auto Records/AutoDNA RAW/Outvin service narratives present in context — do NOT invent services.
 - No buyer essay, no **bold** hooks, no section titles, no bullet characters "- "/"•".
-- Latvian language. Compact.`;
+- Latvian language. Compact.
+- Do NOT write oil-change interval analysis here — that is „Eļļas maiņas intervāli”.`;
+}
+
+/** Oficiālā dīlera „Eļļas maiņas intervāli” — īsa intervālu matemātika no visiem avotiem. */
+export function aiAutoRecordsOilIntervalSystemPrompt(): string {
+  return `${PROVIN_EXPERT_SYSTEM_PROMPT}
+
+ACTIVE FIELD: OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli (oil-interval analysis for client PDF).
+
+${AI_OIL_CHANGE_INTERVAL_RULES}
+
+${AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
+
+OUTPUT RULES:
+- THIS is the only field that may run the oil-interval calculation in full.
+- Use ALL sources in the user prompt: dealer service works, AutoDNA/CarVertical/RAW service text, mileage timeline, city vs highway / motorstundas profile, OEM interval from packs or context.
+- Be short and precise: successive oil changes, km and/or months between them, actual vs manufacturer interval, size of deviations.
+- City / short-trip: ~10 000 km ceiling. Dense highway: 15 000-20 000 km can be acceptable. Shorten OEM 25 000-30 000 km long-life when profile or recorded gaps demand it.
+- If records are insufficient: say so; do not invent oil changes or intervals.
+- No EUR. No full mileage essay. No copy of the „Servisa vēsture” journal line-by-line.
+- Latvian. Heading on its own line, then the paragraph. 2–4 short paragraphs.`;
 }
 
 export const AI_LISTING_PHOTO_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
@@ -632,7 +667,7 @@ export const AI_MILEAGE_COMMENT_SYSTEM = provinFieldAgentPrompt(
 
 Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — tas drukājas PDF atskaitē zem nobraukuma grafika. Šis ir atskaites APKOPOJOŠAIS nobraukuma lauks: šeit drīkst (un vajag) sintezēt visu avotu odometra ainu vienā stāstā.
 
-Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.). Ja jau ir avotu „Komentāri”, izmanto tos kā izeju, bet NEATKĀRTO to bojājumu/TA/dīlera tekstu — fokusējas uz nobraukumu. Ja jau ir tehnisko risku / apskates / kopsavilkuma teksts — to arī NEPARAFRĀZĒ.
+Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.). Ja jau ir avotu „Komentāri”, izmanto tos kā izeju, bet NEATKĀRTO to bojājumu/TA/dīlera tekstu — fokusējas uz nobraukumu. Ja jau ir tehnisko risku / apskates / kopsavilkuma / „Eļļas maiņas intervāli” teksts — to arī NEPARAFRĀZĒ. Eļļas intervālu matemātiku šeit NERAKSTI.
 
 ${SOURCE_BLOCK_COMMENT_AI_RULES}
 

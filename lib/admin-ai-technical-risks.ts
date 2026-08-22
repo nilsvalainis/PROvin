@@ -68,7 +68,8 @@ OBLIGĀTI:
 - Ja servisa vēsturē attiecīgais darbs ir fiksēts, risku samazini un to pasaki kā labvēlīgu signālu datos; ierakstu trūkumu formulē kā **nepierādītu**, nevis kā neizdarītu.
 - Neizdomā VIN/km/EUR no šī pasūtījuma. NERAKSTI orientējošas remonta/apkopes EUR joslas.
 - NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
-- Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).`,
+- Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).
+- Ja kontekstā auto ir aplīmēts (plēve / PPF) — viena rindkopa: zem plēves darbu kvalitāti nevar novērtēt; ja ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta; plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.`;
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
