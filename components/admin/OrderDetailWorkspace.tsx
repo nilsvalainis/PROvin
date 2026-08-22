@@ -1897,8 +1897,11 @@ export function OrderDetailWorkspace({
     onSourcesComparisonCommentChange("");
     setAiInspectionErr(null);
     setAiTechnicalRisksErr(null);
-    setAiPriceErr(null);
+    setAiTirgusMarketErr(null);
     setAiSummaryErr(null);
+    setAiIncidentsSummaryErr(null);
+    setAiMileageCommentErr(null);
+    setAiSourcesComparisonErr(null);
     setAiSourceCommentErr(null);
     setPreviewOpen(false);
     setWizardStep(0);

@@ -58,20 +58,20 @@ export async function generateAdminAiText(
   const decoder = new TextDecoder();
   let buffer = "";
   let preview = "";
-  let final: AiStreamEvent | null = null;
+  let completed: AiStreamEvent | undefined;
 
-  const handle = (event: AiStreamEvent) => {
-    if (event.type === "delta") {
-      preview += event.text;
+  const handle = (incoming: AiStreamEvent) => {
+    if (incoming.type === "delta") {
+      preview += incoming.text;
       opts.onPreview(preview);
       return;
     }
-    if (event.type === "restart") {
+    if (incoming.type === "restart") {
       preview = "";
       opts.onPreview("");
       return;
     }
-    final = event;
+    completed = incoming;
   };
 
   while (true) {
@@ -82,24 +82,30 @@ export async function generateAdminAiText(
   }
   parseSseEvents(`${buffer}\n\n`, handle);
 
-  const event: AiStreamEvent | null = final;
-  if (!event) {
+  if (completed === undefined) {
     // Straume nogriezta pusvārdā — apmaksātais priekšskatījums nedrīkst pazust.
     return preview.trim()
       ? { ok: false, error: "AI: savienojums pārtrūka — teksts nav pabeigts", text: preview.trim() }
       : { ok: false, error: httpFallback };
   }
 
-  const usage = "usage" in event ? event.usage : undefined;
-  if (isAiUsageSummary(usage)) emitAdminAiUsage(usage);
+  if (completed.type === "done") {
+    if (isAiUsageSummary(completed.usage)) emitAdminAiUsage(completed.usage);
+    return { ok: true, text: completed.text };
+  }
 
-  if (event.type === "done") return { ok: true, text: event.text };
+  if (completed.type === "error") {
+    if (isAiUsageSummary(completed.usage)) emitAdminAiUsage(completed.usage);
+    const data: AdminAiApiErrorBody & { text?: string } = {
+      error: completed.error,
+      detail: completed.detail,
+      text: completed.text,
+      incomplete: completed.incomplete,
+    };
+    return readGeneratedAdminAiText({ ok: false, status: 502 }, data, false, httpFallback);
+  }
 
-  const data: AdminAiApiErrorBody & { text?: string } = {
-    error: event.error,
-    detail: event.detail,
-    text: event.text,
-    incomplete: event.incomplete,
-  };
-  return readGeneratedAdminAiText({ ok: false, status: 502 }, data, false, httpFallback);
+  return preview.trim()
+    ? { ok: false, error: "AI: savienojums pārtrūka — teksts nav pabeigts", text: preview.trim() }
+    : { ok: false, error: httpFallback };
 }

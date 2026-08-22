@@ -55,7 +55,11 @@ export function aiStreamResponse(
         }
       });
 
-      send(usage.calls > 0 ? { ...result, usage } : result);
+      if (usage.calls > 0 && (result.type === "done" || result.type === "error")) {
+        send({ ...result, usage });
+      } else {
+        send(result);
+      }
       closed = true;
       controller.close();
     },
