@@ -83,7 +83,10 @@ export async function POST(req: Request) {
     : undefined;
   const targetFieldRaw = str(b.targetField).trim();
   const targetField = isAiSourceCommentTargetField(targetFieldRaw) ? targetFieldRaw : "comments";
-  if (targetField === "serviceHistoryNotes" && blockKeyRaw !== "auto_records") {
+  if (
+    (targetField === "serviceHistoryNotes" || targetField === "oilChangeIntervalNotes") &&
+    blockKeyRaw !== "auto_records"
+  ) {
     return NextResponse.json({ error: "invalid_target_field" }, { status: 400 });
   }
   const existingDraftPlain =

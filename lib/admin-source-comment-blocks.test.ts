@@ -41,6 +41,37 @@ describe("outvinDealerReportToPlainText", () => {
   });
 });
 
+describe("auto_records oil interval field", () => {
+  it("applies generated oil-interval notes and keeps them out of other-source comment context", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      auto_records: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          {
+            date: "01.06.2023",
+            odometer: "26276",
+            location: "",
+            works: "Eļļas maiņa",
+          },
+        ],
+        oilChangeIntervalNotes: "",
+      },
+    });
+    expect(sourceBlockHasDataExcludingComments("auto_records", blocks)).toBe(true);
+
+    const next = applySourceBlockGeneratedComment(
+      "auto_records",
+      blocks.auto_records,
+      "<p>Eļļa mainīta ik ~21 000 km — virs 10 000 km pilsētas griestiem.</p>",
+      { targetField: "oilChangeIntervalNotes" },
+    );
+    expect(next).toMatchObject({
+      oilChangeIntervalNotes:
+        "<p>Eļļa mainīta ik ~21 000 km — virs 10 000 km pilsētas griestiem.</p>",
+    });
+  });
+});
+
 describe("auto_records AI context", () => {
   it("includes outvin report in plain text", () => {
     const blocks = mergeSourceBlocksWithDefaults({

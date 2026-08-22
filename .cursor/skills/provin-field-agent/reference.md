@@ -24,6 +24,7 @@ ${taskBlock}
 | `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs |
 | `AI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums |
 | `aiSourceCommentSystemPrompt(label)` | Avota „Komentāri” |
+| `aiAutoRecordsOilIntervalSystemPrompt()` | Oficiālā dīlera „Eļļas maiņas intervāli” |
 
 ## Extensions beyond core prompt (in repo today)
 

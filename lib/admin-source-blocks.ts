@@ -791,6 +791,11 @@ export type AutoRecordsBlockState = {
    * Admin lauks „Servisa vēsture”; Copilot aizpilda no AutoDNA u.c. PDF.
    */
   serviceHistoryNotes: string;
+  /**
+   * Eļļas maiņas intervālu analīze (cik bieži mainīta, nobīdes no OEM).
+   * Admin lauks „Eļļas maiņas intervāli”; AI rēķina no visiem avotiem.
+   */
+  oilChangeIntervalNotes: string;
   /** Fotogrāfiju vizuālie pierādījumi — PDF režģī (kā Sludinājuma analīzē). */
   photos: AutoRecordsPhotoMeta[];
   /** Fotogrāfiju grupas ar manuāli ievadāmiem virsrakstiem. */
@@ -941,6 +946,7 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
     serviceWorks: [emptyAutoRecordsServiceWorkRow()],
     comments: "",
     serviceHistoryNotes: "",
+    oilChangeIntervalNotes: "",
     photos: [],
     photoGroups: [],
     aiContextRaw: "",
@@ -1237,6 +1243,7 @@ export function autoRecordsBlockHasContent(b: AutoRecordsBlockState): boolean {
     wsStr(b.rawUnprocessedData).trim().length > 0 ||
     wsStr(b.comments).trim().length > 0 ||
     wsStr(b.serviceHistoryNotes).trim().length > 0 ||
+    wsStr(b.oilChangeIntervalNotes).trim().length > 0 ||
     (b.photos?.length ?? 0) > 0 ||
     countAutoRecordsPhotos(b.photoGroups) > 0 ||
     outvinDealerReportHasContent(b.outvinReport) ||
@@ -1301,6 +1308,9 @@ export function autoRecordsBlockToPlainText(b: AutoRecordsBlockState): string {
   }
   if ((b.serviceHistoryNotes ?? "").trim()) {
     lines.push(`Servisa vēsture\n${(b.serviceHistoryNotes ?? "").trim()}`);
+  }
+  if ((b.oilChangeIntervalNotes ?? "").trim()) {
+    lines.push(`Eļļas maiņas intervāli\n${(b.oilChangeIntervalNotes ?? "").trim()}`);
   }
   if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${(b.comments ?? "").trim()}`);
   if ((b.rawUnprocessedData ?? "").trim()) lines.push((b.rawUnprocessedData ?? "").trim());
@@ -1627,6 +1637,10 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       comments: typeof raw.comments === "string" ? raw.comments.slice(0, 12000) : "",
       serviceHistoryNotes:
         typeof raw.serviceHistoryNotes === "string" ? raw.serviceHistoryNotes.slice(0, 12000) : "",
+      oilChangeIntervalNotes:
+        typeof raw.oilChangeIntervalNotes === "string"
+          ? raw.oilChangeIntervalNotes.slice(0, 12000)
+          : "",
       photos: synced.photos,
       photoGroups: synced.photoGroups,
       aiContextRaw: clipAiContextRaw(raw.aiContextRaw),
@@ -1644,6 +1658,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
     serviceWorks: [emptyAutoRecordsServiceWorkRow()],
     comments: "",
     serviceHistoryNotes: "",
+    oilChangeIntervalNotes: "",
     photos: [],
     photoGroups: [],
     aiContextRaw: "",
@@ -2136,6 +2151,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         serviceWorks: normalizeAutoRecordsServiceWorkRows(blocks.auto_records?.serviceWorks),
         comments: wsStr(blocks.auto_records?.comments),
         serviceHistoryNotes: wsStr(blocks.auto_records?.serviceHistoryNotes),
+        oilChangeIntervalNotes: wsStr(blocks.auto_records?.oilChangeIntervalNotes),
         rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),
         photos: synced.photos,
         photoGroups: synced.photoGroups,

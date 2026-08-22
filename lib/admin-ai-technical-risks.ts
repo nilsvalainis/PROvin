@@ -69,7 +69,8 @@ OBLIGĀTI:
 - Neizdomā VIN/km/EUR no šī pasūtījuma. NERAKSTI orientējošas remonta/apkopes EUR joslas.
 - NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
 - Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).
-- Ja kontekstā auto ir aplīmēts (plēve / PPF) — viena rindkopa: zem plēves darbu kvalitāti nevar novērtēt; ja ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta; plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.`;
+- Eļļas maiņas intervālu matemātiku (cik bieži mainīta, km pret OEM) NERAKSTI — tas ir laukā „Eļļas maiņas intervāli”; šeit maksimums viens teikums, ja long-life pret pilsētu ir pirkuma risks.
+- Ja kontekstā auto ir aplīmēts (plēve / PPF) — viena rindkopa: zem plēves darbu kvalitāti nevar novērtēt; ja ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta; plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

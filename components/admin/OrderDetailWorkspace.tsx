@@ -148,6 +148,7 @@ import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCom
 import {
   applySourceBlockGeneratedComment,
   citiAvotiSectionPlainTextExcludingComments,
+  orderHasOilIntervalDataForAi,
   sourceBlockCommentsPlainForAi,
   type AiSourceCommentBlockKey,
   type AiSourceCommentTargetField,
@@ -2319,7 +2320,9 @@ export function OrderDetailWorkspace({
     ): AdminAiSourceCommentSlot => {
       const busyKey = targetField === "comments" ? key : `${key}:${targetField}`;
       const hasSourceData =
-        key === "citi_avoti" && citiAvotiSectionIndex != null ?
+        key === "auto_records" && targetField === "oilChangeIntervalNotes" ?
+          orderHasOilIntervalDataForAi(blocksDisplaySafe)
+        : key === "citi_avoti" && citiAvotiSectionIndex != null ?
           citiAvotiSectionPlainTextExcludingComments(
             blocksDisplaySafe.citi_avoti.sections[citiAvotiSectionIndex] ?? emptyCitiAvotiSection(),
           ).length > 0
@@ -3767,6 +3770,7 @@ export function OrderDetailWorkspace({
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
               aiComment={aiCommentSlot("auto_records")}
               aiServiceHistory={aiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
+              aiOilChangeInterval={aiCommentSlot("auto_records", undefined, "oilChangeIntervalNotes")}
               photosPersistenceEnabled={orderDraftPersistenceEnabled}
               onAutoRecordsPhotoGroupsStructuralCommit={commitAutoRecordsPhotoGroupsStructural}
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}

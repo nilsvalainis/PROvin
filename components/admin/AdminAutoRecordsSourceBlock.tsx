@@ -97,6 +97,7 @@ type Props = {
   onPdfIncludeChange: (next: boolean) => void;
   aiComment?: AdminAiSourceCommentSlot;
   aiServiceHistory?: AdminAiSourceCommentSlot;
+  aiOilChangeInterval?: AdminAiSourceCommentSlot;
   photosPersistenceEnabled?: boolean;
   onAutoRecordsPhotoGroupsStructuralCommit?: (
     next: AutoRecordsBlockState["photoGroups"],
@@ -116,6 +117,7 @@ export function AdminAutoRecordsSourceBlock({
   onPdfIncludeChange,
   aiComment,
   aiServiceHistory,
+  aiOilChangeInterval,
   photosPersistenceEnabled = false,
   onAutoRecordsPhotoGroupsStructuralCommit,
 }: Props) {
@@ -619,6 +621,17 @@ export function AdminAutoRecordsSourceBlock({
             ai={aiServiceHistory}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
             aria-label={`${DEALER_ARIA} — Servisa vēsture`}
+          />
+          <AdminSourceCommentField
+            label="Eļļas maiņas intervāli"
+            value={value.oilChangeIntervalNotes ?? ""}
+            onChange={(next) => onChange({ ...value, oilChangeIntervalNotes: next })}
+            readOnly={readOnly}
+            disabled={disabled}
+            compact
+            ai={aiOilChangeInterval}
+            readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
+            aria-label={`${DEALER_ARIA} — Eļļas maiņas intervāli`}
           />
           {sessionId && onAutoRecordsPhotoGroupsStructuralCommit ? (
             <AdminListingAnalysisPhotos

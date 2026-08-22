@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-23.4 — Oficiālā dīlera lauks „Eļļas maiņas intervāli”: īsa
+ *   intervālu matemātika no visiem avotiem; pārējie aģenti neraksta šo eseju.
  * - 2026-08-23.3 — Plēves atjaunošanas formulējums: divi teikumi (ražotājs
  *   nezināms → sarežģīta detaļu atjaunošana; tona maiņa → atjaunotā detaļa
  *   var būtiski atšķirties), ne viens semikola teikums.
@@ -32,4 +34,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-23.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-23.4";

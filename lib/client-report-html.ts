@@ -1266,6 +1266,7 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
 }
 
 const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
+const PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL = "Eļļas maiņas intervāli";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 
 /** „Regulārā apkope: eļļas maiņa, salona filtrs” → kategorijas prefikss atsevišķi no darbiem. */
@@ -1393,10 +1394,15 @@ function buildAutoRecordsAvotuSubsection(
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
     : "";
+  const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
+  const oilIntervalBox = oilChangeIntervalNotes
+    ? pdfReportCommentBox(oilChangeIntervalNotes, PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL)
+    : "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
   const hasOutvin = outvinInner.length > 0;
   const hasServiceHistory = serviceHistoryBox.length > 0;
+  const hasOilInterval = oilIntervalBox.length > 0;
   const photosHtml = buildSourcePhotoGroupsPdfHtml(
     b.photoGroups,
     b.photos,
@@ -1407,7 +1413,15 @@ function buildAutoRecordsAvotuSubsection(
   const hasPhotos = photosHtml.length > 0;
   const hasServiceWorks = serviceWorksTable.length > 0;
 
-  if (!hasOutvin && !hasServiceWorks && !hasServiceHistory && !hasComments && !hasPhotos && !sparkHtml) {
+  if (
+    !hasOutvin &&
+    !hasServiceWorks &&
+    !hasServiceHistory &&
+    !hasOilInterval &&
+    !hasComments &&
+    !hasPhotos &&
+    !sparkHtml
+  ) {
     return "";
   }
 
@@ -1424,6 +1438,7 @@ function buildAutoRecordsAvotuSubsection(
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceWorks) bodyParts.push(serviceWorksTable);
   if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
+  if (hasOilInterval) bodyParts.push(oilIntervalBox);
   if (hasPhotos) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;

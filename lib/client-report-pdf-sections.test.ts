@@ -881,6 +881,27 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("102300");
   });
 
+  it("renders Auto Records Eļļas maiņas intervāli in client PDF", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      oilChangeIntervalNotes:
+        "Fiksētas 3 eļļas maiņas. Intervāli 18 000-22 000 km pret ražotāja 15 000 km.",
+      comments: "",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("Eļļas maiņas intervāli");
+    expect(doc).toContain("18 000-22 000 km");
+  });
+
   it("renders Auto Records service works table in client PDF", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,

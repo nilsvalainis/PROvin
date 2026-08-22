@@ -20,6 +20,7 @@ import {
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_WRAP_FILM_RULES,
+  AI_OIL_CHANGE_INTERVAL_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -268,6 +269,20 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildStyleCorpusAiContext/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/code\.startsWith\("vocabulary_"\)/);
     expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/listNewestOrderDraftSessionIds/);
+  });
+
+  it("oil-change interval math lives only in the dealer field", () => {
+    expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/Eļļas maiņas intervāli/);
+    expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/manufacturer interval|ražotāja/i);
+    expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/10 000 km/);
+    expect(HYBRID_COMMENT_RULES).toMatch(/Eļļas maiņas intervāli/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_OIL_CHANGE_INTERVAL_RULES\}/,
+    );
+    expect(prompts).toMatch(/aiAutoRecordsOilIntervalSystemPrompt/);
+    expect(prompts).toMatch(/ACTIVE FIELD: OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli/);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/oilChangeIntervalNotes/);
   });
 
   it("wrap / film rules force a mention in risks and summary when any field has a wrap", () => {

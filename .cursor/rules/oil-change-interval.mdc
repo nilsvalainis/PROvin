@@ -1,0 +1,16 @@
+---
+description: Eļļas maiņas intervālu matemātika — tikai dīlera laukā
+alwaysApply: true
+---
+
+# Eļļas maiņas intervāli
+
+Detalizēts aprēķins (cik bieži mainīta eļļa, km/laiks starp maiņām, nobīde no ražotāja intervāla) ir **tikai** laukā **Eļļas maiņas intervāli** (OFICIĀLĀ DĪLERA DATI).
+
+- Ņemt **visus** iegūtos datus: dīlera servisa tabulu, AutoDNA/CarVertical/RAW, nobraukumu, motorstundu / pilsētas–šosejas profilu, OEM intervālu no konteksta vai pakas.
+- Pilsēta: praktiskie griesti ~10 000 km. Blīvi šosejas dati: 15 000-20 000 km var būt pieņemami. 25 000-30 000 km „long-life” saīsināt, ja profils to prasa.
+- Ja ierakstu nav — tā arī teikt; neizdomāt maiņas.
+- Pārējie lauki (riski, nobraukums, avotu komentāri, kopsavilkums): maksimums viens teikums, ja tas ir pirkuma risks.
+- Nav remonta/apkopes EUR.
+
+Kanons: `AI_OIL_CHANGE_INTERVAL_RULES`.

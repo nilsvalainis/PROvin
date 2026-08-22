@@ -15,6 +15,7 @@ Runtime AI calls use constants in `lib/admin-ai-prompts.ts`:
 | `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs |
 | `AI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums |
 | `aiSourceCommentSystemPrompt(label)` | Per-source „Komentāri” blocks |
+| `aiAutoRecordsOilIntervalSystemPrompt()` | Oficiālā dīlera „Eļļas maiņas intervāli” |
 
 `provinFieldAgentPrompt(activeFieldContext, taskBlock)` wraps base + field task.
 

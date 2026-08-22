@@ -964,6 +964,10 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
     lines.push("auto_records Servisa vēsture:");
     lines.push(b.auto_records.serviceHistoryNotes.trim().slice(0, 2000));
   }
+  if ((b.auto_records.oilChangeIntervalNotes ?? "").trim()) {
+    lines.push("auto_records Eļļas maiņas intervāli:");
+    lines.push(b.auto_records.oilChangeIntervalNotes.trim().slice(0, 2000));
+  }
   pushClippedNote(lines, "auto_records comments", b.auto_records.comments);
   pushClippedNote(lines, "auto_records RAW", b.auto_records.rawUnprocessedData ?? "");
 

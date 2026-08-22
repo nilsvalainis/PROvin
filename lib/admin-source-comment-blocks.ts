@@ -29,10 +29,15 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 export type AiSourceCommentBlockKey = Exclude<SourceBlockKey, "listing_analysis">;
 
 /** Kurā laukā ierakstīt AI rezultātu (noklusējums: comments). */
-export type AiSourceCommentTargetField = "comments" | "serviceHistoryNotes";
+export type AiSourceCommentTargetField =
+  | "comments"
+  | "serviceHistoryNotes"
+  | "oilChangeIntervalNotes";
 
 export function isAiSourceCommentTargetField(v: string): v is AiSourceCommentTargetField {
-  return v === "comments" || v === "serviceHistoryNotes";
+  return (
+    v === "comments" || v === "serviceHistoryNotes" || v === "oilChangeIntervalNotes"
+  );
 }
 
 export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
@@ -85,7 +90,11 @@ export function sourceBlockPlainTextExcludingComments(
         sections: blocks.citi_avoti.sections.map((s) => ({ ...s, comments: "" })),
       }).trim();
     case "auto_records":
-      base = autoRecordsBlockToPlainText({ ...blocks.auto_records, comments: "" }).trim();
+      base = autoRecordsBlockToPlainText({
+        ...blocks.auto_records,
+        comments: "",
+        oilChangeIntervalNotes: "",
+      }).trim();
       return appendAiContextRawSection(base, blocks.auto_records.aiContextRaw);
     case "cc_vin":
       base = ccVinBlockToPlainText({ ...blocks.cc_vin, comments: "" }).trim();
@@ -148,6 +157,13 @@ export function sourceBlockHasDataExcludingComments(
   return sourceBlockPlainTextExcludingComments(blockKey, sourceBlocks).length > 0;
 }
 
+/** Eļļas intervālu lauks rēķina no visiem avotiem, ne tikai dīlera tabulas. */
+export function orderHasOilIntervalDataForAi(sourceBlocks: WorkspaceSourceBlocks): boolean {
+  return AI_SOURCE_COMMENT_BLOCK_KEYS.some((key) =>
+    sourceBlockHasDataExcludingComments(key, sourceBlocks),
+  );
+}
+
 export function citiAvotiSectionPlainTextExcludingComments(section: CitiAvotiSectionState): string {
   return appendAiContextRawSection(
     citiAvotiToPlainText({
@@ -185,6 +201,10 @@ export function sourceBlockCommentsPlainForAi(
     const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
     return blocks.auto_records.serviceHistoryNotes ?? "";
   }
+  if (blockKey === "auto_records" && targetField === "oilChangeIntervalNotes") {
+    const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+    return blocks.auto_records.oilChangeIntervalNotes ?? "";
+  }
   return sourceBlockCommentsPlain(blockKey, sourceBlocks);
 }
 
@@ -196,6 +216,7 @@ export function buildPreviouslyGeneratedSourceCommentsContext(
   currentBlockKey: AiSourceCommentBlockKey | null,
   sourceBlocks: WorkspaceSourceBlocks,
   citiAvotiSectionIndex?: number,
+  targetField: AiSourceCommentTargetField = "comments",
 ): string {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
   const parts: string[] = [];
@@ -217,14 +238,22 @@ export function buildPreviouslyGeneratedSourceCommentsContext(
     parts.push(`### ${SOURCE_BLOCK_LABELS[key]}\n${plain}`);
   }
 
-  if (currentBlockKey !== "auto_records") {
+  if (currentBlockKey !== "auto_records" || targetField !== "comments") {
     const serviceWorks = autoRecordsServiceWorkRowsToPlainText(blocks.auto_records.serviceWorks ?? []);
-    if (serviceWorks) {
+    if (serviceWorks && (currentBlockKey !== "auto_records" || targetField !== "serviceHistoryNotes")) {
       parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa un remontu vēsture\n${serviceWorks}`);
     }
-    const serviceNotes = adminRichHtmlToPlainText(blocks.auto_records.serviceHistoryNotes ?? "").trim();
-    if (serviceNotes) {
-      parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa vēsture\n${serviceNotes}`);
+    if (targetField !== "serviceHistoryNotes") {
+      const serviceNotes = adminRichHtmlToPlainText(blocks.auto_records.serviceHistoryNotes ?? "").trim();
+      if (serviceNotes) {
+        parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa vēsture\n${serviceNotes}`);
+      }
+    }
+    if (targetField !== "oilChangeIntervalNotes") {
+      const oilNotes = adminRichHtmlToPlainText(blocks.auto_records.oilChangeIntervalNotes ?? "").trim();
+      if (oilNotes) {
+        parts.push(`### OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli\n${oilNotes}`);
+      }
     }
   }
 
@@ -255,6 +284,9 @@ export function applySourceBlockGeneratedComment(
     case "auto_records":
       if (targetField === "serviceHistoryNotes") {
         return { ...block, serviceHistoryNotes: html };
+      }
+      if (targetField === "oilChangeIntervalNotes") {
+        return { ...block, oilChangeIntervalNotes: html };
       }
       return { ...block, comments: html };
     case "cc_vin":
