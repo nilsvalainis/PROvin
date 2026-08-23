@@ -5,6 +5,7 @@ import {
   LISTING_PEEK_TOPICS,
   assembleListingPeekCustomerComment,
   insertListingPeekLetterSentence,
+  LISTING_PEEK_ODOMETER_AUDIT_TAIL,
   listingPeekPhraseByTone,
   parseListingPeekAiPayload,
   parseListingPeekCustomerComment,
@@ -135,7 +136,7 @@ describe("parseListingPeekAiPayload", () => {
     const letter = [
       LISTING_PEEK_COMMENT_GREETING,
       "",
-      "1. Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. Vienlaikus tas ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
+      `1. Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
       "",
       "VIN no Vācijas, 2018. gads, 189 000 km.",
       "",
@@ -185,6 +186,9 @@ describe("LISTING_PEEK_TOPICS", () => {
       expect(topic.phrases[0]?.tone).toBe("positive");
     }
     expect(listingPeekPhraseByTone("odometer", "critical")).toContain("nesakritībām vēsturē");
+    for (const phrase of LISTING_PEEK_TOPICS.find((t) => t.id === "odometer")?.phrases ?? []) {
+      expect(phrase.text).toContain(LISTING_PEEK_ODOMETER_AUDIT_TAIL);
+    }
     expect(listingPeekPhraseByTone("incidents", "info")).toContain("OCTA atlīdzību pieteikumi Latvijā nav fiksēti");
     expect(listingPeekPhraseByTone("photos", "critical")).toContain("apzināti slēptu defektus");
   });

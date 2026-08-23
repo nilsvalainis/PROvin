@@ -8,6 +8,10 @@ export const LISTING_PEEK_COMMENT_GREETING = "Sveiki!";
 export const LISTING_PEEK_COMMENT_CLOSER =
   "Šis ir virspusējs vērtējums bez detalizētas nobraukuma, negadījumu vēstures un tehnisko risku analīzes. Pilnu pārbaudi nodrošina PROVIN AUDITS.";
 
+/** Nobraukuma sagatavju otrais teikums — vienāds visiem toņiem. */
+export const LISTING_PEEK_ODOMETER_AUDIT_TAIL =
+  "Vienlaikus tas ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām, kā arī dos iespēju ieskatīties oficiālā dīlera datubāzē, kur, iespējams, varēsim apskatīt veiktos apkopju intervālus un iegūt citus vērtīgus datus, kuri var noderēt zināšanai turpmākajā automašīnas ekspluatācijā.";
+
 export type ListingPeekTopicId = "odometer" | "incidents" | "technical" | "seller" | "photos";
 
 export type ListingPeekTone = "positive" | "caution" | "concern" | "critical" | "info";
@@ -34,25 +38,25 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "odometer-labs",
         tone: "positive",
         label: "Labs",
-        text: "Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. Vienlaikus tas ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
+        text: `Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
       },
       {
         id: "odometer-japeta",
         tone: "caution",
         label: "Jāpēta",
-        text: "Odometra rādījumu ticamību nav iespējams pilnvērtīgi izvērtēt bez padziļinātas pārbaudes. Vienlaikus tā ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
+        text: `Odometra rādījumu ticamību nav iespējams pilnvērtīgi izvērtēt bez padziļinātas pārbaudes. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
       },
       {
         id: "odometer-neskaidrs",
         tone: "concern",
         label: "Neskaidrs",
-        text: "Pieejamie dati nevar garantēt nobraukuma atbilstību, tāpēc padziļināta pārbaude maksas datubāzēs vērtējama kā obligāta. Vienlaikus tā ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
+        text: `Pieejamie dati nevar garantēt nobraukuma atbilstību, tāpēc padziļināta pārbaude maksas datubāzēs vērtējama kā obligāta. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
       },
       {
         id: "odometer-kritisks",
         tone: "critical",
         label: "Kritisks",
-        text: "Dati norāda uz iespējamu odometra rādījumu manipulāciju vai būtiskām nesakritībām vēsturē. Nepieciešama detalizēta analīze. Vienlaikus tā ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām.",
+        text: `Dati norāda uz iespējamu odometra rādījumu manipulāciju vai būtiskām nesakritībām vēsturē. Nepieciešama detalizēta analīze. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
       },
     ],
   },
