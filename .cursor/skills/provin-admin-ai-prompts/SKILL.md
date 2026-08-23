@@ -78,7 +78,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Copy historical / style-corpus excerpts instead of adapting them to THIS order and OPERATORA KOMANDAS.
 - Omit wrap / plēve from technical risks or summary when any field already says the car is wrapped. Canonical: `AI_WRAP_FILM_RULES`.
 - Put approximate repair/service EUR bands („orientējoši … €”) into any ✨ comment. Canonical: `AI_NO_ESTIMATED_REPAIR_EUR_RULES`. Aggregate packs may hold € for internal calibration only — `stripUnauthorizedEuroAmounts()` is a runtime safety net on technical-risks/inspection/summary, not a substitute for correct prompting.
-- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, or „kontrolpunkts klātienē” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē” instead.
+- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, „kontrolpunkts klātienē”, „uzturēšanas punkts”, or „integritāte” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē”, „tuvākā laika ieguldījums”, „stāvoklis” instead.
 
 ## Prompt version & evals
 

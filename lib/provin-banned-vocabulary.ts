@@ -66,6 +66,18 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "ieplūdes kolektors",
     code: "vocabulary_swirl_flap",
   },
+  {
+    label: "uzturēšanas punkts",
+    pattern: /uzturēšanas\s+punkts/i,
+    replacement: "tuvākā laika ieguldījums / ierasta uzturēšanas izmaksa",
+    code: "vocabulary_uzturesanas_punkts",
+  },
+  {
+    label: "integritāte",
+    pattern: /integritāt/i,
+    replacement: "stāvoklis",
+    code: "vocabulary_integritate",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */

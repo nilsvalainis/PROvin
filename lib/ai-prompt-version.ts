@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-23.6 — Sarunvaloda: „uzturēšanas punkts” → „tuvākā laika
+ *   ieguldījums”; „integritāte” → „stāvoklis”.
  * - 2026-08-23.5 — Fotogrāfiju analīze: ģenerē arī bez pievienotām bildēm
  *   (no sludinājuma teksta / pasūtījuma datiem; neizdomā vizuālas detales).
  * - 2026-08-23.4 — Oficiālā dīlera lauks „Eļļas maiņas intervāli”: īsa
@@ -36,4 +38,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-23.5";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-23.6";

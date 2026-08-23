@@ -57,7 +57,7 @@ describe("admin-ai-dispatch self-correction retry", () => {
   it("does not pay for a second generation just to strip leftover Markdown asterisks", async () => {
     vi.clearAllMocks();
     vi.mocked(aiGenerateExpertText).mockResolvedValueOnce(
-      "**Eļļas sūkņa ass**\n2.0 TDI dzinējiem šis mezgls ir tipisks uzturēšanas punkts.",
+      "**Eļļas sūkņa ass**\n2.0 TDI dzinējiem šis mezgls ir tipisks tuvākā laika ieguldījums.",
     );
     const text = await adminGenerateExpertText({
       systemInstruction: "sys",

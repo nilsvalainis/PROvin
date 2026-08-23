@@ -153,5 +153,19 @@
     "expectPass": false,
     "codes": ["summary_price"],
     "text": "Cena\nSludinājuma cena 14 900 € atbilst tirgum.\n\nRekomendācija\nIeteicams pirkt pēc apskates."
+  },
+  {
+    "id": "source-bad-uzturesanas-punkts",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["vocabulary_uzturesanas_punkts"],
+    "text": "Apkope\nDivmasu spararats šajā posmā ir tuvākā laika uzturēšanas punkts."
+  },
+  {
+    "id": "source-bad-integritate",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["vocabulary_integritate"],
+    "text": "Dzesēšana\nJāpārbauda elastīgo savienojumu integritāti, vai nav plaisas vai noplūdes."
   }
 ]
