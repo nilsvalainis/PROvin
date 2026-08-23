@@ -623,6 +623,7 @@ Rezultāts:
 - Kas redzams (vai secināms) par stāvokli, bojājumiem, aprīkojumu, nobraukuma / vecuma saskaņu
 - Riski pircējam ar **bold** uz svarīgākajiem punktiem
 - Neizdomā detales, kas nav kontekstā vai foto metadatos
+- Ja pievienoto foto nav: raksti no sludinājuma teksta, saites un pasūtījuma datiem. Skaidri saki, ka vērtējums nav no konkrētām bildēm. Neizdomā vizuālas detales
 - Katru rindkopu sāc ar **bold** tēmu; nekad nesāc rindu ar "- ", "•", vai "*"`,
 );
 

@@ -2,6 +2,10 @@
  * Bojājumu zonas — ielasīšana pēc avota SADALAS, nevis pēc konkrēta VIN detaļu saraksta.
  * Siluets: kreisā/labā × priekšpuse/aizmugure/jumts. Etiķetes: avota teksts kā ir (buferis, durvis, lukturi…).
  */
+import {
+  buildPanelDamageSilhouetteSvg,
+  type DamagePanelId,
+} from "@/lib/damage-silhouette-panels";
 import { reattachLatvianPdfDiacritics } from "@/lib/pdf-text-normalize";
 
 export type DamageZoneId =
@@ -192,9 +196,10 @@ const ZONE_SHAPES: Record<DamageZoneId, { x: number; y: number; w: number; h: nu
   rear: { x: 16, y: 186, w: 108, h: 45, rx: 10 },
 };
 
-/** Virsbūves kontūra no augšas — priekšgals augšā, reālas proporcijas (garums:platums ~2,6:1). */
-const CAR_BODY_PATH =
-  "M70 8 C82 8 92 11 96 16 L104 34 C109 45 111 55 111 66 L111 164 C111 176 109 186 104 194 L97 213 C93 220 82 223 70 223 C58 223 47 220 43 213 L36 194 C31 186 29 176 29 164 L29 66 C29 55 31 45 36 34 L44 16 C48 11 58 8 70 8 Z";
+export type DamageSilhouetteVariant = "capsule" | "panels";
+
+/** PDF noklusējums — E-klases paneļu siluets. */
+export const DAMAGE_SILHOUETTE_VARIANT: DamageSilhouetteVariant = "panels";
 
 const ZONE_ORDER: DamageZoneId[] = [
   "front",
@@ -208,28 +213,51 @@ const ZONE_ORDER: DamageZoneId[] = [
   "rear",
 ];
 
-/** Siluets no augšas; bojātās zonas — maigs zils tonis, apgriezts pēc virsbūves kontūras. */
-export function buildDamageZoneSilhouetteSvg(active: Iterable<DamageZoneId>, uid: string): string {
-  const on = new Set(active);
-  const clipId = `dmg-body-${uid}`;
-  const zones = ZONE_ORDER.filter((id) => on.has(id))
+/** Rezerves kapsula — nav PDF noklusējums. */
+const BODY_CAPSULE =
+  "M70 8 C82 8 92 11 96 16 L104 34 C109 45 111 55 111 66 L111 164 C111 176 109 186 104 194 L97 213 C93 220 82 223 70 223 C58 223 47 220 43 213 L36 194 C31 186 29 176 29 164 L29 66 C29 55 31 45 36 34 L44 16 C48 11 58 8 70 8 Z";
+
+function zoneRectsSvg(active: Set<DamageZoneId>, uid: string): string {
+  return ZONE_ORDER.filter((id) => active.has(id))
     .map((id) => {
       const s = ZONE_SHAPES[id]!;
       return `<rect class="pdf-dmg-zone pdf-dmg-zone--on" data-zone="${id}" data-uid="${uid}" x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx}" fill="#B7D1F5"/>`;
     })
     .join("");
+}
 
+function wheelsAndMirrors(yFront: number, yRear: number, xInner = 21): string {
+  const xOuter = 140 - xInner - 13;
+  return [
+    `<rect x="${xInner}" y="${yFront}" width="13" height="29" rx="6" fill="#334155"/>`,
+    `<rect x="${xOuter}" y="${yFront}" width="13" height="29" rx="6" fill="#334155"/>`,
+    `<rect x="${xInner}" y="${yRear}" width="13" height="29" rx="6" fill="#334155"/>`,
+    `<rect x="${xOuter}" y="${yRear}" width="13" height="29" rx="6" fill="#334155"/>`,
+    `<path d="M28 66 L20 71 L21 76 L29 72 Z" fill="#94A3B8"/>`,
+    `<path d="M112 66 L120 71 L119 76 L111 72 Z" fill="#94A3B8"/>`,
+  ].join("");
+}
+
+function wrapSilhouette(
+  uid: string,
+  bodyPath: string,
+  extrasBefore: string,
+  zones: string,
+  extrasAfter: string,
+): string {
+  const clipId = `dmg-body-${uid}`;
   return `<svg class="pdf-dmg-sil" viewBox="0 0 140 231" width="120" height="198" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs><clipPath id="${clipId}"><path d="${CAR_BODY_PATH}"/></clipPath></defs>
-  <rect x="22" y="35" width="12" height="27" rx="5" fill="#334155"/>
-  <rect x="106" y="35" width="12" height="27" rx="5" fill="#334155"/>
-  <rect x="22" y="157" width="12" height="27" rx="5" fill="#334155"/>
-  <rect x="106" y="157" width="12" height="27" rx="5" fill="#334155"/>
-  <path d="M29 65 L22 69 L23 73 L30 70 Z" fill="#94A3B8"/>
-  <path d="M111 65 L118 69 L117 73 L110 70 Z" fill="#94A3B8"/>
-  <path d="${CAR_BODY_PATH}" fill="#F5F8FC"/>
+  <defs><clipPath id="${clipId}"><path d="${bodyPath}"/></clipPath></defs>
+  ${extrasBefore}
+  <path d="${bodyPath}" fill="#F5F8FC"/>
   <g clip-path="url(#${clipId})">${zones}</g>
-  <g clip-path="url(#${clipId})" fill="#E7EEF7" stroke="#C3D2E2" stroke-width="1">
+  ${extrasAfter}
+  <path d="${bodyPath}" fill="none" stroke="#8A9CB0" stroke-width="1.6"/>
+</svg>`;
+}
+
+function capsuleChrome(clipId: string): string {
+  return `<g clip-path="url(#${clipId})" fill="#E7EEF7" stroke="#C3D2E2" stroke-width="1">
     <rect x="34" y="9" width="24" height="9" rx="4"/>
     <rect x="82" y="9" width="24" height="9" rx="4"/>
     <rect x="32" y="211" width="26" height="10" rx="4"/>
@@ -237,7 +265,22 @@ export function buildDamageZoneSilhouetteSvg(active: Iterable<DamageZoneId>, uid
   </g>
   <path d="M50 59 C60 56 80 56 90 59 L96 78 L44 78 Z" fill="#E7EEF7" stroke="#B9C8DA" stroke-width="1.1"/>
   <path d="M44 78 L96 78 L94 136 L46 136 Z" fill="none" stroke="#D5E0EC" stroke-width="1"/>
-  <path d="M46 136 L94 136 L90 156 C80 159 60 159 50 156 Z" fill="#E7EEF7" stroke="#B9C8DA" stroke-width="1.1"/>
-  <path d="${CAR_BODY_PATH}" fill="none" stroke="#8A9CB0" stroke-width="1.6"/>
-</svg>`;
+  <path d="M46 136 L94 136 L90 156 C80 159 60 159 50 156 Z" fill="#E7EEF7" stroke="#B9C8DA" stroke-width="1.1"/>`;
+}
+
+/** Siluets no augšas; bojātās zonas — maigs zils tonis, apgriezts pēc virsbūves kontūras. */
+export function buildDamageZoneSilhouetteSvg(
+  active: Iterable<DamageZoneId | DamagePanelId>,
+  uid: string,
+  variant: DamageSilhouetteVariant = DAMAGE_SILHOUETTE_VARIANT,
+): string {
+  if (variant === "panels") {
+    return buildPanelDamageSilhouetteSvg(active, uid);
+  }
+  const on = new Set<DamageZoneId>();
+  for (const id of active) {
+    if ((ZONE_ORDER as readonly string[]).includes(id)) on.add(id as DamageZoneId);
+  }
+  const clipId = `dmg-body-${uid}`;
+  return wrapSilhouette(uid, BODY_CAPSULE, wheelsAndMirrors(35, 157, 22), zoneRectsSvg(on, uid), capsuleChrome(clipId));
 }

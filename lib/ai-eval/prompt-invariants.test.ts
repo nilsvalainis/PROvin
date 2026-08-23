@@ -77,6 +77,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/NOBRAUKUMA VĒSTURES KOMENTĀRS/);
     expect(prompts).toContain("AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES");
     expect(prompts).toMatch(/APPROVED BY IRISS/);
+    expect(prompts).toMatch(/Ja pievienoto foto nav/);
   });
 
   it("inspection and seller prompts use expert markdown, not hyphen checklists", () => {

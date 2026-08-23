@@ -151,9 +151,7 @@ export function AdminListingAnalysisSourceBlock({
     Boolean(buildAiPayload) &&
     (v.extraSellerName.trim().length > 0 || v.listingPasteRaw.trim().length > 0);
 
-  const photoCount = (v.photoGroups ?? []).reduce((n, g) => n + (g.photos?.length ?? 0), 0);
-  const canRunPhotoAi =
-    aiAllowed && Boolean(buildAiPayload) && (v.listingPasteRaw.trim().length > 0 || photoCount > 0);
+  const canRunPhotoAi = aiAllowed && Boolean(buildAiPayload);
 
   const runListingFieldAi = useCallback(
     async (

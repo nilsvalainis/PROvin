@@ -33,9 +33,6 @@ export async function generateListingFieldCommentWithAi(
   if (input.field === "listingSalesContext" && !listingPaste) {
     throw new Error("missing_listing_paste");
   }
-  if (input.field === "photoAnalysis" && !listingPaste && photoCount === 0) {
-    throw new Error("missing_photo_context");
-  }
 
   const context = await buildFullAiOrderContextText(input);
   const fieldLabel =
@@ -47,6 +44,7 @@ export async function generateListingFieldCommentWithAi(
     input.field === "photoAnalysis"
       ? `Lauks: ${fieldLabel}
 Foto grupu skaits: ${photoGroups.length}; fotogrāfiju skaits: ${photoCount}.
+${photoCount === 0 ? "Pievienoto fotogrāfiju nav — raksti no sludinājuma teksta, saites un pārējiem pasūtījuma datiem. Nesaki, ka esi redzējis konkrētas bildes." : ""}
 Iekopētais sludinājuma teksts (ja ir):
 ${listingPaste || "(tukšs)"}`
       : `Lauks: ${fieldLabel}

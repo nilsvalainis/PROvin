@@ -67,13 +67,24 @@ describe("buildDamageZoneSilhouetteSvg", () => {
     expect(svg).toContain('clip-path="url(#dmg-body-t1)"');
     expect(svg).not.toContain("PROVIN");
     expect(svg).not.toContain("pdfDmgHatch");
-    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(2);
+    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(3);
   });
 
   it("nezīmē neaktīvās zonas", () => {
     const svg = buildDamageZoneSilhouetteSvg([], "t2");
     expect(svg).not.toContain("pdf-dmg-zone");
   });
+
+  it("panel scheme highlights each body panel, not a single blob", () => {
+    const svg = buildDamageZoneSilhouetteSvg(["front", "front_left_door"], "panel-1", "panels");
+    expect(svg).toContain('class="pdf-dmg-sil"');
+    expect(svg).toContain('data-zone="front_bumper"');
+    expect(svg).toContain('data-zone="hood"');
+    expect(svg).toContain('data-zone="front_left_door"');
+    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(3);
+    expect(svg).toContain("dmg-body-panel-1");
+  });
+
 });
 
 describe("damageGroupDisplayLabels", () => {
