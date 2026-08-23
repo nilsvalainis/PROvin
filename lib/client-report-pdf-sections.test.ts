@@ -1010,17 +1010,32 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("CITI AVOTI — Mans avots");
   });
 
-  it("PDF footer includes bold confidentiality notice under SVARĪGA INFORMĀCIJA", () => {
+  it("PDF footer is a document colophon without website marketing or issuer personal data", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload(),
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(doc).toContain("SVARĪGA INFORMĀCIJA");
+    expect(doc).toContain("Atruna");
+    expect(doc).toContain("Konfidencialitāte");
     expect(doc).toContain("digitāls datu apkopojums");
-    expect(doc).toContain('class="pdf-site-footer__confidentiality"');
     expect(doc).toContain("kategoriski aizliegts pavairot");
-    expect(doc).toContain(`© ${new Date().getFullYear()} PROVIN.LV`);
+    expect(doc).toContain("PROVIN AUDITS");
+    expect(doc).toContain("VIN WVWZZZ1JZXW000001");
+    expect(doc).toContain('class="pdf-doc-footer"');
+    expect(doc).not.toContain("pdf-doc-footer__issuer");
+    expect(doc).not.toContain("pdf-doc-footer__accent");
+    expect(doc).not.toContain(" ·  provin.lv");
+    expect(doc).toContain("pdf-doc-footer__logo");
+    expect(doc).toContain('aria-label="PROVIN.LV"');
+    expect(doc).not.toContain("SVARĪGA INFORMĀCIJA");
+    expect(doc).not.toContain("Standarta vēstures atskaites");
+    expect(doc).not.toContain("Lietošanas noteikumi");
+    expect(doc).not.toContain("Personas datu apstrāde");
+    expect(doc).not.toContain("Nils Valainis");
+    expect(doc).not.toContain("091187");
+    expect(doc).not.toContain("Jana iela");
+    expect(doc).not.toContain("getCompanyLegal");
   });
 
   it("listing analysis photos render in two-column grid under Fotogrāfiju analīze", () => {

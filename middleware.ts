@@ -39,7 +39,9 @@ export default function middleware(request: NextRequest) {
   if (
     pathname === "/test-pricing" ||
     pathname.startsWith("/test-pricing-") ||
-    pathname === "/test-checkout"
+    pathname === "/test-checkout" ||
+    pathname === "/silhouette-preview" ||
+    pathname === "/pdf-footer-preview"
   ) {
     return NextResponse.next();
   }

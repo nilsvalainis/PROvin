@@ -67,7 +67,7 @@ export const CLIENT_REPORT_SECTION_LABELS = {
   contacts: "Kontakti",
 } as const;
 
-/** Vienota juridiskā atruna — PDF kreisā kolonna zem „SVARĪGA INFORMĀCIJA”. */
+/** Vienota juridiskā atruna — PDF kolofons un e-pasta kājene. */
 export const CLIENT_REPORT_FOOTER_DISCLAIMER =
   "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
 
@@ -75,12 +75,18 @@ export const CLIENT_REPORT_FOOTER_DISCLAIMER =
 export const PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE =
   "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.";
 
-/** PDF kājene — virsraksts kreisajai juridiskajai kolonnai. */
+/** E-pasta kājene — virsraksts juridiskajam blokam. */
 export const PDF_SITE_FOOTER_IMPORTANT_TITLE = "SVARĪGA INFORMĀCIJA";
 
+/** PDF dokumentu kolofons — atrunas virsraksts. */
+export const PDF_DOC_FOOTER_DISCLAIMER_TITLE = "Atruna";
+
+/** PDF dokumentu kolofons — konfidencialitātes virsraksts. */
+export const PDF_DOC_FOOTER_CONFIDENTIALITY_TITLE = "Konfidencialitāte";
+
 /**
- * PDF labā kolonna — kopsavilkums (saskan ar `messages/lv/footer.json` „body”,
- * lai atskaite un vietne lieto vienu vēstījumu).
+ * E-pasta kājene — kopsavilkums (saskan ar `messages/lv/footer.json` „body”).
+ * PDF kolofonā nelietot: tas ir vietnes vēstījums, ne dokumenta saturs.
  */
 export const PDF_SITE_FOOTER_VALUE_BODY =
   "Standarta vēstures atskaites sniedz tikai sausus faktus. Mēs veicam padziļinātu izpēti — izvērtējam sludinājumu, analizējam konkrētā modeļa vājās vietas un tirgus vērtību, sniedzot pilnvērtīgu un pārdomātu slēdzienu.";
@@ -92,7 +98,7 @@ export const PDF_SITE_FOOTER_LEGAL_LABELS_STATIC = "Lietošanas noteikumi · Pri
 export const PDF_SITE_FOOTER_GDPR_LINE =
   "Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).";
 
-/** Vienots juridiskās kājenes saturs — PDF, e-pasts un citi klienta paziņojumi. */
+/** Vienots juridiskās kājenes saturs — e-pasts un citi klienta paziņojumi. */
 export type ClientReportLegalFooterBlocks = {
   importantTitle: string;
   disclaimer: string;
@@ -101,6 +107,35 @@ export type ClientReportLegalFooterBlocks = {
   legalLabels: string;
   gdprLine: string;
 };
+
+export function formatPdfDocFooterProductLabel(brand: "PROVIN_AUDITS" | "PROVIN_MINI"): string {
+  return brand === "PROVIN_MINI" ? "PROVIN MINI" : "PROVIN AUDITS";
+}
+
+/** PDF kolofona meta: produkts · VIN · ģenerēšanas datums. Bez izdevēja personas datiem. */
+export function buildPdfDocFooterIdentityLine(args: {
+  productLabel: string;
+  vin?: string | null;
+  generatedLabel: string;
+}): string {
+  const parts = [args.productLabel.trim()].filter(Boolean);
+  const meta = buildPdfDocFooterMetaLine(args);
+  if (meta) parts.push(meta);
+  return parts.join("  ·  ");
+}
+
+/** VIN un ģenerēšanas datums — blakus logo, bez produkta nosaukuma. */
+export function buildPdfDocFooterMetaLine(args: {
+  vin?: string | null;
+  generatedLabel: string;
+}): string {
+  const parts: string[] = [];
+  const vin = (args.vin ?? "").trim();
+  if (vin) parts.push(`VIN ${vin}`);
+  const generated = args.generatedLabel.trim();
+  if (generated) parts.push(generated);
+  return parts.join("  ·  ");
+}
 
 export function getClientReportLegalFooterBlocks(): ClientReportLegalFooterBlocks {
   return {

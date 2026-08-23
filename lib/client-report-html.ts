@@ -112,9 +112,7 @@ import {
   type SectionIconId,
 } from "@/lib/section-icons";
 import { serviceWorkIconId } from "@/lib/service-work-icon";
-import {
-  getClientReportLegalFooterBlocks,
-} from "@/lib/report-pdf-standards";
+import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
 import { buildSourceMileageSparkHtml, buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import { buildDamageZoneSilhouetteSvg } from "@/lib/damage-zones";
 import {
@@ -1757,39 +1755,6 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   return parts.join("\n");
 }
 
-function buildPdfSiteFooterHtml(year: number): string {
-  const b = getClientReportLegalFooterBlocks();
-  const logo = provincLogoSvg().replace(
-    'class="pdf-v1-logo"',
-    'class="pdf-v1-logo pdf-site-footer__logo"',
-  );
-  const disclaimer = escapeHtml(b.disclaimer);
-  const confidentiality = escapeHtml(b.confidentiality);
-  const valueBody = escapeHtml(b.valueBody);
-  const copyright = escapeHtml(`© ${year} PROVIN.LV`);
-  const refs = escapeHtml(b.legalLabels);
-  const gdpr = escapeHtml(b.gdprLine);
-  const importantTitle = escapeHtml(b.importantTitle);
-  return `<footer class="pdf-site-footer" role="contentinfo">
-<div class="pdf-site-footer__grid">
-<div class="pdf-site-footer__col pdf-site-footer__col--legal">
-<h3 class="pdf-site-footer__important-title">${importantTitle}</h3>
-<p class="pdf-site-footer__disclaimer">${disclaimer}</p>
-<p class="pdf-site-footer__confidentiality"><strong>${confidentiality}</strong></p>
-</div>
-<div class="pdf-site-footer__col pdf-site-footer__col--brand">
-${logo}
-<p class="pdf-site-footer__value-body">${valueBody}</p>
-</div>
-</div>
-<div class="pdf-site-footer__bottom" aria-label="Juridiskā informācija">
-<p class="pdf-site-footer__copyright">${copyright}</p>
-<p class="pdf-site-footer__refs">${refs}</p>
-<p class="pdf-site-footer__gdpr">${gdpr}</p>
-</div>
-</footer>`;
-}
-
 function reportFontGuardScript(): string {
   return `<script>
 (function(){
@@ -1857,7 +1822,7 @@ function clientReportPrintCss(): string {
       }
       .provin-report-doc .pdf-v1-panel--clean,
       .provin-report-doc .pdf-summary-tile,
-      .provin-report-doc .pdf-site-footer{
+      .provin-report-doc .pdf-doc-footer{
         break-inside:avoid;
         page-break-inside:avoid;
         -webkit-column-break-inside:avoid;
@@ -2692,34 +2657,7 @@ ${sourceDotColorCss()}
       .pdf-outvin-plain{font-size:var(--pdf-fs-base);line-height:1.5;color:#0f172a;margin:0;}
       .tabular{font-variant-numeric:tabular-nums;}
       .mirror-font-error{padding:16px;color:#991b1b;font-size:13px;}
-      .pdf-site-footer{
-        margin-top:22px;padding-top:0;border-top:1px solid #ececec;background:transparent;
-        break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
-      }
-      .pdf-site-footer__grid{
-        display:grid;grid-template-columns:1fr 1fr;gap:18px 26px;padding:18px 0 14px;align-items:start;
-      }
-      .pdf-site-footer__important-title{
-        margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
-        color:#6b7280;line-height:1.35;
-      }
-      .pdf-site-footer__disclaimer{margin:0;font-size:10px;font-weight:400;line-height:1.8;color:#6b7280;}
-      .pdf-site-footer__confidentiality{
-        margin:10px 0 0;font-size:10px;font-weight:700;line-height:1.8;color:#6b7280;
-      }
-      .pdf-site-footer__confidentiality strong{font-weight:700;}
-      .pdf-site-footer__logo{display:block;width:118px;max-width:100%;height:auto;margin:0 0 10px;}
-      .pdf-site-footer__value-body{margin:0;font-size:11px;font-weight:400;line-height:1.8;color:#6b7280;}
-      .pdf-site-footer__bottom{
-        border-top:1px solid #ececec;padding:14px 6px 2px;text-align:center;
-      }
-      .pdf-site-footer__bottom p{margin:0 0 5px;}
-      .pdf-site-footer__bottom p:last-child{margin-bottom:0;}
-      .pdf-site-footer__copyright{font-size:10px;font-weight:400;line-height:1.5;color:#9ca3af;}
-      .pdf-site-footer__refs{font-size:10px;font-weight:400;line-height:1.5;color:#9ca3af;}
-      .pdf-site-footer__gdpr{
-        margin-top:6px!important;font-size:9px;font-weight:400;line-height:1.45;color:#9ca3af;
-      }
+${pdfDocFooterCss()}
       code{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:#f5f5f7;padding:1px 6px;border-radius:4px;}
       .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
@@ -2737,7 +2675,7 @@ ${sourceDotColorCss()}
         .no-print{display:none!important;}
         thead{display:table-header-group;}
         tfoot{display:table-footer-group;}
-        .pdf-v1-panel--clean,.pdf-summary-tile,.pdf-site-footer,.pdf-page-flow-chunk--avoid{
+        .pdf-v1-panel--clean,.pdf-summary-tile,.pdf-doc-footer,.pdf-page-flow-chunk--avoid{
           break-inside:avoid-page!important;
           page-break-inside:avoid!important;
         }
@@ -2885,7 +2823,13 @@ export function buildClientReportDocumentHtml(args: {
     '<p class="no-print" style="margin-top:12px"><button type="button" style="padding:7px 14px;font-size:12px;border-radius:6px;border:1px solid #94a3b8;background:#fff;color:#475569;cursor:pointer;font-family:Inter,sans-serif;font-weight:600" onclick="window.print()">Drukāt / PDF</button></p>',
   );
 
-  lines.push(buildPdfSiteFooterHtml(new Date().getFullYear()));
+  lines.push(
+    buildPdfDocFooterHtml({
+      vin: p.vin,
+      amountTotalCents: p.amountTotal,
+      generatedLabel: `Ģenerēts ${dateFmt.format(new Date())}`,
+    }),
+  );
   lines.push("</div>");
 
   const vinForFile = (p.vin?.trim().replace(/[^A-Za-z0-9]/g, "_") || "nav_VIN").slice(0, 48);
