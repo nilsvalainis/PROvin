@@ -1,5 +1,5 @@
 /**
- * Ekspluatācijas hronoloģija — viena hronoloģiska transportlīdzekļa dzīves cikla lente no visiem avotiem.
+ * Vēstures kopsavilkums — viena hronoloģiska transportlīdzekļa dzīves cikla lente no visiem avotiem.
  * Fakti nāk no jau savāktajiem blokiem; loģikas slānis pievieno importu, robus un pretrunas.
  */
 
@@ -26,7 +26,7 @@ import {
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
 
-export const PDF_LIFECYCLE_TITLE = "Ekspluatācijas hronoloģija";
+export const PDF_LIFECYCLE_TITLE = "Vēstures kopsavilkums";
 
 export type LifecycleEventKind =
   | "first_registration"

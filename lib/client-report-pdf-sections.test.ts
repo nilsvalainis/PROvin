@@ -399,7 +399,7 @@ describe("TRANSPORTLĪDZEKĻA DATI", () => {
   });
 });
 
-describe("Ekspluatācijas hronoloģija", () => {
+describe("Vēstures kopsavilkums", () => {
   it("builds one chronological lifecycle from all sources", () => {
     const csdd = emptyCsddFields();
     csdd.firstRegistration = "12.05.2016";
@@ -754,8 +754,10 @@ describe("unified PDF sections single block", () => {
     expect(html).not.toContain("pdf-unified-incidents-zone--continued");
     expect(html).toContain("NEGADĪJUMU VĒSTURES KOPSAVILKUMS");
     expect(html).toContain("pdf-incident-history-card");
-    expect(html).toContain("Negadījumi:");
-    expect(html.indexOf("pdf-listing-price-history-foot")).toBeLessThan(html.indexOf("pdf-incident-card"));
+    expect(html).toContain("pdf-incident-count");
+    expect(html).toContain("1 negadījums");
+    expect(html).not.toContain("Negadījumi:");
+    expect(html.indexOf("pdf-incident-count")).toBeLessThan(html.indexOf("pdf-incident-card"));
     expect(html).not.toContain("Apvienotie negadījumi");
     expect(html).not.toContain("Vidējā zaudējumu summa pa avotiem");
     expect(html).not.toContain("Kopā:");
@@ -820,8 +822,11 @@ describe("unified PDF sections single block", () => {
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("01.06.2024");
     expect(html).toContain("pdf-incident-card--with-dmg");
+    expect(html).toContain("pdf-incident-card__main");
     expect(html).toContain("pdf-dmg-sil");
-    expect(html).toContain("Bojājumu zonas");
+    expect(html).toContain("pdf-incident-chips");
+    expect(html).not.toContain("Bojājumu zonas");
+    expect(html).not.toContain("Bojājumu grupas");
     expect(html).toContain("Kreisā puse");
     expect(html).toContain("Priekšpuse");
     expect(html).toContain("Ārējās virsbūves detaļas");
@@ -854,8 +859,28 @@ Bojājumu zona
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("pdf-dmg-sil");
-    expect(html).toContain("Bojājumu zonas");
+    expect(html).toContain("pdf-incident-chips");
+    expect(html).not.toContain("Bojājumu zonas");
     expect(html).toContain("Priekšpuse");
+  });
+
+  it("always draws the car silhouette even when the incident has no zone data", () => {
+    const p = {
+      manualVendorBlocks: [
+        {
+          title: "CarVertical",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "01.02.2023", lossAmount: "2376", incidentNo: "Spānija" }],
+          comments: "",
+        },
+      ],
+    } as ClientReportPayload;
+    const vis = mergePdfVisibility({ unifiedIncidents: true });
+    const html = buildUnifiedIncidentsTableHtml(p, vis);
+    expect(html).toContain("pdf-dmg-sil");
+    expect(html).toContain("01.02.2023");
+    expect(html).toContain("Spānija");
+    expect(html).not.toContain("pdf-incident-chips");
   });
 });
 
@@ -939,7 +964,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     // Servisa punkts ir atsevišķā kolonnā, ne darbu šūnā
     expect(doc).toContain("pdf-service-cell-place");
     expect(doc).toContain("Niederlassung Bonn BMW AG, Bonn");
-    // Jaunākais augšā — tikai servisa tabulā (ekspluatācijas hronoloģija augstāk iet hronoloģiski)
+    // Jaunākais augšā — tikai servisa tabulā (vēstures kopsavilkums augstāk iet hronoloģiski)
     const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
     expect(serviceTable.indexOf("01.12.2023")).toBeLessThan(serviceTable.indexOf("01.06.2023"));
   });

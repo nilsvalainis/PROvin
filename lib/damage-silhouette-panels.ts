@@ -243,10 +243,17 @@ function gridSvg(): string {
 export function buildPanelDamageSilhouetteSvg(
   marks: DamageSilhouetteMarks,
   uid: string,
-  opts?: { labeled?: boolean; mark?: DamageMarkStyle; carHref?: string },
+  opts?: {
+    labeled?: boolean;
+    mark?: DamageMarkStyle;
+    carHref?: string;
+    /** north = priekšpuse augšā. east = augšskats horizontāli, priekšpuse pa labi. */
+    heading?: "north" | "east";
+  },
 ): string {
   const style = opts?.mark ?? DAMAGE_MARK_STYLE;
   const carHref = opts?.carHref ?? "/brand/damage-car-top.jpg";
+  const heading = opts?.heading ?? "north";
   const panels = PANEL_ORDER.filter((id) => new Set(marks.panels).has(id));
   const zones = ZONE_ORDER.filter((id) => new Set(marks.zones as Iterable<string>).has(id));
   const wash = [
@@ -263,13 +270,20 @@ export function buildPanelDamageSilhouetteSvg(
         <text x="90" y="264" text-anchor="middle">buferis</text>
       </g>`
     : "";
-  return `<svg class="pdf-dmg-sil" viewBox="0 0 180 270" width="132" height="198" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
-  <defs>${markDefs(uid)}</defs>
-  <rect x="0" y="0" width="180" height="270" fill="#F3F5F7"/>
+  const body = `<rect x="0" y="0" width="180" height="270" fill="#ffffff"/>
   <image href="${carHref}" xlink:href="${carHref}" x="0" y="0" width="180" height="270" preserveAspectRatio="xMidYMid meet"/>
   ${gridSvg()}
   ${wash}
   ${pins}
-  ${labels}
+  ${labels}`;
+  if (heading === "east") {
+    return `<svg class="pdf-dmg-sil pdf-dmg-sil--east" viewBox="0 0 270 180" width="198" height="132" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
+  <defs>${markDefs(uid)}</defs>
+  <g transform="translate(270 0) rotate(90)">${body}</g>
+</svg>`;
+  }
+  return `<svg class="pdf-dmg-sil" viewBox="0 0 180 270" width="132" height="198" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
+  <defs>${markDefs(uid)}</defs>
+  ${body}
 </svg>`;
 }

@@ -506,7 +506,7 @@ function extractCarVerticalSides(block: string): string {
 
 function extractCarVerticalGroups(block: string): string {
   const groupsM = block.match(
-    /Boj[āa]jumu\s*grupas?\s*([\s\S]{0,800}?)(?:VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|sadaļas\s+skaidrojums|Dabas stih|Tirgus|Remonta\s+izmaksu|\d{1,2}\.\d{1,2}\.\d{4}|\d{1,2}\.\d{4}|$)/i,
+    /Boj[āa]jumu\s*grupas?\s*([\s\S]{0,800}?)(?:VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|sadaļas\s+skaidrojums|Dabas stih|Tirgus|Remonta\s+izmaksu|līdzīg[sz]\s+ierakst|NEGADĪJUMU\s+VĒSTUR|Fiks[eē]tie\s+incidenti|\d{1,2}\.\d{1,2}\.\d{4}|\d{1,2}\.\d{4}|$)/i,
   );
   return flattenDamageGroups(groupsM?.[1] ?? "");
 }

@@ -164,6 +164,35 @@ describe("aggregateUnifiedIncidents", () => {
     expect(agg.clusters[0]?.damage?.zoneIds.sort()).toEqual(["front", "front_left", "front_right"]);
     expect(agg.clusters[0]?.damage?.groupLabels).toEqual(["Virsbūves ārējās daļas"]);
   });
+
+  it("attīra salīmētas grupas un kopsavilkuma noplūdi", () => {
+    const agg = aggregateUnifiedIncidents(
+      [
+        row({
+          date: "01.05.2022",
+          lossAmount: "1 501 - 2 000 €",
+          country: "Latvija",
+          sourceLabel: "CarVertical",
+          sortableTime: Date.UTC(2022, 4, 1),
+          sourceOrder: 0,
+        }),
+      ],
+      [
+        {
+          date: "01.05.2022",
+          country: "Latvija",
+          lossAmount: "1 501 - 2 000 €",
+          damagedSides: "Kreisā sāna priekšpuse Aizmugure",
+          damageGroups:
+            "Virsbūves ārējās daļas Ārējās virsbūves detaļas 01 1 līdzīgs ieraksts NEGADĪJUMU VĒSTURES KOPSAVILKUMS Fiksētie incidenti un datu saskaņotība AutoDNA",
+        },
+      ],
+    );
+    expect(agg.clusters[0]?.damage?.groupLabels).toEqual([
+      "Virsbūves ārējās daļas",
+      "Ārējās virsbūves detaļas",
+    ]);
+  });
 });
 
 describe("collectUnifiedIncidentRows + count label", () => {

@@ -128,4 +128,21 @@ describe("damageGroupDisplayLabels", () => {
     );
     expect(labels).toEqual(["Ārējās virsbūves detaļas"]);
   });
+
+  it("atdala salīmētas grupas un noņem AutoDNA kodu 01", () => {
+    const labels = damageGroupDisplayLabels(
+      "Virsbūves ārējās daļas Ārējās virsbūves detaļas 01 Virsbūves ārējās daļas · Ārējās virsbūves detaļas",
+    );
+    expect(labels).toEqual(["Virsbūves ārējās daļas", "Ārējās virsbūves detaļas"]);
+  });
+
+  it("nogriež CarVertical «līdzīgs ieraksts» un mūsu kopsavilkuma virsrakstu", () => {
+    const labels = damageGroupDisplayLabels(
+      "Ārējās virsbūves detaļas 1 līdzīgs ieraksts NEGADĪJUMU VĒSTURES KOPSAVILKUMS Fiksētie incidenti un datu saskaņotība AutoDNA un CarVertical",
+    );
+    expect(labels).toEqual(["Ārējās virsbūves detaļas"]);
+    expect(labels.join(" ")).not.toMatch(/līdzīg/i);
+    expect(labels.join(" ")).not.toMatch(/NEGADĪJUMU/i);
+    expect(labels.join(" ")).not.toMatch(/saskaņot/i);
+  });
 });

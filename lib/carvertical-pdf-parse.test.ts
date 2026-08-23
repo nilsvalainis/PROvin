@@ -203,6 +203,27 @@ Bojājumu grupas
     expect(damageDetails[0]?.damageGroups).not.toMatch(/WBAVT/i);
     expect(damageDetails[0]?.damageGroups).not.toMatch(/Ģenerē/i);
   });
+
+  it("does not glue CarVertical similar-record or report summary onto Bojājumu grupas", () => {
+    const raw = `
+05.2022. Latvija
+Novērtējums
+Bojātās detaļas
+Kreisā priekšējā daļa / Buferis Aizmugure / Buferis
+Aptuvenā iepriekš gūto bojājumu vērtība
+1501 € – 2000 €
+Bojājumu grupas
+Ārējās virsbūves detaļas
+1 līdzīgs ieraksts
+NEGADĪJUMU VĒSTURES KOPSAVILKUMS
+Fiksētie incidenti un datu saskaņotība AutoDNA un CarVertical
+`;
+    const { damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails[0]?.damageGroups).toMatch(/Ārējās virsbūves detaļas/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/līdzīg/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/NEGADĪJUMU/i);
+    expect(damageDetails[0]?.damageGroups).not.toMatch(/saskaņot/i);
+  });
 });
 
 describe("parseCarverticalPdfText", () => {

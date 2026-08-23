@@ -119,8 +119,10 @@ import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
+  formatUnifiedIncidentCountLabel,
   type UnifiedIncidentAggregation,
   type UnifiedIncidentCluster,
+  type UnifiedIncidentDamage,
 } from "@/lib/unified-incidents";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
@@ -480,7 +482,7 @@ const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], SectionIconId> = {
   anomaly: "search",
 };
 
-/** Ekspluatācijas hronoloģija — viena hronoloģiska lente ar gadu čipiem un avotu plāksnītēm. */
+/** Vēstures kopsavilkums — viena hronoloģiska lente ar gadu čipiem un avotu plāksnītēm. */
 function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.unifiedMileage && !vis.unifiedIncidents) return "";
   const events = buildVehicleLifecycleEvents({
@@ -969,10 +971,16 @@ function buildIncidentSourceTagsHtml(c: UnifiedIncidentCluster): string {
   return `<ul class="pdf-src-tags pdf-incident-card__srcs">${items}</ul>`;
 }
 
-function buildIncidentDamageListHtml(title: string, labels: string[]): string {
+function incidentCountBadgeHtml(n: number): string {
+  if (n <= 0) return "";
+  return `<span class="pdf-incident-count">${escapeHtml(formatUnifiedIncidentCountLabel(n))}</span>`;
+}
+
+function buildIncidentDamageChipsHtml(dmg: UnifiedIncidentDamage | null): string {
+  if (!dmg) return "";
+  const labels = [...dmg.zoneLabels, ...dmg.groupLabels];
   if (labels.length === 0) return "";
-  const text = labels.join(" · ");
-  return `<div class="pdf-dmg-list"><p class="pdf-dmg-list__h">${escapeHtml(title)}</p><p class="pdf-dmg-list__text">${escapeHtml(text)}</p></div>`;
+  return `<ul class="pdf-incident-chips">${labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`;
 }
 
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number): string {
@@ -982,33 +990,28 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number):
   const flag = pdfCountryFlagEmoji(countryLabel);
   const dmg = c.damage;
   const withDmg = Boolean(dmg && (dmg.zoneIds.length > 0 || dmg.zoneLabels.length > 0 || dmg.groupLabels.length > 0));
-  let visual = "";
-  if (withDmg && dmg) {
-    const svg = buildDamageZoneSilhouetteSvg(dmg.zoneIds, `c${index}`, undefined, dmg.zoneLabels);
-    const zones = buildIncidentDamageListHtml("Bojājumu zonas", dmg.zoneLabels);
-    const groups = buildIncidentDamageListHtml("Bojājumu grupas", dmg.groupLabels);
-    visual = `<div class="pdf-incident-card__visual">${svg}<div class="pdf-incident-card__lists">${zones}${groups}</div></div>`;
-  }
+  const svg = buildDamageZoneSilhouetteSvg(dmg?.zoneIds ?? [], `c${index}`, undefined, dmg?.zoneLabels ?? []);
+  const chips = buildIncidentDamageChipsHtml(dmg);
   return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
-    <div class="pdf-incident-card__meta">
-      <div class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</div>
-      <div class="pdf-incident-card__amount">${lossCell}</div>
-      <div class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></div>
+    <div class="pdf-incident-card__main">
+      <div class="pdf-incident-card__datecol">
+        <time class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</time>
+        <span class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></span>
+      </div>
+      <div class="pdf-incident-card__car">${svg}</div>
+      <div class="pdf-incident-card__facts">
+        <div class="pdf-incident-card__amount">${lossCell}</div>
+        ${chips}
+      </div>
     </div>
     ${sourceTags}
-    ${visual}
   </article>`;
 }
 
 function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string {
   if (agg.clusters.length === 0) return "";
   const body = agg.clusters.map((c, i) => buildIncidentClusterCardHtml(c, i)).join("\n");
-  return `<div class="pdf-listing-price-history pdf-incident-history-card">
-    <div class="pdf-listing-price-history-foot">
-      <span>Negadījumi: <strong class="pdf-stat-tone--alert">${escapeHtml(String(agg.uniqueCount))}</strong></span>
-    </div>
-    ${body}
-  </div>`;
+  return `<div class="pdf-listing-price-history pdf-incident-history-card">${body}</div>`;
 }
 
 /** Apvienota negadījumu vēsture — viena kartīte: loģiskie negadījumi + avotu vērtējumi + skaits. */
@@ -1024,7 +1027,11 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
   const damageDetails = collectUnifiedIncidentDamageDetails(p.manualVendorBlocks ?? null);
   const agg = aggregateUnifiedIncidents(collected, damageDetails);
   const card = buildIncidentClustersCardHtml(agg);
-  const head = sectionHeadBrand(sectionIconPdfHtml("shield"), NEGADIJUMU_VESTURE_TITLE);
+  const head = sectionHeadBrand(
+    sectionIconPdfHtml("shield"),
+    NEGADIJUMU_VESTURE_TITLE,
+    incidentCountBadgeHtml(agg.uniqueCount),
+  );
   const body = `${card}${adminNoteHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
@@ -2452,33 +2459,41 @@ ${sourceDotColorCss()}
       .pdf-listing-price-delta--up{color:#dc2626;}
       .pdf-listing-price-delta--note{color:#64748b;font-weight:500;}
       .pdf-incident-source-vals{display:block;margin-top:3px;font-size:0.62rem;font-weight:500;color:#64748b;line-height:1.35;}
+      .pdf-incident-count{
+        display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 12px;
+        border-radius:999px;background:#fff;color:#DC2626;border:1.5px solid #DC2626;
+        font-size:13px;font-weight:700;line-height:1;letter-spacing:0;white-space:nowrap;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-incident-history-card{padding:0;}
-      .pdf-incident-card{padding:14px 16px 16px;border-bottom:1px solid var(--pdf-line-soft);break-inside:avoid;page-break-inside:avoid;}
+      .pdf-incident-card{padding:22px 16px 6px;border-bottom:1px solid var(--pdf-line-soft);break-inside:avoid;page-break-inside:avoid;}
       .pdf-incident-card:last-of-type{border-bottom:none;}
-      .pdf-incident-card__meta{display:flex;align-items:baseline;gap:14px;}
+      .pdf-incident-card__main{
+        display:grid;grid-template-columns:84px 96px minmax(0,1fr);gap:12px 22px;align-items:center;
+      }
+      .pdf-incident-card__datecol{display:flex;flex-direction:column;gap:4px;min-width:0;}
       .pdf-incident-card__date{
         font-size:var(--pdf-fs-base);font-weight:700;color:#0f172a;white-space:nowrap;
         font-variant-numeric:tabular-nums;
       }
-      .pdf-incident-card__amount{flex:1;font-size:15px;font-weight:700;color:#0f172a;line-height:1.2;}
-      .pdf-incident-card__amount .pdf-num-warn{font-size:15px!important;}
+      .pdf-incident-card__car .pdf-dmg-sil{width:96px;}
+      .pdf-incident-card__facts{min-width:0;}
+      .pdf-incident-card__amount{font-size:24px;font-weight:800;color:#0f172a;line-height:1.1;letter-spacing:-0.03em;}
+      .pdf-incident-card__amount .pdf-num-warn{font-size:24px!important;}
+      .pdf-incident-card__amount .pdf-num-warn-digits{font-size:24px;font-weight:800!important;letter-spacing:-0.03em;}
       .pdf-incident-card__country{
-        display:flex;align-items:center;gap:6px;font-size:var(--pdf-fs-table);font-weight:500;color:#64748b;
+        display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:#64748b;
         white-space:nowrap;
       }
       .pdf-incident-card__country .pdf-country-flag{font-size:13px;line-height:1;}
-      .pdf-incident-card__srcs{margin-top:7px;}
-      .pdf-incident-card--with-dmg .pdf-incident-card__visual{
-        display:grid;grid-template-columns:120px minmax(0,1fr);gap:0 20px;align-items:start;
-        margin-top:12px;padding-top:12px;border-top:1px solid var(--pdf-line-soft);
+      .pdf-incident-chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;padding:0;list-style:none;}
+      .pdf-incident-chips li{
+        margin:0;padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;
+        color:#475569;font-size:11px;font-weight:600;line-height:1.3;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-incident-card__srcs{margin:16px 0 0;padding:8px 0 12px;border-top:1px solid #F1F5F9;}
       .pdf-dmg-sil{display:block;width:120px;height:auto;max-width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      .pdf-incident-card__lists{display:flex;flex-direction:column;gap:10px;min-width:0;}
-      .pdf-dmg-list__h{
-        margin:0 0 3px;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
-        text-transform:uppercase;letter-spacing:0.06em;
-      }
-      .pdf-dmg-list__text{margin:0;font-size:var(--pdf-fs-base);color:#0f172a;line-height:1.45;}
       .pdf-listing-price-history-foot{
         display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
         background:#F7F9FC;border-top:1px solid var(--pdf-line-soft);

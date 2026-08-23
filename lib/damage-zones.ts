@@ -54,9 +54,20 @@ const ZONE_LIST_HEADING_RE =
 
 const GROUP_LIST_HEADING_RE = /Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas/i;
 
-/** PDF kājene / leģenda — nav bojājumu grupa. */
+/** PDF kājene, CarVertical «līdzīgs ieraksts», mūsu kopsavilkuma virsraksts — nav bojājumu grupa. */
 const DAMAGE_META_CUT_RE =
-  /VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|"?Boj[āa]jumu"?\s+sadaļas\s+skaidrojums|carVertical/i;
+  /VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|"?Boj[āa]jumu"?\s+sadaļas\s+skaidrojums|carVertical|\d+\s+līdzīg[sz]\s+ierakst|līdzīg[sz]\s+ierakst|NEGADĪJUMU\s+VĒSTUR|Fiks[eē]tie\s+incidenti|datu\s+saskaņotība/i;
+
+const DAMAGE_GROUP_STOP_RE =
+  /Boj[āa]jumu\s+zona|Boj[āa]t[āa]s\s+deta[ļl]as|Valsts|Summa|Rezult[āa]ts|Aptuven|VIN\s*numurs|Ģenerē[sš]anas|līdzīg[sz]\s+ierakst|NEGADĪJUMU\s+VĒSTUR|Fiks[eē]tie\s+incidenti|\d{1,2}\.\d{4}|$/i;
+
+/** Avota grupas bieži salīmējas bez atdalītāja; pēc daļas/detaļas sākas nākamā. */
+const DAMAGE_GROUP_GLUE_RE = new RegExp(
+  `(da[ļl]as|deta[ļl]as)(?:\\s+\\d{1,2})?\\s+(?=[A-ZĀČĒĢĪĶĻŅŠŪŽ])`,
+  "g",
+);
+
+const DAMAGE_LABEL_MAX_LEN = 90;
 
 export function clipVendorDamageField(raw: string): string {
   let t = reattachLatvianPdfDiacritics(raw).replace(/\s+/g, " ").trim();
@@ -69,7 +80,7 @@ export function clipVendorDamageField(raw: string): string {
 
 function isDamageLabelNoise(s: string): boolean {
   const t = s.trim();
-  if (t.length < 2) return true;
+  if (t.length < 2 || t.length > DAMAGE_LABEL_MAX_LEN) return true;
   return DAMAGE_META_CUT_RE.test(t) || /^[A-HJ-NPR-Z0-9]{11,17}$/.test(t.replace(/\s/g, ""));
 }
 
@@ -152,11 +163,12 @@ export function damageGroupDisplayLabels(raw: string): string[] {
 }
 
 function splitLooseLabels(raw: string): string[] {
-  const t = clipVendorDamageField(raw);
-  if (!t || t === "—") return [];
+  const clipped = clipVendorDamageField(raw);
+  if (!clipped || clipped === "—") return [];
+  const t = clipped.replace(DAMAGE_GROUP_GLUE_RE, "$1 · ");
   const parts = t
     .split(/\s*(?:[•·;,]|\n|(?:\s+[-–—]\s+)|(?:\s+\/\s+))\s*/)
-    .map((s) => s.replace(/^[-–—•]\s*/, "").trim())
+    .map((s) => s.replace(/^[-–—•]\s*/, "").replace(/\s+\d{1,2}$/, "").trim())
     .filter((s) => s.length > 1 && !ZONE_LIST_HEADING_RE.test(s) && !GROUP_LIST_HEADING_RE.test(s) && !isDamageLabelNoise(s));
   const seen = new Set<string>();
   const out: string[] = [];
@@ -178,7 +190,10 @@ export function extractZoneListFromBlock(block: string): string {
 
 export function extractGroupListFromBlock(block: string): string {
   const m = block.match(
-    /(?:Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas)\s*[:\-–]?\s*([\s\S]{0,800}?)(?=Boj[āa]jumu\s+zona|Boj[āa]t[āa]s\s+deta[ļl]as|Valsts|Summa|Rezult[āa]ts|Aptuven|VIN\s*numurs|Ģenerē[sš]anas|\d{1,2}\.\d{4}|$)/i,
+    new RegExp(
+      `(?:Deta[ļl]u\\s+grupa|Boj[āa]jumu\\s+grupas)\\s*[:\\-–]?\\s*([\\s\\S]{0,800}?)(?=${DAMAGE_GROUP_STOP_RE.source})`,
+      "i",
+    ),
   );
   return clipVendorDamageField(m?.[1] ?? "");
 }
