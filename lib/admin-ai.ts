@@ -59,10 +59,10 @@ const FAILOVER_STEP_MS = 800;
  */
 const MAX_TOKENS_TEXT = 32_000;
 const MAX_TOKENS_JSON = 32_000;
-/** Komentāru maršrutu `maxDuration` ir 90s — nogrist ar rezervi atbildes noformēšanai. */
-const TEXT_REQUEST_TIMEOUT_MS = 88_000;
-/** Web search aģenti (kopsavilkums, riski, pārdevējs) — maršruti ar `maxDuration = 120`. */
-const WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000;
+/** Viena mēģinājuma griesti; faktisko laiku vēl saīsina pieprasījuma budžets (300s maršruts). */
+const TEXT_REQUEST_TIMEOUT_MS = 280_000;
+/** Web search aģenti — tas pats 300s griests; meklēšana nedrīkst nogriezt tekstu pie 105s. */
+const WEB_SEARCH_REQUEST_TIMEOUT_MS = 280_000;
 const JSON_REQUEST_TIMEOUT_MS = 150_000;
 /** SDK noklusējums PDF/gariem izsaukumiem. */
 const REQUEST_TIMEOUT_MS = 180_000;

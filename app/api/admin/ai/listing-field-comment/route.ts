@@ -14,7 +14,7 @@ import {
 import { mergeSourceBlocksFromBody } from "@/lib/admin-ai-api-body";
 import { parseAiModelTier } from "@/lib/ai-admin-model-tier";
 
-export const maxDuration = 90;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 type BodyShape = {

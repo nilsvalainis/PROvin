@@ -1,4 +1,4 @@
-/** ✨ pieprasījums ar dzīvo teksta priekšskatījumu (SSE), ar atkāpi uz veco JSON. */
+/** ✨ pieprasījums: JSON (preview nav vajadzīgs). SSE paliek kā atkāpe, ja maršruts to joprojām sūta. */
 import {
   parseAdminAiResponse,
   readGeneratedAdminAiText,
@@ -38,14 +38,14 @@ export async function generateAdminAiText(
   url: string,
   body: unknown,
   httpFallback: string,
-  opts: AdminAiStreamOptions,
+  opts?: Partial<AdminAiStreamOptions>,
 ): Promise<GeneratedAdminAiText> {
   const res = await fetch(url, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", Accept: AI_STREAM_CONTENT_TYPE },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(body),
-    signal: opts.signal,
+    signal: opts?.signal,
   });
 
   const isStream = (res.headers.get("content-type") ?? "").includes(AI_STREAM_CONTENT_TYPE);
@@ -63,12 +63,12 @@ export async function generateAdminAiText(
   const handle = (incoming: AiStreamEvent) => {
     if (incoming.type === "delta") {
       preview += incoming.text;
-      opts.onPreview(preview);
+      opts?.onPreview?.(preview);
       return;
     }
     if (incoming.type === "restart") {
       preview = "";
-      opts.onPreview("");
+      opts?.onPreview?.("");
       return;
     }
     completed = incoming;

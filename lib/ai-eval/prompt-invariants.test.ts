@@ -545,8 +545,8 @@ describe("PROVIN AI prompt invariants", () => {
     const ai = readRepo("lib/admin-ai.ts");
     expect(ai).toMatch(/messages\.stream\(/);
     expect(ai).toMatch(/partial_text_salvaged/);
-    expect(ai).toMatch(/TEXT_REQUEST_TIMEOUT_MS = 88_000/);
-    expect(ai).toMatch(/WEB_SEARCH_REQUEST_TIMEOUT_MS = 105_000/);
+    expect(ai).toMatch(/TEXT_REQUEST_TIMEOUT_MS = 280_000/);
+    expect(ai).toMatch(/WEB_SEARCH_REQUEST_TIMEOUT_MS = 280_000/);
     expect(ai).toMatch(/AiIncompleteCommentError/);
     expect(ai).not.toMatch(/return salvaged;/);
     const gemini = readRepo("lib/admin-gemini.ts");
@@ -566,20 +566,15 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-gemini.ts")).toMatch(/aiBudgetAllowsRetry/);
   });
 
-  it("heavy comment routes stream tokens to the admin UI", () => {
-    for (const route of [
-      "app/api/admin/ai/technical-risk-analysis/route.ts",
-      "app/api/admin/ai/inspection-recommendations/route.ts",
-      "app/api/admin/ai/summary-analysis/route.ts",
-      "app/api/admin/ai/seller-analysis/route.ts",
-    ]) {
-      expect(readRepo(route)).toMatch(/wantsAiStream/);
-      expect(readRepo(route)).toMatch(/aiStreamResponse/);
-    }
+  it("comment generation waits for JSON instead of a live preview stream", () => {
+    expect(readRepo("lib/admin-ai-stream-client.ts")).toMatch(/Accept:\s*"application\/json"/);
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/generateAdminAiText/);
-    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/AdminAiStreamPreview/);
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).not.toMatch(/AdminAiStreamPreview/);
     expect(readRepo("components/admin/AdminListingAnalysisSourceBlock.tsx")).toMatch(
       /generateAdminAiText/,
+    );
+    expect(readRepo("components/admin/AdminListingAnalysisSourceBlock.tsx")).not.toMatch(
+      /AdminAiStreamPreview/,
     );
   });
 
@@ -598,13 +593,18 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("components/admin/AdminAiFieldError.tsx")).toMatch(/role="alert"/);
   });
 
-  it("web search agents get a route budget longer than their request timeout", () => {
+  it("comment AI routes use the 300s Fluid Compute ceiling", () => {
     for (const route of [
       "app/api/admin/ai/summary-analysis/route.ts",
       "app/api/admin/ai/technical-risk-analysis/route.ts",
       "app/api/admin/ai/seller-analysis/route.ts",
+      "app/api/admin/ai/source-comment/route.ts",
+      "app/api/admin/ai/inspection-recommendations/route.ts",
     ]) {
-      expect(readRepo(route)).toMatch(/maxDuration = 120/);
+      expect(readRepo(route)).toMatch(/maxDuration = 300/);
     }
+    expect(readRepo("lib/ai-request-budget.ts")).toMatch(/AI_ROUTE_MAX_DURATION_SEC = 300/);
+    expect(readRepo("lib/admin-ai.ts")).toMatch(/TEXT_REQUEST_TIMEOUT_MS = 280_000/);
+    expect(readRepo("lib/admin-gemini.ts")).toMatch(/TEXT_REQUEST_TIMEOUT_MS = 280_000/);
   });
 });

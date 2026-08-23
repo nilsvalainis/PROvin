@@ -19,7 +19,7 @@ import {
 } from "@/lib/admin-source-comment-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
-export const maxDuration = 90;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 type BodyShape = {

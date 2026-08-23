@@ -13,10 +13,16 @@ const RESPONSE_RESERVE_MS = 8_000;
 /** Cik daudz laika vēl jāpaliek, lai kārtējais apmaksātais mēģinājums būtu jēgpilns. */
 export const AI_RETRY_MIN_BUDGET_MS = 22_000;
 
+/**
+ * Vercel Fluid Compute griesti ir 300s — to nevar noņemt.
+ * Zemāks `maxDuration` (90/120) bija galvenais iemesls daļējiem komentāriem.
+ */
+export const AI_ROUTE_MAX_DURATION_SEC = 300;
+
 /** Maršrutu `maxDuration` (skat. `app/api/admin/ai/**`). */
 export const AI_ROUTE_BUDGET_MS = {
-  text: 90_000,
-  webSearch: 120_000,
+  text: AI_ROUTE_MAX_DURATION_SEC * 1000,
+  webSearch: AI_ROUTE_MAX_DURATION_SEC * 1000,
 } as const;
 
 export function createAiRequestBudget(routeMaxDurationMs: number): AiRequestBudget {

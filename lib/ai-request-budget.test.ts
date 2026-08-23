@@ -11,7 +11,7 @@ describe("ai request budget", () => {
   it("caps a single attempt to the remaining time", () => {
     const budget = { endsAt: Date.now() + 12_000 };
     expect(aiAttemptTimeoutMs(budget, 88_000)).toBeLessThanOrEqual(12_000);
-    expect(aiAttemptTimeoutMs(undefined, 88_000)).toBe(88_000);
+    expect(aiAttemptTimeoutMs(undefined, 280_000)).toBe(280_000);
   });
 
   it("refuses another paid retry when the route is almost out of time", () => {
@@ -21,8 +21,8 @@ describe("ai request budget", () => {
   });
 
   it("leaves a reserve under the route maxDuration", () => {
-    const budget = createAiRequestBudget(120_000);
-    expect(aiBudgetRemainingMs(budget)).toBeLessThan(120_000);
-    expect(aiBudgetRemainingMs(budget)).toBeGreaterThan(100_000);
+    const budget = createAiRequestBudget(300_000);
+    expect(aiBudgetRemainingMs(budget)).toBeLessThan(300_000);
+    expect(aiBudgetRemainingMs(budget)).toBeGreaterThan(280_000);
   });
 });

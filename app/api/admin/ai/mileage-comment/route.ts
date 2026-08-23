@@ -10,7 +10,7 @@ import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { generateMileageCommentWithAi } from "@/lib/admin-ai-mileage-comment";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 
-export const maxDuration = 90;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 function str(v: unknown): string {

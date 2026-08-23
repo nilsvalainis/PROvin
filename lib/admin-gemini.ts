@@ -61,10 +61,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Viena mēģinājuma griesti; faktisko laiku vēl saīsina pieprasījuma budžets. */
-const TEXT_REQUEST_TIMEOUT_MS = 88_000;
-/** Web search aģenti — maršruti ar `maxDuration = 120`. */
-const SEARCH_REQUEST_TIMEOUT_MS = 105_000;
+/** Viena mēģinājuma griesti; faktisko laiku vēl saīsina pieprasījuma budžets (300s maršruts). */
+const TEXT_REQUEST_TIMEOUT_MS = 280_000;
+/** Web search aģenti — tas pats 300s griests. */
+const SEARCH_REQUEST_TIMEOUT_MS = 280_000;
 /** Thinking + redzamais teksts dala šo limitu; 8192 pie Gemini 3 + Search apēda izeju (MAX_TOKENS). */
 const GEMINI_MAX_OUTPUT_TOKENS = 32_000;
 

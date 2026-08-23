@@ -35,7 +35,6 @@ import {
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
 import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
-import { AdminAiStreamPreview } from "@/components/admin/AdminAiStreamPreview";
 import type { AiListingCommentField } from "@/lib/admin-ai-listing-field";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -127,7 +126,6 @@ export function AdminListingAnalysisSourceBlock({
   ) : null;
 
   const [sellerAnalyzing, setSellerAnalyzing] = useState(false);
-  const [sellerAnalyzePreview, setSellerAnalyzePreview] = useState("");
   const [sellerAnalyzeErr, setSellerAnalyzeErr] = useState<string | null>(null);
   const [listingFieldBusy, setListingFieldBusy] = useState<AiListingCommentField | null>(null);
   const [listingFieldErr, setListingFieldErr] = useState<{
@@ -220,7 +218,6 @@ export function AdminListingAnalysisSourceBlock({
       if (!canRunSellerAi || sellerAnalyzing || disabled || readOnly || !buildAiPayload) return;
       setSellerAnalyzing(true);
       setSellerAnalyzeErr(null);
-      setSellerAnalyzePreview("");
       try {
         const generated = await generateAdminAiText(
           "/api/admin/ai/seller-analysis",
@@ -232,7 +229,6 @@ export function AdminListingAnalysisSourceBlock({
             modelTier,
           },
           "AI: neizdevās analizēt pārdevēju",
-          { onPreview: setSellerAnalyzePreview },
         );
         applyGeneratedAdminAiText(
           generated,
@@ -242,7 +238,6 @@ export function AdminListingAnalysisSourceBlock({
       } catch {
         setSellerAnalyzeErr("AI: neizdevās savienoties");
       } finally {
-        setSellerAnalyzePreview("");
         setSellerAnalyzing(false);
       }
     },
@@ -322,7 +317,6 @@ export function AdminListingAnalysisSourceBlock({
             )}
           </label>
           <AdminAiFieldError message={sellerAnalyzeErr} />
-          <AdminAiStreamPreview text={sellerAnalyzePreview} />
           {readOnly ? (
             <AdminRichCommentReadonly html={v.sellerPortrait} className={pri ? roBox(!!dense) : roDefault} />
           ) : (

@@ -9,7 +9,7 @@ import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { generateListingPeekCommentWithAi } from "@/lib/admin-ai-listing-peek";
 import { parseAiModelTier } from "@/lib/ai-admin-model-tier";
 
-export const maxDuration = 90;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 function str(v: unknown): string {

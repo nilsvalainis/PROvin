@@ -199,7 +199,6 @@ import {
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
 import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
-import { AdminAiStreamPreview } from "@/components/admin/AdminAiStreamPreview";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
@@ -706,15 +705,12 @@ export function OrderDetailWorkspace({
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
   const [aiInspectionBusy, setAiInspectionBusy] = useState(false);
   const [aiInspectionErr, setAiInspectionErr] = useState<string | null>(null);
-  const [aiInspectionPreview, setAiInspectionPreview] = useState("");
   const [aiTechnicalRisksBusy, setAiTechnicalRisksBusy] = useState(false);
   const [aiTechnicalRisksErr, setAiTechnicalRisksErr] = useState<string | null>(null);
-  const [aiTechnicalRisksPreview, setAiTechnicalRisksPreview] = useState("");
   const [aiTirgusMarketBusy, setAiTirgusMarketBusy] = useState(false);
   const [aiTirgusMarketErr, setAiTirgusMarketErr] = useState<string | null>(null);
   const [aiSummaryBusy, setAiSummaryBusy] = useState(false);
   const [aiSummaryErr, setAiSummaryErr] = useState<string | null>(null);
-  const [aiSummaryPreview, setAiSummaryPreview] = useState("");
   const [aiIncidentsSummaryBusy, setAiIncidentsSummaryBusy] = useState(false);
   const [aiIncidentsSummaryErr, setAiIncidentsSummaryErr] = useState<string | null>(null);
   const [aiMileageCommentBusy, setAiMileageCommentBusy] = useState(false);
@@ -1050,7 +1046,6 @@ export function OrderDetailWorkspace({
     if (!payload.aiAllowed || aiTechnicalRisksBusy) return;
     setAiTechnicalRisksBusy(true);
     setAiTechnicalRisksErr(null);
-    setAiTechnicalRisksPreview("");
     try {
       const cur = wsPersistRef.current;
       const generated = await generateAdminAiText(
@@ -1063,7 +1058,6 @@ export function OrderDetailWorkspace({
           modelTier,
         },
         "AI: neizdevās ģenerēt tehnisko risku analīzi",
-        { onPreview: setAiTechnicalRisksPreview },
       );
       applyGeneratedAdminAiText(
         generated,
@@ -1073,7 +1067,6 @@ export function OrderDetailWorkspace({
     } catch {
       setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
-      setAiTechnicalRisksPreview("");
       setAiTechnicalRisksBusy(false);
     }
   }, [buildAiOrderPayload, aiTechnicalRisksBusy, payload.aiAllowed, updateWs]);
@@ -1082,7 +1075,6 @@ export function OrderDetailWorkspace({
     if (!payload.aiAllowed || aiInspectionBusy) return;
     setAiInspectionBusy(true);
     setAiInspectionErr(null);
-    setAiInspectionPreview("");
     try {
       const cur = wsPersistRef.current;
       const generated = await generateAdminAiText(
@@ -1095,7 +1087,6 @@ export function OrderDetailWorkspace({
           modelTier,
         },
         "AI: neizdevās ģenerēt",
-        { onPreview: setAiInspectionPreview },
       );
       applyGeneratedAdminAiText(
         generated,
@@ -1105,7 +1096,6 @@ export function OrderDetailWorkspace({
     } catch {
       setAiInspectionErr("AI: neizdevās savienoties");
     } finally {
-      setAiInspectionPreview("");
       setAiInspectionBusy(false);
     }
   }, [buildAiOrderPayload, aiInspectionBusy, payload.aiAllowed, updateWs]);
@@ -1114,7 +1104,6 @@ export function OrderDetailWorkspace({
     if (!payload.aiAllowed || aiSummaryBusy) return;
     setAiSummaryBusy(true);
     setAiSummaryErr(null);
-    setAiSummaryPreview("");
     try {
       const cur = wsPersistRef.current;
       const generated = await generateAdminAiText(
@@ -1127,7 +1116,6 @@ export function OrderDetailWorkspace({
           modelTier,
         },
         "AI: neizdevās sagatavot atbildi",
-        { onPreview: setAiSummaryPreview },
       );
       applyGeneratedAdminAiText(
         generated,
@@ -1137,7 +1125,6 @@ export function OrderDetailWorkspace({
     } catch {
       setAiSummaryErr("AI: neizdevās savienoties");
     } finally {
-      setAiSummaryPreview("");
       setAiSummaryBusy(false);
     }
   }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, setIrissSummary]);
@@ -4014,7 +4001,6 @@ export function OrderDetailWorkspace({
                 </div>
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiTechnicalRisksErr} />
-                  <AdminAiStreamPreview text={aiTechnicalRisksPreview} />
                   <AdminAiPolishRichCommentShell
                     value={ws.tehniskoRiskuAnalize ?? ""}
                     onChange={(next) => updateWs({ tehniskoRiskuAnalize: next })}
@@ -4035,7 +4021,6 @@ export function OrderDetailWorkspace({
                 </div>
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiInspectionErr} />
-                  <AdminAiStreamPreview text={aiInspectionPreview} />
                   <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns ?? ""}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
@@ -4063,7 +4048,6 @@ export function OrderDetailWorkspace({
                 </div>
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiSummaryErr} />
-                  <AdminAiStreamPreview text={aiSummaryPreview} />
                   <AdminAiPolishRichCommentShell
                     value={ws.iriss ?? ""}
                     onChange={setIrissSummary}

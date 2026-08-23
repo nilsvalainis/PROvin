@@ -13,7 +13,7 @@ import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { generateSummaryAnalysisWithAi } from "@/lib/admin-ai-summary";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 type BodyShape = {

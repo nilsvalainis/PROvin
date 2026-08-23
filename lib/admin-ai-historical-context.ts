@@ -165,6 +165,22 @@ async function listOrderDraftSessionIdsFromBlob(prefix: string, token: string): 
   return ids;
 }
 
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function worker() {
+    for (;;) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i]!);
+    }
+  }
+  const n = Math.min(Math.max(1, limit), Math.max(1, items.length));
+  if (items.length === 0) return results;
+  await Promise.all(Array.from({ length: n }, () => worker()));
+  return results;
+}
+
 async function listNewestOrderDraftSessionIds(limit: number): Promise<string[]> {
   const byId = new Map<string, number>();
   const remember = (hits: DraftIdHit[]) => {
@@ -190,10 +206,12 @@ async function buildHistoricalReportIndex(): Promise<HistoricalReportIndexEntry[
 
   const sortedIds = await listNewestOrderDraftSessionIds(MAX_DRAFTS_TO_INDEX);
 
+  const drafts = await mapLimit(sortedIds, 8, (sessionId) => readOrderDraft(sessionId));
   const entries: HistoricalReportIndexEntry[] = [];
-  for (const sessionId of sortedIds) {
-    const draft = await readOrderDraft(sessionId);
-    if (!draft) continue;
+  for (let i = 0; i < sortedIds.length; i++) {
+    const draft = drafts[i];
+    const sessionId = sortedIds[i];
+    if (!draft || !sessionId) continue;
     const entry = draftToIndexEntry(sessionId, draft);
     if (entry) entries.push(entry);
   }

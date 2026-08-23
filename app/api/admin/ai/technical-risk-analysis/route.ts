@@ -11,7 +11,7 @@ import { generateTechnicalRiskAnalysisWithAi } from "@/lib/admin-ai-technical-ri
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 type BodyShape = {

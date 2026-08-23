@@ -88,9 +88,20 @@ describe("generateAdminAiText", () => {
         }),
       ),
     );
-    const result = await generateAdminAiText("/api/admin/ai/x", {}, "AI: neizdevās", {
-      onPreview: () => {},
-    });
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ text: "Vecais JSON ceļš" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await generateAdminAiText("/api/admin/ai/x", {}, "AI: neizdevās");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/admin/ai/x",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Accept: "application/json" }),
+      }),
+    );
     expect(result).toEqual({ ok: true, text: "Vecais JSON ceļš" });
   });
 });

@@ -12,7 +12,7 @@ import { generateInspectionRecommendationsWithAi } from "@/lib/admin-ai-inspecti
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 
-export const maxDuration = 90;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 type BodyShape = {

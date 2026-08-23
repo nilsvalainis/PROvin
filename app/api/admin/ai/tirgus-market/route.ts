@@ -10,7 +10,7 @@ import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 import { generateTirgusMarketWithAi } from "@/lib/admin-ai-tirgus-market";
 
-export const maxDuration = 90;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {

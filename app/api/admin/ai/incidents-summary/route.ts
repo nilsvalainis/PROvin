@@ -10,7 +10,7 @@ import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { generateIncidentsSummaryWithAi } from "@/lib/admin-ai-incidents-summary";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 
-export const maxDuration = 90;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 function str(v: unknown): string {
