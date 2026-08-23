@@ -10,6 +10,7 @@ import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-stor
 import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
+import { seedSsLvAdifyOnPaidOrder } from "@/lib/admin-ss-lv-adify-seed";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -106,6 +107,16 @@ async function fulfillPaidCheckoutSession(
     if (getCheckoutLineFromSession(session) === "provin_select") {
       void ensureConsultationDraftSeed(session.id).catch((err) => {
         console.error("[stripe webhook] consultation draft seed:", err);
+      });
+    } else {
+      void seedSsLvAdifyOnPaidOrder(session.id, order.listingUrl).then((r) => {
+        if (r.ok) {
+          console.info("[stripe webhook] ss.lv Adify listing seeded", { sessionId: session.id });
+        } else if (r.reason !== "skip" && r.reason !== "no_listing_url") {
+          console.warn("[stripe webhook] ss.lv Adify listing seed:", r.reason);
+        }
+      }).catch((err) => {
+        console.error("[stripe webhook] ss.lv Adify listing seed:", err);
       });
     }
   } catch (e) {

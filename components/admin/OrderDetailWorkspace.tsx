@@ -144,6 +144,7 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
+import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
   applySourceBlockGeneratedComment,
@@ -199,6 +200,22 @@ import {
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
 import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
+import {
+  FLASH_MAX_DEFAULT_TIER,
+  FLASH_MAX_JOBS,
+  FLASH_MAX_PRESERVE_OPERATOR_NOTE,
+  formatFlashMaxNotice,
+  formatFlashMaxSkipLabel,
+  isFlashMaxEmptyDataError,
+  shouldSkipFlashMaxJob,
+  type FlashMaxJobResult,
+} from "@/lib/admin-flash-max";
+import {
+  applySsLvAdifyAutofill,
+  shouldAutofillSsLvListing,
+} from "@/lib/admin-ss-lv-adify-autofill";
+import type { AdifyListingHistorySnapshot } from "@/lib/adify-listing-history";
+import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
@@ -730,6 +747,11 @@ export function OrderDetailWorkspace({
   const [prepareDraftPhase, setPrepareDraftPhase] = useState<string | null>(null);
   const [prepareDraftErr, setPrepareDraftErr] = useState<string | null>(null);
   const [prepareDraftNotice, setPrepareDraftNotice] = useState<string | null>(null);
+  const [flashMaxBusy, setFlashMaxBusy] = useState(false);
+  const [flashMaxPhase, setFlashMaxPhase] = useState<string | null>(null);
+  const [flashMaxErr, setFlashMaxErr] = useState<string | null>(null);
+  const [flashMaxNotice, setFlashMaxNotice] = useState<string | null>(null);
+  const adifyAutofillAttemptedRef = useRef(false);
   const portfolioDragDepth = useRef(0);
   const hydrationSnapshotRef = useRef("");
   const workspaceDirtyRef = useRef(false);
@@ -1540,6 +1562,161 @@ export function OrderDetailWorkspace({
     [buildAiOrderPayload, aiSourceCommentBusy, payload.aiAllowed, updateSourceBlock],
   );
 
+  const runFlashMax = useCallback(async () => {
+    if (!payload.aiAllowed || flashMaxBusy || !workspaceHydrated) return;
+    setFlashMaxBusy(true);
+    setFlashMaxErr(null);
+    setFlashMaxNotice(null);
+    const results: FlashMaxJobResult[] = [];
+    const total = FLASH_MAX_JOBS.length;
+    try {
+      for (const [i, job] of FLASH_MAX_JOBS.entries()) {
+        const cur = wsPersistRef.current;
+        const skip = shouldSkipFlashMaxJob(job, cur.sourceBlocks);
+        if (skip) {
+          results.push({
+            id: job.id,
+            label: job.label,
+            status: "skipped",
+            detail: formatFlashMaxSkipLabel(skip),
+          });
+          setFlashMaxPhase(`${job.label} — izlaists (${i + 1}/${total})`);
+          continue;
+        }
+
+        setFlashMaxPhase(`${job.label} (${i + 1}/${total})`);
+        const edits = orderEditsRef.current;
+        let existingDraftPlain = "";
+        if (job.kind === "source") {
+          existingDraftPlain = adminRichHtmlToPlainText(
+            sourceBlockCommentsPlainForAi(job.blockKey, cur.sourceBlocks, undefined, job.targetField),
+          ).trim();
+        } else if (job.id === "incidents") {
+          existingDraftPlain = adminRichHtmlToPlainText(edits.internal).trim();
+        } else if (job.id === "mileage") {
+          existingDraftPlain = adminRichHtmlToPlainText(edits.mileage).trim();
+        } else if (job.id === "sources_comparison") {
+          existingDraftPlain = adminRichHtmlToPlainText(edits.sourcesComparison).trim();
+        } else if (job.id === "technical_risks") {
+          existingDraftPlain = adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim();
+        } else if (job.id === "inspection") {
+          existingDraftPlain = adminRichHtmlToPlainText(cur.apskatesPlāns).trim();
+        } else if (job.id === "summary") {
+          existingDraftPlain = adminRichHtmlToPlainText(cur.iriss).trim();
+        }
+
+        const endpoint = job.kind === "source" ? "/api/admin/ai/source-comment" : job.endpoint;
+        const body = {
+          ...buildAiOrderPayload({
+            operatorNotes: FLASH_MAX_PRESERVE_OPERATOR_NOTE,
+            existingDraftPlain,
+          }),
+          modelTier: FLASH_MAX_DEFAULT_TIER,
+          ...(job.kind === "source" ? { blockKey: job.blockKey, targetField: job.targetField } : {}),
+        };
+
+        try {
+          const generated = await generateAdminAiText(
+            endpoint,
+            body,
+            `AI: neizdevās ģenerēt (${job.label})`,
+          );
+          if (!generated.ok && isFlashMaxEmptyDataError(generated.error)) {
+            results.push({
+              id: job.id,
+              label: job.label,
+              status: "skipped",
+              detail: formatFlashMaxSkipLabel("no_source_data"),
+            });
+            continue;
+          }
+          let applied = false;
+          flushSync(() => {
+            applied = applyGeneratedAdminAiText(
+              generated,
+              (text) => {
+                const html = aiExpertSourceCommentToRichHtml(text);
+                if (job.kind === "source") {
+                  const latest = wsPersistRef.current;
+                  const nextBlock = applySourceBlockGeneratedComment(
+                    job.blockKey,
+                    latest.sourceBlocks[job.blockKey],
+                    html,
+                    { targetField: job.targetField },
+                  );
+                  updateSourceBlock(job.blockKey, nextBlock);
+                  return;
+                }
+                if (job.id === "incidents") {
+                  onInternalCommentChange(html);
+                  return;
+                }
+                if (job.id === "mileage") {
+                  onMileageCommentChange(html);
+                  return;
+                }
+                if (job.id === "sources_comparison") {
+                  onSourcesComparisonCommentChange(html);
+                  return;
+                }
+                if (job.id === "technical_risks") {
+                  updateWs({ tehniskoRiskuAnalize: html });
+                  return;
+                }
+                if (job.id === "inspection") {
+                  updateWs({ apskatesPlāns: html });
+                  return;
+                }
+                updateWs({ iriss: html });
+              },
+              (error) => setFlashMaxErr(`${job.label}: ${error}`),
+            );
+          });
+          if (applied) {
+            results.push({ id: job.id, label: job.label, status: "ok" });
+            if (orderDraftPersistenceEnabled) {
+              await persistFullWorkspaceRef("flash-max", { showFlash: false });
+            }
+          } else {
+            results.push({
+              id: job.id,
+              label: job.label,
+              status: "error",
+              detail: generated.error,
+            });
+          }
+        } catch {
+          results.push({
+            id: job.id,
+            label: job.label,
+            status: "error",
+            detail: "Neizdevās savienoties",
+          });
+          setFlashMaxErr(`${job.label}: neizdevās savienoties`);
+        }
+      }
+      setFlashMaxNotice(formatFlashMaxNotice(results));
+      if (results.some((r) => r.status === "ok")) {
+        setWizardStep(11);
+      }
+    } finally {
+      setFlashMaxBusy(false);
+      setFlashMaxPhase(null);
+    }
+  }, [
+    buildAiOrderPayload,
+    flashMaxBusy,
+    onInternalCommentChange,
+    onMileageCommentChange,
+    onSourcesComparisonCommentChange,
+    orderDraftPersistenceEnabled,
+    payload.aiAllowed,
+    persistFullWorkspaceRef,
+    updateSourceBlock,
+    updateWs,
+    workspaceHydrated,
+  ]);
+
   const runPrepareDraft = useCallback(async () => {
     if (!payload.aiAllowed || prepareDraftBusy) return;
     const pdfs = portfolioRef.current.filter(
@@ -1764,6 +1941,63 @@ export function OrderDetailWorkspace({
     setWorkspaceHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- serverWorkspaceJson apzināti nav deps: localStorage vienmēr uzvar
   }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange, orderDraftPersistenceEnabled]);
+
+  useEffect(() => {
+    adifyAutofillAttemptedRef.current = false;
+  }, [payload.sessionId]);
+
+  useEffect(() => {
+    if (!workspaceHydrated || adifyAutofillAttemptedRef.current) return;
+    const url = payload.listingUrl?.trim() ?? "";
+    const tirgus = wsPersistRef.current.sourceBlocks.tirgus;
+    if (!shouldAutofillSsLvListing(url, tirgus)) return;
+    adifyAutofillAttemptedRef.current = true;
+    void (async () => {
+      try {
+        const [adifyRes, scrapeRes] = await Promise.all([
+          fetch("/api/admin/adify-history", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          }),
+          fetch("/api/admin/scrape-listing", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          }).catch(() => null),
+        ]);
+        const snapshot = (await adifyRes.json().catch(() => null)) as AdifyListingHistorySnapshot | null;
+        const scrape = scrapeRes?.ok
+          ? ((await scrapeRes.json().catch(() => null)) as ListingMarketSnapshot | null)
+          : null;
+        const latest = wsPersistRef.current.sourceBlocks.tirgus;
+        if (!shouldAutofillSsLvListing(url, latest)) return;
+        const next = applySsLvAdifyAutofill(
+          latest,
+          url,
+          adifyRes.ok && snapshot?.found ? snapshot : null,
+          scrape,
+        );
+        if (!next) return;
+        flushSync(() => {
+          updateSourceBlock("tirgus", next);
+        });
+        if (orderDraftPersistenceEnabled) {
+          await persistFullWorkspaceRef("ss-lv-adify-autofill", { showFlash: false });
+        }
+      } catch {
+        /* Adify / scrape var nebūt pieejams — operators joprojām var nospiest „Ielasīt no Adify”. */
+      }
+    })();
+  }, [
+    orderDraftPersistenceEnabled,
+    payload.listingUrl,
+    persistFullWorkspaceRef,
+    updateSourceBlock,
+    workspaceHydrated,
+  ]);
 
   const persistWorkspaceSnapshot = useCallback(
     async (opts?: { showFlash?: boolean; serverOnly?: boolean }): Promise<boolean> => {
@@ -3555,6 +3789,16 @@ export function OrderDetailWorkspace({
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
             </button>
+          ) : null}
+          {payload.aiAllowed ? (
+            <AdminFlashMaxButton
+              disabled={!workspaceHydrated || prepareDraftBusy}
+              busy={flashMaxBusy}
+              phase={flashMaxPhase}
+              notice={flashMaxNotice}
+              error={flashMaxErr}
+              onClick={() => void runFlashMax()}
+            />
           ) : null}
           <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
           <AdminOrderCopilotTrigger
