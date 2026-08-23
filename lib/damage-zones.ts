@@ -2,8 +2,11 @@
  * Bojājumu zonas — ielasīšana pēc avota SADALAS, nevis pēc konkrēta VIN detaļu saraksta.
  * Siluets: kreisā/labā × priekšpuse/aizmugure/jumts. Etiķetes: avota teksts kā ir (buferis, durvis, lukturi…).
  */
+import { damageCarTopDataUri } from "@/lib/damage-car-top-uri";
 import {
   buildPanelDamageSilhouetteSvg,
+  isDamagePanelId,
+  panelsFromOneLabel,
   type DamagePanelId,
 } from "@/lib/damage-silhouette-panels";
 import { reattachLatvianPdfDiacritics } from "@/lib/pdf-text-normalize";
@@ -70,7 +73,7 @@ function isDamageLabelNoise(s: string): boolean {
   return DAMAGE_META_CUT_RE.test(t) || /^[A-HJ-NPR-Z0-9]{11,17}$/.test(t.replace(/\s/g, ""));
 }
 
-function classifyDamageSegment(seg: string): DamageZoneId[] {
+export function classifyDamageSegment(seg: string): DamageZoneId[] {
   const t = reattachLatvianPdfDiacritics(seg).replace(/\s+/g, " ").trim().toLowerCase();
   if (!t) return [];
   if (/jumts|virs-?virsb[ūu]ve/.test(t)) return ["roof"];
@@ -221,7 +224,7 @@ function zoneRectsSvg(active: Set<DamageZoneId>, uid: string): string {
   return ZONE_ORDER.filter((id) => active.has(id))
     .map((id) => {
       const s = ZONE_SHAPES[id]!;
-      return `<rect class="pdf-dmg-zone pdf-dmg-zone--on" data-zone="${id}" data-uid="${uid}" x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx}" fill="#B7D1F5"/>`;
+      return `<rect class="pdf-dmg-zone pdf-dmg-zone--on" data-zone="${id}" data-uid="${uid}" x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="${s.rx}" fill="#DC2626" fill-opacity="0.78"/>`;
     })
     .join("");
 }
@@ -268,14 +271,50 @@ function capsuleChrome(clipId: string): string {
   <path d="M46 136 L94 136 L90 156 C80 159 60 159 50 156 Z" fill="#E7EEF7" stroke="#B9C8DA" stroke-width="1.1"/>`;
 }
 
-/** Siluets no augšas; bojātās zonas — maigs zils tonis, apgriezts pēc virsbūves kontūras. */
+/**
+ * Avota precizitāte: ja birka nosauc detaļu — tikai tā detaļa;
+ * ja tikai zona (Priekšpuse, Aizmugure) — tikai tas sektors, ne buferis/kapote/bagāžnieks.
+ */
+export function resolveDamageMarks(
+  active: Iterable<string>,
+  labels: Iterable<string> = [],
+): { panels: DamagePanelId[]; zones: DamageZoneId[] } {
+  const panels = new Set<DamagePanelId>();
+  const zones = new Set<DamageZoneId>();
+  const labelList = [...labels].map((s) => s.trim()).filter(Boolean);
+
+  for (const id of active) {
+    if (isDamagePanelId(id)) panels.add(id);
+  }
+
+  if (labelList.length === 0) {
+    for (const id of active) {
+      if ((ZONE_ORDER as readonly string[]).includes(id)) zones.add(id as DamageZoneId);
+    }
+    return { panels: [...panels], zones: [...zones] };
+  }
+
+  for (const label of labelList) {
+    const named = panelsFromOneLabel(label);
+    if (named.size > 0) {
+      for (const p of named) panels.add(p);
+    } else {
+      for (const z of classifyDamageSegment(label)) zones.add(z);
+    }
+  }
+  return { panels: [...panels], zones: [...zones] };
+}
+
+/** Siluets no augšas; bojātās vietas — sarkanas šķērssvītras uz fotoreālistiska auto. */
 export function buildDamageZoneSilhouetteSvg(
   active: Iterable<DamageZoneId | DamagePanelId>,
   uid: string,
   variant: DamageSilhouetteVariant = DAMAGE_SILHOUETTE_VARIANT,
+  labels: Iterable<string> = [],
 ): string {
   if (variant === "panels") {
-    return buildPanelDamageSilhouetteSvg(active, uid);
+    const marks = resolveDamageMarks(active, labels);
+    return buildPanelDamageSilhouetteSvg(marks, uid, { carHref: damageCarTopDataUri() });
   }
   const on = new Set<DamageZoneId>();
   for (const id of active) {

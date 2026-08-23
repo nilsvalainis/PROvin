@@ -1,4 +1,6 @@
-/** Paneļi, ko var iekrāsot atsevišķi. */
+import type { DamageZoneId } from "@/lib/damage-zones";
+
+/** Paneļi, ko var iekrāsot atsevišķi — tikai ja avots nosauc detaļu. */
 export type DamagePanelId =
   | "front_bumper"
   | "hood"
@@ -13,6 +15,11 @@ export type DamagePanelId =
   | "roof"
   | "trunk"
   | "rear_bumper";
+
+export type DamageMarkStyle = "wash" | "solid" | "hatch" | "outline" | "stamp" | "pin";
+
+/** PDF noklusējums — AutoDNA šķērssvītras, sarkanā. */
+export const DAMAGE_MARK_STYLE: DamageMarkStyle = "hatch";
 
 export const DAMAGE_PANEL_LABELS: Record<DamagePanelId, string> = {
   front_bumper: "Priekšējais buferis",
@@ -30,19 +37,11 @@ export const DAMAGE_PANEL_LABELS: Record<DamagePanelId, string> = {
   rear_bumper: "Aizmugurējais buferis",
 };
 
-const COARSE_TO_PANELS: Record<string, DamagePanelId[]> = {
-  front: ["front_bumper", "hood"],
-  front_left: ["front_left_fender"],
-  front_right: ["front_right_fender"],
-  left: ["front_left_door", "rear_left_door"],
-  right: ["front_right_door", "rear_right_door"],
-  roof: ["roof"],
-  rear_left: ["rear_left_fender"],
-  rear_right: ["rear_right_fender"],
-  rear: ["trunk", "rear_bumper"],
-};
-
 const PANEL_IDS = new Set<string>(Object.keys(DAMAGE_PANEL_LABELS));
+
+export function isDamagePanelId(id: string): id is DamagePanelId {
+  return PANEL_IDS.has(id);
+}
 
 const PANEL_ORDER: DamagePanelId[] = [
   "front_bumper",
@@ -60,124 +59,217 @@ const PANEL_ORDER: DamagePanelId[] = [
   "rear_bumper",
 ];
 
-/**
- * E-klase W214 no augšas — gluda kontūra, bez riteņu iedobēm.
- * 4949×1880, bāze 2961, pārkare 848 / 1140.
- */
-const BODY =
-  "M90 16 C112 15 128 19 136 30 C142 38 145 50 145 64 L145 250 C145 266 141 278 132 287 C122 295 102 297 90 297 C78 297 58 295 48 287 C39 278 35 266 35 250 L35 64 C35 50 38 38 44 30 C52 19 68 15 90 16 Z";
+const ZONE_ORDER: DamageZoneId[] = [
+  "front",
+  "front_left",
+  "front_right",
+  "left",
+  "right",
+  "roof",
+  "rear_left",
+  "rear_right",
+  "rear",
+];
 
-/** Paneļu laukumi — tikai iekrāsošanai; apgriezti pēc BODY. */
-const PANELS: Record<DamagePanelId, string> = {
-  front_bumper: "M30 14 L150 14 L150 39 L30 39 Z",
-  hood: "M54 38 L126 38 L128 107 L52 107 Z",
-  front_left_fender: "M18 28 L54 28 L54 108 L18 108 Z",
-  front_right_fender: "M126 28 L162 28 L162 108 L126 108 Z",
-  front_left_door: "M18 106 L54 106 L54 176 L18 176 Z",
-  front_right_door: "M126 106 L162 106 L162 176 L126 176 Z",
-  roof: "M58 118 L122 118 L122 198 L58 198 Z",
-  rear_left_door: "M18 174 L54 174 L54 226 L18 226 Z",
-  rear_right_door: "M126 174 L162 174 L162 226 L126 226 Z",
-  rear_left_fender: "M18 214 L54 214 L54 276 L18 276 Z",
-  rear_right_fender: "M126 214 L162 214 L162 276 L126 276 Z",
-  trunk: "M52 200 L128 200 L130 266 L50 266 Z",
-  rear_bumper: "M30 264 L150 264 L150 304 L30 304 Z",
+/** AutoDNA sektori uz oriģinālā gaiši pelēkā sedana (viewBox 0 0 180 270). */
+const ZONE_HATCH: Record<DamageZoneId, { x: number; y: number; w: number; h: number; rx: number }> = {
+  front: { x: 52, y: 14, w: 76, h: 16, rx: 6 },
+  front_left: { x: 28, y: 20, w: 56, h: 44, rx: 9 },
+  front_right: { x: 96, y: 20, w: 56, h: 44, rx: 9 },
+  left: { x: 26, y: 92, w: 38, h: 78, rx: 9 },
+  right: { x: 116, y: 92, w: 38, h: 78, rx: 9 },
+  roof: { x: 64, y: 110, w: 52, h: 62, rx: 8 },
+  rear_left: { x: 28, y: 188, w: 56, h: 40, rx: 9 },
+  rear_right: { x: 96, y: 188, w: 56, h: 40, rx: 9 },
+  rear: { x: 52, y: 246, w: 76, h: 16, rx: 6 },
 };
 
-export function expandDamageZonesToPanels(active: Iterable<string>): Set<DamagePanelId> {
+/** Precīzas detaļas — pikseli mērīti no oriģinālā sedana. */
+const PANELS: Record<DamagePanelId, string> = {
+  front_bumper: "M56 14 L124 14 L122 28 L58 28 Z",
+  hood: "M62 28 L118 28 L116 68 L64 68 Z",
+  front_left_fender: "M32 22 L64 22 L62 70 L30 70 Z",
+  front_right_fender: "M116 22 L148 22 L150 70 L118 70 Z",
+  front_left_door: "M30 94 L60 94 L58 158 L28 158 Z",
+  front_right_door: "M120 94 L150 94 L152 158 L122 158 Z",
+  roof: "M66 110 L114 110 L112 172 L68 172 Z",
+  rear_left_door: "M28 156 L58 156 L56 190 L26 190 Z",
+  rear_right_door: "M122 156 L152 156 L154 190 L124 190 Z",
+  rear_left_fender: "M28 188 L58 188 L60 230 L30 230 Z",
+  rear_right_fender: "M122 188 L152 188 L150 230 L120 230 Z",
+  trunk: "M64 210 L116 210 L118 244 L62 244 Z",
+  rear_bumper: "M56 244 L124 244 L122 262 L58 262 Z",
+};
+
+const PANEL_PIN: Record<DamagePanelId, { cx: number; cy: number }> = {
+  front_bumper: { cx: 90, cy: 21 },
+  hood: { cx: 90, cy: 48 },
+  front_left_fender: { cx: 47, cy: 46 },
+  front_right_fender: { cx: 133, cy: 46 },
+  front_left_door: { cx: 44, cy: 126 },
+  front_right_door: { cx: 136, cy: 126 },
+  roof: { cx: 90, cy: 141 },
+  rear_left_door: { cx: 42, cy: 173 },
+  rear_right_door: { cx: 138, cy: 173 },
+  rear_left_fender: { cx: 44, cy: 209 },
+  rear_right_fender: { cx: 136, cy: 209 },
+  trunk: { cx: 90, cy: 227 },
+  rear_bumper: { cx: 90, cy: 253 },
+};
+
+const MARK_RED = "#DC2626";
+const MARK_RED_DEEP = "#991B1B";
+const MARK_RED_SOFT = "#FECACA";
+
+function hasLeft(t: string): boolean {
+  return /kreis/.test(t);
+}
+function hasRight(t: string): boolean {
+  return /lab(?:ais|[āa])/.test(t) || /pa\s+labi/.test(t);
+}
+function hasFront(t: string): boolean {
+  return /priek[šs]/.test(t);
+}
+function hasRear(t: string): boolean {
+  return /aizmugur/.test(t);
+}
+
+/** Tikai tad, ja avots nosauc konkrētu detaļu. */
+export function panelsFromOneLabel(raw: string): Set<DamagePanelId> {
   const out = new Set<DamagePanelId>();
-  for (const id of active) {
-    if (PANEL_IDS.has(id)) out.add(id as DamagePanelId);
-    else {
-      const mapped = COARSE_TO_PANELS[id];
-      if (mapped) for (const panel of mapped) out.add(panel);
+  const t = raw.toLowerCase();
+  if (!t.trim()) return out;
+  const left = hasLeft(t);
+  const right = hasRight(t);
+  const front = hasFront(t);
+  const rear = hasRear(t);
+
+  if (/motora\s+p[āa]rsegs|kapote/.test(t)) out.add("hood");
+  if (/bag[āa]žniek|bag[āa]žas\s+(?:nodal[īi]juma\s+)?v[āa]k|aizmugurējais\s+p[āa]rsegs/.test(t)) {
+    out.add("trunk");
+  }
+  if (/bufer/.test(t)) {
+    if (rear && !front) out.add("rear_bumper");
+    else out.add("front_bumper");
+  }
+  if (/jumts/.test(t)) out.add("roof");
+  if (/sp[āa]rns/.test(t)) {
+    if (rear && left) out.add("rear_left_fender");
+    else if (rear && right) out.add("rear_right_fender");
+    else if (front && left) out.add("front_left_fender");
+    else if (front && right) out.add("front_right_fender");
+  }
+  if (/durv/.test(t)) {
+    if (rear && left) out.add("rear_left_door");
+    else if (rear && right) out.add("rear_right_door");
+    else if (front && left) out.add("front_left_door");
+    else if (front && right) out.add("front_right_door");
+    else if (left && !right) {
+      out.add("front_left_door");
+      out.add("rear_left_door");
+    } else if (right && !left) {
+      out.add("front_right_door");
+      out.add("rear_right_door");
     }
   }
   return out;
 }
 
-function wheelsSvg(): string {
-  const tires = [
-    { x: 27, y: 51 },
-    { x: 139, y: 51 },
-    { x: 27, y: 215 },
-    { x: 139, y: 215 },
-  ];
-  return tires
-    .map(
-      (t) =>
-        `<rect x="${t.x}" y="${t.y}" width="14" height="34" rx="7" fill="#0F172A"/>`,
-    )
+export function panelsFromLabels(labels: Iterable<string>): Set<DamagePanelId> {
+  const out = new Set<DamagePanelId>();
+  for (const raw of labels) {
+    for (const id of panelsFromOneLabel(raw)) out.add(id);
+  }
+  return out;
+}
+
+export type DamageSilhouetteMarks = {
+  panels: Iterable<DamagePanelId | string>;
+  zones: Iterable<DamageZoneId | string>;
+};
+
+function markDefs(uid: string): string {
+  return `<pattern id="dmg-hatch-${uid}" width="4.2" height="4.2" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+      <rect width="4.2" height="4.2" fill="${MARK_RED}" fill-opacity="0.16"/>
+      <line x1="0" y1="0" x2="0" y2="4.2" stroke="${MARK_RED}" stroke-width="2.4"/>
+    </pattern>`;
+}
+
+function markShape(
+  uid: string,
+  style: DamageMarkStyle,
+  zone: string,
+  shape: { kind: "path"; d: string } | { kind: "rect"; x: number; y: number; w: number; h: number; rx: number },
+): string {
+  const cls = `class="pdf-dmg-zone pdf-dmg-zone--on" data-zone="${zone}" data-uid="${uid}"`;
+  const geom =
+    shape.kind === "path"
+      ? `d="${shape.d}"`
+      : `x="${shape.x}" y="${shape.y}" width="${shape.w}" height="${shape.h}" rx="${shape.rx}"`;
+  const tag = shape.kind === "path" ? "path" : "rect";
+  if (style === "wash") return `<${tag} ${cls} ${geom} fill="${MARK_RED_SOFT}"/>`;
+  if (style === "solid") return `<${tag} ${cls} ${geom} fill="${MARK_RED}" fill-opacity="0.72"/>`;
+  if (style === "hatch") return `<${tag} ${cls} ${geom} fill="url(#dmg-hatch-${uid})"/>`;
+  if (style === "outline") {
+    return `<${tag} ${cls} ${geom} fill="${MARK_RED_SOFT}" fill-opacity="0.35" stroke="${MARK_RED}" stroke-width="2.4"/>`;
+  }
+  if (style === "stamp") {
+    return `<${tag} ${cls} ${geom} fill="${MARK_RED}" fill-opacity="0.18" stroke="${MARK_RED_DEEP}" stroke-width="2.6"/>`;
+  }
+  return `<${tag} ${cls} ${geom} fill="${MARK_RED}" fill-opacity="0.14"/>`;
+}
+
+function pinMarks(panels: Iterable<DamagePanelId>): string {
+  return [...panels]
+    .map((id) => {
+      const { cx, cy } = PANEL_PIN[id];
+      return `<g data-zone-pin="${id}">
+        <circle cx="${cx}" cy="${cy}" r="7.5" fill="${MARK_RED}" fill-opacity="0.22" stroke="${MARK_RED}" stroke-width="1.6"/>
+        <circle cx="${cx}" cy="${cy}" r="3.1" fill="${MARK_RED_DEEP}"/>
+      </g>`;
+    })
     .join("");
 }
 
-function mirrorsSvg(): string {
-  return [
-    `<path d="M20 118 C16 119 15 123 17 126 C19 128 26 128 33 125 L34 121 Z" fill="#334155"/>`,
-    `<path d="M160 118 C164 119 165 123 163 126 C161 128 154 128 147 125 L146 121 Z" fill="#334155"/>`,
-  ].join("");
-}
-
-function seamsSvg(): string {
-  return `<g fill="none" stroke="#64748B" stroke-width="0.7" opacity="0.55">
-    <path d="M48 38 C70 36 110 36 132 38"/>
-    <path d="M46 106 C70 104 110 104 134 106"/>
-    <path d="M54 64 L54 104"/>
-    <path d="M126 64 L126 104"/>
-    <path d="M52 118 L52 174"/>
-    <path d="M128 118 L128 174"/>
-    <path d="M52 176 L52 214"/>
-    <path d="M128 176 L128 214"/>
-    <path d="M48 198 C70 196 110 196 132 198"/>
-    <path d="M46 266 C70 264 110 264 134 266"/>
-    <path d="M90 38 L90 106"/>
+function gridSvg(): string {
+  return `<g fill="none" stroke="#94A3B8" stroke-width="0.5" stroke-dasharray="2.4 2.2" opacity="0.38">
+    <line x1="90" y1="10" x2="90" y2="260"/>
+    <line x1="20" y1="72" x2="160" y2="72"/>
+    <line x1="20" y1="150" x2="160" y2="150"/>
+    <line x1="20" y1="220" x2="160" y2="220"/>
   </g>`;
 }
 
 export function buildPanelDamageSilhouetteSvg(
-  active: Iterable<string>,
+  marks: DamageSilhouetteMarks,
   uid: string,
-  opts?: { labeled?: boolean },
+  opts?: { labeled?: boolean; mark?: DamageMarkStyle; carHref?: string },
 ): string {
-  const on = expandDamageZonesToPanels(active);
-  const wash = PANEL_ORDER.filter((id) => on.has(id))
-    .map(
-      (id) =>
-        `<path class="pdf-dmg-zone pdf-dmg-zone--on" data-zone="${id}" data-uid="${uid}" d="${PANELS[id]}" fill="#B7D1F5"/>`,
-    )
-    .join("");
+  const style = opts?.mark ?? DAMAGE_MARK_STYLE;
+  const carHref = opts?.carHref ?? "/brand/damage-car-top.jpg";
+  const panels = PANEL_ORDER.filter((id) => new Set(marks.panels).has(id));
+  const zones = ZONE_ORDER.filter((id) => new Set(marks.zones as Iterable<string>).has(id));
+  const wash = [
+    ...zones.map((id) => markShape(uid, style, id, { kind: "rect", ...ZONE_HATCH[id] })),
+    ...panels.map((id) => markShape(uid, style, id, { kind: "path", d: PANELS[id] })),
+  ].join("");
+  const pins = style === "pin" ? pinMarks(panels) : "";
   const labels = opts?.labeled
     ? `<g font-family="ui-sans-serif,system-ui,sans-serif" font-size="6" fill="#64748B">
         <text x="90" y="28" text-anchor="middle">buferis</text>
-        <text x="90" y="78" text-anchor="middle">pārsegs</text>
-        <text x="90" y="158" text-anchor="middle">jumts</text>
-        <text x="90" y="236" text-anchor="middle">bagāžn.</text>
-        <text x="90" y="280" text-anchor="middle">buferis</text>
+        <text x="90" y="72" text-anchor="middle">pārsegs</text>
+        <text x="90" y="150" text-anchor="middle">jumts</text>
+        <text x="90" y="224" text-anchor="middle">bagāžn.</text>
+        <text x="90" y="264" text-anchor="middle">buferis</text>
       </g>`
     : "";
-  return `<svg class="pdf-dmg-sil" viewBox="0 0 180 320" width="132" height="234" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs>
-    <clipPath id="dmg-body-${uid}"><path d="${BODY}"/></clipPath>
-    <linearGradient id="dmg-paint-${uid}" x1="36" y1="16" x2="144" y2="294" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F8FAFC"/>
-      <stop offset="0.45" stop-color="#E8EEF4"/>
-      <stop offset="1" stop-color="#CBD5E1"/>
-    </linearGradient>
-  </defs>
-  <ellipse cx="90" cy="308" rx="40" ry="4" fill="#0F172A" opacity="0.1"/>
-  ${wheelsSvg()}
-  <path d="${BODY}" fill="url(#dmg-paint-${uid})"/>
-  <g clip-path="url(#dmg-body-${uid})">${wash}${seamsSvg()}</g>
-  <path d="M58 108 C72 100 108 100 122 108 L118 130 L62 130 Z" fill="#334155" opacity="0.22"/>
-  <path d="M62 132 L118 132 L116 196 L64 196 Z" fill="#64748B" opacity="0.08"/>
-  <path d="M64 198 L116 198 L110 220 L70 220 Z" fill="#334155" opacity="0.18"/>
-  <path d="M54 108 L64 132 L62 130 Z" fill="#475569" opacity="0.28"/>
-  <path d="M126 108 L116 132 L118 130 Z" fill="#475569" opacity="0.28"/>
-  <path d="M70 18 C78 16 102 16 110 18 L108 26 L72 26 Z" fill="#E2E8F0" opacity="0.9"/>
-  <path d="M74 18 L106 18 L104 22 L76 22 Z" fill="#334155" opacity="0.2"/>
-  <path d="M68 286 C78 290 102 290 112 286 L108 278 L72 278 Z" fill="#FCA5A5" opacity="0.45"/>
-  ${mirrorsSvg()}
-  <path d="${BODY}" fill="none" stroke="#1E293B" stroke-width="1.35" stroke-linejoin="round"/>
+  return `<svg class="pdf-dmg-sil" viewBox="0 0 180 270" width="132" height="198" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
+  <defs>${markDefs(uid)}</defs>
+  <rect x="0" y="0" width="180" height="270" fill="#F3F5F7"/>
+  <image href="${carHref}" xlink:href="${carHref}" x="0" y="0" width="180" height="270" preserveAspectRatio="xMidYMid meet"/>
+  ${gridSvg()}
+  ${wash}
+  ${pins}
   ${labels}
 </svg>`;
 }

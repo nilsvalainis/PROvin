@@ -984,7 +984,7 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number):
   const withDmg = Boolean(dmg && (dmg.zoneIds.length > 0 || dmg.zoneLabels.length > 0 || dmg.groupLabels.length > 0));
   let visual = "";
   if (withDmg && dmg) {
-    const svg = buildDamageZoneSilhouetteSvg(dmg.zoneIds, `c${index}`);
+    const svg = buildDamageZoneSilhouetteSvg(dmg.zoneIds, `c${index}`, undefined, dmg.zoneLabels);
     const zones = buildIncidentDamageListHtml("Bojājumu zonas", dmg.zoneLabels);
     const groups = buildIncidentDamageListHtml("Bojājumu grupas", dmg.groupLabels);
     visual = `<div class="pdf-incident-card__visual">${svg}<div class="pdf-incident-card__lists">${zones}${groups}</div></div>`;

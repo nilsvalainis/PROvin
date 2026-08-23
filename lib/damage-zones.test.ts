@@ -4,6 +4,7 @@ import {
   damageGroupDisplayLabels,
   damageZoneDisplayLabels,
   parseDamageZoneHits,
+  resolveDamageMarks,
 } from "@/lib/damage-zones";
 
 describe("parseDamageZoneHits", () => {
@@ -58,16 +59,48 @@ describe("parseDamageZoneHits", () => {
   });
 });
 
+describe("resolveDamageMarks", () => {
+  it("AutoDNA zonas paliek sektori, ne buferis/kapote/bagāžnieks", () => {
+    const marks = resolveDamageMarks(
+      ["front", "front_left", "front_right", "rear"],
+      ["Priekšpuse", "Labā sāna priekšpuse", "Kreisā sāna priekšpuse", "Aizmugure"],
+    );
+    expect(marks.panels).toEqual([]);
+    expect(marks.zones.sort()).toEqual(["front", "front_left", "front_right", "rear"]);
+  });
+
+  it("CarVertical Buferis iekrāso tikai buferi", () => {
+    const marks = resolveDamageMarks(
+      ["front", "front_right"],
+      ["Priekšpuse / Buferis", "Labā priekšējā daļa / Buferis"],
+    );
+    expect(marks.panels).toEqual(["front_bumper"]);
+    expect(marks.zones).toEqual([]);
+  });
+
+  it("iekrāso aizmugurējo buferi no Aizmugure / Buferis, ne bagāžnieku", () => {
+    const marks = resolveDamageMarks(["rear"], ["Aizmugure / Buferis"]);
+    expect(marks.panels).toEqual(["rear_bumper"]);
+    expect(marks.zones).toEqual([]);
+  });
+
+  it("sašaurina sānu līdz nosauktajām durvīm", () => {
+    const marks = resolveDamageMarks(["right"], ["Labā puse / Priekšējās durvis"]);
+    expect(marks.panels).toEqual(["front_right_door"]);
+    expect(marks.zones).toEqual([]);
+  });
+});
+
 describe("buildDamageZoneSilhouetteSvg", () => {
-  it("iezīmē aktīvās zonas zilā tonī, apgrieztas pēc virsbūves kontūras", () => {
-    const svg = buildDamageZoneSilhouetteSvg(["front", "front_left"], "t1");
+  it("iezīmē AutoDNA sektoru ar sarkanām šķērssvītrām uz foto auto", () => {
+    const svg = buildDamageZoneSilhouetteSvg(["front_left"], "t1");
     expect(svg).toContain('class="pdf-dmg-sil"');
-    expect(svg).toContain("#B7D1F5");
-    expect(svg).not.toContain("#ef4444");
-    expect(svg).toContain('clip-path="url(#dmg-body-t1)"');
-    expect(svg).not.toContain("PROVIN");
-    expect(svg).not.toContain("pdfDmgHatch");
-    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(3);
+    expect(svg).toContain("#DC2626");
+    expect(svg).toContain("dmg-hatch-t1");
+    expect(svg).not.toContain("#B7D1F5");
+    expect(svg).toContain('data-zone="front_left"');
+    expect(svg).not.toContain('data-zone="front_left_fender"');
+    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(1);
   });
 
   it("nezīmē neaktīvās zonas", () => {
@@ -75,14 +108,15 @@ describe("buildDamageZoneSilhouetteSvg", () => {
     expect(svg).not.toContain("pdf-dmg-zone");
   });
 
-  it("panel scheme highlights each body panel, not a single blob", () => {
-    const svg = buildDamageZoneSilhouetteSvg(["front", "front_left_door"], "panel-1", "panels");
+  it("nosaucot durvis, iekrāso durvis, ne rupjo priekšpusi", () => {
+    const svg = buildDamageZoneSilhouetteSvg(["front", "front_left_door"], "panel-1", "panels", [
+      "Kreisā puse / Priekšējās durvis",
+    ]);
     expect(svg).toContain('class="pdf-dmg-sil"');
-    expect(svg).toContain('data-zone="front_bumper"');
-    expect(svg).toContain('data-zone="hood"');
+    expect(svg).not.toContain('data-zone="front_bumper"');
+    expect(svg).not.toContain('data-zone="hood"');
     expect(svg).toContain('data-zone="front_left_door"');
-    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(3);
-    expect(svg).toContain("dmg-body-panel-1");
+    expect((svg.match(/pdf-dmg-zone--on/g) ?? []).length).toBe(1);
   });
 
 });
