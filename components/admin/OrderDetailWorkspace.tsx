@@ -1681,7 +1681,7 @@ export function OrderDetailWorkspace({
               id: job.id,
               label: job.label,
               status: "error",
-              detail: generated.error,
+              detail: generated.ok ? "AI: neizdevās" : generated.error,
             });
           }
         } catch {
