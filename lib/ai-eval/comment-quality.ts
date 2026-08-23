@@ -3,6 +3,7 @@
  * Used by golden fixtures and as a regression harness when prompts change.
  */
 import { findBannedVocabularyHits } from "@/lib/provin-banned-vocabulary";
+import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
 
 export type CommentQualityIssue = {
   code: string;
@@ -25,6 +26,8 @@ export type CommentQualityOptions = {
   wrapPresentInContext?: boolean;
   /** Deterministiskais ziemas sāls / rūsas bloks saka OBLIGĀTI. */
   winterSaltRustRequiredInContext?: boolean;
+  /** Pilnais user prompt — lai noķertu sveša auto faktu kopēšanu. */
+  sourcePrompt?: string;
 };
 
 /** Aplīmēšana / plēve / PPF — ne CSS „wrap”. */
@@ -65,7 +68,9 @@ export function extractOrderFactsForWrapDetection(prompt: string): string {
     .split(/(?=^### )/m)
     .filter(
       (block) =>
-        !/^### (?:Vēsturiskie PROVIN auditi|PROVIN stilistiskā atmiņa)/.test(block),
+        !/^### (?:Vēsturiskie PROVIN auditi|Citu PROVIN auditu stils|PROVIN stilistiskā atmiņa|Mācījumi no iepriekšējām)/.test(
+          block,
+        ),
     )
     .join("");
   const dash = t.lastIndexOf("\n---\n");
@@ -343,6 +348,27 @@ export function evaluateExpertCommentQuality(
         code: "wrap_film_risk_incomplete",
         message:
           "Kopsavilkumā par plēvi jāpasaka, ka zem tās krāsojumu nevar novērtēt — ne tikai ka auto ir aplīmēts",
+      });
+    }
+  }
+
+  if (opts.sourcePrompt != null) {
+    if (mentionsVehicleWrap(t) && !mentionsVehicleWrapInOrderFacts(opts.sourcePrompt)) {
+      issues.push({
+        code: "wrap_film_invented",
+        message:
+          "Aplīmēšana / plēve nav šī auto datos — to nedrīkst paņemt no cita audita, stila parauga vai uzdevuma rindas",
+      });
+    }
+    const leaks = findCopiedOtherAuditPhrases(
+      t,
+      opts.sourcePrompt,
+      extractOrderFactsForWrapDetection(opts.sourcePrompt),
+    );
+    if (leaks.length > 0) {
+      issues.push({
+        code: "foreign_audit_fact_copied",
+        message: `Nedrīkst kopēt cita auto faktus. Izejā atkārtojas svešs fragments: „${leaks[0]}”`,
       });
     }
   }

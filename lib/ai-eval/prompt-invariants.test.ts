@@ -257,6 +257,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_PLAIN_LANGUAGE_TERMS).toMatch(/divmasu spararats/);
     expect(AI_PLAIN_LANGUAGE_TERMS).toMatch(/ieplūdes kolektors/);
     expect(AI_HISTORICAL_REPORTS_CONTEXT_RULES).toMatch(/ADAPT \/ SUPPLEMENT \/ CONNECT/);
+    expect(AI_HISTORICAL_REPORTS_CONTEXT_RULES).toMatch(/STYLE MEMORY|instance facts|NEVER take instance/i);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(
       /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_TA_COVERED_WEAR_RULES\}/,
@@ -319,6 +320,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?WRAP \/ APLĪMĒŠANA/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/wrap_film_missing/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/mentionsVehicleWrapInOrderFacts/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/wrap_film_invented/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/foreign_audit_fact_copied/);
+    expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/sanitizeOtherAuditSnippet/);
+    expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/OTHER_AUDIT_STYLE_HEADING/);
     expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/WRAP_FILM|aplīmēšana/);
     expect(readRepo("lib/admin-ai-technical-risks.ts")).toMatch(/WRAP_FILM|aplīmēšana/);
     expect(AI_WRAP_FILM_RULES).toMatch(/NOT a trigger|NAV fakts|do not mention wrap at all/i);

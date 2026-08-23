@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-24.3 — Citu auditu atmiņa: tikai stils/vārdi/pieredze; sveša auto
+ *   fakti (plēve u.c.) tiek izņemti no injekcijas un izejā noķerti.
  * - 2026-08-24.2 — Plēve tikai ja ŠĪ auto datos ir aplīmēšana; uzdevuma
  *   rindas un citu auditu fragmenti vairs neuzspiež plēvi katram auto.
  * - 2026-08-24.1 — Ziemas sāls / rūsa: ja auto gadiem Latvijā / Lietuvā /
@@ -43,4 +45,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-24.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-24.3";

@@ -73,6 +73,8 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "tech_risks_identity_intro",
   "wrap_film_missing",
   "wrap_film_risk_incomplete",
+  "wrap_film_invented",
+  "foreign_audit_fact_copied",
   "winter_salt_rust_missing",
   "winter_salt_rust_spots_missing",
 ]);
@@ -111,6 +113,7 @@ async function withSelfCorrection(
     field,
     wrapPresentInContext: mentionsVehicleWrapInOrderFacts(opts.userPrompt),
     winterSaltRustRequiredInContext: winterSaltRustRequiredInPrompt(opts.userPrompt),
+    sourcePrompt: opts.userPrompt,
   }).filter(
     (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );

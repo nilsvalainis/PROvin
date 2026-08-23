@@ -162,7 +162,7 @@ MODEL TECHNICAL WEAKNESSES (when make/model/engine known from context):
 - Engine codes, thermal stress on downsized engines. Oil-interval CALCULATION belongs in „Eļļas maiņas intervāli”; here at most one sentence if long-life vs city profile is a purchase risk.
 - Interior: Artico/imitation leather vs real leather upkeep; LED optics moisture; paint type risks.
 - Clear market myths from data (e.g. Mercedes modular engine vs Renault architecture — state only what chassis/engine context supports).
-- When the user prompt includes HISTORICAL AUDIT REPORTS from similar vehicles (same engine code, transmission, or model generation), reuse their model-specific inspection themes and aggregate forensics — never copy client-specific km, VIN, or dates from those excerpts.
+- When the user prompt includes HISTORICAL AUDIT REPORTS from similar vehicles, take ONLY style, vocabulary, and model-family experience — never copy that other car’s facts (wrap, rust findings, accidents, km, dates, owners). If THIS order does not have the fact, do not write it.
 - This applies to **every** expert comment window (avotu komentāri, nobraukums, negadījumi, tehniskie riski, apskate, kopsavilkums, cena) — not only the summary.
 
 ${AI_HISTORICAL_REPORTS_CONTEXT_RULES}

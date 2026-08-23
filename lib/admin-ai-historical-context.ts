@@ -11,8 +11,7 @@ import {
   isSafeOrderDraftSessionId,
   readOrderDraft,
 } from "@/lib/admin-order-draft-store";
-import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
-import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
@@ -25,6 +24,10 @@ import {
   type VehicleReportFingerprint,
 } from "@/lib/admin-vehicle-report-fingerprint";
 import { AI_HISTORICAL_REPORTS_CONTEXT_RULES } from "@/lib/source-summary-comment-format";
+import {
+  OTHER_AUDIT_STYLE_HEADING,
+  sanitizeOtherAuditSnippet,
+} from "@/lib/admin-ai-other-audit-style";
 
 const CACHE_TTL_MS = Math.max(
   60_000,
@@ -42,7 +45,7 @@ const MIN_MATCH_SCORE = Math.max(
   12,
   Number.parseInt(process.env.AI_HISTORICAL_REPORTS_MIN_SCORE ?? "24", 10) || 24,
 );
-const SNIPPET_MAX = 480;
+const SNIPPET_MAX = 240;
 
 type HistoricalReportIndexEntry = {
   sessionId: string;
@@ -68,7 +71,8 @@ function redactClientSpecificText(text: string): string {
 }
 
 function clipSnippet(text: string, max = SNIPPET_MAX): string {
-  const t = redactClientSpecificText(text.replace(/\s+/g, " ").trim());
+  const t = sanitizeOtherAuditSnippet(redactClientSpecificText(text.replace(/\s+/g, " ").trim()));
+  if (t.length < 40) return "";
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1).trim()}…`;
 }
@@ -76,19 +80,15 @@ function clipSnippet(text: string, max = SNIPPET_MAX): string {
 function pushSnippet(out: Array<{ label: string; text: string }>, label: string, raw: string | undefined): void {
   const plain = adminRichHtmlToPlainText(raw ?? "").trim();
   if (plain.length < 60) return;
-  out.push({ label, text: clipSnippet(plain) });
+  const clipped = clipSnippet(plain);
+  if (clipped.length < 40) return;
+  out.push({ label, text: clipped });
 }
 
 function extractHistoricalSnippets(draft: OrderDraftState): Array<{ label: string; text: string }> {
   const snippets: Array<{ label: string; text: string }> = [];
   const ws = draft.workspace;
   if (!ws) return snippets;
-
-  const blocks = mergeSourceBlocksWithDefaults(ws.sourceBlocks);
-  const sourceComments = buildPreviouslyGeneratedSourceCommentsContext(null, blocks).trim();
-  if (sourceComments) {
-    snippets.push({ label: "Avotu komentāri", text: clipSnippet(sourceComments, 900) });
-  }
 
   pushSnippet(snippets, "1. Tehnisko risku analīze", ws.tehniskoRiskuAnalize);
   pushSnippet(snippets, "2. Ieteikumi klātienes apskatei", ws.apskatesPlāns);
@@ -256,7 +256,7 @@ export async function buildHistoricalReportsAiContext(input: AiHistoricalContext
 
   const blocks: string[] = [
     AI_HISTORICAL_REPORTS_CONTEXT_RULES,
-    `### Vēsturiskie PROVIN auditi ar līdzīgiem agregātiem (${formatVehicleFingerprintLabel(currentFp)})`,
+    `${OTHER_AUDIT_STYLE_HEADING} — līdzīgi agregāti: ${formatVehicleFingerprintLabel(currentFp)}`,
   ];
 
   ranked.forEach(({ entry, score }, i) => {

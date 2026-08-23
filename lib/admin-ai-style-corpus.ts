@@ -24,7 +24,7 @@ export const AI_STYLE_CORPUS_RULES = `STYLE CORPUS (institutional language — n
 - CONNECT: bind every borrowed turn of phrase to a fact from THIS prompt (CSDD, AutoDNA, CarVertical, dealer, TA nosegums, OPERATORA KOMANDAS). If the sample mentions a part that this car does not have, drop it.
 - OPERATOR NOTES WIN: if „OPERATORA KOMANDAS” ask for a theme or forbid one, that beats any sample.
 - Few-shots in the system prompt teach STRUCTURE. This corpus teaches LANGUAGE. Do not mix the jobs.
-- NEVER copy VIN, km, dates, EUR, seller names, or conclusions from a sample into the output.`;
+- NEVER copy VIN, km, dates, EUR, seller names, wrap/plēve, or conclusions from a sample into the output. Samples teach wording, not this car’s story.`;
 
 function clipSample(text: string): string {
   const t = text.replace(/\s+/g, " ").trim();

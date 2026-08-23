@@ -10,6 +10,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { workspaceFillScoreFromDraft } from "@/lib/admin-workspace-integrity";
+import { sanitizeOtherAuditSnippet } from "@/lib/admin-ai-other-audit-style";
 
 export const LEARNING_SNIPPET_MAX_LEN = 360;
 export const LEARNING_TECH_SNIPPET_MAX_LEN = 900;
@@ -27,7 +28,7 @@ export function redactLearningText(text: string): string {
 }
 
 export function clipLearningSnippet(text: string, max = LEARNING_SNIPPET_MAX_LEN): string {
-  const t = redactLearningText(text.replace(/\s+/g, " ").trim());
+  const t = sanitizeOtherAuditSnippet(redactLearningText(text.replace(/\s+/g, " ").trim()));
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1).trim()}…`;
 }

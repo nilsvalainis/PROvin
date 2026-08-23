@@ -37,6 +37,14 @@ describe("admin-audit-learning-extract", () => {
     const long = "A".repeat(500);
     expect(clipLearningSnippet(long, 40).length).toBeLessThanOrEqual(40);
   });
+
+  it("drops wrap sentences so another car's film does not become a lesson", () => {
+    const out = clipLearningSnippet(
+      "Hidrotransformators paliek ierasta uzturēšanas izmaksa šajā posmā. Automašīna ir aplīmēta ar tumšu plēvi.",
+    );
+    expect(out).toMatch(/Hidrotransformators/);
+    expect(out).not.toMatch(/aplīm|plēv/i);
+  });
 });
 
 describe("admin-audit-knowledge-promote", () => {

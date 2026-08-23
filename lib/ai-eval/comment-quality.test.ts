@@ -76,7 +76,7 @@ OBLIGĀTI:
     const prompt = `### CSDD
 BMW 320d.
 
-### Vēsturiskie PROVIN auditi ar līdzīgiem agregātiem (BMW 320d)
+### Citu PROVIN auditu stils (NE šī auto fakti) — līdzīgi agregāti: BMW 320d
 #### Atsauce 1
 **1. Tehnisko risku analīze:** Automašīna ir aplīmēta ar plēvi, zem tās krāsojumu nevar novērtēt.
 

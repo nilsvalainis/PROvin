@@ -549,10 +549,9 @@ ANTI-HALLUCINATION:
 
 /** Vēsturisko auditu konteksts — citu klientu gatavas atskaites ar līdzīgiem agregātiem. */
 export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cross-client reference — when present below):
-- These excerpts come from OTHER completed PROVIN audits with similar make/model/year, engine code, transmission, or fuel type — they are PROVIN **institutional memory**.
-- ADAPT / SUPPLEMENT / CONNECT: reuse forensic patterns, inspection themes, phrasing, and aggregate advice for THIS ACTIVE FIELD — then bind them to THIS order's facts and to OPERATORA KOMANDAS. If the sample is thinner than this audit, add the missing point in the same voice. Never paste a historical paragraph unchanged.
-- NEVER copy client-specific facts from historical excerpts: no VIN, plate, km, dates, EUR sums tied to that other order, seller names, or order IDs.
-- Prefer historical **Tehnisko risku** and **Ieteikumi klātienes apskatei** when the current order lacks depth; always reconcile with the ACTIVE order's actual data and with the TA nosegums block.
+- These excerpts come from OTHER completed PROVIN audits. They are STYLE MEMORY only: paragraph rhythm, workshop vocabulary, heading shape, and model-family experience (this engine/gearbox typically has X).
+- NEVER take instance facts from them: wrap / plēve / PPF, this other car’s rust findings, accidents, km, dates, owners, seller, listing, TA defect rows, prices, or any sentence that is about THAT car. If THIS order’s data does not contain the fact, do not write it.
+- ADAPT / SUPPLEMENT / CONNECT: reuse phrasing and aggregate experience for THIS ACTIVE FIELD — then bind every claim to THIS order's facts and to OPERATORA KOMANDAS. Never paste a historical paragraph. Never transplant another car’s story.
 - OPERATOR NOTES WIN over any historical excerpt.
 - Match paragraph rhythm and "automašīna" vocabulary; keep CLIENT VALUE DENSITY (short, high-value — no fluff).`;
 
