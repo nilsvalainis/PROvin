@@ -215,7 +215,6 @@ import {
   shouldAutofillSsLvListing,
 } from "@/lib/admin-ss-lv-adify-autofill";
 import type { AdifyListingHistorySnapshot } from "@/lib/adify-listing-history";
-import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
