@@ -19,10 +19,11 @@ import {
 import { isGeminiAdminTier, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import {
   evaluateExpertCommentQuality,
-  mentionsVehicleWrap,
+  mentionsVehicleWrapInOrderFacts,
   type CommentQualityIssue,
   type CommentQualityOptions,
 } from "@/lib/ai-eval/comment-quality";
+import { winterSaltRustRequiredInPrompt } from "@/lib/admin-ai-winter-salt-rust";
 import {
   AI_ROUTE_BUDGET_MS,
   aiBudgetAllowsRetry,
@@ -72,6 +73,8 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "tech_risks_identity_intro",
   "wrap_film_missing",
   "wrap_film_risk_incomplete",
+  "winter_salt_rust_missing",
+  "winter_salt_rust_spots_missing",
 ]);
 
 function buildSelfCorrectionPrompt(
@@ -106,7 +109,8 @@ async function withSelfCorrection(
   const field = opts.qualityField ?? "generic";
   const issues = evaluateExpertCommentQuality(raw, {
     field,
-    wrapPresentInContext: mentionsVehicleWrap(opts.userPrompt),
+    wrapPresentInContext: mentionsVehicleWrapInOrderFacts(opts.userPrompt),
+    winterSaltRustRequiredInContext: winterSaltRustRequiredInPrompt(opts.userPrompt),
   }).filter(
     (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );

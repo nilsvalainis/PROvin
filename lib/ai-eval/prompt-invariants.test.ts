@@ -20,6 +20,7 @@ import {
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_WRAP_FILM_RULES,
+  AI_WINTER_SALT_RUST_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
@@ -286,6 +287,25 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/oilChangeIntervalNotes/);
   });
 
+  it("winter salt rust is mandatory in risks and inspection when the exposure brief says so", () => {
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/WINTER SALT RUST/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/riteņu arkas/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/sliekš/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/numura zīmes/);
+    expect(AI_UNKNOWN_IS_NOT_A_RISK_RULES).toMatch(/WINTER SALT RUST/);
+    expect(AI_TA_COVERED_WEAR_RULES).toMatch(/WINTER SALT RUST|Climate rust/);
+    expect(AI_RESOLVED_HISTORICAL_FINDINGS_RULES).toMatch(/WINTER SALT RUST/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_WINTER_SALT_RUST_RULES\}/,
+    );
+    expect(prompts).toMatch(/AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM[\s\S]*?ZIEMAS SĀLS/);
+    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?Ziemas sāls/);
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildWinterSaltRustBrief/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winter_salt_rust_missing/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winterSaltRustRequiredInPrompt/);
+  });
+
   it("wrap / film rules force a mention in risks and summary when any field has a wrap", () => {
     expect(AI_WRAP_FILM_RULES).toMatch(/WRAP \/ FILM/);
     expect(AI_WRAP_FILM_RULES).toMatch(/aplīm/);
@@ -298,9 +318,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM[\s\S]*?WRAP \/ APLĪMĒŠANA/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?WRAP \/ APLĪMĒŠANA/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/wrap_film_missing/);
-    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/mentionsVehicleWrap/);
-    expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/aplīmēts/);
-    expect(readRepo("lib/admin-ai-technical-risks.ts")).toMatch(/aplīmēts/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/mentionsVehicleWrapInOrderFacts/);
+    expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/WRAP_FILM|aplīmēšana/);
+    expect(readRepo("lib/admin-ai-technical-risks.ts")).toMatch(/WRAP_FILM|aplīmēšana/);
+    expect(AI_WRAP_FILM_RULES).toMatch(/NOT a trigger|NAV fakts|do not mention wrap at all/i);
   });
 
   it("resolved historical TA findings are not an in-person hunt list", () => {

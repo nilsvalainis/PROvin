@@ -42,6 +42,7 @@ import { buildHistoricalReportsAiContext } from "@/lib/admin-ai-historical-conte
 import { buildAggregateKnowledgeAiContext } from "@/lib/admin-ai-aggregate-knowledge";
 import { buildStyleCorpusAiContext } from "@/lib/admin-ai-style-corpus";
 import { buildTechnicalInspectionCoverageBrief } from "@/lib/admin-ai-ta-coverage";
+import { buildWinterSaltRustBrief } from "@/lib/admin-ai-winter-salt-rust";
 
 export type AiOrderContextInput = {
   sessionId: string;
@@ -306,6 +307,13 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     sourceBlocks: blocks,
   });
   if (taCoverage) parts.push(taCoverage);
+
+  const winterSalt = buildWinterSaltRustBrief({
+    csdd: blocks.csdd,
+    sourceBlocks: blocks,
+    extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
+  });
+  if (winterSalt) parts.push(winterSalt);
 
   return parts.filter(Boolean).join("\n\n");
 }

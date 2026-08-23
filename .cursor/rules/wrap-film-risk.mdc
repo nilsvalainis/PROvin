@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Aplīmēšana / plēve
 
-Ja jebkurā laukā (sludinājums, avots, operatora piezīmes, jau ģenerēts komentārs) auto ir aplīmēts:
+Tikai ja **šī** pasūtījuma datos (sludinājums, avots, operatora piezīmes, jau ģenerēts šī auto komentārs) ir aplīmēšana. Uzdevuma rindas un citu auto auditi NAV iemesls rakstīt par plēvi.
 
 - **1. Tehnisko risku analīze** un **3. Kopsavilkums** to piemin. Anti-atkārtošanās to neatsauc.
 - Fiksētie bojājumi šādā klasē bieži nav konstrukcijas (tipiski bamperis) — tas neatceļ plēves risku.

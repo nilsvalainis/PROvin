@@ -88,7 +88,7 @@ OBLIGĀTI:
 - NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
 - Īpašnieku skaitu ņem no sadaļas „Īpašnieku skaits (reconcilēts)” — neskaiti AutoDNA+CarVertical+reģistrus kopā.
 - Beigās: APPROVED BY IRISS.
-- Ja jebkurā laukā auto ir aplīmēts — vienā teikumā pasaki, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks.
+- WRAP_FILM: tikai ja ŠĪ pasūtījuma datos jau ir fiksēta aplīmēšana. Šī rinda NAV fakts. Ja datos nav — par plēvi NERAKSTI.
 - Eļļas maiņas intervālu tabulu / matemātiku NEATKĀRTO — tas ir laukā „Eļļas maiņas intervāli”.`,
     {
       operatorNotes: input.operatorNotes,

@@ -1,0 +1,15 @@
+---
+description: Ziemas sāls Latvijā / Lietuvā / Igaunijā — rūsa tipiskajās vietās ir obligāts klimata risks
+alwaysApply: true
+---
+
+# Ziemas sāls / rūsa
+
+Ja auto gadiem ekspluatēts Latvijā, Lietuvā vai Igaunijā (īpaši SUV / krosovers / universālis, piem. Audi Q7):
+
+- **1. Tehnisko risku analīze** un **2. Ieteikumi** to piemin. Anti-atkārtošanās to neatsauc.
+- Tipiskās vietas jānosauc: riteņu arkas (arī zem oderēm), sliekšņu apakšējās malas, bagāžnieka vāka mala ap numura zīmes apgaismojumu, apakšdaļa.
+- Cinkota virsbūve (Audi u.c.) to neatceļ. Svaiga vai tīra TA to neatceļ — TA neredz rūsu zem arku oderēm.
+- Tas ir klimata risks, ne pierādīts defekts. Neizdomā, ka rūsa jau ir.
+
+Kanons: `AI_WINTER_SALT_RUST_RULES`, `buildWinterSaltRustBrief()`.

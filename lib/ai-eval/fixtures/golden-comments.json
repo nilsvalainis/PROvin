@@ -167,5 +167,35 @@
     "expectPass": false,
     "codes": ["vocabulary_integritate"],
     "text": "Dzesēšana\nJāpārbauda elastīgo savienojumu integritāti, vai nav plaisas vai noplūdes."
+  },
+  {
+    "id": "tech-risks-winter-salt-ok",
+    "field": "technical_risks",
+    "expectPass": true,
+    "winterSaltRustRequiredInContext": true,
+    "text": "Kas NAV dārgs risks\nŠīs paaudzes slavenā ķēdes kaite uz šo motoru neattiecas. Hidrotransformators paliek ierasta uzturēšanas izmaksa šajā posmā, ne pirmais pirkuma šķērslis pēc pieejamajiem datiem.\n\nZiemas sāls\nPēc gadiem Latvijā rūsa arkās un sliekšņu apakšās ir tipisks klimata risks, ne pierādīts defekts. Cinkojums to neatceļ, un svaiga TA rūsu zem oderēm neredz. Tas nav apgalvojums, ka korozija jau ir, bet pircējam šīs vietas jāskata pirms darījuma.\n\nKārba\nKārba paliek pārbaudes punkts klātienē pēc auksta starta. Jāvērtē, vai pārslēgumi ir plūdeni un vai nav aizkaves, kas šajā konstrukcijā biežāk parādās pēc ilgas pilsētas ekspluatācijas.\n\nDzesēšana\nŪdens sūknis un termostats šajā vecumā ir vecuma kaprīze, ne tuvākā laika ieguldījums, ja datos nav noplūdes vai pārkaršanas signālu. Servisa ierakstu trūkums to neatceļ, bet arī nepierāda defektu."
+  },
+  {
+    "id": "tech-risks-winter-salt-missing",
+    "field": "technical_risks",
+    "expectPass": false,
+    "winterSaltRustRequiredInContext": true,
+    "codes": ["winter_salt_rust_missing"],
+    "text": "Kas NAV dārgs risks\nŠīs paaudzes slavenā ķēdes kaite uz šo motoru neattiecas.\n\nKārba\nHidrotransformators paliek ierasta uzturēšanas izmaksa šajā posmā, ne pirmais pirkuma šķērslis pēc pieejamajiem datiem."
+  },
+  {
+    "id": "inspection-winter-salt-spots-missing",
+    "field": "inspection",
+    "expectPass": false,
+    "winterSaltRustRequiredInContext": true,
+    "codes": ["winter_salt_rust_spots_missing"],
+    "text": "Virsbūve\nRūpīgi jāmeklē rūsa, jo auto gadiem braucis ziemas sālī.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs.\n\nKārba\nJāpārbauda 1-2 pārslēgumi aukstā un siltā."
+  },
+  {
+    "id": "inspection-winter-salt-ok",
+    "field": "inspection",
+    "expectPass": true,
+    "winterSaltRustRequiredInContext": true,
+    "text": "Virsbūves korozija\nRūpīgi jāmeklē rūsa riteņu arkās, arī zem plastmasas oderēm, sliekšņu apakšējās malās un bagāžnieka vāka malā ap numura zīmes apgaismojumu. Cinkojums un svaiga apskate to neatceļ.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs un rūpīgi jāapskata eļļas filtra korpuss pret tecējumiem.\n\nKārba\nJāpārbauda 1-2 un 4-5 pārslēgumi aukstā un siltā, bez rāviena.\n\nTesta brauciens\nIeteicams 20-30 min klusais brauciens pilsētā un šosejā 90-110 km/h, lai dzirdētu vibrāciju no kardāna."
   }
 ]

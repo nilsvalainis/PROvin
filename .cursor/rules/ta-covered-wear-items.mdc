@@ -15,5 +15,6 @@ Visos klienta komentāros:
 - Nezināma vēsture, detaļu kvalitāte, nolietojums = īss klātienes ieteikums, ne riska rindkopa.
 - 1. līmeņa TA piezīme (piem. eļļas noplūde) uz 15+ gadus veca LV auto = viens teikums, nav dramatisks defekts.
 - Izņēmums paliek: **rūsa/korozija** un **cietās daļiņas / dūmainība**.
+- Ziemas sāls klimata rūsa **nav** TA nosegts nodilums. Svaiga apskate neatceļ arkām / sliekšņiem / bagāžnieka vākam. Kanons: `AI_WINTER_SALT_RUST_RULES`.
 
 Kanons: `AI_TA_COVERED_WEAR_RULES`, `AI_UNKNOWN_IS_NOT_A_RISK_RULES`, `buildTechnicalInspectionCoverageBrief()`.

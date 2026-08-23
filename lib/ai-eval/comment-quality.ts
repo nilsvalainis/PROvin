@@ -23,6 +23,8 @@ export type CommentQualityOptions = {
   taCoverageLevel?: "fresh" | "valid" | "expired" | "none";
   /** Kontekstā (jebkurā laukā) minēta aplīmēšana — riskiem un kopsavilkumam jāpiemin. */
   wrapPresentInContext?: boolean;
+  /** Deterministiskais ziemas sāls / rūsas bloks saka OBLIGĀTI. */
+  winterSaltRustRequiredInContext?: boolean;
 };
 
 /** Aplīmēšana / plēve / PPF — ne CSS „wrap”. */
@@ -32,8 +34,53 @@ export const VEHICLE_WRAP_MENTION_RE =
 const VEHICLE_WRAP_RISK_RE =
   /zem plēves|bez (?:plēves )?demontāž|demontēj|neredz|nevar (?:novērtēt|konstatēt)|slēpj|nokopēt|tona maiņ|mainīt ton|ražotājs nav zināms|uzņem(?:ties|ts) risks|atjaunotā detaļa/i;
 
+const WINTER_SALT_RUST_TOPIC_RE = /rūs|korozij/i;
+
+export function mentionsWinterSaltRust(text: string): boolean {
+  return WINTER_SALT_RUST_TOPIC_RE.test(text ?? "");
+}
+
+/** Tipiskās ziemas sāls vietas — jānosauc vismaz divas. */
+export function countTypicalWinterSaltRustSpots(text: string): number {
+  const t = text ?? "";
+  let n = 0;
+  if (/ark/i.test(t)) n += 1;
+  if (/sliekš/i.test(t)) n += 1;
+  if (/numura zīm|bagāžniek|numurzīm/i.test(t)) n += 1;
+  return n;
+}
+
 export function mentionsVehicleWrap(text: string): boolean {
   return VEHICLE_WRAP_MENTION_RE.test(text ?? "");
+}
+
+/**
+ * Self-correction drīkst skatīt tikai ŠĪ auto faktus.
+ * Uzdevuma rindas („Ja kontekstā auto ir aplīmēts”), citu auditu fragmenti
+ * un stila korpuss NAV triggeris — citādi plēve tiek uzspiesta katram auto.
+ */
+export function extractOrderFactsForWrapDetection(prompt: string): string {
+  let t = prompt ?? "";
+  t = t
+    .split(/(?=^### )/m)
+    .filter(
+      (block) =>
+        !/^### (?:Vēsturiskie PROVIN auditi|PROVIN stilistiskā atmiņa)/.test(block),
+    )
+    .join("");
+  const dash = t.lastIndexOf("\n---\n");
+  if (dash >= 0 && /Sagatavo|OBLIGĀTI:|Uzdevums:/i.test(t.slice(dash))) {
+    t = t.slice(0, dash);
+  }
+  t = t.replace(
+    /(?:^|\n)[^\n]*(?:WRAP\s*\/\s*(?:FILM|APLĪMĒŠANA)|Ja kontekstā auto ir aplīmēts|Ja jebkurā (?:laukā|kontekstā)[^\n]{0,120}aplīmēts|Neizdomā plēvi)[^\n]*/gi,
+    "",
+  );
+  return t;
+}
+
+export function mentionsVehicleWrapInOrderFacts(prompt: string): boolean {
+  return mentionsVehicleWrap(extractOrderFactsForWrapDetection(prompt));
 }
 
 const AUTOMIBILIS_RE = /\bautomobīl/i;
@@ -242,6 +289,19 @@ export function evaluateExpertCommentQuality(
           "Aplīmēšanu nedrīkst atstāt kā faktu vien — jāpasaka, ka zem plēves kvalitāti nevar novērtēt bez demontāžas",
       });
     }
+    if (opts.winterSaltRustRequiredInContext && !mentionsWinterSaltRust(t)) {
+      issues.push({
+        code: "winter_salt_rust_missing",
+        message:
+          "Ziemas sāls ekspozīcija ir obligāta — tehnisko risku analīzē jāpiemin rūsa kā klimata risks (ne kā pierādīts defekts)",
+      });
+    } else if (opts.winterSaltRustRequiredInContext && countTypicalWinterSaltRustSpots(t) < 2) {
+      issues.push({
+        code: "winter_salt_rust_spots_missing",
+        message:
+          "Rūsas rindkopā jāsauc tipiskās vietas: arkas, sliekšņi, bagāžnieka vāks / numura zīmes apgaismojums",
+      });
+    }
   }
 
   if (field === "inspection") {
@@ -249,6 +309,19 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "missing_inspection_verb",
         message: "Apskates ieteikumos jālieto „Jāpārbauda” / „Ieteicams” / „Rūpīgi jā…”",
+      });
+    }
+    if (opts.winterSaltRustRequiredInContext && !mentionsWinterSaltRust(t)) {
+      issues.push({
+        code: "winter_salt_rust_missing",
+        message:
+          "Ziemas sāls ekspozīcija ir obligāta — ieteikumos jāliek rūsas pārbaude tipiskajās vietās",
+      });
+    } else if (opts.winterSaltRustRequiredInContext && countTypicalWinterSaltRustSpots(t) < 2) {
+      issues.push({
+        code: "winter_salt_rust_spots_missing",
+        message:
+          "Ieteikumos jāsauc vismaz divas tipiskās rūsas vietas: arkas, sliekšņi, bagāžnieka vāks / numura zīmes gaismas",
       });
     }
   }

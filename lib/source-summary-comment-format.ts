@@ -82,6 +82,7 @@ export const AI_RESOLVED_HISTORICAL_FINDINGS_RULES = `RESOLVED HISTORICAL FINDIN
 - Do not recommend carefully checking ~2+ year-old defects (lamps, wipers, brakes, play, leaks, etc.) that subsequent TA/DEKRA/service rows no longer show. That makes the expert look foolish.
 - REPEATING or STILL-OPEN findings on the latest inspections remain relevant.
 - EXCEPTION — rūsa / korozija AND exhaust measurements (cietās daļiņas, dūmainības koeficients / smoke opacity): if these were EVER recorded, stay cautious in later years even when a later TA is clean. Quality repair is difficult and expensive; a later pass does not erase the history. Note the later improvement if present, but do not dismiss the topic.
+- SEPARATE from recorded rust: winter-salt climate rust (see WINTER SALT RUST) is mandatory when the exposure brief says OBLIGĀTI — even if rust was NEVER listed in TA. A later clean TA does not cancel typical-spot advice.
 - Same principle for other sources (dealer invoices, DEKRA, foreign TA): a one-off finding later documented as fixed is history, not a hunt list — unless it is rust or exhaust particulates/smoke.`;
 
 /**
@@ -96,7 +97,8 @@ export const AI_TA_COVERED_WEAR_RULES = `CSDD TA COVERED WEAR (mandatory — eve
   • BEIGUSIES / NAV DATU: coverage is off; still do not pad technical risks with generic wear — those belong in inspection as checks, not as model risks.
 - Technical-risk field = model/powertrain specifics (engine construction, ķēde/zobsiksna, kārba, divmasu spararats, dārgie mezgli, rūsa per rust rules). Everyday service wear is not a purchase risk.
 - NEVER write that suspension/brakes „ir kārtībā” as a physical fact. Say only that the inspection record on that date showed they met the requirement.
-- Rust/corrosion and exhaust particulates / smoke opacity stay a caution even after a later clean TA (RESOLVED HISTORICAL FINDINGS exception).`;
+- Rust/corrosion and exhaust particulates / smoke opacity stay a caution even after a later clean TA (RESOLVED HISTORICAL FINDINGS exception).
+- Climate rust (WINTER SALT RUST) is NOT a TA-covered wear item. Fresh/clean TA does not waive typical-spot advice. TA does not see rust under arch liners, sill undersides, or the tailgate seam around the plate lights.`;
 
 /** Nezināmais nav risks — tas ir klātienes uzdevums. */
 export const AI_UNKNOWN_IS_NOT_A_RISK_RULES = `UNKNOWN IS NOT A RISK (mandatory — every agent):
@@ -104,13 +106,14 @@ export const AI_UNKNOWN_IS_NOT_A_RISK_RULES = `UNKNOWN IS NOT A RISK (mandatory 
 - A CSDD rating-1 / maznozīmīgs finding (e.g. a slight oil seep) on a 15+ year Latvia-used car is ONE sentence of on-site attention — never a dramatic defect essay.
 - Do not invent certainty. If data are thin, say so briefly and tell the buyer what to look at, listen for, measure, or ask — then stop.
 - Over-dramatizing routine age items is a failure. Under-stating a real aggregate fault (ķēde, kārba, dārgs mezgls, rūsa) is also a failure.
-- EXCEPTION: if ANY field says the car is wrapped / aplīmēta with film (plēve, PPF, vinils), that hidden painted surface IS a purchase risk — see WRAP / FILM.`;
+- EXCEPTION: if ANY field says the car is wrapped / aplīmēta with film (plēve, PPF, vinils), that hidden painted surface IS a purchase risk — see WRAP / FILM.
+- EXCEPTION: WINTER SALT RUST — when the prompt block says OBLIGĀTI, typical-spot climate rust IS a purchase-relevant climate risk. It is not a proven defect and not „invented”. Do not drop it because TA is clean, because rust is not yet recorded, or because the body is galvanized.`;
 
 /**
  * Aplīmēšana ar plēvi slēpj krāsoto virsmu — jāpiemin riskos un kopsavilkumā.
  */
 export const AI_WRAP_FILM_RULES = `WRAP / FILM / APLĪMĒŠANA (mandatory — every agent, every field):
-- Trigger: ANY text in this prompt (listing, photos, source comments, incidents, operator notes, already-generated fields) says the car is wrapped / aplīmēta / under plēve / PPF / vinila plēve. Do not invent a wrap if nothing says so.
+- Trigger: ONLY a fact about THIS car in order data — listing, photos, source comments, incidents, operator notes, already-generated fields of THIS audit. The WRAP / FILM rule text, user-task instructions („Ja kontekstā auto ir aplīmēts”), style corpus, and historical audits from OTHER cars are NOT a trigger. Do not invent a wrap. If THIS car’s fields do not say it is wrapped, do not mention wrap at all.
 - If triggered, BOTH „1. Tehnisko risku analīze” AND „3. Kopsavilkums” MUST mention it. Anti-repetition does not waive this — one calibrated paragraph in risks, one short sentence in the summary. Other fields mention wrap only if THIS source uniquely states it.
 - What the buyer needs to understand (workshop Latvian, no drama):
   • Recorded damages on this class of car are often not structural (typically a front bumper). That does NOT cancel the wrap risk.
@@ -119,6 +122,18 @@ export const AI_WRAP_FILM_RULES = `WRAP / FILM / APLĪMĒŠANA (mandatory — ev
   • Client phrasing for later work (two sentences, not one semicolon line): „Ja plēves ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta. Tāpat plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.”
 - Do not write that the wrap „proves” hidden crash repair. Say what cannot be seen and what that means for purchase and for future paint/film work.
 - Inspection field: one line on what can still be checked with the film on (edges, orange peel through film, lift, mismatch) — do not pretend a paint gauge through film replaces removal.`;
+
+/**
+ * Ziemas sāls Latvijā / Lietuvā / Igaunijā — rūsa tipiskajās vietās
+ * ir obligāts klimata risks, ne tikai tad, ja TA to jau ir fiksējusi.
+ */
+export const AI_WINTER_SALT_RUST_RULES = `WINTER SALT RUST (mandatory — every agent, every field):
+- Trigger: the prompt block „Ziemas sāls / rūsas ekspozīcija” says Statuss: OBLIGĀTI. That block is computed from CSDD / registry data (years in Latvija / Lietuva / Igaunija, vehicle age, SUV / krosovers / universālis). Do not second-guess it. If the block is absent, do not invent a rust essay.
+- If triggered, BOTH „1. Tehnisko risku analīze” AND „2. Ieteikumi klātienes apskatei” MUST cover it. Anti-repetition does not waive this. One calibrated paragraph in risks; one inspection section that NAMES the spots.
+- Typical spots (name them — do not write only „jāpārbauda rūsa”): riteņu arkas (also under plastic liners); sliekšņu apakšējās malas where stones hit from the wheels; bagāžnieka vāka mala ap numura zīmes apgaismojumu; underbody / inner sills.
+- What the buyer needs to understand: this is a climate risk from winter salt, NOT a proven defect on THIS car. Galvanized Audi / VW bodies do NOT cancel the check. A fresh or clean TA does NOT cancel it — inspection lights and a lift do not see rust under arch liners.
+- Do not invent that rust is already present. Do not write repair EUR. Do not treat rust as TA-covered everyday wear (sviras / bukses).
+- Other fields mention rust only if THIS source uniquely recorded it, or in one summary sentence if the exposure brief is OBLIGĀTI.`;
 
 /**
  * Eļļas maiņas intervālu matemātika — tikai dīlera laukā „Eļļas maiņas intervāli”.
@@ -451,7 +466,8 @@ export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LAT
 - APRĪKOJUMA DISCIPLĪNA: lasi dīlera SA/aprīkojuma sarakstu. Dārgs, šajā vecumā riskants ekstraprīkojums **maina TCO** — ja tā nav, tas ir stiprā puse. Ja saraksts ir īss/nepilnīgs — saki, kas paliek nepierādīts; **meklē** šīs paaudzes tipisko dārgo ekstraprīkojumu (BMW: Active Steering / Dynamic Drive / Soft Close / Logic 7; Audi: Magnetic Ride / sport air; MB: Airmatic / ABC; citi: pneimatika, aktīvā stūre, nakts redzamība) un pārbaudi pret sarakstu. Neizdomā, ka kaut kā „nav”, ja saraksta nav.
 - NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks. Nekad nepārnes citas dzinēja versijas ķēdes pusi tikai tāpēc, ka marka sakrīt. Ja paka šo konstrukciju nesedz — **meklē**, tad raksti.
 - Katra rindkopa = viens mezgls + kāpēc šajā posmā + 1 teikums, ko saka ŠĪ auto dati. Bez orientējošām EUR joslām, bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā), bez eļļas maiņas intervālu tabulas (tas ir „Eļļas maiņas intervāli” — šeit maksimums viens teikums, ja long-life pret pilsētu ir pirkuma risks).
-- TA COVERED WEAR: ja promptā LĪMENIS ir SVAIGA vai SPĒKĀ — sviras/bukses/lodbalsti/bremzes NAV riska sadaļa. Unknown history is a one-line inspection note, not a risk.`;
+- TA COVERED WEAR: ja promptā LĪMENIS ir SVAIGA vai SPĒKĀ — sviras/bukses/lodbalsti/bremzes NAV riska sadaļa. Unknown history is a one-line inspection note, not a risk.
+- WINTER SALT RUST: ja promptā „Ziemas sāls / rūsas ekspozīcija” saka OBLIGĀTI — viena atsevišķa rindkopa (klimata risks, ne pierādīts defekts; cinkojums un tīra TA neatceļ). Tipiskās vietas nosauc vārdā.`;
 
 /** Web research — primary knowledge path when packs do not cover this exact aggregate. */
 export const AI_TECHNICAL_RISKS_RESEARCH_RULES = `WEB RESEARCH (obligāti „1. Tehnisko risku analīze” — tev IR web_search / Google Search):
@@ -550,6 +566,7 @@ ${AI_TA_COVERED_WEAR_RULES}
 ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 ${AI_PLAIN_LANGUAGE_TERMS}
 ${AI_WRAP_FILM_RULES}
+${AI_WINTER_SALT_RUST_RULES}
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 - LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.

@@ -3,6 +3,11 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-24.2 — Plēve tikai ja ŠĪ auto datos ir aplīmēšana; uzdevuma
+ *   rindas un citu auditu fragmenti vairs neuzspiež plēvi katram auto.
+ * - 2026-08-24.1 — Ziemas sāls / rūsa: ja auto gadiem Latvijā / Lietuvā /
+ *   Igaunijā (īpaši SUV), riskos un ieteikumos obligāti tipiskās vietas
+ *   (arkas, sliekšņi, bagāžnieka vāks). Cinkojums un svaiga TA neatceļ.
  * - 2026-08-23.6 — Sarunvaloda: „uzturēšanas punkts” → „tuvākā laika
  *   ieguldījums”; „integritāte” → „stāvoklis”.
  * - 2026-08-23.5 — Fotogrāfiju analīze: ģenerē arī bez pievienotām bildēm
@@ -38,4 +43,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-23.6";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-24.2";

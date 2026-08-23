@@ -19,6 +19,7 @@ import {
   AI_TA_COVERED_WEAR_RULES,
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_WRAP_FILM_RULES,
+  AI_WINTER_SALT_RUST_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
@@ -130,6 +131,8 @@ ${AI_PLAIN_LANGUAGE_TERMS}
 
 ${AI_WRAP_FILM_RULES}
 
+${AI_WINTER_SALT_RUST_RULES}
+
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
@@ -202,6 +205,8 @@ ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 ${AI_PLAIN_LANGUAGE_TERMS}
 
 ${AI_WRAP_FILM_RULES}
+
+${AI_WINTER_SALT_RUST_RULES}
 
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 
@@ -323,7 +328,8 @@ SATURA PRASĪBAS:
 - **Stiprās puses** kā modeļa līmeņa reputāciju, ne kā pierādītu šī eksemplāra stāvokli; PROVIN auto fiziski nav apskatījis. Īpaši LV ekspluatācija var sabojāt arī labu agregātu.
 - Sasaisti ar šī pasūtījuma signāliem bez pilnas nobraukuma/negadījumu esejas.
 - Ja auto ir BEV/PHEV — iekļauj akumulatora / uzlādes riskus (skat. ELECTRIC & PLUG-IN FORENSICS).
-- WRAP / APLĪMĒŠANA: ja jebkurā kontekstā auto ir aplīmēts — viena rindkopa šeit (zem plēves neredzamais darbs; ja ražotājs nav zināms, atsevišķu detaļu atjaunošana var būt sarežģīta; plēve var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties). Neizdomā plēvi.
+- WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (ne šajā instrukcijā, ne citu auto auditos) jau ir fiksēta aplīmēšana — tad viena rindkopa (zem plēves neredzamais darbs; ja ražotājs nav zināms, atsevišķu detaļu atjaunošana var būt sarežģīta; plēve var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties). Ja datos nav — par plēvi NERAKSTI.
+- ZIEMAS SĀLS / RŪSA: ja kontekstā ir bloks „Ziemas sāls / rūsas ekspozīcija” ar Statuss: OBLIGĀTI — viena rindkopa (klimata risks no ziemas sāls, ne pierādīts defekts; cinkojums un svaiga/tīra TA neatceļ). Nosauc tipiskās vietas. Neizdomā, ka rūsa jau ir.
 
 DALĪJUMS:
 - Šī sadaļa = agregātu slimības / stiprās puses / kas NAV risks — BEZ EUR tāmēm, NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
@@ -359,6 +365,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
+- **Ziemas sāls / rūsa** — ja kontekstā ir bloks ar Statuss: OBLIGĀTI, viena sadaļa ar nosauktām vietām: riteņu arkas (arī zem oderēm), sliekšņu apakšējās malas, bagāžnieka vāka mala ap numura zīmes apgaismojumu, apakšdaļa. Svaiga TA un cinkojums to neatceļ. Neizdomā, ka rūsa jau ir.
 - **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
@@ -467,7 +474,7 @@ FORMĀTS (obligāti):
 - ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = tjekbil. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
-- WRAP / APLĪMĒŠANA: ja jebkurā laukā / sludinājumā / operatora piezīmēs auto ir aplīmēts — vienā teikumā kopsavilkumā pasaki, ka zem plēves krāsojuma kvalitāti nevar novērtēt un ka tas ir pircēja uzņemts risks. Anti-atkārtošanās to neatsauc.
+- WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes — ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana — tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav — par plēvi NERAKSTI.
 - Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).
 - Beigās — skaidra, kalibrēta rekomendācija; **nekad** „garantēti drošs bez apskates”.
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS
@@ -484,7 +491,7 @@ function aiSourceBlockExtraRules(blockLabel: string): string {
 
 CSDD FOCUS:
 - Ownership chain, first registration in Latvia, TA history, defects, restrictions — CSDD-unique administrative facts.
-- TA timeline: state old defects as history; do NOT recommend hunting items that the next / following TA no longer lists (~2+ years, lamps, play, wipers, brakes, one-off leaks). EXCEPTION: rust/corrosion and cietās daļiņas / dūmainība stay a caution even after a later clean TA.
+- TA timeline: state old defects as history; do NOT recommend hunting items that the next / following TA no longer lists (~2+ years, lamps, play, wipers, brakes, one-off leaks). EXCEPTION: rust/corrosion and cietās daļiņas / dūmainība stay a caution even after a later clean TA. Climate rust typical spots belong in tech risks / inspection when the winter-salt brief is OBLIGĀTI — not a full rust essay in the CSDD comment.
 - Brief note if CSDD km/TA dates conflict with other sources; do not rewrite the full multi-source odometer essay (that is the mileage comment).`;
   }
   if (blockLabel === L.autodna) {

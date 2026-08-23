@@ -276,6 +276,7 @@ export function buildTechnicalInspectionCoverageBrief(input: {
   }
   lines.push(
     "- IZŅĒMUMS paliek spēkā: rūsa/korozija un cietās daļiņas / dūmainība — arī pēc tīras vēlākas TA paliek uzmanības punkts (skat. RESOLVED HISTORICAL FINDINGS).",
+    "- Ziemas sāls klimats NAV TA nosegts nodilums. Ja promptā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — tipiskās vietas jāmin riskos un ieteikumos pat ja TA ir svaiga un tīra (TA neredz rūsu zem arku oderēm).",
   );
   return lines.join("\n");
 }

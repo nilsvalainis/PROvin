@@ -70,7 +70,8 @@ OBLIGĀTI:
 - NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
 - Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).
 - Eļļas maiņas intervālu matemātiku (cik bieži mainīta, km pret OEM) NERAKSTI — tas ir laukā „Eļļas maiņas intervāli”; šeit maksimums viens teikums, ja long-life pret pilsētu ir pirkuma risks.
-- Ja kontekstā auto ir aplīmēts (plēve / PPF) — viena rindkopa: zem plēves darbu kvalitāti nevar novērtēt; ja ražotājs nav zināms, atsevišķu detaļu atjaunošana bojājumu gadījumā var būt sarežģīta; plēve ar laiku var mainīt toni, tāpēc atjaunotā detaļa var būtiski atšķirties.`,
+- WRAP_FILM: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes) jau ir fiksēta aplīmēšana. Šī rinda NAV fakts par auto. Ja datos nav — par plēvi NERAKSTI.
+- Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — viena rindkopa: rūsa arkās, sliekšņu apakšās un bagāžnieka vākā pie numura zīmes gaismām ir klimata risks, ne pierādīts defekts; cinkojums un svaiga TA to neatceļ.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

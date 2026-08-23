@@ -81,6 +81,8 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Quattro pilnpiedziņa (visos variantos):** aizmugurējās kardānvārpstas **krustiņi** un **karājošais gultnis** ir dilstoša daļa neatkarīgi no dzinēja/kārbas kombinācijas — tipiska pazīme ir vibrācija vai dobjš troksnis paātrinoties pēc **150 000+ km**; tas ir mehānisks nodilums, ne dzinēja/kārbas defekts, un jāvērtē atsevišķi no ķēdes/sajūga riska.
 
+**Virsbūve pēc vairākiem gadiem Latvijā / Lietuvā / Igaunijā:** cinkojums neatceļ pārbaudi arkām, sliekšņu apakšām un bagāžnieka vākam pie numura zīmes gaismām — klimata risks, ne pierādīts defekts. Svaiga TA to nenosedz (rūsa zem oderēm).
+
 **Klātienē:** auksts/patērēts starta tests (S-Tronic variantam — sajūga tvēriens un trīcēšana zemos apgriezienos; Tiptronic variantam — pārslēgšanās plūdenums); intercooler/termiskā stabilitāte; dūmi un spiedības lasījumi; klausīties troksni/vibrāciju no kardānvārpstas paātrinoties un asos pagriezienos; servisa pierādījumi par eļļu, dzesēšanu un (S-Tronic gadījumā) mehatronikas programmatūru.`,
   },
   {
