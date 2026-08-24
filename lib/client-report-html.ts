@@ -506,7 +506,9 @@ function buildPdfLifeKmHtml(e: LifecycleEvent): string {
   if (e.kind === "incident") {
     const raw = e.incident?.displayAmount.trim() ?? "";
     if (!raw || raw === "—") return "";
-    return `<span class="pdf-life-km pdf-life-km--loss">${formatLossAmountEurCell(raw, { approx: Boolean(e.incident?.averaged) })}</span>`;
+    const inner = formatIncidentLossAmountHtml(raw, { approx: Boolean(e.incident?.averaged), ico: "lg" });
+    if (!inner) return "";
+    return `<span class="pdf-life-km pdf-life-km--loss">${inner}</span>`;
   }
   const odo = formatServiceWorkOdometer(e.odometer);
   if (!odo) return "";
@@ -811,6 +813,16 @@ function formatLossAmountEurCell(raw: string, opts?: { approx?: boolean }): stri
   return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--${tier}"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${esc}</span></span>`;
 }
 
+/** Negadījuma summa — vienmēr sarkana, lai hubā un vēsturē to var pamanīt (ne dzeltenais slieksnis zem 1000 €). */
+function formatIncidentLossAmountHtml(raw: string, opts?: { approx?: boolean; ico?: "sm" | "lg" }): string {
+  const display = normalizeLossAmountEurDisplay(raw);
+  const t = display || raw.trim();
+  if (!t || t === "—") return "";
+  const shown = opts?.approx ? `~${t}` : t;
+  const ico = pdfLossAmountAlertIconHtml("red", opts?.ico ?? "lg");
+  return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${escapeHtml(shown)}</span></span>`;
+}
+
 function formatListedForSaleDaysCellHtml(raw: string): string {
   const t = raw.trim();
   const esc = escapeHtml(t);
@@ -1034,7 +1046,7 @@ function buildIncidentDamageChipsHtml(dmg: UnifiedIncidentDamage | null): string
 }
 
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number | string): string {
-  const lossCell = formatLossAmountEurCell(c.displayAmount, { approx: c.averaged });
+  const lossCell = formatIncidentLossAmountHtml(c.displayAmount, { approx: c.averaged, ico: "lg" });
   const sourceTags = buildIncidentSourceTagsHtml(c);
   const countryLabel = c.country.trim() || "—";
   const flag = pdfCountryFlagEmoji(countryLabel);
@@ -1042,27 +1054,29 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number |
   const withDmg = Boolean(dmg && (dmg.zoneIds.length > 0 || dmg.zoneLabels.length > 0 || dmg.groupLabels.length > 0));
   const svg = buildDamageZoneSilhouetteSvg(dmg?.zoneIds ?? [], `c${index}`, undefined, dmg?.zoneLabels ?? []);
   const chips = buildIncidentDamageChipsHtml(dmg);
-  const carFacts = `<div class="pdf-incident-card__car">${svg}</div>
-      <div class="pdf-incident-card__facts">
-        <div class="pdf-incident-card__amount">${lossCell}</div>
-        ${chips}
-      </div>`;
-  return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
-    <div class="pdf-incident-card__main">
-      <div class="pdf-incident-card__datecol">
-        <time class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</time>
-        <span class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></span>
+  const country = `<span class="pdf-life-country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></span>`;
+  const amount = lossCell ? `<span class="pdf-life-km pdf-life-km--loss pdf-inc-amount">${lossCell}</span>` : "";
+  return `<li class="pdf-inc-item">
+    <time class="pdf-life-date">${escapeHtml(c.date || "—")}</time>
+    <article class="pdf-life-card pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
+      <div class="pdf-incident-card__main">
+        <div class="pdf-incident-card__car">${svg}</div>
+        <div class="pdf-incident-card__body">
+          <p class="pdf-life-card__kind"><span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span><span>Negadījums</span></p>
+          <p class="pdf-life-meta">${country}</p>
+          ${chips}
+          ${sourceTags}
+        </div>
+        ${amount}
       </div>
-      ${carFacts}
-    </div>
-    ${sourceTags}
-  </article>`;
+    </article>
+  </li>`;
 }
 
 function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string {
   if (agg.clusters.length === 0) return "";
   const body = agg.clusters.map((c, i) => buildIncidentClusterCardHtml(c, i)).join("\n");
-  return `<div class="pdf-listing-price-history pdf-incident-history-card">${body}</div>`;
+  return `<ol class="pdf-inc-list pdf-incident-history-card">${body}</ol>`;
 }
 
 /** Apvienota negadījumu vēsture — viena kartīte: loģiskie negadījumi + avotu vērtējumi + skaits. */
@@ -2005,8 +2019,15 @@ function clientReportPrintCss(): string {
         font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-life-km--loss{
+        font-size:13px;padding:4px 9px;background:#F8FAFC;
+      }
       .pdf-life-km--loss,
-      .pdf-life-km--loss .pdf-num-warn-digits{color:#B91C1C;}
+      .pdf-life-km--loss .pdf-num-warn,
+      .pdf-life-km--loss .pdf-num-warn-digits{
+        color:#B91C1C!important;font-weight:800!important;font-size:13px!important;
+      }
+      .pdf-life-km--loss .pdf-warn-tri-ico{width:15px!important;height:15px!important;}
       .pdf-life-srcs{
         display:inline-flex;align-items:center;align-content:center;
         gap:4px;flex-wrap:wrap;line-height:1;
@@ -2045,10 +2066,10 @@ function clientReportPrintCss(): string {
         margin-top:14px;padding-top:12px;border-top:1px solid var(--pdf-line);
       }
       .pdf-summary-tiles{
-        display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin:0;padding:0;list-style:none;
+        display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:0;padding:0;list-style:none;
       }
       .pdf-summary-tile{
-        padding:12px 14px;border:0;border-radius:var(--pdf-radius-inner);background:#F7F9FC;min-width:0;
+        padding:12px 14px;border:1px solid var(--pdf-line);border-radius:10px;background:#fff;min-width:0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-summary-tile__label{
@@ -2062,11 +2083,12 @@ function clientReportPrintCss(): string {
       .pdf-summary-tile--ok .pdf-summary-tile__label::before{background:#16a34a;}
       .pdf-summary-tile--warn .pdf-summary-tile__label::before{background:#FFC107;}
       .pdf-summary-tile--alert .pdf-summary-tile__label::before{background:#FF4D4D;}
-      .pdf-summary-tile--ok{background:#F5FBF7;}
-      .pdf-summary-tile--warn{background:#FFFCF3;}
-      .pdf-summary-tile--alert{background:#FFF7F7;}
+      .pdf-summary-tile--ok,
+      .pdf-summary-tile--warn,
+      .pdf-summary-tile--alert{background:#fff;}
+      .pdf-summary-tile--alert .pdf-summary-tile__value{color:#B91C1C;}
       .pdf-summary-tile__value{
-        margin:6px 0 0;font-size:18px;font-weight:700;color:#0f172a;line-height:1.2;letter-spacing:-0.01em;
+        margin:6px 0 0;font-size:15px;font-weight:700;color:#0f172a;line-height:1.2;letter-spacing:-0.01em;
       }
       .pdf-summary-tile__note{margin:4px 0 0;font-size:var(--pdf-fs-table);color:#64748b;line-height:1.4;}
       .pdf-summary-tile__sep{
@@ -2105,8 +2127,8 @@ function clientReportPrintCss(): string {
       .pdf-sec-ico-wrap .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-ltab-izzi{
-        margin:0;padding:16px 14px 14px;border:1px solid var(--pdf-line);
-        border-radius:var(--pdf-radius-inner);background:#FCFDFF;
+        margin:0;padding:12px 14px;border:1px solid var(--pdf-line);
+        border-radius:10px;background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-ltab-izzi .pdf-ltab-loss-history{margin:12px 0 0;}
@@ -2193,8 +2215,8 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
       .pdf-mileage-comment-note{
-        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid #E4EDFA;
-        border-left:3px solid #C6DAF6;border-radius:var(--pdf-radius-inner);background:#F6FAFF;
+        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-line);
+        border-radius:10px;background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-report-comment-note .pdf-subhead{margin:0 0 5px;}
@@ -2495,12 +2517,12 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-price-history--tirgus .pdf-subhead--boxed{color:#15803D;}
-      /* LTAB zaudējumu tabula — smalks sarkans tonis, jo rinda parādās tikai ar fiksētu negadījumu. */
+      /* LTAB zaudējumu tabula — tā pati baltā kartīte; sarkans paliek tikai summām. */
       .pdf-ltab-loss-history{
-        border-color:#F6D9D9;background:#FFFBFB;
+        border-color:var(--pdf-line);background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-ltab-loss-history .pdf-subhead--boxed{color:#B91C1C;}
+      .pdf-ltab-loss-history .pdf-subhead--boxed{color:#86868b;}
       /* Specifiskāks par .pdf-subhead:first-child — citādi virsraksts pielīp pie kartītes malas. */
       .pdf-subhead.pdf-subhead--boxed{margin:14px 12px 6px;}
       .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);font-weight:600;color:#0f172a;}
@@ -2514,39 +2536,38 @@ ${sourceDotColorCss()}
       .pdf-listing-price-delta--note{color:#64748b;font-weight:500;}
       .pdf-incident-source-vals{display:block;margin-top:3px;font-size:0.62rem;font-weight:500;color:#64748b;line-height:1.35;}
       .pdf-incident-count{
-        display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 12px;
-        border-radius:999px;background:#fff;color:#DC2626;border:1.5px solid #DC2626;
-        font-size:13px;font-weight:700;line-height:1;letter-spacing:0;white-space:nowrap;
+        flex-shrink:0;padding:3px 9px;border-radius:999px;background:#F8FAFC;color:#B91C1C;
+        font-size:var(--pdf-fs-label);font-weight:700;letter-spacing:0.01em;line-height:1.3;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-incident-history-card{padding:0;}
-      .pdf-incident-card{padding:22px 16px 6px;border-bottom:1px solid var(--pdf-line-soft);break-inside:avoid;page-break-inside:avoid;}
-      .pdf-incident-card:last-of-type{border-bottom:none;}
+      .pdf-inc-list{margin:0;padding:0;list-style:none;}
+      .pdf-inc-item{
+        display:grid;grid-template-columns:78px minmax(0,1fr);gap:0 12px;align-items:start;
+        break-inside:avoid;page-break-inside:avoid;
+      }
+      .pdf-incident-history-card{padding:0;border:none;background:transparent;overflow:visible;}
+      .pdf-incident-card{padding:12px 14px;border:1px solid #E9EDF3;border-radius:10px;border-bottom:1px solid #E9EDF3;}
+      .pdf-incident-card:last-of-type{border-bottom:1px solid #E9EDF3;}
       .pdf-incident-card__main{
-        display:grid;grid-template-columns:84px 96px minmax(0,1fr);gap:12px 22px;align-items:center;
+        display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:8px 14px;align-items:center;
       }
-      .pdf-incident-card__datecol{display:flex;flex-direction:column;gap:4px;min-width:0;}
-      .pdf-incident-card__date{
-        font-size:var(--pdf-fs-base);font-weight:700;color:#0f172a;white-space:nowrap;
-        font-variant-numeric:tabular-nums;
+      .pdf-incident-card__car .pdf-dmg-sil{width:72px;}
+      .pdf-incident-card__body{min-width:0;}
+      .pdf-incident-card .pdf-life-card__kind{color:#B91C1C;}
+      .pdf-inc-amount{font-size:15px;padding:5px 10px;}
+      .pdf-inc-amount,
+      .pdf-inc-amount .pdf-num-warn,
+      .pdf-inc-amount .pdf-num-warn-digits{
+        font-size:15px!important;font-weight:800!important;color:#B91C1C!important;
       }
-      .pdf-incident-card__car .pdf-dmg-sil{width:96px;}
-      .pdf-incident-card__facts{min-width:0;}
-      .pdf-incident-card__amount{font-size:24px;font-weight:800;color:#0f172a;line-height:1.1;letter-spacing:-0.03em;}
-      .pdf-incident-card__amount .pdf-num-warn{font-size:24px!important;}
-      .pdf-incident-card__amount .pdf-num-warn-digits{font-size:24px;font-weight:800!important;letter-spacing:-0.03em;}
-      .pdf-incident-card__country{
-        display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:#64748b;
-        white-space:nowrap;
-      }
-      .pdf-incident-card__country .pdf-country-flag{font-size:13px;line-height:1;}
-      .pdf-incident-chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;padding:0;list-style:none;}
+      .pdf-inc-amount .pdf-warn-tri-ico{width:17px!important;height:17px!important;}
+      .pdf-incident-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;padding:0;list-style:none;}
       .pdf-incident-chips li{
         margin:0;padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;
         color:#475569;font-size:11px;font-weight:600;line-height:1.3;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-incident-card__srcs{margin:16px 0 0;padding:8px 0 12px;border-top:1px solid #F1F5F9;}
+      .pdf-incident-card__srcs{margin:8px 0 0;padding:0;border:none;}
       .pdf-dmg-sil{display:block;width:120px;height:auto;max-width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .pdf-listing-price-history-foot{
         display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
@@ -2561,9 +2582,8 @@ ${sourceDotColorCss()}
       .pdf-listing-price-history--tirgus .pdf-listing-price-history-foot{
         background:#F2FBF6;border-top-color:#DCEFE1;
       }
-      .pdf-ltab-loss-history .pdf-listing-price-history-foot,
-      .pdf-incident-history-card .pdf-listing-price-history-foot{
-        background:#FDF4F4;border-top-color:#F6D9D9;
+      .pdf-ltab-loss-history .pdf-listing-price-history-foot{
+        background:#F7F9FC;border-top-color:var(--pdf-line-soft);
       }
       .mirror-block{margin:0 0 10px;padding:0 0 8px;border-bottom:1px solid #f1f5f9;}
       .mirror-block.pdf-surface-card{border-bottom:none;padding-bottom:0;margin-bottom:12px;}
@@ -2599,17 +2619,15 @@ ${sourceDotColorCss()}
         background:#fff!important;
       }
       .provin-report-doc .pdf-iriss-approved{
-        border:1px solid #B6D2F6!important;background:#F3F8FF!important;
-        box-shadow:0 2px 10px rgba(0,97,210,0.10)!important;
+        border:1px solid var(--pdf-line)!important;background:#fff!important;
+        box-shadow:var(--pdf-shadow)!important;
       }
-      .pdf-iriss-approved .pdf-sec-head--brand{border-bottom-color:#CFE0FA;}
-      .pdf-iriss-approved h2.pdf-sec{font-size:15px;}
-      .pdf-iriss-approved .pdf-sec-ico-wrap{background:${PDF_BRAND_BLUE_HEX}!important;}
-      .pdf-iriss-approved .pdf-sec-ico-wrap .pdf-ico{color:#fff!important;}
+      .pdf-iriss-approved .pdf-sec-head--brand{border-bottom-color:var(--pdf-line);}
+      .pdf-iriss-approved h2.pdf-sec{font-size:var(--pdf-fs-sec);}
       .pdf-iriss-approved .pdf-report-comment-note{
-        background:#fff!important;border-color:#DCE8F8!important;border-left-color:${PDF_BRAND_BLUE_HEX}!important;
+        background:#fff!important;border-color:var(--pdf-line)!important;
       }
-      .pdf-iriss-approved .pdf-subhead{color:#0f172a;}
+      .pdf-iriss-approved .pdf-subhead{color:#86868b;}
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
       /* Faktu saraksti (CSDD, dīleris, transportlīdzekļa dati) — viena režģa un tipogrāfijas valoda. */
       .mirror-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);margin:0;}

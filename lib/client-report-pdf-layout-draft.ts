@@ -76,8 +76,8 @@ export function pdfLayoutDraftExtraCss(): string {
       }
       .pdf-v1-panel-ico-wrap .pdf-ico{width:16px;height:16px}
       .pdf-v1-notes-client-wrap{
-        margin:0;padding:var(--pdf-pad-inner);border-radius:var(--pdf-radius-inner);
-        border:1px solid #E4EDFA;border-left:3px solid #C6DAF6;background:#F6FAFF;
+        margin:0;padding:var(--pdf-pad-inner);border-radius:10px;
+        border:1px solid var(--pdf-line);background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-v1-notes-body{font-style:italic;color:#000;line-height:1.45}

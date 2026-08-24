@@ -69,6 +69,9 @@ describe("PDF design system", () => {
     expect(html).toContain("--pdf-radius-inner:8px");
     expect(html).toContain("--pdf-gap-section:24px");
     expect(html).toContain("--pdf-fs-sec:13px");
+    expect(html).not.toContain("background:#F3F8FF");
+    expect(html).toContain(".pdf-summary-tile--alert{background:#fff;}");
+    expect(html).toContain(".pdf-ltab-loss-history{\n        border-color:var(--pdf-line);background:#fff;");
   });
 
   it("uses tokens instead of per-section radii and paddings", () => {
@@ -654,7 +657,7 @@ describe("Vēstures kopsavilkums", () => {
           {
             title: "carVertical",
             mileageRows: [],
-            incidentRows: [{ csngDate: "05.2016", lossAmount: "1 636 €", incidentNo: "Latvija" }],
+            incidentRows: [{ csngDate: "05.2016", lossAmount: "913 €", incidentNo: "Latvija" }],
             comments: "",
           },
         ],
@@ -670,6 +673,9 @@ describe("Vēstures kopsavilkums", () => {
     expect(zone).toContain("pdf-life-item--incident");
     expect(zone).toContain("pdf-life-card__grid");
     expect(zone).toContain("pdf-life-km--loss");
+    expect(zone).toContain("pdf-num-warn--red");
+    expect(zone).toContain("pdf-warn-tri-ico--lg");
+    expect(zone).not.toContain("pdf-num-warn--yellow");
     expect(zone).toContain("Negadījums");
     expect(zone).toContain("Latvija");
     expect(zone).not.toContain("pdf-incident-card--hub");
@@ -1034,6 +1040,8 @@ describe("unified PDF sections single block", () => {
     expect(html).not.toContain("pdf-unified-incidents-zone--continued");
     expect(html).toContain("NEGADĪJUMU VĒSTURES KOPSAVILKUMS");
     expect(html).toContain("pdf-incident-history-card");
+    expect(html).toContain("pdf-inc-list");
+    expect(html).toContain("pdf-inc-item");
     expect(html).toContain("pdf-incident-count");
     expect(html).toContain("1 negadījums");
     expect(html).not.toContain("Negadījumi:");
@@ -1103,6 +1111,8 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("01.06.2024");
     expect(html).toContain("pdf-incident-card--with-dmg");
     expect(html).toContain("pdf-incident-card__main");
+    expect(html).toContain("pdf-incident-card__body");
+    expect(html).toContain("pdf-inc-amount");
     expect(html).toContain("pdf-dmg-sil");
     expect(html).toContain("pdf-incident-chips");
     expect(html).not.toContain("Bojājumu zonas");
