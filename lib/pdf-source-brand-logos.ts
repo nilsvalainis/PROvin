@@ -1,9 +1,8 @@
 /**
  * PDF avotu sadaļu zīmolu logotipi — CSDD, CAR INFO, LTAB, dīlera marka, sludinājuma portāls.
+ * Šis fails iet client bundle (admin PDF preview) — bez node:fs / node:path.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { PDF_DEALER_LOGO_DATA_URI, PDF_SOURCE_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logo-data";
 
 export type PdfListingPortalLogoId = "sslv" | "auto24" | "mobilede";
@@ -65,25 +64,7 @@ export function pdfDealerBrandFileKey(makeModel: string): string | null {
   return null;
 }
 
-const publicSvgCache = new Map<string, string | null>();
-
-function publicBrandSvgDataUri(fileKey: string): string | null {
-  if (publicSvgCache.has(fileKey)) return publicSvgCache.get(fileKey) ?? null;
-  let uri: string | null = null;
-  try {
-    const p = join(process.cwd(), "public", "brand-logos", `${fileKey}.svg`);
-    if (existsSync(p)) {
-      const svg = readFileSync(p, "utf8");
-      if (svg.includes("<svg")) uri = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
-    }
-  } catch {
-    uri = null;
-  }
-  publicSvgCache.set(fileKey, uri);
-  return uri;
-}
-
-/** Ja faila nav — vienkāršs monograms, lai dīlera kartītei paliek markas zīme, ne atslēga. */
+/** Ja iegultā SVG nav — vienkāršs monograms, lai dīlera kartītei paliek markas zīme, ne atslēga. */
 function dealerMonogramDataUri(fileKey: string): string {
   const letter = (fileKey.replace(/-/g, " ").trim().charAt(0) || "?").toUpperCase();
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="${fileKey}"><rect width="24" height="24" rx="5" fill="#0f172a"/><text x="12" y="16.5" text-anchor="middle" fill="#fff" font-size="12" font-family="Inter,Arial,sans-serif" font-weight="700">${letter}</text></svg>`;
@@ -93,7 +74,7 @@ function dealerMonogramDataUri(fileKey: string): string {
 export function pdfDealerLogoDataUri(makeModel: string): string | null {
   const key = pdfDealerBrandFileKey(makeModel);
   if (!key) return null;
-  return PDF_DEALER_LOGO_DATA_URI[key] ?? publicBrandSvgDataUri(key) ?? dealerMonogramDataUri(key);
+  return PDF_DEALER_LOGO_DATA_URI[key] ?? dealerMonogramDataUri(key);
 }
 
 function listingHostname(url: string): string | null {

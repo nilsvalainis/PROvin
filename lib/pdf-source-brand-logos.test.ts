@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   pdfDealerBrandFileKey,
@@ -25,6 +26,11 @@ describe("pdfDealerBrandFileKey", () => {
     expect(uri).toBeTruthy();
     expect(uri).toMatch(/^data:image\/svg\+xml/);
     expect(pdfDealerLogoDataUri("AUDI A6")).toBeTruthy();
+  });
+
+  it("stays browser-safe so the admin client bundle does not pull node:fs", () => {
+    const src = readFileSync(new URL("./pdf-source-brand-logos.ts", import.meta.url), "utf8");
+    expect(src).not.toMatch(/from ["']node:(?:fs|path)["']/);
   });
 });
 
