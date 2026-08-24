@@ -7,7 +7,12 @@ import {
   emptyTirgusFields,
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
-import { buildVehicleLifecycleEvents, PDF_LIFECYCLE_TITLE } from "@/lib/vehicle-lifecycle-timeline";
+import { KEY_READ_HISTORY_LABEL } from "@/lib/vendor-service-history";
+import {
+  buildVehicleLifecycleEvents,
+  lifecycleLocationIsCountryName,
+  PDF_LIFECYCLE_TITLE,
+} from "@/lib/vehicle-lifecycle-timeline";
 import {
   buildUnifiedIncidentsTableHtml,
   buildUnifiedMileageTableHtml,
@@ -642,7 +647,7 @@ describe("Vēstures kopsavilkums", () => {
     expect(importLi?.[0]).not.toContain("pdf-life-card__kind");
   });
 
-  it("embeds the incident N card in the hub without red tape chrome", () => {
+  it("renders hub incidents as the same hanging cards as other events", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
         manualVendorBlocks: [
@@ -659,12 +664,108 @@ describe("Vēstures kopsavilkums", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const zone = html.slice(html.indexOf("pdf-lifecycle-zone"), html.indexOf("NEGADĪJUMU VĒSTURE"));
+    const zoneStart = html.indexOf('pdf-lifecycle-zone" role="region"');
+    const incidentsStart = html.indexOf(">NEGADĪJUMU VĒSTURE<");
+    const zone = html.slice(zoneStart, incidentsStart);
     expect(zone).toContain("pdf-life-item--incident");
-    expect(zone).toContain("pdf-incident-card--hub");
-    expect(zone).toContain("pdf-life-card--incident");
+    expect(zone).toContain("pdf-life-card__grid");
+    expect(zone).toContain("pdf-life-km--loss");
+    expect(zone).toContain("Negadījums");
+    expect(zone).toContain("Latvija");
+    expect(zone).not.toContain("pdf-incident-card--hub");
+    expect(zone).not.toContain("pdf-life-card--incident");
     expect(zone).not.toContain("pdf-life-item--alert");
-    expect(zone).not.toMatch(/pdf-life-card--incident[^>]*>[\s\S]*pdf-incident-card__datecol/);
+    expect(zone).not.toContain("pdf-incident-card__datecol");
+    expect(zone).not.toContain("pdf-incident-card__srcs");
+    expect(zone).not.toContain("pdf-dmg-sil");
+    const incidentsSection = html.slice(incidentsStart);
+    expect(incidentsSection).toContain("pdf-incident-card");
+    expect(incidentsSection).toContain("pdf-incident-card__srcs");
+  });
+
+  it("keeps only the flagged country line when location is just a country name", () => {
+    expect(lifecycleLocationIsCountryName("Vācija")).toBe(true);
+    expect(lifecycleLocationIsCountryName("B&K Deutschland GmbH, Osnabrück")).toBe(false);
+
+    const events = buildVehicleLifecycleEvents({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          {
+            date: "05.07.2021",
+            odometer: "221195",
+            location: "Vācija",
+            works: "Apkope",
+          },
+          {
+            date: "28.06.2021",
+            odometer: "221000",
+            location: "B&K Deutschland GmbH, Osnabrück",
+            works: "Eļļas maiņa",
+          },
+        ],
+      },
+      manualVendorBlocks: [
+        {
+          title: "carVertical",
+          mileageRows: [
+            { date: "05.07.2021", odometer: "221195", country: "Vācija" },
+            { date: "28.06.2021", odometer: "221000", country: "Vācija" },
+          ],
+          incidentRows: [],
+          comments: "",
+        },
+      ],
+    });
+    const countryOnly = events.find((e) => e.kind === "service" && e.date === "05.07.2021");
+    expect(countryOnly).toBeTruthy();
+    expect(countryOnly!.detail).toBe("");
+    expect(countryOnly!.country).toBe("Vācija");
+    const workshop = events.find((e) => e.kind === "service" && e.date === "28.06.2021");
+    expect(workshop!.detail).toBe("B&K Deutschland GmbH, Osnabrück");
+    expect(workshop!.country).toBe("Vācija");
+
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: {
+          ...emptyAutoRecordsBlock(),
+          serviceWorks: [
+            {
+              date: "05.07.2021",
+              odometer: "221195",
+              location: "Vācija",
+              works: "Apkope",
+            },
+            {
+              date: "28.06.2021",
+              odometer: "221000",
+              location: "B&K Deutschland GmbH, Osnabrück",
+              works: "Eļļas maiņa",
+            },
+          ],
+        },
+        manualVendorBlocks: [
+          {
+            title: "carVertical",
+            mileageRows: [
+              { date: "05.07.2021", odometer: "221195", country: "Vācija" },
+              { date: "28.06.2021", odometer: "221000", country: "Vācija" },
+            ],
+            incidentRows: [],
+            comments: "",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const list = html.match(/<ol class="pdf-life-list">[\s\S]*?<\/ol>/)?.[0] ?? "";
+    expect(list).not.toMatch(/pdf-life-card__sub">Vācija</);
+    expect(list).toContain("B&amp;K Deutschland GmbH, Osnabrück");
+    const julyCard = list.match(/05\.07\.2021[\s\S]*?<\/li>/)?.[0] ?? "";
+    expect((julyCard.match(/Vācija/g) ?? []).length).toBe(1);
   });
 
   it("omits opaque dealer ID codes from the lifecycle caption", () => {
@@ -679,7 +780,7 @@ describe("Vēstures kopsavilkums", () => {
     const service = events.find((e) => e.kind === "service");
     expect(service).toBeTruthy();
     expect(service!.detail).toBe("");
-    expect(service!.title).toBe("Apkope");
+    expect(service!.title).toBe("Servisa apmeklējums");
   });
 
   it("keeps a real workshop name next to a stripped dealer ID", () => {
@@ -743,6 +844,45 @@ describe("Vēstures kopsavilkums", () => {
     expect(list).toContain("BMW Bonn");
     expect(list).not.toContain("Eļļas maiņa");
     expect(list).not.toContain("bremžu šķidrums");
+  });
+
+  it("does not label Key Read snapshots as Apkope", () => {
+    const events = buildVehicleLifecycleEvents({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          { date: "01.04.2025", odometer: "88000", location: "BMW Bonn", works: KEY_READ_HISTORY_LABEL },
+          { date: "18.06.2021", odometer: "124100", location: "BMW Bonn", works: "Update DVD Road Map Europe Professional" },
+        ],
+      },
+    });
+    expect(events.find((e) => e.odometer === "88000")!.title).toBe("Dīlera nolasījums");
+    expect(events.find((e) => e.odometer === "124100")!.title).toBe("Servisa apmeklējums");
+    expect(events.filter((e) => e.kind === "service").every((e) => e.title !== "Apkope")).toBe(true);
+  });
+
+  it("puts the manufacturer logo on official-dealer hub cards", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "BMW X5";
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        autoRecordsBlock: {
+          ...emptyAutoRecordsBlock(),
+          serviceWorks: [
+            { date: "18.06.2021", odometer: "124100", location: "BMW Bonn", works: "Eļļas maiņa" },
+          ],
+        },
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const list = html.match(/<ol class="pdf-life-list">[\s\S]*?<\/ol>/)?.[0] ?? "";
+    expect(list).toContain("pdf-life-ico--brand");
+    expect(list).toContain(PDF_DEALER_LOGO_DATA_URI.bmw);
+    expect(list).toContain("Apkope");
   });
 
   it("wraps more than four source dots so they do not overflow the odometer", () => {

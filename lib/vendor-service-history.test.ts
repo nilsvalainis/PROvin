@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeVendorServiceEntries, type VendorServiceEntry } from "@/lib/vendor-service-history";
+import {
+  KEY_READ_HISTORY_LABEL,
+  lifecycleDealerVisitTitle,
+  looksLikeIntervalMaintenanceWorks,
+  mergeVendorServiceEntries,
+  type VendorServiceEntry,
+} from "@/lib/vendor-service-history";
 
 function entry(works: string[]): VendorServiceEntry {
   return {
@@ -12,6 +18,17 @@ function entry(works: string[]): VendorServiceEntry {
     works,
   };
 }
+
+describe("dīlera vizītes virsraksts vēstures kopsavilkumā", () => {
+  it("keeps interval jobs as Apkope and Key Read off that label", () => {
+    expect(lifecycleDealerVisitTitle("Eļļas maiņa, filtri")).toBe("Apkope");
+    expect(lifecycleDealerVisitTitle("Regulārā apkope")).toBe("Apkope");
+    expect(looksLikeIntervalMaintenanceWorks(KEY_READ_HISTORY_LABEL)).toBe(false);
+    expect(lifecycleDealerVisitTitle(KEY_READ_HISTORY_LABEL)).toBe("Dīlera nolasījums");
+    expect(lifecycleDealerVisitTitle("Apkope")).toBe("Servisa apmeklējums");
+    expect(lifecycleDealerVisitTitle("Update DVD Road Map Europe Professional")).toBe("Servisa apmeklējums");
+  });
+});
 
 describe("servisa ierakstu apvienošana", () => {
   it("ņem latvisko darbu sarakstu, nejaucot to ar angļu dublikātiem", () => {

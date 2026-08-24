@@ -67,6 +67,46 @@ export function looksLikeCbsKeyReadServiceEntry(entry: VendorServiceEntry): bool
   return works.every((w) => CBS_DUE_ITEM_RE.test(w) || CBS_DUMP_RE.test(w) || KEY_READ_LABEL_RE.test(w));
 }
 
+export function looksLikeCbsKeyReadWorks(works: string, category = ""): boolean {
+  const parts = works
+    .split(/[;,\n]/)
+    .map((w) => w.trim())
+    .filter(Boolean);
+  return looksLikeCbsKeyReadServiceEntry({
+    date: "",
+    odometer: "",
+    country: "",
+    category,
+    location: "",
+    works: parts.length > 0 ? parts : [works],
+  });
+}
+
+/**
+ * Intervāla apkope (eļļa, filtri, bremžu šķidrums u.tml.) — ne remonts un ne Key Read.
+ * Tukšs „Apkope” bez darbiem šeit neietilpst.
+ */
+const INTERVAL_MAINTENANCE_RE =
+  /eļļas?\s*maiņ|eļļas\s+filtr|elljas|motoröl|engine\s+oil|oil\s+(change|filter)|salona\s+gaisa|gaisa\s+filtr|pollen|cabin\s+filter|luftfilter|degvielas\s+filtr|fuel\s+filter|bremž|brake\s+(fluid|pad|disc|shoe)|bremsflüssigkeit|dzesēšanas|coolant|kühlmittel|sveč|spark\s+plug|zündkerze|zobsiksn|timing\s+belt|zahnriemen|regul[āa]r[āa]\s+apkope|long[\s-]?life|oil[\s-]?filter/i;
+
+export function looksLikeIntervalMaintenanceWorks(works: string, category = ""): boolean {
+  if (looksLikeCbsKeyReadWorks(works, category)) return false;
+  return INTERVAL_MAINTENANCE_RE.test(`${category} ${works}`);
+}
+
+export const LIFECYCLE_DEALER_VISIT_TITLE = {
+  maintenance: "Apkope",
+  visit: "Servisa apmeklējums",
+  keyRead: "Dīlera nolasījums",
+} as const;
+
+/** Vēstures kopsavilkuma kartītes virsraksts dīlera rindai. */
+export function lifecycleDealerVisitTitle(works: string, category = ""): string {
+  if (looksLikeCbsKeyReadWorks(works, category)) return LIFECYCLE_DEALER_VISIT_TITLE.keyRead;
+  if (looksLikeIntervalMaintenanceWorks(works, category)) return LIFECYCLE_DEALER_VISIT_TITLE.maintenance;
+  return LIFECYCLE_DEALER_VISIT_TITLE.visit;
+}
+
 function looksLikeCbsDumpWorks(works: string[]): boolean {
   return works.some((w) => CBS_DUMP_RE.test(w) || (/;/.test(w) && /[—–]/.test(w)));
 }

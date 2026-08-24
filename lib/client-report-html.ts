@@ -44,6 +44,7 @@ import {
 } from "@/lib/pdf-report-summary";
 import {
   buildVehicleLifecycleEvents,
+  lifecycleDetailDuplicatesCountry,
   PDF_LIFECYCLE_TITLE,
   type LifecycleEvent,
 } from "@/lib/vehicle-lifecycle-timeline";
@@ -502,6 +503,11 @@ function buildPdfLifeMetaHtml(e: LifecycleEvent): string {
 }
 
 function buildPdfLifeKmHtml(e: LifecycleEvent): string {
+  if (e.kind === "incident") {
+    const raw = e.incident?.displayAmount.trim() ?? "";
+    if (!raw || raw === "—") return "";
+    return `<span class="pdf-life-km pdf-life-km--loss">${formatLossAmountEurCell(raw, { approx: Boolean(e.incident?.averaged) })}</span>`;
+  }
   const odo = formatServiceWorkOdometer(e.odometer);
   if (!odo) return "";
   const inner =
@@ -513,11 +519,13 @@ function buildPdfLifeKmHtml(e: LifecycleEvent): string {
 
 function buildPdfLifeFactHtml(e: LifecycleEvent): string {
   const detail = e.detail.trim();
-  const detailHtml = !detail
-    ? ""
-    : e.kind === "inspection"
-      ? `<p class="pdf-life-ta ${e.tone === "warn" ? "pdf-life-ta--warn" : "pdf-life-ta--ok"}">${escapeHtml(detail)}</p>`
-      : `<p class="pdf-life-card__sub">${escapeHtml(detail)}</p>`;
+  const hideCountryDup = lifecycleDetailDuplicatesCountry(detail, e.country);
+  const detailHtml =
+    !detail || hideCountryDup
+      ? ""
+      : e.kind === "inspection"
+        ? `<p class="pdf-life-ta ${e.tone === "warn" ? "pdf-life-ta--warn" : "pdf-life-ta--ok"}">${escapeHtml(detail)}</p>`
+        : `<p class="pdf-life-card__sub">${escapeHtml(detail)}</p>`;
   return `<div class="pdf-life-card__fact">${detailHtml}${buildPdfLifeMetaHtml(e)}</div>`;
 }
 
@@ -538,21 +546,18 @@ function buildPdfLifeImportHtml(e: LifecycleEvent): string {
   </li>`;
 }
 
-function buildPdfLifeIncidentHtml(e: LifecycleEvent, index: number): string {
-  const inner = e.incident ? buildIncidentClusterCardHtml(e.incident, `life${index}`, { hub: true }) : "";
-  return `<li class="pdf-life-item pdf-life-item--incident">
-    ${buildPdfLifeDateHtml(e)}
-    ${buildPdfLifeRailHtml()}
-    <div class="pdf-life-card pdf-life-card--incident">${inner}</div>
-  </li>`;
-}
-
-function buildPdfLifeCardItemHtml(e: LifecycleEvent): string {
+function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): string {
   const isAnomaly = e.kind === "anomaly";
-  const titleIco = isAnomaly
-    ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
-    : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>`;
-  return `<li class="pdf-life-item pdf-life-item--${e.tone}"${isAnomaly ? ' role="alert"' : ""}>
+  const isIncident = e.kind === "incident";
+  const dealerLogo = e.kind === "service" && dealerMakeHint ? pdfDealerLogoDataUri(dealerMakeHint) : null;
+  const titleIco =
+    isAnomaly || isIncident
+      ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
+      : dealerLogo
+        ? `<span class="pdf-life-ico pdf-life-ico--brand" aria-hidden="true">${pdfBrandLogoImgHtml(dealerLogo)}</span>`
+        : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>`;
+  const itemTone = isIncident ? "incident" : e.tone;
+  return `<li class="pdf-life-item pdf-life-item--${itemTone}"${isAnomaly ? ' role="alert"' : ""}>
     ${buildPdfLifeDateHtml(e)}
     ${buildPdfLifeRailHtml()}
     <article class="pdf-life-card${isAnomaly ? " pdf-life-card--alert" : ""}">
@@ -581,9 +586,10 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
   });
   if (events.length === 0) return "";
 
+  const dealerMakeHint = reportVehicleMakeHint(p);
   const items: string[] = [];
   let lastYear = "";
-  for (const [i, e] of events.entries()) {
+  for (const e of events) {
     if (e.kind === "gap") {
       items.push(buildPdfLifeBreakHtml(e));
       continue;
@@ -596,11 +602,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
       items.push(buildPdfLifeImportHtml(e));
       continue;
     }
-    if (e.kind === "incident") {
-      items.push(buildPdfLifeIncidentHtml(e, i));
-      continue;
-    }
-    items.push(buildPdfLifeCardItemHtml(e));
+    items.push(buildPdfLifeCardItemHtml(e, dealerMakeHint));
   }
 
   const legend = buildPdfSourceLegendHtml(events.flatMap((e) => e.sources));
@@ -1031,11 +1033,7 @@ function buildIncidentDamageChipsHtml(dmg: UnifiedIncidentDamage | null): string
   return `<ul class="pdf-incident-chips">${labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`;
 }
 
-function buildIncidentClusterCardHtml(
-  c: UnifiedIncidentCluster,
-  index: number | string,
-  opts?: { hub?: boolean },
-): string {
+function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number | string): string {
   const lossCell = formatLossAmountEurCell(c.displayAmount, { approx: c.averaged });
   const sourceTags = buildIncidentSourceTagsHtml(c);
   const countryLabel = c.country.trim() || "—";
@@ -1049,14 +1047,6 @@ function buildIncidentClusterCardHtml(
         <div class="pdf-incident-card__amount">${lossCell}</div>
         ${chips}
       </div>`;
-  if (opts?.hub) {
-    return `<article class="pdf-incident-card pdf-incident-card--hub${withDmg ? " pdf-incident-card--with-dmg" : ""}">
-      <header class="pdf-incident-card__h"><span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span><span>Negadījums</span></header>
-      <p class="pdf-incident-card__kicker"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></p>
-      <div class="pdf-incident-card__main pdf-incident-card__main--hub">${carFacts}</div>
-      ${sourceTags}
-    </article>`;
-  }
   return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
     <div class="pdf-incident-card__main">
       <div class="pdf-incident-card__datecol">
@@ -1975,6 +1965,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-item--alert .pdf-life-date,
       .pdf-life-item--incident .pdf-life-date,
+      .pdf-life-item--incident .pdf-life-card__kind,
       .pdf-life-card--alert .pdf-life-card__kind{
         color:#B91C1C;
       }
@@ -1997,6 +1988,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-ico{display:inline-flex;color:#64748b;flex-shrink:0;}
       .pdf-life-ico .pdf-ico{width:14px;height:14px;}
+      .pdf-life-ico--brand .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
       .pdf-life-card__fact{min-width:0;}
       .pdf-life-card__sub{margin:0;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
       .pdf-life-ta{margin:0;font-size:var(--pdf-fs-table);font-weight:650;line-height:1.4;}
@@ -2012,6 +2004,8 @@ function clientReportPrintCss(): string {
         font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-life-km--loss,
+      .pdf-life-km--loss .pdf-num-warn-digits{color:#B91C1C;}
       .pdf-life-srcs{
         display:inline-flex;align-items:center;align-content:center;
         gap:4px;flex-wrap:wrap;line-height:1;
@@ -2024,21 +2018,6 @@ function clientReportPrintCss(): string {
       .pdf-life-imp__side{display:inline-flex;align-items:center;gap:8px;}
       .pdf-life-imp__side .pdf-country-flag{font-size:22px;line-height:1;}
       .pdf-life-imp__arrow{font-size:16px;font-weight:700;color:#94a3b8;line-height:1;}
-      .pdf-life-card--incident{padding:12px 14px;}
-      .pdf-life-card--incident .pdf-incident-card{padding:0;border:none;}
-      .pdf-incident-card--hub .pdf-incident-card__h{
-        display:flex;align-items:center;gap:8px;margin:0;font-size:var(--pdf-fs-base);font-weight:700;color:#B91C1C;line-height:1.3;
-      }
-      .pdf-incident-card--hub .pdf-incident-card__kicker{
-        margin:4px 0 8px;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#64748b;
-      }
-      .pdf-incident-card--hub .pdf-incident-card__main--hub{
-        display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px 14px;align-items:center;
-      }
-      .pdf-incident-card--hub .pdf-incident-card__car .pdf-dmg-sil{width:72px;}
-      .pdf-incident-card--hub .pdf-incident-card__amount,
-      .pdf-incident-card--hub .pdf-incident-card__amount .pdf-num-warn-digits{color:#B91C1C;}
-      .pdf-incident-card--hub .pdf-incident-card__srcs{margin:10px 0 0;padding:8px 0 0;}
       .pdf-life-break{
         padding:10px 0 12px;
         break-inside:avoid;page-break-inside:avoid;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   pdfDealerBrandFileKey,
+  pdfDealerLogoDataUri,
   pdfListingPortalLogoId,
 } from "@/lib/pdf-source-brand-logos";
 
@@ -14,9 +15,16 @@ describe("pdfDealerBrandFileKey", () => {
     expect(pdfDealerBrandFileKey("Škoda Octavia")).toBe("skoda");
   });
 
-  it("returns null when the make is not in the hero dealer set", () => {
-    expect(pdfDealerBrandFileKey("TOYOTA YARIS")).toBeNull();
+  it("returns a file key for unmapped makes so a logo can be generated", () => {
+    expect(pdfDealerBrandFileKey("TOYOTA YARIS")).toBe("toyota");
     expect(pdfDealerBrandFileKey("")).toBeNull();
+  });
+
+  it("falls back to an auto-generated mark when the brand SVG is missing", () => {
+    const uri = pdfDealerLogoDataUri("TOYOTA YARIS");
+    expect(uri).toBeTruthy();
+    expect(uri).toMatch(/^data:image\/svg\+xml/);
+    expect(pdfDealerLogoDataUri("AUDI A6")).toBeTruthy();
   });
 });
 

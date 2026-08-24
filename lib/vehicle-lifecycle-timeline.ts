@@ -15,7 +15,8 @@ import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
-import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { lifecycleDealerVisitTitle } from "@/lib/vendor-service-history";
 import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
@@ -113,6 +114,32 @@ function yearOf(raw: string, ms: number): string {
   return m ? m[1]! : "—";
 }
 
+/** Ja «vieta» ir tikai valsts nosaukums, to rāda karoga rindā, ne kā atsevišķu faktu. */
+export function lifecycleLocationIsCountryName(raw: string): boolean {
+  const t = raw.trim();
+  if (!t || /[,;/]/.test(t)) return false;
+  return Boolean(countryLabelToIso2(t));
+}
+
+/** Fakta rinda dublē karoga valsti («Vācija» virs «🇩🇪 Vācija»). */
+export function lifecycleDetailDuplicatesCountry(detail: string, country: string): boolean {
+  const d = detail.trim();
+  const c = country.trim();
+  if (!d || !c || !lifecycleLocationIsCountryName(d)) return false;
+  return normalizeCountryNameLv(d).toLowerCase() === normalizeCountryNameLv(c).toLowerCase();
+}
+
+/** Valsts paliek tikai karoga rindā; darbnīcas nosaukumu (ar «Deutschland» u.c.) neatceļ. */
+function collapseCountryOnlyDetail(e: LifecycleEvent): void {
+  if (e.kind === "import" || e.kind === "gap") return;
+  if (!e.country && lifecycleLocationIsCountryName(e.detail)) {
+    e.country = normalizeCountryNameLv(e.detail) || e.detail;
+    e.detail = "";
+    return;
+  }
+  if (lifecycleDetailDuplicatesCountry(e.detail, e.country)) e.detail = "";
+}
+
 function monthKey(ms: number): string {
   if (ms <= 0) return "";
   const d = new Date(ms);
@@ -140,7 +167,7 @@ function makeEvent(args: {
   tone?: LifecycleEventTone;
 }): LifecycleEvent {
   const ms = parseLifecycleTimeMs(args.rawDate);
-  return {
+  const ev: LifecycleEvent = {
     kind: args.kind,
     date: displayDate(args.rawDate, ms),
     time: ms > 0 ? ms : 0,
@@ -152,6 +179,8 @@ function makeEvent(args: {
     sources: args.source?.trim() ? [args.source.trim()] : [],
     tone: args.tone ?? "info",
   };
+  collapseCountryOnlyDetail(ev);
+  return ev;
 }
 
 function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
@@ -206,13 +235,16 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   }
 
   for (const w of (input.autoRecordsBlock?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable)) {
+    const loc = lifecyclePublicCaption(w.location);
+    const locIsCountry = lifecycleLocationIsCountryName(loc);
     out.push(
       makeEvent({
         kind: "service",
         rawDate: w.date,
-        title: "Apkope",
-        // Darbu saraksts paliek dīlera sadaļā; kopsavilkumā — tikai vieta.
-        detail: w.location.trim(),
+        title: lifecycleDealerVisitTitle(w.works),
+        // Darbu saraksts paliek dīlera sadaļā; kopsavilkumā — tikai vieta (ne valsts dublikāts).
+        detail: locIsCountry ? "" : loc,
+        country: locIsCountry ? loc : "",
         odometer: w.odometer,
         source: "Dīleris",
       }),
@@ -326,6 +358,7 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
     if (!host.odometer && o.odometer) host.odometer = o.odometer;
     if (!host.country && o.country) host.country = o.country;
     for (const s of o.sources) if (!host.sources.includes(s)) host.sources.push(s);
+    collapseCountryOnlyDetail(host);
   }
   return [...facts, ...kept];
 }
@@ -345,6 +378,7 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
     if (!prev.country && e.country) prev.country = e.country;
     if (!prev.detail && e.detail) prev.detail = e.detail;
     for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
+    collapseCountryOnlyDetail(prev);
   }
   return out;
 }
@@ -410,5 +444,6 @@ export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEve
   const merged = mergeOdometerIntoFacts(facts, collectOdometerEvents(input));
   const deduped = dedupeSameEvents(merged).filter((e) => e.time > 0);
   if (deduped.length === 0) return [];
+  for (const e of deduped) collapseCountryOnlyDetail(e);
   return addDerivedEvents(sortAscending(deduped));
 }
