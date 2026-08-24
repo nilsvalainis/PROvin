@@ -1875,6 +1875,9 @@ function clientReportPrintCss(): string {
         --pdf-fs-table:10.5px;
         --pdf-fs-label:9.5px;
         --pdf-fs-fine:8.5px;
+        --pdf-comment-bg:#F6FAFF;
+        --pdf-comment-line:#E4EDFA;
+        --pdf-comment-edge:#C6DAF6;
       }
       *{box-sizing:border-box;}
       html,body,.provin-report-doc{font-family:Inter,sans-serif!important;}
@@ -2215,8 +2218,8 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
       .pdf-mileage-comment-note{
-        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-line);
-        border-radius:10px;background:#fff;
+        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-comment-line);
+        border-left:3px solid var(--pdf-comment-edge);border-radius:10px;background:var(--pdf-comment-bg);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-report-comment-note .pdf-subhead{margin:0 0 5px;}
@@ -2601,10 +2604,10 @@ ${sourceDotColorCss()}
         max-width:100%;
         margin:4px 0 0;
         padding:var(--pdf-pad-inner);
-        border:1px solid #E4EDFA;
-        border-left:3px solid #C6DAF6;
-        border-radius:var(--pdf-radius-inner);
-        background:#F6FAFF;
+        border:1px solid var(--pdf-comment-line);
+        border-left:3px solid var(--pdf-comment-edge);
+        border-radius:10px;
+        background:var(--pdf-comment-bg);
         font-size:calc(0.72rem + 1px)!important;
         font-weight:595!important;
         font-style:normal!important;
@@ -2615,18 +2618,12 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-analysis-chunk .mirror-pre.pdf-manual-comment-body{margin-top:6px;}
-      .pdf-iriss-approved .mirror-pre.pdf-manual-comment-body{
-        background:#fff!important;
-      }
       .provin-report-doc .pdf-iriss-approved{
         border:1px solid var(--pdf-line)!important;background:#fff!important;
         box-shadow:var(--pdf-shadow)!important;
       }
       .pdf-iriss-approved .pdf-sec-head--brand{border-bottom-color:var(--pdf-line);}
       .pdf-iriss-approved h2.pdf-sec{font-size:var(--pdf-fs-sec);}
-      .pdf-iriss-approved .pdf-report-comment-note{
-        background:#fff!important;border-color:var(--pdf-line)!important;
-      }
       .pdf-iriss-approved .pdf-subhead{color:#86868b;}
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
       /* Faktu saraksti (CSDD, dīleris, transportlīdzekļa dati) — viena režģa un tipogrāfijas valoda. */

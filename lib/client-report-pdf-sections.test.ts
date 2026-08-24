@@ -69,6 +69,7 @@ describe("PDF design system", () => {
     expect(html).toContain("--pdf-radius-inner:8px");
     expect(html).toContain("--pdf-gap-section:24px");
     expect(html).toContain("--pdf-fs-sec:13px");
+    expect(html).toContain("--pdf-comment-bg:#F6FAFF");
     expect(html).not.toContain("background:#F3F8FF");
     expect(html).toContain(".pdf-summary-tile--alert{background:#fff;}");
     expect(html).toContain(".pdf-ltab-loss-history{\n        border-color:var(--pdf-line);background:#fff;");
