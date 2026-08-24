@@ -493,7 +493,7 @@ function buildPdfLifeRailHtml(): string {
 
 function buildPdfLifeMetaHtml(e: LifecycleEvent): string {
   const flag = e.country
-    ? `<span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span>`
+    ? `<span class="pdf-life-country"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span></span>`
     : "";
   const dots = e.sources.map((s) => pdfSourceDotHtml(s)).join("");
   const srcsWrap = e.sources.length > 4 ? " pdf-life-srcs--wrap" : "";
@@ -1980,8 +1980,8 @@ function clientReportPrintCss(): string {
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-card__grid{
-        display:grid;grid-template-columns:minmax(7.5rem,0.9fr) minmax(0,1.2fr) auto;
-        gap:6px 16px;align-items:center;
+        display:grid;grid-template-columns:minmax(7.5rem,10rem) minmax(0,1fr) auto;
+        gap:6px 14px;align-items:start;
       }
       .pdf-life-card__kind{
         margin:0;display:flex;align-items:center;gap:8px;font-size:var(--pdf-fs-base);font-weight:700;color:#0f172a;line-height:1.3;
@@ -1991,13 +1991,14 @@ function clientReportPrintCss(): string {
       .pdf-life-ico--brand .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
       .pdf-life-card__fact{min-width:0;}
       .pdf-life-card__sub{margin:0;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
-      .pdf-life-ta{margin:0;font-size:var(--pdf-fs-table);font-weight:650;line-height:1.4;}
+      .pdf-life-ta{margin:0;font-size:var(--pdf-fs-table);font-weight:650;line-height:1.35;}
       .pdf-life-ta--ok{color:#047857;}
       .pdf-life-ta--warn{color:#B45309;}
       .pdf-life-meta{
-        margin:4px 0 0;display:flex;align-items:center;flex-wrap:wrap;gap:8px;
-        font-size:11px;color:#64748b;line-height:1.3;
+        margin:3px 0 0;display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+        font-size:11px;color:#64748b;line-height:1.3;min-width:0;
       }
+      .pdf-life-country{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
       .pdf-life-meta .pdf-country-flag{font-size:13px;line-height:1;}
       .pdf-life-km{
         flex:none;padding:3px 8px;border-radius:6px;background:#F1F5F9;

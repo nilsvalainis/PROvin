@@ -929,6 +929,35 @@ describe("Vēstures kopsavilkums", () => {
     expect(html).toMatch(/\.pdf-life-srcs\{[^}]*flex-wrap:wrap/);
     expect(html).not.toMatch(/\.pdf-life-srcs\{[^}]*max-width:44px/);
   });
+
+  it("keeps the flagged country on one line under a long TA rating", () => {
+    const csdd = emptyCsddFields();
+    csdd.technicalInspectionHistory = [
+      {
+        date: "13.06.2024",
+        inspectionType: "Kārtējā",
+        ratingLabel: "2 - Ar mēneša laikā labojamiem defektiem",
+        ratingLevel: 2,
+        maxDefectLevel: 2,
+        smokeCoefficient: "",
+        notes: "",
+        defects: [],
+      },
+    ];
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({ csddForm: csdd }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const list = html.match(/<ol class="pdf-life-list">[\s\S]*?<\/ol>/)?.[0] ?? "";
+    expect(list).toContain("pdf-life-ta--warn");
+    expect(list).toContain("2 - Ar mēneša laikā labojamiem defektiem");
+    expect(list).toMatch(/pdf-life-country[\s\S]*pdf-country-flag[\s\S]*Latvija/);
+    expect(html).toMatch(/\.pdf-life-country\{[^}]*white-space:nowrap/);
+    expect(html).toMatch(/\.pdf-life-card__grid\{[^}]*minmax\(0,1fr\)/);
+  });
 });
 
 describe("unified PDF sections single block", () => {
