@@ -27,7 +27,6 @@ type HubEvent = {
   incident?: HubIncident;
   ta?: { result: string; next?: string; ok: boolean };
   ownerN?: string;
-  works?: string;
   fromFlag?: string;
   fromCountry?: string;
 };
@@ -165,7 +164,6 @@ const HUB_EVENTS: HubEvent[] = [
     flag: "🇱🇻",
     km: "124 100 km",
     sources: [{ name: "Dīleris", key: "dealer" }],
-    works: "Regulārā apkope · eļļa, filtri",
   },
 ];
 
@@ -250,7 +248,6 @@ function simpleCard(e: HubEvent, opts: { showDate: boolean }): string {
     e.ta
       ? `<p class="hh-ta ${e.ta.ok ? "hh-ta--ok" : "hh-ta--warn"}">${e.ta.result}</p>${e.ta.next ? `<p class="hh-card__sub">Nākamā TA ${e.ta.next}</p>` : ""}`
       : "",
-    e.works ? `<p class="hh-card__sub">${e.works}</p>` : "",
     `<p class="hh-meta">${e.flag} ${e.country} ${dots(e.sources)}</p>`,
   ]
     .filter(Boolean)

@@ -206,15 +206,13 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   }
 
   for (const w of (input.autoRecordsBlock?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable)) {
-    const works = lifecyclePublicCaption(w.works);
-    const loc = lifecyclePublicCaption(w.location);
-    const genericWorks = !works || /^apkope(?:\s*\/\s*remonts)?$/i.test(works);
     out.push(
       makeEvent({
         kind: "service",
         rawDate: w.date,
         title: "Apkope",
-        detail: [genericWorks ? "" : works, loc].filter(Boolean).join(" · "),
+        // Darbu saraksts paliek dīlera sadaļā; kopsavilkumā — tikai vieta.
+        detail: w.location.trim(),
         odometer: w.odometer,
         source: "Dīleris",
       }),

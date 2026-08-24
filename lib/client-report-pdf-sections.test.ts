@@ -699,6 +699,52 @@ describe("Vēstures kopsavilkums", () => {
     expect(events.find((e) => e.kind === "service")!.detail).toBe("BMW Bonn");
   });
 
+  it("keeps detailed service work lists off the lifecycle hub", () => {
+    const events = buildVehicleLifecycleEvents({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          {
+            date: "05.09.2022",
+            odometer: "120000",
+            location: "BMW Bonn",
+            works: "Eļļas maiņa, filtri, bremžu šķidrums",
+          },
+        ],
+      },
+    });
+    const service = events.find((e) => e.kind === "service");
+    expect(service).toBeTruthy();
+    expect(service!.title).toBe("Apkope");
+    expect(service!.detail).toBe("BMW Bonn");
+    expect(service!.detail).not.toMatch(/eļļas|filtri|bremžu/i);
+
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: {
+          ...emptyAutoRecordsBlock(),
+          serviceWorks: [
+            {
+              date: "05.09.2022",
+              odometer: "120000",
+              location: "BMW Bonn",
+              works: "Eļļas maiņa, filtri, bremžu šķidrums",
+            },
+          ],
+        },
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const list = html.match(/<ol class="pdf-life-list">[\s\S]*?<\/ol>/)?.[0] ?? "";
+    expect(list).toContain("Apkope");
+    expect(list).toContain("BMW Bonn");
+    expect(list).not.toContain("Eļļas maiņa");
+    expect(list).not.toContain("bremžu šķidrums");
+  });
+
   it("wraps more than four source dots so they do not overflow the odometer", () => {
     const csdd = emptyCsddFields();
     csdd.mileageHistory = [{ date: "12.05.2026", odometer: "303616", country: "DE" }];
