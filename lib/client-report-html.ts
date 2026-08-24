@@ -471,7 +471,7 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
 
 const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], SectionIconId> = {
   first_registration: "carFront",
-  registration: "scrollText",
+  registration: "user",
   import: "route",
   inspection: "listChecks",
   odometer: "route",
@@ -482,7 +482,91 @@ const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], SectionIconId> = {
   anomaly: "search",
 };
 
-/** Vēstures kopsavilkums — viena hronoloģiska lente ar gadu čipiem un avotu plāksnītēm. */
+function buildPdfLifeDateHtml(e: LifecycleEvent): string {
+  return `<time class="pdf-life-date">${escapeHtml(e.date)}</time>`;
+}
+
+function buildPdfLifeRailHtml(): string {
+  return `<span class="pdf-life-rail" aria-hidden="true"><span class="pdf-life-dot"></span></span>`;
+}
+
+function buildPdfLifeMetaHtml(e: LifecycleEvent): string {
+  const flag = e.country
+    ? `<span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span>`
+    : "";
+  const dots = e.sources.map((s) => pdfSourceDotHtml(s)).join("");
+  const srcsWrap = e.sources.length > 4 ? " pdf-life-srcs--wrap" : "";
+  const srcHtml = dots ? `<span class="pdf-life-srcs${srcsWrap}">${dots}</span>` : "";
+  if (!flag && !srcHtml) return "";
+  return `<p class="pdf-life-meta">${flag}${srcHtml}</p>`;
+}
+
+function buildPdfLifeKmHtml(e: LifecycleEvent): string {
+  const odo = formatServiceWorkOdometer(e.odometer);
+  if (!odo) return "";
+  const inner =
+    e.kind === "anomaly"
+      ? `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="tabular pdf-num-warn-digits">${escapeHtml(odo)}</span></span>`
+      : escapeHtml(odo);
+  return `<span class="pdf-life-km">${inner}</span>`;
+}
+
+function buildPdfLifeFactHtml(e: LifecycleEvent): string {
+  const detail = e.detail.trim();
+  const detailHtml = !detail
+    ? ""
+    : e.kind === "inspection"
+      ? `<p class="pdf-life-ta ${e.tone === "warn" ? "pdf-life-ta--warn" : "pdf-life-ta--ok"}">${escapeHtml(detail)}</p>`
+      : `<p class="pdf-life-card__sub">${escapeHtml(detail)}</p>`;
+  return `<div class="pdf-life-card__fact">${detailHtml}${buildPdfLifeMetaHtml(e)}</div>`;
+}
+
+function buildPdfLifeImportHtml(e: LifecycleEvent): string {
+  const fromLabel = e.fromCountry?.trim() || e.detail.split(" → ")[0]?.trim() || "";
+  const toLabel = e.country.trim() || e.detail.split(" → ")[1]?.trim() || "";
+  const aria = escapeHtml([fromLabel, toLabel].filter(Boolean).join(" → "));
+  return `<li class="pdf-life-item pdf-life-item--import">
+    ${buildPdfLifeDateHtml(e)}
+    ${buildPdfLifeRailHtml()}
+    <article class="pdf-life-card pdf-life-card--import">
+      <p class="pdf-life-imp" role="img" aria-label="${aria}">
+        <span class="pdf-life-imp__side"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(fromLabel)}</span><span>${escapeHtml(fromLabel)}</span></span>
+        <span class="pdf-life-imp__arrow" aria-hidden="true">→</span>
+        <span class="pdf-life-imp__side"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(toLabel)}</span><span>${escapeHtml(toLabel)}</span></span>
+      </p>
+    </article>
+  </li>`;
+}
+
+function buildPdfLifeIncidentHtml(e: LifecycleEvent, index: number): string {
+  const inner = e.incident ? buildIncidentClusterCardHtml(e.incident, `life${index}`, { hub: true }) : "";
+  return `<li class="pdf-life-item pdf-life-item--incident">
+    ${buildPdfLifeDateHtml(e)}
+    ${buildPdfLifeRailHtml()}
+    <div class="pdf-life-card pdf-life-card--incident">${inner}</div>
+  </li>`;
+}
+
+function buildPdfLifeCardItemHtml(e: LifecycleEvent): string {
+  const isAnomaly = e.kind === "anomaly";
+  const titleIco = isAnomaly
+    ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
+    : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>`;
+  return `<li class="pdf-life-item pdf-life-item--${e.tone}"${isAnomaly ? ' role="alert"' : ""}>
+    ${buildPdfLifeDateHtml(e)}
+    ${buildPdfLifeRailHtml()}
+    <article class="pdf-life-card${isAnomaly ? " pdf-life-card--alert" : ""}">
+      ${isAnomaly ? '<span class="pdf-life-alert-edge" aria-hidden="true"></span>' : ""}
+      <div class="pdf-life-card__grid">
+        <p class="pdf-life-card__kind">${titleIco}<span>${escapeHtml(e.title)}</span></p>
+        ${buildPdfLifeFactHtml(e)}
+        ${buildPdfLifeKmHtml(e)}
+      </div>
+    </article>
+  </li>`;
+}
+
+/** Vēstures kopsavilkums — gada joslas un kartītes pie hronoloģiskās sliedes. */
 function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.unifiedMileage && !vis.unifiedIncidents) return "";
   const events = buildVehicleLifecycleEvents({
@@ -499,46 +583,24 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
 
   const items: string[] = [];
   let lastYear = "";
-  for (const e of events) {
+  for (const [i, e] of events.entries()) {
     if (e.kind === "gap") {
       items.push(buildPdfLifeBreakHtml(e));
       continue;
     }
     if (e.year !== lastYear) {
-      items.push(`<li class="pdf-life-year">
-        <span class="pdf-life-year__num">${escapeHtml(e.year)}</span>
-        <span class="pdf-life-rail pdf-life-rail--year" aria-hidden="true"><span class="pdf-life-year__mark"></span></span>
-      </li>`);
+      items.push(`<li class="pdf-life-year"><span class="pdf-life-year__num">${escapeHtml(e.year)}</span></li>`);
       lastYear = e.year;
     }
     if (e.kind === "import") {
-      items.push(buildPdfLifeBreakHtml(e));
+      items.push(buildPdfLifeImportHtml(e));
       continue;
     }
-    const dots = e.sources.map((s) => pdfSourceDotHtml(s)).join("");
-    const flag = e.country ? buildPdfCountryFlagCellHtml(e.country) : "";
-    const odo = e.odometer.trim() ? `${escapeHtml(e.odometer.trim())} km` : "";
-    const srcsWrap = e.sources.length > 4 ? " pdf-life-srcs--wrap" : "";
-    const isAlert = e.tone === "alert";
-    const titleIco = isAlert
-      ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
-      : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>`;
-    const odoHtml =
-      isAlert && odo
-        ? `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="tabular pdf-num-warn-digits">${odo}</span></span>`
-        : odo;
-    items.push(`<li class="pdf-life-item pdf-life-item--${e.tone}"${isAlert ? ' role="alert"' : ""}>
-      ${isAlert ? '<span class="pdf-life-alert-edge" aria-hidden="true"></span>' : ""}
-      <span class="pdf-life-date">${escapeHtml(e.date)}</span>
-      <span class="pdf-life-rail" aria-hidden="true"><span class="pdf-life-dot"></span></span>
-      <span class="pdf-life-body">
-        <span class="pdf-life-title">${titleIco}${escapeHtml(e.title)}</span>
-        ${e.detail ? `<span class="pdf-life-detail">${escapeHtml(e.detail)}</span>` : ""}
-      </span>
-      <span class="pdf-life-odo">${odoHtml}</span>
-      <span class="pdf-life-srcs${srcsWrap}">${dots}</span>
-      <span class="pdf-life-flag">${flag}</span>
-    </li>`);
+    if (e.kind === "incident") {
+      items.push(buildPdfLifeIncidentHtml(e, i));
+      continue;
+    }
+    items.push(buildPdfLifeCardItemHtml(e));
   }
 
   const legend = buildPdfSourceLegendHtml(events.flatMap((e) => e.sources));
@@ -606,22 +668,8 @@ function buildPdfCountryFlagCellHtml(countryLabel: string, extraWrapClass = ""):
   return `<span class="${wrapCls.trim()}" role="img" aria-label="${ariaLabel}"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span class="pdf-country-code">${codeEsc}</span></span>`;
 }
 
-/** Robs un valsts maiņa — centrēti čipi, kas pārtrauc sliedi (ne fakta rindas). */
+/** Robs starp ierakstiem — centrēts čips, kas pārtrauc sliedi. */
 function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
-  if (e.kind === "import") {
-    const fromLabel = e.fromCountry?.trim() || e.detail.split(" → ")[0]?.trim() || "";
-    const toLabel = e.country.trim() || e.detail.split(" → ")[1]?.trim() || "";
-    return `<li class="pdf-life-break pdf-life-break--import">
-      <span class="pdf-life-rail pdf-life-rail--dash" aria-hidden="true"></span>
-      <div class="pdf-life-break__chip" role="img" aria-label="${escapeHtml(e.title)}">
-        <span class="pdf-life-break__flags">
-          ${buildPdfCountryFlagCellHtml(fromLabel, "pdf-life-break__flag")}
-          <span class="pdf-life-break__arrow" aria-hidden="true">→</span>
-          ${buildPdfCountryFlagCellHtml(toLabel, "pdf-life-break__flag")}
-        </span>
-      </div>
-    </li>`;
-  }
   return `<li class="pdf-life-break pdf-life-break--gap">
     <span class="pdf-life-rail pdf-life-rail--dash" aria-hidden="true"></span>
     <div class="pdf-life-break__chip">
@@ -983,7 +1031,11 @@ function buildIncidentDamageChipsHtml(dmg: UnifiedIncidentDamage | null): string
   return `<ul class="pdf-incident-chips">${labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`;
 }
 
-function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number): string {
+function buildIncidentClusterCardHtml(
+  c: UnifiedIncidentCluster,
+  index: number | string,
+  opts?: { hub?: boolean },
+): string {
   const lossCell = formatLossAmountEurCell(c.displayAmount, { approx: c.averaged });
   const sourceTags = buildIncidentSourceTagsHtml(c);
   const countryLabel = c.country.trim() || "—";
@@ -992,17 +1044,26 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number):
   const withDmg = Boolean(dmg && (dmg.zoneIds.length > 0 || dmg.zoneLabels.length > 0 || dmg.groupLabels.length > 0));
   const svg = buildDamageZoneSilhouetteSvg(dmg?.zoneIds ?? [], `c${index}`, undefined, dmg?.zoneLabels ?? []);
   const chips = buildIncidentDamageChipsHtml(dmg);
+  const carFacts = `<div class="pdf-incident-card__car">${svg}</div>
+      <div class="pdf-incident-card__facts">
+        <div class="pdf-incident-card__amount">${lossCell}</div>
+        ${chips}
+      </div>`;
+  if (opts?.hub) {
+    return `<article class="pdf-incident-card pdf-incident-card--hub${withDmg ? " pdf-incident-card--with-dmg" : ""}">
+      <header class="pdf-incident-card__h"><span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span><span>Negadījums</span></header>
+      <p class="pdf-incident-card__kicker"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></p>
+      <div class="pdf-incident-card__main pdf-incident-card__main--hub">${carFacts}</div>
+      ${sourceTags}
+    </article>`;
+  }
   return `<article class="pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
     <div class="pdf-incident-card__main">
       <div class="pdf-incident-card__datecol">
         <time class="pdf-incident-card__date">${escapeHtml(c.date || "—")}</time>
         <span class="pdf-incident-card__country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></span>
       </div>
-      <div class="pdf-incident-card__car">${svg}</div>
-      <div class="pdf-incident-card__facts">
-        <div class="pdf-incident-card__amount">${lossCell}</div>
-        ${chips}
-      </div>
+      ${carFacts}
     </div>
     ${sourceTags}
   </article>`;
@@ -1872,112 +1933,133 @@ function clientReportPrintCss(): string {
         border-bottom:1px solid var(--pdf-line);
       }
       .pdf-life-list{margin:0;padding:0;list-style:none;}
+      .pdf-life-year{
+        display:block;margin:10px 0 8px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-life-list > li:first-child.pdf-life-year{margin-top:0;}
+      .pdf-life-year__num{
+        display:block;font-size:13px;font-weight:700;color:${PDF_BRAND_BLUE_HEX};letter-spacing:0.04em;line-height:1.3;
+        font-variant-numeric:tabular-nums;
+      }
       .pdf-life-item,
-      .pdf-life-year,
       .pdf-life-break{
-        display:grid;grid-template-columns:74px 20px minmax(0,1fr) auto 44px 44px;gap:0 12px;
+        display:grid;grid-template-columns:78px 18px minmax(0,1fr);gap:0 12px;
         align-items:stretch;margin:0;
       }
-      /* Vertikālā līnija iet cauri visām rindām — gadi un notikumi sasaistās vienā lentē. */
       .pdf-life-rail{
         position:relative;display:block;align-self:stretch;justify-self:center;width:2px;
-        background:#E3EAF3;
+        background:#D7E4F5;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-life-year > *:not(.pdf-life-rail){padding:16px 0 7px;}
-      .pdf-life-list > li:first-child.pdf-life-year > *:not(.pdf-life-rail){padding-top:0;}
-      .pdf-life-year__num{
-        font-size:15px;font-weight:700;color:${PDF_BRAND_BLUE_HEX};letter-spacing:0.06em;line-height:1.1;
-        align-self:center;text-align:right;font-variant-numeric:tabular-nums;
-      }
-      .pdf-life-year__mark{
-        position:absolute;left:50%;top:24px;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;
-        border-radius:999px;background:#fff;border:2.5px solid ${PDF_BRAND_BLUE_HEX};
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
-      .pdf-life-list > li:first-child.pdf-life-year .pdf-life-year__mark{top:8px;}
       .pdf-life-item{break-inside:avoid;page-break-inside:avoid;}
-      .pdf-life-item > *:not(.pdf-life-rail):not(.pdf-life-alert-edge){padding:11px 0;}
       .pdf-life-dot{
-        position:absolute;left:50%;top:15px;width:7px;height:7px;margin-left:-3.5px;
-        border-radius:999px;background:#fff;border:2px solid #C4D0DE;
+        position:absolute;left:50%;top:18px;width:9px;height:9px;margin-left:-4.5px;
+        border-radius:999px;background:#fff;border:2px solid #93C5FD;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-item--warn .pdf-life-dot{border-color:#FFC107;}
-      /* Kreisā josla kartes paddingā; pretējais padding notur datumu uz tās pašas kolonnu līnijas. */
-      .pdf-life-item--alert{
+      .pdf-life-item--alert .pdf-life-dot,
+      .pdf-life-item--incident .pdf-life-dot{
+        background:#FF4D4D;border-color:#FF4D4D;
+      }
+      .pdf-life-card--alert{
         position:relative;
         background:#FFF1F2;
-        border-radius:8px;
-        margin-left:-10px;
-        padding-left:10px;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-alert-edge{
-        position:absolute;top:6px;bottom:6px;left:0;width:3px;border-radius:2px;
+        position:absolute;top:8px;bottom:8px;left:0;width:3px;border-radius:2px;
         background:#FF4D4D;pointer-events:none;z-index:1;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-life-item--alert .pdf-life-dot{
-        background:#FF4D4D;border-color:#FF4D4D;
-      }
       .pdf-life-item--alert .pdf-life-date,
-      .pdf-life-item--alert .pdf-life-title{
+      .pdf-life-item--incident .pdf-life-date,
+      .pdf-life-card--alert .pdf-life-card__kind{
         color:#B91C1C;
       }
-      .pdf-life-item--alert .pdf-life-odo,
-      .pdf-life-item--alert .pdf-num-warn-digits{
-        color:#B91C1C!important;font-weight:700;
-      }
-      .pdf-life-item--alert .pdf-life-title .pdf-data-alert-ico{flex-shrink:0;}
+      .pdf-life-item--alert .pdf-num-warn-digits{color:#B91C1C!important;font-weight:700;}
       .pdf-life-date{
-        font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;white-space:nowrap;
-        font-variant-numeric:tabular-nums;line-height:1.4;
+        padding:14px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;white-space:nowrap;
+        font-variant-numeric:tabular-nums;line-height:1.3;text-align:right;
       }
-      .pdf-life-body{min-width:0;}
-      .pdf-life-title{
-        display:flex;align-items:center;gap:7px;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;line-height:1.4;
+      .pdf-life-card{
+        margin:8px 0;padding:12px 14px;border:1px solid #E9EDF3;border-radius:10px;background:#fff;
+        min-width:0;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-life-ico{display:inline-flex;color:#94a3b8;flex-shrink:0;}
-      .pdf-life-ico .pdf-ico{width:13px;height:13px;}
-      .pdf-life-detail{display:block;margin-top:2px;font-size:var(--pdf-fs-table);color:#64748b;line-height:1.45;}
-      .pdf-life-odo{
-        font-size:var(--pdf-fs-base);font-weight:700;color:#0f172a;white-space:nowrap;
-        font-variant-numeric:tabular-nums;line-height:1.4;min-width:6.6em;text-align:right;
+      .pdf-life-card__grid{
+        display:grid;grid-template-columns:minmax(7.5rem,0.9fr) minmax(0,1.2fr) auto;
+        gap:6px 16px;align-items:center;
+      }
+      .pdf-life-card__kind{
+        margin:0;display:flex;align-items:center;gap:8px;font-size:var(--pdf-fs-base);font-weight:700;color:#0f172a;line-height:1.3;
+      }
+      .pdf-life-ico{display:inline-flex;color:#64748b;flex-shrink:0;}
+      .pdf-life-ico .pdf-ico{width:14px;height:14px;}
+      .pdf-life-card__fact{min-width:0;}
+      .pdf-life-card__sub{margin:0;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
+      .pdf-life-ta{margin:0;font-size:var(--pdf-fs-table);font-weight:650;line-height:1.4;}
+      .pdf-life-ta--ok{color:#047857;}
+      .pdf-life-ta--warn{color:#B45309;}
+      .pdf-life-meta{
+        margin:4px 0 0;display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+        font-size:11px;color:#64748b;line-height:1.3;
+      }
+      .pdf-life-meta .pdf-country-flag{font-size:13px;line-height:1;}
+      .pdf-life-km{
+        flex:none;padding:3px 8px;border-radius:6px;background:#F1F5F9;
+        font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-srcs{
-        display:flex;align-items:center;justify-content:center;align-content:center;
-        gap:4px;flex-wrap:wrap;max-width:44px;line-height:1;box-sizing:border-box;
+        display:inline-flex;align-items:center;align-content:center;
+        gap:4px;flex-wrap:wrap;line-height:1;
       }
-      .pdf-life-flag{display:flex;align-items:center;justify-content:flex-end;line-height:1;}
+      .pdf-life-card--import{display:flex;align-items:center;justify-content:center;padding:14px 16px;}
+      .pdf-life-imp{
+        margin:0;display:flex;align-items:center;justify-content:center;gap:12px;
+        font-size:var(--pdf-fs-base);font-weight:650;color:#0f172a;line-height:1.3;
+      }
+      .pdf-life-imp__side{display:inline-flex;align-items:center;gap:8px;}
+      .pdf-life-imp__side .pdf-country-flag{font-size:22px;line-height:1;}
+      .pdf-life-imp__arrow{font-size:16px;font-weight:700;color:#94a3b8;line-height:1;}
+      .pdf-life-card--incident{padding:12px 14px;}
+      .pdf-life-card--incident .pdf-incident-card{padding:0;border:none;}
+      .pdf-incident-card--hub .pdf-incident-card__h{
+        display:flex;align-items:center;gap:8px;margin:0;font-size:var(--pdf-fs-base);font-weight:700;color:#B91C1C;line-height:1.3;
+      }
+      .pdf-incident-card--hub .pdf-incident-card__kicker{
+        margin:4px 0 8px;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#64748b;
+      }
+      .pdf-incident-card--hub .pdf-incident-card__main--hub{
+        display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px 14px;align-items:center;
+      }
+      .pdf-incident-card--hub .pdf-incident-card__car .pdf-dmg-sil{width:72px;}
+      .pdf-incident-card--hub .pdf-incident-card__amount,
+      .pdf-incident-card--hub .pdf-incident-card__amount .pdf-num-warn-digits{color:#B91C1C;}
+      .pdf-incident-card--hub .pdf-incident-card__srcs{margin:10px 0 0;padding:8px 0 0;}
       .pdf-life-break{
         padding:10px 0 12px;
         break-inside:avoid;page-break-inside:avoid;
       }
       .pdf-life-break .pdf-life-rail{grid-column:2;}
       .pdf-life-rail--dash{
-        background:repeating-linear-gradient(to bottom,#E3EAF3 0,#E3EAF3 3px,transparent 3px,transparent 7px)!important;
+        background:repeating-linear-gradient(to bottom,#D7E4F5 0,#D7E4F5 3px,transparent 3px,transparent 7px)!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-break__chip{
-        grid-column:3 / -1;justify-self:center;
+        grid-column:3;justify-self:center;
         display:flex;flex-direction:column;align-items:center;gap:5px;
         max-width:100%;padding:2px 0;
       }
       .pdf-life-break--gap .pdf-life-break__chip{color:#B45309;}
-      .pdf-life-break--import .pdf-life-break__chip{color:#0f172a;}
       .pdf-life-break__lead{
         display:flex;align-items:center;justify-content:center;gap:8px;
       }
       .pdf-life-break__title{
         font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;text-align:center;
         white-space:nowrap;
-      }
-      .pdf-life-break__flags{
-        display:flex;align-items:center;justify-content:center;gap:16px;
-      }
-      .pdf-life-break__arrow{
-        font-size:20px;font-weight:700;color:#64748b;line-height:1;
       }
       .pdf-lifecycle-zone .pdf-src-legend{
         margin-top:14px;padding-top:12px;border-top:1px solid var(--pdf-line);
@@ -2327,14 +2409,6 @@ ${sourceDotColorCss()}
         letter-spacing:0.04em;font-variant-numeric:tabular-nums;text-transform:uppercase;
         font-family:Inter,sans-serif!important;font-size:11px!important;font-weight:500!important;
         color:#374151!important;
-      }
-      .pdf-country-flag-wrap.pdf-life-break__flag{
-        flex-direction:column;align-items:center;justify-content:center;gap:5px;
-        font-size:13px!important;font-weight:700!important;
-      }
-      .pdf-country-flag-wrap.pdf-life-break__flag .pdf-country-flag{font-size:34px;line-height:1;}
-      .pdf-country-flag-wrap.pdf-life-break__flag .pdf-country-code{
-        font-size:13px!important;font-weight:700!important;letter-spacing:0.06em;color:#1e3a5f!important;
       }
       .pdf-mileage-chart-wrap{
         margin:0 0 10px;padding:8px 10px 4px;border-radius:8px;border:1px solid #f1f5f9;background:#fff;

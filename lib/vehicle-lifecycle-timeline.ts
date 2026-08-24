@@ -20,6 +20,7 @@ import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
+  type UnifiedIncidentCluster,
 } from "@/lib/unified-incidents";
 import {
   analyzeUnifiedMileageAnomalies,
@@ -58,6 +59,8 @@ export type LifecycleEvent = {
   odometer: string;
   sources: string[];
   tone: LifecycleEventTone;
+  /** Negadījuma kartīte — tas pats klasteris, ko „Negadījumu vēsture”. */
+  incident?: UnifiedIncidentCluster;
 };
 
 /** Mēnešu skaits starp notikumiem, no kura robs kļūst par patstāvīgu ierakstu. */
@@ -161,22 +164,25 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         kind: "first_registration",
         rawDate: csdd.firstRegistration,
         title: "Pirmā reģistrācija",
-        detail: csdd.previousRegistrationCountry.trim()
-          ? `Iepriekšējā reģistrācijas valsts: ${csdd.previousRegistrationCountry.trim()}`
-          : "",
+        detail: "",
         country: csdd.previousRegistrationCountry,
         source: "CSDD",
       }),
     );
   }
 
+  let lvOwner = 0;
   for (const e of csdd?.ownerRegistrationEvents ?? []) {
     if (!e.date.trim()) continue;
+    lvOwner += 1;
+    const raw = e.label.trim();
+    const firstLv = /pirmā\s+reģistrācija/i.test(raw);
     out.push(
       makeEvent({
-        kind: "registration",
+        kind: firstLv ? "first_registration" : "registration",
         rawDate: e.date,
-        title: e.label.trim() || "Reģistrācija Latvijā",
+        title: firstLv ? "Pirmā reģistrācija" : "Īpašnieka maiņa",
+        detail: firstLv ? "1. reģistrācija Latvijā" : `${lvOwner}. īpašnieks Latvijā`,
         country: "Latvija",
         source: "CSDD",
       }),
@@ -191,8 +197,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         kind: "inspection",
         rawDate: r.date,
         title: "Tehniskā apskate",
-        // Apskates vērtējuma skaidrojums paliek CSDD sadaļā — laikposmā tikai datums, virsraksts, nobraukums.
-        detail: "",
+        detail: r.ratingLabel.trim(),
         country: "Latvija",
         source: "CSDD",
         tone: failed ? "warn" : "info",
@@ -201,13 +206,15 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   }
 
   for (const w of (input.autoRecordsBlock?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable)) {
+    const works = lifecyclePublicCaption(w.works);
+    const loc = lifecyclePublicCaption(w.location);
+    const genericWorks = !works || /^apkope(?:\s*\/\s*remonts)?$/i.test(works);
     out.push(
       makeEvent({
         kind: "service",
         rawDate: w.date,
-        title: "Apkope / remonts",
-        // Veikto darbu saraksts paliek dīlera sadaļā; laikposmā — tikai vieta.
-        detail: w.location.trim(),
+        title: "Apkope",
+        detail: [genericWorks ? "" : works, loc].filter(Boolean).join(" · "),
         odometer: w.odometer,
         source: "Dīleris",
       }),
@@ -238,14 +245,11 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     collectUnifiedIncidentDamageDetails(input.manualVendorBlocks ?? null),
   );
   for (const c of incidents.clusters) {
-    const zones = c.damage?.zoneLabels ?? [];
     const ev = makeEvent({
       kind: "incident",
       rawDate: c.date,
       title: "Negadījums",
-      detail: [c.averaged ? `~${c.displayAmount}` : c.displayAmount, zones.slice(0, 3).join(", ")]
-        .filter(Boolean)
-        .join(" · "),
+      detail: "",
       country: c.country,
       tone: "alert",
     });
@@ -255,6 +259,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       ev.year = yearOf(c.date, c.sortableTime);
     }
     ev.sources = c.sourceValuations.map((s) => s.sourceLabel);
+    ev.incident = c;
     out.push(ev);
   }
 
@@ -379,7 +384,7 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
         date: e.date,
         time: e.time > 0 ? e.time - 1 : 0,
         year: e.year,
-        title: "Valsts maiņa",
+        title: `${prevCountry} → ${e.country}`,
         detail: `${prevCountry} → ${e.country}`,
         country: e.country,
         fromCountry: prevCountry,

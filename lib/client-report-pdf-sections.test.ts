@@ -536,11 +536,12 @@ describe("Vēstures kopsavilkums", () => {
     });
     expect(html).toContain(PDF_LIFECYCLE_TITLE);
     expect(html).toContain("pdf-life-year__num");
+    expect(html).toContain("pdf-life-card");
     expect(html).toContain("Pirmā reģistrācija");
-    // Avoti laikposmā — tikai krāsu punkti atsevišķā kolonnā + leģenda sadaļas apakšā.
     expect(html).toContain('<span class="pdf-life-srcs">');
     expect(html).toContain("pdf-life-rail");
     expect(html).not.toContain("pdf-life-tags");
+    expect(html).toMatch(/\.pdf-life-year\{[^}]*background:#E8F1FC/);
     expect(html.indexOf(PDF_LIFECYCLE_TITLE)).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 
@@ -566,13 +567,12 @@ describe("Vēstures kopsavilkums", () => {
     });
     expect(html).toContain("Iespējama odometra pretruna");
     expect(html).toContain("pdf-life-item--alert");
+    expect(html).toContain("pdf-life-card--alert");
     expect(html).toContain("pdf-mileage-history-row--anomaly");
     expect(html).toContain("pdf-num-warn--red");
-    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*background:#FFF1F2/);
+    expect(html).toMatch(/\.pdf-life-card--alert\{[^}]*background:#FFF1F2/);
     expect(html).toContain("pdf-life-alert-edge");
     expect(html).not.toContain("pdf-life-alert-edge--end");
-    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*margin-left:-10px/);
-    expect(html).toMatch(/\.pdf-life-item--alert\{[^}]*padding-left:10px/);
     expect(html).not.toMatch(/\.pdf-life-alert-edge--end/);
     expect(html).toMatch(/\.pdf-mileage-history-row--anomaly td\{[^}]*background:#FFF1F2/);
   });
@@ -610,7 +610,7 @@ describe("Vēstures kopsavilkums", () => {
     expect(gapLi?.[0]).not.toContain("pdf-life-break__detail");
   });
 
-  it("renders a country change as a centered flag divider that breaks the timeline rail", () => {
+  it("renders a country change as a centered flag card without a Valsts maiņa label", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
         manualVendorBlocks: [
@@ -630,17 +630,41 @@ describe("Vēstures kopsavilkums", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("pdf-life-break--import");
-    expect(html).toContain("pdf-life-break__flag");
-    expect(html).toMatch(/aria-label="Valsts maiņa"/);
-    expect(html).toMatch(/aria-label="Zviedrija"/);
-    expect(html).toMatch(/aria-label="Latvija"/);
-    expect(html).toMatch(/\.pdf-country-flag-wrap\.pdf-life-break__flag \.pdf-country-flag\{[^}]*font-size:34px/);
-    const importLi = html.match(/<li class="pdf-life-break pdf-life-break--import">[\s\S]*?<\/li>/);
-    expect(importLi?.[0]).toContain("pdf-life-rail--dash");
-    expect(importLi?.[0]).toContain("SE");
-    expect(importLi?.[0]).toContain("LV");
-    expect(importLi?.[0]).not.toContain("pdf-life-break__title");
+    expect(html).toContain("pdf-life-card--import");
+    expect(html).toContain("pdf-life-imp");
+    expect(html).toMatch(/aria-label="Zviedrija → Latvija"/);
+    expect(html).not.toContain("Valsts maiņa");
+    const importLi = html.match(/<li class="pdf-life-item pdf-life-item--import">[\s\S]*?<\/li>/);
+    expect(importLi?.[0]).toContain("Zviedrija");
+    expect(importLi?.[0]).toContain("Latvija");
+    expect(importLi?.[0]).toContain("→");
+    expect(importLi?.[0]).toContain("pdf-life-rail");
+    expect(importLi?.[0]).not.toContain("pdf-life-card__kind");
+  });
+
+  it("embeds the incident N card in the hub without red tape chrome", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: "carVertical",
+            mileageRows: [],
+            incidentRows: [{ csngDate: "05.2016", lossAmount: "1 636 €", incidentNo: "Latvija" }],
+            comments: "",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const zone = html.slice(html.indexOf("pdf-lifecycle-zone"), html.indexOf("NEGADĪJUMU VĒSTURE"));
+    expect(zone).toContain("pdf-life-item--incident");
+    expect(zone).toContain("pdf-incident-card--hub");
+    expect(zone).toContain("pdf-life-card--incident");
+    expect(zone).not.toContain("pdf-life-item--alert");
+    expect(zone).not.toMatch(/pdf-life-card--incident[^>]*>[\s\S]*pdf-incident-card__datecol/);
   });
 
   it("omits opaque dealer ID codes from the lifecycle caption", () => {
@@ -655,7 +679,7 @@ describe("Vēstures kopsavilkums", () => {
     const service = events.find((e) => e.kind === "service");
     expect(service).toBeTruthy();
     expect(service!.detail).toBe("");
-    expect(service!.title).toBe("Apkope / remonts");
+    expect(service!.title).toBe("Apkope");
   });
 
   it("keeps a real workshop name next to a stripped dealer ID", () => {
@@ -717,7 +741,7 @@ describe("Vēstures kopsavilkums", () => {
     expect(zone).toContain("pdf-life-srcs--wrap");
     expect(zone).not.toContain("Dīlera ID");
     expect(html).toMatch(/\.pdf-life-srcs\{[^}]*flex-wrap:wrap/);
-    expect(html).toMatch(/\.pdf-life-srcs\{[^}]*max-width:44px/);
+    expect(html).not.toMatch(/\.pdf-life-srcs\{[^}]*max-width:44px/);
   });
 });
 
