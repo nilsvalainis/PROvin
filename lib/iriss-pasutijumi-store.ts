@@ -430,6 +430,9 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     totalBudget: sanitizeDraftTextForStorage(str("totalBudget"), 120),
     engineType: sanitizeDraftTextForStorage(str("engineType"), 200),
     transmission: sanitizeDraftTextForStorage(str("transmission"), 120),
+    bodyType: sanitizeDraftTextForStorage(str("bodyType"), 120),
+    driveType: sanitizeDraftTextForStorage(str("driveType"), 120),
+    seatCount: sanitizeDraftTextForStorage(str("seatCount"), 40),
     maxMileage: sanitizeDraftTextForStorage(str("maxMileage"), 120),
     preferredColors: sanitizeDraftTextForStorage(str("preferredColors"), 400),
     nonPreferredColors: sanitizeDraftTextForStorage(str("nonPreferredColors"), 400),
@@ -466,7 +469,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
   if (!Array.isArray(raw)) return null;
   if (raw.length > 0) {
     const first = raw[0];
-    if (!first || typeof first !== "object" || !("equipmentRequired" in first)) return null;
+    if (!first || typeof first !== "object" || !("equipmentRequired" in first) || !("bodyType" in first)) return null;
   }
   const rows: IrissPasutijumsListRow[] = [];
   for (const item of raw) {
@@ -489,6 +492,9 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       productionYears: sanitizeDraftTextForStorage(typeof o.productionYears === "string" ? o.productionYears : "", 80),
       engineType: sanitizeDraftTextForStorage(typeof o.engineType === "string" ? o.engineType : "", 80),
       transmission: sanitizeDraftTextForStorage(typeof o.transmission === "string" ? o.transmission : "", 80),
+      bodyType: sanitizeDraftTextForStorage(typeof o.bodyType === "string" ? o.bodyType : "", 80),
+      driveType: sanitizeDraftTextForStorage(typeof o.driveType === "string" ? o.driveType : "", 80),
+      seatCount: sanitizeDraftTextForStorage(typeof o.seatCount === "string" ? o.seatCount : "", 40),
       maxMileage: sanitizeDraftTextForStorage(typeof o.maxMileage === "string" ? o.maxMileage : "", 80),
       preferredColors: sanitizeDraftTextForStorage(typeof o.preferredColors === "string" ? o.preferredColors : "", 200),
       nonPreferredColors: sanitizeDraftTextForStorage(typeof o.nonPreferredColors === "string" ? o.nonPreferredColors : "", 200),

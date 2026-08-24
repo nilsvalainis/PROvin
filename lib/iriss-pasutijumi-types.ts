@@ -151,6 +151,9 @@ export type IrissPasutijumsRecord = {
   totalBudget: string;
   engineType: string;
   transmission: string;
+  bodyType: string;
+  driveType: string;
+  seatCount: string;
   maxMileage: string;
   preferredColors: string;
   nonPreferredColors: string;
@@ -193,6 +196,9 @@ export type IrissPasutijumsListRow = {
   productionYears: string;
   engineType: string;
   transmission: string;
+  bodyType: string;
+  driveType: string;
+  seatCount: string;
   maxMileage: string;
   preferredColors: string;
   nonPreferredColors: string;
@@ -241,6 +247,9 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     totalBudget: "",
     engineType: "",
     transmission: "",
+    bodyType: "",
+    driveType: "",
+    seatCount: "",
     maxMileage: "",
     preferredColors: "",
     nonPreferredColors: "",

@@ -28,6 +28,9 @@ describe("IRISS saraksta rinda", () => {
     rec.phone = "20000000";
     rec.engineType = "2.0D";
     rec.transmission = "Mehānika";
+    rec.bodyType = "Universālis";
+    rec.driveType = "4×4";
+    rec.seatCount = "5";
     rec.equipmentRequired = "ACC";
     rec.dealEkki = true;
     const row = irissPasutijumsToListRow(rec);
@@ -39,6 +42,9 @@ describe("IRISS saraksta rinda", () => {
     expect(formatIrissListDate(row)).toBe("22.04");
     expect(formatIrissListSpecSummary(row)).toContain("2.0D");
     expect(formatIrissListSpecSummary(row)).toContain("Mehānika");
+    expect(formatIrissListSpecSummary(row)).toContain("Universālis");
+    expect(formatIrissListSpecSummary(row)).toContain("4×4");
+    expect(formatIrissListSpecSummary(row)).toContain("5");
     expect(formatIrissListSpecSummary(row)).toContain("EKKI");
     expect(formatIrissListSpecSummary(row)).not.toContain("VW Golf");
     expect(irissPhoneTelHref(row.phone)).toBe("tel:+37120000000");

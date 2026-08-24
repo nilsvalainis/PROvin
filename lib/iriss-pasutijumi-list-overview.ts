@@ -133,6 +133,9 @@ export function collectIrissPasutijumsOverview(record: IrissPasutijumsRecord): I
   pushSpec("Maks. nobraukums", record.maxMileage);
   pushSpec("Transmisija", record.transmission);
   pushSpec("Dzinēja tips", record.engineType);
+  pushSpec("Virsbūves tips", record.bodyType);
+  pushSpec("Piedziņas tips", record.driveType);
+  pushSpec("Sēdvietu skaits", record.seatCount);
   pushSpec("Kopējais budžets", record.totalBudget);
   pushSpec("Vēlamās krāsas", record.preferredColors);
   pushSpec("Nevēlamās krāsas", record.nonPreferredColors);

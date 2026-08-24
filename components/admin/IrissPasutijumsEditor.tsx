@@ -1272,6 +1272,24 @@ export function IrissPasutijumsEditor({
               onChange={(e) => patch("transmission", e.target.value)}
             />
             <LabeledInput
+              label="Virsbūves tips"
+              value={rec.bodyType}
+              onChange={(e) => patch("bodyType", e.target.value)}
+              placeholder="piem., hečbeks, SUV"
+            />
+            <LabeledInput
+              label="Piedziņas tips"
+              value={rec.driveType}
+              onChange={(e) => patch("driveType", e.target.value)}
+              placeholder="piem., priekšējā, 4×4"
+            />
+            <LabeledInput
+              label="Sēdvietu skaits"
+              value={rec.seatCount}
+              onChange={(e) => patch("seatCount", e.target.value)}
+              placeholder="piem., 5"
+            />
+            <LabeledInput
               label="Maks. nobraukums"
               value={rec.maxMileage}
               onChange={(e) => patch("maxMileage", e.target.value)}

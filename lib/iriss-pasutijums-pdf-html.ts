@@ -474,7 +474,10 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     infoTile("Gads / periods", record.productionYears) +
       infoTile("Maks. nobraukums", record.maxMileage) +
       infoTile("Transmisija", record.transmission) +
-      infoTile("Dzinēja tips", record.engineType),
+      infoTile("Dzinēja tips", record.engineType) +
+      infoTile("Virsbūves tips", record.bodyType) +
+      infoTile("Piedziņas tips", record.driveType) +
+      infoTile("Sēdvietu skaits", record.seatCount),
   );
 
   const markaRows = rowIf("Marka / modelis", record.brandModel);

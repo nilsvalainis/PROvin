@@ -39,6 +39,9 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
         productionYears: "2020",
         maxMileage: "60000",
         engineType: "Elektriskais",
+        bodyType: "Hečbeks",
+        driveType: "Aizmugurējā",
+        seatCount: "5",
         totalBudget: "45000",
         nonPreferredColors: "Sarkana, balta",
         equipmentRequired: "Adaptīvā kruīza kontrole",
@@ -59,6 +62,9 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
     ]);
     expect(o.specLines).toContain("Marka / modelis: BMW iX40");
     expect(o.specLines).toContain("Dzinēja tips: Elektriskais");
+    expect(o.specLines).toContain("Virsbūves tips: Hečbeks");
+    expect(o.specLines).toContain("Piedziņas tips: Aizmugurējā");
+    expect(o.specLines).toContain("Sēdvietu skaits: 5");
     expect(o.specLines).not.toContain("EKKI: Jā");
     expect(o.dealLines).toEqual(["EKKI: Jā"]);
     expect(o.equipmentRequired).toBe("Adaptīvā kruīza kontrole");

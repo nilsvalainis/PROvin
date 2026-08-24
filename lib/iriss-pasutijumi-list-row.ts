@@ -25,6 +25,9 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     productionYears: rec.productionYears.trim(),
     engineType: rec.engineType.trim(),
     transmission: rec.transmission.trim(),
+    bodyType: rec.bodyType.trim(),
+    driveType: rec.driveType.trim(),
+    seatCount: rec.seatCount.trim(),
     maxMileage: rec.maxMileage.trim(),
     preferredColors: rec.preferredColors.trim(),
     nonPreferredColors: rec.nonPreferredColors.trim(),
@@ -54,6 +57,9 @@ export function formatIrissListSpecSummary(row: IrissPasutijumsListRow): string 
   push(row.productionYears);
   push(row.engineType);
   push(row.transmission);
+  push(row.bodyType);
+  push(row.driveType);
+  push(row.seatCount);
   push(row.maxMileage);
   push(row.preferredColors);
   if (row.nonPreferredColors.trim()) parts.push(`ne ${row.nonPreferredColors.trim()}`);
