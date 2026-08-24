@@ -12,6 +12,7 @@ import type {
   TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
+import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
@@ -115,6 +116,16 @@ function monthKey(ms: number): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+/** DD.MM.YYYY / ISO, vai MM.YYYY (→ mēneša 1. diena). 0, ja nederīgs. */
+function parseLifecycleTimeMs(raw: string): number {
+  const direct = parseDotOrIsoDateToMs(raw);
+  if (direct > 0) return direct;
+  const expanded = formatAutoRecordsDateForOutput(raw);
+  if (!expanded || expanded === raw.trim()) return 0;
+  const fromMonth = parseDotOrIsoDateToMs(expanded);
+  return fromMonth > 0 ? fromMonth : 0;
+}
+
 function makeEvent(args: {
   kind: LifecycleEventKind;
   rawDate: string;
@@ -125,7 +136,7 @@ function makeEvent(args: {
   source?: string;
   tone?: LifecycleEventTone;
 }): LifecycleEvent {
-  const ms = parseDotOrIsoDateToMs(args.rawDate);
+  const ms = parseLifecycleTimeMs(args.rawDate);
   return {
     kind: args.kind,
     date: displayDate(args.rawDate, ms),
@@ -238,6 +249,11 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       country: c.country,
       tone: "alert",
     });
+    // Klastera displeja datums var būt MM.YYYY, ja avoti nesakrīt dienā — kārtošanai ņem precīzāko locekli.
+    if (c.sortableTime > 0 && Number.isFinite(c.sortableTime)) {
+      ev.time = c.sortableTime;
+      ev.year = yearOf(c.date, c.sortableTime);
+    }
     ev.sources = c.sourceValuations.map((s) => s.sourceLabel);
     out.push(ev);
   }

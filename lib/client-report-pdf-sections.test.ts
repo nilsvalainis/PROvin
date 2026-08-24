@@ -400,6 +400,47 @@ describe("TRANSPORTLĪDZEKĻA DATI", () => {
 });
 
 describe("Vēstures kopsavilkums", () => {
+  it("keeps a month-only clustered incident in the timeline (CarVertical 01.MM + LTAB day)", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [
+        {
+          title: "carVertical",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "01.05.2016", lossAmount: "1 501 - 2 000 €", incidentNo: "Latvija" }],
+          comments: "",
+        },
+      ],
+      manualLtabBlock: {
+        rows: [{ csngDate: "16.05.2016", lossAmount: "1 521.14 €", incidentNo: "Latvija" }],
+        comments: "",
+      },
+    });
+    const incident = events.find((e) => e.kind === "incident");
+    expect(incident).toBeTruthy();
+    expect(incident!.title).toBe("Negadījums");
+    expect(incident!.date).toBe("05.2016");
+    expect(incident!.time).toBe(Date.UTC(2016, 4, 16));
+    expect(incident!.year).toBe("2016");
+  });
+
+  it("keeps a CarVertical MM.YYYY-only incident in the timeline", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [
+        {
+          title: "carVertical",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "05.2016", lossAmount: "1 636 €", incidentNo: "Latvija" }],
+          comments: "",
+        },
+      ],
+    });
+    const incident = events.find((e) => e.kind === "incident");
+    expect(incident).toBeTruthy();
+    expect(incident!.date).toBe("05.2016");
+    expect(incident!.time).toBeGreaterThan(0);
+    expect(incident!.year).toBe("2016");
+  });
+
   it("builds one chronological lifecycle from all sources", () => {
     const csdd = emptyCsddFields();
     csdd.firstRegistration = "12.05.2016";
