@@ -21,7 +21,7 @@ describe("extractExplicitOwnerCount", () => {
     expect(extractExplicitOwnerCount("6 īpašnieki")).toBe(6);
     expect(extractExplicitOwnerCount("Aplēstais īpašnieku skaits: 2")).toBe(2);
     expect(extractExplicitOwnerCount("Īpašnieku skaits: 4")).toBe(4);
-    expect(extractExplicitOwnerCount("Aplēstais īpašnieku skaits: 5 (pēc 4 OCTA kompāniju maiņām Dānijā). Nav DMR oficiālais īpašnieku saraksts.")).toBe(5);
+    expect(extractExplicitOwnerCount("Dānijas īpašnieku skaits: 2 (līzings + privāta reģistrācija Dānijā, ne pēc OCTA).")).toBe(2);
     expect(extractExplicitOwnerCount("04.09.2023 īpašnieka maiņa: AutoEtt\n12.10.2023 īpašnieka maiņa: X")).toBeNull();
     expect(extractExplicitOwnerCount("2 īpašnieku maiņas")).toBeNull();
   });
@@ -50,15 +50,17 @@ describe("synthesizeOwnerCountsFromBlocks", () => {
     expect(syn.chosen.other).toBeUndefined();
   });
 
-  it("takes Danish owner estimate from DĀNIJAS REĢISTRI OCTA line", () => {
+  it("takes Danish owner count from DĀNIJAS REĢISTRI lease + private phases", () => {
     const blocks = createDefaultSourceBlocks();
     blocks.tjekbil = {
       ...emptyVinRegistryBlock(),
-      ownersSummary: "Aplēstais īpašnieku skaits: 5 (pēc 4 OCTA kompāniju maiņām Dānijā). Nav DMR oficiālais īpašnieku saraksts.",
+      ownersSummary:
+        "Dānijas īpašnieku skaits: 2 (līzings + privāta reģistrācija Dānijā, ne pēc OCTA). DMR publiski neraāda īpašnieku sarakstu.\nPirmā reģistrācija: 18.12.2013 (ārpus Dānijas — nav Dānijas īpašnieks)",
     };
     const syn = synthesizeOwnerCountsFromBlocks(blocks);
-    expect(syn.chosen.denmark?.count).toBe(5);
-    expect(syn.noteLine).toMatch(/Dānijā: 5/);
+    expect(syn.chosen.denmark?.count).toBe(2);
+    expect(syn.noteLine).toMatch(/Dānijā: 2/);
+    expect(syn.chosen.germany).toBeUndefined();
   });
 
   it("does not sum AutoDNA and CarVertical for the same unspecified market", () => {

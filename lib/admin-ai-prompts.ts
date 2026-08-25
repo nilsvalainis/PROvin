@@ -471,7 +471,7 @@ FORMĀTS (obligāti):
 - Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Kopējā aina.**, **Galvenais risks.**, **Rekomendācija.**).
 - Būtiskus skaitļus (km, datumi) raksti parastā tekstā, ja tie maina secinājumu — bet bez faktu kataloga un bez *.
 - CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā. Remonta tāmes nav arī 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
-- ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = DĀNIJAS REĢISTRI (aplēse pēc OCTA kompāniju maiņām, ja nav oficiāla DMR saraksta). Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
+- ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = DĀNIJAS REĢISTRI — tikai Dānijas fāzes (līzings un privāta reģistrācija ir divi īpašnieki; nepārtraukti līzinga līgumi = viens; pirmā reģistrācija ārvalstīs nav Dānijas īpašnieks); nekad OCTA polišu maiņas. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
 - Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
 - WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes — ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana — tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav — par plēvi NERAKSTI.
@@ -526,7 +526,7 @@ DEALER / AUTO RECORDS FOCUS:
   if (blockLabel === L.tjekbil || blockLabel === L.mnt_ee || blockLabel === L.lkf_ee || blockLabel === L.carinfo) {
     const scope =
       blockLabel === L.tjekbil
-        ? "Danish DMR / Færdselsstyrelsen registry data (odometer, inspections, usage, leasing, Bilbogen). Owner count is an OCTA-company-change estimate, not an official DMR owner list."
+        ? "Danish DMR / Færdselsstyrelsen registry data (odometer, inspections, usage, leasing, Bilbogen). Danish owner count: leasing and later private registration are two owners; consecutive lease contracts count as one leasing chapter; first registration abroad is not a Danish owner; never insurance/OCTA switches."
         : blockLabel === L.mnt_ee
           ? "Estonian Transpordiamet registry data (odometer readings, usage history, restrictions, arrests/pledges)"
           : blockLabel === L.lkf_ee

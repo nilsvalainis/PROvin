@@ -11,7 +11,7 @@ function base(partial: Partial<VinSourceFetchResult>): VinSourceFetchResult {
     mileage: [{ date: "2026-01-28", odometer: "188528", country: "Dānija", origin: "synsrapport" }],
     incidents: [],
     timeline: [{ date: "2026-01-28", odometer: "188528", country: "Dānija", event: "Periodiskā apskate: izturēta" }],
-    ownersSummary: "OCTA polišu maiņas",
+    ownersSummary: "Dānijas īpašnieku skaits: 1 (pēc reģistrācijas darbībām Dānijā, ne pēc OCTA).",
     statusRecords: "Privāta lietošana",
     notes: ["Neviena apskate nav izgāzta."],
     raw: '{"dmr":true}',

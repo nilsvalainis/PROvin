@@ -74,65 +74,152 @@ function insuranceHistory(dmr: TjekbilDmrResponse): Record<string, unknown>[] {
   return asArray(dmr.extended?.insurance?.historik).map(asRecord);
 }
 
-function normInsurer(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\ba\/s\b/g, "")
-    .replace(/\bforsikring\b/g, "")
-    .replace(/[^a-z0-9æøå]+/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+export type DkRegistrationSignal = { date: string; event: string };
+
+const OWNER_TRANSFER_RE = /ejer|owner|omregistr|ejerskift|overdrag/i;
+const DEREG_RE = /afmeld|udmeld/i;
+const NOT_REG_TRANSFER_RE = /syn|forsikring|insurance|octa|kilometer|kmstand/i;
+
+function statusHistorySignals(
+  basic: Record<string, unknown>,
+  mode: "owners" | "timeline" = "owners",
+): DkRegistrationSignal[] {
+  const out: DkRegistrationSignal[] = [];
+  for (const item of asArray(basic.statusHistory)) {
+    const rec = asRecord(item);
+    const date = isoDay(rec.dato ?? rec.date ?? rec.statusDato ?? rec.statusdato);
+    const blob = [str(rec.type), str(rec.status), str(rec.beskrivelse), str(rec.typeNavn), str(rec.kategori)].join(" ");
+    if (!date || !blob.trim() || NOT_REG_TRANSFER_RE.test(blob)) continue;
+    const isTransfer = OWNER_TRANSFER_RE.test(blob);
+    const isDereg = DEREG_RE.test(blob);
+    if (mode === "owners" && (isDereg || !isTransfer)) continue;
+    if (mode === "timeline" && !isTransfer && !isDereg) continue;
+    const event =
+      translateTermLv(str(rec.typeNavn) || str(rec.type) || str(rec.status), "da") || blob.trim().slice(0, 80);
+    out.push({ date, event });
+  }
+  return out;
 }
 
-function isAktivStatus(status: string): boolean {
-  return /^aktiv/i.test(status.trim());
+function dkRegistreringssynDates(inspections: TjekbilInspection[]): string[] {
+  const dates: string[] = [];
+  for (const r of inspections) {
+    if (isCustomsInspection(r)) continue;
+    if (!/registreringssyn/i.test(`${str(r.kategori)} ${str(r.synstype)}`)) continue;
+    const date = isoDay(r.synsdato);
+    if (date) dates.push(date);
+  }
+  return dates;
 }
 
-function isOphoertStatus(status: string): boolean {
-  return /ophørt|ophoert|ophort/i.test(status.trim());
+/** Pirmā reģistrācija ir Dānijas īpašnieks tikai tad, ja auto nav importēts vēlāk. */
+export function firstRegistrationIsDanish(dmr: TjekbilDmrResponse, inspections: TjekbilInspection[]): boolean {
+  const firstReg = isoDay(dmr.basic?.foersteRegistreringDato);
+  if (!firstReg) return false;
+  if (inspections.some(isCustomsInspection)) return false;
+  return !dkRegistreringssynDates(inspections).some((date) => date !== firstReg);
 }
 
-export type DkOctaOwnerPeriod = { date: string; company: string };
+function addIsoDays(iso: string, days: number): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return "";
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + days));
+  return d.toISOString().slice(0, 10);
+}
+
+function minIsoDay(dates: string[]): string {
+  const ok = dates.filter(Boolean).sort();
+  return ok[0] ?? "";
+}
+
+function maxIsoDay(dates: string[]): string {
+  const ok = dates.filter(Boolean).sort();
+  return ok[ok.length - 1] ?? "";
+}
+
+function mergedLeaseSpans(basic: Record<string, unknown>): { from: string; to: string }[] {
+  const raw = leasingPeriods(basic)
+    .map((p) => ({ from: p.from, to: p.to || p.from }))
+    .filter((p) => p.from)
+    .sort((a, b) => a.from.localeCompare(b.from));
+  const out: { from: string; to: string }[] = [];
+  for (const p of raw) {
+    const prev = out[out.length - 1];
+    if (prev && p.from <= addIsoDays(prev.to, 7)) {
+      if (p.to > prev.to) prev.to = p.to;
+    } else {
+      out.push({ from: p.from, to: p.to });
+    }
+  }
+  return out;
+}
+
+function occupancyPhaseLabel(
+  date: string,
+  kind: "lease" | "private",
+  dmr: TjekbilDmrResponse,
+  inspections: TjekbilInspection[],
+): string {
+  if (kind === "lease") return "Līzings Dānijā";
+  const firstReg = isoDay(dmr.basic?.foersteRegistreringDato);
+  if (firstReg && date === firstReg && firstRegistrationIsDanish(dmr, inspections)) {
+    return "Pirmā reģistrācija Dānijā";
+  }
+  if (dkRegistreringssynDates(inspections).includes(date)) return "Reģistrācija Dānijā";
+  return "Privāta reģistrācija Dānijā";
+}
 
 /**
- * DMR publiski neraāda īpašnieku sarakstu. Tuvākais signāls: jauna OCTA kompānija kļūst aktīva.
- * Tā pati kompānija (pagarinājums) un tīrā Ophørt (noņemšana no uzskaites) nav jauns īpašnieks.
+ * Dānijas īpašnieku fāzes: nepārtraukts līzings = 1, privāta reģistrācija pirms/pēc = atsevišķi.
+ * Ārvalstu pirmā reģistrācija, OCTA un atsevišķi līzinga līgumi nav jauns īpašnieks.
  */
-export function estimateDkOwnersFromOcta(history: Record<string, unknown>[]): DkOctaOwnerPeriod[] {
-  const events = history
-    .map((h) => ({
-      date: isoDay(h.oprettet ?? h.dato),
-      company: str(h.selskab).trim(),
-      status: str(h.status).trim(),
-    }))
-    .filter((e) => e.date && e.company)
-    .sort((a, b) => a.date.localeCompare(b.date) || a.status.localeCompare(b.status));
+export function extractDkRegistrationSignals(
+  dmr: TjekbilDmrResponse,
+  inspections: TjekbilInspection[],
+): DkRegistrationSignal[] {
+  const basic = dmr.basic ?? {};
+  const leases = mergedLeaseSpans(basic);
+  const firstReg = isoDay(basic.foersteRegistreringDato);
+  const dkFirstReg = firstReg && firstRegistrationIsDanish(dmr, inspections) ? firstReg : "";
+  const synDates = dkRegistreringssynDates(inspections);
+  const inspDates = inspections
+    .filter((r) => !isCustomsInspection(r))
+    .map((r) => isoDay(r.synsdato))
+    .filter(Boolean);
+  const dkStart = minIsoDay([dkFirstReg, ...synDates, ...leases.map((l) => l.from), ...inspDates]);
+  const rows: DkRegistrationSignal[] = [];
+  if (!dkStart) return rows;
 
-  const byDate = new Map<string, typeof events>();
-  for (const e of events) {
-    const list = byDate.get(e.date) ?? [];
-    list.push(e);
-    byDate.set(e.date, list);
-  }
-
-  const periods: DkOctaOwnerPeriod[] = [];
-  let current: string | null = null;
-  for (const date of [...byDate.keys()].sort()) {
-    const day = byDate.get(date) ?? [];
-    const aktivs = day.filter((e) => isAktivStatus(e.status));
-    const ophoerts = day.filter((e) => isOphoertStatus(e.status));
-    const newAktiv = aktivs.find((e) => !current || normInsurer(e.company) !== current);
-    if (newAktiv) {
-      periods.push({ date, company: newAktiv.company });
-      current = normInsurer(newAktiv.company);
-      continue;
+  const dkEnd = maxIsoDay([isoDay(basic.statusDato), ...inspDates, ...leases.map((l) => l.to), dkStart]);
+  let cursor = dkStart;
+  for (const lease of leases) {
+    if (lease.to < dkStart || lease.from > dkEnd) continue;
+    const leaseFrom = lease.from < dkStart ? dkStart : lease.from;
+    if (leaseFrom > cursor) {
+      rows.push({ date: cursor, event: occupancyPhaseLabel(cursor, "private", dmr, inspections) });
     }
-    const currentEnded = Boolean(
-      current && ophoerts.some((e) => normInsurer(e.company) === current) && !aktivs.some((e) => normInsurer(e.company) === current),
-    );
-    if (currentEnded) current = null;
+    rows.push({ date: leaseFrom, event: occupancyPhaseLabel(leaseFrom, "lease", dmr, inspections) });
+    cursor = addIsoDays(lease.to, 1);
   }
-  return periods;
+  if (cursor && dkEnd && cursor <= dkEnd) {
+    rows.push({ date: cursor, event: occupancyPhaseLabel(cursor, "private", dmr, inspections) });
+  }
+
+  if (dkFirstReg && !rows.some((s) => s.date === dkFirstReg)) {
+    rows.push({ date: dkFirstReg, event: "Pirmā reģistrācija Dānijā" });
+  }
+  for (const date of synDates) {
+    if (rows.some((s) => s.date === date)) continue;
+    rows.push({ date, event: "Reģistrācija Dānijā" });
+  }
+
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = `${row.date}|${row.event}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function leasingPeriods(basic: Record<string, unknown>): { from: string; to: string }[] {
@@ -273,6 +360,10 @@ export function buildTjekbilTimeline(dmr: TjekbilDmrResponse, inspections: Tjekb
     if (period.to) push(period.to, "Līzings beidzas");
   }
 
+  for (const s of statusHistorySignals(basic, "timeline")) {
+    push(s.date, `Reģistrācijas darbība: ${s.event}`);
+  }
+
   for (const h of insuranceHistory(dmr)) {
     const when = isoDay(h.oprettet);
     const company = str(h.selskab);
@@ -300,23 +391,26 @@ export function buildTjekbilOwnersSummary(dmr: TjekbilDmrResponse, inspections: 
   const basic = dmr.basic ?? {};
   const insurance = dmr.extended?.insurance;
   const lines: string[] = [];
-  const history = insuranceHistory(dmr);
-  const periods = estimateDkOwnersFromOcta(history);
-  if (periods.length > 0) {
-    const n = periods.length;
-    const changes = n - 1;
-    const changeText =
-      changes === 0
-        ? "OCTA kompāniju maiņu nav"
-        : `pēc ${changes} OCTA kompāniju maiņām Dānijā`;
-    lines.push(`Aplēstais īpašnieku skaits: ${n} (${changeText}). Nav DMR oficiālais īpašnieku saraksts.`);
-    for (const p of periods) {
-      lines.push(`${formatRegistryDateLv(p.date)} OCTA: ${p.company}`);
+  const signals = extractDkRegistrationSignals(dmr, inspections);
+  if (signals.length > 0) {
+    const n = new Set(signals.map((s) => s.date)).size;
+    const hasLease = signals.some((s) => s.event === "Līzings Dānijā");
+    const hasPrivate = signals.some((s) => s.event === "Privāta reģistrācija Dānijā");
+    const basis =
+      hasLease && hasPrivate
+        ? "līzings + privāta reģistrācija Dānijā, ne pēc OCTA"
+        : "pēc reģistrācijas darbībām Dānijā, ne pēc OCTA";
+    lines.push(`Dānijas īpašnieku skaits: ${n} (${basis}). DMR publiski neraāda īpašnieku sarakstu.`);
+    lines.push("Reģistrācijas darbības Dānijā:");
+    for (const s of [...signals].sort((a, b) => a.date.localeCompare(b.date))) {
+      lines.push(`${formatRegistryDateLv(s.date)} ${s.event}`);
     }
   }
 
   const firstReg = isoDay(basic.foersteRegistreringDato);
-  if (firstReg) lines.push(`Pirmā reģistrācija: ${formatRegistryDateLv(firstReg)}`);
+  if (firstReg && !firstRegistrationIsDanish(dmr, inspections)) {
+    lines.push(`Pirmā reģistrācija: ${formatRegistryDateLv(firstReg)} (ārpus Dānijas — nav Dānijas īpašnieks)`);
+  }
 
   const importSyn = inspections.find(isCustomsInspection);
   if (importSyn) {
@@ -333,8 +427,9 @@ export function buildTjekbilOwnersSummary(dmr: TjekbilDmrResponse, inspections: 
     lines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
   }
 
+  const history = insuranceHistory(dmr);
   if (history.length > 0) {
-    lines.push("OCTA polišu ieraksti:");
+    lines.push("OCTA polišu ieraksti (nav īpašnieku skaits):");
     for (const h of history) {
       const when = formatRegistryDateLv(isoDay(h.oprettet));
       const parts = [when, str(h.selskab), translateTermLv(str(h.status), "da")].filter(Boolean);

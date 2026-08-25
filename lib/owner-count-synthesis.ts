@@ -70,6 +70,7 @@ function parsePositiveCount(raw: string): number | null {
 export function extractExplicitOwnerCount(text: string): number | null {
   const cleaned = text.replace(/\d{1,2}\s*īpašniek[aāu]?\s*maiņ[aāu]?/gi, " ");
   const patterns = [
+    /dānijas\s+īpašnieku\s+skaits[:\s]+(\d{1,2})/i,
     /(?:aplēstais\s+)?īpašnieku\s+skaits[:\s]+(\d{1,2})/i,
     /(\d{1,2})\s*īpašnieki(?:\s|\(|$)/i,
     /number of owners[:\s]+(\d{1,2})/i,
