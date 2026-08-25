@@ -36,6 +36,8 @@ export type VinSourceFetchResult = {
   message: string;
   mileage: VinSourceMileageRow[];
   incidents: VinSourceIncidentRow[];
+  /** Reģistra darbības pa datumiem (apskates, īpašnieki, līzings, apdrošināšana). */
+  timeline: { date: string; odometer: string; country: string; event: string }[];
   /** Īpašnieku skaits un reģistrācijas darbību apkopojums (latviski). */
   ownersSummary: string;
   /** TAXI, īre bez vadītāja, autoskola, operatīvais transports, līzings u.tml. */
@@ -55,6 +57,7 @@ export function emptyVinSourceResult(source: VinSourceId, vin: string, message: 
     message,
     mileage: [],
     incidents: [],
+    timeline: [],
     ownersSummary: "",
     statusRecords: "",
     notes: [],

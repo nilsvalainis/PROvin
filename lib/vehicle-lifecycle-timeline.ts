@@ -183,6 +183,28 @@ function makeEvent(args: {
   return ev;
 }
 
+function classifyVendorTimelineKind(description: string): LifecycleEventKind {
+  const t = description.toLowerCase();
+  if (/pirmā reģistrācija/.test(t)) return "first_registration";
+  if (/\bimport/.test(t) && !/apskate/.test(t)) return "import";
+  if (/apskate|toldsyn|periodisk syn|registreringssyn/.test(t)) return "inspection";
+  if (/negadīj|bojāj/.test(t)) return "incident";
+  if (/sludināj|pārdošan/.test(t)) return "listed";
+  if (/serviss|apkope/.test(t)) return "service";
+  return "registration";
+}
+
+function vendorTimelineTitleAndDetail(description: string, kind: LifecycleEventKind): { title: string; detail: string } {
+  const raw = description.trim();
+  if (kind === "inspection") {
+    const split = raw.match(/^(tehniskā apskate|periodiskā apskate|reģistrācijas apskate|importa apskate)\s*[:.\-]\s*(.+)$/i);
+    if (split) return { title: "Tehniskā apskate", detail: split[2]!.trim() };
+    if (/^tehniskā apskate$/i.test(raw)) return { title: "Tehniskā apskate", detail: "" };
+  }
+  if (kind === "first_registration") return { title: "Pirmā reģistrācija", detail: "" };
+  return { title: raw || "Ieraksts reģistrā", detail: "" };
+}
+
 function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   const out: LifecycleEvent[] = [];
   const csdd = input.csddForm;
@@ -254,13 +276,20 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   for (const b of input.manualVendorBlocks ?? []) {
     for (const t of b.vehicleHistoryTimeline ?? []) {
       if (!t.date.trim() && !t.description.trim()) continue;
+      const kind = classifyVendorTimelineKind(t.description);
+      const { title, detail } = vendorTimelineTitleAndDetail(t.description, kind);
+      const failedInspection =
+        kind === "inspection" && /neizturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${t.description}`);
       out.push(
         makeEvent({
-          kind: "registration",
+          kind,
           rawDate: t.date,
-          title: t.description.trim() || "Ieraksts reģistrā",
+          title,
+          detail,
           country: t.country,
+          odometer: t.odometer,
           source: b.title,
+          tone: failedInspection ? "warn" : kind === "incident" ? "alert" : "info",
         }),
       );
     }

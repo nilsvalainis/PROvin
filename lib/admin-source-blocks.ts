@@ -543,6 +543,9 @@ export const CSDD_MILEAGE_UNIFIED_TITLE = "NOBRAUKUMA VĒSTURE";
 /** AutoDNA / CarVertical — negadījumu apakšsekcija (saskaņots ar LTAB loģiku). */
 export const NEGADIJUMU_VESTURE_TITLE = "NEGADĪJUMU VĒSTURE";
 
+/** tjekbil / mnt / car.info — reģistra notikumi ar datumu un nobraukumu (PDF vēstures kopsavilkums). */
+export const VIN_REGISTRY_TIMELINE_TITLE = "REĢISTRA HRONOLOĢIJA";
+
 /**
  * Nobraukuma tabulu kolonnu semantika: «Datums», «Odometrs (km)», «Valsts».
  * Vienoti visiem avotu blokiem ar šo tabulu (CSDD, AUTO RECORDS, AutoDNA, CarVertical).
@@ -857,18 +860,28 @@ export type VinRegistryIncidentRow = {
   note: string;
 };
 
+/** Publiskā reģistra hronoloģijas rinda: datums + notikums (+ km, ja ir). */
+export type VinRegistryTimelineRow = {
+  date: string;
+  odometer: string;
+  country: string;
+  event: string;
+};
+
 /**
  * tjekbil.dk / mnt.ee / lkf.ee / car.info — vienota struktūra ar automātisko ielādi pēc VIN.
- * Tikai iekšējai analīzei: dati nonāk AI kontekstā, nevis tieši klienta PDF.
+ * Nobraukums, hronoloģija un īsie fakti nonāk klienta PDF (vēstures kopsavilkums).
  */
 export type VinRegistryBlockState = {
   mileage: VinRegistryMileageRow[];
   incidents: VinRegistryIncidentRow[];
+  /** Visas reģistra darbības pa datumiem (īpašnieki, apskates, līzings, apdrošināšana). */
+  timeline: VinRegistryTimelineRow[];
   /** Īpašnieku skaits un reģistrācijas darbību apkopojums. */
   ownersSummary: string;
   /** TAXI, īre bez vadītāja, autoskola, līzings u.tml. ieraksti. */
   statusRecords: string;
-  /** Neapstrādātie dati avota valodā (JSON / lapas teksts). */
+  /** Neapstrādātie dati avota valodā (JSON / lapas teksts / ielīmētais šablons). */
   rawUnprocessedData: string;
   /** Piezīmes: automātiski atrastās anomālijas, brīdinājumi, sarkanie karogi. */
   autoNotes: string;
@@ -984,10 +997,15 @@ export function emptyVinRegistryIncidentRow(): VinRegistryIncidentRow {
   return { date: "", amount: "", country: "", note: "" };
 }
 
+export function emptyVinRegistryTimelineRow(): VinRegistryTimelineRow {
+  return { date: "", odometer: "", country: "", event: "" };
+}
+
 export function emptyVinRegistryBlock(): VinRegistryBlockState {
   return {
     mileage: [emptyVinRegistryMileageRow()],
     incidents: [emptyVinRegistryIncidentRow()],
+    timeline: [emptyVinRegistryTimelineRow()],
     ownersSummary: "",
     statusRecords: "",
     rawUnprocessedData: "",
@@ -1007,8 +1025,21 @@ export function vinRegistryIncidentRowHasData(r: VinRegistryIncidentRow | null |
   return Boolean(wsStr(r.date).trim() || wsStr(r.amount).trim() || wsStr(r.country).trim() || wsStr(r.note).trim());
 }
 
+export function vinRegistryTimelineRowHasData(r: VinRegistryTimelineRow | null | undefined): boolean {
+  if (!r) return false;
+  return Boolean(wsStr(r.date).trim() || wsStr(r.event).trim() || wsStr(r.odometer).trim());
+}
+
 /** Jaunākais ieraksts augšā (kā pārējās nobraukuma tabulās). */
 export function sortVinRegistryMileage(rows: VinRegistryMileageRow[]): VinRegistryMileageRow[] {
+  return [...rows].sort((a, b) => {
+    const diff = parseDotOrIsoDateToMs(b.date) - parseDotOrIsoDateToMs(a.date);
+    if (diff !== 0) return diff;
+    return Number(b.odometer.replace(/\D/g, "") || 0) - Number(a.odometer.replace(/\D/g, "") || 0);
+  });
+}
+
+export function sortVinRegistryTimeline(rows: VinRegistryTimelineRow[]): VinRegistryTimelineRow[] {
   return [...rows].sort((a, b) => {
     const diff = parseDotOrIsoDateToMs(b.date) - parseDotOrIsoDateToMs(a.date);
     if (diff !== 0) return diff;
@@ -1021,6 +1052,7 @@ export function vinRegistryBlockHasContent(b: VinRegistryBlockState | null | und
   return (
     (b.mileage ?? []).some(vinRegistryMileageRowHasData) ||
     (b.incidents ?? []).some(vinRegistryIncidentRowHasData) ||
+    (b.timeline ?? []).some(vinRegistryTimelineRowHasData) ||
     wsStr(b.ownersSummary).trim().length > 0 ||
     wsStr(b.statusRecords).trim().length > 0 ||
     wsStr(b.rawUnprocessedData).trim().length > 0 ||
@@ -1046,6 +1078,16 @@ export function vinRegistryBlockToPlainText(b: VinRegistryBlockState | null | un
     lines.push(NEGADIJUMU_VESTURE_TITLE);
     for (const r of incidents) {
       lines.push([r.date, r.amount, r.country, r.note].map((c) => wsStr(c).trim()).filter(Boolean).join("\t"));
+    }
+  }
+
+  const timeline = sortVinRegistryTimeline((safe.timeline ?? []).filter(vinRegistryTimelineRowHasData));
+  if (timeline.length > 0) {
+    lines.push(VIN_REGISTRY_TIMELINE_TITLE);
+    for (const r of timeline) {
+      lines.push(
+        [r.date, r.odometer, r.country, r.event].map((c) => wsStr(c).trim()).filter(Boolean).join("\t"),
+      );
     }
   }
 
@@ -1078,9 +1120,16 @@ export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): Vi
     country: wsStr(r?.country).slice(0, 120),
     note: wsStr(r?.note).slice(0, 600),
   }));
+  const timeline = (Array.isArray(b.timeline) ? b.timeline : []).map((r) => ({
+    date: wsStr(r?.date).slice(0, 40),
+    odometer: wsStr(r?.odometer).slice(0, 40),
+    country: wsStr(r?.country).slice(0, 120),
+    event: sanitizeVinRegistryClientText(wsStr(r?.event)).slice(0, 600),
+  }));
   return {
     mileage: mileage.length > 0 ? mileage : e.mileage,
     incidents: incidents.length > 0 ? incidents : e.incidents,
+    timeline: timeline.length > 0 ? timeline : e.timeline,
     ownersSummary: sanitizeVinRegistryClientText(wsStr(b.ownersSummary)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     statusRecords: sanitizeVinRegistryClientText(wsStr(b.statusRecords)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     rawUnprocessedData: wsStr(b.rawUnprocessedData).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
@@ -1516,6 +1565,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
     const ownersSummary = sanitizeVinRegistryClientText(b.ownersSummary ?? "");
     const statusRecords = sanitizeVinRegistryClientText(b.statusRecords ?? "");
     const autoNotes = sanitizeVinRegistryClientText(b.autoNotes ?? "");
+    const timeline = (b.timeline ?? []).filter(vinRegistryTimelineRowHasData);
     out.push({
       title: SOURCE_BLOCK_LABELS[k],
       mileageRows: (b.mileage ?? []).filter(vinRegistryMileageRowHasData).map((r) => ({
@@ -1532,6 +1582,16 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(ownersSummary ? { ownersSummary } : {}),
       ...(statusRecords ? { statusRecords } : {}),
       ...(autoNotes ? { autoNotes } : {}),
+      ...(timeline.length > 0
+        ? {
+            vehicleHistoryTimeline: timeline.map((r) => ({
+              date: r.date,
+              country: r.country,
+              description: r.event,
+              ...(wsStr(r.odometer).trim() ? { odometer: r.odometer } : {}),
+            })),
+          }
+        : {}),
     });
   }
   const citiSections = blocks.citi_avoti.sections ?? [];

@@ -532,6 +532,38 @@ describe("Vēstures kopsavilkums", () => {
     expect(gap!.tone).toBe("warn");
   });
 
+  it("puts tjekbil registry timeline events into the history summary with km", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.tjekbil,
+          mileageRows: [{ date: "18.12.2017", odometer: "29000", country: "Dānija" }],
+          incidentRows: [],
+          comments: "",
+          vehicleHistoryTimeline: [
+            { date: "18.12.2013", country: "Vācija", description: "Pirmā reģistrācija", odometer: "17" },
+            {
+              date: "18.12.2017",
+              country: "Dānija",
+              description: "Tehniskā apskate: izieta ar pirmo reizi",
+              odometer: "29000",
+            },
+            { date: "12.08.2026", country: "Dānija", description: "Noņemts no uzskaites" },
+          ],
+        },
+      ],
+    });
+    const first = events.find((e) => e.kind === "first_registration");
+    expect(first?.title).toBe("Pirmā reģistrācija");
+    expect(first?.odometer).toBe("17");
+    expect(first?.country).toBe("Vācija");
+    const inspection = events.find((e) => e.kind === "inspection");
+    expect(inspection?.title).toBe("Tehniskā apskate");
+    expect(inspection?.detail).toMatch(/izieta ar pirmo reizi/);
+    expect(inspection?.odometer).toBe("29000");
+    expect(events.some((e) => /Noņemts no uzskaites/.test(e.title))).toBe(true);
+  });
+
   it("prints the timeline before the mileage section", () => {
     const csdd = emptyCsddFields();
     csdd.firstRegistration = "12.05.2016";

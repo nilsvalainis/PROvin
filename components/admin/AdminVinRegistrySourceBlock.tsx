@@ -21,13 +21,17 @@ import {
   NEGADIJUMU_VESTURE_TITLE,
   emptyVinRegistryIncidentRow,
   emptyVinRegistryMileageRow,
+  emptyVinRegistryTimelineRow,
   repairVinRegistryBlock,
   sortVinRegistryMileage,
+  sortVinRegistryTimeline,
   SOURCE_BLOCK_LABELS,
+  VIN_REGISTRY_TIMELINE_TITLE,
   type VinRegistryBlockKey,
   type VinRegistryBlockState,
   type VinRegistryIncidentRow,
   type VinRegistryMileageRow,
+  type VinRegistryTimelineRow,
 } from "@/lib/admin-source-blocks";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
@@ -39,6 +43,11 @@ import {
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { buildCarinfoVinCheckUrl, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
 import { parseCarinfoPastedText } from "@/lib/vin-sources/carinfo-parse";
+import {
+  looksLikeVinRegistryTimelinePaste,
+  parseVinRegistryTimelinePaste,
+  VIN_REGISTRY_TIMELINE_PASTE_HEADER,
+} from "@/lib/vin-sources/registry-timeline-parse";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -124,6 +133,7 @@ export function AdminVinRegistrySourceBlock({
 
   const mileage = block.mileage.length > 0 ? block.mileage : [emptyVinRegistryMileageRow()];
   const incidents = block.incidents.length > 0 ? block.incidents : [emptyVinRegistryIncidentRow()];
+  const timeline = block.timeline.length > 0 ? block.timeline : [emptyVinRegistryTimelineRow()];
   const label = SOURCE_BLOCK_LABELS[blockKey];
 
   const setMileageRow = (index: number, patch: Partial<VinRegistryMileageRow>) => {
@@ -141,6 +151,15 @@ export function AdminVinRegistrySourceBlock({
 
   const removeIncidentRow = (index: number) => {
     onChange({ ...block, incidents: dropOrResetRow(incidents, index, emptyVinRegistryIncidentRow) });
+  };
+
+  const setTimelineRow = (index: number, patch: Partial<VinRegistryTimelineRow>) => {
+    const rows = timeline.map((r, i) => (i === index ? { ...r, ...patch } : r));
+    onChange({ ...block, timeline: sortVinRegistryTimeline(rows) });
+  };
+
+  const removeTimelineRow = (index: number) => {
+    onChange({ ...block, timeline: dropOrResetRow(timeline, index, emptyVinRegistryTimelineRow) });
   };
 
   const loadByVin = async () => {
@@ -232,6 +251,38 @@ export function AdminVinRegistrySourceBlock({
     });
     setError(null);
     setStatus(`Ielasīti ${parsed.mileage.length} nobraukuma ieraksti no iekopētā teksta.`);
+  };
+
+  const applyTimelinePaste = (raw: string) => {
+    const clipped = raw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
+    if (!looksLikeVinRegistryTimelinePaste(clipped)) {
+      onChange({ ...block, rawUnprocessedData: clipped });
+      return;
+    }
+    const parsed = parseVinRegistryTimelinePaste(clipped);
+    if (!parsed.found) {
+      onChange({ ...block, rawUnprocessedData: clipped });
+      return;
+    }
+    onChange({
+      ...block,
+      rawUnprocessedData: clipped,
+      mileage: parsed.mileage.some((r) => r.date || r.odometer)
+        ? sortVinRegistryMileage(parsed.mileage)
+        : block.mileage,
+      timeline: parsed.timeline.some((r) => r.date || r.event)
+        ? sortVinRegistryTimeline(parsed.timeline)
+        : block.timeline,
+      ownersSummary: parsed.ownersSummary.trim() ? parsed.ownersSummary : block.ownersSummary,
+      statusRecords: parsed.statusRecords.trim() ? parsed.statusRecords : block.statusRecords,
+      autoNotes: parsed.notes.trim() ? parsed.notes : block.autoNotes,
+      fetchedAt: new Date().toISOString(),
+      fetchMessage: `Ielīmēta reģistra hronoloģija (${parsed.timeline.filter((r) => r.date || r.event).length} notikumi)`,
+    });
+    setError(null);
+    setStatus(
+      `Ielasīti ${parsed.timeline.filter((r) => r.date || r.event).length} hronoloģijas notikumi un ${parsed.mileage.filter((r) => r.odometer).length} nobraukuma rindas.`,
+    );
   };
 
   const textField = (
@@ -428,6 +479,112 @@ export function AdminVinRegistrySourceBlock({
         ) : null}
 
         <div className="mt-4 border-t border-slate-200 pt-3">
+          <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.registryTimeline} />
+            {VIN_REGISTRY_TIMELINE_TITLE}
+          </p>
+          <p className="mb-1.5 text-[10px] text-slate-500">
+            Visas reģistra darbības pa datumiem - īpašnieki, apskates, līzings, apdrošināšana. Nonāk PDF vēstures kopsavilkumā.
+          </p>
+          <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
+            <table className="w-full min-w-[360px] border-collapse text-[11px]">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+                  <th className={cell}>Datums</th>
+                  <th className={cell}>Km</th>
+                  <th className={cell}>Valsts</th>
+                  <th className={cell}>Notikums</th>
+                  {!readOnly ? <th className={`w-9 ${cell}`} aria-hidden /> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {timeline.map((row, i) => (
+                  <tr key={i} className="border-b border-slate-100 last:border-b-0">
+                    <td className={`${cell} align-top`}>
+                      {readOnly ? (
+                        <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "—"}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          className={inp}
+                          value={row.date}
+                          disabled={disabled}
+                          placeholder="18.12.2013"
+                          onChange={(e) => setTimelineRow(i, { date: e.target.value })}
+                          aria-label={`${label} hronoloģijas datums ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className={`${cell} align-top`}>
+                      {readOnly ? (
+                        <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "—"}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className={inp}
+                          value={row.odometer}
+                          disabled={disabled}
+                          onChange={(e) => setTimelineRow(i, { odometer: e.target.value.replace(/[^\d]/g, "") })}
+                          aria-label={`${label} hronoloģijas km ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className={`${cell} align-top`}>
+                      {readOnly ? (
+                        <CountryFlagWithCode countryLabel={row.country.trim() || "—"} />
+                      ) : (
+                        <AdminCountryCombobox
+                          className={inp}
+                          value={row.country}
+                          disabled={disabled}
+                          onChange={(next) => setTimelineRow(i, { country: next })}
+                          aria-label={`${label} hronoloģijas valsts ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    <td className={`${cell} align-top`}>
+                      {readOnly ? (
+                        <span className="text-[var(--color-provin-muted)]">{row.event.trim() || "—"}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          className={inp}
+                          value={row.event}
+                          disabled={disabled}
+                          placeholder="Pirmā reģistrācija / Tehniskā apskate: izieta"
+                          onChange={(e) => setTimelineRow(i, { event: e.target.value })}
+                          aria-label={`${label} hronoloģijas notikums ${i + 1}`}
+                        />
+                      )}
+                    </td>
+                    {!readOnly ? (
+                      <td className={`${cell} align-top`}>
+                        <AdminFieldResetButton
+                          disabled={disabled}
+                          title="Nodzēst hronoloģijas rindu"
+                          aria-label={`${label} nodzēst hronoloģijas rindu ${i + 1}`}
+                          onClick={() => removeTimelineRow(i)}
+                        />
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!readOnly && !disabled ? (
+            <button
+              type="button"
+              className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+              onClick={() => onChange({ ...block, timeline: [...timeline, emptyVinRegistryTimelineRow()] })}
+            >
+              + Rinda
+            </button>
+          ) : null}
+        </div>
+
+        <div className="mt-4 border-t border-slate-200 pt-3">
           <p className="mb-2 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.incidents} />
             {NEGADIJUMU_VESTURE_TITLE}
@@ -557,7 +714,11 @@ export function AdminVinRegistrySourceBlock({
         <div className="mt-3">
           <div className="mb-0.5 flex items-center gap-1">
             <label className={`${labelCls} mb-0`} htmlFor={`${blockKey}-rawUnprocessedData`}>
-              {blockKey === "carinfo" ? "RAW — ielīmē car.info lapas tekstu" : "RAW dati (avota valodā)"}
+              {blockKey === "carinfo"
+                ? "RAW — ielīmē car.info lapas tekstu"
+                : blockKey === "tjekbil"
+                  ? "RAW — ielīmē hronoloģijas šablonu (DATUMS, KM, VALSTS, NOTIKUMS)"
+                  : "RAW dati (avota valodā)"}
             </label>
             {!readOnly ? (
               <AdminFieldResetButton
@@ -580,27 +741,40 @@ export function AdminVinRegistrySourceBlock({
               placeholder={
                 blockKey === "carinfo"
                   ? "Pēc car.info ielīmē šeit visu lapas tekstu (Cmd+V). Nobraukums, īpašnieki un RED FLAG aizpildās paši."
-                  : "Neapstrādātā avota atbilde…"
+                  : `${VIN_REGISTRY_TIMELINE_PASTE_HEADER}
+18.12.2013	17	Vācija	Pirmā reģistrācija
+18.12.2017	29000	Dānija	Tehniskā apskate: izieta ar pirmo reizi
+
+ĪPAŠNIEKI
+3 iepriekšējie īpašnieki.
+
+STATUSI
+Nav ķīlas. Nav meklēšanā.
+
+PIEZĪMES
+Neviena periodiskā apskate nav izgāzta.`
               }
               value={block.rawUnprocessedData}
               onChange={(e) => onChange({ ...block, rawUnprocessedData: e.target.value.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN) })}
-              onPaste={
-                blockKey === "carinfo"
-                  ? (e) => {
-                      const text = e.clipboardData.getData("text");
-                      if (!text.trim()) return;
-                      e.preventDefault();
-                      applyCarinfoPaste(text);
-                    }
-                  : undefined
-              }
-              onBlur={
-                blockKey === "carinfo"
-                  ? (e) => {
-                      if (e.currentTarget.value.trim()) applyCarinfoPaste(e.currentTarget.value);
-                    }
-                  : undefined
-              }
+              onPaste={(e) => {
+                const text = e.clipboardData.getData("text");
+                if (!text.trim()) return;
+                if (blockKey === "carinfo") {
+                  e.preventDefault();
+                  applyCarinfoPaste(text);
+                  return;
+                }
+                if (looksLikeVinRegistryTimelinePaste(text)) {
+                  e.preventDefault();
+                  applyTimelinePaste(text);
+                }
+              }}
+              onBlur={(e) => {
+                const text = e.currentTarget.value;
+                if (!text.trim()) return;
+                if (blockKey === "carinfo") applyCarinfoPaste(text);
+                else if (looksLikeVinRegistryTimelinePaste(text)) applyTimelinePaste(text);
+              }}
             />
           )}
         </div>

@@ -18,6 +18,9 @@ describe("vinSourceResultToBlock", () => {
       message: "Atrasts Dānijas reģistrā",
       mileage: [{ date: "2024-09-19", odometer: "106869", country: "Dānija", origin: "apskate" }],
       incidents: [{ date: "2020-08-12", amount: "", country: "Dānija", note: "Apskate nav izturēta" }],
+      timeline: [
+        { date: "2024-09-19", odometer: "106869", country: "Dānija", event: "Tehniskā apskate: izieta" },
+      ],
       ownersSummary: "Aplēstais īpašnieku skaits: 2",
       statusRecords: "Izmantošanas veids: TAKSOMETRS",
       notes: ["⚠ Īpašs izmantošanas statuss: TAKSOMETRS"],
@@ -28,6 +31,7 @@ describe("vinSourceResultToBlock", () => {
     expect(vinRegistryBlockHasContent(block)).toBe(true);
     expect(block.mileage[0]?.odometer).toBe("106869");
     expect(block.incidents[0]?.note).toContain("Apskate");
+    expect(block.timeline[0]?.event).toMatch(/apskate/i);
     expect(block.ownersSummary).toContain("īpašnieku");
     expect(block.statusRecords).toContain("TAKSOMETRS");
     expect(block.autoNotes).toContain("TAKSOMETRS");
@@ -41,6 +45,14 @@ describe("toPdfManualVendorBlocks — reģistru avoti", () => {
   it("iekļauj tjekbil nobraukuma rindas un faktu laukus PDF", () => {
     const blocks = createDefaultSourceBlocks();
     blocks.tjekbil.mileage = [{ date: "2024-09-19", odometer: "106869", country: "Dānija", origin: "apskate" }];
+    blocks.tjekbil.timeline = [
+      {
+        date: "19.09.2024",
+        odometer: "106869",
+        country: "Dānija",
+        event: "Tehniskā apskate: izieta ar pirmo reizi",
+      },
+    ];
     blocks.tjekbil.ownersSummary = "Aplēstais īpašnieku skaits: 2";
     blocks.tjekbil.statusRecords = "Izmantošanas veids: TAKSOMETRS";
     blocks.tjekbil.autoNotes = "⚠ Īpašs izmantošanas statuss: TAKSOMETRS";
@@ -54,6 +66,14 @@ describe("toPdfManualVendorBlocks — reģistru avoti", () => {
     expect(tjek?.statusRecords).toContain("TAKSOMETRS");
     expect(tjek?.autoNotes).toMatch(/TAKSOMETRS/);
     expect(tjek?.autoNotes).not.toMatch(/⚠/);
+    expect(tjek?.vehicleHistoryTimeline).toEqual([
+      {
+        date: "19.09.2024",
+        country: "Dānija",
+        description: "Tehniskā apskate: izieta ar pirmo reizi",
+        odometer: "106869",
+      },
+    ]);
   });
 });
 

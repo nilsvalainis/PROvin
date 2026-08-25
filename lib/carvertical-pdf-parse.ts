@@ -23,6 +23,8 @@ export type CarVerticalTimelineRow = {
   date: string;
   country: string;
   description: string;
+  /** Reģistra hronoloģija (tjekbil u.c.) — km pie notikuma, ja zināms. */
+  odometer?: string;
 };
 
 export type CarVerticalDamageDetailRow = {

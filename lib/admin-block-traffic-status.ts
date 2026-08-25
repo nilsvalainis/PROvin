@@ -27,6 +27,7 @@ import {
   vinRegistryBlockHasContent,
   vinRegistryIncidentRowHasData,
   vinRegistryMileageRowHasData,
+  vinRegistryTimelineRowHasData,
   citiAvotiSectionHasContent,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
@@ -96,6 +97,7 @@ export function vinRegistryTrafficLevel(b: VinRegistryBlockState | null | undefi
     const hasRows =
       (b.mileage ?? []).some(vinRegistryMileageRowHasData) ||
       (b.incidents ?? []).some(vinRegistryIncidentRowHasData) ||
+      (b.timeline ?? []).some(vinRegistryTimelineRowHasData) ||
       wsStr(b.ownersSummary).trim().length > 0;
     if (hasRows && wsStr(b.comments).trim().length > 0) return "complete";
     return "partial";

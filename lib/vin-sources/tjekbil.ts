@@ -273,6 +273,62 @@ function buildNotes(
   return notes;
 }
 
+function buildTimeline(
+  dmr: DmrResponse,
+  inspections: InspectionReport[],
+): { date: string; odometer: string; country: string; event: string }[] {
+  const basic = dmr.basic ?? {};
+  const rows: { date: string; odometer: string; country: string; event: string }[] = [];
+  const push = (date: string, event: string, odometer = "", country = COUNTRY_LV) => {
+    if (!date || !event) return;
+    rows.push({ date, odometer, country, event });
+  };
+
+  const firstReg = isoDay(basic.foersteRegistreringDato);
+  if (firstReg) push(firstReg, "Pirmā reģistrācija", "", "");
+
+  for (const r of inspections) {
+    const date = isoDay(r.synsdato);
+    const result = translateTermLv(str(r.synsresultat), "da") || str(r.synsresultat);
+    const kind = translateTermLv(str(r.synstype), "da") || str(r.synstype) || "Apskate";
+    const place = str(r.firma);
+    const km = num(r.kmstand);
+    const detail = [result, place].filter(Boolean).join(" · ");
+    push(date, detail ? `Tehniskā apskate: ${detail}` : `Tehniskā apskate (${kind})`, km != null ? String(km) : "");
+  }
+
+  if (basic.bilLeaset === true || isoDay(basic.leasingGyldigFra)) {
+    const from = isoDay(basic.leasingGyldigFra);
+    const to = isoDay(basic.leasingGyldigTil);
+    if (from) push(from, "Līzings sākas");
+    if (to) push(to, "Līzings beidzas");
+  }
+
+  const insurance = dmr.extended?.insurance;
+  const history = Array.isArray(insurance?.historik) ? (insurance?.historik as Record<string, unknown>[]) : [];
+  for (const h of history) {
+    const when = isoDay(h.oprettet);
+    const company = str(h.selskab);
+    const status = translateTermLv(str(h.status), "da") || str(h.status);
+    const parts = [company, status].filter(Boolean).join(", ");
+    if (when && parts) push(when, `Apdrošināšana: ${parts}`);
+  }
+
+  const statusDate = isoDay(basic.statusDato);
+  const status = translateTermLv(str(basic.status), "da");
+  if (statusDate && status) push(statusDate, `Reģistrācijas statuss: ${status}`);
+
+  const seen = new Set<string>();
+  const out: typeof rows = [];
+  for (const row of rows.sort((a, b) => b.date.localeCompare(a.date))) {
+    const key = `${row.date}|${row.event}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
 export async function fetchTjekbil(vin: string): Promise<VinSourceFetchResult> {
   const main = await getJson<DmrResponse>(`${BASE}/dmr/vin/${encodeURIComponent(vin)}`);
   if (!main.data) {
@@ -318,6 +374,7 @@ export async function fetchTjekbil(vin: string): Promise<VinSourceFetchResult> {
     message: `Atrasts Dānijas reģistrā: ${vehicle || "transportlīdzeklis"}${regNr ? ` · ${regNr}` : ""}`,
     mileage,
     incidents,
+    timeline: buildTimeline(dmr, inspections),
     ownersSummary: buildOwnersSummary(dmr),
     statusRecords,
     notes,

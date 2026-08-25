@@ -56,6 +56,7 @@ export async function fetchCarInfo(vin: string): Promise<VinSourceFetchResult> {
         : "car.info lapa atvērta, bet publiski strukturēti dati netika atrasti",
       mileage: parsed.mileage,
       incidents: [],
+      timeline: [],
       ownersSummary: parsed.ownersSummary,
       statusRecords: parsed.statusRecords,
       notes: parsed.notes,

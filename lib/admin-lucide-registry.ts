@@ -91,6 +91,7 @@ export const SUBHEADING_LUCIDE = {
   mileage: Route,
   incidents: Shield,
   listingHistory: History,
+  registryTimeline: History,
   serviceWorks: Wrench,
   ltabCertificate: FileText,
 } as const;
