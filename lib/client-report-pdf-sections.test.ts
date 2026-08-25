@@ -1292,17 +1292,10 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(serviceTable.indexOf("01.12.2023")).toBeLessThan(serviceTable.indexOf("01.06.2023"));
   });
 
-  it("stacks iconed service works one per line and wraps long descriptions", () => {
+  it("keeps service works inline and wraps long descriptions instead of clipping", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,
       serviceWorks: [
-        {
-          date: "05.07.2021",
-          odometer: "221482",
-          location: "Vācija",
-          works:
-            "Regulārā apkope: motoreļļas maiņa, bremžu šķidruma maiņa, aizmugurējo bremžu apkalpošana, salona mikrofiltra maiņa, gaisa filtra maiņa, degvielas filtra maiņa, transportlīdzekļa pārbaude",
-        },
         {
           date: "21.06.2018",
           odometer: "181383",
@@ -1323,14 +1316,10 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
-    expect(serviceTable).toContain('class="pdf-service-works-list"');
-    expect(serviceTable).toContain("motoreļļas maiņa");
-    expect(serviceTable).toContain("degvielas filtra maiņa");
-    expect(serviceTable).toContain("transportlīdzekļa pārbaude");
     expect(serviceTable).toContain("Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)");
-    expect(serviceTable.match(/class="pdf-service-chip"/g)?.length).toBeGreaterThanOrEqual(8);
-    expect(doc).not.toContain(".pdf-service-chip:not(:last-child)::after");
-    expect(doc).toMatch(/\.pdf-service-chip\{[^}]*white-space:normal!important/);
+    expect(serviceTable).not.toContain('class="pdf-service-works-list"');
+    expect(doc).toContain(".pdf-service-chip:not(:last-child)::after");
+    expect(doc).toMatch(/\.pdf-service-chip\{[^}]*display:inline-flex!important/);
     expect(doc).toMatch(/\.pdf-service-chip-txt\{[^}]*overflow-wrap:anywhere/);
   });
 

@@ -1359,7 +1359,7 @@ function serviceWorksLineHtml(line: string): string {
     .filter(Boolean);
   if (items.length === 0) return escapeHtml(text);
   const prefix = category
-    ? `<div class="pdf-service-chip-cat">${escapeHtml(category)}:</div>`
+    ? `<span class="pdf-service-chip-cat">${escapeHtml(category)}:</span> `
     : "";
   const chips = items
     .map((item) => {
@@ -1367,10 +1367,10 @@ function serviceWorksLineHtml(line: string): string {
       const iconHtml = icon
         ? `<span class="pdf-service-chip-ico" aria-hidden="true">${sectionIconPdfHtmlSized(icon, 11)}</span>`
         : "";
-      return `<div class="pdf-service-chip">${iconHtml}<span class="pdf-service-chip-txt">${escapeHtml(item)}</span></div>`;
+      return `<span class="pdf-service-chip">${iconHtml}<span class="pdf-service-chip-txt">${escapeHtml(item)}</span></span>`;
     })
     .join("");
-  return `${prefix}<div class="pdf-service-works-list">${chips}</div>`;
+  return `${prefix}${chips}`;
 }
 
 function serviceWorksCellHtml(raw: string): string {
@@ -2388,20 +2388,18 @@ ${sourceDotColorCss()}
         min-width:0;max-width:0;
       }
       .pdf-mileage-history-table--service tbody tr{page-break-inside:avoid;break-inside:avoid;}
-      .pdf-service-chip-cat{
-        display:block!important;color:#64748B!important;font-weight:500;margin:0 0 3px;
-      }
-      .pdf-service-works-list{display:block!important;min-width:0;max-width:100%;}
+      .pdf-service-chip-cat{color:#64748B!important;font-weight:500;}
       .pdf-service-chip{
-        display:flex!important;align-items:flex-start;gap:5px;
-        margin:0 0 2px;min-width:0;max-width:100%;white-space:normal!important;
+        display:inline-flex!important;align-items:baseline;gap:3px;
+        margin:0 6px 2px 0;max-width:100%;white-space:normal!important;
       }
+      .pdf-service-chip:not(:last-child)::after{content:",";margin-left:-3px;color:#0f172a;}
       .pdf-service-chip-txt{
-        min-width:0;flex:1 1 auto;overflow-wrap:anywhere;word-break:break-word;white-space:normal!important;
+        overflow-wrap:anywhere;word-break:break-word;white-space:normal!important;
       }
       .pdf-service-chip-ico{
         display:inline-flex!important;align-items:center;justify-content:center;
-        color:#0061D2!important;flex:none;margin-top:1px;
+        color:#0061D2!important;flex:none;
       }
       .pdf-service-chip-ico svg{display:block;}
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
