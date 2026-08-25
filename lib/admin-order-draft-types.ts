@@ -33,6 +33,9 @@ export type OrderDraftWorkspaceBody = {
   manualBanners?: import("@/lib/provin-alert-banners").ProvinManualBanner[];
   vehicleAiExtraction?: import("@/lib/vehicle-ai-extraction-types").VehicleAIExtraction | null;
   vehicleAiExtractionMeta?: import("@/lib/vehicle-ai-extraction-types").VehicleAiExtractionMeta | null;
+  /** Negadījumu kopsavilkuma fotogrāfijas (PDF zem apraksta). */
+  incidentPhotoGroups?: import("@/lib/incident-photo-types").IncidentPhotoGroup[];
+  incidentPhotos?: import("@/lib/incident-photo-types").IncidentPhotoMeta[];
 };
 
 export type OrderDraftState = {

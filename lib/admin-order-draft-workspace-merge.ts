@@ -22,6 +22,8 @@ export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): Or
     previewConfirmed: w.previewConfirmed,
     vehicleAiExtraction: w.vehicleAiExtraction ?? null,
     vehicleAiExtractionMeta: w.vehicleAiExtractionMeta ?? null,
+    incidentPhotoGroups: w.incidentPhotoGroups ?? [],
+    incidentPhotos: w.incidentPhotos ?? [],
   });
 }
 
@@ -44,6 +46,8 @@ export function persistBodyToOrderDraftWorkspace(
     manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: safe.vehicleAiExtraction,
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
+    incidentPhotoGroups: safe.incidentPhotoGroups,
+    incidentPhotos: safe.incidentPhotos,
   };
 }
 

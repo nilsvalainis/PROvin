@@ -140,6 +140,8 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     manualBanners: mergeProvinManualBanners(o.manualBanners),
     vehicleAiExtraction,
     vehicleAiExtractionMeta,
+    incidentPhotoGroups: Array.isArray(o.incidentPhotoGroups) ? o.incidentPhotoGroups : undefined,
+    incidentPhotos: Array.isArray(o.incidentPhotos) ? o.incidentPhotos : undefined,
   };
 }
 

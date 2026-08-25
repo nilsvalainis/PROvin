@@ -38,6 +38,7 @@ import {
   syncAutoRecordsPhotoGroupsAndFlat,
 } from "@/lib/auto-records-photo-types";
 import type { AutoRecordsPhotoGroup, AutoRecordsPhotoMeta } from "@/lib/auto-records-photo-types";
+import { incidentPhotosFromUnknown, type IncidentPhotoGroup, type IncidentPhotoMeta } from "@/lib/incident-photo-types";
 import {
   CC_VIN_ADMIN_LABEL,
   ccVinBlockHasContent,
@@ -2403,6 +2404,8 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   manualBanners: ProvinManualBanner[];
   vehicleAiExtraction: VehicleAIExtraction | null;
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
+  incidentPhotoGroups: IncidentPhotoGroup[];
+  incidentPhotos: IncidentPhotoMeta[];
 } | null {
   if (!raw) return null;
   try {
@@ -2422,6 +2425,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
     }
     const { extraction: vehicleAiExtraction, meta: vehicleAiExtractionMeta } =
       parseVehicleAiFromWorkspaceRecord(p);
+    const incident = incidentPhotosFromUnknown(p.incidentPhotoGroups, p.incidentPhotos);
     return {
       sourceBlocks,
       iriss: typeof p.iriss === "string" ? p.iriss : "",
@@ -2434,6 +2438,8 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       manualBanners: mergeProvinManualBanners(p.manualBanners),
       vehicleAiExtraction,
       vehicleAiExtractionMeta,
+      incidentPhotoGroups: incident.incidentPhotoGroups,
+      incidentPhotos: incident.incidentPhotos,
     };
   } catch {
     return null;

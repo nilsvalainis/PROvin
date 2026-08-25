@@ -55,6 +55,8 @@ type Props = {
   maxPhotos?: number;
   emptyGroup?: () => PhotoGroupLike;
   sectionTitle?: string;
+  /** Bez grupu virsrakstiem — viena foto josla (negadījumu kopsavilkums). */
+  simple?: boolean;
 };
 
 const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif)$/i;
@@ -285,6 +287,7 @@ export function AdminListingAnalysisPhotos({
   maxPhotos = LISTING_ANALYSIS_MAX_PHOTOS,
   emptyGroup = emptyListingAnalysisPhotoGroup,
   sectionTitle = "Fotogrāfijas (PDF režģis)",
+  simple = false,
 }: Props) {
   const baseInputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -771,15 +774,17 @@ export function AdminListingAnalysisPhotos({
         </p>
         {!disabled ? (
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={addGroup}
-              disabled={busy}
-              className="inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] hover:bg-black/[0.03] disabled:opacity-45"
-            >
-              <FolderPlus className="h-3.5 w-3.5" aria-hidden />
-              Pievienot grupu
-            </button>
+            {simple ? null : (
+              <button
+                type="button"
+                onClick={addGroup}
+                disabled={busy}
+                className="inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] hover:bg-black/[0.03] disabled:opacity-45"
+              >
+                <FolderPlus className="h-3.5 w-3.5" aria-hidden />
+                Pievienot grupu
+              </button>
+            )}
             {photoCount > 0 ? (
               <button
                 type="button"
@@ -829,7 +834,9 @@ export function AdminListingAnalysisPhotos({
       {photoGroups.length === 0 && !disabled
         ? renderDropZone(
             defaultGroupId,
-            "Velc attēlus šeit vai izmanto „Atvērt no datora…” — tiks izveidota pirmā grupa. Pēc tam vari pievienot virsrakstu (datums, avots).",
+            simple
+              ? "Velc negadījuma fotogrāfijas šeit vai izmanto „Atvērt no datora…”."
+              : "Velc attēlus šeit vai izmanto „Atvērt no datora…” — tiks izveidota pirmā grupa. Pēc tam vari pievienot virsrakstu (datums, avots).",
           )
         : null}
 
@@ -855,6 +862,7 @@ export function AdminListingAnalysisPhotos({
               key={group.id}
               className="space-y-2 rounded-md border border-[var(--admin-field-border)]/70 bg-[var(--admin-field-bg)]/40 p-2"
             >
+              {simple ? null : (
               <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <label className="mb-0.5 block text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
@@ -885,6 +893,7 @@ export function AdminListingAnalysisPhotos({
                   </div>
                 ) : null}
               </div>
+              )}
 
               {renderDropZone(
                 group.id,

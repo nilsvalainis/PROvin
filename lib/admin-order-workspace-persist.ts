@@ -38,6 +38,13 @@ import {
   mergeListingAnalysisPhotoGroups,
   syncListingAnalysisPhotoGroupsAndFlat,
 } from "@/lib/listing-analysis-photo-types";
+import {
+  incidentPhotosFromUnknown,
+  mergeIncidentPhotoGroups,
+  syncIncidentPhotoGroupsAndFlat,
+  type IncidentPhotoGroup,
+  type IncidentPhotoMeta,
+} from "@/lib/incident-photo-types";
 
 export type OrderWorkspacePersistBody = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -48,6 +55,8 @@ export type OrderWorkspacePersistBody = {
   previewConfirmed: boolean;
   vehicleAiExtraction: VehicleAIExtraction | null;
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
+  incidentPhotoGroups?: IncidentPhotoGroup[];
+  incidentPhotos?: IncidentPhotoMeta[];
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -204,7 +213,7 @@ export function coalesceOrderWorkspacePersistBody(
 ): OrderWorkspacePersistBody {
   const incomingBlocks = mergeSourceBlocksWithDefaults(incoming.sourceBlocks);
   if (!baseline) {
-    return { ...incoming, sourceBlocks: incomingBlocks };
+    return normalizeOrderWorkspacePersistBody({ ...incoming, sourceBlocks: incomingBlocks });
   }
   const baselineBlocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
   const mergedBlocks: WorkspaceSourceBlocks = {
@@ -225,6 +234,14 @@ export function coalesceOrderWorkspacePersistBody(
       baselineBlocks.listing_analysis,
     ),
   };
+  const incidentSynced = syncIncidentPhotoGroupsAndFlat(
+    mergeIncidentPhotoGroups(
+      incoming.incidentPhotoGroups,
+      incoming.incidentPhotos,
+      baseline.incidentPhotoGroups,
+      baseline.incidentPhotos,
+    ),
+  );
   return {
     sourceBlocks: mergeSourceBlocksWithDefaults(mergedBlocks),
     iriss: pickRicherTextField(incoming.iriss, baseline.iriss),
@@ -234,6 +251,8 @@ export function coalesceOrderWorkspacePersistBody(
     previewConfirmed: incoming.previewConfirmed || baseline.previewConfirmed,
     vehicleAiExtraction: incoming.vehicleAiExtraction ?? baseline.vehicleAiExtraction,
     vehicleAiExtractionMeta: incoming.vehicleAiExtractionMeta ?? baseline.vehicleAiExtractionMeta,
+    incidentPhotoGroups: incidentSynced.photoGroups,
+    incidentPhotos: incidentSynced.photos,
   };
 }
 
@@ -272,6 +291,8 @@ export function buildOrderDraftWorkspaceBody(
     manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: safe.vehicleAiExtraction,
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
+    incidentPhotoGroups: safe.incidentPhotoGroups,
+    incidentPhotos: safe.incidentPhotos,
   };
 }
 
@@ -303,6 +324,7 @@ export function pickNewestBackupSnapshotRaw(rawBackup: string | null): {
 export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBody): OrderWorkspacePersistBody {
   const merged = mergeSourceBlocksWithDefaults(body.sourceBlocks);
   const complete: WorkspaceSourceBlocks = { ...createDefaultSourceBlocks(), ...merged };
+  const incident = incidentPhotosFromUnknown(body.incidentPhotoGroups, body.incidentPhotos);
   return {
     sourceBlocks: complete,
     iriss: typeof body.iriss === "string" ? body.iriss : "",
@@ -312,6 +334,8 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     previewConfirmed: Boolean(body.previewConfirmed),
     vehicleAiExtraction: body.vehicleAiExtraction ?? null,
     vehicleAiExtractionMeta: body.vehicleAiExtractionMeta ?? null,
+    incidentPhotoGroups: incident.incidentPhotoGroups,
+    incidentPhotos: incident.incidentPhotos,
   };
 }
 
@@ -336,6 +360,8 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: normalized.vehicleAiExtraction,
     vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
+    incidentPhotoGroups: normalized.incidentPhotoGroups,
+    incidentPhotos: normalized.incidentPhotos,
     savedAt,
   });
 }
@@ -361,6 +387,8 @@ export function serializeOrderWorkspaceSnapshot(
     manualBanners: mergeProvinManualBanners(manualBanners),
     vehicleAiExtraction: safe.vehicleAiExtraction,
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
+    incidentPhotoGroups: safe.incidentPhotoGroups,
+    incidentPhotos: safe.incidentPhotos,
     savedAt,
   });
 }
@@ -378,6 +406,8 @@ export function mergeWorkspaceHydrationBodies(
     previewConfirmed: false,
     vehicleAiExtraction: null,
     vehicleAiExtractionMeta: null,
+    incidentPhotoGroups: [],
+    incidentPhotos: [],
   };
   let merged = empty;
   for (const b of bodies) {
@@ -445,6 +475,7 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
   s += citiAvotiTrafficLevel(body.sourceBlocks.citi_avoti) === "empty" ? 0 : 1;
   s +=
     listingSectionTrafficLevel(body.sourceBlocks.tirgus, body.sourceBlocks.listing_analysis) === "empty" ? 0 : 1;
+  if ((body.incidentPhotos?.length ?? 0) > 0) s += 1;
   return s;
 }
 
@@ -505,9 +536,12 @@ type HydratedWorkspaceShape = {
   previewConfirmed: boolean;
   vehicleAiExtraction: VehicleAIExtraction | null;
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
+  incidentPhotoGroups?: IncidentPhotoGroup[];
+  incidentPhotos?: IncidentPhotoMeta[];
 };
 
 function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersistBody {
+  const incident = incidentPhotosFromUnknown(h.incidentPhotoGroups, h.incidentPhotos);
   return {
     sourceBlocks: h.sourceBlocks,
     iriss: h.iriss,
@@ -517,6 +551,8 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
     previewConfirmed: Boolean(h.previewConfirmed),
     vehicleAiExtraction: h.vehicleAiExtraction ?? null,
     vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
+    incidentPhotoGroups: incident.incidentPhotoGroups,
+    incidentPhotos: incident.incidentPhotos,
   };
 }
 
@@ -561,6 +597,8 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     previewConfirmed: false,
     vehicleAiExtraction: null,
     vehicleAiExtractionMeta: null,
+    incidentPhotoGroups: [],
+    incidentPhotos: [],
   };
   for (let i = 1; i < bodiesForMerge.length; i++) {
     merged = coalesceOrderWorkspacePersistBody(bodiesForMerge[i]!.body, merged);
@@ -610,6 +648,8 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     previewConfirmed: merged.previewConfirmed,
     vehicleAiExtraction: merged.vehicleAiExtraction,
     vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
+    incidentPhotoGroups: merged.incidentPhotoGroups,
+    incidentPhotos: merged.incidentPhotos,
   } as T;
 
   const savedAtMs = Math.max(0, ...allPicks.map((p) => p.savedAtMs));

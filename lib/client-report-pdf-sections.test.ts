@@ -1086,6 +1086,31 @@ describe("unified PDF sections single block", () => {
     expect(html.indexOf("pdf-incident-history-card")).toBeLessThan(html.indexOf("Kopsavilkuma teksts"));
   });
 
+  it("renders incident photos directly under the incidents summary comment", () => {
+    const photoId = "inc_ph_aabbccddeeff001122334455";
+    const p = {
+      internalComment: "Kopsavilkuma teksts",
+      incidentPhotos: [{ id: photoId }],
+      incidentPhotoGroups: [{ id: "inc_phg_aabbccddeeff001122334455", title: "", photos: [{ id: photoId }] }],
+      manualVendorBlocks: [
+        {
+          title: "AutoDNA",
+          mileageRows: [],
+          incidentRows: [{ csngDate: "2021-06-01", lossAmount: "1200", incidentNo: "LV" }],
+          comments: "",
+          pdfChecklist: { incidents: false, mileageHistory: false, mileageLine: false },
+        },
+      ],
+    } as ClientReportPayload;
+    const vis = mergePdfVisibility({ unifiedIncidents: true });
+    const urls = new Map<string, string>([[photoId, "data:image/jpeg;base64,/9j/4AAQ"]]);
+    const html = buildUnifiedIncidentsTableHtml(p, vis, urls);
+    expect(html).toContain("pdf-incident-photos");
+    expect(html).toContain("pdf-listing-photo-img");
+    expect(html).toContain("data:image/jpeg;base64,/9j/4AAQ");
+    expect(html.indexOf("Kopsavilkuma teksts")).toBeLessThan(html.indexOf("pdf-incident-photos"));
+  });
+
   it("renders source valuations as colored pills in one row", () => {
     const p = {
       manualVendorBlocks: [

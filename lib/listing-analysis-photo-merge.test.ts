@@ -80,3 +80,34 @@ describe("listing analysis photo merge on coalesce", () => {
     expect(merged.sourceBlocks.listing_analysis.photos.map((p) => p.id)).toEqual([idB, idA]);
   });
 });
+
+describe("incident photo merge on coalesce", () => {
+  it("keeps incident photos when a stale PATCH omits them", () => {
+    const base = createDefaultSourceBlocks();
+    const photoId = "inc_ph_aabbccddeeff001122334455";
+    const baseline = normalizeOrderWorkspacePersistBody({
+      sourceBlocks: base,
+      iriss: "",
+      apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
+      cenasAtbilstiba: "",
+      previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
+      incidentPhotos: [{ id: photoId }],
+    });
+    const incoming = normalizeOrderWorkspacePersistBody({
+      sourceBlocks: base,
+      iriss: "",
+      apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
+      cenasAtbilstiba: "",
+      previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
+      incidentPhotos: [],
+    });
+    const merged = coalesceOrderWorkspacePersistBody(incoming, baseline);
+    expect(merged.incidentPhotos?.map((p) => p.id)).toEqual([photoId]);
+  });
+});

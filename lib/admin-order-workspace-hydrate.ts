@@ -100,6 +100,8 @@ export function resolveOrderWorkspaceHydration(args: {
         manualBanners: [],
         vehicleAiExtraction: null,
         vehicleAiExtractionMeta: null,
+        incidentPhotoGroups: [],
+        incidentPhotos: [],
       },
       workspaceRevision: 0,
     };
@@ -120,6 +122,8 @@ export function resolveOrderWorkspaceHydration(args: {
       manualBanners: [],
       vehicleAiExtraction: null,
       vehicleAiExtractionMeta: null,
+      incidentPhotoGroups: [],
+      incidentPhotos: [],
     },
     workspaceRevision: 0,
   };

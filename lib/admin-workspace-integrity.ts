@@ -23,6 +23,8 @@ function toPersistBody(workspace: OrderDraftWorkspaceBody | OrderWorkspacePersis
     previewConfirmed: w.previewConfirmed,
     vehicleAiExtraction: w.vehicleAiExtraction ?? null,
     vehicleAiExtractionMeta: w.vehicleAiExtractionMeta ?? null,
+    incidentPhotoGroups: w.incidentPhotoGroups,
+    incidentPhotos: w.incidentPhotos,
   });
 }
 
@@ -40,6 +42,8 @@ export function stableWorkspaceChecksum(
     previewConfirmed: normalized.previewConfirmed,
     vehicleAiExtraction: normalized.vehicleAiExtraction,
     vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
+    incidentPhotoGroups: normalized.incidentPhotoGroups,
+    incidentPhotos: normalized.incidentPhotos,
   });
   let h = 5381;
   for (let i = 0; i < canonical.length; i++) {

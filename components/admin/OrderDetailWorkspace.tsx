@@ -49,6 +49,13 @@ import {
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
 import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
 import {
+  emptyIncidentPhotoGroup,
+  INCIDENT_MAX_PHOTOS,
+  syncIncidentPhotoGroupsAndFlat,
+  type IncidentPhotoGroup,
+} from "@/lib/incident-photo-types";
+import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
+import {
   idbDeletePortfolio,
   idbGetPortfolio,
   idbSetPortfolio,
@@ -274,6 +281,8 @@ type WorkspacePersist = {
   previewConfirmed: boolean;
   vehicleAiExtraction: VehicleAIExtraction | null;
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
+  incidentPhotoGroups: IncidentPhotoGroup[];
+  incidentPhotos: { id: string }[];
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -285,6 +294,8 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   previewConfirmed: false,
   vehicleAiExtraction: null,
   vehicleAiExtractionMeta: null,
+  incidentPhotoGroups: [],
+  incidentPhotos: [],
 };
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -464,6 +475,8 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
     previewConfirmed: ws.previewConfirmed,
     vehicleAiExtraction: ws.vehicleAiExtraction,
     vehicleAiExtractionMeta: ws.vehicleAiExtractionMeta,
+    incidentPhotoGroups: ws.incidentPhotoGroups,
+    incidentPhotos: ws.incidentPhotos,
   };
 }
 
@@ -907,6 +920,8 @@ export function OrderDetailWorkspace({
       previewConfirmed: normalized.previewConfirmed,
       vehicleAiExtraction: normalized.vehicleAiExtraction,
       vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
+      incidentPhotoGroups: normalized.incidentPhotoGroups ?? [],
+      incidentPhotos: normalized.incidentPhotos ?? [],
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -970,6 +985,8 @@ export function OrderDetailWorkspace({
           previewConfirmed: body.previewConfirmed,
           vehicleAiExtraction: body.vehicleAiExtraction,
           vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
+          incidentPhotoGroups: body.incidentPhotoGroups ?? [],
+          incidentPhotos: body.incidentPhotos ?? [],
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -1430,6 +1447,28 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
   );
 
+  const commitIncidentPhotoGroupsStructural = useCallback(
+    async (nextGroups: IncidentPhotoGroup[]) => {
+      const synced = syncIncidentPhotoGroupsAndFlat(nextGroups);
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const next = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            incidentPhotoGroups: synced.photoGroups,
+            incidentPhotos: synced.photos,
+          });
+          return applyPersistBodyToWs(next);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        await persistFullWorkspaceRef("incident_photos", { showFlash: false });
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
   const runAiTirgusMarket = useCallback(
     async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.tirgus) => {
       if (!payload.aiAllowed || aiTirgusMarketBusy) return;
@@ -1871,6 +1910,8 @@ export function OrderDetailWorkspace({
         previewConfirmed: Boolean(chosen.previewConfirmed),
         vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
         vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
+        incidentPhotoGroups: chosen.incidentPhotoGroups ?? [],
+        incidentPhotos: chosen.incidentPhotos ?? [],
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -1896,6 +1937,8 @@ export function OrderDetailWorkspace({
         previewConfirmed: Boolean(chosen.previewConfirmed),
         vehicleAiExtraction: chosen.vehicleAiExtraction ?? null,
         vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
+        incidentPhotoGroups: chosen.incidentPhotoGroups ?? [],
+        incidentPhotos: chosen.incidentPhotos ?? [],
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;
@@ -2839,6 +2882,30 @@ export function OrderDetailWorkspace({
       photoGroups: listingBlocks.cc_vin.photoGroups ?? [],
     };
 
+    const incidentPhotoIds = (wsPersistRef.current.incidentPhotos ?? []).map((p) => p.id);
+    const incidentPhotoDataUrls = new Map<string, string>();
+    if (incidentPhotoIds.length > 0) {
+      try {
+        const res = await fetch("/api/admin/incident-photo/pdf-batch", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: payload.sessionId, photoIds: incidentPhotoIds }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          dataUrls?: Record<string, string>;
+          missing?: string[];
+        };
+        if (res.ok && data.dataUrls) {
+          for (const [id, url] of Object.entries(data.dataUrls)) {
+            incidentPhotoDataUrls.set(id, url);
+          }
+        }
+      } catch {
+        /* PDF bez negadījumu fotogrāfijām, ja batch neizdevās */
+      }
+    }
+
     let manualVendorBlocks = toPdfManualVendorBlocks(blocksDisplaySafe);
     const portfolioPdfs = portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
     if (portfolioPdfs.length > 0) {
@@ -2877,6 +2944,8 @@ export function OrderDetailWorkspace({
         manualBanners,
         internalComment: internalCommentDraft,
         mileageComment: mileageCommentDraft,
+        incidentPhotoGroups: wsPersistRef.current.incidentPhotoGroups,
+        incidentPhotos: wsPersistRef.current.incidentPhotos,
       },
       portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
@@ -2885,6 +2954,7 @@ export function OrderDetailWorkspace({
       listingAnalysisPhotoDataUrls,
       autoRecordsPhotoDataUrls,
       ccVinPhotoDataUrls,
+      incidentPhotoDataUrls,
     });
 
     const w = window.open("", "_blank");
@@ -4215,6 +4285,19 @@ export function OrderDetailWorkspace({
                     }
                   />
                 </div>
+                <AdminListingAnalysisPhotos
+                  sessionId={payload.sessionId}
+                  photoGroups={ws.incidentPhotoGroups ?? []}
+                  disabled={!orderDraftPersistenceEnabled}
+                  onPhotoGroupsStructuralCommit={(next) =>
+                    void commitIncidentPhotoGroupsStructural(next as IncidentPhotoGroup[])
+                  }
+                  apiBasePath="/api/admin/incident-photo"
+                  maxPhotos={INCIDENT_MAX_PHOTOS}
+                  emptyGroup={emptyIncidentPhotoGroup}
+                  sectionTitle="Negadījuma fotogrāfijas"
+                  simple
+                />
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiMileageCommentErr} />
                   <AdminAiPolishRichCommentShell

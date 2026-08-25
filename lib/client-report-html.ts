@@ -76,6 +76,7 @@ import {
 import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
 import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import { normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
+import { normalizeIncidentPhotoGroups } from "@/lib/incident-photo-types";
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
@@ -276,6 +277,9 @@ export type ClientReportPayload = {
   manualBanners?: import("@/lib/provin-alert-banners").ProvinManualBanner[] | null;
   /** Iekšējās piezīmes (var saturēt vienkāršu HTML no admin redaktora) — PDF zem apvienotās negadījumu tabulas. */
   internalComment?: string | null;
+  /** Negadījumu fotogrāfijas — PDF tieši zem kopsavilkuma apraksta. */
+  incidentPhotoGroups?: { id: string; title: string; photos: { id: string }[] }[] | null;
+  incidentPhotos?: { id: string }[] | null;
   /** NOBRAUKUMA VĒSTURES KOMENTĀRS — PDF zem nobraukuma grafika. */
   mileageComment?: string | null;
 };
@@ -1080,7 +1084,11 @@ function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string 
 }
 
 /** Apvienota negadījumu vēsture — viena kartīte: loģiskie negadījumi + avotu vērtējumi + skaits. */
-export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
+export function buildUnifiedIncidentsTableHtml(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+  incidentPhotoDataUrls?: Map<string, string>,
+): string {
   if (!vis.unifiedIncidents) return "";
   const collected = collectUnifiedIncidentRows({
     manualVendorBlocks: p.manualVendorBlocks ?? null,
@@ -1088,7 +1096,14 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
     ccVinBlock: vis.cc_vin ? p.ccVinBlock ?? null : null,
   });
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
-  if (collected.length === 0 && !adminNoteHtml) return "";
+  const photosHtml = buildSourcePhotoGroupsPdfHtml(
+    p.incidentPhotoGroups,
+    p.incidentPhotos,
+    incidentPhotoDataUrls,
+    normalizeIncidentPhotoGroups,
+  );
+  const photosBlock = photosHtml ? `<div class="pdf-incident-photos">${photosHtml}</div>` : "";
+  if (collected.length === 0 && !adminNoteHtml && !photosBlock) return "";
   const damageDetails = collectUnifiedIncidentDamageDetails(p.manualVendorBlocks ?? null);
   const agg = aggregateUnifiedIncidents(collected, damageDetails);
   const card = buildIncidentClustersCardHtml(agg);
@@ -1097,7 +1112,7 @@ export function buildUnifiedIncidentsTableHtml(p: ClientReportPayload, vis: PdfV
     NEGADIJUMU_VESTURE_TITLE,
     incidentCountBadgeHtml(agg.uniqueCount),
   );
-  const body = `${card}${adminNoteHtml}`;
+  const body = `${card}${adminNoteHtml}${photosBlock}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
@@ -2165,6 +2180,7 @@ function clientReportPrintCss(): string {
         width:100%;height:auto;max-height:220px;object-fit:contain;
         border-radius:6px;border:1px solid #e2e8f0;display:block;background:#f8fafc;
       }
+      .pdf-incident-photos{margin:10px 0 0;}
       .pdf-listing-photo-grid--full .pdf-listing-photo-img{
         max-height:none;width:100%;height:auto;object-fit:contain;
       }
@@ -2791,6 +2807,7 @@ export function buildClientReportDocumentHtml(args: {
   listingAnalysisPhotoDataUrls?: Map<string, string>;
   autoRecordsPhotoDataUrls?: Map<string, string>;
   ccVinPhotoDataUrls?: Map<string, string>;
+  incidentPhotoDataUrls?: Map<string, string>;
 }): string {
   const {
     payload: p,
@@ -2798,6 +2815,7 @@ export function buildClientReportDocumentHtml(args: {
     listingAnalysisPhotoDataUrls,
     autoRecordsPhotoDataUrls,
     ccVinPhotoDataUrls,
+    incidentPhotoDataUrls,
   } = args;
   const vis = mergePdfVisibility(p.pdfVisibility);
 
@@ -2892,7 +2910,7 @@ export function buildClientReportDocumentHtml(args: {
   const unifiedMileageHtml = vis.unifiedMileage ? buildUnifiedMileageTableHtml(p, mileageOpts) : "";
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
-  const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis);
+  const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis, incidentPhotoDataUrls);
   if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
 
   const avotuHtml = buildAvotuDatiSectionHtml(p, vis, autoRecordsPhotoDataUrls, ccVinPhotoDataUrls);

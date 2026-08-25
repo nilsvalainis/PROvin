@@ -164,6 +164,8 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         manualBanners: w.manualBanners ? mergeProvinManualBanners(w.manualBanners) : undefined,
         vehicleAiExtraction: w.vehicleAiExtraction,
         vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
+        incidentPhotoGroups: w.incidentPhotoGroups,
+        incidentPhotos: w.incidentPhotos,
       });
     } catch {
       json = null;
@@ -182,6 +184,8 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         manualBanners: h.manualBanners,
         vehicleAiExtraction: h.vehicleAiExtraction,
         vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
+        incidentPhotoGroups: h.incidentPhotoGroups,
+        incidentPhotos: h.incidentPhotos,
       };
     }
   }
@@ -475,6 +479,8 @@ export async function patchOrderDraft(
       manualBanners: workspacePatch.manualBanners,
       vehicleAiExtraction: workspacePatch.vehicleAiExtraction,
       vehicleAiExtractionMeta: workspacePatch.vehicleAiExtractionMeta,
+      incidentPhotoGroups: workspacePatch.incidentPhotoGroups,
+      incidentPhotos: workspacePatch.incidentPhotos,
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -490,6 +496,8 @@ export async function patchOrderDraft(
       manualBanners: h.manualBanners,
       vehicleAiExtraction: h.vehicleAiExtraction,
       vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
+      incidentPhotoGroups: h.incidentPhotoGroups,
+      incidentPhotos: h.incidentPhotos,
     };
   }
 

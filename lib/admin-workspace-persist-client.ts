@@ -253,6 +253,8 @@ export function workspacePersistFromDraftWorkspace(
     manualBanners: mergeProvinManualBanners(w.manualBanners),
     vehicleAiExtraction: w.vehicleAiExtraction,
     vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
+    incidentPhotoGroups: w.incidentPhotoGroups,
+    incidentPhotos: w.incidentPhotos,
   });
   const h = hydrateWorkspaceFromStorage(json);
   if (!h) return null;
@@ -265,5 +267,7 @@ export function workspacePersistFromDraftWorkspace(
     previewConfirmed: h.previewConfirmed,
     vehicleAiExtraction: h.vehicleAiExtraction,
     vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
+    incidentPhotoGroups: h.incidentPhotoGroups,
+    incidentPhotos: h.incidentPhotos,
   };
 }
