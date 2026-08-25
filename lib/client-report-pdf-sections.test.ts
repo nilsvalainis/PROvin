@@ -1292,6 +1292,48 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(serviceTable.indexOf("01.12.2023")).toBeLessThan(serviceTable.indexOf("01.06.2023"));
   });
 
+  it("stacks iconed service works one per line and wraps long descriptions", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        {
+          date: "05.07.2021",
+          odometer: "221482",
+          location: "Vācija",
+          works:
+            "Regulārā apkope: motoreļļas maiņa, bremžu šķidruma maiņa, aizmugurējo bremžu apkalpošana, salona mikrofiltra maiņa, gaisa filtra maiņa, degvielas filtra maiņa, transportlīdzekļa pārbaude",
+        },
+        {
+          date: "21.06.2018",
+          odometer: "181383",
+          location: "B&K Deutschland GmbH, Osnabrück",
+          works: "Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)",
+        },
+      ],
+      comments: "",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
+    expect(serviceTable).toContain('class="pdf-service-works-list"');
+    expect(serviceTable).toContain("motoreļļas maiņa");
+    expect(serviceTable).toContain("degvielas filtra maiņa");
+    expect(serviceTable).toContain("transportlīdzekļa pārbaude");
+    expect(serviceTable).toContain("Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)");
+    expect(serviceTable.match(/class="pdf-service-chip"/g)?.length).toBeGreaterThanOrEqual(8);
+    expect(doc).not.toContain(".pdf-service-chip:not(:last-child)::after");
+    expect(doc).toMatch(/\.pdf-service-chip\{[^}]*white-space:normal!important/);
+    expect(doc).toMatch(/\.pdf-service-chip-txt\{[^}]*overflow-wrap:anywhere/);
+  });
+
   it("moves dealer names out of works into the Vieta column", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,

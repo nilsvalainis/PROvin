@@ -1359,7 +1359,7 @@ function serviceWorksLineHtml(line: string): string {
     .filter(Boolean);
   if (items.length === 0) return escapeHtml(text);
   const prefix = category
-    ? `<span class="pdf-service-chip-cat">${escapeHtml(category)}:</span> `
+    ? `<div class="pdf-service-chip-cat">${escapeHtml(category)}:</div>`
     : "";
   const chips = items
     .map((item) => {
@@ -1367,10 +1367,10 @@ function serviceWorksLineHtml(line: string): string {
       const iconHtml = icon
         ? `<span class="pdf-service-chip-ico" aria-hidden="true">${sectionIconPdfHtmlSized(icon, 11)}</span>`
         : "";
-      return `<span class="pdf-service-chip">${iconHtml}${escapeHtml(item)}</span>`;
+      return `<div class="pdf-service-chip">${iconHtml}<span class="pdf-service-chip-txt">${escapeHtml(item)}</span></div>`;
     })
     .join("");
-  return `${prefix}${chips}`;
+  return `${prefix}<div class="pdf-service-works-list">${chips}</div>`;
 }
 
 function serviceWorksCellHtml(raw: string): string {
@@ -2375,6 +2375,7 @@ ${sourceDotColorCss()}
       .pdf-mileage-history-table--service th.pdf-service-th-works{text-align:left!important;}
       .pdf-mileage-history-table--service td.pdf-service-cell-place{
         text-align:left!important;color:#1d1d1f!important;
+        white-space:normal!important;overflow-wrap:anywhere;word-break:break-word;min-width:0;
       }
       .pdf-mileage-history-table--service tbody td{vertical-align:top!important;}
       .pdf-mileage-history-table--service td.pdf-mileage-cell-odo{
@@ -2383,18 +2384,24 @@ ${sourceDotColorCss()}
       .pdf-mileage-history-table--service th.pdf-mileage-th-odo{text-align:left!important;}
       .pdf-mileage-history-table--service td.pdf-service-cell-works{
         text-align:left!important;white-space:normal!important;color:#0f172a!important;
-        line-height:1.5!important;overflow-wrap:break-word;word-break:break-word;
+        line-height:1.5!important;overflow-wrap:anywhere;word-break:break-word;
+        min-width:0;max-width:0;
       }
       .pdf-mileage-history-table--service tbody tr{page-break-inside:avoid;break-inside:avoid;}
-      .pdf-service-chip-cat{color:#64748B!important;font-weight:500;}
-      .pdf-service-chip{
-        display:inline-flex!important;align-items:center;gap:3px;
-        margin:0 6px 2px 0;white-space:nowrap;
+      .pdf-service-chip-cat{
+        display:block!important;color:#64748B!important;font-weight:500;margin:0 0 3px;
       }
-      .pdf-service-chip:not(:last-child)::after{content:",";margin-left:-3px;color:#0f172a;}
+      .pdf-service-works-list{display:block!important;min-width:0;max-width:100%;}
+      .pdf-service-chip{
+        display:flex!important;align-items:flex-start;gap:5px;
+        margin:0 0 2px;min-width:0;max-width:100%;white-space:normal!important;
+      }
+      .pdf-service-chip-txt{
+        min-width:0;flex:1 1 auto;overflow-wrap:anywhere;word-break:break-word;white-space:normal!important;
+      }
       .pdf-service-chip-ico{
         display:inline-flex!important;align-items:center;justify-content:center;
-        color:#0061D2!important;flex:none;
+        color:#0061D2!important;flex:none;margin-top:1px;
       }
       .pdf-service-chip-ico svg{display:block;}
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
