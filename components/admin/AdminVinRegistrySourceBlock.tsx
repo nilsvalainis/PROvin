@@ -352,6 +352,11 @@ export function AdminVinRegistrySourceBlock({
               </a>
             ) : null}
             <span className="font-mono text-[10px] text-slate-500">{vin.trim() || "— nav VIN —"}</span>
+            {blockKey === "tjekbil" ? (
+              <span className="text-[10px] text-slate-400">
+                tjekbil.dk (DMR + Færdselsstyrelsen apskates). Nummerplade.net — ja API atslēga ir iestatīta serverī.
+              </span>
+            ) : null}
             {block.fetchedAt ? (
               <span className="text-[10px] text-slate-400">
                 Pēdējā ielāde: {new Date(block.fetchedAt).toLocaleString("lv-LV")}

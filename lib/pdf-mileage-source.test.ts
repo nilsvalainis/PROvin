@@ -19,6 +19,7 @@ describe("mileageSourceLabelToPdfKey", () => {
     expect(mileageSourceLabelToPdfKey("DEALER")).toBe("dealer");
     expect(mileageSourceLabelToPdfKey("LTAB")).toBe("ltab");
     expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.tjekbil)).toBe("tjekbil");
+    expect(mileageSourceLabelToPdfKey("TJEKBIL.DK — Dānijas reģistrs")).toBe("tjekbil");
     expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.mnt_ee)).toBe("ee");
     expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.lkf_ee)).toBe("ee");
     expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.carinfo)).toBe("carinfo");

@@ -21,7 +21,7 @@ describe("extractExplicitOwnerCount", () => {
     expect(extractExplicitOwnerCount("6 īpašnieki")).toBe(6);
     expect(extractExplicitOwnerCount("Aplēstais īpašnieku skaits: 2")).toBe(2);
     expect(extractExplicitOwnerCount("Īpašnieku skaits: 4")).toBe(4);
-    expect(extractExplicitOwnerCount("2 īpašnieki (pēc OCTA polišu maiņām)")).toBe(2);
+    expect(extractExplicitOwnerCount("Aplēstais īpašnieku skaits: 5 (pēc 4 OCTA kompāniju maiņām Dānijā). Nav DMR oficiālais īpašnieku saraksts.")).toBe(5);
     expect(extractExplicitOwnerCount("04.09.2023 īpašnieka maiņa: AutoEtt\n12.10.2023 īpašnieka maiņa: X")).toBeNull();
     expect(extractExplicitOwnerCount("2 īpašnieku maiņas")).toBeNull();
   });
@@ -31,6 +31,7 @@ describe("inferOwnerCountry", () => {
   it("maps registry names and country words", () => {
     expect(inferOwnerCountry("", SOURCE_BLOCK_LABELS.carinfo)).toBe("sweden");
     expect(inferOwnerCountry("Exported from Sweden")).toBe("sweden");
+    expect(inferOwnerCountry("", SOURCE_BLOCK_LABELS.tjekbil)).toBe("denmark");
     expect(inferOwnerCountry("Dānijas reģistrs")).toBe("denmark");
   });
 });
@@ -47,6 +48,17 @@ describe("synthesizeOwnerCountsFromBlocks", () => {
     expect(syn.totalCount).toBe(8);
     expect(syn.chosen.sweden?.count).toBe(6);
     expect(syn.chosen.other).toBeUndefined();
+  });
+
+  it("takes Danish owner estimate from DĀNIJAS REĢISTRI OCTA line", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.tjekbil = {
+      ...emptyVinRegistryBlock(),
+      ownersSummary: "Aplēstais īpašnieku skaits: 5 (pēc 4 OCTA kompāniju maiņām Dānijā). Nav DMR oficiālais īpašnieku saraksts.",
+    };
+    const syn = synthesizeOwnerCountsFromBlocks(blocks);
+    expect(syn.chosen.denmark?.count).toBe(5);
+    expect(syn.noteLine).toMatch(/Dānijā: 5/);
   });
 
   it("does not sum AutoDNA and CarVertical for the same unspecified market", () => {

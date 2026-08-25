@@ -152,7 +152,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   carvertical: "CarVertical",
   auto_records: "OFICIĀLĀ DĪLERA DATI",
   cc_vin: CC_VIN_ADMIN_LABEL,
-  tjekbil: "TJEKBIL.DK — Dānijas reģistrs",
+  tjekbil: "DĀNIJAS REĢISTRI",
   mnt_ee: "MNT.EE — Igaunijas reģistrs",
   lkf_ee: "LKF.EE — Igaunijas OCTA",
   carinfo: "ZVIEDRIJAS REĢISTRI",

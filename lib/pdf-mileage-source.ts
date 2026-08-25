@@ -83,7 +83,12 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     return "ltab";
   }
 
-  if (t === normLabel(SOURCE_BLOCK_LABELS.tjekbil) || sq.includes("tjekbil")) {
+  if (
+    t === normLabel(SOURCE_BLOCK_LABELS.tjekbil) ||
+    sq.includes("tjekbil") ||
+    sq.includes("danijasregistri") ||
+    sq.includes("danijasregistrs")
+  ) {
     return "tjekbil";
   }
   if (

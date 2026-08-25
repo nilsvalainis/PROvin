@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-25.1 — Dānijas īpašnieku skaits: OCTA kompāniju maiņu aplēse
+ *   (nav oficiāls DMR saraksts); PDF avota virsraksts DĀNIJAS REĢISTRI.
  * - 2026-08-24.3 — Citu auditu atmiņa: tikai stils/vārdi/pieredze; sveša auto
  *   fakti (plēve u.c.) tiek izņemti no injekcijas un izejā noķerti.
  * - 2026-08-24.2 — Plēve tikai ja ŠĪ auto datos ir aplīmēšana; uzdevuma
@@ -45,4 +47,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-24.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-25.1";
