@@ -43,6 +43,29 @@ export function mentionsWinterSaltRust(text: string): boolean {
   return WINTER_SALT_RUST_TOPIC_RE.test(text ?? "");
 }
 
+const PAINT_GAUGE_TOOL_RE = /krāsas (?:biezuma )?mērītāj/i;
+const PAINT_GAUGE_MICRON_RE = /mikron/i;
+const PAINT_GAUGE_RANGE_RE = /150\s*[-–]?\s*170/;
+const PAINT_GAUGE_DELTA_RE = /50\s*[-–]?\s*100/;
+const PAINT_GAUGE_INNER_RE = /iekšēj(?:ās|o) ail/i;
+
+/** Obligātā virsbūves mērīšanas sadaļa klātienes ieteikumos. */
+export function mentionsPaintGaugeInspection(text: string): boolean {
+  const t = text ?? "";
+  return PAINT_GAUGE_TOOL_RE.test(t) || PAINT_GAUGE_MICRON_RE.test(t);
+}
+
+export function paintGaugeInspectionComplete(text: string): boolean {
+  const t = text ?? "";
+  return (
+    PAINT_GAUGE_TOOL_RE.test(t) &&
+    PAINT_GAUGE_MICRON_RE.test(t) &&
+    PAINT_GAUGE_RANGE_RE.test(t) &&
+    PAINT_GAUGE_DELTA_RE.test(t) &&
+    PAINT_GAUGE_INNER_RE.test(t)
+  );
+}
+
 /** Tipiskās ziemas sāls vietas — jānosauc vismaz divas. */
 export function countTypicalWinterSaltRustSpots(text: string): number {
   const t = text ?? "";
@@ -103,7 +126,7 @@ const MAX_CHARS_BY_FIELD: Record<string, number> = {
   mileage: 2400,
   generic: 1800,
   technical_risks: 16_000,
-  inspection: 10_000,
+  inspection: 14_000,
 };
 
 const MIN_PARAS_BY_FIELD: Partial<Record<string, number>> = {
@@ -314,6 +337,19 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "missing_inspection_verb",
         message: "Apskates ieteikumos jālieto „Jāpārbauda” / „Ieteicams” / „Rūpīgi jā…”",
+      });
+    }
+    if (!mentionsPaintGaugeInspection(t)) {
+      issues.push({
+        code: "paint_gauge_missing",
+        message:
+          "Ieteikumos obligāti jāietilpst virsbūves pārbaudei ar krāsas biezuma mērītāju (mikroni, iekšējās ailes)",
+      });
+    } else if (!paintGaugeInspectionComplete(t)) {
+      issues.push({
+        code: "paint_gauge_incomplete",
+        message:
+          "Virsbūves sadaļā jābūt mērītājam, 150-170 / nobīdei 50-100 mikroni un iekšējām ailēm (rūpnīcas slānis, ne remonts)",
       });
     }
     if (opts.winterSaltRustRequiredInContext && !mentionsWinterSaltRust(t)) {

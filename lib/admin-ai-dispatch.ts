@@ -77,6 +77,8 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "foreign_audit_fact_copied",
   "winter_salt_rust_missing",
   "winter_salt_rust_spots_missing",
+  "paint_gauge_missing",
+  "paint_gauge_incomplete",
 ]);
 
 function buildSelfCorrectionPrompt(

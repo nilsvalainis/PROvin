@@ -20,6 +20,7 @@ import {
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
+  AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
@@ -90,7 +91,7 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
 - OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” ask you to cover a theme that would normally live in another field, write it HERE and process every operator topic. Anti-repetition must not delete an operator theme.
 - STRICT ROLES — each ACTIVE FIELD has ONE job; never absorb another field’s essay:
   • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths (kārba, motors, ķēde/zobsiksna, divmasu spararats, dārgie mezgli, rūsa) — NOT everyday TA-covered wear (sviras, bukses, bremzes), NOT EUR repair quotes, NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
-  • „2. Ieteikumi klātienes apskatei” = what the buyer should see, hear, measure, or ask — convert remaining uncertainties into steps; do NOT restate the technical-risk essay or write one paragraph per risk block.
+  • „2. Ieteikumi klātienes apskatei” = what the buyer should see, hear, measure, or ask — convert remaining uncertainties into steps; do NOT restate the technical-risk essay or write one paragraph per risk block. ALWAYS include the combined paint-thickness / inner-opening section (see PAINT THICKNESS); it does not replace other checks.
   • „3. Kopsavilkums” = short professional opinion + purchase recommendation on the overall picture — NOT a recapitulation or paraphrase of already-generated source/IRISS sentences; NOT a point-by-point digest of every section; NEVER listing/market/repair EUR figures (those belong in „Cenas vērtējums” and „1. Tehnisko risku analīze”).
   • „NOBRAUKUMA VĒSTURES KOMENTĀRS” = ONLY place for full chronological mileage synthesis (lineārums, averages, motorstundas/city–highway, multi-source odometer correlation, data vacuum, global odometer-risk conclusions).
   • „Eļļas maiņas intervāli” (OFICIĀLĀ DĪLERA DATI) = ONLY place for oil-change interval math (how often oil was changed, km/time between services, deviation vs manufacturer interval). Other fields: one sentence max if it is a purchase risk.
@@ -132,6 +133,8 @@ ${AI_PLAIN_LANGUAGE_TERMS}
 ${AI_WRAP_FILM_RULES}
 
 ${AI_WINTER_SALT_RUST_RULES}
+
+${AI_PAINT_GAUGE_INSPECTION_RULES}
 
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 
@@ -207,6 +210,8 @@ ${AI_PLAIN_LANGUAGE_TERMS}
 ${AI_WRAP_FILM_RULES}
 
 ${AI_WINTER_SALT_RUST_RULES}
+
+${AI_PAINT_GAUGE_INSPECTION_RULES}
 
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 
@@ -358,9 +363,10 @@ FORMĀTS (obligāti):
 - Virsraksts savā rindā (piem. Virsbūves pārbaude ar krāsas mērītāju), tad rindkopa nākamajā rindā. NEKAD *, **.
 - Formulējumi: Jāpārbauda…, Ieteicams…, Rūpīgi jāapskata… (ne „Pārbaudi”).
 - CLIENT VALUE DENSITY: katra rindkopa = konkrēta pārbaude + kāpēc tā svarīga šim auto; bez garas tehniskās esejas (tā ir 1. sadaļā). Noklusējuma 350–800 šim laukam NEATTIECAS.
-- Garums: tik pārbaužu, cik šim auto ir darāmu soļu (tipiski 4–8). NE pa vienai rindkopai katram risku blokam — grupē pēc pircēja darbības (ko redzēt, dzirdēt, izmērīt, vaicāt). Īsāk, ja datu maz.
+- Garums: tik pārbaužu, cik šim auto ir darāmu soļu (tipiski 6–12, ieskaitot obligāto krāsas-biezuma sadaļu). NE pa vienai rindkopai katram risku blokam — grupē pēc pircēja darbības (ko redzēt, dzirdēt, izmērīt, vaicāt). Īsāk, ja datu maz. Obligātā virsbūves sadaļa NEDRĪKST izstumt kārbu, testa braucienu vai citus soļus — palielini garumu, neizmet.
 
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
+- **Virsbūves stāvoklis un krāsas biezums** — KATRAM auto viena sadaļa (virsraksts + viena rindkopa, ne trīs): krāsas biezuma mērītājs, jo dati var neuzrādīt privāti krāsotus elementus vai rūsas slēpšanu; ārēji 150-170 mikroni, vienmērīgi ~200 bez svārstībām nav satraukums, nobīde 50-100 mikroni starp blakus elementiem var norādīt uz kosmētisku pārkrāsojumu; iekšējās ailes bieži ~uz pusi mazāk = rūpnīca, ne remonts. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.
 - **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).

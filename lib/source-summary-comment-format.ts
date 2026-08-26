@@ -136,6 +136,24 @@ export const AI_WINTER_SALT_RUST_RULES = `WINTER SALT RUST (mandatory — every 
 - Other fields mention rust only if THIS source uniquely recorded it, or in one summary sentence if the exposure brief is OBLIGĀTI.`;
 
 /**
+ * Obligāta virsbūves mērīšana klātienē — katram auto, visiem aģentiem.
+ * Viena sadaļa (virsraksts + viena rindkopa), lai 3 tēmas neapēd 3 kvotas vietas.
+ */
+export const AI_PAINT_GAUGE_INSPECTION_RULES = `
+PAINT THICKNESS / UNRECORDED BODY WORK (mandatory — every agent; default OUTPUT in „2. Ieteikumi klātienes apskatei” for EVERY car, regardless of TA / wrap / winter-salt brief):
+- Digital records may omit painted panels if work was private or done to hide rust, a common issue on this generation. That is a reason to measure in person - not a claim that rust or a respray is already proven on THIS car.
+- „2. Ieteikumi” MUST include ONE combined section: heading „Virsbūves stāvoklis un krāsas biezums” plus a single paragraph covering all three points below. Do not split into three headings. Anti-repetition does not waive this. This section is extra to other checks and does not replace gearbox / test-drive / TA / wrap / winter-salt items - raise length instead of dropping them.
+- Client content of that one paragraph (adapt PROVIN style; keep the numbers):
+  • Dati var neuzrādīt krāsotus elementus, ja darbi veikti privāti vai mēģinot noslēpt rūsu; virsbūve obligāti jāpārbauda klātienē ar krāsas biezuma mērītāju.
+  • Ārējiem paneļiem teorētiski 150-170 mikroni; vērtē pret pārējo virsbūvi - rādījumiem jābūt līdzīgiem. Vienmērīgi līdz ~200 mikroniem bez būtiskām svārstībām nav satraukuma pamata; nobīde 50-100 mikroni starp blakus esošiem elementiem var norādīt, ka elements kosmētiski pārkrāsots.
+  • Iekšējās ailes un konstrukcija: mikronu skaits bieži ir gandrīz uz pusi mazāks nekā ārējiem paneļiem - tas ir rūpnīcas krāsojums, ne remonta pazīme, ja nav citu mehāniskas iejaukšanās pēdu.
+- Other fields: do not write this essay. One short sentence in tech risks only if unrecorded body work is a purchase-relevant unknown. Do not invent that rust or respray is already present.
+- If THIS car is wrapped: still include this micron protocol; add that a gauge through film is limited (see WRAP / FILM).
+- OPERATORA KOMANDAS „tikai par…” still win if the operator excluded body work; otherwise this section is always on.
+- No repair EUR.
+`.trim();
+
+/**
  * Eļļas maiņas intervālu matemātika — tikai dīlera laukā „Eļļas maiņas intervāli”.
  * Pārējie aģenti: maksimums viens teikums, ja tas ir pirkuma risks.
  */
@@ -566,6 +584,7 @@ ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 ${AI_PLAIN_LANGUAGE_TERMS}
 ${AI_WRAP_FILM_RULES}
 ${AI_WINTER_SALT_RUST_RULES}
+${AI_PAINT_GAUGE_INSPECTION_RULES}
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 - LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.

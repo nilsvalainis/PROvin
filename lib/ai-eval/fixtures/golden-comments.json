@@ -111,6 +111,13 @@
     "id": "inspection-structure-ok",
     "field": "inspection",
     "expectPass": true,
+    "text": "Virsbūves stāvoklis un krāsas biezums\nJāpārbauda virsbūve klātienē ar krāsas biezuma mērītāju, jo dati var neuzrādīt privāti krāsotus elementus vai rūsas slēpšanu. Ārējiem paneļiem teorētiski 150-170 mikroni; rādījumus vērtē pret pārējo virsbūvi. Vienmērīgi līdz 200 mikroniem bez būtiskām svārstībām nav satraukuma pamata, bet nobīde 50-100 mikroni starp blakus esošiem elementiem var norādīt uz kosmētisku pārkrāsojumu. Iekšējās ailes un konstrukcija bieži rāda gandrīz uz pusi mazāku mikronu skaitu - tas ir rūpnīcas krāsojums, ne remonta pazīme, ja nav citu mehāniskas iejaukšanās pēdu.\n\nPiekare\nJānovērtē, vai aizmugure stāv līmenī un vai pēc iedarbināšanas paceļas bez gariem kompresora cikliem. Jālūdz dokumenti, ja diagnostikā jau fiksēta nosēšanās.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs un rūpīgi jāapskata eļļas filtra korpuss pret tecējumiem.\n\nKārba\nJāpārbauda 1-2 un 4-5 pārslēgumi aukstā un siltā, bez rāviena.\n\nElektronika\nJāveic vairāki starta cikli un jānovērtē, vai stūres slēdzene neliedz iedarbināšanu.\n\nTesta brauciens\nIeteicams 20-30 min klusais brauciens pilsētā, šosejā 90-110 km/h un viens kick-down bez kļūdu lampiņām."
+  },
+  {
+    "id": "inspection-paint-gauge-missing",
+    "field": "inspection",
+    "expectPass": false,
+    "codes": ["paint_gauge_missing"],
     "text": "Piekare\nJānovērtē, vai aizmugure stāv līmenī un vai pēc iedarbināšanas paceļas bez gariem kompresora cikliem. Jālūdz dokumenti, ja diagnostikā jau fiksēta nosēšanās.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs un rūpīgi jāapskata eļļas filtra korpuss pret tecējumiem.\n\nKārba\nJāpārbauda 1-2 un 4-5 pārslēgumi aukstā un siltā, bez rāviena.\n\nElektronika\nJāveic vairāki starta cikli un jānovērtē, vai stūres slēdzene neliedz iedarbināšanu.\n\nTesta brauciens\nIeteicams 20-30 min klusais brauciens pilsētā, šosejā 90-110 km/h un viens kick-down bez kļūdu lampiņām.\n\nVirsbūve\nRūpīgi jāapskata arkas un jāizmēra krāsa zonās, kur avotos ir neliels zaudējums."
   },
   {
@@ -196,6 +203,6 @@
     "field": "inspection",
     "expectPass": true,
     "winterSaltRustRequiredInContext": true,
-    "text": "Virsbūves korozija\nRūpīgi jāmeklē rūsa riteņu arkās, arī zem plastmasas oderēm, sliekšņu apakšējās malās un bagāžnieka vāka malā ap numura zīmes apgaismojumu. Cinkojums un svaiga apskate to neatceļ.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs un rūpīgi jāapskata eļļas filtra korpuss pret tecējumiem.\n\nKārba\nJāpārbauda 1-2 un 4-5 pārslēgumi aukstā un siltā, bez rāviena.\n\nTesta brauciens\nIeteicams 20-30 min klusais brauciens pilsētā un šosejā 90-110 km/h, lai dzirdētu vibrāciju no kardāna."
+    "text": "Virsbūves stāvoklis un krāsas biezums\nJāpārbauda virsbūve klātienē ar krāsas biezuma mērītāju, jo dati var neuzrādīt privāti krāsotus elementus vai rūsas slēpšanu. Ārējiem paneļiem teorētiski 150-170 mikroni; rādījumus vērtē pret pārējo virsbūvi. Vienmērīgi līdz 200 mikroniem bez būtiskām svārstībām nav satraukuma pamata, bet nobīde 50-100 mikroni starp blakus esošiem elementiem var norādīt uz kosmētisku pārkrāsojumu. Iekšējās ailes un konstrukcija bieži rāda gandrīz uz pusi mazāku mikronu skaitu - tas ir rūpnīcas krāsojums, ne remonta pazīme, ja nav citu mehāniskas iejaukšanās pēdu.\n\nVirsbūves korozija\nRūpīgi jāmeklē rūsa riteņu arkās, arī zem plastmasas oderēm, sliekšņu apakšējās malās un bagāžnieka vāka malā ap numura zīmes apgaismojumu. Cinkojums un svaiga apskate to neatceļ.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs un rūpīgi jāapskata eļļas filtra korpuss pret tecējumiem.\n\nKārba\nJāpārbauda 1-2 un 4-5 pārslēgumi aukstā un siltā, bez rāviena.\n\nTesta brauciens\nIeteicams 20-30 min klusais brauciens pilsētā un šosejā 90-110 km/h, lai dzirdētu vibrāciju no kardāna."
   }
 ]

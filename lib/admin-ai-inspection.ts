@@ -59,8 +59,9 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 - nobraukums, negadījumi, TA, dīleris, pārdevējs, cena;
 - vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
 
-Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: tik soļu, cik šim auto ir darāmu (tipiski 4–8; noklusējuma 350–800 NEATTIECAS). NE pa vienai rindkopai katram risku blokam — grupē pēc tā, ko pircējs redz, dzird, izmēra vai vaicā.
-Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — viena sadaļa ar nosauktām vietām (arkas, sliekšņu apakšas, bagāžnieka vāks pie numura zīmes gaismām). Neizdomā, ka rūsa jau ir.
+Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: tik soļu, cik šim auto ir darāmu (tipiski 6–12; noklusējuma 350–800 NEATTIECAS). NE pa vienai rindkopai katram risku blokam — grupē pēc tā, ko pircējs redz, dzird, izmēra vai vaicā.
+OBLIGĀTI katram auto: viena sadaļa „Virsbūves stāvoklis un krāsas biezums” (virsraksts + viena rindkopa) — krāsas biezuma mērītājs; 150-170 / ~200 mikroni pret pārējo virsbūvi; nobīde 50-100 mikroni; iekšējās ailes ~uz pusi mazāk = rūpnīca. Šī sadaļa neaizstāj citus soļus. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
+Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — extra sadaļa ar nosauktām vietām (arkas, sliekšņu apakšas, bagāžnieka vāks pie numura zīmes gaismām). Neizdomā, ka rūsa jau ir.
 ${!techPlain ? "Tehnisko risku sadaļas vēl nav — vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls” un bez izsaukuma zīmēm.
 NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu — tikai pārvērt signālus par klātienes soļiem.`,

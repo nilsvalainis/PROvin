@@ -21,6 +21,7 @@ import {
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
+  AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
@@ -305,6 +306,26 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildWinterSaltRustBrief/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winter_salt_rust_missing/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winterSaltRustRequiredInPrompt/);
+  });
+
+  it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/PAINT THICKNESS/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/150-170/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/50-100/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/iekšējās ailes/i);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/krāsas biezuma mērītāj/);
+    expect(HYBRID_COMMENT_RULES).toMatch(/PAINT THICKNESS/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_PAINT_GAUGE_INSPECTION_RULES\}/,
+    );
+    expect(prompts).toMatch(/PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_PAINT_GAUGE_INSPECTION_RULES\}/);
+    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?Virsbūves stāvoklis un krāsas biezums/);
+    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?tipiski 6–12/);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/Virsbūves stāvoklis un krāsas biezums/);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/tipiski 6–12/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/paint_gauge_missing/);
+    expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/inspection: 14_000/);
   });
 
   it("wrap / film rules force a mention in risks and summary when any field has a wrap", () => {
