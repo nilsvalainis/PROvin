@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildCcVinPdfInnerHtml } from "@/lib/cc-vin-pdf-html";
 import { applyCcVinParsedReport } from "@/lib/cc-vin-report-apply";
-import { emptyCcVinBlock, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { CC_VIN_PDF_SOURCE_LABEL, emptyCcVinBlock, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { parseCcVinReportText } from "@/lib/cc-vin-report-parse";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
@@ -76,7 +76,7 @@ describe("starptautiskās vēstures PDF sadaļa", () => {
   it("odometra ieraksti nonāk vienotajā nobraukuma tabulā ar savu avota nosaukumu", () => {
     const rows = collectUnifiedMileageRows({ ccVinBlock: blockFromReport() });
     expect(rows.map((r) => r.odometer)).toEqual(["49890", "16"]);
-    expect(new Set(rows.map((r) => r.sourceLabel))).toEqual(new Set(["Starptautiskā vēsture"]));
+    expect(new Set(rows.map((r) => r.sourceLabel))).toEqual(new Set([CC_VIN_PDF_SOURCE_LABEL]));
   });
 
   it("bojājumi bez summas nerada rindas vienotajā negadījumu tabulā", () => {
@@ -89,7 +89,7 @@ describe("starptautiskās vēstures PDF sadaļa", () => {
     b.damages = [{ date: "11.08.2020", region: "ASV", amount: "4 200 €", description: "Priekšpuses bojājums" }];
     const rows = collectUnifiedIncidentRows({ ccVinBlock: b });
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.sourceLabel).toBe("Starptautiskā vēsture");
+    expect(rows[0]!.sourceLabel).toBe(CC_VIN_PDF_SOURCE_LABEL);
   });
 
   it("atkārtota PDF ielāde aizstāj izsoļu stub rindu, kurai bija tikai cena", () => {

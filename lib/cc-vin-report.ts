@@ -1,7 +1,7 @@
 /**
  * Starptautiskās vēstures avots (admin: „CC.VIN”) — strukturētie lauki, normalizācija un LV vārdnīcas.
  *
- * Klienta PDF šo avotu sauc tikai par „STARPTAUTISKĀ VĒSTURE”: ne sadaļā, ne tabulās, ne leģendā
+ * Klienta PDF šo avotu sauc tikai par „IZSOĻU PORTĀLU ARHĪVS”: ne sadaļā, ne tabulās, ne leģendā
  * nedrīkst parādīties ārējā pakalpojuma nosaukums. Specifikācijas šeit netiek dublētas — akcents ir
  * uz sarkanajiem karogiem (bojājumi, total loss, īpašumtiesību atzīmes, īpašnieku maiņas).
  */
@@ -15,10 +15,10 @@ import { normalizeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc
 export const CC_VIN_ADMIN_LABEL = "CC.VIN";
 
 /** Klienta PDF sadaļas nosaukums — bez atsauces uz ārējo pakalpojumu. */
-export const CC_VIN_PDF_TITLE = "STARPTAUTISKĀ VĒSTURE";
+export const CC_VIN_PDF_TITLE = "IZSOĻU PORTĀLU ARHĪVS";
 
 /** Nobraukuma / negadījumu tabulu avota apzīmējums (leģenda PDF). */
-export const CC_VIN_PDF_SOURCE_LABEL = "Starptautiskā vēsture";
+export const CC_VIN_PDF_SOURCE_LABEL = "IZSOĻU PORTĀLU ARHĪVS";
 
 export const CC_VIN_SUBTITLES = {
   checks: "Pārbaudītie reģistri",

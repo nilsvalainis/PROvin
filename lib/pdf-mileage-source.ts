@@ -75,7 +75,11 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     return "dealer";
   }
 
-  if (sq === squishLower(CC_VIN_PDF_SOURCE_LABEL) || sq === "starptautiskavesture") {
+  if (
+    sq === squishLower(CC_VIN_PDF_SOURCE_LABEL) ||
+    sq === "starptautiskavesture" ||
+    sq === "izsoluportaluarhivs"
+  ) {
     return "intl";
   }
 
