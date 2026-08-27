@@ -9,8 +9,6 @@ export type PdfVisibilitySettings = {
   notes: boolean;
   portfolio: boolean;
   alerts: boolean;
-  /** Kopsavilkuma kartīte „Īpašnieku skaits” (aprēķins paliek adminā). */
-  ownerCount: boolean;
   /** Apvienotā „NOBRAUKUMA VĒSTURE” zona (visi avoti, kas atļauti atsevišķi). */
   unifiedMileage: boolean;
   /** CSDD rindas apvienotajā nobraukuma tabulā (CSDD strukturētie lauki var būt ieslēgti atsevišķi). */
@@ -38,7 +36,6 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   notes: true,
   portfolio: true,
   alerts: true,
-  ownerCount: true,
   unifiedMileage: true,
   csddMileageTable: true,
   unifiedIncidents: true,
@@ -73,7 +70,6 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     notes: isBool(o.notes) ? o.notes : d.notes,
     portfolio: isBool(o.portfolio) ? o.portfolio : d.portfolio,
     alerts: isBool(o.alerts) ? o.alerts : d.alerts,
-    ownerCount: isBool(o.ownerCount) ? o.ownerCount : d.ownerCount,
     unifiedMileage: isBool(o.unifiedMileage) ? o.unifiedMileage : d.unifiedMileage,
     csddMileageTable: isBool(o.csddMileageTable) ? o.csddMileageTable : d.csddMileageTable,
     unifiedIncidents: isBool(o.unifiedIncidents) ? o.unifiedIncidents : d.unifiedIncidents,

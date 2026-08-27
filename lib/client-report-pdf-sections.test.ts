@@ -161,28 +161,6 @@ describe("PDF design system", () => {
     expect(html).toContain(SOURCE_BLOCK_LABELS.carinfo);
   });
 
-  it("omits the owner-count summary tile when pdfVisibility.ownerCount is false", () => {
-    const csdd = emptyCsddFields();
-    csdd.registrationStatus = "Uzskaitē";
-    csdd.ownerCountLatvia = "2";
-    const html = buildClientReportDocumentHtml({
-      payload: minimalPayload({
-        csddForm: csdd,
-        pdfVisibility: mergePdfVisibility({ ownerCount: false }),
-      } as Partial<ClientReportPayload>),
-      portfolio: [],
-      pdfInsights: [],
-      dateFmt: new Intl.DateTimeFormat("lv-LV"),
-      formatBytes: () => "0 B",
-    });
-    const summary = html.slice(html.indexOf("ATSKAITES KOPSAVILKUMS"), html.indexOf("Kas tika pārbaudīts"));
-    expect(summary).toContain("Negadījumi un bojājumi");
-    expect(summary).toContain("Nobraukums");
-    expect(summary).toContain("Servisa vēsture");
-    expect(summary).not.toContain("Īpašnieku skaits");
-    expect(summary).not.toContain("Latvijā 2");
-  });
-
   it("does not show Latvian owner count when CSDD has no Latvian registration", () => {
     const csdd = emptyCsddFields();
     csdd.comments = "Dati nav pieejami.";

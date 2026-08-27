@@ -109,7 +109,6 @@ import {
   type ProvinBannerPdfInclude,
   type ProvinManualBanner,
 } from "@/lib/provin-alert-banners";
-import { buildOwnerCountTile } from "@/lib/pdf-report-summary";
 import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
@@ -2632,22 +2631,6 @@ export function OrderDetailWorkspace({
     }
   }, [blocksDisplaySafe]);
 
-  const ownerCountTile = useMemo(() => {
-    try {
-      return buildOwnerCountTile({
-        csddForm: blocksDisplaySafe.csdd,
-        autoRecordsBlock: blocksDisplaySafe.auto_records,
-        ccVinBlock: blocksDisplaySafe.cc_vin,
-        manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
-        manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
-        citiAvoti: blocksDisplaySafe.citi_avoti,
-        tirgusForm: blocksDisplaySafe.tirgus,
-      });
-    } catch {
-      return null;
-    }
-  }, [blocksDisplaySafe]);
-
   const hasIncidentDataForAi = useMemo(() => {
     try {
       return orderHasIncidentDataForAi(blocksDisplaySafe);
@@ -3443,9 +3426,6 @@ export function OrderDetailWorkspace({
             onPdfIncludeChange={patchBannerPdfInclude}
             manualBanners={manualBanners}
             onManualBannersChange={setManualBanners}
-            ownerCountTile={ownerCountTile}
-            ownerCountIncludeInPdf={pdfVisibility.ownerCount}
-            onOwnerCountIncludeChange={(next) => onPdfVisibilityChange({ ownerCount: next })}
           />
           <AdminManualBannersEditor banners={manualBanners} onChange={setManualBanners} />
         </div>

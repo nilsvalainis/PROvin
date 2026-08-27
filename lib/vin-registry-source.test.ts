@@ -85,10 +85,5 @@ describe("mergePdfVisibility — reģistru avoti", () => {
     expect(vis.lkf_ee).toBe(true);
     expect(vis.carinfo).toBe(true);
     expect(vis.autodna).toBe(false);
-    expect(vis.ownerCount).toBe(true);
-  });
-
-  it("saglabā izslēgtu īpašnieku skaita kartīti", () => {
-    expect(mergePdfVisibility({ ownerCount: false }).ownerCount).toBe(false);
   });
 });

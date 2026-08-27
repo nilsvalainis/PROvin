@@ -621,25 +621,18 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilit
 }
 
 /** Atskaites kopsavilkums — bāzes plāksnītes un brīdinājumu / manuālās kartītes vienā režģī. */
-function buildPdfReportSummaryHtml(
-  p: ClientReportPayload,
-  extraTiles: PdfSummaryTile[] = [],
-  vis: PdfVisibilitySettings = mergePdfVisibility(p.pdfVisibility),
-): string {
+function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummaryTile[] = []): string {
   const tiles = [
-    ...buildPdfReportSummaryTiles(
-      {
-        csddForm: p.csddForm ?? null,
-        autoRecordsBlock: p.autoRecordsBlock ?? null,
-        ccVinBlock: p.ccVinBlock ?? null,
-        manualVendorBlocks: p.manualVendorBlocks ?? null,
-        manualLtabBlock: p.manualLtabBlock ?? null,
-        citiAvoti: p.citiAvoti ?? null,
-        tirgusForm: p.tirgusForm ?? null,
-        listingUrl: p.listingUrl ?? null,
-      },
-      { includeOwnerCount: vis.ownerCount },
-    ),
+    ...buildPdfReportSummaryTiles({
+      csddForm: p.csddForm ?? null,
+      autoRecordsBlock: p.autoRecordsBlock ?? null,
+      ccVinBlock: p.ccVinBlock ?? null,
+      manualVendorBlocks: p.manualVendorBlocks ?? null,
+      manualLtabBlock: p.manualLtabBlock ?? null,
+      citiAvoti: p.citiAvoti ?? null,
+      tirgusForm: p.tirgusForm ?? null,
+      listingUrl: p.listingUrl ?? null,
+    }),
     ...extraTiles,
   ];
   const items = tiles
@@ -2884,7 +2877,7 @@ export function buildClientReportDocumentHtml(args: {
         ),
       })
     : [];
-  lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles, vis));
+  lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
 
   const vehicleSpecHtml = buildPdfVehicleSpecSectionHtml(p.csddForm, p.vin, vis);
   if (vehicleSpecHtml) lines.push(vehicleSpecHtml);

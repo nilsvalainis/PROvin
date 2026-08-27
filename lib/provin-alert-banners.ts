@@ -299,39 +299,6 @@ export const PROVIN_BANNER_DEFAULT_LABEL: Record<ProvinManualBannerSeverity, str
   red: "Svarīgi",
 };
 
-/** Admin etiķetes — arī tad, kad baneris vēl nav aktivizējies. */
-export const PROVIN_BANNER_KIND_LABEL: Record<ProvinAlertBannerKind | ProvinInfoBannerKind, string> = {
-  odometer: "Odometra neatbilstības",
-  tirgus_high_supply: "Sludinājuma vecums",
-  incidents: "Negadījumi un zaudējumi",
-  particulate: "Izplūdes cietās daļiņas",
-  inspection: "Tehniskā apskate",
-  lv_registration_tenure: "Reģistrācija Latvijā",
-};
-
-export function provinBannerKindLabel(kind: ProvinBannerKind): string {
-  if (isCcVinBannerKind(kind)) {
-    const slug = kind.slice("ccvin:".length).replace(/_/g, " ");
-    return slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Starptautiskā vēsture";
-  }
-  return PROVIN_BANNER_KIND_LABEL[kind];
-}
-
-/** Informatīvā banera melnraksts, kamēr aprēķins nav nostrādājis. */
-export const PROVIN_INFO_BANNER_DRAFT_DEFAULTS: Record<
-  ProvinInfoBannerKind,
-  { text: string; card: ProvinBannerCardCopy }
-> = {
-  lv_registration_tenure: {
-    text: "Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā reģistrēts — datums avotos nav fiksēts.",
-    card: {
-      label: "Reģistrācija Latvijā",
-      value: "Nav datu",
-      note: "Latvijas reģistrācijas datums avotos nav fiksēts",
-    },
-  },
-};
-
 /** Aprēķinātais brīdinājums pēc operatora labojumiem — vienots skats admin joslai un PDF kartītei. */
 export type ProvinResolvedBanner = {
   kind: ProvinBannerKind;
@@ -346,8 +313,6 @@ export type ProvinResolvedBanner = {
   override: ProvinManualBanner | null;
   /** Labojums tiešām maina saturu (nevis tikai tukšs ieraksts). */
   edited: boolean;
-  /** `false` — avoti šo baneri nav iedarbinājuši; adminā paliek kā melnraksts. */
-  active: boolean;
 };
 
 function bannerOverrideChangesAnything(
@@ -382,34 +347,29 @@ function resolveBannerCard(
 /**
  * Aprēķinātie brīdinājumi + informatīvie ieraksti vienā sarakstā tādā secībā, kādā tie drukājas PDF.
  * Labojumi (`manualBanners` ieraksti ar `kind`) pārraksta tekstu, kartītes laukus un krāsu.
- * `includeInactiveDrafts` — arī vēl neaktivizētie veidi (admin melnraksti); PDF to nelieto.
  */
 export function resolveProvinBanners(args: {
   alertBanners?: ProvinAlertBanner[] | null;
   infoBanners?: ProvinInfoBanner[] | null;
   manualBanners?: ProvinManualBanner[] | null;
-  includeInactiveDrafts?: boolean;
 }): ProvinResolvedBanner[] {
   const out: ProvinResolvedBanner[] = [];
-  const drafts = args.includeInactiveDrafts === true;
 
   for (const kind of PROVIN_ALERT_BANNER_KINDS) {
     const computed = (args.alertBanners ?? []).find((b) => b.kind === kind);
-    if (!computed && !drafts) continue;
+    if (!computed) continue;
     const override = provinBannerOverrideFor(args.manualBanners, kind);
-    const computedSeverity = computed ? alertSeverityToManual(computed.severity) : "grey";
+    const computedSeverity = alertSeverityToManual(computed.severity);
     const severity = override?.severity ?? computedSeverity;
     const defaultCard = PROVIN_ALERT_CARD_DEFAULTS[kind];
-    const defaultText = computed?.text ?? PROVIN_ALERT_TEXT[kind];
     out.push({
       kind,
-      text: (override?.text ?? "").trim() || defaultText,
+      text: (override?.text ?? "").trim() || computed.text,
       severity,
       card: resolveBannerCard(defaultCard, override, severity),
-      defaults: { text: defaultText, severity: computedSeverity, card: defaultCard },
+      defaults: { text: computed.text, severity: computedSeverity, card: defaultCard },
       override,
       edited: bannerOverrideChangesAnything(override, computedSeverity),
-      active: Boolean(computed),
     });
   }
 
@@ -427,30 +387,27 @@ export function resolveProvinBanners(args: {
       defaults: { text: computed.text, severity: computedSeverity, card: defaultCard },
       override,
       edited: bannerOverrideChangesAnything(override, computedSeverity),
-      active: true,
     });
   }
 
   for (const kind of PROVIN_INFO_BANNER_KINDS) {
     const computed = (args.infoBanners ?? []).find((b) => b.kind === kind);
-    if (!computed && !drafts) continue;
+    if (!computed) continue;
     const override = provinBannerOverrideFor(args.manualBanners, kind);
-    const draft = PROVIN_INFO_BANNER_DRAFT_DEFAULTS[kind];
-    const computedSeverity: ProvinManualBannerSeverity = "grey";
-    const severity = override?.severity ?? computedSeverity;
-    const defaultCard: ProvinBannerCardCopy = computed
-      ? { label: computed.label, value: computed.value, note: computed.note }
-      : draft.card;
-    const defaultText = computed?.text ?? draft.text;
+    const severity = override?.severity ?? "grey";
+    const defaultCard: ProvinBannerCardCopy = {
+      label: computed.label,
+      value: computed.value,
+      note: computed.note,
+    };
     out.push({
       kind,
-      text: (override?.text ?? "").trim() || defaultText,
+      text: (override?.text ?? "").trim() || computed.text,
       severity,
       card: resolveBannerCard(defaultCard, override, severity),
-      defaults: { text: defaultText, severity: computedSeverity, card: defaultCard },
+      defaults: { text: computed.text, severity: "grey", card: defaultCard },
       override,
-      edited: bannerOverrideChangesAnything(override, computedSeverity),
-      active: Boolean(computed),
+      edited: bannerOverrideChangesAnything(override, "grey"),
     });
   }
 

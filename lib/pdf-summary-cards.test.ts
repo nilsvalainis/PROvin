@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { emptyCsddFields } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
-import { buildPdfReportSummaryTiles, buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
+import { buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
 import {
   filterManualBannersForPdf,
   mergeProvinManualBanners,
@@ -11,8 +11,6 @@ import {
   computeCcVinAlertBanners,
   ccVinBannerKindFromLabel,
   computeProvinInfoBannersFromPayloadSlice,
-  PROVIN_ALERT_BANNER_KINDS,
-  PROVIN_INFO_BANNER_KINDS,
   type ProvinManualBanner,
 } from "@/lib/provin-alert-banners";
 
@@ -225,39 +223,5 @@ describe("aprēķināto brīdinājumu labošana", () => {
         wide: false,
       },
     ]);
-  });
-});
-
-describe("baneru melnraksti", () => {
-  it("adminā rāda visus fiksētos veidus arī tad, kad avoti tos nav iedarbinājuši", () => {
-    const resolved = resolveProvinBanners({ includeInactiveDrafts: true });
-    expect(resolved.map((b) => b.kind)).toEqual([...PROVIN_ALERT_BANNER_KINDS, ...PROVIN_INFO_BANNER_KINDS]);
-    expect(resolved.every((b) => b.active === false)).toBe(true);
-    expect(resolved.find((b) => b.kind === "inspection")?.defaults.card?.label).toBe("Tehniskā apskate");
-  });
-
-  it("PDF paliek tikai pie aktivizētajiem — melnraksti kartītes neveido", () => {
-    const resolved = resolveProvinBanners({ includeInactiveDrafts: true });
-    const tiles = buildPdfSummaryBannerTiles({});
-    expect(resolved).toHaveLength(PROVIN_ALERT_BANNER_KINDS.length + PROVIN_INFO_BANNER_KINDS.length);
-    expect(tiles).toEqual([]);
-  });
-
-  it("aktivizētais paliek active, pārējie — melnraksti", () => {
-    const resolved = resolveProvinBanners({
-      alertBanners: [{ kind: "inspection", text: "Apskate beidzas.", severity: "yellow" }],
-      includeInactiveDrafts: true,
-    });
-    expect(resolved.find((b) => b.kind === "inspection")).toMatchObject({ active: true, text: "Apskate beidzas." });
-    expect(resolved.find((b) => b.kind === "odometer")?.active).toBe(false);
-  });
-});
-
-describe("īpašnieku skaita kartīte", () => {
-  it("izslēdzama no kopsavilkuma, pārējās plāksnītes paliek", () => {
-    const all = buildPdfReportSummaryTiles({});
-    const without = buildPdfReportSummaryTiles({}, { includeOwnerCount: false });
-    expect(all.map((t) => t.id)).toEqual(["incidents", "mileage", "owners", "service"]);
-    expect(without.map((t) => t.id)).toEqual(["incidents", "mileage", "service"]);
   });
 });
