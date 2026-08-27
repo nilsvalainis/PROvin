@@ -110,15 +110,27 @@ export function csddHasLatvianRegistryRecord(csdd?: CsddFormFields | null): bool
   return false;
 }
 
+/** Teikumi, kuros ir īpašnieku skaits — ne viss atskaites teksts. */
+export function ownerCountFocusText(text: string): string {
+  const t = (text ?? "").trim();
+  if (!t) return "";
+  const parts = t.split(/(?<=[.!?])\s+|\n+/);
+  const hits = parts.map((p) => p.trim()).filter((p) => p && extractExplicitOwnerCount(p) != null);
+  return hits.join(" ").trim();
+}
+
 export function inferOwnerCountry(text: string, sourceHint?: string): OwnerCountryId {
-  const blob = `${sourceHint ?? ""} ${text}`.toLowerCase();
-  // Latvija = tikai CSDD. „pirms importa Latvijā”, „vēl nav reģistrēta”, „ss.lv”
-  // un sludinājuma valsts NAV Latvijas īpašnieku skaits — citādi kartīte rāda
-  // „Latvijā N” auto, kas CSDD vispār nav.
-  if (/zviedr|sweden|sverige|car\.info|zviedrijas\s+re[gģ]istr/.test(blob)) return "sweden";
-  if (/dānij|danij|denmark|danmark|tjekbil/.test(blob)) return "denmark";
-  if (/igaun|estonia|eesti|mnt\.ee|lkf\.ee/.test(blob)) return "estonia";
-  if (/vācij|vacij|germany|deutschland|\bde\b/.test(blob)) return "germany";
+  const hint = (sourceHint ?? "").trim();
+  if (hint === TITLE.carinfo || /zviedrijas\s+re[gģ]istr/i.test(hint)) return "sweden";
+  if (hint === TITLE.tjekbil || /dānijas\s+re[gģ]istr|tjekbil/i.test(hint)) return "denmark";
+  if (hint === TITLE.mnt || hint === TITLE.lkf || /mnt\.ee|lkf\.ee/i.test(hint)) return "estonia";
+
+  const blob = ownerCountFocusText(text).toLowerCase();
+  if (!blob) return "other";
+  if (/zviedr|sweden|sverige/.test(blob)) return "sweden";
+  if (/dānij|denmark|danmark/.test(blob)) return "denmark";
+  if (/igaun|estonia|eesti/.test(blob)) return "estonia";
+  if (/vācij|vacij|germany|deutschland/.test(blob)) return "germany";
   return "other";
 }
 
@@ -231,26 +243,26 @@ function collectFromVendorPdf(
   const out: OwnerCountCandidate[] = [];
   for (const b of blocks ?? []) {
     const title = (b.title ?? "").trim();
-    const blob = [b.ownersSummary, b.comments, b.sourceRaw, b.autoNotes].filter(Boolean).join("\n");
-    const count = extractExplicitOwnerCount(blob);
     if (title === TITLE.carinfo) {
-      pushCandidate(out, "sweden", count ?? extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 0);
+      pushCandidate(out, "sweden", extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 0);
       continue;
     }
     if (title === TITLE.tjekbil) {
-      pushCandidate(out, "denmark", count, title, 0);
+      pushCandidate(out, "denmark", extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 0);
       continue;
     }
     if (title === TITLE.mnt) {
-      pushCandidate(out, "estonia", count, title, 0);
+      pushCandidate(out, "estonia", extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 0);
       continue;
     }
     if (title === TITLE.lkf) {
-      pushCandidate(out, "estonia", count, title, 1);
+      pushCandidate(out, "estonia", extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 1);
       continue;
     }
     if (title === TITLE.autodna || title === TITLE.carvertical || title === TITLE.citi) {
-      const country = inferOwnerCountry(blob, title);
+      const text = [b.ownersSummary, b.comments].filter(Boolean).join("\n");
+      const count = extractExplicitOwnerCount(text);
+      const country = inferOwnerCountry(text, title);
       pushCandidate(out, country, count, title, country === "other" ? 3 : 2);
     }
   }
@@ -275,7 +287,8 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
   }
   candidates.push(...collectFromVendorPdf(input.manualVendorBlocks));
   const citiText = (input.citiAvoti?.sections ?? [])
-    .map((s) => [s.comments, s.aiContextRaw, s.rawUnprocessedData].filter(Boolean).join("\n"))
+    .map((s) => s.comments)
+    .filter(Boolean)
     .join("\n");
   if (citiText.trim()) {
     const country = inferOwnerCountry(citiText, TITLE.citi);
@@ -284,12 +297,10 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
   const ccCount = extractExplicitOwnerCount(input.ccVinBlock?.ownersCount ?? "");
   if (ccCount != null) {
     const country = inferOwnerCountry(
-      [input.ccVinBlock?.ownersCount, input.ccVinBlock?.comments, input.ccVinBlock?.aiContextRaw]
-        .filter(Boolean)
-        .join("\n"),
+      [input.ccVinBlock?.ownersCount, input.ccVinBlock?.comments].filter(Boolean).join("\n"),
       "cc.vin",
     );
-    pushCandidate(candidates, country, ccCount, "cc.vin", country === "other" ? 2 : 2);
+    pushCandidate(candidates, country, ccCount, "cc.vin", 2);
   }
   const chosen = choosePerCountry(candidates);
   return {
@@ -315,19 +326,25 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
     ];
   for (const r of registry) {
     const b = blocks[r.key];
-    const blob = [b.ownersSummary, b.comments, b.rawUnprocessedData, b.aiContextRaw].filter(Boolean).join("\n");
-    pushCandidate(candidates, r.country, extractExplicitOwnerCount(blob), SOURCE_BLOCK_LABELS[r.key], r.priority);
+    pushCandidate(
+      candidates,
+      r.country,
+      extractExplicitOwnerCount(b.ownersSummary),
+      SOURCE_BLOCK_LABELS[r.key],
+      r.priority,
+    );
   }
 
   for (const key of ["autodna", "carvertical"] as const) {
     const b = blocks[key];
-    const blob = [b.comments, b.mileagePasteRaw, b.aiContextRaw].filter(Boolean).join("\n");
-    const country = inferOwnerCountry(blob, SOURCE_BLOCK_LABELS[key]);
-    pushCandidate(candidates, country, extractExplicitOwnerCount(blob), SOURCE_BLOCK_LABELS[key], 2);
+    const text = b.comments;
+    const country = inferOwnerCountry(text, SOURCE_BLOCK_LABELS[key]);
+    pushCandidate(candidates, country, extractExplicitOwnerCount(text), SOURCE_BLOCK_LABELS[key], 2);
   }
 
   const citiText = (blocks.citi_avoti.sections ?? [])
-    .map((s) => [s.comments, s.aiContextRaw, s.rawUnprocessedData].filter(Boolean).join("\n"))
+    .map((s) => s.comments)
+    .filter(Boolean)
     .join("\n");
   if (citiText.trim()) {
     const country = inferOwnerCountry(citiText, TITLE.citi);
@@ -335,10 +352,15 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
   }
 
   const cc = blocks.cc_vin;
-  const ccBlob = [cc.ownersCount, cc.comments, cc.aiContextRaw].filter(Boolean).join("\n");
-  const ccCount = extractExplicitOwnerCount(cc.ownersCount) ?? extractExplicitOwnerCount(ccBlob);
+  const ccCount = extractExplicitOwnerCount(cc.ownersCount) ?? extractExplicitOwnerCount(cc.comments);
   if (ccCount != null) {
-    pushCandidate(candidates, inferOwnerCountry(ccBlob, "cc.vin"), ccCount, "cc.vin", 2);
+    pushCandidate(
+      candidates,
+      inferOwnerCountry([cc.ownersCount, cc.comments].join("\n"), "cc.vin"),
+      ccCount,
+      "cc.vin",
+      2,
+    );
   }
 
   const chosen = choosePerCountry(candidates);

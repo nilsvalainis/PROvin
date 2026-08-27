@@ -30,12 +30,17 @@ describe("extractExplicitOwnerCount", () => {
 describe("inferOwnerCountry", () => {
   it("maps registry names and country words", () => {
     expect(inferOwnerCountry("", SOURCE_BLOCK_LABELS.carinfo)).toBe("sweden");
-    expect(inferOwnerCountry("Exported from Sweden")).toBe("sweden");
+    expect(inferOwnerCountry("6 īpašnieki Zviedrijā")).toBe("sweden");
     expect(inferOwnerCountry("", SOURCE_BLOCK_LABELS.tjekbil)).toBe("denmark");
-    expect(inferOwnerCountry("Dānijas reģistrs")).toBe("denmark");
+    expect(inferOwnerCountry("", "Dānijas reģistrs")).toBe("denmark");
     expect(inferOwnerCountry("pirms importa Latvijā. 5 īpašnieki Vācijā")).toBe("germany");
     expect(inferOwnerCountry("vēl nav reģistrēta Latvijā. 2 īpašnieki")).toBe("other");
     expect(inferOwnerCountry("ss.lv sludinājums. 3 īpašnieki")).toBe("other");
+    expect(
+      inferOwnerCountry(
+        "Pārbaudītās valstis: Zviedrija, Vācija, Itālija.\nPirms importa Latvijā. 2 īpašnieki",
+      ),
+    ).toBe("other");
   });
 });
 
@@ -95,6 +100,25 @@ describe("synthesizeOwnerCountsFromBlocks", () => {
     expect(syn.noteLine).not.toMatch(/Latvijā/);
     expect(syn.chosen.germany?.count).toBe(5);
   });
+
+  it("does not treat CarVertical country-check lists as Swedish owners", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.carinfo = {
+      ...emptyVinRegistryBlock(),
+      rawUnprocessedData: "Number of owners: 2\nSweden checked",
+      aiContextRaw: "ZVIEDRIJAS REĢISTRI\n2 īpašnieki",
+    };
+    blocks.carvertical = {
+      ...emptyVendorAvotuBlock(),
+      comments:
+        "Pārbaudītās valstis: Zviedrija, Vācija, Itālija. Pirms importa Latvijā. 2 īpašnieki",
+      mileagePasteRaw: "Sweden\nNumber of owners: 2",
+    };
+    const syn = synthesizeOwnerCountsFromBlocks(blocks);
+    expect(syn.chosen.sweden).toBeUndefined();
+    expect(syn.chosen.latvia).toBeUndefined();
+    expect(syn.noteLine).toBe("ārvalstīs: 2");
+  });
 });
 
 describe("synthesizeOwnerCountsFromPdfInput", () => {
@@ -145,5 +169,23 @@ describe("synthesizeOwnerCountsFromPdfInput", () => {
     });
     expect(syn.chosen.latvia).toBeUndefined();
     expect(formatOwnerCountTileFacts(syn.chosen).value).not.toMatch(/Latvijā/);
+  });
+
+  it("does not print Zviedrijā from a vendor report that merely lists Sweden", () => {
+    const syn = synthesizeOwnerCountsFromPdfInput({
+      csddForm: { ...createDefaultSourceBlocks().csdd, comments: "Dati nav pieejami." },
+      ccVinBlock: emptyCcVinBlock(),
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.carvertical,
+          mileageRows: [],
+          incidentRows: [],
+          comments: "Pirms importa Latvijā. 2 īpašnieki",
+          sourceRaw: "Countries checked: Sweden, Germany, Italy.\nNumber of owners: 2",
+        },
+      ],
+    });
+    expect(syn.chosen.sweden).toBeUndefined();
+    expect(formatOwnerCountTileFacts(syn.chosen).value).toBe("ārvalstīs 2");
   });
 });
