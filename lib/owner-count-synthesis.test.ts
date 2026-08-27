@@ -33,6 +33,9 @@ describe("inferOwnerCountry", () => {
     expect(inferOwnerCountry("Exported from Sweden")).toBe("sweden");
     expect(inferOwnerCountry("", SOURCE_BLOCK_LABELS.tjekbil)).toBe("denmark");
     expect(inferOwnerCountry("Dānijas reģistrs")).toBe("denmark");
+    expect(inferOwnerCountry("pirms importa Latvijā. 5 īpašnieki Vācijā")).toBe("germany");
+    expect(inferOwnerCountry("vēl nav reģistrēta Latvijā. 2 īpašnieki")).toBe("other");
+    expect(inferOwnerCountry("ss.lv sludinājums. 3 īpašnieki")).toBe("other");
   });
 });
 
@@ -40,6 +43,7 @@ describe("synthesizeOwnerCountsFromBlocks", () => {
   it("joins Latvia CSDD with Sweden car.info and does not add vendor totals", () => {
     const blocks = createDefaultSourceBlocks();
     blocks.csdd.ownerCountLatvia = "2";
+    blocks.csdd.registrationStatus = "Uzskaitē";
     blocks.carinfo = { ...emptyVinRegistryBlock(), ownersSummary: "6 īpašnieki\n04.09.2023 īpašnieka maiņa: AutoEtt" };
     blocks.carvertical = { ...emptyVendorAvotuBlock(), comments: "3 īpašnieki Zviedrijā" };
     blocks.autodna = { ...emptyVendorAvotuBlock(), comments: "2 īpašnieku maiņas" };
@@ -71,6 +75,25 @@ describe("synthesizeOwnerCountsFromBlocks", () => {
     expect(syn.noteLine).toBe("ārvalstīs: 3");
     expect(syn.totalCount).toBe(3);
     expect(syn.noteLine).not.toMatch(/5/);
+  });
+
+  it("does not treat an unregistered Latvian listing as Latvian owners", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.csdd.comments = "Dati nav pieejami.";
+    blocks.csdd.ownerCountLatvia = "2";
+    blocks.autodna = {
+      ...emptyVendorAvotuBlock(),
+      comments:
+        "Datu sakritība ar CarVertical apstiprina incidentu regularitāti pirms importa Latvijā. 2 īpašnieki.",
+    };
+    blocks.carvertical = {
+      ...emptyVendorAvotuBlock(),
+      comments: "Automašīna vēl nav reģistrēta Latvijā. 5 īpašnieki Vācijā.",
+    };
+    const syn = synthesizeOwnerCountsFromBlocks(blocks);
+    expect(syn.chosen.latvia).toBeUndefined();
+    expect(syn.noteLine).not.toMatch(/Latvijā/);
+    expect(syn.chosen.germany?.count).toBe(5);
   });
 });
 
@@ -105,5 +128,22 @@ describe("synthesizeOwnerCountsFromPdfInput", () => {
       value: "Latvijā 2",
       note: "Zviedrijā 6",
     });
+  });
+
+  it("does not print Latvijā when CSDD has no Latvian registration", () => {
+    const syn = synthesizeOwnerCountsFromPdfInput({
+      csddForm: { ...createDefaultSourceBlocks().csdd, comments: "Dati nav pieejami.", ownerCountLatvia: "2" },
+      ccVinBlock: emptyCcVinBlock(),
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.autodna,
+          mileageRows: [],
+          incidentRows: [],
+          comments: "Pirms importa Latvijā. 2 īpašnieki",
+        },
+      ],
+    });
+    expect(syn.chosen.latvia).toBeUndefined();
+    expect(formatOwnerCountTileFacts(syn.chosen).value).not.toMatch(/Latvijā/);
   });
 });

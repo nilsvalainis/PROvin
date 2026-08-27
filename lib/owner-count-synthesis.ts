@@ -88,9 +88,33 @@ export function extractExplicitOwnerCount(text: string): number | null {
   return null;
 }
 
+/**
+ * CSDD ir vienīgais avots Latvijas īpašnieku skaitam.
+ * Nepietiek ar lauku „īpašnieku skaits Latvijā”, ja reģistrācijas nav
+ * (neimportēts auto, „Dati nav pieejami”, sludinājuma valsts Latvija).
+ */
+export function csddHasLatvianRegistryRecord(csdd?: CsddFormFields | null): boolean {
+  if (!csdd) return false;
+  if (csdd.registrationNumber.trim()) return true;
+  if ((csdd.ownerRegistrationEvents ?? []).some((e) => e.date.trim() || e.label.trim())) return true;
+  if ((csdd.technicalInspectionHistory ?? []).some((r) => r.date.trim())) return true;
+  if (
+    (csdd.mileageHistory ?? []).some(
+      (r) => r.date.trim() && /latvij|\blv\b/i.test(r.country),
+    )
+  ) {
+    return true;
+  }
+  const status = csdd.registrationStatus.trim();
+  if (status && !/dati\s+nav\s+pieejami/i.test(status)) return true;
+  return false;
+}
+
 export function inferOwnerCountry(text: string, sourceHint?: string): OwnerCountryId {
   const blob = `${sourceHint ?? ""} ${text}`.toLowerCase();
-  if (/latvij|latvia|\blv\b/.test(blob)) return "latvia";
+  // Latvija = tikai CSDD. „pirms importa Latvijā”, „vēl nav reģistrēta”, „ss.lv”
+  // un sludinājuma valsts NAV Latvijas īpašnieku skaits — citādi kartīte rāda
+  // „Latvijā N” auto, kas CSDD vispār nav.
   if (/zviedr|sweden|sverige|car\.info|zviedrijas\s+re[gģ]istr/.test(blob)) return "sweden";
   if (/dānij|danij|denmark|danmark|tjekbil/.test(blob)) return "denmark";
   if (/igaun|estonia|eesti|mnt\.ee|lkf\.ee/.test(blob)) return "estonia";
@@ -240,13 +264,15 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
   citiAvoti?: CitiAvotiBlockState | null;
 }): OwnerCountSynthesis {
   const candidates: OwnerCountCandidate[] = [];
-  pushCandidate(
-    candidates,
-    "latvia",
-    extractExplicitOwnerCount(input.csddForm?.ownerCountLatvia ?? ""),
-    "CSDD",
-    0,
-  );
+  if (csddHasLatvianRegistryRecord(input.csddForm)) {
+    pushCandidate(
+      candidates,
+      "latvia",
+      extractExplicitOwnerCount(input.csddForm?.ownerCountLatvia ?? ""),
+      "CSDD",
+      0,
+    );
+  }
   candidates.push(...collectFromVendorPdf(input.manualVendorBlocks));
   const citiText = (input.citiAvoti?.sections ?? [])
     .map((s) => [s.comments, s.aiContextRaw, s.rawUnprocessedData].filter(Boolean).join("\n"))
@@ -276,7 +302,9 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
 
 export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): OwnerCountSynthesis {
   const candidates: OwnerCountCandidate[] = [];
-  pushCandidate(candidates, "latvia", extractExplicitOwnerCount(blocks.csdd.ownerCountLatvia), "CSDD", 0);
+  if (csddHasLatvianRegistryRecord(blocks.csdd)) {
+    pushCandidate(candidates, "latvia", extractExplicitOwnerCount(blocks.csdd.ownerCountLatvia), "CSDD", 0);
+  }
 
   const registry: Array<{ key: "carinfo" | "tjekbil" | "mnt_ee" | "lkf_ee"; country: OwnerCountryId; priority: number }> =
     [

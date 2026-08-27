@@ -161,6 +161,32 @@ describe("PDF design system", () => {
     expect(html).toContain(SOURCE_BLOCK_LABELS.carinfo);
   });
 
+  it("does not show Latvian owner count when CSDD has no Latvian registration", () => {
+    const csdd = emptyCsddFields();
+    csdd.comments = "Dati nav pieejami.";
+    csdd.ownerCountLatvia = "2";
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.autodna,
+            mileageRows: [],
+            incidentRows: [],
+            comments: "Pirms importa Latvijā. 2 īpašnieki",
+          },
+        ],
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("Īpašnieku skaits");
+    expect(html).not.toContain("Latvijā 2");
+    expect(html).not.toContain("Latvijā: 2");
+  });
+
   it("keeps payment, vehicle, client and notes in one about block", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
