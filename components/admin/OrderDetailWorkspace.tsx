@@ -3997,18 +3997,6 @@ export function OrderDetailWorkspace({
 
         {wizardStep === 1 ? (
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2 py-1.5">
-              <AdminPdfIncludeToggle
-                checked={pdfVisibility.unifiedMileage}
-                onChange={(next) => onPdfVisibilityChange({ unifiedMileage: next })}
-              />
-              <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Nobraukuma tabula PDF</span>
-              <AdminPdfIncludeToggle
-                checked={pdfVisibility.unifiedIncidents}
-                onChange={(next) => onPdfVisibilityChange({ unifiedIncidents: next })}
-              />
-              <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">Negadījumi PDF</span>
-            </div>
             <div id="admin-order-block-csdd" className="w-full min-w-0">
               <AdminCsddSourceBlock
                 value={blocksDisplaySafe.csdd}

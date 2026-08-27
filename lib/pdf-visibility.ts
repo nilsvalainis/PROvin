@@ -70,9 +70,14 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     notes: isBool(o.notes) ? o.notes : d.notes,
     portfolio: isBool(o.portfolio) ? o.portfolio : d.portfolio,
     alerts: isBool(o.alerts) ? o.alerts : d.alerts,
-    unifiedMileage: isBool(o.unifiedMileage) ? o.unifiedMileage : d.unifiedMileage,
+    /**
+     * Vēstures kopsavilkums / NOBRAUKUMA VĒSTURE / NEGADĪJUMU VĒSTURE vienmēr
+     * drukājas, ja datos ir rindas. Saglabāts `false` (CSDD soļa ķekši pie
+     * nereģistrēta importa) vairs nedrīkst izdzēst AutoDNA/CarVertical/dīlera vēsturi.
+     */
+    unifiedMileage: d.unifiedMileage,
     csddMileageTable: isBool(o.csddMileageTable) ? o.csddMileageTable : d.csddMileageTable,
-    unifiedIncidents: isBool(o.unifiedIncidents) ? o.unifiedIncidents : d.unifiedIncidents,
+    unifiedIncidents: d.unifiedIncidents,
     csdd: isBool(o.csdd) ? o.csdd : d.csdd,
     autodna: isBool(o.autodna) ? o.autodna : d.autodna,
     carvertical: isBool(o.carvertical) ? o.carvertical : d.carvertical,

@@ -122,6 +122,36 @@ describe("PDF design system", () => {
     expect(html.indexOf("PASŪTĪJUMA DATI")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 
+  it("keeps history hub sections when CSDD-step unified flags were saved off", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceHistory: [{ date: "24.07.2024", odometer: "262546", country: "Vācija" }],
+    };
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        manualVendorBlocks: [
+          {
+            title: "AutoDNA",
+            mileageRows: [{ date: "13.08.2019", odometer: "189858", country: "Vācija" }],
+            incidentRows: [{ csngDate: "01.05.2023", lossAmount: "5500-6000", incidentNo: "Vācija" }],
+            comments: "Bojājumu zonas",
+          },
+        ],
+        pdfVisibility: mergePdfVisibility({ unifiedMileage: false, unifiedIncidents: false, csdd: false }),
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain(PDF_LIFECYCLE_TITLE);
+    expect(html).toContain("NOBRAUKUMA VĒSTURE");
+    expect(html).toContain("NEGADĪJUMU VĒSTURE");
+    expect(html).toContain("189858");
+    expect(html).toContain("01.05.2023");
+  });
+
   it("puts reconciled Latvia + Sweden owner counts on the owner-count tile", () => {
     const csdd = emptyCsddFields();
     csdd.registrationStatus = "Uzskaitē";

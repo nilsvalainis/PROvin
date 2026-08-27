@@ -578,8 +578,7 @@ function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): strin
 }
 
 /** Vēstures kopsavilkums — gada joslas un kartītes pie hronoloģiskās sliedes. */
-function buildPdfLifecycleTimelineHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
-  if (!vis.unifiedMileage && !vis.unifiedIncidents) return "";
+function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
   const events = buildVehicleLifecycleEvents({
     csddForm: p.csddForm ?? null,
     autoRecordsBlock: p.autoRecordsBlock ?? null,
@@ -1089,7 +1088,6 @@ export function buildUnifiedIncidentsTableHtml(
   vis: PdfVisibilitySettings,
   incidentPhotoDataUrls?: Map<string, string>,
 ): string {
-  if (!vis.unifiedIncidents) return "";
   const collected = collectUnifiedIncidentRows({
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
@@ -2895,19 +2893,17 @@ export function buildClientReportDocumentHtml(args: {
   });
   if (aboutBlock) lines.push(aboutBlock);
 
-  const lifecycleHtml = buildPdfLifecycleTimelineHtml(p, vis);
+  const lifecycleHtml = buildPdfLifecycleTimelineHtml(p);
   if (lifecycleHtml) lines.push(lifecycleHtml);
 
-  const mileageOpts: CollectUnifiedMileageOptions | undefined = vis.unifiedMileage
-    ? {
-        omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
-        omitAutoRecords: !vis.auto_records,
-        omitCcVin: !vis.cc_vin,
-        omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
-        omitListingMileage: !vis.sludinajums,
-      }
-    : undefined;
-  const unifiedMileageHtml = vis.unifiedMileage ? buildUnifiedMileageTableHtml(p, mileageOpts) : "";
+  const mileageOpts: CollectUnifiedMileageOptions = {
+    omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
+    omitAutoRecords: !vis.auto_records,
+    omitCcVin: !vis.cc_vin,
+    omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
+    omitListingMileage: !vis.sludinajums,
+  };
+  const unifiedMileageHtml = buildUnifiedMileageTableHtml(p, mileageOpts);
   if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
   const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis, incidentPhotoDataUrls);
