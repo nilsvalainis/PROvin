@@ -148,7 +148,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
-function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
+export function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
   const syn = synthesizeOwnerCountsFromPdfInput(input);
   if (syn.totalCount === 0) {
     return {
@@ -191,14 +191,18 @@ function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
-/** Kopsavilkuma plāksnītes secībā, kādā tās drukājas (vienmēr četras — arī tukšas ir informācija). */
-export function buildPdfReportSummaryTiles(input: PdfSummaryInput): PdfSummaryTile[] {
-  return [
+/** Kopsavilkuma plāksnītes secībā, kādā tās drukājas (tukšas kartītes joprojām ir informācija). */
+export function buildPdfReportSummaryTiles(
+  input: PdfSummaryInput,
+  opts?: { includeOwnerCount?: boolean },
+): PdfSummaryTile[] {
+  const tiles = [
     buildIncidentsTile(input),
     buildMileageTile(input),
-    buildOwnerCountTile(input),
+    ...(opts?.includeOwnerCount === false ? [] : [buildOwnerCountTile(input)]),
     buildServiceTile(input),
   ];
+  return tiles;
 }
 
 /** Īsāks teksts iztiek bez atsevišķas paskaidrojuma rindas — tas kļūst par kartītes vērtību. */
