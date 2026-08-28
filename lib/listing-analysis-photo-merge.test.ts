@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { coalesceOrderWorkspacePersistBody, normalizeOrderWorkspacePersistBody } from "@/lib/admin-order-workspace-persist";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
+import { LISTING_ANALYSIS_MAX_PHOTOS } from "@/lib/listing-analysis-photo-types";
 
 describe("listing analysis photo merge on coalesce", () => {
+  it("allows up to 100 listing-analysis photos", () => {
+    expect(LISTING_ANALYSIS_MAX_PHOTOS).toBe(100);
+  });
+
   it("keeps longer photo list when stale PATCH omits new uploads", () => {
     const base = createDefaultSourceBlocks();
     const baseline = normalizeOrderWorkspacePersistBody({
