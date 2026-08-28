@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  INCIDENT_MAX_PHOTOS,
   incidentPhotosFromUnknown,
   isIncidentPhotoId,
   mergeIncidentPhotoGroups,
@@ -10,6 +11,10 @@ const ID_A = "inc_ph_aabbccddeeff001122334455";
 const ID_B = "inc_ph_112233445566778899aabbcc";
 
 describe("incident photo types", () => {
+  it("allows up to 100 incident photos", () => {
+    expect(INCIDENT_MAX_PHOTOS).toBe(100);
+  });
+
   it("accepts incident photo ids", () => {
     expect(isIncidentPhotoId(ID_A)).toBe(true);
     expect(isIncidentPhotoId("la_ph_aabbccddeeff001122334455")).toBe(false);

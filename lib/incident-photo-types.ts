@@ -1,5 +1,5 @@
-/** Negadījumu kopsavilkuma fotogrāfijas — PDF zem apraksta (līdz 20 gab.). */
-export const INCIDENT_MAX_PHOTOS = 20;
+/** Negadījumu kopsavilkuma fotogrāfijas — PDF zem apraksta (līdz 100 gab.). */
+export const INCIDENT_MAX_PHOTOS = 100;
 
 export type IncidentPhotoMeta = {
   id: string;
