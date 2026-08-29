@@ -2171,7 +2171,7 @@ export function OrderDetailWorkspace({
     setAiIncidentsSummaryErr(null);
     setAiMileageCommentErr(null);
     setAiSourcesComparisonErr(null);
-    setAiSourceCommentErr(null);
+    setAiSourceCommentErr({});
     setPreviewOpen(false);
     setWizardStep(0);
     portfolioRef.current.forEach((p) => URL.revokeObjectURL(p.blobUrl));
