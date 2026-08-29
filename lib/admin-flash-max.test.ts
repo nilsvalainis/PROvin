@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   FLASH_MAX_DEFAULT_TIER,
   FLASH_MAX_JOBS,
-  FLASH_MAX_PRESERVE_OPERATOR_NOTE,
+  flashMaxJobModelTier,
   formatFlashMaxNotice,
   isFlashMaxEmptyDataError,
   shouldSkipFlashMaxJob,
@@ -10,7 +10,7 @@ import {
 import { createDefaultSourceBlocks, emptyCsddFields } from "@/lib/admin-source-blocks";
 
 describe("FLASH MAX jobs", () => {
-  it("uses Gemini Flash and covers CSDD, vendors, dealer, kopsavilkums", () => {
+  it("uses per-field models matching standalone ✨ buttons", () => {
     expect(FLASH_MAX_DEFAULT_TIER).toBe("gemini-flash");
     expect(FLASH_MAX_JOBS.map((j) => j.id)).toEqual([
       "csdd",
@@ -26,7 +26,10 @@ describe("FLASH MAX jobs", () => {
       "summary",
       "sources_comparison",
     ]);
-    expect(FLASH_MAX_PRESERVE_OPERATOR_NOTE).toMatch(/saglabā/i);
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "autodna")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "technical_risks")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "summary")!)).toBe("pro");
   });
 
   it("skips source comments when the block has no data", () => {

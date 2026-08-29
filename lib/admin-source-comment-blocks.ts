@@ -40,6 +40,20 @@ export function isAiSourceCommentTargetField(v: string): v is AiSourceCommentTar
   );
 }
 
+/** Vienlaicīga ģenerēšana — katrs avots / lauks / Citi avoti sekcija ar savu atslēgu. */
+export function sourceCommentAiBusyKey(
+  blockKey: AiSourceCommentBlockKey,
+  targetField: AiSourceCommentTargetField = "comments",
+  citiAvotiSectionIndex?: number,
+): string {
+  const parts: string[] = [blockKey];
+  if (targetField !== "comments") parts.push(targetField);
+  if (blockKey === "citi_avoti" && citiAvotiSectionIndex != null) {
+    parts.push(`s${citiAvotiSectionIndex}`);
+  }
+  return parts.join(":");
+}
+
 export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
   "csdd",
   "autodna",

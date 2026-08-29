@@ -5,6 +5,7 @@ import {
   isMainAnalysisSourceBlock,
   sourceBlockHasDataExcludingComments,
   sourceBlockPlainTextExcludingComments,
+  sourceCommentAiBusyKey,
 } from "@/lib/admin-source-comment-blocks";
 import {
   emptyAutoRecordsBlock,
@@ -12,6 +13,19 @@ import {
 } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { outvinDealerReportToPlainText, emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
+
+describe("sourceCommentAiBusyKey", () => {
+  it("keeps each source and Citi avoti section on its own lock", () => {
+    expect(sourceCommentAiBusyKey("autodna")).toBe("autodna");
+    expect(sourceCommentAiBusyKey("carvertical")).toBe("carvertical");
+    expect(sourceCommentAiBusyKey("auto_records", "oilChangeIntervalNotes")).toBe(
+      "auto_records:oilChangeIntervalNotes",
+    );
+    expect(sourceCommentAiBusyKey("citi_avoti", "comments", 0)).not.toBe(
+      sourceCommentAiBusyKey("citi_avoti", "comments", 1),
+    );
+  });
+});
 
 describe("isMainAnalysisSourceBlock", () => {
   it("treats all AI source blocks as deep analysis", () => {

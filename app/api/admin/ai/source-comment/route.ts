@@ -30,8 +30,13 @@ type BodyShape = {
   customerName?: unknown;
   notes?: unknown;
   sourceBlocks?: unknown;
+  iriss?: unknown;
+  apskatesPlāns?: unknown;
+  tehniskoRiskuAnalize?: unknown;
+  cenasAtbilstiba?: unknown;
   internalComment?: unknown;
   mileageComment?: unknown;
+  sourcesComparisonComment?: unknown;
   operatorNotes?: unknown;
   existingDraftPlain?: unknown;
   citiAvotiSectionIndex?: unknown;
@@ -106,8 +111,13 @@ export async function POST(req: Request) {
       customerName: str(b.customerName).trim() || null,
       notes: str(b.notes).trim() || null,
       sourceBlocks,
+      iriss: str(b.iriss),
+      apskatesPlāns: str(b.apskatesPlāns),
+      tehniskoRiskuAnalize: str(b.tehniskoRiskuAnalize),
+      cenasAtbilstiba: str(b.cenasAtbilstiba),
       internalComment: str(b.internalComment),
       mileageComment: str(b.mileageComment),
+      sourcesComparisonComment: str(b.sourcesComparisonComment),
       operatorNotes: str(b.operatorNotes),
       existingDraftPlain,
       modelTier: parseAiModelTier(b.modelTier),

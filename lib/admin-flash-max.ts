@@ -1,6 +1,7 @@
 /**
- * FLASH MAX — viena poga: avotu komentāri + kopsavilkuma lauki ar Gemini Flash.
- * Esošais lauka teksts iet kā existingDraftPlain — aģents to nedrīkst izmest.
+ * FLASH MAX — viena poga: avotu komentāri + kopsavilkuma lauki.
+ * Modeļi tie paši, kas atsevišķajām ✨ pogām. Esošais lauka teksts iet kā
+ * existingDraftPlain — aģents to nedrīkst izmest.
  */
 import {
   orderHasMileageDataForAi,
@@ -19,12 +20,10 @@ import {
   ADMIN_SOURCES_COMPARISON_LABEL,
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
+import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
-export const FLASH_MAX_DEFAULT_TIER: AiAdminModelTier = "gemini-flash";
-
-export const FLASH_MAX_PRESERVE_OPERATOR_NOTE =
-  "FLASH MAX: ja laukā jau ir teksts, saglabā to pilnībā un papildini. Nedrīkst izmest faktus, datumus, km vai secinājumus no esošā teksta.";
+export const FLASH_MAX_DEFAULT_TIER: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.source_comment;
 
 export type FlashMaxSourceJob = {
   kind: "source";
@@ -117,6 +116,17 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
     endpoint: "/api/admin/ai/sources-comparison",
   },
 ];
+
+/** FLASH MAX lieto to pašu modeli, ko atsevišķā ✨ poga šim laukam. */
+export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
+  if (job.kind === "source") return AI_ADMIN_FIELD_DEFAULT_TIER.source_comment;
+  if (job.id === "incidents") return AI_ADMIN_FIELD_DEFAULT_TIER.incidents;
+  if (job.id === "mileage") return AI_ADMIN_FIELD_DEFAULT_TIER.mileage;
+  if (job.id === "technical_risks") return AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks;
+  if (job.id === "inspection") return AI_ADMIN_FIELD_DEFAULT_TIER.inspection;
+  if (job.id === "summary") return AI_ADMIN_FIELD_DEFAULT_TIER.summary;
+  return AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison;
+}
 
 export type FlashMaxSkipReason = "no_source_data" | "no_mileage_data" | "no_oil_data";
 

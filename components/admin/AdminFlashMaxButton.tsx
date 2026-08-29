@@ -19,7 +19,7 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onCl
         disabled={disabled || busy}
         onClick={onClick}
         className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
-        title="Ģenerē CSDD, AutoDNA, CarVertical, dīlera vēsturi un visus kopsavilkuma laukus (Gemini Flash). Esošais teksts paliek kontekstā."
+        title="Ģenerē avotu komentārus (Gemini Flash) un kopsavilkuma laukus ar tiem pašiem modeļiem, ko atsevišķās ✨ pogas: Sonnet sintēzei, Opus kopsavilkumam. Nākamais lauks redz jau uzrakstītos. Esošais teksts paliek kontekstā."
       >
         {busy ? (
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />

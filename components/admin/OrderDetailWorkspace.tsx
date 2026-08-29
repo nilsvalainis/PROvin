@@ -158,6 +158,7 @@ import {
   citiAvotiSectionPlainTextExcludingComments,
   orderHasOilIntervalDataForAi,
   sourceBlockCommentsPlainForAi,
+  sourceCommentAiBusyKey,
   type AiSourceCommentBlockKey,
   type AiSourceCommentTargetField,
   sourceBlockHasDataExcludingComments,
@@ -208,9 +209,8 @@ import {
 } from "@/lib/admin-ai-client-errors";
 import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
 import {
-  FLASH_MAX_DEFAULT_TIER,
   FLASH_MAX_JOBS,
-  FLASH_MAX_PRESERVE_OPERATOR_NOTE,
+  flashMaxJobModelTier,
   formatFlashMaxNotice,
   formatFlashMaxSkipLabel,
   isFlashMaxEmptyDataError,
@@ -746,11 +746,9 @@ export function OrderDetailWorkspace({
   const [aiMileageCommentErr, setAiMileageCommentErr] = useState<string | null>(null);
   const [aiSourcesComparisonBusy, setAiSourcesComparisonBusy] = useState(false);
   const [aiSourcesComparisonErr, setAiSourcesComparisonErr] = useState<string | null>(null);
-  const [aiSourceCommentBusy, setAiSourceCommentBusy] = useState<string | null>(null);
-  const [aiSourceCommentErr, setAiSourceCommentErr] = useState<{
-    key: string;
-    msg: string;
-  } | null>(null);
+  const [aiSourceCommentBusy, setAiSourceCommentBusy] = useState<ReadonlySet<string>>(() => new Set());
+  const aiSourceCommentBusyRef = useRef<Set<string>>(new Set());
+  const [aiSourceCommentErr, setAiSourceCommentErr] = useState<Record<string, string>>({});
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   /** Papildu audita PDF meta dialoga priekšskatam (nosaukums pēc pārdēvēšanas). */
   const [notifyExtraPdfMeta, setNotifyExtraPdfMeta] = useState<{ name: string; size: number } | null>(null);
@@ -1540,10 +1538,18 @@ export function OrderDetailWorkspace({
       modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.source_comment,
       targetField: AiSourceCommentTargetField = "comments",
     ) => {
-      const busyKey = targetField === "comments" ? blockKey : `${blockKey}:${targetField}`;
-      if (!payload.aiAllowed || aiSourceCommentBusy) return;
-      setAiSourceCommentBusy(busyKey);
-      setAiSourceCommentErr(null);
+      const busyKey = sourceCommentAiBusyKey(blockKey, targetField, citiAvotiSectionIndex);
+      if (!payload.aiAllowed || aiSourceCommentBusyRef.current.has(busyKey)) return;
+      const nextBusy = new Set(aiSourceCommentBusyRef.current);
+      nextBusy.add(busyKey);
+      aiSourceCommentBusyRef.current = nextBusy;
+      setAiSourceCommentBusy(nextBusy);
+      setAiSourceCommentErr((prev) => {
+        if (!prev[busyKey]) return prev;
+        const next = { ...prev };
+        delete next[busyKey];
+        return next;
+      });
       try {
         const cur = wsPersistRef.current;
         const existingComments = sourceBlockCommentsPlainForAi(
@@ -1574,30 +1580,33 @@ export function OrderDetailWorkspace({
           parseFailed,
           "AI: neizdevās ģenerēt komentāru",
         );
-        if (
-          !applyGeneratedAdminAiText(
+        let applied = false;
+        flushSync(() => {
+          applied = applyGeneratedAdminAiText(
             generated,
             (text) => {
               const html = aiExpertSourceCommentToRichHtml(text);
-              const prevBlock = cur.sourceBlocks[blockKey];
+              const prevBlock = wsPersistRef.current.sourceBlocks[blockKey];
               const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
                 citiAvotiSectionIndex,
                 targetField,
               });
               updateSourceBlock(blockKey, nextBlock);
             },
-            (error) => setAiSourceCommentErr({ key: busyKey, msg: error }),
-          )
-        ) {
-          return;
-        }
+            (error) => setAiSourceCommentErr((prev) => ({ ...prev, [busyKey]: error })),
+          );
+        });
+        if (!applied) return;
       } catch {
-        setAiSourceCommentErr({ key: busyKey, msg: "AI: neizdevās savienoties" });
+        setAiSourceCommentErr((prev) => ({ ...prev, [busyKey]: "AI: neizdevās savienoties" }));
       } finally {
-        setAiSourceCommentBusy(null);
+        const cleared = new Set(aiSourceCommentBusyRef.current);
+        cleared.delete(busyKey);
+        aiSourceCommentBusyRef.current = cleared;
+        setAiSourceCommentBusy(cleared);
       }
     },
-    [buildAiOrderPayload, aiSourceCommentBusy, payload.aiAllowed, updateSourceBlock],
+    [buildAiOrderPayload, payload.aiAllowed, updateSourceBlock],
   );
 
   const runFlashMax = useCallback(async () => {
@@ -1645,11 +1654,8 @@ export function OrderDetailWorkspace({
 
         const endpoint = job.kind === "source" ? "/api/admin/ai/source-comment" : job.endpoint;
         const body = {
-          ...buildAiOrderPayload({
-            operatorNotes: FLASH_MAX_PRESERVE_OPERATOR_NOTE,
-            existingDraftPlain,
-          }),
-          modelTier: FLASH_MAX_DEFAULT_TIER,
+          ...buildAiOrderPayload({ existingDraftPlain }),
+          modelTier: flashMaxJobModelTier(job),
           ...(job.kind === "source" ? { blockKey: job.blockKey, targetField: job.targetField } : {}),
         };
 
@@ -1712,9 +1718,6 @@ export function OrderDetailWorkspace({
           });
           if (applied) {
             results.push({ id: job.id, label: job.label, status: "ok" });
-            if (orderDraftPersistenceEnabled) {
-              await persistFullWorkspaceRef("flash-max", { showFlash: false });
-            }
           } else {
             results.push({
               id: job.id,
@@ -1735,6 +1738,9 @@ export function OrderDetailWorkspace({
       }
       setFlashMaxNotice(formatFlashMaxNotice(results));
       if (results.some((r) => r.status === "ok")) {
+        if (orderDraftPersistenceEnabled) {
+          await persistFullWorkspaceRef("flash-max", { showFlash: false });
+        }
         setWizardStep(11);
       }
     } finally {
@@ -2584,7 +2590,7 @@ export function OrderDetailWorkspace({
       citiAvotiSectionIndex?: number,
       targetField: AiSourceCommentTargetField = "comments",
     ): AdminAiSourceCommentSlot => {
-      const busyKey = targetField === "comments" ? key : `${key}:${targetField}`;
+      const busyKey = sourceCommentAiBusyKey(key, targetField, citiAvotiSectionIndex);
       const hasSourceData =
         key === "auto_records" && targetField === "oilChangeIntervalNotes" ?
           orderHasOilIntervalDataForAi(blocksDisplaySafe)
@@ -2595,8 +2601,8 @@ export function OrderDetailWorkspace({
         : sourceBlockHasDataExcludingComments(key, blocksDisplaySafe);
       return {
         allowed: payload.aiAllowed,
-        busy: aiSourceCommentBusy === busyKey,
-        error: aiSourceCommentErr?.key === busyKey ? aiSourceCommentErr.msg : null,
+        busy: aiSourceCommentBusy.has(busyKey),
+        error: aiSourceCommentErr[busyKey] ?? null,
         hasSourceData,
         onGenerate: (operatorNotes, modelTier) =>
           void runAiSourceComment(key, operatorNotes, citiAvotiSectionIndex, modelTier, targetField),

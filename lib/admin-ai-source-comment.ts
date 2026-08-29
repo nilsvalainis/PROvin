@@ -26,8 +26,13 @@ export type AiSourceCommentInput = {
   customerName?: string | null;
   notes?: string | null;
   sourceBlocks: WorkspaceSourceBlocks;
+  iriss?: string | null;
+  apskatesPlāns?: string | null;
+  tehniskoRiskuAnalize?: string | null;
+  cenasAtbilstiba?: string | null;
   internalComment?: string | null;
   mileageComment?: string | null;
+  sourcesComparisonComment?: string | null;
   operatorNotes?: string | null;
   existingDraftPlain?: string | null;
   citiAvotiSectionIndex?: number;
@@ -54,8 +59,13 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
     customerName: input.customerName?.trim() || null,
     notes: input.notes?.trim() || null,
     sourceBlocks: input.sourceBlocks,
+    irissSummary: input.iriss ?? undefined,
+    inspectionPlan: input.apskatesPlāns ?? undefined,
+    technicalRiskAnalysis: input.tehniskoRiskuAnalize ?? undefined,
+    priceFit: input.cenasAtbilstiba ?? undefined,
     internalComment: input.internalComment ?? undefined,
     mileageComment: input.mileageComment ?? undefined,
+    sourcesComparisonComment: input.sourcesComparisonComment ?? undefined,
   });
 
   if (isOilInterval) {
