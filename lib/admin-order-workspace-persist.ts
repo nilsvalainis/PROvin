@@ -33,6 +33,12 @@ import {
   syncAutoRecordsPhotoGroupsAndFlat,
 } from "@/lib/auto-records-photo-types";
 import { mergeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
+import {
+  mergeSourceBlockPhotoGroups,
+  syncSourceBlockPhotoGroupsAndFlat,
+  type SourceBlockPhotoGroup,
+  type SourceBlockPhotoMeta,
+} from "@/lib/source-block-photo-types";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import {
   mergeListingAnalysisPhotoGroups,
@@ -203,6 +209,17 @@ function pickRicherCcVinBlock(incoming: CcVinBlockState, baseline: CcVinBlockSta
   return { ...picked, photoGroups: synced.photoGroups, photos: synced.photos };
 }
 
+function withMergedSourceBlockPhotos<T extends { photos?: SourceBlockPhotoMeta[]; photoGroups?: SourceBlockPhotoGroup[] }>(
+  picked: T,
+  incoming: T,
+  baseline: T,
+): T {
+  const synced = syncSourceBlockPhotoGroupsAndFlat(
+    mergeSourceBlockPhotoGroups(incoming.photoGroups, incoming.photos, baseline.photoGroups, baseline.photos),
+  );
+  return { ...picked, photoGroups: synced.photoGroups, photos: synced.photos };
+}
+
 /**
  * Apvieno ienākošo darba zonu ar pēdējo zināmo labo momentuzņēmumu — nekad neiztukšo bloku,
  * kurā baseline jau bija dati (piem. saglabā AutoDNA, ja saglabā tikai Citi avoti).
@@ -217,18 +234,64 @@ export function coalesceOrderWorkspacePersistBody(
   }
   const baselineBlocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
   const mergedBlocks: WorkspaceSourceBlocks = {
-    csdd: pickRicherSourceBlock("csdd", incomingBlocks.csdd, baselineBlocks.csdd),
-    autodna: pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
-    carvertical: pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
+    csdd: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("csdd", incomingBlocks.csdd, baselineBlocks.csdd),
+      incomingBlocks.csdd,
+      baselineBlocks.csdd,
+    ),
+    autodna: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
+      incomingBlocks.autodna,
+      baselineBlocks.autodna,
+    ),
+    carvertical: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
+      incomingBlocks.carvertical,
+      baselineBlocks.carvertical,
+    ),
     auto_records: pickRicherAutoRecordsBlock(incomingBlocks.auto_records, baselineBlocks.auto_records),
     cc_vin: pickRicherCcVinBlock(incomingBlocks.cc_vin, baselineBlocks.cc_vin),
-    tjekbil: pickRicherSourceBlock("tjekbil", incomingBlocks.tjekbil, baselineBlocks.tjekbil),
-    mnt_ee: pickRicherSourceBlock("mnt_ee", incomingBlocks.mnt_ee, baselineBlocks.mnt_ee),
-    lkf_ee: pickRicherSourceBlock("lkf_ee", incomingBlocks.lkf_ee, baselineBlocks.lkf_ee),
-    carinfo: pickRicherSourceBlock("carinfo", incomingBlocks.carinfo, baselineBlocks.carinfo),
-    ltab: pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
-    tirgus: pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
-    citi_avoti: pickRicherSourceBlock("citi_avoti", incomingBlocks.citi_avoti, baselineBlocks.citi_avoti),
+    tjekbil: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("tjekbil", incomingBlocks.tjekbil, baselineBlocks.tjekbil),
+      incomingBlocks.tjekbil,
+      baselineBlocks.tjekbil,
+    ),
+    mnt_ee: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("mnt_ee", incomingBlocks.mnt_ee, baselineBlocks.mnt_ee),
+      incomingBlocks.mnt_ee,
+      baselineBlocks.mnt_ee,
+    ),
+    lkf_ee: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("lkf_ee", incomingBlocks.lkf_ee, baselineBlocks.lkf_ee),
+      incomingBlocks.lkf_ee,
+      baselineBlocks.lkf_ee,
+    ),
+    carinfo: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("carinfo", incomingBlocks.carinfo, baselineBlocks.carinfo),
+      incomingBlocks.carinfo,
+      baselineBlocks.carinfo,
+    ),
+    ltab: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
+      incomingBlocks.ltab,
+      baselineBlocks.ltab,
+    ),
+    tirgus: withMergedSourceBlockPhotos(
+      pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
+      incomingBlocks.tirgus,
+      baselineBlocks.tirgus,
+    ),
+    citi_avoti: (() => {
+      const picked = pickRicherSourceBlock("citi_avoti", incomingBlocks.citi_avoti, baselineBlocks.citi_avoti);
+      const inSec = incomingBlocks.citi_avoti.sections ?? [];
+      const baseSec = baselineBlocks.citi_avoti.sections ?? [];
+      return {
+        ...picked,
+        sections: (picked.sections ?? []).map((s, i) =>
+          withMergedSourceBlockPhotos(s, inSec[i] ?? s, baseSec[i] ?? s),
+        ),
+      };
+    })(),
     listing_analysis: pickRicherListingAnalysisBlock(
       incomingBlocks.listing_analysis,
       baselineBlocks.listing_analysis,

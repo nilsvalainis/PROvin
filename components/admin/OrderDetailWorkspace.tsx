@@ -23,6 +23,7 @@ import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
   SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS,
+  collectWorkspaceSourceBlockPhotoIds,
   blocksToLegacyFlatFields,
   citiAvotiToPlainText,
   createDefaultSourceBlocks,
@@ -48,6 +49,10 @@ import {
 } from "@/lib/admin-source-blocks";
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
 import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
+import {
+  syncSourceBlockPhotoGroupsAndFlat,
+  type SourceBlockPhotoGroup,
+} from "@/lib/source-block-photo-types";
 import {
   emptyIncidentPhotoGroup,
   INCIDENT_MAX_PHOTOS,
@@ -1440,6 +1445,62 @@ export function OrderDetailWorkspace({
       commitWorkspaceLocalNow({ force: true });
       if (orderDraftPersistenceEnabled) {
         await persistFullWorkspaceRef("cc_vin_photos", { showFlash: false });
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
+  const commitGenericSourcePhotoGroups = useCallback(
+    async (
+      key:
+        | "csdd"
+        | "autodna"
+        | "carvertical"
+        | "tjekbil"
+        | "mnt_ee"
+        | "lkf_ee"
+        | "carinfo"
+        | "ltab"
+        | "tirgus"
+        | "citi_avoti",
+      nextGroups: SourceBlockPhotoGroup[],
+      sectionIndex?: number,
+    ) => {
+      const synced = syncSourceBlockPhotoGroupsAndFlat(nextGroups);
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const blocks = mergeSourceBlocksWithDefaults(prev.sourceBlocks);
+          const patched =
+            key === "citi_avoti"
+              ? {
+                  ...blocks,
+                  citi_avoti: {
+                    sections: (blocks.citi_avoti.sections ?? []).map((section, i) =>
+                      i === sectionIndex
+                        ? { ...section, photoGroups: synced.photoGroups, photos: synced.photos }
+                        : section,
+                    ),
+                  },
+                }
+              : {
+                  ...blocks,
+                  [key]: {
+                    ...blocks[key],
+                    photoGroups: synced.photoGroups,
+                    photos: synced.photos,
+                  },
+                };
+          const next = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: patched,
+          });
+          return applyPersistBodyToWs(next);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        await persistFullWorkspaceRef(`${key}_photos`, { showFlash: false });
       }
     },
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
@@ -2912,6 +2973,29 @@ export function OrderDetailWorkspace({
       }
     }
 
+    const sourceBlockPhotoIds = collectWorkspaceSourceBlockPhotoIds(listingBlocks);
+    const sourceBlockPhotoDataUrls = new Map<string, string>();
+    if (sourceBlockPhotoIds.length > 0) {
+      try {
+        const res = await fetch("/api/admin/source-block-photo/pdf-batch", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: payload.sessionId, photoIds: sourceBlockPhotoIds }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          dataUrls?: Record<string, string>;
+        };
+        if (res.ok && data.dataUrls) {
+          for (const [id, url] of Object.entries(data.dataUrls)) {
+            sourceBlockPhotoDataUrls.set(id, url);
+          }
+        }
+      } catch {
+        /* PDF bez avotu fotogrāfijām, ja batch neizdevās */
+      }
+    }
+
     let manualVendorBlocks = toPdfManualVendorBlocks(blocksDisplaySafe);
     const portfolioPdfs = portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
     if (portfolioPdfs.length > 0) {
@@ -2961,6 +3045,7 @@ export function OrderDetailWorkspace({
       autoRecordsPhotoDataUrls,
       ccVinPhotoDataUrls,
       incidentPhotoDataUrls,
+      sourceBlockPhotoDataUrls,
     });
 
     const w = window.open("", "_blank");
@@ -4015,6 +4100,10 @@ export function OrderDetailWorkspace({
                 onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
                 sessionId={payload.sessionId}
                 aiComment={aiCommentSlot("csdd")}
+                photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                onPhotoGroupsStructuralCommit={(next) =>
+                  void commitGenericSourcePhotoGroups("csdd", next)
+                }
               />
             </div>
           </div>
@@ -4035,6 +4124,10 @@ export function OrderDetailWorkspace({
                 aiComment={aiCommentSlot("autodna")}
                 getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
                 applyPatchedBlocks={applyCopilotPatchedBlocks}
+                photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                onPhotoGroupsStructuralCommit={(next) =>
+                  void commitGenericSourcePhotoGroups("autodna", next)
+                }
               />
             </div>
             <div id="admin-order-block-carvertical" className="flex min-h-0 min-w-0 flex-col">
@@ -4050,6 +4143,10 @@ export function OrderDetailWorkspace({
                 aiComment={aiCommentSlot("carvertical")}
                 getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
                 applyPatchedBlocks={applyCopilotPatchedBlocks}
+                photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                onPhotoGroupsStructuralCommit={(next) =>
+                  void commitGenericSourcePhotoGroups("carvertical", next)
+                }
               />
             </div>
           </div>
@@ -4089,6 +4186,10 @@ export function OrderDetailWorkspace({
               aiComment={aiCommentSlot("ltab")}
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
               applyPatchedBlocks={applyCopilotPatchedBlocks}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(next) =>
+                void commitGenericSourcePhotoGroups("ltab", next)
+              }
             />
           </div>
         ) : null}
@@ -4104,6 +4205,10 @@ export function OrderDetailWorkspace({
               pdfInclude={pdfVisibility.citi_avoti}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ citi_avoti: next })}
               aiComment={(i) => aiCommentSlot("citi_avoti", i)}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(sectionIndex, next) =>
+                void commitGenericSourcePhotoGroups("citi_avoti", next, sectionIndex)
+              }
             />
           </div>
         ) : null}
@@ -4140,6 +4245,10 @@ export function OrderDetailWorkspace({
               aiComment={aiCommentSlot("tjekbil")}
               pdfInclude={pdfVisibility.tjekbil}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ tjekbil: next })}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(next) =>
+                void commitGenericSourcePhotoGroups("tjekbil", next)
+              }
             />
           </div>
         ) : null}
@@ -4162,6 +4271,13 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               vin={vinBar}
               readOnly={false}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommitMnt={(next) =>
+                void commitGenericSourcePhotoGroups("mnt_ee", next)
+              }
+              onPhotoGroupsStructuralCommitLkf={(next) =>
+                void commitGenericSourcePhotoGroups("lkf_ee", next)
+              }
             />
           </div>
         ) : null}
@@ -4179,6 +4295,10 @@ export function OrderDetailWorkspace({
               aiComment={aiCommentSlot("carinfo")}
               pdfInclude={pdfVisibility.carinfo}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ carinfo: next })}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(next) =>
+                void commitGenericSourcePhotoGroups("carinfo", next)
+              }
             />
           </div>
         ) : null}
@@ -4215,6 +4335,11 @@ export function OrderDetailWorkspace({
                       marketAiError={aiTirgusMarketErr}
                       onMarketAiAnalyze={(notes, tier) => void runAiTirgusMarket(notes, tier)}
                       listingUrl={payload.listingUrl}
+                      sessionId={payload.sessionId}
+                      photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                      onPhotoGroupsStructuralCommit={(next) =>
+                        void commitGenericSourcePhotoGroups("tirgus", next)
+                      }
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>

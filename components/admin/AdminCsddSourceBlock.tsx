@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
+import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { CsddFormFields, CsddMileageRow } from "@/lib/admin-source-blocks";
 import {
@@ -96,6 +98,8 @@ type Props = {
   /** localStorage atslēgai — noklusējums `csdd`. */
   collapseBlockId?: string;
   aiComment?: AdminAiSourceCommentSlot;
+  photosPersistenceEnabled?: boolean;
+  onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -113,6 +117,8 @@ export function AdminCsddSourceBlock({
   sessionId,
   collapseBlockId = "csdd",
   aiComment,
+  photosPersistenceEnabled = false,
+  onPhotoGroupsStructuralCommit,
 }: Props) {
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange({ ...value, [key]: v });
@@ -560,6 +566,14 @@ export function AdminCsddSourceBlock({
             })
           }
         />
+        {sessionId && onPhotoGroupsStructuralCommit ? (
+          <AdminSourceBlockPhotos
+            sessionId={sessionId}
+            photoGroups={value.photoGroups ?? []}
+            disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+            onCommit={onPhotoGroupsStructuralCommit}
+          />
+        ) : null}
         <AdminSourceCommentField
           value={value.comments}
           onChange={(next) => onChange({ ...value, comments: next })}

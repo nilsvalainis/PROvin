@@ -11,6 +11,8 @@ import {
   type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
+import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -69,6 +71,8 @@ type Props = {
   aiComment?: AdminAiSourceCommentSlot;
   pdfInclude?: boolean;
   onPdfIncludeChange?: (next: boolean) => void;
+  photosPersistenceEnabled?: boolean;
+  onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
 };
 
 export async function requestVinRegistryFetch(
@@ -125,6 +129,8 @@ export function AdminVinRegistrySourceBlock({
   aiComment,
   pdfInclude,
   onPdfIncludeChange,
+  photosPersistenceEnabled = false,
+  onPhotoGroupsStructuralCommit,
 }: Props) {
   const block = repairVinRegistryBlock(value);
   const [busy, setBusy] = useState(false);
@@ -203,6 +209,8 @@ export function AdminVinRegistrySourceBlock({
         ...data.block,
         comments: block.comments,
         aiContextRaw: block.aiContextRaw,
+        photos: block.photos ?? [],
+        photoGroups: block.photoGroups ?? [],
       });
       setStatus(data.message);
     } catch (e) {
@@ -786,6 +794,14 @@ Neviena periodiskā apskate nav izgāzta.`
       </div>
 
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
+        {sessionId && onPhotoGroupsStructuralCommit ? (
+          <AdminSourceBlockPhotos
+            sessionId={sessionId}
+            photoGroups={block.photoGroups ?? []}
+            disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+            onCommit={onPhotoGroupsStructuralCommit}
+          />
+        ) : null}
         <AdminSourceCommentField
           value={block.comments}
           onChange={(next) => onChange({ ...block, comments: next })}
@@ -839,6 +855,9 @@ type EstoniaPairProps = {
   vin: string;
   readOnly: boolean;
   disabled?: boolean;
+  photosPersistenceEnabled?: boolean;
+  onPhotoGroupsStructuralCommitMnt?: (next: SourceBlockPhotoGroup[]) => void;
+  onPhotoGroupsStructuralCommitLkf?: (next: SourceBlockPhotoGroup[]) => void;
 };
 
 /** mnt.ee + lkf.ee vienā sadaļā, blakus. */
@@ -859,6 +878,9 @@ export function AdminEstoniaVinRegistryPair({
   vin,
   readOnly,
   disabled,
+  photosPersistenceEnabled = false,
+  onPhotoGroupsStructuralCommitMnt,
+  onPhotoGroupsStructuralCommitLkf,
 }: EstoniaPairProps) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -874,12 +896,24 @@ export function AdminEstoniaVinRegistryPair({
     try {
       const mntRes = await requestVinRegistryFetch("mnt_ee", cleanVin);
       if (mntRes.ok) {
-        onChangeMnt({ ...mntRes.block, comments: mnt.comments, aiContextRaw: mnt.aiContextRaw });
+        onChangeMnt({
+          ...mntRes.block,
+          comments: mnt.comments,
+          aiContextRaw: mnt.aiContextRaw,
+          photos: mnt.photos ?? [],
+          photoGroups: mnt.photoGroups ?? [],
+        });
       }
       setStatus("Ielasu LKF kahjukontroll…");
       const lkfRes = await requestVinRegistryFetch("lkf_ee", cleanVin);
       if (lkfRes.ok) {
-        onChangeLkf({ ...lkfRes.block, comments: lkf.comments, aiContextRaw: lkf.aiContextRaw });
+        onChangeLkf({
+          ...lkfRes.block,
+          comments: lkf.comments,
+          aiContextRaw: lkf.aiContextRaw,
+          photos: lkf.photos ?? [],
+          photoGroups: lkf.photoGroups ?? [],
+        });
       }
       const parts = [
         mntRes.ok ? `MNT: ${mntRes.message}` : `MNT: ${mntRes.error}`,
@@ -927,6 +961,8 @@ export function AdminEstoniaVinRegistryPair({
             aiComment={aiMnt}
             pdfInclude={pdfIncludeMnt}
             onPdfIncludeChange={onPdfIncludeMnt}
+            photosPersistenceEnabled={photosPersistenceEnabled}
+            onPhotoGroupsStructuralCommit={onPhotoGroupsStructuralCommitMnt}
           />
         </div>
         <div id="admin-order-block-lkf-ee" className="flex min-h-0 min-w-0 flex-col">
@@ -942,6 +978,8 @@ export function AdminEstoniaVinRegistryPair({
             aiComment={aiLkf}
             pdfInclude={pdfIncludeLkf}
             onPdfIncludeChange={onPdfIncludeLkf}
+            photosPersistenceEnabled={photosPersistenceEnabled}
+            onPhotoGroupsStructuralCommit={onPhotoGroupsStructuralCommitLkf}
           />
         </div>
       </div>

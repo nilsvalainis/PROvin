@@ -10,6 +10,8 @@ import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminIncidentFieldFillOption } from "@/components/admin/AdminIncidentFieldFillOption";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
+import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
@@ -65,6 +67,8 @@ type Props = {
     patched: Partial<WorkspaceSourceBlocks>,
     changedKeys: CopilotSourceKey[],
   ) => void;
+  photosPersistenceEnabled?: boolean;
+  onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
 };
 
 export function AdminLtabSourceBlock({
@@ -79,6 +83,8 @@ export function AdminLtabSourceBlock({
   aiComment,
   getSourceBlocks,
   applyPatchedBlocks,
+  photosPersistenceEnabled = false,
+  onPhotoGroupsStructuralCommit,
 }: Props) {
   const setRow = (index: number, patch: Partial<LtabIncidentRow>) => {
     const rows = value.rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
@@ -526,6 +532,14 @@ export function AdminLtabSourceBlock({
                   </button>
                 ))}
               </div>
+            ) : null}
+            {sessionId && onPhotoGroupsStructuralCommit ? (
+              <AdminSourceBlockPhotos
+                sessionId={sessionId}
+                photoGroups={value.photoGroups ?? []}
+                disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+                onCommit={onPhotoGroupsStructuralCommit}
+              />
             ) : null}
             <AdminSourceCommentField
               label="Komentāri:"

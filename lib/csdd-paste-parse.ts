@@ -580,6 +580,8 @@ export function applyCsddPasteToForm(
     prevInspectionWarnings: current.prevInspectionWarnings,
     technicalInspectionWarnings: current.technicalInspectionWarnings,
     comments: current.comments,
+    photos: current.photos ?? [],
+    photoGroups: current.photoGroups ?? [],
   };
 }
 

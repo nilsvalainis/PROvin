@@ -7,7 +7,12 @@ import {
   workspaceHydrationFillScore,
   type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
-import { createDefaultSourceBlocks, emptyVendorAvotuBlock } from "@/lib/admin-source-blocks";
+import {
+  collectWorkspaceSourceBlockPhotoIds,
+  createDefaultSourceBlocks,
+  emptyVendorAvotuBlock,
+  emptyVinRegistryBlock,
+} from "@/lib/admin-source-blocks";
 
 function bodyWithAutodnaComment(comment: string): OrderWorkspacePersistBody {
   const blocks = createDefaultSourceBlocks();
@@ -51,6 +56,39 @@ describe("coalesceOrderWorkspacePersistBody", () => {
     const coalesced = coalesceOrderWorkspacePersistBody(incoming, baseline);
     expect(coalesced.iriss).toContain("Īss labojums");
     expect(coalesced.iriss).not.toContain("Garš AI");
+  });
+
+  it("keeps Estonia registry photos when an incoming patch has empty photo arrays", () => {
+    const baselineBlocks = createDefaultSourceBlocks();
+    baselineBlocks.mnt_ee = {
+      ...emptyVinRegistryBlock(),
+      comments: "MNT",
+      photos: [{ id: "sbp_ph_0123456789abcdef01234567" }],
+      photoGroups: [
+        {
+          id: "sbp_phg_0123456789abcdef01234567",
+          title: "MNT izdruka",
+          photos: [{ id: "sbp_ph_0123456789abcdef01234567" }],
+        },
+      ],
+    };
+    const baseline: OrderWorkspacePersistBody = {
+      ...bodyWithAutodnaComment(""),
+      sourceBlocks: baselineBlocks,
+    };
+    const incomingBlocks = createDefaultSourceBlocks();
+    incomingBlocks.mnt_ee = { ...emptyVinRegistryBlock(), comments: "MNT" };
+    incomingBlocks.ltab.comments = "Jauns LTAB";
+    const merged = coalesceOrderWorkspacePersistBody(
+      { ...baseline, sourceBlocks: incomingBlocks },
+      baseline,
+    );
+    expect(merged.sourceBlocks.mnt_ee.photos).toEqual([{ id: "sbp_ph_0123456789abcdef01234567" }]);
+    expect(merged.sourceBlocks.mnt_ee.photoGroups[0]?.title).toBe("MNT izdruka");
+    expect(merged.sourceBlocks.ltab.comments).toContain("LTAB");
+    expect(collectWorkspaceSourceBlockPhotoIds(merged.sourceBlocks)).toEqual([
+      "sbp_ph_0123456789abcdef01234567",
+    ]);
   });
 });
 

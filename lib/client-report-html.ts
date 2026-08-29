@@ -77,6 +77,7 @@ import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-phot
 import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import { normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
 import { normalizeIncidentPhotoGroups } from "@/lib/incident-photo-types";
+import { normalizeSourceBlockPhotoGroups } from "@/lib/source-block-photo-types";
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
@@ -315,7 +316,9 @@ function vendorPdfBlockHasData(b: ClientManualVendorBlockPdf | undefined): boole
     Boolean(b.ownersSummary?.trim()) ||
     Boolean(b.statusRecords?.trim()) ||
     Boolean(b.autoNotes?.trim()) ||
-    sourcePdfChecklistHasAny(b.pdfChecklist)
+    sourcePdfChecklistHasAny(b.pdfChecklist) ||
+    (b.photoGroups ?? []).some((g) => (g.photos ?? []).length > 0) ||
+    (b.photos ?? []).length > 0
   );
 }
 
@@ -1165,7 +1168,11 @@ function buildPdfVehicleSpecSectionHtml(
 }
 
 /** CSDD — strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
-export function buildCsddAvotuZoneHtml(form: CsddFormFields, sparkHtml = ""): string {
+export function buildCsddAvotuZoneHtml(
+  form: CsddFormFields,
+  sparkHtml = "",
+  photoDataUrls?: Map<string, string>,
+): string {
   if (!csddFormHasContent(form) && !sparkHtml) return "";
 
   const csddRecords =
@@ -1225,10 +1232,24 @@ export function buildCsddAvotuZoneHtml(form: CsddFormFields, sparkHtml = ""): st
       : "";
 
   const commentHtml = hasComments ? pdfAvotuCommentIsland(commentTrim) : "";
-  if (!tableHtml && !ownerTimelineHtml && !prevInspectionHtml && !taTableHtml && !commentHtml && !sparkHtml) {
+  const photosHtml = buildSourcePhotoGroupsPdfHtml(
+    form.photoGroups,
+    form.photos,
+    photoDataUrls,
+    normalizeSourceBlockPhotoGroups,
+  );
+  if (
+    !tableHtml &&
+    !ownerTimelineHtml &&
+    !prevInspectionHtml &&
+    !taTableHtml &&
+    !commentHtml &&
+    !photosHtml &&
+    !sparkHtml
+  ) {
     return "";
   }
-  const bodyInner = `${sparkHtml}${tableHtml}${ownerTimelineHtml}${prevInspectionHtml}${taTableHtml}${commentHtml}`;
+  const bodyInner = `${sparkHtml}${tableHtml}${ownerTimelineHtml}${prevInspectionHtml}${taTableHtml}${photosHtml}${commentHtml}`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(PDF_SUB_CSDD)}" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
 }
 
@@ -1238,7 +1259,12 @@ function csddAvotuRawZoneHtml(raw: string, sparkHtml = ""): string {
 }
 
 /** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
-function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySettings, sparkHtml = ""): string {
+function buildCsddAvotuSubsection(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+  sparkHtml = "",
+  photoDataUrls?: Map<string, string>,
+): string {
   if (!vis.csdd) return "";
   const form = p.csddForm;
   const hasStruct = Boolean(form && csddFormHasContent(form));
@@ -1246,10 +1272,10 @@ function buildCsddAvotuSubsection(p: ClientReportPayload, vis: PdfVisibilitySett
   if (!hasStruct && !hasRaw && !sparkHtml) return "";
 
   if (hasStruct && form) {
-    const zone = buildCsddAvotuZoneHtml(form, sparkHtml);
+    const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls);
     if (zone) return zone;
     if (hasRaw) return csddAvotuRawZoneHtml(p.csdd, sparkHtml);
-    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml);
+    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls);
     return "";
   }
 
@@ -1293,7 +1319,10 @@ function buildTirgusPriceHistoryTableHtml(f: TirgusFormFields): string {
   </div>`;
 }
 
-function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
+function buildTirgusListingHistoryBodyHtml(
+  p: ClientReportPayload,
+  photoDataUrls?: Map<string, string>,
+): string {
   const hasForm = tirgusFormHasContent(p.tirgusForm);
   const hasText = p.tirgus.trim().length > 0;
   if (!hasForm && !hasText) return "";
@@ -1339,6 +1368,13 @@ function buildTirgusListingHistoryBodyHtml(p: ClientReportPayload): string {
         ? `<table class="mirror-table"><tbody>${rows.join("\n")}</tbody></table>`
         : "";
     if (table) parts.push(table);
+    const photosHtml = buildSourcePhotoGroupsPdfHtml(
+      f.photoGroups,
+      f.photos,
+      photoDataUrls,
+      normalizeSourceBlockPhotoGroups,
+    );
+    if (photosHtml) parts.push(photosHtml);
     const tirgusCommentBox = pdfReportCommentBox(f.comments ?? "");
     if (tirgusCommentBox) parts.push(tirgusCommentBox);
   } else {
@@ -1558,6 +1594,7 @@ function buildVendorAvotuSubsection(
   b: ClientManualVendorBlockPdf,
   vis: PdfVisibilitySettings,
   sparkHtml = "",
+  photoDataUrls?: Map<string, string>,
 ): string {
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";
@@ -1572,7 +1609,13 @@ function buildVendorAvotuSubsection(
   const status = (b.statusRecords ?? "").trim();
   const notes = (b.autoNotes ?? "").trim();
   const hasComments = commentBlock.trim().length > 0;
-  if (!hasComments && !owners && !status && !notes && !sparkHtml) return "";
+  const photosHtml = buildSourcePhotoGroupsPdfHtml(
+    b.photoGroups,
+    b.photos,
+    photoDataUrls,
+    normalizeSourceBlockPhotoGroups,
+  );
+  if (!hasComments && !owners && !status && !notes && !photosHtml && !sparkHtml) return "";
   const head = sectionHeadBrand(
     vendorSectionIconHtml(b.title),
     b.title,
@@ -1583,6 +1626,7 @@ function buildVendorAvotuSubsection(
   if (owners) bodyParts.push(pdfReportCommentBox(owners, "Īpašnieku skaits"));
   if (status) bodyParts.push(pdfReportCommentBox(status, "Statuss"));
   if (notes) bodyParts.push(pdfReportCommentBox(notes, "Piezīmes"));
+  if (photosHtml) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   const body = `<div class="pdf-source-section-body">${bodyParts.join("\n")}</div>`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(b.title)}" role="region">${head}${body}</div>`;
@@ -1642,19 +1686,23 @@ function buildLtabAvotuSubsection(
   b: ClientManualLtabBlockPdf | null | undefined,
   vis: PdfVisibilitySettings,
   sparkHtml = "",
+  photoDataUrls?: Map<string, string>,
 ): string {
   if (!vis.ltab) return "";
   if (!b && !sparkHtml) return "";
   const hasComments = Boolean(b?.comments.trim());
   const certHtml =
     b && ltabCertificateHasContent(b.certificate) ? buildLtabCertificateHtml(b.certificate!) : "";
-  if (!hasComments && !certHtml && !sparkHtml) return "";
+  const photosHtml = b
+    ? buildSourcePhotoGroupsPdfHtml(b.photoGroups, b.photos, photoDataUrls, normalizeSourceBlockPhotoGroups)
+    : "";
+  if (!hasComments && !certHtml && !photosHtml && !sparkHtml) return "";
   const head = sectionHeadBrand(
     ltabSectionIconHtml(),
     SOURCE_BLOCK_LABELS.ltab,
     sourceRecordCountBadgeHtml(b ? b.rows.filter(ltabRowHasData).length : 0),
   );
-  const inner = [sparkHtml, certHtml, hasComments && b ? pdfAvotuCommentIsland(b.comments) : ""]
+  const inner = [sparkHtml, certHtml, photosHtml, hasComments && b ? pdfAvotuCommentIsland(b.comments) : ""]
     .filter(Boolean)
     .join("");
   const body = `<div class="pdf-source-section-body">${inner}</div>`;
@@ -1681,9 +1729,10 @@ function buildListingAnalysisPriorityHtml(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
   listingAnalysisPhotoDataUrls?: Map<string, string>,
+  sourceBlockPhotoDataUrls?: Map<string, string>,
 ): string {
   if (!vis.sludinajums) return "";
-  const tirgusBody = buildTirgusListingHistoryBodyHtml(p);
+  const tirgusBody = buildTirgusListingHistoryBodyHtml(p, sourceBlockPhotoDataUrls);
   const b = p.listingAnalysis;
   const hasListingFields = Boolean(b && listingAnalysisHasContent(b));
 
@@ -1723,6 +1772,7 @@ function buildCitiAvotiAvotuSubsection(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
   sparkHtml = "",
+  photoDataUrls?: Map<string, string>,
 ): string {
   if (!vis.citi_avoti) return "";
   const b = p.citiAvoti;
@@ -1731,13 +1781,16 @@ function buildCitiAvotiAvotuSubsection(
   const total = b?.sections?.length ?? 0;
   for (const [i, section] of (b?.sections ?? []).entries()) {
     const comments = section.comments.trim();
-    if (!comments) continue;
-    const subheadLabel = section.label?.trim() || (total > 1 ? `Avots ${i + 1}` : "");
-    islands.push(
-      subheadLabel ?
-        `<p class="pdf-subhead">${escapeHtml(subheadLabel)}</p>${pdfAvotuCommentIsland(comments)}`
-      : pdfAvotuCommentIsland(comments),
+    const photosHtml = buildSourcePhotoGroupsPdfHtml(
+      section.photoGroups,
+      section.photos,
+      photoDataUrls,
+      normalizeSourceBlockPhotoGroups,
     );
+    if (!comments && !photosHtml) continue;
+    const subheadLabel = section.label?.trim() || (total > 1 ? `Avots ${i + 1}` : "");
+    const body = `${photosHtml}${comments ? pdfAvotuCommentIsland(comments) : ""}`;
+    islands.push(subheadLabel ? `<p class="pdf-subhead">${escapeHtml(subheadLabel)}</p>${body}` : body);
   }
   if (islands.length === 0 && !sparkHtml) return "";
   const citiRecords = (b?.sections ?? []).reduce(
@@ -1765,19 +1818,22 @@ function buildAvotuDatiSectionHtml(
   vis: PdfVisibilitySettings,
   autoRecordsPhotoDataUrls?: Map<string, string>,
   ccVinPhotoDataUrls?: Map<string, string>,
+  sourceBlockPhotoDataUrls?: Map<string, string>,
 ): string {
   const sparkCtx = collectPdfMileageSparkContext(p, vis);
   const spark = (key: MileagePdfSourceKey) => sourceMileageSparkHtml(sparkCtx, key);
 
-  const csdd = buildCsddAvotuSubsection(p, vis, spark("csdd"));
-  const ltab = buildLtabAvotuSubsection(p.manualLtabBlock, vis, spark("ltab"));
-  const citiAvoti = buildCitiAvotiAvotuSubsection(p, vis, spark("cits"));
+  const csdd = buildCsddAvotuSubsection(p, vis, spark("csdd"), sourceBlockPhotoDataUrls);
+  const ltab = buildLtabAvotuSubsection(p.manualLtabBlock, vis, spark("ltab"), sourceBlockPhotoDataUrls);
+  const citiAvoti = buildCitiAvotiAvotuSubsection(p, vis, spark("cits"), sourceBlockPhotoDataUrls);
 
   const vendors = p.manualVendorBlocks ?? [];
   const byTitle = new Map(vendors.map((b) => [b.title, b]));
   const vendorHtml = (title: string) => {
     const b = byTitle.get(title);
-    return b ? buildVendorAvotuSubsection(b, vis, spark(mileageSourceLabelToPdfKey(title))) : "";
+    return b
+      ? buildVendorAvotuSubsection(b, vis, spark(mileageSourceLabelToPdfKey(title)), sourceBlockPhotoDataUrls)
+      : "";
   };
   const autodna = vendorHtml(SOURCE_BLOCK_LABELS.autodna);
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
@@ -2806,6 +2862,7 @@ export function buildClientReportDocumentHtml(args: {
   autoRecordsPhotoDataUrls?: Map<string, string>;
   ccVinPhotoDataUrls?: Map<string, string>;
   incidentPhotoDataUrls?: Map<string, string>;
+  sourceBlockPhotoDataUrls?: Map<string, string>;
 }): string {
   const {
     payload: p,
@@ -2814,6 +2871,7 @@ export function buildClientReportDocumentHtml(args: {
     autoRecordsPhotoDataUrls,
     ccVinPhotoDataUrls,
     incidentPhotoDataUrls,
+    sourceBlockPhotoDataUrls,
   } = args;
   const vis = mergePdfVisibility(p.pdfVisibility);
 
@@ -2909,10 +2967,21 @@ export function buildClientReportDocumentHtml(args: {
   const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis, incidentPhotoDataUrls);
   if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
 
-  const avotuHtml = buildAvotuDatiSectionHtml(p, vis, autoRecordsPhotoDataUrls, ccVinPhotoDataUrls);
+  const avotuHtml = buildAvotuDatiSectionHtml(
+    p,
+    vis,
+    autoRecordsPhotoDataUrls,
+    ccVinPhotoDataUrls,
+    sourceBlockPhotoDataUrls,
+  );
   if (avotuHtml) lines.push(avotuHtml);
 
-  const listingPriorityHtml = buildListingAnalysisPriorityHtml(p, vis, listingAnalysisPhotoDataUrls);
+  const listingPriorityHtml = buildListingAnalysisPriorityHtml(
+    p,
+    vis,
+    listingAnalysisPhotoDataUrls,
+    sourceBlockPhotoDataUrls,
+  );
   if (listingPriorityHtml) lines.push(listingPriorityHtml);
 
   const approvedHtml = buildApprovedByIrissHtml(p, vis);

@@ -53,6 +53,13 @@ import {
   syncListingAnalysisPhotoGroupsAndFlat,
 } from "@/lib/listing-analysis-photo-types";
 import type { ListingAnalysisPhotoGroup, ListingAnalysisPhotoMeta } from "@/lib/listing-analysis-photo-types";
+import {
+  flattenSourceBlockPhotoGroups,
+  sourceBlockPhotosHaveContent,
+  syncedSourceBlockPhotos,
+  type SourceBlockPhotoGroup,
+  type SourceBlockPhotoMeta,
+} from "@/lib/source-block-photo-types";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -327,6 +334,8 @@ export type CsddFormFields = {
   aiContextRaw: string;
   /** PDF apstiprinājumi — drukājas kopā ar komentāriem. */
   pdfChecklist?: SourcePdfChecklist;
+  photos: SourceBlockPhotoMeta[];
+  photoGroups: SourceBlockPhotoGroup[];
 };
 
 /** Tehniskie + apskates lauki (secība = Admin / PDF). */
@@ -399,6 +408,8 @@ export type TirgusFormFields = {
   listingMileageDate: string;
   /** Odometra valsts — SS.LV vienmēr Latvija. */
   listingMileageCountry: string;
+  photos: SourceBlockPhotoMeta[];
+  photoGroups: SourceBlockPhotoGroup[];
 };
 
 export const TIRGUS_LABEL_LISTED = "Auto pārdošanā (dienas):";
@@ -421,6 +432,8 @@ export function emptyTirgusFields(): TirgusFormFields {
     listingMileageOdometer: "",
     listingMileageDate: "",
     listingMileageCountry: "",
+    photos: [],
+    photoGroups: [],
   };
 }
 
@@ -464,7 +477,8 @@ export function tirgusFormHasContent(f: TirgusFormFields | null | undefined): bo
     wsStr(f.listingMileageOdometer).trim().length > 0 ||
     wsStr(f.listingMileageDate).trim().length > 0 ||
     wsStr(f.listingMileageCountry).trim().length > 0 ||
-    tirgusPriceHistoryHasRows(f.priceHistory)
+    tirgusPriceHistoryHasRows(f.priceHistory) ||
+    sourceBlockPhotosHaveContent(f)
   );
 }
 
@@ -529,6 +543,8 @@ export function emptyCsddFields(): CsddFormFields {
     comments: "",
     aiContextRaw: "",
     pdfChecklist: undefined,
+    photos: [],
+    photoGroups: [],
   };
 }
 
@@ -673,7 +689,8 @@ export function csddFormHasContent(f: CsddFormFields): boolean {
     (f.ownerRegistrationEvents ?? []).some((r) => r.date.trim() || r.label.trim()) ||
     previousInspectionBlockHasData(f.prevInspectionBlock) ||
     wsStr(f.comments).trim().length > 0 ||
-    sourcePdfChecklistHasAny(f.pdfChecklist)
+    sourcePdfChecklistHasAny(f.pdfChecklist) ||
+    sourceBlockPhotosHaveContent(f)
   );
 }
 
@@ -827,6 +844,8 @@ export type LtabBlockState = {
   aiContextRaw: string;
   /** LTAB OCTA izziņas strukturētā kopija (galvene + CSNg tabula). */
   certificate?: LtabCertificate;
+  photos: SourceBlockPhotoMeta[];
+  photoGroups: SourceBlockPhotoGroup[];
 };
 
 /** AutoDNA / CarVertical — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
@@ -843,6 +862,8 @@ export type VendorAvotuBlockState = {
   pdfChecklist?: SourcePdfChecklist;
   /** Papildu konteksts tikai AI — nav PDF. */
   aiContextRaw: string;
+  photos: SourceBlockPhotoMeta[];
+  photoGroups: SourceBlockPhotoGroup[];
 };
 
 /** Publiskā reģistra nobraukuma rinda: datums + km + valsts (+ ieraksta izcelsme avotā). */
@@ -892,6 +913,8 @@ export type VinRegistryBlockState = {
   /** Pēdējās automātiskās ielādes laiks (ISO) un avota atbildes statuss. */
   fetchedAt?: string;
   fetchMessage?: string;
+  photos: SourceBlockPhotoMeta[];
+  photoGroups: SourceBlockPhotoGroup[];
 };
 
 /** Viens papildu avots „Citi avoti” — struktūra kā AutoDNA / CarVertical + RAW žurnāls. */
@@ -972,7 +995,7 @@ export function emptyLtabRow(): LtabIncidentRow {
 }
 
 export function emptyLtabBlock(): LtabBlockState {
-  return { rows: [emptyLtabRow()], comments: "", pdfImportRaw: "", aiContextRaw: "" };
+  return { rows: [emptyLtabRow()], comments: "", pdfImportRaw: "", aiContextRaw: "", photos: [], photoGroups: [] };
 }
 
 export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
@@ -981,6 +1004,8 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
     incidents: [emptyLtabRow()],
     comments: "",
     aiContextRaw: "",
+    photos: [],
+    photoGroups: [],
   };
 }
 
@@ -1013,6 +1038,8 @@ export function emptyVinRegistryBlock(): VinRegistryBlockState {
     autoNotes: "",
     comments: "",
     aiContextRaw: "",
+    photos: [],
+    photoGroups: [],
   };
 }
 
@@ -1058,7 +1085,8 @@ export function vinRegistryBlockHasContent(b: VinRegistryBlockState | null | und
     wsStr(b.statusRecords).trim().length > 0 ||
     wsStr(b.rawUnprocessedData).trim().length > 0 ||
     wsStr(b.autoNotes).trim().length > 0 ||
-    wsStr(b.comments).trim().length > 0
+    wsStr(b.comments).trim().length > 0 ||
+    sourceBlockPhotosHaveContent(b)
   );
 }
 
@@ -1139,6 +1167,7 @@ export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): Vi
     aiContextRaw: clipAiContextRaw(b.aiContextRaw),
     ...(wsStr(b.fetchedAt).trim() ? { fetchedAt: wsStr(b.fetchedAt).slice(0, 40) } : {}),
     ...(wsStr(b.fetchMessage).trim() ? { fetchMessage: wsStr(b.fetchMessage).slice(0, 400) } : {}),
+    ...syncedSourceBlockPhotos(b),
   };
 }
 
@@ -1252,6 +1281,24 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
     listingSalesContext,
     aiContextRaw: clipAiContextRaw(raw.aiContextRaw),
   };
+}
+
+export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlocks): string[] {
+  const ids: string[] = [];
+  const take = (b?: { photoGroups?: SourceBlockPhotoGroup[] | null }) => {
+    for (const p of flattenSourceBlockPhotoGroups(b?.photoGroups)) ids.push(p.id);
+  };
+  take(blocks.csdd);
+  take(blocks.autodna);
+  take(blocks.carvertical);
+  take(blocks.tjekbil);
+  take(blocks.mnt_ee);
+  take(blocks.lkf_ee);
+  take(blocks.carinfo);
+  take(blocks.ltab);
+  take(blocks.tirgus);
+  for (const section of blocks.citi_avoti.sections ?? []) take(section);
+  return ids;
 }
 
 export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
@@ -1375,7 +1422,8 @@ export function ltabBlockHasContent(b: LtabBlockState): boolean {
   return (
     (b.rows ?? []).some(ltabRowHasData) ||
     wsStr(b.comments).trim().length > 0 ||
-    ltabCertificateHasContent(b.certificate)
+    ltabCertificateHasContent(b.certificate) ||
+    sourceBlockPhotosHaveContent(b)
   );
 }
 
@@ -1405,7 +1453,8 @@ export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState | null | und
     (safe.vehicleHistoryTimeline ?? []).some((r) => r.date.trim() || r.description.trim()) ||
     (safe.damageDetails ?? []).some((r) => r.date.trim() || r.lossAmount.trim()) ||
     wsStr(safe.comments).trim().length > 0 ||
-    sourcePdfChecklistHasAny(safe.pdfChecklist)
+    sourcePdfChecklistHasAny(safe.pdfChecklist) ||
+    sourceBlockPhotosHaveContent(safe)
   );
 }
 
@@ -1527,6 +1576,8 @@ export type ClientManualVendorBlockPdf = {
   ownersSummary?: string;
   statusRecords?: string;
   autoNotes?: string;
+  photos?: SourceBlockPhotoMeta[];
+  photoGroups?: SourceBlockPhotoGroup[];
 };
 
 /** Strukturēts LTAB bloks PDF — atsevišķi panelī pēc AutoDNA / CV / Auto-Records (kā admin režģī). */
@@ -1534,6 +1585,8 @@ export type ClientManualLtabBlockPdf = {
   rows: LtabIncidentRow[];
   comments: string;
   certificate?: LtabCertificate;
+  photos?: SourceBlockPhotoMeta[];
+  photoGroups?: SourceBlockPhotoGroup[];
 };
 
 export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientManualVendorBlockPdf[] {
@@ -1546,6 +1599,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       mileageRows: (b.serviceHistory ?? []).filter(autoRecordsRowHasData),
       incidentRows: (b.incidents ?? []).filter(ltabRowHasData),
       comments: (b.comments ?? "").trim(),
+      ...syncedSourceBlockPhotos(b),
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
       ...(k === "carvertical" && (b.vehicleHistoryTimeline ?? []).length > 0
         ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline }
@@ -1580,6 +1634,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
         incidentNo: r.country,
       })),
       comments: (b.comments ?? "").trim(),
+      ...syncedSourceBlockPhotos(b),
       ...(ownersSummary ? { ownersSummary } : {}),
       ...(statusRecords ? { statusRecords } : {}),
       ...(autoNotes ? { autoNotes } : {}),
@@ -1604,6 +1659,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       mileageRows: (citi.serviceHistory ?? []).filter(autoRecordsRowHasData),
       incidentRows: (citi.incidents ?? []).filter(ltabRowHasData),
       comments: (citi.comments ?? "").trim(),
+      ...syncedSourceBlockPhotos(citi),
       ...(sourcePdfChecklistHasAny(citi.pdfChecklist) ? { pdfChecklist: citi.pdfChecklist } : {}),
       ...((citi.damageDetails ?? []).length > 0 ? { damageDetails: citi.damageDetails } : {}),
       ...((citi.mileagePasteRaw ?? citi.rawUnprocessedData ?? "").trim()
@@ -1619,6 +1675,7 @@ export function toPdfLtabManualBlock(b: LtabBlockState): ClientManualLtabBlockPd
   return {
     rows: b.rows.filter(ltabRowHasData),
     comments: b.comments.trim(),
+    ...syncedSourceBlockPhotos(b),
     ...(ltabCertificateHasContent(b.certificate) ? { certificate: b.certificate } : {}),
   };
 }
@@ -1796,7 +1853,7 @@ function normalizeVendorIncidentsFromRaw(rowsIn: unknown[]): LtabIncidentRow[] {
 }
 
 function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBlockState {
-  if ("serviceHistory" in raw || "incidents" in raw) {
+  if ("serviceHistory" in raw || "incidents" in raw || "photos" in raw || "photoGroups" in raw) {
     const shIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
     const incIn = Array.isArray(raw.incidents) ? raw.incidents : [];
     const timelineIn = Array.isArray(raw.vehicleHistoryTimeline) ? raw.vehicleHistoryTimeline : [];
@@ -1836,6 +1893,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
           }
         : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
+      ...syncedSourceBlockPhotos(raw),
     };
   }
   return migrateLegacyVendorBlock(parseStandardBlockRaw(raw));
@@ -1870,6 +1928,7 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
       comments,
       aiContextRaw: clipAiContextRaw(raw.aiContextRaw),
       ...(pdfImportRaw ? { pdfImportRaw } : {}),
+      ...syncedSourceBlockPhotos(raw),
     });
   }
   const { head, trailing } = splitTrailingEmptyBy(rows, ltabRowHasData);
@@ -1880,6 +1939,7 @@ function parseLtabBlockRaw(raw: Record<string, unknown>): LtabBlockState {
     comments,
     aiContextRaw: clipAiContextRaw(raw.aiContextRaw),
     ...(pdfImportRaw ? { pdfImportRaw } : {}),
+    ...syncedSourceBlockPhotos(raw),
   });
 }
 
@@ -2067,6 +2127,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     comments: clipCsddField(raw.comments, 12000),
     aiContextRaw: clipCsddField(raw.aiContextRaw, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
     ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
+    ...syncedSourceBlockPhotos(raw),
   };
 }
 
@@ -2095,7 +2156,9 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
     "listingCreated" in raw ||
     "priceDrop" in raw ||
     "priceHistory" in raw ||
-    "listingMileageOdometer" in raw
+    "listingMileageOdometer" in raw ||
+    "photos" in raw ||
+    "photoGroups" in raw
   ) {
     return {
       listedForSale: clip(raw.listedForSale),
@@ -2107,6 +2170,7 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
       listingMileageOdometer: clip(raw.listingMileageOdometer).slice(0, 40),
       listingMileageDate: clip(raw.listingMileageDate).slice(0, 40),
       listingMileageCountry: clip(raw.listingMileageCountry).slice(0, 120),
+      ...syncedSourceBlockPhotos(raw),
     };
   }
   if ("rows" in raw || "comments" in raw) {
@@ -2151,6 +2215,7 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
     ...(Array.isArray(b.vehicleHistoryTimeline) ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline } : {}),
     ...(Array.isArray(b.damageDetails) ? { damageDetails: b.damageDetails } : {}),
     ...(b.pdfChecklist ? { pdfChecklist: b.pdfChecklist } : {}),
+    ...syncedSourceBlockPhotos(b),
   };
 }
 
@@ -2190,6 +2255,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     comments: wsStr(csdd.comments),
     rawUnprocessedData: wsStr(csdd.rawUnprocessedData),
     aiContextRaw: wsStr(csdd.aiContextRaw),
+    ...syncedSourceBlockPhotos(csdd),
   });
   return {
     csdd: csddRepaired,
@@ -2227,6 +2293,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       comments: wsStr(blocks.ltab?.comments),
       pdfImportRaw: wsStr(blocks.ltab?.pdfImportRaw),
       aiContextRaw: wsStr(blocks.ltab?.aiContextRaw),
+      ...syncedSourceBlockPhotos(blocks.ltab ?? {}),
       ...(ltabCertificateHasContent(blocks.ltab?.certificate)
         ? { certificate: blocks.ltab.certificate }
         : ltabCertificateHasContent(d.ltab.certificate)
@@ -2243,6 +2310,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       listingMileageOdometer: wsStr(blocks.tirgus?.listingMileageOdometer).slice(0, 40),
       listingMileageDate: wsStr(blocks.tirgus?.listingMileageDate).slice(0, 40),
       listingMileageCountry: wsStr(blocks.tirgus?.listingMileageCountry).slice(0, 120),
+      ...syncedSourceBlockPhotos(blocks.tirgus ?? {}),
     },
     citi_avoti: {
       sections: (blocks.citi_avoti?.sections ?? d.citi_avoti.sections).map(repairCitiSection),
@@ -2289,7 +2357,9 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
       "detailedRatingRows" in c ||
       "prevInspectionBlock" in c ||
       "prevInspectionDefectRows" in c ||
-      "comments" in c;
+      "comments" in c ||
+      "photos" in c ||
+      "photoGroups" in c;
     if (hasStructuredCsdd) {
       const fields = c.fields && typeof c.fields === "object" ? (c.fields as Record<string, unknown>) : c;
       base.csdd = { ...emptyCsddFields(), ...parseCsddFieldsRaw(fields) };
@@ -2351,7 +2421,7 @@ function parseCitiAvotiSectionRaw(raw: unknown): CitiAvotiSectionState {
   if (!raw || typeof raw !== "object") return emptyCitiAvotiSection();
   const o = raw as Record<string, unknown>;
   const vendor =
-    "serviceHistory" in o || "incidents" in o ?
+    "serviceHistory" in o || "incidents" in o || "photos" in o || "photoGroups" in o ?
       parseVendorAvotuBlockRaw(o)
     : { ...emptyVendorAvotuBlock(), comments: typeof o.comments === "string" ? o.comments.slice(0, 12000) : "" };
   return {

@@ -1,0 +1,317 @@
+import "server-only";
+
+/**
+ * Avotu sadaļu fotogrāfijas (JPEG — Blob + lokālais disks).
+ * Atsevišķa mape no sludinājuma / dīlera / cc.vin / negadījumu foto.
+ */
+
+import crypto from "crypto";
+import fs from "fs/promises";
+import os from "os";
+import path from "path";
+import { del, get, list, put } from "@vercel/blob";
+
+import {
+  getOrderDraftBlobConfig,
+  getOrderDraftStorageDir,
+  isSafeOrderDraftSessionId,
+} from "@/lib/admin-order-draft-store";
+import {
+  flattenSourceBlockPhotoGroups,
+  isSourceBlockPhotoId,
+  normalizeSourceBlockPhotoGroups,
+} from "@/lib/source-block-photo-types";
+
+export const SOURCE_BLOCK_PHOTO_MAX_BYTES = 320 * 1024;
+
+const PHOTO_DIR = "source-block-photos";
+
+const PHOTO_BLOCK_KEYS = [
+  "csdd",
+  "autodna",
+  "carvertical",
+  "tjekbil",
+  "mnt_ee",
+  "lkf_ee",
+  "carinfo",
+  "ltab",
+  "tirgus",
+] as const;
+
+export function makeSourceBlockPhotoId(): string {
+  return `sbp_ph_${crypto.randomBytes(12).toString("hex")}`;
+}
+
+export function isSafeSourceBlockPhotoId(id: string): boolean {
+  return isSourceBlockPhotoId(id);
+}
+
+export function isJpegMagicBuffer(buf: Buffer): boolean {
+  return buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+}
+
+function photoBlobPathname(prefix: string, sessionId: string, photoId: string): string {
+  const p = prefix.endsWith("/") ? prefix : `${prefix}/`;
+  return `${p}${PHOTO_DIR}/${sessionId}/${photoId}.jpg`;
+}
+
+function photoFsPath(draftDir: string, sessionId: string, photoId: string): string {
+  return path.join(draftDir, PHOTO_DIR, sessionId, `${photoId}.jpg`);
+}
+
+function isBlobPrimary(): boolean {
+  return Boolean(getOrderDraftBlobConfig()) && process.env.VERCEL === "1";
+}
+
+function shouldSkipEphemeralFs(): boolean {
+  const blob = getOrderDraftBlobConfig();
+  const draftDir = getOrderDraftStorageDir();
+  if (!blob || !draftDir) return false;
+  const normalized = path.resolve(draftDir);
+  const tmp = path.resolve(os.tmpdir());
+  return process.env.VERCEL === "1" && (normalized === tmp || normalized.startsWith(`${tmp}${path.sep}`));
+}
+
+function collectFromBlock(keep: Set<string>, block: { photos?: unknown; photoGroups?: unknown } | undefined): void {
+  if (!block) return;
+  const groups = normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos);
+  for (const ph of flattenSourceBlockPhotoGroups(groups)) keep.add(ph.id);
+}
+
+export function collectSourceBlockPhotoIdsFromWorkspace(
+  workspace: { sourceBlocks?: unknown } | null | undefined,
+): Set<string> {
+  const keep = new Set<string>();
+  const raw = workspace?.sourceBlocks;
+  if (!raw || typeof raw !== "object") return keep;
+  const blocks = raw as Record<string, { photos?: unknown; photoGroups?: unknown; sections?: unknown }>;
+  for (const key of PHOTO_BLOCK_KEYS) {
+    collectFromBlock(keep, blocks[key]);
+  }
+  const citi = blocks.citi_avoti;
+  if (Array.isArray(citi?.sections)) {
+    for (const section of citi.sections) {
+      if (section && typeof section === "object") {
+        collectFromBlock(keep, section as { photos?: unknown; photoGroups?: unknown });
+      }
+    }
+  }
+  return keep;
+}
+
+export async function writeSourceBlockPhotoJpeg(
+  sessionId: string,
+  photoId: string,
+  jpegBody: Buffer,
+): Promise<void> {
+  if (!isSafeOrderDraftSessionId(sessionId) || !isSafeSourceBlockPhotoId(photoId)) {
+    throw new Error("invalid_ids");
+  }
+
+  let blobOk = false;
+  let fsOk = false;
+
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    try {
+      await put(photoBlobPathname(blob.prefix, sessionId, photoId), jpegBody, {
+        access: "private",
+        token: blob.token,
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: "image/jpeg",
+      });
+      blobOk = true;
+    } catch {
+      blobOk = false;
+    }
+  }
+
+  const draftDir = getOrderDraftStorageDir();
+  const skipFs = shouldSkipEphemeralFs();
+  if (draftDir && !skipFs) {
+    try {
+      const fp = photoFsPath(draftDir, sessionId, photoId);
+      await fs.mkdir(path.dirname(fp), { recursive: true });
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, jpegBody);
+      await fs.rename(tmp, fp);
+      fsOk = true;
+    } catch {
+      fsOk = false;
+    }
+  }
+
+  if (isBlobPrimary()) {
+    if (!blobOk) throw new Error("blob_write_failed");
+    const verify = await readSourceBlockPhotoJpeg(sessionId, photoId);
+    if (!verify) throw new Error("write_verify_failed");
+    return;
+  }
+
+  if (!blobOk && !fsOk) {
+    if (blob && !blobOk) throw new Error("blob_write_failed");
+    throw new Error("write_failed");
+  }
+
+  const verify = await readSourceBlockPhotoJpeg(sessionId, photoId);
+  if (!verify) throw new Error("write_verify_failed");
+}
+
+export async function readSourceBlockPhotoJpeg(sessionId: string, photoId: string): Promise<Buffer | null> {
+  if (!isSafeOrderDraftSessionId(sessionId) || !isSafeSourceBlockPhotoId(photoId)) return null;
+
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    try {
+      const res = await get(photoBlobPathname(blob.prefix, sessionId, photoId), {
+        access: "private",
+        token: blob.token,
+        useCache: false,
+      });
+      if (res && res.statusCode === 200 && res.stream) {
+        const buf = Buffer.from(await new Response(res.stream).arrayBuffer());
+        if (isJpegMagicBuffer(buf)) return buf;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+
+  if (isBlobPrimary()) return null;
+
+  const draftDir = getOrderDraftStorageDir();
+  if (!draftDir || shouldSkipEphemeralFs()) return null;
+  try {
+    const buf = await fs.readFile(photoFsPath(draftDir, sessionId, photoId));
+    if (!isJpegMagicBuffer(buf)) return null;
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteSourceBlockPhoto(sessionId: string, photoId: string): Promise<void> {
+  if (!isSafeOrderDraftSessionId(sessionId) || !isSafeSourceBlockPhotoId(photoId)) return;
+
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    try {
+      await del(photoBlobPathname(blob.prefix, sessionId, photoId), { token: blob.token });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const draftDir = getOrderDraftStorageDir();
+  if (draftDir) {
+    await fs.rm(photoFsPath(draftDir, sessionId, photoId), { force: true });
+  }
+}
+
+export async function pruneOrphanSourceBlockPhotos(sessionId: string, keepPhotoIds: Set<string>): Promise<void> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return;
+
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    try {
+      const prefix = photoBlobPathname(blob.prefix, sessionId, "").replace(/\/$/, "");
+      const { blobs } = await list({ prefix: `${prefix}/`, token: blob.token });
+      await Promise.all(
+        blobs.map(async (b) => {
+          const name = b.pathname.split("/").pop() ?? "";
+          if (!name.endsWith(".jpg")) return;
+          const id = name.slice(0, -".jpg".length);
+          if (!isSafeSourceBlockPhotoId(id)) return;
+          if (keepPhotoIds.has(id)) return;
+          await del(b.pathname, { token: blob.token }).catch(() => undefined);
+        }),
+      );
+    } catch {
+      /* ignore blob cleanup */
+    }
+  }
+
+  const draftDir = getOrderDraftStorageDir();
+  if (!draftDir) return;
+  const dir = path.join(draftDir, PHOTO_DIR, sessionId);
+  let names: string[];
+  try {
+    names = await fs.readdir(dir);
+  } catch {
+    return;
+  }
+  await Promise.all(
+    names.map(async (name) => {
+      if (!name.endsWith(".jpg")) return;
+      const id = name.slice(0, -".jpg".length);
+      if (!isSafeSourceBlockPhotoId(id)) return;
+      if (keepPhotoIds.has(id)) return;
+      await fs.rm(path.join(dir, name), { force: true });
+    }),
+  );
+}
+
+export async function listStoredSourceBlockPhotoIds(sessionId: string): Promise<string[]> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return [];
+  const ids = new Set<string>();
+
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    try {
+      const prefix = photoBlobPathname(blob.prefix, sessionId, "").replace(/\/$/, "");
+      const { blobs } = await list({ prefix: `${prefix}/`, token: blob.token });
+      for (const b of blobs) {
+        const name = b.pathname.split("/").pop() ?? "";
+        if (!name.endsWith(".jpg")) continue;
+        const id = name.slice(0, -".jpg".length);
+        if (isSafeSourceBlockPhotoId(id)) ids.add(id);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const draftDir = getOrderDraftStorageDir();
+  if (draftDir && !shouldSkipEphemeralFs()) {
+    try {
+      const names = await fs.readdir(path.join(draftDir, PHOTO_DIR, sessionId));
+      for (const name of names) {
+        if (!name.endsWith(".jpg")) continue;
+        const id = name.slice(0, -".jpg".length);
+        if (isSafeSourceBlockPhotoId(id)) ids.add(id);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return [...ids];
+}
+
+export async function readSourceBlockPhotosForPdf(
+  sessionId: string,
+  preferredOrder: string[],
+): Promise<{ dataUrls: Record<string, string>; missing: string[] }> {
+  const stored = await listStoredSourceBlockPhotoIds(sessionId);
+  const storedSet = new Set(stored);
+  const ordered: string[] = [];
+  for (const id of preferredOrder) {
+    if (isSafeSourceBlockPhotoId(id) && !ordered.includes(id)) ordered.push(id);
+  }
+  for (const id of stored) {
+    if (!ordered.includes(id)) ordered.push(id);
+  }
+
+  const dataUrls: Record<string, string> = {};
+  const missing: string[] = [];
+  for (const id of ordered) {
+    const buf = await readSourceBlockPhotoJpeg(sessionId, id);
+    if (!buf) {
+      if (preferredOrder.includes(id) || storedSet.has(id)) missing.push(id);
+      continue;
+    }
+    dataUrls[id] = `data:image/jpeg;base64,${buf.toString("base64")}`;
+  }
+  return { dataUrls, missing };
+}

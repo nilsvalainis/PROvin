@@ -35,6 +35,11 @@ type Props = {
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
   aiComment?: (sectionIndex: number) => AdminAiSourceCommentSlot;
+  photosPersistenceEnabled?: boolean;
+  onPhotoGroupsStructuralCommit?: (
+    sectionIndex: number,
+    next: import("@/lib/source-block-photo-types").SourceBlockPhotoGroup[],
+  ) => void;
 };
 
 function sectionFromVendor(
@@ -59,6 +64,8 @@ export function AdminCitiAvotiSourceBlock({
   pdfInclude,
   onPdfIncludeChange,
   aiComment,
+  photosPersistenceEnabled = false,
+  onPhotoGroupsStructuralCommit,
 }: Props) {
   const sections = (value.sections ?? []).length > 0 ? value.sections! : [emptyCitiAvotiSection()];
   const total = sections.length;
@@ -203,6 +210,12 @@ export function AdminCitiAvotiSourceBlock({
                   sessionId={sessionId}
                   aiComment={aiComment?.(index)}
                   onChange={(vendor) => updateSection(index, sectionFromVendor(section, vendor))}
+                  photosPersistenceEnabled={photosPersistenceEnabled}
+                  onPhotoGroupsStructuralCommit={
+                    onPhotoGroupsStructuralCommit
+                      ? (next) => onPhotoGroupsStructuralCommit(index, next)
+                      : undefined
+                  }
                 />
               </div>
             );

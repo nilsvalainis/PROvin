@@ -9,6 +9,8 @@ import { AdminSourceCommentField, type AdminAiSourceCommentSlot } from "@/compon
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
+import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
 import {
   applyAdifyHistoryToTirgus,
@@ -73,6 +75,9 @@ type Props = {
   onMarketAiAnalyze?: (operatorNotes: string, modelTier: AiAdminModelTier) => void;
   /** Pasūtījuma sludinājuma URL — Adify vēstures ielādei. */
   listingUrl?: string | null;
+  sessionId?: string;
+  photosPersistenceEnabled?: boolean;
+  onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
 };
 
 export function AdminTirgusSourceBlock({
@@ -88,6 +93,9 @@ export function AdminTirgusSourceBlock({
   marketAiError = null,
   onMarketAiAnalyze,
   listingUrl = "",
+  sessionId,
+  photosPersistenceEnabled = false,
+  onPhotoGroupsStructuralCommit,
 }: Props) {
   const val = value ?? emptyTirgusFields();
   const [urlDraft, setUrlDraft] = useState(listingUrl?.trim() ?? "");
@@ -442,9 +450,20 @@ export function AdminTirgusSourceBlock({
   const commentsReadonlyClassDefault =
     "min-h-[48px] whitespace-pre-wrap rounded-md border border-slate-100 bg-white/90 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]";
 
+  const photosBlock =
+    sessionId && onPhotoGroupsStructuralCommit ? (
+      <AdminSourceBlockPhotos
+        sessionId={sessionId}
+        photoGroups={val.photoGroups ?? []}
+        disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+        onCommit={onPhotoGroupsStructuralCommit}
+      />
+    ) : null;
+
   const commentsBlock =
     variant === "embedded" ? (
       <>
+        {photosBlock}
         <AdminSourceCommentField
           value={val.comments}
           onChange={(next) => setField("comments", next)}
@@ -465,6 +484,7 @@ export function AdminTirgusSourceBlock({
       </>
     ) : (
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
+        {photosBlock}
         <AdminSourceCommentField
           value={val.comments}
           onChange={(next) => setField("comments", next)}

@@ -11,6 +11,8 @@ import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawFiel
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminIncidentFieldFillOption } from "@/components/admin/AdminIncidentFieldFillOption";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
+import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
@@ -107,6 +109,8 @@ type Props = {
     patched: Partial<WorkspaceSourceBlocks>,
     changedKeys: CopilotSourceKey[],
   ) => void;
+  photosPersistenceEnabled?: boolean;
+  onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -124,6 +128,8 @@ export function AdminVendorAvotuSourceBlock({
   sectionIndex,
   getSourceBlocks,
   applyPatchedBlocks,
+  photosPersistenceEnabled = false,
+  onPhotoGroupsStructuralCommit,
 }: Props) {
   const block = coerceVendorAvotuBlock(value);
   const serviceHistory = block.serviceHistory ?? [];
@@ -659,6 +665,14 @@ export function AdminVendorAvotuSourceBlock({
                 pdfChecklist: sourcePdfChecklistHasAny(next) ? next : undefined,
               })
             }
+          />
+        ) : null}
+        {sessionId && onPhotoGroupsStructuralCommit ? (
+          <AdminSourceBlockPhotos
+            sessionId={sessionId}
+            photoGroups={block.photoGroups ?? []}
+            disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+            onCommit={onPhotoGroupsStructuralCommit}
           />
         ) : null}
         <AdminSourceCommentField
