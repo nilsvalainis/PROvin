@@ -270,10 +270,34 @@ function stripClientMarkdownMarkers(text: string): string {
   return t;
 }
 
+/** LV kārtas skaitļi („2019. gada”, „13. novembrī”) — punkts nav teikuma beigas. */
+const LV_ORDINAL_DOT_RE = /\b(\d{1,4})\./g;
+const LV_DATE_OPENER_RE =
+  /^\s*(?:\d{4}\.\s*gad|\d{1,2}\.\s*(?:janvār|februār|mart|aprīl|maij|jūnij|jūlij|august|septembr|oktobr|novembr|decembr))/i;
+
+function maskLatvianOrdinalDots(text: string): string {
+  return text.replace(LV_ORDINAL_DOT_RE, "$1");
+}
+
+function looksLikeLatvianDateOpener(line: string): boolean {
+  return LV_DATE_OPENER_RE.test(line);
+}
+
+/** Pirmais teikuma punkts, kas nav LV kārtas skaitlis (2019. / 13.). */
+function firstRealSentenceEnd(text: string): number {
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch !== "." && ch !== "!" && ch !== "?") continue;
+    if (ch === "." && i > 0 && /\d/.test(text[i - 1]!)) continue;
+    if (/^\s+\S/.test(text.slice(i + 1))) return i;
+  }
+  return -1;
+}
+
 function looksLikeHeadingLine(line: string): boolean {
   const t = line.trim();
   if (!t || t.length > 90) return false;
-  if (/[.!?].+/.test(t)) return false;
+  if (/[.!?].+/.test(maskLatvianOrdinalDots(t))) return false;
   return true;
 }
 
@@ -287,21 +311,33 @@ function lineToHeadingBody(line: string): string {
   }
   const orphan = t.match(/^\*{1,2}\s+(.*)$/);
   const plain = orphan ? orphan[1]!.trim() : t;
-  const sentence = plain.match(/^([^.!?\n]{3,80}?[.!?])\s+(.+)$/);
-  if (sentence) {
-    const heading = sentence[1]!.replace(/[.!?]\s*$/, "").trim();
+  if (looksLikeLatvianDateOpener(plain) || /^\d{4}\.\s/.test(plain)) {
+    return plain;
+  }
+  const end = firstRealSentenceEnd(plain);
+  if (end >= 3 && end <= 80) {
+    const heading = plain.slice(0, end).replace(/[.!?]\s*$/, "").trim();
+    const rest = plain.slice(end + 1).trim();
     const wordCount = heading.split(/\s+/).filter(Boolean).length;
-    if (wordCount >= 1 && wordCount <= 12) {
-      return `${heading}\n${sentence[2]!.trim()}`;
+    if (rest && wordCount >= 2 && wordCount <= 12 && !/^\d/.test(heading)) {
+      return `${heading}\n${rest}`;
     }
   }
   return plain;
 }
 
+function stripListPrefix(line: string): string {
+  if (looksLikeLatvianDateOpener(line) || /^\s*\d{4}\.\s/.test(line)) return line;
+  return line.replace(/^\s*[-•*–]\s+/, "").replace(/^\s*\d{1,2}[\.)]\s+/, "");
+}
+
 function convertExpertBlockToHeadingBody(block: string): string {
   let p = block.trim();
   if (!p) return "";
-  p = p.replace(/^\s*[-•*–]\s+/gm, "").replace(/^\s*\d+[\.)]\s+/gm, "");
+  p = p
+    .split("\n")
+    .map(stripListPrefix)
+    .join("\n");
   const lines = p
     .split("\n")
     .map((l) => l.trim())

@@ -54,6 +54,33 @@ describe("normalizeProvinExpertAiComment", () => {
     expect(out.split(/\n\n+/).length).toBe(12);
   });
 
+  it("keeps a year at the start of a paragraph and does not turn it into a heading", () => {
+    const out = normalizeProvinExpertAiComment(
+      "2019. gada augustā Berlīnē fiksēts nobraukums 189 858 km. Tas saskan ar dīlera datiem.",
+    );
+    expect(out).toContain("2019. gada augustā");
+    expect(out).not.toMatch(/^2019\n/);
+    expect(out).not.toMatch(/^gada augustā/);
+  });
+
+  it("keeps a day-month opener like 13. novembrī", () => {
+    const out = normalizeProvinExpertAiComment(
+      "13. novembrī 2012. gadā dīleris fiksē atslēgas nolasījumu. Nākamais ieraksts ir 2015. gadā.",
+    );
+    expect(out).toContain("13. novembrī 2012. gadā");
+    expect(out).not.toMatch(/^13\n/);
+    expect(out).not.toMatch(/^novembrī/);
+  });
+
+  it("still turns a title sentence plus body into heading-then-paragraph", () => {
+    const out = normalizeProvinExpertAiComment(
+      "Virsbūves pārbaude ar krāsas mērītāju. Jāmēra šuves un paneļu simetrija.",
+    );
+    expect(out).toBe(
+      "Virsbūves pārbaude ar krāsas mērītāju\nJāmēra šuves un paneļu simetrija.",
+    );
+  });
+
   it("does not clip a long expert comment", () => {
     const long = Array.from({ length: 20 }, (_, i) => `**P${i}.** ${"vārds ".repeat(80)}`).join("\n\n");
     const out = normalizeProvinExpertAiComment(long);

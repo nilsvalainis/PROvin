@@ -248,6 +248,23 @@ describe("aiExpertSourceCommentToRichHtml", () => {
     expect(html).not.toContain("*");
   });
 
+  it("does not bold a year or drop it from a paragraph opener", () => {
+    const html = aiExpertSourceCommentToRichHtml(
+      "2019. gada augustā Berlīnē fiksēts nobraukums 189 858 km. Tas saskan ar dīlera datiem.",
+    );
+    expect(html).toContain("2019. gada augustā");
+    expect(html).not.toContain("<strong>2019</strong>");
+    expect(html).not.toMatch(/^<strong>gada/);
+  });
+
+  it("keeps a two-line year title as the heading, without eating the year", () => {
+    const html = aiExpertSourceCommentToRichHtml(
+      "2019. gada apskate\nBerlīnē fiksēts nobraukums 189 858 km, kas saskan ar dīlera datiem.",
+    );
+    expect(html).toContain("<strong>2019. gada apskate</strong>");
+    expect(html).toContain("Berlīnē fiksēts nobraukums");
+  });
+
   it("strips Gemini leftover ** prefixes", () => {
     const html = aiExpertSourceCommentToRichHtml(
       "** Šī automašīna ir koptāka nekā tipisks imports.\n\n** Tuvākais rēķins ir piekare.",

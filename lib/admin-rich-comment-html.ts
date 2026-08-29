@@ -74,12 +74,19 @@ function expertBlockToRichHtml(block: string): string {
   if (nl > 0 && nl <= 90) {
     const heading = block.slice(0, nl).trim();
     const body = block.slice(nl + 1).trim();
-    if (heading && body && !/[.!?].+/.test(heading)) {
+    const headingForSentence = heading.replace(/\b(\d{1,4})\./g, "$1");
+    if (heading && body && !/[.!?].+/.test(headingForSentence)) {
       return `<strong>${escapeHtmlPlain(heading)}</strong><br />${escapeHtmlPlain(body)}`;
     }
   }
   const single = block.trim();
-  if (single.length > 0 && single.length <= 90 && !/[.!?].+/.test(single) && !/[.!?]$/.test(single)) {
+  const singleForSentence = single.replace(/\b(\d{1,4})\./g, "$1");
+  if (
+    single.length > 0 &&
+    single.length <= 90 &&
+    !/[.!?].+/.test(singleForSentence) &&
+    !/[.!?]$/.test(singleForSentence)
+  ) {
     return `<strong>${escapeHtmlPlain(single)}</strong>`;
   }
   return escapeHtmlPlain(block).replace(/\r?\n/g, "<br />");
