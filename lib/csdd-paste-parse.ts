@@ -132,6 +132,8 @@ export function parseCsddTechnicalFields(
   | "prevInspectionBlock"
   | "prevInspectionWarnings"
   | "technicalInspectionWarnings"
+  | "photos"
+  | "photoGroups"
 > {
   const st = extractRegistryStructuredFields(raw);
   const basics = parseLvRegistryBasics(raw);

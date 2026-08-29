@@ -1829,6 +1829,8 @@ export function migrateLegacyVendorBlock(legacy: StandardSourceBlockState): Vend
     incidents,
     comments: legacy.comments,
     aiContextRaw: "",
+    photos: [],
+    photoGroups: [],
   };
 }
 
