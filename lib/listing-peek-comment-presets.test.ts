@@ -5,6 +5,7 @@ import {
   LISTING_PEEK_TOPICS,
   assembleListingPeekCustomerComment,
   insertListingPeekLetterSentence,
+  joinListingPeekSentences,
   LISTING_PEEK_ODOMETER_AUDIT_TAIL,
   listingPeekPhraseByTone,
   parseListingPeekAiPayload,
@@ -12,8 +13,20 @@ import {
   stripListingPeekMarkdown,
 } from "@/lib/listing-peek-comment-presets";
 
+describe("joinListingPeekSentences", () => {
+  it("continues the same paragraph after a period and one space", () => {
+    expect(joinListingPeekSentences("Pirmais teikums.", "Otrais teikums.")).toBe(
+      "Pirmais teikums. Otrais teikums.",
+    );
+    expect(joinListingPeekSentences("Sveiki!", "Ticamība ir augsta.")).toBe(
+      "Sveiki! Ticamība ir augsta.",
+    );
+    expect(joinListingPeekSentences("Bez punkta", "Nākamais.")).toBe("Bez punkta. Nākamais.");
+  });
+});
+
 describe("assembleListingPeekCustomerComment", () => {
-  it("builds the numbered letter the operator already sends", () => {
+  it("joins templates in one paragraph after Sveiki", () => {
     const comment = assembleListingPeekCustomerComment({
       lines: {
         odometer: listingPeekPhraseByTone("odometer", "positive"),
@@ -23,16 +36,18 @@ describe("assembleListingPeekCustomerComment", () => {
         photos: listingPeekPhraseByTone("photos", "positive"),
       },
     });
-    expect(comment.startsWith(`${LISTING_PEEK_COMMENT_GREETING}\n\n`)).toBe(true);
-    expect(comment).toContain("1. Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta");
-    expect(comment).toContain("2. Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.");
-    expect(comment).toContain("3. Tehniski šim modelim ir nianses, kuras noteikti būs jāņem vērā");
-    expect(comment).toContain("4. Pārdevējs ar salīdzinoši labu reputāciju un caurspīdīgu profilu");
-    expect(comment).toContain("5. Virspusēji apskatot sludinājuma fotogrāfijas, būtiski vizuāli trūkumi netika konstatēti");
+    expect(comment.startsWith(`${LISTING_PEEK_COMMENT_GREETING} `)).toBe(true);
+    expect(comment).not.toMatch(/\n(?!\n)/);
+    expect(comment).not.toContain("1. ");
+    expect(comment).toContain("Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta");
+    expect(comment).toContain(". Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.");
+    expect(comment).toContain(". Tehniski šim modelim ir nianses, kuras noteikti būs jāņem vērā");
+    expect(comment).toContain(". Pārdevējs ar salīdzinoši labu reputāciju un caurspīdīgu profilu");
+    expect(comment).toContain(". Virspusēji apskatot sludinājuma fotogrāfijas, būtiski vizuāli trūkumi netika konstatēti");
     expect(comment).not.toContain(LISTING_PEEK_COMMENT_CLOSER);
   });
 
-  it("skips empty topics and renumbers", () => {
+  it("skips empty topics and still stays in one paragraph", () => {
     const comment = assembleListingPeekCustomerComment({
       greeting: false,
       lines: {
@@ -41,10 +56,7 @@ describe("assembleListingPeekCustomerComment", () => {
       },
     });
     expect(comment).toBe(
-      [
-        "1. Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.",
-        "2. Sludinājuma attēlos tika konstatētas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
-      ].join("\n"),
+      "Negadījumu vēsture padziļināti jāpēta maksas datubāzēs. Sludinājuma attēlos tika konstatētas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
     );
   });
 
@@ -53,7 +65,23 @@ describe("assembleListingPeekCustomerComment", () => {
       closer: true,
       lines: { technical: listingPeekPhraseByTone("technical", "caution") },
     });
-    expect(comment.endsWith(LISTING_PEEK_COMMENT_CLOSER)).toBe(true);
+    const [body, closerBlock] = comment.split("\n\n");
+    expect(body).toBe(
+      `${LISTING_PEEK_COMMENT_GREETING} ${listingPeekPhraseByTone("technical", "caution")}`,
+    );
+    expect(body).not.toContain("\n");
+    expect(closerBlock).toBe(LISTING_PEEK_COMMENT_CLOSER);
+  });
+
+  it("still reads an older numbered letter back into topic fields", () => {
+    const incidents = listingPeekPhraseByTone("incidents", "caution");
+    const photos = listingPeekPhraseByTone("photos", "concern");
+    const parsed = parseListingPeekCustomerComment(
+      `${LISTING_PEEK_COMMENT_GREETING}\n\n1. ${incidents}\n2. ${photos}\n\n${LISTING_PEEK_COMMENT_CLOSER}`,
+    );
+    expect(parsed.closer).toBe(true);
+    expect(parsed.lines.incidents).toBe(incidents);
+    expect(parsed.lines.photos).toBe(photos);
   });
 
   it("maps known phrases even when some topics were skipped", () => {
@@ -153,15 +181,16 @@ describe("parseListingPeekAiPayload", () => {
 });
 
 describe("insertListingPeekLetterSentence", () => {
-  it("inserts a specific sentence before the closer", () => {
+  it("inserts a specific sentence before the closer in the same paragraph", () => {
     const base = assembleListingPeekCustomerComment({
       closer: true,
       lines: { technical: listingPeekPhraseByTone("technical", "caution") },
     });
     const next = insertListingPeekLetterSentence(base, "VIN no Vācijas, 2018. gads.");
-    expect(next).toContain("VIN no Vācijas, 2018. gads.");
+    expect(next).toContain(". VIN no Vācijas, 2018. gads.\n\n");
     expect(next.endsWith(LISTING_PEEK_COMMENT_CLOSER)).toBe(true);
     expect(next.indexOf("VIN no Vācijas")).toBeLessThan(next.indexOf(LISTING_PEEK_COMMENT_CLOSER));
+    expect(next.split("\n\n")).toHaveLength(2);
   });
 });
 

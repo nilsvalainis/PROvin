@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-08-29.1 — Ātrie vērtējumi: sagataves turpina to pašu rindkopu
+ *   (punkts + viena atstarpe), bez 1. 2. 3. saraksta.
  * - 2026-08-26.1 — Ieteikumi: katram auto viena virsbūves/krāsas-biezuma
  *   sadaļa (mērītājs, 150-170 / ~200 mikroni, nobīde 50-100, iekšējās ailes).
  *   Tipiskais garums 6-12, lai šī sadaļa neizstumtu citus soļus.
@@ -56,4 +58,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-26.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-08-29.1";

@@ -101,6 +101,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(
       /AI_LISTING_PEEK_COMMENT_SYSTEM[\s\S]*?Field-agent .*bold.*NEDER/,
     );
+    expect(prompts).toMatch(
+      /AI_LISTING_PEEK_COMMENT_SYSTEM[\s\S]*?VIENA rindkopa/,
+    );
   });
 
   it("summary prompt demands short opinion not section recapitulation", () => {

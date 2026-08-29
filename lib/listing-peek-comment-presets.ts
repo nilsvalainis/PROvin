@@ -210,31 +210,45 @@ export function stripListingPeekMarkdown(text: string): string {
     .replace(/__/g, "");
 }
 
+/** Sagatave turpina iepriekšējo tekstu tajā pašā rindkopā: punkts + viena atstarpe. */
+export function joinListingPeekSentences(existing: string, add: string): string {
+  const next = add.replace(/\r/g, "").trim();
+  const current = existing.replace(/\r/g, "").replace(/[ \t]+$/gm, "").replace(/\n+$/, "").trimEnd();
+  if (!next) return current.trim();
+  if (!current.trim()) return next;
+  const left = current.trim();
+  if (/[.!?…]$/.test(left)) return `${left} ${next}`;
+  return `${left}. ${next}`;
+}
+
 export function assembleListingPeekCustomerComment(input: {
   greeting?: boolean;
   closer?: boolean;
   lines: Partial<Record<ListingPeekTopicId, string>>;
 }): string {
   const points = LISTING_PEEK_TOPIC_IDS.map((id) => input.lines[id]?.trim() ?? "").filter(Boolean);
-  const blocks: string[] = [];
-  if (input.greeting !== false) blocks.push(LISTING_PEEK_COMMENT_GREETING);
-  if (points.length) {
-    blocks.push(points.map((text, i) => `${i + 1}. ${text}`).join("\n"));
+  let body = input.greeting !== false ? LISTING_PEEK_COMMENT_GREETING : "";
+  for (const text of points) {
+    body = joinListingPeekSentences(body, text);
   }
+  const blocks: string[] = [];
+  if (body) blocks.push(body);
   if (input.closer) blocks.push(LISTING_PEEK_COMMENT_CLOSER);
   return blocks.join("\n\n").trim();
 }
 
-/** Ieliek teikumu vēstulē pirms AUDITS closer — sagatave + operatora papildinājumi. */
+/** Ieliek teikumu vēstulē pirms AUDITS closer — tajā pašā rindkopā caur punktu un atstarpi. */
 export function insertListingPeekLetterSentence(letter: string, sentence: string): string {
   const add = sentence.trim();
   const current = letter.replace(/\r/g, "").trim();
   if (!add) return current;
   if (current.includes(add)) return current;
   if (current.includes(LISTING_PEEK_COMMENT_CLOSER)) {
-    return current.replace(LISTING_PEEK_COMMENT_CLOSER, `${add}\n\n${LISTING_PEEK_COMMENT_CLOSER}`).trim();
+    const before = current.slice(0, current.indexOf(LISTING_PEEK_COMMENT_CLOSER)).trim();
+    const joined = joinListingPeekSentences(before, add);
+    return `${joined}\n\n${LISTING_PEEK_COMMENT_CLOSER}`.trim();
   }
-  return current ? `${current}\n\n${add}` : add;
+  return joinListingPeekSentences(current, add);
 }
 
 export function applyListingPeekLetterCloser(letter: string, closer: boolean): string {
@@ -292,7 +306,17 @@ export function parseListingPeekCustomerComment(raw: string): {
     const leftover = withoutCloser
       .replace(new RegExp(`^${LISTING_PEEK_COMMENT_GREETING}\\s*`, "i"), "")
       .trim();
-    if (leftover) lines.odometer = leftover;
+    for (const topic of LISTING_PEEK_TOPICS) {
+      if (!unused.has(topic.id)) continue;
+      const hit = topic.phrases.find((p) => leftover.includes(p.text));
+      if (hit) {
+        lines[topic.id] = hit.text;
+        unused.delete(topic.id);
+      }
+    }
+    if (!LISTING_PEEK_TOPIC_IDS.some((id) => lines[id]) && leftover) {
+      lines.odometer = leftover;
+    }
   }
 
   return { closer, lines };
