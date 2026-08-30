@@ -319,6 +319,7 @@ const wizardFooterBtnBase =
 const wizardFooterNav = `${wizardFooterBtnBase} border border-slate-300 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700`;
 const wizardFooterPreview = `${wizardFooterBtnBase} border border-amber-600/35 bg-[#FFD700] text-amber-950 shadow-sm hover:bg-[#ffe033]`;
 const wizardFooterPdf = `${wizardFooterBtnBase} border border-emerald-800/40 bg-[#22C55E] text-white shadow-sm hover:bg-[#16a34a]`;
+const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] border border-slate-800 bg-slate-900 text-white shadow-sm hover:bg-black`;
 
 function adminCommentFieldLabel(icon: LucideIcon, title: string) {
   return (
@@ -2814,7 +2815,7 @@ export function OrderDetailWorkspace({
     [wizardStepLevels],
   );
 
-  const openPrintReport = async () => {
+  const openPrintReport = async (opts?: { printInk?: boolean }) => {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
       await flushWorkspaceServerPatch({ showFlash: false });
@@ -3046,6 +3047,7 @@ export function OrderDetailWorkspace({
       ccVinPhotoDataUrls,
       incidentPhotoDataUrls,
       sourceBlockPhotoDataUrls,
+      printInk: Boolean(opts?.printInk),
     });
 
     const w = window.open("", "_blank");
@@ -3061,12 +3063,13 @@ export function OrderDetailWorkspace({
       checkoutLine: payload.checkoutLine,
       amountTotalCents: payload.amountTotal,
     });
+    const printFileTitle = opts?.printInk ? printTitle.replace(/\.pdf$/i, "_drukai.pdf") : printTitle;
     let printed = false;
     const schedulePrint = () => {
       if (printed) return;
       printed = true;
       try {
-        w.document.title = printTitle;
+        w.document.title = printFileTitle;
         w.focus();
         w.print();
       } catch {
@@ -4585,6 +4588,14 @@ export function OrderDetailWorkspace({
           </button>
           <button type="button" onClick={() => void openPrintReport()} className={wizardFooterPdf}>
             Ģenerēt PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ printInk: true })}
+            className={wizardFooterPrintInk}
+            title="Tā pati atskaite ar tumšāku tekstu un kontūrām papīra drukai"
+          >
+            Drukājamā versija
           </button>
         </div>
       </div>

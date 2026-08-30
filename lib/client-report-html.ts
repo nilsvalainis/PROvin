@@ -116,6 +116,10 @@ import {
 } from "@/lib/section-icons";
 import { serviceWorkIconId } from "@/lib/service-work-icon";
 import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
+import {
+  clientReportPrintInkCss,
+  PROVIN_REPORT_PRINT_INK_CLASS,
+} from "@/lib/client-report-print-ink-css";
 import { buildSourceMileageSparkHtml, buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
 import { buildDamageZoneSilhouetteSvg } from "@/lib/damage-zones";
 import {
@@ -2863,6 +2867,8 @@ export function buildClientReportDocumentHtml(args: {
   ccVinPhotoDataUrls?: Map<string, string>;
   incidentPhotoDataUrls?: Map<string, string>;
   sourceBlockPhotoDataUrls?: Map<string, string>;
+  /** Papīra versija ar palielinātu kontrastu — digitālo PDF CSS nemaina. */
+  printInk?: boolean;
 }): string {
   const {
     payload: p,
@@ -2872,6 +2878,7 @@ export function buildClientReportDocumentHtml(args: {
     ccVinPhotoDataUrls,
     incidentPhotoDataUrls,
     sourceBlockPhotoDataUrls,
+    printInk = false,
   } = args;
   const vis = mergePdfVisibility(p.pdfVisibility);
 
@@ -2991,8 +2998,15 @@ export function buildClientReportDocumentHtml(args: {
     lines.push('<p class="mirror-line"><strong>Demonstrācijas dati</strong> — daļa lauku ir parauga rakstura.</p>');
   }
 
+  if (printInk) {
+    lines.push(
+      '<p class="no-print pdf-print-ink-banner">Drukājamā versija — palielināts kontrasts papīram. Digitālajam PDF lietojiet „Ģenerēt PDF”.</p>',
+    );
+  }
+
+  const printBtnLabel = printInk ? "Drukāt (augsts kontrasts)" : "Drukāt / PDF";
   lines.push(
-    '<p class="no-print" style="margin-top:12px"><button type="button" style="padding:7px 14px;font-size:12px;border-radius:6px;border:1px solid #94a3b8;background:#fff;color:#475569;cursor:pointer;font-family:Inter,sans-serif;font-weight:600" onclick="window.print()">Drukāt / PDF</button></p>',
+    `<p class="no-print" style="margin-top:12px"><button type="button" style="padding:7px 14px;font-size:12px;border-radius:6px;border:1px solid #94a3b8;background:#fff;color:#475569;cursor:pointer;font-family:Inter,sans-serif;font-weight:600" onclick="window.print()">${printBtnLabel}</button></p>`,
   );
 
   lines.push(
@@ -3006,11 +3020,13 @@ export function buildClientReportDocumentHtml(args: {
 
   const vinForFile = (p.vin?.trim().replace(/[^A-Za-z0-9]/g, "_") || "nav_VIN").slice(0, 48);
   const docTitle = `Atskaite_${vinForFile}.pdf`;
-  const html = `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/>
+  const htmlClass = printInk ? ` class="${PROVIN_REPORT_PRINT_INK_CLASS}"` : "";
+  const inkCss = printInk ? clientReportPrintInkCss() : "";
+  const html = `<!DOCTYPE html><html lang="lv"${htmlClass}><head><meta charset="utf-8"/>
 <meta name="color-scheme" content="light"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<title>${escapeHtml(docTitle)}</title><style>${clientReportPrintCss()}</style></head><body class="provin-report-doc">${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
+<title>${escapeHtml(docTitle)}</title><style>${clientReportPrintCss()}${inkCss}</style></head><body class="provin-report-doc">${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
   return html;
 }

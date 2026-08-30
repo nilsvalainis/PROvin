@@ -75,6 +75,30 @@ describe("PDF design system", () => {
     expect(html).toContain(".pdf-ltab-loss-history{\n        border-color:var(--pdf-line);background:#fff;");
   });
 
+  it("keeps the digital PDF palette unless print-ink is requested", () => {
+    const html = doc();
+    expect(html).toContain("--pdf-line:#E9EDF3");
+    expect(html).not.toContain('class="provin-report-print-ink"');
+    expect(html).not.toContain("--pdf-line:#111827");
+    expect(html).toContain("Drukāt / PDF");
+  });
+
+  it("adds a high-contrast print-ink overlay without replacing digital tokens", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({ notes: "Klienta piezīme" }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      printInk: true,
+    });
+    expect(html).toContain('class="provin-report-print-ink"');
+    expect(html).toContain("--pdf-line:#E9EDF3");
+    expect(html).toContain("--pdf-line:#111827");
+    expect(html).toContain("Drukājamā versija");
+    expect(html).toContain("Drukāt (augsts kontrasts)");
+  });
+
   it("uses tokens instead of per-section radii and paddings", () => {
     const html = doc();
     const zoneCss = html.slice(html.indexOf(".pdf-unified-mileage-zone{"));
