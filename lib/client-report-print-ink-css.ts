@@ -2,27 +2,25 @@
 export const PROVIN_REPORT_PRINT_INK_CLASS = "provin-report-print-ink";
 
 /**
- * Papīra versija: gaišie pelēkie toņi un 1px līnijas printerī pazūd.
- * Pārraksta tokenus + zināmos sekundāros tekstus uz gandrīz melnu, bez foto filtra.
+ * Papīra versija: tumšāks teksts, lai pelēkie paraksti printerī paliek salasāmi.
+ * Kartīšu rāmji paliek 1px un tā pati gaišā valoda — tikai par vienu soli tumšāki.
  */
 export function clientReportPrintInkCss(): string {
   const root = `html.${PROVIN_REPORT_PRINT_INK_CLASS}`;
   return `
       ${root}{
-        --pdf-line:#111827;
-        --pdf-line-soft:#4b5563;
-        --pdf-shadow:none;
-        --pdf-comment-bg:#fff;
-        --pdf-comment-line:#111827;
-        --pdf-comment-edge:#111827;
+        --pdf-line:#C5CDD8;
+        --pdf-line-soft:#D8DEE7;
+        --pdf-shadow:0 1px 2px rgba(15,23,42,.06);
+        --pdf-comment-bg:#F6FAFF;
+        --pdf-comment-line:#C5D4EA;
+        --pdf-comment-edge:#8AA9D4;
       }
-      ${root},
-      ${root} body{
-        color:#000!important;
-        -webkit-font-smoothing:none;
-        -moz-osx-font-smoothing:grayscale;
+      ${root} body.provin-report-doc{color:#0f172a;}
+      @media print{
+        ${root},
+        ${root} body{-webkit-font-smoothing:none;-moz-osx-font-smoothing:grayscale;}
       }
-      ${root} body.provin-report-doc{font-weight:500;}
       ${root} .provin-report-doc .pdf-v1-meta,
       ${root} .provin-report-doc .pdf-v1-meta .pdf-vin,
       ${root} .provin-report-doc .pdf-life-ico,
@@ -52,61 +50,19 @@ export function clientReportPrintInkCss(): string {
       ${root} .provin-report-doc [style*="#6e6e73"],
       ${root} .provin-report-doc [style*="#94a3b8"],
       ${root} .provin-report-doc [style*="#475569"]{
-        color:#111827!important;font-weight:600;
+        color:#334155;
       }
-      ${root} .provin-report-doc .pdf-surface-card,
-      ${root} .provin-report-doc .pdf-v1-panel,
-      ${root} .provin-report-doc .pdf-unified-mileage-zone,
-      ${root} .provin-report-doc .pdf-unified-incidents-zone,
-      ${root} .provin-report-doc .pdf-life-card,
-      ${root} .provin-report-doc .pdf-summary-tile,
-      ${root} .provin-report-doc .pdf-listing-price-history,
-      ${root} .provin-report-doc .pdf-ltab-loss-history,
-      ${root} .provin-report-doc .pdf-doc-footer{
-        border-color:#111827!important;
-        border-width:1.75px!important;
-        box-shadow:none!important;
-      }
-      ${root} .provin-report-doc .pdf-sec-head--brand,
-      ${root} .provin-report-doc .pdf-iriss-approved .pdf-sec-head--brand{
-        border-bottom-color:#111827!important;
-        border-bottom-width:2px!important;
-      }
-      ${root} .provin-report-doc .pdf-life-rail{
-        background:#1e293b!important;width:3px;
-      }
-      ${root} .provin-report-doc .pdf-life-dot{
-        border-color:#0f172a!important;border-width:2.5px;
-      }
-      ${root} .provin-report-doc .pdf-life-item--alert .pdf-life-dot,
-      ${root} .provin-report-doc .pdf-life-item--incident .pdf-life-dot{
-        background:#b91c1c!important;border-color:#b91c1c!important;
-      }
-      ${root} .provin-report-doc .pdf-life-year{
-        background:#e2e8f0!important;border:1.5px solid #111827;
-      }
-      ${root} .provin-report-doc .pdf-life-year__num{color:#003a7a!important;}
-      ${root} .provin-report-doc .pdf-life-km{
-        background:#e2e8f0!important;border:1px solid #111827;color:#000!important;
-      }
-      ${root} .provin-report-doc .pdf-src-zone{border-top-color:#111827;}
+      ${root} .provin-report-doc .pdf-life-rail{background:#94A3B8;}
       ${root} .provin-report-doc .pdf-src-mileage-spark-grid{
-        stroke:#64748b!important;opacity:1!important;
+        stroke:#94A3B8;opacity:0.85;
       }
       ${root} .provin-report-doc .pdf-src-mileage-spark-ghost{
-        stroke:#334155!important;opacity:0.85!important;
+        stroke:#64748B;opacity:0.55;
       }
-      ${root} .provin-report-doc .pdf-csdd-ta-warn--gray{
-        border-left-color:#111827!important;color:#000!important;background:#f1f5f9!important;
-      }
-      ${root} .provin-report-doc .pdf-doc-footer__heading{color:#003a7a!important;}
-      ${root} .provin-report-doc .pdf-doc-footer__col--confidential{
-        border-left-color:#003a7a!important;background:#e2e8f0!important;
-      }
-      ${root} .provin-report-doc .pdf-v1-logo tspan[fill="#0061D2"]{fill:#003a7a;}
+      ${root} .provin-report-doc .pdf-csdd-ta-warn--gray{color:#1e293b;}
       ${root} .pdf-print-ink-banner{
-        margin:0 0 12px;padding:8px 10px;border:1px solid #111827;border-radius:8px;
-        font-size:12px;font-weight:600;color:#111827;background:#f8fafc;
+        margin:0 0 12px;padding:8px 10px;border:1px solid #C5CDD8;border-radius:8px;
+        font-size:12px;font-weight:500;color:#334155;background:#f8fafc;
       }
   `;
 }

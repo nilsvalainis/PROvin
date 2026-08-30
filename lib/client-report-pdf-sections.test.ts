@@ -79,8 +79,10 @@ describe("PDF design system", () => {
     const html = doc();
     expect(html).toContain("--pdf-line:#E9EDF3");
     expect(html).not.toContain('class="provin-report-print-ink"');
-    expect(html).not.toContain("--pdf-line:#111827");
+    expect(html).not.toContain("--pdf-line:#C5CDD8");
     expect(html).toContain("Drukāt / PDF");
+    expect(html).not.toContain('document.body.innerHTML=""');
+    expect(html).toContain("document.fonts.load");
   });
 
   it("adds a high-contrast print-ink overlay without replacing digital tokens", () => {
@@ -94,7 +96,8 @@ describe("PDF design system", () => {
     });
     expect(html).toContain('class="provin-report-print-ink"');
     expect(html).toContain("--pdf-line:#E9EDF3");
-    expect(html).toContain("--pdf-line:#111827");
+    expect(html).toContain("--pdf-line:#C5CDD8");
+    expect(html).not.toContain("--pdf-line:#111827");
     expect(html).toContain("Drukājamā versija");
     expect(html).toContain("Drukāt (augsts kontrasts)");
   });

@@ -1903,16 +1903,19 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
 function reportFontGuardScript(): string {
   return `<script>
 (function(){
-  function fail(){
-    var m=document.createElement("div");
-    m.className="mirror-font-error";
-    m.innerHTML="<p><strong>Inter</strong> fonts nav ielādējušies. Pārbaudiet tīklu un mēģiniet vēlreiz. PDF netiks drukāts ar pareizu noformējumu.</p>";
-    if(document.body){document.body.innerHTML="";document.body.appendChild(m);}
+  function loadInter(){
+    if(!document.fonts||!document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load("400 12px Inter"),
+      document.fonts.load("600 12px Inter"),
+      document.fonts.load("700 12px Inter")
+    ]);
   }
-  if(!document.fonts||!document.fonts.check){return;}
-  document.fonts.ready.then(function(){
-    if(!document.fonts.check("12px Inter")){fail();}
-  }).catch(fail);
+  var ready=loadInter().catch(function(){});
+  window.__provinReportReady=ready;
+  ready.then(function(){
+    document.documentElement.setAttribute("data-provin-fonts","ready");
+  });
 })();
 </script>`;
 }
