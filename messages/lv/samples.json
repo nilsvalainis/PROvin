@@ -2,8 +2,7 @@
   "Samples": {
     "heading": "Paraugi",
     "lead": "Reāli PROVIN AUDITA piemēri - kā izskatās gatava atskaite, pirms Tu pasūti savu.",
-    "goalLabel": "Par auto",
-    "reportSummary": "Pilna vēstures atskaite: apvienoti nobraukuma un negadījumu dati no dažādiem avotiem; sludinājuma un risku analīze; ieteikumi klātienes apskatei un kopsavilkums.",
+    "exampleLabel": "PROVIN audita piemērs:",
     "orderCta": "Pasūtīt šādu auditu",
     "previewLabel": "Atskaites piemērs",
     "enlargeLabel": "Pietuvināt",
@@ -11,8 +10,7 @@
     "openPdfLabel": "Atvērt PDF",
     "items": {
       "bmw525e61": {
-        "title": "BMW 525 LCI e61",
-        "product": "PROVIN AUDITS"
+        "title": "BMW 525 LCI e61"
       }
     }
   }

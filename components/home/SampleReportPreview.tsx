@@ -1,7 +1,7 @@
 "use client";
 
 import { Expand } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type MouseEvent } from "react";
 import { SampleReportLightbox } from "@/components/home/SampleReportLightbox";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
@@ -50,7 +50,7 @@ function useIsDesktopPreview() {
 
 /**
  * Desktop/web: scrollable PDF iframe (unchanged).
- * Mobile: full-page PNG preview; „Pietuvināt” opens the original PDF in a native lightbox.
+ * Mobile: full-page PNG preview; „Pietuvināt” opens the PDF in a new browser tab.
  */
 export function SampleReportPreview({
   href,
@@ -66,9 +66,13 @@ export function SampleReportPreview({
   const isDesktop = useIsDesktopPreview();
   const titleId = useId();
 
-  const openLightbox = () => {
+  const openPdfInBrowser = !isDesktop;
+
+  const onEnlargeClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!href) return;
     recordSampleReportClick();
+    if (openPdfInBrowser) return;
+    event.preventDefault();
     setOpen(true);
   };
 
@@ -98,16 +102,18 @@ export function SampleReportPreview({
             {previewLabel}
           </p>
           {href ? (
-            <button
-              type="button"
-              onClick={openLightbox}
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onEnlargeClick}
               className="pointer-events-auto inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[0.6875rem] font-medium text-[#60a5fa] transition hover:bg-white/5 hover:text-[#93c5fd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/40"
-              aria-haspopup="dialog"
-              aria-expanded={open}
+              aria-haspopup={openPdfInBrowser ? undefined : "dialog"}
+              aria-expanded={openPdfInBrowser ? undefined : open}
             >
               <Expand className="h-3.5 w-3.5" aria-hidden />
               {enlargeLabel}
-            </button>
+            </a>
           ) : null}
         </div>
 
