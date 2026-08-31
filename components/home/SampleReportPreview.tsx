@@ -13,8 +13,8 @@ type Props = {
   previewLabel: string;
   openPdfLabel: string;
   comingSoonLabel: string;
-  /** Fill the parent column (samples page 50/50 split). */
-  fillHeight?: boolean;
+  /** Slightly shorter preview (samples grid). */
+  compact?: boolean;
 };
 
 /** lg breakpoint — desktop keeps the original scrollable iframe preview. */
@@ -60,7 +60,7 @@ export function SampleReportPreview({
   previewLabel,
   openPdfLabel,
   comingSoonLabel,
-  fillHeight = false,
+  compact = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const isDesktop = useIsDesktopPreview();
@@ -78,22 +78,16 @@ export function SampleReportPreview({
 
   const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
   const mobileImageSrc = href ? mobilePreviewImageSrc(href) : null;
-  const desktopPaneClass = fillHeight
-    ? "relative min-h-[min(28rem,55vh)] w-full flex-1 bg-zinc-950 sm:min-h-[min(32rem,58vh)] lg:min-h-0"
+  const desktopPaneClass = compact
+    ? "relative h-[min(22rem,48vh)] w-full bg-zinc-950 sm:h-[min(24rem,50vh)] lg:h-[26rem]"
     : "relative h-[min(28rem,55vh)] w-full bg-zinc-950 sm:h-[min(32rem,58vh)] lg:h-[36rem]";
-  const mobilePaneClass = fillHeight
-    ? "pointer-events-none relative flex min-h-[min(28rem,55vh)] w-full flex-1 items-center justify-center overflow-hidden bg-white p-1.5 sm:min-h-[min(32rem,58vh)]"
+  const mobilePaneClass = compact
+    ? "pointer-events-none relative flex h-[min(22rem,48vh)] w-full items-center justify-center overflow-hidden bg-white p-1.5 sm:h-[min(24rem,50vh)]"
     : "pointer-events-none relative flex h-[min(28rem,55vh)] w-full items-center justify-center overflow-hidden bg-white p-1.5 sm:h-[min(32rem,58vh)]";
 
   return (
     <>
-      <div
-        className={
-          fillHeight
-            ? "flex h-full min-h-[min(28rem,55vh)] w-full min-w-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/35 shadow-[0_12px_40px_-20px_rgba(0,0,0,0.7)] lg:min-h-0"
-            : "flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/35 shadow-[0_12px_40px_-20px_rgba(0,0,0,0.7)]"
-        }
-      >
+      <div className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/35 shadow-[0_12px_40px_-20px_rgba(0,0,0,0.7)]">
         <div className="pointer-events-none relative z-[2] flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
           <p
             id={titleId}

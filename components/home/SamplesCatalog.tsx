@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
 import { SampleReportPreview } from "@/components/home/SampleReportPreview";
 import { Link } from "@/i18n/navigation";
-import { homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
+import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";
 import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { SAMPLE_REPORTS, sampleReportAnchorId } from "@/lib/samples-catalog";
@@ -27,11 +27,11 @@ export function SamplesCatalog() {
   return (
     <section
       id="paraugi"
-      className="scroll-mt-16 bg-transparent px-4 pb-10 pt-6 sm:px-6 sm:pb-14 sm:pt-8 lg:pb-8"
+      className="scroll-mt-16 bg-transparent px-4 pb-10 pt-6 sm:px-6 sm:pb-14 sm:pt-8 lg:pb-12"
       aria-labelledby="samples-catalog-heading"
     >
-      <div className="mx-auto w-full min-w-0">
-        <header className="mb-6 max-w-3xl sm:mb-8">
+      <div className={homeContentMaxClass}>
+        <header className="mb-8 max-w-3xl sm:mb-10">
           <h1
             id="samples-catalog-heading"
             className="text-balance text-lg font-bold uppercase tracking-[0.14em] text-zinc-100 sm:text-xl"
@@ -43,7 +43,7 @@ export function SamplesCatalog() {
           </p>
         </header>
 
-        <div className="flex flex-col">
+        <div className="grid grid-cols-1 gap-10 sm:gap-12 lg:grid-cols-2 lg:gap-8">
           {SAMPLE_REPORTS.map((item) => {
             const title = t(`items.${item.id}.title`);
             const checkoutHref = homeHeroCheckoutHref(item.checkoutPlan);
@@ -51,32 +51,27 @@ export function SamplesCatalog() {
               <article
                 key={item.id}
                 id={sampleReportAnchorId(item.id)}
-                className="scroll-mt-24 border-b border-white/[0.08] py-6 first:pt-0 last:border-b-0 sm:scroll-mt-28 sm:py-8 lg:min-h-[calc(100svh-12.5rem)] lg:scroll-mt-28 lg:py-0"
+                className="flex min-w-0 flex-col scroll-mt-24 sm:scroll-mt-28"
               >
-                <div className="grid min-h-0 min-w-0 grid-cols-1 items-start gap-5 lg:h-[calc(100svh-12.5rem)] lg:grid-cols-2 lg:items-stretch lg:gap-8">
-                  <div className="flex min-w-0 flex-col lg:justify-center">
-                    <p className="text-[0.8125rem] font-medium leading-snug text-zinc-400 sm:text-[0.875rem]">
-                      {renderProvinText(t("exampleLabel"), homeDarkProvinWordmarkOptions)}
-                    </p>
-                    <h2 className="mt-2 text-balance text-xl font-bold leading-snug tracking-tight text-zinc-100 sm:text-2xl">
-                      {title}
-                    </h2>
-                    <SampleOrderCta href={checkoutHref} label={orderCta} className="mt-8 hidden lg:block" />
-                  </div>
-                  <div className="flex min-h-0 min-w-0 flex-col lg:h-full">
-                    <SampleReportPreview
-                      href={item.href}
-                      title={title}
-                      previewLabel={t("previewLabel")}
-                      enlargeLabel={t("enlargeLabel")}
-                      closeLabel={t("closeLabel")}
-                      openPdfLabel={t("openPdfLabel")}
-                      comingSoonLabel={t("openPdfLabel")}
-                      fillHeight
-                    />
-                    <SampleOrderCta href={checkoutHref} label={orderCta} className="mt-5 lg:hidden" />
-                  </div>
+                <p className="text-[0.8125rem] font-medium leading-snug text-zinc-400 sm:text-[0.875rem]">
+                  {renderProvinText(t("exampleLabel"), homeDarkProvinWordmarkOptions)}
+                </p>
+                <h2 className="mt-1.5 text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
+                  {title}
+                </h2>
+                <div className="mt-4 min-w-0">
+                  <SampleReportPreview
+                    href={item.href}
+                    title={title}
+                    previewLabel={t("previewLabel")}
+                    enlargeLabel={t("enlargeLabel")}
+                    closeLabel={t("closeLabel")}
+                    openPdfLabel={t("openPdfLabel")}
+                    comingSoonLabel={t("openPdfLabel")}
+                    compact
+                  />
                 </div>
+                <SampleOrderCta href={checkoutHref} label={orderCta} className="mt-5" />
               </article>
             );
           })}
