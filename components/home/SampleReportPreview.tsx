@@ -21,7 +21,7 @@ type Props = {
 const DESKTOP_MQ = "(min-width: 1024px)";
 
 /** Bust CDN/browser cache when page-1 rasters are regenerated. */
-const MOBILE_PAGE1_ASSET_VERSION = "5";
+const MOBILE_PAGE1_ASSET_VERSION = "6";
 
 /**
  * iOS Safari PDF iframes always crop/zoom — full page only via static image.
