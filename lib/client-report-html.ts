@@ -2838,7 +2838,7 @@ ${pdfDocFooterCss()}
           color-adjust:exact!important;
         }
         body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-        .no-print{display:none!important;}
+        .no-print,.pdf-print-chrome,.pdf-print-ink-banner{display:none!important;visibility:hidden!important;height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;}
         thead{display:table-header-group;}
         tfoot{display:table-footer-group;}
         .pdf-v1-panel--clean,.pdf-summary-tile,.pdf-doc-footer,.pdf-page-flow-chunk--avoid{
@@ -3001,17 +3001,6 @@ export function buildClientReportDocumentHtml(args: {
     lines.push('<p class="mirror-line"><strong>Demonstrācijas dati</strong> — daļa lauku ir parauga rakstura.</p>');
   }
 
-  if (printInk) {
-    lines.push(
-      '<p class="no-print pdf-print-ink-banner">Drukājamā versija — palielināts kontrasts papīram. Digitālajam PDF lietojiet „Ģenerēt PDF”.</p>',
-    );
-  }
-
-  const printBtnLabel = printInk ? "Drukāt (augsts kontrasts)" : "Drukāt / PDF";
-  lines.push(
-    `<p class="no-print" style="margin-top:12px"><button type="button" style="padding:7px 14px;font-size:12px;border-radius:6px;border:1px solid #94a3b8;background:#fff;color:#475569;cursor:pointer;font-family:Inter,sans-serif;font-weight:600" onclick="window.print()">${printBtnLabel}</button></p>`,
-  );
-
   lines.push(
     buildPdfDocFooterHtml({
       vin: p.vin,
@@ -3020,6 +3009,18 @@ export function buildClientReportDocumentHtml(args: {
     }),
   );
   lines.push("</div>");
+
+  const printBtnLabel = printInk ? "Drukāt (augsts kontrasts)" : "Drukāt / PDF";
+  const chrome: string[] = ['<div class="no-print pdf-print-chrome">'];
+  if (printInk) {
+    chrome.push(
+      '<p class="pdf-print-ink-banner">Drukājamā versija — palielināts kontrasts papīram. Digitālajam PDF lietojiet „Ģenerēt PDF”.</p>',
+    );
+  }
+  chrome.push(
+    `<p><button type="button" style="padding:7px 14px;font-size:12px;border-radius:6px;border:1px solid #94a3b8;background:#fff;color:#475569;cursor:pointer;font-family:Inter,sans-serif;font-weight:600" onclick="window.print()">${printBtnLabel}</button></p>`,
+  );
+  chrome.push("</div>");
 
   const vinForFile = (p.vin?.trim().replace(/[^A-Za-z0-9]/g, "_") || "nav_VIN").slice(0, 48);
   const docTitle = `Atskaite_${vinForFile}.pdf`;
@@ -3030,6 +3031,6 @@ export function buildClientReportDocumentHtml(args: {
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<title>${escapeHtml(docTitle)}</title><style>${clientReportPrintCss()}${inkCss}</style></head><body class="provin-report-doc">${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
+<title>${escapeHtml(docTitle)}</title><style>${clientReportPrintCss()}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
   return html;
 }

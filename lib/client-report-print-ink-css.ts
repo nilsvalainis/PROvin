@@ -20,6 +20,19 @@ export function clientReportPrintInkCss(): string {
       @media print{
         ${root},
         ${root} body{-webkit-font-smoothing:none;-moz-osx-font-smoothing:grayscale;}
+        ${root} .no-print,
+        ${root} .pdf-print-chrome,
+        ${root} .pdf-print-ink-banner{
+          display:none!important;visibility:hidden!important;height:0!important;
+          margin:0!important;padding:0!important;overflow:hidden!important;
+        }
+      }
+      @media screen{
+        ${root} .pdf-print-chrome{margin:0 0 14px;}
+        ${root} .pdf-print-ink-banner{
+          margin:0 0 12px;padding:8px 10px;border:1px solid #C5CDD8;border-radius:8px;
+          font-size:12px;font-weight:500;color:#334155;background:#f8fafc;
+        }
       }
       ${root} .provin-report-doc .pdf-v1-meta,
       ${root} .provin-report-doc .pdf-v1-meta .pdf-vin,
@@ -60,9 +73,5 @@ export function clientReportPrintInkCss(): string {
         stroke:#64748B;opacity:0.55;
       }
       ${root} .provin-report-doc .pdf-csdd-ta-warn--gray{color:#1e293b;}
-      ${root} .pdf-print-ink-banner{
-        margin:0 0 12px;padding:8px 10px;border:1px solid #C5CDD8;border-radius:8px;
-        font-size:12px;font-weight:500;color:#334155;background:#f8fafc;
-      }
   `;
 }

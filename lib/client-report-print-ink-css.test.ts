@@ -13,5 +13,7 @@ describe("client report print-ink CSS", () => {
     expect(css).not.toContain("--pdf-line:#111827");
     expect(css).not.toContain("border-width:1.75px");
     expect(css).not.toContain("filter:");
+    expect(css).toContain(".pdf-print-chrome");
+    expect(css).toMatch(/@media print\{[\s\S]*\.pdf-print-chrome/);
   });
 });

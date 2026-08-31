@@ -100,6 +100,10 @@ describe("PDF design system", () => {
     expect(html).not.toContain("--pdf-line:#111827");
     expect(html).toContain("Drukājamā versija");
     expect(html).toContain("Drukāt (augsts kontrasts)");
+    expect(html).toContain('class="no-print pdf-print-chrome"');
+    expect(html).toContain(".no-print,.pdf-print-chrome,.pdf-print-ink-banner{display:none!important");
+    const body = html.slice(html.indexOf("<body"));
+    expect(body.indexOf("pdf-print-chrome")).toBeLessThan(body.indexOf('class="sheet"'));
   });
 
   it("uses tokens instead of per-section radii and paddings", () => {
