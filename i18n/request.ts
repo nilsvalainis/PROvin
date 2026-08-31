@@ -21,6 +21,7 @@ async function loadMessages(locale: AppLocale): Promise<AbstractIntlMessages> {
     provinSelect,
     googleReviews,
     riskAuditGuide,
+    samples,
   ] = await Promise.all([
     import(`../messages/${locale}/meta.json`),
     import(`../messages/${locale}/header.json`),
@@ -37,6 +38,7 @@ async function loadMessages(locale: AppLocale): Promise<AbstractIntlMessages> {
     import(`../messages/${locale}/provinSelect.json`),
     import(`../messages/${locale}/googleReviews.json`),
     import(`../messages/${locale}/riskAuditGuide.json`),
+    import(`../messages/${locale}/samples.json`),
   ]);
 
   return {
@@ -55,6 +57,7 @@ async function loadMessages(locale: AppLocale): Promise<AbstractIntlMessages> {
     ...provinSelect.default,
     ...googleReviews.default,
     ...riskAuditGuide.default,
+    ...samples.default,
   };
 }
 

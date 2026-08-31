@@ -1,0 +1,19 @@
+{
+  "Samples": {
+    "heading": "Samples",
+    "lead": "Real PROVIN AUDIT reports - see what a finished audit looks like before you order yours.",
+    "goalLabel": "About the car",
+    "orderCta": "Order an audit like this",
+    "previewLabel": "Sample report",
+    "enlargeLabel": "Enlarge",
+    "closeLabel": "Close",
+    "openPdfLabel": "Open PDF",
+    "items": {
+      "bmw525e61": {
+        "title": "BMW 525 LCI e61",
+        "product": "PROVIN AUDIT",
+        "summary": "Touring estate. A full history report: mileage, incidents, sources and the expert conclusion."
+      }
+    }
+  }
+}

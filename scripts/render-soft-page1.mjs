@@ -12,7 +12,12 @@ import { fileURLToPath } from "url";
 import sharp from "sharp";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const samples = ["provin-mini-piemers", "provin-audits-piemers", "provin-dilera-dati-piemers"];
+const samples = [
+  "provin-mini-piemers",
+  "provin-audits-piemers",
+  "provin-dilera-dati-piemers",
+  "provin-audits-bmw-525-e61",
+];
 const TARGET_WIDTH = 1400;
 const RENDER_DPI = 220;
 

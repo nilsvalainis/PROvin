@@ -11,6 +11,7 @@ export function shouldHideSiteOrderCtaPin(pathname: string): boolean {
     p === "" ||
     p === "/pasutit" ||
     p === "/pakalpojumi" ||
+    p === "/paraugi" ||
     p === "/par-mums" ||
     p === "/blogs" ||
     p === "/biezi-jautajumi" ||

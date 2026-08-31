@@ -29,6 +29,7 @@ export function HeaderClient() {
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isPakalpojumi = normalizedPath === "/pakalpojumi";
+  const isParaugi = normalizedPath === "/paraugi";
   const isParMums = normalizedPath === "/par-mums";
   const isBlogs = normalizedPath === "/blogs" || normalizedPath.startsWith("/blogs/");
   const isFaqPage = normalizedPath === "/biezi-jautajumi";
@@ -38,19 +39,21 @@ export function HeaderClient() {
     normalizedPath === "/pasutit" ||
     isFaqPage ||
     isPakalpojumi ||
+    isParaugi ||
     isParMums ||
     isBlogs;
 
   const isDemoPath = pathname.includes("/demo");
   const isAzvinDemo = pathname.includes("/demo/azvin");
   /**
-   * Tumšais headeris — sākums / pakalpojumi / Par mums / blogs / BUJ / SELECT / azvin.
+   * Tumšais headeris — sākums / pakalpojumi / paraugi / Par mums / blogs / BUJ / SELECT / azvin.
    */
   const isDarkHeaderSurface =
     isHome ||
     isProvinSelectPieteikums ||
     isAzvinDemo ||
     isPakalpojumi ||
+    isParaugi ||
     isParMums ||
     isBlogs ||
     isFaqPage;
@@ -130,6 +133,7 @@ export function HeaderClient() {
     isProvinSelectPieteikums ||
     isAzvinDemo ||
     isPakalpojumi ||
+    isParaugi ||
     isParMums ||
     isBlogs ||
     isFaqPage;
@@ -139,7 +143,7 @@ export function HeaderClient() {
     isFullBleedSiteNav ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
   ].join(" ");
 
-  const logoShowsLvSuffix = !(isHome || isPakalpojumi || isParMums || isBlogs || isFaqPage);
+  const logoShowsLvSuffix = !(isHome || isPakalpojumi || isParaugi || isParMums || isBlogs || isFaqPage);
 
   return (
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>

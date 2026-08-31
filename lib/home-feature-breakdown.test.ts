@@ -60,13 +60,17 @@ describe("pakalpojumi catalog", () => {
     const sections = buildSiteRailSections("/");
     const keys = sections.map((s) => s.labelKey);
     expect(keys).toContain("pakalpojumi");
+    expect(keys).toContain("paraugi");
     expect(keys).toContain("kasSlapjasAizProvin");
     expect(keys).toContain("blogs");
-    expect(keys.indexOf("kasSlapjasAizProvin")).toBeGreaterThan(keys.indexOf("pakalpojumi"));
+    expect(keys.indexOf("paraugi")).toBeGreaterThan(keys.indexOf("pakalpojumi"));
+    expect(keys.indexOf("kasSlapjasAizProvin")).toBeGreaterThan(keys.indexOf("paraugi"));
     expect(keys).not.toContain("buj");
     expect(keys).not.toContain("kontakti");
+    expect(sections.find((s) => s.labelKey === "paraugi")?.href).toBe("/paraugi");
     expect(sections.find((s) => s.labelKey === "kasSlapjasAizProvin")?.href).toBe("/par-mums");
     expect(siteRailRouteActiveIndex("/pakalpojumi")).toBe(keys.indexOf("pakalpojumi"));
+    expect(siteRailRouteActiveIndex("/paraugi")).toBe(keys.indexOf("paraugi"));
     expect(siteRailRouteActiveIndex("/par-mums")).toBe(keys.indexOf("kasSlapjasAizProvin"));
     expect(siteRailRouteActiveIndex("/blogs")).toBe(keys.indexOf("blogs"));
   });
