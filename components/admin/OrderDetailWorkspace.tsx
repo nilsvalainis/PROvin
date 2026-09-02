@@ -214,13 +214,15 @@ import {
 } from "@/lib/admin-ai-client-errors";
 import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
 import {
-  FLASH_MAX_JOBS,
-  flashMaxJobModelTier,
+  expandFlashMaxRunJobs,
+  flashMaxJobTier,
+  flashMaxSelectedJobs,
   formatFlashMaxNotice,
   formatFlashMaxSkipLabel,
   isFlashMaxEmptyDataError,
   shouldSkipFlashMaxJob,
   type FlashMaxJobResult,
+  type FlashMaxSelection,
 } from "@/lib/admin-flash-max";
 import {
   applySsLvAdifyAutofill,
@@ -1671,35 +1673,50 @@ export function OrderDetailWorkspace({
     [buildAiOrderPayload, payload.aiAllowed, updateSourceBlock],
   );
 
-  const runFlashMax = useCallback(async () => {
+  const runFlashMax = useCallback(async (selection: FlashMaxSelection) => {
     if (!payload.aiAllowed || flashMaxBusy || !workspaceHydrated) return;
+    const picked = flashMaxSelectedJobs(selection);
+    if (picked.length === 0) return;
     setFlashMaxBusy(true);
     setFlashMaxErr(null);
     setFlashMaxNotice(null);
     const results: FlashMaxJobResult[] = [];
-    const total = FLASH_MAX_JOBS.length;
+    const runs = expandFlashMaxRunJobs(picked, wsPersistRef.current.sourceBlocks);
+    const total = runs.length;
     try {
-      for (const [i, job] of FLASH_MAX_JOBS.entries()) {
+      for (const [i, job] of runs.entries()) {
         const cur = wsPersistRef.current;
-        const skip = shouldSkipFlashMaxJob(job, cur.sourceBlocks);
+        const skip = shouldSkipFlashMaxJob(job, cur.sourceBlocks, {
+          citiAvotiSectionIndex: job.citiAvotiSectionIndex,
+        });
         if (skip) {
           results.push({
-            id: job.id,
-            label: job.label,
+            id: job.runId,
+            label: job.runLabel,
             status: "skipped",
             detail: formatFlashMaxSkipLabel(skip),
           });
-          setFlashMaxPhase(`${job.label} — izlaists (${i + 1}/${total})`);
+          setFlashMaxPhase(`${job.runLabel} — izlaists (${i + 1}/${total})`);
           continue;
         }
 
-        setFlashMaxPhase(`${job.label} (${i + 1}/${total})`);
+        setFlashMaxPhase(`${job.runLabel} (${i + 1}/${total})`);
         const edits = orderEditsRef.current;
         let existingDraftPlain = "";
         if (job.kind === "source") {
           existingDraftPlain = adminRichHtmlToPlainText(
-            sourceBlockCommentsPlainForAi(job.blockKey, cur.sourceBlocks, undefined, job.targetField),
+            sourceBlockCommentsPlainForAi(
+              job.blockKey,
+              cur.sourceBlocks,
+              job.citiAvotiSectionIndex,
+              job.targetField,
+            ),
           ).trim();
+        } else if (job.kind === "listing") {
+          existingDraftPlain =
+            job.id === "seller"
+              ? adminRichHtmlToPlainText(cur.sourceBlocks.listing_analysis.sellerPortrait).trim()
+              : adminRichHtmlToPlainText(cur.cenasAtbilstiba).trim();
         } else if (job.id === "incidents") {
           existingDraftPlain = adminRichHtmlToPlainText(edits.internal).trim();
         } else if (job.id === "mileage") {
@@ -1717,20 +1734,28 @@ export function OrderDetailWorkspace({
         const endpoint = job.kind === "source" ? "/api/admin/ai/source-comment" : job.endpoint;
         const body = {
           ...buildAiOrderPayload({ existingDraftPlain }),
-          modelTier: flashMaxJobModelTier(job),
-          ...(job.kind === "source" ? { blockKey: job.blockKey, targetField: job.targetField } : {}),
+          modelTier: flashMaxJobTier(job, selection),
+          ...(job.kind === "source"
+            ? {
+                blockKey: job.blockKey,
+                targetField: job.targetField,
+                ...(job.citiAvotiSectionIndex != null
+                  ? { citiAvotiSectionIndex: job.citiAvotiSectionIndex }
+                  : {}),
+              }
+            : {}),
         };
 
         try {
           const generated = await generateAdminAiText(
             endpoint,
             body,
-            `AI: neizdevās ģenerēt (${job.label})`,
+            `AI: neizdevās ģenerēt (${job.runLabel})`,
           );
           if (!generated.ok && isFlashMaxEmptyDataError(generated.error)) {
             results.push({
-              id: job.id,
-              label: job.label,
+              id: job.runId,
+              label: job.runLabel,
               status: "skipped",
               detail: formatFlashMaxSkipLabel("no_source_data"),
             });
@@ -1748,9 +1773,24 @@ export function OrderDetailWorkspace({
                     job.blockKey,
                     latest.sourceBlocks[job.blockKey],
                     html,
-                    { targetField: job.targetField },
+                    {
+                      targetField: job.targetField,
+                      citiAvotiSectionIndex: job.citiAvotiSectionIndex,
+                    },
                   );
                   updateSourceBlock(job.blockKey, nextBlock);
+                  return;
+                }
+                if (job.kind === "listing") {
+                  if (job.id === "seller") {
+                    const latest = wsPersistRef.current;
+                    updateSourceBlock("listing_analysis", {
+                      ...latest.sourceBlocks.listing_analysis,
+                      sellerPortrait: html,
+                    });
+                    return;
+                  }
+                  updateWs({ cenasAtbilstiba: html });
                   return;
                 }
                 if (job.id === "incidents") {
@@ -1775,27 +1815,27 @@ export function OrderDetailWorkspace({
                 }
                 updateWs({ iriss: html });
               },
-              (error) => setFlashMaxErr(`${job.label}: ${error}`),
+              (error) => setFlashMaxErr(`${job.runLabel}: ${error}`),
             );
           });
           if (applied) {
-            results.push({ id: job.id, label: job.label, status: "ok" });
+            results.push({ id: job.runId, label: job.runLabel, status: "ok" });
           } else {
             results.push({
-              id: job.id,
-              label: job.label,
+              id: job.runId,
+              label: job.runLabel,
               status: "error",
               detail: generated.ok ? "AI: neizdevās" : generated.error,
             });
           }
         } catch {
           results.push({
-            id: job.id,
-            label: job.label,
+            id: job.runId,
+            label: job.runLabel,
             status: "error",
             detail: "Neizdevās savienoties",
           });
-          setFlashMaxErr(`${job.label}: neizdevās savienoties`);
+          setFlashMaxErr(`${job.runLabel}: neizdevās savienoties`);
         }
       }
       setFlashMaxNotice(formatFlashMaxNotice(results));
@@ -3960,7 +4000,7 @@ export function OrderDetailWorkspace({
               phase={flashMaxPhase}
               notice={flashMaxNotice}
               error={flashMaxErr}
-              onClick={() => void runFlashMax()}
+              onRun={(selection) => void runFlashMax(selection)}
             />
           ) : null}
           <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />

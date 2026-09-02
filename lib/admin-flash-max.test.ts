@@ -1,18 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
+  FLASH_MAX_DAILY_JOB_IDS,
   FLASH_MAX_DEFAULT_TIER,
   FLASH_MAX_JOBS,
+  FLASH_MAX_SUMMARY_ONLY_JOB_IDS,
+  defaultFlashMaxSelection,
+  expandFlashMaxRunJobs,
   flashMaxJobModelTier,
+  flashMaxSelectedJobs,
   formatFlashMaxNotice,
   isFlashMaxEmptyDataError,
   shouldSkipFlashMaxJob,
+  summaryOnlyFlashMaxSelection,
 } from "@/lib/admin-flash-max";
-import { createDefaultSourceBlocks, emptyCsddFields } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, emptyCsddFields, emptyVendorAvotuBlock } from "@/lib/admin-source-blocks";
 
 describe("FLASH MAX jobs", () => {
   it("uses per-field models matching standalone ✨ buttons", () => {
     expect(FLASH_MAX_DEFAULT_TIER).toBe("gemini-flash");
-    expect(FLASH_MAX_JOBS.map((j) => j.id)).toEqual([
+    expect(FLASH_MAX_DAILY_JOB_IDS).toEqual([
       "csdd",
       "autodna",
       "carvertical",
@@ -26,10 +32,37 @@ describe("FLASH MAX jobs", () => {
       "summary",
       "sources_comparison",
     ]);
+    expect(defaultFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_DAILY_JOB_IDS]);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "seller" && j.group === "extra")).toBe(true);
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "autodna")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!)).toBe("flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "technical_risks")!)).toBe("flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "summary")!)).toBe("pro");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "seller")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "price")!)).toBe("flash");
+  });
+
+  it("lets the operator pick extras without changing daily defaults", () => {
+    const picked = flashMaxSelectedJobs({
+      selectedIds: ["csdd", "ltab", "summary"],
+      tiers: defaultFlashMaxSelection().tiers,
+    });
+    expect(picked.map((j) => j.id)).toEqual(["csdd", "summary", "ltab"]);
+    expect(summaryOnlyFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_SUMMARY_ONLY_JOB_IDS]);
+  });
+
+  it("expands Citi avoti into one run per section", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.citi_avoti.sections = [
+      { ...emptyVendorAvotuBlock(), comments: "", label: "AutoDNA LV", rawUnprocessedData: "x" },
+      { ...emptyVendorAvotuBlock(), comments: "", label: "", rawUnprocessedData: "" },
+    ];
+    const job = FLASH_MAX_JOBS.find((j) => j.id === "citi_avoti")!;
+    const runs = expandFlashMaxRunJobs([job], blocks);
+    expect(runs.map((r) => r.runLabel)).toEqual(["AutoDNA LV", "Avots 2"]);
+    expect(shouldSkipFlashMaxJob(job, blocks, { citiAvotiSectionIndex: 0 })).toBeNull();
+    expect(shouldSkipFlashMaxJob(job, blocks, { citiAvotiSectionIndex: 1 })).toBe("no_source_data");
   });
 
   it("skips source comments when the block has no data", () => {
