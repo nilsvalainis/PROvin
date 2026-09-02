@@ -64,12 +64,11 @@ describe("test-pricing-5 mobile three-tier model", () => {
     );
     expect(dealer.extraNote).toBeUndefined();
     expect(TP5_DEALER_BRAND_ROWS).toEqual([
-      ["Mercedes-Benz", "BMW", "MINI", "Audi"],
-      ["Volkswagen", "Volvo", "Land Rover", "Jaguar"],
-      ["Škoda", "SEAT", "Peugeot", "Citroën"],
-      ["Renault", "Dacia", "Opel", "Smart"],
+      ["Mercedes-Benz", "BMW", "MINI", "Rolls-Royce", "Audi", "Volkswagen"],
+      ["Volvo", "Land Rover", "Jaguar", "Škoda", "SEAT", "Subaru"],
+      ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
     ]);
-    expect(TP5_DEALER_BRANDS).toHaveLength(16);
+    expect(TP5_DEALER_BRANDS).toHaveLength(18);
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-72h");
     expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");

@@ -1,6 +1,6 @@
 /**
  * AZ.VIN official dealer brands.
- * Includes PROVIN-supported set + secondary-source brands (AUDI…VOLKSWAGEN list) + Rolls-Royce.
+ * Includes PROVIN-supported set + secondary-source brands (AUDI…VOLKSWAGEN list) + Rolls-Royce + Subaru.
  */
 export const AZVIN_DEALER_BRANDS = [
   "Audi",
@@ -16,6 +16,7 @@ export const AZVIN_DEALER_BRANDS = [
   "Renault",
   "Rolls-Royce",
   "SEAT",
+  "Subaru",
   "Škoda",
   "Smart",
   "Volkswagen",

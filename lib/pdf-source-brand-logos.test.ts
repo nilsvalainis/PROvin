@@ -12,8 +12,11 @@ describe("pdfDealerBrandFileKey", () => {
     expect(pdfDealerBrandFileKey("VW Golf")).toBe("volkswagen");
     expect(pdfDealerBrandFileKey("Volkswagen Passat")).toBe("volkswagen");
     expect(pdfDealerBrandFileKey("Mercedes-Benz E220")).toBe("mercedes");
+    expect(pdfDealerBrandFileKey("Rolls-Royce Ghost")).toBe("rolls-royce");
+    expect(pdfDealerBrandFileKey("ROLLS ROYCE PHANTOM")).toBe("rolls-royce");
     expect(pdfDealerBrandFileKey("LAND ROVER DISCOVERY")).toBe("land-rover");
     expect(pdfDealerBrandFileKey("Škoda Octavia")).toBe("skoda");
+    expect(pdfDealerBrandFileKey("Subaru Forester")).toBe("subaru");
   });
 
   it("returns a file key for unmapped makes so a logo can be generated", () => {
@@ -26,6 +29,8 @@ describe("pdfDealerBrandFileKey", () => {
     expect(uri).toBeTruthy();
     expect(uri).toMatch(/^data:image\/svg\+xml/);
     expect(pdfDealerLogoDataUri("AUDI A6")).toBeTruthy();
+    expect(pdfDealerLogoDataUri("Rolls-Royce Ghost")).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(pdfDealerLogoDataUri("Subaru Forester")).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
   it("stays browser-safe so the admin client bundle does not pull node:fs", () => {

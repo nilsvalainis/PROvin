@@ -10,6 +10,8 @@ export type PdfListingPortalLogoId = "sslv" | "auto24" | "mobilede";
 const DEALER_BRAND_ALIASES: { needle: string; file: string }[] = [
   { needle: "mercedes-benz", file: "mercedes" },
   { needle: "mercedes benz", file: "mercedes" },
+  { needle: "rolls-royce", file: "rolls-royce" },
+  { needle: "rolls royce", file: "rolls-royce" },
   { needle: "land rover", file: "land-rover" },
   { needle: "land-rover", file: "land-rover" },
   { needle: "landrover", file: "land-rover" },
@@ -28,6 +30,7 @@ const DEALER_BRAND_ALIASES: { needle: string; file: string }[] = [
   { needle: "audi", file: "audi" },
   { needle: "bmw", file: "bmw" },
   { needle: "smart", file: "smart" },
+  { needle: "subaru", file: "subaru" },
   { needle: "toyota", file: "toyota" },
   { needle: "ford", file: "ford" },
   { needle: "hyundai", file: "hyundai" },

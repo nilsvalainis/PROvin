@@ -34,12 +34,11 @@ export type Tp5MobileService = {
   footnote?: string;
 };
 
-/** Supported manufacturers in a fixed 4×4 display grid (premium/popularity + brand groups). */
+/** Supported manufacturers in a fixed 3×6 display grid (premium/popularity + brand groups). */
 export const TP5_DEALER_BRAND_ROWS = [
-  ["Mercedes-Benz", "BMW", "MINI", "Audi"],
-  ["Volkswagen", "Volvo", "Land Rover", "Jaguar"],
-  ["Škoda", "SEAT", "Peugeot", "Citroën"],
-  ["Renault", "Dacia", "Opel", "Smart"],
+  ["Mercedes-Benz", "BMW", "MINI", "Rolls-Royce", "Audi", "Volkswagen"],
+  ["Volvo", "Land Rover", "Jaguar", "Škoda", "SEAT", "Subaru"],
+  ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
 ] as const;
 
 /** Flat brand list (same set as grid). */
@@ -50,6 +49,7 @@ export const TP5_DEALER_BRAND_LOGO_SRC: Record<(typeof TP5_DEALER_BRANDS)[number
   "Mercedes-Benz": "/brand-logos/mercedes.svg?v=5",
   BMW: "/brand-logos/bmw.svg?v=5",
   MINI: "/brand-logos/mini.svg?v=5",
+  "Rolls-Royce": "/brand-logos/rolls-royce.svg?v=5",
   Audi: "/brand-logos/audi.svg?v=5",
   Volkswagen: "/brand-logos/volkswagen.svg?v=5",
   Volvo: "/brand-logos/volvo.svg?v=5",
@@ -57,6 +57,7 @@ export const TP5_DEALER_BRAND_LOGO_SRC: Record<(typeof TP5_DEALER_BRANDS)[number
   Jaguar: "/brand-logos/jaguar.svg?v=5",
   Škoda: "/brand-logos/skoda.svg?v=5",
   SEAT: "/brand-logos/seat.svg?v=5",
+  Subaru: "/brand-logos/subaru.svg?v=5",
   Peugeot: "/brand-logos/peugeot.svg?v=5",
   Citroën: "/brand-logos/citroen.svg?v=5",
   Renault: "/brand-logos/renault.svg?v=5",

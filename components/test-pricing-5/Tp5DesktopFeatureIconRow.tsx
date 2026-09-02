@@ -117,12 +117,12 @@ export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits" }: Props) 
   return (
     <div className={styles.tp5DesktopFeatureRow}>
       <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
-      <div className="relative mt-8 min-h-[7.5rem] w-full">
+      <div className="relative mt-8 min-h-[9.75rem] w-full xl:min-h-[10.75rem]">
         <AnimatePresence mode="wait" initial={false}>
           {showDealerBrands ? (
             <motion.ul
               key="dealer-brands"
-              className="absolute inset-x-0 top-0 grid w-full list-none grid-cols-8 gap-x-1 gap-y-2.5 xl:gap-y-3"
+              className="absolute inset-x-0 top-0 mx-auto grid w-full max-w-[52rem] list-none grid-cols-6 gap-x-2 gap-y-2.5 xl:max-w-[56rem] xl:gap-y-3"
               aria-label={uiCopy.dealerBrandsAria}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
