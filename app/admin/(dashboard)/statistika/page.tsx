@@ -54,7 +54,7 @@ export default async function AdminStatistikaPage() {
           Statistika
         </h1>
         <p className="mt-1.5 text-[13px] text-[var(--color-provin-muted)]">
-          Konversija no atbildētajiem ātrajiem vērtējumiem un īss vietnes kopsavilkums.
+          Konversija no visiem ātrajiem vērtējumiem un īss vietnes kopsavilkums.
         </p>
       </AdminDashboardHeaderWithMenu>
 

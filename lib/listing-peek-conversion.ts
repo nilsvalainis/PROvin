@@ -95,9 +95,8 @@ export function emptyListingPeekConversionStats(): ListingPeekConversionStats {
 }
 
 /**
- * Konversija tikai no atbildētajiem ātrajiem vērtējumiem (ir nosūtīts komentārs).
- * Unikāli klienti, kas pēc atbildes apmaksājuši kādu PROVIN pakalpojumu
- * (e-pasta vai tālruņa sakritība; demo un testa konti ārā).
+ * Unikāli ātro vērtējumu klienti, kas pēc iesūtījuma apmaksājuši kādu PROVIN pakalpojumu
+ * (e-pasta vai tālruņa sakritība; demo un testa konti ārā). Visi pieprasījumi, ne tikai atbildētie.
  */
 export function buildListingPeekConversionStats(
   peeks: ListingPeekConversionPeekInput[],
@@ -113,12 +112,7 @@ export function buildListingPeekConversionStats(
       skippedPeeks += 1;
       continue;
     }
-    const answeredAt = peek.commentSentAt?.trim();
-    if (!answeredAt) {
-      skippedPeeks += 1;
-      continue;
-    }
-    const ms = peekMs(answeredAt) ?? peekMs(peek.createdAt);
+    const ms = peekMs(peek.createdAt);
     const keys = contactKeys([peek.email], [peek.phone]);
     if (ms == null || keys.length === 0) {
       skippedPeeks += 1;

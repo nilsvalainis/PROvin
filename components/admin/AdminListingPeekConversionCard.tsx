@@ -42,7 +42,7 @@ export function AdminListingPeekConversionCard({ stats, variant = "full" }: Prop
             Ātrie vērtējumi
           </p>
           <h2 className="mt-1 text-base font-semibold text-[var(--color-apple-text)]">
-            Atbildētie → pirkums
+            Iesūtītie → pirkums
           </h2>
         </div>
         <p className="text-[2.25rem] font-semibold leading-none tracking-tight text-[var(--color-apple-text)] tabular-nums">
@@ -50,13 +50,13 @@ export function AdminListingPeekConversionCard({ stats, variant = "full" }: Prop
         </p>
       </div>
       <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-        {stats.convertedPeople.toLocaleString("lv-LV")} no {stats.uniquePeople.toLocaleString("lv-LV")} atbildētajiem
-        klientiem pēc komentāra apmaksāja pakalpojumu.
+        {stats.convertedPeople.toLocaleString("lv-LV")} no {stats.uniquePeople.toLocaleString("lv-LV")} unikālajiem
+        klientiem pēc iesūtījuma apmaksāja pakalpojumu.
       </p>
       {!compact ? (
         <>
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Kpi label="Atbildēti" value={stats.peekCount.toLocaleString("lv-LV")} />
+            <Kpi label="Pieprasījumi" value={stats.peekCount.toLocaleString("lv-LV")} />
             <Kpi label="Klienti" value={stats.uniquePeople.toLocaleString("lv-LV")} />
             <Kpi label="Pirkumi" value={stats.orderCount.toLocaleString("lv-LV")} />
             <Kpi label="Ieņēmumi" value={formatEurFromCents(stats.revenueCents)} />
