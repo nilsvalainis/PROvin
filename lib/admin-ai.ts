@@ -174,13 +174,16 @@ export function formatAiSdkError(e: unknown): string {
       return `Claude modelis nav pieejams (${msg.match(/claude-[\w.-]+/)?.[0] ?? "model"}) — izmanto ${CLAUDE_MODEL_OPUS} / ${CLAUDE_MODEL_SONNET}`;
     }
     if (status === 429 || /rate_limit_error|rate limit/i.test(msg)) {
-      return "Anthropic API limits pārsniegts — uzgaidi vai pārbaudi Anthropic Console billing";
+      return "Anthropic API limits pārsniegts — uzgaidi vai palielini limitu Anthropic Console";
     }
     if (status === 529 || /overloaded/i.test(msg)) {
       return "Claude īslaicīgi pārslogots — mēģini vēlreiz pēc brīža";
     }
-    if (/credit balance is too low|billing/i.test(msg)) {
+    if (/credit balance is too low|insufficient credits?|purchase credits/i.test(msg)) {
       return "Anthropic kontā nepietiek kredīta — papildini Anthropic Console → Billing";
+    }
+    if (/spending limit|usage limit|monthly limit/i.test(msg)) {
+      return "Anthropic tēriņu limits sasniegts — palielini Spend limits Anthropic Console → Billing";
     }
     if (/ai_incomplete_comment/i.test(msg)) {
       return "Claude komentārs nav pabeigts — tokeni ir apmaksāti. Mēģini vēlreiz, lai pabeigtu.";

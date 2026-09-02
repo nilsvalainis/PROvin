@@ -56,11 +56,14 @@ function humanizeAiDetail(raw: string): string {
   if (/models\/gemini|is not found for API version/i.test(detail)) {
     return "Gemini modelis nav pieejams — pārbaudi gemini-3-flash-preview / gemini-2.5-flash un GEMINI_API_KEY";
   }
-  if (/credit balance is too low|billing/i.test(detail)) {
+  if (/429|quota|rate.?limit|RESOURCE_EXHAUSTED|limits pārsniegts|kvota pārsniegta/i.test(detail)) {
+    return "API limits pārsniegts — uzgaidi vai palielini limitu Anthropic / Google AI Studio";
+  }
+  if (/credit balance is too low|insufficient credits?|purchase credits/i.test(detail)) {
     return "Anthropic kontā nepietiek kredīta — papildini Anthropic Console → Billing";
   }
-  if (/429|quota|rate.?limit|RESOURCE_EXHAUSTED/i.test(detail)) {
-    return "API limits pārsniegts — uzgaidi vai palielini limitu Anthropic / Google AI Studio";
+  if (/spending limit|usage limit|monthly limit/i.test(detail)) {
+    return "Anthropic tēriņu limits sasniegts — palielini Spend limits Anthropic Console → Billing";
   }
   if (/529|overloaded|pārslogots|high\s+demand|SERVICE_UNAVAILABLE/i.test(detail)) {
     return "Modelis īslaicīgi pārslogots — mēģini vēlreiz pēc brīža";

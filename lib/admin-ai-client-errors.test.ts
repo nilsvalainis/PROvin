@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { applyGeneratedAdminAiText, readGeneratedAdminAiText } from "@/lib/admin-ai-client-errors";
+import {
+  applyGeneratedAdminAiText,
+  formatAdminAiFetchError,
+  readGeneratedAdminAiText,
+} from "@/lib/admin-ai-client-errors";
 
 describe("readGeneratedAdminAiText", () => {
   it("treats HTTP 200 with empty text as a visible error, not a silent no-op", () => {
@@ -43,13 +47,43 @@ describe("readGeneratedAdminAiText", () => {
     );
     let applied = "";
     let error = "";
-    const ok = applyGeneratedAdminAiText(generated, (text) => {
-      applied = text;
-    }, (msg) => {
-      error = msg;
-    });
+    const ok = applyGeneratedAdminAiText(
+      generated,
+      (text) => {
+        applied = text;
+      },
+      (msg) => {
+        error = msg;
+      },
+    );
     expect(ok).toBe(false);
     expect(applied).toBe("**CSDD.** Sākums.");
     expect(error).toMatch(/nav pabeigts/i);
+  });
+});
+
+describe("formatAdminAiFetchError", () => {
+  it("does not treat a rate-limit message that mentions Console as a credit shortage", () => {
+    const msg = formatAdminAiFetchError(
+      {
+        error: "generation_failed",
+        detail: "Anthropic API limits pārsniegts — uzgaidi vai pārbaudi Anthropic Console billing",
+      },
+      { status: 429 },
+    );
+    expect(msg).toMatch(/limits pārsniegts/i);
+    expect(msg).not.toMatch(/nepietiek kredīta/i);
+  });
+
+  it("still maps a real Anthropic credit-balance error", () => {
+    const msg = formatAdminAiFetchError(
+      {
+        error: "generation_failed",
+        detail:
+          "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to purchase credits.",
+      },
+      { status: 400 },
+    );
+    expect(msg).toMatch(/nepietiek kredīta/i);
   });
 });
