@@ -1,20 +1,37 @@
 import Link from "next/link";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 import {
   getAnalyticsDashboardUrl,
   getAnalyticsEmbedUrl,
   getGaMeasurementId,
   isVercelDeployment,
 } from "@/lib/analytics-public";
-import { getSampleReportClickStats } from "@/lib/sample-report-click-store";
 import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
-import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
+import { getSampleReportClickStats } from "@/lib/sample-report-click-store";
 
 export const metadata = {
   title: "Statistika",
 };
 
 export const dynamic = "force-dynamic";
+
+function ToolLink({ href, label, hint }: { href: string; label: string; hint: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-[13px] transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <span className="min-w-0">
+        <span className="block font-semibold text-[var(--color-apple-text)]">{label}</span>
+        <span className="mt-0.5 block text-[12px] text-[var(--color-provin-muted)]">{hint}</span>
+      </span>
+      <span className="shrink-0 text-[12px] font-medium text-[var(--color-provin-accent)]">Atvērt</span>
+    </a>
+  );
+}
 
 export default async function AdminStatistikaPage() {
   const embedUrl = getAnalyticsEmbedUrl();
@@ -31,180 +48,75 @@ export default async function AdminStatistikaPage() {
     : null;
 
   return (
-    <div className="w-full max-w-none">
+    <div className="mx-auto w-full max-w-4xl">
       <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          Mājas lapa
-        </p>
-        <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+        <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Statistika
         </h1>
-        <p className="mt-2 max-w-[42rem] text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-          Apmeklējumu skaiti, avoti un ceļš līdz lapai parasti tiek vākti ar analīzes rīku (Vercel, Plausible, Google
-          Analytics u.c.). Šeit ir īss kopsavilkums un, ja iestatīts, iegults ārējais panelis.
+        <p className="mt-1.5 text-[13px] text-[var(--color-provin-muted)]">
+          Konversija no atbildētajiem ātrajiem vērtējumiem un īss vietnes kopsavilkums.
         </p>
       </AdminDashboardHeaderWithMenu>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div className="md:col-span-2 xl:col-span-2">
-          <AdminListingPeekConversionCard stats={peekConversion} />
-        </div>
-        <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Atskaites piemērs (PDF)</h2>
-          <p className="mt-3 text-[2rem] font-semibold tracking-tight text-[var(--color-apple-text)] tabular-nums">
-            {sampleClicks.total}
-          </p>
-          <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-            Klikšķi uz „Skatīt atskaites piemēru” (PROVIN AUDITS hero). Skaitītājs ir pirmās puses — bez personu datiem.
-          </p>
-          {sampleLastLabel ? (
-            <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">
-              Pēdējais klikšķis:{" "}
-              <span className="font-medium text-[var(--color-apple-text)]">{sampleLastLabel}</span>
-            </p>
-          ) : (
-            <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">Vēl nav reģistrētu klikšķu.</p>
-          )}
-          <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
-            Produkcijā saglabājas caur{" "}
-            <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px]">BLOB_READ_WRITE_TOKEN</code> (ja
-            iestatīts); citādi lokālajā <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px]">.data/</code>.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Vercel Web Analytics</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-            {onVercel ? (
-              <>
-                Šī izvietošana darbojas uz Vercel. <span className="font-medium text-[var(--color-apple-text)]">@vercel/analytics</span>{" "}
-                rāda <span className="font-medium text-[var(--color-apple-text)]">visus</span> apmeklējumus (agregēti).
-                Google Analytics (ja iestatīts) — tikai lietotājiem, kas sīkdatņu joslā piekrīt „analītikai”.
-                Vercel skaitļi un lapu skatījumi ir projekta sadaļā{" "}
-                <span className="font-medium text-[var(--color-apple-text)]">Analytics</span> (pēc pierakstīšanās).
-              </>
-            ) : (
-              <>
-                Lokālā izstrādē vai uz citas platformas detalizēti skaitļi šeit nav. Uz{" "}
-                <span className="font-medium text-[var(--color-apple-text)]">Vercel</span> ieslēdziet Web Analytics
-                projektā un pievienojiet pakotni <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">@vercel/analytics</code>{" "}
-                (saknes layoutā — <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">ConsentAwareAnalytics</code>).
-              </>
-            )}
-          </p>
-          <p className="mt-3 text-[12px] leading-relaxed text-[var(--color-provin-muted)]">
-            Pilns ceļš „no kurienes atnākuši” (referrer, UTMs) Vercel Analytics ietvaros ir ierobežots; detalizētākai
-            avotu analīzei bieži izmanto Plausible vai Google Analytics.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <a
-              href="https://vercel.com/docs/analytics"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50"
-            >
-              Vercel Analytics dokumentācija
-            </a>
-            <a
-              href="https://vercel.com/dashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)]"
-            >
-              Atvērt Vercel paneli
-            </a>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Google Analytics 4</h2>
-          {gaId ? (
-            <>
-              <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-                Vietnē ir ieslēgts <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">gtag.js</code> ar
-                mērījuma ID{" "}
-                <span className="font-mono text-[12px] font-medium text-[var(--color-apple-text)]">{gaId}</span>. Apmeklējumi,
-                lapas, avoti un kampaņas skatāmas GA4 panelī.
-              </p>
-              <div className="mt-4">
-                <a
-                  href="https://analytics.google.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)]"
-                >
-                  Atvērt Google Analytics
-                </a>
-              </div>
-            </>
-          ) : (
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-              Iestatiet{" "}
-              <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">NEXT_PUBLIC_GA_MEASUREMENT_ID=G-…</code>{" "}
-              (tāds pats ID kā Google taga iestatīšanā). EEZ lietotājiem Google iesaka{" "}
-              <span className="font-medium text-[var(--color-apple-text)]">Consent Mode</span> — saskaņot ar sīkdatņu
-              banneri un privātuma politiku.
-            </p>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)] md:col-span-2 xl:col-span-1">
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Ārējais panelis (Plausible, GA…)</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-            Iestatiet vides mainīgos{" "}
-            <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">NEXT_PUBLIC_ANALYTICS_DASHBOARD_URL</code>{" "}
-            (saite uz pilnu paneli) un/vai{" "}
-            <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px]">NEXT_PUBLIC_ANALYTICS_EMBED_URL</code>{" "}
-            (https iframe, piemēram Plausible „Shared dashboard” embed). Abiem jābūt <span className="font-medium">https://</span>.
-          </p>
-          {dashboardUrl ? (
-            <div className="mt-4">
-              <a
-                href={dashboardUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)]"
-              >
-                Atvērt analīzes paneli
-              </a>
-            </div>
-          ) : (
-            <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">
-              <span className="font-medium text-[var(--color-apple-text)]">NEXT_PUBLIC_ANALYTICS_DASHBOARD_URL</span> nav
-              iestatīts.
-            </p>
-          )}
-        </div>
+      <div className="mt-6">
+        <AdminListingPeekConversionCard stats={peekConversion} />
       </div>
 
-      {embedUrl ? (
-        <div className="mt-8">
-          <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Iegults panelis</h2>
-          <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">
-            Avots: <span className="break-all font-mono text-[11px] text-[var(--color-apple-text)]">{embedUrl}</span>
-          </p>
-          <div className="mt-3 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50/50 shadow-inner">
-            <iframe
-              title="Analīzes panelis"
-              src={embedUrl}
-              className="h-[min(720px,70vh)] w-full border-0"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-            />
+      <section className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">
+          Vietne
+        </p>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">Atskaites piemērs</h2>
+            <p className="mt-1 text-[13px] text-[var(--color-provin-muted)]">
+              Klikšķi uz „Skatīt atskaites piemēru” hero AUDITS cilnē.
+            </p>
           </div>
-        </div>
-      ) : (
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-10 text-center shadow-sm">
-          <p className="font-medium text-[var(--color-apple-text)]">Nav iegultā paneļa</p>
-          <p className="mt-2 text-sm text-[var(--color-provin-muted)]">
-            Pievienojiet <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">NEXT_PUBLIC_ANALYTICS_EMBED_URL</code>{" "}
-            Vercel / .env, lai šeit parādītos Plausible vai cits https embed.
+          <p className="text-[2rem] font-semibold leading-none tabular-nums text-[var(--color-apple-text)]">
+            {sampleClicks.total.toLocaleString("lv-LV")}
           </p>
         </div>
-      )}
+        <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">
+          {sampleLastLabel ? `Pēdējais klikšķis: ${sampleLastLabel}` : "Vēl nav reģistrētu klikšķu."}
+        </p>
+      </section>
 
-      <p className="mt-8 text-[12px] leading-relaxed text-[var(--color-provin-muted)]">
+      <section className="mt-5">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">
+          Ārējie rīki
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <ToolLink
+            href="https://vercel.com/dashboard"
+            label="Vercel Analytics"
+            hint={onVercel ? "Apmeklējumi šajā izvietošanā" : "Pieejams pēc deploy uz Vercel"}
+          />
+          <ToolLink
+            href="https://analytics.google.com/"
+            label="Google Analytics"
+            hint={gaId ? gaId : "Mērījuma ID nav iestatīts"}
+          />
+          {dashboardUrl ? (
+            <ToolLink href={dashboardUrl} label="Ārējais panelis" hint="Plausible vai cits koplietots dashboard" />
+          ) : null}
+        </div>
+      </section>
+
+      {embedUrl ? (
+        <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
+          <iframe
+            title="Analīzes panelis"
+            src={embedUrl}
+            className="h-[min(640px,65vh)] w-full border-0"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          />
+        </section>
+      ) : null}
+
+      <p className="mt-8 text-[12px]">
         <Link href="/admin/dashboard" className="font-medium text-[var(--color-provin-accent)] hover:underline">
-          ← Atpakaļ uz pasūtījumiem
+          Atpakaļ uz pasūtījumiem
         </Link>
       </p>
     </div>

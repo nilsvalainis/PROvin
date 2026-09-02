@@ -13,6 +13,19 @@ function formatRate(pct: number | null): string {
   return `${pct.toLocaleString("lv-LV", { maximumFractionDigits: 1 })}%`;
 }
 
+function Kpi({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 text-[1.05rem] font-semibold tabular-nums leading-none text-[var(--color-apple-text)]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 type Props = {
   stats: ListingPeekConversionStats;
   variant?: "full" | "compact";
@@ -22,74 +35,57 @@ export function AdminListingPeekConversionCard({ stats, variant = "full" }: Prop
   const compact = variant === "compact";
 
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
-      <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">
-        Ātrie vērtējumi → pirkums
-      </h2>
-      <p className="mt-3 text-[2rem] font-semibold tracking-tight text-[var(--color-apple-text)] tabular-nums">
-        {formatRate(stats.conversionRatePct)}
-      </p>
-      <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-        {stats.convertedPeople.toLocaleString("lv-LV")} no {stats.uniquePeople.toLocaleString("lv-LV")} unikālajiem
-        klientiem pēc iesūtījuma apmaksāja kādu pakalpojumu.
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">
+            Ātrie vērtējumi
+          </p>
+          <h2 className="mt-1 text-base font-semibold text-[var(--color-apple-text)]">
+            Atbildētie → pirkums
+          </h2>
+        </div>
+        <p className="text-[2.25rem] font-semibold leading-none tracking-tight text-[var(--color-apple-text)] tabular-nums">
+          {formatRate(stats.conversionRatePct)}
+        </p>
+      </div>
+      <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+        {stats.convertedPeople.toLocaleString("lv-LV")} no {stats.uniquePeople.toLocaleString("lv-LV")} atbildētajiem
+        klientiem pēc komentāra apmaksāja pakalpojumu.
       </p>
       {!compact ? (
         <>
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] sm:grid-cols-4">
-            <div>
-              <dt className="text-[11px] uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">Pieprasījumi</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums text-[var(--color-apple-text)]">
-                {stats.peekCount.toLocaleString("lv-LV")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">Atbildēti</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums text-[var(--color-apple-text)]">
-                {stats.commentSentPeeks.toLocaleString("lv-LV")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">Pasūtījumi</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums text-[var(--color-apple-text)]">
-                {stats.orderCount.toLocaleString("lv-LV")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">Ieņēmumi</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums text-[var(--color-apple-text)]">
-                {formatEurFromCents(stats.revenueCents)}
-              </dd>
-            </div>
-          </dl>
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Kpi label="Atbildēti" value={stats.peekCount.toLocaleString("lv-LV")} />
+            <Kpi label="Klienti" value={stats.uniquePeople.toLocaleString("lv-LV")} />
+            <Kpi label="Pirkumi" value={stats.orderCount.toLocaleString("lv-LV")} />
+            <Kpi label="Ieņēmumi" value={formatEurFromCents(stats.revenueCents)} />
+          </div>
           {stats.byProduct.length > 0 ? (
-            <ul className="mt-4 space-y-1.5 text-[13px] text-[var(--color-apple-text)]">
+            <ul className="mt-5 divide-y divide-slate-100 border-t border-slate-100">
               {stats.byProduct.map((row) => (
-                <li key={row.label} className="flex justify-between gap-3">
-                  <span className="min-w-0 truncate">{row.label}</span>
-                  <span className="shrink-0 tabular-nums text-[var(--color-provin-muted)]">
+                <li key={row.label} className="flex items-center justify-between gap-3 py-2 text-[13px]">
+                  <span className="min-w-0 truncate text-[var(--color-apple-text)]">{row.label}</span>
+                  <span className="shrink-0 font-medium tabular-nums text-[var(--color-provin-muted)]">
                     {row.people.toLocaleString("lv-LV")}
                   </span>
                 </li>
               ))}
             </ul>
           ) : null}
-          <p className="mt-4 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
-            Sakritība pēc e-pasta vai tālruņa ar apmaksātu Stripe pasūtījumu pēc pirmā iesūtījuma. Demo un operatora
-            testa konti nav iekļauti. Produkta rinda = pirmais pirkums pēc vērtējuma.
-          </p>
         </>
       ) : null}
-      <p className="mt-3 text-[12px]">
+      <p className="mt-4 text-[12px]">
         {compact ? (
           <Link href="/admin/statistika" className="font-medium text-[var(--color-provin-accent)] hover:underline">
-            Pilna statistika →
+            Pilna statistika
           </Link>
         ) : (
           <Link href="/admin/atras-vertesanas" className="font-medium text-[var(--color-provin-accent)] hover:underline">
-            Ātrie vērtējumi →
+            Ātrie vērtējumi
           </Link>
         )}
       </p>
-    </div>
+    </section>
   );
 }

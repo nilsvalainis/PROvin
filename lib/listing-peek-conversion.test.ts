@@ -6,6 +6,7 @@ const peek = (over: Partial<{ id: string; email: string; phone: string; createdA
   email: "a@provin.lv",
   phone: "+37126111111",
   createdAt: "2026-08-01T10:00:00.000Z",
+  commentSentAt: "2026-08-01T12:00:00.000Z",
   ...over,
 });
 
@@ -36,9 +37,21 @@ describe("buildListingPeekConversionStats", () => {
     expect(stats.conversionRatePct).toBeNull();
   });
 
+  it("ignores unanswered peeks even if they later paid", () => {
+    const stats = buildListingPeekConversionStats(
+      [peek({ commentSentAt: undefined })],
+      [paid({})],
+    );
+    expect(stats.peekCount).toBe(0);
+    expect(stats.skippedPeeks).toBe(1);
+    expect(stats.uniquePeople).toBe(0);
+    expect(stats.convertedPeople).toBe(0);
+  });
+
   it("counts a later paid order on the same email as conversion", () => {
     const stats = buildListingPeekConversionStats([peek({})], [paid({})]);
     expect(stats.peekCount).toBe(1);
+    expect(stats.commentSentPeeks).toBe(1);
     expect(stats.uniquePeople).toBe(1);
     expect(stats.convertedPeople).toBe(1);
     expect(stats.conversionRatePct).toBe(100);
@@ -56,9 +69,9 @@ describe("buildListingPeekConversionStats", () => {
     expect(stats.byProduct[0]?.label).toBe("PROVIN MINI");
   });
 
-  it("does not count a payment that happened before the peek", () => {
+  it("does not count a payment that happened before the reply", () => {
     const stats = buildListingPeekConversionStats(
-      [peek({ createdAt: "2026-08-10T10:00:00.000Z" })],
+      [peek({ commentSentAt: "2026-08-10T10:00:00.000Z" })],
       [paid({ created: Date.parse("2026-08-01T10:00:00.000Z") / 1000 })],
     );
     expect(stats.uniquePeople).toBe(1);
@@ -66,11 +79,11 @@ describe("buildListingPeekConversionStats", () => {
     expect(stats.conversionRatePct).toBe(0);
   });
 
-  it("treats two peeks with the same email as one person", () => {
+  it("treats two answered peeks with the same email as one person", () => {
     const stats = buildListingPeekConversionStats(
       [
-        peek({ id: "p1", createdAt: "2026-08-01T10:00:00.000Z" }),
-        peek({ id: "p2", createdAt: "2026-08-03T10:00:00.000Z" }),
+        peek({ id: "p1", createdAt: "2026-08-01T10:00:00.000Z", commentSentAt: "2026-08-01T12:00:00.000Z" }),
+        peek({ id: "p2", createdAt: "2026-08-03T10:00:00.000Z", commentSentAt: "2026-08-03T12:00:00.000Z" }),
       ],
       [paid({})],
     );
