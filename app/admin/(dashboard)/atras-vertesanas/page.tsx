@@ -19,6 +19,8 @@ import {
   updateListingPeekStatus,
   type ListingPeekStatus,
 } from "@/lib/listing-peek-store";
+import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
+import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +107,7 @@ export default async function AdminListingPeeksPage({
   searchParams?: Promise<{ mail?: string; contact?: string }>;
 }) {
   const entries = await listListingPeeks(200);
+  const peekConversion = await loadListingPeekConversionStats();
   const smtpOk = isSmtpConfigured();
   const sp = searchParams ? await searchParams : undefined;
   const mail = sp?.mail;
@@ -127,6 +130,10 @@ export default async function AdminListingPeeksPage({
           Flash / Gemini apstrādā visu tekstu. Gmail Reply = parasts teksts.
         </p>
       </AdminDashboardHeaderWithMenu>
+
+      <div className="mt-6">
+        <AdminListingPeekConversionCard stats={peekConversion} variant="compact" />
+      </div>
 
       {contact === "saved" ? (
         <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">

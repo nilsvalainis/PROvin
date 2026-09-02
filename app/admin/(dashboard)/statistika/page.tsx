@@ -7,6 +7,8 @@ import {
   isVercelDeployment,
 } from "@/lib/analytics-public";
 import { getSampleReportClickStats } from "@/lib/sample-report-click-store";
+import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
+import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 
 export const metadata = {
   title: "Statistika",
@@ -20,6 +22,7 @@ export default async function AdminStatistikaPage() {
   const gaId = getGaMeasurementId();
   const onVercel = isVercelDeployment();
   const sampleClicks = await getSampleReportClickStats();
+  const peekConversion = await loadListingPeekConversionStats();
   const sampleLastLabel = sampleClicks.lastClickedAt
     ? new Date(sampleClicks.lastClickedAt).toLocaleString("lv-LV", {
         dateStyle: "medium",
@@ -43,6 +46,9 @@ export default async function AdminStatistikaPage() {
       </AdminDashboardHeaderWithMenu>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="md:col-span-2 xl:col-span-2">
+          <AdminListingPeekConversionCard stats={peekConversion} />
+        </div>
         <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
           <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Atskaites piemērs (PDF)</h2>
           <p className="mt-3 text-[2rem] font-semibold tracking-tight text-[var(--color-apple-text)] tabular-nums">
