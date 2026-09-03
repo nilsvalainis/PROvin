@@ -33,7 +33,7 @@ export function dropSourceBlockWipe(
 }
 
 export function sourceBlockWipesSnapshotField(
-  wipes: readonly SourceBlockKey[] | undefined,
+  wipes: unknown,
 ): { sourceBlockWipes?: SourceBlockKey[] } {
   const next = parseSourceBlockWipes(wipes);
   return next.length > 0 ? { sourceBlockWipes: next } : {};

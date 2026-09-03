@@ -19,5 +19,7 @@ describe("parseSourceBlockWipes", () => {
   it("omits empty snapshot field", () => {
     expect(sourceBlockWipesSnapshotField([])).toEqual({});
     expect(sourceBlockWipesSnapshotField(["tirgus"])).toEqual({ sourceBlockWipes: ["tirgus"] });
+    expect(sourceBlockWipesSnapshotField(undefined)).toEqual({});
+    expect(sourceBlockWipesSnapshotField({ not: "an array" })).toEqual({});
   });
 });
