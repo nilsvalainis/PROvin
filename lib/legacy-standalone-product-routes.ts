@@ -25,12 +25,30 @@ export function isLegacyStandaloneProductPath(pathname: string): boolean {
 }
 
 /**
- * Standalone `/provin-audits` — pēc noklusējuma slēpts, kamēr `/test-pricing-5` ir primārais.
+ * Standalone `/provin-audits` — pēc noklusējuma slēpts (primārais ir sākumlapa).
  * Atkal ieslēgt: `NEXT_PUBLIC_PROVIN_AUDITS_STANDALONE_PUBLIC=1`
  */
 export function isProvinAuditsStandalonePublic(): boolean {
   const v = (process.env.NEXT_PUBLIC_PROVIN_AUDITS_STANDALONE_PUBLIC ?? "").trim().toLowerCase();
   return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+const CLOSED_PREVIEW_PATHS = [
+  "/silhouette-preview",
+  "/incident-card-preview",
+  "/history-hub-preview",
+  "/pdf-footer-preview",
+] as const;
+
+/**
+ * Vecās cenu A/B, demo un iekšējie preview URL — redirect uz sākumu.
+ * AZ.VIN kods paliek (`/demo/azvin`); URL slēgts, līdz atkal atveram.
+ */
+export function shouldBlockClosedExperimentPath(pathname: string): boolean {
+  const p = normalizePathWithoutLocale(pathname);
+  if (p === "/test-pricing" || p.startsWith("/test-pricing-") || p === "/test-checkout") return true;
+  if (p === "/demo" || p.startsWith("/demo/")) return true;
+  return CLOSED_PREVIEW_PATHS.some((segment) => p === segment || p.startsWith(`${segment}/`));
 }
 
 export function shouldBlockLegacyStandaloneProductPath(pathname: string): boolean {

@@ -4,7 +4,7 @@ import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import { Footer } from "@/components/Footer";
 import { IrissSection } from "@/components/IrissSection";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
 type Props = { params: Promise<{ locale: string }> };
 

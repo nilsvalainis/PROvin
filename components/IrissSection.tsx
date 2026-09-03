@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { getIrissSocialUrls, IrissSocialIcons } from "@/components/IrissSocialIcons";
 import { IrissZigzagRow } from "@/components/IrissZigzagRow";

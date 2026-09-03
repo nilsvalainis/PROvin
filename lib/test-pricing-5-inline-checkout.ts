@@ -16,7 +16,7 @@ export type Tp5StripeCheckoutProduct = {
   amountCents: number;
 };
 
-/** Sākumlapa, `/test-pricing-5` un `/test-checkout` — vienmēr `price_data` (bez Stripe Catalog ID). */
+/** Sākumlapa un vēsturiski tp5/test-checkout avoti — vienmēr `price_data` (bez Stripe Catalog ID). */
 export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
   Extract<TestPricingPlanId, "plus" | "premium" | "dealer" | "koreaUsa">,
   Tp5StripeCheckoutProduct

@@ -2,7 +2,7 @@
 
 import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent, useEffect, useRef, useState } from "react";
-import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
 import {
   getAzvinMobileService,

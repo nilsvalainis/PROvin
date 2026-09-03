@@ -60,13 +60,6 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/webhook/stripe", destination: "/api/webhooks/stripe" }];
   },
   async headers() {
-    const noStoreTestPricing: { key: string; value: string }[] = [
-      {
-        key: "Cache-Control",
-        value: "private, no-cache, no-store, max-age=0, must-revalidate",
-      },
-    ];
-
     /** Sākumlapa ir prerenderēta (SSG) — `no-store` liktu Vercel CDN to ģenerēt no jauna katram
      * apmeklētājam. Pārlūks vienmēr pārvalidē (`max-age=0`), CDN drīkst turēt minūti, lai cenu
      * izmaiņas parādās ātri; deploy jebkurā gadījumā invalidē CDN kešu. */
@@ -81,18 +74,6 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
-      },
-      {
-        source: "/test-pricing-5",
-        headers: [...securityHeaders, ...noStoreTestPricing],
-      },
-      {
-        source: "/test-pricing-5/:path*",
-        headers: [...securityHeaders, ...noStoreTestPricing],
-      },
-      {
-        source: "/test-checkout",
-        headers: [...securityHeaders, ...noStoreTestPricing],
       },
       {
         source: "/lv",

@@ -137,7 +137,7 @@ const KOREA_USA_FEATURES_EN: Tp5MobileFeature[] = [
 /** Tabs always shown on the home hero (catalog-only tiers appear when deep-linked). */
 export const TP5_HERO_TAB_IDS: readonly Tp5MobileServiceId[] = ["mini", "audits", "dealer"];
 
-/** Mobile `/test-pricing-5` + home hero — MINI, AUDITS, dealer data (+ catalog deep-link tiers). */
+/** Mobile home hero — MINI, AUDITS, dealer data (+ catalog deep-link tiers). */
 export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
   {
     id: "mini",

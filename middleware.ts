@@ -2,7 +2,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
-import { shouldBlockLegacyStandaloneProductPath } from "./lib/legacy-standalone-product-routes";
+import {
+  shouldBlockClosedExperimentPath,
+  shouldBlockLegacyStandaloneProductPath,
+} from "./lib/legacy-standalone-product-routes";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
@@ -17,7 +20,10 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (shouldBlockLegacyStandaloneProductPath(pathname)) {
+  if (
+    shouldBlockLegacyStandaloneProductPath(pathname) ||
+    shouldBlockClosedExperimentPath(pathname)
+  ) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/lv";
     redirectUrl.search = "";
@@ -34,17 +40,6 @@ export default function middleware(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
     return res;
-  }
-
-  if (
-    pathname === "/test-pricing" ||
-    pathname.startsWith("/test-pricing-") ||
-    pathname === "/test-checkout" ||
-    pathname === "/silhouette-preview" ||
-    pathname === "/history-hub-preview" ||
-    pathname === "/pdf-footer-preview"
-  ) {
-    return NextResponse.next();
   }
 
   if (pathname.startsWith("/admin")) {

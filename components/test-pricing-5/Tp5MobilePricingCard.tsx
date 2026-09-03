@@ -3,7 +3,7 @@
 import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent } from "react";
 import { useLocale } from "next-intl";
-import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
   getTp5HeroTabServices,

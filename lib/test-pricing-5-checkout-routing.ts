@@ -1,6 +1,6 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 
-/** Capsule tab display labels on `/test-pricing-5`. */
+/** Capsule tab display labels on the home pricing hero. */
 export const TP5_TAB_LABEL = {
   mini: "19,99 €",
   plus: "39,99 €",
@@ -9,22 +9,13 @@ export const TP5_TAB_LABEL = {
   koreaUsa: "ASV UN KOREJA",
 } as const;
 
-/** Dynamic baseline CTA copy on `/test-pricing-5`. */
+/** Dynamic baseline CTA copy on the home pricing hero. */
 export const TP5_CTA_LABEL = {
   mini: "PASŪTĪT AUDITU — 19,99 €",
   plus: "PASŪTĪT AUDITU — 39,99 €",
   premium: "PASŪTĪT PROVIN AUDITU — 99,99 €",
   dealer: "PASŪTĪT DĪLERA DATUS — 24,99 €",
   koreaUsa: "PASŪTĪT ASV UN KOREJA — 19,99 €",
-} as const;
-
-/** Hard-coded `plan` query values for `/test-checkout`. */
-export const TP5_CHECKOUT_PLAN_QUERY = {
-  mini: "19.99",
-  plus: "39.99",
-  premium: "PROVIN",
-  dealer: "24.99",
-  koreaUsa: "koreaUsa",
 } as const;
 
 export type Tp5TierMeta = {
@@ -73,22 +64,3 @@ export function getTp5DealerFootnote(locale?: string): string {
 }
 
 export const TP5_CHECKOUT_SOURCE = "test-checkout" as const;
-
-export function getTp5CheckoutHref(planId: TestPricingPlanId): string {
-  return `/test-checkout?plan=${TP5_CHECKOUT_PLAN_QUERY[planId]}`;
-}
-
-export function resolveTp5PlanFromCheckoutQuery(
-  param: string | null | undefined,
-): TestPricingPlanId | null {
-  if (!param) return null;
-  const normalized = param.trim();
-  if (normalized === "19.99") return "mini";
-  if (normalized === "39.99") return "plus";
-  if (normalized === "24.99") return "dealer";
-  if (normalized === "koreaUsa" || normalized.toUpperCase() === "ASV" || normalized.toUpperCase() === "KOREA") {
-    return "koreaUsa";
-  }
-  if (normalized.toUpperCase() === "PROVIN" || normalized.toUpperCase() === "PRO") return "premium";
-  return null;
-}

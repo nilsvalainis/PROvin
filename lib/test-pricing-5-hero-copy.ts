@@ -1,4 +1,4 @@
-/** Isolated hero copy for `/test-pricing-5` — not shared with production Hero i18n. */
+/** Isolated hero copy for the home pricing hero — not shared with production Hero i18n. */
 
 export const TP5_HERO_TITLE_PREFIX = "Auto vēstures un sludinājuma ";
 export const TP5_HERO_TITLE_ACCENT = "audits";

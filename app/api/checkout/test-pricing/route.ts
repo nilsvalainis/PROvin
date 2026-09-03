@@ -19,7 +19,6 @@ import {
 import {
   getTp5StripeCheckoutProduct,
   isTp5CheckoutSource,
-  TP5_INLINE_CHECKOUT_SOURCE,
   validateTp5InlineFields,
 } from "@/lib/test-pricing-5-inline-checkout";
 import { routing } from "@/i18n/routing";
@@ -101,7 +100,7 @@ export async function POST(req: Request) {
     : routing.defaultLocale;
 
   const sourcePage =
-    typeof raw.sourcePage === "string" && raw.sourcePage.trim() ? raw.sourcePage.trim() : "test-pricing";
+    typeof raw.sourcePage === "string" && raw.sourcePage.trim() ? raw.sourcePage.trim() : "home-pricing";
   const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
   const vinInput = typeof raw.vin === "string" ? raw.vin : "";
   const vin = normalizeVin(vinInput);
@@ -109,10 +108,9 @@ export async function POST(req: Request) {
   const clientCollected = isTestPricingModalCheckoutPage(sourcePage);
 
   if (clientCollected) {
-    const validation =
-      sourcePage === TP5_INLINE_CHECKOUT_SOURCE
-        ? validateTp5InlineFields(listingUrl, vinInput, locale)
-        : validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent, locale);
+    const validation = isTp5CheckoutSource(sourcePage)
+      ? validateTp5InlineFields(listingUrl, vinInput, locale)
+      : validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent, locale);
     if (!validation.ok) {
       const errors = validation.errors;
       const first =

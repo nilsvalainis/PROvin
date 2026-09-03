@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, ArrowRight, Check } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { useTranslations } from "next-intl";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Link } from "@/i18n/navigation";
 import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import {

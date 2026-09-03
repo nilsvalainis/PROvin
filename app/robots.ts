@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
   const base = getPublicSiteOrigin();
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: ["/admin", "/api/admin", "/test-pricing", "/test-checkout"] },
+      { userAgent: "*", allow: "/", disallow: ["/admin", "/api/admin", "/test-pricing", "/test-checkout", "/demo"] },
     ],
     sitemap: `${base.replace(/\/$/, "")}/sitemap.xml`,
   };

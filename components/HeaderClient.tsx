@@ -43,7 +43,6 @@ export function HeaderClient() {
     isParMums ||
     isBlogs;
 
-  const isDemoPath = pathname.includes("/demo");
   const isAzvinDemo = pathname.includes("/demo/azvin");
   /**
    * Tumšais headeris — sākums / pakalpojumi / paraugi / Par mums / blogs / BUJ / SELECT / azvin.
@@ -57,41 +56,15 @@ export function HeaderClient() {
     isParMums ||
     isBlogs ||
     isFaqPage;
-  const isDemoGraphiteHeader = isDemoPath && !isAzvinDemo;
-  const headerChromeDark = isDarkHeaderSurface || isDemoGraphiteHeader;
+  const headerChromeDark = isDarkHeaderSurface;
 
-  const graphiteHeaderSurface =
-    "border-b border-black/30 bg-[#383a40] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#383a40]/94";
+  const headerSurface = isDarkHeaderSurface
+    ? "border-b border-white/[0.08] bg-[#07080a]/96 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#07080a]/92"
+    : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
-  const headerSurface = isDemoGraphiteHeader
-    ? graphiteHeaderSurface
-    : isDarkHeaderSurface
-      ? "border-b border-white/[0.08] bg-[#07080a]/96 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#07080a]/92"
-      : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
-
-  const logoAlignWithRailSakums = showHomeNavRail;
-
-  const desktopSiteSectionRailEnabled = false;
-  const alignLogoWithDesktopRail = logoAlignWithRailSakums && desktopSiteSectionRailEnabled;
-
-  const logoRailMarginClass = alignLogoWithDesktopRail
-    ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+1.75rem-(100vw-min(100vw,64rem))/2-1.5rem)]"
-    : null;
-
-  const logoHomeRailAlignClass =
-    isHome && alignLogoWithDesktopRail
-      ? "lg:ml-[calc(max(0.5rem,env(safe-area-inset-left,0px))+1.875rem-max(1rem,env(safe-area-inset-left,0px)))]"
-      : null;
-
-  const logoClass = [
-    headerChromeDark
-      ? "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-white transition-colors hover:text-white/90 lg:min-h-0 lg:min-w-0 lg:text-[28.98px]"
-      : "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent lg:min-h-0 lg:min-w-0 lg:text-[28.98px]",
-    !isDarkHeaderSurface && !isHome && !isDemoPath && !isProvinSelectPieteikums ? logoRailMarginClass : null,
-    logoHomeRailAlignClass,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const logoClass = headerChromeDark
+    ? "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-white transition-colors hover:text-white/90 lg:min-h-0 lg:min-w-0 lg:text-[28.98px]"
+    : "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent lg:min-h-0 lg:min-w-0 lg:text-[28.98px]";
 
   const navSections = useMemo(() => buildSiteRailSections(normalizedPath), [normalizedPath]);
 

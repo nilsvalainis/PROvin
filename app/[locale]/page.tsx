@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
 import { HomeRiskAuditGuide } from "@/components/home/HomeRiskAuditGuide";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
 const HomePricingHero = dynamic(() => import("@/components/home/HomePricingHero"), {
   loading: () => (

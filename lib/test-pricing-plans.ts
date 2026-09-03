@@ -1,4 +1,4 @@
-/** Testa cenu lapa `/test-pricing` — MINI, PLUS, PREMIUM (nav saistītas ar hero OrderForm). */
+/** Checkout plan catalog — MINI, PLUS, PREMIUM, dealer, Korea/USA. */
 
 import {
   isPlausibleListingUrl,

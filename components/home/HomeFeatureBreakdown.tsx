@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { SampleReportPreview } from "@/components/home/SampleReportPreview";
 import { Link } from "@/i18n/navigation";
 import { homeContentMaxClass, homeDarkProvinWordmarkOptions } from "@/lib/home-layout";

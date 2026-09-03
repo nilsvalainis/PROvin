@@ -21,7 +21,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/paraugi", changeFrequency: "weekly", priority: 0.75 },
     { path: "/par-mums", changeFrequency: "monthly", priority: 0.75 },
     { path: "/blogs", changeFrequency: "weekly", priority: 0.75 },
-    { path: "/biezi-jautajumi", changeFrequency: "monthly", priority: 0.65 },
     { path: "/privatuma-politika", changeFrequency: "yearly", priority: 0.4 },
     { path: "/lietosanas-noteikumi", changeFrequency: "yearly", priority: 0.4 },
   ];

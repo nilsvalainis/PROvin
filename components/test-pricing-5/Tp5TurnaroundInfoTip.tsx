@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type MouseEvent, type TouchEvent } from "react";
-import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import {
   TP5_TURNAROUND_INFO_PHONE_TEL,
   type Tp5UiCopy,

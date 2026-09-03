@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
 /** Tumšā bloga virsma — tā pati home/pakalpojumi canvas loģika. */
 export function BlogPageShell({ children }: { children: ReactNode }) {

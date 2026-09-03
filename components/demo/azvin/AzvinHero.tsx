@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type SyntheticEvent } from "react";
-import styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { AzvinPricingCard, type AzvinFieldErrors } from "@/components/demo/azvin/AzvinPricingCard";
 import { HeroVisual } from "@/components/HeroVisual";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";

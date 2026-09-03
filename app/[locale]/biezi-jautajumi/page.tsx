@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 import { Link } from "@/i18n/navigation";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
-import tp5Styles from "@/app/test-pricing-5/test-pricing-5.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
 type Props = { params: Promise<{ locale: string }> };
 

@@ -89,7 +89,7 @@ export function useTierSwipe<T extends string>(
   };
 }
 
-/** Desktop `/test-pricing-5` three-tier swipe helper. */
+/** Desktop home pricing hero three-tier swipe helper. */
 export function useTestPricingTierSwipe(
   selectedId: TestPricingPlanId,
   setSelectedId: (id: TestPricingPlanId) => void,
