@@ -14,11 +14,13 @@ import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnaly
 import { AdminListingPeekTopicChips } from "@/components/admin/AdminListingPeekTopicChips";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
+import { AdminClearSourceBlockButton } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminSourceCommentField } from "@/components/admin/AdminSourceCommentField";
 import { ListingAnalysisSubsectionHeading } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import {
   emptyListingAnalysisBlock,
+  SOURCE_BLOCK_LABELS,
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_ANALYSIS_EXTRA_SELLER_LABEL,
   LISTING_ANALYSIS_LISTING_PASTE_LABEL,
@@ -266,10 +268,24 @@ export function AdminListingAnalysisSourceBlock({
 
   const roDefault = "min-h-[48px] rounded-md border border-slate-200/40 bg-transparent px-2 py-1.5 text-[11px] text-slate-500";
 
+  const clearFieldsBtn =
+    !readOnly ? (
+      <AdminClearSourceBlockButton
+        sourceLabel={SOURCE_BLOCK_LABELS.listing_analysis}
+        disabled={disabled}
+        onClear={() => onChange(emptyListingAnalysisBlock())}
+      />
+    ) : null;
+
   return (
     <div className={shell}>
       {variant === "default" ? (
-        <AdminSourceBlockHeader blockKey="listing_analysis" className="mb-1.5" />
+        <div className="mb-1.5 flex flex-wrap items-start justify-between gap-2">
+          <AdminSourceBlockHeader blockKey="listing_analysis" className="mb-0" />
+          {clearFieldsBtn}
+        </div>
+      ) : clearFieldsBtn ? (
+        <div className="mb-1.5 flex justify-end">{clearFieldsBtn}</div>
       ) : null}
       <div className={dense ? "space-y-2" : "space-y-2.5"}>
         <ListingAnalysisSubsectionHeading

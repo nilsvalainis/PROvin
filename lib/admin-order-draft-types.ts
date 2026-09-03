@@ -36,6 +36,8 @@ export type OrderDraftWorkspaceBody = {
   /** Negadījumu kopsavilkuma fotogrāfijas (PDF zem apraksta). */
   incidentPhotoGroups?: import("@/lib/incident-photo-types").IncidentPhotoGroup[];
   incidentPhotos?: import("@/lib/incident-photo-types").IncidentPhotoMeta[];
+  /** Operatora apzināta avotu notīrīšana — PATCH coalesce nedrīkst atjaunot šos blokus. */
+  sourceBlockWipes?: import("@/lib/admin-source-blocks").SourceBlockKey[];
 };
 
 export type OrderDraftState = {

@@ -11,6 +11,7 @@ import {
   normalizeOrderWorkspacePersistBody,
   type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
+import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 
 export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): OrderWorkspacePersistBody {
   return normalizeOrderWorkspacePersistBody({
@@ -24,6 +25,7 @@ export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): Or
     vehicleAiExtractionMeta: w.vehicleAiExtractionMeta ?? null,
     incidentPhotoGroups: w.incidentPhotoGroups ?? [],
     incidentPhotos: w.incidentPhotos ?? [],
+    ...sourceBlockWipesSnapshotField(w.sourceBlockWipes),
   });
 }
 
@@ -58,7 +60,7 @@ export type CoalesceWorkspacePatchResult = {
   changedFields: string[];
 };
 
-/** Deep merge ienākošā PATCH ar servera baseline — neiztukšo aizpildītus blokus. */
+/** Deep merge ienākošā PATCH ar servera baseline — neiztukšo aizpildītus blokus, izņemot `sourceBlockWipes`. */
 export function coalesceOrderDraftWorkspacePatch(
   incoming: OrderDraftWorkspaceBody,
   baseline: OrderDraftWorkspaceBody | null | undefined,

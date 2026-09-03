@@ -2478,6 +2478,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
   incidentPhotoGroups: IncidentPhotoGroup[];
   incidentPhotos: IncidentPhotoMeta[];
+  sourceBlockWipes?: SourceBlockKey[];
 } | null {
   if (!raw) return null;
   try {
@@ -2512,6 +2513,13 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       vehicleAiExtractionMeta,
       incidentPhotoGroups: incident.incidentPhotoGroups,
       incidentPhotos: incident.incidentPhotos,
+      ...(() => {
+        if (!Array.isArray(p.sourceBlockWipes)) return {};
+        const wipes = p.sourceBlockWipes.filter(
+          (k): k is SourceBlockKey => typeof k === "string" && (SOURCE_BLOCK_KEYS as readonly string[]).includes(k),
+        );
+        return wipes.length > 0 ? { sourceBlockWipes: wipes } : {};
+      })(),
     };
   } catch {
     return null;

@@ -10,6 +10,7 @@ import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
+import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -142,6 +143,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     vehicleAiExtractionMeta,
     incidentPhotoGroups: Array.isArray(o.incidentPhotoGroups) ? o.incidentPhotoGroups : undefined,
     incidentPhotos: Array.isArray(o.incidentPhotos) ? o.incidentPhotos : undefined,
+    ...sourceBlockWipesSnapshotField(o.sourceBlockWipes),
   };
 }
 

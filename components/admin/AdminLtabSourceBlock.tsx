@@ -38,9 +38,10 @@ import {
 } from "@/lib/admin-incident-field-presets";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
-import { emptyLtabRow } from "@/lib/admin-source-blocks";
+import { emptyLtabBlock, emptyLtabRow, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import {
   LTAB_COMMENT_TEMPLATES,
@@ -145,7 +146,16 @@ export function AdminLtabSourceBlock({
           className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-0"}`}
         />
       }
-      headerActions={<AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />}
+      headerActions={
+        <AdminSourceBlockHeaderTools
+          sourceLabel={SOURCE_BLOCK_LABELS.ltab}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyLtabBlock())}
+        >
+          <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
+        </AdminSourceBlockHeaderTools>
+      }
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
           <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>

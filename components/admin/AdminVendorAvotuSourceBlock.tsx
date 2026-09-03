@@ -26,6 +26,7 @@ import {
   ltabRowHasData,
   sourcePdfChecklistHasAny,
   coerceVendorAvotuBlock,
+  emptyVendorAvotuBlock,
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import {
@@ -55,6 +56,7 @@ import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
@@ -709,9 +711,16 @@ export function AdminVendorAvotuSourceBlock({
         />
       }
       headerActions={
-        onPdfIncludeChange ?
-          <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
-        : null
+        <AdminSourceBlockHeaderTools
+          sourceLabel={SOURCE_BLOCK_LABELS[blockKey]}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyVendorAvotuBlock())}
+        >
+          {onPdfIncludeChange ? (
+            <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
+          ) : null}
+        </AdminSourceBlockHeaderTools>
       }
     >
       {inner}

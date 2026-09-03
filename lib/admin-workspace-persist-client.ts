@@ -255,6 +255,7 @@ export function workspacePersistFromDraftWorkspace(
     vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
     incidentPhotoGroups: w.incidentPhotoGroups,
     incidentPhotos: w.incidentPhotos,
+    ...(w.sourceBlockWipes?.length ? { sourceBlockWipes: w.sourceBlockWipes } : {}),
   });
   const h = hydrateWorkspaceFromStorage(json);
   if (!h) return null;
@@ -269,5 +270,6 @@ export function workspacePersistFromDraftWorkspace(
     vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
     incidentPhotoGroups: h.incidentPhotoGroups,
     incidentPhotos: h.incidentPhotos,
+    ...(h.sourceBlockWipes?.length ? { sourceBlockWipes: h.sourceBlockWipes } : {}),
   };
 }

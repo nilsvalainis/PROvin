@@ -72,9 +72,16 @@ import {
   isRegressiveWorkspacePersist,
   normalizeOrderWorkspacePersistBody,
   serializeOrderWorkspaceSnapshotFromRef,
+  sourceBlockIsEmpty,
   workspaceHydrationFillScore,
   type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
+import {
+  addSourceBlockWipe,
+  dropSourceBlockWipe,
+  parseSourceBlockWipes,
+  sourceBlockWipesSnapshotField,
+} from "@/lib/admin-source-block-wipes";
 import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
 import {
   bumpWorkspaceSaveGeneration,
@@ -290,6 +297,7 @@ type WorkspacePersist = {
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
   incidentPhotoGroups: IncidentPhotoGroup[];
   incidentPhotos: { id: string }[];
+  sourceBlockWipes?: SourceBlockKey[];
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -303,6 +311,7 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   vehicleAiExtractionMeta: null,
   incidentPhotoGroups: [],
   incidentPhotos: [],
+  sourceBlockWipes: [],
 };
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -485,6 +494,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
     vehicleAiExtractionMeta: ws.vehicleAiExtractionMeta,
     incidentPhotoGroups: ws.incidentPhotoGroups,
     incidentPhotos: ws.incidentPhotos,
+    ...sourceBlockWipesSnapshotField(ws.sourceBlockWipes),
   };
 }
 
@@ -928,6 +938,7 @@ export function OrderDetailWorkspace({
       vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
       incidentPhotoGroups: normalized.incidentPhotoGroups ?? [],
       incidentPhotos: normalized.incidentPhotos ?? [],
+      ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -993,6 +1004,7 @@ export function OrderDetailWorkspace({
           vehicleAiExtractionMeta: body.vehicleAiExtractionMeta,
           incidentPhotoGroups: body.incidentPhotoGroups ?? [],
           incidentPhotos: body.incidentPhotos ?? [],
+          ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -1315,12 +1327,22 @@ export function OrderDetailWorkspace({
     (key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
       workspaceDirtyRef.current = true;
       setWs((prev) => {
+        const prevEmpty = sourceBlockIsEmpty(key, prev.sourceBlocks[key]);
+        const nextEmpty = sourceBlockIsEmpty(key, block);
+        const wipes = parseSourceBlockWipes(prev.sourceBlockWipes);
+        const nextWipes =
+          !prevEmpty && nextEmpty
+            ? addSourceBlockWipe(wipes, key)
+            : !nextEmpty
+              ? dropSourceBlockWipe(wipes, key)
+              : wipes;
         const next = normalizeOrderWorkspacePersistBody({
           ...workspaceToPersistBody(prev),
           sourceBlocks: mergeSourceBlocksWithDefaults({
             ...prev.sourceBlocks,
             [key]: block,
           }),
+          ...sourceBlockWipesSnapshotField(nextWipes),
         });
         return applyPersistBodyToWs(next);
       });
@@ -2020,6 +2042,7 @@ export function OrderDetailWorkspace({
         vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
         incidentPhotoGroups: chosen.incidentPhotoGroups ?? [],
         incidentPhotos: chosen.incidentPhotos ?? [],
+        ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2047,6 +2070,7 @@ export function OrderDetailWorkspace({
         vehicleAiExtractionMeta: chosen.vehicleAiExtractionMeta ?? null,
         incidentPhotoGroups: chosen.incidentPhotoGroups ?? [],
         incidentPhotos: chosen.incidentPhotos ?? [],
+        ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;

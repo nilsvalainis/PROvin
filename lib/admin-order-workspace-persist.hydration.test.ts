@@ -50,6 +50,19 @@ describe("coalesceOrderWorkspacePersistBody", () => {
     expect(isRegressiveWorkspacePersist(coalesced, baseline)).toBe(false);
   });
 
+  it("honors sourceBlockWipes and allows emptying a filled autodna block", () => {
+    const baseline = bodyWithAutodnaComment("Pilns komentārs ar saturu");
+    baseline.sourceBlocks.autodna.photos = [{ id: "sbp_ph_0123456789abcdef01234567" }];
+    const incoming = {
+      ...bodyWithAutodnaComment(""),
+      sourceBlockWipes: ["autodna" as const],
+    };
+    const coalesced = coalesceOrderWorkspacePersistBody(incoming, baseline);
+    expect(coalesced.sourceBlocks.autodna.comments).toBe("");
+    expect(coalesced.sourceBlocks.autodna.photos).toEqual([]);
+    expect(isRegressiveWorkspacePersist(incoming, baseline)).toBe(false);
+  });
+
   it("coalesce keeps shorter user iriss over longer baseline (post-AI edit)", () => {
     const baseline = { ...bodyWithAutodnaComment(""), iriss: "<p>Garš AI ģenerēts kopsavilkums ar daudz detaļām.</p>" };
     const incoming = { ...baseline, iriss: "<p>Īss labojums.</p>" };

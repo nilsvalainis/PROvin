@@ -5,7 +5,9 @@ import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeade
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
   citiAvotiSectionLabel,
+  emptyCitiAvotiBlock,
   emptyCitiAvotiSection,
+  SOURCE_BLOCK_LABELS,
   type CitiAvotiBlockState,
   type CitiAvotiSectionState,
   type VendorAvotuBlockState,
@@ -15,6 +17,7 @@ import {
   ADMIN_RAW_UNPROCESSED_MAX_LEN,
 } from "@/lib/admin-raw-field-limits";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import {
@@ -111,7 +114,16 @@ export function AdminCitiAvotiSourceBlock({
           className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-0"}`}
         />
       }
-      headerActions={<AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />}
+      headerActions={
+        <AdminSourceBlockHeaderTools
+          sourceLabel={SOURCE_BLOCK_LABELS.citi_avoti}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyCitiAvotiBlock())}
+        >
+          <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
+        </AdminSourceBlockHeaderTools>
+      }
     >
       <div className={`flex min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
         <div className={`min-h-0 flex-1 space-y-3 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>

@@ -15,6 +15,7 @@ import {
   type SourceBlockKey,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
@@ -63,6 +64,8 @@ export type OrderWorkspacePersistBody = {
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
   incidentPhotoGroups?: IncidentPhotoGroup[];
   incidentPhotos?: IncidentPhotoMeta[];
+  /** Operatora apzināta avotu notīrīšana — šie bloki drīkst pārrakstīt bagātāku baseline. */
+  sourceBlockWipes?: SourceBlockKey[];
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -88,6 +91,13 @@ export function parseWorkspaceSnapshotSavedAtMs(raw: string | null | undefined):
 }
 
 const TRAFFIC_RANK: Record<TrafficFillLevel, number> = { empty: 0, partial: 1, complete: 2 };
+
+export function sourceBlockIsEmpty(
+  key: SourceBlockKey,
+  block: WorkspaceSourceBlocks[SourceBlockKey],
+): boolean {
+  return sourceBlockTrafficRank(key, block) === 0;
+}
 
 function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]): number {
   switch (key) {
@@ -222,80 +232,117 @@ function withMergedSourceBlockPhotos<T extends { photos?: SourceBlockPhotoMeta[]
 
 /**
  * Apvieno ienākošo darba zonu ar pēdējo zināmo labo momentuzņēmumu — nekad neiztukšo bloku,
- * kurā baseline jau bija dati (piem. saglabā AutoDNA, ja saglabā tikai Citi avoti).
+ * kurā baseline jau bija dati (piem. saglabā AutoDNA, ja saglabā tikai Citi avoti),
+ * izņemot `sourceBlockWipes` (operatora apzināta notīrīšana).
  */
 export function coalesceOrderWorkspacePersistBody(
   incoming: OrderWorkspacePersistBody,
   baseline: OrderWorkspacePersistBody | null | undefined,
 ): OrderWorkspacePersistBody {
   const incomingBlocks = mergeSourceBlocksWithDefaults(incoming.sourceBlocks);
+  const wipes = parseSourceBlockWipes(incoming.sourceBlockWipes);
+  const wiped = new Set(wipes);
   if (!baseline) {
-    return normalizeOrderWorkspacePersistBody({ ...incoming, sourceBlocks: incomingBlocks });
+    return normalizeOrderWorkspacePersistBody({
+      ...incoming,
+      sourceBlocks: incomingBlocks,
+      ...sourceBlockWipesSnapshotField(wipes),
+    });
   }
   const baselineBlocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
   const mergedBlocks: WorkspaceSourceBlocks = {
-    csdd: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("csdd", incomingBlocks.csdd, baselineBlocks.csdd),
-      incomingBlocks.csdd,
-      baselineBlocks.csdd,
-    ),
-    autodna: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
-      incomingBlocks.autodna,
-      baselineBlocks.autodna,
-    ),
-    carvertical: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
-      incomingBlocks.carvertical,
-      baselineBlocks.carvertical,
-    ),
-    auto_records: pickRicherAutoRecordsBlock(incomingBlocks.auto_records, baselineBlocks.auto_records),
-    cc_vin: pickRicherCcVinBlock(incomingBlocks.cc_vin, baselineBlocks.cc_vin),
-    tjekbil: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("tjekbil", incomingBlocks.tjekbil, baselineBlocks.tjekbil),
-      incomingBlocks.tjekbil,
-      baselineBlocks.tjekbil,
-    ),
-    mnt_ee: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("mnt_ee", incomingBlocks.mnt_ee, baselineBlocks.mnt_ee),
-      incomingBlocks.mnt_ee,
-      baselineBlocks.mnt_ee,
-    ),
-    lkf_ee: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("lkf_ee", incomingBlocks.lkf_ee, baselineBlocks.lkf_ee),
-      incomingBlocks.lkf_ee,
-      baselineBlocks.lkf_ee,
-    ),
-    carinfo: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("carinfo", incomingBlocks.carinfo, baselineBlocks.carinfo),
-      incomingBlocks.carinfo,
-      baselineBlocks.carinfo,
-    ),
-    ltab: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
-      incomingBlocks.ltab,
-      baselineBlocks.ltab,
-    ),
-    tirgus: withMergedSourceBlockPhotos(
-      pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
-      incomingBlocks.tirgus,
-      baselineBlocks.tirgus,
-    ),
-    citi_avoti: (() => {
-      const picked = pickRicherSourceBlock("citi_avoti", incomingBlocks.citi_avoti, baselineBlocks.citi_avoti);
-      const inSec = incomingBlocks.citi_avoti.sections ?? [];
-      const baseSec = baselineBlocks.citi_avoti.sections ?? [];
-      return {
-        ...picked,
-        sections: (picked.sections ?? []).map((s, i) =>
-          withMergedSourceBlockPhotos(s, inSec[i] ?? s, baseSec[i] ?? s),
+    csdd: wiped.has("csdd")
+      ? incomingBlocks.csdd
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("csdd", incomingBlocks.csdd, baselineBlocks.csdd),
+          incomingBlocks.csdd,
+          baselineBlocks.csdd,
         ),
-      };
-    })(),
-    listing_analysis: pickRicherListingAnalysisBlock(
-      incomingBlocks.listing_analysis,
-      baselineBlocks.listing_analysis,
-    ),
+    autodna: wiped.has("autodna")
+      ? incomingBlocks.autodna
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("autodna", incomingBlocks.autodna, baselineBlocks.autodna),
+          incomingBlocks.autodna,
+          baselineBlocks.autodna,
+        ),
+    carvertical: wiped.has("carvertical")
+      ? incomingBlocks.carvertical
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
+          incomingBlocks.carvertical,
+          baselineBlocks.carvertical,
+        ),
+    auto_records: wiped.has("auto_records")
+      ? incomingBlocks.auto_records
+      : pickRicherAutoRecordsBlock(incomingBlocks.auto_records, baselineBlocks.auto_records),
+    cc_vin: wiped.has("cc_vin")
+      ? incomingBlocks.cc_vin
+      : pickRicherCcVinBlock(incomingBlocks.cc_vin, baselineBlocks.cc_vin),
+    tjekbil: wiped.has("tjekbil")
+      ? incomingBlocks.tjekbil
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("tjekbil", incomingBlocks.tjekbil, baselineBlocks.tjekbil),
+          incomingBlocks.tjekbil,
+          baselineBlocks.tjekbil,
+        ),
+    mnt_ee: wiped.has("mnt_ee")
+      ? incomingBlocks.mnt_ee
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("mnt_ee", incomingBlocks.mnt_ee, baselineBlocks.mnt_ee),
+          incomingBlocks.mnt_ee,
+          baselineBlocks.mnt_ee,
+        ),
+    lkf_ee: wiped.has("lkf_ee")
+      ? incomingBlocks.lkf_ee
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("lkf_ee", incomingBlocks.lkf_ee, baselineBlocks.lkf_ee),
+          incomingBlocks.lkf_ee,
+          baselineBlocks.lkf_ee,
+        ),
+    carinfo: wiped.has("carinfo")
+      ? incomingBlocks.carinfo
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("carinfo", incomingBlocks.carinfo, baselineBlocks.carinfo),
+          incomingBlocks.carinfo,
+          baselineBlocks.carinfo,
+        ),
+    ltab: wiped.has("ltab")
+      ? incomingBlocks.ltab
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("ltab", incomingBlocks.ltab, baselineBlocks.ltab),
+          incomingBlocks.ltab,
+          baselineBlocks.ltab,
+        ),
+    tirgus: wiped.has("tirgus")
+      ? incomingBlocks.tirgus
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
+          incomingBlocks.tirgus,
+          baselineBlocks.tirgus,
+        ),
+    citi_avoti: wiped.has("citi_avoti")
+      ? incomingBlocks.citi_avoti
+      : (() => {
+          const picked = pickRicherSourceBlock(
+            "citi_avoti",
+            incomingBlocks.citi_avoti,
+            baselineBlocks.citi_avoti,
+          );
+          const inSec = incomingBlocks.citi_avoti.sections ?? [];
+          const baseSec = baselineBlocks.citi_avoti.sections ?? [];
+          return {
+            ...picked,
+            sections: (picked.sections ?? []).map((s, i) =>
+              withMergedSourceBlockPhotos(s, inSec[i] ?? s, baseSec[i] ?? s),
+            ),
+          };
+        })(),
+    listing_analysis: wiped.has("listing_analysis")
+      ? incomingBlocks.listing_analysis
+      : pickRicherListingAnalysisBlock(
+          incomingBlocks.listing_analysis,
+          baselineBlocks.listing_analysis,
+        ),
   };
   const incidentSynced = syncIncidentPhotoGroupsAndFlat(
     mergeIncidentPhotoGroups(
@@ -316,6 +363,7 @@ export function coalesceOrderWorkspacePersistBody(
     vehicleAiExtractionMeta: incoming.vehicleAiExtractionMeta ?? baseline.vehicleAiExtractionMeta,
     incidentPhotoGroups: incidentSynced.photoGroups,
     incidentPhotos: incidentSynced.photos,
+    ...sourceBlockWipesSnapshotField(wipes),
   };
 }
 
@@ -325,6 +373,7 @@ export function isRegressiveWorkspacePersist(
   baseline: OrderWorkspacePersistBody | null | undefined,
 ): boolean {
   if (!baseline) return false;
+  if (parseSourceBlockWipes(incoming.sourceBlockWipes).length > 0) return false;
   const coalesced = coalesceOrderWorkspacePersistBody(incoming, baseline);
   const inScore = workspaceHydrationFillScore(coalesced);
   const baseScore = workspaceHydrationFillScore(baseline);
@@ -356,6 +405,7 @@ export function buildOrderDraftWorkspaceBody(
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
     incidentPhotoGroups: safe.incidentPhotoGroups,
     incidentPhotos: safe.incidentPhotos,
+    ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
   };
 }
 
@@ -399,6 +449,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     vehicleAiExtractionMeta: body.vehicleAiExtractionMeta ?? null,
     incidentPhotoGroups: incident.incidentPhotoGroups,
     incidentPhotos: incident.incidentPhotos,
+    ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
   };
 }
 
@@ -425,6 +476,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
     incidentPhotoGroups: normalized.incidentPhotoGroups,
     incidentPhotos: normalized.incidentPhotos,
+    ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
     savedAt,
   });
 }
@@ -452,6 +504,7 @@ export function serializeOrderWorkspaceSnapshot(
     vehicleAiExtractionMeta: safe.vehicleAiExtractionMeta,
     incidentPhotoGroups: safe.incidentPhotoGroups,
     incidentPhotos: safe.incidentPhotos,
+    ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
     savedAt,
   });
 }

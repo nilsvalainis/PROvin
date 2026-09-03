@@ -23,6 +23,7 @@ import type {
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
+import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
 import {
@@ -467,6 +468,7 @@ export async function patchOrderDraft(
 
   let workspacePatch: OrderDraftWorkspaceBody | null | undefined = patch.workspace;
   if (workspacePatch !== undefined && workspacePatch !== null) {
+    const incomingWipes = parseSourceBlockWipes(workspacePatch.sourceBlockWipes);
     const json = JSON.stringify({
       sourceBlocks: deepSanitizeDraftStrings(workspacePatch.sourceBlocks),
       iriss: sanitizeDraftTextForStorage(workspacePatch.iriss),
@@ -481,6 +483,7 @@ export async function patchOrderDraft(
       vehicleAiExtractionMeta: workspacePatch.vehicleAiExtractionMeta,
       incidentPhotoGroups: workspacePatch.incidentPhotoGroups,
       incidentPhotos: workspacePatch.incidentPhotos,
+      ...sourceBlockWipesSnapshotField(incomingWipes),
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -498,6 +501,7 @@ export async function patchOrderDraft(
       vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
       incidentPhotoGroups: h.incidentPhotoGroups,
       incidentPhotos: h.incidentPhotos,
+      ...sourceBlockWipesSnapshotField(h.sourceBlockWipes ?? incomingWipes),
     };
   }
 

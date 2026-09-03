@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import {
@@ -21,6 +22,7 @@ import { ADMIN_RAW_UNPROCESSED_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   NEGADIJUMU_VESTURE_TITLE,
+  emptyVinRegistryBlock,
   emptyVinRegistryIncidentRow,
   emptyVinRegistryMileageRow,
   emptyVinRegistryTimelineRow,
@@ -830,7 +832,16 @@ Neviena periodiskā apskate nav izgāzta.`
         <AdminSourceBlockHeader blockKey={blockKey} trafficFillLevel={trafficFillLevel} className="shrink-0 mb-0" />
       }
       headerActions={
-        onPdfIncludeChange ? <AdminPdfIncludeToggle checked={pdfInclude ?? true} onChange={onPdfIncludeChange} /> : undefined
+        <AdminSourceBlockHeaderTools
+          sourceLabel={SOURCE_BLOCK_LABELS[blockKey]}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyVinRegistryBlock())}
+        >
+          {onPdfIncludeChange ? (
+            <AdminPdfIncludeToggle checked={pdfInclude ?? true} onChange={onPdfIncludeChange} />
+          ) : null}
+        </AdminSourceBlockHeaderTools>
       }
     >
       {inner}

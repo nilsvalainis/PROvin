@@ -15,6 +15,7 @@ import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell"
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -45,6 +46,7 @@ import {
 import {
   CC_VIN_ADMIN_LABEL,
   CC_VIN_SUBTITLES,
+  emptyCcVinBlock,
   emptyCcVinCheckRow,
   emptyCcVinDamageRow,
   emptyCcVinMileageRow,
@@ -228,10 +230,17 @@ export function AdminCcVinSourceBlock({
         />
       }
       headerActions={
-        <AdminPdfIncludeToggle
-          checked={pdfInclude}
-          onChange={onPdfIncludeChange}
-        />
+        <AdminSourceBlockHeaderTools
+          sourceLabel={CC_VIN_ADMIN_LABEL}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyCcVinBlock())}
+        >
+          <AdminPdfIncludeToggle
+            checked={pdfInclude}
+            onChange={onPdfIncludeChange}
+          />
+        </AdminSourceBlockHeaderTools>
       }
     >
       <div

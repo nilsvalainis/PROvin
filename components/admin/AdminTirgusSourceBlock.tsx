@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
+import { AdminClearSourceBlockButton } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminListingPriceHistoryTable } from "@/components/admin/AdminListingPriceHistoryTable";
 import { AdminSourceCommentField, type AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
@@ -20,6 +21,7 @@ import {
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
 import {
   emptyTirgusFields,
+  SOURCE_BLOCK_LABELS,
   LISTING_ANALYSIS_COMMENT_LABEL,
   LISTING_HISTORY_SUBSECTION_TITLE,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
@@ -520,10 +522,20 @@ export function AdminTirgusSourceBlock({
       </div>
     ) : null;
 
+  const clearFieldsBtn =
+    !readOnly ? (
+      <AdminClearSourceBlockButton
+        sourceLabel={SOURCE_BLOCK_LABELS.tirgus}
+        disabled={disabled}
+        onClear={() => onChange(emptyTirgusFields())}
+      />
+    ) : null;
+
   if (variant === "embedded") {
     return (
       <div className={shell}>
         <div className={embDense ? "space-y-1.5" : "space-y-2"}>
+          {clearFieldsBtn ? <div className="flex justify-end">{clearFieldsBtn}</div> : null}
           {marketAnalyzeRow}
           {adifyFetchRow}
           {historyTable}
@@ -537,7 +549,10 @@ export function AdminTirgusSourceBlock({
 
   return (
     <div className={shell}>
-      <AdminSourceBlockHeader blockKey="tirgus" className="mb-2 shrink-0" />
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+        <AdminSourceBlockHeader blockKey="tirgus" className="mb-0 shrink-0" />
+        {clearFieldsBtn}
+      </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
         {adifyFetchRow}
         {historyTable}

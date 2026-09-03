@@ -13,6 +13,7 @@ import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   CSDD_PREVIOUS_INSPECTION_TITLE,
   CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE,
+  emptyCsddFields,
   emptyCsddMileageRow,
   finalizeMileageHistory,
   LISTING_ANALYSIS_COMMENT_LABEL,
@@ -37,6 +38,7 @@ import {
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
@@ -191,7 +193,14 @@ export function AdminCsddSourceBlock({
         />
       }
       headerActions={
-        <AdminPdfIncludeToggle checked={pdfIncludeBlock} onChange={onPdfIncludeBlockChange} />
+        <AdminSourceBlockHeaderTools
+          sourceLabel={SOURCE_BLOCK_LABELS.csdd}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyCsddFields())}
+        >
+          <AdminPdfIncludeToggle checked={pdfIncludeBlock} onChange={onPdfIncludeBlockChange} />
+        </AdminSourceBlockHeaderTools>
       }
     >
       <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2 p-2"}>

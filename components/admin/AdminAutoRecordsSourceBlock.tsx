@@ -36,7 +36,9 @@ import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
+  emptyAutoRecordsBlock,
   emptyAutoRecordsServiceRow,
+  SOURCE_BLOCK_LABELS,
   sourcePdfChecklistHasAny,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
@@ -58,6 +60,7 @@ import { AdminOutvinDealerReportFields } from "@/components/admin/AdminOutvinDea
 import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-vehicle-info-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
@@ -226,7 +229,16 @@ export function AdminAutoRecordsSourceBlock({
           className={`shrink-0 ${trafficFillLevel ? "mb-0" : "mb-0"}`}
         />
       }
-      headerActions={<AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />}
+      headerActions={
+        <AdminSourceBlockHeaderTools
+          sourceLabel={SOURCE_BLOCK_LABELS.auto_records}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyAutoRecordsBlock())}
+        >
+          <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
+        </AdminSourceBlockHeaderTools>
+      }
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
         <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
