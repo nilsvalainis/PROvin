@@ -189,9 +189,18 @@ export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
   return AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison;
 }
 
+export const FLASH_MAX_OPERATOR_NOTES_MAX_LEN = 8000;
+
+export function clipFlashMaxOperatorNotes(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw.trim().slice(0, FLASH_MAX_OPERATOR_NOTES_MAX_LEN);
+}
+
 export type FlashMaxSelection = {
   selectedIds: string[];
   tiers: Record<string, AiAdminModelTier>;
+  /** Operatora komanda visiem izvēlētajiem aģentiem (OPERATORA KOMANDAS). */
+  operatorNotes?: string;
 };
 
 export function defaultFlashMaxTiers(): Record<string, AiAdminModelTier> {

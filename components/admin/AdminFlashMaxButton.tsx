@@ -5,6 +5,8 @@ import { Loader2, Sparkles } from "lucide-react";
 
 import {
   FLASH_MAX_JOBS,
+  FLASH_MAX_OPERATOR_NOTES_MAX_LEN,
+  clipFlashMaxOperatorNotes,
   defaultFlashMaxSelection,
   emptyFlashMaxSelection,
   summaryOnlyFlashMaxSelection,
@@ -87,6 +89,7 @@ function JobRow({
 export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRun }: Props) {
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState<FlashMaxSelection>(defaultFlashMaxSelection);
+  const [operatorNotes, setOperatorNotes] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const selectedCount = selection.selectedIds.length;
@@ -123,7 +126,10 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
   const confirm = () => {
     if (busy || selectedCount === 0) return;
     setOpen(false);
-    onRun(selection);
+    onRun({
+      ...selection,
+      operatorNotes: clipFlashMaxOperatorNotes(operatorNotes),
+    });
   };
 
   return (
@@ -135,7 +141,7 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
         aria-expanded={open}
         aria-haspopup="dialog"
         className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
-        title="Atver izvēli: kuras sadaļas un ar kuriem aģentiem ģenerēt. Noklusējums paliek esošie Flash Max lauki."
+        title="Atver izvēli: kuras sadaļas, ar kuriem aģentiem un kādu komandu ģenerēt. Noklusējums paliek esošie Flash Max lauki."
       >
         {busy ? (
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
@@ -148,7 +154,7 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
         <div
           role="dialog"
           aria-labelledby={titleId}
-          className="absolute left-0 top-full z-50 mt-1 w-[min(22.5rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(15,23,42,0.14)]"
+          className="absolute left-0 top-full z-50 mt-1 w-[min(24rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(15,23,42,0.14)]"
         >
           <div className="mb-1.5 flex flex-wrap items-start justify-between gap-1.5">
             <div className="min-w-0">
@@ -156,7 +162,7 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
                 FLASH MAX
               </p>
               <p className="text-[9px] leading-snug text-slate-500">
-                Izvēlies sadaļas, tad apstiprini. Aģenti pēc noklusējuma — kā ✨ pogās.
+                Izvēlies sadaļas, ieraksti komandu, tad apstiprini. Aģenti pēc noklusējuma — kā ✨ pogās.
               </p>
             </div>
             <div className="flex flex-wrap gap-1">
@@ -209,6 +215,24 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
               />
             ))}
           </div>
+          <label className="mt-2 block border-t border-slate-100 pt-2">
+            <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+              Papildu piezīmes / komanda
+            </span>
+            <span className="mb-1 block text-[9px] leading-snug text-slate-500">
+              Iet visiem izvēlētajiem aģentiem. Apstrādā katru tēmu; ja saki „tikai par…”, pārējais netiek
+              papildināts. Jauns fakts — labo visus tekstus pēc tā.
+            </span>
+            <textarea
+              className="min-h-[4.5rem] w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
+              placeholder="Piem., jauns AutoDNA: 12.03.2019 Vācijā 18 400 €; labo visus komentārus pēc šiem faktiem…"
+              value={operatorNotes}
+              disabled={busy}
+              maxLength={FLASH_MAX_OPERATOR_NOTES_MAX_LEN}
+              onChange={(e) => setOperatorNotes(e.target.value.slice(0, FLASH_MAX_OPERATOR_NOTES_MAX_LEN))}
+              aria-label="Papildu piezīmes FLASH MAX ģenerēšanai"
+            />
+          </label>
           <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-slate-100 pt-2">
             <button type="button" className={chip} disabled={busy} onClick={() => setOpen(false)}>
               Atcelt

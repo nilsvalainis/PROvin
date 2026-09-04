@@ -3,6 +3,8 @@ import {
   FLASH_MAX_DAILY_JOB_IDS,
   FLASH_MAX_DEFAULT_TIER,
   FLASH_MAX_JOBS,
+  FLASH_MAX_OPERATOR_NOTES_MAX_LEN,
+  clipFlashMaxOperatorNotes,
   FLASH_MAX_SUMMARY_ONLY_JOB_IDS,
   defaultFlashMaxSelection,
   expandFlashMaxRunJobs,
@@ -41,6 +43,16 @@ describe("FLASH MAX jobs", () => {
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "summary")!)).toBe("pro");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "seller")!)).toBe("flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "price")!)).toBe("flash");
+  });
+
+  it("clips FLASH MAX operator notes for all selected agents", () => {
+    expect(clipFlashMaxOperatorNotes("  labo visus tekstus pēc jaunā AutoDNA  ")).toBe(
+      "labo visus tekstus pēc jaunā AutoDNA",
+    );
+    expect(clipFlashMaxOperatorNotes(null)).toBe("");
+    expect(clipFlashMaxOperatorNotes("x".repeat(FLASH_MAX_OPERATOR_NOTES_MAX_LEN + 40))).toHaveLength(
+      FLASH_MAX_OPERATOR_NOTES_MAX_LEN,
+    );
   });
 
   it("lets the operator pick extras without changing daily defaults", () => {

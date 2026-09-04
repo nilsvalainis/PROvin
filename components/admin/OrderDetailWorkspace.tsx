@@ -1754,8 +1754,12 @@ export function OrderDetailWorkspace({
         }
 
         const endpoint = job.kind === "source" ? "/api/admin/ai/source-comment" : job.endpoint;
+        const operatorNotes = selection.operatorNotes?.trim() ?? "";
         const body = {
-          ...buildAiOrderPayload({ existingDraftPlain }),
+          ...buildAiOrderPayload({
+            existingDraftPlain,
+            ...(operatorNotes ? { operatorNotes } : {}),
+          }),
           modelTier: flashMaxJobTier(job, selection),
           ...(job.kind === "source"
             ? {
