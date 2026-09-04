@@ -1,26 +1,25 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminListingPeekActionRow } from "@/components/admin/AdminListingPeekActionRow";
 import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
+import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 import { AdminListingPeekPhoneField } from "@/components/admin/AdminListingPeekPhoneField";
 import {
   AdminListingPeekCardShell,
   AdminListingPeekSla,
 } from "@/components/admin/AdminListingPeekSla";
-import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
+import { isSmtpConfigured } from "@/lib/email/send-transactional";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
+import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
 import { canonicalizeListingUrl, isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
 import {
-  getListingPeekById,
   listListingPeeks,
-  markListingPeekCommentSent,
   updateListingPeekContact,
   updateListingPeekStatus,
   type ListingPeekStatus,
 } from "@/lib/listing-peek-store";
-import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
-import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 
 export const dynamic = "force-dynamic";
 
@@ -61,35 +60,9 @@ async function saveContact(formData: FormData) {
   redirect("/admin/atras-vertesanas?contact=saved");
 }
 
-async function sendComment(formData: FormData) {
-  "use server";
-  const id = String(formData.get("id") ?? "").trim();
-  const comment = String(formData.get("comment") ?? "").trim();
-  if (!id || comment.length < 8) {
-    redirect("/admin/atras-vertesanas?mail=invalid");
-  }
-  if (!isSmtpConfigured()) {
-    redirect("/admin/atras-vertesanas?mail=smtp");
-  }
-
-  const entry = await getListingPeekById(id);
-  if (!entry?.email || !isValidOrderEmail(entry.email)) {
-    redirect("/admin/atras-vertesanas?mail=missing");
-  }
-
-  try {
-    await sendListingPeekCustomerCommentEmail({
-      to: entry.email,
-      comment,
-      listingUrl: entry.listingUrl,
-    });
-    await markListingPeekCommentSent(id, comment);
-  } catch (e) {
-    console.error("[atras-vertesanas] send comment failed:", e);
-    redirect("/admin/atras-vertesanas?mail=error");
-  }
-  revalidatePath("/admin/atras-vertesanas");
-  redirect("/admin/atras-vertesanas?mail=sent");
+async function ListingPeekConversionPanel() {
+  const stats = await loadListingPeekConversionStats();
+  return <AdminListingPeekConversionCard stats={stats} variant="compact" />;
 }
 
 function formatWhen(iso: string): string {
@@ -107,7 +80,6 @@ export default async function AdminListingPeeksPage({
   searchParams?: Promise<{ mail?: string; contact?: string }>;
 }) {
   const entries = await listListingPeeks(200);
-  const peekConversion = await loadListingPeekConversionStats();
   const smtpOk = isSmtpConfigured();
   const sp = searchParams ? await searchParams : undefined;
   const mail = sp?.mail;
@@ -132,7 +104,9 @@ export default async function AdminListingPeeksPage({
       </AdminDashboardHeaderWithMenu>
 
       <div className="mt-6">
-        <AdminListingPeekConversionCard stats={peekConversion} variant="compact" />
+        <Suspense fallback={<div className="h-[8.5rem] rounded-2xl border border-slate-200/80 bg-white" />}>
+          <ListingPeekConversionPanel />
+        </Suspense>
       </div>
 
       {contact === "saved" ? (
@@ -185,7 +159,6 @@ export default async function AdminListingPeeksPage({
                     smtpOk={smtpOk}
                     setStatus={setStatus}
                     saveContact={saveContact}
-                    sendComment={sendComment}
                     showSend
                   />
                 ))}
@@ -206,7 +179,6 @@ export default async function AdminListingPeeksPage({
                     smtpOk={smtpOk}
                     setStatus={setStatus}
                     saveContact={saveContact}
-                    sendComment={sendComment}
                     showSend={false}
                     compact
                   />
@@ -225,7 +197,6 @@ function PeekCard({
   smtpOk,
   setStatus,
   saveContact,
-  sendComment,
   showSend,
   compact = false,
 }: {
@@ -233,7 +204,6 @@ function PeekCard({
   smtpOk: boolean;
   setStatus: (formData: FormData) => Promise<void>;
   saveContact: (formData: FormData) => Promise<void>;
-  sendComment: (formData: FormData) => Promise<void>;
   showSend: boolean;
   compact?: boolean;
 }) {
@@ -310,16 +280,16 @@ function PeekCard({
       </div>
 
       {showSend ? (
-        <form action={sendComment} className="mt-3 border-t border-slate-100 pt-3">
-          <input type="hidden" name="id" value={e.id} />
+        <div className="mt-3 border-t border-slate-100 pt-3">
           <AdminListingPeekCommentComposer
             fieldId={`peek-${e.id}`}
+            peekId={e.id}
             listingUrl={listingUrl}
             smtpOk={smtpOk}
           />
-        </form>
+        </div>
       ) : isDone ? (
-        <PeekSentFollowUp entry={e} smtpOk={smtpOk} sendComment={sendComment} />
+        <PeekSentFollowUp entry={e} smtpOk={smtpOk} />
       ) : null}
     </AdminListingPeekCardShell>
   );
@@ -328,11 +298,9 @@ function PeekCard({
 function PeekSentFollowUp({
   entry: e,
   smtpOk,
-  sendComment,
 }: {
   entry: Awaited<ReturnType<typeof listListingPeeks>>[number];
   smtpOk: boolean;
-  sendComment: (formData: FormData) => Promise<void>;
 }) {
   const parsed = e.comment ? parseListingPeekCustomerComment(e.comment) : null;
   return (
@@ -354,10 +322,10 @@ function PeekSentFollowUp({
           Iepriekšējā vēstule nav saglabāta (vecāks ieraksts). Vari sastādīt jaunu.
         </p>
       )}
-      <form action={sendComment} className="mt-3">
-        <input type="hidden" name="id" value={e.id} />
+      <div className="mt-3">
         <AdminListingPeekCommentComposer
           fieldId={`peek-${e.id}-followup`}
+          peekId={e.id}
           listingUrl={canonicalizeListingUrl(e.listingUrl)}
           smtpOk={smtpOk}
           initialLines={parsed?.lines}
@@ -365,7 +333,7 @@ function PeekSentFollowUp({
           initialLetter={e.comment}
           submitLabel="Nosūtīt vēlreiz"
         />
-      </form>
+      </div>
     </details>
   );
 }

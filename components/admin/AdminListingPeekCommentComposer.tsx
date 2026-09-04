@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
@@ -12,6 +13,7 @@ import {
 } from "@/lib/admin-ai-client-errors";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import { LISTING_PEEK_COMMENT_MIN_LEN } from "@/lib/listing-peek-send-comment-input";
 import {
   LISTING_PEEK_COMMENT_CLOSER,
   LISTING_PEEK_TOPICS,
@@ -44,8 +46,16 @@ const emptyLines = (): Record<ListingPeekTopicId, string> => ({
   photos: "",
 });
 
+const SEND_ERROR_LABEL: Record<string, string> = {
+  invalid: "Komentārs pārāk īss.",
+  smtp: "SMTP nav konfigurēts.",
+  missing: "E-pasta adrese nav derīga.",
+  error: "E-pastu neizdevās nosūtīt. Mēģini vēlreiz.",
+};
+
 export function AdminListingPeekCommentComposer({
   fieldId,
+  peekId,
   smtpOk,
   listingUrl,
   initialLines,
@@ -54,6 +64,7 @@ export function AdminListingPeekCommentComposer({
   submitLabel = "Nosūtīt e-pastu",
 }: {
   fieldId: string;
+  peekId: string;
   smtpOk: boolean;
   listingUrl: string;
   initialLines?: Partial<Record<ListingPeekTopicId, string>>;
@@ -61,6 +72,7 @@ export function AdminListingPeekCommentComposer({
   initialLetter?: string;
   submitLabel?: string;
 }) {
+  const router = useRouter();
   const [lines, setLines] = useState(() => ({ ...emptyLines(), ...initialLines }));
   const [tones, setTones] = useState(() => inferTones({ ...emptyLines(), ...initialLines }));
   const [closer, setCloser] = useState(initialCloser);
@@ -71,7 +83,9 @@ export function AdminListingPeekCommentComposer({
       assembleListingPeekCustomerComment({ closer: initialCloser, lines: { ...emptyLines(), ...initialLines } }),
   );
   const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<ListingPeekTopicId | null>(() => {
     const filled = LISTING_PEEK_TOPICS.find((t) => (initialLines?.[t.id] ?? "").trim());
     return filled?.id ?? "odometer";
@@ -164,8 +178,46 @@ export function AdminListingPeekCommentComposer({
     }
   }
 
+  async function sendLetter() {
+    const comment = letter.trim();
+    if (!smtpOk || sending || busy || comment.length < LISTING_PEEK_COMMENT_MIN_LEN) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      const res = await fetch("/api/admin/listing-peek-comment", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: peekId, comment }),
+      });
+      if (!res.ok) {
+        let reason = "error";
+        try {
+          const data = (await res.json()) as { error?: string };
+          if (data.error && SEND_ERROR_LABEL[data.error]) reason = data.error;
+        } catch {
+          /* ignore */
+        }
+        setSendError(SEND_ERROR_LABEL[reason] ?? SEND_ERROR_LABEL.error);
+        return;
+      }
+      router.replace("/admin/atras-vertesanas?mail=sent");
+      router.refresh();
+    } catch {
+      setSendError(SEND_ERROR_LABEL.error);
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
-    <div className="space-y-2.5">
+    <form
+      className="space-y-2.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void sendLetter();
+      }}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
           Komentārs klientam — ikona atver sagataves
@@ -174,14 +226,14 @@ export function AdminListingPeekCommentComposer({
           label="✨ Flash"
           recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.listing_peek}
           tiers={["gemini-flash", "gemini"]}
-          disabled={!listingUrl.trim()}
-          busy={busy}
+          disabled={!listingUrl.trim() || sending}
+          busy={busy || sending}
           dialogTitle="Piezīmes ātrajam vērtējumam"
           dialogHint="Apstrādā visu vēstules tekstu zemāk — sagataves + tavus specifiskos teikumus. Flash nolasīs ss.lv un pārkārtos PROVIN stilā, neizmetot tavas detaļas."
           onGenerate={(notes, tier) => void runAi(notes, tier)}
         />
       </div>
-      <AdminAiFieldError message={aiError} />
+      <AdminAiFieldError message={aiError ?? sendError} />
 
       <div className="space-y-2">
         {LISTING_PEEK_TOPICS.map((topic) => {
@@ -297,15 +349,17 @@ export function AdminListingPeekCommentComposer({
       <div className="flex flex-wrap items-center gap-3 pt-0.5">
         <button
           type="submit"
-          disabled={!smtpOk || letter.trim().length < 8}
+          disabled={!smtpOk || sending || busy || letter.trim().length < LISTING_PEEK_COMMENT_MIN_LEN}
           className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {submitLabel}
+          {sending ? "Sūta…" : submitLabel}
         </button>
         {!smtpOk ? (
           <p className="text-[12px] text-amber-700">SMTP nav konfigurēts.</p>
+        ) : sending ? (
+          <p className="text-[12px] text-[var(--color-provin-muted)]">Sūta e-pastu. Pēc tam karte uzreiz pāries pie nosūtītajiem.</p>
         ) : null}
       </div>
-    </div>
+    </form>
   );
 }
