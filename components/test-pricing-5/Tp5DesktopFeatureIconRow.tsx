@@ -106,11 +106,13 @@ function FeatureTooltip({ label }: { label: string }) {
 type Props = {
   /** Desktop pricing card active tier — dealer swaps the rail to manufacturer logos. */
   activeServiceId?: Tp5MobileServiceId;
+  /** Optional label/icon set; when omitted, follows the public hero tab. */
+  features?: ReturnType<typeof getTp5DesktopHeroFeatures>;
 };
 
-export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits" }: Props) {
+export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits", features: featuresProp }: Props) {
   const locale = useLocale();
-  const features = getTp5DesktopHeroFeatures(locale, activeServiceId);
+  const features = featuresProp ?? getTp5DesktopHeroFeatures(locale, activeServiceId);
   const uiCopy = getTp5UiCopy(locale);
   const showDealerBrands = activeServiceId === "dealer";
 
