@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-04.1 - Gara domuzīme "—" un en dash "–" aizliegtas visā klienta
+ *   tekstā (mājas lapa, B2B, e-pasti, atskaites). Vietā: komats, kols, jauns
+ *   teikums vai īsā ASCII "-" (24-72h, 2007-2015).
  * - 2026-08-29.1 — Ātrie vērtējumi: sagataves turpina to pašu rindkopu
  *   (punkts + viena atstarpe), bez 1. 2. 3. saraksta.
  * - 2026-08-26.1 — Ieteikumi: katram auto viena virsbūves/krāsas-biezuma
@@ -58,4 +61,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-08-29.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-04.1";

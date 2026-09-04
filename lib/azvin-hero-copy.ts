@@ -1,4 +1,4 @@
-/** AZ.VIN / Azerbaijan market demo — 4 UI locales (az, en, ru, lv). */
+/** AZ.VIN / Azerbaijan market demo: 4 UI locales (az, en, ru, lv). */
 
 export const AZVIN_LOCALES = ["az", "en", "ru", "lv"] as const;
 export type AzvinLocale = (typeof AZVIN_LOCALES)[number];
@@ -30,9 +30,9 @@ const COPY_AZ: AzvinHeroCopy = {
   subheadAccent:
     "Rəsmi diler, Koreya/ABŞ hərrac və Avropa reyestr məlumatlarını bir hesabatda birləşdiririk.",
   demoBanner: "AZ.VIN · Azərbaycan demo",
-  vinInvalid: "Düzgün VIN daxil edin (11–17 simvol).",
+  vinInvalid: "Düzgün VIN daxil edin (11-17 simvol).",
   listingInvalid: "Düzgün elan linki daxil edin.",
-  ctaDemoNote: "Demo — ödəniş tezliklə.",
+  ctaDemoNote: "Demo. Ödəniş tezliklə.",
   langSwitcherAria: "Dil",
 };
 
@@ -47,9 +47,9 @@ const COPY_EN: AzvinHeroCopy = {
   subheadAccent:
     "We combine official dealer, Korea/USA auction and Europe registry data into one clear report.",
   demoBanner: "AZ.VIN · Azerbaijan demo",
-  vinInvalid: "Enter a valid VIN (11–17 characters).",
+  vinInvalid: "Enter a valid VIN (11-17 characters).",
   listingInvalid: "Enter a valid listing link.",
-  ctaDemoNote: "Demo only — checkout coming soon.",
+  ctaDemoNote: "Demo only. Checkout coming soon.",
   langSwitcherAria: "Language",
 };
 
@@ -64,9 +64,9 @@ const COPY_RU: AzvinHeroCopy = {
   subheadAccent:
     "Объединяем данные официального дилера, аукционов Кореи/США и реестров Европы в одном отчёте.",
   demoBanner: "AZ.VIN · Демо Азербайджан",
-  vinInvalid: "Введите корректный VIN (11–17 символов).",
+  vinInvalid: "Введите корректный VIN (11-17 символов).",
   listingInvalid: "Введите корректную ссылку на объявление.",
-  ctaDemoNote: "Демо — оплата скоро.",
+  ctaDemoNote: "Демо. Оплата скоро.",
   langSwitcherAria: "Язык",
 };
 
@@ -81,9 +81,9 @@ const COPY_LV: AzvinHeroCopy = {
   subheadAccent:
     "Apvienojam oficiālo dīleru, Korejas/ASV izsoļu un Eiropas reģistru datus vienā pārskatāmā atskaitē.",
   demoBanner: "AZ.VIN · Azerbaidžānas demo",
-  vinInvalid: "Ievadi derīgu VIN (11–17 rakstzīmes).",
+  vinInvalid: "Ievadi derīgu VIN (11-17 rakstzīmes).",
   listingInvalid: "Ievadi derīgu sludinājuma saiti.",
-  ctaDemoNote: "Demo — apmaksa drīzumā.",
+  ctaDemoNote: "Demo. Apmaksa drīzumā.",
   langSwitcherAria: "Valoda",
 };
 

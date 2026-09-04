@@ -17,12 +17,12 @@
       },
       {
         "title": "EXPERT NEGOTIATION\nSTRATEGY",
-        "body": "We prepare you for seller negotiations — what to ask, how to notice manipulation and how to discuss price with facts. We support you through the whole buying process."
+        "body": "We prepare you for seller negotiations: what to ask, how to notice manipulation and how to discuss price with facts. We support you through the whole buying process."
       }
     ],
     "cardsTrustLine": "5 validated options · Full process support",
     "cardsVinNote": "VIN checks are not included (performed in PROVIN audit).",
-    "comparisonScrollCta": "BOOK CONSULTATION — 49.99 €",
+    "comparisonScrollCta": "BOOK CONSULTATION 49.99 €",
     "ctaPrimary": "APPLY FOR CONSULTATION",
     "formTitle": "Consultation request",
     "strategyFormTitle": "Form",
@@ -49,11 +49,11 @@
     "commentLabel": "Comment (optional)",
     "commentPlaceholder": "Extra context if you want…",
     "followupNote": "After submission we will contact you within 48h.",
-    "submit": "Book consultation — 49.99 €",
-    "financingNote": "We can also help evaluate the most suitable financing type — so you make a smart decision not only about the car, but also the purchase approach.",
+    "submit": "Book consultation 49.99 €",
+    "financingNote": "We can also help evaluate the most suitable financing type, so you make a smart decision not only about the car, but also the purchase approach.",
     "submitting": "Sending…",
-    "success": "Thank you — request submitted. We will contact you within 48h.",
+    "success": "Thank you, request submitted. We will contact you within 48h.",
     "errorGeneric": "Failed to submit. Please try again or write to info@provin.lv.",
-    "errorSmtp": "Email server is not configured — contact us at info@provin.lv."
+    "errorSmtp": "Email server is not configured. Contact us at info@provin.lv."
   }
 }

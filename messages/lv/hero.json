@@ -8,7 +8,7 @@
     "productTitlePart1": "AUTO VĒSTURES",
     "productTitlePart2": " UN SLUDINĀJUMA ",
     "productTitlePart3": "AUDITS",
-    "productSubheadRich": "Uzzini visu par savu nākamo auto — auditā apvienotas vairākas maksas vēstures atskaites, oficiālo dīleru un izsoļu portālu arhīvu dati, sludinājuma ekspertīze un konkrētā modeļa tehnisko risku analīze, balstīta vairāk nekā 10 gadu pieredzē.",
+    "productSubheadRich": "Uzzini visu par savu nākamo auto. Auditā apvienotas vairākas maksas vēstures atskaites, oficiālo dīleru un izsoļu portālu arhīvu dati, sludinājuma ekspertīze un konkrētā modeļa tehnisko risku analīze, balstīta vairāk nekā 10 gadu pieredzē.",
     "productValueStripAria": "PROVIN audita ieguvumi",
     "productValue1": "Vēstures pārbaude",
     "productValue2": "Sludinājuma audits",
@@ -43,9 +43,9 @@
         "body": ""
       }
     ],
-    "cta": "PASŪTĪT — no 39,99 €",
-    "heroMobileOrderCta": "PASŪTĪT — no 39,99 €",
-    "heroResultTime": "Saņem rezultātu 24–72h laikā",
+    "cta": "PASŪTĪT no 39,99 €",
+    "heroMobileOrderCta": "PASŪTĪT no 39,99 €",
+    "heroResultTime": "Saņem rezultātu 24-72h laikā",
     "heroConsultLink": "",
     "heroConsultCta": "",
     "orderPin": "Pasūtīt",

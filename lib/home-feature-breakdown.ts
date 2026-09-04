@@ -38,7 +38,7 @@ export type HomeFeatureBreakdownPackage = {
 const MINI_LV: HomeFeatureBreakdownPackage = {
   id: "mini",
   title: "PROVIN MINI",
-  buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
+  buttonText: "PASŪTĪT MINI AUDITU 39,99 €",
   sampleReportHref: TP5_MINI_SAMPLE_REPORT_HREF,
   goal:
     "Sludinājuma un tehnisko datu analīze automašīnām, kas jau tiek ekspluatētas Latvijā. Pārbaude fokusējas uz vietējo vēsturi, pēdējo tehnisko apskašu datiem un publisko reģistru izvērtējumu, nodrošinot uzticamības prognozi un iespējamo risku kopsavilkumu.",
@@ -74,7 +74,7 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
   id: "audits",
   title: "PROVIN AUDITS",
   badge: "Populārākā izvēle",
-  buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
+  buttonText: "PASŪTĪT PROVIN AUDITU 99,99 €",
   goal:
     "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI un starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un izsoļu foto arhīvus, sniedzot padziļinātu vēstures, nobraukuma un risku analīzi.",
   items: [
@@ -108,7 +108,7 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
 const DEALER_LV: HomeFeatureBreakdownPackage = {
   id: "dealer",
   title: "DĪLERA DATI",
-  buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
+  buttonText: "PASŪTĪT DĪLERA DATUS 24,99 €",
   goal:
     "Oficiālās dīleru servisa vēstures un ražotāju datubāzu analīze automašīnām. Pārbaude fokusējas uz autorizēto servisu ierakstiem, hronoloģisko nobraukumu, veiktajām apkopēm un rūpnīcas atsaukumiem, nodrošinot maksimālu pārredzamību par auto reālo ekspluatāciju.",
   items: [
@@ -143,7 +143,7 @@ const DEALER_LV: HomeFeatureBreakdownPackage = {
 const KOREA_USA_LV: HomeFeatureBreakdownPackage = {
   id: "koreaUsa",
   title: "ASV UN KOREJA",
-  buttonText: "PASŪTĪT ASV UN KOREJA — 19,99 €",
+  buttonText: "PASŪTĪT ASV UN KOREJA 19,99 €",
   goal:
     "Pilns auto pārbaudes komplekts ASV un Korejā ekspluatētiem vai no šīm valstīm importētiem transportlīdzekļiem. Pārbaude fokusējas uz oficiālo reģistru ierakstiem, izsoļu vēsturi un vizuālajiem bojājumiem, nodrošinot pilnīgu skaidrību par auto reālo stāvokli pirms tā iegādes vai reģistrācijas.",
   items: [
@@ -177,7 +177,7 @@ const KOREA_USA_LV: HomeFeatureBreakdownPackage = {
 const MINI_EN: HomeFeatureBreakdownPackage = {
   id: "mini",
   title: "PROVIN MINI",
-  buttonText: "ORDER MINI AUDIT — €39.99",
+  buttonText: "ORDER MINI AUDIT €39.99",
   sampleReportHref: TP5_MINI_SAMPLE_REPORT_HREF,
   goal:
     "Listing, technical data and risk analysis for cars that have already spent a longer time on Latvian roads. The check focuses on an in-depth review of local usage, recent roadworthiness inspection history and public registry data. The service delivers a full assessment of the major components, a reliability outlook and a summary of potential running risks.",
@@ -213,7 +213,7 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
   id: "audits",
   title: "PROVIN AUDIT",
   badge: "Most popular choice",
-  buttonText: "ORDER PROVIN AUDIT — €99.99",
+  buttonText: "ORDER PROVIN AUDIT €99.99",
   goal:
     "Maximum confidence and a complete investigation of cars imported from abroad. Combines PROVIN MINI with international paid database reports, official dealer system data and auction photo archives, delivering in-depth history, mileage and risk analysis.",
   items: [
@@ -247,7 +247,7 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
 const DEALER_EN: HomeFeatureBreakdownPackage = {
   id: "dealer",
   title: "DEALER DATA",
-  buttonText: "ORDER DEALER DATA — €24.99",
+  buttonText: "ORDER DEALER DATA €24.99",
   goal:
     "Official dealer service history and manufacturer database analysis for vehicles. The check focuses on authorised service records, chronological mileage, completed maintenance and factory recalls, providing maximum transparency into the car’s real operating history.",
   items: [
@@ -282,7 +282,7 @@ const DEALER_EN: HomeFeatureBreakdownPackage = {
 const KOREA_USA_EN: HomeFeatureBreakdownPackage = {
   id: "koreaUsa",
   title: "USA & KOREA",
-  buttonText: "ORDER USA & KOREA — €19.99",
+  buttonText: "ORDER USA & KOREA €19.99",
   goal:
     "A full vehicle check package for cars used in the USA and Korea or imported from these countries. The check focuses on official registry records, auction history and visual damage, giving complete clarity on the car’s real condition before purchase or registration.",
   items: [
@@ -313,7 +313,7 @@ const KOREA_USA_EN: HomeFeatureBreakdownPackage = {
   ],
 };
 
-/** Full catalog for `/pakalpojumi` (extensible to 4–6 services). */
+/** Full catalog for `/pakalpojumi` (extensible to 4-6 services). */
 export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
   AUDITS_LV,
   MINI_LV,

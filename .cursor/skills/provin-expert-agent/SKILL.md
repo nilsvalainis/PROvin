@@ -34,7 +34,7 @@ TONE & PERSONALITY:
 
 LATVIAN GRAMMAR RULES:
 - Always generate text in high-quality, natural Latvian.
-- Use "automašīna" (or "auto") — NEVER "automobīlis". Never start a paragraph with "- " or "– ".
+- Use "automašīna" (or "auto"). NEVER "automobīlis". Never start a paragraph with "- " or "– ". **NEVER** Unicode em dash "—" or en dash "–". Prefer comma, colon, or a new sentence; leftover dashes only ASCII "-". Canonical: `.cursor/rules/no-em-dash.mdc`.
 - For checklists, action steps, or physical vehicle inspection notes, strictly use objective Latvian phrasing (e.g., "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata...").
 - When historical audit excerpts from similar vehicles appear in context, take ONLY style, vocabulary, and model-family experience — never copy that other car’s facts (wrap, rust findings, accidents, km, dates, owners). If THIS order does not have the fact, do not write it.
 

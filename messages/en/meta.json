@@ -9,13 +9,13 @@
     "faqTitle": "FAQ",
     "faqDescription": "Frequently asked questions about PROVIN audits, pricing and delivery.",
     "servicesTitle": "Services | PROVIN",
-    "servicesDescription": "PROVIN MINI, PROVIN AUDIT, Dealer Data and other vehicle history services — purpose, what’s included and how to order.",
+    "servicesDescription": "PROVIN MINI, PROVIN AUDIT, Dealer Data and other vehicle history services: purpose, what’s included and how to order.",
     "samplesTitle": "Samples",
     "samplesDescription": "Real PROVIN AUDIT examples - see what a finished report looks like before you order yours.",
     "aboutTitle": "About PROVIN | PROVIN",
-    "aboutDescription": "About PROVIN — experience, IRISS, and our approach to used-car risk assessment.",
+    "aboutDescription": "About PROVIN: experience, IRISS, and our approach to used-car risk assessment.",
     "blogsTitle": "Blog | PROVIN",
-    "blogsDescription": "IRISS | Car Dealer’s Diary — used-car market notes, scams and buyer risk.",
+    "blogsDescription": "IRISS | Car Dealer’s Diary. Used-car market notes, scams and buyer risk.",
     "thanksTitle": "Thank you for your order",
     "thanksDescription": "Order received. A short confirmation after successful Stripe payment."
   }

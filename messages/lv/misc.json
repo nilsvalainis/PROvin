@@ -5,7 +5,7 @@
     "pasutitRedirect": "Pāradresē uz pasūtījuma formu…",
     "checkoutProductName": "PROVIN AUDITS",
     "checkoutProductDesc": "Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.",
-    "checkoutConsultationProductName": "PROVIN — stratēģiskā konsultācija",
+    "checkoutConsultationProductName": "PROVIN: stratēģiskā konsultācija",
     "checkoutConsultationProductDesc": "Individuāla konsultācija un tirgus orientācija: VIN/sludinājuma konteksts, risku skatījums un nākamie soļi.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStratēģiskā konsultācija",
     "checkoutProvinSelectProductDesc": "Individuāla konsultācija auto iegādes jautājumos"
@@ -17,7 +17,7 @@
     "backToList": "← Visi ieraksti",
     "lvOnlyNote": "Pilnais teksts pieejams latviešu valodā.",
     "commentsTitle": "Komentāri",
-    "commentsEmpty": "Pagaidām klusums — esi pirmais.",
+    "commentsEmpty": "Pagaidām klusums. Esi pirmais.",
     "commentName": "Vārds",
     "commentBody": "Komentārs",
     "commentSubmit": "Publicēt",
@@ -32,6 +32,7 @@
     "paraugi": "Paraugi",
     "blogs": "Blogs",
     "provinSelect": "Konsultācija",
-    "kasSlapjasAizProvin": "Par PROVIN"
+    "kasSlapjasAizProvin": "Par PROVIN",
+    "b2b": "B2B"
   }
 }

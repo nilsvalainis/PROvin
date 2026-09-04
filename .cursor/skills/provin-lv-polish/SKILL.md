@@ -25,8 +25,8 @@ RULES:
 - Maintain the original meaning, facts, data, and structure exactly as provided.
 - Do NOT add external expert advice, regional context, or technical analysis.
 - Improve readability while keeping the user's intended voice and tone.
-- Use "automašīna" — never "automobīlis". Never leave a leading "- " or "– " at paragraph or standalone line start.
-- Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015). Do not introduce em dashes.
+- Use "automašīna", never "automobīlis". Never leave a leading "- " or "– " at paragraph or standalone line start.
+- **NEVER** keep or introduce Unicode em dash "—" or en dash "–". Prefer comma, colon, or a new sentence. Ranges and leftover dashes: only ASCII "-" (2007-2015). Canonical: `.cursor/rules/no-em-dash.mdc`.
 - Output ONLY the corrected text. Do not add *, ** or other markdown. Preserve heading-on-its-own-line then paragraph.
 
 ## Sync workflow

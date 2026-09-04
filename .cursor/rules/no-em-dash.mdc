@@ -1,0 +1,32 @@
+---
+description: NEVER use the Unicode em dash. Client and agent text uses ASCII hyphen or other grammar.
+alwaysApply: true
+---
+
+# Nekad nelietot garo domuzīmi „—"
+
+Unicode em dash `—` (U+2014) ir AI stila pazīme. **Aizliegts vienmēr**: mājas lapa, B2B, e-pasti, atskaites, admin ✨, blogi, juridiskie teksti, prasījumi, commit ziņas, UI, testi.
+
+Tāpat nelietot en dash `–` (U+2013) klienta tekstā. Diapazoniem un minusam: tikai īsā ASCII defise `-` (`2007-2015`, `24-72h`, `39,99 €`).
+
+## Ko rakstīt vietā
+
+- CTA / cena: bez svītras (`PASŪTĪT no 39,99 €`, `PASŪTĪT PROVIN AUDITU 99,99 €`).
+- Paskaidrojums: komats, kols vai jauns teikums (`Tāpēc izveidojām PROVIN. Tā ir…`, ne `PROVIN — tā ir`).
+- Juridiski „turpmāk X”: `turpmāk „mēs”`, ne `turpmāk — „mēs”`.
+- Ja svītra tiešām vajadzīga: tikai `-` ar atstarpēm (`teksts - teksts`).
+
+## Piemēri
+
+```
+❌ PASŪTĪT — no 39,99 €
+✅ PASŪTĪT no 39,99 €
+
+❌ Uzzini visu par auto — auditā apvienotas…
+✅ Uzzini visu par auto. Auditā apvienotas…
+
+❌ VIN — 17 rakstzīmes
+✅ VIN: 17 rakstzīmes
+```
+
+Kanons klientu ✨ tekstam: `HUMAN DASHES` / `applyProvinHumanDashes()` (`lib/source-summary-comment-format.ts`). Eval: `unicode_dash` (`lib/ai-eval/comment-quality.ts`).

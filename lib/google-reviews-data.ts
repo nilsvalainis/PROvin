@@ -1,5 +1,5 @@
 /**
- * Kurētas Google Business atsauksmes — statisks, bezmaksas variants (bez API / widget).
+ * Kurētas Google Business atsauksmes: statisks, bezmaksas variants (bez API / widget).
  * Atjaunini šeit, kad parādās jaunas atsauksmes Google profilā.
  */
 
@@ -50,7 +50,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     author: "Ralph_LV",
     rating: 5,
     relativeDateLv: "pirms 4 nedēļām",
-    text: "Vēlos pateikt lielu paldies Provin.lv komandai! Pēc atskaites saņemšanas sazvanījāmies, un šī saruna man tiešām palīdzēja. Ne tikai izskaidroja visu saprotamā valodā, bet arī deva vērtīgus padomus, kam pievērst uzmanību – iespējamām krāsotām detaļām, salona nolietojumam un citām niansēm, ko pats, visticamāk, nebūtu pamanījis. Visvairāk novērtēju to, ka neviens neko neuzspieda, bet ieteica, ko vēl pārbaudīt, pirms tērēt naudu remontiem, un palīdzēja pieņemt pārdomātu lēmumu. Pēc sarunas galva bija daudz skaidrāka, pazuda steiga un emocijas, un uz automašīnu paskatījos pavisam citādi. Ja meklējat godīgu un profesionālu palīdzību pirms auto iegādes, Provin.lv noteikti ir īstā vieta. Paldies par jūsu laiku, zināšanām un cilvēcīgo attieksmi!",
+    text: "Vēlos pateikt lielu paldies Provin.lv komandai! Pēc atskaites saņemšanas sazvanījāmies, un šī saruna man tiešām palīdzēja. Ne tikai izskaidroja visu saprotamā valodā, bet arī deva vērtīgus padomus, kam pievērst uzmanību: iespējamām krāsotām detaļām, salona nolietojumam un citām niansēm, ko pats, visticamāk, nebūtu pamanījis. Visvairāk novērtēju to, ka neviens neko neuzspieda, bet ieteica, ko vēl pārbaudīt, pirms tērēt naudu remontiem, un palīdzēja pieņemt pārdomātu lēmumu. Pēc sarunas galva bija daudz skaidrāka, pazuda steiga un emocijas, un uz automašīnu paskatījos pavisam citādi. Ja meklējat godīgu un profesionālu palīdzību pirms auto iegādes, Provin.lv noteikti ir īstā vieta. Paldies par jūsu laiku, zināšanām un cilvēcīgo attieksmi!",
   },
   {
     id: "juris-tuliks",
@@ -64,7 +64,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     author: "Aigars Smiltnieks",
     rating: 5,
     relativeDateLv: "pirms 10 nedēļām",
-    text: `Ļoti profesionāla un kvalitatīva pieeja auto pārbaudei. Pasūtīju PROVIN auditu, un saņemtā atskaite pārspēja gaidīto — ļoti detalizēta, padziļināta un ar daudz vērtīgu informāciju, ko standarta pārbaudēs nemaz nevar ieraudzīt.
+    text: `Ļoti profesionāla un kvalitatīva pieeja auto pārbaudei. Pasūtīju PROVIN auditu, un saņemtā atskaite pārspēja gaidīto: ļoti detalizēta, padziļināta un ar daudz vērtīgu informāciju, ko standarta pārbaudēs nemaz nevar ieraudzīt.
 
 Pateicoties šim auditam, varēju daudz drošāk izvērtēt auto stāvokli un pieņemt informētu lēmumu. Īpaši novērtēju ieguldīto darbu, uzmanību detaļām un atsaucīgo komunikāciju visa procesa laikā.
 

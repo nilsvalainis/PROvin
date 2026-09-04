@@ -7,7 +7,7 @@
       {
         "id": "what-is-provin-audit",
         "q": "Kas ir PROVIN audits?",
-        "a": "PROVIN ir tavs konsultants un privātais detektīvs auto iegādes procesā. Mēs nesniedzam vienkārši sausu datu izdruku. Mēs apvienojam informāciju no starptautiskajām maksas datubāzēm, oficiālo dīleru servisu vēstures un Eiropas izsoļu foto arhīviem, papildinot to ar pašu svarīgāko — sludinājuma analīzi un konkrētā modeļa tehnisko risku izvērtējumu."
+        "a": "PROVIN ir tavs konsultants un privātais detektīvs auto iegādes procesā. Mēs nesniedzam vienkārši sausu datu izdruku. Mēs apvienojam informāciju no starptautiskajām maksas datubāzēm, oficiālo dīleru servisu vēstures un Eiropas izsoļu foto arhīviem, papildinot to ar pašu svarīgāko: sludinājuma analīzi un konkrētā modeļa tehnisko risku izvērtējumu."
       },
       {
         "id": "vs-standard-pdf",
@@ -16,28 +16,28 @@
       },
       {
         "id": "mini-vs-audits",
-        "q": "Kuru auditu izvēlēties — PROVIN MINI vai PROVIN AUDITS?",
+        "q": "Kuru auditu izvēlēties: PROVIN MINI vai PROVIN AUDITS?",
         "a": "PROVIN MINI (39,99 €) ir piemērots automašīnām, kas jau ilgāku laiku tiek ekspluatētas Latvijā. Fokuss ir uz vietējo vēsturi, CSDD un ES publiskajiem reģistriem, pēdējo tehnisko apskašu (TA) datiem, sludinājuma analīzi un praktiskiem ieteikumiem klātienes apskatei.\n\nPROVIN AUDITS (99,99 €) ir pilna izpēte no ārvalstīm ievestiem auto. Tajā ietilpst visa MINI pakete + maksas starptautiskās datubāzes (carVertical, autoDNA, Cebia u.c.), oficiālo dīleru systems dati un Eiropas izsoļu foto arhīvi, ļaujot ieraut gaismā reālo auto stāvokli un nobraukumu pirms remonta un importa."
       },
       {
         "id": "dealer-data",
         "q": "Kas ir Oficiālā dīlera servisa vēstures dati?",
-        "a": "Tas ir neatkarīgs produkts (24,99 €) — oficiālie dīlera / ražotāja servisa vēstures ieraksti. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm. Izpilde: 24–72h. Ja oficiālo dīleru datubāzē ieraksti nav pieejami — 100% naudas atmaksa."
+        "a": "Tas ir neatkarīgs produkts (24,99 €): oficiālie dīlera / ražotāja servisa vēstures ieraksti. Šajā atskaitē iekļauti tikai dati no oficiālo dīleru datubāzēm. Izpilde: 24-72h. Ja oficiālo dīleru datubāzē ieraksti nav pieejami, 100% naudas atmaksa."
       },
       {
         "id": "delivery-time",
         "q": "Cik ilgi jāgaida atskaite?",
-        "a": "Standarta izpildes laiks ir 24–72 stundas pēc maksājuma saņemšanas. Tā kā katru auto pārbaudām un analizējam manuāli, mums ir svarīgi rūpīgi izpētīt visas detaļas. Tiklīdz audits ir gatavs, nosūtām to uz tavu e-pastu un vienojamies par īsu konsultāciju pa tālruni."
+        "a": "Standarta izpildes laiks ir 24-72 stundas pēc maksājuma saņemšanas. Tā kā katru auto pārbaudām un analizējam manuāli, mums ir svarīgi rūpīgi izpētīt visas detaļas. Tiklīdz audits ir gatavs, nosūtām to uz tavu e-pastu un vienojamies par īsu konsultāciju pa tālruni."
       },
       {
         "id": "what-to-provide",
         "q": "Kas man jānorāda pasūtot?",
-        "a": "Tev vajadzīgs tikai auto VIN numurs vai valsts reģistrācijas numurs, kā arī tavs e-pasts un tālrunis. Ja tev ir sludinājuma saite — obligāti pievieno arī to! Sludinājuma bildes un pārdevēja apraksts sniedz ļoti daudz vērtīgas informācijas mūsu analīzei."
+        "a": "Tev vajadzīgs tikai auto VIN numurs vai valsts reģistrācijas numurs, kā arī tavs e-pasts un tālrunis. Ja tev ir sludinājuma saite, obligāti pievieno arī to! Sludinājuma bildes un pārdevēja apraksts sniedz ļoti daudz vērtīgas informācijas mūsu analīzei."
       },
       {
         "id": "data-completeness",
         "q": "Vai auto vēstures dati vienmēr ir 100% pilnīgi?",
-        "a": "Būsim godīgi — pasaulē nav vienas \"ideālas\" datubāzes, un ne godīgie, ne viltīgie pārdevēji visu nefiksē uz papīra. Mūsu darbs ir savilkt kopā visus pieejamos pavedienus un norādīt uz pretrunām, ja tādas ir. PROVIN audits dod tev milzīgu priekšrocību sarunās un pasargā no acīmredzama \"ieberziena\", taču fiziska auto diagnostika servisā pirms pirkšanas vienmēr ir saprātīgs pēdējais solis."
+        "a": "Būsim godīgi: pasaulē nav vienas \"ideālas\" datubāzes, un ne godīgie, ne viltīgie pārdevēji visu nefiksē uz papīra. Mūsu darbs ir savilkt kopā visus pieejamos pavedienus un norādīt uz pretrunām, ja tādas ir. PROVIN audits dod tev milzīgu priekšrocību sarunās un pasargā no acīmredzama \"ieberziena\", taču fiziska auto diagnostika servisā pirms pirkšanas vienmēr ir saprātīgs pēdējais solis."
       }
     ]
   }

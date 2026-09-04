@@ -1,7 +1,7 @@
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 
-/** Minimālistisks HTML — balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
+/** Minimālistisks HTML: balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
 const BRAND = "#0061D2";
 const INK = "#1d1d1f";
 const MUTED = "#6b7280";
@@ -112,7 +112,7 @@ export function listingPeekCustomerCommentHtml(opts: {
       ? paragraphs
       : opts.comment.trim()
         ? [opts.comment.trim()]
-        : ["—"]
+        : ["-"]
   )
     .map(
       (p) =>
@@ -141,14 +141,14 @@ export function listingPeekCustomerCommentHtml(opts: {
 ${listingBlock}
 ${bodyHtml}
 <p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Noskaidro visu par savu topošo auto.</p>
-<p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:${MUTED};">PROVIN AUDITS — visaptveroša auto vēstures un risku izpēte.</p>
+<p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:${MUTED};">PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.</p>
 ${cta}
 <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:${INK};">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
 `;
   return shell(inner, { omitBrandRibbon: true });
 }
 
-/** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili — nodemailer). */
+/** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili: nodemailer). */
 export function auditCompletedEmailHtml(opts: {
   carVin: string;
   attachmentLines: string[];
@@ -168,7 +168,7 @@ export function auditCompletedEmailHtml(opts: {
     ? `<p style="margin:0 0 8px;font-size:15px;color:${INK};line-height:1.55;"><strong>Kā saņemt rezultātus:</strong></p>
 <p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.55;">PDF atskaite un papildu materiāli ir pievienoti šī e-pasta pielikumā.</p>
 ${listHtml}`
-    : `<p style="margin:0 0 16px;font-size:15px;color:${MUTED};line-height:1.55;">Pielikumi nav pievienoti — sazinieties ar mums, ja nepieciešams.</p>`;
+    : `<p style="margin:0 0 16px;font-size:15px;color:${MUTED};line-height:1.55;">Pielikumi nav pievienoti. Sazinieties ar mums, ja nepieciešams.</p>`;
 
   const inner = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>

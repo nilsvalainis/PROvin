@@ -17,12 +17,12 @@
       },
       {
         "title": "SARUNU STRATĒĢIJA\nUN ATBALSTS",
-        "body": "Sagatavosim Tevi sarunai ar pārdevēju — kādus jautājumus uzdot, kā pamanīt manipulācijas un uz kā pamata apspriest cenu. Atbalstīsim Tevi visā auto iegādes procesā."
+        "body": "Sagatavosim Tevi sarunai ar pārdevēju: kādus jautājumus uzdot, kā pamanīt manipulācijas un uz kā pamata apspriest cenu. Atbalstīsim Tevi visā auto iegādes procesā."
       }
     ],
     "cardsTrustLine": "5 pārbaudīti varianti · Atbalsts visā procesā",
     "cardsVinNote": "VIN pārbaudes nav iekļautas (tiek veiktas PROVIN auditā).",
-    "comparisonScrollCta": "PIETEIKTIES KONSULTĀCIJAI — 49,99 €",
+    "comparisonScrollCta": "PIETEIKTIES KONSULTĀCIJAI 49,99 €",
     "ctaPrimary": "PIETEIKT KONSULTĀCIJU",
     "formTitle": "Pieteikums konsultācijai",
     "strategyFormTitle": "Anketa",
@@ -49,11 +49,11 @@
     "commentLabel": "Komentārs (nav obligāti)",
     "commentPlaceholder": "Papildu konteksts, ja vēlies…",
     "followupNote": "Pēc pieteikuma nosūtīšanas sazināsimies ar jums 48h laikā.",
-    "submit": "Pieteikties konsultācijai — 49,99 €",
-    "financingNote": "Palīdzēsim izvērtēt arī piemērotāko finansējuma veidu — lai Tu pieņemtu gudru lēmumu ne tikai par auto, bet arī par tā iegādi.",
+    "submit": "Pieteikties konsultācijai 49,99 €",
+    "financingNote": "Palīdzēsim izvērtēt arī piemērotāko finansējuma veidu, lai Tu pieņemtu gudru lēmumu ne tikai par auto, bet arī par tā iegādi.",
     "submitting": "Sūta…",
-    "success": "Paldies — pieteikums nosūtīts. Sazināsimies 48h laikā.",
+    "success": "Paldies, pieteikums nosūtīts. Sazināsimies 48h laikā.",
     "errorGeneric": "Neizdevās nosūtīt. Mēģini vēlreiz vai raksti uz info@provin.lv.",
-    "errorSmtp": "E-pasta serveris nav konfigurēts — sazinies ar mums: info@provin.lv."
+    "errorSmtp": "E-pasta serveris nav konfigurēts. Sazinies ar mums: info@provin.lv."
   }
 }

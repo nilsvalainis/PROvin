@@ -38,7 +38,7 @@ function getSmtpTransport(): nodemailer.Transporter | null {
     port: resolvedPort,
     secure,
     auth: { user, pass },
-    /** Gmail / Workspace 587 — STARTTLS; samazina „connection closed” uz dažiem hostiem. */
+    /** Gmail / Workspace 587: STARTTLS; samazina „connection closed” uz dažiem hostiem. */
     requireTLS: useTlsStart,
     tls: { minVersion: "TLSv1.2" },
     connectionTimeout: 25_000,
@@ -50,7 +50,7 @@ function getSmtpTransport(): nodemailer.Transporter | null {
 function contactLabel(v: string | null): string {
   if (v === "whatsapp") return "WhatsApp";
   if (v === "telegram") return "Telegram";
-  return v ?? "—";
+  return v ?? "-";
 }
 
 function adminOrderPlainText(p: OrderEmailPayload): string {
@@ -58,19 +58,19 @@ function adminOrderPlainText(p: OrderEmailPayload): string {
     "Jauns PROVIN pasūtījums",
     "",
     `Session: ${p.sessionId}`,
-    `Vārds: ${p.customerName ?? "—"}`,
-    `E-pasts: ${p.customerEmail ?? "—"}`,
-    `Tālrunis: ${p.customerPhone ?? "—"}`,
-    `VIN: ${p.vin ?? "—"}`,
-    `Sludinājums: ${p.listingUrl ?? "—"}`,
+    `Vārds: ${p.customerName ?? "-"}`,
+    `E-pasts: ${p.customerEmail ?? "-"}`,
+    `Tālrunis: ${p.customerPhone ?? "-"}`,
+    `VIN: ${p.vin ?? "-"}`,
+    `Sludinājums: ${p.listingUrl ?? "-"}`,
     p.contactMethod ? `Saziņa: ${contactLabel(p.contactMethod)}` : "Atskaite: e-pastā",
     p.notes ? `Piezīmes: ${p.notes}` : "",
-    `Summa: ${p.amountTotal ?? "—"} ${p.currency ?? ""}`,
+    `Summa: ${p.amountTotal ?? "-"} ${p.currency ?? ""}`,
   ].filter(Boolean);
   return lines.join("\n");
 }
 
-/** RFC 3834 — palīdz filtriem atpazīt automātiski ģenerētu transakciju pastu (ne „mārketings”). */
+/** RFC 3834: palīdz filtriem atpazīt automātiski ģenerētu transakciju pastu (ne „mārketings”). */
 const AUTO_GENERATED_HEADERS: Record<string, string> = {
   "Auto-Submitted": "auto-generated",
 };
@@ -82,7 +82,7 @@ async function sendSmtpMail(opts: {
   html: string;
   attachments?: Attachment[];
   headers?: Record<string, string>;
-  /** Ja nav — `getMailReplyTo()`. Pieteikumu vēstulēm: klienta e-pasts, lai admin var atbildēt tieši. */
+  /** Ja nav: `getMailReplyTo()`. Pieteikumu vēstulēm: klienta e-pasts, lai admin var atbildēt tieši. */
   replyTo?: string;
 }): Promise<void> {
   const transport = getSmtpTransport();
@@ -103,15 +103,15 @@ async function sendSmtpMail(opts: {
 
 /** Admin: jauns pasūtījums (HTML, Google Workspace SMTP). */
 export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayload, adminTo: string): Promise<void> {
-  const subject = `PROVIN: jauns maksājums — ${payload.vin ?? payload.sessionId}`;
+  const subject = `PROVIN: jauns maksājums: ${payload.vin ?? payload.sessionId}`;
   const text = adminOrderPlainText(payload);
   const html = adminNewOrderHtml([
     { label: "Session", value: payload.sessionId },
-    { label: "Vārds", value: payload.customerName ?? "—" },
-    { label: "E-pasts", value: payload.customerEmail ?? "—" },
-    { label: "Tālrunis", value: payload.customerPhone ?? "—" },
-    { label: "VIN", value: payload.vin ?? "—" },
-    { label: "Sludinājums", value: payload.listingUrl ?? "—" },
+    { label: "Vārds", value: payload.customerName ?? "-" },
+    { label: "E-pasts", value: payload.customerEmail ?? "-" },
+    { label: "Tālrunis", value: payload.customerPhone ?? "-" },
+    { label: "VIN", value: payload.vin ?? "-" },
+    { label: "Sludinājums", value: payload.listingUrl ?? "-" },
     {
       label: "Saziņa",
       value: payload.contactMethod ? contactLabel(payload.contactMethod) : "E-pasts (atskaite)",
@@ -119,14 +119,14 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
     ...(payload.notes ? [{ label: "Piezīmes", value: payload.notes }] : []),
     {
       label: "Summa",
-      value: `${payload.amountTotal ?? "—"} ${payload.currency ?? ""}`.trim(),
+      value: `${payload.amountTotal ?? "-"} ${payload.currency ?? ""}`.trim(),
     },
   ]);
 
   const transport = getSmtpTransport();
   if (!transport) {
     console.warn(
-      "[email] ADMIN_NOTIFY_EMAIL set but SMTP_USER/SMTP_PASS missing — admin e-pasts netika nosūtīts.",
+      "[email] ADMIN_NOTIFY_EMAIL set but SMTP_USER/SMTP_PASS missing: admin e-pasts netika nosūtīts.",
     );
     return;
   }
@@ -149,7 +149,7 @@ export async function sendPaymentConfirmationEmail(opts: {
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
-    console.error("[email] SMTP_USER/SMTP_PASS missing — payment confirmation e-pasts netika nosūtīts.");
+    console.error("[email] SMTP_USER/SMTP_PASS missing: payment confirmation e-pasts netika nosūtīts.");
     return;
   }
 
@@ -158,19 +158,19 @@ export async function sendPaymentConfirmationEmail(opts: {
   const amountLine =
     opts.amountTotal != null
       ? `${opts.amountTotal} ${(opts.currency ?? "EUR").toUpperCase()}`
-      : "—";
+      : "-";
 
   const html = paymentConfirmationHtml({
     invoiceUrl,
     amountLine,
-    vin: opts.vin?.trim() || "—",
+    vin: opts.vin?.trim() || "-",
   });
 
   const text = [
     "Paldies par pasūtījumu.",
     "",
     `Summa: ${amountLine}`,
-    `VIN: ${opts.vin ?? "—"}`,
+    `VIN: ${opts.vin ?? "-"}`,
     "",
     `Rēķins (PDF): ${invoiceUrl}`,
   ].join("\n");
@@ -178,7 +178,7 @@ export async function sendPaymentConfirmationEmail(opts: {
   try {
     await sendSmtpMail({
       to: opts.to,
-      subject: "PROVIN — maksājums saņemts",
+      subject: "PROVIN: maksājums saņemts",
       text,
       html,
     });
@@ -208,7 +208,7 @@ function dedupeAttachmentFilenames(items: ReportReadyMailAttachment[]): ReportRe
   });
 }
 
-/** Klients: audits pabeigts — HTML + pielikumi (PDF/attēli), rēķins servera pusē. */
+/** Klients: audits pabeigts: HTML + pielikumi (PDF/attēli), rēķins servera pusē. */
 export async function sendReportReadyEmail(opts: {
   to: string;
   carVin: string;
@@ -216,7 +216,7 @@ export async function sendReportReadyEmail(opts: {
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
-    const msg = "SMTP_USER / SMTP_PASS nav iestatīti — e-pasts netika nosūtīts.";
+    const msg = "SMTP_USER / SMTP_PASS nav iestatīti: e-pasts netika nosūtīts.";
     console.error("[email]", msg);
     throw new Error(msg);
   }
@@ -224,7 +224,7 @@ export async function sendReportReadyEmail(opts: {
   const deduped = dedupeAttachmentFilenames(opts.attachments);
   if (deduped.length === 0) {
     throw new Error(
-      "Nav pielikumu — pievienojiet audita PDF (admin forma) vai pārliecinieties, ka apmaksātajam pasūtījumam var ģenerēt rēķinu.",
+      "Nav pielikumu: pievienojiet audita PDF (admin forma) vai pārliecinieties, ka apmaksātajam pasūtījumam var ģenerēt rēķinu.",
     );
   }
 
@@ -232,7 +232,7 @@ export async function sendReportReadyEmail(opts: {
   const hasRealVin = isValidVin(rawVin);
   const carVin = hasRealVin ? normalizeVin(rawVin) : "";
   const html = auditCompletedEmailHtml({
-    carVin: hasRealVin ? carVin : "—",
+    carVin: hasRealVin ? carVin : "-",
     attachmentLines: deduped.map((a) => a.filename),
     siteOrigin: getSiteOrigin(),
   });
@@ -256,7 +256,7 @@ export async function sendReportReadyEmail(opts: {
 
   /** Viens atdalītājs starp frāzi un VIN (izvairās no „– –”, ja „VIN” lauks ir svītra / mēstule). */
   const subject = hasRealVin
-    ? `PROVIN audits ir pabeigts – ${carVin}`
+    ? `PROVIN audits ir pabeigts: ${carVin}`
     : "PROVIN audits ir pabeigts, PDF pielikumā";
 
   try {
@@ -293,7 +293,7 @@ export async function sendProvinSelectConsultationLeadEmail(opts: {
   phone: string;
   message: string;
 }): Promise<void> {
-  const subject = "PROVIN SELECT — jauns pieteikums";
+  const subject = "PROVIN SELECT: jauns pieteikums";
   const text = [
     "Jauns stratēģiskās konsultācijas pieteikums (PROVIN SELECT).",
     "",
@@ -330,7 +330,7 @@ export async function sendListingPeekLeadEmail(opts: {
   listingUrl: string;
   id: string;
 }): Promise<void> {
-  const subject = "PROVIN — bezmaksas sludinājuma komentārs";
+  const subject = "PROVIN: bezmaksas sludinājuma komentārs";
   const text = [
     "Jauns bezmaksas sludinājuma komentāra pieprasījums.",
     "",
@@ -340,7 +340,7 @@ export async function sendListingPeekLeadEmail(opts: {
     `Sludinājums: ${opts.listingUrl}`,
     "",
     "Atbilde klientam: Admin → Ātrie vērtējumi → ieraksti komentāru → «Nosūtīt e-pastu».",
-    "NESŪTI ar Gmail Reply — tur būs parasts teksts bez HTML CTA pogas.",
+    "NESŪTI ar Gmail Reply: tur būs parasts teksts bez HTML CTA pogas.",
   ].join("\n");
   const html = `<p>Jauns <strong>bezmaksas sludinājuma komentāra</strong> pieprasījums.</p>
 <table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
@@ -373,7 +373,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
       : `${origin}/?plan=audits#home-hero`;
   const comment = opts.comment.trim();
   const listingUrl = (opts.listingUrl ?? "").trim();
-  const subject = "PROVIN — īss komentārs par tavu sludinājumu";
+  const subject = "PROVIN: īss komentārs par tavu sludinājumu";
   const text = [
     "Labdien!",
     "",
@@ -383,7 +383,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     comment,
     "",
     "Noskaidro visu par savu topošo auto.",
-    "PROVIN AUDITS — visaptveroša auto vēstures un risku izpēte.",
+    "PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.",
     "",
     "Pasūtīt:",
     auditsUrl,

@@ -40,7 +40,7 @@ messages/lv/hero.json
 messages/en/hero.json
 ```
 
-Namespaces (must exist in **both** locales): `meta`, `header`, `hero`, `pricing`, `iriss`, `how`, `faq`, `order`, `footer`, `thanks`, `misc`, `legal`, `provinSelect`, `googleReviews`, `riskAuditGuide`.
+Namespaces (must exist in **both** locales): `meta`, `header`, `hero`, `pricing`, `iriss`, `how`, `faq`, `order`, `footer`, `thanks`, `misc`, `legal`, `provinSelect`, `googleReviews`, `riskAuditGuide`, `samples`, `partner`.
 
 Register a **new** namespace in **both** loaders (keep lists in sync):
 
@@ -55,7 +55,7 @@ Top-level JSON keys are next-intl namespaces (`Hero`, `Order`, `Header`, …). C
 2. Do not leave English as a copy-paste of Latvian, or Latvian as machine-English.
 3. Arrays/objects must have the same shape (e.g. `Hero.pillars`, `Hero.heroOrderBenefits`).
 4. Empty strings that are intentional placeholders (`heroConsultLink: ""`) stay empty in **both** files.
-5. Brand: public provider is **PROVIN.LV**. LV copy: `automašīna` / `auto`, never `automobīlis`. Client-facing hyphen is ASCII `-`, not `—`.
+5. Brand: public provider is **PROVIN.LV**. LV copy: `automašīna` / `auto`, never `automobīlis`. **NEVER** Unicode em dash `—` or en dash `–`. Prefer a comma, colon, or a new sentence. If a dash is needed, only ASCII `-` (`PASŪTĪT no 39,99 €`, `24-72h`). Canonical: `.cursor/rules/no-em-dash.mdc`.
 
 ## Never hardcode public text
 

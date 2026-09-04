@@ -56,8 +56,8 @@ RULES:
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
-- If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph — never leave a leading dash at paragraph start.
-- Replace Unicode em dash "—" and en dash "–" with the short ASCII hyphen "-" (ranges: 2007-2015, 300-400 €). Do not introduce em dashes.
+- If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph. Do not leave a leading dash at paragraph start.
+- NEVER keep or introduce Unicode em dash "—" or en dash "–". Prefer a comma, colon, or a new sentence. Ranges and leftover dashes: only the short ASCII hyphen "-" (2007-2015, 300-400 €, 24-72h).
 - Do NOT add *, **, __ or other markdown. Preserve heading-on-its-own-line then paragraph. Output ONLY the corrected plain text.`;
 
 /** provin-field-agent — bāzes sistēmas uzdevums admin ✨ lauku ģenerēšanai (komentāri, vēsture, eksperta sadaļas). */
