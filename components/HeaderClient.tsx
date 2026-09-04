@@ -42,7 +42,8 @@ export function HeaderClient() {
     isPakalpojumi ||
     isParaugi ||
     isParMums ||
-    isBlogs;
+    isBlogs ||
+    normalizedPath === "/partneriem";
 
   const isAzvinDemo = pathname.includes("/demo/azvin");
   /**

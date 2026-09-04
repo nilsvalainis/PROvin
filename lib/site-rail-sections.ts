@@ -42,7 +42,7 @@ function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSectio
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
 export function buildSiteRailSections(_normalizedPath: string): readonly SiteRailSection[] {
-  /* Secība: Sākums → Pakalpojumi → Paraugi → Par PROVIN → Blogs → Konsultācija (ja publiska). B2B pagaidām nav izvēlnē. */
+  /* Secība: Sākums → Pakalpojumi → Paraugi → Par PROVIN → Blogs → Konsultācija (ja publiska) → B2B. */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/pakalpojumi", labelKey: "pakalpojumi" },
@@ -51,6 +51,7 @@ export function buildSiteRailSections(_normalizedPath: string): readonly SiteRai
     { href: "/blogs", labelKey: "blogs" },
   ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
+  out.push({ href: "/partneriem", labelKey: "b2b" });
   return out;
 }
 
@@ -93,6 +94,7 @@ export function siteRailRouteActiveIndex(pathname: string | null | undefined): n
   if (p === "/paraugi") return railIndex("paraugi", sections);
   if (p === "/par-mums") return railIndex("kasSlapjasAizProvin", sections);
   if (p === "/blogs" || p.startsWith("/blogs/")) return railIndex("blogs", sections);
+  if (p === "/partneriem" || p.startsWith("/partneriem/")) return railIndex("b2b", sections);
   /* FAQ page remains reachable but is no longer a menu item. */
   if (p === "/biezi-jautajumi") return railIndex("sakums", sections);
   return null;
