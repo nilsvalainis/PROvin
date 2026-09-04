@@ -7,7 +7,7 @@ import {
   ADMIN_PARTNER_LABEL_CLASS,
   adminPartnerApiError,
 } from "@/lib/admin-b2b-partner-form";
-import type { B2bPartnerPublicProfile, B2bPartnerStatus } from "@/lib/b2b-partner-account";
+import type { B2bPartnerPublicProfile } from "@/lib/b2b-partner-account";
 
 export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublicProfile }) {
   const router = useRouter();
@@ -107,8 +107,8 @@ export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublic
             value={form.status}
             onChange={set("status")}
           >
-            <option value={"active" satisfies B2bPartnerStatus}>Aktīvs</option>
-            <option value={"disabled" satisfies B2bPartnerStatus}>Bloķēts</option>
+            <option value="active">Aktīvs</option>
+            <option value="disabled">Bloķēts</option>
           </select>
         </label>
         <label className="block min-w-0 sm:col-span-2">

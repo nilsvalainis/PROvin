@@ -33,7 +33,7 @@ export function toInvoiceOrderPayload(
   order: {
     id: string;
     created: number;
-    amountTotal: number;
+    amountTotal: number | null;
     currency: string | null;
     customerEmail: string | null;
     customerDetailsEmail: string | null;
@@ -47,6 +47,9 @@ export function toInvoiceOrderPayload(
   },
   invoiceNumber: string,
 ): InvoiceOrderPayload {
+  if (order.amountTotal == null) {
+    throw new Error("Rēķinam nav summas (amountTotal).");
+  }
   return {
     id: order.id,
     created: order.created,
