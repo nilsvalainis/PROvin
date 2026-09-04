@@ -232,6 +232,33 @@ function clusterDisplayDate(members: UnifiedIncidentRow[], ym: string | null): s
   return sortUnifiedIncidentsNewestFirst(members)[0]?.date.trim() || "—";
 }
 
+/**
+ * carVertical „Bojājumu ieraksti” vienā mēnesī ir atsevišķi bojājumi (piem. novērtējums + fiksēts bojājums),
+ * tāpēc tos summējam. AutoDNA vairākas rindas parasti ir viena CSNg dažādi novērtējumi — tur paliek vidējais.
+ */
+const SUMMED_SAME_MONTH_SOURCES = new Set(["carvertical"]);
+
+function sourceSumsSameMonthRows(label: string): boolean {
+  return SUMMED_SAME_MONTH_SOURCES.has(label.trim().toLowerCase());
+}
+
+/** Identiska rinda (tas pats datums un summa) no viena avota netiek skaitīta divreiz. */
+function sumDistinctEur(rows: UnifiedIncidentRow[]): number | null {
+  const seen = new Set<string>();
+  let sum = 0;
+  let any = false;
+  for (const r of rows) {
+    const n = parseIncidentAmountEur(r.lossAmount);
+    if (n == null) continue;
+    const key = `${r.date.trim()}|${n}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    sum += n;
+    any = true;
+  }
+  return any ? sum : null;
+}
+
 function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedIncidentSourceValuation {
   const values = amountsOf(rows);
   const avg = averageEur(values);
@@ -240,6 +267,14 @@ function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedInci
       sourceLabel: label,
       displayAmount: rows[0]!.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "—"),
       amountEur: avg,
+    };
+  }
+  if (sourceSumsSameMonthRows(label)) {
+    const sum = sumDistinctEur(rows);
+    return {
+      sourceLabel: label,
+      displayAmount: sum != null ? formatLossEurWholeDisplay(sum) : "—",
+      amountEur: sum,
     };
   }
   return {

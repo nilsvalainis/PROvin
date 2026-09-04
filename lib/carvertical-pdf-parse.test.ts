@@ -204,6 +204,51 @@ Bojājumu grupas
     expect(damageDetails[0]?.damageGroups).not.toMatch(/Ģenerē/i);
   });
 
+  it("keeps both damage records from the same month when the legend follows the first", () => {
+    const raw = `
+11.2023. Latvija
+Novērtējums
+Bojātās detaļas
+Kreisā priekšējā daļa / Buferis Priekšpuse / Buferis
+Aptuvenā iepriekš gūto bojājumu vērtība
+2001 € – 2500 €
+Bojājumu grupas
+Ārējās virsbūves detaļas Ārējais apgaismojums
+1 līdzīgs ieraksts
+11.2023. Latvija
+Fiksētie bojājumi
+Bojātās detaļas
+Ārpuse / Nav norādīts
+Aptuvenā iepriekš gūto bojājumu vērtība
+2501 € – 3000 €
+Atruna. Vairums bojājumu ierakstu ir saistīti ar ceļu satiksmes negadījumiem, taču var būt arī citādi.
+"Bojājumu" sadaļas skaidrojums
+Aptuvenā iepriekš gūto bojājumu vērtībaJa transportlīdzeklim ir fiksēti bojājumi, tad remontdarbu izmaksas ir aprēķinātas.
+`;
+    const { incidents, damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails).toHaveLength(2);
+    expect(incidents).toHaveLength(2);
+    expect(damageDetails[0]?.lossAmount).toBe("2001 € – 2500 €");
+    expect(damageDetails[1]?.date).toBe("01.11.2023");
+    expect(damageDetails[1]?.lossAmount).toBe("2501 € – 3000 €");
+  });
+
+  it("does not read Tirgus vērtības text as the loss amount", () => {
+    const raw = `
+05.2025. Latvija
+Fiksētie bojājumi
+Bojātās detaļas
+Ārpuse / Nav norādīts
+Aptuvenā iepriekš gūto bojājumu vērtība
+501 € – 750 €
+Tirgus vērtības novērtēšanas kritēriji:
+Marka: VolvoModelis: XC90Gads: 2018Tirgus: Latvija
+`;
+    const { damageDetails } = parseCarverticalDamagesFromText(raw);
+    expect(damageDetails).toHaveLength(1);
+    expect(damageDetails[0]?.lossAmount).toBe("501 € – 750 €");
+  });
+
   it("does not glue CarVertical similar-record or report summary onto Bojājumu grupas", () => {
     const raw = `
 05.2022. Latvija

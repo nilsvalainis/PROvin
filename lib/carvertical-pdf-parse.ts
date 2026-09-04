@@ -478,12 +478,33 @@ function cleanCarVerticalDamagedSides(raw: string): string {
   return clipVendorDamageField(t.replace(NO_MARKED_PARTS_RE, ""));
 }
 
+/** `2501 € – 3000 €`, `501 € – 750 €`, `1 200 €`. */
+const CV_LOSS_MONEY_RE =
+  /\d[\d\s\u00a0\u202f]*(?:€|EUR)(?:\s*[–—-]\s*\d[\d\s\u00a0\u202f]*(?:€|EUR))?/i;
+
+/** Teksts, kas seko pēc summas — tālāk vairs nav šī ieraksta vērtība. */
+const CV_LOSS_STOP_RE =
+  /Boj[āa]jumu\s*grupas?|Remonta\s+izmaksu|Tirgus|Dabas stih|Atruna|sada[ļl]as\s+skaidrojums|\d{1,2}\.\d{4}\./i;
+
+/**
+ * `Aptuvenā iepriekš gūto bojājumu vērtība` → summa. Meklējam ne-alkatīgi: `Tirgus vērtības …`
+ * satur `vērtība` kā prefiksu, un alkatīga meklēšana pārlēca pāri īstajai summai.
+ * Bloks var saturēt arī sadaļas skaidrojuma virsrakstu bez summas, tāpēc ejam cauri visiem virsrakstiem.
+ */
 function extractCarVerticalLossAmount(block: string): string {
-  const lossM = block.match(
-    /Aptuven[āa]\s+(?:iepriek[sš][\s\S]{0,80}vērt[īi]ba|remonta[\s\S]{0,80}vērt[īi]ba)\s*([\s\S]{0,160}?)(?:Boj[āa]jumu\s*grupas?|Remonta\s+izmaksu|Tirgus|Dabas stih|$)/i,
-  );
-  const lossAmount = (lossM?.[1] ?? "").replace(/\s+/g, " ").trim();
-  return /\d/.test(lossAmount) ? lossAmount : "";
+  const headRe = /Aptuven[āa]\s+(?:iepriek[sš]|remonta)[\s\S]{0,80}?v[ēe]rt[īi]ba/gi;
+  let head: RegExpExecArray | null;
+  while ((head = headRe.exec(block)) !== null) {
+    const from = head.index + head[0].length;
+    const after = block.slice(from, from + 200);
+    const stop = after.search(CV_LOSS_STOP_RE);
+    const window = stop >= 0 ? after.slice(0, stop) : after;
+    const money = window.match(CV_LOSS_MONEY_RE);
+    if (money) return money[0].replace(/\s+/g, " ").trim();
+    const plain = window.replace(/\s+/g, " ").trim();
+    if (/\d/.test(plain)) return plain;
+  }
+  return "";
 }
 
 function extractCarVerticalVisualMapParts(block: string): string {

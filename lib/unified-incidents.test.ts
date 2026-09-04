@@ -303,4 +303,44 @@ Aptuvenā iepriekš gūto bojājumu vērtība
     expect(y2012?.damage?.zoneIds.sort()).toEqual(["front_right", "right"]);
     expect(y2015?.damage).toBeNull();
   });
+
+  it("summē divus CarVertical ierakstus vienā mēnesī par vienu negadījumu", () => {
+    const t = Date.UTC(2023, 10, 1);
+    const agg = aggregateUnifiedIncidents([
+      row({
+        date: "01.11.2023",
+        lossAmount: "2001 € – 2500 €",
+        sourceLabel: "CarVertical",
+        sortableTime: t,
+        sourceOrder: 0,
+      }),
+      row({
+        date: "01.11.2023",
+        lossAmount: "2501 € – 3000 €",
+        sourceLabel: "CarVertical",
+        sortableTime: t,
+        sourceOrder: 1,
+      }),
+      row({
+        date: "01.11.2023",
+        lossAmount: "2 516.91 €",
+        sourceLabel: "LTAB",
+        sortableTime: t,
+        sourceOrder: 2,
+      }),
+    ]);
+    expect(agg.uniqueCount).toBe(1);
+    const cv = agg.clusters[0]?.sourceValuations.find((s) => s.sourceLabel === "CarVertical");
+    expect(cv?.amountEur).toBe(5002);
+    expect(cv?.displayAmount).toBe("5 002 €");
+  });
+
+  it("neskaita divreiz identisku CarVertical rindu", () => {
+    const t = Date.UTC(2023, 10, 1);
+    const agg = aggregateUnifiedIncidents([
+      row({ date: "01.11.2023", lossAmount: "2001 € – 2500 €", sourceLabel: "CarVertical", sortableTime: t, sourceOrder: 0 }),
+      row({ date: "01.11.2023", lossAmount: "2001 € – 2500 €", sourceLabel: "CarVertical", sortableTime: t, sourceOrder: 1 }),
+    ]);
+    expect(agg.clusters[0]?.sourceValuations[0]?.amountEur).toBe(2251);
+  });
 });

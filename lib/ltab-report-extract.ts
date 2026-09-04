@@ -207,8 +207,15 @@ function normalizePdfText(raw: string): string {
     .trim();
 }
 
+/** Summa izziņā: `2516.91`, `2 516.91`. */
+const LTAB_CLAIM_AMOUNT_SRC = "\\d{1,3}(?:[ \\u00a0\\u202f]\\d{3})+[.,]\\d{2}|\\d+[.,]\\d{2}";
+
+/**
+ * Statuss bez summas (`Atbildīgs`) — nākamā ieraksta datums `01.11.2023` izskatās pēc summas `01.11`.
+ * Bez `(?!\.\d{4})` tas tiek apēsts kā summa un vesela CSNg rinda pazūd no izziņas.
+ */
 const CLAIM_RE = new RegExp(
-  `(\\d{1,2}\\.\\d{1,2}\\.\\d{4})\\s+(\\d{1,2}:\\d{2})\\s+(${LTAB_CLAIM_STATUS_ALT})(?:\\s+(\\d+[.,]\\d{2}))?`,
+  `(\\d{1,2}\\.\\d{1,2}\\.\\d{4})\\s+(\\d{1,2}:\\d{2})\\s+(${LTAB_CLAIM_STATUS_ALT})(?:\\s+(${LTAB_CLAIM_AMOUNT_SRC})(?!\\.\\d{4}))?`,
   "gi",
 );
 

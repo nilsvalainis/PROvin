@@ -1673,12 +1673,15 @@ function buildLtabCertificateHtml(cert: NonNullable<ClientManualLtabBlockPdf["ce
       .join("");
     const totalCents = sumLtabCertificateAmountCents(claims);
     const totalLabel = totalCents > 0 ? formatLtabCentsAsEur(totalCents) : "—";
+    // Izziņas „Negadījumu skaits” ir LTAB oficiālais skaits — tas paliek arī tad, ja kādai rindai nav summas.
+    const declaredCount = Number.parseInt(cert.accidentCount.trim(), 10);
+    const countLabel = Number.isFinite(declaredCount) && declaredCount > 0 ? declaredCount : claims.length;
     table = `<div class="pdf-listing-price-history pdf-ltab-loss-history">
     <p class="pdf-subhead pdf-subhead--boxed">Zaudējumu dati</p>
     <table class="pdf-listing-price-history-table" role="table">${body}</table>
     <div class="pdf-listing-price-history-foot">
       <span>Kopā: <strong class="pdf-stat-tone--alert">${escapeHtml(totalLabel)}</strong></span>
-      <span>Negadījumi: <strong class="pdf-stat-tone--alert">${claims.length}</strong></span>
+      <span>Negadījumi: <strong class="pdf-stat-tone--alert">${countLabel}</strong></span>
     </div>
   </div>`;
   }

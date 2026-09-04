@@ -185,6 +185,28 @@ Cietušais1599.00
 Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.
 `.trim();
 
+/** VOLVO XC90 MA1459 — reāls pdf-parse izvads: pirmajai rindai nav summas. */
+const VOLVO_XC90_RAW = `
+Transportlīdzekļa zaudējumu dati uz 04.09.2026 21:21:51
+Transportlīdzeklis VOLVO XC90, izlaiduma gads 2019. Valsts numura zīme MA1459.
+Negadījumu skaits: 3
+Laikā no 26.03.2019 līdz 25.01.2027 apdrošināts 2863 dienas.
+Zaudējumu dati:
+CSNg
+Datums
+StatussZaudējumu summa, ja transportlīdzeklis cietis vai norakstāms
+31.05.2025
+12:32
+Atbildīgs
+01.11.2023
+12:35
+Cietušais2516.91
+21.09.2023
+16:00
+Cietušais1313.32
+Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.
+`.trim();
+
 const ATBILDIGS_RAW = `
 Transportlīdzekļa zaudējumu dati uz 21.04.2026 01:41:05
 Transportlīdzeklis AUDI Q5, izlaiduma gads 2010. Valsts numura zīme RX73.
@@ -237,5 +259,32 @@ describe("LTAB izziņa — reāls pdf-parse teksts", () => {
     expect(cert!.claims).toEqual([
       { date: "27.05.2022", time: "13:00", status: "Atbildīgs", amount: "" },
     ]);
+  });
+
+  it("Atbildīgs bez summas nepaņem nākamā ieraksta datumu kā summu", () => {
+    const cert = extractLtabCertificate(normalizePdfExtractedText(VOLVO_XC90_RAW));
+    expect(cert!.accidentCount).toBe("3");
+    expect(cert!.claims).toEqual([
+      { date: "31.05.2025", time: "12:32", status: "Atbildīgs", amount: "" },
+      { date: "01.11.2023", time: "12:35", status: "Cietušais", amount: "2516.91" },
+      { date: "21.09.2023", time: "16:00", status: "Cietušais", amount: "1313.32" },
+    ]);
+    expect(sumLtabCertificateAmountCents(cert!.claims)).toBe(383023);
+  });
+
+  it("rinda bez summas paliek tukša arī admin tabulā", () => {
+    const cert = extractLtabCertificate(normalizePdfExtractedText(VOLVO_XC90_RAW))!;
+    const rows = ltabCertificateToIncidentRows(cert);
+    expect(rows).toEqual([
+      { csngDate: "31.05.2025", lossAmount: "", incidentNo: "Latvija" },
+      { csngDate: "01.11.2023", lossAmount: "2 516.91 €", incidentNo: "Latvija" },
+      { csngDate: "21.09.2023", lossAmount: "1 313.32 €", incidentNo: "Latvija" },
+    ]);
+  });
+
+  it("lasa summu ar tūkstošu atstarpi", () => {
+    const spaced = ATBILDIGS_RAW.replace("13:00\nAtbildīgs", "13:00\nCietušais 2 516.91");
+    const cert = extractLtabCertificate(spaced);
+    expect(cert!.claims[0]?.amount).toBe("2 516.91");
   });
 });
