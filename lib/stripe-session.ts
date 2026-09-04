@@ -51,11 +51,7 @@ export function getCustomFieldValue(
 }
 
 export function formatStripeCheckoutAddress(
-  address:
-    | Stripe.Address
-    | Stripe.Checkout.Session.CustomerDetails.Address
-    | null
-    | undefined,
+  address: Stripe.Address | null | undefined,
 ): string | null {
   if (!address) return null;
   const cityLine = [address.postal_code, address.city].filter(Boolean).join(" ").trim();
