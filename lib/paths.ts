@@ -23,11 +23,6 @@ export function pakalpojumiHref(): string {
   return "/pakalpojumi";
 }
 
-/** Audita paraugi — `Link`-drošs ceļš. */
-export function paraugiHref(): string {
-  return "/paraugi";
-}
-
 /** Blogs — `Link`-drošs ceļš. */
 export function blogsHref(): string {
   return "/blogs";

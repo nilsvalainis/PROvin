@@ -29,7 +29,6 @@ export function HeaderClient() {
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isPakalpojumi = normalizedPath === "/pakalpojumi";
-  const isParaugi = normalizedPath === "/paraugi";
   const isParMums = normalizedPath === "/par-mums";
   const isBlogs = normalizedPath === "/blogs" || normalizedPath.startsWith("/blogs/");
   const isFaqPage = normalizedPath === "/biezi-jautajumi";
@@ -40,21 +39,19 @@ export function HeaderClient() {
     normalizedPath === "/pasutit" ||
     isFaqPage ||
     isPakalpojumi ||
-    isParaugi ||
     isParMums ||
     isBlogs ||
     normalizedPath === "/partneriem";
 
   const isAzvinDemo = pathname.includes("/demo/azvin");
   /**
-   * Tumšais headeris — sākums / pakalpojumi / paraugi / Par mums / blogs / BUJ / SELECT / azvin.
+   * Tumšais headeris — sākums / pakalpojumi / Par mums / blogs / BUJ / SELECT / azvin.
    */
   const isDarkHeaderSurface =
     isHome ||
     isProvinSelectPieteikums ||
     isAzvinDemo ||
     isPakalpojumi ||
-    isParaugi ||
     isParMums ||
     isBlogs ||
     isFaqPage ||
@@ -116,7 +113,6 @@ export function HeaderClient() {
     isProvinSelectPieteikums ||
     isAzvinDemo ||
     isPakalpojumi ||
-    isParaugi ||
     isParMums ||
     isBlogs ||
     isFaqPage ||
@@ -130,7 +126,6 @@ export function HeaderClient() {
   const logoShowsLvSuffix = !(
     isHome ||
     isPakalpojumi ||
-    isParaugi ||
     isParMums ||
     isBlogs ||
     isFaqPage ||

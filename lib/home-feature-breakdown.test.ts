@@ -9,7 +9,7 @@ import {
   catalogPackageAnchorId,
   getCatalogFeatureBreakdownPackages,
 } from "@/lib/home-feature-breakdown";
-import { buildSiteRailSections, siteRailRouteActiveIndex } from "@/lib/site-rail-sections";
+import { buildSiteRailSections, siteRailActiveFromHash, siteRailRouteActiveIndex } from "@/lib/site-rail-sections";
 
 describe("home-hero-plan", () => {
   it("keeps hero tabs within the catalog deep-link cap", () => {
@@ -60,20 +60,21 @@ describe("pakalpojumi catalog", () => {
     const sections = buildSiteRailSections("/");
     const keys = sections.map((s) => s.labelKey);
     expect(keys).toContain("pakalpojumi");
-    expect(keys).toContain("paraugi");
+    expect(keys).not.toContain("paraugi");
     expect(keys).toContain("kasSlapjasAizProvin");
     expect(keys).toContain("blogs");
     expect(keys).toContain("b2b");
-    expect(keys.indexOf("paraugi")).toBeGreaterThan(keys.indexOf("pakalpojumi"));
-    expect(keys.indexOf("kasSlapjasAizProvin")).toBeGreaterThan(keys.indexOf("paraugi"));
+    expect(keys.indexOf("kasSlapjasAizProvin")).toBeGreaterThan(keys.indexOf("pakalpojumi"));
     expect(keys.indexOf("b2b")).toBeGreaterThan(keys.indexOf("blogs"));
     expect(keys).not.toContain("buj");
     expect(keys).not.toContain("kontakti");
-    expect(sections.find((s) => s.labelKey === "paraugi")?.href).toBe("/paraugi");
+    expect(sections.find((s) => s.labelKey === "pakalpojumi")?.href).toBe("/pakalpojumi");
     expect(sections.find((s) => s.labelKey === "kasSlapjasAizProvin")?.href).toBe("/par-mums");
     expect(sections.find((s) => s.labelKey === "b2b")?.href).toBe("/partneriem");
     expect(siteRailRouteActiveIndex("/pakalpojumi")).toBe(keys.indexOf("pakalpojumi"));
-    expect(siteRailRouteActiveIndex("/paraugi")).toBe(keys.indexOf("paraugi"));
+    expect(siteRailRouteActiveIndex("/paraugi")).toBe(keys.indexOf("pakalpojumi"));
+    expect(siteRailActiveFromHash("paraugi")).toBe(keys.indexOf("pakalpojumi"));
+    expect(siteRailActiveFromHash("paraugs-fordGalaxy")).toBe(keys.indexOf("pakalpojumi"));
     expect(siteRailRouteActiveIndex("/par-mums")).toBe(keys.indexOf("kasSlapjasAizProvin"));
     expect(siteRailRouteActiveIndex("/blogs")).toBe(keys.indexOf("blogs"));
     expect(siteRailRouteActiveIndex("/partneriem")).toBe(keys.indexOf("b2b"));

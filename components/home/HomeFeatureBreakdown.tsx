@@ -145,7 +145,7 @@ export function HomeFeatureBreakdown({
   return (
     <section
       id={sectionId}
-      className="scroll-mt-16 bg-transparent px-4 pb-10 pt-6 sm:px-6 sm:pb-14 sm:pt-8 lg:pb-16"
+      className="scroll-mt-16 bg-transparent px-4 pb-2 pt-6 sm:px-6 sm:pb-4 sm:pt-8 lg:pb-6"
       aria-labelledby="home-feature-breakdown-heading"
     >
       <div className={homeContentMaxClass}>

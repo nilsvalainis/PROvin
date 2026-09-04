@@ -13,7 +13,6 @@ export function getSiteRailHomeScrollIds(): readonly string[] {
 export type SiteRailLabelKey =
   | "sakums"
   | "pakalpojumi"
-  | "paraugi"
   | "blogs"
   | "provinSelect"
   | "kasSlapjasAizProvin"
@@ -42,11 +41,10 @@ function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSectio
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
 export function buildSiteRailSections(_normalizedPath: string): readonly SiteRailSection[] {
-  /* Secība: Sākums → Pakalpojumi → Paraugi → Par PROVIN → Blogs → Konsultācija (ja publiska) → B2B. */
+  /* Secība: Sākums → Pakalpojumi → Par PROVIN → Blogs → Konsultācija (ja publiska) → B2B. */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/pakalpojumi", labelKey: "pakalpojumi" },
-    { href: "/paraugi", labelKey: "paraugi" },
     { href: "/par-mums", labelKey: "kasSlapjasAizProvin" },
     { href: "/blogs", labelKey: "blogs" },
   ];
@@ -73,11 +71,8 @@ export function siteRailActiveFromHash(raw: string): number | null {
   if (h.startsWith("kas-ir-iriss") || h.startsWith("kas-stav") || h === "par-mums") {
     return railIndex("kasSlapjasAizProvin", sections);
   }
-  if (h === "pakalpojumi" || h.startsWith("pakalpojums-")) {
+  if (h === "pakalpojumi" || h.startsWith("pakalpojums-") || h === "paraugi" || h.startsWith("paraugs-")) {
     return railIndex("pakalpojumi", sections);
-  }
-  if (h === "paraugi" || h.startsWith("paraugs-")) {
-    return railIndex("paraugi", sections);
   }
   if (h === "blogs") {
     return railIndex("blogs", sections);
@@ -90,8 +85,7 @@ export function siteRailRouteActiveIndex(pathname: string | null | undefined): n
   const p = normalizeSitePath(pathname);
   const sections = buildSiteRailSections(p);
   if (p === "/pasutit") return railIndex("sakums", sections);
-  if (p === "/pakalpojumi") return railIndex("pakalpojumi", sections);
-  if (p === "/paraugi") return railIndex("paraugi", sections);
+  if (p === "/pakalpojumi" || p === "/paraugi") return railIndex("pakalpojumi", sections);
   if (p === "/par-mums") return railIndex("kasSlapjasAizProvin", sections);
   if (p === "/blogs" || p.startsWith("/blogs/")) return railIndex("blogs", sections);
   if (p === "/partneriem" || p.startsWith("/partneriem/")) return railIndex("b2b", sections);

@@ -53,7 +53,11 @@ const nextConfig: NextConfig = {
     middlewareClientMaxBodySize: "50mb",
   },
   async redirects() {
-    return [{ source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false }];
+    return [
+      { source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false },
+      { source: "/paraugi", destination: "/lv/pakalpojumi", permanent: true },
+      { source: "/:locale(lv|en)/paraugi", destination: "/:locale/pakalpojumi", permanent: true },
+    ];
   },
   /** Stripe Dashboard bieža kļūda: `/api/webhook/stripe` — kods ir `/api/webhooks/stripe`. */
   async rewrites() {
