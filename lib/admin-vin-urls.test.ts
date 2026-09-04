@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SOURCE_BLOCK_EXTERNAL_URL } from "@/lib/admin-source-blocks";
 import {
+  ADMIN_ORDER_LIST_VIN_SOURCES,
+  ADMIN_ORDER_ROW_NAV_IGNORE_SELECTOR,
   AUTODNA_LV_HOME_URL,
   AUTORECORDS_BASE_URL,
   CARINFO_HOME_URL,
@@ -47,6 +49,15 @@ describe("admin VIN service URLs", () => {
   it("opens CheckThisReg homepage for Tampermonkey VIN tab fill", () => {
     expect(buildCheckthisregVinCheckUrl(vin)).toBe(CHECKTHISREG_HOME_URL);
     expect(buildVinAutofillHref("checkthisreg", vin)).toBe(CHECKTHISREG_HOME_URL);
+    expect(CHECKTHISREG_HOME_URL).toContain("checkthisreg.com");
+  });
+
+  it("lists AutoDNA, CarVertical and DEALER on the orders table VIN cell", () => {
+    expect(ADMIN_ORDER_LIST_VIN_SOURCES.map((s) => s.label)).toEqual(["AutoDNA", "CarVertical", "DEALER"]);
+    expect(buildVinAutofillHref("autodna", vin)).toContain("/vin/");
+    expect(buildVinAutofillHref("carvertical", vin)).toBe(CARVERTICAL_REPORTS_URL);
+    expect(buildVinAutofillHref("checkthisreg", vin)).toBe(CHECKTHISREG_HOME_URL);
+    expect(ADMIN_ORDER_ROW_NAV_IGNORE_SELECTOR).toContain("a,button");
   });
 
   it("returns null without VIN", () => {

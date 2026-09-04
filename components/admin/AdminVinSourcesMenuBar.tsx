@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ADMIN_ORDER_LIST_VIN_SOURCES,
   VIN_AUTOFILL_SERVICES,
   buildVinAutofillHref,
   normalizeVinForServiceUrls,
@@ -26,17 +27,20 @@ function VinServiceAnchor({
   svc,
   vin,
   className,
+  label,
 }: {
   svc: VinAutofillService;
   vin: string;
   className: string;
+  label?: string;
 }) {
   const href = buildVinAutofillHref(svc.key, vin);
   const handoff = normalizeVinForServiceUrls(vin);
+  const text = label ?? svc.shortLabel;
   if (!href) {
     return (
       <span className={`${className} cursor-not-allowed opacity-50`} title="Ievadi VIN">
-        {svc.shortLabel}
+        {text}
       </span>
     );
   }
@@ -49,8 +53,24 @@ function VinServiceAnchor({
       title={serviceTitle(svc)}
       data-provin-handoff-vin={svc.handoffVin ? handoff : undefined}
     >
-      {svc.shortLabel}
+      {text}
     </a>
+  );
+}
+
+const orderListPill =
+  "inline-flex h-6 shrink-0 items-center justify-center rounded-md border border-slate-200/90 bg-white px-1.5 text-[9px] font-semibold uppercase tracking-wide text-slate-700 shadow-sm transition hover:border-[var(--color-provin-accent)]/40 hover:text-[var(--color-provin-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)]/35";
+
+/** Pasūtījumu saraksts: AutoDNA, CarVertical, DEALER (CheckThisReg). */
+export function AdminOrderListVinSourceButtons({ vin }: { vin: string }) {
+  return (
+    <span className="mt-1 flex flex-wrap items-center gap-1">
+      {ADMIN_ORDER_LIST_VIN_SOURCES.map((item) => {
+        const svc = VIN_AUTOFILL_SERVICES.find((s) => s.key === item.key);
+        if (!svc) return null;
+        return <VinServiceAnchor key={item.key} svc={svc} vin={vin} label={item.label} className={orderListPill} />;
+      })}
+    </span>
   );
 }
 

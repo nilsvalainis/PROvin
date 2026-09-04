@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { Check, FileText, Loader2, Pencil, Send, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
@@ -15,6 +15,9 @@ import {
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
+import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { AdminOrderListVinSourceButtons } from "@/components/admin/AdminVinSourcesMenuBar";
+import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
 
@@ -483,6 +486,7 @@ export function AdminOrdersTable({
   consultationList?: boolean;
 }) {
   void consultationList;
+  const router = useRouter();
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
   const [clientOverrides, setClientOverrides] = useState<
     Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }>
@@ -528,7 +532,7 @@ export function AdminOrdersTable({
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1180px] text-left text-sm">
+        <table className="w-full min-w-[1320px] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
               <th className="px-4 py-3.5">Datums</th>
@@ -555,14 +559,28 @@ export function AdminOrdersTable({
               const hasVin = vin.length > 0;
               const primaryClient = name || email || phone || "—";
               const secondaryClient = [name ? email : "", phone].filter(Boolean).join(" · ");
+              const orderHref = `${detailBase}/${encodeURIComponent(o.id)}`;
+              const openOrderFromRow = (e: MouseEvent) => {
+                if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
+                if (e.metaKey || e.ctrlKey || e.button === 1) {
+                  window.open(orderHref, "_blank", "noopener,noreferrer");
+                  return;
+                }
+                router.push(orderHref);
+              };
               return (
                 <tr
                   key={o.id}
                   className={
                     o.isDemo
-                      ? "bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
-                      : "transition-colors hover:bg-slate-50/90"
+                      ? "cursor-pointer bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
+                      : "cursor-pointer transition-colors hover:bg-slate-50/90"
                   }
+                  onClick={openOrderFromRow}
+                  onAuxClick={(e) => {
+                    if (e.button !== 1) return;
+                    openOrderFromRow(e);
+                  }}
                 >
                   <td className="whitespace-nowrap px-4 py-3.5 text-[var(--color-apple-text)]">
                     <span className="flex flex-wrap items-center gap-2">
@@ -594,8 +612,20 @@ export function AdminOrdersTable({
                       <span className="text-[var(--color-provin-muted)]">—</span>
                     )}
                   </td>
-                  <td className="max-w-[140px] truncate px-4 py-3.5 font-mono text-xs text-[var(--color-apple-text)]">
-                    {vin || "—"}
+                  <td className="px-4 py-3.5 text-[var(--color-apple-text)]">
+                    {hasVin ? (
+                      <span className="flex min-w-[11.5rem] flex-col items-start">
+                        <span className="inline-flex max-w-full items-center gap-1">
+                          <span className="whitespace-nowrap font-mono text-xs tracking-wide" title={vin}>
+                            {vin}
+                          </span>
+                          <AdminVinCopyButton value={vin} />
+                        </span>
+                        <AdminOrderListVinSourceButtons vin={vin} />
+                      </span>
+                    ) : (
+                      <span className="text-[var(--color-provin-muted)]">—</span>
+                    )}
                   </td>
                   <td
                     className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-[var(--color-apple-text)]"

@@ -14,7 +14,7 @@ export const CARVERTICAL_REPORTS_URL = "https://www.carvertical.com/lv/user/repo
 /** @deprecated Izmanto `CARVERTICAL_REPORTS_URL`. */
 export const CARVERTICAL_LV_BASE_URL = CARVERTICAL_REPORTS_URL;
 export const AUTORECORDS_BASE_URL = "https://www.auto-records.com/";
-export const CHECKTHISREG_HOME_URL = "https://www.checkthisreg.com/";
+export const CHECKTHISREG_HOME_URL = "https://checkthisreg.com/";
 export const CARINFO_HOME_URL = "https://www.car.info/en-se/";
 
 export type VinAutofillServiceKey =
@@ -40,6 +40,25 @@ export const VIN_AUTOFILL_SERVICES: readonly VinAutofillService[] = [
   { key: "checkthisreg", shortLabel: "CTR", title: "CheckThisReg", handoffVin: true },
   { key: "carinfo", shortLabel: "INFO", title: "car.info", handoffVin: true },
 ] as const;
+
+/** Pasūtījumu saraksts: operatīvās avotu pogas pie VIN. */
+export const ADMIN_ORDER_LIST_VIN_SOURCES: readonly {
+  key: Extract<VinAutofillServiceKey, "autodna" | "carvertical" | "checkthisreg">;
+  label: string;
+}[] = [
+  { key: "autodna", label: "AutoDNA" },
+  { key: "carvertical", label: "CarVertical" },
+  { key: "checkthisreg", label: "DEALER" },
+];
+
+/** Klikšķis uz šiem elementiem neatver pasūtījumu (pogu / saišu zona). */
+export const ADMIN_ORDER_ROW_NAV_IGNORE_SELECTOR =
+  "a,button,input,textarea,select,label,[data-admin-row-nav-ignore]";
+
+export function shouldOpenAdminOrderFromRowClick(target: EventTarget | null): boolean {
+  if (typeof Element === "undefined" || !(target instanceof Element)) return false;
+  return !target.closest(ADMIN_ORDER_ROW_NAV_IGNORE_SELECTOR);
+}
 
 export function buildAutodnaVinCheckUrl(raw: string): string | null {
   const v = normalizeVinForServiceUrls(raw);
