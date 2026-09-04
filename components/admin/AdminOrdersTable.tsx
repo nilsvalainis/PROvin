@@ -3,43 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
-import { Check, FileText, Loader2, Pencil, Send, Trash2, X } from "lucide-react";
+import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
-import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
-import { idbGetPortfolio, type StoredPortfolioBlob } from "@/lib/admin-portfolio-idb";
-import {
-  isNotifyBlobUploadEnabled,
-  postNotifyReportReadyMultipart,
-  postNotifyReportReadyViaBlob,
-  type NotifyPortfolioUploadItem,
-} from "@/lib/admin-notify-report-ready-client";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminOrderListVinSourceButtons } from "@/components/admin/AdminVinSourcesMenuBar";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
-
-const NOTIFY_ALLOWED_MIME = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]);
-
-function inferPortfolioMime(p: StoredPortfolioBlob): string | null {
-  const m = (p.mime ?? "").trim().toLowerCase();
-  if (NOTIFY_ALLOWED_MIME.has(m)) return m;
-  const n = (p.name ?? "").toLowerCase();
-  if (n.endsWith(".pdf")) return "application/pdf";
-  if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
-  if (n.endsWith(".png")) return "image/png";
-  if (n.endsWith(".webp")) return "image/webp";
-  if (n.endsWith(".gif")) return "image/gif";
-  return null;
-}
 
 function PaymentStatusPill({ status }: { status: string }) {
   const s = status.toLowerCase();
@@ -79,153 +51,6 @@ function rowDetailHrefBase(row: AdminOrdersTableRow, defaultBase: string): strin
 function rowEditsLocalStoragePrefix(row: AdminOrdersTableRow, tableDefaultPrefix: string): string {
   if (row.checkoutLine === "provin_select") return CONSULTATION_EDITS_PREFIX;
   return tableDefaultPrefix;
-}
-
-function NotifyReportReadyCell({
-  sessionId,
-  paymentStatus,
-  customerEmail,
-  isManual,
-}: {
-  sessionId: string;
-  paymentStatus: string;
-  customerEmail: string | null;
-  isManual?: boolean;
-}) {
-  const order = { id: sessionId, paymentStatus, customerEmail, isManual };
-  const canNotify = canNotifyClientOrder(order, customerEmail);
-  const email = customerEmail?.trim() ?? "";
-  const [phase, setPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
-  const [errMsg, setErrMsg] = useState<string | null>(null);
-  const [lastSentTo, setLastSentTo] = useState<string | null>(null);
-  const [skippedCount, setSkippedCount] = useState(0);
-
-  const sendWithAttachments = useCallback(async () => {
-    setErrMsg(null);
-    setPhase("loading");
-    setSkippedCount(0);
-    try {
-      const stored = (await idbGetPortfolio(sessionId)) ?? [];
-      let skipped = 0;
-      const uploads: NotifyPortfolioUploadItem[] = [];
-      for (const p of stored) {
-        const mime = inferPortfolioMime(p);
-        if (!mime) {
-          skipped += 1;
-          continue;
-        }
-        uploads.push({
-          buffer: p.buffer,
-          name: p.name || "pielikums",
-          mime,
-          lastModified: Number.isFinite(Date.parse(p.addedAt)) ? Date.parse(p.addedAt) : Date.now(),
-        });
-      }
-      setSkippedCount(skipped);
-
-      const blobOn = await isNotifyBlobUploadEnabled();
-      const { res, data } =
-        blobOn && uploads.length > 0
-          ? await postNotifyReportReadyViaBlob({
-              sessionId,
-              customerEmail: email || undefined,
-              uploads,
-            })
-          : await (async () => {
-              const fd = new FormData();
-              fd.append("sessionId", sessionId);
-              if (email) fd.append("customerEmail", email);
-              for (const u of uploads) {
-                const blob = new Blob([u.buffer], { type: u.mime });
-                const file = new File([blob], u.name, {
-                  type: u.mime,
-                  lastModified: u.lastModified ?? Date.now(),
-                });
-                fd.append("attachment", file);
-              }
-              return postNotifyReportReadyMultipart(fd);
-            })();
-      const message = typeof data.message === "string" ? data.message : null;
-      const detail = typeof data.detail === "string" ? data.detail : null;
-      const composed = [message, detail].filter(Boolean).join(" — ") || null;
-      if (!res.ok) {
-        const fallback =
-          typeof data.error === "string"
-            ? data.error
-            : "Neizdevās nosūtīt";
-        setErrMsg(composed ?? fallback);
-        setPhase("error");
-        console.error("[admin] notify-report-ready", res.status, data);
-        return;
-      }
-      const sentTo = typeof data.sentTo === "string" ? data.sentTo.trim() : null;
-      setLastSentTo(sentTo);
-      setPhase("sent");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Tīkla kļūda";
-      setErrMsg(msg);
-      setPhase("error");
-      console.error("[admin] notify-report-ready fetch", e);
-    }
-  }, [email, sessionId]);
-
-  if (!canNotify) {
-    if (isManual && !email) {
-      return <span className="text-[11px] font-medium text-amber-800">Nav e-pasta</span>;
-    }
-    return <span className="text-[11px] text-[var(--color-provin-muted)]">—</span>;
-  }
-  if (!email) {
-    return <span className="text-[11px] font-medium text-amber-800">Nav e-pasta</span>;
-  }
-  if (phase === "sent") {
-    return (
-      <span className="inline-flex max-w-[220px] flex-col items-end gap-0.5 text-[11px] font-semibold text-emerald-800">
-        <span className="inline-flex items-center gap-1">
-          <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
-          Nosūtīts
-        </span>
-        {lastSentTo ? (
-          <span className="break-all text-right text-[10px] font-normal text-emerald-900/90" title="Faktiskais saņēmējs">
-            → {lastSentTo}
-          </span>
-        ) : null}
-      </span>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={() => {
-          setErrMsg(null);
-          setPhase("idle");
-          setLastSentTo(null);
-          setSkippedCount(0);
-          void sendWithAttachments();
-        }}
-        disabled={phase === "loading"}
-        className="inline-flex max-w-[200px] items-center justify-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-[var(--color-provin-accent-soft)]/40 disabled:cursor-not-allowed disabled:opacity-60"
-        title="Nosūtīt klientam e-pastu ar klienta portfeļa failiem"
-      >
-        {phase === "loading" ? (
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-        ) : (
-          <Send className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        )}
-        Nosūtīt atskaiti
-      </button>
-      {phase === "error" && errMsg ? (
-        <p className="max-w-[220px] text-right text-[10px] leading-snug text-red-600">{errMsg}</p>
-      ) : null}
-      {phase === "idle" && skippedCount > 0 ? (
-        <p className="max-w-[220px] text-right text-[10px] leading-snug text-amber-700">
-          {skippedCount} portfeļa faili netika pievienoti (neatbalstīts formāts).
-        </p>
-      ) : null}
-    </div>
-  );
 }
 
 const manualCellEditBtn =
@@ -528,23 +353,23 @@ export function AdminOrdersTable({
   }, [orders, orderEditsLocalStorageKeyPrefix]);
 
   const detailBaseNormalized = orderDetailHrefBase.replace(/\/$/, "");
+  const hug = "w-[1%] whitespace-nowrap";
 
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1320px] text-left text-sm">
+        <table className="w-full min-w-[1120px] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
-              <th className="px-4 py-3.5">Datums</th>
-              <th className="px-4 py-3.5">Termiņš (48 h)</th>
+              <th className={`${hug} py-3.5 pl-4 pr-1`}>Datums</th>
+              <th className={`${hug} py-3.5 pl-1 pr-4`}>Termiņš (48 h)</th>
               <th className="px-4 py-3.5">VIN</th>
               <th className="px-4 py-3.5">Marka, modelis</th>
               <th className="px-4 py-3.5">Klients</th>
-              <th className="px-4 py-3.5">Statuss</th>
-              <th className="px-4 py-3.5 text-right">Summa</th>
-              <th className="px-4 py-3.5 text-center">Rēķins</th>
-              <th className="px-4 py-3.5 text-right">Atskaite</th>
-              <th className="px-4 py-3.5 text-right">Darbība</th>
+              <th className={`${hug} py-3.5 pl-4 pr-1`}>Statuss</th>
+              <th className={`${hug} px-1 py-3.5 text-right`}>Summa</th>
+              <th className={`${hug} py-3.5 pl-1 pr-4 text-center`}>Rēķins</th>
+              <th className={`${hug} px-4 py-3.5 text-right`}>Darbība</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -582,7 +407,7 @@ export function AdminOrdersTable({
                     openOrderFromRow(e);
                   }}
                 >
-                  <td className="whitespace-nowrap px-4 py-3.5 text-[var(--color-apple-text)]">
+                  <td className={`${hug} py-3.5 pl-4 pr-1 text-[var(--color-apple-text)]`}>
                     <span className="flex flex-wrap items-center gap-2">
                       {o.isManual ? (
                         <ManualOrderDateCell id={o.id} created={o.created} />
@@ -601,7 +426,7 @@ export function AdminOrdersTable({
                       ) : null}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3.5">
+                  <td className={`${hug} py-3.5 pl-1 pr-4`}>
                     {hasVin ? (
                       <AdminAuditDeadlineCell
                         sessionId={o.id}
@@ -643,17 +468,17 @@ export function AdminOrdersTable({
                       ) : null}
                     </div>
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className={`${hug} py-3.5 pl-4 pr-1`}>
                     <PaymentStatusPill status={o.paymentStatus} />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums font-medium text-[var(--color-apple-text)]">
+                  <td className={`${hug} px-1 py-3.5 text-right tabular-nums font-medium text-[var(--color-apple-text)]`}>
                     {o.isManual ? (
                       <ManualOrderAmountCell id={o.id} amountTotal={o.amountTotal} currency={o.currency} />
                     ) : (
                       formatMoneyEur(o.amountTotal, o.currency)
                     )}
                   </td>
-                  <td className="px-4 py-3.5 text-center">
+                  <td className={`${hug} py-3.5 pl-1 pr-4 text-center`}>
                     {pdfHref ? (
                       <a
                         href={pdfHref}
@@ -669,15 +494,7 @@ export function AdminOrdersTable({
                       <span className="text-[var(--color-provin-muted)]">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3.5 text-right align-middle">
-                    <NotifyReportReadyCell
-                      sessionId={o.id}
-                      paymentStatus={o.paymentStatus}
-                      customerEmail={email || null}
-                      isManual={o.isManual}
-                    />
-                  </td>
-                  <td className="px-4 py-3.5 text-right">
+                  <td className={`${hug} px-4 py-3.5 text-right`}>
                     <span className="inline-flex items-center gap-2">
                       {o.isManual ? <ManualOrderDeleteButton id={o.id} /> : null}
                       <Link
