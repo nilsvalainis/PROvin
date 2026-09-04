@@ -22,12 +22,14 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
 
   const consultationsActive = Boolean(pathname?.startsWith("/admin/konsultacijas"));
   const rekiniActive = Boolean(pathname?.startsWith("/admin/commission-invoice"));
+  const partneriActive = Boolean(pathname?.startsWith("/admin/partneri"));
   const statistikaActive = Boolean(pathname?.startsWith("/admin/statistika"));
   const blogsActive = Boolean(pathname?.startsWith("/admin/blogs"));
   const peeksActive = Boolean(pathname?.startsWith("/admin/atras-vertesanas"));
   const sakumsActive =
     !consultationsActive &&
     !rekiniActive &&
+    !partneriActive &&
     !statistikaActive &&
     !blogsActive &&
     !peeksActive &&
@@ -54,6 +56,9 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
       </Link>
       <Link href="/admin/commission-invoice" className={navItemClass(rekiniActive)}>
         RĒĶINI
+      </Link>
+      <Link href="/admin/partneri" className={navItemClass(partneriActive)}>
+        Partneri
       </Link>
       {adminRoot && !horizontal ? (
         <p className="hidden w-full break-all pt-2 text-[10px] leading-snug text-[var(--color-provin-muted)] md:block">

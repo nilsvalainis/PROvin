@@ -84,12 +84,14 @@ export function paidProductLabel(args: {
 }): string {
   if (isTelegramGroupPayment(args.amountTotalCents)) return "Telegram grupa (9,99 €)";
   const line = (args.checkoutLine ?? "").trim().toLowerCase();
+  if (line === "business") return "PROVIN BUSINESS";
   if (line === "dealer") return "Dīlera dati";
   if (line === "mini" || line === "plus" || line === "listing_filter") return "PROVIN MINI";
   if (line === "consultation" || line === "provin_select") return "PROVIN SELECT";
   if (line === "premium" || line === "audit") return "PROVIN AUDITS";
   if (args.amountTotalCents === 3999) return "PROVIN MINI";
-  if (args.amountTotalCents === 2499) return "Dīlera dati";
+  if (args.amountTotalCents === 6999) return "PROVIN BUSINESS";
+  if (args.amountTotalCents === 1999 || args.amountTotalCents === 2499) return "Dīlera dati";
   if (args.amountTotalCents != null && args.amountTotalCents >= 7999) return "PROVIN AUDITS";
   return "Apmaksāts pasūtījums";
 }

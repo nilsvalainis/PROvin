@@ -33,6 +33,7 @@ export function HeaderClient() {
   const isParMums = normalizedPath === "/par-mums";
   const isBlogs = normalizedPath === "/blogs" || normalizedPath.startsWith("/blogs/");
   const isFaqPage = normalizedPath === "/biezi-jautajumi";
+  const isPartneriem = normalizedPath === "/partneriem" || normalizedPath.startsWith("/partneriem/");
   /** Tās pašas lapas kā kreisā slide — arī šeit navigācijas saraksts. */
   const showHomeNavRail =
     isHome ||
@@ -55,7 +56,8 @@ export function HeaderClient() {
     isParaugi ||
     isParMums ||
     isBlogs ||
-    isFaqPage;
+    isFaqPage ||
+    isPartneriem;
   const headerChromeDark = isDarkHeaderSurface;
 
   const headerSurface = isDarkHeaderSurface
@@ -109,14 +111,23 @@ export function HeaderClient() {
     isParaugi ||
     isParMums ||
     isBlogs ||
-    isFaqPage;
+    isFaqPage ||
+    isPartneriem;
 
   const headerInnerClass = [
     "mx-auto flex min-h-[2.4rem] w-full min-w-0 items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]",
     isFullBleedSiteNav ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
   ].join(" ");
 
-  const logoShowsLvSuffix = !(isHome || isPakalpojumi || isParaugi || isParMums || isBlogs || isFaqPage);
+  const logoShowsLvSuffix = !(
+    isHome ||
+    isPakalpojumi ||
+    isParaugi ||
+    isParMums ||
+    isBlogs ||
+    isFaqPage ||
+    isPartneriem
+  );
 
   return (
     <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>

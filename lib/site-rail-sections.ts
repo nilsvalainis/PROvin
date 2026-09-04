@@ -16,7 +16,8 @@ export type SiteRailLabelKey =
   | "paraugi"
   | "blogs"
   | "provinSelect"
-  | "kasSlapjasAizProvin";
+  | "kasSlapjasAizProvin"
+  | "b2b";
 
 export type SiteRailSection = {
   href: string;
@@ -41,7 +42,7 @@ function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSectio
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
 export function buildSiteRailSections(_normalizedPath: string): readonly SiteRailSection[] {
-  /* Secība: Sākums → Pakalpojumi → Paraugi → Par PROVIN → Blogs → Konsultācija (ja publiska) */
+  /* Secība: Sākums → Pakalpojumi → Paraugi → Par PROVIN → Blogs → Konsultācija (ja publiska). B2B pagaidām nav izvēlnē. */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/pakalpojumi", labelKey: "pakalpojumi" },

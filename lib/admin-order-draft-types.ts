@@ -57,6 +57,9 @@ export type OrderDraftState = {
   invoiceNumber?: string;
   /** 48 h termiņa „Izpildīts” — ISO laiks; `null`/nav = nav atzīmēts. Persistē ar melnrakstu (Blob). */
   auditCompletedAt?: string | null;
+  /** Kad admin nosūtījis atskaiti klientam un PDF saglabāts partnera arhīvam. */
+  clientReportReadyAt?: string;
+  clientReportFilename?: string;
 };
 
 export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): boolean {

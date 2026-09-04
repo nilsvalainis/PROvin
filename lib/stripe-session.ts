@@ -6,7 +6,8 @@ export type CheckoutLineKind =
   | "provin_select"
   | "mini"
   | "premium"
-  | "dealer";
+  | "dealer"
+  | "business";
 
 /** Stripe Checkout `metadata.checkout_line` — vecām sesijām bez lauka uzskatām par `audit`. */
 export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): CheckoutLineKind {
@@ -17,6 +18,7 @@ export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): Ch
   if (raw === "listing_filter") return "mini";
   if (raw === "premium") return "premium";
   if (raw === "dealer") return "dealer";
+  if (raw === "business") return "business";
   if (raw === "plus") return "mini";
   return "audit";
 }
@@ -48,7 +50,22 @@ export function getCustomFieldValue(
   return null;
 }
 
-/** Jaunākās pasūtījuma formas dati ir `metadata`; vecākām sesijām — Stripe custom lauki. */
+export function formatStripeCheckoutAddress(
+  address:
+    | Stripe.Address
+    | Stripe.Checkout.Session.CustomerDetails.Address
+    | null
+    | undefined,
+): string | null {
+  if (!address) return null;
+  const cityLine = [address.postal_code, address.city].filter(Boolean).join(" ").trim();
+  const parts = [address.line1, address.line2, cityLine || null, address.country]
+    .map((p) => (typeof p === "string" ? p.trim() : ""))
+    .filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
+/** Jaunākās pasūtījuma formas dati ir `metadata`; vecākām sesijām - Stripe custom lauki. */
 export function getOrderFieldsFromSession(session: Stripe.Checkout.Session): {
   vin: string | null;
   listingUrl: string | null;
@@ -56,6 +73,9 @@ export function getOrderFieldsFromSession(session: Stripe.Checkout.Session): {
   customerName: string | null;
   notes: string | null;
   formPhone: string | null;
+  companyName: string | null;
+  companyReg: string | null;
+  companyAddress: string | null;
 } {
   const m = session.metadata ?? {};
   const meta = (k: string) => {
@@ -76,9 +96,12 @@ export function getOrderFieldsFromSession(session: Stripe.Checkout.Session): {
     vin: meta("vin") ?? getCustomFieldValue(session, "vin"),
     listingUrl: meta("listing_url") ?? getCustomFieldValue(session, "listing_url"),
     contactMethod: meta("contact_method") ?? getCustomFieldValue(session, "contact_method"),
-    customerName: meta("customer_name"),
+    customerName: meta("customer_name") ?? session.customer_details?.name?.trim() ?? null,
     notes,
     formPhone: meta("phone"),
+    companyName: meta("company_name"),
+    companyReg: meta("company_reg"),
+    companyAddress: meta("company_address") ?? formatStripeCheckoutAddress(session.customer_details?.address),
   };
 }
 

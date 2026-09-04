@@ -52,7 +52,8 @@ function optionalCheckoutLine(o: RowInput): CheckoutLineKind | undefined {
     c === "provin_select" ||
     c === "mini" ||
     c === "premium" ||
-    c === "dealer"
+    c === "dealer" ||
+    c === "business"
   ) {
     return c;
   }

@@ -2,6 +2,7 @@ import "server-only";
 
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
+import { toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
 import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
 import { readInvoicePdfCached } from "@/lib/invoice-storage";
 
@@ -32,16 +33,7 @@ export async function getInvoiceEmailAttachment(sessionId: string): Promise<Invo
   if (cached) {
     bytes = cached;
   } else {
-    bytes = await buildInvoicePdfBytes({
-      id: order.id,
-      created: order.created,
-      amountTotal: order.amountTotal,
-      currency: order.currency,
-      customerEmail: order.customerEmail,
-      customerDetailsEmail: order.customerDetailsEmail,
-      vin: order.vin,
-      invoiceNumber,
-    });
+    bytes = await buildInvoicePdfBytes(toInvoiceOrderPayload(order, invoiceNumber));
   }
 
   return {

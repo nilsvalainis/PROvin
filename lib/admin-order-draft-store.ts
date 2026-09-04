@@ -205,6 +205,14 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       : o.auditCompletedAt === null
         ? null
         : undefined;
+  const clientReportReadyAt =
+    typeof o.clientReportReadyAt === "string" && o.clientReportReadyAt.trim()
+      ? o.clientReportReadyAt.trim()
+      : undefined;
+  const clientReportFilename =
+    typeof o.clientReportFilename === "string" && o.clientReportFilename.trim()
+      ? o.clientReportFilename.trim()
+      : undefined;
   return {
     orderEdits,
     workspace,
@@ -216,6 +224,19 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     invoicePdfGeneratedAt,
     invoiceNumber,
     ...(auditCompletedAt !== undefined ? { auditCompletedAt } : {}),
+    ...(clientReportReadyAt ? { clientReportReadyAt } : {}),
+    ...(clientReportFilename ? { clientReportFilename } : {}),
+  };
+}
+
+function extraDraftPersistFields(prev: OrderDraftState | null | undefined) {
+  return {
+    ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
+    ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
+    ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
+    ...(prev?.auditCompletedAt !== undefined ? { auditCompletedAt: prev.auditCompletedAt } : {}),
+    ...(prev?.clientReportReadyAt != null ? { clientReportReadyAt: prev.clientReportReadyAt } : {}),
+    ...(prev?.clientReportFilename != null ? { clientReportFilename: prev.clientReportFilename } : {}),
   };
 }
 
@@ -422,14 +443,7 @@ export async function restoreOrderDraftRevision(
     updatedAt,
     orderEdits: normalized.orderEdits,
     workspace: normalized.workspace,
-    ...(normalized.invoiceNumber != null ? { invoiceNumber: normalized.invoiceNumber } : {}),
-    ...(normalized.invoicePdfUrl != null ? { invoicePdfUrl: normalized.invoicePdfUrl } : {}),
-    ...(normalized.invoicePdfGeneratedAt != null
-      ? { invoicePdfGeneratedAt: normalized.invoicePdfGeneratedAt }
-      : {}),
-    ...(normalized.auditCompletedAt !== undefined
-      ? { auditCompletedAt: normalized.auditCompletedAt }
-      : {}),
+    ...extraDraftPersistFields(normalized),
   };
   try {
     await fs.mkdir(dir, { recursive: true });
@@ -611,10 +625,7 @@ export async function patchOrderDraft(
     workspaceChecksum,
     orderEdits: nextOrderEdits,
     workspace: nextWorkspace,
-    ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
-    ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
-    ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
-    ...(prev?.auditCompletedAt !== undefined ? { auditCompletedAt: prev.auditCompletedAt } : {}),
+    ...extraDraftPersistFields(prev),
   };
 
   let fsOk = false;
@@ -766,7 +777,13 @@ export async function patchOrderDraft(
 /** Saglabā rēķina laukus pasūtījuma JSON (numurs, PDF saite). */
 export async function upsertOrderDraftInvoiceFields(
   sessionId: string,
-  fields: Partial<{ invoiceNumber: string; invoicePdfUrl: string; invoicePdfGeneratedAt: string }>,
+  fields: Partial<{
+    invoiceNumber: string;
+    invoicePdfUrl: string;
+    invoicePdfGeneratedAt: string;
+    clientReportReadyAt: string;
+    clientReportFilename: string;
+  }>,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   const dir = resolveDraftDir();
   const blob = resolveOrderDraftBlob();
@@ -782,10 +799,7 @@ export async function upsertOrderDraftInvoiceFields(
     workspace: prev?.workspace ?? null,
     ...(prev?.workspaceRevision != null ? { workspaceRevision: prev.workspaceRevision } : {}),
     ...(prev?.workspaceChecksum != null ? { workspaceChecksum: prev.workspaceChecksum } : {}),
-    ...(prev?.invoiceNumber != null ? { invoiceNumber: prev.invoiceNumber } : {}),
-    ...(prev?.invoicePdfUrl != null ? { invoicePdfUrl: prev.invoicePdfUrl } : {}),
-    ...(prev?.invoicePdfGeneratedAt != null ? { invoicePdfGeneratedAt: prev.invoicePdfGeneratedAt } : {}),
-    ...(prev?.auditCompletedAt !== undefined ? { auditCompletedAt: prev.auditCompletedAt } : {}),
+    ...extraDraftPersistFields(prev),
     ...fields,
   };
 
@@ -829,6 +843,13 @@ export async function upsertOrderDraftInvoiceFields(
     dashboardDraftEntryFromOrderEdits(doc.orderEdits, invoicePdfUrl, doc.workspace),
   ).catch(() => {});
   return { ok: true, updatedAt };
+}
+
+export async function upsertOrderDraftClientReportFields(
+  sessionId: string,
+  fields: { clientReportReadyAt: string; clientReportFilename: string },
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  return upsertOrderDraftInvoiceFields(sessionId, fields);
 }
 
 /** @deprecated Lietot `upsertOrderDraftInvoiceFields`. */

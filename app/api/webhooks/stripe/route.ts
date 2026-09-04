@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
+import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
 import { notifyAdminEmail, notifyAdminTelegram } from "@/lib/notify";
 import { persistPaidOrderInvoice } from "@/lib/invoice-storage";
 import { triggerInvoiceSequenceRepairInBackground } from "@/lib/invoice-counter";
@@ -20,7 +21,7 @@ function fulfillDedupeKey(sessionId: string): string {
 }
 
 /**
- * Apstrāde pēc apmaksas: Telegram, admin e-pasts, klienta apstiprinājums, rēķina saglabāšana.
+ * Apstrāde pēc apmaksas: Telegram, admin e-pasts, rēķina PDF, klienta apstiprinājums ar rēķinu.
  * Izsauc tikai tad, kad `payment_status` ir apmaksāts (vai `no_payment_required`).
  */
 async function fulfillPaidCheckoutSession(
@@ -80,28 +81,37 @@ async function fulfillPaidCheckoutSession(
       console.error("Email notify:", e);
     }
 
+    try {
+      await persistPaidOrderInvoice(session.id);
+    } catch (err) {
+      console.error("invoice persist:", err);
+      throw err;
+    }
+
     if (email) {
       try {
+        const invoiceAttachment = await getInvoiceEmailAttachment(session.id);
+        if (!invoiceAttachment) {
+          throw new Error("invoice_attachment_missing");
+        }
         await sendPaymentConfirmationEmail({
           to: email,
           sessionId: session.id,
           amountTotal: payload.amountTotal,
           currency: payload.currency,
           vin: payload.vin,
+          invoiceAttachment,
         });
         console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });
       } catch (e) {
         console.error("[stripe webhook] Customer payment confirmation email failed:", e);
+        throw e;
       }
     } else {
-      console.warn("[stripe webhook] paid session: no customer email — payment confirmation skipped");
+      console.warn("[stripe webhook] paid session: no customer email - payment confirmation skipped");
     }
 
     console.info("PROVIN order:", payload);
-
-    void persistPaidOrderInvoice(session.id).catch((err) => {
-      console.error("invoice persist:", err);
-    });
     triggerInvoiceSequenceRepairInBackground();
 
     if (getCheckoutLineFromSession(session) === "provin_select") {

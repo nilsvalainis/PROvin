@@ -139,13 +139,18 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
   }
 }
 
-/** Klients: apmaksa veiksmīga + rēķina saite. */
+/** Klients: apmaksa veiksmīga + rēķina PDF pielikumā. */
 export async function sendPaymentConfirmationEmail(opts: {
   to: string;
   sessionId: string;
   amountTotal: string | null;
   currency: string | null;
   vin: string | null;
+  invoiceAttachment?: {
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  } | null;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -172,15 +177,27 @@ export async function sendPaymentConfirmationEmail(opts: {
     `Summa: ${amountLine}`,
     `VIN: ${opts.vin ?? "-"}`,
     "",
+    "Rēķins PDF ir pievienots šim e-pastam.",
     `Rēķins (PDF): ${invoiceUrl}`,
   ].join("\n");
 
   try {
     await sendSmtpMail({
       to: opts.to,
-      subject: "PROVIN: maksājums saņemts",
+      subject: "PROVIN: maksājums saņemts, rēķins pielikumā",
       text,
       html,
+      ...(opts.invoiceAttachment
+        ? {
+            attachments: [
+              {
+                filename: opts.invoiceAttachment.filename,
+                content: opts.invoiceAttachment.content,
+                contentType: opts.invoiceAttachment.contentType,
+              },
+            ],
+          }
+        : {}),
     });
   } catch (e) {
     console.error("[email] sendPaymentConfirmationEmail SMTP:", e);

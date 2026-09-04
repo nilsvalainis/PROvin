@@ -13,6 +13,7 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
+import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
 import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
@@ -45,6 +46,9 @@ type CheckoutBody = {
   checkoutLine?: unknown;
   /** Obligāta klienta piekrišana PTN atteikšanās tiesību zaudēšanai (digitāls saturs, tūlītēja izpilde). */
   withdrawalConsent?: unknown;
+  companyName?: unknown;
+  companyReg?: unknown;
+  companyAddress?: unknown;
 };
 
 const stripeLocales = new Set([
@@ -207,6 +211,7 @@ export async function POST(req: Request) {
       authorization_ack: "true",
       ...(name ? { customer_name: name } : {}),
       ...(notes ? { notes } : {}),
+      ...invoiceBuyerMetadataFromUnknown(raw),
     },
     locale: stripeLocale(locale) as "lv",
   });

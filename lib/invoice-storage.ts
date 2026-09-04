@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
+import { toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
 import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
 
 export function resolveInvoiceDir(): string | null {
@@ -123,16 +124,7 @@ export async function getOrBuildInvoicePdfForSession(
   const cached = await readInvoicePdfCached(sessionId);
   if (cached) return { bytes: cached, invoiceNumber };
 
-  const bytes = await buildInvoicePdfBytes({
-    id: order.id,
-    created: order.created,
-    amountTotal: order.amountTotal,
-    currency: order.currency,
-    customerEmail: order.customerEmail,
-    customerDetailsEmail: order.customerDetailsEmail,
-    vin: order.vin,
-    invoiceNumber,
-  });
+  const bytes = await buildInvoicePdfBytes(toInvoiceOrderPayload(order, invoiceNumber));
 
   await writeInvoicePdfCached(sessionId, bytes);
   void upsertOrderDraftInvoiceFields(sessionId, {

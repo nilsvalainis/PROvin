@@ -1,6 +1,7 @@
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import { formatMoneyEur } from "@/lib/format-money";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
+import { invoiceBuyerLines, normalizeInvoiceBuyer } from "@/lib/invoice-buyer";
 
 function esc(s: string): string {
   return s
@@ -19,16 +20,67 @@ export type InvoiceOrderPayload = {
   customerEmail: string | null;
   customerDetailsEmail: string | null;
   vin: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  companyName?: string | null;
+  companyReg?: string | null;
+  companyAddress?: string | null;
   /** Formāts PRV-YYYY-XXXX */
   invoiceNumber: string;
 };
+
+export function toInvoiceOrderPayload(
+  order: {
+    id: string;
+    created: number;
+    amountTotal: number;
+    currency: string | null;
+    customerEmail: string | null;
+    customerDetailsEmail: string | null;
+    vin: string | null;
+    customerName?: string | null;
+    phone?: string | null;
+    customerDetailsPhone?: string | null;
+    companyName?: string | null;
+    companyReg?: string | null;
+    companyAddress?: string | null;
+  },
+  invoiceNumber: string,
+): InvoiceOrderPayload {
+  return {
+    id: order.id,
+    created: order.created,
+    amountTotal: order.amountTotal,
+    currency: order.currency,
+    customerEmail: order.customerEmail,
+    customerDetailsEmail: order.customerDetailsEmail,
+    vin: order.vin,
+    customerName: order.customerName ?? null,
+    customerPhone: order.phone?.trim() || order.customerDetailsPhone?.trim() || null,
+    companyName: order.companyName ?? null,
+    companyReg: order.companyReg ?? null,
+    companyAddress: order.companyAddress ?? null,
+    invoiceNumber,
+  };
+}
+
+export function invoiceBuyerFromOrder(order: InvoiceOrderPayload) {
+  return normalizeInvoiceBuyer({
+    companyName: order.companyName,
+    companyReg: order.companyReg,
+    companyAddress: order.companyAddress,
+    contactName: order.customerName,
+    email: order.customerEmail ?? order.customerDetailsEmail,
+    phone: order.customerPhone,
+  });
+}
 
 /** Pakalpojuma apraksts rindā: VIN un klients (e-pasts). */
 export function buildInvoiceServiceLineDescription(
   order: Pick<InvoiceOrderPayload, "customerEmail" | "customerDetailsEmail" | "vin">,
 ): string {
-  const email = order.customerEmail ?? order.customerDetailsEmail ?? "—";
-  const vin = order.vin?.trim() || "—";
+  const email = order.customerEmail ?? order.customerDetailsEmail ?? "-";
+  const vin = order.vin?.trim() || "-";
   return `Pakalpojums: transportlīdzekļa VIN ${vin}; klients: ${email}`;
 }
 
@@ -49,8 +101,9 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   const pvnFooter = getInvoicePvnFooterText();
 
   const money = formatMoneyEur(order.amountTotal, order.currency);
-  const email = order.customerEmail ?? order.customerDetailsEmail ?? "—";
-  const vin = order.vin?.trim() || "—";
+  const email = order.customerEmail ?? order.customerDetailsEmail ?? "-";
+  const vin = order.vin?.trim() || "-";
+  const buyerLines = invoiceBuyerLines(invoiceBuyerFromOrder(order));
   const invoiceNo = order.invoiceNumber;
 
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
@@ -60,7 +113,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   const invoiceDate = dateFmt.format(new Date(order.created * 1000));
 
   const supplierLines = [
-    legal.legalName || "—",
+    legal.legalName || "-",
     legal.regNo ? `Reģ. Nr.: ${legal.regNo}` : null,
     legal.legalAddress || null,
   ].filter(Boolean) as string[];
@@ -212,7 +265,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Rēķins ${esc(invoiceNo)} — ${esc(brand)}</title>
+<title>Rēķins ${esc(invoiceNo)} - ${esc(brand)}</title>
 <style>${css}</style>
 </head>
 <body>
@@ -236,7 +289,11 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
     </section>
     <section class="inv-panel" aria-labelledby="inv-buyer">
       <h2 id="inv-buyer">Klients</h2>
-      <p><strong>E-pasts:</strong> ${esc(email)}</p>
+      ${
+        buyerLines.length
+          ? buyerLines.map((line) => `<p>${esc(line)}</p>`).join("")
+          : `<p>${esc(email)}</p>`
+      }
       <p style="margin-top:8px"><strong>Transportlīdzekļa VIN:</strong><br/><span class="inv-vin">${esc(vin)}</span></p>
     </section>
   </div>

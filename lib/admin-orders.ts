@@ -55,6 +55,9 @@ export type AdminOrderRow = {
 export type AdminOrderDetail = AdminOrderRow & {
   listingUrl: string | null;
   customerName: string | null;
+  companyName?: string | null;
+  companyReg?: string | null;
+  companyAddress?: string | null;
   phone: string | null;
   /** Kā klients vēlas sazināties (no pasūtījuma formas / metadata). */
   contactMethod: string | null;
@@ -309,6 +312,9 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     checkoutLine,
     listingUrl: order.listingUrl,
     customerName: order.customerName,
+    companyName: order.companyName,
+    companyReg: order.companyReg,
+    companyAddress: order.companyAddress,
     contactMethod: order.contactMethod,
     phone,
     notes: order.notes,

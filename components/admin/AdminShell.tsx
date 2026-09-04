@@ -90,7 +90,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
   );
 
   const isProWorkspace = workspace === "pro";
-  const isDetailScreen = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice)\/[^/]+$/.test(pathname);
+  const isDetailScreen = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice|partneri)\/[^/]+$/.test(pathname);
   const asideMobileClasses = mobileNavOpen
     ? "max-md:fixed max-md:right-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(14rem,74vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-l max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
     : "max-md:hidden";

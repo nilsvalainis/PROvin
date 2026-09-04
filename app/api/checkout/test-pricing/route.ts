@@ -5,6 +5,7 @@ import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
 import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
 import {
   getTestPricingPlan,
@@ -78,6 +79,9 @@ export async function POST(req: Request) {
     vin?: unknown;
     withdrawalConsent?: unknown;
     sourcePage?: unknown;
+    companyName?: unknown;
+    companyReg?: unknown;
+    companyAddress?: unknown;
   };
   try {
     raw = (await req.json()) as typeof raw;
@@ -196,6 +200,7 @@ export async function POST(req: Request) {
             ...(isTp5CheckoutSource(sourcePage) ? { inline_checkout: "true" } : {}),
           }
         : {}),
+      ...invoiceBuyerMetadataFromUnknown(raw),
     },
     /**
      * Stripe Checkout apzināti angliski: LV tulkojumā atlaides lauks ir

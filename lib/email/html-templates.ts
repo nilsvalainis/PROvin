@@ -76,6 +76,7 @@ export function paymentConfirmationHtml(opts: {
 <p style="margin:0 0 20px;color:${MUTED};font-size:15px;">Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.</p>
 <p style="margin:0 0 6px;font-size:14px;"><strong>Summa:</strong> ${esc(opts.amountLine)}</p>
 <p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> ${esc(opts.vin)}</p>
+<p style="margin:0 0 24px;font-size:14px;">Rēķins PDF ir pievienots šim e-pastam. To var arī lejupielādēt šeit.</p>
 ${ctaButton(opts.invoiceUrl, "Lejupielādēt rēķinu (PDF)")}
 `;
   return shell(inner);

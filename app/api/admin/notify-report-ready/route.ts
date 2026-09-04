@@ -9,6 +9,7 @@ import {
 } from "@/lib/email/notify-attachments-parse";
 import { deleteNotifyBlobUrls, fetchNotifyBlobAttachmentsForEmail } from "@/lib/email/notify-blob-attachments-fetch";
 import { isSmtpConfigured, sendReportReadyEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
+import { persistClientReportFromNotify } from "@/lib/partner-client-report-storage";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -255,9 +256,17 @@ export async function POST(req: Request) {
   try {
     await sendReportReadyEmail({
       to,
-      carVin: notifyVin || "—",
+      carVin: notifyVin || "-",
       attachments: manualAttachments,
     });
+    try {
+      const stored = await persistClientReportFromNotify(sessionId, manualAttachments);
+      if (!stored) {
+        console.warn("[api/admin/notify-report-ready] client report archive persist skipped", { sessionId });
+      }
+    } catch (persistErr) {
+      console.error("[api/admin/notify-report-ready] client report archive persist:", persistErr);
+    }
   } catch (e) {
     const message = e instanceof Error ? e.message : "Nezināma kļūda";
     console.error("[api/admin/notify-report-ready]", e);

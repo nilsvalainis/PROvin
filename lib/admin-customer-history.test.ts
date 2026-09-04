@@ -72,6 +72,8 @@ describe("telegram vs audit amounts", () => {
     );
     expect(paidProductLabel({ checkoutLine: "premium", amountTotalCents: 9999 })).toBe("PROVIN AUDITS");
     expect(paidProductLabel({ checkoutLine: "mini", amountTotalCents: 3999 })).toBe("PROVIN MINI");
+    expect(paidProductLabel({ checkoutLine: "business", amountTotalCents: 6999 })).toBe("PROVIN BUSINESS");
+    expect(paidProductLabel({ checkoutLine: "dealer", amountTotalCents: 1999 })).toBe("Dīlera dati");
   });
 
   it("routes SELECT to konsultācijas", () => {

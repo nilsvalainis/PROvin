@@ -9,8 +9,10 @@ import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import {
   buildInvoiceServiceLineDescription,
   getInvoicePvnFooterText,
+  invoiceBuyerFromOrder,
   type InvoiceOrderPayload,
 } from "@/lib/generate-invoice-html";
+import { invoiceBuyerLines } from "@/lib/invoice-buyer";
 import { formatMoneyEur } from "@/lib/format-money";
 
 /**
@@ -102,8 +104,8 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   const lineDesc = buildInvoiceServiceLineDescription(order);
   const pvnFooter = getInvoicePvnFooterText();
   const money = formatMoneyEur(order.amountTotal, order.currency);
-  const email = order.customerEmail ?? order.customerDetailsEmail ?? "—";
-  const vin = order.vin?.trim() || "—";
+  const vin = order.vin?.trim() || "-";
+  const buyerLines = invoiceBuyerLines(invoiceBuyerFromOrder(order));
   const invoiceNo = order.invoiceNumber;
 
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
@@ -158,7 +160,13 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   ctx.y -= 8;
 
   drawTextLine(ctx, "Klients", 9, { font: fontBold, color: MUTED });
-  drawParagraph(ctx, `E-pasts: ${email}`, 10);
+  if (buyerLines.length) {
+    for (const line of buyerLines) {
+      drawParagraph(ctx, line, 10);
+    }
+  } else {
+    drawParagraph(ctx, "-", 10);
+  }
   drawParagraph(ctx, `Transportlīdzekļa VIN: ${vin}`, 10);
   ctx.y -= 12;
 
