@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { LogIn, Menu, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import {
@@ -82,6 +82,13 @@ export function HeaderClient() {
       : raw;
   };
 
+  const navLabelWithHint = (labelKey: SiteRailLabelKey) => (
+    <span className="inline-flex items-center gap-1">
+      <span>{navLabelForKey(labelKey)}</span>
+      {labelKey === "b2b" ? <LogIn className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden /> : null}
+    </span>
+  );
+
   const navLinkInactive = headerChromeDark
     ? "text-white/[0.88] hover:text-white"
     : "text-[#1d1d1f]/80 hover:text-[#0066ff]";
@@ -160,8 +167,9 @@ export function HeaderClient() {
                   href={s.href}
                   prefetch={false}
                   className={`whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] no-underline transition-colors ${navLinkInactive}`}
+                  aria-label={s.labelKey === "b2b" ? tRail("b2bLoginAria") : undefined}
                 >
-                  <span>{navLabelForKey(s.labelKey)}</span>
+                  {navLabelWithHint(s.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -215,8 +223,9 @@ export function HeaderClient() {
                 prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`min-h-[2.4rem] shrink-0 content-center px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] no-underline outline-none ring-inset transition focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#0066ff]/35 lg:min-h-[3rem] lg:py-2.5 lg:text-[12px] ${navLinkInactive}`}
+                aria-label={s.labelKey === "b2b" ? tRail("b2bLoginAria") : undefined}
               >
-                <span>{navLabelForKey(s.labelKey)}</span>
+                {navLabelWithHint(s.labelKey)}
               </Link>
             ))}
           </nav>
