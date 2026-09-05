@@ -111,7 +111,7 @@ export function oneautoServiceEventHasData(ev: OneautoServiceEvent): boolean {
   return Boolean(ev.date.trim() || ev.odometer.trim() || ev.place.trim() || ev.works.trim());
 }
 
-export function filledOneautoKvRows(rows: OneautoKvRow[] | null | undefined): OneautoKvRow[] {
+export function filledOneautoKvRows(rows: readonly OneautoKvRow[] | null | undefined): OneautoKvRow[] {
   return (rows ?? []).filter(oneautoKvRowHasData);
 }
 
@@ -438,7 +438,9 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   });
 }
 
-export function oneautoDisplayHasRows(d: OneautoDisplaySections | null | undefined): boolean {
+export function oneautoDisplayHasRows(
+  d: OneautoDisplaySections | null | undefined,
+): d is OneautoDisplaySections {
   if (!d) return false;
   return (
     filledOneautoKvRows(d.equipment).length > 0 ||

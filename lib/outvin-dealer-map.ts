@@ -34,6 +34,8 @@ const VEHICLE_ALIASES: Record<keyof OutvinVehicleInfo, string[]> = {
   colorCode: ["colorcode", "colourcode", "paintcode"],
   interior: ["interior", "upholstery", "interiortrim"],
   interiorCode: ["interiorcode", "upholsterycode", "trimcode"],
+  fuel: ["fuel", "fueltype", "fuel_type"],
+  displacement: ["displacement", "capacity", "ccm", "enginesize", "enginecapacity"],
 };
 
 function normKey(s: string): string {

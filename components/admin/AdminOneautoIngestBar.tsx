@@ -123,7 +123,7 @@ export function AdminOneautoIngestBar({
       for (const id of Object.keys(nextResults) as OneautoProductId[]) {
         payloads[id] = nextResults[id]?.payload;
       }
-      const nextDisplay = oneautoDisplayHasRows(body.display)
+      const nextDisplay: OneautoDisplaySections = oneautoDisplayHasRows(body.display)
         ? body.display
         : buildOneautoDisplay(payloads);
       const nextIngest: AutoRecordsOneautoIngest = {
