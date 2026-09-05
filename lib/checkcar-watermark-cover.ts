@@ -14,8 +14,8 @@ export type CheckcarWatermarkCoverResult = {
 const JPEG_QUALITY = 88;
 
 /**
- * Ja attēlā ir CheckCar.vin ūdenszīme, aizklāj to un atgriež jaunu JPEG.
- * Ja nav, atgriež oriģinālo buferi bez pārkodēšanas.
+ * Uzliek fiksētu CheckCar.vin mozaīkas joslu kadra vidū.
+ * Ja josla jau ir mozaīka, atgriež oriģinālo buferi bez pārkodēšanas.
  */
 export async function coverCheckcarVinWatermark(
   jpegBody: Buffer,
@@ -60,7 +60,7 @@ async function coverCheckcarVinWatermarkUnsafe(
   return { covered: true, jpeg, hit };
 }
 
-/** Saglabāšanai: tīrs JPEG, vai oriģināls, ja ūdenszīmes nav. */
+/** Saglabāšanai: JPEG ar centra joslu, vai oriģināls, ja josla jau ir. */
 export async function jpegWithCheckcarWatermarkCovered(jpegBody: Buffer): Promise<Buffer> {
   const result = await coverCheckcarVinWatermark(jpegBody);
   return result.jpeg;

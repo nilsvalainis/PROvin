@@ -15,6 +15,13 @@ async function jpegFromSvg(svg: string): Promise<Buffer> {
   return sharp(Buffer.from(svg)).jpeg({ quality: 92 }).toBuffer();
 }
 
+function expectCenteredStrip(box: { x: number; y: number; w: number; h: number }, width: number, height: number) {
+  const expected = fixedCheckcarWatermarkBox(width, height);
+  expect(box).toEqual(expected);
+  expect(Math.abs(box.x + box.w / 2 - width / 2)).toBeLessThanOrEqual(1);
+  expect(Math.abs(box.y + box.h / 2 - height / 2)).toBeLessThanOrEqual(1);
+}
+
 describe("checkcar watermark cover", () => {
   it("atpazīst sarkano VIN un pelēko CHECKCAR krāsu", () => {
     expect(isCheckcarVinRed(165, 40, 46)).toBe(true);
@@ -26,16 +33,14 @@ describe("checkcar watermark cover", () => {
     expect(isCheckcarGray(250, 250, 250)).toBe(false);
   });
 
-  it("fiksē joslu kadra vidū", () => {
+  it("fiksē joslu tieši kadra vidū", () => {
     const box = fixedCheckcarWatermarkBox(640, 360);
-    expect(box.x + box.w / 2).toBeGreaterThan(300);
-    expect(box.x + box.w / 2).toBeLessThan(340);
-    expect(box.y).toBeGreaterThan(140);
-    expect(box.y + box.h).toBeLessThan(240);
-    expect(box.w).toBeGreaterThan(400);
+    expectCenteredStrip(box, 640, 360);
+    expect(box.w).toBe(Math.round(640 * 0.66));
+    expect(box.h).toBe(Math.round(360 * 0.12));
   });
 
-  it("aizklāj CHECKCAR.VIN uz gaiša fona ar vidus joslu", async () => {
+  it("visām bildēm uzliek to pašu centra joslu", async () => {
     const letters = [
       ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
         (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#c4c4c4"/>`,
@@ -44,16 +49,21 @@ describe("checkcar watermark cover", () => {
       `<rect x="416" y="168" width="10" height="36" fill="#c81e24"/>`,
       `<rect x="434" y="168" width="28" height="36" fill="#c81e24"/>`,
     ].join("");
-    const jpeg = await jpegFromSvg(
+    const light = await jpegFromSvg(
       `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#ececec"/>${letters}</svg>`,
     );
+    const dark = await jpegFromSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#121214"/>${letters}</svg>`,
+    );
 
-    const first = await coverCheckcarVinWatermark(jpeg);
-    expect(first.covered).toBe(true);
-    expect(first.hit!.box.h).toBeLessThan(70);
-    expect(first.hit!.box.w).toBeLessThan(500);
+    const a = await coverCheckcarVinWatermark(light);
+    const b = await coverCheckcarVinWatermark(dark);
+    expect(a.covered).toBe(true);
+    expect(b.covered).toBe(true);
+    expect(a.hit!.box).toEqual(b.hit!.box);
+    expectCenteredStrip(a.hit!.box, 640, 360);
 
-    const outside = await sharp(first.jpeg)
+    const outside = await sharp(a.jpeg)
       .extract({ left: 20, top: 20, width: 8, height: 8 })
       .raw()
       .toBuffer();
@@ -61,29 +71,23 @@ describe("checkcar watermark cover", () => {
     expect(outside[1]).toBeGreaterThan(200);
   });
 
-  it("aizklāj sintētisko CHECKCAR.VIN un otro reizi vairs neskāra", async () => {
-    const letters = [
-      ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
-        (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#b8b8b8"/>`,
-      ),
-      `<rect x="380" y="168" width="28" height="36" fill="#c81e24"/>`,
-      `<rect x="416" y="168" width="10" height="36" fill="#c81e24"/>`,
-      `<rect x="434" y="168" width="28" height="36" fill="#c81e24"/>`,
-    ].join("");
-    const jpeg = await jpegFromSvg(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#121214"/>${letters}</svg>`,
-    );
+  it("otro reizi to pašu centra joslu vairs nepārkodē", async () => {
+    const jpeg = await sharp({
+      create: { width: 640, height: 360, channels: 3, background: "#334155" },
+    })
+      .jpeg({ quality: 85 })
+      .toBuffer();
 
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
-    expect(first.jpeg.equals(jpeg)).toBe(false);
+    expectCenteredStrip(first.hit!.box, 640, 360);
 
     const second = await coverCheckcarVinWatermark(first.jpeg);
     expect(second.covered).toBe(false);
     expect(second.jpeg).toBe(first.jpeg);
   });
 
-  it("tumšu foto bez ūdenszīmes atstāj neskartu", async () => {
+  it("aizklāj arī foto bez atsevišķa uzraksta meklējuma", async () => {
     const jpeg = await sharp({
       create: { width: 640, height: 400, channels: 3, background: "#111111" },
     })
@@ -91,15 +95,16 @@ describe("checkcar watermark cover", () => {
       .toBuffer();
 
     const result = await coverCheckcarVinWatermark(jpeg);
-    expect(result.covered).toBe(false);
-    expect(result.jpeg).toBe(jpeg);
+    expect(result.covered).toBe(true);
+    expectCenteredStrip(result.hit!.box, 640, 400);
   });
 
-  it("aizklāj CheckCar ūdenszīmi uz servisa ekrāna foto", async () => {
+  it("aizklāj CheckCar ūdenszīmi uz servisa ekrāna foto centrā", async () => {
     const jpeg = readFileSync(SERVICE_SCREEN_FIXTURE);
+    const meta = await sharp(jpeg).metadata();
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
-    expect(first.hit!.box.h).toBeLessThan(Math.round(first.hit!.box.w * 0.35));
+    expectCenteredStrip(first.hit!.box, meta.width!, meta.height!);
     const box = first.hit!.box;
     const sample = await sharp(first.jpeg)
       .extract({ left: box.x + Math.floor(box.w / 2), top: box.y + Math.floor(box.h / 2), width: 1, height: 1 })
@@ -107,69 +112,5 @@ describe("checkcar watermark cover", () => {
       .toBuffer();
     expect(Math.abs(sample[0]! - sample[1]!)).toBeLessThan(8);
     expect(Math.abs(sample[1]! - sample[2]!)).toBeLessThan(8);
-
-    expect(first.hit!.box.h).toBeLessThan(Math.round((await sharp(jpeg).metadata()).height! * 0.18));
-  });
-
-  it("aizklāj CHECKCAR.VIN arī virs sarkanās aizmugures luktura joslas", async () => {
-    const letters = [
-      ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
-        (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#e8e8e8"/>`,
-      ),
-      `<rect x="380" y="168" width="28" height="36" fill="#c81e24"/>`,
-      `<rect x="416" y="168" width="10" height="36" fill="#c81e24"/>`,
-      `<rect x="434" y="168" width="28" height="36" fill="#c81e24"/>`,
-    ].join("");
-    const jpeg = await jpegFromSvg(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="#cfcfd1"/><rect x="40" y="228" width="560" height="22" fill="#c4282d"/>${letters}</svg>`,
-    );
-
-    const result = await coverCheckcarVinWatermark(jpeg);
-    expect(result.covered).toBe(true);
-  });
-
-  it("tikai sarkanu luktura joslu bez CHECKCAR.VIN neatklāj", async () => {
-    const jpeg = await jpegFromSvg(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="#cfcfd1"/><rect x="40" y="228" width="560" height="22" fill="#c4282d"/></svg>`,
-    );
-
-    const result = await coverCheckcarVinWatermark(jpeg);
-    expect(result.covered).toBe(false);
-  });
-
-  it("aizklāj CHECKCAR.VIN arī tad, ja mērlenta daļēji aizsedz burtus", async () => {
-    const letters = [
-      ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
-        (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#b8b8b8"/>`,
-      ),
-      `<rect x="380" y="168" width="28" height="36" fill="#c81e24"/>`,
-      `<rect x="416" y="168" width="10" height="36" fill="#c81e24"/>`,
-      `<rect x="434" y="168" width="28" height="36" fill="#c81e24"/>`,
-      // Simulē fizisku mērlentu, kas šķērso burtu vidu.
-      `<rect x="330" y="168" width="50" height="36" fill="#202020"/>`,
-    ].join("");
-    const jpeg = await jpegFromSvg(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#121214"/>${letters}</svg>`,
-    );
-
-    const result = await coverCheckcarVinWatermark(jpeg);
-    expect(result.covered).toBe(true);
-  });
-
-  it("sarkanu taisnstūri neuzskata par VIN burtiem", async () => {
-    const bar = await sharp({
-      create: { width: 200, height: 40, channels: 3, background: "#c4282d" },
-    })
-      .png()
-      .toBuffer();
-    const jpeg = await sharp({
-      create: { width: 640, height: 400, channels: 3, background: "#111111" },
-    })
-      .composite([{ input: bar, left: 220, top: 180 }])
-      .jpeg({ quality: 85 })
-      .toBuffer();
-
-    const result = await coverCheckcarVinWatermark(jpeg);
-    expect(result.covered).toBe(false);
   });
 });
