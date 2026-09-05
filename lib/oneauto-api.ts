@@ -5,6 +5,7 @@ import {
   ONEAUTO_SOURCE_TAG,
   buildOneautoDisplay,
   formatOneautoCostEur,
+  oneautoPayloadIsNoData,
   oneautoPayloadIsPending,
   oneautoProductsCostCents,
   type OneautoProductId,
@@ -27,6 +28,7 @@ export function getOneautoApiConfig(): OneautoApiConfig | null {
 
 function classifyError(status: number, bodyText: string): string {
   const t = bodyText.toLowerCase();
+  if (oneautoPayloadIsNoData(null, bodyText)) return "no_data";
   if (status === 402 || /insufficient|balance|credit|quota/.test(t)) return "insufficient_balance";
   if (status === 400 || /invalid.?vin|vin/.test(t)) return "invalid_vin";
   if (status === 401 || status === 403) return "unauthorized_upstream";
@@ -125,6 +127,10 @@ export async function fetchOneautoProducts(opts: {
           fetched.payload && typeof fetched.payload === "object"
             ? JSON.stringify(fetched.payload).slice(0, 400)
             : "";
+        if (oneautoPayloadIsNoData(fetched.payload, errText)) {
+          results[id] = { ok: true, payload: fetched.payload };
+          continue;
+        }
         const code = classifyError(fetched.status, errText);
         results[id] = { ok: false, error: code, payload: fetched.payload };
         continue;
@@ -135,6 +141,10 @@ export async function fetchOneautoProducts(opts: {
           typeof (body as { error?: unknown }).error === "string"
             ? String((body as { error: string }).error)
             : "upstream_error";
+        if (oneautoPayloadIsNoData(body, err)) {
+          results[id] = { ok: true, payload: body };
+          continue;
+        }
         results[id] = { ok: false, error: classifyError(fetched.status, err), payload: body };
         continue;
       }

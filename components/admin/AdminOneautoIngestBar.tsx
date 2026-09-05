@@ -7,6 +7,7 @@ import {
   buildOneautoDisplay,
   formatOneautoCostEur,
   oneautoDisplayHasRows,
+  oneautoPayloadIsNoData,
   oneautoPayloadIsPending,
   oneautoProductsCostCents,
   oneautoServiceHistoryIsEmpty,
@@ -36,6 +37,8 @@ function oneautoFetchErrorLv(code: string): string {
       return "Admin sesija beigusies. Ielādē lapu no jauna.";
     case "pending":
       return "OEM vēl apstrādā pieprasījumu. Pagaidi un spied Ielādēt datus vēlreiz. Atkārtota pārbaude parasti neiekasē jaunu maksu.";
+    case "no_data":
+      return "OEM atbilde: šim VIN nav datu. Maksa nav iekasēta.";
     default:
       return "OneAutoAPI neatbildēja. Mēģini vēlreiz.";
   }
@@ -111,10 +114,18 @@ export function AdminOneautoIngestBar({
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
         return;
       }
+      const resultRows = Object.values(body.results ?? {});
+      const onlyNoData =
+        resultRows.length > 0 &&
+        resultRows.every(
+          (r) => r && (oneautoPayloadIsNoData(r.payload, r.error ?? "") || r.error === "no_data"),
+        );
       if (body.error && res.status === 402) {
         setError(oneautoFetchErrorLv("insufficient_balance"));
       } else if (body.error === "pending" || res.status === 202) {
         setError(oneautoFetchErrorLv("pending"));
+      } else if (onlyNoData) {
+        setError(null);
       } else if (!res.ok) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
       }
@@ -188,10 +199,24 @@ export function AdminOneautoIngestBar({
                 {result ? (
                   <span
                     className={`ml-1 ${
-                      resultPending ? "text-amber-700" : result.ok ? "text-emerald-700" : "text-rose-700"
+                      resultPending
+                        ? "text-amber-700"
+                        : oneautoPayloadIsNoData(result.payload, result.error ?? "") ||
+                            result.error === "no_data"
+                          ? "text-slate-600"
+                          : result.ok
+                            ? "text-emerald-700"
+                            : "text-rose-700"
                     }`}
                   >
-                    {resultPending ? "gaida OEM" : result.ok ? "ielādēts" : result.error ?? "kļūda"}
+                    {resultPending
+                      ? "gaida OEM"
+                      : oneautoPayloadIsNoData(result.payload, result.error ?? "") ||
+                          result.error === "no_data"
+                        ? "nav datu (nav iekasēts)"
+                        : result.ok
+                          ? "ielādēts"
+                          : result.error ?? "kļūda"}
                   </span>
                 ) : null}
               </span>

@@ -56,6 +56,7 @@ const COUNTRY_IN_DEALER_NAME: { re: RegExp; country: string }[] = [
   { re: /\bDanmark\b|\bDenmark\b/i, country: "Dānija" },
   { re: /\bItalia\b|\bItaly\b/i, country: "Itālija" },
   { re: /\bEspa[ñn]a\b|\bSpain\b/i, country: "Spānija" },
+  { re: /\bUnited\s+Kingdom\b|\bGreat\s+Britain\b|\bEngland\b/i, country: "Apvienotā Karaliste" },
 ];
 
 /** Valsts tikai tad, ja tā ir tieši nosaukta servisa punkta nosaukumā. */

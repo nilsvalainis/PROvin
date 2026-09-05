@@ -69,11 +69,9 @@ import { parseListedForSaleDays } from "@/lib/tirgus-listed-ui";
 import {
   autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
-  normalizeAutoRecordsServiceWorkRow,
-  SERVICE_WORKS_LOCATION_LABEL,
-  sortAutoRecordsServiceWorkRows,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
+import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
 import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
 import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import { normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
@@ -114,7 +112,6 @@ import {
   vendorPdfTitleToIconId,
   type SectionIconId,
 } from "@/lib/section-icons";
-import { formatServiceWorksLines } from "@/lib/service-works-lines";
 import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
 import {
   clientReportPrintInkCss,
@@ -1414,32 +1411,12 @@ const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
 const PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL = "Eļļas maiņas intervāli";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 
-/** Katrs darbs savā rindā, bez ikonām. */
-function serviceWorksCellHtml(raw: string): string {
-  const lines = formatServiceWorksLines(raw).split("\n").filter(Boolean);
-  return lines.length > 0 ? lines.map((line) => escapeHtml(line)).join("<br/>") : "—";
-}
-
-/** OFICIĀLĀ DĪLERA DATI — apkopju tabula: datums, odometrs, veiktie darbi. */
+/** OFICIĀLĀ DĪLERA DATI — servisa vizītes (datums, km, vieta, darbi). */
 function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]): string {
-  const printable = sortAutoRecordsServiceWorkRows(
-    (rows ?? []).map(normalizeAutoRecordsServiceWorkRow).filter(autoRecordsServiceWorkRowIsPrintable),
-  );
-  if (printable.length === 0) return "";
-  const colgroup =
-    '<colgroup><col class="pdf-service-col-date" /><col class="pdf-service-col-odo" /><col class="pdf-service-col-place" /><col class="pdf-service-col-works" /></colgroup>';
-  const head =
-    `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-service-th-place" scope="col">${escapeHtml(SERVICE_WORKS_LOCATION_LABEL)}</th><th class="pdf-service-th-works" scope="col">Veiktie darbi</th></tr>`;
-  const body = printable
-    .map((r) => {
-      const odo = formatServiceWorkOdometer(r.odometer);
-      const place = r.location.trim() ? escapeHtml(r.location.trim()) : "—";
-      const works = r.works.trim() ? serviceWorksCellHtml(r.works) : "—";
-      return `<tr class="pdf-mileage-history-row"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td><td class="tabular pdf-mileage-cell-odo">${odo ? escapeHtml(odo) : "—"}</td><td class="pdf-service-cell-place">${place}</td><td class="pdf-service-cell-works">${works}</td></tr>`;
-    })
-    .join("\n");
+  const body = buildDealerServiceVisitsHtml(rows);
+  if (!body) return "";
   const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL);
-  return `<section class="pdf-service-works-zone">${subheadHtml}<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--service" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div></section>`;
+  return `<section class="pdf-service-works-zone">${subheadHtml}${body}</section>`;
 }
 
 function buildSourcePhotoGroupsPdfHtml(
@@ -2435,28 +2412,64 @@ ${sourceDotColorCss()}
         text-align:right!important;vertical-align:middle!important;
       }
       .pdf-service-works-zone{margin:12px 0 0;}
-      .pdf-mileage-history-table--service col.pdf-service-col-date{width:14%!important;}
-      .pdf-mileage-history-table--service col.pdf-service-col-odo{width:16%!important;}
-      .pdf-mileage-history-table--service col.pdf-service-col-place{width:24%!important;}
-      .pdf-mileage-history-table--service col.pdf-service-col-works{width:46%!important;}
-      .pdf-mileage-history-table--service thead th{vertical-align:middle!important;}
-      .pdf-mileage-history-table--service th.pdf-service-th-place,
-      .pdf-mileage-history-table--service th.pdf-service-th-works{text-align:left!important;}
-      .pdf-mileage-history-table--service td.pdf-service-cell-place{
-        text-align:left!important;color:#1d1d1f!important;
-        white-space:normal!important;overflow-wrap:anywhere;word-break:break-word;min-width:0;
+      .pdf-svc-span{
+        display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;
+        margin:0 0 12px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--pdf-line);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-history-table--service tbody td{vertical-align:top!important;}
-      .pdf-mileage-history-table--service td.pdf-mileage-cell-odo{
-        text-align:left!important;color:#1d1d1f!important;white-space:nowrap;
+      .pdf-svc-span__pt{min-width:0;}
+      .pdf-svc-span__pt b{display:block;font-size:13px;font-weight:750;color:#0f172a;}
+      .pdf-svc-span__pt i{display:block;margin-top:2px;font-style:normal;font-size:var(--pdf-fs-label);color:#64748b;}
+      .pdf-svc-span__pt--end{text-align:right;}
+      .pdf-svc-span__bar{
+        width:72px;height:2px;border-radius:99px;background:#93C5FD;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-history-table--service th.pdf-mileage-th-odo{text-align:left!important;}
-      .pdf-mileage-history-table--service td.pdf-service-cell-works{
-        text-align:left!important;white-space:normal!important;color:#0f172a!important;
-        line-height:1.5!important;overflow-wrap:anywhere;word-break:break-word;
-        min-width:0;max-width:0;
+      .pdf-svc-year{
+        margin:12px 0 8px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
+        font-size:13px;font-weight:700;color:${PDF_BRAND_BLUE_HEX};letter-spacing:0.04em;
+        font-variant-numeric:tabular-nums;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-history-table--service tbody tr{page-break-inside:avoid;break-inside:avoid;}
+      .pdf-svc-year:first-child,
+      .pdf-svc-span + .pdf-svc-year{margin-top:0;}
+      .pdf-svc-visit{
+        display:grid;grid-template-columns:78px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
+        break-inside:avoid;page-break-inside:avoid;
+      }
+      .pdf-svc-date{
+        padding:14px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;
+        white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3;text-align:right;
+      }
+      .pdf-svc-rail{
+        position:relative;display:block;align-self:stretch;justify-self:center;width:2px;background:#D7E4F5;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-dot{
+        position:absolute;left:50%;top:18px;width:9px;height:9px;margin-left:-4.5px;
+        border-radius:999px;background:#fff;border:2px solid #93C5FD;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-box{
+        margin:8px 0;padding:12px 14px;border:1px solid #E9EDF3;border-radius:10px;background:#fff;min-width:0;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-box-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+      .pdf-svc-place{margin:0;font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;color:#0f172a;}
+      .pdf-svc-place span{font-weight:500;color:#64748b;}
+      .pdf-svc-km{
+        flex:none;margin-left:auto;padding:3px 8px;border-radius:6px;background:#F1F5F9;
+        font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-works{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:5px;}
+      .pdf-svc-work{
+        margin:0;padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;
+        font-size:11px;font-weight:600;color:#334155;line-height:1.35;
+        overflow-wrap:anywhere;word-break:break-word;white-space:normal;max-width:100%;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-empty{margin:8px 0 0;font-size:var(--pdf-fs-table);color:#64748b;font-style:italic;line-height:1.4;}
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
       .pdf-country-flag-wrap{
         display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;

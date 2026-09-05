@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN · dīlera servisa PDF koncepts</title>
+<style>
+  :root{
+    --blue:#0061D2;
+    --ink:#0f172a;
+    --mute:#64748b;
+    --label:#86868b;
+    --line:#E9EDF3;
+    --soft:#F1F5F9;
+    --paper:#fff;
+    --desk:#e8edf4;
+    --fs-sec:13px;
+    --fs-base:11.5px;
+    --fs-table:10.5px;
+    --fs-label:9.5px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--desk);
+    color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .chrome{
+    position:sticky;top:0;z-index:20;
+    background:#0f172a;color:#e2e8f0;
+    padding:14px 20px 16px;
+  }
+  .chrome h1{
+    margin:0;font-size:15px;font-weight:700;letter-spacing:-0.02em;color:#fff;
+  }
+  .chrome p{margin:6px 0 0;font-size:12px;line-height:1.45;color:#94a3b8;max-width:62rem;}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .tabs button{
+    appearance:none;border:1px solid #334155;background:#1e293b;color:#e2e8f0;
+    border-radius:999px;padding:6px 12px;font:650 11px/1.2 Inter,sans-serif;
+    letter-spacing:0.02em;cursor:pointer;
+  }
+  .tabs button[aria-selected="true"]{background:#0061D2;border-color:#0061D2;color:#fff;}
+  .hint{margin:10px 0 0;font-size:11px;color:#64748b;}
+
+  .stage{padding:28px 16px 64px;}
+  .sheet{
+    display:none;
+    width:210mm;min-height:297mm;margin:0 auto 28px;
+    background:var(--paper);color:var(--ink);
+    padding:14mm 13mm 16mm;
+    box-shadow:0 18px 50px rgb(15 23 42 / .12);
+  }
+  .sheet.is-on{display:block;}
+
+  .wordmark{font-size:13px;font-weight:800;letter-spacing:-0.02em;}
+  .wordmark b{color:var(--blue);font-weight:800;}
+  .doc-kicker{
+    margin:2px 0 0;font-size:9.5px;font-weight:700;letter-spacing:0.08em;
+    text-transform:uppercase;color:#6e6e73;
+  }
+
+  .card{
+    margin:14px 0 0;padding:16px 18px;
+    border:1px solid var(--line);border-radius:12px;background:#fff;
+    box-shadow:0 1px 0 rgb(15 23 42 / .03);
+  }
+  .sec-head{
+    display:flex;align-items:center;gap:10px;
+    margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);
+  }
+  .sec-head h2{
+    margin:0;flex:1;font-size:var(--fs-sec);font-weight:700;
+    letter-spacing:0.08em;text-transform:uppercase;line-height:1.3;
+  }
+  .count{
+    padding:3px 9px;border-radius:999px;background:#F8FAFC;border:1px solid var(--line);
+    font-size:var(--fs-label);font-weight:700;color:var(--mute);white-space:nowrap;
+  }
+  .sub{
+    display:flex;align-items:center;gap:8px;
+    margin:0 0 10px;font-size:var(--fs-label);font-weight:600;
+    letter-spacing:0.06em;text-transform:uppercase;color:var(--label);
+  }
+
+  /* Šobrīd: četru kolonnu tabula */
+  table.now{
+    width:100%;border-collapse:collapse;font-size:var(--fs-table);
+  }
+  table.now th{
+    padding:6px 8px 7px 0;border-bottom:1px solid var(--line);
+    font-size:var(--fs-label);font-weight:600;color:var(--label);
+    text-transform:uppercase;letter-spacing:0.06em;text-align:left;
+  }
+  table.now td{
+    padding:7px 8px 7px 0;border-bottom:1px solid var(--soft);
+    vertical-align:top;line-height:1.5;
+  }
+  table.now tr:nth-child(even) td{background:#F8FAFC;}
+  table.now .d{width:14%;white-space:nowrap;font-weight:600;}
+  table.now .k{width:16%;white-space:nowrap;}
+  table.now .p{width:24%;overflow-wrap:anywhere;}
+  table.now .w{width:46%;overflow-wrap:anywhere;}
+
+  /* Koncepts A: servisa vizītes */
+  .span{
+    display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;
+    margin:0 0 14px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--line);
+  }
+  .span .pt{min-width:0;}
+  .span .pt b{display:block;font-size:13px;font-weight:750;}
+  .span .pt i{display:block;margin-top:2px;font-style:normal;font-size:var(--fs-label);color:var(--mute);}
+  .span .pt:last-child{text-align:right;}
+  .span .bar{
+    width:88px;height:2px;border-radius:99px;background:linear-gradient(90deg,#93C5FD,var(--blue));
+  }
+
+  .year{
+    margin:12px 0 8px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
+    font-size:13px;font-weight:700;color:var(--blue);letter-spacing:0.04em;
+  }
+  .year:first-of-type{margin-top:0;}
+
+  .visit{
+    display:grid;grid-template-columns:78px 18px minmax(0,1fr);
+    gap:0 12px;align-items:stretch;margin:0;
+  }
+  .visit time{
+    padding:14px 0;font-size:var(--fs-base);font-weight:600;text-align:right;line-height:1.3;
+  }
+  .rail{position:relative;justify-self:center;width:2px;background:#D7E4F5;}
+  .dot{
+    position:absolute;left:50%;top:18px;width:9px;height:9px;margin-left:-4.5px;
+    border-radius:99px;background:#fff;border:2px solid #93C5FD;
+  }
+  .box{
+    margin:8px 0;padding:12px 14px;border:1px solid #E9EDF3;border-radius:10px;background:#fff;min-width:0;
+  }
+  .box-top{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  }
+  .place{margin:0;font-size:var(--fs-base);font-weight:700;line-height:1.3;}
+  .place span{font-weight:500;color:var(--mute);}
+  .km{
+    flex:none;padding:3px 8px;border-radius:6px;background:#F1F5F9;
+    font-size:11px;font-weight:700;white-space:nowrap;
+  }
+  .works{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:5px;}
+  .works li{
+    margin:0;padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;
+    font-size:11px;font-weight:600;color:#334155;line-height:1.3;
+  }
+  .empty{
+    margin:8px 0 0;font-size:var(--fs-table);color:var(--mute);font-style:italic;
+  }
+
+  /* Koncepts B: blīvs žurnāls */
+  .log{width:100%;border-collapse:collapse;}
+  .log td{padding:0;border:0;vertical-align:top;}
+  .row{
+    display:grid;grid-template-columns:92px minmax(0,1fr);
+    gap:0 16px;padding:10px 0;border-bottom:1px solid var(--soft);
+  }
+  .row:last-child{border-bottom:0;}
+  .row .when{font-size:var(--fs-base);font-weight:700;line-height:1.25;}
+  .row .odo{margin-top:3px;font-size:var(--fs-table);color:var(--mute);font-weight:650;}
+  .row .who{margin:0;font-size:var(--fs-base);font-weight:700;}
+  .row .who span{font-weight:500;color:var(--mute);}
+  .row .jobs{margin:4px 0 0;font-size:var(--fs-table);line-height:1.45;color:#1d1d1f;}
+
+  .note{
+    margin:14px 0 0;padding:10px 12px;border-radius:8px;background:#F8FAFC;border:1px solid var(--soft);
+    font-size:var(--fs-table);color:#475569;line-height:1.45;
+  }
+
+  @media print{
+    body{background:#fff;}
+    .chrome{display:none;}
+    .stage{padding:0;}
+    .sheet{display:none;box-shadow:none;margin:0;width:auto;min-height:auto;padding:0;}
+    .sheet.is-on{display:block;}
+    @page{size:A4;margin:12mm 11mm;}
+  }
+</style>
+</head>
+<body>
+  <div class="chrome">
+    <h1>Oficiālā dīlera servisa dati PDF atskaitē</h1>
+    <p>
+      Koncepts, ne produkcija. Viena un tā pati datu kopa (API + dīlera PDF): datums, km, vieta, darbi.
+      Klientam nav OneAuto vai auto-records nosaukumu. Drukā tikai atvērto lapu (A4).
+    </p>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-sheet="a">A · Servisa vizītes (ieteikums)</button>
+      <button type="button" role="tab" aria-selected="false" data-sheet="b">B · Žurnāls</button>
+      <button type="button" role="tab" aria-selected="false" data-sheet="now">Šobrīd · 4 kolonnas</button>
+    </div>
+    <p class="hint">Fails: scripts/pdf-dealer-service-concept.html · atver pārlūkā un, ja vajag, drukā PDF.</p>
+  </div>
+
+  <div class="stage">
+    <article class="sheet is-on" id="sheet-a" aria-label="Koncepts A">
+      <div class="wordmark">PRO<b>VIN</b>.LV</div>
+      <p class="doc-kicker">Transportlīdzekļa izvērtējums · koncepts</p>
+
+      <section class="card">
+        <div class="sec-head">
+          <h2>Oficiālā dīlera dati</h2>
+          <span class="count">8 vizītes</span>
+        </div>
+        <p class="sub">Servisa un remontu vēsture</p>
+
+        <div class="span">
+          <div class="pt"><b>31 400 km</b><i>Pirmais ieraksts · 03.04.2016</i></div>
+          <div class="bar" aria-hidden="true"></div>
+          <div class="pt"><b>142 220 km</b><i>Pēdējais ieraksts · 12.03.2024</i></div>
+        </div>
+
+        <div class="year">2024</div>
+        <div class="visit">
+          <time>12.03.2024</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">d.velop AG, Osnabrück <span>· Vācija</span></p>
+              <span class="km">142 220 km</span>
+            </div>
+            <ul class="works">
+              <li>Eļļas un filtra maiņa</li>
+              <li>Salona gaisa filtrs</li>
+              <li>Bremžu šķidrums</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="year">2023</div>
+        <div class="visit">
+          <time>01.12.2023</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">Niederlassung Bonn BMW AG <span>· Vācija</span></p>
+              <span class="km">128 410 km</span>
+            </div>
+            <ul class="works">
+              <li>Regulārā apkope</li>
+              <li>Eļļas maiņa</li>
+              <li>Salona gaisa filtrs</li>
+            </ul>
+          </article>
+        </div>
+        <div class="visit">
+          <time>01.06.2023</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">Niederlassung Bonn BMW AG <span>· Vācija</span></p>
+              <span class="km">109 880 km</span>
+            </div>
+            <ul class="works">
+              <li>Regulārā apkope</li>
+              <li>Eļļas maiņa</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="year">2022</div>
+        <div class="visit">
+          <time>18.06.2022</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">Premier Service Centre, Leicester <span>· Apvienotā Karaliste</span></p>
+              <span class="km">98 200 km</span>
+            </div>
+            <ul class="works">
+              <li>Garantijas kampaņa 12</li>
+              <li>Programmatūras atjauninājums</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="year">2019</div>
+        <div class="visit">
+          <time>21.10.2019</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">Premier Service Centre, Leicester <span>· Apvienotā Karaliste</span></p>
+              <span class="km">69 202 km</span>
+            </div>
+            <ul class="works">
+              <li>Eļļas un filtra maiņa</li>
+            </ul>
+          </article>
+        </div>
+        <div class="visit">
+          <time>05.09.2019</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">B&amp;K Deutschland GmbH, Osnabrück <span>· Vācija</span></p>
+              <span class="km">58 140 km</span>
+            </div>
+            <p class="empty">Detalizēts darbu saraksts avotā nav.</p>
+          </article>
+        </div>
+
+        <div class="year">2018</div>
+        <div class="visit">
+          <time>21.06.2018</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">B&amp;K Deutschland GmbH, Osnabrück <span>· Vācija</span></p>
+              <span class="km">48 110 km</span>
+            </div>
+            <ul class="works">
+              <li>Navigācijas karšu atjaunināšana</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="year">2016</div>
+        <div class="visit">
+          <time>03.04.2016</time>
+          <span class="rail"><span class="dot"></span></span>
+          <article class="box">
+            <div class="box-top">
+              <p class="place">BMW Mobiler Service, Minhene <span>· Vācija</span></p>
+              <span class="km">31 400 km</span>
+            </div>
+            <p class="empty">Detalizēts darbu saraksts avotā nav.</p>
+          </article>
+        </div>
+
+        <p class="note">
+          Jaunākā vizīte augšā. Km no jūdzēm jau pārrēķināti. Viena vizīte, viens bloks: datums kreisajā sliedē,
+          vieta un valsts virsrakstā, odometrs čipā, darbi kā punkti. API un dīlera PDF rindas šeit ir viena vēsture,
+          ne divas tabulas.
+        </p>
+      </section>
+    </article>
+
+    <article class="sheet" id="sheet-b" aria-label="Koncepts B">
+      <div class="wordmark">PRO<b>VIN</b>.LV</div>
+      <p class="doc-kicker">Transportlīdzekļa izvērtējums · koncepts</p>
+
+      <section class="card">
+        <div class="sec-head">
+          <h2>Oficiālā dīlera dati</h2>
+          <span class="count">8 vizītes</span>
+        </div>
+        <p class="sub">Servisa un remontu vēsture</p>
+
+        <div class="row">
+          <div>
+            <div class="when">12.03.2024</div>
+            <div class="odo">142 220 km</div>
+          </div>
+          <div>
+            <p class="who">d.velop AG, Osnabrück <span>· Vācija</span></p>
+            <p class="jobs">Eļļas un filtra maiņa. Salona gaisa filtrs. Bremžu šķidrums.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <div class="when">01.12.2023</div>
+            <div class="odo">128 410 km</div>
+          </div>
+          <div>
+            <p class="who">Niederlassung Bonn BMW AG <span>· Vācija</span></p>
+            <p class="jobs">Regulārā apkope: eļļas maiņa, salona gaisa filtrs.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <div class="when">01.06.2023</div>
+            <div class="odo">109 880 km</div>
+          </div>
+          <div>
+            <p class="who">Niederlassung Bonn BMW AG <span>· Vācija</span></p>
+            <p class="jobs">Regulārā apkope: eļļas maiņa.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <div class="when">18.06.2022</div>
+            <div class="odo">98 200 km</div>
+          </div>
+          <div>
+            <p class="who">Premier Service Centre, Leicester <span>· Apvienotā Karaliste</span></p>
+            <p class="jobs">Garantijas kampaņa 12. Programmatūras atjauninājums.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <div class="when">21.10.2019</div>
+            <div class="odo">69 202 km</div>
+          </div>
+          <div>
+            <p class="who">Premier Service Centre, Leicester <span>· Apvienotā Karaliste</span></p>
+            <p class="jobs">Eļļas un filtra maiņa.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <div class="when">05.09.2019</div>
+            <div class="odo">58 140 km</div>
+          </div>
+          <div>
+            <p class="who">B&amp;K Deutschland GmbH, Osnabrück <span>· Vācija</span></p>
+            <p class="jobs">Detalizēts darbu saraksts avotā nav.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <div class="when">21.06.2018</div>
+            <div class="odo">48 110 km</div>
+          </div>
+          <div>
+            <p class="who">B&amp;K Deutschland GmbH, Osnabrück <span>· Vācija</span></p>
+            <p class="jobs">Navigācijas karšu atjaunināšana.</p>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <div class="when">03.04.2016</div>
+            <div class="odo">31 400 km</div>
+          </div>
+          <div>
+            <p class="who">BMW Mobiler Service, Minhene <span>· Vācija</span></p>
+            <p class="jobs">Detalizēts darbu saraksts avotā nav.</p>
+          </div>
+        </div>
+
+        <p class="note">
+          Blīvāks par A, ja vizīšu ir 20+. Datums un km paliek fiksētā mugurkaulā; vieta un darbi lasās kā teikums,
+          ne četru kolonnu režģis. Labi, kad darbi ir īsi. Sliktāk, kad vienā vizītē ir 8 pozīcijas.
+        </p>
+      </section>
+    </article>
+
+    <article class="sheet" id="sheet-now" aria-label="Šobrīd">
+      <div class="wordmark">PRO<b>VIN</b>.LV</div>
+      <p class="doc-kicker">Transportlīdzekļa izvērtējums · šobrīd produkcijā</p>
+
+      <section class="card">
+        <div class="sec-head">
+          <h2>Oficiālā dīlera dati</h2>
+          <span class="count">8</span>
+        </div>
+        <p class="sub">Servisa un remontu vēsture</p>
+        <table class="now">
+          <thead>
+            <tr>
+              <th>Datums</th>
+              <th>Odometrs (km)</th>
+              <th>Vieta</th>
+              <th>Veiktie darbi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="d">12.03.2024</td>
+              <td class="k">142 220 km</td>
+              <td class="p">d.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany</td>
+              <td class="w">Eļļas un filtra maiņa<br/>Salona gaisa filtrs<br/>Bremžu šķidrums</td>
+            </tr>
+            <tr>
+              <td class="d">01.12.2023</td>
+              <td class="k">128 410 km</td>
+              <td class="p">Niederlassung Bonn BMW AG, Bonn</td>
+              <td class="w">Regulārā apkope: Eļļas maiņa, Salona gaisa filtra maiņa</td>
+            </tr>
+            <tr>
+              <td class="d">01.06.2023</td>
+              <td class="k">109 880 km</td>
+              <td class="p">Niederlassung Bonn BMW AG, Bonn</td>
+              <td class="w">Regulārā apkope: Eļļas maiņa</td>
+            </tr>
+            <tr>
+              <td class="d">18.06.2022</td>
+              <td class="k">98 200 km</td>
+              <td class="p">Premier Service Centre, Leicester, United Kingdom</td>
+              <td class="w">warranty: Campaign 12. Update.</td>
+            </tr>
+            <tr>
+              <td class="d">21.10.2019</td>
+              <td class="k">69 202 km</td>
+              <td class="p">Premier Service Centre, Leicester, United Kingdom</td>
+              <td class="w">Engine: oil and filter change.</td>
+            </tr>
+            <tr>
+              <td class="d">05.09.2019</td>
+              <td class="k">58 140 km</td>
+              <td class="p">B&amp;K Deutschland GmbH, Osnabrück</td>
+              <td class="w">detalizēts darbu saraksts atskaitē nav pieejams</td>
+            </tr>
+            <tr>
+              <td class="d">21.06.2018</td>
+              <td class="k">48 110 km</td>
+              <td class="p">B&amp;K Deutschland GmbH, Osnabrück</td>
+              <td class="w">Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)</td>
+            </tr>
+            <tr>
+              <td class="d">03.04.2016</td>
+              <td class="k">31 400 km</td>
+              <td class="p">BMW Mobiler Service Einsatzleitzentrale, München</td>
+              <td class="w">detalizēts darbu saraksts atskaitē nav pieejams</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">
+          Četras kolonnas cīnās par A4 platumu. Adrese lauž datumu un km. Darbi kļūst par garu šūnu, ne par vizīti.
+          Šī ir iemesls, kāpēc sadaļa izskatās pēc izklājlapas, ne pēc oficiālas servisa grāmatas.
+        </p>
+      </section>
+    </article>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll(".tabs button");
+    const sheets = {
+      a: document.getElementById("sheet-a"),
+      b: document.getElementById("sheet-b"),
+      now: document.getElementById("sheet-now"),
+    };
+    tabs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-sheet");
+        tabs.forEach((t) => t.setAttribute("aria-selected", String(t === btn)));
+        Object.entries(sheets).forEach(([key, el]) => {
+          el.classList.toggle("is-on", key === id);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

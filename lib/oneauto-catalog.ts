@@ -275,7 +275,24 @@ export function oneautoPayloadHasResultBody(payload: unknown): boolean {
   });
 }
 
+const NO_DATA_RE =
+  /no data available|you have not been charged|no (oem )?service (history|records)/i;
+
+/** OEM atbilde: šim VIN datu nav, maksa nav iekasēta. Tas nav tīkla / 502 kļūda. */
+export function oneautoPayloadIsNoData(payload: unknown, extraText = ""): boolean {
+  const texts: string[] = [];
+  if (extraText.trim()) texts.push(extraText);
+  const o = asRecord(payload);
+  if (o) {
+    for (const key of ["error", "message", "detail"]) {
+      if (typeof o[key] === "string" && o[key].trim()) texts.push(o[key]);
+    }
+  }
+  return texts.some((t) => NO_DATA_RE.test(t));
+}
+
 export function oneautoServiceHistoryIsEmpty(payload: unknown): boolean {
+  if (oneautoPayloadIsNoData(payload)) return true;
   const unwrapped = unwrapResult(payload);
   const o = asRecord(unwrapped);
   if (!o) return false;
@@ -286,6 +303,27 @@ export function oneautoServiceHistoryIsEmpty(payload: unknown): boolean {
     if (o[key].length > 0) return false;
   }
   return sawList;
+}
+
+/** Nobraukums km. UK dīleru `miles` pārrēķina. */
+export function oneautoOdometerToKm(raw: string, unitRaw = ""): string {
+  const t = raw.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const n = Number.parseFloat(t.replace(/[^\d.,]/g, "").replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return t;
+  if (/^(mi|mile|miles)$/i.test(unitRaw.trim())) return String(Math.round(n * 1.609344));
+  return String(Math.round(n));
+}
+
+/** `service_type` pievieno tikai tad, ja tas nav vispārīgais „service”. */
+export function composeOneautoServiceWorks(actions: string, serviceType: string): string {
+  const works = actions.trim();
+  const type = serviceType.trim();
+  if (!type) return works;
+  if (!works) return type;
+  if (/^(service|serviss|maintenance|apkope)$/i.test(type)) return works;
+  if (works.toLowerCase().includes(type.toLowerCase())) return works;
+  return `${type}: ${works}`;
 }
 
 function stringifyVal(v: unknown): string {
@@ -348,21 +386,25 @@ function walkService(node: unknown, out: OneautoServiceEvent[], depth = 0): void
       o.date_of_workshop_remark ??
       o.remark_date,
   );
-  const odometer = stringifyVal(
-    o.mileage_observed ?? o.mileageObserved ?? o.odometer ?? o.mileage ?? o.mileage_reading ?? o.km,
+  const odometer = oneautoOdometerToKm(
+    stringifyVal(
+      o.mileage_observed ?? o.mileageObserved ?? o.odometer ?? o.mileage ?? o.mileage_reading ?? o.km,
+    ),
+    stringifyVal(o.mileage_unit ?? o.mileageUnit ?? o.unit),
   );
   const place = stringifyVal(o.service_provider ?? o.serviceProvider ?? o.dealer ?? o.location ?? o.workshop);
-  const works = stringifyVal(
-    o.service_actions ??
-      o.serviceActions ??
-      o.works ??
-      o.operations ??
-      o.service_type ??
-      o.serviceType ??
-      o.description ??
-      o.remark ??
-      o.workshop_remark ??
-      o.comments,
+  const works = composeOneautoServiceWorks(
+    stringifyVal(
+      o.service_actions ??
+        o.serviceActions ??
+        o.works ??
+        o.operations ??
+        o.description ??
+        o.remark ??
+        o.workshop_remark ??
+        o.comments,
+    ),
+    stringifyVal(o.service_type ?? o.serviceType),
   );
   if (date || odometer || works) {
     const ev = normalizeOneautoServiceEvent({ date, odometer, place, works });
@@ -387,7 +429,7 @@ function flattenScalars(node: unknown, out: OneautoKvRow[], seen: Set<string>, d
   const o = asRecord(node);
   if (!o) return;
   for (const [k, v] of Object.entries(o)) {
-    if (SKIP_META_KEYS.has(k) || k === "vehicle_identification_number") continue;
+    if (SKIP_META_KEYS.has(k)) continue;
     if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
       pushKv(out, humanizeKey(k), v, seen);
     } else if (Array.isArray(v) || asRecord(v)) {

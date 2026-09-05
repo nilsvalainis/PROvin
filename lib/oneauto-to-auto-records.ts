@@ -91,32 +91,56 @@ export function ingestFromOneautoBlock(oa: OneautoBlockState): AutoRecordsOneaut
 }
 
 const LABEL_TO_FIELD: { re: RegExp; key: keyof OutvinVehicleInfo }[] = [
-  { re: /^(vin(\s*code)?|vehicle.?identification)$/i, key: "vinCode" },
-  { re: /^(model\s*series|mode[lļ]a\s*s[eē]rija)$/i, key: "modelSeries" },
+  { re: /^(vin(\s*code)?|vehicle\s*identification(\s*number)?)$/i, key: "vinCode" },
+  { re: /^(model\s*(range|series)|mode[lļ]a\s*s[eē]rija)(\s*desc)?$/i, key: "modelSeries" },
   { re: /^(model\s*code|mode[lļ]a\s*kods)$/i, key: "modelCode" },
-  { re: /^(model|modelis)$/i, key: "model" },
+  {
+    re: /^(oem\s*)?(vehicle\s*desc|vehicle\s*description|derivative(\s*desc)?|model(\s*desc)?|modelis)$/i,
+    key: "model",
+  },
   { re: /^(engine\s*number|dzin[eē]ja\s*numurs)$/i, key: "engineNumber" },
   { re: /^(oem[_\s-]?engine|engine|dzin[eē]j|motor)(?!.*num)/i, key: "engineCode" },
   { re: /^(oem[_\s-]?transmission|transmission|gearbox|[aā]trumk[aā]rba|k[aā]rba)/i, key: "transmission" },
   { re: /^(power(\s*kw)?|jauda|kw)$/i, key: "power" },
-  { re: /^(fuel|degviel)/i, key: "fuel" },
-  { re: /^(displacement|tilpums|capacity|ccm)/i, key: "displacement" },
+  { re: /^(fuel(\s*type)?|degviel)/i, key: "fuel" },
+  { re: /^(displacement|tilpums|capacity|ccm)$/i, key: "displacement" },
   { re: /^(drive|drivetrain|piedzi[nņ]a)/i, key: "drive" },
-  { re: /^(body|virsb[uū]ve)/i, key: "body" },
+  { re: /^(body(\s*type)?|virsb[uū]ve)/i, key: "body" },
   { re: /^(vehicle\s*type|tips|type)$/i, key: "vehicleType" },
   { re: /^(steering|st[uū]re)/i, key: "steeringSide" },
-  { re: /^(colou?r\s*code|kr[aā]sas\s*kods)$/i, key: "colorCode" },
-  { re: /^(colou?r|kr[aā]sa)$/i, key: "color" },
+  { re: /^(colou?r\s*code|paint\s*code|kr[aā]sas\s*kods)$/i, key: "colorCode" },
+  { re: /^(colou?r|paint|kr[aā]sa)/i, key: "color" },
   { re: /^(upholstery\s*code|interior\s*code|interjera\s*kods)$/i, key: "interiorCode" },
-  { re: /^(upholstery|interior|interjers)$/i, key: "interior" },
-  { re: /^(production|ra[zž]o[sš]anas)/i, key: "productionDate" },
+  { re: /^(upholstery|interior|interjers)/i, key: "interior" },
+  { re: /^(manufactured(\s*year)?|production|ra[zž]o[sš]anas|build\s*date)$/i, key: "productionDate" },
   { re: /^(first\s*reg|pirm[aā]\s*re[gģ])/i, key: "firstRegistration" },
   { re: /^(warranty)/i, key: "warrantyStartDate" },
   { re: /^(country|valsts|region)/i, key: "countryRegion" },
 ];
 
+const POWER_BHP_RE = /^(power\s*(bhp|hp|ps)|bhp|hp|ps|zs)$/i;
+const MODEL_YEAR_RE = /^(oem\s*)?model\s*year$/i;
+const MANUFACTURER_RE = /^(manufacturer|make|marka)(\s*desc)?$/i;
+const COLOR_CODE_IN_VALUE_RE = /^(.*?)\s*\(([0-9A-Za-z][0-9A-Za-z /-]{0,20})\)\s*$/;
+
 function normalizeLabel(label: string): string {
-  return label.replace(/^oem_/i, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  return label.replace(/^oem[_\s-]+/i, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function splitColourAndCode(raw: string): { color: string; code: string } {
+  const t = raw.trim();
+  const m = t.match(COLOR_CODE_IN_VALUE_RE);
+  if (m?.[1]?.trim() && m[2]?.trim()) return { color: m[1].trim(), code: m[2].trim() };
+  return { color: t, code: "" };
+}
+
+function formatPowerKwBhp(kw: string, bhp: string): string {
+  const kwN = kw.replace(/[^\d.,]/g, "").replace(",", ".");
+  const bhpN = bhp.replace(/[^\d.,]/g, "").replace(",", ".");
+  const kwPart = kwN ? `${kwN.replace(/\.0$/, "")} kW` : "";
+  const bhpPart = bhpN ? `${bhpN.replace(/\.0$/, "")} ZS` : "";
+  if (kwPart && bhpPart) return `${kwPart} (${bhpPart})`;
+  return kwPart || bhpPart;
 }
 
 export function oneautoPowertrainToVehicleInfo(rows: readonly OneautoKvRow[]): {
@@ -125,15 +149,53 @@ export function oneautoPowertrainToVehicleInfo(rows: readonly OneautoKvRow[]): {
 } {
   const vehicleInfo: Partial<OutvinVehicleInfo> = {};
   const leftovers: OneautoKvRow[] = [];
+  let powerBhp = "";
+  let modelYear = "";
+  let manufacturer = "";
   for (const row of filledOneautoKvRows(rows)) {
     const label = normalizeLabel(row.label);
+    const value = row.value.trim();
+    if (POWER_BHP_RE.test(label)) {
+      if (!powerBhp) powerBhp = value;
+      continue;
+    }
+    if (MODEL_YEAR_RE.test(label)) {
+      if (!modelYear) modelYear = value;
+      continue;
+    }
+    if (MANUFACTURER_RE.test(label)) {
+      if (!manufacturer) manufacturer = value;
+      continue;
+    }
     const hit = LABEL_TO_FIELD.find(({ re }) => re.test(label));
     if (!hit) {
       leftovers.push(row);
       continue;
     }
     const current = (vehicleInfo[hit.key] ?? "").trim();
-    if (!current) vehicleInfo[hit.key] = row.value.trim().slice(0, 500);
+    if (!current) vehicleInfo[hit.key] = value.slice(0, 500);
+  }
+
+  if (vehicleInfo.color) {
+    const split = splitColourAndCode(vehicleInfo.color);
+    vehicleInfo.color = split.color.slice(0, 500);
+    if (!vehicleInfo.colorCode && split.code) vehicleInfo.colorCode = split.code.slice(0, 80);
+  }
+  if (powerBhp && !/zs|bhp|\bhp\b/i.test(vehicleInfo.power ?? "")) {
+    const formatted = formatPowerKwBhp(vehicleInfo.power ?? "", powerBhp);
+    if (formatted) vehicleInfo.power = formatted;
+  }
+  if (!vehicleInfo.productionDate && modelYear) {
+    vehicleInfo.productionDate = modelYear.slice(0, 40);
+  } else if (modelYear && vehicleInfo.productionDate !== modelYear) {
+    leftovers.push({ label: "Modeļa gads", value: modelYear });
+  }
+  if (manufacturer) {
+    const model = (vehicleInfo.model ?? "").trim();
+    if (!model) vehicleInfo.model = manufacturer.slice(0, 500);
+    else if (!model.toLowerCase().includes(manufacturer.toLowerCase())) {
+      vehicleInfo.model = `${manufacturer} ${model}`.slice(0, 500);
+    }
   }
   return { vehicleInfo, leftovers };
 }
@@ -276,6 +338,9 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
     const incoming = (mapped.vehicleInfo[key] ?? "").trim();
     if (!incoming) continue;
     vehicleInfo[key] = mergeVehicleField(vehicleInfo[key], incoming, override);
+  }
+  if (!vehicleInfo.vinCode.trim() && input.ingest.lastFetchedVin.trim()) {
+    vehicleInfo.vinCode = input.ingest.lastFetchedVin.trim().slice(0, 24);
   }
 
   const equipment = mergeEquipment(

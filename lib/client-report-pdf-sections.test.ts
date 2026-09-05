@@ -1425,16 +1425,14 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain("Servisa un remontu vēsture");
-    expect(doc).toContain("pdf-mileage-history-table--service");
-    expect(doc).toContain("Veiktie darbi");
+    expect(doc).toContain("pdf-svc-visit");
     expect(doc).toContain("47 521 km");
     expect(doc).toContain("Salona gaisa filtra maiņa");
-    // Servisa punkts ir atsevišķā kolonnā, ne darbu šūnā
-    expect(doc).toContain("pdf-service-cell-place");
     expect(doc).toContain("Niederlassung Bonn BMW AG, Bonn");
-    // Jaunākais augšā — tikai servisa tabulā (vēstures kopsavilkums augstāk iet hronoloģiski)
-    const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
-    expect(serviceTable.indexOf("01.12.2023")).toBeLessThan(serviceTable.indexOf("01.06.2023"));
+    expect(doc).not.toContain("pdf-mileage-history-table--service");
+    const serviceZone = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
+    const visits = serviceZone.slice(serviceZone.indexOf("pdf-svc-visit"));
+    expect(visits.indexOf("01.12.2023")).toBeLessThan(visits.indexOf("01.06.2023"));
   });
 
   it("keeps service works inline and wraps long descriptions instead of clipping", () => {
@@ -1460,10 +1458,9 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
-    expect(serviceTable).toContain("Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)");
-    expect(serviceTable).not.toContain('class="pdf-service-works-list"');
-    expect(doc).not.toContain("pdf-service-chip");
+    const serviceZone = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
+    expect(serviceZone).toContain("Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)");
+    expect(serviceZone).toContain("pdf-svc-work");
   });
 
   it("moves dealer names out of works into the Vieta column", () => {
@@ -1496,17 +1493,11 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(doc).toContain('class="pdf-service-cell-place">B&amp;K Deutschland GmbH, Osnabrück</td>');
-    expect(doc).toContain(
-      'class="pdf-service-cell-place">BMW Mobiler Service Einsatzleitzentrale, München</td>',
-    );
+    expect(doc).toContain("B&amp;K Deutschland GmbH, Osnabrück");
+    expect(doc).toContain("BMW Mobiler Service Einsatzleitzentrale, München");
     expect(doc).toContain("Detalizēts darbu saraksts atskaitē nav pieejams");
-    expect(doc).not.toContain(
-      'class="pdf-service-cell-works">B&amp;K Deutschland GmbH, Osnabrück:',
-    );
-    expect(doc).not.toContain(
-      'class="pdf-service-cell-works">BMW Mobiler Service Einsatzleitzentrale, München:',
-    );
+    expect(doc).not.toMatch(/pdf-svc-work[^>]*>B&amp;K Deutschland GmbH/);
+    expect(doc).not.toMatch(/pdf-svc-work[^>]*>BMW Mobiler Service/);
   });
 
   it("citi avoti subheads use manual label only, without CITI AVOTI prefix", () => {
