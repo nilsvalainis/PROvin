@@ -180,8 +180,9 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
         date: "01.12.2023",
         odometer: "47521",
         location: "",
-        works:
-          "Regulārā apkope: Salona gaisa filtra maiņa, Dzinēja gaisa filtra maiņa, Eļļas maiņa",
+        works: ["Regulārā apkope", "Eļļas maiņa", "Salona gaisa filtra maiņa", "Dzinēja gaisa filtra maiņa"].join(
+          "\n",
+        ),
       },
       { date: "01.01.2022", odometer: "", location: "", works: "Pirms piegādes sagatavošana" },
     ]);

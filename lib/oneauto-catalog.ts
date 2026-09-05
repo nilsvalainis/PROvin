@@ -1,4 +1,5 @@
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { capitalizeServiceField, formatServiceWorksLines } from "@/lib/service-works-lines";
 
 export const ONEAUTO_SOURCE_TAG = "oneautoapi" as const;
 
@@ -120,13 +121,9 @@ export function filledOneautoServiceEvents(
   return (rows ?? []).filter(oneautoServiceEventHasData);
 }
 
-/** Semikolu sarakstus pārvērš rindās, lai PDF „Veiktie darbi” čipi strādātu. */
+/** Darbu saraksts: katrs darbs savā rindā, bez ikonām, pirmais burts liels. */
 export function formatOneautoWorksText(raw: string): string {
-  return raw
-    .replace(/\s*;\s*/g, "\n")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return formatServiceWorksLines(raw);
 }
 
 export function normalizeOneautoKvRow(row: OneautoKvRow): OneautoKvRow {
@@ -140,7 +137,7 @@ export function normalizeOneautoServiceEvent(ev: OneautoServiceEvent): OneautoSe
   return {
     date: formatAutoRecordsDateForOutput(ev.date) || ev.date.trim().slice(0, 40),
     odometer: ev.odometer.replace(/\s+/g, " ").trim().slice(0, 40),
-    place: ev.place.replace(/\s+/g, " ").trim().slice(0, 200),
+    place: capitalizeServiceField(ev.place.replace(/\s+/g, " ")).slice(0, 200),
     works: formatOneautoWorksText(ev.works).slice(0, 8000),
   };
 }

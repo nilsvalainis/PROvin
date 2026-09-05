@@ -44,7 +44,7 @@ describe("OneAuto katalogs", () => {
             {
               date_of_service_event: "2019-10-21",
               mileage_observed: 69343,
-              service_provider: "Premier Service Centre",
+              service_provider: "premier Service Centre",
               service_actions: ["Engine: oil and filter change."],
             },
           ],
@@ -53,6 +53,7 @@ describe("OneAuto katalogs", () => {
     });
     expect(display.serviceTimeline[0]?.date).toBe("21.10.2019");
     expect(display.serviceTimeline[0]?.odometer).toBe("69343");
+    expect(display.serviceTimeline[0]?.place).toBe("Premier Service Centre");
     expect(display.equipment.some((r) => /Panoramic|PR3L/i.test(`${r.label} ${r.value}`))).toBe(true);
     expect(display.powertrain.some((r) => /2\.0 TDI/.test(r.value))).toBe(true);
   });
@@ -93,7 +94,7 @@ describe("OneAuto katalogs", () => {
     });
     expect(display.serviceTimeline[0]?.date).toBe("23.12.2020");
     expect(display.serviceTimeline[0]?.works).toContain("End fitting 2 sides install acc.");
-    expect(display.serviceTimeline[0]?.works).toContain("Actie uitgevoerd");
+    expect(display.serviceTimeline[0]?.works).toContain("Actie uitgevoerd. Mvg, Inge.");
     expect(display.serviceTimeline[0]?.works).not.toContain(";");
   });
 

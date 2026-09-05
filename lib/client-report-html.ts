@@ -110,11 +110,10 @@ import {
 } from "@/lib/pdf-source-brand-logos";
 import {
   sectionIconPdfHtml,
-  sectionIconPdfHtmlSized,
   vendorPdfTitleToIconId,
   type SectionIconId,
 } from "@/lib/section-icons";
-import { serviceWorkIconId } from "@/lib/service-work-icon";
+import { formatServiceWorksLines } from "@/lib/service-works-lines";
 import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
 import {
   clientReportPrintInkCss,
@@ -1420,43 +1419,10 @@ const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
 const PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL = "Eļļas maiņas intervāli";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 
-/** „Regulārā apkope: eļļas maiņa, salona filtrs” → kategorijas prefikss atsevišķi no darbiem. */
-const SERVICE_WORKS_CATEGORY_PREFIX_RE = /^([^:]{2,40}):\s*(.+)$/;
-
-/**
- * Viena „Veiktie darbi” rinda → kompaktas ikonu shēmas ar mazu ikonu pazīstamām kategorijām
- * (eļļa, bremzes, riepas, akumulators, filtri, dzesēšana, spuldzes). Nezināms darbs paliek bez
- * ikonas — nekas netiek uzminēts.
- */
-function serviceWorksLineHtml(line: string): string {
-  const text = line.trim();
-  if (!text) return "";
-  const catMatch = text.match(SERVICE_WORKS_CATEGORY_PREFIX_RE);
-  const category = catMatch ? catMatch[1]!.trim() : "";
-  const rest = catMatch ? catMatch[2]!.trim() : text;
-  const items = rest
-    .split(/,\s*/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (items.length === 0) return escapeHtml(text);
-  const prefix = category
-    ? `<span class="pdf-service-chip-cat">${escapeHtml(category)}:</span> `
-    : "";
-  const chips = items
-    .map((item) => {
-      const icon = serviceWorkIconId(item);
-      const iconHtml = icon
-        ? `<span class="pdf-service-chip-ico" aria-hidden="true">${sectionIconPdfHtmlSized(icon, 11)}</span>`
-        : "";
-      return `<span class="pdf-service-chip">${iconHtml}<span class="pdf-service-chip-txt">${escapeHtml(item)}</span></span>`;
-    })
-    .join("");
-  return `${prefix}${chips}`;
-}
-
+/** Katrs darbs savā rindā, bez ikonām. */
 function serviceWorksCellHtml(raw: string): string {
-  const lines = raw.replace(/\r\n?/g, "\n").split("\n").map(serviceWorksLineHtml).filter(Boolean);
-  return lines.length > 0 ? lines.join("<br/>") : "—";
+  const lines = formatServiceWorksLines(raw).split("\n").filter(Boolean);
+  return lines.length > 0 ? lines.map((line) => escapeHtml(line)).join("<br/>") : "—";
 }
 
 /** OFICIĀLĀ DĪLERA DATI — apkopju tabula: datums, odometrs, veiktie darbi. */
@@ -2586,20 +2552,6 @@ ${sourceDotColorCss()}
         min-width:0;max-width:0;
       }
       .pdf-mileage-history-table--service tbody tr{page-break-inside:avoid;break-inside:avoid;}
-      .pdf-service-chip-cat{color:#64748B!important;font-weight:500;}
-      .pdf-service-chip{
-        display:inline-flex!important;align-items:baseline;gap:3px;
-        margin:0 6px 2px 0;max-width:100%;white-space:normal!important;
-      }
-      .pdf-service-chip:not(:last-child)::after{content:",";margin-left:-3px;color:#0f172a;}
-      .pdf-service-chip-txt{
-        overflow-wrap:anywhere;word-break:break-word;white-space:normal!important;
-      }
-      .pdf-service-chip-ico{
-        display:inline-flex!important;align-items:center;justify-content:center;
-        color:#0061D2!important;flex:none;
-      }
-      .pdf-service-chip-ico svg{display:block;}
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
       .pdf-country-flag-wrap{
         display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;

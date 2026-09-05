@@ -27,9 +27,24 @@ describe("servisa darbu rindas", () => {
         date: "01.12.2023",
         odometer: "47521",
         location: "Niederlassung Bonn BMW AG, Bonn",
-        works: "Regulārā apkope: eļļas maiņa",
+        works: "Regulārā apkope: Eļļas maiņa",
       },
     ]);
+  });
+
+  it("vietas kolonā pacel pirmo burtu", () => {
+    const rows = normalizeAutoRecordsServiceWorkRows([
+      {
+        date: "27.01.2012",
+        odometer: "60755",
+        location: "d.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+        works: "Rubber valve (36121116326)., GEWICHTE (FT99990111).",
+      },
+    ]);
+    expect(rows[0]?.location).toBe(
+      "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+    );
+    expect(rows[0]?.works).toBe("Rubber valve (36121116326)\nGEWICHTE (FT99990111)");
   });
 
   it("tukšai vērtībai atgriež vienu tukšu ievades rindu", () => {
@@ -121,13 +136,13 @@ describe("servisa darbu rindas", () => {
         date: "01.12.2023",
         odometer: "47521",
         location: "",
-        works: "Regulārā apkope: eļļas maiņa",
+        works: "Regulārā apkope: Eļļas maiņa",
       },
       {
         date: "05.09.2019",
         odometer: "198833",
         location: "B&K Deutschland GmbH, Osnabrück",
-        works: "detalizēts darbu saraksts atskaitē nav pieejams",
+        works: "Detalizēts darbu saraksts atskaitē nav pieejams",
       },
       {
         date: "23.10.2014",
@@ -139,13 +154,13 @@ describe("servisa darbu rindas", () => {
         date: "12.04.2012",
         odometer: "80000",
         location: "BMW Mobiler Service Einsatzleitzentrale, München",
-        works: "detalizēts darbu saraksts atskaitē nav pieejams",
+        works: "Detalizēts darbu saraksts atskaitē nav pieejams",
       },
       {
         date: "01.01.2010",
         odometer: "1000",
         location: "Dīlera ID: 00863 - 3",
-        works: "detalizēts darbu saraksts atskaitē nav pieejams",
+        works: "Detalizēts darbu saraksts atskaitē nav pieejams",
       },
     ]);
   });
@@ -163,7 +178,7 @@ describe("servisa darbu rindas", () => {
         date: "01.12.2023",
         odometer: "47521",
         location: "BMW Bonn",
-        works: "Regulārā apkope: eļļas maiņa",
+        works: "Regulārā apkope: Eļļas maiņa",
       },
       { date: "01.06.2023", odometer: "26276", location: "", works: "Eļļas maiņa" },
     ]);
@@ -182,7 +197,7 @@ describe("servisa darbu rindas", () => {
         date: "01.02.2026",
         odometer: "278484",
         location: "",
-        works: "Veikta regulārā apkope, eļļas maiņa",
+        works: "Eļļas maiņa\nVeikta regulārā apkope",
       },
       { date: "01.08.2025", odometer: "265100", location: "", works: "Bremžu disku maiņa" },
     ]);
@@ -232,11 +247,11 @@ describe("servisa darbu rindas", () => {
         date: "01.12.2023",
         odometer: "47521",
         location: "Niederlassung Bonn BMW AG, Bonn",
-        works: "Regulārā apkope: eļļas maiņa",
+        works: "Regulārā apkope: Eļļas maiņa",
       },
     ]);
     expect(autoRecordsServiceWorkRowsToPlainText(result.sourceBlocks.auto_records.serviceWorks)).toBe(
-      "01.12.2023 | 47 521 km | Regulārā apkope: eļļas maiņa | Vieta: Niederlassung Bonn BMW AG, Bonn",
+      "01.12.2023 | 47 521 km | Regulārā apkope: Eļļas maiņa | Vieta: Niederlassung Bonn BMW AG, Bonn",
     );
   });
 

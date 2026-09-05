@@ -1463,9 +1463,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     const serviceTable = doc.slice(doc.indexOf("Servisa un remontu vēsture"));
     expect(serviceTable).toContain("Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)");
     expect(serviceTable).not.toContain('class="pdf-service-works-list"');
-    expect(doc).toContain(".pdf-service-chip:not(:last-child)::after");
-    expect(doc).toMatch(/\.pdf-service-chip\{[^}]*display:inline-flex!important/);
-    expect(doc).toMatch(/\.pdf-service-chip-txt\{[^}]*overflow-wrap:anywhere/);
+    expect(doc).not.toContain("pdf-service-chip");
   });
 
   it("moves dealer names out of works into the Vieta column", () => {
@@ -1502,7 +1500,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain(
       'class="pdf-service-cell-place">BMW Mobiler Service Einsatzleitzentrale, München</td>',
     );
-    expect(doc).toContain("detalizēts darbu saraksts atskaitē nav pieejams");
+    expect(doc).toContain("Detalizēts darbu saraksts atskaitē nav pieejams");
     expect(doc).not.toContain(
       'class="pdf-service-cell-works">B&amp;K Deutschland GmbH, Osnabrück:',
     );

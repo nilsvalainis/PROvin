@@ -10,6 +10,7 @@ import {
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
 } from "@/lib/auto-records-paste-parse";
+import { capitalizeServiceField, formatServiceWorksLines } from "@/lib/service-works-lines";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 
 export type AutoRecordsServiceWorkRow = {
@@ -114,8 +115,8 @@ export function normalizeAutoRecordsServiceWorkRow(
   return {
     date: formatAutoRecordsDateForOutput(r.date) || r.date.trim().slice(0, 40),
     odometer: normalizeAutoRecordsOdometer(r.odometer).slice(0, 40),
-    location: peeled.location.slice(0, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
-    works: peeled.works.slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
+    location: capitalizeServiceField(peeled.location).slice(0, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
+    works: formatServiceWorksLines(peeled.works).slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
   };
 }
 
@@ -288,7 +289,7 @@ export function autoRecordsServiceWorkRowsToPlainText(rows: AutoRecordsServiceWo
       [
         r.date,
         formatServiceWorkOdometer(r.odometer),
-        r.works,
+        r.works.replace(/\n+/g, "; "),
         r.location.trim() ? `${SERVICE_WORKS_LOCATION_LABEL}: ${r.location.trim()}` : "",
       ]
         .filter(Boolean)
