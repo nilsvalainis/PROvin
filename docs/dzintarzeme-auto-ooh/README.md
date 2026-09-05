@@ -12,7 +12,14 @@ Visi 10 varianti uz jumta malas / parapeta. Siena paliek tukša.
 3. `dzintarzeme-ooh-roof-03-dark-box.png` - tumša kaste uz jumta
 4. `dzintarzeme-ooh-roof-04-belt.png` - gara josla pa jumta malu
 5. `dzintarzeme-ooh-roof-05-channel-letters.png` - 3D kanālburti uz jumta
-6. `dzintarzeme-ooh-roof-06-left.png` - kompakts lockup jumta kreisajā pusē
+6. `dzintarzeme-ooh-roof-06-left.png` - kompakts lockup jumta kreisajā pusē (bāze)
+   Gaismas kastes apspēle (tas pats novietojums, kaste ar iekšējo LED):
+   - `dzintarzeme-ooh-06-lightbox-a-opal-day.png` - opāla balta kaste, diena
+   - `dzintarzeme-ooh-06-lightbox-b-dark-face.png` - tumša seja, oranži burti
+   - `dzintarzeme-ooh-06-lightbox-c-amber-face.png` - visa seja oranža / dzintara
+   - `dzintarzeme-ooh-06-lightbox-d-dusk.png` - krēsla, spēcīgs spīdums
+   - `dzintarzeme-ooh-06-lightbox-e-vertical.png` - vertikāla kaste
+   - `dzintarzeme-ooh-06-lightbox-f-thick-cabinet.png` - bieza kasete, redzams dziļums
 7. `dzintarzeme-ooh-roof-07-wide-tracking.png` - plats tracking pa jumta platumu
 8. `dzintarzeme-ooh-roof-08-outline.png` - kontūrburtu pret debesīm
 9. `dzintarzeme-ooh-roof-09-thin-frame.png` - tievā rāmja lockup uz jumta
