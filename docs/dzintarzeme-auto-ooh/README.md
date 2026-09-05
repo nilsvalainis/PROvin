@@ -20,6 +20,13 @@ Visi 10 varianti uz jumta malas / parapeta. Siena paliek tukša.
    - `dzintarzeme-ooh-06-lightbox-d-dusk.png` - krēsla, spēcīgs spīdums
    - `dzintarzeme-ooh-06-lightbox-e-vertical.png` - vertikāla kaste
    - `dzintarzeme-ooh-06-lightbox-f-thick-cabinet.png` - bieza kasete, redzams dziļums
+   Lielākas kastes:
+   - `dzintarzeme-ooh-06-lightbox-g-wide-opal.png` - plata opāla kaste
+   - `dzintarzeme-ooh-06-lightbox-h-wide-dark.png` - plata tumša seja
+   - `dzintarzeme-ooh-06-lightbox-i-wide-amber.png` - plata dzintara seja
+   - `dzintarzeme-ooh-06-lightbox-j-wide-dusk.png` - plata kaste krēslā
+   - `dzintarzeme-ooh-06-lightbox-k-tall-wide.png` - augstāka un platāka
+   - `dzintarzeme-ooh-06-lightbox-l-lot-fullwidth.png` - gandrīz visa jumta platums no laukuma
 7. `dzintarzeme-ooh-roof-07-wide-tracking.png` - plats tracking pa jumta platumu
 8. `dzintarzeme-ooh-roof-08-outline.png` - kontūrburtu pret debesīm
 9. `dzintarzeme-ooh-roof-09-thin-frame.png` - tievā rāmja lockup uz jumta
