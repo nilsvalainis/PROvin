@@ -203,7 +203,8 @@ function locateMarkSpan(img: RgbBuffer): MarkSpan | null {
     let redSamples = 0;
     let markStart = -1;
     let markEnd = -1;
-    const letterGap = Math.max(stepX * 8, Math.round(img.width * 0.045));
+    /** Plaša tolerance: mērlenta vai cits objekts drīkst uz brīdi aizsegt burtus. */
+    const letterGap = Math.max(stepX * 14, Math.round(img.width * 0.1));
     for (let x = xStart; x < xEnd; x += stepX) {
       const [r, g, b] = readRgb(img, x, y);
       const isRed = isCheckcarVinRed(r, g, b);
@@ -262,7 +263,7 @@ function locateMarkSpan(img: RgbBuffer): MarkSpan | null {
     }
   }
 
-  if (rows < 2 || maxX <= minX) return null;
+  if (rows < 1 || maxX <= minX) return null;
   return { x0: minX, x1: maxX, y0: minY, y1: maxY, rows };
 }
 

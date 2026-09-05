@@ -137,6 +137,25 @@ describe("checkcar watermark cover", () => {
     expect(result.covered).toBe(false);
   });
 
+  it("aizklāj CHECKCAR.VIN arī tad, ja mērlenta daļēji aizsedz burtus", async () => {
+    const letters = [
+      ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
+        (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#b8b8b8"/>`,
+      ),
+      `<rect x="380" y="168" width="28" height="36" fill="#c81e24"/>`,
+      `<rect x="416" y="168" width="10" height="36" fill="#c81e24"/>`,
+      `<rect x="434" y="168" width="28" height="36" fill="#c81e24"/>`,
+      // Simulē fizisku mērlentu, kas šķērso burtu vidu.
+      `<rect x="330" y="168" width="50" height="36" fill="#202020"/>`,
+    ].join("");
+    const jpeg = await jpegFromSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#121214"/>${letters}</svg>`,
+    );
+
+    const result = await coverCheckcarVinWatermark(jpeg);
+    expect(result.covered).toBe(true);
+  });
+
   it("sarkanu taisnstūri neuzskata par VIN burtiem", async () => {
     const bar = await sharp({
       create: { width: 200, height: 40, channels: 3, background: "#c4282d" },
