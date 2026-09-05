@@ -90,7 +90,34 @@ export type OneautoDisplaySections = {
 };
 
 const POWERTRAIN_LABEL_RE =
-  /engine|dzinēj|motor|transmission|kārba|gearbox|power|jauda|kw|displacement|tilpums|fuel|degviel/i;
+  /engine|dzinēj|motor|transmission|kārba|gearbox|power|jauda|kw|displacement|tilpums|fuel|degviel|oem_/i;
+
+const PENDING_STATUS_RE = /pending|queued|processing|accepted|in.?progress|202/;
+
+const SKIP_META_KEYS = new Set([
+  "success",
+  "error",
+  "request_id",
+  "requestId",
+  "job_id",
+  "jobId",
+  "status",
+  "state",
+  "callback_url",
+  "message",
+]);
+
+const SERVICE_LIST_KEYS = [
+  "service_events",
+  "serviceEvents",
+  "events",
+  "services",
+  "history",
+  "records",
+  "workshop_remarks",
+  "workshopRemarks",
+  "remarks",
+];
 
 function asRecord(v: unknown): Record<string, unknown> | null {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
@@ -99,9 +126,58 @@ function asRecord(v: unknown): Record<string, unknown> | null {
 function unwrapResult(raw: unknown): unknown {
   const o = asRecord(raw);
   if (!o) return raw;
-  if (o.result != null) return o.result;
-  if (o.data != null) return o.data;
+  if (o.result != null && o.result !== "") return o.result;
+  if (o.data != null && o.data !== "") return o.data;
   return raw;
+}
+
+function humanizeKey(k: string): string {
+  return k.replace(/^oem_/i, "").replace(/[_-]+/g, " ").trim();
+}
+
+export function oneautoPayloadIsPending(httpStatus: number | undefined, payload: unknown): boolean {
+  if (httpStatus === 202) return true;
+  const o = asRecord(payload);
+  if (!o) return false;
+  if (o.success === false) return false;
+  const status = String(o.status ?? o.state ?? o.message ?? "");
+  if (PENDING_STATUS_RE.test(status.toLowerCase())) return true;
+  const unwrapped = unwrapResult(payload);
+  const inner = asRecord(unwrapped);
+  if (inner && PENDING_STATUS_RE.test(String(inner.status ?? inner.state ?? "").toLowerCase())) {
+    return true;
+  }
+  const requestId = String(o.request_id ?? o.requestId ?? o.job_id ?? o.jobId ?? "").trim();
+  if (!requestId) return false;
+  return !oneautoPayloadHasResultBody(payload);
+}
+
+export function oneautoPayloadHasResultBody(payload: unknown): boolean {
+  const unwrapped = unwrapResult(payload);
+  if (Array.isArray(unwrapped)) return unwrapped.length > 0;
+  const o = asRecord(unwrapped);
+  if (!o) return typeof unwrapped === "string" && unwrapped.trim().length > 8 && !PENDING_STATUS_RE.test(unwrapped);
+  for (const key of SERVICE_LIST_KEYS) {
+    if (Array.isArray(o[key])) return true;
+  }
+  const keys = Object.keys(o).filter((k) => !SKIP_META_KEYS.has(k) && k !== "vehicle_identification_number");
+  return keys.some((k) => {
+    const v = o[k];
+    return v != null && v !== "" && (typeof v === "string" || typeof v === "number" || typeof v === "boolean" || Array.isArray(v) || asRecord(v));
+  });
+}
+
+export function oneautoServiceHistoryIsEmpty(payload: unknown): boolean {
+  const unwrapped = unwrapResult(payload);
+  const o = asRecord(unwrapped);
+  if (!o) return false;
+  let sawList = false;
+  for (const key of SERVICE_LIST_KEYS) {
+    if (!Array.isArray(o[key])) continue;
+    sawList = true;
+    if (o[key].length > 0) return false;
+  }
+  return sawList;
 }
 
 function stringifyVal(v: unknown): string {
@@ -155,17 +231,59 @@ function walkService(node: unknown, out: OneautoServiceEvent[], depth = 0): void
   const o = asRecord(node);
   if (!o) return;
   const date = stringifyVal(
-    o.date_of_service_event ?? o.date ?? o.service_date ?? o.eventDate ?? o.performed_at,
+    o.date_of_service_event ??
+      o.dateOfServiceEvent ??
+      o.date ??
+      o.service_date ??
+      o.eventDate ??
+      o.performed_at ??
+      o.date_of_workshop_remark ??
+      o.remark_date,
   );
-  const odometer = stringifyVal(o.mileage_observed ?? o.odometer ?? o.mileage ?? o.km);
-  const place = stringifyVal(o.service_provider ?? o.dealer ?? o.location ?? o.workshop);
-  const works = stringifyVal(o.service_actions ?? o.works ?? o.operations ?? o.service_type ?? o.description);
+  const odometer = stringifyVal(
+    o.mileage_observed ?? o.mileageObserved ?? o.odometer ?? o.mileage ?? o.mileage_reading ?? o.km,
+  );
+  const place = stringifyVal(o.service_provider ?? o.serviceProvider ?? o.dealer ?? o.location ?? o.workshop);
+  const works = stringifyVal(
+    o.service_actions ??
+      o.serviceActions ??
+      o.works ??
+      o.operations ??
+      o.service_type ??
+      o.serviceType ??
+      o.description ??
+      o.remark ??
+      o.workshop_remark ??
+      o.comments,
+  );
   if (date || odometer || works) {
     out.push({ date, odometer, place, works });
     return;
   }
-  for (const v of Object.values(o)) {
+  for (const key of SERVICE_LIST_KEYS) {
+    if (o[key] != null) walkService(o[key], out, depth + 1);
+  }
+  for (const [k, v] of Object.entries(o)) {
+    if (SERVICE_LIST_KEYS.includes(k) || SKIP_META_KEYS.has(k)) continue;
     if (Array.isArray(v) || asRecord(v)) walkService(v, out, depth + 1);
+  }
+}
+
+function flattenScalars(node: unknown, out: OneautoKvRow[], seen: Set<string>, depth = 0): void {
+  if (depth > 4 || node == null) return;
+  if (Array.isArray(node)) {
+    for (const item of node) flattenScalars(item, out, seen, depth + 1);
+    return;
+  }
+  const o = asRecord(node);
+  if (!o) return;
+  for (const [k, v] of Object.entries(o)) {
+    if (SKIP_META_KEYS.has(k) || k === "vehicle_identification_number") continue;
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+      pushKv(out, humanizeKey(k), v, seen);
+    } else if (Array.isArray(v) || asRecord(v)) {
+      flattenScalars(v, out, seen, depth + 1);
+    }
   }
 }
 
@@ -201,6 +319,8 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   walkEquipment(build, equipment, eqSeen);
   walkPowertrain(decoder, powertrain, ptSeen);
   walkPowertrain(build, powertrain, ptSeen);
+  flattenScalars(decoder, powertrain, ptSeen);
+  flattenScalars(build, powertrain, ptSeen);
   walkService(history, serviceTimeline);
   walkService(schedule, serviceTimeline);
 

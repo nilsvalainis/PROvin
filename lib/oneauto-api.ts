@@ -5,6 +5,7 @@ import {
   ONEAUTO_SOURCE_TAG,
   buildOneautoDisplay,
   formatOneautoCostEur,
+  oneautoPayloadIsPending,
   oneautoProductsCostCents,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
@@ -53,14 +54,8 @@ function requestIdFrom(payload: unknown): string {
   return "";
 }
 
-function payloadLooksPending(payload: unknown): boolean {
-  if (!payload || typeof payload !== "object") return false;
-  const o = payload as Record<string, unknown>;
-  if (o.success === false) return false;
-  const status = String(o.status ?? o.state ?? "").toLowerCase();
-  if (/(pending|queued|processing|accepted)/.test(status)) return true;
-  if (requestIdFrom(payload) && o.result == null && o.data == null) return true;
-  return false;
+function payloadLooksPending(httpStatus: number, payload: unknown): boolean {
+  return oneautoPayloadIsPending(httpStatus, payload);
 }
 
 async function fetchOneautoPath(
@@ -88,13 +83,13 @@ async function fetchWithPoll(
   vin: string,
 ): Promise<{ ok: boolean; status: number; payload: unknown }> {
   let last = await fetchOneautoPath(config, path, vin);
-  if (!last.ok || !payloadLooksPending(last.payload)) return last;
+  if (!payloadLooksPending(last.status, last.payload)) return last;
   const requestId = requestIdFrom(last.payload);
-  for (let i = 0; i < 6; i++) {
-    await new Promise((r) => setTimeout(r, 1500));
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
     const pollPath = requestId ? `${path}?request_id=${encodeURIComponent(requestId)}` : path;
     last = await fetchOneautoPath(config, pollPath.includes("?") ? pollPath : path, vin);
-    if (!payloadLooksPending(last.payload)) return last;
+    if (!payloadLooksPending(last.status, last.payload)) return last;
   }
   return last;
 }
@@ -121,6 +116,10 @@ export async function fetchOneautoProducts(opts: {
     if (!product) continue;
     try {
       const fetched = await fetchWithPoll(config, product.path, opts.vin);
+      if (payloadLooksPending(fetched.status, fetched.payload)) {
+        results[id] = { ok: false, error: "pending", payload: fetched.payload };
+        continue;
+      }
       if (!fetched.ok) {
         const errText =
           fetched.payload && typeof fetched.payload === "object"

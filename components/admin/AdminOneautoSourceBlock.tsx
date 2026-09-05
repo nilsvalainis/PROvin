@@ -14,9 +14,12 @@ import { SOURCE_BLOCK_LABELS, emptyOneautoBlock, type OneautoBlockState } from "
 import { normalizeVin } from "@/lib/order-field-validation";
 import {
   ONEAUTO_PRODUCTS,
+  buildOneautoDisplay,
   formatOneautoCostEur,
   oneautoDisplayHasRows,
+  oneautoPayloadIsPending,
   oneautoProductsCostCents,
+  oneautoServiceHistoryIsEmpty,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
 
@@ -48,6 +51,8 @@ function oneautoFetchErrorLv(code: string): string {
       return "Atzīmē vismaz vienu produktu.";
     case "unauthorized":
       return "Admin sesija beigusies. Ielādē lapu no jauna.";
+    case "pending":
+      return "OEM vēl apstrādā pieprasījumu. Pagaidi un spied Ielādēt datus vēlreiz. Atkārtota pārbaude parasti neiekasē jaunu maksu.";
     default:
       return "OneAutoAPI neatbildēja. Mēģini vēlreiz.";
   }
@@ -69,9 +74,33 @@ export function AdminOneautoSourceBlock({
 
   const effectiveVin = normalizeVin(value.vinOverride || orderVin);
   const estimatedCost = formatOneautoCostEur(oneautoProductsCostCents(value.selectedProducts));
+  const display = useMemo(() => {
+    if (oneautoDisplayHasRows(value.display)) return value.display;
+    const payloads: Partial<Record<OneautoProductId, unknown>> = {};
+    for (const id of Object.keys(value.results) as OneautoProductId[]) {
+      payloads[id] = value.results[id]?.payload;
+    }
+    return buildOneautoDisplay(payloads);
+  }, [value.display, value.results]);
   const cachedForVin =
     Boolean(value.lastFetchedVin) && normalizeVin(value.lastFetchedVin) === effectiveVin;
-  const hasDisplay = oneautoDisplayHasRows(value.display);
+  const hasDisplay = oneautoDisplayHasRows(display);
+  const historyResult = value.results.oe_service_history;
+  const historyPending = Boolean(
+    historyResult && (historyResult.error === "pending" || oneautoPayloadIsPending(undefined, historyResult.payload)),
+  );
+  const historyEmpty = Boolean(historyResult && oneautoServiceHistoryIsEmpty(historyResult.payload));
+  const rawJson = useMemo(() => {
+    const rows = Object.entries(value.results)
+      .filter(([, row]) => row?.payload != null)
+      .map(([id, row]) => ({ id, payload: row?.payload }));
+    if (rows.length === 0) return "";
+    try {
+      return JSON.stringify(rows.length === 1 ? rows[0]?.payload : Object.fromEntries(rows.map((r) => [r.id, r.payload])), null, 2);
+    } catch {
+      return "";
+    }
+  }, [value.results]);
 
   const selectedSet = useMemo(() => new Set(value.selectedProducts), [value.selectedProducts]);
 
@@ -116,16 +145,26 @@ export function AdminOneautoSourceBlock({
       }
       if (body.error && res.status === 402) {
         setError(oneautoFetchErrorLv("insufficient_balance"));
+      } else if (body.error === "pending" || res.status === 202) {
+        setError(oneautoFetchErrorLv("pending"));
       } else if (!res.ok) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
       }
+      const nextResults = body.results ?? value.results;
+      const payloads: Partial<Record<OneautoProductId, unknown>> = {};
+      for (const id of Object.keys(nextResults) as OneautoProductId[]) {
+        payloads[id] = nextResults[id]?.payload;
+      }
+      const nextDisplay = oneautoDisplayHasRows(body.display)
+        ? body.display
+        : buildOneautoDisplay(payloads);
       onChange({
         ...value,
         lastFetchedVin: body.vin ?? effectiveVin,
         fetchedAt: new Date().toISOString(),
         lastCostEur: body.costEur ?? estimatedCost,
-        results: body.results ?? value.results,
-        display: body.display ?? value.display,
+        results: nextResults,
+        display: nextDisplay ?? value.display,
         source: "oneautoapi",
       });
     } catch {
@@ -176,6 +215,10 @@ export function AdminOneautoSourceBlock({
             <legend className={subhead}>Produkti</legend>
             {ONEAUTO_PRODUCTS.map((p) => {
               const result = value.results[p.id];
+              const resultPending = Boolean(
+                result &&
+                  (result.error === "pending" || oneautoPayloadIsPending(undefined, result.payload)),
+              );
               return (
                 <label key={p.id} className="flex items-start gap-2 text-[11px] text-[var(--color-apple-text)]">
                   <input
@@ -194,9 +237,11 @@ export function AdminOneautoSourceBlock({
                     ) : null}
                     {result ? (
                       <span
-                        className={`ml-1 ${result.ok ? "text-emerald-700" : "text-rose-700"}`}
+                        className={`ml-1 ${
+                          resultPending ? "text-amber-700" : result.ok ? "text-emerald-700" : "text-rose-700"
+                        }`}
                       >
-                        {result.ok ? "ielādēts" : result.error ?? "kļūda"}
+                        {resultPending ? "gaida OEM" : result.ok ? "ielādēts" : result.error ?? "kļūda"}
                       </span>
                     ) : null}
                   </span>
@@ -219,28 +264,38 @@ export function AdminOneautoSourceBlock({
             </button>
           </div>
 
-          {cachedForVin ? (
+          {cachedForVin && hasDisplay ? (
             <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-900">
               Saglabāti dati VIN {value.lastFetchedVin}
               {value.fetchedAt ? ` · ${value.fetchedAt.slice(0, 16).replace("T", " ")}` : ""}
               {value.lastCostEur ? ` · ${value.lastCostEur}` : ""}. Atkārtota ielāde nav nepieciešama.
             </p>
           ) : null}
+          {cachedForVin && historyPending ? (
+            <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-950">
+              OEM vēl nav atgriezis servisa vēsturi. Spied Ielādēt datus, lai pārbaudītu (parasti bez jaunas maksas).
+            </p>
+          ) : null}
+          {cachedForVin && historyEmpty && !hasDisplay ? (
+            <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-700">
+              Ielādēts. OEM atbilde šim VIN ir tukša: servisa ierakstu nav.
+            </p>
+          ) : null}
           {error ? <p className="mt-2 text-[11px] text-rose-700">{error}</p> : null}
 
-          {value.display.powertrain.length > 0 ? (
+          {display.powertrain.length > 0 ? (
             <section>
               <h3 className={subhead}>Dzinēja / kārbas specifikācija</h3>
-              <KvTable rows={value.display.powertrain} />
+              <KvTable rows={display.powertrain} />
             </section>
           ) : null}
-          {value.display.equipment.length > 0 ? (
+          {display.equipment.length > 0 ? (
             <section>
               <h3 className={subhead}>Gatavā komplektācija</h3>
-              <KvTable rows={value.display.equipment} />
+              <KvTable rows={display.equipment} />
             </section>
           ) : null}
-          {value.display.serviceTimeline.length > 0 ? (
+          {display.serviceTimeline.length > 0 ? (
             <section>
               <h3 className={subhead}>Servisu vēstures laika skala</h3>
               <div className="overflow-x-auto rounded-lg border border-slate-200/90">
@@ -254,7 +309,7 @@ export function AdminOneautoSourceBlock({
                     </tr>
                   </thead>
                   <tbody>
-                    {value.display.serviceTimeline.map((ev, i) => (
+                    {display.serviceTimeline.map((ev, i) => (
                       <tr key={`${ev.date}-${i}`} className="border-b border-slate-100">
                         <td className="px-1.5 py-0.5">{ev.date}</td>
                         <td className="px-1.5 py-0.5">{ev.odometer}</td>
@@ -265,6 +320,14 @@ export function AdminOneautoSourceBlock({
                   </tbody>
                 </table>
               </div>
+            </section>
+          ) : null}
+          {!hasDisplay && rawJson ? (
+            <section>
+              <h3 className={subhead}>Jēlā OneAuto atbilde</h3>
+              <pre className="max-h-64 overflow-auto rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] leading-snug text-slate-700">
+                {rawJson.slice(0, 12000)}
+              </pre>
             </section>
           ) : null}
 

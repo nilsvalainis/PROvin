@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildOneautoDisplay,
   formatOneautoCostEur,
+  oneautoPayloadIsPending,
   oneautoProductsCostCents,
+  oneautoServiceHistoryIsEmpty,
   parseOneautoProductIds,
 } from "@/lib/oneauto-catalog";
 
@@ -41,5 +43,51 @@ describe("OneAuto katalogs", () => {
     expect(display.serviceTimeline[0]?.odometer).toBe("69343");
     expect(display.equipment.some((r) => /Panoramic|PR3L/i.test(`${r.label} ${r.value}`))).toBe(true);
     expect(display.powertrain.some((r) => /2\.0 TDI/.test(r.value))).toBe(true);
+  });
+
+  it("202 un request_id bez result ir pending, ne gatavi dati", () => {
+    expect(oneautoPayloadIsPending(202, { success: true, request_id: "abc" })).toBe(true);
+    expect(oneautoPayloadIsPending(200, { success: true, request_id: "abc" })).toBe(true);
+    expect(
+      oneautoPayloadIsPending(200, {
+        success: true,
+        result: { vehicle_identification_number: "X", service_events: [] },
+      }),
+    ).toBe(false);
+  });
+
+  it("tukšs service_events ir derīga tukša atbilde", () => {
+    expect(
+      oneautoServiceHistoryIsEmpty({
+        success: true,
+        result: { vehicle_identification_number: "X", service_events: [] },
+      }),
+    ).toBe(true);
+  });
+
+  it("lasa workshop remarks un VIN decoder laukus", () => {
+    const display = buildOneautoDisplay({
+      vin_decoder: {
+        result: {
+          oem_engine_desc: "EB2ADTS",
+          oem_transmission_type_desc: "automatic",
+          power_kw: 96,
+        },
+      },
+      oe_service_history: {
+        result: {
+          workshop_remarks: [
+            {
+              date: "2024-03-12",
+              mileage: 41200,
+              remark: "Warranty inspection.",
+            },
+          ],
+        },
+      },
+    });
+    expect(display.serviceTimeline[0]?.date).toBe("2024-03-12");
+    expect(display.serviceTimeline[0]?.works).toMatch(/Warranty/);
+    expect(display.powertrain.some((r) => r.value === "EB2ADTS")).toBe(true);
   });
 });

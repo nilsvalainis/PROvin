@@ -11,7 +11,7 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   if (!(await getAdminSession())) {
@@ -40,9 +40,13 @@ export async function POST(req: Request) {
   try {
     const fetched = await fetchOneautoProducts({ vin, products });
     const allFailed = products.every((id) => fetched.results[id]?.ok === false);
+    const allPending = products.every((id) => fetched.results[id]?.error === "pending");
     const balanceFail = Object.values(fetched.results).some((r) => r?.error === "insufficient_balance");
     if (allFailed && balanceFail) {
       return NextResponse.json({ error: "insufficient_balance", ...fetched }, { status: 402 });
+    }
+    if (allFailed && allPending) {
+      return NextResponse.json({ error: "pending", ...fetched }, { status: 202 });
     }
     if (allFailed) {
       return NextResponse.json({ error: "upstream_error", ...fetched }, { status: 502 });
