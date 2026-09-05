@@ -170,6 +170,21 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   cits: "#94A3B8",
 };
 
+/** Sadaļas vāka fons: logo krāsa, kas izplūst uz baltu. Dīleris paliek gaiši zils. */
+export const PDF_SOURCE_WASH: Record<MileagePdfSourceKey, string> = {
+  csdd: "#E6F2EA",
+  autodna: "#FFF1E8",
+  carvertical: "#E7F6FB",
+  dealer: "#E8F1FC",
+  tjekbil: "#FDECEC",
+  ee: "#E8EEF8",
+  carinfo: "#FFF3E8",
+  ltab: "#F8EBEB",
+  intl: "#EEEAF6",
+  sslv: "#E8F6E8",
+  cits: "#F1F5F9",
+};
+
 /** Secība leģendas izdrukai (PDF). */
 export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "csdd",

@@ -111,7 +111,6 @@ function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean })
     : ["Pēdējais ieraksts", lastDate].filter(Boolean).join(" · ");
   return `<div class="pdf-svc-span">
     <div class="pdf-svc-span__pt"><b>${escapeHtml(firstKm || "km nav")}</b><i>${escapeHtml(firstMeta)}</i></div>
-    <div class="pdf-svc-span__bar" aria-hidden="true"></div>
     <div class="pdf-svc-span__pt pdf-svc-span__pt--end"><b>${escapeHtml(lastKm || "km nav")}</b><i>${escapeHtml(lastMeta)}</i></div>
   </div>`;
 }

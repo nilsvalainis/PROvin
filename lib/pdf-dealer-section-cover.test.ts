@@ -35,8 +35,11 @@ describe("PDF dīlera sadaļas vāks", () => {
     expect(html).toContain("31 400 km");
     expect(html).toContain("142 220 km");
     expect(html).toContain("2 vizītes");
+    expect(html).toContain("pdf-dealer-cover-curve");
+    expect(html).not.toContain("pdf-svc-span__bar");
     expect(html).not.toContain("Pirmais ieraksts");
     expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
   });
 
   it("tukšus datus neatgriež", () => {

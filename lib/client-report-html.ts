@@ -109,6 +109,7 @@ import {
   pdfBrandLogoImgHtml,
   pdfDealerLogoDataUri,
   pdfListingPortalLogoDataUri,
+  pdfListingPortalLogoId,
   PDF_SOURCE_LOGO_DATA_URI,
 } from "@/lib/pdf-source-brand-logos";
 import {
@@ -137,6 +138,7 @@ import {
   MILEAGE_PDF_SOURCE_COLOR,
   MILEAGE_PDF_SOURCE_LEGEND,
   MILEAGE_PDF_SOURCE_LEGEND_ORDER,
+  PDF_SOURCE_WASH,
   collectMileagePdfSourceKeysFromLabels,
   mileagePdfLegendKeysInOrder,
   mileageSourceLabelToPdfKey,
@@ -738,6 +740,13 @@ function sourceZoneClass(sourceLabel: string): string {
   return `pdf-src-zone pdf-src-zone--${mileageSourceLabelToPdfKey(sourceLabel)}`;
 }
 
+function listingSourceZoneClass(listingUrl: string | null | undefined): string {
+  const portal = pdfListingPortalLogoId(listingUrl);
+  if (portal === "auto24") return "pdf-src-zone pdf-src-zone--sslv pdf-listing-tint--auto24";
+  if (portal === "mobilede") return "pdf-src-zone pdf-src-zone--sslv pdf-listing-tint--mobilede";
+  return sourceZoneClass(SOURCE_BLOCK_LABELS.listing_analysis);
+}
+
 /** „1 ieraksts” / „12 ieraksti” — latviešu skaitļa forma. */
 function formatSourceRecordCountLv(count: number): string {
   const one = count % 10 === 1 && count % 100 !== 11;
@@ -1018,7 +1027,7 @@ export function buildUnifiedMileageTableHtml(
     const commentBlock = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
     if (!commentBlock) return "";
     const headOnly = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
-    return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${headOnly}${commentBlock}</div>`;
+    return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-hub-tint--mileage" role="region">${headOnly}${commentBlock}</div>`;
   }
 
   const mileageRows = prepareUnifiedMileageDisplayRows(collected);
@@ -1060,7 +1069,7 @@ export function buildUnifiedMileageTableHtml(
   const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
 
   const body = `${chartHtml}${dualTables}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
-  return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
+  return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-hub-tint--mileage" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
 /** Avotu vērtējumi zem summas — punkts + avots + summa (tas pats kods kā „Kas tika pārbaudīts”). */
@@ -1152,7 +1161,7 @@ export function buildUnifiedIncidentsTableHtml(
     incidentCountBadgeHtml(agg.uniqueCount),
   );
   const body = `${card}${adminNoteHtml}${photosBlock}`;
-  return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
+  return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card pdf-hub-tint--incidents" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
 /** Tehniskā specifikācija — patstāvīga sadaļa augšā; CSDD zonā paliek reģistrācijas dati. */
@@ -1565,7 +1574,7 @@ function buildAutoRecordsAvotuSubsection(
   );
   const bodyParts: string[] = [];
   if (hasCover) bodyParts.push(coverHtml);
-  if (sparkHtml) bodyParts.push(sparkHtml);
+  if (sparkHtml && !coverHtml.includes("pdf-dealer-cover-curve")) bodyParts.push(sparkHtml);
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceWorks) bodyParts.push(serviceWorksTable);
   if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
@@ -1775,7 +1784,7 @@ function buildListingAnalysisPriorityHtml(
   }
   if (inner.length === 0) return "";
   const parts: string[] = [];
-  parts.push(`<div class="pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root" role="region">`);
+  parts.push(`<div class="pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root ${listingSourceZoneClass(p.listingUrl)}" role="region">`);
   parts.push(sectionHeadBrand(listingAnalysisSectionIconHtml(p.listingUrl), PDF_SECTION_LISTING_ANALYSIS));
   parts.push(`<div class="pdf-source-section-body pdf-listing-analysis-stack">${inner.join("\n")}</div>`);
   parts.push(`</div>`);
@@ -1940,7 +1949,8 @@ export function getClientReportPrintCss(): string {
 function sourceDotColorCss(): string {
   return MILEAGE_PDF_SOURCE_LEGEND_ORDER.map((k) => {
     const hex = MILEAGE_PDF_SOURCE_COLOR[k];
-    return `      .pdf-src-dot--${k}{background:${hex};}\n      .provin-report-doc .pdf-src-zone--${k}{border-top-color:${hex};}`;
+    const wash = PDF_SOURCE_WASH[k];
+    return `      .pdf-src-dot--${k}{background:${hex};}\n      .provin-report-doc .pdf-src-zone--${k}{border-top-color:${hex};background:linear-gradient(180deg,${wash} 0%,#fff 42%)!important;}`;
   }).join("\n");
 }
 
@@ -2267,7 +2277,7 @@ function clientReportPrintCss(): string {
         padding:5px 8px;font-size:9px;font-weight:600;color:#64748b;letter-spacing:0.02em;
       }
       .pdf-dealer-cover{
-        margin:0 0 14px;padding:16px 16px 14px;border-radius:12px;
+        margin:0 0 14px;padding:16px 16px 14px;border-radius:12px;overflow:hidden;
         background:linear-gradient(180deg,#E8F1FC 0%,#fff 72%);border:1px solid var(--pdf-line);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2279,7 +2289,13 @@ function clientReportPrintCss(): string {
         margin:8px 0 0;font-size:20px;font-weight:750;letter-spacing:-0.03em;line-height:1.2;color:#0f172a;
       }
       .pdf-dealer-cover__meta{margin:6px 0 0;font-size:12px;line-height:1.4;color:#475569;}
-      .pdf-dealer-cover .pdf-svc-span{margin:14px 0 0;background:#fff;}
+      .pdf-dealer-cover-curve{display:block;width:calc(100% + 32px);height:auto;margin:8px -16px 0;}
+      .pdf-dealer-cover .pdf-svc-span{margin:10px 0 0;background:#fff;}
+      .provin-report-doc .pdf-listing-tint--auto24{background:linear-gradient(180deg,#E8F0FA 0%,#fff 42%)!important;}
+      .provin-report-doc .pdf-listing-tint--mobilede{background:linear-gradient(180deg,#F3EAF8 0%,#fff 42%)!important;}
+      .provin-report-doc .pdf-hub-tint--mileage,
+      .provin-report-doc .pdf-iriss-approved{background:linear-gradient(180deg,#E8F1FC 0%,#fff 42%)!important;}
+      .provin-report-doc .pdf-hub-tint--incidents{background:linear-gradient(180deg,#FDECEC 0%,#fff 42%)!important;}
       .pdf-dealer-eq{display:flex;flex-wrap:wrap;gap:5px;margin:0;padding:0;list-style:none;}
       .pdf-dealer-eq li{
         padding:4px 8px;border:1px solid #E2E8F0;border-radius:8px;background:#F8FAFC;
@@ -2485,7 +2501,7 @@ ${sourceDotColorCss()}
       }
       .pdf-service-works-zone{margin:12px 0 0;}
       .pdf-svc-span{
-        display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;
+        display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;
         margin:0 0 12px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--pdf-line);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2493,10 +2509,6 @@ ${sourceDotColorCss()}
       .pdf-svc-span__pt b{display:block;font-size:13px;font-weight:750;color:#0f172a;}
       .pdf-svc-span__pt i{display:block;margin-top:2px;font-style:normal;font-size:var(--pdf-fs-label);color:#64748b;}
       .pdf-svc-span__pt--end{text-align:right;}
-      .pdf-svc-span__bar{
-        width:72px;height:2px;border-radius:99px;background:#93C5FD;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      }
       .pdf-svc-year{
         margin:12px 0 8px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
         font-size:13px;font-weight:700;color:${PDF_BRAND_BLUE_HEX};letter-spacing:0.04em;

@@ -44,6 +44,7 @@ describe("PDF dīlera servisa vizītes", () => {
     expect(html).toContain("pdf-svc-work");
     expect(html).toContain("Salona gaisa filtra maiņa");
     expect(html).toContain("Pirmais ieraksts");
+    expect(html).not.toContain("pdf-svc-span__bar");
     expect(html).not.toContain("pdf-mileage-history-table--service");
   });
 

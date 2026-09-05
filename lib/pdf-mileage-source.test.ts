@@ -5,6 +5,7 @@ import {
   mileagePdfLegendKeysInOrder,
   mileageSourceLabelToPdfKey,
   MILEAGE_PDF_SOURCE_LEGEND,
+  PDF_SOURCE_WASH,
 } from "@/lib/pdf-mileage-source";
 
 describe("mileageSourceLabelToPdfKey", () => {
@@ -37,6 +38,11 @@ describe("mileageSourceLabelToPdfKey", () => {
     expect(mileageSourceLabelToPdfKey("?")).toBe("cits");
     expect(mileageSourceLabelToPdfKey("Polijas PDF")).toBe("cits");
     expect(MILEAGE_PDF_SOURCE_LEGEND[mileageSourceLabelToPdfKey("xyz")].abbrev).toBe("CITS");
+  });
+
+  it("keeps the dealer wash as light blue", () => {
+    expect(PDF_SOURCE_WASH.dealer).toBe("#E8F1FC");
+    expect(PDF_SOURCE_WASH.csdd).toBe("#E6F2EA");
   });
 });
 
