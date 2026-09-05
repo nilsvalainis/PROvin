@@ -133,14 +133,14 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
   };
 
   return (
-    <div className="relative min-w-0 flex-1 basis-0" ref={rootRef}>
+    <div className="relative min-w-0" ref={rootRef}>
       <button
         type="button"
         disabled={disabled || busy}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-lg border border-teal-700/40 bg-teal-600 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
+        className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
         title="Atver izvēli: kuras sadaļas, ar kuriem aģentiem un kādu komandu ģenerēt. Noklusējums paliek esošie Flash Max lauki."
       >
         {busy ? (

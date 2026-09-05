@@ -26,7 +26,7 @@ export function AdminCommonPhrasesDrawerTrigger({
   return (
     <button
       type="button"
-      className="inline-flex h-8 min-w-0 flex-1 basis-0 items-center justify-center rounded-lg border border-slate-200/90 bg-white px-2 text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+      className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-white px-2 text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
       title="Frāžu bibliotēka"
       aria-label="Atvērt frāžu bibliotēku"
       aria-expanded={open}

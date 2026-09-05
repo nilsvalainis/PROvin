@@ -204,14 +204,14 @@ export function AdminOrderCopilotTrigger({
       type="button"
       data-copilot-trigger
       disabled={disabled}
-      className="inline-flex h-8 min-w-0 flex-1 basis-0 items-center justify-center gap-1 overflow-hidden rounded-lg border border-emerald-200/90 bg-emerald-50 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+      className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50 px-2.5 text-sm font-medium text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
       title="Order Copilot: chat + PDF (nebloķē paneli)"
       aria-label="Atvērt Order Copilot"
       aria-expanded={open}
       onClick={onOpen}
     >
-      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Bot className="h-3.5 w-3.5" aria-hidden />}
-      COPILOT
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Bot className="h-4 w-4" aria-hidden />}
+      <span className="hidden sm:inline">Copilot</span>
     </button>
   );
 }
