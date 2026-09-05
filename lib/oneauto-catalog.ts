@@ -6,7 +6,6 @@ export const ONEAUTO_PRODUCT_IDS = [
   "vin_decoder",
   "oe_build_sheet",
   "oe_service_history",
-  "oe_service_schedule",
 ] as const;
 
 export type OneautoProductId = (typeof ONEAUTO_PRODUCT_IDS)[number];
@@ -42,13 +41,6 @@ export const ONEAUTO_PRODUCTS: readonly OneautoProduct[] = [
     hint: "Dealer Service Records",
     priceCents: 300,
     path: "/ezyvin/servicehistory/",
-  },
-  {
-    id: "oe_service_schedule",
-    label: "OE Service Schedule",
-    hint: "SMR Maintenance Intervals",
-    priceCents: 210,
-    path: "/ezyvin/serviceschedule/",
   },
 ] as const;
 
@@ -431,7 +423,6 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   const decoder = unwrapResult(results.vin_decoder);
   const build = unwrapResult(results.oe_build_sheet);
   const history = unwrapResult(results.oe_service_history);
-  const schedule = unwrapResult(results.oe_service_schedule);
 
   walkEquipment(build, equipment, eqSeen);
   walkPowertrain(decoder, powertrain, ptSeen);
@@ -439,7 +430,6 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   flattenScalars(decoder, powertrain, ptSeen);
   flattenScalars(build, powertrain, ptSeen);
   walkService(history, serviceTimeline);
-  walkService(schedule, serviceTimeline);
 
   return normalizeOneautoDisplay({
     equipment: equipment.slice(0, 80),

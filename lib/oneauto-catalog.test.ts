@@ -23,6 +23,9 @@ describe("OneAuto katalogs", () => {
 
   it("atlasa tikai zināmos produktu id", () => {
     expect(parseOneautoProductIds(["vin_decoder", "nope", "vin_decoder"])).toEqual(["vin_decoder"]);
+    expect(parseOneautoProductIds(["oe_service_schedule", "oe_service_history"])).toEqual([
+      "oe_service_history",
+    ]);
   });
 
   it("izvelk servisa laika skalu un komplektāciju no OneAuto JSON", () => {
