@@ -291,7 +291,7 @@ function spanToBox(img: RgbBuffer, span: MarkSpan): CheckcarWatermarkBox {
   const padY = Math.max(6, Math.round(img.height * 0.038));
   const y = Math.max(0, span.y0 - padY);
   const y1 = Math.min(img.height, span.y1 + padY);
-  let h = y1 - y;
+  const h = y1 - y;
   const maxH = Math.max(16, Math.round(img.height * 0.13));
   if (h > maxH) {
     const mid = Math.round((span.y0 + span.y1) / 2);
