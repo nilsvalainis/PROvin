@@ -2865,18 +2865,18 @@ export function OrderDetailWorkspace({
   const wizardStepsUi = useMemo(
     () =>
       [
-        { label: "INFO", title: "Pārskats", row: 1 as const },
-        { label: "CSDD", title: "CSDD", row: 1 as const },
-        { label: "DNA / CV", title: "Datu servisi", row: 1 as const },
-        { label: "DEALER", title: "Dīleris", row: 1 as const },
-        { label: "LTAB", title: "LTAB", row: 1 as const },
-        { label: "CITI", title: "Citi avoti", row: 1 as const },
-        { label: "AUCTION", title: "Starptautiskā vēsture", row: 2 as const },
-        { label: "DK", title: "Tjekbil", row: 2 as const },
-        { label: "EST", title: "Igaunija", row: 2 as const },
-        { label: "SWE", title: "car.info", row: 2 as const },
-        { label: "SS.LV", title: "Sludinājuma analīze", row: 2 as const },
-        { label: "ABY", title: "Kopsavilkums", row: 2 as const },
+        { label: "INFO", title: "Pārskats" },
+        { label: "CSDD", title: "CSDD" },
+        { label: "DNA / CV", title: "Datu servisi" },
+        { label: "DEALER", title: "Dīleris" },
+        { label: "LTAB", title: "LTAB" },
+        { label: "CITI", title: "Citi avoti" },
+        { label: "AUCTION", title: "Starptautiskā vēsture" },
+        { label: "DK", title: "Tjekbil" },
+        { label: "EST", title: "Igaunija" },
+        { label: "SWE", title: "car.info" },
+        { label: "SS.LV", title: "Sludinājuma analīze" },
+        { label: "ABY", title: "Kopsavilkums" },
       ] as const,
     [],
   );
@@ -3986,8 +3986,8 @@ export function OrderDetailWorkspace({
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
-        <div className={`mx-auto flex w-full min-w-0 flex-col gap-1.5 ${ADMIN_CONTENT_MAX}`}>
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <div className={`mx-auto flex w-full min-w-0 items-start gap-1.5 ${ADMIN_CONTENT_MAX}`}>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
             <button
               type="button"
               disabled={!workspaceHydrated || workspaceSaveBusy}
@@ -4048,7 +4048,6 @@ export function OrderDetailWorkspace({
             />
             <AdminAiSessionCostBar />
             {wizardStepsUi.map(({ label, title }, idx) => {
-              if (wizardStepsUi[idx]!.row !== 1) return null;
               const lvl = wizardStepLevels[idx] ?? "empty";
               const active = wizardStep === idx;
               return (
@@ -4072,33 +4071,9 @@ export function OrderDetailWorkspace({
               );
             })}
           </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            {wizardStepsUi.map(({ label, title }, idx) => {
-              if (wizardStepsUi[idx]!.row !== 2) return null;
-              const lvl = wizardStepLevels[idx] ?? "empty";
-              const active = wizardStep === idx;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  title={title}
-                  onClick={() => goWizardStep(idx)}
-                  className={`${WIZARD_NAV_BTN} ${
-                    active
-                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35 text-[var(--color-apple-text)]"
-                      : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${WIZARD_STEP_DOT[lvl]}`}
-                    title={`Aizpildījums: ${lvl}`}
-                  />
-                  {label}
-                </button>
-              );
-            })}
+          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1.5">
             <div
-              className={`${WIZARD_NAV_FIELD} ml-auto font-mono text-[10px] font-medium ${
+              className={`${WIZARD_NAV_FIELD} font-mono text-[10px] font-medium ${
                 vinBar ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
               }`}
               title="VIN"
