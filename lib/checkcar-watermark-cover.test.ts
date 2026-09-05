@@ -67,6 +67,13 @@ describe("checkcar watermark cover", () => {
     expect(first.covered).toBe(true);
     expect(first.hit?.grayLetters ?? 0).toBeGreaterThanOrEqual(4);
     expect((first.hit?.vinLetters ?? 0) + (first.hit?.grayLetters ?? 0)).toBeGreaterThanOrEqual(6);
+    const box = first.hit!.box;
+    const sample = await sharp(first.jpeg)
+      .extract({ left: box.x + Math.floor(box.w / 2), top: box.y + Math.floor(box.h / 2), width: 1, height: 1 })
+      .raw()
+      .toBuffer();
+    expect(Math.abs(sample[0]! - sample[1]!)).toBeLessThan(8);
+    expect(Math.abs(sample[1]! - sample[2]!)).toBeLessThan(8);
 
     const second = await coverCheckcarVinWatermark(first.jpeg);
     expect(second.covered).toBe(false);

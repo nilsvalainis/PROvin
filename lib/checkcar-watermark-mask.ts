@@ -1,6 +1,6 @@
 /**
  * CheckCar.vin ūdenszīmes noteikšana un aizklāšana (tīrs RGB, bez sharp).
- * Meklē sarkano „VIN” burtu grupu un pa kreisi pelēko „CHECKCAR”.
+ * Meklē sarkano „VIN” + pelēko „CHECKCAR”, tad uzliek pelēku mozaīkas joslu.
  */
 
 export type RgbBuffer = {
@@ -68,17 +68,6 @@ export function isCheckcarGray(r: number, g: number, b: number): boolean {
   if (max < 76 || max > 214) return false;
   if (max - min > 30) return false;
   if (Math.abs(r - g) > 20 || Math.abs(g - b) > 20) return false;
-  return true;
-}
-
-/** Ūdenszīmes mala / ēna lodziņā: ne fons, ne košs UI teksts. */
-export function isCheckcarWatermarkResidue(r: number, g: number, b: number): boolean {
-  if (isCheckcarVinRed(r, g, b) || isCheckcarGray(r, g, b)) return true;
-  const y = luma(r, g, b);
-  if (y < 52 || y > 175) return false;
-  const max = r > g ? (r > b ? r : b) : g > b ? g : b;
-  const min = r < g ? (r < b ? r : b) : g < b ? g : b;
-  if (max - min > 70) return false;
   return true;
 }
 
@@ -258,8 +247,8 @@ export function detectCheckcarVinWatermark(img: RgbBuffer): CheckcarWatermarkHit
   if (grayLeft.length < 3 && vin.length < 3) return null;
 
   const letters = grayLeft.length >= 3 ? [...grayLeft, ...vin] : vin;
-  const padX = Math.max(6, Math.round(vinH * 0.28));
-  const padY = Math.max(5, Math.round(vinH * 0.28));
+  const padX = Math.max(10, Math.round(vinH * 0.55));
+  const padY = Math.max(8, Math.round(vinH * 0.5));
   let x0 = Math.min(...letters.map((b) => b.minX)) - padX;
   const x1 = Math.max(...letters.map((b) => b.maxX)) + padX;
   const y0 = Math.min(...letters.map((b) => b.minY)) - padY;
@@ -280,159 +269,36 @@ export function detectCheckcarVinWatermark(img: RgbBuffer): CheckcarWatermarkHit
   return { box, vinLetters: vin.length, grayLetters: grayLeft.length };
 }
 
-function dilateMask(mask: Uint8Array, width: number, height: number, radius: number): void {
-  if (radius <= 0) return;
-  const copy = new Uint8Array(mask);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (!copy[y * width + x]) continue;
-      for (let dy = -radius; dy <= radius; dy++) {
-        for (let dx = -radius; dx <= radius; dx++) {
-          const nx = x + dx;
-          const ny = y + dy;
-          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-          mask[ny * width + nx] = 1;
-        }
-      }
-    }
-  }
-}
-
-export function buildCheckcarWatermarkMask(img: RgbBuffer, hit: CheckcarWatermarkHit): Uint8Array {
-  const { width, height } = img;
-  const mask = new Uint8Array(width * height);
-  const x1 = Math.min(width, hit.box.x + hit.box.w);
-  const y1 = Math.min(height, hit.box.y + hit.box.h);
-
-  for (let y = hit.box.y; y < y1; y++) {
-    for (let x = hit.box.x; x < x1; x++) {
-      const [r, g, b] = readRgb(img, x, y);
-      if (isCheckcarWatermarkResidue(r, g, b)) {
-        mask[y * width + x] = 1;
-      }
-    }
-  }
-
-  dilateMask(mask, width, height, 2);
-
-  for (let y = Math.max(0, hit.box.y - 2); y < Math.min(height, y1 + 2); y++) {
-    for (let x = Math.max(0, hit.box.x - 2); x < Math.min(width, x1 + 2); x++) {
-      const [r, g, b] = readRgb(img, x, y);
-      const yLuma = luma(r, g, b);
-      if (yLuma >= 198) mask[y * width + x] = 0;
-      else if (yLuma < 34 && !isCheckcarVinRed(r, g, b)) mask[y * width + x] = 0;
-    }
-  }
-  return mask;
-}
-
-function sampleUnmasked(
-  img: RgbBuffer,
-  mask: Uint8Array,
-  x: number,
-  y: number,
-): [number, number, number] | null {
-  if (y < 0 || y >= img.height || x < 0 || x >= img.width) return null;
-  if (mask[y * img.width + x]) return null;
-  return readRgb(img, x, y);
-}
-
-function unmaskedMedianLuma(img: RgbBuffer, mask: Uint8Array, box: CheckcarWatermarkBox): number {
-  const lumas: number[] = [];
+/** Pelēka cenzūras mozaīka pār visu ūdenszīmes joslu. */
+export function applyGrayMosaicBar(img: RgbBuffer, box: CheckcarWatermarkBox): void {
   const x0 = Math.max(0, box.x);
+  const y0 = Math.max(0, box.y);
   const x1 = Math.min(img.width, box.x + box.w);
-  const y0 = Math.max(0, box.y - Math.round(box.h * 0.8));
-  const y1 = Math.min(img.height, box.y + box.h + Math.round(box.h * 0.8));
-  const step = Math.max(1, Math.round(Math.min(box.w, box.h) / 24));
-  for (let y = y0; y < y1; y += step) {
-    for (let x = x0; x < x1; x += step) {
-      if (mask[y * img.width + x]) continue;
-      const [r, g, b] = readRgb(img, x, y);
-      lumas.push(luma(r, g, b));
-    }
-  }
-  if (lumas.length === 0) return 40;
-  lumas.sort((a, b) => a - b);
-  return lumas[Math.floor(lumas.length / 2)]!;
-}
+  const y1 = Math.min(img.height, box.y + box.h);
+  if (x1 <= x0 || y1 <= y0) return;
 
-function closerToBackground(
-  a: [number, number, number],
-  b: [number, number, number],
-  backgroundLuma: number,
-): [number, number, number] {
-  const da = Math.abs(luma(a[0], a[1], a[2]) - backgroundLuma);
-  const db = Math.abs(luma(b[0], b[1], b[2]) - backgroundLuma);
-  return da <= db ? a : b;
-}
+  const tile = Math.max(10, Math.round(Math.min(box.h, 48) / 2.4));
 
-/** Vertikāla + horizontāla aizpilde no tuvākajiem nemaskētajiem pikseļiem. */
-export function inpaintMaskedRgb(img: RgbBuffer, mask: Uint8Array, box?: CheckcarWatermarkBox): void {
-  const { width, height } = img;
-  const reach = Math.max(18, Math.round(height * 0.08));
-  const bgLuma = box ? unmaskedMedianLuma(img, mask, box) : 40;
-  const preferBackground = bgLuma < 85;
-
-  for (let x = 0; x < width; x++) {
-    for (let y = 0; y < height; y++) {
-      if (!mask[y * width + x]) continue;
-
-      let up: [number, number, number] | null = null;
-      let upDist = 0;
-      for (let d = 1; d <= reach; d++) {
-        const s = sampleUnmasked(img, mask, x, y - d);
-        if (s) {
-          up = s;
-          upDist = d;
-          break;
+  for (let ty = y0; ty < y1; ty += tile) {
+    for (let tx = x0; tx < x1; tx += tile) {
+      const bx = Math.min(x1, tx + tile);
+      const by = Math.min(y1, ty + tile);
+      let sum = 0;
+      let n = 0;
+      for (let y = ty; y < by; y++) {
+        for (let x = tx; x < bx; x++) {
+          const [r, g, b] = readRgb(img, x, y);
+          sum += luma(r, g, b);
+          n++;
         }
       }
-      let down: [number, number, number] | null = null;
-      let downDist = 0;
-      for (let d = 1; d <= reach; d++) {
-        const s = sampleUnmasked(img, mask, x, y + d);
-        if (s) {
-          down = s;
-          downDist = d;
-          break;
+      const avg = n > 0 ? sum / n : 80;
+      const gray = Math.max(52, Math.min(148, Math.round(avg * 0.32 + 78)));
+      for (let y = ty; y < by; y++) {
+        for (let x = tx; x < bx; x++) {
+          writeRgb(img, x, y, gray, gray, gray);
         }
       }
-
-      if (up && down) {
-        if (preferBackground) {
-          const pick = closerToBackground(up, down, bgLuma);
-          writeRgb(img, x, y, pick[0], pick[1], pick[2]);
-          continue;
-        }
-        const t = upDist / (upDist + downDist);
-        writeRgb(
-          img,
-          x,
-          y,
-          Math.round(up[0] + (down[0] - up[0]) * t),
-          Math.round(up[1] + (down[1] - up[1]) * t),
-          Math.round(up[2] + (down[2] - up[2]) * t),
-        );
-        continue;
-      }
-      if (up) {
-        writeRgb(img, x, y, up[0], up[1], up[2]);
-        continue;
-      }
-      if (down) {
-        writeRgb(img, x, y, down[0], down[1], down[2]);
-        continue;
-      }
-
-      let left: [number, number, number] | null = null;
-      let right: [number, number, number] | null = null;
-      for (let d = 1; d <= reach; d++) {
-        if (!left) left = sampleUnmasked(img, mask, x - d, y);
-        if (!right) right = sampleUnmasked(img, mask, x + d, y);
-        if (left && right) break;
-      }
-      const src = left ?? right;
-      if (src) writeRgb(img, x, y, src[0], src[1], src[2]);
     }
   }
 }
@@ -440,7 +306,6 @@ export function inpaintMaskedRgb(img: RgbBuffer, mask: Uint8Array, box?: Checkca
 export function coverCheckcarVinWatermarkRgb(img: RgbBuffer): CheckcarWatermarkHit | null {
   const hit = detectCheckcarVinWatermark(img);
   if (!hit) return null;
-  const mask = buildCheckcarWatermarkMask(img, hit);
-  inpaintMaskedRgb(img, mask, hit.box);
+  applyGrayMosaicBar(img, hit.box);
   return hit;
 }
