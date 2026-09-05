@@ -1,30 +1,17 @@
 /**
  * Klienta JPEG kompresija pirms augšupielādes (taupa servera vietu).
- * HEIC/EXIF: atkarīgs no `createImageBitmap` — Safari/iOS parasti atvērs; citādi `decode_failed`.
- * CheckCar.vin ūdenszīmi aizklāj pirms kompresijas, lai priekšskatījums jau būtu tīrs.
+ * HEIC: ja pārlūks neatkodē, atgriežam oriģinālu — serveris konvertē.
  */
 
-import { coverCheckcarVinWatermarkRgb } from "@/lib/checkcar-watermark-mask";
-
-function coverCheckcarVinWatermarkInCanvas(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-  let imageData: ImageData;
-  try {
-    imageData = ctx.getImageData(0, 0, w, h);
-  } catch {
-    return;
-  }
-  const hit = coverCheckcarVinWatermarkRgb({
-    data: imageData.data,
-    width: w,
-    height: h,
-    channels: 4,
-  });
-  if (!hit) return;
-  ctx.putImageData(imageData, 0, 0);
+function isLikelyHeicImageFile(file: File): boolean {
+  const type = (file.type ?? "").toLowerCase();
+  if (type === "image/heic" || type === "image/heif") return true;
+  return /\.hei[cf]$/i.test(file.name);
 }
 
 const TARGET_MAX_BYTES = 190_000;
 const MAX_DIMENSION = 1680;
+const HEIC_PASSTHROUGH_MAX_BYTES = 12 * 1024 * 1024;
 
 function jpegBaseName(originalName: string): string {
   const base = originalName.replace(/\.[^.\\/]+$/i, "").trim() || "photo";
@@ -70,14 +57,42 @@ async function blobUnderMaxBytes(startCanvas: HTMLCanvasElement, maxBytes: numbe
   return canvasToJpegBlob(work, 0.32);
 }
 
-export async function compressImageFileToJpegForConsultation(file: File): Promise<File> {
-  let bm: ImageBitmap;
+function decodeViaHtmlImage(file: File): Promise<ImageBitmap> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      void createImageBitmap(img)
+        .then((bm) => {
+          URL.revokeObjectURL(url);
+          resolve(bm);
+        })
+        .catch((err) => {
+          URL.revokeObjectURL(url);
+          reject(err);
+        });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("decode_failed"));
+    };
+    img.src = url;
+  });
+}
+
+async function decodeFileToImageBitmap(file: File): Promise<ImageBitmap> {
   try {
-    bm = await createImageBitmap(file);
+    return await createImageBitmap(file);
   } catch {
-    throw new Error("decode_failed");
+    /* HTMLImageElement bieži atver JPEG/PNG, ko createImageBitmap noraida. */
   }
+  return decodeViaHtmlImage(file);
+}
+
+export async function compressImageFileToJpegForConsultation(file: File): Promise<File> {
+  let bm: ImageBitmap | null = null;
   try {
+    bm = await decodeFileToImageBitmap(file);
     const w0 = bm.width;
     const h0 = bm.height;
     if (w0 < 1 || h0 < 1) throw new Error("empty_image");
@@ -90,8 +105,8 @@ export async function compressImageFileToJpegForConsultation(file: File): Promis
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("no_context");
     ctx.drawImage(bm, 0, 0, tw, th);
-    coverCheckcarVinWatermarkInCanvas(ctx, tw, th);
     bm.close();
+    bm = null;
 
     const blob = await blobUnderMaxBytes(canvas, TARGET_MAX_BYTES);
     return new File([blob], jpegBaseName(file.name), {
@@ -99,11 +114,16 @@ export async function compressImageFileToJpegForConsultation(file: File): Promis
       lastModified: Date.now(),
     });
   } catch (e) {
-    try {
-      bm.close();
-    } catch {
-      /* ignore */
+    if (bm) {
+      try {
+        bm.close();
+      } catch {
+        /* ignore */
+      }
     }
-    throw e;
+    if (isLikelyHeicImageFile(file) && file.size > 0 && file.size <= HEIC_PASSTHROUGH_MAX_BYTES) {
+      return file;
+    }
+    throw e instanceof Error ? e : new Error("decode_failed");
   }
 }

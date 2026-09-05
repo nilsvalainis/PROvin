@@ -20,6 +20,16 @@ const JPEG_QUALITY = 88;
 export async function coverCheckcarVinWatermark(
   jpegBody: Buffer,
 ): Promise<CheckcarWatermarkCoverResult> {
+  try {
+    return await coverCheckcarVinWatermarkUnsafe(jpegBody);
+  } catch {
+    return { covered: false, jpeg: jpegBody, hit: null };
+  }
+}
+
+async function coverCheckcarVinWatermarkUnsafe(
+  jpegBody: Buffer,
+): Promise<CheckcarWatermarkCoverResult> {
   let raw: { data: Buffer; info: sharp.OutputInfo };
   try {
     raw = await sharp(jpegBody).rotate().removeAlpha().raw().toBuffer({ resolveWithObject: true });

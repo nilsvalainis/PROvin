@@ -188,7 +188,7 @@ export function AdminConsultationSlotPhotos({
             jpeg = await compressImageFileToJpegForConsultation(file);
           } catch {
             setError(
-              "Neizdevās apstrādāt attēlu (piem. HEIF/HEIC, ja pārlūks neatbalsta). Mēģini citu pārlūku vai eksportē JPG no Foto lietotnes.",
+              "Neizdevās apstrādāt attēlu. Mēģini vēlreiz vai eksportē JPG no Foto lietotnes.",
             );
             continue;
           }

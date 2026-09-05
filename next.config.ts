@@ -35,6 +35,8 @@ const nextConfig: NextConfig = {
     "puppeteer-extra-plugin-stealth",
     "puppeteer-extra-plugin",
     "puppeteer-extra-plugin-user-preferences",
+    "heic-convert",
+    "heic-decode",
   ],
   /** pdfjs worker tiek ielādēts pēc ceļa, tāpēc Next izsekošana to neatrod automātiski. */
   outputFileTracingIncludes: {

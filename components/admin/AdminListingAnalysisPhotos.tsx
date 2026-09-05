@@ -448,7 +448,7 @@ export function AdminListingAnalysisPhotos({
       }
 
       if (compressed.length === 0) {
-        setError("Neizdevās apstrādāt attēlus (piem. HEIF/HEIC). Mēģini Safari vai eksportē JPG.");
+        setError("Neizdevās apstrādāt attēlus. Mēģini vēlreiz vai eksportē JPG no Foto lietotnes.");
         return;
       }
 

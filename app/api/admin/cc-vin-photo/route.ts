@@ -8,12 +8,12 @@ import {
   CC_VIN_PHOTO_MAX_BYTES,
   collectCcVinPhotoIdsFromWorkspace,
   deleteCcVinPhoto,
-  isJpegMagicBuffer,
   isSafeCcVinPhotoId,
   makeCcVinPhotoId,
   readCcVinPhotoJpeg,
   writeCcVinPhotoJpeg,
 } from "@/lib/admin-cc-vin-photo-store";
+import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
 import {
   getOrderDraftBlobConfig,
   getOrderDraftStorageDir,
@@ -109,13 +109,11 @@ export async function POST(req: Request) {
     }
 
     const ab = await file.arrayBuffer();
-    const buf = Buffer.from(ab);
-    if (buf.length === 0 || buf.length > CC_VIN_PHOTO_MAX_BYTES) {
-      return NextResponse.json({ error: "file_too_large" }, { status: 400 });
+    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), CC_VIN_PHOTO_MAX_BYTES);
+    if (!normalized.ok) {
+      return NextResponse.json({ error: normalized.error }, { status: 400 });
     }
-    if (!isJpegMagicBuffer(buf)) {
-      return NextResponse.json({ error: "invalid_jpeg" }, { status: 400 });
-    }
+    const buf = normalized.jpeg;
 
     const photoId = makeCcVinPhotoId();
     try {

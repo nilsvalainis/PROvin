@@ -7,13 +7,13 @@ import { getAdminSession } from "@/lib/admin-auth";
 import {
   collectListingAnalysisPhotoIdsFromWorkspace,
   deleteListingAnalysisPhoto,
-  isJpegMagicBuffer,
   isSafeListingAnalysisPhotoId,
   LISTING_ANALYSIS_PHOTO_MAX_BYTES,
   makeListingAnalysisPhotoId,
   readListingAnalysisPhotoJpeg,
   writeListingAnalysisPhotoJpeg,
 } from "@/lib/admin-listing-analysis-photo-store";
+import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
 import {
   getOrderDraftBlobConfig,
   getOrderDraftStorageDir,
@@ -109,13 +109,11 @@ export async function POST(req: Request) {
     }
 
     const ab = await file.arrayBuffer();
-    const buf = Buffer.from(ab);
-    if (buf.length === 0 || buf.length > LISTING_ANALYSIS_PHOTO_MAX_BYTES) {
-      return NextResponse.json({ error: "file_too_large" }, { status: 400 });
+    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), LISTING_ANALYSIS_PHOTO_MAX_BYTES);
+    if (!normalized.ok) {
+      return NextResponse.json({ error: normalized.error }, { status: 400 });
     }
-    if (!isJpegMagicBuffer(buf)) {
-      return NextResponse.json({ error: "invalid_jpeg" }, { status: 400 });
-    }
+    const buf = normalized.jpeg;
 
     const photoId = makeListingAnalysisPhotoId();
     try {

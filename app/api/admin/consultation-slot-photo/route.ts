@@ -9,9 +9,9 @@ import {
   readConsultationDraft,
 } from "@/lib/admin-consultation-draft-store";
 import { CONSULTATION_MAX_PHOTOS_PER_SLOT, CONSULTATION_SLOT_COUNT } from "@/lib/admin-consultation-draft-types";
+import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
 import {
   CONSULTATION_PHOTO_MAX_BYTES,
-  isJpegMagicBuffer,
   isSafeConsultationPhotoId,
   makeConsultationPhotoId,
   readConsultationSlotPhotoJpeg,
@@ -103,13 +103,11 @@ export async function POST(req: Request) {
     }
 
     const ab = await file.arrayBuffer();
-    const buf = Buffer.from(ab);
-    if (buf.length === 0 || buf.length > CONSULTATION_PHOTO_MAX_BYTES) {
-      return NextResponse.json({ error: "file_too_large" }, { status: 400 });
+    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), CONSULTATION_PHOTO_MAX_BYTES);
+    if (!normalized.ok) {
+      return NextResponse.json({ error: normalized.error }, { status: 400 });
     }
-    if (!isJpegMagicBuffer(buf)) {
-      return NextResponse.json({ error: "invalid_jpeg" }, { status: 400 });
-    }
+    const buf = normalized.jpeg;
 
     const photoId = makeConsultationPhotoId();
     await writeConsultationSlotPhotoJpeg(dir, sessionId, photoId, buf);
