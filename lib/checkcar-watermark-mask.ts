@@ -261,7 +261,7 @@ export function detectCheckcarVinWatermark(img: RgbBuffer): CheckcarWatermarkHit
   const padX = Math.max(6, Math.round(vinH * 0.28));
   const padY = Math.max(5, Math.round(vinH * 0.28));
   let x0 = Math.min(...letters.map((b) => b.minX)) - padX;
-  let x1 = Math.max(...letters.map((b) => b.maxX)) + padX;
+  const x1 = Math.max(...letters.map((b) => b.maxX)) + padX;
   const y0 = Math.min(...letters.map((b) => b.minY)) - padY;
   const y1 = Math.max(...letters.map((b) => b.maxY)) + padY;
 
