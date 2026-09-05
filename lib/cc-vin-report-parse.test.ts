@@ -224,7 +224,8 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
         detail: "Reģistrēts: California (ASV)",
       },
     ]);
-    expect(p.notes).toHaveLength(0);
+    // Izsoles cena „38 745 USD” tiek pārkonvertēta uz EUR — audita ieraksts operatoram.
+    expect(p.notes).toEqual(["38 745 USD → 35 550 € (1 EUR = 1.09 USD)"]);
   });
 
   it("nolasa title ierakstus un izsoļu pārdošanas", () => {
@@ -239,7 +240,7 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
         date: "20.11.2019",
         venue: "Bmw Of Murrieta (Murrieta, CA)",
         odometer: "5 660",
-        price: "38 745 USD",
+        price: "35 550 €",
         status: "Pārdots",
       },
     ]);
@@ -314,7 +315,7 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
       {
         date: "01.06.2016",
         region: "Vācija",
-        amount: "1 360 USD",
+        amount: "1 250 €",
         description: "Negadījums",
       },
     ]);
@@ -358,7 +359,7 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
           date: "10.06.2026",
           venue: "AUTOBID",
           odometer: "304 900",
-          price: "3 989 USD",
+          price: "3 660 €",
           status: "Pārdots",
         },
       ]);

@@ -6,7 +6,7 @@
 
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
-import { CC_VIN_PDF_SOURCE_LABEL, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { CC_VIN_PDF_SOURCE_LABEL, ccVinAmountToEurDisplay, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   damageGroupDisplayLabels,
@@ -111,7 +111,11 @@ export function collectUnifiedIncidentRows(args: {
   if (!args.options?.omitCcVin) {
     for (const d of args.ccVinBlock?.damages ?? []) {
       push(
-        { csngDate: d.date, lossAmount: d.amount, incidentNo: d.region } as LtabIncidentRow,
+        {
+          csngDate: d.date,
+          lossAmount: ccVinAmountToEurDisplay(d.amount) || d.amount,
+          incidentNo: d.region,
+        } as LtabIncidentRow,
         CC_VIN_PDF_SOURCE_LABEL,
       );
     }

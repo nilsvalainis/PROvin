@@ -522,6 +522,7 @@ const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], SectionIconId> = {
   incident: "shield",
   service: "wrench",
   listed: "priceTag",
+  sale: "priceTag",
   gap: "clock",
   anomaly: "search",
 };

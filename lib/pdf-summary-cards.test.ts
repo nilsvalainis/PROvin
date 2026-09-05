@@ -10,6 +10,7 @@ import {
   upsertProvinBannerOverride,
   computeCcVinAlertBanners,
   ccVinBannerKindFromLabel,
+  computeProvinAlertBanners,
   computeProvinInfoBannersFromPayloadSlice,
   type ProvinManualBanner,
 } from "@/lib/provin-alert-banners";
@@ -204,24 +205,43 @@ describe("aprēķināto brīdinājumu labošana", () => {
     const banners = computeCcVinAlertBanners({
       ...emptyCcVinBlock(),
       checks: [
+        { label: "Zādzību ieraksti", status: "Atrasts ieraksts", severity: "alert" },
         { label: "Fiksētie bojājumi", status: "2 bojājumi", severity: "alert" },
-        { label: "Zādzību ieraksti", status: "Nav atrastu problēmu", severity: "ok" },
       ],
     });
     expect(banners).toHaveLength(1);
-    expect(banners[0]!.kind).toBe(ccVinBannerKindFromLabel("Fiksētie bojājumi"));
-    expect(banners[0]!.text).toBe("Fiksētie bojājumi: 2 bojājumi");
+    expect(banners[0]!.kind).toBe(ccVinBannerKindFromLabel("Zādzību ieraksti"));
+    expect(banners[0]!.text).toBe("Zādzību ieraksti: Atrasts ieraksts");
 
     const tiles = buildPdfSummaryBannerTiles({ alertBanners: banners });
     expect(tiles).toEqual([
       {
-        id: "alert-ccvin-fiksetie_bojajumi",
-        label: "Fiksētie bojājumi",
-        value: "2 bojājumi",
+        id: "alert-ccvin-zadzibu_ieraksti",
+        label: "Zādzību ieraksti",
+        value: "Atrasts ieraksts",
         note: "Starptautiskajos vēstures reģistros fiksēta atzīme.",
         tone: "alert",
         wide: false,
       },
     ]);
+  });
+
+  it("CC.VIN bojājumus apvieno ar vienoto negadījumu baneri, nevis dublē atsevišķi", () => {
+    const banners = computeProvinAlertBanners({
+      unifiedMileageRows: [],
+      csddForm: emptyCsddFields(),
+      manualLtabBlock: {
+        rows: [{ csngDate: "01.06.2016", lossAmount: "1 500 €", incidentNo: "Latvija" }],
+        comments: "",
+      },
+      manualVendorBlocks: [],
+      ccVinBlock: {
+        ...emptyCcVinBlock(),
+        checks: [{ label: "Fiksētie bojājumi", status: "1 bojājums", severity: "alert" }],
+        damages: [{ date: "01.06.2016", region: "Vācija", amount: "1 360 USD", description: "Negadījums" }],
+      },
+    });
+    expect(banners.filter((b) => b.kind === "incidents")).toHaveLength(1);
+    expect(banners.some((b) => b.kind === "ccvin:fiksetie_bojajumi")).toBe(false);
   });
 });

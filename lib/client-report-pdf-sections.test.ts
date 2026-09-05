@@ -8,6 +8,7 @@ import {
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import { KEY_READ_HISTORY_LABEL } from "@/lib/vendor-service-history";
+import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import {
   buildVehicleLifecycleEvents,
   lifecycleLocationIsCountryName,
@@ -530,6 +531,26 @@ describe("TRANSPORTLĪDZEKĻA DATI", () => {
 });
 
 describe("Vēstures kopsavilkums", () => {
+  it("rāda CC.VIN pārdošanas summu kopsavilkuma joslā", () => {
+    const ccVin = emptyCcVinBlock();
+    ccVin.sales = [
+      {
+        date: "20.11.2019",
+        venue: "Bmw Of Murrieta (Murrieta, CA)",
+        odometer: "5 660",
+        price: "38 745 USD",
+        status: "Pārdots",
+      },
+    ];
+    const events = buildVehicleLifecycleEvents({ ccVinBlock: ccVin });
+    const sale = events.find((e) => e.kind === "sale");
+    expect(sale).toBeTruthy();
+    expect(sale!.date).toBe("20.11.2019");
+    expect(sale!.detail).toBe("35 550 €");
+    expect(sale!.title).toContain("Bmw Of Murrieta");
+  });
+
+
   it("keeps a month-only clustered incident in the timeline (CarVertical 01.MM + LTAB day)", () => {
     const events = buildVehicleLifecycleEvents({
       manualVendorBlocks: [

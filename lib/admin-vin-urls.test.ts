@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SOURCE_BLOCK_EXTERNAL_URL } from "@/lib/admin-source-blocks";
 import {
-  ADMIN_ORDER_LIST_VIN_SOURCES,
   ADMIN_ORDER_ROW_NAV_IGNORE_SELECTOR,
   AUTODNA_LV_HOME_URL,
   AUTORECORDS_BASE_URL,
@@ -52,8 +51,7 @@ describe("admin VIN service URLs", () => {
     expect(CHECKTHISREG_HOME_URL).toContain("checkthisreg.com");
   });
 
-  it("lists AutoDNA, CarVertical and DEALER on the orders table VIN cell", () => {
-    expect(ADMIN_ORDER_LIST_VIN_SOURCES.map((s) => s.label)).toEqual(["AutoDNA", "CarVertical", "DEALER"]);
+  it("ignores clicks on links and buttons when opening an order row", () => {
     expect(buildVinAutofillHref("autodna", vin)).toContain("/vin/");
     expect(buildVinAutofillHref("carvertical", vin)).toBe(CARVERTICAL_REPORTS_URL);
     expect(buildVinAutofillHref("checkthisreg", vin)).toBe(CHECKTHISREG_HOME_URL);

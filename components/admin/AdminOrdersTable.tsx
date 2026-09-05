@@ -8,7 +8,6 @@ import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
-import { AdminOrderListVinSourceButtons } from "@/components/admin/AdminVinSourcesMenuBar";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
@@ -439,14 +438,11 @@ export function AdminOrdersTable({
                   </td>
                   <td className="px-4 py-3.5 text-[var(--color-apple-text)]">
                     {hasVin ? (
-                      <span className="flex min-w-[11.5rem] flex-col items-start">
-                        <span className="inline-flex max-w-full items-center gap-1">
-                          <span className="whitespace-nowrap font-mono text-xs tracking-wide" title={vin}>
-                            {vin}
-                          </span>
-                          <AdminVinCopyButton value={vin} />
+                      <span className="inline-flex max-w-full items-center gap-1">
+                        <span className="whitespace-nowrap font-mono text-xs tracking-wide" title={vin}>
+                          {vin}
                         </span>
-                        <AdminOrderListVinSourceButtons vin={vin} />
+                        <AdminVinCopyButton value={vin} />
                       </span>
                     ) : (
                       <span className="text-[var(--color-provin-muted)]">—</span>

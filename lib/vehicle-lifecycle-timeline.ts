@@ -15,7 +15,15 @@ import {
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
 import { resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
-import type { CcVinBlockState } from "@/lib/cc-vin-report";
+import {
+  CC_VIN_PDF_SOURCE_LABEL,
+  ccVinAmountToEurDisplay,
+  ccVinDamageRowHasData,
+  ccVinRecordRowHasData,
+  ccVinSaleRowHasData,
+  ccVinTitleRowHasData,
+  type CcVinBlockState,
+} from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { lifecycleDealerVisitTitle } from "@/lib/vendor-service-history";
@@ -42,6 +50,7 @@ export type LifecycleEventKind =
   | "incident"
   | "service"
   | "listed"
+  | "sale"
   | "gap"
   | "anomaly";
 
@@ -328,6 +337,88 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     ev.sources = c.sourceValuations.map((s) => s.sourceLabel);
     ev.incident = c;
     out.push(ev);
+  }
+
+  const ccVin = input.ccVinBlock;
+  // Bojājumi ar summu jau iet caur vienoto negadījumu klasteri; bez summas — atsevišķs fakts.
+  for (const d of ccVin?.damages ?? []) {
+    if (!ccVinDamageRowHasData(d) || !d.date.trim() || d.amount.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "incident",
+        rawDate: d.date,
+        title: lifecyclePublicCaption(d.description) || "Bojājums",
+        country: d.region,
+        source: CC_VIN_PDF_SOURCE_LABEL,
+        tone: "alert",
+      }),
+    );
+  }
+  for (const r of ccVin?.brands ?? []) {
+    if (!ccVinRecordRowHasData(r) || !r.date.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "registration",
+        rawDate: r.date,
+        title: lifecyclePublicCaption(r.label) || "Īpašumtiesību atzīme",
+        detail: r.detail,
+        source: CC_VIN_PDF_SOURCE_LABEL,
+        tone: "warn",
+      }),
+    );
+  }
+  for (const r of ccVin?.insurance ?? []) {
+    if (!ccVinRecordRowHasData(r) || !r.date.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "registration",
+        rawDate: r.date,
+        title: lifecyclePublicCaption(r.label) || "Apdrošinātāja ieraksts",
+        detail: r.detail,
+        source: CC_VIN_PDF_SOURCE_LABEL,
+        tone: "warn",
+      }),
+    );
+  }
+  for (const r of ccVin?.titles ?? []) {
+    if (!ccVinTitleRowHasData(r) || !r.date.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "registration",
+        rawDate: r.date,
+        title: r.region.trim()
+          ? `Īpašumtiesības · ${lifecyclePublicCaption(r.region)}`
+          : "Īpašumtiesību ieraksts",
+        detail: lifecyclePublicCaption(r.note),
+        country: r.region,
+        odometer: r.odometer,
+        source: CC_VIN_PDF_SOURCE_LABEL,
+      }),
+    );
+  }
+  // Izsoļu pārdošanas — datums + cena jābūt kopsavilkuma joslā, ne tikai avota sadaļā.
+  for (const s of ccVin?.sales ?? []) {
+    if (!ccVinSaleRowHasData(s) || !s.date.trim()) continue;
+    const sold = !/nav\s+pārdots/i.test(s.status);
+    const priceText = ccVinAmountToEurDisplay(s.price) || s.price.trim();
+    const venueText = lifecyclePublicCaption(s.venue);
+    out.push(
+      makeEvent({
+        kind: "sale",
+        rawDate: s.date,
+        title: sold
+          ? venueText
+            ? `Pārdots · ${venueText}`
+            : "Pārdots izsolē"
+          : venueText
+            ? `Nav pārdots · ${venueText}`
+            : "Nepārdota izsole",
+        detail: priceText,
+        odometer: s.odometer,
+        source: CC_VIN_PDF_SOURCE_LABEL,
+        tone: "info",
+      }),
+    );
   }
 
   const listingCreated = input.tirgusForm?.listingCreated?.trim();

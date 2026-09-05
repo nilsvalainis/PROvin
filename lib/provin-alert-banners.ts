@@ -30,7 +30,14 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { computeLatviaRegistrationTenure } from "@/lib/latvia-registration-tenure";
-import { ccVinAlertChecks, type CcVinBlockState, type CcVinCheckRow } from "@/lib/cc-vin-report";
+import {
+  CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
+  ccVinAlertChecks,
+  ccVinAmountToEurDisplay,
+  ccVinDamageRowHasData,
+  type CcVinBlockState,
+  type CcVinCheckRow,
+} from "@/lib/cc-vin-report";
 
 export type ProvinInfoBannerKind = "lv_registration_tenure";
 
@@ -421,6 +428,7 @@ function flagToSeverity(f: Exclude<CsddFieldUiFlag, "none">): ProvinAlertSeverit
 function collectIncidentRows(
   ltab: ClientManualLtabBlockPdf | null | undefined,
   vendors: ClientManualVendorBlockPdf[] | undefined,
+  ccVin?: CcVinBlockState | null,
 ): { lossAmount: string }[] {
   const out: { lossAmount: string }[] = [];
   for (const r of ltab?.rows ?? []) {
@@ -431,7 +439,16 @@ function collectIncidentRows(
       if (ltabRowHasData(r)) out.push({ lossAmount: r.lossAmount });
     }
   }
+  for (const d of ccVin?.damages ?? []) {
+    if (ccVinDamageRowHasData(d)) {
+      out.push({ lossAmount: ccVinAmountToEurDisplay(d.amount) || d.amount });
+    }
+  }
   return out;
+}
+
+function ccVinHasIncidentCheck(block: CcVinBlockState | null | undefined): boolean {
+  return ccVinAlertChecks(block).some((c) => CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS.has(c.label.trim()));
 }
 
 /**
@@ -441,9 +458,12 @@ function collectIncidentRows(
 export function computeIncidentBannerSeverity(
   ltab: ClientManualLtabBlockPdf | null | undefined,
   vendors: ClientManualVendorBlockPdf[] | undefined,
+  ccVin?: CcVinBlockState | null,
 ): ProvinAlertSeverity | null {
-  const rows = collectIncidentRows(ltab, vendors);
-  if (rows.length === 0) return null;
+  const rows = collectIncidentRows(ltab, vendors, ccVin);
+  if (rows.length === 0) {
+    return ccVinHasIncidentCheck(ccVin) ? "yellow" : null;
+  }
   const agg = aggregateLossAmountFlags(rows.map((r) => r.lossAmount));
   if (agg === "red") return "red";
   if (agg === "yellow") return "yellow";
@@ -453,8 +473,9 @@ export function computeIncidentBannerSeverity(
 export function shouldShowIncidentBanner(
   ltab: ClientManualLtabBlockPdf | null | undefined,
   vendors: ClientManualVendorBlockPdf[] | undefined,
+  ccVin?: CcVinBlockState | null,
 ): boolean {
-  return collectIncidentRows(ltab, vendors).length > 0;
+  return collectIncidentRows(ltab, vendors, ccVin).length > 0 || ccVinHasIncidentCheck(ccVin);
 }
 
 export function computeProvinAlertBanners(args: {
@@ -482,7 +503,11 @@ export function computeProvinAlertBanners(args: {
     });
   }
 
-  const incSev = computeIncidentBannerSeverity(args.manualLtabBlock, args.manualVendorBlocks);
+  const incSev = computeIncidentBannerSeverity(
+    args.manualLtabBlock,
+    args.manualVendorBlocks,
+    args.ccVinBlock,
+  );
   if (incSev !== null) {
     out.push({ kind: "incidents", text: PROVIN_ALERT_TEXT.incidents, severity: incSev });
   }
@@ -514,6 +539,7 @@ export function computeCcVinAlertBanners(block: CcVinBlockState | null | undefin
   const seen = new Set<string>();
   const out: ProvinAlertBanner[] = [];
   for (const check of ccVinAlertChecks(block)) {
+    if (CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS.has(check.label.trim())) continue;
     const kind = ccVinBannerKindFromLabel(check.label);
     if (seen.has(kind)) continue;
     seen.add(kind);

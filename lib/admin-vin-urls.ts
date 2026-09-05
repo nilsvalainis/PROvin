@@ -41,16 +41,6 @@ export const VIN_AUTOFILL_SERVICES: readonly VinAutofillService[] = [
   { key: "carinfo", shortLabel: "INFO", title: "car.info", handoffVin: true },
 ] as const;
 
-/** Pasūtījumu saraksts: operatīvās avotu pogas pie VIN. */
-export const ADMIN_ORDER_LIST_VIN_SOURCES: readonly {
-  key: Extract<VinAutofillServiceKey, "autodna" | "carvertical" | "checkthisreg">;
-  label: string;
-}[] = [
-  { key: "autodna", label: "AutoDNA" },
-  { key: "carvertical", label: "CarVertical" },
-  { key: "checkthisreg", label: "DEALER" },
-];
-
 /** Klikšķis uz šiem elementiem neatver pasūtījumu (pogu / saišu zona). */
 export const ADMIN_ORDER_ROW_NAV_IGNORE_SELECTOR =
   "a,button,input,textarea,select,label,[data-admin-row-nav-ignore]";

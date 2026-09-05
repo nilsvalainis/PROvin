@@ -420,8 +420,8 @@ const WIZARD_NAV_FIELD =
   "inline-flex h-8 min-w-0 flex-1 basis-0 items-center justify-center gap-1 overflow-hidden rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5";
 const WIZARD_NAV_ROW = "flex w-full min-w-0 items-stretch gap-1.5";
 
-const WIZARD_STEP_COUNT = 12;
-const WIZARD_SUMMARY_STEP = 12;
+const WIZARD_STEP_COUNT = 11;
+const WIZARD_SUMMARY_STEP = 10;
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
   const vin = (p.vin ?? "").trim();
@@ -2849,10 +2849,9 @@ export function OrderDetailWorkspace({
     const vendors = worstTrafficLevel(traffic.autodna, traffic.carvertical);
     return [
       dash,
-      traffic.csdd,
+      worstTrafficLevel(traffic.csdd, traffic.ltab),
       vendors,
       traffic.auto_records,
-      traffic.ltab,
       traffic.citi_avoti,
       traffic.cc_vin,
       traffic.tjekbil,
@@ -2867,10 +2866,9 @@ export function OrderDetailWorkspace({
     () =>
       [
         { label: "INFO", title: "Pārskats" },
-        { label: "CSDD", title: "CSDD" },
+        { label: "CSDD / LTAB", title: "CSDD un LTAB" },
         { label: "DNA / CV", title: "Datu servisi" },
         { label: "DEALER", title: "Dīleris" },
-        { label: "LTAB", title: "LTAB" },
         { label: "CITI", title: "Citi avoti" },
         { label: "AUCTION", title: "Starptautiskā vēsture" },
         { label: "DK", title: "Tjekbil" },
@@ -4186,8 +4184,8 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 1 ? (
-          <div className="space-y-2">
-            <div id="admin-order-block-csdd" className="w-full min-w-0">
+          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+            <div id="admin-order-block-csdd" className="flex min-h-0 min-w-0 flex-col">
               <AdminCsddSourceBlock
                 value={blocksDisplaySafe.csdd}
                 readOnly={false}
@@ -4202,6 +4200,24 @@ export function OrderDetailWorkspace({
                 photosPersistenceEnabled={orderDraftPersistenceEnabled}
                 onPhotoGroupsStructuralCommit={(next) =>
                   void commitGenericSourcePhotoGroups("csdd", next)
+                }
+              />
+            </div>
+            <div id="admin-order-block-ltab" className="flex min-h-0 min-w-0 flex-col">
+              <AdminLtabSourceBlock
+                value={blocksDisplaySafe.ltab}
+                readOnly={false}
+                onChange={(next) => updateSourceBlock("ltab", next)}
+                trafficFillLevel={traffic.ltab}
+                sessionId={payload.sessionId}
+                pdfInclude={pdfVisibility.ltab}
+                onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
+                aiComment={aiCommentSlot("ltab")}
+                getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+                applyPatchedBlocks={applyCopilotPatchedBlocks}
+                photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                onPhotoGroupsStructuralCommit={(next) =>
+                  void commitGenericSourcePhotoGroups("ltab", next)
                 }
               />
             </div>
@@ -4274,27 +4290,6 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 4 ? (
-          <div id="admin-order-block-ltab" className="min-w-0">
-            <AdminLtabSourceBlock
-              value={blocksDisplaySafe.ltab}
-              readOnly={false}
-              onChange={(next) => updateSourceBlock("ltab", next)}
-              trafficFillLevel={traffic.ltab}
-              sessionId={payload.sessionId}
-              pdfInclude={pdfVisibility.ltab}
-              onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
-              aiComment={aiCommentSlot("ltab")}
-              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
-              applyPatchedBlocks={applyCopilotPatchedBlocks}
-              photosPersistenceEnabled={orderDraftPersistenceEnabled}
-              onPhotoGroupsStructuralCommit={(next) =>
-                void commitGenericSourcePhotoGroups("ltab", next)
-              }
-            />
-          </div>
-        ) : null}
-
-        {wizardStep === 5 ? (
           <div id="admin-order-block-citi-avoti" className="min-w-0">
             <AdminCitiAvotiSourceBlock
               value={blocksDisplaySafe.citi_avoti}
@@ -4313,7 +4308,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {wizardStep === 5 ? (
           <div id="admin-order-block-cc-vin" className="min-w-0">
             <AdminCcVinSourceBlock
               value={blocksDisplaySafe.cc_vin}
@@ -4332,7 +4327,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {wizardStep === 6 ? (
           <div id="admin-order-block-tjekbil" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
@@ -4353,7 +4348,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 8 ? (
+        {wizardStep === 7 ? (
           <div id="admin-order-block-estonia" className="min-w-0">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
@@ -4382,7 +4377,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 9 ? (
+        {wizardStep === 8 ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -4403,7 +4398,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 10 ? (
+        {wizardStep === 9 ? (
           <section id="admin-order-section-sludinajums" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
@@ -4463,7 +4458,7 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 11 ? (
+        {wizardStep === 10 ? (
           <section id="admin-order-section-kopsavilkums" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">

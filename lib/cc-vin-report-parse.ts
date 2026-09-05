@@ -17,6 +17,7 @@ import type {
   CcVinTitleRow,
 } from "@/lib/cc-vin-report";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
 
 export type CcVinParsedReport = {
   vin: string;
@@ -309,13 +310,27 @@ function formatKmDisplay(raw: string): string {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-function moneyDisplay(raw: string): string {
+/**
+ * Summu attēlojums CC.VIN tabulās — nav-EUR valūtas automātiski pārrēķina uz EUR
+ * (tāpat kā AutoDNA/CarVertical), lai avota valūta nekad neparādās klientam neizmainīta.
+ * Pārrēķina audita ieraksts (ja `notes` padots) nonāk operatora paziņojumos pēc PDF augšupielādes.
+ */
+function moneyDisplay(raw: string, notes?: string[]): string {
   const m = raw.trim().match(/^([\d.,\s]+)\s*(USD|EUR|GBP)$/i);
   if (!m) return raw.trim();
   const digits = m[1]!.replace(/[.,\s]/g, "");
   if (!digits) return raw.trim();
   const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return `${grouped} ${m[2]!.toUpperCase()}`;
+  const currency = m[2]!.toUpperCase();
+  const display = `${grouped} ${currency}`;
+  if (currency === "EUR") return display;
+  const conversion = convertAmountTextToEur(display);
+  if (!conversion) return display;
+  if (notes) {
+    const note = describeEurConversion(display, conversion);
+    if (note) notes.push(note);
+  }
+  return conversion.display;
 }
 
 function squish(raw: string): string {
@@ -563,7 +578,7 @@ function parseAccidentRecords(lines: string[], out: CcVinParsedReport): void {
         /total\s+repair(?:\s*\([^)]*\))?\s*cost\s*:?\s*([\d.,\s]+)\s*(USD|EUR|GBP)/i,
       );
       if (cost) {
-        amount = moneyDisplay(`${cost[1]!.trim()} ${cost[2]!.toUpperCase()}`);
+        amount = moneyDisplay(`${cost[1]!.trim()} ${cost[2]!.toUpperCase()}`, out.notes);
       }
     }
 
@@ -687,7 +702,7 @@ function parseSales(lines: string[], out: CcVinParsedReport): void {
 
       const money = line.match(SALE_MONEY_RE);
       if (money && !price) {
-        price = moneyDisplay(line);
+        price = moneyDisplay(line, out.notes);
         continue;
       }
 
@@ -741,7 +756,7 @@ function parseSales(lines: string[], out: CcVinParsedReport): void {
       date: lvDate(dateLine),
       venue,
       odometer: "",
-      price: moneyDisplay(price),
+      price: moneyDisplay(price, out.notes),
       status: "Nav pārdots",
     });
   }

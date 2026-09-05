@@ -8,7 +8,9 @@
 
 import {
   CC_VIN_SUBTITLES,
+  CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
   ccVinAlertChecks,
+  ccVinAmountToEurDisplay,
   ccVinDamageRowHasData,
   ccVinRecordRowHasData,
   ccVinSaleRowHasData,
@@ -58,7 +60,7 @@ function kmDisplay(raw: string): string {
 
 /** Brīdinājumi — tikai reģistri ar atzīmi; „tīrie” netiek uzskaitīti. */
 function alertList(b: CcVinBlockState): string {
-  const alerts = ccVinAlertChecks(b);
+  const alerts = ccVinAlertChecks(b).filter((c) => !CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS.has(c.label.trim()));
   if (alerts.length === 0) return "";
   const items = alerts
     .map(
@@ -105,13 +107,15 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): s
     if (facts) parts.push(facts);
   }
 
-  const damages = (b.damages ?? []).filter(ccVinDamageRowHasData);
+  // Bojājumi ar summu jau parādās vienotajā „NEGADĪJUMU VĒSTURE” tabulā (unified-incidents.ts) —
+  // šeit paliek tikai tie, kam nav summas, lai tas pats ieraksts nedublējas divās PDF vietās.
+  const damages = (b.damages ?? []).filter((r) => ccVinDamageRowHasData(r) && !r.amount.trim());
   if (damages.length > 0) {
     parts.push(subhead(CC_VIN_SUBTITLES.damages));
     parts.push(
       logTable(
-        ["Datums", "Bojājums", "Summa", "Vieta"],
-        damages.map((r) => [r.date, r.description, r.amount, r.region]),
+        ["Datums", "Bojājums", "Vieta"],
+        damages.map((r) => [r.date, r.description, r.region]),
       ),
     );
   }
@@ -145,7 +149,7 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): s
     parts.push(
       logTable(
         ["Datums", "Vieta", "Odometrs, km", "Cena", "Statuss"],
-        sales.map((r) => [r.date, r.venue, kmDisplay(r.odometer), r.price, r.status]),
+        sales.map((r) => [r.date, r.venue, kmDisplay(r.odometer), ccVinAmountToEurDisplay(r.price) || r.price, r.status]),
       ),
     );
   }

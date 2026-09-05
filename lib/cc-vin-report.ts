@@ -10,6 +10,7 @@ import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import type { CcVinPhotoGroup, CcVinPhotoMeta } from "@/lib/cc-vin-photo-types";
 import { normalizeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
+import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
 
 /** Admin bloka nosaukums (tikai admin panelis). */
 export const CC_VIN_ADMIN_LABEL = "CC.VIN";
@@ -19,6 +20,9 @@ export const CC_VIN_PDF_TITLE = "IZSOĻU PORTĀLU ARHĪVS";
 
 /** Nobraukuma / negadījumu tabulu avota apzīmējums (leģenda PDF). */
 export const CC_VIN_PDF_SOURCE_LABEL = "IZSOĻU PORTĀLU ARHĪVS";
+
+/** Šie reģistri jau nonāk vienotajā negadījumu tabulā / banerī. */
+export const CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS = new Set(["Fiksētie bojājumi", "Negadījumi"]);
 
 export const CC_VIN_SUBTITLES = {
   checks: "Pārbaudītie reģistri",
@@ -168,6 +172,17 @@ export function ccVinSaleRowHasData(r: CcVinSaleRow | null | undefined): boolean
   return Boolean(
     r && (r.date.trim() || r.venue.trim() || r.odometer.trim() || r.price.trim() || r.status.trim()),
   );
+}
+
+/**
+ * Jau saglabāta CC.VIN summa → EUR attēlojums. Ja valūta jau ir eiro vai nav atpazīstama,
+ * atstāj tekstu kā ir. Vecākiem blokiem, kas vēl glabā „3 989 USD”, pārrēķins notiek šeit.
+ */
+export function ccVinAmountToEurDisplay(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  const conversion = convertAmountTextToEur(t);
+  return conversion?.display ?? t;
 }
 
 /** Cik faktu ierakstu ir blokā (PDF sadaļas galvenes plāksnītei). */

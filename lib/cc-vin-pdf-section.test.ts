@@ -92,6 +92,21 @@ describe("starptautiskās vēstures PDF sadaļa", () => {
     expect(rows[0]!.sourceLabel).toBe(CC_VIN_PDF_SOURCE_LABEL);
   });
 
+  it("bojājumu ar summu nedrukā atsevišķi starptautiskās vēstures sadaļā", () => {
+    const b = blockFromReport();
+    b.damages = [{ date: "11.08.2020", region: "ASV", amount: "4 200 €", description: "Priekšpuses bojājums" }];
+    const html = buildCcVinPdfInnerHtml(b);
+    expect(html).not.toContain("4 200");
+    expect(html).not.toContain("Fiksētie bojājumi");
+  });
+
+  it("USD summu vienotajā tabulā rāda eiro", () => {
+    const b = blockFromReport();
+    b.damages = [{ date: "01.06.2016", region: "Vācija", amount: "1 360 USD", description: "Negadījums" }];
+    const rows = collectUnifiedIncidentRows({ ccVinBlock: b });
+    expect(rows[0]!.lossAmount).toBe("1 250 €");
+  });
+
   it("atkārtota PDF ielāde aizstāj izsoļu stub rindu, kurai bija tikai cena", () => {
     const prev = emptyCcVinBlock();
     prev.sales = [{ date: "", venue: "", odometer: "", price: "7 662 EUR", status: "Pārdots" }];
@@ -110,7 +125,7 @@ describe("starptautiskās vēstures PDF sadaļa", () => {
         date: "10.06.2026",
         venue: "AUTOBID",
         odometer: "304 900",
-        price: "3 989 USD",
+        price: "3 660 €",
         status: "Pārdots",
       },
     ]);
