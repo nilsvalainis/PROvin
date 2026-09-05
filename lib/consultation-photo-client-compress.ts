@@ -1,7 +1,27 @@
 /**
  * Klienta JPEG kompresija pirms augšupielādes (taupa servera vietu).
  * HEIC/EXIF: atkarīgs no `createImageBitmap` — Safari/iOS parasti atvērs; citādi `decode_failed`.
+ * CheckCar.vin ūdenszīmi aizklāj pirms kompresijas, lai priekšskatījums jau būtu tīrs.
  */
+
+import { coverCheckcarVinWatermarkRgb } from "@/lib/checkcar-watermark-mask";
+
+function coverCheckcarVinWatermarkInCanvas(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+  let imageData: ImageData;
+  try {
+    imageData = ctx.getImageData(0, 0, w, h);
+  } catch {
+    return;
+  }
+  const hit = coverCheckcarVinWatermarkRgb({
+    data: imageData.data,
+    width: w,
+    height: h,
+    channels: 4,
+  });
+  if (!hit) return;
+  ctx.putImageData(imageData, 0, 0);
+}
 
 const TARGET_MAX_BYTES = 190_000;
 const MAX_DIMENSION = 1680;
@@ -70,6 +90,7 @@ export async function compressImageFileToJpegForConsultation(file: File): Promis
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("no_context");
     ctx.drawImage(bm, 0, 0, tw, th);
+    coverCheckcarVinWatermarkInCanvas(ctx, tw, th);
     bm.close();
 
     const blob = await blobUnderMaxBytes(canvas, TARGET_MAX_BYTES);
