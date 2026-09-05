@@ -415,9 +415,10 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
 };
 
 const WIZARD_NAV_BTN =
-  "inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg border px-2.5 text-[10px] font-semibold uppercase tracking-wide transition";
+  "inline-flex h-8 min-w-0 flex-1 basis-0 items-center justify-center gap-1 overflow-hidden rounded-lg border px-1.5 text-[10px] font-semibold uppercase tracking-wide transition";
 const WIZARD_NAV_FIELD =
-  "inline-flex h-8 min-w-0 shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2";
+  "inline-flex h-8 min-w-0 flex-1 basis-0 items-center justify-center gap-1 overflow-hidden rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5";
+const WIZARD_NAV_ROW = "flex w-full min-w-0 items-stretch gap-1.5";
 
 const WIZARD_STEP_COUNT = 12;
 const WIZARD_SUMMARY_STEP = 12;
@@ -3986,8 +3987,33 @@ export function OrderDetailWorkspace({
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
-        <div className={`mx-auto flex w-full min-w-0 items-start gap-1.5 ${ADMIN_CONTENT_MAX}`}>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        <div className={`mx-auto flex w-full min-w-0 flex-col gap-1.5 ${ADMIN_CONTENT_MAX}`}>
+          <div className={WIZARD_NAV_ROW}>
+            {wizardStepsUi.map(({ label, title }, idx) => {
+              const lvl = wizardStepLevels[idx] ?? "empty";
+              const active = wizardStep === idx;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  title={title}
+                  onClick={() => goWizardStep(idx)}
+                  className={`${WIZARD_NAV_BTN} ${
+                    active
+                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35 text-[var(--color-apple-text)]"
+                      : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${WIZARD_STEP_DOT[lvl]}`}
+                    title={`Aizpildījums: ${lvl}`}
+                  />
+                  <span className="min-w-0 truncate">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className={WIZARD_NAV_ROW}>
             <button
               type="button"
               disabled={!workspaceHydrated || workspaceSaveBusy}
@@ -4046,39 +4072,13 @@ export function OrderDetailWorkspace({
                 setCopilotOpen(true);
               }}
             />
-            <AdminAiSessionCostBar />
-            {wizardStepsUi.map(({ label, title }, idx) => {
-              const lvl = wizardStepLevels[idx] ?? "empty";
-              const active = wizardStep === idx;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  title={title}
-                  onClick={() => goWizardStep(idx)}
-                  className={`${WIZARD_NAV_BTN} ${
-                    active
-                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35 text-[var(--color-apple-text)]"
-                      : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${WIZARD_STEP_DOT[lvl]}`}
-                    title={`Aizpildījums: ${lvl}`}
-                  />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-1.5">
             <div
               className={`${WIZARD_NAV_FIELD} font-mono text-[10px] font-medium ${
                 vinBar ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
               }`}
               title="VIN"
             >
-              <span className="max-w-[11rem] truncate sm:max-w-[15rem]">{vinBar || "VIN"}</span>
+              <span className="min-w-0 truncate">{vinBar || "VIN"}</span>
               {vinBar ? (
                 <AdminVinCopyButton
                   value={vinBar}
@@ -4100,10 +4100,10 @@ export function OrderDetailWorkspace({
               }`}
               title="Reģistrācijas numurs no CSDD"
             >
-              <span className="shrink-0 text-[9px] font-semibold text-[var(--color-provin-muted)]">
-                Reģistrācijas numurs:
+              <span className="min-w-0 truncate">
+                <span className="font-semibold text-[var(--color-provin-muted)]">Reģistrācijas numurs: </span>
+                <span className="font-mono">{plateBar || "-"}</span>
               </span>
-              <span className="font-mono">{plateBar || "-"}</span>
               <AdminClipboardButton
                 value={plateBar}
                 titleReady="Kopēt reģistrācijas numuru"
@@ -4135,7 +4135,7 @@ export function OrderDetailWorkspace({
               <button
                 type="button"
                 onClick={handleWhatsAppSend}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-400/80 bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-1"
+                className={`${WIZARD_NAV_BTN} border-emerald-400/80 bg-emerald-500 text-white hover:bg-emerald-600`}
                 title={`WhatsApp: ${payload.customerPhone ?? ""}`}
                 aria-label="Ģenerēt PDF un atvērt WhatsApp ar ziņu klientam"
               >
@@ -4143,7 +4143,7 @@ export function OrderDetailWorkspace({
               </button>
             ) : (
               <span
-                className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-60"
+                className={`${WIZARD_NAV_BTN} cursor-not-allowed border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-60`}
                 title="Nav klienta tālruņa WhatsApp atvēršanai"
                 aria-hidden
               >
@@ -4151,6 +4151,7 @@ export function OrderDetailWorkspace({
               </span>
             )}
           </div>
+          <AdminAiSessionCostBar />
         </div>
         <div className={`mx-auto mt-2 px-1 ${ADMIN_CONTENT_MAX}`}>
           <div
