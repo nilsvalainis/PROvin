@@ -66,11 +66,8 @@ export function clientReportPrintInkCss(): string {
         color:#334155;
       }
       ${root} .provin-report-doc .pdf-life-rail{background:#94A3B8;}
-      ${root} .provin-report-doc .pdf-src-mileage-spark-grid{
-        stroke:#94A3B8;opacity:0.85;
-      }
       ${root} .provin-report-doc .pdf-src-mileage-spark-ghost{
-        stroke:#64748B;opacity:0.55;
+        stroke:#64748B;opacity:0.4;
       }
       ${root} .provin-report-doc .pdf-csdd-ta-warn--gray{color:#1e293b;}
   `;

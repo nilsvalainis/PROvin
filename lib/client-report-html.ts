@@ -254,7 +254,6 @@ function sourceMileageSparkHtml(
 
 /** Mājaslapas primārais zils — grafiks, akcenti (`PDF_BRAND_BLUE_HEX`). */
 const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE_HEX;
-const PDF_MILEAGE_CHART_GRID = "#e8eaed";
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 
 export type ClientReportPayload = {
@@ -2573,19 +2572,14 @@ ${sourceDotColorCss()}
         color:#374151!important;
       }
       .pdf-mileage-chart-wrap{
-        margin:0 0 10px;padding:8px 10px 4px;border-radius:8px;border:1px solid #f1f5f9;background:#fff;
-        box-shadow:0 1px 3px rgba(15,23,42,.04);
+        margin:0 0 8px;padding:0;border:0;background:transparent;box-shadow:none;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-svg{max-height:120px;}
-      .pdf-mileage-chart-svg{display:block;width:100%;max-width:480px;height:auto;margin:0 auto;}
-      .pdf-mileage-chart-grid{stroke:${PDF_MILEAGE_CHART_GRID};stroke-width:1;fill:none;}
+      .pdf-mileage-chart-wrap--compact .pdf-mileage-chart-svg{max-height:128px;}
+      .pdf-mileage-chart-svg{display:block;width:100%;max-width:none;height:auto;margin:0;}
+      .pdf-mileage-chart-fill{fill:url(#pdfMileageBlendFade);stroke:none;}
       .pdf-mileage-chart-path{
-        stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
-      }
-      .pdf-mileage-chart-year-band{
-        fill:rgba(239,68,68,0.12);stroke:none;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
       .pdf-mileage-chart-dot{
         fill:#fff;stroke:${PDF_MILEAGE_CHART_LINE};stroke-width:1.75;
@@ -2636,16 +2630,15 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-src-mileage-spark{
-        margin:0 0 10px;padding:2px 0 0;
+        margin:0 0 8px;padding:0;border:0;background:transparent;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-src-mileage-spark-svg{display:block;width:100%;max-width:480px;height:auto;margin:0 auto;}
-      .pdf-src-mileage-spark-grid{stroke:#e8eaed;stroke-width:1;fill:none;opacity:0.7;}
+      .pdf-src-mileage-spark-svg{display:block;width:100%;max-width:none;height:auto;margin:0;}
       .pdf-src-mileage-spark-ghost{
-        stroke:#94A3B8;stroke-width:1.8;opacity:0.38;fill:none;stroke-linecap:round;stroke-linejoin:round;
+        stroke:#94A3B8;stroke-width:1.6;opacity:0.28;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
       .pdf-src-mileage-spark-path{
-        stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
+        stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
       .pdf-src-mileage-spark-date{
         font-family:Inter,sans-serif;font-size:8px;font-weight:600;

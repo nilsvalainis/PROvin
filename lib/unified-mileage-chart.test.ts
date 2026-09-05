@@ -119,7 +119,9 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     const html = buildUnifiedMileageChartWrapHtml(rows, anomalyMap);
     expect(html).toContain("pdf-mileage-chart-wrap--has-anomaly");
     expect(html).toContain("pdf-mileage-chart-rollback");
-    expect(html).toContain("pdf-mileage-chart-year-band");
+    expect(html).toContain("pdf-mileage-chart-fill");
+    expect(html).not.toContain("pdf-mileage-chart-grid");
+    expect(html).not.toContain("pdf-mileage-chart-year-band");
     expect(html).toContain("pdf-mileage-chart-legend-rollback");
     expect(html).toContain("Odometra anomālija");
     expect(html).not.toContain("pdf-mileage-chart-anomaly-halo");
@@ -237,6 +239,8 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     }));
     const html = buildUnifiedMileageChartWrapHtml(rows, new Map());
     expect(html).toContain(" C ");
+    expect(html).toContain("pdf-mileage-chart-fill");
+    expect(html).not.toContain("pdf-mileage-chart-grid");
     expect(html).not.toContain("pdf-mileage-chart-year-band");
   });
 });
@@ -294,8 +298,10 @@ describe("buildSourceMileageSparkHtml", () => {
     expect(html).toContain("pdf-src-mileage-spark");
     expect(html).toContain('data-src-spark="autodna"');
     expect(html).toContain("pdf-src-mileage-spark-ghost");
+    expect(html).toContain("pdf-src-mileage-spark-fill");
     expect(html).toContain('class="pdf-src-mileage-spark-path"');
     expect(html).toContain('stroke="#1E3A8A"');
+    expect(html).not.toContain("pdf-src-mileage-spark-grid");
     expect(html).not.toContain("pdf-mileage-chart-rollback");
     expect(html).not.toContain("Nobraukums");
   });

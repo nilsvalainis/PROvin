@@ -1,6 +1,6 @@
 /**
- * PDF / UI — nobraukuma līknes SVG (plūdaina zila līnija pa reālajiem km).
- * Odometra kritums: taisns sarkans posms + gada josla (ne halo/punkts).
+ * PDF / UI — nobraukuma līknes SVG (01: laukums izplūst, bez rāmja / ass / režģa).
+ * Odometra kritums: taisns sarkans posms (ne halo/punkts).
  * Teoretiskā korekcija (`reconstructTheoreticalMileagePath`) paliek vidējā gada nobraukumam, ne grafikam.
  */
 
@@ -234,6 +234,13 @@ function escChartText(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 }
 
+function areaUnderPath(d: string, pts: ChartXY[], bottomY: number): string {
+  if (!d || pts.length < 2) return "";
+  const first = pts[0]!;
+  const last = pts[pts.length - 1]!;
+  return `${d} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`;
+}
+
 /**
  * @param anomalyBySourceOrder — no `analyzeUnifiedMileageAnomalies` / `computeOdometerAnomalyBySourceOrder`
  */
@@ -296,33 +303,10 @@ export function buildUnifiedMileageChartWrapHtml(
   }
   const placed = pickNonOverlappingYearTicks(candidates, compact ? 30 : YEAR_LABEL_MIN_GAP_PX);
 
-  const gridLines: string[] = [];
   const yearLabels: string[] = [];
   for (const { year: y, x: gx } of placed) {
-    gridLines.push(
-      `<line class="pdf-mileage-chart-grid" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" />`,
-    );
     yearLabels.push(
       `<text class="pdf-mileage-chart-year" x="${gx.toFixed(1)}" y="${H - 6}" text-anchor="middle">${y}</text>`,
-    );
-  }
-
-  const yearBands: string[] = [];
-  const anomalyYears = new Set<number>();
-  for (let i = 0; i < plotPoints.length; i++) {
-    if (plotPoints[i]!.isAnomaly) anomalyYears.add(series[i]!.year);
-  }
-  for (const year of [...anomalyYears].sort((a, b) => a - b)) {
-    const y0 = Date.UTC(year, 0, 1);
-    const y1 = Date.UTC(year + 1, 0, 1);
-    const from = Math.max(tMin, y0);
-    const to = Math.min(tMax, y1);
-    if (to < from) continue;
-    const x1 = xOf(from);
-    const x2 = xOf(to);
-    const w = Math.max(x2 - x1, compact ? 8 : 10);
-    yearBands.push(
-      `<rect class="pdf-mileage-chart-year-band" x="${x1.toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${plotH}" />`,
     );
   }
 
@@ -338,10 +322,19 @@ export function buildUnifiedMileageChartWrapHtml(
     }
   }
 
-  const pathHtml = splitMileageChartRuns(plotPoints)
+  const runs = splitMileageChartRuns(plotPoints);
+  const pathHtml = runs
     .map((run) => monotoneCubicSvgPath(run))
     .filter((d) => d.length > 0)
     .map((d) => `<path class="pdf-mileage-chart-path" fill="none" d="${d}" />`)
+    .join("\n  ");
+  const fillHtml = runs
+    .map((run) => {
+      const d = monotoneCubicSvgPath(run);
+      const area = areaUnderPath(d, run, H);
+      return area ? `<path class="pdf-mileage-chart-fill" d="${area}" />` : "";
+    })
+    .filter(Boolean)
     .join("\n  ");
 
   const loneDot =
@@ -355,8 +348,13 @@ export function buildUnifiedMileageChartWrapHtml(
 
   const svgInner = `
 <svg class="pdf-mileage-chart-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nobraukuma līkne pēc gada">
-  ${yearBands.join("\n  ")}
-  ${gridLines.join("\n  ")}
+  <defs>
+    <linearGradient id="pdfMileageBlendFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${PDF_MILEAGE_CHART_LINE}" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="${PDF_MILEAGE_CHART_LINE}" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  ${fillHtml}
   ${pathHtml}
   ${rollbackOverlays.join("\n  ")}
   ${loneDot}
@@ -374,7 +372,7 @@ export function buildUnifiedMileageChartWrapHtml(
 }
 
 /**
- * Avota sadaļas mazā līkne — tā pati laika/km ass kā galvenajai NOBRAUKUMA VĒSTUREI.
+ * Avota sadaļas līkne (01): laukums izplūst, bez rāmja / ass / režģa.
  * Fonā blāva kopējā līkne; priekšplānā šī avota krāsa; malās šī avota sākuma/beigu datums.
  */
 export function buildSourceMileageSparkHtml(
@@ -395,7 +393,7 @@ export function buildSourceMileageSparkHtml(
   const color = MILEAGE_PDF_SOURCE_COLOR[sourceKey];
 
   const W = 480;
-  const H = 86;
+  const H = 96;
   const padL = 10;
   const padR = 10;
   const padT = 8;
@@ -412,26 +410,13 @@ export function buildSourceMileageSparkHtml(
   const minePts = mine.map((s) => ({ x: xOf(s.time), y: yOf(s.km) }));
   const ghostD = monotoneCubicSvgPath(allPts);
   const mineD = monotoneCubicSvgPath(minePts);
-
-  const yStart = series[0]!.year;
-  const yEnd = series[series.length - 1]!.year;
-  const yearSpan = Math.max(0, yEnd - yStart);
-  const yearStep = yearSpan <= 10 ? 2 : 3;
-  const tickSet = new Set<number>();
-  for (let y = yStart; y <= yEnd; y += yearStep) tickSet.add(y);
-  tickSet.add(yEnd);
-  const gridLines: string[] = [];
-  for (const y of [...tickSet].sort((a, b) => a - b)) {
-    const gx = yearLabelXInRange(y, tMin, tMax, xOf, padL, plotW);
-    if (gx == null) continue;
-    gridLines.push(
-      `<line class="pdf-src-mileage-spark-grid" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" />`,
-    );
-  }
+  const fadeId = `pdfSrcSparkFade-${sourceKey}`;
+  const fillD = areaUnderPath(mineD, minePts, H);
 
   const ghostPath = ghostD
     ? `<path class="pdf-src-mileage-spark-ghost" fill="none" d="${ghostD}" />`
     : "";
+  const fillPath = fillD ? `<path class="pdf-src-mileage-spark-fill" d="${fillD}" fill="url(#${fadeId})" />` : "";
   const sourcePath =
     minePts.length === 1
       ? `<circle class="pdf-src-mileage-spark-dot" cx="${minePts[0]!.x.toFixed(1)}" cy="${minePts[0]!.y.toFixed(1)}" r="3.5" fill="${color}" />`
@@ -444,8 +429,14 @@ export function buildSourceMileageSparkHtml(
 
   return `<div class="pdf-src-mileage-spark" data-src-spark="${sourceKey}">
 <svg class="pdf-src-mileage-spark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nobraukuma līkne: ${escChartText(sourceKey)}">
-  ${gridLines.join("\n  ")}
+  <defs>
+    <linearGradient id="${fadeId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${color}" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
   ${ghostPath}
+  ${fillPath}
   ${sourcePath}
   <text class="pdf-src-mileage-spark-date" x="${padL}" y="${H - 4}" text-anchor="start" fill="${dateFill}">${start}</text>
   <text class="pdf-src-mileage-spark-date" x="${W - padR}" y="${H - 4}" text-anchor="end" fill="${dateFill}">${end}</text>
