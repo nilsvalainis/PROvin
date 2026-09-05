@@ -109,6 +109,32 @@ describe("checkcar watermark cover", () => {
     expect(second.covered).toBe(false);
   });
 
+  it("aizklāj CHECKCAR.VIN arī virs sarkanās aizmugures luktura joslas", async () => {
+    const letters = [
+      ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
+        (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#e8e8e8"/>`,
+      ),
+      `<rect x="380" y="168" width="28" height="36" fill="#c81e24"/>`,
+      `<rect x="416" y="168" width="10" height="36" fill="#c81e24"/>`,
+      `<rect x="434" y="168" width="28" height="36" fill="#c81e24"/>`,
+    ].join("");
+    const jpeg = await jpegFromSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="#cfcfd1"/><rect x="40" y="228" width="560" height="22" fill="#c4282d"/>${letters}</svg>`,
+    );
+
+    const result = await coverCheckcarVinWatermark(jpeg);
+    expect(result.covered).toBe(true);
+  });
+
+  it("tikai sarkanu luktura joslu bez CHECKCAR.VIN neatklāj", async () => {
+    const jpeg = await jpegFromSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="#cfcfd1"/><rect x="40" y="228" width="560" height="22" fill="#c4282d"/></svg>`,
+    );
+
+    const result = await coverCheckcarVinWatermark(jpeg);
+    expect(result.covered).toBe(false);
+  });
+
   it("sarkanu taisnstūri neuzskata par VIN burtiem", async () => {
     const bar = await sharp({
       create: { width: 200, height: 40, channels: 3, background: "#c4282d" },
