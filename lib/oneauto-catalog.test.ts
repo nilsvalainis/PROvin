@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ONEAUTO_DEFAULT_PRODUCT_IDS,
   buildOneautoDisplay,
   formatOneautoCostEur,
   oneautoPayloadIsPending,
@@ -26,6 +27,7 @@ describe("OneAuto katalogs", () => {
     expect(parseOneautoProductIds(["oe_service_schedule", "oe_service_history"])).toEqual([
       "oe_service_history",
     ]);
+    expect(ONEAUTO_DEFAULT_PRODUCT_IDS).toEqual(["oe_service_history"]);
   });
 
   it("izvelk servisa laika skalu un komplektāciju no OneAuto JSON", () => {

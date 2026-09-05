@@ -1,4 +1,5 @@
 import {
+  ONEAUTO_DEFAULT_PRODUCT_IDS,
   ONEAUTO_PRODUCT_IDS,
   ONEAUTO_SOURCE_TAG,
   buildOneautoDisplay,
@@ -50,7 +51,7 @@ export function emptyOneautoBlock(): OneautoBlockState {
     vinOverride: "",
     lastFetchedVin: "",
     fetchedAt: "",
-    selectedProducts: [...ONEAUTO_PRODUCT_IDS],
+    selectedProducts: [...ONEAUTO_DEFAULT_PRODUCT_IDS],
     lastCostEur: "",
     results: {},
     display: emptyOneautoDisplay(),

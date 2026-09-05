@@ -10,6 +10,9 @@ export const ONEAUTO_PRODUCT_IDS = [
 
 export type OneautoProductId = (typeof ONEAUTO_PRODUCT_IDS)[number];
 
+/** Jauns pasūtījums: ieķeksēts tikai servisa vēstures produkts. */
+export const ONEAUTO_DEFAULT_PRODUCT_IDS: readonly OneautoProductId[] = ["oe_service_history"];
+
 export type OneautoProduct = {
   id: OneautoProductId;
   label: string;

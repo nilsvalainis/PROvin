@@ -30,6 +30,10 @@ describe("OneAuto avota bloks", () => {
     expect(oneautoTrafficLevel(emptyOneautoBlock())).toBe("empty");
   });
 
+  it("pēc noklusējuma ieķeksē tikai OE Service History", () => {
+    expect(emptyOneautoBlock().selectedProducts).toEqual(["oe_service_history"]);
+  });
+
   it("merge saglabā oneauto laukus no darba zonas", () => {
     const merged = mergeSourceBlocksWithDefaults({
       oneauto: {
