@@ -11,8 +11,7 @@ import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
 import { LogoutButton } from "./LogoutButton";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
-import { AdminVinHandoffProvider, useAdminVinHandoff } from "./AdminVinHandoffContext";
-import { AdminVinSourcesMenuBar } from "./AdminVinSourcesMenuBar";
+import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
 
 /** Mobilajā admin augšējā joslā — tās pašas 3 strīpiņas kā publiskajā HeaderClient. */
 function AdminMobileMenuIcon({ lineClass }: { lineClass: string }) {
@@ -47,13 +46,6 @@ type Props = {
 };
 
 const MOBILE_NAV_TOP_REM = 3.5;
-
-function AdminProVinMenu({ force }: { force: boolean }) {
-  const ctx = useAdminVinHandoff();
-  const vin = ctx?.vin ?? "";
-  if (!force && !vin) return null;
-  return <AdminVinSourcesMenuBar vin={vin} />;
-}
 
 export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Props) {
   const pathname = usePathname() ?? "";
@@ -94,8 +86,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
   const asideMobileClasses = mobileNavOpen
     ? "max-md:fixed max-md:right-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(14rem,74vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-l max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
     : "max-md:hidden";
-
-  const isOrderDetail = /^\/admin\/orders\/[^/]+$/.test(pathname);
 
   return (
     <AdminVinHandoffProvider>
@@ -139,7 +129,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           </button>
         </div>
         </div>
-        {isProWorkspace ? <AdminProVinMenu force={isOrderDetail} /> : null}
       </header>
 
       {mobileNavOpen ? (

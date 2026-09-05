@@ -713,18 +713,8 @@ export function AdminOrderDetailView({
             href="/admin/dashboard"
             className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
           >
-            <span aria-hidden>←</span> Sākums
+            <span aria-hidden>←</span> Back
           </Link>
-          {order.paymentStatus === "paid" && order.amountTotal != null ? (
-            <a
-              href={`/api/admin/invoice/${encodeURIComponent(order.id)}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50"
-            >
-              Rēķins
-            </a>
-          ) : null}
         </div>
       </div>
 
@@ -749,11 +739,8 @@ export function AdminOrderDetailView({
       ) : null}
 
       <header className="mb-3 border-b border-[var(--admin-border-subtle)] pb-2">
-        <p className="text-[8px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+        <h1 className="text-[13px] font-semibold tracking-tight text-[var(--color-apple-text)]">
           Pasūtījums
-        </p>
-        <h1 className="mt-0.5 font-mono text-base font-medium tracking-tight text-[var(--color-apple-text)] sm:text-xl">
-          {mergedVin.trim() || "—"}
         </h1>
       </header>
 

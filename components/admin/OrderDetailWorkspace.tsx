@@ -143,21 +143,9 @@ import {
 } from "@/lib/admin-block-traffic-status";
 import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import {
-  CarFront,
   Check,
-  ClipboardList,
-  Globe,
-  Landmark,
-  LayoutDashboard,
-  Layers,
-  Link2,
-  ListChecks,
   Loader2,
-  MessageSquare,
-  Newspaper,
   FileText,
-  Scale,
-  Flag,
   RotateCcw,
   Send,
   ShieldAlert,
@@ -181,6 +169,7 @@ import {
   type AiSourceCommentTargetField,
   sourceBlockHasDataExcludingComments,
 } from "@/lib/admin-source-comment-blocks";
+import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
@@ -424,6 +413,11 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   partial: "bg-amber-400",
   complete: "bg-emerald-500",
 };
+
+const WIZARD_NAV_BTN =
+  "inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg border px-2.5 text-[10px] font-semibold uppercase tracking-wide transition";
+const WIZARD_NAV_FIELD =
+  "inline-flex h-8 min-w-0 shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2";
 
 const WIZARD_STEP_COUNT = 12;
 const WIZARD_SUMMARY_STEP = 12;
@@ -2871,18 +2865,18 @@ export function OrderDetailWorkspace({
   const wizardStepsUi = useMemo(
     () =>
       [
-        { label: "Pārskats", Icon: LayoutDashboard, row: 1 as const },
-        { label: "CSDD", Icon: ClipboardList, row: 1 as const },
-        { label: "Datu serv.", Icon: Layers, row: 1 as const },
-        { label: "Dīleris", Icon: CarFront, row: 1 as const },
-        { label: "LTAB", Icon: Scale, row: 1 as const },
-        { label: "Citi avoti", Icon: Link2, row: 1 as const },
-        { label: "Starptaut.", Icon: Globe, row: 2 as const },
-        { label: "Tjekbil", Icon: Landmark, row: 2 as const },
-        { label: "Igaunija", Icon: Flag, row: 2 as const },
-        { label: "car.info", Icon: Globe, row: 2 as const },
-        { label: "Sludinājums", Icon: Newspaper, row: 2 as const },
-        { label: "Kopsavilkums", Icon: ListChecks, row: 2 as const },
+        { label: "INFO", title: "Pārskats", row: 1 as const },
+        { label: "CSDD", title: "CSDD", row: 1 as const },
+        { label: "DNA / CV", title: "Datu servisi", row: 1 as const },
+        { label: "DEALER", title: "Dīleris", row: 1 as const },
+        { label: "LTAB", title: "LTAB", row: 1 as const },
+        { label: "CITI", title: "Citi avoti", row: 1 as const },
+        { label: "AUCTION", title: "Starptautiskā vēsture", row: 2 as const },
+        { label: "DK", title: "Tjekbil", row: 2 as const },
+        { label: "EST", title: "Igaunija", row: 2 as const },
+        { label: "SWE", title: "car.info", row: 2 as const },
+        { label: "SS.LV", title: "Sludinājuma analīze", row: 2 as const },
+        { label: "ABY", title: "Kopsavilkums", row: 2 as const },
       ] as const,
     [],
   );
@@ -3593,8 +3587,7 @@ export function OrderDetailWorkspace({
 
   const alertsSection = (
       <section id="admin-order-section-bridinajumi" className={`${workspaceSectionShell} mb-1.5`}>
-        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <h2 className={workspaceSectionTitle}>Brīdinājumi un informācija (PDF)</h2>
+        <div className="mb-1.5 flex flex-wrap items-center justify-end gap-2">
           <AdminPdfIncludeToggle
             checked={pdfVisibility.alerts}
             onChange={(next) => onPdfVisibilityChange({ alerts: next })}
@@ -3617,7 +3610,14 @@ export function OrderDetailWorkspace({
   const showAlertsPortal = Boolean(alertsPortalDomId && alertsPortalEl);
 
   const vinBar = (payload.vin ?? "").trim();
+  const plateBar = (blocksDisplaySafe.csdd.registrationNumber ?? "").trim();
+  const listingBar = (payload.listingUrl ?? "").trim();
   const whatsappPhoneDigits = normalizeWhatsAppPhoneDigits(payload.customerPhone);
+  const saveLooksSaved =
+    !workspaceSaveBusy &&
+    workspaceAutosaveStatus !== "saving" &&
+    workspaceAutosaveStatus !== "error" &&
+    (workspaceSaveFlash || workspaceAutosaveStatus === "saved");
 
   const generateAuditPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
     const pdf = await PDFDocument.create();
@@ -3986,144 +3986,181 @@ export function OrderDetailWorkspace({
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
-        <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center gap-2 ${ADMIN_CONTENT_MAX}`}>
-          <button
-            type="button"
-            className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-            title={`${ADMIN_INCIDENTS_SUMMARY_LABEL} — solis „Kopsavilkums”`}
-            aria-label={`Pāriet uz ${ADMIN_INCIDENTS_SUMMARY_LABEL} (kopsavilkuma solis)`}
-            onClick={() => goWizardStep(WIZARD_SUMMARY_STEP)}
-          >
-            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-          </button>
-          <button
-            type="button"
-            disabled={!workspaceHydrated || workspaceSaveBusy}
-            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-emerald-700/25 bg-emerald-50/90 px-2 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
-            title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) — lokāli un serverī"
-            onClick={() => {
-              setWorkspaceSaveBusy(true);
-              void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
-            }}
-          >
-            {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
-          </button>
-          {workspaceAutosaveStatus === "saving" ? (
-            <span className="text-[10px] font-medium text-[var(--color-provin-muted)]" role="status">
-              Saglabā…
-            </span>
-          ) : workspaceAutosaveStatus === "error" ? (
-            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800" role="status">
-              Kļūda saglabājot
-            </span>
-          ) : workspaceSaveFlash || workspaceAutosaveStatus === "saved" ? (
-            <span
-              className={`max-w-[11rem] text-[10px] font-semibold leading-tight ${
-                orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
-              }`}
-              role="status"
-            >
-              {!orderDraftPersistenceEnabled
-                ? "Saglabāts pārlūkā"
-                : workspaceSaveServerOk
-                  ? "Saglabāts"
-                  : "Saglabāts pārlūkā — servera melnraksts neizdevās"}
-            </span>
-          ) : null}
-          {payload.isDemo ? (
+        <div className={`mx-auto flex w-full min-w-0 flex-col gap-1.5 ${ADMIN_CONTENT_MAX}`}>
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <button
               type="button"
-              className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-50 px-1.5 text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100 dark:hover:bg-amber-950/60"
-              title="Dzēst visus demo datus un sākt no jauna"
-              aria-label="Dzēst visus demo datus"
-              onClick={() => resetDemoWorkspace()}
+              disabled={!workspaceHydrated || workspaceSaveBusy}
+              className={`${WIZARD_NAV_BTN} ${
+                workspaceAutosaveStatus === "error"
+                  ? "border-amber-400 bg-amber-50 text-amber-900"
+                  : saveLooksSaved
+                    ? "border-emerald-700 bg-emerald-600 text-white"
+                    : "border-emerald-700/25 bg-emerald-50/90 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+              } disabled:opacity-50`}
+              title={
+                workspaceAutosaveStatus === "error"
+                  ? "Kļūda saglabājot"
+                  : saveLooksSaved
+                    ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
+                      ? "Saglabāts pārlūkā"
+                      : "Saglabāts"
+                    : "Saglabāt avotu datus (papildus automātiskajam saglabājumam)"
+              }
+              aria-label={saveLooksSaved ? "Saglabāts" : "Saglabāt"}
+              onClick={() => {
+                setWorkspaceSaveBusy(true);
+                void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+              }}
             >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+              SAVE
             </button>
-          ) : null}
-          {payload.aiAllowed ? (
-            <AdminFlashMaxButton
-              disabled={!workspaceHydrated || prepareDraftBusy}
-              busy={flashMaxBusy}
-              phase={flashMaxPhase}
-              notice={flashMaxNotice}
-              error={flashMaxErr}
-              onRun={(selection) => void runFlashMax(selection)}
+            {payload.isDemo ? (
+              <button
+                type="button"
+                className={`${WIZARD_NAV_BTN} border-amber-300/80 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100`}
+                title="Dzēst visus demo datus un sākt no jauna"
+                aria-label="Dzēst visus demo datus"
+                onClick={() => resetDemoWorkspace()}
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            ) : null}
+            {payload.aiAllowed ? (
+              <AdminFlashMaxButton
+                disabled={!workspaceHydrated || prepareDraftBusy}
+                busy={flashMaxBusy}
+                phase={flashMaxPhase}
+                notice={flashMaxNotice}
+                error={flashMaxErr}
+                onRun={(selection) => void runFlashMax(selection)}
+              />
+            ) : null}
+            <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
+            <AdminOrderCopilotTrigger
+              open={copilotOpen}
+              busy={copilotBusy}
+              disabled={!payload.aiAllowed}
+              onOpen={() => {
+                setPhrasesOpen(false);
+                setCopilotOpen(true);
+              }}
             />
-          ) : null}
-          <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
-          <AdminOrderCopilotTrigger
-            open={copilotOpen}
-            busy={copilotBusy}
-            disabled={!payload.aiAllowed}
-            onOpen={() => {
-              setPhrasesOpen(false);
-              setCopilotOpen(true);
-            }}
-          />
-          <AdminAiSessionCostBar />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            {([1, 2] as const).map((row) => {
-              const cols = row === 1 ? "grid-cols-7" : "grid-cols-6";
+            <AdminAiSessionCostBar />
+            {wizardStepsUi.map(({ label, title }, idx) => {
+              if (wizardStepsUi[idx]!.row !== 1) return null;
+              const lvl = wizardStepLevels[idx] ?? "empty";
+              const active = wizardStep === idx;
               return (
-                <div key={row} className={`grid min-w-0 ${cols} gap-1`}>
-                  {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
-                    if (stepRow !== row) return null;
-                    const lvl = wizardStepLevels[idx] ?? "empty";
-                    const active = wizardStep === idx;
-                    return (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => goWizardStep(idx)}
-                        className={`flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-0.5 py-1 text-center transition sm:flex-row sm:justify-start sm:gap-1 sm:px-1.5 ${
-                          active
-                            ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
-                            : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-                        }`}
-                      >
-                        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
-                          <Icon className="h-3.5 w-3.5" aria-hidden />
-                          <span
-                            className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
-                            title={`Aizpildījums: ${lvl}`}
-                          />
-                        </span>
-                        <span
-                          className={`line-clamp-2 w-full text-[8px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left sm:text-[9px] ${
-                            active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
-                          }`}
-                        >
-                          {label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                <button
+                  key={label}
+                  type="button"
+                  title={title}
+                  onClick={() => goWizardStep(idx)}
+                  className={`${WIZARD_NAV_BTN} ${
+                    active
+                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35 text-[var(--color-apple-text)]"
+                      : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${WIZARD_STEP_DOT[lvl]}`}
+                    title={`Aizpildījums: ${lvl}`}
+                  />
+                  {label}
+                </button>
               );
             })}
           </div>
-          <div
-            className={`flex min-w-0 max-w-full shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 font-mono text-[8px] font-medium text-[var(--color-apple-text)] dark:bg-white/[0.06] sm:text-[9px] ${
-              vinBar ? "" : "text-[var(--color-provin-muted)]"
-            }`}
-            title="VIN"
-          >
-            <span className="max-w-[10rem] truncate sm:max-w-[14rem]">{vinBar || "— VIN —"}</span>
-            {vinBar ? (
-              <AdminVinCopyButton
-                value={vinBar}
-                onCopied={() => {
-                  setVinBarCopyFlash(true);
-                  window.setTimeout(() => setVinBarCopyFlash(false), 600);
-                }}
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {wizardStepsUi.map(({ label, title }, idx) => {
+              if (wizardStepsUi[idx]!.row !== 2) return null;
+              const lvl = wizardStepLevels[idx] ?? "empty";
+              const active = wizardStep === idx;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  title={title}
+                  onClick={() => goWizardStep(idx)}
+                  className={`${WIZARD_NAV_BTN} ${
+                    active
+                      ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35 text-[var(--color-apple-text)]"
+                      : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${WIZARD_STEP_DOT[lvl]}`}
+                    title={`Aizpildījums: ${lvl}`}
+                  />
+                  {label}
+                </button>
+              );
+            })}
+            <div
+              className={`${WIZARD_NAV_FIELD} ml-auto font-mono text-[10px] font-medium ${
+                vinBar ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
+              }`}
+              title="VIN"
+            >
+              <span className="max-w-[11rem] truncate sm:max-w-[15rem]">{vinBar || "VIN"}</span>
+              {vinBar ? (
+                <AdminVinCopyButton
+                  value={vinBar}
+                  onCopied={() => {
+                    setVinBarCopyFlash(true);
+                    window.setTimeout(() => setVinBarCopyFlash(false), 600);
+                  }}
+                />
+              ) : null}
+              {vinBarCopyFlash ? (
+                <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
+                  OK
+                </span>
+              ) : null}
+            </div>
+            <div
+              className={`${WIZARD_NAV_FIELD} text-[10px] font-medium ${
+                plateBar ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
+              }`}
+              title="Reģistrācijas numurs no CSDD"
+            >
+              <span className="shrink-0 text-[9px] font-semibold text-[var(--color-provin-muted)]">
+                Reģistrācijas numurs:
+              </span>
+              <span className="font-mono">{plateBar || "-"}</span>
+              <AdminClipboardButton
+                value={plateBar}
+                titleReady="Kopēt reģistrācijas numuru"
+                titleCopied="Kopēts"
+                ariaReady="Kopēt reģistrācijas numuru starpliktuvē"
+                ariaCopied="Reģistrācijas numurs nokopēts"
               />
-            ) : null}
+            </div>
+            {listingBar ? (
+              <a
+                href={listingBar}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${WIZARD_NAV_BTN} border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100`}
+                title={listingBar}
+                data-provin-handoff-listing-url={listingBar}
+              >
+                SS.LV
+              </a>
+            ) : (
+              <span
+                className={`${WIZARD_NAV_BTN} cursor-not-allowed border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-50`}
+                title="Nav sludinājuma saites"
+              >
+                SS.LV
+              </span>
+            )}
             {whatsappPhoneDigits ? (
               <button
                 type="button"
                 onClick={handleWhatsAppSend}
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-400/80 bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-1"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-400/80 bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-1"
                 title={`WhatsApp: ${payload.customerPhone ?? ""}`}
                 aria-label="Ģenerēt PDF un atvērt WhatsApp ar ziņu klientam"
               >
@@ -4131,18 +4168,13 @@ export function OrderDetailWorkspace({
               </button>
             ) : (
               <span
-                className="inline-flex h-6 w-6 cursor-not-allowed items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-60"
+                className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-60"
                 title="Nav klienta tālruņa WhatsApp atvēršanai"
                 aria-hidden
               >
                 <WhatsAppIconGlyph />
               </span>
             )}
-            {vinBarCopyFlash ? (
-              <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
-                OK
-              </span>
-            ) : null}
           </div>
         </div>
         <div className={`mx-auto mt-2 px-1 ${ADMIN_CONTENT_MAX}`}>
