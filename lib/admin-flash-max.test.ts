@@ -36,12 +36,8 @@ describe("FLASH MAX jobs", () => {
     ]);
     expect(defaultFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_DAILY_JOB_IDS]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
-    expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto" && j.group === "extra")).toBe(true);
-    expect(
-      FLASH_MAX_JOBS.some(
-        (j) => j.kind === "source" && j.id === "oneauto_oil" && j.targetField === "oilChangeIntervalNotes",
-      ),
-    ).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto_oil" || j.id === "oneauto_service")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "seller" && j.group === "extra")).toBe(true);
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "autodna")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!)).toBe("flash");

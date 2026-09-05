@@ -30,6 +30,8 @@ export type OutvinVehicleInfo = {
   colorCode: string;
   interior: string;
   interiorCode: string;
+  fuel: string;
+  displacement: string;
 };
 
 export type OutvinEquipmentLine = {
@@ -76,6 +78,8 @@ export const OUTVIN_VEHICLE_INFO_ROWS: {
   { key: "colorCode", labelEn: "Colour code", labelLv: "Krāsas kods" },
   { key: "interior", labelEn: "Upholstery", labelLv: "Interjers" },
   { key: "interiorCode", labelEn: "Upholstery code", labelLv: "Interjera kods" },
+  { key: "fuel", labelEn: "Fuel", labelLv: "Degviela" },
+  { key: "displacement", labelEn: "Displacement", labelLv: "Tilpums" },
 ];
 
 /** Vecās atskaites lauki → jaunie (saglabātie pasūtījumi nedrīkst pazaudēt datus). */
@@ -110,6 +114,8 @@ export function emptyOutvinVehicleInfo(): OutvinVehicleInfo {
     colorCode: "",
     interior: "",
     interiorCode: "",
+    fuel: "",
+    displacement: "",
   };
 }
 

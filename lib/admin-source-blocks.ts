@@ -16,6 +16,12 @@ import {
   CARVERTICAL_REPORTS_URL,
 } from "@/lib/admin-vin-urls";
 import { emptyOneautoBlock, parseOneautoBlockRaw, type OneautoBlockState } from "@/lib/oneauto-block";
+import {
+  emptyOneautoIngest,
+  foldOneautoBlockIntoAutoRecords,
+  parseOneautoIngestRaw,
+  type AutoRecordsOneautoIngest,
+} from "@/lib/oneauto-to-auto-records";
 
 export type { OneautoBlockState } from "@/lib/oneauto-block";
 export {
@@ -837,6 +843,8 @@ export type AutoRecordsBlockState = {
   /** Papildu konteksts tikai AI — nav PDF. */
   aiContextRaw: string;
   pdfChecklist?: SourcePdfChecklist;
+  /** OneAuto API ielādes metadati (produkti, raw rezultāti). Nav atsevišķa PDF sadaļa. */
+  oneautoIngest?: AutoRecordsOneautoIngest;
 };
 
 export type { OutvinDataBundle } from "@/lib/outvin-data-bundle";
@@ -1001,6 +1009,7 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
     photos: [],
     photoGroups: [],
     aiContextRaw: "",
+    oneautoIngest: emptyOneautoIngest(),
   };
 }
 
@@ -1777,6 +1786,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       photos: synced.photos,
       photoGroups: synced.photoGroups,
       aiContextRaw: clipAiContextRaw(raw.aiContextRaw),
+      oneautoIngest: parseOneautoIngestRaw(raw.oneautoIngest),
       ...(outvin ? { outvin } : {}),
       ...(outvinReport ? { outvinReport } : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
@@ -2274,7 +2284,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     aiContextRaw: wsStr(csdd.aiContextRaw),
     ...syncedSourceBlockPhotos(csdd),
   });
-  return {
+  const repaired = {
     csdd: csddRepaired,
     autodna: repairVendorBlock(blocks.autodna),
     carvertical: repairVendorBlock(blocks.carvertical),
@@ -2300,6 +2310,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         photos: synced.photos,
         photoGroups: synced.photoGroups,
         aiContextRaw: wsStr(blocks.auto_records?.aiContextRaw),
+        oneautoIngest: parseOneautoIngestRaw(blocks.auto_records?.oneautoIngest),
       };
     })(),
     cc_vin: normalizeCcVinBlock(blocks.cc_vin),
@@ -2352,6 +2363,8 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       };
     })(),
   };
+  const folded = foldOneautoBlockIntoAutoRecords(repaired.auto_records, repaired.oneauto);
+  return { ...repaired, auto_records: folded.autoRecords, oneauto: folded.oneauto };
 }
 
 export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSourceBlocks {

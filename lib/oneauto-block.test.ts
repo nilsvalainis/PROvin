@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { oneautoTrafficLevel } from "@/lib/admin-block-traffic-status";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
-import { emptyOneautoBlock, parseOneautoBlockRaw } from "@/lib/oneauto-block";
+import { emptyOneautoBlock, oneautoBlockToPlainText, parseOneautoBlockRaw } from "@/lib/oneauto-block";
 
 describe("OneAuto avota bloks", () => {
   it("hidratē saglabāto JSON ar source: oneautoapi", () => {
@@ -28,13 +28,14 @@ describe("OneAuto avota bloks", () => {
 
   it("tukšs bloks paliek sarkanā luksoforā", () => {
     expect(oneautoTrafficLevel(emptyOneautoBlock())).toBe("empty");
+    expect(oneautoBlockToPlainText(emptyOneautoBlock())).toBe("");
   });
 
   it("pēc noklusējuma ieķeksē tikai OE Service History", () => {
     expect(emptyOneautoBlock().selectedProducts).toEqual(["oe_service_history"]);
   });
 
-  it("merge saglabā oneauto laukus no darba zonas", () => {
+  it("merge pārnes oneauto laukus uz auto_records un iztukšo OneAuto bloku", () => {
     const merged = mergeSourceBlocksWithDefaults({
       oneauto: {
         lastFetchedVin: "WAUZZZGE0KB015525",
@@ -47,8 +48,9 @@ describe("OneAuto avota bloks", () => {
         },
       },
     });
-    expect(merged.oneauto.lastFetchedVin).toBe("WAUZZZGE0KB015525");
-    expect(merged.oneauto.source).toBe("oneautoapi");
-    expect(oneautoTrafficLevel(merged.oneauto)).toBe("complete");
+    expect(merged.oneauto.lastFetchedVin).toBe("");
+    expect(oneautoTrafficLevel(merged.oneauto)).toBe("empty");
+    expect(merged.auto_records.oneautoIngest?.lastFetchedVin).toBe("WAUZZZGE0KB015525");
+    expect(merged.auto_records.outvinReport?.vehicleInfo.engineCode).toBe("2.0 TDI");
   });
 });

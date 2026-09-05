@@ -89,7 +89,6 @@ export function oneautoBlockHasPrintableContent(b: OneautoBlockState | null | un
 export function oneautoBlockToPlainText(b: OneautoBlockState | null | undefined): string {
   if (!b) return "";
   const lines: string[] = [];
-  lines.push(OFFICIAL_DEALER_SECTION_TITLE);
   if (b.lastFetchedVin.trim()) lines.push(`VIN ${b.lastFetchedVin.trim()}`);
   if (b.display.powertrain.length) {
     lines.push(ONEAUTO_PDF_POWERTRAIN_TITLE);
@@ -110,10 +109,11 @@ export function oneautoBlockToPlainText(b: OneautoBlockState | null | undefined)
     lines.push(`Eļļas maiņas intervāli\n${b.oilChangeIntervalNotes.trim()}`);
   }
   if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
-  return lines.join("\n\n");
+  if (lines.length === 0) return "";
+  return [OFFICIAL_DEALER_SECTION_TITLE, ...lines].join("\n\n");
 }
 
-function parseResultMap(raw: unknown): Partial<Record<OneautoProductId, OneautoProductResult>> {
+export function parseResultMap(raw: unknown): Partial<Record<OneautoProductId, OneautoProductResult>> {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
   const out: Partial<Record<OneautoProductId, OneautoProductResult>> = {};

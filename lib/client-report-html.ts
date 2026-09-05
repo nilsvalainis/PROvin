@@ -6,6 +6,7 @@
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import {
   autoRecordsBlockHasContent,
+  emptyAutoRecordsBlock,
   CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_PREVIOUS_INSPECTION_TITLE,
   CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE,
@@ -157,14 +158,9 @@ import {
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
-import { oneautoBlockHasPrintableContent, type OneautoBlockState } from "@/lib/oneauto-block";
-import {
-  OFFICIAL_DEALER_SECTION_TITLE,
-  ONEAUTO_PDF_EQUIPMENT_TITLE,
-  ONEAUTO_PDF_POWERTRAIN_TITLE,
-  oneautoDisplayToServiceWorks,
-} from "@/lib/oneauto-dealer";
-import { filledOneautoKvRows, type OneautoKvRow } from "@/lib/oneauto-catalog";
+import { type OneautoBlockState } from "@/lib/oneauto-block";
+import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
+import { oneautoBlockHasFoldableContent, resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
 import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
@@ -225,8 +221,7 @@ function collectPdfMileageSparkContext(
     },
     {
       omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
-      omitAutoRecords: !vis.auto_records,
-      omitOneauto: !vis.oneauto,
+      omitAutoRecords: !dealerPdfVisible(p, vis),
       omitCcVin: !vis.cc_vin,
       omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
       omitListingMileage: !vis.sludinajums,
@@ -347,14 +342,22 @@ function payloadCsddHasData(p: ClientReportPayload, vis: PdfVisibilitySettings):
   return p.csdd.trim().length > 0;
 }
 
-function payloadAutoRecordsHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
-  if (!vis.auto_records) return false;
-  return Boolean(p.autoRecordsBlock && autoRecordsBlockHasContent(p.autoRecordsBlock));
+function resolvedDealerBlock(p: ClientReportPayload): AutoRecordsBlockState {
+  return resolveDealerAutoRecords(
+    p.autoRecordsBlock,
+    p.oneautoBlock ?? null,
+    emptyAutoRecordsBlock(),
+  );
 }
 
-function payloadOneautoHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
-  if (!vis.oneauto) return false;
-  return Boolean(p.oneautoBlock && oneautoBlockHasPrintableContent(p.oneautoBlock));
+function dealerPdfVisible(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
+  if (vis.auto_records) return true;
+  return vis.oneauto && oneautoBlockHasFoldableContent(p.oneautoBlock);
+}
+
+function payloadAutoRecordsHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
+  if (!dealerPdfVisible(p, vis)) return false;
+  return autoRecordsBlockHasContent(resolvedDealerBlock(p));
 }
 
 function payloadCcVinHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
@@ -444,21 +447,13 @@ function collectPdfCheckedSources(
     if (vendorTitlesOmittedForPdf(vis).has(title)) continue;
     out.push({ label: title, count: b.mileageRows.length + b.incidentRows.length });
   }
-  if (payloadAutoRecordsHasData(p, vis) || payloadOneautoHasData(p, vis)) {
-    const ar = p.autoRecordsBlock;
-    const oa = p.oneautoBlock;
-    const arCount = payloadAutoRecordsHasData(p, vis)
-      ? (ar?.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
-        (ar?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length
-      : 0;
-    const oaCount = payloadOneautoHasData(p, vis)
-      ? oneautoDisplayToServiceWorks(oa?.display).filter(autoRecordsServiceWorkRowIsPrintable).length +
-        filledOneautoKvRows(oa?.display.powertrain ?? []).length +
-        filledOneautoKvRows(oa?.display.equipment ?? []).length
-      : 0;
+  if (payloadAutoRecordsHasData(p, vis)) {
+    const ar = resolvedDealerBlock(p);
     out.push({
       label: PDF_SOURCE_DEALER_TITLE,
-      count: arCount + oaCount,
+      count:
+        (ar.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
+        (ar.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length,
     });
   }
   if (payloadCcVinHasData(p, vis)) {
@@ -1561,89 +1556,6 @@ function buildAutoRecordsAvotuSubsection(
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
 }
 
-function buildOneautoKvTableHtml(title: string, icon: SectionIconId, rows: OneautoKvRow[]): string {
-  const filled = filledOneautoKvRows(rows);
-  if (filled.length === 0) return "";
-  const head = `<tr><th scope="col">Lauks</th><th scope="col">Vērtība</th></tr>`;
-  const body = filled
-    .map(
-      (r) =>
-        `<tr class="pdf-mileage-history-row"><td>${escapeHtml(r.label)}</td><td>${escapeHtml(r.value)}</td></tr>`,
-    )
-    .join("\n");
-  const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml(icon), title);
-  return `<section class="pdf-service-works-zone">${subheadHtml}<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table" role="table"><thead>${head}</thead><tbody>${body}</tbody></table></div></section>`;
-}
-
-/** OneAuto OEM → OFICIĀLĀ DĪLERA DATI (servisa tabula + komplektācija + dzinējs + komentāri). */
-function buildOneautoDealerSubsection(
-  b: OneautoBlockState | null | undefined,
-  vis: PdfVisibilitySettings,
-  makeModel = "",
-  sparkHtml = "",
-): string {
-  if (!vis.oneauto) return "";
-  if ((!b || !oneautoBlockHasPrintableContent(b)) && !sparkHtml) return "";
-  if (!b) {
-    const head = sectionHeadBrand(dealerSectionIconHtml(makeModel), PDF_SOURCE_DEALER_TITLE);
-    return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(OFFICIAL_DEALER_SECTION_TITLE)}" role="region">${head}<div class="pdf-source-section-body">${sparkHtml}</div></div>`;
-  }
-
-  const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(oneautoDisplayToServiceWorks(b.display));
-  const powertrainTable = buildOneautoKvTableHtml(
-    ONEAUTO_PDF_POWERTRAIN_TITLE,
-    "wrench",
-    b.display.powertrain,
-  );
-  const equipmentTable = buildOneautoKvTableHtml(
-    ONEAUTO_PDF_EQUIPMENT_TITLE,
-    "car",
-    b.display.equipment,
-  );
-  const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
-  const serviceHistoryBox = serviceHistoryNotes
-    ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
-    : "";
-  const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
-  const oilIntervalBox = oilChangeIntervalNotes
-    ? pdfReportCommentBox(oilChangeIntervalNotes, PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL)
-    : "";
-  const comments = (b.comments ?? "").trim();
-  const commentIsland = comments ? pdfAvotuCommentIsland(comments) : "";
-
-  if (
-    !serviceWorksTable &&
-    !powertrainTable &&
-    !equipmentTable &&
-    !serviceHistoryBox &&
-    !oilIntervalBox &&
-    !commentIsland &&
-    !sparkHtml
-  ) {
-    return "";
-  }
-
-  const recordCount =
-    oneautoDisplayToServiceWorks(b.display).filter(autoRecordsServiceWorkRowIsPrintable).length +
-    filledOneautoKvRows(b.display.powertrain).length +
-    filledOneautoKvRows(b.display.equipment).length;
-  const head = sectionHeadBrand(
-    dealerSectionIconHtml(makeModel),
-    PDF_SOURCE_DEALER_TITLE,
-    sourceRecordCountBadgeHtml(recordCount),
-  );
-  const bodyParts = [
-    sparkHtml,
-    serviceWorksTable,
-    powertrainTable,
-    equipmentTable,
-    serviceHistoryBox,
-    oilIntervalBox,
-    commentIsland,
-  ].filter(Boolean);
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(OFFICIAL_DEALER_SECTION_TITLE)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
-}
-
 /** Starptautiskā vēsture — sarkanie karogi un vēsture; specifikācijas netiek dublētas. */
 function buildCcVinAvotuSubsection(
   b: CcVinBlockState | null | undefined,
@@ -1922,17 +1834,11 @@ function buildAvotuDatiSectionHtml(
   const autodna = vendorHtml(SOURCE_BLOCK_LABELS.autodna);
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
   const autoRecords = buildAutoRecordsAvotuSubsection(
-    p.autoRecordsBlock ?? null,
-    vis,
+    resolvedDealerBlock(p),
+    { ...vis, auto_records: dealerPdfVisible(p, vis) },
     autoRecordsPhotoDataUrls,
     reportVehicleMakeHint(p),
     spark("dealer"),
-  );
-  const oneauto = buildOneautoDealerSubsection(
-    p.oneautoBlock ?? null,
-    vis,
-    reportVehicleMakeHint(p),
-    vis.auto_records ? "" : spark("dealer"),
   );
   const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
@@ -1945,7 +1851,6 @@ function buildAvotuDatiSectionHtml(
     autodna,
     carvertical,
     autoRecords,
-    oneauto,
     ccVin,
     tjekbil,
     mntEe,
@@ -3041,7 +2946,7 @@ export function buildClientReportDocumentHtml(args: {
 
   const mileageOpts: CollectUnifiedMileageOptions = {
     omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
-    omitAutoRecords: !vis.auto_records,
+    omitAutoRecords: !dealerPdfVisible(p, vis),
     omitCcVin: !vis.cc_vin,
     omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
     omitListingMileage: !vis.sludinajums,

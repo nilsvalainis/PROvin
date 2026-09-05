@@ -3,16 +3,17 @@
  * Fakti nāk no jau savāktajiem blokiem; loģikas slānis pievieno importu, robus un pretrunas.
  */
 
-import type {
-  AutoRecordsBlockState,
-  CitiAvotiBlockState,
-  ClientManualLtabBlockPdf,
-  ClientManualVendorBlockPdf,
-  CsddFormFields,
-  TirgusFormFields,
+import {
+  emptyAutoRecordsBlock,
+  type AutoRecordsBlockState,
+  type CitiAvotiBlockState,
+  type ClientManualLtabBlockPdf,
+  type ClientManualVendorBlockPdf,
+  type CsddFormFields,
+  type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
-import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
+import { resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
@@ -258,11 +259,12 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     );
   }
 
-  const oneautoWorks = oneautoDisplayToServiceWorks(input.oneautoBlock?.display);
-  for (const w of [
-    ...(input.autoRecordsBlock?.serviceWorks ?? []),
-    ...oneautoWorks,
-  ].filter(autoRecordsServiceWorkRowIsPrintable)) {
+  const dealer = resolveDealerAutoRecords(
+    input.autoRecordsBlock,
+    input.oneautoBlock,
+    emptyAutoRecordsBlock(),
+  );
+  for (const w of (dealer.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable)) {
     const loc = lifecyclePublicCaption(w.location);
     const locIsCountry = lifecycleLocationIsCountryName(loc);
     out.push(

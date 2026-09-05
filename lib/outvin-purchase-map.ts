@@ -6,7 +6,7 @@ import {
 } from "@/lib/outvin-dealer-map";
 import { extractEventsFromPayload } from "@/lib/outvin-history-map";
 import { getOutvinCatalogSlotByType } from "@/lib/outvin-source-catalog";
-import type { OutvinDealerReport } from "@/lib/outvin-dealer-types";
+import { outvinVehicleInfoHasData, type OutvinDealerReport } from "@/lib/outvin-dealer-types";
 import {
   emptyOutvinDataBundle,
   emptyOutvinDealerServiceRow,
@@ -204,11 +204,17 @@ function mergeEuropean(
 
 export function outvinBundleToDealerReport(bundle: OutvinDataBundle): OutvinDealerReport {
   const historyPayloads = bundle.purchases.map((p) => p.payload);
-  return buildOutvinDealerReport({
+  const rebuilt = buildOutvinDealerReport({
     vehiclePayload: bundle.vehicleInfo,
     historyPayloads,
     vin: bundle.vin,
   });
+  return {
+    vehicleInfo: outvinVehicleInfoHasData(rebuilt.vehicleInfo) ? rebuilt.vehicleInfo : bundle.vehicleInfo,
+    accidentCheck: rebuilt.accidentCheck.trim() || bundle.accidentCheck,
+    stolenCheck: rebuilt.stolenCheck.trim() || bundle.stolenCheck,
+    equipment: rebuilt.equipment.length > 0 ? rebuilt.equipment : bundle.equipment,
+  };
 }
 
 /** Pēc pirkuma atjauno strukturētos laukus un saglabā raw JSON. */

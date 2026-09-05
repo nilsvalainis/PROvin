@@ -110,7 +110,7 @@ describe("auto_records AI context", () => {
 });
 
 describe("oneauto oficiālā dīlera AI lauki", () => {
-  it("ieraksta servisa un eļļas piezīmes atsevišķos laukos", () => {
+  it("hidratējot OneAuto, dati un AI lauki paliek auto_records", () => {
     const blocks = mergeSourceBlocksWithDefaults({
       oneauto: {
         ...emptyOneautoBlock(),
@@ -123,17 +123,19 @@ describe("oneauto oficiālā dīlera AI lauki", () => {
         },
       },
     });
-    expect(sourceBlockHasDataExcludingComments("oneauto", blocks)).toBe(true);
+    expect(sourceBlockHasDataExcludingComments("oneauto", blocks)).toBe(false);
+    expect(sourceBlockHasDataExcludingComments("auto_records", blocks)).toBe(true);
+    expect(blocks.auto_records.serviceWorks[0]?.works).toContain("Eļļas maiņa");
     const oil = applySourceBlockGeneratedComment(
-      "oneauto",
-      blocks.oneauto,
+      "auto_records",
+      blocks.auto_records,
       "<p>Eļļa mainīta reti.</p>",
       { targetField: "oilChangeIntervalNotes" },
     );
     expect(oil).toMatchObject({ oilChangeIntervalNotes: "<p>Eļļa mainīta reti.</p>" });
     const service = applySourceBlockGeneratedComment(
-      "oneauto",
-      blocks.oneauto,
+      "auto_records",
+      blocks.auto_records,
       "<p>23.12.2020 | 142220 km | eļļas maiņa</p>",
       { targetField: "serviceHistoryNotes" },
     );

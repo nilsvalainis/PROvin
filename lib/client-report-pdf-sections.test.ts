@@ -427,7 +427,7 @@ describe("PDF source-section brand logos", () => {
             ],
           },
         },
-        pdfVisibility: mergePdfVisibility({ oneauto: true, auto_records: false }),
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
       }),
       portfolio: [],
       pdfInsights: [],

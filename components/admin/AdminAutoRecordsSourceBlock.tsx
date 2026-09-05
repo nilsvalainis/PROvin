@@ -18,6 +18,7 @@ import type {
 } from "@/lib/admin-source-blocks";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
+import { AdminOneautoIngestBar } from "@/components/admin/AdminOneautoIngestBar";
 import {
   AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
@@ -53,9 +54,11 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import {
   emptyOutvinDealerReport,
+  outvinDealerReportHasContent,
   outvinVehicleInfoHasData,
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
+import { applyOneautoToAutoRecords, emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
 import { AdminOutvinDealerReportFields } from "@/components/admin/AdminOutvinDealerReportFields";
 import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-vehicle-info-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -90,6 +93,7 @@ type Props = {
   onChange: (next: AutoRecordsBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
   sessionId: string;
+  orderVin?: string;
   /** Copilot dīlera PDF aģentam vajag visus avotu blokus (valstu noteikšanai). */
   getSourceBlocks?: () => WorkspaceSourceBlocks;
   applyPatchedBlocks?: (
@@ -114,6 +118,7 @@ export function AdminAutoRecordsSourceBlock({
   onChange,
   trafficFillLevel,
   sessionId,
+  orderVin = "",
   getSourceBlocks,
   applyPatchedBlocks,
   pdfInclude,
@@ -252,6 +257,25 @@ export function AdminAutoRecordsSourceBlock({
               applyPatchedBlocks={applyPatchedBlocks}
             />
           ) : null}
+          <AdminOneautoIngestBar
+            ingest={value.oneautoIngest ?? emptyOneautoIngest()}
+            orderVin={orderVin}
+            editable={!readOnly && !disabled}
+            hasMappedData={
+              (value.serviceWorks ?? []).some(autoRecordsServiceWorkRowHasData) ||
+              outvinDealerReportHasContent(value.outvinReport)
+            }
+            onIngestChange={(next) => onChange({ ...value, oneautoIngest: next })}
+            onFetched={(ingest, display) =>
+              onChange(
+                applyOneautoToAutoRecords(value, {
+                  display,
+                  ingest,
+                  vehicleOverride: true,
+                }),
+              )
+            }
+          />
           <div className="mb-0.5 flex items-center gap-1">
           <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
             Paste RAW data here
