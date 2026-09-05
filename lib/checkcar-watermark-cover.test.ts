@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 
 import { coverCheckcarVinWatermark } from "@/lib/checkcar-watermark-cover";
-import { isCheckcarGray, isCheckcarVinRed } from "@/lib/checkcar-watermark-mask";
+import { fixedCheckcarWatermarkBox, isCheckcarGray, isCheckcarVinRed } from "@/lib/checkcar-watermark-mask";
 
 const SERVICE_SCREEN_FIXTURE = path.join(
   process.cwd(),
@@ -26,7 +26,16 @@ describe("checkcar watermark cover", () => {
     expect(isCheckcarGray(250, 250, 250)).toBe(false);
   });
 
-  it("aizklāj CHECKCAR.VIN uz gaiša fona ar šauru joslu", async () => {
+  it("fiksē joslu kadra vidū", () => {
+    const box = fixedCheckcarWatermarkBox(640, 360);
+    expect(box.x + box.w / 2).toBeGreaterThan(300);
+    expect(box.x + box.w / 2).toBeLessThan(340);
+    expect(box.y).toBeGreaterThan(140);
+    expect(box.y + box.h).toBeLessThan(240);
+    expect(box.w).toBeGreaterThan(400);
+  });
+
+  it("aizklāj CHECKCAR.VIN uz gaiša fona ar vidus joslu", async () => {
     const letters = [
       ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
         (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#c4c4c4"/>`,
@@ -41,8 +50,6 @@ describe("checkcar watermark cover", () => {
 
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
-    expect(first.hit!.box.h).toBeLessThan(70);
-    expect(first.hit!.box.w).toBeLessThan(430);
 
     const outside = await sharp(first.jpeg)
       .extract({ left: 20, top: 20, width: 8, height: 8 })
@@ -67,8 +74,6 @@ describe("checkcar watermark cover", () => {
 
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
-    expect(first.hit?.vinLetters).toBeGreaterThanOrEqual(2);
-    expect(first.hit?.grayLetters).toBeGreaterThanOrEqual(3);
     expect(first.jpeg.equals(jpeg)).toBe(false);
 
     const second = await coverCheckcarVinWatermark(first.jpeg);
@@ -92,8 +97,6 @@ describe("checkcar watermark cover", () => {
     const jpeg = readFileSync(SERVICE_SCREEN_FIXTURE);
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
-    expect(first.hit?.vinLetters ?? 0).toBeGreaterThanOrEqual(1);
-    expect((first.hit?.vinLetters ?? 0) + (first.hit?.grayLetters ?? 0)).toBeGreaterThanOrEqual(2);
     const box = first.hit!.box;
     const sample = await sharp(first.jpeg)
       .extract({ left: box.x + Math.floor(box.w / 2), top: box.y + Math.floor(box.h / 2), width: 1, height: 1 })
