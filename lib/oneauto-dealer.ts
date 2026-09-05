@@ -35,6 +35,52 @@ export function oneautoDisplayToServiceWorks(
   return sortAutoRecordsServiceWorkRows(rows);
 }
 
+const FOREIGN_WORKS_RE =
+  /\b(the|and|acc\.?|according|software|download|install|sides|fitting|executed|upgrade|workshop|remark|remarks|warranty|inspection|engine|oil|filter|change|performed|latest|already|contained|bij|het|van|dat|aan|uitgevoerd|mvg|nieuwste|geeft|actie|acit|service)\b/i;
+
+/** Vai „Darbi” teksts vēl jāpārtulko latviski. */
+export function oneautoWorksNeedLvTranslation(works: string): boolean {
+  const t = works.replace(/\s+/g, " ").trim();
+  if (t.length < 3) return false;
+  if (FOREIGN_WORKS_RE.test(t)) return true;
+  return false;
+}
+
+export function oneautoDisplayWorksNeedLvTranslation(
+  display: OneautoDisplaySections | null | undefined,
+): boolean {
+  return filledOneautoServiceEvents(display?.serviceTimeline ?? []).some((ev) =>
+    oneautoWorksNeedLvTranslation(ev.works),
+  );
+}
+
+export function applyOneautoTranslatedWorks(
+  current: OneautoDisplaySections,
+  works: readonly string[],
+): OneautoDisplaySections {
+  const events = filledOneautoServiceEvents(current.serviceTimeline);
+  return {
+    ...current,
+    serviceTimeline: events.map((ev, i) => ({
+      ...ev,
+      works: (works[i] ?? "").trim() || ev.works,
+    })),
+  };
+}
+
+export function parseOneautoWorksTranslatePayload(raw: unknown): string[] | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (Array.isArray(o.works)) {
+    const works = o.works.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean);
+    return works.length > 0 ? works : null;
+  }
+  const display = parseOneautoTranslateDisplay(raw);
+  if (!display) return null;
+  const works = filledOneautoServiceEvents(display.serviceTimeline).map((ev) => ev.works.trim());
+  return works.some(Boolean) ? works : null;
+}
+
 export function applyOneautoTranslatedDisplay(
   current: OneautoDisplaySections,
   incoming: OneautoDisplaySections,

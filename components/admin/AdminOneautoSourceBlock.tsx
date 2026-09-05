@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
@@ -35,6 +35,7 @@ import {
   type OneautoProductId,
   type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
+import { oneautoDisplayWorksNeedLvTranslation } from "@/lib/oneauto-dealer";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -97,7 +98,10 @@ export function AdminOneautoSourceBlock({
   const editable = !readOnly && !disabled;
   const [busy, setBusy] = useState(false);
   const [translateBusy, setTranslateBusy] = useState(false);
+  const [autoTranslateHint, setAutoTranslateHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const autoTranslateFailedKey = useRef("");
+  const autoTranslateInflight = useRef(false);
 
   const effectiveVin = normalizeVin(value.vinOverride || orderVin);
   const estimatedCost = formatOneautoCostEur(oneautoProductsCostCents(value.selectedProducts));
@@ -228,14 +232,22 @@ export function AdminOneautoSourceBlock({
     }
   };
 
-  const translateLv = async (operatorNotes: string, modelTier: AiAdminModelTier) => {
+  const translateLv = async (
+    operatorNotes: string,
+    modelTier: AiAdminModelTier,
+    opts?: { scope?: "works" | "all"; silent?: boolean },
+  ) => {
     if (!editable || busy || translateBusy) return;
     if (!hasDisplay) {
-      setError("Vispirms ielādē vai aizpildi tabulas.");
+      if (!opts?.silent) setError("Vispirms ielādē vai aizpildi tabulas.");
       return;
     }
+    const scope = opts?.scope ?? "all";
+    const worksKey = display.serviceTimeline.map((ev) => ev.works).join("\n");
+    if (opts?.silent) autoTranslateFailedKey.current = worksKey;
     setTranslateBusy(true);
-    setError(null);
+    if (opts?.silent) setAutoTranslateHint(true);
+    if (!opts?.silent) setError(null);
     try {
       const res = await fetch("/api/admin/ai/oneauto-translate", {
         method: "POST",
@@ -246,6 +258,7 @@ export function AdminOneautoSourceBlock({
           display,
           operatorNotes,
           modelTier,
+          scope,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -253,20 +266,36 @@ export function AdminOneautoSourceBlock({
         display?: OneautoBlockState["display"];
       };
       if (!res.ok || !body.display) {
-        setError(
-          body.error === "empty_source_data"
-            ? "Nav ko tulkot - vispirms aizpildi tabulas."
-            : "Tulkojums neizdevās. Mēģini vēlreiz.",
-        );
+        if (opts?.silent) autoTranslateFailedKey.current = worksKey;
+        if (!opts?.silent) {
+          setError(
+            body.error === "empty_source_data"
+              ? "Nav ko tulkot - vispirms aizpildi tabulas."
+              : "Tulkojums neizdevās. Mēģini vēlreiz.",
+          );
+        }
         return;
       }
       onChange({ ...value, display: body.display });
     } catch {
-      setError("Tulkojums neizdevās. Mēģini vēlreiz.");
+      if (opts?.silent) autoTranslateFailedKey.current = worksKey;
+      if (!opts?.silent) setError("Tulkojums neizdevās. Mēģini vēlreiz.");
     } finally {
       setTranslateBusy(false);
+      setAutoTranslateHint(false);
     }
   };
+
+  useEffect(() => {
+    if (!editable || busy || translateBusy || autoTranslateInflight.current) return;
+    if (!oneautoDisplayWorksNeedLvTranslation(display)) return;
+    const worksKey = display.serviceTimeline.map((ev) => ev.works).join("\n");
+    if (autoTranslateFailedKey.current === worksKey) return;
+    autoTranslateInflight.current = true;
+    void translateLv("", "gemini-flash", { scope: "works", silent: true }).finally(() => {
+      autoTranslateInflight.current = false;
+    });
+  }, [display, editable, busy, translateBusy]);
 
   return (
     <AdminCollapsibleShell
@@ -378,6 +407,9 @@ export function AdminOneautoSourceBlock({
             </p>
           ) : null}
           {error ? <p className="mt-2 text-[11px] text-rose-700">{error}</p> : null}
+          {autoTranslateHint ? (
+            <p className="mt-2 text-[11px] text-slate-600">Tulko darbus latviski…</p>
+          ) : null}
 
           {editable && hasDisplay ? (
             <div className="mt-2">

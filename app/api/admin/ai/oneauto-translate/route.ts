@@ -7,7 +7,10 @@ import { nextJsonBodyWithAiUsage } from "@/lib/admin-ai-route-response";
 import { getAdminSession } from "@/lib/admin-auth";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
-import { translateOneautoDisplayWithAi } from "@/lib/admin-ai-oneauto-translate";
+import {
+  translateOneautoDisplayWithAi,
+  translateOneautoWorksWithAi,
+} from "@/lib/admin-ai-oneauto-translate";
 import { parseAiModelTier } from "@/lib/ai-admin-model-tier";
 import { parseOneautoDisplay } from "@/lib/oneauto-catalog";
 
@@ -49,11 +52,19 @@ export async function POST(req: Request) {
   const display = parseOneautoDisplay(b.display);
   try {
     return await nextJsonBodyWithAiUsage(async () => {
-      const next = await translateOneautoDisplayWithAi({
-        display,
-        operatorNotes: str(b.operatorNotes),
-        modelTier: str(b.modelTier).trim() ? parseAiModelTier(b.modelTier) : "gemini-flash",
-      });
+      const scope = str(b.scope).trim() === "works" ? "works" : "all";
+      const next =
+        scope === "works"
+          ? await translateOneautoWorksWithAi({
+              display,
+              operatorNotes: str(b.operatorNotes),
+              modelTier: str(b.modelTier).trim() ? parseAiModelTier(b.modelTier) : "gemini-flash",
+            })
+          : await translateOneautoDisplayWithAi({
+              display,
+              operatorNotes: str(b.operatorNotes),
+              modelTier: str(b.modelTier).trim() ? parseAiModelTier(b.modelTier) : "gemini-flash",
+            });
       return { display: next };
     });
   } catch (e) {

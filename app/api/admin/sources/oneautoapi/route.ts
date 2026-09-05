@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
 import { parseOneautoProductIds } from "@/lib/oneauto-catalog";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -51,7 +52,8 @@ export async function POST(req: Request) {
     if (allFailed) {
       return NextResponse.json({ error: "upstream_error", ...fetched }, { status: 502 });
     }
-    return NextResponse.json({ ok: true, ...fetched });
+    const display = await translateOneautoWorksOnIngest(fetched.display);
+    return NextResponse.json({ ok: true, ...fetched, display });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     if (msg === "missing_oneauto_credentials") {

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { emptyOneautoBlock, parseOneautoBlockRaw } from "@/lib/oneauto-block";
 import {
   applyOneautoTranslatedDisplay,
+  applyOneautoTranslatedWorks,
   OFFICIAL_DEALER_SECTION_TITLE,
   oneautoDisplayToServiceWorks,
+  oneautoWorksNeedLvTranslation,
+  parseOneautoWorksTranslatePayload,
 } from "@/lib/oneauto-dealer";
 import { oneautoBlockToPlainText } from "@/lib/oneauto-block";
 
@@ -74,6 +77,40 @@ describe("OneAuto → oficiālā dīlera forma", () => {
       place: "Dīleris NL",
       works: "Eļļas maiņa",
     });
+  });
+
+  it("atpazīst, ka Darbi vēl jāpārtulko, un latvisko jau gatavo tekstu neskār", () => {
+    expect(oneautoWorksNeedLvTranslation("End fitting 2 sides install acc.; Actie uitgevoerd.")).toBe(
+      true,
+    );
+    expect(oneautoWorksNeedLvTranslation("ECM software download acc. to QB.")).toBe(true);
+    expect(oneautoWorksNeedLvTranslation("Eļļas maiņa, salona filtrs")).toBe(false);
+    expect(oneautoWorksNeedLvTranslation("PBM jauninājums")).toBe(false);
+    expect(oneautoWorksNeedLvTranslation("Warranty inspection.")).toBe(true);
+    expect(oneautoWorksNeedLvTranslation("")).toBe(false);
+  });
+
+  it("ielādes tulkojums aizstāj tikai darbus, ne datumus", () => {
+    const next = applyOneautoTranslatedWorks(
+      {
+        equipment: [],
+        powertrain: [],
+        serviceTimeline: [
+          { date: "23.12.2020", odometer: "142220", place: "Volvo", works: "Oil service" },
+        ],
+      },
+      ["Eļļas maiņa"],
+    );
+    expect(next.serviceTimeline[0]).toMatchObject({
+      date: "23.12.2020",
+      odometer: "142220",
+      place: "Volvo",
+      works: "Eļļas maiņa",
+    });
+    expect(parseOneautoWorksTranslatePayload({ works: ["Eļļas maiņa", "Filtra maiņa"] })).toEqual([
+      "Eļļas maiņa",
+      "Filtra maiņa",
+    ]);
   });
 
   it("tukšs bloks paliek bez piezīmēm", () => {
