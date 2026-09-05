@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
+import { AdminOneautoSourceBlock } from "@/components/admin/AdminOneautoSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
 import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
@@ -35,6 +36,7 @@ import {
   ltabBlockToPlainText,
   LISTING_HISTORY_SUBSECTION_TITLE,
   mergeSourceBlocksWithDefaults,
+  oneautoBlockToPlainText,
   autoRecordsBlockToPlainText,
   standardBlockToPlainText,
   vendorAvotuBlockToPlainText,
@@ -125,6 +127,7 @@ import { IRISS_CHROME_LUCIDE, LISTING_ANALYSIS_CHROME_LUCIDE } from "@/lib/admin
 import {
   TRAFFIC_HEADER_STRIP_CLASS,
   autoRecordsTrafficLevel,
+  oneautoTrafficLevel,
   ccVinTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
@@ -140,6 +143,7 @@ import {
   CarFront,
   Check,
   ClipboardList,
+  Factory,
   Globe,
   Landmark,
   LayoutDashboard,
@@ -414,8 +418,8 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   complete: "bg-emerald-500",
 };
 
-const WIZARD_STEP_COUNT = 12;
-const WIZARD_SUMMARY_STEP = 11;
+const WIZARD_STEP_COUNT = 13;
+const WIZARD_SUMMARY_STEP = 12;
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
   const vin = (p.vin ?? "").trim();
@@ -469,6 +473,8 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
       return listingAnalysisToPlainText(blocks.listing_analysis);
     case "auto_records":
       return autoRecordsBlockToPlainText(blocks.auto_records);
+    case "oneauto":
+      return oneautoBlockToPlainText(blocks.oneauto);
     case "cc_vin":
       return ccVinBlockToPlainText(blocks.cc_vin);
     case "autodna":
@@ -1869,7 +1875,7 @@ export function OrderDetailWorkspace({
         if (orderDraftPersistenceEnabled) {
           await persistFullWorkspaceRef("flash-max", { showFlash: false });
         }
-        setWizardStep(11);
+        setWizardStep(WIZARD_SUMMARY_STEP);
       }
     } finally {
       setFlashMaxBusy(false);
@@ -2798,6 +2804,7 @@ export function OrderDetailWorkspace({
       autodna: "empty" as const,
       carvertical: "empty" as const,
       auto_records: "empty" as const,
+      oneauto: "empty" as const,
       cc_vin: "empty" as const,
       tjekbil: "empty" as const,
       mnt_ee: "empty" as const,
@@ -2813,6 +2820,7 @@ export function OrderDetailWorkspace({
         autodna: vendorAvotuTrafficLevel(b?.autodna),
         carvertical: vendorAvotuTrafficLevel(b?.carvertical),
         auto_records: autoRecordsTrafficLevel(b.auto_records),
+        oneauto: oneautoTrafficLevel(b.oneauto),
         cc_vin: ccVinTrafficLevel(b.cc_vin),
         tjekbil: vinRegistryTrafficLevel(b.tjekbil),
         mnt_ee: vinRegistryTrafficLevel(b.mnt_ee),
@@ -2848,6 +2856,7 @@ export function OrderDetailWorkspace({
       traffic.csdd,
       vendors,
       traffic.auto_records,
+      traffic.oneauto,
       traffic.ltab,
       traffic.citi_avoti,
       traffic.cc_vin,
@@ -2866,6 +2875,7 @@ export function OrderDetailWorkspace({
         { label: "CSDD", Icon: ClipboardList, row: 1 as const },
         { label: "Datu serv.", Icon: Layers, row: 1 as const },
         { label: "Auto Records", Icon: CarFront, row: 1 as const },
+        { label: "ONEAUTO", Icon: Factory, row: 1 as const },
         { label: "LTAB", Icon: Scale, row: 1 as const },
         { label: "Citi avoti", Icon: Link2, row: 1 as const },
         { label: "Starptaut.", Icon: Globe, row: 2 as const },
@@ -4044,7 +4054,7 @@ export function OrderDetailWorkspace({
           <AdminAiSessionCostBar />
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             {([1, 2] as const).map((row) => {
-              const cols = "grid-cols-6";
+              const cols = row === 1 ? "grid-cols-7" : "grid-cols-6";
               return (
                 <div key={row} className={`grid min-w-0 ${cols} gap-1`}>
                   {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
@@ -4245,6 +4255,20 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 4 ? (
+          <div id="admin-order-block-oneauto" className="min-w-0">
+            <AdminOneautoSourceBlock
+              value={blocksDisplaySafe.oneauto}
+              orderVin={vinBar}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("oneauto", next)}
+              trafficFillLevel={traffic.oneauto}
+              sessionId={payload.sessionId}
+              aiComment={aiCommentSlot("oneauto")}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 5 ? (
           <div id="admin-order-block-ltab" className="min-w-0">
             <AdminLtabSourceBlock
               value={blocksDisplaySafe.ltab}
@@ -4265,7 +4289,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 5 ? (
+        {wizardStep === 6 ? (
           <div id="admin-order-block-citi-avoti" className="min-w-0">
             <AdminCitiAvotiSourceBlock
               value={blocksDisplaySafe.citi_avoti}
@@ -4284,7 +4308,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {wizardStep === 7 ? (
           <div id="admin-order-block-cc-vin" className="min-w-0">
             <AdminCcVinSourceBlock
               value={blocksDisplaySafe.cc_vin}
@@ -4303,7 +4327,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {wizardStep === 8 ? (
           <div id="admin-order-block-tjekbil" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
@@ -4324,7 +4348,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 8 ? (
+        {wizardStep === 9 ? (
           <div id="admin-order-block-estonia" className="min-w-0">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
@@ -4353,7 +4377,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 9 ? (
+        {wizardStep === 10 ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -4374,7 +4398,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 10 ? (
+        {wizardStep === 11 ? (
           <section id="admin-order-section-sludinajums" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
@@ -4434,7 +4458,7 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 11 ? (
+        {wizardStep === 12 ? (
           <section id="admin-order-section-kopsavilkums" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">

@@ -123,6 +123,7 @@ export const SOURCE_BLOCK_ICON: Record<SourceBlockKey, SectionIconId> = {
   autodna: "database",
   carvertical: "barChart",
   auto_records: "shieldCheck",
+  oneauto: "layers",
   cc_vin: "globe",
   tjekbil: "search",
   mnt_ee: "fileText",

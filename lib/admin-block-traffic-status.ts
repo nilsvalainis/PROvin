@@ -32,6 +32,8 @@ import {
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import { ccVinBlockHasContent, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { oneautoBlockHasContent, type OneautoBlockState } from "@/lib/oneauto-block";
+import { oneautoDisplayHasRows } from "@/lib/oneauto-catalog";
 
 export type TrafficFillLevel = "empty" | "partial" | "complete";
 
@@ -224,6 +226,17 @@ export function listingSectionTrafficLevel(
 }
 
 /** Pielikumu skaits — 0 = tukšs. */
+export function oneautoTrafficLevel(b: OneautoBlockState | null | undefined): TrafficFillLevel {
+  try {
+    if (!b) return "empty";
+    if (!oneautoBlockHasContent(b)) return "empty";
+    if (oneautoDisplayHasRows(b.display)) return "complete";
+    return "partial";
+  } catch {
+    return "empty";
+  }
+}
+
 export function portfolioFilesTrafficLevel(fileCount: number): TrafficFillLevel {
   if (fileCount <= 0) return "empty";
   return "complete";

@@ -19,6 +19,7 @@ import {
   tirgusFormToPlainText,
   vendorAvotuBlockToPlainText,
   type WorkspaceSourceBlocks,
+  oneautoBlockToPlainText,
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
@@ -59,6 +60,7 @@ export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
   "autodna",
   "carvertical",
   "auto_records",
+  "oneauto",
   "cc_vin",
   "tjekbil",
   "mnt_ee",
@@ -110,6 +112,9 @@ export function sourceBlockPlainTextExcludingComments(
         oilChangeIntervalNotes: "",
       }).trim();
       return appendAiContextRawSection(base, blocks.auto_records.aiContextRaw);
+    case "oneauto":
+      base = oneautoBlockToPlainText({ ...blocks.oneauto, comments: "" }).trim();
+      return appendAiContextRawSection(base, blocks.oneauto.aiContextRaw);
     case "cc_vin":
       base = ccVinBlockToPlainText({ ...blocks.cc_vin, comments: "" }).trim();
       return appendAiContextRawSection(base, blocks.cc_vin.aiContextRaw);
@@ -148,6 +153,8 @@ export function sourceBlockCommentsPlain(
         .join("\n\n");
     case "auto_records":
       return blocks.auto_records.comments;
+    case "oneauto":
+      return blocks.oneauto.comments;
     case "cc_vin":
       return blocks.cc_vin.comments;
     case "tjekbil":
@@ -302,6 +309,8 @@ export function applySourceBlockGeneratedComment(
       if (targetField === "oilChangeIntervalNotes") {
         return { ...block, oilChangeIntervalNotes: html };
       }
+      return { ...block, comments: html };
+    case "oneauto":
       return { ...block, comments: html };
     case "cc_vin":
       return { ...(block as CcVinBlockState), comments: html };

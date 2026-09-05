@@ -24,6 +24,7 @@ import {
   listingAnalysisTrafficLevel,
   listingSectionTrafficLevel,
   ltabTrafficLevel,
+  oneautoTrafficLevel,
   tirgusTrafficLevel,
   vendorAvotuTrafficLevel,
   vinRegistryTrafficLevel,
@@ -110,6 +111,8 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
       return TRAFFIC_RANK[autoRecordsTrafficLevel(block as WorkspaceSourceBlocks["auto_records"])];
     case "cc_vin":
       return TRAFFIC_RANK[ccVinTrafficLevel(block as WorkspaceSourceBlocks["cc_vin"])];
+    case "oneauto":
+      return TRAFFIC_RANK[oneautoTrafficLevel(block as WorkspaceSourceBlocks["oneauto"])];
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -278,6 +281,9 @@ export function coalesceOrderWorkspacePersistBody(
     cc_vin: wiped.has("cc_vin")
       ? incomingBlocks.cc_vin
       : pickRicherCcVinBlock(incomingBlocks.cc_vin, baselineBlocks.cc_vin),
+    oneauto: wiped.has("oneauto")
+      ? incomingBlocks.oneauto
+      : pickRicherSourceBlock("oneauto", incomingBlocks.oneauto, baselineBlocks.oneauto),
     tjekbil: wiped.has("tjekbil")
       ? incomingBlocks.tjekbil
       : withMergedSourceBlockPhotos(
@@ -587,6 +593,7 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
   s += vendorAvotuTrafficLevel(body.sourceBlocks.autodna) === "empty" ? 0 : 1;
   s += vendorAvotuTrafficLevel(body.sourceBlocks.carvertical) === "empty" ? 0 : 1;
   s += autoRecordsTrafficLevel(body.sourceBlocks.auto_records) === "empty" ? 0 : 1;
+  s += oneautoTrafficLevel(body.sourceBlocks.oneauto) === "empty" ? 0 : 1;
   s += ltabTrafficLevel(body.sourceBlocks.ltab) === "empty" ? 0 : 1;
   s += citiAvotiTrafficLevel(body.sourceBlocks.citi_avoti) === "empty" ? 0 : 1;
   s +=
@@ -617,7 +624,11 @@ export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistB
     return true;
   }
   if (csddTrafficLevel(b.csdd) !== "empty") return true;
-  if (autoRecordsTrafficLevel(b.auto_records) !== "empty" || ltabTrafficLevel(b.ltab) !== "empty") {
+  if (
+    autoRecordsTrafficLevel(b.auto_records) !== "empty" ||
+    oneautoTrafficLevel(b.oneauto) !== "empty" ||
+    ltabTrafficLevel(b.ltab) !== "empty"
+  ) {
     return true;
   }
   for (const section of b.citi_avoti.sections) {

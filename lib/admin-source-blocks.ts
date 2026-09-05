@@ -15,6 +15,10 @@ import {
   CARINFO_HOME_URL,
   CARVERTICAL_REPORTS_URL,
 } from "@/lib/admin-vin-urls";
+import { emptyOneautoBlock, parseOneautoBlockRaw, type OneautoBlockState } from "@/lib/oneauto-block";
+
+export type { OneautoBlockState } from "@/lib/oneauto-block";
+export { emptyOneautoBlock, oneautoBlockHasContent, oneautoBlockToPlainText } from "@/lib/oneauto-block";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
 import { sanitizeVinRegistryClientText } from "@/lib/vin-registry-client-text";
@@ -118,6 +122,7 @@ export const SOURCE_BLOCK_KEYS = [
   "autodna",
   "carvertical",
   "auto_records",
+  "oneauto",
   "cc_vin",
   "tjekbil",
   "mnt_ee",
@@ -142,7 +147,7 @@ export type SourceBlockKey = (typeof SOURCE_BLOCK_KEYS)[number];
 /** Režģa standarta bloki (rindas + komentāri; bez CSDD, citi_avoti, Sludinājuma analīzes). */
 export type StandardSourceBlockKey = Exclude<
   SourceBlockKey,
-  "csdd" | "listing_analysis" | "citi_avoti" | "cc_vin"
+  "csdd" | "listing_analysis" | "citi_avoti" | "cc_vin" | "oneauto"
 >;
 
 export const STANDARD_SOURCE_BLOCK_KEYS: StandardSourceBlockKey[] = [
@@ -159,6 +164,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   autodna: "AutoDNA",
   carvertical: "CarVertical",
   auto_records: "OFICIĀLĀ DĪLERA DATI",
+  oneauto: "ONEAUTO",
   cc_vin: CC_VIN_ADMIN_LABEL,
   tjekbil: "DĀNIJAS REĢISTRI",
   mnt_ee: "MNT.EE — Igaunijas reģistrs",
@@ -177,6 +183,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   autodna: AUTODNA_LV_HOME_URL,
   carvertical: CARVERTICAL_REPORTS_URL,
   auto_records: AUTORECORDS_BASE_URL.replace(/\/$/, ""),
+  oneauto: "https://www.oneautoapi.com/home/api/",
   cc_vin: "https://cc.vin",
   tjekbil: "https://www.tjekbil.dk",
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
@@ -194,6 +201,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   autodna: "text-sky-700",
   carvertical: "text-yellow-600",
   auto_records: "text-orange-500",
+  oneauto: "text-indigo-800",
   cc_vin: "text-violet-700",
   tjekbil: "text-rose-700",
   mnt_ee: "text-cyan-700",
@@ -954,6 +962,7 @@ export type WorkspaceSourceBlocks = {
   autodna: VendorAvotuBlockState;
   carvertical: VendorAvotuBlockState;
   auto_records: AutoRecordsBlockState;
+  oneauto: OneautoBlockState;
   cc_vin: CcVinBlockState;
   tjekbil: VinRegistryBlockState;
   mnt_ee: VinRegistryBlockState;
@@ -1308,6 +1317,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     autodna: emptyVendorAvotuBlock(),
     carvertical: emptyVendorAvotuBlock(),
     auto_records: emptyAutoRecordsBlock(),
+    oneauto: emptyOneautoBlock(),
     cc_vin: emptyCcVinBlock(),
     tjekbil: emptyVinRegistryBlock(),
     mnt_ee: emptyVinRegistryBlock(),
@@ -2288,6 +2298,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       };
     })(),
     cc_vin: normalizeCcVinBlock(blocks.cc_vin),
+    oneauto: parseOneautoBlockRaw(blocks.oneauto),
     ltab: {
       ...d.ltab,
       ...blocks.ltab,
@@ -2399,6 +2410,11 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   const rawTirgus = o.tirgus;
   if (rawTirgus && typeof rawTirgus === "object") {
     base.tirgus = parseTirgusBlockRaw(rawTirgus as Record<string, unknown>);
+  }
+
+  const rawOneauto = o.oneauto;
+  if (rawOneauto && typeof rawOneauto === "object") {
+    base.oneauto = parseOneautoBlockRaw(rawOneauto);
   }
 
   const rawLtab = o.ltab;
