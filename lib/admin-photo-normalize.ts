@@ -25,12 +25,7 @@ export function isLikelyHeicImageFile(file: { type?: string; name?: string }): b
 
 async function heicBufferToJpeg(input: Buffer): Promise<Buffer | null> {
   try {
-    const mod = (await import("heic-convert")) as { default?: unknown };
-    const convert = (typeof mod.default === "function" ? mod.default : mod) as (opts: {
-      buffer: Buffer;
-      format: "JPEG" | "PNG";
-      quality: number;
-    }) => Promise<ArrayBuffer>;
+    const { default: convert } = await import("heic-convert");
     const out = await convert({ buffer: input, format: "JPEG", quality: 0.88 });
     const jpeg = Buffer.from(out);
     return isJpegMagicBuffer(jpeg) ? jpeg : null;
