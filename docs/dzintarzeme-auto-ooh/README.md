@@ -45,6 +45,13 @@ Pildīti oranži kanālburti + zīme uz jumta, bez kastes un bez paneļa.
 - `dzintarzeme-ooh-letters-05-left.png` - kompakti pa kreisi
 - `dzintarzeme-ooh-letters-06-dusk.png` - pildīti burti krēslā
 
+## 6. lockup uz abām stūra fasādēm
+
+Tas pats kompaktais lockup (logo pa kreisi, pildīti burti, bez fona) uz abām redzamajām sienām.
+
+- `dzintarzeme-ooh-06-both-sides-letters.png` - virs logiem, bēšajā ķieģelī
+- `dzintarzeme-ooh-06-both-sides-letters-b.png` - tumšajā joslā, pa kreisi katrā pusē
+
 ## Sienas kārta (iepriekšējā)
 
 - `dzintarzeme-ooh-contact-sheet-10.png` un `dzintarzeme-ooh-01` līdz `10` - uzraksti uz ķieģeļu sienas.
