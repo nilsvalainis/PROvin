@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildProvinAuditPdfFilename,
+  buildProvinDilerisPdfFilename,
   resolveProvinAuditPdfProductBrand,
 } from "@/lib/audit-report-pdf-filename";
 
@@ -31,6 +32,12 @@ describe("buildProvinAuditPdfFilename", () => {
     expect(
       buildProvinAuditPdfFilename("WVWZZZ1JZXW000001", { checkoutLine: "mini" }),
     ).toBe("PROVIN_MINI_WVWZZZ1JZXW000001.pdf");
+  });
+
+  it("builds PROVIN_DILERIS_<VIN>.pdf for dealer-only reports", () => {
+    expect(buildProvinDilerisPdfFilename("WVWZZZ1JZXW000001")).toBe(
+      "PROVIN_DILERIS_WVWZZZ1JZXW000001.pdf",
+    );
   });
 
   it("sanitizes VIN and uses NAV_VIN when empty", () => {

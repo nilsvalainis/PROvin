@@ -30,6 +30,33 @@ export type PdfVisibilitySettings = {
   iriss: boolean;
 };
 
+/** Tikai OFICIĀLĀ DĪLERA DATI. Netiek merģēts caur `mergePdfVisibility` (tas piespiedu kārtā ieslēdz hubu). */
+export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
+  payment: false,
+  vehicle: false,
+  client: false,
+  notes: false,
+  portfolio: false,
+  alerts: false,
+  unifiedMileage: false,
+  csddMileageTable: false,
+  unifiedIncidents: false,
+  csdd: false,
+  autodna: false,
+  carvertical: false,
+  auto_records: true,
+  oneauto: true,
+  cc_vin: false,
+  tjekbil: false,
+  mnt_ee: false,
+  lkf_ee: false,
+  carinfo: false,
+  ltab: false,
+  citi_avoti: false,
+  sludinajums: false,
+  iriss: false,
+};
+
 export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   payment: true,
   vehicle: true,

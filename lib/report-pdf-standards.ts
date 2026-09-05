@@ -108,8 +108,12 @@ export type ClientReportLegalFooterBlocks = {
   gdprLine: string;
 };
 
-export function formatPdfDocFooterProductLabel(brand: "PROVIN_AUDITS" | "PROVIN_MINI"): string {
-  return brand === "PROVIN_MINI" ? "PROVIN MINI" : "PROVIN AUDITS";
+export function formatPdfDocFooterProductLabel(
+  brand: "PROVIN_AUDITS" | "PROVIN_MINI" | "PROVIN_DILERIS",
+): string {
+  if (brand === "PROVIN_MINI") return "PROVIN MINI";
+  if (brand === "PROVIN_DILERIS") return "PROVIN DĪLERIS";
+  return "PROVIN AUDITS";
 }
 
 /** PDF kolofona meta: produkts · VIN · ģenerēšanas datums. Bez izdevēja personas datiem. */

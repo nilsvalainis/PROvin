@@ -154,7 +154,11 @@ import {
 } from "@/lib/csdd-ui-flags";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
-import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
+import {
+  DEALER_ONLY_PDF_VISIBILITY,
+  mergePdfVisibility,
+  type PdfVisibilitySettings,
+} from "@/lib/pdf-visibility";
 import { type OneautoBlockState } from "@/lib/oneauto-block";
 import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
 import { oneautoBlockHasFoldableContent, resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
@@ -179,6 +183,11 @@ import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
+const PDF_DEALER_ONLY_TITLE = "PROVIN DĪLERIS";
+
+function isDealerOnlyReport(p: ClientReportPayload): boolean {
+  return p.pdfReportKind === "dealer";
+}
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
 /** Vienots komentāru bloka virsraksts visā PDF atskaitē (kā NEGADĪJUMU VĒSTURE). */
@@ -279,6 +288,8 @@ export type ClientReportPayload = {
   listingAnalysis?: ListingAnalysisBlockState | null;
   /** Ja nav — PDF iekļauj visu (admin noklusējums). */
   pdfVisibility?: PdfVisibilitySettings | null;
+  /** `dealer`: tikai OFICIĀLĀ DĪLERA DATI, bez hubu / citu avotu sekcijām. */
+  pdfReportKind?: "full" | "dealer";
   /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums — visi ieslēgti). */
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
   /** Manuāli pievienoti augšējās joslas brīdinājumi. */
@@ -2874,7 +2885,8 @@ export function buildClientReportDocumentHtml(args: {
     sourceBlockPhotoDataUrls,
     printInk = false,
   } = args;
-  const vis = mergePdfVisibility(p.pdfVisibility);
+  const dealerOnly = isDealerOnlyReport(p);
+  const vis = dealerOnly ? DEALER_ONLY_PDF_VISIBILITY : mergePdfVisibility(p.pdfVisibility);
 
   const money =
     p.amountTotal == null
@@ -2894,7 +2906,7 @@ export function buildClientReportDocumentHtml(args: {
   lines.push('<div class="pdf-v1-hero-inner">');
   lines.push(provincLogoSvg());
   lines.push('<div class="pdf-v1-hero-text">');
-  lines.push(`<h1 class="pdf-v1-doc-title">${escapeHtml(PDF_MAIN_TITLE)}</h1>`);
+  lines.push(`<h1 class="pdf-v1-doc-title">${escapeHtml(dealerOnly ? PDF_DEALER_ONLY_TITLE : PDF_MAIN_TITLE)}</h1>`);
   {
     const vin = p.vin?.trim();
     const vinHtml = vin
@@ -2936,39 +2948,43 @@ export function buildClientReportDocumentHtml(args: {
         ),
       })
     : [];
-  lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
+  if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
 
-  const vehicleSpecHtml = buildPdfVehicleSpecSectionHtml(p.csddForm, p.vin, vis);
+  const vehicleSpecHtml = dealerOnly ? "" : buildPdfVehicleSpecSectionHtml(p.csddForm, p.vin, vis);
   if (vehicleSpecHtml) lines.push(vehicleSpecHtml);
 
-  const provinSourcesStrip = buildProvinPdfSourcesUsedStripHtml(p, vis);
+  const provinSourcesStrip = dealerOnly ? "" : buildProvinPdfSourcesUsedStripHtml(p, vis);
   if (provinSourcesStrip) lines.push(provinSourcesStrip);
 
-  const aboutBlock = buildPdfAboutReportBlock({
-    order: p,
-    money,
-    dateFmt,
-    makeModel: vehicleSpecHtml ? null : makeModel,
-    show: { payment: vis.payment, vehicle: vis.vehicle, client: vis.client, notes: vis.notes },
-    titleIconHtml: sectionIconPdfHtml("fileText"),
-  });
+  const aboutBlock = dealerOnly
+    ? ""
+    : buildPdfAboutReportBlock({
+        order: p,
+        money,
+        dateFmt,
+        makeModel: vehicleSpecHtml ? null : makeModel,
+        show: { payment: vis.payment, vehicle: vis.vehicle, client: vis.client, notes: vis.notes },
+        titleIconHtml: sectionIconPdfHtml("fileText"),
+      });
   if (aboutBlock) lines.push(aboutBlock);
 
-  const lifecycleHtml = buildPdfLifecycleTimelineHtml(p);
-  if (lifecycleHtml) lines.push(lifecycleHtml);
+  if (!dealerOnly) {
+    const lifecycleHtml = buildPdfLifecycleTimelineHtml(p);
+    if (lifecycleHtml) lines.push(lifecycleHtml);
 
-  const mileageOpts: CollectUnifiedMileageOptions = {
-    omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
-    omitAutoRecords: !dealerPdfVisible(p, vis),
-    omitCcVin: !vis.cc_vin,
-    omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
-    omitListingMileage: !vis.sludinajums,
-  };
-  const unifiedMileageHtml = buildUnifiedMileageTableHtml(p, mileageOpts);
-  if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
+    const mileageOpts: CollectUnifiedMileageOptions = {
+      omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
+      omitAutoRecords: !dealerPdfVisible(p, vis),
+      omitCcVin: !vis.cc_vin,
+      omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
+      omitListingMileage: !vis.sludinajums,
+    };
+    const unifiedMileageHtml = buildUnifiedMileageTableHtml(p, mileageOpts);
+    if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
-  const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis, incidentPhotoDataUrls);
-  if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
+    const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis, incidentPhotoDataUrls);
+    if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
+  }
 
   const avotuHtml = buildAvotuDatiSectionHtml(
     p,
@@ -2999,6 +3015,7 @@ export function buildClientReportDocumentHtml(args: {
       vin: p.vin,
       amountTotalCents: p.amountTotal,
       generatedLabel: `Ģenerēts ${dateFmt.format(new Date())}`,
+      productBrand: dealerOnly ? "PROVIN_DILERIS" : undefined,
     }),
   );
   lines.push("</div>");

@@ -1500,6 +1500,49 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toMatch(/pdf-svc-work[^>]*>BMW Mobiler Service/);
   });
 
+  it("dealer-only report prints official dealer data and omits other sources", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "BMW 530d";
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        {
+          date: "01.12.2023",
+          odometer: "47521",
+          location: "Niederlassung Bonn BMW AG, Bonn",
+          works: "Regulārā apkope: Eļļas maiņa",
+        },
+      ],
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        pdfReportKind: "dealer",
+        csddForm: csdd,
+        autoRecordsBlock: autoRecords,
+        iriss: "Pilns kopsavilkums no visiem avotiem.",
+        tehniskoRiskuAnalize: "Tehniskais risks no CSDD.",
+        manualLtabBlock: {
+          rows: [],
+          comments: "LTAB komentārs nedrīkst parādīties.",
+          certificate: { ...emptyLtabCertificate(), accidentCount: "2" },
+        },
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("PROVIN DĪLERIS");
+    expect(doc).toContain("OFICIĀLĀ DĪLERA DATI");
+    expect(doc).toContain("Niederlassung Bonn BMW AG, Bonn");
+    expect(doc).not.toContain("TRANSPORTLĪDZEKĻA AUDITS");
+    expect(doc).not.toContain(PDF_LIFECYCLE_TITLE);
+    expect(doc).not.toContain("APPROVED BY IRISS");
+    expect(doc).not.toContain("Pilns kopsavilkums no visiem avotiem.");
+    expect(doc).not.toContain("LTAB komentārs nedrīkst parādīties.");
+    expect(doc).not.toContain('class="pdf-csdd');
+  });
+
   it("citi avoti subheads use manual label only, without CITI AVOTI prefix", () => {
     const p = {
       citiAvoti: {

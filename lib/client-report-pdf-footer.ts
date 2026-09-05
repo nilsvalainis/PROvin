@@ -3,7 +3,10 @@
  * Bez juridiskā vārda, reģ. nr. un adreses.
  */
 
-import { resolveProvinAuditPdfProductBrand } from "@/lib/audit-report-pdf-filename";
+import {
+  resolveProvinAuditPdfProductBrand,
+  type ProvinAuditPdfProductBrand,
+} from "@/lib/audit-report-pdf-filename";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
 import {
   buildPdfDocFooterMetaLine,
@@ -25,10 +28,11 @@ export function buildPdfDocFooterHtml(args: {
   vin: string | null;
   amountTotalCents: number | null;
   generatedLabel: string;
+  productBrand?: ProvinAuditPdfProductBrand | null;
 }): string {
   const b = getClientReportLegalFooterBlocks();
   const productLabel = formatPdfDocFooterProductLabel(
-    resolveProvinAuditPdfProductBrand({ amountTotalCents: args.amountTotalCents }),
+    args.productBrand ?? resolveProvinAuditPdfProductBrand({ amountTotalCents: args.amountTotalCents }),
   );
   const meta = buildPdfDocFooterMetaLine({
     vin: args.vin,

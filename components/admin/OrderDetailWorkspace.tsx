@@ -106,7 +106,11 @@ import {
 import { attachPdfTextsToVendorBlocks } from "@/lib/vendor-damage-hydrate";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
-import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
+import {
+  DEALER_ONLY_PDF_VISIBILITY,
+  mergePdfVisibility,
+  type PdfVisibilitySettings,
+} from "@/lib/pdf-visibility";
 import {
   ListingAnalysisMainBlockTitleRow,
   ListingAnalysisSubsectionHeading,
@@ -201,7 +205,11 @@ import {
   orderHasMileageDataForAi,
   orderHasSourceDataForAi,
 } from "@/lib/admin-ai-data-availability";
-import { buildProvinAuditPdfFilename, resolveProvinAuditPdfProductBrand } from "@/lib/audit-report-pdf-filename";
+import {
+  buildProvinAuditPdfFilename,
+  buildProvinDilerisPdfFilename,
+  resolveProvinAuditPdfProductBrand,
+} from "@/lib/audit-report-pdf-filename";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
@@ -333,6 +341,7 @@ const wizardFooterNav = `${wizardFooterBtnBase} border border-slate-300 bg-white
 const wizardFooterPreview = `${wizardFooterBtnBase} border border-amber-600/35 bg-[#FFD700] text-amber-950 shadow-sm hover:bg-[#ffe033]`;
 const wizardFooterPdf = `${wizardFooterBtnBase} border border-emerald-800/40 bg-[#22C55E] text-white shadow-sm hover:bg-[#16a34a]`;
 const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] border border-slate-800 bg-slate-900 text-white shadow-sm hover:bg-black`;
+const wizardFooterDealer = `${wizardFooterBtnBase} min-w-[8.75rem] border border-orange-800/35 bg-orange-500 text-white shadow-sm hover:bg-orange-600`;
 
 function adminCommentFieldLabel(icon: LucideIcon, title: string) {
   return (
@@ -1648,11 +1657,9 @@ export function OrderDetailWorkspace({
           citiAvotiSectionIndex,
           targetField,
         );
-        const res = await fetch("/api/admin/ai/source-comment", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const generated = await generateAdminAiText(
+          "/api/admin/ai/source-comment",
+          {
             ...buildAiOrderPayload({
               operatorNotes,
               existingDraftPlain: adminRichHtmlToPlainText(existingComments).trim(),
@@ -1661,13 +1668,7 @@ export function OrderDetailWorkspace({
             targetField,
             ...(citiAvotiSectionIndex != null ? { citiAvotiSectionIndex } : {}),
             modelTier,
-          }),
-        });
-        const { data, parseFailed } = await parseAdminAiResponse(res);
-        const generated = readGeneratedAdminAiText(
-          res,
-          data,
-          parseFailed,
+          },
           "AI: neizdevās ģenerēt komentāru",
         );
         let applied = false;
@@ -1676,7 +1677,7 @@ export function OrderDetailWorkspace({
             generated,
             (text) => {
               const html = aiExpertSourceCommentToRichHtml(text);
-              const prevBlock = wsPersistRef.current.sourceBlocks[blockKey];
+              const prevBlock = wsStateRef.current.sourceBlocks[blockKey];
               const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
                 citiAvotiSectionIndex,
                 targetField,
@@ -1687,6 +1688,9 @@ export function OrderDetailWorkspace({
           );
         });
         if (!applied) return;
+        if (orderDraftPersistenceEnabled) {
+          await persistFullWorkspaceRef("source-comment", { showFlash: false });
+        }
       } catch {
         setAiSourceCommentErr((prev) => ({ ...prev, [busyKey]: "AI: neizdevās savienoties" }));
       } finally {
@@ -1696,7 +1700,7 @@ export function OrderDetailWorkspace({
         setAiSourceCommentBusy(cleared);
       }
     },
-    [buildAiOrderPayload, payload.aiAllowed, updateSourceBlock],
+    [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, persistFullWorkspaceRef, updateSourceBlock],
   );
 
   const runFlashMax = useCallback(async (selection: FlashMaxSelection) => {
@@ -1798,10 +1802,9 @@ export function OrderDetailWorkspace({
               (text) => {
                 const html = aiExpertSourceCommentToRichHtml(text);
                 if (job.kind === "source") {
-                  const latest = wsPersistRef.current;
                   const nextBlock = applySourceBlockGeneratedComment(
                     job.blockKey,
-                    latest.sourceBlocks[job.blockKey],
+                    wsStateRef.current.sourceBlocks[job.blockKey],
                     html,
                     {
                       targetField: job.targetField,
@@ -2889,15 +2892,17 @@ export function OrderDetailWorkspace({
     [wizardStepLevels],
   );
 
-  const openPrintReport = async (opts?: { printInk?: boolean }) => {
+  const openPrintReport = async (opts?: { printInk?: boolean; dealerOnly?: boolean }) => {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
       await flushWorkspaceServerPatch({ showFlash: false });
     }
 
+    const dealerOnly = opts?.dealerOnly === true;
+
     let listingMarket: ListingMarketSnapshot | null = null;
     const listingUrl = payload.listingUrl?.trim();
-    if (listingUrl) {
+    if (!dealerOnly && listingUrl) {
       try {
         const res = await fetch("/api/admin/scrape-listing", {
           method: "POST",
@@ -2919,7 +2924,7 @@ export function OrderDetailWorkspace({
     const photoIds = (listingBlocks.listing_analysis.photos ?? []).map((p) => p.id);
     const listingAnalysisPhotoDataUrls = new Map<string, string>();
     let resolvedPhotoIds = photoIds;
-    if (photoIds.length > 0) {
+    if (!dealerOnly && photoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/listing-analysis-photo/pdf-batch", {
           method: "POST",
@@ -2992,7 +2997,7 @@ export function OrderDetailWorkspace({
     const ccVinPhotoIds = (listingBlocks.cc_vin.photos ?? []).map((p) => p.id);
     const ccVinPhotoDataUrls = new Map<string, string>();
     let resolvedCcVinPhotoIds = ccVinPhotoIds;
-    if (ccVinPhotoIds.length > 0) {
+    if (!dealerOnly && ccVinPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/cc-vin-photo/pdf-batch", {
           method: "POST",
@@ -3026,7 +3031,7 @@ export function OrderDetailWorkspace({
 
     const incidentPhotoIds = (wsPersistRef.current.incidentPhotos ?? []).map((p) => p.id);
     const incidentPhotoDataUrls = new Map<string, string>();
-    if (incidentPhotoIds.length > 0) {
+    if (!dealerOnly && incidentPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/incident-photo/pdf-batch", {
           method: "POST",
@@ -3050,7 +3055,7 @@ export function OrderDetailWorkspace({
 
     const sourceBlockPhotoIds = collectWorkspaceSourceBlockPhotoIds(listingBlocks);
     const sourceBlockPhotoDataUrls = new Map<string, string>();
-    if (sourceBlockPhotoIds.length > 0) {
+    if (!dealerOnly && sourceBlockPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/source-block-photo/pdf-batch", {
           method: "POST",
@@ -3071,8 +3076,10 @@ export function OrderDetailWorkspace({
       }
     }
 
-    let manualVendorBlocks = toPdfManualVendorBlocks(blocksDisplaySafe);
-    const portfolioPdfs = portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
+    let manualVendorBlocks = dealerOnly ? [] : toPdfManualVendorBlocks(blocksDisplaySafe);
+    const portfolioPdfs = dealerOnly
+      ? []
+      : portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
     if (portfolioPdfs.length > 0) {
       try {
         const texts: { fileName: string; text: string }[] = [];
@@ -3091,29 +3098,33 @@ export function OrderDetailWorkspace({
       payload: {
         ...payload,
         ...flatSources,
-        csddForm: blocksDisplaySafe.csdd,
-        tirgusForm: blocksDisplaySafe.tirgus,
+        ...(dealerOnly
+          ? { csdd: "", ltab: "", tirgus: "", citi: "" }
+          : {}),
+        csddForm: dealerOnly ? undefined : blocksDisplaySafe.csdd,
+        tirgusForm: dealerOnly ? undefined : blocksDisplaySafe.tirgus,
         manualVendorBlocks,
-        manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
+        manualLtabBlock: dealerOnly ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab),
         autoRecordsBlock: autoRecordsForPdf,
         oneautoBlock: blocksDisplaySafe.oneauto,
-        ccVinBlock: ccVinForPdf,
-        citiAvoti: blocksDisplaySafe.citi_avoti,
-        listingAnalysis: listingAnalysisForPdf,
-        iriss: ws.iriss,
-        apskatesPlāns: ws.apskatesPlāns,
-        tehniskoRiskuAnalize: ws.tehniskoRiskuAnalize,
-        cenasAtbilstiba: ws.cenasAtbilstiba,
-        listingMarket,
-        pdfVisibility,
-        pdfBannerInclude,
-        manualBanners,
-        internalComment: internalCommentDraft,
-        mileageComment: mileageCommentDraft,
-        incidentPhotoGroups: wsPersistRef.current.incidentPhotoGroups,
-        incidentPhotos: wsPersistRef.current.incidentPhotos,
+        ccVinBlock: dealerOnly ? null : ccVinForPdf,
+        citiAvoti: dealerOnly ? null : blocksDisplaySafe.citi_avoti,
+        listingAnalysis: dealerOnly ? null : listingAnalysisForPdf,
+        iriss: dealerOnly ? "" : ws.iriss,
+        apskatesPlāns: dealerOnly ? "" : ws.apskatesPlāns,
+        tehniskoRiskuAnalize: dealerOnly ? "" : ws.tehniskoRiskuAnalize,
+        cenasAtbilstiba: dealerOnly ? "" : ws.cenasAtbilstiba,
+        listingMarket: dealerOnly ? null : listingMarket,
+        pdfVisibility: dealerOnly ? DEALER_ONLY_PDF_VISIBILITY : pdfVisibility,
+        pdfReportKind: dealerOnly ? "dealer" : "full",
+        pdfBannerInclude: dealerOnly ? {} : pdfBannerInclude,
+        manualBanners: dealerOnly ? [] : manualBanners,
+        internalComment: dealerOnly ? "" : internalCommentDraft,
+        mileageComment: dealerOnly ? "" : mileageCommentDraft,
+        incidentPhotoGroups: dealerOnly ? [] : wsPersistRef.current.incidentPhotoGroups,
+        incidentPhotos: dealerOnly ? [] : wsPersistRef.current.incidentPhotos,
       },
-      portfolio: portfolio.map((p) => ({ name: p.name, size: p.size })),
+      portfolio: dealerOnly ? [] : portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
       dateFmt,
       formatBytes,
@@ -3134,10 +3145,12 @@ export function OrderDetailWorkspace({
     w.document.write(html);
     w.document.close();
 
-    const printTitle = buildProvinAuditPdfFilename(payload.vin, {
-      checkoutLine: payload.checkoutLine,
-      amountTotalCents: payload.amountTotal,
-    });
+    const printTitle = dealerOnly
+      ? buildProvinDilerisPdfFilename(payload.vin)
+      : buildProvinAuditPdfFilename(payload.vin, {
+          checkoutLine: payload.checkoutLine,
+          amountTotalCents: payload.amountTotal,
+        });
     const printFileTitle = opts?.printInk ? printTitle.replace(/\.pdf$/i, "_drukai.pdf") : printTitle;
     let printed = false;
     const schedulePrint = () => {
@@ -4664,6 +4677,14 @@ export function OrderDetailWorkspace({
           </button>
           <button type="button" onClick={() => void openPrintReport()} className={wizardFooterPdf}>
             Ģenerēt PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ dealerOnly: true })}
+            className={wizardFooterDealer}
+            title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti."
+          >
+            Ģenerēt dīlera PDF
           </button>
           <button
             type="button"
