@@ -420,7 +420,7 @@ export function AdminOneautoSourceBlock({
                 recommendedTier="gemini-flash"
                 tiers={["gemini-flash", "gemini"]}
                 dialogTitle="Papildu piezīmes tulkojumam"
-                dialogHint="Pēc izvēles: piem. tikai darbus, saglabā OEM kodus. Flash vai Gemini iztulko tabulas skaidrā latviešu valodā."
+                dialogHint="Pēc izvēles: piem. tikai darbus, saglabā OEM kodus. Flash vai Gemini iztulko darbus un dzinēja laukus. Gatavo komplektāciju netulkojam."
                 title="Iztulko ielasītos OneAuto laukus skaidrā latviešu valodā"
                 onGenerate={translateLv}
               />

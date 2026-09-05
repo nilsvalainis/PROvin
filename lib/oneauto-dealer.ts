@@ -91,7 +91,7 @@ export function applyOneautoTranslatedDisplay(
   const curSvc = filledOneautoServiceEvents(current.serviceTimeline);
   return {
     powertrain: mergeTranslatedKv(curPower, next.powertrain),
-    equipment: mergeTranslatedKv(curEquip, next.equipment),
+    equipment: curEquip,
     serviceTimeline: mergeTranslatedService(curSvc, next.serviceTimeline),
   };
 }

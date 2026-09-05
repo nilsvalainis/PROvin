@@ -55,7 +55,7 @@ describe("OneAuto → oficiālā dīlera forma", () => {
     expect(parsed.display.serviceTimeline[0]?.date).toBe("23.12.2020");
   });
 
-  it("tulkojums saglabā datumus un km, aizstāj darbus", () => {
+  it("tulkojums neskar Gatavo komplektāciju, saglabā datumus un km, aizstāj darbus", () => {
     const current = {
       equipment: [{ label: "Panoramic roof", value: "Yes" }],
       powertrain: [{ label: "Engine", value: "D4204T14" }],
@@ -70,7 +70,8 @@ describe("OneAuto → oficiālā dīlera forma", () => {
         { date: "01.01.1999", odometer: "1", place: "Dīleris NL", works: "Eļļas maiņa" },
       ],
     });
-    expect(next.equipment[0]).toEqual({ label: "Panorāmas jumts", value: "Jā" });
+    expect(next.equipment[0]).toEqual({ label: "Panoramic roof", value: "Yes" });
+    expect(next.powertrain[0]?.label).toBe("Dzinējs");
     expect(next.serviceTimeline[0]).toMatchObject({
       date: "23.12.2020",
       odometer: "142220",

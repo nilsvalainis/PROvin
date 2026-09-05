@@ -19,9 +19,10 @@ import {
 const ONEAUTO_TRANSLATE_SYSTEM = `You translate OEM / dealer vehicle data into clear Latvian for a professional car-history report.
 
 RULES:
-- Output JSON only: { "equipment": [{"label","value"}], "powertrain": [{"label","value"}], "serviceTimeline": [{"date","odometer","place","works"}] }.
+- Output JSON only: { "powertrain": [{"label","value"}], "serviceTimeline": [{"date","odometer","place","works"}] }.
 - Keep the same number of rows and the same order as the input.
-- Translate English, Dutch, German and other foreign labels and work descriptions into clear Latvian.
+- NEVER translate Gatavā komplektācija / factory equipment lists. Those stay in the original language.
+- Translate English, Dutch, German and other foreign powertrain labels and work descriptions into clear Latvian.
 - Keep OEM codes, part numbers, VIN fragments, software IDs (ECM, PBM, QB) unchanged.
 - Do not invent facts, dates, km or extra rows.
 - Dates and odometer values stay exactly as given.
@@ -38,18 +39,16 @@ export async function translateOneautoDisplayWithAi(input: {
     powertrain: filledOneautoKvRows(input.display.powertrain),
     serviceTimeline: filledOneautoServiceEvents(input.display.serviceTimeline),
   };
-  if (
-    current.equipment.length === 0 &&
-    current.powertrain.length === 0 &&
-    current.serviceTimeline.length === 0
-  ) {
-    throw new Error("empty_source_data");
+  if (current.powertrain.length === 0 && current.serviceTimeline.length === 0) {
+    if (current.equipment.length === 0) throw new Error("empty_source_data");
+    return input.display;
   }
 
   const userPrompt = appendAiOperatorNotesSection(
     `Iztulko šos OneAuto OEM datus skaidrā latviešu valodā. Saglabā rindu skaitu un kārtību.
+Gatavo komplektāciju (equipment) NETULKO un neatgriez.
 
-${JSON.stringify(current, null, 2)}
+${JSON.stringify({ powertrain: current.powertrain, serviceTimeline: current.serviceTimeline }, null, 2)}
 
 Atbildi tikai ar JSON.`,
     { operatorNotes: input.operatorNotes },
