@@ -71,15 +71,14 @@ export function buildOutvinDealerReportPdfInnerHtml(report: OutvinDealerReport |
   if (equip.length > 0) {
     parts.push(pdfSubLabel("Aprīkojums"));
     parts.push(
-      pdfKvTable(
-        equip.map((line, i) => {
-          const text =
-            line.code.trim() && line.description.trim()
-              ? `${line.code.trim()} — ${line.description.trim()}`
-              : line.code.trim() || line.description.trim();
-          return { k: equip.length > 1 ? `${i + 1}.` : "Aprīkojums", v: text };
-        }),
-      ),
+      `<ul class="pdf-dealer-eq">${equip
+        .map((line) => {
+          const code = line.code.trim();
+          const desc = line.description.trim();
+          const label = code ? `<b>${escapeHtml(code)}</b>${escapeHtml(desc)}` : escapeHtml(desc);
+          return `<li>${label}</li>`;
+        })
+        .join("")}</ul>`,
     );
   }
 

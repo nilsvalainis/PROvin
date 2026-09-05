@@ -72,6 +72,10 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
+import {
+  buildDealerSectionCoverHtml,
+  resolveDealerCoverVehicle,
+} from "@/lib/pdf-dealer-section-cover";
 import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
 import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import { normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
@@ -1421,10 +1425,14 @@ function buildTirgusListingHistoryBodyHtml(
 const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
 const PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL = "Eļļas maiņas intervāli";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
+const PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL = "Fotogrāfiju pielikums";
 
 /** OFICIĀLĀ DĪLERA DATI — servisa vizītes (datums, km, vieta, darbi). */
-function buildAutoRecordsServiceWorksTableHtml(rows: AutoRecordsServiceWorkRow[]): string {
-  const body = buildDealerServiceVisitsHtml(rows);
+function buildAutoRecordsServiceWorksTableHtml(
+  rows: AutoRecordsServiceWorkRow[],
+  omitSpan = false,
+): string {
+  const body = buildDealerServiceVisitsHtml(rows, { omitSpan });
   if (!body) return "";
   const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL);
   return `<section class="pdf-service-works-zone">${subheadHtml}${body}</section>`;
@@ -1438,23 +1446,35 @@ function buildSourcePhotoGroupsPdfHtml(
     groups: unknown,
     legacy: unknown,
   ) => { title: string; photos: { id: string }[] }[],
-  layout: "grid" | "stack" = "grid",
+  layout: "grid" | "stack" | "appendix" = "grid",
 ): string {
   if (!dataUrls?.size) return "";
 
   const groups = normalizeGroups(photoGroups, legacyPhotos);
   if (groups.length === 0) return "";
   const gridCls =
-    layout === "stack" ? "pdf-listing-photo-grid pdf-listing-photo-grid--full" : "pdf-listing-photo-grid";
+    layout === "stack"
+      ? "pdf-listing-photo-grid pdf-listing-photo-grid--full"
+      : layout === "appendix"
+        ? "pdf-listing-photo-grid pdf-listing-photo-grid--appendix"
+        : "pdf-listing-photo-grid";
+  const cellCls =
+    layout === "appendix" ? "pdf-listing-photo-cell pdf-listing-photo-cell--appendix" : "pdf-listing-photo-cell";
 
   const sections: string[] = [];
+  let photoIndex = 0;
   for (const group of groups) {
     const cells: string[] = [];
     for (const ph of group.photos) {
       const src = dataUrls.get(ph.id);
       if (!src) continue;
+      photoIndex += 1;
+      const cap =
+        layout === "appendix"
+          ? `<figcaption class="pdf-listing-photo-cap">${String(photoIndex).padStart(2, "0")}</figcaption>`
+          : "";
       cells.push(
-        `<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/></figure>`,
+        `<figure class="${cellCls}"><img class="pdf-listing-photo-img" src="${src}" alt=""/>${cap}</figure>`,
       );
     }
     if (cells.length === 0) continue;
@@ -1489,7 +1509,13 @@ function buildAutoRecordsAvotuSubsection(
     : "";
   const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport);
   const outvinInner = bundleInner.trim() || legacyInner.trim();
-  const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? []);
+  const coverHtml = buildDealerSectionCoverHtml({
+    vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
+    makeModel,
+    serviceWorks: b.serviceWorks ?? [],
+  });
+  const hasCover = coverHtml.length > 0;
+  const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? [], hasCover);
   const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
@@ -1503,17 +1529,21 @@ function buildAutoRecordsAvotuSubsection(
   const hasOutvin = outvinInner.length > 0;
   const hasServiceHistory = serviceHistoryBox.length > 0;
   const hasOilInterval = oilIntervalBox.length > 0;
-  const photosHtml = buildSourcePhotoGroupsPdfHtml(
+  const photosInner = buildSourcePhotoGroupsPdfHtml(
     b.photoGroups,
     b.photos,
     autoRecordsPhotoDataUrls,
     normalizeAutoRecordsPhotoGroups,
-    "stack",
+    "appendix",
   );
+  const photosHtml = photosInner
+    ? `<p class="pdf-subhead">${PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL}</p>${photosInner}`
+    : "";
   const hasPhotos = photosHtml.length > 0;
   const hasServiceWorks = serviceWorksTable.length > 0;
 
   if (
+    !hasCover &&
     !hasOutvin &&
     !hasServiceWorks &&
     !hasServiceHistory &&
@@ -1534,6 +1564,7 @@ function buildAutoRecordsAvotuSubsection(
     sourceRecordCountBadgeHtml(recordCount),
   );
   const bodyParts: string[] = [];
+  if (hasCover) bodyParts.push(coverHtml);
   if (sparkHtml) bodyParts.push(sparkHtml);
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceWorks) bodyParts.push(serviceWorksTable);
@@ -2213,6 +2244,7 @@ function clientReportPrintCss(): string {
         display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 8px;
       }
       .pdf-listing-photo-grid--full{grid-template-columns:1fr;gap:12px;}
+      .pdf-listing-photo-grid--appendix{grid-template-columns:1fr 1fr;gap:10px;}
       .pdf-listing-photo-group{margin:0 0 14px;}
       .pdf-listing-photo-group:last-child{margin-bottom:0;}
       .pdf-subhead--photo{margin:0 0 6px;}
@@ -2225,6 +2257,35 @@ function clientReportPrintCss(): string {
       .pdf-listing-photo-grid--full .pdf-listing-photo-img{
         max-height:none;width:100%;height:auto;object-fit:contain;
       }
+      .pdf-listing-photo-cell--appendix{
+        border:1px solid var(--pdf-line);border-radius:8px;overflow:hidden;background:#F8FAFC;
+      }
+      .pdf-listing-photo-grid--appendix .pdf-listing-photo-img{
+        max-height:none;width:100%;height:168px;object-fit:cover;border:0;border-radius:0;
+      }
+      .pdf-listing-photo-cap{
+        padding:5px 8px;font-size:9px;font-weight:600;color:#64748b;letter-spacing:0.02em;
+      }
+      .pdf-dealer-cover{
+        margin:0 0 14px;padding:16px 16px 14px;border-radius:12px;
+        background:linear-gradient(180deg,#E8F1FC 0%,#fff 72%);border:1px solid var(--pdf-line);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-dealer-cover__kicker{
+        margin:0;font-size:var(--pdf-fs-label);font-weight:700;letter-spacing:0.08em;
+        text-transform:uppercase;color:#6e6e73;
+      }
+      .pdf-dealer-cover__model{
+        margin:8px 0 0;font-size:20px;font-weight:750;letter-spacing:-0.03em;line-height:1.2;color:#0f172a;
+      }
+      .pdf-dealer-cover__meta{margin:6px 0 0;font-size:12px;line-height:1.4;color:#475569;}
+      .pdf-dealer-cover .pdf-svc-span{margin:14px 0 0;background:#fff;}
+      .pdf-dealer-eq{display:flex;flex-wrap:wrap;gap:5px;margin:0;padding:0;list-style:none;}
+      .pdf-dealer-eq li{
+        padding:4px 8px;border:1px solid #E2E8F0;border-radius:8px;background:#F8FAFC;
+        font-size:var(--pdf-fs-table);line-height:1.35;
+      }
+      .pdf-dealer-eq b{margin-right:6px;font-weight:750;color:${PDF_BRAND_BLUE_HEX};}
       .pdf-listing-history-frame{
         border:1px solid var(--pdf-line);
         border-radius:var(--pdf-radius-inner);

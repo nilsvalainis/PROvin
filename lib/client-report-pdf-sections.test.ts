@@ -1533,6 +1533,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain("PROVIN DĪLERIS");
+    expect(doc).toContain("pdf-dealer-cover");
+    expect(doc).toContain("BMW 530d");
     expect(doc).toContain("OFICIĀLĀ DĪLERA DATI");
     expect(doc).toContain("Niederlassung Bonn BMW AG, Bonn");
     expect(doc).not.toContain("TRANSPORTLĪDZEKĻA AUDITS");
@@ -1629,7 +1631,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });
 
-  it("auto records photos span the full source section width", () => {
+  it("auto records photos print as a numbered two-column appendix", () => {
     const dataUrls = new Map<string, string>([
       ["ar_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],
       ["ar_ph_112233445566778899aabbcc", "data:image/jpeg;base64,/9j/4AAQ"],
@@ -1664,9 +1666,12 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
       autoRecordsPhotoDataUrls: dataUrls,
     });
-    expect(doc).toContain("pdf-listing-photo-grid--full");
-    expect(doc).toMatch(/\.pdf-listing-photo-grid--full\{[^}]*grid-template-columns:1fr/);
-    expect(doc).toMatch(/\.pdf-listing-photo-grid--full \.pdf-listing-photo-img\{[^}]*max-height:none/);
+    expect(doc).toContain("Fotogrāfiju pielikums");
+    expect(doc).toContain("pdf-listing-photo-grid--appendix");
+    expect(doc).toMatch(/\.pdf-listing-photo-grid--appendix\{[^}]*grid-template-columns:1fr 1fr/);
+    expect(doc).toContain("pdf-listing-photo-cap");
+    expect(doc).toContain(">01</figcaption>");
+    expect(doc).toContain(">03</figcaption>");
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(3);
   });
 
@@ -1678,6 +1683,17 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(html).toContain("pdf-v1-kv");
     expect(html).not.toContain("mirror-table--outvin-vehicle");
     expect(html).not.toContain("pdf-outvin-equipment-grid");
+  });
+
+  it("outvin equipment prints as pills without a dash between code and text", () => {
+    const report = emptyOutvinDealerReport();
+    report.equipment = [{ code: "S403A", description: "Panorāmas stikla jumts" }];
+    const html = buildOutvinDealerReportPdfInnerHtml(report);
+    expect(html).toContain("pdf-dealer-eq");
+    expect(html).toContain("S403A");
+    expect(html).toContain("Panorāmas stikla jumts");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
   });
 
   it("APPROVED BY IRISS prints technical risks before inspection and summary", () => {

@@ -93,7 +93,7 @@ function visitHtml(row: AutoRecordsServiceWorkRow): string {
   </div>`;
 }
 
-function spanHtml(rows: AutoRecordsServiceWorkRow[]): string {
+function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean }): string {
   if (rows.length < 2) return "";
   const newest = rows[0]!;
   const oldest = rows[rows.length - 1]!;
@@ -102,13 +102,25 @@ function spanHtml(rows: AutoRecordsServiceWorkRow[]): string {
   if (!firstKm && !lastKm) return "";
   const firstDate = oldest.date.trim();
   const lastDate = newest.date.trim();
-  const firstMeta = ["Pirmais ieraksts", firstDate].filter(Boolean).join(" · ");
-  const lastMeta = ["Pēdējais ieraksts", lastDate].filter(Boolean).join(" · ");
+  const visitCount = `${rows.length} vizītes`;
+  const firstMeta = opts?.cover
+    ? firstDate
+    : ["Pirmais ieraksts", firstDate].filter(Boolean).join(" · ");
+  const lastMeta = opts?.cover
+    ? [lastDate, visitCount].filter(Boolean).join(" · ")
+    : ["Pēdējais ieraksts", lastDate].filter(Boolean).join(" · ");
   return `<div class="pdf-svc-span">
     <div class="pdf-svc-span__pt"><b>${escapeHtml(firstKm || "km nav")}</b><i>${escapeHtml(firstMeta)}</i></div>
     <div class="pdf-svc-span__bar" aria-hidden="true"></div>
     <div class="pdf-svc-span__pt pdf-svc-span__pt--end"><b>${escapeHtml(lastKm || "km nav")}</b><i>${escapeHtml(lastMeta)}</i></div>
   </div>`;
+}
+
+export function buildDealerServiceSpanHtml(
+  rows: AutoRecordsServiceWorkRow[],
+  opts?: { cover?: boolean },
+): string {
+  return spanHtml(printableDealerServiceWorks(rows), opts);
 }
 
 export function printableDealerServiceWorks(rows: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow[] {
@@ -117,11 +129,14 @@ export function printableDealerServiceWorks(rows: AutoRecordsServiceWorkRow[]): 
   );
 }
 
-export function buildDealerServiceVisitsHtml(rows: AutoRecordsServiceWorkRow[]): string {
+export function buildDealerServiceVisitsHtml(
+  rows: AutoRecordsServiceWorkRow[],
+  opts?: { omitSpan?: boolean },
+): string {
   const printable = printableDealerServiceWorks(rows);
   if (printable.length === 0) return "";
 
-  const parts: string[] = [spanHtml(printable)];
+  const parts: string[] = opts?.omitSpan ? [] : [spanHtml(printable)];
   let lastYear = "";
   for (const row of printable) {
     const year = serviceWorkYear(row.date);

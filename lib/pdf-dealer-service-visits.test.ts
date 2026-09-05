@@ -47,6 +47,27 @@ describe("PDF dīlera servisa vizītes", () => {
     expect(html).not.toContain("pdf-mileage-history-table--service");
   });
 
+  it("vākā joslu no vizītēm var izlaist", () => {
+    const rows = [
+      {
+        date: "01.06.2023",
+        odometer: "26276",
+        location: "",
+        works: "Eļļas maiņa",
+      },
+      {
+        date: "01.12.2023",
+        odometer: "47521",
+        location: "Bonn",
+        works: "Eļļas maiņa",
+      },
+    ];
+    const html = buildDealerServiceVisitsHtml(rows, { omitSpan: true });
+    expect(html).toContain("pdf-svc-year");
+    expect(html).not.toContain("pdf-svc-span");
+    expect(html).not.toContain("Pirmais ieraksts");
+  });
+
   it("dīlera vārdu atstāj vietā, ne darbos", () => {
     const html = buildDealerServiceVisitsHtml([
       {
