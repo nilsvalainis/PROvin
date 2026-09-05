@@ -34,6 +34,17 @@ Visi 10 varianti uz jumta malas / parapeta. Siena paliek tukša.
 
 No laukuma vislabāk lasās **3**, **4** un **7**. **2** un **9** ir augstāki un labāk redzami pret debesīm. **6** no distances pazūd.
 
+## Tikai burti un logo (bez fona)
+
+Pildīti oranži kanālburti + zīme uz jumta, bez kastes un bez paneļa.
+
+- `dzintarzeme-ooh-letters-01-logo-left.png` - logo pa kreisi, teksts pa labi
+- `dzintarzeme-ooh-letters-02-stack.png` - logo / DZINTARZEME / AUTO
+- `dzintarzeme-ooh-letters-03-wide.png` - lieli burti pa jumta platumu
+- `dzintarzeme-ooh-letters-04-lot.png` - tas pats no laukuma
+- `dzintarzeme-ooh-letters-05-left.png` - kompakti pa kreisi
+- `dzintarzeme-ooh-letters-06-dusk.png` - pildīti burti krēslā
+
 ## Sienas kārta (iepriekšējā)
 
 - `dzintarzeme-ooh-contact-sheet-10.png` un `dzintarzeme-ooh-01` līdz `10` - uzraksti uz ķieģeļu sienas.
