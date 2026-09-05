@@ -27,7 +27,7 @@ describe("PDF dīlera sadaļas vāks", () => {
       ],
     });
     expect(html).toContain("pdf-dealer-cover");
-    expect(html).toContain("PROVIN DĪLERIS");
+    expect(html).not.toContain("PROVIN DĪLERIS");
     expect(html).toContain("BMW X1 (E84) xDrive 20 d");
     expect(html).toContain("VIN WBAVL12090VX12345");
     expect(html).toContain("A96");

@@ -2,7 +2,7 @@ import type { CheckoutLineKind } from "@/lib/stripe-session";
 
 /**
  * Klienta audita PDF pielikuma standarta nosaukums.
- * Formāts: PROVIN_AUDITS_<VIN>.pdf, PROVIN_MINI_<VIN>.pdf vai PROVIN_DILERIS_<VIN>.pdf
+ * Formāts: PROVIN_AUDITS_<VIN>.pdf, PROVIN_MINI_<VIN>.pdf vai OFICIALA_DILERA_DATI_<VIN>.pdf
  * (atkarībā no pasūtītā produkta vai dīlera-only ģenerēšanas; VIN — tikai burti un cipari, lielie burti).
  */
 
@@ -50,5 +50,7 @@ export function buildProvinSelectConsultationPdfFilename(sessionId: string): str
 
 /** Tikai OFICIĀLĀ DĪLERA DATI, bez citiem avotiem. */
 export function buildProvinDilerisPdfFilename(vin: string | null | undefined): string {
-  return buildProvinAuditPdfFilename(vin, { brand: "PROVIN_DILERIS" });
+  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const slug = v.length > 0 ? v : "NAV_VIN";
+  return `OFICIALA_DILERA_DATI_${slug}.pdf`;
 }

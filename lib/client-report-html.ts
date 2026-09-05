@@ -189,7 +189,6 @@ import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
 
 /** PDF dokumenta virsraksti (UPPERCASE, saskaņoti ar produkta terminoloģiju). */
 const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
-const PDF_DEALER_ONLY_TITLE = "PROVIN DĪLERIS";
 
 function isDealerOnlyReport(p: ClientReportPayload): boolean {
   return p.pdfReportKind === "dealer";
@@ -2973,7 +2972,9 @@ export function buildClientReportDocumentHtml(args: {
   lines.push('<div class="pdf-v1-hero-inner">');
   lines.push(provincLogoSvg());
   lines.push('<div class="pdf-v1-hero-text">');
-  lines.push(`<h1 class="pdf-v1-doc-title">${escapeHtml(dealerOnly ? PDF_DEALER_ONLY_TITLE : PDF_MAIN_TITLE)}</h1>`);
+  lines.push(
+    `<h1 class="pdf-v1-doc-title">${escapeHtml(dealerOnly ? OFFICIAL_DEALER_SECTION_TITLE : PDF_MAIN_TITLE)}</h1>`,
+  );
   {
     const vin = p.vin?.trim();
     const vinHtml = vin

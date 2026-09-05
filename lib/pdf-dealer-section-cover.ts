@@ -98,7 +98,6 @@ export function buildDealerSectionCoverHtml(args: {
     : "";
   const metaHtml = meta ? `<p class="pdf-dealer-cover__meta">${escapeHtml(meta)}</p>` : "";
   return `<div class="pdf-dealer-cover">
-    <p class="pdf-dealer-cover__kicker">PROVIN DĪLERIS</p>
     ${title}
     ${metaHtml}
     ${curve}

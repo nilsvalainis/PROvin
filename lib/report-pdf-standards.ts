@@ -9,6 +9,8 @@
  * - Krāsas / fonti saskaņā ar provin.lv (ne trešo pušu UI krāsas kā „oficiālas”).
  */
 
+import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
+
 export const REPORT_PDF_STANDARDS = {
   firstPageExpertBlockTitle: "Ieteikumi klātienes apskatei · Kopsavilkums",
   /** Paraugs teikumam, ja atspoguļo starptautisko DB saturu bez zīmola nosaukumiem */
@@ -112,7 +114,7 @@ export function formatPdfDocFooterProductLabel(
   brand: "PROVIN_AUDITS" | "PROVIN_MINI" | "PROVIN_DILERIS",
 ): string {
   if (brand === "PROVIN_MINI") return "PROVIN MINI";
-  if (brand === "PROVIN_DILERIS") return "PROVIN DĪLERIS";
+  if (brand === "PROVIN_DILERIS") return OFFICIAL_DEALER_SECTION_TITLE;
   return "PROVIN AUDITS";
 }
 

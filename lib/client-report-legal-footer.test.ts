@@ -27,7 +27,7 @@ describe("client report legal footer", () => {
   it("PDF colophon identity has product, VIN and date only", () => {
     expect(formatPdfDocFooterProductLabel("PROVIN_AUDITS")).toBe("PROVIN AUDITS");
     expect(formatPdfDocFooterProductLabel("PROVIN_MINI")).toBe("PROVIN MINI");
-    expect(formatPdfDocFooterProductLabel("PROVIN_DILERIS")).toBe("PROVIN DĪLERIS");
+    expect(formatPdfDocFooterProductLabel("PROVIN_DILERIS")).toBe("OFICIĀLĀ DĪLERA DATI");
     expect(
       buildPdfDocFooterIdentityLine({
         productLabel: "PROVIN AUDITS",
@@ -65,7 +65,7 @@ describe("client report legal footer", () => {
         generatedLabel: "Ģenerēts 23.08.2026",
         productBrand: "PROVIN_DILERIS",
       }),
-    ).toContain("PROVIN DĪLERIS");
+    ).toContain("OFICIĀLĀ DĪLERA DATI");
     expect(html).toContain("Atruna");
     expect(html).toContain("Konfidencialitāte");
     expect(html).not.toContain("Nils Valainis");

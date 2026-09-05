@@ -1554,7 +1554,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(doc).toContain("PROVIN DĪLERIS");
+    expect(doc).not.toContain("PROVIN DĪLERIS");
     expect(doc).toContain("pdf-dealer-cover");
     expect(doc).toContain("BMW 530d");
     expect(doc).toContain("OFICIĀLĀ DĪLERA DATI");

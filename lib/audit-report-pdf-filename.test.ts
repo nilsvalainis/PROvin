@@ -34,9 +34,9 @@ describe("buildProvinAuditPdfFilename", () => {
     ).toBe("PROVIN_MINI_WVWZZZ1JZXW000001.pdf");
   });
 
-  it("builds PROVIN_DILERIS_<VIN>.pdf for dealer-only reports", () => {
+  it("builds OFICIALA_DILERA_DATI_<VIN>.pdf for dealer-only reports", () => {
     expect(buildProvinDilerisPdfFilename("WVWZZZ1JZXW000001")).toBe(
-      "PROVIN_DILERIS_WVWZZZ1JZXW000001.pdf",
+      "OFICIALA_DILERA_DATI_WVWZZZ1JZXW000001.pdf",
     );
   });
 
