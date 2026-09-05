@@ -27,7 +27,7 @@ import { AdminPhotoLightbox, type AdminLightboxPhoto } from "@/components/admin/
 const inp =
   "mt-1 w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)] placeholder:text-[var(--color-provin-muted)]";
 
-const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif)$/i;
+const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i;
 
 type Props = {
   sessionId: string;
@@ -311,7 +311,7 @@ export function AdminConsultationSlotPhotos({
       <input
         id={inputId}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
+        accept="image/*,.heic,.heif,.avif,.bmp,.tif,.tiff"
         multiple
         className="sr-only"
         onChange={(e) => void onFileChange(e)}

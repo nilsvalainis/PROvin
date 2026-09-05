@@ -1,7 +1,9 @@
 import sharp from "sharp";
 
+import { isHeicMagicBytes, sniffImageKind } from "@/lib/admin-photo-magic";
+
 function isJpegMagicBuffer(buf: Buffer): boolean {
-  return buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  return sniffImageKind(buf) === "jpeg";
 }
 
 /** iPhone HEIC pirms kompresijas; pēc konversijas tiek samazināts līdz store limitam. */
@@ -9,12 +11,8 @@ export const ADMIN_PHOTO_UPLOAD_MAX_SOURCE_BYTES = 12 * 1024 * 1024;
 
 const MAX_EDGE = 1680;
 
-const HEIC_BRANDS = new Set(["heic", "heix", "heif", "hevc", "heim", "heis", "mif1", "msf1"]);
-
 export function isHeicMagicBuffer(buf: Buffer): boolean {
-  if (buf.length < 12) return false;
-  if (buf.toString("ascii", 4, 8) !== "ftyp") return false;
-  return HEIC_BRANDS.has(buf.toString("ascii", 8, 12).toLowerCase());
+  return isHeicMagicBytes(buf);
 }
 
 export function isLikelyHeicImageFile(file: { type?: string; name?: string }): boolean {
@@ -66,8 +64,9 @@ async function shrinkJpegToMax(jpeg: Buffer, maxBytes: number): Promise<Buffer> 
 }
 
 async function toJpegBuffer(raw: Buffer): Promise<Buffer | null> {
-  if (isJpegMagicBuffer(raw)) return raw;
-  if (isHeicMagicBuffer(raw)) {
+  const kind = sniffImageKind(raw);
+  if (kind === "jpeg") return raw;
+  if (kind === "heic") {
     const fromHeic = await heicBufferToJpeg(raw);
     if (fromHeic) return fromHeic;
   }
@@ -75,7 +74,7 @@ async function toJpegBuffer(raw: Buffer): Promise<Buffer | null> {
 }
 
 /**
- * Admin foto POST: JPEG paliek JPEG; HEIC/HEIF, PNG, WebP kļūst par JPEG un ietilpst store limitā.
+ * Admin foto POST: JPEG paliek JPEG; HEIC/HEIF, PNG, WebP, AVIF, GIF, TIFF kļūst par JPEG.
  */
 export async function jpegFromAdminPhotoUpload(
   raw: Buffer,

@@ -59,7 +59,7 @@ type Props = {
   simple?: boolean;
 };
 
-const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif)$/i;
+const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i;
 
 /** Grupas konteinera droppable id — lai var iemest arī tukšā grupā. */
 const GROUP_DROP_PREFIX = "group-drop:";
@@ -718,7 +718,7 @@ export function AdminListingAnalysisPhotos({
     <input
       id={`${baseInputId}-${groupId}`}
       type="file"
-      accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
+      accept="image/*,.heic,.heif,.avif,.bmp,.tif,.tiff"
       multiple
       className="sr-only"
       onChange={(e) => void onFileChange(groupId, e)}

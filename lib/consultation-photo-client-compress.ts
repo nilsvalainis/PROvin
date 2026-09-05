@@ -1,21 +1,28 @@
 /**
- * Klienta JPEG kompresija pirms augšupielādes (taupa servera vietu).
- * HEIC: ja pārlūks neatkodē, atgriežam oriģinālu — serveris konvertē.
+ * Klienta JPEG kompresija pirms augšupielādes.
+ * Formātu nosaka pēc baitiem (JPEG ar .png vārdu, HEIC ar .jpg u.c.).
+ * Ja pārlūks neatkodē, oriģinālu sūta serverim.
  */
 
-function isLikelyHeicImageFile(file: File): boolean {
-  const type = (file.type ?? "").toLowerCase();
-  if (type === "image/heic" || type === "image/heif") return true;
-  return /\.hei[cf]$/i.test(file.name);
-}
+import {
+  SNIFFED_IMAGE_EXT,
+  SNIFFED_IMAGE_MIME,
+  sniffImageKind,
+  type SniffedImageKind,
+} from "@/lib/admin-photo-magic";
 
 const TARGET_MAX_BYTES = 190_000;
 const MAX_DIMENSION = 1680;
-const HEIC_PASSTHROUGH_MAX_BYTES = 12 * 1024 * 1024;
+const PASSTHROUGH_MAX_BYTES = 12 * 1024 * 1024;
 
 function jpegBaseName(originalName: string): string {
   const base = originalName.replace(/\.[^.\\/]+$/i, "").trim() || "photo";
   return `${base}.jpg`;
+}
+
+function nameWithKind(originalName: string, kind: SniffedImageKind): string {
+  const base = originalName.replace(/\.[^.\\/]+$/i, "").trim() || "photo";
+  return `${base}.${SNIFFED_IMAGE_EXT[kind]}`;
 }
 
 function canvasToJpegBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
@@ -57,12 +64,37 @@ async function blobUnderMaxBytes(startCanvas: HTMLCanvasElement, maxBytes: numbe
   return canvasToJpegBlob(work, 0.32);
 }
 
+async function fileWithSniffedType(file: File): Promise<{ file: File; kind: SniffedImageKind | null }> {
+  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const kind = sniffImageKind(head);
+  if (!kind) return { file, kind: null };
+  const mime = SNIFFED_IMAGE_MIME[kind];
+  if (file.type === mime) return { file, kind };
+  return {
+    file: new File([file], nameWithKind(file.name, kind), { type: mime, lastModified: file.lastModified }),
+    kind,
+  };
+}
+
+function drawImageElementToBitmap(img: HTMLImageElement): Promise<ImageBitmap> {
+  const w = Math.max(1, img.naturalWidth || img.width);
+  const h = Math.max(1, img.naturalHeight || img.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return Promise.reject(new Error("no_context"));
+  ctx.drawImage(img, 0, 0, w, h);
+  return createImageBitmap(canvas);
+}
+
 function decodeViaHtmlImage(file: File): Promise<ImageBitmap> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       void createImageBitmap(img)
+        .catch(() => drawImageElementToBitmap(img))
         .then((bm) => {
           URL.revokeObjectURL(url);
           resolve(bm);
@@ -84,15 +116,24 @@ async function decodeFileToImageBitmap(file: File): Promise<ImageBitmap> {
   try {
     return await createImageBitmap(file);
   } catch {
-    /* HTMLImageElement bieži atver JPEG/PNG, ko createImageBitmap noraida. */
+    /* MIME nesakrīt ar baitiem, vai HEIC. */
   }
   return decodeViaHtmlImage(file);
 }
 
+function canPassthrough(file: File, kind: SniffedImageKind | null): boolean {
+  if (file.size <= 0 || file.size > PASSTHROUGH_MAX_BYTES) return false;
+  if (kind) return true;
+  const type = (file.type ?? "").toLowerCase();
+  if (type.startsWith("image/")) return true;
+  return /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i.test(file.name);
+}
+
 export async function compressImageFileToJpegForConsultation(file: File): Promise<File> {
+  const sniffed = await fileWithSniffedType(file);
   let bm: ImageBitmap | null = null;
   try {
-    bm = await decodeFileToImageBitmap(file);
+    bm = await decodeFileToImageBitmap(sniffed.file);
     const w0 = bm.width;
     const h0 = bm.height;
     if (w0 < 1 || h0 < 1) throw new Error("empty_image");
@@ -121,8 +162,8 @@ export async function compressImageFileToJpegForConsultation(file: File): Promis
         /* ignore */
       }
     }
-    if (isLikelyHeicImageFile(file) && file.size > 0 && file.size <= HEIC_PASSTHROUGH_MAX_BYTES) {
-      return file;
+    if (canPassthrough(sniffed.file, sniffed.kind)) {
+      return sniffed.file;
     }
     throw e instanceof Error ? e : new Error("decode_failed");
   }
