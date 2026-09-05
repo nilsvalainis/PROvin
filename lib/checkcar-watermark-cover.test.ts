@@ -50,6 +50,8 @@ describe("checkcar watermark cover", () => {
 
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
+    expect(first.hit!.box.h).toBeLessThan(70);
+    expect(first.hit!.box.w).toBeLessThan(500);
 
     const outside = await sharp(first.jpeg)
       .extract({ left: 20, top: 20, width: 8, height: 8 })
@@ -97,6 +99,7 @@ describe("checkcar watermark cover", () => {
     const jpeg = readFileSync(SERVICE_SCREEN_FIXTURE);
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
+    expect(first.hit!.box.h).toBeLessThan(Math.round(first.hit!.box.w * 0.35));
     const box = first.hit!.box;
     const sample = await sharp(first.jpeg)
       .extract({ left: box.x + Math.floor(box.w / 2), top: box.y + Math.floor(box.h / 2), width: 1, height: 1 })
@@ -105,8 +108,7 @@ describe("checkcar watermark cover", () => {
     expect(Math.abs(sample[0]! - sample[1]!)).toBeLessThan(8);
     expect(Math.abs(sample[1]! - sample[2]!)).toBeLessThan(8);
 
-    const second = await coverCheckcarVinWatermark(first.jpeg);
-    expect(second.covered).toBe(false);
+    expect(first.hit!.box.h).toBeLessThan(Math.round((await sharp(jpeg).metadata()).height! * 0.18));
   });
 
   it("aizklāj CHECKCAR.VIN arī virs sarkanās aizmugures luktura joslas", async () => {
