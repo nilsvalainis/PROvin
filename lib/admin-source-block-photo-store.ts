@@ -109,8 +109,6 @@ export async function writeSourceBlockPhotoJpeg(
     throw new Error("invalid_ids");
   }
 
-  jpegBody = await jpegWithCheckcarWatermarkCovered(jpegBody);
-
   let blobOk = false;
   let fsOk = false;
 

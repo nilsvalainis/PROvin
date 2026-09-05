@@ -28,17 +28,6 @@ import {
 import { compressImageFileToJpegForConsultation } from "@/lib/consultation-photo-client-compress";
 import { AdminPhotoLightbox, type AdminLightboxPhoto } from "@/components/admin/AdminPhotoLightbox";
 
-type UploadPhase = "compressing" | "uploading" | "saving" | "done" | "error";
-
-type PendingUpload = {
-  key: string;
-  groupId: string;
-  fileName: string;
-  phase: UploadPhase;
-  previewUrl: string;
-  error?: string;
-};
-
 type PhotoGroupLike = {
   id: string;
   title: string;
@@ -82,19 +71,17 @@ function uploadErrorMessage(error: string | undefined, maxPhotos: number, detail
   return "Augšupielāde neizdevās.";
 }
 
-function phaseLabel(phase: UploadPhase, fileName: string): string {
-  switch (phase) {
-    case "compressing":
-      return `Apstrādā: ${fileName}…`;
-    case "uploading":
-      return `Augšupielādē: ${fileName}…`;
-    case "saving":
-      return `Saglabā darba zonā: ${fileName}…`;
-    case "done":
-      return `Pievienots: ${fileName}`;
-    case "error":
-      return `Kļūda: ${fileName}`;
-  }
+async function mapPool<T, R>(items: T[], limit: number, fn: (item: T, i: number) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]!, i);
+    }
+  });
+  await Promise.all(workers);
+  return out;
 }
 
 function totalPhotos(groups: { photos?: { id: string }[] }[]): number {
@@ -294,10 +281,10 @@ export function AdminListingAnalysisPhotos({
   const defaultGroupIdRef = useRef(emptyGroup().id);
   const previewUrlsRef = useRef<Map<string, string>>(new Map());
   const dropDepthRef = useRef(0);
-  const [pending, setPending] = useState<PendingUpload[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   const [dropActiveGroupId, setDropActiveGroupId] = useState<string | null>(null);
   const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
   /** Kārtošanas melnraksts — serverī saglabā tikai vienu reizi, kad vilkšana beidzas. */
@@ -405,7 +392,6 @@ export function AdminListingAnalysisPhotos({
     if (!imageFiles.length || disabled) return;
 
     const nextGroupList = ensureGroupInList(photoGroups, targetGroupId, emptyGroup);
-    const group = nextGroupList.find((g) => g.id === targetGroupId)!;
     const currentTotal = totalPhotos(nextGroupList);
 
     setBusy(true);
@@ -418,49 +404,35 @@ export function AdminListingAnalysisPhotos({
       return;
     }
 
-    const pendingEntries: PendingUpload[] = files.map((file, i) => ({
-      key: `pending_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 8)}`,
-      groupId: targetGroupId,
-      fileName: file.name,
-      phase: "compressing" as const,
-      previewUrl: URL.createObjectURL(file),
-    }));
-    setPending((p) => [...p, ...pendingEntries]);
-    setStatusLine(`Apstrādā ${files.length} fotogrāfijas…`);
+    const steps = files.length * 2 + 1;
+    let done = 0;
+    const tick = () => {
+      done += 1;
+      setUploadPercent(Math.min(99, Math.round((100 * done) / steps)));
+    };
+    setUploadPercent(2);
 
     try {
-      const compressed: { key: string; jpeg: File; previewUrl: string }[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]!;
-        const key = pendingEntries[i]!.key;
-        try {
-          const jpeg = await compressImageFileToJpegForConsultation(file);
-          compressed.push({ key, jpeg, previewUrl: pendingEntries[i]!.previewUrl });
-          setPending((p) => p.map((x) => (x.key === key ? { ...x, phase: "uploading" } : x)));
-        } catch {
-          URL.revokeObjectURL(pendingEntries[i]!.previewUrl);
-          setPending((p) =>
-            p.map((x) =>
-              x.key === key ? { ...x, phase: "error" as const, error: "Neizdevās apstrādāt attēlu" } : x,
-            ),
-          );
-        }
-      }
+      const compressed = (
+        await mapPool(files, 4, async (file) => {
+          try {
+            const jpeg = await compressImageFileToJpegForConsultation(file);
+            tick();
+            return jpeg;
+          } catch {
+            tick();
+            return null;
+          }
+        })
+      ).filter((f): f is File => f !== null);
 
       if (compressed.length === 0) {
         setError("Neizdevās apstrādāt attēlus. Mēģini vēlreiz vai eksportē JPG no Foto lietotnes.");
         return;
       }
 
-      setStatusLine(`Augšupielādē ${compressed.length} fotogrāfijas…`);
-      const groupPhotoCount = group.photos.length;
-
-      /**
-       * Secīga augšupielāde: paralēlā `currentCount` sacentās ar servera limita pārbaudi
-       * un arī sajauca kārtību, kādā bildes nonāk grupā.
-       */
       const uploaded: { id: string }[] = [];
-      for (const { key, jpeg, previewUrl } of compressed) {
+      for (const jpeg of compressed) {
         const fd = new FormData();
         fd.set("sessionId", sessionId);
         fd.set("currentCount", String(currentTotal + uploaded.length));
@@ -474,30 +446,24 @@ export function AdminListingAnalysisPhotos({
         } catch {
           data = { error: "write_failed" };
         }
+        tick();
         if (!httpOk || !data.id) {
-          URL.revokeObjectURL(previewUrl);
-          const msg = uploadErrorMessage(data.error, maxPhotos, data.detail);
-          setPending((p) => p.map((x) => (x.key === key ? { ...x, phase: "error" as const, error: msg } : x)));
-          setError(msg);
+          setError(uploadErrorMessage(data.error, maxPhotos, data.detail));
           continue;
         }
-        previewUrlsRef.current.set(data.id, previewUrl);
         uploaded.push({ id: data.id });
-        setPending((p) => p.filter((x) => x.key !== key));
       }
 
       if (uploaded.length > 0) {
         const nextGroups = nextGroupList.map((g) =>
           g.id === targetGroupId ? { ...g, photos: [...g.photos, ...uploaded] } : g,
         );
-        setStatusLine(`Saglabā ${uploaded.length} fotogrāfijas…`);
         await commitGroups(nextGroups);
-        setStatusLine(`Pievienotas ${uploaded.length} fotogrāfijas (${groupPhotoCount + uploaded.length} šajā grupā).`);
+        tick();
       }
     } finally {
       setBusy(false);
-      window.setTimeout(() => setStatusLine(null), 3500);
-      setPending((p) => p.filter((x) => x.phase === "error"));
+      setUploadPercent(null);
     }
   };
 
@@ -807,7 +773,19 @@ export function AdminListingAnalysisPhotos({
         </p>
       ) : null}
 
-      {statusLine ? (
+      {uploadPercent !== null ? (
+        <div className="flex items-center gap-2">
+          <div className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+            <div
+              className="h-full rounded-full bg-[var(--color-provin-accent)] transition-[width] duration-150"
+              style={{ width: `${uploadPercent}%` }}
+            />
+          </div>
+          <span className="w-8 shrink-0 text-right text-[10px] tabular-nums text-[var(--color-provin-muted)]">
+            {uploadPercent}%
+          </span>
+        </div>
+      ) : statusLine ? (
         <p className="flex items-center gap-1.5 text-[10px] text-[var(--color-provin-accent)]">
           {busy ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden /> : null}
           {statusLine}
@@ -815,21 +793,6 @@ export function AdminListingAnalysisPhotos({
       ) : null}
 
       {error ? <p className="text-[10px] text-red-600 dark:text-red-400">{error}</p> : null}
-
-      {pending.length > 0 ? (
-        <ul className="space-y-1">
-          {pending.map((p) => (
-            <li key={p.key} className="flex items-center gap-2 text-[10px] text-[var(--color-provin-muted)]">
-              {p.phase !== "error" && p.phase !== "done" ? (
-                <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden />
-              ) : null}
-              <span className={p.phase === "error" ? "text-red-600 dark:text-red-400" : undefined}>
-                {p.error ?? phaseLabel(p.phase, p.fileName)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
 
       {photoGroups.length === 0 && !disabled
         ? renderDropZone(
@@ -897,7 +860,7 @@ export function AdminListingAnalysisPhotos({
 
               {renderDropZone(
                 group.id,
-                group.photos.length === 0 && pending.every((p) => p.groupId !== group.id)
+                group.photos.length === 0 && uploadPercent === null
                   ? "Velc attēlus šeit vai izmanto „Atvērt no datora…”."
                   : "Velc jaunus attēlus šeit, lai pievienotu grupai.",
               )}

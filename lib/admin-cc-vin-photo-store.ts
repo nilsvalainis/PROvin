@@ -84,8 +84,6 @@ export async function writeCcVinPhotoJpeg(
     throw new Error("invalid_ids");
   }
 
-  jpegBody = await jpegWithCheckcarWatermarkCovered(jpegBody);
-
   let blobOk = false;
   let fsOk = false;
 

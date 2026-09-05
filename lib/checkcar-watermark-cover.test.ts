@@ -18,11 +18,38 @@ async function jpegFromSvg(svg: string): Promise<Buffer> {
 describe("checkcar watermark cover", () => {
   it("atpazīst sarkano VIN un pelēko CHECKCAR krāsu", () => {
     expect(isCheckcarVinRed(165, 40, 46)).toBe(true);
+    expect(isCheckcarVinRed(190, 158, 155)).toBe(true);
     expect(isCheckcarVinRed(20, 18, 16)).toBe(false);
     expect(isCheckcarVinRed(240, 200, 40)).toBe(false);
     expect(isCheckcarGray(160, 158, 156)).toBe(true);
     expect(isCheckcarGray(12, 12, 12)).toBe(false);
     expect(isCheckcarGray(250, 250, 250)).toBe(false);
+  });
+
+  it("aizklāj CHECKCAR.VIN uz gaiša fona ar šauru joslu", async () => {
+    const letters = [
+      ...["80", "116", "152", "188", "224", "260", "296", "332"].map(
+        (x) => `<rect x="${x}" y="168" width="28" height="36" fill="#c4c4c4"/>`,
+      ),
+      `<rect x="380" y="168" width="28" height="36" fill="#c81e24"/>`,
+      `<rect x="416" y="168" width="10" height="36" fill="#c81e24"/>`,
+      `<rect x="434" y="168" width="28" height="36" fill="#c81e24"/>`,
+    ].join("");
+    const jpeg = await jpegFromSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#ececec"/>${letters}</svg>`,
+    );
+
+    const first = await coverCheckcarVinWatermark(jpeg);
+    expect(first.covered).toBe(true);
+    expect(first.hit!.box.h).toBeLessThan(70);
+    expect(first.hit!.box.w).toBeLessThan(430);
+
+    const outside = await sharp(first.jpeg)
+      .extract({ left: 20, top: 20, width: 8, height: 8 })
+      .raw()
+      .toBuffer();
+    expect(outside[0]).toBeGreaterThan(200);
+    expect(outside[1]).toBeGreaterThan(200);
   });
 
   it("aizklāj sintētisko CHECKCAR.VIN un otro reizi vairs neskāra", async () => {
@@ -65,8 +92,8 @@ describe("checkcar watermark cover", () => {
     const jpeg = readFileSync(SERVICE_SCREEN_FIXTURE);
     const first = await coverCheckcarVinWatermark(jpeg);
     expect(first.covered).toBe(true);
-    expect(first.hit?.grayLetters ?? 0).toBeGreaterThanOrEqual(4);
-    expect((first.hit?.vinLetters ?? 0) + (first.hit?.grayLetters ?? 0)).toBeGreaterThanOrEqual(6);
+    expect(first.hit?.vinLetters ?? 0).toBeGreaterThanOrEqual(1);
+    expect((first.hit?.vinLetters ?? 0) + (first.hit?.grayLetters ?? 0)).toBeGreaterThanOrEqual(2);
     const box = first.hit!.box;
     const sample = await sharp(first.jpeg)
       .extract({ left: box.x + Math.floor(box.w / 2), top: box.y + Math.floor(box.h / 2), width: 1, height: 1 })

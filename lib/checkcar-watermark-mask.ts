@@ -47,27 +47,23 @@ function writeRgb(img: RgbBuffer, x: number, y: number, r: number, g: number, b:
   img.data[i + 2] = b;
 }
 
-/** Sarkans CheckCar „VIN” slānis (pustcaurspīdīgs, ne oranžs). */
+/** Sarkans CheckCar „VIN” slānis, arī pustcaurspīdīgs uz gaiša fona. */
 export function isCheckcarVinRed(r: number, g: number, b: number): boolean {
-  if (r < 78) return false;
-  if (r < g + 30 || r < b + 16) return false;
+  if (r < 58) return false;
+  if (r < g + 12 || r < b + 8) return false;
   const min = g < b ? g : b;
-  if ((r - min) / r < 0.38) return false;
-  if (g > b + 42) return false;
+  if ((r - min) / r < 0.14) return false;
+  if (g > b + 48) return false;
   return true;
 }
 
-function luma(r: number, g: number, b: number): number {
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/** Pelēks CheckCar „CHECKCAR” slānis. Nav košs UI baltais un nav gandrīz melns fons. */
+/** Pelēks / balts CheckCar „CHECKCAR” slānis, arī uz gaiša auto. */
 export function isCheckcarGray(r: number, g: number, b: number): boolean {
   const max = r > g ? (r > b ? r : b) : g > b ? g : b;
   const min = r < g ? (r < b ? r : b) : g < b ? g : b;
-  if (max < 76 || max > 214) return false;
-  if (max - min > 30) return false;
-  if (Math.abs(r - g) > 20 || Math.abs(g - b) > 20) return false;
+  if (max < 70 || max > 236) return false;
+  if (max - min > 36) return false;
+  if (Math.abs(r - g) > 22 || Math.abs(g - b) > 22) return false;
   return true;
 }
 
@@ -147,11 +143,11 @@ function collectBlobs(
 function isLetterSized(blob: LetterBlob, width: number, height: number): boolean {
   const w = blobWidth(blob);
   const h = blobHeight(blob);
-  if (h < Math.max(8, height * 0.016) || h > height * 0.18) return false;
-  if (w < Math.max(4, width * 0.004) || w > width * 0.12) return false;
-  if (blob.area < w * h * 0.12) return false;
+  if (h < Math.max(7, height * 0.012) || h > height * 0.3) return false;
+  if (w < Math.max(3, width * 0.0025) || w > width * 0.18) return false;
+  if (blob.area < w * h * 0.1) return false;
   const aspect = w / h;
-  if (aspect > 2.4 || aspect < 0.08) return false;
+  if (aspect > 2.7 || aspect < 0.06) return false;
   return true;
 }
 
@@ -163,14 +159,22 @@ function yOverlapRatio(a: LetterBlob, b: LetterBlob): number {
   return overlap / Math.min(blobHeight(a), blobHeight(b));
 }
 
+function isVinWordBlob(blob: LetterBlob, imgW: number): boolean {
+  const w = blobWidth(blob);
+  const h = blobHeight(blob);
+  const ratio = w / h;
+  return ratio >= 2.05 && ratio <= 4.9 && w >= imgW * 0.05 && w <= imgW * 0.4;
+}
+
 function findVinCluster(letters: LetterBlob[], imgW: number): LetterBlob[] | null {
+  if (letters.length === 1 && isVinWordBlob(letters[0]!, imgW)) return letters;
   if (letters.length < 2) return null;
   const sorted = [...letters].sort((a, b) => a.minX - b.minX);
   const medianH =
     [...sorted].sort((a, b) => blobHeight(a) - blobHeight(b))[Math.floor(sorted.length / 2)] ??
     sorted[0]!;
   const refH = blobHeight(medianH);
-  const maxGap = Math.max(10, refH * 0.85);
+  const maxGap = Math.max(10, refH * 0.95);
 
   for (let i = 0; i < sorted.length; i++) {
     const group = [sorted[i]!];
@@ -180,8 +184,8 @@ function findVinCluster(letters: LetterBlob[], imgW: number): LetterBlob[] | nul
       const gap = cur.minX - prev.maxX;
       if (gap < 0 || gap > maxGap) break;
       const hRatio = blobHeight(cur) / blobHeight(prev);
-      if (hRatio < 0.5 || hRatio > 2) break;
-      if (yOverlapRatio(prev, cur) < 0.45) break;
+      if (hRatio < 0.45 || hRatio > 2.15) break;
+      if (yOverlapRatio(prev, cur) < 0.4) break;
       group.push(cur);
     }
     if (group.length < 2) continue;
@@ -192,12 +196,14 @@ function findVinCluster(letters: LetterBlob[], imgW: number): LetterBlob[] | nul
     const spanW = right - left + 1;
     const spanH = bot - top + 1;
     const ratio = spanW / spanH;
-    if (ratio < 1.6 || ratio > 5.8) continue;
-    if (spanW < imgW * 0.045 || spanW > imgW * 0.28) continue;
-    if (group.length === 2 && ratio < 2.0) continue;
+    if (ratio < 1.35 || ratio > 7) continue;
+    if (spanW < imgW * 0.03 || spanW > imgW * 0.42) continue;
+    if (group.length === 2 && ratio < 1.7) continue;
     return group;
   }
-  return null;
+
+  const word = letters.find((b) => isVinWordBlob(b, imgW));
+  return word ? [word] : null;
 }
 
 function grayLettersLeftOfVin(
@@ -242,20 +248,22 @@ export function detectCheckcarVinWatermark(img: RgbBuffer): CheckcarWatermarkHit
   const vinW = vinRight - vinLeft + 1;
   const vinH = vinBot - vinTop + 1;
 
-  const strongVin = vin.length >= 3 && vinW / vinH >= 1.9 && vinW / vinH <= 3.6;
-  if (grayLeft.length < 4 && !strongVin) return null;
-  if (grayLeft.length < 3 && vin.length < 3) return null;
+  const vinWord = vin.length === 1 && vinW / vinH >= 2.05;
+  const strongVin =
+    (vin.length >= 3 || vinWord) && vinW / vinH >= 1.7 && vinW / vinH <= 4.9;
+  if (!strongVin && grayLeft.length < 4) return null;
+  if (vin.length < 1) return null;
 
   const letters = grayLeft.length >= 3 ? [...grayLeft, ...vin] : vin;
-  const padX = Math.max(10, Math.round(vinH * 0.55));
-  const padY = Math.max(8, Math.round(vinH * 0.5));
+  const padX = Math.max(3, Math.round(vinH * 0.16));
+  const padY = Math.max(2, Math.round(vinH * 0.12));
   let x0 = Math.min(...letters.map((b) => b.minX)) - padX;
   const x1 = Math.max(...letters.map((b) => b.maxX)) + padX;
   const y0 = Math.min(...letters.map((b) => b.minY)) - padY;
   const y1 = Math.max(...letters.map((b) => b.maxY)) + padY;
 
-  if (grayLeft.length < 3 && strongVin) {
-    x0 = Math.min(x0, vinLeft - Math.round(vinW * 3.05) - padX);
+  if (grayLeft.length < 4) {
+    x0 = Math.min(x0, vinLeft - Math.round(vinW * 3.2) - padX);
   }
 
   const box: CheckcarWatermarkBox = {
@@ -269,7 +277,16 @@ export function detectCheckcarVinWatermark(img: RgbBuffer): CheckcarWatermarkHit
   return { box, vinLetters: vin.length, grayLetters: grayLeft.length };
 }
 
-/** Pelēka cenzūras mozaīka pār visu ūdenszīmes joslu. */
+function isWatermarkMaskPixel(r: number, g: number, b: number): boolean {
+  return isCheckcarVinRed(r, g, b) || isCheckcarGray(r, g, b);
+}
+
+function mosaicTileTone(tx: number, ty: number): number {
+  const n = ((tx * 374761393 + ty * 668265263) >>> 0) % 97;
+  return Math.max(74, Math.min(168, 118 + (n - 48)));
+}
+
+/** Maiga pelēka mozaīka tikai uz ūdenszīmes burtiem, ne visā taisnstūrī. */
 export function applyGrayMosaicBar(img: RgbBuffer, box: CheckcarWatermarkBox): void {
   const x0 = Math.max(0, box.x);
   const y0 = Math.max(0, box.y);
@@ -277,25 +294,49 @@ export function applyGrayMosaicBar(img: RgbBuffer, box: CheckcarWatermarkBox): v
   const y1 = Math.min(img.height, box.y + box.h);
   if (x1 <= x0 || y1 <= y0) return;
 
-  const tile = Math.max(14, Math.round(box.h / 2.15));
+  const bw = x1 - x0;
+  const bh = y1 - y0;
+  const mask = new Uint8Array(bw * bh);
+  let marked = 0;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const [r, g, b] = readRgb(img, x, y);
+      if (!isWatermarkMaskPixel(r, g, b)) continue;
+      mask[(y - y0) * bw + (x - x0)] = 1;
+      marked++;
+    }
+  }
+
+  const dilate = Math.max(1, Math.round(bh * 0.08));
+  if (marked > 0 && dilate > 0) {
+    const grown = new Uint8Array(mask);
+    for (let y = 0; y < bh; y++) {
+      for (let x = 0; x < bw; x++) {
+        if (!mask[y * bw + x]) continue;
+        for (let dy = -dilate; dy <= dilate; dy++) {
+          for (let dx = -dilate; dx <= dilate; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= bw || ny >= bh) continue;
+            grown[ny * bw + nx] = 1;
+          }
+        }
+      }
+    }
+    mask.set(grown);
+  }
+
+  const coverAll = marked < bw * bh * 0.04;
+  const tile = Math.max(5, Math.round(bh / 6.4));
 
   for (let ty = y0; ty < y1; ty += tile) {
     for (let tx = x0; tx < x1; tx += tile) {
       const bx = Math.min(x1, tx + tile);
       const by = Math.min(y1, ty + tile);
-      let sum = 0;
-      let n = 0;
+      const gray = mosaicTileTone(tx, ty);
       for (let y = ty; y < by; y++) {
         for (let x = tx; x < bx; x++) {
-          const [r, g, b] = readRgb(img, x, y);
-          sum += luma(r, g, b);
-          n++;
-        }
-      }
-      const avg = n > 0 ? sum / n : 90;
-      const gray = Math.max(78, Math.min(112, Math.round(avg * 0.08 + 90)));
-      for (let y = ty; y < by; y++) {
-        for (let x = tx; x < bx; x++) {
+          if (!coverAll && !mask[(y - y0) * bw + (x - x0)]) continue;
           writeRgb(img, x, y, gray, gray, gray);
         }
       }
