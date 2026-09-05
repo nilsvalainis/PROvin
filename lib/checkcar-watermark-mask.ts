@@ -277,7 +277,7 @@ export function applyGrayMosaicBar(img: RgbBuffer, box: CheckcarWatermarkBox): v
   const y1 = Math.min(img.height, box.y + box.h);
   if (x1 <= x0 || y1 <= y0) return;
 
-  const tile = Math.max(10, Math.round(Math.min(box.h, 48) / 2.4));
+  const tile = Math.max(14, Math.round(box.h / 2.15));
 
   for (let ty = y0; ty < y1; ty += tile) {
     for (let tx = x0; tx < x1; tx += tile) {
@@ -292,8 +292,8 @@ export function applyGrayMosaicBar(img: RgbBuffer, box: CheckcarWatermarkBox): v
           n++;
         }
       }
-      const avg = n > 0 ? sum / n : 80;
-      const gray = Math.max(52, Math.min(148, Math.round(avg * 0.32 + 78)));
+      const avg = n > 0 ? sum / n : 90;
+      const gray = Math.max(78, Math.min(112, Math.round(avg * 0.08 + 90)));
       for (let y = ty; y < by; y++) {
         for (let x = tx; x < bx; x++) {
           writeRgb(img, x, y, gray, gray, gray);
