@@ -5,6 +5,8 @@ import {
   oneautoPayloadIsPending,
   oneautoProductsCostCents,
   oneautoServiceHistoryIsEmpty,
+  padOneautoKvRows,
+  padOneautoServiceRows,
   parseOneautoProductIds,
 } from "@/lib/oneauto-catalog";
 
@@ -12,6 +14,11 @@ describe("OneAuto katalogs", () => {
   it("summē atzīmēto produktu cenas", () => {
     expect(oneautoProductsCostCents(["oe_build_sheet", "oe_service_history"])).toBe(495);
     expect(formatOneautoCostEur(495)).toBe("€4.95");
+  });
+
+  it("tukšām tabulām atstāj vienu rindu", () => {
+    expect(padOneautoKvRows([])).toEqual([{ label: "", value: "" }]);
+    expect(padOneautoServiceRows([])[0]?.date).toBe("");
   });
 
   it("atlasa tikai zināmos produktu id", () => {
@@ -39,7 +46,7 @@ describe("OneAuto katalogs", () => {
         },
       },
     });
-    expect(display.serviceTimeline[0]?.date).toBe("2019-10-21");
+    expect(display.serviceTimeline[0]?.date).toBe("21.10.2019");
     expect(display.serviceTimeline[0]?.odometer).toBe("69343");
     expect(display.equipment.some((r) => /Panoramic|PR3L/i.test(`${r.label} ${r.value}`))).toBe(true);
     expect(display.powertrain.some((r) => /2\.0 TDI/.test(r.value))).toBe(true);
@@ -65,6 +72,26 @@ describe("OneAuto katalogs", () => {
     ).toBe(true);
   });
 
+  it("sadalā darbus pēc semikola un ISO datumu pārvērš DD.MM.YYYY", () => {
+    const display = buildOneautoDisplay({
+      oe_service_history: {
+        result: {
+          service_events: [
+            {
+              date_of_service_event: "2020-12-23",
+              mileage_observed: 142220,
+              service_actions: "End fitting 2 sides install acc.; Actie uitgevoerd. Mvg, Inge.",
+            },
+          ],
+        },
+      },
+    });
+    expect(display.serviceTimeline[0]?.date).toBe("23.12.2020");
+    expect(display.serviceTimeline[0]?.works).toContain("End fitting 2 sides install acc.");
+    expect(display.serviceTimeline[0]?.works).toContain("Actie uitgevoerd");
+    expect(display.serviceTimeline[0]?.works).not.toContain(";");
+  });
+
   it("lasa workshop remarks un VIN decoder laukus", () => {
     const display = buildOneautoDisplay({
       vin_decoder: {
@@ -86,7 +113,7 @@ describe("OneAuto katalogs", () => {
         },
       },
     });
-    expect(display.serviceTimeline[0]?.date).toBe("2024-03-12");
+    expect(display.serviceTimeline[0]?.date).toBe("12.03.2024");
     expect(display.serviceTimeline[0]?.works).toMatch(/Warranty/);
     expect(display.powertrain.some((r) => r.value === "EB2ADTS")).toBe(true);
   });

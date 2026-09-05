@@ -80,6 +80,7 @@ export function orderHasMileageDataForAi(sourceBlocks: WorkspaceSourceBlocks): b
     collectUnifiedMileageRows({
       csddForm: blocks.csdd,
       autoRecordsBlock: blocks.auto_records,
+      oneautoBlock: blocks.oneauto,
       ccVinBlock: blocks.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,

@@ -19,8 +19,10 @@ import {
   toPdfManualVendorBlocks,
   vendorAvotuBlockToPlainText,
   vinRegistryBlockToPlainText,
+  oneautoBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
 import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
@@ -82,6 +84,7 @@ function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
   const rows = collectUnifiedMileageRows({
     csddForm: blocks.csdd,
     autoRecordsBlock: blocks.auto_records,
+    oneautoBlock: blocks.oneauto,
     ccVinBlock: blocks.cc_vin,
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     citiAvotiBlock: blocks.citi_avoti,
@@ -223,11 +226,12 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     parts.push(block("Papildus pārdevēja nosaukums", input.extraSellerName.trim()));
   }
 
-  const sourceSections: { key: keyof WorkspaceSourceBlocks; text: string }[] = [
+  const sourceSections: { key: keyof WorkspaceSourceBlocks; text: string; label?: string }[] = [
     { key: "csdd", text: csddFormToPlainText(blocks.csdd) },
     { key: "autodna", text: vendorAvotuBlockToPlainText(blocks.autodna) },
     { key: "carvertical", text: vendorAvotuBlockToPlainText(blocks.carvertical) },
     { key: "auto_records", text: autoRecordsBlockToPlainText(blocks.auto_records) },
+    { key: "oneauto", text: oneautoBlockToPlainText(blocks.oneauto), label: OFFICIAL_DEALER_SECTION_TITLE },
     { key: "tjekbil", text: vinRegistryBlockToPlainText(blocks.tjekbil) },
     { key: "mnt_ee", text: vinRegistryBlockToPlainText(blocks.mnt_ee) },
     { key: "lkf_ee", text: vinRegistryBlockToPlainText(blocks.lkf_ee) },
@@ -238,7 +242,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     { key: "listing_analysis", text: listingAnalysisToPlainText(blocks.listing_analysis) },
   ];
 
-  for (const { key, text } of sourceSections) {
+  for (const { key, text, label } of sourceSections) {
     let sectionText = text;
     if (key === "listing_analysis") {
       const paste = blocks.listing_analysis.listingPasteRaw.trim();
@@ -249,7 +253,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
       }
     }
     sectionText = appendAiContextRawSection(sectionText, blockAiContextRaw(blocks, key));
-    const section = block(SOURCE_BLOCK_LABELS[key], sectionText);
+    const section = block(label ?? SOURCE_BLOCK_LABELS[key], sectionText);
     if (section) parts.push(section);
   }
 

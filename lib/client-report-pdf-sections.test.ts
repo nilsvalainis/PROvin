@@ -389,7 +389,7 @@ describe("PDF source-section brand logos", () => {
     expect(html).toContain(PDF_SOURCE_LOGO_DATA_URI.ltab);
   });
 
-  it("puts the hero dealer manufacturer logo on DĪLERA DATI when make is known", () => {
+  it("puts the hero dealer manufacturer logo on OFICIĀLĀ DĪLERA DATI when make is known", () => {
     const csdd = emptyCsddFields();
     csdd.makeModel = "AUDI A6";
     const html = buildClientReportDocumentHtml({
@@ -405,8 +405,41 @@ describe("PDF source-section brand logos", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("DĪLERA DATI");
+    expect(html).toContain("OFICIĀLĀ DĪLERA DATI");
     expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.audi);
+  });
+
+  it("prints OneAuto OEM tables under OFICIĀLĀ DĪLERA DATI", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        oneautoBlock: {
+          ...createDefaultSourceBlocks().oneauto,
+          display: {
+            powertrain: [{ label: "Dzinējs", value: "D4204T14" }],
+            equipment: [{ label: "Panorāmas jumts", value: "Jā" }],
+            serviceTimeline: [
+              {
+                date: "23.12.2020",
+                odometer: "142220",
+                place: "Volvo",
+                works: "Eļļas maiņa",
+              },
+            ],
+          },
+        },
+        pdfVisibility: mergePdfVisibility({ oneauto: true, auto_records: false }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("OFICIĀLĀ DĪLERA DATI");
+    expect(html).toContain("23.12.2020");
+    expect(html).toContain("142 220 km");
+    expect(html).toContain("Eļļas maiņa");
+    expect(html).toContain("D4204T14");
+    expect(html).toContain("Panorāmas jumts");
   });
 
   it("uses ss.lv / auto24.ee / mobile.de logos from the listing URL, otherwise the search icon", () => {

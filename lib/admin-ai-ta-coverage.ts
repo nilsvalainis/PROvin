@@ -115,6 +115,7 @@ function latestOdometerKm(blocks: WorkspaceSourceBlocks | undefined, csdd: CsddF
     const rows = collectUnifiedMileageRows({
       csddForm: csdd,
       autoRecordsBlock: blocks.auto_records,
+      oneautoBlock: blocks.oneauto,
       ccVinBlock: blocks.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,

@@ -9,6 +9,7 @@ export function UnifiedMileageIframe({ blocks }: { blocks: WorkspaceSourceBlocks
     const html = buildUnifiedMileageTableHtml({
       csddForm: blocks.csdd,
       autoRecordsBlock: blocks.auto_records,
+      oneautoBlock: blocks.oneauto,
       ccVinBlock: blocks.cc_vin,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,

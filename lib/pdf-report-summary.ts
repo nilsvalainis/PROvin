@@ -61,6 +61,7 @@ export type PdfSummaryTile = {
 export type PdfSummaryInput = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
+  oneautoBlock?: import("@/lib/oneauto-block").OneautoBlockState | null;
   ccVinBlock?: CcVinBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
@@ -115,6 +116,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
     collectUnifiedMileageRows({
       csddForm: input.csddForm ?? undefined,
       autoRecordsBlock: input.autoRecordsBlock ?? undefined,
+      oneautoBlock: input.oneautoBlock ?? undefined,
       ccVinBlock: input.ccVinBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,

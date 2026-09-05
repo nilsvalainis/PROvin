@@ -4,10 +4,21 @@ import {
   buildOneautoDisplay,
   formatOneautoCostEur,
   oneautoDisplayHasRows,
+  parseOneautoDisplay,
   parseOneautoProductIds,
   type OneautoDisplaySections,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
+import {
+  autoRecordsServiceWorkRowsToPlainText,
+  PROVIN_SERVICE_WORKS_TABLE_TITLE,
+} from "@/lib/auto-records-service-works";
+import {
+  OFFICIAL_DEALER_SECTION_TITLE,
+  ONEAUTO_PDF_EQUIPMENT_TITLE,
+  ONEAUTO_PDF_POWERTRAIN_TITLE,
+  oneautoDisplayToServiceWorks,
+} from "@/lib/oneauto-dealer";
 
 export type OneautoProductResult = {
   ok: boolean;
@@ -24,6 +35,8 @@ export type OneautoBlockState = {
   results: Partial<Record<OneautoProductId, OneautoProductResult>>;
   display: OneautoDisplaySections;
   comments: string;
+  serviceHistoryNotes: string;
+  oilChangeIntervalNotes: string;
   aiContextRaw: string;
   source: typeof ONEAUTO_SOURCE_TAG;
 };
@@ -42,6 +55,8 @@ export function emptyOneautoBlock(): OneautoBlockState {
     results: {},
     display: emptyOneautoDisplay(),
     comments: "",
+    serviceHistoryNotes: "",
+    oilChangeIntervalNotes: "",
     aiContextRaw: "",
     source: ONEAUTO_SOURCE_TAG,
   };
@@ -49,31 +64,52 @@ export function emptyOneautoBlock(): OneautoBlockState {
 
 export function oneautoBlockHasContent(b: OneautoBlockState | null | undefined): boolean {
   if (!b) return false;
-  return Boolean(b.lastFetchedVin.trim() || b.fetchedAt.trim() || oneautoDisplayHasRows(b.display) || b.comments.trim());
+  return Boolean(
+    b.lastFetchedVin.trim() ||
+      b.fetchedAt.trim() ||
+      oneautoDisplayHasRows(b.display) ||
+      b.comments.trim() ||
+      b.serviceHistoryNotes.trim() ||
+      b.oilChangeIntervalNotes.trim(),
+  );
+}
+
+/** PDF: tikai tas, ko klients redz (tabulas + komentāri), ne tikai ielādes metadati. */
+export function oneautoBlockHasPrintableContent(b: OneautoBlockState | null | undefined): boolean {
+  if (!b) return false;
+  return Boolean(
+    oneautoDisplayHasRows(b.display) ||
+      b.comments.trim() ||
+      b.serviceHistoryNotes.trim() ||
+      b.oilChangeIntervalNotes.trim(),
+  );
 }
 
 export function oneautoBlockToPlainText(b: OneautoBlockState | null | undefined): string {
   if (!b) return "";
   const lines: string[] = [];
+  lines.push(OFFICIAL_DEALER_SECTION_TITLE);
   if (b.lastFetchedVin.trim()) lines.push(`VIN ${b.lastFetchedVin.trim()}`);
-  if (b.fetchedAt.trim()) lines.push(`Ielādēts ${b.fetchedAt.trim()}`);
-  if (b.lastCostEur.trim()) lines.push(`Izmaksas ${b.lastCostEur.trim()}`);
   if (b.display.powertrain.length) {
-    lines.push("Dzinēja / kārbas specifikācija");
+    lines.push(ONEAUTO_PDF_POWERTRAIN_TITLE);
     for (const row of b.display.powertrain) lines.push(`${row.label}: ${row.value}`);
   }
   if (b.display.equipment.length) {
-    lines.push("Gatavā komplektācija");
+    lines.push(ONEAUTO_PDF_EQUIPMENT_TITLE);
     for (const row of b.display.equipment) lines.push(`${row.label}: ${row.value}`);
   }
-  if (b.display.serviceTimeline.length) {
-    lines.push("Servisu vēstures laika skala");
-    for (const ev of b.display.serviceTimeline) {
-      lines.push([ev.date, ev.odometer, ev.place, ev.works].filter(Boolean).join(" · "));
-    }
+  const serviceWorks = autoRecordsServiceWorkRowsToPlainText(oneautoDisplayToServiceWorks(b.display));
+  if (serviceWorks) {
+    lines.push(`${PROVIN_SERVICE_WORKS_TABLE_TITLE}\n${serviceWorks}`);
   }
-  if (b.comments.trim()) lines.push(b.comments.trim());
-  return lines.join("\n");
+  if ((b.serviceHistoryNotes ?? "").trim()) {
+    lines.push(`Servisa vēsture\n${b.serviceHistoryNotes.trim()}`);
+  }
+  if ((b.oilChangeIntervalNotes ?? "").trim()) {
+    lines.push(`Eļļas maiņas intervāli\n${b.oilChangeIntervalNotes.trim()}`);
+  }
+  if ((b.comments ?? "").trim()) lines.push(`Komentāri\n${b.comments.trim()}`);
+  return lines.join("\n\n");
 }
 
 function parseResultMap(raw: unknown): Partial<Record<OneautoProductId, OneautoProductResult>> {
@@ -99,20 +135,14 @@ export function parseOneautoBlockRaw(raw: unknown): OneautoBlockState {
   const o = raw as Record<string, unknown>;
   const selected = parseOneautoProductIds(o.selectedProducts);
   const results = parseResultMap(o.results);
-  const displayFromRaw =
-    o.display && typeof o.display === "object" ? (o.display as OneautoDisplaySections) : null;
-  const display =
-    displayFromRaw && oneautoDisplayHasRows(displayFromRaw)
-      ? {
-          equipment: Array.isArray(displayFromRaw.equipment) ? displayFromRaw.equipment : [],
-          serviceTimeline: Array.isArray(displayFromRaw.serviceTimeline) ? displayFromRaw.serviceTimeline : [],
-          powertrain: Array.isArray(displayFromRaw.powertrain) ? displayFromRaw.powertrain : [],
-        }
-      : buildOneautoDisplay(
-          Object.fromEntries(ONEAUTO_PRODUCT_IDS.map((id) => [id, results[id]?.payload])) as Partial<
-            Record<OneautoProductId, unknown>
-          >,
-        );
+  const parsedDisplay = parseOneautoDisplay(o.display);
+  const display = oneautoDisplayHasRows(parsedDisplay)
+    ? parsedDisplay
+    : buildOneautoDisplay(
+        Object.fromEntries(ONEAUTO_PRODUCT_IDS.map((id) => [id, results[id]?.payload])) as Partial<
+          Record<OneautoProductId, unknown>
+        >,
+      );
   return {
     vinOverride: typeof o.vinOverride === "string" ? o.vinOverride.slice(0, 24) : "",
     lastFetchedVin: typeof o.lastFetchedVin === "string" ? o.lastFetchedVin.slice(0, 24) : "",
@@ -127,6 +157,9 @@ export function parseOneautoBlockRaw(raw: unknown): OneautoBlockState {
     results,
     display,
     comments: typeof o.comments === "string" ? o.comments.slice(0, 12000) : "",
+    serviceHistoryNotes: typeof o.serviceHistoryNotes === "string" ? o.serviceHistoryNotes.slice(0, 12000) : "",
+    oilChangeIntervalNotes:
+      typeof o.oilChangeIntervalNotes === "string" ? o.oilChangeIntervalNotes.slice(0, 12000) : "",
     aiContextRaw: typeof o.aiContextRaw === "string" ? o.aiContextRaw.slice(0, 12000) : "",
     source: ONEAUTO_SOURCE_TAG,
   };

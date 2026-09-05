@@ -23,6 +23,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
+import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 
@@ -113,7 +114,11 @@ export function sourceBlockPlainTextExcludingComments(
       }).trim();
       return appendAiContextRawSection(base, blocks.auto_records.aiContextRaw);
     case "oneauto":
-      base = oneautoBlockToPlainText({ ...blocks.oneauto, comments: "" }).trim();
+      base = oneautoBlockToPlainText({
+        ...blocks.oneauto,
+        comments: "",
+        oilChangeIntervalNotes: "",
+      }).trim();
       return appendAiContextRawSection(base, blocks.oneauto.aiContextRaw);
     case "cc_vin":
       base = ccVinBlockToPlainText({ ...blocks.cc_vin, comments: "" }).trim();
@@ -226,6 +231,14 @@ export function sourceBlockCommentsPlainForAi(
     const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
     return blocks.auto_records.oilChangeIntervalNotes ?? "";
   }
+  if (blockKey === "oneauto" && targetField === "serviceHistoryNotes") {
+    const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+    return blocks.oneauto.serviceHistoryNotes ?? "";
+  }
+  if (blockKey === "oneauto" && targetField === "oilChangeIntervalNotes") {
+    const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+    return blocks.oneauto.oilChangeIntervalNotes ?? "";
+  }
   return sourceBlockCommentsPlain(blockKey, sourceBlocks);
 }
 
@@ -278,6 +291,27 @@ export function buildPreviouslyGeneratedSourceCommentsContext(
     }
   }
 
+  if (currentBlockKey !== "oneauto" || targetField !== "comments") {
+    const oneautoWorks = autoRecordsServiceWorkRowsToPlainText(
+      oneautoDisplayToServiceWorks(blocks.oneauto.display),
+    );
+    if (oneautoWorks && (currentBlockKey !== "oneauto" || targetField !== "serviceHistoryNotes")) {
+      parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa un remontu vēsture\n${oneautoWorks}`);
+    }
+    if (currentBlockKey !== "oneauto" || targetField !== "serviceHistoryNotes") {
+      const serviceNotes = adminRichHtmlToPlainText(blocks.oneauto.serviceHistoryNotes ?? "").trim();
+      if (serviceNotes) {
+        parts.push(`### OFICIĀLĀ DĪLERA DATI — Servisa vēsture\n${serviceNotes}`);
+      }
+    }
+    if (currentBlockKey !== "oneauto" || targetField !== "oilChangeIntervalNotes") {
+      const oilNotes = adminRichHtmlToPlainText(blocks.oneauto.oilChangeIntervalNotes ?? "").trim();
+      if (oilNotes) {
+        parts.push(`### OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli\n${oilNotes}`);
+      }
+    }
+  }
+
   return parts.join("\n\n");
 }
 
@@ -311,6 +345,12 @@ export function applySourceBlockGeneratedComment(
       }
       return { ...block, comments: html };
     case "oneauto":
+      if (targetField === "serviceHistoryNotes") {
+        return { ...block, serviceHistoryNotes: html };
+      }
+      if (targetField === "oilChangeIntervalNotes") {
+        return { ...block, oilChangeIntervalNotes: html };
+      }
       return { ...block, comments: html };
     case "cc_vin":
       return { ...(block as CcVinBlockState), comments: html };

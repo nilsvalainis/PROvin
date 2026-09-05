@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-source-comment-blocks";
 import {
   emptyAutoRecordsBlock,
+  emptyOneautoBlock,
   mergeSourceBlocksWithDefaults,
 } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
@@ -105,6 +106,40 @@ describe("auto_records AI context", () => {
     expect(plain).toContain("Oficiālā dīlera dati:");
     expect(plain).toContain("Modelis: E 220");
     expect(plain).toContain("937");
+  });
+});
+
+describe("oneauto oficiālā dīlera AI lauki", () => {
+  it("ieraksta servisa un eļļas piezīmes atsevišķos laukos", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      oneauto: {
+        ...emptyOneautoBlock(),
+        display: {
+          equipment: [],
+          powertrain: [],
+          serviceTimeline: [
+            { date: "23.12.2020", odometer: "142220", place: "", works: "Eļļas maiņa" },
+          ],
+        },
+      },
+    });
+    expect(sourceBlockHasDataExcludingComments("oneauto", blocks)).toBe(true);
+    const oil = applySourceBlockGeneratedComment(
+      "oneauto",
+      blocks.oneauto,
+      "<p>Eļļa mainīta reti.</p>",
+      { targetField: "oilChangeIntervalNotes" },
+    );
+    expect(oil).toMatchObject({ oilChangeIntervalNotes: "<p>Eļļa mainīta reti.</p>" });
+    const service = applySourceBlockGeneratedComment(
+      "oneauto",
+      blocks.oneauto,
+      "<p>23.12.2020 | 142220 km | eļļas maiņa</p>",
+      { targetField: "serviceHistoryNotes" },
+    );
+    expect(service).toMatchObject({
+      serviceHistoryNotes: "<p>23.12.2020 | 142220 km | eļļas maiņa</p>",
+    });
   });
 });
 

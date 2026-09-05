@@ -2,31 +2,49 @@
 
 import { useMemo, useState } from "react";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
+import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
+import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import {
   AdminSourceCommentField,
   type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
+import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import { SOURCE_BLOCK_LABELS, emptyOneautoBlock, type OneautoBlockState } from "@/lib/admin-source-blocks";
 import { normalizeVin } from "@/lib/order-field-validation";
 import {
   ONEAUTO_PRODUCTS,
   buildOneautoDisplay,
+  emptyOneautoKvRow,
+  emptyOneautoServiceEvent,
   formatOneautoCostEur,
   oneautoDisplayHasRows,
   oneautoPayloadIsPending,
   oneautoProductsCostCents,
   oneautoServiceHistoryIsEmpty,
+  padOneautoKvRows,
+  padOneautoServiceRows,
+  type OneautoKvRow,
   type OneautoProductId,
+  type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-const subhead = "mb-1.5 mt-3 text-[10px] font-medium uppercase tracking-wide text-slate-500";
+const subhead = "mb-1.5 mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500";
+
+const cell = "px-1.5 py-0.5";
+
+const addBtn =
+  "mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50";
 
 type Props = {
   value: OneautoBlockState;
@@ -36,7 +54,11 @@ type Props = {
   onChange: (next: OneautoBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
   sessionId: string;
+  pdfInclude: boolean;
+  onPdfIncludeChange: (next: boolean) => void;
   aiComment?: AdminAiSourceCommentSlot;
+  aiServiceHistory?: AdminAiSourceCommentSlot;
+  aiOilChangeInterval?: AdminAiSourceCommentSlot;
 };
 
 function oneautoFetchErrorLv(code: string): string {
@@ -66,10 +88,15 @@ export function AdminOneautoSourceBlock({
   onChange,
   trafficFillLevel,
   sessionId,
+  pdfInclude,
+  onPdfIncludeChange,
   aiComment,
+  aiServiceHistory,
+  aiOilChangeInterval,
 }: Props) {
   const editable = !readOnly && !disabled;
   const [busy, setBusy] = useState(false);
+  const [translateBusy, setTranslateBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const effectiveVin = normalizeVin(value.vinOverride || orderVin);
@@ -103,6 +130,33 @@ export function AdminOneautoSourceBlock({
   }, [value.results]);
 
   const selectedSet = useMemo(() => new Set(value.selectedProducts), [value.selectedProducts]);
+  const powertrainRows = padOneautoKvRows(display.powertrain);
+  const equipmentRows = padOneautoKvRows(display.equipment);
+  const serviceRows = padOneautoServiceRows(display.serviceTimeline);
+
+  const patchDisplay = (next: Partial<typeof display>) => {
+    onChange({ ...value, display: { ...display, ...next } });
+  };
+
+  const setKv = (key: "powertrain" | "equipment", index: number, patch: Partial<OneautoKvRow>) => {
+    const rows = padOneautoKvRows(display[key]).map((row, i) => (i === index ? { ...row, ...patch } : row));
+    patchDisplay({ [key]: rows });
+  };
+
+  const addKv = (key: "powertrain" | "equipment") => {
+    patchDisplay({ [key]: [...padOneautoKvRows(display[key]), emptyOneautoKvRow()] });
+  };
+
+  const removeKv = (key: "powertrain" | "equipment", index: number) => {
+    patchDisplay({ [key]: dropOrResetRow(padOneautoKvRows(display[key]), index, emptyOneautoKvRow) });
+  };
+
+  const setService = (index: number, patch: Partial<OneautoServiceEvent>) => {
+    const rows = padOneautoServiceRows(display.serviceTimeline).map((row, i) =>
+      i === index ? { ...row, ...patch } : row,
+    );
+    patchDisplay({ serviceTimeline: rows });
+  };
 
   const toggleProduct = (id: OneautoProductId, checked: boolean) => {
     const next = checked
@@ -174,6 +228,46 @@ export function AdminOneautoSourceBlock({
     }
   };
 
+  const translateLv = async (operatorNotes: string, modelTier: AiAdminModelTier) => {
+    if (!editable || busy || translateBusy) return;
+    if (!hasDisplay) {
+      setError("Vispirms ielādē vai aizpildi tabulas.");
+      return;
+    }
+    setTranslateBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/ai/oneauto-translate", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          display,
+          operatorNotes,
+          modelTier,
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        display?: OneautoBlockState["display"];
+      };
+      if (!res.ok || !body.display) {
+        setError(
+          body.error === "empty_source_data"
+            ? "Nav ko tulkot - vispirms aizpildi tabulas."
+            : "Tulkojums neizdevās. Mēģini vēlreiz.",
+        );
+        return;
+      }
+      onChange({ ...value, display: body.display });
+    } catch {
+      setError("Tulkojums neizdevās. Mēģini vēlreiz.");
+    } finally {
+      setTranslateBusy(false);
+    }
+  };
+
   return (
     <AdminCollapsibleShell
       sessionId={sessionId}
@@ -191,7 +285,9 @@ export function AdminOneautoSourceBlock({
           readOnly={readOnly}
           disabled={disabled}
           onClear={() => onChange(emptyOneautoBlock())}
-        />
+        >
+          <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} />
+        </AdminSourceBlockHeaderTools>
       }
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
@@ -283,54 +379,189 @@ export function AdminOneautoSourceBlock({
           ) : null}
           {error ? <p className="mt-2 text-[11px] text-rose-700">{error}</p> : null}
 
-          {display.powertrain.length > 0 ? (
-            <section>
-              <h3 className={subhead}>Dzinēja / kārbas specifikācija</h3>
-              <KvTable rows={display.powertrain} />
-            </section>
-          ) : null}
-          {display.equipment.length > 0 ? (
-            <section>
-              <h3 className={subhead}>Gatavā komplektācija</h3>
-              <KvTable rows={display.equipment} />
-            </section>
-          ) : null}
-          {display.serviceTimeline.length > 0 ? (
-            <section>
-              <h3 className={subhead}>Servisu vēstures laika skala</h3>
-              <div className="overflow-x-auto rounded-lg border border-slate-200/90">
-                <table className="w-full min-w-[280px] border-collapse text-[11px]">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
-                      <th className="px-1.5 py-0.5">Datums</th>
-                      <th className="px-1.5 py-0.5">Km</th>
-                      <th className="px-1.5 py-0.5">Vieta</th>
-                      <th className="px-1.5 py-0.5">Darbi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {display.serviceTimeline.map((ev, i) => (
-                      <tr key={`${ev.date}-${i}`} className="border-b border-slate-100">
-                        <td className="px-1.5 py-0.5">{ev.date}</td>
-                        <td className="px-1.5 py-0.5">{ev.odometer}</td>
-                        <td className="px-1.5 py-0.5">{ev.place}</td>
-                        <td className="px-1.5 py-0.5">{ev.works}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ) : null}
-          {!hasDisplay && rawJson ? (
-            <section>
-              <h3 className={subhead}>Jēlā OneAuto atbilde</h3>
-              <pre className="max-h-64 overflow-auto rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] leading-snug text-slate-700">
-                {rawJson.slice(0, 12000)}
-              </pre>
-            </section>
+          {editable && hasDisplay ? (
+            <div className="mt-2">
+              <AdminAiGenerateWithPrefill
+                label="Tulkot latviski"
+                busy={translateBusy}
+                disabled={!editable || busy}
+                recommendedTier="gemini-flash"
+                tiers={["gemini-flash", "gemini"]}
+                dialogTitle="Papildu piezīmes tulkojumam"
+                dialogHint="Pēc izvēles: piem. tikai darbus, saglabā OEM kodus. Flash vai Gemini iztulko tabulas skaidrā latviešu valodā."
+                title="Iztulko ielasītos OneAuto laukus skaidrā latviešu valodā"
+                onGenerate={translateLv}
+              />
+            </div>
           ) : null}
 
+          <section>
+            <h3 className={subhead}>
+              <AdminProvinLucide icon={SUBHEADING_LUCIDE.serviceWorks} />
+              Dzinēja / kārbas specifikācija
+            </h3>
+            <KvEditTable
+              rows={powertrainRows}
+              editable={editable}
+              disabled={!editable}
+              labelAria="Dzinēja / kārbas lauks"
+              onChange={(i, patch) => setKv("powertrain", i, patch)}
+              onRemove={(i) => removeKv("powertrain", i)}
+            />
+            {editable ? (
+              <button type="button" className={addBtn} onClick={() => addKv("powertrain")}>
+                Pievienot rindu
+              </button>
+            ) : null}
+          </section>
+
+          <section>
+            <h3 className={subhead}>
+              <AdminProvinLucide icon={SUBHEADING_LUCIDE.listingHistory} />
+              Gatavā komplektācija
+            </h3>
+            <KvEditTable
+              rows={equipmentRows}
+              editable={editable}
+              disabled={!editable}
+              labelAria="Komplektācijas lauks"
+              onChange={(i, patch) => setKv("equipment", i, patch)}
+              onRemove={(i) => removeKv("equipment", i)}
+            />
+            {editable ? (
+              <button type="button" className={addBtn} onClick={() => addKv("equipment")}>
+                Pievienot rindu
+              </button>
+            ) : null}
+          </section>
+
+          <section>
+            <h3 className={subhead}>
+              <AdminProvinLucide icon={SUBHEADING_LUCIDE.registryTimeline} />
+              Servisu vēstures laika skala
+            </h3>
+            <div className="overflow-x-auto rounded-lg border border-slate-200/90">
+              <table className="w-full min-w-[280px] border-collapse text-[11px]">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+                    <th className={cell}>Datums</th>
+                    <th className={cell}>Km</th>
+                    <th className={cell}>Vieta</th>
+                    <th className={cell}>Darbi</th>
+                    {editable ? <th className={`w-9 ${cell}`} aria-hidden /> : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {serviceRows.map((ev, i) => (
+                    <tr key={`svc-${i}`} className="border-b border-slate-100 last:border-b-0">
+                      <td className={cell}>
+                        <input
+                          className={inp}
+                          value={ev.date}
+                          disabled={!editable}
+                          placeholder="21.10.2019"
+                          aria-label={`Servisa datums, rinda ${i + 1}`}
+                          onChange={(e) => setService(i, { date: e.target.value })}
+                        />
+                      </td>
+                      <td className={cell}>
+                        <input
+                          className={inp}
+                          value={ev.odometer}
+                          disabled={!editable}
+                          placeholder="69343"
+                          aria-label={`Servisa km, rinda ${i + 1}`}
+                          onChange={(e) => setService(i, { odometer: e.target.value })}
+                        />
+                      </td>
+                      <td className={cell}>
+                        <input
+                          className={inp}
+                          value={ev.place}
+                          disabled={!editable}
+                          placeholder="Dīleris"
+                          aria-label={`Servisa vieta, rinda ${i + 1}`}
+                          onChange={(e) => setService(i, { place: e.target.value })}
+                        />
+                      </td>
+                      <td className={cell}>
+                        <textarea
+                          className={`${inp} min-h-[40px] resize-y`}
+                          value={ev.works}
+                          disabled={!editable}
+                          placeholder="Eļļas maiņa"
+                          rows={2}
+                          aria-label={`Servisa darbi, rinda ${i + 1}`}
+                          onChange={(e) => setService(i, { works: e.target.value })}
+                        />
+                      </td>
+                      {editable ? (
+                        <td className={cell}>
+                          <AdminFieldResetButton
+                            aria-label={`Dzēst servisa rindu ${i + 1}`}
+                            onClick={() =>
+                              patchDisplay({
+                                serviceTimeline: dropOrResetRow(
+                                  padOneautoServiceRows(display.serviceTimeline),
+                                  i,
+                                  emptyOneautoServiceEvent,
+                                ),
+                              })
+                            }
+                          />
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {editable ? (
+              <button
+                type="button"
+                className={addBtn}
+                onClick={() =>
+                  patchDisplay({
+                    serviceTimeline: [...padOneautoServiceRows(display.serviceTimeline), emptyOneautoServiceEvent()],
+                  })
+                }
+              >
+                Pievienot rindu
+              </button>
+            ) : null}
+          </section>
+
+          <section>
+            <h3 className={subhead}>Jēlie OneAuto dati</h3>
+            <textarea
+              readOnly
+              value={rawJson}
+              placeholder="Pēc ielādes šeit būs OneAuto JSON. Ja tabulas paliek tukšas, skaties šo lauku."
+              className={`${inp} min-h-[96px] font-mono text-[10px] leading-snug`}
+              aria-label="Jēlie OneAuto dati"
+            />
+          </section>
+
+          <AdminSourceCommentField
+            label="Servisa vēsture"
+            value={value.serviceHistoryNotes ?? ""}
+            onChange={(html) => onChange({ ...value, serviceHistoryNotes: html })}
+            readOnly={readOnly}
+            disabled={disabled}
+            compact
+            ai={aiServiceHistory}
+            aria-label="OFICIĀLĀ DĪLERA DATI — Servisa vēsture"
+          />
+          <AdminSourceCommentField
+            label="Eļļas maiņas intervāli"
+            value={value.oilChangeIntervalNotes ?? ""}
+            onChange={(html) => onChange({ ...value, oilChangeIntervalNotes: html })}
+            readOnly={readOnly}
+            disabled={disabled}
+            compact
+            ai={aiOilChangeInterval}
+            aria-label="OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli"
+          />
           <AdminSourceCommentField
             value={value.comments}
             onChange={(html) => onChange({ ...value, comments: html })}
@@ -351,15 +582,62 @@ export function AdminOneautoSourceBlock({
   );
 }
 
-function KvTable({ rows }: { rows: { label: string; value: string }[] }) {
+function KvEditTable({
+  rows,
+  editable,
+  disabled,
+  labelAria,
+  onChange,
+  onRemove,
+}: {
+  rows: OneautoKvRow[];
+  editable: boolean;
+  disabled: boolean;
+  labelAria: string;
+  onChange: (index: number, patch: Partial<OneautoKvRow>) => void;
+  onRemove: (index: number) => void;
+}) {
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200/90">
       <table className="w-full min-w-[240px] border-collapse text-[11px]">
+        <thead>
+          <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+            <th className={cell}>Lauks</th>
+            <th className={cell}>Vērtība</th>
+            {editable ? <th className={`w-9 ${cell}`} aria-hidden /> : null}
+          </tr>
+        </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={`${row.label}:${row.value}`} className="border-b border-slate-100">
-              <td className="w-[38%] px-1.5 py-0.5 font-medium text-slate-600">{row.label}</td>
-              <td className="px-1.5 py-0.5">{row.value}</td>
+          {rows.map((row, i) => (
+            <tr key={`kv-${i}`} className="border-b border-slate-100 last:border-b-0">
+              <td className={`${cell} w-[38%]`}>
+                <input
+                  className={inp}
+                  value={row.label}
+                  disabled={disabled}
+                  placeholder="Dzinējs"
+                  aria-label={`${labelAria} nosaukums, rinda ${i + 1}`}
+                  onChange={(e) => onChange(i, { label: e.target.value })}
+                />
+              </td>
+              <td className={cell}>
+                <input
+                  className={inp}
+                  value={row.value}
+                  disabled={disabled}
+                  placeholder="2.0 TDI"
+                  aria-label={`${labelAria} vērtība, rinda ${i + 1}`}
+                  onChange={(e) => onChange(i, { value: e.target.value })}
+                />
+              </td>
+              {editable ? (
+                <td className={cell}>
+                  <AdminFieldResetButton
+                    aria-label={`Dzēst ${labelAria} rindu ${i + 1}`}
+                    onClick={() => onRemove(i)}
+                  />
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

@@ -12,7 +12,10 @@ import {
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
   type TirgusFormFields,
+  type OneautoBlockState,
 } from "@/lib/admin-source-blocks";
+import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
+import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
   autoRecordsRowHasData,
@@ -48,6 +51,7 @@ export const UNIFIED_MILEAGE_MERGE_MAX_DATE_SPAN_MS = 62 * 24 * 60 * 60 * 1000;
 export type UnifiedMileageSourcePayload = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
+  oneautoBlock?: OneautoBlockState | null;
   ccVinBlock?: CcVinBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   citiAvotiBlock?: CitiAvotiBlockState | null;
@@ -367,6 +371,8 @@ export type CollectUnifiedMileageOptions = {
   omitCsddMileage?: boolean;
   /** Neiekļaut AUTO RECORDS servisa vēsturi. */
   omitAutoRecords?: boolean;
+  /** Neiekļaut OneAuto OEM servisa laika skalu. */
+  omitOneauto?: boolean;
   /** Neiekļaut starptautiskās vēstures odometra ierakstus. */
   omitCcVin?: boolean;
   /** Neiekļaut konkrētus trešās puses avotus pēc nosaukuma (`SOURCE_BLOCK_LABELS`). */
@@ -440,6 +446,18 @@ export function collectUnifiedMileageRows(
     const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
     pushRow(dateOut, odoOut, r.country, "OFICIĀLĀ DĪLERA DATI", documentKeys.has(dealerDocumentKey(dateOut, odoOut)));
   }
+  }
+
+  if (!options?.omitOneauto) {
+    const oneautoWorks = oneautoDisplayToServiceWorks(p.oneautoBlock?.display).filter(
+      autoRecordsServiceWorkRowIsPrintable,
+    );
+    for (const w of oneautoWorks) {
+      const dateOut = formatAutoRecordsDateForOutput(w.date) || w.date.trim();
+      const odoOut = normalizeAutoRecordsOdometer(w.odometer) || w.odometer.replace(/\D/g, "");
+      if (!dateOut || !odoOut) continue;
+      pushRow(dateOut, odoOut, "", "OFICIĀLĀ DĪLERA DATI", true);
+    }
   }
 
   if (!options?.omitCcVin) {

@@ -232,6 +232,28 @@ describe("collectUnifiedMileageRows — dokumenta rādījumi", () => {
     expect(byOdometer.get("41874")?.documentValue).toBeUndefined();
     expect(byOdometer.get("33472")?.documentValue).toBe(true);
   });
+
+  it("ņem OneAuto servisa km kā OFICIĀLĀ DĪLERA DATI dokumenta rādījumu", () => {
+    const collected = collectUnifiedMileageRows({
+      oneautoBlock: {
+        ...createDefaultSourceBlocks().oneauto,
+        display: {
+          equipment: [],
+          powertrain: [],
+          serviceTimeline: [
+            { date: "23.12.2020", odometer: "142220", place: "", works: "Eļļas maiņa" },
+          ],
+        },
+      },
+    });
+    expect(collected).toHaveLength(1);
+    expect(collected[0]).toMatchObject({
+      date: "23.12.2020",
+      sourceLabel: "OFICIĀLĀ DĪLERA DATI",
+      documentValue: true,
+    });
+    expect(collected[0]?.odometer.replace(/\D/g, "")).toBe("142220");
+  });
 });
 
 describe("collectUnifiedMileageRows — sludinājuma odometrs", () => {

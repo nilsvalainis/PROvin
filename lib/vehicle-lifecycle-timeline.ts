@@ -12,6 +12,7 @@ import type {
   TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
+import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
@@ -87,6 +88,7 @@ export function lifecyclePublicCaption(raw: string): string {
 export type LifecycleInput = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
+  oneautoBlock?: import("@/lib/oneauto-block").OneautoBlockState | null;
   ccVinBlock?: CcVinBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
@@ -256,7 +258,11 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     );
   }
 
-  for (const w of (input.autoRecordsBlock?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable)) {
+  const oneautoWorks = oneautoDisplayToServiceWorks(input.oneautoBlock?.display);
+  for (const w of [
+    ...(input.autoRecordsBlock?.serviceWorks ?? []),
+    ...oneautoWorks,
+  ].filter(autoRecordsServiceWorkRowIsPrintable)) {
     const loc = lifecyclePublicCaption(w.location);
     const locIsCountry = lifecycleLocationIsCountryName(loc);
     out.push(
@@ -343,6 +349,7 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
     collectUnifiedMileageRows({
       csddForm: input.csddForm ?? undefined,
       autoRecordsBlock: input.autoRecordsBlock ?? undefined,
+      oneautoBlock: input.oneautoBlock ?? undefined,
       ccVinBlock: input.ccVinBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,

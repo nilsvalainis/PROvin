@@ -1,3 +1,5 @@
+import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+
 export const ONEAUTO_SOURCE_TAG = "oneautoapi" as const;
 
 export const ONEAUTO_PRODUCT_IDS = [
@@ -88,6 +90,120 @@ export type OneautoDisplaySections = {
   serviceTimeline: OneautoServiceEvent[];
   powertrain: OneautoKvRow[];
 };
+
+export function emptyOneautoKvRow(): OneautoKvRow {
+  return { label: "", value: "" };
+}
+
+export function emptyOneautoServiceEvent(): OneautoServiceEvent {
+  return { date: "", odometer: "", place: "", works: "" };
+}
+
+export function padOneautoKvRows(rows: OneautoKvRow[]): OneautoKvRow[] {
+  return rows.length > 0 ? rows : [emptyOneautoKvRow()];
+}
+
+export function padOneautoServiceRows(rows: OneautoServiceEvent[]): OneautoServiceEvent[] {
+  return rows.length > 0 ? rows : [emptyOneautoServiceEvent()];
+}
+
+export function oneautoKvRowHasData(row: OneautoKvRow): boolean {
+  return Boolean(row.label.trim() && row.value.trim());
+}
+
+export function oneautoServiceEventHasData(ev: OneautoServiceEvent): boolean {
+  return Boolean(ev.date.trim() || ev.odometer.trim() || ev.place.trim() || ev.works.trim());
+}
+
+export function filledOneautoKvRows(rows: OneautoKvRow[] | null | undefined): OneautoKvRow[] {
+  return (rows ?? []).filter(oneautoKvRowHasData);
+}
+
+export function filledOneautoServiceEvents(
+  rows: OneautoServiceEvent[] | null | undefined,
+): OneautoServiceEvent[] {
+  return (rows ?? []).filter(oneautoServiceEventHasData);
+}
+
+/** Semikolu sarakstus pārvērš rindās, lai PDF „Veiktie darbi” čipi strādātu. */
+export function formatOneautoWorksText(raw: string): string {
+  return raw
+    .replace(/\s*;\s*/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export function normalizeOneautoKvRow(row: OneautoKvRow): OneautoKvRow {
+  return {
+    label: row.label.replace(/\s+/g, " ").trim().slice(0, 200),
+    value: row.value.replace(/\s+/g, " ").trim().slice(0, 2000),
+  };
+}
+
+export function normalizeOneautoServiceEvent(ev: OneautoServiceEvent): OneautoServiceEvent {
+  return {
+    date: formatAutoRecordsDateForOutput(ev.date) || ev.date.trim().slice(0, 40),
+    odometer: ev.odometer.replace(/\s+/g, " ").trim().slice(0, 40),
+    place: ev.place.replace(/\s+/g, " ").trim().slice(0, 200),
+    works: formatOneautoWorksText(ev.works).slice(0, 8000),
+  };
+}
+
+export function normalizeOneautoDisplay(d: OneautoDisplaySections): OneautoDisplaySections {
+  return {
+    equipment: filledOneautoKvRows(d.equipment.map(normalizeOneautoKvRow)).slice(0, 80),
+    serviceTimeline: filledOneautoServiceEvents(d.serviceTimeline.map(normalizeOneautoServiceEvent)).slice(
+      0,
+      80,
+    ),
+    powertrain: filledOneautoKvRows(d.powertrain.map(normalizeOneautoKvRow)).slice(0, 40),
+  };
+}
+
+function parseKvRows(raw: unknown, max: number): OneautoKvRow[] {
+  if (!Array.isArray(raw)) return [];
+  const out: OneautoKvRow[] = [];
+  for (const item of raw.slice(0, max)) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const row = normalizeOneautoKvRow({
+      label: typeof o.label === "string" ? o.label : "",
+      value: typeof o.value === "string" ? o.value : "",
+    });
+    if (oneautoKvRowHasData(row)) out.push(row);
+  }
+  return out;
+}
+
+function parseServiceRows(raw: unknown): OneautoServiceEvent[] {
+  if (!Array.isArray(raw)) return [];
+  const out: OneautoServiceEvent[] = [];
+  for (const item of raw.slice(0, 80)) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const ev = normalizeOneautoServiceEvent({
+      date: typeof o.date === "string" ? o.date : "",
+      odometer: typeof o.odometer === "string" ? o.odometer : "",
+      place: typeof o.place === "string" ? o.place : "",
+      works: typeof o.works === "string" ? o.works : "",
+    });
+    if (oneautoServiceEventHasData(ev)) out.push(ev);
+  }
+  return out;
+}
+
+export function parseOneautoDisplay(raw: unknown): OneautoDisplaySections {
+  if (!raw || typeof raw !== "object") {
+    return { equipment: [], serviceTimeline: [], powertrain: [] };
+  }
+  const o = raw as Record<string, unknown>;
+  return normalizeOneautoDisplay({
+    equipment: parseKvRows(o.equipment, 80),
+    serviceTimeline: parseServiceRows(o.serviceTimeline),
+    powertrain: parseKvRows(o.powertrain, 40),
+  });
+}
 
 const POWERTRAIN_LABEL_RE =
   /engine|dzinēj|motor|transmission|kārba|gearbox|power|jauda|kw|displacement|tilpums|fuel|degviel|oem_/i;
@@ -257,7 +373,8 @@ function walkService(node: unknown, out: OneautoServiceEvent[], depth = 0): void
       o.comments,
   );
   if (date || odometer || works) {
-    out.push({ date, odometer, place, works });
+    const ev = normalizeOneautoServiceEvent({ date, odometer, place, works });
+    if (oneautoServiceEventHasData(ev)) out.push(ev);
     return;
   }
   for (const key of SERVICE_LIST_KEYS) {
@@ -324,14 +441,18 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   walkService(history, serviceTimeline);
   walkService(schedule, serviceTimeline);
 
-  return {
+  return normalizeOneautoDisplay({
     equipment: equipment.slice(0, 80),
     serviceTimeline: serviceTimeline.slice(0, 80),
     powertrain: powertrain.slice(0, 40),
-  };
+  });
 }
 
 export function oneautoDisplayHasRows(d: OneautoDisplaySections | null | undefined): boolean {
   if (!d) return false;
-  return d.equipment.length > 0 || d.serviceTimeline.length > 0 || d.powertrain.length > 0;
+  return (
+    filledOneautoKvRows(d.equipment).length > 0 ||
+    filledOneautoServiceEvents(d.serviceTimeline).length > 0 ||
+    filledOneautoKvRows(d.powertrain).length > 0
+  );
 }

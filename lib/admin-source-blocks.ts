@@ -18,7 +18,12 @@ import {
 import { emptyOneautoBlock, parseOneautoBlockRaw, type OneautoBlockState } from "@/lib/oneauto-block";
 
 export type { OneautoBlockState } from "@/lib/oneauto-block";
-export { emptyOneautoBlock, oneautoBlockHasContent, oneautoBlockToPlainText } from "@/lib/oneauto-block";
+export {
+  emptyOneautoBlock,
+  oneautoBlockHasContent,
+  oneautoBlockHasPrintableContent,
+  oneautoBlockToPlainText,
+} from "@/lib/oneauto-block";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
 import { sanitizeVinRegistryClientText } from "@/lib/vin-registry-client-text";

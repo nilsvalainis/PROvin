@@ -41,16 +41,20 @@ export type AiSourceCommentInput = {
 };
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
+function isOfficialDealerBlock(blockKey: AiSourceCommentBlockKey): boolean {
+  return blockKey === "auto_records" || blockKey === "oneauto";
+}
+
 export async function generateSourceCommentWithAi(input: AiSourceCommentInput): Promise<string> {
-  const blockLabel = SOURCE_BLOCK_LABELS[input.blockKey];
+  const blockLabel =
+    input.blockKey === "oneauto" ? "OFICIĀLĀ DĪLERA DATI" : SOURCE_BLOCK_LABELS[input.blockKey];
   const targetField = input.targetField ?? "comments";
   const focusDataText = sourceBlockPlainTextForAi(
     input.blockKey,
     input.sourceBlocks,
     input.citiAvotiSectionIndex,
   );
-  const isOilInterval =
-    input.blockKey === "auto_records" && targetField === "oilChangeIntervalNotes";
+  const isOilInterval = isOfficialDealerBlock(input.blockKey) && targetField === "oilChangeIntervalNotes";
 
   const portfolioContext = await buildFullAiOrderContextText({
     sessionId: input.sessionId,
@@ -97,7 +101,7 @@ ${previousComments}
 `;
 
   const isServiceHistory =
-    input.blockKey === "auto_records" && targetField === "serviceHistoryNotes";
+    isOfficialDealerBlock(input.blockKey) && targetField === "serviceHistoryNotes";
 
   const userPrompt = isOilInterval
     ? appendAiOperatorNotesSection(
@@ -107,7 +111,7 @@ Lauks: OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli (PDF)
 === Pilns pasūtījuma konteksts (VISI avoti — rēķini no visa, kas iegūts) ===
 ${portfolioContext}
 
-${chainingSection}=== Oficiālā dīlera / Auto Records dati ===
+${chainingSection}=== Oficiālā dīlera dati ===
 ${focusDataText || "(dīlera tabulā nav atsevišķu rindu — rēķini no pārējiem avotiem)"}
 
 Sagatavo lauku „Eļļas maiņas intervāli” klienta PDF.
@@ -133,7 +137,7 @@ Lauks: OFICIĀLĀ DĪLERA DATI — Servisa vēsture (PDF)
 === Pilns pasūtījuma konteksts ===
 ${portfolioContext}
 
-=== Oficiālā dīlera / Auto Records dati ===
+=== Oficiālā dīlera dati ===
 ${focusDataText}
 
 Sagatavo „Servisa vēsture” lauku klienta PDF — faktu saraksts no dīlera / AutoDNA / RAW / Outvin servisa ierakstiem.

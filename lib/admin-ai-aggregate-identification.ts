@@ -34,6 +34,7 @@ function latestOdometerReading(blocks: WorkspaceSourceBlocks): LatestOdometer {
   const rows = collectUnifiedMileageRows({
     csddForm: blocks.csdd,
     autoRecordsBlock: blocks.auto_records,
+    oneautoBlock: blocks.oneauto,
     ccVinBlock: blocks.cc_vin,
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     citiAvotiBlock: blocks.citi_avoti,

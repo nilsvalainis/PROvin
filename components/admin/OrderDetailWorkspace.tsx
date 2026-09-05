@@ -2728,7 +2728,7 @@ export function OrderDetailWorkspace({
     ): AdminAiSourceCommentSlot => {
       const busyKey = sourceCommentAiBusyKey(key, targetField, citiAvotiSectionIndex);
       const hasSourceData =
-        key === "auto_records" && targetField === "oilChangeIntervalNotes" ?
+        (key === "auto_records" || key === "oneauto") && targetField === "oilChangeIntervalNotes" ?
           orderHasOilIntervalDataForAi(blocksDisplaySafe)
         : key === "citi_avoti" && citiAvotiSectionIndex != null ?
           citiAvotiSectionPlainTextExcludingComments(
@@ -3100,6 +3100,7 @@ export function OrderDetailWorkspace({
         manualVendorBlocks,
         manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
         autoRecordsBlock: autoRecordsForPdf,
+        oneautoBlock: blocksDisplaySafe.oneauto,
         ccVinBlock: ccVinForPdf,
         citiAvoti: blocksDisplaySafe.citi_avoti,
         listingAnalysis: listingAnalysisForPdf,
@@ -4263,7 +4264,11 @@ export function OrderDetailWorkspace({
               onChange={(next) => updateSourceBlock("oneauto", next)}
               trafficFillLevel={traffic.oneauto}
               sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.oneauto}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ oneauto: next })}
               aiComment={aiCommentSlot("oneauto")}
+              aiServiceHistory={aiCommentSlot("oneauto", undefined, "serviceHistoryNotes")}
+              aiOilChangeInterval={aiCommentSlot("oneauto", undefined, "oilChangeIntervalNotes")}
             />
           </div>
         ) : null}
