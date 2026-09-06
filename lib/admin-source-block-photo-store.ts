@@ -16,7 +16,6 @@ import {
   getOrderDraftStorageDir,
   isSafeOrderDraftSessionId,
 } from "@/lib/admin-order-draft-store";
-import { jpegWithCheckcarWatermarkCovered } from "@/lib/checkcar-watermark-cover";
 import {
   flattenSourceBlockPhotoGroups,
   isSourceBlockPhotoId,
@@ -172,7 +171,7 @@ export async function readSourceBlockPhotoJpeg(sessionId: string, photoId: strin
       });
       if (res && res.statusCode === 200 && res.stream) {
         const buf = Buffer.from(await new Response(res.stream).arrayBuffer());
-        if (isJpegMagicBuffer(buf)) return jpegWithCheckcarWatermarkCovered(buf);
+        if (isJpegMagicBuffer(buf)) return buf;
       }
     } catch {
       /* fall through */
@@ -186,7 +185,7 @@ export async function readSourceBlockPhotoJpeg(sessionId: string, photoId: strin
   try {
     const buf = await fs.readFile(photoFsPath(draftDir, sessionId, photoId));
     if (!isJpegMagicBuffer(buf)) return null;
-    return jpegWithCheckcarWatermarkCovered(buf);
+    return buf;
   } catch {
     return null;
   }
