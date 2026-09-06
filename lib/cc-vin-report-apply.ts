@@ -25,6 +25,7 @@ import {
   type CcVinSaleRow,
   type CcVinTitleRow,
 } from "@/lib/cc-vin-report";
+import { applyCcVinDefaultCommentPolicy } from "@/lib/admin-cc-vin-comment-presets";
 
 function squish(v: string): string {
   return v.replace(/\s+/g, " ").trim().toLowerCase();
@@ -133,19 +134,22 @@ export function applyCcVinParsedReport(
     ),
   );
 
-  return {
-    ...base,
-    reportDate: parsed.reportDate || base.reportDate,
-    attentionMarks: parsed.attentionMarks || base.attentionMarks,
-    ownersCount: parsed.ownersCount || base.ownersCount,
-    checks: parsed.checks.length > 0 ? parsed.checks : base.checks,
-    mileage,
-    damages,
-    insurance: records(base.insurance ?? [], parsed.insurance),
-    brands: records(base.brands ?? [], parsed.brands),
-    titles,
-    sales,
-  };
+  return applyCcVinDefaultCommentPolicy(
+    {
+      ...base,
+      reportDate: parsed.reportDate || base.reportDate,
+      attentionMarks: parsed.attentionMarks || base.attentionMarks,
+      ownersCount: parsed.ownersCount || base.ownersCount,
+      checks: parsed.checks.length > 0 ? parsed.checks : base.checks,
+      mileage,
+      damages,
+      insurance: records(base.insurance ?? [], parsed.insurance),
+      brands: records(base.brands ?? [], parsed.brands),
+      titles,
+      sales,
+    },
+    base,
+  );
 }
 
 /** Kopsavilkums operatoram pēc PDF nolasīšanas. */

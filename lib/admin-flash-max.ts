@@ -3,10 +3,7 @@
  * Modeļi pēc noklusējuma tie paši, kas atsevišķajām ✨ pogām.
  * Esošais lauka teksts iet kā existingDraftPlain — aģents to nedrīkst izmest.
  */
-import {
-  orderHasMileageDataForAi,
-  orderHasSourceDataForAi,
-} from "@/lib/admin-ai-data-availability";
+import { orderHasMileageDataForAi } from "@/lib/admin-ai-data-availability";
 import {
   orderHasOilIntervalDataForAi,
   sourceBlockHasDataExcludingComments,
@@ -22,7 +19,6 @@ import {
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
-  ADMIN_SOURCES_COMPARISON_LABEL,
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
@@ -48,8 +44,7 @@ export type FlashMaxSummaryJob = {
     | "mileage"
     | "technical_risks"
     | "inspection"
-    | "summary"
-    | "sources_comparison";
+    | "summary";
   label: string;
   group: FlashMaxJobGroup;
   endpoint: string;
@@ -96,8 +91,8 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   dailySource("csdd", "CSDD", "csdd"),
   dailySource("autodna", "AutoDNA", "autodna"),
   dailySource("carvertical", "CarVertical", "carvertical"),
+  dailySource("cc_vin", SOURCE_BLOCK_LABELS.cc_vin, "cc_vin"),
   dailySource("dealer_comments", "Oficiālā dīlera komentāri", "auto_records"),
-  dailySource("dealer_service", "Oficiālā dīlera servisa vēsture", "auto_records", "serviceHistoryNotes"),
   dailySource("dealer_oil", "Eļļas maiņas intervāli", "auto_records", "oilChangeIntervalNotes"),
   {
     kind: "summary",
@@ -134,15 +129,7 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
     group: "daily",
     endpoint: "/api/admin/ai/summary-analysis",
   },
-  {
-    kind: "summary",
-    id: "sources_comparison",
-    label: ADMIN_SOURCES_COMPARISON_LABEL,
-    group: "daily",
-    endpoint: "/api/admin/ai/sources-comparison",
-  },
   extraSource("ltab", SOURCE_BLOCK_LABELS.ltab, "ltab"),
-  extraSource("cc_vin", SOURCE_BLOCK_LABELS.cc_vin, "cc_vin"),
   extraSource("tjekbil", SOURCE_BLOCK_LABELS.tjekbil, "tjekbil"),
   extraSource("mnt_ee", SOURCE_BLOCK_LABELS.mnt_ee, "mnt_ee"),
   extraSource("lkf_ee", SOURCE_BLOCK_LABELS.lkf_ee, "lkf_ee"),
@@ -185,8 +172,7 @@ export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
   if (job.id === "mileage") return AI_ADMIN_FIELD_DEFAULT_TIER.mileage;
   if (job.id === "technical_risks") return AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks;
   if (job.id === "inspection") return AI_ADMIN_FIELD_DEFAULT_TIER.inspection;
-  if (job.id === "summary") return AI_ADMIN_FIELD_DEFAULT_TIER.summary;
-  return AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison;
+  return AI_ADMIN_FIELD_DEFAULT_TIER.summary;
 }
 
 export const FLASH_MAX_OPERATOR_NOTES_MAX_LEN = 8000;
@@ -286,9 +272,6 @@ export function shouldSkipFlashMaxJob(
   }
   if (job.id === "mileage") {
     return orderHasMileageDataForAi(sourceBlocks) ? null : "no_mileage_data";
-  }
-  if (job.id === "sources_comparison") {
-    return orderHasSourceDataForAi(sourceBlocks) ? null : "no_source_data";
   }
   return null;
 }

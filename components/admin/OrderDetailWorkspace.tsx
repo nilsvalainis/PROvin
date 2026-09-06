@@ -192,6 +192,7 @@ import {
   AdminOrderCopilotTrigger,
 } from "@/components/admin/AdminOrderCopilotPanel";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
+import { applyCcVinDefaultCommentPolicy } from "@/lib/admin-cc-vin-comment-presets";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 import { adminRichHtmlToPlainText, aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import {
@@ -1340,8 +1341,15 @@ export function OrderDetailWorkspace({
     (key: SourceBlockKey, block: WorkspaceSourceBlocks[SourceBlockKey]) => {
       workspaceDirtyRef.current = true;
       setWs((prev) => {
+        const nextBlock =
+          key === "cc_vin"
+            ? applyCcVinDefaultCommentPolicy(
+                block as WorkspaceSourceBlocks["cc_vin"],
+                prev.sourceBlocks.cc_vin,
+              )
+            : block;
         const prevEmpty = sourceBlockIsEmpty(key, prev.sourceBlocks[key]);
-        const nextEmpty = sourceBlockIsEmpty(key, block);
+        const nextEmpty = sourceBlockIsEmpty(key, nextBlock);
         const wipes = parseSourceBlockWipes(prev.sourceBlockWipes);
         const nextWipes =
           !prevEmpty && nextEmpty
@@ -1353,7 +1361,7 @@ export function OrderDetailWorkspace({
           ...workspaceToPersistBody(prev),
           sourceBlocks: mergeSourceBlocksWithDefaults({
             ...prev.sourceBlocks,
-            [key]: block,
+            [key]: nextBlock,
           }),
           ...sourceBlockWipesSnapshotField(nextWipes),
         });
@@ -1372,7 +1380,10 @@ export function OrderDetailWorkspace({
         const merged = { ...prev.sourceBlocks };
         for (const key of changedKeys) {
           if (patched[key] != null) {
-            (merged as Record<string, unknown>)[key] = patched[key];
+            (merged as Record<string, unknown>)[key] =
+              key === "cc_vin"
+                ? applyCcVinDefaultCommentPolicy(patched.cc_vin!, prev.sourceBlocks.cc_vin)
+                : patched[key];
           }
         }
         const next = normalizeOrderWorkspacePersistBody({

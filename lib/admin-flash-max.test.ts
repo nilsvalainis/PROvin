@@ -24,16 +24,18 @@ describe("FLASH MAX jobs", () => {
       "csdd",
       "autodna",
       "carvertical",
+      "cc_vin",
       "dealer_comments",
-      "dealer_service",
       "dealer_oil",
       "incidents",
       "mileage",
       "technical_risks",
       "inspection",
       "summary",
-      "sources_comparison",
     ]);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "dealer_service")).toBe(false);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison")).toBe(false);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "cc_vin" && j.group === "daily")).toBe(true);
     expect(defaultFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_DAILY_JOB_IDS]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);

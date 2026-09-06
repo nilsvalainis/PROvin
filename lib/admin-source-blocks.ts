@@ -62,6 +62,7 @@ import {
   normalizeCcVinBlock,
   type CcVinBlockState,
 } from "@/lib/cc-vin-report";
+import { seedCcVinDefaultComment } from "@/lib/admin-cc-vin-comment-presets";
 import {
   countListingAnalysisPhotos,
   normalizeListingAnalysisPhotoGroups,
@@ -1332,7 +1333,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     carvertical: emptyVendorAvotuBlock(),
     auto_records: emptyAutoRecordsBlock(),
     oneauto: emptyOneautoBlock(),
-    cc_vin: emptyCcVinBlock(),
+    cc_vin: seedCcVinDefaultComment(emptyCcVinBlock()),
     tjekbil: emptyVinRegistryBlock(),
     mnt_ee: emptyVinRegistryBlock(),
     lkf_ee: emptyVinRegistryBlock(),
@@ -2313,7 +2314,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         oneautoIngest: parseOneautoIngestRaw(blocks.auto_records?.oneautoIngest),
       };
     })(),
-    cc_vin: normalizeCcVinBlock(blocks.cc_vin),
+    cc_vin: seedCcVinDefaultComment(normalizeCcVinBlock(blocks.cc_vin)),
     oneauto: parseOneautoBlockRaw(blocks.oneauto),
     ltab: {
       ...d.ltab,
@@ -2406,7 +2407,7 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
 
   const rawCcVin = o.cc_vin;
   if (rawCcVin && typeof rawCcVin === "object") {
-    base.cc_vin = normalizeCcVinBlock(rawCcVin);
+    base.cc_vin = seedCcVinDefaultComment(normalizeCcVinBlock(rawCcVin));
   }
 
   const rawAutodna = o.autodna;

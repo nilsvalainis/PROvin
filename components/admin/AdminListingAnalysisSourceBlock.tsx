@@ -32,6 +32,11 @@ import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
 import { LISTING_PEEK_TOPICS, type ListingPeekTone } from "@/lib/listing-peek-comment-presets";
 import {
+  LISTING_PHOTO_NO_DEFECTS_LABEL,
+  LISTING_PHOTO_NO_DEFECTS_TEXT,
+  applyListingPhotoNoDefectsTemplate,
+} from "@/lib/admin-listing-photo-comment-presets";
+import {
   applyGeneratedAdminAiText,
   parseAdminAiResponse,
   readGeneratedAdminAiText,
@@ -354,7 +359,25 @@ export function AdminListingAnalysisSourceBlock({
             <AdminRichCommentReadonly html={v.photoAnalysis} className={pri ? roBox(!!dense) : roDefault} />
           ) : (
             <>
-              <div className="mb-1.5">
+              <div className="mb-1.5 flex flex-col gap-1.5">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                    Šabloni
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:border-[var(--color-provin-accent)]/40 hover:bg-slate-50"
+                    title={LISTING_PHOTO_NO_DEFECTS_TEXT}
+                    onClick={() =>
+                      onChange({
+                        ...v,
+                        photoAnalysis: applyListingPhotoNoDefectsTemplate(v.photoAnalysis),
+                      })
+                    }
+                  >
+                    {LISTING_PHOTO_NO_DEFECTS_LABEL}
+                  </button>
+                </div>
                 <AdminListingPeekTopicChips
                   topicId="photos"
                   selectedTone={photoPeekSelectedTone(v.photoAnalysis)}

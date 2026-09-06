@@ -60,6 +60,10 @@ import {
   type CcVinSaleRow,
   type CcVinTitleRow,
 } from "@/lib/cc-vin-report";
+import {
+  CC_VIN_AUCTION_CHECK_HEADING,
+  applyCcVinAuctionCheckTemplate,
+} from "@/lib/admin-cc-vin-comment-presets";
 
 const ARIA = "Starptautiskā vēsture";
 
@@ -995,6 +999,26 @@ export function AdminCcVinSourceBlock({
               emptyGroup={emptyCcVinPhotoGroup}
               sectionTitle="Fotogrāfijas (PDF)"
             />
+          ) : null}
+          {!readOnly && !disabled ? (
+            <div className="mb-1.5 flex flex-wrap items-center gap-1">
+              <span className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+                Šabloni
+              </span>
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:border-[var(--color-provin-accent)]/40 hover:bg-slate-50"
+                title={CC_VIN_AUCTION_CHECK_HEADING}
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    comments: applyCcVinAuctionCheckTemplate(value.comments),
+                  })
+                }
+              >
+                {CC_VIN_AUCTION_CHECK_HEADING}
+              </button>
+            </div>
           ) : null}
           <AdminSourceCommentField
             value={value.comments}

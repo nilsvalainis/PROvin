@@ -210,6 +210,16 @@ export function ccVinBlockHasContent(b: CcVinBlockState | null | undefined): boo
   return Boolean(b.comments.trim() || b.reportDate.trim() || b.attentionMarks.trim());
 }
 
+/** Jebkurš aizpildīts CC.VIN lauks, izņemot komentāru (noklusējuma sagatave neskaitās). */
+export function ccVinBlockHasOperatorData(b: CcVinBlockState | null | undefined): boolean {
+  if (!b) return false;
+  if (ccVinBlockHasContent({ ...b, comments: "" })) return true;
+  if (b.ownersCount.trim()) return true;
+  if (b.rawUnprocessedData.trim()) return true;
+  if (b.aiContextRaw.trim()) return true;
+  return false;
+}
+
 function str(v: unknown, max: number): string {
   return typeof v === "string" ? v.slice(0, max) : "";
 }

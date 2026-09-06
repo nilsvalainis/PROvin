@@ -31,7 +31,7 @@ import {
   citiAvotiSectionHasContent,
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
-import { ccVinBlockHasContent, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { ccVinBlockHasOperatorData, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { oneautoBlockHasContent, type OneautoBlockState } from "@/lib/oneauto-block";
 import { oneautoDisplayHasRows } from "@/lib/oneauto-catalog";
 
@@ -126,7 +126,7 @@ export function autoRecordsTrafficLevel(b: AutoRecordsBlockState | null | undefi
 export function ccVinTrafficLevel(b: CcVinBlockState | null | undefined): TrafficFillLevel {
   try {
     if (!b) return "empty";
-    if (!ccVinBlockHasContent(b)) return "empty";
+    if (!ccVinBlockHasOperatorData(b)) return "empty";
     const hasMileage = (b.mileage ?? []).some(autoRecordsRowHasData);
     if (hasMileage && wsStr(b.comments).trim().length > 0) return "complete";
     return "partial";
