@@ -20,6 +20,36 @@ describe("PDF dīlera servisa vizītes", () => {
     expect(uk.country).toBe("Apvienotā Karaliste");
   });
 
+  it("vienāda nobraukuma vizītes rāda kā vienu kartīti", () => {
+    const html = buildDealerServiceVisitsHtml([
+      {
+        date: "05.02.2025",
+        odometer: "199228",
+        location: "Zenter Autohaus Bernau GmbH",
+        works: "Ātrumkārbas eļļa\nSveces",
+      },
+      {
+        date: "01.02.2025",
+        odometer: "199228",
+        location: "",
+        works: "Apkope ar eļļas maiņu\nDegvielas filtra maiņa",
+      },
+      {
+        date: "01.06.2023",
+        odometer: "26276",
+        location: "",
+        works: "Eļļas maiņa",
+      },
+    ]);
+    expect(html.match(/pdf-svc-visit/g)?.length ?? 0).toBe(2);
+    expect(html).toContain("05.02.2025");
+    expect(html).not.toContain("01.02.2025");
+    expect(html).toContain("199 228 km");
+    expect(html).toContain("Ātrumkārbas eļļa");
+    expect(html).toContain("Apkope ar eļļas maiņu");
+    expect(html).toContain("26 276 km");
+  });
+
   it("grupē pēc gada, jaunāko augšā, darbus kā punktus", () => {
     const html = buildDealerServiceVisitsHtml([
       {

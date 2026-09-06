@@ -10,7 +10,11 @@ import {
   formatAutoRecordsDateForOutput,
   normalizeAutoRecordsOdometer,
 } from "@/lib/auto-records-paste-parse";
-import { capitalizeServiceField, formatServiceWorksLines } from "@/lib/service-works-lines";
+import {
+  capitalizeServiceField,
+  formatServiceWorksLines,
+  mergeOverlappingServiceWorkLines,
+} from "@/lib/service-works-lines";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 
 export type AutoRecordsServiceWorkRow = {
@@ -160,12 +164,92 @@ export function normalizeAutoRecordsServiceWorkRows(raw: unknown): AutoRecordsSe
     if (!autoRecordsServiceWorkRowHasData(row)) continue;
     rows.push(row);
   }
-  const sorted = sortAutoRecordsServiceWorkRows(dedupeRows(rows));
+  const sorted = mergeAutoRecordsServiceWorksByOdometer(dedupeRows(rows));
   return sorted.length > 0 ? sorted : [emptyAutoRecordsServiceWorkRow()];
 }
 
+function serviceWorkOdometerDigits(r: AutoRecordsServiceWorkRow): string {
+  return r.odometer.replace(/\D/g, "");
+}
+
 function rowKey(r: AutoRecordsServiceWorkRow): string {
-  return `${r.date.trim()}|${r.odometer.replace(/\D/g, "")}`;
+  return `${r.date.trim()}|${serviceWorkOdometerDigits(r)}`;
+}
+
+function parseServiceWorkDateParts(date: string): { d: number; m: number; y: number } | null {
+  const m = date.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!m) return null;
+  return { d: Number(m[1]), m: Number(m[2]), y: Number(m[3]) };
+}
+
+/** Vienā mēnesī priekšroka reālai dienai pret OneAuto „01.MM.YYYY”; citādi jaunākais. */
+function preferServiceWorkDate(a: string, b: string): string {
+  const pa = parseServiceWorkDateParts(a);
+  const pb = parseServiceWorkDateParts(b);
+  if (!pa) return pb ? b : a.trim();
+  if (!pb) return a.trim();
+  if (pa.y === pb.y && pa.m === pb.m) {
+    if (pa.d === 1 && pb.d > 1) return b.trim();
+    if (pb.d === 1 && pa.d > 1) return a.trim();
+  }
+  return dateSortKey(a) >= dateSortKey(b) ? a.trim() : b.trim();
+}
+
+function preferServiceWorkLocation(a: string, b: string): string {
+  const ta = a.replace(/\s+/g, " ").trim();
+  const tb = b.replace(/\s+/g, " ").trim();
+  if (!ta) return tb;
+  if (!tb) return ta;
+  const locA = looksLikeServiceWorkLocation(ta);
+  const locB = looksLikeServiceWorkLocation(tb);
+  if (locA && !locB) return ta;
+  if (locB && !locA) return tb;
+  return ta.length >= tb.length ? ta : tb;
+}
+
+function mergeServiceWorkGroup(group: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow {
+  let date = "";
+  let location = "";
+  let odometer = "";
+  for (const r of group) {
+    date = date ? preferServiceWorkDate(date, r.date) : r.date.trim();
+    location = preferServiceWorkLocation(location, r.location);
+    if (!odometer) odometer = r.odometer;
+  }
+  const works = mergeOverlappingServiceWorkLines(group.flatMap((r) => r.works.split(/\r?\n+/)))
+    .map(capitalizeServiceField)
+    .join("\n");
+  return {
+    date: formatAutoRecordsDateForOutput(date) || date.slice(0, 40),
+    odometer: normalizeAutoRecordsOdometer(odometer).slice(0, 40),
+    location: capitalizeServiceField(location).slice(0, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
+    works: works.slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
+  };
+}
+
+/**
+ * Visi ieraksti ar vienādu nobraukumu → viena rinda.
+ * Tukšs odometrs nesaista (neapvieno visus bez km).
+ */
+export function mergeAutoRecordsServiceWorksByOdometer(
+  rows: AutoRecordsServiceWorkRow[],
+): AutoRecordsServiceWorkRow[] {
+  const emptyKm: AutoRecordsServiceWorkRow[] = [];
+  const byKm = new Map<string, AutoRecordsServiceWorkRow[]>();
+  for (const r of rows) {
+    const km = serviceWorkOdometerDigits(r);
+    if (!km) {
+      emptyKm.push(r);
+      continue;
+    }
+    const group = byKm.get(km) ?? [];
+    group.push(r);
+    byKm.set(km, group);
+  }
+  const merged = [...byKm.values()].map((group) =>
+    group.length === 1 ? group[0]! : mergeServiceWorkGroup(group),
+  );
+  return sortAutoRecordsServiceWorkRows([...merged, ...emptyKm]);
 }
 
 function dedupeRows(rows: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow[] {
@@ -202,6 +286,14 @@ export function mergeAutoRecordsServiceWorkRow(
     );
     return sortAutoRecordsServiceWorkRows(filled.length > 0 ? filled : [row]);
   }
+  const km = serviceWorkOdometerDigits(row);
+  if (km) {
+    const sameKm = withData.filter((r) => serviceWorkOdometerDigits(r) === km);
+    if (sameKm.length > 0) {
+      const others = withData.filter((r) => serviceWorkOdometerDigits(r) !== km);
+      return sortAutoRecordsServiceWorkRows([...others, mergeServiceWorkGroup([...sameKm, row])]);
+    }
+  }
   if (withData.length >= AUTO_RECORDS_SERVICE_WORKS_MAX_ROWS) return existing;
   return sortAutoRecordsServiceWorkRows([...withData, row]);
 }
@@ -237,7 +329,7 @@ export function parseAutoRecordsServiceWorkLines(text: string): AutoRecordsServi
     if (!works) continue;
     rows.push(normalizeAutoRecordsServiceWorkRow({ date: m[1]!, odometer, location, works }));
   }
-  return sortAutoRecordsServiceWorkRows(dedupeRows(rows));
+  return mergeAutoRecordsServiceWorksByOdometer(dedupeRows(rows));
 }
 
 const DEALER_NARRATIVE_LINE_RE =
@@ -269,7 +361,7 @@ export function parseDealerNarrativeServiceWorks(raw: string): AutoRecordsServic
       }),
     );
   }
-  return sortAutoRecordsServiceWorkRows(dedupeRows(rows));
+  return mergeAutoRecordsServiceWorksByOdometer(dedupeRows(rows));
 }
 
 function groupDigits(value: string): string {

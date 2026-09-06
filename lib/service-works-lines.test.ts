@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { capitalizeServiceField, formatServiceWorksLines } from "@/lib/service-works-lines";
+import {
+  capitalizeServiceField,
+  formatServiceWorksLines,
+  mergeOverlappingServiceWorkLines,
+} from "@/lib/service-works-lines";
 
 describe("service works lines", () => {
   it("vietas pirmajam burtam liek lielo", () => {
@@ -62,5 +66,32 @@ describe("service works lines", () => {
       "Regulārā apkope: eļļas maiņa, salona mikrofiltra maiņa",
     );
     expect(formatServiceWorksLines(once)).toBe(once);
+  });
+
+  it("pārklājošos apkopes darbus atstāj vienu reizi pēc nozīmes", () => {
+    expect(
+      mergeOverlappingServiceWorkLines([
+        "Apkope ar eļļas maiņu",
+        "Regulārā apkope/Eļļas maiņa",
+        "Ātrumkārbas eļļa",
+        "Gaisa filtra elements",
+        "Degvielas filtra maiņa",
+      ]),
+    ).toEqual([
+      "Apkope ar eļļas maiņu",
+      "Ātrumkārbas eļļa",
+      "Gaisa filtra elements",
+      "Degvielas filtra maiņa",
+    ]);
+  });
+
+  it("neapvieno atšķirīgus filtrus tikai tāpēc, ka tekstā ir „filtra maiņa”", () => {
+    expect(
+      mergeOverlappingServiceWorkLines([
+        "Eļļas filtra maiņa",
+        "Gaisa filtra maiņa",
+        "Degvielas filtra maiņa",
+      ]),
+    ).toEqual(["Eļļas filtra maiņa", "Gaisa filtra maiņa", "Degvielas filtra maiņa"]);
   });
 });

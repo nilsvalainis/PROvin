@@ -6,8 +6,8 @@ import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-
 import {
   autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
+  mergeAutoRecordsServiceWorksByOdometer,
   normalizeAutoRecordsServiceWorkRow,
-  sortAutoRecordsServiceWorkRows,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { countryFromDealerName } from "@/lib/dealer-report-extract";
@@ -123,7 +123,7 @@ export function buildDealerServiceSpanHtml(
 }
 
 export function printableDealerServiceWorks(rows: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow[] {
-  return sortAutoRecordsServiceWorkRows(
+  return mergeAutoRecordsServiceWorksByOdometer(
     (rows ?? []).map(normalizeAutoRecordsServiceWorkRow).filter(autoRecordsServiceWorkRowIsPrintable),
   );
 }

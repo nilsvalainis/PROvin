@@ -151,6 +151,91 @@ function sortWorkLines(lines: string[]): string[] {
     .map((x) => x.line);
 }
 
+const WORK_FAMILY_RULES: { family: string; re: RegExp }[] = [
+  { family: "particle_filter", re: /daļiņ|particle|dpf|ru[sš]u\s*filtr|diesel\s*particulate|ru[sß]filter/i },
+  { family: "fuel_filter", re: /degvielas\s*filtr|fuel\s*filter|kraftstofffilter/i },
+  { family: "cabin_filter", re: /salona|pollen|cabin\s*filter|innenraumfilter|mikrofiltr/i },
+  { family: "air_filter", re: /gaisa\s*filtr|air\s*filter|luftfilter/i },
+  { family: "oil_filter", re: /e[ļl]{1,2}as\s*filtr|oil\s*filter|[öo]lfilter/i },
+  { family: "transmission_oil", re: /ātrumkārb|p[aā]rnesumkārb|transmission|gearbox|getriebe/i },
+  { family: "spark_plugs", re: /sve[cč]|spark\s*plug|z[üu]ndkerze/i },
+  { family: "brake_fluid", re: /brem[žz].{0,12}šķidrum|brake\s*fluid|bremsfl/i },
+  { family: "coolant", re: /dzesēšan|coolant|k[üu]hlmittel/i },
+  {
+    family: "oil_service",
+    re: /e[ļl]{1,2}as\s*maiņ|motore[ļl]{1,2}|oil\s*(change|service)|[öo]lwechsel|[öo]lservice|apkope.{0,24}e[ļl]|regul[āa]r[āa]\s*apkope/i,
+  },
+];
+
+const WORK_STOP_TOKENS = new Set(["ar", "un", "the", "for", "mit", "und", "vai", "no", "and"]);
+
+function serviceWorkFamily(line: string): string | null {
+  const t = line.trim();
+  if (!t) return null;
+  if (isVendorServiceCategoryLine(t.replace(/[:/].*$/, "").trim())) return "oil_service";
+  for (const rule of WORK_FAMILY_RULES) {
+    if (rule.re.test(t)) return rule.family;
+  }
+  return null;
+}
+
+function workTokens(line: string): Set<string> {
+  return new Set(
+    line
+      .toLocaleLowerCase("lv")
+      .replace(/[^a-zāčēģīķļņšūž0-9]+/gi, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 3 && !WORK_STOP_TOKENS.has(t)),
+  );
+}
+
+function workKeepScore(line: string, family: string | null): number {
+  const head = line.replace(/[:/].*$/, "").trim();
+  if (isVendorServiceCategoryLine(head)) return 0;
+  if (family === "oil_service" && /regul[āa]r|apkope/i.test(line) && !/filtr|sve[cč]|brem|ātrum|p[aā]rnesum/i.test(line)) {
+    return 1;
+  }
+  return 2 + Math.min(line.length, 80) / 80;
+}
+
+function tokenSetsOverlap(a: Set<string>, b: Set<string>): boolean {
+  if (a.size === 0 || b.size === 0) return false;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter += 1;
+  if (inter === 0) return false;
+  const subset = inter === a.size || inter === b.size;
+  const jaccard = inter / (a.size + b.size - inter);
+  return subset || jaccard >= 0.6;
+}
+
+/**
+ * Apvienojot vizītes: pārklājošos darbus (pēc nozīmes) atstāj vienu reizi.
+ * Identisks teksts nav vajadzīgs: „Apkope ar eļļas maiņu” un „Regulārā apkope / Eļļas maiņa” ir viens darbs.
+ */
+export function mergeOverlappingServiceWorkLines(lines: readonly string[]): string[] {
+  const cleaned = lines.map((l) => cleanItem(l)).filter(Boolean);
+  const kept: string[] = [];
+  for (const line of cleaned) {
+    const family = serviceWorkFamily(line);
+    const tokens = workTokens(line);
+    const hit = kept.findIndex((prev) => {
+      const prevFamily = serviceWorkFamily(prev);
+      if (family && prevFamily) return family === prevFamily;
+      if (family || prevFamily) return false;
+      return tokenSetsOverlap(tokens, workTokens(prev));
+    });
+    if (hit < 0) {
+      kept.push(line);
+      continue;
+    }
+    const prev = kept[hit]!;
+    if (workKeepScore(line, family) > workKeepScore(prev, serviceWorkFamily(prev))) {
+      kept[hit] = line;
+    }
+  }
+  return sortWorkLines(kept);
+}
+
 /** Ielasīts darbu teksts → rindas (idempotents). */
 export function formatServiceWorksLines(raw: string): string {
   const text = stripWorkDecorations(raw);

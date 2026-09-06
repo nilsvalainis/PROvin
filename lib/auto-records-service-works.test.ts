@@ -71,6 +71,91 @@ describe("servisa darbu rindas", () => {
     expect(rows[0]!.location).toBe("BMW Bonn");
   });
 
+  it("apvieno vienāda nobraukuma vizītes un atsijā pārklājošos darbus", () => {
+    const rows = normalizeAutoRecordsServiceWorkRows([
+      {
+        date: "05.02.2025",
+        odometer: "199228",
+        location: "Zenter Autohaus Bernau GmbH",
+        works: [
+          "Ātrumkārbas eļļa",
+          "Daļiņu filtrs",
+          "Sveces",
+          "Gaisa filtra elements",
+        ].join("\n"),
+      },
+      {
+        date: "01.02.2025",
+        odometer: "199228",
+        location: "",
+        works: [
+          "Regulārā apkope/Eļļas maiņa",
+          "Apkope ar eļļas maiņu",
+          "Degvielas filtra maiņa",
+          "Gaisa filtra elements",
+        ].join("\n"),
+      },
+      {
+        date: "07.08.2023",
+        odometer: "30680",
+        location: "Maximillianallee 25",
+        works: "Apkope ar eļļas maiņu",
+      },
+      {
+        date: "01.08.2023",
+        odometer: "30680",
+        location: "",
+        works: "Regulārā apkope/Eļļas maiņa",
+      },
+    ]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      date: "05.02.2025",
+      odometer: "199228",
+      location: "Zenter Autohaus Bernau GmbH",
+    });
+    expect(rows[0]!.works.split("\n")).toEqual(
+      expect.arrayContaining([
+        "Apkope ar eļļas maiņu",
+        "Ātrumkārbas eļļa",
+        "Daļiņu filtrs",
+        "Sveces",
+        "Gaisa filtra elements",
+        "Degvielas filtra maiņa",
+      ]),
+    );
+    expect(rows[0]!.works.split("\n").filter((w) => /eļļas maiņ|regul[āa]r/i.test(w))).toHaveLength(1);
+    expect(rows[1]).toEqual({
+      date: "07.08.2023",
+      odometer: "30680",
+      location: "Maximillianallee 25",
+      works: "Apkope ar eļļas maiņu",
+    });
+  });
+
+  it("ingestā vienāds nobraukums ar citu datumu paliek vienā rindā", () => {
+    let rows = mergeAutoRecordsServiceWorkRow([], {
+      date: "05.02.2025",
+      odometer: "199228",
+      location: "Zenter Autohaus Bernau GmbH",
+      works: "Sveces",
+    });
+    rows = mergeAutoRecordsServiceWorkRow(rows, {
+      date: "01.02.2025",
+      odometer: "199228",
+      location: "",
+      works: "Apkope ar eļļas maiņu",
+    });
+    expect(rows).toEqual([
+      {
+        date: "05.02.2025",
+        odometer: "199228",
+        location: "Zenter Autohaus Bernau GmbH",
+        works: "Apkope ar eļļas maiņu\nSveces",
+      },
+    ]);
+  });
+
   it("neaizvieto operatora labotu rindu ar to pašu datumu un odometru", () => {
     const rows = mergeAutoRecordsServiceWorkRow(
       [{ date: "01.12.2023", odometer: "47521", location: "Operatora vieta", works: "Operatora teksts" }],
