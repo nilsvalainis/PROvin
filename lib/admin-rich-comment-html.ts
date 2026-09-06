@@ -92,6 +92,22 @@ function expertBlockToRichHtml(block: string): string {
   return escapeHtmlPlain(block).replace(/\r?\n/g, "<br />");
 }
 
+/**
+ * Contenteditable sinhronizācija ar parent `value`.
+ * Fokusētā laukā nepārraksta operatora rakstīšanu; tukšu redaktoru AI teksts drīkst aizpildīt
+ * (citādi ✨ avotā „izmet tukšu”, ja kursors paliek laukā, bet Flash Max aizpilda, jo lauki nav fokusēti).
+ */
+export function shouldSyncRichCommentEditorFromParent(opts: {
+  editorHtml: string;
+  parentHtml: string;
+  editorFocused: boolean;
+  editorPlainText: string;
+}): boolean {
+  if (opts.editorHtml === opts.parentHtml) return false;
+  if (!opts.editorFocused) return true;
+  return !opts.editorPlainText.replace(/\u00a0/g, " ").trim();
+}
+
 /** Dziļās avotu analīzes ✨ — virsraksts kā <strong>, bez redzamiem * simboliem. */
 export function aiExpertSourceCommentToRichHtml(text: string): string {
   const t = normalizeAiExpertParagraphText(text);

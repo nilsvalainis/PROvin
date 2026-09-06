@@ -8,6 +8,7 @@ import {
   normalizeEditorRichHtmlForStorage,
   normalizePastedAdminRichHtml,
   promoteInlineStyleSemantics,
+  shouldSyncRichCommentEditorFromParent,
 } from "@/lib/admin-rich-comment-html";
 
 describe("normalizeAiClientPlainText", () => {
@@ -226,6 +227,52 @@ describe("normalizeAiExpertParagraphText", () => {
     );
     expect(out).not.toMatch(/\*/);
     expect(out).toContain("Virsbūves pārbaude ar krāsas mērītāju");
+  });
+});
+
+describe("shouldSyncRichCommentEditorFromParent", () => {
+  it("applies parent HTML when the editor is not focused", () => {
+    expect(
+      shouldSyncRichCommentEditorFromParent({
+        editorHtml: "",
+        parentHtml: "<strong>CSDD</strong>",
+        editorFocused: false,
+        editorPlainText: "",
+      }),
+    ).toBe(true);
+  });
+
+  it("applies AI fill into a focused empty editor", () => {
+    expect(
+      shouldSyncRichCommentEditorFromParent({
+        editorHtml: "<br>",
+        parentHtml: "<strong>CSDD</strong><br />Teksts",
+        editorFocused: true,
+        editorPlainText: "",
+      }),
+    ).toBe(true);
+  });
+
+  it("does not yank a focused editor the operator is typing in", () => {
+    expect(
+      shouldSyncRichCommentEditorFromParent({
+        editorHtml: "rakstu",
+        parentHtml: "<strong>CSDD</strong>",
+        editorFocused: true,
+        editorPlainText: "rakstu",
+      }),
+    ).toBe(false);
+  });
+
+  it("skips when HTML already matches", () => {
+    expect(
+      shouldSyncRichCommentEditorFromParent({
+        editorHtml: "<strong>CSDD</strong>",
+        parentHtml: "<strong>CSDD</strong>",
+        editorFocused: false,
+        editorPlainText: "CSDD",
+      }),
+    ).toBe(false);
   });
 });
 

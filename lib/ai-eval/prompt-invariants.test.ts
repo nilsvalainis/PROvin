@@ -620,6 +620,9 @@ describe("PROVIN AI prompt invariants", () => {
   it("comment generation waits for JSON instead of a live preview stream", () => {
     expect(readRepo("lib/admin-ai-stream-client.ts")).toMatch(/Accept:\s*"application\/json"/);
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(/generateAdminAiText/);
+    expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).toMatch(
+      /generateAdminAiText\(\s*"\/api\/admin\/ai\/source-comment"/,
+    );
     expect(readRepo("components/admin/OrderDetailWorkspace.tsx")).not.toMatch(/AdminAiStreamPreview/);
     expect(readRepo("components/admin/AdminListingAnalysisSourceBlock.tsx")).toMatch(
       /generateAdminAiText/,

@@ -2,6 +2,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -16,6 +17,7 @@ import {
   normalizeEditorRichHtmlForStorage,
   normalizePastedAdminRichHtml,
   plainTextToMinimalRichHtml,
+  shouldSyncRichCommentEditorFromParent,
 } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_RICH_COMMENT_FONT_OPTIONS,
@@ -127,18 +129,25 @@ export function AdminInternalRichCommentEditor({
   const [marks, setMarks] = useState<ActiveMarks>(NO_MARKS);
   const [palette, setPalette] = useState<"text" | "highlight" | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (syncingFromParent.current) {
       syncingFromParent.current = false;
       return;
     }
-    if (document.activeElement === el) return;
     const next = value || "";
-    if (el.innerHTML !== next) {
-      el.innerHTML = next;
+    if (
+      !shouldSyncRichCommentEditorFromParent({
+        editorHtml: el.innerHTML,
+        parentHtml: next,
+        editorFocused: document.activeElement === el,
+        editorPlainText: el.innerText ?? "",
+      })
+    ) {
+      return;
     }
+    el.innerHTML = next;
   }, [value]);
 
   const emit = useCallback(() => {
