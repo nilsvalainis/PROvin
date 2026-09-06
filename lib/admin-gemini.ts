@@ -15,6 +15,7 @@ import { recordAiUsage } from "@/lib/ai-usage-meter";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
 import {
   AiIncompleteCommentError,
+  isAiEmptyGeneratedTextError,
   isAiIncompleteCommentError,
   throwIfBlankGeneratedComment,
   throwIncompleteOrEmptyComment,
@@ -25,6 +26,7 @@ import {
   type AiRequestBudget,
 } from "@/lib/ai-request-budget";
 import type { AiTextStream } from "@/lib/ai-text-stream";
+import { geminiThinkingExtra, geminiWantsThinking } from "@/lib/gemini-thinking-config";
 import {
   applyProvinReportCopyVocabulary,
   normalizeProvinExpertAiComment,
@@ -67,34 +69,6 @@ const TEXT_REQUEST_TIMEOUT_MS = 280_000;
 const SEARCH_REQUEST_TIMEOUT_MS = 280_000;
 /** Thinking + redzamais teksts dala šo limitu; 8192 pie Gemini 3 + Search apēda izeju (MAX_TOKENS). */
 const GEMINI_MAX_OUTPUT_TOKENS = 32_000;
-
-function isGemini3Model(model: string): boolean {
-  return /gemini-3/i.test(model);
-}
-
-function isGemini25Model(model: string): boolean {
-  return /gemini-2\.5/i.test(model);
-}
-
-function geminiWantsThinking(model: string): boolean {
-  return isGemini3Model(model) || isGemini25Model(model);
-}
-
-function geminiThinkingExtra(
-  model: string,
-  enabled: boolean,
-): { thinkingConfig: { thinkingLevel?: "low"; thinkingBudget: number } } | Record<string, never> {
-  if (!enabled) {
-    return isGemini25Model(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {};
-  }
-  if (isGemini3Model(model)) {
-    return { thinkingConfig: { thinkingLevel: "low", thinkingBudget: 512 } };
-  }
-  if (isGemini25Model(model)) {
-    return { thinkingConfig: { thinkingBudget: 512 } };
-  }
-  return {};
-}
 
 function isAbortError(e: unknown): boolean {
   const msg = geminiErrorMessage(e);
@@ -434,14 +408,14 @@ async function geminiGenerateTextOnce(
     return await geminiStreamGenerateText(key, opts, geminiWantsThinking(opts.model));
   } catch (e) {
     if (
-      isAiIncompleteCommentError(e) &&
+      (isAiIncompleteCommentError(e) || isAiEmptyGeneratedTextError(e)) &&
       geminiWantsThinking(opts.model) &&
       aiBudgetAllowsRetry(opts.budget)
     ) {
       console.warn(`${LOG_PREFIX} text_truncated_retry_no_thinking`, {
         model: opts.model,
         promptVersion: PROVIN_AI_PROMPT_VERSION,
-        chars: e.partialText.length,
+        chars: isAiIncompleteCommentError(e) ? e.partialText.length : 0,
       });
       return await geminiStreamGenerateText(key, opts, false);
     }
@@ -672,12 +646,13 @@ async function geminiGenerateTextWithGoogleSearchOnce(
           throw new Error(`[${result.httpStatus} Service Unavailable] ${lastErr}`);
         }
       } catch (e) {
-        if (isAiIncompleteCommentError(e) && withThinking) {
-          lastIncomplete = e;
+        if ((isAiIncompleteCommentError(e) || isAiEmptyGeneratedTextError(e)) && withThinking) {
+          if (isAiIncompleteCommentError(e)) lastIncomplete = e;
+          else lastErr = geminiErrorMessage(e) || lastErr;
           console.warn(`${LOG_PREFIX} search_truncated_retry_no_thinking`, {
             model: opts.model,
             promptVersion: PROVIN_AI_PROMPT_VERSION,
-            chars: e.partialText.length,
+            chars: isAiIncompleteCommentError(e) ? e.partialText.length : 0,
           });
           break;
         }

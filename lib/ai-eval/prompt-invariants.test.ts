@@ -555,10 +555,31 @@ describe("PROVIN AI prompt invariants", () => {
   });
 
   it("Gemini 3 uses low thinking with 400 fallback", () => {
+    const thinking = readRepo("lib/gemini-thinking-config.ts");
+    expect(thinking).toMatch(/thinkingLevel: enabled \? "low" : "minimal"/);
+    expect(thinking).toMatch(/thinkingBudget: enabled \? 512 : 0/);
+    expect(readRepo("lib/admin-gemini.ts")).toMatch(/isGeminiThinkingUnsupported/);
+    expect(readRepo("lib/admin-gemini.ts")).toMatch(/thoughtsTokenCount/);
+  });
+
+  /**
+   * `thinkingLevel` + `thinkingBudget` vienā pieprasījumā = 400 INVALID_ARGUMENT,
+   * un atkāpšanās uz konfigurāciju bez ierobežojuma atdeva tukšu lauku par pilnu
+   * cenu. Katram modelim drīkst būt tieši viens no laukiem.
+   */
+  it("never sends Gemini a thinking level and a thinking budget together", () => {
+    const thinking = readRepo("lib/gemini-thinking-config.ts");
+    for (const branch of thinking.split("return { thinkingConfig:").slice(1)) {
+      const cfg = branch.slice(0, branch.indexOf("}"));
+      expect(/thinkingLevel/.test(cfg) && /thinkingBudget/.test(cfg)).toBe(false);
+    }
+  });
+
+  /** Tukša atbilde (tokeni apmaksāti) jāatkārto ar apcirptu domāšanu, ne jāparāda kā tukšs lauks. */
+  it("retries Gemini without thinking when the paid answer came back empty", () => {
     const gemini = readRepo("lib/admin-gemini.ts");
-    expect(gemini).toMatch(/thinkingLevel:\s*"low"/);
-    expect(gemini).toMatch(/isGeminiThinkingUnsupported/);
-    expect(gemini).toMatch(/thoughtsTokenCount/);
+    expect(gemini).toMatch(/isAiEmptyGeneratedTextError/);
+    expect(readRepo("lib/admin-ai-incomplete.ts")).toMatch(/ai_empty_content_max_tokens/);
   });
 
   it("admin AI routes attach usage to JSON responses", () => {
@@ -604,7 +625,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(gemini).toMatch(/generateContentStream/);
     expect(gemini).toMatch(/partial_text_salvaged/);
     expect(gemini).toMatch(/maxOutputTokens/);
-    expect(gemini).toMatch(/thinkingBudget/);
+    expect(gemini).toMatch(/geminiThinkingExtra/);
     expect(gemini).toMatch(/streamGenerateContent/);
     expect(gemini).toMatch(/AiIncompleteCommentError/);
     expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_empty_content/);

@@ -37,6 +37,20 @@ export function rethrowNormalizedIncompleteComment(
   throw e;
 }
 
+/**
+ * Modelis neatgrieza NEVIENU redzamu rakstzīmi, lai gan tokeni ir apmaksāti —
+ * tipiski tad, kad domāšana apēd izejas limitu. Šādu atbildi ir vērts atkārtot
+ * ar apcirptu domāšanu, nevis parādīt operatoram tukšu lauku.
+ */
+export function isAiEmptyGeneratedTextError(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message.trim() : "";
+  return (
+    msg === "ai_empty_content" ||
+    msg === "ai_empty_content_max_tokens" ||
+    msg === "gemini_empty_content"
+  );
+}
+
 /** Ja ir kaut daļa teksta — kļūda ar to līdzi; ja nav — tukša atbilde (nauda jau noņemta). */
 export function throwIncompleteOrEmptyComment(
   partial: string,
