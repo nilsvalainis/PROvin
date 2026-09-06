@@ -5,6 +5,7 @@ import {
   ONEAUTO_SOURCE_TAG,
   buildOneautoDisplay,
   formatOneautoCostEur,
+  oneautoPayloadIsApiUnavailable,
   oneautoPayloadIsNoData,
   oneautoPayloadIsPending,
   oneautoProductsCostCents,
@@ -29,6 +30,7 @@ export function getOneautoApiConfig(): OneautoApiConfig | null {
 function classifyError(status: number, bodyText: string): string {
   const t = bodyText.toLowerCase();
   if (oneautoPayloadIsNoData(null, bodyText)) return "no_data";
+  if (oneautoPayloadIsApiUnavailable(null, bodyText)) return "api_unavailable";
   if (status === 402 || /insufficient|balance|credit|quota/.test(t)) return "insufficient_balance";
   if (status === 400 || /invalid.?vin|vin/.test(t)) return "invalid_vin";
   if (status === 401 || status === 403) return "unauthorized_upstream";
@@ -131,21 +133,26 @@ export async function fetchOneautoProducts(opts: {
           results[id] = { ok: true, payload: fetched.payload };
           continue;
         }
+        if (oneautoPayloadIsApiUnavailable(fetched.payload, errText)) {
+          results[id] = { ok: false, error: "api_unavailable", payload: fetched.payload };
+          continue;
+        }
         const code = classifyError(fetched.status, errText);
         results[id] = { ok: false, error: code, payload: fetched.payload };
         continue;
       }
       const body = fetched.payload;
       if (body && typeof body === "object" && (body as { success?: unknown }).success === false) {
-        const err =
-          typeof (body as { error?: unknown }).error === "string"
-            ? String((body as { error: string }).error)
-            : "upstream_error";
-        if (oneautoPayloadIsNoData(body, err)) {
+        const errText = JSON.stringify(body).slice(0, 400);
+        if (oneautoPayloadIsNoData(body, errText)) {
           results[id] = { ok: true, payload: body };
           continue;
         }
-        results[id] = { ok: false, error: classifyError(fetched.status, err), payload: body };
+        if (oneautoPayloadIsApiUnavailable(body, errText)) {
+          results[id] = { ok: false, error: "api_unavailable", payload: body };
+          continue;
+        }
+        results[id] = { ok: false, error: classifyError(fetched.status, errText), payload: body };
         continue;
       }
       results[id] = { ok: true, payload: body };

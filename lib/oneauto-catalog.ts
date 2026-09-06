@@ -37,7 +37,8 @@ export const ONEAUTO_PRODUCTS: readonly OneautoProduct[] = [
     label: "OE Build Sheet (Europe)",
     hint: "Factory Options, PR Codes, Colors",
     priceCents: 195,
-    path: "/ezyvin/buildsheet/",
+    // Oficiālais One Auto API ceļš (ne Ezyvin). `/ezyvin/buildsheet/` API katalogā nav.
+    path: "/oneauto/oebuildsheeteuropefromvin/",
   },
   {
     id: "oe_service_history",
@@ -278,17 +279,34 @@ export function oneautoPayloadHasResultBody(payload: unknown): boolean {
 const NO_DATA_RE =
   /no data available|you have not been charged|no (oem )?service (history|records)/i;
 
-/** OEM atbilde: šim VIN datu nav, maksa nav iekasēta. Tas nav tīkla / 502 kļūda. */
-export function oneautoPayloadIsNoData(payload: unknown, extraText = ""): boolean {
+const API_UNAVAILABLE_RE =
+  /requested api is not available|api is not available|contact support at help@oneautoapi/i;
+
+function collectOneautoErrorTexts(payload: unknown, extraText = ""): string[] {
   const texts: string[] = [];
   if (extraText.trim()) texts.push(extraText);
-  const o = asRecord(payload);
-  if (o) {
+  const visit = (node: unknown, depth: number) => {
+    if (depth > 2 || node == null) return;
+    const o = asRecord(node);
+    if (!o) return;
     for (const key of ["error", "message", "detail"]) {
       if (typeof o[key] === "string" && o[key].trim()) texts.push(o[key]);
     }
-  }
-  return texts.some((t) => NO_DATA_RE.test(t));
+    if (o.result != null) visit(o.result, depth + 1);
+    if (o.data != null) visit(o.data, depth + 1);
+  };
+  visit(payload, 0);
+  return texts;
+}
+
+/** OEM atbilde: šim VIN datu nav, maksa nav iekasēta. Tas nav tīkla / 502 kļūda. */
+export function oneautoPayloadIsNoData(payload: unknown, extraText = ""): boolean {
+  return collectOneautoErrorTexts(payload, extraText).some((t) => NO_DATA_RE.test(t));
+}
+
+/** OEM produkts nav pieejams šim ceļam / atslēgai (nepareizs path vai konta entitlements). */
+export function oneautoPayloadIsApiUnavailable(payload: unknown, extraText = ""): boolean {
+  return collectOneautoErrorTexts(payload, extraText).some((t) => API_UNAVAILABLE_RE.test(t));
 }
 
 export function oneautoServiceHistoryIsEmpty(payload: unknown): boolean {
@@ -356,12 +374,38 @@ function walkEquipment(node: unknown, out: OneautoKvRow[], seen: Set<string>, de
   }
   const o = asRecord(node);
   if (!o) return;
-  const label = stringifyVal(o.name ?? o.label ?? o.description ?? o.option ?? o.pr_code ?? o.code);
-  const value = stringifyVal(o.value ?? o.text ?? o.detail ?? o.status);
-  if (label && value) pushKv(out, label, value, seen);
-  else if (label && !value) pushKv(out, "Pozīcija", label, seen);
+  const factoryCode = stringifyVal(o.factory_code ?? o.pr_code ?? o.code);
+  const factoryDesc = stringifyVal(o.factory_desc ?? o.name ?? o.label ?? o.description ?? o.option);
+  const additional = stringifyVal(o.additional_desc ?? o.value ?? o.text ?? o.detail ?? o.status);
+  if (factoryCode && factoryDesc) {
+    pushKv(out, factoryCode, additional && additional !== factoryDesc ? `${factoryDesc}. ${additional}` : factoryDesc, seen);
+  } else if (factoryDesc && additional) {
+    pushKv(out, factoryDesc, additional, seen);
+  } else if (factoryCode && additional) {
+    pushKv(out, factoryCode, additional, seen);
+  } else if (factoryDesc) {
+    pushKv(out, "Pozīcija", factoryDesc, seen);
+  } else if (factoryCode) {
+    pushKv(out, "Pozīcija", factoryCode, seen);
+  }
   for (const [k, v] of Object.entries(o)) {
-    if (["name", "label", "description", "option", "pr_code", "code", "value", "text", "detail", "status"].includes(k)) {
+    if (
+      [
+        "name",
+        "label",
+        "description",
+        "option",
+        "pr_code",
+        "code",
+        "value",
+        "text",
+        "detail",
+        "status",
+        "factory_code",
+        "factory_desc",
+        "additional_desc",
+      ].includes(k)
+    ) {
       continue;
     }
     if (Array.isArray(v) || asRecord(v)) walkEquipment(v, out, seen, depth + 1);

@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   ONEAUTO_DEFAULT_PRODUCT_IDS,
+  ONEAUTO_PRODUCTS,
   buildOneautoDisplay,
   formatOneautoCostEur,
   oneautoPayloadIsPending,
   oneautoProductsCostCents,
   composeOneautoServiceWorks,
   oneautoOdometerToKm,
+  oneautoPayloadIsApiUnavailable,
   oneautoPayloadIsNoData,
   oneautoServiceHistoryIsEmpty,
   padOneautoKvRows,
@@ -31,6 +33,12 @@ describe("OneAuto katalogs", () => {
       "oe_service_history",
     ]);
     expect(ONEAUTO_DEFAULT_PRODUCT_IDS).toEqual(["oe_service_history"]);
+  });
+
+  it("OE Build Sheet (Europe) sauc oficiālo One Auto API ceļu, ne Ezyvin", () => {
+    expect(ONEAUTO_PRODUCTS.find((p) => p.id === "oe_build_sheet")?.path).toBe(
+      "/oneauto/oebuildsheeteuropefromvin/",
+    );
   });
 
   it("izvelk servisa laika skalu un komplektāciju no OneAuto JSON", () => {
@@ -61,6 +69,28 @@ describe("OneAuto katalogs", () => {
     expect(display.powertrain.some((r) => /2\.0 TDI/.test(r.value))).toBe(true);
   });
 
+  it("lasa oficiālos Europe Build Sheet factory_code / factory_desc laukus", () => {
+    const display = buildOneautoDisplay({
+      oe_build_sheet: {
+        success: true,
+        result: {
+          oem_colour_desc: "Mineral-weiss metallic (A96)",
+          oem_interior_trim_desc: "Leather",
+          options: [
+            {
+              factory_code: "S403A",
+              factory_desc: "Glass roof, electrical",
+              additional_desc: "Panorama",
+            },
+          ],
+        },
+      },
+    });
+    expect(display.equipment.some((r) => r.label === "S403A" && /Glass roof/i.test(r.value))).toBe(true);
+    expect(display.equipment.some((r) => /Panorama/i.test(r.value))).toBe(true);
+    expect(display.powertrain.some((r) => /Mineral-weiss/i.test(r.value))).toBe(true);
+  });
+
   it("202 un request_id bez result ir pending, ne gatavi dati", () => {
     expect(oneautoPayloadIsPending(202, { success: true, request_id: "abc" })).toBe(true);
     expect(oneautoPayloadIsPending(200, { success: true, request_id: "abc" })).toBe(true);
@@ -80,6 +110,18 @@ describe("OneAuto katalogs", () => {
     expect(oneautoPayloadIsNoData(payload)).toBe(true);
     expect(oneautoServiceHistoryIsEmpty(payload)).toBe(true);
     expect(oneautoPayloadIsNoData(null, JSON.stringify(payload))).toBe(true);
+  });
+
+  it("Build Sheet API-not-available ir OEM atbilde, ne 502", () => {
+    const payload = {
+      success: false,
+      result: {
+        error: "Requested API is not available. Please contact support at help@oneautoapi.com for assistance",
+      },
+    };
+    expect(oneautoPayloadIsApiUnavailable(payload)).toBe(true);
+    expect(oneautoPayloadIsNoData(payload)).toBe(false);
+    expect(oneautoPayloadIsApiUnavailable(null, JSON.stringify(payload))).toBe(true);
   });
 
   it("tukšs service_events ir derīga tukša atbilde", () => {

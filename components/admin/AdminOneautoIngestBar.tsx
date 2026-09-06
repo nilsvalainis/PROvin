@@ -7,6 +7,7 @@ import {
   buildOneautoDisplay,
   formatOneautoCostEur,
   oneautoDisplayHasRows,
+  oneautoPayloadIsApiUnavailable,
   oneautoPayloadIsNoData,
   oneautoPayloadIsPending,
   oneautoProductsCostCents,
@@ -39,9 +40,21 @@ function oneautoFetchErrorLv(code: string): string {
       return "OEM vēl apstrādā pieprasījumu. Pagaidi un spied Ielādēt datus vēlreiz. Atkārtota pārbaude parasti neiekasē jaunu maksu.";
     case "no_data":
       return "OEM atbilde: šim VIN nav datu. Maksa nav iekasēta.";
+    case "api_unavailable":
+      return "Šis OneAuto produkts šobrīd nav pieejams. Raksti help@oneautoapi.com.";
     default:
       return "OneAutoAPI neatbildēja. Mēģini vēlreiz.";
   }
+}
+
+function oneautoResultIsNoData(result: { ok?: boolean; error?: string; payload?: unknown }): boolean {
+  return oneautoPayloadIsNoData(result.payload, result.error ?? "") || result.error === "no_data";
+}
+
+function oneautoResultIsUnavailable(result: { ok?: boolean; error?: string; payload?: unknown }): boolean {
+  return (
+    oneautoPayloadIsApiUnavailable(result.payload, result.error ?? "") || result.error === "api_unavailable"
+  );
 }
 
 type Props = {
@@ -116,16 +129,19 @@ export function AdminOneautoIngestBar({
       }
       const resultRows = Object.values(body.results ?? {});
       const onlyNoData =
+        resultRows.length > 0 && resultRows.every((r) => r && oneautoResultIsNoData(r));
+      const onlyUnavailable =
         resultRows.length > 0 &&
-        resultRows.every(
-          (r) => r && (oneautoPayloadIsNoData(r.payload, r.error ?? "") || r.error === "no_data"),
-        );
+        resultRows.every((r) => r && (oneautoResultIsUnavailable(r) || oneautoResultIsNoData(r))) &&
+        resultRows.some((r) => r && oneautoResultIsUnavailable(r));
       if (body.error && res.status === 402) {
         setError(oneautoFetchErrorLv("insufficient_balance"));
       } else if (body.error === "pending" || res.status === 202) {
         setError(oneautoFetchErrorLv("pending"));
       } else if (onlyNoData) {
         setError(null);
+      } else if (onlyUnavailable) {
+        setError(oneautoFetchErrorLv("api_unavailable"));
       } else if (!res.ok) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
       }
@@ -201,8 +217,7 @@ export function AdminOneautoIngestBar({
                     className={`ml-1 ${
                       resultPending
                         ? "text-amber-700"
-                        : oneautoPayloadIsNoData(result.payload, result.error ?? "") ||
-                            result.error === "no_data"
+                        : oneautoResultIsNoData(result) || oneautoResultIsUnavailable(result)
                           ? "text-slate-600"
                           : result.ok
                             ? "text-emerald-700"
@@ -211,12 +226,13 @@ export function AdminOneautoIngestBar({
                   >
                     {resultPending
                       ? "gaida OEM"
-                      : oneautoPayloadIsNoData(result.payload, result.error ?? "") ||
-                          result.error === "no_data"
+                      : oneautoResultIsNoData(result)
                         ? "nav datu (nav iekasēts)"
-                        : result.ok
-                          ? "ielādēts"
-                          : result.error ?? "kļūda"}
+                        : oneautoResultIsUnavailable(result)
+                          ? "API nav pieejams"
+                          : result.ok
+                            ? "ielādēts"
+                            : result.error ?? "kļūda"}
                   </span>
                 ) : null}
               </span>
