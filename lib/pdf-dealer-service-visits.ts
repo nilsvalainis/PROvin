@@ -93,6 +93,22 @@ function visitHtml(row: AutoRecordsServiceWorkRow): string {
   </div>`;
 }
 
+/** Pirmais / pēdējais rādījums zem nobraukuma līknes (dīlera vāka logs). */
+export function buildPdfFirstLastReadingSpanHtml(opts: {
+  firstKm: string;
+  lastKm: string;
+  firstMeta: string;
+  lastMeta: string;
+}): string {
+  const firstKm = opts.firstKm.trim() || "km nav";
+  const lastKm = opts.lastKm.trim() || "km nav";
+  if (firstKm === "km nav" && lastKm === "km nav") return "";
+  return `<div class="pdf-svc-span">
+    <div class="pdf-svc-span__pt"><b>${escapeHtml(firstKm)}</b><i>${escapeHtml(opts.firstMeta)}</i></div>
+    <div class="pdf-svc-span__pt pdf-svc-span__pt--end"><b>${escapeHtml(lastKm)}</b><i>${escapeHtml(opts.lastMeta)}</i></div>
+  </div>`;
+}
+
 function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean }): string {
   if (rows.length < 2) return "";
   const newest = rows[0]!;
@@ -109,10 +125,12 @@ function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean })
   const lastMeta = opts?.cover
     ? [lastDate, visitCount].filter(Boolean).join(" · ")
     : ["Pēdējais ieraksts", lastDate].filter(Boolean).join(" · ");
-  return `<div class="pdf-svc-span">
-    <div class="pdf-svc-span__pt"><b>${escapeHtml(firstKm || "km nav")}</b><i>${escapeHtml(firstMeta)}</i></div>
-    <div class="pdf-svc-span__pt pdf-svc-span__pt--end"><b>${escapeHtml(lastKm || "km nav")}</b><i>${escapeHtml(lastMeta)}</i></div>
-  </div>`;
+  return buildPdfFirstLastReadingSpanHtml({
+    firstKm: firstKm || "km nav",
+    lastKm: lastKm || "km nav",
+    firstMeta,
+    lastMeta,
+  });
 }
 
 export function buildDealerServiceSpanHtml(

@@ -308,7 +308,10 @@ describe("PDF design system", () => {
         manualVendorBlocks: [
           {
             title: "AutoDNA",
-            mileageRows: [{ date: "01.03.2016", odometer: "80000", country: "DE" }],
+            mileageRows: [
+              { date: "01.03.2016", odometer: "80000", country: "DE" },
+              { date: "01.06.2018", odometer: "95000", country: "DE" },
+            ],
             incidentRows: [],
             comments: "AutoDNA komentārs",
           },
@@ -322,10 +325,17 @@ describe("PDF design system", () => {
     expect(html).toContain("pdf-src-mileage-spark");
     expect(html).toContain('data-src-spark="autodna"');
     expect(html).toContain('data-src-spark="csdd"');
-    const autodnaZone = html.slice(html.indexOf("pdf-src-zone--autodna"));
+    const zoneAt = html.indexOf("pdf-src-zone pdf-src-zone--autodna");
+    const nextZone = html.indexOf("pdf-src-zone pdf-src-zone--", zoneAt + 10);
+    const autodnaZone = html.slice(zoneAt, nextZone > 0 ? nextZone : undefined);
     expect(autodnaZone).toContain('data-src-spark="autodna"');
     expect(autodnaZone).toContain("01.03.2016");
+    expect(autodnaZone).toContain("pdf-svc-span");
+    expect(autodnaZone).toContain("80 000 km");
+    expect(autodnaZone).toContain("95 000 km");
+    expect(autodnaZone).toContain("2 ieraksti");
     expect(html).toContain(".pdf-src-mileage-spark-ghost");
+    expect(html).toContain(".pdf-src-mileage-spark .pdf-svc-span");
   });
 
   it("uses the homepage hero CarVertical logo and greens the record count when there is at least one row", () => {

@@ -11,6 +11,8 @@ import {
   type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
+import { formatServiceWorkOdometer } from "@/lib/auto-records-service-works";
+import { buildPdfFirstLastReadingSpanHtml } from "@/lib/pdf-dealer-service-visits";
 import {
   MILEAGE_PDF_SOURCE_COLOR,
   mileageSourceLabelToPdfKey,
@@ -241,6 +243,22 @@ function areaUnderPath(d: string, pts: ChartXY[], bottomY: number): string {
   return `${d} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`;
 }
 
+function mileageReadingCountLabel(n: number): string {
+  return n === 1 ? "1 ieraksts" : `${n} ieraksti`;
+}
+
+function mileageSeriesSpanHtml(points: ChartSeriesPoint[]): string {
+  if (points.length < 2) return "";
+  const first = points[0]!;
+  const last = points[points.length - 1]!;
+  return buildPdfFirstLastReadingSpanHtml({
+    firstKm: formatServiceWorkOdometer(String(first.km)),
+    lastKm: formatServiceWorkOdometer(String(last.km)),
+    firstMeta: first.dateDisplay,
+    lastMeta: [last.dateDisplay, mileageReadingCountLabel(points.length)].filter(Boolean).join(" · "),
+  });
+}
+
 /**
  * @param anomalyBySourceOrder — no `analyzeUnifiedMileageAnomalies` / `computeOdometerAnomalyBySourceOrder`
  */
@@ -360,6 +378,7 @@ export function buildUnifiedMileageChartWrapHtml(
   ${loneDot}
   ${yearLabels.join("\n  ")}
 </svg>
+${mileageSeriesSpanHtml(series)}
 <div class="pdf-mileage-chart-legend">
   <span class="pdf-mileage-chart-legend-line" aria-hidden="true"></span>
   <span class="pdf-mileage-chart-legend-text">Nobraukums</span>
@@ -393,11 +412,11 @@ export function buildSourceMileageSparkHtml(
   const color = MILEAGE_PDF_SOURCE_COLOR[sourceKey];
 
   const W = 480;
-  const H = 96;
+  const H = 80;
   const padL = 10;
   const padR = 10;
   const padT = 8;
-  const padB = 18;
+  const padB = 8;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
   const xOf = (time: number) => {
@@ -423,10 +442,6 @@ export function buildSourceMileageSparkHtml(
       : mineD
         ? `<path class="pdf-src-mileage-spark-path" fill="none" stroke="${color}" d="${mineD}" />`
         : "";
-  const start = escChartText(mine[0]!.dateDisplay);
-  const end = escChartText(mine[mine.length - 1]!.dateDisplay);
-  const dateFill = color;
-
   return `<div class="pdf-src-mileage-spark" data-src-spark="${sourceKey}">
 <svg class="pdf-src-mileage-spark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Nobraukuma līkne: ${escChartText(sourceKey)}">
   <defs>
@@ -438,9 +453,8 @@ export function buildSourceMileageSparkHtml(
   ${ghostPath}
   ${fillPath}
   ${sourcePath}
-  <text class="pdf-src-mileage-spark-date" x="${padL}" y="${H - 4}" text-anchor="start" fill="${dateFill}">${start}</text>
-  <text class="pdf-src-mileage-spark-date" x="${W - padR}" y="${H - 4}" text-anchor="end" fill="${dateFill}">${end}</text>
 </svg>
+${mileageSeriesSpanHtml(mine)}
 </div>`;
 }
 

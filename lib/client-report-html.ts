@@ -2640,9 +2640,11 @@ ${sourceDotColorCss()}
       .pdf-src-mileage-spark-path{
         stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
-      .pdf-src-mileage-spark-date{
-        font-family:Inter,sans-serif;font-size:8px;font-weight:600;
+      .pdf-src-mileage-spark .pdf-svc-span,
+      .pdf-mileage-chart-wrap .pdf-svc-span{
+        margin:8px 0 0;background:#fff;
       }
+      .pdf-mileage-chart-wrap .pdf-svc-span{margin:8px 10px 8px 12px;}
       .pdf-data-alert-wrap{
         display:inline-flex;align-items:center;gap:8px;max-width:100%;vertical-align:middle;
       }

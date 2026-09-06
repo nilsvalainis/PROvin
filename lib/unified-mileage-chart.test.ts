@@ -242,6 +242,10 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     expect(html).toContain("pdf-mileage-chart-fill");
     expect(html).not.toContain("pdf-mileage-chart-grid");
     expect(html).not.toContain("pdf-mileage-chart-year-band");
+    expect(html).toContain("pdf-svc-span");
+    expect(html).toContain("50 000 km");
+    expect(html).toContain("110 000 km");
+    expect(html).toContain("4 ieraksti");
   });
 });
 
@@ -312,6 +316,16 @@ describe("buildSourceMileageSparkHtml", () => {
     expect(html).toContain("01.06.2018");
     expect(html).not.toContain("pdf-mileage-chart-year");
     expect(html).not.toContain(">2020<");
+  });
+
+  it("puts first and last km in the dealer-style reading window", () => {
+    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna");
+    expect(html).toContain("pdf-svc-span");
+    expect(html).toContain("50 000 km");
+    expect(html).toContain("80 000 km");
+    expect(html).toContain("2 ieraksti");
+    expect(html).not.toContain("pdf-src-mileage-spark-date");
+    expect(html.indexOf("pdf-src-mileage-spark-svg")).toBeLessThan(html.indexOf("pdf-svc-span"));
   });
 
   it("shares the unified time scale so an early DNA point sits left of a late CSDD point", () => {
