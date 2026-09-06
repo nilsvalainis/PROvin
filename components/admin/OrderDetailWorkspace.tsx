@@ -325,7 +325,7 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   sourceBlockWipes: [],
 };
 
-const MAX_FILE_BYTES = 8 * 1024 * 1024;
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
 /** Pielikumu kolonnā pēc noklusējuma redzams pirmā fails; pārējie — modālā. */

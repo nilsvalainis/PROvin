@@ -1,7 +1,7 @@
 /** Kopīgi limiti admin PDF API maršrutiem (ai-extract, parse-pdf). */
 
 /** Vienam PDF failam. */
-export const PDF_MAX_FILE_BYTES = 15 * 1024 * 1024;
+export const PDF_MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 /** Kopā visiem failiem vienā pieprasījumā. */
 export const PDF_MAX_TOTAL_BYTES = 48 * 1024 * 1024;
