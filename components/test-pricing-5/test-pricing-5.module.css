@@ -2338,12 +2338,19 @@ html[data-site-theme="light"] .inlineInput:focus {
 
 .mobilePackLines .featureRow {
   grid-template-columns: 1rem minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   column-gap: 0.4rem;
   min-height: 0;
   padding: 0.22rem 0;
   font-size: 0.74rem;
   line-height: 1.4;
+}
+
+.mobilePackLines .featureMark {
+  width: 1rem;
+  height: 1.4em;
+  font-size: 0.74rem;
+  line-height: 1;
 }
 
 /* Refund/brands tips inherit desktop center + 44px hit; keep them on the same grid as + rows. */
