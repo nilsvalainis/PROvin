@@ -61,7 +61,7 @@ function CreditStrip({
                   disabled={disabled}
                   onChange={() => selection.onToggle(plan)}
                   aria-label={selection.titles[plan]}
-                  className="h-4 w-4 shrink-0 rounded border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+                  className="h-[1.15rem] w-[1.15rem] shrink-0 cursor-pointer rounded border-2 border-zinc-400 bg-zinc-950 text-[#2563EB] accent-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/45 disabled:cursor-not-allowed"
                 />
               ) : null}
             </div>

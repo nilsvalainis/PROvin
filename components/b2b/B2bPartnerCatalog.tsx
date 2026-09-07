@@ -223,18 +223,17 @@ function DealerBrandLockup({ label, fill }: { label: string; fill?: boolean }) {
         const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
         return (
           <li key={brand} className={fill ? "min-h-0" : undefined}>
-            <button
-              type="button"
-              className={`group flex w-full items-center justify-center rounded-[0.35rem] bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB] ${
+            <div
+              className={`flex w-full items-center justify-center rounded-[0.35rem] bg-white/[0.03] ${
                 fill ? "h-full min-h-0" : TILE_HEIGHT_CLASS
               }`}
-              aria-label={brand}
+              aria-hidden
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={src}
                 alt=""
-                className={`shrink-0 object-contain opacity-70 transition-opacity duration-200 group-hover:opacity-100 ${
+                className={`shrink-0 object-contain opacity-70 ${
                   fill
                     ? "h-9 w-9 sm:h-10 sm:w-10"
                     : "h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]"
@@ -243,7 +242,7 @@ function DealerBrandLockup({ label, fill }: { label: string; fill?: boolean }) {
                 decoding="async"
                 draggable={false}
               />
-            </button>
+            </div>
           </li>
         );
       })}

@@ -138,7 +138,7 @@ export function HeaderClient() {
   );
 
   return (
-    <header className={`${isHome ? "fixed lg:sticky" : "sticky"} top-0 z-[42] isolate w-full ${headerSurface}`}>
+    <header className={`${isHome ? "fixed lg:sticky" : "sticky"} top-0 z-[60] isolate w-full ${headerSurface}`}>
       <div className={headerInnerClass}>
         {isAzvinDemo ? (
           <Link href="/demo/azvin" className={logoClass} aria-label="AZ.VIN">
