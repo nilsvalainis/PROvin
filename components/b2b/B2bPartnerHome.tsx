@@ -1,98 +1,118 @@
 "use client";
 
-import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Link, useRouter } from "@/i18n/navigation";
-import { B2B_CATALOG, B2B_PARTNER_PRICE, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
+import { B2B_CATALOG, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
+import { emptyB2bCreditRemaining, hasAnyB2bCredit, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isValidVin } from "@/lib/order-field-validation";
 
-const TITLE_CLASS = "text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl";
-const TITLE_RULE_CLASS = "mt-2.5 h-px w-full bg-white/10";
 const LABEL_CLASS = "mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
+const PLANS: B2bPartnerPlanId[] = ["business", "dealer"];
 
-function PackageTitle({ title }: { title: string }) {
+function PackageMark({ title }: { title: string }) {
+  if (title !== "PROVIN BUSINESS") return <>{title}</>;
   return (
-    <div>
-      <h2 className={TITLE_CLASS}>
-        {title === "PROVIN BUSINESS" ? (
-          <>
-            PRO<span className="text-[#2563EB]">VIN</span> BUSINESS
-          </>
-        ) : (
-          title
-        )}
-      </h2>
-      <div className={TITLE_RULE_CLASS} aria-hidden />
-    </div>
+    <>
+      PRO<span className="text-[#2563EB]">VIN</span> BUSINESS
+    </>
   );
 }
 
-function OrderColumn({ plan }: { plan: B2bPartnerPlanId }) {
+export function B2bPartnerHome() {
   const t = useTranslations("Partner");
-  const tOrder = useTranslations("Order");
-  const locale = useLocale();
   const router = useRouter();
-  const pkg = B2B_CATALOG[plan];
+  const [remaining, setRemaining] = useState<B2bCreditRemaining | null>(null);
   const [vin, setVin] = useState("");
-  const [comment, setComment] = useState("");
+  const [picked, setPicked] = useState<Record<B2bPartnerPlanId, boolean>>({
+    business: false,
+    dealer: false,
+  });
   const [vinError, setVinError] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [consentError, setConsentError] = useState("");
-  const [payError, setPayError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [serviceError, setServiceError] = useState("");
+  const [formError, setFormError] = useState("");
 
-  const onPay = async () => {
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/partner/credits", { credentials: "include" });
+        if (res.status === 401) {
+          router.replace("/partneriem");
+          return;
+        }
+        const data = (await res.json()) as { remaining?: B2bCreditRemaining };
+        if (cancelled) return;
+        const next = data.remaining ?? emptyB2bCreditRemaining();
+        setRemaining({
+          business: Math.max(0, next.business ?? 0),
+          dealer: Math.max(0, next.dealer ?? 0),
+        });
+      } catch {
+        if (!cancelled) setRemaining(emptyB2bCreditRemaining());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  const credits = remaining ?? emptyB2bCreditRemaining();
+  const loaded = remaining !== null;
+  const canSubmit = loaded && hasAnyB2bCredit(credits);
+
+  const togglePlan = (plan: B2bPartnerPlanId) => {
+    if (credits[plan] < 1) return;
+    setPicked((prev) => ({ ...prev, [plan]: !prev[plan] }));
+    setServiceError("");
+  };
+
+  const onSubmit = () => {
     setVinError("");
-    setConsentError("");
-    setPayError("");
+    setServiceError("");
+    setFormError("");
     if (!isValidVin(vin)) {
       setVinError(t("vinError"));
       return;
     }
-    if (!consent) {
-      setConsentError(tOrder("errors.withdrawalRequired"));
+    const selected = PLANS.filter((plan) => picked[plan]);
+    if (selected.length === 0) {
+      setServiceError(t("needService"));
       return;
     }
-    setBusy(true);
-    try {
-      const res = await fetch("/api/checkout/partner", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan,
-          vin,
-          notes: comment,
-          withdrawalConsent: true,
-          locale,
-        }),
-      });
-      if (res.status === 401) {
-        router.replace("/partneriem");
-        return;
-      }
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        setPayError(typeof data.error === "string" && data.error.trim() ? data.error : t("payError"));
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      setPayError(t("payNetwork"));
-    } finally {
-      setBusy(false);
+    if (selected.some((plan) => credits[plan] < 1)) {
+      setFormError(t("noCredits"));
     }
   };
 
   return (
-    <article className="flex min-w-0 flex-col">
-      <PackageTitle title={pkg.title} />
+    <section className="mx-auto w-full max-w-[22rem]" aria-labelledby="b2b-partner-home-title">
+      <h1 id="b2b-partner-home-title" className="text-balance text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-zinc-100">
+        {t("vinSubmitTitle")}
+      </h1>
+
+      <ul className="mt-6 grid gap-2" aria-label={t("creditsHeading")}>
+        {PLANS.map((plan) => (
+          <li
+            key={plan}
+            className="flex items-baseline justify-between gap-3 border-b border-white/10 py-2 text-[0.9rem]"
+          >
+            <span className="min-w-0 font-medium text-zinc-100">
+              <PackageMark title={B2B_CATALOG[plan].title} />
+            </span>
+            <span className="shrink-0 tabular-nums text-zinc-400">
+              {loaded ? t("creditLeft", { count: credits[plan] }) : "…"}
+            </span>
+          </li>
+        ))}
+      </ul>
+
       <form
-        className="mt-7 flex flex-col gap-4"
+        className="mt-8 flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault();
-          void onPay();
+          onSubmit();
         }}
       >
         <label className="block min-w-0">
@@ -107,87 +127,61 @@ function OrderColumn({ plan }: { plan: B2bPartnerPlanId }) {
             }}
             autoComplete="off"
             spellCheck={false}
+            autoCapitalize="characters"
             maxLength={17}
             placeholder={t("vinPlaceholder")}
             aria-label={t("vinAria")}
             aria-invalid={vinError ? true : undefined}
+            enterKeyHint="done"
           />
         </label>
-        <label className="block min-w-0">
-          <span className={LABEL_CLASS}>{t("commentLabel")}</span>
-          <textarea
-            className={`${styles.inlineInput} min-h-[6.5rem] resize-y py-3`}
-            value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder={t("commentPlaceholder")}
-            aria-label={t("commentAria")}
-            rows={3}
-          />
-        </label>
-        <label className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(event) => {
-              setConsent(event.target.checked);
-              setConsentError("");
-            }}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
-            aria-label={tOrder("checkoutConsentAria")}
-            aria-invalid={consentError ? true : undefined}
-          />
-          <span className="text-[12px] font-normal leading-snug text-zinc-400">
-            {tOrder.rich("checkoutConsent", {
-              terms: (chunks) => (
-                <Link
-                  href="/lietosanas-noteikumi"
-                  className="font-medium text-[#60a5fa] underline decoration-[#60a5fa]/30 underline-offset-2 transition hover:decoration-[#60a5fa]/60"
+
+        <fieldset className="min-w-0">
+          <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
+          <div className="flex flex-col gap-3">
+            {PLANS.map((plan) => {
+              const disabled = !loaded || credits[plan] < 1;
+              return (
+                <label
+                  key={plan}
+                  className={`flex cursor-pointer items-center gap-3 ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
                 >
-                  {chunks}
-                </Link>
-              ),
-              privacy: (chunks) => (
-                <Link
-                  href="/privatuma-politika"
-                  className="font-medium text-[#60a5fa] underline decoration-[#60a5fa]/30 underline-offset-2 transition hover:decoration-[#60a5fa]/60"
-                >
+                  <input
+                    type="checkbox"
+                    checked={picked[plan]}
+                    disabled={disabled}
+                    onChange={() => togglePlan(plan)}
+                    className="h-4 w-4 shrink-0 rounded border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+                  />
+                  <span className="text-[0.9rem] font-medium text-zinc-100">
+                    <PackageMark title={B2B_CATALOG[plan].title} />
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
+        {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
+        {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+        {loaded && !canSubmit ? (
+          <p className="text-[0.78rem] leading-snug text-zinc-400">
+            {t.rich("noCreditsHint", {
+              packs: (chunks) => (
+                <Link href="/partneriem/konts/pakas" className="font-medium text-[#60a5fa] underline-offset-2 hover:underline">
                   {chunks}
                 </Link>
               ),
             })}
-          </span>
-        </label>
-        {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
-        {consentError ? <p className={styles.inlineFieldError}>{consentError}</p> : null}
-        {payError ? <p className={styles.inlineFieldError}>{payError}</p> : null}
-        <button type="submit" className={styles.liquidCta} disabled={busy}>
+          </p>
+        ) : null}
+
+        <button type="submit" className={styles.liquidCta} disabled={!canSubmit}>
           <span className={styles.liquidCtaShimmer} aria-hidden />
-          <span className={styles.liquidCtaLabel}>
-            {busy ? t("payLoading") : t("payCta", { price: B2B_PARTNER_PRICE[plan] })}
-          </span>
+          <span className={styles.liquidCtaLabel}>{t("vinSubmit")}</span>
         </button>
       </form>
-    </article>
-  );
-}
-
-export function B2bPartnerHome() {
-  const t = useTranslations("Partner");
-  return (
-    <section aria-labelledby="b2b-partner-home-title">
-      <h1 id="b2b-partner-home-title" className="sr-only">
-        {t("navHome")}
-      </h1>
-      <div className="flex flex-col gap-10 lg:hidden">
-        <OrderColumn plan="business" />
-        <div className="h-px w-full bg-white/15" aria-hidden />
-        <OrderColumn plan="dealer" />
-      </div>
-      <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-start lg:gap-x-10">
-        <OrderColumn plan="business" />
-        <div className="self-stretch bg-white/15" aria-hidden />
-        <OrderColumn plan="dealer" />
-      </div>
     </section>
   );
 }

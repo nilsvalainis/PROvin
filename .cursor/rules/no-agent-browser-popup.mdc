@@ -1,0 +1,20 @@
+---
+description: Do not open Playwright/Chrome pop-ups. Verify with tests or curl unless the operator asks for a browser.
+alwaysApply: true
+---
+
+# Neatvērt aģenta pārlūka logu
+
+Operatoram traucē Playwright MCP Chrome (`ms-playwright-mcp`) un citi aģenta pārlūka pop-up, kad tiek veikti parastie darbi.
+
+**Aizliegts**, ja operators **šajā** ziņojumā to nav skaidri lūdzis:
+
+- Playwright MCP (`browser_navigate`, `browser_run_code_unsafe`, `browser_snapshot`, `browser_click`, `browser_take_screenshot`, jauni tabi)
+- Cursor Simple Browser / preview pane
+- `open`, headed Chrome, `npx playwright` pret `localhost`
+
+Tas attiecas arī uz UI/layout izmaiņām. Šajā repo **nav** jāverificē, atverot `http://localhost:3040/...` pārlūkā.
+
+**Vietā:** Vitest, `curl` pret localhost, koda/HTML lasīšana. Paziņo, ko nevarēji pārbaudīt pārlūkā.
+
+**Atļauts tikai** ja operators raksta piem. „atver pārlūkā”, „pārbaudi browserī”, „Playwright”.

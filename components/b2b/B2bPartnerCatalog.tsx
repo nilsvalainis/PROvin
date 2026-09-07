@@ -307,7 +307,7 @@ export function B2bPartnerCatalog({ showCta = false }: { showCta?: boolean }) {
   const dealer = B2B_CATALOG.dealer;
 
   return (
-    <section className="scroll-mt-16 border-t border-white/[0.08] bg-transparent px-4 pb-10 pt-8 sm:px-6 sm:pb-14 sm:pt-10 lg:pb-16">
+    <section className="scroll-mt-16 bg-transparent px-0 pb-4 pt-2 sm:pb-8 sm:pt-4 lg:pb-10">
       <div className={homeContentMaxClass}>
         <div className="flex flex-col gap-10 lg:hidden">
           <PackageStack

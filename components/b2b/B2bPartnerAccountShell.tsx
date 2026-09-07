@@ -7,6 +7,7 @@ import { homeContentMaxClass } from "@/lib/home-layout";
 
 const NAV = [
   { href: "/partneriem/konts", key: "navHome" as const },
+  { href: "/partneriem/konts/pakas", key: "navPacks" as const },
   { href: "/partneriem/konts/pasutijumi", key: "navArchive" as const },
   { href: "/partneriem/konts/rekviziti", key: "navRequisites" as const },
 ];
@@ -44,7 +45,7 @@ export function B2bPartnerAccountShell({ children }: { children: ReactNode }) {
   if (!ready) return null;
 
   return (
-    <div className="px-4 pb-10 pt-5 sm:px-6 sm:pb-14 sm:pt-6 lg:pb-16">
+    <div className="px-4 pb-8 pt-3 sm:px-6 sm:pb-12 sm:pt-5 lg:pb-16">
       <div className={homeContentMaxClass}>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-white/10 pb-3">
           <nav className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2" aria-label={t("accountNavAria")}>
@@ -77,7 +78,7 @@ export function B2bPartnerAccountShell({ children }: { children: ReactNode }) {
             {t("signOut")}
           </button>
         </div>
-        <div className="pt-8">{children}</div>
+        <div className="pt-5 sm:pt-8">{children}</div>
       </div>
     </div>
   );

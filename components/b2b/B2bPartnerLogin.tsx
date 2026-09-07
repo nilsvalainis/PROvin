@@ -45,7 +45,7 @@ export function B2bPartnerLogin() {
 
   return (
     <form
-      className="flex w-full max-w-[22rem] flex-col gap-4"
+      className="flex w-full flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault();
         void onSubmit();
@@ -63,8 +63,11 @@ export function B2bPartnerLogin() {
             setLoginEmail(event.target.value);
             setError("");
           }}
-          autoComplete="email"
+          autoComplete="username"
           inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          enterKeyHint="next"
           aria-label={t("emailAria")}
         />
       </label>
@@ -81,6 +84,7 @@ export function B2bPartnerLogin() {
             setError("");
           }}
           autoComplete="current-password"
+          enterKeyHint="go"
           aria-label={t("passwordAria")}
         />
       </label>

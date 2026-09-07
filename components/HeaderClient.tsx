@@ -40,8 +40,7 @@ export function HeaderClient() {
     isFaqPage ||
     isPakalpojumi ||
     isParMums ||
-    isBlogs ||
-    normalizedPath === "/partneriem";
+    isBlogs;
 
   const isAzvinDemo = pathname.includes("/demo/azvin");
   /**
@@ -141,7 +140,7 @@ export function HeaderClient() {
             <span className="text-provin-accent">VIN</span>
           </Link>
         ) : (
-          <Link href="/" className={logoClass} aria-label={logoShowsLvSuffix ? "PROVIN.LV" : "PROVIN"}>
+          <Link href={isPartneriem ? "/partneriem" : "/"} className={logoClass} aria-label={logoShowsLvSuffix ? "PROVIN.LV" : "PROVIN"}>
             <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
             <span className="text-provin-accent">VIN</span>
             {logoShowsLvSuffix ? (

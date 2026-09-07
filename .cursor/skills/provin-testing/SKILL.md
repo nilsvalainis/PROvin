@@ -2,9 +2,9 @@
 name: provin-testing
 description: >-
   PROVIN.LV test conventions for Vitest unit tests, evaluation scripts, and
-  Playwright e2e checks. Use when adding or changing lib/**/*.test.ts,
-  lib/ai-eval, npm test, test:ai-eval, Playwright MCP against localhost,
-  screenshot scripts, or persist/PDF/parser regressions.
+  committed screenshot scripts. Use when adding or changing lib/**/*.test.ts,
+  lib/ai-eval, npm test, test:ai-eval, screenshot scripts, or persist/PDF/parser
+  regressions. Do not use Playwright MCP unless the operator asks.
 ---
 
 # PROVIN Testing
@@ -15,15 +15,15 @@ Three layers. Do not mix them.
 |-------|------|------------|
 | Unit | Vitest | Pure `lib/` logic, colocated `*.test.ts` |
 | Eval | Vitest + goldens | Prompt invariants and comment quality |
-| Browser | Playwright (scripts + MCP) | Visual / flow checks of **this** app |
+| Browser | Committed screenshot scripts only | Only if the operator asks; never Playwright MCP pop-ups by default |
 
 ## When to apply
 
 - New or failing `lib/**/*.test.ts`
 - `lib/ai-eval/**`, `PROVIN_AI_PROMPT_VERSION`, `npm run test:ai-eval`
 - `scripts/mobile-screenshot.mjs`, `scripts/demo-mobile-preview.mjs`
-- Playwright MCP driving `localhost:3040` (or `PREVIEW_URL`)
 - Persist, PDF parse, mileage, Stripe field, or order-validation changes
+- Playwright MCP / agent browser **only** if the operator explicitly asks this turn
 
 ## Vitest (default)
 
@@ -68,7 +68,7 @@ There is **no** `@playwright/test` suite and no `playwright.config.ts`. Do not s
 - `npm run screenshot:demo-mobile` → demo layouts
 - Dev server for daily work: `npm run dev` → **port 3040**
 
-**Playwright MCP / agent browser:** drive **PROVIN** — `/lv`, `/en`, `/pasutit`, checkout, `/admin` after login. Check locale prefix, order validation, footer requisites, admin persist after reload.
+**Playwright MCP / agent browser:** do **not** open. Default verification is Vitest and `curl`. Use MCP only if the operator explicitly asks to open a browser this turn. See `.cursor/rules/no-agent-browser-popup.mdc`.
 
 **Out of scope for tests:** AutoDNA, CarVertical, e.csdd.lv, tjekbil, or any third-party VIN site. Runtime scrapers live in `lib/vin-sources/` and `scripts/vin-fetch.mjs` — they are product code, not the test suite.
 
@@ -76,5 +76,6 @@ There is **no** `@playwright/test` suite and no `playwright.config.ts`. Do not s
 
 - Add `app/**/*.test.ts` that Vitest will ignore.
 - Snapshot entire `client-report-html.ts` output.
+- Open Playwright MCP / agent Chrome unless the operator asked this turn.
 - Use Playwright MCP to “test” vendor history portals.
 - Skip `test:ai-eval` after prompt edits that affect client PDF/email copy.

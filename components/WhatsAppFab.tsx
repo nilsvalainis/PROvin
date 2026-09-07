@@ -3,7 +3,9 @@
 import type { MouseEvent } from "react";
 import { useId } from "react";
 import { useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
 import { whatsappAppUrl, whatsappWebUrl } from "@/lib/contact";
+import { normalizeSitePath } from "@/lib/site-rail-sections";
 
 function WhatsAppIcon({ gradientId }: { gradientId: string }) {
   return (
@@ -31,8 +33,11 @@ function isMobileHandset(): boolean {
 /** Peldošā WhatsApp poga (SmartSupp vietā) — mobilajā atver lietotni. */
 export function WhatsAppFab() {
   const t = useTranslations("Misc");
+  const pathname = usePathname() ?? "";
   const webHref = whatsappWebUrl();
   const gradientId = useId().replace(/:/g, "");
+  const path = normalizeSitePath(pathname);
+  if (path === "/partneriem" || path.startsWith("/partneriem/")) return null;
 
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (!isMobileHandset()) return;
