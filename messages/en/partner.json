@@ -58,6 +58,7 @@
     "payError": "Could not open payment. Try again.",
     "payNetwork": "Connection error. Try again.",
     "profileTitle": "Profile",
+    "navProfile": "Profile",
     "chooseService": "Choose a service",
     "fieldCompany": "Company",
     "fieldReg": "Reg. no.",

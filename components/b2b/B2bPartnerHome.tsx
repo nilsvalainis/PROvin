@@ -11,7 +11,7 @@ import { emptyB2bCreditRemaining, hasAnyB2bCredit, type B2bCreditRemaining } fro
 import { isValidVin } from "@/lib/order-field-validation";
 
 const LABEL_CLASS = "mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
-const PLANS: B2bPartnerPlanId[] = ["business", "dealer"];
+const PLANS: B2bPartnerPlanId[] = ["dealer", "business"];
 
 function CreditStrip({
   credits,

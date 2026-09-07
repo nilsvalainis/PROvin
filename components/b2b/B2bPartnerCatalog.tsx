@@ -319,17 +319,17 @@ export function B2bPartnerCatalog({
       <div className={homeContentMaxClass}>
         <div className="flex flex-col gap-10 lg:hidden">
           <PackageStack
-            pkg={business}
-            plan="business"
+            pkg={dealer}
+            plan="dealer"
+            brandsLabel={uiCopy.dealerBrandsAria}
             infoAria={uiCopy.dealerRefundInfoAria}
             listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
             showCta={showCta}
           />
           <div className="h-px w-full bg-white/15" aria-hidden />
           <PackageStack
-            pkg={dealer}
-            plan="dealer"
-            brandsLabel={uiCopy.dealerBrandsAria}
+            pkg={business}
+            plan="business"
             infoAria={uiCopy.dealerRefundInfoAria}
             listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
             showCta={showCta}

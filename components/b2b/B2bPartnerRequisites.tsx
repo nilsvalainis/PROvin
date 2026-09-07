@@ -18,7 +18,11 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function B2bPartnerRequisites() {
+export function B2bPartnerRequisites({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const t = useTranslations("Partner");
   const [profile, setProfile] = useState<B2bPartnerPublicProfile | null>(null);
 
@@ -39,11 +43,16 @@ export function B2bPartnerRequisites() {
     };
   }, []);
 
+  const HeadingTag = embedded ? "h2" : "h1";
+  const headingClass = embedded
+    ? "text-balance text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-100"
+    : TITLE_CLASS;
+
   return (
     <section aria-labelledby="b2b-partner-requisites-title">
-      <h1 id="b2b-partner-requisites-title" className={TITLE_CLASS}>
+      <HeadingTag id="b2b-partner-requisites-title" className={headingClass}>
         {t("requisitesTitle")}
-      </h1>
+      </HeadingTag>
       <div className={TITLE_RULE_CLASS} aria-hidden />
       {!profile ? (
         <p className="mt-8 text-[0.8125rem] text-zinc-400 sm:text-[0.875rem]">{t("requisitesLoading")}</p>

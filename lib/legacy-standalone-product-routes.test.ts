@@ -44,6 +44,7 @@ describe("legacy standalone product routes", () => {
       "/lv/partneriem/konts",
       "/lv/partneriem/konts/pasutijumi",
       "/lv/partneriem/konts/rekviziti",
+      "/lv/partneriem/konts/profils",
       "/lv/paldies",
       "/lv/lietosanas-noteikumi",
       "/lv/privatuma-politika",

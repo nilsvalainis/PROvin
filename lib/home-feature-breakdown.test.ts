@@ -81,5 +81,6 @@ describe("pakalpojumi catalog", () => {
     expect(siteRailRouteActiveIndex("/partneriem/konts")).toBe(keys.indexOf("b2b"));
     expect(siteRailRouteActiveIndex("/partneriem/konts/pasutijumi")).toBe(keys.indexOf("b2b"));
     expect(siteRailRouteActiveIndex("/partneriem/konts/rekviziti")).toBe(keys.indexOf("b2b"));
+    expect(siteRailRouteActiveIndex("/partneriem/konts/profils")).toBe(keys.indexOf("b2b"));
   });
 });

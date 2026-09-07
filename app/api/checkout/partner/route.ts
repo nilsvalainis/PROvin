@@ -115,7 +115,7 @@ export async function POST(req: Request) {
         quantity: 1,
       },
     ],
-    success_url: `${origin}${prefix}/partneriem/konts/pasutijumi?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${origin}${prefix}/partneriem/konts/profils?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${prefix}/partneriem/konts`,
     phone_number_collection: { enabled: false },
     custom_fields: [getClientCommentCustomField(locale)],

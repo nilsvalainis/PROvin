@@ -25,7 +25,11 @@ function ReportCell({ href, label }: { href: string | null | undefined; label: s
   );
 }
 
-export function B2bPartnerArchive() {
+export function B2bPartnerArchive({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const t = useTranslations("Partner");
   const locale = useLocale();
   const [rows, setRows] = useState<B2bPartnerOrderRow[] | null>(null);
@@ -52,12 +56,16 @@ export function B2bPartnerArchive() {
 
   const list = rows ?? [];
   const loading = rows === null;
+  const HeadingTag = embedded ? "h2" : "h1";
+  const headingClass = embedded
+    ? "text-balance text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-100"
+    : TITLE_CLASS;
 
   return (
     <section aria-labelledby="b2b-partner-archive-title">
-      <h1 id="b2b-partner-archive-title" className={TITLE_CLASS}>
+      <HeadingTag id="b2b-partner-archive-title" className={headingClass}>
         {t("archiveTitle")}
-      </h1>
+      </HeadingTag>
       <div className={TITLE_RULE_CLASS} aria-hidden />
 
       {loading ? (
