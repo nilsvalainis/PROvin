@@ -21,7 +21,12 @@ function packLines(
     if (qty === 1) return [t("bizLineDealer"), t("bizLineDb"), t("bizLineCurve")];
     return [t("packCount", { count: qty }), t("packSameBusiness"), t("packVinSlots", { count: qty })];
   }
-  return [t("packCount", { count: qty }), t("dealerLineRecords"), t("dealerLineGuarantee")];
+  return [
+    t("dealerLineOdo"),
+    t("dealerLineService"),
+    t("dealerLineSummary"),
+    t("dealerLineGuarantee"),
+  ];
 }
 
 function defaultPackIndex(plan: B2bPartnerPlanId): number {
@@ -50,21 +55,10 @@ export function B2bPartnerPackPicker() {
 
   return (
     <section className="mx-auto w-full max-w-[68rem]">
-      <h1 className="text-balance text-[1.5rem] font-semibold leading-snug tracking-[-0.03em] text-zinc-100">
-        {plan === "business" ? (
-          <>
-            {t("titlePrefix")}
-            <span className="text-[#2563EB]">{t("titleAccent")}</span>
-          </>
-        ) : (
-          t("titleDealer")
-        )}
-      </h1>
-
-      <div className="mt-6 flex max-w-[28rem] gap-[3px] rounded-[10px] bg-[#1a1a1a] p-[3px]">
+      <div className="flex max-w-[28rem] gap-[3px] rounded-[10px] bg-[#1a1a1a] p-[3px]">
         <button
           type="button"
-          className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold uppercase tracking-[0.07em] ${
+          className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold tracking-[0.04em] ${
             plan === "dealer" ? "bg-[#2563EB] text-white" : "bg-transparent text-zinc-400"
           }`}
           onClick={() => {
@@ -76,7 +70,7 @@ export function B2bPartnerPackPicker() {
         </button>
         <button
           type="button"
-          className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold uppercase tracking-[0.07em] ${
+          className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold tracking-[0.04em] ${
             plan === "business" ? "bg-[#2563EB] text-white" : "bg-transparent text-zinc-400"
           }`}
           onClick={() => {
@@ -89,7 +83,7 @@ export function B2bPartnerPackPicker() {
         </button>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-3.5 lg:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 gap-3.5 sm:max-w-[45rem] sm:grid-cols-2">
         {cards.map(({ pack, total, full, pct, lines }, index) => {
           const on = index === selected;
           return (
@@ -103,11 +97,6 @@ export function B2bPartnerPackPicker() {
                   : "border-white/10 bg-zinc-950/40"
               }`}
             >
-              {pack.recommended ? (
-                <span className="absolute top-3.5 right-3.5 text-[0.52rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
-                  {t("packRecommended")}
-                </span>
-              ) : null}
               <div
                 className={`grid h-[1.15rem] w-[1.15rem] place-items-center rounded-full border-[1.5px] ${
                   on ? "border-[#2563EB] bg-[#2563EB]" : "border-white/20"
@@ -148,7 +137,7 @@ export function B2bPartnerPackPicker() {
         })}
       </div>
 
-      <button type="button" className={`${styles.liquidCta} mx-auto mt-6 max-w-[22rem]`}>
+      <button type="button" className={`${styles.liquidCta} mt-6 max-w-[22rem]`}>
         <span className={styles.liquidCtaShimmer} aria-hidden />
         <span className={styles.liquidCtaLabel}>
           {plan === "dealer"
@@ -156,7 +145,7 @@ export function B2bPartnerPackPicker() {
             : t("payCta", { price: formatB2bEuroFromCents(current.unitCents * current.qty) })}
         </span>
       </button>
-      <p className="mx-auto mt-4 max-w-[42rem] text-center text-[0.68rem] leading-relaxed text-zinc-500">
+      <p className="mt-4 max-w-[45rem] text-center text-[0.68rem] leading-relaxed text-zinc-500">
         {plan === "dealer" ? t("packFineDealer") : t("packFine")}
       </p>
     </section>

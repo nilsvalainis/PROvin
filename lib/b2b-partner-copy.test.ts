@@ -25,6 +25,7 @@ describe("b2b partner prices", () => {
   it("locks dealer pack units at 19.99 / 17.99", () => {
     expect(B2B_DEALER_PACKS.map((p) => p.unitCents)).toEqual([1999, 1799]);
     expect(formatB2bEuroFromCents(10 * 1799)).toBe("179,90 €");
+    expect(formatB2bEuroFromCents(10 * 1999)).toBe("199,90 €");
     expect(b2bPackDiscountPct(1799, 1999)).toBe(10);
   });
 });

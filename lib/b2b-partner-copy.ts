@@ -109,17 +109,16 @@ export type B2bPackQty = 1 | 10;
 export type B2bPackOffer = {
   qty: B2bPackQty;
   unitCents: number;
-  recommended: boolean;
 };
 
 export const B2B_BUSINESS_PACKS: readonly B2bPackOffer[] = [
-  { qty: 1, unitCents: 7999, recommended: false },
-  { qty: 10, unitCents: 6999, recommended: true },
+  { qty: 1, unitCents: 7999 },
+  { qty: 10, unitCents: 6999 },
 ];
 
 export const B2B_DEALER_PACKS: readonly B2bPackOffer[] = [
-  { qty: 1, unitCents: 1999, recommended: false },
-  { qty: 10, unitCents: 1799, recommended: true },
+  { qty: 1, unitCents: 1999 },
+  { qty: 10, unitCents: 1799 },
 ];
 
 export function formatB2bEuroFromCents(cents: number): string {
