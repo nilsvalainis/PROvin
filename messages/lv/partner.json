@@ -20,7 +20,7 @@
     "vinSubmitTitle": "Iesniegt VIN",
     "vinSubmit": "Iesniegt",
     "creditsHeading": "Atlikušās atskaites",
-    "creditLeft": "{count, plural, =0 {Nav atlikušu atskaišu} one {# atskaite atlikusi} other {# atskaites atlikušas}}",
+    "creditLeft": "Pieejamās atskaites: {count}",
     "servicePick": "Pakalpojums",
     "needService": "Atķeksē vismaz vienu pakalpojumu.",
     "noCredits": "Nav kredītu šim pakalpojumam.",

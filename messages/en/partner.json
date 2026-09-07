@@ -20,7 +20,7 @@
     "vinSubmitTitle": "Submit VIN",
     "vinSubmit": "Submit",
     "creditsHeading": "Reports remaining",
-    "creditLeft": "{count, plural, =0 {No reports left} one {# report left} other {# reports left}}",
+    "creditLeft": "Available reports: {count}",
     "servicePick": "Service",
     "needService": "Tick at least one service.",
     "noCredits": "No credits for this service.",
