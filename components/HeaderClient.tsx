@@ -81,8 +81,8 @@ export function HeaderClient() {
   };
 
   const partnerChipClass = headerChromeDark
-    ? "inline-flex h-8 items-center gap-1.5 rounded-full border border-white/18 bg-transparent px-2.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-[#93c5fd] no-underline transition hover:border-white/28 hover:text-[#bfdbfe]"
-    : "inline-flex h-8 items-center gap-1.5 rounded-full border border-black/15 bg-transparent px-2.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-[#2563eb] no-underline transition hover:border-[#2563eb]/40";
+    ? "inline-flex h-8 items-center gap-1.5 rounded-full border border-white/18 bg-transparent px-2.5 text-[0.68rem] font-semibold tracking-[0.02em] text-[#93c5fd] no-underline transition hover:border-white/28 hover:text-[#bfdbfe]"
+    : "inline-flex h-8 items-center gap-1.5 rounded-full border border-black/15 bg-transparent px-2.5 text-[0.68rem] font-semibold tracking-[0.02em] text-[#2563eb] no-underline transition hover:border-[#2563eb]/40";
 
   const navLabelWithHint = (labelKey: SiteRailLabelKey) => (
     <span className="inline-flex items-center gap-1">
