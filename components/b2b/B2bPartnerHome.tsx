@@ -5,7 +5,6 @@ import { useTranslations, useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { useRouter } from "@/i18n/navigation";
 import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
-import { B2bPartnerCatalog } from "@/components/b2b/B2bPartnerCatalog";
 import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { emptyB2bCreditRemaining, hasAnyB2bCredit, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isValidVin } from "@/lib/order-field-validation";
@@ -235,13 +234,6 @@ export function B2bPartnerHome() {
             </form>
           </>
         )}
-      </section>
-
-      <section className="mt-10 border-t border-white/10 pt-12 sm:mt-14 sm:pt-14" aria-labelledby="b2b-included-title">
-        <h2 id="b2b-included-title" className="text-balance text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-100">
-          {t("includedHeading")}
-        </h2>
-        <B2bPartnerCatalog />
       </section>
     </div>
   );
