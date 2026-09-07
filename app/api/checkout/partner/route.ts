@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
-import { B2B_CATALOG, B2B_PARTNER_PRICE_CENTS, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
+import {
+  B2B_PARTNER_PRICE_CENTS,
+  getB2bCatalogPlan,
+  type B2bPartnerPlanId,
+} from "@/lib/b2b-partner-copy";
 import { getOrderCopy } from "@/lib/checkout-copy";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { routing } from "@/i18n/routing";
@@ -98,7 +102,7 @@ export async function POST(req: Request) {
 
   const origin = await checkoutOrigin();
   const prefix = `/${locale}`;
-  const pkg = B2B_CATALOG[planRaw];
+  const pkg = getB2bCatalogPlan(planRaw, locale);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",

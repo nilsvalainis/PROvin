@@ -11,11 +11,11 @@ export const TP5_TAB_LABEL = {
 
 /** Dynamic baseline CTA copy on the home pricing hero. */
 export const TP5_CTA_LABEL = {
-  mini: "PASŪTĪT AUDITU — 19,99 €",
-  plus: "PASŪTĪT AUDITU — 39,99 €",
-  premium: "PASŪTĪT PROVIN AUDITU — 99,99 €",
-  dealer: "PASŪTĪT DĪLERA DATUS — 24,99 €",
-  koreaUsa: "PASŪTĪT ASV UN KOREJA — 19,99 €",
+  mini: "PASŪTĪT AUDITU - 19,99 €",
+  plus: "PASŪTĪT AUDITU - 39,99 €",
+  premium: "PASŪTĪT PROVIN AUDITU - 99,99 €",
+  dealer: "PASŪTĪT DĪLERA DATUS - 24,99 €",
+  koreaUsa: "PASŪTĪT ASV UN KOREJA - 19,99 €",
 } as const;
 
 export type Tp5TierMeta = {

@@ -1,7 +1,7 @@
 {
   "Meta": {
     "homeIntroTitle": "",
-    "homeIntroBody": "In the used car market, you are playing against people with decades of experience who know this game inside out. PROVIN is your personal interests defender, created to level the playing field.\n\nWe combine information from major vehicle history databases with careful listing analysis and model-specific risk assessment. This helps you notice what the seller leaves unsaid and what usually goes unnoticed. We are here so you can make a clear-headed decision and spot risks before they become a serious problem.",
+    "homeIntroBody": "In the used car market, you are playing against people with decades of experience who know this game inside out. PROVIN is your personal advocate, created to level the playing field.\n\nWe combine information from major vehicle history databases with careful listing analysis and model-specific risk assessment. This helps you notice what the seller leaves unsaid and what usually goes unnoticed. We are here so you can make a clear-headed decision and spot risks before they become a serious problem.",
     "title": "VIN check & car history check | PROVIN",
     "description": "Looking for a reliable car history check? We provide an in-depth VIN check, listing analysis and a technical risk audit. Learn the truth before you buy!",
     "ogTitle": "VIN check & car history check | PROVIN",
@@ -9,11 +9,11 @@
     "faqTitle": "FAQ",
     "faqDescription": "Frequently asked questions about PROVIN audits, pricing and delivery.",
     "servicesTitle": "Services | PROVIN",
-    "servicesDescription": "PROVIN MINI, PROVIN AUDIT, Dealer Data and other vehicle history services: purpose, what’s included and how to order.",
+    "servicesDescription": "PROVIN MINI, PROVIN AUDITS, Dealer Data and other vehicle history services: purpose, what's included and how to order.",
     "aboutTitle": "About PROVIN | PROVIN",
     "aboutDescription": "About PROVIN: experience, IRISS, and our approach to used-car risk assessment.",
     "blogsTitle": "Blog | PROVIN",
-    "blogsDescription": "IRISS | Car Dealer’s Diary. Used-car market notes, scams and buyer risk.",
+    "blogsDescription": "IRISS | Car Dealer's Diary. Used-car market notes, scams and buyer risk.",
     "thanksTitle": "Thank you for your order",
     "thanksDescription": "Order received. A short confirmation after successful Stripe payment."
   }

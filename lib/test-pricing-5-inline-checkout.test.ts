@@ -71,6 +71,17 @@ describe("test-pricing-5 inline checkout", () => {
     expect(getTp5StripeCheckoutProduct("mini")).toBeNull();
     expect(getTp5StripeCheckoutProduct("plus", "en")?.productDesc).toContain("Latvia");
     expect(getTp5StripeCheckoutProduct("plus", "lv")?.productDesc).toContain("Latvijā");
+    expect(getTp5StripeCheckoutProduct("dealer", "en")?.productName).toBe(
+      "Official dealer service history data",
+    );
+    expect(getTp5StripeCheckoutProduct("koreaUsa", "en")?.productName).toBe("USA & KOREA");
+    expect(getTp5StripeCheckoutProduct("premium", "en")?.productName).toBe("PROVIN AUDITS");
+    const badVin = validateTp5InlineFields("", "AB", "en");
+    expect(badVin.ok).toBe(false);
+    if (!badVin.ok) {
+      expect(badVin.errors.vin).toMatch(/3-6/);
+      expect(badVin.errors.vin).not.toMatch(/[\u2013\u2014]/);
+    }
   });
 
   it("uses Latvian product copy on Stripe Checkout", () => {

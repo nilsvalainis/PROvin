@@ -14,7 +14,7 @@
     "legalInlinePrefixJuridiska": "Legal details:",
     "legalInlinePrefixPakalpojums": "Service provider:",
     "serviceProviderDisclosureSummary": "Service provider",
-    "companyLegalSubject": "Legal provider",
+    "companyLegalSubject": "Legal entity",
     "companyRegNo": "Registration number",
     "companyLegalAddress": "Legal address",
     "companyIncompleteDev": "Developer note: set NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO and NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env or hosting).",

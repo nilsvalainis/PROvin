@@ -1,41 +1,41 @@
 {
   "Legal": {
     "privacyMetaTitle": "Privacy Policy",
-    "privacyMetaDescription": "How PROVIN.LV processes personal data, cookies, and analytics after consent under GDPR.",
+    "privacyMetaDescription": "How PROVIN.LV processes personal data, cookies, and analytics after consent under GDPR. Clear and transparent.",
     "privacyTitle": "Privacy Policy",
-    "privacyLead": "This document describes how PROVIN.LV (\"we\", \"service\") processes personal data, what cookies are used, and how you can accept or reject non-essential analytics and first-touch (UTM) data storage. Legal identity and controller details are stated at the start of this document.",
+    "privacyLead": "This document describes how the service provider PROVIN.LV (\"we\", \"the service\") processes personal data, which cookies are used, and how you can accept or reject non-essential analytics and first-touch (UTM) data storage. Legal identity and controller details are stated at the start of this document.",
     "sections": [
       {
         "title": "1. Controller",
-        "body": "The data controller is PROVIN.LV; full legal details are provided at the start of this document. Contact: email and WhatsApp listed in the website footer."
+        "body": "The personal data controller is PROVIN.LV; the legal entity and full details are stated at the start of this document. Contact details: the email and WhatsApp listed in the website footer."
       },
       {
         "title": "2. What data we process",
-        "body": "Order data may include name (if provided), email, phone, VIN or license plate, listing URL (if provided), free-form message and payment metadata (processed by Stripe according to its policy). Technical server logs may be used for security and stability. The homepage may display curated public Google reviews (without extra tracking scripts for that block)."
+        "body": "In connection with an order: name (if provided), email, phone, VIN or licence plate, listing URL (if provided), free-form message, and payment metadata (processed by the payment processor Stripe under its own policy). When using the site: technical server logs (for example IP address and request time) may be used for security and availability. The homepage may show curated, publicly available Google reviews (without extra tracking scripts for that block)."
       },
       {
         "title": "3. Purposes and legal basis",
-        "body": "Contract performance and order processing (GDPR Art. 6(1)(b)); legitimate interests such as security and error prevention (Art. 6(1)(f)); analytics and UTM storage only after explicit consent via the cookie banner (Art. 6(1)(a))."
+        "body": "Performance of a contract and order processing (GDPR Art. 6(1)(b)). Legitimate interests: site security and error prevention (GDPR Art. 6(1)(f)). Analytics and first-touch (UTM) storage only after your voluntary consent via the cookie banner (GDPR Art. 6(1)(a))."
       },
       {
         "title": "4. Cookies and essential functions",
-        "body": "Essential functions (e.g. language preference, session, security) may use cookies or similar technologies without separate consent where objectively necessary to provide the service."
+        "body": "Essential functions (for example language preference, session operation, security) may use cookies or similar technologies without separate consent where they are objectively necessary to provide the service. A list of such cookies can be provided on request."
       },
       {
         "title": "5. Analytics and first-touch data (after consent)",
-        "body": "If you accept “analytics” in the cookie banner, we may store limited first-visit information: path, HTTP referrer (if available), and marketing parameters from the link (UTM). The goal is to understand where visitors come from (e.g. TikTok, YouTube, search), not to track individuals across all third-party platforms. This data is not sold."
+        "body": "If you accept \"analytics\" in the cookie banner, we may store limited first-visit information: site path, HTTP referrer if available, and marketing parameters from the link (UTM: source, medium, campaign, etc.). The goal is to understand where visitors come from (for example TikTok, YouTube, search), not to track individuals across all third-party platforms. This data is not sold."
       },
       {
         "title": "6. Third parties",
-        "body": "Payments: Stripe. Hosting: e.g. Vercel. Vercel Web Analytics collects aggregated visit data for all visits. Google Analytics 4 and TikTok Pixel load only if you consent to analytics; if an ID is not configured, the related scripts are not loaded. Contact: email (footer) and WhatsApp (footer and floating button)."
+        "body": "Payments: Stripe. Website hosting: your chosen provider (for example Vercel). Vercel Web Analytics collects aggregated visit and page-view data for all visits (first-party hosting statistics). Google Analytics 4 and TikTok Pixel load only if you consent to \"analytics\" in the cookie banner; if the relevant ID is not configured, those scripts are not loaded. Contact: email (footer) and WhatsApp (footer and floating button on the site)."
       },
       {
         "title": "7. Retention",
-        "body": "Order and customer data are kept as long as needed for service delivery and legal requirements. Analytics/first-touch cookie lifetime is limited (typically up to 180 days) unless stated otherwise."
+        "body": "Order and customer data are kept as long as needed to deliver the service and meet legal requirements (accounting, disputes). The lifetime of analytics / first-touch cookies is limited (typically up to 180 days) unless stated otherwise."
       },
       {
         "title": "8. Your rights",
-        "body": "Under GDPR you may access, rectify, erase, restrict or object to processing, and request portability where applicable. Complaints may be filed with the supervisory authority (in Latvia: DVI)."
+        "body": "Under the GDPR you have the right to access, rectify, erase, restrict processing, object to processing, and data portability where applicable. You may lodge a complaint with the supervisory authority (in Latvia: DVI)."
       },
       {
         "title": "9. Policy changes",
@@ -43,92 +43,92 @@
       }
     ],
     "termsMetaTitle": "Terms of Service",
-    "termsMetaDescription": "PROVIN.LV terms: service scope, payment, refund policy, distance contract and digital content withdrawal terms.",
+    "termsMetaDescription": "PROVIN.LV terms of use: nature of the service, payment, refunds, distance contracts and withdrawal rights for digital content.",
     "termsTitle": "PROVIN.LV Terms of Service",
     "termsUpdated": "Effective from: 17 July 2026",
-    "termsLead": "These terms govern the legal relationship between you and PROVIN.LV for use of provin.lv and ordering paid services: consultative reports (PROVIN MINI and PROVIN AUDIT) and official dealer service history data.",
+    "termsLead": "These terms set out the legal relationship between you (the \"Customer\") and the service provider PROVIN.LV (\"we\") regarding use of the website provin.lv and ordering paid consultative services. Please read them together with the Privacy Policy. The main rules on price, payment and refunds, and the non-application of withdrawal rights to digital content, are set out in sections 5 and <section11>11</section11> (there: <note>the bold section on withdrawal rights and Cabinet Regulation No. 255, point 22.13</note>). The legal provider details are listed below.",
     "termsSections": [
       {
-        "title": "1. Scope and acceptance",
-        "body": "By submitting an order and confirming these terms, the customer agrees to the full terms, the authorization in section 3.5 of the Latvian terms (where applicable), and immediate service execution."
+        "title": "1. Application of the terms and acceptance",
+        "body": "1.1. These terms apply when you use the website provin.lv and when you order a PROVIN service.\n\n1.2. By placing an order and ticking acceptance of these terms, the Customer confirms that they have read and fully agree to all clauses, including the authorization in section 3.5, and agrees to immediate performance of the service.\n\n1.3. If the Customer does not agree to the terms, they must not order the service or use site features that require a contract."
       },
       {
-        "title": "2. Service nature",
-        "body": "PROVIN provides consultative digital reports: PROVIN MINI (€39.99) and PROVIN AUDIT (€99.99), as shown at checkout. Conclusions are advisory and do not replace an in-person technical inspection or a legal certificate.\n\nSeparately, PROVIN offers “Official dealer service history data” (hero tab: DEALER DATA): digital delivery of official dealer/manufacturer service records where available for the VIN and supported brand. This product does not include PROVIN expert analysis. If no official records are available after ordering, the customer receives a 100% refund. Partial records count as valid delivery and do not qualify for a refund."
+        "title": "2. Nature of the service and its consultative character",
+        "body": "2.1. PROVIN primarily provides a consultative service: assessment, summary and recommendations based on vehicle identification data, the listing and available information (the \"Report\" or the \"Service\"). The consultative products on the site are PROVIN MINI and PROVIN AUDITS (prices shown on the site at the time of order). The Service helps you make an informed decision; it is not a government extract, an independent technical expertise, a mechanic's diagnosis, a legal judgment, or an official roadside vehicle inspection.\n\nThe assessment provided by PROVIN is a subjective expert opinion. It is not a legally binding certificate or technical certificate. PROVIN is not liable for financial losses that may arise if the Customer decides to buy a vehicle based solely on this consultative opinion.\n\n2.1.A. Separately from the consultative Report, the site offers an independent product \"Official dealer service history data\" (hero: \"DEALER DATA\"): digital delivery of official dealer / manufacturer service history records, to the extent available for the VIN and supported brand. This product does not include PROVIN expert analysis or consultation. If no official records are available after ordering, the Customer is entitled to a 100% refund. Partially available records are valid delivery and do not justify a refund.\n\n2.2. Conclusions in the Report are based on PROVIN's professional experience and the information available at that time. They are advisory. The final decision to buy the vehicle, to arrange checks with third parties, and to accept risks rests solely with the Customer.\n\n2.3. The Service is not a full guarantee against every possible hidden defect, fraud or gaps in sources that PROVIN does not control."
       },
       {
-        "title": "3. Data sources",
-        "body": "PROVIN uses multiple lawful data sources, including paid international databases and public registries, according to applicable terms and law."
+        "title": "3. Information sources and structure of the Service",
+        "body": "3.1. To deliver the Service, PROVIN uses various information sources, including paid international databases, public registries and information submitted by the user. Each source is used under the provider's publicly available terms, B2B partnership agreements or another lawful basis.\n\n3.2. The Customer does not purchase access to third-party databases. The Customer receives an original work prepared by PROVIN (an analytical opinion) in which data fragments may be used for quotation and interpretation to the extent permitted by law.\n\n3.3. PROVIN structures the Service as analysis and consultation. PROVIN does not publish full third-party commercial reports as its own product and does not use third-party content in a way that would breach applicable rules. The Report prepared by PROVIN does not use third-party brand logos and does not automatically generate direct hyperlinks to full paid third-party reports on the customer side where that would conflict with applicable law. Depending on the order, information may be obtained under contract, from documents provided by the Customer, or from publicly available sources that may lawfully be used to prepare an analytical conclusion.\n\n3.5. Customer authorization and structure of the Service.\nBy ordering the Service, the Customer expressly authorizes PROVIN (as the Customer's technical consultant and representative) to access third-party information sources and databases on the Customer's behalf and in the Customer's interest, to obtain information about the specific vehicle. The Customer agrees that PROVIN's acquisition of information and payment in third-party systems is part of performing the consultative service ordered by the Customer. PROVIN does not distribute third-party data as a standalone product; it uses that data as source material to prepare a personalized expert opinion for the Customer."
       },
       {
-        "title": "4. Public registries",
-        "body": "Public registry data is used only in lawful ways and according to applicable regulations."
+        "title": "4. Public and state registries",
+        "body": "4.1. Where the Report uses information from public or state registries (for example vehicle registry and insurance history data publicly available in Latvia, and similar), PROVIN uses it only in lawful ways and under applicable rules.\n\n4.2. PROVIN does not carry out unauthorized automated harvesting (for example scraping) from third-party systems where that would breach the provider's terms or the law. If commercial data channels are used in future (for example paid company lookups), they are used under the relevant contract."
       },
       {
-        "title": "5. Orders, pricing, payment and refunds",
-        "body": "Orders require VIN or license plate, email and phone; listing URL is optional but must be a valid listing link if provided. Pricing is shown at checkout (Official dealer service history data €24.99 / MINI €39.99 / AUDIT €99.99 as orientative current prices). Payment is processed by Stripe; refund rules for digital content are defined in section 11. A 100% refund applies if official dealer data cannot be obtained (see section 2)."
+        "title": "5. Order, price, payment and refund principles",
+        "body": "5.1. Orders are placed electronically with the information PROVIN requests. Required: VIN (17 characters) or licence plate, email and phone. A listing URL is optional; if provided, it must be a valid link to a specific listing. Other fields follow the site form. For \"Official dealer service history data\", VIN (or plate) and contact details in Stripe Checkout are sufficient.\n\n5.2. The service price is clearly shown on the site (order form / summary) at the time of order and includes applicable taxes where required by law. Current products and orientative prices: Official dealer service history data €24.99; PROVIN MINI €39.99; PROVIN AUDITS €99.99 (the exact price is the one shown before payment). Prices may change for future orders; for a given order, the price shown before payment confirmation applies.\n\n5.3. Payment is handled by a third-party payment processor (for example Stripe). The legal basis and data processing for payments are described in the Privacy Policy and the processor's documents.\n\n5.4. Payment for the Service is final. Given the nature of the Service (immediate start of digital content preparation), no refund is made after preparation of the Report has started, except as set out in section 11 and the 100% refund in section 2.1.A if official dealer data is not available."
       },
       {
-        "title": "6. Delivery timelines",
-        "body": "Consultative reports are usually delivered within 24-72 hours after successful payment and complete order data. Official dealer service history data is delivered within the same 24-72 hour window as shown on the site."
+        "title": "6. Performance, delivery and permitted delays",
+        "body": "6.1. PROVIN aims to prepare and send the Report to the Customer's email within 24-72 hours of successful payment and receipt of complete order information, unless the site states otherwise. The same delivery window applies to \"Official dealer service history data\" (as shown on the site).\n\n6.2. The deadline may be extended for force majeure, technical limits, need for further information from the Customer, or third-party service outages. PROVIN will inform you of a material delay in a reasonable way where possible.\n\n6.3. The Report is delivered electronically (usually PDF or another unified format) unless stated otherwise."
       },
       {
-        "title": "7. Customer obligations",
-        "body": "Customers must provide accurate data (VIN or plate; valid listing URL if provided) and ensure they have rights to any provided third-party materials."
+        "title": "7. Customer duties and warranties about submitted information",
+        "body": "7.1. The Customer must provide true, accurate and complete information needed for the Service (for example a correct VIN or licence plate; if provided, a valid listing URL).\n\n7.2. If the Customer submits third-party reports, document copies or other materials, the Customer warrants that they have the right to pass those materials to PROVIN for performing the Service and that their use does not infringe third-party rights.\n\n7.3. The Customer is responsible for how they use the Report content, including decisions about information shared with third parties (for example the seller)."
       },
       {
-        "title": "8. Intellectual property",
-        "body": "PROVIN report structure and content are protected; reuse is limited to personal use for purchase decision support."
+        "title": "8. Intellectual property in PROVIN materials",
+        "body": "8.1. The content of Reports prepared by PROVIN (text, structure, layout, brand where applicable) is PROVIN's intellectual property or is used under a lawful licence.\n\n8.2. The Customer receives a non-exclusive, non-transferable right to use the Report for personal purposes related to evaluating that vehicle.\n\n8.3. Without PROVIN's prior written consent, it is forbidden to sell the Report, distribute it at scale, publish it as one's own commercial product, or otherwise use it commercially in a way that infringes PROVIN's rights or third-party rights in source materials."
       },
       {
-        "title": "9. Liability limitations",
-        "body": "PROVIN is not liable for incompleteness or errors in third-party data sources it does not control."
+        "title": "9. Limitation of liability and disclaimers",
+        "body": "9.1. PROVIN is not liable for incompleteness, delays or errors in information from third-party databases, registries or services, because PROVIN does not fully control those sources.\n\n9.2. PROVIN is not liable for indirect loss (for example lost profit or lost time) to the extent permitted by applicable law.\n\n9.3. PROVIN's total liability to the Customer for one order is limited to the amount the Customer paid for that order, except where the law provides otherwise (for example intentional misconduct or personal injury).\n\n9.4. Nothing in these terms may be read as a PROVIN warranty of the vehicle's technical condition, legal cleanliness in every respect, or elimination of all risks."
       },
       {
         "title": "10. Personal data",
-        "body": "Personal data processing is governed by the Privacy Policy."
+        "body": "Processing of personal data is governed by the Privacy Policy, which forms an integral part of these terms as regards information about data."
       },
       {
-        "title": "11. Digital content and withdrawal rights",
-        "withdrawalIntro": "**Withdrawal rights and refunds.** This section explains refund and withdrawal terms for digital content once service execution has started with user consent.",
-        "searchKeywordsLine": "Keywords for clarity: **refund**, **withdrawal**, **right of withdrawal**.",
+        "title": "11. Price, digital content and withdrawal rights (distance contract)",
+        "withdrawalIntro": "**Withdrawal rights and refunds.** This section clearly sets out how **withdrawal rights** (the right to withdraw from a distance contract) and **refunds** apply, especially for digital content and the exception under Cabinet Regulation No. 255, point 22.13.",
+        "searchKeywordsLine": "So reviewers and customers can find this section quickly (for example by searching the page for English terms): **refund**, **withdrawal**, **right of withdrawal**.",
         "subsections": [
           {
-            "heading": "11.1. General rule",
-            "body": "Withdrawal rights may apply under applicable law unless exceptions are triggered."
+            "heading": "11.1. General rule on withdrawal rights",
+            "body": "In a distance contract, a consumer may have the right to withdraw within a set period under the Consumer Rights Protection Law and other legislation, except where the law and this section provide otherwise."
           },
           {
-            "heading": "11.2. Digital content exception",
-            "body": "By explicitly consenting to immediate execution and acknowledging withdrawal waiver, the customer loses withdrawal rights for digital content as allowed by Cabinet Regulation No. 255 (22.13) and applicable consumer law."
+            "heading": "11.2. Digital content and Cabinet Regulation No. 255 of 20 May 2014, point 22.13",
+            "body": "The Customer confirms and agrees that the Service consists of delivery of digital content not supplied on a tangible medium. When performance of the Service begins with the Customer's prior express consent and acknowledgement of loss of withdrawal rights (by ticking the relevant confirmation on the order form), the Customer loses the right of withdrawal under Cabinet Regulation No. 255 of 20 May 2014 \"Regulations regarding distance contracts\", point 22.13, and the Consumer Rights Protection Law."
           },
           {
             "heading": "11.3. Other consumer rights",
-            "body": "Other consumer rights remain applicable under law."
+            "body": "Other consumer rights (for example to require conformity with the contract or to complain) remain available under applicable law."
           }
         ]
       },
       {
         "title": "12. Dispute resolution",
-        "body": "Disputes are first handled amicably; unresolved matters may be handled under Latvian jurisdiction rules."
+        "body": "12.1. We first try to resolve disputes by negotiation, using the contact details on the site.\n\n12.2. If a dispute cannot be settled amicably, it is heard by the courts of the Republic of Latvia under the rules on jurisdiction, unless mandatory law gives the consumer a more favourable forum.\n\n12.3. Consumers may also turn to the Consumer Dispute Resolution Commission or use other out-of-court mechanisms provided by law where applicable."
       },
       {
-        "title": "13. Changes to terms",
-        "body": "PROVIN may update these terms; the version active at order time applies unless law requires otherwise."
+        "title": "13. Changes to the terms",
+        "body": "13.1. PROVIN may amend these terms. The current version is published on the site. For orders placed before an amendment, the version in force at the time of the order applies, unless the law provides otherwise."
       },
       {
-        "title": "14. Applicable law",
-        "body": "These terms are governed by Latvian and directly applicable EU law."
+        "title": "14. Governing law",
+        "body": "These terms are governed by the law of the Republic of Latvia and by European Union legislation to the extent it applies directly."
       },
       {
-        "title": "15. Contacts",
-        "body": "Questions about these terms: use the email or WhatsApp listed in the website footer."
+        "title": "15. Contact",
+        "body": "Questions about these terms: contact PROVIN.LV using the email or WhatsApp listed in the website footer."
       }
     ]
   },
   "Cookies": {
     "bannerTitle": "Cookies and privacy",
-    "bannerText": "We use required cookies for website operation. If you consent to analytics, we may also store anonymous first-touch and UTM data and load Google Analytics and/or TikTok Pixel (when configured) to understand traffic sources.",
-    "reject": "Required only",
+    "bannerText": "We use essential cookies for the site to work. If you consent to analytics, we may store anonymous first-page and marketing link parameters (UTM), and load Google Analytics and/or TikTok Pixel (when configured), to understand where visitors come from.",
+    "reject": "Essential only",
     "acceptAnalytics": "Accept analytics and storage",
     "privacyLink": "Privacy Policy"
   }

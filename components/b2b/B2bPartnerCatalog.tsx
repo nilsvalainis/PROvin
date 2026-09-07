@@ -14,7 +14,13 @@ import Image from "next/image";
 import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { B2B_CATALOG, B2B_PARTNER_PRICE, type B2bCatalogItem, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
+import {
+  B2B_PARTNER_PRICE,
+  getB2bCatalog,
+  type B2bCatalogItem,
+  type B2bCatalogPackage,
+  type B2bPartnerPlanId,
+} from "@/lib/b2b-partner-copy";
 import { homeContentMaxClass } from "@/lib/home-layout";
 import { TP5_DEALER_BRAND_DARK_PLATE, TP5_DEALER_BRAND_LOGO_SRC, TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
@@ -32,7 +38,7 @@ const GOAL_CLASS =
   "text-balance text-[0.8125rem] font-medium leading-[1.55] text-zinc-200 sm:text-[0.875rem] sm:leading-[1.6]";
 const FOOT_CLASS = "text-[0.62rem] leading-[1.4] text-white/40";
 
-type CatalogPackage = (typeof B2B_CATALOG)["business"] | (typeof B2B_CATALOG)["dealer"];
+type CatalogPackage = B2bCatalogPackage;
 
 function PackageTitle({ title }: { title: string }) {
   return (
@@ -285,12 +291,20 @@ function PackageStack({
         <div className="mt-7 flex min-w-0 flex-col gap-1.5 overflow-visible">
           <DealerBrandLockup label={brandsLabel} />
           {isDealer ? (
-            <GuaranteeBlock title={pkg.guaranteeTitle} body={pkg.guaranteeBody} infoAria={infoAria} />
+            <GuaranteeBlock
+              title={pkg.guaranteeTitle ?? ""}
+              body={pkg.guaranteeBody ?? ""}
+              infoAria={infoAria}
+            />
           ) : null}
         </div>
       ) : isDealer ? (
         <div className="mt-7">
-          <GuaranteeBlock title={pkg.guaranteeTitle} body={pkg.guaranteeBody} infoAria={infoAria} />
+          <GuaranteeBlock
+            title={pkg.guaranteeTitle ?? ""}
+            body={pkg.guaranteeBody ?? ""}
+            infoAria={infoAria}
+          />
         </div>
       ) : null}
       {pkg.foot ? <p className={`mt-4 ${FOOT_CLASS}`}>{pkg.foot}</p> : null}
@@ -308,8 +322,9 @@ export function B2bPartnerCatalog({
 }) {
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
-  const business = B2B_CATALOG.business;
-  const dealer = B2B_CATALOG.dealer;
+  const catalog = getB2bCatalog(locale);
+  const business = catalog.business;
+  const dealer = catalog.dealer;
 
   return (
     <section
@@ -347,8 +362,8 @@ export function B2bPartnerCatalog({
           <div className={`mt-7 ${MATCHED_STACK_CLASS}`}>
             <DealerBrandLockup label={uiCopy.dealerBrandsAria} fill />
             <GuaranteeBlock
-              title={dealer.guaranteeTitle}
-              body={dealer.guaranteeBody}
+              title={dealer.guaranteeTitle ?? ""}
+              body={dealer.guaranteeBody ?? ""}
               infoAria={uiCopy.dealerRefundInfoAria}
             />
           </div>

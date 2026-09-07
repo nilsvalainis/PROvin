@@ -3,7 +3,7 @@
     "whatsappFab": "Open WhatsApp",
     "faqBack": "← Back to home",
     "pasutitRedirect": "Redirecting to order form…",
-    "checkoutProductName": "PROVIN AUDIT",
+    "checkoutProductName": "PROVIN AUDITS",
     "checkoutProductDesc": "Full data analysis across multiple databases, listing analysis and expert conclusion.",
     "checkoutConsultationProductName": "PROVIN: strategic consultation",
     "checkoutConsultationProductDesc": "Individual consultation and market orientation: VIN/listing context, risk view and next steps.",
@@ -23,7 +23,7 @@
     "commentSubmit": "Post",
     "commentSubmitting": "Sending…",
     "commentSuccess": "Comment posted.",
-    "commentError": "Couldn’t send. Try again."
+    "commentError": "Couldn't send. Try again."
   },
   "SiteRail": {
     "navAria": "Main sections",

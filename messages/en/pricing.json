@@ -1,13 +1,13 @@
 {
   "Pricing": {
     "workTitle": "WHAT'S INCLUDED IN THE PRICE?",
-    "comparisonAuditTitle": "PROVIN AUDIT",
-    "comparisonAuditSubtitle": "A report that tells much more",
-    "comparisonAuditCta": "ORDER from €39.99",
+    "comparisonAuditTitle": "PROVIN AUDITS",
+    "comparisonAuditSubtitle": "A report that goes far beyond raw data",
+    "comparisonAuditCta": "Order from €39.99",
     "grid": [
       {
         "title": "FULL HISTORY ANALYSIS",
-        "body": "Synthesis of official dealer & auction portal archives*, international and local registry data. Mileage, accidents, and theft records."
+        "body": "Official dealer and auction portal archives*, international and local registry data combined into one clear picture. Mileage, accidents and theft records."
       },
       {
         "title": "LISTING AUDIT",

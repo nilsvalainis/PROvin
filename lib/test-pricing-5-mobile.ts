@@ -214,10 +214,10 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
   },
   {
     id: "audits",
-    title: "PROVIN AUDIT",
-    tabTitle: "AUDIT",
+    title: "PROVIN AUDITS",
+    tabTitle: "AUDITS",
     price: "€99.99",
-    buttonText: "ORDER PROVIN AUDIT €99.99",
+    buttonText: "ORDER PROVIN AUDITS €99.99",
     buttonTextShort: "ORDER €99.99",
     description: "",
     features: AUDITS_FEATURES_EN,

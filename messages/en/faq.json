@@ -16,8 +16,8 @@
       },
       {
         "id": "mini-vs-audits",
-        "q": "Which audit should I choose: PROVIN MINI or PROVIN AUDIT?",
-        "a": "PROVIN MINI (€39.99) suits cars that have already been used in Latvia for a longer time. The focus is local history, CSDD and origin-country registers, recent technical inspection (TA) data, listing analysis and practical tips for an in-person viewing.\n\nPROVIN AUDIT (€99.99) is a full investigation for cars imported from abroad. It includes the full MINI package plus paid international databases (carVertical, autoDNA, Cebia and others), official dealer system data and European auction photo archives, so you can see the real condition and mileage before repairs and import."
+        "q": "Which audit should I choose: PROVIN MINI or PROVIN AUDITS?",
+        "a": "PROVIN MINI (€39.99) suits cars that have already been used in Latvia for a longer time. The focus is local history, CSDD and origin-country registers, recent technical inspection (TA) data, listing analysis and practical tips for an in-person viewing.\n\nPROVIN AUDITS (€99.99) is a full investigation for cars imported from abroad. It includes the full MINI package plus paid international databases (carVertical, autoDNA, Cebia and others), official dealer system data and European auction photo archives, so you can see the real condition and mileage before repairs and import."
       },
       {
         "id": "dealer-data",
@@ -32,12 +32,12 @@
       {
         "id": "what-to-provide",
         "q": "What do I need to provide when ordering?",
-        "a": "You only need the car’s VIN or registration plate number, plus your email and phone. If you have a listing link, add it as well! Listing photos and the seller’s description give us a lot of valuable information for the analysis."
+        "a": "You only need the car's VIN or licence plate number, plus your email and phone. If you have a listing link, add it as well! Listing photos and the seller's description give us a lot of valuable information for the analysis."
       },
       {
         "id": "data-completeness",
         "q": "Is vehicle history data always 100% complete?",
-        "a": "Let’s be honest: there is no single “perfect” database in the world, and neither honest nor dishonest sellers put everything on paper. Our job is to pull every available thread together and flag contradictions when they appear. A PROVIN audit gives you a major advantage in negotiations and protects you from an obvious lemon, but a physical workshop diagnosis before purchase is always a sensible final step."
+        "a": "Let's be honest: there is no single \"perfect\" database in the world, and neither honest nor dishonest sellers put everything on paper. Our job is to pull every available thread together and flag contradictions when they appear. A PROVIN audit gives you a major advantage in negotiations and protects you from an obvious lemon, but a physical workshop diagnosis before purchase is always a sensible final step."
       }
     ]
   }

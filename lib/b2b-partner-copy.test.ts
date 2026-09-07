@@ -6,6 +6,8 @@ import {
   B2B_PARTNER_PRICE_CENTS,
   b2bPackDiscountPct,
   formatB2bEuroFromCents,
+  getB2bCatalog,
+  getB2bBusinessHeroFeatures,
 } from "@/lib/b2b-partner-copy";
 
 describe("b2b partner prices", () => {
@@ -27,5 +29,14 @@ describe("b2b partner prices", () => {
     expect(formatB2bEuroFromCents(10 * 1799)).toBe("179,90 €");
     expect(formatB2bEuroFromCents(10 * 1999)).toBe("199,90 €");
     expect(b2bPackDiscountPct(1799, 1999)).toBe(10);
+  });
+
+  it("exposes English catalog copy for /en partner pages", () => {
+    const en = getB2bCatalog("en");
+    expect(en.dealer.title).toBe("DEALER DATA");
+    expect(en.business.goal).toContain("PROVIN BUSINESS");
+    expect(en.business.goal).not.toMatch(/apvieno datus/);
+    expect(getB2bBusinessHeroFeatures("en")[0]).toBe("Official dealer data*");
+    expect(getB2bCatalog("lv").dealer.title).toBe("DĪLERA DATI");
   });
 });

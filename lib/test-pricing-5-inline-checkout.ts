@@ -92,20 +92,24 @@ export function getTp5CheckoutSubmitMessage(
 
 const TP5_STRIPE_CHECKOUT_PRODUCT_EN: Record<
   keyof typeof TP5_STRIPE_CHECKOUT_PRODUCT,
-  Pick<Tp5StripeCheckoutProduct, "productDesc">
+  Pick<Tp5StripeCheckoutProduct, "productName" | "productDesc">
 > = {
   plus: {
+    productName: "PROVIN MINI",
     productDesc:
       "For cars used in Latvia. No paid international database checks. Other cars: choose PROVIN AUDITS.",
   },
   premium: {
+    productName: "PROVIN AUDITS",
     productDesc:
       "Full data analysis across multiple databases, listing analysis and an expert conclusion.",
   },
   dealer: {
+    productName: "Official dealer service history data",
     productDesc: "Official dealer service history. 100% refund if no data is available.",
   },
   koreaUsa: {
+    productName: "USA & KOREA",
     productDesc:
       "US and Korea registry, auction archive and damage check. 100% refund if no data is available.",
   },
@@ -133,11 +137,11 @@ export type Tp5InlineFieldErrors = {
 const TP5_INLINE_FIELD_MESSAGES = {
   lv: {
     listingUrl: "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.",
-    vin: "Ievadi derīgu VIN kodu vai valsts numurzīmi (3–6 zīmes).",
+    vin: "Ievadi derīgu VIN kodu vai valsts numurzīmi (3-6 zīmes).",
   },
   en: {
     listingUrl: "Please enter the full link to a specific listing.",
-    vin: "Enter a valid VIN or licence plate number (3–6 characters).",
+    vin: "Enter a valid VIN or licence plate number (3-6 characters).",
   },
 } as const;
 

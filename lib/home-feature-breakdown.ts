@@ -211,9 +211,9 @@ const MINI_EN: HomeFeatureBreakdownPackage = {
 
 const AUDITS_EN: HomeFeatureBreakdownPackage = {
   id: "audits",
-  title: "PROVIN AUDIT",
+  title: "PROVIN AUDITS",
   badge: "Most popular choice",
-  buttonText: "ORDER PROVIN AUDIT €99.99",
+  buttonText: "ORDER PROVIN AUDITS €99.99",
   goal:
     "Maximum confidence and a complete investigation of cars imported from abroad. Combines PROVIN MINI with international paid database reports, official dealer system data and auction photo archives, delivering in-depth history, mileage and risk analysis.",
   items: [

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { useRouter } from "@/i18n/navigation";
 import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
 import { B2bPartnerCatalog } from "@/components/b2b/B2bPartnerCatalog";
-import { B2B_CATALOG, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
+import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { emptyB2bCreditRemaining, hasAnyB2bCredit, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isValidVin } from "@/lib/order-field-validation";
 
@@ -65,6 +65,7 @@ function CreditStrip({
 
 export function B2bPartnerHome() {
   const t = useTranslations("Partner");
+  const locale = useLocale();
   const router = useRouter();
   const [remaining, setRemaining] = useState<B2bCreditRemaining | null>(null);
   const [vin, setVin] = useState("");
@@ -214,7 +215,7 @@ export function B2bPartnerHome() {
                           className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
                         />
                         <span className="text-[0.9rem] font-medium text-zinc-100">
-                          <PackageMark title={B2B_CATALOG[plan].title} />
+                          <PackageMark title={getB2bCatalogPlan(plan, locale).title} />
                         </span>
                       </label>
                     );
