@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { contactMailtoHref } from "@/lib/contact";
+import { contactMailtoHref, contactTelHref } from "@/lib/contact";
 import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
@@ -13,10 +13,12 @@ const legalLinkClass =
 /**
  * Kompakta kājene — tā pati 80rem / 7+5 asimetrija un diskrētā līnija kā atsauksmes + BUJ.
  */
-export async function Footer() {
+export async function Footer({ variant = "public" }: { variant?: "public" | "b2b" } = {}) {
   const t = await getTranslations("Footer");
   const mailHref = contactMailtoHref();
+  const phoneHref = contactTelHref();
   const year = new Date().getFullYear();
+  const isB2b = variant === "b2b";
 
   return (
     <footer id="kontakti" className="home-footer-rule relative scroll-mt-14 bg-transparent sm:scroll-mt-16">
@@ -35,9 +37,11 @@ export async function Footer() {
               <span className="provin-wordmark-pro">PRO</span>
               <span className="text-provin-accent">VIN</span>
             </Link>
-            <p className="home-footer-ink mt-3 max-w-[36rem] text-[12px] font-normal leading-[1.55] text-white/45 sm:text-[13px] sm:leading-[1.5]">
-              {t("body")}
-            </p>
+            {isB2b ? null : (
+              <p className="home-footer-ink mt-3 max-w-[36rem] text-[12px] font-normal leading-[1.55] text-white/45 sm:text-[13px] sm:leading-[1.5]">
+                {t("body")}
+              </p>
+            )}
           </div>
 
           <div className="min-w-0 border-t border-white/[0.08] pt-6 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
@@ -49,6 +53,11 @@ export async function Footer() {
                 <a href={mailHref} className={linkClass}>
                   {t("emailCta")}
                 </a>
+                {isB2b ? (
+                  <a href={phoneHref} className={linkClass} aria-label={t("phoneAria")}>
+                    {t("phoneCta")}
+                  </a>
+                ) : null}
               </div>
             </div>
           </div>

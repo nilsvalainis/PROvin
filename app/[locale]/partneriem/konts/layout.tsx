@@ -31,7 +31,7 @@ export default async function PartneriemAccountLayout({
         <B2bPartnerAccountShell>{children}</B2bPartnerAccountShell>
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
           <section className="demo-design-dir__section bg-transparent pb-0">
-            <Footer />
+            <Footer variant="b2b" />
           </section>
         </div>
       </div>

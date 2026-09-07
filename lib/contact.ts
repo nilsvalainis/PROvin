@@ -8,6 +8,10 @@ const DEFAULT_WHATSAPP_PHONE_DIGITS = "37129502039" as const;
 
 const DEFAULT_CONTACT_EMAIL = "info@provin.lv" as const;
 
+/** LV lokālais numurs kājenē (bez +371). */
+export const CONTACT_PHONE_LOCAL = "29502039";
+export const CONTACT_PHONE_TEL = `+371${CONTACT_PHONE_LOCAL}`;
+
 /** WhatsApp tērzēšana (peldošā poga, kājene) */
 export function whatsappChatUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_WHATSAPP_URL?.trim();
@@ -32,6 +36,11 @@ export function whatsappWebUrl(): string {
 /** Dziļā saite mobilajai WhatsApp lietotnei. */
 export function whatsappAppUrl(): string {
   return `whatsapp://send?phone=${whatsappPhoneDigits()}`;
+}
+
+/** `tel:` kājenes zvanam. */
+export function contactTelHref(): string {
+  return `tel:${CONTACT_PHONE_TEL}`;
 }
 
 /** mailto: vispārīgai saziņai (e-pasts netiek rādīts kā redzams teksts) */
