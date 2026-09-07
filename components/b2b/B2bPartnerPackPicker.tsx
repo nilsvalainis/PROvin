@@ -12,14 +12,9 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 
-function packLines(
-  plan: B2bPartnerPlanId,
-  qty: number,
-  t: ReturnType<typeof useTranslations>,
-): string[] {
+function packLines(plan: B2bPartnerPlanId, t: ReturnType<typeof useTranslations>): string[] {
   if (plan === "business") {
-    if (qty === 1) return [t("bizLineDealer"), t("bizLineDb"), t("bizLineCurve")];
-    return [t("packCount", { count: qty }), t("packSameBusiness"), t("packVinSlots", { count: qty })];
+    return [t("bizLineDealer"), t("bizLineDb"), t("bizLineCurve")];
   }
   return [
     t("dealerLineOdo"),
@@ -47,7 +42,7 @@ export function B2bPartnerPackPicker() {
         const total = pack.unitCents * pack.qty;
         const full = listCents * pack.qty;
         const pct = b2bPackDiscountPct(pack.unitCents, listCents);
-        const lines = packLines(plan, pack.qty, t);
+        const lines = packLines(plan, t);
         return { pack, total, full, pct, lines };
       }),
     [packs, listCents, plan, t],

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN B2B - apstiprinātais hero (Mob B + Web drawer)</title>
+<style>
+  :root{
+    --ink:#fafafc; --dim:rgb(210 214 222 / .88); --faint:rgb(148 163 184 / .9);
+    --line:rgb(255 255 255 / .1); --accent:#2563eb; --pad:max(1rem, env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    background:#050505;
+    background-image:
+      radial-gradient(ellipse 120% 70% at 50% -8%, rgb(255 255 255 / .04) 0%, transparent 55%),
+      linear-gradient(180deg,#141414 0%,#0a0a0a 40%,#000 100%);
+    background-attachment:fixed;
+  }
+  .page{max-width:72rem;margin:0 auto;padding:1.25rem var(--pad) 3.5rem;}
+  h1{margin:0 0 .35rem;font-size:1.2rem;letter-spacing:-.02em;}
+  .lead{margin:0 0 1.1rem;color:var(--faint);font-size:.84rem;line-height:1.45;max-width:48rem;}
+  .toc{display:flex;flex-wrap:wrap;gap:.45rem;margin:0 0 1.4rem;}
+  .toc a{
+    display:inline-flex;align-items:center;min-height:2rem;padding:0 .75rem;
+    border:1px solid var(--line);border-radius:999px;color:#93c5fd;text-decoration:none;
+    font-size:.6rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .section{margin:0 0 2.4rem;padding-top:1.1rem;border-top:1px solid var(--line);}
+  .section h2{margin:0 0 .35rem;font-size:1rem;}
+  .why{margin:0 0 1rem;color:var(--faint);font-size:.8rem;line-height:1.45;max-width:46rem;}
+  .ok{color:#86efac;font-weight:650;}
+  .grid{display:grid;gap:1.25rem;}
+  @media (min-width:900px){.grid-2{grid-template-columns:1fr 1fr;}}
+  .frame{
+    border:1px solid rgb(255 255 255 / .12);border-radius:1rem;background:rgb(12 12 12 / .92);
+    padding:1rem;box-shadow:0 18px 40px rgb(0 0 0 / .4);
+  }
+  .frame.wide{padding:1.15rem 1.25rem 1.35rem;}
+  .badge{
+    display:inline-block;margin:0 0 .7rem;padding:.2rem .5rem;border-radius:.35rem;
+    background:rgb(37 99 235 / .18);color:#93c5fd;font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .badge.ok{background:rgb(22 163 74 / .2);color:#86efac;}
+  .nav{display:flex;flex-wrap:wrap;gap:.75rem;padding-bottom:.7rem;margin-bottom:.85rem;border-bottom:1px solid var(--line);
+    font-size:.58rem;font-weight:650;letter-spacing:.14em;text-transform:uppercase;}
+  .nav span{color:#71717a}.nav .on{color:#f4f4f5}
+  .h{margin:0 0 .75rem;font-size:1.05rem;font-weight:650;letter-spacing:-.02em;}
+  .strip{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin:0 0 .85rem;max-width:22rem;}
+  .chip{padding:.7rem .75rem;border:1px solid var(--line);border-radius:.7rem;background:rgb(255 255 255 / .03);}
+  .chip .n{font-size:.58rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);}
+  .chip .v{margin:.3rem 0 0;font-size:1.15rem;font-weight:650;color:#93c5fd;}
+  .chip .v.on{color:#f4f4f5;}
+  .note{margin:0 0 .75rem;font-size:.88rem;font-weight:550;line-height:1.35;max-width:28rem;}
+  .cta,.ghost{
+    display:flex;align-items:center;justify-content:center;min-height:3rem;padding:0 1.25rem;
+    border-radius:999px;font:650 .7rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .cta{border:0;background:linear-gradient(180deg,#1a6fd4 0%,#1459ad 100%);color:#fff;margin-top:.15rem;width:100%;max-width:22rem;}
+  .ghost{margin-top:.55rem;border:1px solid rgb(255 255 255 / .14);background:transparent;color:rgb(226 232 240 / .9);width:auto;}
+  .seg{display:flex;gap:3px;margin:.15rem 0 .85rem;padding:3px;background:#1a1a1a;border-radius:10px;max-width:28rem;}
+  .seg button{flex:1;border:0;border-radius:8px;background:transparent;color:var(--faint);padding:.7rem .15rem;
+    font:600 .56rem/1.2 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;}
+  .seg button.on{background:var(--accent);color:#fff;}
+  .packs{display:grid;gap:.55rem;}
+  @media (min-width:520px){.packs.two{grid-template-columns:1fr 1fr;}}
+  .pack{text-align:left;padding:.9rem;border:1px solid rgb(255 255 255 / .12);border-radius:.9rem;background:rgb(20 20 20 / .7);}
+  .pack.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:rgb(37 99 235 / .1);}
+  .qty{font-size:.66rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;}
+  .price{margin:.45rem 0 0;font-size:1.25rem;font-weight:650;letter-spacing:-.03em;}
+  .price i{font-style:normal;font-size:.7rem;font-weight:500;color:var(--faint);}
+  .sum{margin:.35rem 0 0;font-size:.85rem;font-weight:650;}
+  .sum s{color:#fb7185;font-weight:500;margin-left:.35rem;}
+  .pct{display:inline-block;margin-left:.35rem;padding:.1rem .35rem;border-radius:.25rem;background:#b91c1c;font-size:.58rem;}
+  .lines{margin:.55rem 0 0;padding:0;list-style:none;}
+  .lines li{display:grid;grid-template-columns:1rem 1fr;gap:.3rem;padding:.14rem 0;font-size:.7rem;color:var(--dim);}
+  .mk{color:#60a5fa;font-weight:700;}
+  .field{width:100%;max-width:22rem;min-height:2.7rem;margin:.35rem 0 0;padding:.65rem .85rem;border:1px solid rgb(255 255 255 / .15);
+    border-radius:.75rem;background:rgb(8 10 14 / .55);color:#fff;font:1rem/1.3 Inter,sans-serif;}
+  .lab{display:block;margin:.85rem 0 0;font-size:.56rem;font-weight:650;letter-spacing:.12em;text-transform:uppercase;color:#71717a;}
+  .check{display:flex;align-items:center;gap:.55rem;margin:.45rem 0;font-size:.86rem;}
+  .check input{width:1rem;height:1rem;accent-color:var(--accent);}
+  .foot{margin:.65rem 0 0;font-size:.62rem;line-height:1.4;color:#71717a;max-width:28rem;}
+  .phone{width:min(100%,22rem);margin:0 auto;}
+  .deskHome{max-width:42rem;}
+  .stage{
+    position:relative;overflow:hidden;min-height:22rem;border-radius:.85rem;
+    border:1px solid rgb(255 255 255 / .08);background:rgb(8 8 8 / .85);
+  }
+  .stage .inner{padding:1.1rem 1.15rem 1.35rem;}
+  .scrim{
+    position:absolute;inset:0;background:rgb(0 0 0 / .55);backdrop-filter:blur(2px);
+  }
+  .drawer{
+    position:absolute;top:0;right:0;bottom:0;width:min(100%,26rem);
+    border-left:1px solid rgb(255 255 255 / .14);
+    background:linear-gradient(180deg,#121212 0%,#0a0a0a 100%);
+    padding:1rem 1rem 1.25rem;box-shadow:-24px 0 48px rgb(0 0 0 / .45);
+    display:flex;flex-direction:column;
+  }
+  .drawerHead{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin:0 0 .85rem;}
+  .drawerHead h3{margin:0;font-size:.78rem;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:#93c5fd;}
+  .x{border:0;background:transparent;color:#a1a1aa;font-size:1.1rem;line-height:1;cursor:pointer;padding:.25rem;}
+  .accordion{
+    margin-top:.85rem;padding:.85rem;border:1px solid rgb(255 255 255 / .14);
+    border-radius:.85rem;background:rgb(255 255 255 / .03);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Apstiprinātais B2B hero: Mob B + Web drawer</h1>
+  <p class="lead">
+    <span class="ok">Apstiprināts:</span> mobilais accordion zem CTA; web paliek askētisks (kā tagadējā sākuma lapa),
+    pirkšana tikai izbīdāmā panelī. Navigācija un CTA: <b>Atskaites</b> / <b>PASŪTĪT ATSKAITES</b>.
+  </p>
+  <nav class="toc">
+    <a href="#bought">Nopirkts</a>
+    <a href="#mob">Mob · B</a>
+    <a href="#web">Web · drawer</a>
+    <a href="#biz">BUSINESS copy</a>
+  </nav>
+
+  <section class="section" id="bought">
+    <h2>1. Kad atskaites ir nopirktas</h2>
+    <p class="why">Askētisks darba režīms: flīzes + VIN + pakalpojumi + Iesniegt. Pirkšanas UI nav hero. Papildināt: navigācija <b>Atskaites</b> vai mazs „Pirkt atskaites” (atver to pašu drawer).</p>
+    <div class="grid grid-2">
+      <div class="frame phone">
+        <span class="badge ok">Mobilais · ar kredītiem</span>
+        <div class="nav"><span class="on">Sākums</span><span>Atskaites</span><span>Pasūtījumi</span><span>Rekvizīti</span></div>
+        <h3 class="h">Iesniegt VIN</h3>
+        <div class="strip">
+          <div class="chip"><div class="n">Business</div><div class="v on">7</div></div>
+          <div class="chip"><div class="n">Dīlera dati</div><div class="v on">10</div></div>
+        </div>
+        <label class="lab">Ievadi VIN kodu</label>
+        <input class="field" placeholder="17 zīmes" value="WBA8E9C50HK123456"/>
+        <div class="lab">Pakalpojums</div>
+        <label class="check"><input type="checkbox" checked/> PROVIN BUSINESS</label>
+        <label class="check"><input type="checkbox"/> DĪLERA DATI</label>
+        <button type="button" class="cta" style="margin-top:.9rem">Iesniegt</button>
+      </div>
+      <div class="frame wide">
+        <span class="badge ok">Web · ar kredītiem · askētisks</span>
+        <div class="nav"><span class="on">Sākums</span><span>Atskaites</span><span>Pasūtījumi</span><span>Rekvizīti</span></div>
+        <div class="deskHome">
+          <h3 class="h">Iesniegt VIN</h3>
+          <div class="strip">
+            <div class="chip"><div class="n">Business</div><div class="v on">7</div></div>
+            <div class="chip"><div class="n">Dīlera dati</div><div class="v on">10</div></div>
+          </div>
+          <label class="lab">Ievadi VIN kodu</label>
+          <input class="field" placeholder="17 zīmes"/>
+          <div class="lab">Pakalpojums</div>
+          <label class="check"><input type="checkbox" checked/> PROVIN BUSINESS</label>
+          <label class="check"><input type="checkbox" checked/> DĪLERA DATI</label>
+          <button type="button" class="cta" style="margin-top:.9rem">Iesniegt</button>
+          <button type="button" class="ghost">Pirkt atskaites</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="mob">
+    <h2>Mob · B: accordion zem CTA <span class="ok">(apstiprināts)</span></h2>
+    <p class="why">CTA atver / aizver pirkšanas bloku tajā pašā hero. Ikdienā ar kredītiem accordion nav redzams.</p>
+    <div class="frame phone">
+      <span class="badge ok">0 kredītu · accordion atvērts</span>
+      <div class="nav"><span class="on">Sākums</span><span>Atskaites</span><span>Pasūtījumi</span></div>
+      <h3 class="h">Pieejamās atskaites</h3>
+      <div class="strip">
+        <div class="chip"><div class="n">Business</div><div class="v">0</div></div>
+        <div class="chip"><div class="n">Dīlera dati</div><div class="v">0</div></div>
+      </div>
+      <p class="note">Lai iesniegtu VIN, vispirms iegādājies atskaites.</p>
+      <button type="button" class="cta">Pirkt atskaites ▴</button>
+      <div class="accordion">
+        <div class="seg" style="margin-top:0">
+          <button type="button">Dīlera dati</button>
+          <button type="button" class="on">PROVIN BUSINESS</button>
+        </div>
+        <div class="packs">
+          <div class="pack">
+            <div class="qty">1 atskaite</div>
+            <div class="price">79,99 € <i>par atskaiti</i></div>
+            <div class="sum">Kopā 79,99 €</div>
+          </div>
+          <div class="pack on">
+            <div class="qty">10 atskaites</div>
+            <div class="price">69,99 € <i>par atskaiti</i></div>
+            <div class="sum">Kopā 699,90 € <s>799,90 €</s><span class="pct">-13%</span></div>
+            <ul class="lines">
+              <li><span class="mk">+</span><span>Oficiālā dīlera dati un izsoļu arhīvs</span></li>
+              <li><span class="mk">+</span><span>autoDNA, carVertical, starptautiskie reģistri</span></li>
+              <li><span class="mk">+</span><span>Nobraukuma līkne un kopsavilkums</span></li>
+            </ul>
+          </div>
+        </div>
+        <button type="button" class="cta" style="margin-top:.85rem">Pasūtīt atskaites 699,90 €</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="web">
+    <h2>Web · drawer no labās puses <span class="ok">(virziens)</span></h2>
+    <p class="why">
+      Hero paliek kā tagadējā sākuma lapa: flīzes + īss teksts + CTA. „Pirkt atskaites” atver overlay + panelī no labās
+      (ne 2 kolonnu mobilais look). Pēc pirkuma panelis aizveras; ikdienā skatās tikai askētisko darba hero.
+    </p>
+    <div class="frame wide">
+      <span class="badge ok">Desktop · drawer atvērts</span>
+      <div class="nav"><span class="on">Sākums</span><span>Atskaites</span><span>Pasūtījumi</span><span>Rekvizīti</span></div>
+      <div class="stage">
+        <div class="inner deskHome">
+          <h3 class="h">Pieejamās atskaites</h3>
+          <div class="strip">
+            <div class="chip"><div class="n">Business</div><div class="v">0</div></div>
+            <div class="chip"><div class="n">Dīlera dati</div><div class="v">0</div></div>
+          </div>
+          <p class="note">Lai iesniegtu VIN, vispirms iegādājies atskaites.</p>
+          <button type="button" class="cta">Pirkt atskaites</button>
+        </div>
+        <div class="scrim" aria-hidden="true"></div>
+        <aside class="drawer" aria-label="Pirkt atskaites">
+          <div class="drawerHead">
+            <h3>Pirkt atskaites</h3>
+            <button type="button" class="x" aria-label="Aizvērt">✕</button>
+          </div>
+          <div class="seg" style="margin-top:0;max-width:none">
+            <button type="button">Dīlera dati</button>
+            <button type="button" class="on">PROVIN BUSINESS</button>
+          </div>
+          <div class="packs two">
+            <div class="pack">
+              <div class="qty">1 atskaite</div>
+              <div class="price">79,99 € <i>par atskaiti</i></div>
+              <div class="sum">Kopā 79,99 €</div>
+            </div>
+            <div class="pack on">
+              <div class="qty">10 atskaites</div>
+              <div class="price">69,99 € <i>par atskaiti</i></div>
+              <div class="sum">Kopā 699,90 € <s>799,90 €</s><span class="pct">-13%</span></div>
+            </div>
+          </div>
+          <ul class="lines" style="margin-top:.75rem">
+            <li><span class="mk">+</span><span>Oficiālā dīlera dati un izsoļu arhīvs</span></li>
+            <li><span class="mk">+</span><span>autoDNA, carVertical, starptautiskie reģistri</span></li>
+            <li><span class="mk">+</span><span>Nobraukuma līkne un kopsavilkums</span></li>
+          </ul>
+          <button type="button" class="cta" style="margin-top:1rem;max-width:none">Pasūtīt atskaites 699,90 €</button>
+          <p class="foot">Dīleru sistēmu dati pieejami noteiktiem ražotājiem.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="biz">
+    <h2>BUSINESS 10 atskaites · jaunie punkti</h2>
+    <p class="why">Vienādi 1 un 10 kartītēm (bez „Atskaišu skaits / BUSINESS datu paka / VIN pārbaudes”).</p>
+    <div class="frame" style="max-width:28rem">
+      <div class="pack on">
+        <div class="qty">10 atskaites</div>
+        <div class="price">69,99 € <i>par atskaiti</i></div>
+        <div class="sum">Kopā 699,90 € <s>799,90 €</s><span class="pct">-13%</span></div>
+        <ul class="lines">
+          <li><span class="mk">+</span><span>Oficiālā dīlera dati un izsoļu arhīvs</span></li>
+          <li><span class="mk">+</span><span>autoDNA, carVertical, starptautiskie reģistri</span></li>
+          <li><span class="mk">+</span><span>Nobraukuma līkne un kopsavilkums</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

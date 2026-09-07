@@ -68,8 +68,8 @@
   .hint b{color:#93c5fd;font-weight:600;}
 
   .grid{
-    display:grid;grid-template-columns:repeat(2,1fr);gap:.85rem;
-    margin-top:1.15rem;
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem;
+    margin-top:1.15rem;max-width:45rem;
   }
   .card{
     position:relative;text-align:left;width:100%;
@@ -121,7 +121,7 @@
   .ok{color:var(--mint);}
 
   .cta{
-    display:block;width:min(100%,22rem);margin:1.45rem auto 0;
+    display:block;width:min(100%,22rem);margin:1.45rem 0 0;
     height:2.9rem;border:0;border-radius:.7rem;background:var(--accent);color:#fff;
     font:600 .76rem/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
   }
@@ -129,6 +129,7 @@
   .fine{margin:1.35rem auto 0;max-width:42rem;text-align:center;font-size:.68rem;line-height:1.5;color:rgb(148 163 184 / .68);}
 
   @media (max-width: 820px){
+    h1{display:none;}
     .grid{grid-template-columns:1fr;}
     .intro{text-align:left;}
     .hint,.pay,.fine{text-align:left;}
@@ -158,7 +159,7 @@ const SKUS = {
   business: {
     title: 'PROVIN <span style="color:#2563eb">BUSINESS</span>',
     fine: "Dīleru sistēmu dati pieejami noteiktiem ražotājiem.",
-    cta: "PASŪTĪT",
+    cta: "PASŪTĪT ATSKAITES",
     packs: [
       {
         qty: 1, label: "1 atskaite", rec: false, unit: 79.99,
@@ -170,22 +171,26 @@ const SKUS = {
       },
       {
         qty: 10, label: "10 atskaites", rec: true, unit: 69.99,
-        lines: ["Atskaišu skaits: 10", "BUSINESS datu paka", "10 VIN pārbaudes, derīgums 90 dienas"]
+        lines: [
+          "Oficiālā dīlera dati un izsoļu arhīvs",
+          "autoDNA, carVertical, starptautiskie reģistri",
+          "Nobraukuma līkne un kopsavilkums"
+        ]
       }
     ]
   },
   dealer: {
     title: "DĪLERA DATI",
     fine: "Ja datu nav, kredīts tiek atgriezts kontā kā neiztērēts.",
-    cta: "PASŪTĪT PAKU",
+    cta: "PASŪTĪT ATSKAITES",
     packs: [
       {
         qty: 1, label: "1 atskaite", rec: false, unit: 19.99,
-        lines: ["Atskaišu skaits: 1", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
+        lines: ["Odometra rādījumi", "Servisa un apkopju vēsture", "Kopsavilkums", "100% naudas atmaksas garantija"]
       },
       {
         qty: 10, label: "10 atskaites", rec: true, unit: 17.99,
-        lines: ["Atskaišu skaits: 10", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
+        lines: ["Odometra rādījumi", "Servisa un apkopju vēsture", "Kopsavilkums", "100% naudas atmaksas garantija"]
       }
     ]
   }
