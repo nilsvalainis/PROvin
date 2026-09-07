@@ -22,10 +22,11 @@ function safeTrack(event: string, data?: Record<string, string | number | boolea
   }
 }
 
-export function HomeRiskAuditGuide() {
+export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: boolean }) {
   const t = useTranslations("RiskAuditGuide");
   const baseId = useId();
   const reduceMotion = useReducedMotion();
+  const [paused, setPaused] = useState(queuePaused);
   const [expanded, setExpanded] = useState(false);
   const [listingUrl, setListingUrl] = useState("");
   const [email, setEmail] = useState("");
@@ -38,6 +39,11 @@ export function HomeRiskAuditGuide() {
   const listingTrim = listingUrl.trim();
   const listingOk = listingTrim.length > 0 && isPlausibleListingUrl(listingTrim);
   const listingTouchedInvalid = listingTrim.length > 0 && !listingOk;
+  const orderHref = homeHeroCheckoutHref("audits");
+
+  useEffect(() => {
+    setPaused(queuePaused);
+  }, [queuePaused]);
 
   useEffect(() => {
     try {
@@ -48,11 +54,11 @@ export function HomeRiskAuditGuide() {
     } catch {
       /* private mode */
     }
-    safeTrack("risk_guide_view");
-  }, []);
+    safeTrack("risk_guide_view", queuePaused ? { paused: true } : undefined);
+  }, [queuePaused]);
 
   function openForm() {
-    if (expanded) return;
+    if (paused || expanded) return;
     setExpanded(true);
     setFormError(null);
     setRateLimited(false);
@@ -61,6 +67,7 @@ export function HomeRiskAuditGuide() {
 
   function submitFree(e: FormEvent) {
     e.preventDefault();
+    if (paused) return;
     setFormError(null);
     setRateLimited(false);
 
@@ -90,6 +97,13 @@ export function HomeRiskAuditGuide() {
         });
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
 
+        if (res.status === 503 && data?.error === "queue_paused") {
+          safeTrack("risk_guide_queue_paused");
+          setPaused(true);
+          setExpanded(false);
+          setFormError(null);
+          return;
+        }
         if (res.status === 429) {
           safeTrack("risk_guide_rate_limited");
           if (data?.error === "contact_rate_limited" || data?.error === "email_rate_limited") {
@@ -107,7 +121,10 @@ export function HomeRiskAuditGuide() {
           if (data?.error === "invalid_listing") setFormError(t("errors.listing"));
           else if (data?.error === "invalid_email") setFormError(t("errors.email"));
           else if (data?.error === "invalid_phone") setFormError(t("errors.phone"));
-          else setFormError(t("errors.generic"));
+          else if (data?.error === "queue_paused") {
+            setPaused(true);
+            setExpanded(false);
+          } else setFormError(t("errors.generic"));
           return;
         }
 
@@ -141,12 +158,35 @@ export function HomeRiskAuditGuide() {
               >
                 {t("title")}
               </h2>
-              <p className="mx-auto mt-3 max-w-lg text-[14px] leading-relaxed text-white/50 sm:text-[15px]">
-                {t("subtitle")}
-              </p>
+              {paused ? (
+                <div className="mx-auto mt-3 max-w-lg">
+                  <p className="text-[14px] leading-relaxed text-white/50 sm:text-[15px]">
+                    {t("pausedBody")}
+                  </p>
+                  <p className="mt-3 text-[14px] leading-relaxed text-white/45 sm:text-[15px]">
+                    {t("pausedSoftCta")}
+                  </p>
+                  <div className="mt-7 flex justify-center">
+                    <Link
+                      href={orderHref}
+                      onClick={() => safeTrack("risk_guide_paused_order_clicked")}
+                      className="group inline-flex min-h-[48px] items-center gap-3 rounded-full border border-white/[0.14] bg-white/[0.03] px-5 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/75 transition hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
+                    >
+                      {t("pausedOrderCta")}
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 text-white/50 transition group-hover:border-white/30 group-hover:text-white/80">
+                        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <p className="mx-auto mt-3 max-w-lg text-[14px] leading-relaxed text-white/50 sm:text-[15px]">
+                  {t("subtitle")}
+                </p>
+              )}
             </div>
 
-            {!expanded && !success ? (
+            {!paused && !expanded && !success ? (
               <div className="mt-7 flex justify-center">
                 <button
                   type="button"
@@ -163,7 +203,7 @@ export function HomeRiskAuditGuide() {
             ) : null}
 
             <AnimatePresence initial={false}>
-              {(expanded || success) && (
+              {!paused && (expanded || success) && (
                 <motion.div
                   key="peek-panel"
                   initial={reduceMotion ? false : { height: 0, opacity: 0 }}
@@ -259,7 +299,7 @@ export function HomeRiskAuditGuide() {
                               <p className="text-[13px] leading-relaxed text-amber-200/90">{formError}</p>
                               {rateLimited ? (
                                 <Link
-                                  href={homeHeroCheckoutHref("audits")}
+                                  href={orderHref}
                                   onClick={() => safeTrack("risk_guide_audits_clicked")}
                                   className="mt-3 inline-flex min-h-[40px] items-center gap-2 text-[12px] font-medium uppercase tracking-[0.1em] text-white/55 transition hover:text-white"
                                 >

@@ -9,6 +9,11 @@ import {
   normalizeCustomerPhoneKey as normalizePeekPhoneKey,
 } from "@/lib/admin-customer-identity";
 import { canonicalizeListingUrl } from "@/lib/order-field-validation";
+import {
+  countOpenListingPeeks,
+  getListingPeekQueueLimit,
+  isListingPeekQueuePaused,
+} from "@/lib/listing-peek-queue";
 
 export { normalizePeekEmail, normalizePeekPhoneKey };
 
@@ -206,7 +211,7 @@ export type CreateListingPeekResult =
   | { ok: true; entry: ListingPeekEntry }
   | {
       ok: false;
-      reason: "contact_rate_limited";
+      reason: "contact_rate_limited" | "queue_paused";
       retryAfterSec: number;
     };
 
@@ -222,6 +227,16 @@ export async function createListingPeek(input: {
   const now = Date.now();
   const doc = await readDoc();
   const exempt = isListingPeekRateLimitExempt(email, phone);
+
+  const openCount = countOpenListingPeeks(doc.entries);
+  const queueLimit = getListingPeekQueueLimit();
+  if (isListingPeekQueuePaused(openCount, queueLimit)) {
+    return {
+      ok: false,
+      reason: "queue_paused",
+      retryAfterSec: 3600,
+    };
+  }
 
   if (!exempt) {
     const lastForEmail = doc.entries
@@ -279,6 +294,27 @@ export async function listListingPeeks(limit = 100): Promise<ListingPeekEntry[]>
     .slice()
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, Math.max(1, Math.min(limit, MAX_ENTRIES)));
+}
+
+/** Snapshot for public homepage pause UI (and API). */
+export async function getListingPeekQueueSnapshot(): Promise<{
+  openCount: number;
+  limit: number;
+  paused: boolean;
+}> {
+  const doc = await readDoc();
+  const openCount = countOpenListingPeeks(doc.entries);
+  const limit = getListingPeekQueueLimit();
+  return {
+    openCount,
+    limit,
+    paused: isListingPeekQueuePaused(openCount, limit),
+  };
+}
+
+export async function isListingPeekPublicQueuePaused(): Promise<boolean> {
+  const snap = await getListingPeekQueueSnapshot();
+  return snap.paused;
 }
 
 export async function getListingPeekById(id: string): Promise<ListingPeekEntry | null> {

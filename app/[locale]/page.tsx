@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Footer } from "@/components/Footer";
 import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
-import { HomeRiskAuditGuide } from "@/components/home/HomeRiskAuditGuide";
+import { HomeRiskAuditGuideSection } from "@/components/home/HomeRiskAuditGuideSection";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -25,7 +25,9 @@ export default function HomePage() {
         </Suspense>
 
         <div id="site-content" className="min-w-0 scroll-mt-14 bg-transparent pb-0 text-white home-body-ink">
-          <HomeRiskAuditGuide />
+          <Suspense fallback={null}>
+            <HomeRiskAuditGuideSection />
+          </Suspense>
           <HomeGoogleReviews />
 
           <section className="demo-design-dir__section bg-transparent pb-0">

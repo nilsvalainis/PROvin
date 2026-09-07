@@ -3,6 +3,9 @@
     "title": "Check the listing for free",
     "subtitle": "Send us a listing link and get a short comment on whether this car is worth checking further.",
     "triggerCta": "Submit a listing",
+    "pausedBody": "Free listing reviews are temporarily unavailable. Each link is checked by hand, so a short queue has built up. Please try later or tomorrow.",
+    "pausedSoftCta": "Need a faster answer? Order PROVIN MINI or PROVIN AUDITS - those run as usual.",
+    "pausedOrderCta": "Order an audit",
     "form": {
       "listingLabel": "Listing link",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… or Mobile.de",
@@ -25,6 +28,7 @@
       "rateLimited": "A free review has already been requested. We’ll reply by email, or order PROVIN AUDITS.",
       "rateLimitedCta": "Order PROVIN AUDITS",
       "ipRateLimited": "Several requests were already submitted from this device / network today. Try again tomorrow or order an audit.",
+      "queuePaused": "Free reviews are temporarily unavailable. Please try later or tomorrow, or order an audit.",
       "generic": "Could not submit. Please try again."
     }
   }

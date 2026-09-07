@@ -69,6 +69,12 @@ export async function POST(req: Request) {
 
   const created = await createListingPeek({ email, phone, listingUrl });
   if (!created.ok) {
+    if (created.reason === "queue_paused") {
+      return NextResponse.json(
+        { error: "queue_paused", retryAfterSec: created.retryAfterSec },
+        { status: 503, headers: { "Retry-After": String(created.retryAfterSec) } },
+      );
+    }
     return rateLimitedJson(created.retryAfterSec, "contact_rate_limited");
   }
 

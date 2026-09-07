@@ -3,6 +3,9 @@
     "title": "Pārbaudi sludinājumu bez maksas",
     "subtitle": "Iesūti mums sludinājuma linku un saņem īsu komentāru, vai šo auto ir vērts pārbaudīt tālāk.",
     "triggerCta": "Iesūtīt sludinājumu",
+    "pausedBody": "Šobrīd bezmaksas sludinājumu vērtējumi īslaicīgi nav pieejami. Tā kā katru saiti skatām manuāli, ir izveidojusies neliela rinda. Lūdzu, mēģini vēlāk vai rīt.",
+    "pausedSoftCta": "Ja vajag atbildi ātrāk, pasūti PROVIN MINI vai PROVIN AUDITS - tie darbojas kā ierasts.",
+    "pausedOrderCta": "Pasūtīt auditu",
     "form": {
       "listingLabel": "Sludinājuma saite",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… vai Mobile.de",
@@ -25,6 +28,7 @@
       "rateLimited": "Bezmaksas novērtējums jau ir pieprasīts. Nosūtīsim atbildi e-pastā vai pasūti PROVIN AUDITS.",
       "rateLimitedCta": "Pasūtīt PROVIN AUDITS",
       "ipRateLimited": "No šīs ierīces / tīkla šodien jau iesniegti vairāki pieprasījumi. Mēģini rīt vai pasūti auditu.",
+      "queuePaused": "Šobrīd bezmaksas vērtējumi īslaicīgi nav pieejami. Mēģini vēlāk vai rīt, vai pasūti auditu.",
       "generic": "Neizdevās iesniegt. Mēģini vēlreiz."
     }
   }
