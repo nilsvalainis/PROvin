@@ -2338,11 +2338,53 @@ html[data-site-theme="light"] .inlineInput:focus {
 
 .mobilePackLines .featureRow {
   grid-template-columns: 1rem minmax(0, 1fr);
+  align-items: start;
   column-gap: 0.4rem;
   min-height: 0;
   padding: 0.22rem 0;
   font-size: 0.74rem;
   line-height: 1.4;
+}
+
+/* Refund/brands tips inherit desktop center + 44px hit; keep them on the same grid as + rows. */
+.mobilePackLines .dealerRefundTip {
+  display: inline-flex;
+  justify-content: flex-start;
+  width: auto;
+  max-width: 100%;
+}
+
+.mobilePackLines .dealerRefundHit {
+  min-height: 0;
+  padding: 0;
+  gap: 0.38rem;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.mobilePackLines .dealerRefundLabel {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.mobilePackLines .dealerRefundPopup {
+  left: 0;
+  transform: none;
+}
+
+.mobilePackLines .dealerRefundPopup::after {
+  left: 1.15rem;
+}
+
+.mobilePackLines .dealerBrandsTrigger {
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+  color: inherit;
 }
 
 .featureMarkPlus {
