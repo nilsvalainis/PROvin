@@ -162,22 +162,20 @@ export const FLASH_MAX_SUMMARY_ONLY_JOB_IDS: readonly string[] = [
   "summary",
 ];
 
-/** FLASH MAX: CSDD / AutoDNA / CarVertical / LTAB → Claude Sonnet; pārējie avoti → Gemini Flash. */
-export const FLASH_MAX_SONNET_SOURCE_IDS = new Set(["csdd", "autodna", "carvertical", "ltab"]);
+/** FLASH MAX: CSDD / AutoDNA / CarVertical / LTAB → Gemini Flash; pārējie avoti → Gemini. */
+export const FLASH_MAX_GEMINI_FLASH_SOURCE_IDS = new Set([
+  "csdd",
+  "autodna",
+  "carvertical",
+  "ltab",
+]);
 
-/** FLASH MAX noklusējuma modelis (atsevišķās ✨ pogas paliek AI_ADMIN_FIELD_DEFAULT_TIER). */
+/** FLASH MAX noklusējums. Sonnet / Opus operators izvēlas pats. */
 export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
   if (job.kind === "source") {
-    return FLASH_MAX_SONNET_SOURCE_IDS.has(job.id) ? "flash" : "gemini-flash";
+    return FLASH_MAX_GEMINI_FLASH_SOURCE_IDS.has(job.id) ? "gemini-flash" : "gemini";
   }
-  if (job.kind === "listing") {
-    return job.id === "seller" ? AI_ADMIN_FIELD_DEFAULT_TIER.seller : AI_ADMIN_FIELD_DEFAULT_TIER.price;
-  }
-  if (job.id === "incidents") return AI_ADMIN_FIELD_DEFAULT_TIER.incidents;
-  if (job.id === "mileage") return AI_ADMIN_FIELD_DEFAULT_TIER.mileage;
-  if (job.id === "technical_risks") return AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks;
-  if (job.id === "inspection") return AI_ADMIN_FIELD_DEFAULT_TIER.inspection;
-  return AI_ADMIN_FIELD_DEFAULT_TIER.summary;
+  return "gemini";
 }
 
 export const FLASH_MAX_OPERATOR_NOTES_MAX_LEN = 8000;

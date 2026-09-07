@@ -1,8 +1,8 @@
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 /**
- * Ieteicamais ✨ līmenis pēc lauka — dārgais Opus tikai verdiktam.
- * Gemini Flash = avotu/listing īsie komentāri; Sonnet = sintēze; Opus = kopsavilkums.
+ * Ieteicamais ✨ līmenis pēc lauka. Noklusējums ir Gemini ģimene;
+ * Sonnet / Opus operators izvēlas manuāli.
  */
 export type AiAdminFieldKind =
   | "source_comment"
@@ -22,15 +22,15 @@ export type AiAdminFieldKind =
 export const AI_ADMIN_FIELD_DEFAULT_TIER: Record<AiAdminFieldKind, AiAdminModelTier> = {
   source_comment: "gemini-flash",
   listing: "gemini-flash",
-  tirgus: "gemini-flash",
-  seller: "flash",
-  price: "flash",
-  mileage: "flash",
-  incidents: "flash",
-  inspection: "flash",
-  technical_risks: "flash",
-  summary: "pro",
-  sources_comparison: "flash",
+  tirgus: "gemini",
+  seller: "gemini",
+  price: "gemini",
+  mileage: "gemini",
+  incidents: "gemini",
+  inspection: "gemini",
+  technical_risks: "gemini",
+  summary: "gemini",
+  sources_comparison: "gemini",
   listing_peek: "gemini-flash",
   extract: "flash",
 };
