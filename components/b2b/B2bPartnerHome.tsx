@@ -138,7 +138,7 @@ export function B2bPartnerHome() {
   return (
     <div>
       <section
-        className="mx-auto flex min-h-[calc(100svh-6.75rem)] w-full max-w-[22rem] flex-col"
+        className="mx-auto flex min-h-[calc(100svh-6.75rem)] w-full max-w-[22rem] flex-col lg:max-w-[45rem]"
         aria-labelledby="b2b-partner-home-title"
       >
         <h1 id="b2b-partner-home-title" className="text-balance text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-zinc-100">
