@@ -25,6 +25,7 @@ type Props = {
   onRun: (selection: FlashMaxSelection) => void;
   /** Sticky joslai: izvēlne atveras pa kreisi. */
   menuAlign?: "start" | "end";
+  compact?: boolean;
 };
 
 const SHORT_TIER: Record<AiAdminModelTier, string> = {
@@ -88,7 +89,16 @@ function JobRow({
   );
 }
 
-export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRun, menuAlign = "start" }: Props) {
+export function AdminFlashMaxButton({
+  disabled,
+  busy,
+  phase,
+  notice,
+  error,
+  onRun,
+  menuAlign = "start",
+  compact,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState<FlashMaxSelection>(defaultFlashMaxSelection);
   const [operatorNotes, setOperatorNotes] = useState("");
@@ -142,7 +152,11 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
+        className={
+          compact
+            ? "inline-flex h-7 w-full shrink-0 items-center justify-center gap-0.5 rounded-md border border-teal-700/40 bg-teal-600/90 px-1 text-[9px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
+            : "inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
+        }
         title="Atver izvēli: kuras sadaļas, ar kuriem aģentiem un kādu komandu ģenerēt. Noklusējums paliek esošie Flash Max lauki."
       >
         {busy ? (
@@ -150,7 +164,7 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
         ) : (
           <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
         )}
-        FLASH MAX
+        {compact ? "MAX" : "FLASH MAX"}
       </button>
       {open ? (
         <div
@@ -254,21 +268,21 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
           </div>
         </div>
       ) : null}
-      {phase ? (
+      {compact || !phase ? null : (
         <p className="mt-1 max-w-[18rem] text-[10px] leading-snug text-teal-800" role="status">
           {phase}
         </p>
-      ) : null}
-      {notice ? (
+      )}
+      {compact || !notice ? null : (
         <p className="mt-1 max-w-[22rem] text-[10px] leading-snug text-emerald-800/90" role="status">
           {notice}
         </p>
-      ) : null}
-      {error ? (
+      )}
+      {compact || !error ? null : (
         <p className="mt-1 max-w-[22rem] text-[10px] leading-snug text-amber-800/90" role="alert">
           {error}
         </p>
-      ) : null}
+      )}
     </div>
   );
 }

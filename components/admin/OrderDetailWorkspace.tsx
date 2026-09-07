@@ -4257,7 +4257,7 @@ export function OrderDetailWorkspace({
         }}
       />
 
-      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 lg:pr-[9.25rem] ${ADMIN_CONTENT_MAX}`}>
+      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 ${ADMIN_CONTENT_MAX}`}>
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}
