@@ -23,6 +23,8 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
 > = {
   plus: {
     productName: "PROVIN MINI",
+    productDesc:
+      "For cars used in Latvia. No paid international database checks. Other cars: choose PROVIN AUDITS.",
     amountCents: 3999,
   },
   premium: {
@@ -48,6 +50,25 @@ export function isTp5CheckoutSource(sourcePage: string): boolean {
     sourcePage === TP5_CHECKOUT_SOURCE ||
     sourcePage === HOME_PRICING_CHECKOUT_SOURCE
   );
+}
+
+const TP5_MINI_CHECKOUT_NOTE = {
+  lv: "PROVIN MINI ir paredzēts Latvijā ekspluatētiem auto bez maksas starptautisko datubāžu pārbaudes. Citiem auto izvēlies PROVIN AUDITS.",
+  en: "PROVIN MINI is for cars used in Latvia and does not include paid international database checks. For other cars, choose PROVIN AUDITS.",
+} as const;
+
+/** Stripe Checkout submit note (step 2) for PROVIN MINI. */
+export function getTp5MiniCheckoutNote(locale?: string): string {
+  return locale === "en" ? TP5_MINI_CHECKOUT_NOTE.en : TP5_MINI_CHECKOUT_NOTE.lv;
+}
+
+/** Stripe `custom_text.submit.message` when the selected plan needs a pre-pay note. */
+export function getTp5CheckoutSubmitMessage(
+  planId: TestPricingPlanId,
+  locale?: string,
+): string | null {
+  if (planId === "plus") return getTp5MiniCheckoutNote(locale);
+  return null;
 }
 
 export function getTp5StripeCheckoutProduct(

@@ -88,6 +88,8 @@
 /* Mobile/tablet hero — paslēpts desktopā (neatkarīgi no Tailwind purge). */
 .heroInnerMobile {
   composes: heroInner;
+  /* Fixed transparent header overlays the hero on mobile. */
+  padding-top: calc(3.2rem + env(safe-area-inset-top, 0px));
 }
 
 /* Desktop 2-column hero — redzams tikai lg+. */
@@ -2214,4 +2216,140 @@ html[data-site-theme="light"] .inlineInput:focus {
 .brandIconIdleAutoDna:hover .brandLogoIdleAutoDna,
 .brandIconIdleAutoDna:focus-visible .brandLogoIdleAutoDna {
   animation: none;
+}
+
+/* Mobile B2C pack card (B2B tab language). Desktop hero keeps `.spatialCard`. */
+.mobileHeroStack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  touch-action: pan-y;
+}
+
+.mobileSegWrap {
+  position: relative;
+  margin: 0.15rem 0 0;
+  padding-top: 0.55rem;
+}
+
+.mobileSeg {
+  display: flex;
+  gap: 3px;
+  margin: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 10px;
+  background: #1a1a1a;
+}
+
+.mobileSegBtn {
+  position: relative;
+  flex: 1;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.72rem 0.18rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgb(148 163 184 / 0.9);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.mobileSegBtnActive {
+  background: #2563eb;
+  color: #fff;
+}
+
+.mobileNewBadge {
+  position: absolute;
+  top: -0.72rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.48rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #60a5fa;
+  pointer-events: none;
+}
+
+.mobilePackCard {
+  position: relative;
+  width: 100%;
+  margin-top: 1.1rem;
+  padding: 1.15rem 1.1rem 1.15rem;
+  border: 1px solid #2563eb;
+  border-radius: 0.9rem;
+  background: rgb(20 20 20 / 0.88);
+  box-shadow: 0 0 0 1px #2563eb inset;
+}
+
+.mobilePackRec {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.9rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.mobilePackTitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.mobilePackTitleAccent {
+  color: #2563eb;
+}
+
+.mobilePackPrice {
+  margin: 1.05rem 0 0;
+  font-size: 1.55rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: rgb(250 250 252 / 0.98);
+}
+
+.mobilePackPriceUnit {
+  font-size: 0.78rem;
+  font-weight: 550;
+  letter-spacing: 0;
+  color: rgb(148 163 184 / 0.9);
+}
+
+.mobilePackLines {
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mobilePackLines .featureRow {
+  grid-template-columns: 1rem minmax(0, 1fr);
+  column-gap: 0.4rem;
+  min-height: 0;
+  padding: 0.22rem 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.featureMarkPlus {
+  color: #60a5fa;
+  font-weight: 700;
+}
+
+.mobileHeroFields {
+  margin-top: 1.15rem;
 }

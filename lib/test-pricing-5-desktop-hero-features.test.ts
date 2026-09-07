@@ -8,6 +8,7 @@ describe("test-pricing-5 desktop hero features", () => {
   it("exposes eight feature labels for the full catalog", () => {
     expect(TP5_DESKTOP_HERO_FEATURES).toHaveLength(8);
     expect(TP5_DESKTOP_HERO_FEATURES[0]?.label).toBe("Individuāla konsultācija");
+    expect(TP5_DESKTOP_HERO_FEATURES[2]?.label).toBe("Izcelsmes valsts reģistri & TA vēsture");
     expect(TP5_DESKTOP_HERO_FEATURES[6]?.label).toBe("Oficiālo dīleru un izsoļu portālu arhīvs*");
   });
 

@@ -20,7 +20,7 @@ export type Tp5DesktopHeroFeature = {
 export const TP5_DESKTOP_HERO_FEATURES: Tp5DesktopHeroFeature[] = [
   { label: "Individuāla konsultācija", icon: "consultation" },
   { label: "Sludinājuma un tehnisko risku analīze", icon: "listing-analysis" },
-  { label: "EU reģistru pārbaude & TA vēsture", icon: "eu-registry" },
+  { label: "Izcelsmes valsts reģistri & TA vēsture", icon: "eu-registry" },
   { label: "Ieteikumi klātienes apskatei", icon: "inspection-tips" },
   { label: "carVertical integrācija", icon: "carvertical" },
   { label: "autoDNA integrācija", icon: "autodna" },
@@ -31,7 +31,7 @@ export const TP5_DESKTOP_HERO_FEATURES: Tp5DesktopHeroFeature[] = [
 const TP5_DESKTOP_HERO_FEATURES_EN: Tp5DesktopHeroFeature[] = [
   { label: "Personal consultation", icon: "consultation" },
   { label: "Listing and technical risk analysis", icon: "listing-analysis" },
-  { label: "EU registry check & inspection history", icon: "eu-registry" },
+  { label: "Origin-country registers & inspection history", icon: "eu-registry" },
   { label: "In-person inspection guidance", icon: "inspection-tips" },
   { label: "carVertical integration", icon: "carvertical" },
   { label: "autoDNA integration", icon: "autodna" },

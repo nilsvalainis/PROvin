@@ -144,6 +144,7 @@ export function ProvinPricingHero({
 
         <div className={styles.stage}>
           <Tp5MobilePricingCard
+            layout="mobile"
             activeServiceId={mobileActiveId}
             setActiveServiceId={setMobileActiveId}
             vin={vin}

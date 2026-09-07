@@ -18,6 +18,7 @@ import {
   testPricingCancelPath,
 } from "@/lib/test-pricing-checkout-pages";
 import {
+  getTp5CheckoutSubmitMessage,
   getTp5StripeCheckoutProduct,
   isTp5CheckoutSource,
   validateTp5InlineFields,
@@ -168,6 +169,8 @@ export async function POST(req: Request) {
             };
       })();
 
+  const miniSubmitNote = getTp5CheckoutSubmitMessage(plan.id, "en");
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: [lineItem],
@@ -209,6 +212,13 @@ export async function POST(req: Request) {
      * cenu un Stripe maksājumu laukus.
      */
     locale: "en",
+    ...(miniSubmitNote
+      ? {
+          custom_text: {
+            submit: { message: miniSubmitNote },
+          },
+        }
+      : {}),
   });
 
   if (!session.url) {

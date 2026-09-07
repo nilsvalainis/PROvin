@@ -6,6 +6,9 @@
     "menuOpen": "Atvērt izvēlni",
     "menuClose": "Aizvērt izvēlni",
     "themeSwitchToLight": "Pārslēgt uz gaišo režīmu",
-    "themeSwitchToDark": "Pārslēgt uz tumšo režīmu"
+    "themeSwitchToDark": "Pārslēgt uz tumšo režīmu",
+    "langGroupAria": "Valoda",
+    "langLv": "LV",
+    "langEn": "EN"
   }
 }

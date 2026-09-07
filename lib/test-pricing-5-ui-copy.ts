@@ -58,6 +58,12 @@ export type Tp5UiCopy = {
   dealerRefundInfoBody: string;
   /** Refund guarantee tooltip aria label. */
   dealerRefundInfoAria: string;
+  /** Blue “Jaunums” label above the dealer tab. */
+  newBadge: string;
+  /** Unit-price suffix on the mobile pack card. */
+  perReport: string;
+  /** “Ieteicams” on the AUDITS mobile card. */
+  recommended: string;
 };
 
 /** Publiskais PROVIN MINI atskaites piemērs (`public/samples/…`). */
@@ -105,6 +111,9 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   dealerRefundInfoBody:
     "Pilna naudas atmaksa, ja dīleru datubāzē nav neviena ieraksta. Pakalpojums tiek uzskatīts par izpildītu 100% apjomā, ja atrodama vismaz viena atzīme par odometra rādījumu. Pieejamo datu apjomu nosaka oficiāli fiksētā vēsture.",
   dealerRefundInfoAria: "Naudas atmaksas nosacījumi",
+  newBadge: "Jaunums",
+  perReport: "par atskaiti",
+  recommended: "Ieteicams",
 };
 
 const TP5_UI_COPY_EN: Tp5UiCopy = {
@@ -139,6 +148,9 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   dealerRefundInfoBody:
     "Full refund if no records exist in the dealer database. The service is considered fulfilled if at least one odometer reading is found. Available data volume depends on officially recorded history.",
   dealerRefundInfoAria: "Refund conditions",
+  newBadge: "New",
+  perReport: "per report",
+  recommended: "Recommended",
 };
 
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {

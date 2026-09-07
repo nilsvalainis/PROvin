@@ -15,10 +15,16 @@ export type Tp5MobileServiceId = "mini" | "audits" | "dealer" | "koreaUsa";
 
 export type Tp5MobileService = {
   id: Tp5MobileServiceId;
-  /** Short tab label. */
+  /** Desktop tab / fallback title. */
   title: string;
+  /** Compact mobile tab label (MINI / AUDITS / DĪLERI). */
+  tabTitle?: string;
+  /** Mobile card heading when it differs from `title`. */
+  cardTitle?: string;
   price: string;
   buttonText: string;
+  /** Compact mobile CTA (`PASŪTĪT 39,99 €`). Desktop keeps `buttonText`. */
+  buttonTextShort?: string;
   description: string;
   features: Tp5MobileFeature[];
   /** Brands for dealer popup only (not rendered inline). */
@@ -32,6 +38,10 @@ export type Tp5MobileService = {
   turnaround?: string;
   /** CTA footnote override. */
   footnote?: string;
+  /** Mobile card “Ieteicams” badge (AUDITS). */
+  recommended?: boolean;
+  /** Desktop dealer globe panel (mobile uses the 5-row checklist). */
+  desktopHighlight?: Tp5MobileFeature;
 };
 
 /** Supported manufacturers in a fixed 3×6 display grid (premium/popularity + brand groups). */
@@ -46,24 +56,24 @@ export const TP5_DEALER_BRANDS = TP5_DEALER_BRAND_ROWS.flat();
 
 /** Public logo paths for dealer brand grid cells. */
 export const TP5_DEALER_BRAND_LOGO_SRC: Record<(typeof TP5_DEALER_BRANDS)[number], string> = {
-  "Mercedes-Benz": "/brand-logos/mercedes.svg?v=5",
+  "Mercedes-Benz": "/brand-logos/mercedes.svg?v=6",
   BMW: "/brand-logos/bmw.svg?v=5",
-  MINI: "/brand-logos/mini.svg?v=5",
-  "Rolls-Royce": "/brand-logos/rolls-royce.svg?v=5",
-  Audi: "/brand-logos/audi.svg?v=5",
-  Volkswagen: "/brand-logos/volkswagen.svg?v=5",
-  Volvo: "/brand-logos/volvo.svg?v=5",
-  "Land Rover": "/brand-logos/land-rover.svg?v=5",
-  Jaguar: "/brand-logos/jaguar.svg?v=5",
+  MINI: "/brand-logos/mini.svg?v=8",
+  "Rolls-Royce": "/brand-logos/rolls-royce.svg?v=8",
+  Audi: "/brand-logos/audi.svg?v=8",
+  Volkswagen: "/brand-logos/volkswagen.svg?v=8",
+  Volvo: "/brand-logos/volvo.svg?v=8",
+  "Land Rover": "/brand-logos/land-rover.svg?v=8",
+  Jaguar: "/brand-logos/jaguar.svg?v=8",
   Škoda: "/brand-logos/skoda.svg?v=5",
-  SEAT: "/brand-logos/seat.svg?v=5",
-  Subaru: "/brand-logos/subaru.svg?v=5",
-  Peugeot: "/brand-logos/peugeot.svg?v=5",
-  Citroën: "/brand-logos/citroen.svg?v=5",
-  Renault: "/brand-logos/renault.svg?v=5",
+  SEAT: "/brand-logos/seat.svg?v=8",
+  Subaru: "/brand-logos/subaru.svg?v=8",
+  Peugeot: "/brand-logos/peugeot.svg?v=8",
+  Citroën: "/brand-logos/citroen.svg?v=8",
+  Renault: "/brand-logos/renault.svg?v=8",
   Dacia: "/brand-logos/dacia.svg?v=5",
-  Opel: "/brand-logos/opel.svg?v=5",
-  Smart: "/brand-logos/smart.svg?v=5",
+  Opel: "/brand-logos/opel.svg?v=8",
+  Smart: "/brand-logos/smart.svg?v=8",
 };
 
 /** Brands whose PNG still ships with a solid black plate (none after alpha strip). */
@@ -76,7 +86,7 @@ const AUDITS_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Konsultācija un ieteikumi klātienes apskatei", included: true },
   { name: "Apdrošinātāju dati un tehnisko apskašu vēsture", included: true },
   { name: "Sludinājuma, pārdevēja un tehnisko risku analīze", included: true },
-  { name: "CarVertical + AutoDNA + EU reģistru pārbaude", included: true },
+  { name: "CarVertical + AutoDNA + Izcelsmes valsts reģistri", included: true },
   { name: "Oficiālo dīleru un izsoļu portālu arhīva dati*", included: true },
 ];
 
@@ -84,7 +94,7 @@ const AUDITS_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Consultation and in-person viewing tips", included: true },
   { name: "Insurer data and technical inspection history", included: true },
   { name: "Listing, seller and technical risk analysis", included: true },
-  { name: "CarVertical + AutoDNA + EU registry check", included: true },
+  { name: "CarVertical + AutoDNA + Origin-country registers", included: true },
   { name: "Official dealer and auction portal archive data*", included: true },
 ];
 
@@ -92,7 +102,7 @@ const MINI_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Konsultācija un ieteikumi klātienes apskatei", included: true },
   { name: "Apdrošinātāju dati un tehnisko apskašu vēsture", included: true },
   { name: "Sludinājuma, pārdevēja un tehnisko risku analīze", included: true },
-  { name: "CarVertical + AutoDNA + EU reģistru pārbaude", included: false },
+  { name: "CarVertical + AutoDNA + Izcelsmes valsts reģistri", included: false },
   { name: "Oficiālo dīleru un izsoļu portālu arhīva dati*", included: false },
 ];
 
@@ -100,24 +110,24 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Consultation and in-person viewing tips", included: true },
   { name: "Insurer data and technical inspection history", included: true },
   { name: "Listing, seller and technical risk analysis", included: true },
-  { name: "CarVertical + AutoDNA + EU registry check", included: false },
+  { name: "CarVertical + AutoDNA + Origin-country registers", included: false },
   { name: "Official dealer and auction portal archive data*", included: false },
 ];
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  {
-    name: "Dīleru servisa vēsture un nobraukums",
-    subtitle: "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
-    included: true,
-  },
+  { name: "Odometra rādījumi", included: true },
+  { name: "Servisa un apkopju vēsture*", included: true },
+  { name: "Kopsavilkums", included: true },
+  { name: "100% Naudas atmaksas garantija.", included: true, tone: "guarantee" },
+  { name: "Atbalstītie ražotāji", included: true, tone: "brands" },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  {
-    name: "Dealer service history and mileage",
-    subtitle: "Direct access to official manufacturer service records.",
-    included: true,
-  },
+  { name: "Odometer readings", included: true },
+  { name: "Service and maintenance history*", included: true },
+  { name: "Summary", included: true },
+  { name: "100% money-back guarantee.", included: true, tone: "guarantee" },
+  { name: "Supported manufacturers", included: true, tone: "brands" },
 ];
 
 const KOREA_USA_FEATURES_LV: Tp5MobileFeature[] = [
@@ -142,35 +152,50 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
   {
     id: "mini",
     title: "PROVIN MINI",
+    tabTitle: "MINI",
     price: "39,99 €",
-    buttonText: "PASŪTĪT MINI AUDITU — 39,99 €",
-    description: "Rekomendējam veikt Latvijā ekspluatētiem auto.",
+    buttonText: "PASŪTĪT MINI AUDITU 39,99 €",
+    buttonTextShort: "PASŪTĪT 39,99 €",
+    description: "",
     features: MINI_FEATURES_LV,
   },
   {
     id: "audits",
     title: "PROVIN AUDITS",
+    tabTitle: "AUDITS",
     price: "99,99 €",
-    buttonText: "PASŪTĪT PROVIN AUDITU — 99,99 €",
-    description: "Noskaidro visu par savu topošo auto.",
+    buttonText: "PASŪTĪT PROVIN AUDITU 99,99 €",
+    buttonTextShort: "PASŪTĪT 99,99 €",
+    description: "",
     features: AUDITS_FEATURES_LV,
+    recommended: true,
   },
   {
     id: "dealer",
     title: "DĪLERA DATI",
+    tabTitle: "DĪLERI",
+    cardTitle: "OFICIĀLO DĪLERU DATI",
     price: "24,99 €",
-    buttonText: "PASŪTĪT DĪLERA DATUS — 24,99 €",
+    buttonText: "PASŪTĪT DĪLERA DATUS 24,99 €",
+    buttonTextShort: "PASŪTĪT 24,99 €",
     description: "",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     turnaround: "⏱️ Izpilde: 24-72h",
+    desktopHighlight: {
+      name: "Dīleru servisa vēsture un nobraukums",
+      subtitle: "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
+      included: true,
+    },
   },
   {
     id: "koreaUsa",
     title: "ASV UN KOREJA",
+    tabTitle: "ASV / KR",
     price: "19,99 €",
-    buttonText: "PASŪTĪT ASV UN KOREJA — 19,99 €",
-    description: "Pilns komplekts ASV un Korejā lietotiem vai importētiem auto.",
+    buttonText: "PASŪTĪT ASV UN KOREJA 19,99 €",
+    buttonTextShort: "PASŪTĪT 19,99 €",
+    description: "",
     features: KOREA_USA_FEATURES_LV,
     turnaround: "⏱️ Izpilde: 24-72h",
   },
@@ -180,35 +205,50 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
   {
     id: "mini",
     title: "PROVIN MINI",
+    tabTitle: "MINI",
     price: "€39.99",
-    buttonText: "ORDER MINI AUDIT — €39.99",
-    description: "Recommended for cars used in Latvia.",
+    buttonText: "ORDER MINI AUDIT €39.99",
+    buttonTextShort: "ORDER €39.99",
+    description: "",
     features: MINI_FEATURES_EN,
   },
   {
     id: "audits",
     title: "PROVIN AUDIT",
+    tabTitle: "AUDIT",
     price: "€99.99",
-    buttonText: "ORDER PROVIN AUDIT — €99.99",
-    description: "Find out everything about your next car.",
+    buttonText: "ORDER PROVIN AUDIT €99.99",
+    buttonTextShort: "ORDER €99.99",
+    description: "",
     features: AUDITS_FEATURES_EN,
+    recommended: true,
   },
   {
     id: "dealer",
     title: "DEALER DATA",
+    tabTitle: "DEALERS",
+    cardTitle: "OFFICIAL DEALER DATA",
     price: "€24.99",
-    buttonText: "ORDER DEALER DATA — €24.99",
+    buttonText: "ORDER DEALER DATA €24.99",
+    buttonTextShort: "ORDER €24.99",
     description: "",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     turnaround: "⏱️ Delivery: 24-72h",
+    desktopHighlight: {
+      name: "Dealer service history and mileage",
+      subtitle: "Direct access to official manufacturer service records.",
+      included: true,
+    },
   },
   {
     id: "koreaUsa",
     title: "USA & KOREA",
+    tabTitle: "US / KR",
     price: "€19.99",
-    buttonText: "ORDER USA & KOREA — €19.99",
-    description: "Full check package for US and Korea used or imported vehicles.",
+    buttonText: "ORDER USA & KOREA €19.99",
+    buttonTextShort: "ORDER €19.99",
+    description: "",
     features: KOREA_USA_FEATURES_EN,
     turnaround: "⏱️ Delivery: 24-72h",
   },
@@ -264,4 +304,16 @@ export function getTp5MobileService(id: Tp5MobileServiceId, locale?: string): Tp
 
 export function getTp5MobileServiceIndex(id: Tp5MobileServiceId): number {
   return TP5_MOBILE_SERVICE_ORDER.indexOf(id);
+}
+
+export function getTp5MobileTabTitle(service: Tp5MobileService): string {
+  return service.tabTitle ?? service.title;
+}
+
+export function getTp5MobileCardTitle(service: Tp5MobileService): string {
+  return service.cardTitle ?? service.title;
+}
+
+export function getTp5MobileCtaLabel(service: Tp5MobileService, compact: boolean): string {
+  return compact ? (service.buttonTextShort ?? service.buttonText) : service.buttonText;
 }

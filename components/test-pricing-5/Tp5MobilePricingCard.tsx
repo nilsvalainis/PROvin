@@ -7,9 +7,13 @@ import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
   getTp5HeroTabServices,
+  getTp5MobileCardTitle,
+  getTp5MobileCtaLabel,
   getTp5MobileService,
+  getTp5MobileTabTitle,
   getTp5MobileTurnaround,
   type Tp5MobileFeature,
+  type Tp5MobileService,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
 import {
@@ -79,7 +83,37 @@ function DealerFeatureHighlight({
   );
 }
 
-function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
+function FeatureLabel({
+  feature,
+  brands,
+  uiCopy,
+}: {
+  feature: Tp5MobileFeature;
+  brands: readonly string[];
+  uiCopy: Tp5UiCopy;
+}) {
+  if (feature.tone === "guarantee") {
+    return <Tp5DealerRefundTip copy={uiCopy} />;
+  }
+  if (feature.tone === "brands") {
+    return <Tp5DealerBrandsTip brands={brands} copy={uiCopy} />;
+  }
+  return <>{feature.name}</>;
+}
+
+function MobileFeatureRow({
+  feature,
+  brands,
+  uiCopy,
+  plusMark,
+}: {
+  feature: Tp5MobileFeature;
+  brands: readonly string[];
+  uiCopy: Tp5UiCopy;
+  plusMark?: boolean;
+}) {
+  const label = <FeatureLabel feature={feature} brands={brands} uiCopy={uiCopy} />;
+
   if (feature.tone === "info") {
     return (
       <li className={styles.featureRowPlain}>
@@ -91,10 +125,13 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
-        <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
-          ✓
+        <span
+          className={`${styles.featureMark} ${plusMark ? styles.featureMarkPlus : styles.featureMarkBlue}`}
+          aria-hidden
+        >
+          {plusMark ? "+" : "✓"}
         </span>
-        <span className={styles.featureLabelActive}>{feature.name}</span>
+        <span className={styles.featureLabelActive}>{label}</span>
       </li>
     );
   }
@@ -103,7 +140,7 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
     return (
       <li className={styles.featureRow}>
         <span className={`${styles.featureMark} ${styles.featureMarkSoft}`} aria-hidden>
-          —
+          -
         </span>
         <span className={styles.featureLabelSoft}>{feature.name}</span>
       </li>
@@ -117,6 +154,245 @@ function MobileFeatureRow({ feature }: { feature: Tp5MobileFeature }) {
       </span>
       <span className={styles.featureLabelMuted}>{feature.name}</span>
     </li>
+  );
+}
+
+function PackTitle({ title }: { title: string }) {
+  if (title.startsWith("PROVIN ")) {
+    return (
+      <>
+        PROVIN <span className={styles.mobilePackTitleAccent}>{title.slice(7)}</span>
+      </>
+    );
+  }
+  return <>{title}</>;
+}
+
+function CheckoutFields({
+  vin,
+  listingUrl,
+  errors,
+  uiCopy,
+  onVinChange,
+  onListingUrlChange,
+  stopSwipePropagation,
+  className,
+}: {
+  vin: string;
+  listingUrl: string;
+  errors: Tp5InlineFieldErrors;
+  uiCopy: Tp5UiCopy;
+  onVinChange: (value: string) => void;
+  onListingUrlChange: (value: string) => void;
+  stopSwipePropagation?: (event: SyntheticEvent) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={className ?? styles.inlineFields}
+      onTouchStart={stopSwipePropagation}
+      onTouchMove={stopSwipePropagation}
+      onTouchEnd={stopSwipePropagation}
+      onTouchCancel={stopSwipePropagation}
+    >
+      <input
+        type="text"
+        className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
+        value={vin}
+        onChange={(event) => onVinChange(event.target.value.toUpperCase())}
+        placeholder={uiCopy.vinPlaceholder}
+        aria-label={uiCopy.vinAria}
+        autoComplete="off"
+        spellCheck={false}
+        inputMode="text"
+        maxLength={17}
+      />
+      {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
+      <input
+        type="url"
+        className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
+        value={listingUrl}
+        onChange={(event) => onListingUrlChange(event.target.value)}
+        placeholder={uiCopy.listingPlaceholder}
+        aria-label={uiCopy.listingAria}
+        autoComplete="url"
+        inputMode="url"
+      />
+      {errors.listingUrl ? <p className={styles.inlineFieldError}>{errors.listingUrl}</p> : null}
+    </div>
+  );
+}
+
+function TurnaroundAndCta({
+  isDealer,
+  turnaroundLabel,
+  uiCopy,
+  globalError,
+  loading,
+  ctaLabel,
+  sampleReportHref,
+  onSubmit,
+}: {
+  isDealer: boolean;
+  turnaroundLabel: string;
+  uiCopy: Tp5UiCopy;
+  globalError: string | null;
+  loading: boolean;
+  ctaLabel: string;
+  sampleReportHref: string | null;
+  onSubmit: () => void;
+}) {
+  return (
+    <>
+      <p className={styles.turnaround}>
+        <span>{turnaroundLabel}</span>
+        {!isDealer ? (
+          <>
+            <span className={styles.turnaroundDivider} aria-hidden>
+              |
+            </span>
+            <Tp5TurnaroundInfoTip copy={uiCopy} />
+          </>
+        ) : null}
+      </p>
+
+      <div className={styles.ctaWrap}>
+        {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
+        <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
+          <span className={styles.liquidCtaShimmer} aria-hidden />
+          <span className={styles.liquidCtaLabel}>{ctaLabel}</span>
+        </button>
+        {sampleReportHref ? (
+          <a
+            href={sampleReportHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.sampleReportLink}
+            onClick={() => recordSampleReportClick()}
+          >
+            <SampleReportPdfIcon />
+            <span>{uiCopy.sampleReportLink}</span>
+          </a>
+        ) : (
+          <span className={styles.sampleReportLinkSpacer} aria-hidden />
+        )}
+      </div>
+    </>
+  );
+}
+
+function MobilePackLayout({
+  services,
+  activeService,
+  activeServiceId,
+  setActiveServiceId,
+  uiCopy,
+  vin,
+  listingUrl,
+  errors,
+  globalError,
+  loading,
+  onVinChange,
+  onListingUrlChange,
+  onSubmit,
+  stopSwipePropagation,
+  turnaroundLabel,
+  sampleReportHref,
+  isDealer,
+  ctaLabel,
+}: {
+  services: Tp5MobileService[];
+  activeService: Tp5MobileService;
+  activeServiceId: Tp5MobileServiceId;
+  setActiveServiceId: (id: Tp5MobileServiceId) => void;
+  uiCopy: Tp5UiCopy;
+  vin: string;
+  listingUrl: string;
+  errors: Tp5InlineFieldErrors;
+  globalError: string | null;
+  loading: boolean;
+  onVinChange: (value: string) => void;
+  onListingUrlChange: (value: string) => void;
+  onSubmit: () => void;
+  stopSwipePropagation?: (event: SyntheticEvent) => void;
+  turnaroundLabel: string;
+  sampleReportHref: string | null;
+  isDealer: boolean;
+  ctaLabel: string;
+}) {
+  const cardTitle = getTp5MobileCardTitle(activeService);
+  return (
+    <>
+      <div className={styles.mobileSegWrap}>
+        <div className={styles.mobileSeg} role="tablist" aria-label={uiCopy.packageTabsAria}>
+          {services.map((service) => {
+            const active = activeServiceId === service.id;
+            const tabTitle = getTp5MobileTabTitle(service);
+            return (
+              <button
+                key={service.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={`${tabTitle}${uiCopy.packageAriaSuffix}`}
+                className={`${styles.mobileSegBtn}${active ? ` ${styles.mobileSegBtnActive}` : ""}`}
+                onClick={() => setActiveServiceId(service.id)}
+              >
+                {service.id === "dealer" ? (
+                  <span className={styles.mobileNewBadge}>{uiCopy.newBadge}</span>
+                ) : null}
+                {tabTitle}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <article className={styles.mobilePackCard}>
+        {activeService.recommended ? (
+          <span className={styles.mobilePackRec}>{uiCopy.recommended}</span>
+        ) : null}
+        <p className={styles.mobilePackTitle}>
+          <PackTitle title={cardTitle} />
+        </p>
+        <p className={styles.mobilePackPrice}>
+          {activeService.price} <span className={styles.mobilePackPriceUnit}>{uiCopy.perReport}</span>
+        </p>
+        <ul className={styles.mobilePackLines}>
+          {activeService.features.map((feature) => (
+            <MobileFeatureRow
+              key={`${activeServiceId}-${feature.name}`}
+              feature={feature}
+              brands={activeService.brands ?? []}
+              uiCopy={uiCopy}
+              plusMark
+            />
+          ))}
+        </ul>
+      </article>
+
+      <CheckoutFields
+        vin={vin}
+        listingUrl={listingUrl}
+        errors={errors}
+        uiCopy={uiCopy}
+        onVinChange={onVinChange}
+        onListingUrlChange={onListingUrlChange}
+        stopSwipePropagation={stopSwipePropagation}
+        className={`${styles.inlineFields} ${styles.mobileHeroFields}`}
+      />
+
+      <TurnaroundAndCta
+        isDealer={isDealer}
+        turnaroundLabel={turnaroundLabel}
+        uiCopy={uiCopy}
+        globalError={globalError}
+        loading={loading}
+        ctaLabel={ctaLabel}
+        sampleReportHref={sampleReportHref}
+        onSubmit={onSubmit}
+      />
+    </>
   );
 }
 
@@ -134,6 +410,7 @@ type Tp5MobilePricingCardProps = {
   tabLayoutGroupId?: string;
   tabPillLayoutId?: string;
   tierMetaDescClassName?: string;
+  layout?: "mobile" | "desktop";
   onSwipeAreaTouchStart?: (event: TouchEvent) => void;
   onSwipeAreaTouchMove?: (event: TouchEvent) => void;
   onSwipeAreaTouchEnd?: (event: TouchEvent) => void;
@@ -155,6 +432,7 @@ export function Tp5MobilePricingCard({
   tabLayoutGroupId: _tabLayoutGroupId = "tp5-tabs-mobile",
   tabPillLayoutId: _tabPillLayoutId = "tp5-tab-pill-mobile",
   tierMetaDescClassName,
+  layout = "desktop",
   onSwipeAreaTouchStart,
   onSwipeAreaTouchMove,
   onSwipeAreaTouchEnd,
@@ -176,14 +454,45 @@ export function Tp5MobilePricingCard({
       : isMini
         ? TP5_MINI_SAMPLE_REPORT_HREF
         : null;
+  const ctaLabel = getTp5MobileCtaLabel(activeService, layout === "mobile");
+  const swipeProps = {
+    onTouchStart: onSwipeAreaTouchStart,
+    onTouchMove: onSwipeAreaTouchMove,
+    onTouchEnd: onSwipeAreaTouchEnd,
+    onTouchCancel: onSwipeAreaTouchCancel,
+  };
+
+  if (layout === "mobile") {
+    return (
+      <div className={styles.mobileHeroStack} {...swipeProps}>
+        <MobilePackLayout
+          services={services}
+          activeService={activeService}
+          activeServiceId={activeServiceId}
+          setActiveServiceId={setActiveServiceId}
+          uiCopy={uiCopy}
+          vin={vin}
+          listingUrl={listingUrl}
+          errors={errors}
+          globalError={globalError}
+          loading={loading}
+          onVinChange={onVinChange}
+          onListingUrlChange={onListingUrlChange}
+          onSubmit={onSubmit}
+          stopSwipePropagation={stopSwipePropagation}
+          turnaroundLabel={turnaroundLabel}
+          sampleReportHref={sampleReportHref}
+          isDealer={isDealer}
+          ctaLabel={ctaLabel}
+        />
+      </div>
+    );
+  }
+
+  const desktopDealerHighlight = activeService.desktopHighlight ?? activeService.features[0];
+
   return (
-    <article
-      className={`${styles.spatialCard} w-full`}
-      onTouchStart={onSwipeAreaTouchStart}
-      onTouchMove={onSwipeAreaTouchMove}
-      onTouchEnd={onSwipeAreaTouchEnd}
-      onTouchCancel={onSwipeAreaTouchCancel}
-    >
+    <article className={`${styles.spatialCard} w-full`} {...swipeProps}>
       <div className={styles.cardHeader}>
         <div
           className={`${styles.tierSwitcher}${services.length >= 4 ? ` ${styles.tierSwitcherFour}` : ""}`}
@@ -221,10 +530,10 @@ export function Tp5MobilePricingCard({
 
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
-          {isDealer && activeService.features[0] ? (
+          {isDealer && desktopDealerHighlight ? (
             <div className={styles.dealerUnifiedPanel}>
               <DealerFeatureHighlight
-                feature={activeService.features[0]}
+                feature={desktopDealerHighlight}
                 brands={activeService.brands ?? []}
                 uiCopy={uiCopy}
               />
@@ -234,81 +543,38 @@ export function Tp5MobilePricingCard({
           ) : (
             <ul className={styles.featureList}>
               {activeService.features.map((feature) => (
-                <MobileFeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
+                <MobileFeatureRow
+                  key={`${activeServiceId}-${feature.name}`}
+                  feature={feature}
+                  brands={activeService.brands ?? []}
+                  uiCopy={uiCopy}
+                />
               ))}
             </ul>
           )}
         </div>
 
-        <div
-          className={styles.inlineFields}
-          onTouchStart={stopSwipePropagation}
-          onTouchMove={stopSwipePropagation}
-          onTouchEnd={stopSwipePropagation}
-          onTouchCancel={stopSwipePropagation}
-        >
-          <input
-            type="text"
-            className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
-            value={vin}
-            onChange={(event) => onVinChange(event.target.value.toUpperCase())}
-            placeholder={uiCopy.vinPlaceholder}
-            aria-label={uiCopy.vinAria}
-            autoComplete="off"
-            spellCheck={false}
-            inputMode="text"
-            maxLength={17}
-          />
-          {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
-          <input
-            type="url"
-            className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
-            value={listingUrl}
-            onChange={(event) => onListingUrlChange(event.target.value)}
-            placeholder={uiCopy.listingPlaceholder}
-            aria-label={uiCopy.listingAria}
-            autoComplete="url"
-            inputMode="url"
-          />
-          {errors.listingUrl ? (
-            <p className={styles.inlineFieldError}>{errors.listingUrl}</p>
-          ) : null}
-        </div>
+        <CheckoutFields
+          vin={vin}
+          listingUrl={listingUrl}
+          errors={errors}
+          uiCopy={uiCopy}
+          onVinChange={onVinChange}
+          onListingUrlChange={onListingUrlChange}
+          stopSwipePropagation={stopSwipePropagation}
+        />
       </div>
 
-      <p className={styles.turnaround}>
-        <span>{turnaroundLabel}</span>
-        {!isDealer ? (
-          <>
-            <span className={styles.turnaroundDivider} aria-hidden>
-              |
-            </span>
-            <Tp5TurnaroundInfoTip copy={uiCopy} />
-          </>
-        ) : null}
-      </p>
-
-      <div className={styles.ctaWrap}>
-        {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
-        <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
-          <span className={styles.liquidCtaShimmer} aria-hidden />
-          <span className={styles.liquidCtaLabel}>{activeService.buttonText}</span>
-        </button>
-        {sampleReportHref ? (
-          <a
-            href={sampleReportHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.sampleReportLink}
-            onClick={() => recordSampleReportClick()}
-          >
-            <SampleReportPdfIcon />
-            <span>{uiCopy.sampleReportLink}</span>
-          </a>
-        ) : (
-          <span className={styles.sampleReportLinkSpacer} aria-hidden />
-        )}
-      </div>
+      <TurnaroundAndCta
+        isDealer={isDealer}
+        turnaroundLabel={turnaroundLabel}
+        uiCopy={uiCopy}
+        globalError={globalError}
+        loading={loading}
+        ctaLabel={ctaLabel}
+        sampleReportHref={sampleReportHref}
+        onSubmit={onSubmit}
+      />
     </article>
   );
 }

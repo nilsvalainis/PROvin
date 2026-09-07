@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  getTp5MobileCardTitle,
+  getTp5MobileCtaLabel,
   getTp5MobileService,
   getTp5MobileServices,
+  getTp5MobileTabTitle,
   getTp5MobileTurnaround,
   TP5_DEALER_BRAND_ROWS,
   TP5_DEALER_BRANDS,
@@ -17,7 +20,7 @@ const SHARED_COMPARE_ROWS_LV = [
   "Konsultācija un ieteikumi klātienes apskatei",
   "Apdrošinātāju dati un tehnisko apskašu vēsture",
   "Sludinājuma, pārdevēja un tehnisko risku analīze",
-  "CarVertical + AutoDNA + EU reģistru pārbaude",
+  "CarVertical + AutoDNA + Izcelsmes valsts reģistri",
   "Oficiālo dīleru un izsoļu portālu arhīva dati*",
 ];
 
@@ -31,20 +34,19 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(TP5_MOBILE_CHECKOUT_PLAN.koreaUsa).toBe("koreaUsa");
   });
 
-  it("keeps a five-row checklist on MINI/AUDITS and one feature on dealer", () => {
+  it("keeps a five-row checklist on MINI/AUDITS and dealer", () => {
     expect(TP5_MOBILE_FEATURE_ROW_COUNT).toBe(5);
     expect(getTp5MobileService("mini").features).toHaveLength(5);
     expect(getTp5MobileService("audits").features).toHaveLength(5);
-    expect(getTp5MobileService("dealer").features).toHaveLength(1);
+    expect(getTp5MobileService("dealer").features).toHaveLength(5);
   });
 
   it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {
     const mini = getTp5MobileService("mini");
     const audits = getTp5MobileService("audits");
-    expect(audits.description).toContain("Noskaidro visu");
-    expect(audits.description).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
-    expect(mini.description).toContain("Latvijā ekspluatētiem");
-    expect(mini.description).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
+    expect(audits.description).toBe("");
+    expect(mini.description).toBe("");
+    expect(audits.recommended).toBe(true);
     expect(audits.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
     expect(mini.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
     expect(audits.features.every((f) => f.included)).toBe(true);
@@ -53,13 +55,23 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to one highlight feature (brand logos live on the desktop hero rail)", () => {
+  it("maps dealer to five mobile rows and keeps the desktop globe highlight", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
+    expect(getTp5MobileTabTitle(dealer)).toBe("DĪLERI");
+    expect(getTp5MobileCardTitle(dealer)).toBe("OFICIĀLO DĪLERU DATI");
+    expect(getTp5MobileCtaLabel(dealer, true)).toBe("PASŪTĪT 24,99 €");
     expect(dealer.description).toBe("");
-    expect(dealer.features.map((f) => f.name)).toEqual(["Dīleru servisa vēsture un nobraukums"]);
-    expect(dealer.features[0]?.included).toBe(true);
-    expect(dealer.features[0]?.subtitle).toBe(
+    expect(dealer.features.map((f) => f.name)).toEqual([
+      "Odometra rādījumi",
+      "Servisa un apkopju vēsture*",
+      "Kopsavilkums",
+      "100% Naudas atmaksas garantija.",
+      "Atbalstītie ražotāji",
+    ]);
+    expect(dealer.features.every((f) => f.included)).toBe(true);
+    expect(dealer.desktopHighlight?.name).toBe("Dīleru servisa vēsture un nobraukums");
+    expect(dealer.desktopHighlight?.subtitle).toBe(
       "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
     );
     expect(dealer.extraNote).toBeUndefined();
@@ -89,7 +101,11 @@ describe("test-pricing-5 mobile three-tier model", () => {
       );
     });
     expect(getTp5MobileService("dealer", "en").title).toBe("DEALER DATA");
+    expect(getTp5MobileTabTitle(getTp5MobileService("dealer", "en"))).toBe("DEALERS");
+    expect(getTp5MobileCardTitle(getTp5MobileService("dealer", "en"))).toBe("OFFICIAL DEALER DATA");
     expect(getTp5MobileTurnaround("en")).toContain("24-72h");
+    expect(lv.every((service) => !service.buttonText.includes("\u2014"))).toBe(true);
+    expect(en.every((service) => !service.buttonText.includes("\u2014"))).toBe(true);
   });
 
   it("maps checkout tiers to Stripe plan amounts", () => {

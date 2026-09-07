@@ -57,9 +57,11 @@ export function HeaderClient() {
     isPartneriem;
   const headerChromeDark = isDarkHeaderSurface;
 
-  const headerSurface = isDarkHeaderSurface
-    ? "border-b border-white/[0.08] bg-[#07080a]/96 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#07080a]/92"
-    : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
+  const headerSurface = isHome
+    ? "border-b border-transparent bg-transparent pt-[env(safe-area-inset-top,0px)] lg:border-white/[0.08] lg:bg-[#07080a]/96 lg:backdrop-blur-md lg:supports-[backdrop-filter]:bg-[#07080a]/92"
+    : isDarkHeaderSurface
+      ? "border-b border-white/[0.08] bg-[#07080a]/96 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#07080a]/92"
+      : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
 
   const logoClass = headerChromeDark
     ? "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-white transition-colors hover:text-white/90 lg:min-h-0 lg:min-w-0 lg:text-[28.98px]"
@@ -78,10 +80,14 @@ export function HeaderClient() {
       : raw;
   };
 
+  const partnerChipClass = headerChromeDark
+    ? "inline-flex h-8 items-center gap-1.5 rounded-full border border-white/18 bg-transparent px-2.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-[#93c5fd] no-underline transition hover:border-white/28 hover:text-[#bfdbfe]"
+    : "inline-flex h-8 items-center gap-1.5 rounded-full border border-black/15 bg-transparent px-2.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-[#2563eb] no-underline transition hover:border-[#2563eb]/40";
+
   const navLabelWithHint = (labelKey: SiteRailLabelKey) => (
     <span className="inline-flex items-center gap-1">
       <span>{navLabelForKey(labelKey)}</span>
-      {labelKey === "b2b" ? <LogIn className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden /> : null}
+      {labelKey === "b2b" ? <LogIn className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden /> : null}
     </span>
   );
 
@@ -132,7 +138,7 @@ export function HeaderClient() {
   );
 
   return (
-    <header className={`sticky top-0 z-[42] isolate w-full ${headerSurface}`}>
+    <header className={`${isHome ? "fixed lg:sticky" : "sticky"} top-0 z-[42] isolate w-full ${headerSurface}`}>
       <div className={headerInnerClass}>
         {isAzvinDemo ? (
           <Link href="/demo/azvin" className={logoClass} aria-label="AZ.VIN">
@@ -160,7 +166,11 @@ export function HeaderClient() {
                   key={`${s.labelKey}:${s.href}`}
                   href={s.href}
                   prefetch={false}
-                  className={`whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] no-underline transition-colors ${navLinkInactive}`}
+                  className={
+                    s.labelKey === "b2b"
+                      ? `relative z-[52] ${partnerChipClass}`
+                      : `whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] no-underline transition-colors ${navLinkInactive}`
+                  }
                   aria-label={s.labelKey === "b2b" ? tRail("b2bLoginAria") : undefined}
                 >
                   {navLabelWithHint(s.labelKey)}
@@ -170,17 +180,28 @@ export function HeaderClient() {
           ) : null}
 
           {showHomeNavRail ? (
+            <Link
+              href="/partneriem"
+              prefetch={false}
+              className={`relative z-[52] lg:hidden ${partnerChipClass}`}
+              aria-label={tRail("b2bLoginAria")}
+            >
+              {navLabelWithHint("b2b")}
+            </Link>
+          ) : null}
+
+          {showHomeNavRail ? (
             <button
               type="button"
               aria-expanded={mobileMenuOpen}
               aria-controls="header-mobile-nav-panel"
               onClick={() => setMobileMenuOpen((o) => !o)}
-              className={`lg:hidden relative z-[52] inline-flex h-7 w-7 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none shadow-none transition focus-visible:ring-2 focus-visible:ring-[#0066ff]/45 focus-visible:ring-offset-2 hover:bg-transparent ${
+              className={`lg:hidden relative z-[52] inline-flex h-11 w-11 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none shadow-none transition focus-visible:ring-2 focus-visible:ring-[#0066ff]/45 focus-visible:ring-offset-2 hover:bg-transparent ${
                 headerChromeDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"
               }`}
               aria-label={mobileMenuOpen ? tHeader("menuClose") : tHeader("menuOpen")}
             >
-              {mobileMenuOpen ? <X className="h-[18px] w-[18px]" strokeWidth={1.75} /> : <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />}
+              {mobileMenuOpen ? <X className="h-[22px] w-[22px]" strokeWidth={1.75} /> : <Menu className="h-[22px] w-[22px]" strokeWidth={1.75} />}
             </button>
           ) : null}
 
@@ -195,7 +216,7 @@ export function HeaderClient() {
             <Link
               href={pathname as never}
               locale={targetLocale}
-              className={`relative z-[52] inline-flex min-h-[1.8rem] min-w-[1.8rem] shrink-0 items-center justify-center text-[13.8px] leading-none no-underline transition lg:min-h-[2.25rem] lg:min-w-[2.25rem] lg:text-[calc(17px*1.15)] ${
+              className={`relative z-[52] hidden min-h-[2.25rem] min-w-[2.25rem] shrink-0 items-center justify-center text-[calc(17px*1.15)] leading-none no-underline transition lg:inline-flex ${
                 headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
               }`}
               aria-label={localeLabel}
@@ -210,7 +231,37 @@ export function HeaderClient() {
       {showHomeNavRail && mobileMenuOpen ? (
         <div id="header-mobile-nav-panel" className={`relative z-[44] lg:hidden ${mobilePanelBg} border-t`}>
           <nav aria-label={tRail("navAria")} className="flex flex-col gap-px py-2.5 pr-[max(0.8rem,env(safe-area-inset-right))] pl-[max(0.8rem,env(safe-area-inset-left))] lg:py-3 lg:pl-[max(1rem,env(safe-area-inset-left))] lg:pr-[max(1rem,env(safe-area-inset-right))]">
-            {navSections.map((s) => (
+            <div className="mb-1 flex gap-2 px-2 py-1.5" role="group" aria-label={tHeader("langGroupAria")}>
+              <Link
+                href={pathname as never}
+                locale="lv"
+                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
+                  locale === "lv"
+                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
+                    : headerChromeDark
+                      ? "border-white/12 text-white/80"
+                      : "border-black/12 text-[#1d1d1f]/80"
+                }`}
+              >
+                <span aria-hidden>🇱🇻</span>
+                {tHeader("langLv")}
+              </Link>
+              <Link
+                href={pathname as never}
+                locale="en"
+                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
+                  locale === "en"
+                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
+                    : headerChromeDark
+                      ? "border-white/12 text-white/80"
+                      : "border-black/12 text-[#1d1d1f]/80"
+                }`}
+              >
+                <span aria-hidden>🇬🇧</span>
+                {tHeader("langEn")}
+              </Link>
+            </div>
+            {navSections.filter((s) => s.labelKey !== "b2b").map((s) => (
               <Link
                 key={`mob-${s.labelKey}:${s.href}`}
                 href={s.href}

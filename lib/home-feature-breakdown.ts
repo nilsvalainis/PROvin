@@ -50,7 +50,7 @@ const MINI_LV: HomeFeatureBreakdownPackage = {
       icon: "listing-analysis",
     },
     {
-      title: "EU reģistru pārbaude & TA vēsture",
+      title: "Izcelsmes valsts reģistri & TA vēsture",
       description:
         "Detalizēta Latvijas un Eiropas publisko reģistru datu analīze, tostarp visu tehnisko apskašu vēsture.",
       icon: "eu-registry",
@@ -189,7 +189,7 @@ const MINI_EN: HomeFeatureBreakdownPackage = {
       icon: "listing-analysis",
     },
     {
-      title: "EU registry check & inspection history",
+      title: "Origin-country registers & inspection history",
       description:
         "Detailed analysis of Latvian and European public registry data, including the full roadworthiness inspection history.",
       icon: "eu-registry",
