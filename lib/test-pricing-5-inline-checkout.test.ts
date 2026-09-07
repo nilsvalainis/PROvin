@@ -69,6 +69,8 @@ describe("test-pricing-5 inline checkout", () => {
     expect(getTp5StripeCheckoutProduct("dealer")?.productName).toContain("dīlera");
     expect(getTp5StripeCheckoutProduct("premium")?.productName).toBe("PROVIN AUDITS");
     expect(getTp5StripeCheckoutProduct("mini")).toBeNull();
+    expect(getTp5StripeCheckoutProduct("plus", "en")?.productDesc).toContain("Latvia");
+    expect(getTp5StripeCheckoutProduct("plus", "lv")?.productDesc).toContain("Latvijā");
   });
 
   it("uses Latvian product copy on Stripe Checkout", () => {

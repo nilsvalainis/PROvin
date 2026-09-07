@@ -154,6 +154,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   ctx.y -= 24;
 
   drawTextLine(ctx, "Pakalpojuma sniedzējs", 9, { font: fontBold, color: MUTED });
+  drawParagraph(ctx, brand, 10);
   if (legal.legalName) drawParagraph(ctx, legal.legalName, 10);
   if (legal.regNo) drawParagraph(ctx, `Reģ. Nr.: ${legal.regNo}`, 10);
   if (legal.legalAddress) drawParagraph(ctx, legal.legalAddress, 10);

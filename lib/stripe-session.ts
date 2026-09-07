@@ -23,11 +23,10 @@ export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): Ch
   return "audit";
 }
 
-/**
- * Hosted Stripe Checkout chrome (Maksāt, Starpsumma, Karte, …).
- * Stripe tulko šos laukus pēc `locale`; produktu tekstus rakstām paši.
- */
-export const STRIPE_CHECKOUT_LOCALE = "lv" as const;
+/** Hosted Stripe Checkout chrome follows the public site locale. */
+export function stripeCheckoutLocale(locale?: string): "lv" | "en" {
+  return locale === "en" ? "en" : "lv";
+}
 
 /**
  * Stripe Checkout papildu lauks „Klienta komentārs” — klients var pievienot
@@ -41,6 +40,16 @@ export const CLIENT_COMMENT_CUSTOM_FIELD = {
   optional: true,
   text: { maximum_length: 255 },
 } satisfies Stripe.Checkout.SessionCreateParams.CustomField;
+
+export function getClientCommentCustomField(
+  locale?: string,
+): Stripe.Checkout.SessionCreateParams.CustomField {
+  if (locale !== "en") return CLIENT_COMMENT_CUSTOM_FIELD;
+  return {
+    ...CLIENT_COMMENT_CUSTOM_FIELD,
+    label: { type: "custom", custom: "Customer comment" },
+  };
+}
 
 export function getCustomFieldValue(
   session: Stripe.Checkout.Session,

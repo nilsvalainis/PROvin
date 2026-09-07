@@ -90,11 +90,37 @@ export function getTp5CheckoutSubmitMessage(
   return null;
 }
 
+const TP5_STRIPE_CHECKOUT_PRODUCT_EN: Record<
+  keyof typeof TP5_STRIPE_CHECKOUT_PRODUCT,
+  Pick<Tp5StripeCheckoutProduct, "productDesc">
+> = {
+  plus: {
+    productDesc:
+      "For cars used in Latvia. No paid international database checks. Other cars: choose PROVIN AUDITS.",
+  },
+  premium: {
+    productDesc:
+      "Full data analysis across multiple databases, listing analysis and an expert conclusion.",
+  },
+  dealer: {
+    productDesc: "Official dealer service history. 100% refund if no data is available.",
+  },
+  koreaUsa: {
+    productDesc:
+      "US and Korea registry, auction archive and damage check. 100% refund if no data is available.",
+  },
+};
+
 export function getTp5StripeCheckoutProduct(
   planId: TestPricingPlanId,
+  locale?: string,
 ): Tp5StripeCheckoutProduct | null {
   if (planId === "plus" || planId === "premium" || planId === "dealer" || planId === "koreaUsa") {
-    return TP5_STRIPE_CHECKOUT_PRODUCT[planId];
+    const row = TP5_STRIPE_CHECKOUT_PRODUCT[planId];
+    if (locale === "en") {
+      return { ...row, ...TP5_STRIPE_CHECKOUT_PRODUCT_EN[planId] };
+    }
+    return row;
   }
   return null;
 }

@@ -116,6 +116,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   const invoiceDate = dateFmt.format(new Date(order.created * 1000));
 
   const supplierLines = [
+    brand,
     legal.legalName || "-",
     legal.regNo ? `Reģ. Nr.: ${legal.regNo}` : null,
     legal.legalAddress || null,

@@ -13,8 +13,8 @@ export function getMailFromAddress(): string {
   const f = process.env.SMTP_FROM?.trim();
   if (f) return f;
   const user = process.env.SMTP_USER?.trim();
-  if (user) return `PROVIN <${user}>`;
-  return "PROVIN <info@provin.lv>";
+  if (user) return `PROVIN.LV <${user}>`;
+  return "PROVIN.LV <info@provin.lv>";
 }
 
 /** Reply-To klientu atbildēm. */

@@ -14,7 +14,7 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
-import { CLIENT_COMMENT_CUSTOM_FIELD, STRIPE_CHECKOUT_LOCALE } from "@/lib/stripe-session";
+import { getClientCommentCustomField, stripeCheckoutLocale } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
 
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
   const thanksPath = `${home}/paldies`;
   const cancelPath = `${home}?atcelts=1#${ORDER_SECTION_ID}`;
 
-  const misc = (await import(`../../../messages/lv/misc.json`)).default as {
+  const misc = (await import(`../../../messages/${locale}/misc.json`)).default as {
     Misc: {
       checkoutProductName: string;
       checkoutProductDesc: string;
@@ -154,7 +154,7 @@ export async function POST(req: Request) {
     cancel_url: `${origin}${cancelPath}`,
     phone_number_collection: { enabled: false },
     /** Stripe lapā — papildu lauks „Klienta komentārs” (nav obligāts). */
-    custom_fields: [CLIENT_COMMENT_CUSTOM_FIELD],
+    custom_fields: [getClientCommentCustomField(locale)],
     metadata: {
       checkout_line: "audit",
       vin,
@@ -169,7 +169,7 @@ export async function POST(req: Request) {
       ...(notes ? { notes } : {}),
       ...invoiceBuyerMetadataFromUnknown(raw),
     },
-    locale: STRIPE_CHECKOUT_LOCALE,
+    locale: stripeCheckoutLocale(locale),
   });
 
   if (!session.url) {

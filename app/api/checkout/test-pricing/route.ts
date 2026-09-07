@@ -6,7 +6,10 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { normalizeVin } from "@/lib/order-field-validation";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
-import { CLIENT_COMMENT_CUSTOM_FIELD, STRIPE_CHECKOUT_LOCALE } from "@/lib/stripe-session";
+import {
+  getClientCommentCustomField,
+  stripeCheckoutLocale,
+} from "@/lib/stripe-session";
 import {
   getTestPricingPlan,
   isTestPricingPlanId,
@@ -35,11 +38,15 @@ function resolveStripePriceId(envKey: string): string | null {
   return id.startsWith("price_") ? id : null;
 }
 
-function buildCheckoutCustomFields(plan: { vinRequired: boolean }): Stripe.Checkout.SessionCreateParams.CustomField[] {
+function buildCheckoutCustomFields(
+  plan: { vinRequired: boolean },
+  locale?: string,
+): Stripe.Checkout.SessionCreateParams.CustomField[] {
+  const en = locale === "en";
   return [
     {
       key: "listing_url",
-      label: { type: "custom", custom: "Sludinājuma saite" },
+      label: { type: "custom", custom: en ? "Listing link" : "Sludinājuma saite" },
       type: "text",
       optional: false,
     },
@@ -47,12 +54,12 @@ function buildCheckoutCustomFields(plan: { vinRequired: boolean }): Stripe.Check
       key: "vin",
       label: {
         type: "custom",
-        custom: "VIN (17 zīmes, obligāts)",
+        custom: en ? "VIN (17 characters, required)" : "VIN (17 zīmes, obligāts)",
       },
       type: "text",
       optional: false,
     },
-    CLIENT_COMMENT_CUSTOM_FIELD,
+    getClientCommentCustomField(locale),
   ];
 }
 
@@ -137,7 +144,7 @@ export async function POST(req: Request) {
   const cancelPath = testPricingCancelPath(sourcePage, locale);
 
   const tp5Product = isTp5CheckoutSource(sourcePage)
-    ? getTp5StripeCheckoutProduct(plan.id)
+    ? getTp5StripeCheckoutProduct(plan.id, locale)
     : null;
 
   const lineItem = tp5Product
@@ -169,7 +176,7 @@ export async function POST(req: Request) {
             };
       })();
 
-  const submitNote = getTp5CheckoutSubmitMessage(plan.id, STRIPE_CHECKOUT_LOCALE);
+  const submitNote = getTp5CheckoutSubmitMessage(plan.id, locale);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -179,15 +186,14 @@ export async function POST(req: Request) {
     customer_creation: "always",
     phone_number_collection: { enabled: true },
     billing_address_collection: "auto",
-    allow_promotion_codes: true,
     ...(clientCollected
       ? {
-          /** VIN/saite jau savākti formā — Stripe lapā tikai „Klienta komentārs”. */
-          custom_fields: [CLIENT_COMMENT_CUSTOM_FIELD],
+          /** VIN/saite jau savākti formā — Stripe lapā tikai klienta komentārs. */
+          custom_fields: [getClientCommentCustomField(locale)],
         }
       : {
           consent_collection: { terms_of_service: "required" as const },
-          custom_fields: buildCheckoutCustomFields(plan),
+          custom_fields: buildCheckoutCustomFields(plan, locale),
         }),
     metadata: {
       checkout_line: plan.id,
@@ -205,8 +211,7 @@ export async function POST(req: Request) {
         : {}),
       ...invoiceBuyerMetadataFromUnknown(raw),
     },
-    /** Stripe chrome (Maksāt, Starpsumma, Karte) + mūsu produktu teksti LV. */
-    locale: STRIPE_CHECKOUT_LOCALE,
+    locale: stripeCheckoutLocale(locale),
     ...(submitNote
       ? {
           custom_text: {

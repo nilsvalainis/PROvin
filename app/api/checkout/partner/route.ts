@@ -10,7 +10,7 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getStripe } from "@/lib/stripe";
-import { CLIENT_COMMENT_CUSTOM_FIELD, STRIPE_CHECKOUT_LOCALE } from "@/lib/stripe-session";
+import { getClientCommentCustomField, stripeCheckoutLocale } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
 
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
     success_url: `${origin}${prefix}/partneriem/konts/pasutijumi?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${prefix}/partneriem/konts`,
     phone_number_collection: { enabled: false },
-    custom_fields: [CLIENT_COMMENT_CUSTOM_FIELD],
+    custom_fields: [getClientCommentCustomField(locale)],
     metadata: {
       checkout_line: planRaw,
       partner_id: partner.id,
@@ -135,7 +135,7 @@ export async function POST(req: Request) {
         companyAddress: partner.companyAddress,
       }),
     },
-    locale: STRIPE_CHECKOUT_LOCALE,
+    locale: stripeCheckoutLocale(locale),
   });
 
   if (!session.url) {

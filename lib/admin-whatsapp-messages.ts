@@ -7,7 +7,6 @@ Būšu ļoti pateicīgs, ja atstāsiet atsauksmi par šo projektu Google. Paldie
 https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils V. (IRISS)
 PROVIN.LV`;
 
 /** WhatsApp iepriekš aizpildītais teksts — PROVIN SELECT stratēģiskā konsultācija. */
@@ -17,7 +16,7 @@ Nosūtu Jums PROVIN SELECT stratēģisko konsultāciju. Visus papildu materiālu
 
 ⚠️ Svarīgi: Sakarā ar tehniskiem uzlabojumiem, e-pasts dažkārt mēdz nonākt Spam mapē. Lūdzu, pārbaudiet!
 
-Ja rodas jautājumi par konsultācijas ieteikumiem vai vēlaties palīdzību auto izvēlē — droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
+Ja rodas jautājumi par konsultācijas ieteikumiem vai vēlaties palīdzību auto izvēlē, droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
 
 Ar cieņu,
-IRISS (Nils V.)`;
+PROVIN.LV`;

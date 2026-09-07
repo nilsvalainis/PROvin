@@ -22,6 +22,7 @@ describe("invoice HTML buyer requisites", () => {
         "PRV-2026-0001",
       ),
     );
+    expect(html).toContain("PROVIN.LV");
     expect(html).toContain("SIA Demo Auto");
     expect(html).toContain("Reģ. nr.: 40103123456");
     expect(html).toContain("Brīvības iela 1, Rīga");
