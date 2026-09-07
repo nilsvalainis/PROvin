@@ -419,7 +419,6 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   complete: "bg-emerald-500",
 };
 
-const WIZARD_STEP_COUNT = 11;
 const WIZARD_SUMMARY_STEP = 10;
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {

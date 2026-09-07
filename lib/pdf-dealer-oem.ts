@@ -68,7 +68,7 @@ function formatMileage(obj: Record<string, unknown>): string {
 
 function formatLocation(obj: Record<string, unknown>): { dealer: string; address: string } {
   const loc = obj.location;
-  if (loc && typeof loc === "object" && !Array.isArray(loc) && loc !== true) {
+  if (loc && typeof loc === "object" && !Array.isArray(loc)) {
     const o = loc as Record<string, unknown>;
     const dealer =
       pickStr(o, [/dealer|workshop|company|name|label|partner/i]) || strVal(o.label);
