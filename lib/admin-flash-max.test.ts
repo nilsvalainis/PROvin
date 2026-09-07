@@ -41,7 +41,12 @@ describe("FLASH MAX jobs", () => {
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto_oil" || j.id === "oneauto_service")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "seller" && j.group === "extra")).toBe(true);
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "autodna")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "csdd")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "autodna")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "carvertical")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "ltab")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "cc_vin")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "dealer_comments")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!)).toBe("flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "technical_risks")!)).toBe("flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "summary")!)).toBe("pro");

@@ -4,6 +4,7 @@ import {
   collectCustomerEmails,
   collectCustomerPhoneKeys,
   customerContactsMatch,
+  isDealerHighlightAdminOrder,
   isTelegramGroupPayment,
   normalizeCustomerEmail,
   normalizeCustomerPhoneKey,
@@ -74,6 +75,16 @@ describe("telegram vs audit amounts", () => {
     expect(paidProductLabel({ checkoutLine: "mini", amountTotalCents: 3999 })).toBe("PROVIN MINI");
     expect(paidProductLabel({ checkoutLine: "business", amountTotalCents: 6999 })).toBe("PROVIN BUSINESS");
     expect(paidProductLabel({ checkoutLine: "dealer", amountTotalCents: 1999 })).toBe("Dīlera dati");
+  });
+
+  it("highlights dealer-priced orders and skips Telegram 9,99 €", () => {
+    expect(isDealerHighlightAdminOrder({ checkoutLine: "dealer", amountTotalCents: 1999 })).toBe(true);
+    expect(isDealerHighlightAdminOrder({ checkoutLine: "audit", amountTotalCents: 2499 })).toBe(true);
+    expect(isDealerHighlightAdminOrder({ checkoutLine: "audit", amountTotalCents: 3000 })).toBe(true);
+    expect(isDealerHighlightAdminOrder({ checkoutLine: "audit", amountTotalCents: 3999 })).toBe(false);
+    expect(isDealerHighlightAdminOrder({ checkoutLine: "dealer", amountTotalCents: 999 })).toBe(false);
+    expect(isDealerHighlightAdminOrder({ checkoutLine: "audit", amountTotalCents: 999 })).toBe(false);
+    expect(isDealerHighlightAdminOrder({ amountTotalCents: 0 })).toBe(false);
   });
 
   it("routes SELECT to konsultācijas", () => {

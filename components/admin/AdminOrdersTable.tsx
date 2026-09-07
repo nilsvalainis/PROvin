@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
+import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
@@ -392,13 +393,19 @@ export function AdminOrdersTable({
                 }
                 router.push(orderHref);
               };
+              const dealerHighlight = isDealerHighlightAdminOrder({
+                checkoutLine: o.checkoutLine,
+                amountTotalCents: o.amountTotal,
+              });
               return (
                 <tr
                   key={o.id}
                   className={
                     o.isDemo
                       ? "cursor-pointer bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
-                      : "cursor-pointer transition-colors hover:bg-slate-50/90"
+                      : dealerHighlight
+                        ? "cursor-pointer bg-sky-50/80 transition-colors hover:bg-sky-100/80"
+                        : "cursor-pointer transition-colors hover:bg-slate-50/90"
                   }
                   onClick={openOrderFromRow}
                   onAuxClick={(e) => {

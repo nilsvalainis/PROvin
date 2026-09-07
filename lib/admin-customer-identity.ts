@@ -78,6 +78,20 @@ export function isTelegramGroupPayment(amountCents: number | null | undefined): 
   return amountCents >= TELEGRAM_GROUP_AMOUNT_MIN_CENTS && amountCents <= TELEGRAM_GROUP_AMOUNT_MAX_CENTS;
 }
 
+/** Dīlera pasūtījums sarakstā (gaiši zila rinda): `dealer` līnija vai summa ≤ 30 €, bez Telegram 9,99 €. */
+export const DEALER_ORDER_AMOUNT_MAX_CENTS = 3000;
+
+export function isDealerHighlightAdminOrder(args: {
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
+}): boolean {
+  if (isTelegramGroupPayment(args.amountTotalCents)) return false;
+  const line = (args.checkoutLine ?? "").trim().toLowerCase();
+  if (line === "dealer") return true;
+  const cents = args.amountTotalCents;
+  return cents != null && Number.isFinite(cents) && cents > 0 && cents <= DEALER_ORDER_AMOUNT_MAX_CENTS;
+}
+
 export function paidProductLabel(args: {
   checkoutLine?: string | null;
   amountTotalCents?: number | null;

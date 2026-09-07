@@ -1460,14 +1460,23 @@ function buildSourcePhotoGroupsPdfHtml(
 
   const groups = normalizeGroups(photoGroups, legacyPhotos);
   if (groups.length === 0) return "";
-  const gridCls =
-    layout === "stack"
-      ? "pdf-listing-photo-grid pdf-listing-photo-grid--full"
-      : layout === "appendix"
-        ? "pdf-listing-photo-grid pdf-listing-photo-grid--appendix"
-        : "pdf-listing-photo-grid";
+  let resolvedCount = 0;
+  for (const group of groups) {
+    for (const ph of group.photos) {
+      if (dataUrls.get(ph.id)) resolvedCount += 1;
+    }
+  }
+  if (resolvedCount === 0) return "";
+  const useFull = resolvedCount === 1 || layout === "stack";
+  const gridCls = useFull
+    ? "pdf-listing-photo-grid pdf-listing-photo-grid--full"
+    : layout === "appendix"
+      ? "pdf-listing-photo-grid pdf-listing-photo-grid--appendix"
+      : "pdf-listing-photo-grid";
   const cellCls =
-    layout === "appendix" ? "pdf-listing-photo-cell pdf-listing-photo-cell--appendix" : "pdf-listing-photo-cell";
+    layout === "appendix" && !useFull
+      ? "pdf-listing-photo-cell pdf-listing-photo-cell--appendix"
+      : "pdf-listing-photo-cell";
 
   const sections: string[] = [];
   let photoIndex = 0;

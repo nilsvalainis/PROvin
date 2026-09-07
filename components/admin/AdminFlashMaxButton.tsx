@@ -23,6 +23,8 @@ type Props = {
   notice?: string | null;
   error?: string | null;
   onRun: (selection: FlashMaxSelection) => void;
+  /** Sticky joslai: izvēlne atveras pa kreisi. */
+  menuAlign?: "start" | "end";
 };
 
 const SHORT_TIER: Record<AiAdminModelTier, string> = {
@@ -86,7 +88,7 @@ function JobRow({
   );
 }
 
-export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRun }: Props) {
+export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRun, menuAlign = "start" }: Props) {
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState<FlashMaxSelection>(defaultFlashMaxSelection);
   const [operatorNotes, setOperatorNotes] = useState("");
@@ -154,7 +156,9 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
         <div
           role="dialog"
           aria-labelledby={titleId}
-          className="absolute left-0 top-full z-50 mt-1 w-[min(24rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(15,23,42,0.14)]"
+          className={`absolute top-full z-50 mt-1 w-[min(24rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(15,23,42,0.14)] ${
+            menuAlign === "end" ? "right-0" : "left-0"
+          }`}
         >
           <div className="mb-1.5 flex flex-wrap items-start justify-between gap-1.5">
             <div className="min-w-0">
@@ -162,7 +166,8 @@ export function AdminFlashMaxButton({ disabled, busy, phase, notice, error, onRu
                 FLASH MAX
               </p>
               <p className="text-[9px] leading-snug text-slate-500">
-                Izvēlies sadaļas, ieraksti komandu, tad apstiprini. Aģenti pēc noklusējuma — kā ✨ pogās.
+                CSDD, AutoDNA, CarVertical, LTAB: Sonnet. Pārējie avoti: Gemini Flash. Kopsavilkums paliek kā ✨
+                pogās.
               </p>
             </div>
             <div className="flex flex-wrap gap-1">

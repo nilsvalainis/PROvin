@@ -34,25 +34,27 @@ export function ListingAnalysisSubsectionHeading({
   title,
   compact,
   action,
+  className,
   children,
 }: {
   icon: LucideIcon;
   title: string;
   compact?: boolean;
   action?: ReactNode;
+  className?: string;
   children: ReactNode;
 }) {
   const titleClass = compact
     ? "text-[9px] font-medium uppercase tracking-wide text-slate-600"
     : "text-[10px] font-medium uppercase tracking-wide text-slate-600";
   return (
-    <div className="min-w-0">
+    <div className={`flex min-h-0 min-w-0 flex-col ${className ?? ""}`.trim()}>
       <div className={`flex min-w-0 flex-wrap items-center gap-x-2 ${compact ? "gap-y-0.5" : "gap-y-1"}`}>
         <AdminProvinLucide icon={Icon} />
         <span className={`min-w-0 ${titleClass}`}>{title}</span>
         {action ? <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">{action}</div> : null}
       </div>
-      <div className={`min-w-0 ${compact ? "pt-1" : "pt-1.5"}`}>{children}</div>
+      <div className={`min-h-0 min-w-0 flex-1 ${compact ? "pt-1" : "pt-1.5"}`}>{children}</div>
     </div>
   );
 }

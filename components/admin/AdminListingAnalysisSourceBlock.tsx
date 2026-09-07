@@ -99,6 +99,8 @@ type Props = {
   onListingPhotoGroupsStructuralCommit?: (next: ListingAnalysisBlockState["photoGroups"]) => void;
   /** Pasūtījuma sludinājuma saite — atvēršanai jaunā cilnē pie fotogrāfiju analīzes. */
   listingUrl?: string | null;
+  /** Sadala sludinājuma soli: pārdevējs blakus vēsturei, foto blakus aprakstam. */
+  panels?: "all" | "seller" | "media";
 };
 
 export function AdminListingAnalysisSourceBlock({
@@ -115,6 +117,7 @@ export function AdminListingAnalysisSourceBlock({
   photosPersistenceEnabled = false,
   onListingPhotoGroupsStructuralCommit,
   listingUrl,
+  panels = "all",
 }: Props) {
   const v = value ?? emptyListingAnalysisBlock();
   const L = LISTING_ANALYSIS_SUBSECTIONS;
@@ -273,8 +276,10 @@ export function AdminListingAnalysisSourceBlock({
 
   const roDefault = "min-h-[48px] rounded-md border border-slate-200/40 bg-transparent px-2 py-1.5 text-[11px] text-slate-500";
 
+  const showSeller = panels !== "media";
+  const showMedia = panels !== "seller";
   const clearFieldsBtn =
-    !readOnly ? (
+    !readOnly && showSeller ? (
       <AdminClearSourceBlockButton
         sourceLabel={SOURCE_BLOCK_LABELS.listing_analysis}
         disabled={disabled}
@@ -293,7 +298,9 @@ export function AdminListingAnalysisSourceBlock({
         <div className="mb-1.5 flex justify-end">{clearFieldsBtn}</div>
       ) : null}
       <div className={dense ? "space-y-2" : "space-y-2.5"}>
+        {showSeller ? (
         <ListingAnalysisSubsectionHeading
+          className="h-full"
           icon={LISTING_ANALYSIS_FIELD_LUCIDE.sellerPortrait}
           title={L.sellerPortrait}
           compact={dense}
@@ -348,8 +355,12 @@ export function AdminListingAnalysisSourceBlock({
             />
           )}
         </ListingAnalysisSubsectionHeading>
+        ) : null}
 
+        {showMedia ? (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
         <ListingAnalysisSubsectionHeading
+          className="h-full"
           icon={LISTING_ANALYSIS_FIELD_LUCIDE.photoAnalysis}
           title={L.photoAnalysis}
           compact={dense}
@@ -415,6 +426,7 @@ export function AdminListingAnalysisSourceBlock({
         </ListingAnalysisSubsectionHeading>
 
         <ListingAnalysisSubsectionHeading
+          className="h-full"
           icon={LISTING_ANALYSIS_FIELD_LUCIDE.listingPasteRaw}
           title={LISTING_ANALYSIS_LISTING_PASTE_LABEL}
           compact={dense}
@@ -458,7 +470,10 @@ export function AdminListingAnalysisSourceBlock({
             </AdminAiPolishTextareaShell>
           )}
         </ListingAnalysisSubsectionHeading>
+        </div>
+        ) : null}
       </div>
+      {showMedia ? (
       <AdminAiContextRawField
         value={v.aiContextRaw}
         onChange={(next) => onChange({ ...v, aiContextRaw: next })}
@@ -466,6 +481,7 @@ export function AdminListingAnalysisSourceBlock({
         disabled={disabled}
         ariaLabel="Sludinājuma analīze — AI papildu konteksts"
       />
+      ) : null}
     </div>
   );
 }

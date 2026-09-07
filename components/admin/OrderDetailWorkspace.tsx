@@ -161,6 +161,7 @@ import {
   Send,
   ShieldAlert,
   Sparkles,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -169,6 +170,7 @@ import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
+import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
   applySourceBlockGeneratedComment,
@@ -182,6 +184,7 @@ import {
 } from "@/lib/admin-source-comment-blocks";
 import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
   AdminCommonPhrasesDrawer,
@@ -207,12 +210,14 @@ import {
   orderHasSourceDataForAi,
 } from "@/lib/admin-ai-data-availability";
 import {
+  buildOemDealerPdfFilename,
   buildProvinAuditPdfFilename,
   buildProvinDilerisPdfFilename,
   resolveProvinAuditPdfProductBrand,
 } from "@/lib/audit-report-pdf-filename";
+import { buildOemDealerDocumentHtml } from "@/lib/pdf-dealer-oem";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
-import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { isValidHttpUrl, isValidOrderEmail } from "@/lib/order-field-validation";
 import {
   canNotifyClientOrder,
   isManualNotifyClientOrder,
@@ -338,11 +343,10 @@ const workspaceToolbarBtn =
 
 const wizardFooterBtnBase =
   "inline-flex h-9 min-w-[7.25rem] shrink-0 items-center justify-center rounded-lg px-3 py-2 text-[11px] font-semibold tracking-tight transition disabled:cursor-not-allowed disabled:opacity-40";
-const wizardFooterNav = `${wizardFooterBtnBase} border border-slate-300 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700`;
-const wizardFooterPreview = `${wizardFooterBtnBase} border border-amber-600/35 bg-[#FFD700] text-amber-950 shadow-sm hover:bg-[#ffe033]`;
 const wizardFooterPdf = `${wizardFooterBtnBase} border border-emerald-800/40 bg-[#22C55E] text-white shadow-sm hover:bg-[#16a34a]`;
 const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] border border-slate-800 bg-slate-900 text-white shadow-sm hover:bg-black`;
 const wizardFooterDealer = `${wizardFooterBtnBase} min-w-[8.75rem] border border-orange-800/35 bg-orange-500 text-white shadow-sm hover:bg-orange-600`;
+const wizardFooterOem = `${wizardFooterBtnBase} min-w-[8.75rem] border border-slate-400 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100`;
 
 function adminCommentFieldLabel(icon: LucideIcon, title: string) {
   return (
@@ -357,17 +361,6 @@ const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--c
 
 const workspaceSectionShell =
   "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
-
-const WHATSAPP_PREFILL_MESSAGE = `Sveiki!
-
-Nosūtu Jums iegādāto PROVIN auditu. Visus papildu materiālus nosūtīju uz Jūsu e-pastu.
-
-⚠️ Svarīgi: Sakarā ar tehniskiem uzlabojumiem, e-pasts dažkārt mēdz nonākt Spam mapē. Lūdzu, pārbaudiet!
-
-Ja rodas jautājumi par atskaites datiem, ir nepieciešams padoms pirms/pēc auto apskates vai palīdzība pie formalitāšu kārtošanas — droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
-
-Ar cieņu,
-IRISS (Nils V.)`;
 
 function wrapPdfTextLine(text: string, maxWidth: number, widthOfText: (value: string) => number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
@@ -3171,6 +3164,42 @@ export function OrderDetailWorkspace({
     window.setTimeout(schedulePrint, 900);
   };
 
+  const openOemDealerReport = async () => {
+    syncWsPersistRefFromState();
+    if (orderDraftPersistenceEnabled) {
+      await flushWorkspaceServerPatch({ showFlash: false });
+    }
+    const blocks = mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks);
+    const html = buildOemDealerDocumentHtml({
+      vin: payload.vin,
+      makeModel: blocks.csdd.makeModel,
+      autoRecords: blocks.auto_records,
+    });
+    const w = window.open("", "_blank");
+    if (!w) {
+      alert("Atļauj uznirstošo logu, lai atvērtu OEM dīlera PDF.");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    const printFileTitle = buildOemDealerPdfFilename(payload.vin);
+    let printed = false;
+    const schedulePrint = () => {
+      if (printed) return;
+      printed = true;
+      try {
+        w.document.title = printFileTitle;
+        w.focus();
+        w.print();
+      } catch {
+        printed = false;
+      }
+    };
+    w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
+    window.setTimeout(schedulePrint, 900);
+  };
+
   const previewBody = previewOpen ? (
     <div
       className={`admin-order-page fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 ${adminDark ? "dark" : ""}`}
@@ -3620,6 +3649,10 @@ export function OrderDetailWorkspace({
 
   const vinBar = (payload.vin ?? "").trim();
   const plateBar = (blocksDisplaySafe.csdd.registrationNumber ?? "").trim();
+  const listingBarHref =
+    payload.listingUrl?.trim() && isValidHttpUrl(payload.listingUrl.trim())
+      ? payload.listingUrl.trim()
+      : null;
   const whatsappPhoneDigits = normalizeWhatsAppPhoneDigits(payload.customerPhone);
 
   const generateAuditPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
@@ -3755,7 +3788,7 @@ export function OrderDetailWorkspace({
       a.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
 
-      openWhatsAppChat(whatsappPhoneDigits, WHATSAPP_PREFILL_MESSAGE, chatWindow);
+      openWhatsAppChat(whatsappPhoneDigits, WHATSAPP_PREFILL_AUDIT, chatWindow);
       alert("Atvērts WhatsApp čats. PDF atskaite lejupielādēta automātiski — pievienojiet to kā pielikumu ziņai.");
     } catch (error) {
       chatWindow?.close();
@@ -4124,6 +4157,18 @@ export function OrderDetailWorkspace({
                   }}
                 />
               ) : null}
+              {listingBarHref ? (
+                <a
+                  href={listingBarHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-6 items-center gap-0.5 rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[8px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] shadow-sm hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  title={listingBarHref}
+                >
+                  <ExternalLink className="h-3 w-3" aria-hidden />
+                  ss.lv
+                </a>
+              ) : null}
               {whatsappPhoneDigits ? (
                 <button
                   type="button"
@@ -4189,7 +4234,31 @@ export function OrderDetailWorkspace({
         </div>
       </nav>
 
-      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 ${ADMIN_CONTENT_MAX}`}>
+      <AdminOrderStickyActionRail
+        vin={vinBar}
+        plate={plateBar}
+        listingUrl={payload.listingUrl}
+        aiAllowed={payload.aiAllowed}
+        workspaceHydrated={workspaceHydrated}
+        prepareDraftBusy={prepareDraftBusy}
+        flashMaxBusy={flashMaxBusy}
+        flashMaxPhase={null}
+        flashMaxNotice={null}
+        flashMaxErr={null}
+        onFlashMax={(selection) => void runFlashMax(selection)}
+        copilotOpen={copilotOpen}
+        copilotBusy={copilotBusy}
+        onOpenCopilot={() => {
+          setPhrasesOpen(false);
+          setCopilotOpen(true);
+        }}
+        onVinCopied={() => {
+          setVinBarCopyFlash(true);
+          window.setTimeout(() => setVinBarCopyFlash(false), 600);
+        }}
+      />
+
+      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 lg:pr-[9.25rem] ${ADMIN_CONTENT_MAX}`}>
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}
@@ -4432,11 +4501,13 @@ export function OrderDetailWorkspace({
                 trafficStripClass={TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}
               />
               <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
                 <ListingAnalysisSubsectionHeading
+                  className="h-full"
                   icon={LISTING_ANALYSIS_CHROME_LUCIDE.listingHistory}
                   title={LISTING_HISTORY_SUBSECTION_TITLE}
                 >
-                  <div className="rounded-lg border border-[#E2E8F0] bg-transparent px-2 py-2">
+                  <div className="h-full rounded-lg border border-[#E2E8F0] bg-transparent px-2 py-2">
                     <AdminTirgusSourceBlock
                       value={blocksDisplaySafe.tirgus}
                       readOnly={false}
@@ -4456,6 +4527,23 @@ export function OrderDetailWorkspace({
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>
+                <div className="min-h-0 min-w-0">
+                  <AdminListingAnalysisSourceBlock
+                    value={blocksDisplaySafe.listing_analysis}
+                    readOnly={false}
+                    onChange={(next) => updateSourceBlock("listing_analysis", next)}
+                    variant="priority"
+                    autoGrow
+                    panels="seller"
+                    aiAllowed={payload.aiAllowed}
+                    buildAiPayload={buildAiListingPayload}
+                    sessionId={payload.sessionId}
+                    photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                    onListingPhotoGroupsStructuralCommit={commitListingPhotoGroupsStructural}
+                    listingUrl={payload.listingUrl}
+                  />
+                </div>
+                </div>
                 <div className="min-w-0 border-t border-slate-200/75 pt-2">
                   <AdminListingAnalysisSourceBlock
                     value={blocksDisplaySafe.listing_analysis}
@@ -4463,6 +4551,7 @@ export function OrderDetailWorkspace({
                     onChange={(next) => updateSourceBlock("listing_analysis", next)}
                     variant="priority"
                     autoGrow
+                    panels="media"
                     aiAllowed={payload.aiAllowed}
                     buildAiPayload={buildAiListingPayload}
                     sessionId={payload.sessionId}
@@ -4496,7 +4585,8 @@ export function OrderDetailWorkspace({
                 trafficStripClass=""
               />
               <div className="space-y-2 bg-transparent px-2 pb-2 pt-1.5">
-                <div className="min-w-0">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
+                <div className="min-h-0 min-w-0">
                   <AdminAiFieldError message={aiIncidentsSummaryErr} />
                   <AdminAiPolishRichCommentShell
                     compact
@@ -4517,20 +4607,7 @@ export function OrderDetailWorkspace({
                     }
                   />
                 </div>
-                <AdminListingAnalysisPhotos
-                  sessionId={payload.sessionId}
-                  photoGroups={ws.incidentPhotoGroups ?? []}
-                  disabled={!orderDraftPersistenceEnabled}
-                  onPhotoGroupsStructuralCommit={(next) =>
-                    void commitIncidentPhotoGroupsStructural(next as IncidentPhotoGroup[])
-                  }
-                  apiBasePath="/api/admin/incident-photo"
-                  maxPhotos={INCIDENT_MAX_PHOTOS}
-                  emptyGroup={emptyIncidentPhotoGroup}
-                  sectionTitle="Negadījuma fotogrāfijas"
-                  simple
-                />
-                <div className="min-w-0">
+                <div className="min-h-0 min-w-0">
                   <AdminAiFieldError message={aiMileageCommentErr} />
                   <AdminAiPolishRichCommentShell
                     compact
@@ -4557,6 +4634,20 @@ export function OrderDetailWorkspace({
                     }
                   />
                 </div>
+                </div>
+                <AdminListingAnalysisPhotos
+                  sessionId={payload.sessionId}
+                  photoGroups={ws.incidentPhotoGroups ?? []}
+                  disabled={!orderDraftPersistenceEnabled}
+                  onPhotoGroupsStructuralCommit={(next) =>
+                    void commitIncidentPhotoGroupsStructural(next as IncidentPhotoGroup[])
+                  }
+                  apiBasePath="/api/admin/incident-photo"
+                  maxPhotos={INCIDENT_MAX_PHOTOS}
+                  emptyGroup={emptyIncidentPhotoGroup}
+                  sectionTitle="Negadījuma fotogrāfijas"
+                  simple
+                />
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiTechnicalRisksErr} />
                   <AdminAiPolishRichCommentShell
@@ -4677,25 +4768,6 @@ export function OrderDetailWorkspace({
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--admin-border-subtle)] bg-[var(--admin-footer-bg)] px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)]">
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
-          <button
-            type="button"
-            className={wizardFooterNav}
-            disabled={wizardStep <= 0}
-            onClick={() => goWizardStep((s) => Math.max(0, s - 1))}
-          >
-            Atpakaļ
-          </button>
-          <button
-            type="button"
-            className={wizardFooterNav}
-            disabled={wizardStep >= WIZARD_STEP_COUNT - 1}
-            onClick={() => goWizardStep((s) => Math.min(WIZARD_STEP_COUNT - 1, s + 1))}
-          >
-            Turpināt
-          </button>
-          <button type="button" onClick={() => setPreviewOpen(true)} className={wizardFooterPreview}>
-            PDF Priekšskats
-          </button>
           <button type="button" onClick={() => void openPrintReport()} className={wizardFooterPdf}>
             Ģenerēt PDF
           </button>
@@ -4706,6 +4778,14 @@ export function OrderDetailWorkspace({
             title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti."
           >
             Ģenerēt dīlera PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => void openOemDealerReport()}
+            className={wizardFooterOem}
+            title="OEM-stila izdruka ar visiem dīlera API laukiem, t.sk. pasūtījumu un detaļu numuriem. Atsevišķs fails."
+          >
+            OEM dīlera PDF
           </button>
           <button
             type="button"

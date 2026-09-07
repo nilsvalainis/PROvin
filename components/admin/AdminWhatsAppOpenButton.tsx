@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { adminActionPillBase } from "@/components/admin/adminActionPill";
 import { adminCompactCopyBtnClass } from "@/components/admin/AdminClipboardButton";
+import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -32,7 +33,7 @@ export function AdminWhatsAppOpenButton({
 
   const onClick = useCallback(() => {
     if (!digits) return;
-    openWhatsAppChat(digits);
+    openWhatsAppChat(digits, WHATSAPP_PREFILL_AUDIT);
   }, [digits]);
 
   if (variant === "pill") {

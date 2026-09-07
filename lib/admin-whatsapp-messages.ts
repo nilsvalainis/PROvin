@@ -1,14 +1,14 @@
 /** WhatsApp iepriekš aizpildītais teksts — PROVIN AUDITS. */
-export const WHATSAPP_PREFILL_AUDIT = `Sveiki!
+export const WHATSAPP_PREFILL_AUDIT = `Sveiki! 
 
-Nosūtu Jums iegādāto PROVIN auditu. Visus papildu materiālus nosūtīju uz Jūsu e-pastu.
+Nosūtu iegādāto PROVIN atskaiti. Ja ir jautājumi par atskaites datiem vai nepieciešama konsultācija, droši zvaniet. 
 
-⚠️ Svarīgi: Sakarā ar tehniskiem uzlabojumiem, e-pasts dažkārt mēdz nonākt Spam mapē. Lūdzu, pārbaudiet!
-
-Ja rodas jautājumi par atskaites datiem, ir nepieciešams padoms pirms/pēc auto apskates vai palīdzība pie formalitāšu kārtošanas — droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
+Būšu ļoti pateicīgs, ja atstāsiet atsauksmi par šo projektu Google. Paldies!
+https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-IRISS (Nils V.)`;
+Nils V. (IRISS)
+PROVIN.LV`;
 
 /** WhatsApp iepriekš aizpildītais teksts — PROVIN SELECT stratēģiskā konsultācija. */
 export const WHATSAPP_PREFILL_SELECT_CONSULTATION = `Sveiki!

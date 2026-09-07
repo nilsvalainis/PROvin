@@ -54,3 +54,10 @@ export function buildProvinDilerisPdfFilename(vin: string | null | undefined): s
   const slug = v.length > 0 ? v : "NAV_VIN";
   return `OFICIALA_DILERA_DATI_${slug}.pdf`;
 }
+
+/** OEM-stila dīlera API izdruka (atsevišķs fails). */
+export function buildOemDealerPdfFilename(vin: string | null | undefined): string {
+  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const slug = v.length > 0 ? v : "NAV_VIN";
+  return `OEM_DILERA_DATI_${slug}.pdf`;
+}

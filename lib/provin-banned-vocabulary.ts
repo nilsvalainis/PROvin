@@ -78,6 +78,12 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "stāvoklis",
     code: "vocabulary_integritate",
   },
+  {
+    label: "kontūrā",
+    pattern: /\bkontūrā\b/i,
+    replacement: "virsbūvē (krāsa / virsbūve) vai sistēmā (elektronika / programmatūra)",
+    code: "vocabulary_kontura",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */

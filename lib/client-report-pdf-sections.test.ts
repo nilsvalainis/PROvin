@@ -1663,6 +1663,35 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });
 
+  it("a single source photo prints full width, not a two-column pair", () => {
+    const dataUrls = new Map<string, string>([
+      ["la_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],
+    ]);
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingAnalysis: {
+          ...createDefaultSourceBlocks().listing_analysis,
+          photoGroups: [
+            {
+              id: "la_phg_aabbccddeeff001122334455",
+              title: "Viena bilde",
+              photos: [{ id: "la_ph_aabbccddeeff001122334455" }],
+            },
+          ],
+          photos: [{ id: "la_ph_aabbccddeeff001122334455" }],
+        },
+        pdfVisibility: mergePdfVisibility({ sludinajums: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      listingAnalysisPhotoDataUrls: dataUrls,
+    });
+    expect(doc).toContain("pdf-listing-photo-grid--full");
+    expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(1);
+  });
+
   it("auto records photos print as a numbered two-column appendix", () => {
     const dataUrls = new Map<string, string>([
       ["ar_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],

@@ -162,9 +162,14 @@ export const FLASH_MAX_SUMMARY_ONLY_JOB_IDS: readonly string[] = [
   "summary",
 ];
 
-/** FLASH MAX noklusējuma modelis — tas pats, ko atsevišķā ✨ poga šim laukam. */
+/** FLASH MAX: CSDD / AutoDNA / CarVertical / LTAB → Claude Sonnet; pārējie avoti → Gemini Flash. */
+export const FLASH_MAX_SONNET_SOURCE_IDS = new Set(["csdd", "autodna", "carvertical", "ltab"]);
+
+/** FLASH MAX noklusējuma modelis (atsevišķās ✨ pogas paliek AI_ADMIN_FIELD_DEFAULT_TIER). */
 export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
-  if (job.kind === "source") return AI_ADMIN_FIELD_DEFAULT_TIER.source_comment;
+  if (job.kind === "source") {
+    return FLASH_MAX_SONNET_SOURCE_IDS.has(job.id) ? "flash" : "gemini-flash";
+  }
   if (job.kind === "listing") {
     return job.id === "seller" ? AI_ADMIN_FIELD_DEFAULT_TIER.seller : AI_ADMIN_FIELD_DEFAULT_TIER.price;
   }

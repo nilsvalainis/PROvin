@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOemDealerPdfFilename,
   buildProvinAuditPdfFilename,
   buildProvinDilerisPdfFilename,
   resolveProvinAuditPdfProductBrand,
@@ -38,6 +39,11 @@ describe("buildProvinAuditPdfFilename", () => {
     expect(buildProvinDilerisPdfFilename("WVWZZZ1JZXW000001")).toBe(
       "OFICIALA_DILERA_DATI_WVWZZZ1JZXW000001.pdf",
     );
+  });
+
+  it("builds OEM_DILERA_DATI_<VIN>.pdf for factory-style dealer dumps", () => {
+    expect(buildOemDealerPdfFilename("WVWZZZ1JZXW000001")).toBe("OEM_DILERA_DATI_WVWZZZ1JZXW000001.pdf");
+    expect(buildOemDealerPdfFilename(null)).toBe("OEM_DILERA_DATI_NAV_VIN.pdf");
   });
 
   it("sanitizes VIN and uses NAV_VIN when empty", () => {
