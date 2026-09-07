@@ -97,21 +97,24 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
                   : "border-white/10 bg-zinc-950/40"
               }`}
             >
-              <div
-                className={`grid h-[1.15rem] w-[1.15rem] place-items-center rounded-full border-[1.5px] ${
-                  on ? "border-[#2563EB] bg-[#2563EB]" : "border-white/20"
-                }`}
-              >
-                {on ? (
-                  <svg viewBox="0 0 12 12" className="h-[0.7rem] w-[0.7rem] stroke-white" fill="none" strokeWidth="2.4">
-                    <path d="M2.2 6.2 4.8 8.7 9.8 3.3" />
-                  </svg>
-                ) : null}
+              <div className="flex items-center justify-between gap-3">
+                <div className={`min-w-0 text-[0.72rem] font-semibold uppercase tracking-[0.08em] ${on ? "text-[#93c5fd]" : "text-zinc-500"}`}>
+                  {pack.qty === 1 ? t("packQty1") : t("packQtyN", { count: pack.qty })}
+                </div>
+                <div
+                  className={`grid h-[1.15rem] w-[1.15rem] shrink-0 place-items-center rounded-full border-[1.5px] ${
+                    on ? "border-[#2563EB] bg-[#2563EB]" : "border-white/20"
+                  }`}
+                  aria-hidden
+                >
+                  {on ? (
+                    <svg viewBox="0 0 12 12" className="h-[0.7rem] w-[0.7rem] stroke-white" fill="none" strokeWidth="2.4">
+                      <path d="M2.2 6.2 4.8 8.7 9.8 3.3" />
+                    </svg>
+                  ) : null}
+                </div>
               </div>
-              <div className={`mt-3.5 text-[0.72rem] font-semibold uppercase tracking-[0.08em] ${on ? "text-[#93c5fd]" : "text-zinc-500"}`}>
-                {pack.qty === 1 ? t("packQty1") : t("packQtyN", { count: pack.qty })}
-              </div>
-              <div className="mt-4 text-[1.55rem] font-semibold leading-none tracking-[-0.03em] text-zinc-100">
+              <div className="mt-3.5 text-[1.55rem] font-semibold leading-none tracking-[-0.03em] text-zinc-100">
                 {formatB2bEuroFromCents(pack.unitCents)}{" "}
                 <span className="text-[0.78rem] font-medium tracking-normal text-zinc-500">{t("packPerReport")}</span>
               </div>

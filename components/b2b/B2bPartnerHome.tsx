@@ -13,72 +13,49 @@ import { isValidVin } from "@/lib/order-field-validation";
 const LABEL_CLASS = "mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
 const PLANS: B2bPartnerPlanId[] = ["dealer", "business"];
 
+function PackageMark({ title }: { title: string }) {
+  if (title !== "PROVIN BUSINESS") return <>{title}</>;
+  return (
+    <>
+      PRO<span className="text-[#2563EB]">VIN</span> BUSINESS
+    </>
+  );
+}
+
 function CreditStrip({
   credits,
   loaded,
   labels,
   listAria,
-  selection,
 }: {
   credits: B2bCreditRemaining;
   loaded: boolean;
   labels: Record<B2bPartnerPlanId, string>;
   listAria: string;
-  selection?: {
-    picked: Record<B2bPartnerPlanId, boolean>;
-    onToggle: (plan: B2bPartnerPlanId) => void;
-    titles: Record<B2bPartnerPlanId, string>;
-  };
 }) {
   return (
-    <div
-      className="mt-5 grid grid-cols-2 gap-2.5"
-      role={selection ? "group" : "list"}
-      aria-label={listAria}
-    >
+    <div className="mt-5 grid grid-cols-2 gap-2.5" role="list" aria-label={listAria}>
       {PLANS.map((plan) => {
         const n = credits[plan];
         const empty = loaded && n < 1;
-        const disabled = Boolean(selection) && (!loaded || n < 1);
-        const countClass = empty
-          ? "text-[1.15rem] font-semibold tabular-nums leading-none text-[#93c5fd]"
-          : "text-[1.15rem] font-semibold tabular-nums leading-none text-zinc-100";
-        const shellClass = `rounded-[0.7rem] border border-white/10 bg-white/[0.03] px-3 py-2.5 ${
-          disabled ? "cursor-not-allowed opacity-45" : selection ? "cursor-pointer" : ""
-        }`;
-
-        const body = (
-          <>
+        return (
+          <div
+            key={plan}
+            role="listitem"
+            className="rounded-[0.7rem] border border-white/10 bg-white/[0.03] px-3 py-3"
+          >
             <div className="text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-zinc-500">
               {labels[plan]}
             </div>
-            <div className="mt-1.5 flex items-center justify-between gap-2">
-              <div className={countClass}>{loaded ? n : "…"}</div>
-              {selection ? (
-                <input
-                  type="checkbox"
-                  checked={selection.picked[plan]}
-                  disabled={disabled}
-                  onChange={() => selection.onToggle(plan)}
-                  aria-label={selection.titles[plan]}
-                  className="h-[1.15rem] w-[1.15rem] shrink-0 cursor-pointer rounded border-2 border-zinc-400 bg-zinc-950 text-[#2563EB] accent-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/45 disabled:cursor-not-allowed"
-                />
-              ) : null}
+            <div
+              className={
+                empty
+                  ? "mt-1.5 text-[1.15rem] font-semibold tabular-nums leading-none text-[#93c5fd]"
+                  : "mt-1.5 text-[1.15rem] font-semibold tabular-nums leading-none text-zinc-100"
+              }
+            >
+              {loaded ? n : "…"}
             </div>
-          </>
-        );
-
-        if (selection) {
-          return (
-            <label key={plan} className={shellClass}>
-              {body}
-            </label>
-          );
-        }
-
-        return (
-          <div key={plan} role="listitem" className={shellClass}>
-            {body}
           </div>
         );
       })}
@@ -91,10 +68,7 @@ export function B2bPartnerHome() {
   const router = useRouter();
   const [remaining, setRemaining] = useState<B2bCreditRemaining | null>(null);
   const [vin, setVin] = useState("");
-  const [picked, setPicked] = useState<Record<B2bPartnerPlanId, boolean>>({
-    business: false,
-    dealer: false,
-  });
+  const [service, setService] = useState<B2bPartnerPlanId | null>(null);
   const [vinError, setVinError] = useState("");
   const [serviceError, setServiceError] = useState("");
   const [formError, setFormError] = useState("");
@@ -131,14 +105,15 @@ export function B2bPartnerHome() {
     business: t("creditChipBusiness"),
     dealer: t("creditChipDealer"),
   };
-  const serviceTitles: Record<B2bPartnerPlanId, string> = {
-    business: B2B_CATALOG.business.title,
-    dealer: B2B_CATALOG.dealer.title,
-  };
 
-  const togglePlan = (plan: B2bPartnerPlanId) => {
+  useEffect(() => {
+    if (!loaded || service === null) return;
+    if (credits[service] < 1) setService(null);
+  }, [loaded, service, credits.business, credits.dealer]);
+
+  const pickService = (plan: B2bPartnerPlanId) => {
     if (credits[plan] < 1) return;
-    setPicked((prev) => ({ ...prev, [plan]: !prev[plan] }));
+    setService(plan);
     setServiceError("");
   };
 
@@ -150,12 +125,11 @@ export function B2bPartnerHome() {
       setVinError(t("vinError"));
       return;
     }
-    const selected = PLANS.filter((plan) => picked[plan]);
-    if (selected.length === 0) {
+    if (!service) {
       setServiceError(t("needService"));
       return;
     }
-    if (selected.some((plan) => credits[plan] < 1)) {
+    if (credits[service] < 1) {
       setFormError(t("noCredits"));
     }
   };
@@ -191,12 +165,7 @@ export function B2bPartnerHome() {
               credits={credits}
               loaded={loaded}
               labels={chipLabels}
-              listAria={t("servicePick")}
-              selection={{
-                picked,
-                onToggle: togglePlan,
-                titles: serviceTitles,
-              }}
+              listAria={t("creditsHeading")}
             />
             <form
               className="mt-8 flex flex-col gap-4"
@@ -225,6 +194,33 @@ export function B2bPartnerHome() {
                   enterKeyHint="done"
                 />
               </label>
+
+              <fieldset className="min-w-0">
+                <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
+                <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("servicePick")}>
+                  {PLANS.map((plan) => {
+                    const disabled = !loaded || credits[plan] < 1;
+                    return (
+                      <label
+                        key={plan}
+                        className={`flex cursor-pointer items-center gap-3 ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name="b2b-partner-service"
+                          checked={service === plan}
+                          disabled={disabled}
+                          onChange={() => pickService(plan)}
+                          className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+                        />
+                        <span className="text-[0.9rem] font-medium text-zinc-100">
+                          <PackageMark title={B2B_CATALOG[plan].title} />
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
 
               {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
               {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}

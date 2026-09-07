@@ -24,7 +24,7 @@
     "creditChipBusiness": "Business",
     "creditChipDealer": "Dealer data",
     "servicePick": "Service",
-    "needService": "Tick at least one service.",
+    "needService": "Choose one service.",
     "noCredits": "No credits for this service.",
     "noCreditsLead": "To submit a VIN, buy reports first.",
     "buyPacksCta": "Buy reports",
