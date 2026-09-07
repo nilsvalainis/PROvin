@@ -37,8 +37,8 @@ export const ONEAUTO_PRODUCTS: readonly OneautoProduct[] = [
     label: "OE Build Sheet (Europe)",
     hint: "Factory Options, PR Codes, Colors",
     priceCents: 195,
-    // Oficiālais One Auto API ceļš (ne Ezyvin). `/ezyvin/buildsheet/` API katalogā nav.
-    path: "/oneauto/oebuildsheeteuropefromvin/",
+    // v2 ir asinhronā (202 → poll). Bez /v2 OneAuto atbild ar „API is not available”, pat ja slēdzis ON.
+    path: "/oneauto/oebuildsheeteuropefromvin/v2",
   },
   {
     id: "oe_service_history",

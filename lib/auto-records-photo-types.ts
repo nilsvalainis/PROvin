@@ -153,3 +153,35 @@ export function syncAutoRecordsPhotoGroupsAndFlat(
   const photoGroups = enforcePhotoGroupLimit(groups);
   return { photoGroups, photos: flattenAutoRecordsPhotoGroups(photoGroups) };
 }
+
+/** Pievieno OneAuto kataloga foto kā atsevišķu grupu (vai paplašina esošo ar to pašu virsrakstu). */
+export function appendPhotosToAutoRecordsGroup(
+  groups: AutoRecordsPhotoGroup[] | null | undefined,
+  photoIds: readonly string[],
+  title: string,
+): AutoRecordsPhotoGroup[] {
+  const ids = photoIds.map((id) => id.trim()).filter(isAutoRecordsPhotoId);
+  if (ids.length === 0) return normalizeAutoRecordsPhotoGroups(groups);
+  const titleTrim = title.trim().slice(0, 120) || "OneAuto kataloga foto";
+  const base = normalizeAutoRecordsPhotoGroups(groups);
+  const existingIdx = base.findIndex((g) => g.title.trim().toLowerCase() === titleTrim.toLowerCase());
+  const newPhotos = ids.map((id) => ({ id }));
+  if (existingIdx >= 0) {
+    const g = base[existingIdx]!;
+    const have = new Set(g.photos.map((p) => p.id));
+    const merged = [...g.photos];
+    for (const p of newPhotos) {
+      if (have.has(p.id)) continue;
+      have.add(p.id);
+      merged.push(p);
+    }
+    const next = [...base];
+    next[existingIdx] = { ...g, title: titleTrim, photos: merged };
+    return enforcePhotoGroupLimit(next);
+  }
+  return enforcePhotoGroupLimit([
+    ...base,
+    { id: makeAutoRecordsPhotoGroupId(), title: titleTrim, photos: newPhotos },
+  ]);
+}
+

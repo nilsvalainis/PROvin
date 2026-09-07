@@ -59,6 +59,10 @@ import {
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 import { applyOneautoToAutoRecords, emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
+import {
+  appendPhotosToAutoRecordsGroup,
+  syncAutoRecordsPhotoGroupsAndFlat,
+} from "@/lib/auto-records-photo-types";
 import { AdminOutvinDealerReportFields } from "@/components/admin/AdminOutvinDealerReportFields";
 import { parseOutvinVehicleInfoFromAutoRecordsText } from "@/lib/auto-records-vehicle-info-parse";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -260,6 +264,8 @@ export function AdminAutoRecordsSourceBlock({
           <AdminOneautoIngestBar
             ingest={value.oneautoIngest ?? emptyOneautoIngest()}
             orderVin={orderVin}
+            sessionId={sessionId}
+            photosEnabled={photosPersistenceEnabled && Boolean(onAutoRecordsPhotoGroupsStructuralCommit)}
             editable={!readOnly && !disabled}
             hasMappedData={
               (value.serviceWorks ?? []).some(autoRecordsServiceWorkRowHasData) ||
@@ -274,6 +280,19 @@ export function AdminAutoRecordsSourceBlock({
                   vehicleOverride: true,
                 }),
               )
+            }
+            onImagesFetched={
+              onAutoRecordsPhotoGroupsStructuralCommit
+                ? (photoIds, groupTitle) => {
+                    const merged = appendPhotosToAutoRecordsGroup(
+                      value.photoGroups ?? [],
+                      photoIds,
+                      groupTitle,
+                    );
+                    const synced = syncAutoRecordsPhotoGroupsAndFlat(merged);
+                    onAutoRecordsPhotoGroupsStructuralCommit(synced.photoGroups);
+                  }
+                : undefined
             }
           />
           <div className="mb-0.5 flex items-center gap-1">

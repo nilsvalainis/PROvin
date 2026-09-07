@@ -12,6 +12,20 @@ import {
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
 import type { OneautoProductResult } from "@/lib/oneauto-block";
+import {
+  ONEAUTO_IMAGE_FROM_ID_PATH,
+  ONEAUTO_IMAGE_SEARCH_BY_VIN_PATH,
+  formatOneautoImageCostEur,
+  oneautoImageFetchCostCents,
+  parseOneautoImageFromIdUrl,
+  parseOneautoImageSearchPayload,
+} from "@/lib/oneauto-images";
+import {
+  AUTO_RECORDS_PHOTO_MAX_BYTES,
+  makeAutoRecordsPhotoId,
+  writeAutoRecordsPhotoJpeg,
+} from "@/lib/admin-auto-records-photo-store";
+import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
 
 const DEFAULT_BASE_URL = "https://api.oneautoapi.com";
 
@@ -55,6 +69,14 @@ function requestIdFrom(payload: unknown): string {
     const v = o[key];
     if (typeof v === "string" && v.trim()) return v.trim();
   }
+  const result = o.result;
+  if (result && typeof result === "object") {
+    const r = result as Record<string, unknown>;
+    for (const key of ["request_id", "requestId", "job_id", "jobId", "id"]) {
+      const v = r[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+  }
   return "";
 }
 
@@ -62,13 +84,15 @@ function payloadLooksPending(httpStatus: number, payload: unknown): boolean {
   return oneautoPayloadIsPending(httpStatus, payload);
 }
 
-async function fetchOneautoPath(
+async function fetchOneautoQuery(
   config: OneautoApiConfig,
   path: string,
-  vin: string,
+  query: Record<string, string>,
 ): Promise<{ ok: boolean; status: number; payload: unknown }> {
   const url = new URL(path.startsWith("http") ? path : `${config.baseUrl}${path}`);
-  url.searchParams.set("vehicle_identification_number", vin);
+  for (const [k, v] of Object.entries(query)) {
+    if (v) url.searchParams.set(k, v);
+  }
   const res = await fetch(url.toString(), {
     method: "GET",
     headers: {
@@ -81,6 +105,24 @@ async function fetchOneautoPath(
   return { ok: res.ok, status: res.status, payload };
 }
 
+async function fetchOneautoPath(
+  config: OneautoApiConfig,
+  path: string,
+  vin: string,
+): Promise<{ ok: boolean; status: number; payload: unknown }> {
+  const basePath = path.split("?")[0] ?? path;
+  const query: Record<string, string> = {
+    vehicle_identification_number: vin,
+  };
+  if (path.includes("?")) {
+    const existing = new URL(`https://x.invalid${path.startsWith("/") ? path : `/${path}`}`);
+    for (const [k, v] of existing.searchParams.entries()) {
+      if (k !== "vehicle_identification_number") query[k] = v;
+    }
+  }
+  return fetchOneautoQuery(config, basePath, query);
+}
+
 async function fetchWithPoll(
   config: OneautoApiConfig,
   path: string,
@@ -91,8 +133,9 @@ async function fetchWithPoll(
   const requestId = requestIdFrom(last.payload);
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 2000));
-    const pollPath = requestId ? `${path}?request_id=${encodeURIComponent(requestId)}` : path;
-    last = await fetchOneautoPath(config, pollPath.includes("?") ? pollPath : path, vin);
+    const clean = path.split("?")[0] ?? path;
+    const pollPath = requestId ? `${clean}?request_id=${encodeURIComponent(requestId)}` : clean;
+    last = await fetchOneautoPath(config, pollPath, vin);
     if (!payloadLooksPending(last.status, last.payload)) return last;
   }
   return last;
@@ -174,5 +217,117 @@ export async function fetchOneautoProducts(opts: {
     costCents,
     results,
     display: buildOneautoDisplay(rawForDisplay),
+  };
+}
+
+async function downloadImageToJpeg(url: string): Promise<Buffer | null> {
+  const res = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow" });
+  if (!res.ok) return null;
+  const ab = await res.arrayBuffer();
+  const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), AUTO_RECORDS_PHOTO_MAX_BYTES);
+  return normalized.ok ? normalized.jpeg : null;
+}
+
+export type OneautoVehicleImagesResult = {
+  vin: string;
+  photoIds: string[];
+  views: string[];
+  label: string;
+  costEur: string;
+  costCents: number;
+  error?: string;
+};
+
+/** Image Search by VIN + Image from ID → saglabā JPEG oficiālā dīlera foto veikalā. */
+export async function fetchAndStoreOneautoVehicleImages(opts: {
+  vin: string;
+  sessionId: string;
+}): Promise<OneautoVehicleImagesResult> {
+  const config = getOneautoApiConfig();
+  if (!config) throw new Error("missing_oneauto_credentials");
+
+  const search = await fetchOneautoQuery(config, ONEAUTO_IMAGE_SEARCH_BY_VIN_PATH, {
+    vehicle_identification_number: opts.vin,
+  });
+  if (!search.ok) {
+    const errText =
+      search.payload && typeof search.payload === "object"
+        ? JSON.stringify(search.payload).slice(0, 400)
+        : "";
+    if (oneautoPayloadIsApiUnavailable(search.payload, errText)) {
+      return {
+        vin: opts.vin,
+        photoIds: [],
+        views: [],
+        label: "",
+        costEur: formatOneautoImageCostEur(0),
+        costCents: oneautoImageFetchCostCents(0),
+        error: "api_unavailable",
+      };
+    }
+    return {
+      vin: opts.vin,
+      photoIds: [],
+      views: [],
+      label: "",
+      costEur: formatOneautoImageCostEur(0),
+      costCents: oneautoImageFetchCostCents(0),
+      error: classifyError(search.status, errText),
+    };
+  }
+
+  const match = parseOneautoImageSearchPayload(search.payload);
+  if (!match) {
+    return {
+      vin: opts.vin,
+      photoIds: [],
+      views: [],
+      label: "",
+      costEur: formatOneautoImageCostEur(0),
+      costCents: oneautoImageFetchCostCents(0),
+      error: "no_images",
+    };
+  }
+
+  const colourHint = match.colourHints[0]?.trim() ?? "";
+  const photoIds: string[] = [];
+  const views: string[] = [];
+
+  for (const row of match.views) {
+    const query: Record<string, string> = { image_id: row.imageId };
+    if (colourHint) query.generic_colour_desc = colourHint;
+    const imgRes = await fetchOneautoQuery(config, ONEAUTO_IMAGE_FROM_ID_PATH, query);
+    let imageUrl = parseOneautoImageFromIdUrl(imgRes.payload);
+    if (!imageUrl && colourHint) {
+      const retry = await fetchOneautoQuery(config, ONEAUTO_IMAGE_FROM_ID_PATH, {
+        image_id: row.imageId,
+      });
+      imageUrl = parseOneautoImageFromIdUrl(retry.payload);
+    }
+    if (!imageUrl) continue;
+    const jpeg = await downloadImageToJpeg(imageUrl);
+    if (!jpeg) continue;
+    const photoId = makeAutoRecordsPhotoId();
+    await writeAutoRecordsPhotoJpeg(opts.sessionId, photoId, jpeg);
+    photoIds.push(photoId);
+    views.push(row.view);
+  }
+
+  const labelParts = [
+    match.manufacturer,
+    match.modelRange,
+    match.manufacturedYear ? String(match.manufacturedYear) : "",
+  ]
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return {
+    vin: opts.vin,
+    photoIds,
+    views,
+    label: labelParts.join(" ").slice(0, 80),
+    costEur: formatOneautoImageCostEur(photoIds.length),
+    costCents: oneautoImageFetchCostCents(photoIds.length),
+    error: photoIds.length === 0 ? "no_images" : undefined,
   };
 }

@@ -35,9 +35,9 @@ describe("OneAuto katalogs", () => {
     expect(ONEAUTO_DEFAULT_PRODUCT_IDS).toEqual(["oe_service_history"]);
   });
 
-  it("OE Build Sheet (Europe) sauc oficiālo One Auto API ceļu, ne Ezyvin", () => {
+  it("OE Build Sheet (Europe) sauc oficiālo asinhrono /v2 ceļu", () => {
     expect(ONEAUTO_PRODUCTS.find((p) => p.id === "oe_build_sheet")?.path).toBe(
-      "/oneauto/oebuildsheeteuropefromvin/",
+      "/oneauto/oebuildsheeteuropefromvin/v2",
     );
   });
 
@@ -110,6 +110,19 @@ describe("OneAuto katalogs", () => {
     expect(oneautoPayloadIsNoData(payload)).toBe(true);
     expect(oneautoServiceHistoryIsEmpty(payload)).toBe(true);
     expect(oneautoPayloadIsNoData(null, JSON.stringify(payload))).toBe(true);
+  });
+
+  it("Build Sheet v2 Accepted (bez request_id) ir pending un jāpollē", () => {
+    expect(
+      oneautoPayloadIsPending(202, {
+        success: true,
+        result: {
+          function: "OE Build Sheet Europe From VIN",
+          status: "Accepted",
+          message: "poll this method until a non-202 result is returned",
+        },
+      }),
+    ).toBe(true);
   });
 
   it("Build Sheet API-not-available ir OEM atbilde, ne 502", () => {

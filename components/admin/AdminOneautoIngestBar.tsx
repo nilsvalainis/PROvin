@@ -15,6 +15,7 @@ import {
   type OneautoDisplaySections,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
+import { ONEAUTO_IMAGE_MAX_VIEWS, formatOneautoImageCostEur } from "@/lib/oneauto-images";
 import {
   emptyOneautoIngest,
   oneautoIngestHasMeta,
@@ -42,6 +43,12 @@ function oneautoFetchErrorLv(code: string): string {
       return "OEM atbilde: šim VIN nav datu. Maksa nav iekasēta.";
     case "api_unavailable":
       return "Šis OneAuto produkts šobrīd nav pieejams. Raksti help@oneautoapi.com.";
+    case "no_images":
+      return "OneAuto neatrada kataloga foto šim VIN.";
+    case "store_disabled":
+      return "Foto krātuve nav ieslēgta (Blob / drafts).";
+    case "invalid_session":
+      return "Pasūtījuma sesija nav derīga foto saglabāšanai.";
     default:
       return "OneAutoAPI neatbildēja. Mēģini vēlreiz.";
   }
@@ -51,42 +58,61 @@ function oneautoResultIsNoData(result: { ok?: boolean; error?: string; payload?:
   return oneautoPayloadIsNoData(result.payload, result.error ?? "") || result.error === "no_data";
 }
 
-function oneautoResultIsUnavailable(result: { ok?: boolean; error?: string; payload?: unknown }): boolean {
+function oneautoResultIsUnavailable(result: {
+  ok?: boolean;
+  error?: string;
+  payload?: unknown;
+}): boolean {
   return (
-    oneautoPayloadIsApiUnavailable(result.payload, result.error ?? "") || result.error === "api_unavailable"
+    oneautoPayloadIsApiUnavailable(result.payload, result.error ?? "") ||
+    result.error === "api_unavailable"
   );
 }
 
 type Props = {
   ingest: AutoRecordsOneautoIngest;
   orderVin: string;
+  sessionId?: string;
+  photosEnabled?: boolean;
   editable: boolean;
   hasMappedData: boolean;
   onIngestChange: (next: AutoRecordsOneautoIngest) => void;
   onFetched: (ingest: AutoRecordsOneautoIngest, display: OneautoDisplaySections) => void;
+  onImagesFetched?: (photoIds: string[], groupTitle: string) => void;
 };
 
 export function AdminOneautoIngestBar({
   ingest,
   orderVin,
+  sessionId = "",
+  photosEnabled = false,
   editable,
   hasMappedData,
   onIngestChange,
   onFetched,
+  onImagesFetched,
 }: Props) {
   const [busy, setBusy] = useState(false);
+  const [imagesBusy, setImagesBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imagesNote, setImagesNote] = useState<string | null>(null);
   const value = ingest.lastFetchedVin || ingest.selectedProducts.length ? ingest : emptyOneautoIngest();
   const effectiveVin = normalizeVin(value.vinOverride || orderVin);
   const estimatedCost = formatOneautoCostEur(oneautoProductsCostCents(value.selectedProducts));
+  const imageCostHint = formatOneautoImageCostEur(ONEAUTO_IMAGE_MAX_VIEWS);
   const selectedSet = useMemo(() => new Set(value.selectedProducts), [value.selectedProducts]);
   const cachedForVin =
     Boolean(value.lastFetchedVin) && normalizeVin(value.lastFetchedVin) === effectiveVin;
   const historyResult = value.results.oe_service_history;
   const historyPending = Boolean(
-    historyResult && (historyResult.error === "pending" || oneautoPayloadIsPending(undefined, historyResult.payload)),
+    historyResult &&
+      (historyResult.error === "pending" ||
+        oneautoPayloadIsPending(undefined, historyResult.payload)),
   );
-  const historyEmpty = Boolean(historyResult && oneautoServiceHistoryIsEmpty(historyResult.payload));
+  const historyEmpty = Boolean(
+    historyResult && oneautoServiceHistoryIsEmpty(historyResult.payload),
+  );
+  const canFetchImages = Boolean(sessionId && photosEnabled && onImagesFetched);
 
   const toggleProduct = (id: OneautoProductId, checked: boolean) => {
     const next = checked
@@ -96,7 +122,7 @@ export function AdminOneautoIngestBar({
   };
 
   const fetchData = async () => {
-    if (!editable || busy) return;
+    if (!editable || busy || imagesBusy) return;
     if (value.selectedProducts.length === 0) {
       setError(oneautoFetchErrorLv("no_products_selected"));
       return;
@@ -168,6 +194,46 @@ export function AdminOneautoIngestBar({
     }
   };
 
+  const fetchImages = async () => {
+    if (!editable || busy || imagesBusy || !canFetchImages || !effectiveVin) return;
+    const ok = window.confirm(
+      `Ielādēt OneAuto kataloga foto pēc VIN? Orientējoši līdz ${imageCostHint} (meklēšana + līdz ${ONEAUTO_IMAGE_MAX_VIEWS} skatiem).`,
+    );
+    if (!ok) return;
+    setImagesBusy(true);
+    setError(null);
+    setImagesNote(null);
+    try {
+      const res = await fetch("/api/admin/sources/oneautoapi/images", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vin: effectiveVin, sessionId }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        photoIds?: string[];
+        groupTitle?: string;
+        costEur?: string;
+        label?: string;
+      };
+      if (!res.ok || !body.photoIds?.length) {
+        setError(oneautoFetchErrorLv(body.error ?? "no_images"));
+        return;
+      }
+      onImagesFetched?.(body.photoIds, body.groupTitle ?? "OneAuto kataloga foto");
+      setImagesNote(
+        `Pievienoti ${body.photoIds.length} foto${body.label ? ` (${body.label})` : ""}${
+          body.costEur ? ` · ${body.costEur}` : ""
+        }.`,
+      );
+    } catch {
+      setError(oneautoFetchErrorLv("upstream_error"));
+    } finally {
+      setImagesBusy(false);
+    }
+  };
+
   return (
     <section className="mb-3 rounded-lg border border-slate-200/90 bg-slate-50/70 px-2 py-2">
       <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
@@ -197,12 +263,15 @@ export function AdminOneautoIngestBar({
               (result.error === "pending" || oneautoPayloadIsPending(undefined, result.payload)),
           );
           return (
-            <label key={p.id} className="flex items-start gap-2 text-[11px] text-[var(--color-apple-text)]">
+            <label
+              key={p.id}
+              className="flex items-start gap-2 text-[11px] text-[var(--color-apple-text)]"
+            >
               <input
                 type="checkbox"
                 className="mt-0.5"
                 checked={selectedSet.has(p.id)}
-                disabled={!editable || busy}
+                disabled={!editable || busy || imagesBusy}
                 onChange={(e) => toggleProduct(p.id, e.target.checked)}
               />
               <span className="min-w-0">
@@ -232,7 +301,7 @@ export function AdminOneautoIngestBar({
                           ? "API nav pieejams"
                           : result.ok
                             ? "ielādēts"
-                            : result.error ?? "kļūda"}
+                            : (result.error ?? "kļūda")}
                   </span>
                 ) : null}
               </span>
@@ -246,13 +315,28 @@ export function AdminOneautoIngestBar({
         </p>
         <button
           type="button"
-          disabled={!editable || busy || !effectiveVin}
+          disabled={!editable || busy || imagesBusy || !effectiveVin}
           onClick={() => void fetchData()}
           className="rounded-md bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white disabled:opacity-50"
         >
           {busy ? "Ielādē…" : "Ielādēt datus"}
         </button>
       </div>
+      {canFetchImages ? (
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-2">
+          <p className="text-[11px] text-[var(--color-provin-muted)]">
+            Image Search by VIN (kataloga foto, līdz {imageCostHint})
+          </p>
+          <button
+            type="button"
+            disabled={!editable || busy || imagesBusy || !effectiveVin}
+            onClick={() => void fetchImages()}
+            className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
+          >
+            {imagesBusy ? "Ielādē foto…" : "Ielādēt foto"}
+          </button>
+        </div>
+      ) : null}
       {cachedForVin && hasMappedData ? (
         <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-900">
           Saglabāti dati VIN {value.lastFetchedVin}
@@ -262,12 +346,18 @@ export function AdminOneautoIngestBar({
       ) : null}
       {cachedForVin && historyPending ? (
         <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-950">
-          OEM vēl nav atgriezis servisa vēsturi. Spied Ielādēt datus, lai pārbaudītu (parasti bez jaunas maksas).
+          OEM vēl nav atgriezis servisa vēsturi. Spied Ielādēt datus, lai pārbaudītu (parasti bez
+          jaunas maksas).
         </p>
       ) : null}
       {cachedForVin && historyEmpty && !hasMappedData && oneautoIngestHasMeta(value) ? (
         <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-700">
           Ielādēts. OEM atbilde šim VIN ir tukša: servisa ierakstu nav.
+        </p>
+      ) : null}
+      {imagesNote ? (
+        <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-900">
+          {imagesNote}
         </p>
       ) : null}
       {error ? <p className="mt-2 text-[11px] text-rose-700">{error}</p> : null}
