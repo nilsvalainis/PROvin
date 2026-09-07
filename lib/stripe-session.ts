@@ -24,6 +24,12 @@ export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): Ch
 }
 
 /**
+ * Hosted Stripe Checkout chrome (Maksāt, Starpsumma, Karte, …).
+ * Stripe tulko šos laukus pēc `locale`; produktu tekstus rakstām paši.
+ */
+export const STRIPE_CHECKOUT_LOCALE = "lv" as const;
+
+/**
  * Stripe Checkout papildu lauks „Klienta komentārs” — klients var pievienot
  * būtisku informāciju par ievadītajiem datiem tieši pirms apmaksas.
  * Stripe `custom_fields` ierobežojumi: viena rinda, max 255 rakstzīmes.

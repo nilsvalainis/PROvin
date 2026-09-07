@@ -24,22 +24,25 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
   plus: {
     productName: "PROVIN MINI",
     productDesc:
-      "For cars used in Latvia. No paid international database checks. Other cars: choose PROVIN AUDITS.",
+      "Latvijā ekspluatētiem auto. Bez maksas starptautisko datubāžu pārbaudes. Citiem auto izvēlies PROVIN AUDITS.",
     amountCents: 3999,
   },
   premium: {
     productName: "PROVIN AUDITS",
+    productDesc:
+      "Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.",
     amountCents: 9999,
   },
   dealer: {
     productName: "Oficiālā dīlera servisa vēstures dati",
-    productDesc: "Official dealer service history. 100% refund if no data available.",
+    productDesc:
+      "Oficiālie dīlera servisa vēstures ieraksti. Ja dati nav pieejami, 100% naudas atmaksa.",
     amountCents: 2499,
   },
   koreaUsa: {
     productName: "ASV UN KOREJA",
     productDesc:
-      "ASV and Korea registry, auction archive and damage check. 100% refund if no data available.",
+      "ASV un Korejas reģistru, izsoļu arhīva un bojājumu pārbaude. Ja dati nav pieejami, 100% naudas atmaksa.",
     amountCents: 1999,
   },
 };
@@ -57,6 +60,16 @@ const TP5_MINI_CHECKOUT_NOTE = {
   en: "PROVIN MINI is for cars used in Latvia and does not include paid international database checks. For other cars, choose PROVIN AUDITS.",
 } as const;
 
+const TP5_DEALER_CHECKOUT_NOTE = {
+  lv: "Oficiālā dīlera servisa vēsture. Ja dati nav pieejami, 100% naudas atmaksa.",
+  en: "Official dealer service history. 100% refund if no data is available.",
+} as const;
+
+const TP5_KOREA_USA_CHECKOUT_NOTE = {
+  lv: "ASV un Korejas reģistru, izsoļu arhīva un bojājumu pārbaude. Ja dati nav pieejami, 100% naudas atmaksa.",
+  en: "US and Korea registry, auction archive and damage check. 100% refund if no data is available.",
+} as const;
+
 /** Stripe Checkout submit note (step 2) for PROVIN MINI. */
 export function getTp5MiniCheckoutNote(locale?: string): string {
   return locale === "en" ? TP5_MINI_CHECKOUT_NOTE.en : TP5_MINI_CHECKOUT_NOTE.lv;
@@ -68,6 +81,12 @@ export function getTp5CheckoutSubmitMessage(
   locale?: string,
 ): string | null {
   if (planId === "plus") return getTp5MiniCheckoutNote(locale);
+  if (planId === "dealer") {
+    return locale === "en" ? TP5_DEALER_CHECKOUT_NOTE.en : TP5_DEALER_CHECKOUT_NOTE.lv;
+  }
+  if (planId === "koreaUsa") {
+    return locale === "en" ? TP5_KOREA_USA_CHECKOUT_NOTE.en : TP5_KOREA_USA_CHECKOUT_NOTE.lv;
+  }
   return null;
 }
 

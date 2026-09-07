@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type Stripe from "stripe";
 import {
   CLIENT_COMMENT_CUSTOM_FIELD,
+  STRIPE_CHECKOUT_LOCALE,
   formatStripeCheckoutAddress,
   getCheckoutLineFromSession,
   getOrderFieldsFromSession,
@@ -31,6 +32,7 @@ describe("stripe-session — Klienta komentārs", () => {
     expect(CLIENT_COMMENT_CUSTOM_FIELD.label.custom).toBe("Klienta komentārs");
     expect(CLIENT_COMMENT_CUSTOM_FIELD.optional).toBe(true);
     expect(CLIENT_COMMENT_CUSTOM_FIELD.type).toBe("text");
+    expect(STRIPE_CHECKOUT_LOCALE).toBe("lv");
   });
 
   it("reads Stripe page comment into notes when form notes are empty", () => {

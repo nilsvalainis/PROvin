@@ -14,7 +14,7 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
-import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
+import { CLIENT_COMMENT_CUSTOM_FIELD, STRIPE_CHECKOUT_LOCALE } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
 
@@ -50,50 +50,6 @@ type CheckoutBody = {
   companyReg?: unknown;
   companyAddress?: unknown;
 };
-
-const stripeLocales = new Set([
-  "auto",
-  "bg",
-  "cs",
-  "da",
-  "de",
-  "el",
-  "en",
-  "es",
-  "et",
-  "fi",
-  "fil",
-  "fr",
-  "hr",
-  "hu",
-  "id",
-  "it",
-  "ja",
-  "ko",
-  "lt",
-  "lv",
-  "ms",
-  "mt",
-  "nb",
-  "nl",
-  "pl",
-  "pt",
-  "ro",
-  "ru",
-  "sk",
-  "sl",
-  "sv",
-  "th",
-  "tr",
-  "vi",
-  "zh",
-  "zh-HK",
-]);
-
-function stripeLocale(locale: string): string {
-  if (stripeLocales.has(locale)) return locale;
-  return "lv";
-}
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
@@ -171,7 +127,7 @@ export async function POST(req: Request) {
   const thanksPath = `${home}/paldies`;
   const cancelPath = `${home}?atcelts=1#${ORDER_SECTION_ID}`;
 
-  const misc = (await import(`../../../messages/${locale}/misc.json`)).default as {
+  const misc = (await import(`../../../messages/lv/misc.json`)).default as {
     Misc: {
       checkoutProductName: string;
       checkoutProductDesc: string;
@@ -213,7 +169,7 @@ export async function POST(req: Request) {
       ...(notes ? { notes } : {}),
       ...invoiceBuyerMetadataFromUnknown(raw),
     },
-    locale: stripeLocale(locale) as "lv",
+    locale: STRIPE_CHECKOUT_LOCALE,
   });
 
   if (!session.url) {

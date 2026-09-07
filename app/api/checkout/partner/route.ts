@@ -10,57 +10,13 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getStripe } from "@/lib/stripe";
-import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
+import { CLIENT_COMMENT_CUSTOM_FIELD, STRIPE_CHECKOUT_LOCALE } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
 
 const CHECKOUT_MAX_PER_WINDOW = 40;
 const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
 const NOTES_MAX = 500;
-
-const stripeLocales = new Set([
-  "auto",
-  "bg",
-  "cs",
-  "da",
-  "de",
-  "el",
-  "en",
-  "es",
-  "et",
-  "fi",
-  "fil",
-  "fr",
-  "hr",
-  "hu",
-  "id",
-  "it",
-  "ja",
-  "ko",
-  "lt",
-  "lv",
-  "ms",
-  "mt",
-  "nb",
-  "nl",
-  "pl",
-  "pt",
-  "ro",
-  "ru",
-  "sk",
-  "sl",
-  "sv",
-  "th",
-  "tr",
-  "vi",
-  "zh",
-  "zh-HK",
-]);
-
-function stripeLocale(locale: string): string {
-  if (stripeLocales.has(locale)) return locale;
-  return "lv";
-}
 
 function isPartnerPlan(value: string): value is B2bPartnerPlanId {
   return value === "business" || value === "dealer";
@@ -179,7 +135,7 @@ export async function POST(req: Request) {
         companyAddress: partner.companyAddress,
       }),
     },
-    locale: stripeLocale(locale) as "lv",
+    locale: STRIPE_CHECKOUT_LOCALE,
   });
 
   if (!session.url) {

@@ -6,7 +6,7 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { normalizeVin } from "@/lib/order-field-validation";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
-import { CLIENT_COMMENT_CUSTOM_FIELD } from "@/lib/stripe-session";
+import { CLIENT_COMMENT_CUSTOM_FIELD, STRIPE_CHECKOUT_LOCALE } from "@/lib/stripe-session";
 import {
   getTestPricingPlan,
   isTestPricingPlanId,
@@ -169,7 +169,7 @@ export async function POST(req: Request) {
             };
       })();
 
-  const miniSubmitNote = getTp5CheckoutSubmitMessage(plan.id, "en");
+  const submitNote = getTp5CheckoutSubmitMessage(plan.id, STRIPE_CHECKOUT_LOCALE);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -205,17 +205,12 @@ export async function POST(req: Request) {
         : {}),
       ...invoiceBuyerMetadataFromUnknown(raw),
     },
-    /**
-     * Stripe Checkout apzināti angliski: LV tulkojumā atlaides lauks ir
-     * „Pievienojiet reklāmas kodu”, ko nevar pārrakstīt. Zīmolu nosaukumi
-     * (PROVIN MINI / AUDITS) paliek netulkoti; lapa rāda tikai nosaukumu,
-     * cenu un Stripe maksājumu laukus.
-     */
-    locale: "en",
-    ...(miniSubmitNote
+    /** Stripe chrome (Maksāt, Starpsumma, Karte) + mūsu produktu teksti LV. */
+    locale: STRIPE_CHECKOUT_LOCALE,
+    ...(submitNote
       ? {
           custom_text: {
-            submit: { message: miniSubmitNote },
+            submit: { message: submitNote },
           },
         }
       : {}),
