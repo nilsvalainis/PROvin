@@ -95,14 +95,47 @@ export const B2B_CATALOG = {
 };
 
 export const B2B_PARTNER_PRICE: Record<B2bPartnerPlanId, string> = {
-  business: "69,99 €",
+  business: "79,99 €",
   dealer: "19,99 €",
 };
 
 export const B2B_PARTNER_PRICE_CENTS: Record<B2bPartnerPlanId, number> = {
-  business: 6999,
+  business: 7999,
   dealer: 1999,
 };
+
+export type B2bPackQty = 1 | 3 | 10;
+
+export type B2bPackOffer = {
+  qty: B2bPackQty;
+  unitCents: number;
+  recommended: boolean;
+};
+
+export const B2B_BUSINESS_PACKS: readonly B2bPackOffer[] = [
+  { qty: 1, unitCents: 7999, recommended: false },
+  { qty: 3, unitCents: 7499, recommended: true },
+  { qty: 10, unitCents: 6999, recommended: false },
+];
+
+export const B2B_DEALER_PACKS: readonly B2bPackOffer[] = [
+  { qty: 1, unitCents: 1999, recommended: false },
+  { qty: 3, unitCents: 1899, recommended: true },
+  { qty: 10, unitCents: 1799, recommended: false },
+];
+
+export function formatB2bEuroFromCents(cents: number): string {
+  return `${(cents / 100).toFixed(2).replace(".", ",")} €`;
+}
+
+export function b2bPackListCents(plan: B2bPartnerPlanId): number {
+  return plan === "business" ? B2B_BUSINESS_PACKS[0].unitCents : B2B_DEALER_PACKS[0].unitCents;
+}
+
+export function b2bPackDiscountPct(unitCents: number, listCents: number): number {
+  if (listCents <= 0 || unitCents >= listCents) return 0;
+  return Math.round(((listCents - unitCents) / listCents) * 100);
+}
 
 export function isB2bPartnerCode(value: string): boolean {
   return /^\d{6}$/.test(value.trim());

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Link, useRouter } from "@/i18n/navigation";
+import { B2bPartnerCatalog } from "@/components/b2b/B2bPartnerCatalog";
 import { B2B_CATALOG, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { emptyB2bCreditRemaining, hasAnyB2bCredit, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isValidVin } from "@/lib/order-field-validation";
@@ -87,101 +88,119 @@ export function B2bPartnerHome() {
   };
 
   return (
-    <section className="mx-auto w-full max-w-[22rem]" aria-labelledby="b2b-partner-home-title">
-      <h1 id="b2b-partner-home-title" className="text-balance text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-zinc-100">
-        {t("vinSubmitTitle")}
-      </h1>
+    <div>
+      <section className="mx-auto w-full max-w-[22rem]" aria-labelledby="b2b-partner-home-title">
+        <h1 id="b2b-partner-home-title" className="text-balance text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-zinc-100">
+          {canSubmit ? t("vinSubmitTitle") : t("creditsHeading")}
+        </h1>
 
-      <ul className="mt-6 grid gap-2" aria-label={t("creditsHeading")}>
-        {PLANS.map((plan) => (
-          <li
-            key={plan}
-            className="flex items-baseline justify-between gap-3 border-b border-white/10 py-2 text-[0.9rem]"
-          >
-            <span className="min-w-0 font-medium text-zinc-100">
-              <PackageMark title={B2B_CATALOG[plan].title} />
-            </span>
-            <span className="shrink-0 tabular-nums text-zinc-400">
-              {loaded ? t("creditLeft", { count: credits[plan] }) : "…"}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <form
-        className="mt-8 flex flex-col gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSubmit();
-        }}
-      >
-        <label className="block min-w-0">
-          <span className={LABEL_CLASS}>{t("vinLabel")}</span>
-          <input
-            type="text"
-            className={`${styles.inlineInput} font-mono uppercase tracking-wide${vinError ? ` ${styles.inlineInputError}` : ""}`}
-            value={vin}
-            onChange={(event) => {
-              setVin(event.target.value.toUpperCase());
-              setVinError("");
-            }}
-            autoComplete="off"
-            spellCheck={false}
-            autoCapitalize="characters"
-            maxLength={17}
-            placeholder={t("vinPlaceholder")}
-            aria-label={t("vinAria")}
-            aria-invalid={vinError ? true : undefined}
-            enterKeyHint="done"
-          />
-        </label>
-
-        <fieldset className="min-w-0">
-          <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
-          <div className="flex flex-col gap-3">
-            {PLANS.map((plan) => {
-              const disabled = !loaded || credits[plan] < 1;
-              return (
-                <label
-                  key={plan}
-                  className={`flex cursor-pointer items-center gap-3 ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
+        <ul className="mt-6" aria-label={t("creditsHeading")}>
+          {PLANS.map((plan) => {
+            const n = credits[plan];
+            const empty = loaded && n < 1;
+            return (
+              <li key={plan} className="border-b border-white/10 py-3">
+                <div className="font-medium text-zinc-100">
+                  <PackageMark title={B2B_CATALOG[plan].title} />
+                </div>
+                <p
+                  className={
+                    empty
+                      ? "mt-1 text-[0.84rem] font-medium leading-snug text-[#93c5fd]"
+                      : "mt-1 text-[0.84rem] leading-snug text-zinc-400"
+                  }
                 >
-                  <input
-                    type="checkbox"
-                    checked={picked[plan]}
-                    disabled={disabled}
-                    onChange={() => togglePlan(plan)}
-                    className="h-4 w-4 shrink-0 rounded border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
-                  />
-                  <span className="text-[0.9rem] font-medium text-zinc-100">
-                    <PackageMark title={B2B_CATALOG[plan].title} />
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
+                  {loaded ? t("creditLeft", { count: n }) : "…"}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
 
-        {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
-        {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
-        {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
         {loaded && !canSubmit ? (
-          <p className="text-[0.78rem] leading-snug text-zinc-400">
-            {t.rich("noCreditsHint", {
-              packs: (chunks) => (
-                <Link href="/partneriem/konts/pakas" className="font-medium text-[#60a5fa] underline-offset-2 hover:underline">
-                  {chunks}
-                </Link>
-              ),
-            })}
-          </p>
-        ) : null}
+          <div className="mt-7 rounded-[0.9rem] border border-[#2563EB]/55 bg-[#2563EB]/12 px-4 py-5">
+            <p className="text-[0.95rem] font-medium leading-snug text-zinc-100">{t("noCreditsLead")}</p>
+            <Link
+              href="/partneriem/konts/pakas"
+              className={`${styles.liquidCta} mt-4 flex items-center justify-center no-underline`}
+            >
+              <span className={styles.liquidCtaShimmer} aria-hidden />
+              <span className={styles.liquidCtaLabel}>{t("buyPacksCta")}</span>
+            </Link>
+          </div>
+        ) : (
+          <form
+            className="mt-8 flex flex-col gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSubmit();
+            }}
+          >
+            <label className="block min-w-0">
+              <span className={LABEL_CLASS}>{t("vinLabel")}</span>
+              <input
+                type="text"
+                className={`${styles.inlineInput} font-mono uppercase tracking-wide${vinError ? ` ${styles.inlineInputError}` : ""}`}
+                value={vin}
+                onChange={(event) => {
+                  setVin(event.target.value.toUpperCase());
+                  setVinError("");
+                }}
+                autoComplete="off"
+                spellCheck={false}
+                autoCapitalize="characters"
+                maxLength={17}
+                placeholder={t("vinPlaceholder")}
+                aria-label={t("vinAria")}
+                aria-invalid={vinError ? true : undefined}
+                enterKeyHint="done"
+              />
+            </label>
 
-        <button type="submit" className={styles.liquidCta} disabled={!canSubmit}>
-          <span className={styles.liquidCtaShimmer} aria-hidden />
-          <span className={styles.liquidCtaLabel}>{t("vinSubmit")}</span>
-        </button>
-      </form>
-    </section>
+            <fieldset className="min-w-0">
+              <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
+              <div className="flex flex-col gap-3">
+                {PLANS.map((plan) => {
+                  const disabled = !loaded || credits[plan] < 1;
+                  return (
+                    <label
+                      key={plan}
+                      className={`flex cursor-pointer items-center gap-3 ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={picked[plan]}
+                        disabled={disabled}
+                        onChange={() => togglePlan(plan)}
+                        className="h-4 w-4 shrink-0 rounded border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+                      />
+                      <span className="text-[0.9rem] font-medium text-zinc-100">
+                        <PackageMark title={B2B_CATALOG[plan].title} />
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
+            {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
+            {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+
+            <button type="submit" className={styles.liquidCta} disabled={!canSubmit}>
+              <span className={styles.liquidCtaShimmer} aria-hidden />
+              <span className={styles.liquidCtaLabel}>{t("vinSubmit")}</span>
+            </button>
+          </form>
+        )}
+      </section>
+
+      <section className="mt-12 border-t border-white/10 pt-8" aria-labelledby="b2b-included-title">
+        <h2 id="b2b-included-title" className="text-balance text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-100">
+          {t("includedHeading")}
+        </h2>
+        <B2bPartnerCatalog />
+      </section>
+    </div>
   );
 }

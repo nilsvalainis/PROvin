@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - partneriem (pakas)</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(210 214 222 / .88);
+    --faint:rgb(148 163 184 / .9);
+    --hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+    --mint:rgb(167 243 208 / .95);
+    --pad:max(1.15rem, env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+    background-color:#0d0d0d;
+    background-image:
+      radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / .048) 0%, transparent 54%),
+      linear-gradient(180deg,#171717 0%,#121212 16%,#080808 38%,#040404 62%,#000 100%);
+    background-attachment:fixed,fixed;
+  }
+
+  .mark{max-width:68rem;margin:0 auto;padding:1.6rem var(--pad) 0;}
+  .mark b{display:block;font-size:.6rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .mark i{display:block;margin-top:.25rem;font-style:normal;font-size:.76rem;color:var(--faint);}
+
+  .page{max-width:68rem;margin:0 auto;padding:1.35rem var(--pad) 3.2rem;}
+  .top{display:flex;align-items:baseline;justify-content:space-between;}
+  .logo{font-size:.85rem;font-weight:600;letter-spacing:.03em;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .topLabel{font-size:.6rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);}
+
+  .intro{margin-top:1.65rem;text-align:center;}
+  h1{margin:0;font-size:1.55rem;font-weight:600;letter-spacing:-.03em;}
+  .sub{margin:.45rem auto 0;max-width:34rem;font-size:.84rem;line-height:1.5;color:var(--dim);}
+
+  .gate{
+    margin:1.15rem auto 0;max-width:22rem;
+    display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+    height:2.35rem;border-bottom:1px solid rgb(37 99 235 / .75);
+  }
+  .gate b{font-size:.58rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+  .gate span{font-size:.84rem;letter-spacing:.08em;}
+  .gate em{font-style:normal;font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd;}
+
+  .seg{
+    display:flex;gap:3px;margin:1.35rem auto 0;max-width:28rem;
+    padding:3px;background:#1a1a1a;border-radius:10px;
+  }
+  .seg button{
+    flex:1;border:0;background:transparent;color:var(--faint);
+    padding:.78rem .4rem;border-radius:8px;
+    font:600 .68rem/1.2 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
+  }
+  .seg button.on{background:var(--accent);color:#fff;}
+
+  .hint{margin:.85rem 0 0;text-align:center;font-size:.74rem;color:var(--faint);}
+  .hint b{color:#93c5fd;font-weight:600;}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;
+    margin-top:1.15rem;
+  }
+  .card{
+    position:relative;text-align:left;width:100%;
+    padding:1.15rem 1.1rem 1.2rem;
+    background:rgb(20 20 20 / .88);
+    border:1px solid var(--hair);
+    border-radius:.9rem;
+    color:inherit;cursor:pointer;
+  }
+  .card:hover{border-color:rgb(37 99 235 / .45);}
+  .card.on{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent) inset;
+    background:rgb(37 99 235 / .08);
+  }
+  .check{
+    width:1.15rem;height:1.15rem;border-radius:999px;
+    border:1.5px solid rgb(255 255 255 / .22);
+    display:grid;place-items:center;
+  }
+  .card.on .check{border-color:var(--accent);background:var(--accent);}
+  .check svg{display:none;width:.7rem;height:.7rem;stroke:#fff;fill:none;stroke-width:2.4;}
+  .card.on .check svg{display:block;}
+  .qty{
+    margin:.85rem 0 0;font-size:.72rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);
+  }
+  .card.on .qty{color:#93c5fd;}
+  .rec{
+    position:absolute;top:.85rem;right:.9rem;
+    font-size:.52rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:#93c5fd;
+  }
+  .blurb{margin:.35rem 0 0;font-size:.74rem;line-height:1.4;color:var(--dim);min-height:2.1em;}
+  .unit{margin:1.05rem 0 0;font-size:1.55rem;font-weight:650;letter-spacing:-.03em;line-height:1;}
+  .unit i{font-style:normal;font-size:.78rem;font-weight:550;letter-spacing:0;color:var(--faint);}
+  .sum{margin:.55rem 0 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem .55rem;}
+  .sum b{font-size:.92rem;font-weight:650;}
+  .old{font-size:.78rem;color:#fb7185;text-decoration:line-through;}
+  .off{
+    font-size:.62rem;font-weight:700;letter-spacing:.04em;
+    color:#fff;background:#b91c1c;padding:.12rem .38rem;border-radius:.25rem;
+  }
+  .lines{margin:.85rem 0 0;padding:0;list-style:none;}
+  .lines li{
+    display:grid;grid-template-columns:1rem 1fr;gap:.4rem;align-items:start;
+    padding:.22rem 0;font-size:.74rem;line-height:1.4;color:var(--dim);
+  }
+  .mk{color:#60a5fa;font-weight:700;}
+  .ok{color:var(--mint);}
+
+  .cta{
+    display:block;width:min(100%,22rem);margin:1.45rem auto 0;
+    height:2.9rem;border:0;border-radius:.7rem;background:var(--accent);color:#fff;
+    font:600 .76rem/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+  }
+  .pay{margin:.7rem 0 0;text-align:center;font-size:.68rem;color:var(--faint);}
+  .fine{margin:1.35rem auto 0;max-width:42rem;text-align:center;font-size:.68rem;line-height:1.5;color:rgb(148 163 184 / .68);}
+
+  @media (max-width: 820px){
+    .grid{grid-template-columns:1fr;}
+    .intro{text-align:left;}
+    .hint,.pay,.fine{text-align:left;}
+    .cta{width:100%;}
+    .blurb{min-height:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <h1 id="pageTitle">PROVIN <span style="color:#2563eb">BUSINESS</span></h1>
+
+  <div class="seg" role="tablist">
+    <button type="button" class="on" data-sku="business">PROVIN BUSINESS</button>
+    <button type="button" data-sku="dealer">Dīlera dati</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <button type="button" class="cta" id="cta">PASŪTĪT 79,99 €</button>
+  <p class="fine" id="fine">Dīleru sistēmu dati pieejami noteiktiem ražotājiem.</p>
+</div>
+
+<script>
+const SKUS = {
+  business: {
+    title: 'PROVIN <span style="color:#2563eb">BUSINESS</span>',
+    fine: "Dīleru sistēmu dati pieejami noteiktiem ražotājiem.",
+    packs: [
+      {
+        qty: 1, label: "1 atskaite", rec: false, unit: 79.99,
+        lines: [
+          "Oficiālā dīlera dati un izsoļu arhīvs",
+          "autoDNA, carVertical, starptautiskie reģistri",
+          "Nobraukuma līkne un kopsavilkums"
+        ]
+      },
+      {
+        qty: 3, label: "3 atskaites", rec: true, unit: 74.99,
+        lines: ["Atskaišu skaits: 3", "BUSINESS datu paka", "3 VIN pārbaudes, derīgums 90 dienas"]
+      },
+      {
+        qty: 10, label: "10 atskaites", rec: false, unit: 69.99,
+        lines: ["Atskaišu skaits: 10", "BUSINESS datu paka", "10 VIN pārbaudes, derīgums 90 dienas"]
+      }
+    ]
+  },
+  dealer: {
+    title: "DĪLERA DATI",
+    fine: "Dīleru sistēmu dati pieejami noteiktiem ražotājiem.",
+    packs: [
+      { qty: 1, label: "1 atskaite", rec: false, unit: 19.99, lines: ["Mercedes, BMW, Audi, VW, Volvo u.c.", "100 % atmaksa, ja ierakstu nav"] },
+      { qty: 3, label: "3 atskaites", rec: true, unit: 18.99, lines: ["Atskaišu skaits: 3", "Dīlera datu paka", "3 VIN pārbaudes, derīgums 90 dienas"] },
+      { qty: 10, label: "10 atskaites", rec: false, unit: 17.99, lines: ["Atskaišu skaits: 10", "Dīlera datu paka", "10 VIN pārbaudes, derīgums 90 dienas"] }
+    ]
+  }
+};
+
+const eur = (n) => n.toLocaleString("lv-LV", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " €";
+let sku = "business";
+let selected = 0;
+
+function listPrice(skuKey){
+  return SKUS[skuKey].packs[0].unit;
+}
+
+function render(){
+  const data = SKUS[sku];
+  const list = listPrice(sku);
+  document.getElementById("pageTitle").innerHTML = data.title;
+  document.getElementById("fine").textContent = data.fine;
+  document.getElementById("grid").innerHTML = data.packs.map((p, i) => {
+    const total = p.unit * p.qty;
+    const full = list * p.qty;
+    const save = p.qty > 1;
+    const pct = save ? Math.round((1 - p.unit / list) * 100) : 0;
+    const on = i === selected ? " on" : "";
+    const rec = p.rec ? '<span class="rec">Ieteicams</span>' : "";
+    const sum = save
+      ? `<div class="sum"><b>Kopā ${eur(total)}</b><span class="old">${eur(full)}</span><span class="off">-${pct}%</span></div>`
+      : `<div class="sum"><b>Kopā ${eur(total)}</b></div>`;
+    return `<button type="button" class="card${on}" data-i="${i}">
+      ${rec}
+      <span class="check"><svg viewBox="0 0 12 12"><path d="M2.2 6.2 4.8 8.7 9.8 3.3"/></svg></span>
+      <div class="qty">${p.label}</div>
+      <div class="unit">${eur(p.unit)} <i>par atskaiti</i></div>
+      ${sum}
+      <ul class="lines">
+        ${p.lines.map((line) => `<li><span class="mk">+</span><span>${line}</span></li>`).join("")}
+      </ul>
+    </button>`;
+  }).join("");
+  const p = data.packs[selected];
+  document.getElementById("cta").textContent = `PASŪTĪT ${eur(p.unit * p.qty)}`;
+}
+
+document.querySelectorAll(".seg button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    sku = btn.dataset.sku;
+    selected = 0;
+    document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", b === btn));
+    render();
+  });
+});
+document.getElementById("grid").addEventListener("click", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  selected = Number(card.dataset.i);
+  render();
+});
+render();
+</script>
+</body>
+</html>

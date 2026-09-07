@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { B2bPartnerCatalog } from "@/components/b2b/B2bPartnerCatalog";
+import { B2bPartnerPackPicker } from "@/components/b2b/B2bPartnerPackPicker";
 
 export const metadata: Metadata = {
   title: "PROVIN partneriem",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function PartneriemPacksPage() {
-  return <B2bPartnerCatalog showCta />;
+  return <B2bPartnerPackPicker />;
 }

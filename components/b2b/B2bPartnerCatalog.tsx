@@ -300,14 +300,22 @@ function PackageStack({
   );
 }
 
-export function B2bPartnerCatalog({ showCta = false }: { showCta?: boolean }) {
+export function B2bPartnerCatalog({
+  showCta = false,
+  className,
+}: {
+  showCta?: boolean;
+  className?: string;
+}) {
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
   const business = B2B_CATALOG.business;
   const dealer = B2B_CATALOG.dealer;
 
   return (
-    <section className="scroll-mt-16 bg-transparent px-0 pb-4 pt-2 sm:pb-8 sm:pt-4 lg:pb-10">
+    <section
+      className={`scroll-mt-16 bg-transparent px-0 pb-4 pt-2 sm:pb-8 sm:pt-4 lg:pb-10${className ? ` ${className}` : ""}`}
+    >
       <div className={homeContentMaxClass}>
         <div className="flex flex-col gap-10 lg:hidden">
           <PackageStack
