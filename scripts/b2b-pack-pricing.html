@@ -140,17 +140,17 @@
 <body>
 
 <div class="page">
-  <h1 id="pageTitle">PROVIN <span style="color:#2563eb">BUSINESS</span></h1>
+  <h1 id="pageTitle">DĪLERA DATI</h1>
 
   <div class="seg" role="tablist">
-    <button type="button" class="on" data-sku="business">PROVIN BUSINESS</button>
-    <button type="button" data-sku="dealer">Dīlera dati</button>
+    <button type="button" class="on" data-sku="dealer">Dīlera dati</button>
+    <button type="button" data-sku="business">PROVIN BUSINESS</button>
   </div>
 
   <div class="grid" id="grid"></div>
 
-  <button type="button" class="cta" id="cta">PASŪTĪT 79,99 €</button>
-  <p class="fine" id="fine">Dīleru sistēmu dati pieejami noteiktiem ražotājiem.</p>
+  <button type="button" class="cta" id="cta">PASŪTĪT PAKU 56,97 €</button>
+  <p class="fine" id="fine">Ja datu nav, kredīts tiek atgriezts kontā kā neiztērēts.</p>
 </div>
 
 <script>
@@ -158,6 +158,7 @@ const SKUS = {
   business: {
     title: 'PROVIN <span style="color:#2563eb">BUSINESS</span>',
     fine: "Dīleru sistēmu dati pieejami noteiktiem ražotājiem.",
+    cta: "PASŪTĪT",
     packs: [
       {
         qty: 1, label: "1 atskaite", rec: false, unit: 79.99,
@@ -179,18 +180,28 @@ const SKUS = {
   },
   dealer: {
     title: "DĪLERA DATI",
-    fine: "Dīleru sistēmu dati pieejami noteiktiem ražotājiem.",
+    fine: "Ja datu nav, kredīts tiek atgriezts kontā kā neiztērēts.",
+    cta: "PASŪTĪT PAKU",
     packs: [
-      { qty: 1, label: "1 atskaite", rec: false, unit: 19.99, lines: ["Mercedes, BMW, Audi, VW, Volvo u.c.", "100 % atmaksa, ja ierakstu nav"] },
-      { qty: 3, label: "3 atskaites", rec: true, unit: 18.99, lines: ["Atskaišu skaits: 3", "Dīlera datu paka", "3 VIN pārbaudes, derīgums 90 dienas"] },
-      { qty: 10, label: "10 atskaites", rec: false, unit: 17.99, lines: ["Atskaišu skaits: 10", "Dīlera datu paka", "10 VIN pārbaudes, derīgums 90 dienas"] }
+      {
+        qty: 1, label: "1 atskaite", rec: false, unit: 19.99,
+        lines: ["Atskaišu skaits: 1", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
+      },
+      {
+        qty: 3, label: "3 atskaites", rec: true, unit: 18.99,
+        lines: ["Atskaišu skaits: 3", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
+      },
+      {
+        qty: 10, label: "10 atskaites", rec: false, unit: 17.99,
+        lines: ["Atskaišu skaits: 10", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
+      }
     ]
   }
 };
 
 const eur = (n) => n.toLocaleString("lv-LV", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " €";
-let sku = "business";
-let selected = 0;
+let sku = "dealer";
+let selected = 1;
 
 function listPrice(skuKey){
   return SKUS[skuKey].packs[0].unit;
@@ -205,7 +216,7 @@ function render(){
     const total = p.unit * p.qty;
     const full = list * p.qty;
     const save = p.qty > 1;
-    const pct = save ? Math.round((1 - p.unit / list) * 100) : 0;
+    const pct = save ? Math.round(((list - p.unit) / list) * 100) : 0;
     const on = i === selected ? " on" : "";
     const rec = p.rec ? '<span class="rec">Ieteicams</span>' : "";
     const sum = save
@@ -223,13 +234,13 @@ function render(){
     </button>`;
   }).join("");
   const p = data.packs[selected];
-  document.getElementById("cta").textContent = `PASŪTĪT ${eur(p.unit * p.qty)}`;
+  document.getElementById("cta").textContent = `${data.cta} ${eur(p.unit * p.qty)}`;
 }
 
 document.querySelectorAll(".seg button").forEach((btn) => {
   btn.addEventListener("click", () => {
     sku = btn.dataset.sku;
-    selected = 0;
+    selected = sku === "dealer" ? 1 : 0;
     document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", b === btn));
     render();
   });
