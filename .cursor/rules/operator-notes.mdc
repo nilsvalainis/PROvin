@@ -12,5 +12,6 @@ Ja admin dialogā „Papildu piezīmes AI” (runtime: `OPERATORA KOMANDAS`) ir 
 - Ja operators saka „tikai par…”, „neraksti par…”, „nepapildi” — raksti **tikai** to; bez noklusējuma lauka esejas un bez palīdzīgām liekām rindām.
 - Drīkst pārkārtot PROVIN stilā; nedrīkst izmest faktus, datumus, km, secinājumus.
 - Īsuma limiti un anti-atkārtošanās **ne** attaisno izlaistu operatora tēmu.
+- Ja piezīme nosauc konkrētu avotu („tikai CSDD”, „oficiālais dīleris”) — klienta rindkopu raksti **tikai tajā** avotā. Pārējie avoti drīkst ņemt faktu kā kontekstu, bet neatkarīgi neatkārtot.
 
 Kanons: `AI_OPERATOR_NOTES_EXECUTION_RULES` (`lib/source-summary-comment-format.ts`).

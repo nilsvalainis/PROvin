@@ -23,6 +23,8 @@ import {
   AI_WINTER_SALT_RUST_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
+  AI_DOCUMENTED_SERVICE_WORK_RULES,
+  AI_THIS_CAR_ONLY_LOGIC_RULES,
   HYBRID_COMMENT_RULES,
   PROVIN_COMMENT_BREVITY_RULES,
   PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES,
@@ -147,6 +149,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/kā to apstiprināt/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/Neizdomā kodu/);
     expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/vispārīgā, modeļa līmenī/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/VISI ražotāji|DARBA SECĪBA/);
+    expect(AI_POWERTRAIN_IDENTIFICATION_RULES).toMatch(/dzinēja kodu/);
   });
 
   it("mileage-band rules calibrate risk without exaggeration", () => {
@@ -178,6 +182,7 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("technical risks research rules require European forum search when packs are thin", () => {
     expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/WEB RESEARCH/);
+    expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/ENGINE CODE FIRST/);
     expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/Motor-Talk/);
     expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/Neizdomā/);
     expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs C/);
@@ -313,8 +318,8 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/PAINT THICKNESS/);
-    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/150-170/);
-    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/50-100/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/100 līdz 150/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/50 līdz 150/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/iekšējās ailes/i);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/krāsas biezuma mērītāj/);
     expect(HYBRID_COMMENT_RULES).toMatch(/PAINT THICKNESS/);
@@ -351,6 +356,25 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/WRAP_FILM|aplīmēšana/);
     expect(readRepo("lib/admin-ai-technical-risks.ts")).toMatch(/WRAP_FILM|aplīmēšana/);
     expect(AI_WRAP_FILM_RULES).toMatch(/NOT a trigger|NAV fakts|do not mention wrap at all/i);
+  });
+
+  it("documented service, this-car-only logic, seller search and oil gaps are in the prompts", () => {
+    expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/Independent \/ non-dealer|ārpus oficiālā dīlera|may have been done elsewhere/i);
+    expect(AI_DOCUMENTED_SERVICE_WORK_RULES).toMatch(/DOCUMENTED SERVICE WORK/);
+    expect(AI_DOCUMENTED_SERVICE_WORK_RULES).toMatch(/zobsiksna/);
+    expect(AI_THIS_CAR_ONLY_LOGIC_RULES).toMatch(/THIS CAR ONLY/);
+    expect(AI_THIS_CAR_ONLY_LOGIC_RULES).toMatch(/EVERY manufacturer|every make/i);
+    expect(AI_DOCUMENTED_SERVICE_WORK_RULES).toMatch(/EVERY manufacturer/);
+    expect(AI_OPERATOR_NOTES_EXECUTION_RULES).toMatch(/SOURCE TARGETING/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Do not name Lietuva or Igaunija|Never list Latvija/);
+    expect(readRepo("lib/admin-ai-seller.ts")).toMatch(/sudzibas\.lv/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/AI_SELLER_ANALYSIS_SYSTEM[\s\S]*?sudzibas\.lv/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_DOCUMENTED_SERVICE_WORK_RULES\}/,
+    );
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_THIS_CAR_ONLY_LOGIC_RULES\}/,
+    );
   });
 
   it("resolved historical TA findings are not an in-person hunt list", () => {

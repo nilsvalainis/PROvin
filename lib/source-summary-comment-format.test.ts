@@ -18,6 +18,13 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("Labs auto — kopts.")).toBe("Labs auto - kopts.");
     expect(applyProvinReportCopyVocabulary("2007–2015, 300–400 €")).toBe("2007-2015, 300-400 €");
   });
+
+  it("replaces kancelejisku labvēlīgs-signāls wording", () => {
+    expect(applyProvinReportCopyVocabulary("Salons ir kopts, tas ir labvēlīgs signāls.")).toBe(
+      "Salons ir kopts, tas ir labs rādījums datos.",
+    );
+    expect(applyProvinReportCopyVocabulary("labvēlīgs faktors")).toBe("tas palīdz");
+  });
 });
 
 describe("normalizeProvinExpertAiComment", () => {

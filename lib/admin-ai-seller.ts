@@ -31,9 +31,9 @@ export async function generateSellerAnalysisWithAi(input: AiOrderContextInput): 
   });
 
   const taskBlock = extraSeller
-    ? `Analīzes režīms: UZŅĒMUMS
+    ?         `Analīzes režīms: UZŅĒMUMS
 Papildus pārdevēja nosaukums: „${extraSeller}”
-Veic Google meklēšanu par šo uzņēmumu un sagatavo pārdevēja portretu klientam.`
+Meklē sudzibas.lv un Google atsauksmes par šo uzņēmumu. Raksti īsus faktus. Nenomelno. „Paaugstināta riska darījums” tikai pie sistemātiskām publiskām sūdzībām.`
     : `Analīzes režīms: SLUDINĀJUMS
 Papildus nosaukums nav norādīts — secini pārdevēja tipu no sludinājuma un pieejamā konteksta.
 Sludinājuma iekopētais teksts:

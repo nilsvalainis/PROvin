@@ -6,7 +6,6 @@
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
   CSDD_MILEAGE_COUNTRY_LV,
-  csddFormHasContent,
   emptyCsddFields,
   vinRegistryBlockHasContent,
   type CsddFormFields,
@@ -47,6 +46,7 @@ export type WinterSaltRustAnalysis = {
   isSuvCrossoverWagon: boolean;
   makeModel: string;
   typicalSpots: readonly string[];
+  evidencedCountries: readonly string[];
 };
 
 export function winterSaltRustRequiredInPrompt(prompt: string): boolean {
@@ -139,16 +139,49 @@ function earliestWinterSaltMs(csdd: CsddFormFields): number | null {
   return Math.min(...times);
 }
 
+function evidencedWinterSaltCountries(input: {
+  csdd: CsddFormFields;
+  sourceBlocks?: WorkspaceSourceBlocks | null;
+  hay: string;
+}): string[] {
+  const out: string[] = [];
+  const add = (name: string) => {
+    if (!out.includes(name)) out.push(name);
+  };
+  const csdd = input.csdd;
+  const hay = input.hay;
+  const hasLvRegistry =
+    (csdd.technicalInspectionHistory ?? []).some((r) => r.date.trim()) ||
+    (csdd.ownerRegistrationEvents ?? []).some((r) => r.date.trim() || r.label.trim()) ||
+    (csdd.mileageHistory ?? []).some((row) => /latvij/i.test(row.country) || row.country.trim() === CSDD_MILEAGE_COUNTRY_LV);
+  if (hasLvRegistry || /latvij/i.test(hay) || isWinterSaltCountry(csdd.previousRegistrationCountry) && /latvij/i.test(csdd.previousRegistrationCountry)) {
+    add("Latvija");
+  }
+  if (
+    (csdd.mileageHistory ?? []).some((row) => /lietuv|lithuania/i.test(row.country)) ||
+    /lietuv|lithuania/i.test(hay) ||
+    /lietuv|lithuania/i.test(csdd.previousRegistrationCountry)
+  ) {
+    add("Lietuva");
+  }
+  if (
+    vinRegistryBlockHasContent(input.sourceBlocks?.mnt_ee) ||
+    vinRegistryBlockHasContent(input.sourceBlocks?.lkf_ee) ||
+    (csdd.mileageHistory ?? []).some((row) => /igaun|estonia/i.test(row.country)) ||
+    /igaun|estonia/i.test(hay) ||
+    /igaun|estonia/i.test(csdd.previousRegistrationCountry)
+  ) {
+    add("Igaunija");
+  }
+  return out;
+}
+
 function inWinterSaltRegion(
   csdd: CsddFormFields,
   sourceBlocks: WorkspaceSourceBlocks | null | undefined,
   hay: string,
 ): boolean {
-  if (csddFormHasContent(csdd)) return true;
-  if (vinRegistryBlockHasContent(sourceBlocks?.mnt_ee) || vinRegistryBlockHasContent(sourceBlocks?.lkf_ee)) {
-    return true;
-  }
-  return WINTER_SALT_COUNTRY_RE.test(hay);
+  return evidencedWinterSaltCountries({ csdd, sourceBlocks, hay }).length > 0;
 }
 
 export function analyzeWinterSaltRust(input: {
@@ -166,7 +199,12 @@ export function analyzeWinterSaltRust(input: {
   });
   const makeModel = csdd.makeModel.trim();
   const isSuvCrossoverWagon = SUV_CROSSOVER_WAGON_RE.test(`${makeModel}\n${hay}`);
-  const region = inWinterSaltRegion(csdd, input.sourceBlocks ?? null, hay);
+  const evidencedCountries = evidencedWinterSaltCountries({
+    csdd,
+    sourceBlocks: input.sourceBlocks ?? null,
+    hay,
+  });
+  const region = evidencedCountries.length > 0;
 
   const firstRegYear = parseYearHint(csdd.firstRegistration);
   const vehicleAgeYears =
@@ -179,11 +217,11 @@ export function analyzeWinterSaltRust(input: {
   const yearsInRegion =
     fromDates != null && fromText != null ? Math.max(fromDates, fromText) : (fromDates ?? fromText);
 
-  const required =
-    region &&
-    ((yearsInRegion != null && yearsInRegion >= 3) ||
-      (vehicleAgeYears != null && vehicleAgeYears >= 8) ||
-      isSuvCrossoverWagon);
+  const yearsOk = yearsInRegion != null && yearsInRegion >= 3;
+  const suvWithUse = isSuvCrossoverWagon && yearsInRegion != null && yearsInRegion >= 1;
+  const oldWithUse =
+    vehicleAgeYears != null && vehicleAgeYears >= 8 && yearsInRegion != null && yearsInRegion >= 1;
+  const required = region && (yearsOk || suvWithUse || oldWithUse);
 
   return {
     required,
@@ -193,6 +231,7 @@ export function analyzeWinterSaltRust(input: {
     isSuvCrossoverWagon,
     makeModel,
     typicalSpots: WINTER_SALT_TYPICAL_SPOTS_LV,
+    evidencedCountries,
   };
 }
 
@@ -210,7 +249,16 @@ export function buildWinterSaltRustBrief(input: {
     "- Statuss: OBLIGĀTI",
   ];
   if (c.makeModel) lines.push(`- Marka/modelis: ${c.makeModel}`);
-  if (c.yearsInRegion != null) lines.push(`- Gadi ziemas sāls reģionā (LV/LT/EE): ~${c.yearsInRegion}`);
+  if (c.yearsInRegion != null) {
+    lines.push(
+      `- Gadi ziemas sāls reģionā (${c.evidencedCountries.join(", ") || "LV/LT/EE"}): ~${c.yearsInRegion}`,
+    );
+  }
+  if (c.evidencedCountries.length > 0) {
+    lines.push(
+      `- Ekspluatācija fiksēta: ${c.evidencedCountries.join(", ")}. Citas valstis NENOSAUK.`,
+    );
+  }
   if (c.vehicleAgeYears != null) lines.push(`- Auto vecums: ~${c.vehicleAgeYears} gadi`);
   if (c.isSuvCrossoverWagon) {
     lines.push("- Virsbūves klase: SUV / krosovers / universālis — arkām un sliekšņiem sāls sasniedz ātrāk.");

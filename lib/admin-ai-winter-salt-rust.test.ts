@@ -62,4 +62,18 @@ describe("analyzeWinterSaltRust", () => {
     expect(c.required).toBe(true);
     expect(c.yearsInRegion).toBe(10);
   });
+
+  it("does not require rust advice for a German-only SUV with no Baltic use", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "AUDI Q7";
+    csdd.firstRegistration = "2018-03-12";
+    csdd.previousRegistrationCountry = "Vācija";
+    csdd.mileageHistory = [
+      { date: "2020-05-10", odometer: "85 000", country: "Vācija" },
+    ];
+    const c = analyzeWinterSaltRust({ csdd, nowMs: NOW });
+    expect(c.required).toBe(false);
+    expect(c.evidencedCountries).toEqual([]);
+    expect(buildWinterSaltRustBrief({ csdd, nowMs: NOW })).toBe("");
+  });
 });

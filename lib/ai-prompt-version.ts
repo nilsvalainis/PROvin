@@ -3,6 +3,14 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-07.3 - Agregāti VISIEM ražotājiem: vispirms dzinēja kods, tad
+ *   meklēšana šim kodam, tad komentārs. Pakas un ķēde/zobsiksna nav Audi-only.
+ * - 2026-09-07.2 - Klienta valoda: bez „labvēlīgs signāls”; pārdevēja portrets
+ *   = fakti no sudzibas.lv/Google, paaugstināts risks tikai pie sistemātiskām
+ *   sūdzībām; eļļas robs ≠ risks; zobsiksna/ķēde tikai pēc šī motora; dīlera
+ *   Veiktie darbi uzvar „jāmaina”; pakas tikai sakrītošam kodam; ziemas sāls
+ *   tikai pēc reālas LV/LT/EE; krāsa 100-150 / 50-150 µm; FLASH MAX piezīme
+ *   paliek tajā avotā, uz kuru attiecas.
  * - 2026-09-07.1 - „kontūrā” aizliegts klienta tekstā: virsbūvē (krāsa) vai
  *   sistēmā (elektronika / programmatūra).
  * - 2026-09-04.1 - Gara domuzīme "—" un en dash "–" aizliegtas visā klienta
@@ -11,7 +19,7 @@
  * - 2026-08-29.1 — Ātrie vērtējumi: sagataves turpina to pašu rindkopu
  *   (punkts + viena atstarpe), bez 1. 2. 3. saraksta.
  * - 2026-08-26.1 — Ieteikumi: katram auto viena virsbūves/krāsas-biezuma
- *   sadaļa (mērītājs, 150-170 / ~200 mikroni, nobīde 50-100, iekšējās ailes).
+ *   sadaļa (mērītājs, 100-150 µm / nobīde 50-150, iekšējās ailes).
  *   Tipiskais garums 6-12, lai šī sadaļa neizstumtu citus soļus.
  * - 2026-08-25.4 — Dānija: līzings + privāta reģistrācija = 2 īpašnieki
  *   (līgumu ķēde nav jauni īpašnieki; ārvalstu pirmā reģistrācija nav DK).
@@ -63,4 +71,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-07.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-07.3";

@@ -50,6 +50,7 @@ function engineScore(fp: VehicleReportFingerprint, codes: string[]): number {
 const PACK_BODY_HEADER = `INTERNĀ KALIBRĀCIJA — šīs pakas € summas ir TIKAI tavai iekšējai smaguma/varbūtības kalibrācijai, NEKAD nekopē tās klienta tekstā (skat. NO ESTIMATED REPAIR EUR); ja tās tomēr paslīd, tās izfiltrē pēcapstrāde, bet tas ir drošības tīkls, ne atļauja.
 
 Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
+- Šī paka der TIKAI ja šī auto **dzinēja kods / tilpums / kārba** sakrīt. Tā pati marka ar citu kodu = IGNORĒ šo paku un meklē šim kodam.
 - Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / ierasta uzturēšanas izmaksa / tikai pārbaudāms klātienē).
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
 - **1. Tehnisko risku analīze** — DETALIZĒTI (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija — BEZ € skaitļiem klientam. Blīvums ≠ īsums. TA nosegts nodilums nav šīs sadaļas saturs.
@@ -62,9 +63,10 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     title: "Audi / VW grupa — 3.0 TDI un transmisiju pāris",
     score: (fp, hay) => {
       let s = brandScore(fp, ["AUDI", "VW", "VOLKSWAGEN", "SKODA", "SEAT"], hay);
-      if (/3\.0|TDI|V6|2967|2993/.test(hay)) s += 15;
+      if (/3\.0|V6|2967|2993/.test(hay)) s += 15;
       if (/BITURBO|230KW|313|SQ5/.test(hay)) s += 10;
       if (/S-TRONIC|DSG|TIPTRONIC|7G|8HP/.test(hay)) s += 6;
+      if (/2\.0|1968/.test(hay) && !/3\.0|V6|2967|2993/.test(hay)) s -= 20;
       return s + engineScore(fp, ["CRT", "CAPA", "ASB", "CDUC", "CVU"]);
     },
     body: `${PACK_BODY_HEADER}
@@ -75,7 +77,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **176 kW + Tiptronic 6 (piem. C6 posms) — IZŅĒMUMS:** hidrotransformatora automāts, nav S-Tronic sajūga riska; parasti uzticamākais šīs konstrukcijas komplekts. **Ķēdes maiņa pie ~250 000 km** — ja odometrs rāda mazāk un ķēde jau mainīta, tas ir augsts rollback signāls (reālais nobraukums visticamāk >500 000 km).
 
-**Biturbo ~230 kW + 8AT/8HP Tiptronic:** hidrotransformatora automāts (nav S-Tronic riska); fokuss — **V-intercooler dzesēšanas noplūde**, **iesmidzinātāji un vara blīvgredzeni** (klusā bojāejuma risks — motors turpina strādāt, defekts pamanāms tikai pēc patēriņa/dūmu izmaiņām), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000–10 000 km** premium eļļai — īsāks intervāls ir labvēlīgs signāls.
+**Biturbo ~230 kW + 8AT/8HP Tiptronic:** hidrotransformatora automāts (nav S-Tronic riska); fokuss — **V-intercooler dzesēšanas noplūde**, **iesmidzinātāji un vara blīvgredzeni** (klusā bojāejuma risks — motors turpina strādāt, defekts pamanāms tikai pēc patēriņa/dūmu izmaiņām), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000–10 000 km** premium eļļai — īsāks intervāls datos izskatās labi.
 
 **204 kW un jaunākas biturbo versijas (Euro 6, ap 2015+):** tehniski tuvākas biturbo variantam; papildus kontrolē EGR dzesētāja blīvumu un AdBlue sistēmas kļūdu vēsturi, ja pieejama.
 
@@ -91,9 +93,11 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     title: "VW grupa — 2.0 TDI, DPF/AdBlue, DSG tips",
     score: (fp, hay) => {
       let s = brandScore(fp, ["VW", "VOLKSWAGEN", "AUDI", "SKODA", "SEAT"], hay);
-      if (/2\.0|1968|DIESEL|DĪZEL|TDI/.test(hay)) s += 12;
+      if (/2\.0|1968/.test(hay)) s += 14;
+      if (/\bTDI\b/.test(hay) && /2\.0|1968|EA288/.test(hay)) s += 6;
       if (/DQ200|DQ250|DQ500|DSG|S-TRONIC/.test(hay)) s += 8;
-      return s + engineScore(fp, ["CFFB", "CFGB", "CUPA", "DFGA", "DFHA", "CUNA"]);
+      if (/3\.0|V6|2967|2993/.test(hay) && !/2\.0|1968/.test(hay)) s -= 20;
+      return s + engineScore(fp, ["CFFB", "CFGB", "CUPA", "DFGA", "DFHA", "CUNA", "DTPA", "DTRB", "DTUA"]);
     },
     body: `${PACK_BODY_HEADER}
 
@@ -103,7 +107,9 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **DPF/EGR/AdBlue:** pilsētas profils = **vidējs/liels risks**; šosejas profils ar pierādījumiem — tikai pārbaudes punkts.
 
-**Klātienē:** slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; ūdens sūknis/termostats.`,
+**EA288 / EA288evo (piem. DTPA 150 kW, 1968 cm3):** gāzu sadali piedzen zobsiksna, ne sadales ķēde. Ja dīlera Veiktie darbi vai komentāros siksna jau fiksēta (datums + km), to kā tuvākā laika maiņu NERAKSTI. 3.0 V6 plastmasas termostata korpusa stāstu uz šo motoru NEDRĪKST kopēt, kamēr meklēšana šim konkrētajam kodam to neapstiprina.
+
+**Klātienē:** slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; ja siksna datos nav fiksēta - jālūdz rēķins, ne jāapgalvo, ka tā nav mainīta.`,
   },
   {
     id: "vag_tfsi_ea888",
@@ -179,7 +185,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 
-**M57 mehānika pie 250–350 tūkst. km (ierasta uzturēšanas izmaksa, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve — INTERNĀ KALIBRĀCIJA, nekopē klientam); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, **labvēlīgs signāls**. Ieplūdes kolektors 2008. gada M57T2 visticamāk vēl ir oriģinālais — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/iesmidzinātāji statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labvēlīgs DPF/turbo signāls.
+**M57 mehānika pie 250–350 tūkst. km (ierasta uzturēšanas izmaksa, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve — INTERNĀ KALIBRĀCIJA, nekopē klientam); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, tas datos izskatās labi. Ieplūdes kolektors 2008. gada M57T2 visticamāk vēl ir oriģinālais — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/iesmidzinātāji statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labs DPF/turbo rādījums datos.
 
 **Elektronika kā 15–20 gadu E60/E61 īpatnība:** ELV (iedarbināšana, **150–450 €**), FRM, CAS/IBS, CIC pikseļi, bagāžnieka vadi. Tas ir **laika** risks, ne pierādījums, ka šis auto ir elektriski beidzies. Nošķir jau fiksētu diagnostikas kļūdu (tuvākais rēķins) no paaudzes kaprīzes.
 

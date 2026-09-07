@@ -84,6 +84,18 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "virsbūvē (krāsa / virsbūve) vai sistēmā (elektronika / programmatūra)",
     code: "vocabulary_kontura",
   },
+  {
+    label: "labvēlīgs signāls",
+    pattern: /labvēlīg\w*\s+signāl/i,
+    replacement: "tas datos izskatās labi / labs rādījums datos (vai vienkārši konkrētais fakts bez šīs frāzes)",
+    code: "vocabulary_labveligs_signals",
+  },
+  {
+    label: "labvēlīgs faktors",
+    pattern: /labvēlīg\w*\s+faktor/i,
+    replacement: "tas palīdz / tas šim mezglam nāk par labu (vai vienkārši fakts)",
+    code: "vocabulary_labveligs_faktors",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */

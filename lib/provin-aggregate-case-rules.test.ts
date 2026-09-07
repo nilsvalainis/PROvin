@@ -74,4 +74,26 @@ describe("provin-aggregate-case-rules", () => {
     expect(k1).toBe(k2);
     expect(k1.length).toBeGreaterThan(3);
   });
+
+  it("selects 2.0 TDI pack for Audi A4 DTPA and excludes 3.0 V6 TDI pack", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Audi A4",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.06.2020",
+        engineDisplacementCm3: "1968",
+        enginePowerKw: "150",
+        emissionStandard: "Euro 6",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "DTPA";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "vag_2_0_tdi_dsg")).toBe(true);
+    expect(packs.some((p) => p.id === "vag_audi_v6_tdi")).toBe(false);
+    const tdi = packs.find((p) => p.id === "vag_2_0_tdi_dsg");
+    expect(tdi?.body).toMatch(/zobsiksna/i);
+    expect(tdi?.body).toMatch(/ne sadales ķēde/i);
+    expect(tdi?.body).toMatch(/termostata korpusa stāstu uz šo motoru NEDRĪKST kopēt/i);
+  });
 });

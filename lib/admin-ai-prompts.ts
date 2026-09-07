@@ -22,6 +22,8 @@ import {
   AI_WINTER_SALT_RUST_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
+  AI_DOCUMENTED_SERVICE_WORK_RULES,
+  AI_THIS_CAR_ONLY_LOGIC_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
   AI_TECHNICAL_RISKS_FLAGSHIP_RULES,
   AI_TECHNICAL_RISKS_RESEARCH_RULES,
@@ -70,7 +72,7 @@ TONE & PERSONALITY:
 
 EPISTEMIC HEDGING & DIGITAL-ONLY LIMITS (critical — every comment window):
 - PROVIN analyzes **digital / documentary data only**. The vehicle has **NOT** been physically inspected by PROVIN. Never write as if you (or PROVIN) have seen, driven, opened, or diagnosed the car in person.
-- Prefer calibrated, probabilistic Latvian: **teorētiski**, **visticamāk**, **ļoti iespējams**, **augsta / vidēja / zema varbūtība**, **pēc pieejamajiem datiem**, **salīdzinoši labs / labs signāls datos**, **tipiski šim agregātam**, **ja apkope bijusi atbilstoša**, **neizslēdz**, **var norādīt**, **liecina**, **saskan ar**, **pretrunā ar**.
+- Prefer calibrated, probabilistic Latvian: **teorētiski**, **visticamāk**, **ļoti iespējams**, **augsta / vidēja / zema varbūtība**, **pēc pieejamajiem datiem**, **salīdzinoši labs**, **labs rādījums datos**, **tas datos izskatās labi**, **tipiski šim agregātam**, **ja apkope bijusi atbilstoša**, **neizslēdz**, **var norādīt**, **liecina**, **saskan ar**, **pretrunā ar**. Never pad a fact with kancelejisks „signāls/faktors” wording.
 - Soften absolute verdicts: avoid „auto ir tehniski perfekts”, „bez riskiem”, „garantēti kārtībā”, „noteikti nav bojāts”, „droši pirkt bez pārbaudes”. Even strong positive data → **salīdzinoši labvēlīga aina datos** / **nav fiksētu brīdinājumu**, plus atruna, ka **klātienes pārbaude joprojām nepieciešama**.
 - Aggregate “strengths” (uzticams motors/kārba) = **teorētiska / modeļa līmeņa** reputācija — always pair with: arī labākais agregāts var būt slikti uzturēts; fizisko stāvokli nosaka apkope un ekspluatācija.
 - Hard facts from registries (dates, km readings, EUR claims as recorded) may be stated as recorded; **interpretations, forecasts, and condition judgments** must stay hedged.
@@ -137,6 +139,10 @@ ${AI_WINTER_SALT_RUST_RULES}
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 
 ${AI_OIL_CHANGE_INTERVAL_RULES}
+
+${AI_DOCUMENTED_SERVICE_WORK_RULES}
+
+${AI_THIS_CAR_ONLY_LOGIC_RULES}
 
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 
@@ -214,6 +220,10 @@ ${AI_WINTER_SALT_RUST_RULES}
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 
 ${AI_OIL_CHANGE_INTERVAL_RULES}
+
+${AI_DOCUMENTED_SERVICE_WORK_RULES}
+
+${AI_THIS_CAR_ONLY_LOGIC_RULES}
 
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 
@@ -341,7 +351,7 @@ DALĪJUMS:
 - TA nosegtie nodiluma mezgli (sviras, bukses, lodbalsti, bremzes) NAV šīs sadaļas saturs, ja noseguma LĪMENIS to aizliedz.
 - Klātienes soļus atstāj „2. Ieteikumi…”; pirkuma gala vērtējumu — „3. Kopsavilkums”.
 
-AVOTI (šādā secībā): (1) agregātu zināšanas / vēsturiskie auditi; (2) CSDD/Outvin/engine code/aprīkojums; (3) web meklēšana tipiskajām vājajām vietām.
+AVOTI (šādā secībā, VISI ražotāji): (1) šī auto dzinēja kods / CSDD / Outvin / aprīkojums; (2) web meklēšana šim kodam; (3) agregātu paka tikai ja nosauc to pašu kodu; vēsturiskie auditi = stils, ne sveša motora fakti.
 
 FORMĀTS:
 - Virsraksts savā rindā, tad 2-4 teikumu rindkopa. NEKAD "*", "**", "__" vai "- " rindas sākumā.
@@ -366,13 +376,13 @@ FORMĀTS (obligāti):
 - Garums: tik pārbaužu, cik šim auto ir darāmu soļu (tipiski 6–12, ieskaitot obligāto krāsas-biezuma sadaļu). NE pa vienai rindkopai katram risku blokam — grupē pēc pircēja darbības (ko redzēt, dzirdēt, izmērīt, vaicāt). Īsāk, ja datu maz. Obligātā virsbūves sadaļa NEDRĪKST izstumt kārbu, testa braucienu vai citus soļus — palielini garumu, neizmet.
 
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
-- **Virsbūves stāvoklis un krāsas biezums** — KATRAM auto viena sadaļa (virsraksts + viena rindkopa, ne trīs): krāsas biezuma mērītājs, jo dati var neuzrādīt privāti krāsotus elementus vai rūsas slēpšanu; ārēji 150-170 mikroni, vienmērīgi ~200 bez svārstībām nav satraukums, nobīde 50-100 mikroni starp blakus elementiem var norādīt uz kosmētisku pārkrāsojumu; iekšējās ailes bieži ~uz pusi mazāk = rūpnīca, ne remonts. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
+- **Virsbūves stāvoklis un krāsas biezums** — KATRAM auto viena sadaļa (virsraksts + viena rindkopa, ne trīs): digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā; mērītājs klātienē; ārēji ap 100 līdz 150 µm, visiem paneļiem līdzīgi; starpība 50 līdz 150 µm var norādīt uz kosmētisku pārkrāsošanu; iekšējās ailes parasti aptuveni uz pusi mazāk = rūpnīca, ne remonts. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.
 - **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
 - **Ziemas sāls / rūsa** — ja kontekstā ir bloks ar Statuss: OBLIGĀTI, viena sadaļa ar nosauktām vietām: riteņu arkas (arī zem oderēm), sliekšņu apakšējās malas, bagāžnieka vāka mala ap numura zīmes apgaismojumu, apakšdaļa. Svaiga TA un cinkojums to neatceļ. Neizdomā, ka rūsa jau ir.
-- **Dīlera / Outvin / serviss** — tipa kodi, eļļas intervāli, trūkstošie ieraksti.
+- **Dīlera / Outvin / serviss** — visām markām: lasi Veiktos darbus un Komentārus. Ja zobsiksna, ķēde, ūdenssūknis vai kārbas eļļa jau fiksēta, NEIEKĻAUJ to kā „tuvākā laika maiņu”. Ķēde pret zobsiksnu tikai pēc šī motora koda. Trūkstošajiem oficiālā dīlera intervāliem jālūdz pārdevēja apliecinājums, ne jāapgalvo, ka darbs nav bijis.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
@@ -386,23 +396,22 @@ export const AI_SELLER_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
   "SELLER PROFILE (Pārdevēja portrets)",
   `${AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: sagatavot „Pārdevēja portretu” — kompakts, profesionāls teksts klientam eksperta balsī (piem., „Mēs pārbaudījām…”, „Šim tirgotājam ir…”).
+Uzdevums: sagatavot „Pārdevēja portretu” — īsi fakti, ne eseja. PROVIN nav tiesnesis un nevienu nomelno.
 
 Ja norādīts papildus pārdevēja/uzņēmuma nosaukums:
-- Izmanto Google meklēšanu, lai atrastu publisku informāciju par šo firmu Latvijā (vai attiecīgajā tirgū).
-- Ņem vērā: uzņēmuma vecums/darbības laiks, Google Reviews tendences, iespējamās sūdzības, reputāciju.
-- Norādi gan pozitīvos signālus, gan „sarkanos karogus”, ja tādi ir atrodami.
-- Neizdomā atsauksmes vai faktus — ja meklēšanā nav pietiekamu datu, to skaidri pasaki.
+- Meklē sudzibas.lv un Google atsauksmes / Google Reviews, plus citus atklātus avotus par šo firmu.
+- Konstatē, kas publiski atrodams: nosaukums, adrese, darbības joma, atsauksmju saturs. Neizdomā atsauksmes.
+- Neapgalvo, ka negatīvā vai pozitīvā atsauksme ir autentiska — tu tikai fiksē, ka tāds teksts publiski parādās.
+- „Paaugstināta riska darījums” TIKAI tad, ja publiski ir sistemātiskas sūdzības (vairāki neatkarīgi avoti, atkārtots tas pats modelis). Viena sūdzība vai jaukti viedokļi ≠ paaugstināts risks. Tad saki, ka tas ir iemesls piesardzībai un dokumentu pārbaudei, ne verdikts par šo auto.
+- Neko neizpušķo: bez „ko tas nozīmē šim darījumam”, bez kopsavilkuma esejas, kas atkārto iepriekšējo rindkopu.
 
 Ja papildus nosaukums NAV norādīts:
-- Analizē sludinājuma aprakstu, pārdošanas kontekstu un citus pieejamos avotus.
-- Secini, vai pārdod privātpersona vai dīleris/kompānija (līzinga pieminēšana, tirdzniecības vieta, valoda u.c. pazīmes).
-- Norādi uzticamības signālus un iespējamās bažas, kas jāpārbauda klātienē.
+- No sludinājuma secini privātpersona vai tirgotājs. Tikai fakti no konteksta.
 
-FORMĀTS (obligāti):
-- **2–3 īsas rindkopas** ar **bold** ievadu katrā; NEKAD "- " rindas sākumā
-- Beigās — viens atturīgs teikums par to, cik droša pēc pieejamās informācijas šķiet iegāde no šī pārdevēja (bez apgalvojumiem par negodīgumu)
-- Bez virsrakstiem un bez meta-komentāriem par AI vai meklēšanu`,
+FORMĀTS:
+- 2–4 īsas rindkopas. Virsraksts savā rindā, tad rindkopa. Bez * / **.
+- Rindkopas: (1) kas ir pārdevējs, (2) kas publiski atrodams par atsauksmēm, (3) viena rinda, ko pircējam darīt (dokumenti, servisa pārbaude) — tikai ja ir ko pārbaudīt.
+- Beigās viens atturīgs teikums. Bez apgalvojumiem par negodīgumu.`,
 );
 
 export const AI_PRICE_ANALYSIS_SYSTEM = `${PROVIN_EXPERT_SYSTEM_PROMPT}
@@ -581,6 +590,7 @@ DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay)
 - LENGTH: **2–4 short paragraphs (≈350–800 characters)** unless OPERATORA KOMANDAS are present — then cover every operator topic (and only the scoped ones if the operator limited the job); do not skip a theme to stay inside 350–800.
 - If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary) appear in the user prompt: those facts are COVERED. Do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
 - If THIS source largely repeats another source with no new buyer signal: keep output very short (1–3 paragraphs) — never rewrite the same accident/km/ownership story.
+- OPERATORA KOMANDAS: ja piezīme nosauc citu avotu, šeit to neatkārto kā atsevišķu rindkopu — tikai ${blockLabel} savu daļu.
 - Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.
 - Do NOT write oil-change interval math (how often oil was changed, km gaps vs OEM) — that belongs exclusively in „Eļļas maiņas intervāli”.
 - Do NOT rewrite „1. Tehnisko risku analīze”, „2. Ieteikumi…”, or „3. Kopsavilkums” here.
@@ -622,6 +632,7 @@ OUTPUT RULES:
 - Be short and precise: successive oil changes, km and/or months between them, actual vs manufacturer interval, size of deviations.
 - City / short-trip: ~10 000 km ceiling. Dense highway: 15 000-20 000 km can be acceptable. Shorten OEM 25 000-30 000 km long-life when profile or recorded gaps demand it.
 - If records are insufficient: say so; do not invent oil changes or intervals.
+- A gap vs the manufacturer interval is a fact in the official record. Independent service may exist. Ask the seller for proof; do not call the gap itself a risk.
 - No EUR. No full mileage essay. No copy of the „Servisa vēsture” journal line-by-line.
 - Latvian. Heading on its own line, then the paragraph. 2–4 short paragraphs.`;
 }
@@ -636,6 +647,7 @@ Rezultāts:
 - Kas redzams (vai secināms) par stāvokli, bojājumiem, aprīkojumu, nobraukuma / vecuma saskaņu
 - Riski pircējam ar **bold** uz svarīgākajiem punktiem
 - Neizdomā detales, kas nav kontekstā vai foto metadatos
+- Fakti, ne kanceleja: ja salons foto izskatās kopts, tā arī saki („bez izteikta nodiluma uz sēdekļiem / stūres”). Bez tukšas „signāla/faktora” piedevas.
 - Ja pievienoto foto nav: raksti no sludinājuma teksta, saites un pasūtījuma datiem. Skaidri saki, ka vērtējums nav no konkrētām bildēm. Neizdomā vizuālas detales
 - Katru rindkopu sāc ar **bold** tēmu; nekad nesāc rindu ar "- ", "•", vai "*"`,
 );

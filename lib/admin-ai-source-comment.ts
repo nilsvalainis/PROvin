@@ -122,6 +122,7 @@ Jāatbild:
 - cik lielas ir nobīdes (pārsniegts / īsāks / atbilst);
 - ja pilsētas profils — praktiskais griesti ~10 000 km; ja blīvi šosejas dati — 15 000-20 000 km var būt pieņemami; 25 000-30 000 km „long-life” saīsini, ja profils to prasa.
 Ja eļļas maiņu ierakstu nav vai to ir par maz — tā arī saki; NEIZDOMĀ apkopes.
+Ja oficiālajā dīlerī ir robs pret ražotāja intervālu: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera — jālūdz pārdevēja rēķins/apliecinājums. To pašu robu NESAUC par pirkuma risku.
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
 Garums: 2–4 īsas rindkopas. Virsraksts savā rindā, tad rindkopa. Bez *, **.`,
         {
@@ -165,6 +166,7 @@ Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to
 Ja šis avots tikai apstiprina jau uzrakstīto: 1–2 īsas rindkopas max.
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; digitālie ieraksti var būt nepilnīgi, tāpēc raksti, ko dati uzrāda, nevis ko tie „pierāda”.
 ${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
+Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) — tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
 Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
         {
           operatorNotes: input.operatorNotes,

@@ -44,9 +44,9 @@ export function mentionsWinterSaltRust(text: string): boolean {
 }
 
 const PAINT_GAUGE_TOOL_RE = /krāsas (?:biezuma )?mērītāj/i;
-const PAINT_GAUGE_MICRON_RE = /mikron/i;
-const PAINT_GAUGE_RANGE_RE = /150\s*[-–]?\s*170/;
-const PAINT_GAUGE_DELTA_RE = /50\s*[-–]?\s*100/;
+const PAINT_GAUGE_MICRON_RE = /mikron|µm|μm/i;
+const PAINT_GAUGE_RANGE_RE = /100\s*(?:līdz|[-–])\s*150/;
+const PAINT_GAUGE_DELTA_RE = /50\s*(?:līdz|[-–])\s*150/;
 const PAINT_GAUGE_INNER_RE = /iekšēj(?:ās|o) ail/i;
 
 /** Obligātā virsbūves mērīšanas sadaļa klātienes ieteikumos. */
@@ -349,7 +349,7 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "paint_gauge_incomplete",
         message:
-          "Virsbūves sadaļā jābūt mērītājam, 150-170 / nobīdei 50-100 mikroni un iekšējām ailēm (rūpnīcas slānis, ne remonts)",
+          "Virsbūves sadaļā jābūt mērītājam, ap 100 līdz 150 µm un nobīdei 50 līdz 150 µm, plus iekšējām ailēm (rūpnīcas slānis, ne remonts)",
       });
     }
     if (opts.winterSaltRustRequiredInContext && !mentionsWinterSaltRust(t)) {

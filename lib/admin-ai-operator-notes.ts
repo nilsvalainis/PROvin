@@ -24,6 +24,7 @@ export function appendAiOperatorNotesSection(
         AI_OPERATOR_NOTES_EXECUTION_RULES,
         "",
         "PIRMS rakstīšanas saskaiti KATRU atsevišķo tēmu / norādi / jautājumu / nosaukto mezglu no teksta zemāk. Katrai jābūt izejā. Izlaist kaut vienu = kļūda.",
+        "JA operators nosauc konkrētu avotu („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”) — tās rindkopas raksti TIKAI tajā avotā. Citos laukos tas ir konteksts, ne atkārtota rindkopa.",
         "JA operators saka „tikai par…”, „raksti tikai…”, „neraksti par…”, „nepapildi”, „bez …” — raksti TIKAI to. Bez liekām rindām un bez noklusējuma lauka esejas.",
         "Drīksti pārkārtot PROVIN stilā (**bold** ievadi). NEDRĪKSTI izmest faktus, datumus, km, nosaukumus, secinājumus.",
         "",

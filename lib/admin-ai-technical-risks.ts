@@ -59,19 +59,20 @@ OBLIGĀTI:
 - **Kalibrē riskus pret šī auto aptuveno nobraukumu un vecumu:** kam resurss šajā posmā tipiski jau iztērēts (un tāpēc jābūt pierādītam servisa vēsturē), kas gaidāms nākamajos ~20–40 tūkst. km, un kas ir tikai tāla perspektīva. Sakārto pēc **varbūtības × izmaksām**. Piemērs: 300 tūkst. km M57 ar blīvu DE servisu ir ierasts darba mūžs; tas pats km uz N57 ir pavisam cits stāsts.
 - **Kas NAV risks:** nosauc slavenās markas/paaudzes kaites, kas šim motoram/kārba/piedziņai neattiecas, UN dārgo vecuma ekstraprīkojumu, kura nav (tikai ja SA/dīlera saraksts/tipa kods/operators to ļauj — neizdomā).
 - **Nepārspīlē:** neuzskaiti visu, kas teorētiski var salūzt, un nepasniedz pie 250 000 km tipisku problēmu kā draudu pie 90 000 km. **Galvenais pirkuma risks — maksimāli 1–2 pozīcijas**; pārējais ir ierasta uzturēšanas izmaksa vai kaut kas, ko vienkārši jāpārbauda klātienē. Ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, eļļas noplūdes, hidromufte 15–20 gadu vecumā) nošķir no „šis auto tuvākajā laikā būs problemātisks”.
-- Ja šī dzinēja konstrukcija / paaudze nav pilnībā nosegta agregātu paketē — **vispirms web meklēšana** (Eiropas forumi, klubu wiki, speciālistu raksti), tad raksti. Neizdomā citātus un kampaņu numurus.
+- SECĪBA visiem ražotājiem: vispirms ŠĪ auto dzinēja kods (vai 1-2 kandidāti), tad web meklēšana šim kodam (konstrukcija, ķēde/zobsiksna, tipiskās kaites), tad raksti. Pakas rindkopu lieto tikai ja tā nosauc to pašu kodu. Neizdomā citātus un kampaņu numurus.
 - Garums: tik sadaļu, cik ir atšķirīga agregāta materiāla (tipiski 4–10; 8–12 tikai ja katra sadaļa ir cits mezgls). Īsāka analīze nav kļūda. Noklusējuma 350–800 ŠEIT NEATTIECAS. Aizliegts aizpildīt ar TA nosegtiem nodiluma mezgliem. BEZ orientējošām EUR joslām. BEZ * / **.
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; tipiskās vājās vietas apraksti kā varbūtību („tipiski šim agregātam”, „var novest pie”).
 - Konkrēti mezgli, ne kategorijas (ķēde/zobsiksna un tās puse, turbo, iesmidzinātāji (sprauslas), DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats, ūdens sūknis/termostats/hidromufte, eļļas noplūdes, reduktors un pilnpiedziņas sajūgs (kardānvārpstas krustiņi, karājošais gultnis), gaisa balstiekārta pret Dynamic Drive, EV baterija) — tikai tie, kas šim salikumam relevanti. NERAKSTI aptuvenās remonta izmaksas eiro.
 - Izmanto PROVIN agregātu zināšanas un vēsturiskos auditus no konteksta; ja trūkst — web meklēšana tipiskajām vājajām vietām, tad pielāgo AKTĪVAJAM auto. Neizdomā kampaņu numurus, statistiku vai citātus.
 - Norādi arī stiprās puses; vienlaikus uzsver, ka arī labākie agregāti var būt slikti uzturēti — īpaši Latvijā ekspluatētiem auto.
-- Ja servisa vēsturē attiecīgais darbs ir fiksēts, risku samazini un to pasaki kā labvēlīgu signālu datos; ierakstu trūkumu formulē kā **nepierādītu**, nevis kā neizdarītu.
+- Ja servisa vēsturē attiecīgais darbs ir fiksēts (Veiktie darbi, Servisa vēsture, Komentāri), NEIEKĻAUJ to kā tuvākā laika maiņu — pasaki, ka darbs datos jau ir. Ierakstu trūkumu formulē kā nepierādītu; apkope var būt bijusi ārpus oficiālā dīlera — jālūdz pārdevēja apliecinājums.
 - Neizdomā VIN/km/EUR no šī pasūtījuma. NERAKSTI orientējošas remonta/apkopes EUR joslas.
+- Ķēde pret zobsiksnu: tikai pēc šī motora koda vai pēc fiksētas siksnas/ķēdes maiņas šajā pasūtījumā. Nekad abus vienam dzinējam. Citas paaudzes vai cita koda kaites (jebkura marka) NELIEC, ja kods/tilpums nesakrīt.
 - NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
 - Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).
 - Eļļas maiņas intervālu matemātiku (cik bieži mainīta, km pret OEM) NERAKSTI — tas ir laukā „Eļļas maiņas intervāli”; šeit maksimums viens teikums, ja long-life pret pilsētu ir pirkuma risks.
 - WRAP_FILM: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes) jau ir fiksēta aplīmēšana. Šī rinda NAV fakts par auto. Ja datos nav — par plēvi NERAKSTI.
-- Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — viena rindkopa: rūsa arkās, sliekšņu apakšās un bagāžnieka vākā pie numura zīmes gaismām ir klimata risks, ne pierādīts defekts; cinkojums un svaiga TA to neatceļ.`,
+- Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — viena rindkopa: rūsa arkās, sliekšņu apakšās un bagāžnieka vākā pie numura zīmes gaismām ir klimata risks, ne pierādīts defekts; cinkojums un svaiga TA to neatceļ. Ja bloka NAV, par Lietuvu/Igauniju un „turpmāko sāli Latvijā” NERAKSTI.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
