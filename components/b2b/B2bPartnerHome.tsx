@@ -21,6 +21,47 @@ function PackageMark({ title }: { title: string }) {
   );
 }
 
+function CreditStrip({
+  credits,
+  loaded,
+  labels,
+  listAria,
+}: {
+  credits: B2bCreditRemaining;
+  loaded: boolean;
+  labels: Record<B2bPartnerPlanId, string>;
+  listAria: string;
+}) {
+  return (
+    <div className="mt-5 grid grid-cols-2 gap-2.5" role="list" aria-label={listAria}>
+      {PLANS.map((plan) => {
+        const n = credits[plan];
+        const empty = loaded && n < 1;
+        return (
+          <div
+            key={plan}
+            role="listitem"
+            className="rounded-[0.7rem] border border-white/10 bg-white/[0.03] px-3 py-3"
+          >
+            <div className="text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-zinc-500">
+              {labels[plan]}
+            </div>
+            <div
+              className={
+                empty
+                  ? "mt-1.5 text-[1.15rem] font-semibold tabular-nums leading-none text-[#93c5fd]"
+                  : "mt-1.5 text-[1.15rem] font-semibold tabular-nums leading-none text-zinc-100"
+              }
+            >
+              {loaded ? n : "…"}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function B2bPartnerHome() {
   const t = useTranslations("Partner");
   const router = useRouter();
@@ -62,6 +103,10 @@ export function B2bPartnerHome() {
   const credits = remaining ?? emptyB2bCreditRemaining();
   const loaded = remaining !== null;
   const canSubmit = loaded && hasAnyB2bCredit(credits);
+  const chipLabels: Record<B2bPartnerPlanId, string> = {
+    business: t("creditChipBusiness"),
+    dealer: t("creditChipDealer"),
+  };
 
   const togglePlan = (plan: B2bPartnerPlanId) => {
     if (credits[plan] < 1) return;
@@ -89,113 +134,111 @@ export function B2bPartnerHome() {
 
   return (
     <div>
-      <section className="mx-auto w-full max-w-[22rem]" aria-labelledby="b2b-partner-home-title">
+      <section
+        className="mx-auto flex min-h-[calc(100svh-6.75rem)] w-full max-w-[22rem] flex-col"
+        aria-labelledby="b2b-partner-home-title"
+      >
         <h1 id="b2b-partner-home-title" className="text-balance text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-zinc-100">
           {canSubmit ? t("vinSubmitTitle") : t("creditsHeading")}
         </h1>
 
-        <ul className="mt-6" aria-label={t("creditsHeading")}>
-          {PLANS.map((plan) => {
-            const n = credits[plan];
-            const empty = loaded && n < 1;
-            return (
-              <li key={plan} className="border-b border-white/10 py-3">
-                <div className="font-medium text-zinc-100">
-                  <PackageMark title={B2B_CATALOG[plan].title} />
-                </div>
-                <p
-                  className={
-                    empty
-                      ? "mt-1 text-[0.84rem] font-medium leading-snug text-[#93c5fd]"
-                      : "mt-1 text-[0.84rem] leading-snug text-zinc-400"
-                  }
+        {!canSubmit ? (
+          <>
+            <CreditStrip
+              credits={credits}
+              loaded={loaded}
+              labels={chipLabels}
+              listAria={t("creditsHeading")}
+            />
+            {loaded ? (
+              <div className="mt-7">
+                <p className="text-[0.95rem] font-medium leading-snug text-zinc-100">{t("noCreditsLead")}</p>
+                <Link
+                  href="/partneriem/konts/pakas"
+                  className={`${styles.liquidCta} mt-4 flex items-center justify-center no-underline`}
                 >
-                  {loaded ? t("creditLeft", { count: n }) : "…"}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
-
-        {loaded && !canSubmit ? (
-          <div className="mt-7 rounded-[0.9rem] border border-[#2563EB]/55 bg-[#2563EB]/12 px-4 py-5">
-            <p className="text-[0.95rem] font-medium leading-snug text-zinc-100">{t("noCreditsLead")}</p>
-            <Link
-              href="/partneriem/konts/pakas"
-              className={`${styles.liquidCta} mt-4 flex items-center justify-center no-underline`}
-            >
-              <span className={styles.liquidCtaShimmer} aria-hidden />
-              <span className={styles.liquidCtaLabel}>{t("buyPacksCta")}</span>
-            </Link>
-          </div>
-        ) : (
-          <form
-            className="mt-8 flex flex-col gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onSubmit();
-            }}
-          >
-            <label className="block min-w-0">
-              <span className={LABEL_CLASS}>{t("vinLabel")}</span>
-              <input
-                type="text"
-                className={`${styles.inlineInput} font-mono uppercase tracking-wide${vinError ? ` ${styles.inlineInputError}` : ""}`}
-                value={vin}
-                onChange={(event) => {
-                  setVin(event.target.value.toUpperCase());
-                  setVinError("");
-                }}
-                autoComplete="off"
-                spellCheck={false}
-                autoCapitalize="characters"
-                maxLength={17}
-                placeholder={t("vinPlaceholder")}
-                aria-label={t("vinAria")}
-                aria-invalid={vinError ? true : undefined}
-                enterKeyHint="done"
-              />
-            </label>
-
-            <fieldset className="min-w-0">
-              <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
-              <div className="flex flex-col gap-3">
-                {PLANS.map((plan) => {
-                  const disabled = !loaded || credits[plan] < 1;
-                  return (
-                    <label
-                      key={plan}
-                      className={`flex cursor-pointer items-center gap-3 ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={picked[plan]}
-                        disabled={disabled}
-                        onChange={() => togglePlan(plan)}
-                        className="h-4 w-4 shrink-0 rounded border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
-                      />
-                      <span className="text-[0.9rem] font-medium text-zinc-100">
-                        <PackageMark title={B2B_CATALOG[plan].title} />
-                      </span>
-                    </label>
-                  );
-                })}
+                  <span className={styles.liquidCtaShimmer} aria-hidden />
+                  <span className={styles.liquidCtaLabel}>{t("buyPacksCta")}</span>
+                </Link>
               </div>
-            </fieldset>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <CreditStrip
+              credits={credits}
+              loaded={loaded}
+              labels={chipLabels}
+              listAria={t("creditsHeading")}
+            />
+            <form
+              className="mt-8 flex flex-col gap-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onSubmit();
+              }}
+            >
+              <label className="block min-w-0">
+                <span className={LABEL_CLASS}>{t("vinLabel")}</span>
+                <input
+                  type="text"
+                  className={`${styles.inlineInput} font-mono uppercase tracking-wide${vinError ? ` ${styles.inlineInputError}` : ""}`}
+                  value={vin}
+                  onChange={(event) => {
+                    setVin(event.target.value.toUpperCase());
+                    setVinError("");
+                  }}
+                  autoComplete="off"
+                  spellCheck={false}
+                  autoCapitalize="characters"
+                  maxLength={17}
+                  placeholder={t("vinPlaceholder")}
+                  aria-label={t("vinAria")}
+                  aria-invalid={vinError ? true : undefined}
+                  enterKeyHint="done"
+                />
+              </label>
 
-            {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
-            {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
-            {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+              <fieldset className="min-w-0">
+                <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
+                <div className="flex flex-col gap-3">
+                  {PLANS.map((plan) => {
+                    const disabled = !loaded || credits[plan] < 1;
+                    return (
+                      <label
+                        key={plan}
+                        className={`flex cursor-pointer items-center gap-3 ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={picked[plan]}
+                          disabled={disabled}
+                          onChange={() => togglePlan(plan)}
+                          className="h-4 w-4 shrink-0 rounded border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+                        />
+                        <span className="text-[0.9rem] font-medium text-zinc-100">
+                          <PackageMark title={B2B_CATALOG[plan].title} />
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
 
-            <button type="submit" className={styles.liquidCta} disabled={!canSubmit}>
-              <span className={styles.liquidCtaShimmer} aria-hidden />
-              <span className={styles.liquidCtaLabel}>{t("vinSubmit")}</span>
-            </button>
-          </form>
+              {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
+              {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
+              {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+
+              <button type="submit" className={styles.liquidCta} disabled={!canSubmit}>
+                <span className={styles.liquidCtaShimmer} aria-hidden />
+                <span className={styles.liquidCtaLabel}>{t("vinSubmit")}</span>
+              </button>
+            </form>
+          </>
         )}
       </section>
 
-      <section className="mt-12 border-t border-white/10 pt-8" aria-labelledby="b2b-included-title">
+      <section className="mt-10 border-t border-white/10 pt-12 sm:mt-14 sm:pt-14" aria-labelledby="b2b-included-title">
         <h2 id="b2b-included-title" className="text-balance text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-100">
           {t("includedHeading")}
         </h2>

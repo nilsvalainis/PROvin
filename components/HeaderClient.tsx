@@ -146,7 +146,7 @@ export function HeaderClient() {
             <span className="text-provin-accent">VIN</span>
           </Link>
         ) : (
-          <Link href={isPartneriem ? "/partneriem" : "/"} className={logoClass} aria-label={logoShowsLvSuffix ? "PROVIN.LV" : "PROVIN"}>
+          <Link href="/" className={logoClass} aria-label={logoShowsLvSuffix ? "PROVIN.LV" : "PROVIN"}>
             <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
             <span className="text-provin-accent">VIN</span>
             {logoShowsLvSuffix ? (
@@ -216,9 +216,9 @@ export function HeaderClient() {
             <Link
               href={pathname as never}
               locale={targetLocale}
-              className={`relative z-[52] hidden min-h-[2.25rem] min-w-[2.25rem] shrink-0 items-center justify-center text-[calc(17px*1.15)] leading-none no-underline transition lg:inline-flex ${
-                headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"
-              }`}
+              className={`relative z-[52] min-h-[1.8rem] min-w-[1.8rem] shrink-0 items-center justify-center text-[13.8px] leading-none no-underline transition lg:min-h-[2.25rem] lg:min-w-[2.25rem] lg:text-[calc(17px*1.15)] ${
+                showHomeNavRail ? "hidden lg:inline-flex" : "inline-flex"
+              } ${headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"}`}
               aria-label={localeLabel}
               title={localeLabel}
             >
