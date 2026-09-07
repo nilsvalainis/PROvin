@@ -4,6 +4,7 @@ import {
   parseAuditCompleteIds,
   serializeAuditCompleteIds,
   setAuditCompleteInLocalCache,
+  sortAdminOrdersIncompleteFirst,
   toggleAuditCompleteInSet,
 } from "@/lib/admin-audit-deadline-complete";
 
@@ -45,5 +46,20 @@ describe("admin-audit-deadline-complete", () => {
     expect(parseAuditCompleteIds(store.get(ADMIN_AUDIT_COMPLETE_STORAGE_KEY) ?? null).has("cs_1")).toBe(
       false,
     );
+  });
+
+  it("floats incomplete orders above completed, then sorts each group by date desc", () => {
+    const rows = [
+      { id: "done-new", created: 300, auditComplete: true },
+      { id: "open-mid", created: 200, auditComplete: false },
+      { id: "done-old", created: 100, auditComplete: true },
+      { id: "open-old", created: 50 },
+    ];
+    expect(sortAdminOrdersIncompleteFirst(rows).map((r) => r.id)).toEqual([
+      "open-mid",
+      "open-old",
+      "done-new",
+      "done-old",
+    ]);
   });
 });

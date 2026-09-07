@@ -5,6 +5,7 @@ import {
   filterAdminOrdersForDashboard,
 } from "@/lib/admin-order-amount-filter";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
+import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
@@ -40,7 +41,7 @@ export default async function AdminOrdersPage({
       auditComplete: Boolean(auditCompleteMap.get(o.id)),
     };
   });
-  const tableOrders = serializeAdminOrderTableRows(ordersWithInvoice);
+  const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithInvoice));
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);

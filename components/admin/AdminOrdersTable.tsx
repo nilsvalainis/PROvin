@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
+import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
@@ -313,6 +314,7 @@ export function AdminOrdersTable({
   void consultationList;
   const router = useRouter();
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
+  const [completeOverride, setCompleteOverride] = useState<Record<string, boolean>>({});
   const [clientOverrides, setClientOverrides] = useState<
     Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }>
   >({});
@@ -352,6 +354,18 @@ export function AdminOrdersTable({
     return () => window.clearTimeout(t);
   }, [orders, orderEditsLocalStorageKeyPrefix]);
 
+  const displayedOrders = useMemo(() => {
+    const withComplete = orders.map((o) => ({
+      ...o,
+      auditComplete: o.id in completeOverride ? completeOverride[o.id] : Boolean(o.auditComplete),
+    }));
+    return sortAdminOrdersIncompleteFirst(withComplete);
+  }, [orders, completeOverride]);
+
+  const markComplete = useCallback((id: string, complete: boolean) => {
+    setCompleteOverride((prev) => ({ ...prev, [id]: complete }));
+  }, []);
+
   const detailBaseNormalized = orderDetailHrefBase.replace(/\/$/, "");
   const hug = "w-[1%] whitespace-nowrap";
 
@@ -373,7 +387,7 @@ export function AdminOrdersTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {orders.map((o) => {
+            {displayedOrders.map((o) => {
               const pdfHref = invoicePdfHref(o);
               const detailBase = rowDetailHrefBase(o, detailBaseNormalized);
               const ov = clientOverrides[o.id];
@@ -438,6 +452,7 @@ export function AdminOrdersTable({
                         sessionId={o.id}
                         createdUnixSec={o.created}
                         initialComplete={Boolean(o.auditComplete)}
+                        onCompleteChange={(complete) => markComplete(o.id, complete)}
                       />
                     ) : (
                       <span className="text-[var(--color-provin-muted)]">—</span>

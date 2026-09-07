@@ -20,11 +20,14 @@ export function AdminAuditDeadlineCell({
   sessionId,
   createdUnixSec,
   initialComplete = false,
+  onCompleteChange,
 }: {
   sessionId: string;
   createdUnixSec: number;
   /** Servera stāvoklis pēc lapas ielādes. */
   initialComplete?: boolean;
+  /** Tūlītējai saraksta pārkārtošanai pēc „Izpildīts”. */
+  onCompleteChange?: (complete: boolean) => void;
 }) {
   const tick = useAdminAuditDeadlineTick();
   const [isComplete, setIsComplete] = useState(initialComplete);
@@ -41,6 +44,7 @@ export function AdminAuditDeadlineCell({
     if (saving) return;
     const next = !isComplete;
     setIsComplete(next);
+    onCompleteChange?.(next);
     setSaving(true);
     try {
       const res = await fetch("/api/admin/audit-deadline-complete", {
@@ -52,6 +56,7 @@ export function AdminAuditDeadlineCell({
       const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
       if (!res.ok) {
         setIsComplete(!next);
+        onCompleteChange?.(!next);
         window.alert(
           (typeof data.message === "string" && data.message) ||
             (typeof data.error === "string" && data.error) ||
@@ -61,11 +66,12 @@ export function AdminAuditDeadlineCell({
       }
     } catch {
       setIsComplete(!next);
+      onCompleteChange?.(!next);
       window.alert("Tīkla kļūda — „Izpildīts” netika saglabāts.");
     } finally {
       setSaving(false);
     }
-  }, [isComplete, saving, sessionId]);
+  }, [isComplete, onCompleteChange, saving, sessionId]);
 
   return (
     <button
