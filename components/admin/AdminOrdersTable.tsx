@@ -447,16 +447,12 @@ export function AdminOrdersTable({
                     </span>
                   </td>
                   <td className={`${hug} py-3.5 pl-1 pr-4`}>
-                    {hasVin ? (
-                      <AdminAuditDeadlineCell
-                        sessionId={o.id}
-                        createdUnixSec={o.created}
-                        initialComplete={Boolean(o.auditComplete)}
-                        onCompleteChange={(complete) => markComplete(o.id, complete)}
-                      />
-                    ) : (
-                      <span className="text-[var(--color-provin-muted)]">—</span>
-                    )}
+                    <AdminAuditDeadlineCell
+                      sessionId={o.id}
+                      createdUnixSec={o.created}
+                      initialComplete={Boolean(o.auditComplete)}
+                      onCompleteChange={(complete) => markComplete(o.id, complete)}
+                    />
                   </td>
                   <td className="px-4 py-3.5 text-[var(--color-apple-text)]">
                     {hasVin ? (
