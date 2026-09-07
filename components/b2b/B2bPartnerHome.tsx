@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
 import { B2bPartnerCatalog } from "@/components/b2b/B2bPartnerCatalog";
 import { B2B_CATALOG, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { emptyB2bCreditRemaining, hasAnyB2bCredit, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
@@ -153,13 +154,7 @@ export function B2bPartnerHome() {
             {loaded ? (
               <div className="mt-7">
                 <p className="text-[0.95rem] font-medium leading-snug text-zinc-100">{t("noCreditsLead")}</p>
-                <Link
-                  href="/partneriem/konts/pakas"
-                  className={`${styles.liquidCta} mt-4 flex items-center justify-center no-underline`}
-                >
-                  <span className={styles.liquidCtaShimmer} aria-hidden />
-                  <span className={styles.liquidCtaLabel}>{t("buyPacksCta")}</span>
-                </Link>
+                <B2bPartnerBuyReports mode="primary" />
               </div>
             ) : null}
           </>
@@ -233,6 +228,7 @@ export function B2bPartnerHome() {
                 <span className={styles.liquidCtaShimmer} aria-hidden />
                 <span className={styles.liquidCtaLabel}>{t("vinSubmit")}</span>
               </button>
+              <B2bPartnerBuyReports mode="secondary" />
             </form>
           </>
         )}

@@ -28,13 +28,14 @@ function defaultPackIndex(plan: B2bPartnerPlanId): number {
   return plan === "dealer" ? 1 : 0;
 }
 
-export function B2bPartnerPackPicker() {
+export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | "panel" }) {
   const t = useTranslations("Partner");
   const [plan, setPlan] = useState<B2bPartnerPlanId>("dealer");
   const [selected, setSelected] = useState(defaultPackIndex("dealer"));
   const packs = plan === "business" ? B2B_BUSINESS_PACKS : B2B_DEALER_PACKS;
   const listCents = b2bPackListCents(plan);
   const current = packs[selected] ?? packs[0];
+  const panel = variant === "panel";
 
   const cards = useMemo(
     () =>
@@ -49,8 +50,8 @@ export function B2bPartnerPackPicker() {
   );
 
   return (
-    <section className="mx-auto w-full max-w-[68rem]">
-      <div className="flex max-w-[28rem] gap-[3px] rounded-[10px] bg-[#1a1a1a] p-[3px]">
+    <section className={panel ? "w-full" : "mx-auto w-full max-w-[68rem]"}>
+      <div className={`flex gap-[3px] rounded-[10px] bg-[#1a1a1a] p-[3px] ${panel ? "max-w-none" : "max-w-[28rem]"}`}>
         <button
           type="button"
           className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold tracking-[0.04em] ${
@@ -78,7 +79,11 @@ export function B2bPartnerPackPicker() {
         </button>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-3.5 sm:max-w-[45rem] sm:grid-cols-2">
+      <div
+        className={`mt-5 grid grid-cols-1 gap-3.5 ${
+          panel ? "sm:grid-cols-2" : "sm:max-w-[45rem] sm:grid-cols-2"
+        }`}
+      >
         {cards.map(({ pack, total, full, pct, lines }, index) => {
           const on = index === selected;
           return (
@@ -132,7 +137,7 @@ export function B2bPartnerPackPicker() {
         })}
       </div>
 
-      <button type="button" className={`${styles.liquidCta} mt-6 max-w-[22rem]`}>
+      <button type="button" className={`${styles.liquidCta} mt-6 ${panel ? "w-full max-w-none" : "max-w-[22rem]"}`}>
         <span className={styles.liquidCtaShimmer} aria-hidden />
         <span className={styles.liquidCtaLabel}>
           {plan === "dealer"
@@ -140,7 +145,11 @@ export function B2bPartnerPackPicker() {
             : t("payCta", { price: formatB2bEuroFromCents(current.unitCents * current.qty) })}
         </span>
       </button>
-      <p className="mt-4 max-w-[45rem] text-center text-[0.68rem] leading-relaxed text-zinc-500">
+      <p
+        className={`mt-4 text-[0.68rem] leading-relaxed text-zinc-500 ${
+          panel ? "max-w-none text-left" : "max-w-[45rem] text-center"
+        }`}
+      >
         {plan === "dealer" ? t("packFineDealer") : t("packFine")}
       </p>
     </section>
