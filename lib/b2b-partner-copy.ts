@@ -104,7 +104,7 @@ export const B2B_PARTNER_PRICE_CENTS: Record<B2bPartnerPlanId, number> = {
   dealer: 1999,
 };
 
-export type B2bPackQty = 1 | 3 | 10;
+export type B2bPackQty = 1 | 10;
 
 export type B2bPackOffer = {
   qty: B2bPackQty;
@@ -114,14 +114,12 @@ export type B2bPackOffer = {
 
 export const B2B_BUSINESS_PACKS: readonly B2bPackOffer[] = [
   { qty: 1, unitCents: 7999, recommended: false },
-  { qty: 3, unitCents: 7499, recommended: true },
-  { qty: 10, unitCents: 6999, recommended: false },
+  { qty: 10, unitCents: 6999, recommended: true },
 ];
 
 export const B2B_DEALER_PACKS: readonly B2bPackOffer[] = [
   { qty: 1, unitCents: 1999, recommended: false },
-  { qty: 3, unitCents: 1899, recommended: true },
-  { qty: 10, unitCents: 1799, recommended: false },
+  { qty: 10, unitCents: 1799, recommended: true },
 ];
 
 export function formatB2bEuroFromCents(cents: number): string {

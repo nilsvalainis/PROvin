@@ -89,7 +89,7 @@ export function B2bPartnerPackPicker() {
         </button>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-3.5 lg:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         {cards.map(({ pack, total, full, pct, lines }, index) => {
           const on = index === selected;
           return (

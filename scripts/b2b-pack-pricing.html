@@ -68,7 +68,7 @@
   .hint b{color:#93c5fd;font-weight:600;}
 
   .grid{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:.85rem;
     margin-top:1.15rem;
   }
   .card{
@@ -149,7 +149,7 @@
 
   <div class="grid" id="grid"></div>
 
-  <button type="button" class="cta" id="cta">PASŪTĪT PAKU 56,97 €</button>
+  <button type="button" class="cta" id="cta">PASŪTĪT PAKU 179,90 €</button>
   <p class="fine" id="fine">Ja datu nav, kredīts tiek atgriezts kontā kā neiztērēts.</p>
 </div>
 
@@ -169,11 +169,7 @@ const SKUS = {
         ]
       },
       {
-        qty: 3, label: "3 atskaites", rec: true, unit: 74.99,
-        lines: ["Atskaišu skaits: 3", "BUSINESS datu paka", "3 VIN pārbaudes, derīgums 90 dienas"]
-      },
-      {
-        qty: 10, label: "10 atskaites", rec: false, unit: 69.99,
+        qty: 10, label: "10 atskaites", rec: true, unit: 69.99,
         lines: ["Atskaišu skaits: 10", "BUSINESS datu paka", "10 VIN pārbaudes, derīgums 90 dienas"]
       }
     ]
@@ -188,11 +184,7 @@ const SKUS = {
         lines: ["Atskaišu skaits: 1", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
       },
       {
-        qty: 3, label: "3 atskaites", rec: true, unit: 18.99,
-        lines: ["Atskaišu skaits: 3", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
-      },
-      {
-        qty: 10, label: "10 atskaites", rec: false, unit: 17.99,
+        qty: 10, label: "10 atskaites", rec: true, unit: 17.99,
         lines: ["Atskaišu skaits: 10", "Oficiālo dīleru fiksētie ieraksti", "100% naudas atmaksas garantija"]
       }
     ]
