@@ -1,7 +1,7 @@
 "use client";
 
 import { Globe } from "lucide-react";
-import { type SyntheticEvent, type TouchEvent, useRef } from "react";
+import { type SyntheticEvent, type TouchEvent, useEffect, useRef, useState } from "react";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
 import {
@@ -14,7 +14,11 @@ import {
   AZVIN_DEALER_SAMPLE_REPORT_HREF,
   getAzvinUiCopy,
 } from "@/lib/azvin-ui-copy";
-import { TP5_DEALER_BRAND_GROUPS } from "@/lib/test-pricing-5-mobile";
+import {
+  TP5_DEALER_BRAND_DARK_PLATE,
+  TP5_DEALER_BRAND_GROUPS,
+  TP5_DEALER_BRAND_LOGO_SRC,
+} from "@/lib/test-pricing-5-mobile";
 
 function SampleReportPdfIcon() {
   return (
@@ -80,20 +84,91 @@ function FeatureRow({ feature }: { feature: AzvinMobileFeature }) {
   );
 }
 
-/** Compact brand groups (no logo wall). */
+/** PROVIN dealer brand grid — copied 1:1. */
 function DealerBrandBadges({ brandsAria }: { brandsAria: string }) {
+  const [openBrand, setOpenBrand] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const touchMovedRef = useRef(false);
+
+  useEffect(() => {
+    if (!openBrand) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const root = rootRef.current;
+      if (!root || !(event.target instanceof Node)) return;
+      if (!root.contains(event.target)) setOpenBrand(null);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenBrand(null);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [openBrand]);
+
   return (
-    <div className="flex flex-col gap-1.5" aria-label={brandsAria}>
-      <p className="m-0 text-[0.62rem] font-650 uppercase tracking-[0.08em] text-sky-300/90">
-        {brandsAria}
-      </p>
-      <ul className="m-0 flex max-h-40 list-none flex-col gap-1 overflow-y-auto p-0 [scrollbar-width:thin]">
-        {TP5_DEALER_BRAND_GROUPS.map((group) => (
-          <li key={group.join("|")} className="text-[0.7rem] leading-[1.35] text-zinc-400">
-            {group.join(" · ")}
-          </li>
-        ))}
-      </ul>
+    <div
+      ref={rootRef}
+      className={`${styles.dealerInlineBrands} max-h-[14rem] overflow-y-auto overscroll-contain [scrollbar-width:thin]`}
+      aria-label={brandsAria}
+    >
+      {TP5_DEALER_BRAND_GROUPS.map((group) =>
+        group.map((brand) => {
+        const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+        const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
+        const open = openBrand === brand;
+        return (
+          <div
+            key={brand}
+            role="button"
+            tabIndex={0}
+            className={`${styles.dealerInlineBrandCell}${open ? ` ${styles.dealerInlineBrandCellOpen}` : ""}`}
+            aria-label={brand}
+            aria-expanded={open}
+            onMouseEnter={() => setOpenBrand(brand)}
+            onMouseLeave={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
+            onFocus={() => setOpenBrand(brand)}
+            onBlur={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
+            onTouchStart={() => {
+              touchMovedRef.current = false;
+            }}
+            onTouchMove={() => {
+              touchMovedRef.current = true;
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              setOpenBrand((prev) => (prev === brand ? null : brand));
+            }}
+            onClick={() => {
+              if (touchMovedRef.current) return;
+              if (
+                typeof window !== "undefined" &&
+                window.matchMedia("(hover: hover) and (pointer: fine)").matches
+              ) {
+                return;
+              }
+              setOpenBrand((prev) => (prev === brand ? null : brand));
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt=""
+              className={`${styles.dealerInlineBrandLogo}${darkPlate ? ` ${styles.dealerInlineBrandLogoDarkPlate}` : ""}`}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+            />
+            <span className={styles.dealerInlineBrandTip} role="tooltip">
+              {brand}
+            </span>
+          </div>
+        );
+      }),
+      )}
     </div>
   );
 }

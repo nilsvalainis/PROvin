@@ -22,9 +22,8 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { homeContentMaxClass } from "@/lib/home-layout";
-import { TP5_DEALER_BRAND_GROUPS } from "@/lib/test-pricing-5-mobile";
+import { TP5_DEALER_BRAND_DARK_PLATE, TP5_DEALER_BRAND_GROUPS, TP5_DEALER_BRAND_LOGO_SRC } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
-import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 
 const LUCIDE_ICON_CLASS = "h-4 w-4 [stroke-width:1.6] sm:h-[1.125rem] sm:w-[1.125rem]";
 const BRAND_LOGO_CLASS = "h-4 w-4 shrink-0 object-contain sm:h-[1.125rem] sm:w-[1.125rem]";
@@ -216,29 +215,57 @@ function GuaranteeBlock({ title, body, infoAria }: { title: string; body: string
 }
 
 function DealerBrandLockup({ label, fill }: { label: string; fill?: boolean }) {
-  const locale = useLocale();
-  const uiCopy = getTp5UiCopy(locale);
-  const brands = TP5_DEALER_BRAND_GROUPS.flat();
   return (
     <div
       className={
         fill
-          ? "flex min-h-0 flex-1 flex-col justify-center gap-2 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]"
-          : "flex flex-col gap-2"
+          ? "min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]"
+          : undefined
       }
-      aria-label={label}
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <Tp5DealerBrandsTip brands={brands} copy={uiCopy} />
-        <p className="m-0 text-[0.68rem] leading-snug text-zinc-500">{brands.length} ražotāji</p>
-      </div>
-      <ul className="m-0 flex list-none flex-col gap-1 p-0">
+      <div className="flex flex-col gap-2" aria-label={label} role="list">
         {TP5_DEALER_BRAND_GROUPS.map((group) => (
-          <li key={group.join("|")} className="text-[0.72rem] leading-[1.35] text-zinc-400">
-            {group.join(" · ")}
-          </li>
+          <ul
+            key={group.join("|")}
+            role="list"
+            className={
+              fill
+                ? "grid min-h-0 grid-cols-6 gap-1 overflow-visible sm:grid-cols-8"
+                : "grid grid-cols-4 gap-1.5 overflow-visible sm:grid-cols-6"
+            }
+          >
+            {group.map((brand) => {
+              const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+              const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
+              return (
+                <li key={brand} className={fill ? "min-h-0" : undefined} role="listitem">
+                  <div
+                    className={`flex w-full items-center justify-center rounded-[0.35rem] bg-white/[0.03] ${
+                      fill ? "aspect-square min-h-0" : TILE_HEIGHT_CLASS
+                    }`}
+                    title={brand}
+                    aria-label={brand}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt=""
+                      className={`shrink-0 object-contain opacity-70 ${
+                        fill
+                          ? "h-6 w-6 sm:h-7 sm:w-7"
+                          : "h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]"
+                      }${darkPlate ? " brightness-0 invert" : ""}`}
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

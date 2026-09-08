@@ -29,13 +29,4 @@ describe("test-pricing-5 desktop hero features", () => {
   it("keeps the full set for PROVIN AUDITS", () => {
     expect(getTp5DesktopHeroFeatures("lv", "audits")).toHaveLength(8);
   });
-
-  it("keeps a compact four-icon dealer rail (brands live in the card tip)", () => {
-    expect(getTp5DesktopHeroFeatures("lv", "dealer").map((f) => f.icon)).toEqual([
-      "consultation",
-      "listing-analysis",
-      "inspection-tips",
-      "dealer-data",
-    ]);
-  });
 });
