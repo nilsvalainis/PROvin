@@ -996,6 +996,30 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   white-space: nowrap;
 }
 
+/** Hero dealer rail: concept E — text chips wrap (all brands). */
+.dealerHeroBrandChips {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 0.3rem;
+  width: 100%;
+  max-width: 52rem;
+  margin-inline: auto;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 1280px) {
+  .dealerHeroBrandChips {
+    max-width: 56rem;
+    gap: 0.32rem;
+  }
+}
+
 .dealerBrandCheck {
   color: #2563eb;
   font-weight: 700;

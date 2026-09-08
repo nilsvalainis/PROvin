@@ -76,11 +76,31 @@ describe("test-pricing-5 mobile three-tier model", () => {
     );
     expect(dealer.extraNote).toBeUndefined();
     expect(TP5_DEALER_BRAND_ROWS).toEqual([
-      ["Mercedes-Benz", "BMW", "MINI", "Rolls-Royce", "Audi", "Volkswagen"],
-      ["Volvo", "Land Rover", "Jaguar", "Škoda", "SEAT", "Subaru"],
-      ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
+      ["BMW", "MINI", "Rolls-Royce"],
+      ["Mercedes-Benz", "Smart"],
+      ["Volkswagen", "Audi", "Škoda", "SEAT", "CUPRA", "Porsche", "Bentley", "Lamborghini"],
+      ["Volvo", "Polestar"],
+      ["Jaguar", "Land Rover"],
+      ["Toyota", "Lexus"],
+      ["Ford"],
+      ["Mazda", "Honda", "Nissan", "Infiniti", "Mitsubishi", "Subaru", "Suzuki"],
+      [
+        "Peugeot",
+        "Citroën",
+        "DS Automobiles",
+        "Opel",
+        "Vauxhall",
+        "Fiat",
+        "Abarth",
+        "Alfa Romeo",
+        "Lancia",
+        "Jeep",
+      ],
+      ["Renault", "Dacia", "Alpine"],
+      ["Hyundai", "Kia", "Genesis"],
+      ["Ferrari", "Maserati", "Aston Martin", "Lotus", "MG"],
     ]);
-    expect(TP5_DEALER_BRANDS).toHaveLength(18);
+    expect(TP5_DEALER_BRANDS).toHaveLength(48);
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-72h");
     expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");

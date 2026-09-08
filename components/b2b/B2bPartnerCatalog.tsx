@@ -22,7 +22,7 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { homeContentMaxClass } from "@/lib/home-layout";
-import { TP5_DEALER_BRAND_DARK_PLATE, TP5_DEALER_BRAND_LOGO_SRC, TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
+import { TP5_DEALER_BRAND_DARK_PLATE, TP5_DEALER_BRAND_LOGO_SRC, TP5_DEALER_BRANDS_WITH_LOGO } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const LUCIDE_ICON_CLASS = "h-4 w-4 [stroke-width:1.6] sm:h-[1.125rem] sm:w-[1.125rem]";
@@ -224,8 +224,8 @@ function DealerBrandLockup({ label, fill }: { label: string; fill?: boolean }) {
       }
       aria-label={label}
     >
-      {TP5_DEALER_BRANDS.map((brand) => {
-        const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+      {TP5_DEALER_BRANDS_WITH_LOGO.map((brand) => {
+        const src = TP5_DEALER_BRAND_LOGO_SRC[brand]!;
         const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
         return (
           <li key={brand} className={fill ? "min-h-0" : undefined}>

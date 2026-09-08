@@ -17,7 +17,7 @@ import {
 import {
   TP5_DEALER_BRAND_DARK_PLATE,
   TP5_DEALER_BRAND_LOGO_SRC,
-  TP5_DEALER_BRAND_ROWS,
+  TP5_DEALER_BRANDS_WITH_LOGO,
 } from "@/lib/test-pricing-5-mobile";
 
 function SampleReportPdfIcon() {
@@ -110,8 +110,8 @@ function DealerBrandBadges({ brandsAria }: { brandsAria: string }) {
 
   return (
     <div ref={rootRef} className={styles.dealerInlineBrands} aria-label={brandsAria}>
-      {TP5_DEALER_BRAND_ROWS.flat().map((brand) => {
-        const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+      {TP5_DEALER_BRANDS_WITH_LOGO.map((brand) => {
+        const src = TP5_DEALER_BRAND_LOGO_SRC[brand]!;
         const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
         const open = openBrand === brand;
         return (
