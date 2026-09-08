@@ -72,6 +72,8 @@ export function B2bPartnerHome() {
   const [vinError, setVinError] = useState("");
   const [serviceError, setServiceError] = useState("");
   const [formError, setFormError] = useState("");
+  const [submitOk, setSubmitOk] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,12 +117,14 @@ export function B2bPartnerHome() {
     if (credits[plan] < 1) return;
     setService(plan);
     setServiceError("");
+    setSubmitOk("");
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     setVinError("");
     setServiceError("");
     setFormError("");
+    setSubmitOk("");
     if (!isValidVin(vin)) {
       setVinError(t("vinError"));
       return;
@@ -131,6 +135,46 @@ export function B2bPartnerHome() {
     }
     if (credits[service] < 1) {
       setFormError(t("noCredits"));
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/partner/orders", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vin, plan: service }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
+      if (res.status === 401) {
+        router.replace("/partneriem");
+        return;
+      }
+      if (res.status === 402 || data.error === "no_credits") {
+        setFormError(t("noCredits"));
+        setRemaining(emptyB2bCreditRemaining());
+        return;
+      }
+      if (data.error === "vin" || res.status === 400 && data.error === "vin") {
+        setVinError(t("vinError"));
+        return;
+      }
+      if (data.error === "service") {
+        setServiceError(t("needService"));
+        return;
+      }
+      if (!res.ok || !data.ok) {
+        setFormError(t("payNetwork"));
+        return;
+      }
+      setSubmitOk(t("vinSubmitOk"));
+      setVin("");
+      setService(null);
+    } catch {
+      setFormError(t("payNetwork"));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -171,7 +215,7 @@ export function B2bPartnerHome() {
               className="mt-8 flex flex-col gap-4"
               onSubmit={(event) => {
                 event.preventDefault();
-                onSubmit();
+                if (!submitting) void onSubmit();
               }}
             >
               <label className="block min-w-0">
@@ -183,6 +227,7 @@ export function B2bPartnerHome() {
                   onChange={(event) => {
                     setVin(event.target.value.toUpperCase());
                     setVinError("");
+                    setSubmitOk("");
                   }}
                   autoComplete="off"
                   spellCheck={false}
@@ -192,10 +237,11 @@ export function B2bPartnerHome() {
                   aria-label={t("vinAria")}
                   aria-invalid={vinError ? true : undefined}
                   enterKeyHint="done"
+                  disabled={submitting}
                 />
               </label>
 
-              <fieldset className="min-w-0">
+              <fieldset className="min-w-0" disabled={submitting}>
                 <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
                 <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("servicePick")}>
                   {PLANS.map((plan) => {
@@ -225,10 +271,11 @@ export function B2bPartnerHome() {
               {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
               {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
               {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+              {submitOk ? <p className="text-[0.8125rem] font-medium leading-snug text-emerald-300">{submitOk}</p> : null}
 
-              <button type="submit" className={styles.liquidCta} disabled={!canSubmit}>
+              <button type="submit" className={styles.liquidCta} disabled={!canSubmit || submitting}>
                 <span className={styles.liquidCtaShimmer} aria-hidden />
-                <span className={styles.liquidCtaLabel}>{t("vinSubmit")}</span>
+                <span className={styles.liquidCtaLabel}>{submitting ? t("vinSubmitLoading") : t("vinSubmit")}</span>
               </button>
               <B2bPartnerBuyReports mode="secondary" />
             </form>

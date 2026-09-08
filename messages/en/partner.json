@@ -19,6 +19,8 @@
     "vinError": "VIN: 11-17 characters, no I, O or Q.",
     "vinSubmitTitle": "Submit VIN",
     "vinSubmit": "Submit",
+    "vinSubmitLoading": "Submitting…",
+    "vinSubmitOk": "VIN accepted. We will prepare the report; you will see it under Profile.",
     "creditsHeading": "Available reports",
     "creditLeft": "Available reports: {count}",
     "creditChipBusiness": "Business",

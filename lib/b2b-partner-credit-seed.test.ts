@@ -6,8 +6,10 @@ import {
 } from "@/lib/b2b-partner-credit-seed";
 
 describe("b2b partner credit seed", () => {
-  it("defaults to preview balances when env is unset", () => {
-    expect(parseB2bPartnerSeedCredits(undefined)).toEqual({ dealer: 10, business: 7 });
+  it("defaults to no seed when env is unset", () => {
+    expect(parseB2bPartnerSeedCredits(undefined)).toBeNull();
+    expect(parseB2bPartnerSeedCredits("")).toBeNull();
+    expect(resolvePartnerCreditRemaining([])).toEqual({ dealer: 0, business: 0 });
   });
 
   it("disables seed when env is 0", () => {

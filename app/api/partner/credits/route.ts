@@ -10,6 +10,6 @@ export async function GET() {
   if (!partner) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  // Real lots store lands with pack Stripe fulfillment; seed covers preview UI for now.
+  // Real lots land with pack Stripe fulfillment. No default preview seed.
   return NextResponse.json({ remaining: resolvePartnerCreditRemaining([]) });
 }

@@ -19,6 +19,8 @@
     "vinError": "VIN: 11-17 zīmes, bez I, O, Q.",
     "vinSubmitTitle": "Iesniegt VIN",
     "vinSubmit": "Iesniegt",
+    "vinSubmitLoading": "Iesniedz…",
+    "vinSubmitOk": "VIN pieņemts. Atskaiti sagatavosim un redzēsi to sadaļā Profils.",
     "creditsHeading": "Pieejamās atskaites",
     "creditLeft": "Pieejamās atskaites: {count}",
     "creditChipBusiness": "Business",
