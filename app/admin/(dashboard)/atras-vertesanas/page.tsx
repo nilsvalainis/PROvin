@@ -97,10 +97,6 @@ export default async function AdminListingPeeksPage({
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Ātrie vērtējumi
         </h1>
-        <p className="mt-1.5 max-w-xl text-sm text-[var(--color-provin-muted)]">
-          Bezmaksas sludinājuma komentāri. Sagataves saliekas vēstulē, ko vari papildināt;
-          Flash / Gemini apstrādā visu tekstu. Gmail Reply = parasts teksts.
-        </p>
       </AdminDashboardHeaderWithMenu>
 
       <div className="mt-6">
