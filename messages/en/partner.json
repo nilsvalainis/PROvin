@@ -2,7 +2,10 @@
   "Partner": {
     "titlePrefix": "PROVIN ",
     "titleAccent": "BUSINESS",
-    "heroSubhead": "Built for vehicle dealerships to assess a car's history before purchase, or to give customers a clear digital history.",
+    "heroLead": "Built for vehicle dealerships to fully remove purchase risks tied to corrected mileage, accident history, and service records. With a PROVIN BUSINESS audit report you not only protect your company from buying losses, but also give your customer clear official proof of the car's actual history.",
+    "heroContactLead": "Contact us for a B2B price offer and to connect a company account:",
+    "heroPhoneLabel": "Phone",
+    "heroSubhead": "Built for vehicle dealerships to fully remove purchase risks tied to corrected mileage, accident history, and service records.",
     "loginEmail": "Email",
     "loginPassword": "Password",
     "loginSubmit": "Sign in",

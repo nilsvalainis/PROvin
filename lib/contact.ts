@@ -43,8 +43,12 @@ export function contactTelHref(): string {
   return `tel:${CONTACT_PHONE_TEL}`;
 }
 
-/** mailto: vispārīgai saziņai (e-pasts netiek rādīts kā redzams teksts) */
+/** Publiskais kontakta e-pasts (var pārrakstīt ar env). */
+export function contactEmail(): string {
+  return process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || DEFAULT_CONTACT_EMAIL;
+}
+
+/** mailto: vispārīgai saziņai */
 export function contactMailtoHref(): string {
-  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || DEFAULT_CONTACT_EMAIL;
-  return `mailto:${email}`;
+  return `mailto:${contactEmail()}`;
 }
