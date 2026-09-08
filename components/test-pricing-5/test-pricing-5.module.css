@@ -952,24 +952,6 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   gap: 0.28rem;
 }
 
-.dealerBrandsPopupGroups {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  max-height: min(28rem, 68vh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 0.15rem;
-  scrollbar-width: thin;
-}
-
-.dealerBrandsPopupGroups .dealerBrandsPopupGrid + .dealerBrandsPopupGrid {
-  padding-top: 0.45rem;
-  border-top: 1px solid rgb(255 255 255 / 0.08);
-}
-
 .dealerBrandHeading {
   margin: 0 0 0.28rem;
   font-size: 0.58rem;
@@ -2069,8 +2051,8 @@ html[data-site-theme="light"] .dealerBrandsRefundNote {
   color: #6e6e73;
 }
 
-html[data-site-theme="light"] .dealerBrandsPopupGroups .dealerBrandsPopupGrid + .dealerBrandsPopupGrid {
-  border-top-color: rgb(15 23 42 / 0.08);
+html[data-site-theme="light"] .dealerBrandHeading {
+  color: rgb(37 99 235 / 0.95);
 }
 
 html[data-site-theme="light"] .dealerBrandItem {

@@ -22,14 +22,14 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { homeContentMaxClass } from "@/lib/home-layout";
-import { TP5_DEALER_BRAND_DARK_PLATE, TP5_DEALER_BRAND_GROUPS, TP5_DEALER_BRAND_LOGO_SRC } from "@/lib/test-pricing-5-mobile";
+import { TP5_DEALER_BRAND_DARK_PLATE, TP5_DEALER_BRAND_LOGO_SRC, TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const LUCIDE_ICON_CLASS = "h-4 w-4 [stroke-width:1.6] sm:h-[1.125rem] sm:w-[1.125rem]";
 const BRAND_LOGO_CLASS = "h-4 w-4 shrink-0 object-contain sm:h-[1.125rem] sm:w-[1.125rem]";
 const TILE_HEIGHT_CLASS = "h-12";
-/** 7×h-12 + 6×gap-1.5: same total as BUSINESS tiles; dealer brands scroll inside. */
-const MATCHED_STACK_CLASS = "flex h-[calc(7*3rem+6*0.375rem)] min-h-0 min-w-0 flex-col gap-1.5 overflow-hidden";
+/** 7×h-12 + 6×gap-1.5: same total as BUSINESS tiles, so dealer logos + guarantee line up. */
+const MATCHED_STACK_CLASS = "flex h-[calc(7*3rem+6*0.375rem)] min-h-0 min-w-0 flex-col gap-1.5 overflow-visible";
 const ITEM_TILE_CLASS =
   `flex ${TILE_HEIGHT_CLASS} w-full items-center gap-3 rounded-[0.35rem] bg-white/[0.03] px-3 sm:gap-3.5`;
 const TITLE_CLASS = "text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl";
@@ -216,57 +216,43 @@ function GuaranteeBlock({ title, body, infoAria }: { title: string; body: string
 
 function DealerBrandLockup({ label, fill }: { label: string; fill?: boolean }) {
   return (
-    <div
+    <ul
       className={
         fill
-          ? "min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]"
-          : undefined
+          ? "grid min-h-0 flex-1 grid-cols-6 grid-rows-3 gap-1.5 overflow-visible"
+          : "grid grid-cols-4 gap-1.5 overflow-visible sm:grid-cols-6"
       }
+      aria-label={label}
     >
-      <div className="flex flex-col gap-2" aria-label={label} role="list">
-        {TP5_DEALER_BRAND_GROUPS.map((group) => (
-          <ul
-            key={group.join("|")}
-            role="list"
-            className={
-              fill
-                ? "grid min-h-0 grid-cols-6 gap-1 overflow-visible sm:grid-cols-8"
-                : "grid grid-cols-4 gap-1.5 overflow-visible sm:grid-cols-6"
-            }
-          >
-            {group.map((brand) => {
-              const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
-              const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
-              return (
-                <li key={brand} className={fill ? "min-h-0" : undefined} role="listitem">
-                  <div
-                    className={`flex w-full items-center justify-center rounded-[0.35rem] bg-white/[0.03] ${
-                      fill ? "aspect-square min-h-0" : TILE_HEIGHT_CLASS
-                    }`}
-                    title={brand}
-                    aria-label={brand}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={src}
-                      alt=""
-                      className={`shrink-0 object-contain opacity-70 ${
-                        fill
-                          ? "h-6 w-6 sm:h-7 sm:w-7"
-                          : "h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]"
-                      }${darkPlate ? " brightness-0 invert" : ""}`}
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                    />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        ))}
-      </div>
-    </div>
+      {TP5_DEALER_BRANDS.map((brand) => {
+        const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+        const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
+        return (
+          <li key={brand} className={fill ? "min-h-0" : undefined}>
+            <div
+              className={`flex w-full items-center justify-center rounded-[0.35rem] bg-white/[0.03] ${
+                fill ? "h-full min-h-0" : TILE_HEIGHT_CLASS
+              }`}
+              aria-hidden
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt=""
+                className={`shrink-0 object-contain opacity-70 ${
+                  fill
+                    ? "h-9 w-9 sm:h-10 sm:w-10"
+                    : "h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]"
+                }${darkPlate ? " brightness-0 invert" : ""}`}
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

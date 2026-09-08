@@ -1,23 +1,4 @@
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
-import {
-  groupTp5DealerBrands,
-  TP5_DEALER_BRAND_DARK_PLATE,
-  TP5_DEALER_BRAND_GROUPS,
-  TP5_DEALER_BRAND_LOGO_SRC,
-  TP5_DEALER_BRAND_ROWS,
-  TP5_DEALER_BRANDS,
-  type Tp5DealerBrand,
-} from "@/lib/dealer-brands";
-
-export {
-  groupTp5DealerBrands,
-  TP5_DEALER_BRAND_DARK_PLATE,
-  TP5_DEALER_BRAND_GROUPS,
-  TP5_DEALER_BRAND_LOGO_SRC,
-  TP5_DEALER_BRAND_ROWS,
-  TP5_DEALER_BRANDS,
-  type Tp5DealerBrand,
-};
 
 export type Tp5FeatureTone = "default" | "soft" | "guarantee" | "info" | "brands";
 
@@ -62,6 +43,41 @@ export type Tp5MobileService = {
   /** Desktop dealer globe panel (mobile uses the 5-row checklist). */
   desktopHighlight?: Tp5MobileFeature;
 };
+
+/** Supported manufacturers in a fixed 3×6 display grid (premium/popularity + brand groups). */
+export const TP5_DEALER_BRAND_ROWS = [
+  ["Mercedes-Benz", "BMW", "MINI", "Rolls-Royce", "Audi", "Volkswagen"],
+  ["Volvo", "Land Rover", "Jaguar", "Škoda", "SEAT", "Subaru"],
+  ["Peugeot", "Citroën", "Renault", "Dacia", "Opel", "Smart"],
+] as const;
+
+/** Flat brand list (same set as grid). */
+export const TP5_DEALER_BRANDS = TP5_DEALER_BRAND_ROWS.flat();
+
+/** Public logo paths for dealer brand grid cells. */
+export const TP5_DEALER_BRAND_LOGO_SRC: Record<(typeof TP5_DEALER_BRANDS)[number], string> = {
+  "Mercedes-Benz": "/brand-logos/mercedes.svg?v=6",
+  BMW: "/brand-logos/bmw.svg?v=5",
+  MINI: "/brand-logos/mini.svg?v=8",
+  "Rolls-Royce": "/brand-logos/rolls-royce.svg?v=8",
+  Audi: "/brand-logos/audi.svg?v=8",
+  Volkswagen: "/brand-logos/volkswagen.svg?v=8",
+  Volvo: "/brand-logos/volvo.svg?v=8",
+  "Land Rover": "/brand-logos/land-rover.svg?v=8",
+  Jaguar: "/brand-logos/jaguar.svg?v=8",
+  Škoda: "/brand-logos/skoda.svg?v=5",
+  SEAT: "/brand-logos/seat.svg?v=8",
+  Subaru: "/brand-logos/subaru.svg?v=8",
+  Peugeot: "/brand-logos/peugeot.svg?v=8",
+  Citroën: "/brand-logos/citroen.svg?v=8",
+  Renault: "/brand-logos/renault.svg?v=8",
+  Dacia: "/brand-logos/dacia.svg?v=5",
+  Opel: "/brand-logos/opel.svg?v=8",
+  Smart: "/brand-logos/smart.svg?v=8",
+};
+
+/** Brands whose PNG still ships with a solid black plate (none after alpha strip). */
+export const TP5_DEALER_BRAND_DARK_PLATE = new Set<string>([]);
 
 /** Card checklist row count for MINI/AUDITS compare stack. */
 export const TP5_MOBILE_FEATURE_ROW_COUNT = 5;

@@ -1,4 +1,24 @@
 /**
- * AZ.VIN official dealer brands - mirrors PROVIN TP5 coverage order.
+ * AZ.VIN official dealer brands.
+ * Includes PROVIN-supported set + secondary-source brands (AUDI…VOLKSWAGEN list) + Rolls-Royce + Subaru.
  */
-export { TP5_DEALER_BRANDS as AZVIN_DEALER_BRANDS } from "@/lib/dealer-brands";
+export const AZVIN_DEALER_BRANDS = [
+  "Audi",
+  "BMW",
+  "Citroën",
+  "Dacia",
+  "Jaguar",
+  "Land Rover",
+  "Mercedes-Benz",
+  "MINI",
+  "Opel",
+  "Peugeot",
+  "Renault",
+  "Rolls-Royce",
+  "SEAT",
+  "Subaru",
+  "Škoda",
+  "Smart",
+  "Volkswagen",
+  "Volvo",
+] as const;
