@@ -39,7 +39,7 @@ const TP5_DESKTOP_HERO_FEATURES_EN: Tp5DesktopHeroFeature[] = [
   { label: "International history check", icon: "international" },
 ];
 
-/** Icon ids shown for each hero pricing tab (dealer uses manufacturer logos instead). */
+/** Icon ids shown for each hero pricing tab (brand lists live in the card tip, not this rail). */
 export const TP5_DESKTOP_HERO_FEATURE_ICONS_BY_TAB: Record<
   Tp5MobileServiceId,
   readonly Tp5DesktopHeroFeatureIcon[]
@@ -55,7 +55,7 @@ export const TP5_DESKTOP_HERO_FEATURE_ICONS_BY_TAB: Record<
     "dealer-data",
     "international",
   ],
-  dealer: [],
+  dealer: ["dealer-data", "consultation", "listing-analysis", "inspection-tips"],
   koreaUsa: [
     "consultation",
     "listing-analysis",
