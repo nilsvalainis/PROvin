@@ -19,8 +19,8 @@ import {
 } from "@/lib/test-pricing-5-desktop-hero-features";
 import {
   TP5_DEALER_BRAND_DARK_PLATE,
+  TP5_DEALER_BRAND_GROUPS,
   TP5_DEALER_BRAND_LOGO_SRC,
-  TP5_DEALER_BRANDS,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
@@ -119,44 +119,53 @@ export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits", features:
   return (
     <div className={styles.tp5DesktopFeatureRow}>
       <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
-      <div className="relative mt-8 min-h-[9.75rem] w-full xl:min-h-[10.75rem]">
+      <div className="relative mt-8 min-h-[11.5rem] w-full xl:min-h-[12.5rem]">
         <AnimatePresence mode="wait" initial={false}>
           {showDealerBrands ? (
-            <motion.ul
+            <motion.div
               key="dealer-brands"
-              className="absolute inset-x-0 top-0 mx-auto grid w-full max-w-[52rem] list-none grid-cols-6 gap-x-2 gap-y-2.5 xl:max-w-[56rem] xl:gap-y-3"
+              className="absolute inset-x-0 top-0 mx-auto max-h-[12.5rem] w-full max-w-[56rem] overflow-y-auto overscroll-contain [scrollbar-width:thin] xl:max-h-[13.5rem]"
               aria-label={uiCopy.dealerBrandsAria}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={SWAP_TRANSITION}
             >
-              {TP5_DEALER_BRANDS.map((brand) => {
-                const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
-                const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
-                return (
-                  <li key={brand} className="flex justify-center">
-                    <button
-                      type="button"
-                      className={`group relative ${ICON_BTN_BRAND} ${ICON_BTN_HOVER}`}
-                      aria-label={brand}
-                    >
-                      <FeatureTooltip label={brand} />
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={src}
-                        alt=""
-                        className={`${DEALER_LOGO_CLASS}${darkPlate ? ` ${styles.dealerInlineBrandLogoDarkPlate}` : ""}`}
-                        loading="lazy"
-                        decoding="async"
-                        draggable={false}
-                        aria-hidden
-                      />
-                    </button>
-                  </li>
-                );
-              })}
-            </motion.ul>
+              <div className="flex flex-col gap-2.5 pb-1">
+                {TP5_DEALER_BRAND_GROUPS.map((group) => (
+                  <ul
+                    key={group.join("|")}
+                    className="grid list-none grid-cols-6 gap-x-2 gap-y-2 sm:grid-cols-8 xl:grid-cols-10 xl:gap-y-2.5"
+                  >
+                    {group.map((brand) => {
+                      const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
+                      const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
+                      return (
+                        <li key={brand} className="flex justify-center">
+                          <button
+                            type="button"
+                            className={`group relative ${ICON_BTN_BRAND} ${ICON_BTN_HOVER}`}
+                            aria-label={brand}
+                          >
+                            <FeatureTooltip label={brand} />
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={src}
+                              alt=""
+                              className={`${DEALER_LOGO_CLASS}${darkPlate ? ` ${styles.dealerInlineBrandLogoDarkPlate}` : ""}`}
+                              loading="lazy"
+                              decoding="async"
+                              draggable={false}
+                              aria-hidden
+                            />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ))}
+              </div>
+            </motion.div>
           ) : (
             <motion.ul
               key={`features-${activeServiceId}`}

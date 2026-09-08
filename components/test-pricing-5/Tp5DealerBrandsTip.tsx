@@ -1,8 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
+import { groupTp5DealerBrands } from "@/lib/dealer-brands";
 import type { Tp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 type Props = {
@@ -17,6 +18,7 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
   const dialogId = useId();
   const titleId = useId();
   const reduceMotion = useReducedMotion();
+  const groups = useMemo(() => groupTp5DealerBrands(brands), [brands]);
 
   useEffect(() => {
     if (!open) return;
@@ -127,27 +129,31 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
                   </button>
                 </div>
                 <div className={styles.dealerBrandsPopupDivider} aria-hidden />
-                <ul className={styles.dealerBrandsPopupGrid}>
-                  {brands.map((brand, index) => (
-                    <motion.li
-                      key={brand}
-                      className={styles.dealerBrandItem}
-                      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={
-                        reduceMotion
-                          ? { duration: 0 }
-                          : {
-                              delay: 0.04 + index * 0.018,
-                              duration: 0.28,
-                              ease: [0.22, 1, 0.36, 1],
-                            }
-                      }
-                    >
-                      <span className={styles.dealerBrandChip}>{brand}</span>
-                    </motion.li>
+                <div className={styles.dealerBrandsPopupGroups}>
+                  {groups.map((group, groupIndex) => (
+                    <ul key={group.join("|")} className={styles.dealerBrandsPopupGrid}>
+                      {group.map((brand, index) => (
+                        <motion.li
+                          key={brand}
+                          className={styles.dealerBrandItem}
+                          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={
+                            reduceMotion
+                              ? { duration: 0 }
+                              : {
+                                  delay: 0.02 + groupIndex * 0.02 + index * 0.008,
+                                  duration: 0.22,
+                                  ease: [0.22, 1, 0.36, 1],
+                                }
+                          }
+                        >
+                          <span className={styles.dealerBrandChip}>{brand}</span>
+                        </motion.li>
+                      ))}
+                    </ul>
                   ))}
-                </ul>
+                </div>
               </motion.div>
             </div>
           </>

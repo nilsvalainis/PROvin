@@ -16,8 +16,8 @@ import {
 } from "@/lib/azvin-ui-copy";
 import {
   TP5_DEALER_BRAND_DARK_PLATE,
+  TP5_DEALER_BRAND_GROUPS,
   TP5_DEALER_BRAND_LOGO_SRC,
-  TP5_DEALER_BRAND_ROWS,
 } from "@/lib/test-pricing-5-mobile";
 
 function SampleReportPdfIcon() {
@@ -109,8 +109,13 @@ function DealerBrandBadges({ brandsAria }: { brandsAria: string }) {
   }, [openBrand]);
 
   return (
-    <div ref={rootRef} className={styles.dealerInlineBrands} aria-label={brandsAria}>
-      {TP5_DEALER_BRAND_ROWS.flat().map((brand) => {
+    <div
+      ref={rootRef}
+      className={`${styles.dealerInlineBrands} max-h-[14rem] overflow-y-auto overscroll-contain [scrollbar-width:thin]`}
+      aria-label={brandsAria}
+    >
+      {TP5_DEALER_BRAND_GROUPS.map((group) =>
+        group.map((brand) => {
         const src = TP5_DEALER_BRAND_LOGO_SRC[brand];
         const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
         const open = openBrand === brand;
@@ -162,7 +167,8 @@ function DealerBrandBadges({ brandsAria }: { brandsAria: string }) {
             </span>
           </div>
         );
-      })}
+      }),
+      )}
     </div>
   );
 }
