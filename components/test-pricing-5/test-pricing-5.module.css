@@ -1020,6 +1020,21 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   }
 }
 
+/** B2B catalog dealer column — same chip wrap as hero concept E. */
+.dealerB2bBrandChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dealerB2bBrandChipsFill {
+  min-height: 100%;
+}
+
 .dealerBrandCheck {
   color: #2563eb;
   font-weight: 700;
