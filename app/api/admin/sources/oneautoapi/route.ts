@@ -53,7 +53,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "upstream_error", ...fetched }, { status: 502 });
     }
     const display = await translateOneautoWorksOnIngest(fetched.display);
-    return NextResponse.json({ ok: true, ...fetched, display });
+    return NextResponse.json({
+      ok: true,
+      ...fetched,
+      display,
+      displayOriginal: fetched.display,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     if (msg === "missing_oneauto_credentials") {

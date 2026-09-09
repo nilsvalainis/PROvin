@@ -250,12 +250,15 @@ function visitsFromOneautoTimeline(events: readonly OneautoServiceEvent[]): OemS
 }
 
 /**
- * Avotu prioritate: Outvin purchase payload → OneAuto raw timeline → dealer log.
+ * Avotu prioritate:
+ * 1) Outvin purchase payload
+ * 2) OneAuto raw payload rebuild
+ * 3) Saglabātais serviceTimelineOriginal (pirms LV tulkojuma)
+ * 4) dealer log
  * Apzināti NEŅEM admin `serviceWorks` - tur bieži ir LV tulkojums PROVIN atskaitei.
- * OEM PDF rāda tikai oriģinālo API valodu (rebuild no raw payload).
  */
 export function collectOemDealerVisits(
-  _block: AutoRecordsBlockState,
+  block: AutoRecordsBlockState,
   bundle: OutvinDataBundle,
   oneautoDisplay?: OneautoDisplaySections | null,
 ): OemServiceVisit[] {
@@ -263,6 +266,8 @@ export function collectOemDealerVisits(
   if (fromApi.length > 0) return fromApi;
   const fromOneauto = oneautoDisplay ? visitsFromOneautoTimeline(oneautoDisplay.serviceTimeline) : [];
   if (fromOneauto.length > 0) return fromOneauto;
+  const fromOriginal = visitsFromOneautoTimeline(block.oneautoIngest?.serviceTimelineOriginal ?? []);
+  if (fromOriginal.length > 0) return fromOriginal;
   return visitsFromDealerLog(bundle);
 }
 

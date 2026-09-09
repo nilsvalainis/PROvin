@@ -5,6 +5,7 @@ import { normalizeVin } from "@/lib/order-field-validation";
 import {
   ONEAUTO_PRODUCTS,
   buildOneautoDisplay,
+  filledOneautoServiceEvents,
   formatOneautoCostEur,
   oneautoDisplayHasRows,
   oneautoPayloadIsApiUnavailable,
@@ -148,6 +149,7 @@ export function AdminOneautoIngestBar({
         costEur?: string;
         results?: AutoRecordsOneautoIngest["results"];
         display?: OneautoDisplaySections;
+        displayOriginal?: OneautoDisplaySections;
       };
       if (!res.ok && !body.results) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
@@ -171,20 +173,31 @@ export function AdminOneautoIngestBar({
       } else if (!res.ok) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
       }
-      const nextResults = body.results ?? value.results;
+      // Merge product results so a build-sheet-only refresh does not wipe service history payloads.
+      const nextResults = { ...value.results, ...(body.results ?? {}) };
       const payloads: Partial<Record<OneautoProductId, unknown>> = {};
       for (const id of Object.keys(nextResults) as OneautoProductId[]) {
         payloads[id] = nextResults[id]?.payload;
       }
+      const rebuiltOriginal = buildOneautoDisplay(payloads);
+      const originalFromApi = oneautoDisplayHasRows(body.displayOriginal)
+        ? body.displayOriginal!
+        : rebuiltOriginal;
+      const freshOriginalTimeline = filledOneautoServiceEvents(originalFromApi.serviceTimeline);
+      const serviceTimelineOriginal =
+        freshOriginalTimeline.length > 0
+          ? freshOriginalTimeline
+          : filledOneautoServiceEvents(value.serviceTimelineOriginal);
       const nextDisplay: OneautoDisplaySections = oneautoDisplayHasRows(body.display)
-        ? body.display
-        : buildOneautoDisplay(payloads);
+        ? body.display!
+        : rebuiltOriginal;
       const nextIngest: AutoRecordsOneautoIngest = {
         ...value,
         lastFetchedVin: body.vin ?? effectiveVin,
         fetchedAt: new Date().toISOString(),
         lastCostEur: body.costEur ?? estimatedCost,
         results: nextResults,
+        serviceTimelineOriginal,
       };
       onFetched(nextIngest, nextDisplay);
     } catch {

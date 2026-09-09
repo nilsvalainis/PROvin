@@ -20,11 +20,14 @@ import {
   ONEAUTO_PRODUCT_IDS,
   buildOneautoDisplay,
   filledOneautoKvRows,
+  filledOneautoServiceEvents,
   oneautoDisplayHasRows,
+  parseOneautoDisplay,
   parseOneautoProductIds,
   type OneautoDisplaySections,
   type OneautoKvRow,
   type OneautoProductId,
+  type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
 import {
   emptyOneautoBlock,
@@ -43,6 +46,7 @@ import {
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 
+export type { OneautoServiceEvent };
 export type AutoRecordsOneautoIngest = {
   vinOverride: string;
   lastFetchedVin: string;
@@ -50,6 +54,11 @@ export type AutoRecordsOneautoIngest = {
   selectedProducts: OneautoProductId[];
   lastCostEur: string;
   results: Partial<Record<OneautoProductId, OneautoProductResult>>;
+  /**
+   * Servisa laika skala oriģinālvalodā (pirms LV tulkojuma).
+   * OEM PDF lieto šo; admin tabulas var būt tulkotas.
+   */
+  serviceTimelineOriginal?: OneautoServiceEvent[];
 };
 
 export function emptyOneautoIngest(): AutoRecordsOneautoIngest {
@@ -60,6 +69,7 @@ export function emptyOneautoIngest(): AutoRecordsOneautoIngest {
     selectedProducts: [...ONEAUTO_DEFAULT_PRODUCT_IDS],
     lastCostEur: "",
     results: {},
+    serviceTimelineOriginal: [],
   };
 }
 
@@ -68,6 +78,9 @@ export function parseOneautoIngestRaw(raw: unknown): AutoRecordsOneautoIngest {
   if (!raw || typeof raw !== "object") return d;
   const o = raw as Record<string, unknown>;
   const selected = parseOneautoProductIds(o.selectedProducts);
+  const originalDisplay = parseOneautoDisplay({
+    serviceTimeline: o.serviceTimelineOriginal,
+  });
   return {
     vinOverride: typeof o.vinOverride === "string" ? o.vinOverride.slice(0, 24) : "",
     lastFetchedVin: typeof o.lastFetchedVin === "string" ? o.lastFetchedVin.slice(0, 24) : "",
@@ -75,10 +88,16 @@ export function parseOneautoIngestRaw(raw: unknown): AutoRecordsOneautoIngest {
     selectedProducts: selected.length > 0 ? selected : d.selectedProducts,
     lastCostEur: typeof o.lastCostEur === "string" ? o.lastCostEur.slice(0, 20) : "",
     results: parseResultMap(o.results),
+    serviceTimelineOriginal: filledOneautoServiceEvents(originalDisplay.serviceTimeline),
   };
 }
 
 export function ingestFromOneautoBlock(oa: OneautoBlockState): AutoRecordsOneautoIngest {
+  const fromPayloads: Partial<Record<OneautoProductId, unknown>> = {};
+  for (const id of ONEAUTO_PRODUCT_IDS) {
+    if (oa.results[id]?.payload != null) fromPayloads[id] = oa.results[id]?.payload;
+  }
+  const rebuilt = buildOneautoDisplay(fromPayloads);
   return {
     vinOverride: oa.vinOverride,
     lastFetchedVin: oa.lastFetchedVin,
@@ -87,6 +106,7 @@ export function ingestFromOneautoBlock(oa: OneautoBlockState): AutoRecordsOneaut
       oa.selectedProducts.length > 0 ? oa.selectedProducts : [...ONEAUTO_DEFAULT_PRODUCT_IDS],
     lastCostEur: oa.lastCostEur,
     results: oa.results,
+    serviceTimelineOriginal: filledOneautoServiceEvents(rebuilt.serviceTimeline),
   };
 }
 
@@ -360,6 +380,8 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
   );
 
   const notes = input.notes ?? {};
+  const incomingOriginal = filledOneautoServiceEvents(input.ingest.serviceTimelineOriginal);
+  const keptOriginal = filledOneautoServiceEvents(current.oneautoIngest?.serviceTimelineOriginal);
   return {
     ...current,
     outvinReport: { ...report, vehicleInfo, equipment },
@@ -375,7 +397,10 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
       fillEmptyNote(current.aiContextRaw ?? "", notes.aiContextRaw ?? ""),
       mapped.leftovers,
     ),
-    oneautoIngest: input.ingest,
+    oneautoIngest: {
+      ...input.ingest,
+      serviceTimelineOriginal: incomingOriginal.length > 0 ? incomingOriginal : keptOriginal,
+    },
   };
 }
 

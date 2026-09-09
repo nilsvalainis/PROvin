@@ -316,6 +316,45 @@ describe("OEM dealer PDF", () => {
     expect(vehicleBlock).not.toContain("MAKEUP LAMP");
   });
 
+  it("uses serviceTimelineOriginal when raw service payload was wiped by a later product fetch", () => {
+    const block = emptyAutoRecordsBlock();
+    block.serviceWorks = [
+      {
+        date: "13.10.2022",
+        odometer: "128482",
+        location: "",
+        works: "Automātiskā pārnesumkārba. Automātiskās transmisijas maiņa.",
+      },
+    ];
+    block.oneautoIngest = {
+      ...emptyOneautoIngest(),
+      lastFetchedVin: "YV1PZ68TCL1106362",
+      results: {
+        oe_build_sheet: {
+          ok: true,
+          payload: { success: true, result: { manufacturer: "Volvo" } },
+        },
+      },
+      serviceTimelineOriginal: [
+        {
+          date: "13.10.2022",
+          odometer: "128482",
+          place: "Volvo Partner",
+          works: "Automatikgetriebe. Getriebeölverlust diagnostiziert.",
+        },
+      ],
+    };
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: block,
+    });
+    expect(html).toContain("Automatikgetriebe");
+    expect(html).toContain("Getriebeölverlust");
+    expect(html).not.toContain("Automātiskā pārnesumkārba");
+    expect(html).toContain("Service history");
+  });
+
   it("reads folded OneAuto payloads from auto_records.oneautoIngest", () => {
     const vin = "YV1PZ68TCL1106362";
     const ar = emptyAutoRecordsBlock();
