@@ -10,6 +10,7 @@
  * NETULKO: oriģinālie API dati. „factory code/desc” nav Vehicle sadaļā - tikai Equipment.
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
+import { autoRecordsServiceWorkRowHasData } from "@/lib/auto-records-service-works";
 import {
   ONEAUTO_PRODUCT_IDS,
   buildOneautoDisplay,
@@ -471,6 +472,15 @@ const OEM_SVC_COLS: OemSvcCol[] = [
   { key: "orderNumber", label: "Order no.", className: "num" },
 ];
 
+/**
+ * Rāda, ja admin ir servisa ieraksti (serviceWorks), bet nekāds oriģinālvalodas
+ * avots (API payload / serviceTimelineOriginal) nav pieejams - lai sadaļa NEPAZŪD
+ * nepamanīti, tikai neradām LV tekstu OEM dokumentā.
+ */
+function serviceHistoryPendingNoteHtml(): string {
+  return `<p class="oem-empty">Original-language service history is not available for this VIN yet. Reload OE Service History to populate this section.</p>`;
+}
+
 function serviceTable(visits: OemServiceVisit[]): string {
   if (visits.length === 0) return "";
 
@@ -688,9 +698,17 @@ export function buildOemDealerDocumentHtml(args: {
     { label: "Stolen check", value: bundle.stolenCheck },
   ].filter((r) => r.value.trim());
 
+  const hasAdminServiceWorks = (args.autoRecords.serviceWorks ?? []).some(autoRecordsServiceWorkRowHasData);
+  const serviceBody =
+    visits.length > 0
+      ? serviceTable(visits)
+      : hasAdminServiceWorks
+        ? serviceHistoryPendingNoteHtml()
+        : "";
+
   const vehicleHeading = vin || "Vehicle";
   const vehicleBlock = section(vehicleHeading, vehicleSpecsHtml(specRows));
-  const serviceBlock = section("Service history", serviceTable(visits));
+  const serviceBlock = section("Service history", serviceBody);
   const checksBlock = section("Checks", vehicleSpecsHtml(checksRows));
   const equipmentBlock = section("Equipment", equipmentGrid(equipmentDeduped));
 

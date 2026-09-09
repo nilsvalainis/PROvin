@@ -161,7 +161,10 @@ describe("OEM dealer PDF", () => {
       autoRecords: block,
     });
     expect(html).not.toContain("Automātiskā pārnesumkārba");
-    expect(html).not.toContain("Service history");
+    expect(html).not.toContain("128482");
+    // Section still renders (not silently vanished) with an honest English status note.
+    expect(html).toContain("Service history");
+    expect(html).toContain("Reload OE Service History");
   });
 
   it("prefers raw OneAuto language over LV serviceWorks when both exist", () => {
