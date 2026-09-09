@@ -11,10 +11,6 @@
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import {
-  autoRecordsServiceWorkRowHasData,
-  type AutoRecordsServiceWorkRow,
-} from "@/lib/auto-records-service-works";
-import {
   ONEAUTO_PRODUCT_IDS,
   buildOneautoDisplay,
   filledOneautoKvRows,
@@ -254,28 +250,17 @@ function visitsFromOneautoTimeline(events: readonly OneautoServiceEvent[]): OemS
   }));
 }
 
-function visitsFromServiceWorks(rows: readonly AutoRecordsServiceWorkRow[] | undefined): OemServiceVisit[] {
-  return (rows ?? []).filter(autoRecordsServiceWorkRowHasData).map((r) => ({
-    date: r.date,
-    km: r.odometer,
-    type: "",
-    extraWork: r.works,
-    guarantee: "",
-    dealer: r.location,
-    address: "",
-    orderNumber: "",
-    extra: "",
-  }));
-}
-
 /**
- * Avotu prioritate (vienmēr priekšroka API oriģinālvalodai, ja tā ir pieejama):
- * 1) Outvin purchase payload
+ * OEM PDF = tikai API oriģinālvaloda, NEKAD admin LV tulkojums (atšķirībā no PROVIN
+ * dīlera atskaites klientam, kur "Servisa un remontu vēsture" LV ir korekti).
+ * Avotu prioritate:
+ * 1) Outvin purchase payload (oriģinālvaloda)
  * 2) OneAuto raw payload rebuild (oriģinālvaloda)
  * 3) Saglabātais serviceTimelineOriginal (oriģinālvaloda, pirms LV tulkojuma)
- * 4) serviceWorks - pēdējais avots, lai sadaļa NEKAD nepaliek tukša,
- *    pat ja tas ir vienīgais, kas saglabāts (var būt LV, ja oriģināls pazudis)
- * 5) dealer log
+ * 4) dealer log (Outvin API dati, nav admin tulkojums)
+ * Apzināti NEŅEM admin `serviceWorks` - tur bieži ir LV tulkojums PROVIN atskaitei.
+ * Ja iepriekšējie avoti tukši (oriģinālais payload pazudis no drafta), sadaļa
+ * paliek tukša - operatoram jāpārielādē OE Service History, lai atjaunotu oriģinālu.
  */
 export function collectOemDealerVisits(
   block: AutoRecordsBlockState,
@@ -288,9 +273,6 @@ export function collectOemDealerVisits(
   if (fromOneauto.length > 0) return fromOneauto;
   const fromOriginal = visitsFromOneautoTimeline(block.oneautoIngest?.serviceTimelineOriginal ?? []);
   if (fromOriginal.length > 0) return fromOriginal;
-
-  const works = (block.serviceWorks ?? []).filter(autoRecordsServiceWorkRowHasData);
-  if (works.length > 0) return visitsFromServiceWorks(works);
   return visitsFromDealerLog(bundle);
 }
 

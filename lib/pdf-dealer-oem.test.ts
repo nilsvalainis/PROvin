@@ -145,7 +145,7 @@ describe("OEM dealer PDF", () => {
     expect(html).not.toContain("oem-side");
   });
 
-  it("falls back to admin serviceWorks so Service history is never blank", () => {
+  it("never shows LV-translated serviceWorks in OEM Service history (original only)", () => {
     const block = emptyAutoRecordsBlock();
     block.serviceWorks = [
       {
@@ -160,9 +160,8 @@ describe("OEM dealer PDF", () => {
       makeModel: "",
       autoRecords: block,
     });
-    expect(html).toContain("Service history");
-    expect(html).toContain("128482");
-    expect(html).toContain("Automātiskā pārnesumkārba");
+    expect(html).not.toContain("Automātiskā pārnesumkārba");
+    expect(html).not.toContain("Service history");
   });
 
   it("prefers raw OneAuto language over LV serviceWorks when both exist", () => {
