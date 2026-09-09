@@ -70,14 +70,41 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("oem-top");
     expect(html).toContain("Official dealer data");
     expect(html).toContain("oem-kicker");
-    expect(html).toContain("A4 portrait");
+    expect(html).toContain("table-layout:fixed");
     expect(html).toContain("210mm");
     expect(html).toContain("297mm");
-    expect(html).toContain("original language");
+    expect(html).not.toContain("Portrait A4");
+    expect(html).not.toContain("Source data as provided");
+    expect(html).not.toContain("OneAuto ·");
     expect(html).not.toContain("oem-masthead");
     expect(html).not.toContain("PROVIN DĪLERIS");
     expect(html).not.toContain("PROVIN.LV");
     expect(html).not.toContain("Modelis");
+  });
+
+  it("omits empty service columns so headers stay aligned", () => {
+    const block = emptyAutoRecordsBlock();
+    block.serviceWorks = [
+      {
+        date: "13.10.2022",
+        odometer: "128438",
+        location: "",
+        works: "Engine oil change\nOil filter",
+      },
+    ];
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: block,
+    });
+    expect(html).toContain(">Date<");
+    expect(html).toContain(">km<");
+    expect(html).toContain("Additional work");
+    expect(html).not.toContain(">Type<");
+    expect(html).not.toContain(">Guarantee<");
+    expect(html).not.toContain(">Dealer<");
+    expect(html).not.toContain(">Address<");
+    expect(html).not.toContain("Order no.");
   });
 
   it("does not invent visits when serviceWorks and API payloads are empty", () => {
@@ -179,8 +206,8 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("Volvo Partner Riga");
     expect(html).toContain("Engine: oil and filter change.");
     expect(html).toContain("Metallic paint");
-    expect(html).toContain("OneAuto ·");
-    expect(html).toContain("oem_vehicle_desc");
+    expect(html).not.toContain("OneAuto ·");
+    expect(html).not.toContain("(raw)");
     expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
     expect(html).not.toMatch(/class="oem-logo oem-logo--mono"/);
     expect(html).toMatch(/VOLVO|XC60/i);

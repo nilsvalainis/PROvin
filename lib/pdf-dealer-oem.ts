@@ -13,7 +13,6 @@ import {
 } from "@/lib/auto-records-service-works";
 import {
   ONEAUTO_PRODUCT_IDS,
-  ONEAUTO_PRODUCTS,
   buildOneautoDisplay,
   filledOneautoKvRows,
   filledOneautoServiceEvents,
@@ -393,52 +392,84 @@ function kvTable(rows: Array<{ label: string; value: string }>): string {
   return `<table class="oem-kv"><tbody>${body}</tbody></table>`;
 }
 
+type OemSvcCol = {
+  key: keyof OemServiceVisit;
+  label: string;
+  className?: string;
+};
+
+const OEM_SVC_COLS: OemSvcCol[] = [
+  { key: "date", label: "Date", className: "num" },
+  { key: "km", label: "km", className: "num" },
+  { key: "type", label: "Type" },
+  { key: "extraWork", label: "Additional work" },
+  { key: "guarantee", label: "Guarantee" },
+  { key: "dealer", label: "Dealer" },
+  { key: "address", label: "Address" },
+  { key: "orderNumber", label: "Order no.", className: "num" },
+];
+
 function serviceTable(visits: OemServiceVisit[]): string {
   if (visits.length === 0) return "";
-  const head = `<thead><tr>
-    <th>Date</th><th>km</th><th>Type</th><th>Additional work</th>
-    <th>Guarantee</th><th>Dealer</th><th>Address</th><th>Order no.</th>
-  </tr></thead>`;
-  const body = visits
-    .map((v) => {
-      const extra = v.extra.trim()
-        ? `<div class="oem-extra">${escapeHtml(v.extra).replace(/\n/g, "<br/>")}</div>`
-        : "";
-      const work = `${escapeHtml(v.extraWork).replace(/\n/g, "<br/>")}${extra}`;
-      return `<tr>
-        <td>${escapeHtml(v.date)}</td>
-        <td class="num">${escapeHtml(v.km)}</td>
-        <td>${escapeHtml(v.type)}</td>
-        <td>${work}</td>
-        <td>${escapeHtml(v.guarantee)}</td>
-        <td>${escapeHtml(v.dealer)}</td>
-        <td>${escapeHtml(v.address)}</td>
-        <td class="num">${escapeHtml(v.orderNumber)}</td>
-      </tr>`;
+
+  const active = OEM_SVC_COLS.filter((col) => {
+    if (col.key === "extraWork") {
+      return visits.some((v) => v.extraWork.trim() || v.extra.trim());
+    }
+    return visits.some((v) => String(v[col.key] ?? "").trim());
+  });
+  if (active.length === 0) return "";
+
+  const workWide = active.some((c) => c.key === "extraWork");
+  const colCount = active.length;
+  const workPct = workWide ? Math.max(36, 72 - (colCount - 1) * 8) : 0;
+
+  const colgroup = active
+    .map((col) => {
+      if (col.key === "date") return `<col style="width:11%"/>`;
+      if (col.key === "km") return `<col style="width:10%"/>`;
+      if (col.key === "extraWork") return `<col style="width:${workPct}%"/>`;
+      if (col.key === "orderNumber") return `<col style="width:11%"/>`;
+      return `<col/>`;
     })
     .join("");
-  return `<table class="oem-svc">${head}<tbody>${body}</tbody></table>`;
+
+  const head = `<thead><tr>${active
+    .map((col) => `<th>${escapeHtml(col.label)}</th>`)
+    .join("")}</tr></thead>`;
+
+  const body = visits
+    .map((v) => {
+      const cells = active
+        .map((col) => {
+          if (col.key === "extraWork") {
+            const extra = v.extra.trim()
+              ? `<div class="oem-extra">${escapeHtml(v.extra).replace(/\n/g, "<br/>")}</div>`
+              : "";
+            const work = `${escapeHtml(v.extraWork).replace(/\n/g, "<br/>")}${extra}`;
+            return `<td class="oem-work">${work}</td>`;
+          }
+          const cls = col.className ? ` class="${col.className}"` : "";
+          return `<td${cls}>${escapeHtml(String(v[col.key] ?? ""))}</td>`;
+        })
+        .join("");
+      return `<tr>${cells}</tr>`;
+    })
+    .join("");
+
+  return `<table class="oem-svc" style="table-layout:fixed">${colgroup}${head}<tbody>${body}</tbody></table>`;
 }
 
 function equipmentTableFromLines(rows: Array<{ code: string; description: string }>): string {
   const filled = rows.filter((l) => l.code.trim() || l.description.trim());
   if (filled.length === 0) return "";
   const body = filled
-    .map((l) => `<tr><td class="num">${escapeHtml(l.code)}</td><td>${escapeHtml(l.description)}</td></tr>`)
+    .map(
+      (l) =>
+        `<tr><td class="num" style="width:18%">${escapeHtml(l.code)}</td><td>${escapeHtml(l.description)}</td></tr>`,
+    )
     .join("");
-  return `<h2>Equipment / SA</h2><table class="oem-svc"><thead><tr><th>Code</th><th>Description</th></tr></thead><tbody>${body}</tbody></table>`;
-}
-
-function dumpUnknownJson(title: string, value: unknown): string {
-  if (value == null) return "";
-  let text = "";
-  try {
-    text = JSON.stringify(value, null, 2);
-  } catch {
-    text = String(value);
-  }
-  if (!text.trim() || text === "{}" || text === "[]") return "";
-  return `<h2>${escapeHtml(title)}</h2><pre class="oem-json">${escapeHtml(text)}</pre>`;
+  return `<h2>Equipment / SA</h2><table class="oem-svc" style="table-layout:fixed"><thead><tr><th>Code</th><th>Description</th></tr></thead><tbody>${body}</tbody></table>`;
 }
 
 const OEM_CSS = `
@@ -488,27 +519,21 @@ const OEM_CSS = `
     padding:6px 0;vertical-align:top;color:#0f172a;border-bottom:1px solid #eef2f7;
   }
   .oem-kv tr:last-child th,.oem-kv tr:last-child td{border-bottom:0;}
+  .oem-svc{table-layout:fixed;width:100%;}
   .oem-svc th,.oem-svc td{
-    border:0;border-bottom:1px solid #eef2f7;padding:7px 4px;
+    border:0;border-bottom:1px solid #eef2f7;padding:7px 6px 7px 0;
     vertical-align:top;text-align:left;font-size:9.5px;
+    word-break:break-word;overflow-wrap:anywhere;
   }
   .oem-svc th{
     background:transparent;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;
-    font-weight:650;color:#94a3b8;
+    font-weight:650;color:#94a3b8;white-space:nowrap;
   }
+  .oem-svc td.oem-work{white-space:pre-wrap;line-height:1.45;}
   .oem-svc tr:last-child td{border-bottom:0;}
   .num{font-variant-numeric:tabular-nums;white-space:nowrap;}
   .oem-extra{margin-top:4px;color:#334155;white-space:pre-wrap;}
-  .oem-json{
-    font:9.5px/1.35 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;
-    border:0;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;
-    padding:8px 0;background:transparent;overflow:auto;
-  }
   .oem-empty{color:#64748b;font-size:12px;}
-  .oem-foot{
-    margin:18px 0 0;padding-top:10px;border-top:1px solid #e2e8f0;
-    font-size:9px;line-height:1.4;color:#94a3b8;
-  }
   @media print{
     @page{size:A4 portrait;margin:0;}
     html,body{padding:0!important;background:#fff!important;}
@@ -518,7 +543,6 @@ const OEM_CSS = `
       margin:0!important;padding:12mm!important;
       box-shadow:none!important;border:0!important;overflow:visible!important;
     }
-    .no-print{display:none!important;}
   }
 `;
 
@@ -574,26 +598,11 @@ export function buildOemDealerDocumentHtml(args: {
     { label: "Stolen check", value: bundle.stolenCheck },
   ]);
 
-  const productLabel = (id: OneautoProductId): string =>
-    ONEAUTO_PRODUCTS.find((p) => p.id === id)?.label ?? id;
-
-  const oneautoDumps = ONEAUTO_PRODUCT_IDS.map((id) =>
-    dumpUnknownJson(`OneAuto · ${productLabel(id)} (raw)`, payloads[id]),
-  ).join("");
-
-  const leftoverPurchases = bundle.purchases
-    .map((p, i) => dumpUnknownJson(`API payload ${i + 1} (type ${p.historyType})`, p.payload))
-    .join("");
-  const vehicleOrderDump = dumpUnknownJson("Vehicle order API", bundle.vehicleOrder?.payload);
-
   const hasBody =
     specRows.some((r) => r.value.trim()) ||
     visits.length > 0 ||
     equipmentLines.some((l) => l.code.trim() || l.description.trim()) ||
     Boolean(powertrainExtra) ||
-    leftoverPurchases.length > 0 ||
-    vehicleOrderDump.length > 0 ||
-    oneautoDumps.length > 0 ||
     Boolean(bundle.accidentCheck.trim() || bundle.stolenCheck.trim());
 
   const vehicleKv = kvTable(specRows);
@@ -606,10 +615,9 @@ export function buildOemDealerDocumentHtml(args: {
     : "";
   const checksBlock = checks ? `<hr class="oem-rule"/><h2>Checks</h2>${checks}` : "";
   const equipmentBlock = equipmentTableFromLines(equipmentLines);
-  const dumps = `${vehicleOrderDump}${leftoverPurchases}${oneautoDumps}`;
 
   const inner = hasBody
-    ? `${vehicleBlock}${serviceBlock}${equipmentBlock ? `<hr class="oem-rule"/>${equipmentBlock}` : ""}${checksBlock}${dumps ? `<hr class="oem-rule"/>${dumps}` : ""}`
+    ? `${vehicleBlock}${serviceBlock}${equipmentBlock ? `<hr class="oem-rule"/>${equipmentBlock}` : ""}${checksBlock}`
     : `<p class="oem-empty">No dealer network records for this VIN. Check the official dealer data tables in admin, or reload OneAuto for this order.</p>`;
 
   const logoHtml = logoUri
@@ -626,9 +634,6 @@ export function buildOemDealerDocumentHtml(args: {
 </head>
 <body>
   <div class="oem">
-    <p class="no-print" style="margin:0 0 12px;font-size:11px;color:#666;">
-      Portrait A4 · original OEM language (not translated) · print / save as PDF from the browser.
-    </p>
     <header class="oem-top">
       ${logoHtml}
       <div class="oem-mid">
@@ -639,9 +644,6 @@ export function buildOemDealerDocumentHtml(args: {
       <div class="oem-side">${sideMeta}</div>
     </header>
     ${inner}
-    <p class="oem-foot">
-      Source data as provided by the manufacturer / authorised dealer systems. Field values are shown in their original language and are not translated.
-    </p>
   </div>
 </body>
 </html>`;
