@@ -63,6 +63,26 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("WAUZZZF22KN121142");
     expect(html).toContain("WO-88");
     expect(html).toContain("Order no.");
+    expect(html).toContain("oem-masthead");
+    expect(html).toContain("Official dealer data");
+    expect(html).toContain("A4 portrait");
+    expect(html).toContain("original language");
     expect(html).not.toContain("PROVIN DĪLERIS");
+    expect(html).not.toContain("PROVIN.LV");
+    expect(html).not.toContain("Modelis");
+  });
+
+  it("does not use LV-translated serviceWorks rows for the OEM extract", () => {
+    const block = emptyAutoRecordsBlock();
+    block.serviceWorks = [
+      { date: "12.04.2019", odometer: "48210", location: "Riga", works: "Eļļas maiņa un filtri" },
+    ];
+    const bundle = emptyOutvinDataBundle("WAUZZZF22KN121142");
+    block.outvin = bundle;
+    const visits = collectOemDealerVisits(
+      { ...createDefaultSourceBlocks().auto_records, ...block },
+      bundle,
+    );
+    expect(visits).toHaveLength(0);
   });
 });

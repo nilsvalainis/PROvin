@@ -4782,7 +4782,7 @@ export function OrderDetailWorkspace({
             type="button"
             onClick={() => void openOemDealerReport()}
             className={wizardFooterOem}
-            title="OEM-stila izdruka ar visiem dīlera API laukiem, t.sk. pasūtījumu un detaļu numuriem. Atsevišķs fails."
+            title="Oficiāla OEM izdruka (portrets A4): markas logo, oriģinālie API dati bez tulkojuma. Atsevišķs no PROVIN dīlera atskaites."
           >
             OEM dīlera PDF
           </button>
