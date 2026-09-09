@@ -118,24 +118,69 @@ describe("OEM dealer PDF", () => {
     expect(visits).toHaveLength(0);
   });
 
-  it("falls back to admin serviceWorks when OneAuto raw payloads are missing", () => {
+  it("does not use LV-translated serviceWorks for the OEM extract", () => {
     const block = emptyAutoRecordsBlock();
     block.serviceWorks = [
       {
         date: "12.04.2019",
         odometer: "48210",
-        location: "Volvo Partner Riga",
-        works: "Engine: oil and filter change.",
+        location: "Riga",
+        works: "Eļļas maiņa un filtri",
       },
     ];
+    const bundle = emptyOutvinDataBundle("WAUZZZF22KN121142");
+    block.outvin = bundle;
+    const visits = collectOemDealerVisits(block, bundle);
+    expect(visits).toHaveLength(0);
+    const html = buildOemDealerDocumentHtml({
+      vin: "WAUZZZF22KN121142",
+      makeModel: "Audi A7",
+      autoRecords: block,
+    });
+    expect(html).not.toContain("Eļļas maiņa");
+    expect(html).not.toContain("oem-side");
+  });
+
+  it("uses original language from OneAuto raw payload, not LV serviceWorks", () => {
+    const block = emptyAutoRecordsBlock();
+    block.serviceWorks = [
+      {
+        date: "21.10.2019",
+        odometer: "69343",
+        location: "Riga",
+        works: "Eļļas maiņa un filtrs.",
+      },
+    ];
+    block.oneautoIngest = {
+      ...emptyOneautoIngest(),
+      lastFetchedVin: "YV1PZ68TCL1106362",
+      results: {
+        oe_service_history: {
+          ok: true,
+          payload: {
+            success: true,
+            result: {
+              service_events: [
+                {
+                  date_of_service_event: "2019-10-21",
+                  mileage_observed: 69343,
+                  service_provider: "Volvo Partner",
+                  service_actions: ["Engine: oil and filter change."],
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
     const html = buildOemDealerDocumentHtml({
       vin: "YV1PZ68TCL1106362",
       makeModel: "",
       autoRecords: block,
     });
-    expect(html).toContain("Volvo Partner Riga");
     expect(html).toContain("Engine: oil and filter change.");
-    expect(html).toContain("48210");
+    expect(html).not.toContain("Eļļas maiņa");
+    expect(html).not.toContain("oem-side");
   });
 
   it("merges outvinReport vehicle fields even when an empty outvin shell exists", () => {

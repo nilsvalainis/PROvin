@@ -11,10 +11,6 @@
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import {
-  autoRecordsServiceWorkRowHasData,
-  type AutoRecordsServiceWorkRow,
-} from "@/lib/auto-records-service-works";
-import {
   ONEAUTO_PRODUCT_IDS,
   buildOneautoDisplay,
   filledOneautoKvRows,
@@ -253,25 +249,13 @@ function visitsFromOneautoTimeline(events: readonly OneautoServiceEvent[]): OemS
   }));
 }
 
-function visitsFromServiceWorks(rows: readonly AutoRecordsServiceWorkRow[] | undefined): OemServiceVisit[] {
-  return (rows ?? []).filter(autoRecordsServiceWorkRowHasData).map((r) => ({
-    date: r.date,
-    km: r.odometer,
-    type: "",
-    extraWork: r.works,
-    guarantee: "",
-    dealer: r.location,
-    address: "",
-    orderNumber: "",
-    extra: "",
-  }));
-}
-
 /**
- * Avotu prioritate: Outvin purchase payload → OneAuto raw timeline → admin serviceWorks tabula → dealer log.
+ * Avotu prioritate: Outvin purchase payload → OneAuto raw timeline → dealer log.
+ * Apzināti NEŅEM admin `serviceWorks` - tur bieži ir LV tulkojums PROVIN atskaitei.
+ * OEM PDF rāda tikai oriģinālo API valodu (rebuild no raw payload).
  */
 export function collectOemDealerVisits(
-  block: AutoRecordsBlockState,
+  _block: AutoRecordsBlockState,
   bundle: OutvinDataBundle,
   oneautoDisplay?: OneautoDisplaySections | null,
 ): OemServiceVisit[] {
@@ -279,8 +263,6 @@ export function collectOemDealerVisits(
   if (fromApi.length > 0) return fromApi;
   const fromOneauto = oneautoDisplay ? visitsFromOneautoTimeline(oneautoDisplay.serviceTimeline) : [];
   if (fromOneauto.length > 0) return fromOneauto;
-  const fromWorks = visitsFromServiceWorks(block.serviceWorks);
-  if (fromWorks.length > 0) return fromWorks;
   return visitsFromDealerLog(bundle);
 }
 
@@ -566,7 +548,7 @@ const OEM_CSS = `
     box-shadow:0 12px 40px rgb(15 23 42 / .12);border:1px solid #c5ccd6;
   }
   .oem-top{
-    display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;
+    display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;
     padding-bottom:12px;border-bottom:1px solid #cbd5e1;margin:0 0 12px;
   }
   .oem-logo{
@@ -584,10 +566,6 @@ const OEM_CSS = `
   }
   .oem-meta{margin:3px 0 0;font-size:10.5px;color:#64748b;}
   .oem-vin{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.04em;}
-  .oem-side{
-    text-align:right;font-size:9.5px;line-height:1.35;color:#64748b;max-width:42%;
-  }
-  .oem-side span{display:inline-block;margin-left:6px;white-space:nowrap;}
   .oem-sec{margin:0 0 14px;padding:0 0 2px;break-inside:avoid-page;}
   .oem-sec + .oem-sec{border-top:1px solid #e2e8f0;padding-top:12px;}
   h2{
@@ -692,13 +670,6 @@ export function buildOemDealerDocumentHtml(args: {
     mergeEquipmentLines(equipmentFromDisplay, equipmentFromLeftovers),
   );
 
-  const sideBits = [vi.engineCode, vi.transmission, vi.power, vi.drive, vi.productionDate || vi.firstRegistration]
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const sideMeta = sideBits.length
-    ? sideBits.map((part) => `<span>${escapeHtml(part)}</span>`).join("")
-    : `<span>${escapeHtml(brand)}</span>`;
-
   const specRows: Array<{ label: string; value: string }> = OUTVIN_VEHICLE_INFO_ROWS.map((row) => ({
     label: row.labelEn,
     value: vi[row.key],
@@ -745,7 +716,6 @@ export function buildOemDealerDocumentHtml(args: {
         <h1>${escapeHtml(title)}</h1>
         ${vin ? `<p class="oem-meta"><span class="oem-vin">VIN ${escapeHtml(vin)}</span></p>` : ""}
       </div>
-      <div class="oem-side">${sideMeta}</div>
     </header>
     ${inner}
   </div>
