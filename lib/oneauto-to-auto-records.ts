@@ -110,6 +110,26 @@ export function ingestFromOneautoBlock(oa: OneautoBlockState): AutoRecordsOneaut
   };
 }
 
+/** Merge OneAuto ingest so a later product fetch cannot wipe earlier payloads / original timeline. */
+export function mergeOneautoIngest(
+  previous: AutoRecordsOneautoIngest | null | undefined,
+  incoming: AutoRecordsOneautoIngest,
+): AutoRecordsOneautoIngest {
+  const prev = previous ?? emptyOneautoIngest();
+  const nextOriginal = filledOneautoServiceEvents(incoming.serviceTimelineOriginal);
+  const prevOriginal = filledOneautoServiceEvents(prev.serviceTimelineOriginal);
+  return {
+    vinOverride: incoming.vinOverride.trim() || prev.vinOverride,
+    lastFetchedVin: incoming.lastFetchedVin.trim() || prev.lastFetchedVin,
+    fetchedAt: incoming.fetchedAt.trim() || prev.fetchedAt,
+    selectedProducts:
+      incoming.selectedProducts.length > 0 ? incoming.selectedProducts : prev.selectedProducts,
+    lastCostEur: incoming.lastCostEur.trim() || prev.lastCostEur,
+    results: { ...prev.results, ...incoming.results },
+    serviceTimelineOriginal: nextOriginal.length > 0 ? nextOriginal : prevOriginal,
+  };
+}
+
 const LABEL_TO_FIELD: { re: RegExp; key: keyof OutvinVehicleInfo }[] = [
   { re: /^(vin(\s*code)?|vehicle\s*identification(\s*number)?)$/i, key: "vinCode" },
   { re: /^(model\s*(range|series)|mode[lļ]a\s*s[eē]rija)(\s*desc)?$/i, key: "modelSeries" },
@@ -380,8 +400,21 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
   );
 
   const notes = input.notes ?? {};
+  const payloads: Partial<Record<OneautoProductId, unknown>> = {};
+  for (const id of ONEAUTO_PRODUCT_IDS) {
+    const payload = input.ingest.results[id]?.payload;
+    if (payload != null) payloads[id] = payload;
+  }
+  const rebuiltOriginal = filledOneautoServiceEvents(buildOneautoDisplay(payloads).serviceTimeline);
   const incomingOriginal = filledOneautoServiceEvents(input.ingest.serviceTimelineOriginal);
   const keptOriginal = filledOneautoServiceEvents(current.oneautoIngest?.serviceTimelineOriginal);
+  const serviceTimelineOriginal =
+    rebuiltOriginal.length > 0
+      ? rebuiltOriginal
+      : incomingOriginal.length > 0
+        ? incomingOriginal
+        : keptOriginal;
+
   return {
     ...current,
     outvinReport: { ...report, vehicleInfo, equipment },
@@ -397,10 +430,10 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
       fillEmptyNote(current.aiContextRaw ?? "", notes.aiContextRaw ?? ""),
       mapped.leftovers,
     ),
-    oneautoIngest: {
+    oneautoIngest: mergeOneautoIngest(current.oneautoIngest, {
       ...input.ingest,
-      serviceTimelineOriginal: incomingOriginal.length > 0 ? incomingOriginal : keptOriginal,
-    },
+      serviceTimelineOriginal,
+    }),
   };
 }
 
@@ -434,7 +467,7 @@ export function foldOneautoBlockIntoAutoRecords<T extends AutoRecordsOneautoTarg
   return {
     autoRecords: applyOneautoToAutoRecords(autoRecords, {
       display: displayFromOneauto(oneauto),
-      ingest: ingestFromOneautoBlock(oneauto),
+      ingest: mergeOneautoIngest(autoRecords.oneautoIngest, ingestFromOneautoBlock(oneauto)),
       notes: {
         serviceHistoryNotes: oneauto.serviceHistoryNotes,
         oilChangeIntervalNotes: oneauto.oilChangeIntervalNotes,

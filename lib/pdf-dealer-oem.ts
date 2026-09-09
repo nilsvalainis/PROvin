@@ -11,6 +11,10 @@
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import {
+  autoRecordsServiceWorkRowHasData,
+  type AutoRecordsServiceWorkRow,
+} from "@/lib/auto-records-service-works";
+import {
   ONEAUTO_PRODUCT_IDS,
   buildOneautoDisplay,
   filledOneautoKvRows,
@@ -21,7 +25,7 @@ import {
   type OneautoProductId,
   type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
-import type { OneautoBlockState, OneautoProductResult } from "@/lib/oneauto-block";
+import type { OneautoBlockState } from "@/lib/oneauto-block";
 import {
   oneautoDisplayToEquipment,
   oneautoPowertrainToVehicleInfo,
@@ -249,13 +253,27 @@ function visitsFromOneautoTimeline(events: readonly OneautoServiceEvent[]): OemS
   }));
 }
 
+function visitsFromServiceWorks(rows: readonly AutoRecordsServiceWorkRow[] | undefined): OemServiceVisit[] {
+  return (rows ?? []).filter(autoRecordsServiceWorkRowHasData).map((r) => ({
+    date: r.date,
+    km: r.odometer,
+    type: "",
+    extraWork: r.works,
+    guarantee: "",
+    dealer: r.location,
+    address: "",
+    orderNumber: "",
+    extra: "",
+  }));
+}
+
 /**
  * Avotu prioritate:
  * 1) Outvin purchase payload
  * 2) OneAuto raw payload rebuild
  * 3) Saglabātais serviceTimelineOriginal (pirms LV tulkojuma)
- * 4) dealer log
- * Apzināti NEŅEM admin `serviceWorks` - tur bieži ir LV tulkojums PROVIN atskaitei.
+ * 4) serviceWorks (pēdējais avots - labāk rādīt vizītes nekā tukšu sadaļu)
+ * 5) dealer log
  */
 export function collectOemDealerVisits(
   block: AutoRecordsBlockState,
@@ -268,31 +286,25 @@ export function collectOemDealerVisits(
   if (fromOneauto.length > 0) return fromOneauto;
   const fromOriginal = visitsFromOneautoTimeline(block.oneautoIngest?.serviceTimelineOriginal ?? []);
   if (fromOriginal.length > 0) return fromOriginal;
+
+  const works = (block.serviceWorks ?? []).filter(autoRecordsServiceWorkRowHasData);
+  if (works.length > 0) return visitsFromServiceWorks(works);
   return visitsFromDealerLog(bundle);
 }
 
-function resultMapHasPayload(
-  results: Partial<Record<OneautoProductId, OneautoProductResult>> | undefined,
-): boolean {
-  if (!results) return false;
-  return ONEAUTO_PRODUCT_IDS.some((id) => results[id]?.payload != null);
-}
-
-/** Prefer live oneauto block; after fold, payloads live under auto_records.oneautoIngest. */
+/** Merge payloads from live oneauto block and folded oneautoIngest (do not prefer one exclusively). */
 export function collectOemOneautoPayloads(
   autoRecords: AutoRecordsBlockState,
   oneauto?: OneautoBlockState | null,
 ): Partial<Record<OneautoProductId, unknown>> {
   const out: Partial<Record<OneautoProductId, unknown>> = {};
-  const prefer = resultMapHasPayload(oneauto?.results)
-    ? oneauto!.results
-    : resultMapHasPayload(autoRecords.oneautoIngest?.results)
-      ? autoRecords.oneautoIngest!.results
-      : null;
-  if (!prefer) return out;
-  for (const id of ONEAUTO_PRODUCT_IDS) {
-    const payload = prefer[id]?.payload;
-    if (payload != null) out[id] = payload;
+  for (const map of [autoRecords.oneautoIngest?.results, oneauto?.results]) {
+    if (!map) continue;
+    for (const id of ONEAUTO_PRODUCT_IDS) {
+      if (out[id] != null) continue;
+      const payload = map[id]?.payload;
+      if (payload != null) out[id] = payload;
+    }
   }
   return out;
 }

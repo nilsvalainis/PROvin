@@ -131,16 +131,8 @@ describe("OEM dealer PDF", () => {
     expect(visits).toHaveLength(0);
   });
 
-  it("does not use LV-translated serviceWorks for the OEM extract", () => {
+  it("does not invent visits when serviceWorks and API payloads are empty", () => {
     const block = emptyAutoRecordsBlock();
-    block.serviceWorks = [
-      {
-        date: "12.04.2019",
-        odometer: "48210",
-        location: "Riga",
-        works: "Eļļas maiņa un filtri",
-      },
-    ];
     const bundle = emptyOutvinDataBundle("WAUZZZF22KN121142");
     block.outvin = bundle;
     const visits = collectOemDealerVisits(block, bundle);
@@ -150,11 +142,30 @@ describe("OEM dealer PDF", () => {
       makeModel: "Audi A7",
       autoRecords: block,
     });
-    expect(html).not.toContain("Eļļas maiņa");
     expect(html).not.toContain("oem-side");
   });
 
-  it("uses original language from OneAuto raw payload, not LV serviceWorks", () => {
+  it("falls back to serviceWorks so Service history is never blank when admin has rows", () => {
+    const block = emptyAutoRecordsBlock();
+    block.serviceWorks = [
+      {
+        date: "13.10.2022",
+        odometer: "128482",
+        location: "Volvo Partner",
+        works: "Automātiskā pārnesumkārba. Automātiskās transmisijas maiņa.",
+      },
+    ];
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: block,
+    });
+    expect(html).toContain("Service history");
+    expect(html).toContain("128482");
+    expect(html).toContain("Automātiskā pārnesumkārba");
+  });
+
+  it("prefers raw OneAuto language over LV serviceWorks when both exist", () => {
     const block = emptyAutoRecordsBlock();
     block.serviceWorks = [
       {
