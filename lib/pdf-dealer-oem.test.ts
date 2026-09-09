@@ -283,12 +283,14 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
     expect(html).not.toMatch(/class="oem-logo oem-logo--mono"/);
     expect(html).toMatch(/VOLVO|XC60/i);
-    const vehicleIdx = html.indexOf(">Vehicle<");
+    const vehicleIdx = html.indexOf(`>${vin}<`);
     const serviceIdx = html.indexOf(">Service history<");
     const equipIdx = html.indexOf(">Equipment<");
     expect(vehicleIdx).toBeGreaterThan(-1);
     expect(serviceIdx).toBeGreaterThan(vehicleIdx);
     expect(equipIdx).toBeGreaterThan(serviceIdx);
+    expect(html).not.toContain(`VIN ${vin}`);
+    expect(html).not.toContain("oem-vin");
   });
 
   it("keeps factory options out of Vehicle and only in compact Equipment", () => {
@@ -321,7 +323,7 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("PB02");
     expect(html).toContain("MAKEUP LAMP SUNVISOR");
     expect(html).toContain("oem-eq-item");
-    const vehicleBlock = html.slice(html.indexOf(">Vehicle<"), html.indexOf(">Equipment<"));
+    const vehicleBlock = html.slice(html.indexOf(">YV1PZ68TCL1106362<"), html.indexOf(">Equipment<"));
     expect(vehicleBlock).not.toContain("PB02");
     expect(vehicleBlock).not.toContain("MAKEUP LAMP");
   });

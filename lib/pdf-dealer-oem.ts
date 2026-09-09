@@ -3,7 +3,7 @@
  *
  * Struktūra (vienmēr šādā secībā):
  * 1. Header (logo + modelis + VIN)
- * 2. Vehicle - tikai auto specifikācijas
+ * 2. Vehicle specs (section title = VIN code)
  * 3. Service history
  * 4. Equipment - kompaktā režģī (kods + apraksts), tikai dokumenta beigās
  *
@@ -585,8 +585,6 @@ const OEM_CSS = `
   h1{
     margin:4px 0 0;font-size:16px;font-weight:650;letter-spacing:-0.02em;color:#0f172a;
   }
-  .oem-meta{margin:3px 0 0;font-size:10.5px;color:#64748b;}
-  .oem-vin{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.04em;}
   .oem-sec{margin:0 0 14px;padding:0 0 2px;break-inside:avoid-page;}
   .oem-sec + .oem-sec{border-top:1px solid #e2e8f0;padding-top:12px;}
   h2{
@@ -691,7 +689,9 @@ export function buildOemDealerDocumentHtml(args: {
     mergeEquipmentLines(equipmentFromDisplay, equipmentFromLeftovers),
   );
 
-  const specRows: Array<{ label: string; value: string }> = OUTVIN_VEHICLE_INFO_ROWS.map((row) => ({
+  const specRows: Array<{ label: string; value: string }> = OUTVIN_VEHICLE_INFO_ROWS.filter(
+    (row) => row.key !== "vinCode",
+  ).map((row) => ({
     label: row.labelEn,
     value: vi[row.key],
   }));
@@ -705,7 +705,8 @@ export function buildOemDealerDocumentHtml(args: {
     { label: "Stolen check", value: bundle.stolenCheck },
   ].filter((r) => r.value.trim());
 
-  const vehicleBlock = section("Vehicle", vehicleSpecsHtml(specRows));
+  const vehicleHeading = vin || "Vehicle";
+  const vehicleBlock = section(vehicleHeading, vehicleSpecsHtml(specRows));
   const serviceBlock = section("Service history", serviceTable(visits));
   const checksBlock = section("Checks", vehicleSpecsHtml(checksRows));
   const equipmentBlock = section("Equipment", equipmentGrid(equipmentDeduped));
@@ -735,7 +736,6 @@ export function buildOemDealerDocumentHtml(args: {
       <div class="oem-mid">
         <p class="oem-kicker">Official dealer data</p>
         <h1>${escapeHtml(title)}</h1>
-        ${vin ? `<p class="oem-meta"><span class="oem-vin">VIN ${escapeHtml(vin)}</span></p>` : ""}
       </div>
     </header>
     ${inner}
