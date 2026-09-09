@@ -84,14 +84,27 @@ describe("OEM dealer PDF", () => {
 
   it("omits empty service columns so headers stay aligned", () => {
     const block = emptyAutoRecordsBlock();
-    block.serviceWorks = [
-      {
-        date: "13.10.2022",
-        odometer: "128438",
-        location: "",
-        works: "Engine oil change\nOil filter",
+    block.oneautoIngest = {
+      ...emptyOneautoIngest(),
+      lastFetchedVin: "YV1PZ68TCL1106362",
+      results: {
+        oe_service_history: {
+          ok: true,
+          payload: {
+            success: true,
+            result: {
+              service_events: [
+                {
+                  date_of_service_event: "2022-10-13",
+                  mileage_observed: 128438,
+                  service_actions: ["Engine oil change\nOil filter"],
+                },
+              ],
+            },
+          },
+        },
       },
-    ];
+    };
     const html = buildOemDealerDocumentHtml({
       vin: "YV1PZ68TCL1106362",
       makeModel: "",
