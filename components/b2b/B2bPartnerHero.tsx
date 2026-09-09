@@ -1,10 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { B2bPartnerLogin } from "@/components/b2b/B2bPartnerLogin";
 import { CONTACT_PHONE_TEL, contactEmail } from "@/lib/contact";
 
-export function B2bPartnerHero() {
+export function B2bPartnerHero({ afterContact }: { afterContact?: ReactNode }) {
   const t = useTranslations("Partner");
   const email = contactEmail();
 
@@ -51,6 +52,7 @@ export function B2bPartnerHero() {
                 {CONTACT_PHONE_TEL}
               </a>
             </p>
+            {afterContact}
           </div>
         </div>
 

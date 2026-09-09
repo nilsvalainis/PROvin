@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN B2B partner page - 20 layouts (web + phone)</title>
+<style>
+  :root{
+    --ink:#fafafc; --dim:rgb(210 214 222 / .9); --mute:#a1a1aa; --faint:#71717a;
+    --line:rgb(255 255 255 / .1); --accent:#2563eb; --pad:max(1rem,env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    background:#050505;
+    background-image:
+      radial-gradient(ellipse 120% 70% at 50% -8%, rgb(255 255 255 / .04) 0%, transparent 55%),
+      linear-gradient(180deg,#141414 0%,#0a0a0a 40%,#000 100%);
+    background-attachment:fixed;
+  }
+  .page{max-width:78rem;margin:0 auto;padding:1.2rem var(--pad) 4rem}
+  h1{margin:0 0 .35rem;font-size:1.15rem;letter-spacing:-.02em}
+  .lead{margin:0 0 .85rem;color:var(--faint);font-size:.84rem;line-height:1.45;max-width:52rem}
+  .toc{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 1.3rem}
+  .toc a{
+    display:inline-flex;align-items:center;min-height:1.9rem;padding:0 .65rem;
+    border:1px solid var(--line);border-radius:999px;color:#93c5fd;text-decoration:none;
+    font-size:.52rem;font-weight:650;letter-spacing:.07em;text-transform:uppercase;
+  }
+  .section{margin:0 0 2.6rem;padding-top:1.1rem;border-top:1px solid var(--line)}
+  .section>h2{margin:0 0 .25rem;font-size:.98rem}
+  .why{margin:0 0 .9rem;color:var(--faint);font-size:.78rem;line-height:1.45;max-width:48rem}
+  .pair{display:grid;gap:1rem}
+  @media(min-width:980px){.pair{grid-template-columns:1fr 24rem;align-items:start}}
+  .stage{
+    border:1px solid rgb(255 255 255 / .12);border-radius:1rem;
+    background:rgb(10 10 10 / .96);padding:1.1rem 1.15rem 1.25rem;
+  }
+  .phone-frame{
+    border:1px solid rgb(255 255 255 / .14);border-radius:1.35rem;
+    background:#0a0a0a;padding:.55rem;max-width:24rem;margin:0 auto;
+    box-shadow:0 16px 40px rgb(0 0 0 / .45);
+  }
+  .phone-inner{
+    border:1px solid rgb(255 255 255 / .08);border-radius:1.05rem;
+    padding:.85rem .8rem 1.1rem;min-height:28rem;background:#070707;
+  }
+  .badge{
+    display:inline-block;margin:0 0 .7rem;padding:.18rem .45rem;border-radius:.3rem;
+    background:rgb(255 255 255 / .06);color:#d4d4d8;font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .device{margin:0 0 .55rem;font-size:.55rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd}
+  .brand{margin:0;font-size:1.45rem;font-weight:650;letter-spacing:-.02em}
+  .brand .b{color:var(--accent)}
+  .phone-inner .brand{font-size:1.25rem}
+  .eye{margin:.4rem 0 0;font-size:.55rem;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd}
+  .copy{margin:.7rem 0 0;color:var(--dim);font-size:.82rem;line-height:1.5}
+  .phone-inner .copy{font-size:.78rem}
+  .contact{margin:.7rem 0 0;font-size:.8rem;font-weight:550;color:#f4f4f5}
+  .contact a{color:#93c5fd;text-decoration:none}
+  .contact .row{margin-top:.3rem;font-weight:450;color:var(--mute);font-size:.76rem}
+  .lab{display:block;margin:0 0 .28rem;font-size:.52rem;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .field{
+    width:100%;min-height:2.45rem;margin:0 0 .65rem;padding:.55rem .7rem;
+    border:1px solid rgb(255 255 255 / .14);border-radius:.65rem;
+    background:rgb(8 10 14 / .55);color:#fff;font:1rem/1.3 Inter,sans-serif;
+  }
+  .cta{
+    display:flex;align-items:center;justify-content:center;width:100%;min-height:2.7rem;
+    border:0;border-radius:999px;color:#fff;
+    background:linear-gradient(180deg,#1a6fd4 0%,#1459ad 100%);
+    font:650 .68rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .login-box{
+    border:1px solid var(--line);border-radius:.9rem;padding:.95rem 1rem;
+    background:linear-gradient(180deg,rgb(255 255 255 / .035),rgb(255 255 255 / .012));
+  }
+  .hero2{display:grid;gap:1.25rem;align-items:start}
+  @media(min-width:860px){.desk .hero2{grid-template-columns:minmax(0,1.25fr) minmax(0,20rem)}}
+  .rule{height:1px;margin:1.1rem 0;background:var(--line);border:0}
+  .h3{margin:0;font-size:.98rem;font-weight:650;letter-spacing:-.02em}
+  .h3 .b{color:var(--accent)}
+  .sub{margin:.4rem 0 0;color:var(--dim);font-size:.74rem;line-height:1.45}
+  .foot{margin:.5rem 0 0;font-size:.58rem;color:var(--faint)}
+  .ok{
+    display:flex;align-items:center;gap:.45rem;margin-top:.55rem;padding:.55rem .65rem;
+    border:1px solid rgb(16 185 129 / .3);border-radius:.45rem;background:rgb(6 78 59 / .2);
+    color:#a7f3d0;font-size:.72rem;font-weight:650;
+  }
+  .ok i{font-style:normal;color:#10b981}
+  .feat{margin:.55rem 0 0;padding:0;list-style:none}
+  .feat li{
+    padding:.45rem 0;border-bottom:1px solid rgb(255 255 255 / .06);
+    font-size:.74rem;color:var(--dim);
+  }
+  .feat li:last-child{border-bottom:0}
+  .feat li::before{content:"+ ";color:#60a5fa;font-weight:700}
+  .chips{display:flex;flex-wrap:wrap;gap:.28rem;margin:.55rem 0 0}
+  .chips span{
+    padding:.22rem .4rem;border:1px solid rgb(148 163 184 / .25);border-radius:.28rem;
+    background:rgb(30 41 59 / .55);font-size:.6rem;font-weight:600;color:#f1f5f9;
+  }
+  .groups{margin:.5rem 0 0;display:flex;flex-direction:column;gap:.32rem}
+  .groups p{margin:0;font-size:.7rem;line-height:1.35;color:var(--mute)}
+  details.acc{
+    border-top:1px solid var(--line);padding:.15rem 0;
+  }
+  details.acc>summary{
+    list-style:none;cursor:pointer;padding:.85rem 0;font-size:.72rem;font-weight:650;
+    letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;
+  }
+  details.acc>summary::-webkit-details-marker{display:none}
+  details.acc>summary::after{content:"+";float:right;color:var(--mute);font-weight:400}
+  details.acc[open]>summary::after{content:"−"}
+  .tabs{display:flex;gap:2px;margin:0 0 .85rem;padding:3px;background:#161616;border-radius:10px}
+  .tabs button{
+    flex:1;border:0;border-radius:8px;padding:.65rem .35rem;background:transparent;
+    color:var(--mute);font:600 .58rem/1.2 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .tabs button.on{background:var(--accent);color:#fff}
+  .panel{display:none}
+  .panel.on{display:block}
+  .grid2{display:grid;gap:1.15rem}
+  @media(min-width:860px){.desk .grid2{grid-template-columns:1fr 1fr;gap:1.5rem}}
+  .ghost{
+    display:inline-flex;margin-top:.55rem;padding:0;border:0;background:transparent;
+    color:#93c5fd;font:650 .62rem/1.3 Inter,sans-serif;letter-spacing:.04em;
+    text-transform:uppercase;text-decoration:underline;text-underline-offset:.18em;cursor:pointer;
+  }
+  .more{display:none;margin-top:.65rem}
+  .is-open .more{display:block}
+  .sum{padding:0}
+  .sum ul{margin:.5rem 0 0;padding:0;list-style:none}
+  .sum li{padding:.18rem 0;font-size:.72rem;color:var(--dim)}
+  .sum li::before{content:"+ ";color:#60a5fa;font-weight:700}
+  .nav-mini{display:flex;justify-content:space-between;align-items:center;margin:0 0 1rem}
+  .nav-mini .logo{font-size:.85rem;font-weight:650;letter-spacing:-.02em}
+  .nav-mini .logo .b{color:var(--accent)}
+  .flag{width:1.15rem;height:.75rem;border-radius:2px;background:linear-gradient(#9E3039 33%,#fff 33% 66%,#9E3039 66%)}
+  /* 11–20 alt layouts */
+  .alt-light{background:#f4f4f5!important;color:#18181b}
+  .alt-light .copy,.alt-light .sub,.alt-light .feat li,.alt-light .sum li{color:#3f3f46}
+  .alt-light .contact,.alt-light .h3,.alt-light .brand{color:#18181b}
+  .alt-light .eye,.alt-light .lab,.alt-light .foot,.alt-light .why{color:#71717a}
+  .alt-light .contact a,.alt-light details.acc>summary,.alt-light .ghost{color:#1d4ed8}
+  .alt-light .field{background:#fff;border-color:#d4d4d8;color:#18181b}
+  .alt-light .login-box{background:#fff;border-color:#e4e4e7}
+  .alt-light .chips span{background:#e4e4e7;border-color:#d4d4d8;color:#18181b}
+  .alt-light details.acc,.alt-light .feat li,.alt-light .rule{border-color:#e4e4e7}
+  .alt-light .ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+  .alt-light .badge{background:#e4e4e7;color:#52525b}
+  .alt-split{display:grid;gap:0;min-height:22rem}
+  @media(min-width:860px){.desk .alt-split{grid-template-columns:1.15fr .85fr}}
+  .alt-split .pane-a{padding:0 1.1rem 0 0}
+  .alt-split .pane-b{padding:1rem;background:rgb(37 99 235 / .12);border:1px solid rgb(37 99 235 / .25);border-radius:.9rem}
+  .svc-row{display:grid;gap:.75rem}
+  @media(min-width:860px){.desk .svc-row{grid-template-columns:1fr 1fr}}
+  .svc-card{
+    border:1px solid var(--line);border-radius:.75rem;padding:.85rem .9rem;
+    background:rgb(255 255 255 / .02);
+  }
+  .alt-light .svc-card{background:#fff;border-color:#e4e4e7}
+  .center-col{max-width:28rem;margin:0 auto}
+  .num-svc{display:grid;gap:1rem;margin-top:1rem}
+  .num-svc article{display:grid;grid-template-columns:2.4rem 1fr;gap:.65rem;align-items:start}
+  .num-svc .n{font-size:1.35rem;font-weight:650;letter-spacing:-.03em;color:#60a5fa;line-height:1}
+  .steps{display:flex;flex-wrap:wrap;gap:.4rem;margin:.85rem 0;font-size:.58rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .steps span{padding:.25rem .5rem;border:1px solid var(--line);border-radius:999px}
+  .steps span.on{border-color:rgb(37 99 235 / .5);color:#93c5fd}
+  .marquee{
+    overflow:hidden;margin:.7rem 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:.45rem 0;mask-image:linear-gradient(90deg,transparent,black 8%,black 92%,transparent);
+  }
+  .marquee-track{display:flex;gap:.55rem;width:max-content;animation:mq 48s linear infinite}
+  .marquee-track span{white-space:nowrap;font-size:.62rem;font-weight:600;color:var(--mute)}
+  @keyframes mq{to{transform:translateX(-50%)}}
+  .rail-login{
+    display:grid;gap:1.25rem;
+  }
+  @media(min-width:860px){
+    .desk .rail-login{grid-template-columns:minmax(0,1fr) 17.5rem}
+    .desk .rail-login .sticky-login{position:sticky;top:1rem;align-self:start}
+  }
+  .editorial .brand{font-size:2rem;letter-spacing:-.04em}
+  .phone-inner .editorial .brand{font-size:1.45rem}
+  .editorial .copy{font-size:.88rem;max-width:36rem}
+  .bar-contact{
+    margin-top:1rem;padding:.65rem .75rem;border-radius:.55rem;
+    background:rgb(255 255 255 / .04);border:1px solid var(--line);
+    font-size:.74rem;color:var(--dim);
+  }
+  .bar-contact a{color:#93c5fd;text-decoration:none}
+  .alt-ink{background:#0c1220!important}
+  .alt-ink .pane-b{background:rgb(15 23 42);border-color:rgb(51 65 85)}
+  .pill-svc{display:flex;flex-wrap:wrap;gap:.4rem;margin:1rem 0 .5rem}
+  .pill-svc button{
+    border:1px solid var(--line);border-radius:999px;padding:.55rem .85rem;
+    background:transparent;color:var(--mute);font:650 .58rem/1 Inter,sans-serif;
+    letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .pill-svc button.on{background:#fff;color:#0a0a0a;border-color:#fff}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>B2B partneru lapa: 20 minimālisma varianti (1-10 + 11-20)</h1>
+  <p class="lead">Hero ievada teksts vienmēr redzams. Katalogs: „Pakalpojumi”. Web + telefons. Live kods netiek mainīts.</p>
+  <nav class="toc" id="toc"></nav>
+  <div id="variants"></div>
+</div>
+<script>
+const BRANDS = [
+  "BMW","MINI","Rolls-Royce","Mercedes-Benz","Smart","Volkswagen","Audi","Škoda","SEAT","CUPRA","Porsche","Bentley","Lamborghini",
+  "Volvo","Polestar","Jaguar","Land Rover","Toyota","Lexus","Ford","Mazda","Honda","Nissan","Infiniti","Mitsubishi","Subaru","Suzuki",
+  "Peugeot","Citroën","DS Automobiles","Opel","Vauxhall","Fiat","Abarth","Alfa Romeo","Lancia","Jeep",
+  "Renault","Dacia","Alpine","Hyundai","Kia","Genesis","Ferrari","Maserati","Aston Martin","Lotus","MG"
+];
+const GROUPS = [
+  ["BMW","MINI","Rolls-Royce"],
+  ["Mercedes-Benz","Smart"],
+  ["Volkswagen","Audi","Škoda","SEAT","CUPRA","Porsche","Bentley","Lamborghini"],
+  ["Volvo","Polestar"],
+  ["Jaguar","Land Rover"],
+  ["Toyota","Lexus"],
+  ["Ford"],
+  ["Mazda","Honda","Nissan","Infiniti","Mitsubishi","Subaru","Suzuki"],
+  ["Peugeot","Citroën","DS Automobiles","Opel","Vauxhall","Fiat","Abarth","Alfa Romeo","Lancia","Jeep"],
+  ["Renault","Dacia","Alpine"],
+  ["Hyundai","Kia","Genesis"],
+  ["Ferrari","Maserati","Aston Martin","Lotus","MG"],
+];
+const FEATS = [
+  "Oficiālo dīleru dati*",
+  "carVertical + AutoDNA",
+  "Izcelsmes valsts reģistri",
+  "Izsoļu portālu arhīva dati",
+  "Apdrošinātāju dati",
+  "Tehnisko apskašu vēsture",
+  "Datu kopsavilkums",
+];
+const HERO_COPY = "Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes pilnībā novērstu riskus, kas saistīti ar koriģētu nobraukumu, negadījumu un apkopju vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.";
+const BIZ_GOAL = "PROVIN BUSINESS apvieno datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas/Amerikas valstu reģistriem. Vienā ērtā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, negadījumu vēsturi un servisa ierakstus.";
+const DEAL_GOAL = "DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm.";
+
+function nav(){return `<div class="nav-mini"><div class="logo">PRO<span class="b">VIN</span></div><div class="flag" title="LV" aria-hidden="true"></div></div>`}
+function heroBlock(){
+  return `<h3 class="brand">PRO<span class="b">VIN</span> BUSINESS</h3>
+    <p class="eye">Partneriem</p>
+    <p class="copy">${HERO_COPY}</p>
+    <p class="contact">Sazinieties ar mums, lai saņemtu B2B cenas piedāvājumu un pieslēgtu uzņēmuma kontu:</p>
+    <p class="contact row">E-pasts: <a href="mailto:info@provin.lv">info@provin.lv</a> | Tālr.: <a href="tel:+37129502039">+371 29502039</a></p>`;
+}
+function login(){
+  return `<div class="login-box">
+    <span class="lab">E-pasts</span><input class="field" value="info@dzintarzemeauto.lv"/>
+    <span class="lab">Parole</span><input class="field" type="password" value="password"/>
+    <button type="button" class="cta">Ieiet</button>
+  </div>`;
+}
+function chips(){return `<div class="chips">${BRANDS.map(b=>`<span>${b}</span>`).join("")}</div>`}
+function groups(){return `<div class="groups">${GROUPS.map(g=>`<p>${g.join(" · ")}</p>`).join("")}</div>`}
+function feats(){return `<ul class="feat">${FEATS.map(f=>`<li>${f}</li>`).join("")}</ul><p class="foot">*pieejams noteiktiem ražotājiem.</p>`}
+function ok(){return `<div class="ok"><i>✓</i> 100% Naudas atmaksas garantija</div>`}
+function bizCol(){return `<div><h4 class="h3">PRO<span class="b">VIN</span> BUSINESS</h4><p class="sub">${BIZ_GOAL}</p>${feats()}</div>`}
+function dealCol(brandHtml){return `<div><h4 class="h3">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>${brandHtml}${ok()}</div>`}
+
+const VARIANTS = [
+  {
+    id:"1", title:"1. Viens accordion „Pakalpojumi”",
+    why:"Pirmais fold: tikai hero + login. Katalogs aizvērtā accordion. Minimāls scroll.",
+    desk(m){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <details class="acc"><summary>Pakalpojumi</summary><div class="grid2">${bizCol()}${dealCol(chips())}</div></details>`},
+    phone(m){return `${nav()} ${heroBlock()}${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details>`},
+  },
+  {
+    id:"2", title:"2. Divi accordion: BUSINESS / DĪLERA",
+    why:"Katrs produkts atsevišķi. Markas nepaliek atvērtas līdz klikšķim.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <details class="acc"><summary>PROVIN BUSINESS</summary>${bizCol()}</details>
+      <details class="acc"><summary>Dīlera dati · 48 ražotāji</summary>${dealCol(chips())}</details>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <details class="acc"><summary>PROVIN BUSINESS</summary>${bizCol()}</details>
+      <details class="acc"><summary>Dīlera dati · 48</summary>${dealCol(chips())}</details>`},
+  },
+  {
+    id:"3", title:"3. Tabs zem hero",
+    why:"Vienlaikus viens produkts. Web un phone: BUSINESS | DĪLERA.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <div class="tabs" data-tabs><button type="button" class="on" data-t="b">Business</button><button type="button" data-t="d">Dīlera</button></div>
+      <div class="panel on" data-p="b">${bizCol()}</div><div class="panel" data-p="d">${dealCol(chips())}</div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <div class="tabs" data-tabs><button type="button" class="on" data-t="b">Business</button><button type="button" data-t="d">Dīlera</button></div>
+      <div class="panel on" data-p="b">${bizCol()}</div><div class="panel" data-p="d">${dealCol(chips())}</div>`},
+  },
+  {
+    id:"4", title:"4. BUSINESS redzams · markas accordion",
+    why:"Avotu saraksts vienmēr redzams (kompakts). Čipi aiz „Ražotāji”.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div><div class="grid2">
+      ${bizCol()}
+      <div><h4 class="h3">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>
+      <details class="acc" open><summary>Ražotāji · 48</summary>${chips()}</details>${ok()}</div></div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}${bizCol()}
+      <h4 class="h3" style="margin-top:1rem">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>
+      <details class="acc"><summary>Ražotāji · 48</summary>${chips()}</details>${ok()}`},
+  },
+  {
+    id:"5", title:"5. Markas kā teksta grupas (bez čipiem)",
+    why:"Vēl mazāk vizuālā trokšņa. Grupas ar · atdalītāju. Accordion phone.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <div class="grid2">${bizCol()}${dealCol(groups())}</div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(groups())}</details>`},
+  },
+  {
+    id:"6", title:"6. Login pirmā · katalogs otrā (īpaši phone)",
+    why:"Phone: login pirms gara teksta. Web: hero kreisajā, login labajā, tad accordion.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <details class="acc"><summary>Pakalpojumi un ražotāji</summary><div class="grid2">${bizCol()}${dealCol(chips())}</div></details>`},
+    phone(){return `${nav()}
+      <h3 class="brand">PRO<span class="b">VIN</span> BUSINESS</h3><p class="eye">Partneriem</p>
+      ${login()}
+      <p class="copy" style="margin-top:1rem">${HERO_COPY}</p>
+      <p class="contact row">E-pasts: <a href="mailto:info@provin.lv">info@provin.lv</a><br/>Tālr.: <a href="tel:+37129502039">+371 29502039</a></p>
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details>`},
+  },
+  {
+    id:"7", title:"7. Divas kopsavilkuma kartes + expand",
+    why:"3 punkti katram; „Uzzināt vairāk” izvērš avotus / markas.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div><hr class="rule"/>
+      <div class="grid2">
+        <article class="sum" data-exp><h4 class="h3">PRO<span class="b">VIN</span> BUSINESS</h4>
+          <ul><li>Dīleri + starptautiskie avoti</li><li>Nobraukums, negadījumi, apkopes</li><li>Kopsavilkums darījumam</li></ul>
+          <button type="button" class="ghost" data-more>Uzzināt vairāk</button>
+          <div class="more">${feats()}</div></article>
+        <article class="sum" data-exp><h4 class="h3">DĪLERA DATI</h4>
+          <ul><li>Oficiālie servisa ieraksti</li><li>48 atbalstītie ražotāji</li><li>Naudas atmaksas garantija</li></ul>
+          <button type="button" class="ghost" data-more>Uzzināt vairāk</button>
+          <div class="more">${chips()}${ok()}</div></article>
+      </div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <article class="sum" data-exp style="margin-top:1rem"><h4 class="h3">PRO<span class="b">VIN</span> BUSINESS</h4>
+        <ul><li>Dīleri + starptautiskie avoti</li><li>Nobraukums un negadījumi</li><li>Kopsavilkums</li></ul>
+        <button type="button" class="ghost" data-more>Uzzināt vairāk</button><div class="more">${feats()}</div></article>
+      <article class="sum" data-exp><h4 class="h3">DĪLERA DATI</h4>
+        <ul><li>Servisa ieraksti</li><li>48 ražotāji</li><li>Garantija</li></ul>
+        <button type="button" class="ghost" data-more>Uzzināt vairāk</button><div class="more">${chips()}${ok()}</div></article>`},
+  },
+  {
+    id:"8", title:"8. BUSINESS flat · Dīlera tabs iekšā",
+    why:"Kreisā kolonna vienmēr; labajā tikai dīlera tabs (Markas | Garantija).",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div><div class="grid2">
+      ${bizCol()}
+      <div><h4 class="h3">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>
+        <div class="tabs" data-tabs><button type="button" class="on" data-t="m">Markas</button><button type="button" data-t="g">Garantija</button></div>
+        <div class="panel on" data-p="m">${chips()}</div>
+        <div class="panel" data-p="g">${ok()}<p class="sub" style="margin-top:.55rem">Ja VIN nav ierakstu ražotāja DB, pilna atmaksa.</p></div>
+      </div></div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <details class="acc"><summary>PROVIN BUSINESS</summary>${bizCol()}</details>
+      <details class="acc"><summary>Dīlera dati</summary><p class="sub">${DEAL_GOAL}</p>
+        <div class="tabs" data-tabs><button type="button" class="on" data-t="m">Markas</button><button type="button" data-t="g">Garantija</button></div>
+        <div class="panel on" data-p="m">${chips()}</div>
+        <div class="panel" data-p="g">${ok()}</div></details>`},
+  },
+  {
+    id:"9", title:"9. Pilns hero · vienots „Pakalpojumi”",
+    why:"Obligātais ievada teksts un kontakti hero. Katalogs aizvien aizvērtā accordion.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <details class="acc"><summary>Pakalpojumi</summary><div class="grid2">${bizCol()}${dealCol(chips())}</div></details>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details>`},
+  },
+  {
+    id:"10", title:"10. Pilns hero · 2 saites uz pakalpojumiem",
+    why:"Hero teksts vienmēr redzams. BUSINESS / Dīlera atveras ar saitēm (ne accordion).",
+    desk(){return `${nav()}<div class="hero2">
+      <div>${heroBlock()}
+        <p style="margin:.85rem 0 0">
+          <button type="button" class="ghost" data-open="biz">PROVIN Business →</button><br/>
+          <button type="button" class="ghost" data-open="deal">Dīlera dati →</button>
+        </p>
+        <div id="open-biz" class="more">${bizCol()}</div>
+        <div id="open-deal" class="more">${dealCol(chips())}</div>
+      </div>${login()}</div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <p style="margin:.85rem 0 0">
+        <button type="button" class="ghost" data-open="biz-m">PROVIN Business →</button><br/>
+        <button type="button" class="ghost" data-open="deal-m">Dīlera dati →</button>
+      </p>
+      <div id="open-biz-m" class="more">${bizCol()}</div>
+      <div id="open-deal-m" class="more">${dealCol(chips())}</div>`},
+  },
+  {
+    id:"11", title:"11. Gaišais editorial",
+    why:"Pilnīgi cits tonis: gaišs fons, tumšs teksts. Tas pats saturs.",
+    desk(){return `<div class="alt-light" style="margin:-1.1rem -1.15rem -1.25rem;padding:1.1rem 1.15rem 1.25rem;border-radius:1rem">${nav()}
+      <div class="hero2 editorial">${heroBlock()}${login()}</div>
+      <details class="acc"><summary>Pakalpojumi</summary><div class="grid2">${bizCol()}${dealCol(chips())}</div></details></div>`},
+    phone(){return `<div class="alt-light" style="margin:-.85rem -.8rem -1.1rem;padding:.85rem .8rem 1.1rem;border-radius:1rem">${nav()}
+      ${heroBlock()}${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details></div>`},
+  },
+  {
+    id:"12", title:"12. Split: teksts | login panelis",
+    why:"Login zilā panelī labajā pusē. Pakalpojumi zemāk divās kartēs.",
+    desk(){return `${nav()}<div class="alt-split alt-ink">
+      <div class="pane-a">${heroBlock()}</div>
+      <div class="pane-b"><p class="lab" style="margin-bottom:.55rem">Partneru ieeja</p>${login()}</div>
+    </div><hr class="rule"/><div class="svc-row">
+      <div class="svc-card">${bizCol()}</div><div class="svc-card">${dealCol(chips())}</div>
+    </div>`},
+    phone(){return `${nav()}${heroBlock()}
+      <div class="pane-b" style="margin-top:1rem">${login()}</div>
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details>`},
+  },
+  {
+    id:"13", title:"13. Sticky login rail",
+    why:"Web: login pielīp scrollējot katalogu. Phone: klasisks stack + Pakalpojumi.",
+    desk(){return `${nav()}<div class="rail-login">
+      <div>${heroBlock()}<hr class="rule"/><div class="grid2">${bizCol()}${dealCol(groups())}</div></div>
+      <div class="sticky-login">${login()}</div>
+    </div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(groups())}</details>`},
+  },
+  {
+    id:"14", title:"14. Divas pakalpojumu kartes (vienmēr atvērtas)",
+    why:"Bez accordion. Kompaktas kartes; markas grupās, ne čipos.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <p class="lab" style="margin:1rem 0 .35rem">Pakalpojumi</p>
+      <div class="svc-row"><div class="svc-card">${bizCol()}</div><div class="svc-card">${dealCol(groups())}</div></div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <p class="lab" style="margin:1rem 0 .35rem">Pakalpojumi</p>
+      <div class="svc-card" style="margin-bottom:.65rem">${bizCol()}</div>
+      <div class="svc-card">${dealCol(groups())}</div>`},
+  },
+  {
+    id:"15", title:"15. Liels zīmols + kontaktu josla",
+    why:"Editorial hero. Kontakti vienā joslā. Pakalpojumi tabs.",
+    desk(){return `${nav()}<div class="editorial">
+      <h3 class="brand">PRO<span class="b">VIN</span> BUSINESS</h3>
+      <p class="eye">Partneriem</p>
+      <p class="copy">${HERO_COPY}</p>
+      <div class="bar-contact">B2B cenas un konta pieslēgšana: <a href="mailto:info@provin.lv">info@provin.lv</a> · <a href="tel:+37129502039">+371 29502039</a></div>
+    </div>
+      <div style="margin-top:1.1rem;max-width:20rem">${login()}</div>
+      <div class="tabs" data-tabs style="margin-top:1.1rem"><button type="button" class="on" data-t="b">Business</button><button type="button" data-t="d">Dīlera</button></div>
+      <div class="panel on" data-p="b">${bizCol()}</div><div class="panel" data-p="d">${dealCol(chips())}</div>`},
+    phone(){return `${nav()}<div class="editorial">
+      <h3 class="brand">PRO<span class="b">VIN</span> BUSINESS</h3><p class="eye">Partneriem</p>
+      <p class="copy">${HERO_COPY}</p>
+      <div class="bar-contact"><a href="mailto:info@provin.lv">info@provin.lv</a><br/><a href="tel:+37129502039">+371 29502039</a></div>
+    </div>${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details>`},
+  },
+  {
+    id:"16", title:"16. Centrēta šaurā kolonna",
+    why:"Viena kolonna, max ~28rem. Login zem teksta. Pakalpojumi accordion.",
+    desk(){return `<div class="center-col">${nav()}${heroBlock()}${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details></div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details>`},
+  },
+  {
+    id:"17", title:"17. Numurēti pakalpojumi 01 / 02",
+    why:"Bez kartēm: 01 BUSINESS, 02 Dīlera. Markas accordion iekšā.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <p class="lab" style="margin:1.1rem 0 0">Pakalpojumi</p>
+      <div class="num-svc">
+        <article><div class="n">01</div><div>${bizCol()}</div></article>
+        <article><div class="n">02</div><div>
+          <h4 class="h3">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>
+          <details class="acc"><summary>Ražotāji · 48</summary>${chips()}</details>${ok()}
+        </div></article>
+      </div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <p class="lab" style="margin:1rem 0 0">Pakalpojumi</p>
+      <div class="num-svc">
+        <article><div class="n">01</div><div><h4 class="h3">PRO<span class="b">VIN</span> BUSINESS</h4><p class="sub">${BIZ_GOAL}</p>
+          <details class="acc"><summary>Avoti</summary>${feats()}</details></div></article>
+        <article><div class="n">02</div><div><h4 class="h3">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>
+          <details class="acc"><summary>Ražotāji</summary>${chips()}</details>${ok()}</div></article>
+      </div>`},
+  },
+  {
+    id:"18", title:"18. Soļi: ieeja → pakalpojumi",
+    why:"Vizuāli soļi. Saturs tas pats; uzsvars uz login, tad katalogs.",
+    desk(){return `${nav()}
+      <div class="steps"><span class="on">1 · Ieeja</span><span>2 · Pakalpojumi</span></div>
+      <div class="hero2">${heroBlock()}${login()}</div>
+      <div class="steps" style="margin-top:1.25rem"><span>1 · Ieeja</span><span class="on">2 · Pakalpojumi</span></div>
+      <div class="grid2">${bizCol()}${dealCol(chips())}</div>`},
+    phone(){return `${nav()}
+      <div class="steps"><span class="on">1 · Ieeja</span><span>2 · Pakalpojumi</span></div>
+      ${heroBlock()}${login()}
+      <details class="acc" open><summary>2 · Pakalpojumi</summary>${bizCol()}${dealCol(chips())}</details>`},
+  },
+  {
+    id:"19", title:"19. Marku marquee + pill filtri",
+    why:"Ražotāji kā lēna lenta. Pill: Business | Dīlera. Cits ritms.",
+    desk(){return `${nav()}<div class="hero2">${heroBlock()}${login()}</div>
+      <div class="marquee" aria-hidden="true"><div class="marquee-track">${[...BRANDS,...BRANDS].map(b=>`<span>${b}</span>`).join("")}</div></div>
+      <div class="pill-svc" data-tabs>
+        <button type="button" class="on" data-t="b">Business</button>
+        <button type="button" data-t="d">Dīlera dati</button>
+      </div>
+      <div class="panel on" data-p="b">${bizCol()}</div>
+      <div class="panel" data-p="d"><h4 class="h3">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>${ok()}</div>`},
+    phone(){return `${nav()}${heroBlock()}${login()}
+      <div class="marquee" aria-hidden="true"><div class="marquee-track">${[...BRANDS,...BRANDS].map(b=>`<span>${b}</span>`).join("")}</div></div>
+      <details class="acc"><summary>Pakalpojumi</summary>${bizCol()}
+        <h4 class="h3" style="margin-top:1rem">DĪLERA DATI</h4><p class="sub">${DEAL_GOAL}</p>${ok()}</details>`},
+  },
+  {
+    id:"20", title:"20. Gaišs split + atvērtas kartes",
+    why:"Kombinācija: light theme, split login, Pakalpojumi kā 2 kartes.",
+    desk(){return `<div class="alt-light" style="margin:-1.1rem -1.15rem -1.25rem;padding:1.1rem 1.15rem 1.25rem;border-radius:1rem">${nav()}
+      <div class="alt-split">
+        <div class="pane-a">${heroBlock()}</div>
+        <div class="pane-b" style="background:#fff;border:1px solid #e4e4e7">${login()}</div>
+      </div>
+      <p class="lab" style="margin:1.1rem 0 .35rem">Pakalpojumi</p>
+      <div class="svc-row"><div class="svc-card">${bizCol()}</div><div class="svc-card">${dealCol(chips())}</div></div>
+    </div>`},
+    phone(){return `<div class="alt-light" style="margin:-.85rem -.8rem -1.1rem;padding:.85rem .8rem 1.1rem;border-radius:1rem">${nav()}
+      ${heroBlock()}${login()}
+      <p class="lab" style="margin:1rem 0 .35rem">Pakalpojumi</p>
+      <div class="svc-card" style="margin-bottom:.65rem">${bizCol()}</div>
+      <div class="svc-card">${dealCol(chips())}</div>
+    </div>`},
+  },
+];
+
+const toc = document.getElementById("toc");
+const root = document.getElementById("variants");
+VARIANTS.forEach((v) => {
+  toc.innerHTML += `<a href="#v${v.id}">${v.id}</a>`;
+  const sec = document.createElement("section");
+  sec.className = "section";
+  sec.id = "v" + v.id;
+  sec.innerHTML = `<h2>${v.title}</h2><p class="why">${v.why}</p>
+    <div class="pair">
+      <div><p class="device">Web</p><div class="stage desk"><span class="badge">V${v.id} · web</span>${v.desk()}</div></div>
+      <div><p class="device">Telefons</p><div class="phone-frame"><div class="phone-inner"><span class="badge">V${v.id} · phone</span>${v.phone()}</div></div></div>
+    </div>`;
+  root.appendChild(sec);
+});
+
+document.querySelectorAll("[data-tabs]").forEach((tabs) => {
+  const scope = tabs.parentElement;
+  tabs.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabs.querySelectorAll("button").forEach((b) => b.classList.remove("on"));
+      btn.classList.add("on");
+      const id = btn.getAttribute("data-t");
+      scope.querySelectorAll(".panel").forEach((p) => p.classList.toggle("on", p.getAttribute("data-p") === id));
+    });
+  });
+});
+document.querySelectorAll("[data-more]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const box = btn.closest("[data-exp]");
+    const open = box.classList.toggle("is-open");
+    btn.textContent = open ? "Mazāk" : "Uzzināt vairāk";
+  });
+});
+document.querySelectorAll("[data-open]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const id = btn.getAttribute("data-open");
+    const el = document.getElementById("open-" + id);
+    if (!el) return;
+    const on = el.style.display === "block";
+    const scope = btn.closest(".stage, .phone-inner") || document;
+    scope.querySelectorAll("[id^='open-']").forEach((n) => { n.style.display = "none"; });
+    el.style.display = on ? "none" : "block";
+  });
+});
+</script>
+</body>
+</html>

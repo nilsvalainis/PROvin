@@ -300,9 +300,12 @@ function PackageStack({
 
 export function B2bPartnerCatalog({
   showCta = false,
+  plan,
   className,
 }: {
   showCta?: boolean;
+  /** When set, show only that package (partner landing expand links). */
+  plan?: B2bPartnerPlanId;
   className?: string;
 }) {
   const locale = useLocale();
@@ -310,55 +313,84 @@ export function B2bPartnerCatalog({
   const catalog = getB2bCatalog(locale);
   const business = catalog.business;
   const dealer = catalog.dealer;
+  const onlyBusiness = plan === "business";
+  const onlyDealer = plan === "dealer";
+  const single = onlyBusiness || onlyDealer;
 
   return (
     <section
       className={`scroll-mt-16 bg-transparent px-0 pb-4 pt-2 sm:pb-8 sm:pt-4 lg:pb-10${className ? ` ${className}` : ""}`}
+      aria-label={onlyBusiness ? business.title : onlyDealer ? dealer.title : undefined}
     >
       <div className={homeContentMaxClass}>
-        <div className="flex flex-col gap-10 lg:hidden">
-          <PackageStack
-            pkg={dealer}
-            plan="dealer"
-            brandsLabel={uiCopy.dealerBrandsAria}
-            infoAria={uiCopy.dealerRefundInfoAria}
-            listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
-            showCta={showCta}
-          />
-          <div className="h-px w-full bg-white/15" aria-hidden />
-          <PackageStack
-            pkg={business}
-            plan="business"
-            infoAria={uiCopy.dealerRefundInfoAria}
-            listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
-            showCta={showCta}
-          />
-        </div>
-
-        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_auto_auto] lg:items-start lg:gap-x-10">
-          <PackageTitle title={business.title} />
-          <div className={`${showCta ? "row-span-5" : "row-span-4"} self-stretch bg-white/15`} aria-hidden />
-          <PackageTitle title={dealer.title} />
-
-          <p className={`mt-3 ${GOAL_CLASS}`}>{business.goal}</p>
-          <p className={`mt-3 ${GOAL_CLASS}`}>{dealer.goal}</p>
-
-          <ItemList items={business.items} className="mt-7 flex min-w-0 flex-col gap-1.5" />
-          <div className={`mt-7 ${MATCHED_STACK_CLASS}`}>
-            <DealerBrandLockup label={uiCopy.dealerBrandsAria} fill />
-            <GuaranteeBlock
-              title={dealer.guaranteeTitle ?? ""}
-              body={dealer.guaranteeBody ?? ""}
-              infoAria={uiCopy.dealerRefundInfoAria}
-            />
+        {single ? (
+          <div className="flex flex-col">
+            {onlyBusiness ? (
+              <PackageStack
+                pkg={business}
+                plan="business"
+                infoAria={uiCopy.dealerRefundInfoAria}
+                listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
+                showCta={showCta}
+              />
+            ) : (
+              <PackageStack
+                pkg={dealer}
+                plan="dealer"
+                brandsLabel={uiCopy.dealerBrandsAria}
+                infoAria={uiCopy.dealerRefundInfoAria}
+                listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
+                showCta={showCta}
+              />
+            )}
           </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-10 lg:hidden">
+              <PackageStack
+                pkg={dealer}
+                plan="dealer"
+                brandsLabel={uiCopy.dealerBrandsAria}
+                infoAria={uiCopy.dealerRefundInfoAria}
+                listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
+                showCta={showCta}
+              />
+              <div className="h-px w-full bg-white/15" aria-hidden />
+              <PackageStack
+                pkg={business}
+                plan="business"
+                infoAria={uiCopy.dealerRefundInfoAria}
+                listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
+                showCta={showCta}
+              />
+            </div>
 
-          {business.foot ? <p className={`mt-4 ${FOOT_CLASS}`}>{business.foot}</p> : <div />}
-          <div />
+            <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_auto_auto] lg:items-start lg:gap-x-10">
+              <PackageTitle title={business.title} />
+              <div className={`${showCta ? "row-span-5" : "row-span-4"} self-stretch bg-white/15`} aria-hidden />
+              <PackageTitle title={dealer.title} />
 
-          {showCta ? <PackageCta plan="business" /> : null}
-          {showCta ? <PackageCta plan="dealer" /> : null}
-        </div>
+              <p className={`mt-3 ${GOAL_CLASS}`}>{business.goal}</p>
+              <p className={`mt-3 ${GOAL_CLASS}`}>{dealer.goal}</p>
+
+              <ItemList items={business.items} className="mt-7 flex min-w-0 flex-col gap-1.5" />
+              <div className={`mt-7 ${MATCHED_STACK_CLASS}`}>
+                <DealerBrandLockup label={uiCopy.dealerBrandsAria} fill />
+                <GuaranteeBlock
+                  title={dealer.guaranteeTitle ?? ""}
+                  body={dealer.guaranteeBody ?? ""}
+                  infoAria={uiCopy.dealerRefundInfoAria}
+                />
+              </div>
+
+              {business.foot ? <p className={`mt-4 ${FOOT_CLASS}`}>{business.foot}</p> : <div />}
+              <div />
+
+              {showCta ? <PackageCta plan="business" /> : null}
+              {showCta ? <PackageCta plan="dealer" /> : null}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
