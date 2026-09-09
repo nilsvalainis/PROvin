@@ -3,10 +3,30 @@
  *
  * Dizains: „05 Minimal dossier” - logo kreisajā, hairline līnijas, bez rāmju tabulām.
  * - Portrets A4; markas logo augšā.
- * - NETULKO: oriģinālie API dati oriģinālvalodā.
+ * - NETULKO: oriģinālie API dati oriģinālvalodā (no OneAuto / Outvin raw payload).
  * - PROVIN dīlera atskaite (klienta PDF) var būt tulkota; šis dokuments - nē.
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
+import {
+  autoRecordsServiceWorkRowHasData,
+  type AutoRecordsServiceWorkRow,
+} from "@/lib/auto-records-service-works";
+import {
+  ONEAUTO_PRODUCT_IDS,
+  ONEAUTO_PRODUCTS,
+  buildOneautoDisplay,
+  filledOneautoKvRows,
+  filledOneautoServiceEvents,
+  oneautoDisplayHasRows,
+  type OneautoDisplaySections,
+  type OneautoProductId,
+  type OneautoServiceEvent,
+} from "@/lib/oneauto-catalog";
+import type { OneautoBlockState, OneautoProductResult } from "@/lib/oneauto-block";
+import {
+  oneautoDisplayToEquipment,
+  oneautoPowertrainToVehicleInfo,
+} from "@/lib/oneauto-to-auto-records";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import {
   outvinDealerServiceRowHasData,
@@ -15,7 +35,13 @@ import {
 } from "@/lib/outvin-data-bundle";
 import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { extractEventsFromPayload } from "@/lib/outvin-history-map";
-import { pdfDealerBrandFileKey, pdfDealerLogoDataUri } from "@/lib/pdf-source-brand-logos";
+import {
+  pdfDealerBrandFileKey,
+  pdfDealerBrandFileKeyFromVin,
+  pdfDealerLogoDataUri,
+  pdfDealerLogoDataUriFromVin,
+  pdfDealerLogoIsMonogram,
+} from "@/lib/pdf-source-brand-logos";
 
 function escapeHtml(s: string): string {
   return s
@@ -206,17 +232,105 @@ function visitsFromDealerLog(bundle: OutvinDataBundle): OemServiceVisit[] {
   }));
 }
 
+function visitsFromOneautoTimeline(events: readonly OneautoServiceEvent[]): OemServiceVisit[] {
+  return filledOneautoServiceEvents([...events]).map((ev) => ({
+    date: ev.date,
+    km: ev.odometer,
+    type: "",
+    extraWork: ev.works,
+    guarantee: "",
+    dealer: ev.place,
+    address: "",
+    orderNumber: "",
+    extra: "",
+  }));
+}
+
+function visitsFromServiceWorks(rows: readonly AutoRecordsServiceWorkRow[] | undefined): OemServiceVisit[] {
+  return (rows ?? []).filter(autoRecordsServiceWorkRowHasData).map((r) => ({
+    date: r.date,
+    km: r.odometer,
+    type: "",
+    extraWork: r.works,
+    guarantee: "",
+    dealer: r.location,
+    address: "",
+    orderNumber: "",
+    extra: "",
+  }));
+}
+
 /**
- * Tikai oriģinālie OEM avoti (purchase payload / dealer log).
- * Apzināti NEŅEM admin `serviceWorks` tabulu - tur bieži ir LV tulkojums PROVIN atskaitei.
+ * Avotu prioritate: Outvin purchase payload → OneAuto raw timeline → admin serviceWorks tabula → dealer log.
+ * serviceWorks ir tas, ko operators redz OFICIĀLĀ DĪLERA sadaļā pēc OneAuto ielādes
+ * (raw payload dažreiz nav saglabāts draftā). Apzināti NEIZGudrojam jaunus datus.
  */
 export function collectOemDealerVisits(
-  _block: AutoRecordsBlockState,
+  block: AutoRecordsBlockState,
   bundle: OutvinDataBundle,
+  oneautoDisplay?: OneautoDisplaySections | null,
 ): OemServiceVisit[] {
   const fromApi = visitsFromPurchases(bundle.purchases);
   if (fromApi.length > 0) return fromApi;
+  const fromOneauto = oneautoDisplay ? visitsFromOneautoTimeline(oneautoDisplay.serviceTimeline) : [];
+  if (fromOneauto.length > 0) return fromOneauto;
+  const fromWorks = visitsFromServiceWorks(block.serviceWorks);
+  if (fromWorks.length > 0) return fromWorks;
   return visitsFromDealerLog(bundle);
+}
+
+function resultMapHasPayload(
+  results: Partial<Record<OneautoProductId, OneautoProductResult>> | undefined,
+): boolean {
+  if (!results) return false;
+  return ONEAUTO_PRODUCT_IDS.some((id) => results[id]?.payload != null);
+}
+
+/** Prefer live oneauto block; after fold, payloads live under auto_records.oneautoIngest. */
+export function collectOemOneautoPayloads(
+  autoRecords: AutoRecordsBlockState,
+  oneauto?: OneautoBlockState | null,
+): Partial<Record<OneautoProductId, unknown>> {
+  const out: Partial<Record<OneautoProductId, unknown>> = {};
+  const prefer = resultMapHasPayload(oneauto?.results)
+    ? oneauto!.results
+    : resultMapHasPayload(autoRecords.oneautoIngest?.results)
+      ? autoRecords.oneautoIngest!.results
+      : null;
+  if (!prefer) return out;
+  for (const id of ONEAUTO_PRODUCT_IDS) {
+    const payload = prefer[id]?.payload;
+    if (payload != null) out[id] = payload;
+  }
+  return out;
+}
+
+export function oemDisplayFromRawPayloads(
+  payloads: Partial<Record<OneautoProductId, unknown>>,
+): OneautoDisplaySections {
+  return buildOneautoDisplay(payloads);
+}
+
+function mergeVehicleInfoPreferFilled(
+  base: OutvinVehicleInfo,
+  incoming: Partial<OutvinVehicleInfo>,
+): OutvinVehicleInfo {
+  const next = { ...base };
+  for (const row of OUTVIN_VEHICLE_INFO_ROWS) {
+    const cur = (next[row.key] ?? "").trim();
+    const add = (incoming[row.key] ?? "").trim();
+    if (!cur && add) next[row.key] = add;
+  }
+  return next;
+}
+
+function manufacturerHintFromPowertrain(rows: OneautoDisplaySections["powertrain"]): string {
+  for (const row of filledOneautoKvRows(rows)) {
+    if (/^(manufacturer|make|marka)(\s*desc)?$/i.test(row.label.replace(/^oem[_\s-]+/i, "").trim())) {
+      return row.value.trim();
+    }
+  }
+  return "";
 }
 
 function vehicleMetaLine(vi: OutvinVehicleInfo): string {
@@ -233,13 +347,41 @@ function vehicleMetaLine(vi: OutvinVehicleInfo): string {
     .join(" · ");
 }
 
-function brandDisplayName(makeModel: string, vi: OutvinVehicleInfo): string {
+function brandDisplayName(makeModel: string, vi: OutvinVehicleInfo, vin: string, makeHint: string): string {
   const fromMake = (makeModel.trim().split(/\s+/)[0] || "").trim();
   if (fromMake) return fromMake.toUpperCase();
+  const fromHint = (makeHint.trim().split(/\s+/)[0] || "").trim();
+  if (fromHint) return fromHint.toUpperCase();
   const fromModel = (vi.model.trim().split(/\s+/)[0] || "").trim();
-  if (fromModel) return fromModel.toUpperCase();
-  const key = pdfDealerBrandFileKey(makeModel || vi.model);
+  if (fromModel && !/^vehicle$/i.test(fromModel)) return fromModel.toUpperCase();
+  const key =
+    pdfDealerBrandFileKey(makeModel || makeHint || vi.model) || pdfDealerBrandFileKeyFromVin(vin);
   return key ? key.replace(/-/g, " ").toUpperCase() : "OEM";
+}
+
+function resolveOemLogoUri(args: {
+  makeModel: string;
+  title: string;
+  vin: string;
+  makeHint: string;
+}): string | null {
+  const textCandidates = [args.makeModel, args.makeHint, args.title]
+    .map((s) => s.trim())
+    .filter((s) => s && !/^vehicle$/i.test(s) && !/^oem$/i.test(s));
+
+  for (const c of textCandidates) {
+    const uri = pdfDealerLogoDataUri(c);
+    if (uri && !pdfDealerLogoIsMonogram(uri)) return uri;
+  }
+
+  const fromVin = pdfDealerLogoDataUriFromVin(args.vin);
+  if (fromVin && !pdfDealerLogoIsMonogram(fromVin)) return fromVin;
+
+  for (const c of textCandidates) {
+    const uri = pdfDealerLogoDataUri(c);
+    if (uri) return uri;
+  }
+  return fromVin;
 }
 
 function kvTable(rows: Array<{ label: string; value: string }>): string {
@@ -278,10 +420,10 @@ function serviceTable(visits: OemServiceVisit[]): string {
   return `<table class="oem-svc">${head}<tbody>${body}</tbody></table>`;
 }
 
-function equipmentTable(bundle: OutvinDataBundle): string {
-  const rows = bundle.equipment.filter((l) => l.code.trim() || l.description.trim());
-  if (rows.length === 0) return "";
-  const body = rows
+function equipmentTableFromLines(rows: Array<{ code: string; description: string }>): string {
+  const filled = rows.filter((l) => l.code.trim() || l.description.trim());
+  if (filled.length === 0) return "";
+  const body = filled
     .map((l) => `<tr><td class="num">${escapeHtml(l.code)}</td><td>${escapeHtml(l.description)}</td></tr>`)
     .join("");
   return `<h2>Equipment / SA</h2><table class="oem-svc"><thead><tr><th>Code</th><th>Description</th></tr></thead><tbody>${body}</tbody></table>`;
@@ -317,6 +459,7 @@ const OEM_CSS = `
     display:block;width:32px;height:32px;object-fit:contain;flex-shrink:0;
     filter:brightness(0) saturate(100%);
   }
+  .oem-logo--mono{filter:none;}
   .oem-mid{min-width:0;}
   .oem-kicker{
     margin:0;font-size:9px;font-weight:650;letter-spacing:0.14em;
@@ -383,15 +526,37 @@ export function buildOemDealerDocumentHtml(args: {
   vin?: string | null;
   makeModel?: string | null;
   autoRecords: AutoRecordsBlockState;
+  /** Live OneAuto block (before fold). After fold, payloads are read from autoRecords.oneautoIngest. */
+  oneauto?: OneautoBlockState | null;
 }): string {
   const makeModel = (args.makeModel ?? "").trim();
   const bundle = getAutoRecordsOutvinBundle(args.autoRecords, args.vin ?? "");
-  const vi = bundle.vehicleInfo;
+  const payloads = collectOemOneautoPayloads(args.autoRecords, args.oneauto);
+  const oneautoDisplay = oemDisplayFromRawPayloads(payloads);
+  const hasOneautoRows = oneautoDisplayHasRows(oneautoDisplay);
+
+  const mapped = hasOneautoRows
+    ? oneautoPowertrainToVehicleInfo(oneautoDisplay.powertrain)
+    : { vehicleInfo: {} as Partial<OutvinVehicleInfo>, leftovers: [] };
+
+  let vi = mergeVehicleInfoPreferFilled(bundle.vehicleInfo, mapped.vehicleInfo);
   const vin = (vi.vinCode.trim() || args.vin?.trim() || "").toUpperCase();
-  const title = (vi.model.trim() || makeModel || "Vehicle").trim();
-  const brand = brandDisplayName(makeModel, vi);
-  const logoUri = pdfDealerLogoDataUri(makeModel || title);
-  const visits = collectOemDealerVisits(args.autoRecords, bundle);
+  if (vin && !vi.vinCode.trim()) vi = { ...vi, vinCode: vin };
+
+  const makeHint = manufacturerHintFromPowertrain(oneautoDisplay.powertrain);
+  const title = (vi.model.trim() || makeModel || makeHint || "Vehicle").trim();
+  const brand = brandDisplayName(makeModel, vi, vin, makeHint);
+  const logoUri = resolveOemLogoUri({ makeModel, title, vin, makeHint });
+  const logoIsMono = logoUri ? pdfDealerLogoIsMonogram(logoUri) : false;
+
+  const visits = collectOemDealerVisits(args.autoRecords, bundle, oneautoDisplay);
+  const equipmentLines =
+    bundle.equipment.filter((l) => l.code.trim() || l.description.trim()).length > 0
+      ? bundle.equipment
+      : oneautoDisplayToEquipment(oneautoDisplay);
+
+  const powertrainExtra = kvTable(mapped.leftovers.map((r) => ({ label: r.label, value: r.value })));
+
   const metaLine = vehicleMetaLine(vi);
   const sideMeta = metaLine
     ? metaLine
@@ -399,6 +564,7 @@ export function buildOemDealerDocumentHtml(args: {
         .map((part) => escapeHtml(part))
         .join("<br/>")
     : escapeHtml(brand);
+
   const specRows = OUTVIN_VEHICLE_INFO_ROWS.map((row) => ({
     label: row.labelEn,
     value: vi[row.key],
@@ -407,34 +573,47 @@ export function buildOemDealerDocumentHtml(args: {
     { label: "Accident check", value: bundle.accidentCheck },
     { label: "Stolen check", value: bundle.stolenCheck },
   ]);
+
+  const productLabel = (id: OneautoProductId): string =>
+    ONEAUTO_PRODUCTS.find((p) => p.id === id)?.label ?? id;
+
+  const oneautoDumps = ONEAUTO_PRODUCT_IDS.map((id) =>
+    dumpUnknownJson(`OneAuto · ${productLabel(id)} (raw)`, payloads[id]),
+  ).join("");
+
   const leftoverPurchases = bundle.purchases
     .map((p, i) => dumpUnknownJson(`API payload ${i + 1} (type ${p.historyType})`, p.payload))
     .join("");
   const vehicleOrderDump = dumpUnknownJson("Vehicle order API", bundle.vehicleOrder?.payload);
+
   const hasBody =
     specRows.some((r) => r.value.trim()) ||
     visits.length > 0 ||
-    bundle.equipment.length > 0 ||
+    equipmentLines.some((l) => l.code.trim() || l.description.trim()) ||
+    Boolean(powertrainExtra) ||
     leftoverPurchases.length > 0 ||
     vehicleOrderDump.length > 0 ||
+    oneautoDumps.length > 0 ||
     Boolean(bundle.accidentCheck.trim() || bundle.stolenCheck.trim());
 
-  const vehicleBlock = kvTable(specRows)
-    ? `<h2>Vehicle</h2>${kvTable(specRows)}`
-    : "";
+  const vehicleKv = kvTable(specRows);
+  const vehicleBlock =
+    vehicleKv || powertrainExtra
+      ? `<h2>Vehicle</h2>${vehicleKv}${powertrainExtra}`
+      : "";
   const serviceBlock = visits.length
     ? `<hr class="oem-rule"/><h2>Service history</h2>${serviceTable(visits)}`
     : "";
   const checksBlock = checks ? `<hr class="oem-rule"/><h2>Checks</h2>${checks}` : "";
-  const equipmentBlock = equipmentTable(bundle);
-  const dumps = `${vehicleOrderDump}${leftoverPurchases}`;
+  const equipmentBlock = equipmentTableFromLines(equipmentLines);
+  const dumps = `${vehicleOrderDump}${leftoverPurchases}${oneautoDumps}`;
 
   const inner = hasBody
     ? `${vehicleBlock}${serviceBlock}${equipmentBlock ? `<hr class="oem-rule"/>${equipmentBlock}` : ""}${checksBlock}${dumps ? `<hr class="oem-rule"/>${dumps}` : ""}`
-    : `<p class="oem-empty">No dealer network records for this VIN.</p>`;
+    : `<p class="oem-empty">No dealer network records for this VIN. Check the official dealer data tables in admin, or reload OneAuto for this order.</p>`;
 
   const logoHtml = logoUri
-    ? `<img class="oem-logo" src="${logoUri}" alt="" width="32" height="32"/>`
+    ? `<img class="oem-logo${logoIsMono ? " oem-logo--mono" : ""}" src="${logoUri}" alt="" width="32" height="32"/>`
     : "";
 
   return `<!DOCTYPE html>
@@ -467,4 +646,3 @@ export function buildOemDealerDocumentHtml(args: {
 </body>
 </html>`;
 }
-

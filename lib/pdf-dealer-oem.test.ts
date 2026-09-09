@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultSourceBlocks, emptyAutoRecordsBlock } from "@/lib/admin-source-blocks";
+import { emptyOneautoBlock } from "@/lib/oneauto-block";
+import { emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
 import { emptyOutvinDataBundle } from "@/lib/outvin-data-bundle";
+import { emptyOutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import { PDF_DEALER_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logo-data";
 import {
   buildOemDealerDocumentHtml,
   collectOemDealerVisits,
@@ -76,11 +80,8 @@ describe("OEM dealer PDF", () => {
     expect(html).not.toContain("Modelis");
   });
 
-  it("does not use LV-translated serviceWorks rows for the OEM extract", () => {
+  it("does not invent visits when serviceWorks and API payloads are empty", () => {
     const block = emptyAutoRecordsBlock();
-    block.serviceWorks = [
-      { date: "12.04.2019", odometer: "48210", location: "Riga", works: "Eļļas maiņa un filtri" },
-    ];
     const bundle = emptyOutvinDataBundle("WAUZZZF22KN121142");
     block.outvin = bundle;
     const visits = collectOemDealerVisits(
@@ -88,5 +89,136 @@ describe("OEM dealer PDF", () => {
       bundle,
     );
     expect(visits).toHaveLength(0);
+  });
+
+  it("falls back to admin serviceWorks when OneAuto raw payloads are missing", () => {
+    const block = emptyAutoRecordsBlock();
+    block.serviceWorks = [
+      {
+        date: "12.04.2019",
+        odometer: "48210",
+        location: "Volvo Partner Riga",
+        works: "Engine: oil and filter change.",
+      },
+    ];
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: block,
+    });
+    expect(html).toContain("Volvo Partner Riga");
+    expect(html).toContain("Engine: oil and filter change.");
+    expect(html).toContain("48210");
+  });
+
+  it("merges outvinReport vehicle fields even when an empty outvin shell exists", () => {
+    const block = emptyAutoRecordsBlock();
+    block.outvin = emptyOutvinDataBundle("YV1PZ68TCL1106362");
+    block.outvinReport = {
+      vehicleInfo: {
+        ...emptyOutvinVehicleInfo(),
+        vinCode: "YV1PZ68TCL1106362",
+        model: "XC60",
+        engineCode: "D4204T14",
+      },
+      equipment: [{ code: "000053", description: "Metallic paint" }],
+      accidentCheck: "",
+      stolenCheck: "",
+    };
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: block,
+    });
+    expect(html).toContain("XC60");
+    expect(html).toContain("D4204T14");
+    expect(html).toContain("Metallic paint");
+  });
+
+  it("renders OneAuto raw payloads when outvin is empty (Volvo VIN logo)", () => {
+    const vin = "YV1PZ68TCL1106362";
+    const oneauto = emptyOneautoBlock();
+    oneauto.lastFetchedVin = vin;
+    oneauto.results = {
+      oe_build_sheet: {
+        ok: true,
+        payload: {
+          success: true,
+          result: {
+            manufacturer: "Volvo",
+            oem_vehicle_desc: "XC60",
+            oem_engine: "D4204T14",
+            options: [{ factory_code: "000053", factory_desc: "Metallic paint" }],
+          },
+        },
+      },
+      oe_service_history: {
+        ok: true,
+        payload: {
+          success: true,
+          result: {
+            service_events: [
+              {
+                date_of_service_event: "2019-10-21",
+                mileage_observed: 69343,
+                service_provider: "Volvo Partner Riga",
+                service_actions: ["Engine: oil and filter change."],
+              },
+            ],
+          },
+        },
+      },
+    };
+    const html = buildOemDealerDocumentHtml({
+      vin,
+      makeModel: "",
+      autoRecords: emptyAutoRecordsBlock(),
+      oneauto,
+    });
+    expect(html).toContain(vin);
+    expect(html).toContain("Volvo Partner Riga");
+    expect(html).toContain("Engine: oil and filter change.");
+    expect(html).toContain("Metallic paint");
+    expect(html).toContain("OneAuto ·");
+    expect(html).toContain("oem_vehicle_desc");
+    expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
+    expect(html).not.toMatch(/class="oem-logo oem-logo--mono"/);
+    expect(html).toMatch(/VOLVO|XC60/i);
+  });
+
+  it("reads folded OneAuto payloads from auto_records.oneautoIngest", () => {
+    const vin = "YV1PZ68TCL1106362";
+    const ar = emptyAutoRecordsBlock();
+    ar.oneautoIngest = {
+      ...emptyOneautoIngest(),
+      lastFetchedVin: vin,
+      results: {
+        oe_service_history: {
+          ok: true,
+          payload: {
+            success: true,
+            result: {
+              service_events: [
+                {
+                  date_of_service_event: "2020-01-15",
+                  mileage_observed: 80000,
+                  service_provider: "Official dealer",
+                  service_actions: ["Brake fluid"],
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const html = buildOemDealerDocumentHtml({
+      vin,
+      makeModel: "",
+      autoRecords: ar,
+      oneauto: emptyOneautoBlock(),
+    });
+    expect(html).toContain("Official dealer");
+    expect(html).toContain("Brake fluid");
+    expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
   });
 });

@@ -3173,6 +3173,7 @@ export function OrderDetailWorkspace({
       vin: payload.vin,
       makeModel: blocks.csdd.makeModel,
       autoRecords: blocks.auto_records,
+      oneauto: blocks.oneauto,
     });
     const w = window.open("", "_blank");
     if (!w) {

@@ -80,6 +80,66 @@ export function pdfDealerLogoDataUri(makeModel: string): string | null {
   return PDF_DEALER_LOGO_DATA_URI[key] ?? dealerMonogramDataUri(key);
 }
 
+/** True when the URI is the generated letter tile (not a brand SVG asset). */
+export function pdfDealerLogoIsMonogram(dataUri: string): boolean {
+  return dataUri.includes("font-weight=\"700\"") || dataUri.includes("font-weight='700'");
+}
+
+/**
+ * Common WMI → brand file key (for OEM PDF when CSDD make is empty).
+ * YV1… = Volvo, WAU… = Audi, etc.
+ */
+export function pdfDealerBrandFileKeyFromVin(vin: string): string | null {
+  const v = vin.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (v.length < 3) return null;
+  const wmi = v.slice(0, 3);
+  const WMI: Record<string, string> = {
+    YV1: "volvo",
+    YV2: "volvo",
+    YV3: "volvo",
+    YV4: "volvo",
+    WAU: "audi",
+    WUA: "audi",
+    TRU: "audi",
+    WAP: "audi",
+    WBA: "bmw",
+    WBS: "bmw",
+    WBY: "bmw",
+    WBW: "bmw",
+    WDB: "mercedes",
+    WDC: "mercedes",
+    WDD: "mercedes",
+    WDF: "mercedes",
+    W1K: "mercedes",
+    W1N: "mercedes",
+    WVW: "volkswagen",
+    WV1: "volkswagen",
+    WV2: "volkswagen",
+    TMB: "skoda",
+    VSS: "seat",
+    VF1: "renault",
+    VF3: "peugeot",
+    VF7: "citroen",
+    W0L: "opel",
+    UU1: "dacia",
+    SAJ: "jaguar",
+    SAL: "land-rover",
+    JF1: "subaru",
+    WF0: "ford",
+    ZFA: "fiat",
+  };
+  if (WMI[wmi]) return WMI[wmi];
+  if (wmi.startsWith("WV")) return "volkswagen";
+  if (wmi.startsWith("WB")) return "bmw";
+  return null;
+}
+
+export function pdfDealerLogoDataUriFromVin(vin: string): string | null {
+  const key = pdfDealerBrandFileKeyFromVin(vin);
+  if (!key) return null;
+  return PDF_DEALER_LOGO_DATA_URI[key] ?? dealerMonogramDataUri(key);
+}
+
 function listingHostname(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;

@@ -11,8 +11,12 @@ import { mileageRowsFromOutvinBundle, outvinBundleToDealerReport } from "@/lib/o
 import { outvinDealerReportHasContent } from "@/lib/outvin-dealer-types";
 
 export function getAutoRecordsOutvinBundle(block: AutoRecordsBlockState, vin = ""): OutvinDataBundle {
-  if (block.outvin) return block.outvin;
-  return migrateOutvinReportToBundle(block.outvinReport, emptyOutvinDataBundle(vin));
+  const base = block.outvin
+    ? { ...block.outvin, vin: block.outvin.vin?.trim() || vin }
+    : emptyOutvinDataBundle(vin);
+  // OneAuto writes vehicle/equipment into outvinReport; Outvin purchases live on outvin.
+  // Always merge so an empty/partial outvin shell does not hide OneAuto fields.
+  return migrateOutvinReportToBundle(block.outvinReport, base);
 }
 
 export function syncAutoRecordsWithOutvinBundle(
