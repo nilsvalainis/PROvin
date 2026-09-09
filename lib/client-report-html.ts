@@ -2554,8 +2554,7 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-svc-box{
-        margin:8px 0;padding:12px 14px;border:1px solid #E9EDF3;border-radius:10px;background:#fff;min-width:0;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        margin:8px 0;padding:12px 14px;min-width:0;
       }
       .pdf-svc-box-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
       .pdf-svc-place{margin:0;font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;color:#0f172a;}
@@ -2565,12 +2564,11 @@ ${sourceDotColorCss()}
         font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-svc-works{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:5px;}
+      .pdf-svc-works{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;}
       .pdf-svc-work{
-        margin:0;padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;
-        font-size:11px;font-weight:600;color:#334155;line-height:1.35;
+        margin:0;padding:0;
+        font-size:11px;font-weight:600;color:#334155;line-height:1.4;
         overflow-wrap:anywhere;word-break:break-word;white-space:normal;max-width:100%;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-svc-empty{margin:8px 0 0;font-size:var(--pdf-fs-table);color:#64748b;font-style:italic;line-height:1.4;}
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
