@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN · OEM dīlera PDF, 5 dizaini</title>
+<style>
+  :root{
+    --blue:#0061D2;
+    --ink:#0f172a;
+    --mute:#64748b;
+    --label:#86868b;
+    --line:#E9EDF3;
+    --soft:#F1F5F9;
+    --paper:#fff;
+    --desk:#d7dee8;
+    --volvo:#003057;
+    --audi:#111;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--desk);color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+  }
+  .chrome{position:sticky;top:0;z-index:30;background:#0f172a;color:#e2e8f0;padding:12px 16px 14px;}
+  .chrome h1{margin:0;font-size:15px;font-weight:700;color:#fff;}
+  .chrome p{margin:6px 0 0;font-size:12px;line-height:1.45;color:#94a3b8;max-width:72rem;}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tabs button{
+    appearance:none;border:1px solid #334155;background:#1e293b;color:#e2e8f0;
+    border-radius:999px;padding:5px 10px;font:650 10.5px/1.2 Inter,sans-serif;cursor:pointer;
+  }
+  .tabs button[aria-selected="true"]{background:#0061D2;border-color:#0061D2;color:#fff;}
+  .hint{margin:8px 0 0;font-size:11px;color:#64748b;}
+  .brand-switch{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center;}
+  .brand-switch span{font-size:10px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;margin-right:4px;}
+  .brand-switch button{
+    appearance:none;border:1px solid #475569;background:#0f172a;color:#cbd5e1;
+    border-radius:8px;padding:4px 10px;font:650 11px/1.2 Inter,sans-serif;cursor:pointer;
+  }
+  .brand-switch button[aria-pressed="true"]{border-color:#93C5FD;color:#fff;background:#1e3a5f;}
+  .stage{padding:24px 12px 72px;}
+  .sheet{
+    display:none;width:210mm;max-width:100%;margin:0 auto 22px;background:#fff;
+    padding:13mm 12mm 14mm;box-shadow:0 16px 44px rgb(15 23 42 / .12);
+  }
+  .sheet.is-on{display:block;}
+
+  /* Shared sample content */
+  .sample-logo{
+    display:block;width:44px;height:44px;object-fit:contain;
+    filter:brightness(0) saturate(100%);
+  }
+  .sample-logo.lg{width:56px;height:56px;}
+  .sample-logo.sm{width:32px;height:32px;}
+  .sample-logo.ink-soft{opacity:0.88;}
+  .kv{width:100%;border-collapse:collapse;font-size:10.5px;}
+  .kv th,.kv td{padding:5px 0;border-bottom:1px solid var(--soft);vertical-align:top;text-align:left;}
+  .kv th{width:34%;font-weight:500;color:var(--label);padding-right:10px;}
+  .kv tr:last-child th,.kv tr:last-child td{border-bottom:0;}
+  .svc{width:100%;border-collapse:collapse;font-size:10px;}
+  .svc th,.svc td{border:1px solid #dbe3ee;padding:5px 6px;vertical-align:top;text-align:left;}
+  .svc th{background:#F8FAFC;font-weight:700;color:#334155;}
+  .num{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .vin{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.04em;font-size:11px;}
+  .sec-label{
+    margin:16px 0 6px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--label);
+  }
+  .sec-label:first-of-type{margin-top:0;}
+  .foot-note{margin:14px 0 0;font-size:9.5px;line-height:1.4;color:#94a3b8;}
+  .word{font-size:12px;font-weight:800;letter-spacing:-0.02em;}
+  .word b{color:var(--blue);font-weight:800;}
+
+  /* 01 Factory strip */
+  .v01-top{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding-bottom:12px;border-bottom:2px solid var(--ink);
+  }
+  .v01-brand{display:flex;align-items:center;gap:12px;}
+  .v01-brand strong{display:block;font-size:13px;font-weight:750;letter-spacing:0.02em;}
+  .v01-brand span{display:block;margin-top:2px;font-size:9.5px;font-weight:650;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);}
+  .v01-doc{text-align:right;font-size:9.5px;color:var(--mute);line-height:1.45;}
+  .v01-doc b{display:block;color:var(--ink);font-size:11px;font-weight:700;}
+  .v01 h1{margin:14px 0 4px;font-size:18px;font-weight:750;letter-spacing:-0.02em;}
+  .v01 .meta{margin:0 0 14px;font-size:11.5px;color:#475569;}
+
+  /* 02 Dual header + wash */
+  .v02-band{
+    margin:0 0 16px;padding:16px 16px 14px;border-radius:12px;
+    background:linear-gradient(180deg,#E8F1FC 0%,#fff 92%);
+    border:1px solid var(--line);
+  }
+  .v02-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+  .v02-left .kicker{margin:0;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6e6e73;}
+  .v02 h1{margin:8px 0 0;font-size:20px;font-weight:750;letter-spacing:-0.03em;}
+  .v02 .meta{margin:6px 0 0;font-size:12px;color:#475569;}
+  .v02-logo-wrap{
+    flex-shrink:0;width:64px;height:64px;border-radius:14px;background:#fff;
+    border:1px solid var(--line);display:grid;place-items:center;
+    box-shadow:0 1px 0 rgb(15 23 42 / .04);
+  }
+  .v02 .body-pad{padding:0 2px;}
+
+  /* 03 Centered seal */
+  .v03-head{text-align:center;padding:8px 0 18px;border-bottom:1px solid var(--line);}
+  .v03-logo{margin:0 auto;}
+  .v03 .kicker{margin:12px 0 0;font-size:9.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--label);}
+  .v03 h1{margin:8px 0 0;font-size:22px;font-weight:700;letter-spacing:-0.03em;}
+  .v03 .meta{margin:8px 0 0;font-size:12px;color:#475569;}
+  .v03 .card{
+    margin:16px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#FCFDFF;
+  }
+  .v03 .svc th,.v03 .svc td{border-color:var(--line);}
+  .v03 .svc th{background:#fff;}
+
+  /* 04 Brand accent bar */
+  .v04-bar{height:4px;border-radius:99px;background:var(--accent, var(--volvo));margin:0 0 14px;}
+  .v04-top{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+  .v04-top .titles{flex:1;min-width:0;}
+  .v04 .kicker{margin:0;font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mute);}
+  .v04 h1{margin:4px 0 0;font-size:18px;font-weight:750;letter-spacing:-0.02em;}
+  .v04 .meta{margin:10px 0 0;padding:10px 12px;border-radius:8px;background:var(--soft);font-size:11.5px;color:#334155;}
+  .v04 .svc th{background:#EEF2F7;border-color:#d0d8e4;}
+  .v04 .svc td{border-color:#d0d8e4;}
+
+  /* 05 Minimal dossier */
+  .v05-top{
+    display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:end;
+    padding-bottom:14px;border-bottom:1px solid #cbd5e1;
+  }
+  .v05-mid{min-width:0;}
+  .v05 .kicker{margin:0;font-size:9px;font-weight:650;letter-spacing:0.14em;text-transform:uppercase;color:#94a3b8;}
+  .v05 h1{margin:6px 0 0;font-size:17px;font-weight:650;letter-spacing:-0.02em;color:#0f172a;}
+  .v05 .meta{margin:4px 0 0;font-size:11px;color:var(--mute);}
+  .v05-side{text-align:right;font-size:9.5px;color:var(--mute);line-height:1.4;}
+  .v05 .rule{height:1px;background:#e2e8f0;margin:14px 0;}
+  .v05 .sec-label{letter-spacing:0.12em;color:#94a3b8;font-weight:600;}
+  .v05 .kv th{color:#94a3b8;font-weight:450;}
+  .v05 .svc{border:0;}
+  .v05 .svc th,.v05 .svc td{border:0;border-bottom:1px solid #eef2f7;padding:7px 4px;}
+  .v05 .svc th{background:transparent;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#94a3b8;font-weight:650;}
+  .v05 .svc tr:last-child td{border-bottom:0;}
+
+  @media print{
+    body{background:#fff;}
+    .chrome{display:none;}
+    .sheet{display:none!important;box-shadow:none;width:auto;padding:0;margin:0;}
+    .sheet.is-on{display:block!important;}
+    @page{size:A4;margin:12mm;}
+  }
+</style>
+</head>
+<body>
+  <div class="chrome">
+    <h1>OEM dīlera PDF · 5 dizaina varianti</h1>
+    <p>
+      Atsevišķais OEM / oficiālo dīlera datu dokuments (<code>buildOemDealerDocumentHtml</code>).
+      Visos variantos <strong>augšā obligāti ražotāja logo</strong> (Volvo / Audi pārslēgšana).
+      Produkcijas PDF vēl nav mainīts - izvēlies numuru, tad ieviesīsim.
+    </p>
+    <div class="brand-switch" role="group" aria-label="Ražotāja logo paraugs">
+      <span>Logo</span>
+      <button type="button" id="brand-volvo" aria-pressed="true">Volvo</button>
+      <button type="button" id="brand-audi" aria-pressed="false">Audi</button>
+    </div>
+    <div class="tabs" id="tabs" role="tablist" aria-label="Dizaina varianti"></div>
+    <p class="hint" id="hint"></p>
+  </div>
+  <div class="stage" id="stage"></div>
+
+<script>
+const LOGO = {
+  volvo: { src: "/brand-logos/volvo.svg", name: "Volvo", make: "Volvo XC60" },
+  audi: { src: "/brand-logos/audi.svg", name: "Audi", make: "Audi A6 Avant" },
+};
+
+const SAMPLE = {
+  vin: "YV1UZB7V1K1123456",
+  meta: "2019 · B4204T · Automatic · 190 kW",
+  specs: [
+    ["Model", "XC60 Inscription"],
+    ["Production date", "2019-03-14"],
+    ["Engine", "B4204T23"],
+    ["Colour", "Denim Blue / 619"],
+    ["Power", "190 kW (258 hp)"],
+  ],
+  visits: [
+    ["14.03.2019", "12 km", "PDI", "Pre-delivery inspection", "Volvo Riga"],
+    ["02.09.2020", "28 410 km", "Service", "Oil, filters, multi-point check", "Volvo Riga"],
+    ["18.06.2022", "61 220 km", "Service", "Brake fluid, cabin filter", "Auto Jūrkalne"],
+  ],
+};
+
+let brandKey = "volvo";
+let active = 0;
+
+function logoImg(cls) {
+  const b = LOGO[brandKey];
+  return `<img class="sample-logo ${cls || ""}" src="${b.src}" alt="${b.name}" width="56" height="56"/>`;
+}
+
+function specsTable() {
+  return `<table class="kv"><tbody>${SAMPLE.specs.map(([k, v]) =>
+    `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</tbody></table>`;
+}
+
+function svcTable() {
+  return `<table class="svc">
+    <thead><tr><th>Date</th><th>km</th><th>Type</th><th>Work</th><th>Dealer</th></tr></thead>
+    <tbody>${SAMPLE.visits.map((r) =>
+      `<tr><td class="num">${r[0]}</td><td class="num">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`
+    ).join("")}</tbody>
+  </table>`;
+}
+
+function titleForBrand() {
+  return LOGO[brandKey].make;
+}
+
+function accentCss() {
+  return brandKey === "audi" ? "var(--audi)" : "var(--volvo)";
+}
+
+const VARIANTS = [
+  {
+    id: "01",
+    label: "01 Factory strip",
+    hint: "Rūpnīcas izdrukas sajūta: logo + marka kreisajā, dokuments labajā, bieza tumša līnija. Blīvas tabulas, maz dekoru.",
+    html() {
+      return `<article class="sheet v01" data-v="0">
+        <header class="v01-top">
+          <div class="v01-brand">
+            ${logoImg("sm")}
+            <div>
+              <strong>${LOGO[brandKey].name}</strong>
+              <span>Official dealer data</span>
+            </div>
+          </div>
+          <div class="v01-doc">
+            <b>Service history</b>
+            OEM extract · A4
+          </div>
+        </header>
+        <h1>${titleForBrand()}</h1>
+        <p class="meta"><span class="vin">VIN ${SAMPLE.vin}</span> · ${SAMPLE.meta}</p>
+        <p class="sec-label">Vehicle</p>
+        ${specsTable()}
+        <p class="sec-label">Service visits</p>
+        ${svcTable()}
+        <p class="foot-note">Data from official dealer / manufacturer systems. Not a PROVIN consultative audit.</p>
+      </article>`;
+    },
+  },
+  {
+    id: "02",
+    label: "02 Dual + wash",
+    hint: "PROVIN vārds kreisajā, ražotāja logo kartītē labajā; maigs zils wash. Skaidrs, ka dokuments ir PROVIN piegāde ar OEM avotu.",
+    html() {
+      return `<article class="sheet v02" data-v="1">
+        <div class="v02-band">
+          <div class="v02-row">
+            <div class="v02-left">
+              <p class="word">PRO<b>VIN</b>.LV</p>
+              <p class="kicker">Official dealer data</p>
+              <h1>${titleForBrand()}</h1>
+              <p class="meta"><span class="vin">VIN ${SAMPLE.vin}</span><br/>${SAMPLE.meta}</p>
+            </div>
+            <div class="v02-logo-wrap">${logoImg("lg ink-soft")}</div>
+          </div>
+        </div>
+        <div class="body-pad">
+          <p class="sec-label">Vehicle</p>
+          ${specsTable()}
+          <p class="sec-label">Service visits</p>
+          ${svcTable()}
+          <p class="foot-note">Prepared by PROVIN.LV from official dealer records for this VIN.</p>
+        </div>
+      </article>`;
+    },
+  },
+  {
+    id: "03",
+    label: "03 Centered seal",
+    hint: "Logo centrā kā zīmogs, gaisīgs vāks, saturs kartītēs. Vairāk „premium brochure”, mazāk tabulas-rūpnīca.",
+    html() {
+      return `<article class="sheet v03" data-v="2">
+        <header class="v03-head">
+          ${logoImg("lg v03-logo")}
+          <p class="kicker">Official dealer data</p>
+          <h1>${titleForBrand()}</h1>
+          <p class="meta"><span class="vin">VIN ${SAMPLE.vin}</span> · ${SAMPLE.meta}</p>
+        </header>
+        <div class="card">
+          <p class="sec-label">Vehicle</p>
+          ${specsTable()}
+        </div>
+        <div class="card">
+          <p class="sec-label">Service visits</p>
+          ${svcTable()}
+        </div>
+        <p class="foot-note" style="text-align:center">Manufacturer network records · not a workshop diagnosis</p>
+      </article>`;
+    },
+  },
+  {
+    id: "04",
+    label: "04 Accent bar",
+    hint: "Plāna markas krāsas josla (Volvo navy / Audi black) + logo rindā. Spēcīgs zīmola signāls, joprojām vienkāršs.",
+    html() {
+      return `<article class="sheet v04" data-v="3" style="--accent:${accentCss()}">
+        <div class="v04-bar" aria-hidden="true"></div>
+        <div class="v04-top">
+          ${logoImg("")}
+          <div class="titles">
+            <p class="kicker">${LOGO[brandKey].name} · Official dealer data</p>
+            <h1>${titleForBrand()}</h1>
+          </div>
+        </div>
+        <p class="meta"><span class="vin">VIN ${SAMPLE.vin}</span> · ${SAMPLE.meta}</p>
+        <p class="sec-label">Vehicle</p>
+        ${specsTable()}
+        <p class="sec-label">Service visits</p>
+        ${svcTable()}
+        <p class="foot-note">Brand colour accent follows the manufacturer; layout stays neutral for print.</p>
+      </article>`;
+    },
+  },
+  {
+    id: "05",
+    label: "05 Minimal dossier",
+    hint: "Redakcionāls / dossier: logo kreisajā, metadati labajā, matētas hairline līnijas, bez rāmju tabulām. Klusākais variants.",
+    html() {
+      return `<article class="sheet v05" data-v="4">
+        <header class="v05-top">
+          ${logoImg("sm")}
+          <div class="v05-mid">
+            <p class="kicker">Official dealer data</p>
+            <h1>${titleForBrand()}</h1>
+            <p class="meta"><span class="vin">VIN ${SAMPLE.vin}</span></p>
+          </div>
+          <div class="v05-side">${SAMPLE.meta.replace(/ · /g, "<br/>")}</div>
+        </header>
+        <p class="sec-label">Vehicle</p>
+        ${specsTable()}
+        <div class="rule" aria-hidden="true"></div>
+        <p class="sec-label">Service visits</p>
+        ${svcTable()}
+        <p class="foot-note">Quiet layout for dense OEM fields. Logo remains the primary brand cue.</p>
+      </article>`;
+    },
+  },
+];
+
+function render() {
+  const stage = document.getElementById("stage");
+  const tabs = document.getElementById("tabs");
+  const hint = document.getElementById("hint");
+  tabs.innerHTML = "";
+  VARIANTS.forEach((v, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = v.label;
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-selected", i === active ? "true" : "false");
+    btn.addEventListener("click", () => { active = i; render(); });
+    tabs.appendChild(btn);
+  });
+  stage.innerHTML = VARIANTS.map((v, i) => {
+    let html = v.html();
+    if (i === active) html = html.replace('class="sheet', 'class="sheet is-on');
+    return html;
+  }).join("");
+  hint.textContent = VARIANTS[active].hint;
+}
+
+document.getElementById("brand-volvo").addEventListener("click", () => {
+  brandKey = "volvo";
+  document.getElementById("brand-volvo").setAttribute("aria-pressed", "true");
+  document.getElementById("brand-audi").setAttribute("aria-pressed", "false");
+  render();
+});
+document.getElementById("brand-audi").addEventListener("click", () => {
+  brandKey = "audi";
+  document.getElementById("brand-audi").setAttribute("aria-pressed", "true");
+  document.getElementById("brand-volvo").setAttribute("aria-pressed", "false");
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
