@@ -1,8 +1,9 @@
 /**
  * OEM-stila dīlera PDF (atsevišķs fails no PROVIN dīlera atskaites).
  *
- * - Portrets A4, izskatās kā oficiālā dīlera / ražotāja izdruka (markas logo augšā).
- * - NETULKO: rāda ielasītos oriģinālos API datus oriģinālvalodā.
+ * Dizains: „05 Minimal dossier” - logo kreisajā, hairline līnijas, bez rāmju tabulām.
+ * - Portrets A4; markas logo augšā.
+ * - NETULKO: oriģinālie API dati oriģinālvalodā.
  * - PROVIN dīlera atskaite (klienta PDF) var būt tulkota; šis dokuments - nē.
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
@@ -300,55 +301,69 @@ function dumpUnknownJson(title: string, value: unknown): string {
 
 const OEM_CSS = `
   :root{color-scheme:light;}
-  html,body{margin:0;padding:0;background:#e8edf4;color:#111;font:11.5px/1.4 Helvetica,Arial,sans-serif;}
+  html,body{margin:0;padding:0;background:#e8edf4;color:#0f172a;font:11.5px/1.4 Helvetica,Arial,sans-serif;}
   .oem{
     box-sizing:border-box;
     width:210mm;min-width:210mm;max-width:210mm;min-height:297mm;height:297mm;
-    margin:16px auto;padding:0;background:#fff;
+    margin:16px auto;padding:12mm 12mm 14mm;background:#fff;
     box-shadow:0 12px 40px rgb(15 23 42 / .12);border:1px solid #c5ccd6;
     overflow:auto;
   }
-  .oem-masthead{
-    display:flex;align-items:center;justify-content:space-between;gap:16px;
-    padding:11mm 12mm 10mm;background:#0b1220;color:#E8EEF5;
+  .oem-top{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:end;
+    padding-bottom:14px;border-bottom:1px solid #cbd5e1;margin:0 0 14px;
   }
-  .oem-brand-row{display:flex;align-items:center;gap:12px;min-width:0;}
   .oem-logo{
-    display:block;width:40px;height:40px;object-fit:contain;flex-shrink:0;
+    display:block;width:32px;height:32px;object-fit:contain;flex-shrink:0;
+    filter:brightness(0) saturate(100%);
   }
-  .oem-brand-name{
-    margin:0;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
-  }
-  .oem-brand-sub{
-    margin:3px 0 0;font-size:9px;font-weight:600;letter-spacing:0.12em;
+  .oem-mid{min-width:0;}
+  .oem-kicker{
+    margin:0;font-size:9px;font-weight:650;letter-spacing:0.14em;
     text-transform:uppercase;color:#94a3b8;
   }
-  .oem-doc-side{text-align:right;font-size:9.5px;line-height:1.45;color:#94a3b8;}
-  .oem-doc-side b{display:block;color:#E8EEF5;font-size:11px;font-weight:700;letter-spacing:0.04em;}
-  .oem-body{padding:10mm 12mm 0;}
-  h1{margin:0 0 4px;font-size:17px;font-weight:700;letter-spacing:-0.01em;color:#0f172a;}
-  .oem-meta{margin:0 0 12px;color:#334155;font-size:11.5px;}
+  h1{
+    margin:6px 0 0;font-size:17px;font-weight:650;letter-spacing:-0.02em;color:#0f172a;
+  }
+  .oem-meta{margin:4px 0 0;font-size:11px;color:#64748b;}
   .oem-vin{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.05em;}
+  .oem-side{
+    text-align:right;font-size:9.5px;line-height:1.45;color:#94a3b8;max-width:38%;
+  }
+  .oem-rule{height:1px;background:#e2e8f0;margin:14px 0;border:0;}
   h2{
-    margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #cbd5e1;
-    font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#64748b;
+    margin:14px 0 6px;font-size:9.5px;font-weight:600;letter-spacing:0.12em;
+    text-transform:uppercase;color:#94a3b8;
   }
-  table{width:100%;border-collapse:collapse;margin:0 0 8px;}
-  .oem-kv th{width:32%;text-align:left;font-weight:600;color:#64748b;padding:4px 8px 4px 0;vertical-align:top;}
-  .oem-kv td{padding:4px 0;vertical-align:top;color:#0f172a;}
+  h2:first-of-type{margin-top:0;}
+  table{width:100%;border-collapse:collapse;margin:0 0 4px;}
+  .oem-kv th{
+    width:32%;text-align:left;font-weight:450;color:#94a3b8;
+    padding:6px 10px 6px 0;vertical-align:top;border-bottom:1px solid #eef2f7;
+  }
+  .oem-kv td{
+    padding:6px 0;vertical-align:top;color:#0f172a;border-bottom:1px solid #eef2f7;
+  }
+  .oem-kv tr:last-child th,.oem-kv tr:last-child td{border-bottom:0;}
   .oem-svc th,.oem-svc td{
-    border:1px solid #cbd5e1;padding:4px 6px;vertical-align:top;text-align:left;font-size:9.5px;
+    border:0;border-bottom:1px solid #eef2f7;padding:7px 4px;
+    vertical-align:top;text-align:left;font-size:9.5px;
   }
-  .oem-svc th{background:#f1f5f9;font-weight:700;color:#334155;}
+  .oem-svc th{
+    background:transparent;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;
+    font-weight:650;color:#94a3b8;
+  }
+  .oem-svc tr:last-child td{border-bottom:0;}
   .num{font-variant-numeric:tabular-nums;white-space:nowrap;}
   .oem-extra{margin-top:4px;color:#334155;white-space:pre-wrap;}
   .oem-json{
     font:9.5px/1.35 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;
-    border:1px solid #cbd5e1;padding:8px;background:#f8fafc;overflow:auto;
+    border:0;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;
+    padding:8px 0;background:transparent;overflow:auto;
   }
   .oem-empty{color:#64748b;font-size:12px;}
   .oem-foot{
-    margin:16px 0 0;padding-top:8px;border-top:1px solid #e2e8f0;
+    margin:18px 0 0;padding-top:10px;border-top:1px solid #e2e8f0;
     font-size:9px;line-height:1.4;color:#94a3b8;
   }
   @media print{
@@ -357,7 +372,8 @@ const OEM_CSS = `
     .oem{
       width:210mm!important;min-width:0!important;max-width:none!important;
       min-height:297mm!important;height:auto!important;
-      margin:0!important;box-shadow:none!important;border:0!important;overflow:visible!important;
+      margin:0!important;padding:12mm!important;
+      box-shadow:none!important;border:0!important;overflow:visible!important;
     }
     .no-print{display:none!important;}
   }
@@ -376,6 +392,13 @@ export function buildOemDealerDocumentHtml(args: {
   const brand = brandDisplayName(makeModel, vi);
   const logoUri = pdfDealerLogoDataUri(makeModel || title);
   const visits = collectOemDealerVisits(args.autoRecords, bundle);
+  const metaLine = vehicleMetaLine(vi);
+  const sideMeta = metaLine
+    ? metaLine
+        .split(" · ")
+        .map((part) => escapeHtml(part))
+        .join("<br/>")
+    : escapeHtml(brand);
   const specRows = OUTVIN_VEHICLE_INFO_ROWS.map((row) => ({
     label: row.labelEn,
     value: vi[row.key],
@@ -396,12 +419,22 @@ export function buildOemDealerDocumentHtml(args: {
     vehicleOrderDump.length > 0 ||
     Boolean(bundle.accidentCheck.trim() || bundle.stolenCheck.trim());
 
+  const vehicleBlock = kvTable(specRows)
+    ? `<h2>Vehicle</h2>${kvTable(specRows)}`
+    : "";
+  const serviceBlock = visits.length
+    ? `<hr class="oem-rule"/><h2>Service history</h2>${serviceTable(visits)}`
+    : "";
+  const checksBlock = checks ? `<hr class="oem-rule"/><h2>Checks</h2>${checks}` : "";
+  const equipmentBlock = equipmentTable(bundle);
+  const dumps = `${vehicleOrderDump}${leftoverPurchases}`;
+
   const inner = hasBody
-    ? `${kvTable(specRows)}${visits.length ? `<h2>Service history</h2>${serviceTable(visits)}` : ""}${equipmentTable(bundle)}${checks}${vehicleOrderDump}${leftoverPurchases}`
+    ? `${vehicleBlock}${serviceBlock}${equipmentBlock ? `<hr class="oem-rule"/>${equipmentBlock}` : ""}${checksBlock}${dumps ? `<hr class="oem-rule"/>${dumps}` : ""}`
     : `<p class="oem-empty">No dealer network records for this VIN.</p>`;
 
   const logoHtml = logoUri
-    ? `<img class="oem-logo" src="${logoUri}" alt="" width="40" height="40"/>`
+    ? `<img class="oem-logo" src="${logoUri}" alt="" width="32" height="32"/>`
     : "";
 
   return `<!DOCTYPE html>
@@ -414,34 +447,24 @@ export function buildOemDealerDocumentHtml(args: {
 </head>
 <body>
   <div class="oem">
-    <p class="no-print" style="margin:0;padding:10px 12mm;font-size:11px;color:#666;background:#f8fafc;">
+    <p class="no-print" style="margin:0 0 12px;font-size:11px;color:#666;">
       Portrait A4 · original OEM language (not translated) · print / save as PDF from the browser.
     </p>
-    <header class="oem-masthead">
-      <div class="oem-brand-row">
-        ${logoHtml}
-        <div>
-          <p class="oem-brand-name">${escapeHtml(brand)}</p>
-          <p class="oem-brand-sub">Official dealer data</p>
-        </div>
+    <header class="oem-top">
+      ${logoHtml}
+      <div class="oem-mid">
+        <p class="oem-kicker">Official dealer data</p>
+        <h1>${escapeHtml(title)}</h1>
+        ${vin ? `<p class="oem-meta"><span class="oem-vin">VIN ${escapeHtml(vin)}</span></p>` : ""}
       </div>
-      <div class="oem-doc-side">
-        <b>Service history</b>
-        Manufacturer network extract
-      </div>
+      <div class="oem-side">${sideMeta}</div>
     </header>
-    <div class="oem-body">
-      <h1>${escapeHtml(title)}</h1>
-      <p class="oem-meta">
-        ${vin ? `<span class="oem-vin">VIN ${escapeHtml(vin)}</span>` : ""}
-        ${vehicleMetaLine(vi) ? ` · ${escapeHtml(vehicleMetaLine(vi))}` : ""}
-      </p>
-      ${inner}
-      <p class="oem-foot">
-        Source data as provided by the manufacturer / authorised dealer systems. Field values are shown in their original language and are not translated.
-      </p>
-    </div>
+    ${inner}
+    <p class="oem-foot">
+      Source data as provided by the manufacturer / authorised dealer systems. Field values are shown in their original language and are not translated.
+    </p>
   </div>
 </body>
 </html>`;
 }
+
