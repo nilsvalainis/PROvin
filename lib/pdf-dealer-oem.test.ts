@@ -70,7 +70,7 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("oem-top");
     expect(html).toContain("Official dealer data");
     expect(html).toContain("oem-kicker");
-    expect(html).toContain("table-layout:fixed");
+    expect(html).toContain("oem-svc");
     expect(html).toContain("210mm");
     expect(html).toContain("297mm");
     expect(html).not.toContain("Portrait A4");
@@ -99,7 +99,7 @@ describe("OEM dealer PDF", () => {
     });
     expect(html).toContain(">Date<");
     expect(html).toContain(">km<");
-    expect(html).toContain("Additional work");
+    expect(html).toContain(">Work<");
     expect(html).not.toContain(">Type<");
     expect(html).not.toContain(">Guarantee<");
     expect(html).not.toContain(">Dealer<");
@@ -206,11 +206,56 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("Volvo Partner Riga");
     expect(html).toContain("Engine: oil and filter change.");
     expect(html).toContain("Metallic paint");
+    expect(html).toContain("oem-eq");
+    expect(html).toContain("oem-eq-code");
+    expect(html).not.toContain("factory code");
+    expect(html).not.toContain("factory desc");
     expect(html).not.toContain("OneAuto ·");
     expect(html).not.toContain("(raw)");
     expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
     expect(html).not.toMatch(/class="oem-logo oem-logo--mono"/);
     expect(html).toMatch(/VOLVO|XC60/i);
+    const vehicleIdx = html.indexOf(">Vehicle<");
+    const serviceIdx = html.indexOf(">Service history<");
+    const equipIdx = html.indexOf(">Equipment<");
+    expect(vehicleIdx).toBeGreaterThan(-1);
+    expect(serviceIdx).toBeGreaterThan(vehicleIdx);
+    expect(equipIdx).toBeGreaterThan(serviceIdx);
+  });
+
+  it("keeps factory options out of Vehicle and only in compact Equipment", () => {
+    const oneauto = emptyOneautoBlock();
+    oneauto.results = {
+      oe_build_sheet: {
+        ok: true,
+        payload: {
+          success: true,
+          result: {
+            manufacturer: "Volvo",
+            oem_vehicle_desc: "XC60",
+            oem_engine: "D4204T23",
+            options: [
+              { factory_code: "PB02", factory_desc: "MAKEUP LAMP SUNVISOR 2 illuminated sun visors" },
+              { factory_code: "KG03", factory_desc: "CRUISE CONTROL Adaptive Cruise Control" },
+            ],
+          },
+        },
+      },
+    };
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: emptyAutoRecordsBlock(),
+      oneauto,
+    });
+    expect(html).not.toContain("factory code");
+    expect(html).not.toContain("factory desc");
+    expect(html).toContain("PB02");
+    expect(html).toContain("MAKEUP LAMP SUNVISOR");
+    expect(html).toContain("oem-eq-item");
+    const vehicleBlock = html.slice(html.indexOf(">Vehicle<"), html.indexOf(">Equipment<"));
+    expect(vehicleBlock).not.toContain("PB02");
+    expect(vehicleBlock).not.toContain("MAKEUP LAMP");
   });
 
   it("reads folded OneAuto payloads from auto_records.oneautoIngest", () => {

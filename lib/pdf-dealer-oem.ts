@@ -1,10 +1,13 @@
 /**
  * OEM-stila dīlera PDF (atsevišķs fails no PROVIN dīlera atskaites).
  *
- * Dizains: „05 Minimal dossier” - logo kreisajā, hairline līnijas, bez rāmju tabulām.
- * - Portrets A4; markas logo augšā.
- * - NETULKO: oriģinālie API dati oriģinālvalodā (no OneAuto / Outvin raw payload).
- * - PROVIN dīlera atskaite (klienta PDF) var būt tulkota; šis dokuments - nē.
+ * Struktūra (vienmēr šādā secībā):
+ * 1. Header (logo + modelis + VIN)
+ * 2. Vehicle - tikai auto specifikācijas
+ * 3. Service history
+ * 4. Equipment - kompaktā režģī (kods + apraksts), tikai dokumenta beigās
+ *
+ * NETULKO: oriģinālie API dati. „factory code/desc” nav Vehicle sadaļā - tikai Equipment.
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import {
@@ -18,6 +21,7 @@ import {
   filledOneautoServiceEvents,
   oneautoDisplayHasRows,
   type OneautoDisplaySections,
+  type OneautoKvRow,
   type OneautoProductId,
   type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
@@ -32,7 +36,11 @@ import {
   type OutvinDataBundle,
   type OutvinPurchaseRecord,
 } from "@/lib/outvin-data-bundle";
-import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import {
+  OUTVIN_VEHICLE_INFO_ROWS,
+  type OutvinEquipmentLine,
+  type OutvinVehicleInfo,
+} from "@/lib/outvin-dealer-types";
 import { extractEventsFromPayload } from "@/lib/outvin-history-map";
 import {
   pdfDealerBrandFileKey,
@@ -261,8 +269,6 @@ function visitsFromServiceWorks(rows: readonly AutoRecordsServiceWorkRow[] | und
 
 /**
  * Avotu prioritate: Outvin purchase payload → OneAuto raw timeline → admin serviceWorks tabula → dealer log.
- * serviceWorks ir tas, ko operators redz OFICIĀLĀ DĪLERA sadaļā pēc OneAuto ielādes
- * (raw payload dažreiz nav saglabāts draftā). Apzināti NEIZGudrojam jaunus datus.
  */
 export function collectOemDealerVisits(
   block: AutoRecordsBlockState,
@@ -323,6 +329,81 @@ function mergeVehicleInfoPreferFilled(
   return next;
 }
 
+/** Labels that belong in Equipment, never in Vehicle specs. */
+export function isOemEquipmentLeftoverLabel(label: string): boolean {
+  const n = label.replace(/^oem[_\s-]+/i, "").replace(/[_-]+/g, " ").trim();
+  return /^(factory\s*(code|desc)|option(\s*code|\s*desc)?|sa(\s*code)?|equipment)$/i.test(n);
+}
+
+const LEFTOVER_PROMOTE: { re: RegExp; key: keyof OutvinVehicleInfo }[] = [
+  { re: /^manufactured(\s*date)?$/i, key: "productionDate" },
+  { re: /^build(\s*date)?$/i, key: "productionDate" },
+  { re: /^model\s*year$/i, key: "productionDate" },
+];
+
+function promoteLeftoversToVehicle(
+  vi: OutvinVehicleInfo,
+  leftovers: readonly OneautoKvRow[],
+): { vehicleInfo: OutvinVehicleInfo; leftovers: OneautoKvRow[] } {
+  const next = { ...vi };
+  const kept: OneautoKvRow[] = [];
+  for (const row of leftovers) {
+    const label = row.label.replace(/^oem[_\s-]+/i, "").replace(/[_-]+/g, " ").trim();
+    const hit = LEFTOVER_PROMOTE.find(({ re }) => re.test(label));
+    if (hit && !next[hit.key].trim() && row.value.trim()) {
+      next[hit.key] = row.value.trim().slice(0, 500);
+      continue;
+    }
+    kept.push(row);
+  }
+  return { vehicleInfo: next, leftovers: kept };
+}
+
+/**
+ * Pair stray factory code/desc leftovers into equipment lines (safety net if options
+ * were flattened into powertrain instead of the equipment walker).
+ */
+export function equipmentLinesFromFactoryLeftovers(
+  leftovers: readonly OneautoKvRow[],
+): OutvinEquipmentLine[] {
+  const out: OutvinEquipmentLine[] = [];
+  let pendingCode = "";
+  for (const row of leftovers) {
+    const label = row.label.replace(/^oem[_\s-]+/i, "").replace(/[_-]+/g, " ").trim();
+    const value = row.value.trim();
+    if (!value) continue;
+    if (/^factory\s*code$/i.test(label)) {
+      pendingCode = value;
+      continue;
+    }
+    if (/^factory\s*desc$/i.test(label)) {
+      out.push({ code: pendingCode, description: value });
+      pendingCode = "";
+      continue;
+    }
+  }
+  if (pendingCode) out.push({ code: pendingCode, description: "" });
+  return out.filter((l) => l.code.trim() || l.description.trim());
+}
+
+function mergeEquipmentLines(
+  primary: readonly OutvinEquipmentLine[],
+  secondary: readonly OutvinEquipmentLine[],
+): OutvinEquipmentLine[] {
+  const out: OutvinEquipmentLine[] = [];
+  const seen = new Set<string>();
+  for (const line of [...primary, ...secondary]) {
+    const code = line.code.trim();
+    const desc = line.description.trim();
+    if (!code && !desc) continue;
+    const key = (code || desc).toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ code, description: desc });
+  }
+  return out;
+}
+
 function manufacturerHintFromPowertrain(rows: OneautoDisplaySections["powertrain"]): string {
   for (const row of filledOneautoKvRows(rows)) {
     if (/^(manufacturer|make|marka)(\s*desc)?$/i.test(row.label.replace(/^oem[_\s-]+/i, "").trim())) {
@@ -330,20 +411,6 @@ function manufacturerHintFromPowertrain(rows: OneautoDisplaySections["powertrain
     }
   }
   return "";
-}
-
-function vehicleMetaLine(vi: OutvinVehicleInfo): string {
-  return [
-    vi.model,
-    vi.modelSeries,
-    vi.productionDate || vi.firstRegistration,
-    vi.engineCode,
-    vi.transmission,
-    vi.power,
-  ]
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .join(" · ");
 }
 
 function brandDisplayName(makeModel: string, vi: OutvinVehicleInfo, vin: string, makeHint: string): string {
@@ -383,13 +450,22 @@ function resolveOemLogoUri(args: {
   return fromVin;
 }
 
-function kvTable(rows: Array<{ label: string; value: string }>): string {
-  const body = rows
-    .filter((r) => r.value.trim())
-    .map((r) => `<tr><th>${escapeHtml(r.label)}</th><td>${escapeHtml(r.value)}</td></tr>`)
+function humanizeSpecLabel(label: string): string {
+  const t = label.replace(/^oem[_\s-]+/i, "").replace(/[_-]+/g, " ").trim();
+  if (!t) return "";
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function vehicleSpecsHtml(rows: Array<{ label: string; value: string }>): string {
+  const filled = rows.filter((r) => r.value.trim());
+  if (filled.length === 0) return "";
+  const cells = filled
+    .map(
+      (r) =>
+        `<div class="oem-spec"><span class="oem-spec-k">${escapeHtml(r.label)}</span><span class="oem-spec-v">${escapeHtml(r.value)}</span></div>`,
+    )
     .join("");
-  if (!body) return "";
-  return `<table class="oem-kv"><tbody>${body}</tbody></table>`;
+  return `<div class="oem-specs">${cells}</div>`;
 }
 
 type OemSvcCol = {
@@ -402,7 +478,7 @@ const OEM_SVC_COLS: OemSvcCol[] = [
   { key: "date", label: "Date", className: "num" },
   { key: "km", label: "km", className: "num" },
   { key: "type", label: "Type" },
-  { key: "extraWork", label: "Additional work" },
+  { key: "extraWork", label: "Work", className: "oem-work" },
   { key: "guarantee", label: "Guarantee" },
   { key: "dealer", label: "Dealer" },
   { key: "address", label: "Address" },
@@ -420,16 +496,16 @@ function serviceTable(visits: OemServiceVisit[]): string {
   });
   if (active.length === 0) return "";
 
-  const workWide = active.some((c) => c.key === "extraWork");
-  const colCount = active.length;
-  const workPct = workWide ? Math.max(36, 72 - (colCount - 1) * 8) : 0;
+  const hasWork = active.some((c) => c.key === "extraWork");
+  const metaCount = active.length - (hasWork ? 1 : 0);
+  const workPct = hasWork ? Math.max(48, 78 - metaCount * 9) : 0;
 
   const colgroup = active
     .map((col) => {
-      if (col.key === "date") return `<col style="width:11%"/>`;
-      if (col.key === "km") return `<col style="width:10%"/>`;
+      if (col.key === "date") return `<col class="c-date"/>`;
+      if (col.key === "km") return `<col class="c-km"/>`;
       if (col.key === "extraWork") return `<col style="width:${workPct}%"/>`;
-      if (col.key === "orderNumber") return `<col style="width:11%"/>`;
+      if (col.key === "orderNumber") return `<col class="c-order"/>`;
       return `<col/>`;
     })
     .join("");
@@ -457,92 +533,119 @@ function serviceTable(visits: OemServiceVisit[]): string {
     })
     .join("");
 
-  return `<table class="oem-svc" style="table-layout:fixed">${colgroup}${head}<tbody>${body}</tbody></table>`;
+  return `<table class="oem-svc">${colgroup}${head}<tbody>${body}</tbody></table>`;
 }
 
-function equipmentTableFromLines(rows: Array<{ code: string; description: string }>): string {
+function equipmentGrid(rows: readonly OutvinEquipmentLine[]): string {
   const filled = rows.filter((l) => l.code.trim() || l.description.trim());
   if (filled.length === 0) return "";
-  const body = filled
-    .map(
-      (l) =>
-        `<tr><td class="num" style="width:18%">${escapeHtml(l.code)}</td><td>${escapeHtml(l.description)}</td></tr>`,
-    )
+  const items = filled
+    .map((l) => {
+      const code = l.code.trim();
+      const desc = l.description.trim();
+      return `<div class="oem-eq-item">${
+        code ? `<span class="oem-eq-code">${escapeHtml(code)}</span>` : `<span class="oem-eq-code oem-eq-code--empty"></span>`
+      }<span class="oem-eq-desc">${escapeHtml(desc)}</span></div>`;
+    })
     .join("");
-  return `<h2>Equipment / SA</h2><table class="oem-svc" style="table-layout:fixed"><thead><tr><th>Code</th><th>Description</th></tr></thead><tbody>${body}</tbody></table>`;
+  return `<div class="oem-eq">${items}</div>`;
+}
+
+function section(title: string, body: string): string {
+  if (!body.trim()) return "";
+  return `<section class="oem-sec"><h2>${escapeHtml(title)}</h2>${body}</section>`;
 }
 
 const OEM_CSS = `
   :root{color-scheme:light;}
-  html,body{margin:0;padding:0;background:#e8edf4;color:#0f172a;font:11.5px/1.4 Helvetica,Arial,sans-serif;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#e8edf4;color:#0f172a;font:11px/1.4 Helvetica,Arial,sans-serif;}
   .oem{
-    box-sizing:border-box;
-    width:210mm;min-width:210mm;max-width:210mm;min-height:297mm;height:297mm;
-    margin:16px auto;padding:12mm 12mm 14mm;background:#fff;
+    width:210mm;min-width:210mm;max-width:210mm;min-height:297mm;
+    margin:16px auto;padding:11mm 11mm 12mm;background:#fff;
     box-shadow:0 12px 40px rgb(15 23 42 / .12);border:1px solid #c5ccd6;
-    overflow:auto;
   }
   .oem-top{
-    display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:end;
-    padding-bottom:14px;border-bottom:1px solid #cbd5e1;margin:0 0 14px;
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;
+    padding-bottom:12px;border-bottom:1px solid #cbd5e1;margin:0 0 12px;
   }
   .oem-logo{
-    display:block;width:32px;height:32px;object-fit:contain;flex-shrink:0;
+    display:block;width:30px;height:30px;object-fit:contain;flex-shrink:0;
     filter:brightness(0) saturate(100%);
   }
   .oem-logo--mono{filter:none;}
   .oem-mid{min-width:0;}
   .oem-kicker{
-    margin:0;font-size:9px;font-weight:650;letter-spacing:0.14em;
+    margin:0;font-size:8.5px;font-weight:650;letter-spacing:0.14em;
     text-transform:uppercase;color:#94a3b8;
   }
   h1{
-    margin:6px 0 0;font-size:17px;font-weight:650;letter-spacing:-0.02em;color:#0f172a;
+    margin:4px 0 0;font-size:16px;font-weight:650;letter-spacing:-0.02em;color:#0f172a;
   }
-  .oem-meta{margin:4px 0 0;font-size:11px;color:#64748b;}
-  .oem-vin{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.05em;}
+  .oem-meta{margin:3px 0 0;font-size:10.5px;color:#64748b;}
+  .oem-vin{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.04em;}
   .oem-side{
-    text-align:right;font-size:9.5px;line-height:1.45;color:#94a3b8;max-width:38%;
+    text-align:right;font-size:9.5px;line-height:1.35;color:#64748b;max-width:42%;
   }
-  .oem-rule{height:1px;background:#e2e8f0;margin:14px 0;border:0;}
+  .oem-side span{display:inline-block;margin-left:6px;white-space:nowrap;}
+  .oem-sec{margin:0 0 14px;padding:0 0 2px;break-inside:avoid-page;}
+  .oem-sec + .oem-sec{border-top:1px solid #e2e8f0;padding-top:12px;}
   h2{
-    margin:14px 0 6px;font-size:9.5px;font-weight:600;letter-spacing:0.12em;
+    margin:0 0 8px;font-size:9px;font-weight:650;letter-spacing:0.12em;
     text-transform:uppercase;color:#94a3b8;
   }
-  h2:first-of-type{margin-top:0;}
-  table{width:100%;border-collapse:collapse;margin:0 0 4px;}
-  .oem-kv th{
-    width:32%;text-align:left;font-weight:450;color:#94a3b8;
-    padding:6px 10px 6px 0;vertical-align:top;border-bottom:1px solid #eef2f7;
+  .oem-specs{
+    display:grid;grid-template-columns:1fr 1fr;gap:0 18px;
   }
-  .oem-kv td{
-    padding:6px 0;vertical-align:top;color:#0f172a;border-bottom:1px solid #eef2f7;
+  .oem-spec{
+    display:grid;grid-template-columns:38% minmax(0,1fr);gap:8px;
+    padding:5px 0;border-bottom:1px solid #eef2f7;align-items:start;
   }
-  .oem-kv tr:last-child th,.oem-kv tr:last-child td{border-bottom:0;}
+  .oem-spec-k{color:#94a3b8;font-weight:450;}
+  .oem-spec-v{color:#0f172a;word-break:break-word;}
+  table{width:100%;border-collapse:collapse;margin:0;}
   .oem-svc{table-layout:fixed;width:100%;}
+  .oem-svc col.c-date{width:12%;}
+  .oem-svc col.c-km{width:11%;}
+  .oem-svc col.c-order{width:12%;}
   .oem-svc th,.oem-svc td{
-    border:0;border-bottom:1px solid #eef2f7;padding:7px 6px 7px 0;
+    border:0;border-bottom:1px solid #eef2f7;padding:6px 8px 6px 0;
     vertical-align:top;text-align:left;font-size:9.5px;
-    word-break:break-word;overflow-wrap:anywhere;
   }
   .oem-svc th{
-    background:transparent;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;
+    font-size:8.5px;letter-spacing:0.06em;text-transform:uppercase;
     font-weight:650;color:#94a3b8;white-space:nowrap;
   }
-  .oem-svc td.oem-work{white-space:pre-wrap;line-height:1.45;}
+  .oem-svc td.oem-work,.oem-work{white-space:pre-wrap;line-height:1.4;word-break:break-word;}
   .oem-svc tr:last-child td{border-bottom:0;}
   .num{font-variant-numeric:tabular-nums;white-space:nowrap;}
-  .oem-extra{margin-top:4px;color:#334155;white-space:pre-wrap;}
+  .oem-extra{margin-top:3px;color:#475569;white-space:pre-wrap;}
+  .oem-eq{
+    display:grid;grid-template-columns:1fr 1fr;gap:0 14px;column-gap:16px;
+  }
+  .oem-eq-item{
+    display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;align-items:start;
+    padding:3px 0;border-bottom:1px solid #eef2f7;font-size:9px;line-height:1.35;
+    break-inside:avoid;
+  }
+  .oem-eq-code{
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:650;
+    color:#334155;font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .oem-eq-code--empty{visibility:hidden;}
+  .oem-eq-desc{color:#0f172a;word-break:break-word;}
   .oem-empty{color:#64748b;font-size:12px;}
   @media print{
     @page{size:A4 portrait;margin:0;}
     html,body{padding:0!important;background:#fff!important;}
     .oem{
       width:210mm!important;min-width:0!important;max-width:none!important;
-      min-height:297mm!important;height:auto!important;
-      margin:0!important;padding:12mm!important;
-      box-shadow:none!important;border:0!important;overflow:visible!important;
+      min-height:0!important;height:auto!important;
+      margin:0!important;padding:11mm!important;
+      box-shadow:none!important;border:0!important;
     }
+    .oem-sec{break-inside:auto;}
+    .oem-eq-item{break-inside:avoid;}
   }
 `;
 
@@ -561,11 +664,17 @@ export function buildOemDealerDocumentHtml(args: {
 
   const mapped = hasOneautoRows
     ? oneautoPowertrainToVehicleInfo(oneautoDisplay.powertrain)
-    : { vehicleInfo: {} as Partial<OutvinVehicleInfo>, leftovers: [] };
+    : { vehicleInfo: {} as Partial<OutvinVehicleInfo>, leftovers: [] as OneautoKvRow[] };
 
   let vi = mergeVehicleInfoPreferFilled(bundle.vehicleInfo, mapped.vehicleInfo);
   const vin = (vi.vinCode.trim() || args.vin?.trim() || "").toUpperCase();
   if (vin && !vi.vinCode.trim()) vi = { ...vi, vinCode: vin };
+
+  const promoted = promoteLeftoversToVehicle(vi, mapped.leftovers);
+  vi = promoted.vehicleInfo;
+
+  const equipLeftovers = promoted.leftovers.filter((r) => isOemEquipmentLeftoverLabel(r.label));
+  const vehicleLeftovers = promoted.leftovers.filter((r) => !isOemEquipmentLeftoverLabel(r.label));
 
   const makeHint = manufacturerHintFromPowertrain(oneautoDisplay.powertrain);
   const title = (vi.model.trim() || makeModel || makeHint || "Vehicle").trim();
@@ -574,54 +683,49 @@ export function buildOemDealerDocumentHtml(args: {
   const logoIsMono = logoUri ? pdfDealerLogoIsMonogram(logoUri) : false;
 
   const visits = collectOemDealerVisits(args.autoRecords, bundle, oneautoDisplay);
-  const equipmentLines =
-    bundle.equipment.filter((l) => l.code.trim() || l.description.trim()).length > 0
-      ? bundle.equipment
-      : oneautoDisplayToEquipment(oneautoDisplay);
 
-  const powertrainExtra = kvTable(mapped.leftovers.map((r) => ({ label: r.label, value: r.value })));
+  const equipmentFromBundle = bundle.equipment.filter((l) => l.code.trim() || l.description.trim());
+  const equipmentFromDisplay = oneautoDisplayToEquipment(oneautoDisplay);
+  const equipmentFromLeftovers = equipmentLinesFromFactoryLeftovers(equipLeftovers);
+  const equipmentDeduped = mergeEquipmentLines(
+    equipmentFromBundle,
+    mergeEquipmentLines(equipmentFromDisplay, equipmentFromLeftovers),
+  );
 
-  const metaLine = vehicleMetaLine(vi);
-  const sideMeta = metaLine
-    ? metaLine
-        .split(" · ")
-        .map((part) => escapeHtml(part))
-        .join("<br/>")
-    : escapeHtml(brand);
+  const sideBits = [vi.engineCode, vi.transmission, vi.power, vi.drive, vi.productionDate || vi.firstRegistration]
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const sideMeta = sideBits.length
+    ? sideBits.map((part) => `<span>${escapeHtml(part)}</span>`).join("")
+    : `<span>${escapeHtml(brand)}</span>`;
 
-  const specRows = OUTVIN_VEHICLE_INFO_ROWS.map((row) => ({
+  const specRows: Array<{ label: string; value: string }> = OUTVIN_VEHICLE_INFO_ROWS.map((row) => ({
     label: row.labelEn,
     value: vi[row.key],
   }));
-  const checks = kvTable([
+  for (const row of vehicleLeftovers) {
+    if (!row.value.trim()) continue;
+    specRows.push({ label: humanizeSpecLabel(row.label), value: row.value.trim() });
+  }
+
+  const checksRows = [
     { label: "Accident check", value: bundle.accidentCheck },
     { label: "Stolen check", value: bundle.stolenCheck },
-  ]);
+  ].filter((r) => r.value.trim());
 
-  const hasBody =
-    specRows.some((r) => r.value.trim()) ||
-    visits.length > 0 ||
-    equipmentLines.some((l) => l.code.trim() || l.description.trim()) ||
-    Boolean(powertrainExtra) ||
-    Boolean(bundle.accidentCheck.trim() || bundle.stolenCheck.trim());
+  const vehicleBlock = section("Vehicle", vehicleSpecsHtml(specRows));
+  const serviceBlock = section("Service history", serviceTable(visits));
+  const checksBlock = section("Checks", vehicleSpecsHtml(checksRows));
+  const equipmentBlock = section("Equipment", equipmentGrid(equipmentDeduped));
 
-  const vehicleKv = kvTable(specRows);
-  const vehicleBlock =
-    vehicleKv || powertrainExtra
-      ? `<h2>Vehicle</h2>${vehicleKv}${powertrainExtra}`
-      : "";
-  const serviceBlock = visits.length
-    ? `<hr class="oem-rule"/><h2>Service history</h2>${serviceTable(visits)}`
-    : "";
-  const checksBlock = checks ? `<hr class="oem-rule"/><h2>Checks</h2>${checks}` : "";
-  const equipmentBlock = equipmentTableFromLines(equipmentLines);
-
+  const hasBody = Boolean(vehicleBlock || serviceBlock || checksBlock || equipmentBlock);
+  // Fixed order: vehicle → service → checks → equipment (equipment always last).
   const inner = hasBody
-    ? `${vehicleBlock}${serviceBlock}${equipmentBlock ? `<hr class="oem-rule"/>${equipmentBlock}` : ""}${checksBlock}`
-    : `<p class="oem-empty">No dealer network records for this VIN. Check the official dealer data tables in admin, or reload OneAuto for this order.</p>`;
+    ? `${vehicleBlock}${serviceBlock}${checksBlock}${equipmentBlock}`
+    : `<p class="oem-empty">No dealer network records for this VIN.</p>`;
 
   const logoHtml = logoUri
-    ? `<img class="oem-logo${logoIsMono ? " oem-logo--mono" : ""}" src="${logoUri}" alt="" width="32" height="32"/>`
+    ? `<img class="oem-logo${logoIsMono ? " oem-logo--mono" : ""}" src="${logoUri}" alt="" width="30" height="30"/>`
     : "";
 
   return `<!DOCTYPE html>
