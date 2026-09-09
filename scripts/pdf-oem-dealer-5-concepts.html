@@ -42,12 +42,35 @@
     border-radius:8px;padding:4px 10px;font:650 11px/1.2 Inter,sans-serif;cursor:pointer;
   }
   .brand-switch button[aria-pressed="true"]{border-color:#93C5FD;color:#fff;background:#1e3a5f;}
-  .stage{padding:24px 12px 72px;}
-  .sheet{
-    display:none;width:210mm;max-width:100%;margin:0 auto 22px;background:#fff;
-    padding:13mm 12mm 14mm;box-shadow:0 16px 44px rgb(15 23 42 / .12);
+  .stage{padding:24px 12px 72px;overflow-x:auto;}
+  .a4-wrap{
+    display:none;
+    width:210mm;
+    max-width:none;
+    margin:0 auto 32px;
   }
-  .sheet.is-on{display:block;}
+  .a4-wrap.is-on{display:block;}
+  .a4-badge{
+    margin:0 0 10px;text-align:center;
+    font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#64748b;
+  }
+  .sheet{
+    display:block;box-sizing:border-box;
+    width:210mm;height:297mm;min-height:297mm;max-height:297mm;
+    margin:0;padding:13mm 12mm 14mm;overflow:auto;
+    background:#fff;color:var(--ink);
+    box-shadow:0 16px 44px rgb(15 23 42 / .14);
+    border:1px solid #b8c0cc;
+  }
+  /* Šaurā ekrānā saglabā A4 proporcijas (portrets), mērogo visu lapu. */
+  @media (max-width: 860px){
+    .a4-wrap{
+      width:210mm;
+      transform-origin:top center;
+      transform:scale(var(--a4-scale, 0.48));
+      margin-bottom:calc(297mm * (var(--a4-scale, 0.48) - 1) + 32px);
+    }
+  }
 
   /* Shared sample content */
   .sample-logo{
@@ -147,10 +170,14 @@
 
   @media print{
     body{background:#fff;}
-    .chrome{display:none;}
-    .sheet{display:none!important;box-shadow:none;width:auto;padding:0;margin:0;}
-    .sheet.is-on{display:block!important;}
-    @page{size:A4;margin:12mm;}
+    .chrome,.a4-badge{display:none;}
+    .a4-wrap{display:none!important;transform:none;margin:0;width:auto;}
+    .a4-wrap.is-on{display:block!important;}
+    .sheet{
+      box-shadow:none;border:0;width:auto;height:auto;min-height:0;max-height:none;
+      overflow:visible;padding:0;
+    }
+    @page{size:A4 portrait;margin:12mm;}
   }
 </style>
 </head>
@@ -159,7 +186,8 @@
     <h1>OEM dīlera PDF · 5 dizaina varianti</h1>
     <p>
       Atsevišķais OEM / oficiālo dīlera datu dokuments (<code>buildOemDealerDocumentHtml</code>).
-      <strong>Portrets A4</strong>. Visos variantos <strong>augšā ražotāja logo</strong> (Volvo / Audi).
+      <strong>Portrets A4 (210 × 297 mm)</strong> - katrs variants rādās kā īsta A4 lapa (ne plats bloks).
+      Visos variantos <strong>augšā ražotāja logo</strong> (Volvo / Audi).
       <strong>NETULKO:</strong> ielasītie dati paliek oriģinālvalodā; tulkota būs tikai PROVIN dīlera atskaite.
       Mērķis: izskatīties kā oficiālā dīlera izdruka (ne PROVIN audita PDF).
     </p>
@@ -360,6 +388,8 @@ function render() {
   const stage = document.getElementById("stage");
   const tabs = document.getElementById("tabs");
   const hint = document.getElementById("hint");
+  const scale = Math.min(1, (Math.max(280, window.innerWidth - 24)) / (210 * 3.7795275591));
+  document.documentElement.style.setProperty("--a4-scale", String(Math.max(0.36, Math.min(1, scale))));
   tabs.innerHTML = "";
   VARIANTS.forEach((v, i) => {
     const btn = document.createElement("button");
@@ -371,12 +401,21 @@ function render() {
     tabs.appendChild(btn);
   });
   stage.innerHTML = VARIANTS.map((v, i) => {
-    let html = v.html();
-    if (i === active) html = html.replace('class="sheet', 'class="sheet is-on');
-    return html;
+    const page = v.html();
+    const on = i === active ? " is-on" : "";
+    return `<div class="a4-wrap${on}" data-v="${i}">
+      <p class="a4-badge">A4 portrets · 210 × 297 mm</p>
+      ${page}
+    </div>`;
   }).join("");
   hint.textContent = VARIANTS[active].hint;
 }
+
+window.addEventListener("resize", () => {
+  const scale = Math.min(1, (Math.max(280, window.innerWidth - 24)) / (210 * 3.7795275591));
+  document.documentElement.style.setProperty("--a4-scale", String(Math.max(0.36, Math.min(1, scale))));
+});
+
 
 document.getElementById("brand-volvo").addEventListener("click", () => {
   brandKey = "volvo";

@@ -300,11 +300,13 @@ function dumpUnknownJson(title: string, value: unknown): string {
 
 const OEM_CSS = `
   :root{color-scheme:light;}
-  html,body{margin:0;padding:0;background:#fff;color:#111;font:11.5px/1.4 Helvetica,Arial,sans-serif;}
+  html,body{margin:0;padding:0;background:#e8edf4;color:#111;font:11.5px/1.4 Helvetica,Arial,sans-serif;}
   .oem{
     box-sizing:border-box;
-    width:210mm;max-width:100%;min-height:297mm;margin:0 auto;
-    padding:0 0 14mm;background:#fff;
+    width:210mm;min-width:210mm;max-width:210mm;min-height:297mm;height:297mm;
+    margin:16px auto;padding:0;background:#fff;
+    box-shadow:0 12px 40px rgb(15 23 42 / .12);border:1px solid #c5ccd6;
+    overflow:auto;
   }
   .oem-masthead{
     display:flex;align-items:center;justify-content:space-between;gap:16px;
@@ -352,7 +354,11 @@ const OEM_CSS = `
   @media print{
     @page{size:A4 portrait;margin:0;}
     html,body{padding:0!important;background:#fff!important;}
-    .oem{width:auto;min-height:auto;box-shadow:none;}
+    .oem{
+      width:210mm!important;min-width:0!important;max-width:none!important;
+      min-height:297mm!important;height:auto!important;
+      margin:0!important;box-shadow:none!important;border:0!important;overflow:visible!important;
+    }
     .no-print{display:none!important;}
   }
 `;

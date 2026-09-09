@@ -66,6 +66,8 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("oem-masthead");
     expect(html).toContain("Official dealer data");
     expect(html).toContain("A4 portrait");
+    expect(html).toContain("210mm");
+    expect(html).toContain("297mm");
     expect(html).toContain("original language");
     expect(html).not.toContain("PROVIN DĪLERIS");
     expect(html).not.toContain("PROVIN.LV");
