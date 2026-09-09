@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   pdfDealerBrandFileKey,
   pdfDealerLogoDataUri,
+  pdfDealerLogoDataUriFromVin,
+  pdfDealerLogoIsMonogram,
   pdfListingPortalLogoId,
 } from "@/lib/pdf-source-brand-logos";
 
@@ -31,6 +33,20 @@ describe("pdfDealerBrandFileKey", () => {
     expect(pdfDealerLogoDataUri("AUDI A6")).toBeTruthy();
     expect(pdfDealerLogoDataUri("Rolls-Royce Ghost")).toMatch(/^data:image\/svg\+xml;base64,/);
     expect(pdfDealerLogoDataUri("Subaru Forester")).toMatch(/^data:image\/svg\+xml;base64,/);
+  });
+
+  it("recognizes the generated monogram tile (percent-encoded SVG, not base64)", () => {
+    // pdfDealerLogoDataUri encodes unknown-brand monograms via encodeURIComponent,
+    // so the literal font-weight="700" marker is percent-escaped in the data URI.
+    const uri = pdfDealerLogoDataUri("Xyzzy Motors")!;
+    expect(uri).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+    expect(pdfDealerLogoIsMonogram(uri)).toBe(true);
+  });
+
+  it("prefers the real brand SVG over a monogram for a known VIN WMI", () => {
+    const uri = pdfDealerLogoDataUriFromVin("YV1PZ68TCL1106362")!;
+    expect(uri).toBeTruthy();
+    expect(pdfDealerLogoIsMonogram(uri)).toBe(false);
   });
 
   it("stays browser-safe so the admin client bundle does not pull node:fs", () => {

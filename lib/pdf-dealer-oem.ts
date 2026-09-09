@@ -418,9 +418,12 @@ function resolveOemLogoUri(args: {
   vin: string;
   makeHint: string;
 }): string | null {
+  const vinUpper = args.vin.trim().toUpperCase();
   const textCandidates = [args.makeModel, args.makeHint, args.title]
     .map((s) => s.trim())
-    .filter((s) => s && !/^vehicle$/i.test(s) && !/^oem$/i.test(s));
+    .filter(
+      (s) => s && !/^vehicle$/i.test(s) && !/^oem$/i.test(s) && s.toUpperCase() !== vinUpper,
+    );
 
   for (const c of textCandidates) {
     const uri = pdfDealerLogoDataUri(c);
@@ -667,7 +670,7 @@ export function buildOemDealerDocumentHtml(args: {
   const vehicleLeftovers = promoted.leftovers.filter((r) => !isOemEquipmentLeftoverLabel(r.label));
 
   const makeHint = manufacturerHintFromPowertrain(oneautoDisplay.powertrain);
-  const title = (vi.model.trim() || makeModel || makeHint || "Vehicle").trim();
+  const title = (vi.model.trim() || makeModel || makeHint || vin || "Vehicle").trim();
   const brand = brandDisplayName(makeModel, vi, vin, makeHint);
   const logoUri = resolveOemLogoUri({ makeModel, title, vin, makeHint });
   const logoIsMono = logoUri ? pdfDealerLogoIsMonogram(logoUri) : false;

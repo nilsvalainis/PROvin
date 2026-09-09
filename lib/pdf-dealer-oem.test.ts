@@ -145,6 +145,17 @@ describe("OEM dealer PDF", () => {
     expect(html).not.toContain("oem-side");
   });
 
+  it("shows VIN as the page-top title instead of the literal word Vehicle when no model is known", () => {
+    const block = emptyAutoRecordsBlock();
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: block,
+    });
+    expect(html).toContain("<h1>YV1PZ68TCL1106362</h1>");
+    expect(html).not.toContain("<h1>Vehicle</h1>");
+  });
+
   it("never shows LV-translated serviceWorks in OEM Service history (original only)", () => {
     const block = emptyAutoRecordsBlock();
     block.serviceWorks = [

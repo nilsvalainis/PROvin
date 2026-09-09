@@ -82,7 +82,14 @@ export function pdfDealerLogoDataUri(makeModel: string): string | null {
 
 /** True when the URI is the generated letter tile (not a brand SVG asset). */
 export function pdfDealerLogoIsMonogram(dataUri: string): boolean {
-  return dataUri.includes("font-weight=\"700\"") || dataUri.includes("font-weight='700'");
+  // Monogram tiles are emitted via encodeURIComponent (data:...;charset=utf-8,<encoded>),
+  // so the raw `"` / `=` characters are percent-encoded - match both forms.
+  return (
+    dataUri.includes("font-weight=\"700\"") ||
+    dataUri.includes("font-weight='700'") ||
+    dataUri.includes("font-weight%3D%22700%22") ||
+    dataUri.includes("font-weight%3D%27700%27")
+  );
 }
 
 /**
