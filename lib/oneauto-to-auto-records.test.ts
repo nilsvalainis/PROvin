@@ -7,6 +7,8 @@ import {
   applyOneautoToAutoRecords,
   emptyOneautoIngest,
   foldOneautoBlockIntoAutoRecords,
+  mergeOneautoIngest,
+  mergeOneautoProductResults,
   oneautoDisplayToEquipment,
   oneautoPowertrainToVehicleInfo,
 } from "@/lib/oneauto-to-auto-records";
@@ -174,5 +176,60 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
     expect(foldOneautoBlockIntoAutoRecords(folded.autoRecords, folded.oneauto).autoRecords.serviceWorks).toEqual(
       folded.autoRecords.serviceWorks,
     );
+  });
+
+  it("mergeOneautoProductResults neļauj tukšam service history pārrakstīt bagātāku", () => {
+    const rich = {
+      oe_service_history: {
+        ok: true,
+        payload: {
+          success: true,
+          result: {
+            service_events: [
+              {
+                date_of_service_event: "2022-10-13",
+                mileage_observed: 128482,
+                service_actions: ["Automatic gearbox replacement."],
+              },
+            ],
+          },
+        },
+      },
+    };
+    const emptyish = {
+      oe_service_history: {
+        ok: true,
+        payload: { success: true, result: { service_events: [] } },
+      },
+      oe_build_sheet: {
+        ok: true,
+        payload: { success: true, result: { manufacturer: "Volvo" } },
+      },
+    };
+    const merged = mergeOneautoProductResults(rich, emptyish);
+    expect(merged.oe_service_history?.payload).toEqual(rich.oe_service_history.payload);
+    expect(merged.oe_build_sheet?.payload).toEqual(emptyish.oe_build_sheet.payload);
+
+    const ingest = mergeOneautoIngest(
+      {
+        ...emptyOneautoIngest(),
+        results: rich,
+        serviceTimelineOriginal: [
+          {
+            date: "13.10.2022",
+            odometer: "128482",
+            place: "",
+            works: "Automatic gearbox replacement.",
+          },
+        ],
+      },
+      {
+        ...emptyOneautoIngest(),
+        results: emptyish,
+        serviceTimelineOriginal: [],
+      },
+    );
+    expect(ingest.serviceTimelineOriginal[0]?.works).toContain("Automatic gearbox");
+    expect(ingest.results.oe_service_history?.payload).toEqual(rich.oe_service_history.payload);
   });
 });

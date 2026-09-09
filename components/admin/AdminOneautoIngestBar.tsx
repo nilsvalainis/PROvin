@@ -19,6 +19,7 @@ import {
 import { ONEAUTO_IMAGE_MAX_VIEWS, formatOneautoImageCostEur } from "@/lib/oneauto-images";
 import {
   emptyOneautoIngest,
+  mergeOneautoProductResults,
   oneautoIngestHasMeta,
   type AutoRecordsOneautoIngest,
 } from "@/lib/oneauto-to-auto-records";
@@ -173,8 +174,8 @@ export function AdminOneautoIngestBar({
       } else if (!res.ok) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
       }
-      // Merge product results so a build-sheet-only refresh does not wipe service history payloads.
-      const nextResults = { ...value.results, ...(body.results ?? {}) };
+      // Merge product results so empty/no_data cannot wipe a prior service history payload.
+      const nextResults = mergeOneautoProductResults(value.results, body.results ?? {});
       const payloads: Partial<Record<OneautoProductId, unknown>> = {};
       for (const id of Object.keys(nextResults) as OneautoProductId[]) {
         payloads[id] = nextResults[id]?.payload;

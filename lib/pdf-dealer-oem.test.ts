@@ -145,14 +145,14 @@ describe("OEM dealer PDF", () => {
     expect(html).not.toContain("oem-side");
   });
 
-  it("falls back to serviceWorks so Service history is never blank when admin has rows", () => {
+  it("does not use LV-translated serviceWorks for OEM Service history", () => {
     const block = emptyAutoRecordsBlock();
     block.serviceWorks = [
       {
         date: "13.10.2022",
         odometer: "128482",
         location: "Volvo Partner",
-        works: "Automātiskā pārnesumkārba. Automātiskās transmisijas maiņa.",
+        works: "Automātiskā pārnesumkārba. Automātiskās transmisijas maiņa. Diagnoze: noplūde.",
       },
     ];
     const html = buildOemDealerDocumentHtml({
@@ -160,9 +160,8 @@ describe("OEM dealer PDF", () => {
       makeModel: "",
       autoRecords: block,
     });
-    expect(html).toContain("Service history");
-    expect(html).toContain("128482");
-    expect(html).toContain("Automātiskā pārnesumkārba");
+    expect(html).not.toContain("Automātiskā pārnesumkārba");
+    expect(html).not.toContain("Service history");
   });
 
   it("prefers raw OneAuto language over LV serviceWorks when both exist", () => {
@@ -400,5 +399,44 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain("Official dealer");
     expect(html).toContain("Brake fluid");
     expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
+  });
+
+  it("prefers richer service payload over empty ingest stub", () => {
+    const ar = emptyAutoRecordsBlock();
+    ar.oneautoIngest = {
+      ...emptyOneautoIngest(),
+      results: {
+        oe_service_history: {
+          ok: true,
+          payload: { success: true, result: { service_events: [] } },
+        },
+      },
+    };
+    const oa = emptyOneautoBlock();
+    oa.results = {
+      oe_service_history: {
+        ok: true,
+        payload: {
+          success: true,
+          result: {
+            service_events: [
+              {
+                date_of_service_event: "2021-07-25",
+                mileage_observed: 75272,
+                service_actions: ["Charge air cooler hose replacement."],
+              },
+            ],
+          },
+        },
+      },
+    };
+    const html = buildOemDealerDocumentHtml({
+      vin: "YV1PZ68TCL1106362",
+      makeModel: "",
+      autoRecords: ar,
+      oneauto: oa,
+    });
+    expect(html).toContain("Charge air cooler hose replacement.");
+    expect(html).not.toContain("Automātiskā");
   });
 });

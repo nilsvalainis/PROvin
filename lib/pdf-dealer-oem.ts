@@ -26,9 +26,11 @@ import {
   type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
 import type { OneautoBlockState } from "@/lib/oneauto-block";
+import { oneautoWorksNeedLvTranslation } from "@/lib/oneauto-dealer";
 import {
   oneautoDisplayToEquipment,
   oneautoPowertrainToVehicleInfo,
+  preferRicherOneautoPayload,
 } from "@/lib/oneauto-to-auto-records";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import {
@@ -268,11 +270,11 @@ function visitsFromServiceWorks(rows: readonly AutoRecordsServiceWorkRow[] | und
 }
 
 /**
- * Avotu prioritate:
+ * Avotu prioritate (OEM = API oriģinālvaloda, nekad LV tulkojums):
  * 1) Outvin purchase payload
  * 2) OneAuto raw payload rebuild
  * 3) Saglabātais serviceTimelineOriginal (pirms LV tulkojuma)
- * 4) serviceWorks (pēdējais avots - labāk rādīt vizītes nekā tukšu sadaļu)
+ * 4) serviceWorks TIKAI ja darbi vēl izskatās pēc svešvalodas (nav LV)
  * 5) dealer log
  */
 export function collectOemDealerVisits(
@@ -287,12 +289,14 @@ export function collectOemDealerVisits(
   const fromOriginal = visitsFromOneautoTimeline(block.oneautoIngest?.serviceTimelineOriginal ?? []);
   if (fromOriginal.length > 0) return fromOriginal;
 
-  const works = (block.serviceWorks ?? []).filter(autoRecordsServiceWorkRowHasData);
+  const works = (block.serviceWorks ?? []).filter(
+    (r) => autoRecordsServiceWorkRowHasData(r) && oneautoWorksNeedLvTranslation(r.works),
+  );
   if (works.length > 0) return visitsFromServiceWorks(works);
   return visitsFromDealerLog(bundle);
 }
 
-/** Merge payloads from live oneauto block and folded oneautoIngest (do not prefer one exclusively). */
+/** Merge payloads from live oneauto block and folded oneautoIngest; prefer richer service history. */
 export function collectOemOneautoPayloads(
   autoRecords: AutoRecordsBlockState,
   oneauto?: OneautoBlockState | null,
@@ -301,9 +305,9 @@ export function collectOemOneautoPayloads(
   for (const map of [autoRecords.oneautoIngest?.results, oneauto?.results]) {
     if (!map) continue;
     for (const id of ONEAUTO_PRODUCT_IDS) {
-      if (out[id] != null) continue;
       const payload = map[id]?.payload;
-      if (payload != null) out[id] = payload;
+      if (payload == null) continue;
+      out[id] = preferRicherOneautoPayload(id, out[id], payload);
     }
   }
   return out;

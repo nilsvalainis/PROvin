@@ -110,6 +110,58 @@ export function ingestFromOneautoBlock(oa: OneautoBlockState): AutoRecordsOneaut
   };
 }
 
+/** How much usable OEM data a single product payload carries (higher wins when merging). */
+export function oneautoPayloadRank(id: OneautoProductId, payload: unknown): number {
+  if (payload == null) return 0;
+  const display = buildOneautoDisplay({ [id]: payload });
+  if (id === "oe_service_history") {
+    return filledOneautoServiceEvents(display.serviceTimeline).length * 10;
+  }
+  if (id === "oe_build_sheet") {
+    return (
+      filledOneautoKvRows(display.equipment).length * 2 +
+      filledOneautoKvRows(display.powertrain).length +
+      1
+    );
+  }
+  return filledOneautoKvRows(display.powertrain).length + 1;
+}
+
+/** Prefer the richer product payload so empty/no_data cannot wipe a prior service history. */
+export function preferRicherOneautoPayload(
+  id: OneautoProductId,
+  current: unknown,
+  incoming: unknown,
+): unknown {
+  if (incoming == null) return current ?? null;
+  if (current == null) return incoming;
+  return oneautoPayloadRank(id, incoming) >= oneautoPayloadRank(id, current) ? incoming : current;
+}
+
+export function mergeOneautoProductResults(
+  previous: Partial<Record<OneautoProductId, OneautoProductResult>> | null | undefined,
+  incoming: Partial<Record<OneautoProductId, OneautoProductResult>> | null | undefined,
+): Partial<Record<OneautoProductId, OneautoProductResult>> {
+  const out: Partial<Record<OneautoProductId, OneautoProductResult>> = { ...(previous ?? {}) };
+  if (!incoming) return out;
+  for (const id of ONEAUTO_PRODUCT_IDS) {
+    const next = incoming[id];
+    if (!next) continue;
+    const cur = out[id];
+    if (!cur) {
+      out[id] = next;
+      continue;
+    }
+    const keptPayload = preferRicherOneautoPayload(id, cur.payload, next.payload);
+    if (keptPayload === cur.payload && oneautoPayloadRank(id, cur.payload) > oneautoPayloadRank(id, next.payload)) {
+      out[id] = cur;
+      continue;
+    }
+    out[id] = { ...next, payload: keptPayload };
+  }
+  return out;
+}
+
 /** Merge OneAuto ingest so a later product fetch cannot wipe earlier payloads / original timeline. */
 export function mergeOneautoIngest(
   previous: AutoRecordsOneautoIngest | null | undefined,
@@ -125,7 +177,7 @@ export function mergeOneautoIngest(
     selectedProducts:
       incoming.selectedProducts.length > 0 ? incoming.selectedProducts : prev.selectedProducts,
     lastCostEur: incoming.lastCostEur.trim() || prev.lastCostEur,
-    results: { ...prev.results, ...incoming.results },
+    results: mergeOneautoProductResults(prev.results, incoming.results),
     serviceTimelineOriginal: nextOriginal.length > 0 ? nextOriginal : prevOriginal,
   };
 }
