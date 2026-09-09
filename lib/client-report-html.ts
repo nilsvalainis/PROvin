@@ -182,8 +182,11 @@ import {
   buildTechnicalInspectionHistoryTableHtml,
 } from "@/lib/csdd-inspection-history-html";
 import { emptyCsddPreviousInspectionBlock, isoDateToLvDisplay, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
-import { buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
-import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
+import { buildOutvinBundleEquipmentPdfHtml, buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
+import {
+  buildOutvinDealerEquipmentPdfHtml,
+  buildOutvinDealerReportPdfInnerHtml,
+} from "@/lib/outvin-dealer-pdf-html";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import { outvinBundleHasStructuredContent } from "@/lib/outvin-data-bundle";
 
@@ -1521,11 +1524,15 @@ function buildAutoRecordsAvotuSubsection(
   }
 
   const bundle = getAutoRecordsOutvinBundle(b);
-  const bundleInner = outvinBundleHasStructuredContent(bundle)
-    ? buildOutvinBundlePdfInnerHtml(bundle)
+  const hasBundleStructured = outvinBundleHasStructuredContent(bundle);
+  const bundleInner = hasBundleStructured
+    ? buildOutvinBundlePdfInnerHtml(bundle, undefined, { omitEquipment: true })
     : "";
-  const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport);
+  const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport, { omitEquipment: true });
   const outvinInner = bundleInner.trim() || legacyInner.trim();
+  const equipmentHtml =
+    buildOutvinBundleEquipmentPdfHtml(bundle).trim() ||
+    buildOutvinDealerEquipmentPdfHtml(b.outvinReport).trim();
   const coverHtml = buildDealerSectionCoverHtml({
     vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
     makeModel,
@@ -1544,6 +1551,7 @@ function buildAutoRecordsAvotuSubsection(
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
   const hasOutvin = outvinInner.length > 0;
+  const hasEquipment = equipmentHtml.length > 0;
   const hasServiceHistory = serviceHistoryBox.length > 0;
   const hasOilInterval = oilIntervalBox.length > 0;
   const photosInner = buildSourcePhotoGroupsPdfHtml(
@@ -1562,6 +1570,7 @@ function buildAutoRecordsAvotuSubsection(
   if (
     !hasCover &&
     !hasOutvin &&
+    !hasEquipment &&
     !hasServiceWorks &&
     !hasServiceHistory &&
     !hasOilInterval &&
@@ -1585,6 +1594,8 @@ function buildAutoRecordsAvotuSubsection(
   if (sparkHtml && !coverHtml.includes("pdf-dealer-cover-curve")) bodyParts.push(sparkHtml);
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceWorks) bodyParts.push(serviceWorksTable);
+  // Aprīkojums vienmēr zem servisa / remontu vēstures (dīlera PDF kanons).
+  if (hasEquipment) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${equipmentHtml}</div>`);
   if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
   if (hasOilInterval) bodyParts.push(oilIntervalBox);
   if (hasPhotos) bodyParts.push(photosHtml);

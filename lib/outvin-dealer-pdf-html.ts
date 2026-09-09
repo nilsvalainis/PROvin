@@ -43,7 +43,28 @@ function vehicleInfoTable(vi: OutvinVehicleInfo): string {
   return pdfKvTable(rows);
 }
 
-export function buildOutvinDealerReportPdfInnerHtml(report: OutvinDealerReport | undefined | null): string {
+/** Aprīkojuma bloks (kods + apraksts) - dīlera PDF liek zem servisa vēstures. */
+export function buildOutvinDealerEquipmentPdfHtml(report: OutvinDealerReport | undefined | null): string {
+  if (!report) return "";
+  const equip = report.equipment.filter(outvinEquipmentLineHasData);
+  if (equip.length === 0) return "";
+  return [
+    pdfSubLabel("Aprīkojums"),
+    `<ul class="pdf-dealer-eq">${equip
+      .map((line) => {
+        const code = line.code.trim();
+        const desc = line.description.trim();
+        const label = code ? `<b>${escapeHtml(code)}</b>${escapeHtml(desc)}` : escapeHtml(desc);
+        return `<li>${label}</li>`;
+      })
+      .join("")}</ul>`,
+  ].join("\n");
+}
+
+export function buildOutvinDealerReportPdfInnerHtml(
+  report: OutvinDealerReport | undefined | null,
+  opts?: { omitEquipment?: boolean },
+): string {
   if (!outvinDealerReportHasContent(report) || !report) return "";
 
   const parts: string[] = [];
@@ -67,19 +88,9 @@ export function buildOutvinDealerReportPdfInnerHtml(report: OutvinDealerReport |
     parts.push(pdfPlainBlock(stolen));
   }
 
-  const equip = report.equipment.filter(outvinEquipmentLineHasData);
-  if (equip.length > 0) {
-    parts.push(pdfSubLabel("Aprīkojums"));
-    parts.push(
-      `<ul class="pdf-dealer-eq">${equip
-        .map((line) => {
-          const code = line.code.trim();
-          const desc = line.description.trim();
-          const label = code ? `<b>${escapeHtml(code)}</b>${escapeHtml(desc)}` : escapeHtml(desc);
-          return `<li>${label}</li>`;
-        })
-        .join("")}</ul>`,
-    );
+  if (!opts?.omitEquipment) {
+    const equipHtml = buildOutvinDealerEquipmentPdfHtml(report);
+    if (equipHtml) parts.push(equipHtml);
   }
 
   return parts.join("\n");

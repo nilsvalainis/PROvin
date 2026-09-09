@@ -1,10 +1,3 @@
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 import {
   outvinDealerServiceRowHasData,
   outvinEuropeanRowHasData,
@@ -12,8 +5,19 @@ import {
   type OutvinDataBundle,
   type OutvinPdfSectionToggles,
 } from "@/lib/outvin-data-bundle";
-import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
+import {
+  buildOutvinDealerEquipmentPdfHtml,
+  buildOutvinDealerReportPdfInnerHtml,
+} from "@/lib/outvin-dealer-pdf-html";
 import { outvinBundleToDealerReport } from "@/lib/outvin-purchase-map";
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function subhead(title: string): string {
   return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
@@ -61,16 +65,30 @@ function europeanTable(rows: OutvinDataBundle["europeanRegisters"]): string {
   return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><thead><tr><th>Datums</th><th>Valsts</th><th>Veids</th><th>Dati</th></tr></thead><tbody>${tr}</tbody></table>`;
 }
 
+/** Aprīkojums no Outvin bundle (zem servisa vēstures dīlera PDF). */
+export function buildOutvinBundleEquipmentPdfHtml(
+  bundle: OutvinDataBundle | undefined | null,
+  toggles?: OutvinPdfSectionToggles,
+): string {
+  if (!bundle) return "";
+  const pdf = toggles ?? bundle.pdfSections;
+  if (!pdf.vehicleEquipment) return "";
+  return buildOutvinDealerEquipmentPdfHtml(outvinBundleToDealerReport(bundle));
+}
+
 export function buildOutvinBundlePdfInnerHtml(
   bundle: OutvinDataBundle | undefined | null,
   toggles?: OutvinPdfSectionToggles,
+  opts?: { omitEquipment?: boolean },
 ): string {
   if (!bundle) return "";
   const pdf = toggles ?? bundle.pdfSections;
   const parts: string[] = [];
 
   if (pdf.vehicleEquipment) {
-    const dealerInner = buildOutvinDealerReportPdfInnerHtml(outvinBundleToDealerReport(bundle));
+    const dealerInner = buildOutvinDealerReportPdfInnerHtml(outvinBundleToDealerReport(bundle), {
+      omitEquipment: opts?.omitEquipment === true,
+    });
     if (dealerInner.trim()) parts.push(dealerInner);
   }
 

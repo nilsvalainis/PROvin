@@ -1757,6 +1757,45 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(html).not.toContain("\u2013");
   });
 
+  it("dealer PDF places Aprīkojums below Servisa un remontu vēsture", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      outvinReport: {
+        ...emptyOutvinDealerReport(),
+        vehicleInfo: {
+          ...emptyOutvinDealerReport().vehicleInfo,
+          vinCode: "WBY31AW04NFN09888",
+          model: "i4",
+        },
+        equipment: [{ code: "S403A", description: "Panorāmas stikla jumts" }],
+      },
+      serviceWorks: [
+        {
+          date: "12.04.2019",
+          odometer: "48210",
+          location: "BMW AG",
+          works: "Eļļas maiņa",
+        },
+      ],
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        pdfReportKind: "dealer",
+        autoRecordsBlock: autoRecords,
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const serviceIdx = doc.indexOf("Servisa un remontu vēsture");
+    const equipIdx = doc.indexOf("Aprīkojums");
+    expect(serviceIdx).toBeGreaterThan(-1);
+    expect(equipIdx).toBeGreaterThan(serviceIdx);
+    expect(doc).toContain("S403A");
+    expect(doc).toContain("Panorāmas stikla jumts");
+  });
+
   it("APPROVED BY IRISS prints technical risks before inspection and summary", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload({
