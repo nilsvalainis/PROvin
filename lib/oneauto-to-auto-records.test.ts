@@ -232,4 +232,34 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
     expect(ingest.serviceTimelineOriginal[0]?.works).toContain("Automatic gearbox");
     expect(ingest.results.oe_service_history?.payload).toEqual(rich.oe_service_history.payload);
   });
+
+  it("mergeOneautoProductResults neļauj neveiksmīgam re-fetch pārrakstīt esošu labu payload", () => {
+    const rich = {
+      oe_service_history: {
+        ok: true,
+        payload: {
+          success: true,
+          result: {
+            service_events: [
+              {
+                date_of_service_event: "2022-10-13",
+                mileage_observed: 128482,
+                service_actions: ["Automatic gearbox replacement."],
+              },
+            ],
+          },
+        },
+      },
+    };
+    const failed = {
+      oe_service_history: {
+        ok: false,
+        error: "upstream_error",
+        payload: { success: false, error: "timeout" },
+      },
+    };
+    const merged = mergeOneautoProductResults(rich, failed);
+    expect(merged.oe_service_history?.payload).toEqual(rich.oe_service_history.payload);
+    expect(merged.oe_service_history?.ok).toBe(true);
+  });
 });

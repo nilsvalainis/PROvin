@@ -26,7 +26,6 @@ import {
   type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
 import type { OneautoBlockState } from "@/lib/oneauto-block";
-import { oneautoWorksNeedLvTranslation } from "@/lib/oneauto-dealer";
 import {
   oneautoDisplayToEquipment,
   oneautoPowertrainToVehicleInfo,
@@ -270,11 +269,12 @@ function visitsFromServiceWorks(rows: readonly AutoRecordsServiceWorkRow[] | und
 }
 
 /**
- * Avotu prioritate (OEM = API oriģinālvaloda, nekad LV tulkojums):
+ * Avotu prioritate (vienmēr priekšroka API oriģinālvalodai, ja tā ir pieejama):
  * 1) Outvin purchase payload
- * 2) OneAuto raw payload rebuild
- * 3) Saglabātais serviceTimelineOriginal (pirms LV tulkojuma)
- * 4) serviceWorks TIKAI ja darbi vēl izskatās pēc svešvalodas (nav LV)
+ * 2) OneAuto raw payload rebuild (oriģinālvaloda)
+ * 3) Saglabātais serviceTimelineOriginal (oriģinālvaloda, pirms LV tulkojuma)
+ * 4) serviceWorks - pēdējais avots, lai sadaļa NEKAD nepaliek tukša,
+ *    pat ja tas ir vienīgais, kas saglabāts (var būt LV, ja oriģināls pazudis)
  * 5) dealer log
  */
 export function collectOemDealerVisits(
@@ -289,9 +289,7 @@ export function collectOemDealerVisits(
   const fromOriginal = visitsFromOneautoTimeline(block.oneautoIngest?.serviceTimelineOriginal ?? []);
   if (fromOriginal.length > 0) return fromOriginal;
 
-  const works = (block.serviceWorks ?? []).filter(
-    (r) => autoRecordsServiceWorkRowHasData(r) && oneautoWorksNeedLvTranslation(r.works),
-  );
+  const works = (block.serviceWorks ?? []).filter(autoRecordsServiceWorkRowHasData);
   if (works.length > 0) return visitsFromServiceWorks(works);
   return visitsFromDealerLog(bundle);
 }
@@ -305,8 +303,11 @@ export function collectOemOneautoPayloads(
   for (const map of [autoRecords.oneautoIngest?.results, oneauto?.results]) {
     if (!map) continue;
     for (const id of ONEAUTO_PRODUCT_IDS) {
-      const payload = map[id]?.payload;
+      const row = map[id];
+      const payload = row?.payload;
       if (payload == null) continue;
+      // A failed fetch may never replace an already-collected payload for this product.
+      if (row?.ok === false && out[id] != null) continue;
       out[id] = preferRicherOneautoPayload(id, out[id], payload);
     }
   }

@@ -152,12 +152,18 @@ export function mergeOneautoProductResults(
       out[id] = next;
       continue;
     }
-    const keptPayload = preferRicherOneautoPayload(id, cur.payload, next.payload);
-    if (keptPayload === cur.payload && oneautoPayloadRank(id, cur.payload) > oneautoPayloadRank(id, next.payload)) {
+    // A failed/pending fetch (error, or ok:false) may never replace an existing richer result.
+    const curRank = oneautoPayloadRank(id, cur.payload);
+    if (!next.ok && curRank > 0) {
       out[id] = cur;
       continue;
     }
-    out[id] = { ...next, payload: keptPayload };
+    const nextRank = oneautoPayloadRank(id, next.payload);
+    if (curRank > nextRank) {
+      out[id] = cur;
+      continue;
+    }
+    out[id] = next;
   }
   return out;
 }
