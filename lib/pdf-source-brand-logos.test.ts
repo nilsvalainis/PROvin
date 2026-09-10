@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   pdfDealerBrandFileKey,
+  pdfDealerBrandFileKeyFromVin,
   pdfDealerLogoDataUri,
   pdfDealerLogoDataUriFromVin,
   pdfDealerLogoIsMonogram,
@@ -47,6 +48,18 @@ describe("pdfDealerBrandFileKey", () => {
     const uri = pdfDealerLogoDataUriFromVin("YV1PZ68TCL1106362")!;
     expect(uri).toBeTruthy();
     expect(pdfDealerLogoIsMonogram(uri)).toBe(false);
+  });
+
+  it("embeds Mercedes as a star-in-ring SVG (not a solid dark disc)", () => {
+    const uri = pdfDealerLogoDataUri("Mercedes-Benz")!;
+    expect(uri).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(pdfDealerLogoIsMonogram(uri)).toBe(false);
+    const decoded = Buffer.from(uri.split(",")[1]!, "base64").toString("utf8");
+    expect(decoded).toContain('viewBox="0 0 24 24"');
+    // Solid dark plate becomes a black blob under OEM CSS filter:brightness(0).
+    expect(decoded).not.toMatch(/fill="#0b1220"|fill="#0f172a"|fill="#111"/i);
+    expect(pdfDealerBrandFileKeyFromVin("WDC1671191A006856")).toBe("mercedes");
+    expect(pdfDealerLogoIsMonogram(pdfDealerLogoDataUriFromVin("WDC1671191A006856")!)).toBe(false);
   });
 
   it("stays browser-safe so the admin client bundle does not pull node:fs", () => {
