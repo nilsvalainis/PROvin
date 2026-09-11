@@ -3,11 +3,12 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-11.4 - CRITICAL: D5244T11 = ~158 kW two-stage biturbo (ne viens
+ *   turbo); pakas ir prior, kas JĀPĀRBAUDA pret šī auto kW/kodu pirms rakstīšanas.
  * - 2026-09-11.3 - Agregātu pakas: OM642/OM651, N47/N57, EA888 gen1/2 vs gen3,
  *   EA189/EA288, PureTech/wet belt, Volvo Drive-E D4; kW+cm³+gads visiem.
- * - 2026-09-11.2 - Volvo D5: sadalīta viens-turbo (D5244T11 / ~136 kW) vs
- *   biturbo bloka-plaisu paka; kW+cm³+gads aizstājējs bez koda; tehnisko risku
- *   aizliegums sākt ar „aprīkota ar…” / „neatliekamu” siksnu no tukšiem dokumentiem.
+ * - 2026-09-11.2 - Volvo D5: sadalīta viens-turbo vs biturbo; kW+cm³+gads
+ *   aizstājējs; tehnisko risku aizliegums sākt ar „aprīkota ar…”.
  * - 2026-09-11.1 - Klienta valoda: bez AI-šablona („tuvākā laika ieguldījums”,
  *   „Kas NAV dārgs”, „divējādu ainu”, „dokumentāri pierādījumi”); kopsavilkums
  *   1–2 rindkopas ar skaidru rekomendāciju; portfeļa lasīšana pirms interpretācijas;
@@ -81,4 +82,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-11.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-11.4";
