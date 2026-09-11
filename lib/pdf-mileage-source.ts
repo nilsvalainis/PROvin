@@ -1,5 +1,5 @@
 /**
- * Klienta PDF — nobraukuma tabulas rindas avota vizuālais kodējums (krāsaina svītriņa).
+ * Klienta PDF - nobraukuma tabulas rindas avota vizuālais kodējums (krāsaina svītriņa).
  */
 
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
@@ -22,7 +22,7 @@ function normLabel(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-/** Bez atstarpēm un bez garumzīmēm — „DĪLERA DATI” un „DILERA DATI” ir viens avots. */
+/** Bez atstarpēm un bez garumzīmēm - „DĪLERA DATI” un „DILERA DATI” ir viens avots. */
 function squishLower(raw: string): string {
   return raw
     .trim()
@@ -34,7 +34,7 @@ function squishLower(raw: string): string {
 
 /**
  * Kartē `UnifiedMileageRow.sourceLabel` uz PDF svītriņas kategoriju.
- * Neizmaina datu vākšanu — tikai vizuālo interpretāciju.
+ * Neizmaina datu vākšanu - tikai vizuālo interpretāciju.
  * Neatpazīti / tukši avoti → `cits` (leģendā „CITS”), nekad „?”.
  */
 export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
@@ -153,7 +153,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
 };
 
 /**
- * Avotu punktu krāsas — viens kods visā PDF: laikposms, nobraukums, negadījumi,
+ * Avotu punktu krāsas - viens kods visā PDF: laikposms, nobraukums, negadījumi,
  * „Kas tika pārbaudīts”, sadaļu augšmalas akcents.
  */
 export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {

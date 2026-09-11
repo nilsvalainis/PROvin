@@ -3,7 +3,7 @@ import type { CheckoutLineKind } from "@/lib/stripe-session";
 /**
  * Klienta audita PDF pielikuma standarta nosaukums.
  * Formāts: PROVIN_AUDITS_<VIN>.pdf, PROVIN_MINI_<VIN>.pdf vai OFICIALA_DILERA_DATI_<VIN>.pdf
- * (atkarībā no pasūtītā produkta vai dīlera-only ģenerēšanas; VIN — tikai burti un cipari, lielie burti).
+ * (atkarībā no pasūtītā produkta vai dīlera-only ģenerēšanas; VIN - tikai burti un cipari, lielie burti).
  */
 
 export type ProvinAuditPdfProductBrand = "PROVIN_AUDITS" | "PROVIN_MINI" | "PROVIN_DILERIS";
@@ -18,7 +18,7 @@ export function resolveProvinAuditPdfProductBrand(args: {
   const line = (args.checkoutLine ?? "").toString().trim().toLowerCase();
   if (line === "mini" || line === "plus" || line === "listing_filter") return "PROVIN_MINI";
   if (line === "premium" || line === "audit") return "PROVIN_AUDITS";
-  // Dealer / SELECT / unknown — pēc summas; 39,99 € = MINI.
+  // Dealer / SELECT / unknown - pēc summas; 39,99 € = MINI.
   if (args.amountTotalCents === MINI_AMOUNT_CENTS) return "PROVIN_MINI";
   return "PROVIN_AUDITS";
 }

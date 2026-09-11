@@ -14,7 +14,7 @@ export function sourcePdfBlobPathPrefix(orderId: string): string {
   return `${SOURCE_PDF_BLOB_PREFIX}/${orderId.trim()}`;
 }
 
-/** Pasūtījuma id: Stripe `cs_…`, `demo_order_…`, `manual_order_…` — tikai droši ceļa simboli. */
+/** Pasūtījuma id: Stripe `cs_…`, `demo_order_…`, `manual_order_…` - tikai droši ceļa simboli. */
 export function isSafeAdminOrderId(id: string): boolean {
   return /^[A-Za-z0-9_-]{6,120}$/.test(id.trim());
 }

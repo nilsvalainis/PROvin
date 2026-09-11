@@ -6,7 +6,7 @@ import path from "node:path";
 import { rgb, type PDFFont, type PDFDocument, type PDFImage, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
 
-/** Kopīgs Dzintarzeme PDF (tāme, pasūtījums) — krāsas un kartīšu zīmēšana. */
+/** Kopīgs Dzintarzeme PDF (tāme, pasūtījums) - krāsas un kartīšu zīmēšana. */
 export const INK = rgb(17 / 255, 24 / 255, 39 / 255);
 export const MUTED = rgb(82 / 255, 82 / 255, 91 / 255);
 export const SEC_HEAD = rgb(63 / 255, 63 / 255, 70 / 255);
@@ -14,7 +14,7 @@ export const ACCENT_BAR = rgb(55 / 255, 65 / 255, 75 / 255);
 export const SEC_CARD_FILL = rgb(244 / 255, 244 / 255, 245 / 255);
 export const SEC_CARD_BORDER = rgb(212 / 255, 212 / 255, 216 / 255);
 export const SEC_SHADOW = rgb(228 / 255, 228 / 255, 231 / 255);
-/** Tāmes PDF satura rāmis — tumši pelēks, ieapaļots. */
+/** Tāmes PDF satura rāmis - tumši pelēks, ieapaļots. */
 export const CONTENT_FRAME_BORDER = rgb(38 / 255, 42 / 255, 48 / 255);
 const CONTENT_FRAME_BORDER_W = 1.75;
 export const SECTION_HEAD_GAP = 4;
@@ -123,7 +123,7 @@ export function drawRoundedRect(
   });
 }
 
-/** Saturs (bez virsraksta) — tumši pelēks rāmis, ieapaļoti stūri (ārpusē + balts iekšpus). */
+/** Saturs (bez virsraksta) - tumši pelēks rāmis, ieapaļoti stūri (ārpusē + balts iekšpus). */
 export function drawSectionContentFrame(
   page: PDFPage,
   opts: { x: number; yBottom: number; w: number; h: number },
@@ -295,7 +295,7 @@ export type DzFooterCtx = {
   fontBold: PDFFont;
 };
 
-/** Tāmes PDF kājene: zīmols + adrese + kontakti — viss kreisajā pusē. */
+/** Tāmes PDF kājene: zīmols + adrese + kontakti - viss kreisajā pusē. */
 export function drawDzintarzemeTamePdfFooter(
   page: PDFPage,
   margin: number,

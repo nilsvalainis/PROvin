@@ -1302,13 +1302,13 @@ describe("unified PDF sections single block", () => {
         {
           title: SOURCE_BLOCK_LABELS.carvertical,
           mileageRows: [],
-          incidentRows: [{ csngDate: "01.06.2024", lossAmount: "5001 € – 10 000 €", incidentNo: "Šveice" }],
+          incidentRows: [{ csngDate: "01.06.2024", lossAmount: "5001 € - 10 000 €", incidentNo: "Šveice" }],
           comments: "",
           damageDetails: [
             {
               date: "01.06.2024",
               country: "Šveice",
-              lossAmount: "5001 € – 10 000 €",
+              lossAmount: "5001 € - 10 000 €",
               damagedSides: "Kreisā puse Priekšpuse",
               damageGroups: "Ārējās virsbūves detaļas",
             },
@@ -1597,7 +1597,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain("Mans avots");
-    expect(doc).not.toContain("CITI AVOTI — Mans avots");
+    expect(doc).not.toContain("CITI AVOTI - Mans avots");
   });
 
   it("PDF footer is a document colophon without website marketing or issuer personal data", () => {
@@ -1641,7 +1641,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
           photoGroups: [
             {
               id: "la_phg_aabbccddeeff001122334455",
-              title: "2024-06-12 — ss.com",
+              title: "2024-06-12 - ss.com",
               photos: [{ id: "la_ph_aabbccddeeff001122334455" }, { id: "la_ph_112233445566778899aabbcc" }],
             },
           ],
@@ -1658,7 +1658,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("Fotogrāfiju analīze");
     expect(doc).toContain("pdf-listing-photo-grid");
     expect(doc).toContain("pdf-subhead--photo");
-    expect(doc).toContain("2024-06-12 — ss.com");
+    expect(doc).toContain("2024-06-12 - ss.com");
     expect(doc).toContain("Rūsa");
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });

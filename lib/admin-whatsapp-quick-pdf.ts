@@ -1,6 +1,6 @@
 /**
  * Vienkāršs WinAnsi-drošs PDF WhatsApp nosūtīšanai (pdf-lib Helvetica).
- * Pilna HTML atskaite — atsevišķi caur „Ģenerēt PDF”.
+ * Pilna HTML atskaite - atsevišķi caur „Ģenerēt PDF”.
  */
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -20,7 +20,7 @@ export function toWinAnsiSafeText(text: string): string {
     .replace(/[Žž]/g, "z")
     .replace(/[“”„]/g, "\"")
     .replace(/[’]/g, "'")
-    .replace(/[–—]/g, "-");
+    .replace(/[--]/g, "-");
 }
 
 function wrapPdfTextLine(text: string, maxWidth: number, widthOfText: (value: string) => number): string[] {

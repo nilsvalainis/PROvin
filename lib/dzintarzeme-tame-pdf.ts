@@ -49,7 +49,7 @@ async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array
 }
 
 /**
- * Informatīvs atgādinājums (PVN likums, 138.pants — peļņas daļas režīms).
+ * Informatīvs atgādinājums (PVN likums, 138.pants - peļņas daļas režīms).
  */
 const LV_PVN_TAME_LEGAL_NOTE =
   "Lietotam transportlīdzeklim piemērots PVN likuma 138. panta režīms (peļņas daļas nodoklis). Komisijas maksai un papildu pakalpojumiem piemērota PVN standartlikme 21%. PVN kopsumma norādīta kopsavilkumā.";
@@ -104,7 +104,7 @@ async function createCtx(): Promise<PdfCtx> {
   };
 }
 
-/** Dzintarzeme Auto tāmes PDF — viena A4 lapa, kājene ar logo un kontaktiem. */
+/** Dzintarzeme Auto tāmes PDF - viena A4 lapa, kājene ar logo un kontaktiem. */
 export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInput): Promise<Uint8Array> {
   const c = computeDzintarzemeTame(input);
   const ctx = await createCtx();

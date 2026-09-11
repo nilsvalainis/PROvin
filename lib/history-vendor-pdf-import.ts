@@ -111,7 +111,7 @@ export function parseHistoryVendorPdfText(
     const parsed = parseCarverticalPdfText(trimmed);
     serviceHistory = parsed.serviceHistory;
     if (serviceHistory.length === 0) {
-      warnings.push("Odometra žurnāla rindas netika atpazītas — teksts saglabāts iekopēšanas laukā.");
+      warnings.push("Odometra žurnāla rindas netika atpazītas - teksts saglabāts iekopēšanas laukā.");
     }
     const claims = extractClaimRowsForPdfInsight(trimmed, 1);
     const claimIncidents = claimRowsToLtabRows(claims);
@@ -135,7 +135,7 @@ export function parseHistoryVendorPdfText(
   if (target === "autodna") {
     serviceHistory = parseAutodnaMileagePaste(trimmed);
     if (serviceHistory.length === 0) {
-      warnings.push("TRANSPORTLĪDZEKĻA VĒSTURE rindas netika atpazītas — teksts saglabāts iekopēšanas laukā.");
+      warnings.push("TRANSPORTLĪDZEKĻA VĒSTURE rindas netika atpazītas - teksts saglabāts iekopēšanas laukā.");
     }
   }
 
@@ -148,7 +148,7 @@ export function parseHistoryVendorPdfText(
     autodnaDamage.length > 0 ? autodnaDamage : claimRowsToLtabRows(claims);
 
   if (target === "ltab" && incidents.length === 0) {
-    warnings.push("LTAB negadījumu rindas (datums + EUR) netika atrastas — teksts saglabāts RAW laukā.");
+    warnings.push("LTAB negadījumu rindas (datums + EUR) netika atrastas - teksts saglabāts RAW laukā.");
   } else if (target !== "ltab" && incidents.length === 0 && /claim|damage|accident|atlīdz|negad/i.test(trimmed)) {
     warnings.push("Iespējami negadījumi PDF, bet summas rindas netika strukturētas.");
   }

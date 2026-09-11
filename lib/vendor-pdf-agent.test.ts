@@ -49,7 +49,7 @@ Regulārā apkope
 Salona gaisa filtra maiņa
 Dzinēja gaisa filtra maiņa
 Auto Vēstures Atskaite autoDNA TMBJJ7NX9NY019543
-Pārbaudiet ziņojuma oriģinalitāti — noskenējiet galvenē redzamo QR kodu.
+Pārbaudiet ziņojuma oriģinalitāti - noskenējiet galvenē redzamo QR kodu.
 TMBJJ7NX9NY019543
 Eļļas maiņa
 Valsts Latvija
@@ -74,7 +74,7 @@ Bojājumu ieraksti
 02.2019.Vācija
 Novērtējums
 Aptuvenā iepriekš gūto bojājumu vērtība
-8501 € – 9000 €
+8501 € - 9000 €
 Transportlīdzekļa specifikācija
 Modelis
 A6
@@ -99,7 +99,7 @@ describe("currency → EUR", () => {
   });
 
   it("EUR summu atstāj precīzi kā atskaitē", () => {
-    expect(convertAmountTextToEur("8501 € – 9000 €")?.display).toBe("8 501 - 9 000 €");
+    expect(convertAmountTextToEur("8501 € - 9000 €")?.display).toBe("8 501 - 9 000 €");
   });
 
   it("tekstu bez cipariem neizdomā", () => {
@@ -274,7 +274,7 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
             odometer: "80021",
             location: "Niederlassung Bonn BMW AG, Bonn",
             works: [
-              "Atslēgas nolasījums (CBS): Tehniskā pārbaude servisā — 01.06.2024; Bremžu šķidrums — 01.06.2024",
+              "Atslēgas nolasījums (CBS): Tehniskā pārbaude servisā - 01.06.2024; Bremžu šķidrums - 01.06.2024",
             ],
           },
         ],

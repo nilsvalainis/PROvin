@@ -1,11 +1,11 @@
 /**
- * PDF atskaitei — valsts nosaukuma → karoga emocijzīme (vienots Unicode reģionālā indikatora stils).
+ * PDF atskaitei - valsts nosaukuma → karoga emocijzīme (vienots Unicode reģionālā indikatora stils).
  * Nezināma valsts vai neatpazīts teksts → ES karogs (🇪🇺).
  */
 
 import { countryLabelToIso2 } from "@/lib/country-names-lv";
 
-/** Eiropas Savienība — zils karogs (nezināmas valsts vietā). */
+/** Eiropas Savienība - zils karogs (nezināmas valsts vietā). */
 export const PDF_COUNTRY_FLAG_EU = "\u{1F1EA}\u{1F1FA}";
 
 function iso2ToRegionalFlag(iso: string): string {

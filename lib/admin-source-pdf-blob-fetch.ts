@@ -16,7 +16,7 @@ function blobRwToken(): string | null {
   return process.env.BLOB_READ_WRITE_TOKEN?.trim() || null;
 }
 
-/** Klienta augšupielādētie avotu PDF no Blob — tikai šī pasūtījuma ceļā un tikai PDF. */
+/** Klienta augšupielādētie avotu PDF no Blob - tikai šī pasūtījuma ceļā un tikai PDF. */
 export async function fetchSourcePdfsFromBlob(
   sessionId: string,
   refs: SourcePdfBlobRef[],

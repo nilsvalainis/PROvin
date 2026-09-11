@@ -1,5 +1,5 @@
 /**
- * Klienta PDF — atskaites kopsavilkuma plāksnītes (pirmā lapa).
+ * Klienta PDF - atskaites kopsavilkuma plāksnītes (pirmā lapa).
  * Tikai jau savākto datu interpretācija: negadījumi, nobraukums, īpašnieku skaits, servisa dziļums.
  */
 
@@ -46,7 +46,7 @@ import {
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
 
 export type PdfSummaryTile = {
-  /** Bāzes plāksnītes — fiksēti id; brīdinājumu un manuālās kartītes — `alert-…`, `manual-…`. */
+  /** Bāzes plāksnītes - fiksēti id; brīdinājumu un manuālās kartītes - `alert-…`, `manual-…`. */
   id: string;
   label: string;
   value: string;
@@ -54,7 +54,7 @@ export type PdfSummaryTile = {
   /** Ja ir, piezīmi drukā ar cap-height strīpiņu starp daļām (ne „+”). */
   noteSegments?: string[];
   tone: PdfSummaryTileTone;
-  /** Gara teksta kartīte — režģī aizņem abas kolonnas. */
+  /** Gara teksta kartīte - režģī aizņem abas kolonnas. */
   wide?: boolean;
 };
 
@@ -100,7 +100,7 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
   const newest = agg.clusters[0];
   const withDamage = agg.clusters.filter((c) => c.damage && c.damage.zoneIds.length > 0).length;
   const noteParts: string[] = [];
-  if (newest?.date && newest.date !== "—") noteParts.push(`Jaunākais: ${newest.date}`);
+  if (newest?.date && newest.date !== "-") noteParts.push(`Jaunākais: ${newest.date}`);
   if (withDamage > 0) noteParts.push(`${withDamage} ar bojājumu zonām`);
   return {
     id: "incidents",
@@ -193,7 +193,7 @@ function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
-/** Kopsavilkuma plāksnītes secībā, kādā tās drukājas (vienmēr četras — arī tukšas ir informācija). */
+/** Kopsavilkuma plāksnītes secībā, kādā tās drukājas (vienmēr četras - arī tukšas ir informācija). */
 export function buildPdfReportSummaryTiles(input: PdfSummaryInput): PdfSummaryTile[] {
   return [
     buildIncidentsTile(input),
@@ -203,7 +203,7 @@ export function buildPdfReportSummaryTiles(input: PdfSummaryInput): PdfSummaryTi
   ];
 }
 
-/** Īsāks teksts iztiek bez atsevišķas paskaidrojuma rindas — tas kļūst par kartītes vērtību. */
+/** Īsāks teksts iztiek bez atsevišķas paskaidrojuma rindas - tas kļūst par kartītes vērtību. */
 const MANUAL_CARD_VALUE_MAX_CHARS = 42;
 
 function manualSeverityToTone(severity: ProvinManualBannerSeverity): PdfSummaryTileTone {
@@ -215,7 +215,7 @@ function manualSeverityToTone(severity: ProvinManualBannerSeverity): PdfSummaryT
 const INFO_KINDS = new Set<string>(PROVIN_INFO_BANNER_KINDS);
 
 /**
- * Brīdinājumu, informatīvās un manuālās kartītes — tāds pats formāts kā bāzes plāksnītēm.
+ * Brīdinājumu, informatīvās un manuālās kartītes - tāds pats formāts kā bāzes plāksnītēm.
  * `manualBanners` gaida pilnu sarakstu: patstāvīgie ieraksti filtrējas pēc „Rādīt PDF”,
  * ieraksti ar `kind` ir aprēķināto brīdinājumu labojumi.
  */

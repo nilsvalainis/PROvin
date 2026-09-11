@@ -1,5 +1,5 @@
 /**
- * Klienta audita PDF kolofons — logo, atruna, konfidencialitāte.
+ * Klienta audita PDF kolofons - logo, atruna, konfidencialitāte.
  * Bez juridiskā vārda, reģ. nr. un adreses.
  */
 

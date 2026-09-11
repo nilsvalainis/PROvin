@@ -4,7 +4,7 @@ const LV_LETTER_CLASS = "A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž";
 /** pdf.js bieži izgriež š/ļ utt. kā atsevišķu glifu (`priek š ējā`, `da ļ a`). */
 const LV_CONSONANT_DIA = "šļžņķģčŠĻŽŅĶĢČ";
 
-/** Atstarpes rindas iekšienē — bez jaunas rindas, lai nesalīmētu `2016\n27000 km`. */
+/** Atstarpes rindas iekšienē - bez jaunas rindas, lai nesalīmētu `2016\n27000 km`. */
 const HORIZONTAL_WS = "[ \\t\\u00a0\\u202f]";
 
 /** Salīmē `priek š ējā` → `priekšējā`, neskarot `Labā puse`. */

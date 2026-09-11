@@ -2,7 +2,7 @@ import "server-only";
 
 import sharp from "sharp";
 
-/** Samazina attēlu pirms pdf-lib iegulšanas — PDF šūna ir maza; klienta kompresija jau samazina augšupielādi. */
+/** Samazina attēlu pirms pdf-lib iegulšanas - PDF šūna ir maza; klienta kompresija jau samazina augšupielādi. */
 export async function shrinkImageBytesForIrissPdf(input: Buffer): Promise<Uint8Array | null> {
   const pipeline = () =>
     sharp(input)

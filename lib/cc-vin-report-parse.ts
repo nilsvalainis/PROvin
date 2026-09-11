@@ -3,7 +3,7 @@
  *
  * Nolasa tikai vēstures faktus: odometru, bojājumus, apdrošinātāju / norakstīšanas ierakstus,
  * īpašumtiesību atzīmes (total loss, salvage, junk), title ierakstus un izsoļu pārdošanas.
- * Specifikācijas tabula apzināti tiek ignorēta — PROVIN atskaitē tā jau ir no citiem avotiem.
+ * Specifikācijas tabula apzināti tiek ignorēta - PROVIN atskaitē tā jau ir no citiem avotiem.
  *
  * Viss izvads ir latviski; avota nosaukums netiek pārnests ne vienā laukā.
  */
@@ -114,7 +114,7 @@ const CHECK_LABEL_LV: Record<string, string> = {
   mileages: "Odometra ieraksti",
 };
 
-/** Kopsavilkuma lauciņu secība atskaitē (dažādām atskaitēm atšķiras — pārbaudām visus). */
+/** Kopsavilkuma lauciņu secība atskaitē (dažādām atskaitēm atšķiras - pārbaudām visus). */
 const CHECK_LABELS_EN = Object.keys(CHECK_LABEL_LV);
 
 const CHECK_STATUS_OK_RE = /^(no\s+problems\s+found|no\s+records\s+found|no\s+found\s+records|not\s+rated)$/i;
@@ -188,7 +188,7 @@ function translateDamageTerm(raw: string): string {
 }
 
 /**
- * Īpašumtiesību atzīmes („title brands”) — pilnais saraksts atskaites secībā.
+ * Īpašumtiesību atzīmes („title brands”) - pilnais saraksts atskaites secībā.
  * Klienta PDF drukājam tikai tās, kurām avotā ir ieraksts.
  */
 const TITLE_BRAND_LV: [string, string][] = [
@@ -223,7 +223,7 @@ const TITLE_BRAND_LV: [string, string][] = [
   ["Street Rod", "Pārbūvēts street rod"],
   ["Vehicle Contains Reissued VIN", "Atkārtoti piešķirts VIN"],
   ["Replica", "Replika"],
-  ["Record of Totaled?", "Pilnīgi bojāts — total loss"],
+  ["Record of Totaled?", "Pilnīgi bojāts - total loss"],
   ["Owner Retained", "Total loss, palicis pie īpašnieka"],
   ["Bond Posted", "Īpašumtiesības apstiprinātas ar garantiju"],
   ["Memorandum Copy", "Title dokuments ir kopija"],
@@ -236,8 +236,8 @@ const TITLE_BRAND_LV: [string, string][] = [
   ["Vehicle Safety Defect Uncorrected", "Nenovērsts drošības defekts"],
   ["Vehicle Safety Defect Corrected", "Novērsts drošības defekts"],
   ["VIN Replaced", "VIN nomainīts"],
-  ["Gray Market: Non-compliant", "Pelēkais imports — neatbilst standartiem"],
-  ["Gray Market: Compliant", "Pelēkais imports — atbilst standartiem"],
+  ["Gray Market: Non-compliant", "Pelēkais imports - neatbilst standartiem"],
+  ["Gray Market: Compliant", "Pelēkais imports - atbilst standartiem"],
   ["Manufacturer Buy Back", "Ražotājs atpircis (lemon law)"],
   ["Former Rental", "Iepriekš nomas auto"],
   ["Disclosed Damage", "Deklarēti bojājumi"],
@@ -270,7 +270,7 @@ const US_STATES = new Set(
   ],
 );
 
-/** VERSALIEM tekstiem — cilvēklasāms izskats; īsie akronīmi (IAA, IAAI, CA) paliek. */
+/** VERSALIEM tekstiem - cilvēklasāms izskats; īsie akronīmi (IAA, IAAI, CA) paliek. */
 function titleCase(raw: string): string {
   const words = raw.trim().split(/\s+/);
   return words
@@ -311,7 +311,7 @@ function formatKmDisplay(raw: string): string {
 }
 
 /**
- * Summu attēlojums CC.VIN tabulās — nav-EUR valūtas automātiski pārrēķina uz EUR
+ * Summu attēlojums CC.VIN tabulās - nav-EUR valūtas automātiski pārrēķina uz EUR
  * (tāpat kā AutoDNA/CarVertical), lai avota valūta nekad neparādās klientam neizmainīta.
  * Pārrēķina audita ieraksts (ja `notes` padots) nonāk operatora paziņojumos pēc PDF augšupielādes.
  */
@@ -359,7 +359,7 @@ function parseHeader(lines: string[], out: CcVinParsedReport): void {
   }
 }
 
-/** Kopsavilkuma lauciņi: nosaukums var būt sadalīts 2–3 rindās, statuss ir nākamā rinda. */
+/** Kopsavilkuma lauciņi: nosaukums var būt sadalīts 2-3 rindās, statuss ir nākamā rinda. */
 function parseChecks(lines: string[], out: CcVinParsedReport): void {
   const start = lines.findIndex((l) => /^general\s+information$/i.test(l));
   if (start < 0) return;
@@ -388,7 +388,7 @@ function parseChecks(lines: string[], out: CcVinParsedReport): void {
     const severity: CcVinCheckRow["severity"] = CHECK_STATUS_OK_RE.test(statusRaw.trim()) ? "ok" : "alert";
     if (!seen.has(matched.label)) {
       seen.add(matched.label);
-      out.checks.push({ label: matched.label, status: status || "—", severity });
+      out.checks.push({ label: matched.label, status: status || "-", severity });
       const owners = statusRaw.match(/^(\d+)\s*owner\(s\)$/i);
       if (owners) out.ownersCount = owners[1]!;
     }
@@ -465,7 +465,7 @@ function isMileageNoiseLine(line: string): boolean {
   );
 }
 
-/** Sadaļu virsraksti nav ne izsoles vieta, ne uzņēmums — teksta slānī tie stāv līdzās ierakstiem. */
+/** Sadaļu virsraksti nav ne izsoles vieta, ne uzņēmums - teksta slānī tie stāv līdzās ierakstiem. */
 function isSectionHeading(line: string): boolean {
   const key = line.trim().toLowerCase();
   if (CHECK_LABEL_LV[key]) return true;
@@ -475,7 +475,7 @@ function isSectionHeading(line: string): boolean {
 
 const AUCTION_DAMAGE_PREFIX_RE = /^Norakstīto auto izsole:/;
 
-/** „Damage 1Front Damage” — apraksts ar tuvāko iepriekšējo datumu. */
+/** „Damage 1Front Damage” - apraksts ar tuvāko iepriekšējo datumu. */
 function parseDamages(lines: string[], out: CcVinParsedReport): void {
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i]!.match(/^damage\s*(\d+)\s*(.+)$/i);
@@ -541,7 +541,7 @@ function parseDamages(lines: string[], out: CcVinParsedReport): void {
 
 /**
  * Eiropas CheckCar.vin: „Accident records” / „Accident #1” + CountryDE + remonta tāme.
- * ASV atskaitēs šī sadaļa bieži ir „No records found” — tad rindu nav.
+ * ASV atskaitēs šī sadaļa bieži ir „No records found” - tad rindu nav.
  */
 function parseAccidentRecords(lines: string[], out: CcVinParsedReport): void {
   for (let i = 0; i < lines.length; i++) {
@@ -765,7 +765,7 @@ function parseSales(lines: string[], out: CcVinParsedReport): void {
 /**
  * „Title checks” matrica: statusu straume (`No records found` / `Record found!`) lapā ir pirms
  * atzīmju nosaukumiem, tāpēc pārim izmantojam kārtas numuru, nevis pozīciju.
- * Ja skaits nesakrīt, atgriežam tikai kopsavilkuma rindu — nekad nepiešķiram nepareizu atzīmi.
+ * Ja skaits nesakrīt, atgriežam tikai kopsavilkuma rindu - nekad nepiešķiram nepareizu atzīmi.
  */
 function parseTitleBrands(lines: string[], out: CcVinParsedReport): void {
   const start = lines.findIndex((l) => /^title\s+checks$/i.test(l));
@@ -822,7 +822,7 @@ function parseTitleBrands(lines: string[], out: CcVinParsedReport): void {
     out.brands.push({
       date: "",
       label: `Atrastas īpašumtiesību atzīmes: ${declared ?? foundCount}`,
-      detail: "Atzīmju nosaukumus nevarēja droši sasaistīt — jāpārbauda avota atskaitē.",
+      detail: "Atzīmju nosaukumus nevarēja droši sasaistīt - jāpārbauda avota atskaitē.",
     });
     out.notes.push("Īpašumtiesību atzīmju tabulu nevarēja sasaistīt pa rindām.");
     return;

@@ -1,5 +1,5 @@
 /**
- * Plan A — stingra lokālā (bez AI) AutoDNA / CarVertical / LTAB PDF parsēšana.
+ * Plan A - stingra lokālā (bez AI) AutoDNA / CarVertical / LTAB PDF parsēšana.
  */
 import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
@@ -120,7 +120,7 @@ function extractCarverticalDamageCount(text: string): string | undefined {
 function extractCarverticalOdometerRegex(text: string): AutoRecordsServiceRow[] {
   const out: AutoRecordsServiceRow[] = [];
   const seen = new Set<string>();
-  const re = /(\d{1,2})\.(\d{4})\.?\s*[-–—]?\s*([\d\s\u00a0]+)\s*km\b/gi;
+  const re = /(\d{1,2})\.(\d{4})\.?\s*[---]?\s*([\d\s\u00a0]+)\s*km\b/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const mo = Number.parseInt(m[1] ?? "", 10);
@@ -162,7 +162,7 @@ export function vendorLocalParseHasData(r: HistoryVendorPdfParseResult): boolean
 }
 
 /**
- * Plan A — pilna lokālā parsēšana konkrētam avotam.
+ * Plan A - pilna lokālā parsēšana konkrētam avotam.
  */
 export function parseVendorPdfLocal(
   target: HistoryVendorPdfTarget,
@@ -233,7 +233,7 @@ export function parseVendorPdfLocal(
       factualMeta.push(...extractLtabMetaComments(trimmed));
     }
     if (incidents.length === 0) {
-      warnings.push("LTAB: negadījumu rindas netika strukturētas — teksts saglabāts RAW.");
+      warnings.push("LTAB: negadījumu rindas netika strukturētas - teksts saglabāts RAW.");
     }
   }
 
@@ -254,7 +254,7 @@ export function parseVendorPdfLocal(
 
   if (target !== "ltab" && incidents.length === 0 && /boj[āa]j|damage|accident|atlīdz|negad/i.test(trimmed)) {
     if (extractBodyDamageSnippets(trimmed, 1).length === 0) {
-      anomalies.push("Tekstā minēti bojājumi/negadījumi — strukturētās rindas trūkst");
+      anomalies.push("Tekstā minēti bojājumi/negadījumi - strukturētās rindas trūkst");
     }
   }
 

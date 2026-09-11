@@ -1,7 +1,7 @@
 /**
  * e.csdd.lv TCPDF teksta slānis salīmē etiķetes ar vērtībām, defektu kodus ar
  * novērtējumu un nobraukuma pārus vienā rindā. Šis solis atjauno parserim
- * lasāmu atstarpi — gan PDF importam, gan raw ielīmei.
+ * lasāmu atstarpi - gan PDF importam, gan raw ielīmei.
  */
 
 const GLUED_LABELS = [
@@ -60,7 +60,7 @@ function unstickDefectCodes(text: string): string {
 
 function splitGluedMileageAndFooters(text: string): string {
   return text
-    .replace(/(\d{2}\.\d{2}\.\d{4})(?=\d{4,7}\s*[-–—])/g, "$1\n")
+    .replace(/(\d{2}\.\d{2}\.\d{4})(?=\d{4,7}\s*[---])/g, "$1\n")
     .replace(/(\d{2}\.\d{2}\.\d{4})(\d{1,2}\s*\/\s*\d+)/g, "$1\n$2")
     .replace(/(\d{2}\/\d{2}\/\d{4})(\d+\s+(?:ī|i)pa[sš]niek)/gi, "$1 $2");
 }
@@ -73,7 +73,7 @@ function spaceAfterColonDigits(text: string): string {
   return text.replace(/:(?=\d)/g, ": ");
 }
 
-/** Idempotents — jau atstarpi saturošs paste paliek neskarts. */
+/** Idempotents - jau atstarpi saturošs paste paliek neskarts. */
 export function normalizeEcsddPdfText(raw: string): string {
   let t = raw.replace(/\r/g, "");
   t = joinSuperscriptUnits(t);

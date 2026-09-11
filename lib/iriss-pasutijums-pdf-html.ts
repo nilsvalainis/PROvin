@@ -4,9 +4,9 @@ import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsR
 
 /** Sekundārā virsrakstu krāsa (Tailwind slate-900 tuvinājums). */
 const INK = "#111827";
-/** PDF pamatteksts — gandrīz melns. */
+/** PDF pamatteksts - gandrīz melns. */
 const SLATE_600 = "#1F2937";
-/** Bloku fons — Tailwind `bg-slate-50` (#F8FAFC). */
+/** Bloku fons - Tailwind `bg-slate-50` (#F8FAFC). */
 const PANEL = "#F8FAFC";
 
 function esc(s: string): string {
@@ -445,7 +445,7 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
 }
 
 /**
- * Drukas / „Saglabāt kā PDF” HTML — A4, Inter, akcents no `IRISS_BRAND_ORANGE_HEX`, SIA IRISS rekvizīti.
+ * Drukas / „Saglabāt kā PDF” HTML - A4, Inter, akcents no `IRISS_BRAND_ORANGE_HEX`, SIA IRISS rekvizīti.
  * Dizaina loģika atbilst Tailwind utility principiem (slate-600, slate-50, tracking-wider, shadow-sm, rounded-xl).
  * Tukši lauki netiek iekļauti.
  */

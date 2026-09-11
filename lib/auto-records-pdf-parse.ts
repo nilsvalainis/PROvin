@@ -144,7 +144,7 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
       serviceHistory: [],
       rawUnprocessedData: "",
       suggestedPdfChecklist: {},
-      warnings: ["PDF nesatur izvelkamu tekstu (iespējams skenēts attēls — mēģini iekopēt ODOMETER CHECK no portāla)."],
+      warnings: ["PDF nesatur izvelkamu tekstu (iespējams skenēts attēls - mēģini iekopēt ODOMETER CHECK no portāla)."],
       meta: { charCount: 0, rowCount: 0, usedOdometerSection: false },
     };
   }
@@ -156,11 +156,11 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
     rows = parseAutoRecordsOdometerTable(trimmed);
     if (rows.length === 0) rows = parseAutoRecordsPaste(trimmed);
     if (rows.length === 0) {
-      warnings.push("Atrasts ODOMETER CHECK, bet tabulas rindas netika atpazītas — mēģināju regex rezervi.");
+      warnings.push("Atrasts ODOMETER CHECK, bet tabulas rindas netika atpazītas - mēģināju regex rezervi.");
       rows = parseAutoRecordsPdfRegexFallback(trimmed);
     }
   } else {
-    warnings.push("PDF tekstā nav „ODOMETER CHECK” — izmantota rezerves parsēšana (datums + km).");
+    warnings.push("PDF tekstā nav „ODOMETER CHECK” - izmantota rezerves parsēšana (datums + km).");
     rows = parseAutoRecordsPdfRegexFallback(trimmed);
   }
 
@@ -169,7 +169,7 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
   }
 
   if (rows.length === 0) {
-    warnings.push("Nobraukuma rindas netika atrastas — pārbaudi, vai PDF ir no auto-records.com un satur vēstures tabulu.");
+    warnings.push("Nobraukuma rindas netika atrastas - pārbaudi, vai PDF ir no auto-records.com un satur vēstures tabulu.");
   }
 
   const rawUnprocessedData = trimmed.slice(0, MAX_RAW_SNIPPET);
@@ -179,7 +179,7 @@ export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult
   const facts = [...mileageTimelineFacts(rows, 3), ...damageSnippets];
   const anomalies: string[] = [];
   if (hasDamage && damageSnippets.length === 0 && rows.length === 0) {
-    anomalies.push("Tekstā minēti bojājumi/negadījumi — pārbaudi tabulu");
+    anomalies.push("Tekstā minēti bojājumi/negadījumi - pārbaudi tabulu");
   }
   const suggestedComments =
     facts.length > 0 || anomalies.length > 0 ? buildHybridSourcePdfComments({ facts, anomalies }) : undefined;

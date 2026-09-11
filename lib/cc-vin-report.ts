@@ -1,8 +1,8 @@
 /**
- * Starptautiskās vēstures avots (admin: „CC.VIN”) — strukturētie lauki, normalizācija un LV vārdnīcas.
+ * Starptautiskās vēstures avots (admin: „CC.VIN”) - strukturētie lauki, normalizācija un LV vārdnīcas.
  *
  * Klienta PDF šo avotu sauc tikai par „IZSOĻU PORTĀLU ARHĪVS”: ne sadaļā, ne tabulās, ne leģendā
- * nedrīkst parādīties ārējā pakalpojuma nosaukums. Specifikācijas šeit netiek dublētas — akcents ir
+ * nedrīkst parādīties ārējā pakalpojuma nosaukums. Specifikācijas šeit netiek dublētas - akcents ir
  * uz sarkanajiem karogiem (bojājumi, total loss, īpašumtiesību atzīmes, īpašnieku maiņas).
  */
 
@@ -15,7 +15,7 @@ import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
 /** Admin bloka nosaukums (tikai admin panelis). */
 export const CC_VIN_ADMIN_LABEL = "CC.VIN";
 
-/** Klienta PDF sadaļas nosaukums — bez atsauces uz ārējo pakalpojumu. */
+/** Klienta PDF sadaļas nosaukums - bez atsauces uz ārējo pakalpojumu. */
 export const CC_VIN_PDF_TITLE = "IZSOĻU PORTĀLU ARHĪVS";
 
 /** Nobraukuma / negadījumu tabulu avota apzīmējums (leģenda PDF). */
@@ -85,12 +85,12 @@ export type CcVinPdfChecklist = {
 export type CcVinBlockState = {
   /** Atskaites datums avotā (dd.mm.gggg). */
   reportDate: string;
-  /** „8/12” — cik reģistros ir atzīmes. */
+  /** „8/12” - cik reģistros ir atzīmes. */
   attentionMarks: string;
   /** Īpašnieku skaits pēc ārvalstu reģistriem. */
   ownersCount: string;
   checks: CcVinCheckRow[];
-  /** Odometra ieraksti — nonāk vienotajā nobraukuma tabulā. */
+  /** Odometra ieraksti - nonāk vienotajā nobraukuma tabulā. */
   mileage: AutoRecordsServiceRow[];
   damages: CcVinDamageRow[];
   insurance: CcVinRecordRow[];
@@ -98,16 +98,16 @@ export type CcVinBlockState = {
   titles: CcVinTitleRow[];
   sales: CcVinSaleRow[];
   comments: string;
-  /** Neapstrādātais avota teksts — tikai admin. */
+  /** Neapstrādātais avota teksts - tikai admin. */
   rawUnprocessedData: string;
-  /** Papildu konteksts tikai AI — nav PDF. */
+  /** Papildu konteksts tikai AI - nav PDF. */
   aiContextRaw: string;
   photos: CcVinPhotoMeta[];
   photoGroups: CcVinPhotoGroup[];
   pdfChecklist?: CcVinPdfChecklist;
 };
 
-/** Lokāls dublikāts (bez `admin-source-blocks` importa — tas pats importē šo moduli). */
+/** Lokāls dublikāts (bez `admin-source-blocks` importa - tas pats importē šo moduli). */
 export function emptyCcVinMileageRow(): AutoRecordsServiceRow {
   return { date: "", odometer: "", country: "" };
 }
@@ -335,7 +335,7 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
   };
 }
 
-/** AI konteksts / avotu žurnāls — bloka saturs vienkāršā tekstā. */
+/** AI konteksts / avotu žurnāls - bloka saturs vienkāršā tekstā. */
 export function ccVinBlockToPlainText(b: CcVinBlockState | null | undefined): string {
   if (!b || !ccVinBlockHasContent(b)) return "";
   const lines: string[] = [CC_VIN_PDF_TITLE];

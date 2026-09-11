@@ -152,31 +152,31 @@ function dedupeIncidents(rows: LtabIncidentRow[]): LtabIncidentRow[] {
 }
 
 const VENDOR_SYSTEM = `You are PROVIN.LV admin PDF data extractor. Read the attached vehicle history PDF (and optional text extract) for ONE vendor report.
-Return ONLY valid JSON — no markdown.
+Return ONLY valid JSON - no markdown.
 
 Map every table and timeline you can find into structured fields. Dates as DD.MM.YYYY when possible. If the source shows only MM.YYYY / M.YYYY (e.g. 06.2020), always expand to 01.MM.YYYY (e.g. 01.06.2020). Odometer as digits only (no "km"). Country names in Latvian when known (e.g. Latvija, Vācija).
 
 JSON schema:
 {
-  "mileagePasteRaw": "string — verbatim odometra / vehicle history section text for admin paste field",
-  "rawTextSnippet": "string — short representative excerpt (max 8000 chars)",
+  "mileagePasteRaw": "string - verbatim odometra / vehicle history section text for admin paste field",
+  "rawTextSnippet": "string - short representative excerpt (max 8000 chars)",
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "incidents": [{"csngDate":"DD.MM.YYYY","lossAmount":"e.g. 2930.00 €","incidentNo":"country name or ISO"}],
   "damageDetails": [{"date":"DD.MM.YYYY","country":"string","lossAmount":"EUR range or amount","damagedSides":"string","damageGroups":"string"}],
   "vehicleHistoryTimeline": [{"date":"DD.MM.YYYY","country":"string","description":"string"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
-  "comments": "string — see COMMENTS rules below"
+  "comments": "string - see COMMENTS rules below"
 }
 
 ${SOURCE_PDF_COMMENT_AI_RULES}
 
 Rules:
-- serviceHistory: ONLY rows with explicit odometer km digits (≥3 digits). If a timeline line has only year/date without km — do NOT add to serviceHistory.
-- incidents: ALL damage/claim/accident rows with date + amount + country (including insurance tables). NEVER put vehicle «Vērtība» / market/sale price EUR into lossAmount — those are not claims.
-- damageDetails: body damage sections (CarVertical „Virsbūves bojājums”, AutoDNA damage tables) — every event with date, country, loss/cost, affected sides/zones.
+- serviceHistory: ONLY rows with explicit odometer km digits (≥3 digits). If a timeline line has only year/date without km - do NOT add to serviceHistory.
+- incidents: ALL damage/claim/accident rows with date + amount + country (including insurance tables). NEVER put vehicle «Vērtība» / market/sale price EUR into lossAmount - those are not claims.
+- damageDetails: body damage sections (CarVertical „Virsbūves bojājums”, AutoDNA damage tables) - every event with date, country, loss/cost, affected sides/zones.
 - vehicleHistoryTimeline: non-mileage history events (registration, sale, inspection) when shown separately from odometer log.
 - pdfChecklist.incidents true if any accident/claim/damage mentioned; mileageHistory true if odometer history exists; mileageLine true if chart/curve looks consistent.
-- comments: factual context (damage zone text, dealer milestones, registration) AND anomalies per COMMENTS rules — never output only "no issues" when descriptive history exists.
+- comments: factual context (damage zone text, dealer milestones, registration) AND anomalies per COMMENTS rules - never output only "no issues" when descriptive history exists.
 - Never invent VIN or plate; use only PDF content.`;
 
 const TARGET_USER: Record<HistoryVendorPdfTarget, string> = {
@@ -206,12 +206,12 @@ Return ONLY JSON: {"target":"autodna"|"carvertical"|"ltab"|"auto_records"|"csdd"
 - ltab: LTAB / OCTA Latvia insurance
 - auto_records: auto-records.com ODOMETER CHECK
 - csdd: CSDD / e.csdd.lv registry printout
-- citi_avoti: any other issuer (HPI, national registry abroad, etc.) — set vendorLabel to issuer name if visible`;
+- citi_avoti: any other issuer (HPI, national registry abroad, etc.) - set vendorLabel to issuer name if visible`;
 
 const AUTO_RECORDS_SYSTEM = `You are PROVIN.LV admin PDF extractor for auto-records.com dealer reports.
 Return ONLY valid JSON:
 {
-  "rawUnprocessedData": "string — key sections: ODOMETER CHECK, service events (max 500000 chars)",
+  "rawUnprocessedData": "string - key sections: ODOMETER CHECK, service events (max 500000 chars)",
   "serviceHistory": [{"date":"DD.MM.YYYY","odometer":"digits","country":"string"}],
   "pdfChecklist": {"incidents": boolean, "mileageHistory": boolean, "mileageLine": boolean},
   "vehicleInfo": {
@@ -239,7 +239,7 @@ Return ONLY valid JSON:
     "interior": "string",
     "interiorCode": "string"
   },
-  "comments": "string — see COMMENTS rules below",
+  "comments": "string - see COMMENTS rules below",
   "warnings": ["string"]
 }
 ${AUTO_RECORDS_PDF_COMMENT_AI_RULES}
@@ -288,7 +288,7 @@ function vendorResultFromAi(
     incidents.length === 0 &&
     damageDetails.length === 0
   ) {
-    warnings.push("AI neatrada strukturētas rindas — pārbaudi PDF manuāli.");
+    warnings.push("AI neatrada strukturētas rindas - pārbaudi PDF manuāli.");
   } else {
     warnings.push(`Datu avots: AI PDF (${fileName}).`);
   }
@@ -337,7 +337,7 @@ function autoRecordsResultFromAi(
     if (typeof v !== "string") return "";
     const t = v.trim();
     if (!t) return "";
-    if (/^(\-+|—|–)$/i.test(t)) return "";
+    if (/^(\-+|-|-)$/i.test(t)) return "";
     return t;
   };
   const suggestedOutvinVehicleInfo: Partial<OutvinVehicleInfo> | undefined = (() => {
@@ -355,7 +355,7 @@ function autoRecordsResultFromAi(
   if (serviceHistory.length > 0) {
     warnings.unshift(`Datu avots: AI PDF (${fileName}).`);
   } else {
-    warnings.push("AI neatrada nobraukuma rindas — pārbaudi PDF.");
+    warnings.push("AI neatrada nobraukuma rindas - pārbaudi PDF.");
   }
 
   return {
@@ -475,7 +475,7 @@ export async function extractSourcePdfWithAi(opts: {
   const textSection =
     textHint && textHint.trim().length > 0
       ? `\n\nPartial text layer extract (may be incomplete):\n${textHint.trim().slice(0, 60_000)}`
-      : "\n\nNo usable text layer — read the PDF binary attachment.";
+      : "\n\nNo usable text layer - read the PDF binary attachment.";
 
   if (target === "csdd") {
     console.info(`${LOG_PREFIX} csdd_structured`, { fileName });

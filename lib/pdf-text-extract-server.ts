@@ -28,7 +28,7 @@ const MIN_USABLE_TEXT_CHARS = 80;
 
 let workerConfigured = false;
 
-/** Kopā ar deploy nonāk tikai tas, ko Next izseko — worker fails var arī neeksistēt. */
+/** Kopā ar deploy nonāk tikai tas, ko Next izseko - worker fails var arī neeksistēt. */
 function resolvePdfWorkerUrl(): string | null {
   const workerPath = join(process.cwd(), "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.mjs");
   return existsSync(workerPath) ? pathToFileURL(workerPath).href : null;
@@ -37,7 +37,7 @@ function resolvePdfWorkerUrl(): string | null {
 type PdfParseFn = (data: Buffer) => Promise<{ text?: unknown; numpages?: unknown }>;
 
 /**
- * `pdf-parse` iegājiens (`index.js`) palaiž savu demo režīmu, kad `module.parent` nav definēts —
+ * `pdf-parse` iegājiens (`index.js`) palaiž savu demo režīmu, kad `module.parent` nav definēts -
  * ESM / serverless vidē tas mēģina atvērt `./test/data/05-versions-space.pdf` un met ENOENT.
  * Kodola modulis ir tīra funkcija bez šī sānefekta.
  */
@@ -47,7 +47,7 @@ async function loadPdfParse(): Promise<PdfParseFn> {
     if (typeof core.default === "function") return core.default;
     if (typeof core === "function") return core as unknown as PdfParseFn;
   } catch {
-    // Vecākas / citādi iepakotas versijas — atkāpjamies uz publisko iegājienu.
+    // Vecākas / citādi iepakotas versijas - atkāpjamies uz publisko iegājienu.
   }
   const mod = (await import("pdf-parse")) as { default?: PdfParseFn };
   const fn = mod.default ?? (mod as unknown as PdfParseFn);
@@ -179,8 +179,8 @@ export function logPdfExtractResult(prefix: string, result: PdfExtractResult): v
     errorMessage: result.errorMessage,
     hint:
       result.stage === "text_layer_empty"
-        ? "Tukšs teksta slānis — iespējams skenēts PDF (Plan B: AI)"
-        : "Teksta izvilkšana neizdevās — Plan B: AI",
+        ? "Tukšs teksta slānis - iespējams skenēts PDF (Plan B: AI)"
+        : "Teksta izvilkšana neizdevās - Plan B: AI",
   });
 }
 

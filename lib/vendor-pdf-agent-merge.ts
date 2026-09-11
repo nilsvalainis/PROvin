@@ -1,7 +1,7 @@
 /**
  * Avota PDF aģenta rezultātu apvienošana un pārvēršana Copilot darbībās.
  *
- * Deterministiskais parseris (PDF teksta slānis) ir pamats — AI rezultāts pievieno rindas,
+ * Deterministiskais parseris (PDF teksta slānis) ir pamats - AI rezultāts pievieno rindas,
  * ko teksta slānis nedeva (skenēti / netipiski PDF), un precizē tehniskos laukus.
  */
 
@@ -97,7 +97,7 @@ export function resolveExtractCountries(
   extraTimeline: CountryTimelineEntry[] = [],
 ): VendorReportExtract {
   const timeline = buildCountryTimeline([...extract.countryTimeline, ...extraTimeline]);
-  // Dīlera izdrukā ieraksti ir reti — pēc pēdējā zināmā apmeklējuma valsti neizdomājam.
+  // Dīlera izdrukā ieraksti ir reti - pēc pēdējā zināmā apmeklējuma valsti neizdomājam.
   const opts = extract.vendor === "dealer" ? { extrapolateAfterLast: false } : undefined;
   const mileage = fillCountriesFromTimeline(extract.mileage, timeline, opts);
   const incidents = fillCountriesFromTimeline(
@@ -160,7 +160,7 @@ export function buildVendorCopilotActions(
     });
   }
 
-  // Oficiālā dīlera / rūpnīcas izdruka ir primārais specifikācijas avots — tā pārraksta pārējos.
+  // Oficiālā dīlera / rūpnīcas izdruka ir primārais specifikācijas avots - tā pārraksta pārējos.
   const dealerReport = extract.vendor === "dealer";
 
   if (opts?.includeDealerFields !== false) {
@@ -191,7 +191,7 @@ export function buildVendorCopilotActions(
   const hasStructuredService = extract.serviceHistory.some(
     (e) => e.date.trim() && (e.works.length > 0 || e.category.trim()),
   );
-  // Strukturētā tabula ir primārā — brīvais „Servisa vēsture” lauks tikai tad, ja rindu nav.
+  // Strukturētā tabula ir primārā - brīvais „Servisa vēsture” lauks tikai tad, ja rindu nav.
   if (serviceFacts && !hasStructuredService) {
     actions.push({
       type: "set_service_history",

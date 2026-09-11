@@ -17,14 +17,14 @@ type Props = {
   compact?: boolean;
 };
 
-/** lg breakpoint — desktop keeps the original scrollable iframe preview. */
+/** lg breakpoint - desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
 
 /** Bust CDN/browser cache when page-1 rasters are regenerated. */
 const MOBILE_PAGE1_ASSET_VERSION = "7";
 
 /**
- * iOS Safari PDF iframes always crop/zoom — full page only via static image.
+ * iOS Safari PDF iframes always crop/zoom - full page only via static image.
  * Assets from scripts/render-soft-page1.mjs (Poppler + shadow lift).
  */
 function mobilePreviewImageSrc(pdfHref: string): string | null {
@@ -115,7 +115,7 @@ export function SampleReportPreview({
           <div className={desktopPaneClass}>
             {desktopPaneSrc ? (
               <iframe
-                title={`${title} — ${previewLabel}`}
+                title={`${title} - ${previewLabel}`}
                 src={desktopPaneSrc}
                 className="absolute inset-0 h-full w-full border-0 bg-zinc-950"
                 loading="lazy"

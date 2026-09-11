@@ -1,5 +1,5 @@
 /**
- * Admin darba zonas iestatījumi: kuri bloki iekļauti klienta PDF (noklusējums — visi ieslēgti).
+ * Admin darba zonas iestatījumi: kuri bloki iekļauti klienta PDF (noklusējums - visi ieslēgti).
  */
 
 export type PdfVisibilitySettings = {
@@ -87,7 +87,7 @@ function isBool(v: unknown): v is boolean {
   return typeof v === "boolean";
 }
 
-/** Saglabāta JSON / daļēji objekti — saplūst ar noklusējumu. */
+/** Saglabāta JSON / daļēji objekti - saplūst ar noklusējumu. */
 export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
   const d = DEFAULT_PDF_VISIBILITY;
   if (!raw || typeof raw !== "object") return { ...d };

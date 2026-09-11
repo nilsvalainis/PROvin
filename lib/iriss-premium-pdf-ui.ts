@@ -18,16 +18,16 @@ export const PREMIUM_MUTED = rgb(71 / 255, 85 / 255, 105 / 255);
 export const PREMIUM_PANEL = rgb(248 / 255, 250 / 255, 252 / 255);
 export const PREMIUM_HIGHLIGHT_FILL = rgb(255 / 255, 248 / 255, 245 / 255);
 export const PREMIUM_HEADER_AFTER_RULE_GAP = 40;
-/** Rezerve satura apakšā — 3 kol. kājenei + logo. */
+/** Rezerve satura apakšā - 3 kol. kājenei + logo. */
 export const PREMIUM_FOOTER_BLOCK_H = 102;
 const TRACK_TIGHT = 0.08;
 
-/** Rindiņas augstums 1,52× — „premium” lasāmība. */
+/** Rindiņas augstums 1,52× - „premium” lasāmība. */
 export function premiumLineHeight(fs: number): number {
   return Math.round(fs * 1.52);
 }
 
-/** Logo augšējā labajā stūrī — nobīde uz augšu (PDF y+), lai pilnas platuma līnija zem virsraksta nekrustotu ar logo. */
+/** Logo augšējā labajā stūrī - nobīde uz augšu (PDF y+), lai pilnas platuma līnija zem virsraksta nekrustotu ar logo. */
 export const PREMIUM_HEADER_LOGO_LIFT_Y = 30;
 
 export function stampOfferLogoTopRight(
@@ -56,7 +56,7 @@ export type PremiumHeaderMutableCtx = {
 
 /**
  * Rēķina „premium” galvene: virsraksts kreisajā, logo labajā augšējā stūrī,
- * tieši zem virsraksta — pilna platuma melnā līnija (2 px slate), tad apakšvirsraksti un atstarpe.
+ * tieši zem virsraksta - pilna platuma melnā līnija (2 px slate), tad apakšvirsraksti un atstarpe.
  */
 export function drawPremiumInvoiceHeader(
   ctx: PremiumHeaderMutableCtx,
@@ -241,12 +241,12 @@ function splitIrissFooterIntoCols(lines: string[]): { c1: string; c2: string; c3
   }
   return {
     c1: [brand, ...phones].filter(Boolean).join("\n"),
-    c2: addr.length ? addr.join("\n") : "—",
-    c3: web.length ? web.join("\n") : "—",
+    c2: addr.length ? addr.join("\n") : "-",
+    c3: web.length ? web.join("\n") : "-",
   };
 }
 
-/** Kājene pēc `IRISS_PDF_SUPPLIER_LINES_JSON` — 3 kolonnas. */
+/** Kājene pēc `IRISS_PDF_SUPPLIER_LINES_JSON` - 3 kolonnas. */
 export function drawPremiumFooter3ColIriss(
   page: PDFPage,
   margin: number,
@@ -354,7 +354,7 @@ export function drawOfferMiniIcon(
   });
 }
 
-/** Apmaļots attēla rāmis (5 px radius) — oranža kontūra, balts fons. */
+/** Apmaļots attēla rāmis (5 px radius) - oranža kontūra, balts fons. */
 export function drawImageInPremiumFrame(
   page: PDFPage,
   img: { width: number; height: number },

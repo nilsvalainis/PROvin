@@ -3,7 +3,7 @@
  *
  * Rāda tikai to, kas maina pircēja lēmumu: sarkanos karogus, bojājumus, norakstīšanas un
  * īpašumtiesību ierakstus, pārdošanas vēsturi. Specifikācijas un „nav ierakstu” pārbaudes
- * netiek drukātas — tās jau ir citās sadaļās vai nesniedz informāciju.
+ * netiek drukātas - tās jau ir citās sadaļās vai nesniedz informāciju.
  */
 
 import {
@@ -32,10 +32,10 @@ function subhead(title: string): string {
 }
 
 function td(v: string): string {
-  return `<td>${escapeHtml(v.trim() || "—")}</td>`;
+  return `<td>${escapeHtml(v.trim() || "-")}</td>`;
 }
 
-/** Kolonnas bez neviena datu lauka netiek drukātas — sadaļa nepiepildās ar „—”. */
+/** Kolonnas bez neviena datu lauka netiek drukātas - sadaļa nepiepildās ar „-”. */
 function logTable(headings: string[], rows: string[][]): string {
   if (rows.length === 0) return "";
   const keep = headings.map((_, i) => rows.some((cells) => (cells[i] ?? "").trim().length > 0));
@@ -58,7 +58,7 @@ function kmDisplay(raw: string): string {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-/** Brīdinājumi — tikai reģistri ar atzīmi; „tīrie” netiek uzskaitīti. */
+/** Brīdinājumi - tikai reģistri ar atzīmi; „tīrie” netiek uzskaitīti. */
 function alertList(b: CcVinBlockState): string {
   const alerts = ccVinAlertChecks(b).filter((c) => !CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS.has(c.label.trim()));
   if (alerts.length === 0) return "";
@@ -92,7 +92,7 @@ function factLine(b: CcVinBlockState): string {
 }
 
 /**
- * Sadaļas iekšpuse (bez virsraksta joslas un komentāra salas — tos pievieno izsaucējs,
+ * Sadaļas iekšpuse (bez virsraksta joslas un komentāra salas - tos pievieno izsaucējs,
  * lai noformējums sakristu ar pārējiem avotiem).
  */
 export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): string {
@@ -107,7 +107,7 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): s
     if (facts) parts.push(facts);
   }
 
-  // Bojājumi ar summu jau parādās vienotajā „NEGADĪJUMU VĒSTURE” tabulā (unified-incidents.ts) —
+  // Bojājumi ar summu jau parādās vienotajā „NEGADĪJUMU VĒSTURE” tabulā (unified-incidents.ts) -
   // šeit paliek tikai tie, kam nav summas, lai tas pats ieraksts nedublējas divās PDF vietās.
   const damages = (b.damages ?? []).filter((r) => ccVinDamageRowHasData(r) && !r.amount.trim());
   if (damages.length > 0) {
@@ -157,7 +157,7 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): s
   return parts.join("\n");
 }
 
-/** Sadaļas CSS — mērogs un krāsas seko PDF dizaina marķieriem. */
+/** Sadaļas CSS - mērogs un krāsas seko PDF dizaina marķieriem. */
 export const CC_VIN_PDF_CSS = `
       .pdf-ccvin-flags{list-style:none;margin:0 0 8px;padding:0;display:block}
       .pdf-ccvin-flag{

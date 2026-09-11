@@ -35,7 +35,7 @@ export async function uploadSourcePdfToBlob(sessionId: string, file: File): Prom
     const message = e instanceof Error ? e.message : String(e);
     throw new SourcePdfBlobUploadError(
       /BLOB_READ_WRITE_TOKEN|blob_disabled/i.test(message)
-        ? "Serverī nav BLOB_READ_WRITE_TOKEN — PDF, kas lielāki par ~3 MB, nevar augšupielādēt"
+        ? "Serverī nav BLOB_READ_WRITE_TOKEN - PDF, kas lielāki par ~3 MB, nevar augšupielādēt"
         : `Neizdevās augšupielādēt PDF krātuvē: ${message}`,
     );
   }

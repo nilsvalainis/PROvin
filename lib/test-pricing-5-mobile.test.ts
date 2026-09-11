@@ -8,6 +8,7 @@ import {
   getTp5MobileTurnaround,
   TP5_DEALER_BRAND_ROWS,
   TP5_DEALER_BRANDS,
+  TP5_DEALER_BRANDS_WITH_LOGO,
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_FEATURE_ROW_COUNT,
   TP5_MOBILE_SERVICES,
@@ -101,6 +102,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
       ["Ferrari", "Maserati", "Aston Martin", "Lotus", "MG"],
     ]);
     expect(TP5_DEALER_BRANDS).toHaveLength(48);
+    expect(TP5_DEALER_BRANDS_WITH_LOGO).toHaveLength(48);
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
     expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-72h");
     expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");

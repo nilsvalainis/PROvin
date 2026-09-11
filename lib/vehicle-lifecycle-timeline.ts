@@ -1,5 +1,5 @@
 /**
- * Vēstures kopsavilkums — viena hronoloģiska transportlīdzekļa dzīves cikla lente no visiem avotiem.
+ * Vēstures kopsavilkums - viena hronoloģiska transportlīdzekļa dzīves cikla lente no visiem avotiem.
  * Fakti nāk no jau savāktajiem blokiem; loģikas slānis pievieno importu, robus un pretrunas.
  */
 
@@ -71,7 +71,7 @@ export type LifecycleEvent = {
   odometer: string;
   sources: string[];
   tone: LifecycleEventTone;
-  /** Negadījuma kartīte — tas pats klasteris, ko „Negadījumu vēsture”. */
+  /** Negadījuma kartīte - tas pats klasteris, ko „Negadījumu vēsture”. */
   incident?: UnifiedIncidentCluster;
 };
 
@@ -90,7 +90,7 @@ export function lifecyclePublicCaption(raw: string): string {
   const t = raw
     .replace(OPAQUE_DEALER_CODE_RE, " ")
     .replace(/\s{2,}/g, " ")
-    .replace(/^[\s,;:.\-–—]+|[\s,;:.\-–—]+$/g, "")
+    .replace(/^[\s,;:.\---]+|[\s,;:.\---]+$/g, "")
     .trim();
   return t;
 }
@@ -117,13 +117,13 @@ function displayDate(raw: string, ms: number): string {
     const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
     return `${dd}.${mm}.${d.getUTCFullYear()}`;
   }
-  return t || "—";
+  return t || "-";
 }
 
 function yearOf(raw: string, ms: number): string {
   if (ms > 0) return String(new Date(ms).getUTCFullYear());
   const m = raw.match(/(\d{4})/);
-  return m ? m[1]! : "—";
+  return m ? m[1]! : "-";
 }
 
 /** Ja «vieta» ir tikai valsts nosaukums, to rāda karoga rindā, ne kā atsevišķu faktu. */
@@ -281,7 +281,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         kind: "service",
         rawDate: w.date,
         title: lifecycleDealerVisitTitle(w.works),
-        // Darbu saraksts paliek dīlera sadaļā; kopsavilkumā — tikai vieta (ne valsts dublikāts).
+        // Darbu saraksts paliek dīlera sadaļā; kopsavilkumā - tikai vieta (ne valsts dublikāts).
         detail: locIsCountry ? "" : loc,
         country: locIsCountry ? loc : "",
         odometer: w.odometer,
@@ -329,7 +329,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       country: c.country,
       tone: "alert",
     });
-    // Klastera displeja datums var būt MM.YYYY, ja avoti nesakrīt dienā — kārtošanai ņem precīzāko locekli.
+    // Klastera displeja datums var būt MM.YYYY, ja avoti nesakrīt dienā - kārtošanai ņem precīzāko locekli.
     if (c.sortableTime > 0 && Number.isFinite(c.sortableTime)) {
       ev.time = c.sortableTime;
       ev.year = yearOf(c.date, c.sortableTime);
@@ -340,7 +340,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   }
 
   const ccVin = input.ccVinBlock;
-  // Bojājumi ar summu jau iet caur vienoto negadījumu klasteri; bez summas — atsevišķs fakts.
+  // Bojājumi ar summu jau iet caur vienoto negadījumu klasteri; bez summas - atsevišķs fakts.
   for (const d of ccVin?.damages ?? []) {
     if (!ccVinDamageRowHasData(d) || !d.date.trim() || d.amount.trim()) continue;
     out.push(
@@ -396,7 +396,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       }),
     );
   }
-  // Izsoļu pārdošanas — datums + cena jābūt kopsavilkuma joslā, ne tikai avota sadaļā.
+  // Izsoļu pārdošanas - datums + cena jābūt kopsavilkuma joslā, ne tikai avota sadaļā.
   for (const s of ccVin?.sales ?? []) {
     if (!ccVinSaleRowHasData(s) || !s.date.trim()) continue;
     const sold = !/nav\s+pārdots/i.test(s.status);
@@ -527,7 +527,7 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
       if (months >= GAP_MONTHS_THRESHOLD) {
         out.push({
           kind: "gap",
-          date: `${prev.date} — ${e.date}`,
+          date: `${prev.date} - ${e.date}`,
           time: prev.time + 1,
           year: prev.year,
           title: `Aptuveni ${months} mēneši bez ierakstiem`,

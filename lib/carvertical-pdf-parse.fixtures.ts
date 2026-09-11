@@ -192,7 +192,7 @@ Kreisā puse Priekšpuse
 Aptuvenā iepriekš gūt
 o bojāj
 umu vērtība
-5001 € – 10 000 €
+5001 € - 10 000 €
 Bojāj
 umu
 grupas

@@ -13,7 +13,7 @@ const CSDD_SECTION_MARKERS = [
   "Pēdējā tehniskā apskate",
 ] as const;
 
-/** Apvieno PDF teksta slāni un AI transkriptu — PDF teksts ir primārais avots. */
+/** Apvieno PDF teksta slāni un AI transkriptu - PDF teksts ir primārais avots. */
 export function mergeCsddPdfRawSources(textHint: string, aiRaw: string): string {
   const pdf = normalizeCsddRawText(textHint).trim();
   const ai = normalizeCsddRawText(aiRaw).trim();

@@ -5,7 +5,7 @@ import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { emptyCsddFields } from "@/lib/admin-source-blocks";
 
-/** e.csdd.lv TCPDF slānis — FORD RANGER ON8848 (1 lpp.). */
+/** e.csdd.lv TCPDF slānis - FORD RANGER ON8848 (1 lpp.). */
 const ON8848_TCPDF = `
 Reģistrācijas numursON8848
 StatussNoņemts no uzskaites
@@ -47,7 +47,7 @@ bremžu lukturu slēgums.
 Informācija sagatavota elektroniski 14.08.2026 19:09:27.
 `;
 
-/** e.csdd.lv TCPDF — Mercedes KG982 fragments (salīmēts nobraukums + dūmainība). */
+/** e.csdd.lv TCPDF - Mercedes KG982 fragments (salīmēts nobraukums + dūmainība). */
 const KG982_TCPDF = `
 Reģistrācijas numursKG982
 StatussUzskaitē

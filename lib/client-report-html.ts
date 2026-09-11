@@ -1,5 +1,5 @@
 /**
- * Klienta PDF atskaite — tikai admin paneļa ievadīto datu spogulis.
+ * Klienta PDF atskaite - tikai admin paneļa ievadīto datu spogulis.
  * Nobraukuma sadaļā: divi līknes grafiki (maksas vs bezmaksas/publiski avoti) un tabula.
  */
 
@@ -254,7 +254,7 @@ function sourceMileageSparkHtml(
   return buildSourceMileageSparkHtml(ctx.rows, key, { chartExcludeSourceOrders: ctx.chartExclude });
 }
 
-/** Mājaslapas primārais zils — grafiks, akcenti (`PDF_BRAND_BLUE_HEX`). */
+/** Mājaslapas primārais zils - grafiks, akcenti (`PDF_BRAND_BLUE_HEX`). */
 const PDF_MILEAGE_CHART_LINE = PDF_BRAND_BLUE_HEX;
 const PDF_MILEAGE_CHART_AXIS = "#9ca3af";
 
@@ -284,29 +284,29 @@ export type ClientReportPayload = {
   cenasAtbilstiba: string;
   listingMarket?: import("@/lib/listing-scrape").ListingMarketSnapshot | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[];
-  /** AUTO RECORDS — servisa vēsture (PDF: tabula; raw netiek drukāts). */
+  /** AUTO RECORDS - servisa vēsture (PDF: tabula; raw netiek drukāts). */
   autoRecordsBlock?: AutoRecordsBlockState | null;
-  /** OneAuto OEM — OFICIĀLĀ DĪLERA DATI (servisa skala, komplektācija, dzinējs). */
+  /** OneAuto OEM - OFICIĀLĀ DĪLERA DATI (servisa skala, komplektācija, dzinējs). */
   oneautoBlock?: OneautoBlockState | null;
-  /** Starptautiskā vēsture — sarkanie karogi, bojājumi, īpašumtiesības (bez specifikācijām). */
+  /** Starptautiskā vēsture - sarkanie karogi, bojājumi, īpašumtiesības (bez specifikācijām). */
   ccVinBlock?: CcVinBlockState | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
   listingAnalysis?: ListingAnalysisBlockState | null;
-  /** Ja nav — PDF iekļauj visu (admin noklusējums). */
+  /** Ja nav - PDF iekļauj visu (admin noklusējums). */
   pdfVisibility?: PdfVisibilitySettings | null;
   /** `dealer`: tikai OFICIĀLĀ DĪLERA DATI, bez hubu / citu avotu sekcijām. */
   pdfReportKind?: "full" | "dealer";
-  /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums — visi ieslēgti). */
+  /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums - visi ieslēgti). */
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
   /** Manuāli pievienoti augšējās joslas brīdinājumi. */
   manualBanners?: import("@/lib/provin-alert-banners").ProvinManualBanner[] | null;
-  /** Iekšējās piezīmes (var saturēt vienkāršu HTML no admin redaktora) — PDF zem apvienotās negadījumu tabulas. */
+  /** Iekšējās piezīmes (var saturēt vienkāršu HTML no admin redaktora) - PDF zem apvienotās negadījumu tabulas. */
   internalComment?: string | null;
-  /** Negadījumu fotogrāfijas — PDF tieši zem kopsavilkuma apraksta. */
+  /** Negadījumu fotogrāfijas - PDF tieši zem kopsavilkuma apraksta. */
   incidentPhotoGroups?: { id: string; title: string; photos: { id: string }[] }[] | null;
   incidentPhotos?: { id: string }[] | null;
-  /** NOBRAUKUMA VĒSTURES KOMENTĀRS — PDF zem nobraukuma grafika. */
+  /** NOBRAUKUMA VĒSTURES KOMENTĀRS - PDF zem nobraukuma grafika. */
   mileageComment?: string | null;
 };
 
@@ -406,7 +406,7 @@ function countCitiAvotiFilledParts(b: CitiAvotiBlockState): number {
   return capSourceCount(c);
 }
 
-/** Tikai payload datu apkopošana PDF drukai — bez AI izsaukumiem un bez DB tiešās piekļuves. */
+/** Tikai payload datu apkopošana PDF drukai - bez AI izsaukumiem un bez DB tiešās piekļuves. */
 function computeProvinPdfSourcesUsedCounts(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
@@ -439,7 +439,7 @@ function computeProvinPdfSourcesUsedCounts(
   return { n1, n2, n3 };
 }
 
-/** Katrs pārbaudītais avots atsevišķi — nosaukums, avota krāsa un ierakstu skaits. */
+/** Katrs pārbaudītais avots atsevišķi - nosaukums, avota krāsa un ierakstu skaits. */
 function collectPdfCheckedSources(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
@@ -551,7 +551,7 @@ function buildPdfLifeMetaHtml(e: LifecycleEvent): string {
 function buildPdfLifeKmHtml(e: LifecycleEvent): string {
   if (e.kind === "incident") {
     const raw = e.incident?.displayAmount.trim() ?? "";
-    if (!raw || raw === "—") return "";
+    if (!raw || raw === "-") return "";
     const inner = formatIncidentLossAmountHtml(raw, { approx: Boolean(e.incident?.averaged), ico: "lg" });
     if (!inner) return "";
     return `<span class="pdf-life-km pdf-life-km--loss">${inner}</span>`;
@@ -619,7 +619,7 @@ function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): strin
   </li>`;
 }
 
-/** Vēstures kopsavilkums — gada joslas un kartītes pie hronoloģiskās sliedes. */
+/** Vēstures kopsavilkums - gada joslas un kartītes pie hronoloģiskās sliedes. */
 function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
   const events = buildVehicleLifecycleEvents({
     csddForm: p.csddForm ?? null,
@@ -662,7 +662,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-lifecycle-zone" role="region">${head}<ol class="pdf-life-list">${items.join("")}</ol>${legend}</div>`;
 }
 
-/** Atskaites kopsavilkums — bāzes plāksnītes un brīdinājumu / manuālās kartītes vienā režģī. */
+/** Atskaites kopsavilkums - bāzes plāksnītes un brīdinājumu / manuālās kartītes vienā režģī. */
 function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummaryTile[] = []): string {
   const tiles = [
     ...buildPdfReportSummaryTiles({
@@ -713,13 +713,13 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
 function buildPdfCountryFlagCellHtml(countryLabel: string, extraWrapClass = ""): string {
   const flag = pdfCountryFlagEmoji(countryLabel);
   const code = pdfCountryCodeLetters(countryLabel);
-  const ariaLabel = escapeHtml(countryLabel.trim() || "—");
+  const ariaLabel = escapeHtml(countryLabel.trim() || "-");
   const codeEsc = escapeHtml(code);
   const wrapCls = extraWrapClass ? ` pdf-country-flag-wrap ${extraWrapClass}` : " pdf-country-flag-wrap";
   return `<span class="${wrapCls.trim()}" role="img" aria-label="${ariaLabel}"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span class="pdf-country-code">${codeEsc}</span></span>`;
 }
 
-/** Robs starp ierakstiem — centrēts čips, kas pārtrauc sliedi. */
+/** Robs starp ierakstiem - centrēts čips, kas pārtrauc sliedi. */
 function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
   return `<li class="pdf-life-break pdf-life-break--gap">
     <span class="pdf-life-rail pdf-life-rail--dash" aria-hidden="true"></span>
@@ -737,7 +737,7 @@ function sectionHeadBrand(icon: string, title: string, badgeHtml = ""): string {
   return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap${brandWrap}" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2>${badgeHtml}</div>`;
 }
 
-/** Avota sadaļas ārējā klase — augšmalas akcents avota krāsā (tā pati krāsa kā nobraukuma svītriņai). */
+/** Avota sadaļas ārējā klase - augšmalas akcents avota krāsā (tā pati krāsa kā nobraukuma svītriņai). */
 function sourceZoneClass(sourceLabel: string): string {
   return `pdf-src-zone pdf-src-zone--${mileageSourceLabelToPdfKey(sourceLabel)}`;
 }
@@ -749,7 +749,7 @@ function listingSourceZoneClass(listingUrl: string | null | undefined): string {
   return sourceZoneClass(SOURCE_BLOCK_LABELS.listing_analysis);
 }
 
-/** „1 ieraksts” / „12 ieraksti” — latviešu skaitļa forma. */
+/** „1 ieraksts” / „12 ieraksti” - latviešu skaitļa forma. */
 function formatSourceRecordCountLv(count: number): string {
   const one = count % 10 === 1 && count % 100 !== 11;
   return `${count} ${one ? "ieraksts" : "ieraksti"}`;
@@ -761,7 +761,7 @@ function sourceRecordCountBadgeHtml(count: number): string {
   return `<span class="pdf-src-count-badge pdf-src-count-badge--ok">${escapeHtml(formatSourceRecordCountLv(count))}</span>`;
 }
 
-/** AutoDNA / CarVertical / CAR INFO — zīmolu logotipi, 16×16 kā pārējās PDF sadaļu ikonas. */
+/** AutoDNA / CarVertical / CAR INFO - zīmolu logotipi, 16×16 kā pārējās PDF sadaļu ikonas. */
 function vendorSectionIconHtml(title: string): string {
   const L = SOURCE_BLOCK_LABELS;
   if (title === L.autodna) {
@@ -843,7 +843,7 @@ function pdfLossAmountAlertIconHtml(tier: "yellow" | "red", size: "sm" | "lg" = 
   return `<svg class="${cls}" width="${px}" height="${px}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
-/** Sarkana bultiņa uz leju — krāsa kā pdf-warn (sarkanajam), izmērs +30% pret 13px trijstūri (~17px). */
+/** Sarkana bultiņa uz leju - krāsa kā pdf-warn (sarkanajam), izmērs +30% pret 13px trijstūri (~17px). */
 function pdfPriceDropDownArrowHtml(): string {
   return `<svg class="pdf-price-drop-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 5v14" stroke="#FF4D4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 12-7 7-7-7" stroke="#FF4D4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
@@ -867,11 +867,11 @@ function formatLossAmountEurCell(raw: string, opts?: { approx?: boolean }): stri
   return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--${tier}"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${esc}</span></span>`;
 }
 
-/** Negadījuma summa — vienmēr sarkana, lai hubā un vēsturē to var pamanīt (ne dzeltenais slieksnis zem 1000 €). */
+/** Negadījuma summa - vienmēr sarkana, lai hubā un vēsturē to var pamanīt (ne dzeltenais slieksnis zem 1000 €). */
 function formatIncidentLossAmountHtml(raw: string, opts?: { approx?: boolean; ico?: "sm" | "lg" }): string {
   const display = normalizeLossAmountEurDisplay(raw);
   const t = display || raw.trim();
-  if (!t || t === "—") return "";
+  if (!t || t === "-") return "";
   const shown = opts?.approx ? `~${t}` : t;
   const ico = pdfLossAmountAlertIconHtml("red", opts?.ico ?? "lg");
   return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${escapeHtml(shown)}</span></span>`;
@@ -900,7 +900,7 @@ function extractVehicleMakeModel(csdd: string): string | null {
   return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
 }
 
-/** Komentāru bloks — vienots stils visā atskaitē; „Komentārs” virsraksts netiek rādīts. */
+/** Komentāru bloks - vienots stils visā atskaitē; „Komentārs” virsraksts netiek rādīts. */
 function pdfReportCommentBox(text: string, label = ""): string {
   const body = adminRichHtmlToPdfSafeHtml(text).trim();
   if (!body) return "";
@@ -914,7 +914,7 @@ function pdfAvotuCommentIsland(text: string): string {
   return pdfReportCommentBox(text);
 }
 
-/** Avota punkts — viens vizuālais kods visā atskaitē (tabulas, laikposms, negadījumi, leģendas). */
+/** Avota punkts - viens vizuālais kods visā atskaitē (tabulas, laikposms, negadījumi, leģendas). */
 function pdfSourceDotHtml(sourceLabel: string): string {
   const key = mileageSourceLabelToPdfKey(sourceLabel);
   const aria = `Avots: ${MILEAGE_PDF_SOURCE_LEGEND[key].full}`;
@@ -954,7 +954,7 @@ function buildPdfSourceLegendHtml(sourceLabels: string[]): string {
   return `<ul class="pdf-src-legend">${parts.join("")}</ul>`;
 }
 
-/** Tabulas „Avots” kolonna — punkti bez teksta (nosaukumi ir leģendā zem tabulas). */
+/** Tabulas „Avots” kolonna - punkti bez teksta (nosaukumi ir leģendā zem tabulas). */
 function buildPdfMileageSourceDotsHtml(sourceLabels: string[]): string {
   const inner = uniqueSourceLabels(sourceLabels).map((lbl) => pdfSourceDotHtml(lbl)).join("");
   return `<span class="pdf-src-dots" role="presentation">${inner}</span>`;
@@ -1074,10 +1074,10 @@ export function buildUnifiedMileageTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-hub-tint--mileage" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
-/** Avotu vērtējumi zem summas — punkts + avots + summa (tas pats kods kā „Kas tika pārbaudīts”). */
+/** Avotu vērtējumi zem summas - punkts + avots + summa (tas pats kods kā „Kas tika pārbaudīts”). */
 function buildIncidentSourceTagsHtml(c: UnifiedIncidentCluster): string {
   if (c.sourceValuations.length === 0) return "";
-  // Viens avots — summa jau ir virsrakstā, tāpēc tikai punkts + nosaukums.
+  // Viens avots - summa jau ir virsrakstā, tāpēc tikai punkts + nosaukums.
   const withValues = c.sourceValuations.length > 1;
   const items = c.sourceValuations
     .map(
@@ -1103,7 +1103,7 @@ function buildIncidentDamageChipsHtml(dmg: UnifiedIncidentDamage | null): string
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number | string): string {
   const lossCell = formatIncidentLossAmountHtml(c.displayAmount, { approx: c.averaged, ico: "lg" });
   const sourceTags = buildIncidentSourceTagsHtml(c);
-  const countryLabel = c.country.trim() || "—";
+  const countryLabel = c.country.trim() || "-";
   const flag = pdfCountryFlagEmoji(countryLabel);
   const dmg = c.damage;
   const withDmg = Boolean(dmg && (dmg.zoneIds.length > 0 || dmg.zoneLabels.length > 0 || dmg.groupLabels.length > 0));
@@ -1112,7 +1112,7 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number |
   const country = `<span class="pdf-life-country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></span>`;
   const amount = lossCell ? `<span class="pdf-life-km pdf-life-km--loss pdf-inc-amount">${lossCell}</span>` : "";
   return `<li class="pdf-inc-item">
-    <time class="pdf-life-date">${escapeHtml(c.date || "—")}</time>
+    <time class="pdf-life-date">${escapeHtml(c.date || "-")}</time>
     <article class="pdf-life-card pdf-incident-card${withDmg ? " pdf-incident-card--with-dmg" : ""}">
       <div class="pdf-incident-card__main">
         <div class="pdf-incident-card__car">${svg}</div>
@@ -1134,7 +1134,7 @@ function buildIncidentClustersCardHtml(agg: UnifiedIncidentAggregation): string 
   return `<ol class="pdf-inc-list pdf-incident-history-card">${body}</ol>`;
 }
 
-/** Apvienota negadījumu vēsture — viena kartīte: loģiskie negadījumi + avotu vērtējumi + skaits. */
+/** Apvienota negadījumu vēsture - viena kartīte: loģiskie negadījumi + avotu vērtējumi + skaits. */
 export function buildUnifiedIncidentsTableHtml(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
@@ -1166,7 +1166,7 @@ export function buildUnifiedIncidentsTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card pdf-hub-tint--incidents" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
-/** Tehniskā specifikācija — patstāvīga sadaļa augšā; CSDD zonā paliek reģistrācijas dati. */
+/** Tehniskā specifikācija - patstāvīga sadaļa augšā; CSDD zonā paliek reģistrācijas dati. */
 const PDF_VEHICLE_SPEC_FIELD_KEYS: (keyof CsddFormFields)[] = [
   "makeModel",
   "firstRegistration",
@@ -1184,7 +1184,7 @@ function csddFieldIsVehicleSpec(key: keyof CsddFormFields): boolean {
   return PDF_VEHICLE_SPEC_FIELD_KEYS.includes(key);
 }
 
-/** TRANSPORTLĪDZEKĻA DATI — kas šis auto ir, pirms sākam runāt par avotiem. */
+/** TRANSPORTLĪDZEKĻA DATI - kas šis auto ir, pirms sākam runāt par avotiem. */
 function buildPdfVehicleSpecSectionHtml(
   form: CsddFormFields | null | undefined,
   vin: string | null,
@@ -1216,7 +1216,7 @@ function buildPdfVehicleSpecSectionHtml(
   return `<section class="pdf-unified-mileage-zone pdf-surface-card pdf-vehicle-spec pdf-page-flow-chunk--avoid" role="region">${head}${body}</section>`;
 }
 
-/** CSDD — strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
+/** CSDD - strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
 export function buildCsddAvotuZoneHtml(
   form: CsddFormFields,
   sparkHtml = "",
@@ -1236,7 +1236,7 @@ export function buildCsddAvotuZoneHtml(
   const hasComments = commentTrim.length > 0;
   const regRows: string[] = [];
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
-    // Tehniskie dati ir atsevišķā TRANSPORTLĪDZEKĻA DATI sadaļā; īpašnieku skaits — laika joslā.
+    // Tehniskie dati ir atsevišķā TRANSPORTLĪDZEKĻA DATI sadaļā; īpašnieku skaits - laika joslā.
     if (csddFieldIsVehicleSpec(key) || key === "ownerCountLatvia") continue;
     const v = (form[key] as string).trim();
     if (!v) continue;
@@ -1307,7 +1307,7 @@ function csddAvotuRawZoneHtml(raw: string, sparkHtml = ""): string {
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(PDF_SUB_CSDD)}" role="region">${head}<div class="pdf-source-section-body">${sparkHtml}<pre class="mirror-pre">${escapeHtml(raw.trim())}</pre></div></div>`;
 }
 
-/** CSDD — apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
+/** CSDD - apskates datumi + strukturētie lauki (viena galvenā līmeņa zona, kā NOBRAUKUMA VĒSTURE). */
 function buildCsddAvotuSubsection(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
@@ -1336,7 +1336,7 @@ function buildCsddAvotuSubsection(
   return "";
 }
 
-/** Tirgus dati — HTML ķermenis „Sludinājuma vēsture” apakšsadaļai (bez ārējās kartes). */
+/** Tirgus dati - HTML ķermenis „Sludinājuma vēsture” apakšsadaļai (bez ārējās kartes). */
 function buildTirgusPriceHistoryTableHtml(f: TirgusFormFields): string {
   const rows = f.priceHistory ?? [];
   if (!tirgusPriceHistoryHasRows(rows)) return "";
@@ -1355,7 +1355,7 @@ function buildTirgusPriceHistoryTableHtml(f: TirgusFormFields): string {
       </tr>`;
     })
     .join("\n");
-  const duration = days != null ? `${days} diena(s)` : "—";
+  const duration = days != null ? `${days} diena(s)` : "-";
   const priceChangeTone =
     priceChange < 0 ? "pdf-stat-tone--down" : priceChange > 0 ? "pdf-stat-tone--up" : "";
   return `<div class="pdf-listing-price-history pdf-listing-price-history--tirgus">
@@ -1383,7 +1383,7 @@ function buildTirgusListingHistoryBodyHtml(
     const historyHtml = hasHistoryRows ? buildTirgusPriceHistoryTableHtml(f) : "";
     if (historyHtml) parts.push(historyHtml);
     const rows: string[] = [];
-    // „Ilgums” jau parādās vēstures kartītes apakšā — rindu atkārto tikai, ja iedegas
+    // „Ilgums” jau parādās vēstures kartītes apakšā - rindu atkārto tikai, ja iedegas
     // kritiskais brīdinājums (>200 dienas), jo tad tas nes jaunu informāciju.
     const showListedRow =
       f.listedForSale.trim() &&
@@ -1438,7 +1438,7 @@ const PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL = "Eļļas maiņas intervāli";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 const PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL = "Fotogrāfiju pielikums";
 
-/** OFICIĀLĀ DĪLERA DATI — servisa vizītes (datums, km, vieta, darbi). */
+/** OFICIĀLĀ DĪLERA DATI - servisa vizītes (datums, km, vieta, darbi). */
 function buildAutoRecordsServiceWorksTableHtml(
   rows: AutoRecordsServiceWorkRow[],
   omitSpan = false,
@@ -1508,7 +1508,7 @@ function buildSourcePhotoGroupsPdfHtml(
   return sections.join("");
 }
 
-/** AUTO RECORDS — Outvin dīlera dati PDF; nobraukums tikai vienotajā tabulā; servisa vēsture + komentāri atsevišķi. */
+/** AUTO RECORDS - Outvin dīlera dati PDF; nobraukums tikai vienotajā tabulā; servisa vēsture + komentāri atsevišķi. */
 function buildAutoRecordsAvotuSubsection(
   b: AutoRecordsBlockState | null | undefined,
   vis: PdfVisibilitySettings,
@@ -1603,7 +1603,7 @@ function buildAutoRecordsAvotuSubsection(
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
 }
 
-/** Starptautiskā vēsture — sarkanie karogi un vēsture; specifikācijas netiek dublētas. */
+/** Starptautiskā vēsture - sarkanie karogi un vēsture; specifikācijas netiek dublētas. */
 function buildCcVinAvotuSubsection(
   b: CcVinBlockState | null | undefined,
   vis: PdfVisibilitySettings,
@@ -1629,7 +1629,7 @@ function buildCcVinAvotuSubsection(
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(CC_VIN_PDF_SOURCE_LABEL)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
 }
 
-/** Trešās puses avots — komentāri + reģistru īsie fakti (īpašnieki, statuss, piezīmes). */
+/** Trešās puses avots - komentāri + reģistru īsie fakti (īpašnieki, statuss, piezīmes). */
 function buildVendorAvotuSubsection(
   b: ClientManualVendorBlockPdf,
   vis: PdfVisibilitySettings,
@@ -1690,7 +1690,7 @@ function buildLtabCertificateHtml(cert: NonNullable<ClientManualLtabBlockPdf["ce
       ? ` apdrošināts ${escapeHtml(cert.insuredDays.trim())} dienas.`
       : ".";
     facts.push(
-      `<p class="pdf-ltab-izzi-line">Laikā no ${escapeHtml(cert.insuredFrom.trim() || "—")} līdz ${escapeHtml(cert.insuredTo.trim() || "—")}${days}</p>`,
+      `<p class="pdf-ltab-izzi-line">Laikā no ${escapeHtml(cert.insuredFrom.trim() || "-")} līdz ${escapeHtml(cert.insuredTo.trim() || "-")}${days}</p>`,
     );
   }
   const claims = (cert.claims ?? []).filter(ltabCertificateClaimHasData);
@@ -1698,18 +1698,18 @@ function buildLtabCertificateHtml(cert: NonNullable<ClientManualLtabBlockPdf["ce
   if (claims.length > 0) {
     const body = claims
       .map((row) => {
-        const when = formatLtabClaimWhen(row) || "—";
-        const amt = formatLtabCertificateAmountEur(row.amount) || row.amount.trim() || "—";
+        const when = formatLtabClaimWhen(row) || "-";
+        const amt = formatLtabCertificateAmountEur(row.amount) || row.amount.trim() || "-";
         return `<tr>
         <td class="pdf-listing-price">${escapeHtml(amt)}</td>
-        <td>${escapeHtml(row.status.trim() || "—")}</td>
+        <td>${escapeHtml(row.status.trim() || "-")}</td>
         <td>${escapeHtml(when)}</td>
       </tr>`;
       })
       .join("");
     const totalCents = sumLtabCertificateAmountCents(claims);
-    const totalLabel = totalCents > 0 ? formatLtabCentsAsEur(totalCents) : "—";
-    // Izziņas „Negadījumu skaits” ir LTAB oficiālais skaits — tas paliek arī tad, ja kādai rindai nav summas.
+    const totalLabel = totalCents > 0 ? formatLtabCentsAsEur(totalCents) : "-";
+    // Izziņas „Negadījumu skaits” ir LTAB oficiālais skaits - tas paliek arī tad, ja kādai rindai nav summas.
     const declaredCount = Number.parseInt(cert.accidentCount.trim(), 10);
     const countLabel = Number.isFinite(declaredCount) && declaredCount > 0 ? declaredCount : claims.length;
     table = `<div class="pdf-listing-price-history pdf-ltab-loss-history">
@@ -1753,7 +1753,7 @@ function buildLtabAvotuSubsection(
 }
 
 /**
- * Sludinājuma analīze — patstāvīgs bloks: vispirms „Sludinājuma vēsture” (tirgus dati), tad pārējās apakšsadaļas.
+ * Sludinājuma analīze - patstāvīgs bloks: vispirms „Sludinājuma vēsture” (tirgus dati), tad pārējās apakšsadaļas.
  */
 function buildListingAnalysisPhotosPdfHtml(
   photoGroups: { title: string; photos: { id: string }[] }[] | null | undefined,
@@ -1810,7 +1810,7 @@ function buildListingAnalysisPriorityHtml(
   return parts.join("\n");
 }
 
-/** Citi avoti — tīri komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
+/** Citi avoti - tīri komentāri (nobraukums un negadījumi ir vienotajās tabulās augšā). */
 function buildCitiAvotiAvotuSubsection(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
@@ -1853,7 +1853,7 @@ function buildCitiAvotiAvotuSubsection(
 }
 
 /**
- * Avotu apakšsadaļas (PDF): katra patstāvīga pilna platuma zona — CSDD, AutoDNA, CarVertical, utt.
+ * Avotu apakšsadaļas (PDF): katra patstāvīga pilna platuma zona - CSDD, AutoDNA, CarVertical, utt.
  * Nav kopējā „Avotu bloki“ mātes sadaļas.
  */
 function buildAvotuDatiSectionHtml(
@@ -1910,7 +1910,7 @@ function buildAvotuDatiSectionHtml(
   return stack.join("\n");
 }
 
-/** Galvenais eksperta kopsavilkums — pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
+/** Galvenais eksperta kopsavilkums - pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   if (!vis.iriss) return "";
   const techHtml = (p.tehniskoRiskuAnalize ?? "").trim();
@@ -1959,7 +1959,7 @@ function reportFontGuardScript(): string {
 </script>`;
 }
 
-/** Admin iframe priekšskatam — pilns PDF drukas CSS (izolēts iframe). */
+/** Admin iframe priekšskatam - pilns PDF drukas CSS (izolēts iframe). */
 export function getClientReportPrintCss(): string {
   return clientReportPrintCss();
 }
@@ -2214,7 +2214,7 @@ function clientReportPrintCss(): string {
         display:inline-block;width:1px;height:0.75em;margin:0 0.7em;background:#94a3b8;vertical-align:0.14em;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      /* Gara teksta kartīte (manuālie ieraksti) — abas kolonnas, teksts vērtības vietā. */
+      /* Gara teksta kartīte (manuālie ieraksti) - abas kolonnas, teksts vērtības vietā. */
       .pdf-summary-tile--wide{grid-column:1 / -1;}
       .pdf-summary-tile--wide .pdf-summary-tile__note{
         margin-top:6px;font-size:var(--pdf-fs-base);color:#3f4750;
@@ -2684,19 +2684,19 @@ ${sourceDotColorCss()}
       .pdf-price-drop-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
       .pdf-price-drop-arrow{flex-shrink:0;display:block;width:17px;height:17px;}
       .pdf-listing-price-history,.pdf-ltab-loss-history{margin:0 0 10px;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);overflow:hidden;background:#fff;}
-      /* Sludinājuma cenu vēsture — smalks zaļgans tonis (ss.lv iedvesmots), bez pilna fona akcenta. */
+      /* Sludinājuma cenu vēsture - smalks zaļgans tonis (ss.lv iedvesmots), bez pilna fona akcenta. */
       .pdf-listing-price-history--tirgus{
         border-color:#DCEFE1;background:#FBFEFC;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-price-history--tirgus .pdf-subhead--boxed{color:#15803D;}
-      /* LTAB zaudējumu tabula — tā pati baltā kartīte; sarkans paliek tikai summām. */
+      /* LTAB zaudējumu tabula - tā pati baltā kartīte; sarkans paliek tikai summām. */
       .pdf-ltab-loss-history{
         border-color:var(--pdf-line);background:#fff;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-ltab-loss-history .pdf-subhead--boxed{color:#86868b;}
-      /* Specifiskāks par .pdf-subhead:first-child — citādi virsraksts pielīp pie kartītes malas. */
+      /* Specifiskāks par .pdf-subhead:first-child - citādi virsraksts pielīp pie kartītes malas. */
       .pdf-subhead.pdf-subhead--boxed{margin:14px 12px 6px;}
       .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);font-weight:600;color:#0f172a;}
       .pdf-listing-price-history-table td{padding:7px 12px;border-bottom:1px solid var(--pdf-line-soft);width:33.33%;font-variant-numeric:tabular-nums;}
@@ -2796,7 +2796,7 @@ ${sourceDotColorCss()}
       .pdf-iriss-approved h2.pdf-sec{font-size:var(--pdf-fs-sec);}
       .pdf-iriss-approved .pdf-subhead{color:#86868b;}
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
-      /* Faktu saraksti (CSDD, dīleris, transportlīdzekļa dati) — viena režģa un tipogrāfijas valoda. */
+      /* Faktu saraksti (CSDD, dīleris, transportlīdzekļa dati) - viena režģa un tipogrāfijas valoda. */
       .mirror-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);margin:0;}
       .mirror-table td,.mirror-table th{
         padding:7px 0;border-bottom:1px solid var(--pdf-line-soft);vertical-align:top;text-align:left;
@@ -2844,7 +2844,7 @@ ${sourceDotColorCss()}
       .pdf-csdd-ta-section{margin-top:14px;}
       .pdf-csdd-ta-table-wrap{display:flex;flex-direction:column;gap:10px;}
       .pdf-csdd-ta-year-block{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;}
-      /* Gads pie apskatēm — tā pati zilā skaitļa valoda kā laikposmā. */
+      /* Gads pie apskatēm - tā pati zilā skaitļa valoda kā laikposmā. */
       .pdf-csdd-ta-year-heading{
         margin:0 0 5px;font-size:13px;font-weight:700;letter-spacing:0.06em;color:${PDF_BRAND_BLUE_HEX};
         font-variant-numeric:tabular-nums;
@@ -2958,7 +2958,7 @@ export function buildClientReportDocumentHtml(args: {
   ccVinPhotoDataUrls?: Map<string, string>;
   incidentPhotoDataUrls?: Map<string, string>;
   sourceBlockPhotoDataUrls?: Map<string, string>;
-  /** Papīra versija ar palielinātu kontrastu — digitālo PDF CSS nemaina. */
+  /** Papīra versija ar palielinātu kontrastu - digitālo PDF CSS nemaina. */
   printInk?: boolean;
 }): string {
   const {
@@ -2976,7 +2976,7 @@ export function buildClientReportDocumentHtml(args: {
 
   const money =
     p.amountTotal == null
-      ? "—"
+      ? "-"
       : new Intl.NumberFormat("lv-LV", { style: "currency", currency: p.currency ?? "EUR" }).format(
           p.amountTotal / 100,
         );
@@ -3095,7 +3095,7 @@ export function buildClientReportDocumentHtml(args: {
   if (approvedHtml) lines.push(approvedHtml);
 
   if (p.isDemo) {
-    lines.push('<p class="mirror-line"><strong>Demonstrācijas dati</strong> — daļa lauku ir parauga rakstura.</p>');
+    lines.push('<p class="mirror-line"><strong>Demonstrācijas dati</strong> - daļa lauku ir parauga rakstura.</p>');
   }
 
   lines.push(
@@ -3112,7 +3112,7 @@ export function buildClientReportDocumentHtml(args: {
   const chrome: string[] = ['<div class="no-print pdf-print-chrome">'];
   if (printInk) {
     chrome.push(
-      '<p class="pdf-print-ink-banner">Drukājamā versija — palielināts kontrasts papīram. Digitālajam PDF lietojiet „Ģenerēt PDF”.</p>',
+      '<p class="pdf-print-ink-banner">Drukājamā versija - palielināts kontrasts papīram. Digitālajam PDF lietojiet „Ģenerēt PDF”.</p>',
     );
   }
   chrome.push(

@@ -197,13 +197,13 @@ function parseHasData(
 
 /**
  * Viena PDF imports.
- * CSDD: vispirms lokālais parsers no teksta slāņa (e.csdd.lv TCPDF); AI — tukšam/skenētam PDF.
+ * CSDD: vispirms lokālais parsers no teksta slāņa (e.csdd.lv TCPDF); AI - tukšam/skenētam PDF.
  */
 export async function ingestSourcePdfFile(opts: {
   target: SourcePdfIngestTarget;
   buffer: ArrayBuffer;
   fileName: string;
-  /** false — tikai lokālais + vecais Plan B fallback. */
+  /** false - tikai lokālais + vecais Plan B fallback. */
   preferAi?: boolean;
 }): Promise<{
   result: HistoryVendorPdfParseResult | AutoRecordsPdfParseResult | CsddPdfParseResult;
@@ -364,16 +364,16 @@ export async function ingestSourcePdfFile(opts: {
     if (decision.reason === "empty_text_layer") {
       warnings.unshift(
         extract.stage === "load_failed"
-          ? `Teksta slānis neielādējās (${extract.errorMessage ?? "parser"}) — AI.`
-          : `Skenēts PDF (0 zīmes tekstā) — AI.`,
+          ? `Teksta slānis neielādējās (${extract.errorMessage ?? "parser"}) - AI.`
+          : `Skenēts PDF (0 zīmes tekstā) - AI.`,
       );
     } else if (
       decision.reason === "vendor_structure_unmatched" ||
       decision.reason === "auto_records_structure_unmatched"
     ) {
-      warnings.unshift("Avota struktūra neatpazīta lokāli — AI.");
+      warnings.unshift("Avota struktūra neatpazīta lokāli - AI.");
     } else if (decision.reason.includes("no_rows")) {
-      warnings.unshift("Lokālā heuristika neatrada rindas — AI.");
+      warnings.unshift("Lokālā heuristika neatrada rindas - AI.");
     } else if (decision.reason === "ai_default") {
       /* noop */
     } else {

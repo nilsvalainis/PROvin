@@ -65,7 +65,7 @@ describe.skipIf(!hasLivePdfs)("CarVertical live PDF extraction", () => {
   });
 });
 
-describe.skipIf(!hasE91Pdfs)("BMW E91 live vendor PDFs — damage zones", () => {
+describe.skipIf(!hasE91Pdfs)("BMW E91 live vendor PDFs - damage zones", () => {
   it("parses CarVertical 2012 Bojātās detaļas and empty 2015 parts", async () => {
     const text = await extractPdfText(readFileSync(BMW_E91_CV_PDF));
     const parsed = parseVendorPdfLocal("carvertical", text);

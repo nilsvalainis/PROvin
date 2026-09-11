@@ -1,5 +1,5 @@
 /**
- * Oficiālā dīlera atskaite — struktūra admin + PDF (bez nobraukuma tabulas dublēšanas PDF).
+ * Oficiālā dīlera atskaite - struktūra admin + PDF (bez nobraukuma tabulas dublēšanas PDF).
  *
  * Lauku kopa atbilst rūpnīcas / dīlera portāla izdrukai (BMW: MODEL SERIES … UPHOLSTERY CODE).
  * Tos pašus laukus aizpilda arī auto-records.com „VEHICLE INFORMATION” un AutoDNA / CarVertical
@@ -41,9 +41,9 @@ export type OutvinEquipmentLine = {
 
 export type OutvinDealerReport = {
   vehicleInfo: OutvinVehicleInfo;
-  /** Negadījumu pārbaude — brīvs teksts vai „Nav ierakstu.” */
+  /** Negadījumu pārbaude - brīvs teksts vai „Nav ierakstu.” */
   accidentCheck: string;
-  /** Nozagts transportlīdzeklis — brīvs teksts vai „Nav ierakstu.” */
+  /** Nozagts transportlīdzeklis - brīvs teksts vai „Nav ierakstu.” */
   stolenCheck: string;
   equipment: OutvinEquipmentLine[];
 };
@@ -182,7 +182,7 @@ export function outvinDealerReportToPlainText(r: OutvinDealerReport): string {
     for (const line of equipment) {
       const code = line.code.trim();
       const desc = line.description.trim();
-      lines.push(code && desc ? `${code} — ${desc}` : code || desc);
+      lines.push(code && desc ? `${code} - ${desc}` : code || desc);
     }
   }
   return lines.join("\n");

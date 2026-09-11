@@ -16,7 +16,7 @@ import { invoiceBuyerLines } from "@/lib/invoice-buyer";
 import { formatMoneyEur } from "@/lib/format-money";
 
 /**
- * Inter 4.1 statiskie TTF (extras/ttf no oficiālā Inter izlaiduma, OFL) — pilns latīņu diapazons,
+ * Inter 4.1 statiskie TTF (extras/ttf no oficiālā Inter izlaiduma, OFL) - pilns latīņu diapazons,
  * nevis WOFF2 apakškopa; ar @pdf-lib/fontkit + subset mazāks PDF nekā pilna embed.
  * Standarta Helvetica pdf-lib nevar kodēt latviešu diakritiku (WinAnsi).
  */

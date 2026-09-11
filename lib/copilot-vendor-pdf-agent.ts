@@ -103,7 +103,7 @@ async function runAiExtract(opts: {
         "Read the whole PDF (all pages, both table columns, timeline sections) and extract every record.",
         opts.local.mileage.length > 0
           ? `The PROVIN text-layer parser already found ${opts.local.mileage.length} odometer, ${opts.local.incidents.length} damage and ${opts.local.serviceHistory.length} service records. Return the COMPLETE list anyway (yours is verified independently).`
-          : "The PROVIN text-layer parser found nothing — you are the only extraction pass, so be exhaustive.",
+          : "The PROVIN text-layer parser found nothing - you are the only extraction pass, so be exhaustive.",
         "Return JSON matching the schema.",
       ].join("\n"),
     },
@@ -122,7 +122,7 @@ async function runAiExtract(opts: {
 /**
  * Dīlera darbu nosaukumu tulkojums latviski: Gemini raksta dabiskāku latviešu valodu par
  * Claude šim „brīvā teksta” uzdevumam, tāpēc ir primārais; Claude paliek rezerve, ja Gemini
- * atsakās (kvota, tīkla kļūda) — labāk tulkots ar otru modeli nekā netulkots vispār.
+ * atsakās (kvota, tīkla kļūda) - labāk tulkots ar otru modeli nekā netulkots vispār.
  */
 async function translateDealerServiceWorksLv(pending: string[]): Promise<string> {
   const userText = [
@@ -162,7 +162,7 @@ export async function runVendorPdfAgent(opts: {
   fileName: string;
   buffer: ArrayBuffer;
   sourceBlocks: WorkspaceSourceBlocks;
-  /** `false` — izlaiž AI (tikai teksta slānis; testiem / atkāpes režīmam). */
+  /** `false` - izlaiž AI (tikai teksta slānis; testiem / atkāpes režīmam). */
   useAi?: boolean;
 }): Promise<VendorPdfAgentResult> {
   const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch(() => ({
@@ -175,7 +175,7 @@ export async function runVendorPdfAgent(opts: {
   const notes: string[] = [];
   if (detected && detected !== opts.target) {
     notes.push(
-      `„${opts.fileName}” izskatās pēc ${vendorLabel(detected)} atskaites, bet augšupielādēts ${vendorLabel(opts.target)} blokā — dati salikti pēc faila satura.`,
+      `„${opts.fileName}” izskatās pēc ${vendorLabel(detected)} atskaites, bet augšupielādēts ${vendorLabel(opts.target)} blokā - dati salikti pēc faila satura.`,
     );
   }
 
@@ -193,13 +193,13 @@ export async function runVendorPdfAgent(opts: {
     } catch (e) {
       const detail = e instanceof Error ? e.message : "unknown";
       console.warn(`${LOG_PREFIX} ai_failed`, { fileName: opts.fileName, detail });
-      notes.push(`AI lasījums neizdevās (${detail}) — izmantots tikai PDF teksta slānis.`);
+      notes.push(`AI lasījums neizdevās (${detail}) - izmantots tikai PDF teksta slānis.`);
     }
   }
 
   let merged = mergeVendorReportExtracts(local, ai);
 
-  // Dīlera struktūra ir stabila, bet ETK darbu nosaukumi paliek EN/DE — atsevišķs tulkojums.
+  // Dīlera struktūra ir stabila, bet ETK darbu nosaukumi paliek EN/DE - atsevišķs tulkojums.
   if (
     opts.useAi !== false &&
     vendor === "dealer" &&
@@ -220,7 +220,7 @@ export async function runVendorPdfAgent(opts: {
           detail,
           pending: pending.length,
         });
-        notes.push(`Darbu tulkojums latviski neizdevās (${detail}) — paliek vārdnīcas slānis.`);
+        notes.push(`Darbu tulkojums latviski neizdevās (${detail}) - paliek vārdnīcas slānis.`);
       }
     }
   }
@@ -272,7 +272,7 @@ export type CcVinPdfAgentResult = {
 };
 
 /**
- * Starptautiskās vēstures atskaite — deterministisks teksta parseris (AI nav vajadzīgs).
+ * Starptautiskās vēstures atskaite - deterministisks teksta parseris (AI nav vajadzīgs).
  * Bloks tiek atgriezts jau apvienots ar esošo, lai atkārtota augšupielāde nedublē rindas.
  */
 export async function runCcVinPdfAgent(opts: {
@@ -299,13 +299,13 @@ export async function runCcVinPdfAgent(opts: {
       block: null,
       rows: 0,
       summary: `„${opts.fileName}”: PDF teksta slāni neizdevās nolasīt (${backend}${extractError ? `: ${extractError.slice(0, 120)}` : ""}).`,
-      notes: ["PDF teksta slānis bija tukšs — serverī neizdevās neviena teksta izvilkšanas metode."],
+      notes: ["PDF teksta slānis bija tukšs - serverī neizdevās neviena teksta izvilkšanas metode."],
     };
   }
 
   const notes: string[] = [];
   if (!looksLikeCcVinReport(text, opts.fileName)) {
-    notes.push(`„${opts.fileName}” neizskatās pēc tipiskas vēstures atskaites — nolasīts tik un tā.`);
+    notes.push(`„${opts.fileName}” neizskatās pēc tipiskas vēstures atskaites - nolasīts tik un tā.`);
   }
 
   const parsed = parseCcVinReportText(text);
@@ -328,7 +328,7 @@ export async function runCcVinPdfAgent(opts: {
   }
   const incompleteSales = parsed.sales.filter((s) => !s.date.trim() || !s.odometer.trim());
   if (incompleteSales.length > 0) {
-    notes.push("Dažām izsoļu rindām trūkst datuma vai odometra — pārbaudi PĀRDOŠANAS UN IZSOĻU VĒSTURE tabulu.");
+    notes.push("Dažām izsoļu rindām trūkst datuma vai odometra - pārbaudi PĀRDOŠANAS UN IZSOĻU VĒSTURE tabulu.");
   }
 
   return {
@@ -345,7 +345,7 @@ export type LtabPdfAgentResult = {
   notes: string[];
 };
 
-/** LTAB OCTA izziņa — tikai teksta slānis (formāts stabils; AI nav vajadzīgs). */
+/** LTAB OCTA izziņa - tikai teksta slānis (formāts stabils; AI nav vajadzīgs). */
 export async function runLtabPdfAgent(opts: {
   fileName: string;
   buffer: ArrayBuffer;
@@ -358,7 +358,7 @@ export async function runLtabPdfAgent(opts: {
   const text = pdfText.text ?? "";
   const notes: string[] = [];
   if (!looksLikeLtabCertificate(text) && text.trim()) {
-    notes.push(`„${opts.fileName}” neizskatās pēc tipiskas LTAB izziņas — mēģināts nolasīt CSNg tabulu tik un tā.`);
+    notes.push(`„${opts.fileName}” neizskatās pēc tipiskas LTAB izziņas - mēģināts nolasīt CSNg tabulu tik un tā.`);
   }
   const certificate = extractLtabCertificate(text);
   if (!certificate || !ltabCertificateHasContent(certificate)) {
@@ -380,7 +380,7 @@ export async function runLtabPdfAgent(opts: {
         ? notes
         : [
             emptyLayer
-              ? "PDF teksta slānis bija tukšs — serverī neizdevās neviena teksta izvilkšanas metode."
+              ? "PDF teksta slānis bija tukšs - serverī neizdevās neviena teksta izvilkšanas metode."
               : "PDF teksta slānis nedeva LTAB izziņas laukus.",
           ],
     };

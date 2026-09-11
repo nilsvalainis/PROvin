@@ -74,23 +74,23 @@ function hexToRgb(hex: string): ReturnType<typeof rgb> {
 
 /** IRISS logo / HTML PDF akcents (#F26522). */
 const IRISS_ACCENT = hexToRgb(IRISS_BRAND_ORANGE_HEX);
-/** Virsraksti/pamatteksts — gandrīz melns. */
+/** Virsraksti/pamatteksts - gandrīz melns. */
 const INK = rgb(17 / 255, 24 / 255, 39 / 255);
-/** Sekundārais teksts — joprojām ļoti tumšs. */
+/** Sekundārais teksts - joprojām ļoti tumšs. */
 const MUTED = rgb(31 / 255, 41 / 255, 55 / 255);
 const CARD_FILL_SLATE = rgb(248 / 255, 250 / 255, 252 / 255);
 const CARD_BORDER_SLATE = rgb(15 / 255, 23 / 255, 42 / 255);
 const BAR_TRACK = rgb(226 / 255, 232 / 255, 240 / 255);
 /** Papildu atstarpe starp etiķetes beigām un vērtību vienas rindas layoutā (PDF vienības). */
 const COLON_VALUE_GAP = 3;
-/** Piedāvājuma kopsummas josla — saskaņā ar `IRISS_BRAND_ORANGE_HEX` (#F26522). */
+/** Piedāvājuma kopsummas josla - saskaņā ar `IRISS_BRAND_ORANGE_HEX` (#F26522). */
 const PRICE_BAND_FILL = rgb(255 / 255, 248 / 255, 245 / 255);
 const PRICE_BAND_BORDER = rgb(242 / 255, 101 / 255, 34 / 255);
 const SECTION_BEFORE = 14;
 const SECTION_AFTER = 10;
 const LETTER_TRACKING = 0.242;
 const FOOTER_SAFE = Math.max(52, PREMIUM_FOOTER_BLOCK_H);
-/** Atkārtotai lapai — tikai logo josla no lapas augšas. */
+/** Atkārtotai lapai - tikai logo josla no lapas augšas. */
 const LOGO_ONLY_BAND = 46;
 
 function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
@@ -152,7 +152,7 @@ type Ctx = {
   suppressPageBreak: boolean;
   /** Pasūtījuma PDF 1. lapa: neveidot jaunu lapu (viss uz vienas A4). */
   pasutijumsDzLockPage1?: boolean;
-  /** Piedāvājuma PDF — logo katrā lapā; null = nav. */
+  /** Piedāvājuma PDF - logo katrā lapā; null = nav. */
   offerLogo: LogoPack | null;
   /** Jauna lapa: atstarpe zem augšējā logo (saturs sākas zem šīs joslas). */
   logoOnlyBand: number;
@@ -308,7 +308,7 @@ function drawColonLabeledLine(ctx: Ctx, line: string, size: number, x: number, m
     ctx.y -= lh;
     return;
   }
-  /* Garas etiķetes: vērtība nākamajā rindā — pirmā rinda beidzas ar „: ”, lai nav „:Jā”. */
+  /* Garas etiķetes: vērtība nākamajā rindā - pirmā rinda beidzas ar „: ”, lai nav „:Jā”. */
   drawTrackedText(ctx.page, labWithSp, { x, y: yb, size, font: ctx.fontBold, color });
   ctx.y -= lh;
   for (const ln of wrapText(p.value, ctx.font, size, maxW)) {
@@ -378,7 +378,7 @@ function drawOfferColonLineWithIcon(ctx: Ctx, line: string, size: number, x: num
 
 /**
  * Vieglas kartītes fons + apmale (zīmēts pirms teksta), admin iOS stilam līdzīgi.
- * Kartīte nekad netiek pārrauta starp lapām — pirms zīmēšanas tiek rezervēta pilna augstuma vieta.
+ * Kartīte nekad netiek pārrauta starp lapām - pirms zīmēšanas tiek rezervēta pilna augstuma vieta.
  */
 function drawIosCard(
   ctx: Ctx,

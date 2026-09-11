@@ -1,6 +1,6 @@
 /**
  * PDF teksta slāņa tīrīšana pirms Plan A regex / rindu parsētājiem.
- * NEizmanto normalizePdfExtractedText digit-space collapse — tas bojā "2024-03-25 281,218".
+ * NEizmanto normalizePdfExtractedText digit-space collapse - tas bojā "2024-03-25 281,218".
  */
 export function sanitizePdfTextForParsing(raw: string): string {
   let t = raw.replace(/\u00a0/g, " ");

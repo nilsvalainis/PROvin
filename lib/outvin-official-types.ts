@@ -1,5 +1,5 @@
 /**
- * Outvin Swagger 1.0.3 — `GET /history/{VIN}/{type}` atļauj tikai type 1 un 2.
+ * Outvin Swagger 1.0.3 - `GET /history/{VIN}/{type}` atļauj tikai type 1 un 2.
  */
 export const OUTVIN_OFFICIAL_HISTORY_TYPES = [1, 2] as const;
 

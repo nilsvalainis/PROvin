@@ -45,9 +45,9 @@ export async function buildConsultationQuickPdfForWhatsApp(
   return buildWinAnsiQuickPdfFile({
     docHeading: "PROVIN SELECT KONSULTACIJA",
     metaLines: [
-      `Klients: ${(order.customerName ?? "—").trim() || "—"}`,
-      `Talrunis: ${(order.customerPhone ?? "—").trim() || "—"}`,
-      `E-pasts: ${(order.customerEmail ?? "—").trim() || "—"}`,
+      `Klients: ${(order.customerName ?? "-").trim() || "-"}`,
+      `Talrunis: ${(order.customerPhone ?? "-").trim() || "-"}`,
+      `E-pasts: ${(order.customerEmail ?? "-").trim() || "-"}`,
       `Izveidots: ${new Date().toLocaleString("lv-LV")}`,
     ],
     sections,

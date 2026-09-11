@@ -76,7 +76,7 @@ function countTaDefectsInFields(fields: CsddFormFields): number {
   );
 }
 
-/** Apvieno divus lokāli parsētus laukus — ņem pilnākos masīvus. */
+/** Apvieno divus lokāli parsētus laukus - ņem pilnākos masīvus. */
 export function pickRicherCsddFields(primary: CsddFormFields, secondary: CsddFormFields): CsddFormFields {
   const mileage =
     countMileageRows(secondary) > countMileageRows(primary)
@@ -127,7 +127,7 @@ export function buildCsddPdfParseResultFromTextLayer(
   return {
     rawUnprocessedData,
     fields,
-    warnings: [`Datu avots: PDF teksta slānis (${fileName}) — lokālais parsers.`],
+    warnings: [`Datu avots: PDF teksta slānis (${fileName}) - lokālais parsers.`],
     meta: {
       charCount: rawUnprocessedData.length,
       engine: "local_parser",

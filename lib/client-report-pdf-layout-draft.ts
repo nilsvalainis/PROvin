@@ -1,5 +1,5 @@
 /**
- * PDF — PROVIN „clean & compact” paneļu izkārtojums (Inter, gaišas līnijas, zīmola akcenti).
+ * PDF - PROVIN „clean & compact” paneļu izkārtojums (Inter, gaišas līnijas, zīmola akcenti).
  */
 
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
@@ -12,15 +12,15 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** Mājaslapas / PDF zīmola zils — sakrīt ar `globals.css` `--color-provin-accent` un `PROVIN_SECTION_ICON_HEX`. */
+/** Mājaslapas / PDF zīmola zils - sakrīt ar `globals.css` `--color-provin-accent` un `PROVIN_SECTION_ICON_HEX`. */
 export const PDF_BRAND_BLUE_HEX = "#0061D2";
 
-/** HTML: „PROVIN” bez .lv — PRO melns, VIN zils. */
+/** HTML: „PROVIN” bez .lv - PRO melns, VIN zils. */
 export function pdfProvinWordmarkHtml(): string {
   return `<span class="pdf-provin-wordmark"><span class="pdf-provin-wordmark-pro">PRO</span><span class="pdf-provin-wordmark-vin">VIN</span></span>`;
 }
 
-/** HTML: „PROVIN.LV” — PRO un .LV melni, VIN zils. */
+/** HTML: „PROVIN.LV” - PRO un .LV melni, VIN zils. */
 export function pdfProvinLvWordmarkHtml(): string {
   return `<span class="pdf-provin-wordmark"><span class="pdf-provin-wordmark-pro">PRO</span><span class="pdf-provin-wordmark-vin">VIN</span><span class="pdf-provin-wordmark-pro">.LV</span></span>`;
 }
@@ -33,7 +33,7 @@ export function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
   return `<div class="pdf-v1-panel-head">${icon}<p class="pdf-v1-panel-title">${esc(title)}</p></div>`;
 }
 
-/** Vārda zīme PDF galvenē — tumšs teksts uz baltas lapas, bez krāsaina logo fona. */
+/** Vārda zīme PDF galvenē - tumšs teksts uz baltas lapas, bez krāsaina logo fona. */
 export function provincLogoSvg(): string {
   return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" role="img" aria-label="PROVIN.LV">
   <text font-family="Inter, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.02em">
@@ -87,7 +87,7 @@ export function pdfLayoutDraftExtraCss(): string {
         text-transform:uppercase;color:#0f172a;
       }
       .pdf-v1-panel-title--src{letter-spacing:0.08em;font-size:var(--pdf-fs-sec);color:#0f172a}
-      /* Faktu saraksts — tie paši mērījumi kā .mirror-table (skat. client-report-html.ts). */
+      /* Faktu saraksts - tie paši mērījumi kā .mirror-table (skat. client-report-html.ts). */
       .pdf-v1-kv{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);margin:0}
       .pdf-v1-kv td{padding:7px 0;border-bottom:1px solid var(--pdf-line-soft);vertical-align:top;line-height:1.45}
       .pdf-v1-kv td:first-child{width:38%;color:#86868b;font-weight:500;padding-right:12px}
@@ -131,7 +131,7 @@ export function buildPdfAdminMirrorPaymentBlock(
   titleIconHtml = "",
 ): string {
   const rows: { k: string; v: string; html?: boolean }[] = [];
-  if (money !== "—") rows.push({ k: "Summa", v: money });
+  if (money !== "-") rows.push({ k: "Summa", v: money });
   rows.push({ k: "Laiks", v: dateFmt.format(new Date(p.created * 1000)) });
   if (p.paymentStatus?.trim()) rows.push({ k: "Statuss", v: p.paymentStatus });
   if (rows.length === 0) return "";
@@ -196,7 +196,7 @@ export function buildPdfAdminMirrorClientBlock(
 export const PDF_ABOUT_REPORT_TITLE = "PASŪTĪJUMA DATI";
 
 /**
- * Maksājums, transportlīdzeklis, klients un piezīmes vienā kompaktā blokā —
+ * Maksājums, transportlīdzeklis, klients un piezīmes vienā kompaktā blokā -
  * klientam tie ir viens konteksts, nevis četras atsevišķas sadaļas.
  */
 export function buildPdfAboutReportBlock(args: {
@@ -232,7 +232,7 @@ export function buildPdfAboutReportBlock(args: {
 
   if (show.payment) {
     const rows: Row[] = [];
-    if (money !== "—") rows.push({ k: "Summa", v: money });
+    if (money !== "-") rows.push({ k: "Summa", v: money });
     rows.push({ k: "Pasūtījums", v: dateFmt.format(new Date(o.created * 1000)) });
     if (o.paymentStatus?.trim()) rows.push({ k: "Statuss", v: o.paymentStatus.trim() });
     groups.push({ title: "Maksājums", rows });

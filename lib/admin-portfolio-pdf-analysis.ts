@@ -14,7 +14,7 @@ export type KmSample = {
 };
 
 /**
- * Heuristiska klase pēc faila nosaukuma un PDF teksta — klienta PDF tiek lietots neitrāls nosaukums.
+ * Heuristiska klase pēc faila nosaukuma un PDF teksta - klienta PDF tiek lietots neitrāls nosaukums.
  * Kartē uz biežāk lietotajiem starptautisko vēstures pārskatu formātiem.
  */
 export type HistoryPdfKind = "euro_network" | "regional_alt" | "registry_focus" | "generic";
@@ -48,11 +48,11 @@ export type PdfPortfolioFileInsight = {
   historyKind: HistoryPdfKind;
   /** Atlīdzības / tāmes rindas, izvilktas no PDF teksta. */
   claimRows: ClaimTableRow[];
-  /** Cik lapas lasītas ar OCR, ja teksta slānis bija pārāk mazs (bieži — skenēts PDF). */
+  /** Cik lapas lasītas ar OCR, ja teksta slānis bija pārāk mazs (bieži - skenēts PDF). */
   ocrPages?: number;
 };
 
-/** Mazāk par šo — pārlūkā mēģinām OCR pirmās dažas lapas (tikai `window`; serverī netiek lietots). */
+/** Mazāk par šo - pārlūkā mēģinām OCR pirmās dažas lapas (tikai `window`; serverī netiek lietots). */
 const OCR_TEXT_CHARS_THRESHOLD = 420;
 const OCR_MAX_PAGES = 4;
 
@@ -208,7 +208,7 @@ async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ tex
         await worker.terminate();
       }
     } catch {
-      /* OCR neizdevās — atstājam tikai teksta slāņa rezultātu */
+      /* OCR neizdevās - atstājam tikai teksta slāņa rezultātu */
     }
   }
 
@@ -243,7 +243,7 @@ export async function analyzePdfBuffer(
   const highlights =
     ocrPages > 0
       ? [
-          `OCR: automātiski nolasītas ${ocrPages} lapas (trūka teksta slāņa vai vājš teksts). Salīdziniet ar oriģinālu — iespējamas kļūdas.`,
+          `OCR: automātiski nolasītas ${ocrPages} lapas (trūka teksta slāņa vai vājš teksts). Salīdziniet ar oriģinālu - iespējamas kļūdas.`,
           ...baseHighlights,
         ]
       : baseHighlights;
@@ -260,7 +260,7 @@ export async function analyzePdfBuffer(
   };
 }
 
-/** Admin priekšskatam / grafikiem — visi nobraukuma paraugi, arī ļoti līdzīgi (bez apkopošanas). */
+/** Admin priekšskatam / grafikiem - visi nobraukuma paraugi, arī ļoti līdzīgi (bez apkopošanas). */
 export function mergeKmForChart(insights: PdfPortfolioFileInsight[]): { km: number; label: string }[] {
   const merged: { km: number; label: string }[] = [];
   for (const ins of insights) {

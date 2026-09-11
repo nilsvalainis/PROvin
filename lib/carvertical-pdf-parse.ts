@@ -1,5 +1,5 @@
 /**
- * CarVertical PDF / iekopēts RAW — odometrs, vēstures laikposms, bojājumi.
+ * CarVertical PDF / iekopēts RAW - odometrs, vēstures laikposms, bojājumi.
  * Atbalsta fragmentētu PDF tekstu (vārdi un datumi sadalīti pa rindām).
  */
 
@@ -23,7 +23,7 @@ export type CarVerticalTimelineRow = {
   date: string;
   country: string;
   description: string;
-  /** Reģistra hronoloģija (tjekbil u.c.) — km pie notikuma, ja zināms. */
+  /** Reģistra hronoloģija (tjekbil u.c.) - km pie notikuma, ja zināms. */
   odometer?: string;
 };
 
@@ -46,7 +46,7 @@ export type CarVerticalParseResult = {
 export function normalizeCarVerticalPdfText(raw: string): string {
   let t = sanitizePdfTextForParsing(raw);
   t = t.replace(/[\u000c\u200b]/g, "");
-  // pdf.js sadalīti vārdi (tikai zināmi fragmenti — nevis vispārīga salīmēšana)
+  // pdf.js sadalīti vārdi (tikai zināmi fragmenti - nevis vispārīga salīmēšana)
   t = t.replace(/Transportlīdzek\s+ļ\s+a/gi, "Transportlīdzekļa");
   t = t.replace(/Transportl\s+[īi]\s*dzek\s+ļ\s+a/gi, "Transportlīdzekļa");
   t = t.replace(/Ra\s+ž\s+ots/gi, "Ražots");
@@ -54,7 +54,7 @@ export function normalizeCarVerticalPdfText(raw: string): string {
   t = t.replace(/lai\s+kposms/gi, "laikposms");
   // Ģenerēšanas datums: 24.05.2 + 26 → 24.05.2026
   t = t.replace(/(\d{1,2}\.\d{1,2}\.\d)\s+(\d{2})\b/g, "$1$2");
-  // Īsi sadalīti vārdu fragmenti (1–3 burti nākamajā rindā)
+  // Īsi sadalīti vārdu fragmenti (1-3 burti nākamajā rindā)
   t = t.replace(/([a-zāčēģīķļņšūž])\s*\n\s*([a-zāčēģīķļņšūž]{1,3})(?=\s|\n|$|[,.:;])/gi, "$1$2");
   // MM.YYYY: 12.2 + 016. → 12.2016.
   t = t.replace(/(\d{1,2})\.(\d)\s*\n?\s*(\d{3})\./g, (_, a, b, c) => `${a}.${b}${c}.`);
@@ -98,7 +98,7 @@ export function normalizeCarVerticalPdfText(raw: string): string {
   return joinCarVerticalOdometerColumnTwo(t);
 }
 
-/** 2. odometra kolonna: fragmenti PIRMS „ieraksti”, km — pēc. */
+/** 2. odometra kolonna: fragmenti PIRMS „ieraksti”, km - pēc. */
 function joinCarVerticalOdometerColumnTwo(text: string): string {
   const matches = [...text.matchAll(/ieraksti/gi)];
   if (matches.length < 2) return text;
@@ -185,7 +185,7 @@ export function parseCarverticalOdometerLine(line: string): AutoRecordsServiceRo
   const s = line.replace(/\u00a0/g, " ").trim().replace(/[;\s]+$/g, "");
   if (!s || CV_ODOMETER_HEADER_RE.test(s)) return null;
 
-  const ddmmyyyy = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?\s*[-–—]?\s*([\d\s]+)\s*km\b/i);
+  const ddmmyyyy = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?\s*[---]?\s*([\d\s]+)\s*km\b/i);
   if (ddmmyyyy) {
     const token = `${ddmmyyyy[1]}.${ddmmyyyy[2]}.${ddmmyyyy[3]}`;
     const date = normalizeCarVerticalDateToken(token);
@@ -193,7 +193,7 @@ export function parseCarverticalOdometerLine(line: string): AutoRecordsServiceRo
     if (date && km) return { date, odometer: km, country: "" };
   }
 
-  const mmyyyy = s.match(/^(\d{1,2})\.(\d{4})\.?\s*[-–—]?\s*([\d\s]+)\s*km\b/i);
+  const mmyyyy = s.match(/^(\d{1,2})\.(\d{4})\.?\s*[---]?\s*([\d\s]+)\s*km\b/i);
   if (mmyyyy) {
     const date = normalizeCarVerticalDateToken(`${mmyyyy[1]}.${mmyyyy[2]}`);
     const km = normalizeAutoRecordsOdometer(mmyyyy[3] ?? "");
@@ -252,13 +252,13 @@ export function parseCarverticalOdometerFromText(text: string): AutoRecordsServi
 
   // Pilni datumi + km vienā rindā
   const fullDateRe =
-    /(\d{1,2}\.\d{1,2}\.\d{4})\.?\s*[-–—]?\s*([\d\s\u00a0]+)\s*km\b/gi;
+    /(\d{1,2}\.\d{1,2}\.\d{4})\.?\s*[---]?\s*([\d\s\u00a0]+)\s*km\b/gi;
   let m: RegExpExecArray | null;
   while ((m = fullDateRe.exec(section)) !== null) {
     pushOdometerRow(out, seen, m[1] ?? "", m[2] ?? "");
   }
 
-  const mmYyyyRe = /(\d{1,2}\.\d{4})\.?\s*[-–—]?\s*([\d\s\u00a0]+)\s*km\b/gi;
+  const mmYyyyRe = /(\d{1,2}\.\d{4})\.?\s*[---]?\s*([\d\s\u00a0]+)\s*km\b/gi;
   while ((m = mmYyyyRe.exec(section)) !== null) {
     pushOdometerRow(out, seen, m[1] ?? "", m[2] ?? "");
   }
@@ -335,7 +335,7 @@ function splitTimelineCountryAndDescription(rest: string): { country: string; de
   return { country: "", description: trimmed };
 }
 
-/** Transportlīdzekļa ierakstu laikposms — hronoloģiski ieraksti. */
+/** Transportlīdzekļa ierakstu laikposms - hronoloģiski ieraksti. */
 export function parseCarverticalTimelineFromText(text: string): CarVerticalTimelineRow[] {
   const norm = normalizeCarVerticalPdfText(text);
   const section =
@@ -478,11 +478,11 @@ function cleanCarVerticalDamagedSides(raw: string): string {
   return clipVendorDamageField(t.replace(NO_MARKED_PARTS_RE, ""));
 }
 
-/** `2501 € – 3000 €`, `501 € – 750 €`, `1 200 €`. */
+/** `2501 € - 3000 €`, `501 € - 750 €`, `1 200 €`. */
 const CV_LOSS_MONEY_RE =
-  /\d[\d\s\u00a0\u202f]*(?:€|EUR)(?:\s*[–—-]\s*\d[\d\s\u00a0\u202f]*(?:€|EUR))?/i;
+  /\d[\d\s\u00a0\u202f]*(?:€|EUR)(?:\s*[---]\s*\d[\d\s\u00a0\u202f]*(?:€|EUR))?/i;
 
-/** Teksts, kas seko pēc summas — tālāk vairs nav šī ieraksta vērtība. */
+/** Teksts, kas seko pēc summas - tālāk vairs nav šī ieraksta vērtība. */
 const CV_LOSS_STOP_RE =
   /Boj[āa]jumu\s*grupas?|Remonta\s+izmaksu|Tirgus|Dabas stih|Atruna|sada[ļl]as\s+skaidrojums|\d{1,2}\.\d{4}\./i;
 
@@ -559,7 +559,7 @@ function parseDamageRowFromBlock(
   return { date, country, lossAmount, damagedSides, damageGroups };
 }
 
-/** MM.YYYY. Valsts tieši pirms Novērtējums — ne kājenes ģenerēšanas datums. */
+/** MM.YYYY. Valsts tieši pirms Novērtējums - ne kājenes ģenerēšanas datums. */
 function parseCarverticalDamageEventBlocks(norm: string): CarVerticalDamageDetailRow[] {
   const headRe =
     /(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?\s*([A-Za-zĀČĒĢĪĶĻŅŠŪŽ][A-Za-zĀČĒĢĪĶĻŅŠŪŽ\s-]{0,40}?)\s*(?=Nov[eē]rt[eē]jums|Fiks[eē]tie\s+boj[āa]jumi)/gi;
@@ -598,7 +598,7 @@ function pushDamageRecord(
   damageDetails.push(row);
 }
 
-/** Bojājumu / novērtējumu ieraksti — Bojātās detaļas / zonas / grupas kā sadaļa, neatkarīgi no tā, kuras daļas tur ir. */
+/** Bojājumu / novērtējumu ieraksti - Bojātās detaļas / zonas / grupas kā sadaļa, neatkarīgi no tā, kuras daļas tur ir. */
 export function parseCarverticalDamagesFromText(text: string): {
   incidents: LtabIncidentRow[];
   damageDetails: CarVerticalDamageDetailRow[];

@@ -40,7 +40,7 @@ describe("kopsavilkuma kartītes", () => {
     ]);
   });
 
-  it("vecs ieraksts bez virsraksta: īss teksts kļūst par vērtību, garš — par platu kartīti", () => {
+  it("vecs ieraksts bez virsraksta: īss teksts kļūst par vērtību, garš - par platu kartīti", () => {
     const [short, long] = buildPdfSummaryBannerTiles({
       manualBanners: [
         { id: "s", text: "Atslēgas: 2 gab.", severity: "grey" },
@@ -113,7 +113,7 @@ describe("aprēķināto brīdinājumu labošana", () => {
     const banners = upsertProvinBannerOverride([], "inspection", {
       severity: "red",
       value: "Beigusies 01.06.2026",
-      text: "Apskate beigusies — pirms braukšanas jākārto atkārtoti.",
+      text: "Apskate beigusies - pirms braukšanas jākārto atkārtoti.",
     });
     const tiles = buildPdfSummaryBannerTiles({ alertBanners: [inspection], manualBanners: banners });
     expect(tiles).toEqual([
@@ -121,7 +121,7 @@ describe("aprēķināto brīdinājumu labošana", () => {
         id: "alert-inspection",
         label: "Tehniskā apskate",
         value: "Beigusies 01.06.2026",
-        note: "Apskate beigusies — pirms braukšanas jākārto atkārtoti.",
+        note: "Apskate beigusies - pirms braukšanas jākārto atkārtoti.",
         tone: "alert",
         wide: false,
       },
@@ -142,7 +142,7 @@ describe("aprēķināto brīdinājumu labošana", () => {
     expect(resolved).toMatchObject({ text: "Aprēķinātais teikums.", severity: "yellow", edited: false });
   });
 
-  it("bez labojuma odometra brīdinājums kartīti neveido, ar aizpildītu vērtību — veido", () => {
+  it("bez labojuma odometra brīdinājums kartīti neveido, ar aizpildītu vērtību - veido", () => {
     const banners = upsertProvinBannerOverride([], "odometer", {
       severity: "red",
       value: "2 pretrunas",
