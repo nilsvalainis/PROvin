@@ -59,7 +59,7 @@ Sync full deployed text from `AI_EV_BEV_FORENSICS_RULES` in `lib/source-summary-
 
 Deployed runtime selection: `selectAggregateCasePacks()` in `lib/provin-aggregate-case-rules.ts` + per-report learnings in `provin_audit_aggregate_learnings.json`.
 
-Covers: VAG (3.0 TDI matrix, 2.0 TDI DSG, TFSI), Mercedes OM642/651, BMW M57/E60/E61, BMW N47/N57, Volvo D5/Haldex, PSA wet belt/PureTech, Renault/Nissan, Toyota/Lexus hybrid, Ford EcoBoost/Powershift, Hyundai/Kia incl. E-GMP, Tesla, generic EV, Japanese brands, generic DE→LV ICE fallback.
+Covers: VAG (3.0 TDI matrix, 2.0 TDI EA189/EA288, EA888 gen1/2 vs gen3), Mercedes OM642 / OM651 / OM654 (split), BMW M57/E60/E61, BMW N47 vs N57 vs B47, BMW N20 vs B48, Volvo D5 single-turbo vs biturbo + Drive-E D4, PSA wet belt/PureTech, Renault/Nissan, Toyota/Lexus hybrid, Ford EcoBoost/Powershift, Hyundai/Kia incl. E-GMP, Tesla, generic EV, Japanese brands, generic DE→LV ICE fallback. Pack scoring uses engine code first, else **kW + cm³ + year + fuel** proxy.
 
 Each pack must drive **summary verdict** + **inspection actions** per §1b.
 

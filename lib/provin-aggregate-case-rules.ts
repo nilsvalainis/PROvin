@@ -57,7 +57,9 @@ function parseDisplacementCm3(fp: VehicleReportFingerprint): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/** kW + tilpums + gads (+ degviela haystackā) — kad koda nav vai tas ir vājš. */
+/** kW + tilpums + gads (+ degviela haystackā) — kad koda nav vai tas ir vājš.
+ * Ja cm³ ir zināms un ārpus joslas, kW punktus NEDOD (pretējā gadījumā 150 kW 2.0
+ * ievelk 3.0 V6 / N57 pakas). */
 function powertrainProxyScore(
   fp: VehicleReportFingerprint,
   hay: string,
@@ -73,14 +75,18 @@ function powertrainProxyScore(
 ): number {
   let s = 0;
   const kw = parsePowerKw(fp);
-  if (kw != null && kw >= opts.kwMin && kw <= opts.kwMax) s += 14;
   const cm3 = parseDisplacementCm3(fp);
-  if (cm3 != null && cm3 >= opts.cm3Min && cm3 <= opts.cm3Max) s += 10;
+  const cm3Ok = cm3 != null && cm3 >= opts.cm3Min && cm3 <= opts.cm3Max;
+  const cm3KnownOut = cm3 != null && !cm3Ok;
+  if (cm3KnownOut) return -8;
+  if (cm3Ok) s += 10;
+  const kwOk = kw != null && kw >= opts.kwMin && kw <= opts.kwMax;
+  if (kwOk && (cm3Ok || cm3 == null)) s += 14;
   if (opts.yearMin != null && opts.yearMax != null && fp.year != null) {
     if (fp.year >= opts.yearMin && fp.year <= opts.yearMax) s += 8;
-    else if (fp.year < opts.yearMin - 3 || fp.year > opts.yearMax + 3) s -= 12;
+    else if (fp.year < opts.yearMin - 2 || fp.year > opts.yearMax + 2) s -= 14;
   }
-  if (opts.fuelRe && opts.fuelRe.test(hay)) s += 4;
+  if (opts.fuelRe && opts.fuelRe.test(hay) && (cm3Ok || kwOk)) s += 4;
   return s;
 }
 
@@ -104,7 +110,16 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
       if (/BITURBO|230KW|313|SQ5/.test(hay)) s += 10;
       if (/S-TRONIC|DSG|TIPTRONIC|7G|8HP/.test(hay)) s += 6;
       if (/2\.0|1968/.test(hay) && !/3\.0|V6|2967|2993/.test(hay)) s -= 20;
-      return s + engineScore(fp, ["CRT", "CAPA", "ASB", "CDUC", "CVU"]);
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 150,
+        kwMax: 260,
+        cm3Min: 2900,
+        cm3Max: 3000,
+        yearMin: 2004,
+        yearMax: 2020,
+        fuelRe: /DIESEL|DĪZEL|TDI/,
+      });
+      return s + engineScore(fp, ["CRT", "CAPA", "ASB", "CDUC", "CVU", "CASA", "CGQB"]);
     },
     body: `${PACK_BODY_HEADER}
 
@@ -127,44 +142,99 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
   {
     id: "vag_2_0_tdi_dsg",
     minScore: 12,
-    title: "VW grupa — 2.0 TDI, DPF/AdBlue, DSG tips",
+    title: "VW grupa — 2.0 TDI (EA189 / EA288), DPF/AdBlue, DSG tips",
     score: (fp, hay) => {
       let s = brandScore(fp, ["VW", "VOLKSWAGEN", "AUDI", "SKODA", "SEAT"], hay);
       if (/2\.0|1968/.test(hay)) s += 14;
-      if (/\bTDI\b/.test(hay) && /2\.0|1968|EA288/.test(hay)) s += 6;
+      if (/\bTDI\b/.test(hay) && /2\.0|1968|EA288|EA189/.test(hay)) s += 6;
       if (/DQ200|DQ250|DQ500|DSG|S-TRONIC/.test(hay)) s += 8;
       if (/3\.0|V6|2967|2993/.test(hay) && !/2\.0|1968/.test(hay)) s -= 20;
-      return s + engineScore(fp, ["CFFB", "CFGB", "CUPA", "DFGA", "DFHA", "CUNA", "DTPA", "DTRB", "DTUA"]);
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 81,
+        kwMax: 150,
+        cm3Min: 1900,
+        cm3Max: 2000,
+        yearMin: 2008,
+        yearMax: 2024,
+        fuelRe: /DIESEL|DĪZEL|DIZEL|TDI/,
+      });
+      return s + engineScore(fp, ["CFFB", "CFGB", "CUPA", "DFGA", "DFHA", "CUNA", "DTPA", "DTRB", "DTUA", "CAHA", "CAGA", "CJCA"]);
     },
     body: `${PACK_BODY_HEADER}
 
-**DQ200 (sauss, mazāks moments):** finansiāls risks pie **150–200k** — slīdēšana, smaka, mehatronika.
+**Nošķir paaudzi (kods / gads / AdBlue):** (a) **EA189** (~2008–2015, tipiski ~103–130 kW, bieži bez AdBlue) — zobsiksna, DPF/EGR pilsētā, dažiem agrīnajiem eļļas sūkņa piedziņas ass; (b) **EA288 / evo** (piem. DTPA 150 kW, 1968 cm³) — arī **zobsiksna** (ne ķēde), bieži AdBlue/SCR. 3.0 V6 plastmasas termostata stāstu uz šo motoru NEDRĪKST kopēt.
+
+**Zobsiksna:** ja dīlera Veiktie darbi vai komentāros siksna jau fiksēta (datums + km), to kā „jāmaina” NERAKSTI. Ja NAV fiksēta — **nepierādīts**, jālūdz dokumenti; >30k km / >24 mēn. bez oficiāla ieraksta = darbs var būt ārpus dīlera. Neraksti „neatliekamu obligātu” maiņu tikai no odometra.
+
+**DQ200 (sauss, mazāks moments):** finansiāls risks pie **150–200k** — slīdēšana, smaka, mehatronika. Manuālei / FWD šis stāsts neattiecas.
 
 **DQ250/DQ500 (mitrā, smagāki auto):** izturīgāka, bet joprojām obligāts testa brauciens un eļļas maiņas vēsture.
 
-**DPF/EGR/AdBlue:** pilsētas profils = **vidējs/liels risks**; šosejas profils ar pierādījumiem — tikai pārbaudes punkts.
+**DPF/EGR/AdBlue:** pilsētas profils = augstāka varbūtība; šosejas profils ar pierādījumiem — tikai pārbaudes punkts. Euro 6 + AdBlue ≠ automātiski „slikts motors”.
 
-**EA288 / EA288evo (piem. DTPA 150 kW, 1968 cm3):** gāzu sadali piedzen zobsiksna, ne sadales ķēde. Ja dīlera Veiktie darbi vai komentāros siksna jau fiksēta (datums + km), to kā „jāmaina” NERAKSTI. 3.0 V6 plastmasas termostata korpusa stāstu uz šo motoru NEDRĪKST kopēt, kamēr meklēšana šim konkrētajam kodam to neapstiprina.
-
-**Klātienē:** slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; ja siksna datos nav fiksēta - jālūdz rēķins, ne jāapgalvo, ka tā nav mainīta.`,
+**Klātienē:** DSG slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; auksts starts bez metāliskas klaboņas; siksnas dokumenti.`,
   },
   {
-    id: "vag_tfsi_ea888",
-    minScore: 12,
-    title: "VW / Audi — 1.8/2.0 TFSI (eļļas patēriņš, ķēde)",
+    id: "vag_tfsi_ea888_early",
+    minScore: 14,
+    title: "VW / Audi — EA888 gen1/2 TFSI (eļļas patēriņš, ķēde)",
     score: (fp, hay) => {
+      if (/EA888.?GEN.?3|GEN3|GEN.?3/.test(hay)) return 0;
+      if (fp.year != null && fp.year >= 2014) return 0;
       let s = brandScore(fp, ["VW", "AUDI", "SKODA", "SEAT"], hay);
-      if (/TFSI|TSI|BENZĪN|BENZIN|PETROL/.test(hay)) s += 8;
-      if (/1\.8|2\.0|1798|1984|EA888|EA113/.test(hay)) s += 14;
+      if (!/TFSI|TSI|BENZĪN|BENZIN|PETROL|EA888|EA113/.test(hay) && !/BENZ/.test(fp.fuelType.toUpperCase())) {
+        // still allow via proxy below
+      } else {
+        s += 8;
+      }
+      if (/1\.8|2\.0|1798|1984|EA888|EA113|TFSI|TSI/.test(hay)) s += 10;
+      s += engineScore(fp, ["CDAB", "CDAA", "CCZB", "CAWB", "CCT", "CDNC"]);
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 118,
+        kwMax: 155,
+        cm3Min: 1780,
+        cm3Max: 2000,
+        yearMin: 2008,
+        yearMax: 2012,
+        fuelRe: /BENZ|PETROL|TFSI|TSI/,
+      });
+      if (fp.year != null && fp.year >= 2013) s -= 14;
       return s;
     },
     body: `${PACK_BODY_HEADER}
 
-**2008–2013 paaudzes 1.8/2.0 TFSI:** bieži **galvenais pirkuma risks** — eļļas patēriņš, ķēdes stiepšanās, galvas bloka plaisas. Ja nav pierādīta apkope un eļļas līmeņa disciplīna — **meklēt citu variantu**.
+**2008–2012/13 EA888 gen1/2 (un EA113 pāreja):** bieži **galvenais pirkuma risks** — eļļas patēriņš, ķēdes stiepšanās, galvas/bloka termiskās kaites. Bez pierādītas eļļas disciplīnas un ķēdes stāvokļa — konservatīvs spriedums. Šī paka NEattiecas uz EA888 gen3 (~2013+).
 
-**Jaunāki EA888 gen3:** risks mazāks, bet kontrolē **ūdens sūkni/termostatu**, turbo eļļas caurulītes, PCV.
+**Klātienē:** eļļas līmenis pēc stāvēšanas; zilas dūmas aukstā; ķēdes troksnis aukstā startā; servisa intervāli; spiedības/kompresijas, ja iespējams.`,
+  },
+  {
+    id: "vag_tfsi_ea888_gen3",
+    minScore: 14,
+    title: "VW / Audi — EA888 gen3 TFSI (ūdens sūknis, PCV)",
+    score: (fp, hay) => {
+      if (/EA113|GEN.?1|GEN.?2/.test(hay) && !/GEN.?3/.test(hay)) return 0;
+      if (fp.year != null && fp.year <= 2012) return 0;
+      let s = brandScore(fp, ["VW", "AUDI", "SKODA", "SEAT"], hay);
+      if (/TFSI|TSI|BENZĪN|BENZIN|PETROL|EA888/.test(hay)) s += 8;
+      if (/1\.8|2\.0|1798|1984|EA888/.test(hay)) s += 8;
+      s += engineScore(fp, ["CHHB", "CJX", "DKZ", "DNU"]);
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 110,
+        kwMax: 220,
+        cm3Min: 1780,
+        cm3Max: 2000,
+        yearMin: 2013,
+        yearMax: 2024,
+        fuelRe: /BENZ|PETROL|TFSI|TSI/,
+      });
+      if (fp.year != null && fp.year <= 2011) s -= 16;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
 
-**Klātienē:** eļļas līmenis pēc stāvēšanas; dūmi aukstā; ķēdes troksnis; spiedības testi; servisa intervāli.`,
+**EA888 gen3 (~2013+):** eļļas patēriņa „rijējs” naratīvs no gen1/2 **neattiecas** pēc noklusējuma. Aktuālie mezgli: **ūdens sūknis/termostats**, turbo eļļas caurulītes, PCV, DSG/S-Tronic eļļa ja ir divsajūgs.
+
+**Klātienē:** dzesēšanas stabilitāte; noplūdes priekšā; auksts starts; kārbas plūdenums.`,
   },
   {
     id: "mercedes_om654",
@@ -209,24 +279,97 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 **Klātienē:** auksts starts (rokera/ķēdes troksnis); eļļas noplūdes ap iesmidzinātājiem un karteri; AdBlue/DPF kļūdas; 9G pārslēgumi; dīlera Veiktie darbi uzvar „jāmaina” sarakstu.`,
   },
   {
-    id: "mercedes_diesel",
-    minScore: 12,
-    title: "Mercedes-Benz — OM642 / OM651, 7G/9G, divmasu",
+    id: "mercedes_om642",
+    minScore: 14,
+    title: "Mercedes-Benz — OM642 3.0 V6 dīzelis, 7G/9G, divmasu",
     score: (fp, hay) => {
-      if (/OM654/.test(hay) || /^OM654/.test(fp.engineCode || "")) return 0;
+      if (/OM654|OM651/.test(hay) || /^(OM654|OM651)/.test(fp.engineCode || "")) return 0;
       let s = brandScore(fp, ["MERCEDES", "BENZ"], hay);
-      if (/DIESEL|DĪZEL|BLUE|CDI/.test(hay)) s += 8;
-      return s + engineScore(fp, ["OM642", "OM651", "OM656"]);
+      if (/DIESEL|DĪZEL|BLUE|CDI/.test(hay)) s += 4;
+      s += engineScore(fp, ["OM642"]);
+      if (/OM642|2987|3\.0.?V6|350.?CDI|320.?CDI|280.?CDI/.test(hay)) s += 12;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 140,
+        kwMax: 195,
+        cm3Min: 2900,
+        cm3Max: 3050,
+        yearMin: 2005,
+        yearMax: 2017,
+        fuelRe: /DIESEL|DĪZEL|CDI/,
+      });
+      const cm3 = parseDisplacementCm3(fp);
+      if (cm3 != null && cm3 > 0 && cm3 < 2500) s -= 20;
+      return s;
     },
     body: `${PACK_BODY_HEADER}
 
-**OM642 + 7G-Tronic:** **divmasu spararats + kārba** — dārgs risinājums (līdzīgi lietotai veselīgai 7G montāžai + kodēšana).
+**OM642 (3.0 V6, ~2987 cm³) ≠ OM651/OM654.** Piezo OM651 un OM654 rokera stāstus šeit NEDRĪKST kopēt.
 
-**9G-Tronic (2014+):** labāks profils, ja **eļļas intervāli** ievēroti.
+**7G-Tronic + divmasu:** bieži **galvenais finansiālais risks** pie liela nobraukuma — vibrācija tukšgaitā, raustīšanās. Ja 7G jau „nogurusi”, bieži izdevīgāk meklēt veselīgu lietotu kārbu + kodēšanu nekā tikai DMF. **9G-Tronic (vēlākie, bieži 2014+ bez 4Matic):** labāks profils, ja eļļas intervāli ievēroti; neraksti 7G DMF stāstu uz 9G bez datiem.
+
+**Ieplūde / EGR / eļļas dzesētājs:** kvēpi un noplūdes pie liela km — pārbaudāms, ne automātiski „bloks beidzies”.
+
+**Klātienē:** vibrācijas tukšgaitā; 7G/9G plūdenums; AdBlue/DPF kļūdas; eļļas noplūdes pie kartera/dzesētāja; W206 vs A-klases „Renault” mītu neizplatīt bez šasijas faktiem.`,
+  },
+  {
+    id: "mercedes_om651",
+    minScore: 14,
+    title: "Mercedes-Benz — OM651 2.1 dīzelis (ķēde, piezo, EGR)",
+    score: (fp, hay) => {
+      if (/OM654/.test(hay) || /^OM654/.test(fp.engineCode || "")) return 0;
+      if (/OM642/.test(hay) || /^OM642/.test(fp.engineCode || "")) return 0;
+      let s = brandScore(fp, ["MERCEDES", "BENZ"], hay);
+      if (/DIESEL|DĪZEL|BLUE|CDI/.test(hay)) s += 4;
+      s += engineScore(fp, ["OM651"]);
+      if (/OM651|2143|2\.1|220.?CDI|250.?CDI|200.?CDI/.test(hay)) s += 12;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 100,
+        kwMax: 150,
+        cm3Min: 2100,
+        cm3Max: 2200,
+        yearMin: 2008,
+        yearMax: 2016,
+        fuelRe: /DIESEL|DĪZEL|CDI/,
+      });
+      // 1950 cm³ 2016+ → OM654 klase
+      const cm3 = parseDisplacementCm3(fp);
+      if (cm3 === 1950 || cm3 === 1598) s -= 18;
+      if (fp.year != null && fp.year >= 2017 && (cm3 === 1950 || /1950|1598/.test(hay))) s -= 10;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**OM651 (~2143 cm³, tipiski ~100–150 kW) ≠ OM642 V6 ≠ OM654.** OM654 rokera/NANOSLIDE un OM642 7G/DMF stāstus šeit NEDRĪKST kopēt bez datiem.
+
+**Ķēde / izciļņi / eļļas disciplīna:** agrīnās partijās ķēdes stiepšanās un izciļņu nodilums — auksta starta klaboņa. Eļļas intervāls un pareizā specifikācija maina spriedumu; long-life bez pierādījumiem pilsētā = risks.
+
+**Piezo iesmidzinātāji:** dārga pozīcija, ja jāmaina; neraksti kā jau bojātus bez dūmu/kļūdu/datu.
+
+**EGR dzesētājs / DPF:** pilsētas profilā biežāk; šosejā - pārbaudes punkts.
+
+**Klātienē:** auksts starts (ķēde/izciļņi); eļļas noplūdes; AdBlue ja ir; 7G/9G plūdenums; dīlera Veiktie darbi uzvar „jāmaina”.`,
+  },
+  {
+    id: "mercedes_diesel",
+    minScore: 12,
+    title: "Mercedes-Benz — dīzelis (vispārīgs fallback, ja OM kods neskaidrs)",
+    score: (fp, hay) => {
+      if (/OM654|OM642|OM651|OM656/.test(hay) || /^(OM654|OM642|OM651|OM656)/.test(fp.engineCode || "")) {
+        return 0;
+      }
+      const cm3 = parseDisplacementCm3(fp);
+      if (cm3 === 2987 || cm3 === 2143 || cm3 === 1950 || cm3 === 1598) return 0;
+      let s = brandScore(fp, ["MERCEDES", "BENZ"], hay);
+      if (/DIESEL|DĪZEL|BLUE|CDI/.test(hay)) s += 8;
+      return s + engineScore(fp, ["OM656"]);
+    },
+    body: `${PACK_BODY_HEADER}
+
+**Kad precīzs OM kods / cm³ nav skaidrs:** vispirms izsecini kandidātus no kW+cm³+gada (OM642 ~3.0 V6; OM651 ~2.1; OM654 ~1.6/2.0 2016+), tad meklē to kodu. Neraksti sajauktu „Mercedes dīzelis” eseju.
 
 **AdBlue/SCR/DPF:** klasificēt pēc nobraukuma un pilsētas/šosejas profila.
 
-**Klātienē:** vibrācijas tukšgaitā; pārslēgšanās plūdenums; AdBlue kļūdas; eļļas noplūdes pie kartera; W206 vs A-klases arhitektūras mītu neizplatīt bez pamata.`,
+**Klātienē:** vibrācijas tukšgaitā; pārslēgšanās plūdenums; AdBlue kļūdas; eļļas noplūdes.`,
   },
   {
     id: "bmw_m57_e60_e61",
@@ -272,39 +415,151 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 **Klātienē:** aizmugure pēc 10 min stāvēšanas (E61); eļļa uz filtra korpusa/startera; hidromufte (troksnis/sasilšana); auksts starts bez ķēdes klaboņas; 6HP 1–2 un 4–5; ELV starta cikls; pusass puteklis; parastās stūres brīvkustība (ne Active Steering cena); EMF stāvbremze; ieplūdes kolektora kodi.`,
   },
   {
-    id: "bmw_diesel_chains",
-    minScore: 12,
-    title: "BMW — N47 / N57 / B47 ķēdes un eļļas sistēma",
+    id: "bmw_n57",
+    minScore: 14,
+    title: "BMW — N57 3.0d (ķēde aizmugurē, eļļas sūknis)",
     score: (fp, hay) => {
       if (/M57/.test(hay) || /^M57/.test(fp.engineCode || "")) return 0;
       if (/\bE60\b|\bE61\b/.test(hay)) return 0;
+      if (/N47|B47|M47/.test(hay) || /^(N47|B47|M47)/.test(fp.engineCode || "")) {
+        if (!/N57/.test(fp.engineCode || "") && !/N57/.test(hay)) return 0;
+      }
       let s = brandScore(fp, ["BMW"], hay);
-      if (/DIESEL|DĪZEL/.test(hay)) s += 6;
-      return s + engineScore(fp, ["N47", "N57", "B47", "M47"]);
-    },
-    body: `${PACK_BODY_HEADER}
-
-**N57:** bieži **galvenais finansiālais blokers** — ķēdes lūzums, gultņi. Pēc „ķēdes remonta” obligāti jautā: vai mainīts **eļļas sūknis** (nolietots sūknis = bloka bojāejums).
-
-**N47:** augsts risks, bet atšķirībā no N57 — **laicīga apkope** maina spriedumu.
-
-**Klātienē:** auksta metāliska klaboņa; eļļas spiedība; servisa rēķini par ķēdi/sūkni; turbo atlikušais resurss.`,
-  },
-  {
-    id: "bmw_petrol_n20_b48",
-    minScore: 10,
-    title: "BMW — benzīns N20/B48, cooling, timing",
-    score: (fp, hay) => {
-      let s = brandScore(fp, ["BMW"], hay);
-      if (/BENZĪN|BENZIN|PETROL|BENZ/.test(hay)) s += 8;
-      if (/N20|B48|N55|B58/.test(hay)) s += 10;
+      if (/DIESEL|DĪZEL/.test(hay)) s += 4;
+      s += engineScore(fp, ["N57"]);
+      if (/N57/.test(hay)) s += 20;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 180,
+        kwMax: 280,
+        cm3Min: 2950,
+        cm3Max: 3050,
+        yearMin: 2011,
+        yearMax: 2019,
+        fuelRe: /DIESEL|DĪZEL/,
+      });
+      // ~145 kW pre-2011 = M57 klase
+      const kw = parsePowerKw(fp);
+      if (kw != null && kw > 0 && kw <= 160 && (fp.year == null || fp.year <= 2010)) s -= 20;
       return s;
     },
     body: `${PACK_BODY_HEADER}
 
-**N20/N26:** **ūdens sūknis/termiskā pārvaldība** — vidējs/liels risks; kontrolēt dzesēšanas vēsturi.
+**N57 (3.0d, ķēde aizmugurē) ≠ M57 (ķēde priekšā) ≠ N47 (2.0).** M57 „ierasts darba mūžs pie 300k” un N47 2.0 stāstus šeit NEDRĪKST kopēt.
+
+**Galvenais finansiālais bloķētājs:** ķēdes lūzums / gultņi. Pēc „ķēdes remonta” obligāti jautā: vai mainīts **eļļas sūknis** (nolietots sūknis pēc ķēdes darba = bloka bojāejuma risks). Ja datos ķēde+sūknis fiksēti - risks krīt; ja tikai „ķēde” - jautā dokumentus.
+
+**Kalibrācija:** pie ~150–220k km ķēde jau var būt pirkuma risks; neraksti kā tālu perspektīvu. Twin-turbo / augstāka kW josla = lielāka termiskā slodze.
+
+**Klātienē:** auksta metāliska klaboņa; eļļas spiedība; servisa rēķini par ķēdi/sūkni; turbo atlikušais resurss.`,
+  },
+  {
+    id: "bmw_n47",
+    minScore: 14,
+    title: "BMW — N47 / B47 2.0d ķēde",
+    score: (fp, hay) => {
+      if (/M57|N57/.test(hay) || /^(M57|N57)/.test(fp.engineCode || "")) return 0;
+      if (/\bE60\b|\bE61\b/.test(hay) && /2993|3\.0/.test(hay)) return 0;
+      let s = brandScore(fp, ["BMW"], hay);
+      if (/DIESEL|DĪZEL/.test(hay)) s += 4;
+      s += engineScore(fp, ["N47", "B47", "M47"]);
+      if (/N47|B47|M47/.test(hay)) s += 16;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 85,
+        kwMax: 140,
+        cm3Min: 1950,
+        cm3Max: 2000,
+        yearMin: 2007,
+        yearMax: 2019,
+        fuelRe: /DIESEL|DĪZEL/,
+      });
+      const cm3 = parseDisplacementCm3(fp);
+      if (cm3 != null && cm3 >= 2900) s -= 20;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**N47 (2.0d) ≠ N57 (3.0) ≠ M57.** N57 eļļas sūkņa katastrofas naratīvu uz N47 NEkopē 1:1; N47 ķēde stiepjas agri (~100–150k), bet **laicīga apkope** maina spriedumu. Labi uzturēts N47 ar dokumentētu ķēdi bieži labāks par nogurušu M47 „bez ķēdes problēmas”.
+
+**B47 (vēlākie 2.0d):** uzlabojumi pret N47, bet ķēdes/eļļas disciplīna joprojām jākalibrē pret km - neraksti, ka B47 ir „bez riska”.
+
+**Klātienē:** auksta klaboņa; eļļas spiedība; ķēdes rēķini; turbo/EGR/DPF pilsētā.`,
+  },
+  {
+    id: "bmw_diesel_chains",
+    minScore: 12,
+    title: "BMW — dīzelis ķēde (fallback, ja N47/N57 neskaidrs)",
+    score: (fp, hay) => {
+      if (/M57|N57|N47|B47|M47/.test(hay) || /^(M57|N57|N47|B47|M47)/.test(fp.engineCode || "")) {
+        return 0;
+      }
+      if (/\bE60\b|\bE61\b/.test(hay)) return 0;
+      const cm3 = parseDisplacementCm3(fp);
+      if (cm3 === 2993 || cm3 === 1995) return 0;
+      let s = brandScore(fp, ["BMW"], hay);
+      if (/DIESEL|DĪZEL/.test(hay)) s += 6;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**Kad 2.0 pret 3.0 nav skaidrs:** vispirms kW+cm³+gads → N47 (~2.0, ≤~140 kW) vai N57 (~3.0, ≥~180 kW, 2011+) vai M57 (≤2010, ķēde priekšā). Tad meklē to kodu. Neraksti sajauktu „BMW dīzeļa ķēde” eseju.
+
+**Klātienē:** auksta metāliska klaboņa; eļļas spiedība; servisa rēķini par ķēdi.`,
+  },
+  {
+    id: "bmw_petrol_n20",
+    minScore: 12,
+    title: "BMW — N20/N26 benzīns (dzesēšana, ķēde)",
+    score: (fp, hay) => {
+      if (/B48|B58|N55/.test(hay) || /^(B48|B58|N55)/.test(fp.engineCode || "")) return 0;
+      let s = brandScore(fp, ["BMW"], hay);
+      if (/BENZĪN|BENZIN|PETROL|BENZ/.test(hay)) s += 6;
+      s += engineScore(fp, ["N20", "N26"]);
+      if (/N20|N26/.test(hay)) s += 14;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 135,
+        kwMax: 180,
+        cm3Min: 1950,
+        cm3Max: 2000,
+        yearMin: 2011,
+        yearMax: 2017,
+        fuelRe: /BENZ|PETROL/,
+      });
+      if (fp.year != null && fp.year >= 2018) s -= 12;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**N20/N26:** **ūdens sūknis/termiskā pārvaldība** un ķēdes/eļļas disciplīna — vidējs/liels risks; kontrolēt dzesēšanas vēsturi. B48 stāstu šeit NEkopē.
 
 **Klātienē:** temperatūras stabilitāte; noplūdes; eļļas emulsija; kļūdu kodi pēc auksta starta.`,
+  },
+  {
+    id: "bmw_petrol_b48",
+    minScore: 12,
+    title: "BMW — B48/B58 benzīns (dzesēšana, eļļa)",
+    score: (fp, hay) => {
+      if (/N20|N26/.test(hay) || /^(N20|N26)/.test(fp.engineCode || "")) return 0;
+      let s = brandScore(fp, ["BMW"], hay);
+      if (/BENZĪN|BENZIN|PETROL|BENZ/.test(hay)) s += 6;
+      s += engineScore(fp, ["B48", "B58", "N55"]);
+      if (/B48|B58|N55/.test(hay)) s += 14;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 100,
+        kwMax: 250,
+        cm3Min: 1490,
+        cm3Max: 3000,
+        yearMin: 2015,
+        yearMax: 2026,
+        fuelRe: /BENZ|PETROL/,
+      });
+      if (fp.year != null && fp.year <= 2013) s -= 14;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**B48/B58 (un N55 pēc konteksta):** N20 „agrīnās dzesēšanas katastrofas” naratīvu NEkopē pēc noklusējuma. Fokusā: dzesēšanas noplūdes, eļļas intervāli, turbo eļļas līnijas, 8HP eļļa ja automāts.
+
+**Klātienē:** temperatūras stabilitāte; noplūdes; auksts starts; kārbas plūdenums.`,
   },
   {
     id: "volvo_d5244_single_turbo",
@@ -395,21 +650,66 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 **Klātienē:** dzesēšanas līmenis trendā un smarža; apkures temperatūra braucienā; Haldex serviss; automāta (Aisin) plūdenums, ja nav manuāla.`,
   },
   {
+    id: "volvo_d4_drive_e",
+    minScore: 14,
+    title: "Volvo — Drive-E D4 (D4204) zobsiksna",
+    score: (fp, hay) => {
+      if (/D5244/.test(hay) || /^D5244/.test(fp.engineCode || "")) return 0;
+      let s = brandScore(fp, ["VOLVO"], hay);
+      s += engineScore(fp, ["D4204", "D420"]);
+      if (/D4204|DRIVE.?E|D4/.test(hay) && /DIESEL|DĪZEL|DIZEL/.test(hay)) s += 12;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 110,
+        kwMax: 140,
+        cm3Min: 1960,
+        cm3Max: 2000,
+        yearMin: 2014,
+        yearMax: 2024,
+        fuelRe: /DIESEL|DĪZEL|DIZEL/,
+      });
+      const cm3 = parseDisplacementCm3(fp);
+      if (cm3 != null && cm3 >= 2300) s -= 20;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**Drive-E D4 (D4204T…, ~1969 cm³, tipiski ~120–140 kW) ≠ vecais 2.4 D5.** Biturbo bloka plaisas un D5244T11 papildsiksnas stāstus šeit NEDRĪKST kopēt.
+
+**Zobsiksna + ūdenssūknis:** ražotāja intervāls (bieži ~180–240k / gadi pēc specifikācijas) - ja datos NAV fiksēta maiņa: **nepierādīts**, jālūdz dokumenti; ne „neatliekami obligāti” tikai no odometra.
+
+**Eļļas patēriņš / PCV (agrīnās partijās):** kontrolēt eļļas līmeņa disciplīnu un dīlera ierakstus; neizdomāt patēriņu bez datiem.
+
+**8-pakāpju Aisin (ja automāts):** eļļas intervāli un plūdenums testa braucienā. Haldex AWD - eļļas maiņa.
+
+**Klātienē:** auksts starts; eļļas līmenis; siksnas dokumenti; Aisin/Haldex; dūmainība.`,
+  },
+  {
     id: "psa_stellantis",
     minScore: 12,
     title: "Peugeot / Citroën / DS / Opel — wet belt, PureTech",
     score: (fp, hay) => {
       let s = brandScore(fp, ["PEUGEOT", "CITROEN", "CITROËN", "DS", "OPEL"], hay);
-      if (/PURETECH|1\.2|1\.6|WET|BELT/.test(hay)) s += 10;
+      if (/PURETECH|1\.2|1\.6|WET|BELT|EB2|DV5|DV6/.test(hay)) s += 10;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 60,
+        kwMax: 130,
+        cm3Min: 1190,
+        cm3Max: 1600,
+        yearMin: 2014,
+        yearMax: 2024,
+        fuelRe: /BENZ|PETROL|DIESEL|DĪZEL|PURETECH/,
+      });
       return s;
     },
     body: `${PACK_BODY_HEADER}
 
-**Wet belt (eļļā):** bieži **galvenais motors risks** — bez skaņas pirms bojājuma; profilaktiska maiņa vai pierādījumi obligāti.
+**Wet belt (eļļā, PureTech / daži 1.2/1.0):** bieži **galvenais motors risks** — siksna degradējas ķīmiski bez skaļas brīdinājuma; gumijas atliekas aizzīž eļļas uztvērēju → eļļas bads. Profilaktiska maiņa vai **dokumenti**; trūkums = nepierādīts, ne „jau bojāts”.
 
-**1.2 PureTech:** eļļas patēriņš un agrīna nolietojuma sajūta.
+**1.2 PureTech:** eļļas patēriņš un agrīna nolietojuma sajūta; īsāki eļļas intervāli pilsētā.
 
-**Klātienē:** eļļas krāsa/līmenis; servisa intervāli; vibrācija un dūmi.`,
+**BlueHDi / DV dīzelis:** AdBlue/DPF pilsētā; wet-belt stāstu uz ķēdes dīzeli NEkopē bez koda.
+
+**Klātienē:** eļļas krāsa/līmenis; servisa intervāli / siksnas rēķins; vibrācija un dūmi; auksts starts.`,
   },
   {
     id: "renault_nissan",
@@ -417,16 +717,25 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     title: "Renault / Dacia / Nissan — 1.5 dCi, CVT, hibrīdi",
     score: (fp, hay) => {
       let s = brandScore(fp, ["RENAULT", "DACIA", "NISSAN"], hay);
-      if (/DCI|1\.5|1\.6|QASHQAI|X-TRAIL/.test(hay)) s += 8;
+      if (/DCI|1\.5|1\.6|QASHQAI|X-TRAIL|K9K|R9M/.test(hay)) s += 8;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 66,
+        kwMax: 110,
+        cm3Min: 1450,
+        cm3Max: 1600,
+        yearMin: 2005,
+        yearMax: 2020,
+        fuelRe: /DIESEL|DĪZEL|DCI/,
+      });
       return s;
     },
     body: `${PACK_BODY_HEADER}
 
-**1.5/1.6 dCi:** turbo un iesmidzinātāju nolietojums; EGR/DPF pilsētā.
+**1.5/1.6 dCi (K9K u.c.):** turbo un iesmidzinātāju nolietojums; EGR/DPF pilsētā. Eļļas intervāls kritisks ķēdei/turbo. Wet-belt PureTech stāstu uz dCi NEkopē.
 
-**Nissan CVT (benzīns):** vibrācija un pārkaršana — **vidējs risks**.
+**Nissan CVT (benzīns):** vibrācija un pārkaršana — testa brauciens obligāts; eļļas maiņas vēsture.
 
-**Klātienē:** turbo spiedība; CVT bez slīdēšanas; servisa pierādījumi.`,
+**Klātienē:** turbo spiedība; CVT bez slīdēšanas; servisa pierādījumi; dūmainība.`,
   },
   {
     id: "toyota_lexus",
@@ -449,16 +758,25 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     title: "Ford — EcoBoost, Powershift, wet belt (PSA platformas)",
     score: (fp, hay) => {
       let s = brandScore(fp, ["FORD"], hay);
-      if (/ECOBOOST|ECOSPORT|FOCUS|POWERSHIFT/.test(hay)) s += 10;
+      if (/ECOBOOST|ECOSPORT|FOCUS|POWERSHIFT|WET.?BELT|1\.0|1\.5/.test(hay)) s += 10;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 74,
+        kwMax: 134,
+        cm3Min: 990,
+        cm3Max: 1500,
+        yearMin: 2012,
+        yearMax: 2024,
+        fuelRe: /BENZ|PETROL|ECOBOOST/,
+      });
       return s;
     },
     body: `${PACK_BODY_HEADER}
 
-**1.0/1.5 EcoBoost:** dzesēšana un turbo resurss; dažās platformās **wet belt** risks.
+**1.0/1.5 EcoBoost:** dzesēšana un turbo resurss; dažās PSA platformās **wet belt** (eļļā) - tas pats ķīmiskās degradācijas risks kā PureTech; dokumenti vai profilakse. Neraksti wet-belt uz ķēdes EcoBoost bez koda.
 
-**Powershift (sauss DCT):** **galvenais risks** — obligāts testa brauciens.
+**Powershift (sauss DCT):** **galvenais risks** — obligāts testa brauciens; smaka/slīdēšana.
 
-**Klātienē:** pārslēgšanās; temperatūra; eļļas pierādījumi.`,
+**Klātienē:** pārslēgšanās; temperatūra; eļļas/siksnas pierādījumi.`,
   },
   {
     id: "hyundai_kia",

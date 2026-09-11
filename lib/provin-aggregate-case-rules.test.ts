@@ -18,7 +18,8 @@ describe("provin-aggregate-case-rules", () => {
     const fp = extractVehicleReportFingerprint(blocks, { vin: null });
     fp.engineCode = "N57";
     const packs = selectAggregateCasePacks(fp);
-    expect(packs.some((p) => p.id === "bmw_diesel_chains")).toBe(true);
+    expect(packs.some((p) => p.id === "bmw_n57")).toBe(true);
+    expect(packs.some((p) => p.id === "bmw_n47")).toBe(false);
     expect(packs.some((p) => p.id === "bmw_m57_e60_e61")).toBe(false);
   });
 
@@ -38,6 +39,8 @@ describe("provin-aggregate-case-rules", () => {
     fp.typeCode = "PX61";
     const packs = selectAggregateCasePacks(fp);
     expect(packs.some((p) => p.id === "bmw_m57_e60_e61")).toBe(true);
+    expect(packs.some((p) => p.id === "bmw_n57")).toBe(false);
+    expect(packs.some((p) => p.id === "bmw_n47")).toBe(false);
     expect(packs.some((p) => p.id === "bmw_diesel_chains")).toBe(false);
     const m57 = packs.find((p) => p.id === "bmw_m57_e60_e61");
     expect(m57?.body).toMatch(/ķēde dzinēja priekšpusē/i);
@@ -60,7 +63,26 @@ describe("provin-aggregate-case-rules", () => {
     fp.engineCode = "N57";
     const packs = selectAggregateCasePacks(fp);
     expect(packs.some((p) => p.id === "bmw_m57_e60_e61")).toBe(false);
-    expect(packs.some((p) => p.id === "bmw_diesel_chains")).toBe(true);
+    expect(packs.some((p) => p.id === "bmw_n57")).toBe(true);
+    expect(packs.some((p) => p.id === "bmw_n47")).toBe(false);
+  });
+
+  it("selects BMW N47 pack by kW+cm3 without engine code", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "BMW 320d",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.05.2012",
+        engineDisplacementCm3: "1995",
+        enginePowerKw: "135",
+        emissionStandard: "Euro 5",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "bmw_n47")).toBe(true);
+    expect(packs.some((p) => p.id === "bmw_n57")).toBe(false);
   });
 
   it("builds stable learning key from fingerprint", () => {
@@ -93,8 +115,8 @@ describe("provin-aggregate-case-rules", () => {
     expect(packs.some((p) => p.id === "vag_audi_v6_tdi")).toBe(false);
     const tdi = packs.find((p) => p.id === "vag_2_0_tdi_dsg");
     expect(tdi?.body).toMatch(/zobsiksna/i);
-    expect(tdi?.body).toMatch(/ne sadales ķēde/i);
-    expect(tdi?.body).toMatch(/termostata korpusa stāstu uz šo motoru NEDRĪKST kopēt/i);
+    expect(tdi?.body).toMatch(/ne ķēde/i);
+    expect(tdi?.body).toMatch(/termostata stāstu uz šo motoru NEDRĪKST kopēt/i);
   });
 
   it("selects OM654 pack and excludes OM642/OM651 diesel pack", () => {
@@ -179,5 +201,80 @@ describe("provin-aggregate-case-rules", () => {
     expect(packs.some((p) => p.id === "volvo_d5244_single_turbo")).toBe(false);
     const bi = packs.find((p) => p.id === "volvo_d5_biturbo_block");
     expect(bi?.body).toMatch(/bloka plais/i);
+  });
+
+  it("selects OM642 pack for 3.0 CDI and excludes OM651/OM654", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Mercedes-Benz E 350",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.06.2012",
+        engineDisplacementCm3: "2987",
+        enginePowerKw: "195",
+        emissionStandard: "Euro 5",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "OM642";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "mercedes_om642")).toBe(true);
+    expect(packs.some((p) => p.id === "mercedes_om651")).toBe(false);
+    expect(packs.some((p) => p.id === "mercedes_om654")).toBe(false);
+    expect(packs.find((p) => p.id === "mercedes_om642")?.body).toMatch(/7G-Tronic/i);
+  });
+
+  it("selects OM651 pack by kW+cm3 without code and excludes OM642", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Mercedes-Benz C 220",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.03.2013",
+        engineDisplacementCm3: "2143",
+        enginePowerKw: "125",
+        emissionStandard: "Euro 5",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "mercedes_om651")).toBe(true);
+    expect(packs.some((p) => p.id === "mercedes_om642")).toBe(false);
+  });
+
+  it("selects EA888 early pack for 2010 TFSI and excludes gen3", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Audi A4",
+        fuelType: "Benzīns",
+        firstRegistration: "01.06.2010",
+        engineDisplacementCm3: "1984",
+        enginePowerKw: "155",
+        emissionStandard: "Euro 5",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "vag_tfsi_ea888_early")).toBe(true);
+    expect(packs.some((p) => p.id === "vag_tfsi_ea888_gen3")).toBe(false);
+  });
+
+  it("selects Volvo Drive-E D4 pack for D4204T14", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Volvo XC60",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.06.2017",
+        engineDisplacementCm3: "1969",
+        enginePowerKw: "140",
+        emissionStandard: "Euro 6",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "D4204T14";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "volvo_d4_drive_e")).toBe(true);
+    expect(packs.some((p) => p.id === "volvo_d5244_single_turbo")).toBe(false);
+    expect(packs.some((p) => p.id === "volvo_d5_biturbo_block")).toBe(false);
   });
 });
