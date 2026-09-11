@@ -417,6 +417,26 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
   });
 
+  it("uses a light silhouette BMW mark (not a solid disc under brightness(0))", () => {
+    const bmw = PDF_DEALER_LOGO_DATA_URI.bmw!;
+    expect(bmw).toMatch(/^data:image\/svg\+xml/);
+    const decoded = Buffer.from(bmw.split(",")[1]!, "base64").toString("utf8");
+    expect(decoded).toContain('viewBox="0 0 24 24"');
+    expect(decoded).toContain("#E8EEF5");
+    expect(decoded).not.toMatch(/linearGradient|radialGradient/);
+    expect(decoded).not.toMatch(/fill="#333"/);
+
+    const html = buildOemDealerDocumentHtml({
+      vin: "WBA5K51060D083631",
+      makeModel: "BMW 535d",
+      autoRecords: emptyAutoRecordsBlock(),
+      oneauto: emptyOneautoBlock(),
+    });
+    expect(html).toContain(bmw);
+    expect(html).toMatch(/class="oem-logo"/);
+    expect(html).not.toMatch(/class="oem-logo oem-logo--mono"/);
+  });
+
   it("prefers richer service payload over empty ingest stub", () => {
     const ar = emptyAutoRecordsBlock();
     ar.oneautoIngest = {

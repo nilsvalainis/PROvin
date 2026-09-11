@@ -36,7 +36,7 @@ export type Tp5DealerBrand = (typeof TP5_DEALER_BRAND_GROUPS)[number][number];
 
 export const TP5_DEALER_BRANDS: readonly Tp5DealerBrand[] = TP5_DEALER_BRAND_GROUPS.flat();
 
-const LOGO_V = "11";
+const LOGO_V = "12";
 
 /** Logo paths only where an SVG ships under /public/brand-logos. */
 export const TP5_DEALER_BRAND_LOGO_SRC: Partial<Record<Tp5DealerBrand, string>> = {
