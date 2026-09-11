@@ -26,6 +26,7 @@
     "eval:prod-sample": "node scripts/eval-prod-sample.mjs --load-env-local",
     "style:corpus:mine": "node scripts/mine-style-corpus.mjs --load-env-local",
     "audit:knowledge:promote": "node scripts/audit-knowledge-pipeline.mjs --load-env-local promote",
+    "audit:knowledge": "node scripts/audit-knowledge-cli.mjs --load-env-local",
     "vin:fetch": "node scripts/vin-fetch.mjs",
     "screenshot:mobile": "node scripts/mobile-screenshot.mjs",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe"

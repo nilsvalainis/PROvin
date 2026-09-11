@@ -20,10 +20,11 @@ Field agent prompts are for **data processing and Latvian expert copy** on admin
 
 **Never** dump full order drafts into Cursor Claude / expensive models. Use the cheap local path:
 
-1. **Backfill (no LLM):** `POST /api/admin/audit-knowledge` `{ "action": "backfill", "limit": 120 }` — scans drafts → anonymized snippets → `provin_audit_aggregate_learnings.json`.
-2. **Promote (no LLM):** `{ "action": "promote" }` or `npm run audit:knowledge:promote` → `.data/…/audit-knowledge-candidates.md` (hard-capped ~12k chars).
-3. **Expensive agent:** review **only** that candidates MD → inject durable rules into [provin-admin-prompt-engineering/reference.md](../provin-admin-prompt-engineering/reference.md) + `lib/provin-aggregate-case-rules.ts` → sync prompts.
-4. **Runtime ✨ budget:** `buildAggregateKnowledgeAiContext` caps packs (3); with a known engine code uses up to 5 learning keys / 6 snippets / ~10.5k chars (else 3/4/~7.5k). Learnings also upsert under `ENGINE|{code}` and refresh promotion candidates after each save.
+1. **Backfill (no LLM):** admin lapa `/admin/agregatu-zinasanas` (poga) **vai** `npm run audit:knowledge -- backfill` **vai** `POST /api/admin/audit-knowledge` `{ "action": "backfill", "limit": 120 }` — scans drafts → anonymized snippets → `provin_audit_aggregate_learnings.json`.
+2. **Status:** tajā pašā lapā / `{ "action": "status" }` / `npm run audit:knowledge -- status`.
+3. **Promote (no LLM):** poga lapā, `{ "action": "promote" }`, vai `npm run audit:knowledge:promote` → `.data/…/audit-knowledge-candidates.md` (hard-capped ~12k chars).
+4. **Expensive agent:** review **only** that candidates MD → inject durable rules into [provin-admin-prompt-engineering/reference.md](../provin-admin-prompt-engineering/reference.md) + `lib/provin-aggregate-case-rules.ts` → sync prompts.
+5. **Runtime ✨ budget:** `buildAggregateKnowledgeAiContext` caps packs (3); with a known engine code uses up to 5 learning keys / 6 snippets / ~10.5k chars (else 3/4/~7.5k). Learnings also upsert under `ENGINE|{code}` and refresh promotion candidates after each save.
 
 Code: `lib/admin-audit-learning-extract.ts`, `lib/admin-audit-knowledge-promote.ts`, `lib/admin-ai-aggregate-knowledge.ts`, `app/api/admin/audit-knowledge/route.ts`.
 

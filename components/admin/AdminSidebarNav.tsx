@@ -26,6 +26,7 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
   const statistikaActive = Boolean(pathname?.startsWith("/admin/statistika"));
   const blogsActive = Boolean(pathname?.startsWith("/admin/blogs"));
   const peeksActive = Boolean(pathname?.startsWith("/admin/atras-vertesanas"));
+  const zinasanasActive = Boolean(pathname?.startsWith("/admin/agregatu-zinasanas"));
   const sakumsActive =
     !consultationsActive &&
     !rekiniActive &&
@@ -33,6 +34,7 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
     !statistikaActive &&
     !blogsActive &&
     !peeksActive &&
+    !zinasanasActive &&
     (pathname === "/admin/dashboard" ||
       pathname === "/admin/dashboard/" ||
       Boolean(pathname?.startsWith("/admin/orders/")));
@@ -53,6 +55,9 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
       </Link>
       <Link href="/admin/statistika" className={navItemClass(statistikaActive)}>
         Statistika
+      </Link>
+      <Link href="/admin/agregatu-zinasanas" className={navItemClass(zinasanasActive)}>
+        Agregāti
       </Link>
       <Link href="/admin/commission-invoice" className={navItemClass(rekiniActive)}>
         RĒĶINI

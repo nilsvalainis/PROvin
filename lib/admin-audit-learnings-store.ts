@@ -193,3 +193,34 @@ export async function readAllAuditLearningEntries(): Promise<AuditAggregateLearn
   const doc = await readLearningsCached();
   return Object.values(doc.entries).sort((a, b) => b.snippets.length - a.snippets.length);
 }
+
+export type AuditLearningsSummary = {
+  keyCount: number;
+  snippetTotal: number;
+  updatedAt: string;
+  engineKeys: Array<{ key: string; label: string; snippets: number }>;
+  topKeys: Array<{ key: string; label: string; snippets: number }>;
+};
+
+/** Operatora / CLI statuss — cik atmiņas jau ir. */
+export async function summarizeAuditLearnings(): Promise<AuditLearningsSummary> {
+  const doc = await readLearningsCached();
+  const entries = Object.values(doc.entries);
+  const snippetTotal = entries.reduce((n, e) => n + e.snippets.length, 0);
+  const ranked = [...entries].sort((a, b) => b.snippets.length - a.snippets.length);
+  const engineKeys = ranked
+    .filter((e) => e.key.startsWith("ENGINE|"))
+    .map((e) => ({ key: e.key, label: e.label, snippets: e.snippets.length }));
+  const topKeys = ranked.slice(0, 15).map((e) => ({
+    key: e.key,
+    label: e.label,
+    snippets: e.snippets.length,
+  }));
+  return {
+    keyCount: entries.length,
+    snippetTotal,
+    updatedAt: doc.updatedAt,
+    engineKeys,
+    topKeys,
+  };
+}

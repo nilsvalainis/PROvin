@@ -1,6 +1,7 @@
 /**
- * Admin: audit knowledge pipeline — backfill + promote (bez dārgā LLM).
+ * Admin: audit knowledge pipeline — backfill + promote + status (bez dārgā LLM).
  *
+ * POST { action: "status" }
  * POST { action: "backfill", limit?: number }
  * POST { action: "promote", writeFile?: boolean }
  */
@@ -10,6 +11,7 @@ import {
   backfillAuditAggregateLearnings,
   promoteAuditKnowledgeCandidates,
 } from "@/lib/admin-ai-aggregate-knowledge";
+import { summarizeAuditLearnings } from "@/lib/admin-audit-learnings-store";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -32,12 +34,19 @@ export async function POST(req: Request) {
   }
 
   const action = (body as { action?: unknown }).action;
+
+  if (action === "status") {
+    const summary = await summarizeAuditLearnings();
+    return NextResponse.json({ ok: true, ...summary });
+  }
+
   if (action === "backfill") {
     const limitRaw = (body as { limit?: unknown }).limit;
     const limit =
       typeof limitRaw === "number" && Number.isFinite(limitRaw) ? Math.floor(limitRaw) : undefined;
     const result = await backfillAuditAggregateLearnings({ limit });
-    return NextResponse.json({ ok: true, ...result });
+    const summary = await summarizeAuditLearnings();
+    return NextResponse.json({ ok: true, ...result, summary });
   }
 
   if (action === "promote") {
@@ -53,5 +62,8 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({ error: "unknown_action", hint: "backfill | promote" }, { status: 400 });
+  return NextResponse.json(
+    { error: "unknown_action", hint: "status | backfill | promote" },
+    { status: 400 },
+  );
 }
