@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-11.2 - Volvo D5: sadalīta viens-turbo (D5244T11 / ~136 kW) vs
+ *   biturbo bloka-plaisu paka; kW+cm³+gads aizstājējs bez koda; tehnisko risku
+ *   aizliegums sākt ar „aprīkota ar…” / „neatliekamu” siksnu no tukšiem dokumentiem.
  * - 2026-09-11.1 - Klienta valoda: bez AI-šablona („tuvākā laika ieguldījums”,
  *   „Kas NAV dārgs”, „divējādu ainu”, „dokumentāri pierādījumi”); kopsavilkums
  *   1–2 rindkopas ar skaidru rekomendāciju; portfeļa lasīšana pirms interpretācijas;
@@ -76,4 +79,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-11.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-11.2";

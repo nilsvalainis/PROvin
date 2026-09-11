@@ -218,7 +218,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(tech).toMatch(/Pirmā sadaļa/);
     expect(tech).toMatch(/Nepārspīlē/);
     expect(tech).toMatch(/20–40 tūkst\. km/);
-    expect(tech).toMatch(/varbūtības × izmaksām/);
+    expect(tech).toMatch(/varbūtības × ietekmes/);
     expect(tech).toMatch(/Īsāka analīze nav kļūda/);
   });
 

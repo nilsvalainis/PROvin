@@ -289,6 +289,7 @@ export function evaluateExpertCommentQuality(
     if (
       /identifikācij/i.test(firstLine) ||
       /\*\*[^*]*identifikācij[^*]*\*\*/i.test(firstPara) ||
+      /dzinēja konstrukcija|aprīkota ar|uzticamāk/i.test(firstLine) ||
       (/\b(šis ir|šī ir|šī automašīna ir|šis auto ir)\b/i.test(firstPara) &&
         /(bmw|audi|volkswagen|\bvw\b|mercedes|renault|volvo|škoda|toyota)/i.test(firstPara))
     ) {

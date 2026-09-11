@@ -174,6 +174,13 @@ export function scoreVehicleFingerprintSimilarity(
   const d1 = Number.parseInt(current.engineDisplacementCm3, 10);
   const d2 = Number.parseInt(candidate.engineDisplacementCm3, 10);
   if (Number.isFinite(d1) && Number.isFinite(d2) && Math.abs(d1 - d2) <= 100) score += 8;
+  const kw1 = Number.parseFloat(current.enginePowerKw);
+  const kw2 = Number.parseFloat(candidate.enginePowerKw);
+  if (Number.isFinite(kw1) && Number.isFinite(kw2) && kw1 > 0 && kw2 > 0) {
+    const diff = Math.abs(kw1 - kw2);
+    if (diff <= 5) score += 12;
+    else if (diff <= 15) score += 6;
+  }
   return score;
 }
 

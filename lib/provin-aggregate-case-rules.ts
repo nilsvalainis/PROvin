@@ -47,6 +47,43 @@ function engineScore(fp: VehicleReportFingerprint, codes: string[]): number {
   return 0;
 }
 
+function parsePowerKw(fp: VehicleReportFingerprint): number | null {
+  const n = Number.parseFloat(fp.enginePowerKw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function parseDisplacementCm3(fp: VehicleReportFingerprint): number | null {
+  const n = Number.parseInt(fp.engineDisplacementCm3, 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** kW + tilpums + gads (+ degviela haystackā) — kad koda nav vai tas ir vājš. */
+function powertrainProxyScore(
+  fp: VehicleReportFingerprint,
+  hay: string,
+  opts: {
+    kwMin: number;
+    kwMax: number;
+    cm3Min: number;
+    cm3Max: number;
+    yearMin?: number;
+    yearMax?: number;
+    fuelRe?: RegExp;
+  },
+): number {
+  let s = 0;
+  const kw = parsePowerKw(fp);
+  if (kw != null && kw >= opts.kwMin && kw <= opts.kwMax) s += 14;
+  const cm3 = parseDisplacementCm3(fp);
+  if (cm3 != null && cm3 >= opts.cm3Min && cm3 <= opts.cm3Max) s += 10;
+  if (opts.yearMin != null && opts.yearMax != null && fp.year != null) {
+    if (fp.year >= opts.yearMin && fp.year <= opts.yearMax) s += 8;
+    else if (fp.year < opts.yearMin - 3 || fp.year > opts.yearMax + 3) s -= 12;
+  }
+  if (opts.fuelRe && opts.fuelRe.test(hay)) s += 4;
+  return s;
+}
+
 const PACK_BODY_HEADER = `INTERNĀ KALIBRĀCIJA — šīs pakas € summas ir TIKAI tavai iekšējai smaguma/varbūtības kalibrācijai, NEKAD nekopē tās klienta tekstā (skat. NO ESTIMATED REPAIR EUR); ja tās tomēr paslīd, tās izfiltrē pēcapstrāde, bet tas ir drošības tīkls, ne atļauja.
 
 Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
@@ -270,21 +307,92 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 **Klātienē:** temperatūras stabilitāte; noplūdes; eļļas emulsija; kļūdu kodi pēc auksta starta.`,
   },
   {
-    id: "volvo_d5_diesel",
-    minScore: 12,
-    title: "Volvo — D4/D5, Haldex, dīzeļa bloka plaisas",
+    id: "volvo_d5244_single_turbo",
+    minScore: 14,
+    title: "Volvo — 2.4 D5 viens turbo (D5244T5/T8/T10/T11 u.c.)",
     score: (fp, hay) => {
       let s = brandScore(fp, ["VOLVO"], hay);
-      if (/D5|D4|DIESEL|DĪZEL/.test(hay)) s += 10;
+      const codeHit = engineScore(fp, [
+        "D5244T11",
+        "D5244T10",
+        "D5244T8",
+        "D5244T5",
+        "D5244T4",
+        "D5244T",
+      ]);
+      // Biturbo / vēlākie T13+ kodi — šī paka NAV.
+      if (/D5244T1[3456789]|D5244T2|BITURBO|MELNS.?VĀKS|BLACK.?COVER/.test(hay)) {
+        if (!/D5244T11|D5244T10|D5244T8|D5244T5|D5244T4/.test(fp.engineCode || "")) return 0;
+      }
+      if (/D5244T1[3456789]/.test(fp.engineCode || "")) return 0;
+      s += codeHit;
+      if (/D5|D5244|2400|2\.4/.test(hay)) s += 8;
+      if (/DIESEL|DĪZEL|DIZEL/.test(hay)) s += 4;
+      // ~120–140 kW + ~2400 cm³ + ~2004–2011 → T11 klase bez koda.
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 115,
+        kwMax: 145,
+        cm3Min: 2300,
+        cm3Max: 2500,
+        yearMin: 2004,
+        yearMax: 2011,
+        fuelRe: /DIESEL|DĪZEL|DIZEL/,
+      });
+      // Augstāka jauda tipiski biturbo — sodīt šo paku.
+      const kw = parsePowerKw(fp);
+      if (kw != null && kw >= 148) s -= 18;
       return s;
     },
     body: `${PACK_BODY_HEADER}
 
-**2.4 D5 biturbo (melns vāks):** risks **bloka plaisām** — klusā **antifrīza zuduma** un **auksta gaisa apkure braucot**.
+**Konstrukcija (D5244T5/T8/T10/T11 u.c., tipiski ~120–140 kW / ~163–185 zs, viens VGT turbo):** piecu cilindru 2.4 dīzelis ar **zobsiksnu** (ne ķēdi). Šī paka NEattiecas uz biturbo / melnā vāka stāstu - to ņem tikai biturbo pakā.
+
+**Zobsiksna + ūdenssūknis:** ražotāja josla bieži **180 000 km / 10 gadi**. Ja datos maiņa NAV fiksēta: tas ir **nepierādīts**, ne „neatliekami jāmaina”. >30k km vai >24 mēn. bez oficiālā ieraksta = darbs var būt bijis ārpus dīlera; jālūdz **dokumenti**. Klientam neraksti, ka siksna jau ir „nokavēta obligātā maiņa”, kamēr nav zināms pēdējais darbs.
+
+**Papildsiksnas spriegotājs / brīvgaitas skriemelis (šīs paaudzes D5 paraksts):** nolietojoties siksna var pārtrūkt un tikt ierauta **zobsiksnas** mehānismā → vārstu/virzuļu sadursme. Klātienē klausīties čīkstoņu/gaudošanu aukstā startā; ja maiņas laiks nezināms — profilaktiski kopā ar zobsiksnas komplektu (kā risks, ne kā jau noticis defekts).
+
+**Turbīnas VGT aktuators:** bieža kļūme šajā joslā — jaudas zudums, limpa režīms, kļūdu kodi. Testā: vienmērīga paātrināšanās bez aizkaves; diagnostika, ja iespējams.
+
+**Ieplūde / ieplūdes vārstiņi / EGR:** kvēpu uzkrāšanās pie liela nobraukuma un pilsētas profila — jaudas zudums / dūmi kā **pārbaudāms** punkts, ne pierādīts defekts bez simptomiem datos.
+
+**Manuālā M66 + divmasu + sajūgs:** pie 250–350k km resurss var būt tuvu, BET bez vibrācijām/skaņām tukšgaitā un uzsākot — neraksti „resurss beidzies”. Klātienes tests; € joslas klientam aizliegtas.
+
+**Eļļas disciplīna:** bez oficiāliem intervāliem neizdomā izlaistas maiņas; pasaki, ka dokumenti jāprasa. Šī konstrukcija ar labu eļļu bieži pārsniedz 300 000 km kā ierastu darba mūžu.
+
+**Klātienē:** auksts starts (papildsiksna); eļļas/dzesēšanas noplūdes (vārstu vāks, turbo); turbo aktuatora reakcija; DMF/sajūgs manuālei; Haldex eļļa, ja AWD.`,
+  },
+  {
+    id: "volvo_d5_biturbo_block",
+    minScore: 14,
+    title: "Volvo — D5 biturbo / bloka plaisas, Haldex",
+    score: (fp, hay) => {
+      let s = brandScore(fp, ["VOLVO"], hay);
+      if (/D5244T1[3456789]|D5244T2|BITURBO|MELNS.?VĀKS|BLACK.?COVER/.test(hay)) s += 16;
+      s += engineScore(fp, ["D5244T13", "D5244T14", "D5244T15", "D5244T16", "D5244T17"]);
+      // Viens turbo T11 klase — šo paku neņemt.
+      if (/D5244T11|D5244T10|D5244T8|D5244T5|D5244T4/.test(fp.engineCode || "")) return 0;
+      if (/DIESEL|DĪZEL|DIZEL|D5/.test(hay)) s += 4;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 148,
+        kwMax: 170,
+        cm3Min: 2300,
+        cm3Max: 2500,
+        yearMin: 2008,
+        yearMax: 2016,
+        fuelRe: /DIESEL|DĪZEL|DIZEL/,
+      });
+      const kw = parsePowerKw(fp);
+      // Zema jauda = visticamāk viens turbo — sodīt.
+      if (kw != null && kw > 0 && kw < 145) s -= 16;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**2.4 D5 biturbo (bieži „melns vāks” / augstāka kW josla):** **bloka plaisas** — klusā **antifrīza zudums**, auksts gaiss no apkures braucot, dzesēšanas līmeņa krišana bez redzamas noplūdes. Šis stāsts NEattiecas uz ~136 kW / D5244T11 viena turbo klasi.
 
 **Haldex AWD:** bez eļļas maiņas = **faktiska priekšpiedziņa**.
 
-**Klātienē:** dzesēšanas līmenis trendā; Haldex serviss; automātiskās kārba (Aisin/Volvo) plūdenums.`,
+**Klātienē:** dzesēšanas līmenis trendā un smarža; apkures temperatūra braucienā; Haldex serviss; automāta (Aisin) plūdenums, ja nav manuāla.`,
   },
   {
     id: "psa_stellantis",

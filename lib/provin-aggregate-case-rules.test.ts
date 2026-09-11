@@ -117,4 +117,67 @@ describe("provin-aggregate-case-rules", () => {
     expect(om?.body).toMatch(/OM654 ≠ OM651/i);
     expect(om?.body).toMatch(/rokera/i);
   });
+
+  it("selects Volvo single-turbo D5244 pack for D5244T11 and excludes biturbo block pack", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Volvo V70",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "15.03.2009",
+        engineDisplacementCm3: "2400",
+        enginePowerKw: "136",
+        emissionStandard: "Euro 4",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "D5244T11";
+    fp.transmission = "manual";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "volvo_d5244_single_turbo")).toBe(true);
+    expect(packs.some((p) => p.id === "volvo_d5_biturbo_block")).toBe(false);
+    expect(packs.some((p) => p.id === "volvo_d5_diesel")).toBe(false);
+    const d5 = packs.find((p) => p.id === "volvo_d5244_single_turbo");
+    expect(d5?.body).toMatch(/papildsiksnas spriegotājs/i);
+    expect(d5?.body).toMatch(/VGT aktuators/i);
+    expect(d5?.body).toMatch(/nepierādīts/i);
+    expect(d5?.body).toMatch(/NEattiecas uz biturbo/i);
+  });
+
+  it("matches Volvo D5 single-turbo pack by kW+cm3+year without engine code", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Volvo XC70",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.06.2008",
+        engineDisplacementCm3: "2400",
+        enginePowerKw: "136",
+        emissionStandard: "Euro 4",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "volvo_d5244_single_turbo")).toBe(true);
+    expect(packs.some((p) => p.id === "volvo_d5_biturbo_block")).toBe(false);
+  });
+
+  it("selects Volvo biturbo block pack for higher-kW D5 and excludes single-turbo pack", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Volvo XC60",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.04.2012",
+        engineDisplacementCm3: "2400",
+        enginePowerKw: "158",
+        emissionStandard: "Euro 5",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "D5244T15";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "volvo_d5_biturbo_block")).toBe(true);
+    expect(packs.some((p) => p.id === "volvo_d5244_single_turbo")).toBe(false);
+    const bi = packs.find((p) => p.id === "volvo_d5_biturbo_block");
+    expect(bi?.body).toMatch(/bloka plais/i);
+  });
 });
