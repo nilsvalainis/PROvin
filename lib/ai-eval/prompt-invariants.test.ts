@@ -112,10 +112,11 @@ describe("PROVIN AI prompt invariants", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?profesionālo viedokli/i);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NEKĀDĀ GADĪJUMĀ nepārraksti/i);
-    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?3–5 īsas rindkopas/);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?1–2 rindkopas/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NERAKSTI sludinājuma cenu/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?ĪPAŠNIEKU SKAITS/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?nesummē/i);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?rekomendējam/);
   });
 
   it("field-agent prompts encode client value density and institutional memory", () => {
@@ -177,7 +178,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/8–12 rindkopas/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Active Steering/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/M57/);
-    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/\*\*NAV\*\* dārgs risks/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Kas-NAV-dargs/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/near-term-investment/);
   });
 
   it("technical risks research rules require European forum search when packs are thin", () => {

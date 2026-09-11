@@ -107,7 +107,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **DPF/EGR/AdBlue:** pilsētas profils = **vidējs/liels risks**; šosejas profils ar pierādījumiem — tikai pārbaudes punkts.
 
-**EA288 / EA288evo (piem. DTPA 150 kW, 1968 cm3):** gāzu sadali piedzen zobsiksna, ne sadales ķēde. Ja dīlera Veiktie darbi vai komentāros siksna jau fiksēta (datums + km), to kā tuvākā laika maiņu NERAKSTI. 3.0 V6 plastmasas termostata korpusa stāstu uz šo motoru NEDRĪKST kopēt, kamēr meklēšana šim konkrētajam kodam to neapstiprina.
+**EA288 / EA288evo (piem. DTPA 150 kW, 1968 cm3):** gāzu sadali piedzen zobsiksna, ne sadales ķēde. Ja dīlera Veiktie darbi vai komentāros siksna jau fiksēta (datums + km), to kā „jāmaina” NERAKSTI. 3.0 V6 plastmasas termostata korpusa stāstu uz šo motoru NEDRĪKST kopēt, kamēr meklēšana šim konkrētajam kodam to neapstiprina.
 
 **Klātienē:** slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; ja siksna datos nav fiksēta - jālūdz rēķins, ne jāapgalvo, ka tā nav mainīta.`,
   },
@@ -130,10 +130,53 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 **Klātienē:** eļļas līmenis pēc stāvēšanas; dūmi aukstā; ķēdes troksnis; spiedības testi; servisa intervāli.`,
   },
   {
+    id: "mercedes_om654",
+    minScore: 14,
+    title: "Mercedes-Benz — OM654 (2016+ 1.6/2.0 dīzelis)",
+    score: (fp, hay) => {
+      if (/OM642|OM651/.test(hay) && !/OM654/.test(hay) && !/^OM654/.test(fp.engineCode || "")) {
+        return 0;
+      }
+      let s = brandScore(fp, ["MERCEDES", "BENZ"], hay);
+      if (/DIESEL|DĪZEL|BLUE|CDI/.test(hay)) s += 4;
+      const om654 =
+        engineScore(fp, ["OM654"]) ||
+        (/OM654/.test(hay) ? 25 : 0) ||
+        (fp.year != null &&
+        fp.year >= 2016 &&
+        (fp.engineDisplacementCm3 === "1950" ||
+          fp.engineDisplacementCm3 === "1598" ||
+          /1950|1598|1\.6|2\.0/.test(hay)) &&
+        /DIESEL|DĪZEL|CDI|220D|200D|180D|300D/.test(hay)
+          ? 18
+          : 0);
+      return s + om654;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**OM654 ≠ OM651/OM642.** Šī paka der TIKAI OM654 (un ļoti līdzīgiem 2016+ 1.6/2.0 MB dīzeļiem ar šo kodu). OM651 piezo/ķēdes stāstu un OM642 divmasu+7G stāstu šeit NEDRĪKST kopēt.
+
+**Konstrukcija (iekšējai kalibrācijai):** alumīnija bloks, NANOSLIDE, parasti ķēdes gāzu sadale; bieži 9G-Tronic. Kopumā uzticamāks par agrīno OM651, bet nav „bez problemām”.
+
+**Aktuālie mezgli (kalibrē pret šī auto km/profilu; BEZ € klientam):**
+- **Izplūdes puses rokera/hidraulisko atsperu (tappet) nodilums** — aukstā startā „plop”/neviendabīgs darbs; smagākos gadījumos izciļņu bojājums. Klātienē klausīties aukstu startu.
+- **Iesmidzinātāju blīvgredzeni** — eļļas/kvēpu noplūde ap sprauslām („black death”); pārbaudīt vizuāli un pēc dīlera/RAW ierakstiem.
+- **Ķēdes spriegotājs / ķēde** — riskants galvenokārt pie sliktiem eļļas intervāliem / nepareizas eļļas; ne pasniegt kā OM651 kritisko ķēdi pēc noklusējuma.
+- **EGR / DPF / AdBlue** — pilsētas profilā biežāka aizsērēšana; šosejas profilā mazāk. Kalibrēt pēc motorstundu / km blīvuma.
+- **Turbo eļļas caurulītes / šļūtenes** — vizuāli un testa braucienā (boost).
+
+**Eļļa:** MB 229.51/229.52 (vai jaunāks MB apstiprinājums); pilsētā praktiski ~10 000 km griesti. Long-life „mūža” stāstu neizmantot kā attaisnojumu gariem intervāliem.
+
+**Kārba:** ja 9G — eļļas intervāli un pārslēgšanās plūdenums testa braucienā. Ja 7G uz šo motoru — nejauc ar OM642 divmasu stāstu bez datiem.
+
+**Klātienē:** auksts starts (rokera/ķēdes troksnis); eļļas noplūdes ap iesmidzinātājiem un karteri; AdBlue/DPF kļūdas; 9G pārslēgumi; dīlera Veiktie darbi uzvar „jāmaina” sarakstu.`,
+  },
+  {
     id: "mercedes_diesel",
     minScore: 12,
     title: "Mercedes-Benz — OM642 / OM651, 7G/9G, divmasu",
     score: (fp, hay) => {
+      if (/OM654/.test(hay) || /^OM654/.test(fp.engineCode || "")) return 0;
       let s = brandScore(fp, ["MERCEDES", "BENZ"], hay);
       if (/DIESEL|DĪZEL|BLUE|CDI/.test(hay)) s += 8;
       return s + engineScore(fp, ["OM642", "OM651", "OM656"]);
@@ -181,7 +224,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **525d M57T2 (145 kW, Euro 4) + ZF 6HP19 + HECK:** viens no izturīgākajiem E60/E61 salikumiem. Automāts bez divsajūga; **nav divmasu spararata**. 6HP „mūža eļļa” ir mīts — ATF+filtrs ik **60–80 tūkst. km** (**280–450 €**); mehatronika, ja kadreiz, **800–1800 €**.
 
-**E61 Touring:** visiem rūpnīcā **aizmugures pneimatika (EHC)** — tas nav Dynamic Drive. Spilveni + korodējis kompresors = tipiskais tuvākā laika rēķins (**spilveni 400–800 €**, kompresors **250–500 €**, komplekss **800–1600 €**). E60 sedans bez EHC šo rindkopu neliek kā galveno.
+**E61 Touring:** visiem rūpnīcā **aizmugures pneimatika (EHC)** — tas nav Dynamic Drive. Spilveni + korodējis kompresors = tipiskais aktuālais rēķins (**spilveni 400–800 €**, kompresors **250–500 €**, komplekss **800–1600 €**). E60 sedans bez EHC šo rindkopu neliek kā galveno.
 
 **Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 

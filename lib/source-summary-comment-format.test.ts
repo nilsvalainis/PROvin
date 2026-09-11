@@ -25,6 +25,18 @@ describe("applyProvinReportCopyVocabulary", () => {
     );
     expect(applyProvinReportCopyVocabulary("labvēlīgs faktors")).toBe("tas palīdz");
   });
+
+  it("simplifies AI template cost framing and documentary wording", () => {
+    expect(applyProvinReportCopyVocabulary("jālūdz dokumentāri pierādījumi")).toBe(
+      "jālūdz dokumenti",
+    );
+    expect(applyProvinReportCopyVocabulary("tas ir tuvākā laika ieguldījums")).toBe(
+      "tas ir aktuālais mezgls",
+    );
+    expect(applyProvinReportCopyVocabulary("uzrāda divējādu ainu")).toBe(
+      "datos redzama šāda aina",
+    );
+  });
 });
 
 describe("normalizeProvinExpertAiComment", () => {

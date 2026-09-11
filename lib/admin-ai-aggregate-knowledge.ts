@@ -47,16 +47,26 @@ export { draftQualifiesForAggregateLearning, extractLearningSnippetsFromDraft };
 export const AI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (statiskā bāze + mācījumi no iepriekšējām atskaitēm):
 - Kombinē zemāk esošās ražotāju/agregātu pakas ar AKTĪVĀ pasūtījuma datiem un (ja ir) vēsturisko auditu fragmentiem.
 - Katru agregāta risku klasificē: **galvenais pirkuma risks** / **ierasta uzturēšanas izmaksa** / **pārbaudāms klātienē, nav pirkuma šķērslis**.
-- **1. Tehnisko risku analīze** — detalizēta agregātu forenzika (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla; 8–12 tikai ja katra sadaļa ir cits mezgls); **2. Ieteikumi** — pircēja soļi (redzēt/dzirdēt/izmērīt/vaicāt), ne risku spogulis; **3. Kopsavilkums** — kopaina bez garas tehniskās dublikācijas un BEZ cenu/EUR summām; **avotu/nobraukuma/negadījumu komentāri** — arī lieto šīs zināšanas, kur relevantas.
+- **1. Tehnisko risku analīze** — detalizēta agregātu forenzika (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla; 8–12 tikai ja katra sadaļa ir cits mezgls); **2. Ieteikumi** — pircēja soļi (redzēt/dzirdēt/izmērīt/vaicāt), ne risku spogulis; **3. Kopsavilkums** — 1–2 rindkopas bez garas tehniskās dublikācijas un BEZ cenu/EUR summām; **avotu/nobraukuma/negadījumu komentāri** — arī lieto šīs zināšanas, kur relevantas.
 - Mācījumi no citām atskaitēm — tikai paraugi un forenzikas loģika; **nekopē** klienta VIN, km, datumus, EUR, pasūtījuma ID.
 - Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.
-- Pēc katras bagātīgas atskaites PROVIN saglabā anonimizētus mācījumus — uzskati tos par institucionālo atmiņu nākamajiem līdzīgiem agregātiem.`;
+- Kad zināms dzinēja kods (piem. OM654), prioritāri lieto ENGINE|kods mācījumus un sakrītošo paku — ne vispārīgu markas eseju.
+- Pēc katras bagātīgas atskaites PROVIN saglabā anonimizētus mācījumus (arī pa dzinēja kodu) un atsvaidzina promotion kandidātus — uzskati tos par institucionālo atmiņu nākamajiem līdzīgiem agregātiem.`;
 
 /** Tokenu budžets ✨ kontekstā (dārgais modelis). */
 const AGGREGATE_CTX_MAX_PACKS = 3;
 const AGGREGATE_CTX_MAX_LEARNING_KEYS = 3;
 const AGGREGATE_CTX_MAX_SNIPPETS_PER_KEY = 4;
 const AGGREGATE_CTX_MAX_CHARS = 7_500;
+/** Kad zināms dzinēja kods — lielāks mācību logs (pašmācība no iepriekšējiem auditiem). */
+const AGGREGATE_CTX_MAX_LEARNING_KEYS_WITH_ENGINE = 5;
+const AGGREGATE_CTX_MAX_SNIPPETS_WITH_ENGINE = 6;
+const AGGREGATE_CTX_MAX_CHARS_WITH_ENGINE = 10_500;
+
+export function engineLearningKey(engineCode: string): string {
+  const code = engineCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return code ? `ENGINE|${code}` : "";
+}
 
 /** Pēc veiksmīgas atskaites saglabāšanas — papildina mācījumu indeksu (fire-and-forget). */
 export async function recordAuditAggregateLearningFromDraft(draft: OrderDraftState): Promise<void> {
@@ -74,6 +84,23 @@ export async function recordAuditAggregateLearningFromDraft(draft: OrderDraftSta
     snippets,
   };
   await upsertAuditAggregateLearning(entry);
+
+  const engKey = engineLearningKey(fp.engineCode);
+  if (engKey && engKey !== key) {
+    await upsertAuditAggregateLearning({
+      key: engKey,
+      label: `ENGINE ${fp.engineCode}`,
+      updatedAt: new Date().toISOString(),
+      snippets,
+    });
+  }
+
+  // Atsvaidzina promotion kandidātus — operators / aģents var pārnest uz cieto paku.
+  try {
+    await promoteAuditKnowledgeCandidates({ writeFile: true });
+  } catch {
+    /* non-fatal */
+  }
 }
 
 async function listOrderDraftSessionIdsFromFs(dir: string): Promise<string[]> {
@@ -195,11 +222,17 @@ export async function promoteAuditKnowledgeCandidates(opts?: {
 
 async function rankLearningKeysForFingerprint(fp: VehicleReportFingerprint): Promise<string[]> {
   const primary = fingerprintLearningKey(fp);
+  const engKey = engineLearningKey(fp.engineCode);
   const allKeys = await listAllAuditLearningKeys();
   if (allKeys.length === 0) return [];
 
+  const maxKeys = fp.engineCode
+    ? AGGREGATE_CTX_MAX_LEARNING_KEYS_WITH_ENGINE
+    : AGGREGATE_CTX_MAX_LEARNING_KEYS;
+
   const out: string[] = [];
-  if (allKeys.includes(primary)) out.push(primary);
+  if (engKey && allKeys.includes(engKey)) out.push(engKey);
+  if (allKeys.includes(primary) && !out.includes(primary)) out.push(primary);
   const make = fp.makeTokens[0] ?? "";
   const engine = fp.engineCode;
   for (const k of allKeys) {
@@ -207,7 +240,7 @@ async function rankLearningKeysForFingerprint(fp: VehicleReportFingerprint): Pro
     if (engine && k.includes(engine)) out.push(k);
     else if (make && k.includes(make)) out.push(k);
   }
-  return out.slice(0, AGGREGATE_CTX_MAX_LEARNING_KEYS);
+  return out.slice(0, maxKeys);
 }
 
 export type AggregateKnowledgeContextInput = {
@@ -243,6 +276,12 @@ export async function buildAggregateKnowledgeAiContext(
   const packText = formatAggregateCasePacksForAi(packs);
   const keys = await rankLearningKeysForFingerprint(fp);
   const learnings = await getAuditLearningsForKeys(keys);
+  const maxSnippets = fp.engineCode
+    ? AGGREGATE_CTX_MAX_SNIPPETS_WITH_ENGINE
+    : AGGREGATE_CTX_MAX_SNIPPETS_PER_KEY;
+  const maxChars = fp.engineCode
+    ? AGGREGATE_CTX_MAX_CHARS_WITH_ENGINE
+    : AGGREGATE_CTX_MAX_CHARS;
 
   const parts: string[] = [
     AI_AGGREGATE_KNOWLEDGE_RULES,
@@ -254,14 +293,14 @@ export async function buildAggregateKnowledgeAiContext(
     parts.push("### Mācījumi no iepriekšējām PROVIN atskaitēm (anonimizēti, līdzīgs agregāts)");
     for (const e of learnings) {
       const body = e.snippets
-        .slice(-AGGREGATE_CTX_MAX_SNIPPETS_PER_KEY)
+        .slice(-maxSnippets)
         .map((s) => `- ${s}`)
         .join("\n");
       parts.push(`#### ${e.label}\n${body}`);
     }
   }
 
-  return clipAggregateContext(parts, AGGREGATE_CTX_MAX_CHARS);
+  return clipAggregateContext(parts, maxChars);
 }
 
 export { invalidateAuditLearningsCache };

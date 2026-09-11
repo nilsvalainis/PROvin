@@ -96,4 +96,25 @@ describe("provin-aggregate-case-rules", () => {
     expect(tdi?.body).toMatch(/ne sadales ķēde/i);
     expect(tdi?.body).toMatch(/termostata korpusa stāstu uz šo motoru NEDRĪKST kopēt/i);
   });
+
+  it("selects OM654 pack and excludes OM642/OM651 diesel pack", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Mercedes-Benz E 220",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.06.2019",
+        engineDisplacementCm3: "1950",
+        enginePowerKw: "143",
+        emissionStandard: "Euro 6",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "OM654";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "mercedes_om654")).toBe(true);
+    expect(packs.some((p) => p.id === "mercedes_diesel")).toBe(false);
+    const om = packs.find((p) => p.id === "mercedes_om654");
+    expect(om?.body).toMatch(/OM654 ≠ OM651/i);
+    expect(om?.body).toMatch(/rokera/i);
+  });
 });

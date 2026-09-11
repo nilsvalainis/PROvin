@@ -14,7 +14,10 @@ import {
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_NO_ESTIMATED_REPAIR_EUR_RULES,
+  AI_NO_AI_COST_FRAMING_RULES,
+  AI_PLAIN_FACT_PROSE_RULES,
   AI_PLAIN_LANGUAGE_TERMS,
+  AI_CROSS_FIELD_PORTFOLIO_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TA_COVERED_WEAR_RULES,
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
@@ -132,6 +135,12 @@ ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 
 ${AI_PLAIN_LANGUAGE_TERMS}
 
+${AI_PLAIN_FACT_PROSE_RULES}
+
+${AI_NO_AI_COST_FRAMING_RULES}
+
+${AI_CROSS_FIELD_PORTFOLIO_RULES}
+
 ${AI_WRAP_FILM_RULES}
 
 ${AI_WINTER_SALT_RUST_RULES}
@@ -195,7 +204,7 @@ ANALYSIS GUIDELINES:
 1. Gaps in History: If there is a multi-year gap in mileage history (especially after initial registration abroad), name it as a period without records („iztrūkstoši dati”) and describe the rollback risk as a probability calibrated to typical usage (commercial use can reach 50–70k km/year) — never as an established fact.
 2. Taxi/Commercial Codes: Scan for factory options like 937 (Taxi/Rental package), Artico leather (140A/MB-Tex), or roof antennas. Explain how such usage can hide real wear.
 3. CSDD Failure Trends: Analyze REPETITIVE or STILL-OPEN TA findings. One-off defects that the next (and following) inspection no longer lists are historical facts only — do not tell the buyer to hunt ~2+ year-old cleared items (lamps, play, wipers, brakes, leaks) in person. EXCEPTION: rust/corrosion and exhaust particulates / smoke opacity — remain cautious in later years even if a later TA is clean (quality repair is hard and expensive). See RESOLVED HISTORICAL FINDINGS.
-4. Source Asynchrony: If one database (e.g. LTAB/CarVertical) shows an accident but another (CSDD/AutoDNA) does not, note the discrepancy between sources and the need for a physical paint-gauge inspection.
+4. Source Asynchrony: If one database (e.g. LTAB/CarVertical) shows an accident but another (CSDD/AutoDNA) does not, note the discrepancy between sources. Do NOT paste the paint-gauge / micron essay into AutoDNA, CarVertical, or CSDD comments — that protocol lives in „2. Ieteikumi”. Here only the source delta and named damage zones.
 5. Engine Hours Logic: Distinguish highway vs city driving profiles — high km/year with dense records may imply lower engine-hour stress than sparse Baltic city use; apply when mileage data supports it.
 6. Data Sufficiency: If the dataset is too sparse for a definitive driving-profile conclusion, state that plainly and outline probabilistic risks only.
 7. Claim Amount Context: Never label a EUR loss as „heavy” or „minor” without calibrating to vehicle age, class, equipment complexity, repair market, and damaged zones — high EUR on young premium German cars often means expensive parts/labor, not necessarily structural write-off; the same EUR on an old cheap car may imply severe damage relative to value.
@@ -212,6 +221,12 @@ ${AI_TA_COVERED_WEAR_RULES}
 ${AI_UNKNOWN_IS_NOT_A_RISK_RULES}
 
 ${AI_PLAIN_LANGUAGE_TERMS}
+
+${AI_PLAIN_FACT_PROSE_RULES}
+
+${AI_NO_AI_COST_FRAMING_RULES}
+
+${AI_CROSS_FIELD_PORTFOLIO_RULES}
 
 ${AI_WRAP_FILM_RULES}
 
@@ -382,7 +397,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
 - **Ziemas sāls / rūsa** — ja kontekstā ir bloks ar Statuss: OBLIGĀTI, viena sadaļa ar nosauktām vietām: riteņu arkas (arī zem oderēm), sliekšņu apakšējās malas, bagāžnieka vāka mala ap numura zīmes apgaismojumu, apakšdaļa. Svaiga TA un cinkojums to neatceļ. Neizdomā, ka rūsa jau ir.
-- **Dīlera / Outvin / serviss** — visām markām: lasi Veiktos darbus un Komentārus. Ja zobsiksna, ķēde, ūdenssūknis vai kārbas eļļa jau fiksēta, NEIEKĻAUJ to kā „tuvākā laika maiņu”. Ķēde pret zobsiksnu tikai pēc šī motora koda. Trūkstošajiem oficiālā dīlera intervāliem jālūdz pārdevēja apliecinājums, ne jāapgalvo, ka darbs nav bijis.
+- **Dīlera / Outvin / serviss** — visām markām: lasi Veiktos darbus un Komentārus. Ja zobsiksna, ķēde, ūdenssūknis vai kārbas eļļa jau fiksēta, NEIEKĻAUJ to kā „jāmaina”. Ķēde pret zobsiksnu tikai pēc šī motora koda. Ja oficiālajā ierakstā >30 000 km vai >24 mēn. bez apkopes — pieņem, ka darbs var būt bijis ārpus dīlera; jālūdz pārdevējam uzrādīt dokumenti, ne jāapgalvo, ka apkope nav bijusi.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
@@ -479,19 +494,19 @@ OPERATORA KOMANDAS (obligāti):
 
 DALĪJUMS:
 - „1. Tehnisko risku analīze” / „2. Ieteikumi…” / avotu komentāri = detalizācija citur; kopsavilkumā max 1 īsa atsaukšanās, ja vajag.
-- CLIENT VALUE DENSITY: tipiski **3–5 īsas rindkopas** (+ APPROVED BY IRISS). Garāks tikai, ja operators to prasa.
+- CLIENT VALUE DENSITY: **1–2 rindkopas** (+ APPROVED BY IRISS). Garāks tikai, ja operators to prasa. Apkopo galvenos faktus + par/pret + rekomendāciju ar nosacījumiem.
 
 FORMĀTS (obligāti):
 - Tikai rindkopas ar tukšu rindu starp tām; NEKAD "- ", "•", "1." rindas sākumā.
-- Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Kopējā aina.**, **Galvenais risks.**, **Rekomendācija.**).
+- Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Kopējā aina.**, **Rekomendācija.**). Bez divejada-aina / pozitiva-puse-ir ievada.
 - Būtiskus skaitļus (km, datumi) raksti parastā tekstā, ja tie maina secinājumu — bet bez faktu kataloga un bez *.
 - CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā. Remonta tāmes nav arī 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
 - ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = DĀNIJAS REĢISTRI — tikai Dānijas fāzes (līzings un privāta reģistrācija ir divi īpašnieki; nepārtraukti līzinga līgumi = viens; pirmā reģistrācija ārvalstīs nav Dānijas īpašnieks); nekad OCTA polišu maiņas. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
-- Ja auto ir **BEV/PHEV** — 1 īsa rindkopa par akumulatoru/uzlādi/garantiju (detalizācija — risku sadaļā).
+- Ja auto ir **BEV/PHEV** — iekļauj akumulatoru/uzlādi/garantiju vienā no 1–2 rindkopām (detalizācija — risku sadaļā).
 - WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes — ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana — tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav — par plēvi NERAKSTI.
-- Obligāti nosauc, **kurš agregāts** pēc šī nobraukuma un vecuma posma ir galvenais tuvāko izmaksu draiveris un vai tas ir pirkuma šķērslis vai tikai kontrolpunkts — vienā teikumā, bez tehniskās esejas (tā ir 1. sadaļā).
-- Beigās — skaidra, kalibrēta rekomendācija; **nekad** „garantēti drošs bez apskates”.
+- Īsi nosauc galveno aktuālo mezglu pēc šī nobraukuma (bez near-term-investment frāzes) un vai tas ir pirkuma šķērslis vai tikai jāpārbauda klātienē.
+- REKOMENDĀCIJA (obligāti, arī ja dati ir vāji): skaidri „rekomendējam / nerekomendējam / rekomendējam ar nosacījumiem” + ko pārbaudīt pirms darījuma. Vājāku datu gadījumā rekomendācija ir piesardzīgāka, bet joprojām skaidra. **Nekad** „garantēti drošs bez apskates”.
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS
 
 Atbildi tikai ar gala tekstu — bez meta-komentāriem par AI.`;
@@ -588,11 +603,13 @@ DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay)
 - Primary content = facts, tables, and signals that THIS source uniquely provides (damage zones, TA defects, dealer codes, claims, Status Center, etc.).
 - Comparison = at most ONE sentence, and only when a conflict changes the conclusion. The full cross-source picture is built in „3. Kopsavilkums”, not here.
 - LENGTH: **2–4 short paragraphs (≈350–800 characters)** unless OPERATORA KOMANDAS are present — then cover every operator topic (and only the scoped ones if the operator limited the job); do not skip a theme to stay inside 350–800.
-- If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary) appear in the user prompt: those facts are COVERED. Do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
+- If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary, Fotogrāfiju analīze) appear in the user prompt: READ them as portfolio context (CROSS-FIELD PORTFOLIO), but do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
+- Named damage parts in THIS source beat generic „tipiski” examples.
 - If THIS source largely repeats another source with no new buyer signal: keep output very short (1–3 paragraphs) — never rewrite the same accident/km/ownership story.
 - OPERATORA KOMANDAS: ja piezīme nosauc citu avotu, šeit to neatkārto kā atsevišķu rindkopu — tikai ${blockLabel} savu daļu.
 - Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.
 - Do NOT write oil-change interval math (how often oil was changed, km gaps vs OEM) — that belongs exclusively in „Eļļas maiņas intervāli”.
+- Do NOT write the paint-thickness / micron essay here (AutoDNA / CarVertical / CSDD included) — that belongs in „2. Ieteikumi”.
 - Do NOT rewrite „1. Tehnisko risku analīze”, „2. Ieteikumi…”, or „3. Kopsavilkums” here.
 - Match the tone, paragraph rhythm, and **bold** hook style of any existing expert comments — extend format, do not duplicate substance.
 - Do not invent facts. No section headings in output. No AI meta-commentary.
@@ -676,13 +693,16 @@ Ievadā saņemsi pilnu pasūtījuma kontekstu (visi avoti, apvienotie negadījum
 ${SOURCE_BLOCK_COMMENT_AI_RULES}
 
 Rezultāts:
-- Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS)
+- Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS) UN jau ģenerētajiem komentāriem / Fotogrāfiju analīzi — skat. CROSS-FIELD PORTFOLIO
 - Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz būtiskām summām
 - Katru EUR summu interpretē pēc konteksta (auto vecums incidenta brīdī, klase, aprīkojums, remonta tirgus, bojājumu zonas) — nevis automātiski kā „smagu” vai „vieglu” tikai pēc skaitļa
+- Ja avots nosauc konkrētu zonu (piem. aizmugurējais bamperis), raksti par to — ne „piemēram, bufera pārkrāsošanu” kā brīvu hipotēzi
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
+${AI_CROSS_FIELD_PORTFOLIO_RULES}
 - Īsi saista ar īpašniecības/km logu tikai tad, ja tas skaidro negadījuma kontekstu — NEATKĀRTO pilnu nobraukuma forenziku (tā ir „NOBRAUKUMA VĒSTURES KOMENTĀRĀ”)
-- Ja kontekstā jau ir avotu „Komentāri” par to pašu incidentu — sintezē un izcel pretrunas; neparafrāzē katru avotu no jauna
+- Ja kontekstā jau ir avotu „Komentāri” vai foto analīze par to pašu incidentu — sintezē un izcel pretrunas; neparafrāzē katru avotu no jauna
 - Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu; piemin, kuri avoti pārbaudīti, un pievieno atrunu, ka tas neizslēdz nefiksētu negadījumu vai kosmētisku krāsojumu (neizdomā faktus)
+- NERAKSTI krāsas biezuma / mikronu protokolu šeit — tas ir „2. Ieteikumi”
 - GARUMS: **2–4 rindkopas** — fiksētie ieraksti, to nozīme pircējam un, ja ir, viena pretruna starp avotiem
 - Bez virsraksta un bez meta-komentāriem par AI`,
 );

@@ -3,6 +3,11 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-11.1 - Klienta valoda: bez AI-šablona („tuvākā laika ieguldījums”,
+ *   „Kas NAV dārgs”, „divējādu ainu”, „dokumentāri pierādījumi”); kopsavilkums
+ *   1–2 rindkopas ar skaidru rekomendāciju; portfeļa lasīšana pirms interpretācijas;
+ *   krāsas biezums ne avotu komentāros; apkopes robs >30k km/24 mēn. = ārpus dīlera
+ *   iespēja; OM654 paka + ENGINE|kods mācījumi ar lielāku budžetu.
  * - 2026-09-07.3 - Agregāti VISIEM ražotājiem: vispirms dzinēja kods, tad
  *   meklēšana šim kodam, tad komentārs. Pakas un ķēde/zobsiksna nav Audi-only.
  * - 2026-09-07.2 - Klienta valoda: bez „labvēlīgs signāls”; pārdevēja portrets
@@ -71,4 +76,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-07.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-11.1";

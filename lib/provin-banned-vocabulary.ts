@@ -69,7 +69,7 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   {
     label: "uzturēšanas punkts",
     pattern: /uzturēšanas\s+punkts/i,
-    replacement: "tuvākā laika ieguldījums / ierasta uzturēšanas izmaksa",
+    replacement: "ierasta uzturēšanas izmaksa / konkrētais mezgls bez AI-šablona",
     code: "vocabulary_uzturesanas_punkts",
   },
   {
@@ -95,6 +95,42 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     pattern: /labvēlīg\w*\s+faktor/i,
     replacement: "tas palīdz / tas šim mezglam nāk par labu (vai vienkārši fakts)",
     code: "vocabulary_labveligs_faktors",
+  },
+  {
+    label: "dokumentāri pierādījumi",
+    pattern: /dokumentār\w*\s+pierādījum/i,
+    replacement: "dokumenti",
+    code: "vocabulary_dokumentari_pieradijumi",
+  },
+  {
+    label: "tuvākā laika ieguldījums / risks",
+    pattern: /tuvāk(?:ā|a)\s+laika\s+(?:ieguldījum|rēķin|risk|izmaks|naudas\s+punkt|profilaks)/i,
+    replacement: "konkrētais mezgls / fakts bez „tuvākā laika” šablona",
+    code: "vocabulary_tuvaka_laika",
+  },
+  {
+    label: "finansiāli nozīmīgākais … ieguldījums",
+    pattern: /finansiāli\s+nozīmīgāk\w*/i,
+    replacement: "konkrētais mezgls (bez „finansiāli nozīmīgākais”)",
+    code: "vocabulary_finansiali_nozimigakais",
+  },
+  {
+    label: "nākotnes risks",
+    pattern: /nākotnes\s+risk/i,
+    replacement: "konkrētais fakts / ko pārbaudīt (bez „nākotnes risks”)",
+    code: "vocabulary_nakotnes_risks",
+  },
+  {
+    label: "divējādu ainu / pozitīvā puse",
+    pattern: /divējād\w*\s+ain|pozitīvā\s+puse\s+ir/i,
+    replacement: "sāc ar faktiem, bez „divējādās ainas” / „pozitīvās puses” ievada",
+    code: "vocabulary_divejada_aina",
+  },
+  {
+    label: "kas nav dārgs risks (šablona ievads)",
+    pattern: /kas\s+nav\s+dārgs\s+risk/i,
+    replacement: "ja kaut kas neattiecas - pasaki faktu bez šīs ievada frāzes",
+    code: "vocabulary_kas_nav_dargs_risks",
   },
 ] as const;
 

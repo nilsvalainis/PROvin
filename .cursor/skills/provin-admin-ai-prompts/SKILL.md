@@ -23,7 +23,7 @@ Field agent prompts are for **data processing and Latvian expert copy** on admin
 1. **Backfill (no LLM):** `POST /api/admin/audit-knowledge` `{ "action": "backfill", "limit": 120 }` — scans drafts → anonymized snippets → `provin_audit_aggregate_learnings.json`.
 2. **Promote (no LLM):** `{ "action": "promote" }` or `npm run audit:knowledge:promote` → `.data/…/audit-knowledge-candidates.md` (hard-capped ~12k chars).
 3. **Expensive agent:** review **only** that candidates MD → inject durable rules into [provin-admin-prompt-engineering/reference.md](../provin-admin-prompt-engineering/reference.md) + `lib/provin-aggregate-case-rules.ts` → sync prompts.
-4. **Runtime ✨ budget:** `buildAggregateKnowledgeAiContext` caps packs (3), learning keys (3), snippets/key (4), total ~7500 chars.
+4. **Runtime ✨ budget:** `buildAggregateKnowledgeAiContext` caps packs (3); with a known engine code uses up to 5 learning keys / 6 snippets / ~10.5k chars (else 3/4/~7.5k). Learnings also upsert under `ENGINE|{code}` and refresh promotion candidates after each save.
 
 Code: `lib/admin-audit-learning-extract.ts`, `lib/admin-audit-knowledge-promote.ts`, `lib/admin-ai-aggregate-knowledge.ts`, `app/api/admin/audit-knowledge/route.ts`.
 
@@ -83,7 +83,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Copy a pack fault onto the wrong engine of the same brand (any make: thermostat, chain vs belt, wet belt, intake). Identify THIS engine code, search that code, then write. Canonical: `AI_THIS_CAR_ONLY_LOGIC_RULES`, `AI_POWERTRAIN_IDENTIFICATION_RULES`.
 - Paste a FLASH MAX extra note into every source when the operator targeted one source. Canonical: `AI_OPERATOR_NOTES_EXECUTION_RULES` SOURCE TARGETING.
 - Put approximate repair/service EUR bands („orientējoši … €”) into any ✨ comment. Canonical: `AI_NO_ESTIMATED_REPAIR_EUR_RULES`. Aggregate packs may hold € for internal calibration only — `stripUnauthorizedEuroAmounts()` is a runtime safety net on technical-risks/inspection/summary, not a substitute for correct prompting.
-- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, „kontrolpunkts klātienē”, „uzturēšanas punkts”, or „integritāte” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē”, „tuvākā laika ieguldījums”, „stāvoklis” instead. Do not teach kancelejisks „signāls/faktors” padding.
+- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, „kontrolpunkts klātienē”, „uzturēšanas punkts”, „integritāte”, „tuvākā laika ieguldījums”, „Kas NAV dārgs risks”, „dokumentāri pierādījumi”, or „divējādu ainu” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē”, „dokumenti”, „stāvoklis”, plain facts instead. Do not teach kancelejisks „signāls/faktors” padding.
 
 ## Prompt version & evals
 
