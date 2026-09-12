@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-12.1 - Ātrie vērtējumi: jaunas sagataves, multi-select sadaļās,
+ *   oficiālā dīlera sadaļa; closer bez em dash.
  * - 2026-09-11.4 - CRITICAL: D5244T11 = ~158 kW two-stage biturbo (ne viens
  *   turbo); pakas ir prior, kas JĀPĀRBAUDA pret šī auto kW/kodu pirms rakstīšanas.
  * - 2026-09-11.3 - Agregātu pakas: OM642/OM651, N47/N57, EA888 gen1/2 vs gen3,
@@ -82,4 +84,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-11.4";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-12.1";

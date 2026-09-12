@@ -21,22 +21,9 @@ import {
   assembleListingPeekCustomerComment,
   insertListingPeekLetterSentence,
   parseListingPeekAiPayload,
-  type ListingPeekTone,
+  toggleListingPeekSentence,
   type ListingPeekTopicId,
 } from "@/lib/listing-peek-comment-presets";
-
-function inferTones(
-  lines: Record<ListingPeekTopicId, string>,
-): Partial<Record<ListingPeekTopicId, ListingPeekTone>> {
-  const tones: Partial<Record<ListingPeekTopicId, ListingPeekTone>> = {};
-  for (const topic of LISTING_PEEK_TOPICS) {
-    const text = lines[topic.id]?.trim();
-    if (!text) continue;
-    const hit = topic.phrases.find((p) => p.text === text);
-    if (hit) tones[topic.id] = hit.tone;
-  }
-  return tones;
-}
 
 const emptyLines = (): Record<ListingPeekTopicId, string> => ({
   odometer: "",
@@ -44,6 +31,7 @@ const emptyLines = (): Record<ListingPeekTopicId, string> => ({
   technical: "",
   seller: "",
   photos: "",
+  dealer: "",
 });
 
 const SEND_ERROR_LABEL: Record<string, string> = {
@@ -74,7 +62,6 @@ export function AdminListingPeekCommentComposer({
 }) {
   const router = useRouter();
   const [lines, setLines] = useState(() => ({ ...emptyLines(), ...initialLines }));
-  const [tones, setTones] = useState(() => inferTones({ ...emptyLines(), ...initialLines }));
   const [closer, setCloser] = useState(initialCloser);
   const [letterTouched, setLetterTouched] = useState(() => Boolean(initialLetter?.trim()));
   const [letter, setLetter] = useState(
@@ -100,11 +87,14 @@ export function AdminListingPeekCommentComposer({
     if (!letterTouched) setLetter(assembled);
   }, [assembled, letterTouched]);
 
-  function applyPhrase(topicId: ListingPeekTopicId, tone: ListingPeekTone, text: string) {
-    setTones((prev) => ({ ...prev, [topicId]: tone }));
-    setLines((prev) => ({ ...prev, [topicId]: text }));
+  function applyPhrase(topicId: ListingPeekTopicId, text: string) {
+    const wasOn = (lines[topicId] ?? "").includes(text);
+    setLines((prev) => ({
+      ...prev,
+      [topicId]: toggleListingPeekSentence(prev[topicId] ?? "", text),
+    }));
     setOpenId(topicId);
-    if (letterTouched) {
+    if (letterTouched && !wasOn) {
       setLetter((prev) => insertListingPeekLetterSentence(prev, text));
     }
   }
@@ -115,7 +105,6 @@ export function AdminListingPeekCommentComposer({
     nextLetter: string,
   ) {
     setLines(nextLines);
-    setTones(inferTones(nextLines));
     setCloser(nextCloser);
     setLetter(nextLetter);
     setLetterTouched(true);
@@ -220,7 +209,7 @@ export function AdminListingPeekCommentComposer({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-          Komentārs klientam — ikona atver sagataves
+          Komentārs klientam - ikona atver sagataves
         </p>
         <AdminAiGenerateWithPrefill
           label="✨ Flash"
@@ -250,7 +239,7 @@ export function AdminListingPeekCommentComposer({
                   type="button"
                   aria-expanded={open}
                   aria-controls={`${fieldId}-${topic.id}-panel`}
-                  title={`${topic.title} — sagataves`}
+                  title={`${topic.title} - sagataves`}
                   onClick={() => setOpenId(open ? null : topic.id)}
                   className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition ${
                     filled
@@ -273,13 +262,8 @@ export function AdminListingPeekCommentComposer({
                   onChange={(e) => {
                     const next = e.target.value;
                     setLines((prev) => ({ ...prev, [topic.id]: next }));
-                    setTones((prev) => {
-                      const copy = { ...prev };
-                      delete copy[topic.id];
-                      return copy;
-                    });
                   }}
-                  placeholder="Īsa frāze vai izvēlies no ikonas…"
+                  placeholder="Īsa frāze vai izvēlies no ikonas (vairākas)…"
                   className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
                 />
               </div>
@@ -287,8 +271,8 @@ export function AdminListingPeekCommentComposer({
                 <div id={`${fieldId}-${topic.id}-panel`} className="mt-2 pl-10">
                   <AdminListingPeekTopicChips
                     topicId={topic.id}
-                    selectedTone={tones[topic.id]}
-                    onSelect={(tone, text) => applyPhrase(topic.id, tone, text)}
+                    fieldText={lines[topic.id]}
+                    onToggle={(text) => applyPhrase(topic.id, text)}
                   />
                 </div>
               ) : null}
@@ -317,7 +301,7 @@ export function AdminListingPeekCommentComposer({
             htmlFor={`${fieldId}-letter`}
             className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]"
           >
-            Vēstule klientam — papildini ar specifiskiem teikumiem
+            Vēstule klientam - papildini ar specifiskiem teikumiem
           </label>
           {letterTouched ? (
             <button

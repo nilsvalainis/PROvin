@@ -1,18 +1,21 @@
 /**
  * Ātrie vērtējumi — sagataves klientam. Operatora frāzes: īss vērtējums,
  * vieta PROVIN AUDITS. Bez panikas un bez remonta EUR.
+ * Vienā sadaļā drīkst atlasīt vairākas frāzes (secīgi, punkts + atstarpe).
  */
 
 export const LISTING_PEEK_COMMENT_GREETING = "Sveiki!";
 
 export const LISTING_PEEK_COMMENT_CLOSER =
-  "Šis ir virspusējs vērtējums bez detalizētas nobraukuma, negadījumu vēstures un tehnisko risku analīzes. Pilnu pārbaudi nodrošina PROVIN AUDITS.";
+  "Šis ir virspusējs sākotnējais vērtējums. Pilnu spēkrata analīzi ar nobraukuma hronoloģiju, negadījumu datiem, dīleru vēsturi un specifisko tehnisko risku analīzi nodrošina PROVIN AUDITS, kas ir drošākais veids, kā pilnvērtīgi noskaidrot digitālo auto vēsturi un var ļaut izvairīties no dārgiem remontiem un iegūt argumentus cenas apspriešanai.";
 
-/** Nobraukuma sagatavju otrais teikums — vienāds visiem toņiem. */
-export const LISTING_PEEK_ODOMETER_AUDIT_TAIL =
-  "Vienlaikus tas ļaus mums iegūt datus arī par iespējamo negadījumu vēsturi un oficiāli pieteiktajām zaudējumu atlīdzībām, kā arī dos iespēju ieskatīties oficiālā dīlera datubāzē, kur, iespējams, varēsim apskatīt veiktos apkopju intervālus un iegūt citus vērtīgus datus, kuri var noderēt zināšanai turpmākajā automašīnas ekspluatācijā.";
-
-export type ListingPeekTopicId = "odometer" | "incidents" | "technical" | "seller" | "photos";
+export type ListingPeekTopicId =
+  | "odometer"
+  | "incidents"
+  | "technical"
+  | "seller"
+  | "photos"
+  | "dealer";
 
 export type ListingPeekTone = "positive" | "caution" | "concern" | "critical" | "info";
 
@@ -38,25 +41,43 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "odometer-labs",
         tone: "positive",
         label: "Labs",
-        text: `Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
+        text: "Sākotnējie dati norāda uz augstu odometra rādījumu ticamību, tomēr pilnīgai pārliecībai nobraukuma hronoloģija ir jāsalīdzina ar starptautiskajiem un dīleru reģistriem.",
       },
       {
         id: "odometer-japeta",
         tone: "caution",
         label: "Jāpēta",
-        text: `Odometra rādījumu ticamību nav iespējams pilnvērtīgi izvērtēt bez padziļinātas pārbaudes. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
+        text: "Odometra rādījuma atbilstību šobrīd nav iespējams pilnvērtīgi apstiprināt, tāpēc pilnīgai pārliecībai nobraukuma hronoloģija ir jāsalīdzina ar starptautiskajiem un dīleru reģistriem.",
       },
       {
-        id: "odometer-neskaidrs",
-        tone: "concern",
-        label: "Neskaidrs",
-        text: `Pieejamie dati nevar garantēt nobraukuma atbilstību, tāpēc padziļināta pārbaude maksas datubāzēs vērtējama kā obligāta. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
+        id: "odometer-ncsdd",
+        tone: "caution",
+        label: "Nav CSDD",
+        text: "Tā kā automašīnai vēl nav veikta agregātu numuru salīdzināšana Latvijā, CSDD sistēmā ārvalstu tehniskajās apskatēs fiksētie odometra rādījumi šobrīd nav pieejami. Tie uzrādīsies tikai pēc numuru salīdzināšanas. Ja pārdevējs nav gatavs veikt numuru salīdzināšanu šo datu iegūšanai - pilnīgai pārliecībai nobraukuma hronoloģija ir jāsalīdzina ar starptautiskajiem un dīleru reģistriem.",
       },
       {
         id: "odometer-kritisks",
         tone: "critical",
         label: "Kritisks",
-        text: `Dati norāda uz iespējamu odometra rādījumu manipulāciju vai būtiskām nesakritībām vēsturē. Nepieciešama detalizēta analīze. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
+        text: "Pieejamie dati norāda uz iespējamu odometra rādījumu manipulāciju un prasa detalizētu nobraukuma analīzi datubāzēs.",
+      },
+      {
+        id: "odometer-ierobezoti",
+        tone: "concern",
+        label: "Ierobežoti dati",
+        text: "Šajā gadījumā pilnvērtīgu nobraukuma hronoloģiju no publiskajiem ārvalstu reģistriem iegūt var būt sarežģīti.",
+      },
+      {
+        id: "odometer-tehniska-pase",
+        tone: "info",
+        label: "Tehniskā pase",
+        text: "Konkrētajai automašīnai datus no ārvalstu reģistriem iegūt var būt sarežģīti, tāpēc papildu vēstures datu iegūšanai ir nepieciešams pārdevējam palūgt atsūtīt ārvalsts reģistrācijas apliecības (tehniskās pases) foto, kurā redzama reģistrācijas valsts numurzīme.",
+      },
+      {
+        id: "odometer-dilera-dati",
+        tone: "info",
+        label: "Dīlera dati",
+        text: "Izšķirošu lomu nobraukuma hronoloģijas, reālā nobraukuma un servisa intervālu pārbaudē šeit var nospēlēt oficiālā dīlera datubāze, kurā fiksētie servisa apmeklējumi var ļaut precīzi restaurēt auto lietošanas vēsturi.",
       },
     ],
   },
@@ -68,31 +89,31 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "incidents-nav-redzams",
         tone: "positive",
         label: "Nav redzams",
-        text: "Negadījumu pazīmes netika konstatētas, taču to var apstiprināt, tikai veicot padziļinātu pārbaudi dažādās datubāzēs.",
+        text: "Papildus tam atskaites ļaus mums pārbaudīt arī iespējamo negadījumu vēsturi, kurā šobrīd sākotnējās bojājumu pazīmes nav fiksētas.",
       },
       {
         id: "incidents-japeta",
         tone: "caution",
         label: "Jāpēta",
-        text: "Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.",
+        text: "Tāpat caur šiem avotiem ir nepieciešams padziļināti pārbaudīt automašīnas negadījumu vēsturi, lai izslēgtu slēptos bojājumus un remontus.",
       },
       {
         id: "incidents-pazimes",
         tone: "concern",
         label: "Pazīmes",
-        text: "Sākotnējie dati liecina par iespējamu dalību negadījumā; negadījumu raksturs un sekas jāanalizē padziļināti.",
+        text: "Vienlaikus pieejamā informācija liecina par iespējamu dalību negadījumā, tāpēc ir būtiski noskaidrot fiksēto bojājumu raksturu un aprēķināto zaudējumu apmēru.",
       },
       {
         id: "incidents-butiski",
         tone: "critical",
         label: "Būtiski bojājumi",
-        text: "Pieejamā informācija liecina par nopietnu negadījumu vēsturē. Nepieciešams noskaidrot remonta kvalitāti un skartos mezglus.",
+        text: "Vienlaikus pieejamie dati norāda uz nopietnu negadījumu spēkrata vēsturē, tāpēc obligāti jāpārbauda remonta apjoms un skartie mezgli.",
       },
       {
         id: "incidents-octa",
         tone: "info",
         label: "OCTA",
-        text: "OCTA atlīdzību pieteikumi Latvijā nav fiksēti (KASKO un ārvalstīs fiksētajiem negadījumu datiem bez padziļinātas pārbaudes piekļūt nav iespējams).",
+        text: "Jāņem vērā, ka Latvijas OCTA datubāzē atlīdzību pieteikumi nav fiksēti, taču KASKO un ārvalstu negadījumu datus ir iespējams pārbaudīt, tikai veicot padziļinātu atskaites pieprasījumu.",
       },
     ],
   },
@@ -110,19 +131,19 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "technical-nianses",
         tone: "caution",
         label: "Nianses",
-        text: "Tehniski šim modelim ir nianses, kuras noteikti būs jāņem vērā gan apskatē klātienē, gan turpmākās ekspluatācijas laikā.",
+        text: "Tehniski, šim modelim ir raksturīgas specifiskas nianses, kas prasa pastiprinātu uzmanību gan klātienes pārbaudē, gan turpmākās ekspluatācijas laikā.",
       },
       {
         id: "technical-jaskata",
         tone: "concern",
         label: "Jāskata",
-        text: "Šim modelim ir agregāti, pret kuriem jāizturas ar īpašu piesardzību. Svarīga būs ne tikai auto vēstures izpēte, bet arī rūpīga pārbaude klātienē un pareiza turpmākā ekspluatācija auto iegādes gadījumā.",
+        text: "Tehniski automašīna ir aprīkota ar mezgliem, pret kuriem jāizturas ar īpašu piesardzību gan diagnostikā, gan turpmākajā lietošanā.",
       },
       {
         id: "technical-problematisks",
         tone: "critical",
         label: "Problemātisks",
-        text: "Nopietni izskatot šādu auto, jārēķinās ar zināmiem riskiem, jo konkrētajam modelim ir raksturīgas dārgi novēršamas problēmas. Rūpīga diagnostika un datu pārbaude ir obligāta.",
+        text: "Analizējot tehnisko pusi, konkrētajai modifikācijai un dzinējam ir raksturīgi specifiski riski, ko pirms pirkuma svarīgi savlaicīgi diagnosticēt, lai izvairītos no neparedzētiem ieguldījumiem.",
       },
     ],
   },
@@ -134,25 +155,25 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "seller-labs",
         tone: "positive",
         label: "Labs",
-        text: "Pārdevējs ar salīdzinoši labu reputāciju un caurspīdīgu profilu, tomēr tas šajā sfērā neko negarantē un pilnībā neatbrīvo no paša auto pārbaudes.",
+        text: "Attiecībā uz pārdevēju - tam ir salīdzinoši laba reputācija un caurspīdīgs profils, kas ir pozitīvs rādītājs, tomēr tas pilnībā neatbrīvo no paša auto un vēstures pārbaudes.",
       },
       {
         id: "seller-neitrals",
         tone: "caution",
         label: "Neitrāls",
-        text: "Informācija par pārdevēju ir ierobežota, tāpēc riski jāvērtē kopsakarā ar konkrētā auto vēsturi.",
+        text: "Savukārt publiski pieejamā informācija par pārdevēju ir ierobežota, tāpēc riski jāvērtē kopsakarā ar paša spēkrata faktisko stāvokli un dokumentāciju.",
       },
       {
         id: "seller-jautajumi",
         tone: "concern",
         label: "Jautājumi",
-        text: "Pārdevēja reputācija un darbības stils rada jautājumus, tāpēc auto stāvoklis un vēsture jāvērtē piesardzīgi.",
+        text: "Uzmanību pievērš arī pārdevēja darbības stils, kas rada papildu jautājumus.",
       },
       {
         id: "seller-risks",
         tone: "critical",
         label: "Paaugstināts risks",
-        text: "Pārdevējs, iespējams, ir ar paaugstināta riska profilu, tāpēc auto stāvoklis un vēsture jāvērtē īpaši piesardzīgi.",
+        text: "Pieejamā informācija par automašīnas pārdevēju arī prasa ievērot piesardzību.",
       },
     ],
   },
@@ -164,25 +185,61 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "photos-tiras",
         tone: "positive",
         label: "Tīras",
-        text: "Virspusēji apskatot sludinājuma fotogrāfijas, būtiski vizuāli trūkumi netika konstatēti — novērojamas tikai deklarētajam nobraukumam un vecumam atbilstošas lietošanas pazīmes.",
+        text: "Virspusēji izvērtējot sludinājuma fotogrāfijas, būtiski vizuālie defekti netika novēroti.",
+      },
+      {
+        id: "photos-lietosanas",
+        tone: "positive",
+        label: "Lietošanas pazīmes",
+        text: "Redzamas tikai deklarētajam vecumam un nobraukumam atbilstošas lietošanas pazīmes.",
       },
       {
         id: "photos-maz",
         tone: "caution",
         label: "Maz",
-        text: "Pēc sludinājumā pievienotajām fotogrāfijām pilnvērtīgu vizuālo analīzi veikt nebija iespējams.",
+        text: "Virspusēji izvērtējot sludinājuma fotogrāfijas, tika konstatēts, ka ar pievienotajiem attēliem pilnvērtīgu virsbūves un salona vizuālo analīzi veikt nav iespējams.",
       },
       {
-        id: "photos-tuvplani",
+        id: "photos-nianses",
         tone: "concern",
-        label: "Tuvplāni",
-        text: "Sludinājuma attēlos tika konstatētas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
+        label: "Nianses",
+        text: "Virspusēji izvērtējot sludinājuma fotogrāfijas, attēlos tika pamanītas atsevišķas zonas, kuras klātienē būs jāpārbauda īpaši uzmanīgi.",
       },
       {
-        id: "photos-aizdomigas",
+        id: "photos-lenki",
+        tone: "info",
+        label: "Leņķi",
+        text: "Jāņem vērā, ka dažādu atspīdumu un leņķu dēļ pilnvērtīgu foto analīzi veikt nav iespējams.",
+      },
+    ],
+  },
+  {
+    id: "dealer",
+    title: "Oficiālā dīlera dati",
+    phrases: [
+      {
+        id: "dealer-ir",
+        tone: "positive",
+        label: "Ir",
+        text: "Pie nosacījuma, ka šis auto ir ticis apkopts pie oficiālā dīlera, bieži ir iegūstami detalizēti ieraksti no oficiālā dīlera datubāzēm par veiktajām apkopēm un remontiem.",
+      },
+      {
+        id: "dealer-svarigi",
+        tone: "caution",
+        label: "Svarīgi dati",
+        text: "Datu iegūšana no oficiālā dīlera šeit var nospēlēt izšķirošu lomu, īpaši apkopju intervālu pētīšanā.",
+      },
+      {
+        id: "dealer-nezinams",
+        tone: "concern",
+        label: "Nezināms",
+        text: "Prognozēt datu pieejamību oficiālā dīlera datubāzēs ir sarežģīti.",
+      },
+      {
+        id: "dealer-nav",
         tone: "critical",
-        label: "Aizdomīgas",
-        text: "Sludinājuma attēli, iespējams, ir uzņemti tā, lai apzināti slēptu defektus (rakursi, kvalitāte utt.).",
+        label: "Nav",
+        text: "Šim auto iegūt digitāli fiksētus starptautiskos datus no oficiālā dīlera datubāzes parasti nav iespējams.",
       },
     ],
   },
@@ -196,6 +253,21 @@ export function listingPeekPhraseByTone(
 ): string {
   const topic = LISTING_PEEK_TOPICS.find((t) => t.id === topicId);
   return topic?.phrases.find((p) => p.tone === tone)?.text ?? "";
+}
+
+export function listingPeekPhraseById(phraseId: string): string {
+  for (const topic of LISTING_PEEK_TOPICS) {
+    const hit = topic.phrases.find((p) => p.id === phraseId);
+    if (hit) return hit.text;
+  }
+  return "";
+}
+
+/** Frāzes, kas jau ir ielikti sadaļas tekstā (vairāku izvēle). */
+export function listingPeekSelectedPhraseIds(topicId: ListingPeekTopicId, fieldText: string): string[] {
+  const topic = LISTING_PEEK_TOPICS.find((t) => t.id === topicId);
+  if (!topic || !fieldText.trim()) return [];
+  return topic.phrases.filter((p) => fieldText.includes(p.text)).map((p) => p.id);
 }
 
 /** Klienta e-pasts ir parasts teksts — Gemini citādi atstāj field-agent `**bold**`. */
@@ -216,9 +288,34 @@ export function joinListingPeekSentences(existing: string, add: string): string 
   const current = existing.replace(/\r/g, "").replace(/[ \t]+$/gm, "").replace(/\n+$/, "").trimEnd();
   if (!next) return current.trim();
   if (!current.trim()) return next;
+  if (current.includes(next)) return current.trim();
   const left = current.trim();
   if (/[.!?…]$/.test(left)) return `${left} ${next}`;
   return `${left}. ${next}`;
+}
+
+/** Noņem vienu sagataves frāzi no sadaļas teksta (toggle off). */
+export function removeListingPeekSentence(existing: string, remove: string): string {
+  const drop = remove.replace(/\r/g, "").trim();
+  if (!drop) return existing.replace(/\r/g, "").trim();
+  let t = existing.replace(/\r/g, "");
+  if (!t.includes(drop)) return t.trim();
+  t = t.replace(drop, " ");
+  t = t
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.!?…])/g, "$1")
+    .replace(/([.!?…])\s*\1+/g, "$1")
+    .replace(/\.\s*\./g, ".")
+    .trim();
+  return t;
+}
+
+/** Pievieno frāzi, ja nav; noņem, ja jau ir. */
+export function toggleListingPeekSentence(existing: string, phrase: string): string {
+  const text = phrase.replace(/\r/g, "").trim();
+  if (!text) return existing.replace(/\r/g, "").trim();
+  if (existing.includes(text)) return removeListingPeekSentence(existing, text);
+  return joinListingPeekSentences(existing, text);
 }
 
 export function assembleListingPeekCustomerComment(input: {
@@ -269,9 +366,10 @@ const emptyPeekLines = (): Record<ListingPeekTopicId, string> => ({
   technical: "",
   seller: "",
   photos: "",
+  dealer: "",
 });
 
-/** Atver jau nosūtīto vēstuli atpakaļ piecu tēmu laukos, lai var papildināt. */
+/** Atver jau nosūtīto vēstuli atpakaļ tēmu laukos, lai var papildināt. */
 export function parseListingPeekCustomerComment(raw: string): {
   closer: boolean;
   lines: Record<ListingPeekTopicId, string>;
@@ -287,7 +385,7 @@ export function parseListingPeekCustomerComment(raw: string): {
   const unused = new Set(LISTING_PEEK_TOPIC_IDS);
   for (const text of numbered) {
     const hit = LISTING_PEEK_TOPICS.find(
-      (topic) => unused.has(topic.id) && topic.phrases.some((p) => p.text === text),
+      (topic) => unused.has(topic.id) && topic.phrases.some((p) => p.text === text || text.includes(p.text)),
     );
     if (hit) {
       lines[hit.id] = text;
@@ -308,9 +406,11 @@ export function parseListingPeekCustomerComment(raw: string): {
       .trim();
     for (const topic of LISTING_PEEK_TOPICS) {
       if (!unused.has(topic.id)) continue;
-      const hit = topic.phrases.find((p) => leftover.includes(p.text));
-      if (hit) {
-        lines[topic.id] = hit.text;
+      const hits = topic.phrases.filter((p) => leftover.includes(p.text)).map((p) => p.text);
+      if (hits.length > 0) {
+        lines[topic.id] = hits.join(" ");
+        // Re-join properly with periods
+        lines[topic.id] = hits.reduce((acc, phrase) => joinListingPeekSentences(acc, phrase), "");
         unused.delete(topic.id);
       }
     }
@@ -345,7 +445,7 @@ function coerceJsonObject(raw: unknown): Record<string, unknown> | null {
   })();
 }
 
-/** Flash / Gemini izejas JSON → piecu tēmu lauki + pilnā vēstule. */
+/** Flash / Gemini izejas JSON → tēmu lauki + pilnā vēstule. */
 export function parseListingPeekAiPayload(raw: unknown): {
   closer: boolean;
   lines: Record<ListingPeekTopicId, string>;
@@ -358,7 +458,7 @@ export function parseListingPeekAiPayload(raw: unknown): {
   for (const id of LISTING_PEEK_TOPIC_IDS) {
     const v = obj[id];
     if (typeof v === "string" && v.trim()) {
-      lines[id] = stripListingPeekMarkdown(v.trim()).slice(0, 700);
+      lines[id] = stripListingPeekMarkdown(v.trim()).slice(0, 1200);
       any = true;
     }
   }

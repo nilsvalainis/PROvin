@@ -55,7 +55,7 @@ export async function generateListingPeekCommentWithAi(input: {
       "Sagatavju frāzes (drīksti izmantot vārds vārdā, ja der):",
       listingPeekPhraseBank(),
       "",
-      "Atbildi tikai ar JSON (odometer, incidents, technical, seller, photos, closer, letter).",
+      "Atbildi tikai ar JSON (odometer, incidents, technical, seller, photos, dealer, closer, letter).",
       "letter ir pilnā klienta vēstule — saglabā operatora specifiskos teikumus no melnraksta.",
     ].join("\n"),
     {

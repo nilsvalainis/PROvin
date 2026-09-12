@@ -2,6 +2,7 @@
 
 import {
   LISTING_PEEK_TOPICS,
+  listingPeekSelectedPhraseIds,
   type ListingPeekTone,
   type ListingPeekTopicId,
 } from "@/lib/listing-peek-comment-presets";
@@ -19,30 +20,32 @@ export const LISTING_PEEK_TONE_BTN_CLASS: Record<ListingPeekTone, string> = {
     "border-slate-300 bg-slate-50 text-slate-800 hover:bg-slate-100 data-[on=true]:border-slate-700 data-[on=true]:bg-slate-700 data-[on=true]:text-white disabled:opacity-40",
 };
 
-/** Zaļā / dzeltenā / sarkanā sagatave — tā pati rinda kā ātajos vērtējumos. */
+/** Zaļā / dzeltenā / sarkanā sagatave — vairākas frāzes vienā sadaļā (toggle). */
 export function AdminListingPeekTopicChips({
   topicId,
-  selectedTone,
+  fieldText,
   disabled,
-  onSelect,
+  onToggle,
 }: {
   topicId: ListingPeekTopicId;
-  selectedTone?: ListingPeekTone | null;
+  /** Pašreizējais sadaļas teksts — no tā secina, kuras frāzes ir ieslēgtas. */
+  fieldText: string;
   disabled?: boolean;
-  onSelect: (tone: ListingPeekTone, text: string) => void;
+  onToggle: (text: string) => void;
 }) {
   const topic = LISTING_PEEK_TOPICS.find((t) => t.id === topicId);
   if (!topic) return null;
+  const selected = new Set(listingPeekSelectedPhraseIds(topicId, fieldText));
   return (
     <div className="flex flex-wrap gap-1.5">
       {topic.phrases.map((phrase) => (
         <button
           key={phrase.id}
           type="button"
-          data-on={selectedTone === phrase.tone}
+          data-on={selected.has(phrase.id)}
           title={phrase.text}
           disabled={disabled}
-          onClick={() => onSelect(phrase.tone, phrase.text)}
+          onClick={() => onToggle(phrase.text)}
           className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${LISTING_PEEK_TONE_BTN_CLASS[phrase.tone]}`}
         >
           {phrase.label}

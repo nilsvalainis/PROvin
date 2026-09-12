@@ -6,11 +6,14 @@ import {
   assembleListingPeekCustomerComment,
   insertListingPeekLetterSentence,
   joinListingPeekSentences,
-  LISTING_PEEK_ODOMETER_AUDIT_TAIL,
+  listingPeekPhraseById,
   listingPeekPhraseByTone,
+  listingPeekSelectedPhraseIds,
   parseListingPeekAiPayload,
   parseListingPeekCustomerComment,
+  removeListingPeekSentence,
   stripListingPeekMarkdown,
+  toggleListingPeekSentence,
 } from "@/lib/listing-peek-comment-presets";
 
 describe("joinListingPeekSentences", () => {
@@ -25,6 +28,29 @@ describe("joinListingPeekSentences", () => {
   });
 });
 
+describe("toggleListingPeekSentence", () => {
+  it("allows multiple phrases from the same topic in order", () => {
+    const labs = listingPeekPhraseByTone("odometer", "positive");
+    const kritisks = listingPeekPhraseByTone("odometer", "critical");
+    const once = toggleListingPeekSentence("", labs);
+    const twice = toggleListingPeekSentence(once, kritisks);
+    expect(twice).toBe(`${labs} ${kritisks}`);
+    expect(listingPeekSelectedPhraseIds("odometer", twice)).toEqual([
+      "odometer-labs",
+      "odometer-kritisks",
+    ]);
+    const off = toggleListingPeekSentence(twice, labs);
+    expect(off).toBe(kritisks);
+  });
+
+  it("removeListingPeekSentence cleans leftover spaces", () => {
+    const a = listingPeekPhraseById("photos-tiras");
+    const b = listingPeekPhraseById("photos-lietosanas");
+    const joined = joinListingPeekSentences(a, b);
+    expect(removeListingPeekSentence(joined, a)).toBe(b);
+  });
+});
+
 describe("assembleListingPeekCustomerComment", () => {
   it("joins templates in one paragraph after Sveiki", () => {
     const comment = assembleListingPeekCustomerComment({
@@ -34,16 +60,18 @@ describe("assembleListingPeekCustomerComment", () => {
         technical: listingPeekPhraseByTone("technical", "caution"),
         seller: listingPeekPhraseByTone("seller", "positive"),
         photos: listingPeekPhraseByTone("photos", "positive"),
+        dealer: listingPeekPhraseByTone("dealer", "positive"),
       },
     });
     expect(comment.startsWith(`${LISTING_PEEK_COMMENT_GREETING} `)).toBe(true);
     expect(comment).not.toMatch(/\n(?!\n)/);
     expect(comment).not.toContain("1. ");
-    expect(comment).toContain("Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta");
-    expect(comment).toContain(". Negadījumu vēsture padziļināti jāpēta maksas datubāzēs.");
-    expect(comment).toContain(". Tehniski šim modelim ir nianses, kuras noteikti būs jāņem vērā");
-    expect(comment).toContain(". Pārdevējs ar salīdzinoši labu reputāciju un caurspīdīgu profilu");
-    expect(comment).toContain(". Virspusēji apskatot sludinājuma fotogrāfijas, būtiski vizuāli trūkumi netika konstatēti");
+    expect(comment).toContain("Sākotnējie dati norāda uz augstu odometra rādījumu ticamību");
+    expect(comment).toContain(". Tāpat caur šiem avotiem ir nepieciešams padziļināti pārbaudīt");
+    expect(comment).toContain(". Tehniski, šim modelim ir raksturīgas specifiskas nianses");
+    expect(comment).toContain(". Attiecībā uz pārdevēju - tam ir salīdzinoši laba reputācija");
+    expect(comment).toContain(". Virspusēji izvērtējot sludinājuma fotogrāfijas, būtiski vizuālie defekti netika novēroti.");
+    expect(comment).toContain(". Pie nosacījuma, ka šis auto ir ticis apkopts pie oficiālā dīlera");
     expect(comment).not.toContain(LISTING_PEEK_COMMENT_CLOSER);
   });
 
@@ -56,7 +84,7 @@ describe("assembleListingPeekCustomerComment", () => {
       },
     });
     expect(comment).toBe(
-      "Negadījumu vēsture padziļināti jāpēta maksas datubāzēs. Sludinājuma attēlos tika konstatētas vietas, kuras noteikti būs padziļināti jāvērtē klātienē.",
+      `${listingPeekPhraseByTone("incidents", "caution")} ${listingPeekPhraseByTone("photos", "concern")}`,
     );
   });
 
@@ -98,25 +126,20 @@ describe("assembleListingPeekCustomerComment", () => {
     expect(parsed.lines.odometer).toBe("");
   });
 
-  it("round-trips a sent letter back into the five topic fields", () => {
+  it("round-trips a sent letter back into topic fields including dealer", () => {
     const lines = {
       odometer: listingPeekPhraseByTone("odometer", "positive"),
       incidents: listingPeekPhraseByTone("incidents", "caution"),
       technical: listingPeekPhraseByTone("technical", "caution"),
       seller: listingPeekPhraseByTone("seller", "positive"),
       photos: listingPeekPhraseByTone("photos", "positive"),
+      dealer: listingPeekPhraseByTone("dealer", "caution"),
     };
     const parsed = parseListingPeekCustomerComment(
       assembleListingPeekCustomerComment({ closer: true, lines }),
     );
     expect(parsed.closer).toBe(true);
-    expect(parsed.lines).toEqual({
-      odometer: lines.odometer,
-      incidents: lines.incidents,
-      technical: lines.technical,
-      seller: lines.seller,
-      photos: lines.photos,
-    });
+    expect(parsed.lines).toEqual(lines);
   });
 });
 
@@ -130,6 +153,7 @@ describe("parseListingPeekAiPayload", () => {
           technical: listingPeekPhraseByTone("technical", "positive"),
           seller: "",
           photos: listingPeekPhraseByTone("photos", "caution"),
+          dealer: listingPeekPhraseByTone("dealer", "critical"),
           closer: true,
         }) +
         "\n```",
@@ -138,6 +162,7 @@ describe("parseListingPeekAiPayload", () => {
     expect(parsed?.lines.odometer).toBe(listingPeekPhraseByTone("odometer", "caution"));
     expect(parsed?.lines.technical).toBe(listingPeekPhraseByTone("technical", "positive"));
     expect(parsed?.lines.photos).toBe(listingPeekPhraseByTone("photos", "caution"));
+    expect(parsed?.lines.dealer).toBe(listingPeekPhraseByTone("dealer", "critical"));
     expect(parsed?.lines.incidents).toBe("");
   });
 
@@ -164,7 +189,7 @@ describe("parseListingPeekAiPayload", () => {
     const letter = [
       LISTING_PEEK_COMMENT_GREETING,
       "",
-      `1. Ticamība odometra rādījumiem pēc esošajiem datiem ir diezgan augsta, tomēr padziļināta pārbaude papildu avotos ir vēlama jebkurā gadījumā. ${LISTING_PEEK_ODOMETER_AUDIT_TAIL}`,
+      listingPeekPhraseByTone("odometer", "positive"),
       "",
       "VIN no Vācijas, 2018. gads, 189 000 km.",
       "",
@@ -204,21 +229,22 @@ describe("stripListingPeekMarkdown", () => {
 });
 
 describe("LISTING_PEEK_TOPICS", () => {
-  it("keeps operator phrases without repair EUR or panic closers", () => {
+  it("keeps operator phrases without repair EUR, panic, or em dashes", () => {
     const all = LISTING_PEEK_TOPICS.flatMap((t) => t.phrases.map((p) => p.text)).join("\n");
     expect(all).not.toMatch(/€|EUR|anomālij|nepērc|katastrof/i);
-    expect(LISTING_PEEK_TOPICS).toHaveLength(5);
-    expect(LISTING_PEEK_TOPICS.map((t) => t.phrases.length)).toEqual([4, 5, 4, 4, 4]);
+    expect(all).not.toContain("\u2014");
+    expect(all).not.toContain("\u2013");
+    expect(LISTING_PEEK_COMMENT_CLOSER).not.toContain("\u2014");
+    expect(LISTING_PEEK_TOPICS).toHaveLength(6);
+    expect(LISTING_PEEK_TOPICS.map((t) => t.phrases.length)).toEqual([7, 5, 4, 4, 5, 4]);
     for (const topic of LISTING_PEEK_TOPICS) {
       const ids = topic.phrases.map((p) => p.id);
       expect(new Set(ids).size).toBe(ids.length);
       expect(topic.phrases[0]?.tone).toBe("positive");
     }
-    expect(listingPeekPhraseByTone("odometer", "critical")).toContain("nesakritībām vēsturē");
-    for (const phrase of LISTING_PEEK_TOPICS.find((t) => t.id === "odometer")?.phrases ?? []) {
-      expect(phrase.text).toContain(LISTING_PEEK_ODOMETER_AUDIT_TAIL);
-    }
-    expect(listingPeekPhraseByTone("incidents", "info")).toContain("OCTA atlīdzību pieteikumi Latvijā nav fiksēti");
-    expect(listingPeekPhraseByTone("photos", "critical")).toContain("apzināti slēptu defektus");
+    expect(listingPeekPhraseByTone("odometer", "critical")).toContain("manipulāciju");
+    expect(listingPeekPhraseByTone("incidents", "info")).toContain("Latvijas OCTA datubāzē");
+    expect(listingPeekPhraseByTone("photos", "info")).toContain("leņķu dēļ");
+    expect(listingPeekPhraseByTone("dealer", "critical")).toContain("nav iespējams");
   });
 });

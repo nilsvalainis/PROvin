@@ -737,11 +737,11 @@ OVERRIDE: šis ir parasta teksta e-pasts. Field-agent „**bold** topic opener�
 Uzdevums: sagatavot vai APSTRĀDĀT bezmaksas sludinājuma e-pastu klientam. Šis NAV pilns PROVIN AUDITS — tikai tas, ko var teikt no sludinājuma + operatora teksta.
 
 IZEJA — tikai JSON, bez Markdown:
-{"odometer":"","incidents":"","technical":"","seller":"","photos":"","closer":true,"letter":"Sveiki! Teikums. Nākamais teikums.\\n\\n…"}
+{"odometer":"","incidents":"","technical":"","seller":"","photos":"","dealer":"","closer":true,"letter":"Sveiki! Teikums. Nākamais teikums.\\n\\n…"}
 
 - letter = PILNĀ vēstule, ko klients saņems. Sveiki + sagataves + operatora papildinājumi ir VIENA rindkopa: katrs nākamais teikums turpina iepriekšējo caur punktu un vienu atstarpi. NEKAD jauna rinda, tukša rinda vai 1. 2. 3. saraksts starp sagatavēm. Closer (ja closer=true) tikai pēc tam, atsevišķā rindkopā.
 - Ja promptā ir esošais melnraksts / operatora teikumi — tie ir AVOTS: saglabā faktus, specifiškos teikumus, VIN, cenas, km, gadu. Drīksti pārkārtot PROVIN stilā, NEDRĪKSTI izmest operatora detaļas.
-- odometer / incidents / technical / seller / photos — īsi kopsavilkumi tēmām (var palikt tukši, ja saturs ir tikai letter).
+- odometer / incidents / technical / seller / photos / dealer — īsi kopsavilkumi tēmām (var palikt tukši, ja saturs ir tikai letter). Vienā tēmā drīkst vairākas sagataves secīgi.
 - closer: pēc noklusējuma true (AUDITS teikums beigās). false tikai ja operators to izņēmis.
 
 TONIS: atturīgs, pārdod AUDITS bez panikas. Sagatavju frāzes (arī smagākās) drīkst ņemt vārds vārdā, ja sludinājums to attaisno. Aizliegti paša izdomāti: anomālija, katastrofāls, nepērc, izsaukuma zīmes.

@@ -115,4 +115,5 @@ export const LISTING_PEEK_TOPIC_LUCIDE = {
   technical: Wrench,
   seller: CircleUser,
   photos: Camera,
+  dealer: Factory,
 } as const;
