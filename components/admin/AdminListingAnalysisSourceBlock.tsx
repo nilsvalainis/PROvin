@@ -30,7 +30,7 @@ import {
 import { ADMIN_LISTING_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
 import { LISTING_ANALYSIS_FIELD_LUCIDE } from "@/lib/admin-lucide-registry";
 import { aiExpertSourceCommentToRichHtml, adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
-import { LISTING_PEEK_TOPICS, type ListingPeekTone } from "@/lib/listing-peek-comment-presets";
+import { toggleListingPeekSentence } from "@/lib/listing-peek-comment-presets";
 import {
   LISTING_PHOTO_NO_DEFECTS_LABEL,
   LISTING_PHOTO_NO_DEFECTS_TEXT,
@@ -50,19 +50,12 @@ import { isValidHttpUrl } from "@/lib/order-field-validation";
 const ta =
   "min-h-[72px] w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20";
 
-const PHOTO_PEEK_PHRASES = LISTING_PEEK_TOPICS.find((t) => t.id === "photos")!.phrases;
-
-function photoPeekSelectedTone(html: string): ListingPeekTone | null {
-  const plain = adminRichHtmlToPlainText(html).trim();
-  return PHOTO_PEEK_PHRASES.find((p) => p.text === plain || plain.includes(p.text))?.tone ?? null;
-}
-
-function applyPhotoPeekPhrase(currentHtml: string, phrase: string): string {
-  const plain = adminRichHtmlToPlainText(currentHtml).trim();
-  const presets = PHOTO_PEEK_PHRASES.map((p) => p.text);
-  if (!plain || presets.includes(plain)) return plainTextToMinimalRichHtml(phrase);
-  if (plain.includes(phrase)) return currentHtml;
-  return `${currentHtml.trim()}<br /><br />${plainTextToMinimalRichHtml(phrase)}`;
+/** Foto lauks ir rich HTML; chipi strādā ar plain toggle un atkal ievieto HTML. */
+function togglePhotoPeekPhrase(currentHtml: string, phrase: string): string {
+  const plain = adminRichHtmlToPlainText(currentHtml);
+  const next = toggleListingPeekSentence(plain, phrase);
+  if (!next.trim()) return "";
+  return plainTextToMinimalRichHtml(next);
 }
 
 export type AiListingAnalysisPayload = {
@@ -391,10 +384,10 @@ export function AdminListingAnalysisSourceBlock({
                 </div>
                 <AdminListingPeekTopicChips
                   topicId="photos"
-                  selectedTone={photoPeekSelectedTone(v.photoAnalysis)}
+                  fieldText={adminRichHtmlToPlainText(v.photoAnalysis)}
                   disabled={disabled}
-                  onSelect={(_tone, text) =>
-                    onChange({ ...v, photoAnalysis: applyPhotoPeekPhrase(v.photoAnalysis, text) })
+                  onToggle={(text) =>
+                    onChange({ ...v, photoAnalysis: togglePhotoPeekPhrase(v.photoAnalysis, text) })
                   }
                 />
               </div>
