@@ -5,7 +5,14 @@ import { useTranslations } from "next-intl";
 import { B2bPartnerLogin } from "@/components/b2b/B2bPartnerLogin";
 import { CONTACT_PHONE_TEL, contactEmail } from "@/lib/contact";
 
-export function B2bPartnerHero({ afterContact }: { afterContact?: ReactNode }) {
+export function B2bPartnerHero({
+  afterContact,
+  panel,
+}: {
+  afterContact?: ReactNode;
+  /** Login by default; invite register (or invalid-token copy) replaces the aside. */
+  panel?: ReactNode;
+}) {
   const t = useTranslations("Partner");
   const email = contactEmail();
 
@@ -57,7 +64,7 @@ export function B2bPartnerHero({ afterContact }: { afterContact?: ReactNode }) {
         </div>
 
         <div className="mx-auto w-full max-w-[22rem] text-left lg:mx-0 lg:rounded-[1rem] lg:border lg:border-white/10 lg:bg-gradient-to-b lg:from-white/[0.04] lg:to-white/[0.015] lg:p-5 xl:p-6">
-          <B2bPartnerLogin />
+          {panel ?? <B2bPartnerLogin />}
         </div>
       </div>
     </section>

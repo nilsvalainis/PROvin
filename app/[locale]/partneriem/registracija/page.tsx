@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { B2bPartnerHero } from "@/components/b2b/B2bPartnerHero";
 import { B2bPartnerInviteRegister } from "@/components/b2b/B2bPartnerInviteRegister";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { Footer } from "@/components/Footer";
 import { getOpenB2bInvite } from "@/lib/b2b-partner-invite-store";
 import { isSafeB2bInviteToken } from "@/lib/b2b-partner-invite";
 
@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "PROVIN partneru reģistrācija",
   robots: { index: false, follow: false },
+  appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
 };
 
 type Props = {
@@ -26,18 +27,16 @@ export default async function PartnerInviteRegisterPage({ searchParams }: Props)
 
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
-      <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent px-4 py-10 text-zinc-100">
-        <h1 className="text-xl font-bold tracking-tight">{t("inviteRegisterTitle")}</h1>
-        {invite ? (
-          <div className="mt-6">
-            <B2bPartnerInviteRegister token={invite.token} />
-          </div>
-        ) : (
-          <p className="mt-4 max-w-lg text-sm text-zinc-400">{t("inviteInvalid")}</p>
-        )}
-        <div className="mt-16">
-          <Footer />
-        </div>
+      <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
+        <B2bPartnerHero
+          panel={
+            invite ? (
+              <B2bPartnerInviteRegister token={invite.token} />
+            ) : (
+              <p className="text-[0.84rem] leading-relaxed text-zinc-400">{t("inviteInvalid")}</p>
+            )
+          }
+        />
       </div>
     </div>
   );

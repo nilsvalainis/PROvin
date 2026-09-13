@@ -324,8 +324,8 @@ export function AdminOrderDetailView({
   const metaStack = "mt-1 flex flex-col gap-1 text-[11px]";
 
   const dashboardSlot = (
-    <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
+    <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <section id="admin-order-section-komentars" className="min-w-0">
           <AdminCollapsibleShell
             sessionId={order.id}
@@ -386,9 +386,112 @@ export function AdminOrderDetailView({
             shellClassName={metaAccordionShellClass}
           />
         </div>
+
+        <section id="admin-order-section-maksajums" className="min-w-0">
+            <AdminCollapsibleShell
+              sessionId={order.id}
+              blockId="meta-payment"
+              className={metaAccordionShellClass}
+              header={
+                <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
+                  <AdminProvinLucide icon={META_ORDER_LUCIDE.payment} />
+                  Maksājums
+                </h2>
+              }
+              headerActions={
+                <AdminPdfIncludeToggle
+                  checked={pdfVisibility.payment}
+                  onChange={(next) => patchPdfVisibility({ payment: next })}
+                />
+              }
+            >
+              <div className="space-y-1 px-2 pb-2">
+                <dl className={metaStack}>
+                  <div className="min-w-0">
+                    <dt className={metaLabel}>Summa</dt>
+                    <dd className={`${metaValue} font-medium tabular-nums`}>
+                      <ClientHydrationGate>
+                        {() => formatMoneyEur(order.amountTotal, order.currency)}
+                      </ClientHydrationGate>
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className={metaLabel}>Laiks</dt>
+                    <dd className={metaValue}>
+                      <ClientHydrationGate>{() => formatOrderCreated(order.created)}</ClientHydrationGate>
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className={metaLabel}>Statuss</dt>
+                    <dd className={metaValue}>{order.paymentStatus}</dd>
+                  </div>
+                </dl>
+              </div>
+            </AdminCollapsibleShell>
+          </section>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
+          <section id="admin-order-section-klienta" className="min-w-0">
+            <AdminCollapsibleShell
+              sessionId={order.id}
+              blockId="meta-client"
+              className={metaAccordionShellClass}
+              header={
+                <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
+                  <AdminProvinLucide icon={META_ORDER_LUCIDE.client} />
+                  Klienta dati
+                </h2>
+              }
+              headerActions={
+                <AdminPdfIncludeToggle
+                  checked={pdfVisibility.client}
+                  onChange={(next) => patchPdfVisibility({ client: next })}
+                />
+              }
+            >
+              <div className="space-y-1 px-2 pb-2">
+                <div className="mt-0 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
+                  <AdminSavableTextField
+                    id="edit-customer-name"
+                    label="Vārds, uzvārds"
+                    value={mergedCustomerName}
+                    onChange={(v) => persistEdits({ customerName: v })}
+                    placeholder="Klienta vārds"
+                    compact
+                    hideToolbar
+                    resetVersion={orderFieldResetKey}
+                  />
+                  <AdminSavableTextField
+                    id="edit-customer-email"
+                    label="E-pasts"
+                    value={mergedCustomerEmail}
+                    onChange={(v) => persistEdits({ customerEmail: v })}
+                    placeholder="epasts@piemers.lv"
+                    compact
+                    hideToolbar
+                    resetVersion={orderFieldResetKey}
+                  />
+                  <AdminSavableTextField
+                    id="edit-customer-phone"
+                    label="Tālrunis"
+                    value={mergedCustomerPhone}
+                    onChange={(v) => persistEdits({ customerPhone: v })}
+                    placeholder="+371..."
+                    compact
+                    hideToolbar
+                    resetVersion={orderFieldResetKey}
+                    endAdornment={<AdminWhatsAppOpenButton phone={mergedCustomerPhone} />}
+                  />
+                  <div
+                    id={`admin-portfolio-slot-${order.id}`}
+                    className="min-h-0 min-w-0 rounded-md has-[*]:bg-white/70 has-[*]:ring-1 has-[*]:ring-slate-200/70"
+                  />
+                </div>
+              </div>
+            </AdminCollapsibleShell>
+          </section>
+
           <section id="admin-order-section-transports" className="min-w-0">
             <AdminCollapsibleShell
               sessionId={order.id}
@@ -497,111 +600,8 @@ export function AdminOrderDetailView({
               </div>
             </AdminCollapsibleShell>
           </section>
-
-          <section id="admin-order-section-klienta" className="min-w-0">
-            <AdminCollapsibleShell
-              sessionId={order.id}
-              blockId="meta-client"
-              className={metaAccordionShellClass}
-              header={
-                <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-                  <AdminProvinLucide icon={META_ORDER_LUCIDE.client} />
-                  Klienta dati
-                </h2>
-              }
-              headerActions={
-                <AdminPdfIncludeToggle
-                  checked={pdfVisibility.client}
-                  onChange={(next) => patchPdfVisibility({ client: next })}
-                />
-              }
-            >
-              <div className="space-y-1 px-2 pb-2">
-                <div className="mt-0 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
-                  <AdminSavableTextField
-                    id="edit-customer-name"
-                    label="Vārds, uzvārds"
-                    value={mergedCustomerName}
-                    onChange={(v) => persistEdits({ customerName: v })}
-                    placeholder="Klienta vārds"
-                    compact
-                    hideToolbar
-                    resetVersion={orderFieldResetKey}
-                  />
-                  <AdminSavableTextField
-                    id="edit-customer-email"
-                    label="E-pasts"
-                    value={mergedCustomerEmail}
-                    onChange={(v) => persistEdits({ customerEmail: v })}
-                    placeholder="epasts@piemers.lv"
-                    compact
-                    hideToolbar
-                    resetVersion={orderFieldResetKey}
-                  />
-                  <AdminSavableTextField
-                    id="edit-customer-phone"
-                    label="Tālrunis"
-                    value={mergedCustomerPhone}
-                    onChange={(v) => persistEdits({ customerPhone: v })}
-                    placeholder="+371..."
-                    compact
-                    hideToolbar
-                    resetVersion={orderFieldResetKey}
-                    endAdornment={<AdminWhatsAppOpenButton phone={mergedCustomerPhone} />}
-                  />
-                  <div
-                    id={`admin-portfolio-slot-${order.id}`}
-                    className="min-h-[88px] min-w-0 rounded-md bg-white/70 ring-1 ring-slate-200/70"
-                  />
-                </div>
-              </div>
-            </AdminCollapsibleShell>
-          </section>
       </div>
-
-        <section id="admin-order-section-maksajums" className="min-w-0">
-            <AdminCollapsibleShell
-              sessionId={order.id}
-              blockId="meta-payment"
-              className={metaAccordionShellClass}
-              header={
-                <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
-                  <AdminProvinLucide icon={META_ORDER_LUCIDE.payment} />
-                  Maksājums
-                </h2>
-              }
-              headerActions={
-                <AdminPdfIncludeToggle
-                  checked={pdfVisibility.payment}
-                  onChange={(next) => patchPdfVisibility({ payment: next })}
-                />
-              }
-            >
-              <div className="space-y-1 px-2 pb-2">
-                <dl className={metaStack}>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Summa</dt>
-                    <dd className={`${metaValue} font-medium tabular-nums`}>
-                      <ClientHydrationGate>
-                        {() => formatMoneyEur(order.amountTotal, order.currency)}
-                      </ClientHydrationGate>
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Laiks</dt>
-                    <dd className={metaValue}>
-                      <ClientHydrationGate>{() => formatOrderCreated(order.created)}</ClientHydrationGate>
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className={metaLabel}>Statuss</dt>
-                    <dd className={metaValue}>{order.paymentStatus}</dd>
-                  </div>
-                </dl>
-              </div>
-            </AdminCollapsibleShell>
-          </section>
-    </>
+    </div>
   );
 
   return (

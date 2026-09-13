@@ -46,13 +46,16 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
 
   return (
     <form
-      className="flex w-full max-w-lg flex-col gap-3"
+      className="flex w-full flex-col gap-3.5"
       onSubmit={(event) => {
         event.preventDefault();
         void onSubmit();
       }}
     >
-      <p className="text-sm text-zinc-300">{t("inviteRegisterLead")}</p>
+      <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#93c5fd]">
+        {t("inviteRegisterTitle")}
+      </p>
+      <p className="text-[0.78rem] leading-snug text-zinc-400">{t("inviteRegisterLead")}</p>
       {(
         [
           ["companyName", "fieldCompany"],
@@ -94,9 +97,12 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
           }}
         />
       </label>
-      {error ? <p className="text-sm text-amber-300">{error}</p> : null}
-      <button type="submit" disabled={busy} className={styles.liquidCtaLink}>
-        <span className={styles.liquidCtaLabel}>{busy ? t("inviteRegisterLoading") : t("inviteRegisterSubmit")}</span>
+      {error ? <p className={styles.inlineFieldError}>{error}</p> : null}
+      <button type="submit" className={styles.liquidCta} disabled={busy}>
+        <span className={styles.liquidCtaShimmer} aria-hidden />
+        <span className={styles.liquidCtaLabel}>
+          {busy ? t("inviteRegisterLoading") : t("inviteRegisterSubmit")}
+        </span>
       </button>
     </form>
   );

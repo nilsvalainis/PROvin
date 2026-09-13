@@ -508,11 +508,11 @@ export function Tp5MobilePricingCard({
                 role="tab"
                 aria-selected={active}
                 aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
-                className={`${styles.tierTabBtn}${service.id === "dealer" ? ` ${styles.tierTabBtnWithBadge}` : ""}`}
+                className={styles.tierTabBtn}
                 onClick={() => setActiveServiceId(service.id)}
               >
                 {service.id === "dealer" ? (
-                  <span className={styles.catalogPopularBadge}>{uiCopy.newBadge}</span>
+                  <span className={styles.tierNewBadge}>{uiCopy.newBadge}</span>
                 ) : null}
                 <span
                   className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
