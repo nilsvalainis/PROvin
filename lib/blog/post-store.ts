@@ -3,8 +3,12 @@ import "server-only";
 import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
+import { postLietotaAutoPirksanaBezTabu } from "@/lib/blog/posts/lietota-auto-pirksana-bez-tabu";
 import { postMobileDeScam48000 } from "@/lib/blog/posts/mobile-de-scam-48000";
 import type { BlogBlock, BlogImage, BlogPost, BlogPostLocale } from "@/lib/blog/types";
+
+/** Kanona seed ieraksti - jaunu pievieno šeit, lai parādītos arī esošā Blob/FS indeksā. */
+const SEED_POSTS: BlogPost[] = [postLietotaAutoPirksanaBezTabu, postMobileDeScam48000];
 
 const RELATIVE_DIR = ".data/blog-posts";
 const BLOB_PATHNAME = "blog-posts/index.json";
@@ -201,43 +205,51 @@ function seedDoc(): PostsIndexDoc {
   return {
     version: 1,
     updatedAt: new Date().toISOString(),
-    posts: [postMobileDeScam48000],
+    posts: [...SEED_POSTS],
   };
 }
 
 /**
- * Notīra iepriekš iesēto cover (ja seed to vairs neizmanto).
- * Tips/UI cover atbalstam paliek — vēlāk varēs atgriezt labākā formā.
+ * Iesēj trūkstošos kanona ierakstus un notīra iepriekš iesēto cover
+ * (ja seed to vairs neizmanto). Tips/UI cover atbalstam paliek - vēlāk varēs
+ * atgriezt labākā formā.
  */
-function mergeSeedSeoAssets(doc: PostsIndexDoc): { doc: PostsIndexDoc; changed: boolean } {
-  const seed = postMobileDeScam48000;
-  const idx = doc.posts.findIndex((p) => p.slug === seed.slug);
-  if (idx < 0) return { doc, changed: false };
-
-  const current = doc.posts[idx]!;
+function mergeSeedPosts(doc: PostsIndexDoc): { doc: PostsIndexDoc; changed: boolean } {
   let changed = false;
-  let next = current;
+  const posts = doc.posts.slice();
 
-  if (!seed.coverImage && current.coverImage) {
-    const { coverImage: _removed, ...rest } = next;
-    next = rest;
-    changed = true;
-  }
+  for (const seed of SEED_POSTS) {
+    const idx = posts.findIndex((p) => p.slug === seed.slug);
+    if (idx < 0) {
+      posts.push(seed);
+      changed = true;
+      continue;
+    }
 
-  if (current.lv.body.some((b) => b.type === "image")) {
-    next = {
-      ...next,
-      lv: {
-        ...next.lv,
-        body: next.lv.body.filter((b) => b.type !== "image"),
-      },
-    };
-    changed = true;
+    const current = posts[idx]!;
+    let next = current;
+
+    if (!seed.coverImage && current.coverImage) {
+      const { coverImage: _removed, ...rest } = next;
+      next = rest;
+      changed = true;
+    }
+
+    if (next.lv.body.some((b) => b.type === "image")) {
+      next = {
+        ...next,
+        lv: {
+          ...next.lv,
+          body: next.lv.body.filter((b) => b.type !== "image"),
+        },
+      };
+      changed = true;
+    }
+
+    if (next !== current) posts[idx] = next;
   }
 
   if (!changed) return { doc, changed: false };
-  const posts = doc.posts.slice();
-  posts[idx] = next;
   return {
     doc: { ...doc, posts, updatedAt: new Date().toISOString() },
     changed: true,
@@ -266,12 +278,12 @@ async function readDoc(): Promise<PostsIndexDoc> {
     return seeded;
   }
 
-  const merged = mergeSeedSeoAssets(doc);
+  const merged = mergeSeedPosts(doc);
   if (merged.changed) {
     try {
       await writeDoc(merged.doc);
     } catch {
-      /* ignore persist failure — still serve merged in-memory */
+      /* ignore persist failure - still serve merged in-memory */
     }
     return merged.doc;
   }
