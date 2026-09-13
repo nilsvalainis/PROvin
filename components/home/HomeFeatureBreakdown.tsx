@@ -220,9 +220,14 @@ export function HomeFeatureBreakdown({
                       <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-gray-500">
                         {uiCopy.goalLabel}
                       </p>
-                      <p className="mt-1.5 text-balance text-[0.8125rem] font-medium leading-[1.55] text-zinc-200 sm:text-[0.875rem] sm:leading-[1.6]">
-                        {renderProvinText(pkg.goal, homeDarkProvinWordmarkOptions)}
-                      </p>
+                      {pkg.goal.split(/\n\n+/).map((para, index) => (
+                        <p
+                          key={`${pkg.id}-goal-${index}`}
+                          className={`${index === 0 ? "mt-1.5" : "mt-3"} text-balance text-[0.8125rem] font-medium leading-[1.55] text-zinc-200 sm:text-[0.875rem] sm:leading-[1.6]`}
+                        >
+                          {renderProvinText(para, homeDarkProvinWordmarkOptions)}
+                        </p>
+                      ))}
                     </header>
 
                     <ul className="mt-6 flex min-w-0 flex-col gap-4 sm:mt-7 sm:gap-5">

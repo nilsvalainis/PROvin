@@ -320,9 +320,8 @@ const PARTNER_LV: HomeFeatureBreakdownPackage = {
   title: "PROVIN BUSINESS",
   buttonText: "Partneriem",
   ctaHref: "/partneriem",
-  sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
   goal:
-    "Dati no oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas/Amerikas valstu reģistriem vienā atskaitē: nobraukuma hronoloģija, negadījumu vēsture un servisa ieraksti tirdzniecības uzņēmumiem.",
+    "Risinājums izstrādāts auto tirdzniecības uzņēmumiem, lai pirms auto iegādes pilnībā novērstu riskus, kas saistīti ar koriģētu nobraukumu, negadījumu un nekvalitatīvu apkopju vēsturi.\n\nAr PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumos, bet arī sniedzat saviem klientiem oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi. Auto tirdzniecības nozarē šī atskaite mērķtiecīgi kļūst par nepārprotamu kvalitātes un caurskatāmības simbolu, kas uzskatāmi demonstrē uzņēmuma atbildību un godprātīgu attieksmi pret pircēju.\n\nTas paaugstina klientu uzticēšanos, izceļ jūsu piedāvājumu tirgū un paātrina pārdošanas procesu, jo pircējs jau pirmajā brīdī gūst pārliecību par drošu un pārbaudītu pirkumu digitālās vēstures kontekstā.",
   items: [
     {
       title: "Oficiālo dīleru dati",
@@ -352,9 +351,8 @@ const PARTNER_EN: HomeFeatureBreakdownPackage = {
   title: "PROVIN BUSINESS",
   buttonText: "For partners",
   ctaHref: "/partneriem",
-  sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
   goal:
-    "Data from official dealer networks, carVertical, AutoDNA and European/US registries in one report: mileage timeline, accident history and service records for trade businesses.",
+    "Built for used-car dealerships, so that before a purchase you fully remove risks tied to corrected mileage, accidents and poor-quality service history.\n\nWith a PROVIN BUSINESS audit report you not only protect your company from buying losses, but also give your customers official, unambiguous proof of the car's actual history. In the car trade this report is becoming a clear mark of quality and transparency, showing the company's responsibility and fair attitude toward the buyer.\n\nThat raises customer trust, sets your offer apart in the market and speeds up the sale, because the buyer gains confidence from the first moment that the purchase is safe and checked in the digital-history sense.",
   items: [
     {
       title: "Official dealer data",
