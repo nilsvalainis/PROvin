@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { useRouter } from "@/i18n/navigation";
 
@@ -11,18 +11,25 @@ function isLoginEmail(value: string): boolean {
 
 export function B2bPartnerLogin() {
   const t = useTranslations("Partner");
+  const locale = useLocale();
   const router = useRouter();
   const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [unverified, setUnverified] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
+  const [resendOk, setResendOk] = useState(false);
 
   const onSubmit = async () => {
     if (!isLoginEmail(loginEmail) || password.trim().length < 8) {
       setError(t("loginError"));
+      setUnverified(false);
       return;
     }
     setError("");
+    setUnverified(false);
+    setResendOk(false);
     setBusy(true);
     try {
       const res = await fetch("/api/partner/login", {
@@ -31,6 +38,11 @@ export function B2bPartnerLogin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail.trim(), password }),
       });
+      if (res.status === 403) {
+        setUnverified(true);
+        setError(t("loginUnverified"));
+        return;
+      }
       if (!res.ok) {
         setError(t("loginError"));
         return;
@@ -40,6 +52,24 @@ export function B2bPartnerLogin() {
       setError(t("loginError"));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onResend = async () => {
+    setResendBusy(true);
+    setResendOk(false);
+    try {
+      await fetch("/api/partner/verify/resend", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail.trim(), locale }),
+      });
+      setResendOk(true);
+    } catch {
+      setResendOk(true);
+    } finally {
+      setResendBusy(false);
     }
   };
 
@@ -62,6 +92,8 @@ export function B2bPartnerLogin() {
           onChange={(event) => {
             setLoginEmail(event.target.value);
             setError("");
+            setUnverified(false);
+            setResendOk(false);
           }}
           autoComplete="username"
           inputMode="email"
@@ -82,6 +114,7 @@ export function B2bPartnerLogin() {
           onChange={(event) => {
             setPassword(event.target.value);
             setError("");
+            setUnverified(false);
           }}
           autoComplete="current-password"
           enterKeyHint="go"
@@ -89,10 +122,21 @@ export function B2bPartnerLogin() {
         />
       </label>
       {error ? <p className={styles.inlineFieldError}>{error}</p> : null}
+      {resendOk ? <p className="text-[0.75rem] text-zinc-300">{t("verifyResendOk")}</p> : null}
       <button type="submit" className={styles.liquidCta} disabled={busy}>
         <span className={styles.liquidCtaShimmer} aria-hidden />
         <span className={styles.liquidCtaLabel}>{busy ? t("loginLoading") : t("loginSubmit")}</span>
       </button>
+      {unverified ? (
+        <button
+          type="button"
+          className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#93c5fd] underline-offset-2 hover:underline disabled:opacity-50"
+          disabled={resendBusy}
+          onClick={() => void onResend()}
+        >
+          {resendBusy ? t("verifyResendBusy") : t("verifyResend")}
+        </button>
+      ) : null}
     </form>
   );
 }

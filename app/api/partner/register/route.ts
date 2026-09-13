@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import type { B2bPartnerWriteInput } from "@/lib/b2b-partner-account";
-import { writeB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
 import { consumeB2bInvite, getOpenB2bInvite } from "@/lib/b2b-partner-invite-store";
 import { isSafeB2bInviteToken } from "@/lib/b2b-partner-invite";
 import { createB2bPartner } from "@/lib/b2b-partner-store";
+import { dispatchPartnerVerifyEmail } from "@/lib/b2b-partner-verify-mail";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 
@@ -43,6 +43,7 @@ export async function POST(req: Request) {
 
   const token = typeof raw.token === "string" ? raw.token.trim() : "";
   const password = typeof raw.password === "string" ? raw.password : "";
+  const locale = typeof raw.locale === "string" ? raw.locale : "";
   if (!isSafeB2bInviteToken(token)) {
     return NextResponse.json({ error: "invalid_invite" }, { status: 400 });
   }
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_invite" }, { status: 400 });
   }
 
-  const result = await createB2bPartner(readWriteInput(raw), password);
+  const result = await createB2bPartner(readWriteInput(raw), password, { requireEmailVerification: true });
   if (!result.ok) {
     const status = result.error === "email_taken" ? 409 : 400;
     return NextResponse.json({ error: result.error }, { status });
@@ -63,6 +64,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_invite" }, { status: 400 });
   }
 
-  await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email });
-  return NextResponse.json({ ok: true, partner: result.partner });
+  if (result.verifyToken) {
+    await dispatchPartnerVerifyEmail({
+      to: result.partner.email,
+      token: result.verifyToken,
+      locale,
+      purpose: "signup",
+    });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    pendingVerification: true,
+    email: result.partner.email,
+  });
 }

@@ -30,11 +30,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
 
-  const partner = await authenticateB2bPartner(email, password);
-  if (!partner) {
+  const result = await authenticateB2bPartner(email, password);
+  if (!result.ok) {
+    if (result.error === "unverified") {
+      return NextResponse.json({ error: "email_unverified" }, { status: 403 });
+    }
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
 
-  await writeB2bPartnerServerSession({ partnerId: partner.id, email: partner.email });
-  return NextResponse.json({ ok: true, partner: toPublicPartner(partner) });
+  await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email });
+  return NextResponse.json({ ok: true, partner: toPublicPartner(result.partner) });
 }

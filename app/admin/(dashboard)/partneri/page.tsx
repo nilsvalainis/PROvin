@@ -56,7 +56,11 @@ export default async function AdminPartnersPage() {
                     </td>
                     <td className="px-4 py-3.5 text-[var(--color-apple-text)]">{row.email}</td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-[var(--color-apple-text)]">
-                      {row.status === "active" ? "Aktīvs" : "Bloķēts"}
+                      {row.status === "active"
+                        ? row.emailVerifiedAt
+                          ? "Aktīvs"
+                          : "Gaida e-pastu"
+                        : "Bloķēts"}
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <Link

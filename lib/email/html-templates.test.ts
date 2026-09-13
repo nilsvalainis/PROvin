@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listingPeekCustomerCommentHtml } from "@/lib/email/html-templates";
+import { listingPeekCustomerCommentHtml, partnerVerifyEmailHtml } from "@/lib/email/html-templates";
 
 const listingUrl = "https://www.ss.com/msg/lv/transport/cars/bmw/x5/abc.html";
 
@@ -24,5 +24,18 @@ describe("listingPeekCustomerCommentHtml", () => {
     });
     expect(html).not.toMatch(/javascript:/i);
     expect(html).not.toMatch(/>Sludinājums</);
+  });
+});
+
+describe("partnerVerifyEmailHtml", () => {
+  it("includes a one-time confirmation CTA without leaking extra copy", () => {
+    const html = partnerVerifyEmailHtml({
+      verifyUrl: "https://provin.lv/lv/partneriem/apstiprinat?token=ver_abc",
+      locale: "lv",
+      purpose: "signup",
+    });
+    expect(html).toContain("Apstipriniet e-pastu");
+    expect(html).toContain("https://provin.lv/lv/partneriem/apstiprinat?token=ver_abc");
+    expect(html).toContain("24 stundas");
   });
 });

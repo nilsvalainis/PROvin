@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isUsablePartnerPassword,
   normalizePartnerEmail,
+  parsePartnerRecord,
   partnerFieldError,
   toPublicPartner,
   type B2bPartnerRecord,
@@ -38,8 +39,40 @@ describe("b2b partner account", () => {
       status: "active",
       createdAt: "2026-09-04T00:00:00.000Z",
       updatedAt: "2026-09-04T00:00:00.000Z",
+      emailVerifiedAt: "2026-09-04T00:00:00.000Z",
+      emailVerifyHash: "abc",
+      emailVerifyExpiresAt: null,
+      emailVerifyPurpose: null,
+      pendingEmail: null,
     };
-    expect(toPublicPartner(record)).not.toHaveProperty("passwordHash");
-    expect(toPublicPartner(record).email).toBe("demo@provin.lv");
+    const publicProfile = toPublicPartner(record);
+    expect(publicProfile).not.toHaveProperty("passwordHash");
+    expect(publicProfile).not.toHaveProperty("emailVerifyHash");
+    expect(publicProfile.email).toBe("demo@provin.lv");
+    expect(publicProfile.emailVerifiedAt).toBe("2026-09-04T00:00:00.000Z");
+  });
+
+  it("treats legacy records without emailVerifiedAt as already verified", () => {
+    const parsed = parsePartnerRecord({
+      id: "ptr_0123456789abcdef",
+      ...validInput,
+      email: "demo@provin.lv",
+      passwordHash: "scrypt$salt$hash",
+      status: "active",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      updatedAt: "2026-09-04T00:00:00.000Z",
+    });
+    expect(parsed?.emailVerifiedAt).toBe("2026-09-04T00:00:00.000Z");
+    const pending = parsePartnerRecord({
+      id: "ptr_0123456789abcdef",
+      ...validInput,
+      email: "demo@provin.lv",
+      passwordHash: "scrypt$salt$hash",
+      status: "active",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      updatedAt: "2026-09-04T00:00:00.000Z",
+      emailVerifiedAt: null,
+    });
+    expect(pending?.emailVerifiedAt).toBeNull();
   });
 });

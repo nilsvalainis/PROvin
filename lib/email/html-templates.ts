@@ -186,3 +186,37 @@ ${opts.siteOrigin ? clientReportLegalFooterEmailHtml(opts.siteOrigin) : ""}
 `;
   return shell(inner, { omitBrandRibbon: true });
 }
+
+export function partnerVerifyEmailHtml(opts: {
+  verifyUrl: string;
+  locale?: "lv" | "en";
+  purpose?: "signup" | "email_change";
+}): string {
+  const en = opts.locale === "en";
+  const change = opts.purpose === "email_change";
+  const title = en
+    ? change
+      ? "Confirm your new email"
+      : "Confirm your email"
+    : change
+      ? "Apstipriniet jauno e-pastu"
+      : "Apstipriniet e-pastu";
+  const lead = en
+    ? change
+      ? "Confirm this address to finish updating your PROVIN.LV partner account."
+      : "Confirm this address to finish opening your PROVIN.LV partner account."
+    : change
+      ? "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta e-pasta maiņu."
+      : "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.";
+  const cta = en ? "Confirm email" : "Apstiprināt e-pastu";
+  const hint = en
+    ? "The link is valid for 24 hours and can be used once. If you did not request this, ignore the message."
+    : "Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.";
+  const inner = `
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
+<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(lead)}</p>
+${ctaButton(opts.verifyUrl, cta)}
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:${MUTED};">${esc(hint)}</p>
+`;
+  return shell(inner);
+}

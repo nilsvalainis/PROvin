@@ -18,6 +18,17 @@ import {
   type B2bPartnerWriteInput,
 } from "@/lib/b2b-partner-account";
 import { hashB2bPartnerPassword, verifyB2bPartnerPassword } from "@/lib/b2b-partner-password";
+import { isValidOrderEmail } from "@/lib/order-field-validation";
+import {
+  B2B_EMAIL_VERIFY_TTL_MS,
+  b2bVerifyTokensEqual,
+  hashB2bVerifyToken,
+  isB2bVerifyHashOpen,
+  isPartnerEmailVerified,
+  isSafeB2bVerifyToken,
+  newB2bVerifyToken,
+  type B2bEmailVerifyPurpose,
+} from "@/lib/b2b-partner-verify";
 
 const RELATIVE_DIR = ".data/b2b-partners";
 const FILENAME = "index.json";
@@ -166,12 +177,13 @@ export async function getB2bPartnerByEmail(email: string): Promise<B2bPartnerRec
 }
 
 export type CreateB2bPartnerResult =
-  | { ok: true; partner: B2bPartnerPublicProfile }
+  | { ok: true; partner: B2bPartnerPublicProfile; verifyToken: string | null }
   | { ok: false; error: "invalid_fields" | "email_taken" | "weak_password" };
 
 export async function createB2bPartner(
   input: B2bPartnerWriteInput,
   password: string,
+  opts?: { requireEmailVerification?: boolean },
 ): Promise<CreateB2bPartnerResult> {
   return withLock(async () => {
     const normalized = normalizePartnerWriteInput(input);
@@ -182,6 +194,8 @@ export async function createB2bPartner(
       return { ok: false, error: "email_taken" };
     }
     const now = new Date().toISOString();
+    const requireVerify = Boolean(opts?.requireEmailVerification);
+    const verifyToken = requireVerify ? newB2bVerifyToken() : null;
     const record: B2bPartnerRecord = {
       id: newPartnerId(),
       ...normalized,
@@ -189,10 +203,15 @@ export async function createB2bPartner(
       status: "active",
       createdAt: now,
       updatedAt: now,
+      emailVerifiedAt: requireVerify ? null : now,
+      emailVerifyHash: verifyToken ? hashB2bVerifyToken(verifyToken) : null,
+      emailVerifyExpiresAt: verifyToken ? new Date(Date.now() + B2B_EMAIL_VERIFY_TTL_MS).toISOString() : null,
+      emailVerifyPurpose: verifyToken ? "signup" : null,
+      pendingEmail: null,
     };
     doc.partners.push(record);
     await writeDoc(doc);
-    return { ok: true, partner: toPublicPartner(record) };
+    return { ok: true, partner: toPublicPartner(record), verifyToken };
   });
 }
 
@@ -226,6 +245,8 @@ export async function updateB2bPartner(
       if (!isUsablePartnerPassword(patch.password)) return { ok: false, error: "weak_password" };
     }
     const status: B2bPartnerStatus = patch.status === "disabled" || patch.status === "active" ? patch.status : prev.status;
+    const now = new Date().toISOString();
+    const emailChanged = nextInput.email !== prev.email;
     const record: B2bPartnerRecord = {
       ...prev,
       ...nextInput,
@@ -234,7 +255,16 @@ export async function updateB2bPartner(
         patch.password != null && patch.password.trim()
           ? hashB2bPartnerPassword(patch.password.trim())
           : prev.passwordHash,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
+      ...(emailChanged
+        ? {
+            emailVerifiedAt: now,
+            pendingEmail: null,
+            emailVerifyHash: null,
+            emailVerifyExpiresAt: null,
+            emailVerifyPurpose: null,
+          }
+        : {}),
     };
     doc.partners[idx] = record;
     await writeDoc(doc);
@@ -242,12 +272,178 @@ export async function updateB2bPartner(
   });
 }
 
+export type AuthenticateB2bPartnerResult =
+  | { ok: true; partner: B2bPartnerRecord }
+  | { ok: false; error: "invalid" | "unverified" };
+
 export async function authenticateB2bPartner(
   email: string,
   password: string,
-): Promise<B2bPartnerRecord | null> {
+): Promise<AuthenticateB2bPartnerResult> {
   const partner = await getB2bPartnerByEmail(email);
-  if (!partner || partner.status !== "active") return null;
-  if (!verifyB2bPartnerPassword(password, partner.passwordHash)) return null;
-  return partner;
+  if (!partner || partner.status !== "active") return { ok: false, error: "invalid" };
+  if (!verifyB2bPartnerPassword(password, partner.passwordHash)) return { ok: false, error: "invalid" };
+  if (!isPartnerEmailVerified(partner)) return { ok: false, error: "unverified" };
+  return { ok: true, partner };
+}
+
+function issueVerifyFields(
+  purpose: B2bEmailVerifyPurpose,
+): { token: string; emailVerifyHash: string; emailVerifyExpiresAt: string; emailVerifyPurpose: B2bEmailVerifyPurpose } {
+  const token = newB2bVerifyToken();
+  return {
+    token,
+    emailVerifyHash: hashB2bVerifyToken(token),
+    emailVerifyExpiresAt: new Date(Date.now() + B2B_EMAIL_VERIFY_TTL_MS).toISOString(),
+    emailVerifyPurpose: purpose,
+  };
+}
+
+export async function resendB2bPartnerVerifyToken(
+  email: string,
+): Promise<{ token: string; to: string; purpose: B2bEmailVerifyPurpose } | null> {
+  return withLock(async () => {
+    const key = normalizePartnerEmail(email);
+    if (!key) return null;
+    const doc = await readDoc();
+    const idx = doc.partners.findIndex((p) => p.email === key || p.pendingEmail === key);
+    if (idx < 0) return null;
+    const prev = doc.partners[idx]!;
+    if (prev.status !== "active") return null;
+    const purpose: B2bEmailVerifyPurpose | null = prev.pendingEmail
+      ? "email_change"
+      : !isPartnerEmailVerified(prev)
+        ? "signup"
+        : null;
+    if (!purpose) return null;
+    const issued = issueVerifyFields(purpose);
+    const now = new Date().toISOString();
+    doc.partners[idx] = {
+      ...prev,
+      emailVerifyHash: issued.emailVerifyHash,
+      emailVerifyExpiresAt: issued.emailVerifyExpiresAt,
+      emailVerifyPurpose: issued.emailVerifyPurpose,
+      updatedAt: now,
+    };
+    await writeDoc(doc);
+    return {
+      token: issued.token,
+      to: purpose === "email_change" && prev.pendingEmail ? prev.pendingEmail : prev.email,
+      purpose,
+    };
+  });
+}
+
+export async function consumeB2bPartnerVerifyToken(
+  token: string,
+): Promise<{ ok: true; partner: B2bPartnerRecord } | { ok: false; error: "invalid" }> {
+  if (!isSafeB2bVerifyToken(token)) return { ok: false, error: "invalid" };
+  return withLock(async () => {
+    const doc = await readDoc();
+    const nowMs = Date.now();
+    const idx = doc.partners.findIndex(
+      (p) =>
+        Boolean(p.emailVerifyHash) &&
+        isB2bVerifyHashOpen(p.emailVerifyExpiresAt, nowMs) &&
+        b2bVerifyTokensEqual(p.emailVerifyHash!, token),
+    );
+    if (idx < 0) return { ok: false, error: "invalid" };
+    const prev = doc.partners[idx]!;
+    const stamp = new Date().toISOString();
+    if (prev.emailVerifyPurpose === "email_change") {
+      const nextEmail = prev.pendingEmail;
+      if (!nextEmail || doc.partners.some((p) => p.id !== prev.id && p.email === nextEmail)) {
+        return { ok: false, error: "invalid" };
+      }
+      doc.partners[idx] = {
+        ...prev,
+        email: nextEmail,
+        pendingEmail: null,
+        emailVerifiedAt: stamp,
+        emailVerifyHash: null,
+        emailVerifyExpiresAt: null,
+        emailVerifyPurpose: null,
+        updatedAt: stamp,
+      };
+    } else {
+      doc.partners[idx] = {
+        ...prev,
+        pendingEmail: null,
+        emailVerifiedAt: stamp,
+        emailVerifyHash: null,
+        emailVerifyExpiresAt: null,
+        emailVerifyPurpose: null,
+        updatedAt: stamp,
+      };
+    }
+    await writeDoc(doc);
+    return { ok: true, partner: doc.partners[idx]! };
+  });
+}
+
+export async function changeB2bPartnerPassword(
+  id: string,
+  currentPassword: string,
+  nextPassword: string,
+): Promise<{ ok: true } | { ok: false; error: "not_found" | "invalid_current" | "weak_password" | "same_password" }> {
+  return withLock(async () => {
+    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
+    const doc = await readDoc();
+    const idx = doc.partners.findIndex((p) => p.id === id);
+    if (idx < 0) return { ok: false, error: "not_found" };
+    const prev = doc.partners[idx]!;
+    if (!verifyB2bPartnerPassword(currentPassword, prev.passwordHash)) {
+      return { ok: false, error: "invalid_current" };
+    }
+    if (!isUsablePartnerPassword(nextPassword)) return { ok: false, error: "weak_password" };
+    if (verifyB2bPartnerPassword(nextPassword.trim(), prev.passwordHash)) {
+      return { ok: false, error: "same_password" };
+    }
+    doc.partners[idx] = {
+      ...prev,
+      passwordHash: hashB2bPartnerPassword(nextPassword.trim()),
+      updatedAt: new Date().toISOString(),
+    };
+    await writeDoc(doc);
+    return { ok: true };
+  });
+}
+
+export async function requestB2bPartnerEmailChange(
+  id: string,
+  currentPassword: string,
+  nextEmail: string,
+): Promise<
+  | { ok: true; token: string; to: string; partner: B2bPartnerPublicProfile }
+  | { ok: false; error: "not_found" | "invalid_current" | "invalid_email" | "email_taken" | "same_email" }
+> {
+  return withLock(async () => {
+    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
+    const doc = await readDoc();
+    const idx = doc.partners.findIndex((p) => p.id === id);
+    if (idx < 0) return { ok: false, error: "not_found" };
+    const prev = doc.partners[idx]!;
+    if (!verifyB2bPartnerPassword(currentPassword, prev.passwordHash)) {
+      return { ok: false, error: "invalid_current" };
+    }
+    const email = normalizePartnerEmail(nextEmail).slice(0, 254);
+    if (!isValidOrderEmail(email)) return { ok: false, error: "invalid_email" };
+    if (email === prev.email) return { ok: false, error: "same_email" };
+    if (doc.partners.some((p) => p.id !== id && (p.email === email || p.pendingEmail === email))) {
+      return { ok: false, error: "email_taken" };
+    }
+    const issued = issueVerifyFields("email_change");
+    const now = new Date().toISOString();
+    const record: B2bPartnerRecord = {
+      ...prev,
+      pendingEmail: email,
+      emailVerifyHash: issued.emailVerifyHash,
+      emailVerifyExpiresAt: issued.emailVerifyExpiresAt,
+      emailVerifyPurpose: issued.emailVerifyPurpose,
+      updatedAt: now,
+    };
+    doc.partners[idx] = record;
+    await writeDoc(doc);
+    return { ok: true, token: issued.token, to: email, partner: toPublicPartner(record) };
+  });
 }

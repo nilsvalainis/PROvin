@@ -7,6 +7,7 @@ import {
   adminNewOrderHtml,
   auditCompletedEmailHtml,
   listingPeekCustomerCommentHtml,
+  partnerVerifyEmailHtml,
   paymentConfirmationHtml,
 } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
@@ -416,4 +417,62 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     text,
     html,
   });
+}
+
+export async function sendPartnerVerifyEmail(opts: {
+  to: string;
+  verifyUrl: string;
+  locale?: "lv" | "en";
+  purpose?: "signup" | "email_change";
+}): Promise<void> {
+  const en = opts.locale === "en";
+  const change = opts.purpose === "email_change";
+  const subject = en
+    ? change
+      ? "PROVIN.LV: confirm your new email"
+      : "PROVIN.LV: confirm your email"
+    : change
+      ? "PROVIN.LV: apstipriniet jauno e-pastu"
+      : "PROVIN.LV: apstipriniet e-pastu";
+  const lead = en
+    ? change
+      ? "Confirm this address to finish updating your PROVIN.LV partner account."
+      : "Confirm this address to finish opening your PROVIN.LV partner account."
+    : change
+      ? "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta e-pasta maiņu."
+      : "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.";
+  const hint = en
+    ? "The link is valid for 24 hours and can be used once."
+    : "Saite ir derīga 24 stundas un izmantojama vienu reizi.";
+  const text = [lead, "", opts.verifyUrl, "", hint].join("\n");
+  const html = partnerVerifyEmailHtml({
+    verifyUrl: opts.verifyUrl,
+    locale: opts.locale,
+    purpose: opts.purpose,
+  });
+  await sendSmtpMail({
+    to: opts.to,
+    subject,
+    text,
+    html,
+  });
+}
+
+export async function trySendPartnerVerifyEmail(opts: {
+  to: string;
+  verifyUrl: string;
+  locale?: "lv" | "en";
+  purpose?: "signup" | "email_change";
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[b2b] SMTP nav iestatīts, e-pasta apstiprinājums nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendPartnerVerifyEmail(opts);
+    return true;
+  } catch (err) {
+    console.error("[b2b] verify e-pasts neizdevās", err);
+    return false;
+  }
 }

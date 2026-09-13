@@ -14,9 +14,18 @@ export type B2bPartnerRecord = {
   status: B2bPartnerStatus;
   createdAt: string;
   updatedAt: string;
+  /** null = vēl jāapstiprina. Veciem ierakstiem parse aizpilda ar createdAt. */
+  emailVerifiedAt: string | null;
+  emailVerifyHash: string | null;
+  emailVerifyExpiresAt: string | null;
+  emailVerifyPurpose: "signup" | "email_change" | null;
+  pendingEmail: string | null;
 };
 
-export type B2bPartnerPublicProfile = Omit<B2bPartnerRecord, "passwordHash">;
+export type B2bPartnerPublicProfile = Omit<
+  B2bPartnerRecord,
+  "passwordHash" | "emailVerifyHash" | "emailVerifyExpiresAt" | "emailVerifyPurpose"
+>;
 
 export type B2bPartnerWriteInput = {
   companyName: string;
@@ -60,6 +69,8 @@ export function toPublicPartner(partner: B2bPartnerRecord): B2bPartnerPublicProf
     status: partner.status,
     createdAt: partner.createdAt,
     updatedAt: partner.updatedAt,
+    emailVerifiedAt: partner.emailVerifiedAt,
+    pendingEmail: partner.pendingEmail,
   };
 }
 
@@ -103,6 +114,19 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
   const createdAt = typeof o.createdAt === "string" && o.createdAt.trim() ? o.createdAt.trim() : "";
   const updatedAt = typeof o.updatedAt === "string" && o.updatedAt.trim() ? o.updatedAt.trim() : createdAt;
   if (!createdAt) return null;
+  const purpose =
+    o.emailVerifyPurpose === "signup" || o.emailVerifyPurpose === "email_change" ? o.emailVerifyPurpose : null;
+  const pendingEmail =
+    typeof o.pendingEmail === "string" && isValidOrderEmail(normalizePartnerEmail(o.pendingEmail))
+      ? normalizePartnerEmail(o.pendingEmail).slice(0, 254)
+      : null;
+  let emailVerifiedAt: string | null;
+  if ("emailVerifiedAt" in o) {
+    emailVerifiedAt =
+      typeof o.emailVerifiedAt === "string" && o.emailVerifiedAt.trim() ? o.emailVerifiedAt.trim() : null;
+  } else {
+    emailVerifiedAt = createdAt;
+  }
   return {
     id,
     companyName: typeof o.companyName === "string" ? clip(o.companyName, 200) : "",
@@ -115,5 +139,13 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
     status,
     createdAt,
     updatedAt,
+    emailVerifiedAt,
+    emailVerifyHash: typeof o.emailVerifyHash === "string" && o.emailVerifyHash.trim() ? o.emailVerifyHash.trim() : null,
+    emailVerifyExpiresAt:
+      typeof o.emailVerifyExpiresAt === "string" && o.emailVerifyExpiresAt.trim()
+        ? o.emailVerifyExpiresAt.trim()
+        : null,
+    emailVerifyPurpose: purpose,
+    pendingEmail,
   };
 }

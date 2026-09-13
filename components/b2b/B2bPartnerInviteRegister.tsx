@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { useRouter } from "@/i18n/navigation";
 
 const empty = {
   companyName: "",
@@ -13,16 +12,24 @@ const empty = {
   email: "",
   phone: "",
   password: "",
+  passwordConfirm: "",
 };
 
 export function B2bPartnerInviteRegister({ token }: { token: string }) {
   const t = useTranslations("Partner");
-  const router = useRouter();
+  const locale = useLocale();
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [resendBusy, setResendBusy] = useState(false);
+  const [resendOk, setResendOk] = useState(false);
 
   const onSubmit = async () => {
+    if (form.password.trim() !== form.passwordConfirm.trim()) {
+      setError(t("passwordMismatch"));
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -30,13 +37,24 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, token }),
+        body: JSON.stringify({
+          companyName: form.companyName,
+          companyReg: form.companyReg,
+          companyAddress: form.companyAddress,
+          contactName: form.contactName,
+          email: form.email,
+          phone: form.phone,
+          password: form.password,
+          token,
+          locale,
+        }),
       });
       if (!res.ok) {
         setError(t("inviteRegisterError"));
         return;
       }
-      router.push("/partneriem/konts");
+      const data = (await res.json()) as { email?: string };
+      setPendingEmail(data.email?.trim() || form.email.trim());
     } catch {
       setError(t("inviteRegisterError"));
     } finally {
@@ -44,9 +62,36 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
     }
   };
 
+  const onResend = async () => {
+    if (!pendingEmail) return;
+    setResendBusy(true);
+    setResendOk(false);
+    try {
+      await fetch("/api/partner/verify/resend", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail, locale }),
+      });
+      setResendOk(true);
+    } catch {
+      setResendOk(true);
+    } finally {
+      setResendBusy(false);
+    }
+  };
+
   const field = (
     key: keyof typeof empty,
-    labelKey: "fieldCompany" | "fieldReg" | "fieldAddress" | "fieldContact" | "fieldEmail" | "fieldPhone" | "loginPassword",
+    labelKey:
+      | "fieldCompany"
+      | "fieldReg"
+      | "fieldAddress"
+      | "fieldContact"
+      | "fieldEmail"
+      | "fieldPhone"
+      | "loginPassword"
+      | "passwordConfirm",
     extra?: { type?: string; autoComplete?: string; className?: string },
   ) => (
     <label key={key} className={`block min-w-0 ${extra?.className ?? ""}`}>
@@ -56,7 +101,10 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
       <input
         className={styles.inlineInput}
         value={form[key]}
-        type={extra?.type ?? (key === "email" ? "email" : key === "phone" ? "tel" : key === "password" ? "password" : "text")}
+        type={
+          extra?.type ??
+          (key === "email" ? "email" : key === "phone" ? "tel" : key === "password" || key === "passwordConfirm" ? "password" : "text")
+        }
         autoComplete={extra?.autoComplete ?? "off"}
         onChange={(event) => {
           setForm((prev) => ({ ...prev, [key]: event.target.value }));
@@ -65,6 +113,23 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
       />
     </label>
   );
+
+  if (pendingEmail) {
+    return (
+      <div className="flex w-full flex-col gap-3">
+        <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#93c5fd]">
+          {t("verifyPendingTitle")}
+        </p>
+        <p className="text-[0.84rem] leading-relaxed text-zinc-300">{t("verifyPendingLead", { email: pendingEmail })}</p>
+        <p className="text-[0.75rem] leading-snug text-zinc-500">{t("verifyPendingHint")}</p>
+        {resendOk ? <p className="text-[0.75rem] text-zinc-300">{t("verifyResendOk")}</p> : null}
+        <button type="button" className={styles.liquidCta} disabled={resendBusy} onClick={() => void onResend()}>
+          <span className={styles.liquidCtaShimmer} aria-hidden />
+          <span className={styles.liquidCtaLabel}>{resendBusy ? t("verifyResendBusy") : t("verifyResend")}</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -86,6 +151,7 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
         {field("email", "fieldEmail", { type: "email", autoComplete: "email" })}
         {field("phone", "fieldPhone", { type: "tel", autoComplete: "tel" })}
         {field("password", "loginPassword", { type: "password", autoComplete: "new-password" })}
+        {field("passwordConfirm", "passwordConfirm", { type: "password", autoComplete: "new-password" })}
       </div>
       {error ? <p className={styles.inlineFieldError}>{error}</p> : null}
       <button type="submit" className={styles.liquidCta} disabled={busy}>

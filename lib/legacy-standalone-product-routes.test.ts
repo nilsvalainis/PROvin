@@ -42,6 +42,7 @@ describe("legacy standalone product routes", () => {
       "/lv/pasutit",
       "/lv/partneriem",
       "/lv/partneriem/registracija",
+      "/lv/partneriem/apstiprinat",
       "/lv/partneriem/konts",
       "/lv/partneriem/konts/pasutijumi",
       "/lv/partneriem/konts/rekviziti",
