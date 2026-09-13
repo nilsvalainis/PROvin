@@ -11,7 +11,10 @@ import {
   buildAutorecordsVinCheckUrl,
   buildCarinfoVinCheckUrl,
   buildCarverticalVinCheckUrl,
+  buildCheckcarVinCheckUrl,
   buildCheckthisregVinCheckUrl,
+  CHECKCAR_VIN_HOME_URL,
+  companionSourceOpensForBlock,
   buildVinAutofillHref,
   normalizeVinForServiceUrls,
   resolveSourceBlockExternalOpen,
@@ -43,6 +46,19 @@ describe("admin VIN service URLs", () => {
     expect(buildCarinfoVinCheckUrl(vin)).toBe(CARINFO_HOME_URL);
     expect(buildVinAutofillHref("carinfo", vin)).not.toContain("search?q=");
     expect(resolveSourceBlockExternalOpen("carinfo", vin).handoffVin).toBe(vin);
+  });
+
+  it("opens CheckCar.vin homepage for Tampermonkey VIN fill", () => {
+    expect(buildCheckcarVinCheckUrl(vin)).toBe(CHECKCAR_VIN_HOME_URL);
+    expect(buildVinAutofillHref("checkcar_vin", vin)).toBe(CHECKCAR_VIN_HOME_URL);
+  });
+
+  it("opens CarVertical as a companion when clicking AutoDNA", () => {
+    const extra = companionSourceOpensForBlock("autodna", vin);
+    expect(extra).toHaveLength(1);
+    expect(extra[0]?.href).toBe(CARVERTICAL_REPORTS_URL);
+    expect(extra[0]?.handoffVin).toBe(vin);
+    expect(companionSourceOpensForBlock("carvertical", vin)).toEqual([]);
   });
 
   it("opens CheckThisReg homepage for Tampermonkey VIN tab fill", () => {

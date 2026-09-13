@@ -200,7 +200,7 @@ export function HomeFeatureBreakdown({
 
         <div className="flex flex-col">
           {packages.map((pkg) => {
-            const checkoutHref = homeHeroCheckoutHref(pkg.id as Tp5MobileServiceId);
+            const checkoutHref = pkg.ctaHref ?? homeHeroCheckoutHref(pkg.id as Tp5MobileServiceId);
 
             return (
               <article

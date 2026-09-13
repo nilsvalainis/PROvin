@@ -43,6 +43,7 @@ import {
   PDF_REPORT_SUMMARY_TITLE,
   type PdfSummaryTile,
 } from "@/lib/pdf-report-summary";
+import { formatListingPriceDelta } from "@/lib/listing-price-lifecycle";
 import {
   buildVehicleLifecycleEvents,
   lifecycleDetailDuplicatesCountry,
@@ -326,8 +327,6 @@ const PDF_PROVIN_SOURCES_L2 = "Publiskas Eiropas datubāzes";
 const PDF_PROVIN_SOURCES_L3 = "Citi avoti";
 const PDF_PROVIN_SOURCES_L_TOTAL = "Kopā";
 const PDF_SOURCES_CHECKED_TITLE = "Kas tika pārbaudīts";
-const PDF_VEHICLE_SPEC_TITLE = "TRANSPORTLĪDZEKĻA DATI";
-
 function capSourceCount(n: number): number {
   return Math.min(Math.max(0, n), 9);
 }
@@ -568,12 +567,19 @@ function buildPdfLifeKmHtml(e: LifecycleEvent): string {
 function buildPdfLifeFactHtml(e: LifecycleEvent): string {
   const detail = e.detail.trim();
   const hideCountryDup = lifecycleDetailDuplicatesCountry(detail, e.country);
+  const delta = e.kind === "listed" && e.priceDelta ? e.priceDelta : 0;
+  const deltaHtml =
+    delta !== 0
+      ? `<span class="pdf-life-price-delta ${delta > 0 ? "pdf-life-price-delta--up" : "pdf-life-price-delta--down"}">${escapeHtml(
+          formatListingPriceDelta(delta),
+        )}</span>`
+      : "";
   const detailHtml =
     !detail || hideCountryDup
       ? ""
       : e.kind === "inspection"
         ? `<p class="pdf-life-ta ${e.tone === "warn" ? "pdf-life-ta--warn" : "pdf-life-ta--ok"}">${escapeHtml(detail)}</p>`
-        : `<p class="pdf-life-card__sub">${escapeHtml(detail)}</p>`;
+        : `<p class="pdf-life-card__sub">${escapeHtml(detail)}${deltaHtml ? ` ${deltaHtml}` : ""}</p>`;
   return `<div class="pdf-life-card__fact">${detailHtml}${buildPdfLifeMetaHtml(e)}</div>`;
 }
 
@@ -1184,36 +1190,18 @@ function csddFieldIsVehicleSpec(key: keyof CsddFormFields): boolean {
   return PDF_VEHICLE_SPEC_FIELD_KEYS.includes(key);
 }
 
-/** TRANSPORTLĪDZEKĻA DATI - kas šis auto ir, pirms sākam runāt par avotiem. */
-function buildPdfVehicleSpecSectionHtml(
+/** Tehniskie lauki, kas iepriekš bija atsevišķā TRANSPORTLĪDZEKĻA DATI sadaļā. */
+function collectPdfVehicleSpecExtraRows(
   form: CsddFormFields | null | undefined,
-  vin: string | null,
-  vis: PdfVisibilitySettings,
-): string {
-  if (!vis.csdd && !vis.vehicle) return "";
-  const rows: string[] = [];
-  const vinTrim = vin?.trim();
-  if (vinTrim) {
-    rows.push(`<tr><td>VIN</td><td><span class="pdf-vin">${escapeHtml(vinTrim)}</span></td></tr>`);
-  }
+): { k: string; v: string }[] {
+  const rows: { k: string; v: string }[] = [];
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
-    if (!csddFieldIsVehicleSpec(key)) continue;
+    if (!csddFieldIsVehicleSpec(key) || key === "makeModel") continue;
     const v = (form?.[key] as string | undefined)?.trim() ?? "";
     if (!v) continue;
-    const valueHtml = escapeCsddPdfFieldValue(key, v);
-    if (key === "particulateMatter") {
-      const flag = getParticulateMatterUiFlag(v);
-      if (flag !== "none") {
-        rows.push(buildCsddPdfAlertRowHtml(escapeHtml(label), valueHtml, flag));
-        continue;
-      }
-    }
-    rows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
+    rows.push({ k: label, v });
   }
-  if (rows.length <= 1) return "";
-  const head = sectionHeadBrand(sectionIconPdfHtml("carFront"), PDF_VEHICLE_SPEC_TITLE);
-  const body = `<table class="mirror-table mirror-table--csdd"><tbody>${rows.join("")}</tbody></table>`;
-  return `<section class="pdf-unified-mileage-zone pdf-surface-card pdf-vehicle-spec pdf-page-flow-chunk--avoid" role="region">${head}${body}</section>`;
+  return rows;
 }
 
 /** CSDD - strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
@@ -1236,7 +1224,7 @@ export function buildCsddAvotuZoneHtml(
   const hasComments = commentTrim.length > 0;
   const regRows: string[] = [];
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
-    // Tehniskie dati ir atsevišķā TRANSPORTLĪDZEKĻA DATI sadaļā; īpašnieku skaits - laika joslā.
+    // Tehniskie dati ir Pasūtījuma datos; īpašnieku skaits - laika joslā.
     if (csddFieldIsVehicleSpec(key) || key === "ownerCountLatvia") continue;
     const v = (form[key] as string).trim();
     if (!v) continue;
@@ -2124,6 +2112,9 @@ function clientReportPrintCss(): string {
       .pdf-life-ico--brand .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
       .pdf-life-card__fact{min-width:0;}
       .pdf-life-card__sub{margin:0;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
+      .pdf-life-price-delta{margin-left:0.35em;font-weight:700;font-variant-numeric:tabular-nums;}
+      .pdf-life-price-delta--up{color:#047857;}
+      .pdf-life-price-delta--down{color:#B91C1C;}
       .pdf-life-ta{margin:0;font-size:var(--pdf-fs-table);font-weight:650;line-height:1.35;}
       .pdf-life-ta--ok{color:#047857;}
       .pdf-life-ta--warn{color:#B45309;}
@@ -3038,23 +3029,23 @@ export function buildClientReportDocumentHtml(args: {
     : [];
   if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
 
-  const vehicleSpecHtml = dealerOnly ? "" : buildPdfVehicleSpecSectionHtml(p.csddForm, p.vin, vis);
-  if (vehicleSpecHtml) lines.push(vehicleSpecHtml);
-
-  const provinSourcesStrip = dealerOnly ? "" : buildProvinPdfSourcesUsedStripHtml(p, vis);
-  if (provinSourcesStrip) lines.push(provinSourcesStrip);
-
+  const vehicleExtraRows = dealerOnly ? [] : collectPdfVehicleSpecExtraRows(p.csddForm);
+  const formMakeModel = p.csddForm?.makeModel?.trim() || makeModel;
   const aboutBlock = dealerOnly
     ? ""
     : buildPdfAboutReportBlock({
         order: p,
         money,
         dateFmt,
-        makeModel: vehicleSpecHtml ? null : makeModel,
-        show: { payment: vis.payment, vehicle: vis.vehicle, client: vis.client, notes: vis.notes },
+        makeModel: formMakeModel,
+        vehicleExtraRows,
+        show: { payment: vis.payment, vehicle: vis.vehicle || vis.csdd, client: vis.client, notes: vis.notes },
         titleIconHtml: sectionIconPdfHtml("fileText"),
       });
   if (aboutBlock) lines.push(aboutBlock);
+
+  const provinSourcesStrip = dealerOnly ? "" : buildProvinPdfSourcesUsedStripHtml(p, vis);
+  if (provinSourcesStrip) lines.push(provinSourcesStrip);
 
   if (!dealerOnly) {
     const lifecycleHtml = buildPdfLifecycleTimelineHtml(p);

@@ -49,4 +49,20 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(resolved.source).toBe("server");
     expect(resolved.hydrated.sourceBlocks.autodna.comments).toContain("Tikai serveris");
   });
+
+  it("uses MINI PDF defaults on an empty workspace", () => {
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw: null,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: null,
+      checkoutLine: "mini",
+      amountTotalCents: 3999,
+    });
+    expect(resolved.source).toBe("empty");
+    expect(resolved.hydrated.pdfVisibility.autodna).toBe(false);
+    expect(resolved.hydrated.pdfVisibility.carvertical).toBe(false);
+    expect(resolved.hydrated.pdfVisibility.auto_records).toBe(false);
+    expect(resolved.hydrated.pdfVisibility.csdd).toBe(true);
+  });
 });

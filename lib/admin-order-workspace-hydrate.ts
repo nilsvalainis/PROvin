@@ -11,7 +11,7 @@ import {
   parseWorkspaceSnapshotSavedAtMs,
   pickNewestBackupSnapshotRaw,
 } from "@/lib/admin-order-workspace-persist";
-import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { defaultPdfVisibilityForOrder, mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 
 export type WorkspaceHydrateSource = "local" | "backup" | "server" | "legacy" | "empty";
@@ -41,7 +41,13 @@ export function resolveOrderWorkspaceHydration(args: {
   serverWorkspaceJson: string | null;
   serverInternalComment?: string | null;
   legacyInternalRaw?: string | null;
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
 }): ResolvedWorkspaceHydration {
+  const emptyVisibility = defaultPdfVisibilityForOrder({
+    checkoutLine: args.checkoutLine,
+    amountTotalCents: args.amountTotalCents,
+  });
   const localRaw = args.localRaw?.trim() ? args.localRaw : args.localRawLegacyV2?.trim() ? args.localRawLegacyV2 : null;
 
   if (localRaw) {
@@ -95,7 +101,7 @@ export function resolveOrderWorkspaceHydration(args: {
         tehniskoRiskuAnalize: "",
         cenasAtbilstiba: "",
         previewConfirmed: false,
-        pdfVisibility: mergePdfVisibility(undefined),
+        pdfVisibility: emptyVisibility,
         pdfBannerInclude: mergeProvinBannerPdfInclude(undefined),
         manualBanners: [],
         vehicleAiExtraction: null,
@@ -117,7 +123,7 @@ export function resolveOrderWorkspaceHydration(args: {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
-      pdfVisibility: mergePdfVisibility(undefined),
+      pdfVisibility: emptyVisibility,
       pdfBannerInclude: mergeProvinBannerPdfInclude(undefined),
       manualBanners: [],
       vehicleAiExtraction: null,

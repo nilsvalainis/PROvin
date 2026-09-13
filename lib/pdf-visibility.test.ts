@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEALER_ONLY_PDF_VISIBILITY, mergePdfVisibility } from "@/lib/pdf-visibility";
+import {
+  DEALER_ONLY_PDF_VISIBILITY,
+  defaultPdfVisibilityForOrder,
+  mergePdfVisibility,
+} from "@/lib/pdf-visibility";
 
 describe("mergePdfVisibility", () => {
   it("does not let saved unified flags hide the history hub", () => {
@@ -16,5 +20,15 @@ describe("mergePdfVisibility", () => {
     expect(DEALER_ONLY_PDF_VISIBILITY.iriss).toBe(false);
     expect(DEALER_ONLY_PDF_VISIBILITY.unifiedMileage).toBe(false);
     expect(DEALER_ONLY_PDF_VISIBILITY.unifiedIncidents).toBe(false);
+  });
+
+  it("turns off paid history vendors for MINI defaults", () => {
+    const vis = defaultPdfVisibilityForOrder({ checkoutLine: "mini", amountTotalCents: 3999 });
+    expect(vis.autodna).toBe(false);
+    expect(vis.carvertical).toBe(false);
+    expect(vis.auto_records).toBe(false);
+    expect(vis.oneauto).toBe(false);
+    expect(vis.csdd).toBe(true);
+    expect(vis.sludinajums).toBe(true);
   });
 });

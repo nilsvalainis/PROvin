@@ -57,6 +57,53 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   iriss: false,
 };
 
+/**
+ * MINI (39,99 €): AutoDNA / CarVertical / oficiālā dīlera nav iekļauti cenā.
+ * Pēc noklusējuma izslēgti; operators var ieslēgt manuāli.
+ */
+export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
+  payment: true,
+  vehicle: true,
+  client: true,
+  notes: true,
+  portfolio: true,
+  alerts: true,
+  unifiedMileage: true,
+  csddMileageTable: true,
+  unifiedIncidents: true,
+  csdd: true,
+  autodna: false,
+  carvertical: false,
+  auto_records: false,
+  oneauto: false,
+  cc_vin: true,
+  tjekbil: true,
+  mnt_ee: true,
+  lkf_ee: true,
+  carinfo: true,
+  ltab: true,
+  citi_avoti: true,
+  sludinajums: true,
+  iriss: true,
+};
+
+export function isMiniPdfVisibilityOrder(args: {
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
+}): boolean {
+  const line = (args.checkoutLine ?? "").trim().toLowerCase();
+  if (line === "mini" || line === "plus" || line === "listing_filter") return true;
+  return args.amountTotalCents === 3999;
+}
+
+export function defaultPdfVisibilityForOrder(args: {
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
+}): PdfVisibilitySettings {
+  if (isMiniPdfVisibilityOrder(args)) return { ...MINI_DEFAULT_PDF_VISIBILITY };
+  return { ...DEFAULT_PDF_VISIBILITY };
+}
+
 export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   payment: true,
   vehicle: true,

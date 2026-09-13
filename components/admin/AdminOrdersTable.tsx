@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "reac
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
-import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
+import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder } from "@/lib/admin-customer-identity";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
@@ -411,6 +411,10 @@ export function AdminOrdersTable({
                 checkoutLine: o.checkoutLine,
                 amountTotalCents: o.amountTotal,
               });
+              const miniHighlight = isMiniHighlightAdminOrder({
+                checkoutLine: o.checkoutLine,
+                amountTotalCents: o.amountTotal,
+              });
               return (
                 <tr
                   key={o.id}
@@ -419,7 +423,9 @@ export function AdminOrdersTable({
                       ? "cursor-pointer bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
                       : dealerHighlight
                         ? "cursor-pointer bg-sky-50/80 transition-colors hover:bg-sky-100/80"
-                        : "cursor-pointer transition-colors hover:bg-slate-50/90"
+                        : miniHighlight
+                          ? "cursor-pointer bg-amber-50/90 transition-colors hover:bg-amber-100/80"
+                          : "cursor-pointer transition-colors hover:bg-slate-50/90"
                   }
                   onClick={openOrderFromRow}
                   onAuxClick={(e) => {
@@ -442,6 +448,11 @@ export function AdminOrdersTable({
                       {o.isManual ? (
                         <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-200/80">
                           Manuāls
+                        </span>
+                      ) : null}
+                      {miniHighlight ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950 ring-1 ring-amber-300/80">
+                          MINI
                         </span>
                       ) : null}
                     </span>

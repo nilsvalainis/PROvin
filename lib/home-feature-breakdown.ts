@@ -20,7 +20,7 @@ export type HomeFeatureBreakdownItem = {
   icon: HomeFeatureBreakdownIcon;
 };
 
-export type HomeFeatureBreakdownPackageId = "mini" | "audits" | "dealer" | "koreaUsa";
+export type HomeFeatureBreakdownPackageId = "mini" | "audits" | "dealer" | "koreaUsa" | "partner";
 
 export type HomeFeatureBreakdownPackage = {
   id: HomeFeatureBreakdownPackageId;
@@ -33,6 +33,8 @@ export type HomeFeatureBreakdownPackage = {
   sampleReportHref?: string;
   /** Optional highlight badge (e.g. „Populārākā izvēle”). */
   badge?: string;
+  /** Override checkout href (B2B login, not a priced plan). */
+  ctaHref?: string;
 };
 
 const MINI_LV: HomeFeatureBreakdownPackage = {
@@ -313,12 +315,77 @@ const KOREA_USA_EN: HomeFeatureBreakdownPackage = {
   ],
 };
 
+const PARTNER_LV: HomeFeatureBreakdownPackage = {
+  id: "partner",
+  title: "PROVIN BUSINESS",
+  buttonText: "Partneriem",
+  ctaHref: "/partneriem",
+  sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+  goal:
+    "Dati no oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas/Amerikas valstu reģistriem vienā atskaitē: nobraukuma hronoloģija, negadījumu vēsture un servisa ieraksti tirdzniecības uzņēmumiem.",
+  items: [
+    {
+      title: "Oficiālo dīleru dati",
+      description: "Autorizēto servisu ieraksti, apkopes un ražotāja sistēmu dati.",
+      icon: "dealer-data",
+    },
+    {
+      title: "carVertical + AutoDNA",
+      description: "Starptautiskās maksas datubāzes nobraukumam, negadījumiem un juridiskajam statusam.",
+      icon: "carvertical",
+    },
+    {
+      title: "Izcelsmes valsts reģistri",
+      description: "Eiropas un ASV publisko reģistru dati, tostarp tehnisko apskašu vēsture.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Izsoļu portālu arhīvs",
+      description: "Vēsturisko izsoļu ieraksti un bojājumu attēli pirms remonta, kad pieejami.",
+      icon: "auction",
+    },
+  ],
+};
+
+const PARTNER_EN: HomeFeatureBreakdownPackage = {
+  id: "partner",
+  title: "PROVIN BUSINESS",
+  buttonText: "For partners",
+  ctaHref: "/partneriem",
+  sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+  goal:
+    "Data from official dealer networks, carVertical, AutoDNA and European/US registries in one report: mileage timeline, accident history and service records for trade businesses.",
+  items: [
+    {
+      title: "Official dealer data",
+      description: "Authorised service records, maintenance and manufacturer-system data.",
+      icon: "dealer-data",
+    },
+    {
+      title: "carVertical + AutoDNA",
+      description: "International paid databases for mileage, accidents and legal status.",
+      icon: "carvertical",
+    },
+    {
+      title: "Origin-country registers",
+      description: "European and US public registry data, including roadworthiness history.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Auction portal archive",
+      description: "Historical auction records and pre-repair damage photos when available.",
+      icon: "auction",
+    },
+  ],
+};
+
 /** Full catalog for `/pakalpojumi` (extensible to 4-6 services). */
 export const HOME_FEATURE_BREAKDOWN_PACKAGES: HomeFeatureBreakdownPackage[] = [
   AUDITS_LV,
   MINI_LV,
   DEALER_LV,
   KOREA_USA_LV,
+  PARTNER_LV,
 ];
 
 const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
@@ -326,6 +393,7 @@ const HOME_FEATURE_BREAKDOWN_PACKAGES_EN: HomeFeatureBreakdownPackage[] = [
   MINI_EN,
   DEALER_EN,
   KOREA_USA_EN,
+  PARTNER_EN,
 ];
 
 export function catalogPackageAnchorId(id: HomeFeatureBreakdownPackageId): string {

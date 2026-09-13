@@ -18,8 +18,9 @@ function serviceTitle(svc: VinAutofillService): string {
   if (svc.key === "autodna") return "AutoDNA — autodna.lv /vin/{VIN} + Tampermonkey";
   if (svc.key === "carvertical") return "CarVertical — Manas atskaites + Tampermonkey aizpilda VIN";
   if (svc.key === "auto_records") return "Auto-Records — ?vin= + Tampermonkey";
-  if (svc.key === "carinfo") return "car.info — sākumlapa + Tampermonkey VIN meklēšanā; ielīmē lapas tekstu RAW laukā";
-  return "CheckThisReg — VIN cilne + Tampermonkey aizpilda VIN";
+  if (svc.key === "carinfo") return "car.info - sākumlapa + Tampermonkey VIN meklēšanā; ielīmē lapas tekstu RAW laukā";
+  if (svc.key === "checkcar_vin") return "CheckCar.vin - sākumlapa + Tampermonkey VIN aizpilde (eksperimentāli)";
+  return "CheckThisReg - VIN cilne + Tampermonkey aizpilda VIN";
 }
 
 function VinServiceAnchor({

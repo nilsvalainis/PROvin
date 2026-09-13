@@ -35,7 +35,7 @@ export function SiteJsonLd({ locale, description }: Props) {
         address: legal.legalAddress,
         url,
         description,
-        logo: { "@type": "ImageObject", url: `${url}/opengraph-image`, width: 1200, height: 630 },
+        logo: { "@type": "ImageObject", url: `${base}/icon`, width: 512, height: 512 },
       },
     ],
   };

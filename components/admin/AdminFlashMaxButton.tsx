@@ -9,10 +9,12 @@ import {
   clipFlashMaxOperatorNotes,
   defaultFlashMaxSelection,
   emptyFlashMaxSelection,
+  expandFlashMaxMenuJobs,
   summaryOnlyFlashMaxSelection,
   type FlashMaxJob,
   type FlashMaxSelection,
 } from "@/lib/admin-flash-max";
+import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { AI_ADMIN_TIER_BUTTON_ORDER } from "@/lib/ai-admin-field-defaults";
 import { aiAdminModelTierLabel, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
@@ -26,6 +28,7 @@ type Props = {
   /** Sticky joslai: izvēlne atveras pa kreisi. */
   menuAlign?: "start" | "end";
   compact?: boolean;
+  sourceBlocks?: WorkspaceSourceBlocks | null;
 };
 
 const SHORT_TIER: Record<AiAdminModelTier, string> = {
@@ -98,6 +101,7 @@ export function AdminFlashMaxButton({
   onRun,
   menuAlign = "start",
   compact,
+  sourceBlocks,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState<FlashMaxSelection>(defaultFlashMaxSelection);
@@ -105,8 +109,9 @@ export function AdminFlashMaxButton({
   const rootRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const selectedCount = selection.selectedIds.length;
-  const dailyJobs = useMemo(() => FLASH_MAX_JOBS.filter((j) => j.group === "daily"), []);
-  const extraJobs = useMemo(() => FLASH_MAX_JOBS.filter((j) => j.group === "extra"), []);
+  const menuJobs = useMemo(() => expandFlashMaxMenuJobs(FLASH_MAX_JOBS, sourceBlocks), [sourceBlocks]);
+  const dailyJobs = useMemo(() => menuJobs.filter((j) => j.group === "daily"), [menuJobs]);
+  const extraJobs = useMemo(() => menuJobs.filter((j) => j.group === "extra"), [menuJobs]);
 
   useEffect(() => {
     if (!open) return;

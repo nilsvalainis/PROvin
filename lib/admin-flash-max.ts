@@ -13,6 +13,7 @@ import {
 import {
   citiAvotiSectionHasContent,
   citiAvotiSectionLabel,
+  LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
@@ -52,10 +53,11 @@ export type FlashMaxSummaryJob = {
 
 export type FlashMaxListingJob = {
   kind: "listing";
-  id: "seller" | "price";
+  id: "seller" | "photo" | "listing_sales";
   label: string;
   group: FlashMaxJobGroup;
   endpoint: string;
+  listingField?: "photoAnalysis" | "listingSalesContext";
 };
 
 export type FlashMaxJob = FlashMaxSourceJob | FlashMaxSummaryJob | FlashMaxListingJob;
@@ -145,10 +147,19 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   },
   {
     kind: "listing",
-    id: "price",
-    label: "Cenas vērtējums",
+    id: "photo",
+    label: LISTING_ANALYSIS_SUBSECTIONS.photoAnalysis,
     group: "extra",
-    endpoint: "/api/admin/ai/price-analysis",
+    endpoint: "/api/admin/ai/listing-field-comment",
+    listingField: "photoAnalysis",
+  },
+  {
+    kind: "listing",
+    id: "listing_sales",
+    label: LISTING_ANALYSIS_SUBSECTIONS.listingSalesContext,
+    group: "extra",
+    endpoint: "/api/admin/ai/listing-field-comment",
+    listingField: "listingSalesContext",
   },
 ];
 
@@ -216,7 +227,17 @@ export function emptyFlashMaxSelection(): FlashMaxSelection {
 
 export function flashMaxSelectedJobs(selection: FlashMaxSelection): FlashMaxJob[] {
   const ids = new Set(selection.selectedIds);
-  return FLASH_MAX_JOBS.filter((job) => ids.has(job.id));
+  const out: FlashMaxJob[] = [];
+  for (const job of FLASH_MAX_JOBS) {
+    if (job.kind === "source" && job.blockKey === "citi_avoti") {
+      const wantsParent = ids.has(job.id);
+      const wantsChild = selection.selectedIds.some((id) => parseCitiAvotiFlashMaxJobId(id) != null);
+      if (wantsParent || wantsChild) out.push(job);
+      continue;
+    }
+    if (ids.has(job.id)) out.push(job);
+  }
+  return out;
 }
 
 export function flashMaxJobTier(job: FlashMaxJob, selection: FlashMaxSelection): AiAdminModelTier {
@@ -229,10 +250,46 @@ export type FlashMaxRunJob = FlashMaxJob & {
   citiAvotiSectionIndex?: number;
 };
 
+export function citiAvotiFlashMaxJobId(sectionIndex: number): string {
+  return `citi_avoti:${sectionIndex}`;
+}
+
+export function parseCitiAvotiFlashMaxJobId(id: string): number | null {
+  const m = /^citi_avoti:(\d+)$/.exec(id.trim());
+  if (!m) return null;
+  return Number(m[1]);
+}
+
+/** FLASH MAX izvēlne: Citi avoti pa sadaļām, ja ir vairākas. */
+export function expandFlashMaxMenuJobs(
+  jobs: readonly FlashMaxJob[],
+  sourceBlocks?: WorkspaceSourceBlocks | null,
+): FlashMaxJob[] {
+  const sections = sourceBlocks?.citi_avoti.sections ?? [];
+  if (sections.length <= 1) return [...jobs];
+  const out: FlashMaxJob[] = [];
+  for (const job of jobs) {
+    if (job.kind === "source" && job.blockKey === "citi_avoti") {
+      sections.forEach((section, i) => {
+        out.push({
+          ...job,
+          id: citiAvotiFlashMaxJobId(i),
+          label: citiAvotiSectionLabel(section, i, sections.length),
+        });
+      });
+      continue;
+    }
+    out.push(job);
+  }
+  return out;
+}
+
 export function expandFlashMaxRunJobs(
   jobs: FlashMaxJob[],
   sourceBlocks: WorkspaceSourceBlocks,
+  selectedIds?: readonly string[],
 ): FlashMaxRunJob[] {
+  const selected = selectedIds ? new Set(selectedIds) : null;
   const out: FlashMaxRunJob[] = [];
   for (const job of jobs) {
     if (job.kind === "source" && job.blockKey === "citi_avoti") {
@@ -240,9 +297,13 @@ export function expandFlashMaxRunJobs(
       const total = Math.max(1, sections.length);
       const rows = sections.length > 0 ? sections : [undefined];
       rows.forEach((section, i) => {
+        if (selected && !selected.has(job.id) && !selected.has(citiAvotiFlashMaxJobId(i))) {
+          return;
+        }
         out.push({
           ...job,
-          runId: `${job.id}:${i}`,
+          id: "citi_avoti",
+          runId: citiAvotiFlashMaxJobId(i),
           runLabel: section ? citiAvotiSectionLabel(section, i, total) : job.label,
           citiAvotiSectionIndex: i,
         });

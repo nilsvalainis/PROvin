@@ -92,6 +92,18 @@ export function isDealerHighlightAdminOrder(args: {
   return cents != null && Number.isFinite(cents) && cents > 0 && cents <= DEALER_ORDER_AMOUNT_MAX_CENTS;
 }
 
+/** PROVIN MINI sarakstā (dzintara rinda): `mini` līnija vai 39,99 €. */
+export function isMiniHighlightAdminOrder(args: {
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
+}): boolean {
+  if (isTelegramGroupPayment(args.amountTotalCents)) return false;
+  if (isDealerHighlightAdminOrder(args)) return false;
+  const line = (args.checkoutLine ?? "").trim().toLowerCase();
+  if (line === "mini" || line === "plus" || line === "listing_filter") return true;
+  return args.amountTotalCents === 3999;
+}
+
 export function paidProductLabel(args: {
   checkoutLine?: string | null;
   amountTotalCents?: number | null;

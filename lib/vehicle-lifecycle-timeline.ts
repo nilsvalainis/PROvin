@@ -38,6 +38,11 @@ import {
   collectUnifiedMileageRows,
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
+import {
+  collectListingPriceLifecyclePoints,
+  formatListingOdometerKm,
+  formatListingPriceEur,
+} from "@/lib/listing-price-lifecycle";
 
 export const PDF_LIFECYCLE_TITLE = "Vēstures kopsavilkums";
 
@@ -73,6 +78,8 @@ export type LifecycleEvent = {
   tone: LifecycleEventTone;
   /** Negadījuma kartīte - tas pats klasteris, ko „Negadījumu vēsture”. */
   incident?: UnifiedIncidentCluster;
+  /** Sludinājuma cenas izmaiņa pret iepriekšējo rādīto cenu (0 = sākuma punkts). */
+  priceDelta?: number;
 };
 
 /** Mēnešu skaits starp notikumiem, no kura robs kļūst par patstāvīgu ierakstu. */
@@ -421,17 +428,36 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     );
   }
 
-  const listingCreated = input.tirgusForm?.listingCreated?.trim();
-  if (listingCreated) {
-    out.push(
-      makeEvent({
+  const listingPoints = collectListingPriceLifecyclePoints({
+    priceHistory: input.tirgusForm?.priceHistory,
+    listingCreated: input.tirgusForm?.listingCreated,
+  });
+  if (listingPoints.length > 0) {
+    for (const point of listingPoints) {
+      const ev = makeEvent({
         kind: "listed",
-        rawDate: listingCreated,
-        title: "Izlikts pārdošanā",
-        detail: "Sludinājuma izveides datums",
+        rawDate: point.date,
+        title: point.delta === 0 ? "Sludinājums" : "Sludinājuma cenas izmaiņa",
+        detail: formatListingPriceEur(point.price),
+        odometer: formatListingOdometerKm(point.mileageKm),
         source: "Sludinājums",
-      }),
-    );
+      });
+      ev.priceDelta = point.delta;
+      out.push(ev);
+    }
+  } else {
+    const listingCreated = input.tirgusForm?.listingCreated?.trim();
+    if (listingCreated) {
+      out.push(
+        makeEvent({
+          kind: "listed",
+          rawDate: listingCreated,
+          title: "Izlikts pārdošanā",
+          detail: "Sludinājuma izveides datums",
+          source: "Sludinājums",
+        }),
+      );
+    }
   }
 
   return out;
@@ -560,8 +586,18 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
   return out;
 }
 
+function parseLifecycleOdometerKm(raw: string): number | null {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const n = Number(digits);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function sortAscending(events: LifecycleEvent[]): LifecycleEvent[] {
   return [...events].sort((a, b) => {
+    const kmA = parseLifecycleOdometerKm(a.odometer);
+    const kmB = parseLifecycleOdometerKm(b.odometer);
+    if (kmA != null && kmB != null && kmA !== kmB) return kmA - kmB;
     if (a.time !== b.time) return a.time - b.time;
     return a.kind.localeCompare(b.kind);
   });

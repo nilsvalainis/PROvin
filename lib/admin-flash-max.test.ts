@@ -7,6 +7,7 @@ import {
   clipFlashMaxOperatorNotes,
   FLASH_MAX_SUMMARY_ONLY_JOB_IDS,
   defaultFlashMaxSelection,
+  expandFlashMaxMenuJobs,
   expandFlashMaxRunJobs,
   flashMaxJobModelTier,
   flashMaxSelectedJobs,
@@ -41,6 +42,9 @@ describe("FLASH MAX jobs", () => {
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto_oil" || j.id === "oneauto_service")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "seller" && j.group === "extra")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "photo" && j.group === "extra")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "listing_sales" && j.group === "extra")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "price")).toBe(false);
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "csdd")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "autodna")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "carvertical")!)).toBe("gemini-flash");
@@ -53,7 +57,7 @@ describe("FLASH MAX jobs", () => {
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "inspection")!)).toBe("gemini");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "summary")!)).toBe("gemini");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "seller")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "price")!)).toBe("gemini");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "photo")!)).toBe("gemini");
   });
 
   it("clips FLASH MAX operator notes for all selected agents", () => {
@@ -86,6 +90,23 @@ describe("FLASH MAX jobs", () => {
     expect(runs.map((r) => r.runLabel)).toEqual(["AutoDNA LV", "Avots 2"]);
     expect(shouldSkipFlashMaxJob(job, blocks, { citiAvotiSectionIndex: 0 })).toBeNull();
     expect(shouldSkipFlashMaxJob(job, blocks, { citiAvotiSectionIndex: 1 })).toBe("no_source_data");
+  });
+
+  it("lets the operator run one Citi avoti section", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.citi_avoti.sections = [
+      { ...emptyVendorAvotuBlock(), comments: "", label: "AutoDNA LV", rawUnprocessedData: "x" },
+      { ...emptyVendorAvotuBlock(), comments: "", label: "CarVertical", rawUnprocessedData: "y" },
+    ];
+    const menu = expandFlashMaxMenuJobs(FLASH_MAX_JOBS, blocks);
+    expect(menu.filter((j) => j.id.startsWith("citi_avoti")).map((j) => j.id)).toEqual([
+      "citi_avoti:0",
+      "citi_avoti:1",
+    ]);
+    const job = FLASH_MAX_JOBS.find((j) => j.id === "citi_avoti")!;
+    const runs = expandFlashMaxRunJobs([job], blocks, ["citi_avoti:1"]);
+    expect(runs.map((r) => r.runId)).toEqual(["citi_avoti:1"]);
+    expect(runs[0]?.runLabel).toBe("CarVertical");
   });
 
   it("skips source comments when the block has no data", () => {

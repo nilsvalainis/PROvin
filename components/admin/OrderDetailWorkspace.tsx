@@ -164,7 +164,6 @@ import {
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
@@ -186,6 +185,8 @@ import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
+import { paidProductLabel } from "@/lib/admin-customer-identity";
+import { formatMoneyEur } from "@/lib/format-money";
 import {
   AdminCommonPhrasesDrawer,
   AdminCommonPhrasesDrawerTrigger,
@@ -213,7 +214,6 @@ import {
   buildOemDealerPdfFilename,
   buildProvinAuditPdfFilename,
   buildProvinDilerisPdfFilename,
-  resolveProvinAuditPdfProductBrand,
 } from "@/lib/audit-report-pdf-filename";
 import { buildOemDealerDocumentHtml } from "@/lib/pdf-dealer-oem";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
@@ -361,46 +361,6 @@ const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--c
 
 const workspaceSectionShell =
   "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
-
-function wrapPdfTextLine(text: string, maxWidth: number, widthOfText: (value: string) => number): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return [""];
-  const out: string[] = [];
-  let line = words[0] ?? "";
-  for (let i = 1; i < words.length; i += 1) {
-    const candidate = `${line} ${words[i]}`;
-    if (widthOfText(candidate) <= maxWidth) {
-      line = candidate;
-    } else {
-      out.push(line);
-      line = words[i] ?? "";
-    }
-  }
-  out.push(line);
-  return out.map((x) => (x.length > 1200 ? `${x.slice(0, 1200)}…` : x));
-}
-
-/**
- * WhatsApp ātrajam PDF izmantojam WinAnsi drošu tekstu (pdf-lib StandardFonts).
- * Tas novērš kļūdu: WinAnsi cannot encode "ā" u.c.
- */
-function toWinAnsiSafeText(text: string): string {
-  return text
-    .replace(/[Āā]/g, "a")
-    .replace(/[Čč]/g, "c")
-    .replace(/[Ēē]/g, "e")
-    .replace(/[Ģģ]/g, "g")
-    .replace(/[Īī]/g, "i")
-    .replace(/[Ķķ]/g, "k")
-    .replace(/[Ļļ]/g, "l")
-    .replace(/[Ņņ]/g, "n")
-    .replace(/[Šš]/g, "s")
-    .replace(/[Ūū]/g, "u")
-    .replace(/[Žž]/g, "z")
-    .replace(/[“”„]/g, "\"")
-    .replace(/[’]/g, "'")
-    .replace(/[–—]/g, "-");
-}
 
 function WhatsAppIconGlyph() {
   return (
@@ -1714,7 +1674,7 @@ export function OrderDetailWorkspace({
     setFlashMaxErr(null);
     setFlashMaxNotice(null);
     const results: FlashMaxJobResult[] = [];
-    const runs = expandFlashMaxRunJobs(picked, wsPersistRef.current.sourceBlocks);
+    const runs = expandFlashMaxRunJobs(picked, wsPersistRef.current.sourceBlocks, selection.selectedIds);
     const total = runs.length;
     try {
       for (const [i, job] of runs.entries()) {
@@ -1749,7 +1709,11 @@ export function OrderDetailWorkspace({
           existingDraftPlain =
             job.id === "seller"
               ? adminRichHtmlToPlainText(cur.sourceBlocks.listing_analysis.sellerPortrait).trim()
-              : adminRichHtmlToPlainText(cur.cenasAtbilstiba).trim();
+              : job.id === "photo"
+                ? adminRichHtmlToPlainText(cur.sourceBlocks.listing_analysis.photoAnalysis).trim()
+                : job.id === "listing_sales"
+                  ? adminRichHtmlToPlainText(cur.sourceBlocks.listing_analysis.listingSalesContext).trim()
+                  : "";
         } else if (job.id === "incidents") {
           existingDraftPlain = adminRichHtmlToPlainText(edits.internal).trim();
         } else if (job.id === "mileage") {
@@ -1779,6 +1743,7 @@ export function OrderDetailWorkspace({
                   : {}),
               }
             : {}),
+          ...(job.kind === "listing" && job.listingField ? { field: job.listingField } : {}),
         };
 
         try {
@@ -1816,15 +1781,28 @@ export function OrderDetailWorkspace({
                   return;
                 }
                 if (job.kind === "listing") {
+                  const latest = wsPersistRef.current;
                   if (job.id === "seller") {
-                    const latest = wsPersistRef.current;
                     updateSourceBlock("listing_analysis", {
                       ...latest.sourceBlocks.listing_analysis,
                       sellerPortrait: html,
                     });
                     return;
                   }
-                  updateWs({ cenasAtbilstiba: html });
+                  if (job.id === "photo") {
+                    updateSourceBlock("listing_analysis", {
+                      ...latest.sourceBlocks.listing_analysis,
+                      photoAnalysis: html,
+                    });
+                    return;
+                  }
+                  if (job.id === "listing_sales") {
+                    updateSourceBlock("listing_analysis", {
+                      ...latest.sourceBlocks.listing_analysis,
+                      listingSalesContext: html,
+                    });
+                    return;
+                  }
                   return;
                 }
                 if (job.id === "incidents") {
@@ -2034,6 +2012,8 @@ export function OrderDetailWorkspace({
         serverWorkspaceJson,
         serverInternalComment: payload.serverInternalComment,
         legacyInternalRaw: legacyInternal,
+        checkoutLine: payload.checkoutLine,
+        amountTotalCents: payload.amountTotal,
       });
 
       const chosen = resolved.hydrated;
@@ -3655,146 +3635,19 @@ export function OrderDetailWorkspace({
       : null;
   const whatsappPhoneDigits = normalizeWhatsAppPhoneDigits(payload.customerPhone);
 
-  const generateAuditPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
-    const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const titleFont = await pdf.embedFont(StandardFonts.HelveticaBold);
-    const marginX = 44;
-    const marginTop = 48;
-    const marginBottom = 44;
-    const baseSize = 10;
-    const lineHeight = 14;
-    const titleSize = 14;
-    const maxLineWidth = 595 - marginX * 2;
-    const widthOfText = (value: string) => font.widthOfTextAtSize(toWinAnsiSafeText(value), baseSize);
-    let page = pdf.addPage([595, 842]);
-    let y = page.getHeight() - marginTop;
-    const ensureSpace = (need: number) => {
-      if (y - need > marginBottom) return;
-      page = pdf.addPage([595, 842]);
-      y = page.getHeight() - marginTop;
-    };
-    const drawLine = (value: string) => {
-      ensureSpace(lineHeight);
-      page.drawText(toWinAnsiSafeText(value), {
-        x: marginX,
-        y,
-        size: baseSize,
-        font,
-        color: rgb(0.11, 0.11, 0.11),
-      });
-      y -= lineHeight;
-    };
-    const drawHeading = (value: string) => {
-      ensureSpace(22);
-      page.drawText(toWinAnsiSafeText(value), {
-        x: marginX,
-        y,
-        size: titleSize,
-        font: titleFont,
-        color: rgb(0.05, 0.05, 0.05),
-      });
-      y -= 20;
-    };
-    const drawParagraph = (value: string) => {
-      const normalized = value.trim();
-      if (!normalized) {
-        y -= 6;
-        return;
-      }
-      const lines = wrapPdfTextLine(normalized.replace(/\s+/g, " "), maxLineWidth, widthOfText);
-      for (const ln of lines) drawLine(ln);
-      y -= 4;
-    };
-
-    const sourceTexts: Array<{ title: string; text: string }> = [
-      { title: "CSDD", text: csddFormToPlainText(blocksDisplaySafe.csdd) },
-      { title: "Datu servisi", text: [vendorAvotuBlockToPlainText(blocksDisplaySafe.autodna), vendorAvotuBlockToPlainText(blocksDisplaySafe.carvertical)].filter(Boolean).join("\n\n") },
-      { title: "Auto Records", text: autoRecordsBlockToPlainText(blocksDisplaySafe.auto_records) },
-      { title: CC_VIN_PDF_TITLE, text: ccVinBlockToPlainText(blocksDisplaySafe.cc_vin) },
-      { title: SOURCE_BLOCK_LABELS.tjekbil, text: vinRegistryBlockToPlainText(blocksDisplaySafe.tjekbil) },
-      { title: SOURCE_BLOCK_LABELS.mnt_ee, text: vinRegistryBlockToPlainText(blocksDisplaySafe.mnt_ee) },
-      { title: SOURCE_BLOCK_LABELS.lkf_ee, text: vinRegistryBlockToPlainText(blocksDisplaySafe.lkf_ee) },
-      { title: SOURCE_BLOCK_LABELS.carinfo, text: vinRegistryBlockToPlainText(blocksDisplaySafe.carinfo) },
-      { title: "LTAB", text: ltabBlockToPlainText(blocksDisplaySafe.ltab) },
-      { title: "Citi avoti", text: citiAvotiToPlainText(blocksDisplaySafe.citi_avoti) },
-      { title: "Sludinājuma analīze", text: listingAnalysisToPlainText(blocksDisplaySafe.listing_analysis) },
-      { title: "Kopsavilkums", text: ws.iriss ?? "" },
-      { title: ADMIN_TECHNICAL_RISKS_LABEL, text: ws.tehniskoRiskuAnalize ?? "" },
-      { title: "Apskates plāns", text: ws.apskatesPlāns ?? "" },
-    ];
-
-    drawHeading(
-      resolveProvinAuditPdfProductBrand({
-        checkoutLine: payload.checkoutLine,
-        amountTotalCents: payload.amountTotal,
-      }).replace(/_/g, " "),
-    );
-    drawParagraph(`VIN: ${(payload.vin ?? "—").trim() || "—"}`);
-    drawParagraph(`Klients: ${(payload.customerName ?? "—").trim() || "—"}`);
-    drawParagraph(`Tālrunis: ${(payload.customerPhone ?? "—").trim() || "—"}`);
-    drawParagraph(`E-pasts: ${(payload.customerEmail ?? "—").trim() || "—"}`);
-    drawParagraph(`Izveidots: ${new Date().toLocaleString("lv-LV")}`);
-    drawParagraph("");
-
-    for (const section of sourceTexts) {
-      const body = section.text.trim();
-      if (!body) continue;
-      drawHeading(section.title);
-      const chunks = body.split(/\n+/).map((x) => x.trim()).filter(Boolean);
-      for (const chunk of chunks) drawParagraph(chunk);
-      y -= 2;
-    }
-
-    const pdfBytes = await pdf.save();
-    const pdfBlob = new Blob([Uint8Array.from(pdfBytes)], { type: "application/pdf" });
-    return new File(
-      [pdfBlob],
-      buildProvinAuditPdfFilename(payload.vin, {
-        checkoutLine: payload.checkoutLine,
-        amountTotalCents: payload.amountTotal,
-      }),
-      { type: "application/pdf" },
-    );
-  }, [
-    blocksDisplaySafe,
-    payload.amountTotal,
-    payload.checkoutLine,
-    payload.customerEmail,
-    payload.customerName,
-    payload.customerPhone,
-    payload.vin,
-    ws.apskatesPlāns,
-    ws.iriss,
-    ws.tehniskoRiskuAnalize,
-  ]);
-
-  const handleWhatsAppSend = useCallback(async () => {
+  const handleWhatsAppOpen = useCallback(() => {
     if (!whatsappPhoneDigits) return;
-    const chatWindow = window.open("about:blank", "_blank", "noopener,noreferrer");
-    try {
-      const pdfFile = await generateAuditPdfForWhatsApp();
-      if (!pdfFile) {
-        chatWindow?.close();
-        return;
-      }
-      const objectUrl = URL.createObjectURL(pdfFile);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = pdfFile.name;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+    openWhatsAppChat(whatsappPhoneDigits, WHATSAPP_PREFILL_AUDIT);
+  }, [whatsappPhoneDigits]);
 
-      openWhatsAppChat(whatsappPhoneDigits, WHATSAPP_PREFILL_AUDIT, chatWindow);
-      alert("Atvērts WhatsApp čats. PDF atskaite lejupielādēta automātiski — pievienojiet to kā pielikumu ziņai.");
-    } catch (error) {
-      chatWindow?.close();
-      alert(error instanceof Error ? error.message.slice(0, 220) : "Neizdevās sagatavot PDF WhatsApp nosūtīšanai.");
-    }
-  }, [generateAuditPdfForWhatsApp, whatsappPhoneDigits]);
+  const productBadgeLabel = paidProductLabel({
+    checkoutLine: payload.checkoutLine,
+    amountTotalCents: payload.amountTotal,
+  });
+  const productBadgePrice =
+    payload.amountTotal != null && payload.amountTotal > 0
+      ? formatMoneyEur(payload.amountTotal, payload.currency)
+      : "";
 
   return (
     <div className="relative min-w-0 pb-24">
@@ -4044,6 +3897,15 @@ export function OrderDetailWorkspace({
           >
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
+          <span
+            className="inline-flex max-w-[14rem] items-center gap-1 rounded-md border border-amber-300/80 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-950"
+            title="Pasūtītais produkts"
+          >
+            <span className="truncate">{productBadgeLabel}</span>
+            {productBadgePrice ? (
+              <span className="shrink-0 tabular-nums font-bold normal-case tracking-normal">{productBadgePrice}</span>
+            ) : null}
+          </span>
           {workspaceAutosaveStatus === "saving" ? (
             <span className="text-[10px] font-medium text-[var(--color-provin-muted)]" role="status">
               Saglabā…
@@ -4085,6 +3947,7 @@ export function OrderDetailWorkspace({
               notice={flashMaxNotice}
               error={flashMaxErr}
               onRun={(selection) => void runFlashMax(selection)}
+              sourceBlocks={ws.sourceBlocks}
             />
           ) : null}
           <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
@@ -4172,10 +4035,10 @@ export function OrderDetailWorkspace({
               {whatsappPhoneDigits ? (
                 <button
                   type="button"
-                  onClick={handleWhatsAppSend}
+                  onClick={handleWhatsAppOpen}
                   className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-400/80 bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-1"
                   title={`WhatsApp: ${payload.customerPhone ?? ""}`}
-                  aria-label="Ģenerēt PDF un atvērt WhatsApp ar ziņu klientam"
+                  aria-label="Atvērt WhatsApp sarunu ar klientu"
                 >
                   <WhatsAppIconGlyph />
                 </button>
@@ -4238,6 +4101,7 @@ export function OrderDetailWorkspace({
         vin={vinBar}
         plate={plateBar}
         listingUrl={payload.listingUrl}
+        customerPhone={payload.customerPhone}
         aiAllowed={payload.aiAllowed}
         workspaceHydrated={workspaceHydrated}
         prepareDraftBusy={prepareDraftBusy}
@@ -4256,6 +4120,7 @@ export function OrderDetailWorkspace({
           setVinBarCopyFlash(true);
           window.setTimeout(() => setVinBarCopyFlash(false), 600);
         }}
+        sourceBlocks={ws.sourceBlocks}
       />
 
       <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 ${ADMIN_CONTENT_MAX}`}>

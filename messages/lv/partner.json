@@ -93,6 +93,12 @@
     "archiveReport": "Atskaite",
     "archiveOpenReport": "Atvērt atskaiti",
     "requisitesTitle": "Rekvizīti",
-    "requisitesLoading": "Ielādē rekvizītus…"
+    "requisitesLoading": "Ielādē rekvizītus…",
+    "inviteRegisterTitle": "Partnera reģistrācija",
+    "inviteRegisterLead": "Aizpildi uzņēmuma datus un izveido paroli. Šī saite ir vienreizēja.",
+    "inviteRegisterSubmit": "Reģistrēties",
+    "inviteRegisterLoading": "Reģistrē…",
+    "inviteRegisterError": "Neizdevās reģistrēties. Pārbaudi laukus vai palūdz jaunu ielūgumu.",
+    "inviteInvalid": "Ielūguma saite nav derīga vai jau izmantota. Palūdz jaunu saiti no PROVIN."
   }
 }

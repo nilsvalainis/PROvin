@@ -149,9 +149,9 @@ describe("PDF design system", () => {
     expect(html).toContain("Kas tika pārbaudīts");
     expect(html).toContain("pdf-src-dot pdf-src-dot--autodna");
     expect(html).toContain("PASŪTĪJUMA DATI");
-    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
-    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
-    expect(html.indexOf("PASŪTĪJUMA DATI")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
+    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
+    expect(html.indexOf("PASŪTĪJUMA DATI")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
+    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
   });
 
   it("keeps history hub sections when CSDD-step unified flags were saved off", () => {
@@ -512,8 +512,8 @@ describe("PDF source-section brand logos", () => {
   });
 });
 
-describe("TRANSPORTLĪDZEKĻA DATI", () => {
-  it("moves the technical fields into their own section and out of the CSDD zone", () => {
+describe("Pasūtījuma dati", () => {
+  it("merges vehicle spec into Pasūtījuma dati and keeps it out of the CSDD zone", () => {
     const csdd = emptyCsddFields();
     csdd.makeModel = "BMW 520d";
     csdd.fuelType = "Dīzelis";
@@ -529,18 +529,39 @@ describe("TRANSPORTLĪDZEKĻA DATI", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("TRANSPORTLĪDZEKĻA DATI");
+    expect(html).toContain("PASŪTĪJUMA DATI");
+    expect(html).not.toContain("TRANSPORTLĪDZEKĻA DATI");
     expect(html).toContain("BMW 520d");
-    expect(html.indexOf("TRANSPORTLĪDZEKĻA DATI")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
+    expect(html).toContain("Dīzelis");
+    expect(html.indexOf("PASŪTĪJUMA DATI")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
     const csddZone = html.slice(html.indexOf("pdf-src-zone pdf-src-zone--csdd"));
     expect(csddZone).toContain("AB1234");
     expect(csddZone).not.toContain("Degvielas veids:");
-    // Īpašnieku skaits paliek tikai īpašnieku laika joslā
     expect((html.match(/Īpašnieku skaits Latvijā:/g) ?? []).length).toBeLessThanOrEqual(1);
   });
 });
 
 describe("Vēstures kopsavilkums", () => {
+  it("adds listing first price and later price-change points", () => {
+    const events = buildVehicleLifecycleEvents({
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "01.12.2025",
+        priceHistory: [
+          { date: "10.03.2026", price: 9500, mileage: 190000, year: 2012, delta: 0 },
+          { date: "15.01.2026", price: 10000, mileage: 180000, year: 2012, delta: 500 },
+        ],
+      },
+    });
+    const listed = events.filter((e) => e.kind === "listed");
+    expect(listed).toHaveLength(2);
+    expect(listed[0]?.date).toBe("01.12.2025");
+    expect(listed[0]?.detail).toBe("10 000 €");
+    expect(listed[0]?.priceDelta).toBe(0);
+    expect(listed[1]?.detail).toBe("9 500 €");
+    expect(listed[1]?.priceDelta).toBe(-500);
+  });
+
   it("rāda CC.VIN pārdošanas summu kopsavilkuma joslā", () => {
     const ccVin = emptyCcVinBlock();
     ccVin.sales = [

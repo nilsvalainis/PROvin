@@ -93,6 +93,12 @@
     "archiveReport": "Report",
     "archiveOpenReport": "Open report",
     "requisitesTitle": "Company details",
-    "requisitesLoading": "Loading company details…"
+    "requisitesLoading": "Loading company details…",
+    "inviteRegisterTitle": "Partner registration",
+    "inviteRegisterLead": "Enter your company details and create a password. This link is single-use.",
+    "inviteRegisterSubmit": "Register",
+    "inviteRegisterLoading": "Registering…",
+    "inviteRegisterError": "Could not register. Check the fields or ask for a new invite.",
+    "inviteInvalid": "This invite link is invalid or already used. Ask PROVIN for a new link."
   }
 }

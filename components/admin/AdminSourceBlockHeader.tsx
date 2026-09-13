@@ -5,7 +5,7 @@ import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS, SOURCE_BLOCK_EXTERNAL_URL, SOURCE_
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import { SOURCE_BLOCK_LUCIDE } from "@/lib/admin-lucide-registry";
-import { resolveSourceBlockExternalOpen } from "@/lib/admin-vin-urls";
+import { companionSourceOpensForBlock, resolveSourceBlockExternalOpen } from "@/lib/admin-vin-urls";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { TRAFFIC_HEADER_STRIP_CLASS } from "@/lib/admin-block-traffic-status";
 
@@ -50,13 +50,26 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
   const handoffVin = vinAware?.handoffVin ?? null;
   const Icon = SOURCE_BLOCK_LUCIDE[blockKey];
 
+  const companions =
+    blockKey === "autodna" ||
+    blockKey === "carvertical" ||
+    blockKey === "auto_records" ||
+    blockKey === "carinfo"
+      ? companionSourceOpensForBlock(blockKey, vin)
+      : [];
+
   const row = (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`${label} — atvērt avotu jaunā cilnē`}
+      aria-label={`${label} - atvērt avotu jaunā cilnē`}
       data-provin-handoff-vin={handoffVin || undefined}
+      onClick={() => {
+        for (const extra of companions) {
+          window.open(extra.href, "_blank", "noopener,noreferrer");
+        }
+      }}
       className={`inline-flex max-w-full flex-1 items-center gap-2 font-medium uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} text-slate-600`}
     >
       <AdminProvinLucide icon={Icon} />

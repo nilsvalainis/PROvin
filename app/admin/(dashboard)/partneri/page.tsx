@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminB2bInvitePanel } from "@/components/admin/AdminB2bInvitePanel";
 import { AdminB2bPartnerCreateForm } from "@/components/admin/AdminB2bPartnerCreateForm";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { listB2bPartners } from "@/lib/b2b-partner-store";
@@ -21,10 +22,11 @@ export default async function AdminPartnersPage() {
           Partneri
         </h1>
         <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-          Reģistrē dīleri, iestati paroli un pēc tam viņš var ieiet /lv/partneriem.
+          Reģistrē dīleri pats vai izveido unikālu ielūguma saiti, lai partneris reģistrētos pats. Publiska reģistrācija paliek slēgta.
         </p>
       </AdminDashboardHeaderWithMenu>
 
+      <AdminB2bInvitePanel />
       <AdminB2bPartnerCreateForm />
 
       {partners.length === 0 ? (

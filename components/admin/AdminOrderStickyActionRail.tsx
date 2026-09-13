@@ -5,6 +5,8 @@ import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminOrderCopilotTrigger } from "@/components/admin/AdminOrderCopilotPanel";
 import type { FlashMaxSelection } from "@/lib/admin-flash-max";
+import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
 
 type Props = {
@@ -23,6 +25,8 @@ type Props = {
   copilotBusy: boolean;
   onOpenCopilot: () => void;
   onVinCopied: () => void;
+  customerPhone?: string | null;
+  sourceBlocks?: WorkspaceSourceBlocks | null;
 };
 
 const railBtn =
@@ -51,6 +55,8 @@ export function AdminOrderStickyActionRail({
   copilotBusy,
   onOpenCopilot,
   onVinCopied,
+  customerPhone,
+  sourceBlocks,
 }: Props) {
   const listingHref = listingUrl?.trim() && isValidHttpUrl(listingUrl.trim()) ? listingUrl.trim() : null;
   const vinShort = vinTail(vin);
@@ -78,6 +84,9 @@ export function AdminOrderStickyActionRail({
             ariaReady="Kopēt reģistrācijas numuru starpliktuvē"
             ariaCopied="Reģistrācijas numurs nokopēts"
           />
+        </div>
+        <div className="flex justify-center">
+          <AdminWhatsAppOpenButton phone={customerPhone ?? ""} />
         </div>
         {listingHref ? (
           <a
@@ -111,6 +120,7 @@ export function AdminOrderStickyActionRail({
             notice={flashMaxNotice}
             error={flashMaxErr}
             onRun={onFlashMax}
+            sourceBlocks={sourceBlocks}
           />
         ) : null}
       </div>

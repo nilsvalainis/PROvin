@@ -217,6 +217,8 @@ export function buildPdfAboutReportBlock(args: {
   makeModel: string | null;
   show: { payment: boolean; vehicle: boolean; client: boolean; notes: boolean };
   titleIconHtml?: string;
+  /** Tehniskie lauki no bijušās TRANSPORTLĪDZEKĻA DATI sadaļas. */
+  vehicleExtraRows?: { k: string; v: string }[];
 }): string {
   const { order: o, money, dateFmt, makeModel, show } = args;
   type Row = { k: string; v: string; kind?: "vin" | "link" };
@@ -226,6 +228,11 @@ export function buildPdfAboutReportBlock(args: {
     const rows: Row[] = [];
     if (o.vin?.trim()) rows.push({ k: "VIN", v: o.vin.trim(), kind: "vin" });
     if (makeModel?.trim()) rows.push({ k: "Marka / modelis", v: makeModel.trim() });
+    for (const extra of args.vehicleExtraRows ?? []) {
+      if (!extra.k.trim() || !extra.v.trim()) continue;
+      if (extra.k === "Marka / modelis" && makeModel?.trim()) continue;
+      rows.push({ k: extra.k, v: extra.v });
+    }
     if (o.listingUrl?.trim()) rows.push({ k: "Sludinājums", v: o.listingUrl.trim(), kind: "link" });
     if (rows.length > 0) groups.push({ title: "Transportlīdzeklis", rows });
   }

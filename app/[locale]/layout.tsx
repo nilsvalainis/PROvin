@@ -78,6 +78,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [ogImage],
     },
     robots: { index: true, follow: true },
+    icons: {
+      icon: [{ url: "/icon", type: "image/png", sizes: "512x512" }],
+      apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
+    },
   };
 }
 

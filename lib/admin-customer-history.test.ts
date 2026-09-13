@@ -5,6 +5,7 @@ import {
   collectCustomerPhoneKeys,
   customerContactsMatch,
   isDealerHighlightAdminOrder,
+  isMiniHighlightAdminOrder,
   isTelegramGroupPayment,
   normalizeCustomerEmail,
   normalizeCustomerPhoneKey,
@@ -85,6 +86,13 @@ describe("telegram vs audit amounts", () => {
     expect(isDealerHighlightAdminOrder({ checkoutLine: "dealer", amountTotalCents: 999 })).toBe(false);
     expect(isDealerHighlightAdminOrder({ checkoutLine: "audit", amountTotalCents: 999 })).toBe(false);
     expect(isDealerHighlightAdminOrder({ amountTotalCents: 0 })).toBe(false);
+  });
+
+  it("highlights MINI without treating it as a dealer order", () => {
+    expect(isMiniHighlightAdminOrder({ checkoutLine: "mini", amountTotalCents: 3999 })).toBe(true);
+    expect(isMiniHighlightAdminOrder({ checkoutLine: "audit", amountTotalCents: 3999 })).toBe(true);
+    expect(isMiniHighlightAdminOrder({ checkoutLine: "dealer", amountTotalCents: 2499 })).toBe(false);
+    expect(isDealerHighlightAdminOrder({ checkoutLine: "mini", amountTotalCents: 3999 })).toBe(false);
   });
 
   it("routes SELECT to konsultācijas", () => {

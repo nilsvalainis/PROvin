@@ -29,9 +29,9 @@ describe("home-hero-plan", () => {
 });
 
 describe("pakalpojumi catalog", () => {
-  it("exposes four detailed cards including dealer and koreaUsa", () => {
+  it("exposes catalog cards including dealer, koreaUsa and partners", () => {
     const pkgs = getCatalogFeatureBreakdownPackages();
-    expect(pkgs.map((p) => p.id)).toEqual(["audits", "mini", "dealer", "koreaUsa"]);
+    expect(pkgs.map((p) => p.id)).toEqual(["audits", "mini", "dealer", "koreaUsa", "partner"]);
     const dealer = pkgs.find((p) => p.id === "dealer")!;
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.items).toHaveLength(4);
@@ -44,6 +44,10 @@ describe("pakalpojumi catalog", () => {
     expect(koreaUsa.buttonText).toContain("19,99");
     expect(koreaUsa.items).toHaveLength(4);
     expect(koreaUsa.items[1]?.title).toContain("Izsoļu");
+    const partner = pkgs.find((p) => p.id === "partner")!;
+    expect(partner.title).toBe("PROVIN BUSINESS");
+    expect(partner.buttonText).toBe("Partneriem");
+    expect(partner.ctaHref).toBe("/partneriem");
   });
 
   it("builds stable section anchors for jump pills (scales with catalog size)", () => {
@@ -53,6 +57,7 @@ describe("pakalpojumi catalog", () => {
       "pakalpojums-mini",
       "pakalpojums-dealer",
       "pakalpojums-koreaUsa",
+      "pakalpojums-partner",
     ]);
   });
 

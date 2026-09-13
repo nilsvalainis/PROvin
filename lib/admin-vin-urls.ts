@@ -16,13 +16,16 @@ export const CARVERTICAL_LV_BASE_URL = CARVERTICAL_REPORTS_URL;
 export const AUTORECORDS_BASE_URL = "https://www.auto-records.com/";
 export const CHECKTHISREG_HOME_URL = "https://checkthisreg.com/";
 export const CARINFO_HOME_URL = "https://www.car.info/en-se/";
+/** CheckCar.vin - VIN ievade caur Tampermonkey (nav oficiāla ?vin= API). */
+export const CHECKCAR_VIN_HOME_URL = "https://checkcar.vin/";
 
 export type VinAutofillServiceKey =
   | "autodna"
   | "carvertical"
   | "auto_records"
   | "checkthisreg"
-  | "carinfo";
+  | "carinfo"
+  | "checkcar_vin";
 
 export type VinAutofillService = {
   key: VinAutofillServiceKey;
@@ -39,6 +42,7 @@ export const VIN_AUTOFILL_SERVICES: readonly VinAutofillService[] = [
   { key: "auto_records", shortLabel: "AR", title: "Auto-Records", handoffVin: true },
   { key: "checkthisreg", shortLabel: "CTR", title: "CheckThisReg", handoffVin: true },
   { key: "carinfo", shortLabel: "INFO", title: "car.info", handoffVin: true },
+  { key: "checkcar_vin", shortLabel: "CC", title: "CheckCar.vin", handoffVin: true },
 ] as const;
 
 /** Klikšķis uz šiem elementiem neatver pasūtījumu (pogu / saišu zona). */
@@ -81,11 +85,18 @@ export function buildCarinfoVinCheckUrl(raw: string): string | null {
   return CARINFO_HOME_URL;
 }
 
+export function buildCheckcarVinCheckUrl(raw: string): string | null {
+  const v = normalizeVinForServiceUrls(raw);
+  if (!v) return null;
+  return CHECKCAR_VIN_HOME_URL;
+}
+
 export function buildVinAutofillHref(key: VinAutofillServiceKey, raw: string): string | null {
   if (key === "autodna") return buildAutodnaVinCheckUrl(raw);
   if (key === "carvertical") return buildCarverticalVinCheckUrl(raw);
   if (key === "auto_records") return buildAutorecordsVinCheckUrl(raw);
   if (key === "checkthisreg") return buildCheckthisregVinCheckUrl(raw);
+  if (key === "checkcar_vin") return buildCheckcarVinCheckUrl(raw);
   return buildCarinfoVinCheckUrl(raw);
 }
 
@@ -94,7 +105,18 @@ export function vinAutofillServiceHomeUrl(key: VinAutofillServiceKey): string {
   if (key === "carvertical") return CARVERTICAL_REPORTS_URL;
   if (key === "auto_records") return AUTORECORDS_BASE_URL;
   if (key === "checkthisreg") return CHECKTHISREG_HOME_URL;
+  if (key === "checkcar_vin") return CHECKCAR_VIN_HOME_URL;
   return CARINFO_HOME_URL;
+}
+
+/** AutoDNA virsraksta klikšķis paralēli atver CarVertical Manas atskaites ar to pašu VIN. */
+export function companionSourceOpensForBlock(
+  blockKey: "autodna" | "carvertical" | "auto_records" | "carinfo",
+  rawVin: string,
+): SourceBlockExternalOpen[] {
+  if (blockKey !== "autodna") return [];
+  const vin = normalizeVinForServiceUrls(rawVin);
+  return [{ href: CARVERTICAL_REPORTS_URL, handoffVin: vin || null }];
 }
 
 export type SourceBlockExternalOpen = {

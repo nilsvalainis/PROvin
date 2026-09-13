@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.5.2
-// @description  Admin MENU VIN auto-fill. car.info: sākumlapa, header meklēšana + Enter + Read more.
+// @version      1.6.0
+// @description  Admin MENU VIN auto-fill. car.info + checkcar.vin. AutoDNA arī atver CarVertical.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -22,6 +22,8 @@
 // @match        https://checkthisreg.com/*
 // @match        https://www.car.info/*
 // @match        https://car.info/*
+// @match        https://checkcar.vin/*
+// @match        https://www.checkcar.vin/*
 // @match        https://tirgusdati.lv/*
 // @match        https://www.tirgusdati.lv/*
 // @grant        GM_getValue
@@ -515,8 +517,9 @@
   const isDNA = host.endsWith("autodna.lv") || host.endsWith("autodna.com");
   const isCTR = host.endsWith("checkthisreg.com");
   const isInfo = host.endsWith("car.info");
+  const isCheckcar = host.endsWith("checkcar.vin");
 
-  if (!isCV && !isAR && !isDNA && !isCTR && !isInfo) return;
+  if (!isCV && !isAR && !isDNA && !isCTR && !isInfo && !isCheckcar) return;
 
   let tries = 0;
   const maxTries = 140;
@@ -615,6 +618,16 @@
         }
       }
       if (!infoReadMore && clickCarinfoReadMore()) infoReadMore = true;
+      return;
+    }
+
+    if (isCheckcar) {
+      const el = findCarVerticalVinInput(elapsed1s);
+      if (el && !el.disabled && !done) {
+        done = true;
+        window.clearInterval(interval);
+        fillAndClear(el);
+      }
     }
   }, 250);
 })();
