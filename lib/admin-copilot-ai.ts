@@ -11,7 +11,13 @@ import {
 import { JsonType, type AiJsonSchema } from "@/lib/ai-json-schema";
 import { buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
-import { COPILOT_SOURCE_KEYS, type CopilotChatMessage, type CopilotAiResponse, type CopilotSourceKey } from "@/lib/admin-copilot-types";
+import {
+  COPILOT_CLEARABLE_FIELDS,
+  COPILOT_SOURCE_KEYS,
+  type CopilotAiResponse,
+  type CopilotChatMessage,
+  type CopilotSourceKey,
+} from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { OUTVIN_VEHICLE_INFO_ROWS } from "@/lib/outvin-dealer-types";
 
@@ -62,6 +68,19 @@ Actions:
 5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical/cc_vin → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW; tjekbil/mnt_ee/lkf_ee/carinfo → RAW. Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
 6) set_registry_fields — ONLY tjekbil | mnt_ee | lkf_ee | carinfo. Short Latvian facts, one line per fact. No icons, no “RED FLAG”, no English leftovers, no em dashes. ownersSummary: owner count + owner-change dates. statusRecords: in traffic, colour, engine, export. autoNotes: the noteworthy facts in plain Latvian (export, 0 km classified vs registry km, stolen, commercial use, km rollback). Never invent facts the dump does not support.
 
+DELETING (7-10). The operator is in charge. When the operator asks you to remove, delete, clear, or undo something ("izdzēs", "noņem", "dzēs nost", "iztīri lauku", "atceļ šo rindu", "šī rinda ir kļūdaina"), you MUST emit the matching delete action. Do NOT refuse, do NOT answer that you cannot delete, and do NOT silently ignore the request. Deletions are never applied automatically: the operator sees them listed and presses confirm, so proposing a deletion is safe.
+7) delete_incident — remove a NEGADĪJUMU VĒSTURE row. Required: source + date. Add lossAmount to target one specific row; WITHOUT lossAmount every row on that date is removed.
+8) delete_mileage — remove a NOBRAUKUMS row. Required: source + date. Add odometer to target one specific row; WITHOUT odometer every row on that date is removed.
+9) delete_service_work — remove a SERVISA UN REMONTU VĒSTURE row (ALWAYS source=auto_records). Required: date; optional odometer.
+10) clear_field — empty one text field. Required: source + field, where field is one of: comments | rawUnprocessedData | aiContextRaw | pdfImportRaw | serviceHistoryNotes | oilChangeIntervalNotes | ownersSummary | statusRecords | autoNotes.
+
+Delete rules:
+- Take dates and values from CURRENT TABLES (the snapshot below), not from the PDFs. Copy the date exactly as the table shows it.
+- If the operator says "dzēs visas negadījumu rindas AutoDNA", emit one delete_incident per row shown in CURRENT TABLES for that source.
+- If the row the operator describes is not in CURRENT TABLES, do not guess: say so in reply and set clarificationNeeded.
+- Never pair a delete with a re-insert of the same row in one batch.
+- confidence: high when the operator named the row or source clearly.
+
 When multiple PDFs are attached:
 - Classify each PDF by branding/layout and fill the matching source
 - Extract ALL readable mileage and incident rows (not just a sample)
@@ -110,6 +129,10 @@ const ACTION_ITEM_SCHEMA: AiJsonSchema = {
         "set_dealer_vehicle_info",
         "append_raw",
         "set_registry_fields",
+        "delete_incident",
+        "delete_mileage",
+        "delete_service_work",
+        "clear_field",
       ],
     },
     source: {
@@ -126,6 +149,7 @@ const ACTION_ITEM_SCHEMA: AiJsonSchema = {
     ownersSummary: { type: JsonType.STRING },
     statusRecords: { type: JsonType.STRING },
     autoNotes: { type: JsonType.STRING },
+    field: { type: JsonType.STRING, enum: [...COPILOT_CLEARABLE_FIELDS] },
     vehicleInfo: {
       type: JsonType.OBJECT,
       properties: Object.fromEntries(
@@ -155,6 +179,12 @@ function bufferToBase64(buffer: ArrayBuffer): string {
   return Buffer.from(buffer).toString("base64");
 }
 
+/** Cik sarunas gājumu modelis redz. Operators sagaida, ka Copilot atceras sesijas kontekstu. */
+export const COPILOT_HISTORY_TURNS = 20;
+export const COPILOT_HISTORY_CHARS_PER_TURN = 2_500;
+/** Pilnā audita konteksta griesti — liels, bet neizspiež tabulu momentuzņēmumu. */
+export const COPILOT_AUDIT_CONTEXT_MAX_CHARS = 24_000;
+
 export async function runOrderCopilotAi(opts: {
   message: string;
   sourceBlocks: WorkspaceSourceBlocks;
@@ -162,20 +192,25 @@ export async function runOrderCopilotAi(opts: {
   history?: CopilotChatMessage[];
   /** Viens vai vairāki PDF (AI lasa katru). */
   pdfs?: { fileName: string; buffer: ArrayBuffer }[];
+  /** Fotogrāfijas (JPEG/PNG/WebP) — AI skatās kā attēlus. */
+  photos?: { fileName: string; mimeType: string; buffer: ArrayBuffer }[];
+  /** Pārējais ievāktais audita konteksts (kopsavilkumi, sludinājums, operatora piezīmes). */
+  auditContext?: string;
   /** @deprecated izmanto pdfs */
   pdf?: { fileName: string; buffer: ArrayBuffer };
 }): Promise<CopilotAiResponse> {
   const summary = buildCopilotBlocksSummary(opts.sourceBlocks);
   const allowedSources = (opts.allowedSources ?? [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
   const historyLines = (opts.history ?? [])
-    .slice(-8)
-    .map((m) => `${m.role === "user" ? "Operator" : "Copilot"}: ${m.content.slice(0, 1500)}`)
+    .slice(-COPILOT_HISTORY_TURNS)
+    .map((m) => `${m.role === "user" ? "Operator" : "Copilot"}: ${m.content.slice(0, COPILOT_HISTORY_CHARS_PER_TURN)}`)
     .join("\n");
 
   const pdfs = [
     ...(opts.pdfs ?? []),
     ...(opts.pdf && opts.pdf.buffer.byteLength > 0 ? [opts.pdf] : []),
   ].filter((p) => p.buffer.byteLength > 0);
+  const photos = (opts.photos ?? []).filter((p) => p.buffer.byteLength > 0);
 
   const parts: AiUserPart[] = [];
   for (const [i, pdf] of pdfs.entries()) {
@@ -186,20 +221,36 @@ export async function runOrderCopilotAi(opts: {
       text: `[PDF ${i + 1}/${pdfs.length}: ${pdf.fileName}. Read fully (tables, claims, odometer). Map to the correct PROVIN source. Read the rendered pages, not only the text layer.]`,
     });
   }
+  for (const [i, photo] of photos.entries()) {
+    parts.push({
+      inlineData: { mimeType: photo.mimeType, data: bufferToBase64(photo.buffer) },
+    });
+    parts.push({
+      text: `[FOTO ${i + 1}/${photos.length}: ${photo.fileName}. This is a photograph, not a vendor report. Read only what is legibly visible (odometer reading, service-book stamp, dashboard, VIN plate, document scan). Never create a new source or invent rows from a photo: emit an action only when the value is readable with certainty, otherwise describe what you see in reply and ask in clarificationNeeded.]`,
+    });
+  }
+
+  const auditContext = (opts.auditContext ?? "").trim();
 
   parts.push({
     text: [
       "=== CURRENT TABLES ===",
       summary,
+      auditContext
+        ? `\n=== REST OF THE AUDIT (read-only context: summaries, listing, operator notes) ===\n${auditContext.slice(0, COPILOT_AUDIT_CONTEXT_MAX_CHARS)}\nUse this only to understand the case and to resolve countries, dates and duplicates. Never copy expert commentary from here into table rows.`
+        : "",
       `\n=== ENABLED TARGET SOURCES ===\n${allowedSources.join(", ")}`,
       "\nOnly emit actions for the enabled target sources above. If a fact belongs elsewhere, skip it instead of redirecting it into another source. If auto_records is not enabled, do not emit set_service_history.",
       historyLines ? `\n=== RECENT CHAT ===\n${historyLines}` : "",
       `\n=== ATTACHED PDFs ===\n${pdfs.length ? pdfs.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n") : "(none)"}`,
+      photos.length ? `\n=== ATTACHED PHOTOS ===\n${photos.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n")}` : "",
       "\n=== OPERATOR MESSAGE ===",
       opts.message.trim() ||
         (pdfs.length > 1
           ? "(Multi-PDF) Extract all mileage + incident rows from every attached report into the matching sources."
-          : "(PDF only — extract structured rows for the matching vendor)"),
+          : pdfs.length === 0 && photos.length > 0
+            ? "(Photos only — describe what is legibly readable and extract only certain values)"
+            : "(PDF only — extract structured rows for the matching vendor)"),
       "\nReturn JSON matching the schema.",
     ]
       .filter(Boolean)

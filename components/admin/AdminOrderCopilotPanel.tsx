@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
-import { Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
+import { AlertTriangle, Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -39,6 +39,8 @@ type Props = {
   getSourceBlocks: () => WorkspaceSourceBlocks;
   applyPatchedBlocks: (patched: Partial<WorkspaceSourceBlocks>, changedKeys: CopilotSourceKey[]) => void;
   restoreBlocksSnapshot: (snapshot: WorkspaceSourceBlocks) => void;
+  /** Pārējais audits (kopsavilkumi, sludinājums, operatora piezīmes) — Copilotam tikai lasīšanai. */
+  buildAuditContext?: () => Record<string, unknown>;
 };
 
 type PanelPos = { left: number; top: number };
@@ -56,7 +58,7 @@ const WELCOME_MESSAGE: UiMessage = {
   id: "welcome",
   role: "system",
   content:
-    "Ieslēdz mērķa avotus. PDF vai ielīmē car.info / tjekbil / mnt / lkf lapas tekstu — Copilot aizpilda tabulas un RED FLAG. Pēc sūtīšanas logs samazinās. Sarakste saglabājas šim pasūtījumam.",
+    "Ieslēdz mērķa avotus. PDF, fotogrāfija vai ielīmēts car.info / tjekbil / mnt / lkf teksts — Copilot aizpilda tabulas un RED FLAG. Dzēšanu (rindas, lauka iztīrīšana) vari prasīt tieši; tā izpildās tikai pēc apstiprinājuma. Sarakste saglabājas šim pasūtījumam arī citā ierīcē.",
 };
 const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
@@ -84,6 +86,28 @@ const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   lkf_ee: SOURCE_BLOCK_LABELS.lkf_ee,
   carinfo: SOURCE_BLOCK_LABELS.carinfo,
 };
+
+const PHOTO_MIME_RE = /^image\/(jpeg|png|gif|webp)$/i;
+const PHOTO_NAME_RE = /\.(jpe?g|png|gif|webp)$/i;
+const MAX_ATTACHMENTS = 8;
+
+function isCopilotPhotoFile(f: File): boolean {
+  return PHOTO_MIME_RE.test(f.type) || PHOTO_NAME_RE.test(f.name);
+}
+
+function isCopilotAttachment(f: File): boolean {
+  return isCopilotPhotoFile(f) || /\.pdf$/i.test(f.name);
+}
+
+/** Dzēšošās darbības nekad neizpildās pašas — operators tās apstiprina atsevišķi. */
+function isDestructiveUiAction(a: { type?: string }): boolean {
+  return (
+    a.type === "delete_incident" ||
+    a.type === "delete_mileage" ||
+    a.type === "delete_service_work" ||
+    a.type === "clear_field"
+  );
+}
 
 function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -230,6 +254,7 @@ export function AdminOrderCopilotPanel({
   getSourceBlocks,
   applyPatchedBlocks,
   restoreBlocksSnapshot,
+  buildAuditContext,
   onBusyChange,
 }: Props & { onBusyChange?: (busy: boolean) => void }) {
   const inputId = useId();
@@ -264,15 +289,48 @@ export function AdminOrderCopilotPanel({
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     setChatHydrated(false);
     const stored = loadStoredChat(sessionId);
-    setAllowedSources([]);
-    if (stored) {
-      setMessages(stored.messages);
-    } else {
-      setMessages([WELCOME_MESSAGE]);
-    }
+    // Ieslēgtie avoti palika saglabāti, bet netika atjaunoti — operators tos ķeksēja katru reizi no jauna.
+    setAllowedSources(stored?.allowedSources ?? []);
+    setMessages(stored?.messages ?? [WELCOME_MESSAGE]);
     setChatHydrated(true);
+
+    // Servera atmiņa uzvar, ja tā ir bagātāka: cita ierīce vai iztīrīts localStorage.
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/copilot?sessionId=${encodeURIComponent(sessionId)}`, {
+          credentials: "include",
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          enabled?: boolean;
+          messages?: Array<{ id?: string; role?: string; content?: string }>;
+          allowedSources?: CopilotSourceKey[];
+        };
+        if (cancelled || !data.enabled) return;
+        const serverMessages = (data.messages ?? [])
+          .filter((m): m is { id?: string; role: "user" | "assistant" | "system"; content: string } =>
+            (m.role === "user" || m.role === "assistant" || m.role === "system") &&
+            typeof m.content === "string" &&
+            m.content.trim().length > 0,
+          )
+          .map((m) => ({ id: m.id ?? newId(), role: m.role, content: m.content }));
+        const localCount = (stored?.messages ?? []).filter((m) => m.role !== "system").length;
+        const serverCount = serverMessages.filter((m) => m.role !== "system").length;
+        if (serverCount > localCount) setMessages([WELCOME_MESSAGE, ...serverMessages]);
+        if (!stored?.allowedSources?.length && data.allowedSources?.length) {
+          setAllowedSources(data.allowedSources);
+        }
+      } catch {
+        /* servera atmiņa nav obligāta — čats paliek lokāls */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId]);
 
   useEffect(() => {
@@ -300,7 +358,6 @@ export function AdminOrderCopilotPanel({
     if (open) {
       setMinimized(false);
       setUnreadDone(false);
-      setAllowedSources([]);
     }
   }, [open]);
 
@@ -418,8 +475,7 @@ export function AdminOrderCopilotPanel({
     setMinimized(true);
 
     const userLabel =
-      text ||
-      (files.length === 1 ? `(PDF: ${files[0]!.name})` : `(${files.length} PDF)`);
+      text || (files.length === 1 ? `(${files[0]!.name})` : `(${files.length} pielikumi)`);
     setMessages((prev) => [...prev, { id: newId(), role: "user", content: userLabel }]);
     setDraft("");
     const filesToSend = files;
@@ -434,11 +490,15 @@ export function AdminOrderCopilotPanel({
       fd.set("history", JSON.stringify(historyForApi()));
       fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
       fd.set("allowedSources", JSON.stringify(allowedSources));
+      if (buildAuditContext) fd.set("auditContext", JSON.stringify(buildAuditContext()));
       // Lielie PDF neiekļaujas Vercel funkcijas ķermenī — tos augšupielādē tieši krātuvē.
       const blobRefs: { url: string; name: string }[] = [];
       for (const f of filesToSend) {
-        if (sourcePdfNeedsBlobUpload(f)) blobRefs.push(await uploadSourcePdfToBlob(sessionId, f));
-        else fd.append("files", f);
+        if (!isCopilotPhotoFile(f) && sourcePdfNeedsBlobUpload(f)) {
+          blobRefs.push(await uploadSourcePdfToBlob(sessionId, f));
+        } else {
+          fd.append("files", f);
+        }
       }
       if (blobRefs.length > 0) fd.set("fileUrls", JSON.stringify(blobRefs));
 
@@ -517,7 +577,18 @@ export function AdminOrderCopilotPanel({
     } finally {
       setBusy(false);
     }
-  }, [allowedSources, busy, draft, files, aiAllowed, getSourceBlocks, historyForApi, mergePatch, sessionId]);
+  }, [
+    allowedSources,
+    buildAuditContext,
+    busy,
+    draft,
+    files,
+    aiAllowed,
+    getSourceBlocks,
+    historyForApi,
+    mergePatch,
+    sessionId,
+  ]);
 
   const confirmActions = useCallback(
     async (actions: CopilotAction[]) => {
@@ -711,18 +782,51 @@ export function AdminOrderCopilotPanel({
             }
           >
             <div className="whitespace-pre-wrap break-words">{m.content}</div>
-            {m.needsConfirm && m.needsConfirm.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={busy}
-                  className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
-                  onClick={() => confirmActions(m.needsConfirm!)}
-                >
-                  Apstiprināt ({m.needsConfirm.length})
-                </button>
-              </div>
-            ) : null}
+            {m.needsConfirm && m.needsConfirm.length > 0
+              ? (() => {
+                  const destructive = m.needsConfirm.filter(isDestructiveUiAction);
+                  const additive = m.needsConfirm.filter((a) => !isDestructiveUiAction(a));
+                  return (
+                    <div className="mt-2 space-y-2">
+                      {additive.length > 0 ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                          onClick={() => confirmActions(additive)}
+                        >
+                          Apstiprināt ({additive.length})
+                        </button>
+                      ) : null}
+                      {destructive.length > 0 ? (
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-950/40">
+                          <p className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-900 dark:text-amber-200">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                            Dzēšana: {destructive.length}{" "}
+                            {destructive.length === 1 ? "darbība" : "darbības"}
+                          </p>
+                          <ul className="mt-1 space-y-0.5 text-[11px] leading-snug text-amber-900 dark:text-amber-200">
+                            {destructive.map((a, i) => (
+                              <li key={`${a.type}-${i}`}>• {a.label ?? a.type}</li>
+                            ))}
+                          </ul>
+                          <p className="mt-1 text-[10px] text-amber-800 dark:text-amber-300">
+                            Pirms dzēšanas tiek saglabāts stāvoklis, tāpēc „Atsaukt” atgriež rindas atpakaļ.
+                          </p>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className="mt-1.5 rounded-md bg-amber-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+                            onClick={() => confirmActions(destructive)}
+                          >
+                            Apstiprināt dzēšanu ({destructive.length})
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })()
+              : null}
           </div>
         ))}
         {busy ? (
@@ -780,7 +884,7 @@ export function AdminOrderCopilotPanel({
         <input
           ref={fileRef}
           type="file"
-          accept="application/pdf,.pdf"
+          accept="application/pdf,.pdf,image/jpeg,image/png,image/gif,image/webp"
           multiple
           className="hidden"
           onChange={(e) => {
@@ -789,9 +893,9 @@ export function AdminOrderCopilotPanel({
             setFiles((prev) => {
               const next = [...prev];
               for (const f of picked) {
-                if (!/\.pdf$/i.test(f.name)) continue;
+                if (!isCopilotAttachment(f)) continue;
                 if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
-                if (next.length >= 8) break;
+                if (next.length >= MAX_ATTACHMENTS) break;
                 next.push(f);
               }
               return next;
@@ -854,12 +958,12 @@ export function AdminOrderCopilotPanel({
             <button
               type="button"
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2.5 text-xs font-medium text-[var(--color-apple-text)] hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
-              title="Pievienot PDF (vairākus)"
-              disabled={busy || !aiAllowed || files.length >= 8}
+              title="Pievienot PDF vai fotogrāfijas"
+              disabled={busy || !aiAllowed || files.length >= MAX_ATTACHMENTS}
               onClick={() => fileRef.current?.click()}
             >
               <FileUp className="h-3.5 w-3.5" aria-hidden />
-              PDF{files.length > 0 ? ` (${files.length})` : ""}
+              PDF / foto{files.length > 0 ? ` (${files.length})` : ""}
             </button>
             <button
               type="button"
@@ -876,8 +980,8 @@ export function AdminOrderCopilotPanel({
         </div>
 
         <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          AI raksta tikai ieslēgtajos avotos
-          {files.length > 0 ? ` · ${files.length}/8 PDF` : ""}.
+          AI raksta tikai ieslēgtajos avotos; dzēšana vienmēr prasa apstiprinājumu
+          {files.length > 0 ? ` · ${files.length}/${MAX_ATTACHMENTS} pielikumi` : ""}.
         </p>
       </div>
     </aside>

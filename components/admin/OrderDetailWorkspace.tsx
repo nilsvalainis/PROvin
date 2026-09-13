@@ -3860,6 +3860,7 @@ export function OrderDetailWorkspace({
         getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
         applyPatchedBlocks={applyCopilotPatchedBlocks}
         restoreBlocksSnapshot={restoreCopilotBlocksSnapshot}
+        buildAuditContext={buildAiOrderPayload}
         onBusyChange={setCopilotBusy}
       />
 

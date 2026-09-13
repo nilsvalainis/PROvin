@@ -121,6 +121,67 @@ export type CopilotLtabCertificateAction = {
   note?: string;
 };
 
+/**
+ * Teksta lauki, ko operators drīkst likt Copilotam iztīrīt. Apzināts allowlist:
+ * viss, kas nav sarakstā, netiek dzēsts pat tad, ja modelis to pieprasa.
+ */
+export const COPILOT_CLEARABLE_FIELDS = [
+  "comments",
+  "rawUnprocessedData",
+  "aiContextRaw",
+  "pdfImportRaw",
+  "serviceHistoryNotes",
+  "oilChangeIntervalNotes",
+  "ownersSummary",
+  "statusRecords",
+  "autoNotes",
+] as const;
+
+export type CopilotClearableField = (typeof COPILOT_CLEARABLE_FIELDS)[number];
+
+export function isCopilotClearableField(v: string): v is CopilotClearableField {
+  return (COPILOT_CLEARABLE_FIELDS as readonly string[]).includes(v);
+}
+
+/** NEGADĪJUMU VĒSTURE — rindas dzēšana. Bez `lossAmount` dzēš visas rindas ar šo datumu. */
+export type CopilotDeleteIncidentAction = {
+  type: "delete_incident";
+  source: CopilotSourceKey;
+  date: string;
+  lossAmount?: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
+/** NOBRAUKUMS — rindas dzēšana. Bez `odometer` dzēš visas rindas ar šo datumu. */
+export type CopilotDeleteMileageAction = {
+  type: "delete_mileage";
+  source: CopilotSourceKey;
+  date: string;
+  odometer?: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
+/** SERVISA UN REMONTU VĒSTURE — rindas dzēšana. */
+export type CopilotDeleteServiceWorkAction = {
+  type: "delete_service_work";
+  source: "auto_records";
+  date: string;
+  odometer?: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
+/** Teksta lauka iztīrīšana (komentāri, RAW, servisa vēsture u.c.). */
+export type CopilotClearFieldAction = {
+  type: "clear_field";
+  source: CopilotSourceKey;
+  field: CopilotClearableField;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
 export type CopilotAction =
   | CopilotIncidentAction
   | CopilotMileageAction
@@ -129,7 +190,26 @@ export type CopilotAction =
   | CopilotDealerVehicleInfoAction
   | CopilotAppendRawAction
   | CopilotRegistryFieldsAction
-  | CopilotLtabCertificateAction;
+  | CopilotLtabCertificateAction
+  | CopilotDeleteIncidentAction
+  | CopilotDeleteMileageAction
+  | CopilotDeleteServiceWorkAction
+  | CopilotClearFieldAction;
+
+export const COPILOT_DESTRUCTIVE_ACTION_TYPES = [
+  "delete_incident",
+  "delete_mileage",
+  "delete_service_work",
+  "clear_field",
+] as const;
+
+/**
+ * Dzēšošās darbības nekad neizpildās automātiski. Tās prasa `allowDestructive`
+ * apply slānī, ko uzstāda tikai operatora apstiprinājuma ceļš.
+ */
+export function isDestructiveCopilotAction(action: { type: string }): boolean {
+  return (COPILOT_DESTRUCTIVE_ACTION_TYPES as readonly string[]).includes(action.type);
+}
 
 export type CopilotChatMessage = {
   role: "user" | "assistant";

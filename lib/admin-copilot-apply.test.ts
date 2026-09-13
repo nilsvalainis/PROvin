@@ -386,3 +386,195 @@ describe("parseCopilotAiPayload", () => {
     expect(r.actions[1]?.type).toBe("set_registry_fields");
   });
 });
+
+describe("Copilot dzēšanas darbības", () => {
+  /** Divas AutoDNA nobraukuma rindas un divi negadījumi — dzēšanas testu bāze. */
+  function blocksWithVendorRows() {
+    const blocks = createDefaultSourceBlocks();
+    return applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "upsert_mileage",
+          source: "autodna",
+          date: "10.03.2021",
+          odometer: "120000",
+          country: "Vācija",
+          confidence: "high",
+        },
+        {
+          type: "upsert_mileage",
+          source: "autodna",
+          date: "12.05.2022",
+          odometer: "150000",
+          country: "Vācija",
+          confidence: "high",
+        },
+        {
+          type: "upsert_incident",
+          source: "autodna",
+          date: "17.11.2020",
+          lossAmount: "5000 EUR",
+          country: "Vācija",
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: true },
+    ).sourceBlocks;
+  }
+
+  it("neizpilda dzēšanu automātiski, arī pie high confidence", () => {
+    const blocks = blocksWithVendorRows();
+    const result = applyCopilotActions(
+      blocks,
+      [{ type: "delete_mileage", source: "autodna", date: "10.03.2021", confidence: "high" }],
+      { onlyAuto: true },
+    );
+    expect(result.applied).toHaveLength(0);
+    expect(result.skipped[0]?.reason).toBe("needs_confirm");
+    expect(result.sourceBlocks.autodna.serviceHistory.some((r) => r.odometer === "120000")).toBe(true);
+  });
+
+  it("neizpilda dzēšanu arī tad, kad onlyAuto ir izslēgts bez allowDestructive", () => {
+    const blocks = blocksWithVendorRows();
+    const result = applyCopilotActions(
+      blocks,
+      [{ type: "delete_mileage", source: "autodna", date: "10.03.2021", confidence: "high" }],
+      { onlyAuto: false },
+    );
+    expect(result.applied).toHaveLength(0);
+    expect(result.sourceBlocks.autodna.serviceHistory.some((r) => r.odometer === "120000")).toBe(true);
+  });
+
+  it("dzēš vienu nobraukuma rindu pēc datuma un odometra", () => {
+    const blocks = blocksWithVendorRows();
+    const result = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "delete_mileage",
+          source: "autodna",
+          date: "10.03.2021",
+          odometer: "120000",
+          confidence: "high",
+        },
+      ],
+      { allowDestructive: true },
+    );
+    expect(result.applied).toHaveLength(1);
+    expect(result.changedKeys).toContain("autodna");
+    const rows = result.sourceBlocks.autodna.serviceHistory;
+    expect(rows.some((r) => r.odometer === "120000")).toBe(false);
+    expect(rows.some((r) => r.odometer === "150000")).toBe(true);
+  });
+
+  it("bez odometra dzēš visas attiecīgā datuma rindas", () => {
+    const blocks = blocksWithVendorRows();
+    const result = applyCopilotActions(
+      blocks,
+      [{ type: "delete_mileage", source: "autodna", date: "12.05.2022", confidence: "high" }],
+      { allowDestructive: true },
+    );
+    expect(result.applied).toHaveLength(1);
+    expect(result.sourceBlocks.autodna.serviceHistory.some((r) => r.odometer === "150000")).toBe(false);
+  });
+
+  it("dzēš negadījuma rindu un atstāj tabulu ar vismaz vienu rindu", () => {
+    const blocks = blocksWithVendorRows();
+    const result = applyCopilotActions(
+      blocks,
+      [{ type: "delete_incident", source: "autodna", date: "17.11.2020", confidence: "high" }],
+      { allowDestructive: true },
+    );
+    expect(result.applied).toHaveLength(1);
+    expect(result.sourceBlocks.autodna.incidents.some((r) => r.lossAmount.includes("5"))).toBe(false);
+    expect(result.sourceBlocks.autodna.incidents.length).toBeGreaterThan(0);
+  });
+
+  it("nesakritīgu datumu atzīmē kā delete_no_match un neko nemaina", () => {
+    const blocks = blocksWithVendorRows();
+    const result = applyCopilotActions(
+      blocks,
+      [{ type: "delete_mileage", source: "autodna", date: "01.01.1999", confidence: "high" }],
+      { allowDestructive: true },
+    );
+    expect(result.applied).toHaveLength(0);
+    expect(result.skipped[0]?.reason).toBe("delete_no_match");
+    expect(result.sourceBlocks.autodna.serviceHistory.some((r) => r.odometer === "120000")).toBe(true);
+  });
+
+  it("dzēš servisa darbu rindu no oficiālā dīlera tabulas", () => {
+    const seeded = applyCopilotActions(
+      createDefaultSourceBlocks(),
+      [
+        {
+          type: "upsert_service_work",
+          source: "auto_records",
+          date: "14.02.2021",
+          odometer: "98000",
+          location: "BMW Rīga",
+          works: "Regulārā apkope: eļļas maiņa",
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: true },
+    ).sourceBlocks;
+    expect(seeded.auto_records.serviceWorks.some((r) => /eļļas maiņa/i.test(r.works))).toBe(true);
+
+    const result = applyCopilotActions(
+      seeded,
+      [{ type: "delete_service_work", source: "auto_records", date: "14.02.2021", confidence: "high" }],
+      { allowDestructive: true },
+    );
+    expect(result.applied).toHaveLength(1);
+    expect(result.sourceBlocks.auto_records.serviceWorks.some((r) => /eļļas maiņa/i.test(r.works))).toBe(false);
+  });
+
+  it("iztīra atļauto teksta lauku un noraida neatļautu lauku avotam", () => {
+    const seeded = applyCopilotActions(
+      createDefaultSourceBlocks(),
+      [
+        {
+          type: "set_service_history",
+          source: "auto_records",
+          text: "01.01.2021 | 90 000 km | Apkope",
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: true },
+    ).sourceBlocks;
+    expect(seeded.auto_records.serviceHistoryNotes.trim()).not.toBe("");
+
+    const cleared = applyCopilotActions(
+      seeded,
+      [{ type: "clear_field", source: "auto_records", field: "serviceHistoryNotes", confidence: "high" }],
+      { allowDestructive: true },
+    );
+    expect(cleared.applied).toHaveLength(1);
+    expect(cleared.sourceBlocks.auto_records.serviceHistoryNotes).toBe("");
+
+    const rejected = applyCopilotActions(
+      seeded,
+      [{ type: "clear_field", source: "autodna", field: "serviceHistoryNotes", confidence: "high" }],
+      { allowDestructive: true },
+    );
+    expect(rejected.applied).toHaveLength(0);
+    expect(rejected.skipped[0]?.reason).toBe("field_not_clearable");
+  });
+
+  it("parsē dzēšanas darbības no AI JSON un atmet nederīgu lauku", () => {
+    const r = parseCopilotAiPayload(
+      JSON.stringify({
+        reply: "Dzēšu.",
+        clarificationNeeded: "",
+        actions: [
+          { type: "delete_incident", source: "ltab", date: "01.02.2020", confidence: "high" },
+          { type: "clear_field", source: "autodna", field: "comments", confidence: "high" },
+          { type: "clear_field", source: "autodna", field: "passwordHash", confidence: "high" },
+          { type: "delete_mileage", source: "autodna", confidence: "high" },
+        ],
+      }),
+    );
+    expect(r.actions.map((a) => a.type)).toEqual(["delete_incident", "clear_field"]);
+  });
+});

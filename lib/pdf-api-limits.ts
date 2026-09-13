@@ -18,3 +18,14 @@ export const PDF_AI_INLINE_MAX_BYTES = 12 * 1024 * 1024;
 
 /** Inline PDF kopā vienā Claude pieprasījumā (pirms base64) - ar rezervi zem 32 MB. */
 export const PDF_AI_INLINE_MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+
+/** Copilot fotogrāfijas: Anthropic pieņem JPEG / PNG / GIF / WebP attēlu blokus. */
+export const COPILOT_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
+
+export const COPILOT_IMAGE_MAX_FILE_BYTES = 8 * 1024 * 1024;
+export const COPILOT_IMAGE_MAX_TOTAL_BYTES = 16 * 1024 * 1024;
+export const COPILOT_IMAGE_MAX_FILES = 6;
+
+export function isCopilotImageMimeType(mime: string): boolean {
+  return (COPILOT_IMAGE_MIME_TYPES as readonly string[]).includes(mime.toLowerCase().trim());
+}

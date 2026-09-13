@@ -10,9 +10,27 @@ import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { isLikelyCsddPdfText, mergeCsddFieldsFillEmpty } from "@/lib/admin-copilot-csdd";
 import { runOrderCopilotAi } from "@/lib/admin-copilot-ai";
-import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey, isCopilotSourceKey } from "@/lib/admin-copilot-types";
+import {
+  COPILOT_SOURCE_KEYS,
+  isCopilotSourceKey,
+  isDestructiveCopilotAction,
+  type CopilotAction,
+  type CopilotChatMessage,
+  type CopilotSourceKey,
+} from "@/lib/admin-copilot-types";
+import {
+  appendCopilotChatMessages,
+  clearCopilotChat,
+  isCopilotChatStoreEnabled,
+  readCopilotChat,
+} from "@/lib/admin-copilot-chat-store";
+import { buildAiOrderContextText } from "@/lib/admin-ai-order-context";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import {
+  COPILOT_IMAGE_MAX_FILE_BYTES,
+  COPILOT_IMAGE_MAX_FILES,
+  COPILOT_IMAGE_MAX_TOTAL_BYTES,
+  isCopilotImageMimeType,
   PDF_AI_INLINE_MAX_BYTES,
   PDF_AI_INLINE_MAX_TOTAL_BYTES,
   PDF_MAX_FILE_BYTES,
@@ -76,6 +94,40 @@ function parseSourceBlocks(raw: unknown): WorkspaceSourceBlocks | null {
   return mergeSourceBlocksWithDefaults(raw as Partial<WorkspaceSourceBlocks>);
 }
 
+/**
+ * Pārējais ievāktais audits (kopsavilkumi, sludinājums, operatora piezīmes).
+ * Tos pašus laukus klients jau sūta ✨ ģenerēšanas maršrutiem.
+ */
+function parseAuditContextInput(raw: unknown, sourceBlocks: WorkspaceSourceBlocks, sessionId: string) {
+  const parsed =
+    typeof raw === "string"
+      ? (() => {
+          try {
+            return JSON.parse(raw) as unknown;
+          } catch {
+            return null;
+          }
+        })()
+      : raw;
+  const b = (parsed && typeof parsed === "object" ? parsed : {}) as Record<string, unknown>;
+  return {
+    sessionId,
+    vin: str(b.vin).trim() || null,
+    listingUrl: str(b.listingUrl).trim() || null,
+    customerName: str(b.customerName).trim() || null,
+    notes: str(b.notes).trim() || null,
+    sourceBlocks,
+    irissSummary: str(b.iriss),
+    inspectionPlan: str(b.apskatesPlāns),
+    technicalRiskAnalysis: str(b.tehniskoRiskuAnalize),
+    priceFit: str(b.cenasAtbilstiba),
+    internalComment: str(b.internalComment),
+    mileageComment: str(b.mileageComment),
+    sourcesComparisonComment: str(b.sourcesComparisonComment),
+    operatorNotes: str(b.operatorNotes),
+  };
+}
+
 function parseAllowedSources(raw: unknown): CopilotSourceKey[] {
   const input = typeof raw === "string" ? (() => {
     try {
@@ -122,8 +174,55 @@ function describeAction(a: CopilotAction): string {
     const n = a.certificate.claims.length;
     return `ltab · izziņa · ${n} CSNg (${a.confidence})`;
   }
+  if (a.type === "delete_incident") {
+    const loss = a.lossAmount?.trim() ? ` · ${a.lossAmount}` : " · visas šī datuma rindas";
+    return `DZĒST · ${a.source} · negadījums ${a.date}${loss}`;
+  }
+  if (a.type === "delete_mileage") {
+    const odo = a.odometer?.trim() ? ` · ${a.odometer} km` : " · visas šī datuma rindas";
+    return `DZĒST · ${a.source} · nobraukums ${a.date}${odo}`;
+  }
+  if (a.type === "delete_service_work") {
+    const odo = a.odometer?.trim() ? ` · ${a.odometer} km` : " · visas šī datuma rindas";
+    return `DZĒST · auto_records · apkope ${a.date}${odo}`;
+  }
+  if (a.type === "clear_field") {
+    return `IZTĪRĪT · ${a.source} · lauks „${a.field}”`;
+  }
   const _exhaustive: never = a;
   return String(_exhaustive);
+}
+
+/** Servera sarunas atmiņa — atver pasūtījumu citā ierīcē un čats ir turpat. */
+export async function GET(req: Request) {
+  const ok = await getAdminSession();
+  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const sessionId = new URL(req.url).searchParams.get("sessionId")?.trim() ?? "";
+  if (!sessionId) return NextResponse.json({ error: "missing_session" }, { status: 400 });
+  if (!isCopilotChatStoreEnabled()) {
+    return NextResponse.json({ ok: true, enabled: false, messages: [], allowedSources: [] });
+  }
+
+  const doc = await readCopilotChat(sessionId);
+  return NextResponse.json({
+    ok: true,
+    enabled: true,
+    messages: doc?.messages ?? [],
+    allowedSources: doc?.allowedSources ?? [],
+    updatedAt: doc?.updatedAt ?? null,
+  });
+}
+
+/** Notīra pasūtījuma Copilot sarakstes vēsturi (tabulas netiek aiztiktas). */
+export async function DELETE(req: Request) {
+  const ok = await getAdminSession();
+  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const sessionId = new URL(req.url).searchParams.get("sessionId")?.trim() ?? "";
+  if (!sessionId) return NextResponse.json({ error: "missing_session" }, { status: 400 });
+  const cleared = await clearCopilotChat(sessionId);
+  return NextResponse.json({ ok: true, cleared });
 }
 
 export async function POST(req: Request) {
@@ -142,9 +241,11 @@ export async function POST(req: Request) {
   let sourceBlocks: WorkspaceSourceBlocks | null = null;
   let allowedSources: CopilotSourceKey[] = [...COPILOT_SOURCE_KEYS];
   const pdfs: { fileName: string; buffer: ArrayBuffer }[] = [];
+  const photos: { fileName: string; mimeType: string; buffer: ArrayBuffer }[] = [];
   /** Lieli PDF ceļo caur Vercel Blob — funkcijas pieprasījuma ķermenis ir ~4,5 MB. */
   let blobRefs: SourcePdfBlobRef[] = [];
   let applyMode: "auto" | "preview" = "auto";
+  let auditContextRaw: unknown = null;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -156,6 +257,7 @@ export async function POST(req: Request) {
       allowedSources = parseAllowedSources(form.get("allowedSources"));
       const mode = str(form.get("applyMode")).trim();
       if (mode === "preview") applyMode = "preview";
+      auditContextRaw = form.get("auditContext");
 
       const candidates: File[] = [];
       for (const key of ["files", "file"]) {
@@ -171,22 +273,67 @@ export async function POST(req: Request) {
         seen.add(k);
         return true;
       });
-      if (unique.length > PDF_MAX_FILES) {
+
+      const imageFiles = unique.filter((f) => isCopilotImageMimeType(f.type || ""));
+      const pdfFiles = unique.filter((f) => !isCopilotImageMimeType(f.type || ""));
+
+      if (pdfFiles.length > PDF_MAX_FILES) {
         return NextResponse.json(
           { error: "too_many_files", detail: `Maks. ${PDF_MAX_FILES} PDF vienā reizē` },
           { status: 400 },
         );
       }
+      if (imageFiles.length > COPILOT_IMAGE_MAX_FILES) {
+        return NextResponse.json(
+          { error: "too_many_files", detail: `Maks. ${COPILOT_IMAGE_MAX_FILES} fotogrāfijas vienā reizē` },
+          { status: 400 },
+        );
+      }
+
+      let photoBytes = 0;
+      for (const file of imageFiles) {
+        if (file.size > COPILOT_IMAGE_MAX_FILE_BYTES) {
+          return NextResponse.json(
+            {
+              error: "file_too_large",
+              detail: `${file.name}: maks. ${Math.round(COPILOT_IMAGE_MAX_FILE_BYTES / (1024 * 1024))} MB vienai fotogrāfijai`,
+            },
+            { status: 413 },
+          );
+        }
+        photoBytes += file.size;
+        if (photoBytes > COPILOT_IMAGE_MAX_TOTAL_BYTES) {
+          return NextResponse.json(
+            {
+              error: "file_too_large",
+              detail: `Kopā pārāk lielas fotogrāfijas (maks. ${Math.round(COPILOT_IMAGE_MAX_TOTAL_BYTES / (1024 * 1024))} MB)`,
+            },
+            { status: 413 },
+          );
+        }
+        photos.push({
+          fileName: file.name || "foto.jpg",
+          mimeType: (file.type || "image/jpeg").toLowerCase(),
+          buffer: await file.arrayBuffer(),
+        });
+      }
+
       let totalBytes = 0;
       let inlineBytes = 0;
-      for (const file of unique) {
+      for (const file of pdfFiles) {
         const name = (file.name || "report.pdf").toLowerCase();
         const mime = (file.type || "").toLowerCase();
         if (mime && mime !== "application/pdf" && !mime.includes("pdf")) {
-          return NextResponse.json({ error: "invalid_file_type", detail: `Tikai PDF: ${file.name}` }, { status: 400 });
+          return NextResponse.json(
+            { error: "invalid_file_type", detail: `Tikai PDF vai foto: ${file.name}` },
+            { status: 400 },
+          );
         }
         if (name && !name.endsWith(".pdf")) {
-          return NextResponse.json({ error: "invalid_file_type", detail: `Tikai PDF: ${file.name}` }, { status: 400 });
+          return NextResponse.json(
+            { error: "invalid_file_type", detail: `Tikai PDF vai foto: ${file.name}` },
+            { status: 400 },
+          );
         }
         if (file.size > PDF_MAX_FILE_BYTES) {
           return NextResponse.json(
@@ -246,6 +393,7 @@ export async function POST(req: Request) {
       history = parseHistory(b.history);
       sourceBlocks = parseSourceBlocks(b.sourceBlocks);
       allowedSources = parseAllowedSources(b.allowedSources);
+      auditContextRaw = b.auditContext ?? null;
       if (str(b.applyMode).trim() === "preview") applyMode = "preview";
     }
   } catch (e) {
@@ -269,8 +417,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "blob_fetch_failed", detail }, { status: 502 });
     }
   }
-  if (!message && pdfs.length === 0) {
-    return NextResponse.json({ error: "empty_message", detail: "Ieraksti ziņu vai pievieno PDF" }, { status: 400 });
+  if (!message && pdfs.length === 0 && photos.length === 0) {
+    return NextResponse.json(
+      { error: "empty_message", detail: "Ieraksti ziņu vai pievieno PDF / foto" },
+      { status: 400 },
+    );
   }
   if (!sourceBlocks) {
     return NextResponse.json({ error: "missing_source_blocks" }, { status: 400 });
@@ -382,12 +533,25 @@ export async function POST(req: Request) {
     const carinfoPasteActions =
       allowedSet.has("carinfo") && looksLikeCarinfoDump(message) ? buildCarinfoCopilotActions(message) : [];
     const skipGenericCopilot =
-      (allowedSet.has("csdd") &&
+      photos.length === 0 &&
+      ((allowedSet.has("csdd") &&
         allowedSources.length === 1 &&
         pdfs.length > 0 &&
         csddImportNotes.some((n) => n.includes("aizpildīti"))) ||
-      (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0) ||
-      (carinfoPasteActions.length > 0 && remainingPdfs.length === 0);
+        (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0) ||
+        (carinfoPasteActions.length > 0 && remainingPdfs.length === 0));
+
+    /** Copilotam jāredz tas pats audits, ko redz FLASH MAX: kopsavilkumi, sludinājums, operatora piezīmes. */
+    let auditContextText = "";
+    if (!skipGenericCopilot) {
+      try {
+        auditContextText = buildAiOrderContextText(
+          parseAuditContextInput(auditContextRaw, workingBlocks, sessionId),
+        );
+      } catch (ctxErr) {
+        console.warn(`${LOG_PREFIX} audit_context_failed`, ctxErr instanceof Error ? ctxErr.message : "unknown");
+      }
+    }
 
     const ai = skipGenericCopilot
       ? {
@@ -405,6 +569,8 @@ export async function POST(req: Request) {
           allowedSources,
           history,
           pdfs: remainingPdfs,
+          photos,
+          auditContext: auditContextText,
         });
 
     const blocked = ai.actions.filter((a) => !allowedSet.has(a.source));
@@ -440,17 +606,39 @@ export async function POST(req: Request) {
       allowedSources,
       auto: autoResult.applied.length,
       confirm: needsConfirm.length,
+      destructiveProposed: ai.actions.filter(isDestructiveCopilotAction).length,
       pdfCount: pdfs.length,
+      photoCount: photos.length,
+      auditContextChars: auditContextText.length,
       vendorAgentPdfs: vendorHandledFiles.size,
       vendorAgentApplied: vendorAgentApplied.length,
       csddImports: csddImportNotes.length,
     });
 
     const changedList = [...changedKeys];
+    const replyText = replyParts.filter(Boolean).join("\n\n");
+
+    // Saruna glabājas serverī, lai neizzustu, mainot ierīci vai pārlūku.
+    const attachmentLabel = [
+      pdfs.length ? `${pdfs.length} PDF` : "",
+      photos.length ? `${photos.length} foto` : "",
+    ]
+      .filter(Boolean)
+      .join(" + ");
+    void appendCopilotChatMessages(
+      sessionId,
+      [
+        { role: "user", content: message || `(${attachmentLabel || "pielikums"})` },
+        { role: "assistant", content: replyText },
+      ],
+      allowedSources,
+    ).catch((chatErr) => {
+      console.warn(`${LOG_PREFIX} chat_persist_failed`, chatErr instanceof Error ? chatErr.message : "unknown");
+    });
 
     return NextResponse.json({
       ok: true,
-      reply: replyParts.filter(Boolean).join("\n\n"),
+      reply: replyText,
       clarificationNeeded: ai.clarificationNeeded,
       actions: ai.actions.map((a) => ({ ...a, label: describeAction(a) })),
       autoApplied: shouldPatch
@@ -524,9 +712,14 @@ export async function PUT(req: Request) {
   const allowedSet = new Set<CopilotSourceKey>(allowedSources);
   const allowedActions = actions.filter((a) => allowedSet.has(a.source));
   const blocked = actions.filter((a) => !allowedSet.has(a.source));
-  const result = applyCopilotActions(sourceBlocks, allowedActions, { onlyAuto: false });
+  // Apstiprinājuma ceļš ir vienīgais, kas drīkst dzēst.
+  const result = applyCopilotActions(sourceBlocks, allowedActions, {
+    onlyAuto: false,
+    allowDestructive: true,
+  });
   return NextResponse.json({
     ok: true,
+    destructiveApplied: result.applied.filter(isDestructiveCopilotAction).length,
     autoApplied: result.applied.map((a) => ({ ...a, label: describeAction(a) })),
     skipped: [
       ...result.skipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),

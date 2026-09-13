@@ -55,6 +55,7 @@ import { mergeServiceHistoryFieldText } from "@/lib/vendor-service-history";
 import {
   autoRecordsServiceWorkRowHasData,
   autoRecordsServiceWorkRowsToPlainText,
+  emptyAutoRecordsServiceWorkRow,
   mergeAutoRecordsServiceWorkRow,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
@@ -68,15 +69,23 @@ import {
 import type {
   CopilotAction,
   CopilotAppendRawAction,
+  CopilotClearableField,
+  CopilotClearFieldAction,
   CopilotConfidence,
   CopilotDealerVehicleInfoAction,
+  CopilotDeleteIncidentAction,
+  CopilotDeleteMileageAction,
   CopilotIncidentAction,
   CopilotMileageAction,
   CopilotRegistryFieldsAction,
   CopilotServiceHistoryAction,
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
-import { isCopilotSourceKey, isVinRegistryCopilotSource } from "@/lib/admin-copilot-types";
+import {
+  isCopilotSourceKey,
+  isDestructiveCopilotAction,
+  isVinRegistryCopilotSource,
+} from "@/lib/admin-copilot-types";
 
 export type CopilotApplyResult = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -686,13 +695,274 @@ export function shouldAutoApply(confidence: CopilotConfidence, clarificationNeed
   return confidence === "high";
 }
 
+/* ---------- Dzēšana (tikai pēc operatora apstiprinājuma) ---------- */
+
+/** Saglabā vismaz vienu tukšu rindu, lai tabula UI nepazustu pavisam. */
+function keepAtLeastOneRow<T>(rows: T[], empty: () => T): T[] {
+  return rows.length > 0 ? rows : [empty()];
+}
+
+function matchesDate(rowDate: string, targetDate: string): boolean {
+  const a = normDateKey(rowDate);
+  return Boolean(a) && a === normDateKey(targetDate);
+}
+
+/**
+ * Dzēšamās rindas atlase: datumam jāsakrīt vienmēr; precizētājs (summa / odometrs)
+ * sašaurina atlasi. Bez precizētāja tiek dzēstas visas tā datuma rindas.
+ */
+function pickRowsToDelete<T>(
+  rows: T[],
+  hasData: (r: T) => boolean,
+  rowDate: (r: T) => string,
+  rowQualifier: (r: T) => string,
+  target: { date: string; qualifier?: string },
+  normalizeQualifier: (v: string) => string,
+): { kept: T[]; removed: number } {
+  const wanted = target.qualifier?.trim() ? normalizeQualifier(target.qualifier) : "";
+  let removed = 0;
+  const kept = rows.filter((r) => {
+    if (!hasData(r)) return true;
+    if (!matchesDate(rowDate(r), target.date)) return true;
+    if (wanted && normalizeQualifier(rowQualifier(r)) !== wanted) return true;
+    removed += 1;
+    return false;
+  });
+  return { kept, removed };
+}
+
+function deleteIncidentRows(
+  rows: LtabIncidentRow[],
+  target: { date: string; lossAmount?: string },
+): { rows: LtabIncidentRow[]; removed: number } {
+  const { kept, removed } = pickRowsToDelete(
+    rows,
+    ltabRowHasData,
+    (r) => r.csngDate,
+    (r) => r.lossAmount,
+    { date: target.date, qualifier: target.lossAmount },
+    normLossKey,
+  );
+  return { rows: keepAtLeastOneRow(kept, emptyLtabRow), removed };
+}
+
+function deleteMileageRows(
+  rows: AutoRecordsServiceRow[],
+  target: { date: string; odometer?: string },
+): { rows: AutoRecordsServiceRow[]; removed: number } {
+  const { kept, removed } = pickRowsToDelete(
+    rows,
+    autoRecordsMileageRowHasData,
+    (r) => r.date,
+    (r) => r.odometer,
+    { date: target.date, qualifier: target.odometer },
+    normOdoKey,
+  );
+  return { rows: keepAtLeastOneRow(kept, emptyAutoRecordsServiceRow), removed };
+}
+
+function deleteCcVinDamageRows(
+  rows: CcVinDamageRow[],
+  target: { date: string; lossAmount?: string },
+): { rows: CcVinDamageRow[]; removed: number } {
+  const { kept, removed } = pickRowsToDelete(
+    rows,
+    ccVinDamageRowHasData,
+    (r) => r.date,
+    (r) => r.amount,
+    { date: target.date, qualifier: target.lossAmount },
+    normLossKey,
+  );
+  return { rows: keepAtLeastOneRow(kept, emptyCcVinDamageRow), removed };
+}
+
+function deleteVinRegistryIncidentRows(
+  rows: VinRegistryIncidentRow[],
+  target: { date: string; lossAmount?: string },
+): { rows: VinRegistryIncidentRow[]; removed: number } {
+  const { kept, removed } = pickRowsToDelete(
+    rows,
+    vinRegistryIncidentRowHasData,
+    (r) => r.date,
+    (r) => r.amount,
+    { date: target.date, qualifier: target.lossAmount },
+    normLossKey,
+  );
+  return { rows: keepAtLeastOneRow(kept, emptyVinRegistryIncidentRow), removed };
+}
+
+function deleteVinRegistryMileageRows(
+  rows: VinRegistryMileageRow[],
+  target: { date: string; odometer?: string },
+): { rows: VinRegistryMileageRow[]; removed: number } {
+  const { kept, removed } = pickRowsToDelete(
+    rows,
+    vinRegistryMileageRowHasData,
+    (r) => r.date,
+    (r) => r.odometer,
+    { date: target.date, qualifier: target.odometer },
+    normOdoKey,
+  );
+  return { rows: keepAtLeastOneRow(kept, emptyVinRegistryMileageRow), removed };
+}
+
+function deleteServiceWorkRows(
+  rows: AutoRecordsServiceWorkRow[],
+  target: { date: string; odometer?: string },
+): { rows: AutoRecordsServiceWorkRow[]; removed: number } {
+  const { kept, removed } = pickRowsToDelete(
+    rows,
+    autoRecordsServiceWorkRowHasData,
+    (r) => r.date,
+    (r) => r.odometer,
+    { date: target.date, qualifier: target.odometer },
+    normOdoKey,
+  );
+  return { rows: keepAtLeastOneRow(kept, emptyAutoRecordsServiceWorkRow), removed };
+}
+
+function applyDeleteIncident(
+  blocks: WorkspaceSourceBlocks,
+  action: CopilotDeleteIncidentAction,
+): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
+  const target = { date: action.date, lossAmount: action.lossAmount };
+  if (action.source === "auto_records") {
+    return { blocks, ok: false, reason: "auto_records_has_no_incidents" };
+  }
+  if (isVinRegistryCopilotSource(action.source)) {
+    const cur = repairVinRegistryBlock(blocks[action.source]);
+    const { rows, removed } = deleteVinRegistryIncidentRows(cur.incidents ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, [action.source]: { ...cur, incidents: rows } }, ok: true };
+  }
+  if (action.source === "ltab") {
+    const { rows, removed } = deleteIncidentRows(blocks.ltab.rows ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, ltab: { ...blocks.ltab, rows } }, ok: true };
+  }
+  if (action.source === "cc_vin") {
+    const { rows, removed } = deleteCcVinDamageRows(blocks.cc_vin.damages ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, cc_vin: { ...blocks.cc_vin, damages: rows } }, ok: true };
+  }
+  if (action.source === "citi_avoti") {
+    const sections = [...(blocks.citi_avoti.sections ?? [])];
+    const s0 = sections[0];
+    if (!s0) return { blocks, ok: false, reason: "delete_no_match" };
+    const { rows, removed } = deleteIncidentRows(s0.incidents ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    sections[0] = { ...s0, incidents: rows };
+    return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
+  }
+  if (action.source === "autodna" || action.source === "carvertical") {
+    const cur = ensureVendor(blocks[action.source]);
+    const { rows, removed } = deleteIncidentRows(cur.incidents ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, [action.source]: { ...cur, incidents: rows } }, ok: true };
+  }
+  return { blocks, ok: false, reason: "unknown_source" };
+}
+
+function applyDeleteMileage(
+  blocks: WorkspaceSourceBlocks,
+  action: CopilotDeleteMileageAction,
+): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
+  const target = { date: action.date, odometer: action.odometer };
+  if (action.source === "ltab") return { blocks, ok: false, reason: "ltab_has_no_mileage" };
+  if (isVinRegistryCopilotSource(action.source)) {
+    const cur = repairVinRegistryBlock(blocks[action.source]);
+    const { rows, removed } = deleteVinRegistryMileageRows(cur.mileage ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, [action.source]: { ...cur, mileage: rows } }, ok: true };
+  }
+  if (action.source === "auto_records") {
+    const { rows, removed } = deleteMileageRows(blocks.auto_records.serviceHistory ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, auto_records: { ...blocks.auto_records, serviceHistory: rows } }, ok: true };
+  }
+  if (action.source === "cc_vin") {
+    const { rows, removed } = deleteMileageRows(blocks.cc_vin.mileage ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, cc_vin: { ...blocks.cc_vin, mileage: rows } }, ok: true };
+  }
+  if (action.source === "citi_avoti") {
+    const sections = [...(blocks.citi_avoti.sections ?? [])];
+    const s0 = sections[0];
+    if (!s0) return { blocks, ok: false, reason: "delete_no_match" };
+    const { rows, removed } = deleteMileageRows(s0.serviceHistory ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    sections[0] = { ...s0, serviceHistory: rows };
+    return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
+  }
+  if (action.source === "autodna" || action.source === "carvertical") {
+    const cur = ensureVendor(blocks[action.source]);
+    const { rows, removed } = deleteMileageRows(cur.serviceHistory ?? [], target);
+    if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
+    return { blocks: { ...blocks, [action.source]: { ...cur, serviceHistory: rows } }, ok: true };
+  }
+  return { blocks, ok: false, reason: "unknown_source" };
+}
+
+/** Katram avotam sava tīrāmo lauku atļauja: nosaukumi atšķiras pa blokiem. */
+const CLEARABLE_FIELDS_BY_SOURCE: Record<CopilotSourceKey, readonly CopilotClearableField[]> = {
+  csdd: [],
+  autodna: ["comments", "aiContextRaw"],
+  carvertical: ["comments", "aiContextRaw"],
+  ltab: ["comments", "aiContextRaw", "pdfImportRaw"],
+  auto_records: [
+    "comments",
+    "aiContextRaw",
+    "rawUnprocessedData",
+    "serviceHistoryNotes",
+    "oilChangeIntervalNotes",
+  ],
+  cc_vin: ["comments", "aiContextRaw"],
+  citi_avoti: ["comments", "aiContextRaw", "rawUnprocessedData"],
+  tjekbil: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
+  mnt_ee: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
+  lkf_ee: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
+  carinfo: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
+};
+
+function clearStringField<T extends object>(block: T, field: string): T | null {
+  const current = (block as Record<string, unknown>)[field];
+  if (typeof current !== "string" || current.trim() === "") return null;
+  return { ...block, [field]: "" };
+}
+
+function applyClearField(
+  blocks: WorkspaceSourceBlocks,
+  action: CopilotClearFieldAction,
+): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
+  if (!CLEARABLE_FIELDS_BY_SOURCE[action.source].includes(action.field)) {
+    return { blocks, ok: false, reason: "field_not_clearable" };
+  }
+  if (action.source === "citi_avoti") {
+    const sections = [...(blocks.citi_avoti.sections ?? [])];
+    const s0 = sections[0];
+    if (!s0) return { blocks, ok: false, reason: "field_already_empty" };
+    const updated = clearStringField(s0, action.field);
+    if (!updated) return { blocks, ok: false, reason: "field_already_empty" };
+    sections[0] = updated;
+    return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
+  }
+  const cur = isVinRegistryCopilotSource(action.source)
+    ? repairVinRegistryBlock(blocks[action.source])
+    : blocks[action.source];
+  const updated = clearStringField(cur as object, action.field);
+  if (!updated) return { blocks, ok: false, reason: "field_already_empty" };
+  return { blocks: { ...blocks, [action.source]: updated }, ok: true };
+}
+
 /**
  * Piemēro darbības. Ja `onlyAuto` — tikai high confidence (un bez clarification).
+ * Dzēšošās darbības izpildās tikai ar `allowDestructive`, ko uzstāda vienīgi
+ * operatora apstiprinājuma ceļš; automātiskā plūsma tās vienmēr atliek.
  */
 export function applyCopilotActions(
   blocks: WorkspaceSourceBlocks,
   actions: CopilotAction[],
-  opts?: { onlyAuto?: boolean; clarificationNeeded?: string },
+  opts?: { onlyAuto?: boolean; clarificationNeeded?: string; allowDestructive?: boolean },
 ): CopilotApplyResult {
   let next = mergeSourceBlocksWithDefaults(blocks);
   const applied: CopilotAction[] = [];
@@ -704,6 +974,10 @@ export function applyCopilotActions(
   for (const action of enrichedActions) {
     if (!isCopilotSourceKey(action.source)) {
       skipped.push({ action, reason: "unknown_source" });
+      continue;
+    }
+    if (isDestructiveCopilotAction(action) && !opts?.allowDestructive) {
+      skipped.push({ action, reason: "needs_confirm" });
       continue;
     }
     if (opts?.onlyAuto && !shouldAutoApply(action.confidence, clarification)) {
@@ -870,6 +1144,57 @@ export function applyCopilotActions(
       const result = applyAppendRaw(next, action);
       if (!result.ok) {
         skipped.push({ action, reason: result.reason ?? "append_raw_failed" });
+        continue;
+      }
+      next = result.blocks;
+      applied.push(action);
+      changed.add(action.source);
+      continue;
+    }
+
+    if (action.type === "delete_incident") {
+      const result = applyDeleteIncident(next, action);
+      if (!result.ok) {
+        skipped.push({ action, reason: result.reason ?? "delete_no_match" });
+        continue;
+      }
+      next = result.blocks;
+      applied.push(action);
+      changed.add(action.source);
+      continue;
+    }
+
+    if (action.type === "delete_mileage") {
+      const result = applyDeleteMileage(next, action);
+      if (!result.ok) {
+        skipped.push({ action, reason: result.reason ?? "delete_no_match" });
+        continue;
+      }
+      next = result.blocks;
+      applied.push(action);
+      changed.add(action.source);
+      continue;
+    }
+
+    if (action.type === "delete_service_work") {
+      const { rows, removed } = deleteServiceWorkRows(next.auto_records.serviceWorks ?? [], {
+        date: action.date,
+        odometer: action.odometer,
+      });
+      if (removed === 0) {
+        skipped.push({ action, reason: "delete_no_match" });
+        continue;
+      }
+      next = { ...next, auto_records: { ...next.auto_records, serviceWorks: rows } };
+      applied.push(action);
+      changed.add("auto_records");
+      continue;
+    }
+
+    if (action.type === "clear_field") {
+      const result = applyClearField(next, action);
+      if (!result.ok) {
+        skipped.push({ action, reason: result.reason ?? "field_already_empty" });
         continue;
       }
       next = result.blocks;

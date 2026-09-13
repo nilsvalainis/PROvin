@@ -7,7 +7,11 @@ import type {
   CopilotAiResponse,
   CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
-import { isCopilotSourceKey, isVinRegistryCopilotSource } from "@/lib/admin-copilot-types";
+import {
+  isCopilotClearableField,
+  isCopilotSourceKey,
+  isVinRegistryCopilotSource,
+} from "@/lib/admin-copilot-types";
 import {
   AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
@@ -133,6 +137,56 @@ function parseAction(raw: unknown): CopilotAction | null {
       ownersSummary,
       statusRecords,
       autoNotes,
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "delete_incident") {
+    const date = asString(o.date, 40);
+    if (!date) return null;
+    const lossAmount = asString(o.lossAmount, 120);
+    return {
+      type: "delete_incident",
+      source,
+      date,
+      ...(lossAmount ? { lossAmount } : {}),
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "delete_mileage") {
+    const date = asString(o.date, 40);
+    if (!date) return null;
+    const odometer = asString(o.odometer, 32);
+    return {
+      type: "delete_mileage",
+      source,
+      date,
+      ...(odometer ? { odometer } : {}),
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "delete_service_work") {
+    const date = asString(o.date, 40);
+    if (!date) return null;
+    const odometer = asString(o.odometer, 32);
+    return {
+      type: "delete_service_work",
+      source: "auto_records",
+      date,
+      ...(odometer ? { odometer } : {}),
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
+  if (type === "clear_field") {
+    const field = asString(o.field, 40);
+    if (!isCopilotClearableField(field)) return null;
+    return {
+      type: "clear_field",
+      source,
+      field,
       confidence,
       ...(note ? { note } : {}),
     };
