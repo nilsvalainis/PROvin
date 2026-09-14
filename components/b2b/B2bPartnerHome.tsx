@@ -21,6 +21,12 @@ function PackageMark({ title }: { title: string }) {
   );
 }
 
+function creditCountClass(count: number) {
+  return count >= 1
+    ? "font-semibold text-emerald-400"
+    : "font-semibold text-red-400";
+}
+
 function StatusBar({
   loaded,
   credits,
@@ -33,38 +39,31 @@ function StatusBar({
   const t = useTranslations("Partner");
   if (!loaded) {
     return (
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-white/10 pb-3 text-[0.78rem] text-zinc-400">
-        <span>{t("statusLoading")}</span>
+      <div className="mb-6 border-b border-white/10 pb-3 text-[0.78rem] text-zinc-400">
+        {t("statusLoading")}
+      </div>
+    );
+  }
+  if (dealerEnabled) {
+    return (
+      <div className="mb-6 border-b border-white/10 pb-3 text-[0.78rem] text-zinc-400">
+        <p>{t("statusAvailableHeading")}</p>
+        <p className="mt-1">
+          {t("statusPlanBusiness")}{" "}
+          <span className={creditCountClass(credits.business)}>{credits.business}</span>
+        </p>
+        <p>
+          {t("statusPlanDealer")}{" "}
+          <span className={creditCountClass(credits.dealer)}>{credits.dealer}</span>
+        </p>
       </div>
     );
   }
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-white/10 pb-3 text-[0.78rem] text-zinc-400">
-      <span>
-        {dealerEnabled ? (
-          <>
-            {t("creditChipBusiness")} <b className="font-semibold text-zinc-100">{credits.business}</b>
-            {" · "}
-            {t("creditChipDealer")} <b className="font-semibold text-zinc-100">{credits.dealer}</b>
-          </>
-        ) : (
-          <>
-            {t("statusRemainingAudits", { count: credits.business })}
-          </>
-        )}
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        {t("statusDealerLabel")}
-        <span
-          className={
-            dealerEnabled
-              ? "rounded-[0.25rem] bg-emerald-500/20 px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.06em] text-emerald-200"
-              : "rounded-[0.25rem] bg-white/[0.06] px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.06em] text-zinc-500"
-          }
-        >
-          {dealerEnabled ? t("statusOn") : t("statusOff")}
-        </span>
-      </span>
+    <div className="mb-6 border-b border-white/10 pb-3 text-[0.78rem] text-zinc-400">
+      {t("statusAvailablePrefix")}{" "}
+      <span className={creditCountClass(credits.business)}>{credits.business}</span>{" "}
+      {t("statusAvailableSuffix")}
     </div>
   );
 }
