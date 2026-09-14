@@ -253,7 +253,8 @@ function PeekCard({
           </div>
         </div>
 
-        <form action={setStatus} className="flex items-center gap-2">
+        {/* Telefonā lēmumu pieņem ar lielajām pogām kartes apakšā, ne ar šo izvēlni. */}
+        <form action={setStatus} className="flex items-center gap-2 max-md:hidden">
           <input type="hidden" name="id" value={e.id} />
           <select
             name="status"
@@ -274,6 +275,37 @@ function PeekCard({
           </button>
         </form>
       </div>
+
+      {/* Vērtēšana notiek stāvot pie auto, tāpēc lēmums ir īkšķa zonā. */}
+      <form action={setStatus} className="mt-3 grid grid-cols-3 gap-2 md:hidden">
+        <input type="hidden" name="id" value={e.id} />
+        <button
+          type="submit"
+          name="status"
+          value="rejected"
+          className="rounded-xl border border-rose-200 bg-rose-50 py-3 text-[12px] font-semibold text-rose-700 disabled:opacity-40"
+          disabled={isRejected}
+        >
+          Noraidīt
+        </button>
+        <button
+          type="submit"
+          name="status"
+          value="in_progress"
+          className="rounded-xl border border-slate-200 py-3 text-[12px] font-semibold text-[var(--color-provin-muted)]"
+        >
+          Procesā
+        </button>
+        <button
+          type="submit"
+          name="status"
+          value="completed"
+          className="rounded-xl bg-emerald-600 py-3 text-[12px] font-semibold text-white disabled:opacity-40"
+          disabled={isDone}
+        >
+          Pabeigts
+        </button>
+      </form>
 
       {showSend ? (
         <div className="mt-3 border-t border-slate-100 pt-3">
