@@ -297,6 +297,55 @@ function ManualOrderDeleteButton({ id }: { id: string }) {
   );
 }
 
+type OrderRowView = {
+  pdfHref: string | null;
+  detailBase: string;
+  orderHref: string;
+  vin: string;
+  hasVin: boolean;
+  primaryClient: string;
+  secondaryClient: string;
+  dealerHighlight: boolean;
+  miniHighlight: boolean;
+};
+
+type ClientOverride = {
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  vin?: string;
+};
+
+/** Viena rinda gan tabulai, gan telefona kartēm, lai abi skati nekad neatšķiras. */
+function orderRowView(
+  o: AdminOrdersTableRow,
+  ov: ClientOverride | undefined,
+  detailBaseNormalized: string,
+): OrderRowView {
+  const detailBase = rowDetailHrefBase(o, detailBaseNormalized);
+  const name = ov?.customerName ?? (o.customerName?.trim() ?? "");
+  const email = ov?.customerEmail ?? (o.customerEmail?.trim() ?? "");
+  const phone = ov?.customerPhone ?? (o.customerPhone?.trim() ?? "");
+  const vin = ov?.vin ?? (o.vin?.trim() ?? "");
+  return {
+    pdfHref: invoicePdfHref(o),
+    detailBase,
+    orderHref: `${detailBase}/${encodeURIComponent(o.id)}`,
+    vin,
+    hasVin: vin.length > 0,
+    primaryClient: name || email || phone || "—",
+    secondaryClient: [name ? email : "", phone].filter(Boolean).join(" · "),
+    dealerHighlight: isDealerHighlightAdminOrder({
+      checkoutLine: o.checkoutLine,
+      amountTotalCents: o.amountTotal,
+    }),
+    miniHighlight: isMiniHighlightAdminOrder({
+      checkoutLine: o.checkoutLine,
+      amountTotalCents: o.amountTotal,
+    }),
+  };
+}
+
 export function AdminOrdersTable({
   orders,
   orderDetailHrefBase = "/admin/orders",
@@ -370,8 +419,94 @@ export function AdminOrdersTable({
   const hug = "w-[1%] whitespace-nowrap";
 
   return (
-    <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
-      <div className="overflow-x-auto">
+    <>
+      {/* Telefonā deviņu kolonnu tabula nav lasāma, tāpēc tā pati rinda ir karte.
+          No 768 px uz augšu rāda tieši to pašu tabulu, kas bija līdz šim. */}
+      <ul className="mt-4 space-y-2 md:hidden">
+        {displayedOrders.map((o) => {
+          const v = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
+          const accent = o.isDemo
+            ? "border-l-[var(--color-provin-accent)]"
+            : v.dealerHighlight
+              ? "border-l-sky-400"
+              : v.miniHighlight
+                ? "border-l-amber-400"
+                : "border-l-slate-200";
+          return (
+            <li
+              key={o.id}
+              className={`rounded-xl border border-slate-200/70 border-l-4 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.04)] ${accent}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-semibold text-[var(--color-apple-text)]">
+                    {o.makeModel?.trim() || v.primaryClient}
+                  </p>
+                  <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-provin-muted)]">
+                    {v.hasVin ? v.vin : "VIN nav"}
+                  </p>
+                </div>
+                <AdminAuditDeadlineCell
+                  sessionId={o.id}
+                  createdUnixSec={o.created}
+                  initialComplete={Boolean(o.auditComplete)}
+                  onCompleteChange={(complete) => markComplete(o.id, complete)}
+                />
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <PaymentStatusPill status={o.paymentStatus} />
+                {o.isDemo ? (
+                  <span className="rounded-full bg-[var(--color-provin-accent-soft)]/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
+                    Paraugs
+                  </span>
+                ) : null}
+                {o.isManual ? (
+                  <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800">
+                    Manuāls
+                  </span>
+                ) : null}
+                {v.miniHighlight ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950">
+                    MINI
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[12px] text-[var(--color-apple-text)]">{v.primaryClient}</p>
+                  <p className="mt-0.5 truncate text-[11px] tabular-nums text-[var(--color-provin-muted)]">
+                    {dateFmt.format(new Date(o.created * 1000))} · {formatMoneyEur(o.amountTotal, o.currency)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {v.pdfHref ? (
+                    <a
+                      href={v.pdfHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/90 text-[var(--color-provin-accent)]"
+                      aria-label="Atvērt rēķinu PDF"
+                    >
+                      <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                    </a>
+                  ) : null}
+                  <Link
+                    href={v.orderHref}
+                    className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-2 text-xs font-semibold text-white shadow-sm"
+                  >
+                    Atvērt
+                  </Link>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)] md:block">
+        <div className="overflow-x-auto">
         <table className="w-full min-w-[1120px] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
@@ -388,17 +523,17 @@ export function AdminOrdersTable({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {displayedOrders.map((o) => {
-              const pdfHref = invoicePdfHref(o);
-              const detailBase = rowDetailHrefBase(o, detailBaseNormalized);
-              const ov = clientOverrides[o.id];
-              const name = ov?.customerName ?? (o.customerName?.trim() ?? "");
-              const email = ov?.customerEmail ?? (o.customerEmail?.trim() ?? "");
-              const phone = ov?.customerPhone ?? (o.customerPhone?.trim() ?? "");
-              const vin = ov?.vin ?? (o.vin?.trim() ?? "");
-              const hasVin = vin.length > 0;
-              const primaryClient = name || email || phone || "—";
-              const secondaryClient = [name ? email : "", phone].filter(Boolean).join(" · ");
-              const orderHref = `${detailBase}/${encodeURIComponent(o.id)}`;
+              const {
+                pdfHref,
+                detailBase,
+                orderHref,
+                vin,
+                hasVin,
+                primaryClient,
+                secondaryClient,
+                dealerHighlight,
+                miniHighlight,
+              } = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
               const openOrderFromRow = (e: MouseEvent) => {
                 if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
                 if (e.metaKey || e.ctrlKey || e.button === 1) {
@@ -407,14 +542,6 @@ export function AdminOrdersTable({
                 }
                 router.push(orderHref);
               };
-              const dealerHighlight = isDealerHighlightAdminOrder({
-                checkoutLine: o.checkoutLine,
-                amountTotalCents: o.amountTotal,
-              });
-              const miniHighlight = isMiniHighlightAdminOrder({
-                checkoutLine: o.checkoutLine,
-                amountTotalCents: o.amountTotal,
-              });
               return (
                 <tr
                   key={o.id}
@@ -535,7 +662,8 @@ export function AdminOrdersTable({
             })}
           </tbody>
         </table>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
