@@ -44,6 +44,7 @@ describe("pakalpojumi catalog", () => {
     expect(pkgs.find((p) => p.id === "koreaUsa")).toBeUndefined();
     const partner = pkgs.find((p) => p.id === "partner")!;
     expect(partner.title).toBe("PROVIN BUSINESS");
+    expect(partner.newBadge).toBe(true);
     expect(partner.buttonText).toBe("Partneriem");
     expect(partner.ctaHref).toBe("/partneriem");
     expect(partner.sampleReportHref).toBeUndefined();

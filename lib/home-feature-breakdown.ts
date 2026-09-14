@@ -34,6 +34,8 @@ export type HomeFeatureBreakdownPackage = {
   sampleReportHref?: string;
   /** Optional highlight badge (e.g. „Populārākā izvēle”). */
   badge?: string;
+  /** Solid „Jaunums” chip above the tab / section title (same language as hero dealer tab). */
+  newBadge?: boolean;
   /** Override checkout href (B2B login, not a priced plan). */
   ctaHref?: string;
 };
@@ -319,6 +321,7 @@ const KOREA_USA_EN: HomeFeatureBreakdownPackage = {
 const PARTNER_LV: HomeFeatureBreakdownPackage = {
   id: "partner",
   title: "PROVIN BUSINESS",
+  newBadge: true,
   buttonText: "Partneriem",
   ctaHref: "/partneriem",
   goal:
@@ -350,6 +353,7 @@ const PARTNER_LV: HomeFeatureBreakdownPackage = {
 const PARTNER_EN: HomeFeatureBreakdownPackage = {
   id: "partner",
   title: "PROVIN BUSINESS",
+  newBadge: true,
   buttonText: "For partners",
   ctaHref: "/partneriem",
   goal:

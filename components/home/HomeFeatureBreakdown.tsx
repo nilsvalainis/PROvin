@@ -159,7 +159,7 @@ export function HomeFeatureBreakdown({
         {/* Desktop/web only — mobile intentionally has no jump strip. */}
         <nav
           aria-label={uiCopy.catalogNavAria}
-          className="mb-10 hidden sticky top-11 z-30 -mx-6 border-b border-white/[0.1] bg-transparent px-6 py-2 lg:block"
+          className="mb-10 hidden sticky top-11 z-30 -mx-6 overflow-visible border-b border-white/[0.1] bg-transparent px-6 pb-2 pt-4 lg:block"
         >
           <ul className="flex items-stretch justify-center">
             {packages.map((pkg, index) => {
@@ -178,10 +178,14 @@ export function HomeFeatureBreakdown({
                     href={`#${catalogPackageAnchorId(pkg.id)}`}
                     aria-current={active ? "true" : undefined}
                     data-active={active ? "true" : undefined}
-                    className={`${tp5Styles.tierTabBtn}${pkg.badge ? ` ${tp5Styles.tierTabBtnWithBadge}` : ""} -mb-px px-2`}
+                    className={`${tp5Styles.tierTabBtn}${
+                      pkg.badge && !pkg.newBadge ? ` ${tp5Styles.tierTabBtnWithBadge}` : ""
+                    } -mb-px px-2`}
                     onClick={() => setActiveId(pkg.id)}
                   >
-                    {pkg.badge ? (
+                    {pkg.newBadge ? (
+                      <span className={tp5Styles.tierNewBadge}>{uiCopy.newBadge}</span>
+                    ) : pkg.badge ? (
                       <span className={tp5Styles.catalogPopularBadge}>{pkg.badge}</span>
                     ) : null}
                     <span
@@ -211,7 +215,9 @@ export function HomeFeatureBreakdown({
                 <div className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22.5rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:gap-12">
                   <div className="min-w-0">
                     <header className="min-w-0">
-                      {pkg.badge ? (
+                      {pkg.newBadge ? (
+                        <p className={tp5Styles.catalogNewBadgeHeader}>{uiCopy.newBadge}</p>
+                      ) : pkg.badge ? (
                         <p className={tp5Styles.catalogPopularBadgeHeader}>{pkg.badge}</p>
                       ) : null}
                       <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
