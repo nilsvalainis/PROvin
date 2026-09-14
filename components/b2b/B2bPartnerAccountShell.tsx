@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { homeContentMaxClass } from "@/lib/home-layout";
@@ -30,28 +30,6 @@ export function B2bPartnerAccountShell({ children }: { children: ReactNode }) {
   const t = useTranslations("Partner");
   const router = useRouter();
   const pathname = usePathname() ?? "";
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/partner/me", { credentials: "include" });
-        if (!res.ok) {
-          router.replace("/partneriem");
-          return;
-        }
-        if (!cancelled) setReady(true);
-      } catch {
-        router.replace("/partneriem");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
-
-  if (!ready) return null;
 
   return (
     <div className="px-4 pb-8 pt-3 sm:px-6 sm:pb-12 sm:pt-5 lg:pb-16">

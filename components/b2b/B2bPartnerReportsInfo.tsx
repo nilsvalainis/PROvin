@@ -1,30 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { B2bPartnerCatalog } from "@/components/b2b/B2bPartnerCatalog";
-import type { B2bPartnerPublicProfile } from "@/lib/b2b-partner-account";
 
-export function B2bPartnerReportsInfo() {
+export function B2bPartnerReportsInfo({ dealerEnabled = false }: { dealerEnabled?: boolean }) {
   const t = useTranslations("Partner");
-  const [dealerEnabled, setDealerEnabled] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/partner/me", { credentials: "include" });
-        if (!res.ok) return;
-        const data = (await res.json()) as { partner?: B2bPartnerPublicProfile };
-        if (!cancelled) setDealerEnabled(data.partner?.dealerEnabled === true);
-      } catch {
-        /* keep default off */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   return (
     <div>

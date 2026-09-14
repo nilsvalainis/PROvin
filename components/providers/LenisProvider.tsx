@@ -41,18 +41,14 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     () => ({
       /** Tikai desktop (fine pointer): gluds ritenis; touch paliek native. */
       lerp: 0.058,
-      smoothWheel: true,
+      smoothWheel: !reducedMotion && !coarsePointer,
       wheelMultiplier: 1,
       anchors: true,
       autoRaf: true,
       orientation: "vertical",
     }),
-    [],
+    [reducedMotion, coarsePointer],
   );
-
-  if (reducedMotion || coarsePointer) {
-    return <>{children}</>;
-  }
 
   return (
     <ReactLenis root options={options}>

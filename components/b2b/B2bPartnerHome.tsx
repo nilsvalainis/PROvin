@@ -6,7 +6,7 @@ import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { useRouter } from "@/i18n/navigation";
 import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
 import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
-import type { B2bPartnerPriceOverrides, B2bPartnerPublicProfile } from "@/lib/b2b-partner-account";
+import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
 import { emptyB2bCreditRemaining, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isValidVin } from "@/lib/order-field-validation";
 
@@ -70,13 +70,21 @@ function StatusBar({
   );
 }
 
-export function B2bPartnerHome() {
+export function B2bPartnerHome({
+  initialCredits,
+  initialDealerEnabled,
+  initialPrices,
+}: {
+  initialCredits: B2bCreditRemaining;
+  initialDealerEnabled: boolean;
+  initialPrices: B2bPartnerPriceOverrides | null;
+}) {
   const t = useTranslations("Partner");
   const locale = useLocale();
   const router = useRouter();
-  const [remaining, setRemaining] = useState<B2bCreditRemaining | null>(null);
-  const [dealerEnabled, setDealerEnabled] = useState(false);
-  const [prices, setPrices] = useState<B2bPartnerPriceOverrides | null>(null);
+  const [remaining, setRemaining] = useState<B2bCreditRemaining>(initialCredits);
+  const [dealerEnabled, setDealerEnabled] = useState(initialDealerEnabled);
+  const [prices, setPrices] = useState<B2bPartnerPriceOverrides | null>(initialPrices);
   const [vin, setVin] = useState("");
   const [service, setService] = useState<B2bPartnerPlanId | null>(null);
   const [vinError, setVinError] = useState("");
@@ -97,7 +105,9 @@ export function B2bPartnerHome() {
         return;
       }
       const creditsData = (await creditsRes.json()) as { remaining?: B2bCreditRemaining };
-      const meData = (await meRes.json()) as { partner?: B2bPartnerPublicProfile };
+      const meData = (await meRes.json()) as {
+        partner?: { dealerEnabled?: boolean; prices?: B2bPartnerPriceOverrides | null };
+      };
       if (signal?.cancelled) return;
       const next = creditsData.remaining ?? emptyB2bCreditRemaining();
       const enabled = meData.partner?.dealerEnabled === true;
@@ -112,32 +122,14 @@ export function B2bPartnerHome() {
   );
 
   useEffect(() => {
-    const signal = { cancelled: false };
-    void (async () => {
-      try {
-        await loadCredits(signal);
-      } catch {
-        if (!signal.cancelled) {
-          setRemaining(emptyB2bCreditRemaining());
-          setDealerEnabled(false);
-          setPrices(null);
-        }
-      }
-    })();
-    return () => {
-      signal.cancelled = true;
-    };
-  }, [loadCredits]);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
     if (new URLSearchParams(window.location.search).get("pack") === "1") {
       setPackPaidOk(true);
     }
   }, []);
 
-  const credits = remaining ?? emptyB2bCreditRemaining();
-  const loaded = remaining !== null;
+  const credits = remaining;
+  const loaded = true;
   const availablePlans = useMemo(() => {
     const plans: B2bPartnerPlanId[] = [];
     if (credits.business > 0) plans.push("business");
