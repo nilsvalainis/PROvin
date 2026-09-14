@@ -37,6 +37,9 @@ describe("b2b partner prices", () => {
     expect(en.business.goal).toContain("PROVIN BUSINESS");
     expect(en.business.goal).not.toMatch(/apvieno datus/);
     expect(getB2bBusinessHeroFeatures("en")[0]).toBe("Official dealer data*");
+    expect(getB2bCatalog("de").dealer.title).toBe("HÄNDLERDATEN");
+    expect(getB2bCatalog("ru").business.goal).toContain("PROVIN BUSINESS");
+    expect(getB2bBusinessHeroFeatures("de")[0]).toBe("Offizielle Händlerdaten*");
     expect(getB2bCatalog("lv").dealer.title).toBe("DĪLERA DATI");
   });
 });

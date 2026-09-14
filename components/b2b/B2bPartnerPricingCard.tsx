@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type SyntheticEvent } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
@@ -88,7 +88,8 @@ export function B2bPartnerPricingCard({
   stopSwipePropagation,
 }: Props) {
   const locale = useLocale();
-  const uiCopy = getTp5UiCopy(locale);
+  const t = useTranslations("Partner");
+  const uiCopy = getTp5UiCopy(locale === "lv" ? "lv" : "en");
   const isDealer = plan === "dealer";
   const catalogPlan = getB2bCatalogPlan(plan, locale);
   const heroFeatures = getB2bBusinessHeroFeatures(locale);
@@ -96,23 +97,12 @@ export function B2bPartnerPricingCard({
     { id: "business", title: getB2bCatalogPlan("business", locale).title },
     { id: "dealer", title: getB2bCatalogPlan("dealer", locale).title },
   ];
-  const dealerHighlightTitle =
-    locale === "en" ? "Dealer service history and mileage" : "Dīleru servisa vēsture un nobraukums";
-  const dealerHighlightSubtitle =
-    locale === "en"
-      ? "Direct access to official manufacturer service records."
-      : "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.";
-  const businessMeta =
-    locale === "en"
-      ? "Full history in one report, without consultation."
-      : "Pilna vēsture vienā atskaitē, bez konsultācijas.";
-  const serviceTabAria = locale === "en" ? "Service" : "Pakalpojums";
-  const partnerCodeError =
-    locale === "en" ? "Enter a 6-digit partner code." : "Ievadi 6 ciparu partnera kodu.";
-  const vinFormatError =
-    locale === "en"
-      ? "VIN: 11-17 characters, no I, O or Q."
-      : "VIN: 11-17 zīmes, bez I, O, Q.";
+  const dealerHighlightTitle = t("dealerHighlightTitle");
+  const dealerHighlightSubtitle = t("dealerHighlightSubtitle");
+  const businessMeta = t("businessMeta");
+  const serviceTabAria = t("servicePick");
+  const partnerCodeError = t("partnerCodeError");
+  const vinFormatError = t("vinError");
   const [codeError, setCodeError] = useState("");
   const [vinError, setVinError] = useState("");
   const sampleHref = catalogPlan.sampleHref;

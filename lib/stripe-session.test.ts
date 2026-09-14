@@ -36,7 +36,10 @@ describe("stripe-session — Klienta komentārs", () => {
     expect(stripeCheckoutLocale()).toBe("lv");
     expect(stripeCheckoutLocale("lv")).toBe("lv");
     expect(stripeCheckoutLocale("en")).toBe("en");
+    expect(stripeCheckoutLocale("de")).toBe("de");
+    expect(stripeCheckoutLocale("ru")).toBe("ru");
     expect(getClientCommentCustomField("en").label.custom).toBe("Customer comment");
+    expect(getClientCommentCustomField("de").label.custom).toBe("Kundenkommentar");
   });
 
   it("reads Stripe page comment into notes when form notes are empty", () => {

@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { isAppLocale, type AppLocale } from "@/i18n/locales";
 
 export type CheckoutLineKind =
   | "audit"
@@ -23,9 +24,9 @@ export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): Ch
   return "audit";
 }
 
-/** Hosted Stripe Checkout chrome follows the public site locale. */
-export function stripeCheckoutLocale(locale?: string): "lv" | "en" {
-  return locale === "en" ? "en" : "lv";
+/** Hosted Stripe Checkout chrome follows the page locale. */
+export function stripeCheckoutLocale(locale?: string): AppLocale {
+  return isAppLocale(locale) ? locale : "lv";
 }
 
 /**
@@ -44,11 +45,16 @@ export const CLIENT_COMMENT_CUSTOM_FIELD = {
 export function getClientCommentCustomField(
   locale?: string,
 ): Stripe.Checkout.SessionCreateParams.CustomField {
-  if (locale !== "en") return CLIENT_COMMENT_CUSTOM_FIELD;
-  return {
-    ...CLIENT_COMMENT_CUSTOM_FIELD,
-    label: { type: "custom", custom: "Customer comment" },
-  };
+  if (locale === "en") {
+    return { ...CLIENT_COMMENT_CUSTOM_FIELD, label: { type: "custom", custom: "Customer comment" } };
+  }
+  if (locale === "de") {
+    return { ...CLIENT_COMMENT_CUSTOM_FIELD, label: { type: "custom", custom: "Kundenkommentar" } };
+  }
+  if (locale === "ru") {
+    return { ...CLIENT_COMMENT_CUSTOM_FIELD, label: { type: "custom", custom: "Комментарий клиента" } };
+  }
+  return CLIENT_COMMENT_CUSTOM_FIELD;
 }
 
 export function getCustomFieldValue(

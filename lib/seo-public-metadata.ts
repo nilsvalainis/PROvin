@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PUBLIC_LOCALES } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 import { getCompanyPublicBrand } from "@/lib/company";
 import { getPublicSiteOrigin } from "@/lib/site-url";
@@ -6,7 +7,7 @@ import { getPublicSiteOrigin } from "@/lib/site-url";
 /** `app/[locale]/layout.tsx` metadati mantojas visām apakšlapām. Bez sava `alternates` katra
  * apakšlapa kanonizējas uz sākumlapu, tāpēc katrai indeksējamai lapai jāizsauc šie palīgi. */
 
-type PublicLocale = (typeof routing.locales)[number];
+type PublicLocale = (typeof PUBLIC_LOCALES)[number];
 
 function normalizePath(path: string): string {
   if (!path || path === "/") return "";
@@ -21,17 +22,20 @@ export function publicPageUrl(locale: string, path = ""): string {
 /** Kanoniskais URL + `hreflang` pāri (`x-default` → noklusējuma lokalizācija). */
 export function publicPageAlternates(locale: string, path = ""): NonNullable<Metadata["alternates"]> {
   const languages: Record<string, string> = {};
-  for (const l of routing.locales) languages[l] = publicPageUrl(l, path);
+  for (const l of PUBLIC_LOCALES) languages[l] = publicPageUrl(l, path);
   languages["x-default"] = publicPageUrl(routing.defaultLocale, path);
   return { canonical: publicPageUrl(locale, path), languages };
 }
 
 export function openGraphLocale(locale: string): string {
-  return locale === "en" ? "en_GB" : "lv_LV";
+  if (locale === "en") return "en_GB";
+  if (locale === "de") return "de_DE";
+  if (locale === "ru") return "ru_RU";
+  return "lv_LV";
 }
 
 export function isPublicLocale(locale: string): locale is PublicLocale {
-  return (routing.locales as readonly string[]).includes(locale);
+  return (PUBLIC_LOCALES as readonly string[]).includes(locale);
 }
 
 /** Pilns metadatu bloks indeksējamai publiskajai lapai (title, description, canonical, hreflang, OG). */

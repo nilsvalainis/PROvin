@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { routing } from "@/i18n/routing";
+import { PUBLIC_LOCALES } from "@/i18n/locales";
 import {
   deleteStoredBlogPost,
   emptyBlogPostDraft,
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 /** Publiskās bloga lapas ir ISR (`revalidate = 3600`) — bez šī izmaiņas parādītos ar stundas nobīdi. */
 function revalidateBlogPaths(slug?: string): void {
-  for (const locale of routing.locales) {
+  for (const locale of PUBLIC_LOCALES) {
     try {
       revalidatePath(`/${locale}/blogs`);
       if (slug) revalidatePath(`/${locale}/blogs/${slug}`);

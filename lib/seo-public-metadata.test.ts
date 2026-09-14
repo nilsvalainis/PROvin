@@ -14,7 +14,8 @@ describe("seo-public-metadata", () => {
 
   it("openGraph locale follows the page locale", () => {
     expect(openGraphLocale("lv")).toBe("lv_LV");
-    expect(openGraphLocale("en")).toBe("en_GB");
+    expect(openGraphLocale("de")).toBe("de_DE");
+    expect(openGraphLocale("ru")).toBe("ru_RU");
   });
 
   it("buildPublicPageMetadata sets per-page canonical, not the homepage", () => {

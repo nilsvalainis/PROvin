@@ -12,6 +12,7 @@ import {
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { AzvinLocaleSwitcher } from "@/components/demo/azvin/AzvinLocaleSwitcher";
 import { AzvinAboutNavLink } from "@/components/demo/azvin/AzvinAboutNavLink";
+import { B2bLocaleSwitcher } from "@/components/b2b/B2bLocaleSwitcher";
 
 /** Mājas navigācijas rindkopas kā `/#…` vai `/biezi-jautajumi`. */
 export function HeaderClient() {
@@ -212,6 +213,8 @@ export function HeaderClient() {
               />
               <AzvinLocaleSwitcher dark={headerChromeDark} />
             </>
+          ) : isPartneriem ? (
+            <B2bLocaleSwitcher dark={headerChromeDark} compact />
           ) : (
             <Link
               href={pathname as never}

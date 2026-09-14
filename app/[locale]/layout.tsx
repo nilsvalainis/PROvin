@@ -11,6 +11,7 @@ import { Header } from "@/components/Header";
 import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import { getCompanyPublicBrand } from "@/lib/company";
+import { PUBLIC_LOCALES } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 import { openGraphLocale, publicPageAlternates, publicPageUrl } from "@/lib/seo-public-metadata";
 import { getPublicSiteOrigin } from "@/lib/site-url";
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
 };
 
 export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
+  return PUBLIC_LOCALES.map((locale) => ({ locale }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -1,9 +1,64 @@
 import type { AbstractIntlMessages } from "next-intl";
+import {
+  isAppLocale,
+  siteMessageLocale,
+  type AppLocale,
+  type PublicLocale,
+} from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 
-export type AppLocale = (typeof routing.locales)[number];
+export type { AppLocale };
+
+const SITE_LOADERS: Record<
+  PublicLocale,
+  Record<string, () => Promise<{ default: AbstractIntlMessages }>>
+> = {
+  lv: {
+    meta: () => import("../../messages/lv/meta.json"),
+    header: () => import("../../messages/lv/header.json"),
+    hero: () => import("../../messages/lv/hero.json"),
+    pricing: () => import("../../messages/lv/pricing.json"),
+    iriss: () => import("../../messages/lv/iriss.json"),
+    faq: () => import("../../messages/lv/faq.json"),
+    order: () => import("../../messages/lv/order.json"),
+    footer: () => import("../../messages/lv/footer.json"),
+    thanks: () => import("../../messages/lv/thanks.json"),
+    misc: () => import("../../messages/lv/misc.json"),
+    legal: () => import("../../messages/lv/legal.json"),
+    provinSelect: () => import("../../messages/lv/provinSelect.json"),
+    googleReviews: () => import("../../messages/lv/googleReviews.json"),
+    riskAuditGuide: () => import("../../messages/lv/riskAuditGuide.json"),
+    samples: () => import("../../messages/lv/samples.json"),
+  },
+  en: {
+    meta: () => import("../../messages/en/meta.json"),
+    header: () => import("../../messages/en/header.json"),
+    hero: () => import("../../messages/en/hero.json"),
+    pricing: () => import("../../messages/en/pricing.json"),
+    iriss: () => import("../../messages/en/iriss.json"),
+    faq: () => import("../../messages/en/faq.json"),
+    order: () => import("../../messages/en/order.json"),
+    footer: () => import("../../messages/en/footer.json"),
+    thanks: () => import("../../messages/en/thanks.json"),
+    misc: () => import("../../messages/en/misc.json"),
+    legal: () => import("../../messages/en/legal.json"),
+    provinSelect: () => import("../../messages/en/provinSelect.json"),
+    googleReviews: () => import("../../messages/en/googleReviews.json"),
+    riskAuditGuide: () => import("../../messages/en/riskAuditGuide.json"),
+    samples: () => import("../../messages/en/samples.json"),
+  },
+};
+
+const PARTNER_LOADERS: Record<AppLocale, () => Promise<{ default: AbstractIntlMessages }>> = {
+  lv: () => import("../../messages/lv/partner.json"),
+  en: () => import("../../messages/en/partner.json"),
+  de: () => import("../../messages/de/partner.json"),
+  ru: () => import("../../messages/ru/partner.json"),
+};
 
 export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMessages> {
+  const site = siteMessageLocale(locale);
+  const loaders = SITE_LOADERS[site];
   const [
     meta,
     header,
@@ -17,23 +72,27 @@ export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMe
     misc,
     legal,
     provinSelect,
+    googleReviews,
+    riskAuditGuide,
     samples,
     partner,
   ] = await Promise.all([
-    import(`../../messages/${locale}/meta.json`),
-    import(`../../messages/${locale}/header.json`),
-    import(`../../messages/${locale}/hero.json`),
-    import(`../../messages/${locale}/pricing.json`),
-    import(`../../messages/${locale}/iriss.json`),
-    import(`../../messages/${locale}/faq.json`),
-    import(`../../messages/${locale}/order.json`),
-    import(`../../messages/${locale}/footer.json`),
-    import(`../../messages/${locale}/thanks.json`),
-    import(`../../messages/${locale}/misc.json`),
-    import(`../../messages/${locale}/legal.json`),
-    import(`../../messages/${locale}/provinSelect.json`),
-    import(`../../messages/${locale}/samples.json`),
-    import(`../../messages/${locale}/partner.json`),
+    loaders.meta(),
+    loaders.header(),
+    loaders.hero(),
+    loaders.pricing(),
+    loaders.iriss(),
+    loaders.faq(),
+    loaders.order(),
+    loaders.footer(),
+    loaders.thanks(),
+    loaders.misc(),
+    loaders.legal(),
+    loaders.provinSelect(),
+    loaders.googleReviews(),
+    loaders.riskAuditGuide(),
+    loaders.samples(),
+    PARTNER_LOADERS[locale](),
   ]);
 
   return {
@@ -49,7 +108,13 @@ export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMe
     ...misc.default,
     ...legal.default,
     ...provinSelect.default,
+    ...googleReviews.default,
+    ...riskAuditGuide.default,
     ...samples.default,
     ...partner.default,
   };
+}
+
+export function resolveAppLocale(locale: string | null | undefined): AppLocale {
+  return isAppLocale(locale) ? locale : routing.defaultLocale;
 }

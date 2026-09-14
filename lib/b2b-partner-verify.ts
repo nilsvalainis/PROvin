@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { isAppLocale, type AppLocale } from "@/i18n/locales";
 
 export const B2B_EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -32,11 +33,12 @@ export function b2bEmailVerifyPath(token: string): string {
   return `/partneriem/apstiprinat?token=${encodeURIComponent(token.trim())}`;
 }
 
-export function b2bPartnerLocale(raw: string | null | undefined): "lv" | "en" {
-  return raw?.trim().toLowerCase() === "en" ? "en" : "lv";
+export function b2bPartnerLocale(raw: string | null | undefined): AppLocale {
+  const value = raw?.trim().toLowerCase();
+  return isAppLocale(value) ? value : "lv";
 }
 
-export function b2bPartnerVerifyAbsoluteUrl(origin: string, locale: "lv" | "en", token: string): string {
+export function b2bPartnerVerifyAbsoluteUrl(origin: string, locale: AppLocale, token: string): string {
   return `${origin.replace(/\/$/, "")}/${locale}${b2bEmailVerifyPath(token)}`;
 }
 

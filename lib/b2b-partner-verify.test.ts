@@ -21,8 +21,10 @@ describe("b2b email verify tokens", () => {
     expect(b2bEmailVerifyPath(token)).toBe(`/partneriem/apstiprinat?token=${token}`);
     expect(b2bPartnerLocale("en")).toBe("en");
     expect(b2bPartnerLocale("lv")).toBe("lv");
-    expect(b2bPartnerVerifyAbsoluteUrl("https://provin.lv", "lv", token)).toBe(
-      `https://provin.lv/lv/partneriem/apstiprinat?token=${token}`,
+    expect(b2bPartnerLocale("de")).toBe("de");
+    expect(b2bPartnerLocale("ru")).toBe("ru");
+    expect(b2bPartnerVerifyAbsoluteUrl("https://provin.lv", "de", token)).toBe(
+      `https://provin.lv/de/partneriem/apstiprinat?token=${token}`,
     );
   });
 

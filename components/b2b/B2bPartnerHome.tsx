@@ -61,9 +61,11 @@ function StatusBar({
   }
   return (
     <div className="mb-6 border-b border-white/10 pb-3 text-[0.78rem] text-zinc-400">
-      {t("statusAvailablePrefix")}{" "}
-      <span className={creditCountClass(credits.business)}>{credits.business}</span>{" "}
-      {t("statusAvailableSuffix")}
+      {t.rich("statusAvailable", {
+        count: () => (
+          <span className={creditCountClass(credits.business)}>{credits.business}</span>
+        ),
+      })}
     </div>
   );
 }

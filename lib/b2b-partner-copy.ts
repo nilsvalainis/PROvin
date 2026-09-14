@@ -9,18 +9,30 @@ export type B2bPartnerPlanId = "business" | "dealer";
 export const B2B_DNA_SWAP_NOTE = "Atskaite var tikt aizstāta ar citu, reģionam atbilstošāku.";
 const B2B_DNA_SWAP_NOTE_EN =
   "The report may be substituted with another region-appropriate database.";
+const B2B_DNA_SWAP_NOTE_DE =
+  "Der Bericht kann durch eine andere, für die Region passende Datenquelle ersetzt werden.";
+const B2B_DNA_SWAP_NOTE_RU =
+  "Отчёт может быть заменён другой базой, которая лучше подходит для региона.";
 
 export const B2B_BUSINESS_GOAL =
   "PROVIN BUSINESS apvieno datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas/Amerikas valstu reģistriem. Vienā ērtā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, negadījumu vēsturi un servisa ierakstus, būtiski samazinot riskus un iegūstot pārliecību katrā darījumā.";
 
 const B2B_BUSINESS_GOAL_EN =
   "PROVIN BUSINESS combines data from official dealer networks, carVertical, AutoDNA and European/US registries. In one clear report you get a full mileage timeline, accident history and service records, reducing risk and giving confidence in every deal.";
+const B2B_BUSINESS_GOAL_DE =
+  "PROVIN BUSINESS bündelt Daten aus offiziellen Händlernetzen, carVertical, AutoDNA und europäischen sowie US-Registern. In einem Bericht erhalten Sie die Kilometerchronologie, die Unfallhistorie und Serviceeinträge, senken das Risiko und gewinnen Sicherheit in jedem Geschäft.";
+const B2B_BUSINESS_GOAL_RU =
+  "PROVIN BUSINESS собирает данные официальных дилерских сетей, carVertical, AutoDNA и реестров Европы и США. В одном отчёте вы получаете хронологию пробега, историю ДТП и записи обслуживания: меньше риска и больше уверенности в каждой сделке.";
 
 export const B2B_DEALER_GOAL =
   "DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm. Vienā pārskatāmā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, veiktos remontus, apkopes un aktīvo kampaņu pārbaudi, sniedzot maksimālu pārredzamību un tiešu piekļuvi atbalstīto zīmolu sistēmām.";
 
 const B2B_DEALER_GOAL_EN =
   "DEALER DATA provides in-depth analysis of official service records directly from manufacturer databases. In one clear report you get a full mileage timeline, repairs, maintenance and active campaign checks, with maximum transparency and direct access to supported brand systems.";
+const B2B_DEALER_GOAL_DE =
+  "HÄNDLERDATEN liefern die Servicehistorie direkt aus den Herstellerdatenbanken. In einem Bericht sehen Sie Kilometerstände, Reparaturen, Wartungen und offene Rückrufaktionen, mit direktem Zugang zu den Systemen der unterstützten Marken.";
+const B2B_DEALER_GOAL_RU =
+  "ДАННЫЕ ДИЛЕРА дают разбор официальных сервисных записей напрямую из баз производителя. В одном отчёте: пробег, ремонты, ТО и проверка активных кампаний, с прямым доступом к системам поддерживаемых марок.";
 
 export const B2B_DEALER_GUARANTEE_TITLE = "100% Naudas atmaksas garantija";
 export const B2B_DEALER_GUARANTEE_BODY =
@@ -29,6 +41,12 @@ export const B2B_DEALER_GUARANTEE_BODY =
 const B2B_DEALER_GUARANTEE_TITLE_EN = "100% money-back guarantee";
 const B2B_DEALER_GUARANTEE_BODY_EN =
   "If the manufacturer's official database has no records for this VIN, we will refund the purchase in full.";
+const B2B_DEALER_GUARANTEE_TITLE_DE = "100% Geld-zurück-Garantie";
+const B2B_DEALER_GUARANTEE_BODY_DE =
+  "Liegen in der offiziellen Herstellerdatenbank zu dieser VIN keine Einträge vor, erstatten wir den Kaufbetrag in voller Höhe.";
+const B2B_DEALER_GUARANTEE_TITLE_RU = "100% гарантия возврата денег";
+const B2B_DEALER_GUARANTEE_BODY_RU =
+  "Если в официальной базе производителя по этому VIN нет записей, вернём полную стоимость покупки.";
 
 /** Same 8 glyphs as the public AUDITS rail; labels follow BUSINESS sources. */
 export const B2B_BUSINESS_DESKTOP_FEATURES: Tp5DesktopHeroFeature[] = [
@@ -52,6 +70,26 @@ const B2B_BUSINESS_DESKTOP_FEATURES_EN: Tp5DesktopHeroFeature[] = [
   { label: "Technical inspection history", icon: "inspection-tips" },
   { label: "International history check", icon: "international" },
 ];
+const B2B_BUSINESS_DESKTOP_FEATURES_DE: Tp5DesktopHeroFeature[] = [
+  { label: "Offizielle Händlerdaten", icon: "dealer-data" },
+  { label: "carVertical-Anbindung", icon: "carvertical" },
+  { label: "autoDNA-Anbindung", icon: "autodna" },
+  { label: "Register des Herkunftslands", icon: "eu-registry" },
+  { label: "Auktionsportal-Archiv", icon: "listing-analysis" },
+  { label: "Versichererdaten", icon: "consultation" },
+  { label: "Technische Prüfhistorie", icon: "inspection-tips" },
+  { label: "Internationale Historienprüfung", icon: "international" },
+];
+const B2B_BUSINESS_DESKTOP_FEATURES_RU: Tp5DesktopHeroFeature[] = [
+  { label: "Официальные данные дилера", icon: "dealer-data" },
+  { label: "Интеграция carVertical", icon: "carvertical" },
+  { label: "Интеграция autoDNA", icon: "autodna" },
+  { label: "Реестры страны происхождения", icon: "eu-registry" },
+  { label: "Архив аукционов", icon: "listing-analysis" },
+  { label: "Данные страховщиков", icon: "consultation" },
+  { label: "История техосмотров", icon: "inspection-tips" },
+  { label: "Международная проверка истории", icon: "international" },
+];
 
 export const B2B_BUSINESS_HERO_FEATURES = [
   "Oficiālo dīleru dati*",
@@ -71,6 +109,24 @@ const B2B_BUSINESS_HERO_FEATURES_EN = [
   "Insurer data",
   "Technical inspection history",
   "Data summary",
+] as const;
+const B2B_BUSINESS_HERO_FEATURES_DE = [
+  "Offizielle Händlerdaten*",
+  "CarVertical + AutoDNA",
+  "Register des Herkunftslands",
+  "Auktionsportal-Archiv",
+  "Versichererdaten",
+  "Technische Prüfhistorie",
+  "Datenübersicht",
+] as const;
+const B2B_BUSINESS_HERO_FEATURES_RU = [
+  "Официальные данные дилера*",
+  "CarVertical + AutoDNA",
+  "Реестры страны происхождения",
+  "Архив аукционов",
+  "Данные страховщиков",
+  "История техосмотров",
+  "Сводка данных",
 ] as const;
 
 export type B2bCatalogItem = {
@@ -185,8 +241,65 @@ const B2B_CATALOG_EN: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
   },
 };
 
+const B2B_CATALOG_DE: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
+  business: {
+    title: "PROVIN BUSINESS",
+    goal: B2B_BUSINESS_GOAL_DE,
+    items: [
+      { icon: "store" as const, title: "Offizielle Händlerdaten*" },
+      { icon: "logos" as const, title: "CarVertical + AutoDNA" },
+      { icon: "globe" as const, title: "Register des Herkunftslands" },
+      { icon: "camera" as const, title: "Auktionsportal-Archiv" },
+      { icon: "shield" as const, title: "Versichererdaten" },
+      { icon: "clipboard" as const, title: "Technische Prüfhistorie" },
+      { icon: "list" as const, title: "Datenübersicht" },
+    ],
+    foot: "*verfügbar für ausgewählte Hersteller.",
+    sampleHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+  },
+  dealer: {
+    title: "HÄNDLERDATEN",
+    goal: B2B_DEALER_GOAL_DE,
+    guaranteeTitle: B2B_DEALER_GUARANTEE_TITLE_DE,
+    guaranteeBody: B2B_DEALER_GUARANTEE_BODY_DE,
+    items: [],
+    foot: "",
+    sampleHref: TP5_DEALER_SAMPLE_REPORT_HREF,
+  },
+};
+
+const B2B_CATALOG_RU: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
+  business: {
+    title: "PROVIN BUSINESS",
+    goal: B2B_BUSINESS_GOAL_RU,
+    items: [
+      { icon: "store" as const, title: "Официальные данные дилера*" },
+      { icon: "logos" as const, title: "CarVertical + AutoDNA" },
+      { icon: "globe" as const, title: "Реестры страны происхождения" },
+      { icon: "camera" as const, title: "Архив аукционов" },
+      { icon: "shield" as const, title: "Данные страховщиков" },
+      { icon: "clipboard" as const, title: "История техосмотров" },
+      { icon: "list" as const, title: "Сводка данных" },
+    ],
+    foot: "*доступно для отдельных производителей.",
+    sampleHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+  },
+  dealer: {
+    title: "ДАННЫЕ ДИЛЕРА",
+    goal: B2B_DEALER_GOAL_RU,
+    guaranteeTitle: B2B_DEALER_GUARANTEE_TITLE_RU,
+    guaranteeBody: B2B_DEALER_GUARANTEE_BODY_RU,
+    items: [],
+    foot: "",
+    sampleHref: TP5_DEALER_SAMPLE_REPORT_HREF,
+  },
+};
+
 export function getB2bCatalog(locale?: string): Record<B2bPartnerPlanId, B2bCatalogPackage> {
-  return locale === "en" ? B2B_CATALOG_EN : B2B_CATALOG;
+  if (locale === "en") return B2B_CATALOG_EN;
+  if (locale === "de") return B2B_CATALOG_DE;
+  if (locale === "ru") return B2B_CATALOG_RU;
+  return B2B_CATALOG;
 }
 
 export function getB2bCatalogPlan(
@@ -197,15 +310,24 @@ export function getB2bCatalogPlan(
 }
 
 export function getB2bBusinessHeroFeatures(locale?: string): readonly string[] {
-  return locale === "en" ? B2B_BUSINESS_HERO_FEATURES_EN : B2B_BUSINESS_HERO_FEATURES;
+  if (locale === "en") return B2B_BUSINESS_HERO_FEATURES_EN;
+  if (locale === "de") return B2B_BUSINESS_HERO_FEATURES_DE;
+  if (locale === "ru") return B2B_BUSINESS_HERO_FEATURES_RU;
+  return B2B_BUSINESS_HERO_FEATURES;
 }
 
 export function getB2bBusinessDesktopFeatures(locale?: string): Tp5DesktopHeroFeature[] {
-  return locale === "en" ? B2B_BUSINESS_DESKTOP_FEATURES_EN : B2B_BUSINESS_DESKTOP_FEATURES;
+  if (locale === "en") return B2B_BUSINESS_DESKTOP_FEATURES_EN;
+  if (locale === "de") return B2B_BUSINESS_DESKTOP_FEATURES_DE;
+  if (locale === "ru") return B2B_BUSINESS_DESKTOP_FEATURES_RU;
+  return B2B_BUSINESS_DESKTOP_FEATURES;
 }
 
 export function getB2bDnaSwapNote(locale?: string): string {
-  return locale === "en" ? B2B_DNA_SWAP_NOTE_EN : B2B_DNA_SWAP_NOTE;
+  if (locale === "en") return B2B_DNA_SWAP_NOTE_EN;
+  if (locale === "de") return B2B_DNA_SWAP_NOTE_DE;
+  if (locale === "ru") return B2B_DNA_SWAP_NOTE_RU;
+  return B2B_DNA_SWAP_NOTE;
 }
 
 export const B2B_PARTNER_PRICE: Record<B2bPartnerPlanId, string> = {

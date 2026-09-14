@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { listBlogPosts } from "@/lib/blog/posts";
+import { PUBLIC_LOCALES } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -24,11 +25,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/lietosanas-noteikumi", changeFrequency: "yearly", priority: 0.4 },
   ];
 
-  for (const locale of routing.locales) {
+  for (const locale of PUBLIC_LOCALES) {
     const prefix = `/${locale}`;
     for (const { path, changeFrequency, priority } of publicPaths) {
       const languages: Record<string, string> = {};
-      for (const loc of routing.locales) languages[loc] = `${base}/${loc}${path}`;
+      for (const loc of PUBLIC_LOCALES) languages[loc] = `${base}/${loc}${path}`;
       languages["x-default"] = `${base}/${routing.defaultLocale}${path}`;
       entries.push({
         url: `${base}${prefix}${path}`,
@@ -41,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const post of posts) {
       const postPath = `/blogs/${post.slug}`;
       const languages: Record<string, string> = {};
-      for (const loc of routing.locales) languages[loc] = `${base}/${loc}${postPath}`;
+      for (const loc of PUBLIC_LOCALES) languages[loc] = `${base}/${loc}${postPath}`;
       languages["x-default"] = `${base}/${routing.defaultLocale}${postPath}`;
       entries.push({
         url: `${base}${prefix}${postPath}`,

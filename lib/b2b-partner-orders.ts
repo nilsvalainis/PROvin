@@ -1,4 +1,4 @@
-import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
+import { b2bDateLocale } from "@/i18n/locales";
 
 export type B2bPartnerOrderRow = {
   id: string;
@@ -52,7 +52,7 @@ export function formatB2bArchiveAmount(cents: number | null | undefined, currenc
 export function formatB2bPartnerOrderDate(iso: string, locale: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "lv-LV", {
+  return new Intl.DateTimeFormat(b2bDateLocale(locale), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
