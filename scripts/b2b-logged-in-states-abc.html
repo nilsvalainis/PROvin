@@ -300,18 +300,18 @@ const LAYOUTS = [
     title:"13. Statusa rinda zem nav",
     why:"Pilna platuma rinda ar atlikumu. A/B/C maina tikai rindas tekstu un saturu zemāk.",
     a(){return `${nav("Atskaites")}
-      <div class="bar"><span>Palikušas <b>0</b> Audita atskaites</span><span>Dīleris: <span class="pill off">Off</span></span></div>
+      <div class="bar">Pieejamas <span class="n0">0</span> atskaites</div>
       <h2 class="h">Pirkt atskaites</h2>
       ${packsAudit(1)}
       <button type="button" class="cta">Pasūtīt atskaites 699,90 €</button>`},
     b(){return `${nav("Sākums")}
-      <div class="bar"><span>Palikušas <b>7</b> Audita atskaites</span><span>Dīleris: <span class="pill off">Off</span></span></div>
+      <div class="bar">Pieejamas <span class="n1">7</span> atskaites</div>
       <h2 class="h">Iesniegt VIN</h2>
       <span class="lab">VIN</span><input class="field" value="WVWZZZ3CZWE123456"/>
       <button type="button" class="cta">Iesniegt</button>
       <button type="button" class="cta ghost">Pirkt vēl</button>`},
     c(){return `${nav("Sākums")}
-      <div class="bar"><span>Audits <b>4</b> · Dīlera <b>12</b></span><span>Dīleris: <span class="pill on">On</span></span></div>
+      <div class="bar">Pieejamās atskaites:<br/>Business <span class="n1">4</span><br/>Dealer <span class="n1">12</span></div>
       <h2 class="h">Iesniegt VIN</h2>
       <span class="lab">VIN</span><input class="field"/>
       <label class="radio"><input type="radio" name="r13" checked/> Audits (4)</label>
