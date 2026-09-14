@@ -178,13 +178,11 @@ export function HomeFeatureBreakdown({
                     href={`#${catalogPackageAnchorId(pkg.id)}`}
                     aria-current={active ? "true" : undefined}
                     data-active={active ? "true" : undefined}
-                    className={`${tp5Styles.tierTabBtn}${
-                      pkg.badge || pkg.newBadge ? ` ${tp5Styles.tierTabBtnWithBadge}` : ""
-                    } -mb-px px-2`}
+                    className={`${tp5Styles.tierTabBtn} -mb-px px-2`}
                     onClick={() => setActiveId(pkg.id)}
                   >
                     {pkg.newBadge ? (
-                      <span className={tp5Styles.tierNewBadge}>{uiCopy.newBadge}</span>
+                      <span className={tp5Styles.catalogPopularBadge}>{uiCopy.newBadge}</span>
                     ) : pkg.badge ? (
                       <span className={tp5Styles.catalogPopularBadge}>{pkg.badge}</span>
                     ) : null}
@@ -216,7 +214,7 @@ export function HomeFeatureBreakdown({
                   <div className="min-w-0">
                     <header className="min-w-0">
                       {pkg.newBadge ? (
-                        <p className={tp5Styles.catalogNewBadgeHeader}>{uiCopy.newBadge}</p>
+                        <p className={tp5Styles.catalogPopularBadgeHeader}>{uiCopy.newBadge}</p>
                       ) : pkg.badge ? (
                         <p className={tp5Styles.catalogPopularBadgeHeader}>{pkg.badge}</p>
                       ) : null}

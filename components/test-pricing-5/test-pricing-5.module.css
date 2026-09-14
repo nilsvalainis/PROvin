@@ -192,9 +192,9 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 2.35rem;
+  min-height: 2.85rem;
   margin-bottom: -1px;
-  padding: 0;
+  padding: 0.72rem 0 0;
   border: 0;
   border-bottom: 2px solid transparent;
   border-radius: 0;
@@ -252,101 +252,66 @@
   color: rgb(228 228 231 / 0.95);
 }
 
-.tierTabBtnWithBadge {
-  flex-direction: column;
-  gap: 0.28rem;
-  padding-top: 0.28rem;
-  padding-bottom: 0.3rem;
-}
-
-.tierTabBtnWithBadge .tierTabLabel {
-  min-height: 0;
-  height: auto;
-  padding-top: 0;
-  padding-bottom: 0.28rem;
-}
-
-/* Compact solid chip — CTA color language, badge-scale proportions (no shimmer bleed). */
-.tierNewBadge {
-  position: relative;
+/* Shared status eyebrow — identical for „Populārākā izvēle” and „Jaunums”. */
+.tabStatusBadge,
+.tierNewBadge,
+.catalogPopularBadge,
+.mobileNewBadge {
+  position: absolute;
+  top: 0.14rem;
+  left: 0.15rem;
+  right: 0.15rem;
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  isolation: isolate;
+  display: block;
   margin: 0;
-  padding: 0.15rem 0.42rem;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: 999px;
-  background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
-  color: #fff;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
   font-family: inherit;
-  font-size: 0.5rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1.15;
-  white-space: nowrap;
-  pointer-events: none;
-  box-shadow: 0 4px 10px -7px rgb(0 0 0 / 0.7);
-}
-
-.tierTabBtn:has(.tierNewBadge) {
-  flex-direction: column;
-  gap: 0.28rem;
-  padding-top: 0.28rem;
-  padding-bottom: 0.3rem;
-}
-
-.tierTabBtn:has(.tierNewBadge) .tierTabLabel {
-  min-height: 0;
-  height: auto;
-  padding-top: 0;
-  padding-bottom: 0.28rem;
-}
-
-.catalogPopularBadge {
-  display: inline-block;
   font-size: 0.52rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   line-height: 1;
-  color: rgb(37 99 235 / 0.95);
+  color: rgb(96 165 250 / 0.98);
   white-space: nowrap;
+  pointer-events: none;
+  overflow: visible;
+  transform: none;
 }
 
-.catalogPopularBadgeHeader {
+.catalogPopularBadgeHeader,
+.catalogNewBadgeHeader {
+  position: static;
+  display: block;
   margin: 0 0 0.4rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: inherit;
   font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1.2;
-  color: rgb(37 99 235 / 0.92);
+  color: rgb(96 165 250 / 0.98);
+  white-space: nowrap;
 }
 
-.catalogNewBadgeHeader {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  isolation: isolate;
-  margin: 0 0 0.5rem;
-  padding: 0.16rem 0.48rem;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: 999px;
-  background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
-  color: #fff;
-  font-family: inherit;
-  font-size: 0.5625rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1.15;
-  white-space: nowrap;
-  box-shadow: 0 4px 10px -7px rgb(0 0 0 / 0.7);
+/* Legacy class kept for call sites; layout no longer depends on it. */
+.tierTabBtnWithBadge {
+  flex-direction: row;
+  gap: 0;
+}
+
+.tierTabBtnWithBadge .tierTabLabel {
+  min-height: 2.35rem;
+  height: 100%;
 }
 
 .tierMeta {
@@ -2063,18 +2028,16 @@ html[data-site-theme="light"] .dealerUnifiedDivider {
   border-top-color: rgb(203 213 225 / 0.65);
 }
 
+html[data-site-theme="light"] .tabStatusBadge,
 html[data-site-theme="light"] .tierNewBadge,
 html[data-site-theme="light"] .mobileNewBadge,
-html[data-site-theme="light"] .catalogNewBadgeHeader {
-  color: #fff;
-  border-color: rgb(255 255 255 / 0.2);
-  background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
-  box-shadow: 0 4px 10px -7px rgb(37 99 235 / 0.4);
-}
-
 html[data-site-theme="light"] .catalogPopularBadge,
-html[data-site-theme="light"] .catalogPopularBadgeHeader {
-  color: rgb(37 99 235 / 0.88);
+html[data-site-theme="light"] .catalogPopularBadgeHeader,
+html[data-site-theme="light"] .catalogNewBadgeHeader {
+  color: rgb(37 99 235 / 0.92);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 html[data-site-theme="light"] .dealerFeatureTitle {
@@ -2355,13 +2318,12 @@ html[data-site-theme="light"] .inlineInput:focus {
 .mobileSegBtn {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   flex: 1;
   box-sizing: border-box;
   margin: 0;
-  padding: 0.72rem 0.18rem;
+  padding: 0.95rem 0.18rem 0.72rem;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -2377,38 +2339,6 @@ html[data-site-theme="light"] .inlineInput:focus {
 .mobileSegBtnActive {
   background: #2563eb;
   color: #fff;
-}
-
-.mobileNewBadge {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  isolation: isolate;
-  margin: 0 0 0.22rem;
-  padding: 0.12rem 0.38rem;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: 999px;
-  background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
-  color: #fff;
-  font-family: inherit;
-  font-size: 0.48rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1.15;
-  white-space: nowrap;
-  pointer-events: none;
-  box-shadow: 0 4px 10px -7px rgb(0 0 0 / 0.7);
-}
-
-.mobileSegBtn:has(.mobileNewBadge) {
-  flex-direction: column;
-  gap: 0;
-  padding-top: 0.45rem;
-  padding-bottom: 0.5rem;
 }
 
 .mobilePackCard {
