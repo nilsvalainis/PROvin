@@ -117,13 +117,48 @@ async function fulfillPaidCheckoutSession(
     triggerInvoiceSequenceRepairInBackground();
 
     const checkoutLine = getCheckoutLineFromSession(session);
+    const fulfillment = session.metadata?.fulfillment?.trim() ?? "";
+    const partnerId = session.metadata?.partner_id?.trim() ?? "";
+    const packQtyRaw = Number.parseInt(session.metadata?.pack_qty ?? "", 10);
+
+    if (
+      fulfillment === "b2b_pack" &&
+      (checkoutLine === "dealer" || checkoutLine === "business") &&
+      partnerId
+    ) {
+      const qty = Number.isFinite(packQtyRaw) && packQtyRaw > 0 ? Math.min(packQtyRaw, 50) : 1;
+      after(async () => {
+        try {
+          const { grantB2bCredits, walletHasGrantedSession } = await import("@/lib/b2b-partner-credits");
+          const { readB2bCreditWallet, withB2bCreditLock, writeB2bCreditWallet } = await import(
+            "@/lib/b2b-partner-credit-store"
+          );
+          await withB2bCreditLock(partnerId, async () => {
+            const wallet = await readB2bCreditWallet(partnerId);
+            if (walletHasGrantedSession(wallet, session.id)) return;
+            const next = grantB2bCredits(wallet, checkoutLine, qty, new Date(), session.id);
+            await writeB2bCreditWallet(partnerId, next);
+          });
+          console.info("[stripe webhook] b2b pack credits granted", {
+            sessionId: session.id,
+            partnerId,
+            checkoutLine,
+            qty,
+          });
+        } catch (err) {
+          console.error("[stripe webhook] b2b pack credits:", err);
+        }
+      });
+    }
 
     /**
      * Dīlera produkts: OE servisa vēsture jāielasa automātiski. OneAuto pollings
      * ir par lēnu webhook atbildei, tāpēc darbu atzīmējam sinhroni un izpildām
      * pēc atbildes; cron slaucītājs pārņem, ja fona izpilde nepaspēj.
+     * B2B paka (bez VIN) šeit NEIELASA - ielase sākas tikai pie VIN iesniegšanas.
      */
     if (
+      fulfillment !== "b2b_pack" &&
       order.vin &&
       isDealerDataAutoFetchOrder({ checkoutLine, amountTotalCents: session.amount_total })
     ) {

@@ -34,6 +34,7 @@ export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublic
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const set = (key: keyof typeof form) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value =
@@ -215,13 +216,53 @@ export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublic
 
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
       {saved && !error ? <p className="mt-3 text-sm text-emerald-700">Saglabāts.</p> : null}
-      <button
-        type="submit"
-        disabled={busy}
-        className="mt-4 inline-flex rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-60"
-      >
-        {busy ? "Saglabā…" : "Saglabāt"}
-      </button>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="submit"
+          disabled={busy || deleting}
+          className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-60"
+        >
+          {busy ? "Saglabā…" : "Saglabāt"}
+        </button>
+        <button
+          type="button"
+          disabled={busy || deleting}
+          className="inline-flex rounded-full border border-rose-300 bg-white px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
+          onClick={() => {
+            const name = partner.companyName.trim() || partner.email;
+            if (
+              !window.confirm(
+                `Dzēst partneri „${name}”? Konts, pieteikšanās un kredīti pazudīs. Šo nevar atsaukt.`,
+              )
+            ) {
+              return;
+            }
+            void (async () => {
+              setDeleting(true);
+              setError("");
+              try {
+                const res = await fetch(`/api/admin/partners/${encodeURIComponent(partner.id)}`, {
+                  method: "DELETE",
+                  credentials: "include",
+                });
+                const data = (await res.json().catch(() => ({}))) as { error?: string };
+                if (!res.ok) {
+                  setError(adminPartnerApiError(data.error) || "Neizdevās dzēst partneri.");
+                  return;
+                }
+                router.push("/admin/partneri");
+                router.refresh();
+              } catch {
+                setError("Neizdevās dzēst partneri.");
+              } finally {
+                setDeleting(false);
+              }
+            })();
+          }}
+        >
+          {deleting ? "Dzēš…" : "Dzēst partneri"}
+        </button>
+      </div>
     </form>
   );
 }

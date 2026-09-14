@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import {
   b2bPackDiscountPct,
@@ -33,8 +33,11 @@ export function B2bPartnerPackPicker({
   prices?: B2bPartnerPriceOverrides | null;
 }) {
   const t = useTranslations("Partner");
+  const locale = useLocale();
   const [plan, setPlan] = useState<B2bPartnerPlanId>("business");
   const [selected, setSelected] = useState(0);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
   const activePlan: B2bPartnerPlanId = dealerEnabled ? plan : "business";
   const packs = resolveB2bPacksForPartner(activePlan, prices);
   const listCents = packs[0]?.unitCents ?? 0;
@@ -52,6 +55,39 @@ export function B2bPartnerPackPicker({
       }),
     [packs, listCents, activePlan, t],
   );
+
+  const onPay = async () => {
+    if (!current || paying) return;
+    setPaying(true);
+    setPayError("");
+    try {
+      const res = await fetch("/api/checkout/partner", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: activePlan,
+          qty: current.qty,
+          locale,
+          withdrawalConsent: true,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (res.status === 401) {
+        setPayError(t("payError"));
+        return;
+      }
+      if (!res.ok || !data.url) {
+        setPayError(data.error === "dealer_disabled" ? t("dealerDisabled") : t("payError"));
+        return;
+      }
+      window.location.assign(data.url);
+    } catch {
+      setPayError(t("payNetwork"));
+    } finally {
+      setPaying(false);
+    }
+  };
 
   return (
     <section className={panel ? "w-full" : "mx-auto w-full max-w-[68rem]"}>
@@ -171,15 +207,20 @@ export function B2bPartnerPackPicker({
 
       <button
         type="button"
+        disabled={paying}
+        onClick={() => void onPay()}
         className={`${styles.liquidCta} mt-6 ${panel ? "w-full max-w-none" : "max-w-[22rem]"}`}
       >
         <span className={styles.liquidCtaShimmer} aria-hidden />
         <span className={styles.liquidCtaLabel}>
-          {t("payCta", {
-            price: formatB2bEuroFromCents((current?.unitCents ?? 0) * (current?.qty ?? 1)),
-          })}
+          {paying
+            ? t("payLoading")
+            : t("payCta", {
+                price: formatB2bEuroFromCents((current?.unitCents ?? 0) * (current?.qty ?? 1)),
+              })}
         </span>
       </button>
+      {payError ? <p className="mt-3 text-[0.75rem] text-rose-400">{payError}</p> : null}
       <p
         className={`mt-4 text-[0.68rem] leading-relaxed text-zinc-500 ${
           panel ? "max-w-none text-left" : "max-w-[45rem] text-center"

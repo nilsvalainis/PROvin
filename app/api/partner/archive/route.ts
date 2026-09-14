@@ -12,7 +12,7 @@ export async function GET() {
   }
   const email = partner.email;
   try {
-    const orders = await listPartnerArchiveRows(email);
+    const orders = await listPartnerArchiveRows({ email, partnerId: partner.id });
     return NextResponse.json({ orders });
   } catch (e) {
     console.error("[api/partner/archive]", e);

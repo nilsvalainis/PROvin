@@ -92,6 +92,7 @@ export default function middleware(request: NextRequest) {
       urlLocale,
       cookie: b2bCookieValue(request),
       country: requestCountry(request),
+      preferStoredLocale: !urlLocale,
     });
     if (!urlLocale || nextLocale !== urlLocale) {
       const redirectUrl = request.nextUrl.clone();

@@ -459,3 +459,17 @@ export async function requestB2bPartnerEmailChange(
     return { ok: true, token: issued.token, to: email, partner: toPublicPartner(record) };
   });
 }
+
+export async function deleteB2bPartner(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: "not_found" }> {
+  return withLock(async () => {
+    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
+    const doc = await readDoc();
+    const next = doc.partners.filter((p) => p.id !== id);
+    if (next.length === doc.partners.length) return { ok: false, error: "not_found" };
+    doc.partners = next;
+    await writeDoc(doc);
+    return { ok: true };
+  });
+}

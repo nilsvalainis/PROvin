@@ -26,7 +26,7 @@
     "vinSubmitTitle": "Отправить VIN",
     "vinSubmit": "Отправить",
     "vinSubmitLoading": "Отправка…",
-    "vinSubmitOk": "VIN принят. Отчёт подготовим, он появится в разделе Профиль.",
+    "vinSubmitOk": "VIN принят. Отчёт подготовим, он появится в разделе Заказы.",
     "creditsHeading": "Доступные отчёты",
     "creditLeft": "Доступные отчёты: {count}",
     "creditChipBusiness": "Business",
@@ -70,7 +70,7 @@
     "bizLineDb": "autoDNA, carVertical, международные реестры",
     "bizLineCurve": "Кривая пробега и сводка",
     "dealerLineRecords": "Записи из официальных дилерских систем",
-    "dealerLineGuarantee": "100% гарантия возврата денег",
+    "dealerLineGuarantee": "Если данных одометра нет, кредит возвращается на счёт",
     "navPacksDealer": "Данные дилера",
     "titleDealer": "ДАННЫЕ ДИЛЕРА",
     "payLoading": "Подготовка оплаты…",
@@ -101,6 +101,8 @@
     "archiveVin": "VIN",
     "archiveInvoice": "№ счёта",
     "archiveAmount": "Сумма",
+    "archiveCreditUsed": "1 кр.",
+    "archiveCreditRestored": "Кредит возвращён",
     "archiveReport": "Отчёт",
     "archiveOpenReport": "Открыть отчёт",
     "requisitesTitle": "Реквизиты",
@@ -149,6 +151,7 @@
     "emailChangeSent": "Мы отправили ссылку подтверждения на новый адрес.",
     "emailChangeError": "Не удалось начать смену почты. Проверьте пароль и адрес.",
     "emailPending": "Ожидает подтверждения: {email}",
-    "emailVerified": "Эл. почта подтверждена."
+    "emailVerified": "Эл. почта подтверждена.",
+    "packPaidOk": "Пакет оплачен. Кредиты на счёте."
   }
 }

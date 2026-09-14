@@ -1,13 +1,17 @@
 /**
  * Manuāla dīlera pasūtījuma atmaksa, kad OEM datu par VIN nav.
  *
- * Naudas kustība notiek tikai caur šo ceļu, un tikai reizi katram pasūtījumam:
- * atmaksas ieraksts glabājas dīlera darba stāvoklī un to nevar pārrakstīt.
+ * B2C Stripe `cs_*`: nauda uz karti.
+ * B2B manuālais VIN (manual_order_*): 1 kredīts atpakaļ partnera kontā.
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
+import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
+import { isManualOrderId } from "@/lib/admin-manual-orders";
+import { restoreB2bCredit } from "@/lib/b2b-partner-credits";
+import { readB2bCreditWallet, withB2bCreditLock, writeB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
+import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { readDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   DEALER_REFUND_MAX_CENTS,
@@ -23,6 +27,16 @@ export const maxDuration = 60;
 
 const REFUND_REASON_MAX = 300;
 
+function partnerIdFromNotes(notes: string | undefined): string | null {
+  const m = (notes ?? "").match(/partner_id=(ptr_[a-f0-9]{16})/);
+  return m?.[1] && isSafeB2bPartnerId(m[1]) ? m[1] : null;
+}
+
+function lotIdFromNotes(notes: string | undefined): string | null {
+  const m = (notes ?? "").match(/lot=([a-zA-Z0-9_-]+)/);
+  return m?.[1] ?? null;
+}
+
 export async function POST(req: Request) {
   if (!(await getAdminSession())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -36,7 +50,61 @@ export async function POST(req: Request) {
   }
   const o = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
   const sessionId = String(o.sessionId ?? "").trim();
-  if (!isSafeOrderDraftSessionId(sessionId) || !sessionId.startsWith("cs_")) {
+  if (!isSafeOrderDraftSessionId(sessionId)) {
+    return NextResponse.json({ error: "invalid_session" }, { status: 400 });
+  }
+
+  const job = await readDealerDataJob(sessionId);
+
+  if (isManualOrderId(sessionId)) {
+    if (job?.refund) {
+      return NextResponse.json({ error: "already_refunded", job }, { status: 409 });
+    }
+    if (o.override !== true && job?.status !== "no_data") {
+      return NextResponse.json({ error: "not_no_data", job }, { status: 409 });
+    }
+    const draft = await readOrderDraft(sessionId);
+    const notes = draft?.orderEdits?.notes ?? "";
+    const partnerId = partnerIdFromNotes(notes);
+    if (!partnerId) {
+      return NextResponse.json({ error: "partner_missing" }, { status: 409 });
+    }
+    await withB2bCreditLock(partnerId, async () => {
+      const wallet = await readB2bCreditWallet(partnerId);
+      await writeB2bCreditWallet(partnerId, restoreB2bCredit(wallet, "dealer", lotIdFromNotes(notes)));
+    });
+    const now = new Date().toISOString();
+    const record: DealerRefundRecord = {
+      at: now,
+      amountCents: 0,
+      stripeRefundId: `credit_${sessionId}`,
+      by: "admin",
+      reason: String(o.reason ?? "dealer_data_no_data_credit").slice(0, REFUND_REASON_MAX),
+      kind: "credit",
+    };
+    const persisted = await writeDealerDataJob({
+      sessionId,
+      vin: job?.vin ?? draft?.orderEdits?.vin ?? "",
+      status: job?.status ?? "no_data",
+      attempts: job?.attempts ?? 0,
+      createdAt: job?.createdAt ?? now,
+      updatedAt: now,
+      ...(job?.startedAt ? { startedAt: job.startedAt } : {}),
+      ...(job?.finishedAt ? { finishedAt: job.finishedAt } : {}),
+      serviceEventCount: job?.serviceEventCount ?? 0,
+      refund: record,
+    });
+    return NextResponse.json({
+      ok: true,
+      refund: record,
+      kind: "credit",
+      statePersisted: persisted,
+      emailSent: false,
+      job: await readDealerDataJob(sessionId),
+    });
+  }
+
+  if (!sessionId.startsWith("cs_")) {
     return NextResponse.json({ error: "invalid_session" }, { status: 400 });
   }
 
@@ -50,7 +118,6 @@ export async function POST(req: Request) {
   const session = await stripe.checkout.sessions.retrieve(sessionId).catch(() => null);
   if (!session) return NextResponse.json({ error: "session_not_found" }, { status: 404 });
 
-  const job = await readDealerDataJob(sessionId);
   const decision = decideDealerRefund({
     job,
     amountTotalCents: session.amount_total,
@@ -81,7 +148,6 @@ export async function POST(req: Request) {
         reason: "requested_by_customer",
         metadata: { provin_reason: "dealer_data_no_data", provin_session: sessionId },
       },
-      // Dubults klikšķis vai atkārtots mēģinājums nedrīkst atmaksāt divreiz.
       { idempotencyKey: `provin-dealer-refund-${sessionId}` },
     );
   } catch (e) {
@@ -96,6 +162,7 @@ export async function POST(req: Request) {
     stripeRefundId: refund.id,
     by: "admin",
     reason: String(o.reason ?? "dealer_data_no_data").slice(0, REFUND_REASON_MAX),
+    kind: "stripe",
   };
 
   const now = new Date().toISOString();
@@ -112,7 +179,6 @@ export async function POST(req: Request) {
     refund: record,
   });
   if (!persisted) {
-    // Nauda ir atgriezta; bez ieraksta poga paliktu atkārtoti spiežama.
     console.error("[admin/dealer-data/refund] refund succeeded but state write failed", {
       sessionId,
       stripeRefundId: refund.id,
@@ -133,6 +199,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     refund: record,
+    kind: "stripe",
     statePersisted: persisted,
     emailSent,
     job: await readDealerDataJob(sessionId),

@@ -3,13 +3,14 @@ import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import {
   B2B_PARTNER_PRICE_CENTS,
   getB2bCatalogPlan,
+  resolveB2bPacksForPartner,
+  type B2bPackQty,
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { getOrderCopy } from "@/lib/checkout-copy";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { routing } from "@/i18n/routing";
 import { invoiceBuyerMetadata } from "@/lib/invoice-buyer";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getPublicSiteOrigin } from "@/lib/site-url";
@@ -20,10 +21,13 @@ export const runtime = "nodejs";
 
 const CHECKOUT_MAX_PER_WINDOW = 40;
 const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
-const NOTES_MAX = 500;
 
 function isPartnerPlan(value: string): value is B2bPartnerPlanId {
   return value === "business" || value === "dealer";
+}
+
+function isPackQty(value: unknown): value is B2bPackQty {
+  return value === 1 || value === 10 || value === "1" || value === "10";
 }
 
 async function checkoutOrigin(): Promise<string> {
@@ -34,7 +38,7 @@ async function checkoutOrigin(): Promise<string> {
 
 export async function GET() {
   return NextResponse.json(
-    { error: "Izmanto POST ar JSON (VIN, plāns, piekrišana)." },
+    { error: "Izmanto POST ar JSON (plāns, daudzums, piekrišana)." },
     { status: 405, headers: { Allow: "POST" } },
   );
 }
@@ -65,8 +69,7 @@ export async function POST(req: Request) {
 
   let raw: {
     plan?: unknown;
-    vin?: unknown;
-    notes?: unknown;
+    qty?: unknown;
     locale?: unknown;
     withdrawalConsent?: unknown;
   };
@@ -87,22 +90,28 @@ export async function POST(req: Request) {
   if (!isPartnerPlan(planRaw)) {
     return NextResponse.json({ error: copy.errors.badRequest }, { status: 400 });
   }
+  if (planRaw === "dealer" && partner.dealerEnabled !== true) {
+    return NextResponse.json({ error: "dealer_disabled" }, { status: 403 });
+  }
 
-  const vin = typeof raw.vin === "string" ? normalizeVin(raw.vin) : "";
-  const notesRaw = typeof raw.notes === "string" ? raw.notes.trim() : "";
-  const notes = notesRaw.slice(0, NOTES_MAX);
+  const qty: B2bPackQty = raw.qty === 10 || raw.qty === "10" ? 10 : 1;
+  if (!isPackQty(raw.qty ?? 1) && raw.qty != null) {
+    return NextResponse.json({ error: copy.errors.badRequest }, { status: 400 });
+  }
   const withdrawalConsent = raw.withdrawalConsent === true;
-
   if (!withdrawalConsent) {
     return NextResponse.json({ error: copy.errors.withdrawalRequired }, { status: 400 });
   }
-  if (!vin || !isValidVin(vin)) {
-    return NextResponse.json({ error: copy.validation.vin }, { status: 400 });
-  }
+
+  const packs = resolveB2bPacksForPartner(planRaw, partner.prices);
+  const pack = packs.find((p) => p.qty === qty) ?? packs[0];
+  const unitCents = pack?.unitCents ?? B2B_PARTNER_PRICE_CENTS[planRaw];
+  const qtyN = pack?.qty ?? qty;
 
   const origin = await checkoutOrigin();
   const prefix = `/${locale}`;
   const pkg = getB2bCatalogPlan(planRaw, locale);
+  const productName = qtyN > 1 ? `${pkg.title} × ${qtyN}` : pkg.title;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -111,28 +120,26 @@ export async function POST(req: Request) {
       {
         price_data: {
           currency: "eur",
-          product_data: {
-            name: pkg.title,
-          },
-          unit_amount: B2B_PARTNER_PRICE_CENTS[planRaw],
+          product_data: { name: productName },
+          unit_amount: unitCents,
         },
-        quantity: 1,
+        quantity: qtyN,
       },
     ],
-    success_url: `${origin}${prefix}/partneriem/konts/profils?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}${prefix}/partneriem/konts`,
+    success_url: `${origin}${prefix}/partneriem/konts?pack=1`,
+    cancel_url: `${origin}${prefix}/partneriem/konts/pakas`,
     phone_number_collection: { enabled: false },
     custom_fields: [getClientCommentCustomField(locale)],
     metadata: {
       checkout_line: planRaw,
+      fulfillment: "b2b_pack",
       partner_id: partner.id,
-      vin,
+      pack_qty: String(qtyN),
       report_delivery: "email",
       phone: partner.phone,
       customer_name: partner.contactName,
       withdrawal_waiver_ack: "true",
       authorization_ack: "true",
-      ...(notes ? { notes } : {}),
       ...invoiceBuyerMetadata({
         companyName: partner.companyName,
         companyReg: partner.companyReg,

@@ -209,4 +209,23 @@ describe("normalizeDealerDataJob", () => {
   it("nezināmu statusu nolaiž uz `pending`, nevis met kļūdu", () => {
     expect(normalizeDealerDataJob({ status: "exploded" }, "cs_test_1")?.status).toBe("pending");
   });
+
+  it("patur B2B kredīta atgriešanu ar 0 € un credit_ id", () => {
+    const parsed = normalizeDealerDataJob(
+      {
+        vin: "WAUZZZ4M0JD000001",
+        status: "no_data",
+        refund: {
+          at: "2026-09-14T10:00:00.000Z",
+          amountCents: 0,
+          stripeRefundId: "credit_manual_order_abc",
+          kind: "credit",
+        },
+      },
+      "manual_order_abc",
+    );
+    expect(parsed?.refund?.kind).toBe("credit");
+    expect(parsed?.refund?.amountCents).toBe(0);
+    expect(parsed?.refund?.stripeRefundId).toBe("credit_manual_order_abc");
+  });
 });

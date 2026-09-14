@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { useRouter } from "@/i18n/navigation";
@@ -84,32 +84,40 @@ export function B2bPartnerHome() {
   const [formError, setFormError] = useState("");
   const [submitOk, setSubmitOk] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [packPaidOk, setPackPaidOk] = useState(false);
+
+  const loadCredits = useCallback(
+    async (signal?: { cancelled: boolean }) => {
+      const [creditsRes, meRes] = await Promise.all([
+        fetch("/api/partner/credits", { credentials: "include" }),
+        fetch("/api/partner/me", { credentials: "include" }),
+      ]);
+      if (creditsRes.status === 401 || meRes.status === 401) {
+        router.replace("/partneriem");
+        return;
+      }
+      const creditsData = (await creditsRes.json()) as { remaining?: B2bCreditRemaining };
+      const meData = (await meRes.json()) as { partner?: B2bPartnerPublicProfile };
+      if (signal?.cancelled) return;
+      const next = creditsData.remaining ?? emptyB2bCreditRemaining();
+      const enabled = meData.partner?.dealerEnabled === true;
+      setDealerEnabled(enabled);
+      setPrices(meData.partner?.prices ?? null);
+      setRemaining({
+        business: Math.max(0, next.business ?? 0),
+        dealer: enabled ? Math.max(0, next.dealer ?? 0) : 0,
+      });
+    },
+    [router],
+  );
 
   useEffect(() => {
-    let cancelled = false;
+    const signal = { cancelled: false };
     void (async () => {
       try {
-        const [creditsRes, meRes] = await Promise.all([
-          fetch("/api/partner/credits", { credentials: "include" }),
-          fetch("/api/partner/me", { credentials: "include" }),
-        ]);
-        if (creditsRes.status === 401 || meRes.status === 401) {
-          router.replace("/partneriem");
-          return;
-        }
-        const creditsData = (await creditsRes.json()) as { remaining?: B2bCreditRemaining };
-        const meData = (await meRes.json()) as { partner?: B2bPartnerPublicProfile };
-        if (cancelled) return;
-        const next = creditsData.remaining ?? emptyB2bCreditRemaining();
-        const enabled = meData.partner?.dealerEnabled === true;
-        setDealerEnabled(enabled);
-        setPrices(meData.partner?.prices ?? null);
-        setRemaining({
-          business: Math.max(0, next.business ?? 0),
-          dealer: enabled ? Math.max(0, next.dealer ?? 0) : 0,
-        });
+        await loadCredits(signal);
       } catch {
-        if (!cancelled) {
+        if (!signal.cancelled) {
           setRemaining(emptyB2bCreditRemaining());
           setDealerEnabled(false);
           setPrices(null);
@@ -117,9 +125,16 @@ export function B2bPartnerHome() {
       }
     })();
     return () => {
-      cancelled = true;
+      signal.cancelled = true;
     };
-  }, [router]);
+  }, [loadCredits]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("pack") === "1") {
+      setPackPaidOk(true);
+    }
+  }, []);
 
   const credits = remaining ?? emptyB2bCreditRemaining();
   const loaded = remaining !== null;
@@ -200,6 +215,11 @@ export function B2bPartnerHome() {
       setSubmitOk(t("vinSubmitOk"));
       setVin("");
       setService(null);
+      try {
+        await loadCredits();
+      } catch {
+        /* atlikums atjaunosies nākamajā ielādē */
+      }
     } catch {
       setFormError(t("payNetwork"));
     } finally {
@@ -214,6 +234,9 @@ export function B2bPartnerHome() {
         aria-labelledby="b2b-partner-home-title"
       >
         <StatusBar loaded={loaded} credits={credits} dealerEnabled={dealerEnabled} />
+        {packPaidOk ? (
+          <p className="mb-4 text-[0.8125rem] font-medium leading-snug text-emerald-300">{t("packPaidOk")}</p>
+        ) : null}
 
         <h1
           id="b2b-partner-home-title"

@@ -44,6 +44,7 @@ export type DealerRefundRecord = {
   /** Operatora e-pasts no admin sesijas. */
   by: string;
   reason: string;
+  kind?: "stripe" | "credit";
 };
 
 export type DealerRefundDecision =
@@ -199,13 +200,25 @@ function normalizeRefund(raw: unknown): DealerRefundRecord | null {
     typeof o.amountCents === "number" && Number.isFinite(o.amountCents)
       ? Math.max(0, Math.floor(o.amountCents))
       : 0;
-  if (!stripeRefundId || amountCents <= 0) return null;
+  if (!stripeRefundId) return null;
+  if (stripeRefundId.startsWith("credit_") && amountCents === 0) {
+    return {
+      at: asStr(o.at, 40) || new Date().toISOString(),
+      amountCents: 0,
+      stripeRefundId,
+      by: asStr(o.by, 320),
+      reason: asStr(o.reason, 300),
+      kind: "credit",
+    };
+  }
+  if (amountCents <= 0) return null;
   return {
     at: asStr(o.at, 40) || new Date().toISOString(),
     amountCents,
     stripeRefundId,
     by: asStr(o.by, 320),
     reason: asStr(o.reason, 300),
+    kind: "stripe",
   };
 }
 

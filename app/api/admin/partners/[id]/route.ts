@@ -6,7 +6,8 @@ import {
   toPublicPartner,
   type B2bPartnerStatus,
 } from "@/lib/b2b-partner-account";
-import { getB2bPartnerById, updateB2bPartner } from "@/lib/b2b-partner-store";
+import { deleteB2bPartner, getB2bPartnerById, updateB2bPartner } from "@/lib/b2b-partner-store";
+import { deleteB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,4 +65,15 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: result.error }, { status: statusCode });
   }
   return NextResponse.json({ partner: result.partner });
+}
+
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const ok = await getAdminSession();
+  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const { id } = await ctx.params;
+  if (!isSafeB2bPartnerId(id)) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  const result = await deleteB2bPartner(id);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 404 });
+  await deleteB2bCreditWallet(id);
+  return NextResponse.json({ ok: true });
 }

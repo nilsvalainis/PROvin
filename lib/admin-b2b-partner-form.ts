@@ -10,6 +10,7 @@ export const ADMIN_PARTNER_FIELD_ERROR: Record<string, string> = {
   email_taken: "Šis e-pasts jau ir reģistrēts.",
   weak_password: "Parole jābūt vismaz 8 zīmēm.",
   not_found: "Partneris nav atrasts.",
+  delete_failed: "Neizdevās dzēst partneri.",
 };
 
 export function adminPartnerApiError(error: string | undefined): string {

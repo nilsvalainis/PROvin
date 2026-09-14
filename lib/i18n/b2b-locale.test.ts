@@ -20,7 +20,7 @@ describe("B2B locale detection", () => {
     expect(detectB2bDefaultLocale("RU")).toBe("en");
   });
 
-  it("lets explicit en/de/ru URLs win over IP and cookie", () => {
+  it("lets explicit lv/en/de/ru URLs win over IP and cookie", () => {
     expect(
       resolveB2bEntryLocale({ urlLocale: "en", cookie: "de", country: "DE" }),
     ).toBe("en");
@@ -30,21 +30,34 @@ describe("B2B locale detection", () => {
     expect(
       resolveB2bEntryLocale({ urlLocale: "ru", cookie: "lv", country: "LV" }),
     ).toBe("ru");
+    expect(
+      resolveB2bEntryLocale({ urlLocale: "lv", cookie: "de", country: "DE" }),
+    ).toBe("lv");
   });
 
-  it("uses cookie then IP when the URL is the site default /lv dump", () => {
+  it("uses cookie then IP only on unprefixed /partneriem", () => {
     expect(
-      resolveB2bEntryLocale({ urlLocale: "lv", cookie: "de", country: "US" }),
+      resolveB2bEntryLocale({
+        urlLocale: null,
+        cookie: "de",
+        country: "US",
+        preferStoredLocale: true,
+      }),
     ).toBe("de");
     expect(
-      resolveB2bEntryLocale({ urlLocale: "lv", cookie: null, country: "DE" }),
+      resolveB2bEntryLocale({
+        urlLocale: "lv",
+        cookie: "de",
+        country: "US",
+        preferStoredLocale: true,
+      }),
     ).toBe("de");
-    expect(
-      resolveB2bEntryLocale({ urlLocale: "lv", cookie: null, country: "FR" }),
-    ).toBe("en");
     expect(
       resolveB2bEntryLocale({ urlLocale: null, cookie: null, country: "DE" }),
     ).toBe("de");
+    expect(
+      resolveB2bEntryLocale({ urlLocale: null, cookie: null, country: "FR" }),
+    ).toBe("en");
   });
 
   it("keeps de/ru as B2B-only and English site chrome", () => {

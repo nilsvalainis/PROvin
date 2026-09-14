@@ -10,6 +10,15 @@ const TITLE_RULE_CLASS = "mt-2.5 h-px w-full bg-white/10";
 const TH_CLASS = "pb-3 text-left text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
 const TD_CLASS = "py-3.5 text-[0.8125rem] font-medium text-zinc-100 sm:text-[0.875rem]";
 
+function archiveAmountText(
+  row: B2bPartnerOrderRow,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (row.amountKind === "credit_restored") return t("archiveCreditRestored");
+  if (row.amountKind === "credit") return t("archiveCreditUsed");
+  return row.amountLabel;
+}
+
 function ReportCell({ href, label }: { href: string | null | undefined; label: string }) {
   if (!href) return null;
   return (
@@ -91,7 +100,7 @@ export function B2bPartnerArchive({
                     <td className={TD_CLASS}>{formatB2bPartnerOrderDate(row.createdAt, locale)}</td>
                     <td className={`${TD_CLASS} font-mono tracking-wide`}>{row.vin}</td>
                     <td className={TD_CLASS}>{row.invoiceNumber}</td>
-                    <td className={`${TD_CLASS} text-right tabular-nums`}>{row.amountLabel}</td>
+                    <td className={`${TD_CLASS} text-right tabular-nums`}>{archiveAmountText(row, t)}</td>
                     <td className={`${TD_CLASS} text-right`}>
                       <ReportCell href={row.reportHref} label={t("archiveOpenReport")} />
                     </td>
@@ -107,7 +116,9 @@ export function B2bPartnerArchive({
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-mono text-[0.8125rem] tracking-wide text-zinc-100">{row.vin}</span>
                   <span className="flex shrink-0 items-center gap-3">
-                    <span className="text-[0.8125rem] font-medium tabular-nums text-zinc-100">{row.amountLabel}</span>
+                    <span className="text-[0.8125rem] font-medium tabular-nums text-zinc-100">
+                      {archiveAmountText(row, t)}
+                    </span>
                     <ReportCell href={row.reportHref} label={t("archiveOpenReport")} />
                   </span>
                 </div>

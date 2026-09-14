@@ -26,7 +26,7 @@
     "vinSubmitTitle": "VIN senden",
     "vinSubmit": "Senden",
     "vinSubmitLoading": "Wird gesendet…",
-    "vinSubmitOk": "VIN übernommen. Den Bericht bereiten wir vor; Sie finden ihn unter Profil.",
+    "vinSubmitOk": "VIN übernommen. Den Bericht bereiten wir vor; Sie finden ihn unter Bestellungen.",
     "creditsHeading": "Verfügbare Berichte",
     "creditLeft": "Verfügbare Berichte: {count}",
     "creditChipBusiness": "Business",
@@ -68,13 +68,9 @@
     "dealerLineSummary": "Zusammenfassung",
     "bizLineDealer": "Offizielle Händlerdaten und Auktionsarchiv",
     "bizLineDb": "autoDNA, carVertical, internationale Register",
-    "dealerLineService": "Service- und Wartungshistorie",
-    "dealerLineSummary": "Zusammenfassung",
-    "bizLineDealer": "Offizielle Händlerdaten und Auktionsarchiv",
-    "bizLineDb": "autoDNA, carVertical, internationale Register",
     "bizLineCurve": "Kilometerverlauf und Zusammenfassung",
     "dealerLineRecords": "Einträge aus den offiziellen Händlersystemen",
-    "dealerLineGuarantee": "100% Geld-zurück-Garantie",
+    "dealerLineGuarantee": "Fehlen Kilometerstände, wird das Guthaben auf das Konto zurückgebucht",
     "navPacksDealer": "Händlerdaten",
     "titleDealer": "HÄNDLERDATEN",
     "payLoading": "Zahlung wird vorbereitet…",
@@ -105,6 +101,8 @@
     "archiveVin": "VIN",
     "archiveInvoice": "Rechnungsnr.",
     "archiveAmount": "Betrag",
+    "archiveCreditUsed": "1 Kr.",
+    "archiveCreditRestored": "Guthaben zurückgebucht",
     "archiveReport": "Bericht",
     "archiveOpenReport": "Bericht öffnen",
     "requisitesTitle": "Firmendaten",
@@ -153,6 +151,7 @@
     "emailChangeSent": "Wir haben einen Bestätigungslink an die neue Adresse gesendet.",
     "emailChangeError": "E-Mail-Änderung konnte nicht gestartet werden. Bitte Passwort und Adresse prüfen.",
     "emailPending": "Wartet auf Bestätigung: {email}",
-    "emailVerified": "E-Mail bestätigt."
+    "emailVerified": "E-Mail bestätigt.",
+    "packPaidOk": "Paket bezahlt. Das Guthaben ist auf dem Konto."
   }
 }

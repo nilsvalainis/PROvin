@@ -44,12 +44,18 @@ const btn =
 
 function formatRefund(job: DealerDataJob): string {
   if (!job.refund) return "";
+  if (job.refund.kind === "credit" || job.refund.stripeRefundId.startsWith("credit_")) {
+    return `Kredīts atgriezts · ${job.refund.at.slice(0, 16).replace("T", " ")}`;
+  }
   const eur = (job.refund.amountCents / 100).toFixed(2).replace(".", ",");
   return `Atmaksāts ${eur} € · ${job.refund.at.slice(0, 16).replace("T", " ")}`;
 }
 
 function refundAmountEur(job: DealerDataJob | null): string | null {
   if (!job?.refund) return null;
+  if (job.refund.kind === "credit" || job.refund.stripeRefundId.startsWith("credit_")) {
+    return "1 kredīts";
+  }
   return `${(job.refund.amountCents / 100).toFixed(2)} €`;
 }
 
@@ -152,7 +158,14 @@ export function AdminDealerDataJobStrip({
 
   const refund = async () => {
     if (!editable || busy || !job || !canRefund) return;
-    if (!window.confirm("Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”.")) {
+    const isCredit = sessionId.startsWith("manual_order_");
+    if (
+      !window.confirm(
+        isCredit
+          ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
+          : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”.",
+      )
+    ) {
       return;
     }
     setBusy("refund");
@@ -170,7 +183,13 @@ export function AdminDealerDataJobStrip({
         job?: DealerDataJob | null;
       };
       if (body.job) setJob(body.job);
-      setNotice(body.ok ? "Atmaksa veikta. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag." : `Atmaksa neizdevās: ${body.error ?? "nezināma kļūda"}`);
+      setNotice(
+        body.ok
+          ? isCredit
+            ? "Kredīts atgriezts partnera kontā. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
+            : "Atmaksa veikta. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
+          : `Atmaksa neizdevās: ${body.error ?? "nezināma kļūda"}`,
+      );
       if (body.ok) {
         const amount =
           body.job?.refund != null
@@ -347,7 +366,13 @@ export function AdminDealerDataJobStrip({
             disabled={!editable || busy !== null}
             onClick={() => void refund()}
           >
-            {busy === "refund" ? "Atmaksā…" : "Atgriezt maksājumu"}
+            {busy === "refund"
+              ? sessionId.startsWith("manual_order_")
+                ? "Atgriež…"
+                : "Atmaksā…"
+              : sessionId.startsWith("manual_order_")
+                ? "Atgriezt kredītu"
+                : "Atgriezt maksājumu"}
           </button>
         ) : null}
 

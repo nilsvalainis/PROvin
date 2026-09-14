@@ -4317,7 +4317,11 @@ export function OrderDetailWorkspace({
               applyPatchedBlocks={applyCopilotPatchedBlocks}
               orderVin={vinBar}
               customerEmail={payload.customerEmail}
-              canDealerRefund={payload.sessionId.startsWith("cs_")}
+              canDealerRefund={
+                payload.sessionId.startsWith("cs_") ||
+                (payload.sessionId.startsWith("manual_order_") &&
+                  (payload.notes ?? "").includes("partner_id="))
+              }
               onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
             />
           </div>

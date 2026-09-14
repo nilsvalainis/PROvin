@@ -36,18 +36,22 @@ export function detectB2bDefaultLocale(country: string | null | undefined): AppL
 
 /**
  * B2B entry locale.
- * Explicit `/en|/de|/ru` wins. `/lv` is the site default dump from `/`, so
- * cookie then IP apply. Unprefixed `/partneriem` uses cookie, then IP.
+ * Explicit `/lv|/en|/de|/ru` always wins (including Latvian). Unprefixed
+ * `/partneriem` uses cookie, then IP. The site `/` dump onto `/lv` is handled
+ * in middleware with `preferStoredLocale`.
  */
 export function resolveB2bEntryLocale(args: {
   urlLocale: AppLocale | null;
   cookie?: string | null;
   country?: string | null;
+  /** true only for unprefixed `/partneriem` or a one-time `/` → `/lv` dump. */
+  preferStoredLocale?: boolean;
 }): AppLocale {
   const cookie = args.cookie?.trim().toLowerCase();
   const saved = isAppLocale(cookie) ? cookie : null;
-  if (args.urlLocale && args.urlLocale !== DEFAULT_LOCALE) return args.urlLocale;
+  if (args.urlLocale && !args.preferStoredLocale) return args.urlLocale;
   if (saved) return saved;
+  if (args.urlLocale) return args.urlLocale;
   return detectB2bDefaultLocale(args.country);
 }
 

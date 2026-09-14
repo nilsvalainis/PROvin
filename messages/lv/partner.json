@@ -26,7 +26,7 @@
     "vinSubmitTitle": "Iesniegt VIN",
     "vinSubmit": "Iesniegt",
     "vinSubmitLoading": "Iesniedz…",
-    "vinSubmitOk": "VIN pieņemts. Atskaiti sagatavosim un redzēsi to sadaļā Profils.",
+    "vinSubmitOk": "VIN pieņemts. Atskaiti sagatavosim un redzēsi to sadaļā Pasūtījumi.",
     "creditsHeading": "Pieejamās atskaites",
     "creditLeft": "Pieejamās atskaites: {count}",
     "creditChipBusiness": "Business",
@@ -70,7 +70,7 @@
     "bizLineDb": "autoDNA, carVertical, starptautiskie reģistri",
     "bizLineCurve": "Nobraukuma līkne un kopsavilkums",
     "dealerLineRecords": "Oficiālo dīleru fiksētie ieraksti",
-    "dealerLineGuarantee": "100% naudas atmaksas garantija",
+    "dealerLineGuarantee": "Ja odometra datu nav, kredīts tiek atgriezts kontā",
     "navPacksDealer": "Dīlera dati",
     "titleDealer": "DĪLERA DATI",
     "payLoading": "Sagatavo apmaksu…",
@@ -101,6 +101,8 @@
     "archiveVin": "VIN",
     "archiveInvoice": "Rēķina nr.",
     "archiveAmount": "Summa",
+    "archiveCreditUsed": "1 kr.",
+    "archiveCreditRestored": "Kredīts atgriezts",
     "archiveReport": "Atskaite",
     "archiveOpenReport": "Atvērt atskaiti",
     "requisitesTitle": "Rekvizīti",
@@ -149,6 +151,7 @@
     "emailChangeSent": "Uz jauno adresi nosūtījām apstiprinājuma saiti.",
     "emailChangeError": "Neizdevās sākt e-pasta maiņu. Pārbaudi paroli un adresi.",
     "emailPending": "Gaida apstiprinājumu: {email}",
-    "emailVerified": "E-pasts ir apstiprināts."
+    "emailVerified": "E-pasts ir apstiprināts.",
+    "packPaidOk": "Paka apmaksāta. Kredīti ir kontā."
   }
 }

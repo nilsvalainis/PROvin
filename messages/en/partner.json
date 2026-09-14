@@ -26,7 +26,7 @@
     "vinSubmitTitle": "Submit VIN",
     "vinSubmit": "Submit",
     "vinSubmitLoading": "Submitting…",
-    "vinSubmitOk": "VIN accepted. We will prepare the report; you will see it under Profile.",
+    "vinSubmitOk": "VIN accepted. We will prepare the report; you will see it under Orders.",
     "creditsHeading": "Available reports",
     "creditLeft": "Available reports: {count}",
     "creditChipBusiness": "Business",
@@ -70,7 +70,7 @@
     "bizLineDb": "autoDNA, carVertical, international registers",
     "bizLineCurve": "Mileage curve and summary",
     "dealerLineRecords": "Official dealer-recorded entries",
-    "dealerLineGuarantee": "100% money-back guarantee",
+    "dealerLineGuarantee": "If odometer data is unavailable, the credit is returned to the account",
     "navPacksDealer": "Dealer data",
     "titleDealer": "DEALER DATA",
     "payLoading": "Preparing payment…",
@@ -101,6 +101,8 @@
     "archiveVin": "VIN",
     "archiveInvoice": "Invoice no.",
     "archiveAmount": "Amount",
+    "archiveCreditUsed": "1 cr.",
+    "archiveCreditRestored": "Credit restored",
     "archiveReport": "Report",
     "archiveOpenReport": "Open report",
     "requisitesTitle": "Company details",
@@ -149,6 +151,7 @@
     "emailChangeSent": "We sent a confirmation link to the new address.",
     "emailChangeError": "Could not start the email change. Check the password and address.",
     "emailPending": "Waiting for confirmation: {email}",
-    "emailVerified": "Email confirmed."
+    "emailVerified": "Email confirmed.",
+    "packPaidOk": "Pack paid. Credits are on the account."
   }
 }

@@ -1,12 +1,15 @@
 import { b2bDateLocale } from "@/i18n/locales";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 
+export type B2bArchiveAmountKind = "money" | "credit" | "credit_restored";
+
 export type B2bPartnerOrderRow = {
   id: string;
   createdAt: string;
   vin: string;
   invoiceNumber: string;
   amountLabel: string;
+  amountKind?: B2bArchiveAmountKind;
   plan: B2bPartnerPlanId;
   /** Atskaite PDF. Tukšs, kamēr admin nav nosūtījis / saglabājis failu. */
   reportHref?: string | null;
@@ -58,4 +61,9 @@ export function formatB2bPartnerOrderDate(iso: string, locale: string): string {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
+}
+
+export function partnerNotesMatchId(notes: string, partnerId: string): boolean {
+  const id = partnerId.trim();
+  return Boolean(id) && notes.includes(`partner_id=${id}`);
 }
