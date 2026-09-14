@@ -189,7 +189,7 @@ export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
   return "gemini";
 }
 
-export const FLASH_MAX_OPERATOR_NOTES_MAX_LEN = 8000;
+export const FLASH_MAX_OPERATOR_NOTES_MAX_LEN = 16000;
 
 export function clipFlashMaxOperatorNotes(raw: unknown): string {
   if (typeof raw !== "string") return "";
