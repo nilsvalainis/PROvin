@@ -169,6 +169,7 @@ import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
+import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
@@ -3940,33 +3941,42 @@ export function OrderDetailWorkspace({
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
             </button>
           ) : null}
+          {/* Telefonā šīs darbības dublē apakšējais doks, tāpēc joslā tās neaizņem vietu. */}
           {payload.aiAllowed ? (
-            <AdminFlashMaxButton
-              disabled={!workspaceHydrated || prepareDraftBusy}
-              busy={flashMaxBusy}
-              phase={flashMaxPhase}
-              notice={flashMaxNotice}
-              error={flashMaxErr}
-              onRun={(selection) => void runFlashMax(selection)}
-              sourceBlocks={ws.sourceBlocks}
-            />
+            <span className="max-md:hidden">
+              <AdminFlashMaxButton
+                disabled={!workspaceHydrated || prepareDraftBusy}
+                busy={flashMaxBusy}
+                phase={flashMaxPhase}
+                notice={flashMaxNotice}
+                error={flashMaxErr}
+                onRun={(selection) => void runFlashMax(selection)}
+                sourceBlocks={ws.sourceBlocks}
+              />
+            </span>
           ) : null}
-          <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
-          <AdminOrderCopilotTrigger
-            open={copilotOpen}
-            busy={copilotBusy}
-            disabled={!payload.aiAllowed}
-            onOpen={() => {
-              setPhrasesOpen(false);
-              setCopilotOpen(true);
-            }}
-          />
+          <span className="max-md:hidden">
+            <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
+          </span>
+          <span className="max-md:hidden">
+            <AdminOrderCopilotTrigger
+              open={copilotOpen}
+              busy={copilotBusy}
+              disabled={!payload.aiAllowed}
+              onOpen={() => {
+                setPhrasesOpen(false);
+                setCopilotOpen(true);
+              }}
+            />
+          </span>
           <AdminAiSessionCostBar />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {/* Telefonā abas rindas saplūst vienā velkamā sliedē: `contents` izņem rindu
+              iepakojumu, tāpēc soļi paliek pareizā secībā un desktop režģis nemainās. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
             {([1, 2] as const).map((row) => {
               const cols = row === 1 ? "grid-cols-5" : "grid-cols-6";
               return (
-                <div key={row} className={`grid min-w-0 ${cols} gap-1`}>
+                <div key={row} className={`grid min-w-0 ${cols} gap-1 max-md:contents`}>
                   {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
                     if (stepRow !== row) return null;
                     const lvl = wizardStepLevels[idx] ?? "empty";
@@ -3976,13 +3986,13 @@ export function OrderDetailWorkspace({
                         key={label}
                         type="button"
                         onClick={() => goWizardStep(idx)}
-                        className={`flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-0.5 py-1 text-center transition sm:flex-row sm:justify-start sm:gap-1 sm:px-1.5 ${
+                        className={`flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-0.5 py-1 text-center transition max-md:shrink-0 max-md:snap-start max-md:flex-row max-md:gap-1.5 max-md:rounded-full max-md:px-2.5 max-md:py-1.5 sm:flex-row sm:justify-start sm:gap-1 sm:px-1.5 ${
                           active
                             ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
                             : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                         }`}
                       >
-                        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] dark:bg-white/10">
+                        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] max-md:h-4 max-md:w-4 max-md:bg-transparent dark:bg-white/10 dark:max-md:bg-transparent">
                           <Icon className="h-3.5 w-3.5" aria-hidden />
                           <span
                             className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
@@ -3990,7 +4000,7 @@ export function OrderDetailWorkspace({
                           />
                         </span>
                         <span
-                          className={`line-clamp-2 w-full text-[8px] font-semibold uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-left sm:text-[9px] ${
+                          className={`line-clamp-2 w-full text-[8px] font-semibold uppercase leading-tight tracking-tight max-md:line-clamp-1 max-md:w-auto max-md:whitespace-nowrap max-md:text-[10px] max-md:normal-case max-md:tracking-normal sm:line-clamp-1 sm:text-left sm:text-[9px] ${
                             active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
                           }`}
                         >
@@ -4098,6 +4108,39 @@ export function OrderDetailWorkspace({
         </div>
       </nav>
 
+      <AdminOrderMobileDock
+        aiAllowed={payload.aiAllowed}
+        workspaceHydrated={workspaceHydrated}
+        prepareDraftBusy={prepareDraftBusy}
+        flashMaxBusy={flashMaxBusy}
+        onFlashMax={(selection) => void runFlashMax(selection)}
+        copilotOpen={copilotOpen}
+        copilotBusy={copilotBusy}
+        onOpenCopilot={() => {
+          setPhrasesOpen(false);
+          setCopilotOpen(true);
+        }}
+        onOpenPreview={() => setPreviewOpen(true)}
+        onSave={() => {
+          setWorkspaceSaveBusy(true);
+          void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+        }}
+        saveBusy={workspaceSaveBusy}
+        onOpenPhrases={() => {
+          setCopilotOpen(false);
+          setPhrasesOpen(true);
+        }}
+        onGoSummary={() => goWizardStep(WIZARD_SUMMARY_STEP)}
+        vin={vinBar}
+        plate={plateBar}
+        listingUrl={payload.listingUrl}
+        customerPhone={payload.customerPhone}
+        onVinCopied={() => {
+          setVinBarCopyFlash(true);
+          window.setTimeout(() => setVinBarCopyFlash(false), 600);
+        }}
+      />
+
       <AdminOrderStickyActionRail
         vin={vinBar}
         plate={plateBar}
@@ -4124,7 +4167,8 @@ export function OrderDetailWorkspace({
         sourceBlocks={ws.sourceBlocks}
       />
 
-      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 ${ADMIN_CONTENT_MAX}`}>
+      {/* Apakšējā atstarpe telefonā: fiksētais doks nedrīkst aizsegt pēdējo bloku. */}
+      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 max-md:pb-24 ${ADMIN_CONTENT_MAX}`}>
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}
