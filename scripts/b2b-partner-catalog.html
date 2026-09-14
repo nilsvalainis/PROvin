@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN partneriem — PROVIN BUSINESS</title>
+<style>
+  :root{
+    --ink:rgb(245 248 252 / .96);
+    --dim:#a1a1aa;
+    --faint:#71717a;
+    --hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+    --pad:max(1rem, env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;min-height:100dvh;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background-color:#0d0d0d;
+    background-image:
+      radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / .048) 0%, transparent 54%),
+      linear-gradient(180deg,#171717 0%,#121212 16%,#080808 38%,#040404 62%,#000 100%);
+    background-attachment:fixed,fixed;
+  }
+  @media (max-width:1023px){
+    body{
+      background-color:#060606;
+      background-image:
+        radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / .024) 0%, transparent 54%),
+        linear-gradient(180deg,#0c0c0c 0%,#090909 16%,#050505 38%,#020202 62%,#000 100%);
+    }
+  }
+
+  .hero{
+    max-width:40rem;margin:0 auto;
+    padding:.9rem var(--pad) 1.35rem;
+  }
+  .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .logo{font-size:.85rem;font-weight:600;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .tag{font-size:.56rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+  h1{margin:.8rem 0 0;font-size:1.2rem;font-weight:600;letter-spacing:-.02em;}
+
+  .seg{display:flex;gap:3px;margin-top:.9rem;padding:3px;background:#1a1a1a;border-radius:10px;}
+  .seg button{
+    flex:1;border:0;background:transparent;color:#94a3b8;
+    padding:.72rem .4rem;border-radius:8px;
+    font:600 .68rem/1.2 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
+  }
+  .seg button.on{background:#2563eb;color:#fff;}
+
+  .fields{margin-top:1.05rem;}
+  .fields label{
+    display:block;font-size:.56rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  }
+  .fields input{
+    width:100%;height:2.7rem;margin:0 0 .65rem;padding:0;
+    background:transparent;border:0;border-bottom:1px solid var(--hair);
+    color:inherit;font:500 1.02rem/1 Inter,sans-serif;letter-spacing:.08em;caret-color:#60a5fa;
+  }
+  .fields input:focus{outline:none;border-bottom-color:#2563eb;}
+  .fields input::placeholder{color:#52525b;}
+  .err{margin:-.4rem 0 .45rem;font-size:.7rem;color:#f87171;min-height:.9em;}
+  .paybtn{
+    width:100%;height:2.85rem;margin-top:.2rem;border:0;border-radius:.65rem;
+    background:#2563eb;color:#fff;
+    font:600 .74rem/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+    position:relative;overflow:hidden;
+  }
+  .paybtn:disabled{background:#1e293b;color:#64748b;}
+  .pay-sticky{
+    position:sticky;bottom:0;z-index:10;margin:0 calc(-1 * var(--pad));
+    padding:.65rem var(--pad) calc(.7rem + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,transparent,#0a0a0a 32%);
+  }
+  @media (min-width:1024px){
+    .pay-sticky{position:static;margin:0;padding:0;background:none;}
+  }
+  .done{margin-top:1.2rem;font-size:.88rem;line-height:1.45;color:#6ee7b7;}
+
+  .continues{
+    border-top:1px solid rgb(255 255 255 / .08);
+    padding:2.4rem var(--pad) 4rem;
+  }
+  .catalog{
+    max-width:min(75rem, calc(100vw - 2rem));
+    margin:0 auto;
+  }
+  .grid{
+    display:grid;grid-template-columns:1fr;gap:1.75rem;align-items:start;
+  }
+  @media (min-width:1024px){
+    .grid{grid-template-columns:minmax(0,1fr) minmax(17.5rem,22.5rem);gap:2.5rem;}
+  }
+  @media (min-width:1280px){
+    .grid{grid-template-columns:minmax(0,1fr) minmax(20rem,26rem);gap:3rem;}
+  }
+
+  h2{
+    margin:0;font-size:1.125rem;font-weight:700;letter-spacing:-.02em;line-height:1.35;color:#f4f4f5;
+  }
+  @media (min-width:640px){ h2{font-size:1.25rem;} }
+  .goal-lab{
+    margin:1rem 0 0;font-size:.6875rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;
+  }
+  .goal{
+    margin:.4rem 0 0;font-size:.8125rem;font-weight:500;line-height:1.55;color:#e4e4e7;
+  }
+  @media (min-width:640px){ .goal{font-size:.875rem;line-height:1.6;} }
+
+  .items{margin:1.5rem 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1rem;}
+  @media (min-width:640px){ .items{margin-top:1.75rem;gap:1.25rem;} }
+  .items li{
+    display:grid;grid-template-columns:auto minmax(0,1fr);
+    column-gap:.85rem;row-gap:.35rem;align-items:start;
+  }
+  .badge{
+    display:flex;align-items:center;justify-content:center;
+    width:2.25rem;height:2.25rem;grid-row:span 2;
+    border-radius:999px;border:1px solid rgb(255 255 255 / .1);
+    background:rgb(255 255 255 / .03);color:#a1a1aa;
+  }
+  @media (min-width:640px){ .badge{width:2.5rem;height:2.5rem;} }
+  .badge svg{width:1rem;height:1rem;stroke-width:1.6;}
+  .badge img{width:1.125rem;height:1.125rem;object-fit:contain;opacity:.85;}
+  .badge.dual{gap:.12rem;}
+  .badge.dual img{width:.95rem;height:.95rem;}
+  .item-t{margin:0;font-size:.8125rem;font-weight:700;line-height:1.3;color:#f4f4f5;}
+  .item-d{margin:0;font-size:.8125rem;font-weight:400;line-height:1.55;color:#9ca3af;}
+  @media (min-width:640px){
+    .item-t,.item-d{font-size:.875rem;}
+    .item-d{line-height:1.6;}
+  }
+  .item-t.ok{color:rgb(167 243 208 / .95);}
+  .foot{margin:1.1rem 0 0;font-size:.62rem;line-height:1.4;color:rgb(210 214 222 / .48);}
+
+  .preview{
+    overflow:hidden;border-radius:.75rem;
+    border:1px solid rgb(255 255 255 / .1);
+    background:rgb(0 0 0 / .35);
+    box-shadow:0 12px 40px -20px rgb(0 0 0 / .7);
+  }
+  @media (min-width:1024px){ .preview{position:sticky;top:1.25rem;} }
+  .preview-bar{
+    display:flex;justify-content:space-between;align-items:center;gap:.5rem;
+    padding:.5rem .75rem;border-bottom:1px solid rgb(255 255 255 / .1);
+  }
+  .preview-bar p{
+    margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:.6875rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#a1a1aa;
+  }
+  .preview-bar a{
+    color:#60a5fa;font-size:.6875rem;font-weight:500;text-decoration:none;
+  }
+  .preview-bar a:hover{color:#93c5fd;}
+  .preview-pane{position:relative;height:min(28rem,55vh);background:#09090b;}
+  @media (min-width:640px){ .preview-pane{height:min(32rem,58vh);} }
+  @media (min-width:1024px){ .preview-pane{height:36rem;} }
+  .preview-pane iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#09090b;}
+  .preview-pane img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;padding:.35rem;}
+</style>
+</head>
+<body>
+  <div class="hero" id="order">
+    <div class="top">
+      <div class="logo">PROVIN<i>.LV</i></div>
+      <div class="tag">Partneriem</div>
+    </div>
+    <h1>Pasūtīt</h1>
+    <div class="seg" role="radiogroup" aria-label="Pakalpojums">
+      <button type="button" class="on" data-plan="b">Business</button>
+      <button type="button" data-plan="d">Dīlera dati</button>
+    </div>
+    <div class="fields">
+      <label for="vin">VIN</label>
+      <input id="vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false" autocapitalize="characters">
+      <div class="err" id="vin-err"></div>
+      <label for="code">Partnera kods</label>
+      <input id="code" placeholder="————" spellcheck="false" autocapitalize="characters">
+      <div class="err" id="code-err"></div>
+    </div>
+    <div class="pay-sticky">
+      <button type="button" class="paybtn" id="pay" disabled>VIN + kods</button>
+    </div>
+  </div>
+
+  <section class="continues" aria-labelledby="pkg-title">
+    <div class="catalog">
+      <div class="grid">
+        <div>
+          <h2 id="pkg-title"></h2>
+          <p class="goal-lab">Mērķis</p>
+          <p class="goal" id="goal"></p>
+          <ul class="items" id="items"></ul>
+          <p class="foot" id="foot"></p>
+        </div>
+        <aside class="preview" id="preview"></aside>
+      </div>
+    </div>
+  </section>
+
+<script>
+  const DNA_TIP = "Atskaite var tikt aizstāta ar citu, reģionam atbilstošāku.";
+
+  const ICONS = {
+    store: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l2.5-5h13L21 9"/><path d="M3 9h18v11H3z"/><path d="M9 20v-6h6v6"/></svg>',
+    globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+    clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+    gauge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 15l3.5-6.5"/><path d="M5.5 17.5A8 8 0 1 1 18.5 17.5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
+    tags: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.6 13.4L12 22l-9-9 8.6-8.6a2 2 0 0 1 1.4-.4h6.2V10a2 2 0 0 1-.4 1.4z"/><circle cx="16.5" cy="7.5" r="1"/></svg>',
+  };
+
+  const COPY = {
+    b: {
+      title: "PROVIN BUSINESS",
+      goal: "PROVIN BUSINESS apvieno datus no vairākiem neatkarīgiem avotiem, tostarp oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas valstu reģistriem. Vienā pārskatāmā atskaitē jūs redzat pilnu vēstures un nobraukuma hronoloģiju, negadījumu vēsturi un servisa ierakstus, nodrošinot pilnīgu caurskatāmību pirms darījuma.",
+      items: [
+        { icon: "store", title: "Oficiālo dīleru dati (VW, BMW, MB u.c.)*", desc: "Dati no autorizētajiem servisiem — apkopju, remontu un odometra ieraksti ražotāja tīklā, kur tie ir pieejami." },
+        { logos: ["/public/brand/carvertical-logo.png", "/public/brand/autodna-logo.png"], title: "CarVertical + AutoDNA", desc: DNA_TIP },
+        { icon: "globe", title: "Izcelsmes valsts reģistri", desc: "Publiskie reģistri no auto izcelsmes valsts: reģistrācijas, īpašnieku maiņas un juridiskais statuss." },
+        { icon: "camera", title: "Izsoļu portālu arhīva dati", desc: "Vēsturisko izsoļu arhīvi, ieskaitot sākotnējos bojājumu attēlus pirms auto remonta, ja dati ir pieejami." },
+        { icon: "shield", title: "Apdrošinātāju dati (OCTA/KASKO)", desc: "Apdrošināšanas gadījumu un atlīdzību ieraksti, kur tie ir fiksēti." },
+        { icon: "clipboard", title: "Tehnisko apskašu vēsture", desc: "Periodisko tehnisko apskašu rezultāti un to hronoloģija." },
+        { icon: "list", title: "Datu kopsavilkums", desc: "Visi avoti vienā pārskatāmā atskaitē — bez sludinājuma analīzes un bez konsultācijas." },
+      ],
+      foot: "*pieejama noteiktiem ražotājiem.",
+      sample: "/public/samples/provin-audits-piemers.pdf",
+      sampleImg: "/public/samples/provin-audits-piemers-page1.png",
+    },
+    d: {
+      title: "DĪLERA DATI",
+      goal: "Oficiālās dīleru servisa vēstures un ražotāju datubāzu analīze automašīnām. Pārbaude fokusējas uz autorizēto servisu ierakstiem, hronoloģisko nobraukumu, veiktajām apkopēm un rūpnīcas atsaukumiem, nodrošinot maksimālu pārredzamību par auto reālo ekspluatāciju.",
+      items: [
+        { icon: "globe", title: "Oficiālā servisa vēsture", desc: "Padziļināta autorizēto servisu apmeklējumu, veikto remontu un apkopes darbu ierakstu analīze." },
+        { icon: "gauge", title: "Odometra & kampaņu pārbaude", desc: "Nobraukuma hronoloģiskā izsekošana ražotāja sistēmā, kā arī aktīvo garantijas atsaukumu pārbaude." },
+        { icon: "tags", title: "Atbalstīto ražotāju sistēmas*", desc: "Piekļuve Vācijas premium zīmoliem (BMW, Audi, MB), VAG grupas, VOLVO, SUBARU, Stellantis un citu ražotāju oficiālajiem datiem." },
+        { icon: "shield", title: "100% Naudas atmaksas garantija", desc: "Ja konkrētajam VIN kodam ražotāja oficiālajā datubāzē nav ierakstu, veiksim pilnu pirkuma atmaksu.", ok: true },
+      ],
+      foot: "*pieejama noteiktiem ražotājiem.",
+      sample: "/public/samples/provin-dilera-dati-piemers.pdf",
+      sampleImg: "/public/samples/provin-dilera-dati-piemers-page1.png",
+    },
+  };
+
+  let plan = "b";
+  const isDesk = () => window.matchMedia("(min-width: 1024px)").matches;
+
+  function badgeHtml(item){
+    if (item.logos) {
+      return `<span class="badge dual">${item.logos.map((src) => `<img src="${src}" alt="" width="18" height="18">`).join("")}</span>`;
+    }
+    return `<span class="badge">${ICONS[item.icon] || ICONS.shield}</span>`;
+  }
+
+  function render(){
+    const c = COPY[plan];
+    document.getElementById("pkg-title").textContent = c.title;
+    document.getElementById("goal").textContent = c.goal;
+    document.getElementById("foot").textContent = c.foot;
+    document.getElementById("items").innerHTML = c.items.map((item) => `
+      <li>
+        ${badgeHtml(item)}
+        <p class="item-t${item.ok ? " ok" : ""}">${item.title}</p>
+        <p class="item-d">${item.desc}</p>
+      </li>`).join("");
+    const desk = isDesk();
+    document.getElementById("preview").innerHTML = `
+      <div class="preview-bar">
+        <p>Atskaites piemērs</p>
+        <a href="${c.sample}" target="_blank" rel="noopener noreferrer">Pietuvināt</a>
+      </div>
+      <div class="preview-pane">
+        ${desk
+          ? `<iframe title="${c.title} — atskaites piemērs" src="${c.sample}#toolbar=0&navpanes=0&scrollbar=1" loading="lazy"></iframe>`
+          : `<img src="${c.sampleImg}" alt="" draggable="false">`}
+      </div>`;
+  }
+
+  function validVin(s){
+    const n = s.trim().toUpperCase().replace(/\s/g,"");
+    return n.length >= 11 && n.length <= 17 && /^[A-HJ-NPR-Z0-9]+$/.test(n);
+  }
+  function validCode(s){ return s.trim().length >= 4; }
+
+  const vin = document.getElementById("vin");
+  const code = document.getElementById("code");
+  const pay = document.getElementById("pay");
+  const vinErr = document.getElementById("vin-err");
+  const codeErr = document.getElementById("code-err");
+
+  function sync(){
+    const ok = validVin(vin.value) && validCode(code.value);
+    pay.disabled = !ok;
+    pay.textContent = ok ? "Maksāt" : "VIN + kods";
+  }
+
+  document.querySelectorAll("[data-plan]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      plan = btn.dataset.plan;
+      document.querySelectorAll("[data-plan]").forEach((el) => el.classList.toggle("on", el === btn));
+      render();
+    });
+  });
+  vin.addEventListener("input", () => {
+    const s = vin.selectionStart;
+    vin.value = vin.value.toUpperCase().replace(/\s/g,"");
+    if (s != null) vin.setSelectionRange(s, s);
+    vinErr.textContent = vin.value && !validVin(vin.value) ? "VIN: 11–17 zīmes, bez I, O, Q." : "";
+    sync();
+  });
+  code.addEventListener("input", () => {
+    codeErr.textContent = code.value && !validCode(code.value) ? "Kods vismaz 4 zīmes." : "";
+    sync();
+  });
+  pay.addEventListener("click", () => {
+    if (pay.disabled) return;
+    document.getElementById("order").innerHTML = `<div class="done">Stripe Checkout · ${plan === "b" ? "PROVIN BUSINESS" : "Dīlera dati"} · ${vin.value}</div>`;
+  });
+  let lastDesk = isDesk();
+  window.addEventListener("resize", () => {
+    const desk = isDesk();
+    if (desk !== lastDesk) { lastDesk = desk; render(); }
+  });
+  render();
+  sync();
+</script>
+</body>
+</html>

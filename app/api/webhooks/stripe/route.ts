@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import Stripe from "stripe";
 import { sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
 import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
@@ -12,6 +12,8 @@ import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/str
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedSsLvAdifyOnPaidOrder } from "@/lib/admin-ss-lv-adify-seed";
+import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
+import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -114,7 +116,35 @@ async function fulfillPaidCheckoutSession(
     console.info("PROVIN order:", payload);
     triggerInvoiceSequenceRepairInBackground();
 
-    if (getCheckoutLineFromSession(session) === "provin_select") {
+    const checkoutLine = getCheckoutLineFromSession(session);
+
+    /**
+     * Dīlera produkts: OE servisa vēsture jāielasa automātiski. OneAuto pollings
+     * ir par lēnu webhook atbildei, tāpēc darbu atzīmējam sinhroni un izpildām
+     * pēc atbildes; cron slaucītājs pārņem, ja fona izpilde nepaspēj.
+     */
+    if (
+      order.vin &&
+      isDealerDataAutoFetchOrder({ checkoutLine, amountTotalCents: session.amount_total })
+    ) {
+      const vin = order.vin;
+      const queued = await enqueueDealerDataJob({ sessionId: session.id, vin }).catch((err) => {
+        console.error("[stripe webhook] dealer data enqueue:", err);
+        return false;
+      });
+      if (queued) {
+        after(async () => {
+          try {
+            const r = await runDealerDataJob({ sessionId: session.id, vin, trigger: "webhook" });
+            console.info("[stripe webhook] dealer data job", { sessionId: session.id, ...r });
+          } catch (err) {
+            console.error("[stripe webhook] dealer data job:", err);
+          }
+        });
+      }
+    }
+
+    if (checkoutLine === "provin_select") {
       void ensureConsultationDraftSeed(session.id).catch((err) => {
         console.error("[stripe webhook] consultation draft seed:", err);
       });

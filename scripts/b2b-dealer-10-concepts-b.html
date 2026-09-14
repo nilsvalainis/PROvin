@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN partneriem — 10 jauni virzieni</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(210 214 222 / .82);
+    --faint:rgb(148 163 184 / .88);
+    --hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+    --mint:rgb(167 243 208 / .95);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;
+    padding:.7rem 1.25rem;background:rgb(8 8 8 / .92);border-bottom:1px solid var(--hair);backdrop-filter:blur(10px);
+  }
+  .nav a{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-decoration:none;padding:.35rem .5rem;}
+  .nav a:hover{color:#93c5fd;}
+  .nav strong{margin-right:.4rem;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;}
+  .nav .prev{color:#93c5fd;margin-right:.6rem;}
+
+  .cap{max-width:58rem;margin:0 auto;padding:2.1rem 1.5rem .35rem;}
+  .cap b{display:block;font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin-top:.3rem;font-style:normal;font-size:.8rem;color:var(--faint);max-width:38rem;line-height:1.45;}
+  .shell{max-width:58rem;margin:0 auto 2.4rem;padding:0 1.5rem 2.2rem;}
+  .logo{font-size:.85rem;font-weight:600;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .topline{display:flex;justify-content:space-between;align-items:baseline;}
+  .tag{font-size:.6rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);}
+  .meta{margin:.75rem 0 0;font-size:.68rem;font-weight:600;letter-spacing:.04em;color:var(--faint);}
+  .ok{color:var(--mint);}
+  .cta{display:inline-block;margin-top:.85rem;font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid rgb(255 255 255 / .28);padding-bottom:.18rem;}
+  .gate{margin-top:1.15rem;display:flex;align-items:center;gap:1rem;}
+  .fake{flex:1;height:2.25rem;border-bottom:1px solid var(--hair);display:flex;align-items:center;letter-spacing:.12em;color:var(--faint);font-size:.88rem;}
+  .gok{font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+
+  svg.ico{width:1.15rem;height:1.15rem;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+
+  /* 11 bento */
+  .bento{display:grid;grid-template-columns:1.35fr .9fr;grid-template-rows:auto auto;gap:.7rem;margin-top:1.2rem;}
+  .tile{border:1px solid var(--hair);padding:1.15rem 1.2rem;background:rgb(255 255 255 / .02);}
+  .tile.wide{grid-row:1 / span 2;}
+  .tile h2{margin:0;font-size:.95rem;letter-spacing:.06em;}
+  .tile p{margin:.5rem 0 0;font-size:.8rem;line-height:1.5;color:var(--dim);}
+  .ibadge{display:flex;gap:.45rem;margin-top:.9rem;flex-wrap:wrap;}
+  .ibadge span{
+    width:2.15rem;height:2.15rem;border-radius:999px;border:1px solid rgb(255 255 255 / .14);
+    display:flex;align-items:center;justify-content:center;background:rgb(255 255 255 / .03);color:#d4d4d8;
+  }
+  .ibadge img{width:1.05rem;height:1.05rem;object-fit:contain;opacity:.8;}
+  .mini-brands{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.85rem;}
+  .mini-brands img{width:1.15rem;height:1.15rem;opacity:.55;}
+
+  /* 12 ticket */
+  .tickets{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.2rem;}
+  .ticket{
+    position:relative;padding:1.25rem 1.2rem 1.15rem;
+    background:linear-gradient(180deg,#161616,#0c0c0c);
+    border:1px dashed rgb(255 255 255 / .22);
+  }
+  .ticket::before,.ticket::after{
+    content:"";position:absolute;width:1.1rem;height:1.1rem;border-radius:50%;background:#0d0d0d;
+    left:-.55rem;
+  }
+  .ticket::before{top:-.55rem;}
+  .ticket::after{bottom:-.55rem;}
+  .ticket h2{margin:0;font-size:.8rem;letter-spacing:.16em;}
+  .ticket p{margin:.55rem 0 0;font-size:.78rem;line-height:1.45;color:var(--dim);}
+  .stub{margin-top:1rem;padding-top:.75rem;border-top:1px dashed rgb(255 255 255 / .18);display:flex;justify-content:space-between;font-size:.65rem;letter-spacing:.08em;color:var(--faint);text-transform:uppercase;}
+
+  /* 13 wallpaper */
+  .wall{
+    position:relative;overflow:hidden;min-height:22rem;margin-top:1.1rem;
+    display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--hair);
+  }
+  .ghost{
+    position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,1fr);align-content:center;gap:1.2rem 1rem;
+    padding:2rem;opacity:.09;pointer-events:none;
+  }
+  .ghost img{width:100%;max-width:2.4rem;margin:0 auto;filter:grayscale(1);}
+  .wall .col{position:relative;z-index:1;padding:1.5rem 1.3rem;}
+  .wall .col + .col{border-left:1px solid var(--hair);}
+  .wall h2{margin:0;font-size:1.05rem;letter-spacing:.05em;}
+  .wall p{margin:.55rem 0 0;font-size:.82rem;line-height:1.5;color:var(--dim);}
+
+  /* 14 legend rows */
+  .leg{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:1.3rem;}
+  .leg h2{margin:0 0 .7rem;font-size:.95rem;letter-spacing:.06em;}
+  .leg p.d{margin:0 0 .85rem;font-size:.8rem;line-height:1.45;color:var(--dim);}
+  .row{display:flex;align-items:center;gap:.65rem;padding:.38rem 0;color:var(--dim);font-size:.8rem;}
+  .row i{
+    width:1.7rem;height:1.7rem;border-radius:.3rem;border:1px solid rgb(255 255 255 / .12);
+    display:flex;align-items:center;justify-content:center;color:#93c5fd;flex-shrink:0;font-style:normal;
+  }
+  .row i img{width:.95rem;height:.95rem;object-fit:contain;}
+
+  /* 15 filmstrip */
+  .film{margin-top:1.2rem;overflow:hidden;}
+  .strip{display:flex;width:200%;transition:transform .35s ease;}
+  .strip.on2{transform:translateX(-50%);}
+  .slide{width:50%;padding:1.4rem 1.5rem 1.3rem;border:1px solid var(--hair);background:rgb(255 255 255 / .02);}
+  .slide h2{margin:0;font-size:1.2rem;letter-spacing:.04em;}
+  .slide p{margin:.55rem 0 0;font-size:.84rem;line-height:1.5;color:var(--dim);max-width:32rem;}
+  .dots{display:flex;gap:.5rem;margin-top:.9rem;}
+  .dots button{height:2px;flex:1;border:0;background:rgb(255 255 255 / .15);cursor:pointer;}
+  .dots button.on{background:#60a5fa;}
+
+  /* 16 orbs */
+  .orbs{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.3rem;text-align:center;}
+  .orb-wrap{padding:1.2rem .8rem 1.3rem;}
+  .orb{
+    width:8.5rem;height:8.5rem;margin:0 auto;border-radius:50%;
+    border:1px solid rgb(96 165 250 / .35);
+    box-shadow:0 0 40px rgb(37 99 235 / .18), inset 0 0 30px rgb(37 99 235 / .08);
+    display:grid;place-items:center;color:#93c5fd;
+  }
+  .orb svg{width:2.4rem;height:2.4rem;}
+  .orb-wrap h2{margin:1rem 0 0;font-size:.82rem;letter-spacing:.14em;}
+  .orb-wrap p{margin:.45rem auto 0;max-width:18rem;font-size:.78rem;line-height:1.45;color:var(--dim);}
+
+  /* 17 newspaper */
+  .news{margin-top:1.1rem;border-top:2px solid rgb(255 255 255 / .35);border-bottom:1px solid var(--hair);padding:1rem 0 1.2rem;}
+  .news h1{margin:0;font-size:1.7rem;font-weight:650;letter-spacing:-.03em;text-align:center;}
+  .kicker{text-align:center;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:.35rem 0 1rem;}
+  .cols{display:grid;grid-template-columns:1fr 1px 1fr;gap:1.2rem;}
+  .rule{background:var(--hair);}
+  .cols h2{margin:0;font-size:.78rem;letter-spacing:.16em;}
+  .cols p{margin:.45rem 0 0;font-size:.8rem;line-height:1.55;color:var(--dim);}
+  .key{display:flex;gap:.8rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;}
+  .key span{display:flex;align-items:center;gap:.35rem;font-size:.65rem;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;}
+  .key img,.key svg{width:.9rem;height:.9rem;opacity:.7;}
+
+  /* 18 cinematic */
+  .cine{
+    margin-top:1rem;padding:2rem 1.4rem 1.5rem;min-height:23rem;
+    background:
+      radial-gradient(ellipse 70% 55% at 20% 20%, rgb(37 99 235 / .22), transparent 50%),
+      radial-gradient(ellipse 50% 40% at 90% 80%, rgb(37 99 235 / .1), transparent 45%),
+      #080808;
+    border:1px solid var(--hair);
+  }
+  .cine h1{margin:1.4rem 0 0;font-size:1.8rem;font-weight:550;letter-spacing:-.035em;max-width:16rem;}
+  .cine h1 em{font-style:normal;color:#60a5fa;}
+  .cine-pair{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem;}
+  .cine-pair h2{margin:0;display:flex;align-items:center;gap:.5rem;font-size:.85rem;letter-spacing:.1em;}
+  .cine-pair p{margin:.45rem 0 0;font-size:.8rem;line-height:1.45;color:var(--dim);}
+
+  /* 19 stamp */
+  .stamps{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-top:1.2rem;}
+  .stamp-card{padding:1.3rem 1.15rem;border:1px solid var(--hair);position:relative;}
+  .seal{
+    position:absolute;right:1rem;top:1rem;width:4.2rem;height:4.2rem;border-radius:50%;
+    border:2px solid rgb(37 99 235 / .45);color:#60a5fa;
+    display:grid;place-items:center;transform:rotate(-12deg);opacity:.85;
+    font-size:.48rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:center;line-height:1.15;
+  }
+  .stamp-card h2{margin:0;font-size:.9rem;letter-spacing:.08em;max-width:12rem;}
+  .stamp-card p{margin:1.6rem 0 0;font-size:.8rem;line-height:1.5;color:var(--dim);}
+
+  /* 20 mosaic hover */
+  .mosaic{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem;margin-top:1.2rem;
+  }
+  .cell{
+    aspect-ratio:1;border:1px solid var(--hair);display:grid;place-items:center;
+    background:rgb(255 255 255 / .02);color:#93c5fd;
+  }
+  .cell img{width:42%;height:42%;object-fit:contain;opacity:.7;}
+  .cell.feat{grid-column:span 3;aspect-ratio:auto;min-height:8.5rem;place-items:start;padding:1rem 1.1rem;text-align:left;}
+  .cell.feat h2{margin:0;font-size:.85rem;letter-spacing:.08em;color:var(--ink);}
+  .cell.feat p{margin:.4rem 0 0;font-size:.75rem;line-height:1.4;color:var(--dim);}
+
+  @media (max-width:720px){
+    .bento,.tickets,.wall,.leg,.orbs,.cols,.cine-pair,.stamps{display:block;}
+    .wall .col + .col{border-left:0;border-top:1px solid var(--hair);}
+    .mosaic{grid-template-columns:repeat(3,1fr);}
+    .cell.feat{grid-column:span 3;}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="prev" href="/scripts/b2b-dealer-10-concepts.html">← 01–10</a>
+  <strong>11–20</strong>
+  <a href="#c11">11 Bento</a>
+  <a href="#c12">12 Biļete</a>
+  <a href="#c13">13 Fons</a>
+  <a href="#c14">14 Leģenda</a>
+  <a href="#c15">15 Lente</a>
+  <a href="#c16">16 Orbs</a>
+  <a href="#c17">17 Avīze</a>
+  <a href="#c18">18 Cinema</a>
+  <a href="#c19">19 Zīmogs</a>
+  <a href="#c20">20 Mozaīka</a>
+  <a class="prev" href="/scripts/b2b-dealer-10-concepts-c.html">21–30 →</a>
+</nav>
+
+<!-- 11 -->
+<div class="cap" id="c11"><b>11 · Bento · ar ikonām</b><i>Asimetriski laukumi. BUSINESS ir lielais lauks ar hero ikonām; dīleris — mazāki lauki ar ražotāju logo kā tekstūru.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="bento">
+    <div class="tile wide">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="ibadge">
+        <span title="autoDNA"><img src="/public/brand/autodna-logo.png" alt=""></span>
+        <span title="carVertical"><img src="/public/brand/carvertical-logo.png" alt=""></span>
+        <span title="Dīlera dati"><svg class="ico" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg></span>
+        <span title="Izsoļu arhīvs"><svg class="ico" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></span>
+        <span title="EU reģistri"><svg class="ico" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <span title="Starptautiski"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span>
+      </div>
+      <div class="meta">VIN · 24-72h</div>
+    </div>
+    <div class="tile">
+      <h2>DĪLERA DATI</h2>
+      <p>Oficiālie ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+      <div class="mini-brands">
+        <img src="/public/brand-logos/mercedes.svg" alt=""><img src="/public/brand-logos/bmw.svg" alt=""><img src="/public/brand-logos/audi.svg" alt=""><img src="/public/brand-logos/volkswagen.svg" alt=""><img src="/public/brand-logos/volvo.svg" alt=""><img src="/public/brand-logos/mini.svg" alt="">
+      </div>
+    </div>
+    <div class="tile">
+      <div class="meta"><span class="ok">100% Naudas atmaksas garantija</span></div>
+      <span class="cta">Nepieciešams kods</span>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 12 -->
+<div class="cap" id="c12"><b>12 · Biļetes</b><i>Katrs pakalpojums kā talons — perforēta mala, talona kājene. Bez ikonām, cita forma.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="tickets">
+    <div class="ticket">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, dīlera vēsture un reģistri vienā līknē. Bez konsultācijas.</p>
+      <div class="stub"><span>VIN</span><span>24-72h</span><span>Kods</span></div>
+    </div>
+    <div class="ticket">
+      <h2>DĪLERA DATI</h2>
+      <p>Ražotāja apkopju ieraksti. 100% naudas atmaksa, ja ierakstu nav.</p>
+      <div class="stub"><span>VIN</span><span>24-72h</span><span>100%</span></div>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 13 -->
+<div class="cap" id="c13"><b>13 · Logo kā fons · ar ikonām</b><i>Ražotāju logo nav poga un nav saraksts — tie ir fona tekstūra. Saturs paliek virsū.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="wall">
+    <div class="ghost" aria-hidden>
+      <img src="/public/brand-logos/mercedes.svg" alt=""><img src="/public/brand-logos/bmw.svg" alt=""><img src="/public/brand-logos/mini.svg" alt=""><img src="/public/brand-logos/rolls-royce.svg" alt=""><img src="/public/brand-logos/audi.svg" alt=""><img src="/public/brand-logos/volkswagen.svg" alt="">
+      <img src="/public/brand-logos/volvo.svg" alt=""><img src="/public/brand-logos/land-rover.svg" alt=""><img src="/public/brand-logos/jaguar.svg" alt=""><img src="/public/brand-logos/skoda.svg" alt=""><img src="/public/brand-logos/seat.svg" alt=""><img src="/public/brand-logos/subaru.svg" alt="">
+    </div>
+    <div class="col">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="meta">VIN · 24-72h</div>
+    </div>
+    <div class="col">
+      <h2>DĪLERA DATI</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. 100% naudas atmaksa, ja datu nav.</p>
+      <div class="meta"><span class="ok">100% atmaksa</span> · VIN · 24-72h</div>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 14 -->
+<div class="cap" id="c14"><b>14 · Leģenda · ar ikonām</b><i>Ikona + vārds vienā rindā — kā atslēga, ne kā pogu rinda. Tās pašas hero / avotu ikonas.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="leg">
+    <div>
+      <h2>PROVIN BUSINESS</h2>
+      <p class="d">Pilns datu apkopojums. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="row"><i><img src="/public/brand/autodna-logo.png" alt=""></i>autoDNA integrācija</div>
+      <div class="row"><i><img src="/public/brand/carvertical-logo.png" alt=""></i>carVertical integrācija</div>
+      <div class="row"><i><svg class="ico" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M2 7h20"/></svg></i>Oficiālo dīleru un izsoļu arhīvs</div>
+      <div class="row"><i><svg class="ico" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></i>EU reģistru pārbaude &amp; TA vēsture</div>
+      <div class="row"><i><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></i>Starptautiska vēstures pārbaude</div>
+    </div>
+    <div>
+      <h2>DĪLERA DATI</h2>
+      <p class="d">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+      <div class="row"><i><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></i>Oficiālā servisa vēsture</div>
+      <div class="row"><i><svg class="ico" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg></i>Odometra &amp; kampaņu pārbaude</div>
+      <div class="row"><i><svg class="ico" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></i>100% Naudas atmaksas garantija</div>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 15 -->
+<div class="cap" id="c15"><b>15 · Lente</b><i>Vienā skatā viens produkts. Otrais — ar slīdni. Lapa paliek īsa, bet abi pakalpojumi ir šeit.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="film">
+    <div class="strip" id="strip">
+      <div class="slide">
+        <h2>PROVIN BUSINESS</h2>
+        <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+        <div class="meta">VIN · Izpilde: 24-72h</div>
+      </div>
+      <div class="slide">
+        <h2>DĪLERA DATI</h2>
+        <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa.</p>
+        <div class="meta"><span class="ok">100% Naudas atmaksas garantija</span> · VIN · 24-72h</div>
+      </div>
+    </div>
+    <div class="dots">
+      <button class="on" type="button" id="d1"></button>
+      <button type="button" id="d2"></button>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 16 -->
+<div class="cap" id="c16"><b>16 · Orbs · ar ikonām</b><i>Vizuālais centrs ir divas lielas riņķa zīmes. Teksts zem tām. Hero Lucide, ne avotu čipi.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="orbs">
+    <div class="orb-wrap">
+      <div class="orb"><svg class="ico" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 7h8v10H8z"/><path d="M8 11h8"/></svg></div>
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, dīlera vēsture un reģistri vienā līknē. Bez konsultācijas.</p>
+    </div>
+    <div class="orb-wrap">
+      <div class="orb"><svg class="ico" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg></div>
+      <h2>DĪLERA DATI</h2>
+      <p>Oficiālie ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 17 -->
+<div class="cap" id="c17"><b>17 · Avīze · ar ikonām</b><i>Kā sleja. Ikonas tikai kājenē kā avotu atslēga — ne galvenais motīvs.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="news">
+    <div class="kicker">Partneru katalogs · slēgta sadaļa</div>
+    <h1>Datu pakalpojumi auto tirdzniecībai</h1>
+    <div class="kicker" style="margin-top:.6rem">Cena pēc partnera koda</div>
+    <div class="cols">
+      <div>
+        <h2>PROVIN BUSINESS</h2>
+        <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas. VIN · 24-72h.</p>
+      </div>
+      <div class="rule"></div>
+      <div>
+        <h2>DĪLERA DATI</h2>
+        <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa. VIN · 24-72h.</p>
+      </div>
+    </div>
+    <div class="key">
+      <span><img src="/public/brand/autodna-logo.png" alt="">autoDNA</span>
+      <span><img src="/public/brand/carvertical-logo.png" alt="">carVertical</span>
+      <span><svg class="ico" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M2 7h20"/></svg>Dīlera dati</span>
+      <span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>Reģistri</span>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 18 -->
+<div class="cap" id="c18"><b>18 · Cinema · ar ikonām</b><i>Zilā gaisma kā hero akcents. Katrai pusei viena ikona pie virsraksta — ne rinda.</i></div>
+<div class="shell">
+  <div class="cine">
+    <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Datu pakalpojumi <em>auto tirdzniecībai</em></h1>
+    <div class="cine-pair">
+      <div>
+        <h2><svg class="ico" viewBox="0 0 24 24"><path d="M8 7h8v10H8z"/><path d="M8 11h8"/><path d="M3 7V5a2 2 0 0 1 2-2h2"/></svg> PROVIN BUSINESS</h2>
+        <p>Maksas datubāzes, dīlera vēsture un reģistri vienā līknē. Bez konsultācijas.</p>
+        <div class="meta">VIN · 24-72h</div>
+      </div>
+      <div>
+        <h2><svg class="ico" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M2 7h20"/></svg> DĪLERA DATI</h2>
+        <p>Oficiālie ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+        <div class="meta"><span class="ok">100% atmaksa</span></div>
+      </div>
+    </div>
+    <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+  </div>
+</div>
+
+<!-- 19 -->
+<div class="cap" id="c19"><b>19 · Zīmogs</b><i>Katrai pusei apaļš „zīmogs” kā kvalitātes zīme — ne avotu ikonas. B2B, gandrīz kanceleja.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="stamps">
+    <div class="stamp-card">
+      <div class="seal">PROVIN<br>DATA</div>
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="meta">VIN · 24-72h</div>
+    </div>
+    <div class="stamp-card">
+      <div class="seal">100%<br>REFUND</div>
+      <h2>DĪLERA DATI</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa.</p>
+      <div class="meta">VIN · 24-72h</div>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<!-- 20 -->
+<div class="cap" id="c20"><b>20 · Mozaīka · ar ikonām</b><i>Režģis no laukumiem: daži ir teksts, daži — ražotāju logo. Ikonas kļūst par pašu izkārtojumu.</i></div>
+<div class="shell">
+  <div class="topline"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="mosaic">
+    <div class="cell feat">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Datu apkopojums vienā līknē. Bez konsultācijas. VIN · 24-72h</p>
+    </div>
+    <div class="cell"><img src="/public/brand/autodna-logo.png" alt=""></div>
+    <div class="cell"><img src="/public/brand/carvertical-logo.png" alt=""></div>
+    <div class="cell"><img src="/public/brand-logos/mercedes.svg" alt=""></div>
+    <div class="cell"><img src="/public/brand-logos/bmw.svg" alt=""></div>
+    <div class="cell"><img src="/public/brand-logos/audi.svg" alt=""></div>
+    <div class="cell feat">
+      <h2>DĪLERA DATI</h2>
+      <p>Ražotāja ieraksti. <span class="ok">100% atmaksa</span>, ja datu nav.</p>
+    </div>
+    <div class="cell"><img src="/public/brand-logos/volkswagen.svg" alt=""></div>
+    <div class="cell"><img src="/public/brand-logos/volvo.svg" alt=""></div>
+    <div class="cell"><img src="/public/brand-logos/mini.svg" alt=""></div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<script>
+  const strip = document.getElementById('strip');
+  const d1 = document.getElementById('d1');
+  const d2 = document.getElementById('d2');
+  d1.addEventListener('click', () => { strip.classList.remove('on2'); d1.classList.add('on'); d2.classList.remove('on'); });
+  d2.addEventListener('click', () => { strip.classList.add('on2'); d2.classList.add('on'); d1.classList.remove('on'); });
+</script>
+</body>
+</html>

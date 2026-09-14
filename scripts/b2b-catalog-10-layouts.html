@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN catalog 10 layouts</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(228 231 236 / .92);
+    --mute:rgb(148 163 184 / .9);
+    --hair:rgb(255 255 255 / .12);
+    --blue:#2563eb;
+    --mint:#6ee7b7;
+    --bg:#09090b;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    color:var(--ink);
+    background:var(--bg);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:40;
+    display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;
+    padding:.65rem 1.15rem;
+    background:rgb(9 9 11 / .94);
+    border-bottom:1px solid var(--hair);
+  }
+  .nav strong{margin-right:.45rem;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#f59e0b;}
+  .nav a{
+    font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mute);text-decoration:none;padding:.3rem .45rem;
+  }
+  .nav a:hover{color:#93c5fd;}
+  .cap{max-width:72rem;margin:0 auto;padding:1.8rem 1.4rem .35rem;}
+  .cap b{display:block;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin-top:.28rem;font-style:normal;font-size:.8rem;color:var(--mute);line-height:1.45;max-width:40rem;}
+  .shell{max-width:72rem;margin:0 auto 2.4rem;padding:0 1.4rem 1.6rem;}
+  h2.pkg{margin:0;font-size:1.15rem;font-weight:700;letter-spacing:-.02em;}
+  .goal{margin:.75rem 0 0;font-size:.8125rem;line-height:1.58;font-weight:500;color:var(--dim);}
+  .foot{margin:.9rem 0 0;font-size:.62rem;color:rgb(255 255 255 / .4);}
+  .ico{
+    width:2.15rem;height:2.15rem;flex:0 0 auto;
+    display:grid;place-items:center;
+    border:1px solid rgb(255 255 255 / .1);
+    border-radius:999px;background:rgb(255 255 255 / .03);
+    color:#a1a1aa;
+  }
+  .ico svg{width:1rem;height:1rem;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+  .row{display:grid;grid-template-columns:auto 1fr;gap:.7rem;align-items:center;}
+  .row b{font-size:.8125rem;}
+  .gbox{display:grid;grid-template-columns:auto 1fr;gap:.7rem .75rem;align-items:start;}
+  .gbox b{font-size:.8125rem;}
+  .gbox p{margin:0;font-size:.8125rem;line-height:1.55;color:#9ca3af;}
+  .brands{display:grid;grid-template-columns:repeat(6,1fr);gap:.85rem .55rem;margin:0;padding:0;list-style:none;}
+  .brands button{
+    position:relative;width:100%;min-height:2.6rem;
+    display:grid;place-items:center;background:none;border:0;cursor:default;padding:0;
+  }
+  .brands img{width:1.7rem;height:1.7rem;object-fit:contain;opacity:.72;}
+  .brands button:hover img{opacity:1;}
+  .brands button::after{
+    content:attr(data-name);
+    position:absolute;bottom:calc(100% + .2rem);left:50%;transform:translateX(-50%);
+    font-size:.62rem;color:#d4d4d8;white-space:nowrap;opacity:0;pointer-events:none;
+  }
+  .brands button:hover::after{opacity:1;}
+  .eyebrow{margin:0 0 .7rem;font-size:.6875rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;}
+  .split{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 2.2rem;align-items:start;}
+  .rule{background:rgb(255 255 255 / .15);}
+  .stack{display:flex;flex-direction:column;gap:.72rem;margin-top:1.35rem;}
+  .cv{display:flex;gap:2px;align-items:center;}
+  .cv img{width:1rem;height:1rem;object-fit:contain;opacity:.85;}
+
+  /* 01 current */
+  .c01{padding:1.6rem 0 1.2rem;}
+
+  /* 02 cards */
+  .c02{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;}
+  .card{
+    padding:1.35rem 1.3rem 1.25rem;
+    border:1px solid rgb(255 255 255 / .1);
+    background:linear-gradient(160deg,rgb(255 255 255 / .04),rgb(255 255 255 / .012));
+    border-radius:1rem;
+  }
+
+  /* 03 numbered */
+  .c03 .num{font-size:.68rem;font-weight:700;letter-spacing:.12em;color:#60a5fa;width:1.4rem;}
+  .c03 .stack{gap:.55rem;}
+  .c03 .row{grid-template-columns:1.4rem 1fr;gap:.45rem;}
+
+  /* 04 guarantee strip */
+  .strip{
+    display:grid;grid-template-columns:auto 1fr;gap:.75rem;
+    margin-top:1rem;padding:.85rem .95rem;
+    border:1px solid rgb(110 231 183 / .28);
+    background:rgb(16 185 129 / .08);
+    border-radius:.6rem;
+  }
+  .strip .ico{border-color:rgb(110 231 183 / .28);color:var(--mint);}
+  .strip b{color:#d1fae5;}
+  .strip p{color:#a7f3d0;}
+
+  /* 05 asymmetric */
+  .c05{display:grid;grid-template-columns:1.15fr 1px .85fr;gap:0 1.8rem;}
+  .wall{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;}
+  .wall button{min-height:3.4rem;border:1px solid rgb(255 255 255 / .08);border-radius:.45rem;}
+  .wall img{width:1.9rem;height:1.9rem;}
+
+  /* 06 light paper */
+  .paper{background:#e8eef6;color:#0f172a;padding:1.5rem 1.4rem 1.3rem;border-radius:.2rem;}
+  .paper .goal,.paper .gbox p{color:#334155;}
+  .paper .foot{color:#64748b;}
+  .paper .eyebrow{color:#64748b;}
+  .paper .ico{border-color:#cbd5e1;background:#fff;color:#475569;}
+  .paper .rule{background:#cbd5e1;}
+  .paper .brands img{filter:none;opacity:.85;}
+
+  /* 07 stacked bands */
+  .band{padding:1.35rem 0;border-top:1px solid var(--hair);}
+  .band:last-child{border-bottom:1px solid var(--hair);}
+  .band h2{margin:0 0 .55rem;}
+
+  /* 08 spec + mosaic */
+  .c08{display:grid;grid-template-columns:1fr 1fr;gap:2rem;}
+  .spec{width:100%;border-collapse:collapse;}
+  .spec td{padding:.62rem 0;border-bottom:1px solid rgb(255 255 255 / .07);font-size:.8125rem;}
+  .spec td:first-child{width:2.3rem;color:var(--mute);}
+  .mosaic{display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem;}
+  .mosaic button{min-height:3rem;background:rgb(255 255 255 / .03);border-radius:.35rem;}
+
+  /* 09 tickets */
+  .ticket{padding:0 0 0 1rem;border-left:3px solid var(--blue);}
+  .ticket.silver{border-left-color:#94a3b8;}
+  .chips{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1.1rem;}
+  .chip{
+    font-size:.72rem;font-weight:600;padding:.38rem .6rem;
+    border:1px solid rgb(255 255 255 / .12);border-radius:999px;color:#e4e4e7;
+  }
+
+  /* 10 brand first */
+  .c10 .logohead{margin:0 0 1rem;}
+  .c10 .brands{grid-template-columns:repeat(6,1fr);gap:1rem .4rem;}
+  .c10 .brands img{width:2rem;height:2rem;}
+  .c10 .goal{margin-top:1rem;}
+
+  @media (max-width:860px){
+    .split,.c02,.c05,.c08{grid-template-columns:1fr;gap:1.6rem;}
+    .rule{display:none;}
+    .brands,.wall,.mosaic,.c10 .brands{grid-template-columns:repeat(4,1fr);}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>10 noformējumi</strong>
+  <a href="#c01">01</a><a href="#c02">02</a><a href="#c03">03</a><a href="#c04">04</a><a href="#c05">05</a>
+  <a href="#c06">06</a><a href="#c07">07</a><a href="#c08">08</a><a href="#c09">09</a><a href="#c10">10</a>
+</nav>
+
+<script>
+  const BRANDS = [
+    ["Mercedes-Benz","mercedes"],["BMW","bmw"],["MINI","mini"],["Rolls-Royce","rolls-royce"],
+    ["Audi","audi"],["Volkswagen","volkswagen"],["Volvo","volvo"],["Land Rover","land-rover"],
+    ["Jaguar","jaguar"],["Škoda","skoda"],["SEAT","seat"],["Subaru","subaru"],
+    ["Peugeot","peugeot"],["Citroën","citroen"],["Renault","renault"],["Dacia","dacia"],
+    ["Opel","opel"],["Smart","smart"]
+  ];
+  function brandGrid(cls){
+    return `<ul class="${cls}">` + BRANDS.map(([n,f]) =>
+      `<li><button type="button" data-name="${n}" aria-label="${n}"><img src="../public/brand-logos/${f}.svg" alt=""></button></li>`
+    ).join("") + `</ul>`;
+  }
+  const I = {
+    store:'<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+    globe:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>',
+    camera:'<svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    shield:'<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    clip:'<svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>',
+    list:'<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>'
+  };
+  const ITEMS = [
+    [I.store,"Oficiālo dīleru dati*"],
+    [null,"CarVertical + AutoDNA"],
+    [I.globe,"Izcelsmes valsts reģistri"],
+    [I.camera,"Izsoļu portālu arhīva dati"],
+    [I.shield,"Apdrošinātāju dati (OCTA/KASKO)"],
+    [I.clip,"Tehnisko apskašu vēsture"],
+    [I.list,"Datu kopsavilkums"]
+  ];
+  const BG = "PROVIN BUSINESS apvieno datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas/Amerikas valstu reģistriem. Vienā ērtā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, negadījumu vēsturi un servisa ierakstus, būtiski samazinot riskus un iegūstot pārliecību katrā darījumā.";
+  const DG = "DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm. Vienā pārskatāmā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, veiktos remontus, apkopes un aktīvo kampaņu pārbaudi, sniedzot maksimālu pārredzamību un tiešu piekļuvi atbalstīto zīmolu sistēmām.";
+  const GT = "100% Naudas atmaksas garantija";
+  const GB = "Ja konkrētajam VIN kodam ražotāja oficiālajā datubāzē nav ierakstu, veiksim pilnu pirkuma atmaksu.";
+  function ico(svg){return `<span class="ico">${svg}</span>`;}
+  function cv(){return `<span class="ico cv"><img src="../public/brand/carvertical-logo.png" alt=""><img src="../public/brand/autodna-logo.png" alt=""></span>`;}
+  function itemRows(){
+    return ITEMS.map(([svg,t],i)=>`<div class="row">${svg?ico(svg):cv()}<b>${t}</b></div>`).join("");
+  }
+  function guarantee(extra=""){
+    return `<div class="gbox ${extra}">${ico(I.shield)}<b>${GT}</b><p>${GB}</p></div>`;
+  }
+</script>
+
+<section id="c01">
+  <div class="cap"><b>01. Pašreizējais sadalījums</b><i>Tas, kas jau ir lapā: divas kolonnas, 1px svītra, ikonu saraksts pret zīmolu režģi.</i></div>
+  <div class="shell c01"><div class="split" id="v01"></div></div>
+</section>
+<section id="c02">
+  <div class="cap"><b>02. Divas kartītes</b><i>Katrs produkts savā stikla kartītē. Skaidrāka atdale, mazāk “tabulas” sajūtas.</i></div>
+  <div class="shell"><div class="c02" id="v02"></div></div>
+</section>
+<section id="c03">
+  <div class="cap"><b>03. Numerēts avotu saraksts</b><i>BUSINESS kā 01-07. Dīleris paliek ar garantiju un zīmoliem, bez apaļajām ikonām.</i></div>
+  <div class="shell"><div class="split c03" id="v03"></div></div>
+</section>
+<section id="c04">
+  <div class="cap"><b>04. Garantija kā zaļā josla</b><i>Atmaksas solījums izcelts mint joslā, lai tas lasās kā drošības slānis, ne kā saraksta rinda.</i></div>
+  <div class="shell"><div class="split" id="v04"></div></div>
+</section>
+<section id="c05">
+  <div class="cap"><b>05. Asimetrija, zīmolu siena</b><i>Kreisā kolonna platāka. Labajā zīmoli 3x6 šūnās ar rāmīšiem, kā kataloga siena.</i></div>
+  <div class="shell"><div class="c05" id="v05"></div></div>
+</section>
+<section id="c06">
+  <div class="cap"><b>06. Gaišais papīrs</b><i>Tumšajā lapā ielikts gaišs bloks. Kontrasts pret hero, lasāmība kā drukātā lapā.</i></div>
+  <div class="shell"><div class="paper" id="v06"></div></div>
+</section>
+<section id="c07">
+  <div class="cap"><b>07. Horizontālas joslas</b><i>Nav kolonnu. BUSINESS un DĪLERA DATI kā divas pilna platuma joslas viena zem otras.</i></div>
+  <div class="shell" id="v07"></div>
+</section>
+<section id="c08">
+  <div class="cap"><b>08. Spec tabula un mozaīka</b><i>Kreisajā avoti kā rindu tabula. Labajā zīmoli kā vienmērīga mozaīka.</i></div>
+  <div class="shell"><div class="c08" id="v08"></div></div>
+</section>
+<section id="c09">
+  <div class="cap"><b>09. Biļetes ar akcenta sliedi</b><i>Zila sliede BUSINESS, sudraba sliede DĪLERA DATI. Avoti kā čipi, ne saraksts.</i></div>
+  <div class="shell"><div class="split" id="v09"></div></div>
+</section>
+<section id="c10">
+  <div class="cap"><b>10. Vispirms zīmoli</b><i>Dīlera kolonnā režģis ir pirmais. Apraksts un garantija zem tā. BUSINESS paliek klasisks.</i></div>
+  <div class="shell"><div class="split c10" id="v10"></div></div>
+</section>
+
+<script>
+  const bizList = `<div class="stack">${itemRows()}</div><p class="foot">*pieejama noteiktiem ražotājiem.</p>`;
+  const brands = `<p class="eyebrow">Atbalstītie ražotāji</p>${brandGrid("brands")}`;
+
+  document.getElementById("v01").innerHTML = `
+    <div><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>${bizList}</div>
+    <div class="rule"></div>
+    <div><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p><div style="margin-top:1rem">${guarantee()}</div><div style="margin-top:1.3rem">${brands}</div></div>`;
+
+  document.getElementById("v02").innerHTML = `
+    <article class="card"><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>${bizList}</article>
+    <article class="card"><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p><div style="margin-top:1rem">${guarantee()}</div><div style="margin-top:1.2rem">${brands}</div></article>`;
+
+  const numbered = ITEMS.map(([,t],i)=>`<div class="row"><span class="num">${String(i+1).padStart(2,"0")}</span><b>${t}</b></div>`).join("");
+  document.getElementById("v03").innerHTML = `
+    <div><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p><div class="stack">${numbered}</div><p class="foot">*pieejama noteiktiem ražotājiem.</p></div>
+    <div class="rule"></div>
+    <div><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p><div style="margin-top:1rem">${guarantee()}</div><div style="margin-top:1.3rem">${brands}</div></div>`;
+
+  document.getElementById("v04").innerHTML = `
+    <div><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>${bizList}</div>
+    <div class="rule"></div>
+    <div><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p>
+      <div class="strip">${ico(I.shield)}<div><b>${GT}</b><p class="gbox" style="display:block;margin:.25rem 0 0">${GB}</p></div></div>
+      <div style="margin-top:1.3rem">${brands}</div></div>`;
+
+  document.getElementById("v05").innerHTML = `
+    <div><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>${bizList}</div>
+    <div class="rule"></div>
+    <div><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p><div style="margin-top:1rem">${guarantee()}</div>
+      <p class="eyebrow" style="margin-top:1.2rem">Atbalstītie ražotāji</p>${brandGrid("brands wall")}</div>`;
+
+  document.getElementById("v06").innerHTML = `
+    <div class="split">
+      <div><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>${bizList}</div>
+      <div class="rule"></div>
+      <div><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p><div style="margin-top:1rem">${guarantee()}</div><div style="margin-top:1.2rem">${brands}</div></div>
+    </div>`;
+
+  document.getElementById("v07").innerHTML = `
+    <div class="band"><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>
+      <div class="stack" style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem 1.4rem">${itemRows()}</div>
+      <p class="foot">*pieejama noteiktiem ražotājiem.</p></div>
+    <div class="band"><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p>
+      <div style="margin-top:1rem">${guarantee()}</div>
+      <div style="margin-top:1.2rem">${brands}</div></div>`;
+
+  const spec = ITEMS.map(([svg,t],i)=>`<tr><td>${String(i+1).padStart(2,"0")}</td><td>${t}</td></tr>`).join("");
+  document.getElementById("v08").innerHTML = `
+    <div><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>
+      <table class="spec">${spec}</table><p class="foot">*pieejama noteiktiem ražotājiem.</p></div>
+    <div><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p>
+      <div style="margin-top:1rem">${guarantee()}</div>
+      <p class="eyebrow" style="margin-top:1.15rem">Atbalstītie ražotāji</p>${brandGrid("brands mosaic")}</div>`;
+
+  const chips = ITEMS.map(([,t])=>`<span class="chip">${t}</span>`).join("");
+  document.getElementById("v09").innerHTML = `
+    <div class="ticket"><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p><div class="chips">${chips}</div><p class="foot">*pieejama noteiktiem ražotājiem.</p></div>
+    <div class="rule"></div>
+    <div class="ticket silver"><h2 class="pkg">DĪLERA DATI</h2><p class="goal">${DG}</p><div style="margin-top:1rem">${guarantee()}</div><div style="margin-top:1.2rem">${brands}</div></div>`;
+
+  document.getElementById("v10").innerHTML = `
+    <div><h2 class="pkg">PROVIN BUSINESS</h2><p class="goal">${BG}</p>${bizList}</div>
+    <div class="rule"></div>
+    <div>
+      <h2 class="pkg logohead">DĪLERA DATI</h2>
+      ${brands}
+      <p class="goal">${DG}</p>
+      <div style="margin-top:1rem">${guarantee()}</div>
+    </div>`;
+</script>
+</body>
+</html>

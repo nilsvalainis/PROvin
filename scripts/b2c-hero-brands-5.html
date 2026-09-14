@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN hero - 5 ražotāju zonu risinājumi</title>
+<style>
+  :root{
+    --ink:#fafafc; --dim:rgb(210 214 222 / .9); --mute:#a1a1aa; --faint:#71717a;
+    --line:rgb(255 255 255 / .1); --accent:#2563eb; --pad:max(1rem,env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    background:#050505;
+    background-image:
+      radial-gradient(ellipse 120% 70% at 50% -8%, rgb(255 255 255 / .04) 0%, transparent 55%),
+      linear-gradient(180deg,#141414 0%,#0a0a0a 40%,#000 100%);
+    background-attachment:fixed;
+  }
+  .page{max-width:64rem;margin:0 auto;padding:1.25rem var(--pad) 4rem}
+  h1{margin:0 0 .35rem;font-size:1.15rem;letter-spacing:-.02em}
+  .lead{margin:0 0 1rem;color:var(--faint);font-size:.84rem;line-height:1.45;max-width:48rem}
+  .warn{
+    margin:0 0 1.1rem;padding:.65rem .8rem;border:1px solid rgb(250 204 21 / .25);
+    border-radius:.55rem;background:rgb(250 204 21 / .06);color:#fde68a;font-size:.78rem;line-height:1.45;
+  }
+  .toc{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 1.4rem}
+  .toc a{
+    display:inline-flex;align-items:center;min-height:2rem;padding:0 .7rem;
+    border:1px solid var(--line);border-radius:999px;color:#93c5fd;text-decoration:none;
+    font-size:.56rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .section{margin:0 0 2.6rem;padding-top:1.15rem;border-top:1px solid var(--line)}
+  .section>h2{margin:0 0 .25rem;font-size:1rem}
+  .why{margin:0 0 .9rem;color:var(--faint);font-size:.8rem;line-height:1.45;max-width:46rem}
+  .stage{
+    border:1px solid rgb(255 255 255 / .12);border-radius:1rem;
+    background:rgb(10 10 10 / .95);padding:1.25rem 1.35rem 1.35rem;
+    box-shadow:0 18px 40px rgb(0 0 0 / .4);
+  }
+  .badge{
+    display:inline-block;margin:0 0 .75rem;padding:.2rem .5rem;border-radius:.35rem;
+    background:rgb(37 99 235 / .18);color:#93c5fd;font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  }
+  /* Frozen hero chrome - decorative only */
+  .hero-frozen{opacity:.92;pointer-events:none;user-select:none}
+  .hero-title{margin:0;font-size:clamp(1.35rem,2.4vw,1.85rem);font-weight:700;letter-spacing:-.03em;line-height:1.2}
+  .hero-title .b{color:var(--accent)}
+  .scan{
+    margin:.95rem 0 0;height:2px;border-radius:999px;
+    background:linear-gradient(90deg,transparent,rgb(37 99 235 / .75),transparent);
+    opacity:.7;
+  }
+  .locked{
+    margin:.55rem 0 0;font-size:.58rem;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+  }
+  .zone{
+    margin-top:1.1rem;min-height:6.5rem;
+    outline:1px dashed rgb(37 99 235 / .35);outline-offset:6px;border-radius:.4rem;
+  }
+  .zone-label{
+    margin:0 0 .55rem;font-size:.55rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd;
+  }
+
+  /* Shared icon cell */
+  .cell{
+    display:grid;place-items:center;aspect-ratio:1;border-radius:999px;
+    border:1px solid rgb(255 255 255 / .14);background:rgb(255 255 255 / .03);
+  }
+  .cell img{width:55%;height:55%;object-fit:contain;opacity:.85}
+  .cell .t{
+    font-size:.42rem;font-weight:700;letter-spacing:.02em;color:#d4d4d8;text-align:center;line-height:1.1;padding:0 .15rem;
+  }
+
+  /* A: dense micro grid */
+  .grid-dense{
+    display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:.35rem;
+    max-width:52rem;margin:0 auto;
+  }
+  .grid-dense .cell{width:100%}
+
+  /* B: marquee */
+  .marquee-wrap{overflow:hidden;mask-image:linear-gradient(90deg,transparent,black 6%,black 94%,transparent)}
+  .marquee{
+    display:flex;gap:.45rem;width:max-content;
+    animation:marquee 42s linear infinite;
+  }
+  .marquee:hover{animation-play-state:paused}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .marquee .cell{width:2.35rem;height:2.35rem;flex:0 0 auto}
+
+  /* C: text groups */
+  .text-groups{display:flex;flex-direction:column;gap:.4rem;max-width:52rem;margin:0 auto}
+  .text-groups p{margin:0;font-size:.74rem;line-height:1.4;color:var(--dim)}
+  .text-groups strong{color:#f4f4f5;font-weight:650}
+
+  /* D: featured + tip */
+  .hybrid{display:flex;flex-direction:column;align-items:center;gap:.75rem;max-width:52rem;margin:0 auto}
+  .hybrid-row{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem}
+  .hybrid-row .cell{width:2.7rem;height:2.7rem}
+  .tip-btn{
+    display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .75rem;
+    border:1px solid rgb(255 255 255 / .16);border-radius:999px;background:transparent;
+    color:#e4e4e7;font:650 .62rem/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .tip-btn i{
+    display:grid;place-items:center;width:1rem;height:1rem;border-radius:999px;
+    background:rgb(37 99 235 / .35);color:#93c5fd;font-style:normal;font-size:.65rem;font-weight:800;
+  }
+  .popup{
+    display:none;width:100%;max-width:28rem;margin:0 auto;padding:.85rem .9rem;
+    border:1px solid var(--line);border-radius:.75rem;background:rgb(16 18 24 / .98);
+  }
+  .popup.on{display:block}
+  .popup h4{margin:0 0 .55rem;font-size:.72rem;font-weight:650}
+  .popup .chips{display:flex;flex-wrap:wrap;gap:.3rem}
+  .popup .chips span{
+    padding:.28rem .45rem;border-radius:.35rem;background:rgb(255 255 255 / .05);
+    border:1px solid rgb(255 255 255 / .08);font-size:.65rem;color:var(--dim);
+  }
+
+  /* E: text chips wrap */
+  .chips-wrap{display:flex;flex-wrap:wrap;justify-content:center;gap:.3rem;max-width:52rem;margin:0 auto}
+  .chips-wrap span{
+    padding:.32rem .5rem;border-radius:.4rem;border:1px solid rgb(255 255 255 / .1);
+    background:rgb(255 255 255 / .03);font-size:.68rem;color:var(--dim);white-space:nowrap;
+  }
+  .measure{
+    margin:.7rem 0 0;font-size:.68rem;color:var(--faint);text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Hero ražotāju zona: 5 risinājumi (48 markas)</h1>
+  <p class="lead">Tikai Dīleru tabu ikonu / ražotāju josla. Virsraksts, scan line un pārējais hero - fiksēts maketā (netiek mainīts).</p>
+  <p class="warn">Šis ir koncepciju mock. Live kods netiek mainīts. Logo, kurem nav faila, rāda īsu tekstu šūnā.</p>
+  <nav class="toc">
+    <a href="#a">A · Mikro ikonas 12×4</a>
+    <a href="#b">B · Marquee 1 rinda</a>
+    <a href="#c">C · Teksta grupas</a>
+    <a href="#d">D · 12 logo + tip</a>
+    <a href="#e">E · Teksta čipi</a>
+  </nav>
+
+  <!-- shared brand data injected by script -->
+  <template id="hero-chrome">
+    <div class="hero-frozen">
+      <h3 class="hero-title">Auto vēstures un sludinājuma <span class="b">audits</span></h3>
+      <div class="scan" aria-hidden="true"></div>
+      <p class="locked">Fiksēts · nemainās</p>
+    </div>
+  </template>
+
+  <section class="section" id="a">
+    <h2>A. Mazākas ikonas - blīvs 12 kolonnu režģis</h2>
+    <p class="why">Visas ~48 markas kā mini apļi. Aptuveni 4 rindas, līdzīgs augstums kā šodienas 18×3. Hover tooltip (šeit: title).</p>
+    <div class="stage">
+      <span class="badge">Hero A</span>
+      <div data-chrome></div>
+      <div class="zone">
+        <p class="zone-label">Maināmā zona</p>
+        <div class="grid-dense" data-logos="all" data-size="micro"></div>
+        <p class="measure">~12×4 · mazas ikonas · viss redzams bez scroll</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="b">
+    <h2>B. Viena rinda - lēns marquee</h2>
+    <p class="why">Hero augstums kā 1 rinda. Logos slīd automātiski; hover pauzē. Vismazāk vietas vertikāli.</p>
+    <div class="stage">
+      <span class="badge">Hero B</span>
+      <div data-chrome></div>
+      <div class="zone">
+        <p class="zone-label">Maināmā zona</p>
+        <div class="marquee-wrap">
+          <div class="marquee" data-marquee></div>
+        </div>
+        <p class="measure">1 rinda · auto-scroll · viss saraksts laikā</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="c">
+    <h2>C. Tikai teksts pa ražotāju grupām</h2>
+    <p class="why">Bez logo. 12 īsas rindas (BMW Group, VW Group…). Labi salasāms, mazāk „ikonu sienas”.</p>
+    <div class="stage">
+      <span class="badge">Hero C</span>
+      <div data-chrome></div>
+      <div class="zone">
+        <p class="zone-label">Maināmā zona</p>
+        <div class="text-groups" data-text-groups></div>
+        <p class="measure">~12 teksta rindas · nav logo failu atkarības</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="d">
+    <h2>D. 12 featured logo + „Atbalstītie ražotāji” tip</h2>
+    <p class="why">Hero rāda tikai populārākos. Pārējie 36 tip dialogā (kā mobilajā). Mazāk clutter, pilnais saraksts uz pieprasījumu.</p>
+    <div class="stage">
+      <span class="badge">Hero D</span>
+      <div data-chrome></div>
+      <div class="zone">
+        <p class="zone-label">Maināmā zona</p>
+        <div class="hybrid">
+          <div class="hybrid-row" data-logos="featured"></div>
+          <button type="button" class="tip-btn" id="tip-toggle"><i>i</i> Atbalstītie ražotāji · 48</button>
+          <div class="popup" id="tip-popup">
+            <h4>Visas markas</h4>
+            <div class="chips" data-all-chips></div>
+          </div>
+        </div>
+        <p class="measure">2 rindas logo + tip · pārējais popup</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="e">
+    <h2>E. Teksta čipi (wrap)</h2>
+    <p class="why">Katram zīmolam īss čips, ne aplis. 3-4 rindas ar wrap. Kompakts, bez SVG.</p>
+    <div class="stage">
+      <span class="badge">Hero E</span>
+      <div data-chrome></div>
+      <div class="zone">
+        <p class="zone-label">Maināmā zona</p>
+        <div class="chips-wrap" data-chip-wrap></div>
+        <p class="measure">flex-wrap čipi · ~3-4 rindas</p>
+      </div>
+    </div>
+  </section>
+</div>
+<script>
+  const GROUPS = [
+    ["BMW", "MINI", "Rolls-Royce"],
+    ["Mercedes-Benz", "Smart"],
+    ["Volkswagen", "Audi", "Škoda", "SEAT", "CUPRA", "Porsche", "Bentley", "Lamborghini"],
+    ["Volvo", "Polestar"],
+    ["Jaguar", "Land Rover"],
+    ["Toyota", "Lexus"],
+    ["Ford"],
+    ["Mazda", "Honda", "Nissan", "Infiniti", "Mitsubishi", "Subaru", "Suzuki"],
+    ["Peugeot", "Citroën", "DS Automobiles", "Opel", "Vauxhall", "Fiat", "Abarth", "Alfa Romeo", "Lancia", "Jeep"],
+    ["Renault", "Dacia", "Alpine"],
+    ["Hyundai", "Kia", "Genesis"],
+    ["Ferrari", "Maserati", "Aston Martin", "Lotus", "MG"],
+  ];
+  const ALL = GROUPS.flat();
+  const FEATURED = [
+    "BMW", "Mercedes-Benz", "Audi", "Volkswagen", "Volvo", "Toyota",
+    "Porsche", "Škoda", "Peugeot", "Renault", "Hyundai", "Ford",
+  ];
+  const LOGO = {
+    "Mercedes-Benz": "mercedes.svg",
+    BMW: "bmw.svg",
+    MINI: "mini.svg",
+    "Rolls-Royce": "rolls-royce.svg",
+    Audi: "audi.svg",
+    Volkswagen: "volkswagen.svg",
+    Volvo: "volvo.svg",
+    "Land Rover": "land-rover.svg",
+    Jaguar: "jaguar.svg",
+    Škoda: "skoda.svg",
+    SEAT: "seat.svg",
+    Subaru: "subaru.svg",
+    Peugeot: "peugeot.svg",
+    Citroën: "citroen.svg",
+    Renault: "renault.svg",
+    Dacia: "dacia.svg",
+    Opel: "opel.svg",
+    Smart: "smart.svg",
+  };
+  const BASE = "/public/brand-logos/";
+
+  function shortLabel(brand) {
+    return brand
+      .replace("Mercedes-Benz", "MB")
+      .replace("Rolls-Royce", "RR")
+      .replace("Land Rover", "LR")
+      .replace("Volkswagen", "VW")
+      .replace("DS Automobiles", "DS")
+      .replace("Alfa Romeo", "Alfa")
+      .replace("Aston Martin", "Aston")
+      .replace("Lamborghini", "Lambo");
+  }
+
+  function cell(brand) {
+    const file = LOGO[brand];
+    const el = document.createElement("div");
+    el.className = "cell";
+    el.title = brand;
+    if (file) {
+      const img = document.createElement("img");
+      img.src = BASE + file;
+      img.alt = "";
+      img.loading = "lazy";
+      el.appendChild(img);
+    } else {
+      const t = document.createElement("span");
+      t.className = "t";
+      t.textContent = shortLabel(brand);
+      el.appendChild(t);
+    }
+    return el;
+  }
+
+  document.querySelectorAll("[data-chrome]").forEach((node) => {
+    node.appendChild(document.getElementById("hero-chrome").content.cloneNode(true));
+  });
+
+  document.querySelectorAll("[data-logos]").forEach((node) => {
+    const mode = node.getAttribute("data-logos");
+    const list = mode === "featured" ? FEATURED : ALL;
+    list.forEach((b) => node.appendChild(cell(b)));
+  });
+
+  const marquee = document.querySelector("[data-marquee]");
+  if (marquee) {
+    const once = ALL.map((b) => cell(b));
+    once.forEach((c) => marquee.appendChild(c));
+    once.forEach((c) => marquee.appendChild(c.cloneNode(true)));
+  }
+
+  const tg = document.querySelector("[data-text-groups]");
+  if (tg) {
+    GROUPS.forEach((g) => {
+      const p = document.createElement("p");
+      p.textContent = g.join(" · ");
+      tg.appendChild(p);
+    });
+  }
+
+  const chips = document.querySelector("[data-all-chips]");
+  if (chips) ALL.forEach((b) => {
+    const s = document.createElement("span");
+    s.textContent = b;
+    chips.appendChild(s);
+  });
+
+  const wrap = document.querySelector("[data-chip-wrap]");
+  if (wrap) ALL.forEach((b) => {
+    const s = document.createElement("span");
+    s.textContent = b;
+    wrap.appendChild(s);
+  });
+
+  const tipBtn = document.getElementById("tip-toggle");
+  const tipPopup = document.getElementById("tip-popup");
+  tipBtn?.addEventListener("click", () => tipPopup.classList.toggle("on"));
+</script>
+</body>
+</html>

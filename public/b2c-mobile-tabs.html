@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - B2C mobilie tabi</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(210 214 222 / .88);
+    --faint:rgb(148 163 184 / .9);
+    --accent:#2563eb;
+    --pad:max(1.15rem, env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+    background-color:#0d0d0d;
+    background-image:
+      radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / .048) 0%, transparent 54%),
+      linear-gradient(180deg,#171717 0%,#121212 16%,#080808 38%,#040404 62%,#000 100%);
+    background-attachment:fixed,fixed;
+  }
+
+  .shell{min-height:100dvh;}
+  .page{
+    max-width:26rem;
+    margin:0 auto;
+    padding:1.15rem var(--pad) 2.8rem;
+  }
+
+  .top{
+    display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+    margin-bottom:1.05rem;
+  }
+  .logo{font-size:.92rem;font-weight:600;letter-spacing:.02em;}
+  .logo b{color:#2563eb;font-weight:600;}
+  .partner{
+    display:inline-flex;align-items:center;gap:.38rem;
+    height:2rem;padding:0 .7rem 0 .55rem;
+    border:1px solid rgb(255 255 255 / .14);
+    border-radius:999px;
+    background:rgb(26 26 26 / .92);
+    color:#93c5fd;
+    font:600 .58rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+    text-decoration:none;
+  }
+  .partner svg{width:.85rem;height:.85rem;stroke:currentColor;fill:none;stroke-width:1.7;}
+
+  .seg{
+    display:flex;gap:3px;margin:0;
+    padding:3px;background:#1a1a1a;border-radius:10px;
+  }
+  .seg button{
+    flex:1;border:0;background:transparent;color:var(--faint);
+    padding:.72rem .18rem;border-radius:8px;
+    font:600 .58rem/1.2 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .seg button.on{background:var(--accent);color:#fff;}
+
+  .card{
+    position:relative;width:100%;margin-top:1.1rem;
+    padding:1.15rem 1.1rem 1.15rem;
+    background:rgb(20 20 20 / .88);
+    border:1px solid var(--accent);
+    box-shadow:0 0 0 1px var(--accent) inset;
+    border-radius:.9rem;
+  }
+  .qty{
+    margin:.15rem 0 0;font-size:.72rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;
+  }
+  .rec{
+    position:absolute;top:.85rem;right:.9rem;
+    font-size:.52rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:#93c5fd;
+  }
+  .unit{margin:1.05rem 0 0;font-size:1.55rem;font-weight:650;letter-spacing:-.03em;line-height:1;}
+  .unit i{font-style:normal;font-size:.78rem;font-weight:550;letter-spacing:0;color:var(--faint);}
+  .sum{margin:.55rem 0 0;font-size:.92rem;font-weight:650;}
+  .lines{margin:.85rem 0 0;padding:0;list-style:none;}
+  .lines li{
+    display:grid;grid-template-columns:1rem 1fr;gap:.4rem;align-items:start;
+    padding:.22rem 0;font-size:.74rem;line-height:1.4;color:var(--dim);
+  }
+  .lines li.off{color:rgb(148 163 184 / .42);}
+  .mk{color:#60a5fa;font-weight:700;}
+  .mk.off{color:#fb7185;}
+  .lineText{display:inline;}
+  .tip{
+    position:relative;display:inline-flex;align-items:center;gap:.38rem;
+    margin:0;padding:0;border:0;background:none;color:inherit;
+    font:inherit;text-align:left;cursor:pointer;
+  }
+  .i{
+    box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+    width:.95rem;height:.95rem;flex-shrink:0;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;
+    background:rgb(15 23 42 / .52);
+    box-shadow:inset 0 1px 0 rgb(255 255 255 / .04);
+    color:rgb(226 232 240 / .92);
+    font-size:.56rem;font-weight:700;line-height:1;
+  }
+  .tip[aria-expanded="true"] .i{
+    border-color:rgb(37 99 235 / .65);
+    background:rgb(37 99 235 / .16);
+    color:#fff;
+  }
+  .popup{
+    display:none;position:absolute;left:0;bottom:calc(100% + .45rem);z-index:20;
+    width:min(18rem, calc(100vw - 2rem));
+    padding:.7rem .8rem;
+    border:1px solid rgb(255 255 255 / .14);border-radius:.7rem;
+    background:linear-gradient(160deg, rgb(28 32 40 / .98) 0%, rgb(14 16 22 / .98) 100%);
+    box-shadow:0 12px 28px rgb(0 0 0 / .35);
+    color:rgb(232 235 240 / .92);
+    font-size:.68rem;font-weight:450;line-height:1.45;text-align:left;
+  }
+  .tip[aria-expanded="true"] .popup{display:block;}
+
+  .fields{margin-top:1.15rem;display:flex;flex-direction:column;gap:.85rem;}
+  .fields label span{
+    display:block;margin-bottom:.45rem;
+    font-size:.56rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgb(113 113 122);
+  }
+  .fields input{
+    box-sizing:border-box;width:100%;min-height:44px;
+    border-radius:12px;border:1px solid rgb(255 255 255 / .15);
+    background:rgb(8 10 14 / .55);
+    padding:.625rem 14px;
+    font:1rem/1.35 Inter,sans-serif;color:rgb(245 248 252 / .96);
+    outline:none;
+  }
+  .fields input::placeholder{color:rgb(210 214 222 / .45);}
+  .fields input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgb(37 99 235 / .22);}
+  .fields input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase;}
+
+  .cta{
+    display:block;width:100%;margin:1.35rem 0 0;
+    height:2.9rem;border:0;border-radius:.7rem;background:var(--accent);color:#fff;
+    font:600 .76rem/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+  }
+  .fine{margin:1.15rem 0 0;font-size:.68rem;line-height:1.5;color:rgb(148 163 184 / .68);}
+
+  @media (min-width: 520px){
+    body{
+      display:grid;
+      place-items:center;
+      min-height:100dvh;
+      padding:2rem 1rem;
+    }
+    .shell{
+      width:390px;
+      min-height:844px;
+      border:1px solid rgb(255 255 255 / .12);
+      border-radius:32px;
+      overflow:visible;
+      box-shadow:0 30px 80px rgb(0 0 0 / .55);
+      background-color:#0d0d0d;
+      background-image:
+        radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / .048) 0%, transparent 54%),
+        linear-gradient(180deg,#171717 0%,#121212 16%,#080808 38%,#040404 62%,#000 100%);
+    }
+    .page{padding:1.25rem 1.2rem 2.4rem;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="page">
+    <div class="top">
+      <div class="logo">PRO<b>VIN</b></div>
+      <a class="partner" href="/lv/partneriem">
+        <svg viewBox="0 0 16 16" aria-hidden>
+          <rect x="3.2" y="7.2" width="9.6" height="6.4" rx="1.4"/>
+          <path d="M5.2 7.2V5.4a2.8 2.8 0 0 1 5.6 0v1.8"/>
+        </svg>
+        Partneriem
+      </a>
+    </div>
+
+    <div class="seg" role="tablist" aria-label="Izvēlies pakalpojumu">
+      <button type="button" data-sku="mini">MINI</button>
+      <button type="button" class="on" data-sku="audits">AUDITS</button>
+      <button type="button" data-sku="dealer">DĪLERI</button>
+    </div>
+
+    <article class="card" id="card"></article>
+
+    <form class="fields" id="fields" autocomplete="off"></form>
+
+    <button type="button" class="cta" id="cta">PASŪTĪT 99,99 €</button>
+    <p class="fine" id="fine"></p>
+  </div>
+</div>
+
+<script>
+const REFUND_TIP = "Pilna naudas atmaksa, ja dīleru datubāzē nav neviena ieraksta. Pakalpojums tiek uzskatīts par izpildītu 100% apjomā, ja atrodama vismaz viena atzīme par odometra rādījumu. Pieejamo datu apjomu nosaka oficiāli fiksētā vēsture.";
+const BRANDS_TIP = "Mercedes-Benz, BMW, MINI, Rolls-Royce, Audi, Volkswagen, Volvo, Land Rover, Jaguar, Škoda, SEAT, Subaru, Peugeot, Citroën, Renault, Dacia, Opel, Smart.";
+
+const PRODUCTS = {
+  mini: {
+    label: 'PROVIN <span style="color:#2563eb">MINI</span>',
+    rec: false,
+    price: "39,99 €",
+    cta: "PASŪTĪT 39,99 €",
+    listing: true,
+    fine: "Rekomendējam veikt Latvijā ekspluatētiem auto.",
+    lines: [
+      { text: "Konsultācija un ieteikumi klātienes apskatei", on: true },
+      { text: "Apdrošinātāju dati un tehnisko apskašu vēsture", on: true },
+      { text: "Sludinājuma, pārdevēja un tehnisko risku analīze", on: true },
+      { text: "CarVertical + AutoDNA + Izcelsmes valsts reģistri", on: false },
+      { text: "Oficiālo dīleru un izsoļu portālu arhīva dati*", on: false }
+    ]
+  },
+  audits: {
+    label: 'PROVIN <span style="color:#2563eb">AUDITS</span>',
+    rec: true,
+    price: "99,99 €",
+    cta: "PASŪTĪT 99,99 €",
+    listing: true,
+    fine: "Noskaidro visu par savu topošo auto.",
+    lines: [
+      { text: "Konsultācija un ieteikumi klātienes apskatei", on: true },
+      { text: "Apdrošinātāju dati un tehnisko apskašu vēsture", on: true },
+      { text: "Sludinājuma, pārdevēja un tehnisko risku analīze", on: true },
+      { text: "CarVertical + AutoDNA + Izcelsmes valsts reģistri", on: true },
+      { text: "Oficiālo dīleru un izsoļu portālu arhīva dati*", on: true }
+    ]
+  },
+  dealer: {
+    label: "DĪLERI",
+    rec: false,
+    price: "24,99 €",
+    cta: "PASŪTĪT 24,99 €",
+    listing: false,
+    fine: "",
+    lines: [
+      { text: "Odometra rādījumi", on: true },
+      { text: "Servisa un apkopju vēsture*", on: true },
+      { text: "Kopsavilkums", on: true },
+      { text: "100% Naudas atmaksas garantija.", on: true, tip: "refund" },
+      { text: "Atbalstītie ražotāji", on: true, tip: "brands" }
+    ]
+  }
+};
+
+let sku = "audits";
+
+function field(label, attrs){
+  return `<label>
+    <span>${label}</span>
+    <input ${attrs}/>
+  </label>`;
+}
+
+function lineHtml(line){
+  const mark = line.on ? "+" : "✕";
+  const off = line.on ? "" : " class=\"off\"";
+  const mk = line.on ? "mk" : "mk off";
+  if (line.tip === "refund") {
+    return `<li${off}><span class="${mk}">${mark}</span><button type="button" class="tip" data-tip="refund" aria-expanded="false"><span>${line.text}</span><span class="i" aria-hidden>i</span><span class="popup">${REFUND_TIP}</span></button></li>`;
+  }
+  if (line.tip === "brands") {
+    return `<li${off}><span class="${mk}">${mark}</span><button type="button" class="tip" data-tip="brands" aria-expanded="false"><span>${line.text}</span><span class="i" aria-hidden>i</span><span class="popup">${BRANDS_TIP}</span></button></li>`;
+  }
+  return `<li${off}><span class="${mk}">${mark}</span><span>${line.text}</span></li>`;
+}
+
+function render(){
+  const p = PRODUCTS[sku];
+  document.getElementById("card").innerHTML =
+    `${p.rec ? '<span class="rec">Ieteicams</span>' : ""}
+     <div class="qty">${p.label}</div>
+     <div class="unit">${p.price} <i>par atskaiti</i></div>
+     <div class="sum">Kopā ${p.price}</div>
+     <ul class="lines">${p.lines.map(lineHtml).join("")}</ul>`;
+  document.getElementById("fields").innerHTML =
+    field("VIN kods", 'class="mono" type="text" maxlength="17" placeholder="17 zīmes" spellcheck="false" inputmode="text"') +
+    (p.listing
+      ? field("Sludinājuma saite", 'type="url" placeholder="https://" inputmode="url"')
+      : "") +
+    field("E-pasts", 'type="email" placeholder="vards@epasts.lv" inputmode="email"');
+  document.getElementById("cta").textContent = p.cta;
+  document.getElementById("fine").textContent = p.fine;
+}
+
+document.querySelectorAll(".seg button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    sku = btn.dataset.sku;
+    document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", b === btn));
+    render();
+  });
+});
+document.getElementById("card").addEventListener("click", (event) => {
+  const tip = event.target.closest(".tip");
+  if (!tip) return;
+  event.preventDefault();
+  const open = tip.getAttribute("aria-expanded") === "true";
+  document.querySelectorAll(".tip").forEach((el) => el.setAttribute("aria-expanded", "false"));
+  tip.setAttribute("aria-expanded", open ? "false" : "true");
+});
+document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest(".tip")) return;
+  document.querySelectorAll(".tip").forEach((el) => el.setAttribute("aria-expanded", "false"));
+});
+render();
+</script>
+</body>
+</html>

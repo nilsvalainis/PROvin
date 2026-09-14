@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROVIN - dīlera logo koncepti v2</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #c7d7ee;
+      --year: #e8f1fb;
+      --year-ink: #1d4f91;
+      --border: #e2e8f0;
+      --km: #eef2f7;
+      --blue: #1d4ed8;
+      --page: #e8edf3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, #dfe7f1 0%, var(--page) 180px);
+      line-height: 1.4;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 72px; }
+    .hero {
+      background: #0b1220;
+      color: #e8eef7;
+      border-radius: 16px;
+      padding: 22px 22px 18px;
+      margin-bottom: 16px;
+    }
+    .hero h1 { margin: 0 0 6px; font-size: 1.28rem; letter-spacing: -0.02em; }
+    .hero p { margin: 0; color: #9fb0c6; font-size: 0.92rem; max-width: 62ch; }
+    .hero .why {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #cbd5e1;
+      font-size: 0.84rem;
+    }
+    .toc { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+    .toc a {
+      text-decoration: none; color: #dbeafe;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 5px 10px; border-radius: 999px; font-size: 0.78rem;
+    }
+    .ask {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+    }
+    .ask strong { color: #7c2d12; }
+    .concept {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    .concept h2 { margin: 0 0 4px; font-size: 1.05rem; }
+    .concept .lead { margin: 0 0 12px; color: var(--muted); font-size: 0.88rem; }
+    .pill {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .pill.new { background: #ede9fe; color: #5b21b6; }
+    .pill.rec { background: #dcfce7; color: #166534; }
+    .pill.meh { background: #f1f5f9; color: #475569; }
+
+    .logo-ink {
+      width: 20px; height: 20px;
+      object-fit: contain;
+      filter: brightness(0);
+      flex: 0 0 auto;
+      display: block;
+    }
+    .logo-ink-lg { width: 28px; height: 28px; }
+    .logo-light {
+      width: 18px; height: 18px;
+      object-fit: contain;
+      flex: 0 0 auto;
+      display: block;
+    }
+
+    /* base history mock */
+    .hist {
+      border: 1px solid #d7e3f4;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f7fbff;
+    }
+    .hist-top {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 14px;
+      background: #edf4fc;
+      border-bottom: 1px solid #d7e3f4;
+      font-weight: 700;
+      font-size: 0.76rem;
+      letter-spacing: 0.04em;
+      color: #1e3a5f;
+    }
+    .hist-count {
+      background: #16a34a; color: #fff;
+      font-size: 0.7rem; padding: 3px 8px; border-radius: 999px; font-weight: 700;
+    }
+    .year {
+      margin: 10px 12px 6px;
+      background: var(--year);
+      color: var(--year-ink);
+      font-weight: 800;
+      font-size: 0.92rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .tl { position: relative; padding: 4px 12px 14px; }
+    .tl::before {
+      content: "";
+      position: absolute;
+      left: 90px; top: 0; bottom: 0;
+      width: 2px; background: var(--line);
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 70px 18px 1fr;
+      gap: 10px;
+      align-items: start;
+      margin: 10px 0;
+    }
+    .date {
+      text-align: right;
+      font-size: 0.76rem;
+      color: var(--muted);
+      padding-top: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+    .dot {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      border: 2px solid #7aa2d8;
+      background: #fff;
+      margin: 18px auto 0;
+      position: relative; z-index: 1;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 120px 1fr auto;
+      gap: 10px;
+      align-items: start;
+    }
+    .type { display: flex; align-items: center; gap: 7px; }
+    .type b { font-size: 0.86rem; color: var(--blue); }
+    .ico { width: 16px; height: 16px; color: #94a3b8; flex: 0 0 auto; }
+    .mid { font-size: 0.8rem; color: #334155; }
+    .dealer { font-weight: 600; color: #0f172a; }
+    .meta {
+      display: flex; align-items: center; gap: 7px;
+      margin-top: 4px; color: var(--muted); font-size: 0.76rem; flex-wrap: wrap;
+    }
+    .flag {
+      width: 13px; height: 9px; border-radius: 1px;
+      background: linear-gradient(#ae1c28 33%, #fff 33% 66%, #21468b 66%);
+      display: inline-block;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+    }
+    .km {
+      background: var(--km);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      align-self: center;
+    }
+    .note {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      border-left: 3px solid #c4b5fd;
+      padding-left: 10px;
+    }
+
+    /* F: identity ribbon */
+    .f-card { display: block; padding: 0; overflow: hidden; }
+    .f-ribbon {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .f-ribbon span.sep { opacity: 0.45; font-weight: 500; }
+    .f-body {
+      display: grid;
+      grid-template-columns: 120px 1fr auto;
+      gap: 10px;
+      padding: 10px 12px;
+      align-items: start;
+    }
+
+    /* G: left rail */
+    .g-card {
+      grid-template-columns: 36px 110px 1fr auto;
+      padding: 0;
+      overflow: hidden;
+    }
+    .g-rail {
+      background: #0f172a;
+      display: grid;
+      place-items: center;
+      align-self: stretch;
+      min-height: 72px;
+    }
+
+    /* H: meta chip */
+    .oem-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      padding: 2px 7px 2px 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    /* I: section-level only */
+    .i-head {
+      display: flex; align-items: center; gap: 10px;
+      justify-content: space-between;
+    }
+    .i-brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 999px;
+      padding: 5px 10px 5px 7px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* J: brand as left column (ink, no plate) */
+    .j-card { grid-template-columns: 44px 1fr auto; }
+    .j-brandcol {
+      display: flex; flex-direction: column; gap: 4px; align-items: center;
+      padding-top: 2px;
+    }
+    .j-brandcol small {
+      font-size: 0.62rem;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .j-titleline {
+      display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px;
+    }
+    .j-titleline b { color: var(--blue); font-size: 0.86rem; }
+
+    /* K: ghost behind type */
+    .k-type {
+      position: relative;
+      min-width: 120px;
+      min-height: 36px;
+    }
+    .k-type .ghost {
+      position: absolute;
+      left: -2px; top: -4px;
+      width: 40px; height: 40px;
+      opacity: 0.08;
+      filter: brightness(0);
+      pointer-events: none;
+    }
+    .k-type .fore {
+      position: relative;
+      display: flex; align-items: center; gap: 7px;
+    }
+
+    /* L: year carries brand */
+    .l-year {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px;
+    }
+    .l-year .brand {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #334155;
+      background: rgba(255,255,255,0.7);
+      border-radius: 999px;
+      padding: 3px 8px 3px 5px;
+    }
+
+    /* M: dual-line identity under dealer (text-first) */
+    .m-id {
+      margin-top: 5px;
+      display: flex; align-items: center; gap: 6px;
+      color: #475569;
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+    .m-id::before {
+      content: "";
+      width: 14px; height: 1px;
+      background: #94a3b8;
+    }
+
+    /* service variants */
+    .svc {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      padding: 6px 0 12px;
+    }
+    .svc-year {
+      margin: 10px 14px 4px;
+      background: var(--year);
+      color: var(--year-ink);
+      font-weight: 800;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .svc-visit {
+      display: grid;
+      grid-template-columns: 74px 18px 1fr;
+      gap: 8px;
+      padding: 10px 14px;
+      position: relative;
+    }
+    .svc-visit::before {
+      content: "";
+      position: absolute;
+      left: 84px; top: 0; bottom: 0;
+      width: 2px; background: #dbe7f5;
+    }
+    .svc-date {
+      text-align: right; font-size: 0.78rem; color: var(--muted);
+      font-variant-numeric: tabular-nums; padding-top: 2px;
+    }
+    .svc-dot {
+      width: 10px; height: 10px; border: 2px solid #8bb4e0;
+      border-radius: 50%; background: #fff; margin: 6px auto 0;
+      position: relative; z-index: 1;
+    }
+    .svc-box-top { display: flex; justify-content: space-between; gap: 10px; }
+    .svc-place { margin: 0; font-weight: 700; font-size: 0.88rem; }
+    .svc-place span { font-weight: 500; color: var(--muted); }
+    .svc-km {
+      background: var(--km); border-radius: 999px;
+      padding: 4px 10px; font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+    }
+    .svc-works { margin: 6px 0 0; padding: 0; list-style: none; color: #475569; font-size: 0.82rem; }
+    .svc-works li { margin: 2px 0; }
+
+    .sf .svc-box { border-left: 3px solid #0f172a; padding-left: 10px; }
+    .sf .idline {
+      display: flex; align-items: center; gap: 7px;
+      margin-bottom: 4px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+
+    .sg .svc-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    @media (max-width: 700px) {
+      .card, .f-body, .g-card, .j-card { grid-template-columns: 1fr; }
+      .g-rail { min-height: 44px; }
+      .tl::before, .svc-visit::before { left: 76px; }
+      .row, .svc-visit { grid-template-columns: 60px 16px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Logo koncepti v2 - cita loģika</h1>
+      <p>
+        Pirmā kārta bija „pārbīdīts tumšais kvadrāts”. Šeit logo nav tikai pārvietots -
+        mainās <b>ieraksta struktūra</b> vai <b>cik bieži</b> logo rādās.
+      </p>
+      <div class="why">
+        Hipotēze: problēma nav pozīcija, bet tas, ka tumša plāksnīte pie katra ieraksta
+        izskatās pēc UI badge, ne pēc OEM identitātes.
+      </div>
+      <nav class="toc">
+        <a href="#f">F · ribbon</a>
+        <a href="#g">G · kreisā sliede</a>
+        <a href="#h">H · meta chip</a>
+        <a href="#i">I · tikai sadaļā</a>
+        <a href="#j">J · markas kolonna</a>
+        <a href="#k">K · ghosts</a>
+        <a href="#l">L · pie gada</a>
+        <a href="#m">M · teksta rinda</a>
+        <a href="#sf">SF · serviss ID</a>
+        <a href="#sg">SG · serviss kartīte</a>
+      </nav>
+    </header>
+
+    <div class="ask">
+      <strong>Lai trāpītu nākamajā solī, pasaki 1 teikumu:</strong>
+      logo vajag (1) pie <em>katra</em> dīlera ieraksta, (2) tikai sadaļas galvā vienreiz,
+      vai (3) kā „Oficiālais dīleris” etiķeti bez liela zīmola?
+    </div>
+
+    <!-- F -->
+    <section class="concept" id="f">
+      <span class="pill new">Jauna struktūra</span>
+      <h2>F · Tumša identitātes josla kartītes augšā</h2>
+      <p class="lead">Logo + „Oficiālais dīleris · Mercedes-Benz” kā pirmā rinda. Saturs zemāk paliek kā tagad.</p>
+      <div class="hist">
+        <div class="hist-top"><span>VĒSTURES KOPSAVILKUMS</span><span class="hist-count">9 ieraksti</span></div>
+        <div class="year">2019</div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">08.11.2019</div>
+            <div class="dot"></div>
+            <article class="card f-card">
+              <div class="f-ribbon">
+                <img class="logo-light" src="brand-logos/mercedes.svg" alt="" />
+                Oficiālais dīleris <span class="sep">·</span> Mercedes-Benz
+              </div>
+              <div class="f-body">
+                <div class="type">
+                  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  <b>Apkope</b>
+                </div>
+                <div class="mid">
+                  <div class="dealer">Louwman Mercedes-Benz Breda, Ettensebaan 34, 4814 NN Breda, Netherlands</div>
+                  <div class="meta"><span class="flag"></span> Nīderlande</div>
+                </div>
+                <div class="km">20 594 km</div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">Spēcīgs „šis ir OEM” signāls. 9 ierakstiem ribbon atkārtojas - var nogurdināt.</p>
+    </section>
+
+    <!-- G -->
+    <section class="concept" id="g">
+      <span class="pill new">Jauna struktūra</span>
+      <h2>G · Tumša kreisā sliede ar logo</h2>
+      <p class="lead">Kartītei kreisajā malā šaura markas josla. Tips un adrese paliek neskarti.</p>
+      <div class="hist">
+        <div class="hist-top"><span>VĒSTURES KOPSAVILKUMS</span><span class="hist-count">9 ieraksti</span></div>
+        <div class="year">2020</div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">06.11.2020</div>
+            <div class="dot"></div>
+            <article class="card g-card">
+              <div class="g-rail"><img class="logo-light" src="brand-logos/mercedes.svg" alt="" /></div>
+              <div class="type" style="padding:10px 0 10px 8px">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <b>Apkope</b>
+              </div>
+              <div class="mid" style="padding:10px 0">
+                <div class="dealer">Louwman Mercedes-Benz Den Bosch, Zandzuigerstraat 13…</div>
+                <div class="meta"><span class="flag"></span> Nīderlande</div>
+              </div>
+              <div class="km" style="margin:10px 10px 10px 0">48 055 km</div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">PDF drukā sliede labi „turas”. Neaizņem tekstu.</p>
+    </section>
+
+    <!-- H -->
+    <section class="concept" id="h">
+      <span class="pill rec">Vieglāks</span>
+      <h2>H · Logo meta rindā kopā ar karogu</h2>
+      <p class="lead">Bez tumšās plāksnes. Ink logo + „OEM” chip blakus valstij - sekundārs signāls.</p>
+      <div class="hist">
+        <div class="hist-top"><span>VĒSTURES KOPSAVILKUMS</span><span class="hist-count">9 ieraksti</span></div>
+        <div class="year">2019</div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">08.11.2019</div>
+            <div class="dot"></div>
+            <article class="card">
+              <div class="type">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <b>Apkope</b>
+              </div>
+              <div class="mid">
+                <div class="dealer">Louwman Mercedes-Benz Breda, Ettensebaan 34, 4814 NN Breda, Netherlands</div>
+                <div class="meta">
+                  <span class="flag"></span> Nīderlande
+                  <span class="oem-chip"><img class="logo-ink" style="width:14px;height:14px" src="brand-logos/mercedes.svg" alt="" /> OEM</span>
+                </div>
+              </div>
+              <div class="km">20 594 km</div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">Mazāk „reklāmas”, vairāk datu etiķetes. Labi, ja nevēlies lielu zīmolu.</p>
+    </section>
+
+    <!-- I -->
+    <section class="concept" id="i">
+      <span class="pill rec">Mazāk atkārtošanās</span>
+      <h2>I · Logo tikai sadaļas galvā (ne pie katra ieraksta)</h2>
+      <p class="lead">Viena markas zīme „VĒSTURES KOPSAVILKUMS” joslā. Ieraksti paliek tīri.</p>
+      <div class="hist">
+        <div class="hist-top i-head">
+          <span>VĒSTURES KOPSAVILKUMS</span>
+          <span class="i-brand"><img class="logo-light" src="brand-logos/mercedes.svg" alt="" /> Oficiālais dīleris</span>
+        </div>
+        <div class="year">2021</div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">14.07.2021</div>
+            <div class="dot"></div>
+            <article class="card">
+              <div class="type">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <b>Apkope</b>
+              </div>
+              <div class="mid">
+                <div class="dealer">Louwman Mercedes-Benz Den Bosch…</div>
+                <div class="meta"><span class="flag"></span> Nīderlande</div>
+              </div>
+              <div class="km">68 941 km</div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">Ja sadaļā sajaucas OEM + citi avoti, šis neder - tad vajag per-entry.</p>
+    </section>
+
+    <!-- J -->
+    <section class="concept" id="j">
+      <span class="pill new">Jauna struktūra</span>
+      <h2>J · Markas kolonna (bez tumšās plāksnes)</h2>
+      <p class="lead">Kreiso tipa kolonnu aizstāj ink logo; tips pāriet virs adreses.</p>
+      <div class="hist">
+        <div class="hist-top"><span>VĒSTURES KOPSAVILKUMS</span><span class="hist-count">9 ieraksti</span></div>
+        <div class="year">2019</div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">08.11.2019</div>
+            <div class="dot"></div>
+            <article class="card j-card">
+              <div class="j-brandcol">
+                <img class="logo-ink logo-ink-lg" src="brand-logos/mercedes.svg" alt="" />
+                <small>OEM</small>
+              </div>
+              <div class="mid">
+                <div class="j-titleline"><b>Apkope</b></div>
+                <div class="dealer">Louwman Mercedes-Benz Breda, Ettensebaan 34, 4814 NN Breda, Netherlands</div>
+                <div class="meta"><span class="flag"></span> Nīderlande</div>
+              </div>
+              <div class="km">20 594 km</div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">Melnbalts logo = mazāk „app icon” sajūtas.</p>
+    </section>
+
+    <!-- K -->
+    <section class="concept" id="k">
+      <span class="pill meh">Subtils</span>
+      <h2>K · Ghost logo aiz tipa</h2>
+      <p class="lead">Ļoti caurspīdīgs zīmogs. Gandrīz nemanāms - tikai atmosfēra.</p>
+      <div class="hist">
+        <div class="hist-top"><span>VĒSTURES KOPSAVILKUMS</span><span class="hist-count">9 ieraksti</span></div>
+        <div class="year">2020</div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">06.11.2020</div>
+            <div class="dot"></div>
+            <article class="card">
+              <div class="type k-type">
+                <img class="ghost" src="brand-logos/mercedes.svg" alt="" />
+                <div class="fore">
+                  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  <b>Apkope</b>
+                </div>
+              </div>
+              <div class="mid">
+                <div class="dealer">Louwman Mercedes-Benz Den Bosch…</div>
+                <div class="meta"><span class="flag"></span> Nīderlande</div>
+              </div>
+              <div class="km">48 055 km</div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">PDF bieži „apēd” 8% opacity. Riskants produkcijā.</p>
+    </section>
+
+    <!-- L -->
+    <section class="concept" id="l">
+      <span class="pill rec">Grupēšana</span>
+      <h2>L · Logo pie gada joslas (ne pie ieraksta)</h2>
+      <p class="lead">Ja gada bloks ir tikai OEM, marka rādās reizi pie „2019”.</p>
+      <div class="hist">
+        <div class="hist-top"><span>VĒSTURES KOPSAVILKUMS</span><span class="hist-count">9 ieraksti</span></div>
+        <div class="year l-year">
+          <span>2019</span>
+          <span class="brand"><img class="logo-ink" src="brand-logos/mercedes.svg" alt="" /> Mercedes-Benz dīleris</span>
+        </div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">08.11.2019</div>
+            <div class="dot"></div>
+            <article class="card">
+              <div class="type">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <b>Apkope</b>
+              </div>
+              <div class="mid">
+                <div class="dealer">Louwman Mercedes-Benz Breda…</div>
+                <div class="meta"><span class="flag"></span> Nīderlande</div>
+              </div>
+              <div class="km">20 594 km</div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">Mazāk trokšņa. Strādā, ja gads nav jaukti avoti.</p>
+    </section>
+
+    <!-- M -->
+    <section class="concept" id="m">
+      <span class="pill new">Teksts pirmais</span>
+      <h2>M · Identitātes rinda zem adreses (logo + teksts)</h2>
+      <p class="lead">Kā dokumentu „avots:” - ink logo un „Oficiālā dīlera ieraksts”.</p>
+      <div class="hist">
+        <div class="hist-top"><span>VĒSTURES KOPSAVILKUMS</span><span class="hist-count">9 ieraksti</span></div>
+        <div class="year">2021</div>
+        <div class="tl">
+          <div class="row">
+            <div class="date">14.07.2021</div>
+            <div class="dot"></div>
+            <article class="card">
+              <div class="type">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <b>Apkope</b>
+              </div>
+              <div class="mid">
+                <div class="dealer">Louwman Mercedes-Benz Den Bosch, Zandzuigerstraat 13…</div>
+                <div class="m-id"><img class="logo-ink" style="width:14px;height:14px" src="brand-logos/mercedes.svg" alt="" /> Oficiālā dīlera ieraksts</div>
+                <div class="meta"><span class="flag"></span> Nīderlande</div>
+              </div>
+              <div class="km">68 941 km</div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <p class="note">Vismazāk „dizaina objekts”, visvairāk satura etiķete.</p>
+    </section>
+
+    <!-- SF / SG service -->
+    <section class="concept" id="sf">
+      <span class="pill new">Servisa timeline</span>
+      <h2>SF · ID rinda + kreisā akcenta līnija</h2>
+      <p class="lead">Nav badge blakus adresei. Augšā „Mercedes-Benz · oficiālais dīleris”, kreisā 3px līnija.</p>
+      <div class="svc sf">
+        <div class="svc-year">2021</div>
+        <div class="svc-visit">
+          <div class="svc-date">14.07.2021</div>
+          <div class="svc-dot"></div>
+          <div class="svc-box">
+            <div class="idline"><img class="logo-ink" style="width:14px;height:14px" src="brand-logos/mercedes.svg" alt="" /> Mercedes-Benz · oficiālais dīleris</div>
+            <div class="svc-box-top">
+              <p class="svc-place">Louwman Mercedes-Benz Den Bosch, Zandzuigerstraat 13… <span>· Nīderlande</span></p>
+              <span class="svc-km">68 941 km</span>
+            </div>
+            <ul class="svc-works">
+              <li>Regulārā apkope</li>
+              <li>Dzinējs: eļļas un filtra maiņa. Gaisa filtra elementa maiņa.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="concept" id="sg">
+      <span class="pill meh">Servisa timeline</span>
+      <h2>SG · Viegla kartīte (bez timeline izmaiņām)</h2>
+      <p class="lead">Tikai fons/rāmis ap saturu - logo ribbon mini formā iekšā.</p>
+      <div class="svc sg">
+        <div class="svc-year">2020</div>
+        <div class="svc-visit">
+          <div class="svc-date">06.11.2020</div>
+          <div class="svc-dot"></div>
+          <div class="svc-box">
+            <div class="f-ribbon" style="border-radius:8px;margin-bottom:8px">
+              <img class="logo-light" src="brand-logos/mercedes.svg" alt="" />
+              Oficiālais dīleris <span class="sep">·</span> Mercedes-Benz
+            </div>
+            <div class="svc-box-top">
+              <p class="svc-place">Louwman Mercedes-Benz Den Bosch… <span>· Nīderlande</span></p>
+              <span class="svc-km">48 055 km</span>
+            </div>
+            <ul class="svc-works">
+              <li>Regulārā apkope</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p style="text-align:center;color:#64748b;font-size:0.82rem;margin-top:8px">
+      v2 · <code>/dealer-logo-timeline-concepts-v2.html</code>
+      · v1: <a href="dealer-logo-timeline-concepts.html">iepriekšējie A-E / S1-S4</a>
+    </p>
+  </div>
+</body>
+</html>

@@ -37,6 +37,15 @@
     },
     "app/api/cron/iriss-listings-daily-sync/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/cron/dealer-data-sweep/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/dealer-data/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/webhooks/stripe/route.ts": {
+      "maxDuration": 300
     }
   },
   "crons": [
@@ -47,6 +56,10 @@
     {
       "path": "/api/cron/iriss-listings-daily-sync",
       "schedule": "0 3 * * 1,4"
+    },
+    {
+      "path": "/api/cron/dealer-data-sweep",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

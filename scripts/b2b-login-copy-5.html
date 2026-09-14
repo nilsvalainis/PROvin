@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN B2B login - 5 teksta + login koncepcijas</title>
+<style>
+  :root{
+    --ink:#fafafc; --dim:rgb(210 214 222 / .9); --faint:rgb(148 163 184 / .92);
+    --line:rgb(255 255 255 / .1); --accent:#2563eb; --pad:max(1rem, env(safe-area-inset-left));
+    --canvas:#050505;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    background:var(--canvas);
+    background-image:
+      radial-gradient(ellipse 120% 70% at 50% -8%, rgb(255 255 255 / .04) 0%, transparent 55%),
+      linear-gradient(180deg,#141414 0%,#0a0a0a 40%,#000 100%);
+    background-attachment:fixed;
+  }
+  .page{max-width:78rem;margin:0 auto;padding:1.25rem var(--pad) 4rem;}
+  h1{margin:0 0 .4rem;font-size:1.25rem;letter-spacing:-.02em;}
+  .lead{margin:0 0 1.1rem;color:var(--faint);font-size:.84rem;line-height:1.45;max-width:48rem;}
+  .toc{display:flex;flex-wrap:wrap;gap:.45rem;margin:0 0 1.5rem;}
+  .toc a{
+    display:inline-flex;align-items:center;min-height:2rem;padding:0 .75rem;
+    border:1px solid var(--line);border-radius:999px;color:#93c5fd;text-decoration:none;
+    font-size:.58rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .section{margin:0 0 2.6rem;padding-top:1.15rem;border-top:1px solid var(--line);}
+  .section h2{margin:0 0 .35rem;font-size:1.05rem;}
+  .why{margin:0 0 1rem;color:var(--faint);font-size:.8rem;line-height:1.45;max-width:46rem;}
+  .pair{display:grid;gap:1.15rem;}
+  @media (min-width:960px){.pair{grid-template-columns:minmax(0,22rem) minmax(0,1fr);align-items:start;}}
+  .frame{
+    border:1px solid rgb(255 255 255 / .12);border-radius:1rem;background:rgb(12 12 12 / .94);
+    padding:1rem;box-shadow:0 18px 40px rgb(0 0 0 / .4);
+  }
+  .frame.wide{padding:1.15rem 1.25rem 1.4rem;}
+  .badge{
+    display:inline-block;margin:0 0 .75rem;padding:.2rem .5rem;border-radius:.35rem;
+    background:rgb(37 99 235 / .18);color:#93c5fd;font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .phone{width:min(100%,22rem);}
+  .brand{margin:0;font-size:1.45rem;font-weight:650;letter-spacing:-.02em;line-height:1.15;}
+  .brand .vin{color:var(--accent);}
+  .copy p{margin:0 0 .85rem;color:var(--dim);font-size:.84rem;line-height:1.55;font-weight:450;}
+  .copy p:last-child{margin-bottom:0;}
+  .lab{display:block;margin:0 0 .35rem;font-size:.56rem;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:#71717a;}
+  .field{
+    width:100%;min-height:2.7rem;margin:0 0 .85rem;padding:.65rem .85rem;
+    border:1px solid rgb(255 255 255 / .15);border-radius:.75rem;
+    background:rgb(8 10 14 / .55);color:#fff;font:1rem/1.3 Inter,sans-serif;
+  }
+  .cta{
+    display:flex;align-items:center;justify-content:center;width:100%;min-height:3rem;margin-top:.15rem;
+    border:0;border-radius:999px;color:#fff;cursor:default;
+    background:linear-gradient(180deg,#1a6fd4 0%,#1459ad 100%);
+    font:650 .72rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .login{margin-top:1.15rem;}
+  .rule{height:1px;margin:1rem 0;background:var(--line);border:0;}
+  .eyebrow{margin:0 0 .45rem;font-size:.58rem;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;}
+  .split{display:grid;gap:1.25rem;}
+  @media (min-width:900px){.split.cols{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start;}}
+  .card{
+    border:1px solid var(--line);border-radius:.9rem;padding:1rem 1.05rem;
+    background:rgb(255 255 255 / .03);
+  }
+  .quote{
+    border-left:2px solid var(--accent);padding-left:.9rem;margin:0 0 .85rem;
+  }
+  .stack-tight .copy p{margin-bottom:.65rem;font-size:.8rem;}
+  .src{
+    display:flex;flex-wrap:wrap;gap:.35rem;margin:.85rem 0 0;padding:0;list-style:none;
+  }
+  .src li{
+    padding:.28rem .55rem;border:1px solid rgb(255 255 255 / .12);border-radius:.4rem;
+    font-size:.58rem;font-weight:600;letter-spacing:.04em;color:#a1a1aa;text-transform:uppercase;
+  }
+  .aside-login{
+    border:1px solid var(--line);border-radius:1rem;padding:1.1rem 1.15rem;
+    background:linear-gradient(180deg,rgb(255 255 255 / .04),rgb(255 255 255 / .015));
+  }
+  .desk-narrow{max-width:28rem;}
+  .center{text-align:center;}
+  .center .copy{margin-left:auto;margin-right:auto;max-width:36rem;}
+  .center .login{max-width:22rem;margin-left:auto;margin-right:auto;}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>B2B login: 5 noformējuma paraugi</h1>
+  <p class="lead">Katram variantam: telefons (kreisā) un web. Teksts kā tavā uzdevumā. Login forma vizuāli kā esošajā B2B (e-pasts, parole, IEIET).</p>
+  <nav class="toc">
+    <a href="#c1">1 · Virs login</a>
+    <a href="#c2">2 · Divas kolonnas</a>
+    <a href="#c3">3 · Kartīte + login</a>
+    <a href="#c4">4 · Centrēts editoriāls</a>
+    <a href="#c5">5 · Avotu čipi</a>
+  </nav>
+
+  <!-- 1 -->
+  <section class="section" id="c1">
+    <h2>1. Teksts virs login (šaurā sleja)</h2>
+    <p class="why">Vienkāršākais: zīmols → 2 rindkopas → forma. Web tā pati šaurā sleja kā telefons, tikai platāks rāmis.</p>
+    <div class="pair">
+      <div class="frame phone">
+        <span class="badge">Mob · 1</span>
+        <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+        <div class="copy" style="margin-top:.9rem">
+          <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+          <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+        </div>
+        <div class="login">
+          <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+          <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+          <button type="button" class="cta">Ieiet</button>
+        </div>
+      </div>
+      <div class="frame wide">
+        <span class="badge">Web · 1</span>
+        <div class="desk-narrow">
+          <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+          <div class="copy" style="margin-top:1rem">
+            <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+            <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+          </div>
+          <div class="login">
+            <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+            <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+            <button type="button" class="cta">Ieiet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="section" id="c2">
+    <h2>2. Web: teksts kreisajā, login labajā · Mob: teksts, tad login</h2>
+    <p class="why">Desktopam tipiskais B2B splīts. Telefonā saglabājas vertikālā secība bez šaurināšanas līdz vienai kolonnai.</p>
+    <div class="pair">
+      <div class="frame phone">
+        <span class="badge">Mob · 2</span>
+        <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+        <p class="eyebrow" style="margin-top:.75rem">Partneriem</p>
+        <div class="copy stack-tight">
+          <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+          <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+        </div>
+        <hr class="rule"/>
+        <div class="login" style="margin-top:0">
+          <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+          <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+          <button type="button" class="cta">Ieiet</button>
+        </div>
+      </div>
+      <div class="frame wide">
+        <span class="badge">Web · 2</span>
+        <div class="split cols">
+          <div>
+            <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+            <p class="eyebrow" style="margin-top:.75rem">Partneriem</p>
+            <div class="copy" style="margin-top:.35rem">
+              <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+              <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+            </div>
+          </div>
+          <div class="aside-login">
+            <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+            <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+            <button type="button" class="cta">Ieiet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="section" id="c3">
+    <h2>3. Login augšā, apraksts kartītē zem tā</h2>
+    <p class="why">Ātra ielogošanās pirmajā fold; garais teksts kā sekundārs bloks. Labs, ja partneri bieži atgriežas.</p>
+    <div class="pair">
+      <div class="frame phone">
+        <span class="badge">Mob · 3</span>
+        <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+        <div class="login">
+          <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+          <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+          <button type="button" class="cta">Ieiet</button>
+        </div>
+        <div class="card" style="margin-top:1.1rem">
+          <p class="eyebrow">Kas tas ir</p>
+          <div class="copy stack-tight">
+            <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+            <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+          </div>
+        </div>
+      </div>
+      <div class="frame wide">
+        <span class="badge">Web · 3</span>
+        <div class="split cols">
+          <div class="aside-login" style="max-width:24rem">
+            <h3 class="brand" style="margin-bottom:.9rem">PRO<span class="vin">VIN</span> BUSINESS</h3>
+            <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+            <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+            <button type="button" class="cta">Ieiet</button>
+          </div>
+          <div class="card">
+            <p class="eyebrow">Kas tas ir</p>
+            <div class="copy">
+              <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+              <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="section" id="c4">
+    <h2>4. Centrēts editoriāls (zīmols + citāta josla + login)</h2>
+    <p class="why">Pirmā rindkopa ar zilu akcenta joslu; otrā parasta. Forma centrēta. Vairāk „landing”, mazāk „admin login”.</p>
+    <div class="pair">
+      <div class="frame phone">
+        <span class="badge">Mob · 4</span>
+        <div class="center">
+          <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+          <div class="copy" style="margin-top:1rem;text-align:left">
+            <p class="quote">Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+            <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+          </div>
+          <div class="login">
+            <span class="lab" style="text-align:left">E-pasts</span><input class="field" placeholder=""/>
+            <span class="lab" style="text-align:left">Parole</span><input class="field" type="password" placeholder=""/>
+            <button type="button" class="cta">Ieiet</button>
+          </div>
+        </div>
+      </div>
+      <div class="frame wide">
+        <span class="badge">Web · 4</span>
+        <div class="center" style="padding:1rem 0 0.5rem">
+          <h3 class="brand" style="font-size:1.85rem">PRO<span class="vin">VIN</span> BUSINESS</h3>
+          <div class="copy" style="margin-top:1.15rem;text-align:left">
+            <p class="quote">Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+            <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+          </div>
+          <div class="login">
+            <span class="lab" style="text-align:left">E-pasts</span><input class="field" placeholder=""/>
+            <span class="lab" style="text-align:left">Parole</span><input class="field" type="password" placeholder=""/>
+            <button type="button" class="cta">Ieiet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="section" id="c5">
+    <h2>5. Teksts + avotu čipi, login blakus (web) / zem (mob)</h2>
+    <p class="why">Otrā rindkopa papildināta ar vizuāliem avotu markeriem (dīleri, carVertical, AutoDNA, reģistri…). Teksts paliek pilns.</p>
+    <div class="pair">
+      <div class="frame phone">
+        <span class="badge">Mob · 5</span>
+        <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+        <div class="copy" style="margin-top:.9rem">
+          <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+          <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+        </div>
+        <ul class="src" aria-hidden="true">
+          <li>Dīleri</li><li>carVertical</li><li>AutoDNA</li><li>Reģistri</li><li>Izsoles</li><li>Apdrošinātāji</li>
+        </ul>
+        <div class="login">
+          <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+          <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+          <button type="button" class="cta">Ieiet</button>
+        </div>
+      </div>
+      <div class="frame wide">
+        <span class="badge">Web · 5</span>
+        <div class="split cols">
+          <div>
+            <h3 class="brand">PRO<span class="vin">VIN</span> BUSINESS</h3>
+            <div class="copy" style="margin-top:1rem">
+              <p>Risinājums izstrādāts tirdzniecības uzņēmumiem, lai pirms auto iegādes novērstu slēptos riskus, identificētu koriģētus nobraukumus un negadījumu vēsturi. Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumā, bet arī sniedzat savam pircējam oficiālu un nepārprotamu pierādījumu par auto faktisko vēsturi.</p>
+              <p>Atskaitē apvienojam datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA, kā arī atsevišķu valstu oficiālajiem reģistriem, izsoļu arhīviem un apdrošinātāju datubāzēm. Visi iegūtie dati ir apkopoti vienkārši uztveramā kopsavilkumā, sniedzot skaidru priekšstatu par spēkrata faktisko vēsturi, būtiski samazinot riskus un nodrošinot pārliecību katrā darījumā.</p>
+            </div>
+            <ul class="src" aria-hidden="true">
+              <li>Dīleri</li><li>carVertical</li><li>AutoDNA</li><li>Reģistri</li><li>Izsoles</li><li>Apdrošinātāji</li>
+            </ul>
+          </div>
+          <div class="aside-login">
+            <span class="lab">E-pasts</span><input class="field" placeholder=""/>
+            <span class="lab">Parole</span><input class="field" type="password" placeholder=""/>
+            <button type="button" class="cta">Ieiet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

@@ -220,3 +220,37 @@ ${ctaButton(opts.verifyUrl, cta)}
 `;
   return shell(inner);
 }
+
+/**
+ * E-pasts: oficiālā dīlera dati par šo VIN nav pieejami, maksājums atgriezts.
+ * Nekad neapgalvo, ka auto nav apkalpots: ražotāja datubāzē vienkārši nav ieraksta.
+ */
+export function dealerDataNoDataRefundEmailHtml(opts: {
+  vin?: string | null;
+  amountEur?: string | null;
+  /** Atcelts pēc klienta lūguma, nevis datu trūkuma dēļ. */
+  cancelled?: boolean;
+}): string {
+  const vinRaw = (opts.vin ?? "").trim();
+  const vinEsc = isValidVin(vinRaw) ? esc(normalizeVin(vinRaw)) : "";
+  const amount = (opts.amountEur ?? "").trim();
+  const title = opts.cancelled ? "Pasūtījums atcelts un maksājums atgriezts" : "Dīlera dati nav pieejami";
+
+  const body = opts.cancelled
+    ? `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.</p>`
+    : `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Pārbaudījām oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${
+        vinEsc ? ` (VIN <strong>${vinEsc}</strong>)` : ""
+      }. Ražotāja datubāzē par šo automašīnu ierakstu nav.</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Tas nenozīmē, ka auto nav apkalpots: daļa ražotāju un neatkarīgo servisu datus šajā sistēmā nenodod. Tā kā datus piegādāt nevaram, maksājumu atgriezām.</p>`;
+
+  const inner = `
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
+${body}
+<p style="margin:0 0 18px;font-size:15px;color:${INK};line-height:1.6;">Atmaksa${
+    amount ? ` ${esc(amount)}` : ""
+  } veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
+<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, atbildiet uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
+<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
+`;
+  return shell(inner, { omitBrandRibbon: true });
+}

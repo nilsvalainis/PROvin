@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN · dīlera sadaļa, 10 koncepti</title>
+<style>
+  :root{
+    --blue:#0061D2;
+    --ink:#0f172a;
+    --mute:#64748b;
+    --label:#86868b;
+    --line:#E9EDF3;
+    --soft:#F1F5F9;
+    --paper:#fff;
+    --desk:#d7dee8;
+    --paint:#e6e1d6;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--desk);color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+  }
+  .chrome{position:sticky;top:0;z-index:30;background:#0f172a;color:#e2e8f0;padding:12px 16px 14px;}
+  .chrome h1{margin:0;font-size:15px;font-weight:700;color:#fff;}
+  .chrome p{margin:6px 0 0;font-size:12px;line-height:1.45;color:#94a3b8;max-width:70rem;}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tabs button{
+    appearance:none;border:1px solid #334155;background:#1e293b;color:#e2e8f0;
+    border-radius:999px;padding:5px 10px;font:650 10.5px/1.2 Inter,sans-serif;cursor:pointer;
+  }
+  .tabs button[aria-selected="true"]{background:#0061D2;border-color:#0061D2;color:#fff;}
+  .hint{margin:8px 0 0;font-size:11px;color:#64748b;}
+  .stage{padding:24px 12px 72px;}
+  .sheet{
+    display:none;width:210mm;margin:0 auto 22px;background:#fff;
+    padding:13mm 12mm 14mm;box-shadow:0 16px 44px rgb(15 23 42 / .12);
+  }
+  .sheet.is-on{display:block;}
+  .word{font-size:13px;font-weight:800;letter-spacing:-0.02em;}
+  .word b{color:var(--blue);font-weight:800;}
+  .kicker{margin:2px 0 12px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6e6e73;}
+  .card{margin:0;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:#fff;}
+  .sec{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .sec h2{margin:0;flex:1;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+  .count{padding:3px 9px;border-radius:999px;background:#F8FAFC;border:1px solid var(--line);font-size:9.5px;font-weight:700;color:var(--mute);}
+  .sub{margin:14px 0 8px;font-size:9.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--label);}
+  .sub:first-of-type{margin-top:0;}
+  .kv{width:100%;border-collapse:collapse;font-size:10.5px;}
+  .kv td{padding:6px 0;border-bottom:1px solid var(--soft);vertical-align:top;line-height:1.4;}
+  .kv td:first-child{width:38%;color:var(--label);font-weight:500;padding-right:10px;}
+  .kv tr:last-child td{border-bottom:0;}
+  .note{margin:10px 0 0;padding:10px 12px;border-radius:8px;border:1px solid var(--soft);background:#F8FAFC;font-size:10.5px;line-height:1.45;color:#334155;}
+  .ok{color:#047857;font-weight:650;}
+  .span{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#FCFDFF;}
+  .span b{display:block;font-size:13px;}
+  .span i{display:block;margin-top:2px;font-style:normal;font-size:9.5px;color:var(--mute);}
+  .span .end{text-align:right;}
+  .bar{width:64px;height:2px;border-radius:99px;background:#93C5FD;}
+  .year{margin:10px 0 6px;padding:6px 12px;border-radius:8px;background:#E8F1FC;font-size:13px;font-weight:700;color:var(--blue);}
+  .visit{display:grid;grid-template-columns:76px 16px minmax(0,1fr);gap:0 10px;}
+  .visit time{padding:12px 0;font-size:11.5px;font-weight:600;text-align:right;}
+  .rail{position:relative;justify-self:center;width:2px;background:#D7E4F5;}
+  .dot{position:absolute;left:50%;top:16px;width:8px;height:8px;margin-left:-4px;border-radius:99px;background:#fff;border:2px solid #93C5FD;}
+  .box{margin:6px 0;padding:10px 12px;border:1px solid #E9EDF3;border-radius:10px;}
+  .box-top{display:flex;justify-content:space-between;gap:8px;}
+  .place{margin:0;font-size:11.5px;font-weight:700;}
+  .place span{font-weight:500;color:var(--mute);}
+  .km{margin-left:auto;padding:3px 7px;border-radius:6px;background:#F1F5F9;font-size:11px;font-weight:700;white-space:nowrap;}
+  .works{margin:7px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:4px;}
+  .works li{padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:10.5px;font-weight:600;color:#334155;}
+  .empty{margin:7px 0 0;font-size:10.5px;color:var(--mute);font-style:italic;}
+  .eq{display:flex;flex-wrap:wrap;gap:5px;}
+  .eq li{list-style:none;padding:4px 8px;border:1px solid #E2E8F0;border-radius:8px;background:#F8FAFC;font-size:10.5px;}
+  .eq b{font-weight:750;margin-right:6px;color:var(--blue);}
+  .phs{display:grid;gap:8px;}
+  .phs.g2{grid-template-columns:1fr 1fr;}
+  .phs.g3{grid-template-columns:1fr 1fr 1fr;}
+  .phs.g4{grid-template-columns:1fr 1fr 1fr 1fr;}
+  .phs.stack{grid-template-columns:1fr;}
+  .ph{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#F1F5F9;}
+  .ph img{display:block;width:100%;height:108px;object-fit:cover;}
+  .ph.tall img{height:168px;}
+  .ph.hero img{height:210px;}
+  .ph figcaption{padding:5px 8px;font-size:9px;font-weight:600;color:var(--mute);letter-spacing:0.02em;}
+  .pg{margin:0 0 12px;}
+  .pg h3{margin:0 0 6px;font-size:9.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--label);}
+  .swatch{display:inline-flex;align-items:center;gap:8px;}
+  .swatch i{width:18px;height:18px;border-radius:99px;border:1px solid #d6d3c8;background:var(--paint);display:block;}
+  .facts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .fact{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#FCFDFF;}
+  .fact s{display:block;text-decoration:none;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--label);}
+  .fact b{display:block;margin-top:3px;font-size:12px;}
+  .split{display:grid;grid-template-columns:38% 1fr;gap:16px;}
+  .film{display:flex;gap:6px;overflow:hidden;}
+  .film .ph{flex:1;min-width:0;}
+  .film .ph img{height:88px;}
+  .mosaic{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .tile{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;}
+  .tile.wide{grid-column:span 2;}
+  .cover{padding:18px 18px 16px;border-radius:12px;background:linear-gradient(180deg,#E8F1FC 0%,#fff 70%);border:1px solid var(--line);}
+  .cover h3{margin:8px 0 0;font-size:22px;letter-spacing:-0.03em;}
+  .quiet .visit{grid-template-columns:88px minmax(0,1fr);gap:0 14px;}
+  .quiet .rail{display:none;}
+  .quiet time{color:var(--mute);font-weight:650;}
+  .codes{display:grid;grid-template-columns:72px 1fr;gap:4px 10px;font-size:10.5px;}
+  .codes b{color:var(--blue);font-variant-numeric:tabular-nums;}
+  .stamp{position:relative;}
+  .stamp:after{
+    content:"OEM";position:absolute;top:8px;right:8px;padding:2px 6px;
+    border:1px solid rgb(0 97 210 / .35);color:var(--blue);font-size:8px;font-weight:800;letter-spacing:0.12em;
+    background:rgb(255 255 255 / .85);
+  }
+  @media print{
+    body{background:#fff;}
+    .chrome{display:none;}
+    .stage{padding:0;}
+    .sheet{display:none;box-shadow:none;margin:0;width:auto;padding:0;}
+    .sheet.is-on{display:block;}
+    @page{size:A4;margin:11mm;}
+  }
+</style>
+</head>
+<body>
+  <div class="chrome">
+    <h1>Oficiālā dīlera sadaļa: 10 PDF koncepti</h1>
+    <p>
+      Viena un tā pati datu kopa: visi transporta lauki, negadījumi, zādzība, komplektācija,
+      servisa vizītes, servisa vēsture, eļļas intervāli, komentārs un foto grupas.
+    </p>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <p class="hint" id="hint">01 Kanons. Šodienas PDF valoda: kv tabula, A vizītes, bildes grupās.</p>
+  </div>
+  <div class="stage" id="stage"></div>
+<script>
+const PHOTOS = [
+  { src: "/samples/provin-dilera-dati-piemers-page1.webp", cap: "Dīlera PDF, 1. lapa" },
+  { src: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=80", cap: "Servisa grāmata · 01.12.2023" },
+  { src: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=900&q=80", cap: "VIN / dzinēja numurs" },
+  { src: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=900&q=80", cap: "Identifikācija · priekšpuse" },
+  { src: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80", cap: "Interjers Leather" },
+  { src: "https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=900&q=80", cap: "Krāsa A96 Mineral-weiss" },
+  { src: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80", cap: "Komplektācijas lapa" },
+  { src: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=900&q=80", cap: "Servisa izdruka · 12.03.2024" },
+];
+
+const GROUPS = [
+  { title: "Servisa grāmata", photos: [0, 1, 7] },
+  { title: "VIN / identifikācija", photos: [2, 3] },
+  { title: "Komplektācija un krāsa", photos: [4, 5, 6] },
+];
+
+const SPEC = [
+  ["Modelis", "BMW X1 (E84) xDrive 20 d"],
+  ["Modeļa sērija", "X1 (E84)"],
+  ["VIN kods", "WBAVL12090VX12345"],
+  ["Transportlīdzekļa tips", "Vieglais automobilis"],
+  ["Ātrumkārba", "Automātiskā"],
+  ["Stūre", "Kreisā"],
+  ["Dzinējs", "N47D20C"],
+  ["Dzinēja numurs", "12345678"],
+  ["Virsbūve", "SUV"],
+  ["Piedziņa", "AWD"],
+  ["Jauda", "135 kW (184 ZS)"],
+  ["Integrācijas līmenis", "E89X-14-03-500"],
+  ["Pašreizējais I-Level", "F010-14-11-503"],
+  ["Izstrādes kods", "E84"],
+  ["Modeļa kods", "VL12"],
+  ["Ražošanas datums", "12.2012"],
+  ["Pirmā reģistrācija", "18.01.2013"],
+  ["Garantijas sākums", "18.01.2013"],
+  ["Valsts / reģions", "Vācija"],
+  ["Krāsa", "Mineral-weiss metallic"],
+  ["Krāsas kods", "A96"],
+  ["Interjers", "Leather"],
+  ["Interjera kods", "LCL5"],
+  ["Degviela", "Dīzelis"],
+  ["Tilpums", "1995"],
+];
+
+const EQUIP = [
+  ["S403A", "Panorāmas stikla jumts"],
+  ["S423A", "Aizmugurējie galda paliktņi"],
+  ["S430A", "Salona / iekšējais spogulis ar automātisku aptumšošanos"],
+  ["S459A", "Sēdekļu regulēšana, elektriska, ar atmiņu"],
+  ["S494A", "Sēdekļu apsilde, priekšā"],
+  ["S508A", "Park Distance Control (PDC)"],
+  ["S563A", "Gaismas pakete"],
+  ["S609A", "Navigācijas sistēma Professional"],
+];
+
+function img(p, extra) {
+  return `<figure class="ph ${extra || ""}"><img src="${p.src}" alt="" referrerpolicy="no-referrer"/><figcaption>${p.cap}</figcaption></figure>`;
+}
+function photos(mod, list) {
+  return `<div class="phs ${mod}">${(list || PHOTOS).map((p) => img(p)).join("")}</div>`;
+}
+function photoGroups(mod, extra) {
+  return GROUPS.map((g) => {
+    const list = g.photos.map((i) => PHOTOS[i]);
+    return `<section class="pg"><h3>${g.title}</h3><div class="phs ${mod}">${list.map((p) => img(p, extra)).join("")}</div></section>`;
+  }).join("");
+}
+function kv() {
+  return `<table class="kv">${SPEC.map(([k, v]) => `<tr><td>${k}</td><td>${k === "Krāsa" ? `<span class="swatch"><i></i>${v}</span>` : v}</td></tr>`).join("")}</table>`;
+}
+function equipPills() {
+  return `<ul class="eq">${EQUIP.map(([c, d]) => `<li><b>${c}</b>${d}</li>`).join("")}</ul>`;
+}
+function equipCodes() {
+  return `<div class="codes">${EQUIP.map(([c, d]) => `<b>${c}</b><span>${d}</span>`).join("")}</div>`;
+}
+function checks() {
+  return `<p class="sub">Negadījumu pārbaude</p><p class="note ok" style="margin-top:0">Nav ierakstu.</p>
+    <p class="sub">Zagto transportlīdzekļu datubāze</p><p class="note ok" style="margin-top:0">Nav ierakstu.</p>`;
+}
+function oil() {
+  return `<div class="note"><strong>Eļļas maiņas intervāli.</strong> Dīlera tabulā eļļa mainīta 12.03.2024 (142 220 km) un 01.12.2023 (128 410 km). Intervāls ap 13 800 km. Pilsētas profilam tas ir pieņemami, ja nākamā maiņa netiek vilkta līdz 20 000 km.</div>`;
+}
+function serviceNotes() {
+  return `<div class="note"><strong>Servisa vēsture.</strong> Nepārtraukta ķēde no 2016. līdz 2024. gadam, pārsvarā Vācijas oficiālajos punktos. Divās vecākajās vizītēs darbu saraksts avotā nav.</div>`;
+}
+function comment() {
+  return `<div class="note"><strong>Komentārs.</strong> Oficiālā dīlera dati ir pietiekami pirkuma lēmumam. Nākamā eļļas maiņa jāplāno pēc pilsētas profila, ne pēc 20 000 km long-life.</div>`;
+}
+function visits() {
+  return `
+    <div class="span">
+      <div><b>31 400 km</b><i>Pirmais ieraksts · 03.04.2016</i></div>
+      <div class="bar"></div>
+      <div class="end"><b>142 220 km</b><i>Pēdējais ieraksts · 12.03.2024</i></div>
+    </div>
+    <div class="year">2024</div>
+    <div class="visit"><time>12.03.2024</time><span class="rail"><span class="dot"></span></span>
+      <article class="box"><div class="box-top"><p class="place">d.velop AG, Osnabrück <span>· Vācija</span></p><span class="km">142 220 km</span></div>
+      <ul class="works"><li>Eļļas un filtra maiņa</li><li>Salona gaisa filtrs</li><li>Bremžu šķidrums</li></ul></article></div>
+    <div class="year">2023</div>
+    <div class="visit"><time>01.12.2023</time><span class="rail"><span class="dot"></span></span>
+      <article class="box"><div class="box-top"><p class="place">Niederlassung Bonn BMW AG <span>· Vācija</span></p><span class="km">128 410 km</span></div>
+      <ul class="works"><li>Regulārā apkope</li><li>Eļļas maiņa</li><li>Salona gaisa filtrs</li></ul></article></div>
+    <div class="visit"><time>01.06.2023</time><span class="rail"><span class="dot"></span></span>
+      <article class="box"><div class="box-top"><p class="place">Niederlassung Bonn BMW AG <span>· Vācija</span></p><span class="km">109 880 km</span></div>
+      <ul class="works"><li>Regulārā apkope</li><li>Eļļas maiņa</li></ul></article></div>
+    <div class="year">2019</div>
+    <div class="visit"><time>05.09.2019</time><span class="rail"><span class="dot"></span></span>
+      <article class="box"><div class="box-top"><p class="place">B&amp;K Deutschland GmbH, Osnabrück <span>· Vācija</span></p><span class="km">58 140 km</span></div>
+      <p class="empty">Detalizēts darbu saraksts avotā nav.</p></article></div>
+    <div class="year">2016</div>
+    <div class="visit"><time>03.04.2016</time><span class="rail"><span class="dot"></span></span>
+      <article class="box"><div class="box-top"><p class="place">BMW Mobiler Service, Minhene <span>· Vācija</span></p><span class="km">31 400 km</span></div>
+      <p class="empty">Detalizēts darbu saraksts avotā nav.</p></article></div>`;
+}
+function head(count) {
+  return `<div class="sec"><h2>Oficiālā dīlera dati</h2><span class="count">${count}</span></div>`;
+}
+function wrap(inner, extra) {
+  return `<div class="word">PRO<b>VIN</b>.LV</div><p class="kicker">Koncepts · tikai šī sadaļa</p><section class="card ${extra || ""}">${inner}</section>`;
+}
+
+const VARIANTS = [
+  {
+    id: "01",
+    name: "01 Kanons",
+    hint: "Šodienas PDF valoda: kv tabula, A vizītes, bildes vienā kolonnā.",
+    html: () => wrap(`${head("8 vizītes · 8 bildes")}
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}${checks()}
+      <p class="sub">Aprīkojums</p>${equipPills()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      ${serviceNotes()}${oil()}${comment()}
+      ${photoGroups("stack")}`),
+  },
+  {
+    id: "02",
+    name: "02 Dossier",
+    hint: "Identitātes josla, 3 faktu kartītes, komplektācija čipos, bildes kā kontakta lapa.",
+    html: () => wrap(`${head("Dossier")}
+      <div class="facts">
+        <div class="fact"><s>VIN</s><b>WBAVL12090VX12345</b></div>
+        <div class="fact"><s>Jauda</s><b>135 kW (184 ZS)</b></div>
+        <div class="fact"><s>Krāsa</s><b class="swatch"><i></i>A96 metallic</b></div>
+      </div>
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}${checks()}
+      <p class="sub">Aprīkojums</p>${equipPills()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      ${serviceNotes()}${oil()}${comment()}
+      ${photoGroups("g4")}`),
+  },
+  {
+    id: "03",
+    name: "03 Rūpnīcas lapa",
+    hint: "OEM build sheet: PR kodi pa kreisi, krāsa / I-level, bildes kā zīmogotas skenējuma lapas.",
+    html: () => wrap(`${head("OEM")}
+      <div class="facts">
+        <div class="fact"><s>Krāsa</s><b class="swatch"><i></i>Mineral-weiss (A96)</b></div>
+        <div class="fact"><s>Interjers</s><b>Leather</b></div>
+        <div class="fact"><s>Modeļa kods</s><b>VL12</b></div>
+      </div>
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}
+      <p class="sub">Aprīkojums / PR kodi</p>${equipCodes()}${checks()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      ${serviceNotes()}${oil()}${comment()}
+      ${photoGroups("g2", "stamp")}`),
+  },
+  {
+    id: "04",
+    name: "04 Divas kolonnas",
+    hint: "Kreisā: spec + pārbaudes. Labā: vizītes. Bildes pa visu platumu apakšā.",
+    html: () => wrap(`${head("2 kolonnas")}
+      <div class="split">
+        <div>
+          <p class="sub">Transportlīdzekļa informācija</p>${kv()}${checks()}${oil()}
+          <p class="sub">Aprīkojums</p>${equipCodes()}
+        </div>
+        <div>
+          <p class="sub">Servisa un remontu vēsture</p>${visits()}
+        </div>
+      </div>
+      ${serviceNotes()}${comment()}
+      ${photoGroups("g3")}`),
+  },
+  {
+    id: "05",
+    name: "05 Žurnāls",
+    hint: "Vizītes ir galvenais. Spec ir čipi augšā. Bildes pieliktas pie vēstures, ne atsevišķā sarakstā.",
+    html: () => wrap(`${head("Žurnāls")}
+      <div class="facts">
+        ${SPEC.slice(0, 6).map(([k, v]) => `<div class="fact"><s>${k}</s><b>${v}</b></div>`).join("")}
+      </div>
+      ${checks()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      <p class="sub">Bildes pie vēstures</p>
+      <div class="film">${PHOTOS.slice(0, 4).map((p) => img(p)).join("")}</div>
+      <p class="sub">Aprīkojums</p>${equipPills()}
+      ${serviceNotes()}${oil()}${comment()}
+      ${photoGroups("g2")}`),
+  },
+  {
+    id: "06",
+    name: "06 Mozaīka",
+    hint: "Katrs datu veids ir flīze. Bildes iekš mozaīkas, ne zem tās.",
+    html: () => wrap(`${head("Mozaīka")}
+      <div class="mosaic">
+        <div class="tile wide"><s style="font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#86868b">Modelis</s><b style="display:block;margin-top:4px;font-size:16px">BMW X1 (E84) xDrive 20 d</b></div>
+        <div class="tile"><s style="font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#86868b">VIN</s><b style="display:block;margin-top:4px">WBAVL12090VX12345</b></div>
+        <div class="tile"><s style="font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#86868b">Jauda</s><b style="display:block;margin-top:4px">135 kW (184 ZS)</b></div>
+        <div class="tile"><s style="font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#86868b">Krāsa</s><b class="swatch" style="display:flex;margin-top:4px"><i></i>A96</b></div>
+        <div class="tile"><p class="ok" style="margin:0">Negadījumi: nav ierakstu</p><p class="ok" style="margin:6px 0 0">Zagts: nav ierakstu</p></div>
+        <div class="tile wide">${oil()}</div>
+      </div>
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}
+      <p class="sub">Aprīkojums</p>${equipPills()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      ${serviceNotes()}${comment()}
+      ${photoGroups("g3")}`),
+  },
+  {
+    id: "07",
+    name: "07 Foto vispirms",
+    hint: "Lielā bilde un 2 sānu. Tad identitāte, vizītes, pārējās bildes un spec.",
+    html: () => wrap(`${head("Foto")}
+      <div class="phs g3">
+        ${img(PHOTOS[3], "hero")}
+        ${img(PHOTOS[2], "tall")}
+        ${img(PHOTOS[4], "tall")}
+      </div>
+      <div class="facts" style="margin-top:10px">
+        <div class="fact"><s>VIN</s><b>WBAVL12090VX12345</b></div>
+        <div class="fact"><s>Krāsa</s><b class="swatch"><i></i>A96 metallic</b></div>
+        <div class="fact"><s>Pēdējā apkope</s><b>12.03.2024 · 142 220 km</b></div>
+      </div>
+      ${checks()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      <p class="sub">Aprīkojums</p>${equipPills()}
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}
+      ${serviceNotes()}${oil()}${comment()}
+      ${photoGroups("g3")}`),
+  },
+  {
+    id: "08",
+    name: "08 Kodi un lente",
+    hint: "PR kodi kā rūpnīcas saraksts. Bildes kā filmlente. Vizītes blīvas.",
+    html: () => wrap(`${head("Kodi")}
+      <p class="sub">Fotogrāfijas</p>
+      <div class="film">${PHOTOS.map((p) => img(p)).join("")}</div>
+      <p class="sub">Identitāte</p>
+      <div class="facts">
+        <div class="fact"><s>Modelis</s><b>X1 (E84) xDrive 20 d</b></div>
+        <div class="fact"><s>Dzinējs</s><b>N47D20C · 1995</b></div>
+        <div class="fact"><s>Krāsa / interjers</s><b>A96 · Leather</b></div>
+      </div>
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}
+      <p class="sub">Aprīkojums / PR kodi</p>${equipCodes()}${checks()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      ${serviceNotes()}${oil()}${comment()}`),
+  },
+  {
+    id: "09",
+    name: "09 Klusa tipogrāfija",
+    hint: "Mazāk rāmju, vairāk gaisa. Vizītes bez sliedes. Bildes lielas ar parakstu.",
+    html: () => wrap(`${head("8 vizītes")}
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}${checks()}
+      <p class="sub">Aprīkojums</p>${equipPills()}
+      <p class="sub">Servisa un remontu vēsture</p>
+      <div class="quiet">${visits()}</div>
+      ${serviceNotes()}${oil()}${comment()}
+      ${photoGroups("g2", "tall")}`, "quiet"),
+  },
+  {
+    id: "10",
+    name: "10 Vāks + pielikums",
+    hint: "PROVIN DĪLERIS vāka bloks, tad spec, vizītes un numurētas bildes kā pielikums.",
+    html: () => wrap(`
+      <div class="cover">
+        <p class="kicker" style="margin:0">PROVIN DĪLERIS</p>
+        <h3>BMW X1 (E84) xDrive 20 d</h3>
+        <p style="margin:6px 0 0;font-size:12px;color:#475569">VIN WBAVL12090VX12345 · A96 · 135 kW (184 ZS)</p>
+        <div class="span" style="margin-top:14px;background:#fff">
+          <div><b>31 400 km</b><i>03.04.2016</i></div>
+          <div class="bar"></div>
+          <div class="end"><b>142 220 km</b><i>12.03.2024 · 8 vizītes</i></div>
+        </div>
+      </div>
+      ${head("Pielikums")}
+      <p class="sub">Transportlīdzekļa informācija</p>${kv()}${checks()}
+      <p class="sub">Aprīkojums</p>${equipPills()}
+      <p class="sub">Servisa un remontu vēsture</p>${visits()}
+      ${serviceNotes()}${oil()}${comment()}
+      <p class="sub">Fotogrāfiju pielikums</p>
+      ${photoGroups("g2", "tall")}`),
+  },
+];
+
+const tabs = document.getElementById("tabs");
+const stage = document.getElementById("stage");
+VARIANTS.forEach((v, i) => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = v.name;
+  btn.setAttribute("aria-selected", i === 0 ? "true" : "false");
+  btn.addEventListener("click", () => show(v.id));
+  tabs.appendChild(btn);
+  const art = document.createElement("article");
+  art.className = "sheet" + (i === 0 ? " is-on" : "");
+  art.id = "sheet-" + v.id;
+  art.innerHTML = v.html();
+  stage.appendChild(art);
+});
+function show(id) {
+  document.querySelectorAll(".sheet").forEach((el) => el.classList.toggle("is-on", el.id === "sheet-" + id));
+  document.querySelectorAll(".tabs button").forEach((btn, i) => {
+    btn.setAttribute("aria-selected", VARIANTS[i].id === id ? "true" : "false");
+  });
+  const v = VARIANTS.find((x) => x.id === id);
+  document.getElementById("hint").textContent = v.name + ". " + v.hint;
+}
+</script>
+</body>
+</html>

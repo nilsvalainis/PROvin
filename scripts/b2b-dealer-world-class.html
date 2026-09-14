@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN — 10 pasaules modeļi diviem pakalpojumiem</title>
+<style>
+  :root{
+    --ink:#f8fafc;--dim:#cbd5e1;--faint:#94a3b8;--hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;--mint:#6ee7b7;--bg:#0d0d0d;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .nav{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;padding:.65rem 1.15rem;background:#0d0d0df5;border-bottom:1px solid var(--hair);}
+  .nav a{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-decoration:none;padding:.28rem .4rem;}
+  .nav a:hover,.nav .go{color:#93c5fd;}
+  .nav strong{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#f59e0b;margin-right:.4rem;}
+  .intro{max-width:42rem;margin:0 auto;padding:2.2rem 1.4rem .4rem;}
+  .intro h1{margin:0;font-size:1.45rem;font-weight:600;letter-spacing:-.03em;}
+  .intro p{margin:.55rem 0 0;font-size:.86rem;line-height:1.55;color:var(--dim);}
+  .cap{max-width:58rem;margin:0 auto;padding:2.1rem 1.4rem .4rem;}
+  .cap b{display:block;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin:.3rem 0 0;font-style:normal;font-size:.8rem;color:var(--faint);line-height:1.45;max-width:40rem;}
+  .shell{max-width:58rem;margin:0 auto 2.2rem;padding:0 1.4rem 1.6rem;}
+  .frame{border:1px solid var(--hair);padding:1.5rem 1.4rem 1.4rem;background:#111;}
+  .logo{font-size:.82rem;font-weight:600;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .tag{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);}
+  .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .cta{display:inline-block;margin-top:1rem;background:#2563eb;color:#fff;border:0;padding:.7rem 1rem;font:600 .75rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+  .ghost{background:transparent;border:1px solid var(--hair);color:var(--ink);}
+  .hint{margin:.7rem 0 0;font-size:.72rem;color:var(--faint);}
+
+  /* 1 apple quiz */
+  .q{margin-top:1.2rem;}
+  .q h2{margin:0;font-size:1.25rem;font-weight:550;letter-spacing:-.02em;}
+  .opts{display:grid;gap:.55rem;margin-top:1rem;}
+  .opts button{text-align:left;background:#161616;border:1px solid var(--hair);color:var(--ink);padding:.9rem 1rem;font:500 .88rem/1.35 Inter,sans-serif;cursor:pointer;}
+  .opts button:hover,.opts button.on{border-color:#60a5fa;}
+  .rec{margin-top:1.2rem;padding-top:1.1rem;border-top:1px solid var(--hair);}
+  .rec h3{margin:0;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .rec h4{margin:.35rem 0 0;font-size:1.2rem;}
+  .rec p{margin:.4rem 0 0;font-size:.84rem;line-height:1.5;color:var(--dim);}
+
+  /* 2 stripe fork */
+  .fork{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:1.15rem;}
+  .fork button{text-align:left;min-height:9.5rem;background:#161616;border:1px solid var(--hair);color:inherit;padding:1.15rem;cursor:pointer;}
+  .fork button:hover{border-color:#60a5fa;}
+  .fork b{display:block;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;}
+  .fork span{display:block;margin-top:.5rem;font-size:.8rem;line-height:1.45;color:var(--dim);}
+
+  /* 3 tesla canvas */
+  .seg{display:flex;gap:0;margin:1rem 0 0;border-bottom:1px solid var(--hair);}
+  .seg button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--faint);padding:.7rem;font:600 .72rem/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;}
+  .seg button.on{color:var(--ink);border-bottom-color:#60a5fa;}
+  .canvas h2{margin:1.15rem 0 0;font-size:1.7rem;letter-spacing:-.03em;}
+  .canvas p{margin:.55rem 0 0;max-width:32rem;font-size:.88rem;line-height:1.55;color:var(--dim);}
+
+  /* 4 vercel best-for */
+  .best{display:grid;grid-template-columns:1.15fr .85fr;gap:1.2rem;margin-top:1.1rem;align-items:stretch;}
+  .best .main{padding:1.2rem 1.15rem;border:1px solid rgb(96 165 250 / .45);background:rgb(37 99 235 / .08);}
+  .best .side{padding:1.2rem 1.15rem;border:1px solid var(--hair);}
+  .best .for{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .best h2{margin:.35rem 0 0;font-size:1.15rem;}
+  .best p{margin:.45rem 0 0;font-size:.8rem;line-height:1.45;color:var(--dim);}
+
+  /* 5 gov.uk */
+  .gov{background:#0b0c0c;padding:1.4rem 1.3rem;}
+  .gov h2{margin:.8rem 0 0;font-size:1.35rem;font-weight:700;}
+  .gov fieldset{border:0;margin:1.1rem 0 0;padding:0;}
+  .gov label{display:flex;gap:.7rem;align-items:flex-start;margin:.55rem 0;font-size:.9rem;cursor:pointer;}
+  .gov input{margin-top:.2rem;}
+
+  /* 6 difference matrix */
+  table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:.8rem;}
+  th,td{text-align:left;padding:.7rem .55rem;border-bottom:1px solid var(--hair);vertical-align:top;}
+  th{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  td:not(:first-child){color:var(--dim);}
+  .yes{color:#6ee7b7;} .no{color:#64748b;}
+
+  /* 7 asymmetric */
+  .asy{display:grid;grid-template-columns:1.6fr .9fr;gap:2rem;margin-top:1.1rem;}
+  .asy h2{margin:0;font-size:1.55rem;letter-spacing:-.03em;}
+  .asy p{margin:.5rem 0 0;font-size:.88rem;line-height:1.5;color:var(--dim);}
+  .alt{padding-top:.2rem;border-top:1px solid var(--hair);}
+  .alt b{display:block;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);}
+  .alt p{font-size:.8rem;}
+  .link{display:inline-block;margin-top:.7rem;color:#93c5fd;font-size:.8rem;text-decoration:none;border-bottom:1px solid rgb(147 197 253 / .4);}
+
+  /* 8 configurator */
+  .cfg label{display:block;margin-top:1rem;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+  .pills{display:flex;gap:.45rem;margin-top:.45rem;}
+  .pills button{flex:1;background:#161616;border:1px solid var(--hair);color:var(--ink);padding:.85rem .7rem;font:600 .75rem/1.3 Inter,sans-serif;cursor:pointer;}
+  .pills button.on{border-color:#60a5fa;background:rgb(37 99 235 / .12);}
+  .cfg input[type=text]{margin-top:.45rem;width:100%;height:2.5rem;background:transparent;border:0;border-bottom:1px solid var(--hair);color:var(--ink);font-size:1rem;letter-spacing:.12em;}
+
+  /* 9 command */
+  .cmd{margin-top:1rem;background:#0a0a0a;border:1px solid var(--hair);padding:.55rem .7rem 0;}
+  .cmd input{width:100%;height:2.4rem;background:transparent;border:0;color:var(--ink);font-size:.92rem;}
+  .cmd ul{list-style:none;margin:0;padding:.3rem 0 .5rem;}
+  .cmd li{padding:.55rem .35rem;font-size:.84rem;border-top:1px solid rgb(255 255 255 / .05);cursor:pointer;color:var(--dim);}
+  .cmd li:hover,.cmd li.hit{color:var(--ink);background:rgb(37 99 235 / .12);}
+  .cmd kbd{float:right;font-size:.62rem;color:var(--faint);}
+
+  /* 10 wise audience */
+  .aud{margin-top:1.1rem;}
+  .aud h2{margin:0;font-size:1.2rem;font-weight:550;}
+  .aud .row{display:grid;grid-template-columns:auto 1fr;gap:.85rem;align-items:center;padding:1rem 0;border-bottom:1px solid var(--hair);cursor:pointer;}
+  .dot{width:.9rem;height:.9rem;border-radius:50%;border:2px solid #64748b;}
+  .aud .row.on .dot{border-color:#2563eb;background:#2563eb;}
+  .aud .row b{display:block;font-size:.9rem;}
+  .aud .row span{display:block;margin-top:.2rem;font-size:.78rem;color:var(--dim);}
+
+  @media (max-width:720px){
+    .fork,.best,.asy{display:block;}
+    .fork button{min-height:0;margin-bottom:.5rem;}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="go" href="/scripts/b2b-dealer-10-concepts.html">01–10</a>
+  <strong>Pasaules top 10</strong>
+  <a href="#w1">1 Quiz</a>
+  <a href="#w2">2 Fork</a>
+  <a href="#w3">3 Canvas</a>
+  <a href="#w4">4 Best for</a>
+  <a href="#w5">5 Start</a>
+  <a href="#w6">6 Diff</a>
+  <a href="#w7">7 Default</a>
+  <a href="#w8">8 Config</a>
+  <a href="#w9">9 Command</a>
+  <a href="#w10">10 Audience</a>
+  <a class="go" href="/scripts/b2b-dealer-checkout-flow.html">Pasūtījuma plūsma →</a>
+</nav>
+
+<div class="intro">
+  <h1>Divus pakalpojumus pasaulē nerāda kā split-screen.</h1>
+  <p>Labākie produkti vispirms noskaidro <em>darbu</em>, tad rāda vienu atbilstošu SKU. Zemāk — desmit šie modeļi, pielāgoti PROVIN BUSINESS un DĪLERA DATIEM. Cenas nav; partnera kods paliek nākamajā solī.</p>
+</div>
+
+<!-- 1 -->
+<div class="cap" id="w1"><b>1 · Apple «Help me choose»</b><i>apple.com/mac/best-mac — divi īsi jautājumi, sistēma iesaka vienu produktu. Dīleris nedomā par kolonnu, viņš atbild.</i></div>
+<div class="shell"><div class="frame">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="q" id="quiz">
+    <h2 id="qt">Ko vajag šim VIN?</h2>
+    <div class="opts" id="qo"></div>
+    <div class="rec" id="qr" hidden></div>
+  </div>
+</div></div>
+
+<!-- 2 -->
+<div class="cap" id="w2"><b>2 · Stripe «viena jautājuma dakša»</b><i>Stripe Connect vs Payments — lapa sākas ar darbu, ne ar produktu. Divas lielas atbildes, bez salīdzinājuma tabulas.</i></div>
+<div class="shell"><div class="frame">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <h2 style="margin:1rem 0 0;font-size:1.3rem;font-weight:550;">Ko pērkat šodien?</h2>
+  <div class="fork">
+    <button type="button">
+      <b>Pilnu datu grozu</b>
+      <span>DNA, carVertical, dīlera vēsture un reģistri vienā līknē. Bez konsultācijas.</span>
+    </button>
+    <button type="button">
+      <b>Tikai dīlera vēsturi</b>
+      <span>Oficiālie ražotāja apkopes ieraksti. 100% atmaksa, ja datu nav.</span>
+    </button>
+  </div>
+</div></div>
+
+<!-- 3 -->
+<div class="cap" id="w3"><b>3 · Tesla viena audekla pārslēgs</b><i>Teslas modeļa lapa — viens hero, augšā slēdzis. Lapa nemainās, mainās saturs. Nav divu kolonnu.</i></div>
+<div class="shell"><div class="frame canvas">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="seg">
+    <button class="on" type="button" data-c="b">Business</button>
+    <button type="button" data-c="d">Dīlera dati</button>
+  </div>
+  <div id="cv">
+    <h2>PROVIN BUSINESS</h2>
+    <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+    <p class="hint">VIN · Izpilde 24–72h</p>
+    <button class="cta" type="button">Turpināt ar kodu</button>
+  </div>
+</div></div>
+
+<!-- 4 -->
+<div class="cap" id="w4"><b>4 · Vercel «Best for»</b><i>vercel.com/pricing — ceļš nosaukts pēc cilvēka, ne pēc pakas. Vienam ir ieteikums, otram — īsāks ceļš.</i></div>
+<div class="shell"><div class="frame">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="best">
+    <div class="main">
+      <div class="for">Ieteicams pārdošanai</div>
+      <h2>PROVIN BUSINESS</h2>
+      <p>Kad sludinājumam vajag pilnu datu bildi: DNA, carVertical, dīleris, reģistri. Bez konsultācijas.</p>
+      <button class="cta" type="button">Šis man der</button>
+    </div>
+    <div class="side">
+      <div class="for">Ja jau ir DNA / CV</div>
+      <h2>DĪLERA DATI</h2>
+      <p>Tikai ražotāja apkopes. 100% atmaksa, ja ierakstu nav.</p>
+      <button class="cta ghost" type="button">Šis man der</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- 5 -->
+<div class="cap" id="w5"><b>5 · GOV.UK start page</b><i>gov.uk — viena lieta lapā, radiopogas, tad «Turpināt». Publiskā sektora skaidrība, kas B2B pircējam noņem stresu.</i></div>
+<div class="shell"><div class="frame gov">
+  <div class="tag">PROVIN.LV</div>
+  <h2>Kuru datu paku pasūtīt?</h2>
+  <fieldset>
+    <label><input type="radio" name="g" checked> PROVIN BUSINESS — pilns datu apkopojums, bez konsultācijas</label>
+    <label><input type="radio" name="g"> Dīlera dati — ražotāja apkopes, 100% atmaksa ja datu nav</label>
+  </fieldset>
+  <button class="cta" type="button">Turpināt</button>
+</div></div>
+
+<!-- 6 -->
+<div class="cap" id="w6"><b>6 · Dropbox atšķirību matrica</b><i>Salīdzina tikai to, kas atšķiras. Kopīgais (VIN, 24–72h, bez konsultācijas) ir vienā rindā, ne desmit.</i></div>
+<div class="shell"><div class="frame">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <table>
+    <thead><tr><th></th><th>Business</th><th>Dīlera dati</th></tr></thead>
+    <tbody>
+      <tr><td>AutoDNA + carVertical</td><td class="yes">Iekļauts</td><td class="no">Nav</td></tr>
+      <tr><td>Oficiālā dīlera vēsture</td><td class="yes">Iekļauts</td><td class="yes">Iekļauts</td></tr>
+      <tr><td>EU / Skandināvijas reģistri</td><td class="yes">Iekļauts</td><td class="no">Nav</td></tr>
+      <tr><td>100% atmaksa, ja datu nav</td><td class="no">—</td><td class="yes">Jā</td></tr>
+      <tr><td>Konsultācija, sludinājuma analīze</td><td class="no">Nav. Tas ir AUDITS.</td><td class="no">Nav</td></tr>
+    </tbody>
+  </table>
+  <p class="hint">Abos: VIN · izpilde 24–72h · partnera kods nākamajā solī.</p>
+</div></div>
+
+<!-- 7 -->
+<div class="cap" id="w7"><b>7 · Asimetriskais noklusējums · Linear / Spotify</b><i>Viens produkts ir lapa. Otrs — teksta saite. BUSINESS ir tas, ko partneri grib redzēt; dīlera dati nav jāceļ pretī vienādā svarā.</i></div>
+<div class="shell"><div class="frame">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="asy">
+    <div>
+      <h2>PROVIN BUSINESS</h2>
+      <p>Pilns datu apkopojums pārdošanai: maksas datubāzes, dīlera vēsture un reģistri vienā līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <button class="cta" type="button">Pasūtīt ar partnera kodu</button>
+    </div>
+    <div class="alt">
+      <b>Vai tikai dīlera vēsture?</b>
+      <p>Ja DNA/CV jau ir — oficiālie ražotāja ieraksti. 100% atmaksa, ja datu nav.</p>
+      <a class="link" href="#w7">Atvērt Dīlera datus →</a>
+    </div>
+  </div>
+</div></div>
+
+<!-- 8 -->
+<div class="cap" id="w8"><b>8 · Apple / Porsche konfigurators</b><i>Vispirms modelis (paka), tad VIN. Viena plūsma, ne divas vitrīnas. Tā pērk auto — un tā dīleris jau māk pirkt.</i></div>
+<div class="shell"><div class="frame cfg">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <label>1. Modulis</label>
+  <div class="pills">
+    <button class="on" type="button">Business</button>
+    <button type="button">Dīlera dati</button>
+  </div>
+  <label>2. VIN</label>
+  <input type="text" placeholder="WVWZZZ…" maxlength="17" aria-label="VIN">
+  <label>3. Partnera kods</label>
+  <input type="text" placeholder="————" aria-label="Partnera kods">
+  <button class="cta" type="button">Pasūtīt</button>
+</div></div>
+
+<!-- 9 -->
+<div class="cap" id="w9"><b>9 · Raycast komandu palete</b><i>Power-user B2B: meklē, nevis skata. Partneris, kas pasūta katru dienu, grib 2 sekundes, ne vitrīnu.</i></div>
+<div class="shell"><div class="frame">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="cmd">
+    <input id="cmdq" placeholder="Meklēt pakalpojumu…" aria-label="Meklēt">
+    <ul id="cmdl">
+      <li data-k="business dati grozs">Pasūtīt PROVIN BUSINESS <kbd>↵</kbd></li>
+      <li data-k="dīlera dealer apkopes">Pasūtīt DĪLERA DATUS <kbd>↵</kbd></li>
+    </ul>
+  </div>
+  <p class="hint">Īsceļi: B → Business, D → Dīlera dati.</p>
+</div></div>
+
+<!-- 10 -->
+<div class="cap" id="w10"><b>10 · Wise «es esmu…»</b><i>wise.com personal vs business — vispirms identitāte. Produkts seko cilvēkam, ne otrādi.</i></div>
+<div class="shell"><div class="frame aud">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <h2 style="margin-top:1rem">Es šo pērku, jo…</h2>
+  <div class="row on" data-p="b">
+    <div class="dot"></div>
+    <div><b>lieku pie sludinājuma kā kvalitātes zīmi</b><span>→ PROVIN BUSINESS</span></div>
+  </div>
+  <div class="row" data-p="d">
+    <div class="dot"></div>
+    <div><b>pārbaudu tikai ražotāja servisa vēsturi</b><span>→ DĪLERA DATI · 100% atmaksa, ja datu nav</span></div>
+  </div>
+  <button class="cta" type="button">Turpināt ar kodu</button>
+</div></div>
+
+<script>
+  const Q = [
+    { t:"Ko vajag šim VIN?", a:[["Pilnu datu grozu","b"],["Tikai oficiālo dīlera vēsturi","d"]] },
+    { t:"Kur tas tiks izmantots?", a:[["Pie sludinājuma, klientam","b"],["Sev, pirms iepirkuma","d"]] }
+  ];
+  let qi=0, votes=[];
+  const qo=document.getElementById("qo"), qt=document.getElementById("qt"), qr=document.getElementById("qr");
+  function renderQ(){
+    qt.textContent=Q[qi].t;
+    qo.innerHTML=Q[qi].a.map(([l,v])=>`<button type="button" data-v="${v}">${l}</button>`).join("");
+    qo.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+      votes.push(b.dataset.v);
+      if(qi<Q.length-1){ qi++; renderQ(); }
+      else {
+        const pick = votes.filter(x=>x==="d").length>votes.filter(x=>x==="b").length ? "d":"b";
+        qo.hidden=true; qt.hidden=true; qr.hidden=false;
+        qr.innerHTML = pick==="b"
+          ? `<h3>Jums der</h3><h4>PROVIN BUSINESS</h4><p>Pilns datu apkopojums pārdošanai. Bez konsultācijas. Tālāk — partnera kods.</p><button class="cta" type="button">Turpināt</button>`
+          : `<h3>Jums der</h3><h4>DĪLERA DATI</h4><p>Oficiālie ražotāja apkopes ieraksti. 100% atmaksa, ja datu nav.</p><button class="cta" type="button">Turpināt</button>`;
+      }
+    });
+  }
+  renderQ();
+
+  const cv = document.getElementById("cv");
+  document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));
+    cv.innerHTML = b.dataset.c==="b"
+      ? `<h2>PROVIN BUSINESS</h2><p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p><p class="hint">VIN · Izpilde 24–72h</p><button class="cta" type="button">Turpināt ar kodu</button>`
+      : `<h2>DĪLERA DATI</h2><p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa.</p><p class="hint">VIN · Izpilde 24–72h</p><button class="cta" type="button">Turpināt ar kodu</button>`;
+  });
+
+  document.querySelectorAll(".pills button").forEach(b=>b.onclick=()=>{
+    b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  });
+
+  const cmdq=document.getElementById("cmdq"), cmdl=document.getElementById("cmdl");
+  cmdq.addEventListener("input",()=>{
+    const q=cmdq.value.toLowerCase();
+    [...cmdl.children].forEach(li=>{
+      li.style.display = !q || li.dataset.k.includes(q) || li.textContent.toLowerCase().includes(q) ? "" : "none";
+    });
+  });
+
+  document.querySelectorAll(".aud .row").forEach(r=>r.onclick=()=>{
+    document.querySelectorAll(".aud .row").forEach(x=>x.classList.toggle("on",x===r));
+  });
+</script>
+</body>
+</html>

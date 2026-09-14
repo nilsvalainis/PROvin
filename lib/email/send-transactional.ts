@@ -6,6 +6,7 @@ import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/m
 import {
   adminNewOrderHtml,
   auditCompletedEmailHtml,
+  dealerDataNoDataRefundEmailHtml,
   listingPeekCustomerCommentHtml,
   partnerVerifyEmailHtml,
   paymentConfirmationHtml,
@@ -473,6 +474,67 @@ export async function trySendPartnerVerifyEmail(opts: {
     return true;
   } catch (err) {
     console.error("[b2b] verify e-pasts neizdevās", err);
+    return false;
+  }
+}
+
+/**
+ * Dīlera datu atmaksas paziņojums klientam. Sūta operators no admin, nevis
+ * automātika: naudas atgriešanu vienmēr apstiprina cilvēks.
+ */
+export async function sendDealerDataRefundEmail(opts: {
+  to: string;
+  vin?: string | null;
+  amountEur?: string | null;
+  cancelled?: boolean;
+}): Promise<void> {
+  const subject = opts.cancelled
+    ? "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts"
+    : "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts";
+  const vin = (opts.vin ?? "").trim().toUpperCase();
+  const text = [
+    opts.cancelled
+      ? "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts."
+      : `Pārbaudījām oficiālā dīlera servisa vēsturi${vin ? ` (VIN ${vin})` : ""}. Ražotāja datubāzē par šo automašīnu ierakstu nav.`,
+    opts.cancelled
+      ? ""
+      : "Tas nenozīmē, ka auto nav apkalpots: daļa ražotāju un neatkarīgo servisu datus šajā sistēmā nenodod.",
+    "",
+    `Atmaksa${opts.amountEur ? ` ${opts.amountEur}` : ""} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.`,
+    "",
+    "Ar cieņu,",
+    "PROVIN.LV",
+  ]
+    .filter((l, i, arr) => !(l === "" && arr[i - 1] === ""))
+    .join("\n");
+
+  await sendSmtpMail({
+    to: opts.to,
+    subject,
+    text,
+    html: dealerDataNoDataRefundEmailHtml({
+      vin: opts.vin,
+      amountEur: opts.amountEur,
+      cancelled: opts.cancelled,
+    }),
+  });
+}
+
+export async function trySendDealerDataRefundEmail(opts: {
+  to: string;
+  vin?: string | null;
+  amountEur?: string | null;
+  cancelled?: boolean;
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[dealer-data] SMTP nav iestatīts, atmaksas e-pasts nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendDealerDataRefundEmail(opts);
+    return true;
+  } catch (err) {
+    console.error("[dealer-data] atmaksas e-pasts neizdevās", err);
     return false;
   }
 }

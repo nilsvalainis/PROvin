@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN partneriem — 21–30, citas metaforas</title>
+<style>
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:#070707;color:#eee;font-family:Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .nav{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;padding:.65rem 1.15rem;background:#070707f2;border-bottom:1px solid #222;}
+  .nav a{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#888;text-decoration:none;padding:.3rem .45rem;}
+  .nav a:hover,.nav .go{color:#93c5fd;}
+  .nav strong{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;margin-right:.4rem;}
+  .cap{max-width:60rem;margin:0 auto;padding:2rem 1.4rem .4rem;}
+  .cap b{display:block;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin:.3rem 0 0;font-style:normal;font-size:.8rem;color:#8b8b8b;line-height:1.45;max-width:40rem;}
+  .shell{max-width:60rem;margin:0 auto 2.6rem;padding:0 1.4rem 1.6rem;}
+
+  /* 21 DEPARTURE */
+  .board{background:#0b0b08;border:4px solid #1a1a12;padding:1rem 1rem 1.1rem;box-shadow:inset 0 0 0 1px #3a3210;}
+  .board h1{margin:0 0 .8rem;font:700 .62rem/1 ui-monospace,Menlo,monospace;letter-spacing:.28em;color:#c9a227;}
+  .br{display:grid;grid-template-columns:9rem 1fr 5.5rem 6rem;gap:.4rem;padding:.55rem .4rem;font:600 .78rem/1.2 ui-monospace,Menlo,monospace;letter-spacing:.04em;color:#e8c547;text-transform:uppercase;border-bottom:1px solid #2a240c;}
+  .br.head{color:#7a6a28;font-size:.58rem;letter-spacing:.16em;}
+  .br .st{color:#86efac;}
+  .board .code{margin-top:.9rem;font:500 .72rem ui-monospace,Menlo,monospace;color:#7a6a28;}
+
+  /* 22 BLUEPRINT */
+  .blue{
+    background-color:#0b1c33;
+    background-image:linear-gradient(rgb(56 189 248 / .08) 1px,transparent 1px),linear-gradient(90deg,rgb(56 189 248 / .08) 1px,transparent 1px);
+    background-size:24px 24px;
+    color:#7dd3fc;padding:1.4rem 1.3rem 1.3rem;border:1px solid #155e75;
+  }
+  .blue .ttl{font:600 .62rem/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;}
+  .blue h2{margin:.9rem 0 0;font-size:1.35rem;font-weight:550;color:#e0f2fe;letter-spacing:.02em;}
+  .dim{margin:.35rem 0 0;font:500 .68rem/1.4 ui-monospace,Menlo,monospace;color:#38bdf8;}
+  .blue p{margin:.45rem 0 0;max-width:28rem;font-size:.8rem;line-height:1.45;color:#bae6fd;}
+  .blue .pair{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:1.2rem;}
+  .blue .box{padding:1rem 1rem 1rem 0;border-top:1px solid #155e75;}
+  .blue .box + .box{padding-left:1.1rem;border-left:1px solid #155e75;}
+  .corn{position:relative;}
+  .corn:before,.corn:after{content:"";position:absolute;width:10px;height:10px;border-color:#38bdf8;border-style:solid;}
+  .corn:before{top:6px;left:6px;border-width:1px 0 0 1px;}
+  .corn:after{bottom:6px;right:6px;border-width:0 1px 1px 0;}
+
+  /* 23 CONTRACT */
+  .paper{background:#f4efe4;color:#1c1914;padding:2rem 2rem 1.7rem;font-family:Georgia,"Times New Roman",serif;}
+  .paper .who{font:700 .62rem/1 Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#44403c;}
+  .paper h1{margin:.7rem 0 0;font-size:1.55rem;font-weight:600;}
+  .paper h3{margin:1.3rem 0 0;font-size:.95rem;}
+  .paper p{margin:.4rem 0 0;font-size:.92rem;line-height:1.55;}
+  .sign{margin-top:1.6rem;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+  .line{border-bottom:1px solid #44403c;height:2rem;font:500 .72rem/2.4 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#78716c;}
+
+  /* 24 SUBWAY */
+  .metro{background:#111;padding:1.8rem 1.3rem 1.5rem;}
+  .metro .lab{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#737373;}
+  .linew{position:relative;margin:2.4rem 1.2rem 2.6rem;height:4px;background:#2563eb;}
+  .stn{position:absolute;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#111;border:4px solid #60a5fa;}
+  .stn.a{left:18%;}
+  .stn.b{left:78%;}
+  .stn span{position:absolute;top:1.5rem;left:50%;transform:translateX(-50%);width:12rem;text-align:center;font-size:.72rem;font-weight:700;letter-spacing:.1em;}
+  .stn small{position:absolute;bottom:1.55rem;left:50%;transform:translateX(-50%);width:14rem;text-align:center;font-size:.7rem;line-height:1.35;color:#a3a3a3;font-weight:400;}
+
+  /* 25 ROLODEX */
+  .rolo{position:relative;height:17rem;margin-top:.6rem;}
+  .cardx{
+    position:absolute;left:0;right:8%;background:#161616;border:1px solid #333;padding:1.3rem 1.3rem 1.1rem;
+    box-shadow:0 12px 30px #0008;
+  }
+  .cardx.back{top:1.4rem;left:1.3rem;right:0;background:#101010;opacity:.85;}
+  .cardx.front{top:0;}
+  .ear{position:absolute;top:-.7rem;left:1.2rem;background:#2563eb;color:#fff;font-size:.58rem;font-weight:700;letter-spacing:.16em;padding:.22rem .5rem;}
+  .cardx h2{margin:.4rem 0 0;font-size:1.05rem;letter-spacing:.06em;}
+  .cardx p{margin:.45rem 0 0;font-size:.8rem;line-height:1.45;color:#b0b0b0;}
+
+  /* 26 SWITCH */
+  .hw{background:#1a1c1f;border:1px solid #3f3f46;padding:1.3rem 1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+  .sw{display:flex;gap:1rem;align-items:center;padding:1rem;background:#121314;border:1px solid #2a2b2e;}
+  .tog{width:2.4rem;height:4.2rem;border-radius:.3rem;background:#0a0a0a;border:1px solid #52525b;position:relative;}
+  .kn{position:absolute;left:.2rem;right:.2rem;height:1.7rem;background:linear-gradient(#3f3f46,#27272a);border:1px solid #71717a;bottom:.25rem;}
+  .sw.on .kn{bottom:auto;top:.25rem;background:linear-gradient(#60a5fa,#2563eb);}
+  .sw h2{margin:0;font-size:.78rem;letter-spacing:.12em;}
+  .sw p{margin:.35rem 0 0;font-size:.75rem;color:#a1a1aa;line-height:1.4;}
+
+  /* 27 MUSEUM */
+  .mus{display:grid;grid-template-columns:1.2fr .8fr;min-height:20rem;background:#0c0c0c;}
+  .obj{display:grid;place-items:center;border:1px solid #222;}
+  .plate{width:11rem;height:3.2rem;border:1px solid #e5e5e5;display:grid;place-items:center;font:600 .95rem/1 ui-monospace,Menlo,monospace;letter-spacing:.4em;color:#e5e5e5;}
+  .caption{padding:2rem 1.4rem;font-size:.78rem;line-height:1.55;color:#d4d4d4;}
+  .caption .m{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:#737373;}
+  .caption h2{margin:.35rem 0 0;font-size:1rem;font-weight:550;}
+  .caption + .caption{border-top:1px solid #222;margin-top:1.1rem;padding-top:1.1rem;}
+
+  /* 28 SHIPPING */
+  .label{
+    background:#fff;color:#111;padding:1.1rem 1.1rem 1rem;
+    font-family:ui-monospace,Menlo,monospace;
+    background-image:repeating-linear-gradient(-45deg,#111 0 8px,#f59e0b 8px 16px);
+    background-size:100% 14px;background-repeat:no-repeat;background-position:top;
+  }
+  .label-in{background:#fff;padding:1.1rem .2rem .2rem;}
+  .label h2{margin:0;font-size:1.1rem;letter-spacing:.04em;}
+  .bars{height:38px;margin:.7rem 0 .35rem;background:repeating-linear-gradient(90deg,#111 0 2px,#fff 2px 4px,#111 4px 5px,#fff 5px 8px);}
+  .two-lab{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.8rem;}
+  .label p{margin:.35rem 0 0;font-size:.72rem;line-height:1.4;}
+
+  /* 29 BOOK */
+  .book{display:grid;grid-template-columns:1fr 1fr;min-height:22rem;background:#ebe4d4;color:#1c1917;font-family:Georgia,serif;box-shadow:0 20px 50px #0006;}
+  .pg{padding:1.8rem 1.6rem 1.4rem;position:relative;}
+  .pg + .pg{border-left:1px solid #c4b8a1;background:#e7dfcc;}
+  .run{font:700 .58rem/1 Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#78716c;}
+  .pg h2{margin:1.6rem 0 0;font-size:1.35rem;}
+  .pg p{margin:.6rem 0 0;font-size:.92rem;line-height:1.6;}
+  .pn{position:absolute;bottom:1rem;font:500 .7rem Inter,sans-serif;color:#78716c;}
+  .pg + .pg .pn{right:1.4rem;}
+
+  /* 30 WIZARD */
+  .wiz{border:1px solid #262626;padding:1.3rem 1.3rem 1.2rem;}
+  .steps{display:flex;gap:0;margin:0 0 1.3rem;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+  .steps span{flex:1;padding:.55rem 0;border-bottom:2px solid #333;color:#737373;}
+  .steps span.now{border-bottom-color:#2563eb;color:#fff;}
+  .wiz h2{margin:0;font-size:1.05rem;}
+  .wiz .big{margin:.8rem 0 0;height:2.8rem;border:0;border-bottom:1px solid #404040;background:transparent;color:#fff;font-size:1.2rem;letter-spacing:.16em;width:100%;}
+  .choice{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:1.4rem;}
+  .choice button{text-align:left;background:transparent;border:1px solid #333;color:#eee;padding:1rem;cursor:pointer;}
+  .choice button:first-child{border-right:0;}
+  .choice b{display:block;font-size:.72rem;letter-spacing:.12em;}
+  .choice i{display:block;margin-top:.4rem;font-style:normal;font-size:.75rem;color:#a3a3a3;line-height:1.4;}
+
+  @media (max-width:720px){
+    .br{grid-template-columns:1fr 1fr; }
+    .blue .pair,.hw,.mus,.two-lab,.book,.choice{display:block;}
+    .blue .box + .box{border-left:0;padding-left:0;}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="go" href="/scripts/b2b-dealer-10-concepts.html">01–10</a>
+  <a class="go" href="/scripts/b2b-dealer-10-concepts-b.html">11–20</a>
+  <strong>21–30</strong>
+  <a href="#c21">21 Tablo</a>
+  <a href="#c22">22 Rasējums</a>
+  <a href="#c23">23 Līgums</a>
+  <a href="#c24">24 Metro</a>
+  <a href="#c25">25 Rolodex</a>
+  <a href="#c26">26 Slēdzis</a>
+  <a href="#c27">27 Muzejs</a>
+  <a href="#c28">28 Sūtījums</a>
+  <a href="#c29">29 Grāmata</a>
+  <a href="#c30">30 Vednis</a>
+</nav>
+
+<div class="cap" id="c21"><b>21 · Lidostas tablo</b><i>Monospace, dzintars, reisi. Pakalpojumi kā izlidošanas rindas, ne kā katalogs.</i></div>
+<div class="shell">
+  <div class="board">
+    <h1>PROVIN · PARTNERU TERMINĀLIS</h1>
+    <div class="br head"><span>Reiss</span><span>Maršruts</span><span>Laiks</span><span>Statuss</span></div>
+    <div class="br"><span>BUSINESS</span><span>DNA / CV / Dīleris / Reģistri</span><span>24-72H</span><span>KODS</span></div>
+    <div class="br"><span>DĪLERA</span><span>Ražotāja apkopes · 100% atmaksa</span><span>24-72H</span><span class="st">OK</span></div>
+    <div class="code">PARTNERA KODS _ _ _ _ &nbsp;&nbsp; ATVĒRT</div>
+  </div>
+</div>
+
+<div class="cap" id="c22"><b>22 · Inženiera rasējums</b><i>Millimetru režģis, cianlīnijas, izmēri. Lapa izskatās pēc rasējuma, ne pēc mājaslapas.</i></div>
+<div class="shell">
+  <div class="blue corn">
+    <div class="ttl">PROVIN.LV // PARTNER SHEET // A3</div>
+    <div class="pair">
+      <div class="box">
+        <h2>BUSINESS</h2>
+        <div class="dim">W: VIN &nbsp; H: 24–72h &nbsp; SCALE 1:1</div>
+        <p>Maksas datubāzes, dīlera vēsture, reģistri vienā līknē. Bez konsultācijas.</p>
+      </div>
+      <div class="box">
+        <h2>DĪLERA DATI</h2>
+        <div class="dim">W: VIN &nbsp; H: 24–72h &nbsp; REFUND 100%</div>
+        <p>Oficiālie ražotāja apkopju ieraksti. Atmaksa, ja datu nav.</p>
+      </div>
+    </div>
+    <div class="dim" style="margin-top:1rem">CODE: — — — — &nbsp;&nbsp; REV. 0</div>
+  </div>
+</div>
+
+<div class="cap" id="c23"><b>23 · Līguma lapa</b><i>Krēmīgs papīrs, serifs, paragrāfi. Partnera kods kā paraksta līnija.</i></div>
+<div class="shell">
+  <div class="paper">
+    <div class="who">PROVIN.LV · Partneru vienošanās</div>
+    <h1>Datu pakalpojumi auto tirdzniecībai</h1>
+    <h3>1. PROVIN BUSINESS</h3>
+    <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Sludinājuma analīze un konsultācija nav iekļauta. VIN. Izpilde 24–72h.</p>
+    <h3>2. DĪLERA DATI</h3>
+    <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja ierakstu nav — 100% naudas atmaksa. VIN. Izpilde 24–72h.</p>
+    <div class="sign">
+      <div class="line">Partnera kods</div>
+      <div class="line">Datums</div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="c24"><b>24 · Metro līnija</b><i>Divi pieturu punkti uz vienas līnijas. Nav kolonnu, nav kartīšu — tikai maršruts.</i></div>
+<div class="shell">
+  <div class="metro">
+    <div class="lab">PROVIN · Partneru līnija</div>
+    <div class="linew">
+      <div class="stn a">
+        <small>Datu apkopojums bez konsultācijas</small>
+        <span>BUSINESS</span>
+      </div>
+      <div class="stn b">
+        <small>Ražotāja ieraksti · 100% atmaksa</small>
+        <span>DĪLERA DATI</span>
+      </div>
+    </div>
+    <div class="lab" style="margin-top:5.5rem">Partnera kods, lai iekāptu</div>
+  </div>
+</div>
+
+<div class="cap" id="c25"><b>25 · Rolodex</b><i>Fiziskas kartītes ar ausi, viena uz otras. Priekšējā ir aktīvā.</i></div>
+<div class="shell">
+  <div class="rolo">
+    <div class="cardx back">
+      <div class="ear" style="background:#3f3f46">D</div>
+      <h2>DĪLERA DATI</h2>
+      <p>Oficiālie ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+    </div>
+    <div class="cardx front">
+      <div class="ear">B</div>
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, dīlera vēsture un reģistri vienā līknē. Bez konsultācijas. VIN · 24–72h.</p>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="c26"><b>26 · Iekārtas slēdzis</b><i>Rūpnīcas panelis. Pakalpojums ir slēdzis, ne teksta bloks.</i></div>
+<div class="shell">
+  <div class="hw">
+    <div class="sw on">
+      <div class="tog"><div class="kn"></div></div>
+      <div>
+        <h2>PROVIN BUSINESS</h2>
+        <p>DNA, carVertical, dīleris, reģistri. Bez konsultācijas. VIN · 24–72h.</p>
+      </div>
+    </div>
+    <div class="sw">
+      <div class="tog"><div class="kn"></div></div>
+      <div>
+        <h2>DĪLERA DATI</h2>
+        <p>Ražotāja apkopes. 100% atmaksa, ja datu nav. VIN · 24–72h.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="c27"><b>27 · Muzeja etiķete</b><i>Kreisajā — VIN plāksnīte kā eksponāts. Labajā — sienas paraksts, kā muzejā.</i></div>
+<div class="shell">
+  <div class="mus">
+    <div class="obj"><div class="plate">VIN</div></div>
+    <div class="caption">
+      <div class="m">PROVIN.LV · Partneru kolekcija</div>
+      <div>
+        <div class="m">01</div>
+        <h2>PROVIN BUSINESS</h2>
+        <p>Maksas datubāzes un reģistri vienā līknē. Bez konsultācijas. 24–72h.</p>
+      </div>
+      <div class="caption" style="padding:0;margin-top:1.1rem;padding-top:1.1rem;">
+        <div class="m">02</div>
+        <h2>DĪLERA DATI</h2>
+        <p>Ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="c28"><b>28 · Sūtījuma uzlīme</b><i>Svītrkods, brīdinājuma josla, monospace. Kā paka, ko nosūta pēc koda.</i></div>
+<div class="shell">
+  <div class="two-lab">
+    <div class="label"><div class="label-in">
+      <div style="font-size:.58rem;letter-spacing:.16em;font-weight:700;">FROM PROVIN.LV</div>
+      <h2>BUSINESS</h2>
+      <div class="bars"></div>
+      <div style="font-size:.62rem;">VIN · 24-72H · NO CONSULT</div>
+      <p>DNA / CV / dīleris / reģistri. Partnera kods, lai nosūtītu.</p>
+    </div></div>
+    <div class="label"><div class="label-in">
+      <div style="font-size:.58rem;letter-spacing:.16em;font-weight:700;">FROM PROVIN.LV</div>
+      <h2>DĪLERA DATI</h2>
+      <div class="bars"></div>
+      <div style="font-size:.62rem;">VIN · 24-72H · 100% REFUND</div>
+      <p>Ražotāja apkopes. Atmaksa, ja ierakstu nav.</p>
+    </div></div>
+  </div>
+</div>
+
+<div class="cap" id="c29"><b>29 · Atvērta grāmata</b><i>Divas lapas, papīra krāsa, lappušu numuri. Kreisā — BUSINESS, labā — dīleris.</i></div>
+<div class="shell">
+  <div class="book">
+    <div class="pg">
+      <div class="run">PROVIN · Partneriem</div>
+      <h2>Business</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <p>Vajadzīgs VIN. Izpilde 24–72h.</p>
+      <div class="pn">2</div>
+    </div>
+    <div class="pg">
+      <div class="run">Dīlera dati</div>
+      <h2>Dīlera dati</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa.</p>
+      <p>Vajadzīgs VIN. Izpilde 24–72h.</p>
+      <div class="pn">3</div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="c30"><b>30 · Vednis</b><i>Vispirms kods, tad izvēle. Secība, ne vitrīna — dīleris iet cauri soļiem.</i></div>
+<div class="shell">
+  <div class="wiz">
+    <div class="steps"><span class="now">1 · Kods</span><span>2 · Pakalpojums</span><span>3 · VIN</span></div>
+    <h2>Ievadiet partnera kodu</h2>
+    <input class="big" placeholder="————" aria-label="Partnera kods">
+    <div class="choice">
+      <button type="button"><b>PROVIN BUSINESS</b><i>Datu apkopojums bez konsultācijas</i></button>
+      <button type="button"><b>DĪLERA DATI</b><i>Ražotāja ieraksti · 100% atmaksa</i></button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

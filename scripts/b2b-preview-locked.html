@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - partneriem (makets)</title>
+<style>
+  :root{
+    --ink:rgb(245 248 252 / .96);
+    --dim:rgb(210 214 222 / .78);
+    --faint:rgb(148 163 184 / .88);
+    --hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+    --accent-soft:rgb(37 99 235 / .18);
+    --mint:rgb(167 243 208 / .92);
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    color:var(--ink);
+    background-color:#0d0d0d;
+    background-image:
+      radial-gradient(ellipse 130% 72% at 50% -6%, rgb(255 255 255 / .048) 0%, transparent 54%),
+      linear-gradient(180deg,#171717 0%,#121212 16%,#080808 38%,#040404 62%,#000 100%);
+    background-repeat:no-repeat;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .mark{max-width:58rem;margin:0 auto;padding:2.75rem 1.5rem 0;}
+  .mark b{display:block;font-size:.6rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .mark i{display:block;margin-top:.28rem;font-style:normal;font-size:.76rem;color:var(--faint);}
+
+  .page{max-width:58rem;margin:0 auto;padding:1.75rem 1.5rem 3.5rem;}
+
+  .top{display:flex;align-items:baseline;justify-content:space-between;}
+  .logo{font-size:.85rem;font-weight:600;letter-spacing:.03em;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .topLabel{font-size:.6rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);}
+
+  .intro{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin-top:2.1rem;}
+  h1{margin:0;font-size:1.55rem;font-weight:600;line-height:1.18;letter-spacing:-.025em;max-width:22rem;}
+  h1 em{font-style:normal;color:var(--accent);}
+  .sub{margin:.45rem 0 0;font-size:.82rem;line-height:1.5;color:var(--dim);max-width:22rem;}
+
+  .gate{flex:0 0 16.5rem;}
+  .gateLabel{font-size:.58rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);}
+  .gateField{
+    margin-top:.4rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+    height:2.35rem;border-bottom:1px solid var(--hair);
+  }
+  .gateField.on{border-bottom-color:rgb(37 99 235 / .75);}
+  .gateVal{font-size:.88rem;letter-spacing:.1em;color:var(--faint);}
+  .gateField.on .gateVal{color:var(--ink);}
+  .gateGo{font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+  .gateField.on .gateGo{color:#93c5fd;}
+  .gateNote{margin:.45rem 0 0;font-size:.7rem;line-height:1.4;color:var(--faint);}
+
+  /* divas kolonnas */
+  .split{
+    display:grid;
+    grid-template-columns:1fr 1px 1fr;
+    gap:0;
+    margin-top:2.15rem;
+    padding-top:1.85rem;
+    border-top:1px solid var(--hair);
+  }
+  .rule{background:var(--hair);align-self:stretch;}
+  .col{min-width:0;padding:0 1.65rem;}
+  .col:first-child{padding-left:0;}
+  .col:last-child{padding-right:0;}
+
+  .num{
+    font-size:.62rem;font-weight:700;letter-spacing:.22em;
+    color:var(--accent);
+  }
+  .name{
+    margin:.28rem 0 0;
+    font-size:1.05rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .price{
+    margin:.35rem 0 0;
+    font-size:1.35rem;font-weight:600;letter-spacing:-.02em;
+  }
+  .price.muted{font-size:.78rem;font-weight:500;letter-spacing:.02em;color:var(--faint);}
+
+  .desc{margin:.7rem 0 0;font-size:.8rem;line-height:1.5;color:var(--dim);}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.32rem;margin:.85rem 0 0;}
+  .chip{
+    display:inline-flex;align-items:center;
+    padding:.2rem .4rem;
+    border:1px solid rgb(148 163 184 / .28);
+    background:rgb(30 41 59 / .55);
+    border-radius:.28rem;
+    font-size:.62rem;font-weight:600;letter-spacing:.01em;color:rgb(241 245 249 / .96);
+  }
+  .chip.key{
+    border-color:rgb(96 165 250 / .38);
+    background:rgb(37 99 235 / .16);
+    color:#bfdbfe;
+  }
+
+  .facts{margin:.95rem 0 0;padding:0;list-style:none;}
+  .facts li{
+    position:relative;
+    padding:.18rem 0 .18rem 1.05rem;
+    font-size:.78rem;line-height:1.35;color:rgb(226 232 240 / .92);font-weight:500;
+  }
+  .facts li::before{
+    content:"";
+    position:absolute;left:0;top:.55rem;
+    width:.38rem;height:.38rem;border-radius:50%;
+    background:var(--accent);
+  }
+  .facts li.off{color:var(--faint);font-weight:450;}
+  .facts li.off::before{background:rgb(255 255 255 / .22);}
+  .facts li.ok{color:var(--mint);}
+  .facts li.ok::before{background:#34d399;}
+
+  .meta{
+    display:flex;flex-wrap:wrap;gap:.35rem .7rem;
+    margin:1rem 0 0;padding-top:.75rem;border-top:1px solid rgb(255 255 255 / .07);
+    font-size:.68rem;font-weight:600;letter-spacing:.04em;color:var(--faint);text-transform:uppercase;
+  }
+  .meta b{font-weight:600;color:#93c5fd;}
+
+  .btn{
+    display:inline-flex;margin-top:.95rem;
+    font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink);border-bottom:1px solid rgb(255 255 255 / .28);padding-bottom:.22rem;
+  }
+  .btn.off{color:var(--faint);border-bottom-color:transparent;}
+
+  .terms{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;
+    margin-top:2rem;padding-top:1.15rem;border-top:1px solid var(--hair);
+  }
+  .tk{font-size:.58rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+  .tv{margin:.28rem 0 0;font-size:.78rem;line-height:1.4;color:var(--dim);}
+
+  .fine{margin:1.35rem 0 0;font-size:.68rem;line-height:1.55;color:rgb(148 163 184 / .7);max-width:46rem;}
+
+  @media (max-width: 720px){
+    .intro{display:block;}
+    .gate{margin-top:1.4rem;flex:none;}
+    .split{display:block;padding-top:0;border-top:0;}
+    .rule{display:none;}
+    .col{padding:1.35rem 0 0;border-top:1px solid var(--hair);}
+    .col:first-child{padding-top:1.5rem;}
+    .terms{grid-template-columns:1fr;gap:.85rem;}
+  }
+</style>
+</head>
+<body>
+
+<div class="mark"><b>1 · publiski, bez koda</b><i>Saturs redzams. Cenas nav HTML. Pasūtīt nevar.</i></div>
+
+<div class="page">
+  <div class="top">
+    <div class="logo">PROVIN<i>.LV</i></div>
+    <div class="topLabel">Partneriem</div>
+  </div>
+
+  <div class="intro">
+    <div>
+      <h1>Datu pakalpojumi <em>auto tirdzniecībai</em></h1>
+      <p class="sub">Divi pakalpojumi ar partnera cenu. Pieejami tikai ar kodu.</p>
+    </div>
+    <div class="gate">
+      <div class="gateLabel">Partnera kods</div>
+      <div class="gateField"><span class="gateVal">- - - -</span><span class="gateGo">Atvērt</span></div>
+      <p class="gateNote">Cenas netiek rādītas bez koda.</p>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="col">
+      <div class="num">01</div>
+      <div class="name">PROVIN BUSINESS</div>
+      <div class="price muted">Cena pēc koda</div>
+      <p class="desc">Pilns datu apkopojums par vienu VIN — maksas datubāzes, dīlera vēsture un reģistri vienā līknē, ar skaidrojumu latviešu valodā.</p>
+      <div class="chips">
+        <span class="chip key">AutoDNA</span>
+        <span class="chip key">CarVertical</span>
+        <span class="chip key">Dīlera dati</span>
+        <span class="chip">Izsoļu arhīvs</span>
+        <span class="chip">CSDD</span>
+        <span class="chip">LTAB</span>
+        <span class="chip">EE · DK · SE</span>
+      </div>
+      <ul class="facts">
+        <li>Vienota nobraukuma līkne</li>
+        <li>Apkopju intervāli un īpašnieki</li>
+        <li>Negadījumi un sarkanie karogi</li>
+        <li class="off">Bez sludinājuma analīzes un konsultācijas</li>
+      </ul>
+      <div class="meta"><span><b>VIN</b></span><span>24–72 h</span></div>
+      <span class="btn off">Nepieciešams kods</span>
+    </div>
+    <div class="rule" aria-hidden></div>
+    <div class="col">
+      <div class="num">02</div>
+      <div class="name">Dīlera dati</div>
+      <div class="price muted">Cena pēc koda</div>
+      <p class="desc">Oficiālā dīlera un ražotāja servisa vēsture, apstrādāta latviešu valodā. Dati, kuriem tirgotājam pašam parasti nav piekļuves.</p>
+      <div class="chips">
+        <span class="chip key">Ražotāja sistēmas</span>
+        <span class="chip">Autorizētie servisi</span>
+      </div>
+      <ul class="facts">
+        <li>Apkopju un remontu ieraksti</li>
+        <li>Nobraukuma hronoloģija</li>
+        <li>Rūpnīcas kampaņas un atsaukumi</li>
+        <li class="ok">100 % atmaksa, ja ierakstu nav</li>
+      </ul>
+      <div class="meta"><span><b>VIN</b></span><span>24–72 h</span></div>
+      <span class="btn off">Nepieciešams kods</span>
+    </div>
+  </div>
+
+  <div class="terms">
+    <div><div class="tk">Rinda</div><div class="tv">Partneru pasūtījumiem prioritāra</div></div>
+    <div><div class="tk">Norēķini</div><div class="tv">Stripe vai rēķins reizi mēnesī</div></div>
+    <div><div class="tk">Apjoms</div><div class="tv">Bez limita; cena par VIN nemainās</div></div>
+  </div>
+  <p class="fine">Dīleru sistēmu un izsoļu dati pieejami noteiktiem ražotājiem. PROVIN BUSINESS ir datu apkopojums, nevis konsultatīva atskaite — to sniedz PROVIN AUDITS.</p>
+</div>
+
+</body></html>

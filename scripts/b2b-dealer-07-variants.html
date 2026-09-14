@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN — 07 Split-screen · 10 varianti</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(210 214 222 / .8);
+    --faint:rgb(148 163 184 / .88);
+    --hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+    --mint:rgb(167 243 208 / .95);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;
+    padding:.65rem 1.2rem;background:#0d0d0df2;border-bottom:1px solid var(--hair);
+  }
+  .nav a{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-decoration:none;padding:.3rem .4rem;}
+  .nav a:hover,.nav .go{color:#93c5fd;}
+  .nav strong{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#f59e0b;margin-right:.35rem;}
+  .cap{max-width:64rem;margin:0 auto;padding:2rem 1.4rem .35rem;}
+  .cap b{display:block;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin:.28rem 0 0;font-style:normal;font-size:.8rem;color:var(--faint);line-height:1.45;max-width:38rem;}
+  .shell{max-width:64rem;margin:0 auto 2.4rem;padding:0 1.4rem 1.4rem;}
+  .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.75rem;}
+  .logo{font-size:.82rem;font-weight:600;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .tag{font-size:.58rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);}
+  .meta{font-size:.68rem;font-weight:600;letter-spacing:.04em;color:var(--faint);}
+  .ok{color:var(--mint);}
+  .cta{font-size:.7rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid rgb(255 255 255 / .28);padding-bottom:.15rem;}
+  .gate{margin-top:.95rem;display:flex;align-items:center;gap:1rem;}
+  .fake{flex:1;height:2.15rem;border-bottom:1px solid var(--hair);display:flex;align-items:center;letter-spacing:.12em;color:var(--faint);font-size:.85rem;}
+  .gok{font-size:.66rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+  h2{margin:0;font-weight:600;}
+  p{margin:.65rem 0 0;line-height:1.5;color:var(--dim);}
+
+  /* shared split */
+  .split{display:grid;grid-template-columns:1fr 1fr;min-height:22rem;}
+  .half{padding:1.55rem 1.45rem 1.35rem;display:flex;flex-direction:column;}
+  .half h2{font-size:1.28rem;letter-spacing:-.02em;line-height:1.12;}
+  .half p{font-size:.82rem;flex:1;}
+  .bar{display:flex;justify-content:space-between;align-items:baseline;gap:.8rem;padding-top:.85rem;}
+
+  /* 1 classic */
+  .v1{border:1px solid var(--hair);}
+  .v1 .half + .half{border-left:1px solid var(--hair);background:rgb(255 255 255 / .02);}
+
+  /* 2 asymmetric */
+  .v2{grid-template-columns:1.35fr .85fr;border:1px solid var(--hair);}
+  .v2 .half + .half{border-left:1px solid var(--hair);}
+  .v2 .half:first-child{background:rgb(37 99 235 / .06);}
+
+  /* 3 dual tone */
+  .v3 .half:first-child{background:#0a0a0a;}
+  .v3 .half + .half{background:#122033;}
+  .v3 .half + .half h2{color:#93c5fd;}
+
+  /* 4 monument */
+  .v4{min-height:24rem;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);}
+  .v4 .half{justify-content:flex-end;padding-bottom:1.6rem;}
+  .v4 .half + .half{border-left:1px solid var(--hair);}
+  .v4 h2{font-size:clamp(1.8rem,4.2vw,2.7rem);letter-spacing:-.04em;font-weight:550;}
+  .v4 p{flex:none;max-width:20rem;}
+
+  /* 5 gutter */
+  .v5{gap:1.1rem;background:transparent;min-height:20rem;}
+  .v5 .half{background:rgb(255 255 255 / .03);border:1px solid var(--hair);}
+
+  /* 6 spine */
+  .v6{grid-template-columns:1fr 7.2rem 1fr;min-height:24rem;border:1px solid var(--hair);}
+  .v6 .spine{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7rem;
+    border-left:1px solid var(--hair);border-right:1px solid var(--hair);
+    background:rgb(37 99 235 / .08);padding:1rem .55rem;text-align:center;
+  }
+  .v6 .spine b{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .v6 .spine span{writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.2em;font-size:.72rem;color:var(--faint);}
+
+  /* 7 invert */
+  .v7{border:1px solid var(--hair);}
+  .v7 .half + .half{background:#e8eef6;color:#0f172a;}
+  .v7 .half + .half p{color:#334155;}
+  .v7 .half + .half .meta{color:#64748b;}
+  .v7 .half + .half .ok{color:#047857;}
+  .v7 .half + .half .cta{color:#0f172a;border-bottom-color:#94a3b8;}
+
+  /* 8 fullbleed — breaks out of shell via negative margin visually inside a wide wrap */
+  .bleed-wrap{max-width:none;padding:0 0 2rem;}
+  .v8{min-height:24rem;border:0;}
+  .v8 .half{padding:2rem 8vw 1.6rem;}
+  .v8 .half:first-child{background:#111;}
+  .v8 .half + .half{background:#0a1220;}
+  .v8 .top{max-width:64rem;margin:0 auto;padding:1.1rem 1.4rem 0;}
+
+  /* 9 texture */
+  .v9{border:1px solid var(--hair);}
+  .v9 .half + .half{
+    position:relative;
+    background:
+      linear-gradient(rgb(8 8 8 / .82), rgb(8 8 8 / .88)),
+      url("/public/brand-logos/mercedes.svg") .8rem 1.2rem / 2.1rem no-repeat,
+      url("/public/brand-logos/bmw.svg") 4rem 1.4rem / 2rem no-repeat,
+      url("/public/brand-logos/audi.svg") 7rem 1.1rem / 2.2rem no-repeat,
+      url("/public/brand-logos/volkswagen.svg") 10.2rem 1.5rem / 2rem no-repeat,
+      url("/public/brand-logos/volvo.svg") 2.2rem 5.2rem / 2rem no-repeat,
+      url("/public/brand-logos/mini.svg") 5.6rem 5rem / 1.8rem no-repeat;
+  }
+  .v9 .half + .half > *{position:relative;z-index:1;}
+  .v9 .half:first-child{border-right:1px solid var(--hair);}
+
+  /* 10 diagonal */
+  .v10{
+    position:relative;min-height:24rem;display:block;border:1px solid var(--hair);
+  }
+  .v10 .half{
+    position:absolute;inset:0;width:58%;
+  }
+  .v10 .half:first-child{
+    clip-path:polygon(0 0, 92% 0, 72% 100%, 0 100%);
+    background:#101010;
+    padding-right:18%;
+  }
+  .v10 .half + .half{
+    left:auto;right:0;width:58%;
+    clip-path:polygon(28% 0, 100% 0, 100% 100%, 8% 100%);
+    background:#152238;
+    padding-left:18%;
+    align-items:flex-end;text-align:right;
+  }
+
+  @media (max-width:720px){
+    .split,.v6{display:block;min-height:0;}
+    .v6 .spine{writing-mode:horizontal-tb;flex-direction:row;padding:.7rem;}
+    .v6 .spine span{writing-mode:horizontal-tb;transform:none;}
+    .v10{display:block;min-height:0;}
+    .v10 .half{position:relative;width:100%;clip-path:none;padding:1.4rem;}
+    .v10 .half + .half{text-align:left;align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="go" href="/scripts/b2b-dealer-10-concepts.html#c07">← 07 oriģināls</a>
+  <strong>07 × 10</strong>
+  <a href="#a">1 Classic</a>
+  <a href="#b">2 Asim.</a>
+  <a href="#c">3 Tonis</a>
+  <a href="#d">4 Tips</a>
+  <a href="#e">5 Gutter</a>
+  <a href="#f">6 Spine</a>
+  <a href="#g">7 Invert</a>
+  <a href="#h">8 Bleed</a>
+  <a href="#i">9 Tekstūra</a>
+  <a href="#j">10 Diagonāle</a>
+</nav>
+
+<div class="cap" id="a"><b>07.1 · Classic</b><i>Oriģināls: vienāda platība, matu līnija, labā puse nedaudz gaišāka.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v1">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa.</p>
+      <div class="bar"><span class="meta"><span class="ok">100% atmaksa</span> · VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+  <div class="gate"><span class="fake">Partnera kods</span><span class="gok">Atvērt</span></div>
+</div>
+
+<div class="cap" id="b"><b>07.2 · Asimetrisks</b><i>BUSINESS platāks. Kreisajā zils mazgājums — tas ir galvenais produkts.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v2">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Oficiālie ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="c"><b>07.3 · Divi toņi</b><i>Katra puse ar savu krāsu. Dīleris uz tumši zila — nav tikai līnija, kas šķir.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v3">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa.</p>
+      <div class="bar"><span class="meta"><span class="ok">100% atmaksa</span></span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="d"><b>07.4 · Monumentāls tips</b><i>Nosaukums aizņem pusi. Teksts apakšā. Split paliek, bet svars ir tipogrāfijā.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v4">
+    <div class="half">
+      <h2>BUSINESS</h2>
+      <p>Maksas datubāzes, dīlera vēsture un reģistri. Bez konsultācijas. VIN · 24-72h.</p>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Ražotāja apkopes. 100% atmaksa, ja datu nav. VIN · 24-72h.</p>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="e"><b>07.5 · Gutter</b><i>Nav kopīgas malas. Divas paneļi ar gaisa spraugu pa vidu.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v5">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Oficiālie ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="f"><b>07.6 · Spine</b><i>Trešā josla pa vidu — tur dzīvo partnera kods. Split kļūst par sviestmaizi.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v6">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, dīlera vēsture un reģistri vienā līknē. Bez konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span></div>
+    </div>
+    <div class="spine"><b>Kods</b><span>————</span></div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Ražotāja apkopju ieraksti. 100% atmaksa, ja datu nav.</p>
+      <div class="bar"><span class="meta"><span class="ok">100% atmaksa</span></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="g"><b>07.7 · Invert</b><i>Labā puse gaiša. Visspēcīgākais optiskais šķēlums bez jaunas struktūras.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v7">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. 100% naudas atmaksa, ja datu nav.</p>
+      <div class="bar"><span class="meta"><span class="ok">100% atmaksa</span> · VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="h"><b>07.8 · Full-bleed</b><i>Pusītes iet līdz ekrāna malām. Nav rāmja — split ir pati lapa.</i></div>
+<div class="bleed-wrap">
+  <div class="v8 top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v8">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez sludinājuma analīzes un konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. Ja dati nav pieejami — 100% naudas atmaksa.</p>
+      <div class="bar"><span class="meta"><span class="ok">100% atmaksa</span> · VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="i"><b>07.9 · Tekstūra</b><i>Dīlera pusē ražotāju logo kā fons. BUSINESS paliek tīrs — atšķirība ir materiālā.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="split v9">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, oficiālo dīleru sistēmas un starptautiskie reģistri vienā nobraukuma līknē. Bez konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem. 100% atmaksa, ja datu nav.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="cap" id="j"><b>07.10 · Diagonāle</b><i>Šķēlums slīps, ne vertikāls. Tā pati divu teritoriju ideja, cits ģeometriskais griezums.</i></div>
+<div class="shell">
+  <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+  <div class="v10">
+    <div class="half">
+      <h2>PROVIN BUSINESS</h2>
+      <p>Maksas datubāzes, dīlera vēsture un reģistri. Bez konsultācijas.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+    <div class="half">
+      <h2>DĪLERA DATI</h2>
+      <p>Ražotāja apkopes. 100% atmaksa, ja datu nav.</p>
+      <div class="bar"><span class="meta">VIN · 24-72h</span><span class="cta">Kods</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

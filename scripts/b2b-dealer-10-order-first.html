@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN partneriem — 10 izkārtojumi (darbs vispirms)</title>
+<style>
+  :root{
+    --ink:#f8fafc;--dim:#cbd5e1;--faint:#94a3b8;
+    --hair:rgb(255 255 255 / .1);--accent:#2563eb;--mint:#6ee7b7;
+    --bg:#0d0d0d;--card:#141414;--paper:#f6f7f9;--ink2:#0f172a;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:80;
+    display:flex;flex-wrap:wrap;gap:.25rem;align-items:center;
+    padding:.6rem 1rem;background:#0d0d0df2;border-bottom:1px solid var(--hair);
+    backdrop-filter:blur(12px);
+  }
+  .nav strong{margin-right:.45rem;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#f59e0b;}
+  .nav a{
+    font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--faint);text-decoration:none;padding:.28rem .38rem;
+  }
+  .nav a:hover{color:#93c5fd;}
+  .intro{max-width:62rem;margin:0 auto;padding:2rem 1.25rem .2rem;}
+  .intro h1{margin:0;font-size:1.45rem;font-weight:600;letter-spacing:-.03em;}
+  .intro p{margin:.55rem 0 0;max-width:46rem;font-size:.86rem;line-height:1.55;color:var(--dim);}
+  .cap{max-width:62rem;margin:0 auto;padding:2.1rem 1.25rem .45rem;}
+  .cap b{display:block;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin:.35rem 0 0;font-style:normal;font-size:.8rem;line-height:1.45;color:var(--faint);max-width:44rem;}
+  .duo{
+    max-width:62rem;margin:0 auto 2.4rem;padding:0 1.25rem;
+    display:grid;grid-template-columns:390px minmax(0,1fr);gap:1.1rem;align-items:start;
+  }
+  .frame{
+    border:1px solid var(--hair);background:#111;overflow:auto;
+    min-height:38rem;max-height:42rem;
+  }
+  .phone{border-radius:1.35rem;max-width:390px;}
+  .desk{border-radius:.4rem;}
+  .frame-lab{
+    position:sticky;top:0;z-index:2;
+    padding:.35rem .7rem;font-size:.52rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);background:#111e;border-bottom:1px solid var(--hair);
+  }
+  .app{padding:.9rem 1rem 1.6rem;min-height:36rem;position:relative;}
+  .desk .app{max-width:28rem;margin-inline:0;}
+  .desk:has(.workbench) .app{max-width:none;padding:0;margin:0;}
+  .desk:has(.two) .app{max-width:42rem;margin-inline:0;}
+  .desk .sticky{
+    position:static;margin:.85rem 0 0;padding:0;background:none;
+  }
+  .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .logo{font-size:.82rem;font-weight:600;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .tag{font-size:.56rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+  .app h1{margin:.75rem 0 0;font-size:1.12rem;font-weight:600;letter-spacing:-.02em;}
+  .fields{margin-top:1.05rem;display:grid;gap:.12rem;}
+  .fields label,.lab{
+    font-size:.56rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  }
+  .fields input,.vin{
+    width:100%;height:2.65rem;margin:0 0 .55rem;padding:0;
+    background:transparent;border:0;border-bottom:1px solid var(--hair);
+    color:var(--ink);font:500 1rem/1 Inter,sans-serif;letter-spacing:.08em;border-radius:0;caret-color:#60a5fa;
+  }
+  .fields input:focus,.vin:focus{outline:none;border-bottom-color:#2563eb;}
+  .fields input::placeholder{color:#52525b;}
+  .err{margin:-.35rem 0 .4rem;font-size:.68rem;color:#f87171;min-height:.9em;}
+  .paybtn{
+    width:100%;height:2.75rem;margin-top:.35rem;border:0;background:#2563eb;color:#fff;
+    font:600 .74rem/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+  }
+  .paybtn:disabled{background:#1e293b;color:#64748b;}
+  .sticky{
+    position:sticky;bottom:0;margin:1rem -1rem -1.6rem;padding:.65rem 1rem 1rem;
+    background:linear-gradient(180deg,transparent,#111 28%);
+  }
+  .more{margin-top:1.15rem;padding-top:.85rem;border-top:1px solid var(--hair);}
+  .more summary{
+    cursor:pointer;font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);list-style:none;
+  }
+  .more summary::-webkit-details-marker{display:none;}
+  .more summary::after{content:" +";}
+  .more[open] summary::after{content:" −";}
+  .fl{list-style:none;margin:.65rem 0 0;padding:0;}
+  .fr{display:grid;grid-template-columns:1.1rem minmax(0,1fr);gap:.4rem;padding:.2rem 0;font-size:.74rem;line-height:1.3;color:#e2e8f0;}
+  .mk{color:#2563eb;font-weight:700;}
+  .sub{display:block;margin-top:.12rem;font-size:.66rem;font-weight:450;color:rgb(210 214 222 / .62);}
+  .lt{margin:.7rem 0 0;font-size:.76rem;font-weight:600;}
+  .ld{margin:.35rem 0 0;font-size:.74rem;line-height:1.45;color:rgb(210 214 222 / .82);}
+  .ft{margin:.5rem 0 0;font-size:.6rem;color:rgb(210 214 222 / .48);}
+  .ok{color:rgb(167 243 208 / .95);}
+  .line{margin:.65rem 0 0;font-size:.78rem;line-height:1.4;color:var(--dim);min-height:2.2em;}
+  .done{margin-top:1.2rem;font-size:.86rem;line-height:1.45;color:var(--mint);}
+  .muted{margin:.45rem 0 0;font-size:.72rem;color:var(--faint);}
+
+  /* 01 segment */
+  .seg{display:flex;gap:3px;margin-top:.9rem;padding:3px;background:#1a1a1a;border-radius:10px;}
+  .seg button{
+    flex:1;border:0;background:transparent;color:var(--faint);
+    padding:.7rem .35rem;border-radius:8px;font:600 .68rem/1.2 Inter,sans-serif;
+    letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .seg button.on{background:#2563eb;color:#fff;}
+
+  /* 02 cards */
+  .cards{display:grid;gap:.45rem;margin-top:.85rem;}
+  .cardpick{
+    position:relative;text-align:left;width:100%;padding:.95rem .9rem;
+    background:var(--card);border:1px solid var(--hair);color:inherit;cursor:pointer;
+    font:600 .78rem/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;
+  }
+  .cardpick.on{border-color:#60a5fa;background:rgb(37 99 235 / .12);}
+  .tick{
+    position:absolute;right:.7rem;top:50%;transform:translateY(-50%);
+    width:1.05rem;height:1.05rem;border-radius:4px;border:1.5px solid #64748b;
+  }
+  .cardpick.on .tick{border-color:#2563eb;background:#2563eb;}
+  .cardpick.on .tick::after{
+    content:"";position:absolute;left:.22rem;top:.05rem;width:.28rem;height:.5rem;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+  }
+
+  /* 03 workbench */
+  .workbench{display:block;}
+  .desk .workbench{display:grid;grid-template-columns:22.5rem minmax(0,1fr);gap:0;min-height:36rem;}
+  .order{padding:0;}
+  .desk .order{padding:1.1rem 1.2rem 1.4rem;border-right:1px solid var(--hair);}
+  .brief{
+    display:none;padding:1.15rem 1.25rem 1.4rem;background:#0a0a0a;
+  }
+  .desk .brief{display:block;}
+  .brief h2{margin:0;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .phone-only{display:block;}
+  .desk .phone-only{display:none;}
+  .chips{display:flex;gap:.4rem;margin-top:.85rem;}
+  .chip{
+    flex:1;border:1px solid var(--hair);background:transparent;color:var(--faint);
+    padding:.7rem .4rem;font:600 .62rem/1.2 Inter,sans-serif;letter-spacing:.08em;
+    text-transform:uppercase;cursor:pointer;
+  }
+  .chip.on{border-color:#60a5fa;color:#fff;background:rgb(37 99 235 / .16);}
+
+  /* 05 invoice */
+  .paper{background:var(--paper);color:var(--ink2);}
+  .paper .frame{background:#fff;}
+  .paper .frame-lab,.paper .app{background:#fff;color:var(--ink2);}
+  .paper .logo i,.paper .tag,.paper .lab,.paper .fields label,.paper .more summary{color:#64748b;}
+  .paper .fields input{color:var(--ink2);border-bottom-color:#e2e8f0;}
+  .paper .more{border-top-color:#e2e8f0;}
+  .paper .ld,.paper .sub,.paper .fr{color:#334155;}
+  .paper .ft{color:#94a3b8;}
+  .paper .mk{color:#2563eb;}
+  .rows{margin-top:.9rem;border-top:1px solid #e2e8f0;}
+  .rowpick{
+    display:grid;grid-template-columns:1.15rem 1fr auto;gap:.7rem;align-items:center;
+    width:100%;padding:.85rem 0;border:0;border-bottom:1px solid #e2e8f0;
+    background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit;
+  }
+  .box{width:1.05rem;height:1.05rem;border:1.5px solid #94a3b8;border-radius:3px;}
+  .rowpick.on .box{border-color:#2563eb;background:#2563eb;}
+  .rowpick.on .box::after{
+    content:"";display:block;width:.28rem;height:.5rem;margin:.05rem 0 0 .28rem;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+  }
+  .rowpick b{display:block;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;}
+  .rowpick em{font-style:normal;font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;}
+
+  /* 06 sheet */
+  .ghost{
+    margin-top:.7rem;padding:0;border:0;background:none;color:#93c5fd;
+    font:600 .72rem/1 Inter,sans-serif;letter-spacing:.04em;cursor:pointer;
+  }
+  .sheet{
+    display:none;position:absolute;inset:0;z-index:5;background:rgb(0 0 0 / .45);
+  }
+  .sheet.open{display:block;}
+  .sheet .panel{
+    position:absolute;left:0;right:0;bottom:0;max-height:78%;overflow:auto;
+    padding:1rem 1.1rem 1.4rem;background:#161616;border-top:1px solid var(--hair);
+    border-radius:1rem 1rem 0 0;
+  }
+  .desk .sheet .panel{
+    left:auto;top:0;bottom:0;width:min(28rem,100%);max-height:none;
+    border-radius:0;border-top:0;border-left:1px solid var(--hair);
+  }
+  .sheet h3{margin:0 1.6rem 0 0;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;}
+  .x{
+    position:absolute;top:.85rem;right:1rem;border:0;background:none;color:var(--faint);
+    font-size:1.1rem;cursor:pointer;
+  }
+
+  /* 07 list radios */
+  .list{margin:.85rem 0 0;display:grid;gap:0;}
+  .lrow{
+    display:flex;align-items:center;gap:.75rem;width:100%;padding:.8rem 0;
+    border:0;border-bottom:1px solid var(--hair);background:none;color:inherit;
+    text-align:left;cursor:pointer;font:600 .88rem/1 Inter,sans-serif;
+  }
+  .dot{width:1.15rem;height:1.15rem;border-radius:50%;border:2px solid #64748b;flex-shrink:0;}
+  .lrow.on .dot{border-color:#2563eb;box-shadow:inset 0 0 0 .28rem #2563eb;}
+
+  /* 08 tiles */
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.85rem;}
+  .tile{
+    min-height:5.8rem;padding:.85rem .7rem;text-align:left;
+    background:var(--card);border:1px solid var(--hair);color:inherit;cursor:pointer;
+  }
+  .tile.on{border-color:#60a5fa;background:rgb(37 99 235 / .14);}
+  .tile b{display:block;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;}
+  .tile span{display:block;margin-top:.55rem;font-size:.68rem;color:var(--faint);font-weight:450;text-transform:none;letter-spacing:0;}
+  .desk .tile{min-height:6.4rem;padding:1.1rem 1rem;}
+  .desk .tile b{font-size:.72rem;}
+
+  /* 09 work first */
+  .band{margin-top:1.6rem;padding-top:1.1rem;border-top:1px solid var(--hair);}
+  .band h2{margin:0;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+
+  /* 10 compact */
+  .slim{display:flex;justify-content:space-between;align-items:center;gap:.7rem;}
+  .pills{display:flex;gap:0;border:1px solid var(--hair);}
+  .pills button{
+    border:0;background:transparent;color:var(--faint);padding:.45rem .65rem;
+    font:600 .58rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  }
+  .pills button.on{background:#2563eb;color:#fff;}
+  .desk .two{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .desk .pay-inline{display:flex;justify-content:flex-end;}
+  .desk .pay-inline .paybtn{width:auto;padding:0 1.6rem;margin-top:1.1rem;}
+
+  @media (max-width:860px){
+    .duo{grid-template-columns:1fr;}
+    .desk{display:none;}
+    .phone{margin:0 auto;}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>IA</strong>
+  <a href="#c01">01</a><a href="#c02">02</a><a href="#c03">03</a><a href="#c04">04</a><a href="#c05">05</a>
+  <a href="#c06">06</a><a href="#c07">07</a><a href="#c08">08</a><a href="#c09">09</a><a href="#c10">10</a>
+</nav>
+
+<div class="intro">
+  <h1>Darbs vispirms, skaidrojums zemāk</h1>
+  <p>Visi desmit varianti ievēro to pašu B2B kārtību: vispirms izvēlies produktu, ievadi VIN un kodu, maksā. Skaidrojumi un iekļautie avoti ir mārketingam — tie paliek zem pogām, slēgtā sarakstā vai atvilktnē, lai pirmais skats paliktu tukšs un ātrs. Kreisajā rāmī — telefons, labajā — dators.</p>
+</div>
+
+<!-- 01 -->
+<div class="cap" id="c01"><b>01 · Segmenti</b><i>Produkts kā iOS/Stripe slēdzis — bez radio riņķiem, bez apraksta pogās. Abi varianti vienā rindā. Kas iekļauts — aizvērtā <code>details</code> zem formas.</i></div>
+<div class="duo" data-tpl="t01"></div>
+
+<!-- 02 -->
+<div class="cap" id="c02"><b>02 · Kartītes ar kvadrāta ķeksi</b><i>Visa rinda ir poga. Izvēle redzama kā čekboks stūrī (uzvedība paliek radio — viens produkts). Pirmajā skatā tikai nosaukums.</i></div>
+<div class="duo" data-tpl="t02"></div>
+
+<!-- 03 -->
+<div class="cap" id="c03"><b>03 · Darbagalds</b><i>Telefons: forma, tad «Kas iekļauts». Dators: kreisajā pasūtījums, labajā vienmēr atvērts skaidrojums — Linear/Vercel billing modelis. Mārketings netraucē izvēli, bet ir uzreiz pieejams ekrānšāvienam.</i></div>
+<div class="duo" data-tpl="t03"></div>
+
+<!-- 04 -->
+<div class="cap" id="c04"><b>04 · Viens teikums</b><i>Segmenti + viena rinda, kas mainās ar produktu — pietiek reklāmas screenshotam. Pilnais saraksts paliek zem «Vairāk».</i></div>
+<div class="duo" data-tpl="t04"></div>
+
+<!-- 05 -->
+<div class="cap" id="c05"><b>05 · Rēķina rindas</b><i>Gaišs Stripe Checkout: produkti kā rēķina pozīcijas ar kvadrāta atzīmi un cenu. Skaidrojums tikai zem izvēlētās rindas, slēgts. Citas krāsas, lai redzētu, vai B2B der papīra sajūta.</i></div>
+<div class="duo paper" data-tpl="t05"></div>
+
+<!-- 06 -->
+<div class="cap" id="c06"><b>06 · Atvilktne</b><i>Pati lapa ir tikai izvēle + lauki + maksa. «Kas iekļauts» atver apakšējo lapu telefonā un sānu paneli datorā. Tīrs pirmais skats.</i></div>
+<div class="duo" data-tpl="t06"></div>
+
+<!-- 07 -->
+<div class="cap" id="c07"><b>07 · Saraksts</b><i>GOV.UK: lielas rindas, klasisks radio, bez kastēm. Nav sekundārā teksta pie pogas. Skaidrojums kā atsevišķa «Par pakalpojumu» sadaļa zem maksas pogas.</i></div>
+<div class="duo" data-tpl="t07"></div>
+
+<!-- 08 -->
+<div class="cap" id="c08"><b>08 · Divas flīzes</b><i>Abi produkti vienā skatā blakus — telefonā nav jāritina, lai ieraudzītu otro. Zem flīzēm uzreiz VIN. Skaidrojums kājenē, slēgts.</i></div>
+<div class="duo" data-tpl="t08"></div>
+
+<!-- 09 -->
+<div class="cap" id="c09"><b>09 · Darbs, tad teksts</b><i>Vertikālā kārtība burtiski: izvēle → VIN → kods → Maksāt → tikai tad mārketings. Nav sticky joslas, kas pārklāj tekstu. Ekrānšāvienam ritini uz leju.</i></div>
+<div class="duo" data-tpl="t09"></div>
+
+<!-- 10 -->
+<div class="cap" id="c10"><b>10 · Kompakts atkārtojumam</b><i>Partneris, kas pasūta katru dienu. Produkts kā mazas tabletes galvenē. Datorā VIN un kods vienā rindā, maksa pa labi. Skaidrojums kā zemsvītra.</i></div>
+<div class="duo" data-tpl="t10"></div>
+
+<template id="t01">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Pasūtīt</h1>
+    <div class="seg" role="radiogroup" aria-label="Pakalpojums">
+      <button type="button" class="on" data-plan="b">Business</button>
+      <button type="button" data-plan="d">Dīlera dati</button>
+    </div>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <div class="sticky"><button type="button" class="paybtn js-pay" disabled>VIN + kods</button></div>
+    <details class="more"><summary>Kas iekļauts</summary><div class="js-why"></div></details>
+  </div>
+</template>
+
+<template id="t02">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Pasūtīt</h1>
+    <div class="cards" role="radiogroup">
+      <button type="button" class="cardpick on" data-plan="b">PROVIN Business<span class="tick" aria-hidden></span></button>
+      <button type="button" class="cardpick" data-plan="d">Dīlera dati<span class="tick" aria-hidden></span></button>
+    </div>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <div class="sticky"><button type="button" class="paybtn js-pay" disabled>VIN + kods</button></div>
+    <details class="more"><summary>Kas iekļauts</summary><div class="js-why"></div></details>
+  </div>
+</template>
+
+<template id="t03">
+  <div class="app">
+    <div class="workbench">
+      <div class="order">
+        <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+        <h1>Pasūtīt</h1>
+        <div class="chips" role="radiogroup">
+          <button type="button" class="chip on" data-plan="b">Business</button>
+          <button type="button" class="chip" data-plan="d">Dīlera dati</button>
+        </div>
+        <div class="fields">
+          <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+          <div class="err js-vin-err"></div>
+          <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+          <div class="err js-code-err"></div>
+        </div>
+        <button type="button" class="paybtn js-pay" disabled>VIN + kods</button>
+        <details class="more phone-only"><summary>Kas iekļauts</summary><div class="js-why-m"></div></details>
+      </div>
+      <aside class="brief"><h2>Kas iekļauts</h2><div class="js-why"></div></aside>
+    </div>
+  </div>
+</template>
+
+<template id="t04">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Pasūtīt</h1>
+    <div class="seg" role="radiogroup">
+      <button type="button" class="on" data-plan="b">Business</button>
+      <button type="button" data-plan="d">Dīlera dati</button>
+    </div>
+    <p class="line js-line"></p>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <div class="sticky"><button type="button" class="paybtn js-pay" disabled>VIN + kods</button></div>
+    <details class="more"><summary>Vairāk par iekļauto</summary><div class="js-why"></div></details>
+  </div>
+</template>
+
+<template id="t05">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Pasūtījums</h1>
+    <div class="rows" role="radiogroup">
+      <button type="button" class="rowpick on" data-plan="b">
+        <span class="box" aria-hidden></span>
+        <b>PROVIN Business</b>
+        <em>69,99 €</em>
+      </button>
+      <button type="button" class="rowpick" data-plan="d">
+        <span class="box" aria-hidden></span>
+        <b>Dīlera dati</b>
+        <em>19,99 €</em>
+      </button>
+    </div>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <button type="button" class="paybtn js-pay" disabled>VIN + kods</button>
+    <details class="more"><summary>Kas iekļauts izvēlētajā</summary><div class="js-why"></div></details>
+  </div>
+</template>
+
+<template id="t06">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Pasūtīt</h1>
+    <div class="seg" role="radiogroup">
+      <button type="button" class="on" data-plan="b">Business</button>
+      <button type="button" data-plan="d">Dīlera dati</button>
+    </div>
+    <button type="button" class="ghost js-open">Kas iekļauts →</button>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <div class="sticky"><button type="button" class="paybtn js-pay" disabled>VIN + kods</button></div>
+    <div class="sheet" hidden>
+      <div class="panel">
+        <button type="button" class="x js-close" aria-label="Aizvērt">×</button>
+        <h3>Kas iekļauts</h3>
+        <div class="js-why"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="t07">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Izvēlies pakalpojumu</h1>
+    <div class="list" role="radiogroup">
+      <button type="button" class="lrow on" data-plan="b"><span class="dot" aria-hidden></span>PROVIN Business</button>
+      <button type="button" class="lrow" data-plan="d"><span class="dot" aria-hidden></span>Dīlera dati</button>
+    </div>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <button type="button" class="paybtn js-pay" disabled>VIN + kods</button>
+    <section class="band">
+      <h2>Par šo pakalpojumu</h2>
+      <div class="js-why"></div>
+    </section>
+  </div>
+</template>
+
+<template id="t08">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Pasūtīt</h1>
+    <div class="tiles" role="radiogroup">
+      <button type="button" class="tile on" data-plan="b"><b>Business</b><span>Pilnais pakets</span></button>
+      <button type="button" class="tile" data-plan="d"><b>Dīlera dati</b><span>Servisa vēsture</span></button>
+    </div>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <div class="sticky"><button type="button" class="paybtn js-pay" disabled>VIN + kods</button></div>
+    <details class="more"><summary>Kas iekļauts</summary><div class="js-why"></div></details>
+  </div>
+</template>
+
+<template id="t09">
+  <div class="app">
+    <div class="top"><div class="logo">PROVIN<i>.LV</i></div><div class="tag">Partneriem</div></div>
+    <h1>Pasūtīt</h1>
+    <div class="seg" role="radiogroup">
+      <button type="button" class="on" data-plan="b">Business</button>
+      <button type="button" data-plan="d">Dīlera dati</button>
+    </div>
+    <div class="fields">
+      <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+      <div class="err js-vin-err"></div>
+      <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+      <div class="err js-code-err"></div>
+    </div>
+    <button type="button" class="paybtn js-pay" disabled>VIN + kods</button>
+    <section class="band">
+      <h2>Kas iekļauts — ja vajag parādīt partnerim</h2>
+      <div class="js-why"></div>
+    </section>
+  </div>
+</template>
+
+<template id="t10">
+  <div class="app">
+    <div class="slim">
+      <div class="logo">PROVIN<i>.LV</i></div>
+      <div class="pills" role="radiogroup">
+        <button type="button" class="on" data-plan="b">Business</button>
+        <button type="button" data-plan="d">Dīlera</button>
+      </div>
+    </div>
+    <h1>Jauns pasūtījums</h1>
+    <div class="fields two">
+      <div>
+        <label>VIN</label><input class="js-vin" maxlength="17" placeholder="WVWZZZ…" spellcheck="false">
+        <div class="err js-vin-err"></div>
+      </div>
+      <div>
+        <label>Partnera kods</label><input class="js-code" placeholder="————" spellcheck="false">
+        <div class="err js-code-err"></div>
+      </div>
+    </div>
+    <div class="pay-inline"><button type="button" class="paybtn js-pay" disabled>VIN + kods</button></div>
+    <details class="more"><summary>Specifikācija</summary><div class="js-why"></div></details>
+  </div>
+</template>
+
+<script>
+  const DNA_TIP = "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar citu specializētu datubāzi.";
+  const LINE = {
+    b: "Pilna digitālā vēsture vienā atskaitē — bez konsultācijas.",
+    d: "Oficiālā servisa vēsture. 100% atmaksa, ja ierakstu nav.",
+  };
+  const COPY = {
+    b: {
+      items: [
+        "Oficiālo dīleru dati (VW, BMW, MB u.c.)*",
+        { name: "CarVertical + AutoDNA", tip: DNA_TIP },
+        "Izcelsmes valsts reģistri",
+        "Izsoļu portālu arhīva dati",
+        "Apdrošinātāju dati (OCTA/KASKO)",
+        "Tehnisko apskašu vēsture",
+        "Datu kopsavilkums",
+      ],
+      title: "Pilna transportlīdzekļa digitālā vēsture vienā atskaitē:",
+      lead: "PROVIN BUSINESS apvieno datus no vairākiem neatkarīgiem avotiem, tostarp oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas valstu reģistriem. Vienā pārskatāmā atskaitē jūs redzat pilnu nobraukuma hronoloģiju, slēptas ekspluatācijas pazīmes, negadījumu vēsturi un servisa ierakstus.",
+      foot: "*pieejama noteiktiem ražotājiem.",
+    },
+    d: {
+      items: [
+        { name: "Oficiālā servisa vēsture", sub: "Padziļināta autorizēto servisu apmeklējumu, veikto remontu un apkopes darbu ierakstu analīze." },
+        { name: "Odometra & kampaņu pārbaude", sub: "Nobraukuma hronoloģiskā izsekošana ražotāja sistēmā, kā arī aktīvo garantijas atsaukumu pārbaude." },
+        { name: "Atbalstīto ražotāju sistēmas*", sub: "Piekļuve Vācijas premium zīmoliem (BMW, Audi, MB), VAG grupas, VOLVO, SUBARU, Stellantis un citu ražotāju oficiālajiem datiem." },
+        { name: "100% Naudas atmaksas garantija", sub: "Ja konkrētajam VIN kodam ražotāja oficiālajā datubāzē nav ierakstu, veiksim pilnu pirkuma atmaksu.", tone: "ok" },
+      ],
+      leadFirst: true,
+      lead: "Oficiālās dīleru servisa vēstures un ražotāju datubāzu analīze automašīnām. Pārbaude fokusējas uz autorizēto servisu ierakstiem, hronoloģisko nobraukumu, veiktajām apkopēm un rūpnīcas atsaukumiem.",
+      foot: "*pieejama noteiktiem ražotājiem.",
+    },
+  };
+
+  function rowHtml(item){
+    if (typeof item === "string") {
+      return `<li class="fr"><span class="mk">✓</span><span>${item}</span></li>`;
+    }
+    const sub = item.sub ? `<span class="sub">${item.sub}</span>` : "";
+    const tip = item.tip ? ` <span class="sub">${item.tip}</span>` : "";
+    const cls = item.tone === "ok" ? "ok" : "";
+    return `<li class="fr"><span class="mk">✓</span><span class="${cls}">${item.name}${sub}${tip}</span></li>`;
+  }
+  function detailsHTML(plan){
+    const c = COPY[plan];
+    const list = `<ul class="fl">${c.items.map(rowHtml).join("")}</ul>`;
+    const intro = `${c.title ? `<p class="lt">${c.title}</p>` : ""}${c.lead ? `<p class="ld">${c.lead}</p>` : ""}`;
+    return (c.leadFirst ? intro + list : list + intro) + `<p class="ft">${c.foot}</p>`;
+  }
+  function validVin(s){
+    const n = s.trim().toUpperCase().replace(/\s/g,"");
+    return n.length >= 11 && n.length <= 17 && /^[A-HJ-NPR-Z0-9]+$/.test(n);
+  }
+  function validCode(s){ return s.trim().length >= 4; }
+
+  function wire(root){
+    const picks = [...root.querySelectorAll("[data-plan]")];
+    const whys = [...root.querySelectorAll(".js-why, .js-why-m")];
+    const line = root.querySelector(".js-line");
+    const vin = root.querySelector(".js-vin");
+    const code = root.querySelector(".js-code");
+    const pay = root.querySelector(".js-pay");
+    const vinErr = root.querySelector(".js-vin-err");
+    const codeErr = root.querySelector(".js-code-err");
+    let plan = "b";
+
+    function set(id){
+      plan = id;
+      picks.forEach((p) => p.classList.toggle("on", p.dataset.plan === id));
+      const html = detailsHTML(plan);
+      whys.forEach((el) => { el.innerHTML = html; });
+      if (line) line.textContent = LINE[plan];
+    }
+    function sync(){
+      if (!pay) return;
+      const ok = validVin(vin.value) && validCode(code.value);
+      pay.disabled = !ok;
+      pay.textContent = ok ? "Maksāt" : "VIN + kods";
+    }
+    picks.forEach((p) => p.addEventListener("click", () => set(p.dataset.plan)));
+    vin.addEventListener("input", () => {
+      const s = vin.selectionStart;
+      vin.value = vin.value.toUpperCase().replace(/\s/g,"");
+      if (s != null) vin.setSelectionRange(s, s);
+      vinErr.textContent = vin.value && !validVin(vin.value) ? "VIN: 11–17 zīmes, bez I, O, Q." : "";
+      sync();
+    });
+    code.addEventListener("input", () => {
+      codeErr.textContent = code.value && !validCode(code.value) ? "Kods vismaz 4 zīmes." : "";
+      sync();
+    });
+    pay.addEventListener("click", () => {
+      if (pay.disabled) return;
+      root.querySelector(".app").innerHTML = `<div class="done">Stripe Checkout · ${plan === "b" ? "PROVIN BUSINESS" : "Dīlera dati"} · ${vin.value}</div>`;
+    });
+    const sheet = root.querySelector(".sheet");
+    const open = root.querySelector(".js-open");
+    const close = root.querySelector(".js-close");
+    if (open && sheet) {
+      open.addEventListener("click", () => { sheet.hidden = false; sheet.classList.add("open"); });
+      close.addEventListener("click", () => { sheet.hidden = true; sheet.classList.remove("open"); });
+      sheet.addEventListener("click", (e) => {
+        if (e.target === sheet) { sheet.hidden = true; sheet.classList.remove("open"); }
+      });
+    }
+    set("b");
+    sync();
+  }
+
+  document.querySelectorAll(".duo[data-tpl]").forEach((duo) => {
+    const tpl = document.getElementById(duo.dataset.tpl);
+    ["Telefons", "Dators"].forEach((label, i) => {
+      const frame = document.createElement("div");
+      frame.className = "frame " + (i === 0 ? "phone" : "desk");
+      frame.innerHTML = `<div class="frame-lab">${label}</div>`;
+      const node = tpl.content.cloneNode(true);
+      frame.appendChild(node);
+      duo.appendChild(frame);
+      wire(frame);
+    });
+  });
+</script>
+</body>
+</html>

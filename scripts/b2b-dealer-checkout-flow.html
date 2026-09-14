@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN partneriem — pasūtījums</title>
+<style>
+  :root{
+    --ink:#f8fafc;--dim:#cbd5e1;--faint:#94a3b8;
+    --hair:rgb(255 255 255 / .1);--accent:#2563eb;--mint:#6ee7b7;
+    --pad:max(1rem, env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;min-height:100dvh;
+    color:var(--ink);
+    background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:28rem;margin:0 auto;min-height:100dvh;
+    padding:0.85rem var(--pad) calc(5.6rem + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;
+  }
+  .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .logo{font-size:.82rem;font-weight:600;}
+  .logo i{font-style:normal;color:var(--faint);}
+  .tag{font-size:.58rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);}
+
+  h1{margin:.9rem 0 0;font-size:1.15rem;font-weight:600;letter-spacing:-.02em;}
+
+  .picks{margin-top:.85rem;display:grid;gap:.45rem;}
+  .pick{
+    display:flex;align-items:flex-start;gap:.7rem;
+    padding:.85rem .8rem;text-align:left;width:100%;
+    background:#141414;border:1px solid var(--hair);color:inherit;
+    font:500 .86rem/1.35 Inter,sans-serif;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .pick.on{border-color:#60a5fa;background:rgb(37 99 235 / .12);}
+  .radio{
+    width:1.15rem;height:1.15rem;margin-top:.12rem;flex-shrink:0;
+    border-radius:50%;border:2px solid #64748b;
+  }
+  .pick.on .radio{border-color:#2563eb;box-shadow:inset 0 0 0 .28rem #2563eb;}
+  .pick b{display:block;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;}
+  .pick span{display:block;margin-top:.18rem;font-size:.75rem;color:var(--dim);font-weight:450;}
+  .kbd{float:right;font-size:.58rem;letter-spacing:.04em;color:var(--faint);font-weight:600;}
+
+  .why{margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--hair);}
+  .featureList{list-style:none;margin:0;padding:0;}
+  .featureRow{
+    display:grid;grid-template-columns:1.25rem minmax(0,1fr);
+    align-items:start;column-gap:.45rem;min-height:1.65rem;padding:.22rem 0;
+    font-size:.76rem;line-height:1.25;
+  }
+  .featureMark{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:1.25rem;height:1.25rem;margin-top:.05rem;font-size:.82rem;font-weight:700;color:#2563eb;
+  }
+  .featureLabel{position:relative;min-width:0;color:#e2e8f0;font-weight:500;}
+  .tipwrap{position:relative;display:inline-block;max-width:100%;}
+  .hit{
+    position:relative;display:inline-flex;align-items:center;gap:.4rem;
+    max-width:100%;margin:0;padding:0;border:0;background:transparent;
+    color:#e2e8f0;font:500 .76rem/1.25 Inter,sans-serif;text-align:left;cursor:pointer;
+  }
+  .i{
+    box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+    width:.95rem;height:.95rem;flex-shrink:0;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;
+    background:rgb(15 23 42 / .52);color:rgb(226 232 240 / .92);
+    font-size:.56rem;font-weight:700;line-height:1;
+  }
+  .hit[aria-expanded="true"] .i,.hit:hover .i{
+    border-color:rgb(37 99 235 / .65);background:rgb(37 99 235 / .16);color:#fff;
+  }
+  .popup{
+    position:absolute;left:50%;bottom:calc(100% + .45rem);z-index:20;
+    width:min(18rem, calc(100vw - 2rem));
+    transform:translateX(-50%);
+    padding:.7rem .8rem;border:1px solid rgb(255 255 255 / .14);border-radius:.7rem;
+    background:linear-gradient(160deg, rgb(28 32 40 / .98) 0%, rgb(14 16 22 / .98) 100%);
+    box-shadow:0 12px 28px rgb(0 0 0 / .35);
+    color:rgb(232 235 240 / .92);font-size:.68rem;font-weight:450;line-height:1.45;text-align:left;
+  }
+  .popup::after{
+    content:"";position:absolute;left:50%;top:100%;width:.55rem;height:.55rem;
+    transform:translate(-50%,-45%) rotate(45deg);
+    border-right:1px solid rgb(255 255 255 / .14);
+    border-bottom:1px solid rgb(255 255 255 / .14);
+    background:rgb(14 16 22 / .98);
+  }
+  .leadTitle{margin:.85rem 0 0;font-size:.78rem;font-weight:600;line-height:1.35;color:#e2e8f0;}
+  .lead{margin:.4rem 0 0;font-size:.76rem;line-height:1.45;color:rgb(210 214 222 / .82);}
+  .lead + .featureList{margin-top:.7rem;}
+  .foot{margin:.55rem 0 0;font-size:.62rem;line-height:1.4;color:rgb(210 214 222 / .48);}
+  .sub{display:block;margin-top:.15rem;font-size:.68rem;font-weight:450;color:rgb(210 214 222 / .62);}
+  .ok{color:rgb(167 243 208 / .95);font-weight:550;}
+
+  .fields{margin-top:1rem;display:grid;gap:.15rem;}
+  label{font-size:.58rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+  input{
+    width:100%;height:2.85rem;margin:0 0 .7rem;
+    background:transparent;border:0;border-bottom:1px solid var(--hair);
+    color:var(--ink);font:500 1.05rem/1 Inter,sans-serif;letter-spacing:.08em;
+    border-radius:0;caret-color:#60a5fa;
+  }
+  input:focus{outline:none;border-bottom-color:#2563eb;}
+  input::placeholder{color:#52525b;letter-spacing:.06em;}
+  .err{margin:-.45rem 0 .55rem;font-size:.72rem;color:#f87171;min-height:1em;}
+
+  .pay{
+    position:fixed;left:0;right:0;bottom:0;z-index:20;
+    max-width:28rem;margin:0 auto;
+    padding:.7rem var(--pad) calc(.75rem + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,transparent,#0d0d0d 18%);
+  }
+  .pay button{
+    width:100%;height:2.95rem;border:0;background:#2563eb;color:#fff;
+    font:600 .78rem/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;
+    cursor:pointer;
+  }
+  .pay button:disabled{background:#1e293b;color:#64748b;}
+  .done{margin-top:1.2rem;padding:1rem 0;font-size:.86rem;line-height:1.45;color:var(--mint);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo">PROVIN<i>.LV</i></div>
+    <div class="tag">Partneriem</div>
+  </div>
+
+  <h1>Pasūtīt</h1>
+
+  <div class="picks" role="radiogroup" aria-label="Pakalpojums">
+    <button class="pick on" type="button" role="radio" aria-checked="true" data-id="b" id="pick-b">
+      <span class="radio" aria-hidden></span>
+      <span><b>PROVIN BUSINESS <span class="kbd">B</span></b><span>Pilns datu apkopojums · bez konsultācijas</span></span>
+    </button>
+    <button class="pick" type="button" role="radio" aria-checked="false" data-id="d" id="pick-d">
+      <span class="radio" aria-hidden></span>
+      <span><b>Dīlera dati <span class="kbd">D</span></b><span>Ražotāja apkopes · 100% atmaksa, ja datu nav</span></span>
+    </button>
+  </div>
+
+  <div class="why" id="why"></div>
+
+  <div class="fields">
+    <label for="vin">VIN</label>
+    <input id="vin" name="vin" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="17" placeholder="WVWZZZ…" inputmode="text">
+    <div class="err" id="vin-err"></div>
+    <label for="code">Partnera kods</label>
+    <input id="code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="————" inputmode="text">
+    <div class="err" id="code-err"></div>
+  </div>
+</div>
+
+<div class="pay">
+  <button type="button" id="pay" disabled>Maksāt</button>
+</div>
+
+<script>
+  const DNA_TIP = "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar citu specializētu datubāzi.";
+
+  const COPY = {
+    b: {
+      items: [
+        "Oficiālo dīleru dati (VW, BMW, MB u.c.)*",
+        { name: "CarVertical + AutoDNA", tip: DNA_TIP, aria: "Datubāzes aizstāšana" },
+        "Izcelsmes valsts reģistri",
+        "Izsoļu portālu arhīva dati",
+        "Apdrošinātāju dati (OCTA/KASKO)",
+        "Tehnisko apskašu vēsture",
+        "Datu kopsavilkums",
+      ],
+      title: "Pilna transportlīdzekļa digitālā vēsture vienā atskaitē:",
+      lead: "PROVIN BUSINESS apvieno datus no vairākiem neatkarīgiem avotiem, tostarp oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas valstu reģistriem. Vienā pārskatāmā atskaitē jūs redzat pilnu nobraukuma hronoloģiju, slēptas ekspluatācijas pazīmes, negadījumu vēsturi un servisa ierakstus, nodrošinot pilnīgu caurskatāmību pirms darījuma.",
+      foot: "*pieejama noteiktiem ražotājiem.",
+    },
+    d: {
+      items: [
+        {
+          name: "Oficiālā servisa vēsture",
+          sub: "Padziļināta autorizēto servisu apmeklējumu, veikto remontu un apkopes darbu ierakstu analīze.",
+        },
+        {
+          name: "Odometra & kampaņu pārbaude",
+          sub: "Nobraukuma hronoloģiskā izsekošana ražotāja sistēmā, kā arī aktīvo garantijas atsaukumu pārbaude.",
+        },
+        {
+          name: "Atbalstīto ražotāju sistēmas*",
+          sub: "Piekļuve Vācijas premium zīmoliem (BMW, Audi, MB), VAG grupas, VOLVO, SUBARU, Stellantis un citu ražotāju oficiālajiem datiem.",
+        },
+        {
+          name: "100% Naudas atmaksas garantija",
+          sub: "Ja konkrētajam VIN kodam ražotāja oficiālajā datubāzē nav ierakstu, veiksim pilnu pirkuma atmaksu.",
+          tone: "ok",
+        },
+      ],
+      title: "",
+      leadFirst: true,
+      lead: "Oficiālās dīleru servisa vēstures un ražotāju datubāzu analīze automašīnām. Pārbaude fokusējas uz autorizēto servisu ierakstiem, hronoloģisko nobraukumu, veiktajām apkopēm un rūpnīcas atsaukumiem, nodrošinot maksimālu pārredzamību par auto reālo ekspluatāciju.",
+      foot: "*pieejama noteiktiem ražotājiem.",
+    },
+  };
+
+  let plan = "b";
+  const why = document.getElementById("why");
+  const vin = document.getElementById("vin");
+  const code = document.getElementById("code");
+  const pay = document.getElementById("pay");
+  const vinErr = document.getElementById("vin-err");
+  const codeErr = document.getElementById("code-err");
+
+  function normVin(s){ return s.trim().toUpperCase().replace(/\s/g,""); }
+  function validVin(s){
+    const n = normVin(s);
+    if (n.length < 11 || n.length > 17) return false;
+    return /^[A-HJ-NPR-Z0-9]+$/.test(n);
+  }
+  function validCode(s){ return s.trim().length >= 4; }
+
+  function closeTips(){
+    why.querySelectorAll(".hit").forEach((btn) => {
+      btn.setAttribute("aria-expanded", "false");
+      const pop = btn.closest(".tipwrap").querySelector(".popup");
+      if (pop) pop.hidden = true;
+    });
+  }
+
+  function rowHtml(item){
+    if (typeof item === "string") {
+      return `<li class="featureRow"><span class="featureMark" aria-hidden>✓</span><span class="featureLabel">${item}</span></li>`;
+    }
+    const sub = item.sub ? `<span class="sub">${item.sub}</span>` : "";
+    const cls = item.tone === "ok" ? "featureLabel ok" : "featureLabel";
+    if (item.tip) {
+      return `<li class="featureRow"><span class="featureMark" aria-hidden>✓</span><span class="${cls}">
+        <span class="tipwrap">
+          <button type="button" class="hit" aria-expanded="false" aria-label="${item.name} ${item.aria}">
+            ${item.name}<span class="i" aria-hidden>i</span>
+          </button>
+          <span class="popup" hidden role="tooltip">${item.tip}</span>
+        </span>
+        ${sub}
+      </span></li>`;
+    }
+    return `<li class="featureRow"><span class="featureMark" aria-hidden>✓</span><span class="${cls}">${item.name}${sub}</span></li>`;
+  }
+
+  function renderWhy(){
+    const c = COPY[plan];
+    const list = `<ul class="featureList">${c.items.map(rowHtml).join("")}</ul>`;
+    const intro = `${c.title ? `<p class="leadTitle">${c.title}</p>` : ""}
+      ${c.lead ? `<p class="lead">${c.lead}</p>` : ""}`;
+    why.innerHTML = (c.leadFirst ? intro + list : list + intro)
+      + `<p class="foot">${c.foot}</p>`;
+    why.querySelectorAll(".hit").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const pop = btn.closest(".tipwrap").querySelector(".popup");
+        const open = btn.getAttribute("aria-expanded") === "true";
+        closeTips();
+        if (!open && pop) {
+          btn.setAttribute("aria-expanded", "true");
+          pop.hidden = false;
+        }
+      });
+    });
+  }
+
+  function setPlan(id){
+    plan = id;
+    document.querySelectorAll(".pick").forEach((el) => {
+      const on = el.dataset.id === id;
+      el.classList.toggle("on", on);
+      el.setAttribute("aria-checked", on ? "true" : "false");
+    });
+    renderWhy();
+  }
+
+  function ready(){ return validVin(vin.value) && validCode(code.value); }
+
+  function syncPay(){
+    pay.disabled = !ready();
+    pay.textContent = ready() ? "Maksāt" : "VIN + kods";
+  }
+
+  document.querySelectorAll(".pick").forEach((el) => {
+    el.addEventListener("click", () => setPlan(el.dataset.id));
+  });
+
+  document.addEventListener("pointerdown", (e) => {
+    if (!why.contains(e.target)) closeTips();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeTips();
+  });
+
+  vin.addEventListener("input", () => {
+    const s = vin.selectionStart;
+    vin.value = vin.value.toUpperCase().replace(/\s/g,"");
+    if (s != null) vin.setSelectionRange(s, s);
+    vinErr.textContent = vin.value && !validVin(vin.value) ? "VIN: 11–17 zīmes, bez I, O, Q." : "";
+    syncPay();
+  });
+  code.addEventListener("input", () => {
+    codeErr.textContent = code.value && !validCode(code.value) ? "Kods vismaz 4 zīmes." : "";
+    syncPay();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
+      if (e.key === "Enter") { e.preventDefault(); if (t === vin) code.focus(); else pay.click(); }
+      return;
+    }
+    if (e.key === "b" || e.key === "B") setPlan("b");
+    if (e.key === "d" || e.key === "D") setPlan("d");
+  });
+
+  pay.addEventListener("click", () => {
+    if (!ready()) return;
+    document.querySelector(".app").innerHTML = `<div class="done">Stripe Checkout atvērtos šeit.<br>${plan === "b" ? "PROVIN BUSINESS" : "Dīlera dati"} · ${normVin(vin.value)}</div>`;
+    document.querySelector(".pay").remove();
+  });
+
+  renderWhy();
+  syncPay();
+</script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROVIN - logo zem datuma (koncepts)</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #c7d7ee;
+      --year-bg: #e8f1fb;
+      --year-ink: #1d4f91;
+      --km: #eef2f7;
+      --border: #e2e8f0;
+      --page: #eef2f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #dde5ef, var(--page) 160px);
+      line-height: 1.4;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
+    .hero {
+      background: #0b1220;
+      color: #e8eef7;
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 16px;
+    }
+    .hero h1 { margin: 0 0 6px; font-size: 1.2rem; }
+    .hero p { margin: 0; color: #9fb0c6; font-size: 0.9rem; max-width: 60ch; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    .panel {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .panel h2 {
+      margin: 0 0 4px;
+      font-size: 0.95rem;
+    }
+    .panel .lead {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .tag.now { background: #f1f5f9; color: #475569; }
+    .tag.prop { background: #dcfce7; color: #166534; }
+    .tag.alt { background: #e0f2fe; color: #075985; }
+
+    .svc {
+      border: 1px solid #d7e3f4;
+      border-radius: 12px;
+      background: #fff;
+      padding: 8px 0 12px;
+      overflow: hidden;
+    }
+    .svc-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px 6px;
+      color: #64748b;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .year {
+      margin: 8px 12px 4px;
+      background: var(--year-bg);
+      color: var(--year-ink);
+      font-weight: 800;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .visit {
+      display: grid;
+      grid-template-columns: 86px 22px 1fr;
+      gap: 6px;
+      padding: 12px 14px;
+      position: relative;
+      align-items: start;
+    }
+    .visit::before {
+      content: "";
+      position: absolute;
+      left: 96px;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: #dbe7f5;
+    }
+    .date-col {
+      text-align: right;
+      padding-top: 0;
+    }
+    .date {
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      border: 2px solid #8bb4e0;
+      border-radius: 50%;
+      background: #fff;
+      margin: 5px auto 0;
+      position: relative;
+      z-index: 1;
+    }
+    .works {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 0.88rem;
+      color: #0f172a;
+    }
+    .works li { margin: 1px 0; }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .km {
+      background: var(--km);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    /* Proposed: logo under date */
+    .brand-under {
+      margin-top: 8px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .brand-under img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      filter: brightness(0);
+      opacity: 0.85;
+    }
+    .brand-under.plate {
+      align-items: flex-end;
+    }
+    .brand-under.plate .box {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: #0f172a;
+      display: grid;
+      place-items: center;
+    }
+    .brand-under.plate img {
+      width: 16px;
+      height: 16px;
+      filter: none;
+      opacity: 1;
+    }
+    .brand-under .cap {
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+
+    /* Align dot with first work line when date stack is taller */
+    .visit.with-logo .dot { margin-top: 5px; }
+
+    .note {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-left: 3px solid #93c5fd;
+      padding-left: 10px;
+    }
+    .foot {
+      margin-top: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Logo zem datuma - servisa / remontu vēsture</h1>
+      <p>
+        Trešais pielikums: kreisajā kolonnā zem datuma (pirms timeline līnijas).
+        Zemāk - tagad vs 2 varianti ar BMW piemēru.
+      </p>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <span class="tag now">Tagad</span>
+        <h2>Bez logo</h2>
+        <p class="lead">Kā tavā ekrānuzņēmumā - zem datuma tukša vieta.</p>
+        <div class="svc">
+          <div class="svc-head">SERVISA UN REMONTU VĒSTURE</div>
+          <div class="year">2019</div>
+          <div class="visit">
+            <div class="date-col"><div class="date">01.01.2019</div></div>
+            <div class="dot"></div>
+            <div>
+              <div class="top">
+                <ul class="works">
+                  <li>Regulārā apkope</li>
+                  <li>Eļļas maiņa</li>
+                  <li>Degvielas filtra maiņa</li>
+                  <li>Gaisa filtra maiņa</li>
+                </ul>
+                <span class="km">43 697 km</span>
+              </div>
+            </div>
+          </div>
+          <div class="visit">
+            <div class="date-col"><div class="date">01.02.2018</div></div>
+            <div class="dot"></div>
+            <div>
+              <div class="top">
+                <ul class="works">
+                  <li>Regulārā apkope</li>
+                  <li>Eļļas maiņa</li>
+                </ul>
+                <span class="km">31 712 km</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <span class="tag prop">Ieteikums</span>
+        <h2>A · Ink logo zem datuma</h2>
+        <p class="lead">Mazs melns zīmols zem datuma, izlīdzināts pa labi (kā datums).</p>
+        <div class="svc">
+          <div class="svc-head">SERVISA UN REMONTU VĒSTURE</div>
+          <div class="year">2019</div>
+          <div class="visit with-logo">
+            <div class="date-col">
+              <div class="date">01.01.2019</div>
+              <div class="brand-under">
+                <img src="brand-logos/bmw.svg" alt="BMW" />
+              </div>
+            </div>
+            <div class="dot"></div>
+            <div>
+              <div class="top">
+                <ul class="works">
+                  <li>Regulārā apkope</li>
+                  <li>Eļļas maiņa</li>
+                  <li>Degvielas filtra maiņa</li>
+                  <li>Gaisa filtra maiņa</li>
+                </ul>
+                <span class="km">43 697 km</span>
+              </div>
+            </div>
+          </div>
+          <div class="visit with-logo">
+            <div class="date-col">
+              <div class="date">01.02.2018</div>
+              <div class="brand-under">
+                <img src="brand-logos/bmw.svg" alt="BMW" />
+              </div>
+            </div>
+            <div class="dot"></div>
+            <div>
+              <div class="top">
+                <ul class="works">
+                  <li>Regulārā apkope</li>
+                  <li>Eļļas maiņa</li>
+                </ul>
+                <span class="km">31 712 km</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="note">Aizpilda tukšo vietu kreisajā kolonnā, netraucē darbu sarakstam. Labi PDF un ekrānam.</p>
+      </section>
+
+      <section class="panel">
+        <span class="tag alt">Alternatīva</span>
+        <h2>B · Tumša plāksnīte zem datuma</h2>
+        <p class="lead">Tas pats slots, bet ar tumšu kvadrātu (OEM stilā kā vāka logo).</p>
+        <div class="svc">
+          <div class="svc-head">SERVISA UN REMONTU VĒSTURE</div>
+          <div class="year">2019</div>
+          <div class="visit with-logo">
+            <div class="date-col">
+              <div class="date">01.01.2019</div>
+              <div class="brand-under plate">
+                <span class="box"><img src="brand-logos/bmw.svg" alt="BMW" /></span>
+              </div>
+            </div>
+            <div class="dot"></div>
+            <div>
+              <div class="top">
+                <ul class="works">
+                  <li>Regulārā apkope</li>
+                  <li>Eļļas maiņa</li>
+                  <li>Degvielas filtra maiņa</li>
+                </ul>
+                <span class="km">43 697 km</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="note">Spēcīgāks, bet vieglāk „badge”. Ja A šķiet pārāk kluss - ņem B.</p>
+      </section>
+
+      <section class="panel">
+        <span class="tag alt">Variants</span>
+        <h2>C · Logo + mini „OEM” zem datuma</h2>
+        <p class="lead">Ja grib skaidru nozīmi, ne tikai zīmolu.</p>
+        <div class="svc">
+          <div class="svc-head">SERVISA UN REMONTU VĒSTURE</div>
+          <div class="year">2019</div>
+          <div class="visit with-logo">
+            <div class="date-col">
+              <div class="date">01.01.2019</div>
+              <div class="brand-under">
+                <img src="brand-logos/bmw.svg" alt="BMW" />
+                <span class="cap">OEM</span>
+              </div>
+            </div>
+            <div class="dot"></div>
+            <div>
+              <div class="top">
+                <ul class="works">
+                  <li>Regulārā apkope</li>
+                  <li>Eļļas maiņa</li>
+                </ul>
+                <span class="km">43 697 km</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="note">Noder, ja jaukti OEM un neatkarīgie ieraksti.</p>
+      </section>
+    </div>
+
+    <p class="foot">
+      Priekšskats:
+      <a href="http://127.0.0.1:8112/public/dealer-logo-under-date-concept.html">http://127.0.0.1:8112/public/dealer-logo-under-date-concept.html</a>
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - B2B sākums + Pakas (koncepti)</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(210 214 222 / .88);
+    --faint:rgb(148 163 184 / .9);
+    --line:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+    --pad:max(1rem, env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    background:#050505;
+    background-image:
+      radial-gradient(ellipse 120% 70% at 50% -8%, rgb(255 255 255 / .04) 0%, transparent 55%),
+      linear-gradient(180deg,#141414 0%,#0a0a0a 40%,#000 100%);
+    background-attachment:fixed;
+  }
+  .page{max-width:42rem;margin:0 auto;padding:1.25rem var(--pad) 3rem;}
+  h1{margin:0 0 .35rem;font-size:1.15rem;letter-spacing:-.02em;}
+  .lead{margin:0 0 1.25rem;color:var(--faint);font-size:.82rem;line-height:1.45;}
+  .toc{display:flex;flex-wrap:wrap;gap:.45rem;margin:0 0 1.5rem;}
+  .toc a{
+    display:inline-flex;align-items:center;min-height:2rem;padding:0 .7rem;
+    border:1px solid var(--line);border-radius:999px;color:#93c5fd;
+    font-size:.62rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
+  }
+  .concept{margin:0 0 2.25rem;padding-top:1rem;border-top:1px solid var(--line);}
+  .concept h2{margin:0 0 .35rem;font-size:.95rem;}
+  .concept p.why{margin:0 0 .9rem;color:var(--faint);font-size:.78rem;line-height:1.45;}
+  .phone{
+    width:min(100%,22rem);margin:0 auto;
+    border:1px solid rgb(255 255 255 / .12);border-radius:1.1rem;
+    background:rgb(12 12 12 / .92);padding:1rem 1rem 1.25rem;
+    box-shadow:0 18px 40px rgb(0 0 0 / .45);
+  }
+  .nav{
+    display:flex;flex-wrap:wrap;gap:.7rem;padding-bottom:.7rem;margin-bottom:.85rem;
+    border-bottom:1px solid var(--line);
+    font-size:.58rem;font-weight:650;letter-spacing:.14em;text-transform:uppercase;
+  }
+  .nav span{color:rgb(113 113 122);}
+  .nav .on{color:#f4f4f5;}
+  .h{margin:0 0 .85rem;font-size:1.05rem;font-weight:650;letter-spacing:-.02em;}
+  .row{padding:.72rem 0;border-bottom:1px solid var(--line);}
+  .row:last-of-type{border-bottom:0;}
+  .name{font-size:.92rem;font-weight:550;}
+  .name b{color:var(--accent);font-weight:550;}
+  .meta{margin:.28rem 0 0;font-size:.78rem;color:#93c5fd;}
+  .note{margin:.85rem 0 0;font-size:.88rem;font-weight:550;line-height:1.35;}
+  .cta{
+    display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:3.1rem;margin:.85rem 0 0;border:0;border-radius:999px;
+    background:linear-gradient(180deg,#1a6fd4 0%,#1459ad 100%);
+    color:#fff;font:650 .72rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .ghost{
+    display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:2.6rem;margin:.55rem 0 0;
+    border:1px solid rgb(255 255 255 / .14);border-radius:999px;background:transparent;
+    color:rgb(226 232 240 / .9);font:600 .68rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .seg{display:flex;gap:3px;margin:.2rem 0 .9rem;padding:3px;background:#1a1a1a;border-radius:10px;}
+  .seg button{
+    flex:1;border:0;border-radius:8px;background:transparent;color:var(--faint);
+    padding:.7rem .2rem;font:600 .58rem/1.2 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;
+  }
+  .seg button.on{background:var(--accent);color:#fff;}
+  .pack{
+    margin-top:.65rem;padding:1rem;border:1px solid rgb(255 255 255 / .12);
+    border-radius:.9rem;background:rgb(20 20 20 / .7);
+  }
+  .pack.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:rgb(37 99 235 / .1);}
+  .qty{font-size:.68rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;}
+  .price{margin:.55rem 0 0;font-size:1.35rem;font-weight:650;letter-spacing:-.03em;}
+  .price i{font-style:normal;font-size:.72rem;font-weight:500;color:var(--faint);}
+  .lines{margin:.65rem 0 0;padding:0;list-style:none;}
+  .lines li{display:grid;grid-template-columns:1rem 1fr;gap:.35rem;padding:.18rem 0;font-size:.72rem;color:var(--dim);}
+  .mk{color:#60a5fa;font-weight:700;}
+  .strip{
+    display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin:.15rem 0 .85rem;
+  }
+  .chip{
+    padding:.65rem .7rem;border:1px solid var(--line);border-radius:.7rem;background:rgb(255 255 255 / .03);
+  }
+  .chip .n{font-size:.62rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);}
+  .chip .v{margin:.25rem 0 0;font-size:1.05rem;font-weight:650;color:#93c5fd;}
+  .inlineBuy{
+    display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+    margin-top:.85rem;padding:.7rem .8rem;border-top:1px solid var(--line);
+  }
+  .inlineBuy p{margin:0;font-size:.72rem;line-height:1.35;color:var(--dim);}
+  .miniCta{
+    flex-shrink:0;min-height:2.2rem;padding:0 .85rem;border:0;border-radius:999px;
+    background:var(--accent);color:#fff;font:650 .58rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .tabs{display:flex;gap:.9rem;margin:0 0 .85rem;border-bottom:1px solid var(--line);}
+  .tabs button{
+    margin:0;padding:.55rem 0;border:0;border-bottom:2px solid transparent;background:transparent;
+    color:var(--faint);font:650 .62rem/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .tabs button.on{color:#fff;border-bottom-color:#60a5fa;}
+  .footnote{margin:.7rem 0 0;font-size:.62rem;line-height:1.4;color:rgb(113 113 122);text-align:center;}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>B2B: kredīti + Pakas</h1>
+  <p class="lead">Četri gaumīgi veidi, kā sākuma lapā savienot „Atlikušās atskaites” ar „Pakas”, kad kredītu nav. Poga joprojām ved uz /pakas, bet hero jau jūt, ka pirkums ir nākamais solis.</p>
+  <nav class="toc" aria-label="Koncepti">
+    <a href="#a">A · Inline</a>
+    <a href="#b">B · Mini picker</a>
+    <a href="#c">C · Credits strip</a>
+    <a href="#d">D · Tabs</a>
+  </nav>
+
+  <article class="concept" id="a">
+    <h2>A. Kredīti + viena rinda ar PIRKT</h2>
+    <p class="why">Mazākā izmaiņa. Kredītu saraksts paliek, CTA kļūst par smalku kājeni zem tā, bez zila rāmja. Pakas lapa paliek pilnā izvēlne.</p>
+    <div class="phone">
+      <div class="nav"><span class="on">Sākums</span><span>Pakas</span><span>Pasūtījumi</span><span>Rekvizīti</span></div>
+      <h3 class="h">Atlikušās atskaites</h3>
+      <div class="row"><div class="name">PRO<b>VIN</b> BUSINESS</div><div class="meta">Pieejamās atskaites: 0</div></div>
+      <div class="row"><div class="name">DĪLERA DATI</div><div class="meta">Pieejamās atskaites: 0</div></div>
+      <div class="inlineBuy">
+        <p>Lai iesniegtu VIN, vispirms iegādājies paku.</p>
+        <button type="button" class="miniCta">Pirkt</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="concept" id="b">
+    <h2>B. Kredīti + mini paku picker (ieteicamais)</h2>
+    <p class="why">Hero kļūst par „0 kredītu → izvēlies paku”. Tabu pārslēdzējs un viena ieteiktā kartīte (10 atskaites) ir turpat. Pilnā Pakas lapa paliek ar abām kartītēm.</p>
+    <div class="phone">
+      <div class="nav"><span class="on">Sākums</span><span>Pakas</span><span>Pasūtījumi</span><span>Rekvizīti</span></div>
+      <h3 class="h">Atlikušās atskaites</h3>
+      <div class="row"><div class="name">PRO<b>VIN</b> BUSINESS</div><div class="meta">Pieejamās atskaites: 0</div></div>
+      <div class="row"><div class="name">DĪLERA DATI</div><div class="meta">Pieejamās atskaites: 0</div></div>
+      <p class="note">Lai iesniegtu VIN, izvēlies paku.</p>
+      <div class="seg" role="tablist">
+        <button type="button" class="on">Dīlera dati</button>
+        <button type="button">PROVIN BUSINESS</button>
+      </div>
+      <div class="pack on">
+        <div class="qty">10 atskaites</div>
+        <div class="price">17,99 € <i>par atskaiti</i></div>
+        <ul class="lines">
+          <li><span class="mk">+</span><span>Odometra rādījumi</span></li>
+          <li><span class="mk">+</span><span>Servisa un apkopju vēsture</span></li>
+          <li><span class="mk">+</span><span>100% naudas atmaksas garantija</span></li>
+        </ul>
+      </div>
+      <button type="button" class="cta">Pasūtīt paku 179,90 €</button>
+      <button type="button" class="ghost">Visas pakas</button>
+    </div>
+  </article>
+
+  <article class="concept" id="c">
+    <h2>C. Kredītu strip + paku CTA</h2>
+    <p class="why">Kompakts hero: divas ciparu flīzes vietā garā saraksta. Zemāks, vairāk vietas paku solim. Labs, ja gribi „dashboard” sajūtu.</p>
+    <div class="phone">
+      <div class="nav"><span class="on">Sākums</span><span>Pakas</span><span>Pasūtījumi</span><span>Rekvizīti</span></div>
+      <h3 class="h">Kredīti</h3>
+      <div class="strip">
+        <div class="chip"><div class="n">Business</div><div class="v">0</div></div>
+        <div class="chip"><div class="n">Dīlera dati</div><div class="v">0</div></div>
+      </div>
+      <p class="note">Lai iesniegtu VIN, vispirms iegādājies paku.</p>
+      <button type="button" class="cta">Pirkt pakas</button>
+      <p class="footnote">Dīlera 1 / 10 · BUSINESS 1 / 10</p>
+    </div>
+  </article>
+
+  <article class="concept" id="d">
+    <h2>D. Sākums ar tabiem: Kredīti | Pakas</h2>
+    <p class="why">Viena lapa, divas lomas. Bez navigācijas uz citu URL. Kad kredītu nav, noklusē uz „Pakas” tabu. Kad kredīti ir, noklusē uz „Kredīti” / VIN formu.</p>
+    <div class="phone">
+      <div class="nav"><span class="on">Sākums</span><span>Pasūtījumi</span><span>Rekvizīti</span></div>
+      <div class="tabs" role="tablist">
+        <button type="button">Kredīti</button>
+        <button type="button" class="on">Pakas</button>
+      </div>
+      <div class="seg">
+        <button type="button" class="on">Dīlera dati</button>
+        <button type="button">PROVIN BUSINESS</button>
+      </div>
+      <div class="pack">
+        <div class="qty">1 atskaite</div>
+        <div class="price">19,99 € <i>par atskaiti</i></div>
+      </div>
+      <div class="pack on" style="margin-top:.55rem">
+        <div class="qty">10 atskaites</div>
+        <div class="price">17,99 € <i>par atskaiti</i></div>
+      </div>
+      <button type="button" class="cta">Pasūtīt paku 179,90 €</button>
+    </div>
+  </article>
+</div>
+</body>
+</html>

@@ -18,6 +18,7 @@ import type {
 } from "@/lib/admin-source-blocks";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
+import { AdminDealerDataJobStrip } from "@/components/admin/AdminDealerDataJobStrip";
 import { AdminOneautoIngestBar } from "@/components/admin/AdminOneautoIngestBar";
 import {
   AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
@@ -259,6 +260,13 @@ export function AdminAutoRecordsSourceBlock({
               readOnly={readOnly}
               getSourceBlocks={getSourceBlocks}
               applyPatchedBlocks={applyPatchedBlocks}
+            />
+          ) : null}
+          {sessionId ? (
+            <AdminDealerDataJobStrip
+              sessionId={sessionId}
+              orderVin={orderVin}
+              editable={!readOnly && !disabled}
             />
           ) : null}
           <AdminOneautoIngestBar
