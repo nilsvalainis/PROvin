@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN B2B ielogotais + Audits-only · 10 koncepti</title>
+<style>
+  :root{
+    --ink:#fafafc; --dim:rgb(210 214 222 / .9); --mute:#a1a1aa; --faint:#71717a;
+    --line:rgb(255 255 255 / .1); --accent:#2563eb; --pad:max(1rem,env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    background:#050505;
+    background-image:
+      radial-gradient(ellipse 120% 70% at 50% -8%, rgb(255 255 255 / .04) 0%, transparent 55%),
+      linear-gradient(180deg,#141414 0%,#0a0a0a 40%,#000 100%);
+    background-attachment:fixed;
+  }
+  .page{max-width:78rem;margin:0 auto;padding:1.2rem var(--pad) 4rem}
+  h1{margin:0 0 .35rem;font-size:1.15rem;letter-spacing:-.02em}
+  .lead{margin:0 0 .65rem;color:var(--faint);font-size:.84rem;line-height:1.45;max-width:54rem}
+  .policy{
+    margin:0 0 1.1rem;padding:.85rem 1rem;border-radius:.65rem;
+    border:1px solid rgb(37 99 235 / .35);background:rgb(37 99 235 / .1);
+    font-size:.82rem;line-height:1.5;color:#e4e4e7;max-width:54rem;
+  }
+  .toc{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 1.3rem}
+  .toc a{
+    display:inline-flex;align-items:center;min-height:1.9rem;padding:0 .65rem;
+    border:1px solid var(--line);border-radius:999px;color:#93c5fd;text-decoration:none;
+    font-size:.52rem;font-weight:650;letter-spacing:.07em;text-transform:uppercase;
+  }
+  .section{margin:0 0 2.6rem;padding-top:1.1rem;border-top:1px solid var(--line)}
+  .section>h2{margin:0 0 .25rem;font-size:.98rem}
+  .why{margin:0 0 .9rem;color:var(--faint);font-size:.78rem;line-height:1.45;max-width:48rem}
+  .pair{display:grid;gap:1rem}
+  @media(min-width:980px){.pair{grid-template-columns:1fr 22rem;align-items:start}}
+  .stage{
+    border:1px solid rgb(255 255 255 / .12);border-radius:1rem;
+    background:rgb(10 10 10 / .96);padding:1.1rem 1.15rem 1.25rem;
+  }
+  .phone-frame{
+    border:1px solid rgb(255 255 255 / .14);border-radius:1.35rem;
+    background:#0a0a0a;padding:.55rem;max-width:22rem;margin:0 auto;
+    box-shadow:0 16px 40px rgb(0 0 0 / .45);
+  }
+  .phone-inner{
+    border:1px solid rgb(255 255 255 / .08);border-radius:1.05rem;
+    padding:.85rem .8rem 1.1rem;min-height:26rem;background:#070707;
+  }
+  .badge{
+    display:inline-block;margin:0 0 .7rem;padding:.18rem .45rem;border-radius:.3rem;
+    background:rgb(255 255 255 / .06);color:#d4d4d8;font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .device{margin:0 0 .55rem;font-size:.55rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd}
+  .nav{display:flex;gap:.55rem;flex-wrap:wrap;margin:0 0 1rem;padding-bottom:.75rem;border-bottom:1px solid var(--line)}
+  .nav span{
+    font-size:.58rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);
+  }
+  .nav span.on{color:#fff;border-bottom:2px solid var(--accent);padding-bottom:.2rem}
+  .h{margin:0;font-size:1.05rem;font-weight:650;letter-spacing:-.02em}
+  .sub{margin:.35rem 0 0;color:var(--mute);font-size:.74rem;line-height:1.4}
+  .lab{display:block;margin:0 0 .28rem;font-size:.52rem;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .field{
+    width:100%;min-height:2.45rem;margin:0 0 .65rem;padding:.55rem .7rem;
+    border:1px solid rgb(255 255 255 / .14);border-radius:.65rem;
+    background:rgb(8 10 14 / .55);color:#fff;font:1rem/1.3 Inter,sans-serif;
+  }
+  .cta{
+    display:flex;align-items:center;justify-content:center;width:100%;min-height:2.7rem;
+    border:0;border-radius:999px;color:#fff;margin-top:.35rem;
+    background:linear-gradient(180deg,#1a6fd4 0%,#1459ad 100%);
+    font:650 .68rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .cta.ghost{
+    background:transparent;border:1px solid rgb(255 255 255 / .18);color:#93c5fd;margin-top:.55rem;
+  }
+  .credits{display:grid;gap:.55rem;margin:.85rem 0 1rem}
+  .credits.two{grid-template-columns:1fr 1fr}
+  .credits.one{grid-template-columns:1fr}
+  .cred{
+    border:1px solid var(--line);border-radius:.7rem;padding:.7rem .8rem;background:rgb(255 255 255 / .03);
+  }
+  .cred .k{font-size:.55rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .cred .v{margin-top:.35rem;font-size:1.15rem;font-weight:650;tabular-nums}
+  .cred .v.empty{color:#93c5fd}
+  .svc{
+    border:1px solid var(--line);border-radius:.85rem;padding:.9rem 1rem;margin:0 0 .65rem;
+    background:rgb(255 255 255 / .02);
+  }
+  .svc.primary{border-color:rgb(37 99 235 / .45);background:rgb(37 99 235 / .08)}
+  .svc.locked{opacity:.72}
+  .svc h3{margin:0;font-size:.88rem;font-weight:650}
+  .svc h3 .b{color:var(--accent)}
+  .svc p{margin:.4rem 0 0;font-size:.74rem;color:var(--dim);line-height:1.45}
+  .svc .meta{margin-top:.55rem;font-size:.62rem;color:var(--faint)}
+  .svc .price{font-size:.95rem;font-weight:650;color:#fff;margin-top:.55rem}
+  .pack-row{display:grid;gap:.55rem;margin:.65rem 0}
+  @media(min-width:700px){.desk .pack-row{grid-template-columns:1fr 1fr}}
+  .pack{
+    border:1px solid var(--line);border-radius:.75rem;padding:.8rem .85rem;text-align:left;background:rgb(9 9 11);
+    color:inherit;cursor:pointer;width:100%;
+  }
+  .pack.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:rgb(37 99 235 / .1)}
+  .pack .qty{font-size:.78rem;font-weight:650}
+  .pack .tot{font-size:.95rem;font-weight:650;margin-top:.25rem}
+  .pack ul{margin:.45rem 0 0;padding:0;list-style:none}
+  .pack li{font-size:.68rem;color:var(--dim);padding:.12rem 0}
+  .pack li::before{content:"+ ";color:#60a5fa;font-weight:700}
+  .check{
+    display:flex;align-items:flex-start;gap:.55rem;margin:.65rem 0;font-size:.78rem;color:var(--dim);line-height:1.4;
+  }
+  .check input{margin-top:.15rem;accent-color:var(--accent)}
+  .lock-note{
+    margin:.55rem 0 0;padding:.55rem .65rem;border-radius:.45rem;
+    border:1px dashed rgb(255 255 255 / .18);font-size:.72rem;color:var(--mute);line-height:1.4;
+  }
+  .admin-row{
+    display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:center;
+    padding:.7rem 0;border-bottom:1px solid var(--line);font-size:.8rem;
+  }
+  .admin-row:last-child{border-bottom:0}
+  .pill{
+    display:inline-block;padding:.15rem .4rem;border-radius:.3rem;font-size:.55rem;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;
+  }
+  .pill.on{background:rgb(16 185 129 / .2);color:#a7f3d0}
+  .pill.off{background:rgb(255 255 255 / .06);color:var(--mute)}
+  .radio{
+    display:flex;align-items:center;gap:.55rem;margin:.45rem 0;font-size:.85rem;
+  }
+  .radio input{accent-color:var(--accent)}
+  .split{display:grid;gap:1rem}
+  @media(min-width:860px){.desk .split{grid-template-columns:1.1fr .9fr}}
+  .flag{font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fbbf24;margin:0 0 .55rem}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>B2B ielogotais: bez TAB + Audits bāze / Dīlera pēc ķekša</h1>
+  <p class="lead">
+    Problēma: TAB (Dīlera | BUSINESS) paslēpj otru produktu. Jaunais produkta modelis: visiem partneriem
+    redzamas tikai <strong>PROVIN Audita</strong> pakas; <strong>Dīlera dati</strong> ieslēdzami manuāli
+    katram partnerim adminā, lai nevarētu „salikt” CarVertical+AutoDNA+Dīleris un apiet pilno auditu.
+  </p>
+  <div class="policy">
+    <strong>Produkta politika (konceptos).</strong> Bāze = Audits (79,99 € / 10×69,99 €).
+    Dīlera paku un kredītus rāda tikai ja <code>dealerEnabled=true</code> partnera ierakstā.
+    Bez ķekša: nav atsevišķas dīlera pirkšanas UI; Audita aprakstā dīleru slānis paliek kā audits vērtība.
+  </div>
+  <nav class="toc" id="toc"></nav>
+  <div id="variants"></div>
+</div>
+<script>
+const AUDIT_LINES = [
+  "Oficiālie dīleru dati*",
+  "carVertical + AutoDNA",
+  "Reģistri, izsoles, apdrošinātāji, TA",
+  "Eksperta kopsavilkums",
+];
+const DEAL_LINES = [
+  "Odometra ieraksti no OEM",
+  "Apkopes un remonti",
+  "Kampaņu pārbaude",
+  "100% atmaksa, ja nav ierakstu",
+];
+
+function nav(active){
+  const items = ["Sākums","Atskaites","Profils"];
+  return `<div class="nav">${items.map((x)=>`<span class="${x===active?"on":""}">${x}</span>`).join("")}</div>`;
+}
+function packsAudit(selected=1){
+  return `<div class="pack-row">
+    <button type="button" class="pack ${selected===0?"on":""}"><div class="qty">1 atskaite</div><div class="tot">79,99 €</div>
+      <ul>${AUDIT_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
+    <button type="button" class="pack ${selected===1?"on":""}"><div class="qty">10 atskaites · ieteicams</div><div class="tot">699,90 €</div>
+      <div class="meta" style="font-size:.62rem;color:#93c5fd;margin-top:.35rem">69,99 € / gab.</div>
+      <ul>${AUDIT_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
+  </div>`;
+}
+function packsDealer(selected=1){
+  return `<div class="pack-row">
+    <button type="button" class="pack ${selected===0?"on":""}"><div class="qty">1 · Dīlera</div><div class="tot">19,99 €</div>
+      <ul>${DEAL_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
+    <button type="button" class="pack ${selected===1?"on":""}"><div class="qty">10 · Dīlera</div><div class="tot">179,90 €</div>
+      <ul>${DEAL_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
+  </div>`;
+}
+
+const VARIANTS = [
+  {
+    id:"1",
+    title:"1. Audits-only pirkšana (noklusējums visiem)",
+    why:"Nav TAB. Viena produkta pakas vienmēr redzamas. Dīlera nav pirkšanas UI.",
+    desk(){return `${nav("Atskaites")}<h2 class="h">Pirkt atskaites</h2>
+      <p class="sub">PROVIN Audits - pilna vēstures pārbaude ar eksperta kopsavilkumu.</p>
+      ${packsAudit(1)}
+      <button type="button" class="cta">Pasūtīt atskaites 699,90 €</button>
+      <p class="lock-note">Dīlera dati atsevišķi nav pieejami. Tie ir iekļauti Audita vērtībā (noteiktiem zīmoliem).</p>`},
+    phone(){return `${nav("Atskaites")}<h2 class="h">Pirkt atskaites</h2>
+      <p class="sub">Tikai PROVIN Audits.</p>${packsAudit(1)}
+      <button type="button" class="cta">Pasūtīt 699,90 €</button>`},
+  },
+  {
+    id:"2",
+    title:"2. Sākums: viena kredītu karte + VIN (bez dīlera)",
+    why:"Ja dealerEnabled=false - nav radio, nav otrās kredītu ailes. Mazāk izvēles.",
+    desk(){return `${nav("Sākums")}<h2 class="h">Iesniegt VIN</h2>
+      <div class="credits one"><div class="cred"><div class="k">PROVIN Audits</div><div class="v">7</div></div></div>
+      <span class="lab">VIN</span><input class="field" value="WVWZZZ3CZWE123456"/>
+      <button type="button" class="cta">Iesniegt</button>
+      <button type="button" class="cta ghost">Pirkt vēl atskaites</button>`},
+    phone(){return `${nav("Sākums")}<h2 class="h">Iesniegt VIN</h2>
+      <div class="credits one"><div class="cred"><div class="k">Audits</div><div class="v">7</div></div></div>
+      <span class="lab">VIN</span><input class="field" value="WVWZZZ…"/>
+      <button type="button" class="cta">Iesniegt</button>`},
+  },
+  {
+    id:"3",
+    title:"3. Partnerim ar ķeksi: divas kartes blakus (bez TAB)",
+    why:"Abi produkti vienlaikus redzami. Pirkšana: Audits + Dīlera kā atsevišķas kartes, ne switcher.",
+    desk(){return `${nav("Atskaites")}<p class="flag">dealerEnabled = true</p>
+      <div class="split">
+        <div class="svc primary"><h3>PRO<span class="b">VIN</span> Audits</h3>
+          <p>Manuāla forenzika + dīleru slānis + CV/DNA + reģistri.</p>
+          <div class="price">no 69,99 €</div>${packsAudit(1)}
+          <button type="button" class="cta">Pirkt Audits</button></div>
+        <div class="svc"><h3>Dīlera dati</h3>
+          <p>Tikai OEM servisa ieraksti. Aktivizēts šim partnerim.</p>
+          <div class="price">no 17,99 €</div>${packsDealer(1)}
+          <button type="button" class="cta">Pirkt Dīlera</button></div>
+      </div>`},
+    phone(){return `${nav("Atskaites")}<p class="flag">dealer on</p>
+      <div class="svc primary"><h3>PRO<span class="b">VIN</span> Audits</h3><div class="price">69,99 €</div>
+        <button type="button" class="cta">Pirkt Audits</button></div>
+      <div class="svc"><h3>Dīlera dati</h3><div class="price">17,99 €</div>
+        <button type="button" class="cta">Pirkt Dīlera</button></div>`},
+  },
+  {
+    id:"4",
+    title:"4. Sākums ar dīleri: kredīti 2 ailēs + radio (abi redzami)",
+    why:"TAB nav. Radio saraksts rāda abus pakalpojumus ar atlikumu. Intuitīvāk nekā switcher.",
+    desk(){return `${nav("Sākums")}<p class="flag">dealerEnabled</p><h2 class="h">Iesniegt VIN</h2>
+      <div class="credits two">
+        <div class="cred"><div class="k">Audits</div><div class="v">4</div></div>
+        <div class="cred"><div class="k">Dīlera</div><div class="v">12</div></div>
+      </div>
+      <span class="lab">VIN</span><input class="field" value="WBA8…"/>
+      <span class="lab">Pakalpojums</span>
+      <label class="radio"><input type="radio" name="s4" checked/> PROVIN Audits (4)</label>
+      <label class="radio"><input type="radio" name="s4"/> Dīlera dati (12)</label>
+      <button type="button" class="cta">Iesniegt</button>`},
+    phone(){return `${nav("Sākums")}<div class="credits two">
+        <div class="cred"><div class="k">Audits</div><div class="v">4</div></div>
+        <div class="cred"><div class="k">Dīlera</div><div class="v">12</div></div>
+      </div>
+      <span class="lab">VIN</span><input class="field"/>
+      <label class="radio"><input type="radio" name="s4p" checked/> Audits</label>
+      <label class="radio"><input type="radio" name="s4p"/> Dīlera</label>
+      <button type="button" class="cta">Iesniegt</button>`},
+  },
+  {
+    id:"5",
+    title:"5. Audits pirkšana + locked teaser dīlerim",
+    why:"Bez ķekša: dīleris redzams kā „pieejams pēc vienošanās”, ne kā pirkums. Stiprina Audits.",
+    desk(){return `${nav("Atskaites")}<h2 class="h">PRO<span style="color:var(--accent)">VIN</span> Audits</h2>
+      <p class="sub">Vienīgais pirkšanas produkts šajā kontā.</p>${packsAudit(0)}
+      <button type="button" class="cta">Pasūtīt 79,99 €</button>
+      <div class="svc locked" style="margin-top:1rem">
+        <h3>Dīlera dati</h3>
+        <p>Atsevišķa OEM paka šim kontam nav aktivizēta. Oficiālie dīleru ieraksti joprojām ietilpst Audita atskaitē (atbalstītajiem zīmoliem).</p>
+        <div class="lock-note">Vajadzīga atsevišķa dīlera paka? Rakstiet info@provin.lv</div>
+      </div>`},
+    phone(){return `${nav("Atskaites")}${packsAudit(0)}
+      <button type="button" class="cta">Pasūtīt 79,99 €</button>
+      <div class="lock-note" style="margin-top:.85rem">Dīlera atsevišķi: nav aktivizēts. Sazinieties ar PROVIN.</div>`},
+  },
+  {
+    id:"6",
+    title:"6. VIN plūsma: Audits automātiski · dīleris kā papildu ķeksis",
+    why:"Nav produkta TAB. Ja dealer on un ir kredīti - var pievienot OEM pārbaudi tam pašam VIN (vai tērēt dīlera kredītu).",
+    desk(){return `${nav("Sākums")}<p class="flag">dealer on · hibrīds</p>
+      <h2 class="h">Jauns pasūtījums</h2>
+      <div class="credits two">
+        <div class="cred"><div class="k">Audits</div><div class="v">3</div></div>
+        <div class="cred"><div class="k">Dīlera (add-on)</div><div class="v">5</div></div>
+      </div>
+      <span class="lab">VIN</span><input class="field"/>
+      <div class="svc primary"><h3>Pasūtījums: PROVIN Audits</h3><p>Obligātais produkts šim VIN.</p></div>
+      <label class="check"><input type="checkbox"/> Papildus: Dīlera dati šim VIN (−1 dīlera kredīts)</label>
+      <button type="button" class="cta">Iesniegt</button>`},
+    phone(){return `${nav("Sākums")}<span class="lab">VIN</span><input class="field"/>
+      <div class="svc primary"><h3>Audits</h3></div>
+      <label class="check"><input type="checkbox"/> + Dīlera dati</label>
+      <button type="button" class="cta">Iesniegt</button>`},
+  },
+  {
+    id:"7",
+    title:"7. Tukšs konts: viens CTA, bez izvēles",
+    why:"Nav kredītu - uzreiz Audits pakas. Nekādu TAB „izvēlies dīleri”.",
+    desk(){return `${nav("Sākums")}<h2 class="h">Pieejamās atskaites</h2>
+      <div class="credits one"><div class="cred"><div class="k">PROVIN Audits</div><div class="v empty">0</div></div></div>
+      <p class="sub" style="margin-bottom:.85rem">Lai iesniegtu VIN, vispirms iegādājies Audita atskaites.</p>
+      ${packsAudit(1)}
+      <button type="button" class="cta">Pirkt Audits 699,90 €</button>`},
+    phone(){return `${nav("Sākums")}
+      <div class="cred"><div class="k">Audits</div><div class="v empty">0</div></div>
+      <p class="sub">Nav kredītu.</p>${packsAudit(1)}
+      <button type="button" class="cta">Pirkt</button>`},
+  },
+  {
+    id:"8",
+    title:"8. Admin: partneru saraksts ar Dīlera ķeksi",
+    why:"Manuāla aktivizācija. Bāze Audits visiem; ķeksis ieslēdz Dīlera pirkšanu un kredītus.",
+    desk(){return `<h2 class="h">Admin · B2B partneri</h2>
+      <p class="sub">Atzīmē „Dīlera dati”, lai partneris redzētu atsevišķo paku.</p>
+      <div class="admin-row"><div><strong>SIA Demo Auto</strong><br/><span style="color:var(--mute);font-size:.72rem">info@demo.lv</span></div>
+        <label class="check" style="margin:0"><input type="checkbox"/> Dīlera</label></div>
+      <div class="admin-row"><div><strong>Dzintarzeme Auto</strong><br/><span style="color:var(--mute);font-size:.72rem">info@dzintarzemeauto.lv</span></div>
+        <label class="check" style="margin:0"><input type="checkbox" checked/> Dīlera <span class="pill on">ON</span></label></div>
+      <div class="admin-row"><div><strong>Baltic Motors</strong><br/><span style="color:var(--mute);font-size:.72rem">b2b@baltic.lv</span></div>
+        <label class="check" style="margin:0"><input type="checkbox"/> Dīlera <span class="pill off">OFF</span></label></div>
+      <button type="button" class="cta" style="max-width:14rem;margin-top:1rem">Saglabāt</button>`},
+    phone(){return `<h2 class="h">Partneri</h2>
+      <div class="admin-row"><div>Demo Auto</div><span class="pill off">Dīl OFF</span></div>
+      <div class="admin-row"><div>Dzintarzeme</div><span class="pill on">Dīl ON</span></div>
+      <div class="admin-row"><div>Baltic</div><span class="pill off">Dīl OFF</span></div>`},
+  },
+  {
+    id:"9",
+    title:"9. Vertikāls katalogs: Audits vienmēr · Dīlera ja ON",
+    why:"Atskaites sadaļa kā stacked cards. Otrs produkts parādās tikai ar flagu - bez TAB pārslēgšanas.",
+    desk(){return `${nav("Atskaites")}<div class="svc primary">
+        <h3>PRO<span class="b">VIN</span> Audits</h3>
+        <p>Galvenais produkts. Manuāla meklēšana + OEM slānis Audita ietvaros.</p>
+        <div class="meta">1 × 79,99 € · 10 × 69,99 €</div>
+        <button type="button" class="cta">Izvēlēties paku</button>
+      </div>
+      <div class="svc">
+        <h3>Dīlera dati <span class="pill on">aktivizēts</span></h3>
+        <p>Atsevišķa OEM paka. Redzama tikai šim partnerim.</p>
+        <div class="meta">1 × 19,99 € · 10 × 17,99 €</div>
+        <button type="button" class="cta ghost">Izvēlēties dīlera paku</button>
+      </div>`},
+    phone(){return `${nav("Atskaites")}
+      <div class="svc primary"><h3>Audits</h3><button type="button" class="cta">Pakas</button></div>
+      <div class="svc"><h3>Dīlera <span class="pill on">ON</span></h3><button type="button" class="cta ghost">Pakas</button></div>`},
+  },
+  {
+    id:"10",
+    title:"10. Web: Audits kreisajā · VIN labajā (dīleris nav)",
+    why:"Dashboard bez produktu TAB. Pirkšana un iesniegšana vienā ekrānā - tikai Audits.",
+    desk(){return `${nav("Sākums")}<div class="split">
+      <div>
+        <h2 class="h">Kredīti</h2>
+        <div class="credits one"><div class="cred"><div class="k">PROVIN Audits</div><div class="v empty">0</div></div></div>
+        <p class="sub">Iegādājies Audita paku.</p>
+        ${packsAudit(1)}
+        <button type="button" class="cta">Pirkt 699,90 €</button>
+      </div>
+      <div>
+        <h2 class="h">VIN</h2>
+        <p class="sub">Pieejams pēc kredītu iegādes.</p>
+        <span class="lab">VIN</span><input class="field" disabled placeholder="Nav kredītu"/>
+        <button type="button" class="cta" disabled style="opacity:.45">Iesniegt</button>
+      </div>
+    </div>`},
+    phone(){return `${nav("Sākums")}
+      <div class="cred"><div class="k">Audits</div><div class="v empty">0</div></div>
+      ${packsAudit(1)}
+      <button type="button" class="cta">Pirkt</button>
+      <div class="lock-note">VIN iesniegšana pēc pirkuma.</div>`},
+  },
+];
+
+const toc = document.getElementById("toc");
+const root = document.getElementById("variants");
+VARIANTS.forEach((v) => {
+  toc.innerHTML += `<a href="#v${v.id}">${v.id}</a>`;
+  const sec = document.createElement("section");
+  sec.className = "section";
+  sec.id = "v" + v.id;
+  sec.innerHTML = `<h2>${v.title}</h2><p class="why">${v.why}</p>
+    <div class="pair">
+      <div><p class="device">Web</p><div class="stage desk"><span class="badge">V${v.id} · web</span>${v.desk()}</div></div>
+      <div><p class="device">Telefons</p><div class="phone-frame"><div class="phone-inner"><span class="badge">V${v.id} · phone</span>${v.phone()}</div></div></div>
+    </div>`;
+  root.appendChild(sec);
+});
+</script>
+</body>
+</html>
