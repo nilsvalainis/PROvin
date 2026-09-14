@@ -256,6 +256,10 @@ type StaleDocumentCandidate = {
  * Dīlera pasūtījuma odometrs zem faktisko nolasījumu līmeņa: dokuments atvērts agrāk, nekā datēts.
  * Kandidāts kļūst par apstiprinātu „novecojušu dokumentu” tikai tad, ja vēlākie nolasījumi atgriežas
  * vismaz līdz iepriekšējam līmenim — citādi tā ir īsta odometra pretruna un paliek atzīmēta.
+ *
+ * Zemāks jauns rādījums pēc pīķa (īsta korekcija, piem. 90 599 → 63 573) NAV dokuments:
+ * tas paliek sarkanā pretruna. Oranžais brīdinājums tikai tad, ja tas pats km jau bija
+ * redzēts pirms pīķa (pasūtījums atkārto vecu nolasījumu).
  */
 function findStaleDocumentSourceOrders(
   sorted: UnifiedMileageRow[],
@@ -271,21 +275,28 @@ function findStaleDocumentSourceOrders(
   const candidates: StaleDocumentCandidate[] = [];
   const candidateOrders = new Set<number>();
   const staleValues: number[] = [];
+  const kmAtCurrentPeak: number[] = [];
   let trustedMaxKm: number | null = null;
 
   for (const pt of pts) {
     const belowTrusted =
       trustedMaxKm !== null && trustedMaxKm - pt.km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
+    const repeatsPeakChainKm = kmAtCurrentPeak.some(
+      (v) => Math.abs(v - pt.km) <= STALE_DOCUMENT_MIRROR_TOLERANCE_KM,
+    );
     const mirrorsStaleValue = staleValues.some(
       (v) => Math.abs(v - pt.km) <= STALE_DOCUMENT_MIRROR_TOLERANCE_KM,
     );
-    if (belowTrusted && (pt.documentValue || mirrorsStaleValue)) {
+    if (belowTrusted && (repeatsPeakChainKm || mirrorsStaleValue)) {
       candidates.push({ sourceOrder: pt.sourceOrder, levelKm: trustedMaxKm! });
       candidateOrders.add(pt.sourceOrder);
       staleValues.push(pt.km);
       continue;
     }
-    trustedMaxKm = trustedMaxKm === null ? pt.km : Math.max(trustedMaxKm, pt.km);
+    if (trustedMaxKm === null || pt.km >= trustedMaxKm) {
+      kmAtCurrentPeak.push(pt.km);
+      trustedMaxKm = pt.km;
+    }
   }
 
   const confirmed = new Set<number>();

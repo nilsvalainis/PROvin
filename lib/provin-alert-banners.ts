@@ -41,6 +41,30 @@ import {
 
 export type ProvinInfoBannerKind = "lv_registration_tenure";
 
+/** Kopsavilkuma bāzes plāksnītes - vienmēr redzamas adminā, slēdzamas / rediģējamas kā baneri. */
+export type ProvinSummaryTileKind =
+  | "summary:incidents"
+  | "summary:mileage"
+  | "summary:owners"
+  | "summary:service";
+
+export const PROVIN_SUMMARY_TILE_KINDS = [
+  "summary:incidents",
+  "summary:mileage",
+  "summary:owners",
+  "summary:service",
+] as const satisfies readonly ProvinSummaryTileKind[];
+
+const SUMMARY_TILE_KIND_SET = new Set<string>(PROVIN_SUMMARY_TILE_KINDS);
+
+export function isSummaryTileBannerKind(raw: string): raw is ProvinSummaryTileKind {
+  return SUMMARY_TILE_KIND_SET.has(raw);
+}
+
+export function summaryTileBannerKind(tileId: "incidents" | "mileage" | "owners" | "service"): ProvinSummaryTileKind {
+  return `summary:${tileId}`;
+}
+
 export type ProvinAlertBannerKind =
   | "odometer"
   | "tirgus_high_supply"
@@ -51,7 +75,11 @@ export type ProvinAlertBannerKind =
 /** Starptautiskās vēstures brīdinājums — `ccvin:` + stabils slugs no reģistra nosaukuma. */
 export type ProvinCcVinBannerKind = `ccvin:${string}`;
 
-export type ProvinBannerKind = ProvinAlertBannerKind | ProvinInfoBannerKind | ProvinCcVinBannerKind;
+export type ProvinBannerKind =
+  | ProvinAlertBannerKind
+  | ProvinInfoBannerKind
+  | ProvinCcVinBannerKind
+  | ProvinSummaryTileKind;
 
 const CCVIN_BANNER_KIND_RE = /^ccvin:[a-z0-9_]{1,40}$/;
 
@@ -112,10 +140,15 @@ const MANUAL_BANNER_SEVERITIES = new Set<ProvinManualBannerSeverity>(["grey", "y
 const PROVIN_BANNER_KINDS = new Set<ProvinBannerKind>([
   ...PROVIN_ALERT_BANNER_KINDS,
   ...PROVIN_INFO_BANNER_KINDS,
+  ...PROVIN_SUMMARY_TILE_KINDS,
 ]);
 
 export function isProvinBannerKind(raw: string): raw is ProvinBannerKind {
-  return PROVIN_BANNER_KINDS.has(raw as ProvinBannerKind) || isCcVinBannerKind(raw);
+  return (
+    PROVIN_BANNER_KINDS.has(raw as ProvinBannerKind) ||
+    isCcVinBannerKind(raw) ||
+    isSummaryTileBannerKind(raw)
+  );
 }
 
 /** Aprēķinātā brīdinājuma labojums glabājas tajā pašā sarakstā ar šādu id. */

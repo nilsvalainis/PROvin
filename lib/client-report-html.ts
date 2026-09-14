@@ -671,17 +671,20 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
 /** Atskaites kopsavilkums - bāzes plāksnītes un brīdinājumu / manuālās kartītes vienā režģī. */
 function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummaryTile[] = []): string {
   const tiles = [
-    ...buildPdfReportSummaryTiles({
-      csddForm: p.csddForm ?? null,
-      autoRecordsBlock: p.autoRecordsBlock ?? null,
-      oneautoBlock: p.oneautoBlock ?? null,
-      ccVinBlock: p.ccVinBlock ?? null,
-      manualVendorBlocks: p.manualVendorBlocks ?? null,
-      manualLtabBlock: p.manualLtabBlock ?? null,
-      citiAvoti: p.citiAvoti ?? null,
-      tirgusForm: p.tirgusForm ?? null,
-      listingUrl: p.listingUrl ?? null,
-    }),
+    ...buildPdfReportSummaryTiles(
+      {
+        csddForm: p.csddForm ?? null,
+        autoRecordsBlock: p.autoRecordsBlock ?? null,
+        oneautoBlock: p.oneautoBlock ?? null,
+        ccVinBlock: p.ccVinBlock ?? null,
+        manualVendorBlocks: p.manualVendorBlocks ?? null,
+        manualLtabBlock: p.manualLtabBlock ?? null,
+        citiAvoti: p.citiAvoti ?? null,
+        tirgusForm: p.tirgusForm ?? null,
+        listingUrl: p.listingUrl ?? null,
+      },
+      { pdfBannerInclude: p.pdfBannerInclude ?? null, manualBanners: p.manualBanners ?? null },
+    ),
     ...extraTiles,
   ];
   const items = tiles

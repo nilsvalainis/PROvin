@@ -174,6 +174,26 @@ describe("analyzeUnifiedMileageAnomalies", () => {
     expect(chartExcludeSourceOrders.has(4)).toBe(true);
   });
 
+  it("does not paint the post-rollback climb as stale documents (X5 90599 → 63573)", () => {
+    const rows = [
+      row({ date: "22.12.2009", odometer: "90599", sourceLabel: "DEALER", sourceOrder: 0, sortableTime: Date.UTC(2009, 11, 22), documentValue: true }),
+      row({ date: "01.12.2011", odometer: "63573", sourceLabel: "CarVertical", sourceOrder: 1, sortableTime: Date.UTC(2011, 11, 1) }),
+      row({ date: "23.12.2011", odometer: "63595", sourceLabel: "DEALER", sourceOrder: 2, sortableTime: Date.UTC(2011, 11, 23), documentValue: true }),
+      row({ date: "12.01.2012", odometer: "64316", sourceLabel: "DEALER", sourceOrder: 3, sortableTime: Date.UTC(2012, 0, 12), documentValue: true }),
+      row({ date: "13.07.2012", odometer: "66935", sourceLabel: "DEALER", sourceOrder: 4, sortableTime: Date.UTC(2012, 6, 13), documentValue: true }),
+      row({ date: "18.02.2015", odometer: "70315", sourceLabel: "AutoDNA", sourceOrder: 5, sortableTime: Date.UTC(2015, 1, 18) }),
+      row({ date: "02.02.2016", odometer: "87378", sourceLabel: "DEALER", sourceOrder: 6, sortableTime: Date.UTC(2016, 1, 2), documentValue: true }),
+      row({ date: "30.01.2017", odometer: "105491", sourceLabel: "DEALER", sourceOrder: 7, sortableTime: Date.UTC(2017, 0, 30), documentValue: true }),
+    ];
+    const { anomalyBySourceOrder, staleDocumentSourceOrders } = analyzeUnifiedMileageAnomalies(rows);
+    expect(anomalyBySourceOrder.get(1)).toBe(true);
+    expect(staleDocumentSourceOrders.size).toBe(0);
+    expect(anomalyBySourceOrder.get(2)).toBe(false);
+    expect(anomalyBySourceOrder.get(3)).toBe(false);
+    expect(anomalyBySourceOrder.get(5)).toBe(false);
+    expect(anomalyBySourceOrder.get(6)).toBe(false);
+  });
+
   it("keeps flagging a rollback when later readings never return to the earlier level", () => {
     const rows = [
       row({ date: "01.01.2020", odometer: "150000", sourceLabel: "AutoDNA", sourceOrder: 0, sortableTime: Date.UTC(2020, 0, 1) }),

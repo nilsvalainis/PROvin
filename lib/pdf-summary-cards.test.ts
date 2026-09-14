@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { emptyCsddFields } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
-import { buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
+import { buildPdfReportSummaryTiles, buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
 import {
   filterManualBannersForPdf,
   mergeProvinManualBanners,
@@ -243,5 +243,39 @@ describe("aprēķināto brīdinājumu labošana", () => {
     });
     expect(banners.filter((b) => b.kind === "incidents")).toHaveLength(1);
     expect(banners.some((b) => b.kind === "ccvin:fiksetie_bojajumi")).toBe(false);
+  });
+});
+
+describe("kopsavilkuma bāzes plāksnītes", () => {
+  it("ļauj slēpt un pārrakstīt īpašnieku kartīti", () => {
+    const input = {
+      csddForm: emptyCsddFields(),
+      autoRecordsBlock: null,
+      ccVinBlock: emptyCcVinBlock(),
+      manualVendorBlocks: [],
+      citiAvoti: null,
+    };
+    const all = buildPdfReportSummaryTiles(input);
+    expect(all.map((t) => t.id)).toEqual(["incidents", "mileage", "owners", "service"]);
+    const hidden = buildPdfReportSummaryTiles(input, {
+      pdfBannerInclude: { "summary:owners": false },
+    });
+    expect(hidden.map((t) => t.id)).toEqual(["incidents", "mileage", "service"]);
+    const edited = buildPdfReportSummaryTiles(input, {
+      manualBanners: [
+        {
+          id: "kind:summary:owners",
+          kind: "summary:owners",
+          title: "Īpašnieku skaits",
+          value: "4 maiņas",
+          text: "CarVertical: četras īpašnieku maiņas.",
+          severity: "yellow",
+        },
+      ],
+    });
+    const owners = edited.find((t) => t.id === "owners");
+    expect(owners?.value).toBe("4 maiņas");
+    expect(owners?.note).toBe("CarVertical: četras īpašnieku maiņas.");
+    expect(owners?.tone).toBe("warn");
   });
 });

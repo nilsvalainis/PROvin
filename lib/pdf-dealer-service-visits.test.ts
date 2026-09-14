@@ -124,4 +124,13 @@ describe("PDF dīlera servisa vizītes", () => {
     ]);
     expect(html).toContain("Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)");
   });
+
+  it("tukšu kategoriju „Apkope” rāda kā darbu iztrūkumu, ne kā darbu rindu", () => {
+    const html = buildDealerServiceVisitsHtml([
+      { date: "23.12.2011", odometer: "63595", location: "Itālija", works: "Apkope" },
+    ]);
+    expect(html).toContain("pdf-svc-empty");
+    expect(html).toContain("Detalizēts darbu saraksts atskaitē nav pieejams.");
+    expect(html).not.toMatch(/pdf-svc-work[^>]*>Apkope/);
+  });
 });

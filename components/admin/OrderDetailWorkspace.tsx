@@ -115,7 +115,7 @@ import {
   ListingAnalysisMainBlockTitleRow,
   ListingAnalysisSubsectionHeading,
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
-import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
+import { buildPdfReportSummaryTiles } from "@/lib/pdf-report-summary";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import {
   computeProvinAlertBannersFromWorkspace,
@@ -2752,6 +2752,24 @@ export function OrderDetailWorkspace({
     }
   }, [blocksDisplaySafe]);
 
+  const pdfSummaryTiles = useMemo(() => {
+    try {
+      return buildPdfReportSummaryTiles({
+        csddForm: blocksDisplaySafe.csdd,
+        autoRecordsBlock: blocksDisplaySafe.auto_records,
+        oneautoBlock: blocksDisplaySafe.oneauto,
+        ccVinBlock: blocksDisplaySafe.cc_vin,
+        manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
+        manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
+        citiAvoti: blocksDisplaySafe.citi_avoti,
+        tirgusForm: blocksDisplaySafe.tirgus,
+        listingUrl: payload.listingUrl ?? null,
+      });
+    } catch {
+      return [];
+    }
+  }, [blocksDisplaySafe, payload.listingUrl]);
+
   const hasIncidentDataForAi = useMemo(() => {
     try {
       return orderHasIncidentDataForAi(blocksDisplaySafe);
@@ -3616,6 +3634,7 @@ export function OrderDetailWorkspace({
           <AdminProvinAlertBanners
             banners={provinAlertBanners}
             infoBanners={provinInfoBanners}
+            summaryTiles={pdfSummaryTiles}
             pdfInclude={pdfBannerInclude}
             onPdfIncludeChange={patchBannerPdfInclude}
             manualBanners={manualBanners}

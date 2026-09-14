@@ -17,15 +17,20 @@ import type {
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
 import type {
   ProvinAlertBanner,
+  ProvinBannerPdfInclude,
   ProvinInfoBanner,
   ProvinManualBanner,
   ProvinManualBannerSeverity,
+  ProvinResolvedBanner,
 } from "@/lib/provin-alert-banners";
 import {
   filterManualBannersForPdf,
+  isProvinBannerIncludedInPdf,
   PROVIN_BANNER_DEFAULT_LABEL,
   PROVIN_INFO_BANNER_KINDS,
+  provinBannerOverrideFor,
   resolveProvinBanners,
+  summaryTileBannerKind,
 } from "@/lib/provin-alert-banners";
 import {
   formatOwnerCountTileFacts,
@@ -193,14 +198,73 @@ function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
-/** Kopsavilkuma plāksnītes secībā, kādā tās drukājas (vienmēr četras - arī tukšas ir informācija). */
-export function buildPdfReportSummaryTiles(input: PdfSummaryInput): PdfSummaryTile[] {
-  return [
+function tileToneToSeverity(tone: PdfSummaryTileTone): ProvinManualBannerSeverity {
+  if (tone === "alert") return "red";
+  if (tone === "warn") return "yellow";
+  return "grey";
+}
+
+function applySummaryTileOverride(tile: PdfSummaryTile, override: ProvinManualBanner | null): PdfSummaryTile {
+  if (!override) return tile;
+  const title = (override.title ?? "").trim();
+  const value = (override.value ?? "").trim();
+  const note = override.text.trim();
+  return {
+    ...tile,
+    label: title || tile.label,
+    value: value || tile.value,
+    note: note || tile.note,
+    tone:
+      override.severity === "red" ? "alert" : override.severity === "yellow" ? "warn" : tile.tone === "ok" ? "ok" : "neutral",
+  };
+}
+
+/** Kopsavilkuma plāksnītes secībā, kādā tās drukājas. Operators var slēpt un pārrakstīt katru. */
+export function buildPdfReportSummaryTiles(
+  input: PdfSummaryInput,
+  opts?: { pdfBannerInclude?: ProvinBannerPdfInclude | null; manualBanners?: ProvinManualBanner[] | null },
+): PdfSummaryTile[] {
+  const computed = [
     buildIncidentsTile(input),
     buildMileageTile(input),
     buildOwnerCountTile(input),
     buildServiceTile(input),
   ];
+  const include = opts?.pdfBannerInclude;
+  const manuals = opts?.manualBanners;
+  return computed.flatMap((tile) => {
+    const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service");
+    if (!isProvinBannerIncludedInPdf(kind, include)) return [];
+    return [applySummaryTileOverride(tile, provinBannerOverrideFor(manuals, kind))];
+  });
+}
+
+export function summaryTilesAsResolvedBanners(
+  tiles: PdfSummaryTile[],
+  manualBanners?: ProvinManualBanner[] | null,
+): ProvinResolvedBanner[] {
+  return tiles.map((tile) => {
+    const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service");
+    const override = provinBannerOverrideFor(manualBanners, kind);
+    const computedSeverity = tileToneToSeverity(tile.tone);
+    const card = { label: tile.label, value: tile.value, note: tile.note };
+    const applied = applySummaryTileOverride(tile, override);
+    return {
+      kind,
+      text: applied.note || applied.value,
+      severity: override?.severity ?? computedSeverity,
+      card: { label: applied.label, value: applied.value, note: applied.note },
+      defaults: { text: tile.note || tile.value, severity: computedSeverity, card },
+      override,
+      edited: Boolean(
+        override &&
+          (override.severity !== computedSeverity ||
+            (override.title ?? "").trim() ||
+            (override.value ?? "").trim() ||
+            override.text.trim()),
+      ),
+    };
+  });
 }
 
 /** Īsāks teksts iztiek bez atsevišķas paskaidrojuma rindas - tas kļūst par kartītes vērtību. */

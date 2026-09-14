@@ -12,6 +12,7 @@ import {
 } from "@/lib/auto-records-service-works";
 import { countryFromDealerName } from "@/lib/dealer-report-extract";
 import { formatServiceWorksLines } from "@/lib/service-works-lines";
+import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 
 const EMPTY_WORKS_NOTE = "Detalizēts darbu saraksts atskaitē nav pieejams.";
 const PLACEHOLDER_WORKS_RE = /detaliz[ēe]ts\s+darbu\s+saraksts/i;
@@ -55,7 +56,7 @@ function workLines(raw: string): string[] {
   return formatServiceWorksLines(raw)
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line && !PLACEHOLDER_WORKS_RE.test(line));
+    .filter((line) => line && !PLACEHOLDER_WORKS_RE.test(line) && !isVendorServiceCategoryLine(line));
 }
 
 function visitWorksHtml(raw: string): string {
