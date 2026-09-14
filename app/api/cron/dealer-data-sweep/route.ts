@@ -18,11 +18,17 @@ export const maxDuration = 300;
 const MAX_JOBS_PER_RUN = 5;
 
 function isAuthorized(req: Request): { ok: true } | { ok: false; status: number; error: string } {
-  const expected = process.env.ADMIN_DEALER_DATA_CRON_SECRET?.trim() ?? "";
-  if (!expected) return { ok: false, status: 503, error: "missing_cron_secret" };
+  // Vercel Cron sūta Bearer CRON_SECRET; papildus atbalstām projekta ADMIN_DEALER_DATA_CRON_SECRET.
+  const candidates = [
+    process.env.ADMIN_DEALER_DATA_CRON_SECRET?.trim() ?? "",
+    process.env.CRON_SECRET?.trim() ?? "",
+  ].filter(Boolean);
+  if (candidates.length === 0) return { ok: false, status: 503, error: "missing_cron_secret" };
   const auth = req.headers.get("authorization")?.trim() ?? "";
   if (!auth) return { ok: false, status: 401, error: "missing_authorization" };
-  if (auth !== `Bearer ${expected}`) return { ok: false, status: 403, error: "forbidden" };
+  if (!candidates.some((s) => auth === `Bearer ${s}`)) {
+    return { ok: false, status: 403, error: "forbidden" };
+  }
   return { ok: true };
 }
 

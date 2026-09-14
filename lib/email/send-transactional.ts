@@ -7,6 +7,7 @@ import {
   adminNewOrderHtml,
   auditCompletedEmailHtml,
   dealerDataNoDataRefundEmailHtml,
+  dealerDataOperatorMessageEmailHtml,
   listingPeekCustomerCommentHtml,
   partnerVerifyEmailHtml,
   paymentConfirmationHtml,
@@ -535,6 +536,57 @@ export async function trySendDealerDataRefundEmail(opts: {
     return true;
   } catch (err) {
     console.error("[dealer-data] atmaksas e-pasts neizdevās", err);
+    return false;
+  }
+}
+
+/**
+ * Operatora rediģēts dīlera e-pasts (bez atmaksas). Var ietvert PDF pielikumu.
+ */
+export async function sendDealerDataOperatorEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  attachments?: ReportReadyMailAttachment[];
+}): Promise<void> {
+  const subject = opts.subject.trim().slice(0, 180);
+  const text = opts.text.trim();
+  if (!subject || !text) {
+    throw new Error("missing_subject_or_text");
+  }
+  const attachments = dedupeAttachmentFilenames(opts.attachments ?? []);
+  await sendSmtpMail({
+    to: opts.to,
+    subject,
+    text,
+    html: dealerDataOperatorMessageEmailHtml({ text }),
+    ...(attachments.length > 0
+      ? {
+          attachments: attachments.map((a) => ({
+            filename: a.filename,
+            content: a.content,
+            contentType: a.contentType,
+          })),
+        }
+      : {}),
+  });
+}
+
+export async function trySendDealerDataOperatorEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  attachments?: ReportReadyMailAttachment[];
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[dealer-data] SMTP nav iestatīts, operatora e-pasts nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendDealerDataOperatorEmail(opts);
+    return true;
+  } catch (err) {
+    console.error("[dealer-data] operatora e-pasts neizdevās", err);
     return false;
   }
 }

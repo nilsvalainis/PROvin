@@ -4316,6 +4316,9 @@ export function OrderDetailWorkspace({
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
               applyPatchedBlocks={applyCopilotPatchedBlocks}
               orderVin={vinBar}
+              customerEmail={payload.customerEmail}
+              canDealerRefund={payload.sessionId.startsWith("cs_")}
+              onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
             />
           </div>
         ) : null}

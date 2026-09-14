@@ -222,6 +222,29 @@ ${ctaButton(opts.verifyUrl, cta)}
 }
 
 /**
+ * Operatora rediģēts dīlera e-pasts (plain text → rindkopas).
+ * Izmanto gan „nav datu”, gan PDF piegādei - saturu nosaka teksts, ne veidne.
+ */
+export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null; text: string }): string {
+  const title = (opts.title ?? "").trim();
+  const paragraphs = opts.text
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+  const body = paragraphs
+    .map((block) => {
+      const html = esc(block).replace(/\n/g, "<br/>");
+      return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${html}</p>`;
+    })
+    .join("\n");
+  const titleBlock = title
+    ? `<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>`
+    : "";
+  return shell(`${titleBlock}${body}`, { omitBrandRibbon: true });
+}
+
+/**
  * E-pasts: oficiālā dīlera dati par šo VIN nav pieejami, maksājums atgriezts.
  * Nekad neapgalvo, ka auto nav apkalpots: ražotāja datubāzē vienkārši nav ieraksta.
  */
