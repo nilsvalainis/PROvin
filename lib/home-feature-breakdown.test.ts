@@ -14,12 +14,14 @@ import { buildSiteRailSections, siteRailActiveFromHash, siteRailRouteActiveIndex
 describe("home-hero-plan", () => {
   it("keeps hero tabs within the catalog deep-link cap", () => {
     expect(HERO_CHECKOUT_TAB_IDS.length).toBeLessThanOrEqual(HERO_CHECKOUT_TAB_MAX);
-    expect(HERO_CHECKOUT_TAB_IDS).toEqual(["mini", "audits", "dealer", "koreaUsa"]);
+    expect(HERO_CHECKOUT_TAB_IDS).toEqual(["mini", "audits", "dealer"]);
   });
 
   it("parses plan query aliases", () => {
     expect(parseHeroPlanParam("dealer")).toBe("dealer");
     expect(parseHeroPlanParam("audit")).toBe("audits");
+    expect(parseHeroPlanParam("koreaUsa")).toBeNull();
+    expect(parseHeroPlanParam("asv")).toBeNull();
     expect(parseHeroPlanParam("nope")).toBeNull();
   });
 
@@ -29,9 +31,9 @@ describe("home-hero-plan", () => {
 });
 
 describe("pakalpojumi catalog", () => {
-  it("exposes catalog cards including dealer, koreaUsa and partners", () => {
+  it("exposes catalog cards including dealer and partners (koreaUsa temporarily hidden)", () => {
     const pkgs = getCatalogFeatureBreakdownPackages();
-    expect(pkgs.map((p) => p.id)).toEqual(["audits", "mini", "dealer", "koreaUsa", "partner"]);
+    expect(pkgs.map((p) => p.id)).toEqual(["audits", "mini", "dealer", "partner"]);
     const dealer = pkgs.find((p) => p.id === "dealer")!;
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.items).toHaveLength(4);
@@ -39,11 +41,7 @@ describe("pakalpojumi catalog", () => {
     expect(dealer.sampleReportHref).toContain("dilera");
     const mini = pkgs.find((p) => p.id === "mini")!;
     expect(mini.sampleReportHref).toContain("provin-mini-piemers");
-    const koreaUsa = pkgs.find((p) => p.id === "koreaUsa")!;
-    expect(koreaUsa.title).toBe("ASV UN KOREJA");
-    expect(koreaUsa.buttonText).toContain("19,99");
-    expect(koreaUsa.items).toHaveLength(4);
-    expect(koreaUsa.items[1]?.title).toContain("Izsoļu");
+    expect(pkgs.find((p) => p.id === "koreaUsa")).toBeUndefined();
     const partner = pkgs.find((p) => p.id === "partner")!;
     expect(partner.title).toBe("PROVIN BUSINESS");
     expect(partner.buttonText).toBe("Partneriem");
@@ -59,7 +57,6 @@ describe("pakalpojumi catalog", () => {
       "pakalpojums-audits",
       "pakalpojums-mini",
       "pakalpojums-dealer",
-      "pakalpojums-koreaUsa",
       "pakalpojums-partner",
     ]);
   });

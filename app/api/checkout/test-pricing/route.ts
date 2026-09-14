@@ -26,6 +26,7 @@ import {
   isTp5CheckoutSource,
   validateTp5InlineFields,
 } from "@/lib/test-pricing-5-inline-checkout";
+import { TP5_KOREA_USA_PUBLIC } from "@/lib/test-pricing-5-mobile";
 import { routing } from "@/i18n/routing";
 
 export const runtime = "nodejs";
@@ -104,6 +105,9 @@ export async function POST(req: Request) {
   const plan = getTestPricingPlan(planRaw as TestPricingPlanId);
   if (!plan) {
     return NextResponse.json({ error: "Nederīgs produkts." }, { status: 400 });
+  }
+  if (plan.id === "koreaUsa" && !TP5_KOREA_USA_PUBLIC) {
+    return NextResponse.json({ error: "Šis produkts pagaidām nav pieejams." }, { status: 404 });
   }
 
   const localeRaw = typeof raw.locale === "string" ? raw.locale : routing.defaultLocale;

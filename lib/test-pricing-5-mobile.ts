@@ -32,6 +32,18 @@ export type Tp5MobileFeature = {
 
 export type Tp5MobileServiceId = "mini" | "audits" | "dealer" | "koreaUsa";
 
+/**
+ * Temporarily hide ASV/Koreja from public PROVIN product surfaces (hero, catalog, deep-links, checkout).
+ * Keep definitions + Stripe mapping; flip to `true` to restore.
+ */
+export const TP5_KOREA_USA_PUBLIC = false;
+
+/** Whether a hero/catalog tier should appear on the public site right now. */
+export function isTp5PublicServiceId(id: Tp5MobileServiceId): boolean {
+  if (id === "koreaUsa") return TP5_KOREA_USA_PUBLIC;
+  return true;
+}
+
 export type Tp5MobileService = {
   id: Tp5MobileServiceId;
   /** Desktop tab / fallback title. */
@@ -261,7 +273,9 @@ export function getTp5HeroTabServices(
 ): Tp5MobileService[] {
   const all = getTp5MobileServices(locale);
   return all.filter(
-    (service) => TP5_HERO_TAB_IDS.includes(service.id) || service.id === activeId,
+    (service) =>
+      isTp5PublicServiceId(service.id) &&
+      (TP5_HERO_TAB_IDS.includes(service.id) || service.id === activeId),
   );
 }
 

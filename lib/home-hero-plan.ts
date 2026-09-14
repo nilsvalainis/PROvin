@@ -1,10 +1,12 @@
 import type { Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
-import { TP5_MOBILE_SERVICE_ORDER } from "@/lib/test-pricing-5-mobile";
+import { isTp5PublicServiceId, TP5_MOBILE_SERVICE_ORDER } from "@/lib/test-pricing-5-mobile";
 
 /** Hero checkout tab cap — keep switcher to 3–4 plans; extras live on `/pakalpojumi`. */
 export const HERO_CHECKOUT_TAB_MAX = 4;
 
-export const HERO_CHECKOUT_TAB_IDS: readonly Tp5MobileServiceId[] = TP5_MOBILE_SERVICE_ORDER;
+/** Public hero / deep-link tiers only (hidden products stay in TP5_MOBILE_SERVICE_ORDER). */
+export const HERO_CHECKOUT_TAB_IDS: readonly Tp5MobileServiceId[] =
+  TP5_MOBILE_SERVICE_ORDER.filter(isTp5PublicServiceId);
 
 const HERO_PLAN_ALIAS: Record<string, Tp5MobileServiceId> = {
   mini: "mini",

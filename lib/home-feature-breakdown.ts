@@ -1,4 +1,5 @@
 import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-hero-features";
+import { TP5_KOREA_USA_PUBLIC } from "@/lib/test-pricing-5-mobile";
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
@@ -400,7 +401,8 @@ export function catalogPackageAnchorId(id: HomeFeatureBreakdownPackageId): strin
 
 /** Locale-aware catalog packages; anything other than `en` falls back to Latvian. */
 export function getHomeFeatureBreakdownPackages(locale?: string): HomeFeatureBreakdownPackage[] {
-  return locale === "en" ? HOME_FEATURE_BREAKDOWN_PACKAGES_EN : HOME_FEATURE_BREAKDOWN_PACKAGES;
+  const all = locale === "en" ? HOME_FEATURE_BREAKDOWN_PACKAGES_EN : HOME_FEATURE_BREAKDOWN_PACKAGES;
+  return all.filter((pkg) => pkg.id !== "koreaUsa" || TP5_KOREA_USA_PUBLIC);
 }
 
 /** Alias for catalog page clarity. */

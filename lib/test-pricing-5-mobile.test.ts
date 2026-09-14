@@ -6,9 +6,12 @@ import {
   getTp5MobileServices,
   getTp5MobileTabTitle,
   getTp5MobileTurnaround,
+  getTp5HeroTabServices,
+  isTp5PublicServiceId,
   TP5_DEALER_BRAND_ROWS,
   TP5_DEALER_BRANDS,
   TP5_DEALER_BRANDS_WITH_LOGO,
+  TP5_KOREA_USA_PUBLIC,
   TP5_MOBILE_CHECKOUT_PLAN,
   TP5_MOBILE_FEATURE_ROW_COUNT,
   TP5_MOBILE_SERVICES,
@@ -26,13 +29,21 @@ const SHARED_COMPARE_ROWS_LV = [
 ];
 
 describe("test-pricing-5 mobile three-tier model", () => {
-  it("exposes mini, audits, dealer and catalog koreaUsa", () => {
+  it("exposes mini, audits, dealer and catalog koreaUsa (koreaUsa kept in catalog, public visibility gated)", () => {
     expect(TP5_MOBILE_SERVICE_ORDER).toEqual(["mini", "audits", "dealer", "koreaUsa"]);
     expect(TP5_MOBILE_SERVICES).toHaveLength(4);
     expect(TP5_MOBILE_CHECKOUT_PLAN.mini).toBe("plus");
     expect(TP5_MOBILE_CHECKOUT_PLAN.audits).toBe("premium");
     expect(TP5_MOBILE_CHECKOUT_PLAN.dealer).toBe("dealer");
     expect(TP5_MOBILE_CHECKOUT_PLAN.koreaUsa).toBe("koreaUsa");
+  });
+
+  it("hides koreaUsa from public hero tabs while keeping the service definition", () => {
+    expect(TP5_KOREA_USA_PUBLIC).toBe(false);
+    expect(isTp5PublicServiceId("koreaUsa")).toBe(false);
+    expect(isTp5PublicServiceId("dealer")).toBe(true);
+    expect(getTp5HeroTabServices("koreaUsa").map((s) => s.id)).toEqual(["mini", "audits", "dealer"]);
+    expect(getTp5MobileService("koreaUsa").title).toBe("ASV UN KOREJA");
   });
 
   it("keeps a five-row checklist on MINI/AUDITS and dealer", () => {
