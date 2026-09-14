@@ -5,13 +5,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { get, put } from "@vercel/blob";
 import {
+  emptyB2bPartnerPrices,
   isSafeB2bPartnerId,
   isUsablePartnerPassword,
   normalizePartnerEmail,
   normalizePartnerWriteInput,
+  parseB2bPartnerPrices,
   parsePartnerRecord,
   partnerFieldError,
   toPublicPartner,
+  type B2bPartnerPriceOverrides,
   type B2bPartnerPublicProfile,
   type B2bPartnerRecord,
   type B2bPartnerStatus,
@@ -208,6 +211,8 @@ export async function createB2bPartner(
       emailVerifyExpiresAt: verifyToken ? new Date(Date.now() + B2B_EMAIL_VERIFY_TTL_MS).toISOString() : null,
       emailVerifyPurpose: verifyToken ? "signup" : null,
       pendingEmail: null,
+      dealerEnabled: false,
+      prices: emptyB2bPartnerPrices(),
     };
     doc.partners.push(record);
     await writeDoc(doc);
@@ -221,7 +226,12 @@ export type UpdateB2bPartnerResult =
 
 export async function updateB2bPartner(
   id: string,
-  patch: Partial<B2bPartnerWriteInput> & { status?: B2bPartnerStatus; password?: string },
+  patch: Partial<B2bPartnerWriteInput> & {
+    status?: B2bPartnerStatus;
+    password?: string;
+    dealerEnabled?: boolean;
+    prices?: B2bPartnerPriceOverrides;
+  },
 ): Promise<UpdateB2bPartnerResult> {
   return withLock(async () => {
     if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
@@ -251,6 +261,8 @@ export async function updateB2bPartner(
       ...prev,
       ...nextInput,
       status,
+      dealerEnabled: typeof patch.dealerEnabled === "boolean" ? patch.dealerEnabled : prev.dealerEnabled,
+      prices: patch.prices ? parseB2bPartnerPrices(patch.prices) : prev.prices,
       passwordHash:
         patch.password != null && patch.password.trim()
           ? hashB2bPartnerPassword(patch.password.trim())

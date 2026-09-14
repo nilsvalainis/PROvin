@@ -44,12 +44,48 @@ describe("b2b partner account", () => {
       emailVerifyExpiresAt: null,
       emailVerifyPurpose: null,
       pendingEmail: null,
+      dealerEnabled: false,
+      prices: {
+        business1: null,
+        business10: null,
+        dealer1: null,
+        dealer10: null,
+      },
     };
     const publicProfile = toPublicPartner(record);
     expect(publicProfile).not.toHaveProperty("passwordHash");
     expect(publicProfile).not.toHaveProperty("emailVerifyHash");
     expect(publicProfile.email).toBe("demo@provin.lv");
     expect(publicProfile.emailVerifiedAt).toBe("2026-09-04T00:00:00.000Z");
+    expect(publicProfile.dealerEnabled).toBe(false);
+  });
+
+  it("defaults dealerEnabled to false and parses custom prices", () => {
+    const parsed = parsePartnerRecord({
+      id: "ptr_0123456789abcdef",
+      ...validInput,
+      email: "demo@provin.lv",
+      passwordHash: "scrypt$salt$hash",
+      status: "active",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      updatedAt: "2026-09-04T00:00:00.000Z",
+      dealerEnabled: true,
+      prices: { business1: 5999, business10: 5499, dealer1: 1499, dealer10: 1299 },
+    });
+    expect(parsed?.dealerEnabled).toBe(true);
+    expect(parsed?.prices.business1).toBe(5999);
+    expect(parsed?.prices.dealer10).toBe(1299);
+    const legacy = parsePartnerRecord({
+      id: "ptr_0123456789abcdef",
+      ...validInput,
+      email: "demo@provin.lv",
+      passwordHash: "scrypt$salt$hash",
+      status: "active",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      updatedAt: "2026-09-04T00:00:00.000Z",
+    });
+    expect(legacy?.dealerEnabled).toBe(false);
+    expect(legacy?.prices.business1).toBeNull();
   });
 
   it("treats legacy records without emailVerifiedAt as already verified", () => {

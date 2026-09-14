@@ -24,9 +24,14 @@
   h1{margin:0 0 .35rem;font-size:1.15rem;letter-spacing:-.02em}
   .lead{margin:0 0 .65rem;color:var(--faint);font-size:.84rem;line-height:1.45;max-width:54rem}
   .policy{
-    margin:0 0 1.1rem;padding:.85rem 1rem;border-radius:.65rem;
+    margin:0 0 .6rem;padding:.85rem 1rem;border-radius:.65rem;
     border:1px solid rgb(37 99 235 / .35);background:rgb(37 99 235 / .1);
     font-size:.82rem;line-height:1.5;color:#e4e4e7;max-width:54rem;
+  }
+  .policy2{
+    margin:0 0 1.1rem;padding:.7rem 1rem;border-radius:.65rem;
+    border:1px dashed rgb(255 255 255 / .18);
+    font-size:.78rem;line-height:1.5;color:var(--mute);max-width:54rem;
   }
   .toc{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 1.3rem}
   .toc a{
@@ -57,7 +62,7 @@
     background:rgb(255 255 255 / .06);color:#d4d4d8;font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   }
   .device{margin:0 0 .55rem;font-size:.55rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd}
-  .nav{display:flex;gap:.55rem;flex-wrap:wrap;margin:0 0 1rem;padding-bottom:.75rem;border-bottom:1px solid var(--line)}
+  .nav{display:flex;gap:.55rem;flex-wrap:wrap;margin:0 0 .75rem;padding-bottom:.75rem;border-bottom:1px solid var(--line)}
   .nav span{
     font-size:.58rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);
   }
@@ -79,6 +84,16 @@
   .cta.ghost{
     background:transparent;border:1px solid rgb(255 255 255 / .18);color:#93c5fd;margin-top:.55rem;
   }
+  /* Atlikums — vienots, vienmēr redzams komponents visos konceptos */
+  .atlikums{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1rem}
+  .al{
+    display:flex;align-items:baseline;gap:.4rem;border:1px solid var(--line);border-radius:.6rem;
+    padding:.45rem .65rem;background:rgb(255 255 255 / .03);
+  }
+  .al .k{font-size:.56rem;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .al .v{font-size:.95rem;font-weight:700;tabular-nums;color:#fff}
+  .al .v.empty{color:#93c5fd}
+  .al.dealer{border-color:rgb(16 185 129 / .3)}
   .credits{display:grid;gap:.55rem;margin:.85rem 0 1rem}
   .credits.two{grid-template-columns:1fr 1fr}
   .credits.one{grid-template-columns:1fr}
@@ -106,9 +121,12 @@
     color:inherit;cursor:pointer;width:100%;
   }
   .pack.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:rgb(37 99 235 / .1)}
-  .pack .qty{font-size:.78rem;font-weight:650}
-  .pack .tot{font-size:.95rem;font-weight:650;margin-top:.25rem}
-  .pack ul{margin:.45rem 0 0;padding:0;list-style:none}
+  .pack .qty{font-size:.68rem;font-weight:650;color:var(--mute);letter-spacing:.02em}
+  /* Cenu hierarhija: mazākais (izdevīgākais) skaitlis vizuāli LIELĀKS; kopējā (lielākā) summa MAZĀKA */
+  .pack .unit{margin-top:.3rem;font-size:1.3rem;font-weight:750;letter-spacing:-.01em;color:#fff}
+  .pack .unit .suf{margin-left:.3rem;font-size:.58rem;font-weight:600;color:var(--faint);text-transform:none;letter-spacing:0}
+  .pack .tot-note{margin-top:.2rem;font-size:.62rem;color:var(--faint)}
+  .pack ul{margin:.5rem 0 0;padding:0;list-style:none}
   .pack li{font-size:.68rem;color:var(--dim);padding:.12rem 0}
   .pack li::before{content:"+ ";color:#60a5fa;font-weight:700}
   .check{
@@ -152,6 +170,16 @@
     Dīlera paku un kredītus rāda tikai ja <code>dealerEnabled=true</code> partnera ierakstā.
     Bez ķekša: nav atsevišķas dīlera pirkšanas UI; Audita aprakstā dīleru slānis paliek kā audits vērtība.
   </div>
+  <div class="policy2">
+    <strong>Divi apstiprināti principi (visos konceptos).</strong>
+    1) „Atlikums” (pieejamo atskaišu skaits) ir vienmēr redzams, vienā vietā, vienā stilā.
+    2) Cenu hierarhija: pakas gabalcena (mazākais skaitlis, piem. 69,99 €) ir vizuāli LIELĀKA;
+    kopējā summa par visu paku (lielākais skaitlis, piem. 699,90 €) ir mazāka, sekundāra piezīme.
+  </div>
+  <p class="lead" style="margin-top:-.4rem">
+    11.-20. tajā pašā PROVIN UI, cits izkārtojums:
+    <a href="b2b-logged-in-round-2.html" style="color:#93c5fd">atvērt 11-20</a>.
+  </p>
   <nav class="toc" id="toc"></nav>
   <div id="variants"></div>
 </div>
@@ -173,21 +201,36 @@ function nav(active){
   const items = ["Sākums","Atskaites","Profils"];
   return `<div class="nav">${items.map((x)=>`<span class="${x===active?"on":""}">${x}</span>`).join("")}</div>`;
 }
-function packsAudit(selected=1){
-  return `<div class="pack-row">
-    <button type="button" class="pack ${selected===0?"on":""}"><div class="qty">1 atskaite</div><div class="tot">79,99 €</div>
-      <ul>${AUDIT_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
-    <button type="button" class="pack ${selected===1?"on":""}"><div class="qty">10 atskaites · ieteicams</div><div class="tot">699,90 €</div>
-      <div class="meta" style="font-size:.62rem;color:#93c5fd;margin-top:.35rem">69,99 € / gab.</div>
-      <ul>${AUDIT_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
+
+/** Vienots "Atlikums" rādītājs — vienmēr redzams, vienā vietā, visos konceptos. */
+function atlikums(auditN, dealerN){
+  const showDealer = dealerN !== null;
+  const auditEmpty = auditN < 1;
+  return `<div class="atlikums">
+    <div class="al"><span class="k">Atlikums · Audits</span><span class="v${auditEmpty?" empty":""}">${auditN}</span></div>
+    ${showDealer ? `<div class="al dealer"><span class="k">Atlikums · Dīlera</span><span class="v${dealerN<1?" empty":""}">${dealerN}</span></div>` : ""}
   </div>`;
 }
-function packsDealer(selected=1){
+
+/** Pack karte: gabalcena vienmēr LIELĀ (galvenais skaitlis); kopējā summa MAZA piezīme. */
+function packCard({ qtyLabel, unit, totalNote, on, lines }){
+  return `<button type="button" class="pack ${on ? "on" : ""}">
+      <div class="qty">${qtyLabel}</div>
+      <div class="unit">${unit}<span class="suf">/ atskaite</span></div>
+      ${totalNote ? `<div class="tot-note">${totalNote}</div>` : ""}
+      <ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
+    </button>`;
+}
+function packsAudit(selected = 1){
   return `<div class="pack-row">
-    <button type="button" class="pack ${selected===0?"on":""}"><div class="qty">1 · Dīlera</div><div class="tot">19,99 €</div>
-      <ul>${DEAL_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
-    <button type="button" class="pack ${selected===1?"on":""}"><div class="qty">10 · Dīlera</div><div class="tot">179,90 €</div>
-      <ul>${DEAL_LINES.map(l=>`<li>${l}</li>`).join("")}</ul></button>
+    ${packCard({ qtyLabel: "1 atskaite", unit: "79,99 €", totalNote: "", on: selected === 0, lines: AUDIT_LINES })}
+    ${packCard({ qtyLabel: "10 atskaites", unit: "69,99 €", totalNote: "Kopā 10 gab.: 699,90 €", on: selected === 1, lines: AUDIT_LINES })}
+  </div>`;
+}
+function packsDealer(selected = 1){
+  return `<div class="pack-row">
+    ${packCard({ qtyLabel: "1 · Dīlera", unit: "19,99 €", totalNote: "", on: selected === 0, lines: DEAL_LINES })}
+    ${packCard({ qtyLabel: "10 · Dīlera", unit: "17,99 €", totalNote: "Kopā 10 gab.: 179,90 €", on: selected === 1, lines: DEAL_LINES })}
   </div>`;
 }
 
@@ -195,27 +238,25 @@ const VARIANTS = [
   {
     id:"1",
     title:"1. Audits-only pirkšana (noklusējums visiem)",
-    why:"Nav TAB. Viena produkta pakas vienmēr redzamas. Dīlera nav pirkšanas UI.",
-    desk(){return `${nav("Atskaites")}<h2 class="h">Pirkt atskaites</h2>
+    why:"Nav TAB. Viena produkta pakas vienmēr redzamas. Dīlera nav pirkšanas UI. Atlikums augšā.",
+    desk(){return `${nav("Atskaites")}${atlikums(2, null)}<h2 class="h">Pirkt atskaites</h2>
       <p class="sub">PROVIN Audits - pilna vēstures pārbaude ar eksperta kopsavilkumu.</p>
       ${packsAudit(1)}
       <button type="button" class="cta">Pasūtīt atskaites 699,90 €</button>
       <p class="lock-note">Dīlera dati atsevišķi nav pieejami. Tie ir iekļauti Audita vērtībā (noteiktiem zīmoliem).</p>`},
-    phone(){return `${nav("Atskaites")}<h2 class="h">Pirkt atskaites</h2>
+    phone(){return `${nav("Atskaites")}${atlikums(2, null)}<h2 class="h">Pirkt atskaites</h2>
       <p class="sub">Tikai PROVIN Audits.</p>${packsAudit(1)}
       <button type="button" class="cta">Pasūtīt 699,90 €</button>`},
   },
   {
     id:"2",
     title:"2. Sākums: viena kredītu karte + VIN (bez dīlera)",
-    why:"Ja dealerEnabled=false - nav radio, nav otrās kredītu ailes. Mazāk izvēles.",
-    desk(){return `${nav("Sākums")}<h2 class="h">Iesniegt VIN</h2>
-      <div class="credits one"><div class="cred"><div class="k">PROVIN Audits</div><div class="v">7</div></div></div>
+    why:"Ja dealerEnabled=false - nav radio, nav otrās kredītu ailes. Atlikums = vienīgais rādītājs augšā.",
+    desk(){return `${nav("Sākums")}${atlikums(7, null)}<h2 class="h">Iesniegt VIN</h2>
       <span class="lab">VIN</span><input class="field" value="WVWZZZ3CZWE123456"/>
       <button type="button" class="cta">Iesniegt</button>
       <button type="button" class="cta ghost">Pirkt vēl atskaites</button>`},
-    phone(){return `${nav("Sākums")}<h2 class="h">Iesniegt VIN</h2>
-      <div class="credits one"><div class="cred"><div class="k">Audits</div><div class="v">7</div></div></div>
+    phone(){return `${nav("Sākums")}${atlikums(7, null)}<h2 class="h">Iesniegt VIN</h2>
       <span class="lab">VIN</span><input class="field" value="WVWZZZ…"/>
       <button type="button" class="cta">Iesniegt</button>`},
   },
@@ -223,18 +264,18 @@ const VARIANTS = [
     id:"3",
     title:"3. Partnerim ar ķeksi: divas kartes blakus (bez TAB)",
     why:"Abi produkti vienlaikus redzami. Pirkšana: Audits + Dīlera kā atsevišķas kartes, ne switcher.",
-    desk(){return `${nav("Atskaites")}<p class="flag">dealerEnabled = true</p>
+    desk(){return `${nav("Atskaites")}<p class="flag">dealerEnabled = true</p>${atlikums(2, 15)}
       <div class="split">
         <div class="svc primary"><h3>PRO<span class="b">VIN</span> Audits</h3>
           <p>Manuāla forenzika + dīleru slānis + CV/DNA + reģistri.</p>
-          <div class="price">no 69,99 €</div>${packsAudit(1)}
+          ${packsAudit(1)}
           <button type="button" class="cta">Pirkt Audits</button></div>
         <div class="svc"><h3>Dīlera dati</h3>
           <p>Tikai OEM servisa ieraksti. Aktivizēts šim partnerim.</p>
-          <div class="price">no 17,99 €</div>${packsDealer(1)}
+          ${packsDealer(1)}
           <button type="button" class="cta">Pirkt Dīlera</button></div>
       </div>`},
-    phone(){return `${nav("Atskaites")}<p class="flag">dealer on</p>
+    phone(){return `${nav("Atskaites")}<p class="flag">dealer on</p>${atlikums(2, 15)}
       <div class="svc primary"><h3>PRO<span class="b">VIN</span> Audits</h3><div class="price">69,99 €</div>
         <button type="button" class="cta">Pirkt Audits</button></div>
       <div class="svc"><h3>Dīlera dati</h3><div class="price">17,99 €</div>
@@ -242,22 +283,15 @@ const VARIANTS = [
   },
   {
     id:"4",
-    title:"4. Sākums ar dīleri: kredīti 2 ailēs + radio (abi redzami)",
-    why:"TAB nav. Radio saraksts rāda abus pakalpojumus ar atlikumu. Intuitīvāk nekā switcher.",
-    desk(){return `${nav("Sākums")}<p class="flag">dealerEnabled</p><h2 class="h">Iesniegt VIN</h2>
-      <div class="credits two">
-        <div class="cred"><div class="k">Audits</div><div class="v">4</div></div>
-        <div class="cred"><div class="k">Dīlera</div><div class="v">12</div></div>
-      </div>
+    title:"4. Sākums ar dīleri: radio (abi redzami, viens Atlikums rādītājs)",
+    why:"TAB nav. Vienotais Atlikums rādītājs aizstāj divas atsevišķas kredītu kartes. Radio saraksts izvēlei.",
+    desk(){return `${nav("Sākums")}<p class="flag">dealerEnabled</p>${atlikums(4, 12)}<h2 class="h">Iesniegt VIN</h2>
       <span class="lab">VIN</span><input class="field" value="WBA8…"/>
       <span class="lab">Pakalpojums</span>
       <label class="radio"><input type="radio" name="s4" checked/> PROVIN Audits (4)</label>
       <label class="radio"><input type="radio" name="s4"/> Dīlera dati (12)</label>
       <button type="button" class="cta">Iesniegt</button>`},
-    phone(){return `${nav("Sākums")}<div class="credits two">
-        <div class="cred"><div class="k">Audits</div><div class="v">4</div></div>
-        <div class="cred"><div class="k">Dīlera</div><div class="v">12</div></div>
-      </div>
+    phone(){return `${nav("Sākums")}${atlikums(4, 12)}
       <span class="lab">VIN</span><input class="field"/>
       <label class="radio"><input type="radio" name="s4p" checked/> Audits</label>
       <label class="radio"><input type="radio" name="s4p"/> Dīlera</label>
@@ -267,7 +301,7 @@ const VARIANTS = [
     id:"5",
     title:"5. Audits pirkšana + locked teaser dīlerim",
     why:"Bez ķekša: dīleris redzams kā „pieejams pēc vienošanās”, ne kā pirkums. Stiprina Audits.",
-    desk(){return `${nav("Atskaites")}<h2 class="h">PRO<span style="color:var(--accent)">VIN</span> Audits</h2>
+    desk(){return `${nav("Atskaites")}${atlikums(5, null)}<h2 class="h">PRO<span style="color:var(--accent)">VIN</span> Audits</h2>
       <p class="sub">Vienīgais pirkšanas produkts šajā kontā.</p>${packsAudit(0)}
       <button type="button" class="cta">Pasūtīt 79,99 €</button>
       <div class="svc locked" style="margin-top:1rem">
@@ -275,25 +309,21 @@ const VARIANTS = [
         <p>Atsevišķa OEM paka šim kontam nav aktivizēta. Oficiālie dīleru ieraksti joprojām ietilpst Audita atskaitē (atbalstītajiem zīmoliem).</p>
         <div class="lock-note">Vajadzīga atsevišķa dīlera paka? Rakstiet info@provin.lv</div>
       </div>`},
-    phone(){return `${nav("Atskaites")}${packsAudit(0)}
+    phone(){return `${nav("Atskaites")}${atlikums(5, null)}${packsAudit(0)}
       <button type="button" class="cta">Pasūtīt 79,99 €</button>
       <div class="lock-note" style="margin-top:.85rem">Dīlera atsevišķi: nav aktivizēts. Sazinieties ar PROVIN.</div>`},
   },
   {
     id:"6",
     title:"6. VIN plūsma: Audits automātiski · dīleris kā papildu ķeksis",
-    why:"Nav produkta TAB. Ja dealer on un ir kredīti - var pievienot OEM pārbaudi tam pašam VIN (vai tērēt dīlera kredītu).",
-    desk(){return `${nav("Sākums")}<p class="flag">dealer on · hibrīds</p>
+    why:"Nav produkta TAB. Ja dealer on un ir kredīti - var pievienot OEM pārbaudi tam pašam VIN.",
+    desk(){return `${nav("Sākums")}<p class="flag">dealer on · hibrīds</p>${atlikums(3, 5)}
       <h2 class="h">Jauns pasūtījums</h2>
-      <div class="credits two">
-        <div class="cred"><div class="k">Audits</div><div class="v">3</div></div>
-        <div class="cred"><div class="k">Dīlera (add-on)</div><div class="v">5</div></div>
-      </div>
       <span class="lab">VIN</span><input class="field"/>
       <div class="svc primary"><h3>Pasūtījums: PROVIN Audits</h3><p>Obligātais produkts šim VIN.</p></div>
       <label class="check"><input type="checkbox"/> Papildus: Dīlera dati šim VIN (−1 dīlera kredīts)</label>
       <button type="button" class="cta">Iesniegt</button>`},
-    phone(){return `${nav("Sākums")}<span class="lab">VIN</span><input class="field"/>
+    phone(){return `${nav("Sākums")}${atlikums(3, 5)}<span class="lab">VIN</span><input class="field"/>
       <div class="svc primary"><h3>Audits</h3></div>
       <label class="check"><input type="checkbox"/> + Dīlera dati</label>
       <button type="button" class="cta">Iesniegt</button>`},
@@ -301,21 +331,19 @@ const VARIANTS = [
   {
     id:"7",
     title:"7. Tukšs konts: viens CTA, bez izvēles",
-    why:"Nav kredītu - uzreiz Audits pakas. Nekādu TAB „izvēlies dīleri”.",
-    desk(){return `${nav("Sākums")}<h2 class="h">Pieejamās atskaites</h2>
-      <div class="credits one"><div class="cred"><div class="k">PROVIN Audits</div><div class="v empty">0</div></div></div>
+    why:"Nav kredītu - uzreiz Audits pakas. Nekādu TAB „izvēlies dīleri”. Atlikums rāda 0.",
+    desk(){return `${nav("Sākums")}${atlikums(0, null)}<h2 class="h">Pieejamās atskaites</h2>
       <p class="sub" style="margin-bottom:.85rem">Lai iesniegtu VIN, vispirms iegādājies Audita atskaites.</p>
       ${packsAudit(1)}
       <button type="button" class="cta">Pirkt Audits 699,90 €</button>`},
-    phone(){return `${nav("Sākums")}
-      <div class="cred"><div class="k">Audits</div><div class="v empty">0</div></div>
+    phone(){return `${nav("Sākums")}${atlikums(0, null)}
       <p class="sub">Nav kredītu.</p>${packsAudit(1)}
       <button type="button" class="cta">Pirkt</button>`},
   },
   {
     id:"8",
     title:"8. Admin: partneru saraksts ar Dīlera ķeksi",
-    why:"Manuāla aktivizācija. Bāze Audits visiem; ķeksis ieslēdz Dīlera pirkšanu un kredītus.",
+    why:"Manuāla aktivizācija. Bāze Audits visiem; ķeksis ieslēdz Dīlera pirkšanu un kredītus. (Admin skats - Atlikums šeit nav partnera lauks, tāpēc nav rādīts.)",
     desk(){return `<h2 class="h">Admin · B2B partneri</h2>
       <p class="sub">Atzīmē „Dīlera dati”, lai partneris redzētu atsevišķo paku.</p>
       <div class="admin-row"><div><strong>SIA Demo Auto</strong><br/><span style="color:var(--mute);font-size:.72rem">info@demo.lv</span></div>
@@ -334,7 +362,8 @@ const VARIANTS = [
     id:"9",
     title:"9. Vertikāls katalogs: Audits vienmēr · Dīlera ja ON",
     why:"Atskaites sadaļa kā stacked cards. Otrs produkts parādās tikai ar flagu - bez TAB pārslēgšanas.",
-    desk(){return `${nav("Atskaites")}<div class="svc primary">
+    desk(){return `${nav("Atskaites")}${atlikums(6, 20)}
+      <div class="svc primary">
         <h3>PRO<span class="b">VIN</span> Audits</h3>
         <p>Galvenais produkts. Manuāla meklēšana + OEM slānis Audita ietvaros.</p>
         <div class="meta">1 × 79,99 € · 10 × 69,99 €</div>
@@ -346,18 +375,17 @@ const VARIANTS = [
         <div class="meta">1 × 19,99 € · 10 × 17,99 €</div>
         <button type="button" class="cta ghost">Izvēlēties dīlera paku</button>
       </div>`},
-    phone(){return `${nav("Atskaites")}
+    phone(){return `${nav("Atskaites")}${atlikums(6, 20)}
       <div class="svc primary"><h3>Audits</h3><button type="button" class="cta">Pakas</button></div>
       <div class="svc"><h3>Dīlera <span class="pill on">ON</span></h3><button type="button" class="cta ghost">Pakas</button></div>`},
   },
   {
     id:"10",
     title:"10. Web: Audits kreisajā · VIN labajā (dīleris nav)",
-    why:"Dashboard bez produktu TAB. Pirkšana un iesniegšana vienā ekrānā - tikai Audits.",
-    desk(){return `${nav("Sākums")}<div class="split">
+    why:"Dashboard bez produktu TAB. Pirkšana un iesniegšana vienā ekrānā - tikai Audits. Atlikums augšā, virs abām kolonnām.",
+    desk(){return `${nav("Sākums")}${atlikums(0, null)}<div class="split">
       <div>
         <h2 class="h">Kredīti</h2>
-        <div class="credits one"><div class="cred"><div class="k">PROVIN Audits</div><div class="v empty">0</div></div></div>
         <p class="sub">Iegādājies Audita paku.</p>
         ${packsAudit(1)}
         <button type="button" class="cta">Pirkt 699,90 €</button>
@@ -369,8 +397,7 @@ const VARIANTS = [
         <button type="button" class="cta" disabled style="opacity:.45">Iesniegt</button>
       </div>
     </div>`},
-    phone(){return `${nav("Sākums")}
-      <div class="cred"><div class="k">Audits</div><div class="v empty">0</div></div>
+    phone(){return `${nav("Sākums")}${atlikums(0, null)}
       ${packsAudit(1)}
       <button type="button" class="cta">Pirkt</button>
       <div class="lock-note">VIN iesniegšana pēc pirkuma.</div>`},

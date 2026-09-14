@@ -32,6 +32,9 @@ export async function POST(req: Request) {
   if (!isPartnerPlan(planRaw)) {
     return NextResponse.json({ error: "service" }, { status: 400 });
   }
+  if (planRaw === "dealer" && partner.dealerEnabled !== true) {
+    return NextResponse.json({ error: "dealer_disabled" }, { status: 403 });
+  }
 
   // Real credit lots arrive with pack Stripe fulfillment. Until then remaining is empty
   // unless B2B_PARTNER_SEED_CREDITS is set explicitly for QA.

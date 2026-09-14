@@ -248,6 +248,29 @@ export function b2bPackDiscountPct(unitCents: number, listCents: number): number
   return Math.round(((listCents - unitCents) / listCents) * 100);
 }
 
+export function resolveB2bPacksForPartner(
+  plan: B2bPartnerPlanId,
+  prices?: {
+    business1: number | null;
+    business10: number | null;
+    dealer1: number | null;
+    dealer10: number | null;
+  } | null,
+): B2bPackOffer[] {
+  const base = plan === "business" ? B2B_BUSINESS_PACKS : B2B_DEALER_PACKS;
+  if (!prices) return [...base];
+  if (plan === "business") {
+    return [
+      { qty: 1, unitCents: prices.business1 ?? base[0]!.unitCents },
+      { qty: 10, unitCents: prices.business10 ?? base[1]!.unitCents },
+    ];
+  }
+  return [
+    { qty: 1, unitCents: prices.dealer1 ?? base[0]!.unitCents },
+    { qty: 10, unitCents: prices.dealer10 ?? base[1]!.unitCents },
+  ];
+}
+
 export function isB2bPartnerCode(value: string): boolean {
   return /^\d{6}$/.test(value.trim());
 }

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { isSafeB2bPartnerId, toPublicPartner, type B2bPartnerStatus } from "@/lib/b2b-partner-account";
+import {
+  isSafeB2bPartnerId,
+  parseB2bPartnerPrices,
+  toPublicPartner,
+  type B2bPartnerStatus,
+} from "@/lib/b2b-partner-account";
 import { getB2bPartnerById, updateB2bPartner } from "@/lib/b2b-partner-store";
 
 export const runtime = "nodejs";
@@ -36,6 +41,12 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const status: B2bPartnerStatus | undefined =
     statusRaw === "active" || statusRaw === "disabled" ? statusRaw : undefined;
 
+  const dealerEnabled = typeof raw.dealerEnabled === "boolean" ? raw.dealerEnabled : undefined;
+  let prices: ReturnType<typeof parseB2bPartnerPrices> | undefined;
+  if (raw.prices != null) {
+    prices = parseB2bPartnerPrices(raw.prices);
+  }
+
   const result = await updateB2bPartner(id, {
     companyName: str("companyName"),
     companyReg: str("companyReg"),
@@ -45,6 +56,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
     phone: str("phone"),
     password: str("password"),
     status,
+    dealerEnabled,
+    prices,
   });
   if (!result.ok) {
     const statusCode = result.error === "not_found" ? 404 : result.error === "email_taken" ? 409 : 400;

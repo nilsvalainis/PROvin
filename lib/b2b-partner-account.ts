@@ -2,6 +2,14 @@ import { isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validati
 
 export type B2bPartnerStatus = "active" | "disabled";
 
+/** Individuālas pakas cenas (centi). null = kataloga noklusējums. */
+export type B2bPartnerPriceOverrides = {
+  business1: number | null;
+  business10: number | null;
+  dealer1: number | null;
+  dealer10: number | null;
+};
+
 export type B2bPartnerRecord = {
   id: string;
   companyName: string;
@@ -20,6 +28,9 @@ export type B2bPartnerRecord = {
   emailVerifyExpiresAt: string | null;
   emailVerifyPurpose: "signup" | "email_change" | null;
   pendingEmail: string | null;
+  /** Atsevišķā Dīlera paka. Noklusējums false - ieslēdz admin pēc sarunas. */
+  dealerEnabled: boolean;
+  prices: B2bPartnerPriceOverrides;
 };
 
 export type B2bPartnerPublicProfile = Omit<
@@ -57,6 +68,44 @@ export function isSafeB2bPartnerId(id: string): boolean {
   return /^ptr_[a-f0-9]{16}$/.test(id.trim());
 }
 
+export function emptyB2bPartnerPrices(): B2bPartnerPriceOverrides {
+  return { business1: null, business10: null, dealer1: null, dealer10: null };
+}
+
+function parseOptionalCents(raw: unknown): number | null {
+  if (raw == null) return null;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+  const n = Math.round(raw);
+  if (n < 1 || n > 1_000_000_00) return null;
+  return n;
+}
+
+export function parseB2bPartnerPrices(raw: unknown): B2bPartnerPriceOverrides {
+  if (!raw || typeof raw !== "object") return emptyB2bPartnerPrices();
+  const o = raw as Record<string, unknown>;
+  return {
+    business1: parseOptionalCents(o.business1),
+    business10: parseOptionalCents(o.business10),
+    dealer1: parseOptionalCents(o.dealer1),
+    dealer10: parseOptionalCents(o.dealer10),
+  };
+}
+
+/** Euro tekstu (79,99 / 79.99) -> centi; tukšs = null (kataloga noklusējums). */
+export function euroTextToCents(raw: string): number | null | "invalid" {
+  const t = raw.trim().replace(/\s/g, "").replace("€", "").replace(",", ".");
+  if (!t) return null;
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return "invalid";
+  const euros = Number(t);
+  if (!Number.isFinite(euros) || euros <= 0 || euros > 1_000_000) return "invalid";
+  return Math.round(euros * 100);
+}
+
+export function centsToEuroInput(cents: number | null): string {
+  if (cents == null) return "";
+  return (cents / 100).toFixed(2).replace(".", ",");
+}
+
 export function toPublicPartner(partner: B2bPartnerRecord): B2bPartnerPublicProfile {
   return {
     id: partner.id,
@@ -71,6 +120,8 @@ export function toPublicPartner(partner: B2bPartnerRecord): B2bPartnerPublicProf
     updatedAt: partner.updatedAt,
     emailVerifiedAt: partner.emailVerifiedAt,
     pendingEmail: partner.pendingEmail,
+    dealerEnabled: partner.dealerEnabled,
+    prices: partner.prices,
   };
 }
 
@@ -147,5 +198,7 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
         : null,
     emailVerifyPurpose: purpose,
     pendingEmail,
+    dealerEnabled: o.dealerEnabled === true,
+    prices: parseB2bPartnerPrices(o.prices),
   };
 }

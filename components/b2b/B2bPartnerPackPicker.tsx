@@ -4,13 +4,12 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import {
-  B2B_BUSINESS_PACKS,
-  B2B_DEALER_PACKS,
   b2bPackDiscountPct,
-  b2bPackListCents,
   formatB2bEuroFromCents,
+  resolveB2bPacksForPartner,
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
+import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
 
 function packLines(plan: B2bPartnerPlanId, t: ReturnType<typeof useTranslations>): string[] {
   if (plan === "business") {
@@ -24,16 +23,21 @@ function packLines(plan: B2bPartnerPlanId, t: ReturnType<typeof useTranslations>
   ];
 }
 
-function defaultPackIndex(plan: B2bPartnerPlanId): number {
-  return plan === "dealer" ? 1 : 0;
-}
-
-export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | "panel" }) {
+export function B2bPartnerPackPicker({
+  variant = "page",
+  dealerEnabled = false,
+  prices = null,
+}: {
+  variant?: "page" | "panel";
+  dealerEnabled?: boolean;
+  prices?: B2bPartnerPriceOverrides | null;
+}) {
   const t = useTranslations("Partner");
-  const [plan, setPlan] = useState<B2bPartnerPlanId>("dealer");
-  const [selected, setSelected] = useState(defaultPackIndex("dealer"));
-  const packs = plan === "business" ? B2B_BUSINESS_PACKS : B2B_DEALER_PACKS;
-  const listCents = b2bPackListCents(plan);
+  const [plan, setPlan] = useState<B2bPartnerPlanId>("business");
+  const [selected, setSelected] = useState(0);
+  const activePlan: B2bPartnerPlanId = dealerEnabled ? plan : "business";
+  const packs = resolveB2bPacksForPartner(activePlan, prices);
+  const listCents = packs[0]?.unitCents ?? 0;
   const current = packs[selected] ?? packs[0];
   const panel = variant === "panel";
 
@@ -43,41 +47,50 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
         const total = pack.unitCents * pack.qty;
         const full = listCents * pack.qty;
         const pct = b2bPackDiscountPct(pack.unitCents, listCents);
-        const lines = packLines(plan, t);
+        const lines = packLines(activePlan, t);
         return { pack, total, full, pct, lines };
       }),
-    [packs, listCents, plan, t],
+    [packs, listCents, activePlan, t],
   );
 
   return (
     <section className={panel ? "w-full" : "mx-auto w-full max-w-[68rem]"}>
-      <div className={`flex gap-[3px] rounded-[10px] bg-[#1a1a1a] p-[3px] ${panel ? "max-w-none" : "max-w-[28rem]"}`}>
-        <button
-          type="button"
-          className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold tracking-[0.04em] ${
-            plan === "dealer" ? "bg-[#2563EB] text-white" : "bg-transparent text-zinc-400"
-          }`}
-          onClick={() => {
-            setPlan("dealer");
-            setSelected(defaultPackIndex("dealer"));
-          }}
+      {dealerEnabled ? (
+        <div
+          className={`flex gap-[3px] rounded-[10px] bg-[#1a1a1a] p-[3px] ${panel ? "max-w-none" : "max-w-[28rem]"}`}
         >
-          {t("navPacksDealer")}
-        </button>
-        <button
-          type="button"
-          className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold tracking-[0.04em] ${
-            plan === "business" ? "bg-[#2563EB] text-white" : "bg-transparent text-zinc-400"
-          }`}
-          onClick={() => {
-            setPlan("business");
-            setSelected(defaultPackIndex("business"));
-          }}
-        >
+          <button
+            type="button"
+            className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold tracking-[0.04em] ${
+              activePlan === "business" ? "bg-[#2563EB] text-white" : "bg-transparent text-zinc-400"
+            }`}
+            onClick={() => {
+              setPlan("business");
+              setSelected(0);
+            }}
+          >
+            {t("titlePrefix")}
+            {t("titleAccent")}
+          </button>
+          <button
+            type="button"
+            className={`flex-1 rounded-lg px-2 py-[0.78rem] text-[0.68rem] font-semibold tracking-[0.04em] ${
+              activePlan === "dealer" ? "bg-[#2563EB] text-white" : "bg-transparent text-zinc-400"
+            }`}
+            onClick={() => {
+              setPlan("dealer");
+              setSelected(0);
+            }}
+          >
+            {t("navPacksDealer")}
+          </button>
+        </div>
+      ) : (
+        <h3 className="text-[0.95rem] font-semibold tracking-[-0.02em] text-zinc-100">
           {t("titlePrefix")}
-          {t("titleAccent")}
-        </button>
-      </div>
+          <span className="text-[#2563EB]">{t("titleAccent")}</span>
+        </h3>
+      )}
 
       <div
         className={`mt-5 grid grid-cols-1 gap-3.5 ${
@@ -88,7 +101,7 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
           const on = index === selected;
           return (
             <button
-              key={`${plan}-${pack.qty}`}
+              key={`${activePlan}-${pack.qty}`}
               type="button"
               onClick={() => setSelected(index)}
               className={`relative rounded-[0.9rem] border p-4 text-left ${
@@ -98,7 +111,11 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
               }`}
             >
               <div className="flex items-center justify-between gap-3">
-                <div className={`min-w-0 text-[0.72rem] font-semibold uppercase tracking-[0.08em] ${on ? "text-[#93c5fd]" : "text-zinc-500"}`}>
+                <div
+                  className={`min-w-0 text-[0.72rem] font-semibold uppercase tracking-[0.08em] ${
+                    on ? "text-[#93c5fd]" : "text-zinc-500"
+                  }`}
+                >
                   {pack.qty === 1 ? t("packQty1") : t("packQtyN", { count: pack.qty })}
                 </div>
                 <div
@@ -108,7 +125,12 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
                   aria-hidden
                 >
                   {on ? (
-                    <svg viewBox="0 0 12 12" className="h-[0.7rem] w-[0.7rem] stroke-white" fill="none" strokeWidth="2.4">
+                    <svg
+                      viewBox="0 0 12 12"
+                      className="h-[0.7rem] w-[0.7rem] stroke-white"
+                      fill="none"
+                      strokeWidth="2.4"
+                    >
                       <path d="M2.2 6.2 4.8 8.7 9.8 3.3" />
                     </svg>
                   ) : null}
@@ -116,20 +138,27 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
               </div>
               <div className="mt-3.5 text-[1.55rem] font-semibold leading-none tracking-[-0.03em] text-zinc-100">
                 {formatB2bEuroFromCents(pack.unitCents)}{" "}
-                <span className="text-[0.78rem] font-medium tracking-normal text-zinc-500">{t("packPerReport")}</span>
+                <span className="text-[0.78rem] font-medium tracking-normal text-zinc-500">
+                  {t("packPerReport")}
+                </span>
               </div>
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <b className="text-[0.92rem] font-semibold text-zinc-100">{t("packTotal", { price: formatB2bEuroFromCents(total) })}</b>
-                {pct > 0 ? (
-                  <>
-                    <span className="text-[0.78rem] text-[#fb7185] line-through">{formatB2bEuroFromCents(full)}</span>
-                    <span className="rounded-sm bg-[#b91c1c] px-1.5 py-0.5 text-[0.62rem] font-bold text-white">-{pct}%</span>
-                  </>
-                ) : null}
-              </div>
+              {pack.qty > 1 ? (
+                <div className="mt-2 text-[0.78rem] text-zinc-500">
+                  {t("packTotal", { price: formatB2bEuroFromCents(total) })}
+                  {pct > 0 ? (
+                    <>
+                      {" "}
+                      <span className="text-[#fb7185] line-through">{formatB2bEuroFromCents(full)}</span>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
               <ul className="mt-3.5 list-none p-0">
                 {lines.map((line) => (
-                  <li key={line} className="grid grid-cols-[1rem_1fr] gap-1.5 py-0.5 text-[0.74rem] leading-snug text-zinc-400">
+                  <li
+                    key={line}
+                    className="grid grid-cols-[1rem_1fr] gap-1.5 py-0.5 text-[0.74rem] leading-snug text-zinc-400"
+                  >
                     <span className="font-bold text-[#60a5fa]">+</span>
                     <span>{line}</span>
                   </li>
@@ -140,12 +169,15 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
         })}
       </div>
 
-      <button type="button" className={`${styles.liquidCta} mt-6 ${panel ? "w-full max-w-none" : "max-w-[22rem]"}`}>
+      <button
+        type="button"
+        className={`${styles.liquidCta} mt-6 ${panel ? "w-full max-w-none" : "max-w-[22rem]"}`}
+      >
         <span className={styles.liquidCtaShimmer} aria-hidden />
         <span className={styles.liquidCtaLabel}>
-          {plan === "dealer"
-            ? t("payCtaPack", { price: formatB2bEuroFromCents(current.unitCents * current.qty) })
-            : t("payCta", { price: formatB2bEuroFromCents(current.unitCents * current.qty) })}
+          {t("payCta", {
+            price: formatB2bEuroFromCents((current?.unitCents ?? 0) * (current?.qty ?? 1)),
+          })}
         </span>
       </button>
       <p
@@ -153,7 +185,7 @@ export function B2bPartnerPackPicker({ variant = "page" }: { variant?: "page" | 
           panel ? "max-w-none text-left" : "max-w-[45rem] text-center"
         }`}
       >
-        {plan === "dealer" ? t("packFineDealer") : t("packFine")}
+        {activePlan === "dealer" ? t("packFineDealer") : t("packFine")}
       </p>
     </section>
   );
