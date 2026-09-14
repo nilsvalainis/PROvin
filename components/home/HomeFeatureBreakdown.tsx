@@ -179,7 +179,7 @@ export function HomeFeatureBreakdown({
                     aria-current={active ? "true" : undefined}
                     data-active={active ? "true" : undefined}
                     className={`${tp5Styles.tierTabBtn}${
-                      pkg.badge && !pkg.newBadge ? ` ${tp5Styles.tierTabBtnWithBadge}` : ""
+                      pkg.badge || pkg.newBadge ? ` ${tp5Styles.tierTabBtnWithBadge}` : ""
                     } -mb-px px-2`}
                     onClick={() => setActiveId(pkg.id)}
                   >

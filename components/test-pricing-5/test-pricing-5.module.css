@@ -254,57 +254,56 @@
 
 .tierTabBtnWithBadge {
   flex-direction: column;
-  gap: 0.22rem;
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
+  gap: 0.28rem;
+  padding-top: 0.28rem;
+  padding-bottom: 0.3rem;
 }
 
 .tierTabBtnWithBadge .tierTabLabel {
   min-height: 0;
   height: auto;
   padding-top: 0;
-  padding-bottom: 0.35rem;
+  padding-bottom: 0.28rem;
 }
 
-/* Solid chip — same gradient / type / shimmer language as .liquidCta. */
+/* Compact solid chip — CTA color language, badge-scale proportions (no shimmer bleed). */
 .tierNewBadge {
-  position: absolute;
-  top: -0.2rem;
-  left: 50%;
+  position: relative;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  transform: translateX(-50%);
-  padding: 0.22rem 0.5rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  flex-shrink: 0;
+  isolation: isolate;
+  margin: 0;
+  padding: 0.15rem 0.42rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
   border-radius: 999px;
   background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
   color: #fff;
   font-family: inherit;
-  font-size: 0.58rem;
+  font-size: 0.5rem;
   font-weight: 650;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: 1.15;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 14px -8px rgb(0 0 0 / 0.65);
+  box-shadow: 0 4px 10px -7px rgb(0 0 0 / 0.7);
 }
 
-.tierNewBadge::after {
-  content: "";
-  position: absolute;
-  inset: -40% -60%;
-  background: linear-gradient(
-    105deg,
-    transparent 38%,
-    rgb(255 255 255 / 0.14) 48%,
-    transparent 58%
-  );
-  animation: tp5Shimmer 5.5s ease-in-out infinite;
-  pointer-events: none;
+.tierTabBtn:has(.tierNewBadge) {
+  flex-direction: column;
+  gap: 0.28rem;
+  padding-top: 0.28rem;
+  padding-bottom: 0.3rem;
+}
+
+.tierTabBtn:has(.tierNewBadge) .tierTabLabel {
+  min-height: 0;
+  height: auto;
+  padding-top: 0;
+  padding-bottom: 0.28rem;
 }
 
 .catalogPopularBadge {
@@ -333,35 +332,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  margin: 0 0 0.55rem;
-  padding: 0.28rem 0.62rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  isolation: isolate;
+  margin: 0 0 0.5rem;
+  padding: 0.16rem 0.48rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
   border-radius: 999px;
   background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
   color: #fff;
   font-family: inherit;
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   font-weight: 650;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: 1.15;
   white-space: nowrap;
-  box-shadow: 0 8px 18px -10px rgb(0 0 0 / 0.65);
-}
-
-.catalogNewBadgeHeader::after {
-  content: "";
-  position: absolute;
-  inset: -40% -60%;
-  background: linear-gradient(
-    105deg,
-    transparent 38%,
-    rgb(255 255 255 / 0.14) 48%,
-    transparent 58%
-  );
-  animation: tp5Shimmer 5.5s ease-in-out infinite;
-  pointer-events: none;
+  box-shadow: 0 4px 10px -7px rgb(0 0 0 / 0.7);
 }
 
 .tierMeta {
@@ -1898,10 +1883,7 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .liquidCtaShimmer,
-  .tierNewBadge::after,
-  .mobileNewBadge::after,
-  .catalogNewBadgeHeader::after {
+  .liquidCtaShimmer {
     animation: none;
   }
 
@@ -2085,9 +2067,9 @@ html[data-site-theme="light"] .tierNewBadge,
 html[data-site-theme="light"] .mobileNewBadge,
 html[data-site-theme="light"] .catalogNewBadgeHeader {
   color: #fff;
-  border-color: rgb(255 255 255 / 0.18);
+  border-color: rgb(255 255 255 / 0.2);
   background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
-  box-shadow: 0 6px 14px -8px rgb(37 99 235 / 0.45);
+  box-shadow: 0 4px 10px -7px rgb(37 99 235 / 0.4);
 }
 
 html[data-site-theme="light"] .catalogPopularBadge,
@@ -2357,7 +2339,7 @@ html[data-site-theme="light"] .inlineInput:focus {
 .mobileSegWrap {
   position: relative;
   margin: 0.15rem 0 0;
-  padding-top: 0.55rem;
+  padding-top: 0.2rem;
 }
 
 .mobileSeg {
@@ -2372,6 +2354,10 @@ html[data-site-theme="light"] .inlineInput:focus {
 
 .mobileSegBtn {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   flex: 1;
   box-sizing: border-box;
   margin: 0;
@@ -2394,43 +2380,35 @@ html[data-site-theme="light"] .inlineInput:focus {
 }
 
 .mobileNewBadge {
-  position: absolute;
-  top: -0.55rem;
-  left: 50%;
+  position: relative;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  transform: translateX(-50%);
-  padding: 0.2rem 0.45rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  flex-shrink: 0;
+  isolation: isolate;
+  margin: 0 0 0.22rem;
+  padding: 0.12rem 0.38rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
   border-radius: 999px;
   background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
   color: #fff;
   font-family: inherit;
-  font-size: 0.52rem;
+  font-size: 0.48rem;
   font-weight: 650;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: 1.15;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 14px -8px rgb(0 0 0 / 0.65);
+  box-shadow: 0 4px 10px -7px rgb(0 0 0 / 0.7);
 }
 
-.mobileNewBadge::after {
-  content: "";
-  position: absolute;
-  inset: -40% -60%;
-  background: linear-gradient(
-    105deg,
-    transparent 38%,
-    rgb(255 255 255 / 0.14) 48%,
-    transparent 58%
-  );
-  animation: tp5Shimmer 5.5s ease-in-out infinite;
-  pointer-events: none;
+.mobileSegBtn:has(.mobileNewBadge) {
+  flex-direction: column;
+  gap: 0;
+  padding-top: 0.45rem;
+  padding-bottom: 0.5rem;
 }
 
 .mobilePackCard {

@@ -508,7 +508,7 @@ export function Tp5MobilePricingCard({
                 role="tab"
                 aria-selected={active}
                 aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
-                className={styles.tierTabBtn}
+                className={`${styles.tierTabBtn}${service.id === "dealer" ? ` ${styles.tierTabBtnWithBadge}` : ""}`}
                 onClick={() => setActiveServiceId(service.id)}
               >
                 {service.id === "dealer" ? (
