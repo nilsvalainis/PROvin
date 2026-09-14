@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import {
   b2bPackDiscountPct,
@@ -38,6 +39,7 @@ export function B2bPartnerPackPicker({
   const [selected, setSelected] = useState(0);
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState("");
+  const [withdrawalConsent, setWithdrawalConsent] = useState(false);
   const activePlan: B2bPartnerPlanId = dealerEnabled ? plan : "business";
   const packs = resolveB2bPacksForPartner(activePlan, prices);
   const listCents = packs[0]?.unitCents ?? 0;
@@ -58,6 +60,10 @@ export function B2bPartnerPackPicker({
 
   const onPay = async () => {
     if (!current || paying) return;
+    if (!withdrawalConsent) {
+      setPayError(t("withdrawalRequired"));
+      return;
+    }
     setPaying(true);
     setPayError("");
     try {
@@ -69,7 +75,7 @@ export function B2bPartnerPackPicker({
           plan: activePlan,
           qty: current.qty,
           locale,
-          withdrawalConsent: true,
+          withdrawalConsent,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
@@ -204,6 +210,39 @@ export function B2bPartnerPackPicker({
           );
         })}
       </div>
+
+      <label className={`mt-5 flex cursor-pointer items-start gap-2.5 ${panel ? "max-w-none" : "max-w-[45rem]"}`}>
+        <input
+          type="checkbox"
+          checked={withdrawalConsent}
+          onChange={(event) => {
+            setWithdrawalConsent(event.target.checked);
+            setPayError("");
+          }}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+          aria-label={t("checkoutConsentAria")}
+        />
+        <span className="text-[0.72rem] leading-snug text-zinc-400">
+          {t.rich("checkoutConsent", {
+            terms: (chunks) => (
+              <Link
+                href="/lietosanas-noteikumi"
+                className="font-medium text-[#93c5fd] underline decoration-[#93c5fd]/30 underline-offset-2 transition hover:decoration-[#93c5fd]/70"
+              >
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link
+                href="/privatuma-politika"
+                className="font-medium text-[#93c5fd] underline decoration-[#93c5fd]/30 underline-offset-2 transition hover:decoration-[#93c5fd]/70"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        </span>
+      </label>
 
       <button
         type="button"

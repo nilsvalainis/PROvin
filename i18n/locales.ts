@@ -20,7 +20,7 @@ export function isB2bOnlyLocale(value: string | null | undefined): value is "de"
   return value === "de" || value === "ru";
 }
 
-/** Site chrome (header/footer/legal) stays lv/en until the public site is translated. */
+/** Marketing chrome (hero, pricing, FAQ) stays lv/en. Header, footer and legal for de/ru are native. */
 export function siteMessageLocale(locale: AppLocale): PublicLocale {
   return isB2bOnlyLocale(locale) ? "en" : locale;
 }
@@ -58,6 +58,12 @@ export function resolveB2bEntryLocale(args: {
 export function isPartneriemPath(pathname: string): boolean {
   const path = pathname.split("?")[0] ?? pathname;
   return path === "/partneriem" || path.startsWith("/partneriem/");
+}
+
+/** Noteikumi un privātums DE/RU partneriem, lai kājene neaizvestu uz angļu lapu. */
+export function isB2bLegalPath(pathname: string): boolean {
+  const path = pathname.split("?")[0] ?? pathname;
+  return path === "/lietosanas-noteikumi" || path === "/privatuma-politika";
 }
 
 export function parsePrefixedPath(pathname: string): { locale: AppLocale | null; rest: string } {

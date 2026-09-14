@@ -1,0 +1,16 @@
+{
+  "Header": {
+    "faq": "Fragen",
+    "order": "Bestellen",
+    "navHome": "Start",
+    "menuOpen": "Menü öffnen",
+    "menuClose": "Menü schließen",
+    "themeSwitchToLight": "Zum hellen Modus wechseln",
+    "themeSwitchToDark": "Zum dunklen Modus wechseln",
+    "langGroupAria": "Sprache",
+    "langLv": "LV",
+    "langEn": "EN",
+    "langDe": "DE",
+    "langRu": "RU"
+  }
+}

@@ -44,11 +44,9 @@ export function b2bCreditExpiresAt(purchasedAt: Date, ttlDays = B2B_CREDIT_TTL_D
   return expires;
 }
 
-export function isLiveB2bCreditLot(lot: B2bCreditLot, now: Date): boolean {
-  if (lot.remaining < 1) return false;
-  const expires = Date.parse(lot.expiresAt);
-  if (!Number.isFinite(expires)) return false;
-  return expires > now.getTime();
+/** Kredīti pagaidām bez termiņa. `expiresAt` paliek lotā nākotnei, bet atlikumā to neņem vērā. */
+export function isLiveB2bCreditLot(lot: B2bCreditLot, _now?: Date): boolean {
+  return lot.remaining >= 1;
 }
 
 export function remainingB2bCredits(lots: readonly B2bCreditLot[], now: Date): B2bCreditRemaining {

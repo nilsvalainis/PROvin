@@ -3,6 +3,7 @@ import { AdminB2bInvitePanel } from "@/components/admin/AdminB2bInvitePanel";
 import { AdminB2bPartnerCreateForm } from "@/components/admin/AdminB2bPartnerCreateForm";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { listB2bPartners } from "@/lib/b2b-partner-store";
+import { loadCreditsForPartners } from "@/lib/b2b-partner-dashboard";
 
 export const metadata = {
   title: "Partneri",
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPartnersPage() {
   const partners = await listB2bPartners();
+  const creditsById = await loadCreditsForPartners(partners);
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
@@ -39,11 +41,13 @@ export default async function AdminPartnersPage() {
       ) : (
         <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-[860px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
                   <th className="px-4 py-3.5">Uzņēmums</th>
                   <th className="px-4 py-3.5">E-pasts</th>
+                  <th className="px-4 py-3.5 text-right">Business</th>
+                  <th className="px-4 py-3.5 text-right">Dīleris</th>
                   <th className="px-4 py-3.5">Statuss</th>
                   <th className="px-4 py-3.5 text-right">Darbība</th>
                 </tr>
@@ -55,6 +59,12 @@ export default async function AdminPartnersPage() {
                       {row.companyName}
                     </td>
                     <td className="px-4 py-3.5 text-[var(--color-apple-text)]">{row.email}</td>
+                    <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-[var(--color-apple-text)]">
+                      {creditsById[row.id]?.business ?? 0}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-[var(--color-apple-text)]">
+                      {row.dealerEnabled ? (creditsById[row.id]?.dealer ?? 0) : "-"}
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-[var(--color-apple-text)]">
                       {row.status === "active"
                         ? row.emailVerifiedAt

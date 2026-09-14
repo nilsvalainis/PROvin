@@ -152,6 +152,9 @@
     "emailChangeError": "E-Mail-Änderung konnte nicht gestartet werden. Bitte Passwort und Adresse prüfen.",
     "emailPending": "Wartet auf Bestätigung: {email}",
     "emailVerified": "E-Mail bestätigt.",
-    "packPaidOk": "Paket bezahlt. Das Guthaben ist auf dem Konto."
+    "packPaidOk": "Paket bezahlt. Das Guthaben ist auf dem Konto.",
+    "checkoutConsent": "Ich bestätige, dass ich die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen habe, der sofortigen Erbringung der digitalen Leistung zustimme und zur Kenntnis nehme, dass das Widerrufsrecht mit Beginn der Leistung entfällt.",
+    "checkoutConsentAria": "Bestätigung: Nutzungsbedingungen, Datenschutz, sofortige Leistung, Verzicht auf das Widerrufsrecht",
+    "withdrawalRequired": "Bitte die Bestätigung neben den Bedingungen ankreuzen, um zur Zahlung fortzufahren."
   }
 }

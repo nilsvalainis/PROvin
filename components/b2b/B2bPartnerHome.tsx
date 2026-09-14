@@ -95,28 +95,30 @@ export function B2bPartnerHome({
   const [packPaidOk, setPackPaidOk] = useState(false);
 
   const loadCredits = useCallback(
-    async (signal?: { cancelled: boolean }) => {
+    async (signal?: { cancelled: boolean }): Promise<B2bCreditRemaining | null> => {
       const [creditsRes, meRes] = await Promise.all([
         fetch("/api/partner/credits", { credentials: "include" }),
         fetch("/api/partner/me", { credentials: "include" }),
       ]);
       if (creditsRes.status === 401 || meRes.status === 401) {
         router.replace("/partneriem");
-        return;
+        return null;
       }
       const creditsData = (await creditsRes.json()) as { remaining?: B2bCreditRemaining };
       const meData = (await meRes.json()) as {
         partner?: { dealerEnabled?: boolean; prices?: B2bPartnerPriceOverrides | null };
       };
-      if (signal?.cancelled) return;
+      if (signal?.cancelled) return null;
       const next = creditsData.remaining ?? emptyB2bCreditRemaining();
       const enabled = meData.partner?.dealerEnabled === true;
-      setDealerEnabled(enabled);
-      setPrices(meData.partner?.prices ?? null);
-      setRemaining({
+      const remainingNext: B2bCreditRemaining = {
         business: Math.max(0, next.business ?? 0),
         dealer: enabled ? Math.max(0, next.dealer ?? 0) : 0,
-      });
+      };
+      setDealerEnabled(enabled);
+      setPrices(meData.partner?.prices ?? null);
+      setRemaining(remainingNext);
+      return remainingNext;
     },
     [router],
   );
@@ -127,6 +129,30 @@ export function B2bPartnerHome({
       setPackPaidOk(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!packPaidOk) return;
+    const baseline = initialCredits.business + initialCredits.dealer;
+    const signal = { cancelled: false };
+    let attempts = 0;
+    const poll = async () => {
+      if (signal.cancelled) return;
+      try {
+        const next = await loadCredits(signal);
+        if (signal.cancelled || !next) return;
+        if (next.business + next.dealer > baseline) return;
+      } catch {
+        /* webhook var kavēties; nākamais polls mēģina vēlreiz */
+      }
+      attempts += 1;
+      if (attempts >= 15 || signal.cancelled) return;
+      window.setTimeout(() => void poll(), 2000);
+    };
+    void poll();
+    return () => {
+      signal.cancelled = true;
+    };
+  }, [packPaidOk, initialCredits.business, initialCredits.dealer, loadCredits]);
 
   const credits = remaining;
   const loaded = true;

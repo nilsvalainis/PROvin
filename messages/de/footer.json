@@ -1,0 +1,23 @@
+{
+  "Footer": {
+    "body": "Übliche Berichte zeigen oft nur Bruchstücke der Vergangenheit. Wir bewerten die Lage von heute: Daten aus mehreren Quellen, das Inserat des Verkäufers und modelltypische Risiken, damit Sie eine klare, begründete Einschätzung erhalten.",
+    "legalRegionLabel": "Rechtliche Hinweise und Links",
+    "contacts": "Kontakt",
+    "contactsHint": "Fragen? Schreiben Sie uns.",
+    "emailCta": "E-Mail senden",
+    "phoneCta": "29502039",
+    "phoneAria": "Anrufen 29502039",
+    "whatsapp": "WhatsApp",
+    "privacyPolicy": "Datenschutzerklärung",
+    "termsOfService": "Nutzungsbedingungen",
+    "gdpr": "© {year} PROVIN. Die Verarbeitung personenbezogener Daten erfolgt nach geltendem Recht (DSGVO).",
+    "legalInlinePrefixJuridiska": "Rechtliche Angaben:",
+    "legalInlinePrefixPakalpojums": "Diensteanbieter:",
+    "serviceProviderDisclosureSummary": "Diensteanbieter",
+    "companyLegalSubject": "Rechtlicher Anbieter",
+    "companyRegNo": "Registernummer",
+    "companyLegalAddress": "Anschrift",
+    "companyIncompleteDev": "Für Entwickler: NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO und NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS setzen (.env oder Hosting).",
+    "disclaimer": "PROVIN.LV erbringt eine Beratungsleistung: eine Bewertung der verfügbaren Informationen zum Fahrzeug und Empfehlungen. Es handelt sich um eine digitale Datenzusammenfassung, nicht um eine technische Diagnose des Fahrzeugs, und sie kann eine vollständige Prüfung vor Ort in keiner Weise ersetzen. Der Bericht ist kein Auszug einer Behörde, kein unabhängiges technisches Gutachten und kein Rechtsurteil. Die endgültige Entscheidung über den Kauf trifft der Kunde."
+  }
+}

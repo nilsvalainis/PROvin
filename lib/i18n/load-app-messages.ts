@@ -1,11 +1,12 @@
 import type { AbstractIntlMessages } from "next-intl";
-import { isAppLocale, siteMessageLocale, type AppLocale } from "@/i18n/locales";
+import { isAppLocale, isB2bOnlyLocale, siteMessageLocale, type AppLocale } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 
 export type { AppLocale };
 
 export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMessages> {
   const site = siteMessageLocale(locale);
+  const chrome = isB2bOnlyLocale(locale) ? locale : site;
   const [
     meta,
     header,
@@ -25,16 +26,16 @@ export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMe
     partner,
   ] = await Promise.all([
     import(`../../messages/${site}/meta.json`),
-    import(`../../messages/${site}/header.json`),
+    import(`../../messages/${chrome}/header.json`),
     import(`../../messages/${site}/hero.json`),
     import(`../../messages/${site}/pricing.json`),
     import(`../../messages/${site}/iriss.json`),
     import(`../../messages/${site}/faq.json`),
     import(`../../messages/${site}/order.json`),
-    import(`../../messages/${site}/footer.json`),
+    import(`../../messages/${chrome}/footer.json`),
     import(`../../messages/${site}/thanks.json`),
     import(`../../messages/${site}/misc.json`),
-    import(`../../messages/${site}/legal.json`),
+    import(`../../messages/${chrome}/legal.json`),
     import(`../../messages/${site}/provinSelect.json`),
     import(`../../messages/${site}/googleReviews.json`),
     import(`../../messages/${site}/riskAuditGuide.json`),

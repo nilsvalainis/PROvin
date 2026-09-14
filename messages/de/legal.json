@@ -1,0 +1,135 @@
+{
+  "Legal": {
+    "privacyMetaTitle": "Datenschutzerklärung",
+    "privacyMetaDescription": "Wie PROVIN.LV personenbezogene Daten, Cookies und Analysen nach Einwilligung gemäß DSGVO verarbeitet. Klar und nachvollziehbar.",
+    "privacyTitle": "Datenschutzerklärung",
+    "privacyLead": "Dieses Dokument beschreibt, wie der Diensteanbieter PROVIN.LV (nachfolgend „wir”, „der Dienst”) personenbezogene Daten verarbeitet, welche Cookies eingesetzt werden und wie Sie nicht erforderliche Analysen sowie die Speicherung von First-Touch-Daten (UTM) annehmen oder ablehnen können. Die rechtliche Identität und die Angaben zum Verantwortlichen stehen am Anfang dieses Dokuments.",
+    "sections": [
+      {
+        "title": "1. Verantwortlicher",
+        "body": "Verantwortlicher für die personenbezogenen Daten ist PROVIN.LV; die juristische Person und die vollständigen Angaben stehen am Anfang dieses Dokuments. Kontakt: die im Fußbereich der Website genannte E-Mail-Adresse und WhatsApp."
+      },
+      {
+        "title": "2. Welche Daten wir verarbeiten",
+        "body": "Im Zusammenhang mit einer Bestellung: Name (falls angegeben), E-Mail, Telefon, VIN oder amtliches Kennzeichen, Inserat-URL (falls angegeben), Freitextnachricht und Zahlungsmetadaten (verarbeitet durch den Zahlungsdienstleister Stripe nach dessen eigener Politik). Bei Nutzung der Website: technische Serverprotokolle (zum Beispiel IP-Adresse und Uhrzeit der Anfrage) können der Sicherheit und Verfügbarkeit dienen. Die Startseite kann kuratierte, öffentlich zugängliche Google-Bewertungen zeigen (ohne zusätzliche Tracking-Skripte für diesen Block)."
+      },
+      {
+        "title": "3. Zwecke und Rechtsgrundlage",
+        "body": "Vertragserfüllung und Bestellabwicklung (Art. 6 Abs. 1 lit. b DSGVO). Berechtigte Interessen: Sicherheit der Website und Fehlervermeidung (Art. 6 Abs. 1 lit. f DSGVO). Analysen und First-Touch-Speicherung (UTM) nur nach Ihrer freiwilligen Einwilligung über das Cookie-Banner (Art. 6 Abs. 1 lit. a DSGVO)."
+      },
+      {
+        "title": "4. Cookies und erforderliche Funktionen",
+        "body": "Erforderliche Funktionen (zum Beispiel Sprachwahl, Sitzung, Sicherheit) dürfen Cookies oder vergleichbare Technologien ohne gesonderte Einwilligung nutzen, soweit sie objektiv nötig sind, um den Dienst zu erbringen. Eine Liste solcher Cookies stellen wir auf Anfrage bereit."
+      },
+      {
+        "title": "5. Analysen und First-Touch-Daten (nach Einwilligung)",
+        "body": "Wenn Sie im Cookie-Banner „Analysen” annehmen, können wir begrenzte Daten zum ersten Besuch speichern: den Pfad auf der Website, den HTTP-Referrer soweit vorhanden und Marketingparameter aus dem Link (UTM: source, medium, campaign usw.). Ziel ist zu verstehen, woher Besucher kommen (zum Beispiel TikTok, YouTube, Suche), nicht Personen über alle Drittplattformen hinweg zu verfolgen. Diese Daten werden nicht verkauft."
+      },
+      {
+        "title": "6. Dritte",
+        "body": "Zahlungen: Stripe. Hosting der Website: Ihr gewählter Anbieter (zum Beispiel Vercel). Vercel Web Analytics erfasst aggregierte Besuchszahlen und Seitenaufrufe (First-Party-Statistik im Hosting). Google Analytics 4 und TikTok Pixel laden nur, wenn Sie im Cookie-Banner „Analysen” zustimmen; fehlt die betreffende ID, werden die Skripte nicht geladen. Kontakt: E-Mail (Fußbereich) und WhatsApp (Fußbereich und Schaltfläche auf der Website)."
+      },
+      {
+        "title": "7. Speicherdauer",
+        "body": "Bestell- und Kundendaten werden so lange aufbewahrt, wie es für die Leistung und gesetzliche Pflichten nötig ist (Buchhaltung, Streitigkeiten). Die Laufzeit von Analyse- und First-Touch-Cookies ist begrenzt (in der Regel bis 180 Tage), soweit nichts anderes angegeben ist."
+      },
+      {
+        "title": "8. Ihre Rechte",
+        "body": "Nach der DSGVO haben Sie das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerspruch und Datenübertragbarkeit, soweit anwendbar. Eine Beschwerde können Sie bei der Aufsichtsbehörde einreichen (in Lettland: DVI)."
+      },
+      {
+        "title": "9. Änderungen der Erklärung",
+        "body": "Wir können diese Erklärung aktualisieren. Wesentliche Änderungen werden auf der Website oder im Cookie-Banner kenntlich gemacht, soweit erforderlich."
+      }
+    ],
+    "termsMetaTitle": "Nutzungsbedingungen",
+    "termsMetaDescription": "Nutzungsbedingungen von PROVIN.LV: Art der Leistung, Zahlung, Erstattung, Fernabsatzvertrag und Widerrufsrecht bei digitalen Inhalten.",
+    "termsTitle": "Nutzungsbedingungen von PROVIN.LV",
+    "termsUpdated": "Gültig ab: 17. Juli 2026",
+    "termsLead": "Diese Bedingungen regeln das Rechtsverhältnis zwischen Ihnen (dem „Kunden”) und dem Diensteanbieter PROVIN.LV („wir”) zur Nutzung der Website provin.lv und zur Bestellung entgeltlicher Beratungsleistungen. Bitte lesen Sie sie zusammen mit der Datenschutzerklärung. Die wesentlichen Regeln zu Preis, Zahlung und Erstattung sowie zur Nichtanwendung des Widerrufsrechts auf digitale Inhalte stehen in den Ziffern 5 und <section11>11</section11> (dort: <note>der hervorgehobene Abschnitt zum Widerrufsrecht und zur Verordnung des Ministerkabinetts Nr. 255, Punkt 22.13</note>). Die Angaben zum rechtlichen Anbieter finden Sie unten.",
+    "termsSections": [
+      {
+        "title": "1. Geltung und Annahme der Bedingungen",
+        "body": "1.1. Diese Bedingungen gelten, wenn Sie die Website provin.lv nutzen und eine PROVIN-Leistung bestellen.\n\n1.2. Mit der Bestellung und dem Ankreuzen der Annahme bestätigt der Kunde, alle Klauseln gelesen zu haben und ihnen vollständig zuzustimmen, einschließlich der Bevollmächtigung in Ziffer 3.5, und der sofortigen Leistungserbringung zuzustimmen.\n\n1.3. Stimmt der Kunde den Bedingungen nicht zu, darf er die Leistung nicht bestellen und Funktionen der Website nicht nutzen, die einen Vertrag voraussetzen."
+      },
+      {
+        "title": "2. Art der Leistung und Beratungscharakter",
+        "body": "2.1. PROVIN erbringt in erster Linie eine Beratungsleistung: Bewertung, Zusammenfassung und Empfehlungen auf Grundlage von Identifikationsdaten des Fahrzeugs, des Inserats und verfügbarer Informationen (der „Bericht” oder die „Leistung”). Die beratenden Produkte auf der Website sind PROVIN MINI und PROVIN AUDITS (Preise zum Bestellzeitpunkt auf der Website). Die Leistung hilft bei einer informierten Entscheidung; sie ist kein Behördenauszug, kein unabhängiges technisches Gutachten, keine Werkstattdiagnose, kein Rechtsurteil und keine amtliche Fahrzeugprüfung.\n\nDie Bewertung durch PROVIN ist eine subjektive Expertenmeinung. Sie ist kein rechtlich bindendes Zeugnis und kein technisches Zertifikat. PROVIN haftet nicht für finanzielle Verluste, die entstehen, wenn der Kunde allein auf dieser Beratung ein Fahrzeug kauft.\n\n2.1.A. Neben dem Beratungsbericht bietet die Website das eigenständige Produkt „Offizielle Händler-Servicehistorie” (Hero: „HÄNDLERDATEN”): digitale Lieferung offizieller Händler- bzw. Hersteller-Serviceeinträge, soweit sie für die VIN und die unterstützte Marke verfügbar sind. Dieses Produkt enthält keine PROVIN-Expertenanalyse und keine Beratung. Sind nach der Bestellung keine offiziellen Einträge verfügbar, hat der Kunde Anspruch auf 100 % Erstattung. Teilweise verfügbare Einträge sind eine gültige Lieferung und begründen keine Erstattung.\n\n2.2. Schlussfolgerungen im Bericht beruhen auf der beruflichen Erfahrung von PROVIN und den zu diesem Zeitpunkt verfügbaren Informationen. Sie sind empfehlender Natur. Die endgültige Entscheidung über den Kauf, Prüfungen durch Dritte und die Übernahme von Risiken liegt allein beim Kunden.\n\n2.3. Die Leistung ist keine vollständige Garantie gegen jeden möglichen versteckten Mangel, Betrug oder Lücken in Quellen, die PROVIN nicht kontrolliert."
+      },
+      {
+        "title": "3. Informationsquellen und Aufbau der Leistung",
+        "body": "3.1. Zur Erbringung der Leistung nutzt PROVIN verschiedene Quellen, darunter kostenpflichtige internationale Datenbanken, öffentliche Register und vom Nutzer übermittelte Angaben. Jede Quelle wird nach den öffentlich verfügbaren Bedingungen des Anbieters, B2B-Partnerverträgen oder einer anderen rechtlichen Grundlage genutzt.\n\n3.2. Der Kunde erwirbt keinen Zugang zu Datenbanken Dritter. Der Kunde erhält ein von PROVIN erstelltes Originalwerk (eine analytische Stellungnahme), in dem Datenfragmente zur Zitierung und Auslegung genutzt werden dürfen, soweit das Recht es zulässt.\n\n3.3. PROVIN strukturiert die Leistung als Analyse und Beratung. PROVIN veröffentlicht keine vollständigen kommerziellen Berichte Dritter als eigenes Produkt und nutzt Inhalte Dritter nicht in einer Weise, die geltende Regeln verletzen würde. Der von PROVIN erstellte Bericht verwendet keine Markenlogos Dritter und erzeugt auf Kundenseite keine direkten Hyperlinks zu vollständigen kostenpflichtigen Berichten Dritter, soweit das geltendem Recht widerspräche. Je nach Bestellung können Informationen vertraglich, aus vom Kunden übergebenen Unterlagen oder aus öffentlich zugänglichen Quellen stammen, die rechtmäßig für eine analytische Schlussfolgerung genutzt werden dürfen.\n\n3.5. Bevollmächtigung des Kunden und Aufbau der Leistung.\nMit der Bestellung bevollmächtigt der Kunde PROVIN ausdrücklich (als technischen Berater und Vertreter des Kunden), im Namen und Interesse des Kunden auf Informationsquellen und Datenbanken Dritter zuzugreifen, um Angaben zu dem konkreten Fahrzeug zu beschaffen. Der Kunde stimmt zu, dass die Beschaffung von Informationen und die Zahlung in Systemen Dritter Teil der bestellten Beratungsleistung ist. PROVIN vertreibt Daten Dritter nicht als eigenständiges Produkt; sie dienen als Ausgangsmaterial für eine personalisierte Expertenstellungnahme für den Kunden."
+      },
+      {
+        "title": "4. Öffentliche und staatliche Register",
+        "body": "4.1. Soweit der Bericht Angaben aus öffentlichen oder staatlichen Registern nutzt (zum Beispiel Fahrzeugregister und öffentlich in Lettland verfügbare Versicherungsdaten und vergleichbares), verwendet PROVIN sie nur rechtmäßig und nach geltenden Regeln.\n\n4.2. PROVIN führt kein unzulässiges automatisiertes Auslesen (zum Beispiel Scraping) aus Systemen Dritter durch, soweit das gegen Bedingungen des Anbieters oder gegen das Recht verstieße. Werden künftig kommerzielle Datenkanäle genutzt (zum Beispiel entgeltliche Firmenabfragen), geschieht das nach dem jeweiligen Vertrag."
+      },
+      {
+        "title": "5. Bestellung, Preis, Zahlung und Erstattungsgrundsätze",
+        "body": "5.1. Bestellungen erfolgen elektronisch mit den von PROVIN angeforderten Angaben. Erforderlich: VIN (17 Zeichen) oder Kennzeichen, E-Mail und Telefon. Eine Inserat-URL ist optional; wenn angegeben, muss sie ein gültiger Link zu einem konkreten Inserat sein. Weitere Felder folgen dem Formular der Website. Für „Offizielle Händler-Servicehistorie” genügen VIN (oder Kennzeichen) und Kontaktdaten im Stripe Checkout.\n\n5.2. Der Preis der Leistung ist zum Bestellzeitpunkt auf der Website (Bestellformular / Übersicht) klar ausgewiesen und enthält anfallende Steuern, soweit das Recht sie vorsieht. Aktuelle Produkte und Richtpreise: Offizielle Händler-Servicehistorie 24,99 €; PROVIN MINI 39,99 €; PROVIN AUDITS 99,99 € (maßgeblich ist der vor der Zahlung angezeigte Preis). Preise können sich für künftige Bestellungen ändern; für eine konkrete Bestellung gilt der vor der Zahlungsbestätigung angezeigte Preis.\n\n5.3. Die Zahlung erfolgt über einen Zahlungsdienstleister (zum Beispiel Stripe). Rechtsgrundlage und Datenverarbeitung der Zahlung sind in der Datenschutzerklärung und in den Unterlagen des Dienstleisters beschrieben.\n\n5.4. Die Zahlung für die Leistung ist endgültig. Wegen der Art der Leistung (sofortiger Beginn der Erstellung digitaler Inhalte) erfolgt nach Beginn der Berichtserstellung keine Erstattung, außer nach Ziffer 11 und der 100-%-Erstattung nach Ziffer 2.1.A, wenn offizielle Händlerdaten nicht verfügbar sind."
+      },
+      {
+        "title": "6. Erfüllung, Lieferung und zulässige Verzögerungen",
+        "body": "6.1. PROVIN ist bestrebt, den Bericht innerhalb von 24-72 Stunden nach erfolgreicher Zahlung und vollständigem Bestelldatensatz an die E-Mail des Kunden zu senden, soweit die Website nichts anderes angibt. Dasselbe Zeitfenster gilt für „Offizielle Händler-Servicehistorie” (wie auf der Website angegeben).\n\n6.2. Die Frist kann sich bei höherer Gewalt, technischen Grenzen, weiterem Informationsbedarf beim Kunden oder Ausfällen bei Dritten verlängern. Über eine wesentliche Verzögerung informiert PROVIN in zumutbarer Weise, soweit möglich.\n\n6.3. Der Bericht wird elektronisch geliefert (in der Regel PDF oder ein anderes einheitliches Format), soweit nichts anderes angegeben ist."
+      },
+      {
+        "title": "7. Pflichten des Kunden und Zusicherungen zu übermittelten Angaben",
+        "body": "7.1. Der Kunde muss wahre, genaue und vollständige Angaben machen, die für die Leistung nötig sind (zum Beispiel eine korrekte VIN oder ein korrektes Kennzeichen; falls angegeben, eine gültige Inserat-URL).\n\n7.2. Reicht der Kunde Berichte Dritter, Dokumentkopien oder andere Unterlagen ein, sichert er zu, dass er berechtigt ist, diese Unterlagen PROVIN zur Leistungserbringung zu übergeben, und dass ihre Nutzung Rechte Dritter nicht verletzt.\n\n7.3. Der Kunde verantwortet, wie er den Inhalt des Berichts nutzt, einschließlich Entscheidungen über Angaben gegenüber Dritten (zum Beispiel dem Verkäufer)."
+      },
+      {
+        "title": "8. Geistiges Eigentum an PROVIN-Materialien",
+        "body": "8.1. Der Inhalt der von PROVIN erstellten Berichte (Text, Struktur, Gestaltung, Marke soweit anwendbar) ist geistiges Eigentum von PROVIN oder wird rechtmäßig genutzt.\n\n8.2. Der Kunde erhält ein nicht ausschließliches, nicht übertragbares Recht, den Bericht für eigene Zwecke im Zusammenhang mit der Bewertung dieses Fahrzeugs zu nutzen.\n\n8.3. Ohne vorherige schriftliche Zustimmung von PROVIN ist es untersagt, den Bericht zu verkaufen, in größerem Umfang zu verbreiten, als eigenes kommerzielles Produkt zu veröffentlichen oder sonst kommerziell so zu nutzen, dass Rechte von PROVIN oder Rechte Dritter an Quellmaterial verletzt werden."
+      },
+      {
+        "title": "9. Haftungsbeschränkung und Hinweise",
+        "body": "9.1. PROVIN haftet nicht für Unvollständigkeit, Verzögerungen oder Fehler in Angaben aus Datenbanken, Registern oder Diensten Dritter, weil PROVIN diese Quellen nicht vollständig kontrolliert.\n\n9.2. PROVIN haftet nicht für mittelbare Schäden (zum Beispiel entgangenen Gewinn oder Zeitverlust), soweit das geltende Recht dies zulässt.\n\n9.3. Die Gesamthaftung von PROVIN gegenüber dem Kunden für eine Bestellung ist auf den Betrag beschränkt, den der Kunde für diese Bestellung gezahlt hat, soweit das Gesetz nichts anderes vorsieht (zum Beispiel vorsätzliches Fehlverhalten oder Personenschäden).\n\n9.4. Nichts in diesen Bedingungen ist als Gewähr von PROVIN für den technischen Zustand des Fahrzeugs, die rechtliche Unbedenklichkeit in jeder Hinsicht oder den Ausschluss aller Risiken zu lesen."
+      },
+      {
+        "title": "10. Personenbezogene Daten",
+        "body": "Die Verarbeitung personenbezogener Daten regelt die Datenschutzerklärung, die insoweit integraler Bestandteil dieser Bedingungen ist."
+      },
+      {
+        "title": "11. Preis, digitale Inhalte und Widerrufsrecht (Fernabsatzvertrag)",
+        "withdrawalIntro": "**Widerrufsrecht und Erstattung.** Dieser Abschnitt legt klar fest, wie das **Widerrufsrecht** (das Recht, von einem Fernabsatzvertrag zurückzutreten) und **Erstattungen** gelten, insbesondere bei digitalen Inhalten und der Ausnahme nach Verordnung des Ministerkabinetts Nr. 255, Punkt 22.13.",
+        "searchKeywordsLine": "Damit Prüfer und Kunden diesen Abschnitt schnell finden (zum Beispiel durch Suche nach englischen Begriffen): **refund**, **withdrawal**, **right of withdrawal**.",
+        "subsections": [
+          {
+            "heading": "11.1. Allgemeine Regel zum Widerrufsrecht",
+            "body": "Bei einem Fernabsatzvertrag kann dem Verbraucher nach dem Gesetz zum Schutz der Verbraucherrechte und anderen Vorschriften ein Widerrufsrecht innerhalb einer bestimmten Frist zustehen, soweit Gesetz und dieser Abschnitt nichts anderes vorsehen."
+          },
+          {
+            "heading": "11.2. Digitale Inhalte und Verordnung des Ministerkabinetts Nr. 255 vom 20. Mai 2014, Punkt 22.13",
+            "body": "Der Kunde bestätigt und stimmt zu, dass die Leistung in der Lieferung digitaler Inhalte besteht, die nicht auf einem dauerhaften Datenträger bereitgestellt werden. Beginnt die Leistungserbringung mit vorheriger ausdrücklicher Zustimmung des Kunden und der Bestätigung des Verlusts des Widerrufsrechts (durch Ankreuzen der betreffenden Bestätigung im Bestellformular), verliert der Kunde das Widerrufsrecht nach der Verordnung des Ministerkabinetts Nr. 255 vom 20. Mai 2014 „Vorschriften über Fernabsatzverträge”, Punkt 22.13, und nach dem Gesetz zum Schutz der Verbraucherrechte."
+          },
+          {
+            "heading": "11.3. Weitere Verbraucherrechte",
+            "body": "Weitere Verbraucherrechte (zum Beispiel die Vertragskonformität zu verlangen oder eine Beschwerde einzureichen) bleiben nach geltendem Recht bestehen."
+          }
+        ]
+      },
+      {
+        "title": "12. Streitbeilegung",
+        "body": "12.1. Streitigkeiten versuchen wir zuerst im Gespräch zu klären, über die Kontaktdaten auf der Website.\n\n12.2. Lässt sich eine Streitigkeit nicht gütlich beilegen, entscheiden die Gerichte der Republik Lettland nach den Zuständigkeitsregeln, soweit zwingendes Recht dem Verbraucher kein günstigeres Forum gibt.\n\n12.3. Verbraucher können sich auch an die Kommission zur Beilegung von Verbraucherstreitigkeiten wenden oder andere gesetzliche außergerichtliche Wege nutzen, soweit sie anwendbar sind."
+      },
+      {
+        "title": "13. Änderungen der Bedingungen",
+        "body": "13.1. PROVIN kann diese Bedingungen ändern. Die aktuelle Fassung wird auf der Website veröffentlicht. Für Bestellungen vor einer Änderung gilt die zum Bestellzeitpunkt gültige Fassung, soweit das Gesetz nichts anderes vorsieht."
+      },
+      {
+        "title": "14. Anwendbares Recht",
+        "body": "Für diese Bedingungen gilt das Recht der Republik Lettland und das unmittelbar anwendbare Recht der Europäischen Union."
+      },
+      {
+        "title": "15. Kontakt",
+        "body": "Fragen zu diesen Bedingungen: wenden Sie sich an PROVIN.LV über die E-Mail-Adresse oder WhatsApp im Fußbereich der Website."
+      }
+    ]
+  },
+  "Cookies": {
+    "bannerTitle": "Cookies und Datenschutz",
+    "bannerText": "Wir verwenden erforderliche Cookies, damit die Website funktioniert. Stimmen Sie Analysen zu, können wir anonyme Daten zur ersten Seite und Marketingparameter (UTM) speichern sowie Google Analytics und/oder TikTok Pixel laden (sofern konfiguriert), um zu verstehen, woher Besucher kommen.",
+    "reject": "Nur erforderliche",
+    "acceptAnalytics": "Analysen und Speicherung zustimmen",
+    "privacyLink": "Datenschutzerklärung"
+  }
+}

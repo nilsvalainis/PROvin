@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   detectB2bDefaultLocale,
+  isB2bLegalPath,
   isB2bOnlyLocale,
   isPartneriemPath,
   parsePrefixedPath,
@@ -71,5 +72,8 @@ describe("B2B locale detection", () => {
     });
     expect(isPartneriemPath("/partneriem")).toBe(true);
     expect(isPartneriemPath("/pakalpojumi")).toBe(false);
+    expect(isB2bLegalPath("/lietosanas-noteikumi")).toBe(true);
+    expect(isB2bLegalPath("/privatuma-politika")).toBe(true);
+    expect(isB2bLegalPath("/pakalpojumi")).toBe(false);
   });
 });

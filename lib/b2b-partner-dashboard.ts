@@ -12,6 +12,26 @@ export type B2bAccountDashboard = {
   prices: B2bPartnerPriceOverrides;
 };
 
+export async function loadCreditsForPartners(
+  partners: readonly { id: string; dealerEnabled: boolean }[],
+): Promise<Record<string, B2bCreditRemaining>> {
+  const entries = await Promise.all(
+    partners.map(async (partner) => {
+      const wallet = await readB2bCreditWallet(partner.id);
+      const remaining =
+        wallet.lots.length > 0
+          ? remainingB2bCredits(wallet.lots, new Date())
+          : resolvePartnerCreditRemaining(wallet.lots);
+      const row: B2bCreditRemaining = {
+        business: Math.max(0, remaining.business ?? 0),
+        dealer: partner.dealerEnabled ? Math.max(0, remaining.dealer ?? 0) : 0,
+      };
+      return [partner.id, row] as const;
+    }),
+  );
+  return Object.fromEntries(entries);
+}
+
 export async function loadB2bAccountDashboard(): Promise<B2bAccountDashboard | null> {
   const partner = await resolveActiveB2bPartner();
   if (!partner) return null;

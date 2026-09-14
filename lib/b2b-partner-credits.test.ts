@@ -21,7 +21,7 @@ function lot(partial: Partial<B2bCreditLot> & Pick<B2bCreditLot, "sku" | "remain
 }
 
 describe("b2b partner credits", () => {
-  it("counts only unexpired remaining lots per sku", () => {
+  it("counts remaining lots per sku and ignores expiry for now", () => {
     const now = new Date("2026-09-07T10:00:00.000Z");
     const remaining = remainingB2bCredits(
       [
@@ -32,15 +32,16 @@ describe("b2b partner credits", () => {
       ],
       now,
     );
-    expect(remaining).toEqual({ business: 2, dealer: 3 });
+    expect(remaining).toEqual({ business: 3, dealer: 3 });
     expect(hasAnyB2bCredit(remaining)).toBe(true);
   });
 
-  it("treats a lot as dead on the expiry instant", () => {
+  it("treats a lot as live while remaining is at least 1, even after expiresAt", () => {
     const expiresAt = "2026-09-07T10:00:00.000Z";
     const live = lot({ sku: "business", remaining: 1, expiresAt });
     expect(isLiveB2bCreditLot(live, new Date("2026-09-07T09:59:59.000Z"))).toBe(true);
-    expect(isLiveB2bCreditLot(live, new Date(expiresAt))).toBe(false);
+    expect(isLiveB2bCreditLot(live, new Date(expiresAt))).toBe(true);
+    expect(isLiveB2bCreditLot(lot({ sku: "business", remaining: 0, expiresAt }), new Date())).toBe(false);
   });
 
   it("adds 90 UTC days from purchase", () => {

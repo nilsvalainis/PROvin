@@ -152,6 +152,9 @@
     "emailChangeError": "Neizdevās sākt e-pasta maiņu. Pārbaudi paroli un adresi.",
     "emailPending": "Gaida apstiprinājumu: {email}",
     "emailVerified": "E-pasts ir apstiprināts.",
-    "packPaidOk": "Paka apmaksāta. Kredīti ir kontā."
+    "packPaidOk": "Paka apmaksāta. Kredīti ir kontā.",
+    "checkoutConsent": "Apstiprinu, ka esmu iepazinies ar <terms>Lietošanas noteikumiem</terms> un <privacy>Privātuma politiku</privacy>, piekrītu digitālā pakalpojuma tūlītējai izpildei un apzinos, ka zaudēju atteikuma tiesības, kad izpilde ir sākusies.",
+    "checkoutConsentAria": "Apstiprinājums: noteikumi, privātuma politika, tūlītēja izpilde, atteikuma tiesību zaudēšana",
+    "withdrawalRequired": "Lai turpinātu uz apmaksu, atzīmē apstiprinājumu pie noteikumiem."
   }
 }
