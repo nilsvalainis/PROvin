@@ -272,6 +272,15 @@ export function AdminOrderCopilotPanel({
   const [minimized, setMinimized] = useState(false);
   const [unreadDone, setUnreadDone] = useState(false);
   const [pos, setPos] = useState<PanelPos>({ left: 24, top: 24 });
+  const [isPhone, setIsPhone] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setIsPhone(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
   const [dragging, setDragging] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([WELCOME_MESSAGE]);
   const [chatHydrated, setChatHydrated] = useState(false);
@@ -666,6 +675,13 @@ export function AdminOrderCopilotPanel({
     bottom: "auto",
   };
 
+  /**
+   * Telefonā peldošs, velkams logs nav lietojams: panelis kļūst par pilnekrāna
+   * sarunu. Inline pozīcija tur jāatstāj tukša, citādi tā pārspēj klases.
+   */
+  const phonePanelClass =
+    "max-md:inset-0 max-md:h-[100dvh] max-md:w-full max-md:rounded-none max-md:border-0";
+
   const chip = (
     <div
       data-copilot-panel
@@ -708,25 +724,28 @@ export function AdminOrderCopilotPanel({
   const panel = (
     <aside
       data-copilot-panel
-      className={`fixed z-[45] flex h-[min(38.75rem,calc(100vh-5rem))] w-[min(27.5rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] shadow-2xl dark:bg-zinc-950 dark:text-zinc-100 ${
+      className={`fixed z-[45] flex h-[min(38.75rem,calc(100vh-5rem))] w-[min(27.5rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border-subtle)] bg-white text-[var(--color-apple-text)] shadow-2xl dark:bg-zinc-950 dark:text-zinc-100 ${phonePanelClass} ${
         dragging ? "cursor-grabbing select-none" : ""
       }`}
-      style={posStyle}
+      style={isPhone ? undefined : posStyle}
       aria-label="Order Copilot"
     >
       <div
         data-copilot-drag
         className={`flex shrink-0 touch-none items-center justify-between gap-2 border-b border-[var(--admin-border-subtle)] bg-emerald-50/70 px-3 py-2.5 dark:bg-emerald-950/30 ${
-          dragging ? "cursor-grabbing" : "cursor-grab"
+          isPhone ? "" : dragging ? "cursor-grabbing" : "cursor-grab"
         }`}
-        onPointerDown={onDragPointerDown}
-        onPointerMove={onDragPointerMove}
-        onPointerUp={onDragPointerUp}
-        onPointerCancel={onDragPointerUp}
-        title="Velc, lai pārvietotu logu"
+        onPointerDown={isPhone ? undefined : onDragPointerDown}
+        onPointerMove={isPhone ? undefined : onDragPointerMove}
+        onPointerUp={isPhone ? undefined : onDragPointerUp}
+        onPointerCancel={isPhone ? undefined : onDragPointerUp}
+        title={isPhone ? undefined : "Velc, lai pārvietotu logu"}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <GripVertical className="h-4 w-4 shrink-0 text-emerald-800/70 dark:text-emerald-200/70" aria-hidden />
+          <GripVertical
+            className="h-4 w-4 shrink-0 text-emerald-800/70 max-md:hidden dark:text-emerald-200/70"
+            aria-hidden
+          />
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-700 text-white">
             <Bot className="h-4 w-4" aria-hidden />
           </div>
