@@ -225,6 +225,17 @@ export const AI_CROSS_FIELD_PORTFOLIO_RULES = `CROSS-FIELD PORTFOLIO (mandatory 
 - Incidents summary MUST reconcile claim tables with photo-analysis / other comments about the same damage. Tech risks and summary MUST use source comments already written, not only raw tables.
 - Anti-repetition still applies: do not rewrite another field’s essay; use it as silent context and add only THIS field’s job.`;
 
+/**
+ * FLASH MAX vispirms raksta iekšējo avotu salīdzinājumu. Pārējie lauki to lasa kā kopskatu.
+ */
+export const AI_SOURCES_COMPARISON_OVERVIEW_RULES = `CASE OVERVIEW / AVOTU SALĪDZINĀJUMS (mandatory when the user prompt contains that block or a mileage-forensics brief):
+- The „AVOTU SALĪDZINĀJUMS” block is the case overview for THIS order. Other fields take facts from it; they do not rewrite the whole overview.
+- Keep the split: recorded facts stay facts; interpretations stay interpretations (several scenarios allowed); what the overview marks unknown MUST stay unknown.
+- Forbidden: upgrading „nezinām” / „nav līdz galam izskaidrojams” into „ļoti iespējams, ka odometrs koriģēts”, proven manipulation, or a single chosen story.
+- Deterministic mileage briefs (temps, avotu neatkarība, odometra robežas) are calculated numbers. Copy the figures. Do not re-divide km by days. Do not treat an arithmetic ceiling as a claim that the car was driven that far.
+- If two sources share the same readings (constant km offset), they are NOT independent confirmation.
+- Anti-repetition still applies: do not paste the overview into every source comment.`;
+
 /** Īsi, koncentrēti lauki — apkopojumi un salīdzinājumi tikai kopsavilkumā. */
 export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
 - OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” are present, completeness and scope of those notes beat this brevity block. Do not drop operator topics to stay short; do not pad when the operator limited the job.
@@ -692,6 +703,7 @@ ${AI_PLAIN_LANGUAGE_TERMS}
 ${AI_PLAIN_FACT_PROSE_RULES}
 ${AI_NO_AI_COST_FRAMING_RULES}
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}
+${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 ${AI_WRAP_FILM_RULES}
 ${AI_WINTER_SALT_RUST_RULES}
 ${AI_PAINT_GAUGE_INSPECTION_RULES}

@@ -4,6 +4,7 @@
  */
 import { findBannedVocabularyHits } from "@/lib/provin-banned-vocabulary";
 import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
+import { COMMENT_LENGTH_BUDGET } from "@/lib/ai-comment-length-budget";
 
 export type CommentQualityIssue = {
   code: string;
@@ -120,24 +121,21 @@ const HYPERBOLE_RE =
   /\b(kritisk\w*|anomālij\w*|katastrofāl\w*|šokējoš\w*|drastisk\w*|briesmīg\w*|milzīg\w*|nepārprotami|acīmredzami|garantēti)\b/i;
 
 /** Maksimālais saprātīgais garums pēc lauka (bez operatora materiāla). */
-const MAX_CHARS_BY_FIELD: Record<string, number> = {
-  source: 1400,
-  incidents: 1800,
-  mileage: 2400,
-  generic: 1800,
-  technical_risks: 16_000,
-  inspection: 14_000,
-};
+const MAX_CHARS_BY_FIELD: Record<string, number> = Object.fromEntries(
+  Object.entries(COMMENT_LENGTH_BUDGET).map(([field, b]) => [field, b.maxChars]),
+);
 
-const MIN_PARAS_BY_FIELD: Partial<Record<string, number>> = {
-  technical_risks: 3,
-  inspection: 3,
-};
+const MIN_PARAS_BY_FIELD: Partial<Record<string, number>> = Object.fromEntries(
+  Object.entries(COMMENT_LENGTH_BUDGET)
+    .filter(([, b]) => b.minParas != null)
+    .map(([field, b]) => [field, b.minParas]),
+);
 
-const MIN_CHARS_BY_FIELD: Partial<Record<string, number>> = {
-  technical_risks: 800,
-  inspection: 400,
-};
+const MIN_CHARS_BY_FIELD: Partial<Record<string, number>> = Object.fromEntries(
+  Object.entries(COMMENT_LENGTH_BUDGET)
+    .filter(([, b]) => b.minChars != null)
+    .map(([field, b]) => [field, b.minChars]),
+);
 
 /** Nodilums kā pirkuma risks — neatkarīgi no TA, šis nav modeļa risks. */
 const TA_WEAR_AS_RISK_RE =

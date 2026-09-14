@@ -54,8 +54,8 @@ type GenerateOpts = {
 
 /**
  * Self-correction: kritiskie pārkāpumi (aizliegts vārds, izdomāta EUR summa) izraisa
- * VIENU korekcijas pieprasījumu tam pašam modelim. Stilistiskas/garuma piezīmes (too_long,
- * hyperbolic_language u.c.) NE — tās nav vērtas otras apmaksātas ģenerācijas.
+ * VIENU korekcijas pieprasījumu tam pašam modelim. Garuma piezīme (too_long)
+ * iet caur lētu Gemini Flash piegājienu, ne caur to pašu dārgo modeli.
  *
  * `markdown_asterisk` te apzināti NAV: `normalizeAiExpertParagraphText` izmet *
  * pirms teksts nonāk laukā, tāpēc otrā ģenerācija maksātu naudu un laiku par
@@ -81,6 +81,9 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "paint_gauge_incomplete",
 ]);
 
+/** Lētais Gemini Flash piegājiens. Nav vērts atkārtot ar Opus/Sonnet. */
+const CHEAP_CORRECTION_RETRY_CODES = new Set(["too_long"]);
+
 function buildSelfCorrectionPrompt(
   originalPrompt: string,
   priorText: string,
@@ -100,6 +103,30 @@ ${priorText}
 Uzrakstī PILNU teksta versiju no jauna, novēršot minētās kļūdas un saglabājot visu tehnisko precizitāti un pārējo saturu.`;
 }
 
+function buildCheapLengthCorrectionPrompt(
+  originalPrompt: string,
+  priorText: string,
+  issues: CommentQualityIssue[],
+): string {
+  const violations = issues.map((i) => `- ${i.message}`).join("\n");
+  return `${originalPrompt}
+
+---
+
+TAVĀ IEPRIEKŠĒJĀ ATBILDĒ TEKSTS IR PĀRĀK GARŠ:
+${violations}
+
+Iepriekšējā atbilde (saīsini, NEATKĀRTO burtiski visus teikumus):
+${priorText}
+
+Uzraksti PILNU īsāku versiju. Saglabā visus faktus, datumus, km un secinājumus. Izmet atkārtošanos un vispārīgus teikumus. NEPIEVIENO jaunus faktus. Ja sākotnējā promptā ir OPERATORA KOMANDAS, to tēmas NEDRĪKST izmest.`;
+}
+
+function canCheapCorrect(opts: GenerateOpts): boolean {
+  if (isGeminiAdminTier(opts.modelTier)) return true;
+  return Boolean(getGeminiApiKeyFromEnv());
+}
+
 async function withSelfCorrection(
   opts: GenerateOpts,
   routeBudgetMs: number,
@@ -111,30 +138,55 @@ async function withSelfCorrection(
   };
   const raw = await generateOnce(withBudget);
   const field = opts.qualityField ?? "generic";
-  const issues = evaluateExpertCommentQuality(raw, {
+  const allIssues = evaluateExpertCommentQuality(raw, {
     field,
     wrapPresentInContext: mentionsVehicleWrapInOrderFacts(opts.userPrompt),
     winterSaltRustRequiredInContext: winterSaltRustRequiredInPrompt(opts.userPrompt),
     sourcePrompt: opts.userPrompt,
-  }).filter(
+  });
+  const critical = allIssues.filter(
     (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );
-  if (issues.length === 0) return raw;
+  const cheap = allIssues.filter((i) => CHEAP_CORRECTION_RETRY_CODES.has(i.code));
+
+  if (critical.length === 0 && cheap.length === 0) return raw;
   if (!aiBudgetAllowsRetry(withBudget.budget)) {
     console.warn("[admin-ai-dispatch] self_correction_skipped_no_budget", {
       field,
-      codes: issues.map((i) => i.code),
+      codes: [...critical, ...cheap].map((i) => i.code),
     });
     return raw;
   }
-  console.warn("[admin-ai-dispatch] self_correction_retry", {
+
+  if (critical.length > 0) {
+    console.warn("[admin-ai-dispatch] self_correction_retry", {
+      field,
+      codes: critical.map((i) => i.code),
+    });
+    try {
+      return await generateOnce({
+        ...withBudget,
+        userPrompt: buildSelfCorrectionPrompt(opts.userPrompt, raw, [...critical, ...cheap]),
+      });
+    } catch {
+      return raw;
+    }
+  }
+
+  if (!canCheapCorrect(withBudget)) {
+    console.warn("[admin-ai-dispatch] cheap_correction_skipped_no_gemini", { field });
+    return raw;
+  }
+
+  console.warn("[admin-ai-dispatch] cheap_correction_retry", {
     field,
-    codes: issues.map((i) => i.code),
+    codes: cheap.map((i) => i.code),
   });
   try {
     return await generateOnce({
       ...withBudget,
-      userPrompt: buildSelfCorrectionPrompt(opts.userPrompt, raw, issues),
+      modelTier: "gemini-flash",
+      userPrompt: buildCheapLengthCorrectionPrompt(opts.userPrompt, raw, cheap),
     });
   } catch {
     return raw;

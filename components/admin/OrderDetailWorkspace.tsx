@@ -1720,6 +1720,8 @@ export function OrderDetailWorkspace({
           existingDraftPlain = adminRichHtmlToPlainText(edits.internal).trim();
         } else if (job.id === "mileage") {
           existingDraftPlain = adminRichHtmlToPlainText(edits.mileage).trim();
+        } else if (job.id === "sources_comparison") {
+          existingDraftPlain = adminRichHtmlToPlainText(edits.sourcesComparison).trim();
         } else if (job.id === "technical_risks") {
           existingDraftPlain = adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim();
         } else if (job.id === "inspection") {
@@ -1813,6 +1815,10 @@ export function OrderDetailWorkspace({
                 }
                 if (job.id === "mileage") {
                   onMileageCommentChange(html);
+                  return;
+                }
+                if (job.id === "sources_comparison") {
+                  onSourcesComparisonCommentChange(html);
                   return;
                 }
                 if (job.id === "technical_risks") {

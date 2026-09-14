@@ -14,22 +14,22 @@ Katrs ģenerējums = **system** + **user**. User vienmēr iet caur `appendAiOper
 
 ## Karte
 
-| Lauks | System | User sagatave | Modelis (noklusējums) |
-|---|---|---|---|
-| Avota „Komentāri” (CSDD, AutoDNA, CV, LTAB, dīleris, reģistri, Citi avoti, Tirgus) | `aiSourceCommentSystemPrompt(label)` = `PROVIN_EXPERT_SYSTEM_PROMPT` + avota extra | `lib/admin-ai-source-comment.ts` | Gemini Flash |
-| Oficiālā dīlera servisa vēsture | `aiAutoRecordsServiceHistorySystemPrompt()` | tas pats fails | Gemini Flash |
-| Eļļas maiņas intervāli | `aiAutoRecordsOilIntervalSystemPrompt()` | tas pats fails | Gemini Flash |
-| Negadījumu kopsavilkums | `AI_INCIDENTS_SUMMARY_SYSTEM` | `lib/admin-ai-incidents-summary.ts` | Sonnet |
-| Nobraukuma komentārs | `AI_MILEAGE_COMMENT_SYSTEM` | `lib/admin-ai-mileage-comment.ts` | Sonnet |
-| 1. Tehnisko risku analīze | `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | `lib/admin-ai-technical-risks.ts` | Sonnet + web |
-| 2. Ieteikumi klātienes apskatei | `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | `lib/admin-ai-inspection.ts` | Sonnet (+ web, ja risku vēl nav) |
-| Avotu salīdzinājums (iekšējs, nav PDF) | `AI_SOURCES_COMPARISON_SYSTEM` | `lib/admin-ai-sources-comparison.ts` | Sonnet |
-| 3. Kopsavilkums | `AI_SUMMARY_ANALYSIS_SYSTEM` | `lib/admin-ai-summary.ts` | Opus |
-| Pārdevēja portrets | `AI_SELLER_ANALYSIS_SYSTEM` | `lib/admin-ai-seller.ts` | Gemini / web |
-| Cenas vērtējums | `AI_PRICE_ANALYSIS_SYSTEM` | `lib/admin-ai-price.ts` | Gemini |
-| Tirgus JSON | `AI_TIRGUS_MARKET_SYSTEM` | `lib/admin-ai-tirgus-market.ts` | Gemini |
-| Foto analīze / sludinājuma konteksts | `AI_LISTING_PHOTO_ANALYSIS_SYSTEM` / `AI_LISTING_SALES_CONTEXT_SYSTEM` | `lib/admin-ai-listing-field.ts` | Gemini |
-| Ātrais sludinājuma e-pasts | `AI_LISTING_PEEK_COMMENT_SYSTEM` | `lib/admin-ai-listing-peek.ts` | Gemini Flash |
+| Lauks | System | User sagatave | Modelis (noklusējums) | Garums |
+|---|---|---|---|---|
+| Avota „Komentāri” (CSDD, AutoDNA, CV, LTAB, dīleris, reģistri, Citi avoti, Tirgus) | `aiSourceCommentSystemPrompt(label)` = `PROVIN_EXPERT_SYSTEM_PROMPT` + avota extra | `lib/admin-ai-source-comment.ts` | Gemini Flash | 350-800 (max 1400); zems blīvums: 1-2 rindkopas |
+| Oficiālā dīlera servisa vēsture | `aiAutoRecordsServiceHistorySystemPrompt()` | tas pats fails | Gemini Flash | kā avota komentārs |
+| Eļļas maiņas intervāli | `aiAutoRecordsOilIntervalSystemPrompt()` | tas pats fails | Gemini Flash | pilna matemātika (max 4000) |
+| Avotu salīdzinājums (iekšējs kopskats, nav PDF) | `AI_SOURCES_COMPARISON_SYSTEM` | `lib/admin-ai-sources-comparison.ts` | Claude Sonnet | 4–8 rindkopas; FLASH MAX palaiž pirmo |
+| Negadījumu kopsavilkums | `AI_INCIDENTS_SUMMARY_SYSTEM` | `lib/admin-ai-incidents-summary.ts` | Gemini | 2–4 rindkopas (max 1800) |
+| Nobraukuma komentārs | `AI_MILEAGE_COMMENT_SYSTEM` | `lib/admin-ai-mileage-comment.ts` | Gemini | 3–5 rindkopas (max 2400) |
+| 1. Tehnisko risku analīze | `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | `lib/admin-ai-technical-risks.ts` | Gemini + web | flagship (max 16000) |
+| 2. Ieteikumi klātienes apskatei | `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | `lib/admin-ai-inspection.ts` | Gemini (+ web, ja risku vēl nav) | flagship (max 14000) |
+| 3. Kopsavilkums | `AI_SUMMARY_ANALYSIS_SYSTEM` | `lib/admin-ai-summary.ts` | Gemini | 1–2 rindkopas (max 1800) |
+| Pārdevēja portrets | `AI_SELLER_ANALYSIS_SYSTEM` | `lib/admin-ai-seller.ts` | Gemini / web | 2–3 rindkopas (max 1400) |
+| Cenas vērtējums | `AI_PRICE_ANALYSIS_SYSTEM` | `lib/admin-ai-price.ts` | Gemini | 2–3 rindkopas |
+| Tirgus JSON | `AI_TIRGUS_MARKET_SYSTEM` | `lib/admin-ai-tirgus-market.ts` | Gemini | JSON |
+| Foto analīze / sludinājuma konteksts | `AI_LISTING_PHOTO_ANALYSIS_SYSTEM` / `AI_LISTING_SALES_CONTEXT_SYSTEM` | `lib/admin-ai-listing-field.ts` | Gemini | 2–4 rindkopas |
+| Ātrais sludinājuma e-pasts | `AI_LISTING_PEEK_COMMENT_SYSTEM` | `lib/admin-ai-listing-peek.ts` | Gemini Flash | e-pasta JSON |
 
 Bāzes, kas ietilpst gandrīz visos system promptos:
 
@@ -52,6 +52,8 @@ Bāzes, kas ietilpst gandrīz visos system promptos:
 - `AI_RESOLVED_HISTORICAL_FINDINGS_RULES`
 - `AI_TA_COVERED_WEAR_RULES`
 - `AI_UNKNOWN_IS_NOT_A_RISK_RULES`
+- `AI_CROSS_FIELD_PORTFOLIO_RULES`
+- `AI_SOURCES_COMPARISON_OVERVIEW_RULES`
 - `AI_WRAP_FILM_RULES`
 - `AI_WINTER_SALT_RUST_RULES`
 - `AI_PAINT_GAUGE_INSPECTION_RULES`
@@ -262,7 +264,7 @@ Pilnie system teksti: `lib/admin-ai-prompts.ts`
 - Foto ~629–641
 - Sludinājuma konteksts ~643–654
 - Listing peek ~699–717 (e-pasta JSON, bez Markdown)
-- Avotu salīdzinājums ~719–743 (iekšējs blogs, 1. persona, 4–8 rindkopas)
+- Avotu salīdzinājums ~751– (iekšējs lietas kopskats, FLASH MAX palaiž pirmo, ZINĀMS / INTERPRETĀCIJAS / NAV ZINĀMS)
 
 ---
 

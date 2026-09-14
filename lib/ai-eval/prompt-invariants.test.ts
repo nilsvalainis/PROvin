@@ -13,6 +13,7 @@ import {
   AI_OPERATOR_NOTES_EXECUTION_RULES,
   AI_PLAIN_LANGUAGE_TERMS,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
+  AI_SOURCES_COMPARISON_OVERVIEW_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TA_COVERED_WEAR_RULES,
   AI_TECHNICAL_RISKS_FEW_SHOTS,
@@ -318,6 +319,25 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winterSaltRustRequiredInPrompt/);
   });
 
+  it("mileage forensics briefs and case overview feed FLASH MAX comments", () => {
+    expect(AI_SOURCES_COMPARISON_OVERVIEW_RULES).toMatch(/CASE OVERVIEW/);
+    expect(AI_SOURCES_COMPARISON_OVERVIEW_RULES).toMatch(/NAV neatkarīgi|NOT independent/i);
+    expect(AI_SOURCES_COMPARISON_OVERVIEW_RULES).toMatch(/nezinām/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_SOURCES_COMPARISON_OVERVIEW_RULES\}/,
+    );
+    expect(prompts).toMatch(/AI_SOURCES_COMPARISON_SYSTEM[\s\S]*?ZINĀMS/);
+    expect(prompts).toMatch(/AI_SOURCES_COMPARISON_SYSTEM[\s\S]*?NAV ZINĀMS/);
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildMileageForensicsBrief/);
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildCommentLengthBudgetBrief/);
+    expect(readRepo("lib/admin-flash-max.ts")).toMatch(/id: "sources_comparison"/);
+    expect(readRepo("lib/admin-flash-max.ts")).toMatch(/sources_comparison[\s\S]*?return "flash"/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/CHEAP_CORRECTION_RETRY_CODES/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/too_long/);
+    expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/COMMENT_LENGTH_BUDGET/);
+  });
+
   it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/PAINT THICKNESS/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/100 līdz 150/);
@@ -335,7 +355,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/Virsbūves stāvoklis un krāsas biezums/);
     expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/tipiski 6–12/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/paint_gauge_missing/);
-    expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/inspection: 14_000/);
+    expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/inspection:[\s\S]*?14_000/);
   });
 
   it("wrap / film rules force a mention in risks and summary when any field has a wrap", () => {

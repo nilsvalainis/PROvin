@@ -30,7 +30,7 @@ export const AI_ADMIN_FIELD_DEFAULT_TIER: Record<AiAdminFieldKind, AiAdminModelT
   inspection: "gemini",
   technical_risks: "gemini",
   summary: "gemini",
-  sources_comparison: "gemini",
+  sources_comparison: "flash",
   listing_peek: "gemini-flash",
   extract: "flash",
 };

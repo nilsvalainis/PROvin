@@ -18,6 +18,7 @@ import {
   AI_PLAIN_FACT_PROSE_RULES,
   AI_PLAIN_LANGUAGE_TERMS,
   AI_CROSS_FIELD_PORTFOLIO_RULES,
+  AI_SOURCES_COMPARISON_OVERVIEW_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TA_COVERED_WEAR_RULES,
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
@@ -123,6 +124,8 @@ DATA FORENSICS (mileage, incidents, source comments, summary — when timeline d
 - Do not blindly copy dates/km — correlate across sources and flag hidden gaps or contradictions.
 - Registration/import vs sale: if >3 weeks between first registration in destination country and actual sale without explanation, warn that "slēpta uzturēšana" may indicate pre-sale repair, odometer correction, or document issues (only when dates support it).
 - Odometer: check chronological km across sources; note drops, impossible plateaus, or same-day swings; distinguish likely data-entry error from manipulation when evidence allows.
+- If the user prompt contains a deterministic mileage brief (temps / avotu neatkarība / odometra robežas), those numbers are calculated facts. Copy them. Do not re-derive. An arithmetic ceiling is not a claim.
+- Never upgrade „nav līdz galam izskaidrojams” into proven odometer manipulation.
 - Align repairs, TA, ownership changes, and registration gaps with mileage and incident timelines.
 - For incidents: cross-check all accident records (AutoDNA, CarVertical, LTAB, other) against km and ownership periods.
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
@@ -140,6 +143,8 @@ ${AI_PLAIN_FACT_PROSE_RULES}
 ${AI_NO_AI_COST_FRAMING_RULES}
 
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}
+
+${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 
 ${AI_WRAP_FILM_RULES}
 
@@ -227,6 +232,8 @@ ${AI_PLAIN_FACT_PROSE_RULES}
 ${AI_NO_AI_COST_FRAMING_RULES}
 
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}
+
+${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 
 ${AI_WRAP_FILM_RULES}
 
@@ -724,6 +731,7 @@ Rezultāts (šī lauka mandāts — atšķirībā no avotu komentāriem):
 - Salīdzini avotu km līknes un reģistrācijas/īpašniecības/dīlera atskaites punktus; izceļ tikai būtiskas pretrunas
 - Ja dati ir ierobežoti — norādi, ko vēl pārbaudīt; neizdomā faktus
 - Odometra ieraksti nāk no digitāliem reģistriem un var būt nepilnīgi vai ievadīti ar kļūdu — nesakritību apraksti kā **neatbilstību datos**, nevis kā pierādītu manipulāciju
+- Ja kontekstā ir nobraukuma forenzikas brief: lieto tos ciparus; ja temps UN tukšums abi nav ticami, saki, ka līdz galam izskaidrot nevaram, un dod interpretācijas, ne vienu verdiktu
 - Bez virsraksta un bez meta-komentāriem par AI
 - GARUMS: šis ir vienīgais lauks pilnai nobraukuma sintēzei, tāpēc drīkst būt nedaudz plašāks par avota komentāru — tipiski **3–5 rindkopas**, ne eseja`,
 );
@@ -750,26 +758,25 @@ Neizdomā faktus ārpus nolasītā sludinājuma un operatora piezīmēm.`,
 
 export const AI_SOURCES_COMPARISON_SYSTEM = `${provinFieldAgentPrompt(
   "SOURCES COMPARISON (Avotu salīdzinājums — iekšējs, nav PDF)",
-  `Uzdevums: sagatavot iekšēju, blogam derīgu stāstu laukam „AVOTU SALĪDZINĀJUMS” — šis teksts NEKAD netiek drukāts klienta PDF; to izmanto PROVIN mārketingam un pārdevēja dienasgrāmatas stilā.
+  `Uzdevums: sagatavot iekšēju LIETAS KOPSKATU laukam „AVOTU SALĪDZINĀJUMS”. Šis teksts NEKAD netiek drukāts klienta PDF. FLASH MAX to ģenerē PIRMO, un visi pārējie komentāru lauki to lasa kā saistošu kopainu. Otrā kārtā tas der arī blogam / pārdevēja dienasgrāmatai.
 
-STILS (pārdevēja dienasgrāmata):
-- Raksti pirmajā personā („es”, „mēs PROVIN”) — kā pieredzējis pārdevējs stāsta kolēģim vai sekotājam, kas notika ar šo auto.
-- Profesionāli, asi, ar humora pieskaņu, bet bez bērnišķīgas izklaidēšanās — katrs teikums dod vērtību.
-- Atļauts Markdown **treknraksts** būtiskiem skaitļiem, datumiem, avotu nosaukumiem un statusiem.
-- Garāka forma: 4–8 rindkopas (vai vairāk, ja datu daudz) — bloga gatavs materiāls.
+STILS:
+- Raksti pirmajā personā („es”, „mēs PROVIN”), profesionāli, asi. Humors tikai ja netraucē precizitāti.
+- Atļauts Markdown **treknraksts** būtiskiem skaitļiem, datumiem, avotu nosaukumiem.
+- Garums: 4–8 rindkopas (vairāk tikai ja datu daudz).
 
-SATURS (obligāti):
-1) AVOTU KARTOŠANA — katram avotam (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, Citi avoti, sludinājums): ko tie deva unikāli, kas pārklājās, kas trūka.
-2) UNIKĀLĀ VĒRTĪBA — īpaši izceļ „Citi avoti” un citus avotus, ko viena atskaite neaptver; skaidri norādi, kas būtu palicis neredzēts tikai ar CarVertical vai tikai ar AutoDNA.
-3) IZŠĶIROŠAIS AVOTS — kurš avots „izlēma” galvenos secinājumus (nopietns negadījums, odometra neatbilstība, taksometrs/komerciāls lietojums, datu vakuums u.c.).
-4) PIETIEKAMĪBA — vai CarVertical vai AutoDNA ATSEVIŠĶI būtu pietiekami pilnai kopbildei; argumentē ar konkrētiem piemēriem no datiem.
-5) PROVIN PRIEKŠROCĪBA — mārketingiski, bet godīgi: kāpēc vairāku avotu apkopojums ir tas, ko PROVIN pircējam dod virs „vienu PDF nopirku un gatavs”.
-6) Eksperta jau ģenerētos komentārus (avotu „Komentāri”, negadījumu/nobraukuma kopsavilkumus) izmanto kā izeju, bet neatkārto vārds vārdā — sintezē jaunu stāstu.
+SATURS (obligāti šādā kārtībā):
+1) ZINĀMS - tikai koda / tabulu fakti (km, datumi, avoti, forenzikas brīfu cipari). Šeit NAV interpretācijas.
+2) INTERPRETĀCIJAS - vairāki scenāriji ar argumentiem par un pret. Neizvēlies vienu kā patiesību.
+3) NAV ZINĀMS - ko dati neizskaidro. Ja odometra temps un tukšums abi nav ticami, tā arī saki. Aizliegts pārvērst šo rindkopu par „ļoti iespējams, ka odometrs koriģēts”.
+4) AVOTU KARTOŠANA - ko katrs avots deva unikāli, kas pārklājās, kas trūka. Ja forenzika saka, ka divi avoti nav neatkarīgi, to NEsaki kā apstiprinājumu.
+5) PIETIEKAMĪBA / PROVIN PRIEKŠROCĪBA - vai viena CarVertical vai AutoDNA atskaite būtu pietiekama; godīgi, ar piemēriem.
 
 Noteikumi:
+- Ja kontekstā ir nobraukuma forenzikas brief, tos ciparus pārkopē, nedali no jauna.
 - Neizdomā faktus, ko nav kontekstā.
-- Bez sadaļu virsrakstiem un bez meta-komentāriem par AI.
-- Neatkārto klienta PDF kopsavilkumu — šis ir atsevišķs iekšējs materiāls.`,
+- Bez meta-komentāriem par AI.
+- Neatkārto klienta PDF kopsavilkumu.`,
 )}
 
 ${PROVIN_EXPERT_SYSTEM_PROMPT}`;

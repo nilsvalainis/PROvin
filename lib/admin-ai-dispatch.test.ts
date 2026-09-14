@@ -27,6 +27,7 @@ vi.mock("@/lib/admin-gemini", () => ({
 }));
 
 import { aiGenerateExpertText, aiGenerateTextWithVocabulary } from "@/lib/admin-ai";
+import { geminiGenerateExpertText, getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { adminGenerateExpertText, adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
 
 describe("admin-ai-dispatch self-correction retry", () => {
@@ -66,5 +67,39 @@ describe("admin-ai-dispatch self-correction retry", () => {
     });
     expect(text).toContain("2.0 TDI");
     expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+  });
+
+  it("shortens too-long copy with Gemini Flash instead of a second Claude call", async () => {
+    vi.clearAllMocks();
+    vi.mocked(getGeminiApiKeyFromEnv).mockReturnValue("gemini-key");
+    const long = "Nobraukuma līkne datos ir lineāra un pretrunas nav fiksētas. ".repeat(40);
+    vi.mocked(aiGenerateExpertText).mockResolvedValueOnce(long);
+    vi.mocked(geminiGenerateExpertText).mockResolvedValueOnce(
+      "Nobraukuma līkne datos ir lineāra un pretrunas nav fiksētas.",
+    );
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: "sākotnējais prompts",
+      qualityField: "generic",
+    });
+    expect(text).toBe("Nobraukuma līkne datos ir lineāra un pretrunas nav fiksētas.");
+    expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+    expect(geminiGenerateExpertText).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(geminiGenerateExpertText).mock.calls[0]?.[0].userPrompt).toContain("PĀRĀK GARŠ");
+  });
+
+  it("does not pay Claude again for length when Gemini is unavailable", async () => {
+    vi.clearAllMocks();
+    vi.mocked(getGeminiApiKeyFromEnv).mockReturnValue(null);
+    const long = "Nobraukuma līkne datos ir lineāra un pretrunas nav fiksētas. ".repeat(40);
+    vi.mocked(aiGenerateExpertText).mockResolvedValueOnce(long);
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: "sākotnējais prompts",
+      qualityField: "generic",
+    });
+    expect(text).toBe(long);
+    expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+    expect(geminiGenerateExpertText).not.toHaveBeenCalled();
   });
 });

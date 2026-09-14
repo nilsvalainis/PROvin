@@ -3,12 +3,13 @@
  * Modeļi pēc noklusējuma tie paši, kas atsevišķajām ✨ pogām.
  * Esošais lauka teksts iet kā existingDraftPlain — aģents to nedrīkst izmest.
  */
-import { orderHasMileageDataForAi } from "@/lib/admin-ai-data-availability";
+import { orderHasIncidentDataForAi, orderHasMileageDataForAi } from "@/lib/admin-ai-data-availability";
 import {
   orderHasOilIntervalDataForAi,
   sourceBlockHasDataExcludingComments,
   type AiSourceCommentBlockKey,
   type AiSourceCommentTargetField,
+  AI_SOURCE_COMMENT_BLOCK_KEYS,
 } from "@/lib/admin-source-comment-blocks";
 import {
   citiAvotiSectionHasContent,
@@ -20,6 +21,7 @@ import {
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
+  ADMIN_SOURCES_COMPARISON_LABEL,
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
@@ -41,6 +43,7 @@ export type FlashMaxSourceJob = {
 export type FlashMaxSummaryJob = {
   kind: "summary";
   id:
+    | "sources_comparison"
     | "incidents"
     | "mileage"
     | "technical_risks"
@@ -90,6 +93,13 @@ const extraSource = (
 });
 
 export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
+  {
+    kind: "summary",
+    id: "sources_comparison",
+    label: ADMIN_SOURCES_COMPARISON_LABEL,
+    group: "daily",
+    endpoint: "/api/admin/ai/sources-comparison",
+  },
   dailySource("csdd", "CSDD", "csdd"),
   dailySource("autodna", "AutoDNA", "autodna"),
   dailySource("carvertical", "CarVertical", "carvertical"),
@@ -186,6 +196,7 @@ export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
   if (job.kind === "source") {
     return FLASH_MAX_GEMINI_FLASH_SOURCE_IDS.has(job.id) ? "gemini-flash" : "gemini";
   }
+  if (job.id === "sources_comparison") return "flash";
   return "gemini";
 }
 
@@ -336,6 +347,15 @@ export function shouldSkipFlashMaxJob(
   }
   if (job.id === "mileage") {
     return orderHasMileageDataForAi(sourceBlocks) ? null : "no_mileage_data";
+  }
+  if (job.id === "sources_comparison") {
+    const hasTables = AI_SOURCE_COMMENT_BLOCK_KEYS.some((key) =>
+      sourceBlockHasDataExcludingComments(key, sourceBlocks),
+    );
+    if (hasTables || orderHasMileageDataForAi(sourceBlocks) || orderHasIncidentDataForAi(sourceBlocks)) {
+      return null;
+    }
+    return "no_source_data";
   }
   return null;
 }

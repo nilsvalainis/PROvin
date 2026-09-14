@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-14.1 - Nobraukuma forenzikas brīfi (temps, avotu neatkarība,
+ *   odometra robežas) kodā; FLASH MAX vispirms raksta avotu salīdzinājumu
+ *   kā lietas kopskatu (Sonnet); too_long labo ar Gemini Flash.
  * - 2026-09-12.1 - Ātrie vērtējumi: jaunas sagataves, multi-select sadaļās,
  *   oficiālā dīlera sadaļa; closer bez em dash.
  * - 2026-09-11.4 - CRITICAL: D5244T11 = ~158 kW two-stage biturbo (ne viens
@@ -84,4 +87,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-12.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-14.1";

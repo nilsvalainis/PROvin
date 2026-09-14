@@ -22,6 +22,7 @@ describe("FLASH MAX jobs", () => {
   it("uses per-field models matching standalone ✨ buttons", () => {
     expect(FLASH_MAX_DEFAULT_TIER).toBe("gemini-flash");
     expect(FLASH_MAX_DAILY_JOB_IDS).toEqual([
+      "sources_comparison",
       "csdd",
       "autodna",
       "carvertical",
@@ -35,7 +36,8 @@ describe("FLASH MAX jobs", () => {
       "summary",
     ]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "dealer_service")).toBe(false);
-    expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison")).toBe(false);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison" && j.group === "daily")).toBe(true);
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "sources_comparison")!)).toBe("flash");
     expect(FLASH_MAX_JOBS.some((j) => j.id === "cc_vin" && j.group === "daily")).toBe(true);
     expect(defaultFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_DAILY_JOB_IDS]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
@@ -111,7 +113,11 @@ describe("FLASH MAX jobs", () => {
 
   it("skips source comments when the block has no data", () => {
     const empty = createDefaultSourceBlocks();
-    expect(shouldSkipFlashMaxJob(FLASH_MAX_JOBS[0]!, empty)).toBe("no_source_data");
+    const csdd = FLASH_MAX_JOBS.find((j) => j.id === "csdd")!;
+    expect(shouldSkipFlashMaxJob(csdd, empty)).toBe("no_source_data");
+    expect(shouldSkipFlashMaxJob(FLASH_MAX_JOBS.find((j) => j.id === "sources_comparison")!, empty)).toBe(
+      "no_source_data",
+    );
     expect(shouldSkipFlashMaxJob(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!, empty)).toBe(
       "no_mileage_data",
     );
@@ -120,7 +126,7 @@ describe("FLASH MAX jobs", () => {
   it("does not skip CSDD when the form has data", () => {
     const blocks = createDefaultSourceBlocks();
     blocks.csdd = { ...emptyCsddFields(), makeModel: "BMW 320d", comments: "" };
-    expect(shouldSkipFlashMaxJob(FLASH_MAX_JOBS[0]!, blocks)).toBeNull();
+    expect(shouldSkipFlashMaxJob(FLASH_MAX_JOBS.find((j) => j.id === "csdd")!, blocks)).toBeNull();
   });
 
   it("treats empty-source API errors as skippable", () => {

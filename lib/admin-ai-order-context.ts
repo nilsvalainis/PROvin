@@ -45,6 +45,8 @@ import { buildAggregateKnowledgeAiContext } from "@/lib/admin-ai-aggregate-knowl
 import { buildStyleCorpusAiContext } from "@/lib/admin-ai-style-corpus";
 import { buildTechnicalInspectionCoverageBrief } from "@/lib/admin-ai-ta-coverage";
 import { buildWinterSaltRustBrief } from "@/lib/admin-ai-winter-salt-rust";
+import { buildMileageForensicsBrief } from "@/lib/admin-ai-mileage-forensics";
+import { buildCommentLengthBudgetBrief } from "@/lib/ai-comment-length-budget";
 
 export type AiOrderContextInput = {
   sessionId: string;
@@ -80,8 +82,8 @@ function block(label: string, body: string): string {
   return `### ${label}\n${t}`;
 }
 
-function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
-  const rows = collectUnifiedMileageRows({
+function unifiedMileagePayload(blocks: WorkspaceSourceBlocks) {
+  return {
     csddForm: blocks.csdd,
     autoRecordsBlock: blocks.auto_records,
     oneautoBlock: blocks.oneauto,
@@ -89,7 +91,11 @@ function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     citiAvotiBlock: blocks.citi_avoti,
     tirgusForm: blocks.tirgus,
-  });
+  };
+}
+
+function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
+  const rows = collectUnifiedMileageRows(unifiedMileagePayload(blocks));
   if (rows.length === 0) return "";
   const lines = rows.map((r) => [r.date, r.odometer, r.country, r.sourceLabel].join("\t"));
   return [CSDD_MILEAGE_UNIFIED_TITLE, ...lines].join("\n");
@@ -318,6 +324,11 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
   });
   if (winterSalt) parts.push(winterSalt);
+
+  const mileageForensics = buildMileageForensicsBrief(unifiedMileagePayload(blocks));
+  if (mileageForensics) parts.push(mileageForensics);
+
+  parts.push(buildCommentLengthBudgetBrief(blocks));
 
   return parts.filter(Boolean).join("\n\n");
 }
