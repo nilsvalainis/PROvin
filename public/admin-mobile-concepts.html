@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>PROVIN admin mobile - 5 koncepti</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --accent: #0061D2;
+    --accent-soft: #E7F0FD;
+    --ink: #1d1d1f;
+    --muted: #6b7280;
+    --line: #E5E7EB;
+  }
+  body { background: #f4f4f5; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .phone { width: 390px; height: 800px; }
+  @media (max-width: 900px) { .phone { width: 100%; height: 720px; } }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .snap-x-rail { scroll-snap-type: x mandatory; }
+  .snap-item { scroll-snap-align: start; }
+</style>
+</head>
+<body class="font-sans">
+
+<header class="mx-auto max-w-[1500px] px-4 pt-8 pb-4">
+  <h1 class="text-2xl font-semibold tracking-tight">PROVIN admin uz telefona: 5 koncepti</h1>
+  <p class="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
+    Katrs rāmis ir 390 px plats, tas ir iPhone platums. Visi koncepti balstās vienā tehniskā
+    principā: mobilais skats tiek uzbūvēts tikai ar <code class="rounded bg-slate-200 px-1">max-md:</code>
+    prefiksiem, tāpēc desktop klases paliek neaiztiktas. Izvēlies vienu virzienu katrai sadaļai,
+    tad sāku ieviešanu.
+  </p>
+</header>
+
+<main class="mx-auto grid max-w-[1500px] grid-cols-1 gap-8 px-4 pb-24 lg:grid-cols-2 2xl:grid-cols-3">
+
+  <!-- ============ 1. AUDITA DARBA ZONA: soļu sliede + viens ritinājums ============ -->
+  <section>
+    <div class="mb-3">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)]">Koncepts 1</p>
+      <h2 class="text-lg font-semibold">Audita darba zona: soļu sliede</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        11 vedņa soļi kļūst par horizontāli velkamu sliedi ar aizpildījuma punktiem. Avotu bloki
+        zem tās ir viens vertikāls ritinājums, nevis ligzdoti ritināmi kastes. Apakšā fiksēts
+        darbību doks.
+      </p>
+    </div>
+
+    <div class="phone mx-auto flex flex-col overflow-hidden rounded-[2rem] border-[10px] border-slate-900 bg-white shadow-2xl">
+      <!-- topbar -->
+      <div class="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2">
+        <button class="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold">‹ Pasūtījumi</button>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-[12px] font-semibold">Audi Q7 3.0 TDI</p>
+          <p class="truncate text-[10px] text-[var(--muted)]">WAUZZZ4M0JD012345</p>
+        </div>
+        <span class="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">Saglabāts</span>
+      </div>
+
+      <!-- soļu sliede -->
+      <div class="border-b border-[var(--line)] bg-white">
+        <div class="no-scrollbar snap-x-rail flex gap-1.5 overflow-x-auto px-3 py-2">
+          <button class="snap-item flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--accent)]">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Avoti
+          </button>
+          <button class="snap-item flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-500">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Dīleris
+          </button>
+          <button class="snap-item flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-500">
+            <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span> Nobraukums
+          </button>
+          <button class="snap-item flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-500">
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span> Riski
+          </button>
+          <button class="snap-item flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium text-slate-500">
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span> Apskate
+          </button>
+        </div>
+        <div class="flex gap-0.5 px-3 pb-2">
+          <span class="h-0.5 flex-1 rounded bg-emerald-500"></span>
+          <span class="h-0.5 flex-1 rounded bg-emerald-500"></span>
+          <span class="h-0.5 flex-1 rounded bg-amber-400"></span>
+          <span class="h-0.5 flex-1 rounded bg-slate-200"></span>
+          <span class="h-0.5 flex-1 rounded bg-slate-200"></span>
+        </div>
+      </div>
+
+      <!-- viens ritinājums -->
+      <div class="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-2">
+        <article class="rounded-xl border border-[var(--line)] bg-white">
+          <div class="flex items-center justify-between border-b border-[var(--line)] px-2.5 py-2">
+            <p class="text-[11px] font-semibold uppercase tracking-wide">CSDD</p>
+            <div class="flex items-center gap-1">
+              <span class="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">3 ieraksti</span>
+              <button class="rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px]">⤢</button>
+            </div>
+          </div>
+          <div class="p-2.5">
+            <p class="text-[12px] leading-relaxed text-slate-700">
+              Tehniskā apskate derīga līdz 2027-03. Pēdējā apskatē bez piezīmēm.
+            </p>
+            <button class="mt-2 w-full rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] py-2 text-[11px] font-semibold text-[var(--accent)]">
+              ✨ Sagatavot komentāru
+            </button>
+          </div>
+        </article>
+
+        <article class="rounded-xl border border-[var(--line)] bg-white">
+          <div class="flex items-center justify-between border-b border-[var(--line)] px-2.5 py-2">
+            <p class="text-[11px] font-semibold uppercase tracking-wide">Oficiālā dīlera dati</p>
+            <button class="rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px]">⤢</button>
+          </div>
+          <div class="space-y-2 p-2.5">
+            <div class="flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--line)] bg-white px-2 py-1.5">
+              <span class="text-[9px] font-semibold uppercase tracking-wide text-slate-500">Automātiskā ielase</span>
+              <span class="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Ielasīts: 14 ieraksti</span>
+            </div>
+            <p class="text-[12px] leading-relaxed text-slate-700">
+              Pēdējā apkope 2025-11 pie 187 400 km, oficiālais dīleris Vācijā.
+            </p>
+          </div>
+        </article>
+
+        <p class="py-4 text-center text-[10px] text-slate-400">Velc uz augšu: nākamie bloki</p>
+      </div>
+
+      <!-- darbību doks -->
+      <div class="grid grid-cols-4 border-t border-[var(--line)] bg-white/95 backdrop-blur">
+        <button class="flex flex-col items-center gap-0.5 py-2 text-[9px] font-semibold text-[var(--accent)]">
+          <span class="text-base leading-none">✨</span> FLASH MAX
+        </button>
+        <button class="flex flex-col items-center gap-0.5 py-2 text-[9px] font-semibold text-slate-600">
+          <span class="text-base leading-none">🤖</span> Copilot
+        </button>
+        <button class="flex flex-col items-center gap-0.5 py-2 text-[9px] font-semibold text-slate-600">
+          <span class="text-base leading-none">📄</span> PDF
+        </button>
+        <button class="flex flex-col items-center gap-0.5 py-2 text-[9px] font-semibold text-slate-600">
+          <span class="text-base leading-none">⋯</span> Vairāk
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. AVOTA BLOKS PILNEKRĀNĀ ============ -->
+  <section>
+    <div class="mb-3">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)]">Koncepts 2</p>
+      <h2 class="text-lg font-semibold">Avota bloks pilnekrānā</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        Sarakstā bloks ir kompakts kopsavilkums. Pieskaroties ⤢ tas atveras pilnekrānā ar īsto
+        rediģēšanu, ✨ pogām un tabulām. Tā uz telefona nav jāstrādā 40 px augstā lodziņā.
+      </p>
+    </div>
+
+    <div class="phone mx-auto flex flex-col overflow-hidden rounded-[2rem] border-[10px] border-slate-900 bg-white shadow-2xl">
+      <div class="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2">
+        <button class="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold">✕</button>
+        <p class="min-w-0 flex-1 truncate text-[12px] font-semibold">Oficiālā dīlera dati</p>
+        <button class="rounded-lg bg-[var(--accent)] px-2.5 py-1 text-[11px] font-semibold text-white">Gatavs</button>
+      </div>
+
+      <!-- iekšējās cilnes -->
+      <div class="no-scrollbar flex gap-1 overflow-x-auto border-b border-[var(--line)] px-2 py-1.5">
+        <button class="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white">Komentārs</button>
+        <button class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium text-slate-500">Eļļas intervāli</button>
+        <button class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium text-slate-500">Servisa darbi 14</button>
+        <button class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium text-slate-500">Nobraukums</button>
+        <button class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium text-slate-500">Foto 6</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3">
+        <textarea class="h-64 w-full resize-none rounded-xl border border-[var(--line)] p-3 text-[13px] leading-relaxed outline-none focus:border-[var(--accent)]">Oficiālā dīlera datos fiksētas 14 apkopes no 2018. gada. Pēdējais ieraksts 2025-11 pie 187 400 km.</textarea>
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <button class="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] py-2.5 text-[11px] font-semibold text-[var(--accent)]">✨ Sagatavot</button>
+          <button class="rounded-lg border border-slate-200 py-2.5 text-[11px] font-semibold text-slate-600">✨ LV korekcija</button>
+        </div>
+        <p class="mt-3 text-[10px] text-slate-400">
+          Saglabāšana notiek automātiski. Rindkopu pogas paliek zem lauka, nevis virs tastatūras.
+        </p>
+      </div>
+
+      <!-- tastatūras josla -->
+      <div class="flex items-center gap-2 border-t border-[var(--line)] bg-slate-50 px-3 py-2">
+        <button class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-medium">Frāzes</button>
+        <button class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-medium">Atsaukt</button>
+        <span class="ml-auto text-[10px] text-slate-400">184 zīmes</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. PASŪTĪJUMU SARAKSTS: KARTES ============ -->
+  <section>
+    <div class="mb-3">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)]">Koncepts 3</p>
+      <h2 class="text-lg font-semibold">Pasūtījumu saraksts: kartes, ne tabula</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        Uz telefona tabulas rinda ar 9 kolonnām nav lasāma. Tā pati rinda kā karte: auto, klients,
+        termiņš, stadija. Desktop tabula paliek tieši tāda, kāda ir.
+      </p>
+    </div>
+
+    <div class="phone mx-auto flex flex-col overflow-hidden rounded-[2rem] border-[10px] border-slate-900 bg-white shadow-2xl">
+      <div class="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2">
+        <button class="rounded-lg border border-slate-200 px-2 py-1 text-[13px] leading-none">☰</button>
+        <p class="min-w-0 flex-1 text-[13px] font-semibold">Pasūtījumi</p>
+        <button class="rounded-lg border border-slate-200 px-2 py-1 text-[11px]">🔍</button>
+      </div>
+
+      <div class="no-scrollbar flex gap-1.5 overflow-x-auto border-b border-[var(--line)] px-3 py-2">
+        <button class="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white">Aktīvie 4</button>
+        <button class="shrink-0 rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-medium text-slate-600">Steidzami 1</button>
+        <button class="shrink-0 rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-medium text-slate-600">Dīleris 2</button>
+        <button class="shrink-0 rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-medium text-slate-600">Pabeigtie</button>
+      </div>
+
+      <div class="flex-1 space-y-2 overflow-y-auto bg-slate-50 p-2">
+        <article class="rounded-xl border-l-4 border-l-rose-500 border-y border-r border-[var(--line)] bg-white p-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="truncate text-[13px] font-semibold">BMW X5 xDrive30d</p>
+              <p class="truncate text-[10px] text-[var(--muted)]">WBAKS410X0C123456</p>
+            </div>
+            <span class="shrink-0 rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">6 h atlikušas</span>
+          </div>
+          <div class="mt-2 flex items-center gap-1">
+            <span class="h-1 flex-1 rounded bg-emerald-500"></span>
+            <span class="h-1 flex-1 rounded bg-emerald-500"></span>
+            <span class="h-1 flex-1 rounded bg-amber-400"></span>
+            <span class="h-1 flex-1 rounded bg-slate-200"></span>
+            <span class="ml-1 text-[9px] font-medium text-[var(--muted)]">7/11</span>
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <p class="truncate text-[10px] text-[var(--muted)]">Jānis B. · 99,99 €</p>
+            <div class="flex gap-1">
+              <button class="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-medium">WhatsApp</button>
+              <button class="rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white">Atvērt</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="rounded-xl border-l-4 border-l-amber-400 border-y border-r border-[var(--line)] bg-white p-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="truncate text-[13px] font-semibold">Audi Q7 3.0 TDI</p>
+              <p class="truncate text-[10px] text-[var(--muted)]">WAUZZZ4M0JD012345</p>
+            </div>
+            <span class="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">31 h</span>
+          </div>
+          <div class="mt-2 flex items-center gap-1">
+            <span class="h-1 flex-1 rounded bg-emerald-500"></span>
+            <span class="h-1 flex-1 rounded bg-amber-400"></span>
+            <span class="h-1 flex-1 rounded bg-slate-200"></span>
+            <span class="h-1 flex-1 rounded bg-slate-200"></span>
+            <span class="ml-1 text-[9px] font-medium text-[var(--muted)]">4/11</span>
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <p class="truncate text-[10px] text-[var(--muted)]">Anna K. · 99,99 €</p>
+            <div class="flex gap-1">
+              <button class="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-medium">WhatsApp</button>
+              <button class="rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white">Atvērt</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="rounded-xl border-l-4 border-l-orange-400 border-y border-r border-[var(--line)] bg-white p-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="truncate text-[13px] font-semibold">Volvo XC60 D4</p>
+              <p class="truncate text-[10px] text-[var(--muted)]">YV1DZ8256F2000111</p>
+            </div>
+            <span class="shrink-0 rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700">Nav dīlera datu</span>
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <p class="truncate text-[10px] text-[var(--muted)]">Dīlera pasūtījums · 19,00 €</p>
+            <button class="rounded-md border border-rose-300 px-2 py-1 text-[10px] font-semibold text-rose-700">Atgriezt maksājumu</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. COPILOT UZ TELEFONA ============ -->
+  <section>
+    <div class="mb-3">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)]">Koncepts 4</p>
+      <h2 class="text-lg font-semibold">Copilot kā pilnekrāna saruna</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        Uz desktopa Copilot ir sānu panelis. Uz telefona tas kļūst par pilnekrāna sarunu ar foto
+        pogu, un dzēšanas darbības prasa atsevišķu apstiprinājumu, tāpat kā tagad.
+      </p>
+    </div>
+
+    <div class="phone mx-auto flex flex-col overflow-hidden rounded-[2rem] border-[10px] border-slate-900 bg-white shadow-2xl">
+      <div class="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2">
+        <button class="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold">✕</button>
+        <p class="min-w-0 flex-1 truncate text-[12px] font-semibold">Copilot · Audi Q7</p>
+        <button class="rounded-lg border border-slate-200 px-2 py-1 text-[10px]">Notīrīt</button>
+      </div>
+
+      <div class="flex-1 space-y-2.5 overflow-y-auto bg-slate-50 p-3">
+        <div class="ml-auto max-w-[80%] rounded-2xl rounded-br-md bg-[var(--accent)] px-3 py-2 text-[12px] leading-relaxed text-white">
+          Izdzēs CarVertical nobraukuma rindu 2021-04, tā ir dublikāts.
+        </div>
+        <div class="max-w-[85%] rounded-2xl rounded-bl-md border border-[var(--line)] bg-white px-3 py-2 text-[12px] leading-relaxed">
+          Atradu vienu rindu: 2021-04-12, 142 300 km. Tā tiešām dublē AutoDNA ierakstu tajā pašā dienā.
+        </div>
+        <div class="rounded-xl border border-rose-200 bg-rose-50 p-2.5">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-rose-700">Dzēšana prasa apstiprinājumu</p>
+          <p class="mt-1 text-[11px] leading-relaxed text-rose-900">CarVertical · nobraukums 2021-04-12 · 142 300 km</p>
+          <div class="mt-2 flex gap-2">
+            <button class="flex-1 rounded-lg bg-rose-600 py-2 text-[11px] font-semibold text-white">Dzēst</button>
+            <button class="flex-1 rounded-lg border border-slate-300 bg-white py-2 text-[11px] font-semibold text-slate-600">Atcelt</button>
+          </div>
+          <p class="mt-1.5 text-[9px] text-rose-700">Pirms dzēšanas saglabāju atgriešanas punktu.</p>
+        </div>
+      </div>
+
+      <div class="border-t border-[var(--line)] bg-white p-2">
+        <div class="flex items-end gap-1.5">
+          <button class="shrink-0 rounded-xl border border-slate-200 px-2.5 py-2 text-[14px] leading-none">📎</button>
+          <button class="shrink-0 rounded-xl border border-slate-200 px-2.5 py-2 text-[14px] leading-none">📷</button>
+          <textarea rows="1" class="min-h-[38px] flex-1 resize-none rounded-xl border border-[var(--line)] px-3 py-2 text-[12px] outline-none focus:border-[var(--accent)]" placeholder="Uzdevums vai jautājums"></textarea>
+          <button class="shrink-0 rounded-xl bg-[var(--accent)] px-3 py-2 text-[12px] font-semibold text-white">↑</button>
+        </div>
+        <div class="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
+          <button class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">Kopsavilkums</button>
+          <button class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">Pretrunas</button>
+          <button class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">Notīri tukšās rindas</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. IRISS ĀTRĀ VĒRTĒŠANA ============ -->
+  <section>
+    <div class="mb-3">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)]">Koncepts 5</p>
+      <h2 class="text-lg font-semibold">IRISS ātrā vērtēšana: viena roka</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        Vērtēšana notiek stāvot pie auto, tāpēc visi lēmumi ir īkšķa zonā ekrāna apakšā. Foto,
+        vērtējums un piezīme vienā ekrānā, bez ritināšanas uz augšu.
+      </p>
+    </div>
+
+    <div class="phone mx-auto flex flex-col overflow-hidden rounded-[2rem] border-[10px] border-slate-900 bg-white shadow-2xl">
+      <div class="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2">
+        <button class="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold">‹</button>
+        <p class="min-w-0 flex-1 truncate text-[12px] font-semibold">Ātrā vērtēšana</p>
+        <span class="text-[10px] text-[var(--muted)]">3 / 8</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto">
+        <div class="relative h-52 bg-slate-200">
+          <div class="absolute inset-0 flex items-center justify-center text-[11px] text-slate-500">Sludinājuma foto</div>
+          <div class="absolute bottom-2 left-2 rounded-lg bg-black/70 px-2 py-1 text-[10px] font-medium text-white">1 / 24</div>
+        </div>
+        <div class="p-3">
+          <p class="text-[15px] font-semibold">Škoda Superb 2.0 TDI</p>
+          <p class="mt-0.5 text-[11px] text-[var(--muted)]">2019 · 198 000 km · 14 900 €</p>
+          <div class="mt-2.5 grid grid-cols-2 gap-1.5">
+            <div class="rounded-lg border border-[var(--line)] px-2 py-1.5">
+              <p class="text-[9px] uppercase tracking-wide text-[var(--muted)]">Tirgus mediāna</p>
+              <p class="text-[12px] font-semibold">15 800 €</p>
+            </div>
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5">
+              <p class="text-[9px] uppercase tracking-wide text-emerald-700">Starpība</p>
+              <p class="text-[12px] font-semibold text-emerald-800">-900 €</p>
+            </div>
+          </div>
+          <textarea class="mt-2.5 h-20 w-full resize-none rounded-xl border border-[var(--line)] p-2.5 text-[12px] outline-none focus:border-[var(--accent)]" placeholder="Piezīme vērtējumam"></textarea>
+        </div>
+      </div>
+
+      <!-- īkšķa zona -->
+      <div class="border-t border-[var(--line)] bg-white p-2.5 pb-4">
+        <div class="grid grid-cols-3 gap-2">
+          <button class="rounded-xl border border-rose-200 bg-rose-50 py-3 text-[12px] font-semibold text-rose-700">Noraidīt</button>
+          <button class="rounded-xl border border-slate-200 py-3 text-[12px] font-semibold text-slate-600">Vēlāk</button>
+          <button class="rounded-xl bg-emerald-600 py-3 text-[12px] font-semibold text-white">Derīgs</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TEHNISKAIS PLĀNS ============ -->
+  <section class="lg:col-span-2 2xl:col-span-1">
+    <div class="rounded-2xl border border-[var(--line)] bg-white p-5">
+      <h2 class="text-lg font-semibold">Kā to ieviest, nesalaužot desktopu</h2>
+      <ol class="mt-3 space-y-3 text-sm leading-relaxed text-slate-700">
+        <li>
+          <span class="font-semibold">1. Tikai <code class="rounded bg-slate-100 px-1">max-md:</code> prefiksi.</span>
+          Neviena esošā klase netiek dzēsta vai mainīta. Uz ekrāniem no 768 px viss paliek tieši tā,
+          kā ir šodien.
+        </li>
+        <li>
+          <span class="font-semibold">2. Ligzdotā ritināšana tiek izslēgta uz telefona.</span>
+          Avotu bloki šodien ir <code class="rounded bg-slate-100 px-1">h-full overflow-hidden</code>
+          ar iekšēju ritinājumu. Uz telefona tas kļūst par
+          <code class="rounded bg-slate-100 px-1">max-md:h-auto max-md:overflow-visible</code>,
+          tāpēc lapai ir viens ritinājums.
+        </li>
+        <li>
+          <span class="font-semibold">3. Vedņa soļi paliek tie paši 11.</span>
+          Mainās tikai izkārtojums: divu rindu režģis uz desktopa, velkama sliede uz telefona.
+          Pati loģika un aizpildījuma punkti nemainās.
+        </li>
+        <li>
+          <span class="font-semibold">4. Pilnekrāna redaktors ir jauns slānis, ne pārbūve.</span>
+          Tas rāda to pašu lauku, ko bloks, caur to pašu stāvokli. Desktopā tas nekad neparādās.
+        </li>
+        <li>
+          <span class="font-semibold">5. Regresijas pārbaude.</span>
+          Katrai sadaļai committoju atsevišķi, un pēc katras palaižu Vitest un tipu pārbaudi.
+          Ekrānuzņēmumus ģenerēju ar esošo <code class="rounded bg-slate-100 px-1">screenshot:mobile</code> skriptu.
+        </li>
+      </ol>
+
+      <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3">
+        <p class="text-[13px] font-semibold text-amber-900">Kas man jāzina pirms sākšanas</p>
+        <ul class="mt-2 list-disc space-y-1 pl-5 text-[13px] leading-relaxed text-amber-900">
+          <li>Vai uz telefona tiešām vajag rediģēt tekstu, vai pietiek ar apskatīšanu un apstiprināšanu?</li>
+          <li>Kuras 4 darbības liekam apakšējā dokā: FLASH MAX, Copilot, PDF, saglabāt?</li>
+          <li>Vai pasūtījumu sarakstā kartes aizvieto tabulu arī uz planšetes, vai tikai zem 768 px?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
