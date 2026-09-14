@@ -1,4 +1,5 @@
 import { b2bDateLocale } from "@/i18n/locales";
+import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 
 export type B2bPartnerOrderRow = {
   id: string;
