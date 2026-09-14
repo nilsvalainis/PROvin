@@ -2,40 +2,81 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
-function pillPro(active: boolean) {
+function pill(active: boolean) {
   return active
-    ? "inline-flex min-h-[38px] items-center rounded-lg px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black"
-    : "inline-flex min-h-[38px] items-center rounded-lg px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black opacity-95";
+    ? "relative inline-flex min-h-[34px] items-center rounded-lg px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-black sm:min-h-[38px] sm:px-3 sm:py-1.5 sm:text-[12px]"
+    : "relative inline-flex min-h-[34px] items-center rounded-lg px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-black/80 transition hover:text-black sm:min-h-[38px] sm:px-3 sm:py-1.5 sm:text-[12px]";
 }
 
-function pillIriss(active: boolean) {
-  return active
-    ? "inline-flex min-h-[38px] items-center rounded-lg px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black"
-    : "inline-flex min-h-[38px] items-center rounded-lg px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black transition";
-}
-
-/** Pārslēdzējs starp PRO (pasūtījumi u.tml.) un IRISS admin zonām. */
+/** Pārslēdzējs: PRO (auditi), IRISS, FAST (ātrie pasūtījumi). */
 export function AdminWorkspaceSwitcher() {
   const pathname = usePathname() || "";
   const isIriss = pathname.startsWith("/admin/iriss");
-  const proActive = !isIriss;
+  const isFast = pathname.startsWith("/admin/atras-vertesanas");
+  const proActive = !isIriss && !isFast;
+  const [fastOpen, setFastOpen] = useState(0);
+
+  const refreshFast = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/listing-peeks/open-count", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = (await res.json().catch(() => ({}))) as { openCount?: unknown };
+      const n = typeof data.openCount === "number" && Number.isFinite(data.openCount) ? data.openCount : 0;
+      setFastOpen(Math.max(0, Math.floor(n)));
+    } catch {
+      /* badge nav kritisks */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshFast();
+    const t = window.setInterval(() => void refreshFast(), 45_000);
+    const onFocus = () => void refreshFast();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(t);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [pathname, refreshFast]);
+
+  const fastLabel = fastOpen > 99 ? "99+" : String(fastOpen);
 
   return (
     <div
-      className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 md:justify-start"
+      className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 md:justify-start"
       role="navigation"
       aria-label="Projekta zona"
     >
-      <Link href="/admin/dashboard" className={pillPro(proActive)} aria-current={proActive ? "page" : undefined}>
+      <Link href="/admin/dashboard" className={pill(proActive)} aria-current={proActive ? "page" : undefined}>
         PRO
       </Link>
       <Link
         href="/admin/iriss/pasutijumi"
-        className={pillIriss(isIriss)}
+        className={pill(isIriss)}
         aria-current={isIriss ? "page" : undefined}
       >
-        ORDERS
+        IRISS
+      </Link>
+      <Link
+        href="/admin/atras-vertesanas"
+        className={pill(isFast)}
+        aria-current={isFast ? "page" : undefined}
+        title={fastOpen > 0 ? `Neapstrādāti ātrie: ${fastOpen}` : "Ātrie pasūtījumi"}
+      >
+        FAST
+        {fastOpen > 0 ? (
+          <span
+            className="ml-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-none text-white"
+            aria-label={`Neapstrādāti ātrie pasūtījumi: ${fastOpen}`}
+          >
+            {fastLabel}
+          </span>
+        ) : null}
       </Link>
     </div>
   );

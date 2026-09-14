@@ -23,11 +23,8 @@ import {
 import { isValidHttpUrl } from "@/lib/order-field-validation";
 
 /**
- * Telefona apakšējais darbību doks. Uz ekrāniem no 768 px to nav
- * (`md:hidden`), tāpēc darbvirsmas izkārtojums paliek neskarts.
- *
- * FLASH MAX un Copilot ir vienas pieskaršanās attālumā, jo tos lieto visbiežāk.
- * FLASH MAX neizpildās uzreiz: nejaušs pieskāriens nedrīkst iztērēt AI kredītus.
+ * Telefona apakšējais doks (Instagram stilā: peldoša kapsula virs drošās zonas).
+ * Uz md+ to nav. PDF pogas šeit aizstāj fiksēto kājeni, kas citādi uzkāpa virsū dokam.
  */
 
 type Props = {
@@ -39,11 +36,14 @@ type Props = {
   copilotOpen: boolean;
   copilotBusy: boolean;
   onOpenCopilot: () => void;
-  onOpenPreview: () => void;
   onSave: () => void;
   saveBusy: boolean;
   onOpenPhrases: () => void;
   onGoSummary: () => void;
+  onGeneratePdf: () => void;
+  onGenerateDealerPdf: () => void;
+  onGenerateOemPdf: () => void;
+  onGeneratePrintInkPdf: () => void;
   vin: string;
   plate: string;
   listingUrl: string | null;
@@ -52,7 +52,7 @@ type Props = {
 };
 
 const dockItem =
-  "flex min-w-0 flex-col items-center justify-center gap-1 py-2 text-[9px] font-medium transition disabled:opacity-35";
+  "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[9px] font-medium tracking-wide transition active:opacity-70 disabled:opacity-35";
 
 const sheetRow =
   "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-medium text-[var(--color-apple-text)] transition hover:bg-black/[0.04] disabled:opacity-40 dark:hover:bg-white/[0.06]";
@@ -83,6 +83,7 @@ function Sheet({
         onClick={onClose}
       />
       <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
+        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-slate-300/80" aria-hidden />
         <div className="flex items-center justify-between px-4 py-3">
           <p className="text-[13px] font-semibold text-[var(--color-apple-text)]">{title}</p>
           <button
@@ -109,18 +110,21 @@ export function AdminOrderMobileDock({
   copilotOpen,
   copilotBusy,
   onOpenCopilot,
-  onOpenPreview,
   onSave,
   saveBusy,
   onOpenPhrases,
   onGoSummary,
+  onGeneratePdf,
+  onGenerateDealerPdf,
+  onGenerateOemPdf,
+  onGeneratePrintInkPdf,
   vin,
   plate,
   listingUrl,
   customerPhone,
   onVinCopied,
 }: Props) {
-  const [sheet, setSheet] = useState<null | "flash" | "more">(null);
+  const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
   const listingHref = listingUrl?.trim() && isValidHttpUrl(listingUrl.trim()) ? listingUrl.trim() : null;
   const flashDisabled = !aiAllowed || !workspaceHydrated || prepareDraftBusy || flashMaxBusy;
 
@@ -129,46 +133,54 @@ export function AdminOrderMobileDock({
     onFlashMax(selection);
   };
 
+  const runPdf = (fn: () => void) => {
+    setSheet(null);
+    fn();
+  };
+
   return (
     <>
+      {/* Instagram-stila peldoša kapsula: paceļas virs drošās zonas, noapaļota. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-[60] grid grid-cols-4 border-t border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
         aria-label="Ātrās darbības"
       >
-        <button
-          type="button"
-          className={`${dockItem} ${flashMaxBusy ? "text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}
-          disabled={flashDisabled}
-          onClick={() => setSheet("flash")}
-        >
-          <Sparkles className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          {flashMaxBusy ? "Strādā…" : "FLASH MAX"}
-        </button>
-        <button
-          type="button"
-          className={`${dockItem} ${copilotOpen || copilotBusy ? "text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}
-          disabled={!aiAllowed}
-          onClick={onOpenCopilot}
-        >
-          <Bot className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          Copilot
-        </button>
-        <button
-          type="button"
-          className={`${dockItem} text-[var(--color-apple-text)]`}
-          onClick={onOpenPreview}
-        >
-          <FileText className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          PDF
-        </button>
-        <button
-          type="button"
-          className={`${dockItem} text-[var(--color-apple-text)]`}
-          onClick={() => setSheet("more")}
-        >
-          <MoreHorizontal className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-          Vairāk
-        </button>
+        <div className="pointer-events-auto flex w-full max-w-md items-stretch gap-0.5 rounded-[1.35rem] border border-black/10 bg-[var(--admin-surface-elevated)]/92 px-1.5 py-1 shadow-[0_8px_28px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
+          <button
+            type="button"
+            className={`${dockItem} ${flashMaxBusy ? "text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}
+            disabled={flashDisabled}
+            onClick={() => setSheet("flash")}
+          >
+            <Sparkles className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
+            {flashMaxBusy ? "…" : "FLASH"}
+          </button>
+          <button
+            type="button"
+            className={`${dockItem} ${copilotOpen || copilotBusy ? "text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}
+            disabled={!aiAllowed}
+            onClick={onOpenCopilot}
+          >
+            <Bot className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
+            Copilot
+          </button>
+          <button
+            type="button"
+            className={`${dockItem} text-[var(--color-apple-text)]`}
+            onClick={() => setSheet("pdf")}
+          >
+            <FileText className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
+            PDF
+          </button>
+          <button
+            type="button"
+            className={`${dockItem} text-[var(--color-apple-text)]`}
+            onClick={() => setSheet("more")}
+          >
+            <MoreHorizontal className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
+            Vairāk
+          </button>
+        </div>
       </nav>
 
       {sheet === "flash" ? (
@@ -194,6 +206,39 @@ export function AdminOrderMobileDock({
           <p className="px-3 py-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
             Pilna aģentu izvēle ar modeļiem pieejama uz datora.
           </p>
+        </Sheet>
+      ) : null}
+
+      {sheet === "pdf" ? (
+        <Sheet title="Ģenerēt PDF" onClose={() => setSheet(null)}>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdf)}>
+            <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">Ģenerēt PDF</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā PROVIN atskaite</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdf)}>
+            <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">Ģenerēt dīlera PDF</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai oficiālā dīlera dati</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateOemPdf)}>
+            <FileText className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">OEM dīlera PDF</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Oriģinālie API dati bez tulkojuma</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePrintInkPdf)}>
+            <FileText className="h-4 w-4 shrink-0 text-amber-700" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">Drukājamā versija</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tumšāks teksts papīra drukai</span>
+            </span>
+          </button>
         </Sheet>
       ) : null}
 

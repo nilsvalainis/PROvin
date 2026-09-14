@@ -11,9 +11,9 @@ type Props = {
 };
 
 const MOBILE_MAX = 767;
-const PULL_THRESHOLD_PX = 52;
-const RUBBER = 0.42;
-const MAX_PULL_PX = 96;
+const PULL_THRESHOLD_PX = 64;
+const RUBBER = 0.35;
+const MAX_PULL_PX = 72;
 
 function isCoarseMobileViewport() {
   if (typeof window === "undefined") return false;
@@ -21,8 +21,9 @@ function isCoarseMobileViewport() {
 }
 
 /**
- * Mobilajā admin saturam — skrollējams konteiners + kluss pull-to-refresh (router.refresh).
- * iOS Safari dokumenta PTR šajā layout bieži nestrādā; šī ir uzticama alternatīva.
+ * Mobilajā admin saturam. Detalizētās lapās (pasūtījums) nelietojam ligzdotu
+ * ritinājumu un pull-to-refresh: tie aizturēja swipe un bieži bloķēja touch.
+ * Saraksta lapās PTR paliek, bet preventDefault tikai pēc skaidra vilkiena uz leju.
  */
 export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children }: Props) {
   const router = useRouter();
@@ -32,10 +33,12 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
   const startXRef = useRef(0);
   const pullActiveRef = useRef(false);
   const pullPxRef = useRef(0);
+  const lockingRef = useRef(false);
   const refreshingRef = useRef(false);
 
   const resetPull = useCallback(() => {
     pullActiveRef.current = false;
+    lockingRef.current = false;
     pullPxRef.current = 0;
   }, []);
 
@@ -50,6 +53,9 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
   }, [resetPull, router]);
 
   useEffect(() => {
+    // Detalizētajā ekrānā native scroll + horizontālais swipe; PTR netraucē.
+    if (isDetailScreen) return;
+
     const el = scrollRef.current;
     if (!el) return;
 
@@ -62,6 +68,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       startYRef.current = t.clientY;
       startXRef.current = t.clientX;
       pullActiveRef.current = true;
+      lockingRef.current = false;
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -77,49 +84,49 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       const rawDy = t.clientY - startYRef.current;
       const rawDx = t.clientX - startXRef.current;
 
+      // Horizontāls žests (soļu sliede u.c.) - nekad neķeram.
+      if (Math.abs(rawDx) > Math.abs(rawDy)) {
+        resetPull();
+        return;
+      }
+
       if (rawDy <= 0) {
         pullPxRef.current = 0;
+        lockingRef.current = false;
         return;
       }
 
-      if (Math.abs(rawDx) > rawDy * 1.12 && rawDy < 28) {
-        return;
-      }
+      // preventDefault tikai pēc skaidra vilkiena, citādi Safari „apēd” scroll.
+      if (rawDy < 18 && !lockingRef.current) return;
 
+      lockingRef.current = true;
       const next = Math.min(rawDy * RUBBER, MAX_PULL_PX);
       pullPxRef.current = next;
-      if (next > 0) {
-        e.preventDefault();
-      }
+      if (next > 0) e.preventDefault();
     };
 
     const onTouchEnd = () => {
       if (!isCoarseMobileViewport()) return;
       if (!pullActiveRef.current) return;
-      pullActiveRef.current = false;
       const released = pullPxRef.current;
-      pullPxRef.current = 0;
+      resetPull();
       if (released >= PULL_THRESHOLD_PX && !refreshingRef.current) {
         doRefresh();
       }
     };
 
-    const onTouchCancel = () => {
-      resetPull();
-    };
-
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd);
-    el.addEventListener("touchcancel", onTouchCancel);
+    el.addEventListener("touchcancel", resetPull);
 
     return () => {
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchCancel);
+      el.removeEventListener("touchcancel", resetPull);
     };
-  }, [doRefresh, resetPull]);
+  }, [doRefresh, isDetailScreen, resetPull]);
 
   const mainPad = isDetailScreen
     ? "space-y-0 p-0"
@@ -127,12 +134,20 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
 
   return (
     <main
-      className={`min-w-0 w-full max-w-none flex-1 max-md:flex max-md:min-h-0 max-md:flex-col max-md:overflow-hidden ${mainPad}`}
+      className={`min-w-0 w-full max-w-none flex-1 ${
+        isDetailScreen
+          ? "max-md:overflow-visible"
+          : "max-md:flex max-md:min-h-0 max-md:flex-col max-md:overflow-hidden"
+      } ${mainPad}`}
     >
       <div
         id="admin-main-scroll"
         ref={scrollRef}
-        className="relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] max-md:touch-pan-y md:overflow-visible"
+        className={
+          isDetailScreen
+            ? "relative flex w-full min-w-0 flex-col"
+            : "relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] md:overflow-visible"
+        }
       >
         <div
           className={`flex w-full min-w-0 max-w-none flex-col ${isDetailScreen ? "" : "gap-3"}`}

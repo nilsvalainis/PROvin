@@ -3677,7 +3677,7 @@ export function OrderDetailWorkspace({
       : "";
 
   return (
-    <div className="relative min-w-0 pb-24">
+    <div className="relative min-w-0 pb-24 max-md:pb-36">
       {previewBody}
 
       {portfolioAllFilesModal != null && typeof document !== "undefined"
@@ -3903,11 +3903,13 @@ export function OrderDetailWorkspace({
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
-        <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center gap-2 ${ADMIN_CONTENT_MAX}`}>
+        {/* Telefonā soļi ir pirmie (order-1); Saglabāt/badge/statuss iet uz apakšējo doku / kompakto rindu. */}
+        <div className={`mx-auto flex w-full min-w-0 flex-col gap-1.5 md:flex-row md:flex-wrap md:items-center md:gap-2 ${ADMIN_CONTENT_MAX}`}>
+          <div className="order-2 flex min-w-0 flex-wrap items-center gap-1.5 md:order-1 md:contents">
           <button
             type="button"
-            className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-            title={`${ADMIN_INCIDENTS_SUMMARY_LABEL} — solis „Kopsavilkums”`}
+            className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-1.5 text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] max-md:hidden dark:hover:bg-white/[0.06]"
+            title={`${ADMIN_INCIDENTS_SUMMARY_LABEL}: solis „Kopsavilkums”`}
             aria-label={`Pāriet uz ${ADMIN_INCIDENTS_SUMMARY_LABEL} (kopsavilkuma solis)`}
             onClick={() => goWizardStep(WIZARD_SUMMARY_STEP)}
           >
@@ -3916,8 +3918,8 @@ export function OrderDetailWorkspace({
           <button
             type="button"
             disabled={!workspaceHydrated || workspaceSaveBusy}
-            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-emerald-700/25 bg-emerald-50/90 px-2 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
-            title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) — lokāli un serverī"
+            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-emerald-700/25 bg-emerald-50/90 px-2 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 max-md:hidden dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+            title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) - lokāli un serverī"
             onClick={() => {
               setWorkspaceSaveBusy(true);
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
@@ -3926,7 +3928,7 @@ export function OrderDetailWorkspace({
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
           <span
-            className="inline-flex max-w-[14rem] items-center gap-1 rounded-md border border-amber-300/80 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-950"
+            className="inline-flex max-w-[min(100%,14rem)] items-center gap-1 rounded-md border border-amber-300/80 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-950"
             title="Pasūtītais produkts"
           >
             <span className="truncate">{productBadgeLabel}</span>
@@ -3935,16 +3937,16 @@ export function OrderDetailWorkspace({
             ) : null}
           </span>
           {workspaceAutosaveStatus === "saving" ? (
-            <span className="text-[10px] font-medium text-[var(--color-provin-muted)]" role="status">
+            <span className="text-[10px] font-medium text-[var(--color-provin-muted)] max-md:hidden" role="status">
               Saglabā…
             </span>
           ) : workspaceAutosaveStatus === "error" ? (
-            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800" role="status">
+            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800 max-md:hidden" role="status">
               Kļūda saglabājot
             </span>
           ) : workspaceSaveFlash || workspaceAutosaveStatus === "saved" ? (
             <span
-              className={`max-w-[11rem] text-[10px] font-semibold leading-tight ${
+              className={`max-w-[11rem] text-[10px] font-semibold leading-tight max-md:hidden ${
                 orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
               }`}
               role="status"
@@ -3953,13 +3955,13 @@ export function OrderDetailWorkspace({
                 ? "Saglabāts pārlūkā"
                 : workspaceSaveServerOk
                   ? "Saglabāts"
-                  : "Saglabāts pārlūkā — servera melnraksts neizdevās"}
+                  : "Saglabāts pārlūkā - servera melnraksts neizdevās"}
             </span>
           ) : null}
           {payload.isDemo ? (
             <button
               type="button"
-              className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-50 px-1.5 text-amber-900 shadow-sm transition hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100 dark:hover:bg-amber-950/60"
+              className="inline-flex h-7 shrink-0 items-center justify-center rounded-lg border border-amber-300/80 bg-amber-50 px-1.5 text-amber-900 shadow-sm transition hover:bg-amber-100 max-md:hidden dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100 dark:hover:bg-amber-950/60"
               title="Dzēst visus demo datus un sākt no jauna"
               aria-label="Dzēst visus demo datus"
               onClick={() => resetDemoWorkspace()}
@@ -3995,10 +3997,13 @@ export function OrderDetailWorkspace({
               }}
             />
           </span>
-          <AdminAiSessionCostBar />
+          <span className="max-md:hidden">
+            <AdminAiSessionCostBar />
+          </span>
+          </div>
           {/* Telefonā abas rindas saplūst vienā velkamā sliedē: `contents` izņem rindu
               iepakojumu, tāpēc soļi paliek pareizā secībā un desktop režģis nemainās. */}
-          <div className="flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+          <div className="order-1 flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:order-2">
             {([1, 2] as const).map((row) => {
               const cols = row === 1 ? "grid-cols-5" : "grid-cols-6";
               return (
@@ -4040,7 +4045,7 @@ export function OrderDetailWorkspace({
             })}
           </div>
           <div
-            className={`flex min-w-0 max-w-full shrink-0 flex-col items-stretch gap-0.5 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 dark:bg-white/[0.06] ${
+            className={`order-3 ml-auto hidden min-w-0 max-w-full shrink-0 flex-col items-stretch gap-0.5 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 md:flex dark:bg-white/[0.06] ${
               vinBar ? "" : "text-[var(--color-provin-muted)]"
             }`}
           >
@@ -4114,7 +4119,7 @@ export function OrderDetailWorkspace({
             </div>
           </div>
         </div>
-        <div className={`mx-auto mt-2 px-1 ${ADMIN_CONTENT_MAX}`}>
+        <div className={`mx-auto mt-2 px-1 max-md:mt-1 ${ADMIN_CONTENT_MAX}`}>
           <div
             className="h-1 w-full overflow-hidden rounded-full bg-black/[0.08] dark:bg-white/10"
             role="progressbar"
@@ -4128,7 +4133,7 @@ export function OrderDetailWorkspace({
               style={{ width: `${wizardProgressPct}%` }}
             />
           </div>
-          <p className="mt-0.5 text-end text-[9px] font-medium tabular-nums text-[var(--color-provin-muted)]">
+          <p className="mt-0.5 text-end text-[9px] font-medium tabular-nums text-[var(--color-provin-muted)] max-md:hidden">
             {wizardProgressPct}%
           </p>
         </div>
@@ -4146,7 +4151,6 @@ export function OrderDetailWorkspace({
           setPhrasesOpen(false);
           setCopilotOpen(true);
         }}
-        onOpenPreview={() => setPreviewOpen(true)}
         onSave={() => {
           setWorkspaceSaveBusy(true);
           void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
@@ -4157,6 +4161,10 @@ export function OrderDetailWorkspace({
           setPhrasesOpen(true);
         }}
         onGoSummary={() => goWizardStep(WIZARD_SUMMARY_STEP)}
+        onGeneratePdf={() => void openPrintReport()}
+        onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
+        onGenerateOemPdf={() => void openOemDealerReport()}
+        onGeneratePrintInkPdf={() => void openPrintReport({ printInk: true })}
         vin={vinBar}
         plate={plateBar}
         listingUrl={payload.listingUrl}
@@ -4194,7 +4202,7 @@ export function OrderDetailWorkspace({
       />
 
       {/* Apakšējā atstarpe telefonā: fiksētais doks nedrīkst aizsegt pēdējo bloku. */}
-      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 max-md:pb-24 ${ADMIN_CONTENT_MAX}`}>
+      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 max-md:pb-32 ${ADMIN_CONTENT_MAX}`}>
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}
@@ -4702,7 +4710,8 @@ export function OrderDetailWorkspace({
         ) : null}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--admin-border-subtle)] bg-[var(--admin-footer-bg)] px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)]">
+      {/* Telefonā PDF ir apakšējā doka sheet; fiksētā kājene paliek tikai md+. */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 hidden border-t border-[var(--admin-border-subtle)] bg-[var(--admin-footer-bg)] px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm md:block dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)]">
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
           <button type="button" onClick={() => void openPrintReport()} className={wizardFooterPdf}>
             Ģenerēt PDF

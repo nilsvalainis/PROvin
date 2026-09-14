@@ -2,11 +2,9 @@
 
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
-import { AdminUnreadOrdersBadge } from "./AdminUnreadOrdersBadge";
 import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
 import { LogoutButton } from "./LogoutButton";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
@@ -41,7 +39,7 @@ type Props = {
   children: ReactNode;
   baseUrl?: string;
   notice?: ReactNode;
-  /** PRO — esošais admin; IRISS — atsevišķa zona (pagaidām tukša). */
+  /** PRO — esošais admin; IRISS — atsevišķa zona. */
   workspace?: AdminShellWorkspace;
 };
 
@@ -49,7 +47,6 @@ const MOBILE_NAV_TOP_REM = 3.5;
 
 export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Props) {
   const pathname = usePathname() ?? "";
-  const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -94,7 +91,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
         <div className="flex items-center gap-2 px-3 py-2 sm:px-4">
         <div className="min-w-0 flex flex-1 items-center gap-2">
           <AdminWorkspaceSwitcher />
-          <AdminUnreadOrdersBadge />
           <div className="hidden items-center gap-2 md:flex">
             <div className="h-5 w-px bg-black/35" aria-hidden />
             {isProWorkspace ? (
@@ -108,15 +104,6 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           <LogoutButton className="md:w-auto" />
         </div>
         <div className="flex shrink-0 items-center gap-1.5 md:hidden">
-          <button
-            type="button"
-            onClick={() => router.refresh()}
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-black/35 bg-transparent p-1.5 text-black shadow-sm outline-none transition hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-black/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-provin-accent-soft)]"
-            aria-label="Atsvaidzināt lapu"
-            title="Atsvaidzināt lapu"
-          >
-            <RefreshCw className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
-          </button>
           <button
             type="button"
             onClick={() => setMobileNavOpen((open) => !open)}
