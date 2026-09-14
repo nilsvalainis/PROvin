@@ -13,7 +13,7 @@ import {
   TriangleAlert,
   Users,
 } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { SampleReportPreview } from "@/components/home/SampleReportPreview";
@@ -29,6 +29,9 @@ import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import type { Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
+
+const SAMPLES_SECTION_ID = "paraugi";
+type CatalogNavId = HomeFeatureBreakdownPackageId | "samples";
 
 const BADGE_CLASS =
   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 sm:h-10 sm:w-10";
@@ -98,15 +101,18 @@ export function HomeFeatureBreakdown({
   sectionId = "pakalpojumi",
 }: Props) {
   const locale = useLocale();
+  const tSamples = useTranslations("Samples");
   const uiCopy = getTp5UiCopy(locale);
   const packages = getCatalogFeatureBreakdownPackages(locale);
-  const [activeId, setActiveId] = useState<HomeFeatureBreakdownPackageId>(
-    packages[0]?.id ?? "audits",
-  );
+  const [activeId, setActiveId] = useState<CatalogNavId>(packages[0]?.id ?? "audits");
 
   useEffect(() => {
     const syncFromHash = () => {
       const hash = window.location.hash.replace(/^#/, "");
+      if (hash === SAMPLES_SECTION_ID || hash.startsWith("paraugs-")) {
+        setActiveId("samples");
+        return;
+      }
       const match = packages.find((pkg) => catalogPackageAnchorId(pkg.id) === hash);
       if (match) setActiveId(match.id);
     };
@@ -116,9 +122,11 @@ export function HomeFeatureBreakdown({
   }, [packages]);
 
   useEffect(() => {
-    const elements = packages
+    const packageEls = packages
       .map((pkg) => document.getElementById(catalogPackageAnchorId(pkg.id)))
       .filter((el): el is HTMLElement => Boolean(el));
+    const samplesEl = document.getElementById(SAMPLES_SECTION_ID);
+    const elements = samplesEl ? [...packageEls, samplesEl] : packageEls;
     if (elements.length === 0) return;
 
     const observer = new IntersectionObserver(
@@ -128,6 +136,10 @@ export function HomeFeatureBreakdown({
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
         const top = visible[0]?.target;
         if (!(top instanceof HTMLElement) || !top.id) return;
+        if (top.id === SAMPLES_SECTION_ID) {
+          setActiveId("samples");
+          return;
+        }
         const match = packages.find((pkg) => catalogPackageAnchorId(pkg.id) === top.id);
         if (match) setActiveId(match.id);
       },
@@ -141,6 +153,8 @@ export function HomeFeatureBreakdown({
     for (const el of elements) observer.observe(el);
     return () => observer.disconnect();
   }, [packages]);
+
+  const samplesActive = activeId === "samples";
 
   return (
     <section
@@ -159,7 +173,7 @@ export function HomeFeatureBreakdown({
         {/* Desktop/web only — mobile intentionally has no jump strip. */}
         <nav
           aria-label={uiCopy.catalogNavAria}
-          className="mb-10 hidden sticky top-11 z-30 -mx-6 overflow-visible border-b border-white/[0.1] bg-transparent px-6 pb-2 pt-4 lg:block"
+          className="mb-10 hidden -mx-6 overflow-visible border-b border-white/[0.1] bg-transparent px-6 pb-2 pt-4 lg:block"
         >
           <ul className="flex items-stretch justify-center">
             {packages.map((pkg, index) => {
@@ -197,6 +211,29 @@ export function HomeFeatureBreakdown({
                 </li>
               );
             })}
+            <li className="flex min-w-0 items-stretch">
+              <span
+                className="mx-1.5 flex select-none items-center self-center px-3 text-[0.65rem] font-light leading-none text-white/25"
+                aria-hidden
+              >
+                |
+              </span>
+              <a
+                href={`#${SAMPLES_SECTION_ID}`}
+                aria-current={samplesActive ? "true" : undefined}
+                data-active={samplesActive ? "true" : undefined}
+                className={`${tp5Styles.tierTabBtn} -mb-px px-2`}
+                onClick={() => setActiveId("samples")}
+              >
+                <span
+                  className={`${tp5Styles.tierTabLabel} ${tp5Styles.tierTabLabelCompact} ${
+                    samplesActive ? tp5Styles.tierTabLabelActive : tp5Styles.tierTabLabelInactive
+                  }`}
+                >
+                  {tSamples("navLabel")}
+                </span>
+              </a>
+            </li>
           </ul>
         </nav>
 
