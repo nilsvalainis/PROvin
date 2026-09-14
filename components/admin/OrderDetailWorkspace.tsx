@@ -117,6 +117,7 @@ import {
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { buildPdfReportSummaryTiles } from "@/lib/pdf-report-summary";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
+import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
 import {
   computeProvinAlertBannersFromWorkspace,
   computeProvinInfoBannersFromWorkspace,
