@@ -91,7 +91,14 @@ const INTERVAL_MAINTENANCE_RE =
 
 export function looksLikeIntervalMaintenanceWorks(works: string, category = ""): boolean {
   if (looksLikeCbsKeyReadWorks(works, category)) return false;
-  return INTERVAL_MAINTENANCE_RE.test(`${category} ${works}`);
+  const substance = `${category}\n${works}`
+    .split(/[\n;,]/)
+    .map((part) => part.trim().replace(/:$/, ""))
+    .filter(Boolean)
+    .filter((part) => !isVendorServiceCategoryLine(part))
+    .join(" ");
+  if (!substance) return false;
+  return INTERVAL_MAINTENANCE_RE.test(substance);
 }
 
 export const LIFECYCLE_DEALER_VISIT_TITLE = {
@@ -126,10 +133,13 @@ function normalizeWork(raw: string): string {
 
 /** Veiktie darbi vienā tekstā: „Regulārā apkope: eļļas maiņa, salona gaisa filtra maiņa”. */
 export function formatVendorServiceWorksText(entry: VendorServiceEntry): string {
-  const works = entry.works.map(normalizeWork).filter(Boolean);
+  const works = entry.works.map(normalizeWork).filter(Boolean).filter((w) => !isVendorServiceCategoryLine(w));
   const category = normalizeWork(entry.category);
   const worksText = works.join(", ");
-  return category && worksText ? `${category}: ${worksText}` : worksText || category;
+  if (category && worksText) return `${category}: ${worksText}`;
+  if (worksText) return worksText;
+  if (category && !isVendorServiceCategoryLine(category)) return category;
+  return "";
 }
 
 /** Viens ieraksts → viena rinda „Servisa vēsture” laukam. */

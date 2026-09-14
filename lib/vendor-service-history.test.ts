@@ -22,10 +22,12 @@ function entry(works: string[]): VendorServiceEntry {
 describe("dīlera vizītes virsraksts vēstures kopsavilkumā", () => {
   it("keeps interval jobs as Apkope and Key Read off that label", () => {
     expect(lifecycleDealerVisitTitle("Eļļas maiņa, filtri")).toBe("Apkope");
-    expect(lifecycleDealerVisitTitle("Regulārā apkope")).toBe("Apkope");
+    expect(lifecycleDealerVisitTitle("Regulārā apkope: eļļas maiņa")).toBe("Apkope");
     expect(looksLikeIntervalMaintenanceWorks(KEY_READ_HISTORY_LABEL)).toBe(false);
     expect(lifecycleDealerVisitTitle(KEY_READ_HISTORY_LABEL)).toBe("Dīlera nolasījums");
+    expect(lifecycleDealerVisitTitle("Regulārā apkope")).toBe("Servisa apmeklējums");
     expect(lifecycleDealerVisitTitle("Apkope")).toBe("Servisa apmeklējums");
+    expect(lifecycleDealerVisitTitle("Regulārā apkope", "Apkope")).toBe("Servisa apmeklējums");
     expect(lifecycleDealerVisitTitle("Update DVD Road Map Europe Professional")).toBe("Servisa apmeklējums");
   });
 });
