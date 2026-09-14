@@ -19,6 +19,48 @@ function row(partial: Partial<UnifiedMileageRow> & Pick<UnifiedMileageRow, "date
   };
 }
 
+describe("prepareUnifiedMileageDisplayRows cross-source duplicates", () => {
+  it("merges a month-only vendor reading into the exact-dated dealer record (X5 22 km offset)", () => {
+    const rows = prepareUnifiedMileageDisplayRows([
+      row({ date: "01.12.2009", odometer: "90577", sourceLabel: "CarVertical", sourceOrder: 0, sortableTime: Date.UTC(2009, 11, 1) }),
+      row({ date: "22.12.2009", odometer: "90599", sourceLabel: "DEALER", sourceOrder: 1, sortableTime: Date.UTC(2009, 11, 22), documentValue: true }),
+      row({ date: "01.12.2011", odometer: "63573", sourceLabel: "CarVertical", sourceOrder: 2, sortableTime: Date.UTC(2011, 11, 1) }),
+      row({ date: "23.12.2011", odometer: "63595", sourceLabel: "DEALER", sourceOrder: 3, sortableTime: Date.UTC(2011, 11, 23), documentValue: true }),
+    ]);
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.date).toBe("22.12.2009");
+    expect(rows[0]?.odometer).toBe("90599");
+    expect(rows[0]?.sourceLabels).toEqual(expect.arrayContaining(["DEALER", "CarVertical"]));
+    expect(rows[1]?.date).toBe("23.12.2011");
+    expect(rows[1]?.odometer).toBe("63595");
+
+    // Apvienošana nedrīkst noņemt vienīgo īsto pretrunu.
+    const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
+    expect([...anomalyBySourceOrder.values()].filter(Boolean)).toHaveLength(1);
+    expect(anomalyBySourceOrder.get(rows[1]!.sourceOrder)).toBe(true);
+  });
+
+  it("keeps separate same-source order lines from one workshop episode", () => {
+    const rows = prepareUnifiedMileageDisplayRows([
+      row({ date: "27.02.2018", odometer: "145369", sourceLabel: "DEALER", sourceOrder: 0, sortableTime: Date.UTC(2018, 1, 27), documentValue: true }),
+      row({ date: "27.02.2018", odometer: "145378", sourceLabel: "DEALER", sourceOrder: 1, sortableTime: Date.UTC(2018, 1, 27), documentValue: true }),
+      row({ date: "28.02.2018", odometer: "145430", sourceLabel: "DEALER", sourceOrder: 2, sortableTime: Date.UTC(2018, 1, 28), documentValue: true }),
+    ]);
+    expect(rows.map((r) => r.odometer)).toEqual(["145369", "145378", "145430"]);
+  });
+
+  it("does not merge readings that are far apart in km or in different months", () => {
+    const rows = prepareUnifiedMileageDisplayRows([
+      row({ date: "01.02.2018", odometer: "145010", sourceLabel: "CarVertical", sourceOrder: 0, sortableTime: Date.UTC(2018, 1, 1) }),
+      row({ date: "21.02.2018", odometer: "145065", sourceLabel: "DEALER", sourceOrder: 1, sortableTime: Date.UTC(2018, 1, 21), documentValue: true }),
+      row({ date: "27.02.2018", odometer: "145369", sourceLabel: "AutoDNA", sourceOrder: 2, sortableTime: Date.UTC(2018, 1, 27) }),
+      row({ date: "02.03.2018", odometer: "145400", sourceLabel: "CarVertical", sourceOrder: 3, sortableTime: Date.UTC(2018, 2, 2) }),
+    ]);
+    expect(rows.map((r) => r.odometer)).toEqual(["145065", "145369", "145400"]);
+  });
+});
+
 describe("mergeUnifiedMileageRowsByOdometer", () => {
   it("merges identical km from different sources within 2 months", () => {
     const merged = mergeUnifiedMileageRowsByOdometer([

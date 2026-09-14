@@ -593,12 +593,18 @@ function parseLifecycleOdometerKm(raw: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/**
+ * Datums ir galvenā atslēga; odometrs kārto tikai notikumus ar vienu un to pašu datumu.
+ * Odometrs nedrīkst būt pirmais: pēc atgrieztas skaitītāja vērtības km un datumu secība
+ * ir pretrunā, un salīdzinātājs ar km pirmajā vietā kļūst netranzitīvs (secība neparedzama,
+ * plus `addDerivedEvents` no kaimiņiem izlasa neesošas valstu maiņas un robus).
+ */
 function sortAscending(events: LifecycleEvent[]): LifecycleEvent[] {
   return [...events].sort((a, b) => {
-    const kmA = parseLifecycleOdometerKm(a.odometer);
-    const kmB = parseLifecycleOdometerKm(b.odometer);
-    if (kmA != null && kmB != null && kmA !== kmB) return kmA - kmB;
     if (a.time !== b.time) return a.time - b.time;
+    const kmA = parseLifecycleOdometerKm(a.odometer) ?? -1;
+    const kmB = parseLifecycleOdometerKm(b.odometer) ?? -1;
+    if (kmA !== kmB) return kmA - kmB;
     return a.kind.localeCompare(b.kind);
   });
 }

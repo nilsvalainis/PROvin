@@ -48,6 +48,13 @@ export type UnifiedMileageDisplayRow = UnifiedMileageRow & {
 /** Maks. datumu starplaiks km apvienošanai (~2 kalendāra mēneši). */
 export const UNIFIED_MILEAGE_MERGE_MAX_DATE_SPAN_MS = 62 * 24 * 60 * 60 * 1000;
 
+/**
+ * Maks. km atšķirība, pie kuras divu dažādu avotu ieraksts vienā mēnesī ir tas pats nolasījums.
+ * Daļa avotu zina tikai mēnesi (datums normalizēts uz 1. datumu) un rādījumu glabā ar nelielu
+ * sistemātisku nobīdi, tāpēc precīza km sakritība šos dublikātus nesavieno.
+ */
+export const UNIFIED_MILEAGE_CROSS_SOURCE_MERGE_MAX_KM_DIFF = 150;
+
 export type UnifiedMileageSourcePayload = {
   csddForm?: CsddFormFields | null;
   autoRecordsBlock?: AutoRecordsBlockState | null;
@@ -198,9 +205,78 @@ export function mergeUnifiedMileageRowsByOdometer(
   return sortMileageChronological([...merged, ...passthrough]) as UnifiedMileageDisplayRow[];
 }
 
+function sameCalendarMonth(a: number, b: number): boolean {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  const da = new Date(a);
+  const db = new Date(b);
+  return da.getUTCFullYear() === db.getUTCFullYear() && da.getUTCMonth() === db.getUTCMonth();
+}
+
+function shareSourceLabel(a: UnifiedMileageDisplayRow, b: UnifiedMileageDisplayRow): boolean {
+  const mine = new Set(a.sourceLabels.map((l) => l.trim().toLowerCase()));
+  return b.sourceLabels.some((l) => mine.has(l.trim().toLowerCase()));
+}
+
+/**
+ * Viens nolasījums, ko divi avoti uzrāda ar nelielu atšķirību. Viena avota rindas netiek skartas:
+ * dīlera pasūtījumu rindas ar tuvām vērtībām ir atsevišķi ieraksti, ne dublikāti.
+ */
+function isCrossSourceMonthDuplicate(
+  earlier: UnifiedMileageDisplayRow,
+  later: UnifiedMileageDisplayRow,
+  maxKmDiff: number,
+): boolean {
+  const kmA = parseOdometerKm(earlier.odometer);
+  const kmB = parseOdometerKm(later.odometer);
+  if (kmA === null || kmB === null) return false;
+  if (Math.abs(kmB - kmA) > maxKmDiff) return false;
+  if (!sameCalendarMonth(earlier.sortableTime, later.sortableTime)) return false;
+  return !shareSourceLabel(earlier, later);
+}
+
+/** Patur vēlāko (precīzi datēto) rindu un tās rādījumu, bet abu avotu etiķetes. */
+function mergeCrossSourceRows(
+  earlier: UnifiedMileageDisplayRow,
+  later: UnifiedMileageDisplayRow,
+): UnifiedMileageDisplayRow {
+  const labels: string[] = [];
+  for (const raw of [...later.sourceLabels, ...earlier.sourceLabels]) {
+    const lbl = raw.trim() || "Nezināms avots";
+    if (!labels.some((v) => v.toLowerCase() === lbl.toLowerCase())) labels.push(lbl);
+  }
+  const countries = [...new Set([later.country.trim(), earlier.country.trim()].filter(Boolean))];
+  const documentValue = later.documentValue === true && earlier.documentValue === true;
+  return {
+    ...later,
+    country: countries.length <= 1 ? (countries[0] ?? later.country) : countries.join(" / "),
+    sourceOrder: Math.min(earlier.sourceOrder, later.sourceOrder),
+    sourceLabel: labels[0] ?? later.sourceLabel,
+    sourceLabels: labels,
+    ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
+  };
+}
+
+export function mergeCrossSourceMonthDuplicates(
+  rows: UnifiedMileageDisplayRow[],
+  maxKmDiff = UNIFIED_MILEAGE_CROSS_SOURCE_MERGE_MAX_KM_DIFF,
+): UnifiedMileageDisplayRow[] {
+  const out: UnifiedMileageDisplayRow[] = [];
+  for (const row of rows) {
+    const prev = out[out.length - 1];
+    if (prev && isCrossSourceMonthDuplicate(prev, row, maxKmDiff)) {
+      out[out.length - 1] = mergeCrossSourceRows(prev, row);
+      continue;
+    }
+    out.push(row);
+  }
+  return out;
+}
+
 /** Tabulas / grafika rindas — hronoloģiski + km apvienošana. */
 export function prepareUnifiedMileageDisplayRows(rows: UnifiedMileageRow[]): UnifiedMileageDisplayRow[] {
-  return mergeUnifiedMileageRowsByOdometer(sortMileageChronological([...rows]));
+  return mergeCrossSourceMonthDuplicates(
+    mergeUnifiedMileageRowsByOdometer(sortMileageChronological([...rows])),
+  );
 }
 
 /**

@@ -980,6 +980,37 @@ describe("Vēstures kopsavilkums", () => {
     expect((julyCard.match(/Vācija/g) ?? []).length).toBe(1);
   });
 
+  it("keeps the lifecycle in date order after an odometer rollback (X5 90599 → 63595)", () => {
+    const events = buildVehicleLifecycleEvents({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          { date: "02.10.2009", odometer: "58589", location: "Itālija", works: "Apkope" },
+          { date: "22.12.2009", odometer: "90599", location: "Itālija", works: "Apkope" },
+          { date: "23.12.2011", odometer: "63595", location: "Itālija", works: "Apkope" },
+          { date: "02.02.2016", odometer: "87378", location: "Nīderlande", works: "Apkope" },
+          { date: "30.06.2016", odometer: "93195", location: "Nīderlande", works: "Apkope" },
+        ],
+      },
+    });
+
+    const dated = events.filter((e) => e.kind !== "gap");
+    const times = dated.map((e) => e.time);
+    expect([...times].sort((a, b) => a - b)).toEqual(times);
+
+    const order = dated.map((e) => e.date);
+    expect(order.indexOf("22.12.2009")).toBeLessThan(order.indexOf("23.12.2011"));
+    expect(order.indexOf("23.12.2011")).toBeLessThan(order.indexOf("02.02.2016"));
+
+    // Auto nav divreiz ceļojis uz Itāliju un atpakaļ: km secība nedrīkst radīt valstu maiņas.
+    expect(events.filter((e) => e.kind === "import")).toHaveLength(1);
+
+    // Robs ir starp 2009. un 2011. gada vizīti, nevis starp 2009. un 2016. gadu.
+    const gapTitles = events.filter((e) => e.kind === "gap").map((e) => e.title);
+    expect(gapTitles).toContain("Aptuveni 24 mēneši bez ierakstiem");
+    expect(gapTitles).not.toContain("Aptuveni 78 mēneši bez ierakstiem");
+  });
+
   it("omits opaque dealer ID codes from the lifecycle caption", () => {
     const events = buildVehicleLifecycleEvents({
       autoRecordsBlock: {

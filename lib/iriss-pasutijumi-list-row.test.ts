@@ -60,8 +60,9 @@ describe("IRISS saraksta rinda", () => {
     expect(irissBrandLogoSrc("VW Golf")).toBe("/brand-logos/volkswagen.svg");
     expect(irissBrandLogoSrc("Rolls-Royce Ghost")).toBe("/brand-logos/rolls-royce.svg");
     expect(irissBrandLogoSrc("Subaru Forester")).toBe("/brand-logos/subaru.svg");
-    expect(irissBrandLogoSrc("Toyota")).toBeNull();
-    expect(irissBrandFallbackLabel("Toyota")).toBe("TO");
+    expect(irissBrandLogoSrc("Toyota Avensis")).toBe("/brand-logos/toyota.svg");
+    expect(irissBrandLogoSrc("Moskvitch 412")).toBeNull();
+    expect(irissBrandFallbackLabel("Moskvitch 412")).toBe("MO");
   });
 
   it("counts statuses", () => {
