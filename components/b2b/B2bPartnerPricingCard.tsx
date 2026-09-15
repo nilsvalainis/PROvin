@@ -169,27 +169,25 @@ export function B2bPartnerPricingCard({
           {isDealer ? (
             <ul className={styles.featureList}>
               <li className={styles.featureRow}>
-                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
-                  +
+                <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
+                  ✓
                 </span>
                 <span className={styles.featureLabelActive}>{t("dealerLineService")}</span>
               </li>
               <li className={styles.featureRow}>
-                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
-                  +
+                <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
+                  ✓
                 </span>
                 <span className={styles.featureLabelActive}>{t("dealerLineOdo")}</span>
               </li>
               <li className={styles.featureRow}>
-                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
-                  +
+                <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
+                  ✓
                 </span>
                 <span className={styles.featureLabelActive}>{t("dealerLineSummary")}</span>
               </li>
               <li className={`${styles.featureRow} ${styles.featureRowBrands}`}>
-                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
-                  +
-                </span>
+                <span className={`${styles.featureMark} ${styles.featureMarkBrands}`} aria-hidden />
                 <span className={styles.featureLabelBrands}>
                   <Tp5DealerBrandsTip brands={TP5_DEALER_BRANDS} copy={uiCopy} />
                 </span>

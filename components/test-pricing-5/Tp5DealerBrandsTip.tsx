@@ -89,28 +89,15 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
                 className={styles.dealerBrandsPopup}
                 onClick={(event) => event.stopPropagation()}
                 onTouchStart={(event) => event.stopPropagation()}
-                initial={
-                  reduceMotion
-                    ? { opacity: 1 }
-                    : { opacity: 0, y: 14, scale: 0.94, filter: "blur(6px)" }
-                }
-                animate={
-                  reduceMotion
-                    ? { opacity: 1 }
-                    : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
-                }
-                exit={
-                  reduceMotion
-                    ? { opacity: 0 }
-                    : { opacity: 0, y: 10, scale: 0.96, filter: "blur(4px)" }
-                }
+                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 14, scale: 0.94 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
                 transition={
                   reduceMotion
                     ? { duration: 0.12 }
                     : { type: "spring", stiffness: 420, damping: 28, mass: 0.7 }
                 }
               >
-                <div className={styles.dealerBrandsPopupGlow} aria-hidden />
                 <div className={styles.dealerBrandsPopupHead}>
                   <div className={styles.dealerBrandsPopupHeadText}>
                     <p id={titleId} className={styles.dealerBrandsPopupTitle}>

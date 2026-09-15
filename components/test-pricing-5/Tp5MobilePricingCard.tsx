@@ -79,12 +79,10 @@ function MobileFeatureRow({
   feature,
   brands,
   uiCopy,
-  plusMark,
 }: {
   feature: Tp5MobileFeature;
   brands: readonly string[];
   uiCopy: Tp5UiCopy;
-  plusMark?: boolean;
 }) {
   const label = <FeatureLabel feature={feature} brands={brands} uiCopy={uiCopy} />;
 
@@ -101,8 +99,8 @@ function MobileFeatureRow({
     const isBrands = feature.tone === "brands";
     const markClass = isGuarantee
       ? styles.featureMarkGuarantee
-      : plusMark
-        ? styles.featureMarkPlus
+      : isBrands
+        ? styles.featureMarkBrands
         : styles.featureMarkBlue;
     const labelClass = isGuarantee
       ? styles.featureLabelGuarantee
@@ -112,7 +110,7 @@ function MobileFeatureRow({
     return (
       <li className={`${styles.featureRow}${isBrands ? ` ${styles.featureRowBrands}` : ""}`}>
         <span className={`${styles.featureMark} ${markClass}`} aria-hidden>
-          {isGuarantee ? "✓" : plusMark ? "+" : "✓"}
+          {isBrands ? null : "✓"}
         </span>
         <span className={labelClass}>{label}</span>
       </li>
@@ -348,7 +346,6 @@ function MobilePackLayout({
               feature={feature}
               brands={activeService.brands ?? []}
               uiCopy={uiCopy}
-              plusMark
             />
           ))}
         </ul>
@@ -521,7 +518,6 @@ export function Tp5MobilePricingCard({
                 feature={feature}
                 brands={activeService.brands ?? []}
                 uiCopy={uiCopy}
-                plusMark={isDealer}
               />
             ))}
           </ul>
