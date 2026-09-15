@@ -28,8 +28,10 @@ function asvFetchErrorLv(code: string): string {
       return "Admin sesija beigusies. Ielādē lapu no jauna.";
     case "pending":
       return "VIN Audit vēl apstrādā pieprasījumu. Pagaidi un spied Ielādēt vēlreiz.";
+    case "service_not_enabled":
+      return "One Auto šo produktu pazīst, bet slēdzis ir OFF. Dashboard → Your Plan ieslēdz Vehicle History Report (US) vai spied Request Access.";
     case "api_unavailable":
-      return "Šis One Auto US produkts šobrīd nav pieejams šim ceļam. Raksti help@oneautoapi.com vai iestati ONEAUTO_ASV_VHR_PATH.";
+      return "One Auto šo US vēstures metodi vēl nav publicējis šai atslēgai. API licences logu nerāda. Dashboard → Your Plan pie VIN Audit spied Request Access un palūdz Markam precīzo API ceļu.";
     default:
       return "One Auto API neatbildēja. Mēģini vēlreiz.";
   }
@@ -102,18 +104,13 @@ export function AdminAsvIngestBar({
         costUsd?: string;
         storedPhotoGroups?: AsvBlockState["photoGroups"];
       };
-      if (!res.ok && !body.block) {
+      if (!res.ok) {
         setError(asvFetchErrorLv(body.error ?? "upstream_error"));
         return;
       }
-      if (body.error && res.status === 402) {
-        setError(asvFetchErrorLv("insufficient_balance"));
-      } else if (body.error === "pending" || res.status === 202) {
+      if (body.error === "pending" || res.status === 202) {
         setError(asvFetchErrorLv("pending"));
-      } else if (body.error === "api_unavailable") {
-        setError(asvFetchErrorLv("api_unavailable"));
-      } else if (!res.ok) {
-        setError(asvFetchErrorLv(body.error ?? "upstream_error"));
+        return;
       }
       if (body.block) onFetched(body.block);
     } catch {

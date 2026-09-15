@@ -43,13 +43,20 @@ export async function POST(req: Request) {
   try {
     const fetched = await fetchAsvProducts({ vin, products, sessionId });
     const allFailed = products.every((id) => fetched.results[id]?.ok === false);
-    const allPending = products.every((id) => fetched.results[id]?.error === "pending");
-    const balanceFail = Object.values(fetched.results).some((r) => r?.error === "insufficient_balance");
+    const failCodes = products.map((id) => fetched.results[id]?.error ?? "upstream_error");
+    const allPending = failCodes.every((c) => c === "pending");
+    const balanceFail = failCodes.includes("insufficient_balance");
     if (allFailed && balanceFail) {
       return NextResponse.json({ error: "insufficient_balance", ...fetched }, { status: 402 });
     }
     if (allFailed && allPending) {
       return NextResponse.json({ error: "pending", ...fetched }, { status: 202 });
+    }
+    if (allFailed && failCodes.every((c) => c === "service_not_enabled")) {
+      return NextResponse.json({ error: "service_not_enabled", ...fetched }, { status: 403 });
+    }
+    if (allFailed && failCodes.every((c) => c === "api_unavailable")) {
+      return NextResponse.json({ error: "api_unavailable", ...fetched }, { status: 502 });
     }
     if (allFailed) {
       return NextResponse.json({ error: "upstream_error", ...fetched }, { status: 502 });

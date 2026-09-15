@@ -24,6 +24,7 @@ import {
   oneautoPayloadIsApiUnavailable,
   oneautoPayloadIsNoData,
   oneautoPayloadIsPending,
+  oneautoPayloadIsServiceNotEnabled,
 } from "@/lib/oneauto-catalog";
 import { emptyAsvBlock, normalizeAsvBlock, type AsvBlockState } from "@/lib/asv-report";
 
@@ -43,6 +44,7 @@ function envPathFor(id: AsvProductId): string | undefined {
 function classifyError(status: number, bodyText: string): string {
   const t = bodyText.toLowerCase();
   if (oneautoPayloadIsNoData(null, bodyText)) return "no_data";
+  if (oneautoPayloadIsServiceNotEnabled(null, bodyText)) return "service_not_enabled";
   if (oneautoPayloadIsApiUnavailable(null, bodyText)) return "api_unavailable";
   if (status === 402 || /insufficient|balance|credit|quota/.test(t)) return "insufficient_balance";
   if (status === 400 || /invalid.?vin/.test(t)) return "invalid_vin";
@@ -80,6 +82,10 @@ async function fetchProductWithFallback(
         if (oneautoPayloadIsNoData(fetched.payload, text)) {
           return { ok: true, path, payload: fetched.payload };
         }
+        if (oneautoPayloadIsServiceNotEnabled(fetched.payload, text)) {
+          last = { ok: false, error: "service_not_enabled", path, payload: fetched.payload };
+          continue;
+        }
         if (oneautoPayloadIsApiUnavailable(fetched.payload, text)) {
           last = { ok: false, error: "api_unavailable", path, payload: fetched.payload };
           continue;
@@ -89,6 +95,10 @@ async function fetchProductWithFallback(
       }
       const body = fetched.payload;
       if (body && typeof body === "object" && (body as { success?: unknown }).success === false) {
+        if (oneautoPayloadIsServiceNotEnabled(body, text)) {
+          last = { ok: false, error: "service_not_enabled", path, payload: body };
+          continue;
+        }
         if (oneautoPayloadIsApiUnavailable(body, text)) {
           last = { ok: false, error: "api_unavailable", path, payload: body };
           continue;

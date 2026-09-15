@@ -282,6 +282,8 @@ const NO_DATA_RE =
 const API_UNAVAILABLE_RE =
   /requested api is not available|api is not available|contact support at help@oneautoapi/i;
 
+const SERVICE_NOT_ENABLED_RE = /the requested service has not been enabled/i;
+
 function collectOneautoErrorTexts(payload: unknown, extraText = ""): string[] {
   const texts: string[] = [];
   if (extraText.trim()) texts.push(extraText);
@@ -307,6 +309,11 @@ export function oneautoPayloadIsNoData(payload: unknown, extraText = ""): boolea
 /** OEM produkts nav pieejams šim ceļam / atslēgai (nepareizs path vai konta entitlements). */
 export function oneautoPayloadIsApiUnavailable(payload: unknown, extraText = ""): boolean {
   return collectOneautoErrorTexts(payload, extraText).some((t) => API_UNAVAILABLE_RE.test(t));
+}
+
+/** Metode pastāv, bet slēdzis Your Plan vēl nav ON. */
+export function oneautoPayloadIsServiceNotEnabled(payload: unknown, extraText = ""): boolean {
+  return collectOneautoErrorTexts(payload, extraText).some((t) => SERVICE_NOT_ENABLED_RE.test(t));
 }
 
 export function oneautoServiceHistoryIsEmpty(payload: unknown): boolean {

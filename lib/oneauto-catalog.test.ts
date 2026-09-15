@@ -10,6 +10,7 @@ import {
   oneautoOdometerToKm,
   oneautoPayloadIsApiUnavailable,
   oneautoPayloadIsNoData,
+  oneautoPayloadIsServiceNotEnabled,
   oneautoServiceHistoryIsEmpty,
   padOneautoKvRows,
   padOneautoServiceRows,
@@ -134,7 +135,20 @@ describe("OneAuto katalogs", () => {
     };
     expect(oneautoPayloadIsApiUnavailable(payload)).toBe(true);
     expect(oneautoPayloadIsNoData(payload)).toBe(false);
+    expect(oneautoPayloadIsServiceNotEnabled(payload)).toBe(false);
     expect(oneautoPayloadIsApiUnavailable(null, JSON.stringify(payload))).toBe(true);
+  });
+
+  it("Your Plan slēdzis OFF ir atsevišķs no neesoša ceļa", () => {
+    const payload = {
+      success: false,
+      result: {
+        error:
+          "The requested service has not been enabled. It can be enabled in the 'Your Plan' section when logged into the One Auto API website.",
+      },
+    };
+    expect(oneautoPayloadIsServiceNotEnabled(payload)).toBe(true);
+    expect(oneautoPayloadIsApiUnavailable(payload)).toBe(false);
   });
 
   it("tukšs service_events ir derīga tukša atbilde", () => {
