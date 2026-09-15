@@ -17,7 +17,7 @@ import {
   getTp5DesktopHeroFeatures,
   type Tp5DesktopHeroFeatureIcon,
 } from "@/lib/test-pricing-5-desktop-hero-features";
-import { TP5_DEALER_COVERAGE_TIERS } from "@/lib/dealer-brands";
+import { DealerHeroBrandChips } from "@/components/test-pricing-5/DealerHeroBrandChips";
 import { type Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
@@ -113,33 +113,16 @@ export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits", features:
       <div className="relative mt-8 min-h-[9.75rem] w-full xl:min-h-[10.75rem]">
         <AnimatePresence mode="wait" initial={false}>
           {showDealerBrands ? (
-            <motion.ul
+            <motion.div
               key="dealer-brands"
-              className={styles.dealerHeroBrandChips}
-              aria-label={uiCopy.dealerBrandsAria}
+              className={styles.dealerHeroBrandChipsMotion}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={SWAP_TRANSITION}
             >
-              {TP5_DEALER_COVERAGE_TIERS.flatMap((tier) =>
-                tier.brands.map((brand) => (
-                  <li key={brand} className={styles.dealerBrandItem}>
-                    <span
-                      className={`${styles.dealerBrandChip} ${
-                        tier.id === "full"
-                          ? styles.dealerHeroChipFull
-                          : tier.id === "workshop"
-                            ? styles.dealerHeroChipWorkshop
-                            : styles.dealerHeroChipLimited
-                      }`}
-                    >
-                      {brand}
-                    </span>
-                  </li>
-                )),
-              )}
-            </motion.ul>
+              <DealerHeroBrandChips ariaLabel={uiCopy.dealerBrandsAria} />
+            </motion.div>
           ) : (
             <motion.ul
               key={`features-${activeServiceId}`}

@@ -26,7 +26,7 @@ export type Tp5MobileFeature = {
   included: boolean;
   /** soft = muted dash (not a red ✕); guarantee = refund-style ✓ */
   tone?: Tp5FeatureTone;
-  /** Optional supporting line (dealer highlight card). */
+  /** Optional supporting line under the feature name. */
   subtitle?: string;
 };
 
@@ -71,8 +71,6 @@ export type Tp5MobileService = {
   footnote?: string;
   /** Mobile card “Ieteicams” badge (AUDITS). */
   recommended?: boolean;
-  /** Desktop dealer globe panel (mobile uses the 5-row checklist). */
-  desktopHighlight?: Tp5MobileFeature;
 };
 
 /** Card checklist row count for MINI/AUDITS compare stack. */
@@ -111,19 +109,19 @@ const MINI_FEATURES_EN: Tp5MobileFeature[] = [
 ];
 
 const DEALER_FEATURES_LV: Tp5MobileFeature[] = [
-  { name: "Odometra rādījumi", included: true },
   { name: "Servisa un apkopju vēsture*", included: true },
+  { name: "Odometra rādījumi", included: true },
   { name: "Kopsavilkums", included: true },
-  { name: "100% Naudas atmaksas garantija.", included: true, tone: "guarantee" },
   { name: "Atbalstītie ražotāji", included: true, tone: "brands" },
+  { name: "100% Naudas atmaksas garantija.", included: true, tone: "guarantee" },
 ];
 
 const DEALER_FEATURES_EN: Tp5MobileFeature[] = [
-  { name: "Odometer readings", included: true },
   { name: "Service and maintenance history*", included: true },
+  { name: "Odometer readings", included: true },
   { name: "Summary", included: true },
-  { name: "100% money-back guarantee.", included: true, tone: "guarantee" },
   { name: "Supported manufacturers", included: true, tone: "brands" },
+  { name: "100% money-back guarantee.", included: true, tone: "guarantee" },
 ];
 
 const KOREA_USA_FEATURES_LV: Tp5MobileFeature[] = [
@@ -178,11 +176,6 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
     turnaround: "⏱️ Izpilde: 24-72h",
-    desktopHighlight: {
-      name: "Dīleru servisa vēsture un nobraukums",
-      subtitle: "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
-      included: true,
-    },
   },
   {
     id: "koreaUsa",
@@ -231,11 +224,6 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
     turnaround: "⏱️ Delivery: 24-72h",
-    desktopHighlight: {
-      name: "Dealer service history and mileage",
-      subtitle: "Direct access to official manufacturer service records.",
-      included: true,
-    },
   },
   {
     id: "koreaUsa",

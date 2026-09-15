@@ -1,6 +1,5 @@
 "use client";
 
-import { Globe } from "lucide-react";
 import { type SyntheticEvent, type TouchEvent } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -21,7 +20,6 @@ import {
   TP5_DEALER_SAMPLE_REPORT_HREF,
   TP5_MINI_SAMPLE_REPORT_HREF,
   getTp5UiCopy,
-  type DealerBrandsTipCopy,
   type Tp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
@@ -56,31 +54,6 @@ function SampleReportPdfIcon() {
         strokeLinecap="round"
       />
     </svg>
-  );
-}
-
-function DealerFeatureHighlight({
-  feature,
-  brands,
-  uiCopy,
-}: {
-  feature: Tp5MobileFeature;
-  brands: readonly string[];
-  uiCopy: DealerBrandsTipCopy;
-}) {
-  return (
-    <div className={styles.dealerFeatureHighlight} role="listitem">
-      <Globe className={styles.dealerFeatureIcon} aria-hidden />
-      <div className={styles.dealerFeatureCopy}>
-        <p className={styles.dealerFeatureTitle}>{feature.name}</p>
-        {feature.subtitle ? <p className={styles.dealerFeatureSubtitle}>{feature.subtitle}</p> : null}
-        {brands.length > 0 ? (
-          <div className={styles.dealerBrandsUnderSubtitle}>
-            <Tp5DealerBrandsTip brands={brands} copy={uiCopy} />
-          </div>
-        ) : null}
-      </div>
-    </div>
   );
 }
 
@@ -124,15 +97,24 @@ function MobileFeatureRow({
   }
 
   if (feature.included) {
+    const isGuarantee = feature.tone === "guarantee";
+    const isBrands = feature.tone === "brands";
+    const markClass = isGuarantee
+      ? styles.featureMarkGuarantee
+      : plusMark
+        ? styles.featureMarkPlus
+        : styles.featureMarkBlue;
+    const labelClass = isGuarantee
+      ? styles.featureLabelGuarantee
+      : isBrands
+        ? styles.featureLabelBrands
+        : styles.featureLabelActive;
     return (
-      <li className={styles.featureRow}>
-        <span
-          className={`${styles.featureMark} ${plusMark ? styles.featureMarkPlus : styles.featureMarkBlue}`}
-          aria-hidden
-        >
-          {plusMark ? "+" : "✓"}
+      <li className={`${styles.featureRow}${isBrands ? ` ${styles.featureRowBrands}` : ""}`}>
+        <span className={`${styles.featureMark} ${markClass}`} aria-hidden>
+          {isGuarantee ? "✓" : plusMark ? "+" : "✓"}
         </span>
-        <span className={styles.featureLabelActive}>{label}</span>
+        <span className={labelClass}>{label}</span>
       </li>
     );
   }
@@ -490,8 +472,6 @@ export function Tp5MobilePricingCard({
     );
   }
 
-  const desktopDealerHighlight = activeService.desktopHighlight ?? activeService.features[0];
-
   return (
     <article className={`${styles.spatialCard} w-full`} {...swipeProps}>
       <div className={styles.cardHeader}>
@@ -534,28 +514,17 @@ export function Tp5MobilePricingCard({
 
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
-          {isDealer && desktopDealerHighlight ? (
-            <div className={styles.dealerUnifiedPanel}>
-              <DealerFeatureHighlight
-                feature={desktopDealerHighlight}
+          <ul className={styles.featureList}>
+            {activeService.features.map((feature) => (
+              <MobileFeatureRow
+                key={`${activeServiceId}-${feature.name}`}
+                feature={feature}
                 brands={activeService.brands ?? []}
                 uiCopy={uiCopy}
+                plusMark={isDealer}
               />
-              <hr className={styles.dealerUnifiedDivider} aria-hidden />
-              <Tp5DealerRefundTip copy={uiCopy} />
-            </div>
-          ) : (
-            <ul className={styles.featureList}>
-              {activeService.features.map((feature) => (
-                <MobileFeatureRow
-                  key={`${activeServiceId}-${feature.name}`}
-                  feature={feature}
-                  brands={activeService.brands ?? []}
-                  uiCopy={uiCopy}
-                />
-              ))}
-            </ul>
-          )}
+            ))}
+          </ul>
         </div>
 
         <CheckoutFields

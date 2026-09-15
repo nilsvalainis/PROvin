@@ -23,6 +23,7 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { DealerCoverageBrandSections } from "@/components/test-pricing-5/DealerCoverageBrandSections";
+import { DealerHeroBrandChips } from "@/components/test-pricing-5/DealerHeroBrandChips";
 import { getTp5UiCopy, type Tp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const LUCIDE_ICON_CLASS = "h-4 w-4 [stroke-width:1.6] sm:h-[1.125rem] sm:w-[1.125rem]";
@@ -198,7 +199,7 @@ function ItemList({
                 <div id={panelId} className={styles.b2bDealerAccordion}>
                   <p className={GOAL_CLASS}>{dealer.goal}</p>
                   <div className="mt-4">
-                    <DealerBrandLockup copy={brandsCopy} />
+                    <DealerHeroBrandChips ariaLabel={brandsCopy.dealerBrandsAria} embedded />
                   </div>
                 </div>
               ) : null}

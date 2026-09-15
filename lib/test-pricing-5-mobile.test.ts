@@ -67,7 +67,7 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(mini.features.some((f) => f.name.includes("CSDD"))).toBe(false);
   });
 
-  it("maps dealer to five mobile rows and keeps the desktop globe highlight", () => {
+  it("maps dealer to five checklist rows, brands before the guarantee", () => {
     const dealer = getTp5MobileService("dealer");
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(getTp5MobileTabTitle(dealer)).toBe("DĪLERI");
@@ -75,17 +75,27 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(getTp5MobileCtaLabel(dealer, true)).toBe("PASŪTĪT 24,99 €");
     expect(dealer.description).toBe("");
     expect(dealer.features.map((f) => f.name)).toEqual([
-      "Odometra rādījumi",
       "Servisa un apkopju vēsture*",
+      "Odometra rādījumi",
       "Kopsavilkums",
-      "100% Naudas atmaksas garantija.",
       "Atbalstītie ražotāji",
+      "100% Naudas atmaksas garantija.",
+    ]);
+    expect(dealer.features.map((f) => f.tone)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      "brands",
+      "guarantee",
     ]);
     expect(dealer.features.every((f) => f.included)).toBe(true);
-    expect(dealer.desktopHighlight?.name).toBe("Dīleru servisa vēsture un nobraukums");
-    expect(dealer.desktopHighlight?.subtitle).toBe(
-      "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
-    );
+    expect(getTp5MobileService("dealer", "en").features.map((f) => f.name)).toEqual([
+      "Service and maintenance history*",
+      "Odometer readings",
+      "Summary",
+      "Supported manufacturers",
+      "100% money-back guarantee.",
+    ]);
     expect(dealer.extraNote).toBeUndefined();
     expect(TP5_DEALER_BRAND_ROWS).toEqual([
       [

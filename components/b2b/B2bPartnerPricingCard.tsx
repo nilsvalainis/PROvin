@@ -6,7 +6,6 @@ import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
-import { Globe } from "lucide-react";
 import {
   getB2bBusinessHeroFeatures,
   getB2bCatalogPlan,
@@ -97,8 +96,6 @@ export function B2bPartnerPricingCard({
     { id: "business", title: getB2bCatalogPlan("business", locale).title },
     { id: "dealer", title: getB2bCatalogPlan("dealer", locale).title },
   ];
-  const dealerHighlightTitle = t("dealerHighlightTitle");
-  const dealerHighlightSubtitle = t("dealerHighlightSubtitle");
   const businessMeta = t("businessMeta");
   const serviceTabAria = t("servicePick");
   const partnerCodeError = t("partnerCodeError");
@@ -170,22 +167,42 @@ export function B2bPartnerPricingCard({
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={isDealer ? "dealer" : "audits"}>
           {isDealer ? (
-            <div className={styles.dealerUnifiedPanel}>
-              <div className={styles.dealerFeatureHighlight} role="listitem">
-                <Globe className={styles.dealerFeatureIcon} aria-hidden />
-                <div className={styles.dealerFeatureCopy}>
-                  <p className={styles.dealerFeatureTitle}>{dealerHighlightTitle}</p>
-                  <p className={styles.dealerFeatureSubtitle}>
-                    {dealerHighlightSubtitle}
-                  </p>
-                  <div className={styles.dealerBrandsUnderSubtitle}>
-                    <Tp5DealerBrandsTip brands={TP5_DEALER_BRANDS} copy={uiCopy} />
-                  </div>
-                </div>
-              </div>
-              <hr className={styles.dealerUnifiedDivider} aria-hidden />
-              <Tp5DealerRefundTip copy={uiCopy} />
-            </div>
+            <ul className={styles.featureList}>
+              <li className={styles.featureRow}>
+                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
+                  +
+                </span>
+                <span className={styles.featureLabelActive}>{t("dealerLineService")}</span>
+              </li>
+              <li className={styles.featureRow}>
+                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
+                  +
+                </span>
+                <span className={styles.featureLabelActive}>{t("dealerLineOdo")}</span>
+              </li>
+              <li className={styles.featureRow}>
+                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
+                  +
+                </span>
+                <span className={styles.featureLabelActive}>{t("dealerLineSummary")}</span>
+              </li>
+              <li className={`${styles.featureRow} ${styles.featureRowBrands}`}>
+                <span className={`${styles.featureMark} ${styles.featureMarkPlus}`} aria-hidden>
+                  +
+                </span>
+                <span className={styles.featureLabelBrands}>
+                  <Tp5DealerBrandsTip brands={TP5_DEALER_BRANDS} copy={uiCopy} />
+                </span>
+              </li>
+              <li className={styles.featureRow}>
+                <span className={`${styles.featureMark} ${styles.featureMarkGuarantee}`} aria-hidden>
+                  ✓
+                </span>
+                <span className={styles.featureLabelGuarantee}>
+                  <Tp5DealerRefundTip copy={uiCopy} />
+                </span>
+              </li>
+            </ul>
           ) : (
             <ul className={styles.featureList}>
               {heroFeatures.map((feature) => (
