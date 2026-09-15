@@ -6,7 +6,7 @@ import { getAzvinAboutCopy } from "@/lib/azvin-about-copy";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
 import { readAzvinLocale, subscribeAzvinLocale } from "@/lib/azvin-locale";
 import { TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
-import styles from "@/app/[locale]/demo/azvin/azvin.module.css";
+import styles from "@/app/[locale]/view/n7k4xw9q/azvin.module.css";
 
 export function AzvinAboutSection() {
   const [locale, setLocale] = useState<AzvinLocale>("az");

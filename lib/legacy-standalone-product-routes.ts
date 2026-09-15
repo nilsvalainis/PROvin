@@ -1,3 +1,4 @@
+import { isAzvinPublicPath } from "@/lib/azvin-public-path";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 
 /** Pagaidu slēptās standalone produktu lapas (faili paliek repozitorijā). */
@@ -42,9 +43,10 @@ const CLOSED_PREVIEW_PATHS = [
 
 /**
  * Vecās cenu A/B, demo un iekšējie preview URL — redirect uz sākumu.
- * AZ.VIN kods paliek (`/demo/azvin`); URL slēgts, līdz atkal atveram.
+ * AZ.VIN publiskā lapa ir unikālais `AZVIN_PUBLIC_PATH`; `/demo/azvin` paliek slēgts.
  */
 export function shouldBlockClosedExperimentPath(pathname: string): boolean {
+  if (isAzvinPublicPath(pathname)) return false;
   const p = normalizePathWithoutLocale(pathname);
   if (p === "/test-pricing" || p.startsWith("/test-pricing-") || p === "/test-checkout") return true;
   if (p === "/demo" || p.startsWith("/demo/")) return true;

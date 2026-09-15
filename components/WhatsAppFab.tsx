@@ -5,6 +5,7 @@ import { useId } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { whatsappAppUrl, whatsappWebUrl } from "@/lib/contact";
+import { isAzvinPublicPath } from "@/lib/azvin-public-path";
 import { normalizeSitePath } from "@/lib/site-rail-sections";
 
 function WhatsAppIcon({ gradientId }: { gradientId: string }) {
@@ -37,6 +38,7 @@ export function WhatsAppFab() {
   const webHref = whatsappWebUrl();
   const gradientId = useId().replace(/:/g, "");
   const path = normalizeSitePath(pathname);
+  if (isAzvinPublicPath(pathname)) return null;
   if (path === "/partneriem" || path.startsWith("/partneriem/")) return null;
 
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {

@@ -26,6 +26,8 @@ describe("legacy standalone product routes", () => {
     expect(shouldBlockClosedExperimentPath("/test-checkout")).toBe(true);
     expect(shouldBlockClosedExperimentPath("/lv/demo/azvin")).toBe(true);
     expect(shouldBlockClosedExperimentPath("/en/demo")).toBe(true);
+    expect(shouldBlockClosedExperimentPath("/lv/view/n7k4xw9q")).toBe(false);
+    expect(shouldBlockClosedExperimentPath("/en/view/n7k4xw9q")).toBe(false);
     expect(shouldBlockClosedExperimentPath("/silhouette-preview")).toBe(true);
     expect(shouldBlockClosedExperimentPath("/lv/pakalpojumi")).toBe(false);
   });

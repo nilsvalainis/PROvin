@@ -232,7 +232,7 @@ export function AzvinPricingCard({
       onTouchCancel={onSwipeAreaTouchCancel}
     >
       <div className={styles.cardHeader}>
-        <div className={styles.tierSwitcher} role="tablist" aria-label={uiCopy.packageTabsAria}>
+        <div className={`${styles.tierSwitcher} ${styles.tierSwitcherFour}`} role="tablist" aria-label={uiCopy.packageTabsAria}>
           {services.map((service) => {
             const active = activeServiceId === service.id;
             return (
@@ -248,7 +248,7 @@ export function AzvinPricingCard({
                 <span
                   className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                 >
-                  {service.title}
+                  {service.tabTitle ?? service.title}
                 </span>
               </button>
             );

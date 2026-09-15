@@ -7,13 +7,14 @@ type Props = {
   ariaLabel: string;
   /** Accordion / nested lists: same type as the hero rail, without absolute positioning. */
   embedded?: boolean;
+  className?: string;
 };
 
 /** Unboxed OEM names, H1e coverage tone. Shared by the public hero rail and B2B accordion. */
-export function DealerHeroBrandChips({ ariaLabel, embedded = false }: Props) {
+export function DealerHeroBrandChips({ ariaLabel, embedded = false, className }: Props) {
   return (
     <ul
-      className={`${styles.dealerHeroBrandChips}${embedded ? ` ${styles.dealerHeroBrandChipsEmbedded}` : ""}`}
+      className={`${styles.dealerHeroBrandChips}${embedded ? ` ${styles.dealerHeroBrandChipsEmbedded}` : ""}${className ? ` ${className}` : ""}`}
       aria-label={ariaLabel}
     >
       {TP5_DEALER_COVERAGE_TIERS.flatMap((tier) =>

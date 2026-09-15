@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
-import { DealerCoverageBrandSections } from "@/components/test-pricing-5/DealerCoverageBrandSections";
+import { DealerHeroBrandChips } from "@/components/test-pricing-5/DealerHeroBrandChips";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { DealerBrandsTipCopy } from "@/lib/test-pricing-5-ui-copy";
 
@@ -128,7 +128,11 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
                   </button>
                 </div>
                 <div className={styles.dealerBrandsPopupDivider} aria-hidden />
-                <DealerCoverageBrandSections copy={copy} ariaLabel={copy.dealerBrandsAria} />
+                <DealerHeroBrandChips
+                  ariaLabel={copy.dealerBrandsAria}
+                  embedded
+                  className={styles.dealerHeroBrandChipsPopup}
+                />
               </motion.div>
             </div>
           </>

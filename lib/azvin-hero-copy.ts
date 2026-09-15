@@ -3,97 +3,95 @@
 export const AZVIN_LOCALES = ["az", "en", "ru", "lv"] as const;
 export type AzvinLocale = (typeof AZVIN_LOCALES)[number];
 
+type AzvinHeroServiceId = "korea" | "europe" | "usa" | "dealer";
+
 export type AzvinHeroCopy = {
   brand: string;
   titlePrefix: string;
   titleAccent: string;
-  titleDesktopLine1: string;
-  titleDesktopLine2Prefix: string;
-  titleDesktopAccent: string;
-  subheadLead: string;
-  subheadAccent: string;
-  demoBanner: string;
   vinInvalid: string;
   listingInvalid: string;
   ctaDemoNote: string;
   langSwitcherAria: string;
 };
 
-const COPY_AZ: AzvinHeroCopy = {
+type AzvinHeroBase = Omit<AzvinHeroCopy, "titlePrefix" | "titleAccent">;
+
+const BASE_AZ: AzvinHeroBase = {
   brand: "AZ.VIN",
-  titlePrefix: "Avtomobil tarixi ",
-  titleAccent: "yoxlaması",
-  titleDesktopLine1: "Avtomobil tarixi",
-  titleDesktopLine2Prefix: "və ",
-  titleDesktopAccent: "yoxlama",
-  subheadLead: "Növbəti avtomobiliniz haqqında hər şeyi bilin.",
-  subheadAccent:
-    "Rəsmi diler, Koreya/ABŞ hərrac və Avropa reyestr məlumatlarını bir hesabatda birləşdiririk.",
-  demoBanner: "AZ.VIN · Azərbaycan demo",
   vinInvalid: "Düzgün VIN daxil edin (11-17 simvol).",
   listingInvalid: "Düzgün elan linki daxil edin.",
   ctaDemoNote: "Demo. Ödəniş tezliklə.",
   langSwitcherAria: "Dil",
 };
 
-const COPY_EN: AzvinHeroCopy = {
+const BASE_EN: AzvinHeroBase = {
   brand: "AZ.VIN",
-  titlePrefix: "Vehicle history ",
-  titleAccent: "check",
-  titleDesktopLine1: "Vehicle history",
-  titleDesktopLine2Prefix: "and listing ",
-  titleDesktopAccent: "check",
-  subheadLead: "Know everything about your next car.",
-  subheadAccent:
-    "We combine official dealer, Korea/USA auction and Europe registry data into one clear report.",
-  demoBanner: "AZ.VIN · Azerbaijan demo",
   vinInvalid: "Enter a valid VIN (11-17 characters).",
   listingInvalid: "Enter a valid listing link.",
   ctaDemoNote: "Demo only. Checkout coming soon.",
   langSwitcherAria: "Language",
 };
 
-const COPY_RU: AzvinHeroCopy = {
+const BASE_RU: AzvinHeroBase = {
   brand: "AZ.VIN",
-  titlePrefix: "Проверка истории ",
-  titleAccent: "авто",
-  titleDesktopLine1: "Проверка истории",
-  titleDesktopLine2Prefix: "и объявления ",
-  titleDesktopAccent: "авто",
-  subheadLead: "Узнайте всё о своём следующем авто.",
-  subheadAccent:
-    "Объединяем данные официального дилера, аукционов Кореи/США и реестров Европы в одном отчёте.",
-  demoBanner: "AZ.VIN · Демо Азербайджан",
   vinInvalid: "Введите корректный VIN (11-17 символов).",
   listingInvalid: "Введите корректную ссылку на объявление.",
   ctaDemoNote: "Демо. Оплата скоро.",
   langSwitcherAria: "Язык",
 };
 
-const COPY_LV: AzvinHeroCopy = {
+const BASE_LV: AzvinHeroBase = {
   brand: "AZ.VIN",
-  titlePrefix: "Auto vēstures ",
-  titleAccent: "pārbaude",
-  titleDesktopLine1: "Auto vēstures",
-  titleDesktopLine2Prefix: "un sludinājuma ",
-  titleDesktopAccent: "pārbaude",
-  subheadLead: "Uzzini visu par savu nākamo auto.",
-  subheadAccent:
-    "Apvienojam oficiālo dīleru, Korejas/ASV izsoļu un Eiropas reģistru datus vienā pārskatāmā atskaitē.",
-  demoBanner: "AZ.VIN · Azerbaidžānas demo",
   vinInvalid: "Ievadi derīgu VIN (11-17 rakstzīmes).",
   listingInvalid: "Ievadi derīgu sludinājuma saiti.",
   ctaDemoNote: "Demo. Apmaksa drīzumā.",
   langSwitcherAria: "Valoda",
 };
 
-const COPY_BY_LOCALE: Record<AzvinLocale, AzvinHeroCopy> = {
-  az: COPY_AZ,
-  en: COPY_EN,
-  ru: COPY_RU,
-  lv: COPY_LV,
+const TITLES: Record<AzvinLocale, Record<AzvinHeroServiceId, { prefix: string; accent: string }>> = {
+  az: {
+    korea: { prefix: "Koreya avtomobil tarixi ", accent: "yoxlaması" },
+    europe: { prefix: "Avropa avtomobil tarixi ", accent: "yoxlaması" },
+    usa: { prefix: "Amerika avtomobil tarixi ", accent: "yoxlaması" },
+    dealer: { prefix: "Rəsmi diler məlumatları ", accent: "hesabatı" },
+  },
+  en: {
+    korea: { prefix: "Korea vehicle history ", accent: "check" },
+    europe: { prefix: "Europe vehicle history ", accent: "check" },
+    usa: { prefix: "America vehicle history ", accent: "check" },
+    dealer: { prefix: "Official dealer data ", accent: "report" },
+  },
+  ru: {
+    korea: { prefix: "Проверка истории авто из ", accent: "Кореи" },
+    europe: { prefix: "Проверка истории авто из ", accent: "Европы" },
+    usa: { prefix: "Проверка истории авто из ", accent: "Америки" },
+    dealer: { prefix: "Официальные данные ", accent: "дилера" },
+  },
+  lv: {
+    korea: { prefix: "Korejas auto vēstures ", accent: "pārbaude" },
+    europe: { prefix: "Eiropas auto vēstures ", accent: "pārbaude" },
+    usa: { prefix: "Amerikas auto vēstures ", accent: "pārbaude" },
+    dealer: { prefix: "Oficiālā dīlera datu ", accent: "atskaite" },
+  },
 };
 
-export function getAzvinHeroCopy(locale: AzvinLocale): AzvinHeroCopy {
-  return COPY_BY_LOCALE[locale] ?? COPY_AZ;
+const BASE: Record<AzvinLocale, AzvinHeroBase> = {
+  az: BASE_AZ,
+  en: BASE_EN,
+  ru: BASE_RU,
+  lv: BASE_LV,
+};
+
+export function getAzvinHeroCopy(
+  locale: AzvinLocale,
+  serviceId: AzvinHeroServiceId = "korea",
+): AzvinHeroCopy {
+  const base = BASE[locale] ?? BASE_AZ;
+  const title = TITLES[locale]?.[serviceId] ?? TITLES.az.korea;
+  return {
+    ...base,
+    titlePrefix: title.prefix,
+    titleAccent: title.accent,
+  };
 }

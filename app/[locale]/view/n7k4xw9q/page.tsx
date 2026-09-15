@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { AzvinAboutSection } from "@/components/demo/azvin/AzvinAboutSection";
-import styles from "@/app/[locale]/demo/azvin/azvin.module.css";
+import styles from "@/app/[locale]/view/n7k4xw9q/azvin.module.css";
 
 export const metadata: Metadata = {
-  title: "AZ.VIN demo (Azerbaijan)",
+  title: "AZ.VIN",
   robots: { index: false, follow: false },
 };
 

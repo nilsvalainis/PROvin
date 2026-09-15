@@ -12,6 +12,7 @@ import {
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { AzvinLocaleSwitcher } from "@/components/demo/azvin/AzvinLocaleSwitcher";
 import { AzvinAboutNavLink } from "@/components/demo/azvin/AzvinAboutNavLink";
+import { AZVIN_PUBLIC_PATH, isAzvinPublicPath } from "@/lib/azvin-public-path";
 import { B2bLocaleSwitcher } from "@/components/b2b/B2bLocaleSwitcher";
 
 /** Mājas navigācijas rindkopas kā `/#…` vai `/biezi-jautajumi`. */
@@ -43,7 +44,7 @@ export function HeaderClient() {
     isParMums ||
     isBlogs;
 
-  const isAzvinDemo = pathname.includes("/demo/azvin");
+  const isAzvinDemo = isAzvinPublicPath(pathname);
   /**
    * Tumšais headeris — sākums / pakalpojumi / Par mums / blogs / BUJ / SELECT / azvin.
    */
@@ -142,7 +143,7 @@ export function HeaderClient() {
     <header className={`${isHome ? "fixed lg:sticky" : "sticky"} top-0 z-[60] isolate w-full ${headerSurface}`}>
       <div className={headerInnerClass}>
         {isAzvinDemo ? (
-          <Link href="/demo/azvin" className={logoClass} aria-label="AZ.VIN">
+          <Link href={AZVIN_PUBLIC_PATH} className={logoClass} aria-label="AZ.VIN">
             <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>AZ.</span>
             <span className="text-provin-accent">VIN</span>
           </Link>

@@ -187,6 +187,13 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.tierSwitcherFour .tierTabLabel {
+  white-space: normal;
+  line-height: 1.15;
+  padding-inline: 0.12rem;
+  text-align: center;
+}
+
 .tierTabBtn {
   position: relative;
   display: flex;
@@ -347,11 +354,12 @@
 
 .featureStack {
   position: relative;
-  z-index: 1;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+  overflow: visible;
 }
 
 .liquidAccent {
@@ -824,10 +832,11 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 .dealerBrandsPopup {
   position: absolute;
   left: 0;
-  top: calc(100% + 0.45rem);
+  top: auto;
+  bottom: calc(100% + 0.45rem);
   z-index: 40;
   width: min(22.5rem, 90vw);
-  max-height: min(28rem, 78vh);
+  max-height: min(18rem, 70vh);
   overflow: auto;
   padding: 0.7rem 0.7rem 0.65rem;
   border-radius: 0.85rem;
@@ -873,6 +882,7 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
     position: relative;
     left: auto;
     top: auto;
+    bottom: auto;
     width: min(19.5rem, calc(100vw - 2rem));
     max-height: min(68vh, 26rem);
     pointer-events: auto;
@@ -1190,6 +1200,18 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   inset: auto;
   max-width: none;
   margin-inline: 0;
+}
+
+.dealerHeroBrandChipsPopup {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 0.28rem;
+  row-gap: 0.34rem;
+}
+
+@media (min-width: 360px) {
+  .dealerHeroBrandChipsPopup {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
 /** B2B catalog dealer column — same chip wrap as hero concept E. */
