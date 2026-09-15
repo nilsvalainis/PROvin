@@ -23,6 +23,7 @@ import {
   normalizeAutoRecordsOdometer,
 } from "@/lib/auto-records-paste-parse";
 import { CC_VIN_PDF_SOURCE_LABEL, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { ASV_PDF_SOURCE_LABEL, type AsvBlockState } from "@/lib/asv-report";
 import { resolveListingMileageChartRow } from "@/lib/listing-odometer";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 
@@ -60,6 +61,7 @@ export type UnifiedMileageSourcePayload = {
   autoRecordsBlock?: AutoRecordsBlockState | null;
   oneautoBlock?: OneautoBlockState | null;
   ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   citiAvotiBlock?: CitiAvotiBlockState | null;
   tirgusForm?: TirgusFormFields | null;
@@ -460,6 +462,8 @@ export type CollectUnifiedMileageOptions = {
   omitAutoRecords?: boolean;
   /** Neiekļaut starptautiskās vēstures odometra ierakstus. */
   omitCcVin?: boolean;
+  /** Neiekļaut ASV vēstures odometra ierakstus. */
+  omitAsv?: boolean;
   /** Neiekļaut konkrētus trešās puses avotus pēc nosaukuma (`SOURCE_BLOCK_LABELS`). */
   omitVendorBlockTitles?: Set<string>;
   /** Neiekļaut sludinājuma odometra rindu. */
@@ -541,6 +545,14 @@ export function collectUnifiedMileageRows(
       const dateOut = formatAutoRecordsDateForOutput(r.date);
       const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
       pushRow(dateOut, odoOut, r.country, CC_VIN_PDF_SOURCE_LABEL);
+    }
+  }
+
+  if (!options?.omitAsv) {
+    for (const r of (p.asvBlock?.mileage ?? []).filter(autoRecordsRowHasData)) {
+      const dateOut = formatAutoRecordsDateForOutput(r.date);
+      const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
+      pushRow(dateOut, odoOut, r.country, ASV_PDF_SOURCE_LABEL);
     }
   }
 

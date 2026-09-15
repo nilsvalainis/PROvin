@@ -32,6 +32,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import { ccVinBlockHasOperatorData, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { asvBlockHasOperatorData, type AsvBlockState } from "@/lib/asv-report";
 import { oneautoBlockHasContent, type OneautoBlockState } from "@/lib/oneauto-block";
 import { oneautoDisplayHasRows } from "@/lib/oneauto-catalog";
 
@@ -127,6 +128,18 @@ export function ccVinTrafficLevel(b: CcVinBlockState | null | undefined): Traffi
   try {
     if (!b) return "empty";
     if (!ccVinBlockHasOperatorData(b)) return "empty";
+    const hasMileage = (b.mileage ?? []).some(autoRecordsRowHasData);
+    if (hasMileage && wsStr(b.comments).trim().length > 0) return "complete";
+    return "partial";
+  } catch {
+    return "empty";
+  }
+}
+
+export function asvTrafficLevel(b: AsvBlockState | null | undefined): TrafficFillLevel {
+  try {
+    if (!b) return "empty";
+    if (!asvBlockHasOperatorData(b)) return "empty";
     const hasMileage = (b.mileage ?? []).some(autoRecordsRowHasData);
     if (hasMileage && wsStr(b.comments).trim().length > 0) return "complete";
     return "partial";

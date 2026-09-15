@@ -7,6 +7,7 @@
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { CC_VIN_PDF_SOURCE_LABEL, ccVinAmountToEurDisplay, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { ASV_PDF_SOURCE_LABEL, asvAmountToEurDisplay, type AsvBlockState } from "@/lib/asv-report";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   damageGroupDisplayLabels,
@@ -77,12 +78,14 @@ export type CollectUnifiedIncidentOptions = {
   omitVendorBlockTitles?: Set<string>;
   omitLtab?: boolean;
   omitCcVin?: boolean;
+  omitAsv?: boolean;
 };
 
 export function collectUnifiedIncidentRows(args: {
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
   options?: CollectUnifiedIncidentOptions;
 }): UnifiedIncidentRow[] {
   const out: UnifiedIncidentRow[] = [];
@@ -117,6 +120,18 @@ export function collectUnifiedIncidentRows(args: {
           incidentNo: d.region,
         } as LtabIncidentRow,
         CC_VIN_PDF_SOURCE_LABEL,
+      );
+    }
+  }
+  if (!args.options?.omitAsv) {
+    for (const d of args.asvBlock?.damages ?? []) {
+      push(
+        {
+          csngDate: d.date,
+          lossAmount: asvAmountToEurDisplay(d.amount) || d.amount,
+          incidentNo: d.region,
+        } as LtabIncidentRow,
+        ASV_PDF_SOURCE_LABEL,
       );
     }
   }

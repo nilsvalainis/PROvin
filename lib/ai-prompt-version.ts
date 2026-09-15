@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-15.1 - ASV avota komentārs: NMVTIS/salvage/foto, bez VIN Audit/Carfax
+ *   zīmola klienta tekstā; Lite vs Full seguma godīgums.
  * - 2026-09-14.1 - Nobraukuma forenzikas brīfi (temps, avotu neatkarība,
  *   odometra robežas) kodā; FLASH MAX vispirms raksta avotu salīdzinājumu
  *   kā lietas kopskatu (Sonnet); too_long labo ar Gemini Flash.
@@ -87,4 +89,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-14.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-15.1";

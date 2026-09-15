@@ -22,6 +22,8 @@ import {
   oneautoBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { ccVinBlockToPlainText } from "@/lib/cc-vin-report";
+import { asvBlockToPlainText } from "@/lib/asv-report";
 import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
@@ -88,6 +90,7 @@ function unifiedMileagePayload(blocks: WorkspaceSourceBlocks) {
     autoRecordsBlock: blocks.auto_records,
     oneautoBlock: blocks.oneauto,
     ccVinBlock: blocks.cc_vin,
+    asvBlock: blocks.asv,
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     citiAvotiBlock: blocks.citi_avoti,
     tirgusForm: blocks.tirgus,
@@ -106,6 +109,7 @@ function unifiedIncidentsWithLossPlainText(blocks: WorkspaceSourceBlocks): strin
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
     ccVinBlock: blocks.cc_vin,
+    asvBlock: blocks.asv,
   });
   if (rows.length === 0) return "";
   const lines = rows.map((r) => [r.date, r.lossAmount, r.country, r.sourceLabel].join("\t"));
@@ -238,6 +242,8 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     { key: "carvertical", text: vendorAvotuBlockToPlainText(blocks.carvertical) },
     { key: "auto_records", text: autoRecordsBlockToPlainText(blocks.auto_records) },
     { key: "oneauto", text: oneautoBlockToPlainText(blocks.oneauto), label: OFFICIAL_DEALER_SECTION_TITLE },
+    { key: "cc_vin", text: ccVinBlockToPlainText(blocks.cc_vin) },
+    { key: "asv", text: asvBlockToPlainText(blocks.asv) },
     { key: "tjekbil", text: vinRegistryBlockToPlainText(blocks.tjekbil) },
     { key: "mnt_ee", text: vinRegistryBlockToPlainText(blocks.mnt_ee) },
     { key: "lkf_ee", text: vinRegistryBlockToPlainText(blocks.lkf_ee) },

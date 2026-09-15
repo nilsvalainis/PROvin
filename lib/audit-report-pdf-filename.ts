@@ -61,3 +61,10 @@ export function buildOemDealerPdfFilename(vin: string | null | undefined): strin
   const slug = v.length > 0 ? v : "NAV_VIN";
   return `OEM_DILERA_DATI_${slug}.pdf`;
 }
+
+/** Tikai ASV vēsture (VIN Audit / PROVIN noformējums). */
+export function buildProvinAsvPdfFilename(vin: string | null | undefined): string {
+  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const slug = v.length > 0 ? v : "NAV_VIN";
+  return `PROVIN_ASV_${slug}.pdf`;
+}

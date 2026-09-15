@@ -64,6 +64,14 @@ import {
 } from "@/lib/cc-vin-report";
 import { seedCcVinDefaultComment } from "@/lib/admin-cc-vin-comment-presets";
 import {
+  ASV_ADMIN_LABEL,
+  asvBlockHasContent,
+  asvBlockToPlainText,
+  emptyAsvBlock,
+  normalizeAsvBlock,
+  type AsvBlockState,
+} from "@/lib/asv-report";
+import {
   countListingAnalysisPhotos,
   normalizeListingAnalysisPhotoGroups,
   syncListingAnalysisPhotoGroupsAndFlat,
@@ -136,6 +144,7 @@ export const SOURCE_BLOCK_KEYS = [
   "auto_records",
   "oneauto",
   "cc_vin",
+  "asv",
   "tjekbil",
   "mnt_ee",
   "lkf_ee",
@@ -178,6 +187,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   auto_records: "OFICIĀLĀ DĪLERA DATI",
   oneauto: "ONEAUTO",
   cc_vin: CC_VIN_ADMIN_LABEL,
+  asv: ASV_ADMIN_LABEL,
   tjekbil: "DĀNIJAS REĢISTRI",
   mnt_ee: "MNT.EE — Igaunijas reģistrs",
   lkf_ee: "LKF.EE — Igaunijas OCTA",
@@ -197,6 +207,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   auto_records: AUTORECORDS_BASE_URL.replace(/\/$/, ""),
   oneauto: "https://www.oneautoapi.com/home/api/",
   cc_vin: "https://cc.vin",
+  asv: "https://www.vinaudit.com",
   tjekbil: "https://www.tjekbil.dk",
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
   lkf_ee: "https://lkf.ee/et/kahjukontroll",
@@ -215,6 +226,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   auto_records: "text-orange-500",
   oneauto: "text-indigo-800",
   cc_vin: "text-violet-700",
+  asv: "text-blue-800",
   tjekbil: "text-rose-700",
   mnt_ee: "text-cyan-700",
   lkf_ee: "text-indigo-700",
@@ -978,6 +990,7 @@ export type WorkspaceSourceBlocks = {
   auto_records: AutoRecordsBlockState;
   oneauto: OneautoBlockState;
   cc_vin: CcVinBlockState;
+  asv: AsvBlockState;
   tjekbil: VinRegistryBlockState;
   mnt_ee: VinRegistryBlockState;
   lkf_ee: VinRegistryBlockState;
@@ -1334,6 +1347,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     auto_records: emptyAutoRecordsBlock(),
     oneauto: emptyOneautoBlock(),
     cc_vin: seedCcVinDefaultComment(emptyCcVinBlock()),
+    asv: emptyAsvBlock(),
     tjekbil: emptyVinRegistryBlock(),
     mnt_ee: emptyVinRegistryBlock(),
     lkf_ee: emptyVinRegistryBlock(),
@@ -1565,6 +1579,8 @@ export function mergeVendorBlocksPlain(blocks: WorkspaceSourceBlocks): string {
   if (ar) parts.push(`【${SOURCE_BLOCK_LABELS.auto_records}】\n${ar}`);
   const cc = ccVinBlockToPlainText(blocks.cc_vin).trim();
   if (cc) parts.push(`【${SOURCE_BLOCK_LABELS.cc_vin}】\n${cc}`);
+  const asv = asvBlockToPlainText(blocks.asv).trim();
+  if (asv) parts.push(`【${SOURCE_BLOCK_LABELS.asv}】\n${asv}`);
   return parts.join("\n\n");
 }
 
@@ -2315,6 +2331,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       };
     })(),
     cc_vin: seedCcVinDefaultComment(normalizeCcVinBlock(blocks.cc_vin)),
+    asv: normalizeAsvBlock(blocks.asv),
     oneauto: parseOneautoBlockRaw(blocks.oneauto),
     ltab: {
       ...d.ltab,
@@ -2408,6 +2425,11 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   const rawCcVin = o.cc_vin;
   if (rawCcVin && typeof rawCcVin === "object") {
     base.cc_vin = seedCcVinDefaultComment(normalizeCcVinBlock(rawCcVin));
+  }
+
+  const rawAsv = o.asv;
+  if (rawAsv && typeof rawAsv === "object") {
+    base.asv = normalizeAsvBlock(rawAsv);
   }
 
   const rawAutodna = o.autodna;

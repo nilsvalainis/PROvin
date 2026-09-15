@@ -19,6 +19,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockHasContent } from "@/lib/cc-vin-report";
+import { asvBlockHasContent } from "@/lib/asv-report";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 
@@ -45,6 +46,7 @@ export function orderHasIncidentDataForAi(sourceBlocks: WorkspaceSourceBlocks): 
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
       ccVinBlock: blocks.cc_vin,
+      asvBlock: blocks.asv,
     }).length > 0
   ) {
     return true;
@@ -62,6 +64,7 @@ export function orderHasSourceDataForAi(sourceBlocks: WorkspaceSourceBlocks): bo
     autoRecordsBlockHasContent(blocks.auto_records),
     oneautoBlockHasContent(blocks.oneauto),
     ccVinBlockHasContent(blocks.cc_vin),
+    asvBlockHasContent(blocks.asv),
     vinRegistryBlockHasContent(blocks.tjekbil),
     vinRegistryBlockHasContent(blocks.mnt_ee),
     vinRegistryBlockHasContent(blocks.lkf_ee),
@@ -82,6 +85,7 @@ export function orderHasMileageDataForAi(sourceBlocks: WorkspaceSourceBlocks): b
       autoRecordsBlock: blocks.auto_records,
       oneautoBlock: blocks.oneauto,
       ccVinBlock: blocks.cc_vin,
+      asvBlock: blocks.asv,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,
       tirgusForm: blocks.tirgus,

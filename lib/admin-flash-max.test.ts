@@ -27,6 +27,7 @@ describe("FLASH MAX jobs", () => {
       "autodna",
       "carvertical",
       "cc_vin",
+      "asv",
       "dealer_comments",
       "dealer_oil",
       "incidents",
@@ -39,6 +40,7 @@ describe("FLASH MAX jobs", () => {
     expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison" && j.group === "daily")).toBe(true);
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "sources_comparison")!)).toBe("flash");
     expect(FLASH_MAX_JOBS.some((j) => j.id === "cc_vin" && j.group === "daily")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "asv" && j.group === "daily")).toBe(true);
     expect(defaultFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_DAILY_JOB_IDS]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);
@@ -52,6 +54,7 @@ describe("FLASH MAX jobs", () => {
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "carvertical")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "ltab")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "cc_vin")!)).toBe("gemini");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "asv")!)).toBe("gemini");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "dealer_comments")!)).toBe("gemini");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "dealer_oil")!)).toBe("gemini");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!)).toBe("gemini");

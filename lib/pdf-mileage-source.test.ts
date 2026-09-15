@@ -30,6 +30,8 @@ describe("mileageSourceLabelToPdfKey", () => {
     expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.listing_analysis)).toBe("sslv");
     expect(mileageSourceLabelToPdfKey("IZSOĻU PORTĀLU ARHĪVS")).toBe("intl");
     expect(mileageSourceLabelToPdfKey("Starptautiskā vēsture")).toBe("intl");
+    expect(mileageSourceLabelToPdfKey("ASV")).toBe("asv");
+    expect(mileageSourceLabelToPdfKey(SOURCE_BLOCK_LABELS.asv)).toBe("asv");
   });
 
   it("maps unrecognized and empty labels to cits (never ?)", () => {

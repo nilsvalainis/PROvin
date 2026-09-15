@@ -104,6 +104,7 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   dailySource("autodna", "AutoDNA", "autodna"),
   dailySource("carvertical", "CarVertical", "carvertical"),
   dailySource("cc_vin", SOURCE_BLOCK_LABELS.cc_vin, "cc_vin"),
+  dailySource("asv", SOURCE_BLOCK_LABELS.asv, "asv"),
   dailySource("dealer_comments", "Oficiālā dīlera komentāri", "auto_records"),
   dailySource("dealer_oil", "Eļļas maiņas intervāli", "auto_records", "oilChangeIntervalNotes"),
   {

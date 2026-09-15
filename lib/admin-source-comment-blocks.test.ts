@@ -13,6 +13,7 @@ import {
   mergeSourceBlocksWithDefaults,
 } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
+import { emptyAsvBlock } from "@/lib/asv-report";
 import { outvinDealerReportToPlainText, emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 
 describe("sourceCommentAiBusyKey", () => {
@@ -37,6 +38,7 @@ describe("isMainAnalysisSourceBlock", () => {
       "ltab",
       "auto_records",
       "cc_vin",
+      "asv",
       "citi_avoti",
       "tirgus",
     ] as const) {
@@ -175,5 +177,28 @@ describe("cc_vin AI komentāru slānis", () => {
       "<p>Jauns komentārs</p>",
     );
     expect(next).toMatchObject({ comments: "<p>Jauns komentārs</p>" });
+  });
+});
+
+describe("asv AI komentāru slānis", () => {
+  it("ir avota komentāru bloks un ieslēdz ģenerēšanu, kad ir tabulas vai AI konteksts", () => {
+    expect(isAiSourceCommentBlockKey("asv")).toBe(true);
+    expect(sourceBlockHasDataExcludingComments("asv", mergeSourceBlocksWithDefaults({}))).toBe(false);
+
+    const withMileage = mergeSourceBlocksWithDefaults({
+      asv: {
+        ...emptyAsvBlock(),
+        comments: "esošs komentārs",
+        mileage: [{ date: "12.06.2015", odometer: "72420", country: "ASV" }],
+      },
+    });
+    expect(sourceBlockHasDataExcludingComments("asv", withMileage)).toBe(true);
+    const plain = sourceBlockPlainTextExcludingComments("asv", withMileage);
+    expect(plain).toContain("72420");
+    expect(plain).not.toContain("esošs komentārs");
+    expect(plain).not.toMatch(/VIN Audit|Carfax/i);
+
+    const next = applySourceBlockGeneratedComment("asv", withMileage.asv, "<p>ASV komentārs</p>");
+    expect(next).toMatchObject({ comments: "<p>ASV komentārs</p>" });
   });
 });

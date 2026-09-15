@@ -19,6 +19,7 @@ import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admi
 import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
+  asvTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
   listingAnalysisTrafficLevel,
@@ -35,13 +36,15 @@ import {
   syncAutoRecordsPhotoGroupsAndFlat,
 } from "@/lib/auto-records-photo-types";
 import { mergeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
+import { mergeAsvPhotoGroups, syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
+import type { CcVinBlockState } from "@/lib/cc-vin-report";
+import type { AsvBlockState } from "@/lib/asv-report";
 import {
   mergeSourceBlockPhotoGroups,
   syncSourceBlockPhotoGroupsAndFlat,
   type SourceBlockPhotoGroup,
   type SourceBlockPhotoMeta,
 } from "@/lib/source-block-photo-types";
-import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import {
   mergeListingAnalysisPhotoGroups,
   syncListingAnalysisPhotoGroupsAndFlat,
@@ -111,6 +114,8 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
       return TRAFFIC_RANK[autoRecordsTrafficLevel(block as WorkspaceSourceBlocks["auto_records"])];
     case "cc_vin":
       return TRAFFIC_RANK[ccVinTrafficLevel(block as WorkspaceSourceBlocks["cc_vin"])];
+    case "asv":
+      return TRAFFIC_RANK[asvTrafficLevel(block as WorkspaceSourceBlocks["asv"])];
     case "oneauto":
       return TRAFFIC_RANK[oneautoTrafficLevel(block as WorkspaceSourceBlocks["oneauto"])];
     case "tjekbil":
@@ -222,6 +227,14 @@ function pickRicherCcVinBlock(incoming: CcVinBlockState, baseline: CcVinBlockSta
   return { ...picked, photoGroups: synced.photoGroups, photos: synced.photos };
 }
 
+function pickRicherAsvBlock(incoming: AsvBlockState, baseline: AsvBlockState): AsvBlockState {
+  const picked = pickRicherSourceBlock("asv", incoming, baseline);
+  const synced = syncAsvPhotoGroupsAndFlat(
+    mergeAsvPhotoGroups(incoming.photoGroups, incoming.photos, baseline.photoGroups, baseline.photos),
+  );
+  return { ...picked, photoGroups: synced.photoGroups, photos: synced.photos };
+}
+
 function withMergedSourceBlockPhotos<T extends { photos?: SourceBlockPhotoMeta[]; photoGroups?: SourceBlockPhotoGroup[] }>(
   picked: T,
   incoming: T,
@@ -281,6 +294,9 @@ export function coalesceOrderWorkspacePersistBody(
     cc_vin: wiped.has("cc_vin")
       ? incomingBlocks.cc_vin
       : pickRicherCcVinBlock(incomingBlocks.cc_vin, baselineBlocks.cc_vin),
+    asv: wiped.has("asv")
+      ? incomingBlocks.asv
+      : pickRicherAsvBlock(incomingBlocks.asv, baselineBlocks.asv),
     oneauto: wiped.has("oneauto")
       ? incomingBlocks.oneauto
       : pickRicherSourceBlock("oneauto", incomingBlocks.oneauto, baselineBlocks.oneauto),

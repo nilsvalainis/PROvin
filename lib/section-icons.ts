@@ -43,6 +43,7 @@ export type SectionIconId =
   | "route"
   | "scanSearch"
   | "globe"
+  | "flag"
   | "award"
   | "oilDrop"
   | "brakeDisc"
@@ -88,6 +89,7 @@ export const SECTION_ICON_INNER: Record<SectionIconId, string> = {
   scrollText: `<path d="M15 12h-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M15 8h-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M19 17V5a2 2 0 0 0-2-2H4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
   route: `<circle cx="6" cy="19" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>`,
   globe: `<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M3.6 9h16.8M3.6 15h16.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 3c2.5 2.5 3.8 5.6 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`,
+  flag: `<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
   scanSearch: `<path d="M3 7V5a2 2 0 0 1 2-2h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 17v2a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 21H5a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m16 16-1.9-1.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
   award: `<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>`,
   /** Servisa darbu ikonas: eļļa / šķidrumi. */
@@ -125,6 +127,7 @@ export const SOURCE_BLOCK_ICON: Record<SourceBlockKey, SectionIconId> = {
   auto_records: "shieldCheck",
   oneauto: "layers",
   cc_vin: "globe",
+  asv: "flag",
   tjekbil: "search",
   mnt_ee: "fileText",
   lkf_ee: "shield",

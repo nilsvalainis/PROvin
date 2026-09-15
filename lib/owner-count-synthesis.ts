@@ -9,6 +9,7 @@ import {
   type CsddFormFields,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import type { AsvBlockState } from "@/lib/asv-report";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 
 export type OwnerCountryId = "latvia" | "sweden" | "denmark" | "estonia" | "germany" | "other";
@@ -272,6 +273,7 @@ function collectFromVendorPdf(
 export function synthesizeOwnerCountsFromPdfInput(input: {
   csddForm?: CsddFormFields | null;
   ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   citiAvoti?: CitiAvotiBlockState | null;
 }): OwnerCountSynthesis {
@@ -301,6 +303,10 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
       "cc.vin",
     );
     pushCandidate(candidates, country, ccCount, "cc.vin", 2);
+  }
+  const asvCount = extractExplicitOwnerCount(input.asvBlock?.ownersCount ?? "");
+  if (asvCount != null) {
+    pushCandidate(candidates, "other", asvCount, "ASV", 2);
   }
   const chosen = choosePerCountry(candidates);
   return {
@@ -361,6 +367,11 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
       "cc.vin",
       2,
     );
+  }
+  const asv = blocks.asv;
+  const asvCount = extractExplicitOwnerCount(asv.ownersCount) ?? extractExplicitOwnerCount(asv.comments);
+  if (asvCount != null) {
+    pushCandidate(candidates, "other", asvCount, "ASV", 2);
   }
 
   const chosen = choosePerCountry(candidates);

@@ -117,6 +117,7 @@ function latestOdometerKm(blocks: WorkspaceSourceBlocks | undefined, csdd: CsddF
       autoRecordsBlock: blocks.auto_records,
       oneautoBlock: blocks.oneauto,
       ccVinBlock: blocks.cc_vin,
+      asvBlock: blocks.asv,
       manualVendorBlocks: toPdfManualVendorBlocks(blocks),
       citiAvotiBlock: blocks.citi_avoti,
       tirgusForm: blocks.tirgus,

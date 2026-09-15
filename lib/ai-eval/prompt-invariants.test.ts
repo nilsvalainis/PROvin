@@ -127,6 +127,13 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/VISIEM avotu|VISUS avotu/i);
   });
 
+  it("ASV source comments stay in PROVIN branding without VIN Audit or Carfax", () => {
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(/ASV FOCUS/);
+    expect(prompts).toMatch(/ASV FOCUS[\s\S]*?NEKAD neraksti VIN Audit, Carfax/);
+    expect(prompts).toMatch(/ASV FOCUS[\s\S]*?Lite pret Full/);
+  });
+
   it("field-agent prompts enforce epistemic hedging for digital-only audits", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(/EPISTEMIC HEDGING/);

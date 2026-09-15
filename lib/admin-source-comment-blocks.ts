@@ -22,6 +22,7 @@ import {
   oneautoBlockToPlainText,
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
 import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
 import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
@@ -63,6 +64,7 @@ export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
   "auto_records",
   "oneauto",
   "cc_vin",
+  "asv",
   "tjekbil",
   "mnt_ee",
   "lkf_ee",
@@ -123,6 +125,9 @@ export function sourceBlockPlainTextExcludingComments(
     case "cc_vin":
       base = ccVinBlockToPlainText({ ...blocks.cc_vin, comments: "" }).trim();
       return appendAiContextRawSection(base, blocks.cc_vin.aiContextRaw);
+    case "asv":
+      base = asvBlockToPlainText({ ...blocks.asv, comments: "" }).trim();
+      return appendAiContextRawSection(base, blocks.asv.aiContextRaw);
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -162,6 +167,8 @@ export function sourceBlockCommentsPlain(
       return blocks.oneauto.comments;
     case "cc_vin":
       return blocks.cc_vin.comments;
+    case "asv":
+      return blocks.asv.comments;
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -354,6 +361,8 @@ export function applySourceBlockGeneratedComment(
       return { ...block, comments: html };
     case "cc_vin":
       return { ...(block as CcVinBlockState), comments: html };
+    case "asv":
+      return { ...(block as AsvBlockState), comments: html };
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":

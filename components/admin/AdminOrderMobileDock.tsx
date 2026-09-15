@@ -42,6 +42,7 @@ type Props = {
   onGoSummary: () => void;
   onGeneratePdf: () => void;
   onGenerateDealerPdf: () => void;
+  onGenerateAsvPdf: () => void;
   onGenerateOemPdf: () => void;
   onGeneratePrintInkPdf: () => void;
   vin: string;
@@ -116,6 +117,7 @@ export function AdminOrderMobileDock({
   onGoSummary,
   onGeneratePdf,
   onGenerateDealerPdf,
+  onGenerateAsvPdf,
   onGenerateOemPdf,
   onGeneratePrintInkPdf,
   vin,
@@ -223,6 +225,13 @@ export function AdminOrderMobileDock({
             <span className="min-w-0">
               <span className="block">Ģenerēt dīlera PDF</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai oficiālā dīlera dati</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdf)}>
+            <FileText className="h-4 w-4 shrink-0 text-blue-700" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">Ģenerēt ASV PDF</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai ASV vēsture</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateOemPdf)}>

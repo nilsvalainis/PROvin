@@ -4,6 +4,7 @@
  */
 
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import type { AsvBlockState } from "@/lib/asv-report";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
 import type {
@@ -68,6 +69,7 @@ export type PdfSummaryInput = {
   autoRecordsBlock?: AutoRecordsBlockState | null;
   oneautoBlock?: import("@/lib/oneauto-block").OneautoBlockState | null;
   ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
@@ -87,6 +89,7 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
     manualVendorBlocks: input.manualVendorBlocks ?? null,
     manualLtabBlock: input.manualLtabBlock ?? null,
     ccVinBlock: input.ccVinBlock ?? null,
+    asvBlock: input.asvBlock ?? null,
   });
   const agg = aggregateUnifiedIncidents(
     rows,
@@ -123,6 +126,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
       autoRecordsBlock: input.autoRecordsBlock ?? undefined,
       oneautoBlock: input.oneautoBlock ?? undefined,
       ccVinBlock: input.ccVinBlock ?? null,
+      asvBlock: input.asvBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,
       tirgusForm: input.tirgusForm ?? null,

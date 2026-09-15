@@ -9,8 +9,11 @@ import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
+import { AdminAsvSourceBlock } from "@/components/admin/AdminAsvSourceBlock";
 import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
-import { CC_VIN_PDF_TITLE, ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
+import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
+import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
@@ -107,6 +110,7 @@ import { attachPdfTextsToVendorBlocks } from "@/lib/vendor-damage-hydrate";
 import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import {
+  ASV_ONLY_PDF_VISIBILITY,
   DEALER_ONLY_PDF_VISIBILITY,
   mergePdfVisibility,
   type PdfVisibilitySettings,
@@ -133,6 +137,7 @@ import {
   autoRecordsTrafficLevel,
   oneautoTrafficLevel,
   ccVinTrafficLevel,
+  asvTrafficLevel,
   citiAvotiTrafficLevel,
   csddTrafficLevel,
   expertSummaryTrafficLevel,
@@ -214,6 +219,7 @@ import {
 } from "@/lib/admin-ai-data-availability";
 import {
   buildOemDealerPdfFilename,
+  buildProvinAsvPdfFilename,
   buildProvinAuditPdfFilename,
   buildProvinDilerisPdfFilename,
 } from "@/lib/audit-report-pdf-filename";
@@ -349,6 +355,7 @@ const wizardFooterPdf = `${wizardFooterBtnBase} border border-emerald-800/40 bg-
 const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] border border-slate-800 bg-slate-900 text-white shadow-sm hover:bg-black`;
 const wizardFooterDealer = `${wizardFooterBtnBase} min-w-[8.75rem] border border-orange-800/35 bg-orange-500 text-white shadow-sm hover:bg-orange-600`;
 const wizardFooterOem = `${wizardFooterBtnBase} min-w-[8.75rem] border border-slate-400 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100`;
+const wizardFooterAsv = `${wizardFooterBtnBase} min-w-[8.75rem] border border-blue-800/35 bg-blue-700 text-white shadow-sm hover:bg-blue-800`;
 
 function adminCommentFieldLabel(icon: LucideIcon, title: string) {
   return (
@@ -439,6 +446,8 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
       return oneautoBlockToPlainText(blocks.oneauto);
     case "cc_vin":
       return ccVinBlockToPlainText(blocks.cc_vin);
+    case "asv":
+      return asvBlockToPlainText(blocks.asv);
     case "autodna":
     case "carvertical":
       return vendorAvotuBlockToPlainText(blocks[key] ?? null);
@@ -1448,6 +1457,35 @@ export function OrderDetailWorkspace({
       commitWorkspaceLocalNow({ force: true });
       if (orderDraftPersistenceEnabled) {
         await persistFullWorkspaceRef("cc_vin_photos", { showFlash: false });
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
+  const commitAsvPhotoGroupsStructural = useCallback(
+    async (nextGroups: AsvBlockState["photoGroups"]) => {
+      const synced = syncAsvPhotoGroupsAndFlat(nextGroups);
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const blocks = mergeSourceBlocksWithDefaults(prev.sourceBlocks);
+          const next = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: {
+              ...blocks,
+              asv: {
+                ...blocks.asv,
+                photoGroups: synced.photoGroups,
+                photos: synced.photos,
+              },
+            },
+          });
+          return applyPersistBodyToWs(next);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        await persistFullWorkspaceRef("asv_photos", { showFlash: false });
       }
     },
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
@@ -2810,6 +2848,7 @@ export function OrderDetailWorkspace({
       auto_records: "empty" as const,
       oneauto: "empty" as const,
       cc_vin: "empty" as const,
+      asv: "empty" as const,
       tjekbil: "empty" as const,
       mnt_ee: "empty" as const,
       lkf_ee: "empty" as const,
@@ -2826,6 +2865,7 @@ export function OrderDetailWorkspace({
         auto_records: autoRecordsTrafficLevel(b.auto_records),
         oneauto: oneautoTrafficLevel(b.oneauto),
         cc_vin: ccVinTrafficLevel(b.cc_vin),
+        asv: asvTrafficLevel(b.asv),
         tjekbil: vinRegistryTrafficLevel(b.tjekbil),
         mnt_ee: vinRegistryTrafficLevel(b.mnt_ee),
         lkf_ee: vinRegistryTrafficLevel(b.lkf_ee),
@@ -2862,6 +2902,7 @@ export function OrderDetailWorkspace({
       traffic.auto_records,
       traffic.citi_avoti,
       traffic.cc_vin,
+      traffic.asv,
       traffic.tjekbil,
       worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
       traffic.carinfo,
@@ -2893,17 +2934,19 @@ export function OrderDetailWorkspace({
     [wizardStepLevels],
   );
 
-  const openPrintReport = async (opts?: { printInk?: boolean; dealerOnly?: boolean }) => {
+  const openPrintReport = async (opts?: { printInk?: boolean; dealerOnly?: boolean; asvOnly?: boolean }) => {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
       await flushWorkspaceServerPatch({ showFlash: false });
     }
 
     const dealerOnly = opts?.dealerOnly === true;
+    const asvOnly = opts?.asvOnly === true;
+    const isolate = dealerOnly || asvOnly;
 
     let listingMarket: ListingMarketSnapshot | null = null;
     const listingUrl = payload.listingUrl?.trim();
-    if (!dealerOnly && listingUrl) {
+    if (!isolate && listingUrl) {
       try {
         const res = await fetch("/api/admin/scrape-listing", {
           method: "POST",
@@ -2925,7 +2968,7 @@ export function OrderDetailWorkspace({
     const photoIds = (listingBlocks.listing_analysis.photos ?? []).map((p) => p.id);
     const listingAnalysisPhotoDataUrls = new Map<string, string>();
     let resolvedPhotoIds = photoIds;
-    if (!dealerOnly && photoIds.length > 0) {
+    if (!isolate && photoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/listing-analysis-photo/pdf-batch", {
           method: "POST",
@@ -2961,7 +3004,7 @@ export function OrderDetailWorkspace({
     const autoRecordsPhotoIds = (listingBlocks.auto_records.photos ?? []).map((p) => p.id);
     const autoRecordsPhotoDataUrls = new Map<string, string>();
     let resolvedAutoRecordsPhotoIds = autoRecordsPhotoIds;
-    if (autoRecordsPhotoIds.length > 0) {
+    if (autoRecordsPhotoIds.length > 0 && !asvOnly) {
       try {
         const res = await fetch("/api/admin/auto-records-photo/pdf-batch", {
           method: "POST",
@@ -2998,7 +3041,7 @@ export function OrderDetailWorkspace({
     const ccVinPhotoIds = (listingBlocks.cc_vin.photos ?? []).map((p) => p.id);
     const ccVinPhotoDataUrls = new Map<string, string>();
     let resolvedCcVinPhotoIds = ccVinPhotoIds;
-    if (!dealerOnly && ccVinPhotoIds.length > 0) {
+    if (!isolate && ccVinPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/cc-vin-photo/pdf-batch", {
           method: "POST",
@@ -3030,9 +3073,44 @@ export function OrderDetailWorkspace({
       photoGroups: listingBlocks.cc_vin.photoGroups ?? [],
     };
 
+    const asvPhotoIds = (listingBlocks.asv.photos ?? []).map((p) => p.id);
+    const asvPhotoDataUrls = new Map<string, string>();
+    let resolvedAsvPhotoIds = asvPhotoIds;
+    if (!dealerOnly && asvPhotoIds.length > 0) {
+      try {
+        const res = await fetch("/api/admin/asv-photo/pdf-batch", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: payload.sessionId, photoIds: asvPhotoIds }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          dataUrls?: Record<string, string>;
+          missing?: string[];
+        };
+        if (res.ok && data.dataUrls) {
+          for (const [id, url] of Object.entries(data.dataUrls)) {
+            asvPhotoDataUrls.set(id, url);
+          }
+          const fromBatch = Object.keys(data.dataUrls);
+          resolvedAsvPhotoIds = [
+            ...asvPhotoIds.filter((id) => data.dataUrls![id]),
+            ...fromBatch.filter((id) => !asvPhotoIds.includes(id)),
+          ];
+        }
+      } catch {
+        /* PDF bez ASV fotogrāfijām, ja batch neizdevās */
+      }
+    }
+    const asvForPdf = {
+      ...blocksDisplaySafe.asv,
+      photos: resolvedAsvPhotoIds.filter((id) => asvPhotoDataUrls.has(id)).map((id) => ({ id })),
+      photoGroups: listingBlocks.asv.photoGroups ?? [],
+    };
+
     const incidentPhotoIds = (wsPersistRef.current.incidentPhotos ?? []).map((p) => p.id);
     const incidentPhotoDataUrls = new Map<string, string>();
-    if (!dealerOnly && incidentPhotoIds.length > 0) {
+    if (!isolate && incidentPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/incident-photo/pdf-batch", {
           method: "POST",
@@ -3056,7 +3134,7 @@ export function OrderDetailWorkspace({
 
     const sourceBlockPhotoIds = collectWorkspaceSourceBlockPhotoIds(listingBlocks);
     const sourceBlockPhotoDataUrls = new Map<string, string>();
-    if (!dealerOnly && sourceBlockPhotoIds.length > 0) {
+    if (!isolate && sourceBlockPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/source-block-photo/pdf-batch", {
           method: "POST",
@@ -3077,8 +3155,8 @@ export function OrderDetailWorkspace({
       }
     }
 
-    let manualVendorBlocks = dealerOnly ? [] : toPdfManualVendorBlocks(blocksDisplaySafe);
-    const portfolioPdfs = dealerOnly
+    let manualVendorBlocks = isolate ? [] : toPdfManualVendorBlocks(blocksDisplaySafe);
+    const portfolioPdfs = isolate
       ? []
       : portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
     if (portfolioPdfs.length > 0) {
@@ -3099,39 +3177,45 @@ export function OrderDetailWorkspace({
       payload: {
         ...payload,
         ...flatSources,
-        ...(dealerOnly
+        ...(isolate
           ? { csdd: "", ltab: "", tirgus: "", citi: "" }
           : {}),
-        csddForm: dealerOnly ? undefined : blocksDisplaySafe.csdd,
-        tirgusForm: dealerOnly ? undefined : blocksDisplaySafe.tirgus,
+        csddForm: isolate ? undefined : blocksDisplaySafe.csdd,
+        tirgusForm: isolate ? undefined : blocksDisplaySafe.tirgus,
         manualVendorBlocks,
-        manualLtabBlock: dealerOnly ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab),
-        autoRecordsBlock: autoRecordsForPdf,
-        oneautoBlock: blocksDisplaySafe.oneauto,
-        ccVinBlock: dealerOnly ? null : ccVinForPdf,
-        citiAvoti: dealerOnly ? null : blocksDisplaySafe.citi_avoti,
-        listingAnalysis: dealerOnly ? null : listingAnalysisForPdf,
-        iriss: dealerOnly ? "" : ws.iriss,
-        apskatesPlāns: dealerOnly ? "" : ws.apskatesPlāns,
-        tehniskoRiskuAnalize: dealerOnly ? "" : ws.tehniskoRiskuAnalize,
-        cenasAtbilstiba: dealerOnly ? "" : ws.cenasAtbilstiba,
-        listingMarket: dealerOnly ? null : listingMarket,
-        pdfVisibility: dealerOnly ? DEALER_ONLY_PDF_VISIBILITY : pdfVisibility,
-        pdfReportKind: dealerOnly ? "dealer" : "full",
+        manualLtabBlock: isolate ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab),
+        autoRecordsBlock: asvOnly ? undefined : autoRecordsForPdf,
+        oneautoBlock: asvOnly ? undefined : blocksDisplaySafe.oneauto,
+        ccVinBlock: isolate ? null : ccVinForPdf,
+        asvBlock: dealerOnly ? null : asvForPdf,
+        citiAvoti: isolate ? null : blocksDisplaySafe.citi_avoti,
+        listingAnalysis: isolate ? null : listingAnalysisForPdf,
+        iriss: isolate ? "" : ws.iriss,
+        apskatesPlāns: isolate ? "" : ws.apskatesPlāns,
+        tehniskoRiskuAnalize: isolate ? "" : ws.tehniskoRiskuAnalize,
+        cenasAtbilstiba: isolate ? "" : ws.cenasAtbilstiba,
+        listingMarket: isolate ? null : listingMarket,
+        pdfVisibility: dealerOnly
+          ? DEALER_ONLY_PDF_VISIBILITY
+          : asvOnly
+            ? ASV_ONLY_PDF_VISIBILITY
+            : pdfVisibility,
+        pdfReportKind: dealerOnly ? "dealer" : asvOnly ? "asv" : "full",
         pdfBannerInclude: dealerOnly ? {} : pdfBannerInclude,
         manualBanners: dealerOnly ? [] : manualBanners,
-        internalComment: dealerOnly ? "" : internalCommentDraft,
-        mileageComment: dealerOnly ? "" : mileageCommentDraft,
-        incidentPhotoGroups: dealerOnly ? [] : wsPersistRef.current.incidentPhotoGroups,
-        incidentPhotos: dealerOnly ? [] : wsPersistRef.current.incidentPhotos,
+        internalComment: isolate ? "" : internalCommentDraft,
+        mileageComment: isolate ? "" : mileageCommentDraft,
+        incidentPhotoGroups: isolate ? [] : wsPersistRef.current.incidentPhotoGroups,
+        incidentPhotos: isolate ? [] : wsPersistRef.current.incidentPhotos,
       },
-      portfolio: dealerOnly ? [] : portfolio.map((p) => ({ name: p.name, size: p.size })),
+      portfolio: isolate ? [] : portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
       dateFmt,
       formatBytes,
       listingAnalysisPhotoDataUrls,
       autoRecordsPhotoDataUrls,
       ccVinPhotoDataUrls,
+      asvPhotoDataUrls,
       incidentPhotoDataUrls,
       sourceBlockPhotoDataUrls,
       printInk: Boolean(opts?.printInk),
@@ -3148,10 +3232,12 @@ export function OrderDetailWorkspace({
 
     const printTitle = dealerOnly
       ? buildProvinDilerisPdfFilename(payload.vin)
-      : buildProvinAuditPdfFilename(payload.vin, {
-          checkoutLine: payload.checkoutLine,
-          amountTotalCents: payload.amountTotal,
-        });
+      : asvOnly
+        ? buildProvinAsvPdfFilename(payload.vin)
+        : buildProvinAuditPdfFilename(payload.vin, {
+            checkoutLine: payload.checkoutLine,
+            amountTotalCents: payload.amountTotal,
+          });
     const printFileTitle = opts?.printInk ? printTitle.replace(/\.pdf$/i, "_drukai.pdf") : printTitle;
     let printed = false;
     const schedulePrint = () => {
@@ -4163,6 +4249,7 @@ export function OrderDetailWorkspace({
         onGoSummary={() => goWizardStep(WIZARD_SUMMARY_STEP)}
         onGeneratePdf={() => void openPrintReport()}
         onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
+        onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
         onGenerateOemPdf={() => void openOemDealerReport()}
         onGeneratePrintInkPdf={() => void openPrintReport({ printInk: true })}
         vin={vinBar}
@@ -4361,6 +4448,20 @@ export function OrderDetailWorkspace({
               onPhotoGroupsStructuralCommit={commitCcVinPhotoGroupsStructural}
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
               applyPatchedBlocks={applyCopilotPatchedBlocks}
+            />
+            <AdminAsvSourceBlock
+              value={blocksDisplaySafe.asv}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("asv", next)}
+              trafficFillLevel={traffic.asv}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.asv}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ asv: next })}
+              aiComment={aiCommentSlot("asv")}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={commitAsvPhotoGroupsStructural}
+              onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
+              orderVin={payload.vin ?? ""}
             />
           </div>
         ) : null}
@@ -4730,6 +4831,14 @@ export function OrderDetailWorkspace({
             title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti."
           >
             Ģenerēt dīlera PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ asvOnly: true })}
+            className={wizardFooterAsv}
+            title="Tikai ASV vēsture. Citi avoti netiek iekļauti."
+          >
+            Ģenerēt ASV PDF
           </button>
           <button
             type="button"

@@ -4,6 +4,7 @@
 
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { CC_VIN_PDF_SOURCE_LABEL } from "@/lib/cc-vin-report";
+import { ASV_PDF_SOURCE_LABEL } from "@/lib/asv-report";
 
 export type MileagePdfSourceKey =
   | "csdd"
@@ -15,6 +16,7 @@ export type MileagePdfSourceKey =
   | "carinfo"
   | "ltab"
   | "intl"
+  | "asv"
   | "sslv"
   | "cits";
 
@@ -83,6 +85,14 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     return "intl";
   }
 
+  if (
+    sq === squishLower(ASV_PDF_SOURCE_LABEL) ||
+    sq === "asvvesture" ||
+    sq === "asv"
+  ) {
+    return "asv";
+  }
+
   if (t === normLabel(SOURCE_BLOCK_LABELS.ltab) || sq === "ltab") {
     return "ltab";
   }
@@ -148,6 +158,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "SE" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
   intl: { full: CC_VIN_PDF_SOURCE_LABEL, abbrev: "INTL" },
+  asv: { full: ASV_PDF_SOURCE_LABEL, abbrev: "ASV" },
   sslv: { full: "ss.lv", abbrev: "SS.LV" },
   cits: { full: "Citi avoti", abbrev: "CITS" },
 };
@@ -166,6 +177,7 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   carinfo: "#0F766E",
   ltab: "#DC2626",
   intl: "#7C3AED",
+  asv: "#1D4ED8",
   sslv: "#059669",
   cits: "#94A3B8",
 };
@@ -181,6 +193,7 @@ export const PDF_SOURCE_WASH: Record<MileagePdfSourceKey, string> = {
   carinfo: "#FFF3E8",
   ltab: "#F8EBEB",
   intl: "#EEEAF6",
+  asv: "#E8EEF8",
   sslv: "#E8F6E8",
   cits: "#F1F5F9",
 };
@@ -196,6 +209,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "carinfo",
   "ltab",
   "intl",
+  "asv",
   "sslv",
   "cits",
 ];

@@ -20,6 +20,7 @@ export type PdfVisibilitySettings = {
   auto_records: boolean;
   oneauto: boolean;
   cc_vin: boolean;
+  asv: boolean;
   tjekbil: boolean;
   mnt_ee: boolean;
   lkf_ee: boolean;
@@ -47,6 +48,35 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   auto_records: true,
   oneauto: true,
   cc_vin: false,
+  asv: false,
+  tjekbil: false,
+  mnt_ee: false,
+  lkf_ee: false,
+  carinfo: false,
+  ltab: false,
+  citi_avoti: false,
+  sludinajums: false,
+  iriss: false,
+};
+
+/** Tikai ASV vēsture - atsevišķs produkts / PROVIN BUSINESS US atskaite. */
+export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
+  payment: false,
+  vehicle: false,
+  client: false,
+  notes: false,
+  portfolio: false,
+  alerts: true,
+  unifiedMileage: true,
+  csddMileageTable: false,
+  unifiedIncidents: true,
+  csdd: false,
+  autodna: false,
+  carvertical: false,
+  auto_records: false,
+  oneauto: false,
+  cc_vin: false,
+  asv: true,
   tjekbil: false,
   mnt_ee: false,
   lkf_ee: false,
@@ -77,6 +107,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   auto_records: false,
   oneauto: false,
   cc_vin: true,
+  asv: false,
   tjekbil: true,
   mnt_ee: true,
   lkf_ee: true,
@@ -120,6 +151,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   auto_records: true,
   oneauto: true,
   cc_vin: true,
+  asv: true,
   tjekbil: true,
   mnt_ee: true,
   lkf_ee: true,
@@ -160,6 +192,7 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     auto_records: isBool(o.auto_records) ? o.auto_records : d.auto_records,
     oneauto: isBool(o.oneauto) ? o.oneauto : d.oneauto,
     cc_vin: isBool(o.cc_vin) ? o.cc_vin : d.cc_vin,
+    asv: isBool(o.asv) ? o.asv : d.asv,
     tjekbil: isBool(o.tjekbil) ? o.tjekbil : d.tjekbil,
     mnt_ee: isBool(o.mnt_ee) ? o.mnt_ee : d.mnt_ee,
     lkf_ee: isBool(o.lkf_ee) ? o.lkf_ee : d.lkf_ee,

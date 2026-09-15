@@ -80,9 +80,11 @@ import {
 import { normalizeListingAnalysisPhotoGroups } from "@/lib/listing-analysis-photo-types";
 import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types";
 import { normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
+import { normalizeAsvPhotoGroups } from "@/lib/asv-photo-types";
 import { normalizeIncidentPhotoGroups } from "@/lib/incident-photo-types";
 import { normalizeSourceBlockPhotoGroups } from "@/lib/source-block-photo-types";
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
+import { buildAsvPdfInnerHtml, ASV_PDF_CSS } from "@/lib/asv-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
   CC_VIN_PDF_TITLE,
@@ -90,6 +92,13 @@ import {
   countCcVinRecords,
   type CcVinBlockState,
 } from "@/lib/cc-vin-report";
+import {
+  ASV_PDF_SOURCE_LABEL,
+  ASV_PDF_TITLE,
+  asvBlockHasContent,
+  countAsvRecords,
+  type AsvBlockState,
+} from "@/lib/asv-report";
 import {
   buildPdfAboutReportBlock,
   pdfLayoutDraftExtraCss,
@@ -162,6 +171,7 @@ import {
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import {
+  ASV_ONLY_PDF_VISIBILITY,
   DEALER_ONLY_PDF_VISIBILITY,
   mergePdfVisibility,
   type PdfVisibilitySettings,
@@ -197,6 +207,9 @@ const PDF_MAIN_TITLE = "TRANSPORTLĪDZEKĻA AUDITS";
 function isDealerOnlyReport(p: ClientReportPayload): boolean {
   return p.pdfReportKind === "dealer";
 }
+function isAsvOnlyReport(p: ClientReportPayload): boolean {
+  return p.pdfReportKind === "asv";
+}
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
 /** Vienots komentāru bloka virsraksts visā PDF atskaitē (kā NEGADĪJUMU VĒSTURE). */
@@ -229,6 +242,7 @@ function collectPdfMileageSparkContext(
       autoRecordsBlock: p.autoRecordsBlock,
       oneautoBlock: p.oneautoBlock ?? null,
       ccVinBlock: p.ccVinBlock ?? null,
+      asvBlock: p.asvBlock ?? null,
       manualVendorBlocks: p.manualVendorBlocks,
       citiAvotiBlock: p.citiAvoti ?? null,
       tirgusForm: p.tirgusForm ?? null,
@@ -238,6 +252,7 @@ function collectPdfMileageSparkContext(
       omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
       omitAutoRecords: !dealerPdfVisible(p, vis),
       omitCcVin: !vis.cc_vin,
+      omitAsv: !vis.asv,
       omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
       omitListingMileage: !vis.sludinajums,
     },
@@ -291,13 +306,14 @@ export type ClientReportPayload = {
   oneautoBlock?: OneautoBlockState | null;
   /** Starptautiskā vēsture - sarkanie karogi, bojājumi, īpašumtiesības (bez specifikācijām). */
   ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
   listingAnalysis?: ListingAnalysisBlockState | null;
   /** Ja nav - PDF iekļauj visu (admin noklusējums). */
   pdfVisibility?: PdfVisibilitySettings | null;
   /** `dealer`: tikai OFICIĀLĀ DĪLERA DATI, bez hubu / citu avotu sekcijām. */
-  pdfReportKind?: "full" | "dealer";
+  pdfReportKind?: "full" | "dealer" | "asv";
   /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums - visi ieslēgti). */
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
   /** Manuāli pievienoti augšējās joslas brīdinājumi. */
@@ -377,6 +393,11 @@ function payloadAutoRecordsHasData(p: ClientReportPayload, vis: PdfVisibilitySet
 function payloadCcVinHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
   if (!vis.cc_vin) return false;
   return Boolean(p.ccVinBlock && ccVinBlockHasContent(p.ccVinBlock));
+}
+
+function payloadAsvHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
+  if (!vis.asv) return false;
+  return Boolean(p.asvBlock && asvBlockHasContent(p.asvBlock));
 }
 
 function payloadLtabHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
@@ -472,6 +493,9 @@ function collectPdfCheckedSources(
   }
   if (payloadCcVinHasData(p, vis)) {
     out.push({ label: CC_VIN_PDF_SOURCE_LABEL, count: countCcVinRecords(p.ccVinBlock) });
+  }
+  if (payloadAsvHasData(p, vis)) {
+    out.push({ label: ASV_PDF_SOURCE_LABEL, count: countAsvRecords(p.asvBlock) });
   }
   if (payloadLtabHasData(p, vis)) {
     out.push({ label: L.ltab, count: (p.manualLtabBlock?.rows ?? []).filter(ltabRowHasData).length });
@@ -632,6 +656,7 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
     autoRecordsBlock: p.autoRecordsBlock ?? null,
     oneautoBlock: p.oneautoBlock ?? null,
     ccVinBlock: p.ccVinBlock ?? null,
+    asvBlock: p.asvBlock ?? null,
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
     citiAvoti: p.citiAvoti ?? null,
@@ -677,6 +702,7 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
         autoRecordsBlock: p.autoRecordsBlock ?? null,
         oneautoBlock: p.oneautoBlock ?? null,
         ccVinBlock: p.ccVinBlock ?? null,
+        asvBlock: p.asvBlock ?? null,
         manualVendorBlocks: p.manualVendorBlocks ?? null,
         manualLtabBlock: p.manualLtabBlock ?? null,
         citiAvoti: p.citiAvoti ?? null,
@@ -1027,6 +1053,7 @@ export function buildUnifiedMileageTableHtml(
       autoRecordsBlock: p.autoRecordsBlock,
       oneautoBlock: p.oneautoBlock ?? null,
       ccVinBlock: p.ccVinBlock ?? null,
+      asvBlock: p.asvBlock ?? null,
       manualVendorBlocks: p.manualVendorBlocks,
       citiAvotiBlock: "citiAvoti" in p ? (p as ClientReportPayload).citiAvoti ?? null : p.citiAvotiBlock ?? null,
       tirgusForm: p.tirgusForm ?? ("tirgusForm" in p ? (p as ClientReportPayload).tirgusForm ?? null : null),
@@ -1153,6 +1180,7 @@ export function buildUnifiedIncidentsTableHtml(
     manualVendorBlocks: p.manualVendorBlocks ?? null,
     manualLtabBlock: p.manualLtabBlock ?? null,
     ccVinBlock: vis.cc_vin ? p.ccVinBlock ?? null : null,
+    asvBlock: vis.asv ? p.asvBlock ?? null : null,
   });
   const adminNoteHtml = pdfReportCommentBox(p.internalComment ?? "", ADMIN_INCIDENTS_SUMMARY_LABEL);
   const photosHtml = buildSourcePhotoGroupsPdfHtml(
@@ -1620,6 +1648,31 @@ function buildCcVinAvotuSubsection(
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(CC_VIN_PDF_SOURCE_LABEL)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
 }
 
+function buildAsvAvotuSubsection(
+  b: AsvBlockState | null | undefined,
+  vis: PdfVisibilitySettings,
+  photoDataUrls?: Map<string, string>,
+  sparkHtml = "",
+): string {
+  if (!vis.asv) return "";
+  if ((!b || !asvBlockHasContent(b)) && !sparkHtml) return "";
+  const inner = b && asvBlockHasContent(b) ? buildAsvPdfInnerHtml(b) : "";
+  const photosHtml = b
+    ? buildSourcePhotoGroupsPdfHtml(b.photoGroups, b.photos, photoDataUrls, normalizeAsvPhotoGroups)
+    : "";
+  const comments = (b?.comments ?? "").trim();
+  if (!inner && !photosHtml && !comments && !sparkHtml) return "";
+  const head = sectionHeadBrand(
+    sectionIconPdfHtml("flag"),
+    ASV_PDF_TITLE,
+    sourceRecordCountBadgeHtml(b ? countAsvRecords(b) : 0),
+  );
+  const bodyParts = [sparkHtml, inner, photosHtml, comments ? pdfAvotuCommentIsland(comments) : ""].filter(
+    Boolean,
+  );
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(ASV_PDF_SOURCE_LABEL)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
+}
+
 /** Trešās puses avots - komentāri + reģistru īsie fakti (īpašnieki, statuss, piezīmes). */
 function buildVendorAvotuSubsection(
   b: ClientManualVendorBlockPdf,
@@ -1852,6 +1905,7 @@ function buildAvotuDatiSectionHtml(
   vis: PdfVisibilitySettings,
   autoRecordsPhotoDataUrls?: Map<string, string>,
   ccVinPhotoDataUrls?: Map<string, string>,
+  asvPhotoDataUrls?: Map<string, string>,
   sourceBlockPhotoDataUrls?: Map<string, string>,
 ): string {
   const sparkCtx = collectPdfMileageSparkContext(p, vis);
@@ -1879,6 +1933,7 @@ function buildAvotuDatiSectionHtml(
     spark("dealer"),
   );
   const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
+  const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
   const mntEe = vendorHtml(SOURCE_BLOCK_LABELS.mnt_ee);
   const lkfEe = vendorHtml(SOURCE_BLOCK_LABELS.lkf_ee);
@@ -1890,6 +1945,7 @@ function buildAvotuDatiSectionHtml(
     carvertical,
     autoRecords,
     ccVin,
+    asv,
     tjekbil,
     mntEe,
     lkfEe,
@@ -2931,6 +2987,7 @@ ${pdfDocFooterCss()}
     ` +
     pdfLayoutDraftExtraCss() +
     CC_VIN_PDF_CSS +
+    ASV_PDF_CSS +
     `
       .provin-report-doc .pdf-unified-mileage-zone.pdf-surface-card,
       .provin-report-doc .pdf-unified-incidents-zone.pdf-surface-card{
@@ -2950,6 +3007,7 @@ export function buildClientReportDocumentHtml(args: {
   listingAnalysisPhotoDataUrls?: Map<string, string>;
   autoRecordsPhotoDataUrls?: Map<string, string>;
   ccVinPhotoDataUrls?: Map<string, string>;
+  asvPhotoDataUrls?: Map<string, string>;
   incidentPhotoDataUrls?: Map<string, string>;
   sourceBlockPhotoDataUrls?: Map<string, string>;
   /** Papīra versija ar palielinātu kontrastu - digitālo PDF CSS nemaina. */
@@ -2961,12 +3019,18 @@ export function buildClientReportDocumentHtml(args: {
     listingAnalysisPhotoDataUrls,
     autoRecordsPhotoDataUrls,
     ccVinPhotoDataUrls,
+    asvPhotoDataUrls,
     incidentPhotoDataUrls,
     sourceBlockPhotoDataUrls,
     printInk = false,
   } = args;
   const dealerOnly = isDealerOnlyReport(p);
-  const vis = dealerOnly ? DEALER_ONLY_PDF_VISIBILITY : mergePdfVisibility(p.pdfVisibility);
+  const asvOnly = isAsvOnlyReport(p);
+  const vis = dealerOnly
+    ? DEALER_ONLY_PDF_VISIBILITY
+    : asvOnly
+      ? ASV_ONLY_PDF_VISIBILITY
+      : mergePdfVisibility(p.pdfVisibility);
 
   const money =
     p.amountTotal == null
@@ -2987,7 +3051,9 @@ export function buildClientReportDocumentHtml(args: {
   lines.push(provincLogoSvg());
   lines.push('<div class="pdf-v1-hero-text">');
   lines.push(
-    `<h1 class="pdf-v1-doc-title">${escapeHtml(dealerOnly ? OFFICIAL_DEALER_SECTION_TITLE : PDF_MAIN_TITLE)}</h1>`,
+    `<h1 class="pdf-v1-doc-title">${escapeHtml(
+      dealerOnly ? OFFICIAL_DEALER_SECTION_TITLE : asvOnly ? ASV_PDF_TITLE : PDF_MAIN_TITLE,
+    )}</h1>`,
   );
   {
     const vin = p.vin?.trim();
@@ -3008,6 +3074,7 @@ export function buildClientReportDocumentHtml(args: {
             autoRecordsBlock: p.autoRecordsBlock ?? null,
             oneautoBlock: p.oneautoBlock ?? null,
             ccVinBlock: p.ccVinBlock ?? null,
+            asvBlock: p.asvBlock ?? null,
             manualVendorBlocks: p.manualVendorBlocks ?? null,
             citiAvotiBlock: p.citiAvoti ?? null,
             manualLtabBlock: p.manualLtabBlock ?? null,
@@ -3022,6 +3089,7 @@ export function buildClientReportDocumentHtml(args: {
             autoRecordsBlock: p.autoRecordsBlock ?? null,
             oneautoBlock: p.oneautoBlock ?? null,
             ccVinBlock: p.ccVinBlock ?? null,
+            asvBlock: p.asvBlock ?? null,
             manualVendorBlocks: p.manualVendorBlocks ?? null,
             manualLtabBlock: p.manualLtabBlock ?? null,
             citiAvotiBlock: p.citiAvoti ?? null,
@@ -3058,6 +3126,7 @@ export function buildClientReportDocumentHtml(args: {
       omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
       omitAutoRecords: !dealerPdfVisible(p, vis),
       omitCcVin: !vis.cc_vin,
+      omitAsv: !vis.asv,
       omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
       omitListingMileage: !vis.sludinajums,
     };
@@ -3073,6 +3142,7 @@ export function buildClientReportDocumentHtml(args: {
     vis,
     autoRecordsPhotoDataUrls,
     ccVinPhotoDataUrls,
+    asvPhotoDataUrls,
     sourceBlockPhotoDataUrls,
   );
   if (avotuHtml) lines.push(avotuHtml);

@@ -560,6 +560,17 @@ DEALER / AUTO RECORDS FOCUS:
 - When Servisa vēsture / RAW facts are present in context, weave those maintenance facts into the buyer comment; do not invent services.
 - Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.`;
   }
+  if (blockLabel === L.asv) {
+    return `
+
+ASV FOCUS:
+- US NMVTIS / title / salvage / flood / lemon / theft / lien / auction facts unique to this block.
+- Klienta tekstā avots ir ASV (vai ASV vēsture). NEKAD neraksti VIN Audit, Carfax vai One Auto.
+- Odometrs šajā blokā jau ir km (pārrēķināts no jūdzēm). Nepārrēķini un nejaukt miles pircēja rindkopā.
+- Negadījumu / izsoļu fotogrāfijas: ja foto grupas ir, saki, ka tās ir atskaitē; neizdomā Copart/IAAI bildes.
+- Lite pret Full: ja productUsed ir lite, neizdomā title zīmolus, izsoļu rindas vai ķīlas, kuru nav. Seguma robežas saki godīgi.
+- Salvage / rebuilt / flood / lemon ir pirkuma kritiski; viens īss km krustojums tikai tad, ja šis avots pretējs citiem.`;
+  }
   if (blockLabel === L.tjekbil || blockLabel === L.mnt_ee || blockLabel === L.lkf_ee || blockLabel === L.carinfo) {
     const scope =
       blockLabel === L.tjekbil

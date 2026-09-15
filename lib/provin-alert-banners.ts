@@ -38,6 +38,13 @@ import {
   type CcVinBlockState,
   type CcVinCheckRow,
 } from "@/lib/cc-vin-report";
+import {
+  ASV_UNIFIED_INCIDENT_CHECK_LABELS,
+  asvAlertChecks,
+  asvAmountToEurDisplay,
+  asvDamageRowHasData,
+  type AsvBlockState,
+} from "@/lib/asv-report";
 
 export type ProvinInfoBannerKind = "lv_registration_tenure";
 
@@ -462,6 +469,7 @@ function collectIncidentRows(
   ltab: ClientManualLtabBlockPdf | null | undefined,
   vendors: ClientManualVendorBlockPdf[] | undefined,
   ccVin?: CcVinBlockState | null,
+  asv?: AsvBlockState | null,
 ): { lossAmount: string }[] {
   const out: { lossAmount: string }[] = [];
   for (const r of ltab?.rows ?? []) {
@@ -477,6 +485,11 @@ function collectIncidentRows(
       out.push({ lossAmount: ccVinAmountToEurDisplay(d.amount) || d.amount });
     }
   }
+  for (const d of asv?.damages ?? []) {
+    if (asvDamageRowHasData(d)) {
+      out.push({ lossAmount: asvAmountToEurDisplay(d.amount) || d.amount });
+    }
+  }
   return out;
 }
 
@@ -488,14 +501,19 @@ function ccVinHasIncidentCheck(block: CcVinBlockState | null | undefined): boole
  * Negadījumu banera severitāte: balstīta uz „Zaudējumu summa” laukiem.
  * Ja rindas ir, bet visas summas tukšas → dzeltens (brīdinājums bez skaitliskās summas).
  */
+function asvHasIncidentCheck(block: AsvBlockState | null | undefined): boolean {
+  return asvAlertChecks(block).some((c) => ASV_UNIFIED_INCIDENT_CHECK_LABELS.has(c.label.trim()));
+}
+
 export function computeIncidentBannerSeverity(
   ltab: ClientManualLtabBlockPdf | null | undefined,
   vendors: ClientManualVendorBlockPdf[] | undefined,
   ccVin?: CcVinBlockState | null,
+  asv?: AsvBlockState | null,
 ): ProvinAlertSeverity | null {
-  const rows = collectIncidentRows(ltab, vendors, ccVin);
+  const rows = collectIncidentRows(ltab, vendors, ccVin, asv);
   if (rows.length === 0) {
-    return ccVinHasIncidentCheck(ccVin) ? "yellow" : null;
+    return ccVinHasIncidentCheck(ccVin) || asvHasIncidentCheck(asv) ? "yellow" : null;
   }
   const agg = aggregateLossAmountFlags(rows.map((r) => r.lossAmount));
   if (agg === "red") return "red";
@@ -518,6 +536,7 @@ export function computeProvinAlertBanners(args: {
   manualVendorBlocks: ClientManualVendorBlockPdf[] | undefined;
   tirgusForm?: TirgusFormFields | null;
   ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
   referenceDate?: Date;
 }): ProvinAlertBanner[] {
   const ref = args.referenceDate ?? new Date();
@@ -540,6 +559,7 @@ export function computeProvinAlertBanners(args: {
     args.manualLtabBlock,
     args.manualVendorBlocks,
     args.ccVinBlock,
+    args.asvBlock,
   );
   if (incSev !== null) {
     out.push({ kind: "incidents", text: PROVIN_ALERT_TEXT.incidents, severity: incSev });
@@ -562,6 +582,7 @@ export function computeProvinAlertBanners(args: {
   }
 
   out.push(...computeCcVinAlertBanners(args.ccVinBlock));
+  out.push(...computeAsvAlertBanners(args.asvBlock));
 
   return out;
 }
@@ -573,6 +594,19 @@ export function computeCcVinAlertBanners(block: CcVinBlockState | null | undefin
   const out: ProvinAlertBanner[] = [];
   for (const check of ccVinAlertChecks(block)) {
     if (CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS.has(check.label.trim())) continue;
+    const kind = ccVinBannerKindFromLabel(check.label);
+    if (seen.has(kind)) continue;
+    seen.add(kind);
+    out.push(ccVinCheckToBanner(check, kind));
+  }
+  return out;
+}
+
+export function computeAsvAlertBanners(block: AsvBlockState | null | undefined): ProvinAlertBanner[] {
+  const seen = new Set<string>();
+  const out: ProvinAlertBanner[] = [];
+  for (const check of asvAlertChecks(block)) {
+    if (ASV_UNIFIED_INCIDENT_CHECK_LABELS.has(check.label.trim())) continue;
     const kind = ccVinBannerKindFromLabel(check.label);
     if (seen.has(kind)) continue;
     seen.add(kind);
@@ -614,6 +648,7 @@ export function computeProvinAlertBannersFromPayloadSlice(
     manualVendorBlocks: p.manualVendorBlocks ?? undefined,
     tirgusForm: p.tirgusForm,
     ccVinBlock: p.ccVinBlock,
+    asvBlock: p.asvBlock,
     referenceDate,
   });
 }
@@ -661,6 +696,7 @@ export function computeProvinInfoBannersFromWorkspace(
       autoRecordsBlock: ws.auto_records,
       oneautoBlock: ws.oneauto,
       ccVinBlock: ws.cc_vin,
+      asvBlock: ws.asv,
       manualVendorBlocks: toPdfManualVendorBlocks(ws),
       manualLtabBlock: toPdfLtabManualBlock(ws.ltab),
       citiAvotiBlock: ws.citi_avoti,
@@ -679,6 +715,7 @@ export function computeProvinAlertBannersFromWorkspace(
       autoRecordsBlock: ws.auto_records,
       oneautoBlock: ws.oneauto,
       ccVinBlock: ws.cc_vin,
+      asvBlock: ws.asv,
       manualVendorBlocks: toPdfManualVendorBlocks(ws),
       citiAvotiBlock: ws.citi_avoti,
       manualLtabBlock: toPdfLtabManualBlock(ws.ltab),

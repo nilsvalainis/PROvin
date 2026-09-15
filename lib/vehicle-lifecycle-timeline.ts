@@ -16,6 +16,12 @@ import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service
 import { resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import {
+  ASV_PDF_SOURCE_LABEL,
+  asvBlockToCcVinView,
+  asvRecordRowHasData,
+  type AsvBlockState,
+} from "@/lib/asv-report";
+import {
   CC_VIN_PDF_SOURCE_LABEL,
   ccVinAmountToEurDisplay,
   ccVinDamageRowHasData,
@@ -107,6 +113,7 @@ export type LifecycleInput = {
   autoRecordsBlock?: AutoRecordsBlockState | null;
   oneautoBlock?: import("@/lib/oneauto-block").OneautoBlockState | null;
   ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
   manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
   manualLtabBlock?: ClientManualLtabBlockPdf | null;
   citiAvoti?: CitiAvotiBlockState | null;
@@ -200,6 +207,91 @@ function makeEvent(args: {
   };
   collapseCountryOnlyDetail(ev);
   return ev;
+}
+
+function pushCcVinStyleHistory(
+  out: LifecycleEvent[],
+  ccVin: CcVinBlockState | null | undefined,
+  source: string,
+): void {
+  for (const d of ccVin?.damages ?? []) {
+    if (!ccVinDamageRowHasData(d) || !d.date.trim() || d.amount.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "incident",
+        rawDate: d.date,
+        title: lifecyclePublicCaption(d.description) || "Bojājums",
+        country: d.region,
+        source,
+        tone: "alert",
+      }),
+    );
+  }
+  for (const r of ccVin?.brands ?? []) {
+    if (!ccVinRecordRowHasData(r) || !r.date.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "registration",
+        rawDate: r.date,
+        title: lifecyclePublicCaption(r.label) || "Īpašumtiesību atzīme",
+        detail: r.detail,
+        source,
+        tone: "warn",
+      }),
+    );
+  }
+  for (const r of ccVin?.insurance ?? []) {
+    if (!ccVinRecordRowHasData(r) || !r.date.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "registration",
+        rawDate: r.date,
+        title: lifecyclePublicCaption(r.label) || "Apdrošinātāja ieraksts",
+        detail: r.detail,
+        source,
+        tone: "warn",
+      }),
+    );
+  }
+  for (const r of ccVin?.titles ?? []) {
+    if (!ccVinTitleRowHasData(r) || !r.date.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "registration",
+        rawDate: r.date,
+        title: r.region.trim()
+          ? `Īpašumtiesības · ${lifecyclePublicCaption(r.region)}`
+          : "Īpašumtiesību ieraksts",
+        detail: lifecyclePublicCaption(r.note),
+        country: r.region,
+        odometer: r.odometer,
+        source,
+      }),
+    );
+  }
+  for (const s of ccVin?.sales ?? []) {
+    if (!ccVinSaleRowHasData(s) || !s.date.trim()) continue;
+    const sold = !/nav\s+pārdots/i.test(s.status);
+    const priceText = ccVinAmountToEurDisplay(s.price) || s.price.trim();
+    const venueText = lifecyclePublicCaption(s.venue);
+    out.push(
+      makeEvent({
+        kind: "sale",
+        rawDate: s.date,
+        title: sold
+          ? venueText
+            ? `Pārdots · ${venueText}`
+            : "Pārdots izsolē"
+          : venueText
+            ? `Nav pārdots · ${venueText}`
+            : "Nepārdota izsole",
+        detail: priceText,
+        odometer: s.odometer,
+        source,
+        tone: "info",
+      }),
+    );
+  }
 }
 
 function classifyVendorTimelineKind(description: string): LifecycleEventKind {
@@ -324,6 +416,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       manualVendorBlocks: input.manualVendorBlocks ?? null,
       manualLtabBlock: input.manualLtabBlock ?? null,
       ccVinBlock: input.ccVinBlock ?? null,
+      asvBlock: input.asvBlock ?? null,
     }),
     collectUnifiedIncidentDamageDetails(input.manualVendorBlocks ?? null),
   );
@@ -347,83 +440,32 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   }
 
   const ccVin = input.ccVinBlock;
-  // Bojājumi ar summu jau iet caur vienoto negadījumu klasteri; bez summas - atsevišķs fakts.
-  for (const d of ccVin?.damages ?? []) {
-    if (!ccVinDamageRowHasData(d) || !d.date.trim() || d.amount.trim()) continue;
+  pushCcVinStyleHistory(out, ccVin, CC_VIN_PDF_SOURCE_LABEL);
+  const asvView = asvBlockToCcVinView(input.asvBlock);
+  pushCcVinStyleHistory(out, asvView, ASV_PDF_SOURCE_LABEL);
+  for (const r of input.asvBlock?.liens ?? []) {
+    if (!asvRecordRowHasData(r) || !r.date.trim()) continue;
+    out.push(
+      makeEvent({
+        kind: "registration",
+        rawDate: r.date,
+        title: lifecyclePublicCaption(r.label) || "Ķīla / aizturēšana",
+        detail: r.detail,
+        source: ASV_PDF_SOURCE_LABEL,
+        tone: "warn",
+      }),
+    );
+  }
+  for (const r of input.asvBlock?.thefts ?? []) {
+    if (!asvRecordRowHasData(r) || !r.date.trim()) continue;
     out.push(
       makeEvent({
         kind: "incident",
-        rawDate: d.date,
-        title: lifecyclePublicCaption(d.description) || "Bojājums",
-        country: d.region,
-        source: CC_VIN_PDF_SOURCE_LABEL,
+        rawDate: r.date,
+        title: lifecyclePublicCaption(r.label) || "Zādzība",
+        detail: r.detail,
+        source: ASV_PDF_SOURCE_LABEL,
         tone: "alert",
-      }),
-    );
-  }
-  for (const r of ccVin?.brands ?? []) {
-    if (!ccVinRecordRowHasData(r) || !r.date.trim()) continue;
-    out.push(
-      makeEvent({
-        kind: "registration",
-        rawDate: r.date,
-        title: lifecyclePublicCaption(r.label) || "Īpašumtiesību atzīme",
-        detail: r.detail,
-        source: CC_VIN_PDF_SOURCE_LABEL,
-        tone: "warn",
-      }),
-    );
-  }
-  for (const r of ccVin?.insurance ?? []) {
-    if (!ccVinRecordRowHasData(r) || !r.date.trim()) continue;
-    out.push(
-      makeEvent({
-        kind: "registration",
-        rawDate: r.date,
-        title: lifecyclePublicCaption(r.label) || "Apdrošinātāja ieraksts",
-        detail: r.detail,
-        source: CC_VIN_PDF_SOURCE_LABEL,
-        tone: "warn",
-      }),
-    );
-  }
-  for (const r of ccVin?.titles ?? []) {
-    if (!ccVinTitleRowHasData(r) || !r.date.trim()) continue;
-    out.push(
-      makeEvent({
-        kind: "registration",
-        rawDate: r.date,
-        title: r.region.trim()
-          ? `Īpašumtiesības · ${lifecyclePublicCaption(r.region)}`
-          : "Īpašumtiesību ieraksts",
-        detail: lifecyclePublicCaption(r.note),
-        country: r.region,
-        odometer: r.odometer,
-        source: CC_VIN_PDF_SOURCE_LABEL,
-      }),
-    );
-  }
-  // Izsoļu pārdošanas - datums + cena jābūt kopsavilkuma joslā, ne tikai avota sadaļā.
-  for (const s of ccVin?.sales ?? []) {
-    if (!ccVinSaleRowHasData(s) || !s.date.trim()) continue;
-    const sold = !/nav\s+pārdots/i.test(s.status);
-    const priceText = ccVinAmountToEurDisplay(s.price) || s.price.trim();
-    const venueText = lifecyclePublicCaption(s.venue);
-    out.push(
-      makeEvent({
-        kind: "sale",
-        rawDate: s.date,
-        title: sold
-          ? venueText
-            ? `Pārdots · ${venueText}`
-            : "Pārdots izsolē"
-          : venueText
-            ? `Nav pārdots · ${venueText}`
-            : "Nepārdota izsole",
-        detail: priceText,
-        odometer: s.odometer,
-        source: CC_VIN_PDF_SOURCE_LABEL,
-        tone: "info",
       }),
     );
   }
@@ -470,6 +512,7 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
       autoRecordsBlock: input.autoRecordsBlock ?? undefined,
       oneautoBlock: input.oneautoBlock ?? undefined,
       ccVinBlock: input.ccVinBlock ?? null,
+      asvBlock: input.asvBlock ?? null,
       manualVendorBlocks: input.manualVendorBlocks ?? undefined,
       citiAvotiBlock: input.citiAvoti ?? null,
       tirgusForm: input.tirgusForm ?? null,

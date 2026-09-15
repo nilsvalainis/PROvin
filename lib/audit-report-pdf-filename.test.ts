@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildOemDealerPdfFilename,
+  buildProvinAsvPdfFilename,
   buildProvinAuditPdfFilename,
   buildProvinDilerisPdfFilename,
   resolveProvinAuditPdfProductBrand,
@@ -44,6 +45,11 @@ describe("buildProvinAuditPdfFilename", () => {
   it("builds OEM_DILERA_DATI_<VIN>.pdf for factory-style dealer dumps", () => {
     expect(buildOemDealerPdfFilename("WVWZZZ1JZXW000001")).toBe("OEM_DILERA_DATI_WVWZZZ1JZXW000001.pdf");
     expect(buildOemDealerPdfFilename(null)).toBe("OEM_DILERA_DATI_NAV_VIN.pdf");
+  });
+
+  it("builds PROVIN_ASV_<VIN>.pdf for US-only reports", () => {
+    expect(buildProvinAsvPdfFilename("1HGCM82633A004352")).toBe("PROVIN_ASV_1HGCM82633A004352.pdf");
+    expect(buildProvinAsvPdfFilename(null)).toBe("PROVIN_ASV_NAV_VIN.pdf");
   });
 
   it("sanitizes VIN and uses NAV_VIN when empty", () => {

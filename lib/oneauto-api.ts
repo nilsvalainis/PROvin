@@ -220,6 +220,15 @@ export async function fetchOneautoProducts(opts: {
   };
 }
 
+export async function fetchOneautoVinPath(
+  path: string,
+  vin: string,
+): Promise<{ ok: boolean; status: number; payload: unknown }> {
+  const config = getOneautoApiConfig();
+  if (!config) throw new Error("missing_oneauto_credentials");
+  return fetchWithPoll(config, path, vin);
+}
+
 async function downloadImageToJpeg(url: string): Promise<Buffer | null> {
   const res = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow" });
   if (!res.ok) return null;
