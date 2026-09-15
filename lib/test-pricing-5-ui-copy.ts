@@ -52,6 +52,15 @@ export type Tp5UiCopy = {
   dealerBrandsAria: string;
   /** Close button label for brands dialog. */
   dealerBrandsClose: string;
+  /** Full OEM service-history tier title. */
+  dealerCoverageFullTitle: string;
+  dealerCoverageFullBody: string;
+  /** Workshop-remarks tier title. */
+  dealerCoverageWorkshopTitle: string;
+  dealerCoverageWorkshopBody: string;
+  /** Limited-coverage tier title. */
+  dealerCoverageLimitedTitle: string;
+  dealerCoverageLimitedBody: string;
   /** Refund guarantee short label next to info tip. */
   dealerRefundBanner: string;
   /** Refund guarantee tooltip body text. */
@@ -106,6 +115,15 @@ const TP5_UI_COPY_LV: Tp5UiCopy = {
   dealerBrandsTrigger: "Atbalstītie ražotāji",
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsClose: "Aizvērt",
+  dealerCoverageFullTitle: "Pilna servisa vēsture",
+  dealerCoverageFullBody:
+    "Pilni oficiālo dīleru ieraksti: datumi, nobraukums, veiktie darbi un servisa vieta.",
+  dealerCoverageWorkshopTitle: "Darbnīcas atzīmes",
+  dealerCoverageWorkshopBody:
+    "Atsaukumi, garantijas darbi un darbnīcas piezīmes. Ja atzīme sakrīt ar apkopes grafiku, tas bieži norāda, ka apkope ir bijusi.",
+  dealerCoverageLimitedTitle: "Ierobežots pārklājums",
+  dealerCoverageLimitedBody:
+    "Dati parādās tikai daļā gadījumu. Tas atkarīgs no konkrētā auto ierakstiem un ražotāja sistēmas.",
   dealerRefundBanner:
     "100% Naudas atmaksas garantija.",
   dealerRefundInfoBody:
@@ -143,6 +161,15 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   dealerBrandsTrigger: "Supported manufacturers",
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsClose: "Close",
+  dealerCoverageFullTitle: "Full service history",
+  dealerCoverageFullBody:
+    "Complete official dealership records: dates, mileage, work performed, and service location.",
+  dealerCoverageWorkshopTitle: "Workshop remarks",
+  dealerCoverageWorkshopBody:
+    "Recalls, warranty work, and workshop notes. Where a note lines up with the service schedule, that often indicates a service was carried out.",
+  dealerCoverageLimitedTitle: "Limited coverage",
+  dealerCoverageLimitedBody:
+    "Data is returned in only a share of cases. Results depend on the individual vehicle and manufacturer system availability.",
   dealerRefundBanner:
     "100% Refund guarantee.",
   dealerRefundInfoBody:
@@ -154,5 +181,30 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
 };
 
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {
-  return locale === "en" ? TP5_UI_COPY_EN : TP5_UI_COPY_LV;
+  return locale === "en" || locale === "de" || locale === "ru"
+    ? TP5_UI_COPY_EN
+    : TP5_UI_COPY_LV;
+}
+
+export type DealerCoverageCopy = Pick<
+  Tp5UiCopy,
+  | "dealerCoverageFullTitle"
+  | "dealerCoverageFullBody"
+  | "dealerCoverageWorkshopTitle"
+  | "dealerCoverageWorkshopBody"
+  | "dealerCoverageLimitedTitle"
+  | "dealerCoverageLimitedBody"
+>;
+
+export function getDealerCoverageTierCopy(
+  copy: DealerCoverageCopy,
+  id: "full" | "workshop" | "limited",
+): { title: string; body: string } {
+  if (id === "full") {
+    return { title: copy.dealerCoverageFullTitle, body: copy.dealerCoverageFullBody };
+  }
+  if (id === "workshop") {
+    return { title: copy.dealerCoverageWorkshopTitle, body: copy.dealerCoverageWorkshopBody };
+  }
+  return { title: copy.dealerCoverageLimitedTitle, body: copy.dealerCoverageLimitedBody };
 }

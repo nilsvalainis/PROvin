@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { contactMailtoHref, contactTelHref } from "@/lib/contact";
 import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 import { renderProvinText } from "@/lib/provin-wordmark";
+import { homeFooterColumnClass } from "@/lib/home-layout";
 
 const linkClass =
   "home-footer-link text-[11px] font-semibold uppercase tracking-[0.16em] text-provin-accent no-underline transition hover:text-white";
@@ -27,7 +28,7 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
         aria-hidden
       />
 
-      <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] py-6 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-7 lg:px-8 lg:pb-8 lg:pt-8">
+      <div className={`${homeFooterColumnClass} py-6 sm:py-7 lg:pb-8 lg:pt-8`}>
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start lg:gap-16">
           <div className="min-w-0 lg:col-span-7">
             <Link

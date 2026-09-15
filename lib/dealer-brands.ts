@@ -1,32 +1,87 @@
 /**
  * Official dealer brand coverage for B2C + B2B (+ AZ.VIN demo).
- * Groups follow manufacturer ownership / portfolio order.
+ * Public grouping is by OEM record completeness, not manufacturer ownership.
  */
 
+export type DealerCoverageTierId = "full" | "workshop" | "limited";
+
+/**
+ * Full official dealership service history (dates, mileage, work, provider).
+ * VW Group volume + Bentley/Lamborghini share the same OEM dealer systems.
+ * Volvo is operator-confirmed full (not workshop-remarks only).
+ */
+const TP5_DEALER_COVERAGE_FULL = [
+  "Audi",
+  "Bentley",
+  "BMW",
+  "CUPRA",
+  "Ford",
+  "Infiniti",
+  "Jaguar",
+  "Lamborghini",
+  "Land Rover",
+  "Lexus",
+  "Mazda",
+  "Mercedes-Benz",
+  "MINI",
+  "Nissan",
+  "Opel",
+  "Porsche",
+  "SEAT",
+  "Škoda",
+  "Toyota",
+  "Vauxhall",
+  "Volkswagen",
+  "Volvo",
+] as const;
+
+/**
+ * Workshop remarks (recalls, warranty, workshop notes). A note that lines up
+ * with the service schedule often indicates a service was carried out.
+ */
+const TP5_DEALER_COVERAGE_WORKSHOP = [
+  "Abarth",
+  "Alfa Romeo",
+  "Citroën",
+  "Dacia",
+  "Fiat",
+  "Genesis",
+  "Hyundai",
+  "Jeep",
+  "Kia",
+  "Lancia",
+  "Peugeot",
+  "Polestar",
+  "Renault",
+  "Smart",
+] as const;
+
+/** Sparse / vehicle-dependent hits. Subaru is operator-confirmed limited. */
+const TP5_DEALER_COVERAGE_LIMITED = [
+  "Alpine",
+  "Aston Martin",
+  "DS Automobiles",
+  "Ferrari",
+  "Honda",
+  "Lotus",
+  "Maserati",
+  "MG",
+  "Mitsubishi",
+  "Rolls-Royce",
+  "Subaru",
+  "Suzuki",
+] as const;
+
+export const TP5_DEALER_COVERAGE_TIERS = [
+  { id: "full" as const, brands: TP5_DEALER_COVERAGE_FULL },
+  { id: "workshop" as const, brands: TP5_DEALER_COVERAGE_WORKSHOP },
+  { id: "limited" as const, brands: TP5_DEALER_COVERAGE_LIMITED },
+] as const;
+
 export const TP5_DEALER_BRAND_GROUPS = [
-  ["BMW", "MINI", "Rolls-Royce"],
-  ["Mercedes-Benz", "Smart"],
-  ["Volkswagen", "Audi", "Škoda", "SEAT", "CUPRA", "Porsche", "Bentley", "Lamborghini"],
-  ["Volvo", "Polestar"],
-  ["Jaguar", "Land Rover"],
-  ["Toyota", "Lexus"],
-  ["Ford"],
-  ["Mazda", "Honda", "Nissan", "Infiniti", "Mitsubishi", "Subaru", "Suzuki"],
-  [
-    "Peugeot",
-    "Citroën",
-    "DS Automobiles",
-    "Opel",
-    "Vauxhall",
-    "Fiat",
-    "Abarth",
-    "Alfa Romeo",
-    "Lancia",
-    "Jeep",
-  ],
-  ["Renault", "Dacia", "Alpine"],
-  ["Hyundai", "Kia", "Genesis"],
-  ["Ferrari", "Maserati", "Aston Martin", "Lotus", "MG"],
+  TP5_DEALER_COVERAGE_FULL,
+  TP5_DEALER_COVERAGE_WORKSHOP,
+  TP5_DEALER_COVERAGE_LIMITED,
 ] as const;
 
 /** @deprecated Prefer TP5_DEALER_BRAND_GROUPS - kept for row-style consumers. */

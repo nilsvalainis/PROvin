@@ -2,12 +2,24 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
+import { DealerCoverageBrandSections } from "@/components/test-pricing-5/DealerCoverageBrandSections";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { Tp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 type Props = {
   brands: readonly string[];
-  copy: Pick<Tp5UiCopy, "dealerBrandsTrigger" | "dealerBrandsAria" | "dealerBrandsClose">;
+  copy: Pick<
+    Tp5UiCopy,
+    | "dealerBrandsTrigger"
+    | "dealerBrandsAria"
+    | "dealerBrandsClose"
+    | "dealerCoverageFullTitle"
+    | "dealerCoverageFullBody"
+    | "dealerCoverageWorkshopTitle"
+    | "dealerCoverageWorkshopBody"
+    | "dealerCoverageLimitedTitle"
+    | "dealerCoverageLimitedBody"
+  >;
 };
 
 /** „Atbalstītie ražotāji ⓘ” — opens a compact brands-only dialog. */
@@ -127,27 +139,7 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
                   </button>
                 </div>
                 <div className={styles.dealerBrandsPopupDivider} aria-hidden />
-                <ul className={styles.dealerBrandsPopupGrid}>
-                  {brands.map((brand, index) => (
-                    <motion.li
-                      key={brand}
-                      className={styles.dealerBrandItem}
-                      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={
-                        reduceMotion
-                          ? { duration: 0 }
-                          : {
-                              delay: 0.04 + index * 0.018,
-                              duration: 0.28,
-                              ease: [0.22, 1, 0.36, 1],
-                            }
-                      }
-                    >
-                      <span className={styles.dealerBrandChip}>{brand}</span>
-                    </motion.li>
-                  ))}
-                </ul>
+                <DealerCoverageBrandSections copy={copy} ariaLabel={copy.dealerBrandsAria} />
               </motion.div>
             </div>
           </>

@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - dīlera pārklājums, 10 dizaini</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(210 214 222 / .82);
+    --faint:rgb(148 163 184 / .88);
+    --hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+    --mint:rgb(167 243 208 / .95);
+    --full:#60a5fa;
+    --work:#a78bfa;
+    --lim:#94a3b8;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;
+    padding:.7rem 1.25rem;background:rgb(8 8 8 / .92);border-bottom:1px solid var(--hair);backdrop-filter:blur(10px);
+  }
+  .nav strong{margin-right:.4rem;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;}
+  .nav a{
+    font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);text-decoration:none;padding:.35rem .48rem;
+  }
+  .nav a:hover{color:#93c5fd;}
+  .intro{max-width:64rem;margin:0 auto;padding:1.8rem 1.5rem .4rem;}
+  .intro b{display:block;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .intro h1{margin:.35rem 0 0;font-size:1.35rem;font-weight:600;letter-spacing:-.03em;}
+  .intro p{margin:.45rem 0 0;max-width:42rem;font-size:.84rem;line-height:1.5;color:var(--faint);}
+  .intro ul{margin:.7rem 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:.4rem;}
+  .intro li{
+    font-size:.68rem;color:var(--dim);border:1px solid var(--hair);padding:.28rem .55rem;border-radius:.35rem;
+  }
+  .cap{max-width:64rem;margin:0 auto;padding:2rem 1.5rem .45rem;}
+  .cap b{display:block;font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin-top:.28rem;font-style:normal;font-size:.8rem;color:var(--faint);max-width:40rem;line-height:1.45;}
+  .shell{max-width:64rem;margin:0 auto 2.2rem;padding:0 1.5rem 1.4rem;}
+  .pair{display:grid;gap:1rem;}
+  @media(min-width:960px){.pair{grid-template-columns:22.8rem 1fr;align-items:start;}}
+  .stage{
+    border:1px solid var(--hair);border-radius:.85rem;background:#111;
+    padding:1rem 1.05rem 1.1rem;
+  }
+  .where{
+    margin:0 0 .7rem;font-size:.55rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;
+  }
+  .card-kicker{margin:0;font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#60a5fa;}
+  .card-title{margin:.2rem 0 0;font-size:.95rem;font-weight:650;letter-spacing:.04em;}
+  .card-goal{margin:.35rem 0 0;font-size:.72rem;line-height:1.4;color:var(--dim);}
+  .trigger{
+    display:inline-flex;align-items:center;gap:.35rem;margin:.7rem 0 0;padding:0;border:0;background:transparent;
+    color:rgb(147 197 253 / .95);font:650 .68rem/1 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;
+  }
+  .i{
+    display:inline-flex;align-items:center;justify-content:center;width:.92rem;height:.92rem;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;font-size:.52rem;font-weight:700;color:#e2e8f0;
+  }
+  .refund{margin:.55rem 0 0;font-size:.62rem;color:var(--faint);}
+  .pop{
+    margin-top:.55rem;max-height:22rem;overflow:auto;padding:.7rem;
+    border-radius:.85rem;border:1px solid rgb(148 163 184 / .18);
+    background:linear-gradient(165deg, rgb(30 41 59 / .94) 0%, rgb(15 23 42 / .98) 100%);
+  }
+  .pop-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem;}
+  .pop-h p{margin:0;font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+  .count{
+    min-width:1.25rem;height:1.05rem;padding:0 .35rem;border-radius:.3rem;
+    background:rgb(37 99 235 / .18);border:1px solid rgb(96 165 250 / .28);
+    color:#93c5fd;font-size:.55rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .line{height:1px;margin:0 0 .55rem;background:linear-gradient(90deg,transparent,rgb(148 163 184 / .35),transparent);}
+  .h3{margin:0 0 .22rem;font-size:.56rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgb(37 99 235 / .92);}
+  .h3 span{font-weight:600;letter-spacing:.02em;text-transform:none;color:rgb(148 163 184 / .88);}
+  .body{margin:0 0 .4rem;font-size:.6rem;line-height:1.4;color:rgb(210 214 222 / .72);}
+  .chips{display:flex;flex-wrap:wrap;gap:.28rem;margin:0;padding:0;list-style:none;}
+  .chip{
+    display:inline-flex;align-items:center;padding:.2rem .4rem;border-radius:.28rem;
+    border:1px solid rgb(148 163 184 / .28);background:rgb(30 41 59 / .72);
+    color:rgb(241 245 249 / .96);font-size:.6rem;font-weight:600;white-space:nowrap;
+  }
+  .block + .block{margin-top:.55rem;padding-top:.62rem;border-top:1px solid rgb(148 163 184 / .16);}
+  .tabs{display:flex;gap:.2rem;margin:0 0 .55rem;}
+  .tabs button{
+    flex:1;min-height:1.7rem;border:1px solid rgb(148 163 184 / .22);border-radius:.35rem;
+    background:transparent;color:var(--faint);font:700 .52rem/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .tabs button.on{background:rgb(37 99 235 / .18);border-color:rgb(96 165 250 / .4);color:#e2e8f0;}
+  .acc{width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:0;}
+  .acc .h3{display:flex;justify-content:space-between;align-items:center;}
+  .acc .h3 em{font-style:normal;color:var(--faint);font-size:.7rem;}
+  .chip.full{border-color:rgb(96 165 250 / .45);}
+  .chip.work{border-color:rgb(167 139 250 / .4);}
+  .chip.lim{border-color:rgb(148 163 184 / .22);opacity:.78;}
+  .legend{display:flex;flex-wrap:wrap;gap:.55rem;margin:0 0 .5rem;font-size:.58rem;color:var(--dim);}
+  .legend b{display:inline-block;width:.45rem;height:.45rem;border-radius:99px;margin-right:.28rem;vertical-align:middle;}
+  .b-full{background:var(--full);} .b-work{background:var(--work);} .b-lim{background:var(--lim);}
+  .cols{display:grid;gap:.8rem;}
+  @media(min-width:720px){.cols3{grid-template-columns:1fr 1fr 1fr;}}
+  .row{
+    display:flex;justify-content:space-between;align-items:center;gap:.6rem;
+    width:100%;padding:.45rem 0;border:0;border-bottom:1px solid rgb(148 163 184 / .14);
+    background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left;
+  }
+  .row strong{font-size:.68rem;font-weight:650;}
+  .row span{font-size:.62rem;color:#93c5fd;font-weight:700;}
+  .logos{display:flex;flex-wrap:wrap;gap:.32rem;}
+  .logo{
+    width:1.7rem;height:1.7rem;border-radius:.35rem;border:1px solid rgb(148 163 184 / .22);
+    background:rgb(255 255 255 / .04);display:grid;place-items:center;overflow:hidden;
+  }
+  .logo img{width:68%;height:68%;object-fit:contain;filter:brightness(1.15);}
+  .mcard{
+    display:flex;flex-direction:column;align-items:center;gap:.28rem;padding:.45rem .3rem .4rem;
+    border:1px solid rgb(148 163 184 / .18);border-radius:.45rem;background:rgb(15 23 42 / .55);min-width:4.4rem;
+  }
+  .mcard img{width:1.55rem;height:1.55rem;object-fit:contain;}
+  .mcard b{font-size:.5rem;font-weight:650;text-align:center;line-height:1.15;}
+  .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));gap:.35rem;}
+  .live-shell{max-width:80rem;}
+  .live-hero{padding:1.15rem 1.2rem 1.3rem;}
+  .live-grid{display:grid;gap:1.4rem;align-items:start;}
+  @media(min-width:960px){
+    .live-grid{grid-template-columns:minmax(0,1.35fr) 17.5rem;gap:2rem;align-items:center;}
+  }
+  .live-h1{margin:0;font-size:clamp(1.55rem,3.2vw,2.55rem);font-weight:800;letter-spacing:-.03em;line-height:1.12;color:#fff;text-align:left;}
+  .live-h1 span{color:#2563eb;}
+  .live-scan{
+    margin:.85rem 0 0;max-width:none;height:2px;border-radius:999px;
+    background:linear-gradient(90deg,transparent,rgb(37 99 235 / .75),transparent);
+  }
+  .live-card{
+    border:1px solid rgb(255 255 255 / .1);border-radius:1rem;padding:.85rem .9rem 1rem;
+    background:linear-gradient(145deg, rgb(255 255 255 / .05) 0%, rgb(255 255 255 / .02) 100%);
+  }
+  .live-tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--hair);margin:0 0 .7rem;}
+  .live-tabs span{
+    min-height:1.85rem;padding:0 .45rem;display:inline-flex;align-items:center;
+    font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#71717a;
+  }
+  .live-tabs span.on{color:#f4f4f5;border-bottom:2px solid #60a5fa;margin-bottom:-1px;}
+  .live-card-title{margin:0;font-size:.82rem;font-weight:700;letter-spacing:.04em;}
+  .live-card-note{margin:.4rem 0 0;font-size:.62rem;line-height:1.4;color:var(--faint);}
+  .hero-zone{margin-top:.75rem;text-align:left;min-height:7.5rem;}
+  .hero-zone .h3{text-align:left;}
+  .hero-bands .block{padding-top:.45rem;margin-top:.4rem;}
+  .hero-counts{
+    display:flex;justify-content:flex-start;flex-wrap:wrap;gap:.45rem;margin:0 0 .65rem;
+  }
+  .hero-counts button{
+    min-height:1.55rem;padding:0 .6rem;border-radius:999px;border:1px solid rgb(148 163 184 / .22);
+    background:transparent;color:var(--dim);font:650 .58rem Inter,sans-serif;cursor:pointer;
+  }
+  .hero-counts button.on{background:rgb(37 99 235 / .2);border-color:rgb(96 165 250 / .45);color:#fff;}
+  .hero-counts button strong{color:#93c5fd;font-weight:700;}
+  .cell-row{display:flex;flex-wrap:wrap;gap:.32rem;justify-content:flex-start;}
+  .cell{
+    width:2.15rem;height:2.15rem;border-radius:999px;border:1px solid rgb(255 255 255 / .14);
+    background:rgb(255 255 255 / .03);display:grid;place-items:center;
+  }
+  .cell img{width:55%;height:55%;object-fit:contain;opacity:.88;}
+  .filter{display:flex;flex-wrap:wrap;gap:.28rem;margin:0 0 .5rem;}
+  .filter button{
+    min-height:1.55rem;padding:0 .55rem;border-radius:999px;border:1px solid rgb(148 163 184 / .25);
+    background:transparent;color:var(--dim);font:650 .58rem Inter,sans-serif;cursor:pointer;
+  }
+  .filter button.on{background:rgb(37 99 235 / .2);border-color:rgb(96 165 250 / .45);color:#fff;}
+  .find{
+    width:100%;height:1.85rem;margin:0 0 .5rem;padding:0 .55rem;border-radius:.4rem;
+    border:1px solid rgb(148 163 184 / .22);background:rgb(2 6 23 / .4);color:var(--ink);font:500 .72rem Inter,sans-serif;
+  }
+  .quiet{margin:.35rem 0 0;font-size:.6rem;line-height:1.4;color:var(--faint);}
+  .even-grid{
+    display:grid;grid-template-columns:repeat(8,minmax(0,1fr));
+    justify-items:center;
+    column-gap:.35rem;row-gap:.42rem;margin:0;padding:0;list-style:none;
+  }
+  .even-grid li{
+    width:100%;min-width:0;text-align:center;font-size:.6rem;font-weight:550;
+    color:rgb(226 232 240 / .84);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .even-type{
+    margin:0;font-size:.68rem;line-height:1.75;font-weight:450;color:rgb(210 214 222 / .82);
+  }
+  .even-ticks li{
+    padding-bottom:.28rem;border-bottom:1px solid rgb(148 163 184 / .18);
+  }
+  .even-dim li:nth-child(n+23){color:rgb(148 163 184 / .72);}
+  .even-dim li:nth-child(n+37){color:rgb(148 163 184 / .5);}
+  .even-caps li{letter-spacing:.06em;text-transform:uppercase;font-size:.52rem;font-weight:600;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <strong>10 dizaini</strong>
+  <a href="#c01">01 tagad</a>
+  <a href="#c02">02 tabi</a>
+  <a href="#c03">03 akordeons</a>
+  <a href="#c04">04 leģenda</a>
+  <a href="#c05">05 kartītes</a>
+  <a href="#c06">06 kolonnas</a>
+  <a href="#c07">07 skaitļi</a>
+  <a href="#c08">08 logo</a>
+  <a href="#c09">09 dalīts</a>
+  <a href="#c10">10 filtrs</a>
+  <a href="#h01">H1 sliede</a>
+  <a href="#h1b">H1b</a>
+  <a href="#h1c">H1c</a>
+  <a href="#h1d">H1d</a>
+  <a href="#h1e">H1e</a>
+  <a href="#h1f">H1f</a>
+  <a href="#h1g">H1g</a>
+  <a href="#h02">H2 joslas</a>
+  <a href="#h03">H3 logo</a>
+  <a href="#h04">H4 tabi</a>
+  <a href="#h05">H5 kartītes</a>
+  <a href="#h06">H6 pilnā</a>
+  <a href="#h07">H7 leģenda</a>
+  <a href="#h08">H8 skaitļi</a>
+</nav>
+
+<div class="intro">
+  <b>Dīlera dati · pārklājuma grupas</b>
+  <h1>Kā tas izskatās lapas sadaļās</h1>
+  <p>01-10 ir popup un katalogs. H1-H8 ir tikai esošā hero sliede zem virsraksta, kad ieslēgts DĪLERA DATI. Produktu tabi (MINI / AUDITS / DĪLERI) nemainās.</p>
+  <ul>
+    <li>Pilna vēsture 22</li>
+    <li>Darbnīcas atzīmes 14</li>
+    <li>Ierobežots 12</li>
+  </ul>
+</div>
+
+<section id="c01">
+  <div class="cap"><b>01 · Kā kodā šobrīd</b><i>Popup un katalogs rāda visus trīs blokus uzreiz: virsraksts, skaidrojums, čipi. Godīgi, bet popupā jāritina.</i></div>
+  <div class="shell"><div class="pair" data-pair="now"></div></div>
+</section>
+
+<section id="c02">
+  <div class="cap"><b>02 · Tabi popupā</b><i>Trīs pogas, vienā brīdī redzama viena grupa. Katalogā tas pats. Īsāks, skaidrojums paliek.</i></div>
+  <div class="shell"><div class="pair" data-pair="tabs"></div></div>
+</section>
+
+<section id="c03">
+  <div class="cap"><b>03 · Akordeons</b><i>Pilnā vēsture atvērta. Pārējās aizvērtas, līdz uzklikšķina. Labs kompromiss starp 01 un 02.</i></div>
+  <div class="shell"><div class="pair" data-pair="acc"></div></div>
+</section>
+
+<section id="c04">
+  <div class="cap"><b>04 · Viena mākoņa leģenda</b><i>Visi 48 čipi vienā laukā. Krāsa kodē līmeni. Leģenda augšā. Īsākais popup, sliktāk lasāms pirmajā sekundē.</i></div>
+  <div class="shell"><div class="pair" data-pair="legend"></div></div>
+</section>
+
+<section id="c05">
+  <div class="cap"><b>05 · FSH kartītes</b><i>Katalogā un ražotāju lapā: logo + nosaukums, bez «pilna / atzīmes / ierobežots» zem katra logo. Grupu virsraksts un rindkopa paliek virs režģa. Popupā paliek tabi.</i></div>
+  <div class="shell"><div class="pair" data-pair="cards"></div></div>
+</section>
+
+<section id="c06">
+  <div class="cap"><b>06 · Trīs kolonnas katalogā</b><i>B2B desktop: Pilna / Atzīmes / Ierobežots blakus. Popup paliek ar tabiem, jo 22.5 rem kolonnā trīs kolonnas nesalīst.</i></div>
+  <div class="shell"><div class="pair" data-pair="cols"></div></div>
+</section>
+
+<section id="c07">
+  <div class="cap"><b>07 · Skaitļi vispirms</b><i>Trīs rindas ar 22 / 14 / 12. Čipi tikai pēc klikšķa. Ātri saprotams, ka pārklājums nav vienāds.</i></div>
+  <div class="shell"><div class="pair" data-pair="counts"></div></div>
+</section>
+
+<section id="c08">
+  <div class="cap"><b>08 · Logo joslas</b><i>Katrs līmenis ir mazu logo rinda. Pazīstami zīmoli bez čipu teksta. Hover rāda nosaukumu.</i></div>
+  <div class="shell"><div class="pair" data-pair="logos"></div></div>
+</section>
+
+<section id="c09">
+  <div class="cap"><b>09 · Dalītais blīvums</b><i>Popup paliek īss: trīs teikumi un skaitļi, bez čipiem. Katalogs rāda pilno sarakstu. Katra virsma dara savu darbu.</i></div>
+  <div class="shell"><div class="pair" data-pair="split"></div></div>
+</section>
+
+<section id="c10">
+  <div class="cap"><b>10 · Filtrs katalogā</b><i>Visi / Pilna / Atzīmes / Ierobežots plus meklēšana. Partnerim, kas pārbauda konkrētu marku. Popup paliek ar tabiem.</i></div>
+  <div class="shell"><div class="pair" data-pair="filter"></div></div>
+</section>
+
+<section id="h01">
+  <div class="cap"><b>H1 · Esošā sliede</b><i>Tā pati sliede, bet 8×6 režģis: katrā rindā 8 markas, pēdējā rinda nav ar diviem palikušajiem. Bez zilajām kartītēm, tikai teksts.</i></div>
+  <div class="shell live-shell" data-hero="flat"></div>
+</section>
+<section id="h1b">
+  <div class="cap"><b>H1b · Teksta rinda</b><i>Viena rindkopa, atdalītājs · . Bez režģa, lasās kā saraksts.</i></div>
+  <div class="shell live-shell" data-hero="type"></div>
+</section>
+<section id="h1c">
+  <div class="cap"><b>H1c · Logo 8×6</b><i>Tikai emblēmas, tas pats vienmērīgais režģis. Nosaukums hoverī.</i></div>
+  <div class="shell live-shell" data-hero="logogrid"></div>
+</section>
+<section id="h1d">
+  <div class="cap"><b>H1d · Svītriņas</b><i>Teksts ar plānu līniju zem katra nosaukuma. Nav kastes, ir ritms.</i></div>
+  <div class="shell live-shell" data-hero="ticks"></div>
+</section>
+<section id="h1e">
+  <div class="cap"><b>H1e · Tonis pēc pilnības</b><i>Pirmās 22 spožākas, darbnīcas tumšākas, ierobežotās vēl klusākas. Bez kastes.</i></div>
+  <div class="shell live-shell" data-hero="dim"></div>
+</section>
+<section id="h1f">
+  <div class="cap"><b>H1f · Uppercase</b><i>Mazi kapitāļi, plašāks tracking. Kataloga sajūta, ne čipu.</i></div>
+  <div class="shell live-shell" data-hero="caps"></div>
+</section>
+<section id="h1g">
+  <div class="cap"><b>H1g · 6×8 režģis</b><i>Sešas kolonnas, astoņas rindas. Vairāk gaisa starp nosaukumiem.</i></div>
+  <div class="shell live-shell" data-hero="six"></div>
+</section>
+<section id="h02">
+  <div class="cap"><b>H2 · Trīs čipu joslas</b><i>Tā pati sliede, trīs īsi virsraksti ar skaitu. Bez garajām rindkopām.</i></div>
+  <div class="shell live-shell" data-hero="bands"></div>
+</section>
+<section id="h03">
+  <div class="cap"><b>H3 · Logo riņķi pa grupām</b><i>Tā pati ikonu valoda kā MINI/AUDITS tabul. Nosaukums hoverī. Grupa lasās no virsraksta.</i></div>
+  <div class="shell live-shell" data-hero="cells"></div>
+</section>
+<section id="h04">
+  <div class="cap"><b>H4 · Tabi sliedē</b><i>Pilna / Atzīmes / Ierobežots sliedē zem H1. Tas nav jauns produktu tabs.</i></div>
+  <div class="shell live-shell" data-hero="tabs"></div>
+</section>
+<section id="h05">
+  <div class="cap"><b>H5 · FSH kartītes sliedē</b><i>Logo + nosaukums, bez līmeņa vārda zem logo. Grupu virsraksts paliek virs režģa.</i></div>
+  <div class="shell live-shell" data-hero="cards"></div>
+</section>
+<section id="h06">
+  <div class="cap"><b>H6 · Tikai pilnā vēsture</b><i>Sliedē 22 pilnās markas. Pārējais kā skaitļi, saraksts paliek kartītes «Atbalstītie ražotāji».</i></div>
+  <div class="shell live-shell" data-hero="fullfirst"></div>
+</section>
+<section id="h07">
+  <div class="cap"><b>H7 · Krāsu leģenda</b><i>Visi 48 čipi, mala kodē līmeni. Leģenda sliedes augšā.</i></div>
+  <div class="shell live-shell" data-hero="legend"></div>
+</section>
+<section id="h08">
+  <div class="cap"><b>H8 · Skaitļi, tad čipi</b><i>22 / 14 / 12 sliedē. Noklusējumā pilnā vēsture. Klikšķis pārslēdz grupu.</i></div>
+  <div class="shell live-shell" data-hero="counts"></div>
+</section>
+
+<script>
+const FULL = ["Audi","Bentley","BMW","CUPRA","Ford","Infiniti","Jaguar","Lamborghini","Land Rover","Lexus","Mazda","Mercedes-Benz","MINI","Nissan","Opel","Porsche","SEAT","Škoda","Toyota","Vauxhall","Volkswagen","Volvo"];
+const WORK = ["Abarth","Alfa Romeo","Citroën","Dacia","Fiat","Genesis","Hyundai","Jeep","Kia","Lancia","Peugeot","Polestar","Renault","Smart"];
+const LIM = ["Alpine","Aston Martin","DS Automobiles","Ferrari","Honda","Lotus","Maserati","MG","Mitsubishi","Rolls-Royce","Subaru","Suzuki"];
+const COPY = {
+  full: { title: "Pilna servisa vēsture", body: "Pilni oficiālo dīleru ieraksti: datumi, nobraukums, veiktie darbi un servisa vieta." },
+  work: { title: "Darbnīcas atzīmes", body: "Atsaukumi, garantijas darbi un darbnīcas piezīmes. Ja atzīme sakrīt ar apkopes grafiku, tas bieži norāda, ka apkope ir bijusi." },
+  lim: { title: "Ierobežots pārklājums", body: "Dati parādās tikai daļā gadījumu. Tas atkarīgs no konkrētā auto ierakstiem un ražotāja sistēmas." }
+};
+const FILE = {
+  "Mercedes-Benz":"mercedes","BMW":"bmw","MINI":"mini","Rolls-Royce":"rolls-royce","Smart":"smart",
+  "Volkswagen":"volkswagen","Audi":"audi","Škoda":"skoda","SEAT":"seat","CUPRA":"cupra","Porsche":"porsche",
+  "Bentley":"bentley","Lamborghini":"lamborghini","Volvo":"volvo","Polestar":"polestar","Jaguar":"jaguar",
+  "Land Rover":"land-rover","Toyota":"toyota","Lexus":"lexus","Ford":"ford","Mazda":"mazda","Honda":"honda",
+  "Nissan":"nissan","Infiniti":"infiniti","Mitsubishi":"mitsubishi","Subaru":"subaru","Suzuki":"suzuki",
+  "Peugeot":"peugeot","Citroën":"citroen","DS Automobiles":"ds","Opel":"opel","Vauxhall":"vauxhall",
+  "Fiat":"fiat","Abarth":"abarth","Alfa Romeo":"alfa-romeo","Lancia":"lancia","Jeep":"jeep",
+  "Renault":"renault","Dacia":"dacia","Alpine":"alpine","Hyundai":"hyundai","Kia":"kia","Genesis":"genesis",
+  "Ferrari":"ferrari","Maserati":"maserati","Aston Martin":"aston-martin","Lotus":"lotus","MG":"mg"
+};
+const LOGO = (b) => `../public/brand-logos/${FILE[b]}.svg`;
+
+function chips(list, cls){
+  return `<ul class="chips">${list.map((b) => `<li class="chip ${cls||""}">${b}</li>`).join("")}</ul>`;
+}
+function block(id, list, extra=""){
+  const c = COPY[id];
+  return `<section class="block ${extra}"><h3 class="h3">${c.title}<span> (${list.length})</span></h3><p class="body">${c.body}</p>${chips(list)}</section>`;
+}
+function stacked(){ return block("full", FULL) + block("work", WORK) + block("lim", LIM); }
+function popHead(){
+  return `<div class="pop-h"><p>Atbalstītie ražotāji</p><span class="count">48</span></div><div class="line"></div>`;
+}
+function b2c(inner){
+  return `<div class="stage">
+    <p class="where">B2C / B2B cenas kartīte</p>
+    <p class="card-kicker">Jaunums</p>
+    <h2 class="card-title">DĪLERA DATI</h2>
+    <p class="card-goal">Oficiālie dīlera / ražotāja servisa vēstures ieraksti.</p>
+    <button type="button" class="trigger">Atbalstītie ražotāji <span class="i">i</span></button>
+    <div class="pop">${popHead()}${inner}</div>
+    <p class="refund">100% Naudas atmaksas garantija.</p>
+  </div>`;
+}
+function b2b(inner, where="B2B kataloga dīlera kolonna"){
+  return `<div class="stage">
+    <p class="where">${where}</p>
+    <h2 class="card-title">DĪLERA DATI</h2>
+    <p class="card-goal">MĒRĶIS. Oficiālie dīleru sistēmu dati partnera VIN pārbaudei.</p>
+    <div style="margin-top:.75rem">${inner}</div>
+  </div>`;
+}
+function tabs(rootId){
+  const pane = (id, list, on) => `<div class="tab-pane" data-pane="${id}" ${on?"":"hidden"}><p class="body">${COPY[id].body}</p>${chips(list)}</div>`;
+  return `<div class="tabs" data-tabs="${rootId}">
+    <button type="button" class="on" data-tab="full">Pilna 22</button>
+    <button type="button" data-tab="work">Atzīmes 14</button>
+    <button type="button" data-tab="lim">Ierobežots 12</button>
+  </div>
+  ${pane("full", FULL, true)}${pane("work", WORK, false)}${pane("lim", LIM, false)}`;
+}
+function acc(){
+  const row = (id, list, open) => `<div class="block">
+    <button type="button" class="acc" data-acc aria-expanded="${open}">
+      <span class="h3">${COPY[id].title}<span> (${list.length})</span><em>${open?"−":"+"}</em></span>
+    </button>
+    <div ${open?"":"hidden"}><p class="body">${COPY[id].body}</p>${chips(list)}</div>
+  </div>`;
+  return row("full", FULL, true) + row("work", WORK, false) + row("lim", LIM, false);
+}
+function legendCloud(){
+  return `<div class="legend">
+    <span><b class="b-full"></b>Pilna ${FULL.length}</span>
+    <span><b class="b-work"></b>Atzīmes ${WORK.length}</span>
+    <span><b class="b-lim"></b>Ierobežots ${LIM.length}</span>
+  </div>
+  ${chips(FULL,"full")}${chips(WORK,"work")}${chips(LIM,"lim")}`;
+}
+function logoStrip(list){
+  return `<div class="logos">${list.map((b)=>`<span class="logo" title="${b}"><img src="${LOGO(b)}" alt="${b}"></span>`).join("")}</div>`;
+}
+function mcards(list){
+  return `<div class="mgrid">${list.map((b)=>`<div class="mcard"><img src="${LOGO(b)}" alt=""><b>${b}</b></div>`).join("")}</div>`;
+}
+function counts(openId){
+  const row = (id, list) => `<div>
+    <button type="button" class="row" data-count="${id}">
+      <strong>${COPY[id].title}</strong><span>${list.length}</span>
+    </button>
+    <div data-count-pane="${id}" ${id===openId?"":"hidden"}><p class="body">${COPY[id].body}</p>${chips(list)}</div>
+  </div>`;
+  return row("full", FULL) + row("work", WORK) + row("lim", LIM);
+}
+function splitPop(){
+  return `<p class="body">Pārklājums nav vienāds visiem zīmoliem. Pilna vēsture ${FULL.length} markām, darbnīcas atzīmes ${WORK.length}, ierobežots ${LIM.length}.</p>
+    <p class="quiet">${COPY.full.body}</p>
+    <p class="quiet">${COPY.work.body}</p>
+    <p class="quiet">${COPY.lim.body}</p>`;
+}
+function filterBox(){
+  return `<div class="filter" data-filter>
+    <button type="button" class="on" data-f="all">Visi 48</button>
+    <button type="button" data-f="full">Pilna 22</button>
+    <button type="button" data-f="work">Atzīmes 14</button>
+    <button type="button" data-f="lim">Ierobežots 12</button>
+  </div>
+  <input class="find" data-find placeholder="Meklēt marku, piem. Subaru" />
+  <div data-filter-out>${block("full", FULL)+block("work", WORK)+block("lim", LIM)}</div>`;
+}
+
+const mounts = {
+  now: () => b2c(stacked()) + b2b(stacked()),
+  tabs: () => b2c(tabs("p")) + b2b(tabs("c")),
+  acc: () => b2c(acc()) + b2b(acc()),
+  legend: () => b2c(legendCloud()) + b2b(legendCloud()),
+  cards: () => b2c(tabs("cards-p")) + b2b(
+    `<h3 class="h3">${COPY.full.title}<span> (${FULL.length})</span></h3><p class="body">${COPY.full.body}</p>${mcards(FULL)}
+     <div class="block"><h3 class="h3">${COPY.work.title}<span> (${WORK.length})</span></h3><p class="body">${COPY.work.body}</p>${mcards(WORK)}</div>
+     <div class="block"><h3 class="h3">${COPY.lim.title}<span> (${LIM.length})</span></h3><p class="body">${COPY.lim.body}</p>${mcards(LIM)}</div>`,
+    "B2B katalogs vai /ražotāji lapa"
+  ),
+  cols: () => b2c(tabs("cols-p")) + b2b(
+    `<div class="cols cols3">
+      <div><h3 class="h3">${COPY.full.title}<span> (${FULL.length})</span></h3><p class="body">${COPY.full.body}</p>${chips(FULL)}</div>
+      <div><h3 class="h3">${COPY.work.title}<span> (${WORK.length})</span></h3><p class="body">${COPY.work.body}</p>${chips(WORK)}</div>
+      <div><h3 class="h3">${COPY.lim.title}<span> (${LIM.length})</span></h3><p class="body">${COPY.lim.body}</p>${chips(LIM)}</div>
+    </div>`
+  ),
+  counts: () => b2c(counts("full")) + b2b(counts("full")),
+  logos: () => b2c(
+    `<div class="block" style="border:0;padding:0;margin:0"><h3 class="h3">${COPY.full.title}<span> (${FULL.length})</span></h3><p class="body">${COPY.full.body}</p>${logoStrip(FULL)}</div>
+     <div class="block"><h3 class="h3">${COPY.work.title}<span> (${WORK.length})</span></h3><p class="body">${COPY.work.body}</p>${logoStrip(WORK)}</div>
+     <div class="block"><h3 class="h3">${COPY.lim.title}<span> (${LIM.length})</span></h3><p class="body">${COPY.lim.body}</p>${logoStrip(LIM)}</div>`
+  ) + b2b(
+    `<div class="block" style="border:0;padding:0;margin:0"><h3 class="h3">${COPY.full.title}<span> (${FULL.length})</span></h3><p class="body">${COPY.full.body}</p>${logoStrip(FULL)}</div>
+     <div class="block"><h3 class="h3">${COPY.work.title}<span> (${WORK.length})</span></h3><p class="body">${COPY.work.body}</p>${logoStrip(WORK)}</div>
+     <div class="block"><h3 class="h3">${COPY.lim.title}<span> (${LIM.length})</span></h3><p class="body">${COPY.lim.body}</p>${logoStrip(LIM)}</div>`
+  ),
+  split: () => b2c(splitPop()) + b2b(stacked()),
+  filter: () => b2c(tabs("f-p")) + b2b(filterBox(), "B2B katalogs, garā kolonna"),
+};
+
+function hero(inner){
+  return `<div class="stage live-hero">
+    <p class="where">Esošais hero · DĪLERA DATI · sliede zem virsraksta</p>
+    <div class="live-grid">
+      <div>
+        <h2 class="live-h1">Oficiālā dīlera <span>dati</span></h2>
+        <div class="live-scan" aria-hidden></div>
+        <div class="hero-zone">${inner}</div>
+      </div>
+      <div class="live-card" aria-hidden="true">
+        <div class="live-tabs"><span>MINI</span><span>AUDITS</span><span class="on">DĪLERI</span></div>
+        <p class="live-card-title">OFICIĀLO DĪLERU DATI</p>
+        <p class="live-card-note">Kartītes tabi paliek. Mainās virsraksts pa kreisi un šī sliede zem tā.</p>
+      </div>
+    </div>
+  </div>`;
+}
+function band(id, list){
+  return `<div class="block"><h3 class="h3">${COPY[id].title}<span> (${list.length})</span></h3>${chips(list)}</div>`;
+}
+function cells(list){
+  return `<div class="cell-row">${list.map((b)=>`<span class="cell" title="${b}"><img src="${LOGO(b)}" alt="${b}"></span>`).join("")}</div>`;
+}
+function heroCounts(){
+  return `<div class="hero-counts" data-hero-counts>
+    <button type="button" class="on" data-hc="full">Pilna <strong>22</strong></button>
+    <button type="button" data-hc="work">Atzīmes <strong>14</strong></button>
+    <button type="button" data-hc="lim">Ierobežots <strong>12</strong></button>
+  </div>
+  <div data-hc-pane="full">${chips(FULL)}</div>
+  <div data-hc-pane="work" hidden>${chips(WORK)}</div>
+  <div data-hc-pane="lim" hidden>${chips(LIM)}</div>`;
+}
+
+const ALL = [...FULL, ...WORK, ...LIM];
+function evenNames(extra){
+  return `<ul class="even-grid ${extra||""}">${ALL.map((b)=>`<li title="${b}">${b}</li>`).join("")}</ul>`;
+}
+
+const heroMounts = {
+  flat: () => hero(evenNames()),
+  type: () => hero(`<p class="even-type">${ALL.join(" · ")}</p>`),
+  logogrid: () => hero(`<div class="even-grid">${ALL.map((b)=>`<span class="cell" title="${b}"><img src="${LOGO(b)}" alt="${b}"></span>`).join("")}</div>`),
+  ticks: () => hero(evenNames("even-ticks")),
+  dim: () => hero(evenNames("even-dim")),
+  caps: () => hero(evenNames("even-caps")),
+  six: () => hero(`<ul class="even-grid" style="grid-template-columns:repeat(6,minmax(0,1fr))">${ALL.map((b)=>`<li title="${b}">${b}</li>`).join("")}</ul>`),
+  bands: () => hero(`<div class="hero-bands">${band("full", FULL)}${band("work", WORK)}${band("lim", LIM)}</div>`),
+  cells: () => hero(`<div class="hero-bands">
+    <div class="block" style="border:0;padding:0;margin:0"><h3 class="h3">${COPY.full.title}<span> (${FULL.length})</span></h3>${cells(FULL)}</div>
+    <div class="block"><h3 class="h3">${COPY.work.title}<span> (${WORK.length})</span></h3>${cells(WORK)}</div>
+    <div class="block"><h3 class="h3">${COPY.lim.title}<span> (${LIM.length})</span></h3>${cells(LIM)}</div>
+  </div>`),
+  tabs: () => hero(tabs("hero-t")),
+  cards: () => hero(`<h3 class="h3">${COPY.full.title}<span> (${FULL.length})</span></h3>${mcards(FULL)}
+    <div class="block"><h3 class="h3">${COPY.work.title}<span> (${WORK.length})</span></h3>${mcards(WORK)}</div>
+    <div class="block"><h3 class="h3">${COPY.lim.title}<span> (${LIM.length})</span></h3>${mcards(LIM)}</div>`),
+  fullfirst: () => hero(`<h3 class="h3">${COPY.full.title}<span> (${FULL.length})</span></h3>${cells(FULL)}
+    <p class="quiet" style="margin-top:.7rem">Darbnīcas atzīmes ${WORK.length} · Ierobežots pārklājums ${LIM.length}. Pilns saraksts kartītē «Atbalstītie ražotāji».</p>`),
+  legend: () => hero(`<div style="text-align:center">${legendCloud()}</div>`),
+  counts: () => hero(heroCounts()),
+};
+
+document.querySelectorAll("[data-pair]").forEach((node) => {
+  node.innerHTML = mounts[node.dataset.pair]();
+});
+document.querySelectorAll("[data-hero]").forEach((node) => {
+  node.innerHTML = heroMounts[node.dataset.hero]();
+});
+
+document.addEventListener("click", (e) => {
+  const tab = e.target.closest("[data-tab]");
+  if (tab) {
+    const wrap = tab.closest("[data-tabs]")?.parentElement;
+    if (!wrap) return;
+    wrap.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("on", b === tab));
+    wrap.querySelectorAll("[data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== tab.dataset.tab; });
+    return;
+  }
+  const accBtn = e.target.closest("[data-acc]");
+  if (accBtn) {
+    const pane = accBtn.nextElementSibling;
+    const open = accBtn.getAttribute("aria-expanded") === "true";
+    accBtn.setAttribute("aria-expanded", String(!open));
+    pane.hidden = open;
+    const em = accBtn.querySelector("em");
+    if (em) em.textContent = open ? "+" : "−";
+    return;
+  }
+  const countBtn = e.target.closest("[data-count]");
+  if (countBtn) {
+    const id = countBtn.dataset.count;
+    const root = countBtn.closest(".pop, .stage");
+    root.querySelectorAll("[data-count-pane]").forEach((p) => {
+      p.hidden = p.dataset.countPane === id ? !p.hidden : true;
+    });
+    return;
+  }
+  const hc = e.target.closest("[data-hc]");
+  if (hc) {
+    const wrap = hc.closest(".hero-zone");
+    if (!wrap) return;
+    wrap.querySelectorAll("[data-hc]").forEach((b) => b.classList.toggle("on", b === hc));
+    wrap.querySelectorAll("[data-hc-pane]").forEach((p) => { p.hidden = p.dataset.hcPane !== hc.dataset.hc; });
+    return;
+  }
+  const f = e.target.closest("[data-f]");
+  if (f) {
+    const box = f.closest("[data-filter]").parentElement;
+    box.querySelectorAll("[data-f]").forEach((b) => b.classList.toggle("on", b === f));
+    renderFilter(box, f.dataset.f, box.querySelector("[data-find]").value);
+  }
+});
+
+document.querySelectorAll("[data-find]").forEach((input) => {
+  input.addEventListener("input", () => {
+    const box = input.parentElement;
+    const on = box.querySelector("[data-f].on")?.dataset.f || "all";
+    renderFilter(box, on, input.value);
+  });
+});
+
+function renderFilter(box, mode, q){
+  const query = (q || "").trim().toLowerCase();
+  const keep = (list) => list.filter((b) => !query || b.toLowerCase().includes(query));
+  const full = keep(FULL), work = keep(WORK), lim = keep(LIM);
+  let html = "";
+  if (mode === "all" || mode === "full") html += block("full", full);
+  if (mode === "all" || mode === "work") html += block("work", work);
+  if (mode === "all" || mode === "lim") html += block("lim", lim);
+  box.querySelector("[data-filter-out]").innerHTML = html || `<p class="quiet">Nav sakritības.</p>`;
+}
+</script>
+</body>
+</html>

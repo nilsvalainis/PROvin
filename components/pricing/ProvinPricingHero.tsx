@@ -37,7 +37,6 @@ export function ProvinPricingHero({
   desktopTitleId = "provin-pricing-hero-title-desktop",
 }: Props) {
   const locale = useLocale();
-  const heroCopy = getTp5HeroCopy(locale);
   const uiCopy = getTp5UiCopy(locale);
   const searchParams = useSearchParams();
   const initialPlan =
@@ -49,6 +48,8 @@ export function ProvinPricingHero({
   const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const mobileHeroCopy = getTp5HeroCopy(locale, mobileActiveId);
+  const desktopHeroCopy = getTp5HeroCopy(locale, desktopActiveId);
 
   const mobileSwipeOrder = getTp5HeroSwipeOrder(mobileActiveId);
   const desktopSwipeOrder = getTp5HeroSwipeOrder(desktopActiveId);
@@ -138,8 +139,8 @@ export function ProvinPricingHero({
 
         {/* Mobile: no visible H1 — desktop hero keeps the full title. */}
         <h1 id={mobileTitleId} className="sr-only">
-          {heroCopy.titlePrefix}
-          {heroCopy.titleAccent}
+          {mobileHeroCopy.titlePrefix}
+          {mobileHeroCopy.titleAccent}
         </h1>
 
         <div className={styles.stage}>
@@ -171,9 +172,9 @@ export function ProvinPricingHero({
 
         <header className={styles.heroCopyDesktop}>
           <h1 id={desktopTitleId} className={styles.heroTitleDesktop}>
-            {heroCopy.titlePrefix}
+            {desktopHeroCopy.titlePrefix}
             <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-              {heroCopy.titleAccent}
+              {desktopHeroCopy.titleAccent}
             </span>
           </h1>
           <Tp5DesktopFeatureIconRow activeServiceId={desktopActiveId} />

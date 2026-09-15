@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { B2bPartnerLogin } from "@/components/b2b/B2bPartnerLogin";
 import { CONTACT_PHONE_TEL, contactEmail } from "@/lib/contact";
+import { homeFooterColumnClass } from "@/lib/home-layout";
 
 export function B2bPartnerHero({
   afterContact,
@@ -23,17 +24,12 @@ export function B2bPartnerHero({
   return (
     <section
       id="b2b-partner-hero"
-      className="px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-8 pb-10 sm:pt-12 sm:pb-14"
+      className="pt-8 pb-10 sm:pt-12 sm:pb-14"
       aria-labelledby="b2b-partner-hero-title"
     >
-      <div
-        className={`mx-auto grid w-full max-w-[36rem] gap-8 lg:items-start lg:gap-12 xl:gap-16 ${
-          widePanel
-            ? "lg:max-w-[72rem] lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,32rem)]"
-            : "lg:max-w-[68rem] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,22rem)]"
-        }`}
-      >
-        <div className="min-w-0 text-center lg:text-left">
+      <div className={homeFooterColumnClass}>
+        <div className="grid w-full gap-8 lg:grid-cols-12 lg:items-start lg:gap-16">
+          <div className="min-w-0 text-center lg:col-span-7 lg:text-left">
           <h1
             id="b2b-partner-hero-title"
             className="text-balance text-[1.5rem] font-semibold leading-[1.15] tracking-[-0.02em] text-zinc-100 lg:text-[1.85rem]"
@@ -84,11 +80,12 @@ export function B2bPartnerHero({
         </div>
 
         <div
-          className={`mx-auto w-full text-left lg:mx-0 lg:rounded-[1rem] lg:border lg:border-white/10 lg:bg-gradient-to-b lg:from-white/[0.04] lg:to-white/[0.015] lg:p-5 xl:p-6 ${
-            widePanel ? "max-w-[36rem] lg:max-w-none" : "max-w-[22rem]"
+          className={`mx-auto w-full text-left lg:col-span-5 lg:mx-0 lg:rounded-[1rem] lg:border lg:border-white/10 lg:bg-gradient-to-b lg:from-white/[0.04] lg:to-white/[0.015] lg:p-5 xl:p-6 ${
+            widePanel ? "max-w-[36rem] lg:ml-auto lg:max-w-none" : "max-w-[22rem] lg:ml-auto lg:max-w-[27.5rem]"
           }`}
         >
           {panel ?? <B2bPartnerLogin />}
+        </div>
         </div>
       </div>
     </section>

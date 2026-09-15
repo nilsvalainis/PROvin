@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { B2bPartnerHero } from "@/components/b2b/B2bPartnerHero";
+import { homeFooterColumnClass } from "@/lib/home-layout";
 
 const LINK_CLASS =
   "text-left text-[0.62rem] font-semibold uppercase tracking-[0.04em] text-[#93c5fd] underline decoration-white/25 underline-offset-[0.18em] transition-colors hover:text-[#bfdbfe] hover:decoration-[#93c5fd]";
@@ -33,7 +34,7 @@ export function B2bPartnerPreview() {
   return (
     <>
       <B2bPartnerHero afterContact={<div className="mt-6 hidden lg:block">{links}</div>} />
-      <div className="mx-auto w-full max-w-[36rem] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-6 lg:hidden">
+      <div className={`${homeFooterColumnClass} pb-6 lg:hidden`}>
         {links}
       </div>
       {open ? <B2bPartnerCatalog plan="business" className="px-4 sm:px-6" /> : null}

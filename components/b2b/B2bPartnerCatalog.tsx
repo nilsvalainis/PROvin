@@ -21,9 +21,9 @@ import {
   type B2bCatalogPackage,
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
+import { DealerCoverageBrandSections } from "@/components/test-pricing-5/DealerCoverageBrandSections";
 import { homeContentMaxClass } from "@/lib/home-layout";
-import { TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
-import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
+import { getTp5UiCopy, type Tp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const LUCIDE_ICON_CLASS = "h-4 w-4 [stroke-width:1.6] sm:h-[1.125rem] sm:w-[1.125rem]";
 const BRAND_LOGO_CLASS = "h-4 w-4 shrink-0 object-contain sm:h-[1.125rem] sm:w-[1.125rem]";
@@ -214,29 +214,22 @@ function GuaranteeBlock({ title, body, infoAria }: { title: string; body: string
   );
 }
 
-function DealerBrandLockup({ label, fill }: { label: string; fill?: boolean }) {
+function DealerBrandLockup({
+  copy,
+  fill,
+}: {
+  copy: Tp5UiCopy;
+  fill?: boolean;
+}) {
   return (
     <div
       className={
         fill
-          ? "min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]"
+          ? `min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin] ${styles.dealerB2bBrandChipsFill}`
           : undefined
       }
     >
-      <ul
-        className={
-          fill
-            ? `${styles.dealerB2bBrandChips} ${styles.dealerB2bBrandChipsFill}`
-            : styles.dealerB2bBrandChips
-        }
-        aria-label={label}
-      >
-        {TP5_DEALER_BRANDS.map((brand) => (
-          <li key={brand} className={styles.dealerBrandItem}>
-            <span className={styles.dealerBrandChip}>{brand}</span>
-          </li>
-        ))}
-      </ul>
+      <DealerCoverageBrandSections copy={copy} ariaLabel={copy.dealerBrandsAria} />
     </div>
   );
 }
@@ -254,14 +247,14 @@ function PackageCta({ plan }: { plan: B2bPartnerPlanId }) {
 function PackageStack({
   pkg,
   plan,
-  brandsLabel,
+  brandsCopy,
   listClassName,
   infoAria,
   showCta,
 }: {
   pkg: CatalogPackage;
   plan: B2bPartnerPlanId;
-  brandsLabel?: string;
+  brandsCopy?: Tp5UiCopy;
   listClassName: string;
   infoAria: string;
   showCta: boolean;
@@ -272,9 +265,9 @@ function PackageStack({
       <PackageTitle title={pkg.title} />
       <p className={`mt-3 ${GOAL_CLASS}`}>{pkg.goal}</p>
       <ItemList items={pkg.items} className={listClassName} />
-      {brandsLabel ? (
+      {brandsCopy ? (
         <div className="mt-7 flex min-w-0 flex-col gap-1.5 overflow-visible">
-          <DealerBrandLockup label={brandsLabel} />
+          <DealerBrandLockup copy={brandsCopy} />
           {isDealer ? (
             <GuaranteeBlock
               title={pkg.guaranteeTitle ?? ""}
@@ -337,7 +330,7 @@ export function B2bPartnerCatalog({
               <PackageStack
                 pkg={dealer}
                 plan="dealer"
-                brandsLabel={uiCopy.dealerBrandsAria}
+                brandsCopy={uiCopy}
                 infoAria={uiCopy.dealerRefundInfoAria}
                 listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
                 showCta={showCta}
@@ -350,7 +343,7 @@ export function B2bPartnerCatalog({
               <PackageStack
                 pkg={dealer}
                 plan="dealer"
-                brandsLabel={uiCopy.dealerBrandsAria}
+                brandsCopy={uiCopy}
                 infoAria={uiCopy.dealerRefundInfoAria}
                 listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
                 showCta={showCta}
@@ -375,7 +368,7 @@ export function B2bPartnerCatalog({
 
               <ItemList items={business.items} className="mt-7 flex min-w-0 flex-col gap-1.5" />
               <div className={`mt-7 ${MATCHED_STACK_CLASS}`}>
-                <DealerBrandLockup label={uiCopy.dealerBrandsAria} fill />
+                <DealerBrandLockup copy={uiCopy} fill />
                 <GuaranteeBlock
                   title={dealer.guaranteeTitle ?? ""}
                   body={dealer.guaranteeBody ?? ""}

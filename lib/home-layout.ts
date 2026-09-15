@@ -4,6 +4,12 @@
  */
 export const homeContentMaxClass = "mx-auto min-w-0 w-full max-w-[min(75rem,calc(100vw-2rem))]";
 
+/**
+ * Kājene un B2B hero: tā pati 80rem sleja, lai teksts un login sākas/beidzas vienā vertikālē.
+ */
+export const homeFooterColumnClass =
+  "mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] lg:px-8";
+
 /** BUJ / šaura sleja — iepriekšējais ~680px ar to pašu responsīvo formulu. */
 export const homeFaqMaxClass = "mx-auto min-w-0 w-full max-w-[min(42.5rem,calc(100vw-2rem))]";
 
