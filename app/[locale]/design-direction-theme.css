@@ -6,15 +6,13 @@
 /* Sākumlapa: nav pelēkā `body` fona aiz tp5 hero ambienta. */
 html:has(.home-page-canvas-root),
 body:has(.home-page-canvas-root) {
-  background-color: #0d0d0d;
+  background-color: #000000;
   background-image: none !important;
 }
 
-@media (max-width: 1023px) {
-  html:has(.home-page-canvas-root),
-  body:has(.home-page-canvas-root) {
-    background-color: #060606;
-  }
+html[data-site-theme="light"]:has(.home-page-canvas-root),
+html[data-site-theme="light"]:has(.home-page-canvas-root) body {
+  background-color: #f3f4f6;
 }
 
 /*
