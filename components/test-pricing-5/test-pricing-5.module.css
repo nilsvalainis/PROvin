@@ -1085,7 +1085,7 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: rgb(226 232 240 / 0.82);
+  color: rgb(226 232 240 / 0.84);
   font-size: 0.6rem;
   font-weight: 550;
   letter-spacing: 0.01em;
@@ -1093,6 +1093,19 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* H1e: brightness follows OEM coverage, no boxes. */
+.dealerHeroBrandChips .dealerHeroChipFull {
+  color: rgb(226 232 240 / 0.9);
+}
+
+.dealerHeroBrandChips .dealerHeroChipWorkshop {
+  color: rgb(148 163 184 / 0.72);
+}
+
+.dealerHeroBrandChips .dealerHeroChipLimited {
+  color: rgb(148 163 184 / 0.5);
 }
 
 /** B2B catalog dealer column — same chip wrap as hero concept E. */
@@ -2172,6 +2185,18 @@ html[data-site-theme="light"] .dealerHeroBrandChips .dealerBrandChip {
   background: transparent;
   box-shadow: none;
   color: #3a3a3c;
+}
+
+html[data-site-theme="light"] .dealerHeroBrandChips .dealerHeroChipFull {
+  color: #3a3a3c;
+}
+
+html[data-site-theme="light"] .dealerHeroBrandChips .dealerHeroChipWorkshop {
+  color: rgb(110 110 115 / 0.78);
+}
+
+html[data-site-theme="light"] .dealerHeroBrandChips .dealerHeroChipLimited {
+  color: rgb(142 142 147 / 0.55);
 }
 
 html[data-site-theme="light"] .dealerBrandsYearNote,

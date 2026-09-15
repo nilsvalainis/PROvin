@@ -103,6 +103,9 @@ describe("dealer coverage tiers", () => {
     expect(siteBrands).toHaveLength(48);
     expect([...TP5_DEALER_BRANDS].sort()).toEqual([...siteBrands].sort());
     expect(TP5_DEALER_COVERAGE_TIERS.map((t) => t.brands.length)).toEqual([22, 14, 12]);
+    expect([...TP5_DEALER_BRANDS]).toEqual(
+      TP5_DEALER_COVERAGE_TIERS.flatMap((tier) => [...tier.brands]),
+    );
   });
 
   it("explains each coverage tier in Latvian and English", () => {

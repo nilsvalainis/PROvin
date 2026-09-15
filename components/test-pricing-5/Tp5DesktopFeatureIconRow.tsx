@@ -17,10 +17,8 @@ import {
   getTp5DesktopHeroFeatures,
   type Tp5DesktopHeroFeatureIcon,
 } from "@/lib/test-pricing-5-desktop-hero-features";
-import {
-  TP5_DEALER_BRANDS,
-  type Tp5MobileServiceId,
-} from "@/lib/test-pricing-5-mobile";
+import { TP5_DEALER_COVERAGE_TIERS } from "@/lib/dealer-brands";
+import { type Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const ICON_BTN_BASE =
@@ -124,11 +122,23 @@ export function Tp5DesktopFeatureIconRow({ activeServiceId = "audits", features:
               exit={{ opacity: 0, y: -8 }}
               transition={SWAP_TRANSITION}
             >
-              {TP5_DEALER_BRANDS.map((brand) => (
-                <li key={brand} className={styles.dealerBrandItem}>
-                  <span className={styles.dealerBrandChip}>{brand}</span>
-                </li>
-              ))}
+              {TP5_DEALER_COVERAGE_TIERS.flatMap((tier) =>
+                tier.brands.map((brand) => (
+                  <li key={brand} className={styles.dealerBrandItem}>
+                    <span
+                      className={`${styles.dealerBrandChip} ${
+                        tier.id === "full"
+                          ? styles.dealerHeroChipFull
+                          : tier.id === "workshop"
+                            ? styles.dealerHeroChipWorkshop
+                            : styles.dealerHeroChipLimited
+                      }`}
+                    >
+                      {brand}
+                    </span>
+                  </li>
+                )),
+              )}
             </motion.ul>
           ) : (
             <motion.ul
