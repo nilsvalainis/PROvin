@@ -8,6 +8,7 @@ import {
   formatB2bEuroFromCents,
   getB2bCatalog,
   getB2bBusinessHeroFeatures,
+  splitB2bGoalAroundLink,
 } from "@/lib/b2b-partner-copy";
 
 describe("b2b partner prices", () => {
@@ -41,5 +42,14 @@ describe("b2b partner prices", () => {
     expect(getB2bCatalog("ru").business.goal).toContain("PROVIN BUSINESS");
     expect(getB2bBusinessHeroFeatures("de")[0]).toBe("Offizielle Händlerdaten*");
     expect(getB2bCatalog("lv").dealer.title).toBe("DĪLERA DATI");
+  });
+
+  it("keeps the dealer phrase inside every BUSINESS goal so the landing can open the full list", () => {
+    for (const locale of ["lv", "en", "de", "ru"] as const) {
+      const business = getB2bCatalog(locale).business;
+      const parts = splitB2bGoalAroundLink(business.goal, business.goalDealerLink);
+      expect(parts, locale).not.toBeNull();
+      expect(business.items[0]?.opensDealer).toBe(true);
+    }
   });
 });

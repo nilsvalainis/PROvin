@@ -39,6 +39,8 @@
     "buyPanelTitle": "Buy reports",
     "buyCloseAria": "Close",
     "includedHeading": "Services",
+    "dealerDisclosureAria": "Official dealer data description",
+    "dealerDisclosureOpen": "Open the official dealer data description with all manufacturers",
     "serviceLinkBusiness": "PROVIN Business →",
     "serviceLinkDealer": "Dealer data →",
     "navPacks": "Reports",

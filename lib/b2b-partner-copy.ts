@@ -133,11 +133,15 @@ export type B2bCatalogItem = {
   title: string;
   description?: string;
   icon: "store" | "globe" | "camera" | "shield" | "clipboard" | "list" | "gauge" | "tags" | "logos";
+  /** First BUSINESS source: opens the full dealer-data disclosure. */
+  opensDealer?: boolean;
 };
 
 export type B2bCatalogPackage = {
   title: string;
   goal: string;
+  /** Phrase inside `goal` that opens the dealer-data disclosure. */
+  goalDealerLink?: string;
   items: B2bCatalogItem[];
   foot: string;
   sampleHref: string;
@@ -145,14 +149,31 @@ export type B2bCatalogPackage = {
   guaranteeBody?: string;
 };
 
+export function splitB2bGoalAroundLink(
+  goal: string,
+  link: string | undefined,
+): { before: string; link: string; after: string } | null {
+  const phrase = link?.trim() ?? "";
+  if (!phrase) return null;
+  const index = goal.indexOf(phrase);
+  if (index < 0) return null;
+  return {
+    before: goal.slice(0, index),
+    link: phrase,
+    after: goal.slice(index + phrase.length),
+  };
+}
+
 export const B2B_CATALOG: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
   business: {
     title: "PROVIN BUSINESS",
     goal: B2B_BUSINESS_GOAL,
+    goalDealerLink: "oficiālajiem dīleru tīkliem",
     items: [
       {
         icon: "store" as const,
         title: "Oficiālo dīleru dati*",
+        opensDealer: true,
       },
       {
         icon: "logos" as const,
@@ -197,10 +218,12 @@ const B2B_CATALOG_EN: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
   business: {
     title: "PROVIN BUSINESS",
     goal: B2B_BUSINESS_GOAL_EN,
+    goalDealerLink: "official dealer networks",
     items: [
       {
         icon: "store" as const,
         title: "Official dealer data*",
+        opensDealer: true,
       },
       {
         icon: "logos" as const,
@@ -245,8 +268,9 @@ const B2B_CATALOG_DE: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
   business: {
     title: "PROVIN BUSINESS",
     goal: B2B_BUSINESS_GOAL_DE,
+    goalDealerLink: "offiziellen Händlernetzen",
     items: [
-      { icon: "store" as const, title: "Offizielle Händlerdaten*" },
+      { icon: "store" as const, title: "Offizielle Händlerdaten*", opensDealer: true },
       { icon: "logos" as const, title: "CarVertical + AutoDNA" },
       { icon: "globe" as const, title: "Register des Herkunftslands" },
       { icon: "camera" as const, title: "Auktionsportal-Archiv" },
@@ -272,8 +296,9 @@ const B2B_CATALOG_RU: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
   business: {
     title: "PROVIN BUSINESS",
     goal: B2B_BUSINESS_GOAL_RU,
+    goalDealerLink: "официальных дилерских сетей",
     items: [
-      { icon: "store" as const, title: "Официальные данные дилера*" },
+      { icon: "store" as const, title: "Официальные данные дилера*", opensDealer: true },
       { icon: "logos" as const, title: "CarVertical + AutoDNA" },
       { icon: "globe" as const, title: "Реестры страны происхождения" },
       { icon: "camera" as const, title: "Архив аукционов" },

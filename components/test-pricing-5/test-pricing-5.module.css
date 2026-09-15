@@ -942,6 +942,56 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   color: #fff;
 }
 
+.b2bDealerGoalLink {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #93c5fd;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: rgb(147 197 253 / 0.45);
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.b2bDealerGoalLink:hover {
+  color: #bfdbfe;
+  text-decoration-color: #93c5fd;
+}
+
+.b2bDealerSourceRow {
+  border: 1px solid rgb(147 197 253 / 0.22);
+  background: rgb(37 99 235 / 0.08);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.b2bDealerSourceRow:hover {
+  border-color: rgb(147 197 253 / 0.45);
+  background: rgb(37 99 235 / 0.14);
+}
+
+.b2bDealerAccordionMark {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #93c5fd;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.b2bDealerAccordion {
+  margin-top: 0.55rem;
+  padding: 0.85rem 0.9rem 1rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgb(147 197 253 / 0.22);
+  background: rgb(37 99 235 / 0.06);
+}
+
 .dealerBrandsPopupDivider {
   position: relative;
   z-index: 1;

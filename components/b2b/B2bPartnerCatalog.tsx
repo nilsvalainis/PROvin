@@ -17,12 +17,12 @@ import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import {
   B2B_PARTNER_PRICE,
   getB2bCatalog,
+  splitB2bGoalAroundLink,
   type B2bCatalogItem,
   type B2bCatalogPackage,
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { DealerCoverageBrandSections } from "@/components/test-pricing-5/DealerCoverageBrandSections";
-import { homeContentMaxClass } from "@/lib/home-layout";
 import { getTp5UiCopy, type Tp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 
 const LUCIDE_ICON_CLASS = "h-4 w-4 [stroke-width:1.6] sm:h-[1.125rem] sm:w-[1.125rem]";
@@ -103,29 +103,114 @@ function ItemIcon({ icon }: { icon: B2bCatalogItem["icon"] }) {
   return <span className="flex shrink-0 text-zinc-400">{glyph}</span>;
 }
 
-function ItemList({ items, className }: { items: readonly B2bCatalogItem[]; className: string }) {
+function PackageGoal({
+  goal,
+  dealerLink,
+  onOpenDealer,
+  openLabel,
+  dealerOpen,
+}: {
+  goal: string;
+  dealerLink?: string;
+  onOpenDealer?: () => void;
+  openLabel: string;
+  dealerOpen?: boolean;
+}) {
+  const parts = onOpenDealer ? splitB2bGoalAroundLink(goal, dealerLink) : null;
+  if (!parts) {
+    return <p className={`mt-3 ${GOAL_CLASS}`}>{goal}</p>;
+  }
+  return (
+    <p className={`mt-3 ${GOAL_CLASS}`}>
+      {parts.before}
+      <button
+        type="button"
+        className={styles.b2bDealerGoalLink}
+        onClick={onOpenDealer}
+        aria-label={openLabel}
+        aria-expanded={dealerOpen}
+      >
+        {parts.link}
+      </button>
+      {parts.after}
+    </p>
+  );
+}
+
+function ItemList({
+  items,
+  className,
+  onOpenDealer,
+  openLabel,
+  dealerOpen = false,
+  dealer,
+  brandsCopy,
+}: {
+  items: readonly B2bCatalogItem[];
+  className: string;
+  onOpenDealer?: () => void;
+  openLabel: string;
+  dealerOpen?: boolean;
+  dealer?: CatalogPackage;
+  brandsCopy?: Tp5UiCopy;
+}) {
+  const panelId = useId();
   if (items.length === 0) return null;
   return (
     <ul className={className}>
-      {items.map((item) => (
-        <li key={item.title} className={ITEM_TILE_CLASS}>
-          {item.icon === "logos" ? (
-            <SourcePairTitle />
-          ) : (
-            <>
-              <ItemIcon icon={item.icon} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">{item.title}</p>
-                {item.description ? (
-                  <p className="mt-1 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
-                    {item.description}
-                  </p>
-                ) : null}
-              </div>
-            </>
-          )}
-        </li>
-      ))}
+      {items.map((item) => {
+        const row = (
+          <>
+            {item.icon === "logos" ? (
+              <SourcePairTitle />
+            ) : (
+              <>
+                <ItemIcon icon={item.icon} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.8125rem] font-bold leading-snug text-zinc-100 sm:text-[0.875rem]">{item.title}</p>
+                  {item.description ? (
+                    <p className="mt-1 text-[0.8125rem] font-normal leading-[1.55] text-gray-400 sm:text-[0.875rem] sm:leading-[1.6]">
+                      {item.description}
+                    </p>
+                  ) : null}
+                </div>
+              </>
+            )}
+          </>
+        );
+        if (item.opensDealer && onOpenDealer && dealer && brandsCopy) {
+          return (
+            <li key={item.title}>
+              <button
+                type="button"
+                className={`${ITEM_TILE_CLASS} ${styles.b2bDealerSourceRow}`}
+                onClick={onOpenDealer}
+                aria-expanded={dealerOpen}
+                aria-controls={panelId}
+                aria-label={openLabel}
+              >
+                {row}
+                <span className={styles.b2bDealerAccordionMark} aria-hidden>
+                  {dealerOpen ? "−" : "+"}
+                </span>
+              </button>
+              {dealerOpen ? (
+                <div id={panelId} className={styles.b2bDealerAccordion}>
+                  <p className={GOAL_CLASS}>{dealer.goal}</p>
+                  <div className="mt-4">
+                    <DealerBrandLockup copy={brandsCopy} />
+                  </div>
+                </div>
+              ) : null}
+            </li>
+          );
+        }
+        return (
+          <li key={item.title} className={ITEM_TILE_CLASS}>
+            {row}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -251,6 +336,11 @@ function PackageStack({
   listClassName,
   infoAria,
   showCta,
+  onOpenDealer,
+  openLabel,
+  dealerOpen,
+  accordionDealer,
+  accordionBrandsCopy,
 }: {
   pkg: CatalogPackage;
   plan: B2bPartnerPlanId;
@@ -258,13 +348,32 @@ function PackageStack({
   listClassName: string;
   infoAria: string;
   showCta: boolean;
+  onOpenDealer?: () => void;
+  openLabel: string;
+  dealerOpen?: boolean;
+  accordionDealer?: CatalogPackage;
+  accordionBrandsCopy?: Tp5UiCopy;
 }) {
   const isDealer = "guaranteeTitle" in pkg;
   return (
     <article className="flex min-w-0 flex-col">
       <PackageTitle title={pkg.title} />
-      <p className={`mt-3 ${GOAL_CLASS}`}>{pkg.goal}</p>
-      <ItemList items={pkg.items} className={listClassName} />
+      <PackageGoal
+        goal={pkg.goal}
+        dealerLink={pkg.goalDealerLink}
+        onOpenDealer={onOpenDealer}
+        openLabel={openLabel}
+        dealerOpen={dealerOpen}
+      />
+      <ItemList
+        items={pkg.items}
+        className={listClassName}
+        onOpenDealer={onOpenDealer}
+        openLabel={openLabel}
+        dealerOpen={dealerOpen}
+        dealer={accordionDealer}
+        brandsCopy={accordionBrandsCopy}
+      />
       {brandsCopy ? (
         <div className="mt-7 flex min-w-0 flex-col gap-1.5 overflow-visible">
           <DealerBrandLockup copy={brandsCopy} />
@@ -302,6 +411,7 @@ export function B2bPartnerCatalog({
   className?: string;
 }) {
   const locale = useLocale();
+  const t = useTranslations("Partner");
   const uiCopy = getTp5UiCopy(locale);
   const catalog = getB2bCatalog(locale);
   const business = catalog.business;
@@ -309,13 +419,24 @@ export function B2bPartnerCatalog({
   const onlyBusiness = plan === "business";
   const onlyDealer = plan === "dealer";
   const single = onlyBusiness || onlyDealer;
+  const [dealerOpen, setDealerOpen] = useState(false);
+  const toggleDealer = () => setDealerOpen((open) => !open);
+  const openLabel = t("dealerDisclosureOpen");
+  const dealerTrigger = onlyDealer ? undefined : toggleDealer;
+  const accordion = onlyDealer
+    ? {}
+    : {
+        dealerOpen,
+        accordionDealer: dealer,
+        accordionBrandsCopy: uiCopy,
+      };
 
   return (
     <section
       className={`scroll-mt-16 bg-transparent px-0 pb-4 pt-2 sm:pb-8 sm:pt-4 lg:pb-10${className ? ` ${className}` : ""}`}
       aria-label={onlyBusiness ? business.title : onlyDealer ? dealer.title : undefined}
     >
-      <div className={homeContentMaxClass}>
+      <div className="w-full min-w-0">
         {single ? (
           <div className="flex flex-col">
             {onlyBusiness ? (
@@ -325,6 +446,9 @@ export function B2bPartnerCatalog({
                 infoAria={uiCopy.dealerRefundInfoAria}
                 listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
                 showCta={showCta}
+                onOpenDealer={dealerTrigger}
+                openLabel={openLabel}
+                {...accordion}
               />
             ) : (
               <PackageStack
@@ -334,6 +458,7 @@ export function B2bPartnerCatalog({
                 infoAria={uiCopy.dealerRefundInfoAria}
                 listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
                 showCta={showCta}
+                openLabel={openLabel}
               />
             )}
           </div>
@@ -347,6 +472,7 @@ export function B2bPartnerCatalog({
                 infoAria={uiCopy.dealerRefundInfoAria}
                 listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
                 showCta={showCta}
+                openLabel={openLabel}
               />
               <div className="h-px w-full bg-white/15" aria-hidden />
               <PackageStack
@@ -355,6 +481,9 @@ export function B2bPartnerCatalog({
                 infoAria={uiCopy.dealerRefundInfoAria}
                 listClassName="mt-7 flex min-w-0 flex-col gap-1.5"
                 showCta={showCta}
+                onOpenDealer={dealerTrigger}
+                openLabel={openLabel}
+                {...accordion}
               />
             </div>
 
@@ -363,10 +492,24 @@ export function B2bPartnerCatalog({
               <div className={`${showCta ? "row-span-5" : "row-span-4"} self-stretch bg-white/15`} aria-hidden />
               <PackageTitle title={dealer.title} />
 
-              <p className={`mt-3 ${GOAL_CLASS}`}>{business.goal}</p>
+              <PackageGoal
+                goal={business.goal}
+                dealerLink={business.goalDealerLink}
+                onOpenDealer={dealerTrigger}
+                openLabel={openLabel}
+                dealerOpen={dealerOpen}
+              />
               <p className={`mt-3 ${GOAL_CLASS}`}>{dealer.goal}</p>
 
-              <ItemList items={business.items} className="mt-7 flex min-w-0 flex-col gap-1.5" />
+              <ItemList
+                items={business.items}
+                className="mt-7 flex min-w-0 flex-col gap-1.5"
+                onOpenDealer={dealerTrigger}
+                openLabel={openLabel}
+                dealerOpen={dealerOpen}
+                dealer={dealer}
+                brandsCopy={uiCopy}
+              />
               <div className={`mt-7 ${MATCHED_STACK_CLASS}`}>
                 <DealerBrandLockup copy={uiCopy} fill />
                 <GuaranteeBlock
@@ -388,3 +531,5 @@ export function B2bPartnerCatalog({
     </section>
   );
 }
+
+

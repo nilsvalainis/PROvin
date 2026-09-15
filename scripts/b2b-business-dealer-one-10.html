@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - BUSINESS + Dīlera dati vienā</title>
+<style>
+  :root{
+    --ink:rgb(250 250 252 / .98);
+    --dim:rgb(210 214 222 / .86);
+    --faint:rgb(148 163 184 / .88);
+    --hair:rgb(255 255 255 / .1);
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;
+    padding:.7rem 1.25rem;background:rgb(8 8 8 / .92);border-bottom:1px solid var(--hair);backdrop-filter:blur(10px);
+  }
+  .nav strong{margin-right:.4rem;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;}
+  .nav a{
+    font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);text-decoration:none;padding:.35rem .48rem;
+  }
+  .nav a:hover{color:#93c5fd;}
+  .intro{max-width:64rem;margin:0 auto;padding:1.8rem 1.5rem .4rem;}
+  .intro b{display:block;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .intro h1{margin:.35rem 0 0;font-size:1.35rem;font-weight:600;letter-spacing:-.03em;}
+  .intro p{margin:.45rem 0 0;max-width:46rem;font-size:.84rem;line-height:1.5;color:var(--faint);}
+  .cap{max-width:64rem;margin:0 auto;padding:2rem 1.5rem .45rem;}
+  .cap b{display:block;font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin-top:.28rem;font-style:normal;font-size:.8rem;color:var(--faint);max-width:42rem;line-height:1.45;}
+  .shell{max-width:64rem;margin:0 auto 2.2rem;padding:0 1.5rem 1.4rem;}
+  .stage{
+    border:1px solid var(--hair);border-radius:.85rem;background:#111;
+    padding:1.15rem 1.2rem 1.25rem;
+  }
+  .h2{margin:0;font-size:1.15rem;font-weight:700;}
+  .h2 span{color:var(--accent);}
+  .rule{height:1px;margin:.55rem 0 0;background:rgb(255 255 255 / .1);}
+  .goal{margin:.75rem 0 0;font-size:.8125rem;line-height:1.58;font-weight:500;color:var(--dim);}
+  .link{
+    display:inline;margin:0;padding:0;border:0;background:none;color:#93c5fd;font:inherit;font-weight:650;
+    text-decoration:underline;text-underline-offset:.18em;cursor:pointer;
+  }
+  .tiles{margin:.95rem 0 0;display:flex;flex-direction:column;gap:.38rem;}
+  .tile{
+    display:flex;align-items:center;gap:.75rem;min-height:3rem;padding:0 .8rem;
+    border-radius:.35rem;background:rgb(255 255 255 / .03);border:0;color:inherit;
+    font:700 .8125rem/1.2 Inter,sans-serif;text-align:left;
+  }
+  .tile.hit{
+    border:1px solid rgb(147 197 253 / .28);background:rgb(37 99 235 / .1);cursor:pointer;
+  }
+  .foot{margin:.7rem 0 0;font-size:.62rem;color:rgb(255 255 255 / .4);}
+  .overlay{
+    position:fixed;inset:0;z-index:80;display:none;align-items:flex-start;justify-content:center;
+    padding:1.4rem 1rem;background:rgb(2 6 23 / .62);overflow:auto;
+  }
+  .overlay.on{display:flex;}
+  .panel{
+    width:min(46rem,100%);margin:auto;padding:1.1rem 1.15rem 1.2rem;border-radius:1rem;
+    border:1px solid rgb(148 163 184 / .18);
+    background:linear-gradient(165deg, rgb(28 32 40 / .98), rgb(10 12 16 / .98));
+  }
+  .panel h3{margin:0;font-size:1.05rem;}
+  .brands{margin:.7rem 0 0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.28rem .4rem;font-size:.58rem;color:rgb(226 232 240 / .84);text-align:center;}
+  .ok{margin:.85rem 0 0;padding:.7rem .8rem;border-radius:.35rem;border:1px solid rgb(167 243 208 / .28);color:#a7f3d0;font-size:.78rem;font-weight:700;}
+  .tabs{display:flex;gap:.3rem;margin:.85rem 0 0;}
+  .tabs button{
+    flex:1;min-height:2.4rem;border:1px solid var(--hair);border-radius:.4rem;background:transparent;
+    color:var(--faint);font:650 .62rem/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  }
+  .tabs button.on{background:rgb(37 99 235 / .22);border-color:rgb(147 197 253 / .4);color:#fff;}
+  .split{display:grid;gap:1rem;}
+  @media(min-width:860px){.split{grid-template-columns:1fr 1fr;}}
+  .child{margin:.9rem 0 0;padding:.85rem .9rem;border-radius:.7rem;border:1px solid rgb(37 99 235 / .28);background:rgb(37 99 235 / .06);}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem 0 0;}
+  .chip{padding:.35rem .6rem;border-radius:999px;border:1px solid var(--hair);font-size:.62rem;font-weight:650;}
+  .chip.on{border-color:rgb(147 197 253 / .45);color:#93c5fd;}
+  .acc{width:100%;margin:.55rem 0 0;padding:.75rem .8rem;border:1px solid rgb(147 197 253 / .28);border-radius:.4rem;background:rgb(37 99 235 / .08);color:#fff;font:650 .8rem Inter,sans-serif;text-align:left;cursor:pointer;}
+  .acc-body{display:none;margin-top:.65rem;}
+  .acc-body.on{display:block;}
+  .prices{display:flex;gap:.45rem;margin:.7rem 0 0;}
+  .price{flex:1;padding:.55rem .6rem;border-radius:.45rem;border:1px solid var(--hair);font-size:.68rem;}
+  .price b{display:block;font-size:.82rem;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>10 dizaini</strong>
+  <a href="#c01">01 tagad</a>
+  <a href="#c02">02 akordeons</a>
+  <a href="#c03">03 nodaļas</a>
+  <a href="#c04">04 tabi</a>
+  <a href="#c05">05 ligzda</a>
+  <a href="#c06">06 SKU</a>
+  <a href="#c07">07 puse</a>
+  <a href="#c08">08 slāņi</a>
+  <a href="#c09">09 divi CTA</a>
+  <a href="#c10">10 sliede</a>
+</nav>
+<div class="intro">
+  <b>B2B landing</b>
+  <h1>Viens skats. Divi produkti.</h1>
+  <p>PROVIN BUSINESS paliek jumta atskaite. Dīlera dati nav otra poga hero, bet atveras no oficiālo dīleru pieminējuma. 01 ir tas, kas tagad ir dzīvajā lapā. Pārējie ir alternatīvas, kā abus produktus lasīt kā vienu.</p>
+</div>
+
+<section id="c01">
+  <div class="cap"><b>01 · Overlay</b><i>Zilā frāze un pirmā rinda atver pilnu DĪLERA DATI paneli. Nav dzīvais variants.</i></div>
+  <div class="shell"><div class="stage" data-live></div></div>
+</section>
+<section id="c02">
+  <div class="cap"><b>02 · Akordeons pirmajā rindā</b><i>Dzīvais variants. Dīlera apraksts un markas izvēršas zem Oficiālo dīleru dati. Naudas atmaksas garantija paliek tikai aktivizētā partnera profilā.</i></div>
+  <div class="shell"><div class="stage" data-acc></div></div>
+</section>
+<section id="c03">
+  <div class="cap"><b>03 · Divas nodaļas vienā slejā</b><i>Vispirms BUSINESS avoti, tad pilna DĪLERA DATI nodaļa. Abi produkti redzami bez klikšķa, bet lasās kā viena atskaite ar slāni.</i></div>
+  <div class="shell"><div class="stage" data-chapters></div></div>
+</section>
+<section id="c04">
+  <div class="cap"><b>04 · Tabi kartītē</b><i>Viena kartīte, divi iekšējie tabi: Viss (BUSINESS) un Dīlera dati. Produkta maiņa notiek vietā, ne ar hero pogu.</i></div>
+  <div class="shell"><div class="stage" data-tabs></div></div>
+</section>
+<section id="c05">
+  <div class="cap"><b>05 · Ligzdotais bērns</b><i>Dīlera dati ir ietvarots bloks BUSINESS iekšpusē. Tas ir iekļautais slānis, ne otrs katalogs blakus.</i></div>
+  <div class="shell"><div class="stage" data-nest></div></div>
+</section>
+<section id="c06">
+  <div class="cap"><b>06 · Divi SKU, viena galva</b><i>Viena PROVIN BUSINESS virsraksts. Divas cenas čipas: 79,99 € pilnā atskaite un 19,99 € tikai dīleris. Markas parādās, kad izvēlas dīleri.</i></div>
+  <div class="shell"><div class="stage" data-sku></div></div>
+</section>
+<section id="c07">
+  <div class="cap"><b>07 · Kreisā avoti, labā dīleris</b><i>Klikšķis uz oficiālajiem dīleru datiem aizpilda labo pusi. Viens kompozīts, ne divas līdzvērtīgas kolonnas.</i></div>
+  <div class="shell"><div class="stage" data-split></div></div>
+</section>
+<section id="c08">
+  <div class="cap"><b>08 · Slāņotas kartītes</b><i>BUSINESS ir pamats. Dīlera dati uzgulst kā šaurāka kārta ar savu mērķa tekstu. Abas cenas paliek redzamas.</i></div>
+  <div class="shell"><div class="stage" data-layers></div></div>
+</section>
+<section id="c09">
+  <div class="cap"><b>09 · Viena eseja, divi CTA</b><i>Viens stāsts. Apakšā divas darbības: pasūtīt BUSINESS vai tikai dīlera atskaiti. Markas atveras no saites.</i></div>
+  <div class="shell"><div class="stage" data-cta></div></div>
+</section>
+<section id="c10">
+  <div class="cap"><b>10 · Pastāvīgā marku sliede</b><i>BUSINESS saraksts kreisajā. Dīlera markas vienmēr labajā. Klikšķis nav vajadzīgs, lai saprastu, ka dīleris ir iekļauts un arī atsevišķs.</i></div>
+  <div class="shell"><div class="stage" data-rail></div></div>
+</section>
+
+<div class="overlay" id="ov">
+  <div class="panel">
+    <h3>DĪLERA DATI</h3>
+    <p class="goal">DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm. Vienā pārskatāmā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, veiktos remontus, apkopes un aktīvo kampaņu pārbaudi.</p>
+    <div class="brands" id="ov-brands"></div>
+    <div class="ok">100% Naudas atmaksas garantija</div>
+  </div>
+</div>
+
+<script>
+const FULL = ["Audi","Bentley","BMW","CUPRA","Ford","Infiniti","Jaguar","Lamborghini","Land Rover","Lexus","Mazda","Mercedes-Benz","MINI","Nissan","Opel","Porsche","SEAT","Škoda","Toyota","Vauxhall","Volkswagen","Volvo"];
+const WORK = ["Abarth","Alfa Romeo","Citroën","Dacia","Fiat","Genesis","Hyundai","Jeep","Kia","Lancia","Peugeot","Polestar","Renault","Smart"];
+const LIM = ["Alpine","Aston Martin","DS Automobiles","Ferrari","Honda","Lotus","Maserati","MG","Mitsubishi","Rolls-Royce","Subaru","Suzuki"];
+const ALL = [...FULL, ...WORK, ...LIM];
+const ITEMS = ["Oficiālo dīleru dati*","CarVertical + AutoDNA","Izcelsmes valsts reģistri","Izsoļu portālu arhīva dati","Apdrošinātāju dati","Tehnisko apskašu vēsture","Datu kopsavilkums"];
+const GOAL = 'PROVIN BUSINESS apvieno datus no <button type="button" class="link" data-open>oficiālajiem dīleru tīkliem</button>, carVertical, AutoDNA un Eiropas/Amerikas valstu reģistriem. Vienā ērtā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, negadījumu vēsturi un servisa ierakstus.';
+const DEALER_GOAL = "DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm.";
+function brandsHtml(){ return ALL.map((b)=>`<span>${b}</span>`).join(""); }
+function tiles(hitFirst){
+  return `<div class="tiles">${ITEMS.map((name,i)=>`<button type="button" class="tile${hitFirst&&i===0?" hit":""}" ${hitFirst&&i===0?'data-open':""}>${name}</button>`).join("")}</div>`;
+}
+function head(){ return `<h2 class="h2">PRO<span>VIN</span> BUSINESS</h2><div class="rule"></div>`; }
+
+document.getElementById("ov-brands").innerHTML = brandsHtml();
+const ov = document.getElementById("ov");
+ov.addEventListener("click", (e)=>{ if(e.target===ov) ov.classList.remove("on"); });
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") ov.classList.remove("on"); });
+document.addEventListener("click",(e)=>{
+  const t = e.target.closest("[data-open]");
+  if(t) ov.classList.add("on");
+});
+
+document.querySelector("[data-live]").innerHTML = `${head()}<p class="goal">${GOAL}</p>${tiles(true)}<p class="foot">*pieejama noteiktiem ražotājiem.</p>`;
+
+document.querySelector("[data-acc]").innerHTML = `${head()}<p class="goal">PROVIN BUSINESS apvieno datus no oficiālajiem dīleru tīkliem, carVertical un AutoDNA.</p>
+  <button type="button" class="acc" data-acc-btn>Oficiālo dīleru dati* <span style="float:right">+</span></button>
+  <div class="acc-body" data-acc-body><p class="goal">${DEALER_GOAL}</p><div class="brands">${brandsHtml()}</div></div>
+  ${tiles(false).replace("Oficiālo dīleru dati*","")}`;
+document.querySelector("[data-acc-btn]").addEventListener("click",()=>{
+  document.querySelector("[data-acc-body]").classList.toggle("on");
+});
+
+document.querySelector("[data-chapters]").innerHTML = `${head()}<p class="goal">Pilnā BUSINESS atskaite. Dīlera slānis ir tās daļa un arī atsevišķs 19,99 € produkts.</p>${tiles(false)}
+  <h2 class="h2" style="margin-top:1.4rem">DĪLERA DATI</h2><div class="rule"></div>
+  <p class="goal">${DEALER_GOAL}</p><div class="brands">${brandsHtml()}</div><div class="ok">100% Naudas atmaksas garantija</div>`;
+
+document.querySelector("[data-tabs]").innerHTML = `${head()}<div class="tabs"><button type="button" class="on" data-tab="b">Viss</button><button type="button" data-tab="d">Dīlera dati</button></div>
+  <div data-pane="b"><p class="goal">${GOAL}</p>${tiles(true)}</div>
+  <div data-pane="d" hidden><p class="goal">${DEALER_GOAL}</p><div class="brands">${brandsHtml()}</div><div class="ok">100% Naudas atmaksas garantija</div></div>`;
+document.querySelector("[data-tabs]").addEventListener("click",(e)=>{
+  const btn = e.target.closest("[data-tab]");
+  if(!btn) return;
+  const root = e.currentTarget;
+  root.querySelectorAll("[data-tab]").forEach((b)=>b.classList.toggle("on", b===btn));
+  root.parentElement.querySelectorAll("[data-pane]").forEach((p)=>{ p.hidden = p.getAttribute("data-pane")!==btn.getAttribute("data-tab"); });
+});
+
+document.querySelector("[data-nest]").innerHTML = `${head()}<p class="goal">${GOAL}</p>${tiles(true)}
+  <div class="child"><strong>Iekļautais slānis · DĪLERA DATI</strong><p class="goal">${DEALER_GOAL}</p><div class="brands">${FULL.slice(0,12).map(b=>`<span>${b}</span>`).join("")}</div><p class="foot">Visi 48 ražotāji atveras overlay.</p></div>`;
+
+document.querySelector("[data-sku]").innerHTML = `${head()}<p class="goal">Viens partnera piedāvājums, divas iegādes.</p>
+  <div class="prices"><div class="price on"><b>79,99 €</b>BUSINESS, visi avoti</div><div class="price"><b>19,99 €</b>tikai dīlera dati</div></div>
+  <p class="goal" style="margin-top:.85rem">${GOAL}</p>${tiles(true)}`;
+
+document.querySelector("[data-split]").innerHTML = `<div class="split"><div>${head()}<p class="goal">${GOAL}</p>${tiles(true)}</div>
+  <div><h2 class="h2">DĪLERA DATI</h2><div class="rule"></div><p class="goal">${DEALER_GOAL}</p><div class="brands">${brandsHtml()}</div></div></div>`;
+
+document.querySelector("[data-layers]").innerHTML = `${head()}<p class="goal">Jumta atskaite paliek BUSINESS. Dīleris ir uzlikts slānis, ne otra lapa.</p>${tiles(false)}
+  <div class="child" style="margin-left:1.2rem"><strong>DĪLERA DATI · 19,99 €</strong><p class="goal">${DEALER_GOAL}</p><button type="button" class="link" data-open>Visi ražotāji</button></div>`;
+
+document.querySelector("[data-cta]").innerHTML = `${head()}<p class="goal">${GOAL} Klients saprot abus produktus no viena teksta.</p>
+  <div class="prices"><div class="price"><b>PASŪTĪT BUSINESS</b>79,99 €</div><div class="price"><b>TIKAI DĪLERIS</b>19,99 €</div></div>
+  <p class="foot">Marku saraksts atveras no zilās frāzes.</p>`;
+
+document.querySelector("[data-rail]").innerHTML = `<div class="split"><div>${head()}<p class="goal">${GOAL}</p>${tiles(true)}</div>
+  <div><p class="foot" style="margin:0 0 .4rem">Dīlera pārklājums · 48</p><div class="brands">${brandsHtml()}</div><div class="ok">100% naudas atmaksa, ja odometra nav</div></div></div>`;
+</script>
+</body>
+</html>
