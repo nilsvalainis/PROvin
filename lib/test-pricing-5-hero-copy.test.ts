@@ -14,8 +14,8 @@ describe("getTp5HeroCopy", () => {
 
   it("switches the H1 when the dealer tab is active", () => {
     const lv = getTp5HeroCopy("lv", "dealer");
-    expect(lv.titlePrefix + lv.titleAccent).toBe("Oficiālā dīlera dati");
+    expect(lv.titlePrefix + lv.titleAccent).toBe("Oficiālā dīlera datu atskaite");
     const en = getTp5HeroCopy("en", "dealer");
-    expect(en.titlePrefix + en.titleAccent).toBe("Official dealer data");
+    expect(en.titlePrefix + en.titleAccent).toBe("Official dealer data report");
   });
 });

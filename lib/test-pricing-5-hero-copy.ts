@@ -9,8 +9,8 @@ export const TP5_HERO_TITLE_ACCENT = "audits";
 export const TP5_HERO_TITLE_DESKTOP_LINE1 = "Auto vēstures";
 export const TP5_HERO_TITLE_DESKTOP_LINE2_PREFIX = "un sludinājuma ";
 
-export const TP5_HERO_DEALER_TITLE_PREFIX = "Oficiālā dīlera ";
-export const TP5_HERO_DEALER_TITLE_ACCENT = "dati";
+export const TP5_HERO_DEALER_TITLE_PREFIX = "Oficiālā dīlera datu ";
+export const TP5_HERO_DEALER_TITLE_ACCENT = "atskaite";
 
 export const TP5_HERO_SUBHEAD_LEAD = "Uzzini visu par savu nākamo auto.";
 export const TP5_HERO_SUBHEAD_ACCENT =
@@ -46,8 +46,8 @@ const TP5_HERO_DEALER_COPY_LV: Tp5HeroCopy = {
 
 const TP5_HERO_DEALER_COPY_EN: Tp5HeroCopy = {
   ...TP5_HERO_COPY_EN,
-  titlePrefix: "Official dealer ",
-  titleAccent: "data",
+  titlePrefix: "Official dealer data ",
+  titleAccent: "report",
 };
 
 /** Locale-aware hero copy; anything other than `en` falls back to Latvian. */
