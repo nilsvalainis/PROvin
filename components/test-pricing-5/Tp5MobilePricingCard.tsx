@@ -21,6 +21,7 @@ import {
   TP5_DEALER_SAMPLE_REPORT_HREF,
   TP5_MINI_SAMPLE_REPORT_HREF,
   getTp5UiCopy,
+  type DealerBrandsTipCopy,
   type Tp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
@@ -65,7 +66,7 @@ function DealerFeatureHighlight({
 }: {
   feature: Tp5MobileFeature;
   brands: readonly string[];
-  uiCopy: Pick<Tp5UiCopy, "dealerBrandsTrigger" | "dealerBrandsAria" | "dealerBrandsClose">;
+  uiCopy: DealerBrandsTipCopy;
 }) {
   return (
     <div className={styles.dealerFeatureHighlight} role="listitem">

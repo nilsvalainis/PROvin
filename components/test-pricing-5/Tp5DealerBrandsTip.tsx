@@ -4,22 +4,11 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
 import { DealerCoverageBrandSections } from "@/components/test-pricing-5/DealerCoverageBrandSections";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import type { Tp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
+import type { DealerBrandsTipCopy } from "@/lib/test-pricing-5-ui-copy";
 
 type Props = {
   brands: readonly string[];
-  copy: Pick<
-    Tp5UiCopy,
-    | "dealerBrandsTrigger"
-    | "dealerBrandsAria"
-    | "dealerBrandsClose"
-    | "dealerCoverageFullTitle"
-    | "dealerCoverageFullBody"
-    | "dealerCoverageWorkshopTitle"
-    | "dealerCoverageWorkshopBody"
-    | "dealerCoverageLimitedTitle"
-    | "dealerCoverageLimitedBody"
-  >;
+  copy: DealerBrandsTipCopy;
 };
 
 /** „Atbalstītie ražotāji ⓘ” — opens a compact brands-only dialog. */

@@ -196,6 +196,9 @@ export type DealerCoverageCopy = Pick<
   | "dealerCoverageLimitedBody"
 >;
 
+export type DealerBrandsTipCopy = DealerCoverageCopy &
+  Pick<Tp5UiCopy, "dealerBrandsTrigger" | "dealerBrandsAria" | "dealerBrandsClose">;
+
 export function getDealerCoverageTierCopy(
   copy: DealerCoverageCopy,
   id: "full" | "workshop" | "limited",
