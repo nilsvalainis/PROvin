@@ -93,5 +93,6 @@ describe("admin VIN service URLs", () => {
     expect(SOURCE_BLOCK_EXTERNAL_URL.autodna).not.toContain("autodna.com");
     expect(SOURCE_BLOCK_EXTERNAL_URL.carvertical).toBe(CARVERTICAL_REPORTS_URL);
     expect(SOURCE_BLOCK_EXTERNAL_URL.carvertical).not.toContain("carvertical.lv");
+    expect(SOURCE_BLOCK_EXTERNAL_URL.cc_vin).toBe(CHECKCAR_VIN_HOME_URL);
   });
 });

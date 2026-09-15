@@ -14,6 +14,7 @@ import {
   AUTORECORDS_BASE_URL,
   CARINFO_HOME_URL,
   CARVERTICAL_REPORTS_URL,
+  CHECKCAR_VIN_HOME_URL,
 } from "@/lib/admin-vin-urls";
 import { emptyOneautoBlock, parseOneautoBlockRaw, type OneautoBlockState } from "@/lib/oneauto-block";
 import {
@@ -206,7 +207,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   carvertical: CARVERTICAL_REPORTS_URL,
   auto_records: AUTORECORDS_BASE_URL.replace(/\/$/, ""),
   oneauto: "https://www.oneautoapi.com/home/api/",
-  cc_vin: "https://cc.vin",
+  cc_vin: CHECKCAR_VIN_HOME_URL,
   asv: "https://www.vinaudit.com",
   tjekbil: "https://www.tjekbil.dk",
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",

@@ -192,8 +192,6 @@ import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
-import { paidProductLabel } from "@/lib/admin-customer-identity";
-import { formatMoneyEur } from "@/lib/format-money";
 import {
   AdminCommonPhrasesDrawer,
   AdminCommonPhrasesDrawerTrigger,
@@ -388,7 +386,7 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   complete: "bg-emerald-500",
 };
 
-const WIZARD_SUMMARY_STEP = 10;
+const WIZARD_SUMMARY_STEP = 11;
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
   const vin = (p.vin ?? "").trim();
@@ -2920,6 +2918,7 @@ export function OrderDetailWorkspace({
         { label: "Dīleris", Icon: CarFront, row: 1 as const },
         { label: "Citi avoti", Icon: Link2, row: 1 as const },
         { label: "Starptaut.", Icon: Globe, row: 2 as const },
+        { label: "ASV", Icon: Flag, row: 2 as const },
         { label: "Tjekbil", Icon: Landmark, row: 2 as const },
         { label: "Igaunija", Icon: Flag, row: 2 as const },
         { label: "car.info", Icon: Globe, row: 2 as const },
@@ -3753,15 +3752,6 @@ export function OrderDetailWorkspace({
     openWhatsAppChat(whatsappPhoneDigits, WHATSAPP_PREFILL_AUDIT);
   }, [whatsappPhoneDigits]);
 
-  const productBadgeLabel = paidProductLabel({
-    checkoutLine: payload.checkoutLine,
-    amountTotalCents: payload.amountTotal,
-  });
-  const productBadgePrice =
-    payload.amountTotal != null && payload.amountTotal > 0
-      ? formatMoneyEur(payload.amountTotal, payload.currency)
-      : "";
-
   return (
     <div className="relative min-w-0 pb-24 max-md:pb-36">
       {previewBody}
@@ -3989,7 +3979,7 @@ export function OrderDetailWorkspace({
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
-        {/* Telefonā soļi ir pirmie (order-1); Saglabāt/badge/statuss iet uz apakšējo doku / kompakto rindu. */}
+        {/* Telefonā soļi ir pirmie (order-1); Saglabāt iet uz apakšējo doku. */}
         <div className={`mx-auto flex w-full min-w-0 flex-col gap-1.5 md:flex-row md:flex-wrap md:items-center md:gap-2 ${ADMIN_CONTENT_MAX}`}>
           <div className="order-2 flex min-w-0 flex-wrap items-center gap-1.5 md:order-1 md:contents">
           <button
@@ -4004,8 +3994,29 @@ export function OrderDetailWorkspace({
           <button
             type="button"
             disabled={!workspaceHydrated || workspaceSaveBusy}
-            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-emerald-700/25 bg-emerald-50/90 px-2 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 max-md:hidden dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+            className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-semibold shadow-sm transition disabled:opacity-50 max-md:hidden ${
+              workspaceSaveBusy
+                ? "border-emerald-700/25 bg-emerald-50/90 text-emerald-900 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+                : workspaceAutosaveStatus === "error"
+                  ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
+                  : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
+                    ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
+                      ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
+                      : "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                    : "border-emerald-700/25 bg-emerald-50/90 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+            }`}
             title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) - lokāli un serverī"
+            aria-label={
+              workspaceSaveBusy
+                ? "Saglabā"
+                : workspaceAutosaveStatus === "error"
+                  ? "Saglabāt. Kļūda saglabājot"
+                  : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
+                    ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
+                      ? "Saglabāt. Saglabāts pārlūkā, servera melnraksts neizdevās"
+                      : "Saglabāt. Saglabāts"
+                    : "Saglabāt avotu datus"
+            }
             onClick={() => {
               setWorkspaceSaveBusy(true);
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
@@ -4013,35 +4024,9 @@ export function OrderDetailWorkspace({
           >
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
-          <span
-            className="inline-flex max-w-[min(100%,14rem)] items-center gap-1 rounded-md border border-amber-300/80 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-950"
-            title="Pasūtītais produkts"
-          >
-            <span className="truncate">{productBadgeLabel}</span>
-            {productBadgePrice ? (
-              <span className="shrink-0 tabular-nums font-bold normal-case tracking-normal">{productBadgePrice}</span>
-            ) : null}
-          </span>
-          {workspaceAutosaveStatus === "saving" ? (
-            <span className="text-[10px] font-medium text-[var(--color-provin-muted)] max-md:hidden" role="status">
-              Saglabā…
-            </span>
-          ) : workspaceAutosaveStatus === "error" ? (
+          {workspaceAutosaveStatus === "error" ? (
             <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800 max-md:hidden" role="status">
               Kļūda saglabājot
-            </span>
-          ) : workspaceSaveFlash || workspaceAutosaveStatus === "saved" ? (
-            <span
-              className={`max-w-[11rem] text-[10px] font-semibold leading-tight max-md:hidden ${
-                orderDraftPersistenceEnabled && !workspaceSaveServerOk ? "text-amber-800" : "text-emerald-700"
-              }`}
-              role="status"
-            >
-              {!orderDraftPersistenceEnabled
-                ? "Saglabāts pārlūkā"
-                : workspaceSaveServerOk
-                  ? "Saglabāts"
-                  : "Saglabāts pārlūkā - servera melnraksts neizdevās"}
             </span>
           ) : null}
           {payload.isDemo ? (
@@ -4091,7 +4076,7 @@ export function OrderDetailWorkspace({
               iepakojumu, tāpēc soļi paliek pareizā secībā un desktop režģis nemainās. */}
           <div className="order-1 flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:order-2">
             {([1, 2] as const).map((row) => {
-              const cols = row === 1 ? "grid-cols-5" : "grid-cols-6";
+              const cols = row === 1 ? "grid-cols-5" : "grid-cols-7";
               return (
                 <div key={row} className={`grid min-w-0 ${cols} gap-1 max-md:contents`}>
                   {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
@@ -4449,6 +4434,11 @@ export function OrderDetailWorkspace({
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
               applyPatchedBlocks={applyCopilotPatchedBlocks}
             />
+          </div>
+        ) : null}
+
+        {wizardStep === 6 ? (
+          <div id="admin-order-block-asv" className="min-w-0">
             <AdminAsvSourceBlock
               value={blocksDisplaySafe.asv}
               readOnly={false}
@@ -4466,7 +4456,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {wizardStep === 7 ? (
           <div id="admin-order-block-tjekbil" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
@@ -4487,7 +4477,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {wizardStep === 8 ? (
           <div id="admin-order-block-estonia" className="min-w-0">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
@@ -4516,7 +4506,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 8 ? (
+        {wizardStep === 9 ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -4537,7 +4527,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 9 ? (
+        {wizardStep === 10 ? (
           <section id="admin-order-section-sludinajums" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
@@ -4617,7 +4607,7 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 10 ? (
+        {wizardStep === 11 ? (
           <section id="admin-order-section-kopsavilkums" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">

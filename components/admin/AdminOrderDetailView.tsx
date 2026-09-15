@@ -17,6 +17,7 @@ import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHistoryPanel";
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
+import { paidProductLabel } from "@/lib/admin-customer-identity";
 import { formatOrderTimestampSec } from "@/lib/format-order-datetime";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
@@ -642,10 +643,23 @@ export function AdminOrderDetailView({
         </div>
       ) : null}
 
-      <header className="mb-3 border-b border-[var(--admin-border-subtle)] pb-2">
+      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-[var(--admin-border-subtle)] pb-2">
         <h1 className="text-[13px] font-semibold tracking-tight text-[var(--color-apple-text)]">
           Pasūtījums
         </h1>
+        <p className="text-[11px] font-semibold text-[var(--color-provin-muted)]" title="Pasūtītais produkts">
+          <span className="uppercase tracking-wide text-[var(--color-apple-text)]">
+            {paidProductLabel({
+              checkoutLine: order.checkoutLine,
+              amountTotalCents: order.amountTotal,
+            })}
+          </span>
+          {order.amountTotal != null && order.amountTotal > 0 ? (
+            <span className="ml-1.5 tabular-nums font-bold text-[var(--color-apple-text)]">
+              {formatMoneyEur(order.amountTotal, order.currency)}
+            </span>
+          ) : null}
+        </p>
       </header>
 
       <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
