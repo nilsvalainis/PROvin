@@ -341,6 +341,26 @@ export function getB2bBusinessHeroFeatures(locale?: string): readonly string[] {
   return B2B_BUSINESS_HERO_FEATURES;
 }
 
+const B2B_MILEAGE_HISTORY_TITLE = "Nobraukuma vēsture";
+const B2B_MILEAGE_HISTORY_TITLE_EN = "Mileage history";
+const B2B_MILEAGE_HISTORY_TITLE_DE = "Kilometerhistorie";
+const B2B_MILEAGE_HISTORY_TITLE_RU = "История пробега";
+
+/** 8 hairline sources for the login hero (catalog stays at 7 tiles). */
+export function getB2bHeroSourceItems(locale?: string): B2bCatalogItem[] {
+  const items = getB2bCatalog(locale).business.items.map((item) => ({ ...item }));
+  const title =
+    locale === "en"
+      ? B2B_MILEAGE_HISTORY_TITLE_EN
+      : locale === "de"
+        ? B2B_MILEAGE_HISTORY_TITLE_DE
+        : locale === "ru"
+          ? B2B_MILEAGE_HISTORY_TITLE_RU
+          : B2B_MILEAGE_HISTORY_TITLE;
+  items.splice(5, 0, { icon: "gauge", title });
+  return items;
+}
+
 export function getB2bBusinessDesktopFeatures(locale?: string): Tp5DesktopHeroFeature[] {
   if (locale === "en") return B2B_BUSINESS_DESKTOP_FEATURES_EN;
   if (locale === "de") return B2B_BUSINESS_DESKTOP_FEATURES_DE;

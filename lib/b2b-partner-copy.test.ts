@@ -8,6 +8,7 @@ import {
   formatB2bEuroFromCents,
   getB2bCatalog,
   getB2bBusinessHeroFeatures,
+  getB2bHeroSourceItems,
   splitB2bGoalAroundLink,
 } from "@/lib/b2b-partner-copy";
 
@@ -42,6 +43,14 @@ describe("b2b partner prices", () => {
     expect(getB2bCatalog("ru").business.goal).toContain("PROVIN BUSINESS");
     expect(getB2bBusinessHeroFeatures("de")[0]).toBe("Offizielle Händlerdaten*");
     expect(getB2bCatalog("lv").dealer.title).toBe("DĪLERA DATI");
+  });
+
+  it("adds mileage history so the login hero source list is 8 items", () => {
+    const lv = getB2bHeroSourceItems("lv");
+    expect(lv).toHaveLength(8);
+    expect(lv[5]).toEqual({ icon: "gauge", title: "Nobraukuma vēsture" });
+    expect(getB2bHeroSourceItems("en")[5]?.title).toBe("Mileage history");
+    expect(getB2bCatalog("lv").business.items).toHaveLength(7);
   });
 
   it("keeps the dealer phrase inside every BUSINESS goal so the landing can open the full list", () => {
