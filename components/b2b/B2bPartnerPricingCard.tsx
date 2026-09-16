@@ -14,7 +14,7 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { TP5_DEALER_BRANDS } from "@/lib/test-pricing-5-mobile";
+import { TP5_DEALER_BRANDS, getTp5MobileService, getTp5MobileTurnaround } from "@/lib/test-pricing-5-mobile";
 import {
   getTp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
@@ -264,15 +264,15 @@ export function B2bPartnerPricingCard({
       </div>
 
       <p className={styles.turnaround}>
-        <span>⏱️ Izpilde: 24-72h</span>
-        {!isDealer ? (
-          <>
-            <span className={styles.turnaroundDivider} aria-hidden>
-              |
-            </span>
-            <Tp5TurnaroundInfoTip copy={uiCopy} />
-          </>
-        ) : null}
+        <span>
+          {isDealer
+            ? getTp5MobileService("dealer", locale).turnaround
+            : getTp5MobileTurnaround(locale)}
+        </span>
+        <span className={styles.turnaroundDivider} aria-hidden>
+          |
+        </span>
+        <Tp5TurnaroundInfoTip copy={uiCopy} />
       </p>
 
       <div className={styles.ctaWrap}>

@@ -156,7 +156,8 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(TP5_DEALER_BRANDS).toHaveLength(48);
     expect(TP5_DEALER_BRANDS_WITH_LOGO).toHaveLength(48);
     expect(dealer.brands).toEqual([...TP5_DEALER_BRANDS]);
-    expect(dealer.turnaround).toBe("⏱️ Izpilde: 24-72h");
+    expect(dealer.turnaround).toBe("⏱️ Izpilde: 24h");
+    expect(getTp5MobileService("dealer", "en").turnaround).toBe("⏱️ Delivery: 24h");
     expect(TP5_DEALER_SAMPLE_REPORT_HREF).toBe("/samples/provin-dilera-dati-piemers.pdf");
     expect(TP5_MINI_SAMPLE_REPORT_HREF).toBe("/samples/provin-mini-piemers.pdf");
   });

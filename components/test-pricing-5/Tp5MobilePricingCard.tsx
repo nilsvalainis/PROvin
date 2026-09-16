@@ -205,7 +205,6 @@ function CheckoutFields({
 }
 
 function TurnaroundAndCta({
-  isDealer,
   turnaroundLabel,
   uiCopy,
   globalError,
@@ -214,7 +213,6 @@ function TurnaroundAndCta({
   sampleReportHref,
   onSubmit,
 }: {
-  isDealer: boolean;
   turnaroundLabel: string;
   uiCopy: Tp5UiCopy;
   globalError: string | null;
@@ -227,14 +225,10 @@ function TurnaroundAndCta({
     <>
       <p className={styles.turnaround}>
         <span>{turnaroundLabel}</span>
-        {!isDealer ? (
-          <>
-            <span className={styles.turnaroundDivider} aria-hidden>
-              |
-            </span>
-            <Tp5TurnaroundInfoTip copy={uiCopy} />
-          </>
-        ) : null}
+        <span className={styles.turnaroundDivider} aria-hidden>
+          |
+        </span>
+        <Tp5TurnaroundInfoTip copy={uiCopy} />
       </p>
 
       <div className={styles.ctaWrap}>
@@ -279,7 +273,6 @@ function MobilePackLayout({
   stopSwipePropagation,
   turnaroundLabel,
   sampleReportHref,
-  isDealer,
   ctaLabel,
 }: {
   services: Tp5MobileService[];
@@ -298,7 +291,6 @@ function MobilePackLayout({
   stopSwipePropagation?: (event: SyntheticEvent) => void;
   turnaroundLabel: string;
   sampleReportHref: string | null;
-  isDealer: boolean;
   ctaLabel: string;
 }) {
   const cardTitle = getTp5MobileCardTitle(activeService);
@@ -363,7 +355,6 @@ function MobilePackLayout({
       />
 
       <TurnaroundAndCta
-        isDealer={isDealer}
         turnaroundLabel={turnaroundLabel}
         uiCopy={uiCopy}
         globalError={globalError}
@@ -462,7 +453,6 @@ export function Tp5MobilePricingCard({
           stopSwipePropagation={stopSwipePropagation}
           turnaroundLabel={turnaroundLabel}
           sampleReportHref={sampleReportHref}
-          isDealer={isDealer}
           ctaLabel={ctaLabel}
         />
       </div>
@@ -535,7 +525,6 @@ export function Tp5MobilePricingCard({
       </div>
 
       <TurnaroundAndCta
-        isDealer={isDealer}
         turnaroundLabel={turnaroundLabel}
         uiCopy={uiCopy}
         globalError={globalError}

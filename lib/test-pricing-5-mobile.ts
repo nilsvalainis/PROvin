@@ -175,7 +175,7 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     description: "",
     features: DEALER_FEATURES_LV,
     brands: TP5_DEALER_BRANDS,
-    turnaround: "⏱️ Izpilde: 24-72h",
+    turnaround: "⏱️ Izpilde: 24h",
   },
   {
     id: "koreaUsa",
@@ -223,7 +223,7 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     description: "",
     features: DEALER_FEATURES_EN,
     brands: TP5_DEALER_BRANDS,
-    turnaround: "⏱️ Delivery: 24-72h",
+    turnaround: "⏱️ Delivery: 24h",
   },
   {
     id: "koreaUsa",
