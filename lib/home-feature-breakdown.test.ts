@@ -48,7 +48,7 @@ describe("pakalpojumi catalog", () => {
     expect(partner.buttonText).toBe("Partneriem");
     expect(partner.ctaHref).toBe("/partneriem");
     expect(partner.sampleReportHref).toBeUndefined();
-    expect(partner.goal).toContain("nekvalitatīvu apkopju");
+    expect(partner.goal).toContain("apkopes intervāliem");
     expect(partner.items).toHaveLength(4);
   });
 
