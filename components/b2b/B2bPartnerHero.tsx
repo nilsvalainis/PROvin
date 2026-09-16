@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   Camera,
   ClipboardCheck,
@@ -67,11 +67,10 @@ export function B2bPartnerHero({
   const email = contactEmail();
   const sources = getB2bHeroSourceItems(locale);
   const aside = panel ?? <B2bPartnerLogin />;
-  const [activeBeat, setActiveBeat] = useState(0);
   const beats = [
     { label: t("heroBeatRisk"), body: t("heroLead") },
     { label: t("heroBeatReputation"), body: t("heroLeadProof") },
-    { label: t("heroBeatClients"), body: t("heroLeadTrust") },
+    { label: t("heroBeatSafety"), body: t("heroLeadTrust") },
   ];
 
   return (
@@ -128,35 +127,22 @@ export function B2bPartnerHero({
             <h2 className="mb-5 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
               {t("heroWhyHeading")}
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-              {beats.map((beat, index) => {
-                const selected = activeBeat === index;
-                return (
-                  <button
-                    key={beat.label}
-                    type="button"
-                    onClick={() => setActiveBeat(index)}
-                    className={`rounded-xl border px-4 py-4 text-left transition-colors ${
-                      selected
-                        ? "border-[#2563EB]/70 bg-white/[0.045]"
-                        : "border-white/10 hover:border-[#60a5fa]/45 hover:bg-white/[0.025]"
-                    }`}
-                    aria-pressed={selected}
-                  >
-                    <span className="flex items-baseline gap-2.5">
-                      <span className="text-[0.58rem] font-bold tabular-nums tracking-[0.12em] text-[#60a5fa]">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span className="text-[0.58rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
-                        {beat.label}
-                      </span>
+            <div className="grid items-start gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
+              {beats.map((beat, index) => (
+                <article key={beat.label} className="min-w-0">
+                  <p className="flex items-baseline gap-2.5">
+                    <span className="text-[0.58rem] font-bold tabular-nums tracking-[0.12em] text-[#60a5fa]">
+                      {String(index + 1).padStart(2, "0")}
                     </span>
-                    <span className="mt-2.5 block text-[0.84rem] font-normal leading-[1.58] text-zinc-300 lg:text-[0.88rem] lg:leading-[1.6]">
-                      {beat.body}
+                    <span className="text-[0.58rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
+                      {beat.label}
                     </span>
-                  </button>
-                );
-              })}
+                  </p>
+                  <p className="mt-2.5 text-[0.84rem] font-normal leading-[1.58] text-zinc-300 lg:text-[0.88rem] lg:leading-[1.6]">
+                    {beat.body}
+                  </p>
+                </article>
+              ))}
             </div>
             {hideContact && !afterContact ? null : (
               <div className="mt-6 space-y-2">
