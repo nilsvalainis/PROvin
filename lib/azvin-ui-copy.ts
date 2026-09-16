@@ -12,6 +12,8 @@ export type AzvinUiCopy = {
   sampleReportLink: string;
   dealerRefundBanner: string;
   dealerBrandsAria: string;
+  dealerBrandsClose: string;
+  featureInfoAria: string;
   metaDealerTitle: string;
 };
 
@@ -29,6 +31,8 @@ const UI_AZ: AzvinUiCopy = {
   dealerRefundBanner:
     "100% pulun qaytarılması zəmanəti: Diler bazalarında məlumat yoxdursa, tam geri ödəniş edəcəyik.",
   dealerBrandsAria: "Dəstəklənən istehsalçılar",
+  dealerBrandsClose: "Bağla",
+  featureInfoAria: "Əlavə məlumat",
   metaDealerTitle: "Rəsmi diler məlumatları",
 };
 
@@ -44,6 +48,8 @@ const UI_EN: AzvinUiCopy = {
   dealerRefundBanner:
     "100% refund guarantee: If no data is available in dealer databases, we will issue a full refund.",
   dealerBrandsAria: "Supported manufacturers",
+  dealerBrandsClose: "Close",
+  featureInfoAria: "More information",
   metaDealerTitle: "Authorized dealer data",
 };
 
@@ -59,6 +65,8 @@ const UI_RU: AzvinUiCopy = {
   dealerRefundBanner:
     "100% гарантия возврата: если данных нет в дилерских базах, сделаем полный возврат.",
   dealerBrandsAria: "Поддерживаемые производители",
+  dealerBrandsClose: "Закрыть",
+  featureInfoAria: "Дополнительная информация",
   metaDealerTitle: "Данные авторизованного дилера",
 };
 
@@ -74,6 +82,8 @@ const UI_LV: AzvinUiCopy = {
   dealerRefundBanner:
     "100% Naudas atmaksas garantija: Ja dīleru datubāzēs dati nav pieejami, veiksim pilnu atmaksu.",
   dealerBrandsAria: "Atbalstītie ražotāji",
+  dealerBrandsClose: "Aizvērt",
+  featureInfoAria: "Papildu informācija",
   metaDealerTitle: "Autorizētā dīlera dati",
 };
 

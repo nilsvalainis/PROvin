@@ -467,6 +467,33 @@
   font-weight: 550;
 }
 
+.featureLabelGuaranteeNowrap {
+  white-space: nowrap;
+  font-size: 0.62rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.featureLabelWithInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.featureInlineInfo {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.featureInlineInfo .dealerRefundHit {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+}
+
 .featureMarkGuarantee {
   color: rgb(167 243 208 / 0.95);
 }
@@ -892,10 +919,28 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
     left: auto;
     top: auto;
     bottom: auto;
-    width: min(19.5rem, calc(100vw - 2rem));
-    max-height: min(68vh, 26rem);
+    width: min(22.75rem, calc(100vw - 1.25rem));
+    max-height: min(86vh, 42rem);
     pointer-events: auto;
     transform-origin: center center;
+  }
+
+  .dealerHeroBrandChipsPopup {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 0.5rem;
+    row-gap: 0.5rem;
+  }
+
+  .dealerHeroBrandChipsPopup .dealerBrandItem {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dealerHeroBrandChipsPopup .dealerBrandChip {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.25;
   }
 }
 
@@ -1203,6 +1248,11 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   column-gap: 0.28rem;
   row-gap: 0.34rem;
+}
+
+.dealerHeroBrandChipsPopup .dealerBrandItem {
+  min-width: 0;
+  max-width: 100%;
 }
 
 @media (min-width: 360px) {

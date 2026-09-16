@@ -1,8 +1,8 @@
 "use client";
 
-import { Globe } from "lucide-react";
-import { type SyntheticEvent, type TouchEvent, useEffect, useRef, useState } from "react";
+import { type MouseEvent, type SyntheticEvent, type TouchEvent, useEffect, useId, useRef, useState } from "react";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
+import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
 import {
   getAzvinMobileService,
@@ -14,11 +14,7 @@ import {
   AZVIN_DEALER_SAMPLE_REPORT_HREF,
   getAzvinUiCopy,
 } from "@/lib/azvin-ui-copy";
-import {
-  TP5_DEALER_BRAND_DARK_PLATE,
-  TP5_DEALER_BRAND_LOGO_SRC,
-  TP5_DEALER_BRANDS_WITH_LOGO,
-} from "@/lib/test-pricing-5-mobile";
+import { getTp5UiCopy, type DealerBrandsTipCopy } from "@/lib/test-pricing-5-ui-copy";
 
 function SampleReportPdfIcon() {
   return (
@@ -50,26 +46,123 @@ function SampleReportPdfIcon() {
   );
 }
 
-function HighlightFeature({ feature }: { feature: AzvinMobileFeature }) {
+function canHoverFinePointer(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+function FeatureInfoTip({ text, ariaLabel }: { text: string; ariaLabel: string }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLSpanElement | null>(null);
+  const tipId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const root = rootRef.current;
+      if (!root || !(event.target instanceof Node)) return;
+      if (!root.contains(event.target)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function toggle(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen((prev) => !prev);
+  }
+
+  function stopSwipe(event: TouchEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+  }
+
   return (
-    <div className={styles.dealerFeatureHighlight} role="listitem">
-      <Globe className={styles.dealerFeatureIcon} aria-hidden />
-      <div className={styles.dealerFeatureCopy}>
-        <p className={styles.dealerFeatureTitle}>{feature.name}</p>
-        {feature.subtitle ? <p className={styles.dealerFeatureSubtitle}>{feature.subtitle}</p> : null}
-      </div>
-    </div>
+    <span
+      ref={rootRef}
+      className={styles.featureInlineInfo}
+      onMouseEnter={() => {
+        if (canHoverFinePointer()) setOpen(true);
+      }}
+      onMouseLeave={() => {
+        if (canHoverFinePointer()) setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        className={styles.dealerRefundHit}
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-controls={tipId}
+        onClick={toggle}
+        onTouchStart={stopSwipe}
+        onTouchEnd={stopSwipe}
+      >
+        <span className={styles.dealerRefundInfoBtn} aria-hidden>
+          <span>i</span>
+        </span>
+      </button>
+      {open ? (
+        <span id={tipId} role="tooltip" className={styles.dealerRefundPopup}>
+          <span className={styles.dealerRefundPopupText}>{text}</span>
+        </span>
+      ) : null}
+    </span>
   );
 }
 
-function FeatureRow({ feature }: { feature: AzvinMobileFeature }) {
+function FeatureRow({
+  feature,
+  brands,
+  brandsCopy,
+  infoAria,
+}: {
+  feature: AzvinMobileFeature;
+  brands: readonly string[];
+  brandsCopy: DealerBrandsTipCopy;
+  infoAria: string;
+}) {
+  if (feature.tone === "guarantee") {
+    return (
+      <li className={styles.featureRow}>
+        <span className={`${styles.featureMark} ${styles.featureMarkGuarantee}`} aria-hidden>
+          ✓
+        </span>
+        <span className={`${styles.featureLabelGuarantee} ${styles.featureLabelGuaranteeNowrap}`}>
+          {feature.name}
+        </span>
+      </li>
+    );
+  }
+
+  if (feature.tone === "brands") {
+    return (
+      <li className={`${styles.featureRow} ${styles.featureRowBrands}`}>
+        <span className={`${styles.featureMark} ${styles.featureMarkBrands}`} aria-hidden />
+        <span className={styles.featureLabelBrands}>
+          <Tp5DealerBrandsTip brands={brands} copy={brandsCopy} />
+        </span>
+      </li>
+    );
+  }
+
   if (feature.included) {
     return (
       <li className={styles.featureRow}>
         <span className={`${styles.featureMark} ${styles.featureMarkBlue}`} aria-hidden>
           ✓
         </span>
-        <span className={styles.featureLabelActive}>{feature.name}</span>
+        <span className={`${styles.featureLabelActive}${feature.infoTip ? ` ${styles.featureLabelWithInfo}` : ""}`}>
+          {feature.name}
+          {feature.infoTip ? <FeatureInfoTip text={feature.infoTip} ariaLabel={infoAria} /> : null}
+        </span>
       </li>
     );
   }
@@ -81,89 +174,6 @@ function FeatureRow({ feature }: { feature: AzvinMobileFeature }) {
       </span>
       <span className={styles.featureLabelMuted}>{feature.name}</span>
     </li>
-  );
-}
-
-/** PROVIN dealer brand grid — copied 1:1. */
-function DealerBrandBadges({ brandsAria }: { brandsAria: string }) {
-  const [openBrand, setOpenBrand] = useState<string | null>(null);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const touchMovedRef = useRef(false);
-
-  useEffect(() => {
-    if (!openBrand) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const root = rootRef.current;
-      if (!root || !(event.target instanceof Node)) return;
-      if (!root.contains(event.target)) setOpenBrand(null);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenBrand(null);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [openBrand]);
-
-  return (
-    <div ref={rootRef} className={styles.dealerInlineBrands} aria-label={brandsAria}>
-      {TP5_DEALER_BRANDS_WITH_LOGO.map((brand) => {
-        const src = TP5_DEALER_BRAND_LOGO_SRC[brand]!;
-        const darkPlate = TP5_DEALER_BRAND_DARK_PLATE.has(brand);
-        const open = openBrand === brand;
-        return (
-          <div
-            key={brand}
-            role="button"
-            tabIndex={0}
-            className={`${styles.dealerInlineBrandCell}${open ? ` ${styles.dealerInlineBrandCellOpen}` : ""}`}
-            aria-label={brand}
-            aria-expanded={open}
-            onMouseEnter={() => setOpenBrand(brand)}
-            onMouseLeave={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
-            onFocus={() => setOpenBrand(brand)}
-            onBlur={() => setOpenBrand((prev) => (prev === brand ? null : prev))}
-            onTouchStart={() => {
-              touchMovedRef.current = false;
-            }}
-            onTouchMove={() => {
-              touchMovedRef.current = true;
-            }}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter" && event.key !== " ") return;
-              event.preventDefault();
-              setOpenBrand((prev) => (prev === brand ? null : brand));
-            }}
-            onClick={() => {
-              if (touchMovedRef.current) return;
-              if (
-                typeof window !== "undefined" &&
-                window.matchMedia("(hover: hover) and (pointer: fine)").matches
-              ) {
-                return;
-              }
-              setOpenBrand((prev) => (prev === brand ? null : brand));
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt=""
-              className={`${styles.dealerInlineBrandLogo}${darkPlate ? ` ${styles.dealerInlineBrandLogoDarkPlate}` : ""}`}
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-            />
-            <span className={styles.dealerInlineBrandTip} role="tooltip">
-              {brand}
-            </span>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -222,6 +232,13 @@ export function AzvinPricingCard({
   const turnaroundLabel = activeService.turnaround ?? "";
   const sampleReportHref = isDealer ? AZVIN_DEALER_SAMPLE_REPORT_HREF : null;
   const refundBannerText = activeService.refundBanner ?? uiCopy.dealerRefundBanner;
+  const coverageCopy = getTp5UiCopy(locale === "lv" ? "lv" : "en");
+  const brandsCopy: DealerBrandsTipCopy = {
+    ...coverageCopy,
+    dealerBrandsTrigger: uiCopy.dealerBrandsAria,
+    dealerBrandsAria: uiCopy.dealerBrandsAria,
+    dealerBrandsClose: uiCopy.dealerBrandsClose,
+  };
 
   return (
     <article
@@ -264,19 +281,17 @@ export function AzvinPricingCard({
 
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
-          {isDealer && activeService.features[0] ? (
-            <HighlightFeature feature={activeService.features[0]} />
-          ) : (
-            <ul className={styles.featureList}>
-              {activeService.features.map((feature) => (
-                <FeatureRow key={`${activeServiceId}-${feature.name}`} feature={feature} />
-              ))}
-            </ul>
-          )}
-          {isDealer ? <DealerBrandBadges brandsAria={uiCopy.dealerBrandsAria} /> : null}
-          {activeService.extraNote ? (
-            <p className={styles.featureFootnote}>{activeService.extraNote}</p>
-          ) : null}
+          <ul className={styles.featureList}>
+            {activeService.features.map((feature) => (
+              <FeatureRow
+                key={`${activeServiceId}-${feature.name}`}
+                feature={feature}
+                brands={activeService.brands ?? []}
+                brandsCopy={brandsCopy}
+                infoAria={uiCopy.featureInfoAria}
+              />
+            ))}
+          </ul>
         </div>
 
         {activeService.showRefundBanner ? (
