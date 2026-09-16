@@ -1220,14 +1220,60 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
 /* H1e: brightness follows OEM coverage, no boxes. */
 .dealerHeroBrandChips .dealerHeroChipFull {
   color: rgb(226 232 240 / 0.9);
+  --hud-rest: rgb(226 232 240 / 0.9);
 }
 
 .dealerHeroBrandChips .dealerHeroChipWorkshop {
   color: rgb(148 163 184 / 0.72);
+  --hud-rest: rgb(148 163 184 / 0.72);
 }
 
 .dealerHeroBrandChips .dealerHeroChipLimited {
   color: rgb(148 163 184 / 0.5);
+  --hud-rest: rgb(148 163 184 / 0.5);
+}
+
+.dealerHeroBrandChipsHud .dealerBrandChip {
+  animation: dealerHudRead 2.4s ease both;
+  animation-delay: calc(var(--hud-i, 0) * 28ms);
+}
+
+@keyframes dealerHudRead {
+  0% {
+    opacity: 0.28;
+  }
+  12% {
+    opacity: 1;
+    color: #fff;
+    text-shadow: 0 0 10px rgb(96 165 250 / 0.8);
+  }
+  28%,
+  100% {
+    opacity: 1;
+    color: var(--hud-rest);
+    text-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dealerHeroBrandChipsHud .dealerBrandChip {
+    animation: dealerHudReadQuiet 0.55s ease both;
+    animation-delay: 0s;
+  }
+}
+
+@keyframes dealerHudReadQuiet {
+  0% {
+    opacity: 0.45;
+  }
+  40% {
+    opacity: 1;
+    color: #fff;
+  }
+  100% {
+    opacity: 1;
+    color: var(--hud-rest);
+  }
 }
 
 .dealerHeroBrandChipsMotion {
@@ -2335,14 +2381,17 @@ html[data-site-theme="light"] .dealerHeroBrandChips .dealerBrandChip {
 
 html[data-site-theme="light"] .dealerHeroBrandChips .dealerHeroChipFull {
   color: #3a3a3c;
+  --hud-rest: #3a3a3c;
 }
 
 html[data-site-theme="light"] .dealerHeroBrandChips .dealerHeroChipWorkshop {
   color: rgb(110 110 115 / 0.78);
+  --hud-rest: rgb(110 110 115 / 0.78);
 }
 
 html[data-site-theme="light"] .dealerHeroBrandChips .dealerHeroChipLimited {
   color: rgb(142 142 147 / 0.55);
+  --hud-rest: rgb(142 142 147 / 0.55);
 }
 
 html[data-site-theme="light"] .dealerBrandsYearNote,

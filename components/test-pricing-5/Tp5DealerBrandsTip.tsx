@@ -4,6 +4,10 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
 import { DealerHeroBrandChips } from "@/components/test-pricing-5/DealerHeroBrandChips";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
+import {
+  DEALER_BRANDS_HUD_VIEWPORT_MIN_PX,
+  requestDealerBrandsHud,
+} from "@/lib/dealer-brands";
 import type { DealerBrandsTipCopy } from "@/lib/test-pricing-5-ui-copy";
 
 type Props = {
@@ -11,13 +15,31 @@ type Props = {
   copy: DealerBrandsTipCopy;
 };
 
-/** „Atbalstītie ražotāji ⓘ” — opens a compact brands-only dialog. */
+function desktopHudMq(): MediaQueryList | null {
+  if (typeof window === "undefined") return null;
+  return window.matchMedia(`(min-width: ${DEALER_BRANDS_HUD_VIEWPORT_MIN_PX}px)`);
+}
+
+/** „Atbalstītie ražotāji ⓘ” — desktop HUD on the left rail, phone keeps a dialog. */
 export function Tp5DealerBrandsTip({ brands, copy }: Props) {
   const [open, setOpen] = useState(false);
+  const [useHud, setUseHud] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const dialogId = useId();
   const titleId = useId();
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const mq = desktopHudMq();
+    if (!mq) return;
+    const sync = () => {
+      setUseHud(mq.matches);
+      if (mq.matches) setOpen(false);
+    };
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -53,11 +75,15 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
         type="button"
         className={styles.dealerBrandsTrigger}
         aria-label={copy.dealerBrandsAria}
-        aria-expanded={open}
-        aria-controls={dialogId}
+        aria-expanded={useHud ? undefined : open}
+        aria-controls={useHud ? undefined : dialogId}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
+          if (useHud) {
+            requestDealerBrandsHud();
+            return;
+          }
           setOpen((prev) => !prev);
         }}
       >
@@ -68,7 +94,7 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
       </button>
 
       <AnimatePresence>
-        {open ? (
+        {!useHud && open ? (
           <>
             <motion.button
               type="button"
@@ -118,6 +144,7 @@ export function Tp5DealerBrandsTip({ brands, copy }: Props) {
                 <DealerHeroBrandChips
                   ariaLabel={copy.dealerBrandsAria}
                   embedded
+                  enableHud={false}
                   className={styles.dealerHeroBrandChipsPopup}
                 />
               </motion.div>

@@ -91,6 +91,21 @@ export type Tp5DealerBrand = (typeof TP5_DEALER_BRAND_GROUPS)[number][number];
 
 export const TP5_DEALER_BRANDS: readonly Tp5DealerBrand[] = TP5_DEALER_BRAND_GROUPS.flat();
 
+/** Desktop hero: `i` reads through the left OEM rail instead of a popup. */
+export const DEALER_BRANDS_HUD_EVENT = "provin:dealer-brands-hud";
+export const DEALER_BRANDS_HUD_STEP_MS = 28;
+export const DEALER_BRANDS_HUD_READ_MS = 2400;
+export const DEALER_BRANDS_HUD_VIEWPORT_MIN_PX = 1024;
+
+export function dealerBrandsHudDurationMs(brandCount = TP5_DEALER_BRANDS.length): number {
+  return DEALER_BRANDS_HUD_READ_MS + Math.max(0, brandCount - 1) * DEALER_BRANDS_HUD_STEP_MS;
+}
+
+export function requestDealerBrandsHud(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(DEALER_BRANDS_HUD_EVENT));
+}
+
 const LOGO_V = "12";
 
 /** Logo paths only where an SVG ships under /public/brand-logos. */

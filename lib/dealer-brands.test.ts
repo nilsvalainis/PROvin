@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   TP5_DEALER_BRANDS,
   TP5_DEALER_COVERAGE_TIERS,
+  dealerBrandsHudDurationMs,
   type DealerCoverageTierId,
 } from "@/lib/dealer-brands";
 import { getDealerCoverageTierCopy, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
@@ -115,5 +116,10 @@ describe("dealer coverage tiers", () => {
     expect(getDealerCoverageTierCopy(en, "limited").title).toBe("Limited coverage");
     expect(getTp5UiCopy("de").dealerCoverageLimitedTitle).toBe("Limited coverage");
     expect(getTp5UiCopy("ru").dealerCoverageWorkshopTitle).toBe("Workshop remarks");
+  });
+
+  it("times the HUD read as 2.4s plus 28ms per following brand", () => {
+    expect(dealerBrandsHudDurationMs(1)).toBe(2400);
+    expect(dealerBrandsHudDurationMs(48)).toBe(2400 + 47 * 28);
   });
 });
