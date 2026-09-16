@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { contactMailtoHref, contactTelHref } from "@/lib/contact";
+import { CONTACT_PHONE_TEL, contactMailtoHref, contactTelHref } from "@/lib/contact";
 import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { homeFooterColumnClass } from "@/lib/home-layout";
@@ -11,8 +11,21 @@ const linkClass =
 const legalLinkClass =
   "home-footer-link underline decoration-white/20 underline-offset-2 transition hover:text-provin-accent hover:decoration-provin-accent/50";
 
+function BrandWordmark() {
+  return (
+    <Link
+      href="/"
+      className="home-footer-ink inline-flex text-[15px] font-semibold tracking-tight transition hover:text-provin-accent"
+    >
+      <span className="provin-wordmark-pro">PRO</span>
+      <span className="text-provin-accent">VIN</span>
+    </Link>
+  );
+}
+
 /**
  * Kompakta kājene — tā pati 80rem / 7+5 asimetrija un diskrētā līnija kā atsauksmes + BUJ.
+ * B2B: zīmols un kontakti ir apakšējā juridiskajā joslā, bez tukšās augšējās rindas.
  */
 export async function Footer({ variant = "public" }: { variant?: "public" | "b2b" } = {}) {
   const t = await getTranslations("Footer");
@@ -20,6 +33,24 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
   const phoneHref = contactTelHref();
   const year = new Date().getFullYear();
   const isB2b = variant === "b2b";
+
+  const contacts = (
+    <div className={isB2b ? "sm:text-right" : "w-full max-w-[27.5rem] lg:ml-auto"}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
+        {t("contacts")}
+      </p>
+      <div className="mt-3 flex flex-col gap-2.5">
+        <a href={mailHref} className={linkClass}>
+          {t("emailCta")}
+        </a>
+        {isB2b ? (
+          <a href={phoneHref} className={linkClass} aria-label={t("phoneAria")}>
+            {CONTACT_PHONE_TEL}
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
 
   return (
     <footer id="kontakti" className="home-footer-rule relative scroll-mt-14 bg-transparent sm:scroll-mt-16">
@@ -29,46 +60,36 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
       />
 
       <div className={`${homeFooterColumnClass} py-6 sm:py-7 lg:pb-8 lg:pt-8`}>
-        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start lg:gap-16">
-          <div className="min-w-0 lg:col-span-7">
-            <Link
-              href="/"
-              className="home-footer-ink inline-flex text-[15px] font-semibold tracking-tight transition hover:text-provin-accent"
-            >
-              <span className="provin-wordmark-pro">PRO</span>
-              <span className="text-provin-accent">VIN</span>
-            </Link>
-            {isB2b ? null : (
+        {isB2b ? null : (
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start lg:gap-16">
+            <div className="min-w-0 lg:col-span-7">
+              <BrandWordmark />
               <p className="home-footer-ink mt-3 max-w-[36rem] text-[12px] font-normal leading-[1.55] text-white/45 sm:text-[13px] sm:leading-[1.5]">
                 {t("body")}
               </p>
-            )}
-          </div>
+            </div>
 
-          <div className="min-w-0 border-t border-white/[0.08] pt-6 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-            <div className="w-full max-w-[27.5rem] lg:ml-auto">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
-                {t("contacts")}
-              </p>
-              <div className="mt-3 flex flex-col gap-2.5">
-                <a href={mailHref} className={linkClass}>
-                  {t("emailCta")}
-                </a>
-                {isB2b ? (
-                  <a href={phoneHref} className={linkClass} aria-label={t("phoneAria")}>
-                    {t("phoneCta")}
-                  </a>
-                ) : null}
-              </div>
+            <div className="min-w-0 border-t border-white/[0.08] pt-6 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+              {contacts}
             </div>
           </div>
-        </div>
+        )}
 
         <div
-          className="mt-7 space-y-2.5 border-t border-white/[0.08] pt-5 sm:mt-8"
+          className={
+            isB2b
+              ? "space-y-2.5"
+              : "mt-7 space-y-2.5 border-t border-white/[0.08] pt-5 sm:mt-8"
+          }
           role="region"
           aria-label={t("legalRegionLabel")}
         >
+          {isB2b ? (
+            <div className="mb-5 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+              <BrandWordmark />
+              {contacts}
+            </div>
+          ) : null}
           <p className="home-footer-ink max-w-[65ch] text-[9px] font-normal leading-relaxed text-white/35 sm:text-[10px]">
             {t("disclaimer")}
           </p>
