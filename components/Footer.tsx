@@ -25,7 +25,7 @@ function BrandWordmark() {
 
 /**
  * Kompakta kājene — tā pati 80rem / 7+5 asimetrija un diskrētā līnija kā atsauksmes + BUJ.
- * B2B: zīmols un kontakti ir apakšējā juridiskajā joslā, bez tukšās augšējās rindas.
+ * B2B: PROVIN ir kājenes teksta virsraksts, kontakti vienā līnijā.
  */
 export async function Footer({ variant = "public" }: { variant?: "public" | "b2b" } = {}) {
   const t = await getTranslations("Footer");
@@ -34,8 +34,18 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
   const year = new Date().getFullYear();
   const isB2b = variant === "b2b";
 
-  const contacts = (
-    <div className={isB2b ? "sm:text-right" : "w-full max-w-[27.5rem] lg:ml-auto"}>
+  const contacts = isB2b ? (
+    <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
+      <span>{t("contacts")}</span>
+      <a href={mailHref} className={linkClass}>
+        {t("emailCta")}
+      </a>
+      <a href={phoneHref} className={linkClass} aria-label={t("phoneAria")}>
+        {CONTACT_PHONE_TEL}
+      </a>
+    </p>
+  ) : (
+    <div className="w-full max-w-[27.5rem] lg:ml-auto">
       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
         {t("contacts")}
       </p>
@@ -43,11 +53,6 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
         <a href={mailHref} className={linkClass}>
           {t("emailCta")}
         </a>
-        {isB2b ? (
-          <a href={phoneHref} className={linkClass} aria-label={t("phoneAria")}>
-            {CONTACT_PHONE_TEL}
-          </a>
-        ) : null}
       </div>
     </div>
   );
@@ -59,7 +64,7 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
         aria-hidden
       />
 
-      <div className={`${homeFooterColumnClass} py-6 sm:py-7 lg:pb-8 lg:pt-8`}>
+      <div className={`${homeFooterColumnClass} ${isB2b ? "py-5 lg:pb-6" : "py-6 sm:py-7 lg:pb-8 lg:pt-8"}`}>
         {isB2b ? null : (
           <div className="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:items-start lg:gap-16">
             <div className="min-w-0 lg:col-span-7">
@@ -85,7 +90,7 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
           aria-label={t("legalRegionLabel")}
         >
           {isB2b ? (
-            <div className="mb-5 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
               <BrandWordmark />
               {contacts}
             </div>
