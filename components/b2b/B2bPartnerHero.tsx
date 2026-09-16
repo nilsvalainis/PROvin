@@ -50,6 +50,29 @@ function B2bHeroSourceList({ items }: { items: B2bCatalogItem[] }) {
   );
 }
 
+function B2bHeroContactLinks({ email, labeled }: { email: string; labeled: boolean }) {
+  const t = useTranslations("Partner");
+  return (
+    <p className="text-[0.82rem] leading-relaxed text-zinc-400">
+      {labeled ? `${t("loginEmail")}: ` : null}
+      <a
+        href={`mailto:${email}`}
+        className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
+      >
+        {email}
+      </a>
+      {" | "}
+      {labeled ? `${t("heroPhoneLabel")}: ` : null}
+      <a
+        href={`tel:${CONTACT_PHONE_TEL}`}
+        className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
+      >
+        {CONTACT_PHONE_TEL}
+      </a>
+    </p>
+  );
+}
+
 export function B2bPartnerHero({
   afterContact,
   panel,
@@ -81,36 +104,37 @@ export function B2bPartnerHero({
         aria-labelledby="b2b-partner-hero-title"
       >
         <div
-          className={`${homeFooterColumnClass} grid items-center gap-8 pt-[calc(3.2rem+env(safe-area-inset-top,0px))] pb-8 lg:grid-cols-12 lg:gap-16 lg:pb-12 lg:pt-20 ${
-            widePanel ? "" : "min-h-[calc(100svh-1rem)]"
+          className={`${homeFooterColumnClass} grid items-start gap-6 pt-[calc(3.2rem+env(safe-area-inset-top,0px))] pb-6 lg:grid-cols-12 lg:items-center lg:gap-16 lg:pb-12 lg:pt-20 ${
+            widePanel ? "" : "lg:min-h-[calc(100svh-1rem)]"
           }`}
         >
-          <div className="order-2 hidden min-w-0 lg:order-1 lg:col-span-7 lg:block">
+          <div className="min-w-0 lg:col-span-7">
             <p className="mb-3 text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[#93c5fd]">
               {t("heroPartnerEyebrow")}
             </p>
-            <h1 className={styles.heroTitleDesktop}>
+            <h1
+              id="b2b-partner-hero-title"
+              className={`${styles.heroTitleDesktop} text-[2rem] font-extrabold leading-[1.1] tracking-[-0.025em] text-white`}
+            >
               {t("titlePrefix")}
               <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>{t("titleAccent")}</span>
             </h1>
-            <p className="mt-5 max-w-[32rem] text-[1.05rem] leading-[1.45] text-zinc-200">
+            <p className="mt-3 max-w-[32rem] text-[0.95rem] leading-[1.45] text-zinc-200 lg:mt-5 lg:text-[1.05rem]">
               {t("heroSubhead")}
             </p>
-            <div className={`${styles.tp5DesktopFeatureRow} mt-8 !block`}>
+            <div className={`${styles.tp5DesktopFeatureRow} mt-8`}>
               <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
             </div>
-            <B2bHeroSourceList items={sources} />
+            <div className="hidden lg:block">
+              <B2bHeroSourceList items={sources} />
+            </div>
           </div>
 
           <div
-            className={`order-1 mx-auto w-full lg:order-2 lg:col-span-5 lg:mx-0 ${
+            className={`mx-auto w-full lg:col-span-5 lg:mx-0 ${
               widePanel ? "max-w-[36rem] lg:max-w-none" : "max-w-[22rem] lg:ml-auto lg:max-w-[27.5rem]"
             }`}
           >
-            <h1 id="b2b-partner-hero-title" className="sr-only lg:hidden">
-              {t("titlePrefix")}
-              {t("titleAccent")}
-            </h1>
             <div className={`${styles.stage} ${styles.heroStageDesktop}`}>
               <div className={styles.spatialCard}>
                 <h2 className="mb-4 text-center text-[1.05rem] font-bold tracking-[-0.01em] text-zinc-100">
@@ -119,24 +143,27 @@ export function B2bPartnerHero({
                 {aside}
               </div>
             </div>
+            {hideContact ? null : (
+              <div className="mt-4 text-center lg:hidden">
+                <B2bHeroContactLinks email={email} labeled={false} />
+              </div>
+            )}
           </div>
         </div>
 
         <div className={`${homeFooterColumnClass} relative z-[3] pb-10 lg:pb-14`}>
           <div>
-            <h2 className="mb-5 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
+            <h2 className="mb-4 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd] lg:mb-5">
               {t("heroWhyHeading")}
             </h2>
-            <div className="grid items-start gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
-              {beats.map((beat, index) => (
-                <article key={beat.label} className="min-w-0">
-                  <p className="flex items-baseline gap-2.5">
-                    <span className="text-[0.58rem] font-bold tabular-nums tracking-[0.12em] text-[#60a5fa]">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-[0.58rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
-                      {beat.label}
-                    </span>
+            <div className="grid grid-cols-1 items-start lg:grid-cols-3">
+              {beats.map((beat) => (
+                <article
+                  key={beat.label}
+                  className="min-w-0 border-b border-white/10 py-6 first:pt-0 last:border-b-0 last:pb-0 lg:border-b-0 lg:border-l lg:border-white/10 lg:px-10 lg:py-0 lg:first:border-l-0 lg:first:pl-0 lg:last:pr-0"
+                >
+                  <p className="text-[0.58rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
+                    {beat.label}
                   </p>
                   <p className="mt-2.5 text-[0.84rem] font-normal leading-[1.58] text-zinc-300 lg:text-[0.88rem] lg:leading-[1.6]">
                     {beat.body}
@@ -145,29 +172,13 @@ export function B2bPartnerHero({
               ))}
             </div>
             {hideContact && !afterContact ? null : (
-              <div className="mt-6 space-y-2">
+              <div className={`space-y-2 ${hideContact ? "mt-6" : "mt-6 hidden lg:block"}`}>
                 {hideContact ? null : (
                   <>
                     <p className="text-[0.84rem] font-medium leading-snug text-zinc-100 sm:text-[0.9rem]">
                       {t("heroContactLead")}
                     </p>
-                    <p className="text-[0.82rem] leading-relaxed text-zinc-400 sm:text-[0.875rem]">
-                      {t("loginEmail")}:{" "}
-                      <a
-                        href={`mailto:${email}`}
-                        className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
-                      >
-                        {email}
-                      </a>
-                      {" | "}
-                      {t("heroPhoneLabel")}:{" "}
-                      <a
-                        href={`tel:${CONTACT_PHONE_TEL}`}
-                        className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
-                      >
-                        {CONTACT_PHONE_TEL}
-                      </a>
-                    </p>
+                    <B2bHeroContactLinks email={email} labeled />
                   </>
                 )}
                 {afterContact}
