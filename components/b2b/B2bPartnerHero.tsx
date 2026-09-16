@@ -50,11 +50,9 @@ function B2bHeroSourceList({ items }: { items: B2bCatalogItem[] }) {
   );
 }
 
-function B2bHeroContactLinks({ email, labeled }: { email: string; labeled: boolean }) {
-  const t = useTranslations("Partner");
+function B2bHeroContactLinks({ email }: { email: string }) {
   return (
     <p className="text-[0.82rem] leading-relaxed text-zinc-400">
-      {labeled ? `${t("loginEmail")}: ` : null}
       <a
         href={`mailto:${email}`}
         className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
@@ -62,7 +60,6 @@ function B2bHeroContactLinks({ email, labeled }: { email: string; labeled: boole
         {email}
       </a>
       {" | "}
-      {labeled ? `${t("heroPhoneLabel")}: ` : null}
       <a
         href={`tel:${CONTACT_PHONE_TEL}`}
         className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
@@ -144,8 +141,11 @@ export function B2bPartnerHero({
               </div>
             </div>
             {hideContact ? null : (
-              <div className="mt-4 text-center lg:hidden">
-                <B2bHeroContactLinks email={email} labeled={false} />
+              <div className="mt-4 text-center">
+                <B2bHeroContactLinks email={email} />
+                <p className="mt-1.5 text-[0.68rem] leading-snug text-zinc-500">
+                  {t("heroContactLead")}
+                </p>
               </div>
             )}
           </div>
@@ -171,19 +171,7 @@ export function B2bPartnerHero({
                 </article>
               ))}
             </div>
-            {hideContact && !afterContact ? null : (
-              <div className={`space-y-2 ${hideContact ? "mt-6" : "mt-6 hidden lg:block"}`}>
-                {hideContact ? null : (
-                  <>
-                    <p className="text-[0.84rem] font-medium leading-snug text-zinc-100 sm:text-[0.9rem]">
-                      {t("heroContactLead")}
-                    </p>
-                    <B2bHeroContactLinks email={email} labeled />
-                  </>
-                )}
-                {afterContact}
-              </div>
-            )}
+            {afterContact ? <div className="mt-6">{afterContact}</div> : null}
           </div>
           <div className="lg:hidden">
             <B2bHeroSourceList items={sources} />
