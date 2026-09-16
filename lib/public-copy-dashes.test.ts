@@ -21,6 +21,7 @@ const PUBLIC_COPY_FILES = [
   join(REPO_ROOT, "lib/azvin-hero-copy.ts"),
   join(REPO_ROOT, "lib/azvin-mobile-services.ts"),
   join(REPO_ROOT, "lib/azvin-about-copy.ts"),
+  join(REPO_ROOT, "lib/azvin-ui-copy.ts"),
   join(REPO_ROOT, "lib/google-reviews-data.ts"),
   join(REPO_ROOT, "lib/blog/posts/mobile-de-scam-48000.ts"),
   join(REPO_ROOT, "lib/email/html-templates.ts"),

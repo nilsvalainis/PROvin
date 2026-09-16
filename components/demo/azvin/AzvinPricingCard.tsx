@@ -3,6 +3,8 @@
 import { type MouseEvent, type SyntheticEvent, type TouchEvent, useEffect, useId, useRef, useState } from "react";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
+import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
+import azvinStyles from "@/app/[locale]/view/n7k4xw9q/azvin.module.css";
 import type { AzvinLocale } from "@/lib/azvin-hero-copy";
 import {
   getAzvinMobileService,
@@ -123,11 +125,13 @@ function FeatureRow({
   brands,
   brandsCopy,
   infoAria,
+  refundInfoAria,
 }: {
   feature: AzvinMobileFeature;
   brands: readonly string[];
   brandsCopy: DealerBrandsTipCopy;
   infoAria: string;
+  refundInfoAria: string;
 }) {
   if (feature.tone === "guarantee") {
     return (
@@ -135,8 +139,14 @@ function FeatureRow({
         <span className={`${styles.featureMark} ${styles.featureMarkGuarantee}`} aria-hidden>
           ✓
         </span>
-        <span className={`${styles.featureLabelGuarantee} ${styles.featureLabelGuaranteeNowrap}`}>
-          {feature.name}
+        <span className={styles.featureLabelGuarantee}>
+          <Tp5DealerRefundTip
+            copy={{
+              dealerRefundBanner: feature.name,
+              dealerRefundInfoBody: feature.infoTip ?? "",
+              dealerRefundInfoAria: refundInfoAria,
+            }}
+          />
         </span>
       </li>
     );
@@ -231,7 +241,6 @@ export function AzvinPricingCard({
   const isDealer = activeService.layout === "dealer";
   const turnaroundLabel = activeService.turnaround ?? "";
   const sampleReportHref = isDealer ? AZVIN_DEALER_SAMPLE_REPORT_HREF : null;
-  const refundBannerText = activeService.refundBanner ?? uiCopy.dealerRefundBanner;
   const coverageCopy = getTp5UiCopy(locale === "lv" ? "lv" : "en");
   const brandsCopy: DealerBrandsTipCopy = {
     ...coverageCopy,
@@ -272,16 +281,15 @@ export function AzvinPricingCard({
           })}
         </div>
 
-        {activeService.description.trim() ? (
-          <div className={styles.tierMeta} aria-live="polite">
-            <p className={styles.tierMetaDesc}>{activeService.description}</p>
-          </div>
-        ) : null}
+        <div className={styles.tierMeta} aria-live="polite">
+          <p className={`${styles.tierMetaTitle} ${azvinStyles.packTitle}`}>{activeService.cardTitle}</p>
+          <p className={styles.tierMetaDesc}>{activeService.description}</p>
+        </div>
       </div>
 
       <div className={styles.featureStack}>
         <div className={styles.liquidAccent} data-tier={activeServiceId}>
-          <ul className={styles.featureList}>
+          <ul className={`${styles.featureList} ${azvinStyles.featureListFixed}`}>
             {activeService.features.map((feature) => (
               <FeatureRow
                 key={`${activeServiceId}-${feature.name}`}
@@ -289,14 +297,11 @@ export function AzvinPricingCard({
                 brands={activeService.brands ?? []}
                 brandsCopy={brandsCopy}
                 infoAria={uiCopy.featureInfoAria}
+                refundInfoAria={uiCopy.dealerRefundInfoAria}
               />
             ))}
           </ul>
         </div>
-
-        {activeService.showRefundBanner ? (
-          <p className={styles.dealerRefundBanner}>{refundBannerText}</p>
-        ) : null}
 
         <div
           className={styles.inlineFields}

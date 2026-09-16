@@ -11,6 +11,8 @@ export type AzvinUiCopy = {
   featureIconRowAria: string;
   sampleReportLink: string;
   dealerRefundBanner: string;
+  dealerRefundInfoBody: string;
+  dealerRefundInfoAria: string;
   dealerBrandsAria: string;
   dealerBrandsClose: string;
   featureInfoAria: string;
@@ -28,8 +30,10 @@ const UI_AZ: AzvinUiCopy = {
   listingAria: "Elan linkini yapışdırın",
   featureIconRowAria: "AZ.VIN xidmətlərinin üstünlükləri",
   sampleReportLink: "Hesabat nümunəsinə bax (PDF)",
-  dealerRefundBanner:
-    "100% pulun qaytarılması zəmanəti: Diler bazalarında məlumat yoxdursa, tam geri ödəniş edəcəyik.",
+  dealerRefundBanner: "100% pulun qaytarılması zəmanəti.",
+  dealerRefundInfoBody:
+    "Diler bazalarında heç bir qeyd yoxdursa, tam geri ödəniş edəcəyik. Xidmət yerinə yetirilmiş sayılır, əgər ən azı bir odometr qeydi tapılır.",
+  dealerRefundInfoAria: "Pulun qaytarılması şərtləri",
   dealerBrandsAria: "Dəstəklənən istehsalçılar",
   dealerBrandsClose: "Bağla",
   featureInfoAria: "Əlavə məlumat",
@@ -45,8 +49,10 @@ const UI_EN: AzvinUiCopy = {
   listingAria: "Paste the listing link",
   featureIconRowAria: "AZ.VIN service benefits",
   sampleReportLink: "View sample report (PDF)",
-  dealerRefundBanner:
-    "100% refund guarantee: If no data is available in dealer databases, we will issue a full refund.",
+  dealerRefundBanner: "100% money-back guarantee.",
+  dealerRefundInfoBody:
+    "Full refund if no records exist in the dealer database. The service is considered fulfilled if at least one odometer reading is found.",
+  dealerRefundInfoAria: "Refund conditions",
   dealerBrandsAria: "Supported manufacturers",
   dealerBrandsClose: "Close",
   featureInfoAria: "More information",
@@ -62,8 +68,10 @@ const UI_RU: AzvinUiCopy = {
   listingAria: "Вставьте ссылку на объявление",
   featureIconRowAria: "Преимущества услуг AZ.VIN",
   sampleReportLink: "Смотреть пример отчёта (PDF)",
-  dealerRefundBanner:
-    "100% гарантия возврата: если данных нет в дилерских базах, сделаем полный возврат.",
+  dealerRefundBanner: "100% гарантия возврата.",
+  dealerRefundInfoBody:
+    "Полный возврат, если в дилерской базе нет ни одной записи. Услуга считается выполненной, если найдена хотя бы одна отметка одометра.",
+  dealerRefundInfoAria: "Условия возврата",
   dealerBrandsAria: "Поддерживаемые производители",
   dealerBrandsClose: "Закрыть",
   featureInfoAria: "Дополнительная информация",
@@ -79,8 +87,10 @@ const UI_LV: AzvinUiCopy = {
   listingAria: "Iekopē sludinājuma linku",
   featureIconRowAria: "AZ.VIN pakalpojumu priekšrocības",
   sampleReportLink: "Skatīt atskaites piemēru (PDF)",
-  dealerRefundBanner:
-    "100% Naudas atmaksas garantija: Ja dīleru datubāzēs dati nav pieejami, veiksim pilnu atmaksu.",
+  dealerRefundBanner: "100% Naudas atmaksas garantija.",
+  dealerRefundInfoBody:
+    "Pilna naudas atmaksa, ja dīleru datubāzē nav neviena ieraksta. Pakalpojums tiek uzskatīts par izpildītu, ja atrodama vismaz viena atzīme par odometra rādījumu.",
+  dealerRefundInfoAria: "Naudas atmaksas nosacījumi",
   dealerBrandsAria: "Atbalstītie ražotāji",
   dealerBrandsClose: "Aizvērt",
   featureInfoAria: "Papildu informācija",

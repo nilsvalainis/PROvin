@@ -1,13 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { getAzvinMobileService } from "@/lib/azvin-mobile-services";
+import {
+  AZVIN_FEATURE_ROW_COUNT,
+  getAzvinMobileService,
+  getAzvinMobileServices,
+  type AzvinServiceId,
+} from "@/lib/azvin-mobile-services";
+import { AZVIN_LOCALES } from "@/lib/azvin-hero-copy";
 import { getAzvinUiCopy } from "@/lib/azvin-ui-copy";
 
+const SERVICE_IDS: AzvinServiceId[] = ["korea", "europe", "usa", "dealer"];
+
 describe("AZ.VIN hero packages", () => {
+  it("keeps the same card chrome on every tab: title, description and five rows", () => {
+    for (const locale of AZVIN_LOCALES) {
+      const services = getAzvinMobileServices(locale);
+      expect(services).toHaveLength(4);
+      for (const service of services) {
+        expect(service.cardTitle.trim().length).toBeGreaterThan(0);
+        expect(service.description.trim().length).toBeGreaterThan(0);
+        expect(service.turnaround?.trim().length).toBeGreaterThan(0);
+        expect(service.features).toHaveLength(AZVIN_FEATURE_ROW_COUNT);
+        expect(service.features.every((feature) => feature.name.trim().length > 0)).toBe(true);
+      }
+    }
+    expect(AZVIN_LOCALES).toEqual(["az", "en", "ru", "lv"]);
+    expect(SERVICE_IDS).toEqual(["korea", "europe", "usa", "dealer"]);
+  });
+
   it("does not offer a 100% refund on the Europe report", () => {
     const europe = getAzvinMobileService("europe", "lv");
-    expect(europe.showRefundBanner).toBeFalsy();
-    expect(europe.extraNote).toBeUndefined();
-    expect(europe.refundBanner).toBeUndefined();
+    expect(europe.cardTitle).toBe("EIROPAS VĒSTURE");
     expect(europe.features.some((feature) => feature.tone === "guarantee")).toBe(false);
   });
 
@@ -21,17 +43,12 @@ describe("AZ.VIN hero packages", () => {
     expect(rest.every((feature) => !feature.infoTip)).toBe(true);
   });
 
-  it("matches the PROVIN dealer checklist and keeps the refund as one green sentence", () => {
-    const dealer = getAzvinMobileService("dealer", "lv");
+  it("formats Korea, America and dealer refunds as the short PROVIN label plus info tip", () => {
     const refund = getAzvinUiCopy("lv").dealerRefundBanner;
-    expect(dealer.showRefundBanner).toBeFalsy();
-    expect(dealer.features.map((feature) => feature.name)).toEqual([
-      "Servisa un apkopju vēsture*",
-      "Odometra rādījumi",
-      "Kopsavilkums",
-      "Atbalstītie ražotāji",
-      refund,
-    ]);
+    expect(refund).toBe("100% Naudas atmaksas garantija.");
+
+    const dealer = getAzvinMobileService("dealer", "lv");
+    expect(dealer.cardTitle).toBe("OFICIĀLO DĪLERU DATI");
     expect(dealer.features.map((feature) => feature.tone)).toEqual([
       undefined,
       undefined,
@@ -39,9 +56,15 @@ describe("AZ.VIN hero packages", () => {
       "brands",
       "guarantee",
     ]);
-    expect(refund).toBe(
-      "100% Naudas atmaksas garantija: Ja dīleru datubāzēs dati nav pieejami, veiksim pilnu atmaksu.",
-    );
-    expect(refund.includes("\n")).toBe(false);
+    expect(dealer.features[4]?.name).toBe(refund);
+    expect(dealer.features[4]?.infoTip).toContain("dīleru datubāzē");
+
+    for (const id of ["korea", "usa"] as const) {
+      const service = getAzvinMobileService(id, "lv");
+      const last = service.features[service.features.length - 1];
+      expect(last?.tone).toBe("guarantee");
+      expect(last?.name).toBe(refund);
+      expect((last?.infoTip ?? "").length).toBeGreaterThan(20);
+    }
   });
 });

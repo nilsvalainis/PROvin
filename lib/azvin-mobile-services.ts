@@ -18,22 +18,19 @@ export type AzvinMobileService = {
   title: string;
   /** Compact tab label in the 4-column switcher. */
   tabTitle?: string;
+  /** Card heading under the tabs (PROVIN dealer `cardTitle` pattern). */
+  cardTitle: string;
   price: string;
   priceAzn: number;
   buttonText: string;
   description: string;
   features: AzvinMobileFeature[];
-  /** Dealer highlight uses Globe + brands grid (PROVIN 1:1). */
   layout: "checklist" | "dealer";
   brands?: readonly string[];
   turnaround?: string;
-  /** Asterisk footnote under checklist (e.g. CarVertical*, AutoDNA*). */
-  extraNote?: string;
-  /** Show refund banner above CTA. */
-  showRefundBanner?: boolean;
-  /** Optional refund banner override (else shared dealer refund copy). */
-  refundBanner?: string;
 };
+
+export const AZVIN_FEATURE_ROW_COUNT = 5;
 
 /** Tab order: Korea / Europe / America / Dealer. */
 export const AZVIN_SERVICE_ORDER: AzvinServiceId[] = ["korea", "europe", "usa", "dealer"];
@@ -81,97 +78,81 @@ const KOREA_FEATURES_EN: AzvinMobileFeature[] = [
   { name: "Korea history report", included: true },
   { name: "Odometer and mileage records", included: true },
   { name: "Korean auction portal archive", included: true },
-  { name: "Damage, accident and salvage records", included: true },
-  { name: "Title, theft and lien status check", included: true },
-  { name: "Consultation", included: true },
+  { name: "Damage, salvage and title check", included: true },
 ];
 
 const KOREA_FEATURES_AZ: AzvinMobileFeature[] = [
   { name: "Koreya tarix hesabatı", included: true },
   { name: "Odometr və yürüş qeydləri", included: true },
   { name: "Koreya hərrac portalı arxivi", included: true },
-  { name: "Zədələnmə, qəza və salvage qeydləri", included: true },
-  { name: "Title, oğurluq və girov statusu yoxlaması", included: true },
-  { name: "Konsultasiya", included: true },
+  { name: "Zədələnmə, salvage və title yoxlaması", included: true },
 ];
 
 const KOREA_FEATURES_RU: AzvinMobileFeature[] = [
   { name: "Отчёт истории Кореи", included: true },
   { name: "Записи одометра и пробега", included: true },
   { name: "Архив корейских аукционов", included: true },
-  { name: "Повреждения, аварии и salvage-записи", included: true },
-  { name: "Проверка title, угона и обременений", included: true },
-  { name: "Консультация", included: true },
+  { name: "Проверка повреждений, salvage и title", included: true },
 ];
 
 const KOREA_FEATURES_LV: AzvinMobileFeature[] = [
   { name: "Korejas vēstures atskaite", included: true },
   { name: "Nobraukuma un odometra ieraksti", included: true },
   { name: "Korejas izsoļu portālu arhīvs", included: true },
-  { name: "Bojājumu, avāriju un salvage ieraksti", included: true },
-  { name: "Title, zādzību un apgrūtinājumu pārbaude", included: true },
-  { name: "Konsultācija", included: true },
+  { name: "Bojājumu, salvage un title pārbaude", included: true },
 ];
 
 const USA_FEATURES_EN: AzvinMobileFeature[] = [
   { name: "USA history report", included: true },
   { name: "Odometer and mileage records", included: true },
-  { name: "Auction portal archive (Copart, IAAI, etc.)", included: true },
-  { name: "Damage, accident and salvage records", included: true },
-  { name: "Title, theft and lien status check", included: true },
-  { name: "Consultation", included: true },
+  { name: "Auction archive (Copart, IAAI, etc.)", included: true },
+  { name: "Damage, salvage and title check", included: true },
 ];
 
 const USA_FEATURES_AZ: AzvinMobileFeature[] = [
   { name: "ABŞ tarix hesabatı", included: true },
   { name: "Odometr və yürüş qeydləri", included: true },
-  { name: "Hərrac portalı arxivi (Copart, IAAI və s.)", included: true },
-  { name: "Zədələnmə, qəza və salvage qeydləri", included: true },
-  { name: "Title, oğurluq və girov statusu yoxlaması", included: true },
-  { name: "Konsultasiya", included: true },
+  { name: "Hərrac arxivi (Copart, IAAI və s.)", included: true },
+  { name: "Zədələnmə, salvage və title yoxlaması", included: true },
 ];
 
 const USA_FEATURES_RU: AzvinMobileFeature[] = [
   { name: "Отчёт истории США", included: true },
   { name: "Записи одометра и пробега", included: true },
   { name: "Архив аукционов (Copart, IAAI и др.)", included: true },
-  { name: "Повреждения, аварии и salvage-записи", included: true },
-  { name: "Проверка title, угона и обременений", included: true },
-  { name: "Консультация", included: true },
+  { name: "Проверка повреждений, salvage и title", included: true },
 ];
 
 const USA_FEATURES_LV: AzvinMobileFeature[] = [
   { name: "ASV vēstures atskaite", included: true },
   { name: "Nobraukuma un odometra ieraksti", included: true },
-  { name: "Izsoļu portālu arhīvs (Copart, IAAI u.c.)", included: true },
-  { name: "Bojājumu, avāriju un salvage ieraksti", included: true },
-  { name: "Title, zādzību un apgrūtinājumu pārbaude", included: true },
-  { name: "Konsultācija", included: true },
+  { name: "Izsoļu arhīvs (Copart, IAAI u.c.)", included: true },
+  { name: "Bojājumu, salvage un title pārbaude", included: true },
 ];
 
 const KOREA_REFUND_EN =
-  "100% refund guarantee: If no data is available in Korean databases, we will issue a full refund.";
+  "If no data is available in Korean databases, we will issue a full refund.";
 
 const KOREA_REFUND_AZ =
-  "100% pulun qaytarılması zəmanəti: Koreya bazalarında məlumat yoxdursa, tam geri ödəniş edəcəyik.";
+  "Koreya bazalarında məlumat yoxdursa, tam geri ödəniş edəcəyik.";
 
 const KOREA_REFUND_RU =
-  "100% гарантия возврата: если данных нет в базах Кореи, сделаем полный возврат.";
+  "Если данных нет в базах Кореи, сделаем полный возврат.";
 
 const KOREA_REFUND_LV =
-  "100% Naudas atmaksas garantija: Ja Korejas datubāzēs dati nav pieejami, veiksim pilnu atmaksu.";
+  "Ja Korejas datubāzēs dati nav pieejami, veiksim pilnu atmaksu.";
 
 const USA_REFUND_EN =
-  "100% refund guarantee: If no data is available in USA databases, we will issue a full refund.";
+  "If no data is available in USA databases, we will issue a full refund.";
 
 const USA_REFUND_AZ =
-  "100% pulun qaytarılması zəmanəti: ABŞ bazalarında məlumat yoxdursa, tam geri ödəniş edəcəyik.";
+  "ABŞ bazalarında məlumat yoxdursa, tam geri ödəniş edəcəyik.";
 
 const USA_REFUND_RU =
-  "100% гарантия возврата: если данных нет в базах США, сделаем полный возврат.";
+  "Если данных нет в базах США, сделаем полный возврат.";
 
 const USA_REFUND_LV =
-  "100% Naudas atmaksas garantija: Ja ASV datubāzēs dati nav pieejami, veiksim pilnu atmaksu.";
+  "Ja ASV datubāzēs dati nav pieejami, veiksim pilnu atmaksu.";
 
 const EUROPE_FEATURES_EN: AzvinMobileFeature[] = [
   { name: "CarVertical history report", included: true },
@@ -179,7 +160,6 @@ const EUROPE_FEATURES_EN: AzvinMobileFeature[] = [
   { name: "European registry check", included: true },
   { name: "Auction portal archive data", included: true },
   { name: "Official dealer data", included: true },
-  { name: "Consultation", included: true },
 ];
 
 const EUROPE_FEATURES_AZ: AzvinMobileFeature[] = [
@@ -188,7 +168,6 @@ const EUROPE_FEATURES_AZ: AzvinMobileFeature[] = [
   { name: "Avropa reyestr yoxlaması", included: true },
   { name: "Hərrac portalı arxiv məlumatları", included: true },
   { name: "Rəsmi diler məlumatları", included: true },
-  { name: "Konsultasiya", included: true },
 ];
 
 const EUROPE_FEATURES_RU: AzvinMobileFeature[] = [
@@ -197,7 +176,6 @@ const EUROPE_FEATURES_RU: AzvinMobileFeature[] = [
   { name: "Проверка европейских реестров", included: true },
   { name: "Архивные данные аукционов", included: true },
   { name: "Официальные данные дилера", included: true },
-  { name: "Консультация", included: true },
 ];
 
 const EUROPE_FEATURES_LV: AzvinMobileFeature[] = [
@@ -206,7 +184,6 @@ const EUROPE_FEATURES_LV: AzvinMobileFeature[] = [
   { name: "Eiropas reģistru pārbaude", included: true },
   { name: "Izsoļu portālu arhīva dati", included: true },
   { name: "Oficiālā dīlera dati", included: true },
-  { name: "Konsultācija", included: true },
 ];
 
 const EUROPE_NOTE_EN =
@@ -225,13 +202,18 @@ function withEuropeVendorNotes(features: AzvinMobileFeature[], note: string): Az
   return features.map((feature, index) => (index < 2 ? { ...feature, infoTip: note } : feature));
 }
 
-function withDealerGuarantee(features: AzvinMobileFeature[], locale: AzvinLocale): AzvinMobileFeature[] {
+function withGuaranteeRow(
+  features: AzvinMobileFeature[],
+  locale: AzvinLocale,
+  infoBody: string,
+): AzvinMobileFeature[] {
   return [
     ...features,
     {
       name: getAzvinUiCopy(locale).dealerRefundBanner,
       included: true,
       tone: "guarantee",
+      infoTip: infoBody,
     },
   ];
 }
@@ -243,20 +225,20 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "korea",
         title: "KOREA",
         tabTitle: "KOREA",
+        cardTitle: "KOREA HISTORY",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "ORDER KOREA 19 AZN",
         description: "Full vehicle check package for cars used in Korea.",
-        features: KOREA_FEATURES_EN,
+        features: withGuaranteeRow(KOREA_FEATURES_EN, "en", KOREA_REFUND_EN),
         layout: "checklist",
         turnaround: "⏱️ Delivery: 24h",
-        showRefundBanner: true,
-        refundBanner: KOREA_REFUND_EN,
       },
       {
         id: "europe",
         title: "EUROPE",
         tabTitle: "EUROPE",
+        cardTitle: "EUROPE HISTORY",
         price: "149 AZN",
         priceAzn: 149,
         buttonText: "ORDER EUROPE 149 AZN",
@@ -269,25 +251,25 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "usa",
         title: "AMERICA",
         tabTitle: "AMERICA",
+        cardTitle: "AMERICA HISTORY",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "ORDER AMERICA 19 AZN",
         description: "Full vehicle check package for cars used in the USA.",
-        features: USA_FEATURES_EN,
+        features: withGuaranteeRow(USA_FEATURES_EN, "en", USA_REFUND_EN),
         layout: "checklist",
         turnaround: "⏱️ Delivery: 24h",
-        showRefundBanner: true,
-        refundBanner: USA_REFUND_EN,
       },
       {
         id: "dealer",
         title: "DEALER DATA",
         tabTitle: "DEALER DATA",
+        cardTitle: "OFFICIAL DEALER DATA",
         price: "49 AZN",
         priceAzn: 49,
         buttonText: "ORDER DEALER DATA 49 AZN",
-        description: "",
-        features: withDealerGuarantee(DEALER_FEATURES_EN, "en"),
+        description: "Official manufacturer service records and mileage.",
+        features: withGuaranteeRow(DEALER_FEATURES_EN, "en", getAzvinUiCopy("en").dealerRefundInfoBody),
         layout: "dealer",
         brands: TP5_DEALER_BRANDS,
         turnaround: "⏱️ Delivery: 24-48h",
@@ -298,20 +280,20 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "korea",
         title: "КОРЕЯ",
         tabTitle: "КОРЕЯ",
+        cardTitle: "ИСТОРИЯ КОРЕИ",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "ЗАКАЗАТЬ КОРЕЮ 19 AZN",
         description: "Полный пакет проверки авто, эксплуатируемых в Корее.",
-        features: KOREA_FEATURES_RU,
+        features: withGuaranteeRow(KOREA_FEATURES_RU, "ru", KOREA_REFUND_RU),
         layout: "checklist",
         turnaround: "⏱️ Срок: 24ч",
-        showRefundBanner: true,
-        refundBanner: KOREA_REFUND_RU,
       },
       {
         id: "europe",
         title: "ЕВРОПА",
         tabTitle: "ЕВРОПА",
+        cardTitle: "ИСТОРИЯ ЕВРОПЫ",
         price: "149 AZN",
         priceAzn: 149,
         buttonText: "ЗАКАЗАТЬ ЕВРОПУ 149 AZN",
@@ -324,25 +306,25 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "usa",
         title: "АМЕРИКА",
         tabTitle: "АМЕРИКА",
+        cardTitle: "ИСТОРИЯ АМЕРИКИ",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "ЗАКАЗАТЬ АМЕРИКУ 19 AZN",
         description: "Полный пакет проверки авто, эксплуатируемых в США.",
-        features: USA_FEATURES_RU,
+        features: withGuaranteeRow(USA_FEATURES_RU, "ru", USA_REFUND_RU),
         layout: "checklist",
         turnaround: "⏱️ Срок: 24ч",
-        showRefundBanner: true,
-        refundBanner: USA_REFUND_RU,
       },
       {
         id: "dealer",
         title: "ДАННЫЕ ДИЛЕРА",
         tabTitle: "ДАННЫЕ ДИЛЕРА",
+        cardTitle: "ОФИЦИАЛЬНЫЕ ДАННЫЕ ДИЛЕРА",
         price: "49 AZN",
         priceAzn: 49,
         buttonText: "ЗАКАЗАТЬ ДАННЫЕ ДИЛЕРА 49 AZN",
-        description: "",
-        features: withDealerGuarantee(DEALER_FEATURES_RU, "ru"),
+        description: "Официальные записи сервиса производителя и пробег.",
+        features: withGuaranteeRow(DEALER_FEATURES_RU, "ru", getAzvinUiCopy("ru").dealerRefundInfoBody),
         layout: "dealer",
         brands: TP5_DEALER_BRANDS,
         turnaround: "⏱️ Срок: 24-48ч",
@@ -353,20 +335,20 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "korea",
         title: "KOREJA",
         tabTitle: "KOREJA",
+        cardTitle: "KOREJAS VĒSTURE",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "PASŪTĪT KOREJU 19 AZN",
         description: "Pilns auto pārbaudes komplekts Korejā lietotiem auto.",
-        features: KOREA_FEATURES_LV,
+        features: withGuaranteeRow(KOREA_FEATURES_LV, "lv", KOREA_REFUND_LV),
         layout: "checklist",
         turnaround: "⏱️ Izpilde: 24h",
-        showRefundBanner: true,
-        refundBanner: KOREA_REFUND_LV,
       },
       {
         id: "europe",
         title: "EIROPA",
         tabTitle: "EIROPA",
+        cardTitle: "EIROPAS VĒSTURE",
         price: "149 AZN",
         priceAzn: 149,
         buttonText: "PASŪTĪT EIROPAS PAKETI 149 AZN",
@@ -379,25 +361,25 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "usa",
         title: "AMERIKA",
         tabTitle: "AMERIKA",
+        cardTitle: "AMERIKAS VĒSTURE",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "PASŪTĪT AMERIKU 19 AZN",
         description: "Pilns auto pārbaudes komplekts ASV lietotiem auto.",
-        features: USA_FEATURES_LV,
+        features: withGuaranteeRow(USA_FEATURES_LV, "lv", USA_REFUND_LV),
         layout: "checklist",
         turnaround: "⏱️ Izpilde: 24h",
-        showRefundBanner: true,
-        refundBanner: USA_REFUND_LV,
       },
       {
         id: "dealer",
         title: "DĪLERA DATI",
         tabTitle: "DĪLERA DATI",
+        cardTitle: "OFICIĀLO DĪLERU DATI",
         price: "49 AZN",
         priceAzn: 49,
         buttonText: "PASŪTĪT DĪLERA DATUS 49 AZN",
-        description: "",
-        features: withDealerGuarantee(DEALER_FEATURES_LV, "lv"),
+        description: "Oficiālie ražotāja servisa ieraksti un nobraukums.",
+        features: withGuaranteeRow(DEALER_FEATURES_LV, "lv", getAzvinUiCopy("lv").dealerRefundInfoBody),
         layout: "dealer",
         brands: TP5_DEALER_BRANDS,
         turnaround: "⏱️ Izpilde: 24-48h",
@@ -408,20 +390,20 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "korea",
         title: "KOREYA",
         tabTitle: "KOREYA",
+        cardTitle: "KOREYA TARİXİ",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "SİFARİŞ KOREYA 19 AZN",
         description: "Koreyada istifadə olunan avtomobillər üçün tam yoxlama paketi.",
-        features: KOREA_FEATURES_AZ,
+        features: withGuaranteeRow(KOREA_FEATURES_AZ, "az", KOREA_REFUND_AZ),
         layout: "checklist",
         turnaround: "⏱️ Çatdırılma: 24 saat",
-        showRefundBanner: true,
-        refundBanner: KOREA_REFUND_AZ,
       },
       {
         id: "europe",
         title: "AVROPA",
         tabTitle: "AVROPA",
+        cardTitle: "AVROPA TARİXİ",
         price: "149 AZN",
         priceAzn: 149,
         buttonText: "SİFARİŞ AVROPA 149 AZN",
@@ -434,25 +416,25 @@ function buildServices(locale: AzvinLocale): AzvinMobileService[] {
         id: "usa",
         title: "AMERİKA",
         tabTitle: "AMERİKA",
+        cardTitle: "AMERİKA TARİXİ",
         price: "19 AZN",
         priceAzn: 19,
         buttonText: "SİFARİŞ AMERİKA 19 AZN",
         description: "ABŞ-da istifadə olunan avtomobillər üçün tam yoxlama paketi.",
-        features: USA_FEATURES_AZ,
+        features: withGuaranteeRow(USA_FEATURES_AZ, "az", USA_REFUND_AZ),
         layout: "checklist",
         turnaround: "⏱️ Çatdırılma: 24 saat",
-        showRefundBanner: true,
-        refundBanner: USA_REFUND_AZ,
       },
       {
         id: "dealer",
         title: "DİLER MƏLUMATI",
         tabTitle: "DİLER MƏLUMATI",
+        cardTitle: "RƏSMİ DİLER MƏLUMATLARI",
         price: "49 AZN",
         priceAzn: 49,
         buttonText: "SİFARİŞ DİLER MƏLUMATI 49 AZN",
-        description: "",
-        features: withDealerGuarantee(DEALER_FEATURES_AZ, "az"),
+        description: "Rəsmi istehsalçı servis qeydləri və yürüş.",
+        features: withGuaranteeRow(DEALER_FEATURES_AZ, "az", getAzvinUiCopy("az").dealerRefundInfoBody),
         layout: "dealer",
         brands: TP5_DEALER_BRANDS,
         turnaround: "⏱️ Çatdırılma: 24-48 saat",
