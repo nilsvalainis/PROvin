@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - dīlera kartīte, 2. kārta</title>
+<style>
+  :root{
+    --ink:#f4f6f8;
+    --faint:rgb(148 163 184 / .9);
+    --hair:rgb(255 255 255 / .1);
+    --mint:#6ee7b7;
+    --ok:#10b981;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+  }
+  .nav{
+    position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;
+    padding:.65rem 1.1rem;background:rgb(8 8 8 / .94);border-bottom:1px solid var(--hair);
+  }
+  .nav strong{margin-right:.4rem;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#f59e0b;}
+  .nav a{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-decoration:none;padding:.28rem .4rem;}
+  .nav a:hover{color:#93c5fd;}
+  .intro{max-width:72rem;margin:0 auto;padding:1.5rem 1.3rem .2rem;}
+  .intro b{display:block;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#f59e0b;}
+  .intro h1{margin:.3rem 0 0;font-size:1.25rem;font-weight:600;}
+  .intro p{margin:.4rem 0 0;max-width:44rem;font-size:.82rem;line-height:1.5;color:var(--faint);}
+  .grid{max-width:72rem;margin:0 auto;padding:.5rem 1.3rem 2.5rem;display:grid;gap:1.1rem;}
+  @media(min-width:900px){.grid{grid-template-columns:1fr 1fr;}}
+  .cell{border:1px solid var(--hair);border-radius:.85rem;background:#111;padding:.75rem .8rem .9rem;}
+  .cap b{display:block;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#f59e0b;}
+  .cap i{display:block;margin:.18rem 0 .55rem;font-style:normal;font-size:.72rem;line-height:1.4;color:var(--faint);}
+  .stage{
+    height:13.5rem;border-radius:12px;border:1px solid rgb(255 255 255 / .08);
+    background:rgb(255 255 255 / .03);display:flex;flex-direction:column;padding:.55rem .7rem;
+  }
+  .t{margin:0;font-size:.82rem;font-weight:650;line-height:1.32;}
+  .s{margin:.18rem 0 0;font-size:.76rem;font-weight:450;line-height:1.32;color:rgb(203 213 225 / .88);}
+  .g{width:2rem;height:2rem;stroke:currentColor;fill:none;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;}
+  .i{
+    display:inline-flex;align-items:center;justify-content:center;width:.95rem;height:.95rem;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;font-size:.56rem;font-weight:700;
+  }
+  .row{display:inline-flex;align-items:center;gap:.35rem;font-size:.74rem;font-weight:700;color:#a7f3d0;}
+  .brands{display:flex;gap:.45rem;align-items:center;justify-content:center;}
+  .brands img{width:1.35rem;height:1.35rem;object-fit:contain;filter:brightness(0) invert(1);opacity:.78;}
+
+  .a{align-items:center;justify-content:space-between;text-align:center;}
+  .a .mid{display:flex;flex-direction:column;align-items:center;gap:.4rem;}
+  .b{flex-direction:row;gap:.75rem;align-items:center;}
+  .b .copy{flex:1;text-align:left;}
+  .b .side{display:flex;flex-direction:column;align-items:center;gap:.4rem;min-width:4.6rem;}
+  .c{padding:0;overflow:hidden;}
+  .c .top{flex:1;display:flex;align-items:center;gap:.7rem;padding:.65rem .75rem;}
+  .c .bot{padding:.55rem .75rem;background:rgb(16 185 129 / .14);justify-content:center;}
+  .d{justify-content:center;gap:.5rem;text-align:center;}
+  .dial{width:4.2rem;height:4.2rem;border-radius:999px;border:2px solid rgb(147 197 253 / .4);position:relative;}
+  .dial::after{content:"";position:absolute;left:50%;top:18%;width:2px;height:38%;background:#93c5fd;transform:rotate(28deg);transform-origin:bottom center;}
+  .e{justify-content:space-between;}
+  .letter{text-align:left;}
+  .letter .kicker{margin:0 0 .35rem;font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;}
+  .f .marks{display:flex;gap:.35rem;justify-content:center;}
+  .f .marks span{
+    width:1.7rem;height:1.7rem;border-radius:.3rem;border:1px solid rgb(255 255 255 / .14);
+    display:grid;place-items:center;font-size:.48rem;font-weight:800;letter-spacing:.04em;color:#93c5fd;
+  }
+  .h{flex-direction:row;padding:0;overflow:hidden;}
+  .h .mark{width:4.2rem;display:grid;place-items:center;background:rgb(37 99 235 / .16);color:#93c5fd;}
+  .h .copy{flex:1;padding:.6rem .7rem;display:flex;flex-direction:column;justify-content:space-between;text-align:left;}
+  .j{text-align:left;justify-content:space-between;}
+  .j .head{display:flex;align-items:center;gap:.55rem;}
+  .k{align-items:center;justify-content:center;text-align:center;gap:.4rem;background:
+    repeating-linear-gradient(90deg, transparent, transparent 11px, rgb(255 255 255 / .04) 12px);}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>2. kārta</strong>
+  <a href="#r01">21</a><a href="#r02">22</a><a href="#r03">23</a><a href="#r04">24</a>
+  <a href="#r05">25</a><a href="#r06">26</a><a href="#r07">27</a><a href="#r08">28</a>
+  <a href="#r09">29</a><a href="#r10">30</a><a href="#r11">31</a><a href="#r12">32</a>
+</nav>
+<div class="intro">
+  <b>Hero · Dīlera dati</b>
+  <h1>Cita ikona, tas pats teksts</h1>
+  <p>Globusa vairs nav. Zīme paliek pie dīlera, servisa grāmatas, odometra vai ražotāja tīkla. Garantija paliek zaļa. Augstums kā MINI/AUDITS stekam.</p>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const T = "Dīleru servisa vēsture un nobraukums";
+const S = "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.";
+const G = "100% Naudas atmaksas garantija.";
+const I = `<span class="i">i</span>`;
+const copy = () => `<p class="t">${T}</p><p class="s">${S}</p>`;
+const ico = (d) => `<svg class="g" viewBox="0 0 24 24" aria-hidden>${d}</svg>`;
+const store = ico(`<path d="M3 10.5 12 4l9 6.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>`);
+const clip = ico(`<rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5V4h6v1M8 10h8M8 14h6"/>`);
+const gauge = ico(`<path d="M5 19a8.5 8.5 0 1 1 14 0"/><path d="M12 13l4-3"/><circle cx="12" cy="13" r="1.2"/>`);
+const wrench = ico(`<path d="M14 7a4 4 0 1 0-5.6 5.6L5 16v3h3l3.4-3.4A4 4 0 0 0 14 7z"/><path d="M16 16l3 3"/>`);
+const shield = ico(`<path d="M12 3 5 6v6c0 4.2 2.8 7.4 7 8.5 4.2-1.1 7-4.3 7-8.5V6z"/><path d="m9 12 2 2 4-4"/>`);
+const file = ico(`<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>`);
+const key = ico(`<circle cx="8" cy="15" r="3"/><path d="M10.5 13.5 20 4M17 7l2.5 2.5"/>`);
+const plant = ico(`<path d="M4 20h16M6 20V9l6-5 6 5v11"/><path d="M10 20v-6h4v6"/>`);
+const db = ico(`<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v4c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 10v4c0 1.7 3.1 3 7 3s7-1.3 7-3v-4"/>`);
+const logos = `
+  <div class="brands">
+    <img src="/public/brand-logos/bmw.svg" alt=""/>
+    <img src="/public/brand-logos/mercedes.svg" alt=""/>
+    <img src="/public/brand-logos/audi.svg" alt=""/>
+    <img src="/public/brand-logos/volkswagen.svg" alt=""/>
+    <img src="/public/brand-logos/toyota.svg" alt=""/>
+  </div>`;
+
+const items = [
+  ["21 · Dīlera nams","Ēkas siluets. Serviss kā vieta, ne kā globuss.","a", `<div class="mid">${store}${copy()}</div><span class="row">${G} ${I}</span>`],
+  ["22 · Servisa mape","Starplika ar ķeksi. Oficiāls ieraksts.","a", `<div class="mid">${clip}${copy()}</div><span class="row">${G} ${I}</span>`],
+  ["23 · Odometra skala","Rādītājs. Pakalpojums ir nobraukums.","d", `<div class="dial"></div>${copy()}<span class="row">${G} ${I}</span>`],
+  ["24 · Ražotāju rinda","Pieci īstie logo vietā globusa. Konteksts ir OEM tīkls.","a", `<div class="mid">${logos}${copy()}</div><span class="row">${G} ${I}</span>`],
+  ["25 · Vēstule","Kā dīlera izdruka. Zila galvene, bez jauna teksta.","e letter", `<div style="height:2px;width:2.4rem;background:#2563eb;margin-bottom:.45rem"></div>${copy()}<span class="row">${G} ${I}</span>`],
+  ["26 · Garāža","Atslēga kreisajā. Teksts kā durvju kartīte.","b", `${key}<div class="copy">${copy()}<span class="row" style="margin-top:.45rem">${G} ${I}</span></div>`],
+  ["27 · Darbnīca","Uzgriežņu atslēga zilā ailē.","h", `<div class="mark">${wrench}</div><div class="copy">${copy()}<span class="row">${G} ${I}</span></div>`],
+  ["28 · Datubāze","Trīs diski. Ražotāja sistēma, ne internets.","c", `<div class="top">${db}<div>${copy()}</div></div><div class="bot row">${G} ${I}</div>`],
+  ["29 · Sertifikāts","Vairogs ar ķeksi. Pārbaude, ne karte.","j", `<div class="head">${shield}<div>${copy()}</div></div><span class="row">${G} ${I}</span>`],
+  ["30 · Rūpnīca","Korpuss un vārti. Dīleris kā tīkla punkts.","a", `<div class="mid">${plant}${copy()}</div><span class="row">${G} ${I}</span>`],
+  ["31 · Mapes muguriņa","Dokumenta ikona + zaļa josla apakšā.","c", `<div class="top">${file}<div>${copy()}</div></div><div class="bot row">${G} ${I}</div>`],
+  ["32 · Paceļamais","Fona sliedes kā lifts. Vidū mērierīce.","k", `${gauge}${copy()}<span class="row">${G} ${I}</span>`],
+];
+document.getElementById("grid").innerHTML = items.map((it,n)=>{
+  const id = String(n+21).padStart(2,"0");
+  return `<section class="cell" id="r${id}"><div class="cap"><b>${it[0]}</b><i>${it[1]}</i></div><div class="stage ${it[2]}">${it[3]}</div></section>`;
+}).join("");
+</script>
+</body>
+</html>

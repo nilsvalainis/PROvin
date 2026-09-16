@@ -62,22 +62,28 @@ async function readJson(res: Response): Promise<unknown> {
   }
 }
 
+const REQUEST_ID_KEYS = ["request_id", "requestId", "job_id", "jobId", "report_id", "reportId", "id"] as const;
+
 function requestIdFrom(payload: unknown): string {
-  if (!payload || typeof payload !== "object") return "";
-  const o = payload as Record<string, unknown>;
-  for (const key of ["request_id", "requestId", "job_id", "jobId", "id"]) {
-    const v = o[key];
-    if (typeof v === "string" && v.trim()) return v.trim();
-  }
-  const result = o.result;
-  if (result && typeof result === "object") {
-    const r = result as Record<string, unknown>;
-    for (const key of ["request_id", "requestId", "job_id", "jobId", "id"]) {
-      const v = r[key];
-      if (typeof v === "string" && v.trim()) return v.trim();
+  const pick = (node: unknown): string => {
+    if (!node || typeof node !== "object") return "";
+    const o = node as Record<string, unknown>;
+    for (const key of REQUEST_ID_KEYS) {
+      const v = o[key];
+      if (typeof v !== "string") continue;
+      const t = v.trim();
+      if (!t || /^[A-HJ-NPR-Z0-9]{17}$/i.test(t)) continue;
+      return t;
     }
-  }
-  return "";
+    return "";
+  };
+  const o = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  if (!o) return "";
+  return (
+    pick(o) ||
+    pick(o.result) ||
+    pick(o.result && typeof o.result === "object" ? (o.result as Record<string, unknown>).vehicle_data : null)
+  );
 }
 
 function payloadLooksPending(httpStatus: number, payload: unknown): boolean {
@@ -134,7 +140,9 @@ async function fetchWithPoll(
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 2000));
     const clean = path.split("?")[0] ?? path;
-    const pollPath = requestId ? `${clean}?request_id=${encodeURIComponent(requestId)}` : clean;
+    const pollPath = requestId
+      ? `${clean}?request_id=${encodeURIComponent(requestId)}&report_id=${encodeURIComponent(requestId)}`
+      : clean;
     last = await fetchOneautoPath(config, pollPath, vin);
     if (!payloadLooksPending(last.status, last.payload)) return last;
   }

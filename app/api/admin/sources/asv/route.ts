@@ -39,9 +39,15 @@ export async function POST(req: Request) {
   }
   const sessionRaw = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
   const sessionId = sessionRaw && isSafeOrderDraftSessionId(sessionRaw) ? sessionRaw : undefined;
+  const reportId = typeof o.reportId === "string" ? o.reportId.trim().slice(0, 80) : "";
 
   try {
-    const fetched = await fetchAsvProducts({ vin, products, sessionId });
+    const fetched = await fetchAsvProducts({
+      vin,
+      products,
+      sessionId,
+      reportId: reportId || undefined,
+    });
     const allFailed = products.every((id) => fetched.results[id]?.ok === false);
     const failCodes = products.map((id) => fetched.results[id]?.error ?? "upstream_error");
     const allPending = failCodes.every((c) => c === "pending");

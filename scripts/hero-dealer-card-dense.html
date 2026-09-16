@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - dīlera kartīte, blīvā kārta</title>
+<style>
+  :root{
+    --ink:#f1f5f9;
+    --sub:rgb(203 213 225 / .88);
+    --mute:rgb(148 163 184 / .88);
+    --g:rgb(167 243 208 / .95);
+    --blue:#2563eb;
+    --blue2:#60a5fa;
+    --hair:rgb(255 255 255 / .1);
+    --stage:13.5rem;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;
+    padding:.65rem 1.1rem;background:rgb(8 8 8 / .94);border-bottom:1px solid var(--hair);
+  }
+  .nav strong{margin-right:.4rem;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .nav a{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-decoration:none;padding:.28rem .4rem;}
+  .nav a:hover{color:#93c5fd;}
+  .intro{max-width:48rem;margin:0 auto;padding:1.45rem 1.3rem .25rem;}
+  .intro b{display:block;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;}
+  .intro h1{margin:.3rem 0 0;font-size:1.22rem;font-weight:600;}
+  .intro p{margin:.4rem 0 0;font-size:.82rem;line-height:1.5;color:var(--mute);}
+  .grid{max-width:74rem;margin:0 auto;padding:.45rem 1.3rem 2.6rem;display:grid;gap:1.1rem;}
+  @media(min-width:960px){.grid{grid-template-columns:1fr 1fr;}}
+  .cell{border:1px solid var(--hair);border-radius:.85rem;background:#111;padding:.75rem .8rem .9rem;}
+  .cap b{display:block;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .cap i{display:block;margin:.18rem 0 .55rem;font-style:normal;font-size:.72rem;line-height:1.4;color:var(--mute);}
+  .stage{
+    height:var(--stage);border-radius:16px;border:1px solid rgb(255 255 255 / .08);
+    background:rgb(255 255 255 / .03);overflow:hidden;position:relative;display:flex;flex-direction:column;
+  }
+  .t{margin:0;font-size:.82rem;font-weight:650;line-height:1.28;color:#f1f5f9;}
+  .s{margin:.16rem 0 0;font-size:.74rem;font-weight:450;line-height:1.3;color:var(--sub);}
+  .g{
+    display:inline-flex;align-items:center;gap:.35rem;margin:0;
+    font-size:.76rem;font-weight:700;line-height:1.3;color:var(--g);
+  }
+  .i{
+    display:inline-flex;align-items:center;justify-content:center;width:.9rem;height:.9rem;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;font-size:.52rem;font-weight:700;color:#e2e8f0;
+  }
+  .copy{position:relative;z-index:2;}
+  img.logo{width:1.05rem;height:1.05rem;object-fit:contain;filter:brightness(0) invert(1);opacity:.55;}
+
+  /* 49 ledger */
+  .v49{padding:.55rem .7rem .5rem;justify-content:space-between;}
+  .ledger{opacity:.55;font-size:.62rem;line-height:1.15;color:#cbd5e1;font-variant-numeric:tabular-nums;}
+  .ledger .h{display:grid;grid-template-columns:4.6rem 4.4rem 1fr;gap:.35rem;color:#64748b;letter-spacing:.08em;text-transform:uppercase;font-size:.48rem;margin-bottom:.2rem;}
+  .ledger .r{display:grid;grid-template-columns:4.6rem 4.4rem 1fr;gap:.35rem;padding:.16rem 0;border-top:1px solid rgb(255 255 255 / .06);}
+  .v49 .copy{margin-top:.35rem;}
+
+  /* 50 logo field */
+  .v50{padding:0;}
+  .field{position:absolute;inset:0;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(6,1fr);padding:.35rem .4rem 4.6rem;gap:.12rem;opacity:.38;}
+  .field span{display:grid;place-items:center;}
+  .v50 .scrim{
+    position:absolute;left:0;right:0;bottom:0;z-index:1;padding:.55rem .7rem .55rem;
+    background:linear-gradient(180deg,transparent,rgb(13 13 16 / .92) 38%,rgb(13 13 16 / .97));
+  }
+
+  /* 51 sparkline */
+  .v51{padding:.5rem .7rem .5rem;justify-content:space-between;}
+  .v51 svg{width:100%;height:3.4rem;display:block;}
+
+  /* 52 timeline */
+  .v52{padding:.55rem .7rem .5rem;justify-content:space-between;}
+  .tl{display:flex;align-items:flex-start;gap:0;margin:.1rem 0 .15rem;}
+  .tl .n{flex:1;text-align:center;}
+  .tl .n b{display:block;font-size:.58rem;font-weight:650;color:#93c5fd;}
+  .tl .n span{display:block;margin-top:.12rem;font-size:.5rem;color:#64748b;}
+  .rail{display:flex;align-items:center;margin:.15rem .4rem .35rem;}
+  .rail i{width:7px;height:7px;border-radius:50%;background:var(--blue2);box-shadow:0 0 0 3px rgb(37 99 235 / .22);flex-shrink:0;}
+  .rail em{flex:1;height:1px;background:linear-gradient(90deg,#2563eb,#1e3a8a);opacity:.7;font-style:normal;}
+
+  /* 53 cluster */
+  .v53{padding:.45rem .7rem .5rem;justify-content:space-between;}
+  .odo{
+    font-variant-numeric:tabular-nums;letter-spacing:.12em;font-size:1.55rem;font-weight:650;
+    color:#e2e8f0;line-height:1;text-shadow:0 0 18px rgb(37 99 235 / .28);
+  }
+  .odo small{display:block;margin-top:.18rem;font-size:.52rem;letter-spacing:.16em;text-transform:uppercase;color:#64748b;font-weight:600;}
+
+  /* 54 bento */
+  .v54{display:grid;grid-template-columns:1.35fr .9fr;padding:0;}
+  .v54 .left{padding:.55rem .6rem;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid var(--hair);}
+  .v54 .mini{display:grid;grid-template-columns:repeat(6,1fr);gap:.18rem;opacity:.5;margin-bottom:.4rem;}
+  .v54 .right{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.25rem;
+    background:rgb(16 185 129 / .1);padding:.5rem .45rem;
+  }
+  .v54 .right .pct{font-size:1.45rem;font-weight:750;color:var(--g);letter-spacing:-.04em;line-height:1;}
+  .v54 .right .g{font-size:.62rem;text-align:center;font-weight:650;}
+
+  /* 55 scan */
+  .v55{padding:.55rem .7rem .5rem;justify-content:space-between;}
+  .vinbox{
+    position:relative;overflow:hidden;border:1px solid rgb(37 99 235 / .28);border-radius:.4rem;
+    padding:.4rem .55rem;background:rgb(37 99 235 / .08);font-variant-numeric:tabular-nums;
+    letter-spacing:.18em;font-size:.72rem;font-weight:650;color:#93c5fd;
+  }
+  .vinbox::after{
+    content:"";position:absolute;inset:0;width:42%;
+    background:linear-gradient(90deg,transparent,rgb(96 165 250 / .35),transparent);
+    animation:scan 2.4s ease-in-out infinite;
+  }
+  @keyframes scan{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
+
+  /* 56 coverage heat */
+  .v56{padding:.45rem .6rem .5rem;justify-content:space-between;}
+  .bands{display:flex;flex-direction:column;gap:.18rem;}
+  .bands .b{display:flex;gap:.2rem;align-items:center;}
+  .bands .b img{width:.92rem;height:.92rem;}
+  .bands .full img{opacity:.8;}
+  .bands .work img{opacity:.4;}
+  .bands .lim img{opacity:.22;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>Blīvā kārta</strong>
+  <a href="#r49">49</a><a href="#r50">50</a><a href="#r51">51</a><a href="#r52">52</a>
+  <a href="#r53">53</a><a href="#r54">54</a><a href="#r55">55</a><a href="#r56">56</a>
+</nav>
+<div class="intro">
+  <b>Hero · Dīlera dati</b>
+  <h1>Spēcīgākais, ko šajā nišā rāda citi</h1>
+  <p>FindServiceHistory un CarVertical nepārdod ikonu. Viņi rāda pašu preci: servisa rindu, km līkni, ražotāju tīklu. 2026. gada data produktu tendence ir blīvums, ne tukšs stikls. Palete paliek PROVIN: slāts, zils, mint garantijai. Trīs teksta rindas nemainās. Fona rinda ir atskaites forma, ne jauns sauklis.</p>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const LOGOS = ["mercedes","bmw","audi","volkswagen","porsche","toyota","lexus","volvo","mini","jaguar","land-rover","bentley","lamborghini","skoda","seat","cupra","ford","mazda","nissan","infiniti","opel","vauxhall","peugeot","citroen","renault","dacia","fiat","alfa-romeo","jeep","hyundai","kia","honda","subaru","suzuki","mitsubishi","polestar","smart","abarth","lancia","ds","genesis","ferrari","maserati","aston-martin","lotus","mg","alpine","rolls-royce"];
+const src = (id) => `/public/brand-logos/${id}.svg`;
+const logos = (from, n) => LOGOS.slice(from, from+n).map(id=>`<span><img class="logo" src="${src(id)}" alt=""/></span>`).join("");
+const TITLE = "Dīleru servisa vēsture un nobraukums";
+const SUB = "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.";
+const G = `100% Naudas atmaksas garantija. <span class="i">i</span>`;
+const copy = () => `<div class="copy"><p class="t">${TITLE}</p><p class="s">${SUB}</p></div>`;
+const items = [
+  ["49 · Izraksta rinda","FSH paraugs: datums, km, dīleris. Tā izskatās prece, ne ikona.","v49", `
+    <div class="ledger">
+      <div class="h"><span>Datums</span><span>Km</span><span>Dīleris</span></div>
+      <div class="r"><span>12.03.2024</span><span>142 300</span><span>Oficiālais dīleris</span></div>
+      <div class="r"><span>04.09.2023</span><span>128 110</span><span>Oficiālais dīleris</span></div>
+      <div class="r"><span>18.02.2023</span><span>114 050</span><span>Oficiālais dīleris</span></div>
+    </div>
+    ${copy()}
+    <p class="g">${G}</p>`],
+  ["50 · 48 zīmes","Tīkls ir arguments. Visi ražotāji kā lauks, teksts uz gradienta.","v50", `
+    <div class="field">${logos(0,48)}</div>
+    <div class="scrim">${copy()}<p class="g" style="margin-top:.35rem">${G}</p></div>`],
+  ["51 · Nobraukuma līkne","CarVertical valoda: km kā līkne, punkti ir apkopju notikumi.","v51", `
+    <svg viewBox="0 0 320 70" aria-hidden>
+      <path d="M8 58 C 48 54, 70 46, 96 42 S 150 38, 178 28 S 240 22, 312 12" fill="none" stroke="#2563eb" stroke-width="1.6"/>
+      <path d="M8 58 C 48 54, 70 46, 96 42 S 150 38, 178 28 S 240 22, 312 12 L 312 70 L 8 70 Z" fill="url(#fade)"/>
+      <circle cx="96" cy="42" r="3.2" fill="#60a5fa"/><circle cx="178" cy="28" r="3.2" fill="#60a5fa"/><circle cx="248" cy="18" r="3.2" fill="#93c5fd"/>
+      <defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2563eb" stop-opacity=".28"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs>
+    </svg>
+    ${copy()}
+    <p class="g">${G}</p>`],
+  ["52 · Servisa laika līnija","Vēstures produktu kanons: vizītes uz ass, ne globuss.","v52", `
+    <div>
+      <div class="tl">
+        <div class="n"><b>2019</b><span>48 tkm</span></div>
+        <div class="n"><b>2021</b><span>86 tkm</span></div>
+        <div class="n"><b>2023</b><span>121 tkm</span></div>
+        <div class="n"><b>2025</b><span>154 tkm</span></div>
+      </div>
+      <div class="rail"><i></i><em></em><i></i><em></em><i></i><em></em><i></i></div>
+    </div>
+    ${copy()}
+    <p class="g">${G}</p>`],
+  ["53 · Klasteris","Cockpit: liels odometrs. Tas, ko dīleris fiksē, ir km.","v53", `
+    <div><div class="odo">186 420<small>km</small></div></div>
+    ${copy()}
+    <p class="g">${G}</p>`],
+  ["54 · Divas zonas","Pa kreisi tīkls. Pa labi mint 100%. Data karte + solījums.","v54", `
+    <div class="left">
+      <div class="mini">${logos(0,12)}</div>
+      ${copy()}
+    </div>
+    <div class="right">
+      <div class="pct">100%</div>
+      <p class="g">${G}</p>
+    </div>`],
+  ["55 · OEM skenējums","PROVIN zilā skenēšanas līnija uz VIN lauka. Dzīvā vaicājuma sajūta.","v55", `
+    <div class="vinbox">WBA · · · · · · · · · · 7</div>
+    ${copy()}
+    <p class="g">${G}</p>`],
+  ["56 · Pilnības karstums","Full spilgtāks, workshop dimāks, limited gandrīz ēna. Tā pati H1e loģika kartītē.","v56", `
+    <div class="bands">
+      <div class="b full">${logos(0,11)}</div>
+      <div class="b work">${logos(11,11)}</div>
+      <div class="b lim">${logos(22,11)}</div>
+    </div>
+    ${copy()}
+    <p class="g">${G}</p>`],
+];
+document.getElementById("grid").innerHTML = items.map((it,i)=>`
+  <section class="cell" id="r${49+i}">
+    <div class="cap"><b>${it[0]}</b><i>${it[1]}</i></div>
+    <div class="stage ${it[2]}">${it[3]}</div>
+  </section>`).join("");
+</script>
+</body>
+</html>

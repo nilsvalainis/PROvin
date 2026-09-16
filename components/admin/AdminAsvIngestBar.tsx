@@ -42,6 +42,7 @@ type Props = {
   sessionId?: string;
   editable: boolean;
   lastFetchedVin: string;
+  lastReportId?: string;
   hasMappedData: boolean;
   selectedProducts: AsvProductId[];
   onSelectedProductsChange: (next: AsvProductId[]) => void;
@@ -53,6 +54,7 @@ export function AdminAsvIngestBar({
   sessionId = "",
   editable,
   lastFetchedVin,
+  lastReportId = "",
   hasMappedData,
   selectedProducts,
   onSelectedProductsChange,
@@ -96,6 +98,8 @@ export function AdminAsvIngestBar({
           vin: effectiveVin,
           products: selectedProducts,
           sessionId: sessionId || undefined,
+          reportId:
+            lastReportId && cachedForVin ? lastReportId : undefined,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {

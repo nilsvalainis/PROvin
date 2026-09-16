@@ -52,6 +52,8 @@ describe("ASV catalog", () => {
     expect(formatAsvCostUsd(asvProductsCostUsdCents(["vhr_full"]))).toBe("$4.50");
     const lite = ASV_PRODUCTS.find((p) => p.id === "vhr_lite")!;
     expect(asvProductPaths(lite, "/custom/lite/")[0]).toBe("/custom/lite/");
+    expect(ASV_PRODUCTS.find((p) => p.id === "vhr_full")?.path).toBe("/vinaudit/vehiclehistoryreport/us");
+    expect(lite.path).toBe("/vinaudit/vehiclehistoryreportlite/us");
   });
 });
 
@@ -72,6 +74,7 @@ describe("parseVinauditPayload", () => {
     expect(block.sales.some((s) => /COPART/i.test(s.venue))).toBe(true);
     expect(block.liens.some((r) => /ķīla|lien/i.test(`${r.label} ${r.detail}`))).toBe(true);
     expect(block.aiContextRaw).toContain("Servisa apmeklējumi");
+    expect(block.aiContextRaw).not.toMatch(/VIN Audit|Carfax/i);
     expect(imageHints.some((h) => h.url.includes("crash1.jpg"))).toBe(true);
     const plain = asvBlockToPlainText(block);
     expect(plain).toContain("ASV VĒSTURE");
@@ -82,6 +85,81 @@ describe("parseVinauditPayload", () => {
     const { block } = parseVinauditPayload({ success: true, result: SAMPLE });
     expect(block.reportId).toBe("va_report_99");
     expect(block.mileage.some((r) => r.odometer === String(milesToKmRounded(25000)))).toBe(true);
+  });
+
+  it("maps official /vinaudit/vehiclehistoryreport/us dictionary", () => {
+    const { block } = parseVinauditPayload(
+      {
+        success: true,
+        result: {
+          vehicle_data: {
+            report_id: "oneautoapi.1234567890",
+            vehicle_history_checked_datetime: "2026-09-05 06:09:11 PDT",
+            vehicle_identification_number: "2HGES16501H666666",
+            model_year: 2001,
+            manufacturer_desc: "Honda",
+            model_range_desc: "Civic",
+            trim_desc: "LX",
+          },
+          titles: [
+            {
+              state_code: "PA",
+              title_issued_date: "2005-09-27",
+              mileage: 42781,
+              mileage_unit: "mi",
+              is_current: true,
+            },
+          ],
+          title_brands: [
+            {
+              date: "2005-09-27",
+              brand_title: "Salvage: Damage or Not Specified",
+              brander_name: "PENNSYLVANIA",
+            },
+          ],
+          salvage_data: [
+            {
+              salvage_auction_lot_date: "2020-06-08",
+              salvage_auction_location: "CA - Los Angeles",
+              salvage_auction_record_id: 123456,
+              primary_damage_desc: "Front End",
+              secondary_damage_desc: "Rear End",
+              mileage: "12345",
+            },
+          ],
+          accidents: [
+            {
+              report_date: "2015-11-04",
+              damage_severity: "high",
+              impact_point: "front end",
+              source: { state_code: "CA" },
+            },
+          ],
+          thefts: [{ stolen_date: "2013-12-24", record_type: "Theft Recovery", theft_reported_state: "FL" }],
+          liens: [{ date: "2020-12-06", state_code: "FL", agency: "Westlake Financial Services" }],
+          sales_data: [
+            {
+              record_date: "2019-11-18",
+              advertised_price: 32194,
+              mileage_observed: 9914,
+              seller_details: { name: "Hatch Honda", state_code: "AZ", seller_type: "Dealer" },
+            },
+          ],
+        },
+      },
+      { productUsed: "vhr_full", vin: "2HGES16501H666666" },
+    );
+    expect(block.reportId).toBe("oneautoapi.1234567890");
+    expect(block.titles[0]?.odometer).toBe(String(milesToKmRounded(42781)));
+    expect(block.titles[0]?.note).toMatch(/aktuālais/i);
+    expect(block.brands.some((r) => /Salvage/i.test(r.label))).toBe(true);
+    expect(block.damages.some((d) => /front end/i.test(d.description))).toBe(true);
+    expect(block.sales.some((s) => /Hatch Honda/i.test(s.venue))).toBe(true);
+    expect(block.liens.some((r) => /Westlake/i.test(r.detail))).toBe(true);
+    expect(block.thefts.some((r) => /Theft Recovery/i.test(r.label))).toBe(true);
+    expect(block.checks.some((c) => c.severity === "alert" && /salvage/i.test(c.label))).toBe(true);
+    expect(block.aiContextRaw).toMatch(/Honda Civic LX/);
+    expect(asvBlockToPlainText(block)).not.toMatch(/VIN Audit|Carfax/i);
   });
 
   it("keeps Lite checks without inventing titles", () => {

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - dīlera kartīte, drošā kārta</title>
+<style>
+  :root{
+    --ink:#f1f5f9;
+    --sub:rgb(203 213 225 / .88);
+    --mute:rgb(148 163 184 / .9);
+    --row:#e2e8f0;
+    --g:rgb(167 243 208 / .95);
+    --blue:#2563eb;
+    --hair:rgb(255 255 255 / .1);
+    --stage:13.5rem;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#0d0d0d;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;
+    padding:.65rem 1.1rem;background:rgb(8 8 8 / .94);border-bottom:1px solid var(--hair);
+  }
+  .nav strong{margin-right:.4rem;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .nav a{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-decoration:none;padding:.28rem .4rem;}
+  .nav a:hover{color:#93c5fd;}
+  .intro{max-width:46rem;margin:0 auto;padding:1.5rem 1.3rem .3rem;}
+  .intro b{display:block;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;}
+  .intro h1{margin:.3rem 0 0;font-size:1.22rem;font-weight:600;}
+  .intro p{margin:.45rem 0 0;font-size:.82rem;line-height:1.5;color:var(--mute);}
+  .grid{max-width:72rem;margin:0 auto;padding:.5rem 1.3rem 2.6rem;display:grid;gap:1.1rem;}
+  @media(min-width:900px){.grid{grid-template-columns:1fr 1fr;}}
+  .cell{border:1px solid var(--hair);border-radius:.85rem;background:#111;padding:.75rem .8rem .9rem;}
+  .cap b{display:block;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .cap i{display:block;margin:.18rem 0 .55rem;font-style:normal;font-size:.72rem;line-height:1.4;color:var(--mute);}
+  .stage{
+    height:var(--stage);border-radius:16px;border:1px solid rgb(255 255 255 / .08);
+    background:rgb(255 255 255 / .03);padding:.55rem .75rem .65rem;
+    display:flex;flex-direction:column;
+  }
+  .t{margin:0;font-size:.82rem;font-weight:650;line-height:1.32;color:#f1f5f9;}
+  .s{margin:.2rem 0 0;font-size:.76rem;font-weight:450;line-height:1.32;color:var(--sub);}
+  .hr{margin:.75rem 0;border:0;border-top:1px solid var(--hair);}
+  .g{
+    display:inline-flex;align-items:center;justify-content:center;gap:.35rem;
+    margin:0 auto;font-size:.82rem;font-weight:700;line-height:1.32;color:rgb(226 232 240 / .95);
+  }
+  .g.mint{color:var(--g);}
+  .i{
+    display:inline-flex;align-items:center;justify-content:center;width:.95rem;height:.95rem;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;
+    background:rgb(15 23 42 / .52);font-size:.56rem;font-weight:700;color:rgb(226 232 240 / .92);
+  }
+  .mark{
+    width:1.75rem;height:1.75rem;stroke:rgb(203 213 225);fill:none;stroke-width:1.5;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  .plus{color:#2563eb;font-size:.82rem;font-weight:700;width:1.25rem;text-align:center;flex-shrink:0;}
+  .ok{color:var(--g);font-size:.82rem;font-weight:700;width:1.25rem;text-align:center;flex-shrink:0;}
+
+  .now,.s1{align-items:center;justify-content:space-between;text-align:center;}
+  .now .mid,.s1 .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55rem;}
+  .s1 .mid{gap:.35rem;}
+
+  .s2{justify-content:space-between;text-align:left;}
+  .s2 .mid{flex:1;display:flex;flex-direction:column;justify-content:center;}
+  .s2 .g{margin:0;justify-content:flex-start;}
+  .s2 .hr{margin:.55rem 0;}
+
+  .s3{justify-content:center;gap:.15rem;}
+  .s3 .row{
+    display:grid;grid-template-columns:1.25rem minmax(0,1fr);column-gap:.5rem;align-items:start;
+    padding:.28rem 0;font-size:.8rem;line-height:1.32;
+  }
+  .s3 .row .copy .t{font-weight:500;color:var(--row);font-size:.8rem;}
+  .s3 .row.g-row .t{font-weight:550;color:var(--g);}
+  .s3 .i{margin-left:.3rem;vertical-align:middle;}
+
+  .s4{justify-content:space-between;}
+  .s4 .mid{flex:1;display:flex;gap:.7rem;align-items:flex-start;text-align:left;padding-top:.35rem;}
+  .s4 .g{margin:0 auto;}
+
+  .s5{align-items:center;justify-content:space-between;text-align:center;}
+  .s5 .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .s5 .g{color:var(--g);}
+
+  .s6{justify-content:space-between;text-align:left;}
+  .s6 .top{display:flex;gap:.55rem;align-items:flex-start;padding-top:.2rem;}
+  .s6 .tiny{width:1.25rem;height:1.25rem;stroke:rgb(203 213 225);fill:none;stroke-width:1.55;flex-shrink:0;margin-top:.12rem;}
+  .s6 .g{margin:0;justify-content:flex-start;color:var(--g);}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>Drošā kārta</strong>
+  <a href="#r0">tagad</a>
+  <a href="#r43">43</a><a href="#r44">44</a><a href="#r45">45</a>
+  <a href="#r46">46</a><a href="#r47">47</a><a href="#r48">48</a>
+</nav>
+<div class="intro">
+  <b>Hero · Dīlera dati</b>
+  <h1>Tā pati sliede, drošāka kompozīcija</h1>
+  <p>Inter, slāts, stikls, 16px rādiuss, tā pati i poga. Bez zelta, bez serifa, bez jaunas paletes. Garantija paliek zaļa tikai tur, kur jau ir MINI/AUDITS garantijas krāsa.</p>
+</div>
+<div class="grid">
+
+<section class="cell" id="r0">
+  <div class="cap"><b>Tagad</b><i>Dzīvais stāvoklis. Globuss, centrs, pelēka garantija.</i></div>
+  <div class="stage now">
+    <div class="mid">
+      <svg class="mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20"/><path d="M12 2a15 15 0 0 0 0 20"/></svg>
+      <div>
+        <p class="t">Dīleru servisa vēsture un nobraukums</p>
+        <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+      </div>
+    </div>
+    <hr class="hr"/>
+    <p class="g">100% Naudas atmaksas garantija. <span class="i">i</span></p>
+  </div>
+</section>
+
+<section class="cell" id="r43">
+  <div class="cap"><b>43 · Bez globusa</b><i>Tas pats centrs un dalītājs. Pazūd tikai ikona, kas šobrīd lasās lēti.</i></div>
+  <div class="stage s1">
+    <div class="mid">
+      <p class="t">Dīleru servisa vēsture un nobraukums</p>
+      <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+    </div>
+    <hr class="hr"/>
+    <p class="g">100% Naudas atmaksas garantija. <span class="i">i</span></p>
+  </div>
+</section>
+
+<section class="cell" id="r44">
+  <div class="cap"><b>44 · Kreisā mala</b><i>Tā pati tipogrāfija kā tagad, tikai kā rindkopa, ne plakāts.</i></div>
+  <div class="stage s2">
+    <div class="mid">
+      <p class="t">Dīleru servisa vēsture un nobraukums</p>
+      <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+    </div>
+    <hr class="hr"/>
+    <p class="g">100% Naudas atmaksas garantija. <span class="i">i</span></p>
+  </div>
+</section>
+
+<section class="cell" id="r45">
+  <div class="cap"><b>45 · Kā MINI rindas</b><i>Tā pati valoda kā kaimiņiem: plus un zaļš ķeksis. Drošākais ģimenes variants.</i></div>
+  <div class="stage s3">
+    <div class="row">
+      <span class="plus">+</span>
+      <div class="copy">
+        <p class="t">Dīleru servisa vēsture un nobraukums</p>
+        <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+      </div>
+    </div>
+    <div class="row g-row">
+      <span class="ok">✓</span>
+      <p class="t">100% Naudas atmaksas garantija. <span class="i">i</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="cell" id="r46">
+  <div class="cap"><b>46 · Servisa mape</b><i>Globusa vietā mape. Tāda pati Lucide svars un slāta krāsa kā tagad.</i></div>
+  <div class="stage s4">
+    <div class="mid">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden><path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h4.2L11 8h7.5A1.5 1.5 0 0 1 20 9.5v8A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M8 12h8M8 15h5"/></svg>
+      <div>
+        <p class="t">Dīleru servisa vēsture un nobraukums</p>
+        <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+      </div>
+    </div>
+    <hr class="hr"/>
+    <p class="g">100% Naudas atmaksas garantija. <span class="i">i</span></p>
+  </div>
+</section>
+
+<section class="cell" id="r47">
+  <div class="cap"><b>47 · Zaļa garantija</b><i>43, tikai garantija esošajā featureLabelGuarantee mint. Pārējais paliek slāts.</i></div>
+  <div class="stage s5">
+    <div class="mid">
+      <p class="t">Dīleru servisa vēsture un nobraukums</p>
+      <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+    </div>
+    <hr class="hr"/>
+    <p class="g mint">100% Naudas atmaksas garantija. <span class="i">i</span></p>
+  </div>
+</section>
+
+<section class="cell" id="r48">
+  <div class="cap"><b>48 · Rinda + zaļš solījums</b><i>Maza mape kā plusa izmērs. Kreisā mala. Garantija mint, kā citos pakalpojumos.</i></div>
+  <div class="stage s6">
+    <div class="top">
+      <svg class="tiny" viewBox="0 0 24 24" aria-hidden><path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h4.2L11 8h7.5A1.5 1.5 0 0 1 20 9.5v8A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M8 12h8M8 15h5"/></svg>
+      <div>
+        <p class="t">Dīleru servisa vēsture un nobraukums</p>
+        <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+      </div>
+    </div>
+    <hr class="hr"/>
+    <p class="g">100% Naudas atmaksas garantija. <span class="i">i</span></p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - Atbalstītie ražotāji, 20 efekti pēc i</title>
+<style>
+  :root{
+    --ink:#f5f8fc;
+    --sub:rgb(203 213 225 / .88);
+    --mute:rgb(148 163 184 / .78);
+    --blue:#2563eb;
+    --blue2:#60a5fa;
+    --hair:rgb(255 255 255 / .1);
+    --green:rgb(167 243 208 / .95);
+    --full:rgb(226 232 240 / .9);
+    --work:rgb(148 163 184 / .72);
+    --lim:rgb(148 163 184 / .5);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#070707;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;
+    padding:.7rem 1.1rem;background:rgb(7 7 7 / .95);border-bottom:1px solid var(--hair);
+  }
+  .nav strong{margin-right:.4rem;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .nav a{
+    font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--mute);text-decoration:none;padding:.32rem .5rem;border-radius:999px;
+  }
+  .nav a:hover{color:#fff;}
+  .intro{max-width:72rem;margin:0 auto;padding:1.6rem 1.3rem .2rem;}
+  .intro b{display:block;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;}
+  .intro h1{margin:.4rem 0 0;font-size:1.35rem;font-weight:700;letter-spacing:-.02em;}
+  .intro p{margin:.5rem 0 0;font-size:.86rem;line-height:1.55;color:var(--sub);max-width:46rem;}
+  .scene{
+    max-width:72rem;margin:0 auto;padding:1.6rem 1.3rem 1.8rem;border-top:1px solid var(--hair);
+  }
+  .cap b{display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .cap h2{margin:.28rem 0 0;font-size:1.05rem;font-weight:650;}
+  .cap p{margin:.28rem 0 .85rem;font-size:.8rem;line-height:1.5;color:var(--sub);max-width:42rem;}
+  .hero{
+    position:relative;overflow:hidden;display:grid;grid-template-columns:1.35fr .9fr;gap:1.6rem;
+    align-items:center;padding:1.15rem 1.15rem 1.05rem;border-radius:1.1rem;
+    border:1px solid var(--hair);
+    background:radial-gradient(120% 80% at 12% 0%, rgb(37 99 235 / .14), transparent 46%), #101215;
+  }
+  .left{min-width:0;position:relative;}
+  .h1{margin:0 0 .7rem;font-size:1.55rem;line-height:1.12;font-weight:800;letter-spacing:-.03em;}
+  .h1 span{color:var(--blue);}
+  .rail{position:relative;min-height:8.4rem;}
+  .brands{
+    list-style:none;margin:0;padding:0;display:grid;
+    grid-template-columns:repeat(8,minmax(0,1fr));
+    column-gap:.28rem;row-gap:.38rem;
+  }
+  .chip{
+    min-width:0;text-align:center;font-size:.52rem;font-weight:550;letter-spacing:.01em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
+  }
+  .chip.full{color:var(--full);}
+  .chip.workshop{color:var(--work);}
+  .chip.limited{color:var(--lim);}
+  .card{
+    border-radius:16px;padding:.75rem .8rem .85rem;border:1px solid rgb(255 255 255 / .1);
+    background:linear-gradient(145deg, rgb(255 255 255 / .05), rgb(255 255 255 / .02));
+    box-shadow:0 22px 44px -16px rgb(0 0 0 / .65);
+  }
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--hair);margin-bottom:.55rem;}
+  .tabs span{text-align:center;padding:.4rem .15rem .5rem;font-size:.52rem;font-weight:700;letter-spacing:.08em;color:rgb(148 163 184 / .75);}
+  .tabs span.on{color:#f8fafc;box-shadow:inset 0 -2px 0 var(--blue);}
+  .box{border-radius:14px;border:1px solid rgb(255 255 255 / .08);background:rgb(255 255 255 / .03);padding:.45rem .65rem .5rem;}
+  .row{display:grid;grid-template-columns:1.1rem minmax(0,1fr);gap:.4rem;align-items:center;min-height:1.55rem;font-size:.72rem;}
+  .mark{color:var(--blue);font-weight:700;text-align:center;}
+  .gridmark{
+    width:.72rem;height:.72rem;margin:.2rem auto 0;
+    background:
+      linear-gradient(currentColor,currentColor) 0 0 / 42% 42% no-repeat,
+      linear-gradient(currentColor,currentColor) 100% 0 / 42% 42% no-repeat,
+      linear-gradient(currentColor,currentColor) 0 100% / 42% 42% no-repeat,
+      linear-gradient(currentColor,currentColor) 100% 100% / 42% 42% no-repeat;
+    color:#93c5fd;
+  }
+  .ok{color:var(--green);font-weight:700;text-align:center;}
+  .lab{color:#e2e8f0;font-weight:500;}
+  .lab.b{color:#93c5fd;font-weight:650;letter-spacing:.04em;text-transform:uppercase;font-size:.68rem;}
+  .lab.g{color:var(--green);}
+  .i{
+    display:inline-flex;align-items:center;justify-content:center;width:.92rem;height:.92rem;margin-left:.28rem;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;background:rgb(15 23 42 / .52);
+    color:#e2e8f0;font-size:.54rem;font-weight:700;cursor:pointer;
+  }
+  .i:hover,.scene.is-on .i{border-color:rgb(96 165 250 / .7);background:rgb(37 99 235 / .28);color:#fff;}
+  .cta{margin-top:.5rem;height:2.15rem;border-radius:.55rem;background:var(--blue);display:grid;place-items:center;font-size:.62rem;font-weight:750;letter-spacing:.04em;}
+  .hint{margin:.55rem 0 0;font-size:.68rem;color:var(--mute);}
+  .overlay,.beam,.scan,.ripple,.legend,.counter{
+    pointer-events:none;position:absolute;inset:0;opacity:0;
+  }
+  .scene.is-on .overlay,.scene.is-on .beam,.scene.is-on .scan,.scene.is-on .ripple,.scene.is-on .legend,.scene.is-on .counter{opacity:1;}
+
+  /* 01 wave */
+  [data-fx="wave"] .chip{transition:transform .45s ease, color .45s ease, text-shadow .45s ease;}
+  [data-fx="wave"].is-on .chip{
+    animation:waveUp .7s cubic-bezier(.2,.8,.2,1) both;
+    animation-delay:calc(var(--c) * 70ms);
+    text-shadow:0 0 12px rgb(96 165 250 / .35);
+  }
+  @keyframes waveUp{from{transform:translateY(10px);filter:blur(3px);opacity:.25;}to{transform:none;filter:none;opacity:1;}}
+
+  /* 02 scan */
+  [data-fx="scan"] .scan{
+    background:linear-gradient(90deg, transparent 0%, rgb(37 99 235 / .0) 40%, rgb(96 165 250 / .55) 50%, transparent 60%);
+    transform:translateX(-110%);
+  }
+  [data-fx="scan"].is-on .scan{animation:scanGo 1.15s ease-in-out forwards;}
+  [data-fx="scan"].is-on .chip{animation:scanLit .5s ease both;animation-delay:calc((var(--c) * 70ms) + 180ms);}
+  @keyframes scanGo{to{transform:translateX(110%);}}
+  @keyframes scanLit{from{color:rgb(148 163 184 / .28);}to{}}
+
+  /* 03 spotlight */
+  [data-fx="spot"] .overlay{
+    background:radial-gradient(55% 70% at 28% 58%, rgb(37 99 235 / .18), transparent 62%);
+    box-shadow:inset 0 0 0 1px rgb(37 99 235 / 0);
+  }
+  [data-fx="spot"].is-on .rail{
+    border-radius:.7rem;padding:.35rem .2rem .4rem;
+    box-shadow:0 0 0 1px rgb(37 99 235 / .45), 0 0 36px rgb(37 99 235 / .22);
+    background:rgb(15 23 42 / .45);
+  }
+  [data-fx="spot"].is-on .chip{transform:scale(1.04);text-shadow:0 0 10px rgb(147 197 253 / .25);}
+  [data-fx="spot"] .chip{transition:transform .45s ease, text-shadow .45s ease;}
+  [data-fx="spot"].is-on .card{opacity:.55;filter:saturate(.7);}
+  [data-fx="spot"] .card{transition:opacity .4s ease, filter .4s ease;}
+
+  /* 04 tiers */
+  [data-fx="tiers"] .chip{transition:color .3s ease, opacity .3s ease, text-shadow .3s ease;}
+  [data-fx="tiers"].is-on .chip.full{animation:tierOn .55s ease both;animation-delay:.05s;color:#dbeafe;text-shadow:0 0 10px rgb(96 165 250 / .4);}
+  [data-fx="tiers"].is-on .chip.workshop{animation:tierOn .55s ease both;animation-delay:.42s;color:#93c5fd;}
+  [data-fx="tiers"].is-on .chip.limited{animation:tierOn .55s ease both;animation-delay:.78s;color:#64748b;}
+  [data-fx="tiers"] .legend{display:flex;gap:.7rem;align-items:center;top:auto;inset:auto 0 -.15rem 0;height:auto;font-size:.58rem;color:var(--mute);opacity:0;transform:translateY(6px);}
+  [data-fx="tiers"].is-on .legend{opacity:1;transform:none;transition:.35s ease .2s;}
+  [data-fx="tiers"] .legend i{font-style:normal;margin-right:.22rem;}
+  @keyframes tierOn{from{opacity:.2;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* 05 beam */
+  [data-fx="beam"] .beam svg{width:100%;height:100%;}
+  [data-fx="beam"] .beam path{
+    fill:none;stroke:#60a5fa;stroke-width:1.6;stroke-linecap:round;
+    stroke-dasharray:8 7;filter:drop-shadow(0 0 6px #2563eb);
+  }
+  [data-fx="beam"].is-on .beam path{animation:dash 1.1s linear infinite;}
+  [data-fx="beam"].is-on .chip{animation:beamLit .55s ease both;animation-delay:calc(var(--i) * 18ms);}
+  [data-fx="beam"].is-on .i{box-shadow:0 0 0 4px rgb(37 99 235 / .25), 0 0 18px rgb(37 99 235 / .7);}
+  @keyframes dash{to{stroke-dashoffset:-60;}}
+  @keyframes beamLit{from{opacity:.15;}to{opacity:1;}}
+
+  /* 06 count */
+  [data-fx="count"] .chip{opacity:.18;}
+  [data-fx="count"].is-on .chip{animation:popIn .4s ease both;animation-delay:calc(var(--i) * 16ms);opacity:1;}
+  [data-fx="count"] .counter{
+    display:flex;align-items:flex-start;justify-content:flex-end;padding:.2rem .1rem 0;
+    font-size:1.8rem;font-weight:800;letter-spacing:-.04em;color:rgb(147 197 253 / .95);
+    text-shadow:0 0 18px rgb(37 99 235 / .5);
+  }
+  [data-fx="count"].is-on .counter{animation:countFade 1.4s ease forwards;}
+  @keyframes popIn{from{transform:scale(.86);opacity:0;}to{transform:none;opacity:1;}}
+  @keyframes countFade{0%,70%{opacity:1;}100%{opacity:0;}}
+
+  /* 07 columns */
+  [data-fx="cols"] .chip{opacity:.2;transform:translateY(16px);}
+  [data-fx="cols"].is-on .chip{
+    animation:colRise .7s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:calc(var(--c) * 85ms);
+  }
+  @keyframes colRise{to{opacity:1;transform:none;}}
+
+  /* 08 ripple */
+  [data-fx="ripple"] .ripple{
+    background:radial-gradient(circle at 30% 55%, rgb(96 165 250 / .35), transparent 38%);
+    transform:scale(.2);filter:blur(8px);
+  }
+  [data-fx="ripple"].is-on .ripple{animation:rippleGo 1s ease-out forwards;}
+  [data-fx="ripple"].is-on .chip{animation:rippleHit .6s ease both;animation-delay:calc((var(--c) + var(--r)) * 45ms);}
+  @keyframes rippleGo{to{transform:scale(2.4);opacity:0;}}
+  @keyframes rippleHit{0%{filter:brightness(.6);}40%{filter:brightness(1.45);color:#dbeafe;}100%{filter:none;}}
+
+  /* 09 hud */
+  [data-fx="hud"] .chip{position:relative;}
+  [data-fx="hud"].is-on .chip{animation:hudRead 2.4s ease both;animation-delay:calc(var(--i) * 28ms);}
+  @keyframes hudRead{
+    0%{opacity:.28;}
+    12%{opacity:1;color:#fff;text-shadow:0 0 10px rgb(96 165 250 / .8);}
+    28%,100%{opacity:1;text-shadow:none;}
+  }
+
+  /* 10 live */
+  [data-fx="live"] .chip{transition:color .4s ease, text-shadow .4s ease;}
+  [data-fx="live"].is-on .rail::after{
+    content:"";position:absolute;inset:-.4rem -.2rem;border-radius:.8rem;
+    border:1px solid rgb(37 99 235 / .4);
+    box-shadow:0 0 28px rgb(37 99 235 / .18);
+    animation:liveBreath 1.8s ease-in-out infinite;
+  }
+  [data-fx="live"].is-on .chip.full{color:#eff6ff;text-shadow:0 0 8px rgb(96 165 250 / .35);}
+  [data-fx="live"].is-on .chip.workshop{color:#93c5fd;}
+  [data-fx="live"].is-on .lab.b{text-shadow:0 0 10px rgb(37 99 235 / .6);}
+  @keyframes liveBreath{50%{opacity:.45;}100%{opacity:1;}}
+
+  .veil,.wash,.hair{
+    pointer-events:none;position:absolute;inset:0;opacity:0;
+  }
+  .scene.is-on .veil,.scene.is-on .wash,.scene.is-on .hair{opacity:1;}
+
+  /* 11 soft lift */
+  [data-fx="softlift"] .chip{opacity:.78;transition:none;}
+  [data-fx="softlift"].is-on .chip{
+    animation:softLift 1.15s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--r) * 90ms);
+  }
+  @keyframes softLift{from{opacity:.78;transform:translateY(3px);}to{opacity:1;transform:none;}}
+
+  /* 12 wash */
+  [data-fx="wash"] .wash{
+    background:linear-gradient(90deg, transparent 0%, rgb(96 165 250 / .12) 46%, transparent 72%);
+    transform:translateX(-80%);
+  }
+  [data-fx="wash"].is-on .wash{animation:washGo 1.8s cubic-bezier(.22,1,.36,1) forwards;}
+  [data-fx="wash"].is-on .chip{
+    animation:washLit 1.2s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--c) * 55ms);
+  }
+  @keyframes washGo{to{transform:translateX(80%);opacity:0;}}
+  @keyframes washLit{from{opacity:.72;}to{opacity:1;}}
+
+  /* 13 settle */
+  [data-fx="settle"] .chip{letter-spacing:.04em;opacity:.74;}
+  [data-fx="settle"].is-on .chip{
+    animation:settleIn 1.25s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--i) * 12ms);
+  }
+  @keyframes settleIn{to{letter-spacing:.01em;opacity:1;}}
+
+  /* 14 quiet tiers */
+  [data-fx="quietiers"] .chip{opacity:.55;}
+  [data-fx="quietiers"].is-on .chip.full{animation:qTier 1.1s cubic-bezier(.22,1,.36,1) both;animation-delay:.05s;}
+  [data-fx="quietiers"].is-on .chip.workshop{animation:qTier 1.1s cubic-bezier(.22,1,.36,1) both;animation-delay:.38s;}
+  [data-fx="quietiers"].is-on .chip.limited{animation:qTier 1.1s cubic-bezier(.22,1,.36,1) both;animation-delay:.7s;}
+  @keyframes qTier{to{opacity:1;}}
+
+  /* 15 hairline */
+  [data-fx="hair"] .hair{
+    inset:auto 0 0 0;height:1px;
+    background:linear-gradient(90deg, transparent, rgb(96 165 250 / .55), transparent);
+    transform:scaleX(.2);transform-origin:left center;
+  }
+  [data-fx="hair"].is-on .hair{animation:hairDraw 1.4s cubic-bezier(.22,1,.36,1) forwards;}
+  [data-fx="hair"].is-on .chip{animation:hairLit 1.1s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--c) * 40ms);}
+  @keyframes hairDraw{to{transform:scaleX(1);opacity:.85;}}
+  @keyframes hairLit{from{opacity:.7;}to{opacity:1;}}
+
+  /* 16 mist */
+  [data-fx="mist"] .chip{opacity:.62;}
+  [data-fx="mist"].is-on .chip{animation:mistClear 1.5s cubic-bezier(.22,1,.36,1) both;animation-delay:calc((var(--c) + var(--r)) * 35ms);}
+  @keyframes mistClear{to{opacity:1;}}
+
+  /* 17 rows */
+  [data-fx="rows"] .chip{opacity:.7;transform:translateX(-4px);}
+  [data-fx="rows"].is-on .chip{
+    animation:rowDrift 1.2s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--r) * 110ms);
+  }
+  @keyframes rowDrift{to{opacity:1;transform:none;}}
+
+  /* 18 veil */
+  [data-fx="veil"] .veil{
+    background:radial-gradient(70% 80% at 30% 50%, rgb(37 99 235 / .1), transparent 70%);
+  }
+  [data-fx="veil"].is-on .veil{animation:veilIn 1.6s ease forwards;}
+  [data-fx="veil"].is-on .chip{animation:veilLit 1.3s cubic-bezier(.22,1,.36,1) both;}
+  @keyframes veilIn{from{opacity:0;}50%{opacity:1;}to{opacity:.35;}}
+  @keyframes veilLit{from{opacity:.75;}to{opacity:1;}}
+
+  /* 19 weight */
+  [data-fx="weight"] .chip.full{color:rgb(148 163 184 / .7);}
+  [data-fx="weight"] .chip.workshop{color:rgb(148 163 184 / .5);}
+  [data-fx="weight"] .chip.limited{color:rgb(148 163 184 / .35);}
+  [data-fx="weight"].is-on .chip.full{color:var(--full);transition:color 1.2s cubic-bezier(.22,1,.36,1);}
+  [data-fx="weight"].is-on .chip.workshop{color:var(--work);transition:color 1.2s cubic-bezier(.22,1,.36,1) .15s;}
+  [data-fx="weight"].is-on .chip.limited{color:var(--lim);transition:color 1.2s cubic-bezier(.22,1,.36,1) .3s;}
+
+  /* 20 hold */
+  [data-fx="hold"] .chip{opacity:.68;}
+  [data-fx="hold"].is-on .chip{
+    animation:holdOnce 1.8s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--c) * 40ms);
+  }
+  [data-fx="hold"].is-on .rail{
+    transition:box-shadow 1.2s ease;
+    box-shadow:0 0 0 1px rgb(37 99 235 / .18);
+    border-radius:.55rem;
+  }
+  @keyframes holdOnce{from{opacity:.68;}to{opacity:1;}}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr;}
+    .brands{grid-template-columns:repeat(6,minmax(0,1fr));}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>20 efekti</strong>
+  <a href="#fx01">01</a><a href="#fx02">02</a><a href="#fx03">03</a><a href="#fx04">04</a>
+  <a href="#fx05">05</a><a href="#fx06">06</a><a href="#fx07">07</a><a href="#fx08">08</a>
+  <a href="#fx09">09</a><a href="#fx10">10</a>
+  <a href="#fx11">11</a><a href="#fx12">12</a><a href="#fx13">13</a><a href="#fx14">14</a>
+  <a href="#fx15">15</a><a href="#fx16">16</a><a href="#fx17">17</a><a href="#fx18">18</a>
+  <a href="#fx19">19</a><a href="#fx20">20</a>
+</nav>
+<div class="intro">
+  <b>Hero · Dīlera dati · web</b>
+  <h1>i nospiež kreiso ražotāju kolonnu, ne popup</h1>
+  <p>Katrā kartē nospied zilo <b>i</b> pie Atbalstītajiem ražotājiem. Tas palaiž efektu kreisajā pusē. Vēlreiz nospied, lai atkārtotu. Popup šeit nav. Mierīgie: <a href="#soft" style="color:#93c5fd">11 līdz 20</a>.</p>
+</div>
+
+<section class="scene" id="fx01" data-fx="wave">
+  <div class="cap"><b>01 · Kolonnu vilnis</b><h2>No kreisās uz labo paceļas visas 8 kolonnas</h2><p>Katra kolonna uzlec ar nelielu nobīdi. Spēcīgs, bet paliek H1e tipogrāfijā.</p></div>
+  <div class="hero" data-hero></div>
+  <p class="hint">Nospied i kartītē.</p>
+</section>
+<section class="scene" id="fx02" data-fx="scan">
+  <div class="cap"><b>02 · Diagnostikas skenēšana</b><h2>Zila josla iziet cauri nosaukumiem</h2><p>Tas pats sliežu ritms, kas jau ir hero. i palaiž skenēšanu, nosaukumi iedegas, kad josla tiem paiet garām.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx03" data-fx="spot">
+  <div class="cap"><b>03 · Prožektors</b><h2>Kartīte pieklusinās, ražotāji kļūst par galveno</h2><p>Fokuss pāriet uz kreiso pusi: rāmis, mērogs, zila aura. Kartīte paliek, bet atkāpjas.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx04" data-fx="tiers">
+  <div class="cap"><b>04 · Trīs viļņi pēc pilnības</b><h2>Vispirms pilnā vēsture, tad darbnīca, tad ierobežotie</h2><p>H1e tonis paliek. i izstāsta pārklājumu kā secīgu iedegšanos, lejā parādās leģenda.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx05" data-fx="beam">
+  <div class="cap"><b>05 · Stīga no i</b><h2>No pogas uz kolonnu iet dzīva līnija</h2><p>Skaidra saikne: šī rinda kartītē pieder šiem ražotājiem kreisajā pusē.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx06" data-fx="count">
+  <div class="cap"><b>06 · 48 ielāde</b><h2>Skaitītājs un nosaukumi ienāk pa vienam</h2><p>Sajūta, ka sistēma atver 48 OEM. Pēc tam skaitlis pazūd, paliek režģis.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx07" data-fx="cols">
+  <div class="cap"><b>07 · Kolonnu pacelšana</b><h2>Režģis sākumā ir tukšs, tad pieceļas pa kolonnām</h2><p>Visspēcīgākais “aktivizē” žests. Pēc i kolonnas fiziski uznāk no apakšas.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx08" data-fx="ripple">
+  <div class="cap"><b>08 · Impulss</b><h2>No centra iziet riņķis un uzsit pa nosaukumiem</h2><p>Viens spēcīgs sitien. Nosaukumi uzplaiksnī un paliek savā tonī.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx09" data-fx="hud">
+  <div class="cap"><b>09 · Nolasīšana</b><h2>HUD iet cauri visiem 48, katrs uz mirkli kļūst balts</h2><p>Kā datu pārbaude. Pēc tam visi paliek redzami.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx10" data-fx="live">
+  <div class="cap"><b>10 · Dzīvais savienojums</b><h2>Rāmis elpo, pilnie nosaukumi kļūst gaišāki</h2><p>Nav uzplaiksnījuma, kas pazūd. i ieslēdz pastāvīgu “live” stāvokli, līdz nospiež vēlreiz.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+
+<div class="intro" id="soft">
+  <b>Otrā kārta · mierīgi</b>
+  <h1>Vēl 10, plūdeni, bez sitiena</h1>
+  <p>Nosaukumi paliek vietā. i tikai palielina skaidrību. Nav lēcienu, nav spilgta zibšņa, nav kartītes aptumšošanas. Sākums pie 11.</p>
+</div>
+
+<section class="scene" id="fx11" data-fx="softlift">
+  <div class="cap"><b>11 · Maigs pacēlums</b><h2>Rindas paceļas par 3px un kļūst skaidrākas</h2><p>Lēns, no augšas uz leju. Paliek tas pats H1e režģis.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx12" data-fx="wash">
+  <div class="cap"><b>12 · Gaišuma vilnis</b><h2>Mīksta zila gaisma lēni iet no kreisās</h2><p>Josla ir gandrīz neredzama. Nosaukumi tikai atgūst pilnu opaciti.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx13" data-fx="settle">
+  <div class="cap"><b>13 · Burtu nosēšanās</b><h2>Atstarpes starp burtiem savācas, teksts nostājas</h2><p>Bez kustības uz augšu. Tikai tipogrāfija, ap 1,2s.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx14" data-fx="quietiers">
+  <div class="cap"><b>14 · Klusie trīs slāņi</b><h2>Pilnā, darbnīca, ierobežotie parādās pēc kārtas</h2><p>Tas pats stāsts kā 04, bet tikai opacitate. Bez spīduma un leģendas.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx15" data-fx="hair">
+  <div class="cap"><b>15 · Spalvas līnija</b><h2>Zem režģa izvelkas plāna līnija, kolonnas atveras</h2><p>Vienkāršs žests, ka saraksts ir “aktīvs”.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx16" data-fx="mist">
+  <div class="cap"><b>16 · Miglas noņemšana</b><h2>Nosaukumi paliek vietā un pamazām kļūst skaidri</h2><p>Nav pārvietošanās. Tikai 1,5s caurspīdīguma maiņa.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx17" data-fx="rows">
+  <div class="cap"><b>17 · Rindu slīdēšana</b><h2>Sešas rindas piebīdās par 4px no kreisās</h2><p>Plūdena, kā teksts ieiet fokusā. Bez lēciena.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx18" data-fx="veil">
+  <div class="cap"><b>18 · Viegls plīvurs</b><h2>Zils gaismas laukums uzpeld un paliek vājš</h2><p>Kartīte nemainās. Ražotāji kļūst par vienu niansi gaišāki.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx19" data-fx="weight">
+  <div class="cap"><b>19 · Tona atgriešanās</b><h2>Pelēkie nosaukumi atgūst H1e krāsas</h2><p>Pilnā vispirms, tad darbnīca, tad ierobežotie. Tikai krāsa, 1,2s.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+<section class="scene" id="fx20" data-fx="hold">
+  <div class="cap"><b>20 · Klusais rāmis</b><h2>Opacitāte pieaug, parādās ļoti smalks rāmis</h2><p>Viens lēns solis un paliek. Nav elpošanas, nav atkārtošanās.</p></div>
+  <div class="hero" data-hero></div>
+</section>
+
+<script>
+const TIERS = [
+  ["full", ["Audi","Bentley","BMW","CUPRA","Ford","Infiniti","Jaguar","Lamborghini","Land Rover","Lexus","Mazda","Mercedes-Benz","MINI","Nissan","Opel","Porsche","SEAT","Škoda","Toyota","Vauxhall","Volkswagen","Volvo"]],
+  ["workshop", ["Abarth","Alfa Romeo","Citroën","Dacia","Fiat","Genesis","Hyundai","Jeep","Kia","Lancia","Peugeot","Polestar","Renault","Smart"]],
+  ["limited", ["Alpine","Aston Martin","DS Automobiles","Ferrari","Honda","Lotus","Maserati","MG","Mitsubishi","Rolls-Royce","Subaru","Suzuki"]],
+];
+
+function brandsHtml(){
+  const cols = 8;
+  let i = 0, html = '<ul class="brands">';
+  for (const [tier, list] of TIERS) {
+    for (const name of list) {
+      const c = i % cols, r = Math.floor(i / cols);
+      html += `<li class="chip ${tier}" style="--i:${i};--c:${c};--r:${r}">${name}</li>`;
+      i += 1;
+    }
+  }
+  return html + "</ul>";
+}
+
+function heroHtml(fx){
+  const extras = {
+    scan: '<div class="scan"></div>',
+    spot: '<div class="overlay"></div>',
+    tiers: '<div class="legend"><span><i>●</i>pilna vēsture</span><span><i>●</i>darbnīca</span><span><i>●</i>ierobežots</span></div>',
+    beam: '<div class="beam"><svg viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M92 22 C 70 22, 48 18, 28 18"/></svg></div>',
+    count: '<div class="counter" data-count>48</div>',
+    ripple: '<div class="ripple"></div>',
+    wash: '<div class="wash"></div>',
+    hair: '<div class="hair"></div>',
+    veil: '<div class="veil"></div>',
+  }[fx] || "";
+  return `
+    <div class="left">
+      <p class="h1">Oficiālā <span>dīlera datu</span> atskaite</p>
+      <div class="rail">${brandsHtml()}${extras}</div>
+    </div>
+    <div class="card">
+      <div class="tabs"><span>PROVIN MINI</span><span>PROVIN AUDITS</span><span class="on">DĪLERA DATI</span></div>
+      <div class="box">
+        <div class="row"><span class="mark">✓</span><span class="lab">Servisa un apkopju vēsture*</span></div>
+        <div class="row"><span class="mark">✓</span><span class="lab">Odometra rādījumi</span></div>
+        <div class="row"><span class="mark">✓</span><span class="lab">Kopsavilkums</span></div>
+        <div class="row"><span class="gridmark"></span><span class="lab b">Atbalstītie ražotāji <button class="i" type="button" aria-label="Aktivizēt ražotājus">i</button></span></div>
+        <div class="row"><span class="ok">✓</span><span class="lab g">100% Naudas atmaksas garantija.</span></div>
+      </div>
+      <div class="cta">PASŪTĪT 24,99 €</div>
+    </div>`;
+}
+
+document.querySelectorAll(".scene").forEach((scene) => {
+  const host = scene.querySelector("[data-hero]");
+  host.innerHTML = heroHtml(scene.dataset.fx);
+  const btn = scene.querySelector(".i");
+  const counter = scene.querySelector("[data-count]");
+  btn.addEventListener("click", (event) => {
+    event.preventDefault();
+    scene.classList.remove("is-on");
+    void scene.offsetWidth;
+    scene.classList.add("is-on");
+    if (counter) {
+      let n = 0;
+      counter.textContent = "0";
+      const t = setInterval(() => {
+        n += 2;
+        if (n >= 48) { n = 48; clearInterval(t); }
+        counter.textContent = String(n);
+      }, 28);
+    }
+  });
+});
+</script>
+</body>
+</html>

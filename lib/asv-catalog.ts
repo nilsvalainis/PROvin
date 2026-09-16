@@ -25,33 +25,25 @@ export type AsvProduct = {
 };
 
 /**
- * One Auto dashboard nosaukumi: Vehicle History Report Lite (US) / Vehicle History Report (US).
- * Ceļi var atšķirties pēc konta; fallback ķēde paliek serverī.
+ * Oficiālie One Auto ceļi (dokumentācija): `/vinaudit/vehiclehistoryreport/us`.
+ * Lite: tas pats šablons (`…reportlite/us`). PAYG Full šajā kontā: $4.50.
  */
 export const ASV_PRODUCTS: readonly AsvProduct[] = [
   {
     id: "vhr_lite",
     label: "VHR Lite (US)",
-    hint: "Skrīnings: karogi, salvage, negadījumu esamība. Bieži pietiek, lai saprastu, kas vispār ir.",
+    hint: "Skrīnings: specifikācija, zādzība, negadījums, salvage, cena. Bieži pietiek pirmajam slānim.",
     priceUsdCents: 55,
-    path: "/vinaudit/vehiclehistoryreportlitefromvin/",
-    pathFallbacks: [
-      "/vinaudit/vehiclehistoryreportlitefromvin/v2",
-      "/oneauto/vehiclehistoryreportliteusfromvin/",
-      "/vinaudit/pullreport/",
-    ],
+    path: "/vinaudit/vehiclehistoryreportlite/us",
+    pathFallbacks: ["/vinaudit/vehiclehistoryreportlite/us/"],
   },
   {
     id: "vhr_full",
     label: "VHR Full (US)",
-    hint: "NMVTIS title vēsture ar odometru, izsoles, ķīlas, zādzības. Forenzikai. Ietver Lite saturu.",
+    hint: "NMVTIS title, zīmes, izsoles, ķīlas, zādzības. Forenzikai. Ietver Lite saturu.",
     priceUsdCents: 450,
-    path: "/vinaudit/vehiclehistoryreportfromvin/",
-    pathFallbacks: [
-      "/vinaudit/vehiclehistoryreportfromvin/v2",
-      "/oneauto/vehiclehistoryreportusfromvin/",
-      "/vinaudit/pullreport/",
-    ],
+    path: "/vinaudit/vehiclehistoryreport/us",
+    pathFallbacks: ["/vinaudit/vehiclehistoryreport/us/"],
   },
 ] as const;
 

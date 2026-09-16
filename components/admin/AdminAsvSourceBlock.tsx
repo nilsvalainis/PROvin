@@ -185,6 +185,7 @@ export function AdminAsvSourceBlock({
             sessionId={sessionId}
             editable={editable}
             lastFetchedVin={value.lastFetchedVin}
+            lastReportId={value.reportId}
             hasMappedData={odometerCount > 0 || (value.checks ?? []).length > 0}
             selectedProducts={selectedProducts}
             onSelectedProductsChange={setSelectedProducts}

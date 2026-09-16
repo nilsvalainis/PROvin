@@ -65,10 +65,16 @@ function errText(payload: unknown): string {
 async function fetchProductWithFallback(
   vin: string,
   id: AsvProductId,
+  reportId?: string,
 ): Promise<AsvProductResult> {
   const product = ASV_PRODUCTS.find((p) => p.id === id);
   if (!product) return { ok: false, error: "unknown_product" };
-  const paths = asvProductPaths(product, envPathFor(id));
+  const cachedId = reportId?.trim() ?? "";
+  const paths = asvProductPaths(product, envPathFor(id)).map((path) => {
+    if (!cachedId) return path;
+    const base = path.split("?")[0] ?? path;
+    return `${base}?report_id=${encodeURIComponent(cachedId)}`;
+  });
   let last: AsvProductResult = { ok: false, error: "upstream_error" };
   for (const path of paths) {
     try {
@@ -137,6 +143,7 @@ export async function fetchAsvProducts(opts: {
   vin: string;
   products: readonly AsvProductId[];
   sessionId?: string;
+  reportId?: string;
 }): Promise<{
   source: typeof ASV_SOURCE_TAG;
   vin: string;
@@ -151,7 +158,7 @@ export async function fetchAsvProducts(opts: {
 
   const results: Partial<Record<AsvProductId, AsvProductResult>> = {};
   for (const id of opts.products) {
-    results[id] = await fetchProductWithFallback(opts.vin, id);
+    results[id] = await fetchProductWithFallback(opts.vin, id, opts.reportId);
   }
 
   const preferred: AsvProductId[] = opts.products.includes("vhr_full")

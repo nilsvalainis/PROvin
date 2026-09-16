@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN - dīlera kartīte, struktūra</title>
+<style>
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:#0d0d0d;color:#f1f5f9;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;
+    padding:.7rem 1.2rem;background:rgb(8 8 8 / .94);border-bottom:1px solid rgb(255 255 255 / .1);
+  }
+  .nav strong{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;margin-right:.4rem;}
+  .nav a{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;text-decoration:none;padding:.28rem .4rem;}
+  .nav a:hover{color:#93c5fd;}
+  .intro{max-width:44rem;margin:0 auto;padding:1.5rem 1.3rem .4rem;}
+  .intro b{display:block;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;}
+  .intro h1{margin:.35rem 0 0;font-size:1.28rem;font-weight:600;}
+  .intro p{margin:.45rem 0 0;font-size:.84rem;line-height:1.55;color:#94a3b8;}
+  .wrap{max-width:74rem;margin:0 auto;padding:.4rem 1.3rem 3rem;display:grid;gap:1.3rem;}
+  @media(min-width:980px){.wrap{grid-template-columns:1fr 1fr;}}
+  .cell{border:1px solid rgb(255 255 255 / .1);border-radius:.9rem;background:#111;padding:.85rem;}
+  .cap b{display:block;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .cap i{display:block;margin:.2rem 0 .7rem;font-style:normal;font-size:.74rem;line-height:1.45;color:#94a3b8;}
+  .card{
+    border-radius:18px;padding:.85rem .9rem 1rem;
+    border:1px solid rgb(255 255 255 / .1);
+    background:linear-gradient(145deg, rgb(255 255 255 / .05), rgb(255 255 255 / .02));
+    box-shadow:0 25px 50px -12px rgb(0 0 0 / .7);
+  }
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid rgb(255 255 255 / .1);margin-bottom:.7rem;}
+  .tabs span{text-align:center;padding:.45rem .2rem .55rem;font-size:.62rem;font-weight:700;letter-spacing:.08em;color:rgb(148 163 184 / .75);}
+  .tabs span.on{color:#f8fafc;box-shadow:inset 0 -2px 0 #2563eb;}
+  .price{margin:.15rem 0 .65rem;font-size:1.55rem;font-weight:700;letter-spacing:-.03em;}
+  .box{
+    min-height:calc(5 * 2.7rem);border-radius:16px;border:1px solid rgb(255 255 255 / .08);
+    background:rgb(255 255 255 / .03);padding:.55rem .75rem .65rem;
+    display:flex;flex-direction:column;
+  }
+  .rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;justify-content:space-evenly;flex:1;}
+  .row{display:grid;grid-template-columns:1.25rem minmax(0,1fr);column-gap:.5rem;align-items:start;padding:.18rem 0;font-size:.8rem;line-height:1.32;}
+  .plus{color:#2563eb;font-weight:700;text-align:center;}
+  .ok{color:rgb(167 243 208 / .95);font-weight:700;text-align:center;}
+  .lab{color:#e2e8f0;font-weight:500;}
+  .lab.g{color:rgb(167 243 208 / .95);font-weight:550;display:inline-flex;align-items:center;gap:.32rem;}
+  .sub{display:block;margin-top:.12rem;font-size:.74rem;font-weight:450;color:rgb(203 213 225 / .88);}
+  .ii{
+    display:inline-flex;align-items:center;justify-content:center;width:.9rem;height:.9rem;
+    border:1px solid rgb(148 163 184 / .4);border-radius:999px;font-size:.52rem;font-weight:700;color:#e2e8f0;
+  }
+  .poster{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.45rem;}
+  .poster svg{width:2rem;height:2rem;stroke:#cbd5e1;fill:none;stroke-width:1.5;}
+  .poster .t{margin:0;font-size:.82rem;font-weight:650;color:#f1f5f9;}
+  .poster .s{margin:.15rem 0 0;font-size:.76rem;color:rgb(203 213 225 / .88);}
+  .hr{width:100%;border:0;border-top:1px solid rgb(255 255 255 / .1);margin:.4rem 0;}
+  .vin{margin-top:.7rem;height:2.4rem;border-radius:.55rem;border:1px solid rgb(255 255 255 / .1);background:rgb(0 0 0 / .25);}
+  .cta{margin-top:.55rem;height:2.55rem;border-radius:.65rem;background:#2563eb;display:grid;place-items:center;font-size:.72rem;font-weight:750;letter-spacing:.04em;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <strong>Struktūra</strong>
+  <a href="#mini">MINI</a>
+  <a href="#now">tagad</a>
+  <a href="#a">A</a>
+  <a href="#b">B</a>
+</nav>
+<div class="intro">
+  <b>Hero · Dīlera dati</b>
+  <h1>Beidzam dekorēt globusu</h1>
+  <p>Iepriekšējās kārtas bija bildes tukšumā, ko izveido desktop plakāts. Telefonā dīlerim jau ir piecas rindas, tas pats ritms kā MINI un AUDITS. Desktop no tā aizgāja. Šeit trīs kartītes ir tas pats stikls. Mainās tikai iekšpuse.</p>
+</div>
+<div class="wrap">
+
+<section class="cell" id="mini">
+  <div class="cap"><b>MINI · atsauce</b><i>Šis ritms jau der. Piecas rindas, zils plus. Dīlerim jābūt šīs ģimenes loceklim.</i></div>
+  <article class="card">
+    <div class="tabs"><span class="on">MINI</span><span>AUDITS</span><span>DĪLERA DATI</span></div>
+    <div class="price">39,99 €</div>
+    <div class="box">
+      <ul class="rows">
+        <li class="row"><span class="plus">+</span><span class="lab">Konsultācija un ieteikumi klātienes apskatei</span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Apdrošinātāju dati un tehnisko apskašu vēsture</span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Sludinājuma, pārdevēja un tehnisko risku analīze</span></li>
+        <li class="row"><span class="plus" style="color:rgb(255 255 255 / .35)">–</span><span class="lab" style="color:rgb(210 214 222 / .55)">CarVertical + AutoDNA + Izcelsmes valsts reģistri</span></li>
+        <li class="row"><span class="plus" style="color:rgb(255 255 255 / .35)">–</span><span class="lab" style="color:rgb(210 214 222 / .55)">Oficiālo dīleru un izsoļu portālu arhīva dati*</span></li>
+      </ul>
+    </div>
+    <div class="vin"></div>
+    <div class="cta">PASŪTĪT MINI AUDITU 39,99 €</div>
+  </article>
+</section>
+
+<section class="cell" id="now">
+  <div class="cap"><b>Tagad · desktop plakāts</b><i>Globuss un divas rindas piecu rindu bedrē. Tāpēc viss nākamais izskatījās vai nu lēti, vai tukši, vai kā uzlīme.</i></div>
+  <article class="card">
+    <div class="tabs"><span>MINI</span><span>AUDITS</span><span class="on">DĪLERA DATI</span></div>
+    <div class="price">24,99 €</div>
+    <div class="box">
+      <div class="poster">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20"/><path d="M12 2a15 15 0 0 0 0 20"/></svg>
+        <div>
+          <p class="t">Dīleru servisa vēsture un nobraukums</p>
+          <p class="s">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</p>
+        </div>
+        <hr class="hr"/>
+        <p class="lab g" style="font-weight:700;color:rgb(226 232 240 / .95)">100% Naudas atmaksas garantija. <span class="ii">i</span></p>
+      </div>
+    </div>
+    <div class="vin"></div>
+    <div class="cta">PASŪTĪT DĪLERA DATUS 24,99 €</div>
+  </article>
+</section>
+
+<section class="cell" id="a">
+  <div class="cap"><b>A · Tās pašas piecas rindas</b><i>Jau ir telefonā. Augstums sakrīt, jo tas ir tas pats komponents. Garantija mint. Bez ikonas.</i></div>
+  <article class="card">
+    <div class="tabs"><span>MINI</span><span>AUDITS</span><span class="on">DĪLERA DATI</span></div>
+    <div class="price">24,99 €</div>
+    <div class="box">
+      <ul class="rows">
+        <li class="row"><span class="plus">+</span><span class="lab">Odometra rādījumi</span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Servisa un apkopju vēsture*</span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Kopsavilkums</span></li>
+        <li class="row"><span class="ok">✓</span><span class="lab g">100% Naudas atmaksas garantija. <span class="ii">i</span></span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Atbalstītie ražotāji <span class="ii">i</span></span></li>
+      </ul>
+    </div>
+    <div class="vin"></div>
+    <div class="cta">PASŪTĪT DĪLERA DATUS 24,99 €</div>
+  </article>
+</section>
+
+<section class="cell" id="b">
+  <div class="cap"><b>B · Highlight kā pirmā rinda</b><i>Patur desktop virsrakstu un apakšrindu. Pārējais paliek saraksts. Nav plakāta.</i></div>
+  <article class="card">
+    <div class="tabs"><span>MINI</span><span>AUDITS</span><span class="on">DĪLERA DATI</span></div>
+    <div class="price">24,99 €</div>
+    <div class="box">
+      <ul class="rows">
+        <li class="row"><span class="plus">+</span><span class="lab">Dīleru servisa vēsture un nobraukums<span class="sub">Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.</span></span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Odometra rādījumi</span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Kopsavilkums</span></li>
+        <li class="row"><span class="ok">✓</span><span class="lab g">100% Naudas atmaksas garantija. <span class="ii">i</span></span></li>
+        <li class="row"><span class="plus">+</span><span class="lab">Atbalstītie ražotāji <span class="ii">i</span></span></li>
+      </ul>
+    </div>
+    <div class="vin"></div>
+    <div class="cta">PASŪTĪT DĪLERA DATUS 24,99 €</div>
+  </article>
+</section>
+
+</div>
+</body>
+</html>

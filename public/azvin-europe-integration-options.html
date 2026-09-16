@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>AZ.VIN — Eiropas integrācijas varianti</title>
+<style>
+  :root{
+    --ink:#f5f8fc;
+    --sub:rgb(203 213 225 / .88);
+    --mute:rgb(148 163 184 / .78);
+    --blue:#2563eb;
+    --blue2:#60a5fa;
+    --hair:rgb(255 255 255 / .1);
+    --glass:rgb(255 255 255 / .035);
+    --green:rgb(167 243 208 / .95);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:#050505;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .nav{
+    position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;
+    padding:.7rem 1.1rem;background:rgb(5 5 5 / .95);border-bottom:1px solid var(--hair);
+    backdrop-filter:blur(10px);
+  }
+  .nav strong{margin-right:.4rem;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .nav a{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-decoration:none;padding:.32rem .55rem;border:1px solid transparent;border-radius:999px;}
+  .nav a:hover{color:#fff;border-color:var(--hair);}
+
+  .intro{max-width:56rem;margin:0 auto;padding:1.8rem 1.3rem .4rem;}
+  .intro b{display:block;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;}
+  .intro h1{margin:.4rem 0 0;font-size:1.35rem;font-weight:700;letter-spacing:-.02em;}
+  .intro p{margin:.5rem 0 0;font-size:.86rem;line-height:1.55;color:var(--sub);max-width:44rem;}
+
+  section.opt{max-width:56rem;margin:0 auto;padding:2.2rem 1.3rem 1rem;border-top:1px solid var(--hair);}
+  section.opt:first-of-type{border-top:0;}
+  .opt-head{margin:0 0 1.1rem;}
+  .opt-head b{display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .opt-head h2{margin:.3rem 0 0;font-size:1.1rem;font-weight:700;}
+  .opt-head p{margin:.5rem 0 0;font-size:.8rem;line-height:1.5;color:var(--mute);max-width:38rem;}
+  .prosCons{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;margin:.65rem 0 0;font-size:.72rem;line-height:1.4;}
+  .prosCons span{color:var(--sub);}
+  .prosCons b{color:var(--green);font-weight:700;}
+  .prosCons em{color:#fca5a5;font-style:normal;font-weight:700;}
+
+  /* ---- shared card chrome (mirrors test-pricing-5.module.css tokens) ---- */
+  .card{
+    max-width:26rem;margin:1.1rem auto 0;border-radius:20px;padding:1.15rem;
+    border:1px solid rgb(255 255 255 / .1);
+    background:linear-gradient(145deg, rgb(255 255 255 / .05) 0%, rgb(255 255 255 / .02) 42%, rgb(255 255 255 / .012) 100%);
+    box-shadow:0 25px 50px -18px rgb(0 0 0 / .7);
+  }
+  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-bottom:1px solid var(--hair);margin:0 0 .9rem;}
+  .tabsFour{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .tabsFour .tab{font-size:.58rem;letter-spacing:.04em;padding:.72rem .1rem;font-weight:750;}
+  .tab{
+    appearance:none;border:0;background:transparent;color:var(--mute);cursor:pointer;
+    padding:.65rem 0;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;
+  }
+  .tab:hover{color:rgb(228 228 231/.95);}
+  .tab.active{color:#fff;border-bottom-color:var(--blue2);}
+
+  .tabsQuiet{grid-template-columns:1.05fr 1fr 1.2fr .72fr;}
+  .tabQuiet{
+    font-size:.6rem;font-weight:600;letter-spacing:.04em;color:rgb(148 163 184 / .55);
+    text-transform:none;
+  }
+  .tabQuiet:hover{color:rgb(186 194 206 / .9);}
+  .tabQuiet.active{color:#93c5fd;border-bottom-color:rgb(96 165 250 / .45);font-weight:650;}
+
+  .tabsRow{
+    display:flex;align-items:flex-end;gap:.15rem;border-bottom:1px solid var(--hair);margin:0 0 .9rem;
+  }
+  .tabsRow .tabs{flex:1;margin:0;border-bottom:0;}
+  .tabLink{
+    appearance:none;border:0;background:transparent;cursor:pointer;font-family:inherit;
+    flex:0 0 auto;padding:.55rem .2rem .7rem .55rem;margin-bottom:-1px;
+    font-size:.58rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:rgb(148 163 184 / .5);border-bottom:2px solid transparent;
+  }
+  .tabLink:hover{color:#93c5fd;}
+  .tabLink.active{color:#93c5fd;border-bottom-color:rgb(96 165 250 / .4);}
+
+  .tabsEu{grid-template-columns:1fr 1fr 1.15fr .55fr;}
+  .tabEu{
+    font-size:.58rem;font-weight:650;letter-spacing:.12em;color:rgb(148 163 184 / .48);
+  }
+  .tabEu.active{color:#93c5fd;border-bottom-color:rgb(96 165 250 / .4);}
+
+  .grid2{display:grid;gap:1.4rem;margin-top:1.2rem;}
+  @media(min-width:920px){.grid2{grid-template-columns:1fr 1fr;}}
+  .cell .cap{margin:0 0 .15rem;text-align:center;}
+  .cell .cap b{display:block;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;}
+  .cell .cap i{display:block;margin:.2rem auto .2rem;font-style:normal;font-size:.72rem;line-height:1.4;color:var(--mute);max-width:22rem;}
+
+  .pill{
+    appearance:none;font-family:inherit;cursor:pointer;border-radius:999px;
+    padding:.45rem .85rem;font-size:.66rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    border:1px solid rgb(37 99 235 / .4);background:rgb(37 99 235 / .1);color:#93c5fd;
+    transition:all .15s ease;
+  }
+  .pill:hover{background:rgb(37 99 235 / .18);}
+  .pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  .seg{display:flex;gap:.4rem;margin:0 0 .85rem;}
+  .segBtn{
+    flex:1;appearance:none;font-family:inherit;cursor:pointer;border-radius:12px;
+    padding:.55rem .5rem;text-align:center;border:1px solid var(--hair);background:rgb(255 255 255 / .02);color:var(--mute);
+  }
+  .segBtn b{display:block;font-size:.7rem;font-weight:700;letter-spacing:.02em;color:inherit;}
+  .segBtn small{display:block;margin-top:.15rem;font-size:.62rem;font-weight:600;color:inherit;opacity:.85;}
+  .segBtn.active{border-color:var(--blue2);background:rgb(37 99 235 / .14);color:#fff;}
+
+  .meta{text-align:center;margin:0 0 .8rem;}
+  .meta .t{margin:0;font-size:.94rem;font-weight:700;color:#fff;}
+  .meta .d{margin:.25rem 0 0;font-size:.76rem;color:var(--sub);line-height:1.4;}
+
+  .liquidAccent{border-radius:14px;border:1px solid var(--hair);background:rgb(255 255 255 / .03);padding:.9rem .95rem;}
+  ul.feat{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
+  ul.feat li{display:flex;align-items:flex-start;gap:.55rem;font-size:.78rem;line-height:1.35;color:var(--sub);}
+  ul.feat li .m{flex:0 0 auto;width:1.1rem;font-weight:800;color:var(--blue2);}
+  .foot-note{margin:.6rem 0 0;padding:0 .1rem;font-size:.62rem;line-height:1.4;color:rgb(210 214 222 / .48);}
+
+  .globeRow{display:flex;align-items:flex-start;gap:.7rem;}
+  .globeIcon{flex:0 0 auto;width:1.5rem;height:1.5rem;border-radius:50%;border:1.5px solid rgb(148 163 184 / .5);display:grid;place-items:center;font-size:.7rem;color:#94a3b8;}
+  .globeCopy .gt{margin:0;font-size:.82rem;font-weight:700;color:#fff;}
+  .globeCopy .gs{margin:.15rem 0 0;font-size:.72rem;color:var(--mute);line-height:1.35;}
+
+  .refund{margin:.75rem 0 0;text-align:center;font-size:.72rem;color:rgb(226 232 240 / .88);line-height:1.35;}
+  .turn{margin:.65rem 0 0;text-align:center;font-size:.7rem;font-weight:600;color:var(--mute);}
+  .cta{
+    display:block;width:100%;margin-top:.8rem;padding:.8rem 1rem;border-radius:999px;border:1px solid rgb(255 255 255 / .12);
+    background:linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);color:#fff;font-family:inherit;
+    font-size:.74rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;text-align:center;cursor:pointer;
+  }
+
+  /* Option C standalone below-hero block */
+  .belowCard{
+    max-width:26rem;margin:.75rem auto 0;border-radius:16px;padding:.95rem 1rem;
+    border:1px dashed rgb(96 165 250 / .35);background:rgb(37 99 235 / .06);
+    display:flex;align-items:center;gap:.8rem;justify-content:space-between;flex-wrap:wrap;
+  }
+  .belowCard .lc b{display:block;font-size:.82rem;font-weight:700;color:#fff;}
+  .belowCard .lc span{display:block;margin-top:.15rem;font-size:.7rem;color:var(--mute);}
+  .belowCard a.pill{text-decoration:none;white-space:nowrap;}
+
+  .badge{display:inline-block;margin-left:.4rem;padding:.1rem .45rem;border-radius:999px;background:rgb(167 243 208 / .12);color:var(--green);font-size:.58rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <strong>AZ.VIN prototips</strong>
+  <a href="#chosen">Izvēlētais</a>
+  <a href="#d">Vecie D</a>
+  <a href="#a">A</a>
+  <a href="#b">B</a>
+  <a href="#c">C</a>
+</nav>
+
+<div class="intro">
+  <b>Izvēlētais virziens</b>
+  <h1>Četri vienādi lieli tabi</h1>
+  <p>Secība: KOREJA / EIROPA / AMERIKA / DĪLERA DATI. Visi četri ar vienādu svaru. Noklusējums: Koreja. Zemāk paliek vecākie varianti, ja vajag salīdzināt.</p>
+</div>
+
+<section class="opt" id="chosen">
+  <div class="opt-head">
+    <b>Aktuālais makets</b>
+    <h2>KOREJA / EIROPA / AMERIKA / DĪLERA DATI</h2>
+    <p>Četras vienādi lielas pogas. DĪLERA DATI paliek pilnais nosaukums. Klikšķini tabus.</p>
+  </div>
+  <div class="card" style="max-width:32rem;">
+    <div class="tabs tabsFour" id="chosen-tabs"></div>
+    <div id="chosen-panel"></div>
+  </div>
+</section>
+
+<!-- ================= OPTION D ================= -->
+<section class="opt" id="d">
+  <div class="opt-head">
+    <b>Variants D</b>
+    <h2>Eiropa ir tabā, bet ne kā ceturtais līdzvērtīgs produkts</h2>
+    <p>Trīs pamata tabi paliek lieli un vienādi. Eiropa ir tajā pašā joslā, tikai šaurāka, pelēcīgāka un ar mazāku burtu. Kad to izvēlas, tā kļūst zila, bet paliek vizuāli vieglāka par pārējiem.</p>
+    <div class="prosCons">
+      <span><b>+</b> Visi 4 produkti redzami uzreiz</span>
+      <span><b>+</b> Hierarhija paliek: 3 galvenie, Eiropa kā dārgāks papildinājums</span>
+      <span><em>−</em> Četras pogas šaurā joslā, DĪLERA DATI labāk saīsināt uz DĪLERI</span>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="cell">
+      <div class="cap">
+        <b>D1. Šaurāks 4. tabs</b>
+        <i>KOREJA / ASV / DĪLERI aizņem gandrīz visu joslu. EIROPA ir šaura, mazākiem burtiem, bez lielajiem burtiem.</i>
+      </div>
+      <div class="card">
+        <div class="tabs tabsQuiet" id="d1-tabs"></div>
+        <div id="d1-panel"></div>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="cap">
+        <b>D2. Teksta saite joslas galā</b>
+        <i>Trīs pilni tabi kā PROVIN. Eiropa ir tikai „Eiropa” saite labajā malā, nevis tabs ar pasvītrojumu.</i>
+      </div>
+      <div class="card">
+        <div class="tabsRow">
+          <div class="tabs" id="d2-tabs"></div>
+          <button class="tabLink" id="d2-eu" type="button">Eiropa</button>
+        </div>
+        <div id="d2-panel"></div>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="cap">
+        <b>D3. Tikai „EU”</b>
+        <i>Vēl klusāk: ceturtais tabs ir saīsinājums EU. Redzams, bet nesacenšas ar produktu nosaukumiem.</i>
+      </div>
+      <div class="card">
+        <div class="tabs tabsEu" id="d3-tabs"></div>
+        <div id="d3-panel"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OPTION A ================= -->
+<section class="opt" id="a">
+  <div class="opt-head">
+    <b>Variants A</b>
+    <h2>Slēdzis DĪLERA DATI tabā</h2>
+    <p>3 galvenie tabi paliek neskarti. DĪLERA DATI tabā iekšā ir mazs 2 pogu pārslēgs: standarta dīlera dati vai EIROPA PRO. Pārslēdzot mainās apraksts, saraksts, cena un CTA vienā un tajā pašā tabā.</p>
+    <div class="prosCons">
+      <span><b>+</b> Tab josla identiska PROVIN (3 tabi)</span>
+      <span><b>+</b> Loģiski, jo Eiropa satur dīlera datus</span>
+      <span><em>−</em> Eiropa mazāk pamanāma no pirmā acu uzmetiena</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tabs" id="a-tabs"></div>
+    <div id="a-panel"></div>
+  </div>
+</section>
+
+<!-- ================= OPTION B ================= -->
+<section class="opt" id="b">
+  <div class="opt-head">
+    <b>Variants B</b>
+    <h2>3 tabi + maza papildu poga</h2>
+    <p>KOREJA / ASV / DĪLERA DATI paliek kā vienlīdzīga 3 kolonnu tab josla. Virs vai blakus tai ir mazāka, vizuāli sekundāra poga „+ EIROPA PRO”, kas atver 4. karti. Tabi vizuāli izslēdzas, kamēr aktīva Eiropa.</p>
+    <div class="prosCons">
+      <span><b>+</b> Eiropa redzama uzreiz, bet nesacenšas ar 3 pamata tabiem</span>
+      <span><b>+</b> Viegli izmērāms atsevišķi (poga = savs klikšķu notikums)</span>
+      <span><em>−</em> Vizuāli 4 izvēles vietā, ne tīri 3</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin:0 0 .1rem;">
+      <div class="tabs" id="b-tabs" style="flex:1;min-width:12rem;margin-bottom:0;"></div>
+    </div>
+    <div style="margin:.6rem 0 .9rem;text-align:right;">
+      <button class="pill" id="b-europe-pill">+ EIROPA PRO</button>
+    </div>
+    <div id="b-panel"></div>
+  </div>
+</section>
+
+<!-- ================= OPTION C ================= -->
+<section class="opt" id="c">
+  <div class="opt-head">
+    <b>Variants C</b>
+    <h2>Hero paliek tīri 3 tabi, Eiropa zem tā</h2>
+    <p>Hero kartīte ir 1:1 kā PROVIN (KOREJA / ASV / DĪLERA DATI), bez jebkādas izmaiņas. Tūlīt zem kartītes ir šaurs, vizuāli atšķirīgs josla „EIROPA PRO” ar savu CTA, kas ved uz atsevišķu Eiropas karti vai sadaļu.</p>
+    <div class="prosCons">
+      <span><b>+</b> Hero paliek burtiski identisks PROVIN, nulle riska</span>
+      <span><b>+</b> Skaidra vizuālā hierarhija: 3 galvenie, Eiropa kā upsell</span>
+      <span><em>−</em> Eiropa mazāk redzama pirmajā ekrānā uz maziem ekrāniem</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tabs" id="c-tabs"></div>
+    <div id="c-panel"></div>
+  </div>
+  <div class="belowCard">
+    <div class="lc">
+      <b>EIROPA PRO <span class="badge">149 AZN</span></b>
+      <span>CarVertical, AutoDNA, EU reģistri, izsoles, dīlera dati, konsultācija</span>
+    </div>
+    <a class="pill" href="#c" id="c-europe-link">SKATĪT EIROPA PRO</a>
+  </div>
+</section>
+
+<div style="height:3rem"></div>
+
+<script>
+const DATA = {
+  koreja: {
+    label: "KOREJA",
+    title: "KOREJA",
+    desc: "Pilns auto pārbaudes komplekts Korejā lietotiem auto.",
+    price: "19 AZN",
+    features: [
+      "Korejas vēstures atskaite",
+      "Nobraukuma un odometra ieraksti",
+      "Izsoļu portālu arhīvs",
+      "Bojājumu un avāriju ieraksti",
+      "Title un juridiskā statusa pārbaude",
+      "Konsultācija",
+    ],
+    turn: "Izpilde: 24h",
+    cta: "PASŪTĪT KOREJU 19 AZN",
+    refund: "100% naudas atmaksas garantija, ja datu nav.",
+  },
+  asv: {
+    label: "ASV",
+    title: "ASV",
+    desc: "Pilns auto pārbaudes komplekts ASV lietotiem auto.",
+    price: "19 AZN",
+    features: [
+      "ASV vēstures atskaite",
+      "Nobraukuma un odometra ieraksti",
+      "Izsoļu portālu arhīvs (Copart, IAAI u.c.)",
+      "Bojājumu, avāriju un salvage ieraksti",
+      "Title, zādzību un apgrūtinājumu pārbaude",
+      "Konsultācija",
+    ],
+    turn: "Izpilde: 24h",
+    cta: "PASŪTĪT ASV 19 AZN",
+    refund: "100% naudas atmaksas garantija, ja datu nav.",
+  },
+  dealer: {
+    label: "DĪLERA DATI",
+    title: "DĪLERA DATI",
+    globe: {
+      t: "Dīleru servisa vēsture un nobraukums",
+      s: "Tiešā piekļuve oficiālajiem ražotāja apkopju ierakstiem.",
+    },
+    price: "49 AZN",
+    turn: "Izpilde: 24-48h",
+    cta: "PASŪTĪT DĪLERA DATUS 49 AZN",
+    refund: "100% naudas atmaksas garantija, ja dīleru datubāzēs dati nav pieejami.",
+  },
+  europe: {
+    label: "EIROPA",
+    title: "EIROPA",
+    desc: "Pilns auto pārbaudes komplekts Eiropā lietotiem auto.",
+    price: "149 AZN",
+    features: [
+      "CarVertical vēstures atskaite",
+      "AutoDNA vēstures atskaite",
+      "Eiropas reģistru pārbaude",
+      "Izsoļu portālu arhīva dati",
+      "Oficiālā dīlera dati",
+      "Konsultācija",
+    ],
+    note: "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar citu specializētu maksas atskaiti.",
+    turn: "Izpilde: 24h",
+    cta: "PASŪTĪT EIROPAS PAKETI 149 AZN",
+    refund: "100% naudas atmaksas garantija, ja datu nav.",
+  },
+};
+DATA.korea = DATA.koreja;
+DATA.usa = {
+  ...DATA.asv,
+  label: "AMERIKA",
+  title: "AMERIKA",
+  cta: "PASŪTĪT AMERIKU 19 AZN",
+};
+
+function checklistPanel(entry){
+  const feats = entry.features.map(f => `<li><span class="m">✓</span><span>${f}</span></li>`).join("");
+  return `
+    <div class="meta">
+      <p class="t">${entry.title}</p>
+      <p class="d">${entry.desc}</p>
+    </div>
+    <div class="liquidAccent">
+      <ul class="feat">${feats}</ul>
+      ${entry.note ? `<p class="foot-note">${entry.note}</p>` : ""}
+    </div>
+    <p class="refund">${entry.refund}</p>
+    <p class="turn">${entry.turn}</p>
+    <button class="cta">${entry.cta}</button>
+  `;
+}
+
+function dealerPanel(entry){
+  return `
+    <div class="liquidAccent">
+      <div class="globeRow">
+        <span class="globeIcon">&#9711;</span>
+        <div class="globeCopy">
+          <p class="gt">${entry.globe.t}</p>
+          <p class="gs">${entry.globe.s}</p>
+        </div>
+      </div>
+    </div>
+    <p class="refund">${entry.refund}</p>
+    <p class="turn">${entry.turn}</p>
+    <button class="cta">${entry.cta}</button>
+  `;
+}
+
+function bindFourEqual(tabsEl, panelEl){
+  const order = [
+    ["korea","KOREJA"],
+    ["europe","EIROPA"],
+    ["usa","AMERIKA"],
+    ["dealer","DĪLERA DATI"],
+  ];
+  let active = "korea";
+  function render(){
+    tabsEl.innerHTML = order.map(([id,label]) => {
+      return `<button class="tab ${active===id?'active':''}" data-id="${id}">${label}</button>`;
+    }).join("");
+    tabsEl.querySelectorAll(".tab").forEach(btn => {
+      btn.onclick = () => { active = btn.dataset.id; render(); };
+    });
+    panelEl.innerHTML = panelFor(active);
+  }
+  render();
+}
+
+function panelFor(id){
+  if (id === "europe") return checklistPanel(DATA.europe);
+  if (id === "dealer") return dealerPanel(DATA.dealer);
+  return checklistPanel(DATA[id]);
+}
+
+bindFourEqual(document.getElementById("chosen-tabs"), document.getElementById("chosen-panel"));
+
+function bindMainTabs(tabsEl, panelEl, getActive, setActive){
+  const order = ["koreja","asv","dealer"];
+  tabsEl.innerHTML = order.map(id => {
+    const label = id === "dealer" ? "DĪLERI" : DATA[id].label;
+    const active = getActive() === id;
+    return `<button class="tab ${active?'active':''}" data-id="${id}">${label}</button>`;
+  }).join("");
+  tabsEl.querySelectorAll(".tab").forEach(btn => {
+    btn.onclick = () => { setActive(btn.dataset.id); };
+  });
+  panelEl.innerHTML = panelFor(getActive());
+}
+
+/* ---------------- Option D1: quiet 4th tab ---------------- */
+(function initD1(){
+  const tabsEl = document.getElementById("d1-tabs");
+  const panelEl = document.getElementById("d1-panel");
+  let active = "koreja";
+  function render(){
+    const order = [
+      ["koreja","KOREJA",""],
+      ["asv","ASV",""],
+      ["dealer","DĪLERI",""],
+      ["europe","Eiropa","tabQuiet"],
+    ];
+    tabsEl.innerHTML = order.map(([id,label,extra]) => {
+      const cls = `tab ${extra} ${active===id?'active':''}`.trim();
+      return `<button class="${cls}" data-id="${id}">${label}</button>`;
+    }).join("");
+    tabsEl.querySelectorAll(".tab").forEach(btn => {
+      btn.onclick = () => { active = btn.dataset.id; render(); };
+    });
+    panelEl.innerHTML = panelFor(active);
+  }
+  render();
+})();
+
+/* ---------------- Option D2: text link at end of tab row ---------------- */
+(function initD2(){
+  const tabsEl = document.getElementById("d2-tabs");
+  const panelEl = document.getElementById("d2-panel");
+  const euBtn = document.getElementById("d2-eu");
+  let active = "koreja";
+  function render(){
+    const order = ["koreja","asv","dealer"];
+    tabsEl.innerHTML = order.map(id => {
+      const label = id === "dealer" ? "DĪLERI" : DATA[id].label;
+      const isActive = active === id;
+      return `<button class="tab ${isActive?'active':''}" data-id="${id}">${label}</button>`;
+    }).join("");
+    tabsEl.querySelectorAll(".tab").forEach(btn => {
+      btn.onclick = () => { active = btn.dataset.id; render(); };
+    });
+    euBtn.classList.toggle("active", active === "europe");
+    panelEl.innerHTML = panelFor(active);
+  }
+  euBtn.onclick = () => { active = "europe"; render(); };
+  render();
+})();
+
+/* ---------------- Option D3: EU abbreviation ---------------- */
+(function initD3(){
+  const tabsEl = document.getElementById("d3-tabs");
+  const panelEl = document.getElementById("d3-panel");
+  let active = "koreja";
+  function render(){
+    const order = [
+      ["koreja","KOREJA",""],
+      ["asv","ASV",""],
+      ["dealer","DĪLERI",""],
+      ["europe","EU","tabEu"],
+    ];
+    tabsEl.innerHTML = order.map(([id,label,extra]) => {
+      const cls = `tab ${extra} ${active===id?'active':''}`.trim();
+      return `<button class="${cls}" data-id="${id}">${label}</button>`;
+    }).join("");
+    tabsEl.querySelectorAll(".tab").forEach(btn => {
+      btn.onclick = () => { active = btn.dataset.id; render(); };
+    });
+    panelEl.innerHTML = panelFor(active);
+  }
+  render();
+})();
+
+/* ---------------- Option A: tabs + segmented dealer/europe ---------------- */
+(function initA(){
+  const tabsEl = document.getElementById("a-tabs");
+  const panelEl = document.getElementById("a-panel");
+  const order = ["koreja","asv","dealer"];
+  let active = "koreja";
+  let dealerMode = "standard"; // standard | europe
+
+  function render(){
+    tabsEl.innerHTML = order.map(id => {
+      const label = id === "dealer" ? DATA.dealer.label : DATA[id].label;
+      return `<button class="tab ${active===id?'active':''}" data-id="${id}">${label}</button>`;
+    }).join("");
+    tabsEl.querySelectorAll(".tab").forEach(btn => {
+      btn.onclick = () => { active = btn.dataset.id; render(); };
+    });
+
+    if (active === "dealer"){
+      panelEl.innerHTML = `
+        <div class="seg" id="a-seg">
+          <button class="segBtn ${dealerMode==='standard'?'active':''}" data-mode="standard">
+            <b>DĪLERA DATI</b><small>49 AZN</small>
+          </button>
+          <button class="segBtn ${dealerMode==='europe'?'active':''}" data-mode="europe">
+            <b>EIROPA PRO</b><small>149 AZN</small>
+          </button>
+        </div>
+        <div id="a-seg-panel"></div>
+      `;
+      document.getElementById("a-seg-panel").innerHTML =
+        dealerMode === "europe" ? checklistPanel(DATA.europe) : dealerPanel(DATA.dealer);
+      panelEl.querySelectorAll(".segBtn").forEach(btn => {
+        btn.onclick = () => { dealerMode = btn.dataset.mode; render(); };
+      });
+    } else {
+      panelEl.innerHTML = checklistPanel(DATA[active]);
+    }
+  }
+  render();
+})();
+
+/* ---------------- Option B: 3 tabs + secondary Europe pill ---------------- */
+(function initB(){
+  const tabsEl = document.getElementById("b-tabs");
+  const panelEl = document.getElementById("b-panel");
+  const pillEl = document.getElementById("b-europe-pill");
+  const order = ["koreja","asv","dealer"];
+  let active = "koreja";
+  let europeActive = false;
+
+  function render(){
+    tabsEl.innerHTML = order.map(id => {
+      const label = id === "dealer" ? DATA.dealer.label : DATA[id].label;
+      const isActive = !europeActive && active === id;
+      return `<button class="tab ${isActive?'active':''}" data-id="${id}" style="${europeActive?'opacity:.45':''}">${label}</button>`;
+    }).join("");
+    tabsEl.querySelectorAll(".tab").forEach(btn => {
+      btn.onclick = () => { active = btn.dataset.id; europeActive = false; render(); };
+    });
+    pillEl.classList.toggle("active", europeActive);
+
+    if (europeActive){
+      panelEl.innerHTML = checklistPanel(DATA.europe);
+    } else if (active === "dealer"){
+      panelEl.innerHTML = dealerPanel(DATA.dealer);
+    } else {
+      panelEl.innerHTML = checklistPanel(DATA[active]);
+    }
+  }
+  pillEl.onclick = () => { europeActive = !europeActive; render(); };
+  render();
+})();
+
+/* ---------------- Option C: untouched 3 tabs + below-card europe strip ---------------- */
+(function initC(){
+  const tabsEl = document.getElementById("c-tabs");
+  const panelEl = document.getElementById("c-panel");
+  const order = ["koreja","asv","dealer"];
+  let active = "koreja";
+
+  function render(){
+    tabsEl.innerHTML = order.map(id => {
+      const label = id === "dealer" ? DATA.dealer.label : DATA[id].label;
+      return `<button class="tab ${active===id?'active':''}" data-id="${id}">${label}</button>`;
+    }).join("");
+    tabsEl.querySelectorAll(".tab").forEach(btn => {
+      btn.onclick = () => { active = btn.dataset.id; render(); };
+    });
+    panelEl.innerHTML = active === "dealer" ? dealerPanel(DATA.dealer) : checklistPanel(DATA[active]);
+  }
+  render();
+
+  document.getElementById("c-europe-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    const card = document.querySelector("#c .card");
+    card.style.transition = "box-shadow .25s ease";
+    card.style.boxShadow = "0 0 0 2px rgb(96 165 250 / .6), 0 25px 50px -18px rgb(0 0 0 / .7)";
+    setTimeout(() => { card.style.boxShadow = ""; }, 900);
+  });
+})();
+</script>
+
+</body>
+</html>
