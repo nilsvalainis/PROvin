@@ -5,6 +5,7 @@ import type { Attachment } from "nodemailer/lib/mailer";
 import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import {
   adminNewOrderHtml,
+  adminNewPartnerHtml,
   auditCompletedEmailHtml,
   dealerDataNoDataRefundEmailHtml,
   dealerDataOperatorMessageEmailHtml,
@@ -139,6 +140,70 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
   } catch (e) {
     console.error("[email] sendAdminNewOrderNotificationEmail SMTP:", e);
     throw e instanceof Error ? e : new Error(String(e));
+  }
+}
+
+export type AdminNewPartnerEmailPayload = {
+  partnerId: string;
+  companyName: string;
+  companyReg: string;
+  companyAddress: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  adminUrl: string;
+};
+
+const ADMIN_NEW_PARTNER_NOTIFY_EMAIL = "info@provin.lv";
+
+export function getAdminNewPartnerNotifyEmail(): string {
+  return ADMIN_NEW_PARTNER_NOTIFY_EMAIL;
+}
+
+export async function sendAdminNewPartnerNotificationEmail(payload: AdminNewPartnerEmailPayload): Promise<void> {
+  const to = getAdminNewPartnerNotifyEmail();
+  const subject = `PROVIN: jauns partneris: ${payload.companyName}`;
+  const text = [
+    "Jauns B2B partneris",
+    "",
+    `Uzņēmums: ${payload.companyName}`,
+    `Reģ. nr.: ${payload.companyReg}`,
+    `Adrese: ${payload.companyAddress}`,
+    `Kontaktpersona: ${payload.contactName}`,
+    `E-pasts: ${payload.email}`,
+    `Tālrunis: ${payload.phone}`,
+    `Admin: ${payload.adminUrl}`,
+  ].join("\n");
+  const html = adminNewPartnerHtml({
+    adminUrl: payload.adminUrl,
+    lines: [
+      { label: "Uzņēmums", value: payload.companyName },
+      { label: "Reģ. nr.", value: payload.companyReg },
+      { label: "Adrese", value: payload.companyAddress },
+      { label: "Kontaktpersona", value: payload.contactName },
+      { label: "E-pasts", value: payload.email },
+      { label: "Tālrunis", value: payload.phone },
+    ],
+  });
+
+  if (!isSmtpConfigured()) {
+    console.warn("[email] SMTP_USER/SMTP_PASS missing: jauna partnera e-pasts netika nosūtīts.");
+    return;
+  }
+  try {
+    await sendSmtpMail({ to, subject, text, html, replyTo: payload.email });
+  } catch (e) {
+    console.error("[email] sendAdminNewPartnerNotificationEmail SMTP:", e);
+  }
+}
+
+export async function trySendAdminNewPartnerNotificationEmail(
+  payload: AdminNewPartnerEmailPayload,
+): Promise<void> {
+  try {
+    await sendAdminNewPartnerNotificationEmail(payload);
+  } catch (e) {
+    console.error("[email] jauna partnera paziņojums neizdevās", e);
   }
 }
 

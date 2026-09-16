@@ -56,7 +56,14 @@ export default async function AdminPartnersPage() {
                 {partners.map((row) => (
                   <tr key={row.id} className="transition-colors hover:bg-slate-50/90">
                     <td className="max-w-[260px] truncate px-4 py-3.5 font-medium text-[var(--color-apple-text)]">
-                      {row.companyName}
+                      <span className="inline-flex items-center gap-2">
+                        {row.companyName}
+                        {row.adminSeenAt == null ? (
+                          <span className="inline-flex h-[18px] items-center rounded-full bg-rose-600 px-1.5 text-[10px] font-bold uppercase leading-none text-white">
+                            Jauns
+                          </span>
+                        ) : null}
+                      </span>
                     </td>
                     <td className="px-4 py-3.5 text-[var(--color-apple-text)]">{row.email}</td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-[var(--color-apple-text)]">

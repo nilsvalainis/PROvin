@@ -14,6 +14,8 @@ import {
   parsePartnerRecord,
   partnerFieldError,
   toPublicPartner,
+  toAdminPartner,
+  type B2bPartnerAdminListItem,
   type B2bPartnerPriceOverrides,
   type B2bPartnerPublicProfile,
   type B2bPartnerRecord,
@@ -159,10 +161,10 @@ function newPartnerId(): string {
   return `ptr_${randomBytes(8).toString("hex")}`;
 }
 
-export async function listB2bPartners(): Promise<B2bPartnerPublicProfile[]> {
+export async function listB2bPartners(): Promise<B2bPartnerAdminListItem[]> {
   const doc = await readDoc();
   return doc.partners
-    .map(toPublicPartner)
+    .map(toAdminPartner)
     .sort((a, b) => a.companyName.localeCompare(b.companyName, "lv"));
 }
 
@@ -213,10 +215,29 @@ export async function createB2bPartner(
       pendingEmail: null,
       dealerEnabled: false,
       prices: emptyB2bPartnerPrices(),
+      adminSeenAt: requireVerify ? null : now,
     };
     doc.partners.push(record);
     await writeDoc(doc);
     return { ok: true, partner: toPublicPartner(record), verifyToken };
+  });
+}
+
+export async function markB2bPartnerAdminSeen(
+  id: string,
+): Promise<{ ok: true; partner: B2bPartnerPublicProfile } | { ok: false; error: "not_found" }> {
+  return withLock(async () => {
+    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
+    const doc = await readDoc();
+    const idx = doc.partners.findIndex((p) => p.id === id);
+    if (idx < 0) return { ok: false, error: "not_found" };
+    const prev = doc.partners[idx]!;
+    if (prev.adminSeenAt) return { ok: true, partner: toPublicPartner(prev) };
+    const now = new Date().toISOString();
+    const record: B2bPartnerRecord = { ...prev, adminSeenAt: now, updatedAt: now };
+    doc.partners[idx] = record;
+    await writeDoc(doc);
+    return { ok: true, partner: toPublicPartner(record) };
   });
 }
 

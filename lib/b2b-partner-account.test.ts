@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  countUnseenB2bPartners,
   isUsablePartnerPassword,
   normalizePartnerEmail,
   parsePartnerRecord,
@@ -51,6 +52,7 @@ describe("b2b partner account", () => {
         dealer1: null,
         dealer10: null,
       },
+      adminSeenAt: "2026-09-04T00:00:00.000Z",
     };
     const publicProfile = toPublicPartner(record);
     expect(publicProfile).not.toHaveProperty("passwordHash");
@@ -58,6 +60,7 @@ describe("b2b partner account", () => {
     expect(publicProfile.email).toBe("demo@provin.lv");
     expect(publicProfile.emailVerifiedAt).toBe("2026-09-04T00:00:00.000Z");
     expect(publicProfile.dealerEnabled).toBe(false);
+    expect(publicProfile).not.toHaveProperty("adminSeenAt");
   });
 
   it("defaults dealerEnabled to false and parses custom prices", () => {
@@ -110,5 +113,30 @@ describe("b2b partner account", () => {
       emailVerifiedAt: null,
     });
     expect(pending?.emailVerifiedAt).toBeNull();
+  });
+
+  it("treats legacy records without adminSeenAt as already seen", () => {
+    const parsed = parsePartnerRecord({
+      id: "ptr_0123456789abcdef",
+      ...validInput,
+      email: "demo@provin.lv",
+      passwordHash: "scrypt$salt$hash",
+      status: "active",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      updatedAt: "2026-09-04T00:00:00.000Z",
+    });
+    expect(parsed?.adminSeenAt).toBe("2026-09-04T00:00:00.000Z");
+    const unseen = parsePartnerRecord({
+      id: "ptr_0123456789abcdef",
+      ...validInput,
+      email: "demo@provin.lv",
+      passwordHash: "scrypt$salt$hash",
+      status: "active",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      updatedAt: "2026-09-04T00:00:00.000Z",
+      adminSeenAt: null,
+    });
+    expect(unseen?.adminSeenAt).toBeNull();
+    expect(countUnseenB2bPartners([parsed!, unseen!])).toBe(1);
   });
 });

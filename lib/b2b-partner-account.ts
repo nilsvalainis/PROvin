@@ -31,12 +31,21 @@ export type B2bPartnerRecord = {
   /** Atsevišķā Dīlera paka. Noklusējums false - ieslēdz admin pēc sarunas. */
   dealerEnabled: boolean;
   prices: B2bPartnerPriceOverrides;
+  /**
+   * Kad operators atvēris partneri adminā. `null` = jauns, rāda badge.
+   * Veciem ierakstiem parse aizpilda ar createdAt.
+   */
+  adminSeenAt: string | null;
 };
 
 export type B2bPartnerPublicProfile = Omit<
   B2bPartnerRecord,
-  "passwordHash" | "emailVerifyHash" | "emailVerifyExpiresAt" | "emailVerifyPurpose"
+  "passwordHash" | "emailVerifyHash" | "emailVerifyExpiresAt" | "emailVerifyPurpose" | "adminSeenAt"
 >;
+
+export type B2bPartnerAdminListItem = B2bPartnerPublicProfile & {
+  adminSeenAt: string | null;
+};
 
 export type B2bPartnerWriteInput = {
   companyName: string;
@@ -125,6 +134,10 @@ export function toPublicPartner(partner: B2bPartnerRecord): B2bPartnerPublicProf
   };
 }
 
+export function toAdminPartner(partner: B2bPartnerRecord): B2bPartnerAdminListItem {
+  return { ...toPublicPartner(partner), adminSeenAt: partner.adminSeenAt };
+}
+
 export function normalizePartnerWriteInput(raw: B2bPartnerWriteInput): B2bPartnerWriteInput {
   return {
     companyName: clip(raw.companyName, 200),
@@ -200,5 +213,23 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
     pendingEmail,
     dealerEnabled: o.dealerEnabled === true,
     prices: parseB2bPartnerPrices(o.prices),
+    adminSeenAt: parseAdminSeenAt(o, createdAt),
   };
+}
+
+function parseAdminSeenAt(o: Record<string, unknown>, createdAt: string): string | null {
+  if (!("adminSeenAt" in o)) return createdAt;
+  return typeof o.adminSeenAt === "string" && o.adminSeenAt.trim() ? o.adminSeenAt.trim() : null;
+}
+
+export function isUnseenB2bPartner(partner: { adminSeenAt: string | null }): boolean {
+  return partner.adminSeenAt == null;
+}
+
+export function countUnseenB2bPartners(partners: ReadonlyArray<{ adminSeenAt: string | null }>): number {
+  let n = 0;
+  for (const partner of partners) {
+    if (isUnseenB2bPartner(partner)) n += 1;
+  }
+  return n;
 }

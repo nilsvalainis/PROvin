@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { AdminNavCountBadge } from "@/components/admin/AdminNavCountBadge";
 
 function pill(active: boolean) {
   return active
@@ -44,8 +45,6 @@ export function AdminWorkspaceSwitcher() {
     };
   }, [pathname, refreshFast]);
 
-  const fastLabel = fastOpen > 99 ? "99+" : String(fastOpen);
-
   return (
     <div
       className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 md:justify-start"
@@ -69,14 +68,7 @@ export function AdminWorkspaceSwitcher() {
         title={fastOpen > 0 ? `Neapstrādāti ātrie: ${fastOpen}` : "Ātrie pasūtījumi"}
       >
         FAST
-        {fastOpen > 0 ? (
-          <span
-            className="ml-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-none text-white"
-            aria-label={`Neapstrādāti ātrie pasūtījumi: ${fastOpen}`}
-          >
-            {fastLabel}
-          </span>
-        ) : null}
+        <AdminNavCountBadge count={fastOpen} label={`Neapstrādāti ātrie pasūtījumi: ${fastOpen}`} />
       </Link>
     </div>
   );

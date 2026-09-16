@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listingPeekCustomerCommentHtml, partnerVerifyEmailHtml } from "@/lib/email/html-templates";
+import { listingPeekCustomerCommentHtml, partnerVerifyEmailHtml, adminNewPartnerHtml } from "@/lib/email/html-templates";
 
 const listingUrl = "https://www.ss.com/msg/lv/transport/cars/bmw/x5/abc.html";
 
@@ -37,5 +37,23 @@ describe("partnerVerifyEmailHtml", () => {
     expect(html).toContain("Apstipriniet e-pastu");
     expect(html).toContain("https://provin.lv/lv/partneriem/apstiprinat?token=ver_abc");
     expect(html).toContain("24 stundas");
+  });
+});
+
+describe("adminNewPartnerHtml", () => {
+  it("lists the new partner and links to admin", () => {
+    const html = adminNewPartnerHtml({
+      adminUrl: "https://provin.lv/admin/partneri/ptr_0123456789abcdef",
+      lines: [
+        { label: "Uzņēmums", value: "SIA Demo Auto" },
+        { label: "E-pasts", value: "demo@salon.lv" },
+      ],
+    });
+    expect(html).toContain("Jauns B2B partneris");
+    expect(html).toContain("SIA Demo Auto");
+    expect(html).toContain("https://provin.lv/admin/partneri/ptr_0123456789abcdef");
+    expect(html).toContain("Atvērt partneri adminā");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
   });
 });

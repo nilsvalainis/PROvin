@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminB2bPartnerEditForm } from "@/components/admin/AdminB2bPartnerEditForm";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { isSafeB2bPartnerId, toPublicPartner } from "@/lib/b2b-partner-account";
-import { getB2bPartnerById } from "@/lib/b2b-partner-store";
+import { getB2bPartnerById, markB2bPartnerAdminSeen } from "@/lib/b2b-partner-store";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,9 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
   if (!isSafeB2bPartnerId(id)) notFound();
   const record = await getB2bPartnerById(id);
   if (!record) notFound();
+  if (!record.adminSeenAt) {
+    await markB2bPartnerAdminSeen(id);
+  }
   const partner = toPublicPartner(record);
 
   return (
