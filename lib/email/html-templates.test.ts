@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listingPeekCustomerCommentHtml, partnerVerifyEmailHtml, adminNewPartnerHtml } from "@/lib/email/html-templates";
+import { listingPeekCustomerCommentHtml, partnerPasswordResetEmailHtml, partnerVerifyEmailHtml, adminNewPartnerHtml } from "@/lib/email/html-templates";
 
 const listingUrl = "https://www.ss.com/msg/lv/transport/cars/bmw/x5/abc.html";
 
@@ -37,6 +37,20 @@ describe("partnerVerifyEmailHtml", () => {
     expect(html).toContain("Apstipriniet e-pastu");
     expect(html).toContain("https://provin.lv/lv/partneriem/apstiprinat?token=ver_abc");
     expect(html).toContain("24 stundas");
+  });
+});
+
+describe("partnerPasswordResetEmailHtml", () => {
+  it("includes a one-time reset CTA", () => {
+    const html = partnerPasswordResetEmailHtml({
+      resetUrl: "https://provin.lv/lv/partneriem/parole?token=rst_abc",
+      locale: "lv",
+    });
+    expect(html).toContain("Atjaunojiet paroli");
+    expect(html).toContain("https://provin.lv/lv/partneriem/parole?token=rst_abc");
+    expect(html).toContain("24 stundas");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
   });
 });
 

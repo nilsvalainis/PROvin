@@ -241,6 +241,28 @@ ${ctaButton(opts.verifyUrl, cta)}
   return shell(inner);
 }
 
+export function partnerPasswordResetEmailHtml(opts: {
+  resetUrl: string;
+  locale?: "lv" | "en";
+}): string {
+  const en = opts.locale === "en";
+  const title = en ? "Reset your password" : "Atjaunojiet paroli";
+  const lead = en
+    ? "Use this link to set a new password for your PROVIN.LV partner account."
+    : "Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.";
+  const cta = en ? "Set a new password" : "Iestatīt jaunu paroli";
+  const hint = en
+    ? "The link is valid for 24 hours and can be used once. If you did not request this, ignore the message."
+    : "Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.";
+  const inner = `
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
+<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(lead)}</p>
+${ctaButton(opts.resetUrl, cta)}
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:${MUTED};">${esc(hint)}</p>
+`;
+  return shell(inner);
+}
+
 /**
  * Operatora rediģēts dīlera e-pasts (plain text → rindkopas).
  * Izmanto gan „nav datu”, gan PDF piegādei - saturu nosaka teksts, ne veidne.

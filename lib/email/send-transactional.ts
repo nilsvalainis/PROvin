@@ -10,6 +10,7 @@ import {
   dealerDataNoDataRefundEmailHtml,
   dealerDataOperatorMessageEmailHtml,
   listingPeekCustomerCommentHtml,
+  partnerPasswordResetEmailHtml,
   partnerVerifyEmailHtml,
   paymentConfirmationHtml,
 } from "@/lib/email/html-templates";
@@ -540,6 +541,50 @@ export async function trySendPartnerVerifyEmail(opts: {
     return true;
   } catch (err) {
     console.error("[b2b] verify e-pasts neizdevās", err);
+    return false;
+  }
+}
+
+export async function sendPartnerPasswordResetEmail(opts: {
+  to: string;
+  resetUrl: string;
+  locale?: "lv" | "en";
+}): Promise<void> {
+  const en = opts.locale === "en";
+  const subject = en ? "PROVIN.LV: reset your password" : "PROVIN.LV: atjaunojiet paroli";
+  const lead = en
+    ? "Use this link to set a new password for your PROVIN.LV partner account."
+    : "Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.";
+  const hint = en
+    ? "The link is valid for 24 hours and can be used once."
+    : "Saite ir derīga 24 stundas un izmantojama vienu reizi.";
+  const text = [lead, "", opts.resetUrl, "", hint].join("\n");
+  const html = partnerPasswordResetEmailHtml({
+    resetUrl: opts.resetUrl,
+    locale: opts.locale,
+  });
+  await sendSmtpMail({
+    to: opts.to,
+    subject,
+    text,
+    html,
+  });
+}
+
+export async function trySendPartnerPasswordResetEmail(opts: {
+  to: string;
+  resetUrl: string;
+  locale?: "lv" | "en";
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[b2b] SMTP nav iestatīts, paroles atjaunošana nav nosūtīta");
+    return false;
+  }
+  try {
+    await sendPartnerPasswordResetEmail(opts);
+    return true;
+  } catch (err) {
+    console.error("[b2b] paroles atjaunošanas e-pasts neizdevās", err);
     return false;
   }
 }

@@ -28,6 +28,8 @@ export type B2bPartnerRecord = {
   emailVerifyExpiresAt: string | null;
   emailVerifyPurpose: "signup" | "email_change" | null;
   pendingEmail: string | null;
+  passwordResetHash: string | null;
+  passwordResetExpiresAt: string | null;
   /** Atsevišķā Dīlera paka. Noklusējums false - ieslēdz admin pēc sarunas. */
   dealerEnabled: boolean;
   prices: B2bPartnerPriceOverrides;
@@ -40,7 +42,13 @@ export type B2bPartnerRecord = {
 
 export type B2bPartnerPublicProfile = Omit<
   B2bPartnerRecord,
-  "passwordHash" | "emailVerifyHash" | "emailVerifyExpiresAt" | "emailVerifyPurpose" | "adminSeenAt"
+  | "passwordHash"
+  | "emailVerifyHash"
+  | "emailVerifyExpiresAt"
+  | "emailVerifyPurpose"
+  | "passwordResetHash"
+  | "passwordResetExpiresAt"
+  | "adminSeenAt"
 >;
 
 export type B2bPartnerAdminListItem = B2bPartnerPublicProfile & {
@@ -211,6 +219,12 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
         : null,
     emailVerifyPurpose: purpose,
     pendingEmail,
+    passwordResetHash:
+      typeof o.passwordResetHash === "string" && o.passwordResetHash.trim() ? o.passwordResetHash.trim() : null,
+    passwordResetExpiresAt:
+      typeof o.passwordResetExpiresAt === "string" && o.passwordResetExpiresAt.trim()
+        ? o.passwordResetExpiresAt.trim()
+        : null,
     dealerEnabled: o.dealerEnabled === true,
     prices: parseB2bPartnerPrices(o.prices),
     adminSeenAt: parseAdminSeenAt(o, createdAt),

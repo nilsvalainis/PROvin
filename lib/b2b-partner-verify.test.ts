@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   b2bEmailVerifyPath,
   b2bPartnerLocale,
+  b2bPartnerPasswordResetAbsoluteUrl,
   b2bPartnerVerifyAbsoluteUrl,
+  b2bPasswordResetPath,
   b2bVerifyTokensEqual,
   hashB2bVerifyToken,
   isB2bVerifyHashOpen,
   isPartnerEmailVerified,
+  isSafeB2bResetToken,
   isSafeB2bVerifyToken,
+  newB2bResetToken,
   newB2bVerifyToken,
 } from "@/lib/b2b-partner-verify";
 
@@ -25,6 +29,16 @@ describe("b2b email verify tokens", () => {
     expect(b2bPartnerLocale("ru")).toBe("ru");
     expect(b2bPartnerVerifyAbsoluteUrl("https://provin.lv", "de", token)).toBe(
       `https://provin.lv/de/partneriem/apstiprinat?token=${token}`,
+    );
+  });
+
+  it("issues a hashed one-time password reset token", () => {
+    const token = newB2bResetToken();
+    expect(isSafeB2bResetToken(token)).toBe(true);
+    expect(isSafeB2bVerifyToken(token)).toBe(false);
+    expect(b2bPasswordResetPath(token)).toBe(`/partneriem/parole?token=${token}`);
+    expect(b2bPartnerPasswordResetAbsoluteUrl("https://provin.lv", "lv", token)).toBe(
+      `https://provin.lv/lv/partneriem/parole?token=${token}`,
     );
   });
 

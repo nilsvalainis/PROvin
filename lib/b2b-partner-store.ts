@@ -26,12 +26,15 @@ import { hashB2bPartnerPassword, verifyB2bPartnerPassword } from "@/lib/b2b-part
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
   B2B_EMAIL_VERIFY_TTL_MS,
+  B2B_PASSWORD_RESET_TTL_MS,
   b2bVerifyTokensEqual,
   hashB2bVerifyToken,
   isB2bVerifyHashOpen,
   isPartnerEmailVerified,
   isSafeB2bVerifyToken,
   newB2bVerifyToken,
+  newB2bResetToken,
+  isSafeB2bResetToken,
   type B2bEmailVerifyPurpose,
 } from "@/lib/b2b-partner-verify";
 
@@ -213,6 +216,8 @@ export async function createB2bPartner(
       emailVerifyExpiresAt: verifyToken ? new Date(Date.now() + B2B_EMAIL_VERIFY_TTL_MS).toISOString() : null,
       emailVerifyPurpose: verifyToken ? "signup" : null,
       pendingEmail: null,
+      passwordResetHash: null,
+      passwordResetExpiresAt: null,
       dealerEnabled: false,
       prices: emptyB2bPartnerPrices(),
       adminSeenAt: requireVerify ? null : now,
@@ -289,6 +294,9 @@ export async function updateB2bPartner(
           ? hashB2bPartnerPassword(patch.password.trim())
           : prev.passwordHash,
       updatedAt: now,
+      ...(patch.password != null && patch.password.trim()
+        ? { passwordResetHash: null, passwordResetExpiresAt: null }
+        : {}),
       ...(emailChanged
         ? {
             emailVerifiedAt: now,
@@ -435,6 +443,8 @@ export async function changeB2bPartnerPassword(
     doc.partners[idx] = {
       ...prev,
       passwordHash: hashB2bPartnerPassword(nextPassword.trim()),
+      passwordResetHash: null,
+      passwordResetExpiresAt: null,
       updatedAt: new Date().toISOString(),
     };
     await writeDoc(doc);
@@ -478,6 +488,61 @@ export async function requestB2bPartnerEmailChange(
     doc.partners[idx] = record;
     await writeDoc(doc);
     return { ok: true, token: issued.token, to: email, partner: toPublicPartner(record) };
+  });
+}
+
+export async function requestB2bPartnerPasswordReset(
+  email: string,
+): Promise<{ token: string; to: string } | null> {
+  return withLock(async () => {
+    const key = normalizePartnerEmail(email);
+    if (!key || !isValidOrderEmail(key)) return null;
+    const doc = await readDoc();
+    const idx = doc.partners.findIndex((p) => p.email === key);
+    if (idx < 0) return null;
+    const prev = doc.partners[idx]!;
+    if (prev.status !== "active") return null;
+    const token = newB2bResetToken();
+    const now = new Date().toISOString();
+    doc.partners[idx] = {
+      ...prev,
+      passwordResetHash: hashB2bVerifyToken(token),
+      passwordResetExpiresAt: new Date(Date.now() + B2B_PASSWORD_RESET_TTL_MS).toISOString(),
+      updatedAt: now,
+    };
+    await writeDoc(doc);
+    return { token, to: prev.email };
+  });
+}
+
+export async function completeB2bPartnerPasswordReset(
+  token: string,
+  nextPassword: string,
+): Promise<{ ok: true; partner: B2bPartnerRecord } | { ok: false; error: "invalid" | "weak_password" }> {
+  if (!isSafeB2bResetToken(token)) return { ok: false, error: "invalid" };
+  if (!isUsablePartnerPassword(nextPassword)) return { ok: false, error: "weak_password" };
+  return withLock(async () => {
+    const doc = await readDoc();
+    const nowMs = Date.now();
+    const idx = doc.partners.findIndex(
+      (p) =>
+        Boolean(p.passwordResetHash) &&
+        isB2bVerifyHashOpen(p.passwordResetExpiresAt, nowMs) &&
+        b2bVerifyTokensEqual(p.passwordResetHash!, token),
+    );
+    if (idx < 0) return { ok: false, error: "invalid" };
+    const prev = doc.partners[idx]!;
+    if (prev.status !== "active") return { ok: false, error: "invalid" };
+    const stamp = new Date().toISOString();
+    doc.partners[idx] = {
+      ...prev,
+      passwordHash: hashB2bPartnerPassword(nextPassword.trim()),
+      passwordResetHash: null,
+      passwordResetExpiresAt: null,
+      updatedAt: stamp,
+    };
+    await writeDoc(doc);
+    return { ok: true, partner: doc.partners[idx]! };
   });
 }
 

@@ -45,6 +45,8 @@ describe("b2b partner account", () => {
       emailVerifyExpiresAt: null,
       emailVerifyPurpose: null,
       pendingEmail: null,
+      passwordResetHash: "rsthash",
+      passwordResetExpiresAt: null,
       dealerEnabled: false,
       prices: {
         business1: null,
@@ -57,6 +59,7 @@ describe("b2b partner account", () => {
     const publicProfile = toPublicPartner(record);
     expect(publicProfile).not.toHaveProperty("passwordHash");
     expect(publicProfile).not.toHaveProperty("emailVerifyHash");
+    expect(publicProfile).not.toHaveProperty("passwordResetHash");
     expect(publicProfile.email).toBe("demo@provin.lv");
     expect(publicProfile.emailVerifiedAt).toBe("2026-09-04T00:00:00.000Z");
     expect(publicProfile.dealerEnabled).toBe(false);
@@ -89,6 +92,7 @@ describe("b2b partner account", () => {
     });
     expect(legacy?.dealerEnabled).toBe(false);
     expect(legacy?.prices.business1).toBeNull();
+    expect(legacy?.passwordResetHash).toBeNull();
   });
 
   it("treats legacy records without emailVerifiedAt as already verified", () => {

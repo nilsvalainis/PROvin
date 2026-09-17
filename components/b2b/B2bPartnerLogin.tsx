@@ -20,6 +20,9 @@ export function B2bPartnerLogin() {
   const [busy, setBusy] = useState(false);
   const [resendBusy, setResendBusy] = useState(false);
   const [resendOk, setResendOk] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [forgotBusy, setForgotBusy] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   const onSubmit = async () => {
     if (!isLoginEmail(loginEmail) || password.trim().length < 8) {
@@ -72,6 +75,85 @@ export function B2bPartnerLogin() {
       setResendBusy(false);
     }
   };
+
+  const onForgot = async () => {
+    if (!isLoginEmail(loginEmail)) {
+      setError(t("loginError"));
+      return;
+    }
+    setError("");
+    setForgotBusy(true);
+    try {
+      await fetch("/api/partner/password/forgot", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail.trim(), locale }),
+      });
+      setForgotSent(true);
+    } catch {
+      setForgotSent(true);
+    } finally {
+      setForgotBusy(false);
+    }
+  };
+
+  if (forgot) {
+    return (
+      <form
+        className="flex w-full flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onForgot();
+        }}
+      >
+        <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#93c5fd]">
+          {t("forgotPasswordTitle")}
+        </p>
+        <p className="text-[0.75rem] leading-snug text-zinc-400">{t("forgotPasswordLead")}</p>
+        <label className="block min-w-0">
+          <span className="mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+            {t("loginEmail")}
+          </span>
+          <input
+            type="email"
+            className={styles.inlineInput}
+            value={loginEmail}
+            onChange={(event) => {
+              setLoginEmail(event.target.value);
+              setError("");
+              setForgotSent(false);
+            }}
+            autoComplete="username"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            enterKeyHint="send"
+            aria-label={t("emailAria")}
+          />
+        </label>
+        {error ? <p className={styles.inlineFieldError}>{error}</p> : null}
+        {forgotSent ? <p className="text-[0.75rem] text-zinc-300">{t("forgotPasswordSent")}</p> : null}
+        <button type="submit" className={styles.liquidCta} disabled={forgotBusy}>
+          <span className={styles.liquidCtaShimmer} aria-hidden />
+          <span className={styles.liquidCtaLabel}>
+            {forgotBusy ? t("forgotPasswordLoading") : t("forgotPasswordSubmit")}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#93c5fd] underline-offset-2 hover:underline"
+          onClick={() => {
+            setForgot(false);
+            setForgotSent(false);
+            setError("");
+          }}
+        >
+          {t("forgotPasswordBack")}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form
@@ -126,6 +208,18 @@ export function B2bPartnerLogin() {
       <button type="submit" className={styles.liquidCta} disabled={busy}>
         <span className={styles.liquidCtaShimmer} aria-hidden />
         <span className={styles.liquidCtaLabel}>{busy ? t("loginLoading") : t("loginSubmit")}</span>
+      </button>
+      <button
+        type="button"
+        className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#93c5fd] underline-offset-2 hover:underline"
+        onClick={() => {
+          setForgot(true);
+          setError("");
+          setUnverified(false);
+          setResendOk(false);
+        }}
+      >
+        {t("forgotPassword")}
       </button>
       {unverified ? (
         <button
