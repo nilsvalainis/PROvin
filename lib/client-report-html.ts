@@ -561,8 +561,11 @@ function buildPdfLifeRailHtml(): string {
 }
 
 function buildPdfLifeMetaHtml(e: LifecycleEvent): string {
+  const unverifiedNote = e.countryUnverified
+    ? `<span class="pdf-life-country-note">(pēc sludinājuma, nav apstiprināts)</span>`
+    : "";
   const flag = e.country
-    ? `<span class="pdf-life-country"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span></span>`
+    ? `<span class="pdf-life-country${e.countryUnverified ? " pdf-life-country--unverified" : ""}"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span>${unverifiedNote}</span>`
     : "";
   const dots = e.sources.map((s) => pdfSourceDotHtml(s)).join("");
   const srcsWrap = e.sources.length > 4 ? " pdf-life-srcs--wrap" : "";
@@ -2182,6 +2185,9 @@ function clientReportPrintCss(): string {
         font-size:11px;color:#64748b;line-height:1.3;min-width:0;
       }
       .pdf-life-country{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+      .pdf-life-country--unverified{opacity:0.72;}
+      .pdf-life-country--unverified .pdf-country-flag{filter:grayscale(45%);}
+      .pdf-life-country-note{font-style:italic;color:#94a3b8;white-space:normal;}
       .pdf-life-meta .pdf-country-flag{font-size:13px;line-height:1;}
       .pdf-life-km{
         flex:none;padding:3px 8px;border-radius:6px;background:#F1F5F9;

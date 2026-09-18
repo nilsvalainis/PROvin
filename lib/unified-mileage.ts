@@ -39,6 +39,12 @@ export type UnifiedMileageRow = {
    * Dokumentā rādījums bieži saglabāts no pasūtījuma atvēršanas brīža, tāpēc datums var būt vēlāks par rādījumu.
    */
   documentValue?: boolean;
+  /**
+   * Valsts nāk no sludinājuma/tirgus avota (piem. ss.lv → vienmēr "Latvija"), nevis no oficiāla
+   * reģistra vai dīlera datiem. Pārdevēja norādītā vieta nav ticama ģeogrāfiska liecība, tāpēc
+   * to nedrīkst izmantot robežšķērsošanas (importa) notikumu atvasināšanai laikposma hronoloģijā.
+   */
+  countryUnverified?: boolean;
 };
 
 /** Tabulas rinda pēc km apvienošanas — vairāki avoti vienā „Avots” kolonnā. */
@@ -160,6 +166,9 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
   const countries = [...new Set(cluster.map((r) => r.country.trim()).filter(Boolean))];
   // Ja to pašu km apstiprina kāds neatkarīgs nolasījums, apvienotā rinda vairs nav tikai dokumenta vērtība.
   const documentValue = cluster.every((r) => r.documentValue === true);
+  // Valsts paliek nesertificēta tikai tad, ja pilnīgi visi avoti šajā km klasterī ir nesertificēti
+  // (piem. tikai sludinājums) — ja klāt ir kaut viens oficiāls avots, valsts vairs nav tikai pieņēmums.
+  const countryUnverified = cluster.every((r) => r.countryUnverified === true);
   return {
     ...primary,
     country: countries.length <= 1 ? (countries[0] ?? primary.country) : countries.join(" / "),
@@ -167,6 +176,7 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
     sourceLabel: labels[0] ?? primary.sourceLabel,
     sourceLabels: labels,
     ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
+    ...(countryUnverified ? { countryUnverified: true } : { countryUnverified: undefined }),
   };
 }
 
@@ -248,6 +258,7 @@ function mergeCrossSourceRows(
   }
   const countries = [...new Set([later.country.trim(), earlier.country.trim()].filter(Boolean))];
   const documentValue = later.documentValue === true && earlier.documentValue === true;
+  const countryUnverified = later.countryUnverified === true && earlier.countryUnverified === true;
   return {
     ...later,
     country: countries.length <= 1 ? (countries[0] ?? later.country) : countries.join(" / "),
@@ -255,6 +266,7 @@ function mergeCrossSourceRows(
     sourceLabel: labels[0] ?? later.sourceLabel,
     sourceLabels: labels,
     ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
+    ...(countryUnverified ? { countryUnverified: true } : { countryUnverified: undefined }),
   };
 }
 
@@ -501,6 +513,7 @@ export function collectUnifiedMileageRows(
     countryRaw: string,
     sourceLabelRaw: string,
     documentValue = false,
+    countryUnverified = false,
   ) => {
     const date = dateRaw.trim();
     const odometer = odometerRaw.trim();
@@ -514,6 +527,7 @@ export function collectUnifiedMileageRows(
       sourceOrder,
       sourceLabel: sourceLabelRaw.trim() || "Nezināms avots",
       ...(documentValue ? { documentValue: true } : null),
+      ...(countryUnverified ? { countryUnverified: true } : null),
     });
     sourceOrder += 1;
   };
@@ -592,7 +606,8 @@ export function collectUnifiedMileageRows(
   if (!options?.omitListingMileage) {
     const listing = resolveListingMileageChartRow(p.tirgusForm, p.listingUrl);
     if (listing) {
-      pushRow(listing.date, listing.odometer, listing.country, listing.sourceLabel);
+      // Sludinājuma valsts (piem. ss.lv → vienmēr "Latvija") ir pieņēmums, ne apstiprināts fakts.
+      pushRow(listing.date, listing.odometer, listing.country, listing.sourceLabel, false, true);
     }
   }
 

@@ -86,6 +86,14 @@ export type LifecycleEvent = {
   incident?: UnifiedIncidentCluster;
   /** Sludinājuma cenas izmaiņa pret iepriekšējo rādīto cenu (0 = sākuma punkts). */
   priceDelta?: number;
+  /**
+   * Valsts nāk no sludinājuma/tirgus avota, ne no oficiāla reģistra vai dīlera datiem.
+   * Šāda valsts nedrīkst noteikt robežšķērsošanas (importa) notikumus starp kaimiņiem
+   * un nedrīkst kļūt par jauno `prevCountry` — pretējā gadījumā pārdevēja kļūdains/apzināti
+   * pazemināts nobraukums (ar piesaistītu nepareizu valsti) izskatās pēc reālas robežas
+   * šķērsošanas turp un atpakaļ.
+   */
+  countryUnverified?: boolean;
 };
 
 /** Mēnešu skaits starp notikumiem, no kura robs kļūst par patstāvīgu ierakstu. */
@@ -191,6 +199,7 @@ function makeEvent(args: {
   odometer?: string;
   source?: string;
   tone?: LifecycleEventTone;
+  countryUnverified?: boolean;
 }): LifecycleEvent {
   const ms = parseLifecycleTimeMs(args.rawDate);
   const ev: LifecycleEvent = {
@@ -204,6 +213,7 @@ function makeEvent(args: {
     odometer: args.odometer?.trim() ?? "",
     sources: args.source?.trim() ? [args.source.trim()] : [],
     tone: args.tone ?? "info",
+    ...(args.countryUnverified ? { countryUnverified: true } : null),
   };
   collapseCountryOnlyDetail(ev);
   return ev;
@@ -530,6 +540,7 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
       country: r.country,
       odometer: r.odometer,
       tone: anomaly ? "alert" : "info",
+      countryUnverified: r.countryUnverified === true,
     });
     ev.sources = [...r.sourceLabels];
     return ev;
@@ -554,7 +565,10 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
       continue;
     }
     if (!host.odometer && o.odometer) host.odometer = o.odometer;
-    if (!host.country && o.country) host.country = o.country;
+    if (!host.country && o.country) {
+      host.country = o.country;
+      if (o.countryUnverified) host.countryUnverified = true;
+    }
     for (const s of o.sources) if (!host.sources.includes(s)) host.sources.push(s);
     collapseCountryOnlyDetail(host);
   }
@@ -573,7 +587,10 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
       continue;
     }
     if (!prev.odometer && e.odometer) prev.odometer = e.odometer;
-    if (!prev.country && e.country) prev.country = e.country;
+    if (!prev.country && e.country) {
+      prev.country = e.country;
+      if (e.countryUnverified) prev.countryUnverified = true;
+    }
     if (!prev.detail && e.detail) prev.detail = e.detail;
     for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
     collapseCountryOnlyDetail(prev);
@@ -608,7 +625,13 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
         });
       }
     }
-    if (e.country && prevCountry && e.country !== prevCountry && e.kind !== "gap") {
+    if (
+      e.country &&
+      prevCountry &&
+      e.country !== prevCountry &&
+      e.kind !== "gap" &&
+      !e.countryUnverified
+    ) {
       out.push({
         kind: "import",
         date: e.date,
@@ -623,7 +646,9 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
         tone: "warn",
       });
     }
-    if (e.country) prevCountry = e.country;
+    // Sludinājuma/tirgus valsts nekad nekļūst par jauno "zināmo" valsti: nākamais notikums
+    // joprojām salīdzinās pret pēdējo oficiāli apstiprināto valsti, ne pret pārdevēja pieņēmumu.
+    if (e.country && !e.countryUnverified) prevCountry = e.country;
     out.push(e);
   }
   return out;

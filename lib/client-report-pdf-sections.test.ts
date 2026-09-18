@@ -791,6 +791,38 @@ describe("Vēstures kopsavilkums", () => {
     expect(html).toMatch(/\.pdf-mileage-history-row--anomaly td\{[^}]*background:#FFF1F2/);
   });
 
+  it("does not fabricate a round-trip border crossing from an ss.lv listing's forced-Latvija odometer", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [
+      { date: "12.01.2026", odometer: "330488", country: "Nīderlande" },
+      // Real import happens later, confirmed by an independent CSDD reading.
+      { date: "29.06.2026", odometer: "330779", country: "Latvija" },
+      { date: "28.07.2026", odometer: "332651", country: "Latvija" },
+    ];
+    const events = buildVehicleLifecycleEvents({
+      csddForm: csdd,
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "22.03.2026",
+        listingMileageOdometer: "300000",
+      },
+      listingUrl: "https://www.ss.lv/lv/transport/cars/bmw/x5/some-listing.html",
+    });
+
+    const anomaly = events.find((e) => e.kind === "anomaly");
+    expect(anomaly).toBeTruthy();
+    expect(anomaly!.country).toBe("Latvija");
+    expect(anomaly!.countryUnverified).toBe(true);
+
+    // Only the real, CSDD-confirmed import survives; no phantom NL→LV→NL pair around the listing anomaly.
+    const imports = events.filter((e) => e.kind === "import");
+    expect(imports).toHaveLength(1);
+    expect(imports[0]!.detail).toBe("Nīderlande → Latvija");
+    expect(imports[0]!.time).toBeGreaterThan(anomaly!.time);
+    const lastCsdd = events.find((e) => e.odometer === "332651");
+    expect(imports[0]!.time).toBeLessThan(lastCsdd!.time);
+  });
+
   it("highlights a long record gap as an amber warning on the timeline", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
