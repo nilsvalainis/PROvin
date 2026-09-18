@@ -91,6 +91,20 @@ export type ListingMileageChartRow = {
 };
 
 /**
+ * Sludinājuma tirdzniecības valsts (ss.lv vienmēr Latvija). Šī ir metadata par sludinājumu
+ * pašu (kurā tirgū/valstī auto tiek piedāvāts), ne apstiprināts fakts par auto fizisko
+ * atrašanās vietu — sludinājums var parādīties, vēl pirms auto ir oficiāli reģistrēts
+ * mērķa valstī (piem., pārdevējs sāk tirgot Latvijā pirms importa noformēšanas).
+ */
+export function resolveListingCountry(
+  tirgus: TirgusFormFields | null | undefined,
+  listingUrl?: string | null,
+): string {
+  if (isSsLvListingUrl(listingUrl)) return LISTING_ODOMETER_COUNTRY_LV;
+  return tirgus?.listingMileageCountry?.trim() ?? "";
+}
+
+/**
  * Viena sludinājuma odometra rinda kopējam grafikam.
  * SS.LV: datums vienmēr listingCreated (pirmā publicēšana), valsts vienmēr Latvija.
  */
@@ -108,7 +122,7 @@ export function resolveListingMileageChartRow(
     : tirgus.listingMileageDate.trim() || tirgus.listingCreated.trim();
   if (!date) return null;
 
-  const country = ss ? LISTING_ODOMETER_COUNTRY_LV : tirgus.listingMileageCountry.trim();
+  const country = resolveListingCountry(tirgus, listingUrl);
   const sourceLabel =
     ss || (!listingUrl?.trim() && country === LISTING_ODOMETER_COUNTRY_LV)
       ? LISTING_MILEAGE_SOURCE_SSLV

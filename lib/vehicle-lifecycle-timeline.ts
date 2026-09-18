@@ -49,6 +49,7 @@ import {
   formatListingOdometerKm,
   formatListingPriceEur,
 } from "@/lib/listing-price-lifecycle";
+import { resolveListingCountry } from "@/lib/listing-odometer";
 
 export const PDF_LIFECYCLE_TITLE = "Vēstures kopsavilkums";
 
@@ -484,6 +485,11 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     priceHistory: input.tirgusForm?.priceHistory,
     listingCreated: input.tirgusForm?.listingCreated,
   });
+  // Sludinājuma notikumi vienmēr rāda sludinājuma paša tirdzniecības valsti (piem. ss.lv → Latvija),
+  // nevis paļaujas uz vēlāku apvienošanu ar kādu citu (bieži vecāku/citas valsts) odometra ierakstu.
+  // Pārdevējs bieži sāk tirgot mērķa valstī, vēl pirms auto tur formāli reģistrēts — tas nav apstiprināts
+  // fakts par auto atrašanās vietu, tāpēc paliek `countryUnverified` un neietekmē robežšķērsošanas atvasināšanu.
+  const listingCountry = resolveListingCountry(input.tirgusForm, input.listingUrl);
   if (listingPoints.length > 0) {
     for (const point of listingPoints) {
       const ev = makeEvent({
@@ -492,6 +498,8 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         title: point.delta === 0 ? "Sludinājums" : "Sludinājuma cenas izmaiņa",
         detail: formatListingPriceEur(point.price),
         odometer: formatListingOdometerKm(point.mileageKm),
+        country: listingCountry,
+        countryUnverified: Boolean(listingCountry),
         source: "Sludinājums",
       });
       ev.priceDelta = point.delta;
@@ -506,6 +514,8 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
           rawDate: listingCreated,
           title: "Izlikts pārdošanā",
           detail: "Sludinājuma izveides datums",
+          country: listingCountry,
+          countryUnverified: Boolean(listingCountry),
           source: "Sludinājums",
         }),
       );

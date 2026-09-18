@@ -823,6 +823,35 @@ describe("Vēstures kopsavilkums", () => {
     expect(imports[0]!.time).toBeLessThan(lastCsdd!.time);
   });
 
+  it("shows the listing's own country on its price-change events instead of an unrelated same-month reading", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [
+      // Real, unrelated NL reading that happens to fall in the same calendar month as the listing.
+      { date: "05.03.2026", odometer: "329000", country: "Nīderlande" },
+      { date: "29.06.2026", odometer: "330779", country: "Latvija" },
+    ];
+    const events = buildVehicleLifecycleEvents({
+      csddForm: csdd,
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "22.03.2026",
+        listingMileageOdometer: "300000",
+        priceHistory: [
+          { date: "22.03.2026", price: 7999, mileage: 300000, year: 2012, delta: 0 },
+          { date: "13.04.2026", price: 7850, mileage: 300000, year: 2012, delta: -149 },
+        ],
+      },
+      listingUrl: "https://www.ss.lv/lv/transport/cars/bmw/x5/some-listing.html",
+    });
+
+    const listed = events.filter((e) => e.kind === "listed");
+    expect(listed.length).toBeGreaterThan(0);
+    for (const e of listed) {
+      expect(e.country).toBe("Latvija");
+      expect(e.countryUnverified).toBe(true);
+    }
+  });
+
   it("highlights a long record gap as an amber warning on the timeline", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
