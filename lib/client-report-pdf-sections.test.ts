@@ -890,6 +890,95 @@ describe("Vēstures kopsavilkums", () => {
     expect(imports[0]!.detail).toBe("Vācija → Latvija");
   });
 
+  it("merges the listing's own odometer row into its own Sludinājums card instead of duplicating it", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [{ date: "08.01.2026", odometer: "236920", country: "Vācija" }];
+    const events = buildVehicleLifecycleEvents({
+      csddForm: csdd,
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "02.09.2026",
+        listingMileageOdometer: "243000",
+        priceHistory: [{ date: "02.09.2026", price: 6750, mileage: 243000, year: 2012, delta: 0 }],
+      },
+      listingUrl: "https://www.ss.lv/lv/transport/cars/bmw/x5/some-listing.html",
+    });
+
+    const listed = events.filter((e) => e.kind === "listed");
+    expect(listed).toHaveLength(1);
+    expect(listed[0]!.country).toBe("Latvija");
+    expect(listed[0]!.countryUnverified).toBe(true);
+
+    // No separate standalone card duplicating the exact same listing data point.
+    const duplicateCards = events.filter(
+      (e) => (e.kind === "odometer" || e.kind === "anomaly") && e.country === "Latvija",
+    );
+    expect(duplicateCards).toHaveLength(0);
+  });
+
+  it("keeps an official same-month confirmation as its own confidently-verified record and derives the real import", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [
+      { date: "08.01.2026", odometer: "236920", country: "Vācija" },
+      { date: "01.09.2026", odometer: "250000", country: "Latvija" },
+    ];
+    const events = buildVehicleLifecycleEvents({
+      csddForm: csdd,
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "02.09.2026",
+        listingMileageOdometer: "243000",
+        priceHistory: [{ date: "02.09.2026", price: 6750, mileage: 243000, year: 2012, delta: 0 }],
+      },
+      listingUrl: "https://www.ss.lv/lv/transport/cars/bmw/x5/some-listing.html",
+    });
+
+    const listed = events.find((e) => e.kind === "listed");
+    expect(listed).toBeTruthy();
+    expect(listed!.countryUnverified).toBe(true);
+    expect(listed!.sources).not.toContain("CSDD");
+
+    const official = events.find((e) => e.kind === "odometer" && e.odometer === "250000");
+    expect(official).toBeTruthy();
+    expect(official!.country).toBe("Latvija");
+    expect(official!.countryUnverified).toBeFalsy();
+    expect(official!.sources).toContain("CSDD");
+
+    const imports = events.filter((e) => e.kind === "import");
+    expect(imports).toHaveLength(1);
+    expect(imports[0]!.detail).toBe("Vācija → Latvija");
+  });
+
+  it("never leaves the unverified listing annotation on a record once an independent official source confirms it (defense in depth)", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [
+      { date: "08.01.2026", odometer: "236920", country: "Vācija" },
+      { date: "05.09.2026", odometer: "300000", country: "Latvija" },
+    ];
+    const events = buildVehicleLifecycleEvents({
+      csddForm: csdd,
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        // Non-ss.lv listing where the mileage-row date can drift from the listing-created date,
+        // landing the listing's own odometer row in a different month than its own "listed" card.
+        listingCreated: "10.03.2026",
+        listingMileageOdometer: "243000",
+        listingMileageDate: "01.09.2026",
+        listingMileageCountry: "Latvija",
+      },
+      listingUrl: "https://www.example-autoportal.lv/car/123",
+    });
+
+    for (const e of events) {
+      if (e.countryUnverified) expect(e.sources).not.toContain("CSDD");
+    }
+    const merged = events.find(
+      (e) => e.kind === "odometer" && e.sources.includes("CSDD") && e.time > Date.UTC(2026, 7, 1),
+    );
+    expect(merged).toBeTruthy();
+    expect(merged!.countryUnverified).toBeFalsy();
+  });
+
   it("highlights a long record gap as an amber warning on the timeline", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({

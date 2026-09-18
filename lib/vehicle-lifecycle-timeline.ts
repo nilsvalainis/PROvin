@@ -559,10 +559,12 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
 
 /**
  * Odometra ieraksti tajā pašā mēnesī pieķeras faktiskajam notikumam, nevis dublējas atsevišķā rindā.
- * Izņēmums: "listed" (sludinājums) nekad nekļūst par saimniekierakstu. Sludinājums ir tikai norāde,
- * ne juridisks apstiprinājums, tāpēc oficiāls avota ieraksts (CSDD/dīleris/cits) tajā pašā mēnesī
- * paliek savs, neatkarīgs ieraksts - tas ļauj tam pareizi noteikt reālu robežšķērsošanu un nenozūd
- * apvienojumā ar sludinājuma karti.
+ * Izņēmums: apstiprināts (ne `countryUnverified`) odometra ieraksts nekad nekļūst par "listed"
+ * (sludinājums) saimnieku. Sludinājums ir tikai norāde, ne juridisks apstiprinājums, tāpēc oficiāls
+ * avota ieraksts (CSDD/dīleris/carVertical/cits) tajā pašā mēnesī paliek savs, neatkarīgs ieraksts -
+ * tas ļauj tam pareizi noteikt reālu robežšķērsošanu un nenozūd apvienojumā ar sludinājuma karti.
+ * Sludinājuma PAŠA (arī nesertificēta) odometra rinda gan joprojām pieķeras savai "Sludinājums"
+ * kartei - tā ir viens un tas pats fakts, ne atsevišķa liecība, un dublēt to būtu nepareizi.
  */
 function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]): LifecycleEvent[] {
   const byMonth = new Map<string, LifecycleEvent[]>();
@@ -575,7 +577,11 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
   for (const o of odo) {
     const key = monthKey(o.time);
     const hosts = key ? byMonth.get(key) : undefined;
-    const host = hosts?.find((h) => h.kind !== "odometer" && h.kind !== "listed");
+    const host = hosts?.find((h) => {
+      if (h.kind === "odometer") return false;
+      if (h.kind === "listed" && !o.countryUnverified) return false;
+      return true;
+    });
     if (o.kind === "anomaly" || !host) {
       kept.push(o);
       continue;
@@ -584,6 +590,9 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
     if (!host.country && o.country) {
       host.country = o.country;
       if (o.countryUnverified) host.countryUnverified = true;
+    } else if (host.country === o.country && !o.countryUnverified) {
+      // Apstiprināts nolasījums no cita avota pierāda to pašu valsti - vairs nav pieņēmums.
+      host.countryUnverified = false;
     }
     for (const s of o.sources) if (!host.sources.includes(s)) host.sources.push(s);
     collapseCountryOnlyDetail(host);
@@ -606,6 +615,10 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
     if (!prev.country && e.country) {
       prev.country = e.country;
       if (e.countryUnverified) prev.countryUnverified = true;
+    } else if (prev.country && prev.country === e.country && !e.countryUnverified) {
+      // Apstiprināts nolasījums no cita avota pierāda to pašu valsti - vairs nav pieņēmums.
+      // Tā nekad nedrīkst palikt "(pēc sludinājuma, nav apstiprināts)" kopā ar oficiālu avotu punktu.
+      prev.countryUnverified = false;
     }
     if (!prev.detail && e.detail) prev.detail = e.detail;
     for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
