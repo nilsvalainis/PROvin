@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { isPartnerEmailVerified, toPublicPartner } from "@/lib/b2b-partner-account";
+import { toPublicPartner } from "@/lib/b2b-partner-account";
 import { writeB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
 import { completeB2bPartnerPasswordReset } from "@/lib/b2b-partner-store";
-import { isSafeB2bResetToken } from "@/lib/b2b-partner-verify";
+import { isPartnerEmailVerified, isSafeB2bResetToken } from "@/lib/b2b-partner-verify";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 
