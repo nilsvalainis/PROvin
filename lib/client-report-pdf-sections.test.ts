@@ -852,6 +852,44 @@ describe("Vēstures kopsavilkums", () => {
     }
   });
 
+  it("keeps a same-month CSDD confirmation as its own record instead of absorbing it into the listing card, so a real border crossing still shows", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [
+      { date: "08.01.2026", odometer: "236920", country: "Vācija" },
+      // Legal confirmation lands in the same calendar month as the listing - it must stay
+      // its own record, not merge into the "Sludinājums" card, so it can drive the real import.
+      { date: "01.09.2026", odometer: "243200", country: "Latvija" },
+    ];
+    const events = buildVehicleLifecycleEvents({
+      csddForm: csdd,
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "02.09.2026",
+        listingMileageOdometer: "243000",
+      },
+      listingUrl: "https://www.ss.lv/lv/transport/cars/bmw/x5/some-listing.html",
+    });
+
+    const listing = events.find((e) => e.kind === "listed");
+    expect(listing).toBeTruthy();
+    expect(listing!.country).toBe("Latvija");
+    expect(listing!.countryUnverified).toBe(true);
+    expect(listing!.sources).not.toContain("CSDD");
+
+    // The CSDD confirmation is a separate, verified record in the same month.
+    const csddConfirmation = events.find(
+      (e) => e.kind === "odometer" && e.odometer === "243200" && !e.countryUnverified,
+    );
+    expect(csddConfirmation).toBeTruthy();
+    expect(csddConfirmation!.country).toBe("Latvija");
+    expect(csddConfirmation!.sources).toContain("CSDD");
+
+    // The real border crossing is now derivable again.
+    const imports = events.filter((e) => e.kind === "import");
+    expect(imports).toHaveLength(1);
+    expect(imports[0]!.detail).toBe("Vācija → Latvija");
+  });
+
   it("highlights a long record gap as an amber warning on the timeline", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({

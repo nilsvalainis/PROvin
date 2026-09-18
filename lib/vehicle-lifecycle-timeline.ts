@@ -557,7 +557,13 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
   });
 }
 
-/** Odometra ieraksti tajā pašā mēnesī pieķeras faktiskajam notikumam, nevis dublējas atsevišķā rindā. */
+/**
+ * Odometra ieraksti tajā pašā mēnesī pieķeras faktiskajam notikumam, nevis dublējas atsevišķā rindā.
+ * Izņēmums: "listed" (sludinājums) nekad nekļūst par saimniekierakstu. Sludinājums ir tikai norāde,
+ * ne juridisks apstiprinājums, tāpēc oficiāls avota ieraksts (CSDD/dīleris/cits) tajā pašā mēnesī
+ * paliek savs, neatkarīgs ieraksts - tas ļauj tam pareizi noteikt reālu robežšķērsošanu un nenozūd
+ * apvienojumā ar sludinājuma karti.
+ */
 function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]): LifecycleEvent[] {
   const byMonth = new Map<string, LifecycleEvent[]>();
   for (const f of facts) {
@@ -569,7 +575,7 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
   for (const o of odo) {
     const key = monthKey(o.time);
     const hosts = key ? byMonth.get(key) : undefined;
-    const host = hosts?.find((h) => h.kind !== "odometer");
+    const host = hosts?.find((h) => h.kind !== "odometer" && h.kind !== "listed");
     if (o.kind === "anomaly" || !host) {
       kept.push(o);
       continue;
