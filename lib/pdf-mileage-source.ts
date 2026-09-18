@@ -178,7 +178,8 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   ltab: "#DC2626",
   intl: "#7C3AED",
   asv: "#1D4ED8",
-  sslv: "#059669",
+  // Atšķirīgs no CSDD zaļā (#16A34A) - abi bija pārāk līdzīgi punktu leģendā.
+  sslv: "#DB2777",
   cits: "#94A3B8",
 };
 
