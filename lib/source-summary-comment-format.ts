@@ -237,6 +237,23 @@ export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (ma
 - This is what keeps source fields short: cut the explanation, keep the fact. „1. Tehnisko risku analīze” and „3. Kopsavilkums” are the only fields allowed to run long — everywhere else, prefer 1-3 sentences per fact/event.`;
 
 /**
+ * Balstīts uz 96 reālu dīlera komentāru izlases analīzi (2026-09-19 backup). Konstatētās problēmas:
+ * ~40% komentāru sāk ar identisku frāzi "Oficiālā dīlera dati sniedz/apstiprina..."; garums svārstās
+ * no 73 līdz 3654 rakstzīmēm (bez disciplīnas); 14 no 96 nemaz nelieto <strong> virsrakstu struktūru,
+ * kamēr vairums lieto tieši 3 virsrakstus. Šis bloks fiksē novēroto labo struktūru kā standartu.
+ */
+export const AI_DEALER_COMMENT_CONSTRUCTION_RULES = `DĪLERA / AUTO RECORDS „Komentārs” LAUKA UZBŪVE (mandatory — AUTO RECORDS / dealer „Komentārs” field only):
+- NO GENERIC OPENER: never start the field with "Oficiālā dīlera dati sniedz...", "Oficiālā dīlera dati apstiprina...", "Dīlera dati precizē..." or any variant that names the SOURCE before the FACT. Start the first sentence with the concrete fact itself (engine code, gearbox, dated service entry, equipment code). The reader already knows this is dealer data from the field's own heading; repeating that as a sentence-opener is filler, not information.
+- CANONICAL 3-ROLE STRUCTURE (use only the roles THIS order's data actually supports; skip a role entirely rather than padding it):
+  1) Agregātu / aprīkojuma identifikācija: what THIS source uniquely confirms about the exact car (engine code, gearbox code, factory equipment, color code, type/fleet code) — the identification facts other sources usually cannot give.
+  2) Servisa / remontu vēsture: concrete dated service or repair events (date + km + work). Never compute or list oil-change km/month gaps here; that math lives only in „Eļļas maiņas intervāli” (see AI_OIL_CHANGE_INTERVAL_RULES) — mention THAT service happened, not the gap arithmetic.
+  3) Nobraukuma / datu saskaņa: one short cross-check sentence on whether the dealer's km points line up with CSDD/AutoDNA/CarVertical. This is a one-line confirmation, not a mileage-forensics essay — that belongs to the mileage comment / summary.
+- Each role gets its own „<strong>Virsraksts</strong><br>” heading (3-6 words, no trailing period) followed by 2-4 sentences. Use the SAME heading-then-paragraph shape for every role present; never leave one role as a bare paragraph with only inline **bold** while the others use headings.
+- LENGTH DISCIPLINE: target roughly 600-1000 characters total across all roles present. If the source data is thin, write less — do not stretch a one-fact source into three padded paragraphs just to hit three headings.
+- Sentence job inside each paragraph: sentence 1 = the fact; sentence 2 (only if it adds something) = why it is useful for THIS car (e.g. confirms/contradicts another source, fills a gap) — never a filler sentence like "šī informācija ir vērtīga pircējam" that restates the fact without adding content.
+- <br> vs <br /> — pick one style for the whole field and keep it consistent within this field.`;
+
+/**
  * FLASH MAX vispirms raksta iekšējo avotu salīdzinājumu. Pārējie lauki to lasa kā kopskatu.
  */
 export const AI_SOURCES_COMPARISON_OVERVIEW_RULES = `CASE OVERVIEW / AVOTU SALĪDZINĀJUMS (mandatory when the user prompt contains that block or a mileage-forensics brief):

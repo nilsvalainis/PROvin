@@ -20,6 +20,7 @@ import {
   AI_CROSS_FIELD_PORTFOLIO_RULES,
   AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
   AI_MILEAGE_PATTERN_CHANGE_RULES,
+  AI_DEALER_COMMENT_CONSTRUCTION_RULES,
   AI_SOURCES_COMPARISON_OVERVIEW_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TA_COVERED_WEAR_RULES,
@@ -573,7 +574,7 @@ DEALER / AUTO RECORDS FOCUS:
 - When Servisa vēsture / RAW facts are present in context, weave those maintenance facts into the buyer comment; do not invent services.
 - Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.
 - OIL-INTERVAL EXCLUSION (mandatory, this field duplicates it most often): this „Komentārs” field may mention THAT oil changes happened (e.g. "regulāras eļļas maiņas fiksētas"), but must NOT compute or list the km/month gaps between individual oil-change events, and must NOT repeat the same events already covered there — that math and that list belong exclusively to „Eļļas maiņas intervāli”. If you find yourself writing a second "No X km līdz Y km" gap sentence here, delete it.
-- FORMAT CONSISTENCY (mandatory): use the same heading-then-paragraph shape as every other paragraph in this field — never drop to a plain paragraph with only inline **bold** on dates/numbers while the rest of the field uses heading paragraphs, and never mix "<br>" and "<br />" style inconsistently. One shape throughout.
+${AI_DEALER_COMMENT_CONSTRUCTION_RULES}
 - OUTPUT DISCIPLINE: output ONLY the final client-facing paragraphs. Never output meta-commentary about formatting choices, alternative structures, or what you "could" do (e.g. "izskatīt iespēju apvienot..." or "varētu noformēt kā tabulu...") — that is an instruction to a human, not a report field.`;
   }
   if (blockLabel === L.asv) {

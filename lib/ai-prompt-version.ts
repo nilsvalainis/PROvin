@@ -3,6 +3,12 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-19.2 - Dīlera "Komentārs" (AI_DEALER_COMMENT_CONSTRUCTION_RULES),
+ *   balstīts uz 96 reālu komentāru analīzi: aizliegts sākt ar "Oficiālā dīlera
+ *   dati sniedz/apstiprina..." (bija ~40% gadījumu); kanoniska 3-lomu struktūra
+ *   (agregātu identifikācija / servisa vēsture / nobraukuma saskaņa), katra
+ *   loma tikai ja datos ir pamats; garuma disciplīna ~600-1000 rakstzīmes
+ *   (bija izkliede 73-3654); viens <br> stils visam laukam.
  * - 2026-09-19.1 - Avotu lauki = fakti tikai (AI_SOURCE_FIELDS_FACTS_ONLY_RULES):
  *   vispārīgs "obligāti pilna diagnostika" ieteikums tikai Kopsavilkumā +
  *   nobraukuma/negadījumu kopsavilkumos; "galvenais pirkuma risks" aizliegts;
@@ -102,4 +108,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-19.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-19.2";
