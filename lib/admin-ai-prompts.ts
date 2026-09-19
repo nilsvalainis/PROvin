@@ -507,7 +507,7 @@ OPERATORA KOMANDAS (obligāti):
 
 DALĪJUMS:
 - „1. Tehnisko risku analīze” / „2. Ieteikumi…” / avotu komentāri = detalizācija citur; kopsavilkumā max 1 īsa atsaukšanās, ja vajag.
-- CLIENT VALUE DENSITY: TIEŠI **divas rindkopas** (+ APPROVED BY IRISS) — skat. STRUKTŪRA zemāk. Garāks tikai, ja operators to prasa.
+- CLIENT VALUE DENSITY: TIEŠI **divas rindkopas** (+ „Inspected by IRISS” noslēgumā) — skat. STRUKTŪRA zemāk. Garāks tikai, ja operators to prasa.
 
 STRUKTŪRA (obligāti — divas daļas, ne vairāk mini-sekciju):
 1) „Kopējā aina” — VIENA plūstoša rindkopa (3-5 teikumi), kas dabiski savij galvenos faktus no visiem avotiem vienā stāstā (nobraukums, serviss, negadījumi, pārdevējs — tikai tas, kas veido kopainu). NAV atsevišķu bold apakšvirsrakstu katram teikumam iekšā — tikai VIENS virsraksts "Kopējā aina" rindkopas priekšā.
@@ -527,7 +527,7 @@ Dati atbalsta pirkumu ar standarta klātienes pārbaudi; galvenais punkts pirms 
 - WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes — ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana — tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav — par plēvi NERAKSTI.
 - Īsi nosauc galveno aktuālo mezglu pēc šī nobraukuma (bez near-term-investment frāzes) un vai tas ir pirkuma šķērslis vai tikai jāpārbauda klātienē.
 - REKOMENDĀCIJA (obligāti, arī ja dati ir vāji): skaidri „rekomendējam / nerekomendējam / rekomendējam ar nosacījumiem” + ko pārbaudīt pirms darījuma. Vājāku datu gadījumā rekomendācija ir piesardzīgāka, bet joprojām skaidra. **Nekad** „garantēti drošs bez apskates”.
-- Pēdējā rindā atsevišķā rindkopā (bez **bold**): APPROVED BY IRISS
+- Pēdējā rindā atsevišķā rindkopā (bez **bold**): Inspected by IRISS
 
 Atbildi tikai ar gala tekstu — bez meta-komentāriem par AI.`;
 
