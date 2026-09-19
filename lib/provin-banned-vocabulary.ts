@@ -132,6 +132,18 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "ja kaut kas neattiecas - pasaki faktu bez šīs ievada frāzes",
     code: "vocabulary_kas_nav_dargs_risks",
   },
+  {
+    label: "bufer(is/a/i) (bampera vietā)",
+    pattern: /\bbufer(is|a|u|i|iem|us|ā)\b/i,
+    replacement: "bamperis / bampera / bamperi",
+    code: "vocabulary_bufers",
+  },
+  {
+    label: "mūža eļļa nenodrošina ilgmūžību (šablona teikums)",
+    pattern: /m[uū]ža\s+e[ļl]{2}[uūas]*[^.]*?nenodrošina/i,
+    replacement: "izlaid šo vispārīgo teikumu; ja jāpiemin, raksti konkrētu faktu par ŠO kārbu/agregātu",
+    code: "vocabulary_muza_ellas_apgalvojums",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */

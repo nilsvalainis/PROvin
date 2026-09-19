@@ -18,6 +18,8 @@ import {
   AI_PLAIN_FACT_PROSE_RULES,
   AI_PLAIN_LANGUAGE_TERMS,
   AI_CROSS_FIELD_PORTFOLIO_RULES,
+  AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
+  AI_MILEAGE_PATTERN_CHANGE_RULES,
   AI_SOURCES_COMPARISON_OVERVIEW_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
   AI_TA_COVERED_WEAR_RULES,
@@ -144,6 +146,8 @@ ${AI_NO_AI_COST_FRAMING_RULES}
 
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}
 
+${AI_SOURCE_FIELDS_FACTS_ONLY_RULES}
+
 ${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 
 ${AI_WRAP_FILM_RULES}
@@ -232,6 +236,8 @@ ${AI_PLAIN_FACT_PROSE_RULES}
 ${AI_NO_AI_COST_FRAMING_RULES}
 
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}
+
+${AI_SOURCE_FIELDS_FACTS_ONLY_RULES}
 
 ${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 
@@ -501,11 +507,18 @@ OPERATORA KOMANDAS (obligāti):
 
 DALĪJUMS:
 - „1. Tehnisko risku analīze” / „2. Ieteikumi…” / avotu komentāri = detalizācija citur; kopsavilkumā max 1 īsa atsaukšanās, ja vajag.
-- CLIENT VALUE DENSITY: **1–2 rindkopas** (+ APPROVED BY IRISS). Garāks tikai, ja operators to prasa. Apkopo galvenos faktus + par/pret + rekomendāciju ar nosacījumiem.
+- CLIENT VALUE DENSITY: TIEŠI **divas rindkopas** (+ APPROVED BY IRISS) — skat. STRUKTŪRA zemāk. Garāks tikai, ja operators to prasa.
 
-FORMĀTS (obligāti):
-- Tikai rindkopas ar tukšu rindu starp tām; NEKAD "- ", "•", "1." rindas sākumā.
-- Katra rindkopa sākas ar **bold** tematisko ievadu (piem. **Kopējā aina.**, **Rekomendācija.**). Bez divejada-aina / pozitiva-puse-ir ievada.
+STRUKTŪRA (obligāti — divas daļas, ne vairāk mini-sekciju):
+1) „Kopējā aina” — VIENA plūstoša rindkopa (3-5 teikumi), kas dabiski savij galvenos faktus no visiem avotiem vienā stāstā (nobraukums, serviss, negadījumi, pārdevējs — tikai tas, kas veido kopainu). NAV atsevišķu bold apakšvirsrakstu katram teikumam iekšā — tikai VIENS virsraksts "Kopējā aina" rindkopas priekšā.
+2) „Rekomendācija” — atsevišķa, īsa rindkopa (1-3 teikumi): skaidra rekomendācija (pirkt / pārbaudīt klātienē ar konkrētiem nosacījumiem / meklēt citu) + ja der, viens galvenais nosacījums.
+- Virsraksti ("Kopējā aina", "Rekomendācija") ir parasts teksts savā rindā, NE **bold** un NE ar punktu aiz vārda. Nekad "- ", "•", "1." rindas sākumā.
+- Piemērs (garums un tonis, ne burtiski jākopē):
+"Kopējā aina
+Pēc pieejamajiem datiem, automašīnai ir detalizēta, caurskatāma un gandrīz pilnībā saskanīga vēsture no Vācijas. Nobraukuma hronoloģija ir lineāra, apstiprināta vairākos neatkarīgos avotos, un servisa vēsture ir neparasti detalizēta, ieskaitot divas dokumentētas zobsiksnas maiņas. Fiksētie negadījumi ir seni un ar nelielām summām, kas neliecina par būtiskiem strukturāliem bojājumiem. Kopumā digitālā vēsture šim auto ir labāka nekā vidēji šajā vecuma un cenas segmentā.
+
+Rekomendācija
+Dati atbalsta pirkumu ar standarta klātienes pārbaudi; galvenais punkts pirms darījuma ir [konkrētais mezgls/dokuments šim auto]."
 - Būtiskus skaitļus (km, datumi) raksti parastā tekstā, ja tie maina secinājumu — bet bez faktu kataloga un bez *.
 - CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā. Remonta tāmes nav arī 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
 - ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = DĀNIJAS REĢISTRI — tikai Dānijas fāzes (līzings un privāta reģistrācija ir divi īpašnieki; nepārtraukti līzinga līgumi = viens; pirmā reģistrācija ārvalstīs nav Dānijas īpašnieks); nekad OCTA polišu maiņas. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
@@ -558,7 +571,10 @@ LTAB / OCTA FOCUS:
 DEALER / AUTO RECORDS FOCUS:
 - Type code, engine code, equipment, accident/stolen checks, and „Servisa vēsture” (service/repair journal: date + odometer + work done) — not only the km table.
 - When Servisa vēsture / RAW facts are present in context, weave those maintenance facts into the buyer comment; do not invent services.
-- Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.`;
+- Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.
+- OIL-INTERVAL EXCLUSION (mandatory, this field duplicates it most often): this „Komentārs” field may mention THAT oil changes happened (e.g. "regulāras eļļas maiņas fiksētas"), but must NOT compute or list the km/month gaps between individual oil-change events, and must NOT repeat the same events already covered there — that math and that list belong exclusively to „Eļļas maiņas intervāli”. If you find yourself writing a second "No X km līdz Y km" gap sentence here, delete it.
+- FORMAT CONSISTENCY (mandatory): use the same heading-then-paragraph shape as every other paragraph in this field — never drop to a plain paragraph with only inline **bold** on dates/numbers while the rest of the field uses heading paragraphs, and never mix "<br>" and "<br />" style inconsistently. One shape throughout.
+- OUTPUT DISCIPLINE: output ONLY the final client-facing paragraphs. Never output meta-commentary about formatting choices, alternative structures, or what you "could" do (e.g. "izskatīt iespēju apvienot..." or "varētu noformēt kā tabulu...") — that is an instruction to a human, not a report field.`;
   }
   if (blockLabel === L.asv) {
     return `
@@ -714,7 +730,7 @@ Rezultāts:
 - Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS) UN jau ģenerētajiem komentāriem / Fotogrāfiju analīzi — skat. CROSS-FIELD PORTFOLIO
 - Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz būtiskām summām
 - Katru EUR summu interpretē pēc konteksta (auto vecums incidenta brīdī, klase, aprīkojums, remonta tirgus, bojājumu zonas) — nevis automātiski kā „smagu” vai „vieglu” tikai pēc skaitļa
-- Ja avots nosauc konkrētu zonu (piem. aizmugurējais bamperis), raksti par to — ne „piemēram, bufera pārkrāsošanu” kā brīvu hipotēzi
+- Ja avots nosauc konkrētu zonu (piem. aizmugurējais bamperis), raksti par to — ne „piemēram, bampera pārkrāsošanu” kā brīvu hipotēzi
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}
 - Īsi saista ar īpašniecības/km logu tikai tad, ja tas skaidro negadījuma kontekstu — NEATKĀRTO pilnu nobraukuma forenziku (tā ir „NOBRAUKUMA VĒSTURES KOMENTĀRĀ”)
@@ -734,6 +750,8 @@ Uzdevums: sagatavot komentāru laukam „NOBRAUKUMA VĒSTURES KOMENTĀRS” — 
 Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO RECORDS, LTAB, Tirgus, vendor raw logs u.c.). Ja jau ir avotu „Komentāri”, izmanto tos kā izeju, bet NEATKĀRTO to bojājumu/TA/dīlera tekstu — fokusējas uz nobraukumu. Ja jau ir tehnisko risku / apskates / kopsavilkuma / „Eļļas maiņas intervāli” teksts — to arī NEPARAFRĀZĒ. Eļļas intervālu matemātiku šeit NERAKSTI.
 
 ${SOURCE_BLOCK_COMMENT_AI_RULES}
+
+${AI_MILEAGE_PATTERN_CHANGE_RULES}
 
 Rezultāts (šī lauka mandāts — atšķirībā no avotu komentāriem):
 - Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos; interpretē lineārumu, platos, izteiktus kritumus un periodus bez datiem

@@ -82,7 +82,7 @@ OBLIGĀTI:
 - Šī ir vieta, kur avotu dati tiek sasaistīti kopainā — pārējos laukos katrs avots pastāsta tikai savu daļu.
 - NEATKĀRTO un neapkopo jau ģenerētos teikumus no avotiem / nobraukuma / negadījumiem / „${ADMIN_TECHNICAL_RISKS_LABEL}” / apskates.
 - Neveido „CSDD… AutoDNA… CarVertical…” katalogu.
-- Tipiski 3–5 īsas rindkopas + APPROVED BY IRISS.
+- Tieši divas rindkopas: „Kopējā aina” (plūstošs stāsts, bez iekšējiem bold apakšvirsrakstiem) + „Rekomendācija” (īsa, skaidra) — tad APPROVED BY IRISS.
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; rekomendācija kalibrēta, jo pamatā ir digitāli dati, kas var būt nepilnīgi.
 - NESĀC ar „Sveiki” vai sarunas uzrunu.
 - NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.

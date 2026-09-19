@@ -3,6 +3,19 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-19.1 - Avotu lauki = fakti tikai (AI_SOURCE_FIELDS_FACTS_ONLY_RULES):
+ *   vispārīgs "obligāti pilna diagnostika" ieteikums tikai Kopsavilkumā +
+ *   nobraukuma/negadījumu kopsavilkumos; "galvenais pirkuma risks" aizliegts;
+ *   "bufer(is/a/i)" → "bamperis/bampera/bamperi" (banned vocab + few-shot fix);
+ *   zaudējumu summas interpretācija (AI_DAMAGE_CLAIM_CONTEXT_RULES) tikai
+ *   negadījumu kopsavilkumā/Kopsavilkumā, avotu laukos tikai fakts; cieto
+ *   daļiņu skaitlisks references (100k/1M) pret izdomātu "palielināts" pie
+ *   triviāliem skaitļiem; "mūža eļļa ... nenodrošina" šablona teikums aizliegts;
+ *   nobraukuma komentārs: straujš (>50%) pēdējo 2 gadu tempa kritums pirms
+ *   importa - konteksta piezīme, ne apgalvojums; dīlera "Komentārs" vairs
+ *   nedublē Eļļas maiņas intervālu matemātiku, aizliegts meta-komentārs par
+ *   formatēšanu; Kopsavilkums (3.) pārstrukturēts uz divām daļām - "Kopējā
+ *   aina" (viena plūstoša rindkopa) + "Rekomendācija" (īsa).
  * - 2026-09-15.1 - ASV avota komentārs: NMVTIS/salvage/foto, bez VIN Audit/Carfax
  *   zīmola klienta tekstā; Lite vs Full seguma godīgums.
  * - 2026-09-14.1 - Nobraukuma forenzikas brīfi (temps, avotu neatkarība,
@@ -89,4 +102,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-15.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-19.1";

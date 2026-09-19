@@ -88,6 +88,7 @@ export const AI_RESOLVED_HISTORICAL_FINDINGS_RULES = `RESOLVED HISTORICAL FINDIN
 - Do not recommend carefully checking ~2+ year-old defects (lamps, wipers, brakes, play, leaks, etc.) that subsequent TA/DEKRA/service rows no longer show. That makes the expert look foolish.
 - REPEATING or STILL-OPEN findings on the latest inspections remain relevant.
 - EXCEPTION — rūsa / korozija AND exhaust measurements (cietās daļiņas, dūmainības koeficients / smoke opacity): if these were EVER recorded, stay cautious in later years even when a later TA is clean. Quality repair is difficult and expensive; a later pass does not erase the history. Note the later improvement if present, but do not dismiss the topic.
+- PARTICULATE COUNT REFERENCE (do not invent "elevated" from a small number): the CSDD „Atgāzu cietās daļiņas (cm⁻³)” reading is a raw particle count, typically in the tens or hundreds of thousands when it is actually notable — practical reference: under ~100 000 is unremarkable, ~100 000-1 000 000 is a caution, over ~1 000 000 (sensor saturation) is the serious end. A reading in the low hundreds (e.g. 300) is NOT elevated and needs no "pārbaudīt izplūdes sistēmu" sentence — state the number as a fact only, without inventing a severity label the data does not support. Dūmainības koeficients (m⁻¹, older unit) has no such large-number scale; judge it only against the vehicle's own prior/later readings, never against the particle-count scale above.
 - SEPARATE from recorded rust: winter-salt climate rust (see WINTER SALT RUST) is mandatory when the exposure brief says OBLIGĀTI — even if rust was NEVER listed in TA. A later clean TA does not cancel typical-spot advice.
 - Same principle for other sources (dealer invoices, DEKRA, foreign TA): a one-off finding later documented as fixed is history, not a hunt list — unless it is rust or exhaust particulates/smoke.`;
 
@@ -221,9 +222,19 @@ export const AI_NO_AI_COST_FRAMING_RULES = `NO AI COST FRAMING (mandatory — ev
  */
 export const AI_CROSS_FIELD_PORTFOLIO_RULES = `CROSS-FIELD PORTFOLIO (mandatory — every agent before interpreting damage, service, or risk):
 - Before writing, READ the full order context you were given: tables (AutoDNA, CarVertical, LTAB, CSDD, dealer), ALL already-generated expert comments in other fields, and listing / Fotogrāfiju analīze. Do not pretend a field is isolated when those blocks are in the prompt.
-- A concrete named fact in a source (e.g. „aizmugurējais bamperis”, specific panel, specific work) BEATS a generic „tipiski šādiem negadījumiem” example. If the source names the bumper, write bumper replacement/paint — do not invent „piemēram, bufera pārkrāsošanu” as a free hypothesis when the zone is already named.
+- A concrete named fact in a source (e.g. „aizmugurējais bamperis”, specific panel, specific work) BEATS a generic „tipiski šādiem negadījumiem” example. If the source names the bumper, write bumper replacement/paint — do not invent „piemēram, bampera pārkrāsošanu” as a free hypothesis when the zone is already named. The Latvian word for a car bumper is always „bamperis” (bampera/bamperi) — see BANNED VOCABULARY for the wrong calque some models default to.
 - Incidents summary MUST reconcile claim tables with photo-analysis / other comments about the same damage. Tech risks and summary MUST use source comments already written, not only raw tables.
 - Anti-repetition still applies: do not rewrite another field’s essay; use it as silent context and add only THIS field’s job.`;
+
+/**
+ * Avotu lauki (CSDD, AutoDNA, CarVertical, LTAB, dīlera dati u.c.) konstatē faktus.
+ * Interpretācija un ieteikumi pieder tikai norādītajiem laukiem.
+ */
+export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (mandatory — every per-source comment window: CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS / dealer, seller portrait, photos):
+- State what THIS source recorded (date, km, amount, zone, code, name) — do not add a risk label, a severity verdict, or a recommendation sentence after the fact. No "kas prasa detalizētu izvērtējumu", "kas ir svarīgi noskaidrot", "signāls, kas jāpārbauda" tails, and no naming a single item as THE headline purchase risk, bolted onto a plain fact. That kind of verdict belongs only in „1. Tehnisko risku analīze” / „3. Kopsavilkums”, where it is the field's actual job.
+- GENERIC INSPECTION RECOMMENDATIONS ("obligāti jāveic pilna diagnostika neatkarīgā servisā" and similar catch-all advice) are ONLY allowed in THREE places: „3. Kopsavilkums”, nobraukuma kopsavilkums (NOBRAUKUMA VĒSTURES KOMENTĀRS), and negadījumu kopsavilkums. Every other field (source comments, tech risks per-item lines, seller portrait, photos, price fit) either states a concrete, specific klātienes step for that exact fact, or says nothing extra.
+- If there is nothing beyond the bare fact to add, stop after the fact. Do not pad with a closing sentence just to "round off" the paragraph — an unnecessary sentence is worse than a short one.
+- This is what keeps source fields short: cut the explanation, keep the fact. „1. Tehnisko risku analīze” and „3. Kopsavilkums” are the only fields allowed to run long — everywhere else, prefer 1-3 sentences per fact/event.`;
 
 /**
  * FLASH MAX vispirms raksta iekšējo avotu salīdzinājumu. Pārējie lauki to lasa kā kopskatu.
@@ -482,12 +493,12 @@ CarVertical fiksē 2019. gada jūlijā Vācijā reģistrētu negadījumu ar zaud
 Nozīme pircējam
 Ieraksts jāsasaista ar virsbūves stāvokli klātienē - krāsas biezums, šuvju platums un paneļu simetrija. Bez fiziskas pārbaudes strukturālu remontu izslēgt nevar."
 
-Example 3b (augsta summa, bet ierobežots smagums premium klasē):
+Example 3b (KOPSAVILKUMAM / negadījumu kopsavilkumam — kontekstuāla interpretācija; AVOTA laukā, piem. AutoDNA komentārā, raksti TIKAI faktu daļu bez „tāpēc…” teikuma):
 "Zaudējumu apjoms kontekstā
-AutoDNA fiksē 2022. gada februārī Vācijā apdrošināšanas izmaksu 6 840 € ar bojātu priekšējo buferi un labo priekšējo lukturi. Automašīnai tobrīd bija ~1 gads, tā ir premium klase ar adaptīvo apgaismojumu un sensoriem, tāpēc šāda summa bieži atspoguļo dārgas OEM detaļas un dīlera darbu, ne obligāti nesošo elementu bojājumu.
+AutoDNA fiksē 2022. gada februārī Vācijā apdrošināšanas izmaksu 6 840 € ar bojātu priekšējo bamperi un labo priekšējo lukturi. Automašīnai tobrīd bija ~1 gads, tā ir premium klase ar adaptīvo apgaismojumu un sensoriem, tāpēc šāda summa bieži atspoguļo dārgas OEM detaļas un dīlera darbu, ne obligāti nesošo elementu bojājumu.
 
 Ko pārbaudīt klātienē
-Virsbūves pārbaude joprojām nepieciešama (šuvju platums, radars un kamera aiz bufera), taču pēc summas vien smagu negadījumu secināt nevar - jāvērtē kopā ar bojājumu zonām, vecumu un klasi."
+Virsbūves pārbaude joprojām nepieciešama (šuvju platums, radars un kamera aiz bampera), taču pēc summas vien smagu negadījumu secināt nevar - jāvērtē kopā ar bojājumu zonām, vecumu un klasi."
 
 Example 4 (cena / tirgus):
 "Cenas pozīcija Latvijas tirgū
@@ -557,7 +568,8 @@ export const AI_DAMAGE_CLAIM_CONTEXT_RULES = `DAMAGE & CLAIM AMOUNT CONTEXT (man
   4) Repair market — German/DACH labor and OEM parts inflate totals vs Baltic cosmetic repairs; distinguish „expensive to fix” from „structurally totaled”.
   5) Damage zones from data — correlate EUR with affected sides (bumper only vs structural pillars/dills); a moderate sum with multiple panels can still be serious on an old car.
 - Buyer-facing wording: state whether the sum suggests **relatīvi smagu** bojājumu šai auto klasei/vecumam, **dārgu, bet iespējams lokālu** premium remontu, vai **neskaidru** smagumu, ja trūkst zonu/aprīkojuma datu — never imply „milzīgs negadījums” from EUR alone without context.
-- Examples (logic, not templates): **5 000 €** on a **12-year-old** **~8 000 €** segment car **recently** → likely material damage relative to residual value. **5 000 €** on a **1-year-old premium** in **Germany** with front bumper + headlight zones → may be parking/low-speed impact with costly OEM parts — still requires paint-gauge inspection, but not automatically „write-off level”.`;
+- Examples (logic, not templates): **5 000 €** on a **12-year-old** **~8 000 €** segment car **recently** → likely material damage relative to residual value. **5 000 €** on a **1-year-old premium** in **Germany** with front bumper + headlight zones → may be parking/low-speed impact with costly OEM parts — still requires paint-gauge inspection, but not automatically „write-off level”.
+- FIELD SCOPE (mandatory): the axes above are YOUR internal reasoning, not a template for every field. In a PER-SOURCE comment (AutoDNA, CarVertical, LTAB, dealer/AUTO RECORDS „Komentārs”), state only the facts — date, country, EUR amount, damaged zones, class/age if it disambiguates which source added what. Do NOT write the interpretive sentence ("šāda summa liecina par…", "visbiežāk norāda uz…") there — that sentence belongs ONLY in „negadījumu kopsavilkums” (incidents summary) and „3. Kopsavilkums”. Repeating the same interpretation in every source field is redundant and unprofessional (client reads it 3-4 times).`;
 
 /** Agregātu identifikācija no pieejamajiem datiem — pamats visai tehnisko risku analīzei. */
 export const AI_POWERTRAIN_IDENTIFICATION_RULES = `AGREGĀTU IDENTIFIKĀCIJA (mandatory — pirms jebkura tehniska riska nosaukšanas; VISI ražotāji):
@@ -581,6 +593,16 @@ export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCI
 - **Pierādījumi maina risku:** ja servisa vēsturē ir attiecīgais darbs (ķēde, divsajūga eļļa, zobsiksna, ūdens sūknis, iesmidzinātāji), risks krīt — pasaki, ka darbs datos jau fiksēts. Ierakstu trūkums nav pierādījums, ka darbs nav veikts — formulē kā **nepierādītu**, kas jānoskaidro pie pārdevēja.
 - Izmaksas vērtē **varbūtības × ietekmes** griezumā: pirmais nāk tas, kam ir gan reāla varbūtība šajā posmā, gan būtiska naudas ietekme. NERAKSTI orientējošas EUR joslas — tikai kvalitatīvi (dārgs / vidējs / pārbaudes punkts).
 - Ja nobraukums, vecums un apkopes aina šim agregātam ir **relatīvi labvēlīga**, to ir atļauts un vajag pateikt — kalibrēti, ar atrunu, ka PROVIN auto fiziski nav apskatījis. Mākslīgi „sarkanie karogi” bez datu pamata ir tāda pati kļūda kā risku noklusēšana.`;
+
+/**
+ * Straujš gada nobraukuma kritums pirms importa / valsts maiņas — TIKAI nobraukuma komentāram.
+ */
+export const AI_MILEAGE_PATTERN_CHANGE_RULES = `NOBRAUKUMA PARADUMA MAIŅA PIRMS IMPORTA (mandatory — only in NOBRAUKUMA VĒSTURES KOMENTĀRS):
+- Compute the car's yearly km pace across its history from the available odometer points. Compare the pace in the LAST TWO YEARS (or the last two years before import / country-change / de-registration, whichever the data shows) against the earlier, established yearly pace.
+- Trigger this note ONLY when the recent pace has dropped to LESS THAN HALF of the earlier established pace, AND that drop happens shortly before an import / country change. Smaller drops, or a drop with no import/country change nearby, are normal variation — say nothing.
+- Before writing it, check other sources (market/listing data, other registries, dealer records) so you do not confuse a genuine pace drop with a car that was simply sitting unsold on the market for a long time in the same country — that is a different, non-suspicious explanation and should be named as such when the data supports it.
+- Wording (calibrated, never an accusation): name the fact (yearly pace before vs. after, and the timing near import), then explicitly offer a plausible innocent explanation (car sitting at a logistics/export lot, prolonged foreign listing, temporary storage) as equally possible — do NOT state or imply an odometer correction/rollback occurred. The goal is to make the buyer aware the pattern exists and worth asking about, not to accuse the seller.
+- Do not repeat this analysis in any other field (tech risks, summary, incidents) — it lives only in the mileage comment; other fields may reference it in at most one short sentence if it changes their conclusion.`;
 
 /**
  * Flagship quality bar for „1. Tehnisko risku analīze” — this field must be technically
