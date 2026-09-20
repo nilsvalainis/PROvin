@@ -82,15 +82,14 @@ describe("tjekbil-map", () => {
     expect(mapped.timeline.some((r) => /Muitas apskate/.test(r.event))).toBe(true);
     expect(mapped.timeline.some((r) => /reģistrācijas apskate/i.test(r.event))).toBe(true);
     expect(mapped.timeline.some((r) => r.event === "Līzings sākas" && r.date === "2017-12-18")).toBe(true);
-    expect(mapped.ownersSummary).toBe(
-      "Dānijas īpašnieku skaits: 2 (līzings + privāta reģistrācija Dānijā, ne pēc OCTA).",
-    );
-    expect(mapped.ownersSummary).not.toMatch(/OCTA polišu ieraksti|Imports uz Dāniju|Līzings Dānijā/);
-    expect(mapped.statusRecords).toMatch(/Izmantošanas veids: privāta pasažieru pārvadāšana/);
+    expect(mapped.ownersSummary).toBe("Īpašnieku skaits Dānijā: 2.");
+    expect(mapped.ownersSummary).not.toMatch(/OCTA|pēc reģistrācijas darbībām/);
+    expect(mapped.statusRecords).toMatch(/Izmantošanas veids: Privāti/);
     expect(mapped.statusRecords).toMatch(/Līzings: 18\.12\.2017 - 21\.10\.2019 \(3 periodi\)/);
-    expect(mapped.statusRecords).toMatch(/Reģistrācijas statuss: noņemts no uzskaites/);
-    expect(mapped.statusRecords).toMatch(/Pēdējā apskate: 28\.01\.2026, izturēta/);
-    expect(mapped.statusRecords).toMatch(/Pašreizējā OCTA: GF-FORSIKRING A\/S \(beigusies\)/);
+    expect(mapped.statusRecords).toMatch(/Reģistrācijas statuss: Noņemts no uzskaites/);
+    expect(mapped.statusRecords).not.toMatch(/Sekundārais statuss/);
+    expect(mapped.statusRecords).toMatch(/Pēdējā apskate: 28\.01\.2026, Izturēta/);
+    expect(mapped.statusRecords).toMatch(/Pašreizējā OCTA: GF-FORSIKRING A\/S \(Beigusies\)/);
     expect(mapped.timeline.some((r) => /Periodiskā apskate: Izturēta/.test(r.event))).toBe(true);
     expect(mapped.notes).toEqual([]);
     expect(mapped.message).toMatch(/Færdselsstyrelsen synsrapport/);
@@ -141,7 +140,7 @@ describe("tjekbil-map", () => {
     expect(signals.some((s) => s.event === "Privāta reģistrācija Dānijā")).toBe(true);
     expect(signals.some((s) => s.date === "2019-11-11")).toBe(false);
     expect(mapTjekbilPayload({ dmr, mileagelogs: [], wanted: [] }).ownersSummary).toMatch(
-      /Dānijas īpašnieku skaits: 2/,
+      /Īpašnieku skaits Dānijā: 2/,
     );
   });
 });

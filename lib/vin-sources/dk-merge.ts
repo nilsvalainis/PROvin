@@ -67,12 +67,9 @@ const FACT_KEY_ORDER = [
   "izmantošanas veids",
   "degviela",
   "jauda / piedziņa",
-  "euronorma",
-  "dpf",
   "ātrumkārba",
   "līzings",
   "reģistrācijas statuss",
-  "sekundārais statuss",
   "stāvoklis pēc importa",
   "pēdējā apskate",
   "nākamā apskate (dk)",
@@ -91,9 +88,10 @@ function parseFactLine(line: string): { key: string; raw: string } | null {
 /** Faktu karte: tjekbil pārraksta kopīgās atslēgas, nummerplade pievieno trūkstošās. */
 function mergeFactCards(primary: string, extra: string): string {
   const byKey = new Map<string, string>();
+  const drop = new Set(["euronorma", "dpf", "sekundārais statuss"]);
   for (const line of [...extra.split(/\r?\n/), ...primary.split(/\r?\n/)]) {
     const parsed = parseFactLine(line);
-    if (!parsed) continue;
+    if (!parsed || drop.has(parsed.key)) continue;
     byKey.set(parsed.key, parsed.raw);
   }
   const used = new Set<string>();

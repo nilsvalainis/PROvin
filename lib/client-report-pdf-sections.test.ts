@@ -1984,11 +1984,12 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(3);
   });
 
-  it("outvin vehicle info uses single-column pdf-v1-kv", () => {
+  it("outvin vehicle info uses two-column pdf-v1-kv-pair", () => {
     const report = emptyOutvinDealerReport();
     report.vehicleInfo.vinCode = "WVWZZZ";
     report.vehicleInfo.model = "Golf";
     const html = buildOutvinDealerReportPdfInnerHtml(report);
+    expect(html).toContain("pdf-v1-kv-pair");
     expect(html).toContain("pdf-v1-kv");
     expect(html).not.toContain("mirror-table--outvin-vehicle");
     expect(html).not.toContain("pdf-outvin-equipment-grid");
@@ -2086,9 +2087,10 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain(SOURCE_BLOCK_LABELS.carinfo);
+    expect(doc).toContain("pdf-v1-kv-pair");
     expect(doc).toContain("pdf-v1-kv");
     expect(doc).toContain("Transportlīdzekļa informācija");
-    expect(doc).toContain("<td>Satiksmē</td><td>nē</td>");
+    expect(doc).toContain("<td>Satiksmē</td><td>Nē</td>");
     expect(doc).toContain("Eksportēts no Zviedrijas");
     expect(doc).toContain("Zviedrijā 6");
     expect(doc).not.toContain("6 īpašnieki");
@@ -2118,9 +2120,10 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain(SOURCE_BLOCK_LABELS.tjekbil);
+    expect(doc).toContain("pdf-v1-kv-pair");
     expect(doc).toContain("pdf-v1-kv");
     expect(doc).toContain("Transportlīdzekļa informācija");
-    expect(doc).toContain("2 īpašnieki");
+    expect(doc).toContain("<td>Īpašnieku skaits</td><td>2</td>");
     expect(doc).toContain("TAKSOMETRS");
     expect(doc).not.toContain("<p class=\"pdf-subhead pdf-subhead--flush\">Statuss</p>");
     expect(doc).not.toContain("⚠");

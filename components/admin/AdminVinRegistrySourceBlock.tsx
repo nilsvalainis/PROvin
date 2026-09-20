@@ -711,7 +711,7 @@ export function AdminVinRegistrySourceBlock({
         {textField(
           "ownersSummary",
           "Īpašnieku skaits",
-          "Piem.: Dānijas īpašnieku skaits: 2 (pēc reģistrācijas darbībām, ne pēc OCTA).",
+          "Piem.: Īpašnieku skaits Dānijā: 2.",
           2,
         )}
         {textField(

@@ -22,6 +22,7 @@ describe("extractExplicitOwnerCount", () => {
     expect(extractExplicitOwnerCount("Aplēstais īpašnieku skaits: 2")).toBe(2);
     expect(extractExplicitOwnerCount("Īpašnieku skaits: 4")).toBe(4);
     expect(extractExplicitOwnerCount("Dānijas īpašnieku skaits: 2 (līzings + privāta reģistrācija Dānijā, ne pēc OCTA).")).toBe(2);
+    expect(extractExplicitOwnerCount("Īpašnieku skaits Dānijā: 2.")).toBe(2);
     expect(extractExplicitOwnerCount("04.09.2023 īpašnieka maiņa: AutoEtt\n12.10.2023 īpašnieka maiņa: X")).toBeNull();
     expect(extractExplicitOwnerCount("2 īpašnieku maiņas")).toBeNull();
   });

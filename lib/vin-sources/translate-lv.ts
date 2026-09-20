@@ -39,7 +39,7 @@ const DA_TERMS: Record<string, string> = {
   "el/diesel": "hibrīds (dīzelis)",
   brint: "ūdeņradis",
   // izmantošanas veidi
-  "privat personkørsel": "privāta pasažieru pārvadāšana",
+  "privat personkørsel": "Privāti",
   "erhvervsmæssig personkørsel": "komerciāla pasažieru pārvadāšana",
   "erhvervsmæssig personkørsel (taxi)": "komerciāla pasažieru pārvadāšana (TAKSOMETRS)",
   taxi: "TAKSOMETRS",
@@ -110,6 +110,16 @@ export function capitalizeRegistryEvent(event: string): string {
   let out = t.slice(0, i) + t.charAt(i).toLocaleUpperCase("lv") + t.slice(i + 1);
   out = out.replace(/:\s+(\p{L})/u, (_m, letter: string) => `: ${letter.toLocaleUpperCase("lv")}`);
   return out;
+}
+
+/** Fakta vērtība: pirmais burts, pēc komata un iekavās. */
+export function capitalizeFactValue(value: string): string {
+  let t = capitalizeRegistryEvent(value);
+  if (!t) return "";
+  t = t.replace(/,\s+(\p{L})/gu, (_m, letter: string) => `, ${letter.toLocaleUpperCase("lv")}`);
+  t = t.replace(/\(\s*(\p{L})/gu, (_m, letter: string) => `(${letter.toLocaleUpperCase("lv")}`);
+  t = t.replace(/·\s+(\p{L})/gu, (_m, letter: string) => `· ${letter.toLocaleUpperCase("lv")}`);
+  return t;
 }
 
 /**

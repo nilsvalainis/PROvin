@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN · kv tabulu vietas paraugi</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --mute:#86868b;
+    --line:#E9EDF3;
+    --soft:#F1F5F9;
+    --desk:#d7dee8;
+    --fs-table:10.5px;
+    --fs-label:9.5px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--desk);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;}
+  .chrome{position:sticky;top:0;z-index:20;background:#0f172a;color:#e2e8f0;padding:14px 18px 16px;}
+  .chrome h1{margin:0;font-size:15px;font-weight:700;color:#fff;}
+  .chrome p{margin:6px 0 0;font-size:12px;line-height:1.5;color:#94a3b8;max-width:52rem;}
+  .nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .nav a{color:#93C5FD;font-size:12px;font-weight:650;text-decoration:none;}
+  .nav a:hover{text-decoration:underline;}
+  .stage{padding:22px 16px 80px;max-width:760px;margin:0 auto;}
+  .rec{margin:0 0 18px;padding:14px 16px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:13px;line-height:1.5;}
+  .rec h2{margin:0 0 8px;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;}
+  .rec ul{margin:0;padding-left:1.2em;}
+  .rec li{margin:4px 0;}
+  .sheet{
+    width:210mm;max-width:100%;margin:0 auto 28px;padding:18px 20px 22px;
+    background:#fff;border-radius:12px;box-shadow:0 16px 44px rgb(15 23 42 / .1);
+  }
+  .sheet-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .sheet-head h2{margin:0;font-size:15px;font-weight:750;letter-spacing:-0.02em;}
+  .sheet-head p{margin:0;font-size:12px;color:#64748b;max-width:28rem;}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#F8FAFC;border:1px solid var(--line);font-size:10px;font-weight:700;color:var(--mute);}
+  .tag--rec{background:#ecfdf5;border-color:#bbf7d0;color:#047857;}
+  .block{margin:0 0 18px;}
+  .block:last-child{margin:0;}
+
+  .pdf-subhead{
+    display:flex;align-items:center;gap:7px;margin:0 0 7px;
+    font-size:var(--fs-label);font-weight:600;color:var(--mute);
+    letter-spacing:0.07em;text-transform:uppercase;line-height:1.3;
+  }
+  .plain{margin:0;padding:6px 0 0;font-size:var(--fs-table);color:var(--ink);line-height:1.45;}
+
+  table.kv{width:100%;border-collapse:collapse;font-size:var(--fs-table);margin:0;}
+  table.kv td{padding:7px 0;border-bottom:1px solid var(--soft);vertical-align:top;line-height:1.45;}
+  table.kv td:first-child{width:38%;color:var(--mute);font-weight:500;padding-right:12px;}
+  table.kv td:nth-child(2){color:var(--ink);}
+  table.kv tr:last-child td{border-bottom:none;}
+
+  .tight table.kv td{padding:4.5px 0;}
+  .tight .pdf-subhead{margin:0 0 5px;}
+  .tight .block{margin:0 0 14px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;}
+  .grid2 .wide{grid-column:1 / -1;}
+  .grid2 table.kv td{padding:5px 0;}
+  .grid2 table.kv td:first-child{width:44%;}
+  .grid2 .wide table.kv td:first-child{width:22%;}
+  .grid2 .pdf-subhead{grid-column:1 / -1;}
+
+  .pair2{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;}
+  .pair2 table.kv td{padding:5px 0;}
+  .pair2 table.kv td:first-child{width:44%;}
+
+  @media (max-width:720px){
+    .grid2,.pair2{grid-template-columns:1fr;}
+    .grid2 .wide table.kv td:first-child{width:38%;}
+  }
+</style>
+</head>
+<body>
+  <div class="chrome">
+    <h1>Kv tabulu vietas paraugi</h1>
+    <p>
+      Tikai dizains. Produkcija nav mainīta. Četri mierīgi varianti tām pašām trim sadaļām:
+      CSDD, oficiālais dīleris, Dānijas reģistrs. Dānijas saturā jau ir tava labojuma kopa
+      (B-D). A rāda, kā ir tagad.
+    </p>
+    <div class="nav">
+      <a href="#a">A. Kā tagad</a>
+      <a href="#b">B. Īsāks ritms</a>
+      <a href="#c">C. Divas kolonnas, gari pa visu</a>
+      <a href="#d">D. Divas kolonnas visiem</a>
+    </div>
+  </div>
+
+  <div class="stage">
+    <article class="rec">
+      <h2>Dānijas saturs paraugos B-D</h2>
+      <ul>
+        <li>Īpašnieku skaits Dānijā: <b>2</b>, bez iekavām.</li>
+        <li>Izmantošanas veids: <b>Privāti</b>.</li>
+        <li>Dzēsts: Euronorma, DPF, sekundārais statuss.</li>
+        <li>Vērtības sākas ar lielo burtu.</li>
+      </ul>
+    </article>
+
+    <section class="sheet" id="a">
+      <div class="sheet-head">
+        <div>
+          <h2>A. Kā tagad</h2>
+          <p>Viena kolonna, 7 px rindas. Dānijā vēl vecais saturs, lai redz, cik tas stiepj lapu.</p>
+        </div>
+        <span class="tag">Atsauce</span>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa dati</p>
+        <table class="kv"><tbody>
+          <tr><td>Marka, modelis</td><td>Jaguar F-Pace</td></tr>
+          <tr><td>Reģistrācijas numurs</td><td>OG47991</td></tr>
+          <tr><td>Pirmā reģistrācija</td><td>05.01.2017</td></tr>
+          <tr><td>Nākamās apskates datums</td><td>26.02.2027</td></tr>
+          <tr><td>Iepriekšējās apskates datums</td><td>06.02.2025</td></tr>
+          <tr><td>Motora tilpums (cm³)</td><td>2993</td></tr>
+          <tr><td>Motora maksimālā jauda (kW)</td><td>221</td></tr>
+          <tr><td>Emisiju standarts</td><td>Euro 6 W</td></tr>
+          <tr><td>Pilna masa (kg)</td><td>2570</td></tr>
+          <tr><td>Pašmasa (kg)</td><td>2111</td></tr>
+          <tr><td>Ekspluatācijas nodoklis (EUR)</td><td>159,00</td></tr>
+          <tr><td>Reģistrācijas statuss</td><td>Noņemts no uzskaites, atļauta piedalīšanās ceļu satiksmē līdz 15.10.2025</td></tr>
+          <tr><td>Atgāžamā daļa</td><td>93000</td></tr>
+          <tr><td>Iepriekšējās reģistrācijas valsts</td><td>Dānija</td></tr>
+        </tbody></table>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <table class="kv"><tbody>
+          <tr><td>Modelis</td><td>F-Pace</td></tr>
+          <tr><td>Modeļa sērija</td><td>F-PACE - X76101</td></tr>
+          <tr><td>VIN kods</td><td>SADCA2BK6HA098675</td></tr>
+          <tr><td>Transportlīdzekļa tips</td><td>Universālis</td></tr>
+          <tr><td>Ātrumkārba</td><td>Automātiskā ātrumkārba (8 Speed Auto Trans ZF 8HP70 4WD)</td></tr>
+          <tr><td>Stūre</td><td>LHD (automašīna ar stūri kreisajā pusē)</td></tr>
+          <tr><td>Dzinējs</td><td>200AZ</td></tr>
+          <tr><td>Virsbūve</td><td>Universālis</td></tr>
+          <tr><td>Piedziņa</td><td>Pilnpiedziņa</td></tr>
+          <tr><td>Jauda</td><td>228 kW (306 ZS / 310 PS)</td></tr>
+          <tr><td>Modeļa kods</td><td>761ABB Prestige</td></tr>
+          <tr><td>Ražošanas datums</td><td>01.11.2016</td></tr>
+          <tr><td>Pirmā reģistrācija</td><td>01.01.2017</td></tr>
+          <tr><td>Garantijas sākums</td><td>27.12.2016</td></tr>
+          <tr><td>Valsts / reģions</td><td>Dānija</td></tr>
+          <tr><td>Krāsa</td><td>Tempest Grey (1ARR)</td></tr>
+          <tr><td>Krāsas kods</td><td>1ARR</td></tr>
+          <tr><td>Interjers</td><td>Taurus Leather (033ASS)</td></tr>
+          <tr><td>Interjera kods</td><td>033ASS</td></tr>
+          <tr><td>Degviela</td><td>Dīzelis</td></tr>
+          <tr><td>Tilpums</td><td>3 l</td></tr>
+        </tbody></table>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Negadījumu pārbaude</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Zagto transportlīdzekļu datubāze</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <table class="kv"><tbody>
+          <tr><td>Dānijas īpašnieku skaits</td><td>2 (pēc reģistrācijas darbībām Dānijā, ne pēc OCTA)</td></tr>
+          <tr><td>Izmantošanas veids</td><td>privāta pasažieru pārvadāšana</td></tr>
+          <tr><td>Degviela</td><td>dīzelis</td></tr>
+          <tr><td>Jauda / piedziņa</td><td>300 HK (221 kW) · Firehjulstrukket</td></tr>
+          <tr><td>Euronorma</td><td>Euro VI</td></tr>
+          <tr><td>DPF</td><td>ir</td></tr>
+          <tr><td>Reģistrācijas statuss</td><td>noņemts no uzskaites (14.10.2024)</td></tr>
+          <tr><td>Sekundārais statuss</td><td>noņemts no uzskaites (noņemta spēkā esoša reģistrācija)</td></tr>
+          <tr><td>Stāvoklis pēc importa</td><td>vidējs</td></tr>
+          <tr><td>Pēdējā apskate</td><td>16.10.2024, izturēta</td></tr>
+          <tr><td>Pašreizējā OCTA</td><td>GF-FORSIKRING A/S (beigusies)</td></tr>
+          <tr><td>Neizturētas apskates</td><td>1</td></tr>
+        </tbody></table>
+      </div>
+    </section>
+
+    <section class="sheet tight" id="b">
+      <div class="sheet-head">
+        <div>
+          <h2>B. Īsāks ritms</h2>
+          <p>Tā pati viena kolonna. Mazāks atstatums starp rindām, Dānijas saturs jau saīsināts. Burtu izmērs paliek.</p>
+        </div>
+        <span class="tag">+saturs</span>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa dati</p>
+        <table class="kv"><tbody>
+          <tr><td>Marka, modelis</td><td>Jaguar F-Pace</td></tr>
+          <tr><td>Reģistrācijas numurs</td><td>OG47991</td></tr>
+          <tr><td>Pirmā reģistrācija</td><td>05.01.2017</td></tr>
+          <tr><td>Nākamās apskates datums</td><td>26.02.2027</td></tr>
+          <tr><td>Iepriekšējās apskates datums</td><td>06.02.2025</td></tr>
+          <tr><td>Motora tilpums (cm³)</td><td>2993</td></tr>
+          <tr><td>Motora maksimālā jauda (kW)</td><td>221</td></tr>
+          <tr><td>Emisiju standarts</td><td>Euro 6 W</td></tr>
+          <tr><td>Pilna masa (kg)</td><td>2570</td></tr>
+          <tr><td>Pašmasa (kg)</td><td>2111</td></tr>
+          <tr><td>Ekspluatācijas nodoklis (EUR)</td><td>159,00</td></tr>
+          <tr><td>Reģistrācijas statuss</td><td>Noņemts no uzskaites, atļauta piedalīšanās ceļu satiksmē līdz 15.10.2025</td></tr>
+          <tr><td>Atgāžamā daļa</td><td>93000</td></tr>
+          <tr><td>Iepriekšējās reģistrācijas valsts</td><td>Dānija</td></tr>
+        </tbody></table>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <table class="kv"><tbody>
+          <tr><td>Modelis</td><td>F-Pace</td></tr>
+          <tr><td>Modeļa sērija</td><td>F-PACE - X76101</td></tr>
+          <tr><td>VIN kods</td><td>SADCA2BK6HA098675</td></tr>
+          <tr><td>Transportlīdzekļa tips</td><td>Universālis</td></tr>
+          <tr><td>Ātrumkārba</td><td>Automātiskā ātrumkārba (8 Speed Auto Trans ZF 8HP70 4WD)</td></tr>
+          <tr><td>Stūre</td><td>LHD (automašīna ar stūri kreisajā pusē)</td></tr>
+          <tr><td>Dzinējs</td><td>200AZ</td></tr>
+          <tr><td>Virsbūve</td><td>Universālis</td></tr>
+          <tr><td>Piedziņa</td><td>Pilnpiedziņa</td></tr>
+          <tr><td>Jauda</td><td>228 kW (306 ZS / 310 PS)</td></tr>
+          <tr><td>Modeļa kods</td><td>761ABB Prestige</td></tr>
+          <tr><td>Ražošanas datums</td><td>01.11.2016</td></tr>
+          <tr><td>Pirmā reģistrācija</td><td>01.01.2017</td></tr>
+          <tr><td>Garantijas sākums</td><td>27.12.2016</td></tr>
+          <tr><td>Valsts / reģions</td><td>Dānija</td></tr>
+          <tr><td>Krāsa</td><td>Tempest Grey (1ARR)</td></tr>
+          <tr><td>Krāsas kods</td><td>1ARR</td></tr>
+          <tr><td>Interjers</td><td>Taurus Leather (033ASS)</td></tr>
+          <tr><td>Interjera kods</td><td>033ASS</td></tr>
+          <tr><td>Degviela</td><td>Dīzelis</td></tr>
+          <tr><td>Tilpums</td><td>3 l</td></tr>
+        </tbody></table>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Negadījumu pārbaude</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Zagto transportlīdzekļu datubāze</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block" id="b-dk">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <table class="kv"><tbody>
+          <tr><td>Īpašnieku skaits Dānijā</td><td>2</td></tr>
+          <tr><td>Izmantošanas veids</td><td>Privāti</td></tr>
+          <tr><td>Degviela</td><td>Dīzelis</td></tr>
+          <tr><td>Jauda / piedziņa</td><td>300 HK (221 kW) · Firehjulstrukket</td></tr>
+          <tr><td>Reģistrācijas statuss</td><td>Noņemts no uzskaites (14.10.2024)</td></tr>
+          <tr><td>Stāvoklis pēc importa</td><td>Vidējs</td></tr>
+          <tr><td>Pēdējā apskate</td><td>16.10.2024, Izturēta</td></tr>
+          <tr><td>Pašreizējā OCTA</td><td>GF-FORSIKRING A/S (Beigusies)</td></tr>
+          <tr><td>Neizturētas apskates</td><td>1</td></tr>
+        </tbody></table>
+      </div>
+    </section>
+
+    <section class="sheet" id="c">
+      <div class="sheet-head">
+        <div>
+          <h2>C. Divas kolonnas, gari pa visu</h2>
+          <p>Īsie fakti pa pāriem. VIN, ātrumkārba, statuss un OCTA paliek vienā rindā. Lielākais ieguvums bez saspiešanas.</p>
+        </div>
+        <span class="tag tag--rec">Ieteikums</span>
+      </div>
+      <div class="block grid2">
+        <p class="pdf-subhead">Transportlīdzekļa dati</p>
+        <table class="kv"><tbody>
+          <tr><td>Marka, modelis</td><td>Jaguar F-Pace</td></tr>
+          <tr><td>Reģistrācijas numurs</td><td>OG47991</td></tr>
+          <tr><td>Pirmā reģistrācija</td><td>05.01.2017</td></tr>
+          <tr><td>Nākamā apskate</td><td>26.02.2027</td></tr>
+          <tr><td>Iepriekšējā apskate</td><td>06.02.2025</td></tr>
+          <tr><td>Motora tilpums</td><td>2993 cm³</td></tr>
+          <tr><td>Jauda</td><td>221 kW</td></tr>
+          <tr><td>Emisiju standarts</td><td>Euro 6 W</td></tr>
+          <tr><td>Pilna masa</td><td>2570 kg</td></tr>
+          <tr><td>Pašmasa</td><td>2111 kg</td></tr>
+          <tr><td>Ekspluatācijas nodoklis</td><td>159,00 EUR</td></tr>
+          <tr><td>Atgāžamā daļa</td><td>93000</td></tr>
+        </tbody></table>
+        <div class="wide">
+          <table class="kv"><tbody>
+            <tr><td>Reģistrācijas statuss</td><td>Noņemts no uzskaites, atļauta piedalīšanās ceļu satiksmē līdz 15.10.2025</td></tr>
+            <tr><td>Iepriekšējās reģistrācijas valsts</td><td>Dānija</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="block grid2">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <table class="kv"><tbody>
+          <tr><td>Modelis</td><td>F-Pace</td></tr>
+          <tr><td>Modeļa sērija</td><td>F-PACE - X76101</td></tr>
+          <tr><td>Tips</td><td>Universālis</td></tr>
+          <tr><td>Virsbūve</td><td>Universālis</td></tr>
+          <tr><td>Dzinējs</td><td>200AZ</td></tr>
+          <tr><td>Piedziņa</td><td>Pilnpiedziņa</td></tr>
+          <tr><td>Jauda</td><td>228 kW (306 ZS / 310 PS)</td></tr>
+          <tr><td>Modeļa kods</td><td>761ABB Prestige</td></tr>
+          <tr><td>Ražošana</td><td>01.11.2016</td></tr>
+          <tr><td>Pirmā reģistrācija</td><td>01.01.2017</td></tr>
+          <tr><td>Garantijas sākums</td><td>27.12.2016</td></tr>
+          <tr><td>Valsts / reģions</td><td>Dānija</td></tr>
+          <tr><td>Krāsa</td><td>Tempest Grey (1ARR)</td></tr>
+          <tr><td>Krāsas kods</td><td>1ARR</td></tr>
+          <tr><td>Interjers</td><td>Taurus Leather (033ASS)</td></tr>
+          <tr><td>Interjera kods</td><td>033ASS</td></tr>
+          <tr><td>Degviela</td><td>Dīzelis</td></tr>
+          <tr><td>Tilpums</td><td>3 l</td></tr>
+        </tbody></table>
+        <div class="wide">
+          <table class="kv"><tbody>
+            <tr><td>VIN kods</td><td>SADCA2BK6HA098675</td></tr>
+            <tr><td>Ātrumkārba</td><td>Automātiskā ātrumkārba (8 Speed Auto Trans ZF 8HP70 4WD)</td></tr>
+            <tr><td>Stūre</td><td>LHD (automašīna ar stūri kreisajā pusē)</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Negadījumu pārbaude</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Zagto transportlīdzekļu datubāze</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block grid2">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <table class="kv"><tbody>
+          <tr><td>Īpašnieku skaits Dānijā</td><td>2</td></tr>
+          <tr><td>Izmantošanas veids</td><td>Privāti</td></tr>
+          <tr><td>Degviela</td><td>Dīzelis</td></tr>
+          <tr><td>Stāvoklis pēc importa</td><td>Vidējs</td></tr>
+          <tr><td>Pēdējā apskate</td><td>16.10.2024, Izturēta</td></tr>
+          <tr><td>Neizturētas apskates</td><td>1</td></tr>
+        </tbody></table>
+        <div class="wide">
+          <table class="kv"><tbody>
+            <tr><td>Jauda / piedziņa</td><td>300 HK (221 kW) · Firehjulstrukket</td></tr>
+            <tr><td>Reģistrācijas statuss</td><td>Noņemts no uzskaites (14.10.2024)</td></tr>
+            <tr><td>Pašreizējā OCTA</td><td>GF-FORSIKRING A/S (Beigusies)</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet" id="d">
+      <div class="sheet-head">
+        <div>
+          <h2>D. Divas kolonnas visiem</h2>
+          <p>Visi fakti pusē. Garie teksti laužas. Kompaktākais no šiem četriem, vēl lasāms, bet jau tuvāk saspiešanai.</p>
+        </div>
+        <span class="tag">Kompaktākais</span>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa dati</p>
+        <div class="pair2">
+          <table class="kv"><tbody>
+            <tr><td>Marka, modelis</td><td>Jaguar F-Pace</td></tr>
+            <tr><td>Pirmā reģistrācija</td><td>05.01.2017</td></tr>
+            <tr><td>Iepriekšējā apskate</td><td>06.02.2025</td></tr>
+            <tr><td>Jauda</td><td>221 kW</td></tr>
+            <tr><td>Pilna masa</td><td>2570 kg</td></tr>
+            <tr><td>Ekspluatācijas nodoklis</td><td>159,00 EUR</td></tr>
+            <tr><td>Atgāžamā daļa</td><td>93000</td></tr>
+          </tbody></table>
+          <table class="kv"><tbody>
+            <tr><td>Reģ. numurs</td><td>OG47991</td></tr>
+            <tr><td>Nākamā apskate</td><td>26.02.2027</td></tr>
+            <tr><td>Motora tilpums</td><td>2993 cm³</td></tr>
+            <tr><td>Emisiju standarts</td><td>Euro 6 W</td></tr>
+            <tr><td>Pašmasa</td><td>2111 kg</td></tr>
+            <tr><td>Iepriekšējā valsts</td><td>Dānija</td></tr>
+            <tr><td>Reģistrācijas statuss</td><td>Noņemts no uzskaites, atļauta piedalīšanās ceļu satiksmē līdz 15.10.2025</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <div class="pair2">
+          <table class="kv"><tbody>
+            <tr><td>Modelis</td><td>F-Pace</td></tr>
+            <tr><td>VIN kods</td><td>SADCA2BK6HA098675</td></tr>
+            <tr><td>Ātrumkārba</td><td>Automātiskā (ZF 8HP70 4WD)</td></tr>
+            <tr><td>Dzinējs</td><td>200AZ</td></tr>
+            <tr><td>Jauda</td><td>228 kW (306 ZS)</td></tr>
+            <tr><td>Ražošana</td><td>01.11.2016</td></tr>
+            <tr><td>Garantijas sākums</td><td>27.12.2016</td></tr>
+            <tr><td>Krāsa</td><td>Tempest Grey (1ARR)</td></tr>
+            <tr><td>Interjers</td><td>Taurus Leather (033ASS)</td></tr>
+            <tr><td>Degviela</td><td>Dīzelis</td></tr>
+          </tbody></table>
+          <table class="kv"><tbody>
+            <tr><td>Modeļa sērija</td><td>F-PACE - X76101</td></tr>
+            <tr><td>Tips / virsbūve</td><td>Universālis</td></tr>
+            <tr><td>Stūre</td><td>LHD, kreisā puse</td></tr>
+            <tr><td>Piedziņa</td><td>Pilnpiedziņa</td></tr>
+            <tr><td>Modeļa kods</td><td>761ABB Prestige</td></tr>
+            <tr><td>Pirmā reģistrācija</td><td>01.01.2017</td></tr>
+            <tr><td>Valsts / reģions</td><td>Dānija</td></tr>
+            <tr><td>Krāsas kods</td><td>1ARR</td></tr>
+            <tr><td>Interjera kods</td><td>033ASS</td></tr>
+            <tr><td>Tilpums</td><td>3 l</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Negadījumu pārbaude</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Zagto transportlīdzekļu datubāze</p>
+        <p class="plain">Nav ierakstu.</p>
+      </div>
+      <div class="block">
+        <p class="pdf-subhead">Transportlīdzekļa informācija</p>
+        <div class="pair2">
+          <table class="kv"><tbody>
+            <tr><td>Īpašnieku skaits Dānijā</td><td>2</td></tr>
+            <tr><td>Degviela</td><td>Dīzelis</td></tr>
+            <tr><td>Reģistrācijas statuss</td><td>Noņemts no uzskaites (14.10.2024)</td></tr>
+            <tr><td>Pēdējā apskate</td><td>16.10.2024, Izturēta</td></tr>
+            <tr><td>Neizturētas apskates</td><td>1</td></tr>
+          </tbody></table>
+          <table class="kv"><tbody>
+            <tr><td>Izmantošanas veids</td><td>Privāti</td></tr>
+            <tr><td>Jauda / piedziņa</td><td>300 HK (221 kW) · Firehjulstrukket</td></tr>
+            <tr><td>Stāvoklis pēc importa</td><td>Vidējs</td></tr>
+            <tr><td>Pašreizējā OCTA</td><td>GF-FORSIKRING A/S (Beigusies)</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

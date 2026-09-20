@@ -5,6 +5,7 @@
 import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 import { asArray, asRecord, DK_COUNTRY_LV, isoDay, num, str } from "@/lib/vin-sources/dk-json";
 import {
+  capitalizeFactValue,
   capitalizeRegistryEvent,
   detectSpecialUseLabels,
   translateTermLv,
@@ -394,13 +395,7 @@ export function buildTjekbilOwnersSummary(dmr: TjekbilDmrResponse, inspections: 
   const signals = extractDkRegistrationSignals(dmr, inspections);
   if (signals.length === 0) return "";
   const n = new Set(signals.map((s) => s.date)).size;
-  const hasLease = signals.some((s) => s.event === "Līzings Dānijā");
-  const hasPrivate = signals.some((s) => s.event === "Privāta reģistrācija Dānijā");
-  const basis =
-    hasLease && hasPrivate
-      ? "līzings + privāta reģistrācija Dānijā, ne pēc OCTA"
-      : "pēc reģistrācijas darbībām Dānijā, ne pēc OCTA";
-  return `Dānijas īpašnieku skaits: ${n} (${basis}).`;
+  return `Īpašnieku skaits Dānijā: ${n}.`;
 }
 
 export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: string; specialUse: string[] } {
@@ -411,21 +406,30 @@ export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: stri
   const lines: string[] = [];
 
   const use = str(basic.koeretoejAnvendelseNavn) || str(general.koeretoejAnvendelse);
-  if (use) lines.push(`Izmantošanas veids: ${translateTermLv(use, "da")}`);
+  if (use) lines.push(`Izmantošanas veids: ${capitalizeFactValue(translateTermLv(use, "da"))}`);
 
   const fuel =
     str(basic.drivkraft) ||
     str(basic.koeretoejMotorDrivkraftNavn) ||
     str(general.drivkraft) ||
     str(general.drivmiddel);
-  if (fuel) lines.push(`Degviela: ${translateTermLv(fuel, "da")}`);
+  if (fuel) lines.push(`Degviela: ${capitalizeFactValue(translateTermLv(fuel, "da"))}`);
 
-  const power = str(basic.motoreffekt) || str(basic.effekt) || str(general.effekt);
-  if (power) lines.push(`Jauda / piedziņa: ${power}`);
+  const powerRaw = str(basic.motoreffekt) || str(basic.effekt) || str(general.effekt);
+  const driveRaw =
+    str(basic.koeretoejMotorKoeretoejTraekNavn) ||
+    str(basic.traek) ||
+    str(general.traek) ||
+    str(general.koeretoejTraek);
+  const power = [translateTextLv(powerRaw, "da"), translateTermLv(driveRaw, "da") || translateTextLv(driveRaw, "da")]
+    .filter(Boolean)
+    .filter((part, i, all) => i === 0 || !all[0]!.toLocaleLowerCase("lv").includes(part.toLocaleLowerCase("lv")))
+    .join(" · ");
+  if (power) lines.push(`Jauda / piedziņa: ${capitalizeFactValue(power)}`);
 
   const periods = leasingPeriods(basic);
   if (basic.bilLeaset === true) {
-    lines.push("Līzings: aktīvs");
+    lines.push("Līzings: Aktīvs");
   } else if (periods.length > 0) {
     const first = periods[0]!;
     const last = periods[periods.length - 1]!;
@@ -436,21 +440,24 @@ export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: stri
   const status = translateTermLv(str(basic.status), "da");
   const statusDate = isoDay(basic.statusDato);
   if (status) {
-    lines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
+    lines.push(
+      `Reģistrācijas statuss: ${capitalizeFactValue(`${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`)}`,
+    );
   }
 
   const secondary = str(general.sekundaerStatus);
-  if (secondary && translateTermLv(secondary, "da") !== status) {
-    lines.push(`Sekundārais statuss: ${translateTermLv(secondary, "da")}`);
-  }
 
   const importCondition = str(general.standEfterImport) || str(basic.koeretoejstand);
-  if (importCondition) lines.push(`Stāvoklis pēc importa: ${translateTextLv(importCondition, "da")}`);
+  if (importCondition) {
+    lines.push(`Stāvoklis pēc importa: ${capitalizeFactValue(translateTextLv(importCondition, "da"))}`);
+  }
 
   const lastSyn = isoDay(inspection.sidsteSyn);
   const lastResult = translateTermLv(str(inspection.sidsteSynResultat), "da");
   if (lastSyn) {
-    lines.push(`Pēdējā apskate: ${formatRegistryDateLv(lastSyn)}${lastResult ? `, ${lastResult}` : ""}`);
+    lines.push(
+      `Pēdējā apskate: ${capitalizeFactValue(`${formatRegistryDateLv(lastSyn)}${lastResult ? `, ${lastResult}` : ""}`)}`,
+    );
   }
   const nextSyn = isoDay(inspection.naesteSyn);
   if (nextSyn) lines.push(`Nākamā apskate (DK): ${formatRegistryDateLv(nextSyn)}`);
@@ -458,7 +465,9 @@ export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: stri
   const currentInsurer = str(insurance?.selskab);
   if (currentInsurer) {
     const insStatus = translateTermLv(str(insurance?.status), "da");
-    lines.push(`Pašreizējā OCTA: ${currentInsurer}${insStatus ? ` (${insStatus})` : ""}`);
+    lines.push(
+      `Pašreizējā OCTA: ${capitalizeFactValue(`${currentInsurer}${insStatus ? ` (${insStatus})` : ""}`)}`,
+    );
   }
 
   const permissions = asArray(basic.permissions).map(asRecord);

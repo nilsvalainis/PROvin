@@ -73,7 +73,8 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
-import { buildPdfFactCardHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
+import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
+import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
 import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
 import {
   buildDealerSectionCoverHtml,
@@ -1232,7 +1233,8 @@ export function buildCsddAvotuZoneHtml(
   );
   const commentTrim = mergePdfChecklistAndComments(form.pdfChecklist, form.comments ?? "").trim();
   const hasComments = commentTrim.length > 0;
-  const regRows: string[] = [];
+  const kvRows: { k: string; v: string; vHtml: string }[] = [];
+  const alertRows: string[] = [];
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
     // Īpašnieku skaits paliek laika joslā, ne kv tabulā.
     if (key === "ownerCountLatvia") continue;
@@ -1241,17 +1243,22 @@ export function buildCsddAvotuZoneHtml(
     let flag: CsddFieldUiFlag = "none";
     if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
     else if (key === "nextInspectionDate") flag = getNextInspectionDateUiFlag(v);
-    const valueHtml = escapeCsddPdfFieldValue(key, v);
+    const display = key === "nextInspectionDate" || key === "prevInspectionDate" || key === "firstRegistration"
+      ? v
+      : capitalizeFactValue(v);
+    const valueHtml = escapeCsddPdfFieldValue(key, display);
     if (flag !== "none" && (key === "particulateMatter" || key === "nextInspectionDate")) {
-      regRows.push(buildCsddPdfAlertRowHtml(escapeHtml(label), valueHtml, flag));
+      alertRows.push(buildCsddPdfAlertRowHtml(escapeHtml(label), valueHtml, flag));
     } else {
-      regRows.push(`<tr><td>${escapeHtml(label)}</td><td>${valueHtml}</td></tr>`);
+      kvRows.push({ k: label, v: display, vHtml: valueHtml });
     }
   }
-  const tableHtml =
-    regRows.length > 0
-      ? `<table class="mirror-table mirror-table--csdd"><tbody>${regRows.join("\n")}</tbody></table>`
+  const pairHtml = buildPdfKvPairHtml(kvRows);
+  const alertsHtml =
+    alertRows.length > 0
+      ? `<table class="mirror-table mirror-table--csdd"><tbody>${alertRows.join("\n")}</tbody></table>`
       : "";
+  const tableHtml = pairHtml || alertsHtml ? `${pairHtml}${alertsHtml}` : "";
 
   const ownerTimelineHtml =
     form.ownerCountLatvia.trim() || (form.ownerRegistrationEvents ?? []).some((e) => e.date.trim())

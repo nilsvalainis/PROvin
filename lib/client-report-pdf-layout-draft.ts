@@ -93,6 +93,9 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv td:first-child{width:38%;color:#86868b;font-weight:500;padding-right:12px}
       .pdf-v1-kv td:nth-child(2){color:#0f172a}
       .pdf-v1-kv tr:last-child td{border-bottom:none}
+      .pdf-v1-kv-pair{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start;}
+      .pdf-v1-kv-pair .pdf-v1-kv td{padding:5px 0;}
+      .pdf-v1-kv-pair .pdf-v1-kv td:first-child{width:44%;}
       .pdf-v1-kv--outvin-log thead th{
         font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;text-align:left;
         text-transform:uppercase;letter-spacing:0.06em;

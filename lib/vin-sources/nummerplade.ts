@@ -6,7 +6,12 @@
  */
 import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 import { asArray, asRecord, DK_COUNTRY_LV, isoDay, num, pickNum, pickStr } from "@/lib/vin-sources/dk-json";
-import { capitalizeRegistryEvent, translateTermLv, translateTextLv } from "@/lib/vin-sources/translate-lv";
+import {
+  capitalizeFactValue,
+  capitalizeRegistryEvent,
+  translateTermLv,
+  translateTextLv,
+} from "@/lib/vin-sources/translate-lv";
 import type { VinSourceFetchResult, VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
 import { emptyVinSourceResult } from "@/lib/vin-sources/types";
 
@@ -96,27 +101,27 @@ export function mapNummerpladePayload(payload: unknown): Omit<VinSourceFetchResu
 
   const statusLines: string[] = [];
   const use = pickStr(rec, ["anvendelse"]);
-  if (use) statusLines.push(`Izmantošanas veids: ${translateTermLv(use, "da")}`);
+  if (use) statusLines.push(`Izmantošanas veids: ${capitalizeFactValue(translateTermLv(use, "da"))}`);
   const fuel = pickStr(rec, ["drivmiddel"]);
   const power = pickStr(rec, ["effekt"]);
-  const euro = pickStr(rec, ["euronorm"]);
-  const dpf = pickStr(rec, ["partikelfilter"]);
-  if (fuel) statusLines.push(`Degviela: ${translateTermLv(fuel, "da")}`);
-  if (power) statusLines.push(`Jauda / piedziņa: ${translateTextLv(power, "da")}`);
-  if (euro) statusLines.push(`Euronorma: ${euro}`);
-  if (dpf && /ja|yes|1/i.test(dpf)) statusLines.push("DPF: ir");
+  if (fuel) statusLines.push(`Degviela: ${capitalizeFactValue(translateTermLv(fuel, "da"))}`);
+  if (power) statusLines.push(`Jauda / piedziņa: ${capitalizeFactValue(translateTextLv(power, "da"))}`);
   const eq = equipmentList(rec);
   if (eq.some((x) => /automatgear|automat gear/i.test(x))) {
-    statusLines.push("Ātrumkārba: automāts (nav CVT)");
+    statusLines.push("Ātrumkārba: Automāts (nav CVT)");
   }
   if (status) {
-    statusLines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
+    statusLines.push(
+      `Reģistrācijas statuss: ${capitalizeFactValue(`${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`)}`,
+    );
   }
   const insurance = asRecord(asRecord(rec.forsikring).aktuel);
   const insurer = pickStr(insurance, ["selskab", "company"]);
   if (insurer) {
     const insStatus = translateTermLv(pickStr(insurance, ["status"]), "da");
-    statusLines.push(`Pašreizējā OCTA: ${insurer}${insStatus ? ` (${insStatus})` : ""}`);
+    statusLines.push(
+      `Pašreizējā OCTA: ${capitalizeFactValue(`${insurer}${insStatus ? ` (${insStatus})` : ""}`)}`,
+    );
   }
 
   const notes: string[] = [];

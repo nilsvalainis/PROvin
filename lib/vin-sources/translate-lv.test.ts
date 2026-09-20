@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { capitalizeRegistryEvent, translateTextLv } from "@/lib/vin-sources/translate-lv";
+import { capitalizeFactValue, capitalizeRegistryEvent, translateTextLv } from "@/lib/vin-sources/translate-lv";
 
 describe("capitalizeRegistryEvent", () => {
   it("paceļ pirmo burtu un tekstu pēc kolona", () => {
@@ -10,6 +10,15 @@ describe("capitalizeRegistryEvent", () => {
       "Apdrošināšana: GF-FORSIKRING A/S, beigusies",
     );
     expect(capitalizeRegistryEvent("Pirmā reģistrācija")).toBe("Pirmā reģistrācija");
+  });
+});
+
+describe("capitalizeFactValue", () => {
+  it("paceļ pirmo burtu, pēc komata un iekavās", () => {
+    expect(capitalizeFactValue("dīzelis")).toBe("Dīzelis");
+    expect(capitalizeFactValue("16.10.2024, izturēta")).toBe("16.10.2024, Izturēta");
+    expect(capitalizeFactValue("GF-FORSIKRING A/S (beigusies)")).toBe("GF-FORSIKRING A/S (Beigusies)");
+    expect(capitalizeFactValue("300 HK (221 kW) · pilnpiedziņa")).toBe("300 HK (221 kW) · Pilnpiedziņa");
   });
 });
 

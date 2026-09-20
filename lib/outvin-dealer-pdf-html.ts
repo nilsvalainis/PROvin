@@ -1,3 +1,4 @@
+import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
 import {
   OUTVIN_VEHICLE_INFO_ROWS,
   outvinDealerReportHasContent,
@@ -5,6 +6,7 @@ import {
   type OutvinDealerReport,
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
+import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
 
 function escapeHtml(s: string): string {
   return s
@@ -25,22 +27,14 @@ function pdfPlainBlock(text: string): string {
   return `<div class="pdf-outvin-plain">${body}</div>`;
 }
 
-function pdfKvTable(rows: { k: string; v: string }[]): string {
-  if (rows.length === 0) return "";
-  const body = rows
-    .map((r) => `<tr><td>${escapeHtml(r.k)}</td><td>${escapeHtml(r.v)}</td></tr>`)
-    .join("\n");
-  return `<table class="pdf-v1-kv"><tbody>${body}</tbody></table>`;
-}
-
 function vehicleInfoTable(vi: OutvinVehicleInfo): string {
   const rows: { k: string; v: string }[] = [];
   for (const { key, labelLv, labelEn } of OUTVIN_VEHICLE_INFO_ROWS) {
     const v = vi[key].trim();
     if (!v) continue;
-    rows.push({ k: labelLv || labelEn, v });
+    rows.push({ k: labelLv || labelEn, v: capitalizeFactValue(v) });
   }
-  return pdfKvTable(rows);
+  return buildPdfKvPairHtml(rows);
 }
 
 /** Aprīkojuma bloks (kods + apraksts) - dīlera PDF liek zem servisa vēstures. */

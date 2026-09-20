@@ -11,7 +11,7 @@ function base(partial: Partial<VinSourceFetchResult>): VinSourceFetchResult {
     mileage: [{ date: "2026-01-28", odometer: "188528", country: "Dānija", origin: "synsrapport" }],
     incidents: [],
     timeline: [{ date: "2026-01-28", odometer: "188528", country: "Dānija", event: "Periodiskā apskate: izturēta" }],
-    ownersSummary: "Dānijas īpašnieku skaits: 1 (pēc reģistrācijas darbībām Dānijā, ne pēc OCTA).",
+    ownersSummary: "Īpašnieku skaits Dānijā: 1.",
     statusRecords: "Privāta lietošana",
     notes: ["Neviena apskate nav izgāzta."],
     raw: '{"dmr":true}',
@@ -42,7 +42,7 @@ describe("mergeDanishVinResults", () => {
     expect(merged.mileage[0]?.origin).toMatch(/nummerplade/);
     expect(merged.ownersSummary).toBe(
       [
-        "Dānijas īpašnieku skaits: 1 (pēc reģistrācijas darbībām Dānijā, ne pēc OCTA).",
+        "Īpašnieku skaits Dānijā: 1.",
         "4 īpašnieki (nummerplade.net), 3 iepriekšējie.",
       ].join("\n"),
     );
