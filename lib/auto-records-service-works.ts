@@ -207,6 +207,31 @@ function preferServiceWorkLocation(a: string, b: string): string {
   return ta.length >= tb.length ? ta : tb;
 }
 
+/** OneAuto / API saraksts: vismaz 2 īsas rindas. AutoDNA rindkopa paliek vienā gabalā. */
+export function looksLikeServiceWorksList(raw: string): boolean {
+  const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return false;
+  const short = lines.filter((l) => l.length <= 180).length;
+  return short >= Math.ceil(lines.length * 0.6);
+}
+
+/** AutoDNA / Copilot rindkopa: viens garš teksts ar teikumu robežām. */
+export function looksLikeServiceWorksNarrative(raw: string): boolean {
+  const t = raw.replace(/\s+/g, " ").trim();
+  if (!t || looksLikeServiceWorksList(raw)) return false;
+  const sentenceBreaks = (t.match(/[.!?]\s+\S/g) ?? []).length;
+  return t.length >= 140 && sentenceBreaks >= 1;
+}
+
+function mergeServiceWorksPreferringApiList(group: AutoRecordsServiceWorkRow[]): string {
+  const lists = group.filter((r) => looksLikeServiceWorksList(r.works));
+  const sources = lists.length > 0 ? lists : group.filter((r) => !looksLikeServiceWorksNarrative(r.works));
+  const used = sources.length > 0 ? sources : group;
+  return mergeOverlappingServiceWorkLines(used.flatMap((r) => r.works.split(/\r?\n+/)))
+    .map(capitalizeServiceField)
+    .join("\n");
+}
+
 function mergeServiceWorkGroup(group: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow {
   let date = "";
   let location = "";
@@ -216,14 +241,11 @@ function mergeServiceWorkGroup(group: AutoRecordsServiceWorkRow[]): AutoRecordsS
     location = preferServiceWorkLocation(location, r.location);
     if (!odometer) odometer = r.odometer;
   }
-  const works = mergeOverlappingServiceWorkLines(group.flatMap((r) => r.works.split(/\r?\n+/)))
-    .map(capitalizeServiceField)
-    .join("\n");
   return {
     date: formatAutoRecordsDateForOutput(date) || date.slice(0, 40),
     odometer: normalizeAutoRecordsOdometer(odometer).slice(0, 40),
     location: capitalizeServiceField(location).slice(0, AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN),
-    works: works.slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
+    works: mergeServiceWorksPreferringApiList(group).slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN),
   };
 }
 
@@ -278,12 +300,23 @@ export function mergeAutoRecordsServiceWorkRow(
   const withData = existing.filter(autoRecordsServiceWorkRowHasData);
   const key = rowKey(row);
   if (withData.some((r) => rowKey(r) === key)) {
-    // Tukšu vietas kolonnu drīkst papildināt (rindas no vecākām apstrādēm bez šīs kolonnas).
-    const filled = withData.map((r) =>
-      rowKey(r) === key && !r.location.trim() && row.location.trim()
-        ? { ...r, location: row.location }
-        : r,
-    );
+    const filled = withData.map((r) => {
+      if (rowKey(r) !== key) return r;
+      const location = !r.location.trim() && row.location.trim() ? row.location : r.location;
+      const existList = looksLikeServiceWorksList(r.works);
+      const existNarr = looksLikeServiceWorksNarrative(r.works);
+      const inList = looksLikeServiceWorksList(row.works);
+      const inNarr = looksLikeServiceWorksNarrative(row.works);
+      let works = r.works;
+      if (inList && existNarr) works = row.works;
+      else if (existList && inNarr) works = r.works;
+      else if (existList && inList) {
+        works = mergeOverlappingServiceWorkLines([...r.works.split(/\r?\n+/), ...row.works.split(/\r?\n+/)])
+          .map(capitalizeServiceField)
+          .join("\n");
+      }
+      return { ...r, location, works: works.slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN) };
+    });
     return sortAutoRecordsServiceWorkRows(filled.length > 0 ? filled : [row]);
   }
   const km = serviceWorkOdometerDigits(row);

@@ -31,11 +31,11 @@ describe("vinSourceResultToBlock", () => {
     expect(vinRegistryBlockHasContent(block)).toBe(true);
     expect(block.mileage[0]?.odometer).toBe("106869");
     expect(block.incidents[0]?.note).toContain("Apskate");
-    expect(block.timeline[0]?.event).toMatch(/apskate/i);
+    expect(block.timeline[0]?.event).toBe("Tehniskā apskate: Izieta");
     expect(block.ownersSummary).toContain("īpašnieku");
     expect(block.statusRecords).toContain("TAKSOMETRS");
     expect(block.autoNotes).toContain("TAKSOMETRS");
-    expect(block.autoNotes).not.toMatch(/⚠|RED FLAG/i);
+    expect(block.autoNotes).not.toMatch(/Ielasīts|⚠|RED FLAG/i);
     expect(block.rawUnprocessedData).toContain("ok");
     expect(block.comments).toBe("");
   });

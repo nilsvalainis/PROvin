@@ -24,7 +24,7 @@ describe("mergeDanishVinResults", () => {
   it("keeps tjekbil data when nummerplade key is missing", () => {
     const merged = mergeDanishVinResults(base({}), null);
     expect(merged.mileage).toHaveLength(1);
-    expect(merged.notes.join(" ")).toMatch(/Nummerplade.net nav pieslēgts/);
+    expect(merged.notes).toEqual(["Neviena apskate nav izgāzta."]);
     expect(merged.raw).toMatch(/tjekbil\.dk/);
   });
 
@@ -40,8 +40,14 @@ describe("mergeDanishVinResults", () => {
     const merged = mergeDanishVinResults(base({}), extra);
     expect(merged.mileage).toHaveLength(1);
     expect(merged.mileage[0]?.origin).toMatch(/nummerplade/);
-    expect(merged.ownersSummary.startsWith("4 īpašnieki")).toBe(true);
+    expect(merged.ownersSummary).toBe(
+      [
+        "Dānijas īpašnieku skaits: 1 (pēc reģistrācijas darbībām Dānijā, ne pēc OCTA).",
+        "4 īpašnieki (nummerplade.net), 3 iepriekšējie.",
+      ].join("\n"),
+    );
     expect(merged.timeline.some((r) => r.event === "Pirmā reģistrācija")).toBe(true);
+    expect(merged.timeline.some((r) => r.event === "Periodiskā apskate: Izturēta")).toBe(true);
     expect(merged.message).toMatch(/nummerplade ok/);
   });
 
@@ -50,6 +56,6 @@ describe("mergeDanishVinResults", () => {
     const merged = mergeDanishVinResults(base({}), failed);
     expect(merged.found).toBe(true);
     expect(merged.mileage).toHaveLength(1);
-    expect(merged.notes.join(" ")).toMatch(/nedeva papildu datus/);
+    expect(merged.notes).toEqual(["Neviena apskate nav izgāzta."]);
   });
 });

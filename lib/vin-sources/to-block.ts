@@ -8,6 +8,7 @@ import {
   sortVinRegistryTimeline,
   type VinRegistryBlockState,
 } from "@/lib/admin-source-blocks";
+import { capitalizeRegistryEvent } from "@/lib/vin-sources/translate-lv";
 import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 export function vinSourceResultToBlock(result: VinSourceFetchResult): VinRegistryBlockState {
@@ -32,11 +33,9 @@ export function vinSourceResultToBlock(result: VinSourceFetchResult): VinRegistr
       date: r.date,
       odometer: r.odometer ?? "",
       country: r.country,
-      event: r.event,
+      event: capitalizeRegistryEvent(r.event),
     })),
   );
-
-  const noteLines = [`Ielasīts: ${new Date(result.fetchedAt).toLocaleString("lv-LV")} — ${result.message}`, ...result.notes];
 
   return repairVinRegistryBlock({
     ...empty,
@@ -46,7 +45,7 @@ export function vinSourceResultToBlock(result: VinSourceFetchResult): VinRegistr
     ownersSummary: result.ownersSummary,
     statusRecords: result.statusRecords,
     rawUnprocessedData: result.raw,
-    autoNotes: noteLines.join("\n"),
+    autoNotes: result.notes.map((n) => n.trim()).filter(Boolean).join("\n"),
     comments: "",
     aiContextRaw: "",
     fetchedAt: result.fetchedAt,

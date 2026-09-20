@@ -32,15 +32,16 @@ describe("mapNummerpladePayload", () => {
     const mapped = mapNummerpladePayload(SAMPLE);
     expect(mapped.found).toBe(true);
     expect(mapped.message).toMatch(/CM53865/);
-    expect(mapped.ownersSummary).toMatch(/Pirmā reģistrācija: 18\.12\.2013/);
-    expect(mapped.ownersSummary).toMatch(/noņemts no uzskaites/);
-    expect(mapped.ownersSummary).toMatch(/12\.08\.2026/);
-    expect(mapped.ownersSummary).not.toMatch(/īpašnieki \(nummerplade/);
+    expect(mapped.ownersSummary).toBe("");
     expect(mapped.timeline.some((r) => r.event === "Pirmā reģistrācija" && r.date === "2013-12-18")).toBe(true);
-    expect(mapped.timeline.some((r) => r.date === "2026-08-12" && /noņemts no uzskaites/.test(r.event))).toBe(true);
-    expect(mapped.statusRecords).toMatch(/Automatgear|automāts/);
+    expect(mapped.timeline.some((r) => r.date === "2026-08-12" && /noņemts no uzskaites/i.test(r.event))).toBe(true);
+    expect(mapped.statusRecords).toMatch(/Izmantošanas veids: privāta pasažieru pārvadāšana/);
+    expect(mapped.statusRecords).toMatch(/Degviela: dīzelis/);
+    expect(mapped.statusRecords).toMatch(/Ātrumkārba: automāts/);
     expect(mapped.statusRecords).toMatch(/Euro V/);
-    expect(mapped.notes.join(" ")).toMatch(/Gratis Cache/);
+    expect(mapped.statusRecords).toMatch(/Reģistrācijas statuss: noņemts no uzskaites/);
+    expect(mapped.statusRecords).toMatch(/Pašreizējā OCTA: GF-FORSIKRING A\/S \(beigusies\)/);
+    expect(mapped.notes).toEqual([]);
     expect(mapped.mileage).toEqual([]);
   });
 

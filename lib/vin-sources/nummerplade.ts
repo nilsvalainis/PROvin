@@ -6,7 +6,7 @@
  */
 import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 import { asArray, asRecord, DK_COUNTRY_LV, isoDay, num, pickNum, pickStr } from "@/lib/vin-sources/dk-json";
-import { translateTermLv } from "@/lib/vin-sources/translate-lv";
+import { capitalizeRegistryEvent, translateTermLv } from "@/lib/vin-sources/translate-lv";
 import type { VinSourceFetchResult, VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
 import { emptyVinSourceResult } from "@/lib/vin-sources/types";
 
@@ -52,7 +52,7 @@ function extraSynMileage(rec: Record<string, unknown>): {
         date,
         odometer: kmStr,
         country: DK_COUNTRY_LV,
-        event: [kind || "Tehniskā apskate", result].filter(Boolean).join(": "),
+        event: capitalizeRegistryEvent([kind || "Tehniskā apskate", result].filter(Boolean).join(": ")),
       });
     }
   }
@@ -65,7 +65,6 @@ export function mapNummerpladePayload(payload: unknown): Omit<VinSourceFetchResu
 
   const firstReg = isoDay(pickStr(rec, ["foerste_registrering", "1_registrering"]));
   const status = translateTermLv(pickStr(rec, ["status"]), "da") || pickStr(rec, ["status"]);
-  const statusWord = pickStr(rec, ["registrering_status_ord"]);
   const statusDate = isoDay(pickStr(rec, ["omregistreret", "status_dato"]));
   const omreg = isoDay(rec.omregistreret);
   const plate = pickStr(rec, ["nummerplade", "regNr"]);
@@ -82,7 +81,7 @@ export function mapNummerpladePayload(payload: unknown): Omit<VinSourceFetchResu
   if (firstReg) timeline.push({ date: firstReg, odometer: "", country: "", event: "Pirmā reģistrācija" });
   if (omreg && omreg !== firstReg) {
     const event = status ? `Reģistrācijas statuss: ${status}` : "Reģistrācijas izmaiņa";
-    timeline.push({ date: omreg, odometer: "", country: DK_COUNTRY_LV, event });
+    timeline.push({ date: omreg, odometer: "", country: DK_COUNTRY_LV, event: capitalizeRegistryEvent(event) });
   }
 
   const ownersLines: string[] = [];
@@ -93,13 +92,6 @@ export function mapNummerpladePayload(payload: unknown): Omit<VinSourceFetchResu
         ? "1 īpašnieks (nummerplade.net)."
         : `${ownerCount} īpašnieki (nummerplade.net)${prev > 0 ? `, ${prev} iepriekšējie` : ""}.`,
     );
-  }
-  if (firstReg) ownersLines.push(`Pirmā reģistrācija: ${formatRegistryDateLv(firstReg)}`);
-  if (status) {
-    ownersLines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
-  }
-  if (statusWord && translateTermLv(statusWord, "da") !== status) {
-    ownersLines.push(`Reģistra formulējums: ${translateTermLv(statusWord, "da")}`);
   }
 
   const statusLines: string[] = [];
@@ -115,15 +107,19 @@ export function mapNummerpladePayload(payload: unknown): Omit<VinSourceFetchResu
   if (dpf && /ja|yes|1/i.test(dpf)) statusLines.push("DPF: ir");
   const eq = equipmentList(rec);
   if (eq.some((x) => /automatgear|automat gear/i.test(x))) {
-    statusLines.push("Ātrumkārba (nummerplade.net): automāts — nav CVT/trinløst.");
+    statusLines.push("Ātrumkārba: automāts (nav CVT)");
+  }
+  if (status) {
+    statusLines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
+  }
+  const insurance = asRecord(asRecord(rec.forsikring).aktuel);
+  const insurer = pickStr(insurance, ["selskab", "company"]);
+  if (insurer) {
+    const insStatus = translateTermLv(pickStr(insurance, ["status"]), "da");
+    statusLines.push(`Pašreizējā OCTA: ${insurer}${insStatus ? ` (${insStatus})` : ""}`);
   }
 
-  const notes: string[] = [
-    "nummerplade.net Gratis Cache: tehnika un OCTA. Apskašu km paliek no tjekbil.dk / Færdselsstyrelsen.",
-  ];
-  if (eq.some((x) => /automatgear/i.test(x))) {
-    notes.push("nummerplade.net uzrāda Automatgear; DMR „trinløst gear” šim auto nav jāņem par CVT.");
-  }
+  const notes: string[] = [];
 
   const incidents: VinSourceIncidentRow[] = [];
   const found = Boolean(make || model || plate || firstReg || extra.mileage.length);

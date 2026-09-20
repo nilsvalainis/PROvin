@@ -94,6 +94,17 @@ export function translateTermLv(value: string, lang: "da" | "et"): string {
   return hit ?? raw;
 }
 
+/** Hronoloģijas notikums: pirmais burts un teksts pēc kolona ar lielo. */
+export function capitalizeRegistryEvent(event: string): string {
+  const t = event.replace(/\u00a0/g, " ").replace(/[ \t]+/g, " ").trim();
+  if (!t) return "";
+  const i = t.search(/\p{L}/u);
+  if (i < 0) return t;
+  let out = t.slice(0, i) + t.charAt(i).toLocaleUpperCase("lv") + t.slice(i + 1);
+  out = out.replace(/:\s+(\p{L})/u, (_m, letter: string) => `: ${letter.toLocaleUpperCase("lv")}`);
+  return out;
+}
+
 /**
  * Terminu aizvietošana garākā tekstā (piem. apskates defektu aprakstā),
  * lai operators redz latviskus jēdzienus arī tur, kur nav precīzas sakritības.

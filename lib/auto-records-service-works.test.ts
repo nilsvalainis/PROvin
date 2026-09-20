@@ -133,6 +133,54 @@ describe("servisa darbu rindas", () => {
     });
   });
 
+  it("vienādā km API saraksts aizstāj AutoDNA rindkopu", () => {
+    const rows = normalizeAutoRecordsServiceWorkRows([
+      {
+        date: "01.02.2025",
+        odometer: "199228",
+        location: "",
+        works:
+          "The vehicle underwent scheduled maintenance including oil and filter change. Brake fluid was flushed and the cabin filter was replaced. Additional inspection of the chassis was performed.",
+      },
+      {
+        date: "05.02.2025",
+        odometer: "199228",
+        location: "Zenter Autohaus Bernau GmbH",
+        works: ["Eļļas maiņa", "Gaisa filtra elements", "Bremžu šķidrums"].join("\n"),
+      },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      date: "05.02.2025",
+      odometer: "199228",
+      location: "Zenter Autohaus Bernau GmbH",
+    });
+    expect(rows[0]!.works.split("\n")).toEqual(["Eļļas maiņa", "Gaisa filtra elements", "Bremžu šķidrums"]);
+    expect(rows[0]!.works).not.toMatch(/underwent scheduled|chassis was performed/i);
+  });
+
+  it("Copilot rindkopa neaizstāj jau ielasīto API sarakstu", () => {
+    const rows = mergeAutoRecordsServiceWorkRow(
+      [
+        {
+          date: "05.02.2025",
+          odometer: "199228",
+          location: "Zenter Autohaus Bernau GmbH",
+          works: "Eļļas maiņa\nGaisa filtra elements",
+        },
+      ],
+      {
+        date: "05.02.2025",
+        odometer: "199228",
+        location: "",
+        works:
+          "The vehicle underwent scheduled maintenance including oil and filter change. Brake fluid was flushed and the cabin filter was replaced.",
+      },
+    );
+    expect(rows[0]!.works.split("\n")).toEqual(["Eļļas maiņa", "Gaisa filtra elements"]);
+    expect(rows[0]!.works).not.toMatch(/underwent scheduled/i);
+  });
+
   it("ingestā vienāds nobraukums ar citu datumu paliek vienā rindā", () => {
     let rows = mergeAutoRecordsServiceWorkRow([], {
       date: "05.02.2025",

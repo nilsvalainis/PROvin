@@ -710,21 +710,21 @@ export function AdminVinRegistrySourceBlock({
 
         {textField(
           "ownersSummary",
-          "Īpašnieku skaits un reģistrācijas darbības",
-          "Piem.: aplēstais īpašnieku skaits, pirmā reģistrācija, reģistrācijas / izslēgšanas datumi…",
-          4,
+          "Īpašnieku skaits",
+          "Piem.: Dānijas īpašnieku skaits: 2 (pēc reģistrācijas darbībām, ne pēc OCTA).",
+          2,
         )}
         {textField(
           "statusRecords",
-          "Statusi: TAXI, īre bez vadītāja, autoskola, līzings",
-          "Izmantošanas veids, komerciālie statusi, ierobežojumi, arests / ķīla…",
-          3,
+          "Fakti: izmantošana, degviela, līzings, apskate",
+          "Izmantošanas veids, degviela, jauda, līzings, reģistrācijas statuss, pēdējā / nākamā apskate, OCTA…",
+          8,
         )}
         {textField(
           "autoNotes",
-          "Piezīmes — anomālijas, brīdinājumi, sarkanie karogi",
-          "Automātiski atrastie brīdinājumi; var papildināt manuāli…",
-          4,
+          "Piezīmes: tikai sarkanie karogi",
+          "TAXI, neizturēta apskate, aizdomīgs km, ķīla. Hronoloģijas dublikātus šeit neliek…",
+          3,
         )}
         <div className="mt-3">
           <div className="mb-0.5 flex items-center gap-1">

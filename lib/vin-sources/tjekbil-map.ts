@@ -4,7 +4,12 @@
  */
 import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 import { asArray, asRecord, DK_COUNTRY_LV, isoDay, num, str } from "@/lib/vin-sources/dk-json";
-import { detectSpecialUseLabels, translateTermLv, translateTextLv } from "@/lib/vin-sources/translate-lv";
+import {
+  capitalizeRegistryEvent,
+  detectSpecialUseLabels,
+  translateTermLv,
+  translateTextLv,
+} from "@/lib/vin-sources/translate-lv";
 import type { VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
 
 export type TjekbilDmrResponse = {
@@ -50,8 +55,6 @@ const MILEAGE_ORIGIN_LV: Record<number, string> = {
   20: "Motorstyrelsen (nodokļu reģistrs)",
   30: "Pirmā reģistrācija",
 };
-
-const CVT_CODE_RE = /trinløst\s+gear|trinlos[t]? gear/i;
 
 export function isCustomsInspection(r: TjekbilInspection): boolean {
   return /toldsyn/i.test(`${str(r.kategori)} ${str(r.synstype)}`);
@@ -342,7 +345,7 @@ export function buildTjekbilTimeline(dmr: TjekbilDmrResponse, inspections: Tjekb
   const rows: TjekbilTimelineRow[] = [];
   const push = (date: string, event: string, odometer = "", country = DK_COUNTRY_LV) => {
     if (!date || !event) return;
-    rows.push({ date, odometer, country, event });
+    rows.push({ date, odometer, country, event: capitalizeRegistryEvent(event) });
   };
 
   const firstReg = isoDay(basic.foersteRegistreringDato);
@@ -388,86 +391,61 @@ export function buildTjekbilTimeline(dmr: TjekbilDmrResponse, inspections: Tjekb
 }
 
 export function buildTjekbilOwnersSummary(dmr: TjekbilDmrResponse, inspections: TjekbilInspection[]): string {
-  const basic = dmr.basic ?? {};
-  const insurance = dmr.extended?.insurance;
-  const lines: string[] = [];
   const signals = extractDkRegistrationSignals(dmr, inspections);
-  if (signals.length > 0) {
-    const n = new Set(signals.map((s) => s.date)).size;
-    const hasLease = signals.some((s) => s.event === "Līzings Dānijā");
-    const hasPrivate = signals.some((s) => s.event === "Privāta reģistrācija Dānijā");
-    const basis =
-      hasLease && hasPrivate
-        ? "līzings + privāta reģistrācija Dānijā, ne pēc OCTA"
-        : "pēc reģistrācijas darbībām Dānijā, ne pēc OCTA";
-    lines.push(`Dānijas īpašnieku skaits: ${n} (${basis}). DMR publiski neraāda īpašnieku sarakstu.`);
-    lines.push("Reģistrācijas darbības Dānijā:");
-    for (const s of [...signals].sort((a, b) => a.date.localeCompare(b.date))) {
-      lines.push(`${formatRegistryDateLv(s.date)} ${s.event}`);
-    }
-  }
-
-  const firstReg = isoDay(basic.foersteRegistreringDato);
-  if (firstReg && !firstRegistrationIsDanish(dmr, inspections)) {
-    lines.push(`Pirmā reģistrācija: ${formatRegistryDateLv(firstReg)} (ārpus Dānijas — nav Dānijas īpašnieks)`);
-  }
-
-  const importSyn = inspections.find(isCustomsInspection);
-  if (importSyn) {
-    const when = isoDay(importSyn.synsdato);
-    const grade = translateTermLv(str(importSyn.synsresultat), "da") || str(importSyn.synsresultat);
-    lines.push(
-      `Imports uz Dāniju: ${when ? formatRegistryDateLv(when) : "datums nav norādīts"}${grade ? ` (muitas apskate, stāvoklis ${grade})` : ""}`,
-    );
-  }
-
-  const statusDate = isoDay(basic.statusDato);
-  const status = translateTermLv(str(basic.status), "da");
-  if (status) {
-    lines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
-  }
-
-  const history = insuranceHistory(dmr);
-  if (history.length > 0) {
-    lines.push("OCTA polišu ieraksti (nav īpašnieku skaits):");
-    for (const h of history) {
-      const when = formatRegistryDateLv(isoDay(h.oprettet));
-      const parts = [when, str(h.selskab), translateTermLv(str(h.status), "da")].filter(Boolean);
-      if (parts.length) lines.push(parts.join(", "));
-    }
-  }
-
-  const currentInsurer = str(insurance?.selskab);
-  if (currentInsurer) {
-    lines.push(`Pašreizējā apdrošināšana: ${currentInsurer} (${translateTermLv(str(insurance?.status), "da")})`);
-  }
-  return lines.join("\n");
+  if (signals.length === 0) return "";
+  const n = new Set(signals.map((s) => s.date)).size;
+  const hasLease = signals.some((s) => s.event === "Līzings Dānijā");
+  const hasPrivate = signals.some((s) => s.event === "Privāta reģistrācija Dānijā");
+  const basis =
+    hasLease && hasPrivate
+      ? "līzings + privāta reģistrācija Dānijā, ne pēc OCTA"
+      : "pēc reģistrācijas darbībām Dānijā, ne pēc OCTA";
+  return `Dānijas īpašnieku skaits: ${n} (${basis}).`;
 }
 
 export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: string; specialUse: string[] } {
   const basic = dmr.basic ?? {};
   const general = dmr.extended?.general ?? {};
   const inspection = dmr.extended?.inspection ?? {};
+  const insurance = dmr.extended?.insurance;
   const lines: string[] = [];
 
   const use = str(basic.koeretoejAnvendelseNavn) || str(general.koeretoejAnvendelse);
   if (use) lines.push(`Izmantošanas veids: ${translateTermLv(use, "da")}`);
 
+  const fuel =
+    str(basic.drivkraft) ||
+    str(basic.koeretoejMotorDrivkraftNavn) ||
+    str(general.drivkraft) ||
+    str(general.drivmiddel);
+  if (fuel) lines.push(`Degviela: ${translateTermLv(fuel, "da")}`);
+
+  const power = str(basic.motoreffekt) || str(basic.effekt) || str(general.effekt);
+  if (power) lines.push(`Jauda / piedziņa: ${power}`);
+
+  const periods = leasingPeriods(basic);
+  if (basic.bilLeaset === true) {
+    lines.push("Līzings: aktīvs");
+  } else if (periods.length > 0) {
+    const first = periods[0]!;
+    const last = periods[periods.length - 1]!;
+    const span = [first.from, last.to].filter(Boolean).map(formatRegistryDateLv).join(" - ");
+    lines.push(`Līzings: ${span || "bijis"}${periods.length > 1 ? ` (${periods.length} periodi)` : ""}`);
+  }
+
+  const status = translateTermLv(str(basic.status), "da");
+  const statusDate = isoDay(basic.statusDato);
+  if (status) {
+    lines.push(`Reģistrācijas statuss: ${status}${statusDate ? ` (${formatRegistryDateLv(statusDate)})` : ""}`);
+  }
+
   const secondary = str(general.sekundaerStatus);
-  if (secondary) lines.push(`Sekundārais statuss: ${translateTermLv(secondary, "da")}`);
+  if (secondary && translateTermLv(secondary, "da") !== status) {
+    lines.push(`Sekundārais statuss: ${translateTermLv(secondary, "da")}`);
+  }
 
   const importCondition = str(general.standEfterImport) || str(basic.koeretoejstand);
   if (importCondition) lines.push(`Stāvoklis pēc importa: ${translateTextLv(importCondition, "da")}`);
-
-  const periods = leasingPeriods(basic);
-  if (periods.length > 0) {
-    const spans = periods
-      .map((p) => [p.from, p.to].filter(Boolean).map(formatRegistryDateLv).join(" - "))
-      .filter(Boolean);
-    if (spans.length) lines.push(`Līzinga periodi: ${spans.join("; ")}`);
-  }
-  if (basic.bilLeaset === true) lines.push("Līzings: aktīvs");
-  if (general.blockedStatus === true) lines.push("Reģistrā bloķēts");
 
   const lastSyn = isoDay(inspection.sidsteSyn);
   const lastResult = translateTermLv(str(inspection.sidsteSynResultat), "da");
@@ -477,12 +455,13 @@ export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: stri
   const nextSyn = isoDay(inspection.naesteSyn);
   if (nextSyn) lines.push(`Nākamā apskate (DK): ${formatRegistryDateLv(nextSyn)}`);
 
-  const permissions = asArray(basic.permissions).map(asRecord);
-  for (const p of permissions) {
-    const parts = [str(p.typeNavn), str(p.kommentar), isoDay(p.datoGyldigFra)].filter(Boolean);
-    if (parts.length) lines.push(`Atļauja: ${parts.join(" · ")}`);
+  const currentInsurer = str(insurance?.selskab);
+  if (currentInsurer) {
+    const insStatus = translateTermLv(str(insurance?.status), "da");
+    lines.push(`Pašreizējā OCTA: ${currentInsurer}${insStatus ? ` (${insStatus})` : ""}`);
   }
 
+  const permissions = asArray(basic.permissions).map(asRecord);
   const specialUse = detectSpecialUseLabels([use, secondary, ...permissions.map((p) => str(p.typeNavn))].join(" "));
   if (specialUse.length > 0) lines.push(`Īpašie statusi: ${specialUse.join(", ")}`);
 
@@ -512,44 +491,10 @@ export function buildTjekbilNotes(
     if (!peak || km > peakKm) peak = row;
   }
 
-  if (asc.length >= 2) {
-    const first = asc[0]!;
-    const last = asc[asc.length - 1]!;
-    const years = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (365.25 * 24 * 3600 * 1000);
-    const delta = Number(last.odometer) - Number(first.odometer);
-    if (years > 0.5) {
-      const perYear = Math.round(delta / years);
-      notes.push(`Vidējais nobraukums: ap ${perYear.toLocaleString("lv-LV")} km gadā.`);
-      if (perYear > 40000) notes.push("Liels gada nobraukums, iespējama komerciāla izmantošana.");
-    }
-    const staleYears = (Date.now() - new Date(last.date).getTime()) / (365.25 * 24 * 3600 * 1000);
-    if (staleYears > 1.5) {
-      notes.push(`Jaunākais odometra ieraksts ir ${staleYears.toFixed(1)} gadus vecs.`);
-    }
-  }
-
   for (const label of specialUse) notes.push(`Īpašais statuss: ${label}.`);
 
-  const periodic = inspections.filter((r) => !isCustomsInspection(r));
-  const failed = periodic.filter(isFailedMot);
-  if (periodic.length > 0 && failed.length === 0) {
-    notes.push("Neviena periodiskā / reģistrācijas apskate nav izgāzta (Færdselsstyrelsen synsrapport).");
-  } else if (failed.length > 0) {
-    notes.push(`Neizturētas apskates: ${failed.length}.`);
-  }
-
-  const customs = inspections.filter(isCustomsInspection);
-  if (customs.length > 0) {
-    notes.push("Toldsyn rezultāts ir muitas stāvokļa vērtējums importam, neizgāzta periodiskā apskate.");
-  }
-
-  const equipment = [
-    ...asArray(dmr.basic?.koeretoejUdstyrSamling).map(str),
-    ...asArray(dmr.extended?.general?.koeretoejUdstyrSamling).map(str),
-  ].join(" ");
-  if (CVT_CODE_RE.test(equipment)) {
-    notes.push("DMR iekārtu sarakstā ir trinløst gear (CVT kods) — DSG modeļiem tas bieži ir reģistra kodēšanas kļūda.");
-  }
+  const failed = inspections.filter((r) => !isCustomsInspection(r) && isFailedMot(r));
+  if (failed.length > 0) notes.push(`Neizturētas apskates: ${failed.length}.`);
 
   if (dmr.inspectionData?.mistaenkeligtKmStand === true) {
     notes.push("tjekbil.dk atzīmē aizdomīgu odometra rindu.");
