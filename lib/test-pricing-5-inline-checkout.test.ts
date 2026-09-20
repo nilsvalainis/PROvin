@@ -62,7 +62,7 @@ describe("test-pricing-5 inline checkout", () => {
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.plus.productDesc).not.toMatch(/[\u2013\u2014]/);
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.premium.amountCents).toBe(9999);
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.premium.productName).toBe("PROVIN AUDITS");
-    expect(TP5_STRIPE_CHECKOUT_PRODUCT.premium.productDesc).toContain("eksperta slēdziens");
+    expect(TP5_STRIPE_CHECKOUT_PRODUCT.premium.productDesc).toContain("maksas datubāzēs");
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.dealer.amountCents).toBe(2499);
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.dealer.productDesc).toContain("naudas atmaksa");
     expect(TP5_STRIPE_CHECKOUT_PRODUCT.koreaUsa.productDesc).toContain("Korejas");

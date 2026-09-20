@@ -30,7 +30,7 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
   premium: {
     productName: "PROVIN AUDITS",
     productDesc:
-      "Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.",
+      "Pilna vēstures pārbaude maksas datubāzēs, sludinājuma un risku analīze.",
     amountCents: 9999,
   },
   dealer: {
@@ -102,7 +102,7 @@ const TP5_STRIPE_CHECKOUT_PRODUCT_EN: Record<
   premium: {
     productName: "PROVIN AUDITS",
     productDesc:
-      "Full data analysis across multiple databases, listing analysis and an expert conclusion.",
+      "Full history check in paid databases, listing and risk analysis.",
   },
   dealer: {
     productName: "Official dealer service history data",
