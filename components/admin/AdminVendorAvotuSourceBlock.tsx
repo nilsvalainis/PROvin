@@ -52,6 +52,7 @@ import {
 import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import { parseAutodnaDamageDetails, parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
+import { extractAutodnaHistoricalTimelineEvents } from "@/lib/autodna-report-extract";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -206,13 +207,22 @@ export function AdminVendorAvotuSourceBlock({
     const parsed = parseAutodnaMileagePaste(raw);
     const details = parseAutodnaDamageDetails(raw);
     const damageEvents = parseAutodnaDamageEvents(raw);
-    if (parsed.length === 0 && details.length === 0 && damageEvents.length === 0) return;
+    const historyTimeline = extractAutodnaHistoricalTimelineEvents(raw);
+    if (
+      parsed.length === 0 &&
+      details.length === 0 &&
+      damageEvents.length === 0 &&
+      historyTimeline.length === 0
+    ) {
+      return;
+    }
     onChange({
       ...block,
       mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
       ...(parsed.length > 0 ? { serviceHistory: parsed } : {}),
       ...(damageEvents.length > 0 ? { incidents: damageEvents } : {}),
       ...(details.length > 0 ? { damageDetails: details } : {}),
+      ...(historyTimeline.length > 0 ? { vehicleHistoryTimeline: historyTimeline } : {}),
     });
   };
 

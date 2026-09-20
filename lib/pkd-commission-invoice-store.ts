@@ -3,10 +3,12 @@ import "server-only";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { get, list, put } from "@vercel/blob";
 import type { PkdCommissionInvoiceInput } from "@/lib/pkd-commission-invoice-pdf";
 
 const STORE_RELATIVE_DIR = ".data/admin-pkd-commission-invoices";
 const STORE_TMP_DIR = path.join(os.tmpdir(), "provin-admin-pkd-commission-invoices");
+const BLOB_PREFIX = "admin-pkd-commission-invoices/";
 const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,120}$/;
 const OFF_VALUES = ["0", "false", "no", "off", "disabled"];
 
@@ -15,6 +17,15 @@ export type PkdCommissionInvoiceDraft = PkdCommissionInvoiceInput & {
   createdAt: string;
   updatedAt: string;
 };
+
+function blobToken(): string | null {
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
+  return token || null;
+}
+
+function blobKey(id: string): string {
+  return `${BLOB_PREFIX}${id}.json`;
+}
 
 function resolveStoreDir(): string {
   const explicit = process.env.ADMIN_PKD_INVOICE_DIR?.trim() ?? "";
@@ -63,58 +74,107 @@ function parseInvoiceNumberMeta(invoiceNumber: string): { year: number; seq: num
   return { year, seq };
 }
 
-async function readDraftFile(id: string): Promise<PkdCommissionInvoiceDraft | null> {
+function parseDraftRecord(id: string, parsed: unknown): PkdCommissionInvoiceDraft | null {
+  if (!parsed || typeof parsed !== "object") return null;
+  const o = parsed as Record<string, unknown>;
+  if (o.id !== id) return null;
+  const must = [
+    "invoiceNumber",
+    "invoiceDate",
+    "paymentDue",
+    "serviceDescription",
+    "amountEur",
+    "supplierName",
+    "supplierReg",
+    "supplierAddress",
+    "supplierBank",
+    "supplierSwift",
+    "supplierBankAccount",
+    "supplierEmail",
+    "supplierPhone",
+    "recipientCompany",
+    "recipientReg",
+    "recipientAddress",
+    "createdAt",
+    "updatedAt",
+  ] as const;
+  for (const key of must) {
+    if (typeof o[key] !== "string") return null;
+  }
+  return {
+    id,
+    invoiceNumber: o.invoiceNumber as string,
+    invoiceDate: o.invoiceDate as string,
+    paymentDue: o.paymentDue as string,
+    serviceDescription: o.serviceDescription as string,
+    amountEur: o.amountEur as string,
+    supplierName: o.supplierName as string,
+    supplierReg: o.supplierReg as string,
+    supplierAddress: o.supplierAddress as string,
+    supplierBank: o.supplierBank as string,
+    supplierSwift: o.supplierSwift as string,
+    supplierBankAccount: o.supplierBankAccount as string,
+    supplierEmail: o.supplierEmail as string,
+    supplierPhone: o.supplierPhone as string,
+    recipientCompany: o.recipientCompany as string,
+    recipientReg: o.recipientReg as string,
+    recipientAddress: o.recipientAddress as string,
+    createdAt: o.createdAt as string,
+    updatedAt: o.updatedAt as string,
+  };
+}
+
+async function readDraftFromBlob(id: string, token: string): Promise<PkdCommissionInvoiceDraft | null> {
+  try {
+    const res = await get(blobKey(id), { access: "private", token, useCache: false });
+    if (!res || res.statusCode !== 200 || !res.stream) return null;
+    const text = await new Response(res.stream).text();
+    return parseDraftRecord(id, JSON.parse(text) as unknown);
+  } catch {
+    return null;
+  }
+}
+
+async function writeDraftToBlob(draft: PkdCommissionInvoiceDraft, token: string): Promise<boolean> {
+  try {
+    await put(blobKey(draft.id), JSON.stringify(draft), {
+      access: "private",
+      token,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function listBlobInvoiceIds(token: string): Promise<string[]> {
+  const ids: string[] = [];
+  try {
+    let cursor: string | undefined;
+    do {
+      const res = await list({ prefix: BLOB_PREFIX, token, cursor, limit: 1000, mode: "expanded" });
+      for (const b of res.blobs) {
+        if (!b.pathname.endsWith(".json")) continue;
+        const name = b.pathname.slice(BLOB_PREFIX.length, -".json".length);
+        if (isSafePkdInvoiceId(name)) ids.push(name);
+      }
+      cursor = res.hasMore && res.cursor ? res.cursor : undefined;
+    } while (cursor);
+  } catch {
+    /* blob listing unavailable (e.g. no token in local dev) */
+  }
+  return ids;
+}
+
+async function readDraftFromFilesystem(id: string): Promise<PkdCommissionInvoiceDraft | null> {
   for (const dir of storeDirs()) {
     try {
       const raw = await fs.readFile(draftPath(dir, id), "utf8");
-      const parsed = JSON.parse(raw) as unknown;
-      if (!parsed || typeof parsed !== "object") return null;
-      const o = parsed as Record<string, unknown>;
-      if (o.id !== id) return null;
-      const must = [
-        "invoiceNumber",
-        "invoiceDate",
-        "paymentDue",
-        "serviceDescription",
-        "amountEur",
-        "supplierName",
-        "supplierReg",
-        "supplierAddress",
-        "supplierBank",
-        "supplierSwift",
-        "supplierBankAccount",
-        "supplierEmail",
-        "supplierPhone",
-        "recipientCompany",
-        "recipientReg",
-        "recipientAddress",
-        "createdAt",
-        "updatedAt",
-      ] as const;
-      for (const key of must) {
-        if (typeof o[key] !== "string") return null;
-      }
-      return {
-        id,
-        invoiceNumber: o.invoiceNumber as string,
-        invoiceDate: o.invoiceDate as string,
-        paymentDue: o.paymentDue as string,
-        serviceDescription: o.serviceDescription as string,
-        amountEur: o.amountEur as string,
-        supplierName: o.supplierName as string,
-        supplierReg: o.supplierReg as string,
-        supplierAddress: o.supplierAddress as string,
-        supplierBank: o.supplierBank as string,
-        supplierSwift: o.supplierSwift as string,
-        supplierBankAccount: o.supplierBankAccount as string,
-        supplierEmail: o.supplierEmail as string,
-        supplierPhone: o.supplierPhone as string,
-        recipientCompany: o.recipientCompany as string,
-        recipientReg: o.recipientReg as string,
-        recipientAddress: o.recipientAddress as string,
-        createdAt: o.createdAt as string,
-        updatedAt: o.updatedAt as string,
-      };
+      const draft = parseDraftRecord(id, JSON.parse(raw) as unknown);
+      if (draft) return draft;
     } catch {
       /* try next storage dir */
     }
@@ -122,8 +182,8 @@ async function readDraftFile(id: string): Promise<PkdCommissionInvoiceDraft | nu
   return null;
 }
 
-async function writeDraftFile(draft: PkdCommissionInvoiceDraft): Promise<void> {
-  let lastError: unknown = null;
+async function writeDraftToFilesystem(draft: PkdCommissionInvoiceDraft): Promise<boolean> {
+  let ok = false;
   for (const dir of storeDirs()) {
     try {
       await fs.mkdir(dir, { recursive: true });
@@ -131,17 +191,44 @@ async function writeDraftFile(draft: PkdCommissionInvoiceDraft): Promise<void> {
       const tmp = `${fp}.tmp`;
       await fs.writeFile(tmp, JSON.stringify(draft), "utf8");
       await fs.rename(tmp, fp);
-      return;
-    } catch (e) {
-      lastError = e;
+      ok = true;
+    } catch {
+      /* try next storage dir */
     }
   }
-  throw lastError instanceof Error ? lastError : new Error("write_failed");
+  return ok;
+}
+
+async function readDraftFile(id: string): Promise<PkdCommissionInvoiceDraft | null> {
+  const token = blobToken();
+  if (token) {
+    const fromBlob = await readDraftFromBlob(id, token);
+    if (fromBlob) return fromBlob;
+  }
+  return readDraftFromFilesystem(id);
+}
+
+/** Persist to Vercel Blob (production-durable) AND local filesystem (dev cache). */
+async function writeDraftFile(draft: PkdCommissionInvoiceDraft): Promise<void> {
+  const token = blobToken();
+  const [blobOk, fsOk] = await Promise.all([
+    token ? writeDraftToBlob(draft, token) : Promise.resolve(false),
+    writeDraftToFilesystem(draft),
+  ]);
+  if (!blobOk && !fsOk) {
+    throw new Error("write_failed");
+  }
 }
 
 export async function listPkdCommissionInvoiceDrafts(): Promise<PkdCommissionInvoiceDraft[]> {
   try {
     const idSet = new Set<string>();
+
+    const token = blobToken();
+    if (token) {
+      for (const id of await listBlobInvoiceIds(token)) idSet.add(id);
+    }
+
     for (const dir of storeDirs()) {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -154,6 +241,7 @@ export async function listPkdCommissionInvoiceDrafts(): Promise<PkdCommissionInv
         /* this dir might not exist yet */
       }
     }
+
     const ids = [...idSet];
     const drafts = await Promise.all(ids.map((id) => readDraftFile(id)));
     return drafts

@@ -1,0 +1,2370 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN BUSINESS - 20 vizuāli risinājumi galvenajai partneru lapai</title>
+<style>
+  :root{
+    --ink:#f5f8fc;
+    --sub:rgb(203 213 225 / .88);
+    --mute:rgb(148 163 184 / .78);
+    --blue:#2563eb;
+    --blue2:#60a5fa;
+    --hair:rgb(255 255 255 / .1);
+    --green:rgb(110 231 183 / .95);
+    --bg:#070707;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);background:var(--bg);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  svg{display:block;}
+  .nav{
+    position:sticky;top:0;z-index:80;display:flex;flex-wrap:nowrap;gap:.3rem;align-items:center;
+    padding:.7rem 1.1rem;background:rgb(7 7 7 / .95);border-bottom:1px solid var(--hair);
+    backdrop-filter:blur(6px);overflow-x:auto;scrollbar-width:thin;
+  }
+  .nav strong{margin-right:.4rem;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .nav a{
+    font-size:.6rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--mute);text-decoration:none;padding:.3rem .5rem;border-radius:999px;white-space:nowrap;
+  }
+  .nav a:hover{color:#fff;background:rgb(255 255 255 / .06);}
+  .intro{max-width:74rem;margin:0 auto;padding:1.6rem 1.3rem .2rem;}
+  .intro b{display:block;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd;}
+  .intro h1{margin:.4rem 0 0;font-size:1.35rem;font-weight:700;letter-spacing:-.02em;}
+  .intro p{margin:.5rem 0 0;font-size:.86rem;line-height:1.55;color:var(--sub);max-width:50rem;}
+
+  .scene{max-width:74rem;margin:0 auto;padding:1.8rem 1.3rem 2.4rem;border-top:1px solid var(--hair);scroll-margin-top:3.6rem;}
+  .cap b{display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .cap h2{margin:.28rem 0 0;font-size:1.05rem;font-weight:650;}
+  .cap p{margin:.28rem 0 1rem;font-size:.8rem;line-height:1.5;color:var(--sub);max-width:44rem;}
+
+  /* ---- shared brand + copy bits ---- */
+  .brand{font-weight:800;letter-spacing:-.02em;}
+  .brand b{color:var(--blue);font-weight:800;}
+  .lead p{margin:0 0 .7rem;font-size:.8rem;line-height:1.55;color:var(--sub);}
+  .lead p:last-child{margin-bottom:0;}
+  .contact{margin-top:.9rem;font-size:.78rem;color:var(--mute);}
+  .contact a{color:#93c5fd;text-decoration:none;}
+  .contact a:hover{text-decoration:underline;}
+  .contact strong{display:block;margin-bottom:.25rem;font-weight:600;color:#e2e8f0;font-size:.8rem;}
+
+  .lform{display:flex;flex-direction:column;gap:.65rem;}
+  .lform label{display:block;}
+  .lform span{display:block;margin-bottom:.3rem;font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7c8aa0;}
+  .lform input{
+    width:100%;height:2.35rem;border-radius:.5rem;border:1px solid rgb(255 255 255 / .14);
+    background:rgb(255 255 255 / .04);color:#f1f5f9;padding:0 .7rem;font-size:.8rem;outline:none;
+  }
+  .lform input:focus{border-color:var(--blue2);background:rgb(255 255 255 / .07);}
+  .lform button{
+    margin-top:.15rem;height:2.4rem;border:0;border-radius:.5rem;background:var(--blue);color:#fff;
+    font-size:.7rem;font-weight:750;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  }
+  .lform button:hover{background:#1d4ed8;}
+
+  .footnote{margin-top:.9rem;font-size:.62rem;color:rgb(148 163 184 / .6);}
+
+  /* icon sprite reused everywhere */
+  .ic{width:1rem;height:1rem;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+
+  /* ---- device (desktop / phone) toggle, shared by every variant ---- */
+  .devtoggle{display:inline-flex;gap:.35rem;margin:0 0 1rem;}
+  .devtoggle button{
+    font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--mute);background:rgb(255 255 255 / .04);border:1px solid var(--hair);
+    border-radius:999px;padding:.32rem .7rem;cursor:pointer;
+  }
+  .devtoggle button.on{color:#fff;background:rgb(37 99 235 / .3);border-color:rgb(96 165 250 / .55);}
+  .device{container-type:inline-size;transition:max-width .25s ease;}
+  .device[data-mode="phone"]{max-width:23.5rem !important;margin:0 auto;}
+
+  @container (max-width: 460px){
+    .split, .top, .grid, .cols, .layout, .duo, .app, .term-body, .rail-app{
+      grid-template-columns:1fr !important;gap:1.3rem !important;
+    }
+    .bento{grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:auto !important;}
+    .bhero,.blogin,.btile,.bwide,.bfoot{grid-column:span 2 !important;grid-row:auto !important;}
+    .blogin{order:-1;}
+    .bhero{padding:1.1rem 1.2rem !important;}
+    .strip{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+    .frame{padding:1.5rem 1.1rem !important;}
+    .glass{margin-top:1.4rem !important;}
+    .card{padding:1.4rem !important;}
+    .full{padding:1.9rem 1.2rem 1.6rem !important;}
+    .term-body{padding:1.1rem 1.1rem 1.3rem !important;}
+    .dark,.light{padding:1.5rem !important;}
+    .main{padding:1.4rem 1.2rem !important;}
+    .side{border-right:0 !important;border-bottom:1px solid var(--hair);}
+    .side ul{display:flex;overflow-x:auto;gap:.35rem;}
+    .side li{white-space:nowrap;}
+    .railbar{flex-direction:row !important;overflow-x:auto;border-right:0 !important;border-bottom:1px solid var(--hair);padding:.9rem .6rem !important;}
+    .steps{flex-wrap:wrap;row-gap:1rem;}
+    .steps::before{display:none;}
+    .step{flex:0 0 30%;}
+    .kpirow{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+    .kpi-header{flex-direction:column;align-items:flex-start !important;gap:.8rem;}
+    .medals{gap:.7rem;}
+    .medal{width:4.6rem;}
+    .fan{margin-left:0 !important;}
+    .scard{margin-left:0 !important;transform:none !important;flex:0 0 47% !important;}
+    h1.h, h3.h{font-size:1.2rem !important;}
+    .tlcols{grid-template-columns:1fr !important;}
+    .lformline.row{flex-direction:column !important;}
+    .lformline.row input{width:100% !important;}
+    .tickerhead{flex-direction:column;align-items:flex-start !important;gap:.6rem;}
+    .netwrap, .radarwrap{max-width:14rem !important;}
+    .lhead{font-size:1.7rem !important;}
+    .strow{grid-template-columns:1fr !important;}
+    .bignum{text-align:left !important;}
+    .duotone{padding:1.6rem 1.2rem !important;}
+  }
+
+  /* ================= 01 SPLIT GLASS ================= */
+  #v1 .frame{position:relative;border-radius:1.2rem;overflow:hidden;border:1px solid var(--hair);
+    background:radial-gradient(120% 90% at 8% 0%, rgb(37 99 235 / .22), transparent 55%), #0c0e12;
+    padding:2.2rem 2rem;
+  }
+  #v1 .split{display:grid;grid-template-columns:1.15fr .85fr;gap:2.4rem;align-items:start;}
+  #v1 .h{font-size:1.9rem;line-height:1.1;font-weight:800;letter-spacing:-.03em;margin:0 0 1rem;}
+  #v1 .h b{color:var(--blue);}
+  #v1 .glass{
+    position:relative;margin-top:-.6rem;border-radius:1rem;padding:1.4rem 1.3rem;
+    background:linear-gradient(160deg, rgb(255 255 255 / .08), rgb(255 255 255 / .015));
+    border:1px solid rgb(255 255 255 / .16);backdrop-filter:blur(14px);
+    box-shadow:0 30px 60px -20px rgb(0 0 0 / .6);
+  }
+  #v1 .glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+    background:linear-gradient(160deg, rgb(96 165 250 / .5), transparent 40%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}
+  #v1 .strip{margin-top:2.2rem;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;}
+  #v1 .tile{border-radius:.8rem;border:1px solid var(--hair);background:rgb(255 255 255 / .03);
+    padding:.9rem .85rem;transition:transform .2s ease, background .2s ease, border-color .2s ease;}
+  #v1 .tile:hover{transform:translateY(-3px);background:rgb(255 255 255 / .06);border-color:rgb(96 165 250 / .4);}
+  #v1 .tile .ic{width:1.15rem;height:1.15rem;color:#93c5fd;margin-bottom:.55rem;}
+  #v1 .tile p{margin:0;font-size:.74rem;font-weight:650;color:#e2e8f0;line-height:1.35;}
+
+  /* ================= 02 UNIFIED CARD ================= */
+  #v2 .card{border-radius:1.1rem;border:1px solid var(--hair);
+    background:linear-gradient(180deg, rgb(255 255 255 / .035), rgb(255 255 255 / .01));
+    padding:2rem;}
+  #v2 .top{display:grid;grid-template-columns:1.3fr .9fr;gap:2.2rem;padding-bottom:1.8rem;border-bottom:1px solid var(--hair);}
+  #v2 .h{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;margin:0 0 .9rem;}
+  #v2 .h b{color:var(--blue);}
+  #v2 table{width:100%;border-collapse:collapse;margin-top:1.6rem;}
+  #v2 table tr{border-bottom:1px solid rgb(255 255 255 / .06);}
+  #v2 table tr:last-child{border-bottom:0;}
+  #v2 table td{padding:.75rem .3rem;font-size:.78rem;color:#e2e8f0;font-weight:600;vertical-align:middle;}
+  #v2 table td:first-child{width:1.8rem;color:#93c5fd;}
+  #v2 table tr:nth-child(odd){background:rgb(255 255 255 / .015);}
+
+  /* ================= 03 BENTO GRID ================= */
+  #v3 .bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:5.2rem;gap:.75rem;}
+  #v3 .bhero{grid-column:span 4;grid-row:span 2;border-radius:1.1rem;border:1px solid var(--hair);
+    background:radial-gradient(140% 100% at 0% 0%, rgb(37 99 235 / .28), transparent 60%), #0c0e12;
+    padding:1.4rem 1.5rem;display:flex;flex-direction:column;justify-content:center;}
+  #v3 .bhero h3{margin:0 0 .5rem;font-size:1.35rem;font-weight:800;letter-spacing:-.02em;}
+  #v3 .bhero h3 b{color:var(--blue);}
+  #v3 .bhero p{margin:0;font-size:.76rem;line-height:1.5;color:var(--sub);max-width:34rem;}
+  #v3 .blogin{grid-column:span 2;grid-row:span 3;border-radius:1.1rem;border:1px solid rgb(96 165 250 / .3);
+    background:rgb(37 99 235 / .08);padding:1.2rem;}
+  #v3 .btile{grid-column:span 2;border-radius:1.1rem;border:1px solid var(--hair);background:rgb(255 255 255 / .03);
+    padding:.9rem 1rem;display:flex;align-items:center;gap:.65rem;transition:background .2s ease;}
+  #v3 .btile:hover{background:rgb(255 255 255 / .065);}
+  #v3 .btile .ic{color:#93c5fd;width:1.15rem;height:1.15rem;}
+  #v3 .btile p{margin:0;font-size:.72rem;font-weight:650;color:#e2e8f0;}
+  #v3 .bwide{grid-column:span 4;}
+  #v3 .bfoot{grid-column:span 6;border-radius:.8rem;border:1px dashed rgb(255 255 255 / .12);
+    display:flex;align-items:center;padding:0 1rem;color:rgb(148 163 184 / .65);font-size:.66rem;}
+
+  /* ================= 04 EDITORIAL MINIMAL ================= */
+  #v4 .ehead{max-width:38rem;}
+  #v4 .h{font-size:2.3rem;line-height:1.08;font-weight:800;letter-spacing:-.035em;margin:0 0 1.3rem;}
+  #v4 .h b{color:var(--blue);}
+  #v4 .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:3rem;margin-top:2rem;align-items:start;}
+  #v4 .elist{list-style:none;margin:0;padding:0;}
+  #v4 .elist li{display:flex;align-items:baseline;gap:.9rem;padding:.75rem 0;border-bottom:1px solid rgb(255 255 255 / .07);}
+  #v4 .elist li:last-child{border-bottom:0;}
+  #v4 .elist .num{font-size:.68rem;color:#7c8aa0;font-variant-numeric:tabular-nums;width:1.3rem;}
+  #v4 .elist p{margin:0;font-size:.85rem;font-weight:600;color:#e2e8f0;}
+  #v4 .esub{margin-top:2rem;padding-top:1.3rem;border-top:1px solid var(--hair);}
+
+  /* ================= 05 DATA TERMINAL ================= */
+  #v5 .term{border-radius:.9rem;border:1px solid rgb(110 231 183 / .18);background:#050807;
+    box-shadow:inset 0 0 60px rgb(37 99 235 / .06);overflow:hidden;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;}
+  #v5 .bar{display:flex;align-items:center;gap:.4rem;padding:.55rem .8rem;border-bottom:1px solid rgb(255 255 255 / .08);background:rgb(255 255 255 / .02);}
+  #v5 .dot{width:.5rem;height:.5rem;border-radius:999px;background:rgb(255 255 255 / .18);}
+  #v5 .bar span{margin-left:.5rem;font-size:.6rem;color:rgb(148 163 184 / .6);letter-spacing:.05em;}
+  #v5 .term-body{padding:1.4rem 1.6rem 1.7rem;display:grid;grid-template-columns:1.2fr .9fr;gap:2rem;}
+  #v5 .h{font-size:1.05rem;font-weight:700;color:var(--green);margin:0 0 .9rem;letter-spacing:-.01em;}
+  #v5 .h b{color:#93c5fd;}
+  #v5 .h::before{content:"$ ";color:rgb(110 231 183 / .55);}
+  #v5 .lead p{color:rgb(203 213 225 / .82);font-size:.76rem;}
+  #v5 .lead p::before{content:"// ";color:rgb(110 231 183 / .4);}
+  #v5 .log{list-style:none;margin:1.3rem 0 0;padding:0;font-size:.76rem;}
+  #v5 .log li{display:flex;gap:.6rem;padding:.4rem 0;color:#d1d5db;border-bottom:1px dashed rgb(255 255 255 / .06);}
+  #v5 .log li::before{content:"[ok]";color:var(--green);font-weight:700;flex-shrink:0;}
+  #v5 .term input, #v5 .term button{font-family:inherit;}
+  #v5 .lform input{background:#0b0d0f;border-color:rgb(110 231 183 / .18);color:var(--green);}
+  #v5 .lform span{color:rgb(110 231 183 / .55);}
+  #v5 .lform button{background:rgb(110 231 183 / .14);border:1px solid rgb(110 231 183 / .5);color:var(--green);}
+  #v5 .lform button:hover{background:rgb(110 231 183 / .24);}
+
+  /* ================= 06 VERTICAL TIMELINE ================= */
+  #v6 .layout{display:grid;grid-template-columns:1.2fr .9fr;gap:2.4rem;align-items:start;}
+  #v6 .h{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v6 .h b{color:var(--blue);}
+  #v6 .tl{position:relative;margin-top:1.8rem;padding-left:1.9rem;}
+  #v6 .tl::before{content:"";position:absolute;left:.5rem;top:.3rem;bottom:.3rem;width:1px;
+    background:linear-gradient(180deg, rgb(37 99 235 / .6), rgb(255 255 255 / .06));}
+  #v6 .tstep{position:relative;padding-bottom:1.3rem;}
+  #v6 .tstep:last-child{padding-bottom:0;}
+  #v6 .tstep::before{content:"";position:absolute;left:-1.9rem;top:.15rem;width:.62rem;height:.62rem;border-radius:999px;
+    background:#0c0e12;border:2px solid var(--blue2);}
+  #v6 .tstep p{margin:0;font-size:.8rem;font-weight:650;color:#e2e8f0;}
+  #v6 .panel{border-radius:1rem;border:1px solid var(--hair);background:rgb(255 255 255 / .03);padding:1.4rem;}
+
+  /* ================= 07 STICKY SIDEBAR NAV ================= */
+  #v7 .app{display:grid;grid-template-columns:14rem 1fr;border-radius:1.1rem;border:1px solid var(--hair);overflow:hidden;min-height:26rem;}
+  #v7 .side{background:rgb(255 255 255 / .025);border-right:1px solid var(--hair);padding:1.3rem 1rem;}
+  #v7 .side b{display:block;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:#7c8aa0;margin-bottom:.8rem;}
+  #v7 .side ul{list-style:none;margin:0;padding:0;}
+  #v7 .side li{display:flex;align-items:center;gap:.6rem;padding:.55rem .5rem;border-radius:.5rem;font-size:.74rem;
+    font-weight:600;color:#cbd5e1;margin-bottom:.15rem;}
+  #v7 .side li.on{background:rgb(37 99 235 / .16);color:#fff;}
+  #v7 .side .ic{width:.95rem;height:.95rem;color:#93c5fd;}
+  #v7 .main{padding:1.8rem 2rem;}
+  #v7 .h{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v7 .h b{color:var(--blue);}
+  #v7 .cols{display:grid;grid-template-columns:1.2fr .9fr;gap:2.2rem;margin-top:1.6rem;}
+
+  /* ================= 08 FULLBLEED + CAROUSEL ================= */
+  #v8 .full{position:relative;border-radius:1.2rem;overflow:hidden;
+    background:radial-gradient(80% 60% at 50% 0%, rgb(37 99 235 / .3), transparent 60%),
+      radial-gradient(60% 50% at 90% 100%, rgb(96 165 250 / .16), transparent 60%), #08090b;
+    padding:2.6rem 2rem 2rem;text-align:center;}
+  #v8 .h{font-size:2rem;font-weight:800;letter-spacing:-.03em;margin:0 auto .9rem;max-width:36rem;}
+  #v8 .h b{color:var(--blue);}
+  #v8 .lead{max-width:34rem;margin:0 auto;}
+  #v8 .lform{max-width:20rem;margin:1.6rem auto 0;text-align:left;}
+  #v8 .carousel{display:flex;gap:.8rem;overflow-x:auto;margin-top:2.2rem;padding-bottom:.4rem;
+    scroll-snap-type:x mandatory;}
+  #v8 .carousel::-webkit-scrollbar{height:.35rem;}
+  #v8 .carousel::-webkit-scrollbar-thumb{background:rgb(255 255 255 / .15);border-radius:999px;}
+  #v8 .ccard{flex:0 0 11.5rem;scroll-snap-align:start;border-radius:.9rem;border:1px solid var(--hair);
+    background:rgb(255 255 255 / .04);padding:1rem;text-align:left;}
+  #v8 .ccard .ic{color:#93c5fd;width:1.2rem;height:1.2rem;margin-bottom:.6rem;}
+  #v8 .ccard p{margin:0;font-size:.72rem;font-weight:650;color:#e2e8f0;}
+
+  /* ================= 09 TWO-TONE CONTRAST ================= */
+  #v9 .duo{display:grid;grid-template-columns:1fr 1fr;border-radius:1.1rem;overflow:hidden;border:1px solid var(--hair);}
+  #v9 .dark{background:#0a0b0d;padding:2.2rem;}
+  #v9 .light{background:#f4f6f9;color:#0f172a;padding:2.2rem;}
+  #v9 .h{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v9 .h b{color:#60a5fa;}
+  #v9 .light .lform span{color:#64748b;}
+  #v9 .light .lform input{background:#fff;border-color:#dbe2ea;color:#0f172a;}
+  #v9 .light .lform button{background:#2563eb;}
+  #v9 .light .row{border-bottom-color:rgb(15 23 42 / .08);}
+  #v9 .row{display:flex;align-items:center;gap:.7rem;padding:.7rem 0;border-bottom:1px solid rgb(255 255 255 / .07);}
+  #v9 .row .ic{color:#2563eb;}
+  #v9 .row p{margin:0;font-size:.78rem;font-weight:650;}
+  #v9 .light p, #v9 .light .contact strong{color:#0f172a;}
+  #v9 .light .contact{color:#475569;}
+
+  /* ================= 10 DASHBOARD PREVIEW MOCK ================= */
+  #v10 .layout{display:grid;grid-template-columns:1.15fr .85fr;gap:2.2rem;align-items:start;}
+  #v10 .h{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v10 .h b{color:var(--blue);}
+  #v10 .mock{margin-top:1.8rem;border-radius:.9rem;border:1px solid var(--hair);overflow:hidden;
+    box-shadow:0 30px 60px -24px rgb(0 0 0 / .7);}
+  #v10 .chrome{display:flex;align-items:center;gap:.4rem;padding:.55rem .8rem;background:#16181c;border-bottom:1px solid var(--hair);}
+  #v10 .chrome .dot{width:.5rem;height:.5rem;border-radius:999px;background:rgb(255 255 255 / .18);}
+  #v10 .chrome span{margin-left:.5rem;font-size:.6rem;color:rgb(148 163 184 / .55);}
+  #v10 .mockbody{background:#0e1013;padding:1rem 1.1rem 1.2rem;}
+  #v10 .mrow{display:flex;align-items:center;gap:.65rem;padding:.55rem .6rem;border-radius:.5rem;}
+  #v10 .mrow:nth-child(odd){background:rgb(255 255 255 / .025);}
+  #v10 .mrow .ic{width:1rem;height:1rem;color:#93c5fd;}
+  #v10 .mrow p{margin:0;font-size:.74rem;font-weight:600;color:#dbe4f0;}
+  #v10 .mrow .badge{margin-left:auto;font-size:.6rem;font-weight:700;color:var(--green);
+    background:rgb(110 231 183 / .1);border-radius:999px;padding:.15rem .5rem;}
+  #v10 .panel{border-radius:1rem;border:1px solid rgb(96 165 250 / .25);background:rgb(37 99 235 / .06);padding:1.4rem;}
+
+  /* ================= 11 ICON RAIL ================= */
+  #v11 .rail-app{display:grid;grid-template-columns:4.4rem 1fr;border-radius:1.1rem;border:1px solid var(--hair);overflow:hidden;min-height:22rem;}
+  #v11 .railbar{display:flex;flex-direction:column;align-items:center;gap:1.05rem;padding:1.4rem .4rem;
+    background:rgb(255 255 255 / .025);border-right:1px solid var(--hair);}
+  #v11 .ri{display:flex;flex-direction:column;align-items:center;gap:.3rem;color:#93c5fd;}
+  #v11 .ri.on{color:#fff;}
+  #v11 .ri .ic{width:1.05rem;height:1.05rem;}
+  #v11 .ri span{font-size:.48rem;font-weight:600;letter-spacing:.02em;color:var(--mute);text-align:center;line-height:1.15;max-width:3.4rem;}
+  #v11 .ri.on span{color:#e2e8f0;}
+  #v11 .main{padding:1.8rem 2rem;}
+  #v11 .h{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v11 .h b{color:var(--blue);}
+  #v11 .cols{display:grid;grid-template-columns:1.2fr .9fr;gap:2.2rem;margin-top:1.6rem;}
+
+  /* ================= 12 HORIZONTAL STEPPER ================= */
+  #v12 .h{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 .3rem;}
+  #v12 .h b{color:var(--blue);}
+  #v12 .steps{position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin:1.8rem 0 2.1rem;}
+  #v12 .steps::before{content:"";position:absolute;top:.82rem;left:4%;right:4%;height:1px;background:var(--hair);z-index:0;}
+  #v12 .step{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:.5rem;flex:1;min-width:0;padding:0 .3rem;}
+  #v12 .step .dot{width:1.7rem;height:1.7rem;border-radius:999px;background:#0c0e12;border:1px solid rgb(96 165 250 / .55);
+    display:flex;align-items:center;justify-content:center;color:#93c5fd;}
+  #v12 .step .dot .ic{width:.85rem;height:.85rem;}
+  #v12 .step p{margin:0;font-size:.58rem;line-height:1.25;text-align:center;color:var(--mute);max-width:5.6rem;}
+  #v12 .cols{display:grid;grid-template-columns:1.2fr .9fr;gap:2.2rem;align-items:start;}
+
+  /* ================= 13 NOTION DOC ================= */
+  #v13 .docwrap{max-width:42rem;}
+  #v13 .eyebrow{font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;margin-bottom:.5rem;}
+  #v13 .h{font-size:1.7rem;font-weight:800;letter-spacing:-.025em;margin:0 0 1rem;}
+  #v13 .h b{color:var(--blue);}
+  #v13 .callout{margin:1.5rem 0;border-left:3px solid var(--blue);background:rgb(37 99 235 / .07);
+    border-radius:0 .6rem .6rem 0;padding:1.2rem 1.3rem;}
+  #v13 .callout p{margin:0 0 .8rem;font-size:.76rem;font-weight:650;color:#e2e8f0;}
+  #v13 .callout .lform{max-width:21rem;}
+  #v13 .drow{display:flex;align-items:center;gap:.75rem;padding:.7rem 0;border-bottom:1px solid rgb(255 255 255 / .07);}
+  #v13 .drow:last-child{border-bottom:0;}
+  #v13 .drow .ic{color:#93c5fd;}
+  #v13 .drow p{margin:0;font-size:.8rem;font-weight:600;color:#e2e8f0;}
+
+  /* ================= 14 KPI STRIP ================= */
+  #v14 .kpi-header{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;}
+  #v14 .h{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin:0;}
+  #v14 .h b{color:var(--blue);}
+  #v14 .kpi-header .lform{flex-direction:row;align-items:end;gap:.5rem;flex-wrap:wrap;}
+  #v14 .kpi-header .lform label{min-width:0;}
+  #v14 .kpi-header .lform span{display:none;}
+  #v14 .kpi-header .lform input{width:9rem;height:2rem;font-size:.72rem;}
+  #v14 .kpi-header .lform button{height:2rem;margin-top:0;padding:0 .9rem;white-space:nowrap;}
+  #v14 .kpirow{margin-top:1.8rem;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;}
+  #v14 .kpi{border-radius:.8rem;border:1px solid var(--hair);background:rgb(255 255 255 / .03);padding:.85rem .8rem;}
+  #v14 .kpi .ic{width:1.05rem;height:1.05rem;color:#93c5fd;margin-bottom:.55rem;}
+  #v14 .kpi p{margin:0;font-size:.7rem;font-weight:650;color:#e2e8f0;line-height:1.3;}
+
+  /* ================= 15 CHAT ASSISTANT ================= */
+  #v15 .chatwrap{max-width:40rem;}
+  #v15 .bubble{display:flex;gap:.8rem;align-items:flex-start;margin-bottom:1rem;}
+  #v15 .avatar{flex-shrink:0;width:2rem;height:2rem;border-radius:999px;background:var(--blue);
+    display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;color:#fff;}
+  #v15 .bubble .msg{border-radius:.2rem 1rem 1rem 1rem;background:rgb(255 255 255 / .045);
+    border:1px solid var(--hair);padding:.9rem 1.05rem;max-width:32rem;}
+  #v15 .bubble .msg h3{margin:0 0 .5rem;font-size:1rem;font-weight:800;}
+  #v15 .bubble .msg h3 b{color:var(--blue);}
+  #v15 .bubble .msg p{margin:0;font-size:.78rem;line-height:1.55;color:var(--sub);}
+  #v15 .clist{list-style:none;margin:0;padding:0;}
+  #v15 .clist li{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;font-size:.76rem;font-weight:600;color:#e2e8f0;}
+  #v15 .clist .ic{color:var(--green);width:.9rem;height:.9rem;}
+  #v15 .chatbar{margin-top:.4rem;border-radius:1.2rem;border:1px solid var(--hair);background:rgb(255 255 255 / .04);
+    padding:.9rem 1.1rem;}
+  #v15 .chatbar .lform{flex-direction:row;flex-wrap:wrap;align-items:end;gap:.5rem;}
+  #v15 .chatbar .lform span{display:none;}
+  #v15 .chatbar .lform input{width:10.5rem;height:2.1rem;font-size:.72rem;}
+  #v15 .chatbar .lform button{height:2.1rem;margin-top:0;padding:0 1rem;}
+
+  /* ================= 16 CIRCULAR MEDALLIONS ================= */
+  #v16 .medwrap{text-align:center;max-width:40rem;margin:0 auto;}
+  #v16 .h{font-size:1.7rem;font-weight:800;letter-spacing:-.025em;margin:0 0 .9rem;}
+  #v16 .h b{color:var(--blue);}
+  #v16 .medals{display:flex;justify-content:center;flex-wrap:wrap;gap:1.1rem;margin:2rem 0;}
+  #v16 .medal{display:flex;flex-direction:column;align-items:center;gap:.55rem;width:6.2rem;}
+  #v16 .circle{width:3.5rem;height:3.5rem;border-radius:999px;
+    background:radial-gradient(circle at 30% 30%, rgb(37 99 235 / .3), rgb(255 255 255 / .02));
+    border:1px solid rgb(96 165 250 / .45);display:flex;align-items:center;justify-content:center;color:#93c5fd;}
+  #v16 .medal p{margin:0;font-size:.62rem;line-height:1.25;color:var(--mute);}
+  #v16 .medwrap .lform{max-width:19rem;margin:0 auto;text-align:left;}
+
+  /* ================= 17 STICKY BOTTOM BAR ================= */
+  #v17 .stickywrap{position:relative;border-radius:1.1rem;border:1px solid var(--hair);overflow:hidden;height:27rem;}
+  #v17 .stickyscroll{height:100%;overflow-y:auto;padding:1.7rem 1.7rem 5.6rem;}
+  #v17 .h{font-size:1.4rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v17 .h b{color:var(--blue);}
+  #v17 .stickybar{position:absolute;left:0;right:0;bottom:0;padding:1rem 1.5rem;
+    background:linear-gradient(180deg, rgb(10 12 16 / .2), rgb(10 12 16 / .96) 40%);
+    border-top:1px solid var(--hair);}
+  #v17 .stickybar .lform{flex-direction:row;flex-wrap:wrap;align-items:end;gap:.5rem;}
+  #v17 .stickybar .lform span{display:none;}
+  #v17 .stickybar .lform input{width:10.5rem;height:2.15rem;font-size:.72rem;}
+  #v17 .stickybar .lform button{height:2.15rem;margin-top:0;padding:0 1.1rem;}
+
+  /* ================= 18 ACCORDION LIST ================= */
+  #v18 .layout{display:grid;grid-template-columns:1.2fr .9fr;gap:2.2rem;align-items:start;}
+  #v18 .h{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v18 .h b{color:var(--blue);}
+  #v18 .acc{border-radius:.9rem;border:1px solid var(--hair);overflow:hidden;margin-top:1.6rem;}
+  #v18 .arow{border-bottom:1px solid var(--hair);}
+  #v18 .arow:last-child{border-bottom:0;}
+  #v18 .ahead{display:flex;align-items:center;gap:.7rem;padding:.85rem 1rem;cursor:pointer;background:rgb(255 255 255 / .02);}
+  #v18 .ahead .ic{color:#93c5fd;}
+  #v18 .ahead p{margin:0;flex:1;font-size:.78rem;font-weight:650;color:#e2e8f0;}
+  #v18 .chev{transition:transform .2s ease;color:var(--mute);}
+  #v18 .arow.open .chev{transform:rotate(180deg);}
+  #v18 .abody{max-height:0;overflow:hidden;transition:max-height .2s ease;}
+  #v18 .arow.open .abody{max-height:3rem;}
+  #v18 .abody span{display:inline-flex;align-items:center;gap:.35rem;font-size:.68rem;color:var(--green);font-weight:650;
+    padding:0 1rem .8rem 2.5rem;}
+  #v18 .panel{border-radius:1rem;border:1px solid var(--hair);background:rgb(255 255 255 / .03);padding:1.4rem;}
+
+  /* ================= 19 STACKED CARDS ================= */
+  #v19 .h{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem;}
+  #v19 .h b{color:var(--blue);}
+  #v19 .fan{display:flex;align-items:center;margin:2rem 0 2.2rem .6rem;flex-wrap:wrap;row-gap:.9rem;}
+  #v19 .scard{margin-left:-1.6rem;flex:0 0 8.5rem;border-radius:.85rem;border:1px solid var(--hair);
+    background:linear-gradient(160deg, rgb(255 255 255 / .06), #101215);padding:.85rem .8rem;
+    box-shadow:0 14px 26px -12px rgb(0 0 0 / .55);transition:transform .2s ease;}
+  #v19 .scard:hover{transform:translateY(-6px) rotate(0deg);z-index:5;}
+  #v19 .scard:nth-child(1){margin-left:0;transform:rotate(-4deg);}
+  #v19 .scard:nth-child(2){transform:rotate(2deg);}
+  #v19 .scard:nth-child(3){transform:rotate(-2deg);}
+  #v19 .scard:nth-child(4){transform:rotate(3deg);}
+  #v19 .scard:nth-child(5){transform:rotate(-3deg);}
+  #v19 .scard:nth-child(6){transform:rotate(1deg);}
+  #v19 .scard:nth-child(7){transform:rotate(-1deg);}
+  #v19 .scard .ic{color:#93c5fd;width:1.05rem;height:1.05rem;margin-bottom:.5rem;}
+  #v19 .scard p{margin:0;font-size:.68rem;font-weight:650;color:#e2e8f0;line-height:1.3;}
+  #v19 .cols{display:grid;grid-template-columns:1.2fr .9fr;gap:2.2rem;align-items:start;}
+
+  /* ================= 20 PROOF PANEL ================= */
+  #v20 .cols{display:grid;grid-template-columns:1.2fr .9fr;gap:2.4rem;align-items:start;}
+  #v20 .h{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin:0 0 1.1rem;}
+  #v20 .h b{color:var(--blue);}
+  #v20 .proof{list-style:none;margin:0;padding:0;}
+  #v20 .proof li{display:flex;gap:.7rem;align-items:flex-start;padding:.7rem 0;}
+  #v20 .proof .ic{color:var(--green);width:1rem;height:1rem;margin-top:.15rem;}
+  #v20 .proof p{margin:0;font-size:.8rem;line-height:1.55;color:var(--sub);}
+  #v20 .stickycard{border-radius:1rem;border:1px solid var(--hair);background:rgb(255 255 255 / .03);padding:1.4rem;}
+  #v20 .checklist{list-style:none;margin:1.3rem 0 0;padding-top:1.2rem;border-top:1px solid var(--hair);}
+  #v20 .checklist li{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;font-size:.72rem;font-weight:600;color:#cbd5e1;}
+  #v20 .checklist .ic{width:.85rem;height:.85rem;color:#93c5fd;}
+
+  /* ---- shared "no-box" helpers for the 2nd batch (21-28) ---- */
+  .lform.lformline{gap:.5rem;}
+  .lform.lformline span{display:none;}
+  .lform.lformline input{background:transparent;border:0;border-bottom:1px solid rgb(255 255 255 / .18);
+    border-radius:0;padding:.3rem 0;}
+  .lform.lformline input:focus{border-color:#60a5fa;background:transparent;}
+  .lform.lformline.row{flex-direction:row;flex-wrap:wrap;align-items:end;gap:.9rem;}
+  .lform.lformline.row label{flex:0 0 auto;}
+  .lform.lformline.row input{width:9.5rem;}
+  .lform.lformline.row button{border-radius:999px;padding:0 1.1rem;height:2.2rem;margin-top:0;}
+  .short{font-size:.9rem;line-height:1.62;color:var(--sub);max-width:32rem;}
+  .short p{margin:0 0 .7rem;}
+  .short p:last-child{margin-bottom:0;}
+  .short.center{margin:0 auto;text-align:center;}
+  .trustbar{display:flex;flex-wrap:wrap;gap:1.2rem 1.7rem;margin-top:2rem;}
+  .trustbar.center{justify-content:center;}
+  .trustbar .ti{display:flex;align-items:center;gap:.45rem;font-size:.68rem;font-weight:600;color:var(--mute);}
+  .trustbar .ti .ic{width:.85rem;height:.85rem;color:#93c5fd;}
+  .eyebrow2{font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;margin:0 0 .5rem;}
+
+  /* ================= 21 LINEAR-STYLE MINIMAL ================= */
+  #v21 .lstyle{position:relative;padding:3rem 1rem 2.6rem;text-align:center;overflow:hidden;border-radius:1.2rem;}
+  #v21 .lgrad{position:absolute;inset:-30% -10% auto -10%;height:24rem;z-index:0;pointer-events:none;
+    background:radial-gradient(55% 70% at 50% 0%, rgb(37 99 235 / .38), transparent 70%);filter:blur(6px);}
+  #v21 .lhead{position:relative;z-index:1;margin:0 auto;font-size:clamp(2.1rem,5vw,3.3rem);font-weight:800;
+    letter-spacing:-.04em;line-height:1.03;max-width:38rem;}
+  #v21 .lhead b{color:#60a5fa;}
+  #v21 .lfull{position:relative;z-index:1;max-width:33rem;margin:1.4rem auto 0;text-align:left;font-size:.88rem;}
+  #v21 .lloginrow{position:relative;z-index:1;max-width:20rem;margin:2rem auto 0;}
+  #v21 .lloginrow .lform button{border-radius:999px;}
+  #v21 .lpills{position:relative;z-index:1;margin:2.3rem auto 0;max-width:36rem;justify-content:center;}
+  #v21 .contact{position:relative;z-index:1;text-align:center;}
+
+  /* ================= 22 MILEAGE TIMELINE ILLUSTRATION ================= */
+  #v22 .tlcols{display:grid;grid-template-columns:1.1fr .9fr;gap:2.4rem;align-items:center;}
+  #v22 .h{font-size:1.65rem;font-weight:800;letter-spacing:-.025em;margin:0 0 .8rem;}
+  #v22 .h b{color:var(--blue);}
+  #v22 .chartbox{padding:1.2rem;}
+  #v22 .chartsvg{width:100%;height:auto;display:block;}
+  #v22 .chartsvg path.line{fill:none;stroke:url(#v22grad);stroke-width:2;stroke-linecap:round;}
+  #v22 .chartsvg circle{fill:#0c0e12;stroke:#60a5fa;stroke-width:1.6;}
+  #v22 .chartcap{margin:.6rem 0 0;font-size:.6rem;color:rgb(148 163 184 / .55);text-align:center;}
+  #v22 .tlbar{margin-top:2.2rem;max-width:26rem;}
+  #v22 .contact{margin-top:1.6rem;}
+
+  /* ================= 23 RADAR SCAN ================= */
+  #v23 .radarrow{display:grid;grid-template-columns:auto 1fr;gap:2.6rem;align-items:center;}
+  #v23 .radarwrap{position:relative;width:12rem;height:12rem;border-radius:999px;flex-shrink:0;}
+  #v23 .radarwrap .ring{position:absolute;inset:0;border-radius:999px;border:1px solid rgb(96 165 250 / .22);}
+  #v23 .radarwrap .ring.r2{inset:18%;}
+  #v23 .radarwrap .ring.r3{inset:36%;}
+  #v23 .radarwrap .sweep{position:absolute;inset:0;border-radius:999px;overflow:hidden;
+    animation:radarspin 4s linear infinite;}
+  #v23 .radarwrap .sweep::before{content:"";position:absolute;inset:0;
+    background:conic-gradient(from 0deg, rgb(96 165 250 / .5), transparent 22%);}
+  @keyframes radarspin{to{transform:rotate(360deg);}}
+  #v23 .radarwrap .core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:2.6rem;height:2.6rem;border-radius:999px;background:#0c0e12;border:1px solid rgb(96 165 250 / .5);
+    display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:#93c5fd;}
+  #v23 .h{font-size:1.6rem;font-weight:800;letter-spacing:-.025em;margin:0 0 .8rem;}
+  #v23 .h b{color:var(--blue);}
+  #v23 .radarlist{list-style:none;margin:1.4rem 0 0;padding:0;columns:2;column-gap:1.4rem;}
+  #v23 .radarlist li{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;font-size:.7rem;
+    font-weight:600;color:#cbd5e1;break-inside:avoid;}
+  #v23 .radarlist .ic{width:.8rem;height:.8rem;color:#93c5fd;}
+  #v23 .rform{margin-top:1.6rem;max-width:26rem;}
+  #v23 .contact{margin-top:1.4rem;}
+
+  /* ================= 24 DATA NETWORK GRAPH ================= */
+  #v24 .netrow{display:grid;grid-template-columns:1fr auto;gap:2.4rem;align-items:center;}
+  #v24 .h{font-size:1.6rem;font-weight:800;letter-spacing:-.025em;margin:0 0 .9rem;}
+  #v24 .h b{color:var(--blue);}
+  #v24 .netwrap{position:relative;width:16rem;aspect-ratio:1;flex-shrink:0;}
+  #v24 .netlines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+  #v24 .netlines line{stroke:rgb(96 165 250 / .3);stroke-width:.6;}
+  #v24 .netcenter{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4.2rem;height:4.2rem;
+    border-radius:999px;background:radial-gradient(circle at 30% 30%, rgb(37 99 235 / .55), #0c0e12);
+    display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;letter-spacing:.01em;
+    text-align:center;color:#fff;line-height:1.15;box-shadow:0 0 0 1px rgb(96 165 250 / .4), 0 18px 34px -14px rgb(0 0 0 / .7);}
+  #v24 .netnode{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;
+    align-items:center;gap:.3rem;width:5.4rem;}
+  #v24 .netnode .nic{width:1.65rem;height:1.65rem;border-radius:999px;background:#0c0e12;
+    border:1px solid rgb(96 165 250 / .35);display:flex;align-items:center;justify-content:center;color:#93c5fd;}
+  #v24 .netnode .nic .ic{width:.8rem;height:.8rem;}
+  #v24 .netnode span{font-size:.54rem;font-weight:600;color:var(--mute);text-align:center;line-height:1.2;}
+  #v24 .netform{margin-top:1.8rem;max-width:26rem;}
+  #v24 .contact{margin-top:1.4rem;}
+
+  /* ================= 25 TAB REVEAL ================= */
+  #v25 .tabwrap{text-align:center;max-width:38rem;margin:0 auto;}
+  #v25 .h.giant{font-size:clamp(2rem,4.6vw,2.9rem);font-weight:800;letter-spacing:-.035em;margin:0 0 1.4rem;}
+  #v25 .h.giant b{color:var(--blue);}
+  #v25 .tabtext{margin:1.6rem auto 0;max-width:32rem;text-align:left;}
+  #v25 .tabbeat{margin-bottom:1.3rem;}
+  #v25 .tabbeat:last-child{margin-bottom:0;}
+  #v25 .tabbeat .tabbtn{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:#93c5fd;background:rgb(37 99 235 / .14);border-radius:999px;
+    padding:.28rem .7rem;margin-bottom:.55rem;}
+  #v25 .tabbeat p{margin:0;font-size:.86rem;line-height:1.6;color:var(--sub);}
+  #v25 .tlform{max-width:20rem;margin:1.6rem auto 0;text-align:left;}
+  #v25 .contact{margin-top:1.4rem;}
+
+  /* ================= 26 TICKER + SLIDE LOGIN ================= */
+  #v26 .tickerhead{display:flex;align-items:center;justify-content:space-between;gap:1.2rem;}
+  #v26 .h{font-size:1.5rem;font-weight:800;letter-spacing:-.025em;margin:0;}
+  #v26 .h b{color:var(--blue);}
+  #v26 .tickerbtn{border:1px solid rgb(96 165 250 / .4);background:rgb(37 99 235 / .12);color:#dbeafe;
+    font-size:.66rem;font-weight:700;letter-spacing:.04em;border-radius:999px;padding:.5rem 1rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap;}
+  #v26 .tickerform{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+  #v26 .tickerform.open{max-height:10rem;margin-top:1.2rem;}
+  #v26 .marquee{margin-top:2rem;overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+    mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
+  #v26 .marquee-track{display:flex;width:max-content;gap:2.4rem;animation:tickerScroll 22s linear infinite;}
+  @keyframes tickerScroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  #v26 .marquee-track .ti{display:flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:650;
+    color:#cbd5e1;white-space:nowrap;}
+  #v26 .marquee-track .ic{color:#93c5fd;width:.85rem;height:.85rem;}
+  #v26 .contact{margin-top:1.6rem;}
+
+  /* ================= 27 STORY BEATS ================= */
+  #v27 .storywrap{max-width:36rem;}
+  #v27 .beat{padding:1.6rem 0;}
+  #v27 .beat-b,#v27 .beat-c{border-top:1px solid rgb(255 255 255 / .08);}
+  #v27 .h{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;margin:0 0 .8rem;}
+  #v27 .h b{color:var(--blue);}
+  #v27 .beat p{margin:0;font-size:.88rem;line-height:1.62;color:var(--sub);}
+  #v27 .beat-c .lform{max-width:22rem;margin-top:1.3rem;}
+  #v27 .contact{margin-top:.4rem;}
+
+  /* ================= 28 DOT-GRID + GLASS CAPSULE ================= */
+  #v28 .dotwrap{position:relative;padding:3rem 1rem;text-align:center;overflow:hidden;border-radius:1.2rem;}
+  #v28 .dotbg{position:absolute;inset:0;z-index:0;opacity:.5;
+    background-image:radial-gradient(rgb(255 255 255 / .16) 1px, transparent 1px);
+    background-size:22px 22px;}
+  #v28 .dotblob{position:absolute;top:-6rem;left:50%;transform:translateX(-50%);width:26rem;height:26rem;
+    border-radius:999px;background:radial-gradient(circle, rgb(37 99 235 / .38), transparent 65%);
+    filter:blur(6px);z-index:0;pointer-events:none;}
+  #v28 .h{position:relative;z-index:1;font-size:clamp(2rem,4.6vw,2.9rem);font-weight:800;letter-spacing:-.035em;
+    margin:0 auto;max-width:34rem;}
+  #v28 .h b{color:var(--blue);}
+  #v28 .short{position:relative;z-index:1;}
+  #v28 .capsule{position:relative;z-index:1;margin:1.8rem auto 0;}
+  #v28 .lform.lformcapsule{position:relative;flex-direction:row;align-items:center;gap:0;
+    background:rgb(255 255 255 / .07);border:1px solid rgb(255 255 255 / .16);border-radius:999px;
+    padding:.3rem .3rem .3rem 1.2rem;max-width:29rem;margin:0 auto;backdrop-filter:blur(12px);}
+  #v28 .lform.lformcapsule label{flex:1;min-width:0;}
+  #v28 .lform.lformcapsule label:first-child{border-right:1px solid rgb(255 255 255 / .14);}
+  #v28 .lform.lformcapsule span{display:none;}
+  #v28 .lform.lformcapsule input{background:transparent;border:0;height:2.15rem;padding:0 .8rem;font-size:.76rem;}
+  #v28 .lform.lformcapsule button{margin:0;height:2.15rem;border-radius:999px;padding:0 1.15rem;white-space:nowrap;}
+  #v28 .trustbar{position:relative;z-index:1;}
+  #v28 .contact{position:relative;z-index:1;}
+
+  /* ================= 29 ASYMMETRIC EDITORIAL ================= */
+  #v29 .h{font-size:2rem;font-weight:800;letter-spacing:-.03em;margin:0 0 .3rem;max-width:34rem;}
+  #v29 .h b{color:var(--blue);}
+  #v29 .edrow{margin-top:.9rem;}
+  #v29 .edrow p{margin:0 0 1rem;font-size:.86rem;line-height:1.62;color:var(--sub);max-width:38rem;}
+  #v29 .edrow p.pull{font-size:1.05rem;font-weight:650;color:#e2e8f0;line-height:1.5;max-width:36rem;}
+  #v29 .edtrust{margin-top:1.5rem;font-size:.72rem;color:var(--mute);display:flex;flex-wrap:wrap;align-items:center;}
+  #v29 .edtrust .dot{margin:0 .55rem;color:rgb(148 163 184 / .4);}
+  #v29 .edform{margin-top:1.8rem;max-width:26rem;}
+  #v29 .contact{margin-top:1.3rem;}
+
+  /* ================= 30 BIG STAT + FULL TEXT ================= */
+  #v30 .strow{display:grid;grid-template-columns:auto 1fr;gap:2.8rem;align-items:start;}
+  #v30 .bignum{font-size:5.2rem;font-weight:800;line-height:.85;letter-spacing:-.04em;color:transparent;
+    background:linear-gradient(160deg,#93c5fd,#2563eb);-webkit-background-clip:text;background-clip:text;
+    text-align:center;}
+  #v30 .bignum span{display:block;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mute);-webkit-text-fill-color:var(--mute);margin-top:.4rem;max-width:6.5rem;line-height:1.35;}
+  #v30 .h{font-size:1.6rem;font-weight:800;letter-spacing:-.025em;margin:0 0 .9rem;}
+  #v30 .h b{color:var(--blue);}
+  #v30 .stlist{list-style:none;margin:1.6rem 0 0;padding-top:1.2rem;border-top:1px solid rgb(255 255 255 / .08);}
+  #v30 .stlist li{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;font-size:.76rem;font-weight:600;color:#cbd5e1;}
+  #v30 .stlist .ic{width:.85rem;height:.85rem;color:#93c5fd;}
+  #v30 .stform{margin-top:1.6rem;max-width:26rem;}
+  #v30 .contact{margin-top:1.3rem;}
+
+  /* ================= 31 DUOTONE GRADIENT SPLIT ================= */
+  #v31 .duotone{position:relative;border-radius:1.2rem;overflow:hidden;padding:2.4rem 2.2rem;
+    background:linear-gradient(135deg, rgb(37 99 235 / .24) 0%, transparent 55%), #0a0b0d;}
+  #v31 .h{font-size:1.8rem;font-weight:800;letter-spacing:-.03em;margin:0 0 1rem;max-width:32rem;}
+  #v31 .h b{color:#60a5fa;}
+  #v31 .duotone .short{max-width:34rem;}
+  #v31 .dtform{margin-top:1.7rem;}
+  #v31 .lform.lformcapsule2{flex-direction:row;align-items:center;gap:0;background:rgb(255 255 255 / .07);
+    border:1px solid rgb(255 255 255 / .16);border-radius:999px;padding:.3rem .3rem .3rem 1.1rem;
+    max-width:28rem;backdrop-filter:blur(10px);}
+  #v31 .lform.lformcapsule2 label{flex:1;min-width:0;}
+  #v31 .lform.lformcapsule2 span{display:none;}
+  #v31 .lform.lformcapsule2 input{background:transparent;border:0;height:2.1rem;padding:0 .7rem;font-size:.76rem;}
+  #v31 .lform.lformcapsule2 button{margin:0;height:2.1rem;border-radius:999px;padding:0 1.05rem;white-space:nowrap;}
+  #v31 .contact{margin-top:1.4rem;}
+
+  /* ================= 32 VERTICAL RULE + DROP CAP ================= */
+  #v32 .rulewrap{border-left:2px solid var(--blue);padding-left:1.4rem;max-width:36rem;}
+  #v32 .h{font-size:1.6rem;font-weight:800;letter-spacing:-.025em;margin:0 0 1rem;}
+  #v32 .h b{color:var(--blue);}
+  #v32 .dropcap p:first-child::first-letter{float:left;font-size:2.8rem;font-weight:800;line-height:.8;
+    padding:.1rem .35rem 0 0;color:#60a5fa;}
+  #v32 .dropcap p{margin:0 0 .9rem;font-size:.86rem;line-height:1.62;color:var(--sub);}
+  #v32 .rulewrap .lform{max-width:24rem;margin-top:.5rem;flex-direction:row;flex-wrap:wrap;align-items:end;gap:.7rem;}
+  #v32 .rulewrap .lform span{display:none;}
+  #v32 .rulewrap .lform input{width:9.5rem;}
+  #v32 .rulewrap .lform button{border-radius:999px;height:2.2rem;margin-top:0;}
+  #v32 .footstrip{margin-top:1.8rem;padding-top:1.1rem;border-top:1px solid rgb(255 255 255 / .08);
+    display:flex;flex-wrap:wrap;gap:1rem 1.6rem;}
+  #v32 .footstrip .ti{font-size:.63rem;font-weight:700;letter-spacing:.03em;color:var(--mute);text-transform:uppercase;}
+  #v32 .contact{margin-top:1.2rem;}
+
+  /* ================= 33 PROVIN.LV REAL HERO DNA REPLICA ================= */
+  .replicaWrap{display:flex;gap:1.7rem;flex-wrap:wrap;align-items:flex-start;}
+  .replicaCol{display:flex;flex-direction:column;align-items:center;}
+
+  .browserWin{flex:1 1 34rem;min-width:19rem;border-radius:14px;overflow:hidden;
+    border:1px solid var(--hair);box-shadow:0 30px 60px -20px rgb(0 0 0 / .6);}
+  .browserBar{height:2.1rem;display:flex;align-items:center;gap:.4rem;padding:0 .8rem;
+    background:#111318;border-bottom:1px solid var(--hair);}
+  .browserBar .bdot{width:.5rem;height:.5rem;border-radius:50%;flex-shrink:0;}
+  .browserBar .burl{margin-left:.5rem;font-size:.6rem;color:var(--mute);
+    background:rgb(255 255 255 / .04);border-radius:999px;padding:.18rem .7rem;}
+
+  .realbg{position:relative;
+    background:linear-gradient(180deg,#0d1118 0%,#07080a 42%,#0a0c10 100%);}
+  .realbg::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(ellipse 95% 85% at 50% 42%, transparent 52%, rgb(0 0 0 / .28) 100%);}
+
+  .rheader{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+    height:3rem;padding:0 1.1rem;background:linear-gradient(180deg, rgb(7 8 10 / .88), rgb(7 8 10 / 0));
+    backdrop-filter:blur(6px);}
+  .rheader .rlogo{font-size:.86rem;font-weight:800;letter-spacing:-.02em;color:#fff;}
+  .rheader .rlogo b{color:#60a5fa;}
+  .rheader .rnavdot{width:1.5rem;height:1.5rem;border-radius:50%;background:rgb(255 255 255 / .08);}
+
+  .realDesktopGrid{position:relative;z-index:1;display:grid;
+    grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:2rem;align-items:center;padding:2.6rem 1.8rem;}
+  .realTitleDesktop{margin:0;font-size:1.85rem;line-height:1.12;font-weight:800;letter-spacing:-.02em;color:#fff;}
+  .realTitleDesktop b{color:#2563eb;}
+  .realLeadDesktop p{margin:.9rem 0 0;font-size:.82rem;line-height:1.6;color:rgb(228 231 236 / .94);max-width:31rem;}
+  .realTrustRow{display:flex;flex-wrap:wrap;gap:.9rem 1.3rem;margin-top:1.3rem;}
+  .realTrustRow .ti{display:flex;align-items:center;gap:.4rem;font-size:.65rem;font-weight:600;color:var(--mute);}
+  .realTrustRow .ti .ic{width:.8rem;height:.8rem;color:#93c5fd;}
+
+  .rcard{position:relative;z-index:1;border-radius:18px;padding:1.1rem 1.15rem 1.3rem;
+    border:1px solid rgb(255 255 255 / .1);
+    background:linear-gradient(145deg, rgb(255 255 255 / .05) 0%, rgb(255 255 255 / .02) 42%, rgb(255 255 255 / .012) 100%);
+    box-shadow:0 25px 50px -12px rgb(0 0 0 / .7),0 16px 32px -10px rgb(0 0 0 / .55),
+      0 4px 12px -2px rgb(0 0 0 / .35),0 0 0 1px rgb(255 255 255 / .05);}
+  .rcard.mobileCard{background:transparent;box-shadow:none;border-color:rgb(255 255 255 / .08);padding:.8rem;}
+  .rcardEyebrow{margin:0 0 .3rem;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:rgb(96 165 250 / .95);text-align:center;}
+  .rcardTitle{margin:0 0 .5rem;font-size:1.05rem;font-weight:700;letter-spacing:-.01em;text-align:center;color:#f4f4f5;}
+  .rcardTitle b{color:#60a5fa;}
+  .rcardDesc{margin:0 0 .85rem;font-size:.82rem;line-height:1.42;font-weight:600;color:#f1f5f9;text-align:center;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+  .rcardFoot{margin:.7rem 0 0;font-size:.66rem;color:rgb(148 163 184 / .65);text-align:center;}
+  .rcardFoot a{color:#93c5fd;text-decoration:none;}
+
+  .rform{display:flex;flex-direction:column;gap:.6rem;}
+  .rform label{display:block;}
+  .rform span{display:block;margin-bottom:.3rem;font-size:.6rem;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:rgb(148 163 184 / .75);}
+  .rinput{box-sizing:border-box;width:100%;min-height:44px;border-radius:12px;border:1px solid rgb(255 255 255 / .15);
+    background:rgb(8 10 14 / .55);padding:.6rem .85rem;font-size:.85rem;color:rgb(245 248 252 / .96);
+    outline:none;font-family:inherit;}
+  .rinput::placeholder{color:rgb(210 214 222 / .45);}
+  .rinput:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgb(37 99 235 / .22);}
+  .rcta{position:relative;overflow:hidden;box-sizing:border-box;width:100%;min-height:52px;padding:.8rem 1rem;
+    border:1px solid rgb(255 255 255 / .12);border-radius:999px;
+    background:linear-gradient(180deg,#1a6fd4 0%,#1459ad 100%);color:#fff;font-family:inherit;
+    font-size:.8rem;font-weight:750;letter-spacing:.02em;cursor:pointer;margin-top:.15rem;}
+  .rcta:hover{filter:brightness(1.05);}
+  .rcta .rshimmer{position:absolute;inset:-40% -60%;pointer-events:none;
+    background:linear-gradient(105deg,transparent 38%,rgb(255 255 255 / .16) 48%,transparent 58%);
+    animation:rShimmer 5.2s ease-in-out infinite;}
+  .rcta .rlabel{position:relative;z-index:1;}
+  @keyframes rShimmer{0%{transform:translateX(-35%);}50%{transform:translateX(35%);}100%{transform:translateX(-35%);}}
+
+  .phoneshell{flex:0 0 300px;width:300px;border-radius:2.3rem;padding:.5rem;
+    background:#050506;border:1px solid rgb(255 255 255 / .12);box-shadow:0 30px 60px -20px rgb(0 0 0 / .75);}
+  .phonenotch{width:5.4rem;height:.42rem;margin:.35rem auto .45rem;border-radius:999px;background:#1a1a1c;}
+  .phonescreen{border-radius:1.75rem;overflow:hidden;position:relative;}
+  .phoneviewport{height:600px;overflow-y:auto;position:relative;scrollbar-width:thin;}
+  .phoneviewport::-webkit-scrollbar{width:5px;}
+  .phoneviewport::-webkit-scrollbar-thumb{background:rgb(255 255 255 / .15);border-radius:99px;}
+  .rfoldhint{position:relative;z-index:1;margin:.75rem 0 0;padding:0 1rem;font-size:.62rem;
+    color:rgb(148 163 184 / .55);text-align:center;}
+  .rmorewrap{position:relative;z-index:1;padding:0 1rem 2rem;}
+  .rmorewrap h4{margin:1.6rem 0 .3rem;font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:#93c5fd;}
+  .replicaCaption{margin-top:.7rem;font-size:.68rem;line-height:1.5;color:var(--mute);text-align:center;max-width:300px;}
+
+  /* ================= 34 COMBINED: real DNA (33) + linear minimal (21) + moving logo strip (26) ================= */
+  .v34stage{position:relative;z-index:1;padding:2.2rem 1.6rem 2rem;text-align:center;overflow:hidden;}
+  .v34stage.v34stageM{padding:1.4rem 1rem 1.2rem;}
+  .v34lgrad{position:absolute;inset:-30% -10% auto -10%;height:20rem;z-index:0;pointer-events:none;
+    background:radial-gradient(55% 70% at 50% 0%, rgb(37 99 235 / .38), transparent 70%);filter:blur(6px);}
+  .v34head{position:relative;z-index:1;margin:0 auto;font-size:clamp(1.7rem,4.4vw,2.9rem);font-weight:800;
+    letter-spacing:-.035em;line-height:1.05;max-width:34rem;color:#fff;}
+  .v34head b{color:#60a5fa;}
+  .v34head.v34headM{font-size:1.35rem;max-width:100%;}
+  .v34full{position:relative;z-index:1;max-width:32rem;margin:1.3rem auto 0;text-align:left;}
+  .v34full p{margin:0 0 .7rem;font-size:.85rem;line-height:1.58;color:var(--sub);}
+  .v34full p:last-child{margin-bottom:0;}
+  .v34loginhead{position:relative;z-index:1;margin:1.6rem auto 0;display:flex;justify-content:center;}
+  .v34btn{border:1px solid rgb(96 165 250 / .4);background:rgb(37 99 235 / .14);color:#dbeafe;
+    font-size:.68rem;font-weight:700;letter-spacing:.03em;border-radius:999px;padding:.55rem 1.1rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:.45rem;white-space:nowrap;font-family:inherit;}
+  .v34btn:hover{background:rgb(37 99 235 / .22);}
+  .v34formwrap{position:relative;z-index:1;max-width:22rem;margin:0 auto;max-height:0;overflow:hidden;
+    transition:max-height .35s ease;}
+  .v34formwrap.open{max-height:15rem;margin-top:1.3rem;}
+
+  .logostrip{position:relative;z-index:1;margin-top:2rem;overflow:hidden;
+    -webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+    mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
+  .logostrip-track{display:flex;width:max-content;gap:1.5rem;animation:logoScroll 26s linear infinite;}
+  @keyframes logoScroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  .logochip{flex:0 0 7.2rem;display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;}
+  .logochip .lbadge{width:2.4rem;height:2.4rem;border-radius:.65rem;border:1px solid rgb(255 255 255 / .14);
+    background:rgb(255 255 255 / .04);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .logochip .lbadge .ic{width:1.1rem;height:1.1rem;color:#93c5fd;}
+  .logochip span{font-size:.6rem;font-weight:650;color:#cbd5e1;line-height:1.25;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.15em;}
+
+  .logogrid{position:relative;z-index:1;display:none;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:1.1rem .8rem;margin:1.6rem 0 0;}
+  .logogrid .logochip{flex:none;}
+
+  #v34.scene{max-width:none;padding-left:0;padding-right:0;padding-bottom:0;}
+  #v34 .cap, #v34 .livebar{
+    max-width:74rem;margin-left:auto;margin-right:auto;padding-left:1.3rem;padding-right:1.3rem;
+  }
+  #v34 .livebar{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;margin:0 auto 1rem;}
+  #v34 .livebar .devtoggle{margin:0;}
+  .liveOpen, .liveExit{
+    font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:#fff;background:rgb(37 99 235 / .85);border:1px solid rgb(96 165 250 / .55);
+    border-radius:999px;padding:.42rem .9rem;cursor:pointer;font-family:inherit;
+  }
+  .liveExit{
+    display:none;position:fixed;top:.8rem;right:.8rem;z-index:120;
+    background:rgb(7 8 10 / .92);
+  }
+  #v34 .liveShell{
+    min-height:100svh;width:100%;max-width:none !important;
+    display:flex;flex-direction:column;
+  }
+  #v34 .v34stage{
+    flex:1;display:flex;flex-direction:column;justify-content:center;
+    padding:2.4rem 1.6rem 2.6rem;overflow:visible;
+  }
+  #v34 .v34formwrap.open{max-height:28rem;}
+  #v34 .v34contact{position:relative;z-index:1;margin-top:1.4rem;text-align:center;}
+  #v34 .device[data-mode="phone"]{
+    border-left:1px solid var(--hair);border-right:1px solid var(--hair);
+  }
+
+  @container (max-width: 460px){
+    #v34 .v34stage{padding:1.2rem 1rem 1.6rem;justify-content:flex-start;}
+    #v34 .v34head{order:1;font-size:1.45rem;}
+    #v34 .v34loginhead{display:none;}
+    #v34 .v34formwrap, #v34 .v34formwrap.open{
+      order:2;max-height:none !important;overflow:visible;margin-top:1.1rem;max-width:100%;
+    }
+    #v34 .v34full{order:3;margin-top:1.8rem;text-align:left;}
+    #v34 .logostrip{display:none;}
+    #v34 .logogrid{order:4;display:grid;}
+    #v34 .v34contact{order:5;}
+  }
+
+  html.fullview .nav,
+  html.fullview .intro{display:none !important;}
+  html.fullview .scene{display:none !important;}
+  html.fullview[data-fullview="v34"] #v34{display:block !important;padding:0;border:0;margin:0;max-width:none;}
+  html.fullview[data-fullview="v34"] #v34 .cap{display:none !important;}
+  html.fullview[data-fullview="v34"] #v34 .livebar{
+    display:flex !important;position:fixed;top:.65rem;left:.8rem;z-index:120;
+    margin:0;padding:0;max-width:none;background:transparent;
+  }
+  html.fullview[data-fullview="v34"] #v34 .liveOpen{display:none;}
+  html.fullview[data-fullview="v34"] .liveExit{display:inline-flex;}
+  html.fullview[data-fullview="v34"] #v34 .liveShell{min-height:100svh;}
+
+  /* ================= RESET: same jobs as the real home hero ================= */
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  #reset.scene{max-width:none;padding-left:0;padding-right:0;padding-bottom:0;}
+  #reset .cap, #reset .livebar{
+    max-width:74rem;margin-left:auto;margin-right:auto;padding-left:1.3rem;padding-right:1.3rem;
+  }
+  #reset .livebar{display:flex;flex-wrap:wrap;align-items:center;gap:.55rem .7rem;margin:0 auto 1rem;}
+  #reset .livebar .devtoggle{margin:0;}
+  #reset .skins{flex:1 1 100%;}
+  #reset .resetLive{
+    min-height:100svh;width:100%;max-width:none !important;
+  }
+  #reset .resetHero{
+    position:relative;z-index:1;min-height:100svh;display:flex;flex-direction:column;justify-content:center;
+    padding:4.2rem 1.2rem 2rem;
+  }
+  #reset .resetDesktop{display:none;}
+  #reset .resetMobile{width:100%;max-width:22rem;margin:0 auto;}
+  #reset .resetBody{
+    position:relative;z-index:1;max-width:40rem;margin:0 auto;padding:0 1.2rem 3.5rem;
+  }
+  #reset .resetBody h2{
+    margin:0 0 1rem;font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;
+  }
+  #reset .resetBody .beats{display:flex;flex-direction:column;gap:.5rem;}
+  #reset .beat{
+    width:100%;text-align:left;border:0;border-left:2px solid rgb(255 255 255 / .1);
+    background:transparent;border-radius:0 .7rem .7rem 0;padding:.75rem .9rem;cursor:pointer;font-family:inherit;
+  }
+  #reset .beat:hover{border-left-color:rgb(96 165 250 / .55);background:rgb(255 255 255 / .025);}
+  #reset .beat.on{border-left-color:#2563eb;background:rgb(255 255 255 / .045);}
+  #reset .beat .blab{display:flex;align-items:baseline;gap:.55rem;}
+  #reset .beat .bnum{font-size:.58rem;font-weight:800;letter-spacing:.12em;color:#60a5fa;}
+  #reset .beat .btit{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;}
+  #reset .beat p{margin:.4rem 0 0;font-size:.86rem;line-height:1.62;color:var(--sub);}
+  #reset .resetOneLine{margin:1.2rem 0 0;font-size:1.05rem;line-height:1.45;color:rgb(228 231 236 / .94);max-width:32rem;}
+  #reset .device[data-mode="phone"]{border-left:1px solid var(--hair);border-right:1px solid var(--hair);}
+
+  @container (min-width: 461px){
+    #reset .resetMobile{display:none;}
+    #reset .resetDesktop{
+      display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:4rem;align-items:center;
+      width:100%;max-width:80rem;margin:0 auto;padding:0 2rem;
+    }
+    #reset .resetHero{padding:5rem 0 3rem;}
+    #reset .resetTitle{margin:0;font-size:3rem;line-height:1.1;font-weight:800;letter-spacing:-.025em;color:#fff;}
+    #reset .resetTitle b{color:#2563eb;}
+    #reset .resetBody{max-width:80rem;padding:0 2rem 4rem;}
+    #reset .resetBodyInner{max-width:40rem;}
+    #reset .resetBody .prod{display:none;}
+  }
+
+  /* ---- 10 product-list skins on the RESET structure ---- */
+  .skins{display:flex;flex-wrap:nowrap;gap:.28rem;overflow-x:auto;max-width:min(72vw,46rem);padding-bottom:.1rem;scrollbar-width:thin;}
+  .skins button{
+    flex:0 0 auto;font-size:.56rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--mute);background:rgb(255 255 255 / .04);border:1px solid var(--hair);
+    border-radius:999px;padding:.32rem .62rem;cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  .skins button.on{color:#fff;background:rgb(37 99 235 / .35);border-color:rgb(96 165 250 / .55);}
+  #reset .skinname{margin:.15rem 0 0;font-size:.62rem;color:#93c5fd;letter-spacing:.08em;text-transform:uppercase;}
+
+  #reset .prod{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.15rem .75rem;margin-top:2.2rem;}
+  #reset .proditem{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;}
+  #reset .prodnum,#reset .prodmark,#reset .prodhint{display:none;}
+  #reset .prodbadge{
+    width:2.55rem;height:2.55rem;border-radius:.7rem;border:1px solid rgb(255 255 255 / .14);
+    background:rgb(255 255 255 / .045);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  #reset .prodbadge .ic{width:1.15rem;height:1.15rem;color:#93c5fd;}
+  #reset .prodtitle{
+    margin-top:.5rem;font-size:.6rem;font-weight:650;color:#cbd5e1;line-height:1.25;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.5em;
+  }
+  #reset .prodcopy{min-width:0;width:100%;}
+
+  /* r1 already = default square tiles */
+
+  #reset [data-skin="r2"] .prodbadge{
+    width:3.5rem;height:3.5rem;border-radius:999px;border-color:rgb(255 255 255 / .15);
+    background:rgb(255 255 255 / .03);box-shadow:0 0 12px rgb(37 99 235 / .12);
+  }
+  #reset [data-skin="r2"] .prodbadge .ic{width:1.35rem;height:1.35rem;color:#d4d4d8;}
+  #reset [data-skin="r2"] .prodtitle{font-size:.58rem;letter-spacing:.01em;color:#e4e4e7;}
+
+  #reset [data-skin="r3"] .prodbadge{display:none;}
+  #reset [data-skin="r3"] .prodmark{
+    display:flex;width:2.8rem;height:2.8rem;align-items:center;justify-content:center;
+    border-radius:.75rem;border:1px solid rgb(96 165 250 / .35);
+    background:linear-gradient(180deg, rgb(37 99 235 / .22), rgb(37 99 235 / .06));
+    font-size:.72rem;font-weight:800;letter-spacing:.06em;color:#dbeafe;
+  }
+  #reset [data-skin="r3"] .prodtitle{margin-top:.55rem;}
+
+  #reset [data-skin="r4"] .prod{grid-template-columns:1fr 1fr;gap:.15rem 1.6rem;max-width:34rem;}
+  #reset [data-skin="r4"] .proditem{
+    flex-direction:row;align-items:center;gap:.7rem;text-align:left;
+    padding:.55rem 0;border-bottom:1px solid rgb(255 255 255 / .07);
+  }
+  #reset [data-skin="r4"] .prodnum{
+    display:block;flex:0 0 1.4rem;font-size:.62rem;font-weight:800;letter-spacing:.08em;color:#60a5fa;
+  }
+  #reset [data-skin="r4"] .prodbadge{width:1.85rem;height:1.85rem;border-radius:.45rem;}
+  #reset [data-skin="r4"] .prodbadge .ic{width:.9rem;height:.9rem;}
+  #reset [data-skin="r4"] .prodtitle{margin:0;min-height:0;-webkit-line-clamp:2;font-size:.72rem;font-weight:600;color:#e2e8f0;}
+
+  #reset [data-skin="r5"] .prodbadge{
+    width:2.7rem;height:2.7rem;border-radius:999px;border:0;
+    background:linear-gradient(180deg,#1a6fd4,#1459ad);box-shadow:0 6px 14px rgb(20 89 173 / .35);
+  }
+  #reset [data-skin="r5"] .prodbadge .ic{width:1.15rem;height:1.15rem;color:#fff;}
+
+  #reset [data-skin="r6"] .prod{grid-template-columns:1fr 1fr;gap:0 2rem;max-width:34rem;}
+  #reset [data-skin="r6"] .proditem{
+    flex-direction:row;align-items:center;gap:.65rem;text-align:left;
+    padding:.7rem 0;border-bottom:1px solid rgb(255 255 255 / .08);
+  }
+  #reset [data-skin="r6"] .prodbadge{width:auto;height:auto;border:0;background:none;border-radius:0;}
+  #reset [data-skin="r6"] .prodbadge .ic{width:1rem;height:1rem;color:#60a5fa;}
+  #reset [data-skin="r6"] .prodtitle{margin:0;min-height:0;font-size:.74rem;font-weight:600;color:#e2e8f0;}
+
+  #reset [data-skin="r7"] .prod{gap:1rem .7rem;}
+  #reset [data-skin="r7"] .proditem{
+    padding:.85rem .45rem .75rem;border:1px solid rgb(255 255 255 / .1);
+    border-radius:.9rem;background:rgb(255 255 255 / .03);
+  }
+  #reset [data-skin="r7"] .prodhint{
+    display:block;margin-top:.2rem;font-size:.52rem;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:rgb(148 163 184 / .75);
+  }
+  #reset [data-skin="r7"] .prodtitle{min-height:2.5em;margin-top:.45rem;}
+
+  #reset [data-skin="r8"] .prod{display:flex;flex-wrap:wrap;gap:.5rem;max-width:36rem;}
+  #reset [data-skin="r8"] .proditem{
+    flex-direction:row;align-items:center;gap:.45rem;text-align:left;
+    padding:.38rem .75rem .38rem .38rem;border:1px solid rgb(255 255 255 / .12);
+    border-radius:999px;background:rgb(255 255 255 / .04);
+  }
+  #reset [data-skin="r8"] .prodbadge{width:1.7rem;height:1.7rem;border-radius:999px;}
+  #reset [data-skin="r8"] .prodbadge .ic{width:.8rem;height:.8rem;}
+  #reset [data-skin="r8"] .prodtitle{margin:0;min-height:0;-webkit-line-clamp:1;font-size:.64rem;font-weight:650;color:#e2e8f0;}
+
+  #reset [data-skin="r9"] .prod{grid-template-columns:1fr 1fr;gap:.85rem 1.2rem;max-width:36rem;}
+  #reset [data-skin="r9"] .proditem{flex-direction:row;align-items:flex-start;gap:.7rem;text-align:left;}
+  #reset [data-skin="r9"] .prodbadge{width:2.2rem;height:2.2rem;border-radius:.6rem;}
+  #reset [data-skin="r9"] .prodcopy{display:flex;flex-direction:column;min-width:0;padding-top:.1rem;}
+  #reset [data-skin="r9"] .prodtitle{margin:0;min-height:0;font-size:.74rem;font-weight:650;color:#f1f5f9;}
+  #reset [data-skin="r9"] .prodhint{
+    display:block;margin-top:.18rem;font-size:.52rem;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:#60a5fa;
+  }
+
+  #reset [data-skin="r10"] .prod{position:relative;gap:1.6rem .4rem;}
+  #reset [data-skin="r10"] .proditem{position:relative;}
+  #reset [data-skin="r10"] .prodbadge{
+    width:2.4rem;height:2.4rem;border-radius:999px;border-color:rgb(96 165 250 / .45);
+    background:#0b1220;z-index:1;
+  }
+  #reset [data-skin="r10"] .proditem:not(:nth-child(4n+1))::before{
+    content:"";position:absolute;top:1.2rem;right:50%;width:100%;height:1px;
+    background:linear-gradient(90deg, rgb(96 165 250 / .35), rgb(96 165 250 / .08));
+    z-index:0;
+  }
+  #reset [data-skin="r10"] .prodtitle{font-size:.55rem;color:#94a3b8;}
+
+  @container (max-width: 460px){
+    #reset .prod{grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem .7rem;margin-top:1.4rem;}
+    #reset [data-skin="r4"] .prod,
+    #reset [data-skin="r6"] .prod,
+    #reset [data-skin="r9"] .prod{grid-template-columns:1fr;max-width:none;}
+    #reset [data-skin="r8"] .prod{display:flex;}
+    #reset [data-skin="r10"] .proditem:nth-child(2n+1)::before{display:none;}
+    #reset [data-skin="r10"] .proditem:not(:nth-child(2n+1))::before{width:100%;}
+    #reset .resetBody .prod{display:grid;}
+    #reset [data-skin="r8"] .resetBody .prod{display:flex;}
+  }
+
+  html.fullview[data-fullview="reset"] #reset{display:block !important;padding:0;border:0;margin:0;max-width:none;}
+  html.fullview[data-fullview="reset"] #reset .cap{display:none !important;}
+  html.fullview[data-fullview="reset"] #reset .livebar{
+    display:flex !important;position:fixed;top:.55rem;left:.7rem;z-index:120;
+    margin:0;padding:.45rem .55rem;max-width:min(92vw,40rem);background:rgb(7 8 10 / .82);
+    border:1px solid rgb(255 255 255 / .08);border-radius:.8rem;backdrop-filter:blur(8px);
+  }
+  html.fullview[data-fullview="reset"] #reset .liveOpen{display:none;}
+  html.fullview[data-fullview="reset"] .liveExit{display:inline-flex;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <strong>PROVIN B2B</strong>
+  <a href="#reset" style="color:#fca5a5;">RESET · kā mājas lapa</a>
+  <a href="#v1">01 Šķelts stikls</a>
+  <a href="#v2">02 Vienots panelis</a>
+  <a href="#v3">03 Bento tīkls</a>
+  <a href="#v4">04 Redakcijas minimālisms</a>
+  <a href="#v5">05 Datu termināls</a>
+  <a href="#v6">06 Laika līnija</a>
+  <a href="#v7">07 Sānu navigācija</a>
+  <a href="#v8">08 Pilnekrāna fons</a>
+  <a href="#v9">09 Divkrāsu panelis</a>
+  <a href="#v10">10 Produkta priekšskats</a>
+  <a href="#v11">11 Ikonu sliekšņjosla</a>
+  <a href="#v12">12 Soļu josla</a>
+  <a href="#v13">13 Notion dokuments</a>
+  <a href="#v14">14 KPI josla</a>
+  <a href="#v15">15 Asistenta saruna</a>
+  <a href="#v16">16 Riņķa medaljoni</a>
+  <a href="#v17">17 Lipīga josla</a>
+  <a href="#v18">18 Akordeons</a>
+  <a href="#v19">19 Karšu kaudzīte</a>
+  <a href="#v20">20 Pierādījumu panelis</a>
+  <strong style="margin-left:.7rem;">2. sērija (bez kastēm) →</strong>
+  <a href="#v21">21 Linear minimālisms</a>
+  <a href="#v22">22 Nobraukuma līnijas grafika</a>
+  <a href="#v23">23 Radara skenēšana</a>
+  <a href="#v24">24 Datu tīkla grafs</a>
+  <a href="#v25">25 Cilnes / viena rindkopa</a>
+  <a href="#v26">26 Kustīga josla + login</a>
+  <a href="#v27">27 Stāsta ritms</a>
+  <a href="#v28">28 Punktu režģis + kapsula</a>
+  <a href="#v29">29 Redakcijas kolonnas</a>
+  <a href="#v30">30 Liels skaitlis</a>
+  <a href="#v31">31 Duotone gradients</a>
+  <a href="#v32">32 Vertikāla līnija + iniciālis</a>
+  <strong style="margin-left:.7rem;">★ Reālā hero replika →</strong>
+  <a href="#v33" style="color:#fca5a5;">33 PROVIN.LV oriģinālā hero DNS</a>
+  <a href="#v34" style="color:#fca5a5;">34 33+21+26 kombinēts</a>
+</nav>
+
+<section class="scene" id="reset">
+  <div class="cap"><b>RESET</b><h2>Tā pati struktūra, kas strādā provin.lv sākumlapā</h2>
+    <p>Nevis jauns stils. Hero dara vienu darbu (ieiet kontā), teksts dzīvo zem locījuma.
+      Telefonā pirmajā skatā ir tikai login karte, kā mājas lapā ir tikai cenas karte.
+      Desktopā: liels virsraksts pa kreisi, karte pa labi. Trīs rindkopas paliek pilnas, tikai
+    <p>Nevis jauns karkass. Zemāk ir 10 noformējumi <b>tieši šai</b> struktūrai. Mainās tikai
+      ikonu/pakalpojumu siena. Telefonā pirmajā skatā paliek tikai login.</p></div>
+  <div class="livebar">
+    <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+    <button class="liveOpen" type="button" id="reset-fullview">Atvērt pilno skatu</button>
+    <p class="skinname" id="reset-skin-name">06 · Tikai līnijas</p>
+    <div class="skins" id="reset-skins">
+      <button type="button" data-skin="r1">01 Kvadrāti</button>
+      <button type="button" data-skin="r2">02 Mājas riņķi</button>
+      <button type="button" data-skin="r3">03 Monogrammas</button>
+      <button type="button" data-skin="r4">04 Numuri</button>
+      <button type="button" data-skin="r5">05 Pildīti riņķi</button>
+      <button class="on" type="button" data-skin="r6">06 Līnijas</button>
+      <button type="button" data-skin="r7">07 Logo kartītes</button>
+      <button type="button" data-skin="r8">08 Čipi</button>
+      <button type="button" data-skin="r9">09 Ikonas + tips</button>
+      <button type="button" data-skin="r10">10 Savienota josla</button>
+    </div>
+  </div>
+
+  <div class="resetLive realbg device" data-mode="desktop" data-skin="r6">
+    <div class="resetHero">
+      <div class="resetMobile">
+        <h1 class="sr-only">PROVIN BUSINESS</h1>
+        <div class="rcard mobileCard">
+          <p class="rcardEyebrow">PARTNERIEM</p>
+          <h3 class="rcardTitle">PRO<b>VIN</b> BUSINESS</h3>
+          <p class="rcardDesc">Novērš iepirkuma riskus un sargā uzņēmuma reputāciju. Visi dati vienā atskaitē.</p>
+          <form class="rform" id="reset-form-m"></form>
+        </div>
+      </div>
+      <div class="resetDesktop">
+        <div>
+          <h1 class="resetTitle">PRO<b>VIN</b> BUSINESS</h1>
+          <p class="resetOneLine">Novērš iepirkuma riskus un sargā uzņēmuma reputāciju. Visi dati vienā atskaitē.</p>
+          <div class="prod" id="reset-logos-d"></div>
+        </div>
+        <div class="rcard">
+          <p class="rcardEyebrow">PIETEIKŠANĀS</p>
+          <h3 class="rcardTitle">Partneru <b>konts</b></h3>
+          <p class="rcardDesc">Ieiet, lai pasūtītu atskaiti.</p>
+          <form class="rform" id="reset-form-d"></form>
+        </div>
+      </div>
+    </div>
+    <div class="resetBody">
+      <div class="resetBodyInner">
+        <h2>Kāpēc PROVIN BUSINESS</h2>
+        <div class="beats" id="reset-lead"></div>
+        <div class="prod" id="reset-logos-m"></div>
+        <div class="contact" id="reset-contact"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="intro">
+  <b>Reset · ne jauns stils</b>
+  <h1>Kāpēc neviens variants nestrādāja</h1>
+  <p>Mājas lapas hero dara <b>vienu</b> darbu: kartīte pirmajā skatā. Partneru lapa mēģināja darīt trīs:
+    pārliecināt ar garu tekstu, ielogot, un izskatīties kā mājas lapa. Kostīms mainījās 34 reizes,
+    darbs palika tas pats. RESET zemāk ir tā pati mājas struktūra: hero = login, teksts = zem locījuma.</p>
+  <p>Saturs (virsraksts, 3 pamatteksta rindkopas, kontaktinfo, login forma un 7 pakalpojumu rindas) visur ir identisks
+    tekstuāli - mainīts ir tikai pasniegšanas veids. Katram variantam augšā ir poga "Desktop / Telefons" - pārslēdz,
+    lai redzētu, kā tas pārkārtojas mobilajā platumā.</p>
+  <p><b style="color:#93c5fd;">1.-20. variants</b> bija "kastu" pieeja - rāmji, tabulas, sānjoslas, par daudz uzreiz
+    redzama satura. <b style="color:#93c5fd;">21.-32. variants</b> (<a href="#v21" style="color:#93c5fd;">lēkt uz to uzreiz</a>)
+    ir gandrīz bez rāmjiem/robežlīnijām, Linear/Stripe/Vercel tipa gaisīgums, plus ilustratīvi/grafiski elementi
+    (nobraukuma līnija, radars, datu tīkls, liels skaitlis), kas rāda PROVIN kā datu produktu, ne tikai teksta kastes.
+    <b style="color:#fca5a5;">Svarīgi: visos šajos variantos visas 3 pamatteksta rindkopas ir pilnā apjomā vienmēr
+    redzamas pēc noklusējuma</b> - nekas nav paslēpts aiz "lasīt vairāk" vai cilnēm.</p>
+  <p><b style="color:#fca5a5;">33. variants</b> (<a href="#v33" style="color:#fca5a5;">lēkt uz to uzreiz</a>) ir
+    atsevišķs no pirmajiem 32 - tas nav "jauns stils", bet gan reālā provin.lv sākumlapas hero pikseļu DNS
+    (fona gradients, stikla kartīte, ievadlauki, mirdzuma poga) tieši pārnesta uz B2B login. Blakus ir fiksēta
+    600px augstuma telefona rāmja simulācija, kas pierāda: login poga redzama pirmajā skatā bez ritināšanas.</p>
+  <p><b style="color:#fca5a5;">34. variants</b> (<a href="#v34" style="color:#fca5a5;">lēkt uz pilno skatu</a>) apvieno
+    <b>33.</b> (reālā fona/ievadlauku DNS), <b>21. Linear-style minimālismu</b> un <b>26. Kustīgo joslu</b>.
+    Atverot šo variantu, tas palaižas kā <b>īstā lapas skats (100vh)</b>, ne miniatūra rāmī. Telefona režīmā login
+    paliek pirmajā skatā. Pakalpojumu logotipi ir vienāda izmēra kvadrāti; pievienots 8. pakalpojums
+    <b style="color:#93c5fd;">"Nobraukuma vēsture"</b> simetrijai (4+4).</p>
+</div>
+
+<!-- ============================================================ 01 ============================================================ -->
+<section class="scene" id="v1">
+  <div class="cap"><b>01</b><h2>Šķelts stikls</h2>
+    <p>Liels, drošs virsraksts kreisajā pusē; login forma peld kā stikla panelis pāri fonam. Pakalpojumu saraksts pārtop
+      par 4 kolonnu "chip" joslu zem locījuma, ne garu sarakstu.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="frame device" data-mode="desktop">
+    <div class="split">
+      <div>
+        <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+        <div class="lead" id="v1-lead"></div>
+        <div class="contact" id="v1-contact"></div>
+      </div>
+      <div class="glass">
+        <form class="lform" id="v1-form"></form>
+      </div>
+    </div>
+    <div class="strip" id="v1-items"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 02 ============================================================ -->
+<section class="scene" id="v2">
+  <div class="cap"><b>02</b><h2>Vienots panelis</h2>
+    <p>Viens liels, mierīgs bloks bez iekšējām kastēm. Pakalpojumi kā smalka tabula ar svītrojumu, nevis atsevišķas
+      "flīzes" - vizuāli vieglāk, mazāk kastes-uz-kastes sajūtas.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="card device" data-mode="desktop">
+    <div class="top">
+      <div>
+        <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+        <div class="lead" id="v2-lead"></div>
+      </div>
+      <form class="lform" id="v2-form"></form>
+    </div>
+    <table id="v2-items"></table>
+    <div class="contact" id="v2-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 03 ============================================================ -->
+<section class="scene" id="v3">
+  <div class="cap"><b>03</b><h2>Bento tīkls</h2>
+    <p>Moderns "bento" izkārtojums - dažāda izmēra kastes vienā tīklā. Login forma kļūst par vienu no blokiem, nevis
+      atsevišķu sānu paneli.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="bento device" data-mode="desktop">
+    <div class="bhero">
+      <h3>PRO<b>VIN</b> BUSINESS</h3>
+      <p id="v3-lead"></p>
+    </div>
+    <div class="blogin">
+      <form class="lform" id="v3-form"></form>
+    </div>
+    <div class="btile bwide" id="v3-contact-tile"></div>
+    <div id="v3-items"></div>
+    <div class="bfoot" id="v3-foot"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 04 ============================================================ -->
+<section class="scene" id="v4">
+  <div class="cap"><b>04</b><h2>Redakcijas minimālisms</h2>
+    <p>Bez kastēm un fona plankumiem - liela tipogrāfija, plānas līnijas, daudz gaisa. Pakalpojumi kā numurēts
+      saraksts, login forma vienkārša, bez rāmja.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="ehead">
+      <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+      <div class="lead" id="v4-lead"></div>
+    </div>
+    <div class="grid">
+      <div>
+        <ul class="elist" id="v4-items"></ul>
+      </div>
+      <div>
+        <form class="lform" id="v4-form"></form>
+        <div class="contact esub" id="v4-contact"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 05 ============================================================ -->
+<section class="scene" id="v5">
+  <div class="cap"><b>05</b><h2>Datu termināls</h2>
+    <p>Monospace, "sistēmas žurnāla" estētika - sasaucas ar PROVIN kā datu/audita produktu. Pakalpojumi izskatās pēc
+      pabeigtām pārbaudēm ([ok] ... ), login forma kā termināļa komandrinda.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="term device" data-mode="desktop">
+    <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>provin_business.sh</span></div>
+    <div class="term-body">
+      <div>
+        <h3 class="h">provin<b>@</b>business</h3>
+        <div class="lead" id="v5-lead"></div>
+        <ul class="log" id="v5-items"></ul>
+      </div>
+      <div>
+        <form class="lform" id="v5-form"></form>
+        <div class="contact" id="v5-contact" style="font-family:inherit;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 ============================================================ -->
+<section class="scene" id="v6">
+  <div class="cap"><b>06</b><h2>Vertikāla laika līnija</h2>
+    <p>Pakalpojumi pasniegti kā process/plūsma, ne statisks saraksts - katrs punkts uz vertikālas līnijas. Rada
+      sajūtu par "ceļu", ko atskaite iziet, nevis vienkārši uzskaitījumu.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="layout device" data-mode="desktop">
+    <div>
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="lead" id="v6-lead"></div>
+      <div class="tl" id="v6-items"></div>
+    </div>
+    <div class="panel">
+      <form class="lform" id="v6-form"></form>
+      <div class="contact" id="v6-contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 07 ============================================================ -->
+<section class="scene" id="v7">
+  <div class="cap"><b>07</b><h2>Sānu navigācija (app skats)</h2>
+    <p>Izskatās pēc produkta paneļa, ne mārketinga lapas - kreisajā pusē fiksēts saraksts kā izvēlne, labajā pusē
+      teksts un login. Stiprina "šis ir nopietns B2B rīks" sajūtu.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="app device" data-mode="desktop">
+    <div class="side">
+      <b>Iekļauts pakalpojumā</b>
+      <ul id="v7-items"></ul>
+    </div>
+    <div class="main">
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="cols">
+        <div class="lead" id="v7-lead"></div>
+        <form class="lform" id="v7-form"></form>
+      </div>
+      <div class="contact" id="v7-contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 08 ============================================================ -->
+<section class="scene" id="v8">
+  <div class="cap"><b>08</b><h2>Pilnekrāna fons + karuselis</h2>
+    <p>Centrēts, "hero" tipa skats ar gaismas plankumiem fonā; login forma mazs, kompakts panelis pa vidu. Pakalpojumi
+      ripina horizontāli kā kartītes zem locījuma.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="full device" data-mode="desktop">
+    <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+    <div class="lead" id="v8-lead"></div>
+    <form class="lform" id="v8-form"></form>
+    <div class="contact" id="v8-contact" style="max-width:20rem;margin:1rem auto 0;"></div>
+    <div class="carousel" id="v8-items"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 09 ============================================================ -->
+<section class="scene" id="v9">
+  <div class="cap"><b>09</b><h2>Divkrāsu panelis</h2>
+    <p>Spēcīgs kontrasts - kreisajā pusē tumšs zīmola panelis ar tekstu, labajā pusē gaišs panelis ar pakalpojumiem un
+      login formu. Vizuāli "pārtrauc" tumšo monotoniju.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="duo device" data-mode="desktop">
+    <div class="dark">
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="lead" id="v9-lead"></div>
+      <div class="contact" id="v9-contact"></div>
+    </div>
+    <div class="light">
+      <div id="v9-items"></div>
+      <form class="lform" style="margin-top:1.4rem;" id="v9-form"></form>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 10 ============================================================ -->
+<section class="scene" id="v10">
+  <div class="cap"><b>10</b><h2>Produkta priekšskats</h2>
+    <p>Pakalpojumu saraksts pasniegts kā "ekrānšāviņš" no paša produkta (pārlūka logs ar rindām un statusa zīmi), ne kā
+      mārketinga flīzes - rāda, ko klients faktiski saņems.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="layout device" data-mode="desktop">
+    <div>
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="lead" id="v10-lead"></div>
+      <div class="mock">
+        <div class="chrome"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>atskaite.provin.lv</span></div>
+        <div class="mockbody" id="v10-items"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <form class="lform" id="v10-form"></form>
+      <div class="contact" id="v10-contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 11 ============================================================ -->
+<section class="scene" id="v11">
+  <div class="cap"><b>11</b><h2>Ikonu sliekšņjosla</h2>
+    <p>Tuvāk 07 idejai, bet minimālāks - kreisajā pusē tikai šauna ikonu sleja (bez teksta blokiem), kā VS Code/produkta
+      "activity bar". Teksts un login labajā pusē divās kolonnās.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="rail-app device" data-mode="desktop">
+    <div class="railbar" id="v11-items"></div>
+    <div class="main">
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="cols">
+        <div class="lead" id="v11-lead"></div>
+        <form class="lform" id="v11-form"></form>
+      </div>
+      <div class="contact" id="v11-contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 12 ============================================================ -->
+<section class="scene" id="v12">
+  <div class="cap"><b>12</b><h2>Horizontāla soļu josla</h2>
+    <p>Tuvāk 06 idejai (process/plūsma), bet horizontāli un kompakti - 7 soļi virs locījuma kā progresa josla, tad
+      teksts un login divās kolonnās.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+    <div class="steps" id="v12-items"></div>
+    <div class="cols">
+      <div class="lead" id="v12-lead"></div>
+      <form class="lform" id="v12-form"></form>
+    </div>
+    <div class="contact" id="v12-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 13 ============================================================ -->
+<section class="scene" id="v13">
+  <div class="cap"><b>13</b><h2>Notion tipa dokuments</h2>
+    <p>Izskatās pēc pārskatāma "wiki" dokumenta, ne mārketinga lapas. Login ir iestrādāts tekstā kā izceltais bloks
+      ("callout"), pakalpojumi kā vienkāršas ikonu rindas.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="docwrap device" data-mode="desktop">
+    <div class="eyebrow">Partneriem</div>
+    <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+    <div class="lead" id="v13-lead"></div>
+    <div class="callout">
+      <p>Pieslēgties partnera kontam</p>
+      <form class="lform" id="v13-form"></form>
+    </div>
+    <div id="v13-items"></div>
+    <div class="contact" id="v13-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 14 ============================================================ -->
+<section class="scene" id="v14">
+  <div class="cap"><b>14</b><h2>KPI statistikas josla</h2>
+    <p>Izskatās pēc SaaS paneļa galvenes - login ir kompakta, horizontāla rinda augšējā stūrī, pakalpojumi kā 7 mazas
+      KPI kartītes zem tās.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="kpi-header">
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <form class="lform" id="v14-form"></form>
+    </div>
+    <div class="lead" id="v14-lead" style="margin-top:1.2rem;"></div>
+    <div class="kpirow" id="v14-items"></div>
+    <div class="contact" id="v14-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 15 ============================================================ -->
+<section class="scene" id="v15">
+  <div class="cap"><b>15</b><h2>Asistenta saruna</h2>
+    <p>Teksts pasniegts kā asistenta ziņu "burbuļi", login forma kā sarunas ievades josla apakšā. Draudzīgāks,
+      mazāk "korporatīvs" tonis vizuāli (teksts nemainīts).</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="chatwrap device" data-mode="desktop">
+    <div class="bubble">
+      <div class="avatar">P</div>
+      <div class="msg">
+        <h3>PRO<b>VIN</b> BUSINESS</h3>
+        <div class="lead" id="v15-lead"></div>
+      </div>
+    </div>
+    <div class="bubble">
+      <div class="avatar">P</div>
+      <div class="msg" id="v15-items"></div>
+    </div>
+    <div class="chatbar">
+      <form class="lform" id="v15-form"></form>
+    </div>
+    <div class="contact" id="v15-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 16 ============================================================ -->
+<section class="scene" id="v16">
+  <div class="cap"><b>16</b><h2>Riņķa medaljoni</h2>
+    <p>Plakātam līdzīgs, centrēts izkārtojums - 7 apļveida ikonu medaljoni zem virsraksta, login forma centrēta un
+      kompakta apakšā.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="medwrap device" data-mode="desktop">
+    <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+    <div class="lead" id="v16-lead"></div>
+    <div class="medals" id="v16-items"></div>
+    <form class="lform" id="v16-form"></form>
+    <div class="contact" id="v16-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 17 ============================================================ -->
+<section class="scene" id="v17">
+  <div class="cap"><b>17</b><h2>Lipīga apakšējā josla</h2>
+    <p>Mobilo lietotņu paradums, atnests uz desktopu - saturs ritina augšā, login rinda vienmēr redzama, pielipusi
+      pie loga apakšas.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="stickywrap device" data-mode="desktop">
+    <div class="stickyscroll">
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="lead" id="v17-lead"></div>
+      <div id="v17-items"></div>
+    </div>
+    <div class="stickybar">
+      <form class="lform" id="v17-form"></form>
+    </div>
+  </div>
+  <div class="contact" id="v17-contact" style="margin-top:.9rem;"></div>
+</section>
+
+<!-- ============================================================ 18 ============================================================ -->
+<section class="scene" id="v18">
+  <div class="cap"><b>18</b><h2>Akordeona saraksts</h2>
+    <p>Pakalpojumi ir klikšķināmi - katra rinda atveras un parāda apstiprinājumu. Interaktīvāk nekā statisks saraksts,
+      login paliek pastāvīgs sānu panelis.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="layout device" data-mode="desktop">
+    <div>
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="lead" id="v18-lead"></div>
+      <div class="acc" id="v18-items"></div>
+    </div>
+    <div class="panel">
+      <form class="lform" id="v18-form"></form>
+      <div class="contact" id="v18-contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 19 ============================================================ -->
+<section class="scene" id="v19">
+  <div class="cap"><b>19</b><h2>Karšu kaudzīte</h2>
+    <p>Rotaļīgāks, "premium" tonis - pakalpojumi kā sakrautas, viegli sagrieztas kartītes ("fanned" kārtis). Login
+      paliek vienkāršs, mierīgs panelis labajā pusē.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="cols device" data-mode="desktop">
+    <div>
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="lead" id="v19-lead"></div>
+      <div class="fan" id="v19-items"></div>
+    </div>
+    <div>
+      <form class="lform" id="v19-form"></form>
+      <div class="contact" id="v19-contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 20 ============================================================ -->
+<section class="scene" id="v20">
+  <div class="cap"><b>20</b><h2>Pierādījumu panelis</h2>
+    <p>Klasisks konversijas fokuss - kreisajā pusē teksts kā pierādījumu punkti ar ķeksīšiem, labajā pusē "lipīga"
+      login kartīte ar kompaktu pakalpojumu sarakstu apakšā.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="cols device" data-mode="desktop">
+    <div>
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div id="v20-lead"></div>
+    </div>
+    <div class="stickycard">
+      <form class="lform" id="v20-form"></form>
+      <ul class="checklist" id="v20-items"></ul>
+      <div class="contact" id="v20-contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 21 ============================================================ -->
+<section class="scene" id="v21">
+  <div class="cap"><b>21</b><h2>Linear-style minimālisms</h2>
+    <p>Gandrīz bez rāmjiem - milzīgs virsraksts, mīksts gradienta plankums fonā, tikai viena teikuma rindkopa
+      redzama uzreiz (pārējais aiz "Lasīt vairāk"). Login - tikai pasvītrotas ievades, bez kastes. Pakalpojumi kā
+      viegla teksta josla, ne saraksts.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="lstyle device" data-mode="desktop">
+    <div class="lgrad" aria-hidden></div>
+    <h1 class="lhead">PRO<b>VIN</b> BUSINESS</h1>
+    <div class="lfull lead" id="v21-lead"></div>
+    <div class="lloginrow">
+      <form class="lform lformline" id="v21-form"></form>
+    </div>
+    <div class="lpills trustbar" id="v21-items"></div>
+    <div class="contact" id="v21-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 22 ============================================================ -->
+<section class="scene" id="v22">
+  <div class="cap"><b>22</b><h2>Nobraukuma līnijas ilustrācija</h2>
+    <p>Nevis login forma sānos, bet abstrakta grafika - vēstures/nobraukuma līnija kā vizuāls PROVIN datu produkta
+      simbols. Bez rāmjiem, login zem tā kā vienkārša rinda, pakalpojumi kā smalka uzticības josla.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="tlcols">
+      <div>
+        <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+        <p class="short" id="v22-short"></p>
+      </div>
+      <div class="chartbox">
+        <svg class="chartsvg" viewBox="0 0 320 110" aria-hidden="true">
+          <defs>
+            <linearGradient id="v22grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#2563eb"/>
+              <stop offset="100%" stop-color="#93c5fd"/>
+            </linearGradient>
+          </defs>
+          <path class="line" d="M6 88 C 50 90, 70 40, 108 46 S 168 92, 206 58 S 268 18, 314 26"/>
+          <circle cx="108" cy="46" r="3.4"/>
+          <circle cx="206" cy="58" r="3.4"/>
+          <circle cx="314" cy="26" r="3.4"/>
+        </svg>
+        <p class="chartcap">Nobraukuma un servisa vēstures ilustrācija</p>
+      </div>
+    </div>
+    <div class="tlbar">
+      <form class="lform lformline row" id="v22-form"></form>
+    </div>
+    <div class="trustbar" id="v22-items"></div>
+    <div class="contact" id="v22-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 23 ============================================================ -->
+<section class="scene" id="v23">
+  <div class="cap"><b>23</b><h2>Radara skenēšana</h2>
+    <p>Pakalpojumu avoti pasniegti kā "skenējami" punkti ap rotējošu radaru - vizuāla metafora datu apkopošanai no
+      vairākiem avotiem, ne saraksts kastēs.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="radarrow">
+      <div class="radarwrap" aria-hidden="true">
+        <div class="ring"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+        <div class="sweep"></div>
+        <div class="core">P</div>
+      </div>
+      <div>
+        <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+        <p class="short" id="v23-short"></p>
+        <ul class="radarlist" id="v23-items"></ul>
+      </div>
+    </div>
+    <div class="rform">
+      <form class="lform lformline row" id="v23-form"></form>
+    </div>
+    <div class="contact" id="v23-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 24 ============================================================ -->
+<section class="scene" id="v24">
+  <div class="cap"><b>24</b><h2>Datu tīkla grafs</h2>
+    <p>Burtiski parāda "apvieno datus no 7 avotiem vienā atskaitē" - katrs avots kā mezgls, kas savienots ar PROVIN
+      centru. Konkrētāk nekā jebkurš saraksts.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="netrow">
+      <div>
+        <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+        <p class="short" id="v24-short"></p>
+      </div>
+      <div class="netwrap" id="v24-net"></div>
+    </div>
+    <div class="netform">
+      <form class="lform lformline row" id="v24-form"></form>
+    </div>
+    <div class="contact" id="v24-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 25 ============================================================ -->
+<section class="scene" id="v25">
+  <div class="cap"><b>25</b><h2>Cilnes - viena rindkopa uzreiz</h2>
+    <p>Tieši risina "par daudz teksta uzreiz" - redzama tikai viena no 3 rindkopām, cilnes pārslēdz starp tām.
+      Bez rāmjiem, centrēts, gaisīgs.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="tabwrap device" data-mode="desktop">
+    <h1 class="h giant">PRO<b>VIN</b> BUSINESS</h1>
+    <div class="tabtext" id="v25-text"></div>
+    <div class="tlform">
+      <form class="lform lformline" id="v25-form"></form>
+    </div>
+    <div class="trustbar center" id="v25-items"></div>
+    <div class="contact" id="v25-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 26 ============================================================ -->
+<section class="scene" id="v26">
+  <div class="cap"><b>26</b><h2>Kustīga josla + slīdošs login</h2>
+    <p>Pakalpojumi ripo kā nepārtraukta josla (nevis statisks saraksts), login pēc noklusējuma paslēpts aiz pogas
+      un izslīd uz leju pēc klikšķa - samazina redzamo blīvumu.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="tickerhead">
+      <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+      <button class="tickerbtn" type="button" id="v26-toggle">Partneriem <span aria-hidden>→</span></button>
+    </div>
+    <p class="short" id="v26-short"></p>
+    <div class="tickerform" id="v26-formwrap">
+      <form class="lform lformline row" id="v26-form"></form>
+    </div>
+    <div class="marquee"><div class="marquee-track" id="v26-items"></div></div>
+    <div class="contact" id="v26-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 27 ============================================================ -->
+<section class="scene" id="v27">
+  <div class="cap"><b>27</b><h2>Stāsta ritms</h2>
+    <p>Trīs rindkopas pasniegtas kā stāsta "takti" ar dāsnu vertikālo atstarpi un plānām šķirtnēm - nevis viss
+      uzreiz vienā blokā. Bez kastēm, tikai tipogrāfija un ritms.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="storywrap device" data-mode="desktop">
+    <div class="beat beat-a">
+      <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+      <p id="v27-p1"></p>
+    </div>
+    <div class="beat beat-b">
+      <p class="eyebrow2">Bieži aizmirsts</p>
+      <p id="v27-p2"></p>
+    </div>
+    <div class="beat beat-c">
+      <p class="eyebrow2">Rezultāts</p>
+      <p id="v27-p3"></p>
+      <form class="lform" id="v27-form"></form>
+    </div>
+    <div class="trustbar" id="v27-items"></div>
+    <div class="contact" id="v27-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 28 ============================================================ -->
+<section class="scene" id="v28">
+  <div class="cap"><b>28</b><h2>Punktu režģis + stikla kapsula</h2>
+    <p>Smalks punktu režģis un izplūdis gaismas plankums fonā (nevis kastes rāmis), login kā viena horizontāla
+      "kapsulas" josla bez redzamiem laukumu nosaukumiem.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="dotwrap device" data-mode="desktop">
+    <div class="dotbg" aria-hidden></div>
+    <div class="dotblob" aria-hidden></div>
+    <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+    <p class="short center" id="v28-short"></p>
+    <div class="capsule">
+      <form class="lform lformcapsule" id="v28-form"></form>
+    </div>
+    <div class="trustbar center" id="v28-items"></div>
+    <div class="contact center" id="v28-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 29 ============================================================ -->
+<section class="scene" id="v29">
+  <div class="cap"><b>29</b><h2>Redakcijas kolonnas (asimetrisks)</h2>
+    <p>Žurnāla tipa izkārtojums - pirmā rindkopa izcelta kā "pull quote" (lielāka, treknāka), pārējās divas parastā
+      izmērā zem tās. Pakalpojumi kā viena teksta rinda ar punktiem, ne saraksts. Login vienkārša pasvītrota rinda.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+    <div class="edrow" id="v29-lead"></div>
+    <p class="edtrust" id="v29-items"></p>
+    <div class="edform">
+      <form class="lform lformline row" id="v29-form"></form>
+    </div>
+    <div class="contact" id="v29-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 30 ============================================================ -->
+<section class="scene" id="v30">
+  <div class="cap"><b>30</b><h2>Liels skaitlis + pilns teksts</h2>
+    <p>Vizuālais fokuss - liels "7" (datu avotu skaits) kreisajā pusē, pilns teksts (visas 3 rindkopas) labajā pusē
+      normālā plūsmā. Bez rāmjiem, tikai viena plāna šķirtne pirms saraksta.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="strow">
+      <div class="bignum">7<span>datu avoti vienā atskaitē</span></div>
+      <div>
+        <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+        <div class="short" id="v30-lead"></div>
+      </div>
+    </div>
+    <ul class="stlist" id="v30-items"></ul>
+    <div class="stform">
+      <form class="lform lformline row" id="v30-form"></form>
+    </div>
+    <div class="contact" id="v30-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 31 ============================================================ -->
+<section class="scene" id="v31">
+  <div class="cap"><b>31</b><h2>Duotone gradients (bez cietām līnijām)</h2>
+    <p>Mīksts diagonāls gradients (nevis cieta robežlīnija) rada divkrāsainu sajūtu vienā, nesadalītā laukumā.
+      Pilns teksts, login kā peldoša stikla kapsula.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="duotone device" data-mode="desktop">
+    <h1 class="h">PRO<b>VIN</b> BUSINESS</h1>
+    <div class="short" id="v31-lead"></div>
+    <div class="trustbar" id="v31-items"></div>
+    <div class="dtform">
+      <form class="lform lformcapsule2" id="v31-form"></form>
+    </div>
+    <div class="contact" id="v31-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 32 ============================================================ -->
+<section class="scene" id="v32">
+  <div class="cap"><b>32</b><h2>Vertikāla līnija + iniciālis</h2>
+    <p>Klasisks redakcijas paņēmiens - plāna krāsaina līnija kreisajā malā, liels iniciālis pirmajam burtam.
+      Viss teksts plūst dabiski, login vienkārša rinda zem tā, pakalpojumi kā apakšējā "footer" tipa josla.</p></div>
+  <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+  <div class="device" data-mode="desktop">
+    <div class="rulewrap">
+      <h3 class="h">PRO<b>VIN</b> BUSINESS</h3>
+      <div class="dropcap" id="v32-lead"></div>
+      <form class="lform" id="v32-form"></form>
+    </div>
+    <div class="footstrip" id="v32-items"></div>
+    <div class="contact" id="v32-contact"></div>
+  </div>
+</section>
+
+<!-- ============================================================ 33 · REAL HERO DNA ============================================================ -->
+<section class="scene" id="v33">
+  <div class="cap"><b>33 · JAUNS</b><h2>PROVIN.LV oriģinālā hero replika</h2>
+    <p>Šis nav jauns stils - tas pārnes reālā provin.lv sākumlapas hero pikseļu DNS (fona gradients
+      <code>#0d1118→#07080a→#0a0c10</code>, stikla kartīte ar 18px stūriem, tumšie ievadlauki, mirdzuma pogas
+      gradients <code>#1a6fd4→#1459ad</code>) uz B2B login bloku. Labajā/apakšā ir fiksēta
+      <b style="color:#fca5a5;">600px augstuma telefona rāmja simulācija</b> - login poga tajā redzama uzreiz,
+      bez ritināšanas; pilns 3 rindkopu teksts un pakalpojumu saraksts turpinās, ritinot rāmī tālāk - tāpat kā
+      reālajā provin.lv hero (kur H1 mobilē arī ir sarautas garumā, akcents uz darbību, ne tekstu).</p></div>
+
+  <div class="replicaWrap">
+    <div class="replicaCol" style="flex:1 1 34rem;min-width:19rem;align-items:stretch;">
+      <div class="browserWin">
+        <div class="browserBar">
+          <span class="bdot" style="background:#ff5f57;"></span>
+          <span class="bdot" style="background:#febc2e;"></span>
+          <span class="bdot" style="background:#28c840;"></span>
+          <span class="burl">provin.lv/partneriem</span>
+        </div>
+        <div class="realbg">
+          <div class="realDesktopGrid">
+            <div>
+              <p class="eyebrow2" style="text-align:left;">PARTNERIEM</p>
+              <h1 class="realTitleDesktop">PRO<b>VIN</b> BUSINESS</h1>
+              <div class="realLeadDesktop" id="v33-lead-d"></div>
+              <div class="realTrustRow" id="v33-trust-d"></div>
+            </div>
+            <div class="rcard">
+              <p class="rcardEyebrow">PIETEIKŠANĀS</p>
+              <h3 class="rcardTitle">Partneru <b>konts</b></h3>
+              <p class="rcardDesc" id="v33-desc-d"></p>
+              <form class="rform" id="v33-form-d"></form>
+              <p class="rcardFoot" id="v33-contact-d"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="replicaCaption" style="max-width:34rem;">Desktop: identisks 7/5 kolonnu sadalījums, stikla kartīte ar
+        ēnu slāņiem un mirdzuma poga - tieši kā reālajā provin.lv sākumlapas hero.</p>
+    </div>
+
+    <div class="replicaCol">
+      <div class="phoneshell">
+        <div class="phonenotch"></div>
+        <div class="phonescreen realbg">
+          <div class="phoneviewport" id="v33-phoneviewport">
+            <div class="rheader"><span class="rlogo">PRO<b>VIN</b></span><span class="rnavdot"></span></div>
+            <div style="padding:0 1rem;position:relative;z-index:1;">
+              <div class="rcard mobileCard">
+                <p class="rcardEyebrow">PARTNERIEM</p>
+                <h3 class="rcardTitle">PRO<b>VIN</b> BUSINESS</h3>
+                <p class="rcardDesc" id="v33-desc-m"></p>
+                <form class="rform" id="v33-form-m"></form>
+              </div>
+            </div>
+            <p class="rfoldhint">▾ ritini tālāk pilnam aprakstam</p>
+            <div class="rmorewrap">
+              <h4>Kāpēc PROVIN BUSINESS</h4>
+              <div class="lead" id="v33-lead-m"></div>
+              <div class="contact" id="v33-contact-m"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="replicaCaption">600px = tipisks redzamais telefona ekrāns bez ritināšanas ("pirmais skats").
+        Login poga <b style="color:#93c5fd;">ir redzama uzreiz</b>, ne zem locījuma.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 34 · 33+21+26 KOMBINĒTS ============================================================ -->
+<section class="scene" id="v34">
+  <div class="cap"><b>34 · KOMBINĒTS</b><h2>Reālā DNS + Linear minimālisms + kustīga josla</h2>
+    <p>Apvieno <b style="color:#93c5fd;">33.</b> (reālais fons/ievadlauki/poga), <b style="color:#93c5fd;">21.</b>
+      (milzīgs virsraksts, gradienta plankums) un <b style="color:#93c5fd;">26.</b> (pakalpojumi ripo kā josla).
+      Zemāk ir <b style="color:#fca5a5;">īstais lapas skats 100vh</b>, ne miniatūra pārlūka rāmī. Poga
+      "Atvērt pilno skatu" paslēpj galerijas navigāciju. Telefonā login paliek pirmajā skatā; pilnais teksts
+      un 8 pakalpojumu režģis ir zem locījuma.</p></div>
+  <div class="livebar">
+    <div class="devtoggle"><button class="on" data-mode="desktop" type="button">Desktop</button><button data-mode="phone" type="button">Telefons</button></div>
+    <button class="liveOpen" type="button" id="v34-fullview">Atvērt pilno skatu</button>
+  </div>
+
+  <div class="liveShell realbg device" data-mode="desktop">
+    <div class="rheader"><span class="rlogo">PRO<b>VIN</b></span><span class="rnavdot"></span></div>
+    <div class="v34stage">
+      <div class="v34lgrad" aria-hidden="true"></div>
+      <h1 class="v34head">PRO<b>VIN</b> BUSINESS</h1>
+      <div class="v34full" id="v34-lead"></div>
+      <div class="v34loginhead">
+        <button class="v34btn" type="button" id="v34-toggle">Partneru login <span aria-hidden="true">↕</span></button>
+      </div>
+      <div class="v34formwrap open" id="v34-formwrap">
+        <form class="rform" id="v34-form"></form>
+      </div>
+      <div class="logostrip"><div class="logostrip-track" id="v34-logos"></div></div>
+      <div class="logogrid" id="v34-logos-grid"></div>
+      <p class="v34contact rcardFoot" id="v34-contact"></p>
+    </div>
+  </div>
+</section>
+<button class="liveExit" type="button" id="v34-exit">Aizvērt pilno skatu</button>
+
+<script>
+const ICONS = {
+  store: '<path d="M4 10h16"/><path d="M5 10V7l2-3h10l2 3v3"/><path d="M6 10v9h5v-5h2v5h5v-9"/><path d="M9 7h.01M12 7h.01M15 7h.01"/>',
+  logos: '<ellipse cx="8.5" cy="7" rx="4.2" ry="2"/><path d="M4.3 7v4.2c0 1.1 1.9 2 4.2 2s4.2-.9 4.2-2V7"/><ellipse cx="15.5" cy="10" rx="4.2" ry="2"/><path d="M11.3 10v4.2c0 1.1 1.9 2 4.2 2s4.2-.9 4.2-2V10"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9"/><path d="M12 3c-2.6 2.4-4 5.6-4 9s1.4 6.6 4 9"/>',
+  gavel: '<path d="M14 4l6 6"/><path d="M12.5 5.5l6 6"/><path d="M11 8l-7 7 3 3 7-7"/><path d="M4 20h8"/>',
+  shield: '<path d="M12 3l8 3v6.2c0 4.8-3.2 8.2-8 9.8-4.8-1.6-8-5-8-9.8V6z"/><path d="M9 12l2.1 2.1L15.5 10"/>',
+  clipboard: '<rect x="7" y="4.5" width="10" height="15.5" rx="1.6"/><path d="M9.5 4h5v2.2h-5z"/><path d="M9.5 11.2h5M9.5 14.4h3.6"/>',
+  list: '<rect x="4" y="4" width="16" height="5" rx="1"/><rect x="4" y="10.5" width="16" height="4" rx="1"/><rect x="4" y="16.5" width="11" height="3.5" rx="1"/>',
+  check: '<path d="M5 13l4 4L19 7"/>',
+  chev: '<path d="M6 9l6 6 6-6"/>',
+  gauge: '<path d="M5.2 15.2a7.2 7.2 0 1 1 13.6 0"/><path d="M12 15l4-5"/><circle cx="12" cy="15" r="1.15" fill="currentColor" stroke="none"/><path d="M7 15h.01M17 15h.01M12 9.2h.01"/>',
+};
+function icon(name){ return `<svg class="ic" viewBox="0 0 24 24">${ICONS[name]}</svg>`; }
+
+const ITEMS = [
+  { icon: "store", title: "Oficiālo dīleru dati*" },
+  { icon: "logos", title: "CarVertical + AutoDNA" },
+  { icon: "globe", title: "Izcelsmes valsts reģistri" },
+  { icon: "gavel", title: "Izsoļu portālu arhīva dati" },
+  { icon: "shield", title: "Apdrošinātāju dati" },
+  { icon: "clipboard", title: "Tehnisko apskašu vēsture" },
+  { icon: "list", title: "Datu kopsavilkums" },
+];
+
+const LEAD = [
+  "Risinājums izstrādāts auto tirdzniecības uzņēmumiem, lai pirms auto iegādes pilnībā novērstu riskus, kas saistīti ar koriģētu nobraukumu, vēsturē fiksētiem negadījumiem un neatbilstoši ievērotiem apkopes intervāliem.",
+  "Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat savu uzņēmumu no zaudējumiem iepirkumos, bet arī sniedzat klientiem nepārprotamus pierādījumus par auto faktisko vēsturi. Auto tirdzniecības nozarē šī atskaite kļūst par kvalitātes un caurskatāmības standartu, kas uzskatāmi demonstrē uzņēmuma atbildību un godprātību pret pircēju.",
+  "Tas stiprina uzticēšanos, izceļ jūsu piedāvājumu tirgū un paātrina pārdošanas procesu, jo pircējs jau pirmajā brīdī gūst pilnīgu pārliecību par drošu un pārbaudītu pirkumu.",
+];
+
+const GOAL = "PROVIN BUSINESS apvieno datus no oficiālajiem dīleru tīkliem, carVertical, AutoDNA un Eiropas/Amerikas valstu reģistriem. Vienā ērtā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, negadījumu vēsturi un servisa ierakstus, būtiski samazinot riskus un iegūstot pārliecību katrā darījumā.";
+
+function leadHTML(withGoal){
+  const paras = withGoal ? [GOAL] : LEAD;
+  return paras.map(p => `<p>${p}</p>`).join("");
+}
+function contactHTML(){
+  return `<strong>Sazinieties ar mums, lai saņemtu B2B cenas piedāvājumu un pieslēgtu uzņēmuma kontu:</strong>
+    E-pasts: <a href="mailto:info@provin.lv">info@provin.lv</a> | Tālr.: <a href="tel:+37129502039">+371 29502039</a>`;
+}
+function formHTML(){
+  return `
+    <label><span>E-pasts</span><input type="email" placeholder="uznemums@piemers.lv"/></label>
+    <label><span>Parole</span><input type="password" placeholder="········"/></label>
+    <button type="button">Ieiet</button>`;
+}
+function itemsListHTML(){
+  return `<ul style="list-style:none;margin:0;padding:0;">${ITEMS.map(it =>
+    `<li style="display:flex;align-items:center;gap:.65rem;padding:.6rem 0;border-bottom:1px solid rgb(255 255 255 / .07);">
+      ${icon(it.icon)}<p style="margin:0;font-size:.78rem;font-weight:650;color:#e2e8f0;">${it.title}</p>
+    </li>`).join("")}</ul>`;
+}
+function railHTML(){
+  return ITEMS.map((it,i) => `<div class="ri${i===0?" on":""}">${icon(it.icon)}<span>${it.title}</span></div>`).join("");
+}
+function stepsHTML(){
+  return ITEMS.map(it => `<div class="step"><div class="dot">${icon(it.icon)}</div><p>${it.title}</p></div>`).join("");
+}
+function docRowsHTML(){
+  return ITEMS.map(it => `<div class="drow">${icon(it.icon)}<p>${it.title}</p></div>`).join("");
+}
+function kpiHTML(){
+  return ITEMS.map(it => `<div class="kpi">${icon(it.icon)}<p>${it.title}</p></div>`).join("");
+}
+function chatListHTML(){
+  return `<h3>PRO<b>VIN</b> BUSINESS</h3><ul class="clist">${ITEMS.map(it => `<li>${icon("check")}${it.title}</li>`).join("")}</ul>`;
+}
+function medalsHTML(){
+  return ITEMS.map(it => `<div class="medal"><div class="circle">${icon(it.icon)}</div><p>${it.title}</p></div>`).join("");
+}
+function accordionRowsHTML(){
+  return ITEMS.map(it => `
+    <div class="arow">
+      <div class="ahead">${icon(it.icon)}<p>${it.title}</p>${icon("chev").replace('class="ic"','class="ic chev"')}</div>
+      <div class="abody"><span>${icon("check")}Iekļauts atskaitē</span></div>
+    </div>`).join("");
+}
+function fanHTML(){
+  return ITEMS.map(it => `<div class="scard">${icon(it.icon)}<p>${it.title}</p></div>`).join("");
+}
+function proofListHTML(){
+  return `<ul class="proof">${LEAD.map(p => `<li>${icon("check")}<p>${p}</p></li>`).join("")}</ul>`;
+}
+function checklistHTML(){
+  return ITEMS.map(it => `<li>${icon("check")}${it.title}</li>`).join("");
+}
+
+function fill(id, html){ const el = document.getElementById(id); if (el) el.innerHTML = html; }
+
+/* ---- batch 2 (21-28) helpers ---- */
+function trustbarHTML(){
+  return ITEMS.map(it => `<span class="ti">${icon(it.icon)}${it.title}</span>`).join("");
+}
+const NET_POS = [
+  [50, 8], [82.8, 23.75], [90.95, 59.35], [68.2, 87.8],
+  [31.8, 87.8], [9.05, 59.35], [17.2, 23.75],
+];
+function networkGraphHTML(){
+  const lines = NET_POS.map(([x,y]) => `<line x1="50" y1="50" x2="${x}" y2="${y}"/>`).join("");
+  const nodes = ITEMS.map((it,i) => {
+    const [x,y] = NET_POS[i];
+    return `<div class="netnode" style="top:${y}%;left:${x}%;">
+      <span class="nic">${icon(it.icon)}</span><span>${it.title}</span>
+    </div>`;
+  }).join("");
+  return `<svg class="netlines" viewBox="0 0 100 100">${lines}</svg>
+    <div class="netcenter">PROVIN<br/>BUSINESS</div>${nodes}`;
+}
+function dropCapHTML(){
+  return LEAD.map(p => `<p>${p}</p>`).join("");
+}
+
+/* ---- 33: real hero DNA replica ---- */
+function replicaFormHTML(){
+  return `
+    <label><span>E-pasts</span><input class="rinput" type="email" placeholder="uznemums@piemers.lv"/></label>
+    <label><span>Parole</span><input class="rinput" type="password" placeholder="········"/></label>
+    <button type="button" class="rcta"><span class="rshimmer" aria-hidden="true"></span><span class="rlabel">Ieiet</span></button>`;
+}
+const V33_DESC = "Novērš nobraukuma korekcijas un slēptu negadījumu riskus pirms iepirkuma - viena atskaite, pilna pārliecība.";
+
+/* ---- 34: combined (33 + 21 + 26) - symmetric 8-item "logo" strip/grid ---- */
+// Scoped to v34 only (doesn't touch global ITEMS - v24's network graph has exactly
+// 7 hardcoded node positions, so the shared list stays at 7).
+const V34_ITEMS = [
+  { icon: "store", title: "Oficiālo dīleru dati*", mark: "OD", hint: "Serviss" },
+  { icon: "logos", title: "CarVertical + AutoDNA", mark: "CV", hint: "Datubāze" },
+  { icon: "globe", title: "Izcelsmes valsts reģistri", mark: "EU", hint: "Reģistrs" },
+  { icon: "gavel", title: "Izsoļu portālu arhīva dati", mark: "AU", hint: "Arhīvs" },
+  { icon: "shield", title: "Apdrošinātāju dati", mark: "AP", hint: "Reģistrs" },
+  { icon: "gauge", title: "Nobraukuma vēsture", mark: "NV", hint: "Serviss" },
+  { icon: "clipboard", title: "Tehnisko apskašu vēsture", mark: "TA", hint: "Reģistrs" },
+  { icon: "list", title: "Datu kopsavilkums", mark: "KS", hint: "Atskaites" },
+];
+function logoChipHTML(it){
+  return `<div class="logochip"><span class="lbadge">${icon(it.icon)}</span><span>${it.title}</span></div>`;
+}
+function logoStripHTML(){
+  return V34_ITEMS.concat(V34_ITEMS).map(logoChipHTML).join("");
+}
+function logoGridHTML(){
+  return V34_ITEMS.map(logoChipHTML).join("");
+}
+function prodHTML(){
+  return V34_ITEMS.map((it, i) => `
+    <div class="proditem">
+      <span class="prodnum">${String(i + 1).padStart(2, "0")}</span>
+      <span class="prodmark">${it.mark}</span>
+      <span class="prodbadge">${icon(it.icon)}</span>
+      <span class="prodcopy">
+        <span class="prodtitle">${it.title}</span>
+        <span class="prodhint">${it.hint}</span>
+      </span>
+    </div>`).join("");
+}
+const RESET_SKINS = [
+  ["r1", "01 · Kvadrātu siena"],
+  ["r2", "02 · Mājas riņķi"],
+  ["r3", "03 · Monogrammas"],
+  ["r4", "04 · Numurēts saraksts"],
+  ["r5", "05 · Pildīti riņķi"],
+  ["r6", "06 · Tikai līnijas"],
+  ["r7", "07 · Logo kartītes"],
+  ["r8", "08 · Čipi"],
+  ["r9", "09 · Ikonas + tips"],
+  ["r10", "10 · Savienota josla"],
+];
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  // ---- device (desktop / phone) toggle, works for every variant ----
+  document.querySelectorAll(".devtoggle").forEach((group) => {
+    const scene = group.closest(".scene");
+    const target = scene ? scene.querySelector(".device") : null;
+    if (!target) return;
+    group.querySelectorAll("button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        target.dataset.mode = btn.dataset.mode;
+        group.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === btn));
+      });
+    });
+  });
+
+  // ---- accordion (18), delegated because rows are injected dynamically ----
+  document.addEventListener("click", (event) => {
+    const head = event.target.closest("#v18 .ahead");
+    if (head) head.closest(".arow").classList.toggle("open");
+  });
+
+  // 01 split glass
+  fill("v1-lead", leadHTML());
+  fill("v1-contact", contactHTML());
+  fill("v1-form", formHTML());
+  fill("v1-items", ITEMS.map(it => `<div class="tile">${icon(it.icon)}<p>${it.title}</p></div>`).join(""));
+
+  // 02 unified card
+  fill("v2-lead", leadHTML());
+  fill("v2-form", formHTML());
+  fill("v2-contact", contactHTML());
+  fill("v2-items", ITEMS.map((it,i) => `<tr><td>${String(i+1).padStart(2,"0")}</td><td>${it.title}</td></tr>`).join("")
+    + `<tfoot><tr><td></td><td style="color:rgb(148 163 184 / .55);font-weight:500;font-size:.68rem;">*pieejama noteiktiem ražotājiem.</td></tr></tfoot>`);
+
+  // 03 bento
+  fill("v3-lead", LEAD[0]);
+  fill("v3-form", formHTML());
+  fill("v3-contact-tile", `${icon("shield")}<p>${contactHTML()}</p>`);
+  document.getElementById("v3-contact-tile").style.cssText += "align-items:flex-start;line-height:1.5;font-size:.7rem;";
+  fill("v3-items", ITEMS.map((it,i) => `<div class="btile${i===0?" bwide":""}">${icon(it.icon)}<p>${it.title}</p></div>`).join(""));
+  fill("v3-foot", "*Oficiālo dīleru dati pieejama noteiktiem ražotājiem.");
+
+  // 04 editorial
+  fill("v4-lead", leadHTML());
+  fill("v4-items", ITEMS.map((it,i) => `<li><span class="num">${String(i+1).padStart(2,"0")}</span><p>${it.title}</p></li>`).join(""));
+  fill("v4-form", formHTML());
+  fill("v4-contact", contactHTML());
+
+  // 05 terminal
+  fill("v5-lead", leadHTML());
+  fill("v5-items", ITEMS.map(it => `<li>${it.title}</li>`).join(""));
+  fill("v5-form", formHTML());
+  fill("v5-contact", contactHTML());
+
+  // 06 timeline
+  fill("v6-lead", leadHTML());
+  fill("v6-items", ITEMS.map(it => `<div class="tstep">${icon(it.icon)}<p style="margin-top:.3rem;">${it.title}</p></div>`).join(""));
+  fill("v6-form", formHTML());
+  fill("v6-contact", contactHTML());
+
+  // 07 sidebar app
+  fill("v7-items", ITEMS.map((it,i) => `<li class="${i===0?"on":""}">${icon(it.icon)}${it.title}</li>`).join(""));
+  fill("v7-lead", leadHTML());
+  fill("v7-form", formHTML());
+  fill("v7-contact", contactHTML());
+
+  // 08 fullbleed carousel
+  fill("v8-lead", `<p>${LEAD[0]}</p>`);
+  fill("v8-form", formHTML());
+  fill("v8-contact", contactHTML());
+  fill("v8-items", ITEMS.map(it => `<div class="ccard">${icon(it.icon)}<p>${it.title}</p></div>`).join(""));
+
+  // 09 two-tone
+  fill("v9-lead", leadHTML());
+  fill("v9-contact", contactHTML());
+  fill("v9-items", ITEMS.map(it => `<div class="row">${icon(it.icon)}<p>${it.title}</p></div>`).join(""));
+  fill("v9-form", formHTML());
+
+  // 10 dashboard mock
+  fill("v10-lead", leadHTML());
+  fill("v10-items", ITEMS.map(it => `<div class="mrow">${icon(it.icon)}<p>${it.title}</p><span class="badge">OK</span></div>`).join(""));
+  fill("v10-form", formHTML());
+  fill("v10-contact", contactHTML());
+
+  // 11 icon rail
+  fill("v11-items", railHTML());
+  fill("v11-lead", leadHTML());
+  fill("v11-form", formHTML());
+  fill("v11-contact", contactHTML());
+
+  // 12 horizontal stepper
+  fill("v12-items", stepsHTML());
+  fill("v12-lead", leadHTML());
+  fill("v12-form", formHTML());
+  fill("v12-contact", contactHTML());
+
+  // 13 notion doc
+  fill("v13-lead", leadHTML());
+  fill("v13-form", formHTML());
+  fill("v13-items", docRowsHTML());
+  fill("v13-contact", contactHTML());
+
+  // 14 kpi strip
+  fill("v14-form", formHTML());
+  fill("v14-lead", leadHTML());
+  fill("v14-items", kpiHTML());
+  fill("v14-contact", contactHTML());
+
+  // 15 chat assistant
+  fill("v15-lead", leadHTML());
+  fill("v15-items", chatListHTML());
+  fill("v15-form", formHTML());
+  fill("v15-contact", contactHTML());
+
+  // 16 medallions
+  fill("v16-lead", leadHTML());
+  fill("v16-items", medalsHTML());
+  fill("v16-form", formHTML());
+  fill("v16-contact", contactHTML());
+
+  // 17 sticky bottom bar
+  fill("v17-lead", leadHTML());
+  fill("v17-items", itemsListHTML());
+  fill("v17-form", formHTML());
+  fill("v17-contact", contactHTML());
+
+  // 18 accordion
+  fill("v18-lead", leadHTML());
+  fill("v18-items", accordionRowsHTML());
+  fill("v18-form", formHTML());
+  fill("v18-contact", contactHTML());
+
+  // 19 stacked cards
+  fill("v19-lead", leadHTML());
+  fill("v19-items", fanHTML());
+  fill("v19-form", formHTML());
+  fill("v19-contact", contactHTML());
+
+  // 20 proof panel
+  fill("v20-lead", proofListHTML());
+  fill("v20-form", formHTML());
+  fill("v20-items", checklistHTML());
+  fill("v20-contact", contactHTML());
+
+  // ---- batch 2 (21-28) ----
+
+  // 21 linear minimal (full text, always visible)
+  fill("v21-lead", leadHTML());
+  fill("v21-form", formHTML());
+  fill("v21-items", trustbarHTML());
+  fill("v21-contact", contactHTML());
+
+  // 22 mileage timeline illustration (full text)
+  fill("v22-short", leadHTML());
+  fill("v22-form", formHTML());
+  fill("v22-items", trustbarHTML());
+  fill("v22-contact", contactHTML());
+
+  // 23 radar scan (full text)
+  fill("v23-short", leadHTML());
+  fill("v23-items", ITEMS.map(it => `<li>${icon(it.icon)}${it.title}</li>`).join(""));
+  fill("v23-form", formHTML());
+  fill("v23-contact", contactHTML());
+
+  // 24 data network graph (full text)
+  fill("v24-short", leadHTML());
+  fill("v24-net", networkGraphHTML());
+  fill("v24-form", formHTML());
+  fill("v24-contact", contactHTML());
+
+  // 25 labelled beats, centered (full text, all 3 always visible)
+  fill("v25-text", LEAD.map((p, i) => `
+    <div class="tabbeat">
+      <span class="tabbtn on" style="pointer-events:none;">${["Riski","Reputācija","Klientiem"][i]}</span>
+      <p>${p}</p>
+    </div>`).join(""));
+  fill("v25-form", formHTML());
+  fill("v25-items", trustbarHTML());
+  fill("v25-contact", contactHTML());
+
+  // 26 ticker + slide login (full text)
+  fill("v26-short", leadHTML());
+  fill("v26-form", formHTML());
+  fill("v26-items", trustbarHTML() + trustbarHTML());
+  fill("v26-contact", contactHTML());
+  document.getElementById("v26-toggle").addEventListener("click", () => {
+    const wrap = document.getElementById("v26-formwrap");
+    wrap.classList.toggle("open");
+  });
+
+  // 27 story beats (already full text)
+  fill("v27-p1", LEAD[0]);
+  fill("v27-p2", LEAD[1]);
+  fill("v27-p3", LEAD[2]);
+  fill("v27-form", formHTML());
+  fill("v27-items", trustbarHTML());
+  fill("v27-contact", contactHTML());
+
+  // 28 dot-grid + glass capsule (full text)
+  fill("v28-short", leadHTML());
+  fill("v28-form", formHTML());
+  fill("v28-items", trustbarHTML());
+  fill("v28-contact", contactHTML());
+
+  // 29 asymmetric editorial columns (full text)
+  fill("v29-lead", `<p class="pull">${LEAD[0]}</p><p>${LEAD[1]}</p><p>${LEAD[2]}</p>`);
+  fill("v29-items", ITEMS.map(it => `<span>${it.title}</span>`).join('<span class="dot" aria-hidden>·</span>'));
+  fill("v29-form", formHTML());
+  fill("v29-contact", contactHTML());
+
+  // 30 big stat + full text side note
+  fill("v30-lead", leadHTML());
+  fill("v30-items", ITEMS.map(it => `<li>${icon(it.icon)}${it.title}</li>`).join(""));
+  fill("v30-form", formHTML());
+  fill("v30-contact", contactHTML());
+
+  // 31 duotone gradient split
+  fill("v31-lead", leadHTML());
+  fill("v31-items", trustbarHTML());
+  fill("v31-form", formHTML());
+  fill("v31-contact", contactHTML());
+
+  // 32 vertical accent rule + drop cap
+  fill("v32-lead", dropCapHTML());
+  fill("v32-items", trustbarHTML());
+  fill("v32-form", formHTML());
+  fill("v32-contact", contactHTML());
+
+  // 33 provin.lv real hero DNA replica (desktop 7/5 grid + fixed 600px phone fold proof)
+  fill("v33-desc-d", V33_DESC);
+  fill("v33-desc-m", V33_DESC);
+  fill("v33-lead-d", leadHTML());
+  fill("v33-lead-m", leadHTML());
+  fill("v33-trust-d", trustbarHTML());
+  fill("v33-form-d", replicaFormHTML());
+  fill("v33-form-m", replicaFormHTML());
+  fill("v33-contact-d", `E-pasts: <a href="mailto:info@provin.lv">info@provin.lv</a> · Tālr.: <a href="tel:+37129502039">+371 29502039</a>`);
+  fill("v33-contact-m", contactHTML());
+
+  // 34 combined: real DNA (33) + linear minimal (21) + moving logo strip w/ slide login (26)
+  fill("v34-lead", leadHTML());
+  fill("v34-form", replicaFormHTML());
+  fill("v34-logos", logoStripHTML());
+  fill("v34-logos-grid", logoGridHTML());
+  fill("v34-contact", `E-pasts: <a href="mailto:info@provin.lv">info@provin.lv</a> · Tālr.: <a href="tel:+37129502039">+371 29502039</a>`);
+  const v34Toggle = document.getElementById("v34-toggle");
+  const v34Wrap = document.getElementById("v34-formwrap");
+  if (v34Toggle && v34Wrap) v34Toggle.addEventListener("click", () => v34Wrap.classList.toggle("open"));
+
+  fill("reset-lead", [
+    ["Riski", LEAD[0]],
+    ["Reputācija", LEAD[1]],
+    ["Klientiem", LEAD[2]],
+  ].map(([label, body], i) => `
+    <button class="beat${i === 0 ? " on" : ""}" type="button">
+      <span class="blab"><span class="bnum">${String(i + 1).padStart(2, "0")}</span><span class="btit">${label}</span></span>
+      <p>${body}</p>
+    </button>`).join(""));
+  document.getElementById("reset-lead")?.addEventListener("click", (event) => {
+    const beat = event.target.closest(".beat");
+    if (!beat) return;
+    document.querySelectorAll("#reset-lead .beat").forEach((el) => el.classList.toggle("on", el === beat));
+  });
+  fill("reset-form-m", replicaFormHTML());
+  fill("reset-form-d", replicaFormHTML());
+  fill("reset-logos-d", prodHTML());
+  fill("reset-logos-m", prodHTML());
+  fill("reset-contact", contactHTML());
+  const resetLive = document.querySelector("#reset .resetLive");
+  const resetSkinName = document.getElementById("reset-skin-name");
+  document.querySelectorAll("#reset-skins button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const skin = btn.dataset.skin;
+      if (resetLive) resetLive.dataset.skin = skin;
+      document.querySelectorAll("#reset-skins button").forEach((b) => b.classList.toggle("on", b === btn));
+      const label = RESET_SKINS.find((row) => row[0] === skin);
+      if (resetSkinName && label) resetSkinName.textContent = label[1];
+    });
+  });
+
+  const setFullview = (on, id) => {
+    document.documentElement.classList.toggle("fullview", on);
+    document.documentElement.dataset.fullview = on ? id : "";
+    if (on) document.getElementById(id)?.scrollIntoView({ block: "start" });
+  };
+  document.getElementById("reset-fullview")?.addEventListener("click", () => setFullview(true, "reset"));
+  document.getElementById("v34-fullview")?.addEventListener("click", () => setFullview(true, "v34"));
+  document.getElementById("v34-exit")?.addEventListener("click", () => setFullview(false, ""));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.documentElement.classList.contains("fullview")) setFullview(false, "");
+  });
+  const hash = location.hash.replace("#", "");
+  if (hash === "v34") setFullview(true, "v34");
+  else if (!hash || hash === "reset") setFullview(true, "reset");
+});
+</script>
+</body>
+</html>

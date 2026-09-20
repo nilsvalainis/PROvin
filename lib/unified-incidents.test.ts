@@ -39,14 +39,15 @@ describe("aggregateUnifiedIncidents", () => {
     expect(agg.clusters).toHaveLength(1);
     expect(agg.clusters[0]?.averaged).toBe(true);
     expect(agg.clusters[0]?.averageEur).toBe(2789);
-    expect(agg.clusters[0]?.displayAmount).toBe("2 789 €");
+    // Klientam redzamā summa noapaļota uz tuvāko 10 EUR (pēdējais cipars "0"); iekšējais averageEur paliek precīzs.
+    expect(agg.clusters[0]?.displayAmount).toBe("2 790 €");
     expect(agg.clusters[0]?.date).toBe("16.06.2021");
     expect(agg.clusters[0]?.sourceValuations).toEqual([
       { sourceLabel: "AutoDNA", displayAmount: "2 800 €", amountEur: 2800 },
-      { sourceLabel: "LTAB", displayAmount: "2 778.22 €", amountEur: 2778 },
+      { sourceLabel: "LTAB", displayAmount: "2 780 €", amountEur: 2778 },
     ]);
     expect(formatIncidentSourceValuationsLine(agg.clusters[0]!)).toBe(
-      "AutoDNA 2 800 € · LTAB 2 778.22 €",
+      "AutoDNA 2 800 € · LTAB 2 780 €",
     );
   });
 
@@ -332,7 +333,8 @@ Aptuvenā iepriekš gūto bojājumu vērtība
     expect(agg.uniqueCount).toBe(1);
     const cv = agg.clusters[0]?.sourceValuations.find((s) => s.sourceLabel === "CarVertical");
     expect(cv?.amountEur).toBe(5002);
-    expect(cv?.displayAmount).toBe("5 002 €");
+    // Klientam redzamā summa noapaļota uz tuvāko 10 EUR; iekšējais amountEur paliek precīzs (5002).
+    expect(cv?.displayAmount).toBe("5 000 €");
   });
 
   it("neskaita divreiz identisku CarVertical rindu", () => {

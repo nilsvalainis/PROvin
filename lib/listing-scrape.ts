@@ -348,6 +348,26 @@ export function formatListingAiSnapshotForAi(snapshot: ListingAiSnapshot): strin
   return lines.join("\n");
 }
 
+/**
+ * Sludinājuma teksts operatora „Sludinājuma apraksts (iekopēšanai)” laukam - tas pats saturs,
+ * ko operators citādi iekopētu no ss.lv lapas ar roku (virsraksts + apraksts + parametru tabula).
+ * Tikai teksts, bez servera metadatiem (cenu vēsture, foto skaits) - tie paliek Tirgus blokā.
+ */
+export function formatListingSnapshotForPasteField(snapshot: ListingAiSnapshot): string {
+  if (!snapshot.ok) return "";
+  const lines: string[] = [];
+  if (snapshot.pageTitle) lines.push(snapshot.pageTitle);
+  if (snapshot.description) {
+    if (lines.length > 0) lines.push("");
+    lines.push(snapshot.description);
+  }
+  if (snapshot.options.length > 0) {
+    if (lines.length > 0) lines.push("");
+    for (const { label, value } of snapshot.options) lines.push(`${label}: ${value}`);
+  }
+  return lines.join("\n").trim();
+}
+
 async function fetchSsLvListingHtml(listingUrl: string): Promise<
   | { ok: true; html: string; url: string; host: string }
   | { ok: false; snapshot: ListingAiSnapshot }

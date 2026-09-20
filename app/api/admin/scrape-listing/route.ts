@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { fetchListingMarketSnapshot } from "@/lib/listing-scrape";
+import { fetchListingAiSnapshot } from "@/lib/listing-scrape";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 
 export async function POST(req: Request) {
@@ -21,6 +21,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_url" }, { status: 400 });
   }
 
-  const snapshot = await fetchListingMarketSnapshot(url);
+  // ListingAiSnapshot ir ListingMarketSnapshot papildināts ar description/pageTitle/options/photoCount -
+  // esošie patērētāji (Tirgus autofill), kas lasa tikai market laukus, turpina strādāt nemainīti.
+  const snapshot = await fetchListingAiSnapshot(url);
   return NextResponse.json(snapshot);
 }

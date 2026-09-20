@@ -147,7 +147,8 @@ import {
   vendorAvotuTrafficLevel,
   vinRegistryTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
-import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
+import type { ListingAiSnapshot, ListingMarketSnapshot } from "@/lib/listing-scrape";
+import { formatListingSnapshotForPasteField } from "@/lib/listing-scrape";
 import {
   CarFront,
   Check,
@@ -257,6 +258,7 @@ import {
   applySsLvAdifyAutofill,
   shouldAutofillSsLvListing,
 } from "@/lib/admin-ss-lv-adify-autofill";
+import { isSsLvListingUrl } from "@/lib/listing-odometer";
 import type { AdifyListingHistorySnapshot } from "@/lib/adify-listing-history";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
@@ -2156,7 +2158,8 @@ export function OrderDetailWorkspace({
     if (!workspaceHydrated || adifyAutofillAttemptedRef.current) return;
     const url = payload.listingUrl?.trim() ?? "";
     const tirgus = wsPersistRef.current.sourceBlocks.tirgus;
-    if (!shouldAutofillSsLvListing(url, tirgus)) return;
+    const listingPasteEmpty = !wsPersistRef.current.sourceBlocks.listing_analysis.listingPasteRaw.trim();
+    if (!shouldAutofillSsLvListing(url, tirgus) && !(listingPasteEmpty && isSsLvListingUrl(url))) return;
     adifyAutofillAttemptedRef.current = true;
     void (async () => {
       try {
@@ -2176,19 +2179,29 @@ export function OrderDetailWorkspace({
         ]);
         const snapshot = (await adifyRes.json().catch(() => null)) as AdifyListingHistorySnapshot | null;
         const scrape = scrapeRes?.ok
-          ? ((await scrapeRes.json().catch(() => null)) as ListingMarketSnapshot | null)
+          ? ((await scrapeRes.json().catch(() => null)) as ListingAiSnapshot | null)
           : null;
         const latest = wsPersistRef.current.sourceBlocks.tirgus;
-        if (!shouldAutofillSsLvListing(url, latest)) return;
-        const next = applySsLvAdifyAutofill(
-          latest,
-          url,
-          adifyRes.ok && snapshot?.found ? snapshot : null,
-          scrape,
-        );
-        if (!next) return;
+        const tirgusShouldFill = shouldAutofillSsLvListing(url, latest);
+        const next = tirgusShouldFill
+          ? applySsLvAdifyAutofill(latest, url, adifyRes.ok && snapshot?.found ? snapshot : null, scrape)
+          : null;
+
+        // SLUDINĀJUMA APRAKSTS (IEKOPĒŠANAI): tikai, ja operators to vēl nav ielīmējis ar roku -
+        // nekad nepārraksta jau esošu tekstu.
+        const listingAnalysis = wsPersistRef.current.sourceBlocks.listing_analysis;
+        const pasteText = scrape ? formatListingSnapshotForPasteField(scrape) : "";
+        const shouldFillPaste = !listingAnalysis.listingPasteRaw.trim() && Boolean(pasteText);
+
+        if (!next && !shouldFillPaste) return;
         flushSync(() => {
-          updateSourceBlock("tirgus", next);
+          if (next) updateSourceBlock("tirgus", next);
+          if (shouldFillPaste) {
+            updateSourceBlock("listing_analysis", {
+              ...wsPersistRef.current.sourceBlocks.listing_analysis,
+              listingPasteRaw: pasteText,
+            });
+          }
         });
         if (orderDraftPersistenceEnabled) {
           await persistFullWorkspaceRef("ss-lv-adify-autofill", { showFlash: false });

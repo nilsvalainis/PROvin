@@ -1643,7 +1643,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       comments: (b.comments ?? "").trim(),
       ...syncedSourceBlockPhotos(b),
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
-      ...(k === "carvertical" && (b.vehicleHistoryTimeline ?? []).length > 0
+      ...((b.vehicleHistoryTimeline ?? []).length > 0
         ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline }
         : {}),
       ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),

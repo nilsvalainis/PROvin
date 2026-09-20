@@ -152,6 +152,10 @@ function describeAction(a: CopilotAction): string {
   if (a.type === "upsert_mileage") {
     return `${a.source} · nobraukums ${a.date || "—"} · ${a.odometer || "—"} km · ${a.country || "—"} (${a.confidence})`;
   }
+  if (a.type === "upsert_vehicle_history_timeline_row") {
+    const odo = a.odometer?.trim() ? ` · ${a.odometer} km` : "";
+    return `${a.source} · laikposma fakts ${a.date || "—"}${odo} · ${a.description || "—"} · ${a.country || "—"} (${a.confidence})`;
+  }
   if (a.type === "set_service_history") {
     const lines = a.text.trim().split(/\n+/).filter(Boolean).length;
     return `auto_records · Servisa vēsture (${lines} rindas) (${a.confidence})`;

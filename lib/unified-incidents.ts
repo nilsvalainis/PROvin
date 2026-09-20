@@ -20,6 +20,7 @@ import {
   formatLossEurWholeDisplay,
   normalizeLossAmountEurDisplay,
   parseLossAmountEurComparable,
+  roundLossAmountEurDisplayToTens,
 } from "@/lib/loss-amount-format";
 import { parseMileageDateForSort } from "@/lib/unified-mileage";
 
@@ -282,9 +283,10 @@ function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedInci
   const values = amountsOf(rows);
   const avg = averageEur(values);
   if (rows.length === 1) {
+    const display = rows[0]!.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "—");
     return {
       sourceLabel: label,
-      displayAmount: rows[0]!.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "—"),
+      displayAmount: roundLossAmountEurDisplayToTens(display),
       amountEur: avg,
     };
   }
@@ -292,13 +294,13 @@ function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedInci
     const sum = sumDistinctEur(rows);
     return {
       sourceLabel: label,
-      displayAmount: sum != null ? formatLossEurWholeDisplay(sum) : "—",
+      displayAmount: roundLossAmountEurDisplayToTens(sum != null ? formatLossEurWholeDisplay(sum) : "—"),
       amountEur: sum,
     };
   }
   return {
     sourceLabel: label,
-    displayAmount: avg != null ? formatLossEurWholeDisplay(avg) : "—",
+    displayAmount: roundLossAmountEurDisplayToTens(avg != null ? formatLossEurWholeDisplay(avg) : "—"),
     amountEur: avg,
   };
 }
@@ -315,9 +317,11 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
   const sourceAmounts = sourceValuations.map((s) => s.amountEur).filter((n): n is number => n != null);
   const avg = averageEur(sourceAmounts);
   const averaged = sourceValuations.length > 1 && avg != null;
-  const displayAmount = averaged
-    ? formatLossEurWholeDisplay(avg)
-    : sourceValuations[0]?.displayAmount || newest.lossAmount.trim() || "—";
+  const displayAmount = roundLossAmountEurDisplayToTens(
+    averaged
+      ? formatLossEurWholeDisplay(avg)
+      : sourceValuations[0]?.displayAmount || newest.lossAmount.trim() || "—",
+  );
   const country = normalizeCountryNameLv(newest.country) || newest.country.trim() || "—";
   const ym = incidentYearMonthKey(newest) ?? incidentYearMonthKey(members[0]!);
   return {

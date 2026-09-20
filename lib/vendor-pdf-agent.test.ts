@@ -128,6 +128,17 @@ describe("AutoDNA deterministiskā ekstrakcija", () => {
     expect(extract.incidents.some((r) => r.lossAmount.includes("29 380"))).toBe(false);
     expect(extract.notes.some((n) => n.includes("29 380 EUR"))).toBe(true);
   });
+
+  it("vēsturisko cenu ārvalstīs pārnes uz laikposma sadaļu ar datumu, valsti un nobraukumu", () => {
+    expect(extract.vehicleHistoryTimeline).toEqual([
+      {
+        date: "24.10.2019",
+        country: "Čehija",
+        description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)",
+        odometer: "159383",
+      },
+    ]);
+  });
 });
 
 describe("AutoDNA apkopes → Servisa vēsture", () => {
@@ -370,6 +381,71 @@ describe("merge + darbības", () => {
       "set_dealer_vehicle_info",
     ]);
     expect(actions.every((a) => a.confidence === "high")).toBe(true);
+  });
+
+  it("veido laikposma darbību no vēsturiskās cenas ieraksta (autodna/carvertical)", () => {
+    const extract = emptyVendorReportExtract("autodna");
+    extract.vehicleHistoryTimeline = [
+      {
+        date: "24.10.2019",
+        country: "Čehija",
+        description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)",
+        odometer: "159383",
+      },
+    ];
+    const actions = buildVendorCopilotActions(extract, "autodna");
+    expect(actions).toEqual([
+      {
+        type: "upsert_vehicle_history_timeline_row",
+        source: "autodna",
+        date: "24.10.2019",
+        description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)",
+        country: "Čehija",
+        odometer: "159383",
+        confidence: "high",
+        note: "Laikposma fakts no AutoDNA atskaites",
+      },
+    ]);
+  });
+
+  it("apvienojot AI un deterministisko rezultātu, nedublē vienu un to pašu laikposma faktu", () => {
+    const local = emptyVendorReportExtract("autodna");
+    local.vehicleHistoryTimeline = [
+      { date: "24.10.2019", country: "Čehija", description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)" },
+    ];
+    const ai = emptyVendorReportExtract("autodna");
+    ai.vehicleHistoryTimeline = [
+      { date: "24.10.2019", country: "Čehija", description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)" },
+      { date: "01.06.2018", country: "Vācija", description: "Pārdošanai piedāvātas automašīnas (25 000 EUR)" },
+    ];
+    const merged = mergeVendorReportExtracts(local, ai);
+    expect(merged.vehicleHistoryTimeline).toHaveLength(2);
+  });
+});
+
+describe("laikposma fakta piemērošana (upsert_vehicle_history_timeline_row)", () => {
+  it("pievieno rindu AutoDNA blokam un neblukdublē atkārtotu darbību", () => {
+    const blocks = createDefaultSourceBlocks();
+    const action = {
+      type: "upsert_vehicle_history_timeline_row" as const,
+      source: "autodna" as const,
+      date: "24.10.2019",
+      description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)",
+      country: "Čehija",
+      odometer: "159383",
+      confidence: "high" as const,
+    };
+    const first = applyCopilotActions(blocks, [action], { onlyAuto: false });
+    expect(first.sourceBlocks.autodna.vehicleHistoryTimeline).toEqual([
+      {
+        date: "24.10.2019",
+        country: "Čehija",
+        description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)",
+        odometer: "159383",
+      },
+    ]);
+    const second = applyCopilotActions(first.sourceBlocks, [action], { onlyAuto: false });
+    expect(second.sourceBlocks.autodna.vehicleHistoryTimeline).toHaveLength(1);
   });
 });
 

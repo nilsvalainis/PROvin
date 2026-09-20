@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeLossAmountEurDisplay,
   parseLossAmountEurBounds,
+  roundLossAmountEurDisplayToTens,
 } from "@/lib/loss-amount-format";
 
 describe("normalizeLossAmountEurDisplay", () => {
@@ -38,5 +39,40 @@ describe("normalizeLossAmountEurDisplay", () => {
 describe("parseLossAmountEurBounds", () => {
   it("rejects digit soup that would become a fake mega-amount", () => {
     expect(parseLossAmountEurBounds("1001 1500")).toBeNull();
+  });
+});
+
+describe("roundLossAmountEurDisplayToTens", () => {
+  it("rounds a plain grouped amount to the nearest 10 EUR", () => {
+    expect(roundLossAmountEurDisplayToTens("2 847 €")).toBe("2 850 €");
+    expect(roundLossAmountEurDisplayToTens("5001 €")).toBe("5 000 €");
+  });
+
+  it("rounds amounts with cents to the nearest 10 EUR", () => {
+    expect(roundLossAmountEurDisplayToTens("2 778.22 €")).toBe("2 780 €");
+  });
+
+  it("leaves already-round amounts unchanged", () => {
+    expect(roundLossAmountEurDisplayToTens("2 800 €")).toBe("2 800 €");
+  });
+
+  it("rounds both bounds of a range", () => {
+    expect(roundLossAmountEurDisplayToTens("1 001 - 1 500 €")).toBe("1 000 - 1 500 €");
+  });
+
+  it("preserves a trailing free-text note after a range", () => {
+    expect(roundLossAmountEurDisplayToTens("1 001 - 1 500 €; Zādzība")).toBe(
+      "1 000 - 1 500 €; Zādzība",
+    );
+  });
+
+  it("leaves free text and unavailable-data sentinels unchanged", () => {
+    expect(roundLossAmountEurDisplayToTens("apstrīdēts")).toBe("apstrīdēts");
+    expect(roundLossAmountEurDisplayToTens("Dati nav pieejami")).toBe("Dati nav pieejami");
+    expect(roundLossAmountEurDisplayToTens("")).toBe("");
+  });
+
+  it("rounds near-zero amounts to 0 €", () => {
+    expect(roundLossAmountEurDisplayToTens("4 €")).toBe("0 €");
   });
 });

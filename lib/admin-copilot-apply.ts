@@ -36,6 +36,7 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
+import type { CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { sanitizeVinRegistryClientText } from "@/lib/vin-registry-client-text";
 import {
@@ -80,6 +81,7 @@ import type {
   CopilotRegistryFieldsAction,
   CopilotServiceHistoryAction,
   CopilotSourceKey,
+  CopilotVehicleHistoryTimelineAction,
 } from "@/lib/admin-copilot-types";
 import {
   isCopilotSourceKey,
@@ -113,6 +115,19 @@ function normalizeMileageRow(a: CopilotMileageAction): AutoRecordsServiceRow | n
   if (!date.trim() || odometer === "") return null;
   if (!autoRecordsMileageRowHasData(row)) return null;
   return row;
+}
+
+function normalizeHistoryTimelineRow(a: CopilotVehicleHistoryTimelineAction): CarVerticalTimelineRow | null {
+  const date = formatAutoRecordsDateForOutput(a.date.trim());
+  const description = a.description.trim();
+  if (!date || !description) return null;
+  const country = normalizeCountryNameLv(a.country.trim()) || a.country.trim();
+  const odometer = a.odometer?.trim() ? normalizeAutoRecordsOdometer(a.odometer.trim()) : "";
+  return { date, country, description, ...(odometer ? { odometer } : {}) };
+}
+
+function historyTimelineRowKey(r: CarVerticalTimelineRow): string {
+  return `${r.date}|${r.description.replace(/\s+/g, " ").trim().toLowerCase()}`;
 }
 
 function incidentKey(r: LtabIncidentRow): string {
@@ -285,6 +300,17 @@ function applyMileageToVendor(b: VendorAvotuBlockState, row: AutoRecordsServiceR
     ...base,
     serviceHistory: mergeMileageRows(base.serviceHistory ?? [emptyAutoRecordsServiceRow()], row),
   };
+}
+
+function applyHistoryTimelineToVendor(
+  b: VendorAvotuBlockState,
+  row: CarVerticalTimelineRow,
+): VendorAvotuBlockState {
+  const base = ensureVendor(b);
+  const existing = base.vehicleHistoryTimeline ?? [];
+  const key = historyTimelineRowKey(row);
+  if (existing.some((r) => historyTimelineRowKey(r) === key)) return base;
+  return { ...base, vehicleHistoryTimeline: [...existing, row] };
 }
 
 function vinRegistryMileageKey(r: VinRegistryMileageRow): string {
@@ -1056,6 +1082,25 @@ export function applyCopilotActions(
         next = { ...next, carvertical: applyMileageToVendor(next.carvertical, row) };
       } else if (action.source === "cc_vin") {
         next = { ...next, cc_vin: applyMileageToCcVin(next.cc_vin, row) };
+      } else {
+        skipped.push({ action, reason: "unknown_source" });
+        continue;
+      }
+      applied.push(action);
+      changed.add(action.source);
+      continue;
+    }
+
+    if (action.type === "upsert_vehicle_history_timeline_row") {
+      const row = normalizeHistoryTimelineRow(action);
+      if (!row) {
+        skipped.push({ action, reason: "invalid_history_timeline_row" });
+        continue;
+      }
+      if (action.source === "autodna") {
+        next = { ...next, autodna: applyHistoryTimelineToVendor(next.autodna, row) };
+      } else if (action.source === "carvertical") {
+        next = { ...next, carvertical: applyHistoryTimelineToVendor(next.carvertical, row) };
       } else {
         skipped.push({ action, reason: "unknown_source" });
         continue;

@@ -43,6 +43,10 @@ function incidentKey(r: LtabIncidentRow): string {
   return `${r.csngDate}|${r.lossAmount.replace(/\s+/g, "")}`;
 }
 
+function historyTimelineKey(r: { date: string; description: string }): string {
+  return `${r.date}|${r.description.replace(/\s+/g, " ").trim().toLowerCase()}`;
+}
+
 /** Apvieno deterministisko un AI rezultātu; primārais nosaka vērtības konfliktos. */
 export function mergeVendorReportExtracts(
   primary: VendorReportExtract,
@@ -68,6 +72,15 @@ export function mergeVendorReportExtracts(
     incidents.push(row);
   }
 
+  const vehicleHistoryTimeline = [...primary.vehicleHistoryTimeline];
+  const historySeen = new Set(primary.vehicleHistoryTimeline.map(historyTimelineKey));
+  for (const row of secondary.vehicleHistoryTimeline) {
+    const key = historyTimelineKey(row);
+    if (historySeen.has(key)) continue;
+    historySeen.add(key);
+    vehicleHistoryTimeline.push(row);
+  }
+
   return {
     vendor: primary.vendor,
     mileage,
@@ -79,6 +92,7 @@ export function mergeVendorReportExtracts(
         : secondary.serviceHistory,
     ),
     countryTimeline: [...primary.countryTimeline, ...secondary.countryTimeline],
+    vehicleHistoryTimeline,
     vehicleInfo: mergeVehicleInfoPreferSpecific(primary.vehicleInfo, secondary.vehicleInfo),
     equipment: primary.equipment.length > 0 ? primary.equipment : secondary.equipment,
     serviceHistoryNotes: primary.serviceHistoryNotes || secondary.serviceHistoryNotes,
@@ -143,6 +157,22 @@ export function buildVendorCopilotActions(
       country: row.incidentNo,
       confidence: "high",
     });
+  }
+
+  if (source === "autodna" || source === "carvertical") {
+    for (const row of extract.vehicleHistoryTimeline) {
+      if (!row.date.trim() || !row.description.trim()) continue;
+      actions.push({
+        type: "upsert_vehicle_history_timeline_row",
+        source,
+        date: row.date,
+        description: row.description,
+        country: row.country,
+        ...(row.odometer?.trim() ? { odometer: row.odometer } : {}),
+        confidence: "high",
+        note: `Laikposma fakts no ${vendorLabel(extract.vendor)} atskaites`,
+      });
+    }
   }
 
   for (const entry of sortVendorServiceEntries(extract.serviceHistory)) {

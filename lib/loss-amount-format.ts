@@ -113,6 +113,57 @@ export function normalizeLossAmountEurDisplay(raw: string): string {
   return trimmed;
 }
 
+function roundEurToNearestTen(n: number): number {
+  return Math.round(n / 10) * 10;
+}
+
+/**
+ * Fallback tiem pašiem gadījumiem, kuros parseLossAmountEurBounds apzināti atsakās (vairākas
+ * ciparu grupas bez domuzīmes = potenciāls "digit soup"), bet reāli tas ir viens grupēts skaitlis
+ * ar atstarpēm kā tūkstošu atdalītāju (piem. "2 847 €"). Tas pats trikts jau lietots
+ * unified-incidents.ts → parseIncidentAmountEur.
+ */
+function collapsedEurWhole(raw: string): number | null {
+  const collapsed = raw.replace(/EUR|€/gi, "").replace(/[\s\u00a0\u202f]/g, "").trim();
+  if (!/^\d+$/.test(collapsed)) return null;
+  const v = Number.parseInt(collapsed, 10);
+  return Number.isNaN(v) ? null : v;
+}
+
+/**
+ * Klientam redzamā PDF „NEGADĪJUMU VĒSTURE” summa: noapaļota uz tuvāko 10 EUR (pēdējais cipars vienmēr „0”).
+ * Diapazoniem noapaļo abas robežas; brīvu tekstu (piem. „apstrīdēts”, „nav datu”, sentinel) atstāj nemainītu.
+ * Neietekmē admin rediģēšanas laukus — tie turpina rādīt precīzo avota vērtību (normalizeLossAmountEurDisplay).
+ */
+export function roundLossAmountEurDisplayToTens(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed || isIncidentDataUnavailableText(trimmed)) return trimmed;
+
+  const segments = trimmed
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (segments.length > 1) {
+    return segments.map(roundLossAmountEurDisplayToTens).join("; ");
+  }
+
+  const bounds = parseLossAmountEurBounds(trimmed);
+  if (bounds) {
+    const lo = roundEurToNearestTen(bounds.lo);
+    const hi = roundEurToNearestTen(bounds.hi);
+    if (lo === hi) return lo <= 0 ? "0 €" : `${formatEurGrouped(lo)} €`;
+    return `${formatEurGrouped(lo)} - ${formatEurGrouped(hi)} €`;
+  }
+
+  const whole = collapsedEurWhole(trimmed);
+  if (whole != null) {
+    const rounded = roundEurToNearestTen(whole);
+    return rounded <= 0 ? "0 €" : `${formatEurGrouped(rounded)} €`;
+  }
+
+  return trimmed;
+}
+
 export function normalizeLtabIncidentRow(row: LtabIncidentRow): LtabIncidentRow {
   return {
     ...row,

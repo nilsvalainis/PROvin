@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN BUSINESS - 10 varianti 3 teksta kartītēm</title>
+<style>
+  :root{
+    --ink:#f5f8fc; --sub:rgb(203 213 225 / .9); --mute:rgb(148 163 184 / .8);
+    --blue:#2563eb; --blue2:#60a5fa; --hair:rgb(255 255 255 / .1); --bg:#07080a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;color:var(--ink);background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,sans-serif;}
+  .nav{position:sticky;top:0;z-index:20;display:flex;flex-wrap:nowrap;gap:.35rem;overflow-x:auto;
+    padding:.7rem 1rem;background:rgb(7 8 10 / .94);border-bottom:1px solid var(--hair);}
+  .nav a{flex:0 0 auto;font-size:.58rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--mute);text-decoration:none;padding:.32rem .55rem;border-radius:999px;}
+  .nav a:hover,.nav a.on{color:#fff;background:rgb(37 99 235 / .28);}
+  .intro,.scene{max-width:80rem;margin:0 auto;padding:1.4rem 1.2rem 2rem;}
+  .intro b{display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .intro h1{margin:.4rem 0 0;font-size:1.25rem;}
+  .intro p{margin:.5rem 0 0;font-size:.86rem;line-height:1.55;color:var(--sub);max-width:46rem;}
+  .cap b{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;}
+  .cap h2{margin:.2rem 0 .25rem;font-size:1.02rem;}
+  .cap p{margin:0 0 1rem;font-size:.8rem;line-height:1.5;color:var(--sub);max-width:44rem;}
+  .why{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;margin:0 0 1rem;}
+  .n{font-size:.58rem;font-weight:800;letter-spacing:.12em;color:#60a5fa;}
+  .l{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;}
+  .lab{display:flex;align-items:baseline;gap:.5rem;}
+  .body{margin:.55rem 0 0;font-size:.84rem;line-height:1.58;color:var(--sub);}
+  .frame{border:1px solid var(--hair);border-radius:1rem;padding:1.3rem 1.2rem;background:#0a0c10;}
+
+  /* 01 stretch */
+  .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;align-items:stretch;}
+  .c{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:.9rem;padding:1rem;background:rgb(255 255 255 / .03);min-height:100%;}
+  .c .body{flex:1;}
+
+  /* 02 editorial no box */
+  .ed .c{border:0;background:transparent;padding:0 1rem 0 0;border-radius:0;border-right:1px solid var(--hair);}
+  .ed .c:last-child{border-right:0;padding-right:0;}
+
+  /* 03 tabs */
+  .tabs .tabbar{display:flex;gap:.4rem;margin-bottom:1rem;}
+  .tabs .tab{border:1px solid var(--hair);background:transparent;color:var(--mute);border-radius:999px;
+    padding:.4rem .85rem;font:inherit;font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;}
+  .tabs .tab.on{color:#fff;border-color:rgb(96 165 250 / .55);background:rgb(37 99 235 / .28);}
+  .tabs .panel{min-height:11rem;border-left:2px solid var(--blue);padding:.2rem 0 .2rem 1rem;}
+
+  /* 04 mosaic: wide + two */
+  .mosaic{display:grid;grid-template-columns:1.35fr .82fr .82fr;gap:1rem;align-items:stretch;}
+  .mosaic .c.wide{background:rgb(37 99 235 / .08);border-color:rgb(96 165 250 / .28);}
+
+  /* 05 accordion */
+  .acc .row{width:100%;text-align:left;border:1px solid var(--hair);background:rgb(255 255 255 / .03);
+    color:inherit;border-radius:.8rem;padding:.9rem 1rem;margin:0 0 .5rem;cursor:pointer;font:inherit;}
+  .acc .row .body{display:none;}
+  .acc .row.open .body{display:block;}
+
+  /* 06 equal cap + scroll */
+  .scroll .c{max-height:14.5rem;}
+  .scroll .body{overflow:auto;padding-right:.35rem;scrollbar-width:thin;}
+
+  /* 07 shared well */
+  .well .chips{display:flex;gap:.5rem;margin-bottom:1rem;}
+  .well .chip{border:1px solid var(--hair);background:transparent;color:var(--mute);border-radius:.7rem;
+    padding:.7rem .9rem;cursor:pointer;font:inherit;flex:1;text-align:left;}
+  .well .chip.on{border-color:rgb(96 165 250 / .5);background:rgb(37 99 235 / .16);color:#fff;}
+  .well .text{border-top:1px solid var(--hair);padding-top:1rem;min-height:10rem;}
+
+  /* 08 quote + rest */
+  .quote .leadline{margin:.7rem 0 .55rem;font-size:1.05rem;line-height:1.35;font-weight:650;color:#e2e8f0;}
+  .quote .rest{font-size:.78rem;line-height:1.55;color:var(--mute);}
+
+  /* 09 stacked right */
+  .stack{display:grid;grid-template-columns:1.2fr .9fr;gap:1rem;}
+  .stack .side{display:flex;flex-direction:column;gap:1rem;}
+
+  /* 10 numbered story, no columns */
+  .story .beat{display:grid;grid-template-columns:3.2rem 1fr;gap:1rem;padding:1.1rem 0;border-top:1px solid var(--hair);}
+  .story .beat:first-child{border-top:0;padding-top:0;}
+  .story .big{font-size:1.4rem;font-weight:800;color:#2563eb;line-height:1;}
+
+  @media (max-width: 800px){
+    .g3,.mosaic,.stack{grid-template-columns:1fr;}
+    .ed .c{border-right:0;border-bottom:1px solid var(--hair);padding:0 0 1rem;}
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="#v1">01 Vienāds augstums</a>
+  <a href="#v2">02 Bez kastēm</a>
+  <a href="#v3">03 Cilnes</a>
+  <a href="#v4">04 Mozaīka 1+2</a>
+  <a href="#v5">05 Akordeons</a>
+  <a href="#v6">06 Vienāds + ritinājums</a>
+  <a href="#v7">07 Kopīgs lauks</a>
+  <a href="#v8">08 Citāts + pārējais</a>
+  <a href="#v9">09 Gara pa kreisi</a>
+  <a href="#v10">10 Vertikāls stāsts</a>
+</nav>
+<div class="intro">
+  <b>3 kartītes · nevienāds teksta garums</b>
+  <h1>Problēma nav krāsa. Vidējā kolonna ir apmēram 2× garāka.</h1>
+  <p>Riski un Klientiem ir līdzīgi gari. Reputācija ir gandrīz divas reizes garāka. Trīs vienāda platuma kartītes
+    tāpēc izskatās “salauztas”: īsajās paliek tukšums, garajā teksts spiežas. Zemāk 10 paņēmieni, kā to risināt,
+    <b>nemainot saturu</b>.</p>
+</div>
+
+<section class="scene" id="v1">
+  <div class="cap"><b>01</b><h2>Vienāds augstums, teksts augšā</h2>
+    <p>Kartītes stiepjas līdz garākajai. Īsajās paliek tukša vieta apakšā. Klasika, bet tukšums joprojām redzams.</p></div>
+  <div class="frame"><p class="why">Kāpēc PROVIN BUSINESS</p><div class="g3" id="v1g"></div></div>
+</section>
+
+<section class="scene" id="v2">
+  <div class="cap"><b>02</b><h2>Bez kastēm, redakcijas kolonnas</h2>
+    <p>Nav rāmja, kuram “jābūt vienādam”. Garums drīkst atšķirties, kā avīzē. Vizuāli visstabilākais, ja grib visus trīs tekstus uzreiz.</p></div>
+  <div class="frame"><p class="why">Kāpēc PROVIN BUSINESS</p><div class="g3 ed" id="v2g"></div></div>
+</section>
+
+<section class="scene" id="v3">
+  <div class="cap"><b>03</b><h2>Cilnes: viens teksts vienā laikā</h2>
+    <p>Garums vairs neskaitās. Visi trīs teksti paliek, bet redzams viens. Labākais, ja kolonnas ir jātur vienā blokā.</p></div>
+  <div class="frame tabs" id="v3g"></div>
+</section>
+
+<section class="scene" id="v4">
+  <div class="cap"><b>04</b><h2>Mozaīka: garajam vairāk vietas</h2>
+    <p>Reputācija dabū platāku kolonnu, jo tai ir vairāk zīmju. Īsie teksti paliek šaurāki. Proporcija seko saturam.</p></div>
+  <div class="frame"><p class="why">Kāpēc PROVIN BUSINESS</p><div class="mosaic" id="v4g"></div></div>
+</section>
+
+<section class="scene" id="v5">
+  <div class="cap"><b>05</b><h2>Akordeons, virsraksti vienādi</h2>
+    <p>Trīs vienādas rindas. Atver, kad vajag. Garums ietekmē tikai atvērto rindu, ne trīs blakus kartītes.</p></div>
+  <div class="frame acc"><p class="why">Kāpēc PROVIN BUSINESS</p><div id="v5g"></div></div>
+</section>
+
+<section class="scene" id="v6">
+  <div class="cap"><b>06</b><h2>Vienāds rāmis, teksts ritinas iekšā</h2>
+    <p>Ārēji trīs vienādi kvadrāti. Garais teksts slīd kartītes iekšpusē. Forma paliek simetriska.</p></div>
+  <div class="frame"><p class="why">Kāpēc PROVIN BUSINESS</p><div class="g3 scroll" id="v6g"></div></div>
+</section>
+
+<section class="scene" id="v7">
+  <div class="cap"><b>07</b><h2>Trīs iezīmes + viens kopīgs teksta lauks</h2>
+    <p>Augšā vienāda platuma pogas. Apakšā viens lauks, kas pieņem jebkuru garumu. Kartīšu augstums vairs nav problēma.</p></div>
+  <div class="frame well" id="v7g"></div>
+</section>
+
+<section class="scene" id="v8">
+  <div class="cap"><b>08</b><h2>Pirmais teikums liels, pārējais mazāks</h2>
+    <p>Vizuālo svaru nes pirmais teikums (līdzīgi visās trīs). Garāka otra daļa kļūst par “mazāku burtu” bloku, nevis par izstieptu kasti.</p></div>
+  <div class="frame"><p class="why">Kāpēc PROVIN BUSINESS</p><div class="g3 quote" id="v8g"></div></div>
+</section>
+
+<section class="scene" id="v9">
+  <div class="cap"><b>09</b><h2>Garais pa kreisi, īsie sakrauti pa labi</h2>
+    <p>Reputācija kā galvenā kolonna. Riski un Klientiem viens virs otra. Kopējais bloks paliek taisnstūris, teksts nekarājas.</p></div>
+  <div class="frame"><p class="why">Kāpēc PROVIN BUSINESS</p><div class="stack" id="v9g"></div></div>
+</section>
+
+<section class="scene" id="v10">
+  <div class="cap"><b>10</b><h2>Nav kolonnu: vertikāls stāsts</h2>
+    <p>Katrs teksts ņem tik vietas, cik vajag. Nav ko salīdzināt pa augstumu. Tas ir visgodīgākais pret atšķirīgo zīmju skaitu.</p></div>
+  <div class="frame story"><p class="why">Kāpēc PROVIN BUSINESS</p><div id="v10g"></div></div>
+</section>
+
+<script>
+const BEATS = [
+  { n:"01", l:"Riski", t:"Risinājums izstrādāts auto tirdzniecības uzņēmumiem, lai pirms auto iegādes, pieņemšanas komisijā vai maiņas darījumos pilnībā novērstu riskus, kas saistīti ar koriģētu nobraukumu, slēptiem negadījumiem un neatbilstoši ievērotiem apkopes intervāliem." },
+  { n:"02", l:"Reputācija", t:"Ar PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat uzņēmumu no zaudējumiem iepirkumos, bet arī pasargājat savu reputāciju. Bieži vien iepriekšējie tirgotāji auto vēsturei nav pievērsuši uzmanību, ir apzināti slēpuši defektus vai pat koriģējuši odometra rādījumus. Pieņemot tādu auto savā klāstā vai kā pirmo iemaksu, atbildība gala pircēja priekšā gulstas uz jūsu uzņēmuma pleciem. Veicot pārbaudi pirms katra darījuma, jūs nodrošināt, ka jūsu zīmols tiek saistīts tikai ar pārbaudītiem un uzticamiem auto." },
+  { n:"03", l:"Klientiem", t:"Klientiem šī atskaite sniedz nepārprotamus pierādījumus par auto faktisko vēsturi, un auto tirdzniecības nozarē tā kļūst par kvalitātes standartu, kas uzskatāmi demonstrē uzņēmuma atbildību un godprātību. Tas stiprina uzticēšanos, paaugstina jūsu piedāvājuma vērtību tirgū un atvieglo lēmuma pieņemšanu jebkurā darījuma veidā." },
+];
+function firstSentence(s){
+  const i = s.indexOf(". ");
+  return i > 0 ? { a:s.slice(0,i+1), b:s.slice(i+2) } : { a:s, b:"" };
+}
+function card(b, extra){
+  return `<article class="c ${extra||""}"><div class="lab"><span class="n">${b.n}</span><span class="l">${b.l}</span></div><p class="body">${b.t}</p></article>`;
+}
+function fill(id, html){ const el=document.getElementById(id); if(el) el.innerHTML=html; }
+
+fill("v1g", BEATS.map(b=>card(b)).join(""));
+fill("v2g", BEATS.map(b=>card(b)).join(""));
+fill("v4g", BEATS.map((b,i)=>card(b, i===1?"wide":"")).join(""));
+fill("v6g", BEATS.map(b=>card(b)).join(""));
+fill("v8g", BEATS.map(b=>{
+  const {a,b:rest}=firstSentence(b.t);
+  return `<article class="c"><div class="lab"><span class="n">${b.n}</span><span class="l">${b.l}</span></div><p class="leadline">${a}</p>${rest?`<p class="rest">${rest}</p>`:""}</article>`;
+}).join(""));
+fill("v9g", `${card(BEATS[1], "wide")}<div class="side">${card(BEATS[0])}${card(BEATS[2])}</div>`);
+fill("v10g", BEATS.map(b=>`<div class="beat"><div class="big">${b.n}</div><div><div class="l">${b.l}</div><p class="body">${b.t}</p></div></div>`).join(""));
+
+fill("v5g", BEATS.map((b,i)=>`<button class="row${i===1?" open":""}" type="button"><div class="lab"><span class="n">${b.n}</span><span class="l">${b.l}</span></div><p class="body">${b.t}</p></button>`).join(""));
+document.getElementById("v5g").addEventListener("click", (e)=>{
+  const row = e.target.closest(".row"); if(!row) return;
+  row.classList.toggle("open");
+});
+
+function bindSwitch(rootSel, makeChrome){
+  const root = document.querySelector(rootSel);
+  let on = 0;
+  const draw = () => { root.innerHTML = makeChrome(on); };
+  root.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-i]"); if(!btn) return;
+    on = Number(btn.dataset.i); draw();
+  });
+  draw();
+}
+bindSwitch("#v3g", (on) => `
+  <p class="why">Kāpēc PROVIN BUSINESS</p>
+  <div class="tabbar">${BEATS.map((b,i)=>`<button class="tab${i===on?" on":""}" data-i="${i}" type="button">${b.n} ${b.l}</button>`).join("")}</div>
+  <div class="panel"><div class="lab"><span class="n">${BEATS[on].n}</span><span class="l">${BEATS[on].l}</span></div><p class="body">${BEATS[on].t}</p></div>`);
+bindSwitch("#v7g", (on) => `
+  <p class="why">Kāpēc PROVIN BUSINESS</p>
+  <div class="chips">${BEATS.map((b,i)=>`<button class="chip${i===on?" on":""}" data-i="${i}" type="button"><span class="n">${b.n}</span> <span class="l">${b.l}</span></button>`).join("")}</div>
+  <div class="text"><p class="body" style="margin:0">${BEATS[on].t}</p></div>`);
+</script>
+</body>
+</html>

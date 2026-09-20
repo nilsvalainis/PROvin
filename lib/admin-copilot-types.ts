@@ -49,6 +49,22 @@ export type CopilotMileageAction = {
   note?: string;
 };
 
+/**
+ * Vispārīgs laikposma fakts, kas nav nobraukums/negadījums (piem. AutoDNA/CarVertical
+ * vēsturiskā cena vai sludinājums ārvalstīs) - "Vēstures kopsavilkums" PDF lentē.
+ * Tikai `autodna` / `carvertical`, jo tie ir vienīgie bloki ar `vehicleHistoryTimeline`.
+ */
+export type CopilotVehicleHistoryTimelineAction = {
+  type: "upsert_vehicle_history_timeline_row";
+  source: "autodna" | "carvertical";
+  date: string;
+  description: string;
+  country: string;
+  odometer?: string;
+  confidence: CopilotConfidence;
+  note?: string;
+};
+
 /** Oficiālā dīlera „Servisa vēsture” — faktu rindas (datums + km + darbi). */
 export type CopilotServiceHistoryAction = {
   type: "set_service_history";
@@ -185,6 +201,7 @@ export type CopilotClearFieldAction = {
 export type CopilotAction =
   | CopilotIncidentAction
   | CopilotMileageAction
+  | CopilotVehicleHistoryTimelineAction
   | CopilotServiceHistoryAction
   | CopilotServiceWorkAction
   | CopilotDealerVehicleInfoAction

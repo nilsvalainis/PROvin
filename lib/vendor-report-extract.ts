@@ -9,6 +9,7 @@
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
+import type { CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import type { OutvinEquipmentLine, OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
 import type { VendorServiceEntry } from "@/lib/vendor-service-history";
@@ -26,6 +27,8 @@ export type VendorReportExtract = {
   serviceHistory: VendorServiceEntry[];
   /** Auto dzīves cikls pa valstīm (valsts noteikšanai tukšajām rindām). */
   countryTimeline: CountryTimelineEntry[];
+  /** Vispārīgi laikposma notikumi, kas nav nobraukums/negadījums (piem. vēsturiskā cena/sludinājums ārvalstīs). */
+  vehicleHistoryTimeline: CarVerticalTimelineRow[];
   /** Dīlera tehniskie lauki (OFICIĀLĀ DĪLERA DATI). */
   vehicleInfo: Partial<OutvinVehicleInfo>;
   /** Rūpnīcas komplektācija (kods + apraksts) — tikai dīlera / rūpnīcas izdrukām. */
@@ -46,6 +49,7 @@ export function emptyVendorReportExtract(vendor: VendorReportVendor): VendorRepo
     incidents: [],
     serviceHistory: [],
     countryTimeline: [],
+    vehicleHistoryTimeline: [],
     vehicleInfo: {},
     equipment: [],
     serviceHistoryNotes: "",
