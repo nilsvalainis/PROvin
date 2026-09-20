@@ -236,13 +236,28 @@ export function mergeOverlappingServiceWorkLines(lines: readonly string[]): stri
   return sortWorkLines(kept);
 }
 
+/** AutoDNA / Copilot rindkopa: gara rinda ar vairākiem teikumiem. */
+export function looksLikeNarrativeServiceWorkLine(line: string): boolean {
+  const t = line.replace(/\s+/g, " ").trim();
+  if (t.length < 140) return false;
+  return (t.match(/[.!?]\s+\S/g) ?? []).length >= 1;
+}
+
+/** Ja blakus ir īss saraksts, AutoDNA rindkopu izmet. */
+export function dropNarrativeServiceWorkLines(lines: readonly string[]): string[] {
+  const cleaned = lines.map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+  if (cleaned.length < 2) return cleaned;
+  const kept = cleaned.filter((l) => !looksLikeNarrativeServiceWorkLine(l));
+  return kept.length > 0 && kept.length < cleaned.length ? kept : cleaned;
+}
+
 /** Ielasīts darbu teksts → rindas (idempotents). */
 export function formatServiceWorksLines(raw: string): string {
   const text = stripWorkDecorations(raw);
   if (!text) return "";
 
   const seeds: string[] = [];
-  for (const block of text.split(/\r?\n+/)) {
+  for (const block of dropNarrativeServiceWorkLines(text.split(/\r?\n+/))) {
     const trimmed = block.trim();
     if (!trimmed) continue;
     for (const piece of splitOemTerminated(trimmed)) {

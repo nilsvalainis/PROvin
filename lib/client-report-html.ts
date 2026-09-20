@@ -73,6 +73,7 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
+import { buildPdfFactCardHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
 import {
   buildDealerSectionCoverHtml,
   resolveDealerCoverVehicle,
@@ -1702,7 +1703,14 @@ function buildVendorAvotuSubsection(
     photoDataUrls,
     normalizeSourceBlockPhotoGroups,
   );
-  if (!hasComments && !owners && !status && !notes && !photosHtml && !sparkHtml) return "";
+  const factsHtml = buildPdfFactCardHtml(
+    collectRegistryFactCardRows({
+      ownersSummary: owners,
+      statusRecords: status,
+      autoNotes: notes,
+    }),
+  );
+  if (!hasComments && !factsHtml && !photosHtml && !sparkHtml) return "";
   const head = sectionHeadBrand(
     vendorSectionIconHtml(b.title),
     b.title,
@@ -1710,9 +1718,7 @@ function buildVendorAvotuSubsection(
   );
   const bodyParts: string[] = [];
   if (sparkHtml) bodyParts.push(sparkHtml);
-  if (owners) bodyParts.push(pdfReportCommentBox(owners, "Īpašnieku skaits"));
-  if (status) bodyParts.push(pdfReportCommentBox(status, "Statuss"));
-  if (notes) bodyParts.push(pdfReportCommentBox(notes, "Piezīmes"));
+  if (factsHtml) bodyParts.push(factsHtml);
   if (photosHtml) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   const body = `<div class="pdf-source-section-body">${bodyParts.join("\n")}</div>`;

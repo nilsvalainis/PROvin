@@ -48,6 +48,13 @@ const DA_TERMS: Record<string, string> = {
   ambulance: "ātrā palīdzība",
   "godstransport erhverv": "komerciāli kravu pārvadājumi",
   "privat godstransport": "privāti kravu pārvadājumi",
+  // piedziņa
+  firehjulstrukket: "pilnpiedziņa",
+  firehjulstrækket: "pilnpiedziņa",
+  forhjulstrukket: "priekšējo riteņu piedziņa",
+  forhjulstrækket: "priekšējo riteņu piedziņa",
+  baghjulstrukket: "aizmugurējo riteņu piedziņa",
+  baghjulstrækket: "aizmugurējo riteņu piedziņa",
   // virsbūve
   stationcar: "universālis",
   personbil: "vieglā automašīna",

@@ -133,6 +133,37 @@ describe("servisa darbu rindas", () => {
     });
   });
 
+  it("vienā rindā AutoDNA rindkopu izmet, ja blakus ir API saraksts", () => {
+    const narrative =
+      "Eļļas un eļļas filtra maiņa. Dzesēšanas šķidruma maiņa. Bremžu šķidruma maiņa. Bremžu šķidruma maiņa. Aizmugurējo bremžu maiņa. Zobsiksnas maiņa. Papildierīču piedziņas siksnas maiņa. Elektroniskā transportlīdzekļa veselības pārbaude (eVHCE). 1820000 Km / 84 mēnešu apkope. Salona filtra maiņa. AdBlue papildiņāšana.";
+    const rows = normalizeAutoRecordsServiceWorkRows([
+      {
+        date: "16.08.2023",
+        odometer: "179144",
+        location: "British Motor Group Land Rover København A/S",
+        works: [
+          narrative,
+          "Eļļas filtru maiņa",
+          "Bremžu šķidruma maiņa",
+          "Dzinēja dzesēšanas šķidruma maiņa",
+          "Elastīgo bremžu šļūteņu nomaiņa",
+          "Aizmugurējo bremžu nomaiņa",
+          "AdBlue papildiņāšana",
+        ].join("\n"),
+      },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.works).not.toMatch(/eļļas un eļļas filtra maiņa|1820000|eVHCE/i);
+    expect(rows[0]!.works.split("\n")).toEqual(
+      expect.arrayContaining([
+        "Eļļas filtru maiņa",
+        "Bremžu šķidruma maiņa",
+        "Dzinēja dzesēšanas šķidruma maiņa",
+        "Aizmugurējo bremžu nomaiņa",
+      ]),
+    );
+  });
+
   it("vienādā km API saraksts aizstāj AutoDNA rindkopu", () => {
     const rows = normalizeAutoRecordsServiceWorkRows([
       {

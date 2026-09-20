@@ -6,7 +6,7 @@
  */
 import { formatRegistryDateLv } from "@/lib/vin-registry-client-text";
 import { asArray, asRecord, DK_COUNTRY_LV, isoDay, num, pickNum, pickStr } from "@/lib/vin-sources/dk-json";
-import { capitalizeRegistryEvent, translateTermLv } from "@/lib/vin-sources/translate-lv";
+import { capitalizeRegistryEvent, translateTermLv, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import type { VinSourceFetchResult, VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
 import { emptyVinSourceResult } from "@/lib/vin-sources/types";
 
@@ -102,7 +102,7 @@ export function mapNummerpladePayload(payload: unknown): Omit<VinSourceFetchResu
   const euro = pickStr(rec, ["euronorm"]);
   const dpf = pickStr(rec, ["partikelfilter"]);
   if (fuel) statusLines.push(`Degviela: ${translateTermLv(fuel, "da")}`);
-  if (power) statusLines.push(`Jauda / piedziņa: ${power}`);
+  if (power) statusLines.push(`Jauda / piedziņa: ${translateTextLv(power, "da")}`);
   if (euro) statusLines.push(`Euronorma: ${euro}`);
   if (dpf && /ja|yes|1/i.test(dpf)) statusLines.push("DPF: ir");
   const eq = equipmentList(rec);

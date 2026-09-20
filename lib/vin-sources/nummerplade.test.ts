@@ -37,6 +37,7 @@ describe("mapNummerpladePayload", () => {
     expect(mapped.timeline.some((r) => r.date === "2026-08-12" && /noņemts no uzskaites/i.test(r.event))).toBe(true);
     expect(mapped.statusRecords).toMatch(/Izmantošanas veids: privāta pasažieru pārvadāšana/);
     expect(mapped.statusRecords).toMatch(/Degviela: dīzelis/);
+    expect(mapped.statusRecords).toMatch(/priekšējo riteņu piedziņa|Forhjulstrukket/);
     expect(mapped.statusRecords).toMatch(/Ātrumkārba: automāts/);
     expect(mapped.statusRecords).toMatch(/Euro V/);
     expect(mapped.statusRecords).toMatch(/Reģistrācijas statuss: noņemts no uzskaites/);

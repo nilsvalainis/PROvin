@@ -12,7 +12,9 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import {
   capitalizeServiceField,
+  dropNarrativeServiceWorkLines,
   formatServiceWorksLines,
+  looksLikeNarrativeServiceWorkLine,
   mergeOverlappingServiceWorkLines,
 } from "@/lib/service-works-lines";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
@@ -219,17 +221,15 @@ export function looksLikeServiceWorksList(raw: string): boolean {
 export function looksLikeServiceWorksNarrative(raw: string): boolean {
   const t = raw.replace(/\s+/g, " ").trim();
   if (!t || looksLikeServiceWorksList(raw)) return false;
-  const sentenceBreaks = (t.match(/[.!?]\s+\S/g) ?? []).length;
-  return t.length >= 140 && sentenceBreaks >= 1;
+  return looksLikeNarrativeServiceWorkLine(t);
 }
 
 function mergeServiceWorksPreferringApiList(group: AutoRecordsServiceWorkRow[]): string {
   const lists = group.filter((r) => looksLikeServiceWorksList(r.works));
   const sources = lists.length > 0 ? lists : group.filter((r) => !looksLikeServiceWorksNarrative(r.works));
   const used = sources.length > 0 ? sources : group;
-  return mergeOverlappingServiceWorkLines(used.flatMap((r) => r.works.split(/\r?\n+/)))
-    .map(capitalizeServiceField)
-    .join("\n");
+  const lines = dropNarrativeServiceWorkLines(used.flatMap((r) => r.works.split(/\r?\n+/)));
+  return mergeOverlappingServiceWorkLines(lines).map(capitalizeServiceField).join("\n");
 }
 
 function mergeServiceWorkGroup(group: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow {

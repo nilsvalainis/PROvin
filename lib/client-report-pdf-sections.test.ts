@@ -2078,13 +2078,13 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain(SOURCE_BLOCK_LABELS.carinfo);
-    expect(doc).toContain("Satiksmē: nē");
+    expect(doc).toContain("pdf-v1-kv");
+    expect(doc).toContain("Transportlīdzekļa informācija");
+    expect(doc).toContain("<td>Satiksmē</td><td>nē</td>");
     expect(doc).toContain("Eksportēts no Zviedrijas");
-    expect(doc).toContain("Statuss");
-    expect(doc).toContain("Piezīmes");
-    expect(doc).toContain("Īpašnieku skaits");
     expect(doc).toContain("Zviedrijā 6");
     expect(doc).not.toContain("6 īpašnieki");
+    expect(doc).not.toContain("<p class=\"pdf-subhead pdf-subhead--flush\">Statuss</p>");
     expect(doc).not.toContain("⚠");
     expect(doc).not.toContain("RED FLAG");
   });
@@ -2110,11 +2110,11 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain(SOURCE_BLOCK_LABELS.tjekbil);
+    expect(doc).toContain("pdf-v1-kv");
+    expect(doc).toContain("Transportlīdzekļa informācija");
     expect(doc).toContain("2 īpašnieki");
     expect(doc).toContain("TAKSOMETRS");
-    expect(doc).toContain("Īpašnieku skaits");
-    expect(doc).toContain("Statuss");
-    expect(doc).toContain("Piezīmes");
+    expect(doc).not.toContain("<p class=\"pdf-subhead pdf-subhead--flush\">Statuss</p>");
     expect(doc).not.toContain("⚠");
   });
 });

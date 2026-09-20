@@ -20,6 +20,25 @@ describe("PDF dīlera servisa vizītes", () => {
     expect(uk.country).toBe("Apvienotā Karaliste");
   });
 
+  it("PDF vizītē neatstāj AutoDNA rindkopu blakus API sarakstam", () => {
+    const html = buildDealerServiceVisitsHtml([
+      {
+        date: "16.08.2023",
+        odometer: "179144",
+        location: "British Motor Group Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Dānija",
+        works: [
+          "Eļļas un eļļas filtra maiņa. Dzesēšanas šķidruma maiņa. Bremžu šķidruma maiņa. Bremžu šķidruma maiņa. Aizmugurējo bremžu maiņa. Zobsiksnas maiņa. Papildierīču piedziņas siksnas maiņa. Elektroniskā transportlīdzekļa veselības pārbaude (eVHCE). 1820000 Km / 84 mēnešu apkope. Salona filtra maiņa. AdBlue papildiņāšana.",
+          "Eļļas filtru maiņa",
+          "Bremžu šķidruma maiņa",
+          "Aizmugurējo bremžu nomaiņa",
+        ].join("\n"),
+      },
+    ]);
+    expect(html).toContain("Eļļas filtru maiņa");
+    expect(html).toContain("Aizmugurējo bremžu nomaiņa");
+    expect(html).not.toMatch(/eVHCE|1820000 Km|Eļļas un eļļas filtra maiņa/);
+  });
+
   it("vienāda nobraukuma vizītes rāda kā vienu kartīti", () => {
     const html = buildDealerServiceVisitsHtml([
       {
