@@ -14,7 +14,7 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
-import { getClientCommentCustomField, stripeCheckoutLocale } from "@/lib/stripe-session";
+import { getCheckoutIntakeCustomFields, stripeCheckoutLocale } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
 
@@ -153,8 +153,8 @@ export async function POST(req: Request) {
     success_url: `${origin}${thanksPath}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${cancelPath}`,
     phone_number_collection: { enabled: false },
-    /** Stripe lapā — papildu lauks „Klienta komentārs” (nav obligāts). */
-    custom_fields: [getClientCommentCustomField(locale)],
+    /** Stripe lapā — sociālie tīkli + komentārs (nav obligāti). */
+    custom_fields: getCheckoutIntakeCustomFields(locale),
     metadata: {
       checkout_line: "audit",
       vin,

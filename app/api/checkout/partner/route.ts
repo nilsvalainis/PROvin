@@ -15,7 +15,7 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getStripe } from "@/lib/stripe";
-import { getClientCommentCustomField, stripeCheckoutLocale } from "@/lib/stripe-session";
+import { getCheckoutIntakeCustomFields, stripeCheckoutLocale } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
 
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
     success_url: `${origin}${prefix}/partneriem/konts?pack=1`,
     cancel_url: `${origin}${prefix}/partneriem/konts/pakas`,
     phone_number_collection: { enabled: false },
-    custom_fields: [getClientCommentCustomField(locale)],
+    custom_fields: getCheckoutIntakeCustomFields(locale),
     metadata: {
       checkout_line: planRaw,
       fulfillment: "b2b_pack",

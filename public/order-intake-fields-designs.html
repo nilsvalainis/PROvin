@@ -4,19 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
-<title>PROVIN - Stripe Checkout lauki, tuvu esošajam</title>
+<title>PROVIN - Stripe Checkout avots + komentārs</title>
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;background:#fff;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
-  .jump{position:sticky;top:0;z-index:20;display:flex;gap:.4rem;padding:.55rem 1rem;background:#111;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
-  .jump a{color:#bbb;text-decoration:none;padding:.28rem .65rem;border-radius:999px;}
-  .jump a:hover,.jump a.on{color:#fff;background:#0075ea;}
   .note{max-width:980px;margin:0 auto;padding:1rem 1.4rem .2rem;font-size:.8rem;line-height:1.5;color:#5c5c66;}
   .note b{display:block;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:#0075ea;margin-bottom:.25rem;}
-  .cap{max-width:980px;margin:0 auto;padding:1.1rem 1.4rem .4rem;font-size:.78rem;color:#6d6e78;}
-  .cap strong{color:#1a1a1a;font-size:.95rem;}
-
-  .stripe{background:#fff;}
   .wrap{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr 1.08fr;gap:2.5rem;padding:2.2rem 1.5rem 3rem;}
   @media (max-width:860px){.wrap{grid-template-columns:1fr;gap:1.3rem;padding:1.15rem 1rem 2.2rem;}}
   .back{display:inline-flex;align-items:center;gap:.45rem;color:#1a1a1a;text-decoration:none;font-size:.92rem;font-weight:500;margin:0 0 1.55rem;}
@@ -24,7 +17,6 @@
   .prod{font-size:.95rem;margin:0 0 .12rem;}
   .amt{font-size:2.15rem;font-weight:700;letter-spacing:-.04em;margin:.08rem 0 .5rem;line-height:1.1;}
   .desc{font-size:.92rem;line-height:1.45;color:#6d6e78;max-width:22rem;}
-
   .h{font-size:.92rem;font-weight:600;margin:0 0 .55rem;}
   .box{border:1px solid #e6e6e6;border-radius:8px;overflow:hidden;}
   .row{display:flex;align-items:center;gap:.65rem;padding:.78rem .9rem;border-bottom:1px solid #e6e6e6;}
@@ -35,143 +27,71 @@
   .field{margin:1.15rem 0 0;}
   .lab{font-size:.92rem;font-weight:600;margin:0 0 .4rem;}
   .in{width:100%;border:1px solid #d8d8d8;border-radius:6px;padding:.7rem .75rem;font-size:.92rem;background:#fff;color:#1a1a1a;}
-  .in:focus{outline:2px solid #0075ea;border-color:transparent;}
   .selwrap{position:relative;}
   .selwrap:after{content:"";position:absolute;right:.75rem;top:50%;border:5px solid transparent;border-top-color:#6d6e78;margin-top:-2px;pointer-events:none;}
   select.in{appearance:none;padding-right:1.8rem;}
   .pay{margin-top:1.35rem;}
   .card{border:1px solid #e6e6e6;border-radius:8px;padding:.95rem;}
-  .card-title{display:flex;align-items:center;gap:.45rem;font-weight:650;margin:0 0 .75rem;font-size:.95rem;}
+  .card-title{font-weight:650;margin:0 0 .75rem;font-size:.95rem;}
   .sl{font-weight:500;font-size:.82rem;color:#6d6e78;margin:0 0 .35rem;}
   .split{display:grid;grid-template-columns:1fr 1fr;border:1px solid #d8d8d8;border-radius:6px;overflow:hidden;margin-top:.45rem;}
   .split .in{border:0;border-radius:0;}
   .split .in + .in{border-left:1px solid #d8d8d8;}
   .mt{margin-top:.75rem;}
-  .paybtn{width:100%;margin-top:1.05rem;min-height:44px;border:0;border-radius:6px;background:#0075ea;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;}
+  .paybtn{width:100%;margin-top:1.05rem;min-height:44px;border:0;border-radius:6px;background:#0075ea;color:#fff;font-size:1rem;font-weight:600;}
   .legal{margin:1rem 0 0;text-align:center;font-size:.75rem;color:#8b8b93;}
-  .legal b{font-style:italic;}
 </style>
 </head>
 <body>
-<nav class="jump">
-  <a href="#now">Tagad</a>
-  <a href="#next">Ieteikums</a>
-</nav>
-
 <div class="note">
-  <b>Stripe logs, ne mājaslapa</b>
-  Tā pati Stripe lapa. Jauni ir tikai divi pazīstami nolaižamie lauki Stripe stilā. „Klienta komentārs” paliek savā vietā. Viss nav obligāts.
+  <b>Ievietots Stripe Checkout</b>
+  Hosted Stripe nezīmē čipus, tāpēc sociālie tīkli ir nolaižamais saraksts ar tām pašām opcijām. Audita mērķa nav. Komentāra etiķete ir „Komentārs”. Stripe neatbalsta placeholder tekstu šajā laukā.
 </div>
-
-<section class="cap" id="now">
-  <strong>Tagad</strong><br>
-  E-pasts, tālrunis, viens komentārs, karte.
-</section>
-<div class="stripe">
-  <div class="wrap">
-    <aside>
-      <a class="back" href="#"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="avatar">NV</span> Nils Valainis</a>
-      <div class="prod">PROVIN AUDITS</div>
-      <div class="amt">99,99 €</div>
-      <p class="desc">Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.</p>
-    </aside>
-    <div>
-      <div class="h">Kontaktinformācija</div>
-      <div class="box">
-        <div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg><input value="email@example.com"></div>
-        <div class="row"><span>🇱🇻</span><input value="21 234 567"><span class="opt">ⓘ</span></div>
-      </div>
-      <div class="field">
-        <div class="lab">Klienta komentārs</div>
-        <div class="box"><div class="row"><input placeholder=""><span class="opt">Izvēles</span></div></div>
-      </div>
-      <div class="pay">
-        <div class="h">Maksājumu veids</div>
-        <div class="card">
-          <div class="card-title">💳  Karte</div>
-          <div class="sl">Kartes informācija</div>
-          <input class="in" placeholder="1234 1234 1234 1234">
-          <div class="split"><input class="in" placeholder="MM / YY"><input class="in" placeholder="CVC"></div>
-          <div class="sl mt">Kartes īpašnieka vārds</div>
-          <input class="in" placeholder="Vārds, uzvārds">
-          <div class="sl mt">Valsts vai reģions</div>
-          <div class="selwrap"><select class="in"><option>Latvija</option></select></div>
-        </div>
-        <button class="paybtn">Maksāt</button>
-        <p class="legal">Nodrošina <b>stripe</b> &nbsp;|&nbsp; Noteikumi &nbsp;|&nbsp; Konfidencialitāte</p>
+<div class="wrap">
+  <aside>
+    <a class="back" href="#"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="avatar">NV</span> Nils Valainis</a>
+    <div class="prod">PROVIN AUDITS</div>
+    <div class="amt">99,99 €</div>
+    <p class="desc">Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.</p>
+  </aside>
+  <div>
+    <div class="h">Kontaktinformācija</div>
+    <div class="box">
+      <div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg><input value="email@example.com"></div>
+      <div class="row"><span>🇱🇻</span><input value="21 234 567"><span class="opt">ⓘ</span></div>
+    </div>
+    <div class="field">
+      <div class="lab">Kur uzzinājāt par mums?</div>
+      <div class="selwrap">
+        <select class="in">
+          <option value="">Izvēlies</option>
+          <option>TikTok</option>
+          <option selected>Instagram</option>
+          <option>Facebook</option>
+          <option>YouTube</option>
+          <option>Google</option>
+          <option>Cits</option>
+        </select>
       </div>
     </div>
-  </div>
-</div>
-
-<section class="cap" id="next">
-  <strong>Ieteikums</strong><br>
-  Pēc kontaktiem: mērķis, tad pazīstamais komentārs, tad avots, tad karte. Trīs īsi soļi, neviens nav obligāts. Ja mērķis ir „Cits”, detaļas raksta komentārā.
-</section>
-<div class="stripe">
-  <div class="wrap">
-    <aside>
-      <a class="back" href="#"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="avatar">NV</span> Nils Valainis</a>
-      <div class="prod">PROVIN AUDITS</div>
-      <div class="amt">99,99 €</div>
-      <p class="desc">Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.</p>
-    </aside>
-    <div>
-      <div class="h">Kontaktinformācija</div>
-      <div class="box">
-        <div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg><input value="email@example.com"></div>
-        <div class="row"><span>🇱🇻</span><input value="21 234 567"><span class="opt">ⓘ</span></div>
+    <div class="field">
+      <div class="lab">Komentārs</div>
+      <div class="box"><div class="row"><input placeholder="Piem. kas jums šajā auditā ir visbūtiskākais"><span class="opt">Izvēles</span></div></div>
+    </div>
+    <div class="pay">
+      <div class="h">Maksājumu veids</div>
+      <div class="card">
+        <div class="card-title">💳  Karte</div>
+        <div class="sl">Kartes informācija</div>
+        <input class="in" placeholder="1234 1234 1234 1234">
+        <div class="split"><input class="in" placeholder="MM / YY"><input class="in" placeholder="CVC"></div>
+        <div class="sl mt">Kartes īpašnieka vārds</div>
+        <input class="in" placeholder="Vārds, uzvārds">
+        <div class="sl mt">Valsts vai reģions</div>
+        <div class="selwrap"><select class="in"><option>Latvija</option></select></div>
       </div>
-
-      <div class="field">
-        <div class="lab">Audita mērķis</div>
-        <div class="selwrap">
-          <select class="in">
-            <option value="">Izvēlies</option>
-            <option selected>Vēlos pirkt šo auto</option>
-            <option>Pārdodu šo auto</option>
-            <option>Pārbaudu savu auto</option>
-            <option>Strīds ar pārdevēju</option>
-            <option>Cits</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="lab">Klienta komentārs</div>
-        <div class="box"><div class="row"><input placeholder=""><span class="opt">Izvēles</span></div></div>
-      </div>
-
-      <div class="field">
-        <div class="lab">Kur uzzinājāt par mums?</div>
-        <div class="selwrap">
-          <select class="in">
-            <option value="">Izvēlies</option>
-            <option>TikTok</option>
-            <option selected>Instagram</option>
-            <option>Facebook</option>
-            <option>YouTube</option>
-            <option>Google</option>
-            <option>Cits</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="pay">
-        <div class="h">Maksājumu veids</div>
-        <div class="card">
-          <div class="card-title">💳  Karte</div>
-          <div class="sl">Kartes informācija</div>
-          <input class="in" placeholder="1234 1234 1234 1234">
-          <div class="split"><input class="in" placeholder="MM / YY"><input class="in" placeholder="CVC"></div>
-          <div class="sl mt">Kartes īpašnieka vārds</div>
-          <input class="in" placeholder="Vārds, uzvārds">
-          <div class="sl mt">Valsts vai reģions</div>
-          <div class="selwrap"><select class="in"><option>Latvija</option></select></div>
-        </div>
-        <button class="paybtn">Maksāt</button>
-        <p class="legal">Nodrošina <b>stripe</b> &nbsp;|&nbsp; Noteikumi &nbsp;|&nbsp; Konfidencialitāte</p>
-      </div>
+      <button class="paybtn">Maksāt</button>
+      <p class="legal">Nodrošina <b>stripe</b> &nbsp;|&nbsp; Noteikumi &nbsp;|&nbsp; Konfidencialitāte</p>
     </div>
   </div>
 </div>

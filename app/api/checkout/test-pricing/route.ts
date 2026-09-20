@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { normalizeVin } from "@/lib/order-field-validation";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
 import {
+  getCheckoutIntakeCustomFields,
   getClientCommentCustomField,
   stripeCheckoutLocale,
 } from "@/lib/stripe-session";
@@ -192,8 +193,8 @@ export async function POST(req: Request) {
     billing_address_collection: "auto",
     ...(clientCollected
       ? {
-          /** VIN/saite jau savākti formā — Stripe lapā tikai klienta komentārs. */
-          custom_fields: [getClientCommentCustomField(locale)],
+          /** VIN/saite jau savākti formā — Stripe lapā avots + komentārs. */
+          custom_fields: getCheckoutIntakeCustomFields(locale),
         }
       : {
           consent_collection: { terms_of_service: "required" as const },
