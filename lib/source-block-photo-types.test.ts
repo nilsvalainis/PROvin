@@ -42,8 +42,14 @@ describe("source-block photo types", () => {
   });
 
   it("syncs empty blocks to empty photo arrays", () => {
-    const next = syncedSourceBlockPhotos({ comments: "ok" });
+    const next = syncedSourceBlockPhotos({});
     expect(next.photos).toEqual([]);
     expect(next.photoGroups).toEqual([]);
+    expect(next.hidePhotoWatermarks).toBe(true);
+  });
+
+  it("keeps an explicit hidePhotoWatermarks off flag", () => {
+    const next = syncedSourceBlockPhotos({ hidePhotoWatermarks: false });
+    expect(next.hidePhotoWatermarks).toBe(false);
   });
 });

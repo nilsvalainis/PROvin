@@ -27,6 +27,8 @@ import {
 } from "@/lib/listing-analysis-photo-types";
 import { compressImageFileToJpegForConsultation } from "@/lib/consultation-photo-client-compress";
 import { AdminPhotoLightbox, type AdminLightboxPhoto } from "@/components/admin/AdminPhotoLightbox";
+import { AdminPhotoWatermarkToggle } from "@/components/admin/AdminPhotoWatermarkToggle";
+import { HIDE_PHOTO_WATERMARKS_DEFAULT } from "@/lib/admin-photo-watermark";
 
 type PhotoGroupLike = {
   id: string;
@@ -46,6 +48,9 @@ type Props = {
   sectionTitle?: string;
   /** Bez grupu virsrakstiem — viena foto josla (negadījumu kopsavilkums). */
   simple?: boolean;
+  /** Slēpt CheckCar.vin ūdenszīmi pirms augšupielādes (noklusējums: ieslēgts). */
+  hidePhotoWatermarks?: boolean;
+  onHidePhotoWatermarksChange?: (next: boolean) => void;
 };
 
 const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i;
@@ -275,6 +280,8 @@ export function AdminListingAnalysisPhotos({
   emptyGroup = emptyListingAnalysisPhotoGroup,
   sectionTitle = "Fotogrāfijas (PDF režģis)",
   simple = false,
+  hidePhotoWatermarks,
+  onHidePhotoWatermarksChange,
 }: Props) {
   const baseInputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -290,6 +297,12 @@ export function AdminListingAnalysisPhotos({
   /** Kārtošanas melnraksts — serverī saglabā tikai vienu reizi, kad vilkšana beidzas. */
   const [dragDraft, setDragDraft] = useState<PhotoGroupLike[] | null>(null);
   const [lightboxId, setLightboxId] = useState<string | null>(null);
+  const [localHideWatermarks, setLocalHideWatermarks] = useState(HIDE_PHOTO_WATERMARKS_DEFAULT);
+  const hideWatermarks = hidePhotoWatermarks ?? localHideWatermarks;
+  const setHideWatermarks = (next: boolean) => {
+    if (onHidePhotoWatermarksChange) onHidePhotoWatermarksChange(next);
+    else setLocalHideWatermarks(next);
+  };
 
   const groups = dragDraft ?? photoGroups;
 
@@ -436,6 +449,7 @@ export function AdminListingAnalysisPhotos({
         const fd = new FormData();
         fd.set("sessionId", sessionId);
         fd.set("currentCount", String(currentTotal + uploaded.length));
+        fd.set("hideWatermarks", hideWatermarks ? "1" : "0");
         fd.set("file", jpeg);
         let data: { ok?: boolean; id?: string; error?: string; detail?: string } = {};
         let httpOk = false;
@@ -740,6 +754,11 @@ export function AdminListingAnalysisPhotos({
         </p>
         {!disabled ? (
           <div className="flex flex-wrap items-center gap-2">
+            <AdminPhotoWatermarkToggle
+              checked={hideWatermarks}
+              onChange={setHideWatermarks}
+              disabled={busy}
+            />
             {simple ? null : (
               <button
                 type="button"

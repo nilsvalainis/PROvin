@@ -1504,7 +1504,7 @@ function buildSourcePhotoGroupsPdfHtml(
     }
     if (cells.length === 0) continue;
     const titleHtml = group.title.trim()
-      ? `<p class="pdf-subhead pdf-subhead--photo">${escapeHtml(group.title.trim())}</p>`
+      ? `<p class="pdf-subhead pdf-subhead--photo"><span class="pdf-subhead__ico" aria-hidden="true">${sectionIconPdfHtml("camera")}</span><span>${escapeHtml(group.title.trim())}</span></p>`
       : "";
     sections.push(
       `<section class="pdf-listing-photo-group">${titleHtml}<div class="${gridCls}">${cells.join("")}</div></section>`,
@@ -2325,9 +2325,17 @@ function clientReportPrintCss(): string {
       }
       .pdf-listing-photo-grid--full{grid-template-columns:1fr;gap:12px;}
       .pdf-listing-photo-grid--appendix{grid-template-columns:1fr 1fr;gap:10px;}
-      .pdf-listing-photo-group{margin:0 0 14px;}
+      .pdf-listing-photo-group{
+        margin:0 0 22px;padding:12px 12px 14px;
+        border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-listing-photo-group:last-child{margin-bottom:0;}
-      .pdf-subhead--photo{margin:0 0 6px;}
+      .pdf-subhead--photo{
+        margin:0 0 10px;font-size:13px;font-weight:750;letter-spacing:-0.015em;
+        text-transform:none;color:#0f172a;
+      }
+      .pdf-subhead--photo .pdf-ico{width:15px;height:15px;color:#334155;}
       .pdf-listing-photo-cell{margin:0;break-inside:avoid;}
       .pdf-listing-photo-img{
         width:100%;height:auto;max-height:220px;object-fit:contain;

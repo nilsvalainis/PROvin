@@ -1,6 +1,7 @@
 import sharp from "sharp";
 
 import { isHeicMagicBytes, sniffImageKind } from "@/lib/admin-photo-magic";
+import { jpegWithCheckcarWatermarkCovered } from "@/lib/checkcar-watermark-cover";
 
 function isJpegMagicBuffer(buf: Buffer): boolean {
   return sniffImageKind(buf) === "jpeg";
@@ -75,10 +76,12 @@ async function toJpegBuffer(raw: Buffer): Promise<Buffer | null> {
 
 /**
  * Admin foto POST: JPEG paliek JPEG; HEIC/HEIF, PNG, WebP, AVIF, GIF, TIFF kļūst par JPEG.
+ * `coverCheckcarWatermark` - CheckCar.vin centra joslas slēpšana pirms saglabāšanas.
  */
 export async function jpegFromAdminPhotoUpload(
   raw: Buffer,
   storedMaxBytes: number,
+  options?: { coverCheckcarWatermark?: boolean },
 ): Promise<{ ok: true; jpeg: Buffer } | { ok: false; error: "file_too_large" | "invalid_jpeg" }> {
   if (raw.length === 0) return { ok: false, error: "invalid_jpeg" };
   if (raw.length > ADMIN_PHOTO_UPLOAD_MAX_SOURCE_BYTES) return { ok: false, error: "file_too_large" };
@@ -90,7 +93,11 @@ export async function jpegFromAdminPhotoUpload(
     const fitted = await shrinkJpegToMax(jpeg, storedMaxBytes);
     if (!isJpegMagicBuffer(fitted)) return { ok: false, error: "invalid_jpeg" };
     if (fitted.length > storedMaxBytes) return { ok: false, error: "file_too_large" };
-    return { ok: true, jpeg: fitted };
+    if (!options?.coverCheckcarWatermark) return { ok: true, jpeg: fitted };
+    const covered = await jpegWithCheckcarWatermarkCovered(fitted);
+    if (!isJpegMagicBuffer(covered)) return { ok: true, jpeg: fitted };
+    if (covered.length > storedMaxBytes) return { ok: true, jpeg: fitted };
+    return { ok: true, jpeg: covered };
   } catch {
     return { ok: false, error: "invalid_jpeg" };
   }

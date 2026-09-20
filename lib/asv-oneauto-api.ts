@@ -132,7 +132,9 @@ async function downloadHintJpeg(url: string): Promise<Buffer | null> {
     const res = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow" });
     if (!res.ok) return null;
     const ab = await res.arrayBuffer();
-    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), ASV_PHOTO_MAX_BYTES);
+    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), ASV_PHOTO_MAX_BYTES, {
+      coverCheckcarWatermark: true,
+    });
     return normalized.ok ? normalized.jpeg : null;
   } catch {
     return null;

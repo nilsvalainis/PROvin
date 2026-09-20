@@ -15,6 +15,10 @@ import {
 } from "@/lib/admin-cc-vin-photo-store";
 import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
 import {
+  formRequestsWatermarkCover,
+  hidePhotoWatermarksFromCcVinWorkspace,
+} from "@/lib/admin-photo-watermark";
+import {
   getOrderDraftBlobConfig,
   getOrderDraftStorageDir,
   isSafeOrderDraftSessionId,
@@ -60,7 +64,10 @@ export async function GET(req: Request) {
     const access = await assertOrderAccess(sessionId);
     if (!access) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-    const buf = await readCcVinPhotoJpeg(sessionId, photoId);
+    const draft = await readOrderDraft(sessionId);
+    const buf = await readCcVinPhotoJpeg(sessionId, photoId, {
+      coverWatermark: hidePhotoWatermarksFromCcVinWorkspace(draft?.workspace ?? null),
+    });
     if (!buf) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     return new NextResponse(new Uint8Array(buf), {
@@ -109,7 +116,9 @@ export async function POST(req: Request) {
     }
 
     const ab = await file.arrayBuffer();
-    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), CC_VIN_PHOTO_MAX_BYTES);
+    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), CC_VIN_PHOTO_MAX_BYTES, {
+      coverCheckcarWatermark: formRequestsWatermarkCover(form),
+    });
     if (!normalized.ok) {
       return NextResponse.json({ error: normalized.error }, { status: 400 });
     }

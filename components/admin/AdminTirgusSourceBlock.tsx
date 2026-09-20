@@ -459,6 +459,8 @@ export function AdminTirgusSourceBlock({
         photoGroups={val.photoGroups ?? []}
         disabled={readOnly || !!disabled || !photosPersistenceEnabled}
         onCommit={onPhotoGroupsStructuralCommit}
+        hidePhotoWatermarks={val.hidePhotoWatermarks !== false}
+        onHidePhotoWatermarksChange={(next) => onChange({ ...val, hidePhotoWatermarks: next })}
       />
     ) : null;
 

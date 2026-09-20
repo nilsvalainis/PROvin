@@ -134,8 +134,17 @@ export async function writeCcVinPhotoJpeg(
   if (!verify) throw new Error("write_verify_failed");
 }
 
-export async function readCcVinPhotoJpeg(sessionId: string, photoId: string): Promise<Buffer | null> {
+async function maybeCoverCcVinJpeg(buf: Buffer, coverWatermark: boolean): Promise<Buffer> {
+  return coverWatermark ? jpegWithCheckcarWatermarkCovered(buf) : buf;
+}
+
+export async function readCcVinPhotoJpeg(
+  sessionId: string,
+  photoId: string,
+  options?: { coverWatermark?: boolean },
+): Promise<Buffer | null> {
   if (!isSafeOrderDraftSessionId(sessionId) || !isSafeCcVinPhotoId(photoId)) return null;
+  const coverWatermark = options?.coverWatermark !== false;
 
   const blob = getOrderDraftBlobConfig();
   if (blob) {
@@ -147,7 +156,7 @@ export async function readCcVinPhotoJpeg(sessionId: string, photoId: string): Pr
       });
       if (res && res.statusCode === 200 && res.stream) {
         const buf = Buffer.from(await new Response(res.stream).arrayBuffer());
-        if (isJpegMagicBuffer(buf)) return jpegWithCheckcarWatermarkCovered(buf);
+        if (isJpegMagicBuffer(buf)) return maybeCoverCcVinJpeg(buf, coverWatermark);
       }
     } catch {
       /* fall through */
@@ -161,7 +170,7 @@ export async function readCcVinPhotoJpeg(sessionId: string, photoId: string): Pr
   try {
     const buf = await fs.readFile(photoFsPath(draftDir, sessionId, photoId));
     if (!isJpegMagicBuffer(buf)) return null;
-    return jpegWithCheckcarWatermarkCovered(buf);
+    return maybeCoverCcVinJpeg(buf, coverWatermark);
   } catch {
     return null;
   }
@@ -270,6 +279,7 @@ export async function listStoredCcVinPhotoIds(sessionId: string): Promise<string
 export async function readCcVinPhotosForPdf(
   sessionId: string,
   preferredOrder: string[],
+  options?: { coverWatermark?: boolean },
 ): Promise<{ dataUrls: Record<string, string>; missing: string[] }> {
   const stored = await listStoredCcVinPhotoIds(sessionId);
   const storedSet = new Set(stored);
@@ -284,7 +294,7 @@ export async function readCcVinPhotosForPdf(
   const dataUrls: Record<string, string> = {};
   const missing: string[] = [];
   for (const id of ordered) {
-    const buf = await readCcVinPhotoJpeg(sessionId, id);
+    const buf = await readCcVinPhotoJpeg(sessionId, id, options);
     if (!buf) {
       if (preferredOrder.includes(id) || storedSet.has(id)) missing.push(id);
       continue;

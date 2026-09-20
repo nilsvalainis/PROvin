@@ -414,6 +414,8 @@ export function AdminListingAnalysisSourceBlock({
               photoGroups={v.photoGroups ?? []}
               disabled={readOnly || disabled || !photosPersistenceEnabled}
               onPhotoGroupsStructuralCommit={(next) => onListingPhotoGroupsStructuralCommit(next)}
+              hidePhotoWatermarks={v.hidePhotoWatermarks !== false}
+              onHidePhotoWatermarksChange={(next) => onChange({ ...v, hidePhotoWatermarks: next })}
             />
           ) : null}
         </ListingAnalysisSubsectionHeading>

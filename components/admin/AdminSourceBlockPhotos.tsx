@@ -12,11 +12,15 @@ export function AdminSourceBlockPhotos({
   photoGroups,
   disabled,
   onCommit,
+  hidePhotoWatermarks,
+  onHidePhotoWatermarksChange,
 }: {
   sessionId: string;
   photoGroups: SourceBlockPhotoGroup[];
   disabled: boolean;
   onCommit: (next: SourceBlockPhotoGroup[]) => void;
+  hidePhotoWatermarks?: boolean;
+  onHidePhotoWatermarksChange?: (next: boolean) => void;
 }) {
   return (
     <AdminListingAnalysisPhotos
@@ -28,6 +32,8 @@ export function AdminSourceBlockPhotos({
       maxPhotos={SOURCE_BLOCK_MAX_PHOTOS}
       emptyGroup={emptySourceBlockPhotoGroup}
       sectionTitle="Fotogrāfijas (PDF)"
+      hidePhotoWatermarks={hidePhotoWatermarks}
+      onHidePhotoWatermarksChange={onHidePhotoWatermarksChange}
     />
   );
 }

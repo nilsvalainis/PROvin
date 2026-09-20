@@ -572,6 +572,10 @@ export function AdminAsvSourceBlock({
               maxPhotos={ASV_MAX_PHOTOS}
               emptyGroup={emptyAsvPhotoGroup}
               sectionTitle="Negadījumu / izsoļu fotogrāfijas (PDF)"
+              hidePhotoWatermarks={value.hidePhotoWatermarks !== false}
+              onHidePhotoWatermarksChange={(next) =>
+                onChange({ ...value, hidePhotoWatermarks: next })
+              }
             />
           ) : null}
           <AdminSourceCommentField

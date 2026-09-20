@@ -998,6 +998,10 @@ export function AdminCcVinSourceBlock({
               maxPhotos={CC_VIN_MAX_PHOTOS}
               emptyGroup={emptyCcVinPhotoGroup}
               sectionTitle="Fotogrāfijas (PDF)"
+              hidePhotoWatermarks={value.hidePhotoWatermarks !== false}
+              onHidePhotoWatermarksChange={(next) =>
+                onChange({ ...value, hidePhotoWatermarks: next })
+              }
             />
           ) : null}
           {!readOnly && !disabled ? (

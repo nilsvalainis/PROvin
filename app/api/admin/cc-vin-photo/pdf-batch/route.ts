@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { collectCcVinPhotoIdsFromWorkspace, readCcVinPhotosForPdf } from "@/lib/admin-cc-vin-photo-store";
+import { hidePhotoWatermarksFromCcVinWorkspace } from "@/lib/admin-photo-watermark";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isCcVinPhotoId } from "@/lib/cc-vin-photo-types";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
 
+    const draft = await readOrderDraft(sessionId);
     let preferredOrder: string[] = [];
     if (Array.isArray(b.photoIds)) {
       preferredOrder = b.photoIds
@@ -52,11 +54,12 @@ export async function POST(req: Request) {
     }
 
     if (preferredOrder.length === 0) {
-      const draft = await readOrderDraft(sessionId);
       preferredOrder = [...collectCcVinPhotoIdsFromWorkspace(draft?.workspace ?? null)];
     }
 
-    const { dataUrls, missing } = await readCcVinPhotosForPdf(sessionId, preferredOrder);
+    const { dataUrls, missing } = await readCcVinPhotosForPdf(sessionId, preferredOrder, {
+      coverWatermark: hidePhotoWatermarksFromCcVinWorkspace(draft?.workspace ?? null),
+    });
     return NextResponse.json({
       ok: true,
       dataUrls,

@@ -14,6 +14,7 @@ import {
   writeIncidentPhotoJpeg,
 } from "@/lib/admin-incident-photo-store";
 import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
+import { formRequestsWatermarkCover } from "@/lib/admin-photo-watermark";
 import {
   getOrderDraftBlobConfig,
   getOrderDraftStorageDir,
@@ -109,7 +110,9 @@ export async function POST(req: Request) {
     }
 
     const ab = await file.arrayBuffer();
-    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), INCIDENT_PHOTO_MAX_BYTES);
+    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), INCIDENT_PHOTO_MAX_BYTES, {
+      coverCheckcarWatermark: formRequestsWatermarkCover(form),
+    });
     if (!normalized.ok) {
       return NextResponse.json({ error: normalized.error }, { status: 400 });
     }

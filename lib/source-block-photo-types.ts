@@ -1,3 +1,5 @@
+import { parseHidePhotoWatermarks } from "@/lib/admin-photo-watermark";
+
 /** Avotu sadaļu fotogrāfijas — vizuālie pierādījumi PDF (līdz 50 gab. vienā blokā). */
 export const SOURCE_BLOCK_MAX_PHOTOS = 50;
 
@@ -148,11 +150,17 @@ export function syncSourceBlockPhotoGroupsAndFlat(groups: SourceBlockPhotoGroup[
   return { photoGroups, photos: flattenSourceBlockPhotoGroups(photoGroups) };
 }
 
-export function syncedSourceBlockPhotos(block: { photos?: unknown; photoGroups?: unknown }): {
+export function syncedSourceBlockPhotos(block: {
+  photos?: unknown;
+  photoGroups?: unknown;
+  hidePhotoWatermarks?: unknown;
+}): {
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
+  hidePhotoWatermarks: boolean;
 } {
-  return syncSourceBlockPhotoGroupsAndFlat(
+  const synced = syncSourceBlockPhotoGroupsAndFlat(
     normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos),
   );
+  return { ...synced, hidePhotoWatermarks: parseHidePhotoWatermarks(block) };
 }

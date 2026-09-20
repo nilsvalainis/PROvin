@@ -23,6 +23,8 @@ import type { ConsultationSlotPhotoMeta } from "@/lib/admin-consultation-draft-t
 import { CONSULTATION_MAX_PHOTOS_PER_SLOT } from "@/lib/admin-consultation-draft-types";
 import { compressImageFileToJpegForConsultation } from "@/lib/consultation-photo-client-compress";
 import { AdminPhotoLightbox, type AdminLightboxPhoto } from "@/components/admin/AdminPhotoLightbox";
+import { AdminPhotoWatermarkToggle } from "@/components/admin/AdminPhotoWatermarkToggle";
+import { HIDE_PHOTO_WATERMARKS_DEFAULT } from "@/lib/admin-photo-watermark";
 
 const inp =
   "mt-1 w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] text-[var(--admin-field-text)] placeholder:text-[var(--color-provin-muted)]";
@@ -159,6 +161,7 @@ export function AdminConsultationSlotPhotos({
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [dropActive, setDropActive] = useState(false);
   const [lightboxId, setLightboxId] = useState<string | null>(null);
+  const [hideWatermarks, setHideWatermarks] = useState(HIDE_PHOTO_WATERMARKS_DEFAULT);
 
   const atLimit = photos.length >= CONSULTATION_MAX_PHOTOS_PER_SLOT;
 
@@ -196,6 +199,7 @@ export function AdminConsultationSlotPhotos({
           const fd = new FormData();
           fd.set("sessionId", sessionId);
           fd.set("slotIndex", String(slotIndex));
+          fd.set("hideWatermarks", hideWatermarks ? "1" : "0");
           fd.set("file", jpeg);
           let data: { ok?: boolean; id?: string; error?: string } = {};
           let httpOk = false;
@@ -232,7 +236,7 @@ export function AdminConsultationSlotPhotos({
         window.setTimeout(() => setStatusLine(null), 3000);
       }
     },
-    [disabled, onPhotosStructuralCommit, photos, sessionId, slotIndex],
+    [disabled, hideWatermarks, onPhotosStructuralCommit, photos, sessionId, slotIndex],
   );
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,6 +300,12 @@ export function AdminConsultationSlotPhotos({
         <h3 className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
           Fotogrāfijas · {photos.length}/{CONSULTATION_MAX_PHOTOS_PER_SLOT}
         </h3>
+        <div className="flex flex-wrap items-center gap-2">
+        <AdminPhotoWatermarkToggle
+          checked={hideWatermarks}
+          onChange={setHideWatermarks}
+          disabled={disabled || busy}
+        />
         <label
           htmlFor={inputId}
           className={`inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] ${
@@ -307,6 +317,7 @@ export function AdminConsultationSlotPhotos({
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImagePlus className="h-3.5 w-3.5" aria-hidden />}
           Pievienot
         </label>
+        </div>
       </div>
       <input
         id={inputId}

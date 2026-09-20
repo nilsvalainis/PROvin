@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-consultation-draft-store";
 import { CONSULTATION_MAX_PHOTOS_PER_SLOT, CONSULTATION_SLOT_COUNT } from "@/lib/admin-consultation-draft-types";
 import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
+import { formRequestsWatermarkCover } from "@/lib/admin-photo-watermark";
 import {
   CONSULTATION_PHOTO_MAX_BYTES,
   isSafeConsultationPhotoId,
@@ -103,7 +104,9 @@ export async function POST(req: Request) {
     }
 
     const ab = await file.arrayBuffer();
-    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), CONSULTATION_PHOTO_MAX_BYTES);
+    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), CONSULTATION_PHOTO_MAX_BYTES, {
+      coverCheckcarWatermark: formRequestsWatermarkCover(form),
+    });
     if (!normalized.ok) {
       return NextResponse.json({ error: normalized.error }, { status: 400 });
     }

@@ -369,6 +369,7 @@ export type CsddFormFields = {
   pdfChecklist?: SourcePdfChecklist;
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
 };
 
 /** Tehniskie + apskates lauki (secība = Admin / PDF). */
@@ -443,6 +444,7 @@ export type TirgusFormFields = {
   listingMileageCountry: string;
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
 };
 
 export const TIRGUS_LABEL_LISTED = "Auto pārdošanā (dienas):";
@@ -854,6 +856,7 @@ export type AutoRecordsBlockState = {
   photos: AutoRecordsPhotoMeta[];
   /** Fotogrāfiju grupas ar manuāli ievadāmiem virsrakstiem. */
   photoGroups: AutoRecordsPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
   /** Papildu konteksts tikai AI — nav PDF. */
   aiContextRaw: string;
   pdfChecklist?: SourcePdfChecklist;
@@ -881,6 +884,7 @@ export type LtabBlockState = {
   certificate?: LtabCertificate;
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
 };
 
 /** AutoDNA / CarVertical — nobraukums (kā AUTO RECORDS) + negadījumi (kā LTAB). */
@@ -899,6 +903,7 @@ export type VendorAvotuBlockState = {
   aiContextRaw: string;
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
 };
 
 /** Publiskā reģistra nobraukuma rinda: datums + km + valsts (+ ieraksta izcelsme avotā). */
@@ -950,6 +955,7 @@ export type VinRegistryBlockState = {
   fetchMessage?: string;
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
 };
 
 /** Viens papildu avots „Citi avoti” — struktūra kā AutoDNA / CarVertical + RAW žurnāls. */
@@ -973,6 +979,7 @@ export type ListingAnalysisBlockState = {
   photos: ListingAnalysisPhotoMeta[];
   /** Fotogrāfiju grupas ar manuāli ievadāmiem virsrakstiem (datums, avots u.c.). */
   photoGroups: ListingAnalysisPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
   /** Papildus pārdevēja / uzņēmuma nosaukums — admin + AI meklēšanai; nav PDF. */
   extraSellerName: string;
   /** Iekopēts neapstrādāts sludinājuma teksts — tikai adminā, nav PDF. */
@@ -1314,6 +1321,7 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
     photoAnalysis,
     photos: synced.photos,
     photoGroups: synced.photoGroups,
+    hidePhotoWatermarks: raw.hidePhotoWatermarks === false ? false : true,
     extraSellerName,
     listingPasteRaw,
     listingSalesContext,
@@ -1803,6 +1811,7 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
           : "",
       photos: synced.photos,
       photoGroups: synced.photoGroups,
+      hidePhotoWatermarks: raw.hidePhotoWatermarks === false ? false : true,
       aiContextRaw: clipAiContextRaw(raw.aiContextRaw),
       oneautoIngest: parseOneautoIngestRaw(raw.oneautoIngest),
       ...(outvin ? { outvin } : {}),
@@ -2327,6 +2336,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         rawUnprocessedData: wsStr(blocks.auto_records?.rawUnprocessedData),
         photos: synced.photos,
         photoGroups: synced.photoGroups,
+        hidePhotoWatermarks: blocks.auto_records?.hidePhotoWatermarks === false ? false : true,
         aiContextRaw: wsStr(blocks.auto_records?.aiContextRaw),
         oneautoIngest: parseOneautoIngestRaw(blocks.auto_records?.oneautoIngest),
       };
@@ -2375,6 +2385,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
         photoAnalysis: wsStr(blocks.listing_analysis?.photoAnalysis),
         photos: synced.photos,
         photoGroups: synced.photoGroups,
+        hidePhotoWatermarks: blocks.listing_analysis?.hidePhotoWatermarks === false ? false : true,
         extraSellerName: wsStr(blocks.listing_analysis?.extraSellerName),
         listingPasteRaw: wsStr(blocks.listing_analysis?.listingPasteRaw),
         listingSalesContext: wsStr(blocks.listing_analysis?.listingSalesContext),
