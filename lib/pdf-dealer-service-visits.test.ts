@@ -20,6 +20,46 @@ describe("PDF dīlera servisa vizītes", () => {
     expect(uk.country).toBe("Apvienotā Karaliste");
   });
 
+  it("PDF visās vizītēs neatstāj īso AutoDNA rindkopu blakus API sarakstam", () => {
+    const html = buildDealerServiceVisitsHtml([
+      {
+        date: "26.10.2021",
+        odometer: "122090",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa. Elektroniskā transportlīdzekļa veselības pārbaude (eVHCE). 1200000 km / 60 mēnešu apkope. Salona filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+          "Salona filtra maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "24.10.2019",
+        odometer: "97576",
+        location: "British Motor Group",
+        works: [
+          "Gaisa filtra maiņa. Bremžu šķidruma maiņa. 760000 km / 36 mēnešu apkope. Salona filtra maiņa.",
+          "Gaisa filtra maiņa",
+          "Bremžu šķidruma maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "12.12.2017",
+        odometer: "60364",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa. 200000 km / 12 mēnešu apkope. Salona filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+          "Eļļas filtru maiņa",
+        ].join("\n"),
+      },
+    ]);
+    expect(html.match(/pdf-svc-visit/g)?.length ?? 0).toBe(3);
+    expect(html).not.toMatch(/eVHCE|1200000 km|760000|200000 km|36 mēnešu|60 mēnešu|12 mēnešu/i);
+    expect(html).toContain("Eļļas un eļļas filtra maiņa");
+    expect(html).toContain("Gaisa filtra maiņa");
+    expect(html).toContain("Bremžu šķidruma maiņa");
+  });
+
   it("PDF vizītē neatstāj AutoDNA rindkopu blakus API sarakstam", () => {
     const html = buildDealerServiceVisitsHtml([
       {

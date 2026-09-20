@@ -10,6 +10,7 @@ import {
   parseAutoRecordsServiceWorkLines,
   parseDealerNarrativeServiceWorks,
 } from "@/lib/auto-records-service-works";
+import { looksLikeNarrativeServiceWorkLine } from "@/lib/service-works-lines";
 
 describe("servisa darbu rindas", () => {
   it("normalizē datumu, odometru, vietu un darbus", () => {
@@ -149,11 +150,12 @@ describe("servisa darbu rindas", () => {
           "Elastīgo bremžu šļūteņu nomaiņa",
           "Aizmugurējo bremžu nomaiņa",
           "AdBlue papildiņāšana",
+          "Renewal of ancillary drive belt",
         ].join("\n"),
       },
     ]);
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.works).not.toMatch(/eļļas un eļļas filtra maiņa|1820000|eVHCE/i);
+    expect(rows[0]!.works).not.toMatch(/eļļas un eļļas filtra maiņa|1820000|eVHCE|ancillary drive belt/i);
     expect(rows[0]!.works.split("\n")).toEqual(
       expect.arrayContaining([
         "Eļļas filtru maiņa",
@@ -161,6 +163,142 @@ describe("servisa darbu rindas", () => {
         "Dzinēja dzesēšanas šķidruma maiņa",
         "Aizmugurējo bremžu nomaiņa",
       ]),
+    );
+  });
+
+  it("īsās AutoDNA rindkopas visās vizītēs zaudē pret API sarakstu", () => {
+    const rows = normalizeAutoRecordsServiceWorkRows([
+      {
+        date: "26.10.2021",
+        odometer: "122090",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa. Elektroniskā transportlīdzekļa veselības pārbaude (eVHCE). 1200000 km / 60 mēnešu apkope. Salona filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "24.10.2019",
+        odometer: "97576",
+        location: "British Motor Group",
+        works: [
+          "Gaisa filtra maiņa. Bremžu šķidruma maiņa. 760000 km / 36 mēnešu apkope. Salona filtra maiņa.",
+          "Gaisa filtra maiņa",
+          "Bremžu šķidruma maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "12.12.2017",
+        odometer: "60364",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa. 200000 km / 12 mēnešu apkope. Salona filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+          "Eļļas filtru maiņa",
+        ].join("\n"),
+      },
+    ]);
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      expect(row.works).not.toMatch(/mēnešu apkope|eVHCE|200000 km|760000|1200000/i);
+      expect(row.works.split("\n").every((line) => !line.includes(". "))).toBe(true);
+    }
+    expect(rows[1]!.works.split("\n")).toEqual(
+      expect.arrayContaining(["Gaisa filtra maiņa", "Bremžu šķidruma maiņa"]),
+    );
+  });
+
+  it("visā servisa vēsturē API saraksts uzvar īso AutoDNA rindkopu", () => {
+    const rows = normalizeAutoRecordsServiceWorkRows([
+      {
+        date: "16.08.2023",
+        odometer: "179148",
+        location: "British Motor Group Land Rover København A/S",
+        works: [
+          "Eļļas un eļļas filtra maiņa. Dzesēšanas šķidruma maiņa. Bremžu šķidruma maiņa. Aizmugurējo bremžu maiņa. Zobsiksnas maiņa. Papildierīču piedziņas siksnas maiņa. Elektroniskā transportlīdzekļa veselības pārbaude (eVHCE). 1820000 Km / 84 mēnešu apkope. Salona filtra maiņa. AdBlue papildiņāšana.",
+          "Eļļas filtru maiņa",
+          "Bremžu šķidruma maiņa",
+          "Dzinēja dzesēšanas šķidruma maiņa",
+          "Aizmugurējo bremžu nomaiņa",
+          "AdBlue papildiņāšana",
+          "Renewal of ancillary drive belt",
+        ].join("\n"),
+      },
+      {
+        date: "29.09.2022",
+        odometer: "140380",
+        location: "British Motor Group",
+        works: ["Eļļas un eļļas filtra maiņa", "Salona gaisa filtra maiņa", "Drenāža gaisa filtra maiņa"].join("\n"),
+      },
+      {
+        date: "26.10.2021",
+        odometer: "122090",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa. Elektroniskā transportlīdzekļa veselības pārbaude (eVHCE). 1200000 km / 60 mēnešu apkope. Salona filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+          "Salona filtra maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "24.11.2020",
+        odometer: "93236",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa",
+          "Salona gaisa filtra maiņa",
+          "Drenāža gaisa filtra maiņa",
+          "Gaisa kondicionēšanas apkope",
+        ].join("\n"),
+      },
+      {
+        date: "24.10.2019",
+        odometer: "97576",
+        location: "British Motor Group",
+        works: [
+          "Gaisa filtra maiņa. Bremžu šķidruma maiņa. 760000 km / 36 mēnešu apkope. Salona filtra maiņa.",
+          "Gaisa filtra maiņa",
+          "Bremžu šķidruma maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "04.12.2018",
+        odometer: "74050",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa. 520000 km / 24 mēnešu apkope. Degvielas filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+          "Salona gaisa filtra maiņa",
+          "Drenāža gaisa filtra maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "12.12.2017",
+        odometer: "60364",
+        location: "British Motor Group",
+        works: [
+          "Eļļas un eļļas filtra maiņa. 200000 km / 12 mēnešu apkope. Salona filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+          "Eļļas filtru maiņa",
+        ].join("\n"),
+      },
+      {
+        date: "19.12.2016",
+        odometer: "17",
+        location: "Terminalen Aarhus Nord",
+        works: ["Pirmā pārdošana / pārbaude", "Pirmā piegādes sagatavošana"].join("\n"),
+      },
+    ]);
+    expect(rows).toHaveLength(8);
+    for (const row of rows) {
+      expect(row.works).not.toMatch(/mēnešu apkope|eVHCE|1820000|1200000|760000|520000|200000 km|ancillary drive belt/i);
+      expect(row.works.split("\n").every((line) => !looksLikeNarrativeServiceWorkLine(line))).toBe(true);
+    }
+    expect(rows[2]!.works.split("\n")).toEqual(
+      expect.arrayContaining(["Eļļas un eļļas filtra maiņa", "Salona filtra maiņa"]),
+    );
+    expect(rows[4]!.works.split("\n")).toEqual(
+      expect.arrayContaining(["Gaisa filtra maiņa", "Bremžu šķidruma maiņa"]),
     );
   });
 

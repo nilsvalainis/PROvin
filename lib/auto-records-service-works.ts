@@ -12,7 +12,6 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import {
   capitalizeServiceField,
-  dropNarrativeServiceWorkLines,
   formatServiceWorksLines,
   looksLikeNarrativeServiceWorkLine,
   mergeOverlappingServiceWorkLines,
@@ -225,11 +224,13 @@ export function looksLikeServiceWorksNarrative(raw: string): boolean {
 }
 
 function mergeServiceWorksPreferringApiList(group: AutoRecordsServiceWorkRow[]): string {
-  const lists = group.filter((r) => looksLikeServiceWorksList(r.works));
-  const sources = lists.length > 0 ? lists : group.filter((r) => !looksLikeServiceWorksNarrative(r.works));
-  const used = sources.length > 0 ? sources : group;
-  const lines = dropNarrativeServiceWorkLines(used.flatMap((r) => r.works.split(/\r?\n+/)));
-  return mergeOverlappingServiceWorkLines(lines).map(capitalizeServiceField).join("\n");
+  const formatted = formatServiceWorksLines(group.map((r) => r.works).join("\n"));
+  if (group.length <= 1) return formatted;
+  return mergeOverlappingServiceWorkLines(
+    formatted.split(/\r?\n+/).map((l) => l.trim()).filter(Boolean),
+  )
+    .map(capitalizeServiceField)
+    .join("\n");
 }
 
 function mergeServiceWorkGroup(group: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow {
@@ -300,21 +301,17 @@ export function mergeAutoRecordsServiceWorkRow(
   const withData = existing.filter(autoRecordsServiceWorkRowHasData);
   const key = rowKey(row);
   if (withData.some((r) => rowKey(r) === key)) {
+    const incomingNarr =
+      looksLikeServiceWorksNarrative(incoming.works) ||
+      looksLikeNarrativeServiceWorkLine(incoming.works.replace(/\s+/g, " "));
     const filled = withData.map((r) => {
       if (rowKey(r) !== key) return r;
       const location = !r.location.trim() && row.location.trim() ? row.location : r.location;
-      const existList = looksLikeServiceWorksList(r.works);
       const existNarr = looksLikeServiceWorksNarrative(r.works);
-      const inList = looksLikeServiceWorksList(row.works);
-      const inNarr = looksLikeServiceWorksNarrative(row.works);
-      let works = r.works;
-      if (inList && existNarr) works = row.works;
-      else if (existList && inNarr) works = r.works;
-      else if (existList && inList) {
-        works = mergeOverlappingServiceWorkLines([...r.works.split(/\r?\n+/), ...row.works.split(/\r?\n+/)])
-          .map(capitalizeServiceField)
-          .join("\n");
-      }
+      const works =
+        existNarr && !incomingNarr
+          ? row.works
+          : formatServiceWorksLines(r.works);
       return { ...r, location, works: works.slice(0, AUTO_RECORDS_SERVICE_WORKS_MAX_LEN) };
     });
     return sortAutoRecordsServiceWorkRows(filled.length > 0 ? filled : [row]);

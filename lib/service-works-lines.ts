@@ -172,7 +172,10 @@ const WORK_STOP_TOKENS = new Set(["ar", "un", "the", "for", "mit", "und", "vai",
 function serviceWorkFamily(line: string): string | null {
   const t = line.trim();
   if (!t) return null;
-  if (isVendorServiceCategoryLine(t.replace(/[:/].*$/, "").trim())) return "oil_service";
+  const head = t.replace(/[:/].*$/, "").trim();
+  if (isVendorServiceCategoryLine(head)) {
+    return /[:/].+/.test(t) ? "oil_service" : "category_label";
+  }
   for (const rule of WORK_FAMILY_RULES) {
     if (rule.re.test(t)) return rule.family;
   }
@@ -236,45 +239,140 @@ export function mergeOverlappingServiceWorkLines(lines: readonly string[]): stri
   return sortWorkLines(kept);
 }
 
-/** AutoDNA / Copilot rindkopa: gara rinda ar vairākiem teikumiem. */
+const AUTODNA_INTERVAL_RE = /\d[\d\s.,]*\s*km\s*\/\s*\d+\s*mēne/i;
+const AUTODNA_HEALTH_RE =
+  /evhce|elektronisk[āa]\s+transportl[īi]dzek[ļl]a\s+vesel[īi]bas|vehicle\s+health\s+check/i;
+const ENGLISH_WORK_RE =
+  /\b(renewal|replacement|replaced|ancillary|drive belt|oil (and )?filter|brake fluid|cabin filter|air filter|coolant|vehicle health|performed|underwent|scheduled maintenance)\b/i;
+const LATVIAN_WORK_RE = /[āčēģīķļņšūž]|\b(maiņ|nomaiņ|apkope|filtr|eļļ|šķidrum|siksn)/i;
+const WORK_VERB_RE = /maiņ|nomaiņ|apkope|change|replacement|renewal|flushed|replaced|underwent/gi;
+
+/** AutoDNA intervāla birka, ne darbs: „760000 km / 36 mēnešu apkope”. */
+export function isAutoDnaServiceIntervalLabel(line: string): boolean {
+  const t = line.replace(/\s+/g, " ").trim();
+  return AUTODNA_INTERVAL_RE.test(t) && t.length <= 80;
+}
+
+/** eVHCE / intervāls kā atsevišķa rinda: AutoDNA birka, ne API darbs. */
+export function isAutoDnaServiceFluffLine(line: string): boolean {
+  const t = line.replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  if (isAutoDnaServiceIntervalLabel(t)) return true;
+  return AUTODNA_HEALTH_RE.test(t) && t.length <= 90;
+}
+
+function sentenceBreakCount(line: string): number {
+  return (line.match(/[.!?]\s+\p{L}/gu) ?? []).length;
+}
+
+function workVerbCount(line: string): number {
+  return line.match(WORK_VERB_RE)?.length ?? 0;
+}
+
+/** AutoDNA / Copilot rindkopa: teikumi vienā rindā, arī īsas ar km/mēnešu birku. */
 export function looksLikeNarrativeServiceWorkLine(line: string): boolean {
   const t = line.replace(/\s+/g, " ").trim();
-  if (t.length < 140) return false;
-  return (t.match(/[.!?]\s+\S/g) ?? []).length >= 1;
+  if (!t) return false;
+  const breaks = sentenceBreakCount(t);
+  if (breaks >= 2) return true;
+  if (AUTODNA_INTERVAL_RE.test(t) && t.length > 40) return true;
+  if (AUTODNA_HEALTH_RE.test(t) && (breaks >= 1 || t.length > 40)) return true;
+  if (breaks >= 1 && (t.length >= 70 || workVerbCount(t) >= 2)) return true;
+  return false;
 }
 
-/** Ja blakus ir īss saraksts, AutoDNA rindkopu izmet. */
+export function looksLikeEnglishServiceWorkLine(line: string): boolean {
+  const t = line.replace(/\s+/g, " ").trim();
+  if (!t || LATVIAN_WORK_RE.test(t)) return false;
+  return ENGLISH_WORK_RE.test(t);
+}
+
+/** Ja blakus ir API saraksts, AutoDNA rindkopu izmet. Intervāla un eVHCE birkas vienmēr. */
 export function dropNarrativeServiceWorkLines(lines: readonly string[]): string[] {
-  const cleaned = lines.map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const cleaned = lines
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter((l) => l && !isAutoDnaServiceFluffLine(l));
   if (cleaned.length < 2) return cleaned;
   const kept = cleaned.filter((l) => !looksLikeNarrativeServiceWorkLine(l));
-  return kept.length > 0 && kept.length < cleaned.length ? kept : cleaned;
+  const next = kept.length > 0 ? kept : cleaned;
+  const hasLv = next.some((l) => LATVIAN_WORK_RE.test(l));
+  return hasLv ? next.filter((l) => !looksLikeEnglishServiceWorkLine(l)) : next;
 }
 
-/** Ielasīts darbu teksts → rindas (idempotents). */
-export function formatServiceWorksLines(raw: string): string {
-  const text = stripWorkDecorations(raw);
-  if (!text) return "";
+export function explodeNarrativeWorkLine(line: string): string[] {
+  return line
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => cleanItem(part))
+    .filter((part) => part && !isAutoDnaServiceIntervalLabel(part));
+}
 
+function collectWorkSeeds(lines: readonly string[]): string[] {
   const seeds: string[] = [];
-  for (const block of dropNarrativeServiceWorkLines(text.split(/\r?\n+/))) {
-    const trimmed = block.trim();
-    if (!trimmed) continue;
+  for (const rawLine of lines) {
+    const trimmed = rawLine.replace(/\s+/g, " ").trim();
+    if (!trimmed || isAutoDnaServiceFluffLine(trimmed)) continue;
     for (const piece of splitOemTerminated(trimmed)) {
       seeds.push(...explodeSegment(piece));
     }
   }
-
+  const hasLv = seeds.some((l) => LATVIAN_WORK_RE.test(l));
   const seen = new Set<string>();
   const items: string[] = [];
   for (const item of seeds) {
     const line = cleanItem(item);
-    if (!line) continue;
+    if (!line || isAutoDnaServiceFluffLine(line)) continue;
+    if (hasLv && looksLikeEnglishServiceWorkLine(line)) continue;
     const key = line.toLocaleLowerCase("lv");
     if (seen.has(key)) continue;
     seen.add(key);
     items.push(line);
   }
+  return items;
+}
+
+/** API saraksta formulējums paliek; rindkopas teikumu pievieno tikai ja tāda darba nav. */
+export function preferListServiceWorkLines(
+  listLines: readonly string[],
+  extraLines: readonly string[],
+): string[] {
+  const kept = [...listLines];
+  const extras: string[] = [];
+  for (const line of extraLines) {
+    const trial = mergeOverlappingServiceWorkLines([...kept, ...extras, line]);
+    if (trial.length > kept.length + extras.length) extras.push(line);
+  }
+  return sortWorkLines([...kept, ...extras]);
+}
+
+/** Ielasīts darbu teksts → rindas (idempotents). API saraksts uzvar AutoDNA rindkopu. */
+export function formatServiceWorksLines(raw: string): string {
+  const text = stripWorkDecorations(raw);
+  if (!text) return "";
+
+  const listBlocks: string[] = [];
+  const narrativeBlocks: string[] = [];
+  for (const rawLine of text.split(/\r?\n+/)) {
+    const trimmed = rawLine.replace(/\s+/g, " ").trim();
+    if (!trimmed || isAutoDnaServiceFluffLine(trimmed)) continue;
+    if (looksLikeNarrativeServiceWorkLine(trimmed)) {
+      narrativeBlocks.push(
+        ...explodeNarrativeWorkLine(trimmed).filter((part) => part && !isAutoDnaServiceFluffLine(part)),
+      );
+      continue;
+    }
+    listBlocks.push(trimmed);
+  }
+
+  const listItems = collectWorkSeeds(listBlocks);
+  const extraItems = collectWorkSeeds(narrativeBlocks);
+  const hasLv = [...listItems, ...extraItems].some((l) => LATVIAN_WORK_RE.test(l));
+  const extras = hasLv ? extraItems.filter((l) => !looksLikeEnglishServiceWorkLine(l)) : extraItems;
+  const items =
+    listItems.length > 0
+      ? extras.length > 0
+        ? preferListServiceWorkLines(listItems, extras)
+        : listItems
+      : extras;
 
   return sortWorkLines(items).map(capitalizeServiceField).join("\n");
 }

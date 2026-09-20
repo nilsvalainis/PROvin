@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   capitalizeServiceField,
   formatServiceWorksLines,
+  looksLikeNarrativeServiceWorkLine,
   mergeOverlappingServiceWorkLines,
 } from "@/lib/service-works-lines";
 
@@ -83,6 +84,48 @@ describe("service works lines", () => {
       "Gaisa filtra elements",
       "Degvielas filtra maiņa",
     ]);
+  });
+
+  it("īsā AutoDNA rindkopa ar km/mēnešu birku ir narratīvs", () => {
+    expect(
+      looksLikeNarrativeServiceWorkLine(
+        "Gaisa filtra maiņa. Bremžu šķidruma maiņa. 760000 km / 36 mēnešu apkope. Salona filtra maiņa.",
+      ),
+    ).toBe(true);
+    expect(
+      looksLikeNarrativeServiceWorkLine(
+        "Eļļas un eļļas filtra maiņa. Elektroniskā transportlīdzekļa veselības pārbaude (eVHCE). 1200000 km / 60 mēnešu apkope. Salona filtra maiņa.",
+      ),
+    ).toBe(true);
+  });
+
+  it("visās vizītēs API saraksts uzvar īso AutoDNA rindkopu un angļu paliekas", () => {
+    expect(
+      formatServiceWorksLines(
+        [
+          "Gaisa filtra maiņa. Bremžu šķidruma maiņa. 760000 km / 36 mēnešu apkope. Salona filtra maiņa.",
+          "Gaisa filtra maiņa",
+          "Bremžu šķidruma maiņa",
+          "Salona filtra maiņa",
+        ].join("\n"),
+      ),
+    ).toBe(["Gaisa filtra maiņa", "Salona filtra maiņa", "Bremžu šķidruma maiņa"].join("\n"));
+
+    expect(
+      formatServiceWorksLines(
+        [
+          "Eļļas un eļļas filtra maiņa. 520000 km / 24 mēnešu apkope. Salona filtra maiņa.",
+          "Eļļas un eļļas filtra maiņa",
+          "Eļļas filtru maiņa",
+        ].join("\n"),
+      ),
+    ).not.toMatch(/520000|24 mēnešu/);
+
+    expect(
+      formatServiceWorksLines(
+        ["Eļļas filtru maiņa", "Papildu piedziņas siksnas nomaiņa", "Renewal of ancillary drive belt"].join("\n"),
+      ),
+    ).toBe("Eļļas filtru maiņa\nPapildu piedziņas siksnas nomaiņa");
   });
 
   it("neapvieno atšķirīgus filtrus tikai tāpēc, ka tekstā ir „filtra maiņa”", () => {
