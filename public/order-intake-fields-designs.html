@@ -4,299 +4,339 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
-<title>PROVIN - Audita mērķis / Kur uzzināja - noformējuma varianti</title>
+<title>PROVIN - pilns skats pirms apmaksas (forma + Stripe)</title>
 <style>
   :root{
-    --accent:#0066ff; --accent-hover:#0052cc; --accent-soft:#e8f2fc;
-    --ink:#1d1d1f; --sub:#424245; --mute:#6e6e73; --hair:rgba(5,5,5,.1);
-    --bg:#f5f6f8; --card:#ffffff;
+    --accent:#0066ff; --accent-hover:#0052cc;
+    --ink:#f5f8fc; --sub:rgb(203 213 225 / .9); --mute:rgb(148 163 184 / .82);
+    --hair:rgb(255 255 255 / .1); --bg:#07080a;
   }
   *{box-sizing:border-box;}
-  body{margin:0;color:var(--ink);background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Inter",ui-sans-serif,system-ui,sans-serif;}
-  .nav{position:sticky;top:0;z-index:20;display:flex;flex-wrap:nowrap;gap:.35rem;overflow-x:auto;
-    padding:.75rem 1rem;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--hair);}
-  .nav a{flex:0 0 auto;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-    color:var(--mute);text-decoration:none;padding:.34rem .6rem;border-radius:999px;}
-  .nav a:hover,.nav a.on{color:#fff;background:var(--accent);}
-  .intro{max-width:56rem;margin:0 auto;padding:1.6rem 1.2rem .4rem;}
-  .intro b{display:block;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);}
-  .intro h1{margin:.4rem 0 0;font-size:1.3rem;letter-spacing:-.02em;}
-  .intro p{margin:.6rem 0 0;font-size:.9rem;line-height:1.6;color:var(--sub);max-width:44rem;}
-  .scene{max-width:38rem;margin:0 auto;padding:1.3rem 1.2rem 2.6rem;}
-  .cap b{display:block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);}
-  .cap h2{margin:.3rem 0 0;font-size:1.05rem;letter-spacing:-.01em;}
-  .cap p{margin:.4rem 0 1.1rem;font-size:.82rem;line-height:1.55;color:var(--mute);max-width:40rem;}
-  .stage{border:1px solid var(--hair);border-radius:16px;padding:1.4rem 1.35rem 1.5rem;background:var(--card);
-    box-shadow:0 10px 26px rgba(24,31,42,.07);}
-  .stage.dark{background:#0b0c0f;border-color:rgba(255,255,255,.08);color:#f5f6f8;box-shadow:0 18px 40px rgba(0,0,0,.4);}
-  .field{margin-bottom:1.15rem;}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;}
+  a{color:inherit;}
+
+  .jump{position:sticky;top:0;z-index:40;display:flex;gap:.4rem;overflow-x:auto;
+    padding:.7rem 1rem;background:rgb(7 8 10 / .94);border-bottom:1px solid var(--hair);backdrop-filter:blur(8px);}
+  .jump a{flex:0 0 auto;font-size:.58rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--mute);text-decoration:none;padding:.34rem .7rem;border-radius:999px;border:1px solid transparent;}
+  .jump a:hover,.jump a.on{color:#fff;background:rgb(37 99 235 / .32);border-color:rgb(0 102 255 / .35);}
+  .note{max-width:52rem;margin:0 auto;padding:1.15rem 1.2rem .2rem;font-size:.82rem;line-height:1.55;color:var(--sub);}
+  .note b{display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;margin-bottom:.35rem;}
+
+  /* ─── PROVIN site chrome ─── */
+  .site{background:#07080a;}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    padding:.85rem clamp(1rem,3vw,2rem);border-bottom:1px solid var(--hair);}
+  .brand{font-size:.78rem;font-weight:800;letter-spacing:.18em;}
+  .nav{display:flex;gap:1.1rem;font-size:.72rem;color:var(--mute);letter-spacing:.04em;}
+  .nav span{cursor:default;}
+  @media (max-width:720px){.nav{display:none;}}
+  .hero{max-width:42rem;margin:0 auto;padding:2.2rem 1.15rem 3.4rem;}
+  .kicker{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd;font-weight:700;}
+  .h1{margin:.45rem 0 0;font-size:clamp(1.7rem,5vw,2.55rem);line-height:1.05;letter-spacing:-.03em;font-weight:760;text-transform:uppercase;}
+  .sub{margin:.85rem 0 0;font-size:.95rem;line-height:1.6;color:var(--sub);max-width:38rem;}
+  .benefits{display:grid;grid-template-columns:1fr 1fr;gap:.7rem 1.1rem;margin:1.25rem 0 1.5rem;padding:0;list-style:none;}
+  .benefits li{display:flex;gap:.55rem;align-items:center;font-size:.82rem;font-weight:600;}
+  .check{width:1.2rem;height:1.2rem;border-radius:999px;background:linear-gradient(165deg,#2b8cff,#0d5fd4);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .check svg{width:.65rem;height:.65rem;}
+
+  .card{border:1px solid var(--hair);border-radius:20px;padding:1.25rem 1.15rem 1.3rem;
+    background:rgb(255 255 255 / .02);box-shadow:0 0 0 1px rgb(0 102 255 / .12),0 18px 36px rgb(0 0 0 / .3);}
+  .flabel{display:block;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgb(200 208 220 / .72);margin:0 0 .4rem;}
+  .opt{text-transform:none;letter-spacing:0;font-weight:500;color:rgb(148 163 184 / .7);font-size:.68rem;}
+  .inp,.ta,.sel{width:100%;border:1px solid rgb(255 255 255 / .08);border-radius:14px;padding:.85rem 1rem;
+    font-size:.95rem;color:#f5f8fc;background:linear-gradient(165deg,rgb(255 255 255 / .055),rgb(255 255 255 / .035));
+    box-shadow:0 0 0 1px rgb(0 0 0 / .35),0 14px 32px rgb(0 0 0 / .35),0 1px 0 rgb(255 255 255 / .05) inset;outline:none;}
+  .ta{min-height:6.2rem;resize:vertical;font-family:inherit;line-height:1.45;}
+  .inp::placeholder,.ta::placeholder{color:rgb(160 170 188 / .5);}
+  .hint{margin:.4rem 0 0;font-size:.72rem;line-height:1.45;color:rgb(200 208 220 / .48);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+  @media (max-width:640px){.grid2,.benefits{grid-template-columns:1fr;}}
+  .field{margin-bottom:.95rem;}
   .field:last-child{margin-bottom:0;}
-  .flabel{display:flex;align-items:baseline;gap:.4rem;font-size:.72rem;font-weight:650;letter-spacing:.04em;
-    text-transform:uppercase;color:var(--mute);margin-bottom:.55rem;}
-  .dark .flabel{color:rgba(226,232,240,.66);}
-  .req{color:#d33;font-weight:700;}
-  .dark .req{color:#ff8080;}
-  .optional{font-weight:500;text-transform:none;letter-spacing:0;color:#9aa0a8;font-size:.68rem;}
+  .req{color:#f87171;}
 
-  /* chips */
-  .chips{display:flex;flex-wrap:wrap;gap:.5rem;}
-  .chip{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .85rem;border-radius:999px;
-    border:1px solid rgba(5,5,5,.14);background:#fff;color:var(--sub);font-size:.82rem;font-weight:500;
-    cursor:pointer;user-select:none;transition:all .14s ease;}
-  .chip:hover{border-color:rgba(0,102,255,.4);}
-  .chip.on{background:var(--accent);border-color:var(--accent-hover);color:#fff;box-shadow:0 4px 10px rgba(0,102,255,.25);}
-  .dark .chip{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14);color:#e5e7eb;}
-  .dark .chip:hover{border-color:rgba(0,120,255,.55);}
-  .dark .chip.on{background:linear-gradient(180deg,#2b8cff,#0d5fd4);border-color:rgba(0,102,255,.5);}
-  .chip svg{width:14px;height:14px;flex:0 0 auto;}
+  .chips{display:flex;flex-wrap:wrap;gap:.45rem;margin:.15rem 0 .65rem;}
+  .chip{display:inline-flex;align-items:center;padding:.42rem .78rem;border-radius:999px;
+    border:1px solid rgb(255 255 255 / .14);background:rgb(255 255 255 / .04);color:#e5e7eb;
+    font-size:.8rem;font-weight:500;cursor:pointer;user-select:none;}
+  .chip:hover{border-color:rgb(0 120 255 / .55);}
+  .chip.on{background:linear-gradient(180deg,#2b8cff,#0d5fd4);border-color:rgb(0 102 255 / .5);color:#fff;}
+  .notes-wrap{border:1px solid rgb(255 255 255 / .1);border-radius:16px;padding:.9rem .9rem 1rem;background:rgb(255 255 255 / .025);}
 
-  /* text inputs matching production OrderForm underline style */
-  .u-input{width:100%;border:0;border-bottom:1px solid rgba(5,5,5,.75);background:transparent;
-    padding:.6rem 0;font-size:15px;color:var(--ink);outline:none;}
-  .u-input::placeholder{color:#86868b;}
-  .u-input:focus{border-color:var(--accent);}
-  .dark .u-input{border-bottom-color:rgba(255,255,255,.35);color:#f5f6f8;}
-  .dark .u-input::placeholder{color:rgba(160,170,188,.55);}
+  .sum{border-top:1px solid rgb(192 192 192 / .22);border-bottom:1px solid rgb(192 192 192 / .22);padding:1rem 0;margin:1.15rem 0 1rem;}
+  .sum-row{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;}
+  .price{font-size:1.85rem;font-weight:800;letter-spacing:-.03em;color:#c0c0c0;}
+  .consent{display:flex;gap:.7rem;align-items:flex-start;font-size:.78rem;line-height:1.5;color:#e5e7eb;}
+  .consent input{margin-top:.2rem;accent-color:var(--accent);width:1rem;height:1rem;flex:0 0 auto;}
+  .consent a{color:#60a5fa;text-underline-offset:2px;}
+  .cta{display:flex;align-items:center;justify-content:center;gap:.45rem;width:min(100%,416px);margin:1.05rem auto 0;
+    min-height:52px;border:0;border-radius:999px;cursor:pointer;color:#fff;font-weight:600;letter-spacing:.12em;
+    text-transform:uppercase;font-size:clamp(10px,2.95vw,11px);background:var(--accent);box-shadow:0 5px 17px rgba(0,0,0,.13);}
+  .back{display:block;margin:.85rem auto 0;background:none;border:0;color:rgb(229 231 235 / .7);font-size:.75rem;text-decoration:underline;cursor:pointer;}
+  .stripe-note{text-align:center;margin:.7rem 0 0;font-size:.68rem;color:rgb(229 231 235 / .48);}
+  .foot{border-top:1px solid var(--hair);padding:1.6rem 1.2rem 2.2rem;color:var(--mute);font-size:.72rem;line-height:1.55;}
+  .foot inner,.foot-inner{max-width:52rem;margin:0 auto;}
+  .legal{margin-top:.8rem;font-size:10px;color:rgb(148 163 184 / .72);line-height:1.5;}
 
-  /* boxed input (card style, matches homepage hero) */
-  .box-input{width:100%;border:1px solid rgba(248,249,251,.95);border-radius:12px;padding:.75rem .9rem;
-    font-size:.92rem;color:var(--ink);background:linear-gradient(180deg,#fff 0%,#f4f6f9 100%);
-    box-shadow:0 8px 18px rgba(24,31,42,.07),0 1px 0 rgba(255,255,255,.72) inset;outline:none;}
-  .box-input:focus{box-shadow:0 0 0 2px rgba(0,102,255,.35);}
-  .dark .box-input{color:#f5f6f8;border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.045);
-    box-shadow:0 0 0 1px rgba(0,0,0,.35),0 12px 28px rgba(0,0,0,.3);}
+  /* ─── Stripe hosted checkout ─── */
+  .stripe-page{background:#f6f9fc;color:#1a1f36;min-height:100vh;padding:0 0 3rem;}
+  .s-top{display:flex;align-items:center;gap:.65rem;padding:1rem 1.2rem;background:#fff;border-bottom:1px solid #e6ebf1;}
+  .s-logo{font-size:.72rem;font-weight:800;letter-spacing:.16em;color:#0a2540;}
+  .s-wrap{max-width:920px;margin:0 auto;display:grid;grid-template-columns:1fr 1.05fr;gap:2.2rem;padding:2rem 1.2rem;}
+  @media (max-width:860px){.s-wrap{grid-template-columns:1fr;}}
+  .s-sum h2{margin:0;font-size:1.05rem;color:#0a2540;}
+  .s-amt{margin:.35rem 0 0;font-size:2rem;font-weight:700;letter-spacing:-.03em;color:#0a2540;}
+  .s-prod{margin:1.2rem 0 0;padding:1rem 0 0;border-top:1px solid #e6ebf1;display:flex;justify-content:space-between;gap:1rem;font-size:.88rem;}
+  .s-prod small{display:block;margin-top:.25rem;color:#697386;font-size:.75rem;line-height:1.4;max-width:18rem;}
+  .s-card{background:#fff;border-radius:8px;box-shadow:0 13px 27px -5px rgba(50,50,93,.1),0 8px 16px -8px rgba(0,0,0,.08);padding:1.35rem 1.25rem 1.45rem;}
+  .s-label{font-size:.8rem;font-weight:600;color:#30313d;margin:0 0 .4rem;}
+  .s-input{width:100%;border:1px solid #e6e8eb;border-radius:6px;padding:.7rem .75rem;font-size:.92rem;color:#30313d;background:#fff;}
+  .s-input:focus{outline:2px solid #635bff;border-color:transparent;}
+  .s-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+  .s-payrow{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.85rem;}
+  .s-wpay{display:flex;align-items:center;justify-content:center;gap:.4rem;min-height:42px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:.82rem;}
+  .apple{background:#000;color:#fff;}
+  .gpay{background:#fff;color:#1f1f1f;border:1px solid #dadce0;}
+  .or{display:flex;align-items:center;gap:.6rem;margin:.15rem 0 .9rem;color:#697386;font-size:.72rem;}
+  .or:before,.or:after{content:"";flex:1;height:1px;background:#e6ebf1;}
+  .s-btn{width:100%;margin-top:1rem;min-height:44px;border:0;border-radius:6px;background:#0066ff;color:#fff;font-weight:650;font-size:.95rem;cursor:pointer;}
+  .s-sec{margin-top:.85rem;font-size:.68rem;color:#697386;text-align:center;}
+  .s-foot{margin-top:1.1rem;text-align:center;font-size:.68rem;color:#8898aa;}
+  .s-section{margin-top:.95rem;}
+  .s-chips{display:flex;flex-wrap:wrap;gap:.4rem;}
+  .s-chip{border:1px solid #e6e8eb;background:#fff;border-radius:999px;padding:.32rem .7rem;font-size:.75rem;color:#30313d;cursor:pointer;}
+  .s-chip.on{border-color:#635bff;background:#f0efff;color:#3d348b;}
 
-  select.box-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236e6e73'%3E%3Cpath d='M5.5 7.5l4.5 5 4.5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .8rem center;background-size:16px;padding-right:2.2rem;}
-  .dark select.box-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23cbd5e1'%3E%3Cpath d='M5.5 7.5l4.5 5 4.5-5z'/%3E%3C/svg%3E");}
-
-  /* radio grid cards */
-  .rcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;}
-  @media (max-width:520px){.rcards{grid-template-columns:repeat(2,minmax(0,1fr));}}
-  .rcard{display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.75rem .5rem;border-radius:12px;
-    border:1px solid rgba(5,5,5,.12);background:#fff;cursor:pointer;transition:all .14s ease;text-align:center;}
-  .rcard svg{width:20px;height:20px;color:var(--mute);}
-  .rcard span{font-size:.72rem;font-weight:600;color:var(--sub);}
-  .rcard:hover{border-color:rgba(0,102,255,.4);}
-  .rcard.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1px rgba(0,102,255,.25) inset;}
-  .rcard.on svg,.rcard.on span{color:var(--accent-hover);}
-  .dark .rcard{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12);}
-  .dark .rcard span{color:#e5e7eb;}
-  .dark .rcard svg{color:#9aa4b2;}
-  .dark .rcard.on{background:rgba(0,102,255,.18);border-color:rgba(0,102,255,.6);}
-  .dark .rcard.on svg,.dark .rcard.on span{color:#8fc0ff;}
-
-  .hint{margin:.4rem 0 0;font-size:.72rem;line-height:1.45;color:#9aa0a8;}
-  .dark .hint{color:rgba(200,208,220,.55);}
-  .custom-row{margin-top:.6rem;}
-  .badge{display:inline-block;margin-left:.4rem;padding:.1rem .45rem;border-radius:999px;background:#eef2f7;
-    color:#6e6e73;font-size:.6rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
-  .notice{max-width:38rem;margin:0 auto;padding:0 1.2rem 1rem;font-size:.78rem;line-height:1.55;color:var(--mute);}
-  .notice code{background:#eef2f7;padding:.05rem .35rem;border-radius:4px;font-size:.75em;}
+  .cap{max-width:52rem;margin:0 auto;padding:1.6rem 1.2rem .2rem;}
+  .cap h2{margin:.25rem 0 0;font-size:1.15rem;}
+  .cap p{margin:.4rem 0 0;font-size:.82rem;line-height:1.55;color:var(--sub);}
 </style>
 </head>
 <body>
-<nav class="nav">
-  <a href="#v1">01 Čipi (gaišs)</a>
-  <a href="#v2">02 Nolaižamie saraksti</a>
-  <a href="#v3">03 Ikonu kartītes</a>
-  <a href="#v4">04 Čipi (tumšais hero)</a>
+<nav class="jump">
+  <a href="#step1">1. solis · VIN</a>
+  <a href="#step2">2. solis · visa forma</a>
+  <a href="#stripe">3. Stripe apmaksa</a>
 </nav>
 
-<div class="intro">
-  <b>PROVIN · Datu ievade pirms apmaksas</b>
-  <h1>Audita mērķis + Kur uzzinājāt par mums</h1>
-  <p>
-    Četri noformējuma varianti diviem jauniem laukiem 2. solī (pirms apmaksas pogas), starp esošajiem
-    Vārds / E-pasts / Tālrunis laukiem un piekrišanas rūtiņu. Abi lauki nav obligāti pēc noklusējuma
-    (var mainīt), bet ieteicams tos parādīt kā ērti aizpildāmus, lai operators pēc tam PDF komentāros
-    var vairāk fokusēties uz klienta reālo mērķi. Visur „Cits” atver īsu teksta lauku.
-  </p>
+<div class="note">
+  <b>Skats, ne produkcija</b>
+  Pilna klienta plūsma: sākumlapa (1. un 2. solis) + Stripe logs. Audita mērķis ir tajā pašā blokā, kur esošais piezīmju / komentāru lauks. „Kur uzzinājāt” paliek atsevišķi, lai to varētu statistiski lasīt. Stripe logā paliek karte / Apple Pay / Google Pay un (pēc izvēles) īss komentārs, kas jau šodien ir Checkout sesijā.
 </div>
 
-<!-- ============ VARIANT 1: CHIPS, LIGHT ============ -->
-<section class="scene" id="v1">
-  <div class="cap">
-    <b>01</b>
-    <h2>Čipi / pogas (gaišs, saskan ar esošo formu)</h2>
-    <p>Viena rindkopa katram laukam, ātri uzklikšķina. „Kur uzzinājāt” - viens izvēles čips; ja neviens
-      neder, atveras teksta lauks. „Audita mērķis” - biežākie iemesli kā čipi + brīvs teksta lauks apakšā
-      papildu detaļām (nav obligāts).</p>
-  </div>
-  <div class="stage">
-    <div class="field">
-      <div class="flabel">Kāds ir jūsu audita mērķis? <span class="optional">(nav obligāts)</span></div>
-      <div class="chips" data-group="goal">
-        <span class="chip">Vēlos pirkt šo auto</span>
-        <span class="chip">Pārdodu šo auto</span>
-        <span class="chip">Pārbaudu savu auto</span>
-        <span class="chip">Strīds ar pārdevēju</span>
-        <span class="chip">Cits</span>
-      </div>
-      <div class="custom-row" style="display:none;">
-        <input class="u-input" type="text" placeholder="Īsi apraksti mērķi..." />
-      </div>
-    </div>
-    <div class="field">
-      <div class="flabel">Kur jūs uzzinājāt par PROVIN? <span class="optional">(nav obligāts)</span></div>
-      <div class="chips" data-group="source">
-        <span class="chip">TikTok</span>
-        <span class="chip">Instagram</span>
-        <span class="chip">Facebook</span>
-        <span class="chip">YouTube</span>
-        <span class="chip">Google</span>
-        <span class="chip">Cits</span>
-      </div>
-      <div class="custom-row" style="display:none;">
-        <input class="u-input" type="text" placeholder="Piem. draugs ieteica, forums..." />
-      </div>
-    </div>
-  </div>
+<!-- ═══════════════ 1. SOLIS ═══════════════ -->
+<section class="cap" id="step1">
+  <b class="kicker">1 / 3</b>
+  <h2>Sākumlapa, 1. solis</h2>
+  <p>Tas, ko klients redz vispirms. Obligāts ir tikai VIN vai numurzīme. Sludinājuma saite palīdz auditam, bet nav obligāta.</p>
 </section>
 
-<!-- ============ VARIANT 2: SELECT DROPDOWNS ============ -->
-<section class="scene" id="v2">
-  <div class="cap">
-    <b>02</b>
-    <h2>Nolaižamie saraksti (kompaktākais, mazākā UI izmaiņa)</h2>
-    <p>Vismazāk vizuālā trokšņa, ietilpst vienā rindā ar E-pastu / Tālruni. Izvēloties „Cits”, zem
-      parādās neliels teksta ievades lauks. Vienkāršākais realizēt un uzturēt.</p>
-  </div>
-  <div class="stage">
-    <div class="field">
-      <div class="flabel">Audita mērķis <span class="optional">(nav obligāts)</span></div>
-      <select class="box-input">
-        <option value="">Izvēlies...</option>
-        <option>Vēlos pirkt šo auto</option>
-        <option>Pārdodu šo auto</option>
-        <option>Pārbaudu savu auto</option>
-        <option>Strīds ar pārdevēju</option>
-        <option>Cits</option>
-      </select>
-    </div>
-    <div class="field">
-      <div class="flabel">Kur uzzinājāt par mums? <span class="optional">(nav obligāts)</span></div>
-      <select class="box-input">
-        <option value="">Izvēlies...</option>
-        <option>TikTok</option>
-        <option>Instagram</option>
-        <option>Facebook</option>
-        <option>YouTube</option>
-        <option>Google</option>
-        <option>Cits</option>
-      </select>
-      <div class="custom-row">
-        <input class="box-input" type="text" placeholder="Ieraksti, ja izvēlējies „Cits”" style="margin-top:.55rem;" />
+<div class="site">
+  <header class="top">
+    <div class="brand">PROVIN.LV</div>
+    <div class="nav"><span>Sākums</span><span>Pakalpojumi</span><span>Par PROVIN</span><span>LV</span></div>
+  </header>
+  <div class="hero">
+    <div class="kicker">Atskaite, kas pastāsta daudz vairāk</div>
+    <h1 class="h1">Auto vēstures un sludinājuma audits</h1>
+    <p class="sub">Uzzini visu par savu nākamo auto. Auditā apvienotas vairākas maksas vēstures atskaites, oficiālo dīleru un izsoļu portālu arhīvu dati, sludinājuma ekspertīze un konkrētā modeļa tehnisko risku analīze.</p>
+    <ul class="benefits">
+      <li><span class="check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2l2.6 2.6L10 3.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Vēstures atskaites</li>
+      <li><span class="check" style="background:linear-gradient(165deg,#34d058,#1a9e47)"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2l2.6 2.6L10 3.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Sludinājuma audits</li>
+      <li><span class="check"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2l2.6 2.6L10 3.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Tehnisko risku analīze</li>
+      <li><span class="check" style="background:linear-gradient(165deg,#34d058,#1a9e47)"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2l2.6 2.6L10 3.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Ieteikumi un konsultācijas</li>
+    </ul>
+    <div class="card">
+      <div class="field">
+        <label class="flabel">VIN numurs vai numurzīme</label>
+        <input class="inp" value="SADCA2BK6HA098675" readonly />
       </div>
+      <div class="field">
+        <label class="flabel">Sludinājuma saite <span class="opt">(nav obligāti)</span></label>
+        <input class="inp" value="https://www.ss.lv/msg/lv/transport/cars/jaguar/f-pace/..." readonly />
+      </div>
+      <button class="cta" type="button">Pasūtīt no 39,99 €</button>
     </div>
   </div>
+</div>
+
+<!-- ═══════════════ 2. SOLIS ═══════════════ -->
+<section class="cap" id="step2">
+  <b class="kicker">2 / 3</b>
+  <h2>Sākumlapa, 2. solis. Viss, kas jāaizpilda pirms Stripe</h2>
+  <p>Audita mērķis ir čipi virs esošā piezīmju lauka, nevis jauns atsevišķs bloks. Klients var tikai uzklikšķināt mērķi, tikai uzrakstīt, vai abus. Šis teksts pēc tam paliek pie pasūtījuma, lai atskaitē varētu fokusēties uz galveno.</p>
 </section>
 
-<!-- ============ VARIANT 3: ICON RADIO CARDS ============ -->
-<section class="scene" id="v3">
-  <div class="cap">
-    <b>03</b>
-    <h2>Ikonu kartītes (visvairāk telpas, vislabāk mobilajā)</h2>
-    <p>Lielāki pieskaršanās mērķi ar zīmola ikonām - ērtāk mobilajā, bet aizņem vairāk vertikālās telpas.
-      Piemērots, ja šis solis kļūst par atsevišķu „mini aptaujas” bloku formas 2. solī.</p>
-  </div>
-  <div class="stage">
-    <div class="field">
-      <div class="flabel">Audita mērķis <span class="optional">(nav obligāts)</span></div>
-      <div class="rcards">
-        <div class="rcard on">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l2-8h14l2 8M5 12v7a1 1 0 001 1h2a1 1 0 001-1v-2h6v2a1 1 0 001 1h2a1 1 0 001-1v-7M5 12h14"/></svg>
-          <span>Pērku auto</span>
+<div class="site">
+  <header class="top">
+    <div class="brand">PROVIN.LV</div>
+    <div class="nav"><span>Sākums</span><span>Pakalpojumi</span><span>Par PROVIN</span><span>LV</span></div>
+  </header>
+  <div class="hero">
+    <div class="kicker">2. solis · dati pirms apmaksas</div>
+    <h1 class="h1" style="font-size:clamp(1.35rem,4vw,1.85rem);text-transform:none;letter-spacing:-.02em;">Gandrīz gatavs. Pārbaudi datus un dodies uz apmaksu.</h1>
+    <div class="card" style="margin-top:1.15rem;">
+      <div class="field">
+        <label class="flabel">VIN numurs vai numurzīme</label>
+        <input class="inp" value="SADCA2BK6HA098675" readonly />
+        <p class="hint">VIN: 17 rakstzīmes; valsts numurzīme: 3-6 zīmes.</p>
+      </div>
+      <div class="field">
+        <label class="flabel">Sludinājuma saite <span class="opt">(nav obligāti)</span></label>
+        <input class="inp" value="https://www.ss.lv/msg/lv/transport/cars/jaguar/f-pace/..." readonly />
+        <p class="hint">Lūdzu, norādiet precīzu saiti uz sludinājumu. Katra saite tiek manuāli pārbaudīta.</p>
+      </div>
+      <div class="field">
+        <label class="flabel">Vārds / uzvārds <span class="opt">(nav obligāti)</span></label>
+        <input class="inp" placeholder="Andris Bērziņš" />
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label class="flabel">E-pasts <span class="req">*</span></label>
+          <input class="inp" placeholder="andris@n57.lv" value="andris@n57.lv" />
+          <p class="hint">Atskaiti nosūtīsim uz norādīto adresi.</p>
         </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          <span>Pārdodu auto</span>
-        </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z"/></svg>
-          <span>Pārbaudu savu</span>
-        </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 17a2 2 0 001.7 3h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
-          <span>Strīds</span>
-        </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Cits</span>
+        <div class="field">
+          <label class="flabel">Tālrunis <span class="req">*</span></label>
+          <input class="inp" placeholder="+371 …" value="+371 26 123 193" />
+          <p class="hint">Rezerves saziņai, piem. ja e-pasts ievadīts kļūdaini.</p>
         </div>
       </div>
-    </div>
-    <div class="field">
-      <div class="flabel">Kur uzzinājāt par mums? <span class="optional">(nav obligāts)</span></div>
-      <div class="rcards">
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.3 2 1.7 3.6 4 3.9v3c-1.4 0-2.8-.4-4-1.2v6.3a5.6 5.6 0 11-5.6-5.6c.3 0 .6 0 .9.1v3.1a2.5 2.5 0 102.1 2.5V3h2.6z"/></svg>
-          <span>TikTok</span>
-        </div>
-        <div class="rcard on">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
-          <span>Instagram</span>
-        </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3.2h-3.1V7.7c0-.9.3-1.6 1.7-1.6h1.5V3.2C15.9 3.1 14.8 3 13.6 3c-2.6 0-4.4 1.6-4.4 4.5v2.3H6.5v3.2h2.7V21h4.3z"/></svg>
-          <span>Facebook</span>
-        </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2c-.2-1.5-1.4-2.7-2.9-2.9C16.9 4 12 4 12 4s-4.9 0-6.7.3C3.8 4.5 2.6 5.7 2.4 7.2 2.1 9 2.1 12 2.1 12s0 3 .3 4.8c.2 1.5 1.4 2.7 2.9 2.9C7.1 20 12 20 12 20s4.9 0 6.7-.3c1.5-.2 2.7-1.4 2.9-2.9.3-1.8.3-4.8.3-4.8s0-3-.3-4.8zM10 15.5v-7l6 3.5-6 3.5z"/></svg>
-          <span>YouTube</span>
-        </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 01-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.6z"/><path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.3-2.6c-.9.6-2.1 1-3.4 1-2.6 0-4.8-1.7-5.6-4.1H3v2.7A10 10 0 0012 22z"/><path d="M6.4 13.9a6 6 0 010-3.8V7.4H3a10 10 0 000 9.1l3.4-2.6z"/><path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9C16.9 2.7 14.7 1.8 12 1.8A10 10 0 003 7.4l3.4 2.7C7.2 7.7 9.4 5.9 12 5.9z"/></svg>
-          <span>Google</span>
-        </div>
-        <div class="rcard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Cits</span>
+
+      <div class="field">
+        <div class="notes-wrap">
+          <label class="flabel">Piezīmes / audita mērķis <span class="opt">(nav obligāti)</span></label>
+          <div class="chips" data-group="goal">
+            <span class="chip on">Vēlos pirkt šo auto</span>
+            <span class="chip">Pārdodu šo auto</span>
+            <span class="chip">Pārbaudu savu auto</span>
+            <span class="chip">Strīds ar pārdevēju</span>
+            <span class="chip">Cits</span>
+          </div>
+          <textarea class="ta" placeholder="Kas jums šajā auditā ir visbūtiskākais? Piem. nobraukums, negadījumi, dīlera vēsture, sludinājuma foto.">Vēlos pirkt šo Jaguar F-Pace. Interesē, vai ir bijuši negadījumi un vai nobraukums ir ticams.</textarea>
+          <p class="hint">Čips palīdz mums saprast kontekstu. Teksts zem tā ir tas pats piezīmju lauks, kas jau ir formā.</p>
         </div>
       </div>
+
+      <div class="field">
+        <label class="flabel">Kur jūs uzzinājāt par PROVIN? <span class="opt">(nav obligāti)</span></label>
+        <div class="chips" data-group="source">
+          <span class="chip">TikTok</span>
+          <span class="chip on">Instagram</span>
+          <span class="chip">Facebook</span>
+          <span class="chip">YouTube</span>
+          <span class="chip">Google</span>
+          <span class="chip">Cits</span>
+        </div>
+        <div class="custom-row" style="display:none;margin-top:.45rem;">
+          <input class="inp" placeholder="Piem. draugs ieteica, forums..." />
+        </div>
+      </div>
+
+      <div class="sum">
+        <div class="sum-row">
+          <span style="font-size:.85rem;font-weight:600;">Kopā</span>
+          <span class="price">99,99 €</span>
+        </div>
+        <p class="hint" style="margin-top:.55rem;">Vienreizējs maksājums par izvēlēto PROVIN atskaiti (MINI 39,99 € vai AUDITS 99,99 €): sagatavošana un PDF piegāde uz e-pastu parasti 24-72h no veiksmīgas apmaksas.</p>
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" checked />
+        <span>Apstiprinu, ka esmu iepazinies ar <a href="/lv/lietosanas-noteikumi">Lietošanas noteikumiem</a> un <a href="/lv/privatuma-politika">Privātuma politiku</a>, pilnvaroju PROVIN iegūt transportlīdzekļa datus manā vārdā (3.5. punkts), piekrītu digitālā pakalpojuma tūlītējai izpildei un apzinos, ka zaudēju atteikuma tiesības, kad izpilde ir sākusies.</span>
+      </label>
+
+      <button class="cta" type="button">Turpināt uz apmaksu <span aria-hidden>→</span></button>
+      <button class="back" type="button">Atpakaļ</button>
+      <p class="stripe-note">Droša apmaksa ar Stripe, bankas karti un Apple/Google Pay.</p>
     </div>
   </div>
+  <footer class="foot">
+    <div class="foot-inner">
+      Standarta auto vēstures atskaites uzrāda tikai pagātnes fragmentus. PROVIN ir manuāls eksperta audits lietotai automašīnai pirms pirkuma.
+      <div class="legal">
+        PROVIN.LV<br />
+        Nils Valainis · Reģ. nr. 091187-11109<br />
+        Jana iela 3, Tukums, LV3101, Latvija
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════ STRIPE ═══════════════ -->
+<section class="cap" id="stripe">
+  <b class="kicker">3 / 3</b>
+  <h2>Stripe Checkout logs</h2>
+  <p>Pēc „Turpināt uz apmaksu” klients nonāk Stripe viesotajā lapā. Šeit jāaizpilda tikai maksājums. E-pasts jau ir ielasīts no 2. soļa. „Klienta komentārs” Stripe logā jau pastāv šodien (max 255 zīmes). Ja audita mērķis paliek mūsu formā, šo Stripe lauku var atstāt kā īsu papildinājumu vai vēlāk noņemt, lai nebūtu divi komentāri.</p>
 </section>
 
-<!-- ============ VARIANT 4: CHIPS, DARK HERO ============ -->
-<section class="scene" id="v4">
-  <div class="cap">
-    <b>04</b>
-    <h2>Čipi tumšajā „hero” formā (sākumlapas variants)</h2>
-    <p>Tā pati 01. varianta loģika, bet tumšajā stilā - kā to redzēs klients, ja pasūta tieši no
-      sākumlapas hero formas (dark tēma).</p>
+<div class="stripe-page">
+  <div class="s-top">
+    <div class="s-logo">PROVIN.LV</div>
+    <span style="font-size:.72rem;color:#697386;">Droša apmaksa · Stripe</span>
   </div>
-  <div class="stage dark">
-    <div class="field">
-      <div class="flabel">Kāds ir jūsu audita mērķis? <span class="optional">(nav obligāts)</span></div>
-      <div class="chips" data-group="goal-dark">
-        <span class="chip on">Vēlos pirkt šo auto</span>
-        <span class="chip">Pārdodu šo auto</span>
-        <span class="chip">Pārbaudu savu auto</span>
-        <span class="chip">Strīds ar pārdevēju</span>
-        <span class="chip">Cits</span>
+  <div class="s-wrap">
+    <aside class="s-sum">
+      <h2>PROVIN AUDITS</h2>
+      <div class="s-amt">99,99 €</div>
+      <div class="s-prod">
+        <div>
+          PROVIN AUDITS
+          <small>Pilna datu analīze vairākās datubāzēs, sludinājuma analīze un eksperta slēdziens.</small>
+        </div>
+        <strong>99,99 €</strong>
       </div>
-    </div>
-    <div class="field">
-      <div class="flabel">Kur jūs uzzinājāt par PROVIN? <span class="optional">(nav obligāts)</span></div>
-      <div class="chips" data-group="source-dark">
-        <span class="chip">TikTok</span>
-        <span class="chip on">Instagram</span>
-        <span class="chip">Facebook</span>
-        <span class="chip">YouTube</span>
-        <span class="chip">Google</span>
-        <span class="chip">Cits</span>
+      <p style="margin:1.4rem 0 0;font-size:.75rem;color:#697386;line-height:1.5;">
+        VIN SADCA2BK6HA098675 · atskaite uz andris@n57.lv parasti 24-72h.
+      </p>
+    </aside>
+    <div class="s-card">
+      <div class="s-payrow">
+        <button class="s-wpay apple" type="button"> Apple Pay</button>
+        <button class="s-wpay gpay" type="button">G Pay</button>
       </div>
-    </div>
-  </div>
-</section>
+      <div class="or">vai apmaksā ar karti</div>
 
-<div class="notice">
-  <b style="display:block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.35rem;">Piezīme</b>
-  Šis ir tikai vizuāls skats (statisks HTML) - loģika (validācija, saglabāšana pasūtījumā, parādīšana
-  admin panelī <code>SLUDINĀJUMA APRAKSTS</code> / kopsavilkuma blokā) vēl nav ieviesta. Pēc varianta
-  izvēles integrēšu abus laukus <code>components/OrderForm.tsx</code>, <code>lib/order-field-validation.ts</code>,
-  <code>/api/checkout</code> un operatora manuālā pasūtījuma plūsmā, lai dati nonāk admin panelī pie
-  attiecīgā pasūtījuma.
+      <div>
+        <div class="s-label">E-pasts</div>
+        <input class="s-input" value="andris@n57.lv" readonly />
+      </div>
+
+      <div class="s-section">
+        <div class="s-label">Kartes informācija</div>
+        <input class="s-input" placeholder="1234 1234 1234 1234" />
+        <div class="s-row" style="margin-top:.45rem;">
+          <input class="s-input" placeholder="MM / GG" />
+          <input class="s-input" placeholder="CVC" />
+        </div>
+      </div>
+
+      <div class="s-section">
+        <div class="s-label">Kartes īpašnieka vārds</div>
+        <input class="s-input" placeholder="Pilns vārds uz kartes" />
+      </div>
+
+      <div class="s-section">
+        <div class="s-label">Valsts vai reģions</div>
+        <select class="s-input">
+          <option selected>Latvija</option>
+          <option>Lietuva</option>
+          <option>Igaunija</option>
+        </select>
+      </div>
+
+      <div class="s-section">
+        <div class="s-label">Klienta komentārs <span style="font-weight:500;color:#8898aa;">(nav obligāti)</span></div>
+        <input class="s-input" placeholder="Īsa piezīme Stripe lapā, līdz 255 zīmēm" value="Vēlos pirkt. Pārbaudiet negadījumus un nobraukumu." />
+        <p style="margin:.35rem 0 0;font-size:.7rem;color:#8898aa;">Šis ir esošais Stripe custom field. 2. solī mērķis + piezīmes jau ir aizpildītas garāk.</p>
+      </div>
+
+      <button class="s-btn" type="button">Maksāt 99,99 €</button>
+      <p class="s-sec">Apmaksu apstrādā Stripe. Pēc maksājuma atgriezīsies uz PROVIN.LV paldies lapu.</p>
+      <p class="s-foot">Powered by Stripe</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -306,18 +346,9 @@
       if (!chip) return;
       group.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
       chip.classList.add('on');
-      var customRow = group.parentElement.querySelector('.custom-row');
-      if (customRow) {
-        customRow.style.display = chip.textContent.trim() === 'Cits' ? 'block' : 'none';
-      }
-    });
-  });
-  document.querySelectorAll('.rcards').forEach(function (group) {
-    group.addEventListener('click', function (e) {
-      var card = e.target.closest('.rcard');
-      if (!card) return;
-      group.querySelectorAll('.rcard').forEach(function (c) { c.classList.remove('on'); });
-      card.classList.add('on');
+      var wrap = group.parentElement;
+      var customRow = wrap.querySelector('.custom-row');
+      if (customRow) customRow.style.display = chip.textContent.trim() === 'Cits' ? 'block' : 'none';
     });
   });
 </script>
