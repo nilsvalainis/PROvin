@@ -13,6 +13,13 @@
     "text": "Reģistrācija\nŠis automobīlis Latvijā reģistrēts 2016. gadā."
   },
   {
+    "id": "source-bad-data-specificity-expansion",
+    "field": "source",
+    "expectPass": false,
+    "codes": ["source_field_expansion"],
+    "text": "Datu specifika\nIerakstu trūkums datubāzē neizslēdz iespējamus nelielus bojājumus, kas varētu būt novērsti bez apdrošinātāju starpniecības vai notikuši pirms importa no Dānijas. Tāpēc virsbūves stāvokļa pārbaude klātienē ar krāsas biezuma mērītāju joprojām ir nepieciešama, lai pārliecinātos par remonta darbu neesamību."
+  },
+  {
     "id": "source-bad-mileage-essay",
     "field": "source",
     "expectPass": false,
@@ -204,5 +211,14 @@
     "expectPass": true,
     "winterSaltRustRequiredInContext": true,
     "text": "Virsbūves stāvoklis un krāsas biezums\nDigitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve obligāti jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.\n\nVirsbūves korozija\nRūpīgi jāmeklē rūsa riteņu arkās, arī zem plastmasas oderēm, sliekšņu apakšējās malās un bagāžnieka vāka malā ap numura zīmes apgaismojumu. Cinkojums un svaiga apskate to neatceļ.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs un rūpīgi jāapskata eļļas filtra korpuss pret tecējumiem.\n\nKārba\nJāpārbauda 1-2 un 4-5 pārslēgumi aukstā un siltā, bez rāviena.\n\nTesta brauciens\nIeteicams 20-30 min klusais brauciens pilsētā un šosejā 90-110 km/h, lai dzirdētu vibrāciju no kardāna."
+  },
+  {
+    "id": "inspection-winter-salt-plastic-tailgate",
+    "field": "inspection",
+    "expectPass": false,
+    "winterSaltRustRequiredInContext": true,
+    "winterSaltTailgateMaterial": "non_steel",
+    "codes": ["winter_salt_plastic_tailgate"],
+    "text": "Virsbūves stāvoklis un krāsas biezums\nDigitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve obligāti jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.\n\nVirsbūves korozija\nRūpīgi jāmeklē rūsa riteņu arkās, arī zem plastmasas oderēm, sliekšņu apakšējās malās un bagāžnieka vāka malā ap numura zīmes apgaismojumu. Cinkojums un svaiga apskate to neatceļ.\n\nAuksts starts\nIeteicams klausīties ķēdi pirmajās sekundēs."
   }
 ]

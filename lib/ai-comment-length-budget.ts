@@ -37,7 +37,7 @@ export type CommentLengthBudget = {
 };
 
 export const COMMENT_LENGTH_BUDGET: Record<CommentLengthBudgetField, CommentLengthBudget> = {
-  source: { targetChars: "350-800", targetParas: "2-4", maxChars: 1400 },
+  source: { targetChars: "līdz 800", targetParas: "1 (griesti 2-3)", maxChars: 1400 },
   incidents: { targetChars: "500-1200", targetParas: "2-4", maxChars: 1800 },
   mileage: { targetChars: "800-1800", targetParas: "3-5", maxChars: 2400 },
   generic: { targetChars: "350-800", targetParas: "2-4", maxChars: 1800 },
@@ -105,7 +105,7 @@ export function buildCommentLengthBudgetBrief(sourceBlocks: WorkspaceSourceBlock
   const lines = [
     "### Komentāru garuma budžets (deterministisks)",
     `- Datu blīvums: ${DENSITY_LV[d.density]} (${d.sourceCount} avoti ar datiem, ${d.mileageRowCount} nobraukuma rindas)`,
-    `- Avota komentārs: mērķis ${COMMENT_LENGTH_BUDGET.source.targetChars} rakstzīmes (${COMMENT_LENGTH_BUDGET.source.targetParas} rindkopas), griesti ${COMMENT_LENGTH_BUDGET.source.maxChars}.`,
+    `- Avota komentārs: 1 rindkopa, ja pietiek; griesti ${COMMENT_LENGTH_BUDGET.source.targetParas} / ${COMMENT_LENGTH_BUDGET.source.maxChars} rakstzīmes. ${COMMENT_LENGTH_BUDGET.source.targetChars} ir GRIESTI, ne kvota. Neizdomā otru virsrakstu, lai aizpildītu formu.`,
     `- Nobraukums: mērķis ${COMMENT_LENGTH_BUDGET.mileage.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.mileage.maxChars}.`,
     `- Negadījumi: mērķis ${COMMENT_LENGTH_BUDGET.incidents.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.incidents.maxChars}.`,
     `- 1. Tehnisko risku analīze: flagship, griesti ${COMMENT_LENGTH_BUDGET.technical_risks.maxChars} (NEĪSINĀT līdz avota komentāra garumam).`,

@@ -61,7 +61,7 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 
 Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: tik soļu, cik šim auto ir darāmu (tipiski 6–12; noklusējuma 350–800 NEATTIECAS). NE pa vienai rindkopai katram risku blokam — grupē pēc tā, ko pircējs redz, dzird, izmēra vai vaicā.
 OBLIGĀTI katram auto: viena sadaļa „Virsbūves stāvoklis un krāsas biezums” (virsraksts + viena rindkopa) — krāsas biezuma mērītājs; ārēji ap 100 līdz 150 µm; starpība 50 līdz 150 µm; iekšējās ailes aptuveni uz pusi mazāk = rūpnīca. Šī sadaļa neaizstāj citus soļus. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
-Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — extra sadaļa ar nosauktām vietām (arkas, sliekšņu apakšas, bagāžnieka vāks pie numura zīmes gaismām). Ja bloka NAV, par Lietuvu/Igauniju un „turpmāko sāli” NERAKSTI.
+Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — extra sadaļa ar vietām no brīfa (arkas, sliekšņu apakšas, apakšdaļa; bagāžnieka vāks pie numura zīmes gaismām TIKAI ja brīfs saka tērauds). Ja bloka NAV, par Lietuvu/Igauniju un „turpmāko sāli” NERAKSTI.
 PIRMS ieteikt zobsiksnas, ķēdes, ūdenssūkņa vai kārbas eļļas maiņu (jebkura marka): izlasi dīlera Veiktos darbus un Komentārus. Ja darbs jau fiksēts, to kā „jāmaina” NERAKSTI. Ķēde pret zobsiksnu - tikai pēc šī motora koda vai fiksētas maiņas.
 ${!techPlain ? "Tehnisko risku sadaļas vēl nav — vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls” un bez izsaukuma zīmēm.

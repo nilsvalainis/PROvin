@@ -3,6 +3,15 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-20.2 - Avotu komentārs: 1 rindkopa, ja pietiek; griesti 2-3
+ *   (350-800 ir griesti, ne kvota). Ziemas sāls: bagāžnieka vāks / numura
+ *   zīmes apgaismojums tikai ja vāks ir tērauds; plastmasa, stiklašķiedra,
+ *   kompozīts, alumīnijs vai nezināms materiāls - šablonu neraksta.
+ * - 2026-09-20.1 - Avotu komentāri = tikai fiksētais fakts. Teikuma paplašinājumi
+ *   („Datu specifika”, „ierakstu trūkums neizslēdz…”, krāsas biezuma mērītājs)
+ *   atļauti tikai kopsavilkuma sadaļās / 2. Ieteikumos. HYBRID vairs neprasa
+ *   interpretēt pircējam; drošības tīkls stripSourceFieldExpansions +
+ *   source_field_expansion self-correction.
  * - 2026-09-19.2 - Dīlera "Komentārs" (AI_DEALER_COMMENT_CONSTRUCTION_RULES),
  *   balstīts uz 96 reālu komentāru analīzi: aizliegts sākt ar "Oficiālā dīlera
  *   dati sniedz/apstiprina..." (bija ~40% gadījumu); kanoniska 3-lomu struktūra
@@ -108,4 +117,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-19.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-20.2";

@@ -16,7 +16,7 @@ Katrs ģenerējums = **system** + **user**. User vienmēr iet caur `appendAiOper
 
 | Lauks | System | User sagatave | Modelis (noklusējums) | Garums |
 |---|---|---|---|---|
-| Avota „Komentāri” (CSDD, AutoDNA, CV, LTAB, dīleris, reģistri, Citi avoti, Tirgus) | `aiSourceCommentSystemPrompt(label)` = `PROVIN_EXPERT_SYSTEM_PROMPT` + avota extra | `lib/admin-ai-source-comment.ts` | Gemini Flash | 350-800 (max 1400); zems blīvums: 1-2 rindkopas |
+| Avota „Komentāri” (CSDD, AutoDNA, CV, LTAB, dīleris, reģistri, Citi avoti, Tirgus) | `aiSourceCommentSystemPrompt(label)` = `PROVIN_EXPERT_SYSTEM_PROMPT` + avota extra | `lib/admin-ai-source-comment.ts` | Gemini Flash | 1 rindkopa (griesti 2-3 / 800; max 1400); zems blīvums: 1 rindkopa |
 | Oficiālā dīlera servisa vēsture | `aiAutoRecordsServiceHistorySystemPrompt()` | tas pats fails | Gemini Flash | kā avota komentārs |
 | Eļļas maiņas intervāli | `aiAutoRecordsOilIntervalSystemPrompt()` | tas pats fails | Gemini Flash | pilna matemātika (max 4000) |
 | Avotu salīdzinājums (iekšējs kopskats, nav PDF) | `AI_SOURCES_COMPARISON_SYSTEM` | `lib/admin-ai-sources-comparison.ts` | Claude Sonnet | 4–8 rindkopas; FLASH MAX palaiž pirmo |
@@ -86,9 +86,9 @@ DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay)
 - Open with the single most important thing ${blockLabel} adds to this audit; the whole comment answers that one question.
 - Primary content = facts, tables, and signals that THIS source uniquely provides (damage zones, TA defects, dealer codes, claims, Status Center, etc.).
 - Comparison = at most ONE sentence, and only when a conflict changes the conclusion. The full cross-source picture is built in „3. Kopsavilkums”, not here.
-- LENGTH: **2–4 short paragraphs (≈350–800 characters)** unless OPERATORA KOMANDAS are present — then cover every operator topic (and only the scoped ones if the operator limited the job); do not skip a theme to stay inside 350–800.
+- LENGTH: **1 paragraph if the unique facts fit; ceiling 2–3 (≈800 characters)**. 350–800 is a ceiling, not a quota. Unless OPERATORA KOMANDAS are present — then cover every operator topic (and only the scoped ones if the operator limited the job).
 - If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary) appear in the user prompt: those facts are COVERED. Do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
-- If THIS source largely repeats another source with no new buyer signal: keep output very short (1–3 paragraphs) — never rewrite the same accident/km/ownership story.
+- If THIS source largely repeats another source with no new buyer signal: one short confirmation — never rewrite the same accident/km/ownership story.
 - Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.
 - Do NOT write oil-change interval math (how often oil was changed, km gaps vs OEM) — that belongs exclusively in „Eļļas maiņas intervāli”.
 - Do NOT rewrite „1. Tehnisko risku analīze”, „2. Ieteikumi…”, or „3. Kopsavilkums” here.
@@ -113,7 +113,7 @@ ${focusDataText}
 
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
 Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” pievieno šim auditam? To pasaki pirmajā rindkopā.
-Garums: **2–4 īsas rindkopas** (≈350–800 rakstzīmes). Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
+Garums: **1 rindkopa, ja pietiek**; griesti 2–3 / ≈800 rakstzīmes. Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
 Ja šis avots tikai apstiprina jau uzrakstīto: 1–2 īsas rindkopas max.
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; digitālie ieraksti var būt nepilnīgi, tāpēc raksti, ko dati uzrāda, nevis ko tie „pierāda”.

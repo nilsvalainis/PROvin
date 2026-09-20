@@ -105,7 +105,7 @@ export const AI_TA_COVERED_WEAR_RULES = `CSDD TA COVERED WEAR (mandatory — eve
 - Technical-risk field = model/powertrain specifics (engine construction, ķēde/zobsiksna, kārba, divmasu spararats, dārgie mezgli, rūsa per rust rules). Everyday service wear is not a purchase risk.
 - NEVER write that suspension/brakes „ir kārtībā” as a physical fact. Say only that the inspection record on that date showed they met the requirement.
 - Rust/corrosion and exhaust particulates / smoke opacity stay a caution even after a later clean TA (RESOLVED HISTORICAL FINDINGS exception).
-- Climate rust (WINTER SALT RUST) is NOT a TA-covered wear item. Fresh/clean TA does not waive typical-spot advice. TA does not see rust under arch liners, sill undersides, or the tailgate seam around the plate lights.`;
+- Climate rust (WINTER SALT RUST) is NOT a TA-covered wear item. Fresh/clean TA does not waive typical-spot advice. TA does not see rust under arch liners or sill undersides. The tailgate/plate-light seam is only a rust spot when THAT car’s lid is steel (see WINTER SALT RUST).`;
 
 /** Nezināmais nav risks — tas ir klātienes uzdevums. */
 export const AI_UNKNOWN_IS_NOT_A_RISK_RULES = `UNKNOWN IS NOT A RISK (mandatory — every agent):
@@ -138,7 +138,8 @@ export const AI_WINTER_SALT_RUST_RULES = `WINTER SALT RUST (mandatory — every 
 - Trigger: the prompt block „Ziemas sāls / rūsas ekspozīcija” says Statuss: OBLIGĀTI. That block is computed from THIS car’s actual use in Latvija / Lietuva / Igaunija (mileage country, CSDD TA, Latvian registration events, Estonian registries, listing text). Do not second-guess a missing block into an essay. If the block is absent, do not invent rust, do not name Lietuva or Igaunija „just in case”, and do not write that future Latvian winters will now create this risk.
 - Name ONLY the countries listed in the brief as evidenced for THIS car. Never list Latvija, Lietuva and Igaunija as a set when the data shows none of them, or only one of them.
 - If triggered, BOTH „1. Tehnisko risku analīze” AND „2. Ieteikumi klātienes apskatei” MUST cover it. Anti-repetition does not waive this. One calibrated paragraph in risks; one inspection section that NAMES the spots.
-- Typical spots (name them — do not write only „jāpārbauda rūsa”): riteņu arkas (also under plastic liners); sliekšņu apakšējās malas where stones hit from the wheels; bagāžnieka vāka mala ap numura zīmes apgaismojumu; underbody / inner sills.
+- Typical spots to name by default (do not write only „jāpārbauda rūsa”): riteņu arkas (also under plastic liners); sliekšņu apakšējās malas where stones hit from the wheels; underbody / inner sills.
+- TAILGATE / bagāžnieka vāks is NOT a universal rust spot. Many hatchbacks and SUVs have a plastic, fiberglass, SMC, thermoplastic, composite or aluminium lid - steel rust does not grow there. Name „bagāžnieka vāka mala ap numura zīmes apgaismojumu” ONLY when the brief says „Bagāžnieka vāks: tērauds”. If the brief says plastmasa / stiklašķiedra / kompozīts / alumīnijs, or „materiāls nav droši zināms”, do NOT use that canned tailgate sentence. Rear metal that may still rust: hinge plates, lock recess, number-plate frame on metal - not the lid itself.
 - What the buyer needs to understand: this is a climate risk from winter salt, NOT a proven defect on THIS car. Galvanized Audi / VW bodies do NOT cancel the check. A fresh or clean TA does NOT cancel it — inspection lights and a lift do not see rust under arch liners.
 - PROSE: short factual sentences. Forbidden padding: „rada paaugstinātu risku”, „lai gan X ir laba pretkorozijas apstrāde…”, long climate essays. State years/countries from the brief, name the spots, note that a fresh TA does not see rust under liners — then stop.
 - Do not invent that rust is already present. Do not write repair EUR. Do not treat rust as TA-covered everyday wear (sviras / bukses).
@@ -156,7 +157,7 @@ PAINT THICKNESS / UNRECORDED BODY WORK (mandatory — every agent; default OUTPU
   • Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve obligāti jāpārbauda klātienē ar krāsas biezuma mērītāju.
   • Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem.
   • Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.
-- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer comments, mileage): do NOT write this paint-gauge essay or micron protocol. Those fields extract THIS source’s unique facts (km, claims, TA, warnings) for later summary sections. One short sentence in tech risks only if unrecorded body work is a purchase-relevant unknown. Incidents may name recorded damage zones without repeating the full micron protocol.
+- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer, VIN registry, CC.VIN, ASV, mileage): do NOT write this paint-gauge essay, micron protocol, or the „records may omit painted panels / measure in person” caveat. Those fields extract THIS source’s unique facts (km, claims, TA, warnings) and stop. Unrecorded-body-work interpretation belongs in „3. Kopsavilkums” or one short sentence in tech risks only if it is a purchase-relevant unknown. Incidents may name recorded damage zones without repeating the micron protocol.
 - If THIS car is wrapped: still include this micron protocol in „2. Ieteikumi”; add that a gauge through film is limited (see WRAP / FILM).
 - OPERATORA KOMANDAS „tikai par…” still win if the operator excluded body work; otherwise this section is always on in inspection only.
 - No repair EUR.
@@ -230,11 +231,14 @@ export const AI_CROSS_FIELD_PORTFOLIO_RULES = `CROSS-FIELD PORTFOLIO (mandatory 
  * Avotu lauki (CSDD, AutoDNA, CarVertical, LTAB, dīlera dati u.c.) konstatē faktus.
  * Interpretācija un ieteikumi pieder tikai norādītajiem laukiem.
  */
-export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (mandatory — every per-source comment window: CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS / dealer, seller portrait, photos):
-- State what THIS source recorded (date, km, amount, zone, code, name) — do not add a risk label, a severity verdict, or a recommendation sentence after the fact. No "kas prasa detalizētu izvērtējumu", "kas ir svarīgi noskaidrot", "signāls, kas jāpārbauda" tails, and no naming a single item as THE headline purchase risk, bolted onto a plain fact. That kind of verdict belongs only in „1. Tehnisko risku analīze” / „3. Kopsavilkums”, where it is the field's actual job.
-- GENERIC INSPECTION RECOMMENDATIONS ("obligāti jāveic pilna diagnostika neatkarīgā servisā" and similar catch-all advice) are ONLY allowed in THREE places: „3. Kopsavilkums”, nobraukuma kopsavilkums (NOBRAUKUMA VĒSTURES KOMENTĀRS), and negadījumu kopsavilkums. Every other field (source comments, tech risks per-item lines, seller portrait, photos, price fit) either states a concrete, specific klātienes step for that exact fact, or says nothing extra.
-- If there is nothing beyond the bare fact to add, stop after the fact. Do not pad with a closing sentence just to "round off" the paragraph — an unnecessary sentence is worse than a short one.
-- This is what keeps source fields short: cut the explanation, keep the fact. „1. Tehnisko risku analīze” and „3. Kopsavilkums” are the only fields allowed to run long — everywhere else, prefer 1-3 sentences per fact/event.`;
+export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (mandatory — every per-source comment window: CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS / dealer, VIN registry / Dānijas reģistri, CC.VIN, ASV, seller portrait, photos, listing photo analysis):
+- State ONLY what THIS source recorded (date, km, amount, zone, code, name, status). After the fact, STOP. Do not add a second sentence that explains, hedges, or expands the fact.
+- FORBIDDEN in source fields (these are sentence expansions, not facts): „ierakstu trūkums neizslēdz…”, „varētu būt novērsti bez apdrošinātāju starpniecības”, „notikuši pirms importa”, „Digitālie dati var neuzrādīt krāsotus elementus”, krāsas biezuma mērītājs / mikroni / „virsbūves stāvokļa pārbaude klātienē”, invented headings such as „Datu specifika”. That material belongs ONLY in summary fields.
+- EXPANSIONS AND ADDED SENTENCES are allowed ONLY in summary sections: „3. Kopsavilkums”, „NOBRAUKUMA VĒSTURES KOMENTĀRS”, „NEGADĪJUMU VĒSTURES KOPSAVILKUMS”. „1. Tehnisko risku analīze” analyses THIS car’s aggregates; „2. Ieteikumi” is the inspection checklist (including paint gauge). Neither of those jobs may be copied into a source comment.
+- No risk label, severity verdict, or recommendation after the fact. No „kas prasa detalizētu izvērtējumu”, „kas ir svarīgi noskaidrot”, „signāls, kas jāpārbauda”, no „galvenais pirkuma risks” bolted onto a plain registry row.
+- GENERIC INSPECTION ADVICE („obligāti jāveic pilna diagnostika”, „jāpārbauda ar krāsas biezuma mērītāju”) is NEVER a source-comment sentence.
+- If there is nothing beyond the bare fact, stop. A short fact is better than a rounded-off paragraph.
+- LENGTH: one paragraph when that covers the unique facts. Ceiling 2–3 paragraphs. Do not invent a heading such as „Datu specifika” or a second section to hit a 2–4 / 350–800 quota.`;
 
 /**
  * Balstīts uz 96 reālu dīlera komentāru izlases analīzi (2026-09-19 backup). Konstatētās problēmas:
@@ -249,7 +253,7 @@ export const AI_DEALER_COMMENT_CONSTRUCTION_RULES = `DĪLERA / AUTO RECORDS „K
   2) Servisa / remontu vēsture: concrete dated service or repair events (date + km + work). Never compute or list oil-change km/month gaps here; that math lives only in „Eļļas maiņas intervāli” (see AI_OIL_CHANGE_INTERVAL_RULES) — mention THAT service happened, not the gap arithmetic.
   3) Nobraukuma / datu saskaņa: one short cross-check sentence on whether the dealer's km points line up with CSDD/AutoDNA/CarVertical. This is a one-line confirmation, not a mileage-forensics essay — that belongs to the mileage comment / summary.
 - Each role gets its own „<strong>Virsraksts</strong><br>” heading (3-6 words, no trailing period) followed by 2-4 sentences. Use the SAME heading-then-paragraph shape for every role present; never leave one role as a bare paragraph with only inline **bold** while the others use headings.
-- LENGTH DISCIPLINE: target roughly 600-1000 characters total across all roles present. If the source data is thin, write less — do not stretch a one-fact source into three padded paragraphs just to hit three headings.
+- LENGTH DISCIPLINE: 1-2 roles is normal. Three only when each has unique facts. Target roughly 600-1000 characters total across all roles present. If the source data is thin, write less — do not stretch a one-fact source into three padded paragraphs just to hit three headings.
 - Sentence job inside each paragraph: sentence 1 = the fact; sentence 2 (only if it adds something) = why it is useful for THIS car (e.g. confirms/contradicts another source, fills a gap) — never a filler sentence like "šī informācija ir vērtīga pircējam" that restates the fact without adding content.
 - <br> vs <br /> — pick one style for the whole field and keep it consistent within this field.`;
 
@@ -268,7 +272,8 @@ export const AI_SOURCES_COMPARISON_OVERVIEW_RULES = `CASE OVERVIEW / AVOTU SALĪ
 export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
 - OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” are present, completeness and scope of those notes beat this brevity block. Do not drop operator topics to stay short; do not pad when the operator limited the job.
 - Each comment answers ONE question: what does THIS source / THIS field add to the audit? Say it in the first paragraph.
-- DEFAULT LENGTH: 2–4 paragraphs, 2–3 sentences each (≈350–800 characters). Thin data → shorter. Only OPERATORA KOMANDAS may extend this. (Length exceptions for flagship fields live only in those fields' task blocks — do not copy 8–12 paragraphs into source/seller/summary.)
+- DEFAULT LENGTH (non-source fields): 2–4 paragraphs, 2–3 sentences each (≈350–800 characters). Thin data → shorter. Only OPERATORA KOMANDAS may extend this. (Length exceptions for flagship fields live only in those fields' task blocks — do not copy 8–12 paragraphs into source/seller/summary.)
+- SOURCE COMMENTS: paragraph count = distinct fact-clusters THIS source uniquely adds. One cluster = one paragraph. Default is ONE paragraph. Ceiling 2–3. 350–800 characters is a CEILING, not a quota. Merge related facts (same date/event) instead of inventing a second heading. A short fact is better than a rounded-off second section.
 - Cross-source comparison is NOT this field's job: at most ONE short sentence, and only when a conflict changes the conclusion. The aggregate picture, source-by-source comparison, and the purchase verdict belong to „3. Kopsavilkums”.
 - Never retell a fact the client already reads in another section or source comment. If this source only confirms it: one sentence („Saskan ar …”) and move on.
 - Cut: greetings, restating the section title, „kopumā var secināt”, „svarīgi atzīmēt”, „ko tas nozīmē šim darījumam”, „tomēr līdzās šim atrodama arī”, generic „jāpārbauda klātienē” without naming the component, closing paragraphs that repeat earlier content.
@@ -310,6 +315,34 @@ const SENTENCE_HAS_EURO_RE = /€|\bEUR\b/;
  * Prompta instrukcija ir pirmā aizsardzības līnija; šī funkcija ir pēdējā — izmet teikumu,
  * kurā parādās € vai EUR, nevis mēģina "labot" skaitli (drošāk par pusuztaisītu teikumu).
  */
+const SOURCE_FIELD_EXPANSION_HEADING_RE = /^\s*datu specifika\s*$/i;
+const SOURCE_FIELD_EXPANSION_SENTENCE_RE =
+  /krāsas (?:biezuma )?mērītāj|digitālie dati var neuzrādīt|neizslēdz iespējam|varētu būt novērsti|bez apdrošinātāju starpniec|pārliecinātos par remonta|virsbūves stāvokļa pārbaude klātien|nefiksētu (?:negadījumu|bojājum)|kosmētisku krāsojumu|\b(?:µm|μm|mikron)/i;
+
+/**
+ * Avotu komentāru drošības tīkls: izmet teikumus, kas paplašina faktu
+ * (mērītājs, „neizslēdz iespējamus”, „Datu specifika”). Promptam jāstrādā vispirms.
+ */
+export function stripSourceFieldExpansions(text: string): string {
+  if (!text) return text;
+  return text
+    .split(/\n\n+/)
+    .map((para) => {
+      const lines = para.split("\n").filter((line) => !SOURCE_FIELD_EXPANSION_HEADING_RE.test(line.trim()));
+      const kept = lines
+        .map((line) =>
+          splitIntoSentences(line)
+            .filter((s) => !SOURCE_FIELD_EXPANSION_SENTENCE_RE.test(s))
+            .join("")
+            .trim(),
+        )
+        .filter(Boolean);
+      return kept.join("\n");
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 export function stripUnauthorizedEuroAmounts(text: string): string {
   if (!text) return text;
   return text
@@ -569,7 +602,7 @@ ${PROVIN_COMMENT_BREVITY_RULES}
 - SECTION SHAPE: Each section = a short heading on its OWN line (3-10 words, no period needed) then the paragraph on the next line. Example:
 Nobraukuma vēsture Latvijā
 CSDD datos automašīna Latvijā reģistrēta 2016. gada 22. janvārī.
-- SCANABILITY: Keep each paragraph to 2-4 sentences. When OPERATORA KOMANDAS supply dense timelines, or the ACTIVE FIELD is „1. Tehnisko risku analīze”, allow the flagship section count — never pad with filler.
+- SCANABILITY: Keep each paragraph to 2-4 sentences except per-source comments (1-2 sentences; do not invent a second heading to fill a quota). When OPERATORA KOMANDAS supply dense timelines, or the ACTIVE FIELD is „1. Tehnisko risku analīze”, allow the flagship section count — never pad with filler.
 - HUMAN TONE: Write like a senior Latvian inspector briefing a buyer — concrete, varied rhythm, no AI filler ("Kopumā var secināt", "Svarīgi atzīmēt", "Turklāt jāpiemin", "Nav šaubu"). Do not wrap the whole output in quotation marks.
 - CONFLICTS: State risks inside prose; heading „Neatbilstība” or „Pretruna avotos” when the data conflicts — never the word „anomālija”, and never prefix with "- ".
 - STYLE REFERENCE: When the user prompt includes existing expert comments from this order, match their heading-then-paragraph rhythm, vocabulary ("automašīna"), and tone; extend with new facts, do not switch to a different format.
@@ -742,6 +775,7 @@ ${AI_PLAIN_LANGUAGE_TERMS}
 ${AI_PLAIN_FACT_PROSE_RULES}
 ${AI_NO_AI_COST_FRAMING_RULES}
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}
+${AI_SOURCE_FIELDS_FACTS_ONLY_RULES}
 ${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 ${AI_WRAP_FILM_RULES}
 ${AI_WINTER_SALT_RUST_RULES}
@@ -750,10 +784,10 @@ ${AI_OIL_CHANGE_INTERVAL_RULES}
 ${AI_DOCUMENTED_SERVICE_WORK_RULES}
 ${AI_THIS_CAR_ONLY_LOGIC_RULES}
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
-- LENGTH (default when generating from source data alone): Target 350–800 characters (2–4 short paragraphs) for per-source comments — what THIS source adds, not a second full-report essay. Fewer, sharper paragraphs are always better than more.
-- LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / eksperta piezīmes — IGNORE the 350–800 target if needed to cover every operator topic. Preserve the operator's detail density; reorganize into paragraphs with **bold** hooks; do not compress into a short formula and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes are long.
+- LENGTH (default when generating from source data alone): ONE paragraph if that covers the unique facts THIS source adds. Ceiling 2–3 short paragraphs / ≈800 characters. 350–800 is a CEILING, not a quota. Merge related facts. Do not invent a second heading to fill a form. Fewer, sharper paragraphs are always better than more.
+- LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / eksperta piezīmes — IGNORE the 350–800 ceiling if needed to cover every operator topic. Preserve the operator's detail density; reorganize into heading-then-paragraph; do not compress into a short formula and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes are long.
 - STYLE: Analytical, professional, restrained automotive Latvian. Flexible structure — not one fixed template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
-- LOGIC: Interpret what the findings mean for the buyer — do not only list raw facts; but never drop operator-supplied facts to fit a template.
+- LOGIC: State what THIS source recorded. Do not interpret, hedge, or add a buyer-advice sentence after the fact. Meaning, caveats, and „what the buyer should do” belong ONLY in summary sections (3. Kopsavilkums, NOBRAUKUMA VĒSTURES KOMENTĀRS, NEGADĪJUMU VĒSTURES KOPSAVILKUMS) or in „2. Ieteikumi” when it is an inspection step. Never drop operator-supplied facts to fit a template.
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 - ANTI-REPETITION (mandatory): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, missing-data narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), oil-change interval math (that belongs in „Eļļas maiņas intervāli”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here and process EVERY operator topic (anti-repetition must not delete an operator theme). Per-source text = unique facts from THIS source + at most ONE cross-check sentence vs other sources when generating from data alone. If another source comment already covered the same fact AND the operator did not ask you to write it here: one short confirmation only — never a near-duplicate essay.
 `;

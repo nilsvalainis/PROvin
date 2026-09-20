@@ -27,6 +27,8 @@ export type CommentQualityOptions = {
   wrapPresentInContext?: boolean;
   /** Deterministiskais ziemas sāls / rūsas bloks saka OBLIGĀTI. */
   winterSaltRustRequiredInContext?: boolean;
+  /** Bagāžnieka vāka materiāls no ziemas sāls brīfa. */
+  winterSaltTailgateMaterial?: "steel" | "non_steel" | "unknown";
   /** Pilnais user prompt — lai noķertu sveša auto faktu kopēšanu. */
   sourcePrompt?: string;
 };
@@ -67,13 +69,13 @@ export function paintGaugeInspectionComplete(text: string): boolean {
   );
 }
 
-/** Tipiskās ziemas sāls vietas — jānosauc vismaz divas. */
+/** Tipiskās ziemas sāls vietas — arkas un sliekšņi ir obligāti; vāks nav universāls. */
 export function countTypicalWinterSaltRustSpots(text: string): number {
   const t = text ?? "";
   let n = 0;
   if (/ark/i.test(t)) n += 1;
   if (/sliekš/i.test(t)) n += 1;
-  if (/numura zīm|bagāžniek|numurzīm/i.test(t)) n += 1;
+  if (/apakšdaļ|sliekšņu iekš/i.test(t)) n += 1;
   return n;
 }
 
@@ -229,6 +231,18 @@ export function evaluateExpertCommentQuality(
           "Avota komentārs satur pārāk daudz nobraukuma sintēzes — atstāj to „NOBRAUKUMA VĒSTURES KOMENTĀRAM”",
       });
     }
+    if (
+      PAINT_GAUGE_TOOL_RE.test(t) ||
+      /datu specifika/i.test(t) ||
+      /neizslēdz iespējam/i.test(t) ||
+      /digitālie dati var neuzrādīt/i.test(t)
+    ) {
+      issues.push({
+        code: "source_field_expansion",
+        message:
+          "Avota komentārā nav paplašinājumu: bez „Datu specifika”, bez „neizslēdz iespējamus” un bez krāsas biezuma mērītāja — tas pieder kopsavilkumam vai ieteikumiem",
+      });
+    }
   }
 
   if (field === "mileage") {
@@ -326,7 +340,19 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "winter_salt_rust_spots_missing",
         message:
-          "Rūsas rindkopā jāsauc tipiskās vietas: arkas, sliekšņi, bagāžnieka vāks / numura zīmes apgaismojums",
+          "Rūsas rindkopā jāsauc tipiskās vietas: arkas un sliekšņi (apakšdaļa, ja vietas ir)",
+      });
+    }
+    if (
+      opts.winterSaltRustRequiredInContext &&
+      (opts.winterSaltTailgateMaterial === "non_steel" ||
+        opts.winterSaltTailgateMaterial === "unknown") &&
+      /bagāžniek/i.test(t)
+    ) {
+      issues.push({
+        code: "winter_salt_plastic_tailgate",
+        message:
+          "Bagāžnieka vāku nedrīkst saukt kā rūsas vietu, ja vāks nav tērauda vai materiāls nav droši zināms",
       });
     }
   }
@@ -361,7 +387,19 @@ export function evaluateExpertCommentQuality(
       issues.push({
         code: "winter_salt_rust_spots_missing",
         message:
-          "Ieteikumos jāsauc vismaz divas tipiskās rūsas vietas: arkas, sliekšņi, bagāžnieka vāks / numura zīmes gaismas",
+          "Ieteikumos jāsauc vismaz divas tipiskās rūsas vietas: arkas un sliekšņi",
+      });
+    }
+    if (
+      opts.winterSaltRustRequiredInContext &&
+      (opts.winterSaltTailgateMaterial === "non_steel" ||
+        opts.winterSaltTailgateMaterial === "unknown") &&
+      /bagāžniek/i.test(t)
+    ) {
+      issues.push({
+        code: "winter_salt_plastic_tailgate",
+        message:
+          "Ieteikumos bagāžnieka vāku nedrīkst saukt kā rūsas vietu, ja vāks nav tērauda vai materiāls nav droši zināms",
       });
     }
   }

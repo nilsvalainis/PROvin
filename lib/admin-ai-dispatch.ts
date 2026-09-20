@@ -23,7 +23,10 @@ import {
   type CommentQualityIssue,
   type CommentQualityOptions,
 } from "@/lib/ai-eval/comment-quality";
-import { winterSaltRustRequiredInPrompt } from "@/lib/admin-ai-winter-salt-rust";
+import {
+  winterSaltRustRequiredInPrompt,
+  winterSaltTailgateMaterialFromPrompt,
+} from "@/lib/admin-ai-winter-salt-rust";
 import {
   AI_ROUTE_BUDGET_MS,
   aiBudgetAllowsRetry,
@@ -77,8 +80,10 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "foreign_audit_fact_copied",
   "winter_salt_rust_missing",
   "winter_salt_rust_spots_missing",
+  "winter_salt_plastic_tailgate",
   "paint_gauge_missing",
   "paint_gauge_incomplete",
+  "source_field_expansion",
 ]);
 
 /** Lētais Gemini Flash piegājiens. Nav vērts atkārtot ar Opus/Sonnet. */
@@ -142,6 +147,7 @@ async function withSelfCorrection(
     field,
     wrapPresentInContext: mentionsVehicleWrapInOrderFacts(opts.userPrompt),
     winterSaltRustRequiredInContext: winterSaltRustRequiredInPrompt(opts.userPrompt),
+    winterSaltTailgateMaterial: winterSaltTailgateMaterialFromPrompt(opts.userPrompt) ?? undefined,
     sourcePrompt: opts.userPrompt,
   });
   const critical = allIssues.filter(

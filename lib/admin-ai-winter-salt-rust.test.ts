@@ -3,7 +3,9 @@ import { emptyCsddFields } from "@/lib/admin-source-blocks";
 import {
   analyzeWinterSaltRust,
   buildWinterSaltRustBrief,
+  inferTailgateRustMaterial,
   winterSaltRustRequiredInPrompt,
+  winterSaltTailgateMaterialFromPrompt,
 } from "@/lib/admin-ai-winter-salt-rust";
 
 const NOW = Date.parse("2026-08-24T00:00:00Z");
@@ -75,5 +77,47 @@ describe("analyzeWinterSaltRust", () => {
     expect(c.required).toBe(false);
     expect(c.evidencedCountries).toEqual([]);
     expect(buildWinterSaltRustBrief({ csdd, nowMs: NOW })).toBe("");
+  });
+
+  it("names the tailgate rust spot only for a known steel lid (Audi Q7)", () => {
+    expect(inferTailgateRustMaterial("AUDI Q7")).toBe("steel");
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "AUDI Q7";
+    csdd.firstRegistration = "2016-03-12";
+    csdd.ownerRegistrationEvents = [{ date: "2016-04-01", label: "Reģistrācija" }];
+    const brief = buildWinterSaltRustBrief({ csdd, nowMs: NOW });
+    expect(brief).toMatch(/Bagāžnieka vāks: tērauds/);
+    expect(brief).toMatch(/numura zīmes/);
+    expect(winterSaltTailgateMaterialFromPrompt(brief)).toBe("steel");
+  });
+
+  it("does not name the tailgate as a rust spot on a plastic / composite lid", () => {
+    expect(inferTailgateRustMaterial("PEUGEOT 3008")).toBe("non_steel");
+    expect(inferTailgateRustMaterial("CITROEN C4 PICASSO")).toBe("non_steel");
+    expect(inferTailgateRustMaterial("BMW I3")).toBe("non_steel");
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "PEUGEOT 3008";
+    csdd.firstRegistration = "2016-03-12";
+    csdd.ownerRegistrationEvents = [{ date: "2016-04-01", label: "Reģistrācija" }];
+    const c = analyzeWinterSaltRust({ csdd, nowMs: NOW });
+    expect(c.required).toBe(true);
+    expect(c.tailgateMaterial).toBe("non_steel");
+    expect(c.typicalSpots.join(" ")).not.toMatch(/bagāžniek|numura zīm/);
+    const brief = buildWinterSaltRustBrief({ csdd, nowMs: NOW });
+    expect(brief).toMatch(/Bagāžnieka vāks: plastmasa/);
+    expect(brief).toMatch(/NENOSAUKT bagāžnieka vāka malu/);
+    expect(winterSaltTailgateMaterialFromPrompt(brief)).toBe("non_steel");
+  });
+
+  it("omits the canned tailgate sentence when the lid material is unknown", () => {
+    expect(inferTailgateRustMaterial("BMW 320d")).toBe("unknown");
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "BMW 320d";
+    csdd.firstRegistration = "2014-06-01";
+    csdd.ownerRegistrationEvents = [{ date: "2014-07-01", label: "Reģistrācija" }];
+    const brief = buildWinterSaltRustBrief({ csdd, nowMs: NOW });
+    expect(brief).toMatch(/Bagāžnieka vāks: materiāls nav droši zināms/);
+    expect(brief).not.toMatch(/nosauc vietas vārdā —[^\n]*bagāžniek/);
+    expect(winterSaltTailgateMaterialFromPrompt(brief)).toBe("unknown");
   });
 });

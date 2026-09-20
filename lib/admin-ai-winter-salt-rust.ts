@@ -31,12 +31,63 @@ const REGION_YEARS_FLIP_RE =
 const SUV_CROSSOVER_WAGON_RE =
   /\b(?:Q[3578]|SQ[578]|X[1-7]|GLA|GLB|GLC|GLE|GLS|GLK|ML\s*\d|TOUAREG|TIGUAN|ATLAS|CAYENNE|MACAN|XC(?:40|60|70|90)|DISCOVERY|EVOQUE|DEFENDER|KODIAQ|KAROQ|ATECA|TARRACO|OUTLANDER|PAJERO|LAND\s*CRUISER|PRADO|CR-?V|RAV4|HIGHLANDER|TUCSON|SANTA\s*FE|SORENTO|SPORTAGE|FORESTER|OUTBACK|CX-[579]|QASHQAI|X-?TRAIL|KUGA|EQUINOX|COMPASS|CHEROKEE|WRANGLER|SUV|APVIDUS|KROSOVER|CROSSOVER|UNIVERS[AĀ]L|AVANT|VARIANT|TOURING|ALLROAD|ALLTRACK)\b/i;
 
-export const WINTER_SALT_TYPICAL_SPOTS_LV = [
+export const WINTER_SALT_CORE_SPOTS_LV = [
   "riteņu arkas (arī zem plastmasas oderēm)",
   "sliekšņu apakšējās malas, kur lido akmeņi no riteņiem",
-  "bagāžnieka vāka mala ap numura zīmes apgaismojumu",
   "apakšdaļa un sliekšņu iekšpuse",
 ] as const;
+
+export const WINTER_SALT_STEEL_TAILGATE_SPOT_LV =
+  "bagāžnieka vāka mala ap numura zīmes apgaismojumu";
+
+/** @deprecated Core spots only — tailgate is not universal. Use winterSaltTypicalSpots(). */
+export const WINTER_SALT_TYPICAL_SPOTS_LV = WINTER_SALT_CORE_SPOTS_LV;
+
+/** Tērauda vāks = klasiskā rūsa pie numura zīmes. Cits materiāls = šablonu neraksta. */
+export type TailgateRustMaterial = "steel" | "non_steel" | "unknown";
+
+const EXPLICIT_NON_STEEL_TAILGATE_RE =
+  /(?:plastmasas?|stiklašķiedr\w*|kompozīt\w*|termoplast\w*|\bSMC\b|alumīnij\w*)\s+bagāžniek|bagāžniek\w{0,12}\s+(?:ir\s+)?(?:no\s+)?(?:plastmas|stiklašķiedr|kompozīt|termoplast|alumīnij)/i;
+
+const EXPLICIT_STEEL_TAILGATE_RE =
+  /tērauda\s+bagāžniek|bagāžniek\w{0,12}\s+(?:ir\s+)?(?:no\s+)?tēraud/i;
+
+/** Plastmasa, stiklašķiedra, SMC, termoplasts, kompozīts, alumīnija vāks. */
+const NON_STEEL_TAILGATE_MODEL_RE =
+  /\b(?:CORVETTE|LOTUS|TVR|CATERHAM|WESTFIELD|DONKERVOORT|GINETTA|NOBLE|MARCOS|ALFA\s*4C|SMART\s*(?:FORTWO|FORFOUR|EQ)|BMW\s*I3|SATURN|RENAULT\s*ESPACE|CITRO[EĒ]N\s*C4\s*(?:PICASSO|GRAND|SPACETOURER)|GRAND\s+C4(?:\s+PICASSO)?|PEUGEOT\s*(?:3008|5008|807)|CITRO[EĒ]N\s*C8|FIAT\s*MULTIPLA|FORD\s*(?:ESCAPE|EDGE|EXPLORER|ECOSPORT|BRONCO\s*SPORT)|LINCOLN\s*(?:MKC|NAUTILUS|AVIATOR)|CHEVROLET\s*(?:EQUINOX|TRAVERSE|BLAZER)|GMC\s*(?:TERRAIN|ACADIA)|TESLA|IONIQ\s*[56]|KIA\s*EV[69]|HYUNDAI\s*IONIQ)\b/i;
+
+/** Klasiskā tērauda vāka rūsa pie numura zīmes gaismām - tikai šīm saimēm. */
+const STEEL_TAILGATE_RUST_CLASSIC_RE =
+  /\b(?:GOLF|PASSAT|OCTAVIA|SUPERB|LEON|A3\b|A4\b|A6\b|Q5\b|Q7\b|TIGUAN|TOUAREG|SHARAN|ALHAMBRA|FABIA|POLO|TOURAN|CADDY|YETI|ROOMSTER|RAPID|IBIZA|TOLEDO|KAROQ|KODIAQ|ATECA|TARRACO|ARTEON|X3\b|X5\b|V70|XC70|XC60|XC90|V60|V90|V50)\b/i;
+
+export function inferTailgateRustMaterial(makeModel: string, haystack = ""): TailgateRustMaterial {
+  const hay = `${makeModel}\n${haystack}`;
+  if (EXPLICIT_NON_STEEL_TAILGATE_RE.test(hay)) return "non_steel";
+  if (EXPLICIT_STEEL_TAILGATE_RE.test(hay)) return "steel";
+  if (NON_STEEL_TAILGATE_MODEL_RE.test(hay)) return "non_steel";
+  if (STEEL_TAILGATE_RUST_CLASSIC_RE.test(hay)) return "steel";
+  return "unknown";
+}
+
+export function winterSaltTypicalSpots(material: TailgateRustMaterial): readonly string[] {
+  if (material === "steel") {
+    return [
+      WINTER_SALT_CORE_SPOTS_LV[0],
+      WINTER_SALT_CORE_SPOTS_LV[1],
+      WINTER_SALT_STEEL_TAILGATE_SPOT_LV,
+      WINTER_SALT_CORE_SPOTS_LV[2],
+    ];
+  }
+  return WINTER_SALT_CORE_SPOTS_LV;
+}
+
+export function winterSaltTailgateMaterialFromPrompt(prompt: string): TailgateRustMaterial | null {
+  if (!winterSaltRustRequiredInPrompt(prompt)) return null;
+  if (/Bagāžnieka vāks:\s*tērauds/i.test(prompt)) return "steel";
+  if (/Bagāžnieka vāks:\s*plastmasa/i.test(prompt)) return "non_steel";
+  if (/Bagāžnieka vāks:\s*materiāls nav/i.test(prompt)) return "unknown";
+  return "unknown";
+}
 
 export type WinterSaltRustAnalysis = {
   required: boolean;
@@ -45,6 +96,7 @@ export type WinterSaltRustAnalysis = {
   vehicleAgeYears: number | null;
   isSuvCrossoverWagon: boolean;
   makeModel: string;
+  tailgateMaterial: TailgateRustMaterial;
   typicalSpots: readonly string[];
   evidencedCountries: readonly string[];
 };
@@ -199,6 +251,7 @@ export function analyzeWinterSaltRust(input: {
   });
   const makeModel = csdd.makeModel.trim();
   const isSuvCrossoverWagon = SUV_CROSSOVER_WAGON_RE.test(`${makeModel}\n${hay}`);
+  const tailgateMaterial = inferTailgateRustMaterial(makeModel, hay);
   const evidencedCountries = evidencedWinterSaltCountries({
     csdd,
     sourceBlocks: input.sourceBlocks ?? null,
@@ -230,7 +283,8 @@ export function analyzeWinterSaltRust(input: {
     vehicleAgeYears,
     isSuvCrossoverWagon,
     makeModel,
-    typicalSpots: WINTER_SALT_TYPICAL_SPOTS_LV,
+    tailgateMaterial,
+    typicalSpots: winterSaltTypicalSpots(tailgateMaterial),
     evidencedCountries,
   };
 }
@@ -262,6 +316,19 @@ export function buildWinterSaltRustBrief(input: {
   if (c.vehicleAgeYears != null) lines.push(`- Auto vecums: ~${c.vehicleAgeYears} gadi`);
   if (c.isSuvCrossoverWagon) {
     lines.push("- Virsbūves klase: SUV / krosovers / universālis — arkām un sliekšņiem sāls sasniedz ātrāk.");
+  }
+  if (c.tailgateMaterial === "steel") {
+    lines.push(
+      "- Bagāžnieka vāks: tērauds. Nosauc arī malu ap numura zīmes apgaismojumu.",
+    );
+  } else if (c.tailgateMaterial === "non_steel") {
+    lines.push(
+      "- Bagāžnieka vāks: plastmasa / stiklašķiedra / kompozīts / alumīnijs. NENOSAUKT bagāžnieka vāka malu kā rūsas vietu. Rūsa tur neaug. Aizmugurē, ja jāmin: eņģu plāksnes, slēdzenes ligzda, numura rāmis uz metāla, ne pats vāks.",
+    );
+  } else {
+    lines.push(
+      "- Bagāžnieka vāks: materiāls nav droši zināms. NENOSAUKT bagāžnieka vāku kā rūsas vietu pēc noklusējuma. Tikai arkas, sliekšņi, apakšdaļa.",
+    );
   }
   lines.push(
     "- OBLIGĀTI „1. Tehnisko risku analīze”: viena rindkopa — tipisks klimata risks no ziemas sāls, NE pierādīts defekts. Cinkota virsbūve (Audi u.c.) to NEATCEĻ. Svaiga vai tīra TA to NEATCEĻ — TA neredz rūsu zem arku oderēm un sliekšņu apakšā.",

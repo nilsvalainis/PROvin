@@ -23,6 +23,7 @@ import {
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
+  AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_DOCUMENTED_SERVICE_WORK_RULES,
   AI_THIS_CAR_ONLY_LOGIC_RULES,
@@ -312,6 +313,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_WINTER_SALT_RUST_RULES).toMatch(/riteņu arkas/);
     expect(AI_WINTER_SALT_RUST_RULES).toMatch(/sliekš/);
     expect(AI_WINTER_SALT_RUST_RULES).toMatch(/numura zīmes/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/plastmasa|stiklašķiedra/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Bagāžnieka vāks: tērauds|ONLY when the brief says/);
     expect(AI_UNKNOWN_IS_NOT_A_RISK_RULES).toMatch(/WINTER SALT RUST/);
     expect(AI_TA_COVERED_WEAR_RULES).toMatch(/WINTER SALT RUST|Climate rust/);
     expect(AI_RESOLVED_HISTORICAL_FINDINGS_RULES).toMatch(/WINTER SALT RUST/);
@@ -323,7 +326,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?Ziemas sāls/);
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildWinterSaltRustBrief/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winter_salt_rust_missing/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winter_salt_plastic_tailgate/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winterSaltRustRequiredInPrompt/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winterSaltTailgateMaterialFromPrompt/);
+    expect(readRepo("lib/admin-ai-winter-salt-rust.ts")).toMatch(/inferTailgateRustMaterial/);
   });
 
   it("mileage forensics briefs and case overview feed FLASH MAX comments", () => {
@@ -362,6 +368,12 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/Virsbūves stāvoklis un krāsas biezums/);
     expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/tipiski 6–12/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/paint_gauge_missing/);
+    expect(AI_SOURCE_FIELDS_FACTS_ONLY_RULES).toMatch(/FACTS ONLY/);
+    expect(AI_SOURCE_FIELDS_FACTS_ONLY_RULES).toMatch(/Datu specifika/);
+    expect(AI_SOURCE_FIELDS_FACTS_ONLY_RULES).toMatch(/neizslēdz/);
+    expect(HYBRID_COMMENT_RULES).toMatch(/SOURCE FIELDS = FACTS ONLY|Do not interpret/);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/stripSourceFieldExpansions/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/source_field_expansion/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/inspection:[\s\S]*?14_000/);
   });
 
@@ -446,6 +458,8 @@ describe("PROVIN AI prompt invariants", () => {
   it("hybrid comment rules waive short length when operator supplies detail", () => {
     expect(HYBRID_COMMENT_RULES).toMatch(/LENGTH OVERRIDE/i);
     expect(HYBRID_COMMENT_RULES).toMatch(/IGNORE the 350–800/i);
+    expect(HYBRID_COMMENT_RULES).toMatch(/ONE paragraph|1 paragraph/i);
+    expect(HYBRID_COMMENT_RULES).toMatch(/Ceiling 2–3|griesti 2–3/);
   });
 
   it("restrained tone rules ban hyperbole and absolute claims", () => {

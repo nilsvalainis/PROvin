@@ -10,6 +10,8 @@ import { createDefaultSourceBlocks, emptyCsddFields } from "@/lib/admin-source-b
 describe("comment length budget", () => {
   it("keeps existing quality ceilings", () => {
     expect(COMMENT_LENGTH_BUDGET.source.maxChars).toBe(1400);
+    expect(COMMENT_LENGTH_BUDGET.source.targetParas).toMatch(/1/);
+    expect(COMMENT_LENGTH_BUDGET.source.targetParas).toMatch(/2-3/);
     expect(COMMENT_LENGTH_BUDGET.mileage.maxChars).toBe(2400);
     expect(COMMENT_LENGTH_BUDGET.technical_risks.maxChars).toBe(16_000);
     expect(COMMENT_LENGTH_BUDGET.inspection.maxChars).toBe(14_000);

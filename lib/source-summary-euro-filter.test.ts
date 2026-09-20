@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   splitIntoSentences,
+  stripSourceFieldExpansions,
   stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
 
@@ -57,5 +58,22 @@ describe("stripUnauthorizedEuroAmounts", () => {
 
   it("keeps a paragraph whose heading is the only line", () => {
     expect(stripUnauthorizedEuroAmounts("Tikai virsraksts")).toBe("Tikai virsraksts");
+  });
+});
+
+describe("stripSourceFieldExpansions", () => {
+  it("drops the data-gap plus paint-gauge expansion and keeps the recorded fact", () => {
+    const input = [
+      "Reģistra ieraksti",
+      "Dānijas datos nav fiksētu bojājumu.",
+      "",
+      "Datu specifika",
+      "Ierakstu trūkums datubāzē neizslēdz iespējamus nelielus bojājumus, kas varētu būt novērsti bez apdrošinātāju starpniecības vai notikuši pirms importa no Dānijas. Tāpēc virsbūves stāvokļa pārbaude klātienē ar krāsas biezuma mērītāju joprojām ir nepieciešama, lai pārliecinātos par remonta darbu neesamību.",
+    ].join("\n");
+    const out = stripSourceFieldExpansions(input);
+    expect(out).toContain("Dānijas datos nav fiksētu bojājumu.");
+    expect(out).not.toMatch(/Datu specifika/i);
+    expect(out).not.toMatch(/neizslēdz/i);
+    expect(out).not.toMatch(/mērītāj/i);
   });
 });

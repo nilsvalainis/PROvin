@@ -15,6 +15,7 @@ type Fixture = {
   codes?: string[];
   wrapPresentInContext?: boolean;
   winterSaltRustRequiredInContext?: boolean;
+  winterSaltTailgateMaterial?: CommentQualityOptions["winterSaltTailgateMaterial"];
   text: string;
 };
 
@@ -28,6 +29,7 @@ describe("ai-eval comment quality (golden fixtures)", () => {
         field: fx.field,
         wrapPresentInContext: fx.wrapPresentInContext,
         winterSaltRustRequiredInContext: fx.winterSaltRustRequiredInContext,
+        winterSaltTailgateMaterial: fx.winterSaltTailgateMaterial,
       });
       if (fx.expectPass) {
         expect(issues, JSON.stringify(issues)).toEqual([]);

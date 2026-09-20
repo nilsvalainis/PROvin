@@ -16,6 +16,7 @@ import {
   type AiSourceCommentTargetField,
 } from "@/lib/admin-source-comment-blocks";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { stripSourceFieldExpansions } from "@/lib/source-summary-comment-format";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 export type AiSourceCommentInput = {
@@ -160,11 +161,12 @@ ${chainingSection}=== Konkrētā avota „${blockLabel}” dati (bez esošajiem 
 ${focusDataText}
 
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
-Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” pievieno šim auditam? To pasaki pirmajā rindkopā.
-Garums: **2–4 īsas rindkopas** (≈350–800 rakstzīmes). Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
+Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē šajā auditā? To pasaki pirmajā rindkopā un apstājies pie fakta.
+Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.
+Garums: **1 rindkopa, ja pietiek**; griesti 2–3 / ≈800 rakstzīmes. 350–800 ir griesti, ne kvota. Neizdomā otru virsrakstu, lai aizpildītu formu. Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
-Ja šis avots tikai apstiprina jau uzrakstīto: 1–2 īsas rindkopas max.
-Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; digitālie ieraksti var būt nepilnīgi, tāpēc raksti, ko dati uzrāda, nevis ko tie „pierāda”.
+Ja šis avots tikai apstiprina jau uzrakstīto: viens īss teikums.
+Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; raksti, ko dati uzrāda, nevis ko tie „pierāda” vai „neizslēdz”.
 ${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
 Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) — tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
 Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
@@ -174,7 +176,7 @@ Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā ga
         },
       );
 
-  return adminGenerateExpertText({
+  const generated = await adminGenerateExpertText({
     modelTier: input.modelTier,
     systemInstruction: isOilInterval
       ? aiAutoRecordsOilIntervalSystemPrompt()
@@ -185,6 +187,8 @@ Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā ga
     qualityField: "source",
     temperature: 0.25,
   });
+  if (isOilInterval || isServiceHistory) return generated;
+  return stripSourceFieldExpansions(generated);
 }
 
 export { isAiSourceCommentBlockKey } from "@/lib/admin-source-comment-blocks";
