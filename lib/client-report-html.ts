@@ -74,6 +74,7 @@ import {
 } from "@/lib/auto-records-service-works";
 import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
 import { buildPdfFactCardHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
+import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
 import {
   buildDealerSectionCoverHtml,
   resolveDealerCoverVehicle,
@@ -697,8 +698,22 @@ function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-lifecycle-zone" role="region">${head}<ol class="pdf-life-list">${items.join("")}</ol>${legend}</div>`;
 }
 
+function buildPdfSummaryIdentityHtml(makeModel: string, vin: string): string {
+  const model = formatPdfReportMakeModel(makeModel);
+  const code = vin.trim();
+  if (!model && !code) return "";
+  const modelHtml = model
+    ? `<p class="pdf-summary-identity__model">${escapeHtml(model)}</p>`
+    : "";
+  const vinHtml = code
+    ? `<p class="pdf-summary-identity__vin"><span class="pdf-vin">${escapeHtml(code)}</span></p>`
+    : "";
+  return `<div class="pdf-summary-identity">${modelHtml}${vinHtml}</div>`;
+}
+
 /** Atskaites kopsavilkums - bāzes plāksnītes un brīdinājumu / manuālās kartītes vienā režģī. */
 function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummaryTile[] = []): string {
+  const identityHtml = buildPdfSummaryIdentityHtml(resolvePdfReportMakeModelFromPayload(p), p.vin ?? "");
   const tiles = [
     ...buildPdfReportSummaryTiles(
       {
@@ -746,7 +761,9 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
     })
     .join("");
   const head = sectionHeadBrand(sectionIconPdfHtml("listChecks"), PDF_REPORT_SUMMARY_TITLE);
-  return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}<ul class="pdf-summary-tiles">${items}</ul></section>`;
+  const tilesHtml = items ? `<ul class="pdf-summary-tiles">${items}</ul>` : "";
+  if (!identityHtml && !tilesHtml) return "";
+  return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}${identityHtml}${tilesHtml}</section>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string, extraWrapClass = ""): string {
@@ -834,13 +851,18 @@ function listingAnalysisSectionIconHtml(listingUrl: string | null | undefined): 
 }
 
 function reportVehicleMakeHint(p: ClientReportPayload): string {
-  return (
-    p.csddForm?.makeModel?.trim() ||
-    extractVehicleMakeModel(p.csddForm?.rawUnprocessedData ?? "") ||
-    extractVehicleMakeModel(p.csdd) ||
-    p.manualLtabBlock?.certificate?.makeModel?.trim() ||
-    ""
-  );
+  return resolvePdfReportMakeModelFromPayload(p);
+}
+
+function resolvePdfReportMakeModelFromPayload(p: ClientReportPayload): string {
+  return resolvePdfReportMakeModel({
+    csddMakeModel: p.csddForm?.makeModel,
+    csddRaw: [p.csddForm?.rawUnprocessedData ?? "", p.csdd].filter(Boolean).join("\n"),
+    dealerModel: p.autoRecordsBlock?.outvinReport?.vehicleInfo.model,
+    listingUrl: p.listingUrl,
+    listingText: p.listingAnalysis?.sellerPortrait ?? "",
+    ltabMakeModel: p.manualLtabBlock?.certificate?.makeModel,
+  });
 }
 
 function pdfFieldLabelWithIcon(iconHtml: string, label: string): string {
@@ -922,21 +944,6 @@ function formatListedForSaleDaysCellHtml(raw: string): string {
   if (!t || !shouldShowListedForSaleCriticalBanner(raw)) return esc;
   const ico = pdfLossAmountAlertIconHtml("red", "lg");
   return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${esc}</span></span>`;
-}
-
-function extractVehicleMakeModel(csdd: string): string | null {
-  const t = csdd.replace(/\r/g, "");
-  let m = t.match(
-    /(?:marka|modelis)\s*[,&]?\s*(?:modelis|marka)?\s*[:\-]\s*([^\n]{2,72})/i,
-  );
-  if (m) {
-    const s = m[1].trim().split(/\n/)[0]?.trim() ?? "";
-    if (s.length >= 2) return s.replace(/\s{2,}/g, " ");
-  }
-  m = t.match(
-    /\b(BMW|Audi|Mercedes-Benz|Mercedes|VW|Volkswagen|Toyota|Volvo|Opel|Ford|Peugeot|Renault|Hyundai|Kia|Škoda|Skoda|Nissan|Mazda|Honda|Citro[ëe]n|Tesla)\s+[A-Za-z0-9][A-Za-z0-9\s\-]{1,32}/i,
-  );
-  return m ? m[0].trim().replace(/\s{2,}/g, " ") : null;
 }
 
 /** Komentāru bloks - vienots stils visā atskaitē; „Komentārs” virsraksts netiek rādīts. */
@@ -1207,38 +1214,6 @@ export function buildUnifiedIncidentsTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card pdf-hub-tint--incidents" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
-/** Tehniskā specifikācija - patstāvīga sadaļa augšā; CSDD zonā paliek reģistrācijas dati. */
-const PDF_VEHICLE_SPEC_FIELD_KEYS: (keyof CsddFormFields)[] = [
-  "makeModel",
-  "firstRegistration",
-  "engineDisplacementCm3",
-  "enginePowerKw",
-  "fuelType",
-  "emissionStandard",
-  "grossMassKg",
-  "curbMassKg",
-  "opacityCoefficient",
-  "particulateMatter",
-];
-
-function csddFieldIsVehicleSpec(key: keyof CsddFormFields): boolean {
-  return PDF_VEHICLE_SPEC_FIELD_KEYS.includes(key);
-}
-
-/** Tehniskie lauki, kas iepriekš bija atsevišķā TRANSPORTLĪDZEKĻA DATI sadaļā. */
-function collectPdfVehicleSpecExtraRows(
-  form: CsddFormFields | null | undefined,
-): { k: string; v: string }[] {
-  const rows: { k: string; v: string }[] = [];
-  for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
-    if (!csddFieldIsVehicleSpec(key) || key === "makeModel") continue;
-    const v = (form?.[key] as string | undefined)?.trim() ?? "";
-    if (!v) continue;
-    rows.push({ k: label, v });
-  }
-  return rows;
-}
-
 /** CSDD - strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
 export function buildCsddAvotuZoneHtml(
   form: CsddFormFields,
@@ -1259,8 +1234,8 @@ export function buildCsddAvotuZoneHtml(
   const hasComments = commentTrim.length > 0;
   const regRows: string[] = [];
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
-    // Tehniskie dati ir Pasūtījuma datos; īpašnieku skaits - laika joslā.
-    if (csddFieldIsVehicleSpec(key) || key === "ownerCountLatvia") continue;
+    // Īpašnieku skaits paliek laika joslā, ne kv tabulā.
+    if (key === "ownerCountLatvia") continue;
     const v = (form[key] as string).trim();
     if (!v) continue;
     let flag: CsddFieldUiFlag = "none";
@@ -2246,6 +2221,13 @@ function clientReportPrintCss(): string {
       .pdf-lifecycle-zone .pdf-src-legend{
         margin-top:14px;padding-top:12px;border-top:1px solid var(--pdf-line);
       }
+      .pdf-summary-identity{margin:0 0 14px;}
+      .pdf-summary-identity__model{
+        margin:0;font-size:22px;font-weight:750;letter-spacing:-0.03em;line-height:1.15;color:#0f172a;
+      }
+      .pdf-summary-identity__vin{
+        margin:6px 0 0;font-size:16px;font-weight:700;letter-spacing:0.06em;line-height:1.2;color:#0f172a;
+      }
       .pdf-summary-tiles{
         display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:0;padding:0;list-style:none;
       }
@@ -3051,11 +3033,6 @@ export function buildClientReportDocumentHtml(args: {
           p.amountTotal / 100,
         );
 
-  const makeModel =
-    extractVehicleMakeModel(p.csddForm?.rawUnprocessedData ?? "") ||
-    extractVehicleMakeModel(p.csdd) ||
-    null;
-
   const lines: string[] = [];
   lines.push('<div class="sheet">');
   lines.push('<header class="pdf-v1-hero">');
@@ -3112,20 +3089,15 @@ export function buildClientReportDocumentHtml(args: {
     : [];
   if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
 
-  const vehicleExtraRows = dealerOnly ? [] : collectPdfVehicleSpecExtraRows(p.csddForm);
-  const formMakeModel = p.csddForm?.makeModel?.trim() || makeModel;
   const aboutBlock = dealerOnly
     ? ""
     : buildPdfAboutReportBlock({
         order: p,
         money,
         dateFmt,
-        makeModel: formMakeModel,
-        vehicleExtraRows,
-        show: { payment: vis.payment, vehicle: vis.vehicle || vis.csdd, client: vis.client, notes: vis.notes },
+        show: { payment: vis.payment, vehicle: vis.vehicle, client: vis.client, notes: vis.notes },
         titleIconHtml: sectionIconPdfHtml("fileText"),
       });
-  if (aboutBlock) lines.push(aboutBlock);
 
   const provinSourcesStrip = dealerOnly ? "" : buildProvinPdfSourcesUsedStripHtml(p, vis);
   if (provinSourcesStrip) lines.push(provinSourcesStrip);
@@ -3173,6 +3145,8 @@ export function buildClientReportDocumentHtml(args: {
   if (p.isDemo) {
     lines.push('<p class="mirror-line"><strong>Demonstrācijas dati</strong> - daļa lauku ir parauga rakstura.</p>');
   }
+
+  if (aboutBlock) lines.push(aboutBlock);
 
   lines.push(
     buildPdfDocFooterHtml({

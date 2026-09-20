@@ -196,8 +196,8 @@ export function buildPdfAdminMirrorClientBlock(
 export const PDF_ABOUT_REPORT_TITLE = "PASŪTĪJUMA DATI";
 
 /**
- * Maksājums, transportlīdzeklis, klients un piezīmes vienā kompaktā blokā -
- * klientam tie ir viens konteksts, nevis četras atsevišķas sadaļas.
+ * Klients, maksājums un sludinājuma saite - atskaites pašā apakšā.
+ * VIN un marka/modelis ir kopsavilkumā; CSDD tehnika paliek CSDD sadaļā.
  */
 export function buildPdfAboutReportBlock(args: {
   order: {
@@ -214,27 +214,18 @@ export function buildPdfAboutReportBlock(args: {
   };
   money: string;
   dateFmt: Intl.DateTimeFormat;
-  makeModel: string | null;
   show: { payment: boolean; vehicle: boolean; client: boolean; notes: boolean };
   titleIconHtml?: string;
-  /** Tehniskie lauki no bijušās TRANSPORTLĪDZEKĻA DATI sadaļas. */
-  vehicleExtraRows?: { k: string; v: string }[];
 }): string {
-  const { order: o, money, dateFmt, makeModel, show } = args;
+  const { order: o, money, dateFmt, show } = args;
   type Row = { k: string; v: string; kind?: "vin" | "link" };
   const groups: { title: string; rows: Row[] }[] = [];
 
-  if (show.vehicle) {
-    const rows: Row[] = [];
-    if (o.vin?.trim()) rows.push({ k: "VIN", v: o.vin.trim(), kind: "vin" });
-    if (makeModel?.trim()) rows.push({ k: "Marka / modelis", v: makeModel.trim() });
-    for (const extra of args.vehicleExtraRows ?? []) {
-      if (!extra.k.trim() || !extra.v.trim()) continue;
-      if (extra.k === "Marka / modelis" && makeModel?.trim()) continue;
-      rows.push({ k: extra.k, v: extra.v });
-    }
-    if (o.listingUrl?.trim()) rows.push({ k: "Sludinājums", v: o.listingUrl.trim(), kind: "link" });
-    if (rows.length > 0) groups.push({ title: "Transportlīdzeklis", rows });
+  if (show.vehicle && o.listingUrl?.trim()) {
+    groups.push({
+      title: "Sludinājums",
+      rows: [{ k: "Saite", v: o.listingUrl.trim(), kind: "link" }],
+    });
   }
 
   if (show.payment) {

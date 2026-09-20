@@ -149,9 +149,9 @@ describe("PDF design system", () => {
     expect(html).toContain("Kas tika pārbaudīts");
     expect(html).toContain("pdf-src-dot pdf-src-dot--autodna");
     expect(html).toContain("PASŪTĪJUMA DATI");
-    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
-    expect(html.indexOf("PASŪTĪJUMA DATI")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
+    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
     expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
+    expect(html.indexOf("NOBRAUKUMA VĒSTURE")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
   });
 
   it("keeps history hub sections when CSDD-step unified flags were saved off", () => {
@@ -249,7 +249,7 @@ describe("PDF design system", () => {
     expect(html).not.toContain("Latvijā: 2");
   });
 
-  it("keeps payment, vehicle, client and notes in one about block", () => {
+  it("keeps payment, client and notes in one about block at the end", () => {
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
         listingUrl: "https://www.ss.lv/msg/lv/transport/cars/audi/a6/abcd.html",
@@ -263,12 +263,13 @@ describe("PDF design system", () => {
     });
     const aboutCount = (html.match(/pdf-about-report/g) ?? []).length;
     expect(aboutCount).toBe(1);
-    expect(html).toContain("Transportlīdzeklis");
     expect(html).toContain("Maksājums");
+    expect(html).toContain("Klients");
     expect(html).toContain("Jānis Bērziņš");
     expect(html).toContain("Interesē tikai bojājumi");
-    expect(html).not.toContain("transportlīdzeklis un sludinājums");
-    expect(html).not.toContain("klienta dati");
+    expect(html).not.toContain("Transportlīdzeklis");
+    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
+    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
   });
 
   it("marks each source zone with its own accent and record count", () => {
@@ -513,7 +514,7 @@ describe("PDF source-section brand logos", () => {
 });
 
 describe("Pasūtījuma dati", () => {
-  it("merges vehicle spec into Pasūtījuma dati and keeps it out of the CSDD zone", () => {
+  it("returns CSDD vehicle spec to the CSDD zone and puts identity on the summary", () => {
     const csdd = emptyCsddFields();
     csdd.makeModel = "BMW 520d";
     csdd.fuelType = "Dīzelis";
@@ -523,7 +524,7 @@ describe("Pasūtījuma dati", () => {
     csdd.registrationStatus = "Reģistrēts";
     csdd.ownerCountLatvia = "3";
     const html = buildClientReportDocumentHtml({
-      payload: minimalPayload({ csddForm: csdd }),
+      payload: minimalPayload({ vin: "SADCA2BK6HA098675", csddForm: csdd }),
       portfolio: [],
       pdfInsights: [],
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
@@ -531,12 +532,19 @@ describe("Pasūtījuma dati", () => {
     });
     expect(html).toContain("PASŪTĪJUMA DATI");
     expect(html).not.toContain("TRANSPORTLĪDZEKĻA DATI");
-    expect(html).toContain("BMW 520d");
-    expect(html).toContain("Dīzelis");
-    expect(html.indexOf("PASŪTĪJUMA DATI")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
+    expect(html).toContain('class="pdf-summary-identity__model">BMW 520D</p>');
+    expect(html).toContain("SADCA2BK6HA098675");
+    expect(html).not.toContain("Marka / modelis");
+    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf('class="pdf-summary-identity__model"'));
+    expect(html.indexOf('class="pdf-summary-identity__model"')).toBeLessThan(
+      html.indexOf('class="pdf-summary-tiles"'),
+    );
+    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
     const csddZone = html.slice(html.indexOf("pdf-src-zone pdf-src-zone--csdd"));
     expect(csddZone).toContain("AB1234");
-    expect(csddZone).not.toContain("Degvielas veids:");
+    expect(csddZone).toContain("Degvielas veids:");
+    expect(csddZone).toContain("Dīzelis");
+    expect(csddZone).toContain("Marka, modelis:");
     expect((html.match(/Īpašnieku skaits Latvijā:/g) ?? []).length).toBeLessThanOrEqual(1);
   });
 });
