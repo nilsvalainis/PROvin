@@ -1,5 +1,7 @@
 import "server-only";
 
+import { ProxyAgent, type Dispatcher } from "undici";
+
 import { normalizeVin } from "@/lib/order-field-validation";
 import { readAutodnaEnvConfig, type AutodnaConfig } from "@/lib/autodna-config";
 
@@ -73,6 +75,35 @@ function autodnaNotConfiguredFailure(): AutodnaApiFailure {
 function resolveAutodnaConfig(config?: AutodnaConfig): AutodnaConfig | null {
   if (config?.baseUrl && config.email && config.apiKey) return config;
   return readAutodnaEnvConfig();
+}
+
+/**
+ * Fixie HTTP prokss tikai autoDNA izsaukumiem (`FIXIE_URL`).
+ * Nav globālais HTTPS_PROXY: Stripe / Claude / Gemini / Blob nedrīkst iet caur šo kvotu.
+ */
+export function readFixieProxyUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  const raw = env.FIXIE_URL?.trim();
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    if (!parsed.hostname) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+export function createAutodnaFixieDispatcher(proxyUrl: string): Dispatcher {
+  return new ProxyAgent(proxyUrl);
+}
+
+type AutodnaFetchInit = RequestInit & { dispatcher?: Dispatcher };
+
+export function withAutodnaFixieProxy(init: RequestInit, env: NodeJS.ProcessEnv = process.env): AutodnaFetchInit {
+  const proxyUrl = readFixieProxyUrl(env);
+  if (!proxyUrl) return init;
+  return { ...init, dispatcher: createAutodnaFixieDispatcher(proxyUrl) };
 }
 
 export function autodnaEndpointUrl(config: AutodnaConfig, endpoint: AutodnaApiEndpoint): string {
@@ -212,12 +243,15 @@ async function autodnaMultipartPost(
 ): Promise<AutodnaJsonSuccess | AutodnaBinarySuccess | AutodnaApiFailure> {
   const url = autodnaEndpointUrl(config, endpoint);
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: buildAutodnaRequestHeaders(config),
-    body: form,
-    cache: "no-store",
-  });
+  const res = await fetch(
+    url,
+    withAutodnaFixieProxy({
+      method: "POST",
+      headers: buildAutodnaRequestHeaders(config),
+      body: form,
+      cache: "no-store",
+    }),
+  );
 
   const contentType = res.headers.get("content-type") ?? "application/octet-stream";
   const buffer = Buffer.from(await res.arrayBuffer());
