@@ -28,6 +28,9 @@ describe("invoice HTML buyer requisites", () => {
     expect(html).toContain("Brīvības iela 1, Rīga");
     expect(html).toContain("Jānis Bērziņš");
     expect(html).toContain("demo@provin.lv");
+    expect(html).toContain("139.²");
+    expect(html).toContain("netiek piemērots");
+    expect(html).not.toContain("nav reģistrēta PVN");
     expect(html).not.toContain("—");
   });
 });

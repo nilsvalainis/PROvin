@@ -92,8 +92,8 @@ export function getInvoicePvnFooterText(): string {
   const v = process.env.NEXT_PUBLIC_INVOICE_PVN_DISCLAIMER?.trim();
   if (v) return v;
   return (
-    "Pakalpojuma sniedzējs ir fiziska persona, kas veic saimniecisko darbību un nav reģistrēta PVN maksātāju reģistrā " +
-    "(PVN likuma 3. pants)."
+    "Pakalpojuma sniedzējs ir fiziska persona, kas veic saimniecisko darbību un VID PVN maksātāju reģistrā reģistrēta " +
+    "īpašā kārtībā (PVN likuma 139.² pants). Šim pakalpojumam pievienotās vērtības nodoklis netiek piemērots."
   );
 }
 
