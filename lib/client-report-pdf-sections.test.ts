@@ -2131,3 +2131,67 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("⚠");
   });
 });
+
+describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
+  it("keeps Latvian output identical when lang is omitted or lv", () => {
+    const args = {
+      payload: minimalPayload({ tehniskoRiskuAnalize: "Auto ir bijis vieglā negadījumā." }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    };
+    const noLang = buildClientReportDocumentHtml(args);
+    const explicitLv = buildClientReportDocumentHtml({ ...args, lang: "lv" as const });
+    expect(noLang).toBe(explicitLv);
+    expect(noLang).toContain('<html lang="lv"');
+    expect(noLang).toContain("1. Tehnisko risku analīze");
+  });
+
+  it("translates the static IRISS section headings to English and swaps the html lang attribute", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        tehniskoRiskuAnalize: "Auto ir bijis vieglā negadījumā.",
+        apskatesPlāns: "Pārbaudīt krāsas biezumu.",
+        iriss: "Auto kopumā ir labā stāvoklī.",
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      lang: "en",
+    });
+    expect(doc).toContain('<html lang="en"');
+    expect(doc).toContain("1. Technical Risk Analysis");
+    expect(doc).toContain("2. Recommendations for In-Person Inspection");
+    expect(doc).toContain("3. Summary");
+    expect(doc).not.toContain("1. Tehnisko risku analīze");
+  });
+
+  it("translates the static section headings to Russian", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({ tehniskoRiskuAnalize: "Auto ir bijis vieglā negadījumā." }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      lang: "ru",
+    });
+    expect(doc).toContain('<html lang="ru"');
+    expect(doc).toContain("Анализ технических рисков");
+  });
+
+  it("does not translate the dynamic ✨ comment text by itself - caller must translate the payload first", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({ tehniskoRiskuAnalize: "Auto ir bijis vieglā negadījumā." }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      lang: "en",
+    });
+    // Statiskais virsraksts ir tulkots, bet operatora/AI tekstu build funkcija pati netulko.
+    expect(doc).toContain("1. Technical Risk Analysis");
+    expect(doc).toContain("Auto ir bijis vieglā negadījumā.");
+  });
+});

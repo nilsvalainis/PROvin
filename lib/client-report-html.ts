@@ -4,6 +4,8 @@
  */
 
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
+import { applyClientReportStaticTranslations, type ClientReportLang } from "@/lib/client-report-i18n";
+export type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   autoRecordsBlockHasContent,
   emptyAutoRecordsBlock,
@@ -3022,10 +3024,14 @@ export function buildClientReportDocumentHtml(args: {
   sourceBlockPhotoDataUrls?: Map<string, string>;
   /** Papīra versija ar palielinātu kontrastu - digitālo PDF CSS nemaina. */
   printInk?: boolean;
+  /** EN/RU: statiskais apvalks tiek tulkots ar "sweep" pāri gatavajam HTML. Dinamiskais teksts (✨ komentāri)
+   * jātulko UN jāieliek `payload` PIRMS šī izsaukuma (sk. lib/client-report-translatable-fields.ts). */
+  lang?: ClientReportLang;
 }): string {
   const {
     payload: p,
     dateFmt,
+    lang = "lv",
     listingAnalysisPhotoDataUrls,
     autoRecordsPhotoDataUrls,
     ccVinPhotoDataUrls,
@@ -3196,5 +3202,5 @@ export function buildClientReportDocumentHtml(args: {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <title>${escapeHtml(docTitle)}</title><style>${clientReportPrintCss()}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
-  return html;
+  return applyClientReportStaticTranslations(html, lang);
 }

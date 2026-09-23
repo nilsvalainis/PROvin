@@ -107,7 +107,13 @@ import {
   type PdfPortfolioFileInsight,
 } from "@/lib/admin-portfolio-pdf-analysis";
 import { attachPdfTextsToVendorBlocks } from "@/lib/vendor-damage-hydrate";
-import { buildClientReportDocumentHtml } from "@/lib/client-report-html";
+import {
+  buildClientReportDocumentHtml,
+  type ClientReportLang,
+  type ClientReportPayload,
+} from "@/lib/client-report-html";
+import { translateClientReportPayloadForPrint } from "@/lib/client-report-translate-client";
+import type { ClientReportTranslationCache } from "@/lib/client-report-translate-client";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import {
   ASV_ONLY_PDF_VISIBILITY,
@@ -768,6 +774,8 @@ export function OrderDetailWorkspace({
   const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const workspaceRevisionRef = useRef(0);
   const wsPersistRef = useRef(ws);
+  /** EN/RU PDF: keš pēc pēdējā tulkojuma, lai nesauktu AI atkārtoti, ja LV teksts nav mainījies. */
+  const reportTranslationCacheRef = useRef<ClientReportTranslationCache>({});
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -2953,7 +2961,12 @@ export function OrderDetailWorkspace({
     [wizardStepLevels],
   );
 
-  const openPrintReport = async (opts?: { printInk?: boolean; dealerOnly?: boolean; asvOnly?: boolean }) => {
+  const openPrintReport = async (opts?: {
+    printInk?: boolean;
+    dealerOnly?: boolean;
+    asvOnly?: boolean;
+    lang?: ClientReportLang;
+  }) => {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
       await flushWorkspaceServerPatch({ showFlash: false });
@@ -3192,41 +3205,62 @@ export function OrderDetailWorkspace({
       }
     }
 
+    const reportLang: ClientReportLang = opts?.lang ?? "lv";
+
+    const reportPayload: ClientReportPayload = {
+      ...payload,
+      ...flatSources,
+      ...(isolate
+        ? { csdd: "", ltab: "", tirgus: "", citi: "" }
+        : {}),
+      csddForm: isolate ? undefined : blocksDisplaySafe.csdd,
+      tirgusForm: isolate ? undefined : blocksDisplaySafe.tirgus,
+      manualVendorBlocks,
+      manualLtabBlock: isolate ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab),
+      autoRecordsBlock: asvOnly ? undefined : autoRecordsForPdf,
+      oneautoBlock: asvOnly ? undefined : blocksDisplaySafe.oneauto,
+      ccVinBlock: isolate ? null : ccVinForPdf,
+      asvBlock: dealerOnly ? null : asvForPdf,
+      citiAvoti: isolate ? null : blocksDisplaySafe.citi_avoti,
+      listingAnalysis: isolate ? null : listingAnalysisForPdf,
+      iriss: isolate ? "" : ws.iriss,
+      apskatesPlāns: isolate ? "" : ws.apskatesPlāns,
+      tehniskoRiskuAnalize: isolate ? "" : ws.tehniskoRiskuAnalize,
+      cenasAtbilstiba: isolate ? "" : ws.cenasAtbilstiba,
+      listingMarket: isolate ? null : listingMarket,
+      pdfVisibility: dealerOnly
+        ? DEALER_ONLY_PDF_VISIBILITY
+        : asvOnly
+          ? ASV_ONLY_PDF_VISIBILITY
+          : pdfVisibility,
+      pdfReportKind: dealerOnly ? "dealer" : asvOnly ? "asv" : "full",
+      pdfBannerInclude: dealerOnly ? {} : pdfBannerInclude,
+      manualBanners: dealerOnly ? [] : manualBanners,
+      internalComment: isolate ? "" : internalCommentDraft,
+      mileageComment: isolate ? "" : mileageCommentDraft,
+      incidentPhotoGroups: isolate ? [] : wsPersistRef.current.incidentPhotoGroups,
+      incidentPhotos: isolate ? [] : wsPersistRef.current.incidentPhotos,
+    };
+
+    let finalPayload = reportPayload;
+    if (reportLang !== "lv") {
+      try {
+        finalPayload = await translateClientReportPayloadForPrint(
+          reportPayload,
+          payload.sessionId,
+          reportLang,
+          reportTranslationCacheRef.current,
+        );
+      } catch (e) {
+        alert(
+          `Tulkošana neizdevās (${e instanceof Error ? e.message : "kļūda"}). Atskaite tiks atvērta latviski.`,
+        );
+      }
+    }
+
     const html = buildClientReportDocumentHtml({
-      payload: {
-        ...payload,
-        ...flatSources,
-        ...(isolate
-          ? { csdd: "", ltab: "", tirgus: "", citi: "" }
-          : {}),
-        csddForm: isolate ? undefined : blocksDisplaySafe.csdd,
-        tirgusForm: isolate ? undefined : blocksDisplaySafe.tirgus,
-        manualVendorBlocks,
-        manualLtabBlock: isolate ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab),
-        autoRecordsBlock: asvOnly ? undefined : autoRecordsForPdf,
-        oneautoBlock: asvOnly ? undefined : blocksDisplaySafe.oneauto,
-        ccVinBlock: isolate ? null : ccVinForPdf,
-        asvBlock: dealerOnly ? null : asvForPdf,
-        citiAvoti: isolate ? null : blocksDisplaySafe.citi_avoti,
-        listingAnalysis: isolate ? null : listingAnalysisForPdf,
-        iriss: isolate ? "" : ws.iriss,
-        apskatesPlāns: isolate ? "" : ws.apskatesPlāns,
-        tehniskoRiskuAnalize: isolate ? "" : ws.tehniskoRiskuAnalize,
-        cenasAtbilstiba: isolate ? "" : ws.cenasAtbilstiba,
-        listingMarket: isolate ? null : listingMarket,
-        pdfVisibility: dealerOnly
-          ? DEALER_ONLY_PDF_VISIBILITY
-          : asvOnly
-            ? ASV_ONLY_PDF_VISIBILITY
-            : pdfVisibility,
-        pdfReportKind: dealerOnly ? "dealer" : asvOnly ? "asv" : "full",
-        pdfBannerInclude: dealerOnly ? {} : pdfBannerInclude,
-        manualBanners: dealerOnly ? [] : manualBanners,
-        internalComment: isolate ? "" : internalCommentDraft,
-        mileageComment: isolate ? "" : mileageCommentDraft,
-        incidentPhotoGroups: isolate ? [] : wsPersistRef.current.incidentPhotoGroups,
-        incidentPhotos: isolate ? [] : wsPersistRef.current.incidentPhotos,
-      },
+      payload: finalPayload,
+      lang: reportLang,
       portfolio: isolate ? [] : portfolio.map((p) => ({ name: p.name, size: p.size })),
       pdfInsights,
       dateFmt,
@@ -3257,7 +3291,12 @@ export function OrderDetailWorkspace({
             checkoutLine: payload.checkoutLine,
             amountTotalCents: payload.amountTotal,
           });
-    const printFileTitle = opts?.printInk ? printTitle.replace(/\.pdf$/i, "_drukai.pdf") : printTitle;
+    const langSuffix = reportLang === "en" ? "_EN" : reportLang === "ru" ? "_RU" : "";
+    const printFileTitle = opts?.printInk
+      ? printTitle.replace(/\.pdf$/i, `${langSuffix}_drukai.pdf`)
+      : langSuffix
+        ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
+        : printTitle;
     let printed = false;
     const schedulePrint = () => {
       if (printed) return;
@@ -4856,6 +4895,22 @@ export function OrderDetailWorkspace({
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
           <button type="button" onClick={() => void openPrintReport()} className={wizardFooterPdf}>
             Ģenerēt PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ lang: "en" })}
+            className={wizardFooterPdf}
+            title="Pilnā atskaite angļu valodā — statiskais apvalks un ✨ komentāri tiek tulkoti automātiski."
+          >
+            PDF (EN)
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ lang: "ru" })}
+            className={wizardFooterPdf}
+            title="Pilnā atskaite krievu valodā — statiskais apvalks un ✨ komentāri tiek tulkoti automātiski."
+          >
+            PDF (RU)
           </button>
           <button
             type="button"
