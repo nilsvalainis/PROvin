@@ -29,9 +29,6 @@ import {
   emptyVendorAvotuBlock,
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
-import {
-  ADMIN_MILEAGE_PASTE_RAW_MAX_LEN,
-} from "@/lib/admin-raw-field-limits";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
@@ -45,14 +42,8 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import {
-  CARVERTICAL_TIMELINE_TITLE,
-  parseCarverticalPdfText,
-} from "@/lib/carvertical-pdf-parse";
+import { CARVERTICAL_TIMELINE_TITLE } from "@/lib/carvertical-pdf-parse";
 import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
-import { parseAutodnaDamageDetails, parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
-import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
-import { extractAutodnaHistoricalTimelineEvents } from "@/lib/autodna-report-extract";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -180,52 +171,6 @@ export function AdminVendorAvotuSourceBlock({
 
   const idBase = sectionIndex != null ? `${blockKey}-s${sectionIndex}` : blockKey;
 
-  const applyCarverticalOdometerPaste = (raw: string) => {
-    const parsed = parseCarverticalPdfText(raw);
-    if (
-      parsed.serviceHistory.length === 0 &&
-      parsed.timeline.length === 0 &&
-      parsed.incidents.length === 0
-    ) {
-      return;
-    }
-    const nextIncidents =
-      parsed.incidents.length > 0
-        ? parsed.incidents
-        : incidents.filter((r) => r.csngDate.trim() || r.lossAmount.trim() || r.incidentNo.trim());
-    onChange({
-      ...block,
-      mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-      ...(parsed.serviceHistory.length > 0 ? { serviceHistory: parsed.serviceHistory } : {}),
-      ...(parsed.incidents.length > 0 ? { incidents: nextIncidents } : {}),
-      ...(parsed.timeline.length > 0 ? { vehicleHistoryTimeline: parsed.timeline } : {}),
-      ...(parsed.damageDetails.length > 0 ? { damageDetails: parsed.damageDetails } : {}),
-    });
-  };
-
-  const applyAutodnaMileagePaste = (raw: string) => {
-    const parsed = parseAutodnaMileagePaste(raw);
-    const details = parseAutodnaDamageDetails(raw);
-    const damageEvents = parseAutodnaDamageEvents(raw);
-    const historyTimeline = extractAutodnaHistoricalTimelineEvents(raw);
-    if (
-      parsed.length === 0 &&
-      details.length === 0 &&
-      damageEvents.length === 0 &&
-      historyTimeline.length === 0
-    ) {
-      return;
-    }
-    onChange({
-      ...block,
-      mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
-      ...(parsed.length > 0 ? { serviceHistory: parsed } : {}),
-      ...(damageEvents.length > 0 ? { incidents: damageEvents } : {}),
-      ...(details.length > 0 ? { damageDetails: details } : {}),
-      ...(historyTimeline.length > 0 ? { vehicleHistoryTimeline: historyTimeline } : {}),
-    });
-  };
-
   const inner = (
     <div className={`flex min-h-0 flex-col overflow-hidden ${embedded ? "" : trafficFillLevel ? "p-0" : "p-2"}`}>
       <div className={`min-h-0 flex-1 overflow-y-auto ${embedded ? "" : trafficFillLevel ? "px-2 pt-2" : ""}`}>
@@ -234,95 +179,16 @@ export function AdminVendorAvotuSourceBlock({
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         {blockKey === "carvertical" || blockKey === "autodna" ? (
-          <>
-            {getSourceBlocks && applyPatchedBlocks ? (
-              <AdminHistoryVendorPdfUpload
-                target={blockKey}
-                sessionId={sessionId}
-                disabled={disabled}
-                readOnly={readOnly}
-                getSourceBlocks={getSourceBlocks}
-                applyPatchedBlocks={applyPatchedBlocks}
-              />
-            ) : null}
-            <div className="mb-2">
-            <div className="mb-0.5 flex items-center gap-1">
-            <label
-              className="block text-[10px] font-medium text-[var(--color-provin-muted)]"
-              htmlFor={`${idBase}-mileage-paste-raw`}
-            >
-              {blockKey === "carvertical"
-                ? "CarVertical — odometra žurnāls (iekopēšanai)"
-                : "AutoDNA — transportlīdzekļa vēsture (iekopēšanai)"}
-            </label>
-            {!readOnly ? (
-              <AdminFieldResetButton
-                disabled={disabled || !(block.mileagePasteRaw ?? "").trim()}
-                title="Nodzēst iekopējumu"
-                onClick={() => onChange({ ...block, mileagePasteRaw: "" })}
-              />
-            ) : null}
-            </div>
-            {readOnly ? (
-              <div
-                id={`${idBase}-mileage-paste-raw`}
-                className="min-h-[56px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-              >
-                {(block.mileagePasteRaw ?? "").trim() ? (
-                  block.mileagePasteRaw
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-              </div>
-            ) : (
-              <>
-                <textarea
-                  id={`${idBase}-mileage-paste-raw`}
-                  className="mb-1 w-full min-h-[72px] resize-y rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-provin-accent)]/20"
-                  rows={4}
-                  disabled={disabled}
-                  placeholder={
-                    blockKey === "carvertical"
-                      ? "Odometra rādījumu ieraksti + rindas (MM.YYYY. … km vai DD.MM.YYYY. … km)…"
-                      : "TRANSPORTLĪDZEKĻA VĒSTURE + datumi, Odometra rādījums … km, Valsts …"
-                  }
-                  value={block.mileagePasteRaw ?? ""}
-                  onChange={(e) =>
-                    onChange({ ...block, mileagePasteRaw: e.target.value.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) })
-                  }
-                  onBlur={(e) =>
-                    blockKey === "carvertical"
-                      ? applyCarverticalOdometerPaste(e.currentTarget.value)
-                      : applyAutodnaMileagePaste(e.currentTarget.value)
-                  }
-                  aria-label={
-                    blockKey === "carvertical"
-                      ? "CarVertical odometra žurnāla iekopēšana"
-                      : "AutoDNA transportlīdzekļa vēstures iekopēšana"
-                  }
-                />
-                {!disabled ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-                      onClick={() =>
-                        blockKey === "carvertical"
-                          ? applyCarverticalOdometerPaste(block.mileagePasteRaw ?? "")
-                          : applyAutodnaMileagePaste(block.mileagePasteRaw ?? "")
-                      }
-                    >
-                      Ielasīt tabulā
-                    </button>
-                    <span className="text-[10px] text-slate-400">
-                      Kārtošana kā tabulā: jaunākais augšā (pēc datuma, tad km).
-                    </span>
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
-          </>
+          getSourceBlocks && applyPatchedBlocks ? (
+            <AdminHistoryVendorPdfUpload
+              target={blockKey}
+              sessionId={sessionId}
+              disabled={disabled}
+              readOnly={readOnly}
+              getSourceBlocks={getSourceBlocks}
+              applyPatchedBlocks={applyPatchedBlocks}
+            />
+          ) : null
         ) : null}
         <div
           className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90"
