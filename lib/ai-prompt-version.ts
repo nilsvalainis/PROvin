@@ -3,6 +3,18 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-23.6 - Finnik TAXI: statuss „tikai juridiski”; vājām
+ *   pazīmēm noslēgums „neizskatās pēc klasiska taksometra”.
+ * - 2026-09-23.5 - Finnik TAXI: varbūtības forma; vājš nobraukums
+ *   nav klasisks taksometrs, intensīvs km/APK var saskanēt ar pārvadājumiem.
+ * - 2026-09-23.4 - Finnik TAXI: klientam „Nīderlandes oficiālie reģistri”;
+ *   BPM atlaide līdz 2020. gadam benzīnam/dīzelim, elektroauto neatvieglo.
+ * - 2026-09-23.3 - Finnik TAXI: virsraksts nav „taksometrs”; paskaidro,
+ *   ka NL reģistra vārds ir plašāks par klasisku taksometru.
+ * - 2026-09-23.2 - Finnik TAXI rindkopa īsāka: ielas taksometrs, platforma
+ *   ar atļauju, pielāgots līgumpārvadājums, līzings šim darbam.
+ * - 2026-09-23.1 - Finnik TAXI „Ja”: viena rindkopa tikai šajā avotā.
+ *   Atzīme nav līzinga sinonīms; scenāriju šķiro pēc km/gadā un APK ritma.
  * - 2026-09-20.2 - Avotu komentārs: 1 rindkopa, ja pietiek; griesti 2-3
  *   (350-800 ir griesti, ne kvota). Ziemas sāls: bagāžnieka vāks / numura
  *   zīmes apgaismojums tikai ja vāks ir tērauds; plastmasa, stiklašķiedra,
@@ -117,4 +129,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-20.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-23.6";

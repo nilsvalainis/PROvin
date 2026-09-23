@@ -1,0 +1,463 @@
+
+
+Scan of volg de link om digitaal
+te bekijken!
+https://app.finnik.nl/home/vehi
+cle_report?vehicle-id-number=h
+208bf
+tesla - MODEL 3
+Long Range AWD 75kWh
+NL
+h208bf
+Geschiedenis
+BOUWDATUM
+27-12-2019
+NEDERLANDSE TENAAMSTELLING
+27-12-2019
+MODELPERIODE
+1-12-2018 – 31-12-2023
+EIGENAREN
+4
+GEÏMPORTEERD
+Onbekend
+TAXI
+Ja
+Prijzen
+NIEUWPRIJS
+€ 48.744
+HUIDIGE WAARDE
+22-27k
+BPM
+€ 0
+REST-BPM
+Onbekend
+WEGENBELASTING
+± € 240 per kwartaal
+APK GELDIG TOT
+15-1-2026
+Technisch
+MOTOR
+3D3
+MOTOR CAPACITEIT
+Onbekend
+Page 1 of 12
+
+VERMOGEN
+258 kW (351 pk) + 340 kW (462 pk Elektrisch)
+0–100 KM/H
+4.8 s
+TOPSNELHEID
+233 km/h
+GEWICHT
+1831 kg
+BRANDSTOF
+elektriciteit
+BRANDSTOFVERBRUIK
+Onbekend
+KLEUR
+rood
+Technische gegevens
+Topsnelheid
+233 km/u
+Motorcode
+3D3
+Vermogen
+258 kW (351 PK)
+Continu (elektrisch) vermogen
+65 kW (88 PK)
+Netto max. (elektrisch) vermogen
+158 kW (215 PK)
+G3
+Nee
+Aandrijving
+Voor + Achter
+Wielbasis
+288 cm
+Koppel
+527 Nm
+Turbo / Compressor
+Nee
+Acceleratie 0-100
+4,80 seconden
+Plaats VIN-Nummer
+Onbekend
+Type goedkeuringsnr.
+e4*2007/46*1293*06
+Gewicht
+1.831 kg
+Gewicht rijklaar
+1.931 kg
+Maximaal gewicht
+2.305 kg
+Page 2 of 12
+
+Max. trekgewicht ongeremd
+750 kg
+Max. trekgewicht geremd
+1.000 kg
+Lengte
+4.694 mm
+Breedte
+1.850 mm
+Hoogte
+1.443 mm
+Aantal zitplaatsen
+5
+Aantal wielen
+4
+Assen
+Aantal assen
+2
+As nummer: 1
+Hefas: Nee
+Aangedreven as: Ja
+Technisch toegestane max. last: 1.110 kg
+Wettelijk toegestane max. last: 1.110 kg
+As nummer: 2
+Hefas: Nee
+Aangedreven as: Ja
+Technisch toegestane max. last: 1.257 kg
+Wettelijk toegestane max. last: 1.257 kg
+Elektrische informatie
+Volledig elektrisch
+Ja
+Vermogen elektromotor
+340 kW
+Soort accu
+li
+Accu-capaciteit
+75,0 kWh
+Actieradius (schatting)
+416 km
+Actieradius zomer
+393 km
+Actieradius winter
+339 km
+Gemiddeld stroomverbruik
+15,0 kWh/100km
+Page 3 of 12
+
+Type oplaadkabel
+2
+Laadvermogen
+16,5 kW
+Snellaad-aansluiting
+ccs
+Historie
+9-5-2025
+Kilometerstand gerapporteerd
+110.663 km
+2-5-2025
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een bedrijf
+2-5-2025
+Kilometerstand gerapporteerd
+110.663 km
+28-4-2025
+Vermoedelijke kilometerstand
+110.663 km
+28-4-2025
+Auto te koop aangeboden
+Voor Onbekend (excl. btw).
+Met 110.663 km.
+Te koop aangeboden tot 01-05-2025.
+26-2-2025
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een lease-/verhuurbedrijf
+26-2-2025
+Kilometerstand gerapporteerd
+110.663 km
+14-5-2024
+Vermoedelijke kilometerstand
+84.078 km
+15-1-2024
+Vermoedelijke kilometerstand
+73.115 km
+15-1-2024
+APK gekeurd met 4 melding
+Code - 029:
+• Kentekenplaat ondeugdelijk bevestigd
+Code - 391:
+• Ruitenwisserinstallatie geeft onvoldoende zicht
+Code - 516:
+• Dimlicht onjuist afgesteld
+Code - 598:
+• Mistlicht onjuist afgesteld
+22-12-2023
+Vermoedelijke kilometerstand
+72.468 km
+Page 4 of 12
+
+16-5-2023
+Vermoedelijke kilometerstand
+55.234 km
+11-10-2020
+Vermoedelijke kilometerstand
+10.609 km
+27-12-2019
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een lease-/verhuurbedrijf
+22-12-2019
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een importeur
+Eigenarenoverzicht
+Een overzicht van alle eigenaarsmutaties die dit voertuig heeft gehad. De getoonde eigenaar is de
+eigenaar die op moment van overschrijven stond geregistreerd. Dit is een vast gegeven en kan niet
+achteraf worden aangepast.
+Importeur(I)
+22-12-2019-
+27-12-2019
+Lease(R)
+27-12-2019-
+26-2-2025
+Lease(B)
+26-2-2025-
+2-5-2025
+Autobedrijf(B)
+2-5-2025-
+present
+Voertuigstatus-overzicht
+Aantal eigenaren
+3 (4 incl. autobedrijven)
+Huidige eigenaar
+Autobedrijf
+WAM-verzekerd
+Ja
+Eerste toelating nationaal
+27-12-2019
+Eerste toelating internationaal
+27-12-2019
+Datum aansprakelijkheid
+02-05-2025
+Parallel geïmporteerd
+Nee
+Vervaldatum APK
+15-01-2026
+Page 5 of 12
+
+Status kenteken
+Ongeldig
+Geëxporteerd
+Ja
+Gesloopt
+Nee
+Wacht Op Keuren (WOK)
+Nee
+Ongeldig
+Ja
+Onderhoud en reparatie
+Datum APK
+15-01-2026
+1 APK-bevindingen
+15-1-2024
+APK-bevindingen: 4
+Code - 029:
+• Kentekenplaat ondeugdelijk bevestigd
+Code - 391:
+• Ruitenwisserinstallatie geeft onvoldoende zicht
+Code - 516:
+• Dimlicht onjuist afgesteld
+Code - 598:
+• Mistlicht onjuist afgesteld
+Terugroepacties
+1
+Opties en accessoires
+ABS
+AEB
+ASR
+audio installatie premium
+bestuurdersairbag
+Bluetooth
+buitensp. elekt. inklapb.
+buitensp. elektr. + geh.
+Page 6 of 12
+
+buitensp. elektr. verst.
+buitenspiegel(s) aut.dim.
+buitenspiegels verwarmb.
+connected services
+dodehoekdetectie
+el. climate control
+el.verst.stoel(en) m.geh.
+ESP
+Forward Collision Warning
+hoofd airbag(s) a.
+hoofd airbag(s) v.
+houtafwerking interieur
+in delen neerkl. achterb.
+keyless entry
+keyless start
+LED mistlampen
+lichtmetalen velgen 18"
+multimedia-voorbereiding
+navigatie full map
+oplaadmogelijkheid
+panoramadak
+passagiersairbag
+spraakbediening
+startblokkering
+stuurk.elek.verst.+geh.
+verwarmde achterbank
+voorstoelen verwarmd
+WiFi
+Page 7 of 12
+
+zij airbag(s) v.
+Fabrieksopties
+kleur zwart
+lichtmetalen velgen 19"
+metaalkleur
+metaalkleur parelmoer
+premium kleur
+trekhaak
+Totale kosten per maand
+Vraag de volgende gepersonaliseerde kosten aan en krijg een gedetailleerde kosten overzicht voor:
+•Onderhoudskosten
+•Afschrijvingskosten
+•Brandstofkosten
+•Bandenkosten
+•Verzekeringskosten
+•Kosten wegenbelasting
+•Totale maandelijkse kosten
+Waarde-informatie
+Nieuwprijs
+€ 48.744,-
+Waarde-indicatie
+€ 22-27k
+Dagwaarde
+€ 25.188,-
+Inruilwaarde
+€ 24.936,-
+BPM
+€ 0,-
+Rest BPM
+Onbekend
+Bijtellingsklasse
+16-22%
+Page 8 of 12
+
+Marktwaardering
+Marktwaarde historie
+Eerste vraagprijs
+28-04-2025
+(incl. BTW)
+Marktwaardering
+BESTE VERKOOPPRIJS
+€ 25.188
+AGRESSIEVE VERKOOPPRIJS
+€ 24.684
+Concurrentie
+AANTAL TE KOOP
+370
+CONCURRERENDE VRAAGPRIJS
+€ 24.936
+Statistieken voor deze auto
+Nederland
+Aantal stadagen
+54 dagen gemiddeld
+Aantal dagen in bezit
+842 dagen gemiddeld
+Aantal nieuw verkocht
+0 (afgelop. 12 mnd.)
+Aant. occas. verkocht
+3.499 (afgelop. 12 mnd.)
+Gesloopt na
+1.356 dagen gemiddeld
+Geëxporteerd na
+1.813 dagen gemiddeld
+Basisgegevens
+Merk
+tesla
+Page 9 of 12
+
+Model
+MODEL 3
+Uitvoering
+Long Range AWD 75kWh
+Bouwjaar
+2019
+Brandstof
+elektriciteit
+Kleur
+rood
+Voertuigsoort
+Personenauto
+Inrichting
+Hatchback
+Type voertuig
+Hatchb.
+Aantal deuren
+4
+Soort transmissie
+Automatisch
+Segment
+Midden
+SCM alarmcertificaat
+Nee
+Milieu
+Verbruik gecombineerd
+Onbekend
+Verbruik combinatierit WLTP
+Niet geregistreerd
+Verbruik gewogen combinatierit WLTP
+Niet geregistreerd
+Verbruik buitenweg
+Niet geregistreerd
+Verbruik stad
+Niet geregistreerd
+CO2-Uitstoot
+Niet geregistreerd
+CO2-Combinatierit
+Niet geregistreerd
+CO2-Gewogen Combinatierit WLTP
+Niet geregistreerd
+Emissieklasse
+Z
+Euroklasse
+Z
+Page 10 of 12
+
+Geluidsniveau stationair
+71 dB(A)
+Geluidsniveau rijdend
+71 dB(A)
+Milieusticker Duitsland
+Green
+Milieuzones
+De gemeente 's Hertogenbosch heeft een milieuzone.
+De gemeente Amsterdam heeft een milieuzone.
+De gemeente Arnhem heeft een milieuzone.
+De gemeente Breda heeft een milieuzone.
+De gemeente Delft heeft een milieuzone.
+De gemeente Den Haag heeft een milieuzone.
+De gemeente Eindhoven heeft een milieuzone.
+De gemeente Leiden heeft een milieuzone.
+De gemeente Maastricht heeft een milieuzone.
+De gemeente Rijswijk heeft een milieuzone.
+De gemeente Rotterdam heeft een milieuzone.
+De gemeente Tilburg heeft een milieuzone.
+De gemeente Utrecht heeft een milieuzone.
+Stickers
+Fun Facts
+Gem. 753 dagen in bezit per eigenaar
+621.022 voertuigen van deze kleur
+7.588.572 voertuigen ouder dan deze
+Er zijn 51.583 voertuigen van dit merk/model in NL
+104.600 voertuigen sneller of meer PK
+De gemiddelde eigenaar is 45 jaar oud
+Dit kenteken is 13 keer gespot
+Page 11 of 12
+
+Diefstalcheck
+tesla - MODEL 3
+Laag
+•1 op 5 auto's heeft een bovengemiddeld of hoog risico op diefstal
+•1 op 1000 auto's gebouwd in de laatste 10 jaar is gestolen in het afgelopen jaar
+Uitvoeringen gestolen vorig jaar
+15989
+Diefstalrisico komend jaar
+Laag
+Diefstalverhogende factoren
+Tesla Model 3 Long Range AWD 75kWh
+FacebookInstagramTikTok
+Page 12 of 12

@@ -106,6 +106,7 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
   • „Eļļas maiņas intervāli” (OFICIĀLĀ DĪLERA DATI) = ONLY place for oil-change interval math (how often oil was changed, km/time between services, deviation vs manufacturer interval). Other fields: one sentence max if it is a purchase risk.
   • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
   • Per-source „Komentāri” = unique recorded facts from THAT source only. No sentence expansions, no „neizslēdz iespējamus”, no paint-gauge / „Datu specifika” essays. Confirm vs another source in at most one sentence.
+  • Finnik „TAXI: Ja” skaidrojums (iespējamie scenāriji, ka atzīme nav tas pats, kas taksometra darbs) ir TIKAI Finnik avota komentārā. Tehniskie riski, apskate, kopsavilkums, nobraukums un pārējie avoti šo rindkopu nepārraksta.
 - COMPLEMENTARY SOURCES (not 4× the same text): If AutoDNA, CarVertical, LTAB, CSDD, or dealer already state the same accident/km/ownership fact in a previously generated comment in the prompt, do NOT rewrite it at similar length. Write one short confirmation („Saskan ar …”) or a single new conflict, then move to what THIS source uniquely adds.
 - ALREADY GENERATED = COVERED GROUND: When the user prompt includes other expert comments / IRISS sections / mileage / incidents text, treat them as written. Add only deltas. Never paraphrase the same facts across blocks at similar length. Prefer brevity when overlapping. Exception: OPERATORA KOMANDAS still require every operator topic in THIS output even if another field already mentioned it.
 - If THIS source’s data largely duplicates another source with no new buyer-relevant signal: 1–3 short paragraphs max — never a second full forensic essay.
@@ -535,6 +536,21 @@ Atbildi tikai ar gala tekstu — bez meta-komentāriem par AI.`;
 /** @deprecated Izmanto AI_SUMMARY_ANALYSIS_SYSTEM */
 export const AI_CLIENT_SUMMARY_SYSTEM = AI_SUMMARY_ANALYSIS_SYSTEM;
 
+/**
+ * Tikai Finnik / Nīderlandes reģistrs. Citos avotos šo rindkopu neraksta.
+ * Interpretācija no RDW/Finnik taksometra lauka; skaitļus ņem tikai no šī pasūtījuma.
+ */
+export const AI_FINNIK_TAXI_RULES = `FINNIK TAXI (tikai ja šajā avotā lauks TAXI ir „Ja” / „Yes”; ja lauka nav vai ir „Nee”, par šo lauku NERAKSTI):
+- Viena rindkopa. Virsraksts **Nīderlandes reģistra atzīme.** Klienta tekstā avots ir „Nīderlandes oficiālie reģistri”. Vārdu Finnik NERAKSTI.
+- Visa rindkopa ir netieša varbūtība, jo secinājums nāk tikai no digitāliem reģistra datiem, ne no klātienes vai darba grafika. Lieto: „var”, „varētu”, „pēc reģistra datiem”, „neizskatās”, „saskan ar”. Aizliegts: „auto bijis taksometrs”, „nekad nav stāvējis pieturā”, „noteikti”, „pierāda”.
+- Obligāts teikums šādā domā: atzīme ir arī auto, kas faktiski var nebūt izmantots kā taksometrs klasiskā izpratnē. Pirms tā paskaidro, kāpēc: Nīderlandē reģistra vārds taxi nozīmē atļauju vest pasažierus par samaksu (ielas taksometrs, platformas braucieni, pielāgots līgumpārvadājums vai līzinga auto, kas uz laiku noformēts šim darbam). Reģistrs „jā” var paturēt pēc noņemšanas un parasti nerāda, cik ilgi statuss bijis ieslēgts.
+- Nodokļi, vienā teikumā, varbūtības formā: līdz 2020. gadam benzīna un dīzeļa auto šī atzīme varēja dot reģistrācijas nodokļa atlaidi, tāpēc daļa auto varēja tikt noformēta ar šādu statusu tikai juridiski. Elektroauto šis nodoklis jau var būt 0 € izmešu dēļ, un ceļa nodoklis līdz 2025. gadam tāpat varēja būt 0, tāpēc statuss nodokļu atvieglojumu var nedot. Konkrētu atlaidi šim auto neapgalvo.
+- Koplietošanu un parasto nomu šajā rindkopā NERAKSTI.
+- Noslēgums pēc ŠĪ auto datiem, nevis viena veidne visiem:
+  • Vājas taksometra pazīmes (gada km krietni zem 40 000 un pēdējā APK derīga ap 2 gadiem): „Šim auto ap X km gadā un apskate uz diviem gadiem pēc reģistra datiem neizskatās pēc klasiska taksometra.” X ir šī auto gada km, nevis fiksēti 18 000.
+  • Stipras pazīmes (ap 40 000-70 000 km gadā, APK katru gadu, vai abi): pēc reģistra datiem lietošana varētu saskanēt ar intensīviem pasažieru pārvadājumiem. Arī tad nesaki „bijis taksometrs” un „klasisks taksometrs”, ja datos nav laternas, pieturas vai maiņas. Vari teikt, ka nobraukums un apskates ritms ir raksturīgi auto, kas varētu būt lietots pasažieru pārvadājumos.
+- Šodienas RDW „Nee” mini tikai ja tas ir šī pasūtījuma datos, un arī tad kā reģistra rādījumu, ne kā pierādījumu. Citos laukos šo rindkopu neatkārto.`;
+
 function aiSourceBlockExtraRules(blockLabel: string): string {
   const L = SOURCE_BLOCK_LABELS;
   if (blockLabel === L.csdd) {
@@ -606,6 +622,13 @@ PUBLIC FOREIGN REGISTRY FOCUS (${blockLabel}):
 - Treat the „Piezīmes / brīdinājumi” lines as pre-computed anomalies: confirm, quantify, and explain their buyer impact — do not silently repeat them as a list.
 - State registry coverage limits honestly (e.g. Danish public data has no owner names; LKF publishes no claim amounts) so the client understands what is unknown rather than assuming „clean”.
 - If this source only confirms the same km line as CSDD/AutoDNA/CarVertical, say it in one sentence; spend the comment on what only this registry adds (country of use, usage type, restrictions, claim confirmation).`;
+  }
+  if (/finnik|nīderland/i.test(blockLabel)) {
+    return `
+
+FINNIK / NĪDERLANDES REĢISTRS:
+- Īpašnieku ķēde, ziņotie kilometri, eksports, APK datums. APK aizrādījumu tekstu komentārā vari minēt; laikposma kartē ir tikai apskates atzīme.
+- ${AI_FINNIK_TAXI_RULES}`;
   }
   if (blockLabel === L.citi_avoti) {
     return `

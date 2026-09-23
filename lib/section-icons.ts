@@ -129,6 +129,7 @@ export const SOURCE_BLOCK_ICON: Record<SourceBlockKey, SectionIconId> = {
   cc_vin: "globe",
   asv: "flag",
   tjekbil: "search",
+  finnik: "flag",
   mnt_ee: "fileText",
   lkf_ee: "shield",
   carinfo: "history",

@@ -147,6 +147,7 @@ export const SOURCE_BLOCK_KEYS = [
   "cc_vin",
   "asv",
   "tjekbil",
+  "finnik",
   "mnt_ee",
   "lkf_ee",
   "carinfo",
@@ -159,6 +160,9 @@ export const SOURCE_BLOCK_KEYS = [
 /** Publiskie valsts reģistru avoti ar automātisko ielādi pēc VIN (viens bloka tips). */
 export const VIN_REGISTRY_BLOCK_KEYS = ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const;
 export type VinRegistryBlockKey = (typeof VIN_REGISTRY_BLOCK_KEYS)[number];
+
+/** Tā pati reģistra forma, bet bez VIN API (Finnik PDF / Copilot). */
+export const REGISTRY_STYLE_BLOCK_KEYS = [...VIN_REGISTRY_BLOCK_KEYS, "finnik"] as const;
 
 export function isVinRegistryBlockKey(v: string): v is VinRegistryBlockKey {
   return (VIN_REGISTRY_BLOCK_KEYS as readonly string[]).includes(v);
@@ -190,6 +194,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   cc_vin: CC_VIN_ADMIN_LABEL,
   asv: ASV_ADMIN_LABEL,
   tjekbil: "DĀNIJAS REĢISTRI",
+  finnik: "NĪDERLANDES REĢISTRI",
   mnt_ee: "MNT.EE — Igaunijas reģistrs",
   lkf_ee: "LKF.EE — Igaunijas OCTA",
   carinfo: "ZVIEDRIJAS REĢISTRI",
@@ -210,6 +215,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   cc_vin: CHECKCAR_VIN_HOME_URL,
   asv: "https://www.vinaudit.com",
   tjekbil: "https://www.tjekbil.dk",
+  finnik: "https://finnik.nl",
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
   lkf_ee: "https://lkf.ee/et/kahjukontroll",
   carinfo: CARINFO_HOME_URL.replace(/\/$/, ""),
@@ -229,6 +235,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   cc_vin: "text-violet-700",
   asv: "text-blue-800",
   tjekbil: "text-rose-700",
+  finnik: "text-orange-800",
   mnt_ee: "text-cyan-700",
   lkf_ee: "text-indigo-700",
   carinfo: "text-teal-700",
@@ -1000,6 +1007,7 @@ export type WorkspaceSourceBlocks = {
   cc_vin: CcVinBlockState;
   asv: AsvBlockState;
   tjekbil: VinRegistryBlockState;
+  finnik: VinRegistryBlockState;
   mnt_ee: VinRegistryBlockState;
   lkf_ee: VinRegistryBlockState;
   carinfo: VinRegistryBlockState;
@@ -1135,7 +1143,10 @@ export function vinRegistryBlockHasContent(b: VinRegistryBlockState | null | und
   );
 }
 
-export function vinRegistryBlockToPlainText(b: VinRegistryBlockState | null | undefined): string {
+export function vinRegistryBlockToPlainText(
+  b: VinRegistryBlockState | null | undefined,
+  opts?: { omitRaw?: boolean },
+): string {
   const safe = repairVinRegistryBlock(b ?? undefined);
   const lines: string[] = [];
 
@@ -1173,7 +1184,7 @@ export function vinRegistryBlockToPlainText(b: VinRegistryBlockState | null | un
   }
   if (safe.autoNotes.trim()) lines.push(`Piezīmes / brīdinājumi\n${safe.autoNotes.trim()}`);
   if (safe.comments.trim()) lines.push(`Komentāri\n${safe.comments.trim()}`);
-  if (safe.rawUnprocessedData.trim()) {
+  if (!opts?.omitRaw && safe.rawUnprocessedData.trim()) {
     lines.push(`RAW (avota valodā)\n${safe.rawUnprocessedData.trim().slice(0, 8000)}`);
   }
   return lines.join("\n");
@@ -1338,6 +1349,7 @@ export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlock
   take(blocks.autodna);
   take(blocks.carvertical);
   take(blocks.tjekbil);
+  take(blocks.finnik);
   take(blocks.mnt_ee);
   take(blocks.lkf_ee);
   take(blocks.carinfo);
@@ -1358,6 +1370,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     cc_vin: seedCcVinDefaultComment(emptyCcVinBlock()),
     asv: emptyAsvBlock(),
     tjekbil: emptyVinRegistryBlock(),
+    finnik: emptyVinRegistryBlock(),
     mnt_ee: emptyVinRegistryBlock(),
     lkf_ee: emptyVinRegistryBlock(),
     carinfo: emptyVinRegistryBlock(),
@@ -1664,7 +1677,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       })(),
     });
   }
-  for (const k of VIN_REGISTRY_BLOCK_KEYS) {
+  for (const k of REGISTRY_STYLE_BLOCK_KEYS) {
     const b = blocks[k];
     if (!vinRegistryBlockHasContent(b)) continue;
     const ownersSummary = sanitizeVinRegistryClientText(b.ownersSummary ?? "");
@@ -2316,6 +2329,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     autodna: repairVendorBlock(blocks.autodna),
     carvertical: repairVendorBlock(blocks.carvertical),
     tjekbil: repairVinRegistryBlock(blocks.tjekbil),
+    finnik: repairVinRegistryBlock(blocks.finnik),
     mnt_ee: repairVinRegistryBlock(blocks.mnt_ee),
     lkf_ee: repairVinRegistryBlock(blocks.lkf_ee),
     carinfo: repairVinRegistryBlock(blocks.carinfo),
@@ -2453,7 +2467,7 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
     base.carvertical = parseVendorAvotuBlockRaw(rawCarvertical as Record<string, unknown>);
   }
 
-  for (const key of VIN_REGISTRY_BLOCK_KEYS) {
+  for (const key of REGISTRY_STYLE_BLOCK_KEYS) {
     const rawBlock = o[key];
     if (rawBlock && typeof rawBlock === "object") {
       base[key] = parseVinRegistryBlockRaw(rawBlock);

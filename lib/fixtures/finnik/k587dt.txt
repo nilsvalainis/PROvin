@@ -1,0 +1,434 @@
+
+
+Scan of volg de link om digitaal
+te bekijken!
+https://app.finnik.nl/home/vehi
+cle_report?vehicle-id-number=k
+587dt
+volkswagen - ID.3 PRO 150 KW
+First Plus 58 kWh
+NL
+k587dt
+Geschiedenis
+BOUWDATUM
+4-12-2020
+NEDERLANDSE TENAAMSTELLING
+4-12-2020
+MODELPERIODE
+14-7-2020 – 30-11-2020
+EIGENAREN
+4
+GEÏMPORTEERD
+Onbekend
+TAXI
+Ja
+Prijzen
+NIEUWPRIJS
+€ 35.438
+HUIDIGE WAARDE
+18-22k
+BPM
+€ 0
+REST-BPM
+Onbekend
+WEGENBELASTING
+± € 220 per kwartaal
+APK GELDIG TOT
+23-12-2026
+Technisch
+MOTOR
+EBJ
+MOTOR CAPACITEIT
+Onbekend
+Page 1 of 12
+
+VERMOGEN
+150 kW (204 pk) + 150 kW (204 pk Elektrisch)
+0–100 KM/H
+7.3 s
+TOPSNELHEID
+160 km/h
+GEWICHT
+1694 kg
+BRANDSTOF
+elektriciteit
+BRANDSTOFVERBRUIK
+Onbekend
+KLEUR
+grijs
+Technische gegevens
+Topsnelheid
+160 km/u
+Motorcode
+EBJ
+Vermogen
+150 kW (204 PK)
+Continu (elektrisch) vermogen
+70 kW (95 PK)
+Netto max. (elektrisch) vermogen
+150 kW (204 PK)
+G3
+Nee
+Aandrijving
+Achter
+Wielbasis
+277 cm
+Koppel
+310 Nm
+Turbo / Compressor
+Nee
+Acceleratie 0-100
+7,30 seconden
+Plaats VIN-Nummer
+Onbekend
+Type goedkeuringsnr.
+e1*2007/46*2033*00
+Gewicht
+1.694 kg
+Gewicht rijklaar
+1.794 kg
+Maximaal gewicht
+2.260 kg
+Page 2 of 12
+
+Lengte
+4.261 mm
+Breedte
+1.809 mm
+Hoogte
+1.568 mm
+Aantal zitplaatsen
+5
+Aantal wielen
+4
+Assen
+Aantal assen
+2
+As nummer: 1
+Hefas: Nee
+Aangedreven as: Nee
+Technisch toegestane max. last: 1.050 kg
+Wettelijk toegestane max. last: 1.050 kg
+As nummer: 2
+Hefas: Nee
+Aangedreven as: Ja
+Technisch toegestane max. last: 1.260 kg
+Wettelijk toegestane max. last: 1.260 kg
+Elektrische informatie
+Volledig elektrisch
+Ja
+Vermogen elektromotor
+150 kW
+Soort accu
+li
+Accu-capaciteit
+58,0 kWh
+Actieradius (schatting)
+327 km
+Actieradius zomer
+315 km
+Actieradius winter
+271 km
+Gemiddeld stroomverbruik
+15,5 kWh/100km
+Type oplaadkabel
+2
+Laadvermogen
+11,0 kW
+Page 3 of 12
+
+Snellaad-aansluiting
+ccs
+Historie
+4-8-2026
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een bedrijf
+4-8-2026
+Kilometerstand gerapporteerd
+101.303 km
+16-7-2026
+Vermoedelijke kilometerstand
+101.303 km
+13-7-2026
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een lease-/verhuurbedrijf
+13-7-2026
+Kilometerstand gerapporteerd
+101.247 km
+23-12-2024
+APK gekeurd met 1 melding
+Code - 393:
+• Ruitensproeierinstallatie werkt niet goed
+4-12-2020
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een lease-/verhuurbedrijf
+25-11-2020
+Nieuwe eigenaar type:
+Voertuig is geregistreerd door een importeur
+Eigenarenoverzicht
+Een overzicht van alle eigenaarsmutaties die dit voertuig heeft gehad. De getoonde eigenaar is de
+eigenaar die op moment van overschrijven stond geregistreerd. Dit is een vast gegeven en kan niet
+achteraf worden aangepast.
+Importeur(I)
+25-11-2020-
+4-12-2020
+Lease(R)
+4-12-2020-
+13-7-2026
+Lease(B)
+13-7-2026-
+4-8-2026
+Autobedrijf(B)
+4-8-2026-
+present
+Page 4 of 12
+
+Voertuigstatus-overzicht
+Aantal eigenaren
+3 (4 incl. autobedrijven)
+Huidige eigenaar
+Autobedrijf
+WAM-verzekerd
+Ja
+Eerste toelating nationaal
+04-12-2020
+Eerste toelating internationaal
+04-12-2020
+Datum aansprakelijkheid
+04-08-2026
+Parallel geïmporteerd
+Nee
+Vervaldatum APK
+23-12-2026
+Status kenteken
+Ongeldig
+Geëxporteerd
+Ja
+Gesloopt
+Nee
+Wacht Op Keuren (WOK)
+Nee
+Ongeldig
+Ja
+Onderhoud en reparatie
+Datum APK
+23-12-2026
+1 APK-bevindingen
+23-12-2024
+APK-bevindingen: 1
+Code - 393:
+• Ruitensproeierinstallatie werkt niet goed
+Terugroepacties
+Geen
+Page 5 of 12
+
+Opties en accessoires
+ABS
+achteropk verkeer waarsch
+achteruitrijcamera
+AEB
+airco automatisch
+andere dakkleur
+Apple Carpl./Android Auto
+armsteun achter
+armsteun voor
+band.sp.contr.syst.
+bestuurdersairbag
+binnensp. aut. dimmend
+Bluetooth
+buitensp. elekt. inklapb.
+buitensp. elektr. + verw.
+centrale airbag v.
+connected services
+cruise contr.adap Stop&Go
+DAB
+elek.ramen voor en achter
+ESP
+extra getint glas achter
+Forward Collision Warning
+grootlichtassistent
+hill hold functie
+Page 6 of 12
+
+hoofd airbag(s) a.
+hoofd airbag(s) v.
+in delen neerkl. achterb.
+interieurklimaat instelb.
+keyless entry
+keyless start
+LED achterlichten
+LED dagrijverlichting
+lichtmetalen velgen 19"
+matrix LED koplampen
+multimedia-voorbereiding
+navigatie full map
+oplaadmogelijkheid
+parkeersensor v en a
+passagiersairbag
+radio
+regensensor
+rijstrooksensor met corr.
+spraakbediening
+startblokkering
+stuur leder
+stuur multifunctioneel
+stuur verstelbaar
+stuur verwarmd
+stuurbekr. snelheidsafh.
+verkeersbord detectie
+vermoeidheidsherkenning
+voorstoelen verwarmd
+Page 7 of 12
+
+WiFi
+zij airbag(s) v.
+Fabrieksopties
+metaalkleur
+unikleur/pastel
+Totale kosten per maand
+Vraag de volgende gepersonaliseerde kosten aan en krijg een gedetailleerde kosten overzicht voor:
+•Onderhoudskosten
+•Afschrijvingskosten
+•Brandstofkosten
+•Bandenkosten
+•Verzekeringskosten
+•Kosten wegenbelasting
+•Totale maandelijkse kosten
+Waarde-informatie
+Nieuwprijs
+€ 35.438,-
+Waarde-indicatie
+€ 18-22k
+Dagwaarde
+€ 19.661,-
+Inruilwaarde
+€ 19.464,-
+BPM
+€ 0,-
+Rest BPM
+Onbekend
+Bijtellingsklasse
+16-22%
+Page 8 of 12
+
+Marktwaardering
+Marktwaardering
+BESTE VERKOOPPRIJS
+€ 19.661
+AGRESSIEVE VERKOOPPRIJS
+€ 19.268
+Concurrentie
+AANTAL TE KOOP
+574
+CONCURRERENDE VRAAGPRIJS
+€ 19.464
+Statistieken voor deze auto
+Nederland
+Aantal stadagen
+70 dagen gemiddeld
+Aantal dagen in bezit
+645 dagen gemiddeld
+Aantal nieuw verkocht
+0 (afgelop. 12 mnd.)
+Aant. occas. verkocht
+2.367 (afgelop. 12 mnd.)
+Gesloopt na
+1.246 dagen gemiddeld
+Geëxporteerd na
+1.807 dagen gemiddeld
+Basisgegevens
+Merk
+volkswagen
+Model
+ID.3 PRO 150 KW
+Uitvoering
+First Plus 58 kWh
+Bouwjaar
+2020
+Page 9 of 12
+
+Brandstof
+elektriciteit
+Kleur
+grijs
+Voertuigsoort
+Personenauto
+Inrichting
+Hatchback
+Type voertuig
+Hatchb.
+Aantal deuren
+5
+Soort transmissie
+Automatisch
+Segment
+Klein midden
+SCM alarmcertificaat
+Nee
+Milieu
+Verbruik gecombineerd
+Onbekend
+Verbruik combinatierit WLTP
+Niet geregistreerd
+Verbruik gewogen combinatierit WLTP
+Niet geregistreerd
+Verbruik buitenweg
+Niet geregistreerd
+Verbruik stad
+Niet geregistreerd
+CO2-Uitstoot
+Niet geregistreerd
+CO2-Combinatierit
+Niet geregistreerd
+CO2-Gewogen Combinatierit WLTP
+Niet geregistreerd
+Emissieklasse
+Z
+Euroklasse
+Z
+Geluidsniveau stationair
+68 dB(A)
+Geluidsniveau rijdend
+68 dB(A)
+Milieusticker Duitsland
+Green
+Page 10 of 12
+
+Milieuzones
+De gemeente 's Hertogenbosch heeft een milieuzone.
+De gemeente Amsterdam heeft een milieuzone.
+De gemeente Arnhem heeft een milieuzone.
+De gemeente Breda heeft een milieuzone.
+De gemeente Delft heeft een milieuzone.
+De gemeente Den Haag heeft een milieuzone.
+De gemeente Eindhoven heeft een milieuzone.
+De gemeente Leiden heeft een milieuzone.
+De gemeente Maastricht heeft een milieuzone.
+De gemeente Rijswijk heeft een milieuzone.
+De gemeente Rotterdam heeft een milieuzone.
+De gemeente Tilburg heeft een milieuzone.
+De gemeente Utrecht heeft een milieuzone.
+Stickers
+Fun Facts
+Gem. 48 dagen in bezit per eigenaar
+3.336.383 voertuigen van deze kleur
+7.428.779 voertuigen ouder dan deze
+Er zijn 10 voertuigen van dit merk/model in NL
+643.663 voertuigen sneller of meer PK
+De gemiddelde eigenaar is 50 jaar oud
+Dit kenteken is 28 keer gespot
+Diefstalcheck
+volkswagen - ID.3 PRO 150 KW
+Laag
+•1 op 5 auto's heeft een bovengemiddeld of hoog risico op diefstal
+•1 op 1000 auto's gebouwd in de laatste 10 jaar is gestolen in het afgelopen jaar
+Uitvoeringen gestolen vorig jaar
+6538
+Page 11 of 12
+
+Diefstalrisico komend jaar
+Laag
+Diefstalverhogende factoren
+Volkswagen ID.3 First Plus 58 kWh
+FacebookInstagramTikTok
+Page 12 of 12

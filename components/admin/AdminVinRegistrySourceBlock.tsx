@@ -31,6 +31,7 @@ import {
   sortVinRegistryTimeline,
   SOURCE_BLOCK_LABELS,
   VIN_REGISTRY_TIMELINE_TITLE,
+  type WorkspaceSourceBlocks,
   type VinRegistryBlockKey,
   type VinRegistryBlockState,
   type VinRegistryIncidentRow,
@@ -38,6 +39,7 @@ import {
   type VinRegistryTimelineRow,
 } from "@/lib/admin-source-blocks";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
 import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
 import {
@@ -46,6 +48,8 @@ import {
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { buildCarinfoVinCheckUrl, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
+import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
 import { parseCarinfoPastedText } from "@/lib/vin-sources/carinfo-parse";
 import {
   looksLikeVinRegistryTimelinePaste,
@@ -61,7 +65,7 @@ const areaCls =
 const labelCls = "mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]";
 
 type Props = {
-  blockKey: VinRegistryBlockKey;
+  blockKey: VinRegistryBlockKey | "finnik";
   value: VinRegistryBlockState;
   readOnly: boolean;
   disabled?: boolean;
@@ -75,6 +79,8 @@ type Props = {
   onPdfIncludeChange?: (next: boolean) => void;
   photosPersistenceEnabled?: boolean;
   onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
+  getSourceBlocks?: () => WorkspaceSourceBlocks;
+  applyPatchedBlocks?: (patched: Partial<WorkspaceSourceBlocks>, changedKeys: CopilotSourceKey[]) => void;
 };
 
 export async function requestVinRegistryFetch(
@@ -133,6 +139,8 @@ export function AdminVinRegistrySourceBlock({
   onPdfIncludeChange,
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
+  getSourceBlocks,
+  applyPatchedBlocks,
 }: Props) {
   const block = repairVinRegistryBlock(value);
   const [busy, setBusy] = useState(false);
@@ -196,6 +204,7 @@ export function AdminVinRegistrySourceBlock({
       }, 200);
       return;
     }
+    if (blockKey === "finnik") return;
     setBusy(true);
     try {
       const data = await requestVinRegistryFetch(blockKey, cleanVin);
@@ -220,6 +229,26 @@ export function AdminVinRegistrySourceBlock({
     } finally {
       setBusy(false);
     }
+  };
+
+  const applyFinnikPaste = (raw: string) => {
+    const clipped = raw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
+    const applied = applyFinnikReportToBlock({ ...block, rawUnprocessedData: clipped }, clipped);
+    if (!applied) {
+      onChange({ ...block, rawUnprocessedData: clipped });
+      setError(null);
+      setStatus("RAW saglabāts. Teksts neizskatās pēc Finnik / RDW atskaites.");
+      return;
+    }
+    onChange({
+      ...applied.block,
+      rawUnprocessedData: clipped,
+      comments: block.comments,
+      photos: block.photos ?? [],
+      photoGroups: block.photoGroups ?? [],
+    });
+    setError(null);
+    setStatus(applied.summary);
   };
 
   const applyCarinfoPaste = (raw: string) => {
@@ -336,7 +365,23 @@ export function AdminVinRegistrySourceBlock({
   const inner = (
     <div className="flex min-h-0 flex-col overflow-hidden p-2">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {!readOnly ? (
+        {!readOnly && blockKey === "finnik" && getSourceBlocks && applyPatchedBlocks ? (
+          <div className="mb-2">
+            <AdminHistoryVendorPdfUpload
+              target="finnik"
+              sessionId={sessionId}
+              disabled={disabled}
+              readOnly={readOnly}
+              getSourceBlocks={getSourceBlocks}
+              applyPatchedBlocks={applyPatchedBlocks}
+              onParseActiveChange={(active) => setBusy(active)}
+            />
+            <p className="mt-1 text-[10px] text-slate-500">
+              PDF bez VIN. Numurs ir reģistrācijas zīme. Pasūtījuma VIN sasaisti pats. Tas pats parseris nolasa ielīmētu tekstu RAW laukā.
+            </p>
+          </div>
+        ) : null}
+        {!readOnly && blockKey !== "finnik" ? (
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -711,7 +756,9 @@ export function AdminVinRegistrySourceBlock({
         {textField(
           "ownersSummary",
           "Īpašnieku skaits",
-          "Piem.: Īpašnieku skaits Dānijā: 2.",
+          blockKey === "finnik"
+            ? "Ķēde pa datumiem, piem. 04.12.2020-13.07.2026 Līzinga uzņēmums"
+            : "Piem.: Īpašnieku skaits Dānijā: 2.",
           2,
         )}
         {textField(
@@ -730,10 +777,12 @@ export function AdminVinRegistrySourceBlock({
           <div className="mb-0.5 flex items-center gap-1">
             <label className={`${labelCls} mb-0`} htmlFor={`${blockKey}-rawUnprocessedData`}>
               {blockKey === "carinfo"
-                ? "RAW — ielīmē car.info lapas tekstu"
-                : blockKey === "tjekbil"
-                  ? "RAW — ielīmē hronoloģijas šablonu (DATUMS, KM, VALSTS, NOTIKUMS)"
-                  : "RAW dati (avota valodā)"}
+                ? "RAW - ielīmē car.info lapas tekstu"
+                : blockKey === "finnik"
+                  ? "RAW - ielīmē Finnik / RDW tekstu"
+                  : blockKey === "tjekbil"
+                    ? "RAW - ielīmē hronoloģijas šablonu (DATUMS, KM, VALSTS, NOTIKUMS)"
+                    : "RAW dati (avota valodā)"}
             </label>
             {!readOnly ? (
               <AdminFieldResetButton
@@ -756,7 +805,9 @@ export function AdminVinRegistrySourceBlock({
               placeholder={
                 blockKey === "carinfo"
                   ? "Pēc car.info ielīmē šeit visu lapas tekstu (Cmd+V). Nobraukums, īpašnieki un RED FLAG aizpildās paši."
-                  : `${VIN_REGISTRY_TIMELINE_PASTE_HEADER}
+                  : blockKey === "finnik"
+                    ? "Ielīmē Finnik / RDW atskaites tekstu. Oficiālajā nobraukumā nonāk tikai Kilometerstand gerapporteerd."
+                    : `${VIN_REGISTRY_TIMELINE_PASTE_HEADER}
 18.12.2013	17	Vācija	Pirmā reģistrācija
 18.12.2017	29000	Dānija	Tehniskā apskate: izieta ar pirmo reizi
 
@@ -779,6 +830,11 @@ Neviena periodiskā apskate nav izgāzta.`
                   applyCarinfoPaste(text);
                   return;
                 }
+                if (blockKey === "finnik" && looksLikeFinnikReport(text)) {
+                  e.preventDefault();
+                  applyFinnikPaste(text);
+                  return;
+                }
                 if (looksLikeVinRegistryTimelinePaste(text)) {
                   e.preventDefault();
                   applyTimelinePaste(text);
@@ -788,6 +844,7 @@ Neviena periodiskā apskate nav izgāzta.`
                 const text = e.currentTarget.value;
                 if (!text.trim()) return;
                 if (blockKey === "carinfo") applyCarinfoPaste(text);
+                else if (blockKey === "finnik" && looksLikeFinnikReport(text)) applyFinnikPaste(text);
                 else if (looksLikeVinRegistryTimelinePaste(text)) applyTimelinePaste(text);
               }}
             />

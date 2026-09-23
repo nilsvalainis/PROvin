@@ -82,6 +82,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toContain("PROVIN_AI_PROMPT_VERSION");
     expect(prompts).toMatch(/NOBRAUKUMA VĒSTURES KOMENTĀRS/);
     expect(prompts).toContain("AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES");
+    expect(prompts).toContain("AI_FINNIK_TAXI_RULES");
+    expect(prompts).toMatch(/Finnik „TAXI: Ja” skaidrojums[\s\S]*TIKAI Finnik/);
     expect(prompts).toMatch(/APPROVED BY IRISS/);
     expect(prompts).toMatch(/Ja pievienoto foto nav/);
   });

@@ -228,6 +228,7 @@ function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
   if (!vis.autodna) s.add(L.autodna);
   if (!vis.carvertical) s.add(L.carvertical);
   if (!vis.tjekbil) s.add(L.tjekbil);
+  if (!vis.finnik) s.add(L.finnik);
   if (!vis.mnt_ee) s.add(L.mnt_ee);
   if (!vis.lkf_ee) s.add(L.lkf_ee);
   if (!vis.carinfo) s.add(L.carinfo);

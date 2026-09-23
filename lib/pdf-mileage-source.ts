@@ -12,6 +12,7 @@ export type MileagePdfSourceKey =
   | "carvertical"
   | "dealer"
   | "tjekbil"
+  | "finnik"
   | "ee"
   | "carinfo"
   | "ltab"
@@ -106,6 +107,14 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     return "tjekbil";
   }
   if (
+    t === normLabel(SOURCE_BLOCK_LABELS.finnik) ||
+    sq.includes("finnik") ||
+    sq.includes("niderlandesregistri") ||
+    sq.includes("niderlandesregistrs")
+  ) {
+    return "finnik";
+  }
+  if (
     t === normLabel(SOURCE_BLOCK_LABELS.mnt_ee) ||
     t === normLabel(SOURCE_BLOCK_LABELS.lkf_ee) ||
     sq.includes("mnt.ee") ||
@@ -154,6 +163,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   carvertical: { full: "carVertical", abbrev: "CV" },
   dealer: { full: "DĪLERA DATI", abbrev: "DEALER" },
   tjekbil: { full: SOURCE_BLOCK_LABELS.tjekbil, abbrev: "DK" },
+  finnik: { full: SOURCE_BLOCK_LABELS.finnik, abbrev: "NL" },
   ee: { full: "Igaunijas reģistri", abbrev: "EE" },
   carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "SE" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
@@ -173,6 +183,7 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   carvertical: "#EAB308",
   dealer: "#EA580C",
   tjekbil: "#BE123C",
+  finnik: "#C2410C",
   ee: "#0E7490",
   carinfo: "#0F766E",
   ltab: "#DC2626",
@@ -190,6 +201,7 @@ export const PDF_SOURCE_WASH: Record<MileagePdfSourceKey, string> = {
   carvertical: "#E7F6FB",
   dealer: "#E8F1FC",
   tjekbil: "#FDECEC",
+  finnik: "#FFF4ED",
   ee: "#E8EEF8",
   carinfo: "#FFF3E8",
   ltab: "#F8EBEB",
@@ -206,6 +218,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "carvertical",
   "dealer",
   "tjekbil",
+  "finnik",
   "ee",
   "carinfo",
   "ltab",

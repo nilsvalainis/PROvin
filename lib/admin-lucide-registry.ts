@@ -49,6 +49,7 @@ export const SOURCE_BLOCK_LUCIDE: Record<SourceBlockKey, LucideIcon> = {
   cc_vin: Globe,
   asv: Flag,
   tjekbil: Landmark,
+  finnik: Landmark,
   mnt_ee: Landmark,
   lkf_ee: Shield,
   carinfo: Globe,

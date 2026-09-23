@@ -119,6 +119,7 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
     case "oneauto":
       return TRAFFIC_RANK[oneautoTrafficLevel(block as WorkspaceSourceBlocks["oneauto"])];
     case "tjekbil":
+    case "finnik":
     case "mnt_ee":
     case "lkf_ee":
     case "carinfo":
@@ -306,6 +307,13 @@ export function coalesceOrderWorkspacePersistBody(
           pickRicherSourceBlock("tjekbil", incomingBlocks.tjekbil, baselineBlocks.tjekbil),
           incomingBlocks.tjekbil,
           baselineBlocks.tjekbil,
+        ),
+    finnik: wiped.has("finnik")
+      ? incomingBlocks.finnik
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("finnik", incomingBlocks.finnik, baselineBlocks.finnik),
+          incomingBlocks.finnik,
+          baselineBlocks.finnik,
         ),
     mnt_ee: wiped.has("mnt_ee")
       ? incomingBlocks.mnt_ee

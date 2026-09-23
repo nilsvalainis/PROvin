@@ -42,6 +42,8 @@ import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-ai-extract";
 import { detectVendorFromReport, runCcVinPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
+import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
+import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
 import { looksLikeCcVinReport } from "@/lib/cc-vin-report-parse";
 import { buildCarinfoCopilotActions, looksLikeCarinfoDump } from "@/lib/admin-copilot-vin-registry";
 import {
@@ -456,6 +458,16 @@ export async function POST(req: Request) {
         pdfText = "";
       }
 
+      if (allowedSet.has("finnik") && looksLikeFinnikReport(`${pdf.fileName}\n${pdfText}`)) {
+        const applied = applyFinnikReportToBlock(workingBlocks.finnik, pdfText);
+        if (applied) {
+          workingBlocks = { ...workingBlocks, finnik: applied.block };
+          vendorAgentNotes.push(applied.summary);
+          vendorHandledFiles.add(pdf.fileName);
+          continue;
+        }
+      }
+
       const detected = detectVendorFromReport(pdfText, pdf.fileName);
       if (detected && allowedSet.has(vendorSourceKey(detected))) {
         try {
@@ -467,6 +479,12 @@ export async function POST(req: Request) {
           });
           const result = applyCopilotActions(workingBlocks, agent.actions, { onlyAuto: false });
           workingBlocks = result.sourceBlocks;
+          if (detected === "autodna" || detected === "carvertical") {
+            const filled = fillVendorAiContextIfEmpty(workingBlocks[detected], pdfText);
+            if (filled.aiContextRaw !== workingBlocks[detected].aiContextRaw) {
+              workingBlocks = { ...workingBlocks, [detected]: filled };
+            }
+          }
           vendorAgentApplied.push(...result.applied);
           vendorAgentNotes.push(agent.summary, ...agent.notes.slice(0, 4));
           vendorHandledFiles.add(pdf.fileName);
@@ -534,6 +552,14 @@ export async function POST(req: Request) {
 
     // Avota aģents jau izlasīja šos PDF — ģenēriskajam Copilot tos vairs nedodam (nedublējam rindas).
     const remainingPdfs = pdfs.filter((p) => !vendorHandledFiles.has(p.fileName));
+    let finnikPasteNote = "";
+    if (allowedSet.has("finnik") && looksLikeFinnikReport(message)) {
+      const applied = applyFinnikReportToBlock(workingBlocks.finnik, message);
+      if (applied) {
+        workingBlocks = { ...workingBlocks, finnik: applied.block };
+        finnikPasteNote = applied.summary;
+      }
+    }
     const carinfoPasteActions =
       allowedSet.has("carinfo") && looksLikeCarinfoDump(message) ? buildCarinfoCopilotActions(message) : [];
     const skipGenericCopilot =
@@ -543,7 +569,8 @@ export async function POST(req: Request) {
         pdfs.length > 0 &&
         csddImportNotes.some((n) => n.includes("aizpildīti"))) ||
         (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0) ||
-        (carinfoPasteActions.length > 0 && remainingPdfs.length === 0));
+        (carinfoPasteActions.length > 0 && remainingPdfs.length === 0) ||
+        (finnikPasteNote.length > 0 && remainingPdfs.length === 0));
 
     /** Copilotam jāredz tas pats audits, ko redz FLASH MAX: kopsavilkumi, sludinājums, operatora piezīmes. */
     let auditContextText = "";
@@ -560,7 +587,9 @@ export async function POST(req: Request) {
     const ai = skipGenericCopilot
       ? {
           reply:
-            carinfoPasteActions.length > 0
+            finnikPasteNote
+              ? `${finnikPasteNote} Pārbaudi NĪDERLANDES REĢISTRI bloku.`
+              : carinfoPasteActions.length > 0
               ? "car.info teksts ielasīts: nobraukums, īpašnieki, statusi un RED FLAG. Pārbaudi ZVIEDRIJAS REĢISTRI bloku."
               : [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
                 "PDF apstrādāts — pārbaudi avota laukus, ja kaut kas trūkst.",

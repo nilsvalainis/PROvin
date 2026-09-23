@@ -66,6 +66,7 @@ export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
   "cc_vin",
   "asv",
   "tjekbil",
+  "finnik",
   "mnt_ee",
   "lkf_ee",
   "carinfo",
@@ -134,6 +135,9 @@ export function sourceBlockPlainTextExcludingComments(
     case "carinfo":
       base = vinRegistryBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
       return appendAiContextRawSection(base, blocks[blockKey].aiContextRaw);
+    case "finnik":
+      base = vinRegistryBlockToPlainText({ ...blocks.finnik, comments: "" }, { omitRaw: true }).trim();
+      return appendAiContextRawSection(base, blocks.finnik.aiContextRaw);
     case "ltab":
       base = ltabBlockToPlainText({ ...blocks.ltab, comments: "" }).trim();
       return appendAiContextRawSection(base, blocks.ltab.aiContextRaw);
@@ -170,6 +174,7 @@ export function sourceBlockCommentsPlain(
     case "asv":
       return blocks.asv.comments;
     case "tjekbil":
+    case "finnik":
     case "mnt_ee":
     case "lkf_ee":
     case "carinfo":
@@ -364,6 +369,7 @@ export function applySourceBlockGeneratedComment(
     case "asv":
       return { ...(block as AsvBlockState), comments: html };
     case "tjekbil":
+    case "finnik":
     case "mnt_ee":
     case "lkf_ee":
     case "carinfo":

@@ -44,6 +44,8 @@ import {
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import { mergeLtabIncidentRows, mergeVendorServiceHistory } from "@/lib/history-vendor-pdf-import";
 import { mergeDamageDetailRows } from "@/lib/vendor-damage-hydrate";
+import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
+import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
@@ -98,6 +100,9 @@ function applyVendorImport(
   return {
     ...existing,
     ...(raw ? { mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) } : {}),
+    ...(raw && !(existing.aiContextRaw ?? "").trim()
+      ? { aiContextRaw: fillVendorAiContextIfEmpty(existing, raw).aiContextRaw }
+      : {}),
     ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
     ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
     ...(result.vehicleHistoryTimeline?.length ? { vehicleHistoryTimeline: result.vehicleHistoryTimeline } : {}),
@@ -200,6 +205,19 @@ export async function runPrepareDraftPipeline(input: {
   for (const pdf of input.pdfs) {
     const stepId = `pdf:${pdf.fileName}`;
     const quick = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
+    if (looksLikeFinnikReport(`${pdf.fileName}\n${quick.text}`)) {
+      const applied = applyFinnikReportToBlock(blocks.finnik, quick.text);
+      if (applied) {
+        blocks = { ...blocks, finnik: applied.block };
+        steps.push({
+          id: stepId,
+          label: pdf.fileName,
+          status: "ok",
+          detail: `finnik · ${applied.summary}`,
+        });
+        continue;
+      }
+    }
     let target = pdf.target ?? detectSourcePdfIngestTarget(pdf.fileName, quick.text);
     let citiLabel = labelFromUnknownPdfFileName(pdf.fileName);
     if (!target) {

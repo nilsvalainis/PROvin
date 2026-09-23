@@ -17,7 +17,7 @@ import {
   uploadSourcePdfToBlob,
 } from "@/lib/admin-source-pdf-blob-client";
 
-export type VendorPdfUploadTarget = "autodna" | "carvertical" | "auto_records" | "cc_vin" | "ltab";
+export type VendorPdfUploadTarget = "autodna" | "carvertical" | "auto_records" | "cc_vin" | "ltab" | "finnik";
 
 const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   autodna: {
@@ -39,6 +39,10 @@ const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   ltab: {
     title: "Augšupielādēt LTAB izziņu (PDF)",
     hint: "Velc PDF šeit vai klikšķini · nolasām CSNg datumu, summu, statusu un izziņas galveni",
+  },
+  finnik: {
+    title: "Augšupielādēt Finnik / RDW PDF",
+    hint: "Velc PDF šeit vai klikšķini · tas pats parseris, kas ielīmētam tekstam. Oficiālajā nobraukumā tikai ziņotie km.",
   },
 };
 

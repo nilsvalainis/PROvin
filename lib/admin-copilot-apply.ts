@@ -945,6 +945,7 @@ const CLEARABLE_FIELDS_BY_SOURCE: Record<CopilotSourceKey, readonly CopilotClear
   cc_vin: ["comments", "aiContextRaw"],
   citi_avoti: ["comments", "aiContextRaw", "rawUnprocessedData"],
   tjekbil: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
+  finnik: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
   mnt_ee: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
   lkf_ee: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
   carinfo: ["comments", "aiContextRaw", "rawUnprocessedData", "ownersSummary", "statusRecords", "autoNotes"],
@@ -1364,7 +1365,7 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
     lines.push("citi_avoti: (no sections)");
   }
 
-  for (const key of ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const) {
+  for (const key of ["tjekbil", "finnik", "mnt_ee", "lkf_ee", "carinfo"] as const) {
     const block = b[key];
     const mile = (block.mileage ?? []).filter(vinRegistryMileageRowHasData);
     if (mile.length === 0) {
@@ -1387,7 +1388,8 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
     pushClippedNote(lines, `${key} owners`, block.ownersSummary);
     pushClippedNote(lines, `${key} status`, block.statusRecords);
     pushClippedNote(lines, `${key} notes`, block.autoNotes);
-    pushClippedNote(lines, `${key} RAW`, block.rawUnprocessedData);
+    if (key === "finnik") pushClippedNote(lines, `${key} AI context`, block.aiContextRaw);
+    else pushClippedNote(lines, `${key} RAW`, block.rawUnprocessedData);
   }
 
   lines.push(

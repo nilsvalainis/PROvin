@@ -22,6 +22,7 @@ export type PdfVisibilitySettings = {
   cc_vin: boolean;
   asv: boolean;
   tjekbil: boolean;
+  finnik: boolean;
   mnt_ee: boolean;
   lkf_ee: boolean;
   carinfo: boolean;
@@ -50,6 +51,7 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   cc_vin: false,
   asv: false,
   tjekbil: false,
+  finnik: false,
   mnt_ee: false,
   lkf_ee: false,
   carinfo: false,
@@ -78,6 +80,7 @@ export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   cc_vin: false,
   asv: true,
   tjekbil: false,
+  finnik: false,
   mnt_ee: false,
   lkf_ee: false,
   carinfo: false,
@@ -109,6 +112,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   cc_vin: true,
   asv: false,
   tjekbil: true,
+  finnik: true,
   mnt_ee: true,
   lkf_ee: true,
   carinfo: true,
@@ -153,6 +157,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   cc_vin: true,
   asv: true,
   tjekbil: true,
+  finnik: true,
   mnt_ee: true,
   lkf_ee: true,
   carinfo: true,
@@ -194,6 +199,7 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     cc_vin: isBool(o.cc_vin) ? o.cc_vin : d.cc_vin,
     asv: isBool(o.asv) ? o.asv : d.asv,
     tjekbil: isBool(o.tjekbil) ? o.tjekbil : d.tjekbil,
+    finnik: isBool(o.finnik) ? o.finnik : d.finnik,
     mnt_ee: isBool(o.mnt_ee) ? o.mnt_ee : d.mnt_ee,
     lkf_ee: isBool(o.lkf_ee) ? o.lkf_ee : d.lkf_ee,
     carinfo: isBool(o.carinfo) ? o.carinfo : d.carinfo,

@@ -388,7 +388,7 @@ const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   complete: "bg-emerald-500",
 };
 
-const WIZARD_SUMMARY_STEP = 11;
+const WIZARD_SUMMARY_STEP = 12;
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
   const vin = (p.vin ?? "").trim();
@@ -456,6 +456,8 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
     case "lkf_ee":
     case "carinfo":
       return vinRegistryBlockToPlainText(blocks[key]);
+    case "finnik":
+      return vinRegistryBlockToPlainText(blocks.finnik, { omitRaw: true });
   }
 }
 
@@ -1498,6 +1500,7 @@ export function OrderDetailWorkspace({
         | "autodna"
         | "carvertical"
         | "tjekbil"
+        | "finnik"
         | "mnt_ee"
         | "lkf_ee"
         | "carinfo"
@@ -2861,6 +2864,7 @@ export function OrderDetailWorkspace({
       cc_vin: "empty" as const,
       asv: "empty" as const,
       tjekbil: "empty" as const,
+      finnik: "empty" as const,
       mnt_ee: "empty" as const,
       lkf_ee: "empty" as const,
       carinfo: "empty" as const,
@@ -2878,6 +2882,7 @@ export function OrderDetailWorkspace({
         cc_vin: ccVinTrafficLevel(b.cc_vin),
         asv: asvTrafficLevel(b.asv),
         tjekbil: vinRegistryTrafficLevel(b.tjekbil),
+        finnik: vinRegistryTrafficLevel(b.finnik),
         mnt_ee: vinRegistryTrafficLevel(b.mnt_ee),
         lkf_ee: vinRegistryTrafficLevel(b.lkf_ee),
         carinfo: vinRegistryTrafficLevel(b.carinfo),
@@ -2915,6 +2920,7 @@ export function OrderDetailWorkspace({
       traffic.cc_vin,
       traffic.asv,
       traffic.tjekbil,
+      traffic.finnik,
       worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
       traffic.carinfo,
       traffic.listingSection,
@@ -2933,6 +2939,7 @@ export function OrderDetailWorkspace({
         { label: "Starptaut.", Icon: Globe, row: 2 as const },
         { label: "ASV", Icon: Flag, row: 2 as const },
         { label: "Tjekbil", Icon: Landmark, row: 2 as const },
+        { label: "NL reģ.", Icon: Landmark, row: 2 as const },
         { label: "Igaunija", Icon: Flag, row: 2 as const },
         { label: "car.info", Icon: Globe, row: 2 as const },
         { label: "Sludinājums", Icon: Newspaper, row: 2 as const },
@@ -4089,7 +4096,7 @@ export function OrderDetailWorkspace({
               iepakojumu, tāpēc soļi paliek pareizā secībā un desktop režģis nemainās. */}
           <div className="order-1 flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:order-2">
             {([1, 2] as const).map((row) => {
-              const cols = row === 1 ? "grid-cols-5" : "grid-cols-7";
+              const cols = row === 1 ? "grid-cols-5" : "grid-cols-8";
               return (
                 <div key={row} className={`grid min-w-0 ${cols} gap-1 max-md:contents`}>
                   {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
@@ -4491,6 +4498,29 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 8 ? (
+          <div id="admin-order-block-finnik" className="min-w-0">
+            <AdminVinRegistrySourceBlock
+              blockKey="finnik"
+              value={blocksDisplaySafe.finnik}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("finnik", next)}
+              trafficFillLevel={traffic.finnik}
+              sessionId={payload.sessionId}
+              vin={vinBar}
+              aiComment={aiCommentSlot("finnik")}
+              pdfInclude={pdfVisibility.finnik}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ finnik: next })}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(next) =>
+                void commitGenericSourcePhotoGroups("finnik", next)
+              }
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 9 ? (
           <div id="admin-order-block-estonia" className="min-w-0">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
@@ -4519,7 +4549,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 9 ? (
+        {wizardStep === 10 ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -4540,7 +4570,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 10 ? (
+        {wizardStep === 11 ? (
           <section id="admin-order-section-sludinajums" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
@@ -4620,7 +4650,7 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 11 ? (
+        {wizardStep === 12 ? (
           <section id="admin-order-section-kopsavilkums" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
