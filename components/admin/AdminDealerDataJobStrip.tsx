@@ -29,6 +29,8 @@ type Props = {
   /** true tikai Stripe Checkout sesijām (cs_…). Manuāliem refund pogu nerāda. */
   canRefund?: boolean;
   onGenerateDealerPdf?: () => void;
+  onGenerateDealerPdfEn?: () => void;
+  onGenerateDealerPdfRu?: () => void;
 };
 
 const STATUS_TONE: Record<DealerDataJob["status"], string> = {
@@ -71,6 +73,8 @@ export function AdminDealerDataJobStrip({
   customerEmail = "",
   canRefund = false,
   onGenerateDealerPdf,
+  onGenerateDealerPdfEn,
+  onGenerateDealerPdfRu,
 }: Props) {
   const [job, setJob] = useState<DealerDataJob | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -405,6 +409,16 @@ export function AdminDealerDataJobStrip({
         {onGenerateDealerPdf ? (
           <button type="button" className={btn} disabled={busy !== null} onClick={() => onGenerateDealerPdf()}>
             Ģenerēt dīlera PDF
+          </button>
+        ) : null}
+        {onGenerateDealerPdfEn ? (
+          <button type="button" className={btn} disabled={busy !== null} onClick={() => onGenerateDealerPdfEn()}>
+            Dīlera PDF (EN)
+          </button>
+        ) : null}
+        {onGenerateDealerPdfRu ? (
+          <button type="button" className={btn} disabled={busy !== null} onClick={() => onGenerateDealerPdfRu()}>
+            Dīlera PDF (RU)
           </button>
         ) : null}
         <button

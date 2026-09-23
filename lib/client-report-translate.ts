@@ -10,6 +10,8 @@ const REPORT_TRANSLATE_SYSTEM = (langName: string) => `You translate a Latvian v
 RULES:
 - Output JSON only: a flat object with EXACTLY the same keys as the input. Each value is the ${langName} translation of the source value.
 - Translate by MEANING and context, never word-for-word. Natural, professional, client-facing tone, as a native ${langName} speaker would write it.
+- Values may be full paragraphs OR short labels, table cells, country names, inspection grades and defect lines. Translate each value on its own. Leave no Latvian words in the value.
+- German or English workshop lines that are already not Latvian (OEM job names) stay unchanged.
 - NEVER change or convert: numbers, dates, mileage/km values, VIN, license plates, currency amounts (keep € symbol as-is), OEM/error/diagnostic codes.
 - NEVER invent facts, dates, figures, or sentences that are not present in the source text.
 - Keep brand, company and model names unchanged exactly as written (AutoDNA, CarVertical, CSDD, LTAB, Tesla, Audi, PROVIN, etc.).

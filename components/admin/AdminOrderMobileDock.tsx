@@ -42,6 +42,10 @@ type Props = {
   onGoSummary: () => void;
   onGeneratePdf: () => void;
   onGenerateDealerPdf: () => void;
+  onGenerateDealerPdfEn: () => void;
+  onGenerateDealerPdfRu: () => void;
+  onGeneratePdfEn: () => void;
+  onGeneratePdfRu: () => void;
   onGenerateAsvPdf: () => void;
   onGenerateOemPdf: () => void;
   onGeneratePrintInkPdf: () => void;
@@ -117,6 +121,10 @@ export function AdminOrderMobileDock({
   onGoSummary,
   onGeneratePdf,
   onGenerateDealerPdf,
+  onGenerateDealerPdfEn,
+  onGenerateDealerPdfRu,
+  onGeneratePdfEn,
+  onGeneratePdfRu,
   onGenerateAsvPdf,
   onGenerateOemPdf,
   onGeneratePrintInkPdf,
@@ -220,11 +228,39 @@ export function AdminOrderMobileDock({
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā PROVIN atskaite</span>
             </span>
           </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdfEn)}>
+            <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">PDF (EN)</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā atskaite angļu valodā</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdfRu)}>
+            <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">PDF (RU)</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā atskaite krievu valodā</span>
+            </span>
+          </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdf)}>
             <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">Ģenerēt dīlera PDF</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai oficiālā dīlera dati</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdfEn)}>
+            <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">Dīlera PDF (EN)</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Dīlera atskaite angļu valodā</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdfRu)}>
+            <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">Dīlera PDF (RU)</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Dīlera atskaite krievu valodā</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdf)}>

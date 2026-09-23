@@ -112,7 +112,10 @@ import {
   type ClientReportLang,
   type ClientReportPayload,
 } from "@/lib/client-report-html";
-import { translateClientReportPayloadForPrint } from "@/lib/client-report-translate-client";
+import {
+  translateClientReportHtmlResidue,
+  translateClientReportPayloadForPrint,
+} from "@/lib/client-report-translate-client";
 import type { ClientReportTranslationCache } from "@/lib/client-report-translate-client";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import {
@@ -2994,7 +2997,10 @@ export function OrderDetailWorkspace({
       }
     }
 
-    const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
+    const dateFmt = new Intl.DateTimeFormat(
+      opts?.lang === "en" ? "en-GB" : opts?.lang === "ru" ? "ru-RU" : "lv-LV",
+      { dateStyle: "long", timeStyle: "short" },
+    );
     const flatSources = blocksToLegacyFlatFields(blocksDisplaySafe);
     const listingBlocks = mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks);
     const photoIds = (listingBlocks.listing_analysis.photos ?? []).map((p) => p.id);
@@ -3274,13 +3280,29 @@ export function OrderDetailWorkspace({
       printInk: Boolean(opts?.printInk),
     });
 
+    let translatedHtml = html;
+    if (reportLang !== "lv") {
+      try {
+        translatedHtml = await translateClientReportHtmlResidue(
+          html,
+          payload.sessionId,
+          reportLang,
+          reportTranslationCacheRef.current,
+        );
+      } catch (e) {
+        alert(
+          `Daļa atskaites palika latviski (${e instanceof Error ? e.message : "kļūda"}).`,
+        );
+      }
+    }
+
     const w = window.open("", "_blank");
     if (!w) {
       alert("Atļauj uznirstošo logu, lai atvērtu druku.");
       return;
     }
     w.document.open();
-    w.document.write(html);
+    w.document.write(translatedHtml);
     w.document.close();
 
     const printTitle = dealerOnly
@@ -4292,7 +4314,11 @@ export function OrderDetailWorkspace({
         }}
         onGoSummary={() => goWizardStep(WIZARD_SUMMARY_STEP)}
         onGeneratePdf={() => void openPrintReport()}
+        onGeneratePdfEn={() => void openPrintReport({ lang: "en" })}
+        onGeneratePdfRu={() => void openPrintReport({ lang: "ru" })}
         onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
+        onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
+        onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
         onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
         onGenerateOemPdf={() => void openOemDealerReport()}
         onGeneratePrintInkPdf={() => void openPrintReport({ printInk: true })}
@@ -4454,6 +4480,8 @@ export function OrderDetailWorkspace({
                   (payload.notes ?? "").includes("partner_id="))
               }
               onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
+              onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
+              onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
             />
           </div>
         ) : null}
@@ -4900,7 +4928,7 @@ export function OrderDetailWorkspace({
             type="button"
             onClick={() => void openPrintReport({ lang: "en" })}
             className={wizardFooterPdf}
-            title="Pilnā atskaite angļu valodā — statiskais apvalks un ✨ komentāri tiek tulkoti automātiski."
+            title="Pilnā atskaite angļu valodā. Virsraksti, komentāri un CSDD teksts tiek tulkoti automātiski."
           >
             PDF (EN)
           </button>
@@ -4908,7 +4936,7 @@ export function OrderDetailWorkspace({
             type="button"
             onClick={() => void openPrintReport({ lang: "ru" })}
             className={wizardFooterPdf}
-            title="Pilnā atskaite krievu valodā — statiskais apvalks un ✨ komentāri tiek tulkoti automātiski."
+            title="Pilnā atskaite krievu valodā. Virsraksti, komentāri un CSDD teksts tiek tulkoti automātiski."
           >
             PDF (RU)
           </button>
@@ -4922,11 +4950,43 @@ export function OrderDetailWorkspace({
           </button>
           <button
             type="button"
+            onClick={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
+            className={wizardFooterDealer}
+            title="Tikai oficiālā dīlera dati, angļu valodā."
+          >
+            Dīlera PDF (EN)
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
+            className={wizardFooterDealer}
+            title="Tikai oficiālā dīlera dati, krievu valodā."
+          >
+            Dīlera PDF (RU)
+          </button>
+          <button
+            type="button"
             onClick={() => void openPrintReport({ asvOnly: true })}
             className={wizardFooterAsv}
             title="Tikai ASV vēsture. Citi avoti netiek iekļauti."
           >
             Ģenerēt ASV PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ asvOnly: true, lang: "en" })}
+            className={wizardFooterAsv}
+            title="Tikai ASV vēsture, angļu valodā."
+          >
+            ASV PDF (EN)
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPrintReport({ asvOnly: true, lang: "ru" })}
+            className={wizardFooterAsv}
+            title="Tikai ASV vēsture, krievu valodā."
+          >
+            ASV PDF (RU)
           </button>
           <button
             type="button"

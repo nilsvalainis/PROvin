@@ -103,6 +103,8 @@ type Props = {
   /** Stripe cs_* sesijām true - manuāliem refund nerāda. */
   canDealerRefund?: boolean;
   onGenerateDealerPdf?: () => void;
+  onGenerateDealerPdfEn?: () => void;
+  onGenerateDealerPdfRu?: () => void;
   /** Copilot dīlera PDF aģentam vajag visus avotu blokus (valstu noteikšanai). */
   getSourceBlocks?: () => WorkspaceSourceBlocks;
   applyPatchedBlocks?: (
@@ -131,6 +133,8 @@ export function AdminAutoRecordsSourceBlock({
   customerEmail = null,
   canDealerRefund = false,
   onGenerateDealerPdf,
+  onGenerateDealerPdfEn,
+  onGenerateDealerPdfRu,
   getSourceBlocks,
   applyPatchedBlocks,
   pdfInclude,
@@ -277,6 +281,8 @@ export function AdminAutoRecordsSourceBlock({
               customerEmail={customerEmail}
               canRefund={canDealerRefund}
               onGenerateDealerPdf={onGenerateDealerPdf}
+              onGenerateDealerPdfEn={onGenerateDealerPdfEn}
+              onGenerateDealerPdfRu={onGenerateDealerPdfRu}
             />
           ) : null}
           <AdminOneautoIngestBar
