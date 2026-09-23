@@ -164,6 +164,18 @@ PAINT THICKNESS / UNRECORDED BODY WORK (mandatory — every agent; default OUTPU
 `.trim();
 
 /**
+ * Kārbas / divmasu / V6 noplūžu soļi klātienes ieteikumos.
+ * Izvade: „2. Ieteikumi”. Riskos nosauc mezglu, ne procedūru.
+ */
+export const AI_TEST_DRIVE_GEARBOX_DMF_RULES = `TEST DRIVE: GEARBOX, DMF, COOLING LEAKS (mandatory in „2. Ieteikumi” when THIS car has the matching aggregate; do not invent a dual-clutch or a dual-mass flywheel that the data do not support):
+- OUTPUT lives in „2. Ieteikumi klātienes apskatei”. „1. Tehnisko risku analīze” may name the mezgls (S-Tronic sajūgs, divmasu spararats, V6 dzesēšanas noplūde) in one risk paragraph. Source comments, mileage, incidents: do not write this procedure.
+- 7-SPEED S-TRONIC / dual-clutch (S-Tronic 7, DL501, DSG): to judge gearbox condition, the buyer MUST feel how the car starts moving after releasing the brake and a light throttle for a slow takeoff. A distinctly jerky / saraustīta start is often the first sign of clutch-pack (sajūga disku) wear. After the test drive, do a firm stop; after the car is still, there must be no jerks or small knocks. Do NOT copy this clutch-disc story onto a Tiptronic / 8HP / classic hidrotransformators automatic.
+- DIVMASU SPARARATS (only if THIS car has one: S-Tronic 7, many manuals, some 7G; not a Tiptronic torque-converter flywheel): listen for irregular rattling from the engine bay, best heard at the left front wheel. Do this on a COLD engine and again when WARM - the noise can change with heat. Vibration while accelerating can also point to DMF wear. This is a climate of the mezgls, not a proven defect.
+- AUDI / VW 3.0 V6 TDI from ~2012 (termostata korpuss, starpdzesētājs / V-intercooler, eļļas piejaukums dzesēšanas sistēmā): the leak check MUST be done BOTH before and after a dynamic, loaded test drive. Leaks often show only after heat and load. Look at coolant for oil film, thermostat housing, and the intercooler area. Do not copy this V6 cooling story onto a 2.0 TDI.
+- Keep the existing 3-stage 20-30 min frame (city / highway / kick-down). These checks sit inside that frame; they do not replace it.
+- No repair EUR. Do not claim the clutch, DMF, or leak is already proven.`;
+
+/**
  * Eļļas maiņas intervālu matemātika — tikai dīlera laukā „Eļļas maiņas intervāli”.
  * Pārējie aģenti: maksimums viens teikums, ja tas ir pirkuma risks.
  */

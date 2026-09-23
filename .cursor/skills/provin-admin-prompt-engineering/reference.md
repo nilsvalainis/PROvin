@@ -11,13 +11,14 @@ Whenever you generate or refactor prompt strings in code, you MUST hardcode the 
 - **3.0 TDI Biturbo (230kW / 313hp and newer - A6 C7, SQ5):**
   - *Transmission:* Paired exclusively with the 8-speed Tiptronic (classic torque converter). High reliability, low risk, completely avoids the dual-mass flywheel failure modes inherent to S-Tronic.
   - *Timing Chains:* Structurally reinforced. Based on 40+ audited biturbo vehicles, timing chains DO NOT rattle or fail up to 300,000 km. Standard V6 chain failure rules do not apply here.
-  - *Silent & Fatal Faults:* 1. V-space intercooler coolant leak (independent of mileage, occurs at 200k or 300k km alike, severe engine damage risk if neglected, repair costs: 500-1000 EUR).
+  - *Silent & Fatal Faults:* 1. V-space intercooler coolant leak (independent of mileage, occurs at 200k or 300k km alike, severe engine damage risk if neglected, repair costs: 500-1000 EUR). Tell the buyer to check coolant (oil film), thermostat housing, and intercooler BOTH before and after a dynamic loaded test drive; leaks often show only after heat and load. Same before/after leak check applies to 3.0 V6 TDI from ~2012 (150/180 kW included), not only biturbo. Never copy this onto a 2.0 TDI.
     2. Fuel injectors & copper rings (LV client term: "iesmidzinātāji (sprauslas)", never "injektori"): Fail silently without physical symptoms (no audible "cukāšana" like older gens). Must be tested on a professional bench. Defective spray patterns lead directly to burned/melted pistons and total engine destruction.
     3. Plastic thermostat housings: High tendency to crack and leak fluid; require preventative replacement during major front-end service.
   - *Operating Cost:* High thermal and mechanical stress requires a reduced oil interval (strictly 7,000–10,000 km using premium oils). SQ5 braking components are significantly more expensive than standard V6 options.
 
 - **3.0 TDI Single-Turbo Standard (150kW & 180kW - A4, A5, A6 C7, Q5):**
   - *Transmission:* Paired with the high-risk 7-speed S-Tronic (dual-clutch DSG) with a dual-mass flywheel. High probability of internal wear, clutch jerkiness, and mechatronic failure. Deemed a blind risk for remote auction/buying structures unless physically tested.
+  - *Klātienē (S-Tronic 7):* after releasing the brake, use a light throttle for a slow takeoff. A distinctly jerky start is often the first clutch-pack (sajūga disku) sign. After the drive, a firm stop must not leave jerks or knocks. Dual-mass flywheel: listen for irregular rattling at the left front wheel on a cold engine and again when warm (noise can change with heat); vibration on acceleration can also point to DMF wear. Do not copy the clutch-disc takeoff onto Tiptronic. Canonical: `AI_TEST_DRIVE_GEARBOX_DMF_RULES`.
   - *Timing Chains:* Major structural weakness. Rattle/stretch occurs early, frequently manifesting right around the 200,000 km threshold. High financial entry risk.
 
 - **Older 3.0 TDI Generation (up to 2010/2011 - e.g., Audi A6 C6 Facelift 176kW):**

@@ -3,6 +3,10 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-23.7 - Testa brauciens: 7 pakāpju S-Tronic lēna uzsākšana
+ *   pēc bremžu atlaišanas un strauja apstāšanās; divmasu spararata
+ *   graboņa pie kreisā priekšējā riteņa aukstam un siltam; Audi V6
+ *   TDI ~2012+ noplūdes gan pirms, gan pēc dinamiska slodzes brauciena.
  * - 2026-09-23.6 - Finnik TAXI: statuss „tikai juridiski”; vājām
  *   pazīmēm noslēgums „neizskatās pēc klasiska taksometra”.
  * - 2026-09-23.5 - Finnik TAXI: varbūtības forma; vājš nobraukums
@@ -129,4 +133,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-23.6";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-23.7";

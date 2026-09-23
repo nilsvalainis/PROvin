@@ -28,6 +28,7 @@ import {
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
+  AI_TEST_DRIVE_GEARBOX_DMF_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_DOCUMENTED_SERVICE_WORK_RULES,
   AI_THIS_CAR_ONLY_LOGIC_RULES,
@@ -158,6 +159,8 @@ ${AI_WINTER_SALT_RUST_RULES}
 
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 
+${AI_TEST_DRIVE_GEARBOX_DMF_RULES}
+
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 
 ${AI_DOCUMENTED_SERVICE_WORK_RULES}
@@ -181,6 +184,9 @@ LEGAL & ADMINISTRATIVE (Latvian buyer framework — when import/registration dat
 
 TEST DRIVE FRAMEWORK (inspection / summary fields — when recommending klātienes apskate or testa brauciens):
 - ICE / classic hybrid: 3 stages, 20–30 min quiet test: (1) City — cold start chain/valve sounds, mild-hybrid ISG smoothness, low-speed vibrations (mounts, axles); (2) Highway 90–110 km/h — tracking, wind noise/seals, light-brake steering shake (warped rotors); (3) Dynamics — kick-down 0–100 km/h, turbo/trans response without lag or cluster fault codes.
+- When THIS car is 7-speed S-Tronic / dual-clutch: inside the city stage, feel the takeoff after releasing the brake and a light throttle for a slow start. Jerky takeoff can be the first clutch-pack sign. After the drive, a firm stop must not leave jerks or knocks. See TEST DRIVE: GEARBOX, DMF, COOLING LEAKS.
+- When THIS car has a dual-mass flywheel: listen for irregular engine-bay rattling at the left front wheel, cold and warm; vibration on acceleration can also point to DMF wear.
+- Audi / VW 3.0 V6 TDI ~2012+: coolant / oil-in-coolant / thermostat / intercooler leak check BOTH before and after a dynamic loaded drive.
 - BEV / PHEV electric-focused checks: follow ELECTRIC & PLUG-IN FORENSICS (SOH, charging habits 20–80 %, DC vs AC, thermal context, HV warranty, 12 V aux, regen, range realism) — do not substitute only ICE oil/DPF advice when the vehicle is primarily electric.
 
 ${AI_POWERTRAIN_IDENTIFICATION_RULES}
@@ -248,6 +254,8 @@ ${AI_WRAP_FILM_RULES}
 ${AI_WINTER_SALT_RUST_RULES}
 
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
+
+${AI_TEST_DRIVE_GEARBOX_DMF_RULES}
 
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 
@@ -416,6 +424,9 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.
 - Ievēro 3 posmu, 20–30 min klusā brauciena ietvaru (pilsēta/auksts starts/ātrumkārba → šoseja/vibrācijas → dinamika kick-down) — **izņemot BEV**: tad EV punkti no ELECTRIC & PLUG-IN FORENSICS.
+- **7 pakāpju S-Tronic / divsajūgs** (ja šim auto tāds ir): pilsētas posmā jāizjūt, kā auto uzsāk kustību pēc bremžu atlaišanas un vieglas gāzes lēnai kustībai. Izteikti saraustīta uzsākšana var būt pirmā pazīme par sajūga disku nodilumu. Pēc brauciena - strauja apstāšanās; pēc apstāšanās nedrīkst parādīties grūdieni vai nelieli sitieni. Šo sajūga stāstu NEKOPĒ uz Tiptronic / hidrotransformatoru.
+- **Divmasu spararats** (tikai ja šim auto tas ir): jāmēģina saklausīt neritmiska graboņa no motortelpas pie kreisā priekšējā riteņa, gan aukstam, gan siltam dzinējam (uzsilstot troksnis var mainīties). Par nolietojumu var liecināt arī vibrācija paātrinoties.
+- **Audi / VW 3.0 V6 TDI no ~2012:** eļļas piejaukums dzesēšanā, termostata korpuss, starpdzesētājs - noplūžu pārbaude GAN pirms, GAN pēc dinamiska slodzes brauciena. Pēc slodzes noplūdes bieži redzamas vieglāk. 2.0 TDI šo stāstu NEKOPĒ.
 - Ja auto ir elektrisks vai plug-in — obligāti akumulatora/uzlādes pārbaudes.
 - Neizdomā specifisku defektu bez pamata datos vai tipiskajā agregāta zināšanā.
 - ANTI-REPETITION: ja kontekstā jau ir 1./3. sadaļa vai avotu komentāri — neraksti to pašu stāstu; tikai pārbaudes soļi.

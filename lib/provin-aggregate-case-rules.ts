@@ -127,11 +127,13 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Vispirms nošķir kārbas tipu — tas maina visu risku profilu:** šai V6 3.0 TDI konstrukcijai VW grupa lietojusi divus principiāli atšķirīgus risinājumus, un tos NEDRĪKST sajaukt: (a) **klasiskais hidrotransformatora automāts** (Tiptronic 6 vai 8AT/8HP) — nav sausā/mitrā sajūga, nav mehatronikas kļūmes riska, dubultsajūga trīcēšanas tēma **UZ ŠO VARIANTU NEATTIECAS**; (b) **S-Tronic 7 (DL501, mitrais divsajūgs)** — te tieši mehatronika un sajūgs ir galvenais finansiālais risks.
 
-**150/180 kW + S-Tronic 7 (DL501):** **galvenais pirkuma risks — S-Tronic mehatronika un divsajūgs** (trīcēšana zemos apgriezienos, aizkaves pārslēdzot, kļūdu kodi). Ķēde šajā variantā bieži problemātiska pie **~200 000 km** — klasificēt kā finansiālu ieejas risku, kas jāapstiprina ar klātienes testu.
+**150/180 kW + S-Tronic 7 (DL501):** **galvenais pirkuma risks — S-Tronic mehatronika un divsajūgs** (trīcēšana zemos apgriezienos, aizkaves pārslēdzot, kļūdu kodi). Klātienē: lēna uzsākšana pēc bremžu atlaišanas + vieglas gāzes (saraustīšana var būt pirmā sajūga disku pazīme) un strauja apstāšanās bez grūdieniem; divmasu spararats - graboņa pie kreisā priekšējā riteņa aukstam un siltam. Ķēde šajā variantā bieži problemātiska pie **~200 000 km** - klasificēt kā finansiālu ieejas risku, kas jāapstiprina ar klātienes testu.
 
 **176 kW + Tiptronic 6 (piem. C6 posms) — IZŅĒMUMS:** hidrotransformatora automāts, nav S-Tronic sajūga riska; parasti uzticamākais šīs konstrukcijas komplekts. **Ķēdes maiņa pie ~250 000 km** — ja odometrs rāda mazāk un ķēde jau mainīta, tas ir augsts rollback signāls (reālais nobraukums visticamāk >500 000 km).
 
-**Biturbo ~230 kW + 8AT/8HP Tiptronic:** hidrotransformatora automāts (nav S-Tronic riska); fokuss — **V-intercooler dzesēšanas noplūde**, **iesmidzinātāji un vara blīvgredzeni** (klusā bojāejuma risks — motors turpina strādāt, defekts pamanāms tikai pēc patēriņa/dūmu izmaiņām), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000–10 000 km** premium eļļai — īsāks intervāls datos izskatās labi.
+**Biturbo ~230 kW + 8AT/8HP Tiptronic:** hidrotransformatora automāts (nav S-Tronic riska un nav divmasu spararata stāsta); fokuss — **V-intercooler dzesēšanas noplūde**, **iesmidzinātāji un vara blīvgredzeni** (klusā bojāejuma risks — motors turpina strādāt, defekts pamanāms tikai pēc patēriņa/dūmu izmaiņām), **plastmasas termostats/ūdens sūknis**. Eļļas intervāls **7 000–10 000 km** premium eļļai — īsāks intervāls datos izskatās labi.
+
+**3.0 V6 TDI no ~2012 (visi varianti, arī 150/180 kW):** eļļas piejaukums dzesēšanas sistēmā, termostata korpuss un starpdzesētājs. Klientam jāsaka, ka noplūžu pārbaude jāveic **gan pirms, gan pēc** dinamiska testa brauciena - pēc slodzes un aktīvas braukšanas noplūdes bieži redzamas vieglāk. 2.0 TDI šo stāstu NEDRĪKST kopēt.
 
 **204 kW un jaunākas biturbo versijas (Euro 6, ap 2015+):** tehniski tuvākas biturbo variantam; papildus kontrolē EGR dzesētāja blīvumu un AdBlue sistēmas kļūdu vēsturi, ja pieejama.
 
@@ -139,7 +141,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **Virsbūve pēc vairākiem gadiem Latvijā / Lietuvā / Igaunijā:** cinkojums neatceļ pārbaudi arkām, sliekšņu apakšām un apakšdaļai. Bagāžnieka vāku pie numura zīmes gaismām nosauc tikai ja vāks ir tērauds - plastmasa, stiklašķiedra, kompozīts vai alumīnijs tur nerūsē. Klimata risks, ne pierādīts defekts. Svaiga TA to nenosedz (rūsa zem oderēm).
 
-**Klātienē:** auksts/patērēts starta tests (S-Tronic variantam — sajūga tvēriens un trīcēšana zemos apgriezienos; Tiptronic variantam — pārslēgšanās plūdenums); intercooler/termiskā stabilitāte; dūmi un spiedības lasījumi; klausīties troksni/vibrāciju no kardānvārpstas paātrinoties un asos pagriezienos; servisa pierādījumi par eļļu, dzesēšanu un (S-Tronic gadījumā) mehatronikas programmatūru.`,
+**Klātienē:** auksts/patērēts starta tests. **S-Tronic 7:** pēc bremžu atlaišanas un vieglas gāzes lēnai kustībai - izteikti saraustīta uzsākšana var būt pirmā pazīme par sajūga disku nodilumu; pēc brauciena strauja apstāšanās bez grūdieniem vai sitieniem; divmasu spararata graboņa pie kreisā priekšējā riteņa aukstam un siltam dzinējam, plus vibrācija paātrinoties. **Tiptronic:** pārslēgšanās plūdenums, bez sajūga-disku šablona. **V6 no ~2012:** dzesēšanas / termostata / starpdzesētāja noplūdes GAN pirms, GAN pēc dinamiska slodzes brauciena. Dūmi un spiedības lasījumi; klausīties troksni/vibrāciju no kardānvārpstas paātrinoties un asos pagriezienos; servisa pierādījumi par eļļu, dzesēšanu un (S-Tronic gadījumā) mehatronikas programmatūru.`,
   },
   {
     id: "vag_2_0_tdi_dsg",
@@ -174,7 +176,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **DPF/EGR/AdBlue:** pilsētas profils = augstāka varbūtība; šosejas profils ar pierādījumiem — tikai pārbaudes punkts. Euro 6 + AdBlue ≠ automātiski „slikts motors”.
 
-**Klātienē:** DSG slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; auksts starts bez metāliskas klaboņas; siksnas dokumenti.`,
+**Klātienē:** DSG / S-Tronic lēna uzsākšana pēc bremžu atlaišanas un vieglas gāzes (saraustīšana = iespējams sajūga nodilums); pēc brauciena strauja apstāšanās bez grūdieniem; DSG slīdēšana uz kāpnēm; DPF regenerācijas kļūdas; AdBlue patēriņš; dūmainība; auksts starts bez metāliskas klaboņas; siksnas dokumenti.`,
   },
   {
     id: "vag_tfsi_ea888_early",

@@ -23,6 +23,7 @@ import {
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
+  AI_TEST_DRIVE_GEARBOX_DMF_RULES,
   AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_DOCUMENTED_SERVICE_WORK_RULES,
@@ -377,6 +378,27 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/stripSourceFieldExpansions/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/source_field_expansion/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/inspection:[\s\S]*?14_000/);
+  });
+
+  it("test-drive prompts name S-Tronic takeoff, DMF listen, and V6 leak check before and after load", () => {
+    expect(AI_TEST_DRIVE_GEARBOX_DMF_RULES).toMatch(/S-TRONIC|S-Tronic/);
+    expect(AI_TEST_DRIVE_GEARBOX_DMF_RULES).toMatch(/sajūga disku/);
+    expect(AI_TEST_DRIVE_GEARBOX_DMF_RULES).toMatch(/left front wheel|kreis/);
+    expect(AI_TEST_DRIVE_GEARBOX_DMF_RULES).toMatch(/COLD|aukstam/i);
+    expect(AI_TEST_DRIVE_GEARBOX_DMF_RULES).toMatch(/before and after|pirms.*pēc/i);
+    expect(AI_TEST_DRIVE_GEARBOX_DMF_RULES).toMatch(/Tiptronic/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_TEST_DRIVE_GEARBOX_DMF_RULES\}/,
+    );
+    expect(prompts).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_TEST_DRIVE_GEARBOX_DMF_RULES\}/,
+    );
+    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?7 pakāpju S-Tronic/);
+    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?gan pirms, gan pēc/i);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/bremžu atlaišanas/);
+    expect(readRepo("lib/provin-aggregate-case-rules.ts")).toMatch(/gan pirms, gan pēc/);
+    expect(readRepo("lib/provin-aggregate-case-rules.ts")).toMatch(/sajūga disku nodilumu/);
   });
 
   it("wrap / film rules force a mention in risks and summary when any field has a wrap", () => {
