@@ -1,5 +1,5 @@
 /**
- * Klienta atskaites (PDF) dinamiskā satura tulkošana EN / RU.
+ * Klienta atskaites (PDF) dinamiskā satura tulkošana EN / DE / RU.
  * Statisko "apvalku" (virsraksti, tabulu galviņas) tulko lib/client-report-i18n.ts
  * bez AI, tieši pārlūkā ģenerējot HTML — šis maršruts aptver TIKAI pasūtījumam
  * specifisko brīvo tekstu (✨ komentāri, avotu piezīmes).
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   if (!sessionId) return NextResponse.json({ error: "missing_session" }, { status: 400 });
 
   const lang = str(b.lang).trim();
-  if (lang !== "en" && lang !== "ru") {
+  if (lang !== "en" && lang !== "ru" && lang !== "de") {
     return NextResponse.json({ error: "invalid_lang" }, { status: 400 });
   }
 

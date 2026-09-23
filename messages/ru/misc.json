@@ -1,0 +1,38 @@
+{
+  "Misc": {
+    "whatsappFab": "Открыть WhatsApp",
+    "faqBack": "← На главную",
+    "pasutitRedirect": "Переход к форме заказа…",
+    "checkoutProductName": "PROVIN AUDITS",
+    "checkoutProductDesc": "Полная проверка истории в платных базах, разбор объявления и анализ рисков.",
+    "checkoutConsultationProductName": "PROVIN: стратегическая консультация",
+    "checkoutConsultationProductDesc": "Личная консультация и ориентир по рынку: контекст VIN и объявления, взгляд на риски и следующие шаги.",
+    "checkoutProvinSelectProductName": "PROVIN SELECT\nСтратегическая консультация",
+    "checkoutProvinSelectProductDesc": "Личная консультация для решения о покупке"
+  },
+  "Blogs": {
+    "comingSoon": "СКОРО",
+    "sermonTitle": "ПРОПОВЕДЬ БЕЗ АЛТАРЯ",
+    "readMore": "Читать запись",
+    "backToList": "← Все записи",
+    "lvOnlyNote": "Полный текст доступен на латышском.",
+    "commentsTitle": "Комментарии",
+    "commentsEmpty": "Пока тихо. Будьте первым.",
+    "commentName": "Имя",
+    "commentBody": "Комментарий",
+    "commentSubmit": "Отправить",
+    "commentSubmitting": "Отправка…",
+    "commentSuccess": "Комментарий опубликован.",
+    "commentError": "Не удалось отправить. Попробуйте ещё раз."
+  },
+  "SiteRail": {
+    "navAria": "Основные разделы",
+    "sakums": "Главная",
+    "pakalpojumi": "Услуги",
+    "blogs": "Блог",
+    "provinSelect": "Консультация",
+    "kasSlapjasAizProvin": "О PROVIN",
+    "b2b": "Для дилеров",
+    "b2bLoginAria": "Для дилеров, войти"
+  }
+}

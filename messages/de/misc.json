@@ -1,0 +1,38 @@
+{
+  "Misc": {
+    "whatsappFab": "WhatsApp öffnen",
+    "faqBack": "← Zur Startseite",
+    "pasutitRedirect": "Weiterleitung zum Bestellformular…",
+    "checkoutProductName": "PROVIN AUDITS",
+    "checkoutProductDesc": "Vollständige Historienprüfung in kostenpflichtigen Datenbanken, Inserats- und Risikoanalyse.",
+    "checkoutConsultationProductName": "PROVIN: strategische Beratung",
+    "checkoutConsultationProductDesc": "Individuelle Beratung und Markteinordnung: VIN- und Inseratskontext, Risikoblick und nächste Schritte.",
+    "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategische Beratung",
+    "checkoutProvinSelectProductDesc": "Individuelle Beratung für die Kaufentscheidung"
+  },
+  "Blogs": {
+    "comingSoon": "DEMNÄCHST",
+    "sermonTitle": "PREDIGT OHNE ALTAR",
+    "readMore": "Beitrag lesen",
+    "backToList": "← Alle Beiträge",
+    "lvOnlyNote": "Der vollständige Text ist auf Lettisch verfügbar.",
+    "commentsTitle": "Kommentare",
+    "commentsEmpty": "Noch still. Seien Sie der Erste.",
+    "commentName": "Name",
+    "commentBody": "Kommentar",
+    "commentSubmit": "Senden",
+    "commentSubmitting": "Wird gesendet…",
+    "commentSuccess": "Kommentar veröffentlicht.",
+    "commentError": "Senden fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "SiteRail": {
+    "navAria": "Hauptbereiche",
+    "sakums": "Start",
+    "pakalpojumi": "Leistungen",
+    "blogs": "Blog",
+    "provinSelect": "Beratung",
+    "kasSlapjasAizProvin": "Über PROVIN",
+    "b2b": "Für Händler",
+    "b2bLoginAria": "Für Händler, anmelden"
+  }
+}

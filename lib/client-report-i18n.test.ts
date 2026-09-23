@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyClientReportStaticTranslations,
+  CLIENT_REPORT_DE,
+  clientReportStaticKeys,
   translateClientReportStatic,
 } from "@/lib/client-report-i18n";
 
@@ -20,6 +22,13 @@ describe("translateClientReportStatic", () => {
 
   it("falls back to the Latvian text for an unknown phrase instead of throwing or returning empty", () => {
     expect(translateClientReportStatic("Kāds vēl nezināms teksts", "en")).toBe("Kāds vēl nezināms teksts");
+  });
+
+  it("has a German line for every static label", () => {
+    for (const key of clientReportStaticKeys()) {
+      expect(CLIENT_REPORT_DE[key], key).toBeTruthy();
+    }
+    expect(translateClientReportStatic("ATSKAITES KOPSAVILKUMS", "de")).toBe("BERICHTSZUSAMMENFASSUNG");
   });
 });
 

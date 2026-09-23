@@ -5,7 +5,7 @@
  * `buildClientReportDocumentHtml({ lang })` iekšienē — bez AI.
  */
 import type { ClientReportPayload } from "@/lib/client-report-html";
-import type { ClientReportLang } from "@/lib/client-report-i18n";
+import type { ClientReportLang, ClientReportTargetLang } from "@/lib/client-report-i18n";
 import {
   applyHtmlTextTranslations,
   collectHtmlTextsNeedingTranslation,
@@ -24,9 +24,9 @@ export type ClientReportTranslationCacheEntry = {
   texts: TranslatableFieldMap;
 };
 
-export type ClientReportTranslationCache = Partial<Record<"en" | "ru", ClientReportTranslationCacheEntry>> & {
+export type ClientReportTranslationCache = Partial<Record<ClientReportTargetLang, ClientReportTranslationCacheEntry>> & {
   /** Atlikušais HTML teksts (CSDD, laikposms, kājene), atsevišķi no komentāru kartes. */
-  html?: Partial<Record<"en" | "ru", ClientReportTranslationCacheEntry>>;
+  html?: Partial<Record<ClientReportTargetLang, ClientReportTranslationCacheEntry>>;
 };
 
 /**
@@ -60,7 +60,7 @@ const HTML_TRANSLATE_CHUNK = 40;
 
 async function postClientReportTranslation(
   sessionId: string,
-  lang: "en" | "ru",
+  lang: ClientReportTargetLang,
   texts: TranslatableFieldMap,
 ): Promise<TranslatableFieldMap> {
   const res = await fetch("/api/admin/report-translate", {
@@ -88,6 +88,7 @@ export async function translateClientReportHtmlResidue(
   sessionId: string,
   lang: ClientReportLang,
   cache?: ClientReportTranslationCache,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<string> {
   if (lang === "lv") return html;
 
@@ -105,9 +106,12 @@ export async function translateClientReportHtmlResidue(
 
   if (cached && cached.hash === hash) {
     byOriginal = cached.texts;
+    onProgress?.(1, 1);
   } else {
     byOriginal = {};
     const ids = Object.keys(source);
+    const chunks = Math.max(1, Math.ceil(ids.length / HTML_TRANSLATE_CHUNK));
+    let done = 0;
     for (let i = 0; i < ids.length; i += HTML_TRANSLATE_CHUNK) {
       const slice: TranslatableFieldMap = {};
       for (const id of ids.slice(i, i + HTML_TRANSLATE_CHUNK)) slice[id] = source[id];
@@ -116,6 +120,8 @@ export async function translateClientReportHtmlResidue(
         const value = translated[id];
         if (typeof value === "string" && value.trim()) byOriginal[slice[id]] = value;
       }
+      done += 1;
+      onProgress?.(done, chunks);
     }
     if (cache) {
       if (!cache.html) cache.html = {};

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   detectB2bDefaultLocale,
   isB2bLegalPath,
-  isB2bOnlyLocale,
   isPartneriemPath,
   parsePrefixedPath,
   resolveB2bEntryLocale,
@@ -61,10 +60,10 @@ describe("B2B locale detection", () => {
     ).toBe("en");
   });
 
-  it("keeps de/ru as B2B-only and English site chrome", () => {
-    expect(isB2bOnlyLocale("de")).toBe(true);
-    expect(siteMessageLocale("de")).toBe("en");
-    expect(siteMessageLocale("ru")).toBe("en");
+  it("serves de and ru as native public locales", () => {
+    expect(siteMessageLocale("de")).toBe("de");
+    expect(siteMessageLocale("ru")).toBe("ru");
+    expect(siteMessageLocale("en")).toBe("en");
     expect(siteMessageLocale("lv")).toBe("lv");
     expect(parsePrefixedPath("/de/partneriem/konts")).toEqual({
       locale: "de",

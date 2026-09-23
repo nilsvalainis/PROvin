@@ -4,8 +4,6 @@ import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
 import {
   B2B_LOCALE_COOKIE,
-  isB2bLegalPath,
-  isB2bOnlyLocale,
   isPartneriemPath,
   parsePrefixedPath,
   resolveB2bEntryLocale,
@@ -79,17 +77,6 @@ export default function middleware(request: NextRequest) {
   }
 
   const prefixed = parsePrefixedPath(pathname);
-
-  if (
-    prefixed.locale &&
-    isB2bOnlyLocale(prefixed.locale) &&
-    !isPartneriemPath(prefixed.rest) &&
-    !isB2bLegalPath(prefixed.rest)
-  ) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = `/en${prefixed.rest === "/" ? "" : prefixed.rest}`;
-    return NextResponse.redirect(redirectUrl);
-  }
 
   if (isPartneriemPath(pathname) || (prefixed.locale && isPartneriemPath(prefixed.rest))) {
     const urlLocale = prefixed.locale;

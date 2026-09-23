@@ -1,0 +1,9 @@
+{
+  "Thanks": {
+    "title": "Danke! Zahlung eingegangen",
+    "body": "Ihre Bestellung ist registriert. Sie erhalten in Kürze eine Bestätigung per E-Mail. Wir beginnen mit der Datensammlung und der Analyse.",
+    "sessionLabel": "Sitzungs-ID:",
+    "downloadInvoice": "Rechnung herunterladen (PDF)",
+    "back": "Zur Startseite"
+  }
+}

@@ -777,8 +777,22 @@ export function OrderDetailWorkspace({
   const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const workspaceRevisionRef = useRef(0);
   const wsPersistRef = useRef(ws);
-  /** EN/RU PDF: keš pēc pēdējā tulkojuma, lai nesauktu AI atkārtoti, ja LV teksts nav mainījies. */
+  /** EN/DE/RU PDF: keš pēc pēdējā tulkojuma, lai nesauktu AI atkārtoti, ja LV teksts nav mainījies. */
   const reportTranslationCacheRef = useRef<ClientReportTranslationCache>({});
+  const pdfBusyRef = useRef(false);
+  const pdfTargetRef = useRef(0);
+  const [pdfJob, setPdfJob] = useState<{ key: string; pct: number } | null>(null);
+
+  useEffect(() => {
+    if (!pdfJob) return;
+    const timer = window.setInterval(() => {
+      setPdfJob((cur) => {
+        if (!cur || cur.pct >= pdfTargetRef.current) return cur;
+        return { key: cur.key, pct: Math.min(pdfTargetRef.current, cur.pct + 1) };
+      });
+    }, 140);
+    return () => window.clearInterval(timer);
+  }, [pdfJob?.key]);
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -2964,12 +2978,29 @@ export function OrderDetailWorkspace({
     [wizardStepLevels],
   );
 
+  const pdfButtonLabel = (key: string, idle: string) =>
+    pdfJob?.key === key ? `${pdfJob.pct}%` : idle;
+
   const openPrintReport = async (opts?: {
     printInk?: boolean;
     dealerOnly?: boolean;
     asvOnly?: boolean;
     lang?: ClientReportLang;
   }) => {
+    if (pdfBusyRef.current) return;
+    const pdfJobKey = [
+      opts?.dealerOnly ? "dealer" : opts?.asvOnly ? "asv" : opts?.printInk ? "ink" : "pdf",
+      opts?.lang && opts.lang !== "lv" ? opts.lang : "",
+    ]
+      .filter(Boolean)
+      .join("-");
+    pdfBusyRef.current = true;
+    pdfTargetRef.current = 8;
+    setPdfJob({ key: pdfJobKey, pct: 1 });
+    const bumpPdf = (pct: number) => {
+      pdfTargetRef.current = Math.max(pdfTargetRef.current, pct);
+    };
+    try {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
       await flushWorkspaceServerPatch({ showFlash: false });
@@ -2998,7 +3029,7 @@ export function OrderDetailWorkspace({
     }
 
     const dateFmt = new Intl.DateTimeFormat(
-      opts?.lang === "en" ? "en-GB" : opts?.lang === "ru" ? "ru-RU" : "lv-LV",
+      opts?.lang === "en" ? "en-GB" : opts?.lang === "de" ? "de-DE" : opts?.lang === "ru" ? "ru-RU" : "lv-LV",
       { dateStyle: "long", timeStyle: "short" },
     );
     const flatSources = blocksToLegacyFlatFields(blocksDisplaySafe);
@@ -3249,6 +3280,7 @@ export function OrderDetailWorkspace({
     };
 
     let finalPayload = reportPayload;
+    bumpPdf(46);
     if (reportLang !== "lv") {
       try {
         finalPayload = await translateClientReportPayloadForPrint(
@@ -3281,6 +3313,7 @@ export function OrderDetailWorkspace({
     });
 
     let translatedHtml = html;
+    bumpPdf(72);
     if (reportLang !== "lv") {
       try {
         translatedHtml = await translateClientReportHtmlResidue(
@@ -3288,6 +3321,7 @@ export function OrderDetailWorkspace({
           payload.sessionId,
           reportLang,
           reportTranslationCacheRef.current,
+          (done, total) => bumpPdf(72 + Math.round((done / Math.max(total, 1)) * 24)),
         );
       } catch (e) {
         alert(
@@ -3313,7 +3347,7 @@ export function OrderDetailWorkspace({
             checkoutLine: payload.checkoutLine,
             amountTotalCents: payload.amountTotal,
           });
-    const langSuffix = reportLang === "en" ? "_EN" : reportLang === "ru" ? "_RU" : "";
+    const langSuffix = reportLang === "en" ? "_EN" : reportLang === "ru" ? "_RU" : reportLang === "de" ? "_DE" : "";
     const printFileTitle = opts?.printInk
       ? printTitle.replace(/\.pdf$/i, `${langSuffix}_drukai.pdf`)
       : langSuffix
@@ -3333,6 +3367,15 @@ export function OrderDetailWorkspace({
     };
     w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
     window.setTimeout(schedulePrint, 900);
+    bumpPdf(100);
+    } finally {
+      pdfTargetRef.current = 100;
+      setPdfJob({ key: pdfJobKey, pct: 100 });
+      window.setTimeout(() => {
+        pdfBusyRef.current = false;
+        setPdfJob((cur) => (cur?.key === pdfJobKey ? null : cur));
+      }, 700);
+    }
   };
 
   const openOemDealerReport = async () => {
@@ -4316,10 +4359,17 @@ export function OrderDetailWorkspace({
         onGeneratePdf={() => void openPrintReport()}
         onGeneratePdfEn={() => void openPrintReport({ lang: "en" })}
         onGeneratePdfRu={() => void openPrintReport({ lang: "ru" })}
+        onGeneratePdfDe={() => void openPrintReport({ lang: "de" })}
         onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
         onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
         onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
+        onGenerateDealerPdfDe={() => void openPrintReport({ dealerOnly: true, lang: "de" })}
+        pdfProgressKey={pdfJob?.key ?? null}
+        pdfProgressPct={pdfJob?.pct ?? null}
         onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
+        onGenerateAsvPdfEn={() => void openPrintReport({ asvOnly: true, lang: "en" })}
+        onGenerateAsvPdfRu={() => void openPrintReport({ asvOnly: true, lang: "ru" })}
+        onGenerateAsvPdfDe={() => void openPrintReport({ asvOnly: true, lang: "de" })}
         onGenerateOemPdf={() => void openOemDealerReport()}
         onGeneratePrintInkPdf={() => void openPrintReport({ printInk: true })}
         vin={vinBar}
@@ -4482,6 +4532,9 @@ export function OrderDetailWorkspace({
               onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
               onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
               onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
+              onGenerateDealerPdfDe={() => void openPrintReport({ dealerOnly: true, lang: "de" })}
+              dealerPdfProgressKey={pdfJob?.key ?? null}
+              dealerPdfProgressPct={pdfJob?.pct ?? null}
             />
           </div>
         ) : null}
@@ -4921,88 +4974,47 @@ export function OrderDetailWorkspace({
       {/* Telefonā PDF ir apakšējā doka sheet; fiksētā kājene paliek tikai md+. */}
       <div className="fixed bottom-0 left-0 right-0 z-40 hidden border-t border-[var(--admin-border-subtle)] bg-[var(--admin-footer-bg)] px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm md:block dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)]">
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
-          <button type="button" onClick={() => void openPrintReport()} className={wizardFooterPdf}>
-            Ģenerēt PDF
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport()} className={wizardFooterPdf}>
+            {pdfButtonLabel("pdf", "Ģenerēt PDF")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ lang: "en" })}
-            className={wizardFooterPdf}
-            title="Pilnā atskaite angļu valodā. Virsraksti, komentāri un CSDD teksts tiek tulkoti automātiski."
-          >
-            PDF (EN)
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ lang: "en" })} className={wizardFooterPdf} title="Pilnā atskaite angļu valodā.">
+            {pdfButtonLabel("pdf-en", "PDF (EN)")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ lang: "ru" })}
-            className={wizardFooterPdf}
-            title="Pilnā atskaite krievu valodā. Virsraksti, komentāri un CSDD teksts tiek tulkoti automātiski."
-          >
-            PDF (RU)
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ lang: "ru" })} className={wizardFooterPdf} title="Pilnā atskaite krievu valodā.">
+            {pdfButtonLabel("pdf-ru", "PDF (RU)")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ dealerOnly: true })}
-            className={wizardFooterDealer}
-            title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti."
-          >
-            Ģenerēt dīlera PDF
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ lang: "de" })} className={wizardFooterPdf} title="Pilnā atskaite vācu valodā.">
+            {pdfButtonLabel("pdf-de", "PDF (DE)")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
-            className={wizardFooterDealer}
-            title="Tikai oficiālā dīlera dati, angļu valodā."
-          >
-            Dīlera PDF (EN)
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ dealerOnly: true })} className={wizardFooterDealer} title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti.">
+            {pdfButtonLabel("dealer", "Ģenerēt dīlera PDF")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
-            className={wizardFooterDealer}
-            title="Tikai oficiālā dīlera dati, krievu valodā."
-          >
-            Dīlera PDF (RU)
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ dealerOnly: true, lang: "en" })} className={wizardFooterDealer} title="Tikai oficiālā dīlera dati, angļu valodā.">
+            {pdfButtonLabel("dealer-en", "Dīlera PDF (EN)")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ asvOnly: true })}
-            className={wizardFooterAsv}
-            title="Tikai ASV vēsture. Citi avoti netiek iekļauti."
-          >
-            Ģenerēt ASV PDF
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ dealerOnly: true, lang: "ru" })} className={wizardFooterDealer} title="Tikai oficiālā dīlera dati, krievu valodā.">
+            {pdfButtonLabel("dealer-ru", "Dīlera PDF (RU)")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ asvOnly: true, lang: "en" })}
-            className={wizardFooterAsv}
-            title="Tikai ASV vēsture, angļu valodā."
-          >
-            ASV PDF (EN)
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ dealerOnly: true, lang: "de" })} className={wizardFooterDealer} title="Tikai oficiālā dīlera dati, vācu valodā.">
+            {pdfButtonLabel("dealer-de", "Dīlera PDF (DE)")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ asvOnly: true, lang: "ru" })}
-            className={wizardFooterAsv}
-            title="Tikai ASV vēsture, krievu valodā."
-          >
-            ASV PDF (RU)
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ asvOnly: true })} className={wizardFooterAsv} title="Tikai ASV vēsture. Citi avoti netiek iekļauti.">
+            {pdfButtonLabel("asv", "Ģenerēt ASV PDF")}
           </button>
-          <button
-            type="button"
-            onClick={() => void openOemDealerReport()}
-            className={wizardFooterOem}
-            title="Oficiāla OEM izdruka (portrets A4): markas logo, oriģinālie API dati bez tulkojuma. Atsevišķs no PROVIN dīlera atskaites."
-          >
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ asvOnly: true, lang: "en" })} className={wizardFooterAsv} title="Tikai ASV vēsture, angļu valodā.">
+            {pdfButtonLabel("asv-en", "ASV PDF (EN)")}
+          </button>
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ asvOnly: true, lang: "ru" })} className={wizardFooterAsv} title="Tikai ASV vēsture, krievu valodā.">
+            {pdfButtonLabel("asv-ru", "ASV PDF (RU)")}
+          </button>
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ asvOnly: true, lang: "de" })} className={wizardFooterAsv} title="Tikai ASV vēsture, vācu valodā.">
+            {pdfButtonLabel("asv-de", "ASV PDF (DE)")}
+          </button>
+          <button type="button" onClick={() => void openOemDealerReport()} className={wizardFooterOem} title="Oficiāla OEM izdruka (portrets A4): markas logo, oriģinālie API dati bez tulkojuma. Atsevišķs no PROVIN dīlera atskaites.">
             OEM dīlera PDF
           </button>
-          <button
-            type="button"
-            onClick={() => void openPrintReport({ printInk: true })}
-            className={wizardFooterPrintInk}
-            title="Tā pati atskaite ar tumšāku tekstu un kontūrām papīra drukai"
-          >
-            Drukājamā versija
+          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ printInk: true })} className={wizardFooterPrintInk} title="Tā pati atskaite ar tumšāku tekstu un kontūrām papīra drukai">
+            {pdfButtonLabel("ink", "Drukājamā versija")}
           </button>
         </div>
       </div>

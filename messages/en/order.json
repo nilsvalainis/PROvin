@@ -38,7 +38,7 @@
     "ariaSummary": "Order summary",
     "operatorPageTitle": "Operator order",
     "operatorPageIntro": "Internal form without payment. After creation the admin workspace opens.",
-    "operatorNote": "No Stripe. The order appears in admin as “Manual”.",
+    "operatorNote": "No Stripe. The order appears in admin as Manual.",
     "operatorSubmitButton": "Create order",
     "operatorSubmitLoading": "Creating order…",
     "errors": {

@@ -46,7 +46,14 @@ type Props = {
   onGenerateDealerPdfRu: () => void;
   onGeneratePdfEn: () => void;
   onGeneratePdfRu: () => void;
+  onGeneratePdfDe: () => void;
+  onGenerateDealerPdfDe: () => void;
+  pdfProgressKey?: string | null;
+  pdfProgressPct?: number | null;
   onGenerateAsvPdf: () => void;
+  onGenerateAsvPdfEn: () => void;
+  onGenerateAsvPdfRu: () => void;
+  onGenerateAsvPdfDe: () => void;
   onGenerateOemPdf: () => void;
   onGeneratePrintInkPdf: () => void;
   vin: string;
@@ -125,7 +132,14 @@ export function AdminOrderMobileDock({
   onGenerateDealerPdfRu,
   onGeneratePdfEn,
   onGeneratePdfRu,
+  onGeneratePdfDe,
+  onGenerateDealerPdfDe,
+  pdfProgressKey = null,
+  pdfProgressPct = null,
   onGenerateAsvPdf,
+  onGenerateAsvPdfEn,
+  onGenerateAsvPdfRu,
+  onGenerateAsvPdfDe,
   onGenerateOemPdf,
   onGeneratePrintInkPdf,
   vin,
@@ -177,10 +191,11 @@ export function AdminOrderMobileDock({
           <button
             type="button"
             className={`${dockItem} text-[var(--color-apple-text)]`}
+            disabled={pdfProgressKey !== null}
             onClick={() => setSheet("pdf")}
           >
             <FileText className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
-            PDF
+            {pdfProgressKey ? `${pdfProgressPct ?? 0}%` : "PDF"}
           </button>
           <button
             type="button"
@@ -224,50 +239,85 @@ export function AdminOrderMobileDock({
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdf)}>
             <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">Ģenerēt PDF</span>
+              <span className="block">{pdfProgressKey === "pdf" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā PROVIN atskaite</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdfEn)}>
             <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">PDF (EN)</span>
+              <span className="block">{pdfProgressKey === "pdf-en" ? `${pdfProgressPct ?? 0}%` : "PDF (EN)"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā atskaite angļu valodā</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdfRu)}>
             <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">PDF (RU)</span>
+              <span className="block">{pdfProgressKey === "pdf-ru" ? `${pdfProgressPct ?? 0}%` : "PDF (RU)"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā atskaite krievu valodā</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdfDe)}>
+            <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">{pdfProgressKey === "pdf-de" ? `${pdfProgressPct ?? 0}%` : "PDF (DE)"}</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā atskaite vācu valodā</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdf)}>
             <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">Ģenerēt dīlera PDF</span>
+              <span className="block">{pdfProgressKey === "dealer" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt dīlera PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai oficiālā dīlera dati</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdfEn)}>
             <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">Dīlera PDF (EN)</span>
+              <span className="block">{pdfProgressKey === "dealer-en" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (EN)"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Dīlera atskaite angļu valodā</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdfRu)}>
             <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">Dīlera PDF (RU)</span>
+              <span className="block">{pdfProgressKey === "dealer-ru" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (RU)"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Dīlera atskaite krievu valodā</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdfDe)}>
+            <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">{pdfProgressKey === "dealer-de" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (DE)"}</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Dīlera atskaite vācu valodā</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdf)}>
             <FileText className="h-4 w-4 shrink-0 text-blue-700" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">Ģenerēt ASV PDF</span>
+              <span className="block">{pdfProgressKey === "asv" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt ASV PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai ASV vēsture</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdfEn)}>
+            <FileText className="h-4 w-4 shrink-0 text-blue-700" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">{pdfProgressKey === "asv-en" ? `${pdfProgressPct ?? 0}%` : "ASV PDF (EN)"}</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">ASV vēsture angļu valodā</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdfRu)}>
+            <FileText className="h-4 w-4 shrink-0 text-blue-700" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">{pdfProgressKey === "asv-ru" ? `${pdfProgressPct ?? 0}%` : "ASV PDF (RU)"}</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">ASV vēsture krievu valodā</span>
+            </span>
+          </button>
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdfDe)}>
+            <FileText className="h-4 w-4 shrink-0 text-blue-700" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">{pdfProgressKey === "asv-de" ? `${pdfProgressPct ?? 0}%` : "ASV PDF (DE)"}</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">ASV vēsture vācu valodā</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateOemPdf)}>
@@ -280,7 +330,7 @@ export function AdminOrderMobileDock({
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePrintInkPdf)}>
             <FileText className="h-4 w-4 shrink-0 text-amber-700" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
-              <span className="block">Drukājamā versija</span>
+              <span className="block">{pdfProgressKey === "ink" ? `${pdfProgressPct ?? 0}%` : "Drukājamā versija"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tumšāks teksts papīra drukai</span>
             </span>
           </button>

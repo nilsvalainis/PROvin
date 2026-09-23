@@ -3,7 +3,7 @@ import "server-only";
 import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import type { TranslatableFieldMap } from "@/lib/client-report-translatable-fields";
-import type { ClientReportLang } from "@/lib/client-report-i18n";
+import type { ClientReportTargetLang } from "@/lib/client-report-i18n";
 
 const REPORT_TRANSLATE_SYSTEM = (langName: string) => `You translate a Latvian vehicle-history report (PROVIN.LV) into ${langName} for the end customer who is buying a used car.
 
@@ -47,13 +47,13 @@ function safeJsonParse(raw: string): unknown {
 /** Tulko visus pasūtījuma brīvā teksta laukus vienā AI izsaukumā. Tukšs input = tukšs output, bez AI izsaukuma. */
 export async function translateClientReportTexts(
   texts: TranslatableFieldMap,
-  lang: Exclude<ClientReportLang, "lv">,
+  lang: ClientReportTargetLang,
   modelTier: AiAdminModelTier = "gemini-flash",
 ): Promise<ClientReportTranslateResult> {
   const entries = Object.entries(texts).filter(([, v]) => v.trim().length > 0);
   if (entries.length === 0) return { texts: {}, missingKeys: [] };
 
-  const langName = lang === "en" ? "English" : "Russian";
+  const langName = lang === "en" ? "English" : lang === "de" ? "German" : "Russian";
   const source = Object.fromEntries(entries);
 
   const raw = await adminGenerateJsonText({

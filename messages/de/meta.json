@@ -1,0 +1,20 @@
+{
+  "Meta": {
+    "homeIntroTitle": "",
+    "homeIntroBody": "Auf dem Gebrauchtwagenmarkt spielen Sie gegen Menschen mit jahrzehntelanger Erfahrung, die dieses Spiel auswendig kennen. PROVIN ist Ihr persönlicher Interessenvertreter, damit die Chancen ausgeglichener werden.\n\nWir verbinden Informationen aus großen Fahrzeughistorie-Datenbanken mit einer sorgfältigen Prüfung des Inserats und einer modellspezifischen Risikobewertung. So sehen Sie, was der Verkäufer verschweigt und was sonst leicht übersehen wird. Wir sind da, damit Sie nüchtern entscheiden und Risiken erkennen, bevor sie zu einem ernsten Problem werden.",
+    "title": "VIN-Prüfung und Fahrzeughistorie | PROVIN",
+    "description": "Sie suchen eine verlässliche Fahrzeughistorie? Wir prüfen die VIN, das Inserat und die technischen Risiken. Erfahren Sie die Fakten, bevor Sie kaufen.",
+    "ogTitle": "VIN-Prüfung und Fahrzeughistorie | PROVIN",
+    "ogDescription": "Sie suchen eine verlässliche Fahrzeughistorie? Wir prüfen die VIN, das Inserat und die technischen Risiken. Erfahren Sie die Fakten, bevor Sie kaufen.",
+    "faqTitle": "FAQ",
+    "faqDescription": "Häufige Fragen zu PROVIN-Audits, Preisen und Lieferzeit.",
+    "servicesTitle": "Leistungen | PROVIN",
+    "servicesDescription": "PROVIN MINI, PROVIN AUDITS, Händlerdaten und weitere Historienleistungen: Zweck, Umfang und Bestellung.",
+    "aboutTitle": "Über PROVIN | PROVIN",
+    "aboutDescription": "Über PROVIN: Erfahrung, IRISS und unser Ansatz zur Risikobewertung von Gebrauchtwagen.",
+    "blogsTitle": "Blog | PROVIN",
+    "blogsDescription": "IRISS | Tagebuch eines Autohändlers. Notizen zum Gebrauchtwagenmarkt, Betrug und Käuferrisiken.",
+    "thanksTitle": "Danke für Ihre Bestellung",
+    "thanksDescription": "Bestellung eingegangen. Kurze Bestätigung nach erfolgreicher Stripe-Zahlung."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "Samples": {
+    "heading": "Примеры отчётов",
+    "navLabel": "Примеры",
+    "lead": "Реальные примеры PROVIN AUDITS. Посмотрите, как выглядит готовый отчёт, прежде чем заказывать свой.",
+    "exampleLabel": "Пример аудита PROVIN:",
+    "orderCta": "Заказать такой же аудит",
+    "previewLabel": "Пример отчёта",
+    "enlargeLabel": "Увеличить",
+    "closeLabel": "Закрыть",
+    "openPdfLabel": "Открыть PDF",
+    "items": {
+      "fordGalaxy": {
+        "title": "Ford Galaxy"
+      },
+      "bmw525e61": {
+        "title": "BMW 525 LCI e61"
+      }
+    }
+  }
+}

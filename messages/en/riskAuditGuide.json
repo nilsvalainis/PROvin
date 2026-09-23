@@ -10,7 +10,7 @@
       "listingLabel": "Listing link",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… or Mobile.de",
       "emailLabel": "Your email",
-      "emailPlaceholder": "janis@inbox.lv",
+      "emailPlaceholder": "you@email.com",
       "phoneLabel": "Phone",
       "phonePlaceholder": "+371 …",
       "submit": "Get the review",
@@ -18,14 +18,14 @@
       "disclaimer": "* Does not include risk analysis, consultation, or vehicle history checks in databases."
     },
     "success": {
-      "title": "Thanks! We’ve received the link.",
-      "body": "We’ll send a short comment by email."
+      "title": "Thanks! We've received the link.",
+      "body": "We'll send a short comment by email."
     },
     "errors": {
       "listing": "Paste a valid link to a specific listing.",
       "email": "Email address is not valid.",
       "phone": "Phone number is not valid.",
-      "rateLimited": "A free review has already been requested. We’ll reply by email, or order PROVIN AUDITS.",
+      "rateLimited": "A free review has already been requested. We'll reply by email, or order PROVIN AUDITS.",
       "rateLimitedCta": "Order PROVIN AUDITS",
       "ipRateLimited": "Several requests were already submitted from this device / network today. Try again tomorrow or order an audit.",
       "queuePaused": "Free reviews are temporarily unavailable. Please try later or tomorrow, or order an audit.",

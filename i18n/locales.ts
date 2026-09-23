@@ -1,5 +1,5 @@
 export const APP_LOCALES = ["lv", "en", "de", "ru"] as const;
-export const PUBLIC_LOCALES = ["lv", "en"] as const;
+export const PUBLIC_LOCALES = APP_LOCALES;
 export const B2B_LOCALES = APP_LOCALES;
 export const DEFAULT_LOCALE = "lv";
 export const B2B_LOCALE_COOKIE = "provin-b2b-locale";
@@ -13,16 +13,12 @@ export function isAppLocale(value: string | null | undefined): value is AppLocal
 }
 
 export function isPublicLocale(value: string | null | undefined): value is PublicLocale {
-  return value === "lv" || value === "en";
+  return value === "lv" || value === "en" || value === "de" || value === "ru";
 }
 
-export function isB2bOnlyLocale(value: string | null | undefined): value is "de" | "ru" {
-  return value === "de" || value === "ru";
-}
-
-/** Marketing chrome (hero, pricing, FAQ) stays lv/en. Header, footer and legal for de/ru are native. */
+/** Public copy is native in every locale. Russian is never chosen from a RU/BY IP. */
 export function siteMessageLocale(locale: AppLocale): PublicLocale {
-  return isB2bOnlyLocale(locale) ? "en" : locale;
+  return locale;
 }
 
 export function detectB2bDefaultLocale(country: string | null | undefined): AppLocale {

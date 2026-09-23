@@ -19,10 +19,6 @@ import { B2bLocaleSwitcher } from "@/components/b2b/B2bLocaleSwitcher";
 export function HeaderClient() {
   const pathname = usePathname() ?? "";
   const locale = useLocale();
-  const targetLocale = locale === "lv" ? "en" : "lv";
-  /** Rāda tekošās valodas karogu; klikšķis joprojām pārslēdz uz otru valodu. */
-  const localeFlag = locale === "lv" ? "🇱🇻" : "🇬🇧";
-  const localeLabel = locale === "lv" ? "Switch to English" : "Pārslēgt uz latviešu valodu";
   const normalizedPath = normalizeSitePath(pathname);
   const isProvinSelectPieteikums = normalizedPath === "/provin-select-pieteikums";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -217,17 +213,9 @@ export function HeaderClient() {
           ) : isPartneriem ? (
             <B2bLocaleSwitcher dark={headerChromeDark} compact />
           ) : (
-            <Link
-              href={pathname as never}
-              locale={targetLocale}
-              className={`relative z-[52] min-h-[1.8rem] min-w-[1.8rem] shrink-0 items-center justify-center text-[13.8px] leading-none no-underline transition lg:min-h-[2.25rem] lg:min-w-[2.25rem] lg:text-[calc(17px*1.15)] ${
-                showHomeNavRail ? "hidden lg:inline-flex" : "inline-flex"
-              } ${headerChromeDark ? "text-white hover:text-white/80" : "text-[#1d1d1f] hover:text-[#111827]"}`}
-              aria-label={localeLabel}
-              title={localeLabel}
-            >
-              <span aria-hidden>{localeFlag}</span>
-            </Link>
+            <div className={showHomeNavRail ? "hidden lg:inline-flex" : "inline-flex"}>
+              <B2bLocaleSwitcher dark={headerChromeDark} compact />
+            </div>
           )}
         </div>
       </div>
@@ -263,6 +251,34 @@ export function HeaderClient() {
               >
                 <span aria-hidden>🇬🇧</span>
                 {tHeader("langEn")}
+              </Link>
+              <Link
+                href={pathname as never}
+                locale="de"
+                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
+                  locale === "de"
+                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
+                    : headerChromeDark
+                      ? "border-white/12 text-white/80"
+                      : "border-black/12 text-[#1d1d1f]/80"
+                }`}
+              >
+                <span aria-hidden>🇩🇪</span>
+                {tHeader("langDe")}
+              </Link>
+              <Link
+                href={pathname as never}
+                locale="ru"
+                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
+                  locale === "ru"
+                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
+                    : headerChromeDark
+                      ? "border-white/12 text-white/80"
+                      : "border-black/12 text-[#1d1d1f]/80"
+                }`}
+              >
+                <span aria-hidden>🇷🇺</span>
+                {tHeader("langRu")}
               </Link>
             </div>
             {navSections.filter((s) => s.labelKey !== "b2b").map((s) => (

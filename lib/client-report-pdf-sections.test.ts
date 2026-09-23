@@ -2181,6 +2181,19 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
     expect(doc).toContain("Анализ технических рисков");
   });
 
+  it("translates the static section headings to German", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({ tehniskoRiskuAnalize: "Auto ir bijis vieglā negadījumā." }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      lang: "de",
+    });
+    expect(doc).toContain('<html lang="de"');
+    expect(doc).toContain("1. Analyse der technischen Risiken");
+  });
+
   it("does not translate the dynamic ✨ comment text by itself - caller must translate the payload first", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload({ tehniskoRiskuAnalize: "Auto ir bijis vieglā negadījumā." }),

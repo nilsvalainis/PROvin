@@ -31,6 +31,9 @@ type Props = {
   onGenerateDealerPdf?: () => void;
   onGenerateDealerPdfEn?: () => void;
   onGenerateDealerPdfRu?: () => void;
+  onGenerateDealerPdfDe?: () => void;
+  pdfProgressKey?: string | null;
+  pdfProgressPct?: number | null;
 };
 
 const STATUS_TONE: Record<DealerDataJob["status"], string> = {
@@ -75,6 +78,9 @@ export function AdminDealerDataJobStrip({
   onGenerateDealerPdf,
   onGenerateDealerPdfEn,
   onGenerateDealerPdfRu,
+  onGenerateDealerPdfDe,
+  pdfProgressKey = null,
+  pdfProgressPct = null,
 }: Props) {
   const [job, setJob] = useState<DealerDataJob | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -407,18 +413,23 @@ export function AdminDealerDataJobStrip({
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-1.5">
         <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Piegāde</span>
         {onGenerateDealerPdf ? (
-          <button type="button" className={btn} disabled={busy !== null} onClick={() => onGenerateDealerPdf()}>
-            Ģenerēt dīlera PDF
+          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdf()}>
+            {pdfProgressKey === "dealer" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt dīlera PDF"}
           </button>
         ) : null}
         {onGenerateDealerPdfEn ? (
-          <button type="button" className={btn} disabled={busy !== null} onClick={() => onGenerateDealerPdfEn()}>
-            Dīlera PDF (EN)
+          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdfEn()}>
+            {pdfProgressKey === "dealer-en" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (EN)"}
           </button>
         ) : null}
         {onGenerateDealerPdfRu ? (
-          <button type="button" className={btn} disabled={busy !== null} onClick={() => onGenerateDealerPdfRu()}>
-            Dīlera PDF (RU)
+          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdfRu()}>
+            {pdfProgressKey === "dealer-ru" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (RU)"}
+          </button>
+        ) : null}
+        {onGenerateDealerPdfDe ? (
+          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdfDe()}>
+            {pdfProgressKey === "dealer-de" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (DE)"}
           </button>
         ) : null}
         <button

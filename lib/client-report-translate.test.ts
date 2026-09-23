@@ -71,4 +71,10 @@ describe("translateClientReportTexts", () => {
     const call = vi.mocked(geminiGenerateJsonText).mock.calls.at(-1)?.[0] as { systemInstruction: string };
     expect(call.systemInstruction).toContain("Russian");
   });
+
+  it("passes a German system instruction naming the target language", async () => {
+    await translateClientReportTexts({ a: "Teksts" }, "de");
+    const call = vi.mocked(geminiGenerateJsonText).mock.calls.at(-1)?.[0] as { systemInstruction: string };
+    expect(call.systemInstruction).toContain("German");
+  });
 });

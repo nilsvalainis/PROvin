@@ -1,0 +1,44 @@
+{
+  "Faq": {
+    "title": "Häufig gestellte Fragen (FAQ)",
+    "homeEyebrow": "FAQ",
+    "homeSeeAll": "Alle →",
+    "items": [
+      {
+        "id": "what-is-provin-audit",
+        "q": "Was ist ein PROVIN-Audit?",
+        "a": "PROVIN ist Ihr Berater und privater Ermittler beim Autokauf. Wir übergeben Ihnen keinen trockenen Datenausdruck. Wir verbinden Informationen aus internationalen kostenpflichtigen Datenbanken, der Servicehistorie offizieller Händler und europäischen Auktionsfotoarchiven mit dem, was am meisten zählt: der Prüfung des Inserats und der technischen Risikobewertung des konkreten Modells."
+      },
+      {
+        "id": "vs-standard-pdf",
+        "q": "Worin unterscheidet sich PROVIN von einem gewöhnlichen Historienbericht?",
+        "a": "Ein automatischer Standardbericht liefert nur Rohdaten des Systems, oft unvollständig, in denen ein Käufer Muster schwer erkennt. Wir leiten Daten nicht einfach weiter: Wir analysieren und vergleichen sie. Wir verbinden Quellen, lesen zwischen den Zeilen des Inserats, bewerten typische Schwachstellen des konkreten Motors und Getriebes und gehen in einem persönlichen Telefonat jedes Pro und Kontra durch."
+      },
+      {
+        "id": "mini-vs-audits",
+        "q": "Welches Audit passt: PROVIN MINI oder PROVIN AUDITS?",
+        "a": "PROVIN MINI (39,99 €) eignet sich für Autos, die schon länger in Lettland genutzt werden. Im Mittelpunkt stehen die lokale Historie, CSDD und Register des Herkunftslandes, aktuelle Daten der technischen Prüfung, die Inseratsanalyse und praktische Hinweise für die Besichtigung vor Ort.\n\nPROVIN AUDITS (99,99 €) ist eine vollständige Prüfung für aus dem Ausland importierte Autos. Es enthält das gesamte MINI-Paket plus kostenpflichtige internationale Datenbanken (carVertical, autoDNA, Cebia und weitere), Daten offizieller Händlersysteme und europäische Auktionsfotoarchive, damit Sie Zustand und Laufleistung vor Reparatur und Import sehen."
+      },
+      {
+        "id": "dealer-data",
+        "q": "Was sind die Daten der offiziellen Händler-Servicehistorie?",
+        "a": "Ein eigenständiges Produkt (24,99 €): Serviceeinträge des offiziellen Händlers bzw. Herstellers. Dieser Bericht enthält nur Daten aus offiziellen Händlerdatenbanken. Lieferung: 24 Stunden. Wenn in der offiziellen Händlerdatenbank keine Einträge vorliegen, erstatten wir 100 %."
+      },
+      {
+        "id": "delivery-time",
+        "q": "Wie lange dauert der Bericht?",
+        "a": "Die übliche Bearbeitungszeit beträgt 24-72 Stunden nach Zahlungseingang. Weil wir jedes Auto von Hand prüfen und analysieren, nehmen wir uns Zeit für die Details. Sobald das Audit fertig ist, senden wir es per E-Mail und vereinbaren eine kurze telefonische Beratung."
+      },
+      {
+        "id": "what-to-provide",
+        "q": "Was muss ich bei der Bestellung angeben?",
+        "a": "Sie brauchen nur die VIN oder das Kennzeichen sowie E-Mail und Telefon. Wenn Sie einen Link zum Inserat haben, fügen Sie ihn bitte hinzu. Fotos und die Beschreibung des Verkäufers liefern uns viel Wertvolles für die Analyse."
+      },
+      {
+        "id": "data-completeness",
+        "q": "Ist die Fahrzeughistorie immer zu 100 % vollständig?",
+        "a": "Seien wir ehrlich: Es gibt weltweit keine einzige \"perfekte\" Datenbank, und weder ehrliche noch unehrliche Verkäufer schreiben alles auf. Unsere Aufgabe ist, alle verfügbaren Fäden zusammenzuziehen und Widersprüche zu markieren, sobald sie auftauchen. Ein PROVIN-Audit gibt Ihnen einen klaren Vorteil in Verhandlungen und schützt vor einem offensichtlichen Fehlkauf. Eine Diagnose in der Werkstatt vor dem Kauf bleibt trotzdem ein sinnvoller letzter Schritt."
+      }
+    ]
+  }
+}

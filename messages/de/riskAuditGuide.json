@@ -1,0 +1,35 @@
+{
+  "RiskAuditGuide": {
+    "title": "Inserat kostenlos prüfen lassen",
+    "subtitle": "Senden Sie uns den Link zum Inserat und erhalten Sie einen kurzen Kommentar, ob sich eine weitere Prüfung lohnt.",
+    "triggerCta": "Inserat senden",
+    "pausedBody": "Kostenlose Inseratsprüfungen sind vorübergehend nicht verfügbar. Jeden Link prüfen wir von Hand, deshalb hat sich eine kurze Warteschlange gebildet. Bitte später oder morgen erneut versuchen.",
+    "pausedSoftCta": "Sie brauchen eine schnellere Antwort? Bestellen Sie PROVIN MINI oder PROVIN AUDITS. Diese laufen wie gewohnt.",
+    "pausedOrderCta": "Audit bestellen",
+    "form": {
+      "listingLabel": "Link zum Inserat",
+      "listingPlaceholder": "https://www.ss.com/msg/lv/… oder Mobile.de",
+      "emailLabel": "Ihre E-Mail",
+      "emailPlaceholder": "you@email.com",
+      "phoneLabel": "Telefon",
+      "phonePlaceholder": "+371 …",
+      "submit": "Prüfung anfordern",
+      "submitting": "Wird gesendet…",
+      "disclaimer": "* Ohne Risikoanalyse, Beratung und ohne Historienprüfung in Datenbanken."
+    },
+    "success": {
+      "title": "Danke! Wir haben den Link erhalten.",
+      "body": "Einen kurzen Kommentar senden wir per E-Mail."
+    },
+    "errors": {
+      "listing": "Fügen Sie einen gültigen Link zu einem konkreten Inserat ein.",
+      "email": "Die E-Mail-Adresse ist ungültig.",
+      "phone": "Die Telefonnummer ist ungültig.",
+      "rateLimited": "Eine kostenlose Prüfung wurde bereits angefordert. Wir antworten per E-Mail, oder bestellen Sie PROVIN AUDITS.",
+      "rateLimitedCta": "PROVIN AUDITS bestellen",
+      "ipRateLimited": "Von diesem Gerät bzw. Netz wurden heute bereits mehrere Anfragen gesendet. Versuchen Sie es morgen erneut oder bestellen Sie ein Audit.",
+      "queuePaused": "Kostenlose Prüfungen sind vorübergehend nicht verfügbar. Bitte später oder morgen, oder bestellen Sie ein Audit.",
+      "generic": "Senden fehlgeschlagen. Bitte erneut versuchen."
+    }
+  }
+}

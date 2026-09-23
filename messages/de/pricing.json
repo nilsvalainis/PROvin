@@ -1,0 +1,29 @@
+{
+  "Pricing": {
+    "workTitle": "WAS IST IM PREIS ENTHALTEN?",
+    "comparisonAuditTitle": "PROVIN AUDITS",
+    "comparisonAuditSubtitle": "Ein Bericht, der weit über Rohdaten hinausgeht",
+    "comparisonAuditCta": "Bestellen ab 39,99 €",
+    "grid": [
+      {
+        "title": "VOLLSTÄNDIGE HISTORIENANALYSE",
+        "body": "Archive offizieller Händler und Auktionsportale*, internationale und lokale Registerdaten in einem klaren Bild. Laufleistung, Unfälle und Diebstahlmeldungen."
+      },
+      {
+        "title": "INSERATSPRÜFUNG",
+        "body": "Fachliche Prüfung von Fotos und Beschreibung. Hinweise auf verdeckte Reparaturen und Verschleiß."
+      },
+      {
+        "title": "ANALYSE DER TECHNISCHEN RISIKEN",
+        "body": "Bewertung von Motor, Getriebe und zentralen Systemen. Zuverlässigkeit und Betriebsrisiken des konkreten Modells."
+      },
+      {
+        "title": "EMPFEHLUNGEN UND BERATUNG",
+        "body": "Schlussfolgerung aus den Daten und mehr als 10 Jahren Erfahrung. Persönliche Beratung nach dem Bericht.",
+        "href": true
+      }
+    ],
+    "irissLink": "WER STEHT HINTER PROVIN?",
+    "autoRecordsFootnote": "* Daten aus offiziellen Händlersystemen und Auktionsarchiven sind für ausgewählte Hersteller und Modelle verfügbar"
+  }
+}

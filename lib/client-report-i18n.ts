@@ -13,9 +13,11 @@
  * tie paliek nemainīgi visās valodās.
  */
 
-export type ClientReportLang = "lv" | "en" | "ru";
+export type ClientReportLang = "lv" | "en" | "ru" | "de";
 
-export const CLIENT_REPORT_LANGS: ClientReportLang[] = ["lv", "en", "ru"];
+export const CLIENT_REPORT_LANGS: ClientReportLang[] = ["lv", "en", "ru", "de"];
+
+export type ClientReportTargetLang = Exclude<ClientReportLang, "lv">;
 
 type StaticTranslationEntry = { en: string; ru: string };
 
@@ -182,9 +184,118 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Viena virkne — izmanto vietās, kur teksts jau ir atsevišķa mainīgā (nevis pilns HTML). */
+/** Vācu statiskais apvalks. Katram STATIC_TRANSLATIONS atslēgas vārdam jābūt ierakstam. */
+export const CLIENT_REPORT_DE: Record<string, string> = {
+  "TRANSPORTLĪDZEKĻA AUDITS": "FAHRZEUGHISTORIE-AUDIT",
+  "APPROVED BY IRISS": "APPROVED BY IRISS",
+  "1. Tehnisko risku analīze": "1. Analyse der technischen Risiken",
+  "2. Ieteikumi klātienes apskatei": "2. Empfehlungen für die Besichtigung vor Ort",
+  "3. Kopsavilkums": "3. Zusammenfassung",
+  "Tehnisko risku analīze": "Analyse der technischen Risiken",
+  "NOBRAUKUMA VĒSTURE": "KILOMETERSTAND-HISTORIE",
+  "NOBRAUKUMA VĒSTURES KOMENTĀRS": "KOMMENTAR ZUR KILOMETERSTAND-HISTORIE",
+  "NEGADĪJUMU VĒSTURES KOPSAVILKUMS": "ZUSAMMENFASSUNG DER SCHADENSHISTORIE",
+  Negadījums: "Schaden",
+  "Negadījumi:": "Schäden:",
+  "Negadījumu skaits:": "Anzahl der Schäden:",
+  "Zaudējumu dati": "Schadendaten",
+  "SLUDINĀJUMA ANALĪZE": "INSERATSANALYSE",
+  "Sludinājuma analīze": "Inseratsanalyse",
+  "Cenas izmaiņas šajā sludinājumā": "Preisänderungen in diesem Inserat",
+  "Cenas izmaiņa:": "Preisänderung:",
+  "Ilgums tirgū:": "Standzeit:",
+  "Tirgus dati": "Marktdaten",
+  "OFICIĀLĀ DĪLERA DATI": "OFFIZIELLE HÄNDLERDATEN",
+  "DĀNIJAS REĢISTRI": "DÄNISCHE REGISTER",
+  "NĪDERLANDES REĢISTRI": "NIEDERLÄNDISCHE REGISTER",
+  "ZVIEDRIJAS REĢISTRI": "SCHWEDISCHE REGISTER",
+  "Igaunijas reģistrs": "Estnisches Register",
+  "Igaunijas OCTA": "Estnische OCTA",
+  "CITI AVOTI": "WEITERE QUELLEN",
+  "Servisa vēsture": "Servicehistorie",
+  "Eļļas maiņas intervāli": "Ölwechselintervalle",
+  "Servisa un remontu vēsture": "Service- und Reparaturhistorie",
+  "Fotogrāfiju pielikums": "Fotoanhang",
+  " atskaites ģenerēšanā izmantotie avoti": " für diesen Bericht verwendete Quellen",
+  "Maksas vēstures atskaites": "Kostenpflichtige Historienberichte",
+  "Publiskas Eiropas datubāzes": "Öffentliche europäische Datenbanken",
+  "Kas tika pārbaudīts": "Was geprüft wurde",
+  Kopā: "Gesamt",
+  Datums: "Datum",
+  "Odometrs (km)": "Kilometerstand (km)",
+  Avots: "Quelle",
+  Valsts: "Land",
+  Komentārs: "Kommentar",
+  "Marka, modelis:": "Marke, Modell:",
+  "Reģistrācijas numurs:": "Kennzeichen:",
+  "Pirmā reģistrācija:": "Erstzulassung:",
+  "Nākamās apskates datums:": "Nächster HU-Termin:",
+  "Iepriekšējās apskates datums:": "Vorheriger Prüftermin:",
+  "Motora tilpums (cm³):": "Hubraum (cm³):",
+  "Motora maksimālā jauda (kW):": "Max. Motorleistung (kW):",
+  "Degvielas veids:": "Kraftstoff:",
+  "Emisiju standarts:": "Abgasnorm:",
+  "Pilna masa (kg):": "Zulässige Gesamtmasse (kg):",
+  "Pašmasa (kg):": "Leermasse (kg):",
+  "Ekspluatācijas nodoklis (EUR):": "Kfz-Steuer (EUR):",
+  "Reģistrācijas statuss:": "Zulassungsstatus:",
+  "Dūmainības koeficients (m⁻¹):": "Trübungskoeffizient (m⁻¹):",
+  "Atgāzu cietās daļiņas:": "Partikel im Abgas:",
+  "Iepriekšējās reģistrācijas valsts:": "Land der vorherigen Zulassung:",
+  "Īpašnieku skaits Latvijā:": "Anzahl der Halter in Lettland:",
+  "Tehnisko apskašu vēsture": "Historie der technischen Prüfungen",
+  "Iepriekšējās apskates dati": "Daten der vorherigen Prüfung",
+  "Auto pārdošanā (dienas):": "Inseriert (Tage):",
+  "Izveidots:": "Erstellt:",
+  "Cenas izmaiņas (eiro):": "Preisänderungen (EUR):",
+  "Odometrs, km:": "Kilometerstand, km:",
+  "Drukāt / PDF": "Drucken / PDF",
+  "Drukāt (augsts kontrasts)": "Drucken (hoher Kontrast)",
+  "Drukājamā versija - palielināts kontrasts papīram. Digitālajam PDF lietojiet „Ģenerēt PDF”.":
+    "Druckversion mit höherem Kontrast für Papier. Für ein digitales PDF „PDF erzeugen“ verwenden.",
+  "Demonstrācijas dati": "Demodaten",
+  Ģenerēts: "Erstellt",
+  "ATSKAITES KOPSAVILKUMS": "BERICHTSZUSAMMENFASSUNG",
+  "Vēstures kopsavilkums": "Historienzusammenfassung",
+  "NEGADĪJUMU VĒSTURE": "SCHADENSHISTORIE",
+  "Negadījumi un bojājumi": "Schäden und Beschädigungen",
+  "Avotos nav fiksētu negadījumu": "In den Quellen sind keine Unfälle erfasst",
+  "Nav ierakstu": "Keine Einträge",
+  "Īpašnieku skaits": "Anzahl der Halter",
+  "Reģistrācija Latvijā": "Zulassung in Lettland",
+  Nobraukums: "Kilometerstand",
+  "DĪLERA DATI": "HÄNDLERDATEN",
+  "IZSOĻU PORTĀLU ARHĪVS": "AUKTIONSARCHIV",
+  "Pirmā reģistrācija": "Erstzulassung",
+  "Tehniskā apskate": "Technische Prüfung",
+  "Īpašnieka maiņa": "Halterwechsel",
+  "Servisa apmeklējums": "Werkstattbesuch",
+  Sludinājums: "Inserat",
+  "Sludinājuma cenas izmaiņa": "Preisänderung im Inserat",
+  "Izlikts pārdošanā": "Zum Verkauf inseriert",
+  "(pēc sludinājuma, nav apstiprināts)": "(laut Inserat, nicht bestätigt)",
+  "Sludinājuma vēsture": "Inseratshistorie",
+  "Pārdevēja portrets": "Verkäuferprofil",
+  "Fotogrāfiju analīze": "Fotoanalyse",
+  "Pārdošanas sludinājuma konteksts": "Kontext des Verkaufsinserats",
+  "Grafika ģenerēšanā izmantotais avotu skaits:": "Anzahl der Quellen für die Grafik:",
+  pārbaudīts: "geprüft",
+  Atruna: "Hinweis",
+  Konfidencialitāte: "Vertraulichkeit",
+  "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.":
+    "PROVIN.LV erbringt eine Beratungsleistung: eine Bewertung der verfügbaren Fahrzeuginformationen und Empfehlungen. Dies ist eine digitale Datenzusammenstellung, keine technische Diagnose des Fahrzeugs, und sie ersetzt keine vollständige Prüfung vor Ort. Der Bericht ist kein Behördenauszug, kein unabhängiges technisches Gutachten und kein Rechtsurteil. Die Kaufentscheidung trifft der Kunde.",
+  "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.":
+    "Dieser Bericht wurde ausschließlich für den Auftraggeber erstellt und darf nur für private Zwecke verwendet werden. Den Bericht und die darin enthaltenen Informationen zu vervielfältigen, öffentlich wiederzugeben, weiterzugeben oder Dritten (einschließlich des Fahrzeugverkäufers) ohne Abstimmung mit PROVIN.LV zugänglich zu machen, ist untersagt.",
+};
+
+export function clientReportStaticKeys(): string[] {
+  return Object.keys(STATIC_TRANSLATIONS);
+}
+
+/** Viena virkne. Trūkstošs tulkojums paliek latviski. */
 export function translateClientReportStatic(lv: string, lang: ClientReportLang): string {
   if (lang === "lv") return lv;
+  if (lang === "de") return CLIENT_REPORT_DE[lv] ?? lv;
   return STATIC_TRANSLATIONS[lv]?.[lang] ?? lv;
 }
 
@@ -199,7 +310,7 @@ export function applyClientReportStaticTranslations(html: string, lang: ClientRe
   if (lang === "lv") return html;
   let out = html.replace(/<html lang="lv"/, `<html lang="${lang}"`);
   for (const lv of SORTED_STATIC_KEYS) {
-    const translated = STATIC_TRANSLATIONS[lv][lang];
+    const translated = translateClientReportStatic(lv, lang);
     if (!translated || translated === lv) continue;
     out = out.replace(new RegExp(escapeRegExp(lv), "g"), translated);
   }

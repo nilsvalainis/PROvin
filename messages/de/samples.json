@@ -1,0 +1,21 @@
+{
+  "Samples": {
+    "heading": "Beispielberichte",
+    "navLabel": "Beispiele",
+    "lead": "Echte Beispiele von PROVIN AUDITS. Sehen Sie, wie ein fertiger Bericht aussieht, bevor Sie Ihren bestellen.",
+    "exampleLabel": "Beispiel eines PROVIN-Audits:",
+    "orderCta": "Ein solches Audit bestellen",
+    "previewLabel": "Beispielbericht",
+    "enlargeLabel": "Vergrößern",
+    "closeLabel": "Schließen",
+    "openPdfLabel": "PDF öffnen",
+    "items": {
+      "fordGalaxy": {
+        "title": "Ford Galaxy"
+      },
+      "bmw525e61": {
+        "title": "BMW 525 LCI e61"
+      }
+    }
+  }
+}

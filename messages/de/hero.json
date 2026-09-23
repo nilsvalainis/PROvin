@@ -1,0 +1,45 @@
+{
+  "Hero": {
+    "approved": "APPROVED BY IRISS",
+    "h1Vin": "VIN",
+    "h1Un": "UND",
+    "h1Sludinajuma": "INSERATS",
+    "h1Line2": "AUDIT",
+    "productTitlePart1": "FAHRZEUGHISTORIE",
+    "productTitlePart2": " UND INSERATS",
+    "productTitlePart3": "AUDIT",
+    "productSubheadRich": "Erfahren Sie alles über Ihr nächstes Auto. Das Audit verbindet mehrere kostenpflichtige Historienberichte, Daten offizieller Händler und Auktionsarchive, eine Inseratsprüfung und die technische Risikoanalyse des konkreten Modells, gestützt auf mehr als 10 Jahre Erfahrung.",
+    "productValueStripAria": "Vorteile des PROVIN-Audits",
+    "productValue1": "Historienprüfung",
+    "productValue2": "Inseratsaudit",
+    "productValue3": "Technische Risikoanalyse",
+    "productValue4": "Empfehlungen und Beratung",
+    "heroOrderBenefitsAria": "Was das Audit umfasst",
+    "heroOrderBenefits": [
+      "Historienberichte",
+      "Inseratsaudit",
+      "Technische Risikoanalyse",
+      "Empfehlungen und Beratung"
+    ],
+    "italyKicker": "Ein Bericht, der deutlich mehr zeigt...",
+    "lensLine1": "FAHRZEUGHISTORIE UND INSERAT",
+    "lensLine2": "AUDIT",
+    "h2": "IHR PERSÖNLICHER AUTO-DETEKTIV",
+    "pillars": [
+      { "title": "HISTORIEN\nPRÜFUNG", "body": "" },
+      { "title": "INSERATS\nANALYSE", "body": "" },
+      { "title": "TECHNISCHE\nRISIKOANALYSE", "body": "" },
+      { "title": "PERSÖNLICHE\nBERATUNG", "body": "" }
+    ],
+    "cta": "Bestellen ab 39,99 €",
+    "heroMobileOrderCta": "Bestellen ab 39,99 €",
+    "heroResultTime": "Ergebnis in 24-72 Stunden",
+    "heroConsultLink": "",
+    "heroConsultCta": "",
+    "orderPin": "Bestellen",
+    "trustBody": "",
+    "scrollToPricingAria": "Weiter",
+    "introBlurbTitle": "Was ist",
+    "introBlurbTitleSuffix": "?"
+  }
+}

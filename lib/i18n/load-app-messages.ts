@@ -1,12 +1,10 @@
 import type { AbstractIntlMessages } from "next-intl";
-import { isAppLocale, isB2bOnlyLocale, siteMessageLocale, type AppLocale } from "@/i18n/locales";
+import { isAppLocale, type AppLocale } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 
 export type { AppLocale };
 
 export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMessages> {
-  const site = siteMessageLocale(locale);
-  const chrome = isB2bOnlyLocale(locale) ? locale : site;
   const [
     meta,
     header,
@@ -25,21 +23,21 @@ export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMe
     samples,
     partner,
   ] = await Promise.all([
-    import(`../../messages/${site}/meta.json`),
-    import(`../../messages/${chrome}/header.json`),
-    import(`../../messages/${site}/hero.json`),
-    import(`../../messages/${site}/pricing.json`),
-    import(`../../messages/${site}/iriss.json`),
-    import(`../../messages/${site}/faq.json`),
-    import(`../../messages/${site}/order.json`),
-    import(`../../messages/${chrome}/footer.json`),
-    import(`../../messages/${site}/thanks.json`),
-    import(`../../messages/${site}/misc.json`),
-    import(`../../messages/${chrome}/legal.json`),
-    import(`../../messages/${site}/provinSelect.json`),
-    import(`../../messages/${site}/googleReviews.json`),
-    import(`../../messages/${site}/riskAuditGuide.json`),
-    import(`../../messages/${site}/samples.json`),
+    import(`../../messages/${locale}/meta.json`),
+    import(`../../messages/${locale}/header.json`),
+    import(`../../messages/${locale}/hero.json`),
+    import(`../../messages/${locale}/pricing.json`),
+    import(`../../messages/${locale}/iriss.json`),
+    import(`../../messages/${locale}/faq.json`),
+    import(`../../messages/${locale}/order.json`),
+    import(`../../messages/${locale}/footer.json`),
+    import(`../../messages/${locale}/thanks.json`),
+    import(`../../messages/${locale}/misc.json`),
+    import(`../../messages/${locale}/legal.json`),
+    import(`../../messages/${locale}/provinSelect.json`),
+    import(`../../messages/${locale}/googleReviews.json`),
+    import(`../../messages/${locale}/riskAuditGuide.json`),
+    import(`../../messages/${locale}/samples.json`),
     import(`../../messages/${locale}/partner.json`),
   ]);
 

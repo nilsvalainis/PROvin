@@ -8,7 +8,7 @@ export const routing = defineRouting({
   /**
    * Viens `lv`: `as-needed` un `never` dev vidē deva 307 cilpu uz `/` (next-intl + viena lokalizācija).
    * `always` — `/` → `/lv` vienu reizi, tad lapa ielādējas (URL ar `/lv` prefiksu).
-   * `de` un `ru` ir B2B lokalizācijas; publiskās lapas no tām middleware sūta uz `/en`.
+   * `de` un `ru` ir publiskās valodas ar pilniem tulkojumiem. Krievu valodu neizvēlas pēc IP.
    */
   localePrefix: "always",
 });

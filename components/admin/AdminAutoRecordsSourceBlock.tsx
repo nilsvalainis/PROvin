@@ -105,6 +105,9 @@ type Props = {
   onGenerateDealerPdf?: () => void;
   onGenerateDealerPdfEn?: () => void;
   onGenerateDealerPdfRu?: () => void;
+  onGenerateDealerPdfDe?: () => void;
+  dealerPdfProgressKey?: string | null;
+  dealerPdfProgressPct?: number | null;
   /** Copilot dīlera PDF aģentam vajag visus avotu blokus (valstu noteikšanai). */
   getSourceBlocks?: () => WorkspaceSourceBlocks;
   applyPatchedBlocks?: (
@@ -135,6 +138,9 @@ export function AdminAutoRecordsSourceBlock({
   onGenerateDealerPdf,
   onGenerateDealerPdfEn,
   onGenerateDealerPdfRu,
+  onGenerateDealerPdfDe,
+  dealerPdfProgressKey = null,
+  dealerPdfProgressPct = null,
   getSourceBlocks,
   applyPatchedBlocks,
   pdfInclude,
@@ -283,6 +289,9 @@ export function AdminAutoRecordsSourceBlock({
               onGenerateDealerPdf={onGenerateDealerPdf}
               onGenerateDealerPdfEn={onGenerateDealerPdfEn}
               onGenerateDealerPdfRu={onGenerateDealerPdfRu}
+              onGenerateDealerPdfDe={onGenerateDealerPdfDe}
+              pdfProgressKey={dealerPdfProgressKey}
+              pdfProgressPct={dealerPdfProgressPct}
             />
           ) : null}
           <AdminOneautoIngestBar

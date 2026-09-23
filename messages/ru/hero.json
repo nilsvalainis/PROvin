@@ -1,0 +1,45 @@
+{
+  "Hero": {
+    "approved": "APPROVED BY IRISS",
+    "h1Vin": "VIN",
+    "h1Un": "И",
+    "h1Sludinajuma": "ОБЪЯВЛЕНИЯ",
+    "h1Line2": "АУДИТ",
+    "productTitlePart1": "ИСТОРИЯ АВТО",
+    "productTitlePart2": " И ОБЪЯВЛЕНИЯ ",
+    "productTitlePart3": "АУДИТ",
+    "productSubheadRich": "Узнайте всё о следующей машине. В аудите собраны несколько платных отчётов об истории, данные официальных дилеров и архивов аукционов, экспертиза объявления и анализ технических рисков конкретной модели, основанный на опыте более 10 лет.",
+    "productValueStripAria": "Что даёт аудит PROVIN",
+    "productValue1": "Проверка истории",
+    "productValue2": "Аудит объявления",
+    "productValue3": "Анализ технических рисков",
+    "productValue4": "Рекомендации и консультация",
+    "heroOrderBenefitsAria": "Что входит в аудит",
+    "heroOrderBenefits": [
+      "Отчёты об истории",
+      "Аудит объявления",
+      "Анализ технических рисков",
+      "Рекомендации и консультация"
+    ],
+    "italyKicker": "Отчёт, который рассказывает гораздо больше...",
+    "lensLine1": "ИСТОРИЯ АВТО И ОБЪЯВЛЕНИЕ",
+    "lensLine2": "АУДИТ",
+    "h2": "ВАШ ЛИЧНЫЙ АВТОДЕТЕКТИВ",
+    "pillars": [
+      { "title": "ПРОВЕРКА\nИСТОРИИ", "body": "" },
+      { "title": "АНАЛИЗ\nОБЪЯВЛЕНИЯ", "body": "" },
+      { "title": "АНАЛИЗ\nТЕХНИЧЕСКИХ РИСКОВ", "body": "" },
+      { "title": "ЛИЧНАЯ\nКОНСУЛЬТАЦИЯ", "body": "" }
+    ],
+    "cta": "Заказать от 39,99 €",
+    "heroMobileOrderCta": "Заказать от 39,99 €",
+    "heroResultTime": "Результат за 24-72 часа",
+    "heroConsultLink": "",
+    "heroConsultCta": "",
+    "orderPin": "Заказать",
+    "trustBody": "",
+    "scrollToPricingAria": "Дальше",
+    "introBlurbTitle": "Что такое",
+    "introBlurbTitleSuffix": "?"
+  }
+}

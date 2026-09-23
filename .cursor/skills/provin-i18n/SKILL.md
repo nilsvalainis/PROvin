@@ -7,13 +7,13 @@ description: >-
   marketing/checkout/legal copy in app/[locale] or components (not admin).
 ---
 
-# PROVIN i18n (lv / en + B2B de / ru)
+# PROVIN i18n (lv / en / de / ru)
 
 Public site copy lives in JSON. Admin UI is Latvian-only and is **not** this skill — see [provin-admin-ui](../provin-admin-ui/SKILL.md). Legal/Stripe identity still follows `.cursor/rules/business-legal-lv.mdc`.
 
 ## When to apply
 
-- `messages/lv/**`, `messages/en/**`, B2B-only `messages/de/partner.json`, `messages/ru/partner.json`
+- `messages/lv/**`, `messages/en/**`, `messages/de/**`, `messages/ru/**`
 - `i18n/locales.ts`, `i18n/routing.ts`, `i18n/request.ts`, `i18n/navigation.ts`, `lib/i18n/load-app-messages.ts`, `middleware.ts`
 - `useTranslations`, `useLocale`, `getTranslations` from `next-intl`
 - Public pages under `app/[locale]/` and marketing/checkout components
@@ -24,15 +24,14 @@ Do **not** use for admin ✨ expert copy (`provin-field-agent`) or grammar polis
 
 | | |
 |---|---|
-| Public locales | `lv` (default), `en` |
-| B2B extra | `de`, `ru` (`/de/partneriem`, `/ru/partneriem` only) |
+| Public locales | `lv` (default), `en`, `de`, `ru` |
 | Prefix | `localePrefix: "always"` |
-| Detection | `localeDetection: false` in next-intl. B2B entry uses `i18n/locales.ts`: cookie, then `x-vercel-ip-country` (DE/AT → `de`, LV → `lv`, other countries → `en`). Explicit `/en|/de|/ru` wins. `/lv/partneriem` is treated as the site default dump from `/`. Non-partner `/de` and `/ru` redirect to `/en`. |
+| Detection | `localeDetection: false` in next-intl. B2B entry uses `i18n/locales.ts`: cookie, then `x-vercel-ip-country` (DE/AT → `de`, LV → `lv`, other countries → `en`). Explicit `/en|/de|/ru` wins. `/lv/partneriem` is treated as the site default dump from `/`. |
 | Plugin | `next.config.ts` → `createNextIntlPlugin("./i18n/request.ts")` |
 
-Links and redirects for localized routes: `Link` / `redirect` / `usePathname` from `@/i18n/navigation`, never `next/link` or hardcoded `/lv` prefixes in hrefs. B2B language switcher: `B2bLocaleSwitcher`.
+Links and redirects for localized routes: `Link` / `redirect` / `usePathname` from `@/i18n/navigation`, never `next/link` or hardcoded `/lv` prefixes in hrefs. Language switcher: `B2bLocaleSwitcher` (also the public header).
 
-`de`/`ru` load English site chrome (header, footer, legal) and native `partner.json`. Do not add full `messages/de/*` or `messages/ru/*` until the public site is actually translated.
+Every public namespace loads from `messages/${locale}/`. German uses Sie. Russian uses вы. Do not fall back de/ru pages to English.
 
 ## File map
 
@@ -43,18 +42,15 @@ messages/lv/hero.json
 messages/en/hero.json
 ```
 
-Namespaces (must exist in **lv and en**): `meta`, `header`, `hero`, `pricing`, `iriss`, `faq`, `order`, `footer`, `thanks`, `misc`, `legal`, `provinSelect`, `googleReviews`, `riskAuditGuide`, `samples`, `partner`.
+Namespaces (must exist in **lv, en, de and ru**, same keys): `meta`, `header`, `hero`, `pricing`, `iriss`, `faq`, `order`, `footer`, `thanks`, `misc`, `legal`, `provinSelect`, `googleReviews`, `riskAuditGuide`, `samples`, `partner`.
 
-B2B `partner.json` must exist in **lv, en, de, ru** with the same keys.
-
-Register a **new** namespace in `lib/i18n/load-app-messages.ts` (`loadAppMessages`) for lv/en. B2B-only strings go in all four `partner.json` files.
+Register a **new** namespace in `lib/i18n/load-app-messages.ts` (`loadAppMessages`) and add the JSON file in all four locales.
 
 Top-level JSON keys are next-intl namespaces (`Hero`, `Order`, `Header`, …). Components call `useTranslations("Hero")` then `t("cta")`.
 
 ## Parity checklist (every copy change)
 
-1. Public copy: add or change the key in `messages/lv/{file}.json` **and** `messages/en/{file}.json` with the **same key path**.
-2. B2B `Partner` keys: same path in `lv`, `en`, `de`, `ru`. Translate for context, not word-for-word. German uses Sie. Russian uses вы.
+1. Public copy: add or change the key in `messages/lv`, `messages/en`, `messages/de` and `messages/ru` with the **same key path**. Translate for context. German uses Sie. Russian uses вы.
 3. Do not leave English as a copy-paste of Latvian, or Latvian as machine-English.
 4. Arrays/objects must have the same shape (e.g. `Hero.pillars`, `Hero.heroOrderBenefits`).
 5. Empty strings that are intentional placeholders (`heroConsultLink: ""`) stay empty in **both** public files.
@@ -74,7 +70,7 @@ Top-level JSON keys are next-intl namespaces (`Hero`, `Order`, `Header`, …). C
 
 ## Do not
 
-- Add a public third locale without translating **all** lv/en namespaces, sitemap, and legal copy.
+- Ship a locale without translating **all** namespaces, sitemap, and legal copy.
 - Translate admin source-block labels (`SOURCE_BLOCK_LABELS`) via next-intl.
 - Change `localePrefix` without checking the `/` → `/lv` redirect loop note in `i18n/routing.ts`.
-- Auto-select Russian from a RU/BY IP. Russian is a B2B switcher language; default foreign locale is English.
+- Auto-select Russian from a RU/BY IP. Default foreign locale stays English. Russian is chosen only in the language switcher.
