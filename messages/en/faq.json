@@ -22,7 +22,7 @@
       {
         "id": "dealer-data",
         "q": "What is Official dealer service history data?",
-        "a": "An independent product (€24.99): official dealer/manufacturer service records. This report includes only data from official dealer databases. Delivery: 24h. If official dealer database records are unavailable, 100% refund."
+        "a": "A standalone product (€24.99): official dealer or manufacturer service records. This report contains only data from official dealer databases. Delivery within 24 hours. If the official dealer database holds no records, we refund the full amount."
       },
       {
         "id": "delivery-time",
@@ -32,7 +32,7 @@
       {
         "id": "what-to-provide",
         "q": "What do I need to provide when ordering?",
-        "a": "You only need the car's VIN or licence plate number, plus your email and phone. If you have a listing link, add it as well! Listing photos and the seller's description give us a lot of valuable information for the analysis."
+        "a": "You only need the car's VIN or licence plate number, plus your email and phone. If you have a listing link, add it as well: the listing photos and the seller's description give us a lot of valuable material for the analysis."
       },
       {
         "id": "data-completeness",

@@ -504,7 +504,7 @@ export async function sendPartnerVerifyEmail(opts: {
     lv: change ? "PROVIN.LV: apstipriniet jauno e-pastu" : "PROVIN.LV: apstipriniet e-pastu",
     en: change ? "PROVIN.LV: confirm your new email" : "PROVIN.LV: confirm your email",
     de: change ? "PROVIN.LV: neue E-Mail bestätigen" : "PROVIN.LV: E-Mail bestätigen",
-    ru: change ? "PROVIN.LV: подтвердите новую почту" : "PROVIN.LV: подтвердите почту",
+    ru: change ? "PROVIN.LV: подтвердите новый адрес" : "PROVIN.LV: подтвердите адрес почты",
   }[loc];
   const lead = {
     lv: change
@@ -515,16 +515,16 @@ export async function sendPartnerVerifyEmail(opts: {
       : "Confirm this address to finish opening your PROVIN.LV partner account.",
     de: change
       ? "Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern."
-      : "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto zu eröffnen.",
+      : "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto einzurichten.",
     ru: change
-      ? "Подтвердите этот адрес, чтобы сменить почту партнёрского аккаунта PROVIN.LV."
+      ? "Подтвердите этот адрес, чтобы сменить адрес почты партнёрского аккаунта PROVIN.LV."
       : "Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.",
   }[loc];
   const hint = {
     lv: "Saite ir derīga 24 stundas un izmantojama vienu reizi.",
     en: "The link is valid for 24 hours and can be used once.",
     de: "Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
-    ru: "Ссылка действует 24 часа и только один раз.",
+    ru: "Ссылка действует 24 часа и срабатывает только один раз.",
   }[loc];
   const text = [lead, "", opts.verifyUrl, "", hint].join("\n");
   const html = partnerVerifyEmailHtml({
@@ -581,7 +581,7 @@ export async function sendPartnerPasswordResetEmail(opts: {
     lv: "Saite ir derīga 24 stundas un izmantojama vienu reizi.",
     en: "The link is valid for 24 hours and can be used once.",
     de: "Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
-    ru: "Ссылка действует 24 часа и только один раз.",
+    ru: "Ссылка действует 24 часа и срабатывает только один раз.",
   }[loc];
   const text = [lead, "", opts.resetUrl, "", hint].join("\n");
   const html = partnerPasswordResetEmailHtml({

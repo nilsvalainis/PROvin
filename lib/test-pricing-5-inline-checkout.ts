@@ -134,7 +134,7 @@ const TP5_STRIPE_CHECKOUT_PRODUCT_DE: Record<
   premium: {
     productName: "PROVIN AUDITS",
     productDesc:
-      "Vollständige Historienprüfung in kostenpflichtigen Datenbanken, Analyse von Inserat und Risiken.",
+      "Vollständige Prüfung der Fahrzeughistorie in kostenpflichtigen Datenbanken, Analyse von Inserat und Risiken.",
   },
   dealer: {
     productName: "Servicehistorie des offiziellen Händlers",
@@ -158,7 +158,8 @@ const TP5_STRIPE_CHECKOUT_PRODUCT_RU: Record<
   },
   premium: {
     productName: "PROVIN AUDITS",
-    productDesc: "Полная проверка истории в платных базах, разбор объявления и анализ рисков.",
+    productDesc:
+      "Полная проверка истории автомобиля в платных базах, разбор объявления и анализ рисков.",
   },
   dealer: {
     productName: "Сервисная история официального дилера",
@@ -205,7 +206,7 @@ const TP5_INLINE_FIELD_MESSAGES = {
   },
   ru: {
     listingUrl: "Введите полную ссылку на конкретное объявление.",
-    vin: "Введите корректный VIN или госномер (3-6 знаков).",
+    vin: "Введите корректный VIN или госномер (3-6 символов).",
   },
 } as const;
 

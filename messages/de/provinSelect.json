@@ -5,11 +5,11 @@
     "included": [
       {
         "title": "PASSENDE MODELLE\nAUSWÄHLEN",
-        "body": "Wir stellen 3 Marken und Modelle zusammen, die zu Ihrem Bedarf, Budget und den Unterhaltskosten passen. Sie verlieren keine Zeit mehr mit ungeeigneten Optionen."
+        "body": "Wir stellen 3 Marken und Modelle zusammen, die zu Ihrem Bedarf, Ihrem Budget und den Unterhaltskosten passen. So verlieren Sie keine Zeit mit ungeeigneten Optionen."
       },
       {
         "title": "GEZIELTE SUCHE\nNACH INSERATEN",
-        "body": "Wir prüfen passende Angebote von Hand und sortieren riskante Inserate von Anfang an aus. Sie erhalten nur Optionen, die Ihre Zeit wert sind."
+        "body": "Wir prüfen passende Angebote manuell und sortieren riskante Inserate von Anfang an aus. Sie erhalten nur Fahrzeuge, die Ihre Zeit wert sind."
       },
       {
         "title": "PROGNOSE DER\nTECHNISCHEN RISIKEN",
@@ -21,28 +21,28 @@
       }
     ],
     "cardsTrustLine": "5 geprüfte Optionen · Begleitung im gesamten Prozess",
-    "cardsVinNote": "VIN-Prüfungen sind nicht enthalten (das übernimmt das PROVIN-Audit).",
+    "cardsVinNote": "VIN-Abfragen sind nicht enthalten (das übernimmt das PROVIN-Audit).",
     "comparisonScrollCta": "BERATUNG BUCHEN 49,99 €",
     "ctaPrimary": "BERATUNG BUCHEN",
-    "formTitle": "Anfrage zur Beratung",
+    "formTitle": "Beratungsanfrage",
     "strategyFormTitle": "Formular",
     "formIntro": "Geben Sie Ihre Daten ein und schließen Sie die Zahlung ab, damit wir alles für Ihre Beratung vorbereiten können.",
-    "groupTitleCarAria": "Kriterien zum Auto",
+    "groupTitleCarAria": "Kriterien zum Fahrzeug",
     "groupTitleContact": "Kontakt",
     "requiredSrOnly": "Pflichtfeld",
     "budgetPlaceholder": "z. B. 20 000",
     "enginePlaceholder": "z. B. Benzin 1.4 TSI",
     "transmissionPlaceholder": "z. B. Schaltgetriebe",
     "fieldBrandModel": "Marke/Modell:",
-    "fieldProductionYears": "Baujahr:",
+    "fieldProductionYears": "Baujahre:",
     "fieldPlannedBudget": "Geplantes Budget (€):",
-    "fieldEngineType": "Motor:",
+    "fieldEngineType": "Motorisierung:",
     "fieldTransmission": "Getriebe:",
     "fieldMaxMileage": "Maximale Laufleistung:",
     "fieldExteriorColors": "Bevorzugte Außenfarben:",
-    "fieldInteriorMaterial": "Innenfarbe / Material:",
-    "fieldRequiredEquipment": "Pflichtausstattung:",
-    "fieldDesiredEquipment": "Wunschausstattung:",
+    "fieldInteriorMaterial": "Innenraum: Farbe / Material:",
+    "fieldRequiredEquipment": "Ausstattung (Pflicht):",
+    "fieldDesiredEquipment": "Ausstattung (Wunsch):",
     "nameLabel": "Name",
     "phoneLabel": "Telefonnummer",
     "emailLabel": "E-Mail",
@@ -50,7 +50,7 @@
     "commentPlaceholder": "Weiterer Kontext, wenn Sie möchten…",
     "followupNote": "Nach dem Absenden melden wir uns innerhalb von 48 Stunden.",
     "submit": "Beratung buchen 49,99 €",
-    "financingNote": "Wir können auch helfen, die passende Finanzierungsform einzuschätzen, damit die Entscheidung nicht nur das Auto, sondern auch den Kaufweg betrifft.",
+    "financingNote": "Auf Wunsch schätzen wir auch die passende Finanzierungsform ein, damit nicht nur das Auto stimmt, sondern auch der Weg zum Kauf.",
     "submitting": "Wird gesendet…",
     "success": "Danke, die Anfrage ist eingegangen. Wir melden uns innerhalb von 48 Stunden.",
     "errorGeneric": "Senden fehlgeschlagen. Bitte erneut versuchen oder an info@provin.lv schreiben.",

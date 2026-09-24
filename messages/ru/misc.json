@@ -4,20 +4,20 @@
     "faqBack": "← На главную",
     "pasutitRedirect": "Переход к форме заказа…",
     "checkoutProductName": "PROVIN AUDITS",
-    "checkoutProductDesc": "Полная проверка истории в платных базах, разбор объявления и анализ рисков.",
+    "checkoutProductDesc": "Полная проверка истории автомобиля в платных базах, разбор объявления и анализ рисков.",
     "checkoutConsultationProductName": "PROVIN: стратегическая консультация",
-    "checkoutConsultationProductDesc": "Личная консультация и ориентир по рынку: контекст VIN и объявления, взгляд на риски и следующие шаги.",
+    "checkoutConsultationProductDesc": "Личная консультация и ориентир по рынку: контекст VIN и объявления, оценка рисков и следующие шаги.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nСтратегическая консультация",
     "checkoutProvinSelectProductDesc": "Личная консультация для решения о покупке"
   },
   "Blogs": {
     "comingSoon": "СКОРО",
     "sermonTitle": "ПРОПОВЕДЬ БЕЗ АЛТАРЯ",
-    "readMore": "Читать запись",
-    "backToList": "← Все записи",
-    "lvOnlyNote": "Полный текст доступен на латышском.",
+    "readMore": "Читать статью",
+    "backToList": "← Все статьи",
+    "lvOnlyNote": "Полный текст доступен на латышском языке.",
     "commentsTitle": "Комментарии",
-    "commentsEmpty": "Пока тихо. Будьте первым.",
+    "commentsEmpty": "Комментариев пока нет. Будьте первым.",
     "commentName": "Имя",
     "commentBody": "Комментарий",
     "commentSubmit": "Отправить",
@@ -33,6 +33,6 @@
     "provinSelect": "Консультация",
     "kasSlapjasAizProvin": "О PROVIN",
     "b2b": "Для дилеров",
-    "b2bLoginAria": "Для дилеров, войти"
+    "b2bLoginAria": "Для дилеров: войти"
   }
 }

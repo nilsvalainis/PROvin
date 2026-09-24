@@ -6,12 +6,12 @@
     "comparisonAuditCta": "Bestellen ab 39,99 €",
     "grid": [
       {
-        "title": "VOLLSTÄNDIGE HISTORIENANALYSE",
-        "body": "Archive offizieller Händler und Auktionsportale*, internationale und lokale Registerdaten in einem klaren Bild. Laufleistung, Unfälle und Diebstahlmeldungen."
+        "title": "KOMPLETTE FAHRZEUGHISTORIE",
+        "body": "Archive offizieller Händler und Auktionsportale*, internationale und lokale Registerdaten in einem klaren Bild: Laufleistung, Unfallschäden und Diebstahlmeldungen."
       },
       {
         "title": "INSERATSPRÜFUNG",
-        "body": "Fachliche Prüfung von Fotos und Beschreibung. Hinweise auf verdeckte Reparaturen und Verschleiß."
+        "body": "Fachliche Auswertung von Fotos und Beschreibung. Hinweise auf verdeckte Reparaturen und Verschleiß."
       },
       {
         "title": "ANALYSE DER TECHNISCHEN RISIKEN",
@@ -19,7 +19,7 @@
       },
       {
         "title": "EMPFEHLUNGEN UND BERATUNG",
-        "body": "Schlussfolgerung aus den Daten und mehr als 10 Jahren Erfahrung. Persönliche Beratung nach dem Bericht.",
+        "body": "Ein klares Fazit aus den Daten und mehr als 10 Jahren Erfahrung. Persönliche Beratung nach dem Bericht.",
         "href": true
       }
     ],

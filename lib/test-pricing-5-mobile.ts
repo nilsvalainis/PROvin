@@ -163,14 +163,14 @@ const DEALER_FEATURES_DE: Tp5MobileFeature[] = [
 ];
 
 const KOREA_USA_FEATURES_DE: Tp5MobileFeature[] = [
-  { name: "Historie der amtlichen Register", included: true },
+  { name: "Einträge der amtlichen Register", included: true },
   { name: "Auktionsarchiv und Fotos", included: true },
   { name: "Analyse von Schäden und Laufleistung", included: true },
   { name: "100 % Geld-zurück-Garantie", included: true, tone: "guarantee" },
 ];
 
 const AUDITS_FEATURES_RU: Tp5MobileFeature[] = [
-  { name: "Консультация и советы к осмотру на месте", included: true },
+  { name: "Консультация и советы для осмотра на месте", included: true },
   { name: "Данные страховщиков и история техосмотров", included: true },
   { name: "Разбор объявления, продавца и технических рисков", included: true },
   { name: "CarVertical + AutoDNA + реестры страны происхождения", included: true },
@@ -178,7 +178,7 @@ const AUDITS_FEATURES_RU: Tp5MobileFeature[] = [
 ];
 
 const MINI_FEATURES_RU: Tp5MobileFeature[] = [
-  { name: "Консультация и советы к осмотру на месте", included: true },
+  { name: "Консультация и советы для осмотра на месте", included: true },
   { name: "Данные страховщиков и история техосмотров", included: true },
   { name: "Разбор объявления, продавца и технических рисков", included: true },
   { name: "CarVertical + AutoDNA + реестры страны происхождения", included: false },
@@ -186,18 +186,18 @@ const MINI_FEATURES_RU: Tp5MobileFeature[] = [
 ];
 
 const DEALER_FEATURES_RU: Tp5MobileFeature[] = [
-  { name: "История сервиса и обслуживаний*", included: true },
+  { name: "История сервиса и ТО*", included: true },
   { name: "Показания одометра", included: true },
   { name: "Сводка", included: true },
   { name: "Поддерживаемые производители", included: true, tone: "brands" },
-  { name: "Гарантия возврата 100 %.", included: true, tone: "guarantee" },
+  { name: "100 % гарантия возврата денег.", included: true, tone: "guarantee" },
 ];
 
 const KOREA_USA_FEATURES_RU: Tp5MobileFeature[] = [
-  { name: "История официальных реестров", included: true },
+  { name: "Записи официальных реестров", included: true },
   { name: "Архив аукционов и фото", included: true },
   { name: "Анализ повреждений и пробега", included: true },
-  { name: "Гарантия возврата 100 %", included: true, tone: "guarantee" },
+  { name: "100 % гарантия возврата денег", included: true, tone: "guarantee" },
 ];
 
 /** Tabs always shown on the home hero (catalog-only tiers appear when deep-linked). */
@@ -340,7 +340,7 @@ const TP5_MOBILE_SERVICES_DE: Tp5MobileService[] = [
     title: "USA UND KOREA",
     tabTitle: "US / KR",
     price: "19,99 €",
-    buttonText: "USA UND KOREA BESTELLEN 19,99 €",
+    buttonText: "BERICHT USA/KOREA BESTELLEN 19,99 €",
     buttonTextShort: "BESTELLEN 19,99 €",
     description: "",
     features: KOREA_USA_FEATURES_DE,
@@ -388,7 +388,7 @@ const TP5_MOBILE_SERVICES_RU: Tp5MobileService[] = [
     title: "США И КОРЕЯ",
     tabTitle: "US / KR",
     price: "19,99 €",
-    buttonText: "ЗАКАЗАТЬ США И КОРЕЯ 19,99 €",
+    buttonText: "ЗАКАЗАТЬ ОТЧЁТ США / КОРЕЯ 19,99 €",
     buttonTextShort: "ЗАКАЗАТЬ 19,99 €",
     description: "",
     features: KOREA_USA_FEATURES_RU,

@@ -42,7 +42,7 @@ export const TP5_TIER_META: Record<TestPricingPlanId, Tp5TierMeta> = {
   dealer: {
     title: "DĪLERA DATI",
     description:
-      "Oficiālā dīlera servisa vēstures dati — bez PROVIN eksperta analīzes.",
+      "Oficiālā dīlera servisa vēstures dati, bez PROVIN eksperta analīzes.",
   },
   koreaUsa: {
     title: "ASV UN KOREJA",

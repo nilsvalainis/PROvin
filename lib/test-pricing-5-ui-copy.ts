@@ -209,7 +209,7 @@ const TP5_UI_COPY_DE: Tp5UiCopy = {
   dealerBrandsClose: "Schließen",
   dealerCoverageFullTitle: "Vollständige Servicehistorie",
   dealerCoverageFullBody:
-    "Vollständige Einträge offizieller Händler: Daten, Laufleistung, ausgeführte Arbeiten und Servicestandort.",
+    "Vollständige Einträge offizieller Händler: Datum, Kilometerstand, ausgeführte Arbeiten und Servicestandort.",
   dealerCoverageWorkshopTitle: "Werkstattvermerke",
   dealerCoverageWorkshopBody:
     "Rückrufe, Garantiearbeiten und Werkstattnotizen. Deckt sich ein Vermerk mit dem Wartungsplan, deutet das oft darauf hin, dass eine Wartung stattgefunden hat.",
@@ -218,7 +218,7 @@ const TP5_UI_COPY_DE: Tp5UiCopy = {
     "Daten liegen nur in einem Teil der Fälle vor. Das hängt vom konkreten Fahrzeug und vom System des Herstellers ab.",
   dealerRefundBanner: "100 % Geld-zurück-Garantie.",
   dealerRefundInfoBody:
-    "Volle Rückerstattung, wenn in der Händlerdatenbank kein Eintrag vorliegt. Die Leistung gilt als erbracht, sobald mindestens ein Kilometerstand gefunden wird. Der Umfang folgt der offiziell erfassten Historie.",
+    "Volle Rückerstattung, wenn in der Händlerdatenbank kein Eintrag vorliegt. Die Leistung gilt als erbracht, sobald mindestens ein Kilometerstand gefunden wurde. Der Umfang richtet sich nach der offiziell erfassten Historie.",
   dealerRefundInfoAria: "Bedingungen der Rückerstattung",
   newBadge: "Neu",
   perReport: "pro Bericht",
@@ -244,7 +244,7 @@ const TP5_UI_COPY_RU: Tp5UiCopy = {
   sampleReportPreviewLabel: "Пример отчёта",
   sampleReportEnlarge: "Увеличить",
   sampleReportClose: "Закрыть",
-  sampleReportComingSoon: "Пример отчёта скоро",
+  sampleReportComingSoon: "Пример отчёта появится позже",
   turnaroundUrgencyCta: "Срочно?",
   turnaroundInfoAria: "Подробнее о срочном выполнении",
   turnaroundInfoBody: "Базовые данные и короткий комментарий можно получить в течение нескольких часов.",
@@ -254,16 +254,16 @@ const TP5_UI_COPY_RU: Tp5UiCopy = {
   dealerBrandsClose: "Закрыть",
   dealerCoverageFullTitle: "Полная сервисная история",
   dealerCoverageFullBody:
-    "Полные записи официальных дилеров: даты, пробег, выполненные работы и место сервиса.",
-  dealerCoverageWorkshopTitle: "Отметки мастерской",
+    "Полные записи официальных дилеров: даты, показания одометра, выполненные работы и место обслуживания.",
+  dealerCoverageWorkshopTitle: "Отметки сервиса",
   dealerCoverageWorkshopBody:
-    "Отзывные кампании, гарантийные работы и заметки мастерской. Если отметка совпадает с графиком обслуживания, это часто значит, что обслуживание было.",
+    "Отзывные кампании, гарантийные работы и заметки сервиса. Если отметка совпадает с графиком обслуживания, это часто означает, что обслуживание было выполнено.",
   dealerCoverageLimitedTitle: "Ограниченное покрытие",
   dealerCoverageLimitedBody:
     "Данные есть только в части случаев. Это зависит от конкретного автомобиля и системы производителя.",
-  dealerRefundBanner: "Гарантия возврата 100 %.",
+  dealerRefundBanner: "100 % гарантия возврата денег.",
   dealerRefundInfoBody:
-    "Полный возврат, если в дилерской базе нет ни одной записи. Услуга считается выполненной, если найден хотя бы один показатель одометра. Объём данных определяет официально зафиксированная история.",
+    "Полный возврат, если в дилерской базе нет ни одной записи. Услуга считается выполненной, если найдено хотя бы одно показание одометра. Объём данных определяет официально зафиксированная история.",
   dealerRefundInfoAria: "Условия возврата",
   newBadge: "Новое",
   perReport: "за отчёт",

@@ -41,12 +41,12 @@ export const B2B_DEALER_GUARANTEE_BODY =
 const B2B_DEALER_GUARANTEE_TITLE_EN = "100% money-back guarantee";
 const B2B_DEALER_GUARANTEE_BODY_EN =
   "If the manufacturer's official database has no records for this VIN, we will refund the purchase in full.";
-const B2B_DEALER_GUARANTEE_TITLE_DE = "100% Geld-zurück-Garantie";
+const B2B_DEALER_GUARANTEE_TITLE_DE = "100 % Geld-zurück-Garantie";
 const B2B_DEALER_GUARANTEE_BODY_DE =
-  "Liegen in der offiziellen Herstellerdatenbank zu dieser VIN keine Einträge vor, erstatten wir den Kaufbetrag in voller Höhe.";
-const B2B_DEALER_GUARANTEE_TITLE_RU = "100% гарантия возврата денег";
+  "Liegen in der offiziellen Herstellerdatenbank zu dieser VIN keine Einträge vor, erstatten wir den vollen Betrag.";
+const B2B_DEALER_GUARANTEE_TITLE_RU = "100 % гарантия возврата денег";
 const B2B_DEALER_GUARANTEE_BODY_RU =
-  "Если в официальной базе производителя по этому VIN нет записей, вернём полную стоимость покупки.";
+  "Если в официальной базе производителя по этому VIN нет записей, вернём полную стоимость заказа.";
 
 /** Same 8 glyphs as the public AUDITS rail; labels follow BUSINESS sources. */
 export const B2B_BUSINESS_DESKTOP_FEATURES: Tp5DesktopHeroFeature[] = [
@@ -74,11 +74,11 @@ const B2B_BUSINESS_DESKTOP_FEATURES_DE: Tp5DesktopHeroFeature[] = [
   { label: "Offizielle Händlerdaten", icon: "dealer-data" },
   { label: "carVertical-Anbindung", icon: "carvertical" },
   { label: "autoDNA-Anbindung", icon: "autodna" },
-  { label: "Register des Herkunftslands", icon: "eu-registry" },
+  { label: "Register des Herkunftslandes", icon: "eu-registry" },
   { label: "Auktionsportal-Archiv", icon: "listing-analysis" },
   { label: "Versichererdaten", icon: "consultation" },
   { label: "Technische Prüfhistorie", icon: "inspection-tips" },
-  { label: "Internationale Historienprüfung", icon: "international" },
+  { label: "Internationale Fahrzeughistorie", icon: "international" },
 ];
 const B2B_BUSINESS_DESKTOP_FEATURES_RU: Tp5DesktopHeroFeature[] = [
   { label: "Официальные данные дилера", icon: "dealer-data" },
@@ -113,7 +113,7 @@ const B2B_BUSINESS_HERO_FEATURES_EN = [
 const B2B_BUSINESS_HERO_FEATURES_DE = [
   "Offizielle Händlerdaten*",
   "CarVertical + AutoDNA",
-  "Register des Herkunftslands",
+  "Register des Herkunftslandes",
   "Auktionsportal-Archiv",
   "Versichererdaten",
   "Technische Prüfhistorie",
@@ -272,7 +272,7 @@ const B2B_CATALOG_DE: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
     items: [
       { icon: "store" as const, title: "Offizielle Händlerdaten*", opensDealer: true },
       { icon: "logos" as const, title: "CarVertical + AutoDNA" },
-      { icon: "globe" as const, title: "Register des Herkunftslands" },
+      { icon: "globe" as const, title: "Register des Herkunftslandes" },
       { icon: "camera" as const, title: "Auktionsportal-Archiv" },
       { icon: "shield" as const, title: "Versichererdaten" },
       { icon: "clipboard" as const, title: "Technische Prüfhistorie" },

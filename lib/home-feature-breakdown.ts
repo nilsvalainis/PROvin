@@ -254,7 +254,7 @@ const DEALER_EN: HomeFeatureBreakdownPackage = {
   title: "DEALER DATA",
   buttonText: "ORDER DEALER DATA €24.99",
   goal:
-    "Official dealer service history and manufacturer database analysis for vehicles. The check focuses on authorised service records, chronological mileage, completed maintenance and factory recalls, providing maximum transparency into the car’s real operating history.",
+    "Official dealer service history and manufacturer database analysis for vehicles. The check focuses on authorised service records, chronological mileage, completed maintenance and factory recalls, providing maximum transparency into the car's real operating history.",
   items: [
     {
       title: "Official service history",
@@ -271,13 +271,13 @@ const DEALER_EN: HomeFeatureBreakdownPackage = {
     {
       title: "Supported manufacturer systems",
       description:
-        "Access to German premium brands (BMW, Audi, MB), the VAG group, VOLVO and other manufacturers’ official data.",
+        "Access to German premium brands (BMW, Audi, MB), the VAG group, VOLVO and other manufacturers' official data.",
       icon: "brands",
     },
     {
       title: "100% money-back guarantee",
       description:
-        "If the manufacturer’s official database has no records for the specific VIN, we will issue a full purchase refund.",
+        "If the manufacturer's official database has no records for the specific VIN, we will issue a full refund.",
       icon: "refund",
     },
   ],
@@ -289,7 +289,7 @@ const KOREA_USA_EN: HomeFeatureBreakdownPackage = {
   title: "USA & KOREA",
   buttonText: "ORDER USA & KOREA €19.99",
   goal:
-    "A full vehicle check package for cars used in the USA and Korea or imported from these countries. The check focuses on official registry records, auction history and visual damage, giving complete clarity on the car’s real condition before purchase or registration.",
+    "A full vehicle check package for cars used in the USA and Korea or imported from these countries. The check focuses on official registry records, auction history and visual damage, giving complete clarity on the car's real condition before purchase or registration.",
   items: [
     {
       title: "Official registry history",
@@ -440,7 +440,7 @@ const AUDITS_DE: HomeFeatureBreakdownPackage = {
     "Maximale Sicherheit und eine vollständige Prüfung für aus dem Ausland importierte Autos. Verbindet PROVIN MINI mit internationalen kostenpflichtigen Datenbanken, Daten offizieller Händlersysteme und Auktionsfotoarchiven und liefert eine vertiefte Analyse von Historie, Laufleistung und Risiken.",
   items: [
     {
-      title: "Internationale Historienprüfung",
+      title: "Internationale Fahrzeughistorie",
       description: "Vertiefte Analyse früherer Halter, Zulassungen und des rechtlichen Status.",
       icon: "international",
     },
@@ -492,7 +492,7 @@ const DEALER_DE: HomeFeatureBreakdownPackage = {
     {
       title: "100 % Geld-zurück-Garantie",
       description:
-        "Wenn die offizielle Herstellerdatenbank zur konkreten VIN keine Einträge hat, erstatten wir den vollen Kaufpreis.",
+        "Wenn die offizielle Herstellerdatenbank zur konkreten VIN keine Einträge hat, erstatten wir den vollen Betrag.",
       icon: "refund",
     },
   ],
@@ -502,13 +502,13 @@ const DEALER_DE: HomeFeatureBreakdownPackage = {
 const KOREA_USA_DE: HomeFeatureBreakdownPackage = {
   id: "koreaUsa",
   title: "USA UND KOREA",
-  buttonText: "USA UND KOREA BESTELLEN 19,99 €",
+  buttonText: "BERICHT USA/KOREA BESTELLEN 19,99 €",
   goal:
     "Ein vollständiges Prüfpaket für Autos, die in den USA oder Korea genutzt oder von dort importiert wurden. Im Mittelpunkt stehen amtliche Register, die Auktionshistorie und sichtbare Schäden, damit der reale Zustand vor Kauf oder Zulassung klar ist.",
   items: [
     {
-      title: "Historie der amtlichen Register",
-      description: "Zugang zu kombinierten Fahrzeugdatenbanken der USA und Koreas sowie zu offiziellen Title-Status.",
+      title: "Einträge der amtlichen Register",
+      description: "Zugang zu kombinierten Fahrzeugdatenbanken der USA und Koreas sowie zum offiziellen Title-Status.",
       icon: "international",
     },
     {
@@ -523,7 +523,7 @@ const KOREA_USA_DE: HomeFeatureBreakdownPackage = {
     },
     {
       title: "100 % Geld-zurück-Garantie",
-      description: "Wenn zur konkreten VIN in den Datenbanken der USA und Koreas nichts vorliegt, erstatten wir den vollen Kaufpreis.",
+      description: "Wenn zur konkreten VIN in den Datenbanken der USA und Koreas nichts vorliegt, erstatten wir den vollen Betrag.",
       icon: "refund",
     },
   ],
@@ -536,7 +536,7 @@ const PARTNER_DE: HomeFeatureBreakdownPackage = {
   buttonText: "Für Händler",
   ctaHref: "/partneriem",
   goal:
-    "Für Autohändler, damit Sie vor einem Ankauf, einer Inzahlungnahme oder einem Tausch die Risiken von manipuliertem Kilometerstand, verdeckten Unfällen und nicht eingehaltenen Wartungsintervallen ausschließen.\n\nMit einem PROVIN BUSINESS-Audit schützen Sie das Unternehmen vor Einkaufsverlusten und zugleich Ihren Ruf. Vorbesitzer haben die Historie oft ignoriert, Mängel bewusst verschwiegen oder den Kilometerstand zurückgedreht. Nehmen Sie ein solches Auto in den Bestand oder als Anzahlung, liegt die Verantwortung gegenüber dem Endkunden bei Ihrem Unternehmen. Eine Prüfung vor jedem Abschluss sorgt dafür, dass Ihre Marke nur mit geprüften, vertrauenswürdigen Autos verbunden wird.\n\nFür Kunden ist der Bericht ein klarer Nachweis der tatsächlichen Historie. Im Handel wird er zu einem Qualitätsstandard, der Verantwortung und Sorgfalt sichtbar macht. Das stärkt das Vertrauen, hebt den Wert Ihres Angebots und erleichtert die Entscheidung bei jeder Art von Geschäft.",
+    "Für Autohändler, damit Sie vor einem Ankauf, einer Inzahlungnahme oder einem Tausch die Risiken von manipuliertem Kilometerstand, verschwiegenen Unfallschäden und versäumten Wartungsintervallen ausschließen.\n\nMit einem PROVIN BUSINESS-Audit schützen Sie das Unternehmen vor Einkaufsverlusten und zugleich Ihren Ruf. Vorbesitzer haben die Historie oft ignoriert, Mängel bewusst verschwiegen oder den Kilometerstand zurückgedreht. Nehmen Sie ein solches Auto in den Bestand oder in Zahlung, liegt die Verantwortung gegenüber dem Endkunden bei Ihrem Unternehmen. Eine Prüfung vor jedem Abschluss sorgt dafür, dass Ihre Marke nur mit geprüften, vertrauenswürdigen Autos verbunden wird.\n\nFür Kunden ist der Bericht ein klarer Nachweis der tatsächlichen Historie. Im Handel wird er zu einem Qualitätsstandard, der Verantwortung und Sorgfalt sichtbar macht. Das stärkt das Vertrauen, hebt den Wert Ihres Angebots und erleichtert die Entscheidung bei jeder Art von Geschäft.",
   items: [
     {
       title: "Daten offizieller Händler",
@@ -580,7 +580,7 @@ const MINI_RU: HomeFeatureBreakdownPackage = {
       icon: "eu-registry",
     },
     {
-      title: "Советы к осмотру на месте",
+      title: "Советы для осмотра на месте",
       description: "Практический список: на что смотреть, когда едете смотреть конкретный автомобиль.",
       icon: "inspection-tips",
     },
@@ -598,7 +598,7 @@ const AUDITS_RU: HomeFeatureBreakdownPackage = {
   badge: "Самый популярный выбор",
   buttonText: "ЗАКАЗАТЬ PROVIN AUDITS 99,99 €",
   goal:
-    "Максимальная ясность и полное расследование для машин, ввезённых из-за рубежа. Соединяет PROVIN MINI с международными платными базами, данными официальных дилерских систем и фотоархивами аукционов и даёт глубокий разбор истории, пробега и рисков.",
+    "Максимальная ясность и полная проверка для машин, ввезённых из-за рубежа. Соединяет PROVIN MINI с международными платными базами, данными официальных дилерских систем и фотоархивами аукционов и даёт глубокий разбор истории, пробега и рисков.",
   items: [
     {
       title: "Международная проверка истории",
@@ -629,7 +629,7 @@ const DEALER_RU: HomeFeatureBreakdownPackage = {
   title: "ДАННЫЕ ДИЛЕРА",
   buttonText: "ЗАКАЗАТЬ ДАННЫЕ ДИЛЕРА 24,99 €",
   goal:
-    "Анализ официальной дилерской сервисной истории и баз производителя. Проверка смотрит записи авторизованных сервисов, хронологию пробега, выполненные обслуживания и заводские отзывные кампании и показывает, как автомобиль реально эксплуатировали.",
+    "Анализ официальной дилерской сервисной истории и баз производителя. Проверка охватывает записи авторизованных сервисов, хронологию пробега, выполненные обслуживания и заводские отзывные кампании и показывает, как автомобиль реально эксплуатировали.",
   items: [
     {
       title: "Официальная сервисная история",
@@ -647,7 +647,7 @@ const DEALER_RU: HomeFeatureBreakdownPackage = {
       icon: "brands",
     },
     {
-      title: "Гарантия возврата 100 %",
+      title: "100 % гарантия возврата денег",
       description: "Если в официальной базе производителя по этому VIN записей нет, вернём полную стоимость.",
       icon: "refund",
     },
@@ -658,12 +658,12 @@ const DEALER_RU: HomeFeatureBreakdownPackage = {
 const KOREA_USA_RU: HomeFeatureBreakdownPackage = {
   id: "koreaUsa",
   title: "США И КОРЕЯ",
-  buttonText: "ЗАКАЗАТЬ США И КОРЕЯ 19,99 €",
+  buttonText: "ЗАКАЗАТЬ ОТЧЁТ США / КОРЕЯ 19,99 €",
   goal:
     "Полный пакет проверки для автомобилей, которые эксплуатировались в США или Корее либо ввезены оттуда. В центре - официальные реестры, история аукционов и видимые повреждения, чтобы реальное состояние было ясно до покупки или регистрации.",
   items: [
     {
-      title: "История официальных реестров",
+      title: "Записи официальных реестров",
       description: "Доступ к объединённым базам автомобилей США и Кореи и к официальным статусам Title.",
       icon: "international",
     },
@@ -678,7 +678,7 @@ const KOREA_USA_RU: HomeFeatureBreakdownPackage = {
       icon: "damage",
     },
     {
-      title: "Гарантия возврата 100 %",
+      title: "100 % гарантия возврата денег",
       description: "Если по этому VIN в базах США и Кореи данных нет, вернём полную стоимость.",
       icon: "refund",
     },
@@ -692,7 +692,7 @@ const PARTNER_RU: HomeFeatureBreakdownPackage = {
   buttonText: "Для дилеров",
   ctaHref: "/partneriem",
   goal:
-    "Решение для автодилеров: до покупки, приёма на комиссию или обмена убрать риски скрученного пробега, скрытых ДТП и несоблюдённых интервалов обслуживания.\n\nОтчёт PROVIN BUSINESS защищает компанию от убытков на закупке и одновременно бережёт репутацию. Прежние продавцы часто не смотрели историю, сознательно скрывали дефекты или даже откатывали одометр. Если такой автомобиль попадает в ваш склад или принимается в зачёт, ответственность перед конечным покупателем лежит на вашей компании. Проверка перед каждой сделкой связывает ваш бренд только с проверенными и надёжными машинами.\n\nДля клиента отчёт - ясное доказательство фактической истории. В торговле он становится стандартом качества и показывает ответственность компании. Это укрепляет доверие, повышает ценность предложения и упрощает решение в любой сделке.",
+    "Решение для автодилеров: до закупки, приёма в трейд-ин или обмена убрать риски скрученного пробега, скрытых ДТП и пропущенных интервалов обслуживания.\n\nОтчёт PROVIN BUSINESS защищает компанию от убытков на закупке и одновременно бережёт репутацию. Прежние владельцы часто не следили за историей автомобиля, сознательно скрывали дефекты или даже скручивали пробег. Если такой автомобиль попадает в ваш сток или принимается в трейд-ин, ответственность перед конечным покупателем лежит на вашей компании. Проверка перед каждой сделкой связывает ваш бренд только с проверенными и надёжными машинами.\n\nДля клиента отчёт - убедительное подтверждение фактической истории. В торговле он становится стандартом качества и показывает ответственность компании. Это укрепляет доверие, повышает ценность предложения и упрощает решение в любой сделке.",
   items: [
     {
       title: "Данные официальных дилеров",

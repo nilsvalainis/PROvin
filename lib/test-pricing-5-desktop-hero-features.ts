@@ -47,14 +47,14 @@ const TP5_DESKTOP_HERO_FEATURES_DE: Tp5DesktopHeroFeature[] = [
   { label: "carVertical-Anbindung", icon: "carvertical" },
   { label: "autoDNA-Anbindung", icon: "autodna" },
   { label: "Archiv offizieller Händler und Auktionsportale*", icon: "dealer-data" },
-  { label: "Internationale Historienprüfung", icon: "international" },
+  { label: "Internationale Fahrzeughistorie", icon: "international" },
 ];
 
 const TP5_DESKTOP_HERO_FEATURES_RU: Tp5DesktopHeroFeature[] = [
   { label: "Личная консультация", icon: "consultation" },
   { label: "Разбор объявления и технических рисков", icon: "listing-analysis" },
   { label: "Реестры страны происхождения и история техосмотров", icon: "eu-registry" },
-  { label: "Советы к осмотру на месте", icon: "inspection-tips" },
+  { label: "Советы для осмотра на месте", icon: "inspection-tips" },
   { label: "Интеграция carVertical", icon: "carvertical" },
   { label: "Интеграция autoDNA", icon: "autodna" },
   { label: "Архив официальных дилеров и аукционных порталов*", icon: "dealer-data" },

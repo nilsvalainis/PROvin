@@ -1,6 +1,6 @@
 {
   "Footer": {
-    "body": "Übliche Fahrzeughistorie-Berichte zeigen nur Bruchstücke der Vergangenheit. PROVIN ist ein manuelles Expertengutachten für einen Gebrauchtwagen vor dem Kauf: Daten aus mehreren VIN-Quellen, das Inserat des Verkäufers und die Schwachstellen des konkreten Modells in einer begründeten Einschätzung.",
+    "body": "Übliche Fahrzeughistorien-Berichte zeigen nur Bruchstücke der Vergangenheit. PROVIN ist eine manuelle Expertenprüfung für einen Gebrauchtwagen vor dem Kauf: Daten aus mehreren VIN-Quellen, das Inserat des Verkäufers und die Schwachstellen des konkreten Modells in einer begründeten Einschätzung.",
     "legalRegionLabel": "Rechtliche Hinweise und Links",
     "contacts": "Kontakt",
     "contactsHint": "Fragen? Schreiben Sie uns.",
@@ -14,7 +14,7 @@
     "legalInlinePrefixJuridiska": "Rechtliche Angaben:",
     "legalInlinePrefixPakalpojums": "Diensteanbieter:",
     "serviceProviderDisclosureSummary": "Diensteanbieter",
-    "companyLegalSubject": "Rechtlicher Anbieter",
+    "companyLegalSubject": "Rechtlicher Leistungserbringer",
     "companyRegNo": "Registernummer",
     "companyLegalAddress": "Anschrift",
     "companyIncompleteDev": "Für Entwickler: NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO und NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS setzen (.env oder Hosting).",

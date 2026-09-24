@@ -8,16 +8,16 @@
     "productTitlePart1": "CAR HISTORY",
     "productTitlePart2": " AND LISTING ",
     "productTitlePart3": "AUDIT",
-    "productSubheadRich": "Learn everything about your next car. The audit combines multiple paid vehicle history reports, official dealer and auction portal archive data, listing expertise, and model-specific technical risk analysis, based on more than 10 years of experience.",
+    "productSubheadRich": "Learn everything about your next car. The audit combines multiple paid vehicle history reports, official dealer and auction portal archive data, listing analysis, and model-specific technical risk analysis, based on more than 10 years of experience.",
     "productValueStripAria": "PROVIN audit benefits",
-    "productValue1": "History Check",
-    "productValue2": "Listing Audit",
-    "productValue3": "Technical Risk Analysis",
+    "productValue1": "Vehicle history check",
+    "productValue2": "Listing analysis",
+    "productValue3": "Technical risk analysis",
     "productValue4": "Recommendations and consultation",
     "heroOrderBenefitsAria": "What the audit includes",
     "heroOrderBenefits": [
-      "History reports",
-      "Listing audit",
+      "Vehicle history check",
+      "Listing analysis",
       "Technical risk analysis",
       "Recommendations and consultation"
     ],
@@ -26,7 +26,7 @@
     "lensLine2": "AUDIT",
     "h2": "YOUR PERSONAL CAR DETECTIVE",
     "pillars": [
-      { "title": "HISTORY\nCHECK", "body": "" },
+      { "title": "VEHICLE\nHISTORY CHECK", "body": "" },
       { "title": "LISTING\nANALYSIS", "body": "" },
       { "title": "TECHNICAL\nRISK ANALYSIS", "body": "" },
       { "title": "PERSONAL\nCONSULTATION", "body": "" }

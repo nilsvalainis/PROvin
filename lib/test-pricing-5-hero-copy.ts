@@ -51,8 +51,8 @@ const TP5_HERO_DEALER_COPY_EN: Tp5HeroCopy = {
 };
 
 const TP5_HERO_COPY_DE: Tp5HeroCopy = {
-  titlePrefix: "Fahrzeughistorie und Inserat ",
-  titleAccent: "Audit",
+  titlePrefix: "Fahrzeughistorien- und Inserats",
+  titleAccent: "prüfung",
   subheadLead: "Erfahren Sie alles über Ihr nächstes Auto.",
   subheadAccent:
     "Wir verbinden die Fahrzeughistorie und die Analyse des Inserats in einem übersichtlichen Audit.",
@@ -60,22 +60,22 @@ const TP5_HERO_COPY_DE: Tp5HeroCopy = {
 
 const TP5_HERO_DEALER_COPY_DE: Tp5HeroCopy = {
   ...TP5_HERO_COPY_DE,
-  titlePrefix: "Daten des offiziellen Händlers ",
+  titlePrefix: "Offizieller Händlerdaten-",
   titleAccent: "Bericht",
 };
 
 const TP5_HERO_COPY_RU: Tp5HeroCopy = {
-  titlePrefix: "История авто и объявление ",
-  titleAccent: "аудит",
-  subheadLead: "Узнайте всё о следующей машине.",
+  titlePrefix: "Аудит истории авто и ",
+  titleAccent: "объявления",
+  subheadLead: "Узнайте всё о своём будущем автомобиле.",
   subheadAccent:
     "Мы соединяем историю автомобиля и разбор объявления в одном понятном аудите.",
 };
 
 const TP5_HERO_DEALER_COPY_RU: Tp5HeroCopy = {
   ...TP5_HERO_COPY_RU,
-  titlePrefix: "Данные официального дилера ",
-  titleAccent: "отчёт",
+  titlePrefix: "Отчёт по данным официального ",
+  titleAccent: "дилера",
 };
 
 /** Locale-aware hero copy. Unknown locales stay Latvian. */

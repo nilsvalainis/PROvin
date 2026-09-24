@@ -4,9 +4,9 @@
     "faqBack": "← Zur Startseite",
     "pasutitRedirect": "Weiterleitung zum Bestellformular…",
     "checkoutProductName": "PROVIN AUDITS",
-    "checkoutProductDesc": "Vollständige Historienprüfung in kostenpflichtigen Datenbanken, Inserats- und Risikoanalyse.",
+    "checkoutProductDesc": "Vollständige Prüfung der Fahrzeughistorie in kostenpflichtigen Datenbanken, Inserats- und Risikoanalyse.",
     "checkoutConsultationProductName": "PROVIN: strategische Beratung",
-    "checkoutConsultationProductDesc": "Individuelle Beratung und Markteinordnung: VIN- und Inseratskontext, Risikoblick und nächste Schritte.",
+    "checkoutConsultationProductDesc": "Individuelle Beratung und Markteinordnung: VIN- und Inseratskontext, Risikobewertung und nächste Schritte.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategische Beratung",
     "checkoutProvinSelectProductDesc": "Individuelle Beratung für die Kaufentscheidung"
   },
@@ -17,7 +17,7 @@
     "backToList": "← Alle Beiträge",
     "lvOnlyNote": "Der vollständige Text ist auf Lettisch verfügbar.",
     "commentsTitle": "Kommentare",
-    "commentsEmpty": "Noch still. Seien Sie der Erste.",
+    "commentsEmpty": "Noch keine Kommentare. Schreiben Sie den ersten.",
     "commentName": "Name",
     "commentBody": "Kommentar",
     "commentSubmit": "Senden",
@@ -33,6 +33,6 @@
     "provinSelect": "Beratung",
     "kasSlapjasAizProvin": "Über PROVIN",
     "b2b": "Für Händler",
-    "b2bLoginAria": "Für Händler, anmelden"
+    "b2bLoginAria": "Für Händler: anmelden"
   }
 }

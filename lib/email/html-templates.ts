@@ -237,18 +237,18 @@ const PARTNER_VERIFY_COPY: Record<
   de: {
     title: "Bestätigen Sie Ihre E-Mail",
     titleChange: "Bestätigen Sie die neue E-Mail",
-    lead: "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto zu eröffnen.",
+    lead: "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto einzurichten.",
     leadChange: "Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern.",
     cta: "E-Mail bestätigen",
     hint: "Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.",
   },
   ru: {
-    title: "Подтвердите почту",
-    titleChange: "Подтвердите новую почту",
+    title: "Подтвердите адрес почты",
+    titleChange: "Подтвердите новый адрес почты",
     lead: "Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.",
-    leadChange: "Подтвердите этот адрес, чтобы сменить почту партнёрского аккаунта PROVIN.LV.",
-    cta: "Подтвердить почту",
-    hint: "Ссылка действует 24 часа и только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.",
+    leadChange: "Подтвердите этот адрес, чтобы сменить адрес почты партнёрского аккаунта PROVIN.LV.",
+    cta: "Подтвердить адрес",
+    hint: "Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.",
   },
 };
 
@@ -295,10 +295,10 @@ const PARTNER_RESET_COPY: Record<
     hint: "Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.",
   },
   ru: {
-    title: "Сбросьте пароль",
+    title: "Восстановление пароля",
     lead: "По этой ссылке можно задать новый пароль партнёрского аккаунта PROVIN.LV.",
     cta: "Задать новый пароль",
-    hint: "Ссылка действует 24 часа и только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.",
+    hint: "Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.",
   },
 };
 
