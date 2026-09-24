@@ -116,29 +116,8 @@ export function HeaderClient() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const isFullBleedSiteNav =
-    isHome ||
-    isProvinSelectPieteikums ||
-    isAzvinDemo ||
-    isPakalpojumi ||
-    isParMums ||
-    isBlogs ||
-    isFaqPage ||
-    isPartneriem;
-
-  const headerInnerClass = [
-    "mx-auto flex min-h-[2.4rem] w-full min-w-0 items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]",
-    isFullBleedSiteNav ? "max-w-none" : "max-w-[980px] lg:max-w-[1024px]",
-  ].join(" ");
-
-  const logoShowsLvSuffix = !(
-    isHome ||
-    isPakalpojumi ||
-    isParMums ||
-    isBlogs ||
-    isFaqPage ||
-    isPartneriem
-  );
+  const headerInnerClass =
+    "mx-auto flex min-h-[2.4rem] w-full min-w-0 max-w-none items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]";
 
   return (
     <header className={`${isHome ? "fixed lg:sticky" : "sticky"} top-0 z-[60] isolate w-full ${headerSurface}`}>
@@ -149,12 +128,9 @@ export function HeaderClient() {
             <span className="text-provin-accent">VIN</span>
           </Link>
         ) : (
-          <Link href="/" className={logoClass} aria-label={logoShowsLvSuffix ? "PROVIN.LV" : "PROVIN"}>
+          <Link href="/" className={logoClass} aria-label="PROVIN">
             <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
             <span className="text-provin-accent">VIN</span>
-            {logoShowsLvSuffix ? (
-              <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>.LV</span>
-            ) : null}
           </Link>
         )}
 
