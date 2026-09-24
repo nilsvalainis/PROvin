@@ -31,6 +31,9 @@ export function HeaderClient() {
   const isBlogs = normalizedPath === "/blogs" || normalizedPath.startsWith("/blogs/");
   const isFaqPage = normalizedPath === "/biezi-jautajumi";
   const isPartneriem = normalizedPath === "/partneriem" || normalizedPath.startsWith("/partneriem/");
+  const isLegalPage =
+    normalizedPath === "/lietosanas-noteikumi" || normalizedPath === "/privatuma-politika";
+  const isThanks = normalizedPath === "/paldies";
   /** Tās pašas lapas kā kreisā slide — arī šeit navigācijas saraksts. */
   const showHomeNavRail =
     isHome ||
@@ -52,7 +55,9 @@ export function HeaderClient() {
     isParMums ||
     isBlogs ||
     isFaqPage ||
-    isPartneriem;
+    isPartneriem ||
+    isLegalPage ||
+    isThanks;
   const headerChromeDark = isDarkHeaderSurface;
 
   const headerSurface = isHome

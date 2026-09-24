@@ -114,10 +114,10 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
             <span>{renderProvinText(t("gdpr", { year }))}</span>
           </p>
           <details className="group pt-0.5">
-            <summary className="inline-flex cursor-pointer list-none select-none text-[9px] font-normal uppercase tracking-[0.14em] text-white/25 transition hover:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/20 sm:text-[10px] [&::-webkit-details-marker]:hidden">
+            <summary className="inline-flex cursor-pointer list-none select-none text-[9px] font-normal text-white/20 transition hover:text-white/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/20 [&::-webkit-details-marker]:hidden">
               {t("serviceProviderDisclosureSummary")}
             </summary>
-            <div className="mt-1.5 [&_p]:mx-0 [&_p]:max-w-none [&_p]:text-left [&_p]:text-[10px] [&_p]:leading-relaxed [&_p]:text-white/25">
+            <div className="mt-1 [&_p]:mx-0 [&_p]:max-w-none [&_p]:text-left [&_p]:text-[9px] [&_p]:leading-relaxed [&_p]:text-white/30">
               <CompanyLegalOneLine omitPrefix variant="pakalpojums" tone="dark" />
             </div>
           </details>

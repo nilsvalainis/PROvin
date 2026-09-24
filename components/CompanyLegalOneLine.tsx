@@ -45,7 +45,7 @@ export async function CompanyLegalOneLine({
   return (
     <p className={cls}>
       {omitPrefix ? null : <span>{prefix} </span>}
-      {legalName}, Reģ. nr. {regNo}, {legalAddress}
+      {legalName}, {t("companyRegNo")} {regNo}, {legalAddress}
     </p>
   );
 }

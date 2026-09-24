@@ -36,15 +36,15 @@ export async function CompanyLegalDisclosure({ className }: Props) {
         "not-italic text-[11px] leading-relaxed text-[#6e6e73] sm:text-[12px]"
       }
     >
-      <p className="font-medium text-[#424245]">{publicBrand}</p>
+      <p>{publicBrand}</p>
       <p className="mt-1">
-        <span className="font-medium text-[#424245]">{t("companyLegalSubject")}:</span> {legalName}
+        {t("companyLegalSubject")}: {legalName}
       </p>
       <p className="mt-0.5">
-        <span className="font-medium text-[#424245]">{t("companyRegNo")}:</span> {regNo}
+        {t("companyRegNo")}: {regNo}
       </p>
       <p className="mt-0.5">
-        <span className="font-medium text-[#424245]">{t("companyLegalAddress")}:</span> {legalAddress}
+        {t("companyLegalAddress")}: {legalAddress}
       </p>
     </address>
   );
