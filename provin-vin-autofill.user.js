@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.6.0
+// @version      1.7.0
 // @description  Admin MENU: GM_setValue no data-provin-handoff-*. AutoDNA / CarVertical / Auto-Records / CheckThisReg / car.info / CheckCar.vin VIN aizpilde; Tirgus dati URL.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -41,6 +41,8 @@
 
   const GM_PENDING_VIN = "provin_pending_vin";
   const GM_PENDING_URL = "provin_pending_url";
+  const GM_CC_PROBE = "provin_cc_photo_probe";
+  const GM_CC_RESULT = "provin_cc_photo_result";
 
   /* ---------- Admin: saglabāt hand-off pirms jaunas cilnes ---------- */
   if (path.includes("/admin")) {
@@ -49,6 +51,39 @@
       function (ev) {
         const t = ev.target;
         if (!t || typeof t.closest !== "function") return;
+        const probeEl = t.closest("[data-provin-cc-photo-probe]");
+        if (probeEl instanceof HTMLElement) {
+          const probeVin = (probeEl.dataset.provinHandoffVin || "").trim();
+          try {
+            if (probeVin) GM_setValue(GM_PENDING_VIN, probeVin);
+            GM_setValue(GM_CC_PROBE, probeVin);
+            GM_deleteValue(GM_CC_RESULT);
+          } catch (e) {
+            console.warn("PROVIN admin: CC foto", e);
+          }
+          let polls = 0;
+          const timer = window.setInterval(() => {
+            polls += 1;
+            let raw = "";
+            try {
+              raw = String(GM_getValue(GM_CC_RESULT, "") || "");
+            } catch {
+              raw = "";
+            }
+            if (raw) {
+              window.clearInterval(timer);
+              try {
+                const data = JSON.parse(raw);
+                document.dispatchEvent(new CustomEvent("provin-cc-photo", { detail: data }));
+                GM_deleteValue(GM_CC_RESULT);
+              } catch {
+                /* ignore */
+              }
+              return;
+            }
+            if (polls > 90) window.clearInterval(timer);
+          }, 500);
+        }
         const a = t.closest("a[href]");
         if (!a || !(a instanceof HTMLAnchorElement)) return;
         const vin = (a.dataset.provinHandoffVin || "").trim();
@@ -467,6 +502,83 @@
     }
   }
 
+  function findCheckcarVinInput() {
+    const list = document.querySelectorAll("input");
+    for (const el of list) {
+      if (!isVisible(el) || el.disabled) continue;
+      const ph = (el.getAttribute("placeholder") || "").toLowerCase();
+      if (ph.includes("vin")) return el;
+      if (el.maxLength === 17) return el;
+    }
+    return findCarVerticalVinInput(true);
+  }
+
+  function countCheckcarPhotos() {
+    const seen = new Set();
+    let count = 0;
+    for (const img of document.querySelectorAll("img")) {
+      const src = (img.currentSrc || img.src || "").toLowerCase();
+      if (!src || src.startsWith("data:")) continue;
+      if (/logo|icon|flag|sprite|avatar|payment|visa|mastercard|favicon/.test(src)) continue;
+      const w = img.naturalWidth || img.width || 0;
+      const h = img.naturalHeight || img.height || 0;
+      if ((w && w < 80) || (h && h < 80)) continue;
+      if (seen.has(src)) continue;
+      seen.add(src);
+      count += 1;
+    }
+    return count;
+  }
+
+  function publishCheckcarPhotos(probeVin, count, error) {
+    try {
+      GM_setValue(
+        GM_CC_RESULT,
+        JSON.stringify({ vin: probeVin, count, error: error || "", at: Date.now() }),
+      );
+      GM_deleteValue(GM_CC_PROBE);
+    } catch (e) {
+      console.warn("PROVIN checkcar", e);
+    }
+    let badge = document.getElementById("provin-cc-photo-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "provin-cc-photo-badge";
+      badge.style.cssText =
+        "position:fixed;z-index:2147483647;right:16px;bottom:16px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:12px;font:600 14px/1.3 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25)";
+      document.body.appendChild(badge);
+    }
+    badge.textContent = error ? error : count > 0 ? "Foto: " + count : "Foto: nav";
+  }
+
+  function watchCheckcarPhotos(probeVin) {
+    let last = -1;
+    let stable = 0;
+    let ticks = 0;
+    const timer = window.setInterval(() => {
+      ticks += 1;
+      const text = document.body.innerText || "";
+      const leftHome = location.pathname !== "/" || /[?&]vin=/i.test(location.search);
+      const ready = leftHome || text.toUpperCase().includes(probeVin);
+      const count = ready ? countCheckcarPhotos() : 0;
+      if (ready) {
+        if (count === last) stable += 1;
+        else {
+          last = count;
+          stable = 0;
+        }
+        if (stable >= 3) {
+          window.clearInterval(timer);
+          publishCheckcarPhotos(probeVin, count, "");
+        }
+      }
+      if (ticks > 50) {
+        window.clearInterval(timer);
+        publishCheckcarPhotos(probeVin, Math.max(last, 0), ready || last >= 0 ? "" : "Nav atbildes");
+      }
+    }, 500);
+  }
+
   const isCV = host.endsWith("carvertical.com");
   const isAR = host.endsWith("auto-records.com");
   const isDNA = host.endsWith("autodna.lv") || host.endsWith("autodna.com");
@@ -558,12 +670,28 @@
     }
 
     if (isCheckcar) {
-      const el = findCarVerticalVinInput(elapsed1s);
-      if (el && !el.disabled && !done) {
+      if (done) return;
+      const nodes = document.querySelectorAll("button, [role='tab']");
+      for (const node of nodes) {
+        if (!isVisible(node)) continue;
+        if ((node.textContent || "").trim() === "VIN") {
+          node.click();
+          break;
+        }
+      }
+      const el = findCheckcarVinInput();
+      if (!el || el.disabled) return;
+      if (!fieldAlreadyHasVin(el)) fillAndClear(el);
+      const probeVin = String(GM_getValue(GM_CC_PROBE, "") || "").replace(/[\s-]/g, "").toUpperCase();
+      if (!probeVin) {
         done = true;
         window.clearInterval(interval);
-        fillAndClear(el);
+        return;
       }
+      if (!clickByText(/^check vin$/i)) return;
+      done = true;
+      window.clearInterval(interval);
+      watchCheckcarPhotos(probeVin);
     }
   }, 250);
 })();

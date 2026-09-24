@@ -8,6 +8,8 @@
  */
 
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
+import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
+import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
 import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
@@ -120,6 +122,7 @@ export function AdminCcVinSourceBlock({
   onPhotoGroupsStructuralCommit,
 }: Props) {
   const editable = !readOnly && !disabled;
+  const handoffVin = useAdminVinHandoff()?.vin ?? "";
 
   /** Katrai tabulai tāda pati rediģēšanas plūsma: rindas ar vismaz vienu tukšu rindu redzamībai. */
   function rowsOf<T>(rows: T[] | undefined, fallback: () => T): T[] {
@@ -240,6 +243,7 @@ export function AdminCcVinSourceBlock({
           disabled={disabled}
           onClear={() => onChange(emptyCcVinBlock())}
         >
+          <AdminCcVinPhotoProbeButton vin={handoffVin} variant="quiet" />
           <AdminPdfIncludeToggle
             checked={pdfInclude}
             onChange={onPdfIncludeChange}

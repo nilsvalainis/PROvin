@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
 import {
   VIN_AUTOFILL_SERVICES,
   buildVinAutofillHref,
@@ -65,6 +66,7 @@ export function AdminVinServiceLinkRow({ vin }: { vin: string }) {
       {VIN_AUTOFILL_SERVICES.map((svc) => (
         <VinServiceAnchor key={svc.key} svc={svc} vin={vin} className={linkPill} />
       ))}
+      <AdminCcVinPhotoProbeButton vin={vin} variant="quiet" />
     </div>
   );
 }

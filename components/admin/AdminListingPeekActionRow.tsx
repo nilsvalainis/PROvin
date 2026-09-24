@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminAdifyHistoryButton } from "@/components/admin/AdminAdifyHistoryButton";
+import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
 import { adminActionPillBase } from "@/components/admin/adminActionPill";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { SOURCE_BLOCK_EXTERNAL_URL } from "@/lib/admin-source-blocks";
@@ -9,9 +10,10 @@ import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 type Props = {
   listingUrl: string;
   phone: string;
+  vin?: string | null;
 };
 
-export function AdminListingPeekActionRow({ listingUrl, phone }: Props) {
+export function AdminListingPeekActionRow({ listingUrl, phone, vin }: Props) {
   const url = canonicalizeListingUrl(listingUrl);
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -34,6 +36,7 @@ export function AdminListingPeekActionRow({ listingUrl, phone }: Props) {
         LTAB
       </a>
       <AdminAdifyHistoryButton listingUrl={url} />
+      <AdminCcVinPhotoProbeButton vin={vin ?? ""} askVin={!vin?.trim()} />
       <AdminWhatsAppOpenButton phone={phone} variant="pill" />
     </div>
   );
