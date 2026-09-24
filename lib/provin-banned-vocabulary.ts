@@ -127,6 +127,24 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     code: "vocabulary_divejada_aina",
   },
   {
+    label: "duāla vēsture",
+    pattern: /duāl\w*\s+vēstur/i,
+    replacement: "sāc ar fiksētajiem faktiem, bez vēstures dualisma ievada",
+    code: "vocabulary_duala_vesture",
+  },
+  {
+    label: "caurskatāma vēsture (ievads)",
+    pattern: /caurskatām\w*/i,
+    replacement: "sāc ar fiksēto faktu, bez vēstures vērtējuma ievada",
+    code: "vocabulary_caurskatama",
+  },
+  {
+    label: "no vienas puses / no otras puses",
+    pattern: /no\s+vienas\s+puses|no\s+otras\s+puses/i,
+    replacement: "raksti faktu, tad ja vajag - servisa pārbaudi; bez pretstatījuma",
+    code: "vocabulary_no_vienas_puses",
+  },
+  {
     label: "kas nav dārgs risks (šablona ievads)",
     pattern: /kas\s+nav\s+dārgs\s+risk/i,
     replacement: "ja kaut kas neattiecas - pasaki faktu bez šīs ievada frāzes",
@@ -156,4 +174,20 @@ export function buildBannedVocabularyPromptRules(): string {
 export function findBannedVocabularyHits(text: string): BannedVocabularyEntry[] {
   if (!text) return [];
   return PROVIN_BANNED_VOCABULARY.filter((e) => e.pattern.test(text));
+}
+
+const SUMMARY_DUALISM_OPENER = [
+  /Pēc pieejamajiem datiem,?\s*automašīnai ir[^.]{0,160}(?:caurskatām|duāl)[^.]{0,80}\.\s*/gi,
+  /[^.!?\n]*no\s+vienas\s+puses[^.!?\n]*[.!?]\s*/gi,
+  /[^.!?\n]*no\s+otras\s+puses[^.!?\n]*[.!?]\s*/gi,
+];
+
+/** Noņem kopsavilkuma dual-history / on-one-hand ievada teikumus un veco virsrakstu. */
+export function stripSummaryDualismOpener(text: string): string {
+  if (!text) return text;
+  let out = text.replace(/^Kopējā aina\s*$/gim, "Fakti");
+  for (const re of SUMMARY_DUALISM_OPENER) {
+    out = out.replace(re, "");
+  }
+  return out.replace(/\n{3,}/g, "\n\n").trim();
 }

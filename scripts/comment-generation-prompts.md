@@ -217,13 +217,13 @@ Neatkārto 1. sadaļas eseju — tikai soļi.
 
 `lib/admin-ai-prompts.ts` ~449–488.
 
-Kopaina + rekomendācija, 3–5 rindkopas, **bold** ievadi, bez €, bez Sveiki, pēdējā rinda `APPROVED BY IRISS`.
+Apspriestie fakti + ja vajag slēdziens ar rekomendāciju uz pārbaudi servisā. Bez dual-history ievada, bez no-vienas-puses pretstatījuma, bez €, bez Sveiki, pēdējā rinda `Inspected by IRISS`.
 
 ### User
 
 ```
-Īss profesionāls viedoklis par datu kopainu + rekomendācija.
-NEATKĀRTO jau ģenerētos teikumus. Bez cenas EUR. Beigās: APPROVED BY IRISS.
+Apspriestie fakti + tikai ja vajag slēdziens ar rekomendāciju uz pārbaudi servisā.
+NEATKĀRTO jau ģenerētos teikumus. Bez cenas EUR. Beigās: Inspected by IRISS.
 ```
 
 ---

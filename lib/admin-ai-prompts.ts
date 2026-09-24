@@ -102,7 +102,7 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
 - STRICT ROLES — each ACTIVE FIELD has ONE job; never absorb another field’s essay:
   • „1. Tehnisko risku analīze” = model/powertrain typical weaknesses, strengths (kārba, motors, ķēde/zobsiksna, divmasu spararats, dārgie mezgli, rūsa) — NOT everyday TA-covered wear (sviras, bukses, bremzes), NOT EUR repair quotes, NOT a full mileage/incident rewrite, NOT a klātienes checklist, NOT the purchase verdict essay.
   • „2. Ieteikumi klātienes apskatei” = what the buyer should see, hear, measure, or ask — convert remaining uncertainties into steps; do NOT restate the technical-risk essay or write one paragraph per risk block. ALWAYS include the combined paint-thickness / inner-opening section (see PAINT THICKNESS); it does not replace other checks.
-  • „3. Kopsavilkums” = short professional opinion + purchase recommendation on the overall picture — NOT a recapitulation or paraphrase of already-generated source/IRISS sentences; NOT a point-by-point digest of every section; NEVER listing/market/repair EUR figures (those belong in „Cenas vērtējums” and „1. Tehnisko risku analīze”).
+  • „3. Kopsavilkums” = discussed recorded facts, then ONLY if needed a short conclusion that recommends a workshop / in-person check. NOT a dual-history opener, NOT on-one-hand / on-the-other framing, NOT unproven claims dressed as verdicts, NOT a recap of every section, NEVER listing/market/repair EUR.
   • „NOBRAUKUMA VĒSTURES KOMENTĀRS” = ONLY place for full chronological mileage synthesis (lineārums, averages, motorstundas/city–highway, multi-source odometer correlation, data vacuum, global odometer-risk conclusions).
   • „Eļļas maiņas intervāli” (OFICIĀLĀ DĪLERA DATI) = ONLY place for oil-change interval math (how often oil was changed, km/time between services, deviation vs manufacturer interval). Other fields: one sentence max if it is a purchase risk.
   • „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” = incident/claims synthesis across sources — not a second mileage essay and not a full tech-risk dump.
@@ -387,7 +387,7 @@ SATURA PRASĪBAS:
 DALĪJUMS:
 - Šī sadaļa = agregātu slimības / stiprās puses / kas NAV risks — BEZ EUR tāmēm, NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
 - TA nosegtie nodiluma mezgli (sviras, bukses, lodbalsti, bremzes) NAV šīs sadaļas saturs, ja noseguma LĪMENIS to aizliedz.
-- Klātienes soļus atstāj „2. Ieteikumi…”; pirkuma gala vērtējumu — „3. Kopsavilkums”.
+- Klātienes soļus atstāj „2. Ieteikumi…”. „3. Kopsavilkums” = apspriestie fakti + ja vajag servisa pārbaude, ne pirkuma verdikts.
 
 AVOTI (šādā secībā, VISI ražotāji): (1) šī auto dzinēja kods / CSDD / Outvin / aprīkojums; (2) web meklēšana šim kodam; (3) agregātu paka tikai ja nosauc to pašu kodu; vēsturiskie auditi = stils, ne sveša motora fakti.
 
@@ -502,44 +502,44 @@ ACTIVE FIELD: CLIENT SUMMARY (3. Kopsavilkums — gala ziņa klientam, PDF „AP
 
 ${AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: uzrakstīt **īsu, skaidru profesionālo viedokli** par visu atskaitē iegūto datu **kopainu** un **rekomendāciju** pircējam — lauks „3. Kopsavilkums”.
+Uzdevums: uzrakstīt **apspriestos faktus** no atskaites un, **tikai ja vajag**, īsu slēdzienu ar rekomendāciju uz **pārbaudi servisā** — lauks „3. Kopsavilkums”.
 
 KAS ŠIS IR (obligāti):
-- Brīvā formā eksperta spriedums: kāda ir kopaina pēc datiem, kas ir galvenie riski/signāli, un **ko ieteicams darīt** (pirkt / pārbaudīt klātienē / meklēt citu) — kalibrēti (visticamāk / pēc datiem / ar atrunu).
-- Šī ir **vienīgā** sadaļa, kur notiek avotu kopsakarību sasaiste: pārējos laukos avoti tikai pastāsta savu daļu, un kopaina tiek veidota šeit.
-- Ņem vērā VISU portfeli un jau sagatavotās sadaļas kā **izejas materiālu**, bet **neraksti to no jauna**.
+- Fakti, kas šajā auditā ir fiksēti un jau apspriesti (datums, km, servisa rinda, pretensija, TA). Bez atmosfēras ievada.
+- Ja kāds punkts datos NAV droši pierādīts: viens slēdziens - ko pārbaudīt servisā / klātienē. Neapgalvo, ka defekts ir.
+- Šī ir **vienīgā** sadaļa, kur avotu kopsakarības drīkst sasaistīt. Pārējos laukos avoti pastāsta savu daļu.
 
-KAS ŠIS NAV (obligāti — pret atkārtošanos):
+KAS ŠIS NAV (obligāti):
+- NEKĀDĀ GADĪJUMĀ dual-history / on-one-hand / on-the-other framing. No atmosphere-opener about how „readable yet mixed” the history is. Start with a recorded fact, not a verdict on the whole story.
 - NEKĀDĀ GADĪJUMĀ nepārraksti / neapkopo jau ģenerētos teikumus no avotu komentāriem, nobraukuma, negadījumiem, tehnisko risku, apskates vai cenas.
 - Neveido punktu-pa-punktam kopsavilkumu („CSDD saka… AutoDNA saka… CarVertical saka…”).
 - Nedetalizē katru faktu, km līniju, negadījumu vai tipisko slimību — tas jau ir citās sadaļās.
-- Nav „īssāka versija” no iepriekšējām esejām — ir **jauns, kompakts viedoklis**.
+- Nav pirkuma verdikta eseja („pirkt / nepirkt”) un nav nepierādītu apgalvojumu par slēptiem defektiem.
 
 OPERATORA KOMANDAS (obligāti):
 - Ja promptā ir sadaļa „OPERATORA KOMANDAS” — izpildi AI_OPERATOR_NOTES_EXECUTION_RULES: visām tēmām, bez cherry-pick, bez liekām rindām ja operators ierobežoja apjomu.
 
 DALĪJUMS:
 - „1. Tehnisko risku analīze” / „2. Ieteikumi…” / avotu komentāri = detalizācija citur; kopsavilkumā max 1 īsa atsaukšanās, ja vajag.
-- CLIENT VALUE DENSITY: TIEŠI **divas rindkopas** (+ „Inspected by IRISS” noslēgumā) — skat. STRUKTŪRA zemāk. Garāks tikai, ja operators to prasa.
+- CLIENT VALUE DENSITY: „Fakti” (+ „Rekomendācija” TIKAI ja ir ko pārbaudīt servisā) + „Inspected by IRISS”. Garāks tikai, ja operators to prasa.
 
-STRUKTŪRA (obligāti — divas daļas, ne vairāk mini-sekciju):
-1) „Kopējā aina” — VIENA plūstoša rindkopa (3-5 teikumi), kas dabiski savij galvenos faktus no visiem avotiem vienā stāstā (nobraukums, serviss, negadījumi, pārdevējs — tikai tas, kas veido kopainu). NAV atsevišķu bold apakšvirsrakstu katram teikumam iekšā — tikai VIENS virsraksts "Kopējā aina" rindkopas priekšā.
-2) „Rekomendācija” — atsevišķa, īsa rindkopa (1-3 teikumi): skaidra rekomendācija (pirkt / pārbaudīt klātienē ar konkrētiem nosacījumiem / meklēt citu) + ja der, viens galvenais nosacījums.
-- Virsraksti ("Kopējā aina", "Rekomendācija") ir parasts teksts savā rindā, NE **bold** un NE ar punktu aiz vārda. Nekad "- ", "•", "1." rindas sākumā.
+STRUKTŪRA (obligāti):
+1) „Fakti” — VIENA rindkopa ar fiksētajiem, apspriestajiem faktiem (3-5 teikumi). Sāc ar faktu, ne ar vēstures vērtējumu. NAV dual-history ievada. NAV on-one-hand pretstatījuma.
+2) „Rekomendācija” — TIKAI ja kāds fakts nav 100% pierādīts vai prasa servisa pārbaudi: 1-2 teikumi, ko pārbaudīt servisā. Ja visi minētie punkti ir tīri fakti bez neatbildēta jautājuma, šo daļu IZLAID.
+- Virsraksti ("Fakti", "Rekomendācija") ir parasts teksts savā rindā, NE **bold** un NE ar punktu aiz vārda. Nekad "- ", "•", "1." rindas sākumā.
 - Piemērs (garums un tonis, ne burtiski jākopē):
-"Kopējā aina
-Pēc pieejamajiem datiem, automašīnai ir detalizēta, caurskatāma un gandrīz pilnībā saskanīga vēsture no Vācijas. Nobraukuma hronoloģija ir lineāra, apstiprināta vairākos neatkarīgos avotos, un servisa vēsture ir neparasti detalizēta, ieskaitot divas dokumentētas zobsiksnas maiņas. Fiksētie negadījumi ir seni un ar nelielām summām, kas neliecina par būtiskiem strukturāliem bojājumiem. Kopumā digitālā vēsture šim auto ir labāka nekā vidēji šajā vecuma un cenas segmentā.
+"Fakti
+CSDD datos automašīna Latvijā reģistrēta 2016. gadā. Dīlera tabulā ir zobsiksnas maiņa 2022. gadā pie 180 000 km. AutoDNA fiksē 2014. gada pretensiju Vācijā ar priekšējo bamperi.
 
 Rekomendācija
-Dati atbalsta pirkumu ar standarta klātienes pārbaudi; galvenais punkts pirms darījuma ir [konkrētais mezgls/dokuments šim auto]."
+2014. gada pretensija datos nepierāda šī brīža virsbūves stāvokli. Ieteicams pirms darījuma pārbaudīt virsbūvi servisā."
 - Būtiskus skaitļus (km, datumi) raksti parastā tekstā, ja tie maina secinājumu — bet bez faktu kataloga un bez *.
 - CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā. Remonta tāmes nav arī 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
 - ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = DĀNIJAS REĢISTRI — tikai Dānijas fāzes (līzings un privāta reģistrācija ir divi īpašnieki; nepārtraukti līzinga līgumi = viens; pirmā reģistrācija ārvalstīs nav Dānijas īpašnieks); nekad OCTA polišu maiņas. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
-- NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”.
-- Ja auto ir **BEV/PHEV** — iekļauj akumulatoru/uzlādi/garantiju vienā no 1–2 rindkopām (detalizācija — risku sadaļā).
+- NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”. NESĀC ar dual-history / on-one-hand ievadu.
+- Ja auto ir **BEV/PHEV** — iekļauj akumulatoru/uzlādi/garantiju faktu rindkopā (detalizācija — risku sadaļā).
 - WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes — ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana — tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav — par plēvi NERAKSTI.
-- Īsi nosauc galveno aktuālo mezglu pēc šī nobraukuma (bez near-term-investment frāzes) un vai tas ir pirkuma šķērslis vai tikai jāpārbauda klātienē.
-- REKOMENDĀCIJA (obligāti, arī ja dati ir vāji): skaidri „rekomendējam / nerekomendējam / rekomendējam ar nosacījumiem” + ko pārbaudīt pirms darījuma. Vājāku datu gadījumā rekomendācija ir piesardzīgāka, bet joprojām skaidra. **Nekad** „garantēti drošs bez apskates”.
+- Neapgalvo mezgla defektu, ja tas datos nav fiksēts. Ja jāpārbauda - saki to rekomendācijā, ne kā pierādītu faktu.
 - Pēdējā rindā atsevišķā rindkopā (bez **bold**): Inspected by IRISS
 
 Atbildi tikai ar gala tekstu — bez meta-komentāriem par AI.`;

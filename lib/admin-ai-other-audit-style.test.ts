@@ -66,7 +66,7 @@ ${OTHER_AUDIT_STYLE_HEADING}
 Sagatavo kopsavilkumu.`;
     expect(mentionsVehicleWrapInOrderFacts(prompt)).toBe(false);
     const issues = evaluateExpertCommentQuality(
-      "Kopējā aina\nAutomašīna ir aplīmēta ar plēvi, tāpēc krāsojumu zem tās nevar novērtēt bez demontāžas.\n\nRekomendācija\nIeteicams turpināt pēc klātienes pārbaudes.",
+      "Fakti\nAutomašīna ir aplīmēta ar plēvi, tāpēc krāsojumu zem tās nevar novērtēt bez demontāžas.\n\nRekomendācija\nIeteicams pirms darījuma pārbaudīt virsbūvi servisā.",
       { field: "summary", sourcePrompt: prompt },
     );
     expect(issues.some((i) => i.code === "wrap_film_invented")).toBe(true);

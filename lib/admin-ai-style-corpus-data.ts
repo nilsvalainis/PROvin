@@ -51,6 +51,6 @@ export const PROVIN_STYLE_CORPUS_SAMPLES: readonly StyleCorpusSample[] = [
   },
   {
     field: "summary",
-    text: "Kopējā aina\nPēc pieejamajiem datiem automašīna izskatās koptāka nekā tipisks imports šajā vecumā, ar atrunu ka PROVIN to fiziski nav apskatījis.\n\nRekomendācija\nIeteicams turpināt pēc klātienes pārbaudes; tuvākais izmaksu punkts ir agregāta īpatnība, ne ikdienas nodilums.",
+    text: "Fakti\nCSDD datos auto Latvijā reģistrēts pēc importa. Dīlera tabulā ir fiksēta zobsiksnas maiņa.\n\nRekomendācija\nIeteicams pirms darījuma pārbaudīt virsbūvi un kārbu servisā. Datos nav pierādīta pašreizējā defekta.",
   },
 ];

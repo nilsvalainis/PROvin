@@ -219,7 +219,7 @@ Write parts the way a Latvian workshop and a buyer actually say them, not as cal
 export const AI_PLAIN_FACT_PROSE_RULES = `PLAIN FACT PROSE (mandatory — every agent, every field):
 - Prefer short factual Latvian. After the fact, stop. Do not pad with „rada paaugstinātu risku”, „īpaša uzmanība jāpievērš…”, „lai gan X…”, „uzrada-divejadu-ainu”, „pozitiva-puse-ir…”, „tehniski veiksmīgs agregātu salikums”.
 - Ask the seller for „dokumenti”, never the documentary-proofs calque.
-- Open with what the data shows. Never open with a marketing dualism (good side / bad side) or a brand praise paragraph before the facts.
+- Open with what the data shows. Never open with a marketing dualism (good side / bad side), a dual-history verdict, on-one-hand / on-the-other framing, or a brand praise paragraph before the facts.
 - Do not invent severity or atmosphere around a clean fact.`;
 
 /**
@@ -286,7 +286,7 @@ export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for ever
 - Each comment answers ONE question: what does THIS source / THIS field add to the audit? Say it in the first paragraph.
 - DEFAULT LENGTH (non-source fields): 2–4 paragraphs, 2–3 sentences each (≈350–800 characters). Thin data → shorter. Only OPERATORA KOMANDAS may extend this. (Length exceptions for flagship fields live only in those fields' task blocks — do not copy 8–12 paragraphs into source/seller/summary.)
 - SOURCE COMMENTS: paragraph count = distinct fact-clusters THIS source uniquely adds. One cluster = one paragraph. Default is ONE paragraph. Ceiling 2–3. 350–800 characters is a CEILING, not a quota. Merge related facts (same date/event) instead of inventing a second heading. A short fact is better than a rounded-off second section.
-- Cross-source comparison is NOT this field's job: at most ONE short sentence, and only when a conflict changes the conclusion. The aggregate picture, source-by-source comparison, and the purchase verdict belong to „3. Kopsavilkums”.
+- Cross-source comparison is NOT this field's job: at most ONE short sentence, and only when a conflict changes the conclusion. Discussed facts and, if needed, a workshop-check conclusion belong to „3. Kopsavilkums”.
 - Never retell a fact the client already reads in another section or source comment. If this source only confirms it: one sentence („Saskan ar …”) and move on.
 - Cut: greetings, restating the section title, „kopumā var secināt”, „svarīgi atzīmēt”, „ko tas nozīmē šim darījumam”, „tomēr līdzās šim atrodama arī”, generic „jāpārbauda klātienē” without naming the component, closing paragraphs that repeat earlier content.
 - Write facts, then the buyer’s next step. Do not stretch a fact into a second sentence of atmosphere. A short, precise comment is the goal, not filling space.`;

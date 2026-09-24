@@ -47,7 +47,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 | `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | 2. Ieteikumi klātienes apskatei | `admin-ai-inspection.ts` — heading then paragraph, no `*`; uses technical-risks section |
 | `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets | `admin-ai-seller.ts` — heading then paragraph, no `*` |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums | `admin-ai-price.ts` |
-| `AI_SUMMARY_ANALYSIS_SYSTEM` | 3. Kopsavilkums | `admin-ai-summary.ts` — free-form synthesis, no „Sveiki”, no EUR prices, avoid duplicating technical risks |
+| `AI_SUMMARY_ANALYSIS_SYSTEM` | 3. Kopsavilkums | `admin-ai-summary.ts` — discussed facts, then optional workshop-check conclusion; no dual-history opener, no „Sveiki”, no EUR prices, avoid duplicating technical risks |
 | `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs | `admin-ai-mileage-comment.ts` |
 | `AI_INCIDENTS_SUMMARY_SYSTEM` | Negadījumu vēstures kopsavilkums | `admin-ai-incidents-summary.ts` |
 | `aiSourceCommentSystemPrompt(label)` | Avota „Komentāri” | `admin-ai-source-comment.ts` |
@@ -86,7 +86,7 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 - Copy a pack fault onto the wrong engine of the same brand (any make: thermostat, chain vs belt, wet belt, intake). Identify THIS engine code, search that code, then write. Canonical: `AI_THIS_CAR_ONLY_LOGIC_RULES`, `AI_POWERTRAIN_IDENTIFICATION_RULES`.
 - Paste a FLASH MAX extra note into every source when the operator targeted one source. Canonical: `AI_OPERATOR_NOTES_EXECUTION_RULES` SOURCE TARGETING.
 - Put approximate repair/service EUR bands („orientējoši … €”) into any ✨ comment. Canonical: `AI_NO_ESTIMATED_REPAIR_EUR_RULES`. Aggregate packs may hold € for internal calibration only — `stripUnauthorizedEuroAmounts()` is a runtime safety net on technical-risks/inspection/summary, not a substitute for correct prompting.
-- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, „kontrolpunkts klātienē”, „uzturēšanas punkts”, „integritāte”, „tuvākā laika ieguldījums”, „Kas NAV dārgs risks”, „dokumentāri pierādījumi”, or „divējādu ainu” anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē”, „dokumenti”, „stāvoklis”, plain facts instead. Do not teach kancelejisks „signāls/faktors” padding.
+- Use „saime”, „Baltija”/„Baltijas”, bare „injektori”, „vidējs uzturēšanas risks”, „kontrolpunkts klātienē”, „uzturēšanas punkts”, „integritāte”, „tuvākā laika ieguldījums”, „Kas NAV dārgs risks”, „dokumentāri pierādījumi”, „divējādu ainu”, a dual-history opener, or on-one-hand / on-the-other framing anywhere the model can copy into client text (prompts, aggregate packs, few-shots). Use „agregāts/konstrukcija”, named countries (Latvija/Lietuva/Igaunija), „iesmidzinātājs (sprausla)”, „ierasta uzturēšanas izmaksa”, „jāpārbauda klātienē”, „dokumenti”, „stāvoklis”, discussed facts then a workshop check if needed. Do not teach kancelejisks „signāls/faktors” padding.
 
 ## Prompt version & evals
 

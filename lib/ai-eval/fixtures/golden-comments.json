@@ -153,13 +153,20 @@
     "expectPass": false,
     "wrapPresentInContext": true,
     "codes": ["wrap_film_missing"],
-    "text": "Kopējā aina\nPēc pieejamajiem datiem automašīna izskatās koptāka nekā tipisks imports, ar atrunu ka PROVIN to fiziski nav apskatījis.\n\nRekomendācija\nIeteicams turpināt pēc klātienes pārbaudes."
+    "text": "Fakti\nCSDD datos automašīna Latvijā reģistrēta 2016. gadā. Dīlera tabulā ir zobsiksnas maiņa 2022. gadā.\n\nRekomendācija\nIeteicams pirms darījuma pārbaudīt virsbūvi servisā."
   },
   {
     "id": "summary-no-price-ok",
     "field": "summary",
     "expectPass": true,
-    "text": "Kopējā aina\nPēc pieejamajiem datiem automašīna izskatās koptāka nekā tipisks imports šajā vecumā, ar atrunu ka PROVIN to fiziski nav apskatījis.\n\nGalvenais punkts\nTuvākais izmaksu draiveris ir piekare, ne motors - tas ir kontrolpunkts, ne pirkuma šķērslis.\n\nRekomendācija\nIeteicams turpināt pēc klātienes pārbaudes."
+    "text": "Fakti\nCSDD datos automašīna Latvijā reģistrēta 2016. gadā. Dīlera tabulā ir zobsiksnas maiņa 2022. gadā pie 180 000 km. AutoDNA fiksē 2014. gada pretensiju Vācijā ar priekšējo bamperi.\n\nRekomendācija\n2014. gada pretensija datos nepierāda šī brīža virsbūves stāvokli. Ieteicams pirms darījuma pārbaudīt virsbūvi servisā."
+  },
+  {
+    "id": "summary-bad-dual-history",
+    "field": "summary",
+    "expectPass": false,
+    "codes": ["vocabulary_duala_vesture", "vocabulary_caurskatama"],
+    "text": "Fakti\nPēc pieejamajiem datiem, automašīnai ir caurskatāma, bet duāla vēsture. CSDD datos auto Latvijā reģistrēts 2016. gadā."
   },
   {
     "id": "summary-bad-price",

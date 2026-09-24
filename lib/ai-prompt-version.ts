@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-24.1 - 3. Kopsavilkums: fakti, tad ja vajag slēdziens ar
+ *   servisa pārbaudi. Bez dual-history ievada, bez no-vienas-puses
+ *   pretstatījuma, bez apgalvojumiem, kas datos nav pierādīti.
  * - 2026-09-23.7 - Testa brauciens: 7 pakāpju S-Tronic lēna uzsākšana
  *   pēc bremžu atlaišanas un strauja apstāšanās; divmasu spararata
  *   graboņa pie kreisā priekšējā riteņa aukstam un siltam; Audi V6
@@ -133,4 +136,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-23.7";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-24.1";

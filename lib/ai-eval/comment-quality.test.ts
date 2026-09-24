@@ -7,6 +7,7 @@ import {
   mentionsVehicleWrapInOrderFacts,
   type CommentQualityOptions,
 } from "@/lib/ai-eval/comment-quality";
+import { stripSummaryDualismOpener } from "@/lib/provin-banned-vocabulary";
 
 type Fixture = {
   id: string;
@@ -89,5 +90,23 @@ Lineārs, bez vakuuma.
 
 Sagatavo kopsavilkumu.`;
     expect(mentionsVehicleWrapInOrderFacts(prompt)).toBe(false);
+  });
+});
+
+describe("stripSummaryDualismOpener", () => {
+  it("deletes the canned dual-history opener and renames the old heading", () => {
+    const raw = [
+      "Kopējā aina",
+      "Pēc pieejamajiem datiem, automašīnai ir caurskatāma, bet duāla vēsture. CSDD datos auto Latvijā reģistrēts 2016. gadā.",
+      "",
+      "Rekomendācija",
+      "Ieteicams pirms darījuma pārbaudīt virsbūvi servisā.",
+    ].join("\n");
+    const out = stripSummaryDualismOpener(raw);
+    expect(out).toMatch(/^Fakti/);
+    expect(out).not.toMatch(/caurskatām/i);
+    expect(out).not.toMatch(/duāl/i);
+    expect(out).toMatch(/CSDD datos auto Latvijā reģistrēts 2016/);
+    expect(out).toMatch(/Rekomendācija/);
   });
 });

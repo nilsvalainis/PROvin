@@ -113,15 +113,18 @@ describe("PROVIN AI prompt invariants", () => {
     );
   });
 
-  it("summary prompt demands short opinion not section recapitulation", () => {
+  it("summary prompt demands discussed facts, not dual-history or section recap", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
-    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?profesionālo viedokli/i);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?apspriestos faktus/i);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NEKĀDĀ GADĪJUMĀ nepārraksti/i);
-    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?divas rindkopas/);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?pārbaudi servisā/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?NERAKSTI sludinājuma cenu/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?ĪPAŠNIEKU SKAITS/);
     expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?nesummē/i);
-    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?rekomendējam/);
+    expect(prompts).toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?dual-history/);
+    expect(prompts).not.toMatch(/AI_SUMMARY_ANALYSIS_SYSTEM[\s\S]*?Kopējā aina/);
+    expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/stripSummaryDualismOpener/);
+    expect(readRepo("lib/admin-ai-summary.ts")).toMatch(/pārbaudi servisā/);
   });
 
   it("field-agent prompts encode client value density and institutional memory", () => {

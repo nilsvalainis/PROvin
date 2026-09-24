@@ -15,13 +15,16 @@ import {
   throwIfBlankGeneratedComment,
   rethrowNormalizedIncompleteComment,
 } from "@/lib/admin-ai-incomplete";
+import { stripSummaryDualismOpener } from "@/lib/provin-banned-vocabulary";
 import {
   normalizeProvinExpertAiComment,
   stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
 
 function finalizeSummaryComment(text: string): string {
-  return stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text));
+  return stripUnauthorizedEuroAmounts(
+    normalizeProvinExpertAiComment(stripSummaryDualismOpener(text)),
+  );
 }
 
 function expertSection(label: string, html: string): string {
@@ -76,20 +79,21 @@ ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
         : ""
     }Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
 
-Uzdevums: īss, skaidrs **profesionāls viedoklis** par datu **kopainu** + **rekomendācija**. Brīvā formā — nevis katra punkta atkārtošana.
+Uzdevums: apspriestie **fakti** + **tikai ja vajag** slēdziens ar rekomendāciju uz **pārbaudi servisā**. Sāc ar faktu, ne ar vēstures vērtējumu. Bez dual-history ievada, bez on-one-hand pretstatījuma.
 
 OBLIGĀTI:
-- Šī ir vieta, kur avotu dati tiek sasaistīti kopainā — pārējos laukos katrs avots pastāsta tikai savu daļu.
+- Šī ir vieta, kur avotu dati tiek sasaistīti - pārējos laukos katrs avots pastāsta tikai savu daļu.
 - NEATKĀRTO un neapkopo jau ģenerētos teikumus no avotiem / nobraukuma / negadījumiem / „${ADMIN_TECHNICAL_RISKS_LABEL}” / apskates.
 - Neveido „CSDD… AutoDNA… CarVertical…” katalogu.
-- Tieši divas rindkopas: „Kopējā aina” (plūstošs stāsts, bez iekšējiem bold apakšvirsrakstiem) + „Rekomendācija” (īsa, skaidra) — tad Inspected by IRISS.
-- Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; rekomendācija kalibrēta, jo pamatā ir digitāli dati, kas var būt nepilnīgi.
-- NESĀC ar „Sveiki” vai sarunas uzrunu.
-- NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas — tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
-- Īpašnieku skaitu ņem no sadaļas „Īpašnieku skaits (reconcilēts)” — neskaiti AutoDNA+CarVertical+reģistrus kopā.
+- „Fakti” (fiksētais, apspriestais) + „Rekomendācija” TIKAI ja kāds punkts nav 100% pierādīts un prasa servisa / klātienes pārbaudi. Tad Inspected by IRISS. Ja slēdziena nav vajadzības, rekomendāciju IZLAID.
+- Neapgalvo defektu, kas datos nav fiksēts. Nav pirkuma verdikta esejas (pirkt / nepirkt).
+- Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm.
+- NESĀC ar „Sveiki” vai sarunas uzrunu. NESĀC ar dual-history / on-one-hand ievadu.
+- NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas - tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
+- Īpašnieku skaitu ņem no sadaļas „Īpašnieku skaits (reconcilēts)” - neskaiti AutoDNA+CarVertical+reģistrus kopā.
 - Beigās: Inspected by IRISS.
-- WRAP_FILM: tikai ja ŠĪ pasūtījuma datos jau ir fiksēta aplīmēšana. Šī rinda NAV fakts. Ja datos nav — par plēvi NERAKSTI.
-- Eļļas maiņas intervālu tabulu / matemātiku NEATKĀRTO — tas ir laukā „Eļļas maiņas intervāli”.`,
+- WRAP_FILM: tikai ja ŠĪ pasūtījuma datos jau ir fiksēta aplīmēšana. Šī rinda NAV fakts. Ja datos nav - par plēvi NERAKSTI.
+- Eļļas maiņas intervālu tabulu / matemātiku NEATKĀRTO - tas ir laukā „Eļļas maiņas intervāli”.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
