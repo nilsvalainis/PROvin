@@ -46,6 +46,8 @@ export type AdminOrderRow = {
   vin: string | null;
   /** Stripe `metadata.checkout_line` (demo rindām var nebūt — tad uzskatām par auditu). */
   checkoutLine?: CheckoutLineKind;
+  /** „Kur uzzināja” no Stripe. Tikai admin, ne klienta PDF. */
+  heardAbout?: string | null;
   /** Demonstrācijas pasūtījums (ADMIN_DEMO_ORDERS) */
   isDemo?: boolean;
   /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe) — Summa/Laiks labojami. */
@@ -62,6 +64,8 @@ export type AdminOrderDetail = AdminOrderRow & {
   /** Kā klients vēlas sazināties (no pasūtījuma formas / metadata). */
   contactMethod: string | null;
   notes: string | null;
+  /** Avots (TikTok u.c.). Nav klienta komentāra daļa. */
+  heardAbout?: string | null;
   customerDetailsEmail: string | null;
   customerDetailsPhone: string | null;
   /** Tavs komentārs apstrādei (vēlāk — saglabāšana DB) */
@@ -114,6 +118,7 @@ function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | nul
     customerEmail: s.customer_email ?? s.customer_details?.email ?? null,
     vin: order.vin,
     checkoutLine: getCheckoutLineFromSession(s),
+    heardAbout: order.heardAbout,
   };
 }
 
@@ -318,6 +323,7 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     contactMethod: order.contactMethod,
     phone,
     notes: order.notes,
+    heardAbout: order.heardAbout,
     customerDetailsEmail: session.customer_details?.email ?? null,
     customerDetailsPhone: session.customer_details?.phone ?? null,
     ...(select

@@ -68,6 +68,20 @@ export function heardAboutDisplayLabel(
   return HEARD_ABOUT_LABELS[value][checkoutFieldLocale(locale)];
 }
 
+/** Rinda, ko agrāk līmējām klienta piezīmēs. PDF un klienta komentārā tai nav jāparādās. */
+const HEARD_ABOUT_NOTE_LINE = /^\s*(?:<p[^>]*>\s*)?Kur uzzināja:\s*\S.*$/i;
+
+/** Izņem tikai „Kur uzzināja: …” rindas. Pārējais klienta komentārs paliek. */
+export function stripHeardAboutFromClientNotes(notes: string | null | undefined): string | null {
+  if (!notes?.trim()) return null;
+  const kept = notes
+    .replace(/<p[^>]*>\s*Kur uzzināja:\s*[^<]*<\/p>/gi, "")
+    .split(/\r?\n/)
+    .filter((line) => !HEARD_ABOUT_NOTE_LINE.test(line));
+  const text = kept.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return text || null;
+}
+
 /**
  * Stripe Checkout „Kur uzzinājāt par mums?” - dropdown, jo hosted Checkout
  * nezīmē čipus. Tās pašas opcijas, ko dizainā rādījām kā čipus.
@@ -183,11 +197,9 @@ export function getOrderFieldsFromSession(session: Stripe.Checkout.Session): {
   const clientComment = getCustomFieldValue(session, "client_comment")?.trim() || null;
   const heardRaw = meta(HEARD_ABOUT_FIELD_KEY) ?? getCustomFieldValue(session, HEARD_ABOUT_FIELD_KEY);
   const heardLabel = heardAboutDisplayLabel(heardRaw, "lv");
-  const heardLine = heardLabel ? `Kur uzzināja: ${heardLabel}` : null;
   const commentParts = [metaNotes, clientComment].filter((p): p is string => Boolean(p));
   const uniqueComments = commentParts.filter((p, i) => commentParts.indexOf(p) === i);
-  const notesParts = [heardLine, ...uniqueComments].filter((p): p is string => Boolean(p));
-  const notes = notesParts.length ? notesParts.join("\n\n") : null;
+  const notes = stripHeardAboutFromClientNotes(uniqueComments.length ? uniqueComments.join("\n\n") : null);
 
   return {
     vin: meta("vin") ?? getCustomFieldValue(session, "vin"),

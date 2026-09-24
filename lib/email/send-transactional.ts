@@ -70,6 +70,7 @@ function adminOrderPlainText(p: OrderEmailPayload): string {
     `Sludinājums: ${p.listingUrl ?? "-"}`,
     p.contactMethod ? `Saziņa: ${contactLabel(p.contactMethod)}` : "Atskaite: e-pastā",
     p.notes ? `Piezīmes: ${p.notes}` : "",
+    p.heardAbout ? `Kur uzzināja: ${p.heardAbout}` : "",
     `Summa: ${p.amountTotal ?? "-"} ${p.currency ?? ""}`,
   ].filter(Boolean);
   return lines.join("\n");
@@ -122,6 +123,7 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
       value: payload.contactMethod ? contactLabel(payload.contactMethod) : "E-pasts (atskaite)",
     },
     ...(payload.notes ? [{ label: "Piezīmes", value: payload.notes }] : []),
+    ...(payload.heardAbout ? [{ label: "Kur uzzināja", value: payload.heardAbout }] : []),
     {
       label: "Summa",
       value: `${payload.amountTotal ?? "-"} ${payload.currency ?? ""}`.trim(),

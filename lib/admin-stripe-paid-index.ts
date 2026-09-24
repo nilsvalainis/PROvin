@@ -47,6 +47,7 @@ function normalizeRow(raw: unknown): AdminOrderRow | null {
     customerEmail: typeof o.customerEmail === "string" ? o.customerEmail : null,
     vin: typeof o.vin === "string" ? o.vin : null,
     checkoutLine: typeof o.checkoutLine === "string" ? (o.checkoutLine as AdminOrderRow["checkoutLine"]) : undefined,
+    heardAbout: typeof o.heardAbout === "string" && o.heardAbout.trim() ? o.heardAbout.trim() : null,
     isDemo: o.isDemo === true,
     isManual: o.isManual === true,
   };

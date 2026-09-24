@@ -9,6 +9,7 @@ import {
   formatStripeCheckoutAddress,
   getCheckoutLineFromSession,
   getOrderFieldsFromSession,
+  stripHeardAboutFromClientNotes,
 } from "@/lib/stripe-session";
 
 function sessionWith(opts: {
@@ -74,14 +75,25 @@ describe("stripe-session — Komentārs un avots", () => {
     expect(getOrderFieldsFromSession(s).notes).toBe("VIN ir no tehniskās pases, ne sludinājuma.");
   });
 
-  it("prefixes heard-about into notes for the operator", () => {
+  it("keeps heard-about off client notes and stores it separately", () => {
     const s = sessionWith({
       heardAbout: "instagram",
       clientComment: "Pārbaudiet negadījumus.",
     });
     const fields = getOrderFieldsFromSession(s);
     expect(fields.heardAbout).toBe("Instagram");
-    expect(fields.notes).toBe("Kur uzzināja: Instagram\n\nPārbaudiet negadījumus.");
+    expect(fields.notes).toBe("Pārbaudiet negadījumus.");
+    expect(fields.notes).not.toContain("Kur uzzināja");
+  });
+
+  it("strips a saved heard-about line and keeps the client comment", () => {
+    expect(stripHeardAboutFromClientNotes("Kur uzzināja: TikTok\n\nPārbaudiet rūsu.")).toBe(
+      "Pārbaudiet rūsu.",
+    );
+    expect(stripHeardAboutFromClientNotes("<p>Kur uzzināja: TikTok</p>\n<p>Komentārs</p>")).toBe(
+      "<p>Komentārs</p>",
+    );
+    expect(stripHeardAboutFromClientNotes("Kur uzzināja: TikTok")).toBeNull();
   });
 
   it("merges form notes with Stripe page comment", () => {

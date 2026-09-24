@@ -1,4 +1,5 @@
 import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderDetailView";
+import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -44,7 +45,8 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     contactMethod: str(order.contactMethod) || null,
     vin: str(order.vin) || null,
     listingUrl: str(order.listingUrl) || null,
-    notes: str(order.notes) || null,
+    notes: stripHeardAboutFromClientNotes(str(order.notes) || null),
+    heardAbout: str(order.heardAbout) || null,
     internalComment: str(order.internalComment) || null,
     attachments: attachmentList(order.attachments),
     isDemo: Boolean(order.isDemo),

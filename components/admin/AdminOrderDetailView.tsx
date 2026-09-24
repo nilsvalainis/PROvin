@@ -21,6 +21,7 @@ import { paidProductLabel } from "@/lib/admin-customer-identity";
 import { formatOrderTimestampSec } from "@/lib/format-order-datetime";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
+import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
 import type { CustomerHistory } from "@/lib/admin-customer-history";
 import {
   pickOrderEditsForHydration,
@@ -43,6 +44,8 @@ export type AdminOrderDetailClientModel = {
   vin: string | null;
   listingUrl: string | null;
   notes: string | null;
+  /** Iekšēji: kur klients uzzināja par PROVIN. Nav PDF. */
+  heardAbout?: string | null;
   internalComment?: string | null;
   attachments?: { label: string; fileName: string }[];
   isDemo?: boolean;
@@ -305,7 +308,10 @@ export function AdminOrderDetailView({
       ? editFieldStr(edits.customerPhone)
       : editFieldStr(order.phone ?? order.customerDetailsPhone);
   const mergedContactMethod = edits.contactMethod !== undefined ? editFieldStr(edits.contactMethod) : editFieldStr(order.contactMethod);
-  const mergedNotes = edits.notes !== undefined ? editFieldStr(edits.notes) : editFieldStr(order.notes);
+  const mergedNotes =
+    stripHeardAboutFromClientNotes(
+      edits.notes !== undefined ? editFieldStr(edits.notes) : editFieldStr(order.notes),
+    ) ?? "";
   const mergedInternalComment =
     edits.internalComment !== undefined ? editFieldStr(edits.internalComment) : editFieldStr(order.internalComment);
   const mergedMileageComment =
@@ -376,6 +382,12 @@ export function AdminOrderDetailView({
                   resetVersion={orderFieldResetKey}
                 />
               </div>
+              {order.heardAbout?.trim() ? (
+                <p className="px-0.5 text-[11px] text-[var(--color-provin-muted)]">
+                  Kur uzzināja: <span className="font-medium text-[var(--color-apple-text)]">{order.heardAbout.trim()}</span>
+                  <span className="ml-1.5 text-[10px]">(tikai admin, nav PDF)</span>
+                </p>
+              ) : null}
             </div>
           </AdminCollapsibleShell>
         </section>

@@ -26,6 +26,7 @@ function formatMessage(p: OrderPayload): string {
     `<b>Sludinājums:</b> ${escapeHtml(p.listingUrl ?? "—")}`,
     deliveryLine,
     p.notes ? `<b>Piezīmes:</b> ${escapeHtml(p.notes)}` : "",
+    p.heardAbout ? `<b>Kur uzzināja:</b> ${escapeHtml(p.heardAbout)}` : "",
     `<b>Summa:</b> ${escapeHtml(p.amountTotal ?? "—")} ${escapeHtml(p.currency ?? "")}`,
   ]
     .filter(Boolean)

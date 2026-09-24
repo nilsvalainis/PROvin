@@ -8,6 +8,8 @@ export type OrderEmailPayload = {
   listingUrl: string | null;
   contactMethod: string | null;
   notes: string | null;
+  /** Kur klients uzzināja. Tikai iekšējam paziņojumam. */
+  heardAbout?: string | null;
   amountTotal: string | null;
   currency: string | null;
 };

@@ -11,6 +11,7 @@ import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
+import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 
 export const dynamic = "force-dynamic";
 
@@ -124,11 +125,40 @@ export default async function AdminOrdersPage({
         <AdminCreateManualOrderButton />
       </div>
 
-      {orders.length > 0 ? <AdminOrdersTable orders={tableOrders} /> : null}
+      {orders.length > 0 ? (
+        <>
+          <HeardAboutStats orders={tableOrders} />
+          <AdminOrdersTable orders={tableOrders} />
+        </>
+      ) : null}
 
       <div className="mt-8 flex flex-wrap items-start justify-end gap-3 border-t border-slate-100/80 pt-4">
         <AdminOrdersExportButton />
       </div>
     </div>
+  );
+}
+
+function HeardAboutStats({ orders }: { orders: SerializedAdminOrderTableRow[] }) {
+  const counts = new Map<string, number>();
+  for (const order of orders) {
+    const label = order.heardAbout?.trim();
+    if (!label) continue;
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  const rows = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "lv"));
+  if (rows.length === 0) return null;
+  return (
+    <p className="mt-4 text-[12px] text-[var(--color-provin-muted)]">
+      Kur uzzināja:{" "}
+      {rows.map(([label, count], i) => (
+        <span key={label}>
+          {i > 0 ? ", " : null}
+          <span className="font-medium text-[var(--color-apple-text)]">
+            {label} {count}
+          </span>
+        </span>
+      ))}
+    </p>
   );
 }

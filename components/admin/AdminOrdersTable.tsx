@@ -493,6 +493,11 @@ export function AdminOrdersTable({
                     MINI
                   </span>
                 ) : null}
+                {o.heardAbout?.trim() ? (
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-slate-700">
+                    {o.heardAbout.trim()}
+                  </span>
+                ) : null}
               </div>
 
               <div className="mt-2 flex items-end justify-between gap-2">
@@ -535,6 +540,7 @@ export function AdminOrdersTable({
               <th className="px-4 py-3.5">VIN</th>
               <th className="px-4 py-3.5">Marka, modelis</th>
               <th className="px-4 py-3.5">Klients</th>
+              <th className={`${hug} px-4 py-3.5`}>Avots</th>
               <th className={`${hug} py-3.5 pl-4 pr-1`}>Statuss</th>
               <th className={`${hug} px-1 py-3.5 text-right`}>Summa</th>
               <th className={`${hug} py-3.5 pl-1 pr-4 text-center`}>Rēķins</th>
@@ -639,6 +645,9 @@ export function AdminOrdersTable({
                         <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">{secondaryClient}</p>
                       ) : null}
                     </div>
+                  </td>
+                  <td className={`${hug} whitespace-nowrap px-4 py-3.5 text-[13px] text-[var(--color-apple-text)]`}>
+                    {o.heardAbout?.trim() || <span className="text-[var(--color-provin-muted)]">-</span>}
                   </td>
                   <td className={`${hug} py-3.5 pl-4 pr-1`}>
                     <PaymentStatusPill status={o.paymentStatus} />

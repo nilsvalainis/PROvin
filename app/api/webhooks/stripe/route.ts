@@ -66,6 +66,7 @@ async function fulfillPaidCheckoutSession(
       listingUrl: order.listingUrl,
       contactMethod: order.contactMethod,
       notes: order.notes,
+      heardAbout: order.heardAbout,
       amountTotal:
         session.amount_total != null ? (session.amount_total / 100).toFixed(2) : null,
       currency: session.currency?.toUpperCase() ?? null,
