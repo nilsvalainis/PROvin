@@ -10,7 +10,17 @@
       "listingLabel": "Sludinājuma saite",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… vai Mobile.de",
       "vinLabel": "VIN kods",
-      "vinPlaceholder": "17 zīmes, piem. WVWZZZ3CZWE123456",
+      "vinPlaceholder": "Ievadi VIN kodu",
+      "heardLabel": "Kur uzzinājāt par mums?",
+      "heardPlaceholder": "Izvēlies",
+      "heard": {
+        "tiktok": "TikTok",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "youtube": "YouTube",
+        "google": "Google",
+        "other": "Cits"
+      },
       "emailLabel": "Tavs e-pasts",
       "emailPlaceholder": "janis@inbox.lv",
       "phoneLabel": "Tālrunis",
@@ -25,7 +35,8 @@
     },
     "errors": {
       "listing": "Ielīmē derīgu saiti uz konkrētu sludinājumu.",
-      "vin": "VIN kods nav derīgs. Ievadi 11-17 zīmes bez I, O un Q.",
+      "vin": "Ievadi derīgu VIN kodu vai valsts numurzīmi (3-6 zīmes).",
+      "heard": "Norādi, kur uzzināji par mums.",
       "email": "E-pasta adrese nav derīga.",
       "phone": "Tālruņa numurs nav derīgs.",
       "rateLimited": "Bezmaksas novērtējums jau ir pieprasīts. Nosūtīsim atbildi e-pastā vai pasūti PROVIN AUDITS.",

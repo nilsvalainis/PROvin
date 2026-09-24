@@ -10,7 +10,17 @@
       "listingLabel": "Link zum Inserat",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… oder Mobile.de",
       "vinLabel": "FIN",
-      "vinPlaceholder": "17 Zeichen, z. B. WVWZZZ3CZWE123456",
+      "vinPlaceholder": "VIN eingeben",
+      "heardLabel": "Wie haben Sie von uns erfahren?",
+      "heardPlaceholder": "Bitte wählen",
+      "heard": {
+        "tiktok": "TikTok",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "youtube": "YouTube",
+        "google": "Google",
+        "other": "Sonstiges"
+      },
       "emailLabel": "Ihre E-Mail",
       "emailPlaceholder": "max@beispiel.de",
       "phoneLabel": "Telefon",
@@ -25,7 +35,8 @@
     },
     "errors": {
       "listing": "Bitte fügen Sie einen gültigen Link zu einem konkreten Inserat ein.",
-      "vin": "Die FIN ist ungültig. 11-17 Zeichen, ohne I, O und Q.",
+      "vin": "Bitte eine gültige VIN oder ein Kennzeichen eingeben (3-6 Zeichen).",
+      "heard": "Bitte angeben, wie Sie von uns erfahren haben.",
       "email": "Die E-Mail-Adresse ist ungültig.",
       "phone": "Die Telefonnummer ist ungültig.",
       "rateLimited": "Eine kostenlose Prüfung wurde bereits angefordert. Wir antworten per E-Mail. Alternativ können Sie PROVIN AUDITS bestellen.",

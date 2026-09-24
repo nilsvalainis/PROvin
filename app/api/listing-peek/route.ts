@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isSmtpConfigured, sendListingPeekLeadEmail } from "@/lib/email/send-transactional";
-import { canonicalizeListingUrl, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
+import { heardAboutDisplayLabel, isHeardAboutValue } from "@/lib/stripe-session";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { createListingPeek, isListingPeekRateLimitExempt } from "@/lib/listing-peek-store";
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
   const listingUrl =
     typeof o.listingUrl === "string" ? canonicalizeListingUrl(clip(o.listingUrl, 2000)) : "";
   const vin = typeof o.vin === "string" ? normalizeVin(clip(o.vin, 17)) : "";
+  const heardAbout = typeof o.heardAbout === "string" ? clip(o.heardAbout, 40) : "";
 
   if (!email || !isValidOrderEmail(email)) {
     return NextResponse.json({ error: "invalid_email" }, { status: 400 });
@@ -54,8 +56,11 @@ export async function POST(req: Request) {
   if (!listingUrl || !isPlausibleListingUrl(listingUrl)) {
     return NextResponse.json({ error: "invalid_listing" }, { status: 400 });
   }
-  if (!isValidVin(vin)) {
+  if (!isValidVinOrPlate(vin)) {
     return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
+  }
+  if (!isHeardAboutValue(heardAbout)) {
+    return NextResponse.json({ error: "invalid_heard" }, { status: 400 });
   }
 
   const exempt = isListingPeekRateLimitExempt(email, phone);
@@ -71,7 +76,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const created = await createListingPeek({ email, phone, listingUrl, vin });
+  const created = await createListingPeek({ email, phone, listingUrl, vin, heardAbout });
   if (!created.ok) {
     if (created.reason === "queue_paused") {
       return NextResponse.json(
@@ -91,6 +96,7 @@ export async function POST(req: Request) {
         phone: created.entry.phone,
         listingUrl: created.entry.listingUrl,
         vin: created.entry.vin,
+        heardAbout: heardAboutDisplayLabel(created.entry.heardAbout, "lv"),
         id: created.entry.id,
       });
     } catch (e) {

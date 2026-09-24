@@ -12,9 +12,10 @@ import {
   isPlausibleListingUrl,
   isValidOrderEmail,
   isValidOrderPhone,
-  isValidVin,
+  isValidVinOrPlate,
   normalizeVin,
 } from "@/lib/order-field-validation";
+import { HEARD_ABOUT_OPTION_VALUES, isHeardAboutValue } from "@/lib/stripe-session";
 
 function safeTrack(event: string, data?: Record<string, string | number | boolean>) {
   try {
@@ -32,6 +33,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
   const [expanded, setExpanded] = useState(false);
   const [listingUrl, setListingUrl] = useState("");
   const [vin, setVin] = useState("");
+  const [heardAbout, setHeardAbout] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -82,8 +84,12 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
       setFormError(t("errors.listing"));
       return;
     }
-    if (!isValidVin(vinCode)) {
+    if (!isValidVinOrPlate(vinCode)) {
       setFormError(t("errors.vin"));
+      return;
+    }
+    if (!isHeardAboutValue(heardAbout)) {
+      setFormError(t("errors.heard"));
       return;
     }
     if (!mail || !isValidOrderEmail(mail)) {
@@ -101,7 +107,13 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
         const res = await fetch("/api/listing-peek", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: mail, phone: tel, listingUrl: url, vin: vinCode }),
+          body: JSON.stringify({
+            email: mail,
+            phone: tel,
+            listingUrl: url,
+            vin: vinCode,
+            heardAbout,
+          }),
         });
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
 
@@ -128,6 +140,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
         if (!res.ok) {
           if (data?.error === "invalid_listing") setFormError(t("errors.listing"));
           else if (data?.error === "invalid_vin") setFormError(t("errors.vin"));
+          else if (data?.error === "invalid_heard") setFormError(t("errors.heard"));
           else if (data?.error === "invalid_email") setFormError(t("errors.email"));
           else if (data?.error === "invalid_phone") setFormError(t("errors.phone"));
           else if (data?.error === "queue_paused") {
@@ -314,6 +327,21 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                               onChange={(e) => setPhone(e.target.value)}
                               className={tp5Styles.inlineInput}
                             />
+                            <select
+                              id={`${baseId}-heard`}
+                              required
+                              aria-label={t("form.heardLabel")}
+                              value={heardAbout}
+                              onChange={(e) => setHeardAbout(e.target.value)}
+                              className={tp5Styles.inlineInput}
+                            >
+                              <option value="">{t("form.heardPlaceholder")}</option>
+                              {HEARD_ABOUT_OPTION_VALUES.map((value) => (
+                                <option key={value} value={value}>
+                                  {t(`form.heard.${value}`)}
+                                </option>
+                              ))}
+                            </select>
                           </div>
 
                           {formError ? (

@@ -14,6 +14,7 @@ import { isSmtpConfigured } from "@/lib/email/send-transactional";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
 import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
 import { canonicalizeListingUrl, isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
+import { heardAboutDisplayLabel } from "@/lib/stripe-session";
 import {
   listListingPeeks,
   updateListingPeekContact,
@@ -251,6 +252,11 @@ function PeekCard({
             </a>
             {e.vin ? (
               <p className="font-mono text-[12px] tracking-wide text-[var(--color-apple-text)]">{e.vin}</p>
+            ) : null}
+            {e.heardAbout ? (
+              <p className="text-[12px] text-[var(--color-provin-muted)]">
+                Kur uzzināja: {heardAboutDisplayLabel(e.heardAbout, "lv")}
+              </p>
             ) : null}
             <AdminListingPeekActionRow listingUrl={listingUrl} phone={e.phone} vin={e.vin} />
           </div>

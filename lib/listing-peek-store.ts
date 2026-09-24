@@ -31,8 +31,10 @@ export type ListingPeekEntry = {
   email: string;
   phone: string;
   listingUrl: string;
-  /** Klienta VIN. Veciem ierakstiem var nebūt. */
+  /** Klienta VIN vai numurzīme. Veciem ierakstiem var nebūt. */
   vin?: string;
+  /** Kur uzzināja. Veciem ierakstiem var nebūt. */
+  heardAbout?: string;
   /** @deprecated Nav formā; vecie ieraksti var saturēt. */
   location?: ListingPeekLocation;
   createdAt: string;
@@ -86,6 +88,8 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
   const phone = typeof o.phone === "string" ? o.phone.trim() : "";
   const listingUrl = typeof o.listingUrl === "string" ? canonicalizeListingUrl(o.listingUrl) : "";
   const vin = typeof o.vin === "string" && o.vin.trim() ? o.vin.trim().toUpperCase() : undefined;
+  const heardAbout =
+    typeof o.heardAbout === "string" && o.heardAbout.trim() ? o.heardAbout.trim() : undefined;
   const createdAt =
     typeof o.createdAt === "string" && o.createdAt.trim() ? o.createdAt.trim() : null;
   if (!id || !email || !listingUrl || !createdAt || !isStatus(o.status)) {
@@ -104,6 +108,7 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
     phone,
     listingUrl,
     ...(vin ? { vin } : {}),
+    ...(heardAbout ? { heardAbout } : {}),
     ...(isLocation(o.location) ? { location: o.location } : {}),
     createdAt,
     status: o.status,
@@ -224,6 +229,7 @@ export async function createListingPeek(input: {
   phone: string;
   listingUrl: string;
   vin: string;
+  heardAbout: string;
 }): Promise<CreateListingPeekResult> {
   const email = normalizePeekEmail(input.email);
   const phone = input.phone.trim();
@@ -283,6 +289,7 @@ export async function createListingPeek(input: {
     phone,
     listingUrl,
     vin: input.vin.trim().toUpperCase(),
+    heardAbout: input.heardAbout.trim(),
     createdAt: new Date(now).toISOString(),
     status: "new",
     source: "listing_peek",
