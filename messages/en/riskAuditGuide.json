@@ -9,6 +9,8 @@
     "form": {
       "listingLabel": "Listing link",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… or Mobile.de",
+      "vinLabel": "VIN",
+      "vinPlaceholder": "17 characters, e.g. WVWZZZ3CZWE123456",
       "emailLabel": "Your email",
       "emailPlaceholder": "you@email.com",
       "phoneLabel": "Phone",
@@ -23,6 +25,7 @@
     },
     "errors": {
       "listing": "Paste a valid link to a specific listing.",
+      "vin": "VIN is not valid. Enter 11-17 characters, without I, O or Q.",
       "email": "Email address is not valid.",
       "phone": "Phone number is not valid.",
       "rateLimited": "A free review has already been requested. We'll reply by email, or order PROVIN AUDITS.",

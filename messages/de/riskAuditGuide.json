@@ -9,6 +9,8 @@
     "form": {
       "listingLabel": "Link zum Inserat",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… oder Mobile.de",
+      "vinLabel": "FIN",
+      "vinPlaceholder": "17 Zeichen, z. B. WVWZZZ3CZWE123456",
       "emailLabel": "Ihre E-Mail",
       "emailPlaceholder": "max@beispiel.de",
       "phoneLabel": "Telefon",
@@ -23,6 +25,7 @@
     },
     "errors": {
       "listing": "Bitte fügen Sie einen gültigen Link zu einem konkreten Inserat ein.",
+      "vin": "Die FIN ist ungültig. 11-17 Zeichen, ohne I, O und Q.",
       "email": "Die E-Mail-Adresse ist ungültig.",
       "phone": "Die Telefonnummer ist ungültig.",
       "rateLimited": "Eine kostenlose Prüfung wurde bereits angefordert. Wir antworten per E-Mail. Alternativ können Sie PROVIN AUDITS bestellen.",

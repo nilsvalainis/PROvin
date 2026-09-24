@@ -416,6 +416,7 @@ export async function sendListingPeekLeadEmail(opts: {
   email: string;
   phone: string;
   listingUrl: string;
+  vin?: string | null;
   id: string;
 }): Promise<void> {
   const subject = "PROVIN: bezmaksas sludinājuma komentārs";
@@ -426,6 +427,7 @@ export async function sendListingPeekLeadEmail(opts: {
     `E-pasts: ${opts.email}`,
     `Tālrunis: ${opts.phone}`,
     `Sludinājums: ${opts.listingUrl}`,
+    `VIN: ${opts.vin?.trim() || "-"}`,
     "",
     "Atbilde klientam: Admin → Ātrie vērtējumi → ieraksti komentāru → «Nosūtīt e-pastu».",
     "NESŪTI ar Gmail Reply: tur būs parasts teksts bez HTML CTA pogas.",
@@ -436,6 +438,7 @@ export async function sendListingPeekLeadEmail(opts: {
 <tr><td><strong>E-pasts</strong></td><td>${escHtmlMail(opts.email)}</td></tr>
 <tr><td><strong>Tālrunis</strong></td><td>${escHtmlMail(opts.phone)}</td></tr>
 <tr><td><strong>Sludinājums</strong></td><td><a href="${escHtmlMail(opts.listingUrl)}">${escHtmlMail(opts.listingUrl)}</a></td></tr>
+<tr><td><strong>VIN</strong></td><td>${escHtmlMail(opts.vin?.trim() || "-")}</td></tr>
 </table>
 <p style="color:#666;font-size:13px;"><strong>Svarīgi:</strong> atbildi no <em>Admin → Ātrie vērtējumi → Nosūtīt e-pastu</em>. Gmail Reply sūta parasto tekstu <strong>bez</strong> PROVIN AUDITS CTA pogas.</p>`;
 

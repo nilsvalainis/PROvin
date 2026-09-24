@@ -249,7 +249,10 @@ function PeekCard({
             >
               {listingUrl}
             </a>
-            <AdminListingPeekActionRow listingUrl={listingUrl} phone={e.phone} />
+            {e.vin ? (
+              <p className="font-mono text-[12px] tracking-wide text-[var(--color-apple-text)]">{e.vin}</p>
+            ) : null}
+            <AdminListingPeekActionRow listingUrl={listingUrl} phone={e.phone} vin={e.vin} />
           </div>
         </div>
 

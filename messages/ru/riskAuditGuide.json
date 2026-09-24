@@ -9,6 +9,8 @@
     "form": {
       "listingLabel": "Ссылка на объявление",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… или Mobile.de",
+      "vinLabel": "VIN",
+      "vinPlaceholder": "17 знаков, например WVWZZZ3CZWE123456",
       "emailLabel": "Ваша электронная почта",
       "emailPlaceholder": "ivan@example.com",
       "phoneLabel": "Телефон",
@@ -23,6 +25,7 @@
     },
     "errors": {
       "listing": "Вставьте действующую ссылку на конкретное объявление.",
+      "vin": "VIN некорректный. Введите 11-17 знаков без I, O и Q.",
       "email": "Некорректный адрес электронной почты.",
       "phone": "Некорректный номер телефона.",
       "rateLimited": "Бесплатная проверка уже запрошена. Мы ответим на почту. Либо закажите PROVIN AUDITS.",

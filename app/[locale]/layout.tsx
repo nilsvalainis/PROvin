@@ -80,7 +80,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     robots: { index: true, follow: true },
     icons: {
-      icon: [{ url: "/icon", type: "image/png", sizes: "512x512" }],
+      icon: [
+        { url: "/favicon.ico", sizes: "48x48" },
+        { url: "/icon", type: "image/png", sizes: "512x512" },
+      ],
       apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
     },
   };

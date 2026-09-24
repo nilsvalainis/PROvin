@@ -42,7 +42,13 @@ function withB2bLocaleCookie(res: NextResponse, locale: AppLocale): NextResponse
 export default function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
-  if (pathname === "/sitemap.xml" || pathname === "/robots.txt") {
+  if (
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === "/icon" ||
+    pathname === "/apple-icon" ||
+    pathname === "/favicon.ico"
+  ) {
     return NextResponse.next();
   }
 

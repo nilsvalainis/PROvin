@@ -12,6 +12,8 @@ import {
   isPlausibleListingUrl,
   isValidOrderEmail,
   isValidOrderPhone,
+  isValidVin,
+  normalizeVin,
 } from "@/lib/order-field-validation";
 
 function safeTrack(event: string, data?: Record<string, string | number | boolean>) {
@@ -29,6 +31,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
   const [paused, setPaused] = useState(queuePaused);
   const [expanded, setExpanded] = useState(false);
   const [listingUrl, setListingUrl] = useState("");
+  const [vin, setVin] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -72,10 +75,15 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
     setRateLimited(false);
 
     const url = listingUrl.trim();
+    const vinCode = normalizeVin(vin);
     const mail = email.trim();
     const tel = phone.trim();
     if (!url || !isPlausibleListingUrl(url)) {
       setFormError(t("errors.listing"));
+      return;
+    }
+    if (!isValidVin(vinCode)) {
+      setFormError(t("errors.vin"));
       return;
     }
     if (!mail || !isValidOrderEmail(mail)) {
@@ -93,7 +101,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
         const res = await fetch("/api/listing-peek", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: mail, phone: tel, listingUrl: url }),
+          body: JSON.stringify({ email: mail, phone: tel, listingUrl: url, vin: vinCode }),
         });
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
 
@@ -119,6 +127,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
         }
         if (!res.ok) {
           if (data?.error === "invalid_listing") setFormError(t("errors.listing"));
+          else if (data?.error === "invalid_vin") setFormError(t("errors.vin"));
           else if (data?.error === "invalid_email") setFormError(t("errors.email"));
           else if (data?.error === "invalid_phone") setFormError(t("errors.phone"));
           else if (data?.error === "queue_paused") {
@@ -269,6 +278,19 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                             {listingTouchedInvalid ? (
                               <p className={tp5Styles.inlineFieldError}>{t("errors.listing")}</p>
                             ) : null}
+                            <input
+                              id={`${baseId}-vin`}
+                              type="text"
+                              autoComplete="off"
+                              spellCheck={false}
+                              required
+                              maxLength={17}
+                              placeholder={t("form.vinPlaceholder")}
+                              aria-label={t("form.vinLabel")}
+                              value={vin}
+                              onChange={(e) => setVin(e.target.value.toUpperCase())}
+                              className={`${tp5Styles.inlineInput} uppercase`}
+                            />
                             <input
                               id={`${baseId}-email`}
                               type="email"
