@@ -14,9 +14,12 @@ export const runtime = "nodejs";
 const MAX = 4000;
 const MAX_SHORT = 120;
 
-function clip(s: unknown, max: number): string {
+function clip(s: unknown, max: number, keepNewlines = false): string {
   if (typeof s !== "string") return "";
-  return s.trim().slice(0, max).replace(/[\u0000-\u001F]+/g, " ");
+  const cleaned = keepNewlines
+    ? s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]+/g, " ")
+    : s.replace(/[\u0000-\u001F]+/g, " ");
+  return cleaned.trim().slice(0, max);
 }
 
 function parseBody(raw: unknown): PkdCommissionInvoiceInput | null {
@@ -25,7 +28,7 @@ function parseBody(raw: unknown): PkdCommissionInvoiceInput | null {
   const invoiceNumber = clip(o.invoiceNumber, MAX_SHORT);
   const invoiceDate = clip(o.invoiceDate, MAX_SHORT);
   const paymentDue = clip(o.paymentDue, MAX_SHORT);
-  const serviceDescription = clip(o.serviceDescription, MAX);
+  const serviceDescription = clip(o.serviceDescription, MAX, true);
   const amountEur = clip(o.amountEur, 32);
   const supplierName = clip(o.supplierName, MAX_SHORT);
   const supplierReg = clip(o.supplierReg, MAX_SHORT);
@@ -44,8 +47,8 @@ function parseBody(raw: unknown): PkdCommissionInvoiceInput | null {
   if (!recipientCompany || !recipientReg || !recipientAddress) return null;
   return {
     invoiceNumber,
-    invoiceDate: invoiceDate || "—",
-    paymentDue: paymentDue || "—",
+    invoiceDate: invoiceDate || "-",
+    paymentDue: paymentDue || "-",
     serviceDescription,
     amountEur,
     supplierName,

@@ -201,11 +201,14 @@ async function writeDraftToFilesystem(draft: PkdCommissionInvoiceDraft): Promise
 
 async function readDraftFile(id: string): Promise<PkdCommissionInvoiceDraft | null> {
   const token = blobToken();
-  if (token) {
-    const fromBlob = await readDraftFromBlob(id, token);
-    if (fromBlob) return fromBlob;
+  const [fromBlob, fromFs] = await Promise.all([
+    token ? readDraftFromBlob(id, token) : Promise.resolve(null),
+    readDraftFromFilesystem(id),
+  ]);
+  if (fromBlob && fromFs) {
+    return fromBlob.updatedAt >= fromFs.updatedAt ? fromBlob : fromFs;
   }
-  return readDraftFromFilesystem(id);
+  return fromBlob ?? fromFs;
 }
 
 /** Persist to Vercel Blob (production-durable) AND local filesystem (dev cache). */

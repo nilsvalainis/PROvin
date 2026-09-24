@@ -210,7 +210,7 @@ export async function buildPkdCommissionInvoicePdfBytes(input: PkdCommissionInvo
   y -= 28;
 
   const foot1 =
-    "PVN netiek piemērots saskaņā ar Pievienotās vērtības nodokļa likuma 3. panta devīto daļu.";
+    "PVN netiek piemērots. Pakalpojuma sniedzējs ir saimnieciskās darbības veicējs, VID PVN maksātāju reģistrā reģistrēts īpašajā kārtībā (Pievienotās vērtības nodokļa likuma 139.² pants).";
   const foot2 = "Rēķins sagatavots elektroniski un ir derīgs bez paraksta.";
   const fSize = 8;
   for (const ln of wrapText(foot1, font, fSize, contentW * 0.72)) {
