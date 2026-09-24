@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.7.0
+// @version      1.7.1
 // @description  Admin MENU: GM_setValue no data-provin-handoff-*. AutoDNA / CarVertical / Auto-Records / CheckThisReg / car.info / CheckCar.vin VIN aizpilde; Tirgus dati URL.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -682,7 +682,13 @@
       const el = findCheckcarVinInput();
       if (!el || el.disabled) return;
       if (!fieldAlreadyHasVin(el)) fillAndClear(el);
-      const probeVin = String(GM_getValue(GM_CC_PROBE, "") || "").replace(/[\s-]/g, "").toUpperCase();
+      const fromUrl = params.get("provin_probe") === "1";
+      const probeVin = (
+        String(GM_getValue(GM_CC_PROBE, "") || "") ||
+        (fromUrl ? params.get("vin") || "" : "")
+      )
+        .replace(/[\s-]/g, "")
+        .toUpperCase();
       if (!probeVin) {
         done = true;
         window.clearInterval(interval);

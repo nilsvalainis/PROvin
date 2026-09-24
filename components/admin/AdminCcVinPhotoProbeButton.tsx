@@ -51,6 +51,10 @@ export function AdminCcVinPhotoProbeButton({
     variant === "pill"
       ? `${adminActionPillBase} bg-slate-800 hover:bg-slate-900 focus-visible:ring-slate-700`
       : "inline-flex h-7 items-center rounded-md border border-slate-300 bg-white px-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40";
+  const href =
+    effective.length >= 11
+      ? `${CHECKCAR_VIN_HOME_URL}?vin=${encodeURIComponent(effective)}&provin_probe=1`
+      : CHECKCAR_VIN_HOME_URL;
 
   return (
     <span className="inline-flex items-center gap-1">
@@ -67,25 +71,30 @@ export function AdminCcVinPhotoProbeButton({
           className="h-[28px] w-[8.6rem] rounded-md border border-slate-200 bg-white px-2 font-mono text-[11px] uppercase text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)] max-md:h-10"
         />
       ) : null}
-      <button
-        type="button"
-        className={buttonClass}
-        disabled={!effective || effective.length < 11}
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-disabled={!effective || effective.length < 11}
+        className={`${buttonClass} ${!effective || effective.length < 11 ? "pointer-events-none opacity-40" : ""}`}
         title="Checkcar.vin: vai šim VIN ir fotogrāfijas, un cik"
         data-provin-cc-photo-probe="1"
         data-provin-handoff-vin={effective || undefined}
-        onClick={() => {
+        onClick={(event) => {
+          if (!effective || effective.length < 11) {
+            event.preventDefault();
+            return;
+          }
           setStatus("Skaita…");
-          window.open(CHECKCAR_VIN_HOME_URL, "_blank", "noopener,noreferrer");
           window.setTimeout(() => {
             setStatus((current) =>
-              current === "Skaita…" ? "Nav atbildes. Vai PROVIN skripts ir ieslēgts?" : current,
+              current === "Skaita…" ? "Nav atbildes. Atjaunini PROVIN skriptu (1.7.1)." : current,
             );
           }, 45000);
         }}
       >
         {status ?? "CC foto"}
-      </button>
+      </a>
     </span>
   );
 }
