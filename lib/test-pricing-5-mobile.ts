@@ -138,6 +138,68 @@ const KOREA_USA_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "100% money-back guarantee", included: true, tone: "guarantee" },
 ];
 
+const AUDITS_FEATURES_DE: Tp5MobileFeature[] = [
+  { name: "Beratung und Hinweise zur Besichtigung vor Ort", included: true },
+  { name: "Versicherungsdaten und Historie der technischen Prüfungen", included: true },
+  { name: "Analyse von Inserat, Verkäufer und technischen Risiken", included: true },
+  { name: "CarVertical + AutoDNA + Register des Herkunftslandes", included: true },
+  { name: "Daten offizieller Händler und Auktionsarchive*", included: true },
+];
+
+const MINI_FEATURES_DE: Tp5MobileFeature[] = [
+  { name: "Beratung und Hinweise zur Besichtigung vor Ort", included: true },
+  { name: "Versicherungsdaten und Historie der technischen Prüfungen", included: true },
+  { name: "Analyse von Inserat, Verkäufer und technischen Risiken", included: true },
+  { name: "CarVertical + AutoDNA + Register des Herkunftslandes", included: false },
+  { name: "Daten offizieller Händler und Auktionsarchive*", included: false },
+];
+
+const DEALER_FEATURES_DE: Tp5MobileFeature[] = [
+  { name: "Service- und Wartungshistorie*", included: true },
+  { name: "Kilometerstände", included: true },
+  { name: "Zusammenfassung", included: true },
+  { name: "Unterstützte Hersteller", included: true, tone: "brands" },
+  { name: "100 % Geld-zurück-Garantie.", included: true, tone: "guarantee" },
+];
+
+const KOREA_USA_FEATURES_DE: Tp5MobileFeature[] = [
+  { name: "Historie der amtlichen Register", included: true },
+  { name: "Auktionsarchiv und Fotos", included: true },
+  { name: "Analyse von Schäden und Laufleistung", included: true },
+  { name: "100 % Geld-zurück-Garantie", included: true, tone: "guarantee" },
+];
+
+const AUDITS_FEATURES_RU: Tp5MobileFeature[] = [
+  { name: "Консультация и советы к осмотру на месте", included: true },
+  { name: "Данные страховщиков и история техосмотров", included: true },
+  { name: "Разбор объявления, продавца и технических рисков", included: true },
+  { name: "CarVertical + AutoDNA + реестры страны происхождения", included: true },
+  { name: "Данные официальных дилеров и архивов аукционов*", included: true },
+];
+
+const MINI_FEATURES_RU: Tp5MobileFeature[] = [
+  { name: "Консультация и советы к осмотру на месте", included: true },
+  { name: "Данные страховщиков и история техосмотров", included: true },
+  { name: "Разбор объявления, продавца и технических рисков", included: true },
+  { name: "CarVertical + AutoDNA + реестры страны происхождения", included: false },
+  { name: "Данные официальных дилеров и архивов аукционов*", included: false },
+];
+
+const DEALER_FEATURES_RU: Tp5MobileFeature[] = [
+  { name: "История сервиса и обслуживаний*", included: true },
+  { name: "Показания одометра", included: true },
+  { name: "Сводка", included: true },
+  { name: "Поддерживаемые производители", included: true, tone: "brands" },
+  { name: "Гарантия возврата 100 %.", included: true, tone: "guarantee" },
+];
+
+const KOREA_USA_FEATURES_RU: Tp5MobileFeature[] = [
+  { name: "История официальных реестров", included: true },
+  { name: "Архив аукционов и фото", included: true },
+  { name: "Анализ повреждений и пробега", included: true },
+  { name: "Гарантия возврата 100 %", included: true, tone: "guarantee" },
+];
+
 /** Tabs always shown on the home hero (catalog-only tiers appear when deep-linked). */
 export const TP5_HERO_TAB_IDS: readonly Tp5MobileServiceId[] = ["mini", "audits", "dealer"];
 
@@ -238,6 +300,102 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
   },
 ];
 
+const TP5_MOBILE_SERVICES_DE: Tp5MobileService[] = [
+  {
+    id: "mini",
+    title: "PROVIN MINI",
+    tabTitle: "MINI",
+    price: "39,99 €",
+    buttonText: "MINI-AUDIT BESTELLEN 39,99 €",
+    buttonTextShort: "BESTELLEN 39,99 €",
+    description: "",
+    features: MINI_FEATURES_DE,
+  },
+  {
+    id: "audits",
+    title: "PROVIN AUDITS",
+    tabTitle: "AUDITS",
+    price: "99,99 €",
+    buttonText: "PROVIN AUDITS BESTELLEN 99,99 €",
+    buttonTextShort: "BESTELLEN 99,99 €",
+    description: "",
+    features: AUDITS_FEATURES_DE,
+    recommended: true,
+  },
+  {
+    id: "dealer",
+    title: "HÄNDLERDATEN",
+    tabTitle: "HÄNDLER",
+    cardTitle: "DATEN OFFIZIELLER HÄNDLER",
+    price: "24,99 €",
+    buttonText: "HÄNDLERDATEN BESTELLEN 24,99 €",
+    buttonTextShort: "BESTELLEN 24,99 €",
+    description: "",
+    features: DEALER_FEATURES_DE,
+    brands: TP5_DEALER_BRANDS,
+    turnaround: "⏱️ Bearbeitung: 24h",
+  },
+  {
+    id: "koreaUsa",
+    title: "USA UND KOREA",
+    tabTitle: "US / KR",
+    price: "19,99 €",
+    buttonText: "USA UND KOREA BESTELLEN 19,99 €",
+    buttonTextShort: "BESTELLEN 19,99 €",
+    description: "",
+    features: KOREA_USA_FEATURES_DE,
+    turnaround: "⏱️ Bearbeitung: 24-72h",
+  },
+];
+
+const TP5_MOBILE_SERVICES_RU: Tp5MobileService[] = [
+  {
+    id: "mini",
+    title: "PROVIN MINI",
+    tabTitle: "MINI",
+    price: "39,99 €",
+    buttonText: "ЗАКАЗАТЬ MINI-АУДИТ 39,99 €",
+    buttonTextShort: "ЗАКАЗАТЬ 39,99 €",
+    description: "",
+    features: MINI_FEATURES_RU,
+  },
+  {
+    id: "audits",
+    title: "PROVIN AUDITS",
+    tabTitle: "AUDITS",
+    price: "99,99 €",
+    buttonText: "ЗАКАЗАТЬ PROVIN AUDITS 99,99 €",
+    buttonTextShort: "ЗАКАЗАТЬ 99,99 €",
+    description: "",
+    features: AUDITS_FEATURES_RU,
+    recommended: true,
+  },
+  {
+    id: "dealer",
+    title: "ДАННЫЕ ДИЛЕРА",
+    tabTitle: "ДИЛЕР",
+    cardTitle: "ДАННЫЕ ОФИЦИАЛЬНЫХ ДИЛЕРОВ",
+    price: "24,99 €",
+    buttonText: "ЗАКАЗАТЬ ДАННЫЕ ДИЛЕРА 24,99 €",
+    buttonTextShort: "ЗАКАЗАТЬ 24,99 €",
+    description: "",
+    features: DEALER_FEATURES_RU,
+    brands: TP5_DEALER_BRANDS,
+    turnaround: "⏱️ Срок: 24 ч",
+  },
+  {
+    id: "koreaUsa",
+    title: "США И КОРЕЯ",
+    tabTitle: "US / KR",
+    price: "19,99 €",
+    buttonText: "ЗАКАЗАТЬ США И КОРЕЯ 19,99 €",
+    buttonTextShort: "ЗАКАЗАТЬ 19,99 €",
+    description: "",
+    features: KOREA_USA_FEATURES_RU,
+    turnaround: "⏱️ Срок: 24-72 ч",
+  },
+];
+
 export const TP5_MOBILE_SERVICE_ORDER: Tp5MobileServiceId[] = TP5_MOBILE_SERVICES.map(
   (service) => service.id,
 );
@@ -245,6 +403,8 @@ export const TP5_MOBILE_SERVICE_ORDER: Tp5MobileServiceId[] = TP5_MOBILE_SERVICE
 export const TP5_MOBILE_TURNAROUND = "⏱️ Izpilde: 24-72h";
 
 const TP5_MOBILE_TURNAROUND_EN = "⏱️ Delivery: 24-72h";
+const TP5_MOBILE_TURNAROUND_DE = "⏱️ Bearbeitung: 24-72h";
+const TP5_MOBILE_TURNAROUND_RU = "⏱️ Срок: 24-72 ч";
 
 /** Stripe checkout plan mapping for mobile tiers. */
 export const TP5_MOBILE_CHECKOUT_PLAN: Record<Tp5MobileServiceId, TestPricingPlanId> = {
@@ -271,13 +431,19 @@ export function getTp5HeroSwipeOrder(activeId: Tp5MobileServiceId): Tp5MobileSer
   return getTp5HeroTabServices(activeId).map((service) => service.id);
 }
 
-/** Locale-aware tier list; anything other than `en` falls back to Latvian. */
+/** Locale-aware tier list. Unknown locales stay Latvian. */
 export function getTp5MobileServices(locale?: string): Tp5MobileService[] {
-  return locale === "en" ? TP5_MOBILE_SERVICES_EN : TP5_MOBILE_SERVICES;
+  if (locale === "en") return TP5_MOBILE_SERVICES_EN;
+  if (locale === "de") return TP5_MOBILE_SERVICES_DE;
+  if (locale === "ru") return TP5_MOBILE_SERVICES_RU;
+  return TP5_MOBILE_SERVICES;
 }
 
 export function getTp5MobileTurnaround(locale?: string): string {
-  return locale === "en" ? TP5_MOBILE_TURNAROUND_EN : TP5_MOBILE_TURNAROUND;
+  if (locale === "en") return TP5_MOBILE_TURNAROUND_EN;
+  if (locale === "de") return TP5_MOBILE_TURNAROUND_DE;
+  if (locale === "ru") return TP5_MOBILE_TURNAROUND_RU;
+  return TP5_MOBILE_TURNAROUND;
 }
 
 export function getTp5MobileService(id: Tp5MobileServiceId, locale?: string): Tp5MobileService {

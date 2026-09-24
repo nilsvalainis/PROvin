@@ -179,6 +179,10 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(getTp5MobileTabTitle(getTp5MobileService("dealer", "en"))).toBe("DEALERS");
     expect(getTp5MobileCardTitle(getTp5MobileService("dealer", "en"))).toBe("OFFICIAL DEALER DATA");
     expect(getTp5MobileTurnaround("en")).toContain("24-72h");
+    expect(getTp5MobileTabTitle(getTp5MobileService("dealer", "de"))).toBe("HÄNDLER");
+    expect(getTp5MobileTabTitle(getTp5MobileService("dealer", "ru"))).toBe("ДИЛЕР");
+    expect(getTp5MobileTurnaround("de")).toContain("24-72h");
+    expect(getTp5MobileServices("de").map((service) => service.id)).toEqual(lv.map((service) => service.id));
     expect(lv.every((service) => !service.buttonText.includes("\u2014"))).toBe(true);
     expect(en.every((service) => !service.buttonText.includes("\u2014"))).toBe(true);
   });

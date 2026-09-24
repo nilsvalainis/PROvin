@@ -114,8 +114,8 @@ describe("dealer coverage tiers", () => {
     const en = getTp5UiCopy("en");
     expect(getDealerCoverageTierCopy(lv, "full").title).toBe("Pilna servisa vēsture");
     expect(getDealerCoverageTierCopy(en, "limited").title).toBe("Limited coverage");
-    expect(getTp5UiCopy("de").dealerCoverageLimitedTitle).toBe("Limited coverage");
-    expect(getTp5UiCopy("ru").dealerCoverageWorkshopTitle).toBe("Workshop remarks");
+    expect(getTp5UiCopy("de").dealerCoverageLimitedTitle).toBe("Eingeschränkte Abdeckung");
+    expect(getTp5UiCopy("ru").dealerCoverageWorkshopTitle).toBe("Отметки мастерской");
   });
 
   it("times the HUD read as 2.4s plus 28ms per following brand", () => {

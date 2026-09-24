@@ -19,7 +19,7 @@ export async function dispatchPartnerVerifyEmail(args: {
   await trySendPartnerVerifyEmail({
     to: args.to,
     verifyUrl,
-    locale: locale === "lv" ? "lv" : "en",
+    locale,
     purpose: args.purpose,
   });
 }

@@ -76,6 +76,9 @@ describe("test-pricing-5 inline checkout", () => {
     );
     expect(getTp5StripeCheckoutProduct("koreaUsa", "en")?.productName).toBe("USA & KOREA");
     expect(getTp5StripeCheckoutProduct("premium", "en")?.productName).toBe("PROVIN AUDITS");
+    expect(getTp5StripeCheckoutProduct("dealer", "de")?.productName).toContain("Händlers");
+    expect(getTp5StripeCheckoutProduct("plus", "ru")?.productDesc).toContain("Латвии");
+    expect(getTp5MiniCheckoutNote("de")).toContain("Lettland");
     const badVin = validateTp5InlineFields("", "AB", "en");
     expect(badVin.ok).toBe(false);
     if (!badVin.ok) {

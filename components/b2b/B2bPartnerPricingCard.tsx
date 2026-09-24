@@ -88,7 +88,7 @@ export function B2bPartnerPricingCard({
 }: Props) {
   const locale = useLocale();
   const t = useTranslations("Partner");
-  const uiCopy = getTp5UiCopy(locale === "lv" ? "lv" : "en");
+  const uiCopy = getTp5UiCopy(locale);
   const isDealer = plan === "dealer";
   const catalogPlan = getB2bCatalogPlan(plan, locale);
   const heroFeatures = getB2bBusinessHeroFeatures(locale);

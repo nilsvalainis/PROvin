@@ -50,12 +50,42 @@ const TP5_HERO_DEALER_COPY_EN: Tp5HeroCopy = {
   titleAccent: "report",
 };
 
-/** Locale-aware hero copy; anything other than `en` falls back to Latvian. */
+const TP5_HERO_COPY_DE: Tp5HeroCopy = {
+  titlePrefix: "Fahrzeughistorie und Inserat ",
+  titleAccent: "Audit",
+  subheadLead: "Erfahren Sie alles über Ihr nächstes Auto.",
+  subheadAccent:
+    "Wir verbinden die Fahrzeughistorie und die Analyse des Inserats in einem übersichtlichen Audit.",
+};
+
+const TP5_HERO_DEALER_COPY_DE: Tp5HeroCopy = {
+  ...TP5_HERO_COPY_DE,
+  titlePrefix: "Daten des offiziellen Händlers ",
+  titleAccent: "Bericht",
+};
+
+const TP5_HERO_COPY_RU: Tp5HeroCopy = {
+  titlePrefix: "История авто и объявление ",
+  titleAccent: "аудит",
+  subheadLead: "Узнайте всё о следующей машине.",
+  subheadAccent:
+    "Мы соединяем историю автомобиля и разбор объявления в одном понятном аудите.",
+};
+
+const TP5_HERO_DEALER_COPY_RU: Tp5HeroCopy = {
+  ...TP5_HERO_COPY_RU,
+  titlePrefix: "Данные официального дилера ",
+  titleAccent: "отчёт",
+};
+
+/** Locale-aware hero copy. Unknown locales stay Latvian. */
 export function getTp5HeroCopy(
   locale: string,
   serviceId: Tp5MobileServiceId = "audits",
 ): Tp5HeroCopy {
   const dealer = serviceId === "dealer";
   if (locale === "en") return dealer ? TP5_HERO_DEALER_COPY_EN : TP5_HERO_COPY_EN;
+  if (locale === "de") return dealer ? TP5_HERO_DEALER_COPY_DE : TP5_HERO_COPY_DE;
+  if (locale === "ru") return dealer ? TP5_HERO_DEALER_COPY_RU : TP5_HERO_COPY_RU;
   return dealer ? TP5_HERO_DEALER_COPY_LV : TP5_HERO_COPY_LV;
 }

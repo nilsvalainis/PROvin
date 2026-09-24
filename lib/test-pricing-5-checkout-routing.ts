@@ -58,9 +58,18 @@ export const TP5_DEALER_FOOTNOTE =
 const TP5_DEALER_FOOTNOTE_EN =
   "*Official dealer system data and auction archives are available for selected manufacturers and models.";
 
-/** Locale-aware dealer footnote; anything other than `en` falls back to Latvian. */
+const TP5_DEALER_FOOTNOTE_DE =
+  "*Daten aus offiziellen Händlersystemen und Auktionsarchiven sind für ausgewählte Hersteller und Modelle verfügbar.";
+
+const TP5_DEALER_FOOTNOTE_RU =
+  "*Данные официальных дилерских систем и архивов аукционов доступны для отдельных марок и моделей.";
+
+/** Locale-aware dealer footnote. Unknown locales stay Latvian. */
 export function getTp5DealerFootnote(locale?: string): string {
-  return locale === "en" ? TP5_DEALER_FOOTNOTE_EN : TP5_DEALER_FOOTNOTE;
+  if (locale === "en") return TP5_DEALER_FOOTNOTE_EN;
+  if (locale === "de") return TP5_DEALER_FOOTNOTE_DE;
+  if (locale === "ru") return TP5_DEALER_FOOTNOTE_RU;
+  return TP5_DEALER_FOOTNOTE;
 }
 
 export const TP5_CHECKOUT_SOURCE = "test-checkout" as const;

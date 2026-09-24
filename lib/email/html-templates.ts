@@ -207,31 +207,62 @@ ${opts.siteOrigin ? clientReportLegalFooterEmailHtml(opts.siteOrigin) : ""}
   return shell(inner, { omitBrandRibbon: true });
 }
 
+type PartnerMailLocale = "lv" | "en" | "de" | "ru";
+
+function partnerMailLocale(locale?: string): PartnerMailLocale {
+  if (locale === "en" || locale === "de" || locale === "ru") return locale;
+  return "lv";
+}
+
+const PARTNER_VERIFY_COPY: Record<
+  PartnerMailLocale,
+  { title: string; titleChange: string; lead: string; leadChange: string; cta: string; hint: string }
+> = {
+  lv: {
+    title: "Apstipriniet e-pastu",
+    titleChange: "Apstipriniet jauno e-pastu",
+    lead: "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.",
+    leadChange: "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta e-pasta maiņu.",
+    cta: "Apstiprināt e-pastu",
+    hint: "Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.",
+  },
+  en: {
+    title: "Confirm your email",
+    titleChange: "Confirm your new email",
+    lead: "Confirm this address to finish opening your PROVIN.LV partner account.",
+    leadChange: "Confirm this address to finish updating your PROVIN.LV partner account.",
+    cta: "Confirm email",
+    hint: "The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.",
+  },
+  de: {
+    title: "Bestätigen Sie Ihre E-Mail",
+    titleChange: "Bestätigen Sie die neue E-Mail",
+    lead: "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto zu eröffnen.",
+    leadChange: "Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern.",
+    cta: "E-Mail bestätigen",
+    hint: "Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.",
+  },
+  ru: {
+    title: "Подтвердите почту",
+    titleChange: "Подтвердите новую почту",
+    lead: "Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.",
+    leadChange: "Подтвердите этот адрес, чтобы сменить почту партнёрского аккаунта PROVIN.LV.",
+    cta: "Подтвердить почту",
+    hint: "Ссылка действует 24 часа и только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.",
+  },
+};
+
 export function partnerVerifyEmailHtml(opts: {
   verifyUrl: string;
-  locale?: "lv" | "en";
+  locale?: string;
   purpose?: "signup" | "email_change";
 }): string {
-  const en = opts.locale === "en";
+  const copy = PARTNER_VERIFY_COPY[partnerMailLocale(opts.locale)];
   const change = opts.purpose === "email_change";
-  const title = en
-    ? change
-      ? "Confirm your new email"
-      : "Confirm your email"
-    : change
-      ? "Apstipriniet jauno e-pastu"
-      : "Apstipriniet e-pastu";
-  const lead = en
-    ? change
-      ? "Confirm this address to finish updating your PROVIN.LV partner account."
-      : "Confirm this address to finish opening your PROVIN.LV partner account."
-    : change
-      ? "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta e-pasta maiņu."
-      : "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.";
-  const cta = en ? "Confirm email" : "Apstiprināt e-pastu";
-  const hint = en
-    ? "The link is valid for 24 hours and can be used once. If you did not request this, ignore the message."
-    : "Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.";
+  const title = change ? copy.titleChange : copy.title;
+  const lead = change ? copy.leadChange : copy.lead;
+  const cta = copy.cta;
+  const hint = copy.hint;
   const inner = `
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
 <p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(lead)}</p>
@@ -241,19 +272,45 @@ ${ctaButton(opts.verifyUrl, cta)}
   return shell(inner);
 }
 
+const PARTNER_RESET_COPY: Record<
+  PartnerMailLocale,
+  { title: string; lead: string; cta: string; hint: string }
+> = {
+  lv: {
+    title: "Atjaunojiet paroli",
+    lead: "Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.",
+    cta: "Iestatīt jaunu paroli",
+    hint: "Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.",
+  },
+  en: {
+    title: "Reset your password",
+    lead: "Use this link to set a new password for your PROVIN.LV partner account.",
+    cta: "Set a new password",
+    hint: "The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.",
+  },
+  de: {
+    title: "Setzen Sie Ihr Passwort zurück",
+    lead: "Mit diesem Link legen Sie ein neues Passwort für Ihr PROVIN.LV-Partnerkonto fest.",
+    cta: "Neues Passwort festlegen",
+    hint: "Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.",
+  },
+  ru: {
+    title: "Сбросьте пароль",
+    lead: "По этой ссылке можно задать новый пароль партнёрского аккаунта PROVIN.LV.",
+    cta: "Задать новый пароль",
+    hint: "Ссылка действует 24 часа и только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.",
+  },
+};
+
 export function partnerPasswordResetEmailHtml(opts: {
   resetUrl: string;
-  locale?: "lv" | "en";
+  locale?: string;
 }): string {
-  const en = opts.locale === "en";
-  const title = en ? "Reset your password" : "Atjaunojiet paroli";
-  const lead = en
-    ? "Use this link to set a new password for your PROVIN.LV partner account."
-    : "Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.";
-  const cta = en ? "Set a new password" : "Iestatīt jaunu paroli";
-  const hint = en
-    ? "The link is valid for 24 hours and can be used once. If you did not request this, ignore the message."
-    : "Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.";
+  const copy = PARTNER_RESET_COPY[partnerMailLocale(opts.locale)];
+  const title = copy.title;
+  const lead = copy.lead;
+  const cta = copy.cta;
+  const hint = copy.hint;
   const inner = `
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
 <p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(lead)}</p>

@@ -6,6 +6,7 @@ import { BlogViewTracker } from "@/components/blog/BlogViewTracker";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { Link } from "@/i18n/navigation";
 import type { BlogPost } from "@/lib/blog/types";
+import { b2bDateLocale } from "@/i18n/locales";
 import { resolveBlogLocale } from "@/lib/blog/posts";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -25,7 +26,7 @@ export async function BlogPostView({ post, locale }: Props) {
     headline: content.title,
     description: content.socialExcerpt ?? content.excerpt,
     datePublished: `${post.publishedAt}T12:00:00.000Z`,
-    inLanguage: locale === "en" ? "en" : "lv",
+    inLanguage: locale === "en" ? "en" : locale === "de" ? "de" : locale === "ru" ? "ru" : "lv",
     mainEntityOfPage: `${base}/${locale}/blogs/${post.slug}`,
     keywords: post.tags.join(", "),
     ...(cover
@@ -129,7 +130,7 @@ export async function BlogPostView({ post, locale }: Props) {
 function formatPostDate(isoDate: string, locale: string): string {
   const d = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(d.getTime())) return isoDate;
-  return d.toLocaleDateString(locale === "en" ? "en-GB" : "lv-LV", {
+  return d.toLocaleDateString(b2bDateLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",

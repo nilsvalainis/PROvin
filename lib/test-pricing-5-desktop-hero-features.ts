@@ -39,6 +39,28 @@ const TP5_DESKTOP_HERO_FEATURES_EN: Tp5DesktopHeroFeature[] = [
   { label: "International history check", icon: "international" },
 ];
 
+const TP5_DESKTOP_HERO_FEATURES_DE: Tp5DesktopHeroFeature[] = [
+  { label: "Persönliche Beratung", icon: "consultation" },
+  { label: "Analyse von Inserat und technischen Risiken", icon: "listing-analysis" },
+  { label: "Register des Herkunftslandes und Prüfhistorie", icon: "eu-registry" },
+  { label: "Hinweise zur Besichtigung vor Ort", icon: "inspection-tips" },
+  { label: "carVertical-Anbindung", icon: "carvertical" },
+  { label: "autoDNA-Anbindung", icon: "autodna" },
+  { label: "Archiv offizieller Händler und Auktionsportale*", icon: "dealer-data" },
+  { label: "Internationale Historienprüfung", icon: "international" },
+];
+
+const TP5_DESKTOP_HERO_FEATURES_RU: Tp5DesktopHeroFeature[] = [
+  { label: "Личная консультация", icon: "consultation" },
+  { label: "Разбор объявления и технических рисков", icon: "listing-analysis" },
+  { label: "Реестры страны происхождения и история техосмотров", icon: "eu-registry" },
+  { label: "Советы к осмотру на месте", icon: "inspection-tips" },
+  { label: "Интеграция carVertical", icon: "carvertical" },
+  { label: "Интеграция autoDNA", icon: "autodna" },
+  { label: "Архив официальных дилеров и аукционных порталов*", icon: "dealer-data" },
+  { label: "Международная проверка истории", icon: "international" },
+];
+
 /** Icon ids shown for each hero pricing tab (dealer uses manufacturer logos instead). */
 export const TP5_DESKTOP_HERO_FEATURE_ICONS_BY_TAB: Record<
   Tp5MobileServiceId,
@@ -69,10 +91,13 @@ export const TP5_DESKTOP_HERO_FEATURE_ICONS_BY_TAB: Record<
 };
 
 function allFeaturesForLocale(locale?: string): Tp5DesktopHeroFeature[] {
-  return locale === "en" ? TP5_DESKTOP_HERO_FEATURES_EN : TP5_DESKTOP_HERO_FEATURES;
+  if (locale === "en") return TP5_DESKTOP_HERO_FEATURES_EN;
+  if (locale === "de") return TP5_DESKTOP_HERO_FEATURES_DE;
+  if (locale === "ru") return TP5_DESKTOP_HERO_FEATURES_RU;
+  return TP5_DESKTOP_HERO_FEATURES;
 }
 
-/** Locale-aware icon-row labels filtered by active pricing tab; non-`en` → Latvian. */
+/** Locale-aware icon-row labels filtered by active pricing tab. Unknown locales stay Latvian. */
 export function getTp5DesktopHeroFeatures(
   locale?: string,
   serviceId: Tp5MobileServiceId = "audits",

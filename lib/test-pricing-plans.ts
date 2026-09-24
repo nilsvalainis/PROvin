@@ -170,8 +170,18 @@ const TEST_PRICING_STEP2_MESSAGES = {
   },
   en: {
     listingUrl: "Please enter the full link to a specific listing.",
-    vin: "Enter a valid VIN or licence plate number (3–6 characters).",
+    vin: "Enter a valid VIN or licence plate number (3-6 characters).",
     consent: "Please accept the terms and the digital content delivery conditions.",
+  },
+  de: {
+    listingUrl: "Bitte den vollständigen Link zu einem konkreten Inserat eingeben.",
+    vin: "Bitte eine gültige VIN oder ein Kennzeichen eingeben (3-6 Zeichen).",
+    consent: "Bitte bestätigen Sie die Bedingungen und die Ausführung des digitalen Inhalts.",
+  },
+  ru: {
+    listingUrl: "Введите полную ссылку на конкретное объявление.",
+    vin: "Введите корректный VIN или госномер (3-6 знаков).",
+    consent: "Подтвердите условия и исполнение цифрового содержания.",
   },
 } as const;
 
@@ -182,8 +192,8 @@ export function validateTestPricingStep2(
   withdrawalConsent: boolean,
   locale?: string,
 ): { ok: true } | { ok: false; errors: TestPricingStep2FieldErrors } {
-  const messages =
-    locale === "en" ? TEST_PRICING_STEP2_MESSAGES.en : TEST_PRICING_STEP2_MESSAGES.lv;
+  const loc = locale === "en" || locale === "de" || locale === "ru" ? locale : "lv";
+  const messages = TEST_PRICING_STEP2_MESSAGES[loc];
   const errors: TestPricingStep2FieldErrors = {};
   const listing = listingUrl.trim();
 

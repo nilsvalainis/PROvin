@@ -487,31 +487,45 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
   });
 }
 
+function partnerMailLocale(locale?: string): "lv" | "en" | "de" | "ru" {
+  if (locale === "en" || locale === "de" || locale === "ru") return locale;
+  return "lv";
+}
+
 export async function sendPartnerVerifyEmail(opts: {
   to: string;
   verifyUrl: string;
-  locale?: "lv" | "en";
+  locale?: string;
   purpose?: "signup" | "email_change";
 }): Promise<void> {
-  const en = opts.locale === "en";
+  const loc = partnerMailLocale(opts.locale);
   const change = opts.purpose === "email_change";
-  const subject = en
-    ? change
-      ? "PROVIN.LV: confirm your new email"
-      : "PROVIN.LV: confirm your email"
-    : change
-      ? "PROVIN.LV: apstipriniet jauno e-pastu"
-      : "PROVIN.LV: apstipriniet e-pastu";
-  const lead = en
-    ? change
-      ? "Confirm this address to finish updating your PROVIN.LV partner account."
-      : "Confirm this address to finish opening your PROVIN.LV partner account."
-    : change
+  const subject = {
+    lv: change ? "PROVIN.LV: apstipriniet jauno e-pastu" : "PROVIN.LV: apstipriniet e-pastu",
+    en: change ? "PROVIN.LV: confirm your new email" : "PROVIN.LV: confirm your email",
+    de: change ? "PROVIN.LV: neue E-Mail bestätigen" : "PROVIN.LV: E-Mail bestätigen",
+    ru: change ? "PROVIN.LV: подтвердите новую почту" : "PROVIN.LV: подтвердите почту",
+  }[loc];
+  const lead = {
+    lv: change
       ? "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta e-pasta maiņu."
-      : "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.";
-  const hint = en
-    ? "The link is valid for 24 hours and can be used once."
-    : "Saite ir derīga 24 stundas un izmantojama vienu reizi.";
+      : "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.",
+    en: change
+      ? "Confirm this address to finish updating your PROVIN.LV partner account."
+      : "Confirm this address to finish opening your PROVIN.LV partner account.",
+    de: change
+      ? "Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern."
+      : "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto zu eröffnen.",
+    ru: change
+      ? "Подтвердите этот адрес, чтобы сменить почту партнёрского аккаунта PROVIN.LV."
+      : "Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.",
+  }[loc];
+  const hint = {
+    lv: "Saite ir derīga 24 stundas un izmantojama vienu reizi.",
+    en: "The link is valid for 24 hours and can be used once.",
+    de: "Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
+    ru: "Ссылка действует 24 часа и только один раз.",
+  }[loc];
   const text = [lead, "", opts.verifyUrl, "", hint].join("\n");
   const html = partnerVerifyEmailHtml({
     verifyUrl: opts.verifyUrl,
@@ -529,7 +543,7 @@ export async function sendPartnerVerifyEmail(opts: {
 export async function trySendPartnerVerifyEmail(opts: {
   to: string;
   verifyUrl: string;
-  locale?: "lv" | "en";
+  locale?: string;
   purpose?: "signup" | "email_change";
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
@@ -548,16 +562,27 @@ export async function trySendPartnerVerifyEmail(opts: {
 export async function sendPartnerPasswordResetEmail(opts: {
   to: string;
   resetUrl: string;
-  locale?: "lv" | "en";
+  locale?: string;
 }): Promise<void> {
-  const en = opts.locale === "en";
-  const subject = en ? "PROVIN.LV: reset your password" : "PROVIN.LV: atjaunojiet paroli";
-  const lead = en
-    ? "Use this link to set a new password for your PROVIN.LV partner account."
-    : "Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.";
-  const hint = en
-    ? "The link is valid for 24 hours and can be used once."
-    : "Saite ir derīga 24 stundas un izmantojama vienu reizi.";
+  const loc = partnerMailLocale(opts.locale);
+  const subject = {
+    lv: "PROVIN.LV: atjaunojiet paroli",
+    en: "PROVIN.LV: reset your password",
+    de: "PROVIN.LV: Passwort zurücksetzen",
+    ru: "PROVIN.LV: сброс пароля",
+  }[loc];
+  const lead = {
+    lv: "Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.",
+    en: "Use this link to set a new password for your PROVIN.LV partner account.",
+    de: "Mit diesem Link legen Sie ein neues Passwort für Ihr PROVIN.LV-Partnerkonto fest.",
+    ru: "По этой ссылке можно задать новый пароль партнёрского аккаунта PROVIN.LV.",
+  }[loc];
+  const hint = {
+    lv: "Saite ir derīga 24 stundas un izmantojama vienu reizi.",
+    en: "The link is valid for 24 hours and can be used once.",
+    de: "Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
+    ru: "Ссылка действует 24 часа и только один раз.",
+  }[loc];
   const text = [lead, "", opts.resetUrl, "", hint].join("\n");
   const html = partnerPasswordResetEmailHtml({
     resetUrl: opts.resetUrl,
@@ -574,7 +599,7 @@ export async function sendPartnerPasswordResetEmail(opts: {
 export async function trySendPartnerPasswordResetEmail(opts: {
   to: string;
   resetUrl: string;
-  locale?: "lv" | "en";
+  locale?: string;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[b2b] SMTP nav iestatīts, paroles atjaunošana nav nosūtīta");

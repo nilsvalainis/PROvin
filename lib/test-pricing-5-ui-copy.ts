@@ -1,6 +1,6 @@
 /**
  * Locale-aware UI microcopy for the shared tp5/home pricing hero stack.
- * Latvian is the source copy; anything other than `en` falls back to it.
+ * Latvian is the source. English, German (Sie) and Russian (вы) are native.
  */
 
 export type Tp5UiCopy = {
@@ -180,10 +180,101 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   recommended: "Recommended",
 };
 
+const TP5_UI_COPY_DE: Tp5UiCopy = {
+  cancelNote: "Die Zahlung wurde abgebrochen. Sie können es erneut versuchen.",
+  checkoutErrorFallback: "Die Zahlung konnte nicht gestartet werden.",
+  packageTabsAria: "Paket wählen",
+  packageAriaSuffix: "-Paket",
+  vinPlaceholder: "VIN eingeben",
+  vinAria: "VIN oder Kennzeichen eingeben",
+  listingPlaceholder: "Link zum Inserat einfügen",
+  listingAria: "Link zum Inserat einfügen",
+  featureIconRowAria: "Vorteile des PROVIN-Audits",
+  transitionBannerAria: "Überblick über die PROVIN-Leistung",
+  breakdownHeading: "PROVIN-Leistungen",
+  catalogHeading: "LEISTUNGEN",
+  catalogNavAria: "Zu einer Leistung oder zu Beispielberichten springen",
+  goalLabel: "ZIEL",
+  sampleReportLink: "Beispielbericht ansehen (PDF)",
+  sampleReportPreviewLabel: "Beispielbericht",
+  sampleReportEnlarge: "Vergrößern",
+  sampleReportClose: "Schließen",
+  sampleReportComingSoon: "Beispielbericht folgt in Kürze",
+  turnaroundUrgencyCta: "Eilig?",
+  turnaroundInfoAria: "Mehr zur eiligen Bearbeitung",
+  turnaroundInfoBody: "Grunddaten und einen kurzen Kommentar können Sie innerhalb weniger Stunden erhalten.",
+  turnaroundInfoPhoneLink: `📞 Anrufen: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
+  dealerBrandsTrigger: "Unterstützte Hersteller",
+  dealerBrandsAria: "Unterstützte Hersteller",
+  dealerBrandsClose: "Schließen",
+  dealerCoverageFullTitle: "Vollständige Servicehistorie",
+  dealerCoverageFullBody:
+    "Vollständige Einträge offizieller Händler: Daten, Laufleistung, ausgeführte Arbeiten und Servicestandort.",
+  dealerCoverageWorkshopTitle: "Werkstattvermerke",
+  dealerCoverageWorkshopBody:
+    "Rückrufe, Garantiearbeiten und Werkstattnotizen. Deckt sich ein Vermerk mit dem Wartungsplan, deutet das oft darauf hin, dass eine Wartung stattgefunden hat.",
+  dealerCoverageLimitedTitle: "Eingeschränkte Abdeckung",
+  dealerCoverageLimitedBody:
+    "Daten liegen nur in einem Teil der Fälle vor. Das hängt vom konkreten Fahrzeug und vom System des Herstellers ab.",
+  dealerRefundBanner: "100 % Geld-zurück-Garantie.",
+  dealerRefundInfoBody:
+    "Volle Rückerstattung, wenn in der Händlerdatenbank kein Eintrag vorliegt. Die Leistung gilt als erbracht, sobald mindestens ein Kilometerstand gefunden wird. Der Umfang folgt der offiziell erfassten Historie.",
+  dealerRefundInfoAria: "Bedingungen der Rückerstattung",
+  newBadge: "Neu",
+  perReport: "pro Bericht",
+  recommended: "Empfohlen",
+};
+
+const TP5_UI_COPY_RU: Tp5UiCopy = {
+  cancelNote: "Оплата отменена. Можно попробовать ещё раз.",
+  checkoutErrorFallback: "Не удалось начать оплату.",
+  packageTabsAria: "Выберите пакет",
+  packageAriaSuffix: ", пакет",
+  vinPlaceholder: "Введите VIN",
+  vinAria: "Введите VIN или госномер",
+  listingPlaceholder: "Вставьте ссылку на объявление",
+  listingAria: "Вставьте ссылку на объявление",
+  featureIconRowAria: "Что даёт аудит PROVIN",
+  transitionBannerAria: "Кратко об услуге PROVIN",
+  breakdownHeading: "Услуги PROVIN",
+  catalogHeading: "УСЛУГИ",
+  catalogNavAria: "Перейти к услуге или примерам отчётов",
+  goalLabel: "ЦЕЛЬ",
+  sampleReportLink: "Смотреть пример отчёта (PDF)",
+  sampleReportPreviewLabel: "Пример отчёта",
+  sampleReportEnlarge: "Увеличить",
+  sampleReportClose: "Закрыть",
+  sampleReportComingSoon: "Пример отчёта скоро",
+  turnaroundUrgencyCta: "Срочно?",
+  turnaroundInfoAria: "Подробнее о срочном выполнении",
+  turnaroundInfoBody: "Базовые данные и короткий комментарий можно получить в течение нескольких часов.",
+  turnaroundInfoPhoneLink: `📞 Позвонить: ${TP5_TURNAROUND_INFO_PHONE_LOCAL}`,
+  dealerBrandsTrigger: "Поддерживаемые производители",
+  dealerBrandsAria: "Поддерживаемые производители",
+  dealerBrandsClose: "Закрыть",
+  dealerCoverageFullTitle: "Полная сервисная история",
+  dealerCoverageFullBody:
+    "Полные записи официальных дилеров: даты, пробег, выполненные работы и место сервиса.",
+  dealerCoverageWorkshopTitle: "Отметки мастерской",
+  dealerCoverageWorkshopBody:
+    "Отзывные кампании, гарантийные работы и заметки мастерской. Если отметка совпадает с графиком обслуживания, это часто значит, что обслуживание было.",
+  dealerCoverageLimitedTitle: "Ограниченное покрытие",
+  dealerCoverageLimitedBody:
+    "Данные есть только в части случаев. Это зависит от конкретного автомобиля и системы производителя.",
+  dealerRefundBanner: "Гарантия возврата 100 %.",
+  dealerRefundInfoBody:
+    "Полный возврат, если в дилерской базе нет ни одной записи. Услуга считается выполненной, если найден хотя бы один показатель одометра. Объём данных определяет официально зафиксированная история.",
+  dealerRefundInfoAria: "Условия возврата",
+  newBadge: "Новое",
+  perReport: "за отчёт",
+  recommended: "Рекомендуем",
+};
+
 export function getTp5UiCopy(locale?: string): Tp5UiCopy {
-  return locale === "en" || locale === "de" || locale === "ru"
-    ? TP5_UI_COPY_EN
-    : TP5_UI_COPY_LV;
+  if (locale === "en") return TP5_UI_COPY_EN;
+  if (locale === "de") return TP5_UI_COPY_DE;
+  if (locale === "ru") return TP5_UI_COPY_RU;
+  return TP5_UI_COPY_LV;
 }
 
 export type DealerCoverageCopy = Pick<

@@ -44,20 +44,32 @@ function buildCheckoutCustomFields(
   plan: { vinRequired: boolean },
   locale?: string,
 ): Stripe.Checkout.SessionCreateParams.CustomField[] {
-  const en = locale === "en";
+  const listing =
+    locale === "en"
+      ? "Listing link"
+      : locale === "de"
+        ? "Link zum Inserat"
+        : locale === "ru"
+          ? "Ссылка на объявление"
+          : "Sludinājuma saite";
+  const vin =
+    locale === "en"
+      ? "VIN (17 characters, required)"
+      : locale === "de"
+        ? "VIN (17 Zeichen, erforderlich)"
+        : locale === "ru"
+          ? "VIN (17 знаков, обязательно)"
+          : "VIN (17 zīmes, obligāts)";
   return [
     {
       key: "listing_url",
-      label: { type: "custom", custom: en ? "Listing link" : "Sludinājuma saite" },
+      label: { type: "custom", custom: listing },
       type: "text",
       optional: false,
     },
     {
       key: "vin",
-      label: {
-        type: "custom",
-        custom: en ? "VIN (17 characters, required)" : "VIN (17 zīmes, obligāts)",
-      },
+      label: { type: "custom", custom: vin },
       type: "text",
       optional: false,
     },
@@ -134,7 +146,13 @@ export async function POST(req: Request) {
         errors.listingUrl ??
         errors.vin ??
         ("consent" in errors ? errors.consent : undefined) ??
-        (locale === "en" ? "Please fill in the required fields." : "Aizpildi obligātos laukus.");
+        (locale === "en"
+          ? "Please fill in the required fields."
+          : locale === "de"
+            ? "Bitte füllen Sie die Pflichtfelder aus."
+            : locale === "ru"
+              ? "Заполните обязательные поля."
+              : "Aizpildi obligātos laukus.");
       return NextResponse.json({ error: first, errors: Object.values(errors) }, { status: 400 });
     }
   }

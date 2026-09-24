@@ -14,6 +14,6 @@ export async function dispatchPartnerPasswordResetEmail(args: {
   await trySendPartnerPasswordResetEmail({
     to: args.to,
     resetUrl,
-    locale: locale === "lv" ? "lv" : "en",
+    locale,
   });
 }
