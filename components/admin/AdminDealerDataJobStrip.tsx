@@ -14,6 +14,7 @@ import {
 } from "@/lib/dealer-data-client-email";
 import { describeDealerDataJob, type DealerDataJob } from "@/lib/dealer-data-job-types";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
@@ -413,24 +414,24 @@ export function AdminDealerDataJobStrip({
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-1.5">
         <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Piegāde</span>
         {onGenerateDealerPdf ? (
-          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdf()}>
-            {pdfProgressKey === "dealer" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt dīlera PDF"}
-          </button>
-        ) : null}
-        {onGenerateDealerPdfEn ? (
-          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdfEn()}>
-            {pdfProgressKey === "dealer-en" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (EN)"}
-          </button>
-        ) : null}
-        {onGenerateDealerPdfRu ? (
-          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdfRu()}>
-            {pdfProgressKey === "dealer-ru" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (RU)"}
-          </button>
-        ) : null}
-        {onGenerateDealerPdfDe ? (
-          <button type="button" className={btn} disabled={busy !== null || pdfProgressKey !== null} onClick={() => onGenerateDealerPdfDe()}>
-            {pdfProgressKey === "dealer-de" ? `${pdfProgressPct ?? 0}%` : "Dīlera PDF (DE)"}
-          </button>
+          <AdminPdfLangSplitButton
+            label="Ģenerēt dīlera PDF"
+            disabled={busy !== null || pdfProgressKey !== null}
+            busyLabel={
+              pdfProgressKey === "dealer" || pdfProgressKey?.startsWith("dealer-")
+                ? `${pdfProgressPct ?? 0}%`
+                : null
+            }
+            toneClass="border border-slate-300 bg-white text-slate-700 shadow-none hover:bg-slate-50"
+            dividerClass="border-slate-200"
+            menuSide="down"
+            onPrimary={() => onGenerateDealerPdf()}
+            onLang={(lang) => {
+              if (lang === "en") onGenerateDealerPdfEn?.();
+              if (lang === "ru") onGenerateDealerPdfRu?.();
+              if (lang === "de") onGenerateDealerPdfDe?.();
+            }}
+          />
         ) : null}
         <button
           type="button"
