@@ -659,7 +659,16 @@ TIRGUS DATI FOCUS:
 }
 
 /** Avota bloka „Komentāri” ģenerēšana — vienots PROVIN eksperta režīms visiem avotiem. */
-export function aiSourceCommentSystemPrompt(blockLabel: string): string {
+export function aiSourceCommentSystemPrompt(
+  blockLabel: string,
+  opts?: { unlimitedLength?: boolean; includeOilIntervalRole?: boolean },
+): string {
+  const lengthRule = opts?.unlimitedLength
+    ? `- LENGTH OVERRIDE FOR ${blockLabel}: this source has NO fixed character or paragraph ceiling. Ignore every earlier statement in this prompt limiting source comments to 1-3 paragraphs or ~350-800 characters (SOURCE COMMENTS brevity rule, SOURCE FIELDS = FACTS ONLY length rule) — none of those ceilings apply here. Explain every distinct fact-cluster this order's data actually contains; a long, valuable service/repair history deserves full explanation, not compression. Still never pad: a thin fact stays one short sentence, never invent a heading or a sentence to look complete.`
+    : `- LENGTH: **1 paragraph if the unique facts fit; ceiling 2–3 (≈800 characters)**. 350–800 is a ceiling, not a quota. Do not invent a second heading to fill 2–4. Unless OPERATORA KOMANDAS are present — then cover every operator topic (and only the scoped ones if the operator limited the job); do not skip a theme to stay inside the ceiling.`;
+  const oilLine = opts?.includeOilIntervalRole
+    ? `- AUTOMATIC POST-INGEST EXCEPTION (this call only): add one additional role/paragraph with heading „<strong>Eļļas maiņas intervāli</strong><br>” that runs the oil-change interval math (km/month gaps between changes, actual vs manufacturer interval, size of deviation) per OIL CHANGE INTERVALS rules, using ALL available data (dealer service-works, AutoDNA/CarVertical/RAW, mileage/motorstundas profile, OEM interval). This OVERRIDES the "Do NOT write oil-change interval math" line below and the OIL-INTERVAL EXCLUSION note above for THIS call only; both still apply to manual generation of this field. If oil-change records are thin or absent, say so in that role; never invent a schedule. No EUR in that role.`
+    : `- Do NOT write oil-change interval math (how often oil was changed, km gaps vs OEM) — that belongs exclusively in „Eļļas maiņas intervāli”.`;
   return `${PROVIN_EXPERT_SYSTEM_PROMPT}
 
 ACTIVE SOURCE BLOCK: ${blockLabel} — client PDF audit report expert commentary for THIS source only.
@@ -672,13 +681,13 @@ DIVISION OF LABOUR (mandatory — complementary sources, not 4× the same essay)
 - Primary content = facts, tables, and signals that THIS source uniquely recorded (damage zones, TA defects, dealer codes, claims, Status Center, etc.). After each fact, stop. Do not add a caveat or buyer-advice sentence.
 - Comparison = at most ONE sentence, and only when a conflict changes the conclusion. The full cross-source picture is built in „3. Kopsavilkums”, not here.
 - FORBIDDEN here: „Datu specifika”, „ierakstu trūkums neizslēdz…”, paint-gauge / micron / virsbūves pārbaude klātienē. Those expansions belong only in summary sections or „2. Ieteikumi”.
-- LENGTH: **1 paragraph if the unique facts fit; ceiling 2–3 (≈800 characters)**. 350–800 is a ceiling, not a quota. Do not invent a second heading to fill 2–4. Unless OPERATORA KOMANDAS are present — then cover every operator topic (and only the scoped ones if the operator limited the job); do not skip a theme to stay inside the ceiling.
+${lengthRule}
 - If previously generated expert comments (other sources, mileage, incidents, tech risks, inspection, summary, Fotogrāfiju analīze) appear in the user prompt: READ them as portfolio context (CROSS-FIELD PORTFOLIO), but do not paraphrase them at similar length. Confirm in one sentence if needed, then ONLY add what is still missing for ${blockLabel}.
 - Named damage parts in THIS source beat generic „tipiski” examples.
 - If THIS source largely repeats another source with no new buyer signal: one short confirmation — never rewrite the same accident/km/ownership story.
 - OPERATORA KOMANDAS: ja piezīme nosauc citu avotu, šeit to neatkārto kā atsevišķu rindkopu — tikai ${blockLabel} savu daļu.
 - Do NOT write the global mileage chronology, annual km averages, motorstundas profile, or data-vacuum essay here — that belongs exclusively in „NOBRAUKUMA VĒSTURES KOMENTĀRS”. If this source only confirms the same km line, say so in one sentence and move on to unique content.
-- Do NOT write oil-change interval math (how often oil was changed, km gaps vs OEM) — that belongs exclusively in „Eļļas maiņas intervāli”.
+${oilLine}
 - Do NOT write the paint-thickness / micron essay here (AutoDNA / CarVertical / CSDD included) — that belongs in „2. Ieteikumi”.
 - Do NOT rewrite „1. Tehnisko risku analīze”, „2. Ieteikumi…”, or „3. Kopsavilkums” here.
 - Match the tone, paragraph rhythm, and **bold** hook style of any existing expert comments — extend format, do not duplicate substance.

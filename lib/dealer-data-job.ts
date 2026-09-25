@@ -84,8 +84,11 @@ async function writeAutoRecords(
 }
 
 /**
- * AI melnraksti eļļas intervāliem un dīlera komentāram. Ģenerē tikai tukšos
- * laukus, lai atkārtota palaišana nepārrakstītu operatora tekstu.
+ * AI melnraksts dīlera komentāram. Automātiskā API ielase ģenerē TIKAI lauku
+ * „Komentāri” un tajā pašā rindkopu kopā iekļauj arī eļļas maiņas intervālu
+ * matemātiku (nevis atsevišķu „Eļļas maiņas intervāli” lauku) — operators to
+ * lauku var vēlāk ģenerēt manuāli, ja vēlas atsevišķu versiju.
+ * Ģenerē tikai tukšu lauku, lai atkārtota palaišana nepārrakstītu operatora tekstu.
  */
 async function generateDealerNotes(sessionId: string, vin: string): Promise<boolean> {
   const draft = await readOrderDraft(sessionId);
@@ -93,18 +96,12 @@ async function generateDealerNotes(sessionId: string, vin: string): Promise<bool
   if (!baseline) return false;
   const blocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
 
-  const targets = (
-    [
-      { field: "oilChangeIntervalNotes", current: blocks.auto_records.oilChangeIntervalNotes },
-      { field: "comments", current: blocks.auto_records.comments },
-    ] as const
-  ).filter((t) => !t.current.trim());
-  if (targets.length === 0) return false;
+  if (blocks.auto_records.comments.trim()) return false;
 
-  const generated: Partial<Record<"oilChangeIntervalNotes" | "comments", string>> = {};
-  for (const target of targets) {
-    try {
-      const text = await generateSourceCommentWithAi({
+  let generatedComments = "";
+  try {
+    generatedComments = (
+      await generateSourceCommentWithAi({
         sessionId,
         blockKey: "auto_records",
         vin,
@@ -117,30 +114,27 @@ async function generateDealerNotes(sessionId: string, vin: string): Promise<bool
         tehniskoRiskuAnalize: baseline.tehniskoRiskuAnalize,
         cenasAtbilstiba: baseline.cenasAtbilstiba,
         internalComment: draft?.orderEdits?.internalComment ?? null,
-        targetField: target.field,
-      });
-      if (text.trim()) generated[target.field] = text.trim();
-    } catch (e) {
-      console.warn("[dealer-data-job] AI note failed", {
-        sessionId,
-        field: target.field,
-        error: e instanceof Error ? e.message : "unknown",
-      });
-    }
+        targetField: "comments",
+        includeOilIntervalSummary: true,
+        // Avota komentāri vienmēr ar Gemini, ne noklusējuma Claude ceļu.
+        modelTier: "gemini-flash",
+      })
+    ).trim();
+  } catch (e) {
+    console.warn("[dealer-data-job] AI note failed", {
+      sessionId,
+      field: "comments",
+      error: e instanceof Error ? e.message : "unknown",
+    });
   }
-  if (Object.keys(generated).length === 0) return false;
+  if (!generatedComments) return false;
 
   return writeAutoRecords(sessionId, (current) => ({
     ...current,
     auto_records: {
       ...current.auto_records,
       // Operatora teksts vienmēr uzvar: rakstām tikai, ja lauks joprojām tukšs.
-      oilChangeIntervalNotes:
-        current.auto_records.oilChangeIntervalNotes.trim() ||
-        generated.oilChangeIntervalNotes ||
-        current.auto_records.oilChangeIntervalNotes,
-      comments:
-        current.auto_records.comments.trim() || generated.comments || current.auto_records.comments,
+      comments: current.auto_records.comments.trim() || generatedComments,
     },
   }));
 }

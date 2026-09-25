@@ -3,6 +3,12 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-25.1 - OFICIĀLĀ DĪLERA DATI „Komentārs”: nav fiksētu rakstzīmju/
+ *   rindkopu griestu (griesti citiem avotiem paliek); automātiskā API ielase
+ *   ģenerē TIKAI šo lauku (nevis atsevišķu „Eļļas maiņas intervāli”) un iekļauj
+ *   eļļas intervālu matemātiku kā papildu lomu tajā pašā komentārā; vienmēr
+ *   Gemini Flash (nevis noklusējuma Claude), lai <strong> lomu struktūra
+ *   (agregāti / servisa vēsture / nobraukuma saskaņa) tiktu ievērota.
  * - 2026-09-24.1 - 3. Kopsavilkums: fakti, tad ja vajag slēdziens ar
  *   servisa pārbaudi. Bez dual-history ievada, bez no-vienas-puses
  *   pretstatījuma, bez apgalvojumiem, kas datos nav pierādīti.
@@ -136,4 +142,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-24.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-25.1";

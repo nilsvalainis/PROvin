@@ -15,6 +15,7 @@ export type CommentQualityOptions = {
   /** Per-source comments must not contain a full mileage-synthesis essay. */
   field?:
     | "source"
+    | "source_dealer"
     | "mileage"
     | "incidents"
     | "generic"
@@ -222,7 +223,7 @@ export function evaluateExpertCommentQuality(
     });
   }
 
-  if (field === "source") {
+  if (field === "source" || field === "source_dealer") {
     const hits = MILEAGE_ESSAY_SIGNALS.filter((re) => re.test(t)).length;
     if (hits >= 2) {
       issues.push({
@@ -280,7 +281,7 @@ export function evaluateExpertCommentQuality(
     }
   }
 
-  if (field === "source" || field === "mileage") {
+  if (field === "source" || field === "source_dealer" || field === "mileage") {
     if (/orientējoš[\w]*\s+[^\n]{0,80}(?:€|EUR|eiro)|remonta izmaks|profilakses izmaks|Baltijas neatkarīg/i.test(t)) {
       issues.push({
         code: "invented_repair_eur",

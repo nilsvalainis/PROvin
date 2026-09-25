@@ -39,6 +39,12 @@ export type AiSourceCommentInput = {
   citiAvotiSectionIndex?: number;
   targetField?: AiSourceCommentTargetField;
   modelTier?: AiAdminModelTier;
+  /**
+   * Tikai automātiskajai API ielasei (auto_records/oneauto, targetField "comments"):
+   * fold eļļas maiņas intervālu matemātiku vienā papildu rindkopā šajā pašā laukā,
+   * lai atsevišķais „Eļļas maiņas intervāli” lauks paliktu tukšs.
+   */
+  includeOilIntervalSummary?: boolean;
 };
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
@@ -103,6 +109,11 @@ ${previousComments}
 
   const isServiceHistory =
     isOfficialDealerBlock(input.blockKey) && targetField === "serviceHistoryNotes";
+  const isDealerComments = isOfficialDealerBlock(input.blockKey) && targetField === "comments";
+  const includeOilIntervalRole = isDealerComments && Boolean(input.includeOilIntervalSummary);
+  const oilRoleHint = includeOilIntervalRole
+    ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla (km/mēnešu starpība starp maiņām, faktiskais pret ražotāja intervālu). Izmanto VISUS iegūtos datus (dīlera tabula, AutoDNA/CarVertical/RAW, nobraukuma/motorstundu profils, OEM intervāls). Ja datu nav vai ir pārāk maz — tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
+    : "";
 
   const userPrompt = isOilInterval
     ? appendAiOperatorNotesSection(
@@ -163,13 +174,17 @@ ${focusDataText}
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
 Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē šajā auditā? To pasaki pirmajā rindkopā un apstājies pie fakta.
 Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.
-Garums: **1 rindkopa, ja pietiek**; griesti 2–3 / ≈800 rakstzīmes. 350–800 ir griesti, ne kvota. Neizdomā otru virsrakstu, lai aizpildītu formu. Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
+${
+  isDealerComments
+    ? "Garums: nav fiksētu griestu šai sadaļai — izskaidro VISUS iegūtos datus (agregātu identifikācija, servisa/remontu vēsture, nobraukuma saskaņa), īpaši, ja tie satur daudz vērtīgas informācijas. Bez liekvārdības un mākslīgi paplašinātiem teikumiem: īss fakts ir labāks par izdomātu teikumu."
+    : "Garums: **1 rindkopa, ja pietiek**; griesti 2–3 / ≈800 rakstzīmes. 350–800 ir griesti, ne kvota. Neizdomā otru virsrakstu, lai aizpildītu formu."
+} Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
 Ja šis avots tikai apstiprina jau uzrakstīto: viens īss teikums.
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; raksti, ko dati uzrāda, nevis ko tie „pierāda” vai „neizslēdz”.
 ${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
 Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) — tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
-Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.`,
+Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.${oilRoleHint}`,
         {
           operatorNotes: input.operatorNotes,
           existingDraftPlain: input.existingDraftPlain,
@@ -182,9 +197,12 @@ Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā ga
       ? aiAutoRecordsOilIntervalSystemPrompt()
       : isServiceHistory
         ? aiAutoRecordsServiceHistorySystemPrompt()
-        : aiSourceCommentSystemPrompt(blockLabel),
+        : aiSourceCommentSystemPrompt(blockLabel, {
+            unlimitedLength: isDealerComments,
+            includeOilIntervalRole,
+          }),
     userPrompt,
-    qualityField: "source",
+    qualityField: isDealerComments ? "source_dealer" : "source",
     temperature: 0.25,
   });
   if (isOilInterval || isServiceHistory) return generated;
