@@ -295,7 +295,7 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
     aiContextRaw: str(o.aiContextRaw, 200000),
     photos: synced.photos,
     photoGroups: synced.photoGroups,
-    hidePhotoWatermarks: o.hidePhotoWatermarks === false ? false : true,
+    hidePhotoWatermarks: o.hidePhotoWatermarks === true,
     ...("pdfChecklist" in o ? { pdfChecklist: normalizeChecklist(o.pdfChecklist) } : {}),
   };
 }

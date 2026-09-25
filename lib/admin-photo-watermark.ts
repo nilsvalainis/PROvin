@@ -1,16 +1,25 @@
 /**
  * CheckCar.vin ūdenszīmes slēpšana pirms admin foto saglabāšanas.
- * Noklusējums: ieslēgts (kā līdz šim CC.VIN lasīšanā).
+ * CC.VIN: noklusējums ieslēgts. Pārējās sadaļas: noklusējums izslēgts.
  */
 
-export const HIDE_PHOTO_WATERMARKS_DEFAULT = true;
+export const HIDE_PHOTO_WATERMARKS_DEFAULT = false;
+export const HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT = true;
 
-export function parseHidePhotoWatermarks(raw: unknown): boolean {
-  if (!raw || typeof raw !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
+function parseHidePhotoWatermarksFlag(raw: unknown, fallback: boolean): boolean {
+  if (!raw || typeof raw !== "object") return fallback;
   const v = (raw as { hidePhotoWatermarks?: unknown }).hidePhotoWatermarks;
   if (v === false || v === 0 || v === "0" || v === "false" || v === "off") return false;
   if (v === true || v === 1 || v === "1" || v === "true" || v === "on") return true;
-  return HIDE_PHOTO_WATERMARKS_DEFAULT;
+  return fallback;
+}
+
+export function parseHidePhotoWatermarks(raw: unknown): boolean {
+  return parseHidePhotoWatermarksFlag(raw, HIDE_PHOTO_WATERMARKS_DEFAULT);
+}
+
+export function parseCcVinHidePhotoWatermarks(raw: unknown): boolean {
+  return parseHidePhotoWatermarksFlag(raw, HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT);
 }
 
 export function formRequestsWatermarkCover(form: FormData): boolean {
@@ -22,8 +31,8 @@ export function formRequestsWatermarkCover(form: FormData): boolean {
 
 /** CC.VIN lasīšana (priekšskatījums / PDF) - slēdzis no saglabātā bloka. */
 export function hidePhotoWatermarksFromCcVinWorkspace(workspace: unknown): boolean {
-  if (!workspace || typeof workspace !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
+  if (!workspace || typeof workspace !== "object") return HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT;
   const blocks = (workspace as { sourceBlocks?: unknown }).sourceBlocks;
-  if (!blocks || typeof blocks !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
-  return parseHidePhotoWatermarks((blocks as { cc_vin?: unknown }).cc_vin);
+  if (!blocks || typeof blocks !== "object") return HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT;
+  return parseCcVinHidePhotoWatermarks((blocks as { cc_vin?: unknown }).cc_vin);
 }

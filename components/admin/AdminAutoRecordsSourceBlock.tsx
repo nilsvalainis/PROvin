@@ -731,7 +731,7 @@ export function AdminAutoRecordsSourceBlock({
               maxPhotos={AUTO_RECORDS_MAX_PHOTOS}
               emptyGroup={emptyAutoRecordsPhotoGroup}
               sectionTitle="Fotogrāfijas (PDF)"
-              hidePhotoWatermarks={value.hidePhotoWatermarks !== false}
+              hidePhotoWatermarks={value.hidePhotoWatermarks === true}
               onHidePhotoWatermarksChange={(next) =>
                 onChange({ ...value, hidePhotoWatermarks: next })
               }

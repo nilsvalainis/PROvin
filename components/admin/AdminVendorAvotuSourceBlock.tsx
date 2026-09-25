@@ -551,7 +551,7 @@ export function AdminVendorAvotuSourceBlock({
             photoGroups={block.photoGroups ?? []}
             disabled={readOnly || !!disabled || !photosPersistenceEnabled}
             onCommit={onPhotoGroupsStructuralCommit}
-            hidePhotoWatermarks={block.hidePhotoWatermarks !== false}
+            hidePhotoWatermarks={block.hidePhotoWatermarks === true}
             onHidePhotoWatermarksChange={(next) => onChange({ ...block, hidePhotoWatermarks: next })}
           />
         ) : null}

@@ -549,7 +549,7 @@ export function AdminLtabSourceBlock({
                 photoGroups={value.photoGroups ?? []}
                 disabled={readOnly || !!disabled || !photosPersistenceEnabled}
                 onCommit={onPhotoGroupsStructuralCommit}
-                hidePhotoWatermarks={value.hidePhotoWatermarks !== false}
+                hidePhotoWatermarks={value.hidePhotoWatermarks === true}
                 onHidePhotoWatermarksChange={(next) => onChange({ ...value, hidePhotoWatermarks: next })}
               />
             ) : null}

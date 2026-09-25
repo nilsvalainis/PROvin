@@ -48,7 +48,7 @@ type Props = {
   sectionTitle?: string;
   /** Bez grupu virsrakstiem — viena foto josla (negadījumu kopsavilkums). */
   simple?: boolean;
-  /** Slēpt CheckCar.vin ūdenszīmi pirms augšupielādes (noklusējums: ieslēgts). */
+  /** Slēpt CheckCar.vin ūdenszīmi pirms augšupielādes (noklusējums: izslēgts). */
   hidePhotoWatermarks?: boolean;
   onHidePhotoWatermarksChange?: (next: boolean) => void;
 };

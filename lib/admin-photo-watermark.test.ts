@@ -3,13 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   formRequestsWatermarkCover,
   hidePhotoWatermarksFromCcVinWorkspace,
+  parseCcVinHidePhotoWatermarks,
   parseHidePhotoWatermarks,
 } from "@/lib/admin-photo-watermark";
 
 describe("admin photo watermark toggle", () => {
-  it("noklusējumā slēpj ūdenszīmi, ja lauks nav saglabāts", () => {
-    expect(parseHidePhotoWatermarks(undefined)).toBe(true);
-    expect(parseHidePhotoWatermarks({})).toBe(true);
+  it("ārpus CC.VIN noklusējumā neslēpj ūdenszīmi, ja lauks nav saglabāts", () => {
+    expect(parseHidePhotoWatermarks(undefined)).toBe(false);
+    expect(parseHidePhotoWatermarks({})).toBe(false);
     expect(parseHidePhotoWatermarks({ hidePhotoWatermarks: true })).toBe(true);
     expect(parseHidePhotoWatermarks({ hidePhotoWatermarks: false })).toBe(false);
   });
@@ -23,7 +24,13 @@ describe("admin photo watermark toggle", () => {
     off.set("hideWatermarks", "0");
     expect(formRequestsWatermarkCover(off)).toBe(false);
 
-    expect(formRequestsWatermarkCover(new FormData())).toBe(true);
+    expect(formRequestsWatermarkCover(new FormData())).toBe(false);
+  });
+
+  it("CC.VIN noklusējumā slēpj ūdenszīmi", () => {
+    expect(parseCcVinHidePhotoWatermarks(undefined)).toBe(true);
+    expect(parseCcVinHidePhotoWatermarks({})).toBe(true);
+    expect(parseCcVinHidePhotoWatermarks({ hidePhotoWatermarks: false })).toBe(false);
   });
 
   it("CC.VIN slēdzi lasa no darba zonas bloka", () => {

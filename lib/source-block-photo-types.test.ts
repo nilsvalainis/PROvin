@@ -45,11 +45,16 @@ describe("source-block photo types", () => {
     const next = syncedSourceBlockPhotos({});
     expect(next.photos).toEqual([]);
     expect(next.photoGroups).toEqual([]);
-    expect(next.hidePhotoWatermarks).toBe(true);
+    expect(next.hidePhotoWatermarks).toBe(false);
   });
 
   it("keeps an explicit hidePhotoWatermarks off flag", () => {
     const next = syncedSourceBlockPhotos({ hidePhotoWatermarks: false });
     expect(next.hidePhotoWatermarks).toBe(false);
+  });
+
+  it("keeps an explicit hidePhotoWatermarks on flag", () => {
+    const next = syncedSourceBlockPhotos({ hidePhotoWatermarks: true });
+    expect(next.hidePhotoWatermarks).toBe(true);
   });
 });
