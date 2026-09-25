@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.7.3
+// @version      1.7.4
 // @description  Admin MENU VIN auto-fill. car.info + checkcar.vin. AutoDNA arī atver CarVertical.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -36,7 +36,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.7.3";
+  const SCRIPT_VERSION = "1.7.4";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -619,7 +619,7 @@
         "position:fixed;z-index:2147483647;right:16px;bottom:16px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:12px;font:600 14px/1.3 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25)";
       document.body.appendChild(badge);
     }
-    badge.textContent = error ? error : count > 0 ? "Foto: " + count : "Foto: nav";
+    badge.textContent = error ? error : count > 0 ? "Ir foto" : "Nav foto";
   }
 
   function watchCheckcarPhotos(probeVin) {
@@ -638,9 +638,9 @@
           last = count;
           stable = 0;
         }
-        /* Nulle pārāk agri nozīmē, ka galerija vēl nav ielādēta. */
-        if (count > 0 && stable >= 3) {
-          console.log("PROVIN checkcar: foto skaits stabilizējies", count);
+        /* Admin panelim vajag tikai faktu, vai bildes ir. Pirmo foto pietiek. */
+        if (count > 0 && stable >= 1) {
+          console.log("PROVIN checkcar: ir foto");
           window.clearInterval(timer);
           publishCheckcarPhotos(probeVin, count, "");
         } else if (count === 0 && ticks >= 24 && stable >= 8) {
