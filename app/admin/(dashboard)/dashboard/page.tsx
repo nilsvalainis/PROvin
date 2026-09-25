@@ -8,6 +8,7 @@ import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table"
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
+import { getAuditResultColorMap } from "@/lib/admin-audit-result-color-store";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
@@ -26,9 +27,10 @@ export default async function AdminOrdersPage({
   const hiddenByAmount = countAdminOrdersHiddenByAmountFilter(allOrders);
   const orders = filterAdminOrdersForDashboard(allOrders, showAll);
   const orderIds = orders.map((o) => o.id);
-  const [draftSummaries, auditCompleteMap] = await Promise.all([
+  const [draftSummaries, auditCompleteMap, auditResultColorMap] = await Promise.all([
     readOrderDraftSummaries(orderIds),
     getAuditDeadlineCompleteMap(orderIds),
+    getAuditResultColorMap(orderIds),
   ]);
   const ordersWithInvoice = orders.map((o) => {
     const draft = draftSummaries.get(o.id);
@@ -40,6 +42,7 @@ export default async function AdminOrdersPage({
       invoicePdfUrl: draft?.invoicePdfUrl ?? null,
       makeModel: draft?.makeModel || null,
       auditComplete: Boolean(auditCompleteMap.get(o.id)),
+      auditResultColor: auditResultColorMap.get(o.id) ?? null,
     };
   });
   const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithInvoice));

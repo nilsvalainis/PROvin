@@ -56,6 +56,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
         orderDraftPersistenceEnabled={loaded.orderDraftPersistenceEnabled}
         aiAllowed={loaded.aiAllowed}
         customerHistory={loaded.customerHistory}
+        auditResultColor={loaded.auditResultColor}
       />
     </>
   );

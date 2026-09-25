@@ -9,8 +9,17 @@ import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-t
 import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder } from "@/lib/admin-customer-identity";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
+import {
+  AdminAuditResultColorControl,
+} from "@/components/admin/AdminAuditResultColorControl";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
+import {
+  AUDIT_RESULT_COLORS,
+  AUDIT_RESULT_COLOR_DOT_CLASS,
+  AUDIT_RESULT_COLOR_LABEL_LV,
+  type AuditResultColor,
+} from "@/lib/admin-audit-result-color";
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
 
@@ -364,6 +373,8 @@ export function AdminOrdersTable({
   const router = useRouter();
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
   const [completeOverride, setCompleteOverride] = useState<Record<string, boolean>>({});
+  const [colorOverride, setColorOverride] = useState<Record<string, AuditResultColor | null>>({});
+  const [colorFilter, setColorFilter] = useState<AuditResultColor | "all" | "none">("all");
   const [clientOverrides, setClientOverrides] = useState<
     Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }>
   >({});
@@ -404,22 +415,81 @@ export function AdminOrdersTable({
   }, [orders, orderEditsLocalStorageKeyPrefix]);
 
   const displayedOrders = useMemo(() => {
-    const withComplete = orders.map((o) => ({
+    const withMeta = orders.map((o) => ({
       ...o,
       auditComplete: o.id in completeOverride ? completeOverride[o.id] : Boolean(o.auditComplete),
+      auditResultColor:
+        o.id in colorOverride ? colorOverride[o.id] : (o.auditResultColor ?? null),
     }));
-    return sortAdminOrdersIncompleteFirst(withComplete);
-  }, [orders, completeOverride]);
+    const filtered =
+      colorFilter === "all"
+        ? withMeta
+        : colorFilter === "none"
+          ? withMeta.filter((o) => !o.auditResultColor)
+          : withMeta.filter((o) => o.auditResultColor === colorFilter);
+    return sortAdminOrdersIncompleteFirst(filtered);
+  }, [orders, completeOverride, colorOverride, colorFilter]);
 
   const markComplete = useCallback((id: string, complete: boolean) => {
     setCompleteOverride((prev) => ({ ...prev, [id]: complete }));
   }, []);
 
+  const markColor = useCallback((id: string, color: AuditResultColor | null) => {
+    setColorOverride((prev) => ({ ...prev, [id]: color }));
+  }, []);
+
   const detailBaseNormalized = orderDetailHrefBase.replace(/\/$/, "");
   const hug = "w-[1%] whitespace-nowrap";
 
+  const filterChip =
+    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition";
+
   return (
     <>
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+          Rezultāts
+        </span>
+        <button
+          type="button"
+          className={`${filterChip} ${
+            colorFilter === "all"
+              ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/50 text-[var(--color-provin-accent)]"
+              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+          }`}
+          onClick={() => setColorFilter("all")}
+        >
+          Visi
+        </button>
+        {AUDIT_RESULT_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            className={`${filterChip} ${
+              colorFilter === c
+                ? "border-slate-300 bg-slate-50 text-[var(--color-apple-text)]"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+            onClick={() => setColorFilter(c)}
+          >
+            <span className={`h-2 w-2 rounded-full ${AUDIT_RESULT_COLOR_DOT_CLASS[c]}`} aria-hidden />
+            {AUDIT_RESULT_COLOR_LABEL_LV[c]}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={`${filterChip} ${
+            colorFilter === "none"
+              ? "border-slate-300 bg-slate-50 text-[var(--color-apple-text)]"
+              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+          }`}
+          onClick={() => setColorFilter("none")}
+        >
+          <span className="h-2 w-2 rounded-full bg-slate-200 ring-1 ring-slate-300/80" aria-hidden />
+          Bez krāsas
+        </button>
+      </div>
+
       {/* Telefonā deviņu kolonnu tabula nav lasāma, tāpēc tā pati rinda ir karte.
           No 768 px uz augšu rāda tieši to pašu tabulu, kas bija līdz šim. */}
       <ul className="mt-4 space-y-2 md:hidden">
@@ -459,7 +529,13 @@ export function AdminOrdersTable({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-[14px] font-semibold text-[var(--color-apple-text)]">
+                  <p className="flex items-center gap-1.5 truncate text-[14px] font-semibold text-[var(--color-apple-text)]">
+                    <AdminAuditResultColorControl
+                      sessionId={o.id}
+                      initialColor={o.auditResultColor ?? null}
+                      compact
+                      onColorChange={(c) => markColor(o.id, c)}
+                    />
                     {o.makeModel?.trim() || v.primaryClient}
                   </p>
                   <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-provin-muted)]">
@@ -536,6 +612,7 @@ export function AdminOrdersTable({
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
               <th className={`${hug} py-3.5 pl-4 pr-1`}>Datums</th>
+              <th className={`${hug} py-3.5 pl-1 pr-2`}>Rez.</th>
               <th className={`${hug} py-3.5 pl-1 pr-4`}>Termiņš (48 h)</th>
               <th className="px-4 py-3.5">VIN</th>
               <th className="px-4 py-3.5">Marka, modelis</th>
@@ -609,6 +686,14 @@ export function AdminOrdersTable({
                         </span>
                       ) : null}
                     </span>
+                  </td>
+                  <td className={`${hug} py-3.5 pl-1 pr-2`}>
+                    <AdminAuditResultColorControl
+                      sessionId={o.id}
+                      initialColor={o.auditResultColor ?? null}
+                      compact
+                      onColorChange={(c) => markColor(o.id, c)}
+                    />
                   </td>
                   <td className={`${hug} py-3.5 pl-1 pr-4`}>
                     <AdminAuditDeadlineCell

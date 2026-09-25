@@ -27,6 +27,8 @@ import {
   pickOrderEditsForHydration,
   serializeOrderEditsForLocalStorage,
 } from "@/lib/admin-order-edits-persist";
+import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResultColorControl";
+import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
@@ -111,6 +113,7 @@ export function AdminOrderDetailView({
   orderDraftPersistenceEnabled,
   aiAllowed,
   customerHistory,
+  auditResultColor = null,
 }: {
   order: AdminOrderDetailClientModel;
   serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
@@ -118,6 +121,7 @@ export function AdminOrderDetailView({
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
   customerHistory: CustomerHistory | null;
+  auditResultColor?: AuditResultColor | null;
 }) {
   const [edits, setEdits] = useState<OrderEdits>(() => orderEditsFromServerDraft(serverOrderDraft));
   const [hydrated, setHydrated] = useState(false);
@@ -656,8 +660,9 @@ export function AdminOrderDetailView({
       ) : null}
 
       <header className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-[var(--admin-border-subtle)] pb-2">
-        <h1 className="text-[13px] font-semibold tracking-tight text-[var(--color-apple-text)]">
-          Pasūtījums
+        <h1 className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold tracking-tight text-[var(--color-apple-text)]">
+          <span>Pasūtījums</span>
+          <AdminAuditResultColorControl sessionId={order.id} initialColor={auditResultColor} />
         </h1>
         <p className="text-[11px] font-semibold text-[var(--color-provin-muted)]" title="Pasūtītais produkts">
           <span className="uppercase tracking-wide text-[var(--color-apple-text)]">

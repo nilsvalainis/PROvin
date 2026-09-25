@@ -10,6 +10,8 @@ import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderD
 import { toAdminOrderDetailClientModel } from "@/lib/admin-order-detail-client-model";
 import { emptyCustomerHistory, type CustomerHistory } from "@/lib/admin-customer-history";
 import { loadCustomerHistoryForOrder } from "@/lib/admin-customer-history-load";
+import { getAuditResultColor } from "@/lib/admin-audit-result-color-store";
+import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 
 export type { AdminOrderDetailClientModel };
 export { toAdminOrderDetailClientModel };
@@ -23,6 +25,7 @@ export type AdminOrderDetailPageLoadSuccess = {
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
   customerHistory: CustomerHistory;
+  auditResultColor: AuditResultColor | null;
 };
 
 export type AdminOrderDetailPageLoadFailure = {
@@ -145,6 +148,13 @@ export async function loadAdminOrderDetailPageData(
       console.warn("[admin-order-detail] customer history failed", e);
     }
 
+    let auditResultColor: AuditResultColor | null = null;
+    try {
+      auditResultColor = await getAuditResultColor(sid);
+    } catch (e) {
+      console.warn("[admin-order-detail] audit result color failed", e);
+    }
+
     return {
       ok: true,
       sessionId: sid,
@@ -154,6 +164,7 @@ export async function loadAdminOrderDetailPageData(
       orderDraftPersistenceEnabled: isOrderDraftStorageDurable(),
       aiAllowed: aiAllowsOrder(Boolean(order.isDemo)),
       customerHistory,
+      auditResultColor,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

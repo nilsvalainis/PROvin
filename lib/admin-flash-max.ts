@@ -104,9 +104,24 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   dailySource("autodna", "AutoDNA", "autodna"),
   dailySource("carvertical", "CarVertical", "carvertical"),
   dailySource("cc_vin", SOURCE_BLOCK_LABELS.cc_vin, "cc_vin"),
-  dailySource("asv", SOURCE_BLOCK_LABELS.asv, "asv"),
   dailySource("dealer_comments", "Oficiālā dīlera komentāri", "auto_records"),
   dailySource("dealer_oil", "Eļļas maiņas intervāli", "auto_records", "oilChangeIntervalNotes"),
+  dailySource("tirgus", SOURCE_BLOCK_LABELS.tirgus, "tirgus"),
+  {
+    kind: "listing",
+    id: "seller",
+    label: "Pārdevēja portrets",
+    group: "daily",
+    endpoint: "/api/admin/ai/seller-analysis",
+  },
+  {
+    kind: "listing",
+    id: "photo",
+    label: LISTING_ANALYSIS_SUBSECTIONS.photoAnalysis,
+    group: "daily",
+    endpoint: "/api/admin/ai/listing-field-comment",
+    listingField: "photoAnalysis",
+  },
   {
     kind: "summary",
     id: "incidents",
@@ -144,26 +159,12 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   },
   extraSource("ltab", SOURCE_BLOCK_LABELS.ltab, "ltab"),
   extraSource("tjekbil", SOURCE_BLOCK_LABELS.tjekbil, "tjekbil"),
+  extraSource("finnik", SOURCE_BLOCK_LABELS.finnik, "finnik"),
   extraSource("mnt_ee", SOURCE_BLOCK_LABELS.mnt_ee, "mnt_ee"),
   extraSource("lkf_ee", SOURCE_BLOCK_LABELS.lkf_ee, "lkf_ee"),
   extraSource("carinfo", SOURCE_BLOCK_LABELS.carinfo, "carinfo"),
+  extraSource("asv", SOURCE_BLOCK_LABELS.asv, "asv"),
   extraSource("citi_avoti", SOURCE_BLOCK_LABELS.citi_avoti, "citi_avoti"),
-  extraSource("tirgus", SOURCE_BLOCK_LABELS.tirgus, "tirgus"),
-  {
-    kind: "listing",
-    id: "seller",
-    label: "Pārdevēja portrets",
-    group: "extra",
-    endpoint: "/api/admin/ai/seller-analysis",
-  },
-  {
-    kind: "listing",
-    id: "photo",
-    label: LISTING_ANALYSIS_SUBSECTIONS.photoAnalysis,
-    group: "extra",
-    endpoint: "/api/admin/ai/listing-field-comment",
-    listingField: "photoAnalysis",
-  },
   {
     kind: "listing",
     id: "listing_sales",
@@ -173,7 +174,6 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
     listingField: "listingSalesContext",
   },
 ];
-
 export const FLASH_MAX_DAILY_JOB_IDS: readonly string[] = FLASH_MAX_JOBS.filter((j) => j.group === "daily").map(
   (j) => j.id,
 );

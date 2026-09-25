@@ -27,9 +27,11 @@ describe("FLASH MAX jobs", () => {
       "autodna",
       "carvertical",
       "cc_vin",
-      "asv",
       "dealer_comments",
       "dealer_oil",
+      "tirgus",
+      "seller",
+      "photo",
       "incidents",
       "mileage",
       "technical_risks",
@@ -40,13 +42,15 @@ describe("FLASH MAX jobs", () => {
     expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison" && j.group === "daily")).toBe(true);
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "sources_comparison")!)).toBe("flash");
     expect(FLASH_MAX_JOBS.some((j) => j.id === "cc_vin" && j.group === "daily")).toBe(true);
-    expect(FLASH_MAX_JOBS.some((j) => j.id === "asv" && j.group === "daily")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "asv" && j.group === "extra")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "finnik" && j.group === "extra")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "tirgus" && j.group === "daily")).toBe(true);
     expect(defaultFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_DAILY_JOB_IDS]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto_oil" || j.id === "oneauto_service")).toBe(false);
-    expect(FLASH_MAX_JOBS.some((j) => j.id === "seller" && j.group === "extra")).toBe(true);
-    expect(FLASH_MAX_JOBS.some((j) => j.id === "photo" && j.group === "extra")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "seller" && j.group === "daily")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "photo" && j.group === "daily")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "listing_sales" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "price")).toBe(false);
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "csdd")!)).toBe("gemini-flash");

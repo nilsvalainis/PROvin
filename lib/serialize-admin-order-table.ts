@@ -1,4 +1,5 @@
 import type { CheckoutLineKind } from "@/lib/stripe-session";
+import { parseAuditResultColor } from "@/lib/admin-audit-result-color";
 
 /**
  * RSC → client `AdminOrdersTable`: tikai string | number | null | boolean (bez Date, Decimal, Stripe instancēm).
@@ -20,6 +21,8 @@ export type SerializedAdminOrderTableRow = {
   heardAbout?: string | null;
   /** 48 h termiņš atzīmēts kā izpildīts (servera persistents). */
   auditComplete?: boolean;
+  /** Operātora audita rezultāta krāsa (zaļš / oranžs / sarkans) — reklāmas grupēšanai. */
+  auditResultColor?: "green" | "orange" | "red" | null;
   /** Ja ir, tabula var novirzīt „Atvērt” uz `/admin/konsultacijas` PROVIN SELECT sesijām. */
   checkoutLine?: CheckoutLineKind;
   isDemo?: boolean;
@@ -41,6 +44,7 @@ type RowInput = {
   makeModel?: unknown;
   heardAbout?: unknown;
   auditComplete?: unknown;
+  auditResultColor?: unknown;
   checkoutLine?: unknown;
   isDemo?: unknown;
   isManual?: unknown;
@@ -99,6 +103,9 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
           ? null
           : String(o.heardAbout).trim(),
       ...(Boolean(o.auditComplete) ? { auditComplete: true as const } : {}),
+      ...(parseAuditResultColor(o.auditResultColor)
+        ? { auditResultColor: parseAuditResultColor(o.auditResultColor)! }
+        : {}),
       ...(checkoutLine ? { checkoutLine } : {}),
       ...(Boolean(o.isDemo) ? { isDemo: true as const } : {}),
       ...(Boolean(o.isManual) ? { isManual: true as const } : {}),

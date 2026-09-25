@@ -6,6 +6,7 @@ import { AdminOrderWorkspaceErrorBoundary } from "@/components/admin/AdminOrderW
 import { AdminOrderDetailLoading } from "@/components/admin/AdminOrderDetailLoading";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
 import type { CustomerHistory } from "@/lib/admin-customer-history";
+import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 
 const AdminOrderDetailView = dynamic(
   () => import("@/components/admin/AdminOrderDetailView").then((m) => m.AdminOrderDetailView),
@@ -20,6 +21,7 @@ export function AdminOrderDetailPageClient({
   orderDraftPersistenceEnabled,
   aiAllowed,
   customerHistory,
+  auditResultColor = null,
 }: {
   sessionId: string;
   order: AdminOrderDetailClientModel;
@@ -28,6 +30,7 @@ export function AdminOrderDetailPageClient({
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
   customerHistory: CustomerHistory;
+  auditResultColor?: AuditResultColor | null;
 }) {
   return (
     <AdminOrderWorkspaceErrorBoundary sessionId={sessionId}>
@@ -39,6 +42,7 @@ export function AdminOrderDetailPageClient({
         orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
         aiAllowed={aiAllowed}
         customerHistory={customerHistory}
+        auditResultColor={auditResultColor}
       />
     </AdminOrderWorkspaceErrorBoundary>
   );
