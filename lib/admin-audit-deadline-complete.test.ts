@@ -62,4 +62,12 @@ describe("admin-audit-deadline-complete", () => {
       "done-old",
     ]);
   });
+
+  it("treats credit packs as finished so they do not float as VIN work", () => {
+    const rows = [
+      { id: "pack-new", created: 400, isB2bPack: true },
+      { id: "open", created: 200 },
+    ];
+    expect(sortAdminOrdersIncompleteFirst(rows).map((r) => r.id)).toEqual(["open", "pack-new"]);
+  });
 });

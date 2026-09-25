@@ -51,6 +51,9 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     attachments: attachmentList(order.attachments),
     isDemo: Boolean(order.isDemo),
     ...(Boolean(order.isManual) ? { isManual: true as const } : {}),
+    ...(typeof order.fulfillment === "string" && order.fulfillment.trim()
+      ? { fulfillment: order.fulfillment.trim() }
+      : {}),
     ...(typeof order.partnerCompanyName === "string" && order.partnerCompanyName.trim()
       ? { partnerCompanyName: order.partnerCompanyName.trim() }
       : {}),

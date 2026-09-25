@@ -7,7 +7,12 @@ import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder } from "@/lib/admin-customer-identity";
-import { isPartnerHighlightAdminOrder, partnerAuditPurposeLabelLv } from "@/lib/b2b-partner-orders";
+import {
+  b2bPackInfoLabelLv,
+  isB2bPackAdminOrder,
+  isPartnerHighlightAdminOrder,
+  partnerAuditPurposeLabelLv,
+} from "@/lib/b2b-partner-orders";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import {
@@ -320,6 +325,8 @@ type OrderRowView = {
   partnerHighlight: boolean;
   partnerCompanyName: string;
   partnerPurposeLabel: string;
+  isPack: boolean;
+  packLabel: string;
 };
 
 type ClientOverride = {
@@ -341,10 +348,13 @@ function orderRowView(
   const phone = ov?.customerPhone ?? (o.customerPhone?.trim() ?? "");
   const vin = ov?.vin ?? (o.vin?.trim() ?? "");
   const partnerCompanyName = o.partnerCompanyName?.trim() ?? "";
-  const partnerHighlight = isPartnerHighlightAdminOrder({
-    partnerCompanyName,
-    partnerId: o.partnerId,
-  });
+  const isPack = isB2bPackAdminOrder(o);
+  const partnerHighlight =
+    !isPack &&
+    isPartnerHighlightAdminOrder({
+      partnerCompanyName,
+      partnerId: o.partnerId,
+    });
   return {
     pdfHref: invoicePdfHref(o),
     detailBase,
@@ -355,17 +365,23 @@ function orderRowView(
     secondaryClient: [partnerCompanyName && name ? name : "", name && !partnerCompanyName ? email : "", phone]
       .filter(Boolean)
       .join(" · "),
-    dealerHighlight: isDealerHighlightAdminOrder({
-      checkoutLine: o.checkoutLine,
-      amountTotalCents: o.amountTotal,
-    }),
-    miniHighlight: isMiniHighlightAdminOrder({
-      checkoutLine: o.checkoutLine,
-      amountTotalCents: o.amountTotal,
-    }),
+    dealerHighlight:
+      !isPack &&
+      isDealerHighlightAdminOrder({
+        checkoutLine: o.checkoutLine,
+        amountTotalCents: o.amountTotal,
+      }),
+    miniHighlight:
+      !isPack &&
+      isMiniHighlightAdminOrder({
+        checkoutLine: o.checkoutLine,
+        amountTotalCents: o.amountTotal,
+      }),
     partnerHighlight,
     partnerCompanyName,
-    partnerPurposeLabel: partnerAuditPurposeLabelLv(o.partnerAuditPurpose),
+    partnerPurposeLabel: isPack ? "" : partnerAuditPurposeLabelLv(o.partnerAuditPurpose),
+    isPack,
+    packLabel: isPack ? b2bPackInfoLabelLv({ checkoutLine: o.checkoutLine, packQty: o.packQty }) : "",
   };
 }
 
@@ -511,14 +527,17 @@ export function AdminOrdersTable({
           const v = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
           const accent = o.isDemo
             ? "border-l-[var(--color-provin-accent)]"
-            : v.partnerHighlight
-              ? "border-l-violet-500"
-              : v.dealerHighlight
-                ? "border-l-sky-400"
-                : v.miniHighlight
-                  ? "border-l-amber-400"
-                  : "border-l-slate-200";
+            : v.isPack
+              ? "border-l-violet-400"
+              : v.partnerHighlight
+                ? "border-l-violet-500"
+                : v.dealerHighlight
+                  ? "border-l-sky-400"
+                  : v.miniHighlight
+                    ? "border-l-amber-400"
+                    : "border-l-slate-200";
           const openOrderFromCard = (e: MouseEvent) => {
+            if (v.isPack) return;
             if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
             if (e.metaKey || e.ctrlKey || e.button === 1) {
               window.open(v.orderHref, "_blank", "noopener,noreferrer");
@@ -529,45 +548,65 @@ export function AdminOrdersTable({
           return (
             <li
               key={o.id}
-              role="link"
-              tabIndex={0}
-              className={`cursor-pointer rounded-xl border border-slate-200/70 border-l-4 p-3 shadow-[0_1px_10px_rgba(15,23,42,0.04)] active:bg-slate-50 ${accent} ${
-                v.partnerHighlight ? "bg-violet-50/80" : "bg-white"
+              role={v.isPack ? undefined : "link"}
+              tabIndex={v.isPack ? undefined : 0}
+              className={`rounded-xl border border-slate-200/70 border-l-4 p-3 shadow-[0_1px_10px_rgba(15,23,42,0.04)] ${accent} ${
+                v.isPack
+                  ? "cursor-default bg-violet-50/70"
+                  : v.partnerHighlight
+                    ? "cursor-pointer bg-violet-50/80 active:bg-slate-50"
+                    : "cursor-pointer bg-white active:bg-slate-50"
               }`}
-              onClick={openOrderFromCard}
-              onAuxClick={(e) => {
-                if (e.button !== 1) return;
-                openOrderFromCard(e);
-              }}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-                e.preventDefault();
-                router.push(v.orderHref);
-              }}
+              onClick={v.isPack ? undefined : openOrderFromCard}
+              onAuxClick={
+                v.isPack
+                  ? undefined
+                  : (e) => {
+                      if (e.button !== 1) return;
+                      openOrderFromCard(e);
+                    }
+              }
+              onKeyDown={
+                v.isPack
+                  ? undefined
+                  : (e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      router.push(v.orderHref);
+                    }
+              }
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="flex items-center gap-1.5 truncate text-[14px] font-semibold text-[var(--color-apple-text)]">
-                    <AdminAuditResultColorControl
+                    {v.isPack ? null : (
+                      <AdminAuditResultColorControl
+                        sessionId={o.id}
+                        initialColor={o.auditResultColor ?? null}
+                        compact
+                        onColorChange={(c) => markColor(o.id, c)}
+                      />
+                    )}
+                    {v.isPack ? v.packLabel : o.makeModel?.trim() || v.primaryClient}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">
+                    {v.isPack
+                      ? v.primaryClient
+                      : v.hasVin
+                        ? v.vin
+                        : "VIN nav"}
+                  </p>
+                </div>
+                {v.isPack ? null : (
+                  <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                    <AdminAuditDeadlineCell
                       sessionId={o.id}
-                      initialColor={o.auditResultColor ?? null}
-                      compact
-                      onColorChange={(c) => markColor(o.id, c)}
+                      createdUnixSec={o.created}
+                      initialComplete={Boolean(o.auditComplete)}
+                      onCompleteChange={(complete) => markComplete(o.id, complete)}
                     />
-                    {o.makeModel?.trim() || v.primaryClient}
-                  </p>
-                  <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-provin-muted)]">
-                    {v.hasVin ? v.vin : "VIN nav"}
-                  </p>
-                </div>
-                <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                  <AdminAuditDeadlineCell
-                    sessionId={o.id}
-                    createdUnixSec={o.created}
-                    initialComplete={Boolean(o.auditComplete)}
-                    onCompleteChange={(complete) => markComplete(o.id, complete)}
-                  />
-                </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -577,7 +616,11 @@ export function AdminOrdersTable({
                     Paraugs
                   </span>
                 ) : null}
-                {v.partnerHighlight ? (
+                {v.isPack ? (
+                  <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">
+                    Paka
+                  </span>
+                ) : v.partnerHighlight ? (
                   <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">
                     Partneris{v.partnerCompanyName ? ` · ${v.partnerCompanyName}` : ""}
                   </span>
@@ -623,9 +666,13 @@ export function AdminOrdersTable({
                       <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                     </a>
                   ) : null}
-                  <span className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-2 text-xs font-semibold text-white shadow-sm">
-                    Atvērt
-                  </span>
+                  {v.isPack ? (
+                    <span className="text-[11px] font-medium text-[var(--color-provin-muted)]">Tikai info</span>
+                  ) : (
+                    <span className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-2 text-xs font-semibold text-white shadow-sm">
+                      Atvērt
+                    </span>
+                  )}
                 </div>
               </div>
             </li>
@@ -666,8 +713,11 @@ export function AdminOrdersTable({
                 partnerHighlight,
                 partnerCompanyName,
                 partnerPurposeLabel,
+                isPack,
+                packLabel,
               } = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
               const openOrderFromRow = (e: MouseEvent) => {
+                if (isPack) return;
                 if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
                 if (e.metaKey || e.ctrlKey || e.button === 1) {
                   window.open(orderHref, "_blank", "noopener,noreferrer");
@@ -679,21 +729,27 @@ export function AdminOrdersTable({
                 <tr
                   key={o.id}
                   className={
-                    o.isDemo
-                      ? "cursor-pointer bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
-                      : partnerHighlight
-                        ? "cursor-pointer bg-violet-50/90 transition-colors hover:bg-violet-100/80"
-                        : dealerHighlight
-                          ? "cursor-pointer bg-sky-50/80 transition-colors hover:bg-sky-100/80"
-                          : miniHighlight
-                            ? "cursor-pointer bg-amber-50/90 transition-colors hover:bg-amber-100/80"
-                            : "cursor-pointer transition-colors hover:bg-slate-50/90"
+                    isPack
+                      ? "bg-violet-50/70"
+                      : o.isDemo
+                        ? "cursor-pointer bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
+                        : partnerHighlight
+                          ? "cursor-pointer bg-violet-50/90 transition-colors hover:bg-violet-100/80"
+                          : dealerHighlight
+                            ? "cursor-pointer bg-sky-50/80 transition-colors hover:bg-sky-100/80"
+                            : miniHighlight
+                              ? "cursor-pointer bg-amber-50/90 transition-colors hover:bg-amber-100/80"
+                              : "cursor-pointer transition-colors hover:bg-slate-50/90"
                   }
-                  onClick={openOrderFromRow}
-                  onAuxClick={(e) => {
-                    if (e.button !== 1) return;
-                    openOrderFromRow(e);
-                  }}
+                  onClick={isPack ? undefined : openOrderFromRow}
+                  onAuxClick={
+                    isPack
+                      ? undefined
+                      : (e) => {
+                          if (e.button !== 1) return;
+                          openOrderFromRow(e);
+                        }
+                  }
                 >
                   <td className={`${hug} py-3.5 pl-4 pr-1 text-[var(--color-apple-text)]`}>
                     <span className="flex flex-wrap items-center gap-2">
@@ -707,7 +763,11 @@ export function AdminOrdersTable({
                           Paraugs
                         </span>
                       ) : null}
-                      {partnerHighlight ? (
+                      {isPack ? (
+                        <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
+                          Paka
+                        </span>
+                      ) : partnerHighlight ? (
                         <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
                           Partneris{partnerCompanyName ? ` · ${partnerCompanyName}` : ""}
                         </span>
@@ -729,20 +789,28 @@ export function AdminOrdersTable({
                     </span>
                   </td>
                   <td className={`${hug} py-3.5 pl-1 pr-2`}>
-                    <AdminAuditResultColorControl
-                      sessionId={o.id}
-                      initialColor={o.auditResultColor ?? null}
-                      compact
-                      onColorChange={(c) => markColor(o.id, c)}
-                    />
+                    {isPack ? (
+                      <span className="text-[var(--color-provin-muted)]">—</span>
+                    ) : (
+                      <AdminAuditResultColorControl
+                        sessionId={o.id}
+                        initialColor={o.auditResultColor ?? null}
+                        compact
+                        onColorChange={(c) => markColor(o.id, c)}
+                      />
+                    )}
                   </td>
                   <td className={`${hug} py-3.5 pl-1 pr-4`}>
-                    <AdminAuditDeadlineCell
-                      sessionId={o.id}
-                      createdUnixSec={o.created}
-                      initialComplete={Boolean(o.auditComplete)}
-                      onCompleteChange={(complete) => markComplete(o.id, complete)}
-                    />
+                    {isPack ? (
+                      <span className="text-[var(--color-provin-muted)]">—</span>
+                    ) : (
+                      <AdminAuditDeadlineCell
+                        sessionId={o.id}
+                        createdUnixSec={o.created}
+                        initialComplete={Boolean(o.auditComplete)}
+                        onCompleteChange={(complete) => markComplete(o.id, complete)}
+                      />
+                    )}
                   </td>
                   <td className="px-4 py-3.5 text-[var(--color-apple-text)]">
                     {hasVin ? (
@@ -758,9 +826,13 @@ export function AdminOrdersTable({
                   </td>
                   <td
                     className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-[var(--color-apple-text)]"
-                    title={o.makeModel?.trim() || undefined}
+                    title={isPack ? packLabel : o.makeModel?.trim() || undefined}
                   >
-                    {o.makeModel?.trim() || (
+                    {isPack ? (
+                      packLabel
+                    ) : o.makeModel?.trim() ? (
+                      o.makeModel.trim()
+                    ) : (
                       <span className="text-[var(--color-provin-muted)]">—</span>
                     )}
                   </td>
@@ -803,13 +875,17 @@ export function AdminOrdersTable({
                   </td>
                   <td className={`${hug} px-4 py-3.5 text-right`}>
                     <span className="inline-flex items-center gap-2">
-                      {o.isManual ? <ManualOrderDeleteButton id={o.id} /> : null}
-                      <Link
-                        href={`${detailBase}/${encodeURIComponent(o.id)}`}
-                        className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] hover:shadow-md"
-                      >
-                        Atvērt
-                      </Link>
+                      {o.isManual && !isPack ? <ManualOrderDeleteButton id={o.id} /> : null}
+                      {isPack ? (
+                        <span className="text-[11px] font-medium text-[var(--color-provin-muted)]">Tikai info</span>
+                      ) : (
+                        <Link
+                          href={`${detailBase}/${encodeURIComponent(o.id)}`}
+                          className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] hover:shadow-md"
+                        >
+                          Atvērt
+                        </Link>
+                      )}
                     </span>
                   </td>
                 </tr>

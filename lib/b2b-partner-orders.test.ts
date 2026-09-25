@@ -3,6 +3,7 @@ import {
   buildPartnerOrderNotes,
   formatB2bArchiveAmount,
   formatB2bPartnerOrderDate,
+  b2bPackInfoLabelLv,
   isB2bPackAdminOrder,
   isPartnerHighlightAdminOrder,
   parsePartnerAuditPurposeFromNotes,
@@ -53,14 +54,26 @@ describe("b2b partner archive rows", () => {
     expect(isPartnerHighlightAdminOrder({ notes: "parasts komentārs" })).toBe(false);
   });
 
-  it("hides B2B credit packs from the admin order list, not VIN jobs", () => {
+  it("detects B2B credit packs, not VIN jobs", () => {
     expect(
       isB2bPackAdminOrder({ checkoutLine: "business", vin: null, fulfillment: "b2b_pack" }),
     ).toBe(true);
-    expect(isB2bPackAdminOrder({ checkoutLine: "dealer", vin: "", isManual: false })).toBe(true);
+    expect(isB2bPackAdminOrder({ checkoutLine: "dealer", vin: "", isManual: false })).toBe(false);
+    expect(
+      isB2bPackAdminOrder({
+        checkoutLine: "dealer",
+        vin: "",
+        partnerId: "ptr_0123456789abcdef",
+      }),
+    ).toBe(true);
     expect(
       isB2bPackAdminOrder({ checkoutLine: "business", vin: "WVWZZZ1JZXW000001", isManual: false }),
     ).toBe(false);
     expect(isB2bPackAdminOrder({ checkoutLine: "audit", vin: null, isManual: true })).toBe(false);
+  });
+
+  it("labels pack info rows with product and quantity", () => {
+    expect(b2bPackInfoLabelLv({ checkoutLine: "business", packQty: 1 })).toBe("Paka · PROVIN BUSINESS × 1");
+    expect(b2bPackInfoLabelLv({ checkoutLine: "dealer", packQty: 10 })).toBe("Paka · Dīlera dati × 10");
   });
 });

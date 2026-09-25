@@ -102,19 +102,43 @@ export function buildPartnerOrderNotes(args: {
   return parts.join(" · ");
 }
 
-/** Kredītu paka (Stripe, bez VIN), ne auto audits. Nedrīkst rādīt pasūtījumu sarakstā. */
+/** Kredītu paka (Stripe, bez VIN): sarakstā informatīva rinda, nav atverams VIN darbs. */
 export function isB2bPackAdminOrder(row: {
   fulfillment?: string | null;
   isManual?: boolean;
   isDemo?: boolean;
   checkoutLine?: string | null;
   vin?: string | null;
+  isB2bPack?: boolean;
+  partnerId?: string | null;
+  companyName?: string | null;
 }): boolean {
+  if (row.isB2bPack === true) return true;
   if (row.isManual || row.isDemo) return false;
   if ((row.fulfillment ?? "").trim().toLowerCase() === "b2b_pack") return true;
+  if ((row.vin ?? "").trim()) return false;
   const line = (row.checkoutLine ?? "").trim().toLowerCase();
-  if (line !== "business" && line !== "dealer") return false;
-  return !(row.vin ?? "").trim();
+  if (line === "business") return true;
+  if (line === "dealer") {
+    return Boolean((row.partnerId ?? "").trim() || (row.companyName ?? "").trim());
+  }
+  return false;
+}
+
+export function parseB2bPackQty(raw: unknown): number | null {
+  const n = typeof raw === "number" ? raw : Number.parseInt(String(raw ?? "").trim(), 10);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return Math.min(Math.trunc(n), 50);
+}
+
+export function b2bPackInfoLabelLv(args: {
+  checkoutLine?: string | null;
+  packQty?: number | null;
+}): string {
+  const line = (args.checkoutLine ?? "").trim().toLowerCase();
+  const product = line === "dealer" ? "Dīlera dati" : "PROVIN BUSINESS";
+  const qty = args.packQty && args.packQty > 0 ? args.packQty : 1;
+  return `Paka · ${product} × ${qty}`;
 }
 
 export function isPartnerHighlightAdminOrder(args: {

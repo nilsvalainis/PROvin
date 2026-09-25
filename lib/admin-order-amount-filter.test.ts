@@ -18,6 +18,18 @@ describe("passesAdminOrderAmountFilter", () => {
     expect(passesAdminOrderAmountFilter({ amountTotal: 50, isDemo: true })).toBe(true);
   });
 
+  it("always includes B2B credit packs", () => {
+    expect(
+      passesAdminOrderAmountFilter({
+        amountTotal: 1999,
+        fulfillment: "b2b_pack",
+        checkoutLine: "dealer",
+        vin: null,
+        partnerId: "ptr_0123456789abcdef",
+      }),
+    ).toBe(true);
+  });
+
   it("excludes null amount", () => {
     expect(passesAdminOrderAmountFilter({ amountTotal: null })).toBe(false);
   });

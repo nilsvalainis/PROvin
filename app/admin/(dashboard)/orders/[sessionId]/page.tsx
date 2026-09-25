@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { MarkAdminStripeSessionOpened } from "@/components/admin/MarkAdminStripeSessionOpened";
 import { AdminOrderDetailPageClient } from "@/components/admin/AdminOrderDetailPageClient";
 import { AdminOrderDetailPageFallback } from "@/components/admin/AdminOrderDetailPageFallback";
 import { loadAdminOrderDetailPageData } from "@/lib/admin-order-detail-page-load";
+import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,10 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   }
 
   const loaded = await loadAdminOrderDetailPageData(sessionId);
+
+  if (loaded.ok && isB2bPackAdminOrder(loaded.order)) {
+    redirect("/admin/dashboard");
+  }
 
   if (!loaded.ok) {
     if (loaded.code === "not_found") {

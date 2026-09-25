@@ -21,7 +21,8 @@ import {
   writeStripePaidIndex,
 } from "@/lib/admin-stripe-paid-index";
 import { getStripe } from "@/lib/stripe";
-import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
+import { parseB2bPackQty } from "@/lib/b2b-partner-orders";
+import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import {
   getCheckoutLineFromSession,
   getOrderFieldsFromSession,
@@ -55,6 +56,9 @@ export type AdminOrderRow = {
   isManual?: boolean;
   /** Stripe `metadata.fulfillment` (piem. `b2b_pack` = kredītu paka, nav VIN darbs). */
   fulfillment?: string | null;
+  partnerId?: string | null;
+  packQty?: number | null;
+  companyName?: string | null;
 };
 
 export type AdminOrderDetail = AdminOrderRow & {
@@ -112,6 +116,8 @@ function manualOrderToAdminOrderRow(rec: ManualOrderRecord): AdminOrderRow {
 function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | null {
   if (s.payment_status !== "paid") return null;
   const order = getOrderFieldsFromSession(s);
+  const partnerRaw = s.metadata?.partner_id?.trim() ?? "";
+  const partnerId = isSafeB2bPartnerId(partnerRaw) ? partnerRaw : null;
   return {
     id: s.id,
     created: s.created,
@@ -123,6 +129,9 @@ function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | nul
     checkoutLine: getCheckoutLineFromSession(s),
     heardAbout: order.heardAbout,
     fulfillment: s.metadata?.fulfillment?.trim() || null,
+    partnerId,
+    packQty: parseB2bPackQty(s.metadata?.pack_qty),
+    companyName: order.companyName,
   };
 }
 
@@ -233,10 +242,8 @@ export async function listAdminOrders(): Promise<{
   /** Ja Stripe saraksts neizdodas, rādām demo pat tad, ja ADMIN_DEMO_ORDERS=0 — lai admin nav tukšs. */
   const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
   const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
-  /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. Paraugi (isDemo) nav piesprausti augšā — tieši starp pārējiem pēc datuma. B2B paka (bez VIN) nav audita rinda. */
-  const rows = [...demo, ...manual, ...real]
-    .filter((r) => !isB2bPackAdminOrder(r))
-    .sort((a, b) => b.created - a.created);
+  /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. Paraugi (isDemo) nav piesprausti augšā — tieši starp pārējiem pēc datuma. B2B paka paliek kā informatīva rinda. */
+  const rows = [...demo, ...manual, ...real].sort((a, b) => b.created - a.created);
   return { rows, stripeError };
 }
 
@@ -321,6 +328,11 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     customerEmail: session.customer_email ?? session.customer_details?.email ?? null,
     vin: order.vin,
     checkoutLine,
+    fulfillment: session.metadata?.fulfillment?.trim() || null,
+    partnerId: isSafeB2bPartnerId(session.metadata?.partner_id?.trim() ?? "")
+      ? session.metadata!.partner_id!.trim()
+      : null,
+    packQty: parseB2bPackQty(session.metadata?.pack_qty),
     listingUrl: order.listingUrl,
     customerName: order.customerName,
     companyName: order.companyName,

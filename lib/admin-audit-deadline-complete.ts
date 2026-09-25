@@ -54,12 +54,12 @@ export function setAuditCompleteInLocalCache(
 }
 
 /** Neizpildītie (nav „Izpildīts”) vispirms; katrā grupā jaunākie augšā, kā līdz šim. */
-export function sortAdminOrdersIncompleteFirst<T extends { created: number; auditComplete?: boolean }>(
-  rows: T[],
-): T[] {
+export function sortAdminOrdersIncompleteFirst<
+  T extends { created: number; auditComplete?: boolean; isB2bPack?: boolean },
+>(rows: T[]): T[] {
   return [...rows].sort((a, b) => {
-    const aDone = a.auditComplete ? 1 : 0;
-    const bDone = b.auditComplete ? 1 : 0;
+    const aDone = a.auditComplete || a.isB2bPack ? 1 : 0;
+    const bDone = b.auditComplete || b.isB2bPack ? 1 : 0;
     if (aDone !== bDone) return aDone - bDone;
     return b.created - a.created;
   });

@@ -55,6 +55,7 @@ export type AdminOrderDetailClientModel = {
   isDemo?: boolean;
   /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe). */
   isManual?: boolean;
+  fulfillment?: string | null;
   partnerId?: string | null;
   partnerCompanyName?: string | null;
   partnerAuditPurpose?: "client" | "internal" | null;

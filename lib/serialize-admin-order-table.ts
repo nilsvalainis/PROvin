@@ -31,6 +31,9 @@ export type SerializedAdminOrderTableRow = {
   partnerId?: string | null;
   partnerCompanyName?: string | null;
   partnerAuditPurpose?: "client" | "internal" | null;
+  /** Kredītu paka: informatīva rinda, nav atverams pasūtījums. */
+  isB2bPack?: boolean;
+  packQty?: number | null;
   invoicePdfUrl: string | null;
 };
 
@@ -54,6 +57,8 @@ type RowInput = {
   partnerId?: unknown;
   partnerCompanyName?: unknown;
   partnerAuditPurpose?: unknown;
+  isB2bPack?: unknown;
+  packQty?: unknown;
   invoicePdfUrl?: unknown;
 };
 
@@ -123,6 +128,10 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
         : {}),
       ...(o.partnerAuditPurpose === "client" || o.partnerAuditPurpose === "internal"
         ? { partnerAuditPurpose: o.partnerAuditPurpose }
+        : {}),
+      ...(Boolean(o.isB2bPack) ? { isB2bPack: true as const } : {}),
+      ...(typeof o.packQty === "number" && Number.isFinite(o.packQty) && o.packQty > 0
+        ? { packQty: Math.trunc(o.packQty) }
         : {}),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),

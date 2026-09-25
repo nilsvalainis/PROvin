@@ -13,8 +13,9 @@ import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManu
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
-import { getB2bPartnerById } from "@/lib/b2b-partner-store";
+import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
 import {
+  isB2bPackAdminOrder,
   parsePartnerAuditPurposeFromNotes,
   parsePartnerCheckoutLineFromNotes,
   parsePartnerCompanyFromNotes,
@@ -40,39 +41,66 @@ export default async function AdminOrdersPage({
     getAuditResultColorMap(orderIds),
   ]);
   const partnerIds = new Set<string>();
-  for (const id of orderIds) {
-    const partnerId = parsePartnerIdFromNotes(draftSummaries.get(id)?.notes);
-    if (partnerId) partnerIds.add(partnerId);
+  const packEmails = new Set<string>();
+  for (const o of orders) {
+    const fromNotes = parsePartnerIdFromNotes(draftSummaries.get(o.id)?.notes);
+    if (fromNotes) partnerIds.add(fromNotes);
+    if (o.partnerId) partnerIds.add(o.partnerId);
+    const line = (o.checkoutLine ?? "").trim().toLowerCase();
+    if (
+      o.customerEmail?.trim() &&
+      !o.isManual &&
+      !(o.vin ?? "").trim() &&
+      (isB2bPackAdminOrder(o) || line === "business" || line === "dealer")
+    ) {
+      packEmails.add(o.customerEmail.trim().toLowerCase());
+    }
   }
   const partnerNames = new Map<string, string>();
-  await Promise.all(
-    [...partnerIds].map(async (id) => {
+  const partnerNamesByEmail = new Map<string, string>();
+  await Promise.all([
+    ...[...partnerIds].map(async (id) => {
       const p = await getB2bPartnerById(id);
       if (p?.companyName.trim()) partnerNames.set(id, p.companyName.trim());
     }),
-  );
+    ...[...packEmails].map(async (email) => {
+      const p = await getB2bPartnerByEmail(email);
+      if (p?.companyName.trim()) partnerNamesByEmail.set(email, p.companyName.trim());
+    }),
+  ]);
   const ordersWithInvoice = orders.map((o) => {
     const draft = draftSummaries.get(o.id);
     const notes = draft?.notes ?? "";
-    const partnerId = parsePartnerIdFromNotes(notes);
+    const emailKey = o.customerEmail?.trim().toLowerCase() ?? "";
+    const isPack =
+      isB2bPackAdminOrder(o) ||
+      (!o.isManual &&
+        !(o.vin ?? "").trim() &&
+        (o.checkoutLine === "business" || o.checkoutLine === "dealer") &&
+        Boolean(emailKey && partnerNamesByEmail.has(emailKey)));
+    const partnerId = o.partnerId || parsePartnerIdFromNotes(notes);
     const partnerCompanyName =
-      parsePartnerCompanyFromNotes(notes) || (partnerId ? partnerNames.get(partnerId) ?? null : null);
+      o.companyName?.trim() ||
+      parsePartnerCompanyFromNotes(notes) ||
+      (partnerId ? partnerNames.get(partnerId) ?? null : null) ||
+      (o.customerEmail?.trim() ? partnerNamesByEmail.get(o.customerEmail.trim().toLowerCase()) ?? null : null);
     const partnerLine = parsePartnerCheckoutLineFromNotes(notes);
     const partnerAuditPurpose = parsePartnerAuditPurposeFromNotes(notes);
     return {
       ...o,
-      vin: draft?.vin || o.vin,
+      vin: isPack ? null : draft?.vin || o.vin,
       customerEmail: draft?.customerEmail ? draft.customerEmail : o.customerEmail,
-      customerName: draft?.customerName || null,
+      customerName: draft?.customerName || o.companyName || null,
       customerPhone: draft?.customerPhone || null,
       invoicePdfUrl: draft?.invoicePdfUrl ?? null,
-      makeModel: draft?.makeModel || null,
-      auditComplete: Boolean(auditCompleteMap.get(o.id)),
-      auditResultColor: auditResultColorMap.get(o.id) ?? null,
+      makeModel: isPack ? null : draft?.makeModel || null,
+      auditComplete: isPack ? true : Boolean(auditCompleteMap.get(o.id)),
+      auditResultColor: isPack ? null : auditResultColorMap.get(o.id) ?? null,
       checkoutLine: partnerLine ?? o.checkoutLine,
+      ...(isPack ? { isB2bPack: true as const } : {}),
       ...(partnerId ? { partnerId } : {}),
       ...(partnerCompanyName ? { partnerCompanyName } : {}),
-      ...(partnerAuditPurpose ? { partnerAuditPurpose } : {}),
+      ...(partnerAuditPurpose && !isPack ? { partnerAuditPurpose } : {}),
     };
   });
   const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithInvoice));
