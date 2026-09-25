@@ -28,6 +28,9 @@ export type SerializedAdminOrderTableRow = {
   isDemo?: boolean;
   /** Manuāli izveidots pasūtījums — tabulā Summa/Laiks ir labojami. */
   isManual?: boolean;
+  partnerId?: string | null;
+  partnerCompanyName?: string | null;
+  partnerAuditPurpose?: "client" | "internal" | null;
   invoicePdfUrl: string | null;
 };
 
@@ -48,6 +51,9 @@ type RowInput = {
   checkoutLine?: unknown;
   isDemo?: unknown;
   isManual?: unknown;
+  partnerId?: unknown;
+  partnerCompanyName?: unknown;
+  partnerAuditPurpose?: unknown;
   invoicePdfUrl?: unknown;
 };
 
@@ -109,6 +115,15 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       ...(checkoutLine ? { checkoutLine } : {}),
       ...(Boolean(o.isDemo) ? { isDemo: true as const } : {}),
       ...(Boolean(o.isManual) ? { isManual: true as const } : {}),
+      ...(typeof o.partnerId === "string" && o.partnerId.trim()
+        ? { partnerId: o.partnerId.trim() }
+        : {}),
+      ...(typeof o.partnerCompanyName === "string" && o.partnerCompanyName.trim()
+        ? { partnerCompanyName: o.partnerCompanyName.trim() }
+        : {}),
+      ...(o.partnerAuditPurpose === "client" || o.partnerAuditPurpose === "internal"
+        ? { partnerAuditPurpose: o.partnerAuditPurpose }
+        : {}),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),
     };

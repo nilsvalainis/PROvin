@@ -50,6 +50,7 @@ function normalizeRow(raw: unknown): AdminOrderRow | null {
     heardAbout: typeof o.heardAbout === "string" && o.heardAbout.trim() ? o.heardAbout.trim() : null,
     isDemo: o.isDemo === true,
     isManual: o.isManual === true,
+    fulfillment: typeof o.fulfillment === "string" && o.fulfillment.trim() ? o.fulfillment.trim() : null,
   };
 }
 

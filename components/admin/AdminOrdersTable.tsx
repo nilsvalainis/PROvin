@@ -7,6 +7,7 @@ import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder } from "@/lib/admin-customer-identity";
+import { isPartnerHighlightAdminOrder, partnerAuditPurposeLabelLv } from "@/lib/b2b-partner-orders";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import {
@@ -316,6 +317,9 @@ type OrderRowView = {
   secondaryClient: string;
   dealerHighlight: boolean;
   miniHighlight: boolean;
+  partnerHighlight: boolean;
+  partnerCompanyName: string;
+  partnerPurposeLabel: string;
 };
 
 type ClientOverride = {
@@ -336,14 +340,21 @@ function orderRowView(
   const email = ov?.customerEmail ?? (o.customerEmail?.trim() ?? "");
   const phone = ov?.customerPhone ?? (o.customerPhone?.trim() ?? "");
   const vin = ov?.vin ?? (o.vin?.trim() ?? "");
+  const partnerCompanyName = o.partnerCompanyName?.trim() ?? "";
+  const partnerHighlight = isPartnerHighlightAdminOrder({
+    partnerCompanyName,
+    partnerId: o.partnerId,
+  });
   return {
     pdfHref: invoicePdfHref(o),
     detailBase,
     orderHref: `${detailBase}/${encodeURIComponent(o.id)}`,
     vin,
     hasVin: vin.length > 0,
-    primaryClient: name || email || phone || "—",
-    secondaryClient: [name ? email : "", phone].filter(Boolean).join(" · "),
+    primaryClient: partnerCompanyName || name || email || phone || "—",
+    secondaryClient: [partnerCompanyName && name ? name : "", name && !partnerCompanyName ? email : "", phone]
+      .filter(Boolean)
+      .join(" · "),
     dealerHighlight: isDealerHighlightAdminOrder({
       checkoutLine: o.checkoutLine,
       amountTotalCents: o.amountTotal,
@@ -352,6 +363,9 @@ function orderRowView(
       checkoutLine: o.checkoutLine,
       amountTotalCents: o.amountTotal,
     }),
+    partnerHighlight,
+    partnerCompanyName,
+    partnerPurposeLabel: partnerAuditPurposeLabelLv(o.partnerAuditPurpose),
   };
 }
 
@@ -497,11 +511,13 @@ export function AdminOrdersTable({
           const v = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
           const accent = o.isDemo
             ? "border-l-[var(--color-provin-accent)]"
-            : v.dealerHighlight
-              ? "border-l-sky-400"
-              : v.miniHighlight
-                ? "border-l-amber-400"
-                : "border-l-slate-200";
+            : v.partnerHighlight
+              ? "border-l-violet-500"
+              : v.dealerHighlight
+                ? "border-l-sky-400"
+                : v.miniHighlight
+                  ? "border-l-amber-400"
+                  : "border-l-slate-200";
           const openOrderFromCard = (e: MouseEvent) => {
             if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
             if (e.metaKey || e.ctrlKey || e.button === 1) {
@@ -515,7 +531,9 @@ export function AdminOrdersTable({
               key={o.id}
               role="link"
               tabIndex={0}
-              className={`cursor-pointer rounded-xl border border-slate-200/70 border-l-4 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.04)] active:bg-slate-50 ${accent}`}
+              className={`cursor-pointer rounded-xl border border-slate-200/70 border-l-4 p-3 shadow-[0_1px_10px_rgba(15,23,42,0.04)] active:bg-slate-50 ${accent} ${
+                v.partnerHighlight ? "bg-violet-50/80" : "bg-white"
+              }`}
               onClick={openOrderFromCard}
               onAuxClick={(e) => {
                 if (e.button !== 1) return;
@@ -559,9 +577,18 @@ export function AdminOrdersTable({
                     Paraugs
                   </span>
                 ) : null}
-                {o.isManual ? (
+                {v.partnerHighlight ? (
+                  <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">
+                    Partneris{v.partnerCompanyName ? ` · ${v.partnerCompanyName}` : ""}
+                  </span>
+                ) : o.isManual ? (
                   <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800">
                     Manuāls
+                  </span>
+                ) : null}
+                {v.partnerPurposeLabel ? (
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-800 ring-1 ring-violet-200/80">
+                    {v.partnerPurposeLabel}
                   </span>
                 ) : null}
                 {v.miniHighlight ? (
@@ -636,6 +663,9 @@ export function AdminOrdersTable({
                 secondaryClient,
                 dealerHighlight,
                 miniHighlight,
+                partnerHighlight,
+                partnerCompanyName,
+                partnerPurposeLabel,
               } = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
               const openOrderFromRow = (e: MouseEvent) => {
                 if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
@@ -651,11 +681,13 @@ export function AdminOrdersTable({
                   className={
                     o.isDemo
                       ? "cursor-pointer bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
-                      : dealerHighlight
-                        ? "cursor-pointer bg-sky-50/80 transition-colors hover:bg-sky-100/80"
-                        : miniHighlight
-                          ? "cursor-pointer bg-amber-50/90 transition-colors hover:bg-amber-100/80"
-                          : "cursor-pointer transition-colors hover:bg-slate-50/90"
+                      : partnerHighlight
+                        ? "cursor-pointer bg-violet-50/90 transition-colors hover:bg-violet-100/80"
+                        : dealerHighlight
+                          ? "cursor-pointer bg-sky-50/80 transition-colors hover:bg-sky-100/80"
+                          : miniHighlight
+                            ? "cursor-pointer bg-amber-50/90 transition-colors hover:bg-amber-100/80"
+                            : "cursor-pointer transition-colors hover:bg-slate-50/90"
                   }
                   onClick={openOrderFromRow}
                   onAuxClick={(e) => {
@@ -675,9 +707,18 @@ export function AdminOrdersTable({
                           Paraugs
                         </span>
                       ) : null}
-                      {o.isManual ? (
+                      {partnerHighlight ? (
+                        <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
+                          Partneris{partnerCompanyName ? ` · ${partnerCompanyName}` : ""}
+                        </span>
+                      ) : o.isManual ? (
                         <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-200/80">
                           Manuāls
+                        </span>
+                      ) : null}
+                      {partnerPurposeLabel ? (
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-800 ring-1 ring-violet-200/80">
+                          {partnerPurposeLabel}
                         </span>
                       ) : null}
                       {miniHighlight ? (

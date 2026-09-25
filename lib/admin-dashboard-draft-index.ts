@@ -17,6 +17,8 @@ export type DashboardDraftIndexEntry = {
   makeModel: string | null;
   /** 48 h termiņa manuāla „Izpildīts” atzīme (ISO laiks; `null` = nav atzīmēts). */
   auditCompletedAt: string | null;
+  vin: string | null;
+  notes: string | null;
 };
 
 type DashboardDraftIndexDoc = {
@@ -32,6 +34,8 @@ const EMPTY_ENTRY: DashboardDraftIndexEntry = {
   invoicePdfUrl: null,
   makeModel: null,
   auditCompletedAt: null,
+  vin: null,
+  notes: null,
 };
 
 function indexFsPath(dir: string): string {
@@ -55,6 +59,8 @@ function normalizeEntry(raw: unknown): DashboardDraftIndexEntry | null {
       typeof o.auditCompletedAt === "string" && o.auditCompletedAt.trim()
         ? o.auditCompletedAt.trim()
         : null,
+    vin: typeof o.vin === "string" && o.vin.trim() ? o.vin.trim() : null,
+    notes: typeof o.notes === "string" && o.notes.trim() ? o.notes.trim() : null,
   };
 }
 
@@ -162,15 +168,31 @@ export async function upsertDashboardDraftIndexEntry(
     makeModel: patch.makeModel !== undefined ? patch.makeModel : prev.makeModel,
     auditCompletedAt:
       patch.auditCompletedAt !== undefined ? patch.auditCompletedAt : prev.auditCompletedAt,
+    vin: patch.vin !== undefined ? patch.vin : prev.vin,
+    notes: patch.notes !== undefined ? patch.notes : prev.notes,
   };
   doc.updatedAt = new Date().toISOString();
   await writeDashboardDraftIndexDoc(doc);
 }
 
+function summaryFieldsFromDraftRaw(raw: {
+  workspace?: unknown;
+  orderEdits?: { vin?: unknown; notes?: unknown };
+}): { makeModel: string | null; vin: string | null; notes: string | null } {
+  const vin = typeof raw.orderEdits?.vin === "string" && raw.orderEdits.vin.trim() ? raw.orderEdits.vin.trim() : null;
+  const notes =
+    typeof raw.orderEdits?.notes === "string" && raw.orderEdits.notes.trim() ? raw.orderEdits.notes.trim() : null;
+  return {
+    makeModel: extractCsddMakeModelFromWorkspace(raw.workspace),
+    vin,
+    notes,
+  };
+}
+
 async function readDraftFileSummaryFields(
   sessionId: string,
-): Promise<{ makeModel: string | null }> {
-  const empty = { makeModel: null as string | null };
+): Promise<{ makeModel: string | null; vin: string | null; notes: string | null }> {
+  const empty = { makeModel: null as string | null, vin: null as string | null, notes: null as string | null };
   const dir = getOrderDraftStorageDir();
   const blob = getOrderDraftBlobConfig();
 
@@ -178,9 +200,10 @@ async function readDraftFileSummaryFields(
     try {
       const raw = JSON.parse(await fs.readFile(path.join(dir, `${sessionId}.json`), "utf8")) as {
         workspace?: unknown;
+        orderEdits?: { vin?: unknown; notes?: unknown };
       };
-      const makeModel = extractCsddMakeModelFromWorkspace(raw.workspace);
-      if (makeModel) return { makeModel };
+      const fields = summaryFieldsFromDraftRaw(raw);
+      if (fields.makeModel || fields.vin || fields.notes) return fields;
     } catch {
       /* try blob */
     }
@@ -196,8 +219,9 @@ async function readDraftFileSummaryFields(
       if (!res || res.statusCode !== 200 || !res.stream) return empty;
       const raw = JSON.parse(await new Response(res.stream).text()) as {
         workspace?: unknown;
+        orderEdits?: { vin?: unknown; notes?: unknown };
       };
-      return { makeModel: extractCsddMakeModelFromWorkspace(raw.workspace) };
+      return summaryFieldsFromDraftRaw(raw);
     } catch {
       return empty;
     }
@@ -217,21 +241,27 @@ export async function readDashboardDraftSummaries(
   for (const id of sessionIds) {
     const entry = doc.entries[id] ?? EMPTY_ENTRY;
     out.set(id, entry);
-    if (!entry.makeModel) needsBackfill.push(id);
+    if (!entry.makeModel || !entry.vin || !entry.notes) needsBackfill.push(id);
   }
 
   if (needsBackfill.length > 0) {
     const BACKFILL_CAP = 40;
     const toFill = needsBackfill.slice(0, BACKFILL_CAP);
-    const found: { id: string; makeModel: string }[] = [];
+    const found: { id: string; makeModel: string | null; vin: string | null; notes: string | null }[] = [];
     await Promise.all(
       toFill.map(async (id) => {
         const prev = out.get(id) ?? EMPTY_ENTRY;
-        if (prev.makeModel) return;
+        if (prev.makeModel && prev.vin && prev.notes) return;
         const fromDraft = await readDraftFileSummaryFields(id);
-        if (fromDraft.makeModel) {
-          found.push({ id, makeModel: fromDraft.makeModel });
-          out.set(id, { ...prev, makeModel: fromDraft.makeModel });
+        const next = {
+          ...prev,
+          makeModel: prev.makeModel || fromDraft.makeModel,
+          vin: prev.vin || fromDraft.vin,
+          notes: prev.notes || fromDraft.notes,
+        };
+        if (next.makeModel !== prev.makeModel || next.vin !== prev.vin || next.notes !== prev.notes) {
+          found.push({ id, makeModel: next.makeModel, vin: next.vin, notes: next.notes });
+          out.set(id, next);
         }
       }),
     );
@@ -241,7 +271,12 @@ export async function readDashboardDraftSummaries(
           const latest = await readDashboardDraftIndexDoc();
           for (const row of found) {
             const prev = latest.entries[row.id] ?? EMPTY_ENTRY;
-            latest.entries[row.id] = { ...prev, makeModel: row.makeModel };
+            latest.entries[row.id] = {
+              ...prev,
+              makeModel: prev.makeModel || row.makeModel,
+              vin: prev.vin || row.vin,
+              notes: prev.notes || row.notes,
+            };
           }
           latest.updatedAt = new Date().toISOString();
           await writeDashboardDraftIndexDoc(latest);
@@ -260,6 +295,8 @@ export function dashboardDraftEntryFromOrderEdits(
     customerEmail?: string | null;
     customerName?: string | null;
     customerPhone?: string | null;
+    vin?: string | null;
+    notes?: string | null;
   } | null | undefined,
   invoicePdfUrl?: string | null,
   workspace?: unknown,
@@ -267,11 +304,15 @@ export function dashboardDraftEntryFromOrderEdits(
   const email = orderEdits?.customerEmail?.trim();
   const name = orderEdits?.customerName?.trim();
   const phone = orderEdits?.customerPhone?.trim();
+  const vin = orderEdits?.vin?.trim();
+  const notes = orderEdits?.notes?.trim();
   return {
     customerEmail: email || null,
     customerName: name || null,
     customerPhone: phone || null,
     invoicePdfUrl: invoicePdfUrl ?? null,
     makeModel: extractCsddMakeModelFromWorkspace(workspace),
+    vin: vin || null,
+    notes: notes || null,
   };
 }

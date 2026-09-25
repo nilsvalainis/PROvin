@@ -51,6 +51,15 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     attachments: attachmentList(order.attachments),
     isDemo: Boolean(order.isDemo),
     ...(Boolean(order.isManual) ? { isManual: true as const } : {}),
+    ...(typeof order.partnerCompanyName === "string" && order.partnerCompanyName.trim()
+      ? { partnerCompanyName: order.partnerCompanyName.trim() }
+      : {}),
+    ...(typeof order.partnerId === "string" && order.partnerId.trim()
+      ? { partnerId: order.partnerId.trim() }
+      : {}),
+    ...(order.partnerAuditPurpose === "client" || order.partnerAuditPurpose === "internal"
+      ? { partnerAuditPurpose: order.partnerAuditPurpose }
+      : {}),
     ...(typeof order.checkoutLine === "string" && order.checkoutLine.trim()
       ? { checkoutLine: order.checkoutLine.trim() }
       : {}),

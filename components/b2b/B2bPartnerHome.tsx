@@ -8,7 +8,11 @@ import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
 import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
 import { emptyB2bCreditRemaining, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
-import { isValidVin } from "@/lib/order-field-validation";
+import { isPlausibleListingUrl, isValidVin } from "@/lib/order-field-validation";
+import {
+  isPartnerAuditPurpose,
+  type B2bPartnerAuditPurpose,
+} from "@/lib/b2b-partner-orders";
 
 const LABEL_CLASS = "mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
 
@@ -86,8 +90,12 @@ export function B2bPartnerHome({
   const [dealerEnabled, setDealerEnabled] = useState(initialDealerEnabled);
   const [prices, setPrices] = useState<B2bPartnerPriceOverrides | null>(initialPrices);
   const [vin, setVin] = useState("");
+  const [listingUrl, setListingUrl] = useState("");
+  const [auditPurpose, setAuditPurpose] = useState<B2bPartnerAuditPurpose | null>(null);
   const [service, setService] = useState<B2bPartnerPlanId | null>(null);
   const [vinError, setVinError] = useState("");
+  const [listingError, setListingError] = useState("");
+  const [auditPurposeError, setAuditPurposeError] = useState("");
   const [serviceError, setServiceError] = useState("");
   const [formError, setFormError] = useState("");
   const [submitOk, setSubmitOk] = useState("");
@@ -179,11 +187,22 @@ export function B2bPartnerHome({
 
   const onSubmit = async () => {
     setVinError("");
+    setListingError("");
+    setAuditPurposeError("");
     setServiceError("");
     setFormError("");
     setSubmitOk("");
+    if (!auditPurpose || !isPartnerAuditPurpose(auditPurpose)) {
+      setAuditPurposeError(t("auditPurposeError"));
+      return;
+    }
     if (!isValidVin(vin)) {
       setVinError(t("vinError"));
+      return;
+    }
+    const listing = listingUrl.trim();
+    if (listing && !isPlausibleListingUrl(listing)) {
+      setListingError(t("listingError"));
       return;
     }
     const plan = service ?? (availablePlans.length === 1 ? availablePlans[0]! : null);
@@ -202,7 +221,12 @@ export function B2bPartnerHome({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vin, plan }),
+        body: JSON.stringify({
+          vin,
+          plan,
+          auditPurpose,
+          ...(listing ? { listingUrl: listing } : {}),
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
       if (res.status === 401) {
@@ -222,6 +246,14 @@ export function B2bPartnerHome({
         setVinError(t("vinError"));
         return;
       }
+      if (data.error === "listing" || (res.status === 400 && data.error === "listing")) {
+        setListingError(t("listingError"));
+        return;
+      }
+      if (data.error === "audit_purpose") {
+        setAuditPurposeError(t("auditPurposeError"));
+        return;
+      }
       if (data.error === "service") {
         setServiceError(t("needService"));
         return;
@@ -232,6 +264,8 @@ export function B2bPartnerHome({
       }
       setSubmitOk(t("vinSubmitOk"));
       setVin("");
+      setListingUrl("");
+      setAuditPurpose(null);
       setService(null);
       try {
         await loadCredits();
@@ -278,6 +312,30 @@ export function B2bPartnerHome({
               if (!submitting) void onSubmit();
             }}
           >
+            <fieldset className="min-w-0" disabled={submitting}>
+              <legend className={LABEL_CLASS}>{t("auditPurposeLabel")}</legend>
+              <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("auditPurposeAria")}>
+                {(["client", "internal"] as const).map((purpose) => (
+                  <label key={purpose} className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="radio"
+                      name="b2b-partner-audit-purpose"
+                      checked={auditPurpose === purpose}
+                      onChange={() => {
+                        setAuditPurpose(purpose);
+                        setAuditPurposeError("");
+                        setSubmitOk("");
+                      }}
+                      className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+                    />
+                    <span className="text-[0.9rem] font-medium text-zinc-100">
+                      {purpose === "client" ? t("auditPurposeClient") : t("auditPurposeInternal")}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
             <label className="block min-w-0">
               <span className={LABEL_CLASS}>{t("vinLabel")}</span>
               <input
@@ -297,6 +355,26 @@ export function B2bPartnerHome({
                 aria-label={t("vinAria")}
                 aria-invalid={vinError ? true : undefined}
                 enterKeyHint="done"
+                disabled={submitting}
+              />
+            </label>
+
+            <label className="block min-w-0">
+              <span className={LABEL_CLASS}>{t("listingLabel")}</span>
+              <input
+                type="url"
+                className={`${styles.inlineInput}${listingError ? ` ${styles.inlineInputError}` : ""}`}
+                value={listingUrl}
+                onChange={(event) => {
+                  setListingUrl(event.target.value);
+                  setListingError("");
+                  setSubmitOk("");
+                }}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={t("listingPlaceholder")}
+                aria-label={t("listingAria")}
+                aria-invalid={listingError ? true : undefined}
                 disabled={submitting}
               />
             </label>
@@ -324,7 +402,9 @@ export function B2bPartnerHome({
               </fieldset>
             ) : null}
 
+            {auditPurposeError ? <p className={styles.inlineFieldError}>{auditPurposeError}</p> : null}
             {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
+            {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
             {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
             {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
             {submitOk ? (

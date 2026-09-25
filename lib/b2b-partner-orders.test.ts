@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPartnerOrderNotes,
   formatB2bArchiveAmount,
   formatB2bPartnerOrderDate,
+  isB2bPackAdminOrder,
+  isPartnerHighlightAdminOrder,
+  parsePartnerAuditPurposeFromNotes,
+  parsePartnerCheckoutLineFromNotes,
+  parsePartnerCompanyFromNotes,
+  parsePartnerIdFromNotes,
+  partnerAuditPurposeLabelLv,
   partnerNotesMatchId,
 } from "@/lib/b2b-partner-orders";
 
@@ -21,5 +29,38 @@ describe("b2b partner archive rows", () => {
       true,
     );
     expect(partnerNotesMatchId("B2B dealer · partner_id=ptr_0123456789abcdef", "ptr_ffffffffffffffff")).toBe(false);
+  });
+
+  it("parses partner id, company and checkout line from notes", () => {
+    const notes = buildPartnerOrderNotes({
+      plan: "business",
+      partnerId: "ptr_0123456789abcdef",
+      lotId: "lot_1",
+      companyName: "SIA Demo Auto",
+      auditPurpose: "internal",
+    });
+    expect(notes).toContain("partner_id=ptr_0123456789abcdef");
+    expect(notes).toContain("partner_company=SIA Demo Auto");
+    expect(notes).toContain("audit_purpose=internal");
+    expect(parsePartnerIdFromNotes(notes)).toBe("ptr_0123456789abcdef");
+    expect(parsePartnerCompanyFromNotes(notes)).toBe("SIA Demo Auto");
+    expect(parsePartnerCheckoutLineFromNotes(notes)).toBe("business");
+    expect(parsePartnerAuditPurposeFromNotes(notes)).toBe("internal");
+    expect(partnerAuditPurposeLabelLv("internal")).toBe("Iekšējai lietošanai");
+    expect(partnerAuditPurposeLabelLv("client")).toBe("Klientam");
+    expect(isPartnerHighlightAdminOrder({ notes })).toBe(true);
+    expect(isPartnerHighlightAdminOrder({ partnerCompanyName: "SIA X" })).toBe(true);
+    expect(isPartnerHighlightAdminOrder({ notes: "parasts komentārs" })).toBe(false);
+  });
+
+  it("hides B2B credit packs from the admin order list, not VIN jobs", () => {
+    expect(
+      isB2bPackAdminOrder({ checkoutLine: "business", vin: null, fulfillment: "b2b_pack" }),
+    ).toBe(true);
+    expect(isB2bPackAdminOrder({ checkoutLine: "dealer", vin: "", isManual: false })).toBe(true);
+    expect(
+      isB2bPackAdminOrder({ checkoutLine: "business", vin: "WVWZZZ1JZXW000001", isManual: false }),
+    ).toBe(false);
+    expect(isB2bPackAdminOrder({ checkoutLine: "audit", vin: null, isManual: true })).toBe(false);
   });
 });

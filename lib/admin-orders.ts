@@ -21,6 +21,7 @@ import {
   writeStripePaidIndex,
 } from "@/lib/admin-stripe-paid-index";
 import { getStripe } from "@/lib/stripe";
+import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 import {
   getCheckoutLineFromSession,
   getOrderFieldsFromSession,
@@ -52,6 +53,8 @@ export type AdminOrderRow = {
   isDemo?: boolean;
   /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe) — Summa/Laiks labojami. */
   isManual?: boolean;
+  /** Stripe `metadata.fulfillment` (piem. `b2b_pack` = kredītu paka, nav VIN darbs). */
+  fulfillment?: string | null;
 };
 
 export type AdminOrderDetail = AdminOrderRow & {
@@ -119,6 +122,7 @@ function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | nul
     vin: order.vin,
     checkoutLine: getCheckoutLineFromSession(s),
     heardAbout: order.heardAbout,
+    fulfillment: s.metadata?.fulfillment?.trim() || null,
   };
 }
 
@@ -229,8 +233,10 @@ export async function listAdminOrders(): Promise<{
   /** Ja Stripe saraksts neizdodas, rādām demo pat tad, ja ADMIN_DEMO_ORDERS=0 — lai admin nav tukšs. */
   const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
   const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
-  /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. Paraugi (isDemo) nav piesprausti augšā — tieši starp pārējiem pēc datuma. */
-  const rows = [...demo, ...manual, ...real].sort((a, b) => b.created - a.created);
+  /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. Paraugi (isDemo) nav piesprausti augšā — tieši starp pārējiem pēc datuma. B2B paka (bez VIN) nav audita rinda. */
+  const rows = [...demo, ...manual, ...real]
+    .filter((r) => !isB2bPackAdminOrder(r))
+    .sort((a, b) => b.created - a.created);
   return { rows, stripeError };
 }
 

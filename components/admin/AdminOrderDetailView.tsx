@@ -18,6 +18,7 @@ import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHisto
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
 import { paidProductLabel } from "@/lib/admin-customer-identity";
+import { partnerAuditPurposeLabelLv } from "@/lib/b2b-partner-orders";
 import { formatOrderTimestampSec } from "@/lib/format-order-datetime";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
@@ -28,6 +29,7 @@ import {
   serializeOrderEditsForLocalStorage,
 } from "@/lib/admin-order-edits-persist";
 import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResultColorControl";
+import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
@@ -53,6 +55,9 @@ export type AdminOrderDetailClientModel = {
   isDemo?: boolean;
   /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe). */
   isManual?: boolean;
+  partnerId?: string | null;
+  partnerCompanyName?: string | null;
+  partnerAuditPurpose?: "client" | "internal" | null;
   /** Stripe `metadata.checkout_line` — MINI vs AUDITS PDF nosaukumam. */
   checkoutLine?: string | null;
   selectBrandModel?: string | null;
@@ -469,6 +474,17 @@ export function AdminOrderDetailView({
             >
               <div className="space-y-1 px-2 pb-2">
                 <div className="mt-0 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
+                  {order.partnerCompanyName?.trim() ? (
+                    <div className="rounded-md bg-violet-50 px-2 py-1.5 ring-1 ring-violet-200/80">
+                      <p className="text-[9px] font-bold uppercase tracking-wide text-violet-800">Partnera SIA</p>
+                      <p className="text-[13px] font-semibold text-violet-950">{order.partnerCompanyName.trim()}</p>
+                      {partnerAuditPurposeLabelLv(order.partnerAuditPurpose) ? (
+                        <p className="mt-0.5 text-[11px] font-medium text-violet-900">
+                          {partnerAuditPurposeLabelLv(order.partnerAuditPurpose)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <AdminSavableTextField
                     id="edit-customer-name"
                     label="Vārds, uzvārds"
@@ -639,6 +655,23 @@ export function AdminOrderDetailView({
         </div>
       </div>
 
+      {order.partnerCompanyName?.trim() || order.partnerId ? (
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-violet-200/90 bg-violet-50 px-3 py-2.5 text-sm text-violet-950 shadow-sm ring-1 ring-violet-100/80">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-800">Partneris</p>
+            <p className="mt-0.5 text-[1.05rem] font-semibold leading-snug tracking-tight text-violet-950">
+              {order.partnerCompanyName?.trim() || "B2B partneris"}
+            </p>
+            {partnerAuditPurposeLabelLv(order.partnerAuditPurpose) ? (
+              <p className="mt-1 text-[12px] font-medium text-violet-900">
+                Mērķis: {partnerAuditPurposeLabelLv(order.partnerAuditPurpose)}
+              </p>
+            ) : null}
+          </div>
+          <AdminPartnerArchivePdfButton sessionId={order.id} />
+        </div>
+      ) : null}
+
       {order.isDemo ? (
         <div className="mb-3 rounded-xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white px-3 py-2.5 text-sm text-amber-950 shadow-sm ring-1 ring-amber-100/80">
           <p className="text-xs font-bold uppercase tracking-wide text-amber-800/90">Parauga pasūtījums</p>
@@ -711,6 +744,8 @@ export function AdminOrderDetailView({
           paymentStatus: order.paymentStatus,
           isManual: Boolean(order.isManual),
           checkoutLine: order.checkoutLine ?? null,
+          partnerCompanyName: order.partnerCompanyName?.trim() || null,
+          partnerId: order.partnerId?.trim() || null,
           listingUrl: mergedListing.trim() || null,
           customerEmail: mergedCustomerEmail.trim() || null,
           customerPhone: mergedCustomerPhone.trim() || null,

@@ -118,6 +118,8 @@ import {
 } from "@/lib/client-report-translate-client";
 import type { ClientReportTranslationCache } from "@/lib/client-report-translate-client";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
+import { isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
 import {
   ASV_ONLY_PDF_VISIBILITY,
   DEALER_ONLY_PDF_VISIBILITY,
@@ -300,6 +302,8 @@ export type OrderWorkspacePayload = {
   isManual?: boolean;
   /** Stripe checkout line — PDF faila nosaukumam (MINI vs AUDITS). */
   checkoutLine?: string | null;
+  partnerCompanyName?: string | null;
+  partnerId?: string | null;
   listingUrl: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
@@ -3644,6 +3648,9 @@ export function OrderDetailWorkspace({
                 <Send className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
                 Nosūtīt klientam
               </button>
+            ) : null}
+            {payload.partnerCompanyName || payload.partnerId || isPartnerOrderNotes(payload.notes) ? (
+              <AdminPartnerArchivePdfButton sessionId={payload.sessionId} />
             ) : null}
             <AdminPdfIncludeToggle
               checked={pdfVisibility.portfolio}

@@ -26,4 +26,31 @@ describe("toAdminOrderDetailClientModel", () => {
     expect(model.vin).toBe("WDD2210801A318496");
     expect(model.attachments).toEqual([{ label: "x", fileName: "y.pdf" }]);
   });
+
+  it("keeps partner company name for the order header", () => {
+    const model = toAdminOrderDetailClientModel({
+      id: "manual_order_1",
+      created: 1,
+      amountTotal: null,
+      currency: "EUR",
+      paymentStatus: "unpaid",
+      customerEmail: "p@auto.lv",
+      vin: "WVWZZZ1JZXW000001",
+      listingUrl: null,
+      customerName: "Jānis",
+      phone: null,
+      contactMethod: null,
+      notes: "B2B business · partner_id=ptr_0123456789abcdef",
+      customerDetailsEmail: null,
+      customerDetailsPhone: null,
+      isManual: true,
+      partnerId: "ptr_0123456789abcdef",
+      partnerCompanyName: "SIA Demo Auto",
+      partnerAuditPurpose: "internal",
+    } as never);
+    expect(model.partnerCompanyName).toBe("SIA Demo Auto");
+    expect(model.partnerId).toBe("ptr_0123456789abcdef");
+    expect(model.partnerAuditPurpose).toBe("internal");
+    expect(model.isManual).toBe(true);
+  });
 });

@@ -9,6 +9,8 @@ export type OrderDraftDashboardSummary = {
   invoicePdfUrl: string | null;
   makeModel: string | null;
   auditCompletedAt: string | null;
+  vin: string | null;
+  notes: string | null;
 };
 
 /** Viena JSON lasīšana — nevis N× Blob/FS melnrakstu lasījumi. */

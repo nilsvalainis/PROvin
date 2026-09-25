@@ -13,6 +13,13 @@ import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManu
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
+import { getB2bPartnerById } from "@/lib/b2b-partner-store";
+import {
+  parsePartnerAuditPurposeFromNotes,
+  parsePartnerCheckoutLineFromNotes,
+  parsePartnerCompanyFromNotes,
+  parsePartnerIdFromNotes,
+} from "@/lib/b2b-partner-orders";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +39,29 @@ export default async function AdminOrdersPage({
     getAuditDeadlineCompleteMap(orderIds),
     getAuditResultColorMap(orderIds),
   ]);
+  const partnerIds = new Set<string>();
+  for (const id of orderIds) {
+    const partnerId = parsePartnerIdFromNotes(draftSummaries.get(id)?.notes);
+    if (partnerId) partnerIds.add(partnerId);
+  }
+  const partnerNames = new Map<string, string>();
+  await Promise.all(
+    [...partnerIds].map(async (id) => {
+      const p = await getB2bPartnerById(id);
+      if (p?.companyName.trim()) partnerNames.set(id, p.companyName.trim());
+    }),
+  );
   const ordersWithInvoice = orders.map((o) => {
     const draft = draftSummaries.get(o.id);
+    const notes = draft?.notes ?? "";
+    const partnerId = parsePartnerIdFromNotes(notes);
+    const partnerCompanyName =
+      parsePartnerCompanyFromNotes(notes) || (partnerId ? partnerNames.get(partnerId) ?? null : null);
+    const partnerLine = parsePartnerCheckoutLineFromNotes(notes);
+    const partnerAuditPurpose = parsePartnerAuditPurposeFromNotes(notes);
     return {
       ...o,
+      vin: draft?.vin || o.vin,
       customerEmail: draft?.customerEmail ? draft.customerEmail : o.customerEmail,
       customerName: draft?.customerName || null,
       customerPhone: draft?.customerPhone || null,
@@ -43,6 +69,10 @@ export default async function AdminOrdersPage({
       makeModel: draft?.makeModel || null,
       auditComplete: Boolean(auditCompleteMap.get(o.id)),
       auditResultColor: auditResultColorMap.get(o.id) ?? null,
+      checkoutLine: partnerLine ?? o.checkoutLine,
+      ...(partnerId ? { partnerId } : {}),
+      ...(partnerCompanyName ? { partnerCompanyName } : {}),
+      ...(partnerAuditPurpose ? { partnerAuditPurpose } : {}),
     };
   });
   const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithInvoice));

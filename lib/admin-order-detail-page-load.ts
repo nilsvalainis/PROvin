@@ -12,6 +12,13 @@ import { emptyCustomerHistory, type CustomerHistory } from "@/lib/admin-customer
 import { loadCustomerHistoryForOrder } from "@/lib/admin-customer-history-load";
 import { getAuditResultColor } from "@/lib/admin-audit-result-color-store";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
+import { getB2bPartnerById } from "@/lib/b2b-partner-store";
+import {
+  parsePartnerAuditPurposeFromNotes,
+  parsePartnerCheckoutLineFromNotes,
+  parsePartnerCompanyFromNotes,
+  parsePartnerIdFromNotes,
+} from "@/lib/b2b-partner-orders";
 
 export type { AdminOrderDetailClientModel };
 export { toAdminOrderDetailClientModel };
@@ -133,8 +140,27 @@ export async function loadAdminOrderDetailPageData(
     }
 
     const serverWorkspaceJson = buildServerWorkspaceJson(serverOrderDraft);
-    const clientOrder = toAdminOrderDetailClientModel(order as unknown as Record<string, unknown>);
     const draftEdits = serverOrderDraft?.orderEdits ?? {};
+    const mergedNotes = draftEdits.notes || order.notes || "";
+    const partnerId = parsePartnerIdFromNotes(mergedNotes);
+    let partnerCompanyName = parsePartnerCompanyFromNotes(mergedNotes);
+    if (partnerId && !partnerCompanyName) {
+      try {
+        const partner = await getB2bPartnerById(partnerId);
+        partnerCompanyName = partner?.companyName.trim() || null;
+      } catch {
+        partnerCompanyName = null;
+      }
+    }
+    const partnerLine = parsePartnerCheckoutLineFromNotes(mergedNotes);
+    const partnerAuditPurpose = parsePartnerAuditPurposeFromNotes(mergedNotes);
+    const clientOrder = toAdminOrderDetailClientModel({
+      ...(order as unknown as Record<string, unknown>),
+      ...(partnerLine ? { checkoutLine: partnerLine } : {}),
+      ...(partnerId ? { partnerId } : {}),
+      ...(partnerCompanyName ? { partnerCompanyName } : {}),
+      ...(partnerAuditPurpose ? { partnerAuditPurpose } : {}),
+    });
 
     let customerHistory = emptyCustomerHistory();
     try {
