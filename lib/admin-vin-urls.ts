@@ -91,6 +91,13 @@ export function buildCheckcarVinCheckUrl(raw: string): string | null {
   return CHECKCAR_VIN_HOME_URL;
 }
 
+/** Bezmaksas priekšskatījums ar fotogrāfijām. Nav jāaizpilda sākumlapas meklēšana. */
+export function buildCheckcarVinReportUrl(raw: string): string | null {
+  const v = normalizeVinForServiceUrls(raw);
+  if (v.length < 11) return null;
+  return `${CHECKCAR_VIN_HOME_URL}report/check/${encodeURIComponent(v)}`;
+}
+
 export function buildVinAutofillHref(key: VinAutofillServiceKey, raw: string): string | null {
   if (key === "autodna") return buildAutodnaVinCheckUrl(raw);
   if (key === "carvertical") return buildCarverticalVinCheckUrl(raw);

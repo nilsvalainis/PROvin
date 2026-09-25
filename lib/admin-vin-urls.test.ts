@@ -12,6 +12,7 @@ import {
   buildCarinfoVinCheckUrl,
   buildCarverticalVinCheckUrl,
   buildCheckcarVinCheckUrl,
+  buildCheckcarVinReportUrl,
   buildCheckthisregVinCheckUrl,
   CHECKCAR_VIN_HOME_URL,
   companionSourceOpensForBlock,
@@ -51,6 +52,11 @@ describe("admin VIN service URLs", () => {
   it("opens CheckCar.vin homepage for Tampermonkey VIN fill", () => {
     expect(buildCheckcarVinCheckUrl(vin)).toBe(CHECKCAR_VIN_HOME_URL);
     expect(buildVinAutofillHref("checkcar_vin", vin)).toBe(CHECKCAR_VIN_HOME_URL);
+  });
+
+  it("opens the CheckCar.vin free report preview for a photo count", () => {
+    expect(buildCheckcarVinReportUrl(vin)).toBe(`${CHECKCAR_VIN_HOME_URL}report/check/${vin}`);
+    expect(buildCheckcarVinReportUrl("short")).toBeNull();
   });
 
   it("opens CarVertical as a companion when clicking AutoDNA", () => {

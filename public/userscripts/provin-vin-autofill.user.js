@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.7.2
+// @version      1.7.3
 // @description  Admin MENU VIN auto-fill. car.info + checkcar.vin. AutoDNA arī atver CarVertical.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -36,9 +36,15 @@
 (function () {
   "use strict";
 
+  const SCRIPT_VERSION = "1.7.3";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
+  try {
+    document.documentElement.setAttribute("data-provin-userscript", SCRIPT_VERSION);
+  } catch {
+    /* ignore */
+  }
 
   const GM_PENDING_VIN = "provin_pending_vin";
   const GM_PENDING_URL = "provin_pending_url";
@@ -84,9 +90,9 @@
               }
               return;
             }
-            if (polls > 90) {
+            if (polls > 130) {
               window.clearInterval(timer);
-              console.warn("PROVIN admin: CC foto atbilde nesagaidīta (45s)");
+              console.warn("PROVIN admin: CC foto atbilde nesagaidīta");
             }
           }, 500);
         }
@@ -114,7 +120,16 @@
     return;
   }
 
-  console.log("PROVIN skripts (v1.7.2) ielādēts: " + window.location.href);
+  console.log("PROVIN skripts (v" + SCRIPT_VERSION + ") ielādēts: " + window.location.href);
+
+  if (host.endsWith("checkcar.vin") && document.body) {
+    const boot = document.createElement("div");
+    boot.id = "provin-cc-photo-badge";
+    boot.textContent = "PROVIN " + SCRIPT_VERSION;
+    boot.style.cssText =
+      "position:fixed;z-index:2147483647;right:16px;bottom:16px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:12px;font:600 14px/1.3 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25)";
+    document.body.appendChild(boot);
+  }
 
   function setNativeValue(element, value) {
     if (!element || (element.tagName !== "INPUT" && element.tagName !== "TEXTAREA")) return;
@@ -263,6 +278,11 @@
     return m ? String(m[1]).toUpperCase() : "";
   }
 
+  function vinFromCheckcarPath() {
+    const m = path.match(/\/report\/check\/([A-HJ-NPR-Z0-9]{11,17})/i);
+    return m ? String(m[1]).toUpperCase() : "";
+  }
+
   function peekPendingVin() {
     let vin = "";
     try {
@@ -292,6 +312,7 @@
       }
     }
     if (!vin) vin = vinFromAutodnaPath();
+    if (!vin) vin = vinFromCheckcarPath();
     return vin;
   }
 
@@ -552,30 +573,30 @@
     return true;
   }
 
-  function findCheckcarVinInput() {
-    const list = document.querySelectorAll("input");
-    for (const el of list) {
-      if (!isVisible(el) || el.disabled) continue;
-      const ph = (el.getAttribute("placeholder") || "").toLowerCase();
-      if (ph.includes("vin")) return el;
-      if (el.maxLength === 17) return el;
-    }
-    return findCarVerticalVinInput(true);
+  function rememberCheckcarPhoto(seen, src) {
+    const clean = String(src || "").trim().toLowerCase();
+    if (!clean || clean.startsWith("data:")) return false;
+    if (/logo|icon|flag|sprite|avatar|payment|visa|mastercard|favicon/.test(clean)) return false;
+    if (seen.has(clean)) return false;
+    seen.add(clean);
+    return true;
   }
 
   function countCheckcarPhotos() {
     const seen = new Set();
     let count = 0;
     for (const img of document.querySelectorAll("img")) {
-      const src = (img.currentSrc || img.src || "").toLowerCase();
-      if (!src || src.startsWith("data:")) continue;
-      if (/logo|icon|flag|sprite|avatar|payment|visa|mastercard|favicon/.test(src)) continue;
+      const src =
+        img.currentSrc || img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-lazy-src") || "";
       const w = img.naturalWidth || img.width || 0;
       const h = img.naturalHeight || img.height || 0;
       if ((w && w < 80) || (h && h < 80)) continue;
-      if (seen.has(src)) continue;
-      seen.add(src);
-      count += 1;
+      if (rememberCheckcarPhoto(seen, src)) count += 1;
+    }
+    for (const el of document.querySelectorAll("[style*='background']")) {
+      const style = el.getAttribute("style") || "";
+      const match = style.match(/url\((['"]?)(https?:[^)'"]+)/i);
+      if (match && rememberCheckcarPhoto(seen, match[2])) count += 1;
     }
     return count;
   }
@@ -608,10 +629,8 @@
     const timer = window.setInterval(() => {
       ticks += 1;
       const text = document.body.innerText || "";
-      /* Mūsu pašu ?vin= navigācijas parametrs paliek adresē arī sākumlapā,
-         tāpēc "ready" drīkst balstīties TIKAI uz to, ka VIN faktiski parādās
-         atskaites tekstā (nevis uz URL formu). */
-      const ready = text.toUpperCase().includes(probeVin);
+      const challenge = /security verification|just a moment/i.test(text);
+      const ready = !challenge && text.toUpperCase().includes(probeVin);
       const count = ready ? countCheckcarPhotos() : 0;
       if (ready) {
         if (count === last) stable += 1;
@@ -619,10 +638,15 @@
           last = count;
           stable = 0;
         }
-        if (stable >= 3) {
+        /* Nulle pārāk agri nozīmē, ka galerija vēl nav ielādēta. */
+        if (count > 0 && stable >= 3) {
           console.log("PROVIN checkcar: foto skaits stabilizējies", count);
           window.clearInterval(timer);
           publishCheckcarPhotos(probeVin, count, "");
+        } else if (count === 0 && ticks >= 24 && stable >= 8) {
+          console.log("PROVIN checkcar: atskaitē nav fotogrāfiju");
+          window.clearInterval(timer);
+          publishCheckcarPhotos(probeVin, 0, "");
         }
       }
       if (ticks > 90) {
@@ -744,45 +768,25 @@
 
     if (isCheckcar) {
       if (done) return;
-      const isProbe = params.get("provin_probe") === "1";
-      const probeVin = (
-        (isProbe && vin ? vin : "") || String(GM_getValue(GM_CC_PROBE, "") || "")
-      )
-        .replace(/[\s-]/g, "")
-        .toUpperCase();
-
-      const el = findCheckcarVinInput();
-      if (!el) {
-        const nodes = document.querySelectorAll("button, [role='tab'], a, span, div");
-        for (const node of nodes) {
-          if (!isVisible(node)) continue;
-          const label = (node.textContent || "").replace(/\s+/g, " ").trim();
-          if (/^vin$/i.test(label)) {
-            console.log("PROVIN checkcar: klikšķinu VIN cilni");
-            node.click();
-            break;
-          }
-        }
-        return; /* nākamajā tikā DOM jau pārrenderēts */
+      const pathVin = vinFromCheckcarPath();
+      let probeStored = "";
+      try {
+        probeStored = String(GM_getValue(GM_CC_PROBE, "") || "");
+      } catch {
+        probeStored = "";
       }
-      if (el.disabled) return;
-      if (!fieldAlreadyHasVin(el)) {
-        console.log("PROVIN checkcar: ierakstu VIN laukā", vin);
-        fillAndClear(el);
-        return; /* pēc ievades ļaujam validācijai atbloķēt pogu nākamajā tikā */
-      }
-      if (!probeVin) {
+      const probeVin = (pathVin || probeStored || vin || "").replace(/[\s-]/g, "").toUpperCase();
+      if (!pathVin) {
+        if (probeVin.length < 11) return;
         done = true;
         window.clearInterval(interval);
+        console.log("PROVIN checkcar: atveru atskaiti", probeVin);
+        location.assign("https://checkcar.vin/report/check/" + encodeURIComponent(probeVin));
         return;
       }
-      if (!clickByText(/check\s*vin/i)) {
-        console.log("PROVIN checkcar: 'Check VIN' poga vēl nav klikšķināma");
-        return;
-      }
-      console.log("PROVIN checkcar: nospiests Check VIN, gaidu fotogrāfijas", probeVin);
       done = true;
       window.clearInterval(interval);
+      console.log("PROVIN checkcar: skaitu fotogrāfijas", probeVin);
       watchCheckcarPhotos(probeVin);
     }
   }, 250);

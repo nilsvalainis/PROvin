@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { adminActionPillBase } from "@/components/admin/adminActionPill";
-import { CHECKCAR_VIN_HOME_URL, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
+import {
+  CHECKCAR_VIN_HOME_URL,
+  buildCheckcarVinReportUrl,
+  normalizeVinForServiceUrls,
+} from "@/lib/admin-vin-urls";
 
 type ProbeDetail = {
   vin?: string;
@@ -51,10 +55,7 @@ export function AdminCcVinPhotoProbeButton({
     variant === "pill"
       ? `${adminActionPillBase} bg-slate-800 hover:bg-slate-900 focus-visible:ring-slate-700`
       : "inline-flex h-7 items-center rounded-md border border-slate-300 bg-white px-2 text-[10px] font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40";
-  const href =
-    effective.length >= 11
-      ? `${CHECKCAR_VIN_HOME_URL}?vin=${encodeURIComponent(effective)}&provin_probe=1`
-      : CHECKCAR_VIN_HOME_URL;
+  const href = buildCheckcarVinReportUrl(effective) ?? CHECKCAR_VIN_HOME_URL;
 
   return (
     <span className="inline-flex items-center gap-1">
@@ -77,7 +78,7 @@ export function AdminCcVinPhotoProbeButton({
         rel="noopener noreferrer"
         aria-disabled={!effective || effective.length < 11}
         className={`${buttonClass} ${!effective || effective.length < 11 ? "pointer-events-none opacity-40" : ""}`}
-        title="Checkcar.vin: vai šim VIN ir fotogrāfijas, un cik. Ja nestrādā, atvērtajā Checkcar cilnē pārbaudi DevTools konsoli (rindas ar 'PROVIN')."
+        title="Checkcar.vin bezmaksas priekšskatījums. Apakšā labajā stūrī jābūt melnai PROVIN 1.7.3 zīmei, tad poga parāda foto skaitu."
         data-provin-cc-photo-probe="1"
         data-provin-handoff-vin={effective || undefined}
         onClick={(event) => {
@@ -85,10 +86,21 @@ export function AdminCcVinPhotoProbeButton({
             event.preventDefault();
             return;
           }
+          const installed = document.documentElement.getAttribute("data-provin-userscript");
+          if (installed !== "1.7.3") {
+            setStatus(
+              installed
+                ? `Skripts ir ${installed}. Atjaunini uz 1.7.3.`
+                : "PROVIN skripts admin lapā nav ieslēgts.",
+            );
+            return;
+          }
           setStatus("Skaita…");
           window.setTimeout(() => {
             setStatus((current) =>
-              current === "Skaita…" ? "Nav atbildes. Skat. konsoli Checkcar cilnē." : current,
+              current === "Skaita…"
+                ? "Nav atbildes. Checkcar cilnē jābūt melnai PROVIN 1.7.3 zīmei."
+                : current,
             );
           }, 65000);
         }}
