@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.7.1
-// @description  Admin MENU: GM_setValue no data-provin-handoff-*. AutoDNA / CarVertical / Auto-Records / CheckThisReg / car.info / CheckCar.vin VIN aizpilde; Tirgus dati URL.
+// @version      1.7.2
+// @description  Admin MENU VIN auto-fill. car.info + checkcar.vin. AutoDNA arī atver CarVertical.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -29,6 +29,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
+// @grant        GM_setClipboard
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -54,6 +55,7 @@
         const probeEl = t.closest("[data-provin-cc-photo-probe]");
         if (probeEl instanceof HTMLElement) {
           const probeVin = (probeEl.dataset.provinHandoffVin || "").trim();
+          console.log("PROVIN admin: CC foto poga nospiesta, VIN =", probeVin);
           try {
             if (probeVin) GM_setValue(GM_PENDING_VIN, probeVin);
             GM_setValue(GM_CC_PROBE, probeVin);
@@ -72,6 +74,7 @@
             }
             if (raw) {
               window.clearInterval(timer);
+              console.log("PROVIN admin: CC foto atbilde saņemta", raw);
               try {
                 const data = JSON.parse(raw);
                 document.dispatchEvent(new CustomEvent("provin-cc-photo", { detail: data }));
@@ -81,7 +84,10 @@
               }
               return;
             }
-            if (polls > 90) window.clearInterval(timer);
+            if (polls > 90) {
+              window.clearInterval(timer);
+              console.warn("PROVIN admin: CC foto atbilde nesagaidīta (45s)");
+            }
           }, 500);
         }
         const a = t.closest("a[href]");
@@ -108,7 +114,7 @@
     return;
   }
 
-  console.log("PROVIN skripts ielādēts: " + window.location.href);
+  console.log("PROVIN skripts (v1.7.2) ielādēts: " + window.location.href);
 
   function setNativeValue(element, value) {
     if (!element || (element.tagName !== "INPUT" && element.tagName !== "TEXTAREA")) return;
@@ -477,29 +483,73 @@
   }
 
   function findCarinfoSearchInput() {
+    const preferred = document.querySelector(
+      'form.nav_search input.searchfield, input.searchfield[name="query"], input[name="query"][role="searchbox"]',
+    );
+    if (preferred && isVisible(preferred) && !preferred.disabled) return preferred;
     const list = document.querySelectorAll("input");
     for (const el of list) {
       if (!isVisible(el) || el.disabled || el.type === "password" || el.type === "hidden") continue;
       const ph = (el.getAttribute("placeholder") || "").toLowerCase();
       const n = (el.name || "").toLowerCase();
       const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+      const cls = (el.className || "").toLowerCase();
+      if (n === "query" || cls.includes("searchfield")) return el;
       if (n === "q" || el.type === "search") return el;
-      if (ph.includes("search") || ph.includes("vin") || ph.includes("license") || ph.includes("reg")) return el;
+      if (ph.includes("search") || ph.includes("vin") || ph.includes("licence") || ph.includes("license")) return el;
       if (aria.includes("search") || aria.includes("vin")) return el;
     }
-    return document.querySelector('input[name="q"], input[type="search"]');
+    return document.querySelector('input[name="query"], input[name="q"], input[type="search"]');
   }
 
-  function clickCarinfoSearch() {
-    clickByText(/search|sök|søg|suchen|meklēt/i);
-    const form = document.querySelector("form");
-    if (form && typeof form.requestSubmit === "function") {
-      try {
-        form.requestSubmit();
-      } catch {
-        /* ignore */
-      }
+  function pressEnter(el) {
+    try {
+      el.focus();
+    } catch {
+      /* ignore */
     }
+    const opts = { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true };
+    el.dispatchEvent(new KeyboardEvent("keydown", opts));
+    el.dispatchEvent(new KeyboardEvent("keypress", opts));
+    el.dispatchEvent(new KeyboardEvent("keyup", opts));
+    /* car.info meklēšana ir JS overlay — form.requestSubmit ved uz 404 /search?q= */
+  }
+
+  function clickCarinfoSearchIcon() {
+    const icon = document.querySelector("form.nav_search .form_search_common_icon");
+    if (icon && isVisible(icon)) {
+      icon.click();
+      return true;
+    }
+    return false;
+  }
+
+  function clickCarinfoReadMore() {
+    const nodes = Array.from(document.querySelectorAll("button, a, [role='button']"));
+    const btn = nodes.find((b) => isVisible(b) && /^read more$/i.test((b.textContent || "").trim()));
+    if (!btn) return false;
+    btn.click();
+    return true;
+  }
+
+  function carinfoHasVehicleInfo() {
+    const t = document.body.innerText || "";
+    return /vehicle info|mileage/i.test(t) && /\d[\d\s.,]{2,}\s+km/i.test(t);
+  }
+
+  function copyCarinfoPageText() {
+    const text = (document.body.innerText || "").replace(/[ \t]+/g, " ").trim();
+    if (text.length < 80) return false;
+    try {
+      if (typeof GM_setClipboard === "function") GM_setClipboard(text);
+    } catch {
+      /* ignore */
+    }
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      navigator.clipboard.writeText(text).catch(() => undefined);
+    }
+    console.log("PROVIN car.info: lapas teksts nokopēts starpliktuvē");
+    return true;
   }
 
   function findCheckcarVinInput() {
@@ -558,8 +608,10 @@
     const timer = window.setInterval(() => {
       ticks += 1;
       const text = document.body.innerText || "";
-      const leftHome = location.pathname !== "/" || /[?&]vin=/i.test(location.search);
-      const ready = leftHome || text.toUpperCase().includes(probeVin);
+      /* Mūsu pašu ?vin= navigācijas parametrs paliek adresē arī sākumlapā,
+         tāpēc "ready" drīkst balstīties TIKAI uz to, ka VIN faktiski parādās
+         atskaites tekstā (nevis uz URL formu). */
+      const ready = text.toUpperCase().includes(probeVin);
       const count = ready ? countCheckcarPhotos() : 0;
       if (ready) {
         if (count === last) stable += 1;
@@ -568,13 +620,15 @@
           stable = 0;
         }
         if (stable >= 3) {
+          console.log("PROVIN checkcar: foto skaits stabilizējies", count);
           window.clearInterval(timer);
           publishCheckcarPhotos(probeVin, count, "");
         }
       }
-      if (ticks > 50) {
+      if (ticks > 90) {
+        console.log("PROVIN checkcar: laiks izbeidzies gaidot atskaiti", { ready, last });
         window.clearInterval(timer);
-        publishCheckcarPhotos(probeVin, Math.max(last, 0), ready || last >= 0 ? "" : "Nav atbildes");
+        publishCheckcarPhotos(probeVin, Math.max(last, 0), ready ? "" : "Nav atbildes");
       }
     }, 500);
   }
@@ -589,10 +643,14 @@
   if (!isCV && !isAR && !isDNA && !isCTR && !isInfo && !isCheckcar) return;
 
   let tries = 0;
-  const maxTries = 140;
+  const maxTries = 220;
   let done = false;
   let ctrTabClicked = false;
   let dnaLoginAttempted = false;
+  let infoFilled = false;
+  let infoSubmitted = false;
+  let infoReadMore = false;
+  let infoCopied = false;
 
   const interval = window.setInterval(() => {
     tries += 1;
@@ -656,45 +714,73 @@
     }
 
     if (isInfo) {
+      if (carinfoHasVehicleInfo()) {
+        if (!infoReadMore && clickCarinfoReadMore()) infoReadMore = true;
+        if (!infoCopied) {
+          if (copyCarinfoPageText()) {
+            infoCopied = true;
+            done = true;
+            window.clearInterval(interval);
+          }
+        }
+        return;
+      }
       const el = findCarinfoSearchInput();
-      if (el && !el.disabled && !done) {
-        const already = fieldAlreadyHasVin(el);
+      if (el && !el.disabled && !infoFilled) {
         fillAndClear(el);
-        done = true;
-        window.clearInterval(interval);
-        if (!already && !params.get("q")) {
-          window.setTimeout(clickCarinfoSearch, 350);
+        infoFilled = true;
+      }
+      if (infoFilled && !infoSubmitted) {
+        const searchEl = el || findCarinfoSearchInput();
+        if (searchEl) {
+          pressEnter(searchEl);
+          clickCarinfoSearchIcon();
+          infoSubmitted = true;
         }
       }
+      if (!infoReadMore && clickCarinfoReadMore()) infoReadMore = true;
       return;
     }
 
     if (isCheckcar) {
       if (done) return;
-      const nodes = document.querySelectorAll("button, [role='tab']");
-      for (const node of nodes) {
-        if (!isVisible(node)) continue;
-        if ((node.textContent || "").trim() === "VIN") {
-          node.click();
-          break;
-        }
-      }
-      const el = findCheckcarVinInput();
-      if (!el || el.disabled) return;
-      if (!fieldAlreadyHasVin(el)) fillAndClear(el);
-      const fromUrl = params.get("provin_probe") === "1";
+      const isProbe = params.get("provin_probe") === "1";
       const probeVin = (
-        String(GM_getValue(GM_CC_PROBE, "") || "") ||
-        (fromUrl ? params.get("vin") || "" : "")
+        (isProbe && vin ? vin : "") || String(GM_getValue(GM_CC_PROBE, "") || "")
       )
         .replace(/[\s-]/g, "")
         .toUpperCase();
+
+      const el = findCheckcarVinInput();
+      if (!el) {
+        const nodes = document.querySelectorAll("button, [role='tab'], a, span, div");
+        for (const node of nodes) {
+          if (!isVisible(node)) continue;
+          const label = (node.textContent || "").replace(/\s+/g, " ").trim();
+          if (/^vin$/i.test(label)) {
+            console.log("PROVIN checkcar: klikšķinu VIN cilni");
+            node.click();
+            break;
+          }
+        }
+        return; /* nākamajā tikā DOM jau pārrenderēts */
+      }
+      if (el.disabled) return;
+      if (!fieldAlreadyHasVin(el)) {
+        console.log("PROVIN checkcar: ierakstu VIN laukā", vin);
+        fillAndClear(el);
+        return; /* pēc ievades ļaujam validācijai atbloķēt pogu nākamajā tikā */
+      }
       if (!probeVin) {
         done = true;
         window.clearInterval(interval);
         return;
       }
-      if (!clickByText(/^check vin$/i)) return;
+      if (!clickByText(/check\s*vin/i)) {
+        console.log("PROVIN checkcar: 'Check VIN' poga vēl nav klikšķināma");
+        return;
+      }
+      console.log("PROVIN checkcar: nospiests Check VIN, gaidu fotogrāfijas", probeVin);
       done = true;
       window.clearInterval(interval);
       watchCheckcarPhotos(probeVin);

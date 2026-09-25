@@ -77,7 +77,7 @@ export function AdminCcVinPhotoProbeButton({
         rel="noopener noreferrer"
         aria-disabled={!effective || effective.length < 11}
         className={`${buttonClass} ${!effective || effective.length < 11 ? "pointer-events-none opacity-40" : ""}`}
-        title="Checkcar.vin: vai šim VIN ir fotogrāfijas, un cik"
+        title="Checkcar.vin: vai šim VIN ir fotogrāfijas, un cik. Ja nestrādā, atvērtajā Checkcar cilnē pārbaudi DevTools konsoli (rindas ar 'PROVIN')."
         data-provin-cc-photo-probe="1"
         data-provin-handoff-vin={effective || undefined}
         onClick={(event) => {
@@ -88,9 +88,9 @@ export function AdminCcVinPhotoProbeButton({
           setStatus("Skaita…");
           window.setTimeout(() => {
             setStatus((current) =>
-              current === "Skaita…" ? "Nav atbildes. Atjaunini PROVIN skriptu (1.7.1)." : current,
+              current === "Skaita…" ? "Nav atbildes. Skat. konsoli Checkcar cilnē." : current,
             );
-          }, 45000);
+          }, 65000);
         }}
       >
         {status ?? "CC foto"}
