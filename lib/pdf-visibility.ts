@@ -2,6 +2,8 @@
  * Admin darba zonas iestatījumi: kuri bloki iekļauti klienta PDF (noklusējums - visi ieslēgti).
  */
 
+import { isPartnerHighlightAdminOrder } from "@/lib/b2b-partner-orders";
+
 export type PdfVisibilitySettings = {
   payment: boolean;
   vehicle: boolean;
@@ -131,12 +133,39 @@ export function isMiniPdfVisibilityOrder(args: {
   return args.amountTotalCents === 3999;
 }
 
-export function defaultPdfVisibilityForOrder(args: {
+/** Partneru VIN darbi: PDF nenes maksājuma summu / statusu. */
+export function isB2bClientPdfVisibilityOrder(args: {
+  checkoutLine?: string | null;
+  partnerId?: string | null;
+  partnerCompanyName?: string | null;
+  notes?: string | null;
+}): boolean {
+  if (isPartnerHighlightAdminOrder(args)) return true;
+  return (args.checkoutLine ?? "").trim().toLowerCase() === "business";
+}
+
+export type PdfVisibilityOrderArgs = {
   checkoutLine?: string | null;
   amountTotalCents?: number | null;
-}): PdfVisibilitySettings {
-  if (isMiniPdfVisibilityOrder(args)) return { ...MINI_DEFAULT_PDF_VISIBILITY };
-  return { ...DEFAULT_PDF_VISIBILITY };
+  partnerId?: string | null;
+  partnerCompanyName?: string | null;
+  notes?: string | null;
+};
+
+export function applyOrderPdfVisibilityDefaults(
+  vis: PdfVisibilitySettings,
+  args: PdfVisibilityOrderArgs,
+): PdfVisibilitySettings {
+  if (!isB2bClientPdfVisibilityOrder(args)) return vis;
+  if (vis.payment === false) return vis;
+  return { ...vis, payment: false };
+}
+
+export function defaultPdfVisibilityForOrder(args: PdfVisibilityOrderArgs): PdfVisibilitySettings {
+  const base = isMiniPdfVisibilityOrder(args)
+    ? { ...MINI_DEFAULT_PDF_VISIBILITY }
+    : { ...DEFAULT_PDF_VISIBILITY };
+  return applyOrderPdfVisibilityDefaults(base, args);
 }
 
 export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {

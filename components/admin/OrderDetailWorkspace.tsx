@@ -121,6 +121,7 @@ import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle"
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import { isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
 import {
+  applyOrderPdfVisibilityDefaults,
   ASV_ONLY_PDF_VISIBILITY,
   DEALER_ONLY_PDF_VISIBILITY,
   mergePdfVisibility,
@@ -2091,6 +2092,9 @@ export function OrderDetailWorkspace({
         legacyInternalRaw: legacyInternal,
         checkoutLine: payload.checkoutLine,
         amountTotalCents: payload.amountTotal,
+        partnerId: payload.partnerId,
+        partnerCompanyName: payload.partnerCompanyName,
+        notes: payload.notes,
       });
 
       const chosen = resolved.hydrated;
@@ -2142,7 +2146,13 @@ export function OrderDetailWorkspace({
       setWs(hydratedWs);
       lastGoodPersistBodyRef.current = body;
 
-      const mergedVisibility = mergePdfVisibility(chosen.pdfVisibility);
+      const mergedVisibility = applyOrderPdfVisibilityDefaults(mergePdfVisibility(chosen.pdfVisibility), {
+        checkoutLine: payload.checkoutLine,
+        amountTotalCents: payload.amountTotal,
+        partnerId: payload.partnerId,
+        partnerCompanyName: payload.partnerCompanyName,
+        notes: payload.notes,
+      });
       const mergedBannerInclude = mergeProvinBannerPdfInclude(chosen.pdfBannerInclude);
       const mergedManualBanners = mergeProvinManualBanners(chosen.manualBanners);
       onPdfVisibilityChange(mergedVisibility);
@@ -2169,7 +2179,13 @@ export function OrderDetailWorkspace({
       setWs(EMPTY_WORKSPACE);
       wsPersistRef.current = EMPTY_WORKSPACE;
       wsStateRef.current = EMPTY_WORKSPACE;
-      const mergedVisibility = mergePdfVisibility(undefined);
+      const mergedVisibility = applyOrderPdfVisibilityDefaults(mergePdfVisibility(undefined), {
+        checkoutLine: payload.checkoutLine,
+        amountTotalCents: payload.amountTotal,
+        partnerId: payload.partnerId,
+        partnerCompanyName: payload.partnerCompanyName,
+        notes: payload.notes,
+      });
       onPdfVisibilityChange(mergedVisibility);
       setPdfBannerInclude({});
       setManualBanners([]);
@@ -2358,7 +2374,13 @@ export function OrderDetailWorkspace({
       return;
     }
     const emptyBlocks = createDefaultSourceBlocks();
-    const mergedVisibility = mergePdfVisibility(undefined);
+    const mergedVisibility = applyOrderPdfVisibilityDefaults(mergePdfVisibility(undefined), {
+      checkoutLine: payload.checkoutLine,
+      amountTotalCents: payload.amountTotal,
+      partnerId: payload.partnerId,
+      partnerCompanyName: payload.partnerCompanyName,
+      notes: payload.notes,
+    });
     setWs({ ...EMPTY_WORKSPACE, sourceBlocks: emptyBlocks });
     onPdfVisibilityChange(mergedVisibility);
     setPdfBannerInclude({});

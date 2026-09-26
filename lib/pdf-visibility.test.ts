@@ -44,4 +44,16 @@ describe("mergePdfVisibility", () => {
     expect(vis.csdd).toBe(true);
     expect(vis.sludinajums).toBe(true);
   });
+
+  it("hides payment fields by default for B2B partner VIN orders", () => {
+    const vis = defaultPdfVisibilityForOrder({
+      checkoutLine: "business",
+      partnerId: "ptr_0123456789abcdef",
+      notes: "B2B business · partner_id=ptr_0123456789abcdef",
+    });
+    expect(vis.payment).toBe(false);
+    expect(vis.csdd).toBe(true);
+    expect(vis.iriss).toBe(true);
+    expect(defaultPdfVisibilityForOrder({ checkoutLine: "premium" }).payment).toBe(true);
+  });
 });

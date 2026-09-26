@@ -11,7 +11,10 @@ import {
   parseWorkspaceSnapshotSavedAtMs,
   pickNewestBackupSnapshotRaw,
 } from "@/lib/admin-order-workspace-persist";
-import { defaultPdfVisibilityForOrder, mergePdfVisibility } from "@/lib/pdf-visibility";
+import {
+  applyOrderPdfVisibilityDefaults,
+  defaultPdfVisibilityForOrder,
+} from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 
 export type WorkspaceHydrateSource = "local" | "backup" | "server" | "legacy" | "empty";
@@ -43,10 +46,21 @@ export function resolveOrderWorkspaceHydration(args: {
   legacyInternalRaw?: string | null;
   checkoutLine?: string | null;
   amountTotalCents?: number | null;
+  partnerId?: string | null;
+  partnerCompanyName?: string | null;
+  notes?: string | null;
 }): ResolvedWorkspaceHydration {
-  const emptyVisibility = defaultPdfVisibilityForOrder({
+  const orderPdfArgs = {
     checkoutLine: args.checkoutLine,
     amountTotalCents: args.amountTotalCents,
+    partnerId: args.partnerId,
+    partnerCompanyName: args.partnerCompanyName,
+    notes: args.notes,
+  };
+  const emptyVisibility = defaultPdfVisibilityForOrder(orderPdfArgs);
+  const withOrderDefaults = (hydrated: HydratedWorkspaceSnapshot): HydratedWorkspaceSnapshot => ({
+    ...hydrated,
+    pdfVisibility: applyOrderPdfVisibilityDefaults(hydrated.pdfVisibility, orderPdfArgs),
   });
   const localRaw = args.localRaw?.trim() ? args.localRaw : args.localRawLegacyV2?.trim() ? args.localRawLegacyV2 : null;
 
@@ -55,7 +69,7 @@ export function resolveOrderWorkspaceHydration(args: {
     if (hydrated) {
       return {
         source: "local",
-        hydrated,
+        hydrated: withOrderDefaults(hydrated),
         workspaceRevision: revisionFromRaw(localRaw),
       };
     }
@@ -67,7 +81,7 @@ export function resolveOrderWorkspaceHydration(args: {
     if (hydrated) {
       return {
         source: "backup",
-        hydrated,
+        hydrated: withOrderDefaults(hydrated),
         workspaceRevision: revisionFromRaw(backupPick.data),
       };
     }
@@ -78,7 +92,7 @@ export function resolveOrderWorkspaceHydration(args: {
     if (hydrated) {
       return {
         source: "server",
-        hydrated,
+        hydrated: withOrderDefaults(hydrated),
         workspaceRevision: revisionFromRaw(args.serverWorkspaceJson),
       };
     }

@@ -65,4 +65,19 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(resolved.hydrated.pdfVisibility.auto_records).toBe(false);
     expect(resolved.hydrated.pdfVisibility.csdd).toBe(true);
   });
+
+  it("turns off payment visibility for B2B partner orders even when a snapshot had it on", () => {
+    const local = snapshotWithAutodnaComment("Partnera teksts", "2026-09-01T10:00:00.000Z");
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw: local,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: null,
+      checkoutLine: "business",
+      partnerId: "ptr_0123456789abcdef",
+      notes: "B2B business · partner_id=ptr_0123456789abcdef",
+    });
+    expect(resolved.source).toBe("local");
+    expect(resolved.hydrated.pdfVisibility.payment).toBe(false);
+  });
 });

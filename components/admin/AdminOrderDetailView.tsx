@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
-import { DEFAULT_PDF_VISIBILITY, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
+import { defaultPdfVisibilityForOrder, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { META_ORDER_LUCIDE } from "@/lib/admin-lucide-registry";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
@@ -138,7 +138,15 @@ export function AdminOrderDetailView({
   const skipOrderEditsAutosaveFlash = useRef(true);
   const editsRef = useRef(edits);
   editsRef.current = edits;
-  const [pdfVisibility, setPdfVisibility] = useState<PdfVisibilitySettings>(DEFAULT_PDF_VISIBILITY);
+  const [pdfVisibility, setPdfVisibility] = useState<PdfVisibilitySettings>(() =>
+    defaultPdfVisibilityForOrder({
+      checkoutLine: order.checkoutLine,
+      amountTotalCents: order.amountTotal,
+      partnerId: order.partnerId,
+      partnerCompanyName: order.partnerCompanyName,
+      notes: order.notes,
+    }),
+  );
   const patchPdfVisibility = useCallback((patch: Partial<PdfVisibilitySettings>) => {
     setPdfVisibility((prev) => ({ ...prev, ...patch }));
   }, []);
