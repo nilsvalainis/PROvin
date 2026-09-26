@@ -469,6 +469,7 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
     case "mnt_ee":
     case "lkf_ee":
     case "carinfo":
+    case "traficom_fi":
       return vinRegistryBlockToPlainText(blocks[key]);
     case "finnik":
       return vinRegistryBlockToPlainText(blocks.finnik, { omitRaw: true });
