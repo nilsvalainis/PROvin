@@ -1486,7 +1486,7 @@ function buildSourcePhotoGroupsPdfHtml(
   const sections: string[] = [];
   let photoIndex = 0;
   for (const group of groups) {
-    const cells: string[] = [];
+    const cells: { src: string; cap: string }[] = [];
     for (const ph of group.photos) {
       const src = dataUrls.get(ph.id);
       if (!src) continue;
