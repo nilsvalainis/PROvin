@@ -28,6 +28,7 @@ export type PdfVisibilitySettings = {
   mnt_ee: boolean;
   lkf_ee: boolean;
   carinfo: boolean;
+  traficom_fi: boolean;
   ltab: boolean;
   citi_avoti: boolean;
   sludinajums: boolean;
@@ -57,6 +58,7 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   mnt_ee: false,
   lkf_ee: false,
   carinfo: false,
+  traficom_fi: false,
   ltab: false,
   citi_avoti: false,
   sludinajums: false,
@@ -86,6 +88,7 @@ export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   mnt_ee: false,
   lkf_ee: false,
   carinfo: false,
+  traficom_fi: false,
   ltab: false,
   citi_avoti: false,
   sludinajums: false,
@@ -118,6 +121,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   mnt_ee: true,
   lkf_ee: true,
   carinfo: true,
+  traficom_fi: true,
   ltab: true,
   citi_avoti: true,
   sludinajums: true,
@@ -190,6 +194,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   mnt_ee: true,
   lkf_ee: true,
   carinfo: true,
+  traficom_fi: true,
   ltab: true,
   citi_avoti: true,
   sludinajums: true,
@@ -232,6 +237,7 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     mnt_ee: isBool(o.mnt_ee) ? o.mnt_ee : d.mnt_ee,
     lkf_ee: isBool(o.lkf_ee) ? o.lkf_ee : d.lkf_ee,
     carinfo: isBool(o.carinfo) ? o.carinfo : d.carinfo,
+    traficom_fi: isBool(o.traficom_fi) ? o.traficom_fi : d.traficom_fi,
     ltab: isBool(o.ltab) ? o.ltab : d.ltab,
     citi_avoti: isBool(o.citi_avoti) ? o.citi_avoti : d.citi_avoti,
     sludinajums: isBool(o.sludinajums) ? o.sludinajums : d.sludinajums,
