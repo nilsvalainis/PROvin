@@ -12,12 +12,22 @@ export type OperatorOrderFields = {
   phone: string;
   name?: string;
   notes?: string;
+  partnerId?: string;
+  companyName?: string;
+  checkoutLine?: "business" | "dealer";
+  auditPurpose?: "client" | "internal";
 };
 
 export async function createOperatorOrderWithFields(
   fields: OperatorOrderFields,
 ): Promise<{ ok: true; orderId: string } | { ok: false; error: string }> {
-  const created = await createManualOrder({ amountTotal: null });
+  const created = await createManualOrder({
+    amountTotal: null,
+    partnerId: fields.partnerId,
+    companyName: fields.companyName,
+    checkoutLine: fields.checkoutLine,
+    auditPurpose: fields.auditPurpose,
+  });
   if (!created.ok) return created;
 
   const orderEdits: OrderDraftOrderEdits = {

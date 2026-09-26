@@ -27,6 +27,11 @@ export type ManualOrderRecord = {
   amountTotal: number | null;
   currency: string;
   updatedAt: string;
+  /** Partnera kredīta VIN darbs - nav parasts manuālais piedāvājums. */
+  partnerId?: string | null;
+  companyName?: string | null;
+  checkoutLine?: "business" | "dealer";
+  auditPurpose?: "client" | "internal";
 };
 
 type ManualOrdersIndexDoc = {
@@ -62,7 +67,21 @@ function normalizeRecord(raw: unknown): ManualOrderRecord | null {
       : null;
   const currency = typeof o.currency === "string" && o.currency ? o.currency.toUpperCase() : "EUR";
   const updatedAt = typeof o.updatedAt === "string" ? o.updatedAt : new Date(0).toISOString();
-  return { id, created, amountTotal, currency, updatedAt };
+  const partnerId = typeof o.partnerId === "string" && o.partnerId.trim() ? o.partnerId.trim() : null;
+  const companyName = typeof o.companyName === "string" && o.companyName.trim() ? o.companyName.trim() : null;
+  const checkoutLine = o.checkoutLine === "business" || o.checkoutLine === "dealer" ? o.checkoutLine : undefined;
+  const auditPurpose = o.auditPurpose === "client" || o.auditPurpose === "internal" ? o.auditPurpose : undefined;
+  return {
+    id,
+    created,
+    amountTotal,
+    currency,
+    updatedAt,
+    ...(partnerId ? { partnerId } : {}),
+    ...(companyName ? { companyName } : {}),
+    ...(checkoutLine ? { checkoutLine } : {}),
+    ...(auditPurpose ? { auditPurpose } : {}),
+  };
 }
 
 function normalizeIndexDoc(raw: unknown): ManualOrdersIndexDoc | null {
@@ -180,9 +199,18 @@ export async function getManualOrder(id: string): Promise<ManualOrderRecord | nu
 }
 
 export async function createManualOrder(
-  init: { created?: number; amountTotal?: number | null } = {},
+  init: {
+    created?: number;
+    amountTotal?: number | null;
+    partnerId?: string | null;
+    companyName?: string | null;
+    checkoutLine?: "business" | "dealer";
+    auditPurpose?: "client" | "internal";
+  } = {},
 ): Promise<{ ok: true; record: ManualOrderRecord } | { ok: false; error: string }> {
   const now = new Date();
+  const partnerId = typeof init.partnerId === "string" && init.partnerId.trim() ? init.partnerId.trim() : null;
+  const companyName = typeof init.companyName === "string" && init.companyName.trim() ? init.companyName.trim() : null;
   const record: ManualOrderRecord = {
     id: makeManualOrderId(now),
     created:
@@ -195,6 +223,14 @@ export async function createManualOrder(
         : null,
     currency: "EUR",
     updatedAt: now.toISOString(),
+    ...(partnerId ? { partnerId } : {}),
+    ...(companyName ? { companyName } : {}),
+    ...(init.checkoutLine === "business" || init.checkoutLine === "dealer"
+      ? { checkoutLine: init.checkoutLine }
+      : {}),
+    ...(init.auditPurpose === "client" || init.auditPurpose === "internal"
+      ? { auditPurpose: init.auditPurpose }
+      : {}),
   };
   const idx = await readManualOrdersIndex();
   const doc: ManualOrdersIndexDoc = {

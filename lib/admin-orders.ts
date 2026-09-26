@@ -59,6 +59,7 @@ export type AdminOrderRow = {
   partnerId?: string | null;
   packQty?: number | null;
   companyName?: string | null;
+  auditPurpose?: "client" | "internal";
 };
 
 export type AdminOrderDetail = AdminOrderRow & {
@@ -99,17 +100,20 @@ const STRIPE_CHECKOUT_PAGE_SIZE = 100;
 const STRIPE_CHECKOUT_MAX_PAGES = 80;
 
 function manualOrderToAdminOrderRow(rec: ManualOrderRecord): AdminOrderRow {
+  const partnerVin = Boolean(rec.partnerId || rec.companyName);
   return {
     id: rec.id,
     created: rec.created,
     amountTotal: rec.amountTotal,
     currency: rec.currency,
-    /** Manuālie pasūtījumi = individuāli piedāvājumi pirms apmaksas. */
-    paymentStatus: "unpaid",
+    paymentStatus: partnerVin ? "paid" : "unpaid",
     customerEmail: null,
     vin: null,
-    checkoutLine: "audit",
+    checkoutLine: rec.checkoutLine ?? "audit",
     isManual: true,
+    ...(rec.partnerId ? { partnerId: rec.partnerId } : {}),
+    ...(rec.companyName ? { companyName: rec.companyName } : {}),
+    ...(rec.auditPurpose ? { auditPurpose: rec.auditPurpose } : {}),
   };
 }
 

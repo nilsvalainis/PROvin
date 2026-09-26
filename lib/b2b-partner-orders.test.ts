@@ -4,8 +4,10 @@ import {
   formatB2bArchiveAmount,
   formatB2bPartnerOrderDate,
   b2bPackInfoLabelLv,
+  PARTNER_VIN_AMOUNT_LABEL_LV,
   isB2bPackAdminOrder,
   isPartnerHighlightAdminOrder,
+  isPartnerVinAdminOrder,
   parsePartnerAuditPurposeFromNotes,
   parsePartnerCheckoutLineFromNotes,
   parsePartnerCompanyFromNotes,
@@ -70,6 +72,38 @@ describe("b2b partner archive rows", () => {
       isB2bPackAdminOrder({ checkoutLine: "business", vin: "WVWZZZ1JZXW000001", isManual: false }),
     ).toBe(false);
     expect(isB2bPackAdminOrder({ checkoutLine: "audit", vin: null, isManual: true })).toBe(false);
+  });
+
+  it("treats credit VIN jobs as partner rows, not packs", () => {
+    expect(
+      isPartnerVinAdminOrder({
+        isManual: true,
+        partnerId: "ptr_0123456789abcdef",
+        vin: "WVWZZZ1JZXW000001",
+      }),
+    ).toBe(true);
+    expect(
+      isPartnerVinAdminOrder({
+        isManual: true,
+        notes: buildPartnerOrderNotes({
+          plan: "business",
+          partnerId: "ptr_0123456789abcdef",
+          lotId: "lot_1",
+        }),
+      }),
+    ).toBe(true);
+    expect(
+      isPartnerVinAdminOrder({
+        fulfillment: "b2b_pack",
+        checkoutLine: "business",
+        vin: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("uses a credit label without a unicode dash", () => {
+    expect(PARTNER_VIN_AMOUNT_LABEL_LV).toBe("Kredīts");
+    expect(PARTNER_VIN_AMOUNT_LABEL_LV).not.toMatch(/[\u2013\u2014]/);
   });
 
   it("labels pack info rows with product and quantity", () => {

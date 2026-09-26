@@ -142,8 +142,9 @@ export async function loadAdminOrderDetailPageData(
     const serverWorkspaceJson = buildServerWorkspaceJson(serverOrderDraft);
     const draftEdits = serverOrderDraft?.orderEdits ?? {};
     const mergedNotes = draftEdits.notes || order.notes || "";
-    const partnerId = parsePartnerIdFromNotes(mergedNotes);
-    let partnerCompanyName = parsePartnerCompanyFromNotes(mergedNotes);
+    const partnerId = order.partnerId || parsePartnerIdFromNotes(mergedNotes);
+    let partnerCompanyName =
+      parsePartnerCompanyFromNotes(mergedNotes) || order.companyName?.trim() || null;
     if (partnerId && !partnerCompanyName) {
       try {
         const partner = await getB2bPartnerById(partnerId);
@@ -153,7 +154,9 @@ export async function loadAdminOrderDetailPageData(
       }
     }
     const partnerLine = parsePartnerCheckoutLineFromNotes(mergedNotes);
-    const partnerAuditPurpose = parsePartnerAuditPurposeFromNotes(mergedNotes);
+    const partnerAuditPurpose =
+      parsePartnerAuditPurposeFromNotes(mergedNotes) ||
+      (order.auditPurpose === "client" || order.auditPurpose === "internal" ? order.auditPurpose : null);
     const clientOrder = toAdminOrderDetailClientModel({
       ...(order as unknown as Record<string, unknown>),
       ...(partnerLine ? { checkoutLine: partnerLine } : {}),

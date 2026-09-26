@@ -149,3 +149,22 @@ export function isPartnerHighlightAdminOrder(args: {
   if ((args.partnerCompanyName ?? "").trim() || (args.partnerId ?? "").trim()) return true;
   return isPartnerOrderNotes(args.notes);
 }
+
+/** Partnera kredīta VIN darba summas etiķete admin sarakstā (nav Stripe cena). */
+export const PARTNER_VIN_AMOUNT_LABEL_LV = "Kredīts";
+
+/** Partnera kredīta VIN darbs (ne paka): B2B rinda bez Stripe cenas. */
+export function isPartnerVinAdminOrder(args: {
+  isB2bPack?: boolean;
+  fulfillment?: string | null;
+  isManual?: boolean;
+  isDemo?: boolean;
+  checkoutLine?: string | null;
+  vin?: string | null;
+  partnerCompanyName?: string | null;
+  partnerId?: string | null;
+  notes?: string | null;
+}): boolean {
+  if (isB2bPackAdminOrder(args)) return false;
+  return isPartnerHighlightAdminOrder(args);
+}

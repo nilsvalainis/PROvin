@@ -31,6 +31,8 @@ export type SerializedAdminOrderTableRow = {
   partnerId?: string | null;
   partnerCompanyName?: string | null;
   partnerAuditPurpose?: "client" | "internal" | null;
+  /** Partnera piezīmes (partner_id=…) — B2B VIN izcelšanai, ja lauki vēl nav indeksā. */
+  notes?: string | null;
   /** Kredītu paka: informatīva rinda, nav atverams pasūtījums. */
   isB2bPack?: boolean;
   packQty?: number | null;
@@ -57,6 +59,7 @@ type RowInput = {
   partnerId?: unknown;
   partnerCompanyName?: unknown;
   partnerAuditPurpose?: unknown;
+  notes?: unknown;
   isB2bPack?: unknown;
   packQty?: unknown;
   invoicePdfUrl?: unknown;
@@ -129,6 +132,7 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       ...(o.partnerAuditPurpose === "client" || o.partnerAuditPurpose === "internal"
         ? { partnerAuditPurpose: o.partnerAuditPurpose }
         : {}),
+      ...(typeof o.notes === "string" && o.notes.trim() ? { notes: o.notes.trim() } : {}),
       ...(Boolean(o.isB2bPack) ? { isB2bPack: true as const } : {}),
       ...(typeof o.packQty === "number" && Number.isFinite(o.packQty) && o.packQty > 0
         ? { packQty: Math.trunc(o.packQty) }

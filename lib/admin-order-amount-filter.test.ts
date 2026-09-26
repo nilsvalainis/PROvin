@@ -18,6 +18,17 @@ describe("passesAdminOrderAmountFilter", () => {
     expect(passesAdminOrderAmountFilter({ amountTotal: 50, isDemo: true })).toBe(true);
   });
 
+  it("always includes partner VIN credit jobs (manual, no Stripe price)", () => {
+    expect(
+      passesAdminOrderAmountFilter({
+        amountTotal: null,
+        isManual: true,
+        checkoutLine: "business",
+        vin: "WVWZZZ1JZXW000001",
+      }),
+    ).toBe(true);
+  });
+
   it("always includes B2B credit packs", () => {
     expect(
       passesAdminOrderAmountFilter({

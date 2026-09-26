@@ -85,7 +85,9 @@ export default async function AdminOrdersPage({
       (partnerId ? partnerNames.get(partnerId) ?? null : null) ||
       (o.customerEmail?.trim() ? partnerNamesByEmail.get(o.customerEmail.trim().toLowerCase()) ?? null : null);
     const partnerLine = parsePartnerCheckoutLineFromNotes(notes);
-    const partnerAuditPurpose = parsePartnerAuditPurposeFromNotes(notes);
+    const partnerAuditPurpose =
+      parsePartnerAuditPurposeFromNotes(notes) ||
+      (o.auditPurpose === "client" || o.auditPurpose === "internal" ? o.auditPurpose : null);
     return {
       ...o,
       vin: isPack ? null : draft?.vin || o.vin,
@@ -101,6 +103,7 @@ export default async function AdminOrdersPage({
       ...(partnerId ? { partnerId } : {}),
       ...(partnerCompanyName ? { partnerCompanyName } : {}),
       ...(partnerAuditPurpose && !isPack ? { partnerAuditPurpose } : {}),
+      ...(notes && !isPack ? { notes } : {}),
     };
   });
   const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithInvoice));

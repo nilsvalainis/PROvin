@@ -60,7 +60,7 @@ export async function listPartnerArchiveRows(args: {
     if (seen.has(rec.id)) continue;
     const draft = await readOrderDraft(rec.id);
     const notes = draft?.orderEdits?.notes ?? "";
-    const byId = partnerNotesMatchId(notes, partnerId);
+    const byId = rec.partnerId === partnerId || partnerNotesMatchId(notes, partnerId);
     const byLegacyMark = notes.includes("B2B ");
     if (!byId && !byLegacyMark) continue;
     const draftEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
@@ -81,7 +81,10 @@ export async function listPartnerArchiveRows(args: {
       invoiceNumber: draft?.invoiceNumber?.trim() || "-",
       amountLabel: amountKind,
       amountKind,
-      plan: planFromNotes(notes, "business"),
+      plan:
+        rec.checkoutLine === "dealer" || rec.checkoutLine === "business"
+          ? rec.checkoutLine
+          : planFromNotes(notes, "business"),
       reportHref: reportReady ? `/api/partner/report/${encodeURIComponent(rec.id)}` : null,
     });
   }

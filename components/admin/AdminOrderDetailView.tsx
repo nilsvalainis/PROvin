@@ -18,7 +18,11 @@ import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHisto
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
 import { paidProductLabel } from "@/lib/admin-customer-identity";
-import { partnerAuditPurposeLabelLv } from "@/lib/b2b-partner-orders";
+import {
+  isPartnerVinAdminOrder,
+  PARTNER_VIN_AMOUNT_LABEL_LV,
+  partnerAuditPurposeLabelLv,
+} from "@/lib/b2b-partner-orders";
 import { formatOrderTimestampSec } from "@/lib/format-order-datetime";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
@@ -337,6 +341,16 @@ export function AdminOrderDetailView({
   const mergedSourcesComparisonComment =
     edits.sourcesComparisonComment !== undefined ? editFieldStr(edits.sourcesComparisonComment) : "";
 
+  const isPartnerVin = isPartnerVinAdminOrder({
+    isManual: order.isManual,
+    fulfillment: order.fulfillment,
+    checkoutLine: order.checkoutLine,
+    vin: mergedVin,
+    partnerCompanyName: order.partnerCompanyName,
+    partnerId: order.partnerId,
+    notes: mergedNotes,
+  });
+
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
 
   /** Levitējošs meta bloks — caurspīdīgs, bez rāmja. */
@@ -441,9 +455,13 @@ export function AdminOrderDetailView({
                   <div className="min-w-0">
                     <dt className={metaLabel}>Summa</dt>
                     <dd className={`${metaValue} font-medium tabular-nums`}>
-                      <ClientHydrationGate>
-                        {() => formatMoneyEur(order.amountTotal, order.currency)}
-                      </ClientHydrationGate>
+                      {isPartnerVin ? (
+                        PARTNER_VIN_AMOUNT_LABEL_LV
+                      ) : (
+                        <ClientHydrationGate>
+                          {() => formatMoneyEur(order.amountTotal, order.currency)}
+                        </ClientHydrationGate>
+                      )}
                     </dd>
                   </div>
                   <div className="min-w-0">
@@ -454,7 +472,9 @@ export function AdminOrderDetailView({
                   </div>
                   <div className="min-w-0">
                     <dt className={metaLabel}>Statuss</dt>
-                    <dd className={metaValue}>{order.paymentStatus}</dd>
+                    <dd className={metaValue}>
+                      {isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : order.paymentStatus}
+                    </dd>
                   </div>
                 </dl>
               </div>
@@ -713,7 +733,9 @@ export function AdminOrderDetailView({
               amountTotalCents: order.amountTotal,
             })}
           </span>
-          {order.amountTotal != null && order.amountTotal > 0 ? (
+          {isPartnerVin ? (
+            <span className="ml-1.5 font-bold text-violet-900">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>
+          ) : order.amountTotal != null && order.amountTotal > 0 ? (
             <span className="ml-1.5 tabular-nums font-bold text-[var(--color-apple-text)]">
               {formatMoneyEur(order.amountTotal, order.currency)}
             </span>

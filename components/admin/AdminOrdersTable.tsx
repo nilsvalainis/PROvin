@@ -11,8 +11,11 @@ import {
   b2bPackInfoLabelLv,
   isB2bPackAdminOrder,
   isPartnerHighlightAdminOrder,
+  isPartnerVinAdminOrder,
+  PARTNER_VIN_AMOUNT_LABEL_LV,
   partnerAuditPurposeLabelLv,
 } from "@/lib/b2b-partner-orders";
+import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import {
@@ -327,6 +330,7 @@ type OrderRowView = {
   partnerPurposeLabel: string;
   isPack: boolean;
   packLabel: string;
+  isPartnerVin: boolean;
 };
 
 type ClientOverride = {
@@ -354,7 +358,18 @@ function orderRowView(
     isPartnerHighlightAdminOrder({
       partnerCompanyName,
       partnerId: o.partnerId,
+      notes: o.notes,
     });
+  const isPartnerVin = isPartnerVinAdminOrder({
+    isB2bPack: o.isB2bPack,
+    isManual: o.isManual,
+    isDemo: o.isDemo,
+    checkoutLine: o.checkoutLine,
+    vin: o.vin,
+    partnerCompanyName,
+    partnerId: o.partnerId,
+    notes: o.notes,
+  });
   return {
     pdfHref: invoicePdfHref(o),
     detailBase,
@@ -367,12 +382,14 @@ function orderRowView(
       .join(" · "),
     dealerHighlight:
       !isPack &&
+      !partnerHighlight &&
       isDealerHighlightAdminOrder({
         checkoutLine: o.checkoutLine,
         amountTotalCents: o.amountTotal,
       }),
     miniHighlight:
       !isPack &&
+      !partnerHighlight &&
       isMiniHighlightAdminOrder({
         checkoutLine: o.checkoutLine,
         amountTotalCents: o.amountTotal,
@@ -382,6 +399,7 @@ function orderRowView(
     partnerPurposeLabel: isPack ? "" : partnerAuditPurposeLabelLv(o.partnerAuditPurpose),
     isPack,
     packLabel: isPack ? b2bPackInfoLabelLv({ checkoutLine: o.checkoutLine, packQty: o.packQty }) : "",
+    isPartnerVin,
   };
 }
 
@@ -610,7 +628,13 @@ export function AdminOrdersTable({
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <PaymentStatusPill status={o.paymentStatus} />
+                {v.isPartnerVin ? (
+                  <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
+                    {PARTNER_VIN_AMOUNT_LABEL_LV}
+                  </span>
+                ) : (
+                  <PaymentStatusPill status={o.paymentStatus} />
+                )}
                 {o.isDemo ? (
                   <span className="rounded-full bg-[var(--color-provin-accent-soft)]/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
                     Paraugs
@@ -650,10 +674,19 @@ export function AdminOrdersTable({
                 <div className="min-w-0">
                   <p className="truncate text-[12px] text-[var(--color-apple-text)]">{v.primaryClient}</p>
                   <p className="mt-0.5 truncate text-[11px] tabular-nums text-[var(--color-provin-muted)]">
-                    {dateFmt.format(new Date(o.created * 1000))} · {formatMoneyEur(o.amountTotal, o.currency)}
+                    {dateFmt.format(new Date(o.created * 1000))} ·{" "}
+                    {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
+                  {v.isPartnerVin ? (
+                    <span
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      <AdminPartnerArchivePdfButton sessionId={o.id} compact />
+                    </span>
+                  ) : null}
                   {v.pdfHref ? (
                     <a
                       href={v.pdfHref}
@@ -715,6 +748,7 @@ export function AdminOrdersTable({
                 partnerPurposeLabel,
                 isPack,
                 packLabel,
+                isPartnerVin,
               } = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
               const openOrderFromRow = (e: MouseEvent) => {
                 if (isPack) return;
@@ -753,7 +787,7 @@ export function AdminOrdersTable({
                 >
                   <td className={`${hug} py-3.5 pl-4 pr-1 text-[var(--color-apple-text)]`}>
                     <span className="flex flex-wrap items-center gap-2">
-                      {o.isManual ? (
+                      {o.isManual && !isPartnerVin ? (
                         <ManualOrderDateCell id={o.id} created={o.created} />
                       ) : (
                         dateFmt.format(new Date(o.created * 1000))
@@ -848,10 +882,18 @@ export function AdminOrdersTable({
                     {o.heardAbout?.trim() || <span className="text-[var(--color-provin-muted)]">-</span>}
                   </td>
                   <td className={`${hug} py-3.5 pl-4 pr-1`}>
-                    <PaymentStatusPill status={o.paymentStatus} />
+                    {isPartnerVin ? (
+                      <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
+                        {PARTNER_VIN_AMOUNT_LABEL_LV}
+                      </span>
+                    ) : (
+                      <PaymentStatusPill status={o.paymentStatus} />
+                    )}
                   </td>
                   <td className={`${hug} px-1 py-3.5 text-right tabular-nums font-medium text-[var(--color-apple-text)]`}>
-                    {o.isManual ? (
+                    {isPartnerVin ? (
+                      PARTNER_VIN_AMOUNT_LABEL_LV
+                    ) : o.isManual ? (
                       <ManualOrderAmountCell id={o.id} amountTotal={o.amountTotal} currency={o.currency} />
                     ) : (
                       formatMoneyEur(o.amountTotal, o.currency)
@@ -875,7 +917,15 @@ export function AdminOrdersTable({
                   </td>
                   <td className={`${hug} px-4 py-3.5 text-right`}>
                     <span className="inline-flex items-center gap-2">
-                      {o.isManual && !isPack ? <ManualOrderDeleteButton id={o.id} /> : null}
+                      {isPartnerVin ? (
+                        <span
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          <AdminPartnerArchivePdfButton sessionId={o.id} compact />
+                        </span>
+                      ) : null}
+                      {o.isManual && !isPack && !isPartnerVin ? <ManualOrderDeleteButton id={o.id} /> : null}
                       {isPack ? (
                         <span className="text-[11px] font-medium text-[var(--color-provin-muted)]">Tikai info</span>
                       ) : (

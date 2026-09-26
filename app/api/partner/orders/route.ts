@@ -112,6 +112,10 @@ export async function POST(req: Request) {
     phone: partner.phone,
     name: partner.contactName,
     notes,
+    partnerId: partner.id,
+    companyName: partner.companyName,
+    checkoutLine: planRaw,
+    auditPurpose: purposeRaw,
     ...(listingRaw ? { listingUrl: listingRaw } : {}),
   });
   if (!created.ok) {
