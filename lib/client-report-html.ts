@@ -238,6 +238,7 @@ function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
   if (!vis.mnt_ee) s.add(L.mnt_ee);
   if (!vis.lkf_ee) s.add(L.lkf_ee);
   if (!vis.carinfo) s.add(L.carinfo);
+  if (!vis.traficom_fi) s.add(L.traficom_fi);
   if (!vis.citi_avoti) s.add(L.citi_avoti);
   return s;
 }
@@ -452,6 +453,7 @@ function computeProvinPdfSourcesUsedCounts(
   if (vis.mnt_ee && vendorPdfBlockHasData(getVendorPdfBlock(p, L.mnt_ee))) n1++;
   if (vis.lkf_ee && vendorPdfBlockHasData(getVendorPdfBlock(p, L.lkf_ee))) n1++;
   if (vis.carinfo && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carinfo))) n1++;
+  if (vis.traficom_fi && vendorPdfBlockHasData(getVendorPdfBlock(p, L.traficom_fi))) n1++;
   n1 = capSourceCount(n1);
 
   let n2 = 0;
@@ -486,7 +488,7 @@ function collectPdfCheckedSources(
         (f?.mileageHistory ?? []).filter((r) => r.date.trim() && r.odometer.trim()).length,
     });
   }
-  for (const title of [L.autodna, L.carvertical, L.tjekbil, L.mnt_ee, L.lkf_ee, L.carinfo] as const) {
+  for (const title of [L.autodna, L.carvertical, L.tjekbil, L.mnt_ee, L.lkf_ee, L.carinfo, L.traficom_fi] as const) {
     const b = getVendorPdfBlock(p, title);
     if (!b || !vendorPdfBlockHasData(b)) continue;
     if (vendorTitlesOmittedForPdf(vis).has(title)) continue;
@@ -772,6 +774,18 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
   const tilesHtml = items ? `<ul class="pdf-summary-tiles">${items}</ul>` : "";
   if (!identityHtml && !tilesHtml) return "";
   return `<section class="pdf-report-summary pdf-surface-card pdf-page-flow-chunk--avoid" role="region">${head}${identityHtml}${tilesHtml}</section>`;
+}
+
+/** Viena bilde uzreiz zem baneriem: sludinājuma ekrānuzņēmums vai auto fotogrāfija. */
+function buildPdfCoverPhotoHtml(
+  p: ClientReportPayload,
+  dataUrls: Map<string, string> | undefined,
+): string {
+  const id = p.listingAnalysis?.coverPhoto?.id?.trim() ?? "";
+  if (!id) return "";
+  const src = dataUrls?.get(id) ?? "";
+  if (!src.startsWith("data:image/")) return "";
+  return `<figure class="pdf-cover-photo"><img class="pdf-cover-photo__img" src="${src}" alt=""/></figure>`;
 }
 
 function buildPdfCountryFlagCellHtml(countryLabel: string, extraWrapClass = ""): string {
@@ -1682,6 +1696,7 @@ function buildVendorAvotuSubsection(
   if (b.title === L.mnt_ee && !vis.mnt_ee) return "";
   if (b.title === L.lkf_ee && !vis.lkf_ee) return "";
   if (b.title === L.carinfo && !vis.carinfo) return "";
+  if (b.title === L.traficom_fi && !vis.traficom_fi) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const omitOwners = b.title === L.carinfo;
   const owners = omitOwners ? "" : (b.ownersSummary ?? "").trim();
@@ -1938,6 +1953,7 @@ function buildAvotuDatiSectionHtml(
   const mntEe = vendorHtml(SOURCE_BLOCK_LABELS.mnt_ee);
   const lkfEe = vendorHtml(SOURCE_BLOCK_LABELS.lkf_ee);
   const carinfo = vendorHtml(SOURCE_BLOCK_LABELS.carinfo);
+  const traficomFi = vendorHtml(SOURCE_BLOCK_LABELS.traficom_fi);
 
   const stack = [
     csdd,
@@ -1950,6 +1966,7 @@ function buildAvotuDatiSectionHtml(
     mntEe,
     lkfEe,
     carinfo,
+    traficomFi,
     ltab,
     citiAvoti,
   ].filter(Boolean);
@@ -2349,6 +2366,11 @@ function clientReportPrintCss(): string {
       .pdf-listing-photo-img{
         width:100%;height:auto;max-height:220px;object-fit:contain;
         border-radius:6px;border:1px solid #e2e8f0;display:block;background:#f8fafc;
+      }
+      .pdf-cover-photo{margin:0 0 14px;break-inside:avoid;}
+      .pdf-cover-photo__img{
+        display:block;width:100%;max-height:360px;object-fit:contain;object-position:center top;
+        border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc;
       }
       .pdf-incident-photos{margin:10px 0 0;}
       .pdf-listing-photo-grid--full .pdf-listing-photo-img{
@@ -3123,6 +3145,8 @@ export function buildClientReportDocumentHtml(args: {
       })
     : [];
   if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
+  const coverPhotoHtml = buildPdfCoverPhotoHtml(p, listingAnalysisPhotoDataUrls);
+  if (coverPhotoHtml) lines.push(coverPhotoHtml);
 
   const aboutBlock = dealerOnly
     ? ""

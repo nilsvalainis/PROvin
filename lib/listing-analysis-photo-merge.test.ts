@@ -115,4 +115,44 @@ describe("incident photo merge on coalesce", () => {
     const merged = coalesceOrderWorkspacePersistBody(incoming, baseline);
     expect(merged.incidentPhotos?.map((p) => p.id)).toEqual([photoId]);
   });
+
+  it("keeps the PDF cover photo and lets an explicit clear remove it", () => {
+    const base = createDefaultSourceBlocks();
+    const coverId = "la_ph_aabbccddeeff001122334455";
+    const withCover = normalizeOrderWorkspacePersistBody({
+      sourceBlocks: {
+        ...base,
+        listing_analysis: { ...base.listing_analysis, coverPhoto: { id: coverId } },
+      },
+      iriss: "",
+      apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
+      cenasAtbilstiba: "",
+      previewConfirmed: false,
+    });
+    const stale = normalizeOrderWorkspacePersistBody({
+      sourceBlocks: base,
+      iriss: "",
+      apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
+      cenasAtbilstiba: "",
+      previewConfirmed: false,
+    });
+    expect(coalesceOrderWorkspacePersistBody(stale, withCover).sourceBlocks.listing_analysis.coverPhoto?.id).toBe(
+      coverId,
+    );
+
+    const cleared = normalizeOrderWorkspacePersistBody({
+      sourceBlocks: {
+        ...base,
+        listing_analysis: { ...base.listing_analysis, coverPhoto: null },
+      },
+      iriss: "",
+      apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
+      cenasAtbilstiba: "",
+      previewConfirmed: false,
+    });
+    expect(coalesceOrderWorkspacePersistBody(cleared, withCover).sourceBlocks.listing_analysis.coverPhoto?.id).toBeUndefined();
+  });
 });

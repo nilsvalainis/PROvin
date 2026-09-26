@@ -123,6 +123,7 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
     case "mnt_ee":
     case "lkf_ee":
     case "carinfo":
+    case "traficom_fi":
       return TRAFFIC_RANK[vinRegistryTrafficLevel(block as WorkspaceSourceBlocks["tjekbil"])];
     case "ltab":
       return TRAFFIC_RANK[ltabTrafficLevel(block as WorkspaceSourceBlocks["ltab"])];
@@ -194,10 +195,21 @@ function pickRicherListingAnalysisBlock(
     baseline.photos,
   );
   const synced = syncListingAnalysisPhotoGroupsAndFlat(mergedGroups);
+  const coverPhoto =
+    incoming.coverPhoto === null
+      ? null
+      : incoming.coverPhoto?.id
+        ? incoming.coverPhoto
+        : baseline.coverPhoto === null
+          ? null
+          : baseline.coverPhoto?.id
+            ? baseline.coverPhoto
+            : undefined;
   return {
     ...picked,
     photoGroups: synced.photoGroups,
     photos: synced.photos,
+    coverPhoto,
   };
 }
 
@@ -335,6 +347,13 @@ export function coalesceOrderWorkspacePersistBody(
           pickRicherSourceBlock("carinfo", incomingBlocks.carinfo, baselineBlocks.carinfo),
           incomingBlocks.carinfo,
           baselineBlocks.carinfo,
+        ),
+    traficom_fi: wiped.has("traficom_fi")
+      ? incomingBlocks.traficom_fi
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("traficom_fi", incomingBlocks.traficom_fi, baselineBlocks.traficom_fi),
+          incomingBlocks.traficom_fi,
+          baselineBlocks.traficom_fi,
         ),
     ltab: wiped.has("ltab")
       ? incomingBlocks.ltab

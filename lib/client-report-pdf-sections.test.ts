@@ -1932,6 +1932,28 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });
 
+  it("places one cover photo directly under the summary banners", () => {
+    const id = "la_ph_aabbccddeeff001122334455";
+    const src = "data:image/jpeg;base64,/9j/cover";
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingAnalysis: {
+          ...createDefaultSourceBlocks().listing_analysis,
+          coverPhoto: { id },
+        },
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      listingAnalysisPhotoDataUrls: new Map([[id, src]]),
+    });
+    expect(doc).toContain('class="pdf-cover-photo"');
+    expect(doc).toContain(src);
+    expect(doc.indexOf('class="pdf-report-summary')).toBeLessThan(doc.indexOf('class="pdf-cover-photo"'));
+    expect(doc).not.toContain('class="pdf-listing-photo-grid"');
+  });
+
   it("a single source photo prints full width, not a two-column pair", () => {
     const dataUrls = new Map<string, string>([
       ["la_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],

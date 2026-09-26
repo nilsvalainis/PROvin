@@ -119,6 +119,21 @@ export function countListingAnalysisPhotos(groups: ListingAnalysisPhotoGroup[] |
   return flattenListingAnalysisPhotoGroups(groups).length;
 }
 
+/** Viena PDF augšas bilde: sludinājuma ekrānuzņēmums vai auto fotogrāfija. */
+export function parseListingCoverPhoto(raw: unknown): ListingAnalysisPhotoMeta | null {
+  if (!raw || typeof raw !== "object") return null;
+  const id = typeof (raw as { id?: unknown }).id === "string" ? (raw as { id: string }).id.trim() : "";
+  if (!isListingAnalysisPhotoId(id)) return null;
+  return { id };
+}
+
+/** `null` = operators noņēma bildi. `undefined` = lauka šajā payload nav. */
+export function listingCoverFromRaw(raw: unknown): ListingAnalysisPhotoMeta | null | undefined {
+  if (raw === undefined) return undefined;
+  if (raw === null) return null;
+  return parseListingCoverPhoto(raw) ?? undefined;
+}
+
 /** PATCH merge — nekad nezaudē vairāk fotogrāfiju; vienāda skaita gadījumā ienākošā secība (kārtošana). */
 export function mergeListingAnalysisPhotoLists(
   incoming: ListingAnalysisPhotoMeta[] | null | undefined,

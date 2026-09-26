@@ -102,10 +102,11 @@ export async function POST(req: Request) {
     const orderOk = await assertOrderAccess(sessionId);
     if (!orderOk) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+    const isCover = String(form.get("role") ?? "") === "cover";
     const persisted = await persistedPhotoCount(sessionId);
     const effectiveCount =
       Number.isFinite(clientCount) && clientCount >= 0 ? Math.max(persisted, clientCount) : persisted;
-    if (effectiveCount >= LISTING_ANALYSIS_MAX_PHOTOS) {
+    if (!isCover && effectiveCount >= LISTING_ANALYSIS_MAX_PHOTOS) {
       return NextResponse.json({ error: "photo_limit" }, { status: 400 });
     }
 

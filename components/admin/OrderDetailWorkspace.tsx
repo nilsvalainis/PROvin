@@ -17,6 +17,7 @@ import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
+import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhoto";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import {
   AdminEstoniaVinRegistryPair,
@@ -1430,6 +1431,33 @@ export function OrderDetailWorkspace({
       commitWorkspaceLocalNow({ force: true });
       if (orderDraftPersistenceEnabled) {
         await persistFullWorkspaceRef("listing_photos", { showFlash: false });
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
+  const commitListingCoverPhoto = useCallback(
+    async (next: ListingAnalysisBlockState["coverPhoto"]) => {
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const blocks = mergeSourceBlocksWithDefaults(prev.sourceBlocks);
+          const saved = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: {
+              ...blocks,
+              listing_analysis: {
+                ...blocks.listing_analysis,
+                coverPhoto: next,
+              },
+            },
+          });
+          return applyPersistBodyToWs(saved);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        await persistFullWorkspaceRef("listing_cover_photo", { showFlash: false });
       }
     },
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
@@ -3071,9 +3099,13 @@ export function OrderDetailWorkspace({
     );
     const flatSources = blocksToLegacyFlatFields(blocksDisplaySafe);
     const listingBlocks = mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks);
-    const photoIds = (listingBlocks.listing_analysis.photos ?? []).map((p) => p.id);
+    const coverPhotoId = listingBlocks.listing_analysis.coverPhoto?.id ?? "";
+    const galleryPhotoIds = (listingBlocks.listing_analysis.photos ?? [])
+      .map((p) => p.id)
+      .filter((id) => id !== coverPhotoId);
+    const photoIds = [...(coverPhotoId ? [coverPhotoId] : []), ...galleryPhotoIds];
     const listingAnalysisPhotoDataUrls = new Map<string, string>();
-    let resolvedPhotoIds = photoIds;
+    let resolvedPhotoIds = galleryPhotoIds;
     if (!isolate && photoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/listing-analysis-photo/pdf-batch", {
@@ -3092,8 +3124,8 @@ export function OrderDetailWorkspace({
           }
           const fromBatch = Object.keys(data.dataUrls);
           resolvedPhotoIds = [
-            ...photoIds.filter((id) => data.dataUrls![id]),
-            ...fromBatch.filter((id) => !photoIds.includes(id)),
+            ...galleryPhotoIds.filter((id) => data.dataUrls![id]),
+            ...fromBatch.filter((id) => id !== coverPhotoId && !galleryPhotoIds.includes(id)),
           ];
         }
       } catch {
@@ -3103,8 +3135,11 @@ export function OrderDetailWorkspace({
     const listingAnalysisForPdf = {
       ...listingBlocks.listing_analysis,
       photos: resolvedPhotoIds
-        .filter((id) => listingAnalysisPhotoDataUrls.has(id))
+        .filter((id) => id !== coverPhotoId && listingAnalysisPhotoDataUrls.has(id))
         .map((id) => ({ id })),
+      ...(coverPhotoId && listingAnalysisPhotoDataUrls.has(coverPhotoId)
+        ? { coverPhoto: { id: coverPhotoId } }
+        : {}),
     };
 
     const autoRecordsPhotoIds = (listingBlocks.auto_records.photos ?? []).map((p) => p.id);
@@ -4752,6 +4787,12 @@ export function OrderDetailWorkspace({
                 trafficStripClass={TRAFFIC_HEADER_STRIP_CLASS[traffic.listingSection]}
               />
               <div className="space-y-3 bg-transparent px-2 pb-2 pt-2">
+                <AdminListingCoverPhoto
+                  sessionId={payload.sessionId}
+                  photo={blocksDisplaySafe.listing_analysis.coverPhoto}
+                  disabled={!orderDraftPersistenceEnabled}
+                  onCommit={commitListingCoverPhoto}
+                />
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
                 <ListingAnalysisSubsectionHeading
                   className="h-full"
@@ -4932,13 +4973,6 @@ export function OrderDetailWorkspace({
                         busy={aiInspectionBusy}
                         disabled={!payload.aiAllowed}
                         demoOnly={!payload.aiAllowed}
-                        title={
-                          !payload.aiAllowed
-                            ? undefined
-                            : !adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim()
-                              ? "Vispirms ģenerē 1. Tehnisko risku analīzi"
-                              : undefined
-                        }
                         recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.inspection}
                         onGenerate={(operatorNotes, modelTier) =>
                           void runAiInspectionRecommendations(operatorNotes, modelTier)}
@@ -4957,26 +4991,8 @@ export function OrderDetailWorkspace({
                       <AdminAiGenerateWithPrefill
                         label="Sagatavot atbildi"
                         busy={aiSummaryBusy}
-                        disabled={
-                          !payload.aiAllowed ||
-                          !(
-                            adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
-                            adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
-                            adminRichHtmlToPlainText(ws.apskatesPlāns).trim()
-                          )
-                        }
+                        disabled={!payload.aiAllowed}
                         demoOnly={!payload.aiAllowed}
-                        title={
-                          !payload.aiAllowed
-                            ? undefined
-                            : !(
-                                  adminRichHtmlToPlainText(ws.sourceBlocks.listing_analysis.sellerPortrait).trim() ||
-                                  adminRichHtmlToPlainText(ws.tehniskoRiskuAnalize).trim() ||
-                                  adminRichHtmlToPlainText(ws.apskatesPlāns).trim()
-                                )
-                              ? "Vispirms ģenerē vai aizpildi tehnisko risku, pārdevēja vai ieteikumu sadaļu"
-                              : undefined
-                        }
                         recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.summary}
                         onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
                       />

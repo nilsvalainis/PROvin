@@ -16,6 +16,7 @@ import {
   isListingAnalysisPhotoId,
   normalizeListingAnalysisPhotoGroups,
   normalizeListingAnalysisPhotos,
+  parseListingCoverPhoto,
   type ListingAnalysisPhotoMeta,
 } from "@/lib/listing-analysis-photo-types";
 
@@ -63,9 +64,12 @@ export function collectListingAnalysisPhotoIdsFromWorkspace(
   const keep = new Set<string>();
   const raw = workspace?.sourceBlocks;
   if (!raw || typeof raw !== "object") return keep;
-  const la = (raw as { listing_analysis?: { photos?: unknown; photoGroups?: unknown } }).listing_analysis;
+  const la = (raw as { listing_analysis?: { photos?: unknown; photoGroups?: unknown; coverPhoto?: unknown } })
+    .listing_analysis;
   const groups = normalizeListingAnalysisPhotoGroups(la?.photoGroups, la?.photos);
   for (const ph of flattenListingAnalysisPhotoGroups(groups)) keep.add(ph.id);
+  const cover = parseListingCoverPhoto(la?.coverPhoto);
+  if (cover) keep.add(cover.id);
   return keep;
 }
 

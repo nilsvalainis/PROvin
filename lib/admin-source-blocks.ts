@@ -74,6 +74,7 @@ import {
 } from "@/lib/asv-report";
 import {
   countListingAnalysisPhotos,
+  listingCoverFromRaw,
   normalizeListingAnalysisPhotoGroups,
   syncListingAnalysisPhotoGroupsAndFlat,
 } from "@/lib/listing-analysis-photo-types";
@@ -151,6 +152,7 @@ export const SOURCE_BLOCK_KEYS = [
   "mnt_ee",
   "lkf_ee",
   "carinfo",
+  "traficom_fi",
   "ltab",
   "tirgus",
   "citi_avoti",
@@ -161,8 +163,8 @@ export const SOURCE_BLOCK_KEYS = [
 export const VIN_REGISTRY_BLOCK_KEYS = ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const;
 export type VinRegistryBlockKey = (typeof VIN_REGISTRY_BLOCK_KEYS)[number];
 
-/** Tā pati reģistra forma, bet bez VIN API (Finnik PDF / Copilot). */
-export const REGISTRY_STYLE_BLOCK_KEYS = [...VIN_REGISTRY_BLOCK_KEYS, "finnik"] as const;
+/** Tā pati reģistra forma, bet bez VIN API (Finnik / Traficom PDF vai ielīmēts teksts / Copilot). */
+export const REGISTRY_STYLE_BLOCK_KEYS = [...VIN_REGISTRY_BLOCK_KEYS, "finnik", "traficom_fi"] as const;
 
 export function isVinRegistryBlockKey(v: string): v is VinRegistryBlockKey {
   return (VIN_REGISTRY_BLOCK_KEYS as readonly string[]).includes(v);
@@ -198,6 +200,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   mnt_ee: "MNT.EE — Igaunijas reģistrs",
   lkf_ee: "LKF.EE — Igaunijas OCTA",
   carinfo: "ZVIEDRIJAS REĢISTRI",
+  traficom_fi: "SOMIJAS REĢISTRI",
   ltab: "LTAB",
   citi_avoti: "CITI AVOTI",
   listing_analysis: "Sludinājuma analīze",
@@ -219,6 +222,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
   lkf_ee: "https://lkf.ee/et/kahjukontroll",
   carinfo: CARINFO_HOME_URL.replace(/\/$/, ""),
+  traficom_fi: "https://www.traficom.fi",
   citi_avoti: "https://www.provin.lv",
   listing_analysis: "https://www.ss.lv",
 };
@@ -239,6 +243,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   mnt_ee: "text-cyan-700",
   lkf_ee: "text-indigo-700",
   carinfo: "text-teal-700",
+  traficom_fi: "text-blue-600",
   citi_avoti: "text-stone-700",
   listing_analysis: "text-green-700",
 };
@@ -987,6 +992,11 @@ export type ListingAnalysisBlockState = {
   /** Fotogrāfiju grupas ar manuāli ievadāmiem virsrakstiem (datums, avots u.c.). */
   photoGroups: ListingAnalysisPhotoGroup[];
   hidePhotoWatermarks?: boolean;
+  /**
+   * PDF augšas bilde uzreiz zem baneriem.
+   * `null` nozīmē, ka operators to noņēma (merge nedrīkst atjaunot veco).
+   */
+  coverPhoto?: ListingAnalysisPhotoMeta | null;
   /** Papildus pārdevēja / uzņēmuma nosaukums — admin + AI meklēšanai; nav PDF. */
   extraSellerName: string;
   /** Iekopēts neapstrādāts sludinājuma teksts — tikai adminā, nav PDF. */
@@ -1011,6 +1021,7 @@ export type WorkspaceSourceBlocks = {
   mnt_ee: VinRegistryBlockState;
   lkf_ee: VinRegistryBlockState;
   carinfo: VinRegistryBlockState;
+  traficom_fi: VinRegistryBlockState;
   ltab: LtabBlockState;
   citi_avoti: CitiAvotiBlockState;
   listing_analysis: ListingAnalysisBlockState;
@@ -1327,12 +1338,14 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
   const synced = syncListingAnalysisPhotoGroupsAndFlat(
     normalizeListingAnalysisPhotoGroups(raw.photoGroups, raw.photos),
   );
+  const coverPhoto = listingCoverFromRaw(raw.coverPhoto);
   return {
     sellerPortrait,
     photoAnalysis,
     photos: synced.photos,
     photoGroups: synced.photoGroups,
     hidePhotoWatermarks: raw.hidePhotoWatermarks === true,
+    ...(coverPhoto === undefined ? {} : { coverPhoto }),
     extraSellerName,
     listingPasteRaw,
     listingSalesContext,
@@ -1353,6 +1366,7 @@ export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlock
   take(blocks.mnt_ee);
   take(blocks.lkf_ee);
   take(blocks.carinfo);
+  take(blocks.traficom_fi);
   take(blocks.ltab);
   take(blocks.tirgus);
   for (const section of blocks.citi_avoti.sections ?? []) take(section);
@@ -1374,6 +1388,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     mnt_ee: emptyVinRegistryBlock(),
     lkf_ee: emptyVinRegistryBlock(),
     carinfo: emptyVinRegistryBlock(),
+    traficom_fi: emptyVinRegistryBlock(),
     ltab: emptyLtabBlock(),
     citi_avoti: emptyCitiAvotiBlock(),
     listing_analysis: emptyListingAnalysisBlock(),
@@ -2330,6 +2345,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     carvertical: repairVendorBlock(blocks.carvertical),
     tjekbil: repairVinRegistryBlock(blocks.tjekbil),
     finnik: repairVinRegistryBlock(blocks.finnik),
+    traficom_fi: repairVinRegistryBlock(blocks.traficom_fi),
     mnt_ee: repairVinRegistryBlock(blocks.mnt_ee),
     lkf_ee: repairVinRegistryBlock(blocks.lkf_ee),
     carinfo: repairVinRegistryBlock(blocks.carinfo),
@@ -2394,12 +2410,14 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
           blocks.listing_analysis?.photos,
         ),
       );
+      const coverPhoto = listingCoverFromRaw(blocks.listing_analysis?.coverPhoto);
       return {
         sellerPortrait: wsStr(blocks.listing_analysis?.sellerPortrait),
         photoAnalysis: wsStr(blocks.listing_analysis?.photoAnalysis),
         photos: synced.photos,
         photoGroups: synced.photoGroups,
         hidePhotoWatermarks: blocks.listing_analysis?.hidePhotoWatermarks === true,
+        ...(coverPhoto === undefined ? {} : { coverPhoto }),
         extraSellerName: wsStr(blocks.listing_analysis?.extraSellerName),
         listingPasteRaw: wsStr(blocks.listing_analysis?.listingPasteRaw),
         listingSalesContext: wsStr(blocks.listing_analysis?.listingSalesContext),
