@@ -25,16 +25,18 @@ export function AdminListingPeekPhotos({
   photos: ListingPeekPhotoRef[];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropDepth = useRef(0);
   const incoming = initialPhotos.map((p) => p.id).join(",");
   const [photos, setPhotos] = useState<ListingPeekPhotoRef[]>(initialPhotos);
   const [busy, setBusy] = useState(false);
+  const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setPhotos(incoming ? incoming.split(",").map((id) => ({ id })) : []);
   }, [incoming]);
 
-  async function uploadFiles(list: FileList | null) {
+  async function uploadFiles(list: FileList | File[] | null) {
     if (!list || list.length === 0 || busy) return;
     setBusy(true);
     setError(null);
@@ -104,31 +106,70 @@ export function AdminListingPeekPhotos({
   }
 
   const full = photos.length >= LISTING_PEEK_MAX_PHOTOS;
+  const locked = busy || full;
 
   return (
     <div className="mt-2">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <label
-          className={`inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] transition hover:bg-slate-50 ${
-            busy || full ? "cursor-not-allowed opacity-40" : ""
-          }`}
-          title="Fotogrāfijas aiziet klientam kopā ar e-pastu"
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,.heic,.heif"
+        multiple
+        disabled={locked}
+        className="sr-only"
+        aria-label="Pievienot fotogrāfijas klientam"
+        onChange={(e) => void uploadFiles(e.target.files)}
+      />
+      <div
+        title="Fotogrāfijas aiziet klientam kopā ar e-pastu"
+        onClick={() => {
+          if (!locked) inputRef.current?.click();
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropDepth.current += 1;
+          if (!locked) setDropActive(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = locked ? "none" : "copy";
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropDepth.current = Math.max(0, dropDepth.current - 1);
+          if (dropDepth.current === 0) setDropActive(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropDepth.current = 0;
+          setDropActive(false);
+          if (locked) return;
+          void uploadFiles(e.dataTransfer.files);
+        }}
+        className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-1.5 rounded-lg border border-dashed px-2 py-1.5 transition ${
+          dropActive
+            ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent)]/10"
+            : "border-slate-300 bg-slate-50/80 hover:border-[var(--color-provin-accent)]/50"
+        } ${locked ? "cursor-not-allowed opacity-60" : ""}`}
+      >
+        <button
+          type="button"
+          disabled={locked}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!locked) inputRef.current?.click();
+          }}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-apple-text)] disabled:cursor-not-allowed"
         >
           {busy ? <Loader2 size={13} className="animate-spin" aria-hidden /> : <Camera size={13} aria-hidden />}
-          Foto
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*,.heic,.heif"
-            multiple
-            disabled={busy || full}
-            className="sr-only"
-            aria-label="Pievienot fotogrāfijas klientam"
-            onChange={(e) => void uploadFiles(e.target.files)}
-          />
-        </label>
+          {full ? "Pilns" : "Ievilc vai izvēlies"}
+        </button>
         <span className="text-[10px] uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-          klientam{photos.length > 0 ? ` · ${photos.length}` : ""}
+          klientam {photos.length}/{LISTING_PEEK_MAX_PHOTOS}
         </span>
         {photos.map((photo) => (
           <span key={photo.id} className="relative inline-flex">
@@ -142,7 +183,10 @@ export function AdminListingPeekPhotos({
               type="button"
               aria-label="Noņemt foto"
               disabled={busy}
-              onClick={() => void removePhoto(photo.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                void removePhoto(photo.id);
+              }}
               className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-40"
             >
               <X size={10} aria-hidden />
