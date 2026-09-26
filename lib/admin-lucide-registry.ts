@@ -53,6 +53,7 @@ export const SOURCE_BLOCK_LUCIDE: Record<SourceBlockKey, LucideIcon> = {
   mnt_ee: Landmark,
   lkf_ee: Shield,
   carinfo: Globe,
+  traficom_fi: Landmark,
   ltab: Shield,
   tirgus: History,
   citi_avoti: Layers,

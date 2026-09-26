@@ -133,6 +133,7 @@ export const SOURCE_BLOCK_ICON: Record<SourceBlockKey, SectionIconId> = {
   mnt_ee: "fileText",
   lkf_ee: "shield",
   carinfo: "history",
+  traficom_fi: "flag",
   ltab: "shield",
   tirgus: "history",
   citi_avoti: "layers",
@@ -157,5 +158,6 @@ export function vendorPdfTitleToIconId(title: string): SectionIconId {
   if (title === SOURCE_BLOCK_LABELS.mnt_ee) return "fileText";
   if (title === SOURCE_BLOCK_LABELS.lkf_ee) return "shield";
   if (title === SOURCE_BLOCK_LABELS.carinfo) return "history";
+  if (title === SOURCE_BLOCK_LABELS.traficom_fi) return "flag";
   return "layers";
 }
