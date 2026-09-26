@@ -1482,16 +1482,6 @@ function buildSourcePhotoGroupsPdfHtml(
     }
   }
   if (resolvedCount === 0) return "";
-  const useFull = resolvedCount === 1 || layout === "stack";
-  const gridCls = useFull
-    ? "pdf-listing-photo-grid pdf-listing-photo-grid--full"
-    : layout === "appendix"
-      ? "pdf-listing-photo-grid pdf-listing-photo-grid--appendix"
-      : "pdf-listing-photo-grid";
-  const cellCls =
-    layout === "appendix" && !useFull
-      ? "pdf-listing-photo-cell pdf-listing-photo-cell--appendix"
-      : "pdf-listing-photo-cell";
 
   const sections: string[] = [];
   let photoIndex = 0;
@@ -1505,16 +1495,28 @@ function buildSourcePhotoGroupsPdfHtml(
         layout === "appendix"
           ? `<figcaption class="pdf-listing-photo-cap">${String(photoIndex).padStart(2, "0")}</figcaption>`
           : "";
-      cells.push(
-        `<figure class="${cellCls}"><img class="pdf-listing-photo-img" src="${src}" alt=""/>${cap}</figure>`,
-      );
+      cells.push({ src, cap });
     }
     if (cells.length === 0) continue;
+    const useFull = cells.length === 1 || layout === "stack";
+    const gridCls = useFull
+      ? "pdf-listing-photo-grid pdf-listing-photo-grid--full"
+      : layout === "appendix"
+        ? "pdf-listing-photo-grid pdf-listing-photo-grid--appendix"
+        : "pdf-listing-photo-grid";
+    const cellCls =
+      layout === "appendix" && !useFull
+        ? "pdf-listing-photo-cell pdf-listing-photo-cell--appendix"
+        : "pdf-listing-photo-cell";
+    const figures = cells.map(
+      ({ src, cap }) =>
+        `<figure class="${cellCls}"><img class="pdf-listing-photo-img" src="${src}" alt=""/>${cap}</figure>`,
+    );
     const titleHtml = group.title.trim()
       ? `<p class="pdf-subhead pdf-subhead--photo"><span class="pdf-subhead__ico" aria-hidden="true">${sectionIconPdfHtml("camera")}</span><span>${escapeHtml(group.title.trim())}</span></p>`
       : "";
     sections.push(
-      `<section class="pdf-listing-photo-group">${titleHtml}<div class="${gridCls}">${cells.join("")}</div></section>`,
+      `<section class="pdf-listing-photo-group">${titleHtml}<div class="${gridCls}">${figures.join("")}</div></section>`,
     );
   }
   return sections.join("");

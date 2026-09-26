@@ -1961,6 +1961,50 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(1);
   });
 
+  it("a one-photo listing group stays full width even when another group has a pair", () => {
+    const dataUrls = new Map<string, string>([
+      ["la_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],
+      ["la_ph_112233445566778899aabbcc", "data:image/jpeg;base64,/9j/4AAQ"],
+      ["la_ph_aabbccddeeff998877665544", "data:image/jpeg;base64,/9j/4AAQ"],
+    ]);
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        listingAnalysis: {
+          ...createDefaultSourceBlocks().listing_analysis,
+          photoGroups: [
+            {
+              id: "la_phg_aabbccddeeff001122334455",
+              title: "Viena",
+              photos: [{ id: "la_ph_aabbccddeeff001122334455" }],
+            },
+            {
+              id: "la_phg_112233445566778899aabbcc",
+              title: "Pāris",
+              photos: [
+                { id: "la_ph_112233445566778899aabbcc" },
+                { id: "la_ph_aabbccddeeff998877665544" },
+              ],
+            },
+          ],
+          photos: [
+            { id: "la_ph_aabbccddeeff001122334455" },
+            { id: "la_ph_112233445566778899aabbcc" },
+            { id: "la_ph_aabbccddeeff998877665544" },
+          ],
+        },
+        pdfVisibility: mergePdfVisibility({ sludinajums: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      listingAnalysisPhotoDataUrls: dataUrls,
+    });
+    expect(doc).toContain('class="pdf-listing-photo-grid pdf-listing-photo-grid--full"');
+    expect(doc).toContain('class="pdf-listing-photo-grid">');
+    expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(3);
+  });
+
   it("auto records photos print as a numbered two-column appendix", () => {
     const dataUrls = new Map<string, string>([
       ["ar_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],
