@@ -41,6 +41,10 @@ type Props = {
   onOpenPhrases: () => void;
   onGoSummary: () => void;
   onGeneratePdf: () => void;
+  onGenerateBusinessPdf: () => void;
+  onGenerateBusinessPdfEn: () => void;
+  onGenerateBusinessPdfRu: () => void;
+  onGenerateBusinessPdfDe: () => void;
   onGenerateDealerPdf: () => void;
   onGenerateDealerPdfEn: () => void;
   onGenerateDealerPdfRu: () => void;
@@ -163,6 +167,10 @@ export function AdminOrderMobileDock({
   onOpenPhrases,
   onGoSummary,
   onGeneratePdf,
+  onGenerateBusinessPdf,
+  onGenerateBusinessPdfEn,
+  onGenerateBusinessPdfRu,
+  onGenerateBusinessPdfDe,
   onGenerateDealerPdf,
   onGenerateDealerPdfEn,
   onGenerateDealerPdfRu,
@@ -286,6 +294,23 @@ export function AdminOrderMobileDock({
             onEn={() => runPdf(onGeneratePdfEn)}
             onRu={() => runPdf(onGeneratePdfRu)}
             onDe={() => runPdf(onGeneratePdfDe)}
+          />
+          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateBusinessPdf)}>
+            <FileText className="h-4 w-4 shrink-0 text-violet-600" strokeWidth={1.5} aria-hidden />
+            <span className="min-w-0">
+              <span className="block">{pdfProgressKey === "business" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt BUSINESS PDF"}</span>
+              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">
+                Virsraksts PROVIN BUSINESS VĒSTURES AUDITS
+              </span>
+            </span>
+          </button>
+          <PdfLangRow
+            progressKey={pdfProgressKey}
+            progressPct={pdfProgressPct}
+            keys={{ en: "business-en", ru: "business-ru", de: "business-de" }}
+            onEn={() => runPdf(onGenerateBusinessPdfEn)}
+            onRu={() => runPdf(onGenerateBusinessPdfRu)}
+            onDe={() => runPdf(onGenerateBusinessPdfDe)}
           />
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdf)}>
             <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />

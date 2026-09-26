@@ -1825,6 +1825,25 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain('class="pdf-csdd');
   });
 
+  it("business report keeps full content and only swaps the title", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        pdfReportKind: "business",
+        iriss: "Pilns kopsavilkums partnerim.",
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("PROVIN BUSINESS VĒSTURES AUDITS");
+    expect(doc).not.toContain("TRANSPORTLĪDZEKĻA AUDITS");
+    expect(doc).not.toContain(">PROVIN AUDITS<");
+    expect(doc).toContain("APPROVED BY IRISS");
+    expect(doc).toContain("Pilns kopsavilkums partnerim.");
+    expect((doc.match(/PROVIN BUSINESS VĒSTURES AUDITS/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+
   it("citi avoti subheads use manual label only, without CITI AVOTI prefix", () => {
     const p = {
       citiAvoti: {

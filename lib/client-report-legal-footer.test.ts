@@ -28,6 +28,7 @@ describe("client report legal footer", () => {
     expect(formatPdfDocFooterProductLabel("PROVIN_AUDITS")).toBe("PROVIN AUDITS");
     expect(formatPdfDocFooterProductLabel("PROVIN_MINI")).toBe("PROVIN MINI");
     expect(formatPdfDocFooterProductLabel("PROVIN_DILERIS")).toBe("OFICIĀLĀ DĪLERA DATI");
+    expect(formatPdfDocFooterProductLabel("PROVIN_BUSINESS")).toBe("PROVIN BUSINESS VĒSTURES AUDITS");
     expect(
       buildPdfDocFooterIdentityLine({
         productLabel: "PROVIN AUDITS",
@@ -66,6 +67,14 @@ describe("client report legal footer", () => {
         productBrand: "PROVIN_DILERIS",
       }),
     ).toContain("OFICIĀLĀ DĪLERA DATI");
+    expect(
+      buildPdfDocFooterHtml({
+        vin: "WVWZZZ1JZXW000001",
+        amountTotalCents: 9999,
+        generatedLabel: "Ģenerēts 23.08.2026",
+        productBrand: "PROVIN_BUSINESS",
+      }),
+    ).toContain("PROVIN BUSINESS VĒSTURES AUDITS");
     expect(html).toContain("Atruna");
     expect(html).toContain("Konfidencialitāte");
     expect(html).not.toContain("Nils Valainis");

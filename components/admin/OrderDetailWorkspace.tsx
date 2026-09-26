@@ -232,6 +232,7 @@ import {
   buildOemDealerPdfFilename,
   buildProvinAsvPdfFilename,
   buildProvinAuditPdfFilename,
+  buildProvinBusinessPdfFilename,
   buildProvinDilerisPdfFilename,
 } from "@/lib/audit-report-pdf-filename";
 import { buildOemDealerDocumentHtml } from "@/lib/pdf-dealer-oem";
@@ -2989,11 +2990,20 @@ export function OrderDetailWorkspace({
     printInk?: boolean;
     dealerOnly?: boolean;
     asvOnly?: boolean;
+    businessBrand?: boolean;
     lang?: ClientReportLang;
   }) => {
     if (pdfBusyRef.current) return;
     const pdfJobKey = [
-      opts?.dealerOnly ? "dealer" : opts?.asvOnly ? "asv" : opts?.printInk ? "ink" : "pdf",
+      opts?.dealerOnly
+        ? "dealer"
+        : opts?.asvOnly
+          ? "asv"
+          : opts?.businessBrand
+            ? "business"
+            : opts?.printInk
+              ? "ink"
+              : "pdf",
       opts?.lang && opts.lang !== "lv" ? opts.lang : "",
     ]
       .filter(Boolean)
@@ -3012,6 +3022,7 @@ export function OrderDetailWorkspace({
 
     const dealerOnly = opts?.dealerOnly === true;
     const asvOnly = opts?.asvOnly === true;
+    const businessBrand = opts?.businessBrand === true;
     const isolate = dealerOnly || asvOnly;
 
     let listingMarket: ListingMarketSnapshot | null = null;
@@ -3274,7 +3285,7 @@ export function OrderDetailWorkspace({
         : asvOnly
           ? ASV_ONLY_PDF_VISIBILITY
           : pdfVisibility,
-      pdfReportKind: dealerOnly ? "dealer" : asvOnly ? "asv" : "full",
+      pdfReportKind: dealerOnly ? "dealer" : asvOnly ? "asv" : businessBrand ? "business" : "full",
       pdfBannerInclude: dealerOnly ? {} : pdfBannerInclude,
       manualBanners: dealerOnly ? [] : manualBanners,
       internalComment: isolate ? "" : internalCommentDraft,
@@ -3347,10 +3358,12 @@ export function OrderDetailWorkspace({
       ? buildProvinDilerisPdfFilename(payload.vin)
       : asvOnly
         ? buildProvinAsvPdfFilename(payload.vin)
-        : buildProvinAuditPdfFilename(payload.vin, {
-            checkoutLine: payload.checkoutLine,
-            amountTotalCents: payload.amountTotal,
-          });
+        : businessBrand
+          ? buildProvinBusinessPdfFilename(payload.vin)
+          : buildProvinAuditPdfFilename(payload.vin, {
+              checkoutLine: payload.checkoutLine,
+              amountTotalCents: payload.amountTotal,
+            });
     const langSuffix = reportLang === "en" ? "_EN" : reportLang === "ru" ? "_RU" : reportLang === "de" ? "_DE" : "";
     const printFileTitle = opts?.printInk
       ? printTitle.replace(/\.pdf$/i, `${langSuffix}_drukai.pdf`)
@@ -4367,6 +4380,10 @@ export function OrderDetailWorkspace({
         onGeneratePdfEn={() => void openPrintReport({ lang: "en" })}
         onGeneratePdfRu={() => void openPrintReport({ lang: "ru" })}
         onGeneratePdfDe={() => void openPrintReport({ lang: "de" })}
+        onGenerateBusinessPdf={() => void openPrintReport({ businessBrand: true })}
+        onGenerateBusinessPdfEn={() => void openPrintReport({ businessBrand: true, lang: "en" })}
+        onGenerateBusinessPdfRu={() => void openPrintReport({ businessBrand: true, lang: "ru" })}
+        onGenerateBusinessPdfDe={() => void openPrintReport({ businessBrand: true, lang: "de" })}
         onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
         onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
         onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
@@ -4988,6 +5005,15 @@ export function OrderDetailWorkspace({
             toneClass="border border-emerald-800/40 bg-[#22C55E] text-white shadow-sm hover:bg-[#16a34a]"
             onPrimary={() => void openPrintReport()}
             onLang={(lang) => void openPrintReport({ lang })}
+          />
+          <AdminPdfLangSplitButton
+            label="Ģenerēt BUSINESS PDF"
+            title="Tā pati atskaite ar virsrakstu PROVIN BUSINESS VĒSTURES AUDITS."
+            busyLabel={pdfFamilyBusy("business")}
+            disabled={pdfJob !== null}
+            toneClass="border border-violet-800/40 bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+            onPrimary={() => void openPrintReport({ businessBrand: true })}
+            onLang={(lang) => void openPrintReport({ businessBrand: true, lang })}
           />
           <AdminPdfLangSplitButton
             label="Ģenerēt dīlera PDF"

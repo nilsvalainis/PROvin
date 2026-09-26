@@ -2,11 +2,16 @@ import type { CheckoutLineKind } from "@/lib/stripe-session";
 
 /**
  * Klienta audita PDF pielikuma standarta nosaukums.
- * Formāts: PROVIN_AUDITS_<VIN>.pdf, PROVIN_MINI_<VIN>.pdf vai OFICIALA_DILERA_DATI_<VIN>.pdf
+ * Formāts: PROVIN_AUDITS_<VIN>.pdf, PROVIN_MINI_<VIN>.pdf, PROVIN_BUSINESS_<VIN>.pdf
+ * vai OFICIALA_DILERA_DATI_<VIN>.pdf
  * (atkarībā no pasūtītā produkta vai dīlera-only ģenerēšanas; VIN - tikai burti un cipari, lielie burti).
  */
 
-export type ProvinAuditPdfProductBrand = "PROVIN_AUDITS" | "PROVIN_MINI" | "PROVIN_DILERIS";
+export type ProvinAuditPdfProductBrand =
+  | "PROVIN_AUDITS"
+  | "PROVIN_MINI"
+  | "PROVIN_DILERIS"
+  | "PROVIN_BUSINESS";
 
 /** MINI = 39,99 €; AUDITS = 99,99 € (un vecāki 79,99 € audit pasūtījumi). */
 const MINI_AMOUNT_CENTS = 3999;
@@ -60,6 +65,11 @@ export function buildOemDealerPdfFilename(vin: string | null | undefined): strin
   const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const slug = v.length > 0 ? v : "NAV_VIN";
   return `OEM_DILERA_DATI_${slug}.pdf`;
+}
+
+/** PROVIN BUSINESS vēstures audits (tā pati atskaite, cits virsraksts). */
+export function buildProvinBusinessPdfFilename(vin: string | null | undefined): string {
+  return buildProvinAuditPdfFilename(vin, { brand: "PROVIN_BUSINESS" });
 }
 
 /** Tikai ASV vēsture (VIN Audit / PROVIN noformējums). */

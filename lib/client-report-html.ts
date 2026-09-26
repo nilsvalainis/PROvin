@@ -133,6 +133,7 @@ import {
   type SectionIconId,
 } from "@/lib/section-icons";
 import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
+import { PDF_BUSINESS_DOC_TITLE } from "@/lib/report-pdf-standards";
 import {
   clientReportPrintInkCss,
   PROVIN_REPORT_PRINT_INK_CLASS,
@@ -214,6 +215,9 @@ function isDealerOnlyReport(p: ClientReportPayload): boolean {
 }
 function isAsvOnlyReport(p: ClientReportPayload): boolean {
   return p.pdfReportKind === "asv";
+}
+function isBusinessBrandReport(p: ClientReportPayload): boolean {
+  return p.pdfReportKind === "business";
 }
 const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
@@ -318,8 +322,8 @@ export type ClientReportPayload = {
   listingAnalysis?: ListingAnalysisBlockState | null;
   /** Ja nav - PDF iekļauj visu (admin noklusējums). */
   pdfVisibility?: PdfVisibilitySettings | null;
-  /** `dealer`: tikai OFICIĀLĀ DĪLERA DATI, bez hubu / citu avotu sekcijām. */
-  pdfReportKind?: "full" | "dealer" | "asv";
+  /** `dealer`: tikai OFICIĀLĀ DĪLERA DATI. `business`: pilna atskaite ar BUSINESS virsrakstu. */
+  pdfReportKind?: "full" | "dealer" | "asv" | "business";
   /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums - visi ieslēgti). */
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
   /** Manuāli pievienoti augšējās joslas brīdinājumi. */
@@ -3042,6 +3046,7 @@ export function buildClientReportDocumentHtml(args: {
   } = args;
   const dealerOnly = isDealerOnlyReport(p);
   const asvOnly = isAsvOnlyReport(p);
+  const businessBrand = isBusinessBrandReport(p);
   const vis = dealerOnly
     ? DEALER_ONLY_PDF_VISIBILITY
     : asvOnly
@@ -3063,7 +3068,13 @@ export function buildClientReportDocumentHtml(args: {
   lines.push('<div class="pdf-v1-hero-text">');
   lines.push(
     `<h1 class="pdf-v1-doc-title">${escapeHtml(
-      dealerOnly ? OFFICIAL_DEALER_SECTION_TITLE : asvOnly ? ASV_PDF_TITLE : PDF_MAIN_TITLE,
+      dealerOnly
+        ? OFFICIAL_DEALER_SECTION_TITLE
+        : asvOnly
+          ? ASV_PDF_TITLE
+          : businessBrand
+            ? PDF_BUSINESS_DOC_TITLE
+            : PDF_MAIN_TITLE,
     )}</h1>`,
   );
   {
@@ -3175,7 +3186,7 @@ export function buildClientReportDocumentHtml(args: {
       vin: p.vin,
       amountTotalCents: p.amountTotal,
       generatedLabel: `Ģenerēts ${dateFmt.format(new Date())}`,
-      productBrand: dealerOnly ? "PROVIN_DILERIS" : undefined,
+      productBrand: dealerOnly ? "PROVIN_DILERIS" : businessBrand ? "PROVIN_BUSINESS" : undefined,
     }),
   );
   lines.push("</div>");

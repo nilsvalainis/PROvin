@@ -9,7 +9,11 @@
  * - Krāsas / fonti saskaņā ar provin.lv (ne trešo pušu UI krāsas kā „oficiālas”).
  */
 
+import type { ProvinAuditPdfProductBrand } from "@/lib/audit-report-pdf-filename";
 import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
+
+/** BUSINESS PDF virsraksts (augša un kājene). */
+export const PDF_BUSINESS_DOC_TITLE = "PROVIN BUSINESS VĒSTURES AUDITS";
 
 export const REPORT_PDF_STANDARDS = {
   firstPageExpertBlockTitle: "Ieteikumi klātienes apskatei · Kopsavilkums",
@@ -110,11 +114,10 @@ export type ClientReportLegalFooterBlocks = {
   gdprLine: string;
 };
 
-export function formatPdfDocFooterProductLabel(
-  brand: "PROVIN_AUDITS" | "PROVIN_MINI" | "PROVIN_DILERIS",
-): string {
+export function formatPdfDocFooterProductLabel(brand: ProvinAuditPdfProductBrand): string {
   if (brand === "PROVIN_MINI") return "PROVIN MINI";
   if (brand === "PROVIN_DILERIS") return OFFICIAL_DEALER_SECTION_TITLE;
+  if (brand === "PROVIN_BUSINESS") return PDF_BUSINESS_DOC_TITLE;
   return "PROVIN AUDITS";
 }
 

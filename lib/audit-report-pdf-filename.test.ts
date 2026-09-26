@@ -3,6 +3,7 @@ import {
   buildOemDealerPdfFilename,
   buildProvinAsvPdfFilename,
   buildProvinAuditPdfFilename,
+  buildProvinBusinessPdfFilename,
   buildProvinDilerisPdfFilename,
   resolveProvinAuditPdfProductBrand,
 } from "@/lib/audit-report-pdf-filename";
@@ -45,6 +46,13 @@ describe("buildProvinAuditPdfFilename", () => {
   it("builds OEM_DILERA_DATI_<VIN>.pdf for factory-style dealer dumps", () => {
     expect(buildOemDealerPdfFilename("WVWZZZ1JZXW000001")).toBe("OEM_DILERA_DATI_WVWZZZ1JZXW000001.pdf");
     expect(buildOemDealerPdfFilename(null)).toBe("OEM_DILERA_DATI_NAV_VIN.pdf");
+  });
+
+  it("builds PROVIN_BUSINESS_<VIN>.pdf for the B2B report", () => {
+    expect(buildProvinBusinessPdfFilename("WVWZZZ1JZXW000001")).toBe(
+      "PROVIN_BUSINESS_WVWZZZ1JZXW000001.pdf",
+    );
+    expect(buildProvinBusinessPdfFilename(null)).toBe("PROVIN_BUSINESS_NAV_VIN.pdf");
   });
 
   it("builds PROVIN_ASV_<VIN>.pdf for US-only reports", () => {
