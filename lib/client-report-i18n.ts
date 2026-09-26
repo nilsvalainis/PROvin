@@ -25,9 +25,9 @@ type StaticTranslationEntry = { en: string; ru: string };
 const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   // Galvenie virsraksti
   "TRANSPORTLĪDZEKĻA AUDITS": { en: "VEHICLE HISTORY AUDIT", ru: "АУДИТ ИСТОРИИ АВТОМОБИЛЯ" },
-  "PROVIN BUSINESS VĒSTURES AUDITS": {
-    en: "PROVIN BUSINESS HISTORY AUDIT",
-    ru: "PROVIN BUSINESS АУДИТ ИСТОРИИ",
+  "PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS": {
+    en: "PROVIN BUSINESS VEHICLE HISTORY AUDIT",
+    ru: "PROVIN BUSINESS АУДИТ ИСТОРИИ АВТОМОБИЛЯ",
   },
   "APPROVED BY IRISS": { en: "APPROVED BY IRISS", ru: "APPROVED BY IRISS" },
 
@@ -191,7 +191,7 @@ function escapeRegExp(s: string): string {
 /** Vācu statiskais apvalks. Katram STATIC_TRANSLATIONS atslēgas vārdam jābūt ierakstam. */
 export const CLIENT_REPORT_DE: Record<string, string> = {
   "TRANSPORTLĪDZEKĻA AUDITS": "FAHRZEUGHISTORIE-AUDIT",
-  "PROVIN BUSINESS VĒSTURES AUDITS": "PROVIN BUSINESS HISTORIENAUDIT",
+  "PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS": "PROVIN BUSINESS FAHRZEUGHISTORIE-AUDIT",
   "APPROVED BY IRISS": "APPROVED BY IRISS",
   "1. Tehnisko risku analīze": "1. Analyse der technischen Risiken",
   "2. Ieteikumi klātienes apskatei": "2. Empfehlungen für die Besichtigung vor Ort",

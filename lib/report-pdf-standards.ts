@@ -13,7 +13,7 @@ import type { ProvinAuditPdfProductBrand } from "@/lib/audit-report-pdf-filename
 import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
 
 /** BUSINESS PDF virsraksts (augša un kājene). */
-export const PDF_BUSINESS_DOC_TITLE = "PROVIN BUSINESS VĒSTURES AUDITS";
+export const PDF_BUSINESS_DOC_TITLE = "PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS";
 
 export const REPORT_PDF_STANDARDS = {
   firstPageExpertBlockTitle: "Ieteikumi klātienes apskatei · Kopsavilkums",

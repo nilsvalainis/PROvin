@@ -14,8 +14,8 @@ describe("translateClientReportStatic", () => {
 
   it("translates a known label to English", () => {
     expect(translateClientReportStatic("3. Kopsavilkums", "en")).toBe("3. Summary");
-    expect(translateClientReportStatic("PROVIN BUSINESS VĒSTURES AUDITS", "en")).toBe(
-      "PROVIN BUSINESS HISTORY AUDIT",
+    expect(translateClientReportStatic("PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS", "en")).toBe(
+      "PROVIN BUSINESS VEHICLE HISTORY AUDIT",
     );
   });
 

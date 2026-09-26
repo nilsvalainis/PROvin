@@ -300,7 +300,7 @@ export function AdminOrderMobileDock({
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "business" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt BUSINESS PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">
-                Virsraksts PROVIN BUSINESS VĒSTURES AUDITS
+                Virsraksts PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS
               </span>
             </span>
           </button>
