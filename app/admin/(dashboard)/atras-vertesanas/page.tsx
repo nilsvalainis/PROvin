@@ -6,6 +6,7 @@ import { AdminListingPeekActionRow } from "@/components/admin/AdminListingPeekAc
 import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListingPeekCommentComposer";
 import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 import { AdminListingPeekPhoneField } from "@/components/admin/AdminListingPeekPhoneField";
+import { AdminListingPeekPhotos } from "@/components/admin/AdminListingPeekPhotos";
 import {
   AdminListingPeekCardShell,
   AdminListingPeekSla,
@@ -284,6 +285,8 @@ function PeekCard({
           </button>
         </form>
       </div>
+
+      <AdminListingPeekPhotos peekId={e.id} photos={e.photos ?? []} />
 
       {/* Vērtēšana notiek stāvot pie auto, tāpēc lēmums ir īkšķa zonā. */}
       <form action={setStatus} className="mt-3 grid grid-cols-3 gap-2 md:hidden">

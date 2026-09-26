@@ -16,6 +16,7 @@ import {
 } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { listingPeekPhotoCid } from "@/lib/listing-peek-photos";
 import { buildClientReportLegalFooterPlainText } from "@/lib/report-pdf-standards";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
@@ -459,6 +460,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
   to: string;
   comment: string;
   listingUrl?: string | null;
+  photos?: { id: string; jpeg: Buffer }[];
 }): Promise<void> {
   const origin = getSiteOrigin().replace(/\/$/, "");
   const auditsUrl =
@@ -467,6 +469,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
       : `${origin}/?plan=audits#home-hero`;
   const comment = opts.comment.trim();
   const listingUrl = (opts.listingUrl ?? "").trim();
+  const photos = (opts.photos ?? []).filter((p) => p.id.trim() && p.jpeg.length > 0);
   const subject = "PROVIN: īss komentārs par tavu sludinājumu";
   const text = [
     "Labdien!",
@@ -475,6 +478,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     ...(listingUrl ? ["", listingUrl] : []),
     "",
     comment,
+    ...(photos.length > 0 ? ["", `Pielikumā ${photos.length} fotogrāfijas.`] : []),
     "",
     "Noskaidro visu par savu topošo auto.",
     "PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.",
@@ -485,13 +489,20 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     "Ar cieņu,",
     "PROVIN.LV",
   ].join("\n");
-  const html = listingPeekCustomerCommentHtml({ comment, auditsUrl, listingUrl });
+  const photoCids = photos.map((p) => listingPeekPhotoCid(p.id));
+  const html = listingPeekCustomerCommentHtml({ comment, auditsUrl, listingUrl, photoCids });
 
   await sendSmtpMail({
     to: opts.to,
     subject,
     text,
     html,
+    attachments: photos.map((p, index) => ({
+      filename: `provin-foto-${index + 1}.jpg`,
+      content: p.jpeg,
+      contentType: "image/jpeg",
+      cid: listingPeekPhotoCid(p.id),
+    })),
   });
 }
 

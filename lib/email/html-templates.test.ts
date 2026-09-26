@@ -16,6 +16,18 @@ describe("listingPeekCustomerCommentHtml", () => {
     expect(html.indexOf("Sludinājums")).toBeLessThan(html.indexOf("Sveiki!"));
   });
 
+  it("embeds operator photos by content id", () => {
+    const html = listingPeekCustomerCommentHtml({
+      comment: "Sveiki!",
+      auditsUrl: "https://provin.lv/?plan=audits#home-hero",
+      listingUrl,
+      photoCids: ["peek-photo-11111111-1111-4111-8111-111111111111@provin.lv"],
+    });
+    expect(html).toContain("Fotogrāfijas");
+    expect(html).toContain('src="cid:peek-photo-11111111-1111-4111-8111-111111111111@provin.lv"');
+    expect(html.indexOf("Sveiki!")).toBeLessThan(html.indexOf("Fotogrāfijas"));
+  });
+
   it("omits javascript URLs", () => {
     const html = listingPeekCustomerCommentHtml({
       comment: "Sveiki!",

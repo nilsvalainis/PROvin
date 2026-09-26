@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isSmtpConfigured, sendListingPeekCustomerCommentEmail } from "@/lib/email/send-transactional";
+import { readListingPeekPhotoJpeg } from "@/lib/listing-peek-photo-bytes";
 import { parseListingPeekSendCommentInput } from "@/lib/listing-peek-send-comment-input";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import { getListingPeekById, markListingPeekCommentSent } from "@/lib/listing-peek-store";
@@ -26,10 +27,16 @@ export async function sendListingPeekCustomerComment(input: {
   }
 
   try {
+    const photos: { id: string; jpeg: Buffer }[] = [];
+    for (const photo of entry.photos ?? []) {
+      const jpeg = await readListingPeekPhotoJpeg(entry.id, photo.id);
+      if (jpeg && jpeg.length > 0) photos.push({ id: photo.id, jpeg });
+    }
     await sendListingPeekCustomerCommentEmail({
       to: entry.email,
       comment: parsed.comment,
       listingUrl: entry.listingUrl,
+      photos,
     });
     await markListingPeekCommentSent(parsed.id, parsed.comment);
     return { ok: true };

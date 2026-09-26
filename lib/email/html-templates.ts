@@ -122,6 +122,8 @@ export function listingPeekCustomerCommentHtml(opts: {
   comment: string;
   auditsUrl: string;
   listingUrl?: string | null;
+  /** CID vērtības (`peek-photo-…@provin.lv`) inline attēliem. */
+  photoCids?: string[];
 }): string {
   const paragraphs = opts.comment
     .trim()
@@ -148,6 +150,18 @@ export function listingPeekCustomerCommentHtml(opts: {
 <a href="${esc(listingHref)}" target="_blank" style="color:${BRAND};text-decoration:underline;word-break:break-all;">${esc(listingHref)}</a></p>`
     : "";
 
+  const photoCids = (opts.photoCids ?? []).map((cid) => cid.trim()).filter(Boolean);
+  const photoBlock =
+    photoCids.length > 0
+      ? `<p style="margin:4px 0 10px;font-size:13px;line-height:1.45;color:${MUTED};">Fotogrāfijas</p>
+${photoCids
+  .map(
+    (cid) =>
+      `<img src="cid:${esc(cid)}" alt="" width="520" style="display:block;width:100%;max-width:520px;height:auto;margin:0 0 12px;border:0;border-radius:12px;" />`,
+  )
+  .join("")}`
+      : "";
+
   const auditsHref = esc(opts.auditsUrl);
   const cta = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 10px;">
 <tr><td align="left" bgcolor="${BRAND}" style="border-radius:9999px;background-color:${BRAND};">
@@ -161,6 +175,7 @@ export function listingPeekCustomerCommentHtml(opts: {
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:${INK};">Īss skatījums uz tavu sludinājumu</p>
 ${listingBlock}
 ${bodyHtml}
+${photoBlock}
 <p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Noskaidro visu par savu topošo auto.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:${MUTED};">PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.</p>
 ${cta}

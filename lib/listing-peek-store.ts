@@ -10,6 +10,15 @@ import {
 } from "@/lib/admin-customer-identity";
 import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 import {
+  deleteListingPeekPhotoJpeg,
+  writeListingPeekPhotoJpeg,
+} from "@/lib/listing-peek-photo-bytes";
+import {
+  LISTING_PEEK_MAX_PHOTOS,
+  parseListingPeekPhotos,
+  type ListingPeekPhotoRef,
+} from "@/lib/listing-peek-photos";
+import {
   countOpenListingPeeks,
   getListingPeekQueueLimit,
   isListingPeekQueuePaused,
@@ -43,6 +52,8 @@ export type ListingPeekEntry = {
   /** Pēdējā nosūtītā klienta vēstule — lai var nolasīt un papildināt. */
   comment?: string;
   commentSentAt?: string;
+  /** JPEG, ko nosūtīt klientam kopā ar vēstuli. */
+  photos?: ListingPeekPhotoRef[];
 };
 
 type ListingPeekDoc = {
@@ -102,6 +113,7 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
     typeof o.commentSentAt === "string" && o.commentSentAt.trim()
       ? o.commentSentAt.trim()
       : undefined;
+  const photos = parseListingPeekPhotos(o.photos);
   return {
     id,
     email,
@@ -115,6 +127,7 @@ function parseEntry(raw: unknown): ListingPeekEntry | null {
     source,
     ...(comment ? { comment } : {}),
     ...(commentSentAt ? { commentSentAt } : {}),
+    ...(photos.length > 0 ? { photos } : {}),
   };
 }
 
@@ -374,6 +387,58 @@ export async function updateListingPeekStatus(
   doc.updatedAt = new Date().toISOString();
   await writeDoc(doc);
   return next;
+}
+
+export type AddListingPeekPhotoResult =
+  | { ok: true; photo: ListingPeekPhotoRef }
+  | { ok: false; reason: "missing" | "limit" };
+
+/** Saglabā JPEG un pieraksta id pie vērtējuma. Operators var noņemt pirms sūtīšanas. */
+export async function addListingPeekPhoto(
+  id: string,
+  jpeg: Buffer,
+): Promise<AddListingPeekPhotoResult> {
+  const trimmed = id.trim();
+  if (!trimmed || jpeg.length === 0) return { ok: false, reason: "missing" };
+  const doc = await readDoc();
+  const idx = doc.entries.findIndex((e) => e.id === trimmed);
+  if (idx < 0) return { ok: false, reason: "missing" };
+  const current = parseListingPeekPhotos(doc.entries[idx].photos);
+  if (current.length >= LISTING_PEEK_MAX_PHOTOS) return { ok: false, reason: "limit" };
+
+  const photoId = randomUUID();
+  await writeListingPeekPhotoJpeg(trimmed, photoId, jpeg);
+  const photo: ListingPeekPhotoRef = { id: photoId };
+  const next: ListingPeekEntry = {
+    ...doc.entries[idx],
+    photos: [...current, photo],
+  };
+  doc.entries[idx] = next;
+  doc.updatedAt = new Date().toISOString();
+  await writeDoc(doc);
+  return { ok: true, photo };
+}
+
+export async function removeListingPeekPhoto(id: string, photoId: string): Promise<boolean> {
+  const trimmed = id.trim();
+  const photo = photoId.trim().toLowerCase();
+  if (!trimmed || !photo) return false;
+  const doc = await readDoc();
+  const idx = doc.entries.findIndex((e) => e.id === trimmed);
+  if (idx < 0) return false;
+  const current = parseListingPeekPhotos(doc.entries[idx].photos);
+  if (!current.some((p) => p.id === photo)) return false;
+  const photos = current.filter((p) => p.id !== photo);
+  const next: ListingPeekEntry = {
+    ...doc.entries[idx],
+    ...(photos.length > 0 ? { photos } : {}),
+  };
+  if (photos.length === 0) delete next.photos;
+  doc.entries[idx] = next;
+  doc.updatedAt = new Date().toISOString();
+  await writeDoc(doc);
+  await deleteListingPeekPhotoJpeg(trimmed, photo);
+  return true;
 }
 
 export async function updateListingPeekContact(
