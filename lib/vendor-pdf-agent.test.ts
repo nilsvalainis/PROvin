@@ -129,8 +129,20 @@ describe("AutoDNA deterministiskā ekstrakcija", () => {
     expect(extract.notes.some((n) => n.includes("29 380 EUR"))).toBe(true);
   });
 
-  it("vēsturisko cenu ārvalstīs pārnes uz laikposma sadaļu ar datumu, valsti un nobraukumu", () => {
+  it("katru virsrakstu (TA, odometrs, cena) liek laikposmā; zaudējumu rindu - nē", () => {
     expect(extract.vehicleHistoryTimeline).toEqual([
+      {
+        date: "13.10.2025",
+        country: "Latvija",
+        description: "Veikta tehniskā apskate",
+        odometer: "254941",
+      },
+      {
+        date: "01.04.2020",
+        country: "",
+        description: "Ziņots par odometra rādījumu",
+        odometer: "169751",
+      },
       {
         date: "24.10.2019",
         country: "Čehija",
@@ -138,6 +150,7 @@ describe("AutoDNA deterministiskā ekstrakcija", () => {
         odometer: "159383",
       },
     ]);
+    expect(extract.vehicleHistoryTimeline.some((r) => /zaud[ēe]jumu/i.test(r.description))).toBe(false);
   });
 });
 
@@ -169,8 +182,16 @@ describe("AutoDNA apkopes → Servisa vēsture", () => {
     ]);
   });
 
-  it("neiekļauj tehniskās apskates", () => {
+  it("neiekļauj tehniskās apskates servisā, bet liek laikposmā ar rezultātu", () => {
     expect(extract.serviceHistory.some((e) => e.date === "10.01.2026")).toBe(false);
+    expect(extract.vehicleHistoryTimeline).toEqual([
+      {
+        date: "10.01.2026",
+        country: "Latvija",
+        description: "Veikta tehniskā apskate: Izgāja",
+        odometer: "91038",
+      },
+    ]);
   });
 
   it("formatē rindas laukam „Servisa vēsture”", () => {
@@ -320,6 +341,32 @@ describe("CarVertical deterministiskā ekstrakcija", () => {
     expect(extract.vehicleInfo.engineCode).toBe("CVUA");
     expect(extract.vehicleInfo.vinCode).toBe("WAUZZZ4GXGN052397");
     expect(extract.vehicleInfo.transmission).toContain("G1G");
+  });
+
+  it("valstu „Laikposms” bez notikuma virsraksta nepaliek par iekārtas kodu karti", () => {
+    expect(extract.vehicleHistoryTimeline).toEqual([]);
+  });
+
+  it("Transportlīdzekļa ierakstu laikposms un datums+valsts virsraksts kļūst par notikumu", () => {
+    const titled = extractCarverticalReport(`${CARVERTICAL_TEXT}
+Transportlīdzekļa ierakstu laikposms
+12.2016. Nezināma valsts Ražots Šī transportlīdzekļa ražošanas gads ir fiksēts.
+04.2024. Latvija Reģistrēts citā valstī
+02.2024. Čehija
+Veikta tehniskā apskate
+`);
+    expect(titled.vehicleHistoryTimeline.some((r) => r.description === "Ražots")).toBe(true);
+    expect(
+      titled.vehicleHistoryTimeline.some(
+        (r) => r.country === "Latvija" && /Reģistrēts/i.test(r.description),
+      ),
+    ).toBe(true);
+    expect(
+      titled.vehicleHistoryTimeline.some(
+        (r) => r.date === "01.02.2024" && r.country === "Čehija" && /tehnisk/i.test(r.description),
+      ),
+    ).toBe(true);
+    expect(titled.vehicleHistoryTimeline.some((r) => /LY8X|Havana/i.test(r.description))).toBe(false);
   });
 });
 

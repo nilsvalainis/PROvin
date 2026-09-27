@@ -61,6 +61,13 @@ describe("parseCarverticalTimelineFromText", () => {
     );
     expect(rows[0]?.description).toBe("Ražots");
   });
+
+  it("keeps extra facts after a known title and still drops the essay tail", () => {
+    const rows = parseCarverticalTimelineFromText(
+      `Transportlīdzekļa ierakstu laikposms\n10.01.2026. Latvija Veikta tehniskā apskate Izgāja. Šī transportlīdzekļa apskate ir fiksēta.`,
+    );
+    expect(rows[0]?.description).toBe("Veikta tehniskā apskate Izgāja");
+  });
 });
 
 describe("parseCarverticalDamagesFromText", () => {

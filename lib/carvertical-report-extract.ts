@@ -1,7 +1,7 @@
 /**
  * CarVertical atskaites (PDF teksta slānis) deterministiskā ekstrakcija:
  * „Odometra rādījumu ieraksti” → nobraukums, „Bojājumu ieraksti” → negadījumi,
- * „Laikposms” → valstu dzīves cikls, „Transportlīdzekļa specifikācija” + PR kodi →
+ * „Laikposms” → valstu dzīves cikls un laikposma notikumi, „Transportlīdzekļa specifikācija” + PR kodi →
  * OFICIĀLĀ DĪLERA DATI lauki.
  */
 
@@ -12,6 +12,8 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
+import type { CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
+import { parseCarverticalTimelineFromText } from "@/lib/carvertical-pdf-parse";
 import { matchLeadingCountryNameLv, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
@@ -76,6 +78,45 @@ function collectDatedCountryLines(lines: string[]): DatedCountryLine[] {
  * CarVertical PDF nesatur darbu sarakstu, tāpēc ieraksts ir tikai fakts par apkopi;
  * „Ieteicamais apkopes plāns” (plānotie darbi) šeit netiek ņemts — tas nav veikts darbs.
  */
+const CV_DATED_EVENT_TITLE_RE =
+  /^(Ra[žz]ots|Re[ģg]istr[ēe]ts(\s+cit[āa]\s+valst[īi])?|Pirm[āa]\s+re[ģg]istr[āa]cija|Main[īi]tas\s+[īi]pa[šs]umties[īi]bas|Veikta\s+tehnisk[āa]\s+apskate|No[ņn]emts\s+no\s+uzskaites|Import[ēe]ts|Eksport[ēe]ts)\b/i;
+
+function parseDatedCountryEventRows(
+  lines: string[],
+  datedCountries: DatedCountryLine[],
+): CarVerticalTimelineRow[] {
+  const out: CarVerticalTimelineRow[] = [];
+  for (const header of datedCountries) {
+    const rawTitle = (lines[header.index + 1] ?? "").trim() || (lines[header.index + 2] ?? "").trim();
+    if (!rawTitle) continue;
+    if (/^(Atrad[āa]m|Datu\s+avoti|Odometra|Boj[āa]jumu|Transportl[īi]dzek[ļl]a\s+specifik|Nov[ēe]rt[ēe]jums|Fiks[ēe]ts\s+nov[ēe]rt)/i.test(rawTitle)) {
+      continue;
+    }
+    if (/^\d{1,2}(?:\.\d{1,2})?\.\d{4}/.test(rawTitle)) continue;
+    const countryOnly = matchLeadingCountryNameLv(rawTitle);
+    if (countryOnly && countryOnly.rest === "") continue;
+    if (!CV_DATED_EVENT_TITLE_RE.test(rawTitle)) continue;
+    out.push({
+      date: header.date,
+      country: normalizeCountryNameLv(header.country) || header.country,
+      description: rawTitle.replace(/\s+/g, " ").trim(),
+    });
+  }
+  return out;
+}
+
+function mergeTimelineRows(primary: CarVerticalTimelineRow[], extra: CarVerticalTimelineRow[]): CarVerticalTimelineRow[] {
+  const seen = new Set<string>();
+  const out: CarVerticalTimelineRow[] = [];
+  for (const row of [...primary, ...extra]) {
+    const key = `${row.date}|${row.country}|${row.description}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
 function parseServiceTimelineEntries(
   lines: string[],
   datedCountries: DatedCountryLine[],
@@ -275,6 +316,10 @@ export function extractCarverticalReport(rawText: string): VendorReportExtract {
     [],
   );
   out.countryTimeline = timeline;
+  out.vehicleHistoryTimeline = mergeTimelineRows(
+    parseCarverticalTimelineFromText(text),
+    parseDatedCountryEventRows(lines, datedCountries),
+  );
   out.notes = notes;
   out.vehicleInfo = {
     ...spec.vehicleInfo,

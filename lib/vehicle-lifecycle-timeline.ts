@@ -319,9 +319,9 @@ function classifyVendorTimelineKind(description: string): LifecycleEventKind {
 function vendorTimelineTitleAndDetail(description: string, kind: LifecycleEventKind): { title: string; detail: string } {
   const raw = description.trim();
   if (kind === "inspection") {
-    const split = raw.match(/^(tehniskā apskate|periodiskā apskate|reģistrācijas apskate|importa apskate)\s*[:.\-]\s*(.+)$/i);
+    const split = raw.match(/^(?:veikta\s+)?(tehniskā apskate|periodiskā apskate|reģistrācijas apskate|importa apskate)\s*[:.\-]\s*(.+)$/i);
     if (split) return { title: "Tehniskā apskate", detail: split[2]!.trim() };
-    if (/^tehniskā apskate$/i.test(raw)) return { title: "Tehniskā apskate", detail: "" };
+    if (/^(?:veikta\s+)?tehniskā apskate$/i.test(raw)) return { title: "Tehniskā apskate", detail: "" };
   }
   if (kind === "first_registration") return { title: "Pirmā reģistrācija", detail: "" };
   return { title: raw || "Ieraksts reģistrā", detail: "" };

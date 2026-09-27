@@ -27,7 +27,7 @@ export type VendorReportExtract = {
   serviceHistory: VendorServiceEntry[];
   /** Auto dzīves cikls pa valstīm (valsts noteikšanai tukšajām rindām). */
   countryTimeline: CountryTimelineEntry[];
-  /** Vispārīgi laikposma notikumi, kas nav nobraukums/negadījums (piem. vēsturiskā cena/sludinājums ārvalstīs). */
+  /** Laikposma notikumi (reģistrācija, apskate, īpašnieka maiņa, vēsturiskā cena u.c.). */
   vehicleHistoryTimeline: CarVerticalTimelineRow[];
   /** Dīlera tehniskie lauki (OFICIĀLĀ DĪLERA DATI). */
   vehicleInfo: Partial<OutvinVehicleInfo>;

@@ -14,6 +14,7 @@ import {
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
 import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
+import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
@@ -118,11 +119,13 @@ export function parseHistoryVendorPdfText(
     const claimIncidents = claimRowsToLtabRows(claims);
     const incidents =
       parsed.incidents.length > 0 ? parsed.incidents : claimIncidents;
+    const extractTimeline = extractCarverticalReport(trimmed).vehicleHistoryTimeline;
     return {
       rawText,
       serviceHistory: sortAutoRecordsDescending(serviceHistory.filter(autoRecordsMileageRowHasData)),
       incidents,
-      vehicleHistoryTimeline: parsed.timeline,
+      vehicleHistoryTimeline:
+        extractTimeline.length >= parsed.timeline.length ? extractTimeline : parsed.timeline,
       damageDetails: parsed.damageDetails,
       suggestedPdfChecklist: suggestChecklist(trimmed, serviceHistory, incidents),
       warnings,

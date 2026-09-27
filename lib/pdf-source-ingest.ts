@@ -4,6 +4,7 @@ import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { parseAutoRecordsPdfText, type AutoRecordsPdfParseResult } from "@/lib/auto-records-pdf-parse";
 import { parseHistoryVendorPdfText } from "@/lib/history-vendor-pdf-import";
 import { parseCarverticalPdfText } from "@/lib/carvertical-pdf-parse";
+import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
 import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/history-vendor-pdf-import";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
@@ -63,11 +64,13 @@ function enrichCarverticalAiResult(
   const hint = textHint.trim();
   if (!hint) return result;
   const cv = parseCarverticalPdfText(hint);
+  const extractTimeline = extractCarverticalReport(hint).vehicleHistoryTimeline;
+  const timeline = extractTimeline.length >= cv.timeline.length ? extractTimeline : cv.timeline;
   const damageDetails = mergeDamageDetailRows(result.damageDetails ?? [], cv.damageDetails);
   return {
     ...result,
-    ...(cv.timeline.length > 0 && !(result.vehicleHistoryTimeline ?? []).length
-      ? { vehicleHistoryTimeline: cv.timeline }
+    ...(timeline.length > 0 && !(result.vehicleHistoryTimeline ?? []).length
+      ? { vehicleHistoryTimeline: timeline }
       : {}),
     ...(damageDetails.length > 0 ? { damageDetails } : {}),
     ...(result.serviceHistory.length === 0 && cv.serviceHistory.length > 0

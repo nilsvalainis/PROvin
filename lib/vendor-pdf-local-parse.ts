@@ -3,7 +3,9 @@
  */
 import type { LtabIncidentRow, SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
+import { extractAutodnaHistoricalTimelineEvents } from "@/lib/autodna-report-extract";
 import { parseAutodnaDamageDetails, parseAutodnaDamageEvents } from "@/lib/autodna-damage-parse";
+import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
 import { parseAutodnaMileagePaste } from "@/lib/autodna-mileage-paste-parse";
 import {
   autoRecordsMileageRowHasData,
@@ -182,8 +184,10 @@ export function parseVendorPdfLocal(
 
   if (target === "carvertical") {
     const parsed = parseCarverticalPdfText(trimmed);
+    const extractTimeline = extractCarverticalReport(trimmed).vehicleHistoryTimeline;
     serviceHistory = parsed.serviceHistory;
-    vehicleHistoryTimeline = parsed.timeline;
+    vehicleHistoryTimeline =
+      extractTimeline.length >= parsed.timeline.length ? extractTimeline : parsed.timeline;
     damageDetails = parsed.damageDetails;
     carverticalIncidents = parsed.incidents;
     if (serviceHistory.length === 0) {
@@ -201,6 +205,11 @@ export function parseVendorPdfLocal(
     }
   } else if (target === "autodna") {
     serviceHistory = parseAutodnaMileagePaste(trimmed);
+    const autodnaTimeline = extractAutodnaHistoricalTimelineEvents(trimmed);
+    if (autodnaTimeline.length > 0) {
+      vehicleHistoryTimeline = autodnaTimeline;
+      factualMeta.push(`${autodnaTimeline.length} vēstures ieraksti (laikposms)`);
+    }
     const reg = extractAutodnaFirstRegistration(trimmed);
     if (reg) factualMeta.push(reg);
     const statusNote = extractAutodnaStatusCenterNote(trimmed);

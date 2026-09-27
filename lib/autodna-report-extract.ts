@@ -172,6 +172,34 @@ function eventPriceRaw(lines: string[]): string {
   return "";
 }
 
+function eventResult(lines: string[]): string {
+  for (const line of lines) {
+    const m = line.match(/^Rezult[āa]ts\s+(.+)$/i);
+    if (m) return m[1]!.trim();
+  }
+  return "";
+}
+
+function autodnaTimelineDescription(lines: string[], title: string, priceRaw: string): string {
+  const result = eventResult(lines);
+  let desc = title;
+  if (result) desc = `${title}: ${result}`;
+  if (priceRaw) desc = `${desc} (${priceRaw})`;
+  return desc;
+}
+
+function dedupeHistoryTimeline(rows: CarVerticalTimelineRow[]): CarVerticalTimelineRow[] {
+  const seen = new Set<string>();
+  const out: CarVerticalTimelineRow[] = [];
+  for (const r of rows) {
+    const key = `${r.date}|${r.country}|${r.description}|${r.odometer ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(r);
+  }
+  return out;
+}
+
 const TECH_LABELS: { key: keyof OutvinVehicleInfo | "colorCandidate"; re: RegExp }[] = [
   { key: "transmission", re: /^[ĀA]trumk[āa]rbas\s+veids$/i },
   { key: "colorCandidate", re: /^([ŠS]asijas|Virsb[ūu]ves)\s+kr[āa]sa$/i },
@@ -256,15 +284,15 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
 
     const priceRaw = eventPriceRaw(event.lines);
     if (priceRaw && !lossRaw) {
-      out.notes.push(`${event.date}: cenas/vērtības ieraksts „${priceRaw}” — nav negadījums.`);
-      // Vēsturiskā cena ārvalstīs (piem. "Pārdošanai piedāvātas automašīnas") nav negadījums,
-      // bet ir derīgs laikposma fakts - jāparādās "Vēstures kopsavilkums" lentē, nevis tikai
-      // admin-only piezīmē. Nobraukums paliek tukšs, ja šim notikumam tāda nebija (`eventOdometer`
-      // to jau atgriež "", ja nav atrodams - klientam rāda tikai datumu un cenu).
+      out.notes.push(`${event.date}: cenas/vērtības ieraksts „${priceRaw}” - nav negadījums.`);
+    }
+
+    // Zaudējumi → negadījumu josla. Apkopes darbi → dīlera tabula. Pārējie virsraksti → laikposms.
+    if (title && !lossRaw && !isVendorServiceEventTitle(title)) {
       historyTimeline.push({
         date: event.date,
         country,
-        description: title ? `${title} (${priceRaw})` : `Vēsturiskā cena: ${priceRaw}`,
+        description: autodnaTimelineDescription(event.lines, title, priceRaw),
         ...(odometer ? { odometer } : {}),
       });
     }
@@ -278,7 +306,7 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
   out.incidents = dedupeIncidents(incidents);
   out.serviceHistory = mergeVendorServiceEntries(serviceHistory, []);
   out.countryTimeline = timeline;
-  out.vehicleHistoryTimeline = historyTimeline;
+  out.vehicleHistoryTimeline = dedupeHistoryTimeline(historyTimeline);
   out.vehicleInfo = {
     ...vehicleInfo,
     ...(vin ? { vinCode: vin } : {}),
@@ -287,11 +315,7 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
   return out;
 }
 
-/**
- * AutoDNA vēsturiskās cenas / sludinājuma notikumi ("Cena X €" bez zaudējumu konteksta), kas
- * NAV negadījumi - domāts operatora "iekopēt tekstu" un PDF-augšupielādes plūsmām, kur vajag
- * tikai laikposma rindas bez pārējiem `extractAutodnaReport` laukiem.
- */
+/** AutoDNA „Transportlīdzekļa vēsture” notikumi laikposma joslai (bez zaudējumu rindām). */
 export function extractAutodnaHistoricalTimelineEvents(rawText: string): CarVerticalTimelineRow[] {
   return extractAutodnaReport(rawText).vehicleHistoryTimeline ?? [];
 }

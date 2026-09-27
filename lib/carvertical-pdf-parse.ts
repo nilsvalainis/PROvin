@@ -266,6 +266,21 @@ export function parseCarverticalOdometerFromText(text: string): AutoRecordsServi
   return sortAutoRecordsDescending(out);
 }
 
+function stripCvEssayTail(text: string): string {
+  let t = text.trim();
+  for (const stop of [/\s+Šim\s+transportl/i, /\s+Šī\s+transportl/i, /\s+Šis\s+transportl/i]) {
+    const idx = t.search(stop);
+    if (idx > 0) t = t.slice(0, idx).trim();
+  }
+  const firstClause = t.match(/^(.{2,200}?)\.\s+(?:Š|Taču|Spēkrats|Mēs)/i);
+  if (firstClause?.[1]) return firstClause[1].trim();
+  return t.replace(/[.:]+$/, "").trim();
+}
+
+function isCvEssayStart(rest: string): boolean {
+  return /^(Šim|Šī|Šis)\s+transportl/i.test(rest) || /^(Taču|Spēkrats|Mēs)\b/i.test(rest);
+}
+
 function cleanTimelineDescription(raw: string): string {
   const t = raw
     .replace(/\s+/g, " ")
@@ -278,6 +293,7 @@ function cleanTimelineDescription(raw: string): string {
     "Fiksēts novērtējums",
     "Mainītas īpašumtiesības",
     "Veikta tehniskā apskate",
+    "Veikta apkope",
     "Noņemts no uzskaites",
     "Pirmā reģistrācija",
     "Reģistrēts",
@@ -285,18 +301,14 @@ function cleanTimelineDescription(raw: string): string {
   ].sort((a, b) => b.length - a.length);
 
   for (const title of titles) {
-    if (t.toLowerCase().startsWith(title.toLowerCase())) return title;
+    if (!t.toLowerCase().startsWith(title.toLowerCase())) continue;
+    const rest = t.slice(title.length).trim();
+    if (!rest || isCvEssayStart(rest)) return title;
+    const kept = stripCvEssayTail(rest);
+    return kept ? `${title} ${kept}`.replace(/\s+/g, " ").trim() : title;
   }
 
-  for (const stop of [/\s+Šim\s+transportl/i, /\s+Šī\s+transportl/i, /\s+Šis\s+transportl/i]) {
-    const idx = t.search(stop);
-    if (idx > 0) return t.slice(0, idx).trim().replace(/[.:]+$/, "");
-  }
-
-  const firstClause = t.match(/^(.{2,64}?)\.\s+(?:Š|Taču|Spēkrats|Mēs)/i);
-  if (firstClause?.[1]) return firstClause[1].trim();
-
-  return t.length > 64 ? t.slice(0, 64).trim() : t;
+  return stripCvEssayTail(t);
 }
 
 const TIMELINE_COUNTRY_NAMES = [
