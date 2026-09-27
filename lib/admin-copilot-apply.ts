@@ -123,7 +123,7 @@ function normalizeHistoryTimelineRow(a: CopilotVehicleHistoryTimelineAction): Ca
   if (!date || !description) return null;
   const country = normalizeCountryNameLv(a.country.trim()) || a.country.trim();
   const odometer = a.odometer?.trim() ? normalizeAutoRecordsOdometer(a.odometer.trim()) : "";
-  return { date, country, description, ...(odometer ? { odometer } : {}) };
+  return { date, country, description, ...(odometer ? { odometer } : {}), includeInPdf: false };
 }
 
 function historyTimelineRowKey(r: CarVerticalTimelineRow): string {

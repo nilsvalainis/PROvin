@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
-import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  coerceVendorAvotuBlock,
+  createDefaultSourceBlocks,
+  SOURCE_BLOCK_LABELS,
+  toPdfManualVendorBlocks,
+} from "@/lib/admin-source-blocks";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
 import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
 import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
@@ -489,10 +494,51 @@ describe("laikposma fakta piemērošana (upsert_vehicle_history_timeline_row)", 
         country: "Čehija",
         description: "Pārdošanai piedāvātas automašīnas (29 380 EUR)",
         odometer: "159383",
+        includeInPdf: false,
       },
     ]);
     const second = applyCopilotActions(first.sourceBlocks, [action], { onlyAuto: false });
     expect(second.sourceBlocks.autodna.vehicleHistoryTimeline).toHaveLength(1);
+  });
+
+  it("ielasītiem laikposma ierakstiem pēc noklusējuma nav PDF karodziņa, bet odometrs paliek", () => {
+    const block = coerceVendorAvotuBlock({
+      serviceHistory: [],
+      incidents: [],
+      comments: "",
+      vehicleHistoryTimeline: [
+        { date: "13.10.2025", country: "Latvija", description: "Veikta tehniskā apskate", odometer: "254941" },
+      ],
+    });
+    expect(block.vehicleHistoryTimeline).toEqual([
+      {
+        date: "13.10.2025",
+        country: "Latvija",
+        description: "Veikta tehniskā apskate",
+        odometer: "254941",
+        includeInPdf: false,
+      },
+    ]);
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna = block;
+    expect(
+      toPdfManualVendorBlocks(blocks).find((v) => v.title === SOURCE_BLOCK_LABELS.autodna)?.vehicleHistoryTimeline,
+    ).toBeUndefined();
+    blocks.autodna = {
+      ...block,
+      vehicleHistoryTimeline: [{ ...block.vehicleHistoryTimeline![0]!, includeInPdf: true }],
+    };
+    expect(
+      toPdfManualVendorBlocks(blocks).find((v) => v.title === SOURCE_BLOCK_LABELS.autodna)?.vehicleHistoryTimeline,
+    ).toEqual([
+      {
+        date: "13.10.2025",
+        country: "Latvija",
+        description: "Veikta tehniskā apskate",
+        odometer: "254941",
+        includeInPdf: true,
+      },
+    ]);
   });
 });
 

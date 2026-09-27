@@ -25,7 +25,33 @@ export type CarVerticalTimelineRow = {
   description: string;
   /** Reģistra hronoloģija (tjekbil u.c.) - km pie notikuma, ja zināms. */
   odometer?: string;
+  /** Operatora izvēle: rādīt PDF laikposma joslā. Ielasīšanas noklusējums: false. */
+  includeInPdf?: boolean;
 };
+
+export function emptyCarVerticalTimelineRow(): CarVerticalTimelineRow {
+  return { date: "", country: "", description: "", includeInPdf: false };
+}
+
+export function carVerticalTimelineRowHasData(r: CarVerticalTimelineRow): boolean {
+  return Boolean(r.date.trim() || r.description.trim() || (r.odometer ?? "").trim());
+}
+
+export function carVerticalTimelineRowInPdf(r: CarVerticalTimelineRow): boolean {
+  return r.includeInPdf !== false && carVerticalTimelineRowHasData(r);
+}
+
+export function normalizeCarVerticalTimelineRow(raw: unknown): CarVerticalTimelineRow {
+  const x = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const odometer = String(x.odometer ?? "").replace(/\D/g, "").slice(0, 12);
+  return {
+    date: String(x.date ?? "").slice(0, 40),
+    country: String(x.country ?? "").slice(0, 120),
+    description: String(x.description ?? "").slice(0, 400),
+    ...(odometer ? { odometer } : {}),
+    includeInPdf: x.includeInPdf === true,
+  };
+}
 
 export type CarVerticalDamageDetailRow = {
   date: string;

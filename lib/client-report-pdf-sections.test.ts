@@ -713,6 +713,36 @@ describe("Vēstures kopsavilkums", () => {
     expect(gap!.tone).toBe("warn");
   });
 
+  it("skips AutoDNA/CarVertical laikposma rindas, kam operators nav ieslēdzis PDF", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.autodna,
+          mileageRows: [],
+          incidentRows: [],
+          comments: "",
+          vehicleHistoryTimeline: [
+            {
+              date: "13.10.2025",
+              country: "Latvija",
+              description: "Veikta tehniskā apskate",
+              odometer: "254941",
+              includeInPdf: false,
+            },
+            {
+              date: "24.10.2019",
+              country: "Čehija",
+              description: "Pārdošanai piedāvātas automašīnas",
+              includeInPdf: true,
+            },
+          ],
+        },
+      ],
+    });
+    expect(events.some((e) => /tehnisk/i.test(e.title) && e.date.includes("2025"))).toBe(false);
+    expect(events.some((e) => /Pārdošanai/.test(e.title))).toBe(true);
+  });
+
   it("puts tjekbil registry timeline events into the history summary with km", () => {
     const events = buildVehicleLifecycleEvents({
       manualVendorBlocks: [

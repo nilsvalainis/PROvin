@@ -72,6 +72,7 @@ describe("toPdfManualVendorBlocks — reģistru avoti", () => {
         country: "Dānija",
         description: "Tehniskā apskate: izieta ar pirmo reizi",
         odometer: "106869",
+        includeInPdf: true,
       },
     ]);
   });
@@ -89,7 +90,12 @@ describe("toPdfManualVendorBlocks — reģistru avoti", () => {
     expect(fi).toBeDefined();
     expect(fi?.mileageRows).toEqual([]);
     expect(fi?.vehicleHistoryTimeline).toEqual([
-      { date: "12.12.2024", country: "Somija", description: "Noņemts no reģistra bojājuma dēļ" },
+      {
+        date: "12.12.2024",
+        country: "Somija",
+        description: "Noņemts no reģistra bojājuma dēļ",
+        includeInPdf: true,
+      },
     ]);
     expect(fi?.incidentRows[0]?.csngDate).toBe("12.12.2024");
   });

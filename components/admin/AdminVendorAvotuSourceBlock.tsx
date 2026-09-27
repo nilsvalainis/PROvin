@@ -42,7 +42,11 @@ import {
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
 } from "@/lib/auto-records-paste-parse";
-import { CARVERTICAL_TIMELINE_TITLE } from "@/lib/carvertical-pdf-parse";
+import {
+  emptyCarVerticalTimelineRow,
+  carVerticalTimelineRowHasData,
+  type CarVerticalTimelineRow,
+} from "@/lib/carvertical-pdf-parse";
 import { matchCarVerticalDamageDetail } from "@/lib/carvertical-damage-match";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -167,6 +171,33 @@ export function AdminVendorAvotuSourceBlock({
 
   const removeIncidentRow = (index: number) => {
     onChange({ ...block, incidents: dropOrResetRow(incidents, index, emptyLtabRow) });
+  };
+
+  const timelineRows =
+    (block.vehicleHistoryTimeline ?? []).length > 0
+      ? block.vehicleHistoryTimeline!
+      : [emptyCarVerticalTimelineRow()];
+  const timelineHasData = timelineRows.some(carVerticalTimelineRowHasData);
+
+  const commitTimeline = (rows: CarVerticalTimelineRow[]) => {
+    const data = rows.filter(carVerticalTimelineRowHasData);
+    onChange({
+      ...block,
+      vehicleHistoryTimeline: data.length > 0 ? rows : [emptyCarVerticalTimelineRow()],
+    });
+  };
+
+  const setTimelineRow = (index: number, patch: Partial<CarVerticalTimelineRow>) => {
+    const rows = timelineRows.map((r, i) => (i === index ? { ...r, ...patch } : r));
+    commitTimeline(rows);
+  };
+
+  const addTimelineRow = () => {
+    commitTimeline([...timelineRows, emptyCarVerticalTimelineRow()]);
+  };
+
+  const removeTimelineRow = (index: number) => {
+    commitTimeline(dropOrResetRow(timelineRows, index, emptyCarVerticalTimelineRow));
   };
 
   const idBase = sectionIndex != null ? `${blockKey}-s${sectionIndex}` : blockKey;
@@ -323,22 +354,135 @@ export function AdminVendorAvotuSourceBlock({
           </div>
         ) : null}
 
-        {blockKey === "carvertical" && (block.vehicleHistoryTimeline ?? []).length > 0 ? (
+        {!readOnly || timelineHasData ? (
           <div className="mt-4 border-t border-slate-200 pt-3">
-            <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-              {CARVERTICAL_TIMELINE_TITLE}
+            <p className="mb-1.5 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              <AdminProvinLucide icon={SUBHEADING_LUCIDE.registryTimeline} />
+              Laikposma ieraksti
             </p>
-            <div className="space-y-1 rounded-lg border border-slate-200/90 bg-slate-50/70 px-2 py-1.5">
-              {(block.vehicleHistoryTimeline ?? []).map((row, ti) => (
-                <div key={ti} className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] leading-snug">
-                  <span className="font-semibold text-slate-600">{row.date || "—"}</span>
-                  {row.country.trim() ? (
-                    <span className="text-slate-500">{row.country.trim()}</span>
-                  ) : null}
-                  <span className="min-w-0 flex-1 text-[var(--color-apple-text)]">{row.description}</span>
-                </div>
-              ))}
+            <p className="mb-1.5 text-[10px] text-slate-500">
+              Pēc ielasīšanas izslēgti. Atzīmē PDF, lai rādītu laikposma joslā. Var labot, dzēst vai atstāt ārā.
+            </p>
+            <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/50 to-white shadow-[0_1px_8px_rgba(15,23,42,0.04)]">
+              <table className="w-full min-w-[420px] border-collapse text-[11px]">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+                    <th className={`w-12 ${mileCell}`}>PDF</th>
+                    <th className={mileCell}>Datums</th>
+                    <th className={mileCell}>Km</th>
+                    <th className={mileCell}>Valsts</th>
+                    <th className={mileCell}>Notikums</th>
+                    {!readOnly ? <th className={`w-9 ${mileCell}`} aria-hidden /> : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {timelineRows.map((row, ti) => {
+                    const rowOn = row.includeInPdf === true;
+                    const rowData = carVerticalTimelineRowHasData(row);
+                    return (
+                      <tr
+                        key={ti}
+                        className={
+                          rowOn
+                            ? "border-b border-slate-100 last:border-b-0"
+                            : "border-b border-slate-100/70 last:border-b-0 opacity-60"
+                        }
+                      >
+                        <td className={`${mileCell} align-middle`}>
+                          <input
+                            type="checkbox"
+                            className="h-3.5 w-3.5 rounded border-slate-300/80 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]/25"
+                            checked={rowOn}
+                            disabled={readOnly || disabled}
+                            onChange={(e) => setTimelineRow(ti, { includeInPdf: e.target.checked })}
+                            aria-label={`${blockKey} laikposma rinda ${ti + 1} rādīt PDF`}
+                          />
+                        </td>
+                        <td className={`${mileCell} align-top`}>
+                          {readOnly ? (
+                            <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "-"}</span>
+                          ) : (
+                            <input
+                              type="text"
+                              className={inp}
+                              placeholder="13.10.2025"
+                              value={row.date}
+                              disabled={disabled}
+                              onChange={(e) => setTimelineRow(ti, { date: e.target.value })}
+                              aria-label={`${blockKey} laikposma datums ${ti + 1}`}
+                            />
+                          )}
+                        </td>
+                        <td className={`${mileCell} align-top`}>
+                          {readOnly ? (
+                            <span className="text-[var(--color-provin-muted)]">{(row.odometer ?? "").trim() || "-"}</span>
+                          ) : (
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              className={inp}
+                              value={row.odometer ?? ""}
+                              disabled={disabled}
+                              onChange={(e) =>
+                                setTimelineRow(ti, { odometer: e.target.value.replace(/[^\d]/g, "") })
+                              }
+                              aria-label={`${blockKey} laikposma km ${ti + 1}`}
+                            />
+                          )}
+                        </td>
+                        <td className={`${mileCell} align-top`}>
+                          {readOnly ? (
+                            <CountryFlagWithCode countryLabel={row.country.trim() || "-"} />
+                          ) : (
+                            <AdminCountryCombobox
+                              className={inp}
+                              value={row.country}
+                              disabled={disabled}
+                              onChange={(next) => setTimelineRow(ti, { country: next })}
+                              aria-label={`${blockKey} laikposma valsts ${ti + 1}`}
+                            />
+                          )}
+                        </td>
+                        <td className={`${mileCell} align-top`}>
+                          {readOnly ? (
+                            <span className="text-[var(--color-apple-text)]">{row.description.trim() || "-"}</span>
+                          ) : (
+                            <input
+                              type="text"
+                              className={inp}
+                              placeholder="Reģistrēts / Tehniskā apskate"
+                              value={row.description}
+                              disabled={disabled}
+                              onChange={(e) => setTimelineRow(ti, { description: e.target.value })}
+                              aria-label={`${blockKey} laikposma notikums ${ti + 1}`}
+                            />
+                          )}
+                        </td>
+                        {!readOnly ? (
+                          <td className={`${mileCell} align-top`}>
+                            <AdminFieldResetButton
+                              disabled={disabled || (!rowData && timelineRows.length <= 1)}
+                              title="Nodzēst laikposma rindu"
+                              aria-label={`${blockKey} nodzēst laikposma rindu ${ti + 1}`}
+                              onClick={() => removeTimelineRow(ti)}
+                            />
+                          </td>
+                        ) : null}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+            {!readOnly && !disabled ? (
+              <button
+                type="button"
+                className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+                onClick={addTimelineRow}
+              >
+                + Rinda
+              </button>
+            ) : null}
           </div>
         ) : null}
 

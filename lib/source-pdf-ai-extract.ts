@@ -95,10 +95,13 @@ function normalizeDamageDetailRow(raw: unknown): CarVerticalDamageDetailRow | nu
 function normalizeTimelineRow(raw: unknown): CarVerticalTimelineRow | null {
   const o = asRecord(raw);
   if (!o) return null;
+  const odometer = asString(o.odometer, 12).replace(/\D/g, "");
   const row: CarVerticalTimelineRow = {
     date: formatAutoRecordsDateForOutput(asString(o.date, 32)),
     country: normalizeCountryNameLv(asString(o.country, 80)),
     description: asString(o.description, 240),
+    ...(odometer ? { odometer } : {}),
+    includeInPdf: false,
   };
   if (!row.date.trim() && !row.description.trim()) return null;
   return row;

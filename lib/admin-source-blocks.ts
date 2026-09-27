@@ -6,6 +6,9 @@ import type { TirgusPriceHistoryRow } from "@/lib/adify-listing-history";
 import { formatAdifyDeltaLabel, formatAdifyPriceLabel } from "@/lib/adify-listing-history";
 import {
   CARVERTICAL_TIMELINE_TITLE,
+  carVerticalTimelineRowHasData,
+  carVerticalTimelineRowInPdf,
+  normalizeCarVerticalTimelineRow,
   type CarVerticalDamageDetailRow,
   type CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
@@ -1521,12 +1524,32 @@ export function ltabBlockToPlainText(b: LtabBlockState): string {
   return [...(cert ? [cert] : []), ...lines, ...(c ? [c] : [])].join("\n");
 }
 
+export function mergeVendorHistoryTimeline(
+  existing: CarVerticalTimelineRow[] | undefined,
+  incoming: CarVerticalTimelineRow[] | undefined,
+): CarVerticalTimelineRow[] {
+  const have = (existing ?? []).map(normalizeCarVerticalTimelineRow).filter(carVerticalTimelineRowHasData);
+  const seen = new Set(
+    have.map((r) => `${r.date}|${r.description.replace(/\s+/g, " ").trim().toLowerCase()}`),
+  );
+  const out = [...have];
+  for (const raw of incoming ?? []) {
+    const row = { ...normalizeCarVerticalTimelineRow(raw), includeInPdf: false };
+    if (!carVerticalTimelineRowHasData(row)) continue;
+    const key = `${row.date}|${row.description.replace(/\s+/g, " ").trim().toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
 export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState | null | undefined): boolean {
   const safe = coerceVendorAvotuBlock(b);
   return (
     (safe.serviceHistory ?? []).some(autoRecordsRowHasData) ||
     (safe.incidents ?? []).some(ltabRowHasData) ||
-    (safe.vehicleHistoryTimeline ?? []).some((r) => r.date.trim() || r.description.trim()) ||
+    (safe.vehicleHistoryTimeline ?? []).some(carVerticalTimelineRowHasData) ||
     (safe.damageDetails ?? []).some((r) => r.date.trim() || r.lossAmount.trim()) ||
     wsStr(safe.comments).trim().length > 0 ||
     sourcePdfChecklistHasAny(safe.pdfChecklist) ||
@@ -1561,7 +1584,7 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState | null | un
       );
     }
   }
-  const timeline = (safe.vehicleHistoryTimeline ?? []).filter((r) => r.date.trim() || r.description.trim());
+  const timeline = (safe.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowHasData);
   if (timeline.length > 0) {
     lines.push(CARVERTICAL_TIMELINE_TITLE);
     for (const r of timeline) {
@@ -1679,9 +1702,10 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       comments: (b.comments ?? "").trim(),
       ...syncedSourceBlockPhotos(b),
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
-      ...((b.vehicleHistoryTimeline ?? []).length > 0
-        ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline }
-        : {}),
+      ...(() => {
+        const timeline = (b.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowInPdf);
+        return timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {};
+      })(),
       ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),
       ...(() => {
         const sourceRaw = [b.mileagePasteRaw, b.aiContextRaw, b.comments]
@@ -1723,6 +1747,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
               country: r.country,
               description: r.event,
               ...(wsStr(r.odometer).trim() ? { odometer: r.odometer } : {}),
+              includeInPdf: true,
             })),
           }
         : {}),
@@ -1949,16 +1974,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
         ? { mileagePasteRaw: raw.mileagePasteRaw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) }
         : {}),
       ...(timelineIn.length > 0
-        ? {
-            vehicleHistoryTimeline: timelineIn.map((row) => {
-              const x = row as Record<string, unknown>;
-              return {
-                date: String(x.date ?? "").slice(0, 40),
-                country: String(x.country ?? "").slice(0, 120),
-                description: String(x.description ?? "").slice(0, 400),
-              };
-            }),
-          }
+        ? { vehicleHistoryTimeline: timelineIn.map(normalizeCarVerticalTimelineRow) }
         : {}),
       ...(damageIn.length > 0
         ? {
@@ -2294,7 +2310,9 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
     comments: wsStr(b.comments),
     aiContextRaw: wsStr(b.aiContextRaw),
     ...(typeof b.mileagePasteRaw === "string" ? { mileagePasteRaw: b.mileagePasteRaw } : {}),
-    ...(Array.isArray(b.vehicleHistoryTimeline) ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline } : {}),
+    ...(Array.isArray(b.vehicleHistoryTimeline)
+      ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline.map(normalizeCarVerticalTimelineRow) }
+      : {}),
     ...(Array.isArray(b.damageDetails) ? { damageDetails: b.damageDetails } : {}),
     ...(b.pdfChecklist ? { pdfChecklist: b.pdfChecklist } : {}),
     ...syncedSourceBlockPhotos(b),

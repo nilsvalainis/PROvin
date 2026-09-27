@@ -32,6 +32,7 @@ import {
   citiAvotiSectionHasContent,
   emptyCitiAvotiSection,
   mergeSourceBlocksWithDefaults,
+  mergeVendorHistoryTimeline,
   normalizeSourcePdfChecklist,
   sourcePdfChecklistHasAny,
   type AutoRecordsBlockState,
@@ -106,7 +107,14 @@ function applyVendorImport(
       : {}),
     ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
     ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
-    ...(result.vehicleHistoryTimeline?.length ? { vehicleHistoryTimeline: result.vehicleHistoryTimeline } : {}),
+    ...(result.vehicleHistoryTimeline?.length
+      ? {
+          vehicleHistoryTimeline: mergeVendorHistoryTimeline(
+            existing.vehicleHistoryTimeline,
+            result.vehicleHistoryTimeline,
+          ),
+        }
+      : {}),
     ...(result.damageDetails?.length
       ? { damageDetails: mergeDamageDetailRows(existing.damageDetails ?? [], result.damageDetails) }
       : {}),

@@ -402,6 +402,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
 
   for (const b of input.manualVendorBlocks ?? []) {
     for (const t of b.vehicleHistoryTimeline ?? []) {
+      if (t.includeInPdf === false) continue;
       if (!t.date.trim() && !t.description.trim()) continue;
       const kind = classifyVendorTimelineKind(t.description);
       const { title, detail } = vendorTimelineTitleAndDetail(t.description, kind);
