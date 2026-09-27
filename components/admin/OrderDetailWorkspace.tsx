@@ -3025,7 +3025,7 @@ export function OrderDetailWorkspace({
         { label: "Datu serv.", Icon: Layers, row: 1 as const },
         { label: "Dīleris", Icon: CarFront, row: 1 as const },
         { label: "AUCTION", Icon: Globe, row: 1 as const },
-        { label: "Citi avoti", Icon: Link2, row: 2 as const },
+        { label: "Citi avoti", Icon: Link2, row: 1 as const },
         { label: "DK", Icon: Landmark, row: 2 as const },
         { label: "SWE", Icon: Globe, row: 2 as const },
         { label: "FIN", Icon: Landmark, row: 2 as const },
@@ -4309,7 +4309,7 @@ export function OrderDetailWorkspace({
               iepakojumu, tāpēc soļi paliek pareizā secībā un desktop režģis nemainās. */}
           <div className="order-1 flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:order-2">
             {([1, 2] as const).map((row) => {
-              const cols = row === 1 ? "grid-cols-5" : "grid-cols-8";
+              const cols = row === 1 ? "grid-cols-6" : "grid-cols-8";
               return (
                 <div key={row} className={`grid min-w-0 ${cols} gap-1 max-md:contents`}>
                   {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
