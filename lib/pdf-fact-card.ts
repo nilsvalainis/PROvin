@@ -105,13 +105,20 @@ export function buildPdfKvPairHtml(rows: readonly PdfKvRow[]): string {
   return `<div class="pdf-v1-kv-pair">${kvTableHtml(left)}${kvTableHtml(right)}</div>`;
 }
 
+/** Viena kolonna - gariem reģistra faktiem (Somija), kur divas kolonnas kļūst nesalasāmas. */
+export function buildPdfKvStackHtml(rows: readonly PdfKvRow[]): string {
+  return kvTableHtml(rows);
+}
+
 export function buildPdfFactCardHtml(
   rows: { k: string; v: string }[],
   title = "Transportlīdzekļa informācija",
+  opts?: { columns?: 1 | 2 },
 ): string {
   if (rows.length === 0) return "";
   const head = title.trim()
     ? `<p class="pdf-subhead">${escapeHtml(title.trim())}</p>`
     : "";
-  return `${head}${buildPdfKvPairHtml(rows)}`;
+  const body = opts?.columns === 1 ? buildPdfKvStackHtml(rows) : buildPdfKvPairHtml(rows);
+  return `${head}${body}`;
 }

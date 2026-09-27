@@ -2268,6 +2268,40 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("<p class=\"pdf-subhead pdf-subhead--flush\">Statuss</p>");
     expect(doc).not.toContain("⚠");
   });
+
+  it("prints Somijas reģistra faktus vienā kolonnā, ne divās", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.traficom_fi,
+            mileageRows: [],
+            incidentRows: [],
+            comments: "",
+            ownersSummary: "Īpašnieku skaits Somijā: 3",
+            statusRecords: [
+              "Reģistrācijas statuss: noņemts no reģistra bojājuma dēļ",
+              "Nākamā apskate: 12.2026",
+              "Izmantošanas veids: privāti",
+              "Apdrošināšana: spēkā",
+            ].join("\n"),
+            autoNotes: "Noņemts no reģistra bojājuma dēļ (12.12.2024).",
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const fiStart = doc.indexOf(SOURCE_BLOCK_LABELS.traficom_fi);
+    expect(fiStart).toBeGreaterThan(-1);
+    const fiChunk = doc.slice(fiStart, fiStart + 2500);
+    expect(fiChunk).toContain("pdf-v1-kv");
+    expect(fiChunk).toContain("Transportlīdzekļa informācija");
+    expect(fiChunk).toContain("Īpašnieku skaits Somijā");
+    expect(fiChunk).not.toContain("pdf-v1-kv-pair");
+  });
 });
 
 describe("buildClientReportDocumentHtml lang (multi-language export)", () => {

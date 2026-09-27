@@ -43,6 +43,22 @@ describe("pdf-fact-card", () => {
     expect(html).not.toContain("pdf-report-comment-note");
   });
 
+  it("Somijas faktus liek vienā kv kolonnā", () => {
+    const html = buildPdfFactCardHtml(
+      [
+        { k: "Īpašnieku skaits Somijā", v: "3" },
+        { k: "Reģistrācijas statuss", v: "Noņemts no reģistra bojājuma dēļ" },
+        { k: "Nākamā apskate", v: "12.2026" },
+        { k: "Izmantošanas veids", v: "Privāti" },
+      ],
+      "Transportlīdzekļa informācija",
+      { columns: 1 },
+    );
+    expect(html).toContain("pdf-v1-kv");
+    expect(html).toContain("<td>Īpašnieku skaits Somijā</td><td>3</td>");
+    expect(html).not.toContain("pdf-v1-kv-pair");
+  });
+
   it("nemaina jau tīru Dānijas skaita rindu", () => {
     expect(
       polishPdfFactCardRows([{ k: "Īpašnieku skaits Dānijā", v: "2" }]),

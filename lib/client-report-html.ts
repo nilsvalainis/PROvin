@@ -1715,6 +1715,8 @@ function buildVendorAvotuSubsection(
       statusRecords: status,
       autoNotes: notes,
     }),
+    "Transportlīdzekļa informācija",
+    b.title === L.traficom_fi ? { columns: 1 } : undefined,
   );
   if (!hasComments && !factsHtml && !photosHtml && !sparkHtml) return "";
   const head = sectionHeadBrand(
