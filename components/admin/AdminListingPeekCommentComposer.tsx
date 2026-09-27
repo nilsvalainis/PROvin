@@ -32,6 +32,7 @@ const emptyLines = (): Record<ListingPeekTopicId, string> => ({
   seller: "",
   photos: "",
   dealer: "",
+  recommendation: "",
 });
 
 const SEND_ERROR_LABEL: Record<string, string> = {

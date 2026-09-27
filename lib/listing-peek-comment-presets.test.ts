@@ -67,11 +67,11 @@ describe("assembleListingPeekCustomerComment", () => {
     expect(comment).not.toMatch(/\n(?!\n)/);
     expect(comment).not.toContain("1. ");
     expect(comment).toContain("Sākotnējie dati norāda uz augstu odometra rādījumu ticamību");
-    expect(comment).toContain(". Tāpat caur šiem avotiem ir nepieciešams padziļināti pārbaudīt");
-    expect(comment).toContain(". Tehniski, šim modelim ir raksturīgas specifiskas nianses");
-    expect(comment).toContain(". Attiecībā uz pārdevēju - tam ir salīdzinoši laba reputācija");
+    expect(comment).toContain(". Automašīnas negadījumu vēsturi nepieciešams padziļināti pārbaudīt");
+    expect(comment).toContain(". Modelim ir zināmas ekspluatācijas nianses");
+    expect(comment).toContain(". Pārdevējam ir salīdzinoši laba reputācija");
     expect(comment).toContain(". Virspusēji izvērtējot sludinājuma fotogrāfijas, būtiski vizuālie defekti netika novēroti.");
-    expect(comment).toContain(". Pie nosacījuma, ka šis auto ir ticis apkopts pie oficiālā dīlera");
+    expect(comment).toContain(". Ja auto ir apkopts pie oficiālā dīlera");
     expect(comment).not.toContain(LISTING_PEEK_COMMENT_CLOSER);
   });
 
@@ -134,6 +134,7 @@ describe("assembleListingPeekCustomerComment", () => {
       seller: listingPeekPhraseByTone("seller", "positive"),
       photos: listingPeekPhraseByTone("photos", "positive"),
       dealer: listingPeekPhraseByTone("dealer", "caution"),
+      recommendation: "",
     };
     const parsed = parseListingPeekCustomerComment(
       assembleListingPeekCustomerComment({ closer: true, lines }),
@@ -235,8 +236,8 @@ describe("LISTING_PEEK_TOPICS", () => {
     expect(all).not.toContain("\u2014");
     expect(all).not.toContain("\u2013");
     expect(LISTING_PEEK_COMMENT_CLOSER).not.toContain("\u2014");
-    expect(LISTING_PEEK_TOPICS).toHaveLength(6);
-    expect(LISTING_PEEK_TOPICS.map((t) => t.phrases.length)).toEqual([7, 5, 4, 4, 5, 4]);
+    expect(LISTING_PEEK_TOPICS).toHaveLength(7);
+    expect(LISTING_PEEK_TOPICS.map((t) => t.phrases.length)).toEqual([7, 5, 3, 4, 5, 6, 5]);
     for (const topic of LISTING_PEEK_TOPICS) {
       const ids = topic.phrases.map((p) => p.id);
       expect(new Set(ids).size).toBe(ids.length);
@@ -246,5 +247,6 @@ describe("LISTING_PEEK_TOPICS", () => {
     expect(listingPeekPhraseByTone("incidents", "info")).toContain("Latvijas OCTA datubāzē");
     expect(listingPeekPhraseByTone("photos", "info")).toContain("leņķu dēļ");
     expect(listingPeekPhraseByTone("dealer", "critical")).toContain("nav iespējams");
+    expect(listingPeekPhraseById("recommendation-neiesakam")).toContain("neiesakām");
   });
 });

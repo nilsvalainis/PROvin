@@ -5,6 +5,7 @@ import type { SourceBlockKey } from "@/lib/admin-source-blocks";
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
+  BadgeCheck,
   Battery,
   Camera,
   CarFront,
@@ -120,4 +121,5 @@ export const LISTING_PEEK_TOPIC_LUCIDE = {
   seller: CircleUser,
   photos: Camera,
   dealer: Factory,
+  recommendation: BadgeCheck,
 } as const;
