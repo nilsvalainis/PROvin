@@ -354,9 +354,6 @@ const PDF_PROVIN_SOURCES_L2 = "Publiskas Eiropas datubāzes";
 const PDF_PROVIN_SOURCES_L3 = "Citi avoti";
 const PDF_PROVIN_SOURCES_L_TOTAL = "Kopā";
 const PDF_SOURCES_CHECKED_TITLE = "Kas tika pārbaudīts";
-function capSourceCount(n: number): number {
-  return Math.min(Math.max(0, n), 9);
-}
 
 function vendorPdfBlockHasData(b: ClientManualVendorBlockPdf | undefined): boolean {
   if (!b) return false;
@@ -434,7 +431,7 @@ function countCitiAvotiFilledParts(b: CitiAvotiBlockState): number {
     if (section.comments.trim()) c++;
     if (section.rawUnprocessedData?.trim()) c++;
   }
-  return capSourceCount(c);
+  return c;
 }
 
 /** Tikai payload datu apkopošana PDF drukai - bez AI izsaukumiem un bez DB tiešās piekļuves. */
@@ -454,19 +451,16 @@ function computeProvinPdfSourcesUsedCounts(
   if (vis.lkf_ee && vendorPdfBlockHasData(getVendorPdfBlock(p, L.lkf_ee))) n1++;
   if (vis.carinfo && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carinfo))) n1++;
   if (vis.traficom_fi && vendorPdfBlockHasData(getVendorPdfBlock(p, L.traficom_fi))) n1++;
-  n1 = capSourceCount(n1);
 
   let n2 = 0;
   if (payloadCsddHasData(p, vis)) n2++;
   if (payloadLtabHasData(p, vis)) n2++;
   if (payloadSludinajumsHasData(p, vis)) n2++;
-  n2 = capSourceCount(n2);
 
   let n3 = 0;
   if (vis.citi_avoti && p.citiAvoti && citiAvotiHasContent(p.citiAvoti)) {
     n3 = countCitiAvotiFilledParts(p.citiAvoti);
   }
-  n3 = capSourceCount(n3);
 
   return { n1, n2, n3 };
 }
@@ -520,7 +514,7 @@ function collectPdfCheckedSources(
 
 function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   const { n1, n2, n3 } = computeProvinPdfSourcesUsedCounts(p, vis);
-  const nTotal = capSourceCount(n1 + n2 + n3);
+  const nTotal = n1 + n2 + n3;
   if (nTotal === 0) return "";
 
   const cards = [

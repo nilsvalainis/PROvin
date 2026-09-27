@@ -1920,6 +1920,64 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("CITI AVOTI - Mans avots");
   });
 
+  it("Kopā ir kategoriju summa, arī ja tā pārsniedz 9", () => {
+    const vendor = (title: string): NonNullable<ClientReportPayload["manualVendorBlocks"]>[number] => ({
+      title,
+      mileageRows: [{ date: "01.01.2020", odometer: "1000", country: "LV" }],
+      incidentRows: [],
+      comments: "",
+    });
+    const csdd = emptyCsddFields();
+    csdd.comments = "CSDD ir";
+    const vis = mergePdfVisibility({
+      csdd: true,
+      autodna: true,
+      carvertical: true,
+      auto_records: true,
+      cc_vin: true,
+      traficom_fi: true,
+      ltab: true,
+      sludinajums: true,
+      citi_avoti: true,
+    });
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        pdfVisibility: vis,
+        csddForm: csdd,
+        autoRecordsBlock: { ...emptyAutoRecordsBlock(), comments: "Dīleris" },
+        ccVinBlock: { ...emptyCcVinBlock(), comments: "Izsole" },
+        manualLtabBlock: { rows: [], comments: "LTAB", certificate: undefined },
+        tirgusForm: { ...emptyTirgusFields(), comments: "Sludinājums" },
+        citiAvoti: {
+          sections: [
+            {
+              ...emptyCitiAvotiSection(),
+              comments: "Viens",
+              rawUnprocessedData: "Divi",
+              serviceHistory: [{ date: "01.01.2020", odometer: "5000", country: "LV" }],
+            },
+          ],
+        },
+        manualVendorBlocks: [
+          vendor(SOURCE_BLOCK_LABELS.autodna),
+          vendor(SOURCE_BLOCK_LABELS.carvertical),
+          vendor(SOURCE_BLOCK_LABELS.traficom_fi),
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const wrap = doc.match(/pdf-provin-sources-wrap[\s\S]*?<\/table>/)?.[0] ?? "";
+    expect(wrap).toContain("Maksas vēstures atskaites");
+    expect(wrap).toMatch(/Maksas vēstures atskaites<\/td><td>6<\/td>/);
+    expect(wrap).toMatch(/Publiskas Eiropas datubāzes<\/td><td>3<\/td>/);
+    expect(wrap).toMatch(/Citi avoti<\/td><td>3<\/td>/);
+    expect(wrap).toMatch(/Kopā<\/strong><\/td><td><strong>12<\/strong>/);
+    expect(wrap).not.toMatch(/Kopā<\/strong><\/td><td><strong>9<\/strong>/);
+  });
+
   it("PDF footer is a document colophon without website marketing or issuer personal data", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload(),
