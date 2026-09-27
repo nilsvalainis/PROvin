@@ -12,16 +12,48 @@ import type {
 } from "@/lib/provin-alert-banners";
 import {
   isProvinBannerIncludedInPdf,
+  ownManualBanners,
   PROVIN_INFO_BANNER_KINDS,
   resolveProvinBanners,
   upsertProvinBannerOverride,
 } from "@/lib/provin-alert-banners";
 import { BANNER_SEVERITY_OPTIONS, bannerSeverityChrome } from "@/components/admin/admin-banner-chrome";
-import { Pencil, RotateCcw } from "lucide-react";
+import { AlertTriangle, Pencil, RotateCcw } from "lucide-react";
 import type { PdfSummaryTile } from "@/lib/pdf-report-summary";
 import { summaryTilesAsResolvedBanners } from "@/lib/pdf-report-summary";
 
 const INFO_KINDS = new Set<ProvinBannerKind>(PROVIN_INFO_BANNER_KINDS);
+
+type CompactWarning = {
+  key: string;
+  severity: "red" | "yellow";
+  label: string;
+  title: string;
+};
+
+function compactLabelFromResolved(b: ProvinResolvedBanner): string {
+  const label = b.card?.label?.trim() ?? "";
+  const value = b.card?.value?.trim() ?? "";
+  if (label && value) return `${label}: ${value}`;
+  if (value) return value;
+  if (label) return label;
+  return b.text.trim();
+}
+
+function compactTitleFromResolved(b: ProvinResolvedBanner): string {
+  const bits = [b.card?.label, b.card?.value, b.card?.note || b.text]
+    .map((part) => part?.trim() ?? "")
+    .filter(Boolean);
+  return bits.join(". ") || b.text.trim();
+}
+
+/** Sarkans ir augstāks par oranžo. Tas pats veids paliek vienu reizi. */
+function upsertCompactWarning(map: Map<string, CompactWarning>, item: CompactWarning) {
+  const prev = map.get(item.key);
+  if (!prev || (prev.severity === "yellow" && item.severity === "red")) {
+    map.set(item.key, item);
+  }
+}
 
 const FIELD_CLASS =
   "w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1.5 text-[11px] leading-snug text-[var(--admin-field-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -34,21 +66,23 @@ export function AdminProvinAlertBanners({
   onPdfIncludeChange,
   manualBanners = [],
   onManualBannersChange,
+  cardsHidden = false,
 }: {
   banners: ProvinAlertBanner[];
   infoBanners?: ProvinInfoBanner[];
-  /** Četras kopsavilkuma plāksnītes - vienmēr rediģējamas un slēdzamas. */
+  /** Četras kopsavilkuma plāksnītes - rediģējamas un slēdzamas, kamēr kartītes nav paslēptas. */
   summaryTiles?: PdfSummaryTile[];
   pdfInclude?: ProvinBannerPdfInclude;
   onPdfIncludeChange?: (kind: ProvinBannerKind, included: boolean) => void;
   /** Pilns saraksts — aprēķināto brīdinājumu labojumi glabājas tajā pašā masīvā. */
   manualBanners?: ProvinManualBanner[];
   onManualBannersChange?: (next: ProvinManualBanner[]) => void;
+  /** Paslēpt pilnās kartītes. Sarkanie un oranžie brīdinājumi paliek kompaktā joslā. */
+  cardsHidden?: boolean;
 }) {
   const [openKinds, setOpenKinds] = useState<ProvinBannerKind[]>([]);
   const resolved = resolveProvinBanners({ alertBanners: banners, infoBanners, manualBanners });
   const summaryResolved = summaryTilesAsResolvedBanners(summaryTiles, manualBanners);
-  if (resolved.length === 0 && summaryResolved.length === 0) return null;
 
   const editable = Boolean(onManualBannersChange);
 
@@ -65,6 +99,65 @@ export function AdminProvinAlertBanners({
   const toggleOpen = (kind: ProvinBannerKind) => {
     setOpenKinds((prev) => (prev.includes(kind) ? prev.filter((k) => k !== kind) : [...prev, kind]));
   };
+
+  if (cardsHidden) {
+    const compact = new Map<string, CompactWarning>();
+    for (const b of [...summaryResolved, ...resolved]) {
+      if (b.severity !== "red" && b.severity !== "yellow") continue;
+      const label = compactLabelFromResolved(b);
+      if (!label) continue;
+      upsertCompactWarning(compact, {
+        key: b.kind,
+        severity: b.severity,
+        label,
+        title: compactTitleFromResolved(b),
+      });
+    }
+    for (const b of ownManualBanners(manualBanners)) {
+      if (b.severity !== "red" && b.severity !== "yellow") continue;
+      const title = (b.title ?? "").trim();
+      const value = (b.value ?? "").trim();
+      const text = b.text.trim();
+      const label = title && value ? `${title}: ${value}` : value || title || text;
+      if (!label) continue;
+      compact.set(`manual-${b.id}`, {
+        key: `manual-${b.id}`,
+        severity: b.severity,
+        label,
+        title: [title, value, text].filter(Boolean).join(". ") || label,
+      });
+    }
+    const warnings = [...compact.values()].sort((a, b) => {
+      if (a.severity === b.severity) return 0;
+      return a.severity === "red" ? -1 : 1;
+    });
+    if (warnings.length === 0) return null;
+    return (
+      <div className="mt-1.5 flex flex-wrap gap-1" role="region" aria-label="Kompaktie brīdinājumi">
+        {warnings.map((w) => {
+          const orange = w.severity === "yellow";
+          return (
+            <p
+              key={w.key}
+              role="alert"
+              title={w.title}
+              data-provin-severity={w.severity}
+              className={`inline-flex max-w-full items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium leading-tight ${
+                orange
+                  ? "border-[#F97316]/45 bg-[#F97316]/12 text-[#C2410C]"
+                  : "border-[#FF4D4D]/45 bg-[#FF4D4D]/10 text-[#C62828]"
+              }`}
+            >
+              <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden strokeWidth={1.75} />
+              <span className="min-w-0 truncate">{w.label}</span>
+            </p>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (resolved.length === 0 && summaryResolved.length === 0) return null;
 
   const renderRow = (b: ProvinResolvedBanner, isInfo: boolean) => {
     const chrome = bannerSeverityChrome(b.severity);

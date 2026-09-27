@@ -135,6 +135,7 @@ import {
 import { buildPdfReportSummaryTiles } from "@/lib/pdf-report-summary";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
+import { useAdminBannerCardsHidden } from "@/components/admin/use-admin-banner-cards-hidden";
 import {
   computeProvinAlertBannersFromWorkspace,
   computeProvinInfoBannersFromWorkspace,
@@ -738,6 +739,7 @@ export function OrderDetailWorkspace({
   const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
   const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
+  const bannerCards = useAdminBannerCardsHidden();
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
   const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
   const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
@@ -3929,13 +3931,21 @@ export function OrderDetailWorkspace({
 
   const alertsSection = (
       <section id="admin-order-section-bridinajumi" className={`${workspaceSectionShell} mb-1.5`}>
-        <div className="mb-1.5 flex flex-wrap items-center justify-end gap-2">
+        <div className={`flex flex-wrap items-center justify-between gap-2 ${bannerCards.hidden ? "" : "mb-1.5"}`}>
+          <button
+            type="button"
+            className="inline-flex h-6 items-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 text-[10px] font-medium text-[var(--color-apple-text)] hover:bg-black/[0.04]"
+            aria-pressed={bannerCards.hidden}
+            onClick={bannerCards.toggle}
+          >
+            {bannerCards.hidden ? "Rādīt kartītes" : "Paslēpt kartītes"}
+          </button>
           <AdminPdfIncludeToggle
             checked={pdfVisibility.alerts}
             onChange={(next) => onPdfVisibilityChange({ alerts: next })}
           />
         </div>
-        <div className="space-y-2">
+        <div className={bannerCards.hidden ? "" : "space-y-2"}>
           <AdminProvinAlertBanners
             banners={provinAlertBanners}
             infoBanners={provinInfoBanners}
@@ -3944,8 +3954,11 @@ export function OrderDetailWorkspace({
             onPdfIncludeChange={patchBannerPdfInclude}
             manualBanners={manualBanners}
             onManualBannersChange={setManualBanners}
+            cardsHidden={bannerCards.hidden}
           />
-          <AdminManualBannersEditor banners={manualBanners} onChange={setManualBanners} />
+          {bannerCards.hidden ? null : (
+            <AdminManualBannersEditor banners={manualBanners} onChange={setManualBanners} />
+          )}
         </div>
       </section>
     );
