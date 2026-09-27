@@ -2998,14 +2998,14 @@ export function OrderDetailWorkspace({
       worstTrafficLevel(traffic.csdd, traffic.ltab),
       vendors,
       traffic.auto_records,
-      traffic.citi_avoti,
       traffic.cc_vin,
-      traffic.asv,
+      traffic.citi_avoti,
       traffic.tjekbil,
-      traffic.finnik,
-      worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
       traffic.carinfo,
       traffic.traficom_fi,
+      worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
+      traffic.finnik,
+      traffic.asv,
       traffic.listingSection,
       expertTraffic,
     ];
@@ -3018,14 +3018,14 @@ export function OrderDetailWorkspace({
         { label: "CSDD / LTAB", Icon: ClipboardList, row: 1 as const },
         { label: "Datu serv.", Icon: Layers, row: 1 as const },
         { label: "Dīleris", Icon: CarFront, row: 1 as const },
-        { label: "Citi avoti", Icon: Link2, row: 1 as const },
-        { label: "Starptaut.", Icon: Globe, row: 2 as const },
-        { label: "ASV", Icon: Flag, row: 2 as const },
-        { label: "Tjekbil", Icon: Landmark, row: 2 as const },
+        { label: "AUCTION", Icon: Globe, row: 1 as const },
+        { label: "Citi avoti", Icon: Link2, row: 2 as const },
+        { label: "DK", Icon: Landmark, row: 2 as const },
+        { label: "SWE", Icon: Globe, row: 2 as const },
+        { label: "FIN", Icon: Landmark, row: 2 as const },
+        { label: "EST", Icon: Flag, row: 2 as const },
         { label: "NL reģ.", Icon: Landmark, row: 2 as const },
-        { label: "Igaunija", Icon: Flag, row: 2 as const },
-        { label: "car.info", Icon: Globe, row: 2 as const },
-        { label: "Somija", Icon: Landmark, row: 2 as const },
+        { label: "ASV", Icon: Flag, row: 2 as const },
         { label: "Sludinājums", Icon: Newspaper, row: 2 as const },
         { label: "Kopsavilkums", Icon: ListChecks, row: 2 as const },
       ] as const,
@@ -4626,7 +4626,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 4 ? (
+        {wizardStep === 5 ? (
           <div id="admin-order-block-citi-avoti" className="min-w-0">
             <AdminCitiAvotiSourceBlock
               value={blocksDisplaySafe.citi_avoti}
@@ -4645,7 +4645,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 5 ? (
+        {wizardStep === 4 ? (
           <div id="admin-order-block-cc-vin" className="min-w-0">
             <AdminCcVinSourceBlock
               value={blocksDisplaySafe.cc_vin}
@@ -4664,7 +4664,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {wizardStep === 11 ? (
           <div id="admin-order-block-asv" className="min-w-0">
             <AdminAsvSourceBlock
               value={blocksDisplaySafe.asv}
@@ -4683,7 +4683,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {wizardStep === 6 ? (
           <div id="admin-order-block-tjekbil" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
@@ -4704,7 +4704,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 8 ? (
+        {wizardStep === 10 ? (
           <div id="admin-order-block-finnik" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="finnik"
@@ -4756,7 +4756,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 10 ? (
+        {wizardStep === 7 ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -4777,7 +4777,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 11 ? (
+        {wizardStep === 8 ? (
           <div id="admin-order-block-traficom-fi" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="traficom_fi"

@@ -1045,6 +1045,7 @@ export function AdminEstoniaVinRegistryPair({
 
   return (
     <div className="space-y-2">
+      <h2 className="text-[11px] font-semibold uppercase tracking-wide text-cyan-700">EST</h2>
       {!readOnly ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2 py-1.5">
           <button
