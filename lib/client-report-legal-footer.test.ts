@@ -87,16 +87,17 @@ describe("client report legal footer", () => {
     expect(html).not.toContain("pdf-doc-footer__issuer");
   });
 
-  it("audit completed email HTML includes shared legal footer", () => {
+  it("audit completed email HTML uses the product-specific body", () => {
     const html = auditCompletedEmailHtml({
       carVin: "WVWZZZ1JZXW000001",
       attachmentLines: ["PROVIN_atskaite.pdf"],
-      siteOrigin: "https://provin.lv",
+      productKind: "audits",
     });
-    expect(html).toContain("SVARĪGA INFORMĀCIJA");
-    expect(html).toContain("digitāls datu apkopojums");
-    expect(html).toContain("kategoriski aizliegts pavairot");
-    expect(html).toContain("lietosanas-noteikumi");
-    expect(html).toContain("privatuma-politika");
+    expect(html).toContain("PROVIN AUDITS atskaite");
+    expect(html).toContain("WVWZZZ1JZXW000001");
+    expect(html).toContain("Kopsavilkuma PDF atskaiti");
+    expect(html).toContain("PROVIN.LV komanda");
+    expect(html).not.toContain("SVARĪGA INFORMĀCIJA");
+    expect(html).not.toMatch(/—/);
   });
 });

@@ -51,6 +51,7 @@ export async function postNotifyReportReadyViaBlob(input: {
   customerEmail?: string;
   uploads: NotifyPortfolioUploadItem[];
   extraAuditPdf?: File | null;
+  offerAuditDiscount?: boolean;
 }): Promise<{ res: Response; rawText: string; data: Record<string, unknown> }> {
   const files: { blob: Blob; filename: string; mime: string }[] = [];
   for (const u of input.uploads) {
@@ -79,6 +80,7 @@ export async function postNotifyReportReadyViaBlob(input: {
     body: JSON.stringify({
       sessionId: input.sessionId,
       ...(input.customerEmail?.trim() ? { customerEmail: input.customerEmail.trim() } : {}),
+      ...(input.offerAuditDiscount ? { offerAuditDiscount: true } : {}),
       blobAttachments,
     }),
   });

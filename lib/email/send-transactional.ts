@@ -22,6 +22,11 @@ import {
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { listingPeekPhotoCid } from "@/lib/listing-peek-photos";
 import { buildClientReportLegalFooterPlainText } from "@/lib/report-pdf-standards";
+import {
+  buildReportReadyPlainText,
+  buildReportReadySubject,
+  type ReportReadyProductKind,
+} from "@/lib/email/report-ready-copy";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
 export function isSmtpConfigured(): boolean {
@@ -301,11 +306,13 @@ function dedupeAttachmentFilenames(items: ReportReadyMailAttachment[]): ReportRe
   });
 }
 
-/** Klients: audits pabeigts: HTML + pielikumi (PDF/attēli), rēķins servera pusē. */
+/** Klients: atskaite gatava (dīleris / MINI / AUDITS) + pielikumi. */
 export async function sendReportReadyEmail(opts: {
   to: string;
   carVin: string;
   attachments: ReportReadyMailAttachment[];
+  productKind?: ReportReadyProductKind;
+  offerAuditDiscount?: boolean;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -324,33 +331,21 @@ export async function sendReportReadyEmail(opts: {
   const rawVin = opts.carVin.trim();
   const hasRealVin = isValidVin(rawVin);
   const carVin = hasRealVin ? normalizeVin(rawVin) : "";
+  const productKind = opts.productKind ?? "audits";
+  const offerAuditDiscount = productKind === "dealer" && opts.offerAuditDiscount === true;
   const html = auditCompletedEmailHtml({
     carVin: hasRealVin ? carVin : "-",
     attachmentLines: deduped.map((a) => a.filename),
-    siteOrigin: getSiteOrigin(),
+    productKind,
+    offerAuditDiscount,
   });
-
-  const text = [
-    "Labdien!",
-    "",
-    "Jūsu pasūtītais audits ir pabeigts!",
-    "",
-    hasRealVin ? `VIN: ${carVin}` : "VIN: skatiet pielikumā pievienoto PDF.",
-    "",
-    "Pielikumi šajā vēstulē:",
-    ...deduped.map((a) => `- ${a.filename}`),
-    "",
-    "Saziņa: info@provin.lv (atbildot uz šo e-pastu).",
-    buildClientReportLegalFooterPlainText(),
-    "",
-    "Ar cieņu,",
-    "PROVIN.LV",
-  ].join("\n");
-
-  /** Viens atdalītājs starp frāzi un VIN (izvairās no „– –”, ja „VIN” lauks ir svītra / mēstule). */
-  const subject = hasRealVin
-    ? `PROVIN audits ir pabeigts: ${carVin}`
-    : "PROVIN audits ir pabeigts, PDF pielikumā";
+  const text = buildReportReadyPlainText({
+    kind: productKind,
+    vin: carVin,
+    attachmentLines: deduped.map((a) => a.filename),
+    offerAuditDiscount,
+  });
+  const subject = buildReportReadySubject(productKind, carVin);
 
   try {
     await sendSmtpMail({

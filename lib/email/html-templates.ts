@@ -1,5 +1,11 @@
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
+import {
+  REPORT_READY_AUDIT_CTA_URL,
+  REPORT_READY_AUDIT_PRICE_NOW,
+  REPORT_READY_AUDIT_PRICE_WAS,
+  type ReportReadyProductKind,
+} from "@/lib/email/report-ready-copy";
 
 /** Minimālistisks HTML: balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
 const BRAND = "#0061D2";
@@ -184,42 +190,75 @@ ${cta}
   return shell(inner, { omitBrandRibbon: true });
 }
 
-/** E-pasts: „audits pabeigts” ar pielikumu sarakstu (faktiskie faili: nodemailer). */
+function reportReadyVinHtml(vinRaw: string): string {
+  const hasVin = isValidVin(vinRaw);
+  if (!hasVin) return "";
+  return ` transportlīdzeklim ar VIN <strong>${esc(normalizeVin(vinRaw))}</strong>`;
+}
+
+function dealerAuditDiscountHtml(): string {
+  return `<div style="margin:18px 0 16px;padding:18px 18px 16px;border:1px solid #bfdbfe;border-radius:14px;background:#f0f7ff;">
+<p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:${INK};"><strong>Plānojat iegādāties šo auto?</strong><br/>Veiciet pilnu pārbaudi pirms pirkuma! Piedāvājam PROVIN AUDITS pakalpojumu ar 20% atlaidi:</p>
+<ul style="margin:0 0 12px;padding-left:20px;color:${INK};font-size:15px;line-height:1.5;">
+<li>Padziļināta auto vēstures un risku analīze</li>
+<li>Odometra rādījumu atbilstības pārbaude</li>
+<li>Negadījumu un bojājumu vēsture</li>
+</ul>
+<p style="margin:0 0 8px;font-size:15px;color:${INK};">Cena: <span style="text-decoration:line-through;color:#9ca3af;">${esc(
+    REPORT_READY_AUDIT_PRICE_WAS,
+  )}</span> ${esc(REPORT_READY_AUDIT_PRICE_NOW)}</p>
+${ctaButton(REPORT_READY_AUDIT_CTA_URL, `Pasūtīt PROVIN AUDITS par ${REPORT_READY_AUDIT_PRICE_NOW}`)}
+</div>`;
+}
+
+/** Klienta „atskaite gatava” e-pasts pēc produkta (dīleris / MINI / AUDITS). */
 export function auditCompletedEmailHtml(opts: {
   carVin: string;
   attachmentLines: string[];
   siteOrigin?: string;
+  productKind?: ReportReadyProductKind;
+  offerAuditDiscount?: boolean;
 }): string {
-  const vinRaw = opts.carVin.trim();
-  const hasVin = isValidVin(vinRaw);
-  const vinEsc = hasVin ? esc(normalizeVin(vinRaw)) : "";
-  const hasList = opts.attachmentLines.length > 0;
-  const listHtml = hasList
-    ? `<ul style="margin:10px 0 18px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">${opts.attachmentLines
-        .map((l) => `<li style="margin:4px 0;">${esc(l)}</li>`)
-        .join("")}</ul>`
-    : "";
+  const kind = opts.productKind ?? "audits";
+  const vinHtml = reportReadyVinHtml(opts.carVin);
+  const files = opts.attachmentLines.map((l) => l.trim()).filter(Boolean);
+  const fileList =
+    files.length > 0
+      ? `<ul style="margin:4px 0 16px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">${files
+          .map((l) => `<li style="margin:4px 0;">${esc(l)}</li>`)
+          .join("")}</ul>`
+      : "";
 
-  const resultsBlock = hasList
-    ? `<p style="margin:0 0 8px;font-size:15px;color:${INK};line-height:1.55;"><strong>Kā saņemt rezultātus:</strong></p>
-<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.55;">PDF atskaite un papildu materiāli ir pievienoti šī e-pasta pielikumā.</p>
-${listHtml}`
-    : `<p style="margin:0 0 16px;font-size:15px;color:${MUTED};line-height:1.55;">Pielikumi nav pievienoti. Sazinieties ar mums, ja nepieciešams.</p>`;
-
-  const inner = `
+  let body = "";
+  if (kind === "dealer") {
+    body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${
-    hasVin
-      ? `Jūsu pasūtītais audits ir pabeigts!<br/>Atskaite transportlīdzeklim ar VIN <strong>${vinEsc}</strong> ir sagatavota.`
-      : `Jūsu pasūtītais audits ir pabeigts!<br/>Atskaite ir sagatavota un pievienota šī e-pasta <strong>pielikumā</strong> (PDF).`
-  }</p>
-${resultsBlock}
-<p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.55;"><strong>Saziņa un jautājumi:</strong></p>
-<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas kādi papildu jautājumi, droši sazinieties ar mums, atbildot uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
-${opts.siteOrigin ? clientReportLegalFooterEmailHtml(opts.siteOrigin) : ""}
-<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
-`;
-  return shell(inner, { omitBrandRibbon: true });
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vinHtml} ir sagatavoti.</p>
+<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
+${fileList}
+${opts.offerAuditDiscount ? dealerAuditDiscountHtml() : ""}
+<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
+<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>PROVIN.LV komanda</p>`;
+  } else if (kind === "mini") {
+    body = `
+<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite${vinHtml} ir sagatavota un pievienota šī e-pasta pielikumā.</p>
+<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas kādi jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
+<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>PROVIN.LV komanda</p>`;
+  } else {
+    body = `
+<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītā PROVIN AUDITS atskaite${vinHtml} ir sagatavota.</p>
+<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">E-pasta pielikumā atradīsiet:</p>
+<ul style="margin:4px 0 16px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">
+<li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
+<li style="margin:4px 0;">Papildu materiālus un pielikumus</li>
+</ul>
+<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
+<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>PROVIN.LV komanda</p>`;
+  }
+
+  return shell(body, { omitBrandRibbon: true });
 }
 
 type PartnerMailLocale = "lv" | "en" | "de" | "ru";

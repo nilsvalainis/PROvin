@@ -13,6 +13,7 @@ import { persistClientReportFromNotify } from "@/lib/partner-client-report-stora
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { resolveReportReadyProductKind } from "@/lib/email/report-ready-copy";
 
 /** Stripe metadata var būt tukšs; VIN bieži ir tikai admina melnrakstā (`orderEdits.vin`). */
 function resolveVinForNotify(sessionVin: string | null | undefined, draftVin: string | undefined): string {
@@ -86,6 +87,7 @@ export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
   let sessionId = "";
   let bodyCustomerEmail = "";
+  let offerAuditDiscount = false;
   let multipartForm: FormData | null = null;
   let jsonAttachmentsBase64: unknown = undefined;
   let jsonBlobAttachments: { url: string; filename?: string }[] | undefined;
@@ -95,6 +97,9 @@ export async function POST(req: Request) {
       multipartForm = await req.formData();
       sessionId = String(multipartForm.get("sessionId") ?? "").trim();
       bodyCustomerEmail = String(multipartForm.get("customerEmail") ?? "").trim();
+      offerAuditDiscount =
+        String(multipartForm.get("offerAuditDiscount") ?? "").trim() === "1" ||
+        String(multipartForm.get("offerAuditDiscount") ?? "").trim() === "true";
     } else {
       let body: unknown;
       try {
@@ -108,6 +113,7 @@ export async function POST(req: Request) {
       const b = body as Record<string, unknown>;
       sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
       bodyCustomerEmail = typeof b.customerEmail === "string" ? b.customerEmail.trim() : "";
+      offerAuditDiscount = b.offerAuditDiscount === true || b.offerAuditDiscount === "1";
       jsonAttachmentsBase64 = b.attachmentsBase64;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
@@ -258,6 +264,11 @@ export async function POST(req: Request) {
       to,
       carVin: notifyVin || "-",
       attachments: manualAttachments,
+      productKind: resolveReportReadyProductKind({
+        checkoutLine: order.checkoutLine,
+        amountTotalCents: order.amountTotal,
+      }),
+      offerAuditDiscount,
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);
