@@ -160,7 +160,7 @@ const USE_LV: Record<string, string> = {
   company: "Uzņēmuma lietošanā",
 };
 
-function useLv(raw: string): string {
+function traficomUseKindLv(raw: string): string {
   return USE_LV[raw.trim().toLowerCase()] ?? raw.trim();
 }
 
@@ -469,7 +469,12 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
   }
   for (const row of useHistory) {
     if (!row.start) continue;
-    timeline.push({ date: dateFi(row.start), odometer: "", country: FI, event: `Lietošanas veids: ${useLv(row.use)}` });
+    timeline.push({
+      date: dateFi(row.start),
+      odometer: "",
+      country: FI,
+      event: `Lietošanas veids: ${traficomUseKindLv(row.use)}`,
+    });
   }
   for (const row of decommission) {
     if (!row.start) continue;
