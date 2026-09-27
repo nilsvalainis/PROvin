@@ -15,6 +15,10 @@ import {
   paymentConfirmationHtml,
 } from "@/lib/email/html-templates";
 import type { OrderEmailPayload } from "@/lib/email/types";
+import {
+  buildDealerCancelledEmailDraft,
+  buildDealerNoDataEmailDraft,
+} from "@/lib/dealer-data-client-email";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { listingPeekPhotoCid } from "@/lib/listing-peek-photos";
 import { buildClientReportLegalFooterPlainText } from "@/lib/report-pdf-standards";
@@ -646,22 +650,10 @@ export async function sendDealerDataRefundEmail(opts: {
   const subject = opts.cancelled
     ? "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts"
     : "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts";
-  const vin = (opts.vin ?? "").trim().toUpperCase();
-  const text = [
-    opts.cancelled
-      ? "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts."
-      : `Pārbaudījām oficiālā dīlera servisa vēsturi${vin ? ` (VIN ${vin})` : ""}. Ražotāja datubāzē par šo automašīnu ierakstu nav.`,
-    opts.cancelled
-      ? ""
-      : "Tas nenozīmē, ka auto nav apkalpots: daļa ražotāju un neatkarīgo servisu datus šajā sistēmā nenodod.",
-    "",
-    `Atmaksa${opts.amountEur ? ` ${opts.amountEur}` : ""} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.`,
-    "",
-    "Ar cieņu,",
-    "PROVIN.LV",
-  ]
-    .filter((l, i, arr) => !(l === "" && arr[i - 1] === ""))
-    .join("\n");
+  const amount = (opts.amountEur ?? "").trim() || "24,99 €";
+  const text = opts.cancelled
+    ? buildDealerCancelledEmailDraft({ vin: opts.vin, amountEur: amount }).text
+    : buildDealerNoDataEmailDraft({ vin: opts.vin, amountEur: amount, refunded: true }).text;
 
   await sendSmtpMail({
     to: opts.to,
@@ -669,7 +661,7 @@ export async function sendDealerDataRefundEmail(opts: {
     text,
     html: dealerDataNoDataRefundEmailHtml({
       vin: opts.vin,
-      amountEur: opts.amountEur,
+      amountEur: amount,
       cancelled: opts.cancelled,
     }),
   });

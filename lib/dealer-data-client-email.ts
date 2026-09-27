@@ -3,9 +3,16 @@
  * Tīri stringi - der arī klienta komponentei, bez server-only.
  */
 
+export const DEALER_NO_DATA_AUDIT_CTA_URL = "https://provin.lv";
+
 function vinSuffix(vin?: string | null): string {
   const v = (vin ?? "").trim().toUpperCase();
   return v ? ` (VIN ${v})` : "";
+}
+
+function amountLine(amountEur?: string | null): string {
+  const a = (amountEur ?? "").trim();
+  return a || "24,99 €";
 }
 
 export type DealerClientEmailKind = "no_data" | "cancelled" | "ready";
@@ -16,7 +23,19 @@ export type DealerClientEmailDraft = {
   text: string;
 };
 
-/** E-pasts: OEM datos nav ieraksta (ar vai bez jau veiktas atmaksas). */
+/** Soft CTA bloks (pirms auto iegādes → PROVIN AUDITS). */
+export function dealerNoDataAuditCtaBlock(): string {
+  return [
+    "Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.",
+    "",
+    `Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`,
+  ].join("\n");
+}
+
+/**
+ * E-pasts: OEM / dīlera datos nav ieraksta (ar vai bez jau veiktas atmaksas).
+ * Noklusējums pēc atmaksas: A + soft CTA.
+ */
 export function buildDealerNoDataEmailDraft(opts: {
   vin?: string | null;
   amountEur?: string | null;
@@ -24,25 +43,37 @@ export function buildDealerNoDataEmailDraft(opts: {
   refunded?: boolean;
 }): DealerClientEmailDraft {
   const vin = vinSuffix(opts.vin);
-  const amount = (opts.amountEur ?? "").trim();
+  const amount = amountLine(opts.amountEur);
   const refunded = opts.refunded === true;
 
   const subject = refunded
     ? "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts"
     : "PROVIN.LV: dīlera dati nav pieejami";
 
-  const refundLine = refunded
-    ? `Atmaksa${amount ? ` ${amount}` : ""} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.`
-    : "Tā kā datus piegādāt nevaram, maksājumu atgriezīsim pilnā apmērā. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā pēc atmaksas, atkarībā no bankas.";
+  const refundBlock = refunded
+    ? [
+        "Informācija par naudas atmaksu:",
+        `Summa: ${amount} (veikta pilnā apmērā uz to pašu maksājumu karti).`,
+        "",
+        "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
+      ].join("\n")
+    : [
+        "Informācija par naudas atmaksu:",
+        `Summa: ${amount} (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).`,
+        "",
+        "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
+      ].join("\n");
 
   const text = [
-    `Pārbaudījām oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vin}. Ražotāja datubāzē par šo automašīnu ierakstu nav.`,
+    "Labdien!",
     "",
-    "Tas nenozīmē, ka auto nav apkalpots: daļa ražotāju un neatkarīgo servisu datus šajā sistēmā nenodod.",
+    `Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vin}. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.`,
     "",
-    refundLine,
+    refundBlock,
     "",
-    "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
+    dealerNoDataAuditCtaBlock(),
+    "",
+    "Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.",
     "",
     "Ar cieņu,",
     "PROVIN.LV",
@@ -56,14 +87,14 @@ export function buildDealerCancelledEmailDraft(opts: {
   amountEur?: string | null;
 }): DealerClientEmailDraft {
   const vin = vinSuffix(opts.vin);
-  const amount = (opts.amountEur ?? "").trim();
+  const amount = amountLine(opts.amountEur);
   return {
     kind: "cancelled",
     subject: "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
     text: [
       `Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts${vin}.`,
       "",
-      `Atmaksa${amount ? ` ${amount}` : ""} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.`,
+      `Atmaksa ${amount} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.`,
       "",
       "Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, atbildiet uz šo e-pastu.",
       "",

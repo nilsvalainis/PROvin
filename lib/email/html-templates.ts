@@ -337,10 +337,11 @@ ${ctaButton(opts.resetUrl, cta)}
 
 /**
  * Operatora rediģēts dīlera e-pasts (plain text → rindkopas).
- * Izmanto gan „nav datu”, gan PDF piegādei - saturu nosaka teksts, ne veidne.
+ * Rinda `Pasūtīt: https://…` kļūst par CTA pogu.
  */
 export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null; text: string }): string {
   const title = (opts.title ?? "").trim();
+  const orderCta = /^Pasūtīt:\s*(https?:\/\/\S+)\s*$/i;
   const paragraphs = opts.text
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/)
@@ -348,6 +349,10 @@ export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null
     .filter(Boolean);
   const body = paragraphs
     .map((block) => {
+      const m = orderCta.exec(block);
+      if (m?.[1] && isValidHttpUrl(m[1])) {
+        return ctaButton(m[1], "Pasūtīt PROVIN AUDITS");
+      }
       const html = esc(block).replace(/\n/g, "<br/>");
       return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${html}</p>`;
     })
@@ -360,7 +365,7 @@ export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null
 
 /**
  * E-pasts: oficiālā dīlera dati par šo VIN nav pieejami, maksājums atgriezts.
- * Nekad neapgalvo, ka auto nav apkalpots: ražotāja datubāzē vienkārši nav ieraksta.
+ * Noklusējums: A + soft CTA.
  */
 export function dealerDataNoDataRefundEmailHtml(opts: {
   vin?: string | null;
@@ -370,23 +375,36 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
 }): string {
   const vinRaw = (opts.vin ?? "").trim();
   const vinEsc = isValidVin(vinRaw) ? esc(normalizeVin(vinRaw)) : "";
-  const amount = (opts.amountEur ?? "").trim();
+  const amount = (opts.amountEur ?? "").trim() || "24,99 €";
   const title = opts.cancelled ? "Pasūtījums atcelts un maksājums atgriezts" : "Dīlera dati nav pieejami";
 
-  const body = opts.cancelled
-    ? `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.</p>`
-    : `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Pārbaudījām oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${
-        vinEsc ? ` (VIN <strong>${vinEsc}</strong>)` : ""
-      }. Ražotāja datubāzē par šo automašīnu ierakstu nav.</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Tas nenozīmē, ka auto nav apkalpots: daļa ražotāju un neatkarīgo servisu datus šajā sistēmā nenodod. Tā kā datus piegādāt nevaram, maksājumu atgriezām.</p>`;
+  if (opts.cancelled) {
+    const inner = `
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts${
+      vinEsc ? ` (VIN <strong>${vinEsc}</strong>)` : ""
+    }.</p>
+<p style="margin:0 0 18px;font-size:15px;color:${INK};line-height:1.6;">Atmaksa ${esc(
+      amount,
+    )} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
+<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, atbildiet uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
+<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
+`;
+    return shell(inner, { omitBrandRibbon: true });
+  }
 
+  const vinPart = vinEsc ? ` (VIN <strong>${vinEsc}</strong>)` : "";
   const inner = `
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
-${body}
-<p style="margin:0 0 18px;font-size:15px;color:${INK};line-height:1.6;">Atmaksa${
-    amount ? ` ${esc(amount)}` : ""
-  } veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
-<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, atbildiet uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vinPart}. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
+<p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.6;"><strong>Informācija par naudas atmaksu:</strong><br/>Summa: ${esc(
+    amount,
+  )} (veikta pilnā apmērā uz to pašu maksājumu karti).</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
+${ctaButton("https://provin.lv", "Pasūtīt PROVIN AUDITS")}
+<p style="margin:16px 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
 <p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
 `;
   return shell(inner, { omitBrandRibbon: true });

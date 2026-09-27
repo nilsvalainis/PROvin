@@ -227,7 +227,7 @@ export function AdminDealerDataJobStrip({
   const copyTemplate = async (cancelled: boolean) => {
     const text = cancelled
       ? whatsappPrefillDealerPaymentCancelled(vin)
-      : whatsappPrefillDealerNoDataRefunded(vin);
+      : whatsappPrefillDealerNoDataRefunded(vin, refundAmountEur(job));
     try {
       await navigator.clipboard.writeText(text);
       setNotice("WhatsApp šablons nokopēts.");

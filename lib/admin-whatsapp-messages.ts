@@ -23,23 +23,37 @@ PROVIN.LV`;
 
 function vinLine(vin: string | null | undefined): string {
   const v = (vin ?? "").trim().toUpperCase();
-  return v ? `\nVIN: ${v}` : "";
+  return v ? ` (VIN ${v})` : "";
+}
+
+function amountLine(amountEur?: string | null): string {
+  const a = (amountEur ?? "").trim();
+  return a || "24,99 €";
 }
 
 /**
- * OEM datubāzē par šo VIN nav ierakstu, un nauda ir atgriezta.
- * Neapgalvo, ka auto nav apkalpots: daļa ražotāju šos datus nenodod.
+ * OEM / dīlera datos nav ierakstu, nauda atgriezta.
+ * Noklusējums: A + soft CTA uz PROVIN AUDITS.
  */
-export function whatsappPrefillDealerNoDataRefunded(vin?: string | null): string {
-  return `Sveiki!
+export function whatsappPrefillDealerNoDataRefunded(
+  vin?: string | null,
+  amountEur?: string | null,
+): string {
+  const amount = amountLine(amountEur);
+  return `Labdien!
 
-Pārbaudīju oficiālā dīlera servisa vēsturi Jūsu pasūtījumam.${vinLine(vin)}
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vinLine(vin)}. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
 
-Ražotāja datubāzē par šo automašīnu ierakstu nav. Tas nenozīmē, ka auto nav apkalpots: daļa ražotāju un neatkarīgo servisu datus šajā sistēmā nenodod.
+Informācija par naudas atmaksu:
+Summa: ${amount} (veikta pilnā apmērā uz to pašu maksājumu karti).
 
-Tā kā datus piegādāt nevaru, maksājumu atgriezu pilnā apmērā. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
+Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
 
-Ja vēlaties, varu pastāstīt, kā servisa vēsturi pārbaudīt citos avotos.
+Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+
+Pasūtīt: https://provin.lv
+
+Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv.
 
 Ar cieņu,
 PROVIN.LV`;
