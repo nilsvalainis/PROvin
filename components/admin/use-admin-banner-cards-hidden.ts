@@ -6,13 +6,14 @@ import { useCallback, useEffect, useState } from "react";
 const STORAGE_KEY = "provin-admin-banner-cards-hidden";
 
 export function useAdminBannerCardsHidden() {
-  const [hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(true);
 
   useEffect(() => {
     try {
-      setHidden(localStorage.getItem(STORAGE_KEY) === "1");
+      // Noklusējums: paslēptas. Rādīt tikai ja operators to skaidri izvēlējies ("0").
+      setHidden(localStorage.getItem(STORAGE_KEY) !== "0");
     } catch {
-      setHidden(false);
+      setHidden(true);
     }
   }, []);
 
