@@ -3,6 +3,8 @@
  * Tīri stringi - der arī klienta komponentei, bez server-only.
  */
 
+import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
+
 export const DEALER_NO_DATA_AUDIT_CTA_URL = "https://provin.lv";
 
 function vinSuffix(vin?: string | null): string {
@@ -75,8 +77,7 @@ export function buildDealerNoDataEmailDraft(opts: {
     "",
     "Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.",
     "",
-    "Ar cieņu,",
-    "PROVIN.LV",
+    clientMessageSignOff(),
   ].join("\n");
 
   return { kind: "no_data", subject, text };
@@ -98,8 +99,7 @@ export function buildDealerCancelledEmailDraft(opts: {
       "",
       "Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, atbildiet uz šo e-pastu.",
       "",
-      "Ar cieņu,",
-      "PROVIN.LV",
+      clientMessageSignOff(),
     ].join("\n"),
   };
 }
@@ -117,8 +117,7 @@ export function buildDealerReadyEmailDraft(opts: { vin?: string | null }): Deale
       "",
       "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
       "",
-      "Ar cieņu,",
-      "PROVIN.LV",
+      clientMessageSignOff(),
     ].join("\n"),
   };
 }

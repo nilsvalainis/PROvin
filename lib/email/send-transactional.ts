@@ -313,6 +313,7 @@ export async function sendReportReadyEmail(opts: {
   attachments: ReportReadyMailAttachment[];
   productKind?: ReportReadyProductKind;
   offerAuditDiscount?: boolean;
+  includeGoogleReview?: boolean;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -333,17 +334,20 @@ export async function sendReportReadyEmail(opts: {
   const carVin = hasRealVin ? normalizeVin(rawVin) : "";
   const productKind = opts.productKind ?? "audits";
   const offerAuditDiscount = productKind === "dealer" && opts.offerAuditDiscount === true;
+  const includeGoogleReview = opts.includeGoogleReview === true;
   const html = auditCompletedEmailHtml({
     carVin: hasRealVin ? carVin : "-",
     attachmentLines: deduped.map((a) => a.filename),
     productKind,
     offerAuditDiscount,
+    includeGoogleReview,
   });
   const text = buildReportReadyPlainText({
     kind: productKind,
     vin: carVin,
     attachmentLines: deduped.map((a) => a.filename),
     offerAuditDiscount,
+    includeGoogleReview,
   });
   const subject = buildReportReadySubject(productKind, carVin);
 

@@ -88,6 +88,7 @@ export async function POST(req: Request) {
   let sessionId = "";
   let bodyCustomerEmail = "";
   let offerAuditDiscount = false;
+  let includeGoogleReview = false;
   let multipartForm: FormData | null = null;
   let jsonAttachmentsBase64: unknown = undefined;
   let jsonBlobAttachments: { url: string; filename?: string }[] | undefined;
@@ -100,6 +101,9 @@ export async function POST(req: Request) {
       offerAuditDiscount =
         String(multipartForm.get("offerAuditDiscount") ?? "").trim() === "1" ||
         String(multipartForm.get("offerAuditDiscount") ?? "").trim() === "true";
+      includeGoogleReview =
+        String(multipartForm.get("includeGoogleReview") ?? "").trim() === "1" ||
+        String(multipartForm.get("includeGoogleReview") ?? "").trim() === "true";
     } else {
       let body: unknown;
       try {
@@ -114,6 +118,7 @@ export async function POST(req: Request) {
       sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
       bodyCustomerEmail = typeof b.customerEmail === "string" ? b.customerEmail.trim() : "";
       offerAuditDiscount = b.offerAuditDiscount === true || b.offerAuditDiscount === "1";
+      includeGoogleReview = b.includeGoogleReview === true || b.includeGoogleReview === "1";
       jsonAttachmentsBase64 = b.attachmentsBase64;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
@@ -269,6 +274,7 @@ export async function POST(req: Request) {
         amountTotalCents: order.amountTotal,
       }),
       offerAuditDiscount,
+      includeGoogleReview,
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);

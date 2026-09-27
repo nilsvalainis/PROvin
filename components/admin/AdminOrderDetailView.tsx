@@ -9,6 +9,7 @@ import { META_ORDER_LUCIDE } from "@/lib/admin-lucide-registry";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
+import { whatsappPrefillForOrder } from "@/lib/admin-whatsapp-messages";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -543,7 +544,16 @@ export function AdminOrderDetailView({
                     compact
                     hideToolbar
                     resetVersion={orderFieldResetKey}
-                    endAdornment={<AdminWhatsAppOpenButton phone={mergedCustomerPhone} />}
+                    endAdornment={
+                      <AdminWhatsAppOpenButton
+                        phone={mergedCustomerPhone}
+                        prefillMessage={whatsappPrefillForOrder({
+                          checkoutLine: order.checkoutLine,
+                          amountTotalCents: order.amountTotal,
+                          vin: mergedVin,
+                        })}
+                      />
+                    }
                   />
                   <div
                     id={`admin-portfolio-slot-${order.id}`}

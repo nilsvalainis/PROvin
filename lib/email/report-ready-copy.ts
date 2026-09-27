@@ -11,6 +11,16 @@ import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 export const REPORT_READY_AUDIT_CTA_URL = "https://provin.lv";
 export const REPORT_READY_AUDIT_PRICE_WAS = "99,99 €";
 export const REPORT_READY_AUDIT_PRICE_NOW = "79,99 €";
+export const GOOGLE_REVIEW_URL = "https://g.page/r/CamRaT51IPQ_EBM/review";
+export const CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "Nils / IRISS", "PROVIN.LV"] as const;
+
+export function googleReviewPlainBlock(): string {
+  return `Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: ${GOOGLE_REVIEW_URL}`;
+}
+
+export function clientMessageSignOff(): string {
+  return CLIENT_MESSAGE_SIGN_OFF_LINES.join("\n");
+}
 
 export type ReportReadyProductKind = "dealer" | "mini" | "audits";
 
@@ -52,14 +62,25 @@ export function dealerAuditDiscountPlainBlock(): string {
   ].join("\n");
 }
 
+function reportReadyClosingLines(includeGoogleReview?: boolean): string[] {
+  const lines: string[] = [];
+  if (includeGoogleReview) {
+    lines.push(googleReviewPlainBlock(), "");
+  }
+  lines.push(...CLIENT_MESSAGE_SIGN_OFF_LINES);
+  return lines;
+}
+
 export function buildReportReadyPlainText(opts: {
   kind: ReportReadyProductKind;
   vin: string;
   attachmentLines: string[];
   offerAuditDiscount?: boolean;
+  includeGoogleReview?: boolean;
 }): string {
   const vin = opts.vin.trim();
   const files = opts.attachmentLines.filter((n) => n.trim());
+  const closing = reportReadyClosingLines(opts.includeGoogleReview);
 
   if (opts.kind === "dealer") {
     const parts = [
@@ -79,8 +100,7 @@ export function buildReportReadyPlainText(opts: {
       "",
       "Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.",
       "",
-      "Ar cieņu,",
-      "PROVIN.LV komanda",
+      ...closing,
     );
     return parts.join("\n");
   }
@@ -93,8 +113,7 @@ export function buildReportReadyPlainText(opts: {
       "",
       "Ja Jums rodas kādi jautājumi, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!",
       "",
-      "Ar cieņu,",
-      "PROVIN.LV komanda",
+      ...closing,
     ].join("\n");
   }
 
@@ -110,7 +129,6 @@ export function buildReportReadyPlainText(opts: {
     "",
     "Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!",
     "",
-    "Ar cieņu,",
-    "PROVIN.LV komanda",
+    ...closing,
   ].join("\n");
 }

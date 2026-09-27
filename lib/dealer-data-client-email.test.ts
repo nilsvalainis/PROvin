@@ -27,6 +27,7 @@ describe("dealer-data-client-email drafts", () => {
     expect(d.text).toMatch(/atcelta rezervētā summa/);
     expect(d.text).toContain("PROVIN AUDITS");
     expect(d.text).toContain(`Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`);
+    expect(d.text).toContain("Nils / IRISS");
     expect(d.text).not.toMatch(/—/);
   });
 

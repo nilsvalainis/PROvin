@@ -27,7 +27,10 @@ describe("report-ready product emails", () => {
     expect(text).toContain("OFICIALA_DILERA_DATI.pdf");
     expect(text).toContain("20% atlaidi");
     expect(text).toContain("79,99 €");
-    expect(text).toContain("PROVIN.LV komanda");
+    expect(text).toContain("Nils / IRISS");
+    expect(text).toContain("PROVIN.LV");
+    expect(text).not.toContain("PROVIN.LV komanda");
+    expect(text).not.toContain("g.page");
     expect(text).not.toMatch(/—/);
   });
 
@@ -70,5 +73,44 @@ describe("report-ready product emails", () => {
     expect(on).toContain("Pasūtīt PROVIN AUDITS par 79,99 €");
     expect(on).toContain('href="https://provin.lv"');
     expect(on).toContain("20% atlaidi");
+    expect(on).toContain("Nils / IRISS");
+  });
+
+  it("adds Google review HTML only when asked", () => {
+    const off = auditCompletedEmailHtml({
+      carVin: "ABC",
+      attachmentLines: [],
+      productKind: "audits",
+    });
+    expect(off).not.toContain("g.page");
+
+    const on = auditCompletedEmailHtml({
+      carVin: "ABC",
+      attachmentLines: [],
+      productKind: "audits",
+      includeGoogleReview: true,
+    });
+    expect(on).toContain("atvēlēsiet īsu brīdi");
+    expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
+  });
+
+  it("adds Google review only when asked", () => {
+    const off = buildReportReadyPlainText({
+      kind: "mini",
+      vin: "ABC",
+      attachmentLines: [],
+    });
+    expect(off).not.toContain("g.page");
+
+    const on = buildReportReadyPlainText({
+      kind: "mini",
+      vin: "ABC",
+      attachmentLines: [],
+      includeGoogleReview: true,
+    });
+    expect(on).toContain("atvēlēsiet īsu brīdi");
+    expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
+    expect(on).toContain("Nils / IRISS");
+    expect(on.indexOf("g.page")).toBeLessThan(on.indexOf("Nils / IRISS"));
   });
 });

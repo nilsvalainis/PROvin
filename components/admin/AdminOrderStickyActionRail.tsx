@@ -26,6 +26,7 @@ type Props = {
   onOpenCopilot: () => void;
   onVinCopied: () => void;
   customerPhone?: string | null;
+  whatsappPrefill?: string;
   sourceBlocks?: WorkspaceSourceBlocks | null;
 };
 
@@ -56,6 +57,7 @@ export function AdminOrderStickyActionRail({
   onOpenCopilot,
   onVinCopied,
   customerPhone,
+  whatsappPrefill,
   sourceBlocks,
 }: Props) {
   const listingHref = listingUrl?.trim() && isValidHttpUrl(listingUrl.trim()) ? listingUrl.trim() : null;
@@ -86,7 +88,7 @@ export function AdminOrderStickyActionRail({
           />
         </div>
         <div className="flex justify-center">
-          <AdminWhatsAppOpenButton phone={customerPhone ?? ""} />
+          <AdminWhatsAppOpenButton phone={customerPhone ?? ""} prefillMessage={whatsappPrefill} />
         </div>
         {listingHref ? (
           <a

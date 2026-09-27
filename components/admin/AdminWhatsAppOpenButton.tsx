@@ -25,16 +25,19 @@ const whatsappPillDisabledClass = `${adminActionPillBase} cursor-not-allowed bg-
 export function AdminWhatsAppOpenButton({
   phone,
   variant = "icon",
+  prefillMessage,
 }: {
   phone: string;
   variant?: "icon" | "pill";
+  prefillMessage?: string;
 }) {
   const digits = useMemo(() => normalizeWhatsAppPhoneDigits(phone), [phone]);
+  const message = prefillMessage ?? WHATSAPP_PREFILL_AUDIT;
 
   const onClick = useCallback(() => {
     if (!digits) return;
-    openWhatsAppChat(digits, WHATSAPP_PREFILL_AUDIT);
-  }, [digits]);
+    openWhatsAppChat(digits, message);
+  }, [digits, message]);
 
   if (variant === "pill") {
     if (!digits) {

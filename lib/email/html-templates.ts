@@ -1,6 +1,7 @@
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 import {
+  GOOGLE_REVIEW_URL,
   REPORT_READY_AUDIT_CTA_URL,
   REPORT_READY_AUDIT_PRICE_NOW,
   REPORT_READY_AUDIT_PRICE_WAS,
@@ -196,6 +197,22 @@ function reportReadyVinHtml(vinRaw: string): string {
   return ` transportlīdzeklim ar VIN <strong>${esc(normalizeVin(vinRaw))}</strong>`;
 }
 
+function clientSignOffHtml(): string {
+  return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>`;
+}
+
+function googleReviewHtml(): string {
+  const href = esc(GOOGLE_REVIEW_URL);
+  return `<p style="margin:0 0 20px;font-size:15px;color:${INK};line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="${href}" style="color:${BRAND};text-decoration:none;font-weight:500;word-break:break-all;">${href}</a></p>`;
+}
+
+function reportReadyCloseHtml(questionsInner: string, includeGoogleReview?: boolean): string {
+  const qMargin = includeGoogleReview ? "12px" : "20px";
+  return `<p style="margin:0 0 ${qMargin};font-size:15px;color:${MUTED};line-height:1.55;">${questionsInner}</p>
+${includeGoogleReview ? googleReviewHtml() : ""}
+${clientSignOffHtml()}`;
+}
+
 function dealerAuditDiscountHtml(): string {
   return `<div style="margin:18px 0 16px;padding:18px 18px 16px;border:1px solid #bfdbfe;border-radius:14px;background:#f0f7ff;">
 <p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:${INK};"><strong>Plānojat iegādāties šo auto?</strong><br/>Veiciet pilnu pārbaudi pirms pirkuma! Piedāvājam PROVIN AUDITS pakalpojumu ar 20% atlaidi:</p>
@@ -218,6 +235,7 @@ export function auditCompletedEmailHtml(opts: {
   siteOrigin?: string;
   productKind?: ReportReadyProductKind;
   offerAuditDiscount?: boolean;
+  includeGoogleReview?: boolean;
 }): string {
   const kind = opts.productKind ?? "audits";
   const vinHtml = reportReadyVinHtml(opts.carVin);
@@ -228,6 +246,7 @@ export function auditCompletedEmailHtml(opts: {
           .map((l) => `<li style="margin:4px 0;">${esc(l)}</li>`)
           .join("")}</ul>`
       : "";
+  const mailLink = `<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>`;
 
   let body = "";
   if (kind === "dealer") {
@@ -237,14 +256,12 @@ export function auditCompletedEmailHtml(opts: {
 <p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
 ${fileList}
 ${opts.offerAuditDiscount ? dealerAuditDiscountHtml() : ""}
-<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
-<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>PROVIN.LV komanda</p>`;
+${reportReadyCloseHtml(`Ja Jums rodas papildu jautājumi, droši rakstiet mums uz ${mailLink}.`, opts.includeGoogleReview)}`;
   } else if (kind === "mini") {
     body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite${vinHtml} ir sagatavota un pievienota šī e-pasta pielikumā.</p>
-<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas kādi jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
-<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>PROVIN.LV komanda</p>`;
+${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview)}`;
   } else {
     body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
@@ -254,8 +271,7 @@ ${opts.offerAuditDiscount ? dealerAuditDiscountHtml() : ""}
 <li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
 <li style="margin:4px 0;">Papildu materiālus un pielikumus</li>
 </ul>
-<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
-<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>PROVIN.LV komanda</p>`;
+${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview)}`;
   }
 
   return shell(body, { omitBrandRibbon: true });
@@ -427,7 +443,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
       amount,
     )} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
 <p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, atbildiet uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
-<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
+${clientSignOffHtml()}
 `;
     return shell(inner, { omitBrandRibbon: true });
   }
@@ -444,7 +460,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
 ${ctaButton("https://provin.lv", "Pasūtīt PROVIN AUDITS")}
 <p style="margin:16px 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
-<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
+${clientSignOffHtml()}
 `;
   return shell(inner, { omitBrandRibbon: true });
 }

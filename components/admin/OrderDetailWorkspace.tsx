@@ -206,7 +206,7 @@ import {
 } from "@/lib/admin-source-comment-blocks";
 import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
-import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
+import { whatsappPrefillForOrder } from "@/lib/admin-whatsapp-messages";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
   AdminCommonPhrasesDrawer,
@@ -745,6 +745,7 @@ export function OrderDetailWorkspace({
   const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [notifyOfferAuditDiscount, setNotifyOfferAuditDiscount] = useState(false);
+  const [notifyIncludeGoogleReview, setNotifyIncludeGoogleReview] = useState(false);
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
@@ -2671,6 +2672,7 @@ export function OrderDetailWorkspace({
     setNotifyLastSentTo(null);
     setNotifyExtraPdfMeta(null);
     setNotifyOfferAuditDiscount(false);
+    setNotifyIncludeGoogleReview(false);
     if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
   }, []);
@@ -2742,12 +2744,14 @@ export function OrderDetailWorkspace({
             uploads,
             extraAuditPdf: extraReport,
             offerAuditDiscount: notifyOfferAuditDiscount,
+            includeGoogleReview: notifyIncludeGoogleReview,
           })
         : await (async () => {
             const fd = new FormData();
             fd.append("sessionId", payload.sessionId);
             fd.append("customerEmail", email);
             if (notifyOfferAuditDiscount) fd.append("offerAuditDiscount", "1");
+            if (notifyIncludeGoogleReview) fd.append("includeGoogleReview", "1");
             if (extraReport) {
               fd.append("reportPdf", extraReport);
             }
@@ -2792,6 +2796,7 @@ export function OrderDetailWorkspace({
     portfolio,
     portfolioBytes,
     notifyOfferAuditDiscount,
+    notifyIncludeGoogleReview,
   ]);
 
   const onPickFiles = async (files: FileList | File[] | null) => {
@@ -3973,10 +3978,16 @@ export function OrderDetailWorkspace({
       : null;
   const whatsappPhoneDigits = normalizeWhatsAppPhoneDigits(payload.customerPhone);
 
+  const whatsappPrefill = whatsappPrefillForOrder({
+    checkoutLine: payload.checkoutLine,
+    amountTotalCents: payload.amountTotal,
+    vin: payload.vin,
+  });
+
   const handleWhatsAppOpen = useCallback(() => {
     if (!whatsappPhoneDigits) return;
-    openWhatsAppChat(whatsappPhoneDigits, WHATSAPP_PREFILL_AUDIT);
-  }, [whatsappPhoneDigits]);
+    openWhatsAppChat(whatsappPhoneDigits, whatsappPrefill);
+  }, [whatsappPhoneDigits, whatsappPrefill]);
 
   return (
     <div className="relative min-w-0 pb-24 max-md:pb-36">
@@ -4157,6 +4168,21 @@ export function OrderDetailWorkspace({
                       </span>
                     </label>
                   ) : null}
+                  <label className="mt-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-[11px] leading-snug text-[var(--color-apple-text)] dark:border-zinc-700 dark:bg-zinc-900/40">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]/30"
+                      checked={notifyIncludeGoogleReview}
+                      disabled={notifyPhase === "loading"}
+                      onChange={(e) => setNotifyIncludeGoogleReview(e.target.checked)}
+                    />
+                    <span>
+                      Pievienot Google atsauksmes lūgumu
+                      <span className="mt-0.5 block text-[10px] text-[var(--color-provin-muted)]">
+                        E-pasta beigās pirms paraksta.
+                      </span>
+                    </span>
+                  </label>
                   {notifyErr ? (
                     <p className="mt-2 text-[11px] leading-snug text-red-600">{notifyErr}</p>
                   ) : null}
@@ -4502,6 +4528,7 @@ export function OrderDetailWorkspace({
         plate={plateBar}
         listingUrl={payload.listingUrl}
         customerPhone={payload.customerPhone}
+        whatsappPrefill={whatsappPrefill}
         onVinCopied={() => {
           setVinBarCopyFlash(true);
           window.setTimeout(() => setVinBarCopyFlash(false), 600);
@@ -4513,6 +4540,7 @@ export function OrderDetailWorkspace({
         plate={plateBar}
         listingUrl={payload.listingUrl}
         customerPhone={payload.customerPhone}
+        whatsappPrefill={whatsappPrefill}
         aiAllowed={payload.aiAllowed}
         workspaceHydrated={workspaceHydrated}
         prepareDraftBusy={prepareDraftBusy}

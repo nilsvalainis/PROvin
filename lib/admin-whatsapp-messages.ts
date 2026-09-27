@@ -1,13 +1,79 @@
-/** WhatsApp iepriekš aizpildītais teksts — PROVIN AUDITS. */
-export const WHATSAPP_PREFILL_AUDIT = `Sveiki! 
+/**
+ * WhatsApp iepriekš aizpildītie teksti (pasūtījuma pogas un dīlera josla).
+ * SELECT šablonu neaiztiekam; IRISS sadaļa ir citā failā.
+ */
+import {
+  clientMessageSignOff,
+  dealerAuditDiscountPlainBlock,
+  googleReviewPlainBlock,
+  resolveReportReadyProductKind,
+  type ReportReadyProductKind,
+} from "@/lib/email/report-ready-copy";
 
-Nosūtu iegādāto PROVIN atskaiti. Ja ir jautājumi par atskaites datiem vai nepieciešama konsultācija, droši zvaniet. 
+function vinPhrase(vin?: string | null): string {
+  const v = (vin ?? "").trim().toUpperCase();
+  return v ? ` transportlīdzeklim ar VIN ${v}` : "";
+}
 
-Būšu ļoti pateicīgs, ja atstāsiet atsauksmi par šo projektu Google. Paldies!
-https://g.page/r/CamRaT51IPQ_EBM/review
+function vinLine(vin: string | null | undefined): string {
+  const v = (vin ?? "").trim().toUpperCase();
+  return v ? ` (VIN ${v})` : "";
+}
 
-Ar cieņu,
-PROVIN.LV`;
+function amountLine(amountEur?: string | null): string {
+  const a = (amountEur ?? "").trim();
+  return a || "24,99 €";
+}
+
+function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
+  if (kind === "dealer") {
+    return "Ja Jums rodas papildu jautājumi, droši rakstiet šeit vai uz info@provin.lv.";
+  }
+  if (kind === "mini") {
+    return "Ja Jums rodas kādi jautājumi, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!";
+  }
+  return "Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!";
+}
+
+/** Gatavs ziņojums pēc e-pasta šablona (pielikumu sarakstu WA neiekļauj). */
+export function whatsappPrefillReportReady(opts: {
+  kind: ReportReadyProductKind;
+  vin?: string | null;
+  offerAuditDiscount?: boolean;
+}): string {
+  const vin = vinPhrase(opts.vin);
+  const parts: string[] = ["Labdien!", ""];
+
+  if (opts.kind === "dealer") {
+    parts.push(`Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vin} ir sagatavoti.`);
+    if (opts.offerAuditDiscount) {
+      parts.push("", dealerAuditDiscountPlainBlock());
+    }
+  } else if (opts.kind === "mini") {
+    parts.push(`Jūsu pasūtītā PROVIN MINI atskaite${vin} ir sagatavota.`);
+  } else {
+    parts.push(`Jūsu pasūtītā PROVIN AUDITS atskaite${vin} ir sagatavota.`);
+  }
+
+  parts.push("", whatsappQuestionsLine(opts.kind), "", googleReviewPlainBlock(), "", clientMessageSignOff());
+  return parts.join("\n");
+}
+
+export function whatsappPrefillForOrder(args: {
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
+  vin?: string | null;
+}): string {
+  const kind = resolveReportReadyProductKind(args);
+  return whatsappPrefillReportReady({
+    kind,
+    vin: args.vin,
+    offerAuditDiscount: kind === "dealer",
+  });
+}
+
+/** Noklusējums vietām bez produkta konteksta (ātrie vērtējumi). */
+export const WHATSAPP_PREFILL_AUDIT = whatsappPrefillReportReady({ kind: "audits" });
 
 /** WhatsApp iepriekš aizpildītais teksts — PROVIN SELECT stratēģiskā konsultācija. */
 export const WHATSAPP_PREFILL_SELECT_CONSULTATION = `Sveiki!
@@ -20,16 +86,6 @@ Ja rodas jautājumi par konsultācijas ieteikumiem vai vēlaties palīdzību aut
 
 Ar cieņu,
 PROVIN.LV`;
-
-function vinLine(vin: string | null | undefined): string {
-  const v = (vin ?? "").trim().toUpperCase();
-  return v ? ` (VIN ${v})` : "";
-}
-
-function amountLine(amountEur?: string | null): string {
-  const a = (amountEur ?? "").trim();
-  return a || "24,99 €";
-}
 
 /**
  * OEM / dīlera datos nav ierakstu, nauda atgriezta.
@@ -55,8 +111,7 @@ Pasūtīt: https://provin.lv
 
 Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv.
 
-Ar cieņu,
-PROVIN.LV`;
+${clientMessageSignOff()}`;
 }
 
 /** Apmaksa atcelta vai atgriezta pēc klienta lūguma, pirms darbs uzsākts. */
@@ -69,6 +124,5 @@ Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
 
 Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, droši rakstiet šeit.
 
-Ar cieņu,
-PROVIN.LV`;
+${clientMessageSignOff()}`;
 }

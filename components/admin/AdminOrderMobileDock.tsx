@@ -64,6 +64,7 @@ type Props = {
   plate: string;
   listingUrl: string | null;
   customerPhone?: string | null;
+  whatsappPrefill?: string;
   onVinCopied: () => void;
 };
 
@@ -190,6 +191,7 @@ export function AdminOrderMobileDock({
   plate,
   listingUrl,
   customerPhone,
+  whatsappPrefill,
   onVinCopied,
 }: Props) {
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
@@ -412,7 +414,7 @@ export function AdminOrderMobileDock({
               />
             </div>
             <div className="mt-3 flex items-center gap-2">
-              <AdminWhatsAppOpenButton phone={customerPhone ?? ""} />
+              <AdminWhatsAppOpenButton phone={customerPhone ?? ""} prefillMessage={whatsappPrefill} />
               {listingHref ? (
                 <a
                   href={listingHref}
