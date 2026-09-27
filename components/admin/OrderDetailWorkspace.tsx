@@ -252,7 +252,6 @@ import {
   postNotifyReportReadyViaBlob,
   type NotifyPortfolioUploadItem,
 } from "@/lib/admin-notify-report-ready-client";
-import { resolveReportReadyProductKind } from "@/lib/email/report-ready-copy";
 import {
   applyGeneratedAdminAiText,
   formatAdminAiFetchError,
@@ -744,7 +743,6 @@ export function OrderDetailWorkspace({
   const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
   const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
-  const [notifyOfferAuditDiscount, setNotifyOfferAuditDiscount] = useState(false);
   const [notifyIncludeGoogleReview, setNotifyIncludeGoogleReview] = useState(false);
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
@@ -2671,7 +2669,6 @@ export function OrderDetailWorkspace({
     setNotifyPhase("idle");
     setNotifyLastSentTo(null);
     setNotifyExtraPdfMeta(null);
-    setNotifyOfferAuditDiscount(false);
     setNotifyIncludeGoogleReview(false);
     if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
@@ -2743,14 +2740,12 @@ export function OrderDetailWorkspace({
             customerEmail: email,
             uploads,
             extraAuditPdf: extraReport,
-            offerAuditDiscount: notifyOfferAuditDiscount,
             includeGoogleReview: notifyIncludeGoogleReview,
           })
         : await (async () => {
             const fd = new FormData();
             fd.append("sessionId", payload.sessionId);
             fd.append("customerEmail", email);
-            if (notifyOfferAuditDiscount) fd.append("offerAuditDiscount", "1");
             if (notifyIncludeGoogleReview) fd.append("includeGoogleReview", "1");
             if (extraReport) {
               fd.append("reportPdf", extraReport);
@@ -2795,7 +2790,6 @@ export function OrderDetailWorkspace({
     payload.vin,
     portfolio,
     portfolioBytes,
-    notifyOfferAuditDiscount,
     notifyIncludeGoogleReview,
   ]);
 
@@ -4148,26 +4142,6 @@ export function OrderDetailWorkspace({
                       }}
                     />
                   </div>
-                  {resolveReportReadyProductKind({
-                    checkoutLine: payload.checkoutLine,
-                    amountTotalCents: payload.amountTotal,
-                  }) === "dealer" ? (
-                    <label className="mt-3 flex items-start gap-2 rounded-lg border border-sky-200 bg-sky-50/80 px-2.5 py-2 text-[11px] leading-snug text-[var(--color-apple-text)] dark:border-sky-900/50 dark:bg-sky-950/30">
-                      <input
-                        type="checkbox"
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]/30"
-                        checked={notifyOfferAuditDiscount}
-                        disabled={notifyPhase === "loading"}
-                        onChange={(e) => setNotifyOfferAuditDiscount(e.target.checked)}
-                      />
-                      <span>
-                        Piedāvāt PROVIN AUDITS ar 20% atlaidi (79,99 €)
-                        <span className="mt-0.5 block text-[10px] text-[var(--color-provin-muted)]">
-                          E-pasta tekstam pievieno piedāvājumu un pogu.
-                        </span>
-                      </span>
-                    </label>
-                  ) : null}
                   <label className="mt-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-[11px] leading-snug text-[var(--color-apple-text)] dark:border-zinc-700 dark:bg-zinc-900/40">
                     <input
                       type="checkbox"

@@ -11,6 +11,8 @@ import { toAdminOrderDetailClientModel } from "@/lib/admin-order-detail-client-m
 import { emptyCustomerHistory, type CustomerHistory } from "@/lib/admin-customer-history";
 import { loadCustomerHistoryForOrder } from "@/lib/admin-customer-history-load";
 import { getAuditResultColor } from "@/lib/admin-audit-result-color-store";
+import { upsellListOverlay } from "@/lib/order-upsell";
+import { readSessionUpsellDoc, toOfferSnapshot } from "@/lib/order-upsell-store";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import {
@@ -157,8 +159,19 @@ export async function loadAdminOrderDetailPageData(
     const partnerAuditPurpose =
       parsePartnerAuditPurposeFromNotes(mergedNotes) ||
       (order.auditPurpose === "client" || order.auditPurpose === "internal" ? order.auditPurpose : null);
+    const upsellDoc = await readSessionUpsellDoc(sid);
+    const upsellOverlay = upsellListOverlay(
+      upsellDoc
+        ? Object.values(upsellDoc.offers)
+            .filter((o): o is NonNullable<typeof o> => Boolean(o))
+            .map(toOfferSnapshot)
+        : [],
+    );
     const clientOrder = toAdminOrderDetailClientModel({
       ...(order as unknown as Record<string, unknown>),
+      ...(upsellOverlay
+        ? { amountTotal: upsellOverlay.targetCents, checkoutLine: upsellOverlay.targetLine }
+        : {}),
       ...(partnerLine ? { checkoutLine: partnerLine } : {}),
       ...(partnerId ? { partnerId } : {}),
       ...(partnerCompanyName ? { partnerCompanyName } : {}),

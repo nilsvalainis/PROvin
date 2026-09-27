@@ -8,6 +8,8 @@ import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table"
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
+import { upsellListOverlay } from "@/lib/order-upsell";
+import { readUpsellDisplayOffers } from "@/lib/order-upsell-store";
 import { getAuditResultColorMap } from "@/lib/admin-audit-result-color-store";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
@@ -106,7 +108,20 @@ export default async function AdminOrdersPage({
       ...(notes && !isPack ? { notes } : {}),
     };
   });
-  const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithInvoice));
+  const upsellOffers = await readUpsellDisplayOffers(ordersWithInvoice.map((o) => o.id));
+  const ordersWithUpsell = ordersWithInvoice.map((o) => {
+    const overlay = upsellListOverlay(upsellOffers.get(o.id) ?? []);
+    if (!overlay) return o;
+    return {
+      ...o,
+      amountTotal: overlay.targetCents,
+      checkoutLine: overlay.targetLine,
+      deadlineFromUnix: overlay.paidAtUnix,
+      activityUnix: overlay.paidAtUnix,
+      upsellBadge: overlay.badge,
+    };
+  });
+  const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithUpsell));
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);

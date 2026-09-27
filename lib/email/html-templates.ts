@@ -1,12 +1,6 @@
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
-import {
-  GOOGLE_REVIEW_URL,
-  REPORT_READY_AUDIT_CTA_URL,
-  REPORT_READY_AUDIT_PRICE_NOW,
-  REPORT_READY_AUDIT_PRICE_WAS,
-  type ReportReadyProductKind,
-} from "@/lib/email/report-ready-copy";
+import { GOOGLE_REVIEW_URL, type ReportReadyProductKind } from "@/lib/email/report-ready-copy";
 
 /** Minimālistisks HTML: balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
 const BRAND = "#0061D2";
@@ -213,28 +207,12 @@ ${includeGoogleReview ? googleReviewHtml() : ""}
 ${clientSignOffHtml()}`;
 }
 
-function dealerAuditDiscountHtml(): string {
-  return `<div style="margin:18px 0 16px;padding:18px 18px 16px;border:1px solid #bfdbfe;border-radius:14px;background:#f0f7ff;">
-<p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:${INK};"><strong>Plānojat iegādāties šo auto?</strong><br/>Veiciet pilnu pārbaudi pirms pirkuma! Piedāvājam PROVIN AUDITS pakalpojumu ar 20% atlaidi:</p>
-<ul style="margin:0 0 12px;padding-left:20px;color:${INK};font-size:15px;line-height:1.5;">
-<li>Padziļināta auto vēstures un risku analīze</li>
-<li>Odometra rādījumu atbilstības pārbaude</li>
-<li>Negadījumu un bojājumu vēsture</li>
-</ul>
-<p style="margin:0 0 8px;font-size:15px;color:${INK};">Cena: <span style="text-decoration:line-through;color:#9ca3af;">${esc(
-    REPORT_READY_AUDIT_PRICE_WAS,
-  )}</span> ${esc(REPORT_READY_AUDIT_PRICE_NOW)}</p>
-${ctaButton(REPORT_READY_AUDIT_CTA_URL, `Pasūtīt PROVIN AUDITS par ${REPORT_READY_AUDIT_PRICE_NOW}`)}
-</div>`;
-}
-
 /** Klienta „atskaite gatava” e-pasts pēc produkta (dīleris / MINI / AUDITS). */
 export function auditCompletedEmailHtml(opts: {
   carVin: string;
   attachmentLines: string[];
   siteOrigin?: string;
   productKind?: ReportReadyProductKind;
-  offerAuditDiscount?: boolean;
   includeGoogleReview?: boolean;
 }): string {
   const kind = opts.productKind ?? "audits";
@@ -255,7 +233,6 @@ export function auditCompletedEmailHtml(opts: {
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vinHtml} ir sagatavoti.</p>
 <p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
 ${fileList}
-${opts.offerAuditDiscount ? dealerAuditDiscountHtml() : ""}
 ${reportReadyCloseHtml(`Ja Jums rodas papildu jautājumi, droši rakstiet mums uz ${mailLink}.`, opts.includeGoogleReview)}`;
   } else if (kind === "mini") {
     body = `
@@ -396,7 +373,7 @@ ${ctaButton(opts.resetUrl, cta)}
  */
 export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null; text: string }): string {
   const title = (opts.title ?? "").trim();
-  const orderCta = /^Pasūtīt:\s*(https?:\/\/\S+)\s*$/i;
+  const orderCta = /^(Pasūtīt|Apmaksāt):\s*(https?:\/\/\S+)\s*$/i;
   const paragraphs = opts.text
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/)
@@ -405,8 +382,9 @@ export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null
   const body = paragraphs
     .map((block) => {
       const m = orderCta.exec(block);
-      if (m?.[1] && isValidHttpUrl(m[1])) {
-        return ctaButton(m[1], "Pasūtīt PROVIN AUDITS");
+      if (m?.[2] && isValidHttpUrl(m[2])) {
+        const label = /^apmaksāt$/i.test(m[1] ?? "") ? "Apmaksāt" : "Pasūtīt PROVIN AUDITS";
+        return ctaButton(m[2], label);
       }
       const html = esc(block).replace(/\n/g, "<br/>");
       return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${html}</p>`;

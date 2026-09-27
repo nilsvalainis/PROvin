@@ -87,7 +87,6 @@ export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
   let sessionId = "";
   let bodyCustomerEmail = "";
-  let offerAuditDiscount = false;
   let includeGoogleReview = false;
   let multipartForm: FormData | null = null;
   let jsonAttachmentsBase64: unknown = undefined;
@@ -98,9 +97,6 @@ export async function POST(req: Request) {
       multipartForm = await req.formData();
       sessionId = String(multipartForm.get("sessionId") ?? "").trim();
       bodyCustomerEmail = String(multipartForm.get("customerEmail") ?? "").trim();
-      offerAuditDiscount =
-        String(multipartForm.get("offerAuditDiscount") ?? "").trim() === "1" ||
-        String(multipartForm.get("offerAuditDiscount") ?? "").trim() === "true";
       includeGoogleReview =
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "1" ||
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "true";
@@ -117,7 +113,6 @@ export async function POST(req: Request) {
       const b = body as Record<string, unknown>;
       sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
       bodyCustomerEmail = typeof b.customerEmail === "string" ? b.customerEmail.trim() : "";
-      offerAuditDiscount = b.offerAuditDiscount === true || b.offerAuditDiscount === "1";
       includeGoogleReview = b.includeGoogleReview === true || b.includeGoogleReview === "1";
       jsonAttachmentsBase64 = b.attachmentsBase64;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
@@ -273,7 +268,6 @@ export async function POST(req: Request) {
         checkoutLine: order.checkoutLine,
         amountTotalCents: order.amountTotal,
       }),
-      offerAuditDiscount,
       includeGoogleReview,
     });
     try {

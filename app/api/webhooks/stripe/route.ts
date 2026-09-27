@@ -14,6 +14,7 @@ import { getStripe } from "@/lib/stripe";
 import { seedSsLvAdifyOnPaidOrder } from "@/lib/admin-ss-lv-adify-seed";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
+import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +49,11 @@ async function fulfillPaidCheckoutSession(
   }
 
   try {
+    if ((session.metadata?.fulfillment ?? "").trim() === "order_upsell") {
+      await fulfillOrderUpsellPayment(session);
+      return;
+    }
+
     void upsertPaidCheckoutSessionFromStripe(session).catch((err) => {
       console.warn("[stripe webhook] paid index upsert failed:", err);
     });

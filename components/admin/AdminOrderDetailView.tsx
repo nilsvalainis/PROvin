@@ -18,7 +18,8 @@ import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHistoryPanel";
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
-import { paidProductLabel } from "@/lib/admin-customer-identity";
+import { isMiniHighlightAdminOrder, paidProductLabel } from "@/lib/admin-customer-identity";
+import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
 import {
   isPartnerVinAdminOrder,
   PARTNER_VIN_AMOUNT_LABEL_LV,
@@ -752,6 +753,13 @@ export function AdminOrderDetailView({
           ) : null}
         </p>
       </header>
+
+      {isMiniHighlightAdminOrder({
+        checkoutLine: order.checkoutLine,
+        amountTotalCents: order.amountTotal,
+      }) ? (
+        <AdminOrderUpsellPanel sessionId={order.id} placement="mini" />
+      ) : null}
 
       <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
 

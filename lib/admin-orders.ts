@@ -23,6 +23,7 @@ import {
 import { getStripe } from "@/lib/stripe";
 import { parseB2bPackQty } from "@/lib/b2b-partner-orders";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
+import { isOrderUpsellFulfillment } from "@/lib/order-upsell";
 import {
   getCheckoutLineFromSession,
   getOrderFieldsFromSession,
@@ -119,6 +120,7 @@ function manualOrderToAdminOrderRow(rec: ManualOrderRecord): AdminOrderRow {
 
 function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | null {
   if (s.payment_status !== "paid") return null;
+  if (isOrderUpsellFulfillment(s.metadata?.fulfillment, s.metadata?.upgrade_of)) return null;
   const order = getOrderFieldsFromSession(s);
   const partnerRaw = s.metadata?.partner_id?.trim() ?? "";
   const partnerId = isSafeB2bPartnerId(partnerRaw) ? partnerRaw : null;
@@ -188,7 +190,7 @@ async function resolvePaidCheckoutSessions(): Promise<AdminOrderRow[]> {
         /* test / non-next runtime */
       }
     }
-    return index.rows;
+    return index.rows.filter((r) => r.fulfillment !== "order_upsell");
   }
   return refreshStripePaidIndexFromStripe();
 }

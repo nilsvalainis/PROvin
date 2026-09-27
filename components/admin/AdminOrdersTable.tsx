@@ -619,7 +619,7 @@ export function AdminOrdersTable({
                   <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                     <AdminAuditDeadlineCell
                       sessionId={o.id}
-                      createdUnixSec={o.created}
+                      createdUnixSec={o.deadlineFromUnix ?? o.created}
                       initialComplete={Boolean(o.auditComplete)}
                       onCompleteChange={(complete) => markComplete(o.id, complete)}
                     />
@@ -661,6 +661,11 @@ export function AdminOrdersTable({
                 {v.miniHighlight ? (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950">
                     MINI
+                  </span>
+                ) : null}
+                {o.upsellBadge ? (
+                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-sky-950">
+                    {o.upsellBadge}
                   </span>
                 ) : null}
                 {o.heardAbout?.trim() ? (
@@ -820,6 +825,11 @@ export function AdminOrdersTable({
                           MINI
                         </span>
                       ) : null}
+                      {o.upsellBadge ? (
+                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-sky-950 ring-1 ring-sky-200/80">
+                          {o.upsellBadge}
+                        </span>
+                      ) : null}
                     </span>
                   </td>
                   <td className={`${hug} py-3.5 pl-1 pr-2`}>
@@ -840,7 +850,7 @@ export function AdminOrdersTable({
                     ) : (
                       <AdminAuditDeadlineCell
                         sessionId={o.id}
-                        createdUnixSec={o.created}
+                        createdUnixSec={o.deadlineFromUnix ?? o.created}
                         initialComplete={Boolean(o.auditComplete)}
                         onCompleteChange={(complete) => markComplete(o.id, complete)}
                       />

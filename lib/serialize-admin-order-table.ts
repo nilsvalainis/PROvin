@@ -21,6 +21,12 @@ export type SerializedAdminOrderTableRow = {
   heardAbout?: string | null;
   /** 48 h termiņš atzīmēts kā izpildīts (servera persistents). */
   auditComplete?: boolean;
+  /** Piepirkuma apmaksas brīdis. 48 h skaita no šī, nevis no pirmā pasūtījuma. */
+  deadlineFromUnix?: number;
+  /** Saraksta kārtošana. Piepirkums paceļ vecu pasūtījumu starp neizpildītajiem. */
+  activityUnix?: number;
+  /** Piem. "Piepirkums 24,99 € + 75,00 €". */
+  upsellBadge?: string | null;
   /** Operātora audita rezultāta krāsa (zaļš / oranžs / sarkans) — reklāmas grupēšanai. */
   auditResultColor?: "green" | "orange" | "red" | null;
   /** Ja ir, tabula var novirzīt „Atvērt” uz `/admin/konsultacijas` PROVIN SELECT sesijām. */
@@ -52,6 +58,9 @@ type RowInput = {
   makeModel?: unknown;
   heardAbout?: unknown;
   auditComplete?: unknown;
+  deadlineFromUnix?: unknown;
+  activityUnix?: unknown;
+  upsellBadge?: unknown;
   auditResultColor?: unknown;
   checkoutLine?: unknown;
   isDemo?: unknown;
@@ -95,6 +104,18 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       amt == null || amt === undefined ? null : Number(amt);
     const amountOk = amountTotal != null && Number.isFinite(amountTotal) ? amountTotal : null;
     const checkoutLine = optionalCheckoutLine(o);
+    const deadlineRaw = o.deadlineFromUnix;
+    const deadlineFromUnix =
+      typeof deadlineRaw === "number" && Number.isFinite(deadlineRaw) && deadlineRaw > 0
+        ? Math.trunc(deadlineRaw)
+        : undefined;
+    const activityRaw = o.activityUnix;
+    const activityUnix =
+      typeof activityRaw === "number" && Number.isFinite(activityRaw) && activityRaw > 0
+        ? Math.trunc(activityRaw)
+        : undefined;
+    const upsellBadge =
+      typeof o.upsellBadge === "string" && o.upsellBadge.trim() ? o.upsellBadge.trim() : undefined;
     return {
       id: String(o.id ?? ""),
       created,
@@ -117,6 +138,9 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
           ? null
           : String(o.heardAbout).trim(),
       ...(Boolean(o.auditComplete) ? { auditComplete: true as const } : {}),
+      ...(deadlineFromUnix ? { deadlineFromUnix } : {}),
+      ...(activityUnix ? { activityUnix } : {}),
+      ...(upsellBadge ? { upsellBadge } : {}),
       ...(parseAuditResultColor(o.auditResultColor)
         ? { auditResultColor: parseAuditResultColor(o.auditResultColor)! }
         : {}),

@@ -6,15 +6,15 @@ import {
 } from "@/lib/admin-whatsapp-messages";
 
 describe("whatsapp report-ready prefills", () => {
-  it("builds dealer text with 20% offer and review", () => {
+  it("builds dealer text without a consumer discount", () => {
     const t = whatsappPrefillForOrder({
       checkoutLine: "dealer",
       vin: "WAUZZZF44LA062962",
     });
     expect(t).toContain("oficiālā dīlera servisa vēstures dati");
     expect(t).toContain("WAUZZZF44LA062962");
-    expect(t).toContain("20% atlaidi");
-    expect(t).toContain("79,99 €");
+    expect(t).not.toContain("20%");
+    expect(t).not.toContain("79,99");
     expect(t).toContain("atvēlēsiet īsu brīdi");
     expect(t).toContain("Nils / IRISS");
     expect(t).not.toMatch(/—/);

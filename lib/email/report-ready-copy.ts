@@ -8,9 +8,6 @@ import {
 } from "@/lib/admin-customer-identity";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 
-export const REPORT_READY_AUDIT_CTA_URL = "https://provin.lv";
-export const REPORT_READY_AUDIT_PRICE_WAS = "99,99 €";
-export const REPORT_READY_AUDIT_PRICE_NOW = "79,99 €";
 export const GOOGLE_REVIEW_URL = "https://g.page/r/CamRaT51IPQ_EBM/review";
 export const CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "Nils / IRISS", "PROVIN.LV"] as const;
 
@@ -47,21 +44,6 @@ export function buildReportReadySubject(kind: ReportReadyProductKind, vin: strin
   return vin ? `PROVIN AUDITS atskaite (${vin})` : "PROVIN AUDITS atskaite";
 }
 
-export function dealerAuditDiscountPlainBlock(): string {
-  return [
-    "Plānojat iegādāties šo auto?",
-    "Veiciet pilnu pārbaudi pirms pirkuma! Piedāvājam PROVIN AUDITS pakalpojumu ar 20% atlaidi:",
-    "",
-    "- Padziļināta auto vēstures un risku analīze",
-    "- Odometra rādījumu atbilstības pārbaude",
-    "- Negadījumu un bojājumu vēsture",
-    "",
-    `Cena: ${REPORT_READY_AUDIT_PRICE_WAS} → ${REPORT_READY_AUDIT_PRICE_NOW}`,
-    "",
-    `Pasūtīt PROVIN AUDITS par ${REPORT_READY_AUDIT_PRICE_NOW}: ${REPORT_READY_AUDIT_CTA_URL}`,
-  ].join("\n");
-}
-
 function reportReadyClosingLines(includeGoogleReview?: boolean): string[] {
   const lines: string[] = [];
   if (includeGoogleReview) {
@@ -75,7 +57,6 @@ export function buildReportReadyPlainText(opts: {
   kind: ReportReadyProductKind;
   vin: string;
   attachmentLines: string[];
-  offerAuditDiscount?: boolean;
   includeGoogleReview?: boolean;
 }): string {
   const vin = opts.vin.trim();
@@ -92,9 +73,6 @@ export function buildReportReadyPlainText(opts: {
     ];
     if (files.length > 0) {
       parts.push("", ...files.map((n) => `- ${n}`));
-    }
-    if (opts.offerAuditDiscount) {
-      parts.push("", dealerAuditDiscountPlainBlock());
     }
     parts.push(
       "",

@@ -53,14 +53,16 @@ export function setAuditCompleteInLocalCache(
   writeAuditCompleteIdsToStorage(setItem, ids);
 }
 
-/** Neizpildītie (nav „Izpildīts”) vispirms; katrā grupā jaunākie augšā, kā līdz šim. */
+/** Neizpildītie (nav „Izpildīts”) vispirms; katrā grupā jaunākie augšā. Piepirkums lieto activityUnix. */
 export function sortAdminOrdersIncompleteFirst<
-  T extends { created: number; auditComplete?: boolean; isB2bPack?: boolean },
+  T extends { created: number; activityUnix?: number; auditComplete?: boolean; isB2bPack?: boolean },
 >(rows: T[]): T[] {
   return [...rows].sort((a, b) => {
     const aDone = a.auditComplete || a.isB2bPack ? 1 : 0;
     const bDone = b.auditComplete || b.isB2bPack ? 1 : 0;
     if (aDone !== bDone) return aDone - bDone;
-    return b.created - a.created;
+    const aAt = a.activityUnix ?? a.created;
+    const bAt = b.activityUnix ?? b.created;
+    return bAt - aAt;
   });
 }

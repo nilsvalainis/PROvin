@@ -4,7 +4,6 @@
  */
 import {
   clientMessageSignOff,
-  dealerAuditDiscountPlainBlock,
   googleReviewPlainBlock,
   resolveReportReadyProductKind,
   type ReportReadyProductKind,
@@ -39,16 +38,12 @@ function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
 export function whatsappPrefillReportReady(opts: {
   kind: ReportReadyProductKind;
   vin?: string | null;
-  offerAuditDiscount?: boolean;
 }): string {
   const vin = vinPhrase(opts.vin);
   const parts: string[] = ["Labdien!", ""];
 
   if (opts.kind === "dealer") {
     parts.push(`Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vin} ir sagatavoti.`);
-    if (opts.offerAuditDiscount) {
-      parts.push("", dealerAuditDiscountPlainBlock());
-    }
   } else if (opts.kind === "mini") {
     parts.push(`Jūsu pasūtītā PROVIN MINI atskaite${vin} ir sagatavota.`);
   } else {
@@ -68,7 +63,6 @@ export function whatsappPrefillForOrder(args: {
   return whatsappPrefillReportReady({
     kind,
     vin: args.vin,
-    offerAuditDiscount: kind === "dealer",
   });
 }
 

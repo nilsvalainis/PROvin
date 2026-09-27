@@ -15,6 +15,7 @@ import {
 import { describeDealerDataJob, type DealerDataJob } from "@/lib/dealer-data-job-types";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
@@ -334,6 +335,7 @@ export function AdminDealerDataJobStrip({
 
   return (
     <section className="mb-2 rounded-lg border border-slate-200/90 bg-white px-2 py-2">
+      <AdminOrderUpsellPanel sessionId={sessionId} placement="dealer" />
       {job ? (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
