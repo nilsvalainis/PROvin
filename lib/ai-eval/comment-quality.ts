@@ -4,7 +4,7 @@
  */
 import { findBannedVocabularyHits } from "@/lib/provin-banned-vocabulary";
 import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
-import { COMMENT_LENGTH_BUDGET } from "@/lib/ai-comment-length-budget";
+import { COMMENT_LENGTH_BUDGET, commentQualityMaxChars } from "@/lib/ai-comment-length-budget";
 
 export type CommentQualityIssue = {
   code: string;
@@ -123,11 +123,6 @@ const LIST_LINE_RE = /^\s*[-•*]\s+/m;
 const HYPERBOLE_RE =
   /\b(kritisk\w*|anomālij\w*|katastrofāl\w*|šokējoš\w*|drastisk\w*|briesmīg\w*|milzīg\w*|nepārprotami|acīmredzami|garantēti)\b/i;
 
-/** Maksimālais saprātīgais garums pēc lauka (bez operatora materiāla). */
-const MAX_CHARS_BY_FIELD: Record<string, number> = Object.fromEntries(
-  Object.entries(COMMENT_LENGTH_BUDGET).map(([field, b]) => [field, b.maxChars]),
-);
-
 const MIN_PARAS_BY_FIELD: Partial<Record<string, number>> = Object.fromEntries(
   Object.entries(COMMENT_LENGTH_BUDGET)
     .filter(([, b]) => b.minParas != null)
@@ -215,8 +210,8 @@ export function evaluateExpertCommentQuality(
   }
 
   const field = opts.field ?? "generic";
-  const maxChars = MAX_CHARS_BY_FIELD[field] ?? MAX_CHARS_BY_FIELD.generic;
-  if (t.length > maxChars) {
+  const maxChars = commentQualityMaxChars(field, opts.sourcePrompt);
+  if (maxChars != null && t.length > maxChars) {
     issues.push({
       code: "too_long",
       message: `Komentārs ir pārāk garš (${t.length} rakstzīmes, mērķis līdz ${maxChars})`,

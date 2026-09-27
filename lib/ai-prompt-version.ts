@@ -3,6 +3,10 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-09-26.1 - Komentāru garums seko informācijai: maz datu = īss,
+ *   daudz datu = garāks, vairākas rindkopas. Garš operatora ielīmējums
+ *   (Papildu piezīmes AI) vai garš esošais lauka teksts atceļ rakstzīmju
+ *   griestus un too_long Flash saīsinājumu - saturu nedrīkst apgraizīt.
  * - 2026-09-25.1 - OFICIĀLĀ DĪLERA DATI „Komentārs”: nav fiksētu rakstzīmju/
  *   rindkopu griestu (griesti citiem avotiem paliek); automātiskā API ielase
  *   ģenerē TIKAI šo lauku (nevis atsevišķu „Eļļas maiņas intervāli”) un iekļauj
@@ -142,4 +146,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-25.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-09-26.1";

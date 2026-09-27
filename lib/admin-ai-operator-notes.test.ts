@@ -42,6 +42,19 @@ describe("appendAiOperatorNotesSection", () => {
     expect(out).toContain("Tikai par EGR. Piemini arī DPF un eļļas intervālu.");
     expect(out).toContain("KONTEKSTS");
     expect(out.indexOf("Tikai par EGR")).toBeLessThan(out.indexOf("KONTEKSTS"));
+    expect(out).toMatch(/OPERATORA IELĪMĒTAIS TEKSTS/);
+    expect(out).toMatch(/garuma limiti NEATTIECAS|griesti NEATTIECAS/i);
+  });
+
+  it("wraps an existing field draft so the model must keep the operator's facts", async () => {
+    const { appendAiOperatorNotesSection } = await import("@/lib/admin-ai-operator-notes");
+    const out = appendAiOperatorNotesSection("KONTEKSTS", {
+      existingDraftPlain: "CSDD fiksē 2016. gada importu un zobsiksnas maiņu.",
+    });
+    expect(out).toMatch(/Esošais melnraksts/);
+    expect(out).toMatch(/BEIGAS ESOŠAJAM MELNRAKSTAM/);
+    expect(out).toContain("CSDD fiksē 2016. gada importu");
+    expect(out).toMatch(/NEĪSINĀT/);
   });
 
   it("leaves the prompt unchanged when notes are empty", async () => {

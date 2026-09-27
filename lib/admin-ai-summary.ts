@@ -53,8 +53,8 @@ export async function generateSummaryAnalysisWithAi(input: AiOrderContextInput):
     priceFit: undefined,
   });
 
-  if (!sellerText && !techText && !inspectionText && !priceText && !orderContext.trim()) {
-    throw new Error("missing_expert_sections");
+  if (!orderContext.trim() && !sellerText && !techText && !inspectionText && !priceText) {
+    throw new Error("empty_order_context");
   }
 
   const expertBundle = [sellerText, techText, inspectionText, priceText].filter(Boolean).join("\n\n");

@@ -354,7 +354,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-flash-max.ts")).toMatch(/sources_comparison[\s\S]*?return "flash"/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/CHEAP_CORRECTION_RETRY_CODES/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/too_long/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/commentLengthLimitsWaived/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/COMMENT_LENGTH_BUDGET/);
+    expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/commentLengthLimitsWaived/);
   });
 
   it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {
@@ -486,7 +488,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(HYBRID_COMMENT_RULES).toMatch(/LENGTH OVERRIDE/i);
     expect(HYBRID_COMMENT_RULES).toMatch(/IGNORE the 350–800/i);
     expect(HYBRID_COMMENT_RULES).toMatch(/ONE paragraph|1 paragraph/i);
-    expect(HYBRID_COMMENT_RULES).toMatch(/Ceiling 2–3|griesti 2–3/);
+    expect(HYBRID_COMMENT_RULES).toMatch(/do not substantially shorten/i);
+    expect(HYBRID_COMMENT_RULES).toMatch(/Esošais melnraksts/);
   });
 
   it("restrained tone rules ban hyperbole and absolute claims", () => {

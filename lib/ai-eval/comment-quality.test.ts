@@ -93,6 +93,28 @@ Sagatavo kopsavilkumu.`;
   });
 });
 
+describe("too_long vs operator paste", () => {
+  it("does not flag too_long when the prompt contains a long operator paste", () => {
+    const prompt = [
+      "=== OPERATORA IELĪMĒTAIS TEKSTS (pilns saturs jāsaglabā) ===",
+      "x".repeat(500),
+      "=== BEIGAS OPERATORA IELĪMĒTAJAM TEKSTAM ===",
+    ].join("\n");
+    const long = "Nobraukuma līkne datos ir lineāra un pretrunas nav fiksētas. ".repeat(40);
+    const issues = evaluateExpertCommentQuality(long, {
+      field: "generic",
+      sourcePrompt: prompt,
+    });
+    expect(issues.some((i) => i.code === "too_long")).toBe(false);
+  });
+
+  it("still flags too_long without operator material", () => {
+    const long = "Nobraukuma līkne datos ir lineāra un pretrunas nav fiksētas. ".repeat(40);
+    const issues = evaluateExpertCommentQuality(long, { field: "generic" });
+    expect(issues.some((i) => i.code === "too_long")).toBe(true);
+  });
+});
+
 describe("stripSummaryDualismOpener", () => {
   it("deletes the canned dual-history opener and renames the old heading", () => {
     const raw = [

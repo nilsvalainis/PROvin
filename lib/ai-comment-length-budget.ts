@@ -115,12 +115,62 @@ export function buildCommentLengthBudgetBrief(sourceBlocks: WorkspaceSourceBlock
     `- 2. Ieteikumi: flagship, griesti ${COMMENT_LENGTH_BUDGET.inspection.maxChars}.`,
     `- 3. Kopsavilkums: mērķis ${COMMENT_LENGTH_BUDGET.summary.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.summary.maxChars}.`,
     `- Eļļas maiņas intervāli: pilna matemātika, ja dati ir; griesti ${COMMENT_LENGTH_BUDGET.oil.maxChars}.`,
-    "- Tukši vai trūcīgi dati ≠ garāka eseja par to, ka datu nav. OPERATORA KOMANDAS pārspēj šo budžetu.",
+    "- Tukši vai trūcīgi dati ≠ garāka eseja par to, ka datu nav.",
+    "- Garums seko informācijai: ja datu ir MAZ, raksti ĪSI. Ja datu ir DAUDZ, raksti GARĀK un VAIRĀKĀS rindkopās. Neiespiest bagātīgu vēsturi 1-2 rindkopās tikai tāpēc, ka šeit ir rakstzīmju griesti.",
+    "- OPERATORA IELĪMĒTAIS TEKSTS / Esošais melnraksts, ja tas ir garš: šie griesti NEATTIECAS. Pārkārto PROVIN stilā; NEDRĪKSTI būtiski saīsināt un izmest faktus, ko operators gribēja klientam pateikt.",
   ];
   if (d.density === "low") {
     lines.push(
       "- Šajā pasūtījumā datu ir MAZ: avota/nobraukuma/kopsavilkuma lauki 1-2 īsas rindkopas. Neraksti vispārīgu modeli vai tukšuma eseju.",
     );
   }
+  if (d.density === "high") {
+    lines.push(
+      "- Šajā pasūtījumā datu ir DAUDZ: atļauts garāks teksts un vairākas rindkopas. Nesaīsini līdz avota 1 rindkopas kvotai.",
+    );
+  }
   return lines.join("\n");
+}
+
+/** No šī garuma operators ir iedevis pilnu komentāru, ne īsu norādi. */
+export const OPERATOR_SUPPLIED_LENGTH_OVERRIDE_MIN = 400;
+
+const OPERATOR_PASTE_RE =
+  /===\s*OPERATORA IELĪMĒTAIS TEKSTS[^\n]*===\s*\n([\s\S]*?)\n===\s*BEIGAS OPERATORA IELĪMĒTAJAM TEKSTAM/i;
+const EXISTING_DRAFT_RE =
+  /===\s*Esošais melnraksts[^\n]*===\s*\n([\s\S]*?)\n===\s*BEIGAS ESOŠAJAM MELNRAKSTAM/i;
+
+export function extractOperatorPasteBody(prompt: string): string {
+  return (prompt.match(OPERATOR_PASTE_RE)?.[1] ?? "").trim();
+}
+
+export function extractExistingDraftBody(prompt: string): string {
+  return (prompt.match(EXISTING_DRAFT_RE)?.[1] ?? "").trim();
+}
+
+export function measureOperatorSuppliedChars(prompt: string): number {
+  if (!prompt) return 0;
+  return Math.max(extractOperatorPasteBody(prompt).length, extractExistingDraftBody(prompt).length);
+}
+
+/** Garš operatora ielīmējums vai jau uzrakstīts lauka teksts - rakstzīmju griesti izslēgti. */
+export function commentLengthLimitsWaived(prompt: string | undefined | null): boolean {
+  return measureOperatorSuppliedChars(prompt ?? "") >= OPERATOR_SUPPLIED_LENGTH_OVERRIDE_MIN;
+}
+
+/**
+ * `too_long` griesti. `null` = pārbaudi nelieto (operators iedeva garu tekstu).
+ * AUGSTS datu blīvums paceļ griestus, lai bagātīgu vēsturi nesaisinātu Flash.
+ */
+export function commentQualityMaxChars(
+  field: string,
+  prompt?: string | null,
+): number | null {
+  if (commentLengthLimitsWaived(prompt)) return null;
+  const key = field as CommentLengthBudgetField;
+  const base = COMMENT_LENGTH_BUDGET[key]?.maxChars ?? COMMENT_LENGTH_BUDGET.generic.maxChars;
+  if (prompt && /Datu blīvums:\s*AUGSTS/i.test(prompt)) {
+    return Math.max(base, Math.min(12_000, Math.ceil(base * 3)));
+  }
+  return base;
 }

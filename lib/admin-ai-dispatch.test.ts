@@ -88,6 +88,28 @@ describe("admin-ai-dispatch self-correction retry", () => {
     expect(vi.mocked(geminiGenerateExpertText).mock.calls[0]?.[0].userPrompt).toContain("PĀRĀK GARŠ");
   });
 
+  it("does not Flash-shorten when the operator pasted a long comment", async () => {
+    vi.clearAllMocks();
+    vi.mocked(getGeminiApiKeyFromEnv).mockReturnValue("gemini-key");
+    const long = "Nobraukuma līkne datos ir lineāra un pretrunas nav fiksētas. ".repeat(40);
+    vi.mocked(aiGenerateExpertText).mockResolvedValueOnce(long);
+    const prompt = [
+      "=== OPERATORA IELĪMĒTAIS TEKSTS (pilns saturs jāsaglabā) ===",
+      "z".repeat(500),
+      "=== BEIGAS OPERATORA IELĪMĒTAJAM TEKSTAM ===",
+      "",
+      "sākotnējais prompts",
+    ].join("\n");
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: prompt,
+      qualityField: "generic",
+    });
+    expect(text).toBe(long);
+    expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+    expect(geminiGenerateExpertText).not.toHaveBeenCalled();
+  });
+
   it("does not pay Claude again for length when Gemini is unavailable", async () => {
     vi.clearAllMocks();
     vi.mocked(getGeminiApiKeyFromEnv).mockReturnValue(null);

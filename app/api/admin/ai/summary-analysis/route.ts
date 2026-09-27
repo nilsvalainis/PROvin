@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     const { error, detail } = failureEvent(e);
     return NextResponse.json(
       { error, ...(detail ? { detail } : {}) },
-      { status: error === "missing_expert_sections" ? 400 : 502 },
+      { status: error === "empty_order_context" ? 400 : 502 },
     );
   }
 }
@@ -88,6 +88,6 @@ export async function POST(req: Request) {
 function failureEvent(e: unknown): { error: string; detail?: string } {
   const msg = e instanceof Error ? e.message : "unknown";
   console.error("[ai/summary-analysis]", msg);
-  if (msg === "missing_expert_sections") return { error: "missing_expert_sections" };
+  if (msg === "empty_order_context") return { error: "empty_order_context" };
   return { error: "generation_failed", detail: msg };
 }

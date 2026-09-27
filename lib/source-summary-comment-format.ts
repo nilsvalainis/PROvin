@@ -63,6 +63,7 @@ FORMAT:
 - You MAY rewrite into PROVIN Latvian expert style (heading on its own line, then the paragraph; hedging vocabulary). Never add *, ** or other markdown.
 - You MUST NOT drop facts, numbers, dates, named parts, service names, or conclusions from the notes.
 - Operator notes beat CLIENT VALUE DENSITY, default length, FIELD DIVISION / anti-repetition, and „already generated = covered ground” for THIS generation.
+- LENGTH: if the notes are a long paste (or the prompt has a long „Esošais melnraksts”), character and paragraph ceilings in this prompt do NOT apply. Restyle into PROVIN heading-then-paragraph. Do not substantially shorten. Do not omit information the operator wanted the client to read.
 
 If there is no „OPERATORA KOMANDAS” section, ignore this block and follow the ACTIVE FIELD rules as usual.`;
 
@@ -250,7 +251,7 @@ export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (ma
 - No risk label, severity verdict, or recommendation after the fact. No „kas prasa detalizētu izvērtējumu”, „kas ir svarīgi noskaidrot”, „signāls, kas jāpārbauda”, no „galvenais pirkuma risks” bolted onto a plain registry row.
 - GENERIC INSPECTION ADVICE („obligāti jāveic pilna diagnostika”, „jāpārbauda ar krāsas biezuma mērītāju”) is NEVER a source-comment sentence.
 - If there is nothing beyond the bare fact, stop. A short fact is better than a rounded-off paragraph.
-- LENGTH: one paragraph when that covers the unique facts. Ceiling 2–3 paragraphs. Do not invent a heading such as „Datu specifika” or a second section to hit a 2–4 / 350–800 quota.`;
+- LENGTH: one paragraph when that covers the unique facts. If THIS source has many facts, write more paragraphs. Ceiling 2–3 applies only to thin source-only generation. Operator paste / long existing draft: no ceiling. Do not invent a heading such as „Datu specifika” or a second section to hit a 2–4 / 350–800 quota.`;
 
 /**
  * Balstīts uz 96 reālu dīlera komentāru izlases analīzi (2026-09-19 backup). Konstatētās problēmas:
@@ -283,10 +284,10 @@ export const AI_SOURCES_COMPARISON_OVERVIEW_RULES = `CASE OVERVIEW / AVOTU SALĪ
 
 /** Īsi, koncentrēti lauki — apkopojumi un salīdzinājumi tikai kopsavilkumā. */
 export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for every ✨ field):
-- OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” are present, completeness and scope of those notes beat this brevity block. Do not drop operator topics to stay short; do not pad when the operator limited the job.
+- OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” or a long „Esošais melnraksts” are present, completeness and scope beat this brevity block. Do not drop operator topics to stay short; do not pad when the operator limited the job. Long operator paste / long draft: character and paragraph ceilings do NOT apply.
 - Each comment answers ONE question: what does THIS source / THIS field add to the audit? Say it in the first paragraph.
-- DEFAULT LENGTH (non-source fields): 2–4 paragraphs, 2–3 sentences each (≈350–800 characters). Thin data → shorter. Only OPERATORA KOMANDAS may extend this. (Length exceptions for flagship fields live only in those fields' task blocks — do not copy 8–12 paragraphs into source/seller/summary.)
-- SOURCE COMMENTS: paragraph count = distinct fact-clusters THIS source uniquely adds. One cluster = one paragraph. Default is ONE paragraph. Ceiling 2–3. 350–800 characters is a CEILING, not a quota. Merge related facts (same date/event) instead of inventing a second heading. A short fact is better than a rounded-off second section.
+- DEFAULT LENGTH follows the information: thin data → short (often 1 paragraph). Rich data → longer, several paragraphs. The old 2–4 paragraphs / ≈350–800 band is a default when data are ordinary, not a hard cap when THIS order has many distinct facts. (flagship fields live only in those fields' task blocks - do not copy 8–12 paragraphs into a thin source comment.)
+- SOURCE COMMENTS: paragraph count = distinct fact-clusters THIS source uniquely adds. One cluster = one paragraph. Default is ONE paragraph when facts are few. Ceiling 2–3 only when generating from thin source data alone. 350–800 is a CEILING for thin data, not a quota. Merge related facts. A short fact is better than a rounded-off second section. If THIS source has many facts, write more paragraphs. If the operator pasted a long comment, keep that density.
 - Cross-source comparison is NOT this field's job: at most ONE short sentence, and only when a conflict changes the conclusion. Discussed facts and, if needed, a workshop-check conclusion belong to „3. Kopsavilkums”.
 - Never retell a fact the client already reads in another section or source comment. If this source only confirms it: one sentence („Saskan ar …”) and move on.
 - Cut: greetings, restating the section title, „kopumā var secināt”, „svarīgi atzīmēt”, „ko tas nozīmē šim darījumam”, „tomēr līdzās šim atrodama arī”, generic „jāpārbauda klātienē” without naming the component, closing paragraphs that repeat earlier content.
@@ -797,8 +798,8 @@ ${AI_OIL_CHANGE_INTERVAL_RULES}
 ${AI_DOCUMENTED_SERVICE_WORK_RULES}
 ${AI_THIS_CAR_ONLY_LOGIC_RULES}
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
-- LENGTH (default when generating from source data alone): ONE paragraph if that covers the unique facts THIS source adds. Ceiling 2–3 short paragraphs / ≈800 characters. 350–800 is a CEILING, not a quota. Merge related facts. Do not invent a second heading to fill a form. Fewer, sharper paragraphs are always better than more.
-- LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / eksperta piezīmes — IGNORE the 350–800 ceiling if needed to cover every operator topic. Preserve the operator's detail density; reorganize into heading-then-paragraph; do not compress into a short formula and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes are long.
+- LENGTH (default when generating from source data alone): ONE paragraph if that covers the unique facts THIS source adds. Thin data stays short. Rich data from THIS source may use more paragraphs. Ceiling 2–3 / ≈800 applies only to thin source-only generation. 350–800 is a CEILING for thin data, not a quota. Do not invent a second heading to fill a form.
+- LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / OPERATORA IELĪMĒTAIS TEKSTS / a long Esošais melnraksts — IGNORE the 350–800 ceiling and every other character/paragraph ceiling. Preserve the operator's detail density; reorganize into heading-then-paragraph; do not substantially shorten and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes or draft are long.
 - STYLE: Analytical, professional, restrained automotive Latvian. Flexible structure — not one fixed template. Match the richness of the operator material when present. No greetings, no filler restating the section title.
 - LOGIC: State what THIS source recorded. Do not interpret, hedge, or add a buyer-advice sentence after the fact. Meaning, caveats, and „what the buyer should do” belong ONLY in summary sections (3. Kopsavilkums, NOBRAUKUMA VĒSTURES KOMENTĀRS, NEGADĪJUMU VĒSTURES KOPSAVILKUMS) or in „2. Ieteikumi” when it is an inspection step. Never drop operator-supplied facts to fit a template.
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}

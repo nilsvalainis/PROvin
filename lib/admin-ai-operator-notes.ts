@@ -26,9 +26,12 @@ export function appendAiOperatorNotesSection(
         "PIRMS rakstīšanas saskaiti KATRU atsevišķo tēmu / norādi / jautājumu / nosaukto mezglu no teksta zemāk. Katrai jābūt izejā. Izlaist kaut vienu = kļūda.",
         "JA operators nosauc konkrētu avotu („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”) — tās rindkopas raksti TIKAI tajā avotā. Citos laukos tas ir konteksts, ne atkārtota rindkopa.",
         "JA operators saka „tikai par…”, „raksti tikai…”, „neraksti par…”, „nepapildi”, „bez …” — raksti TIKAI to. Bez liekām rindām un bez noklusējuma lauka esejas.",
-        "Drīksti pārkārtot PROVIN stilā (**bold** ievadi). NEDRĪKSTI izmest faktus, datumus, km, nosaukumus, secinājumus.",
+        "Drīksti pārkārtot PROVIN stilā (virsraksts savā rindā, tad rindkopa). NEDRĪKSTI izmest faktus, datumus, km, nosaukumus, secinājumus.",
+        "Ja ielīmējums ir garš: rakstzīmju un rindkopu griesti NEATTIECAS. Nesaīsini būtiski. Izstāsti visu, ko operators gribēja klientam pateikt.",
         "",
+        "=== OPERATORA IELĪMĒTAIS TEKSTS (pilns saturs jāsaglabā) ===",
         notes,
+        "=== BEIGAS OPERATORA IELĪMĒTAJAM TEKSTAM ===",
         "",
         "=== BEIGAS OPERATORA KOMANDĀM ===",
       ].join("\n"),
@@ -38,7 +41,11 @@ export function appendAiOperatorNotesSection(
   const draft = options?.existingDraftPlain?.trim();
   if (draft) {
     parts.push(
-      `=== Esošais melnraksts (jāapvieno ar jauno tekstu — nevis jāatkārto vārds vārdā; operatora komandas virs tā) ===\n${draft}`,
+      [
+        "=== Esošais melnraksts (operators jau uzrakstījis klientam - NEĪSINĀT, saglabā visus faktus) ===",
+        draft,
+        "=== BEIGAS ESOŠAJAM MELNRAKSTAM ===",
+      ].join("\n"),
     );
   }
 

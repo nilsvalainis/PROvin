@@ -177,7 +177,7 @@ Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu 
 ${
   isDealerComments
     ? "Garums: nav fiksētu griestu šai sadaļai — izskaidro VISUS iegūtos datus (agregātu identifikācija, servisa/remontu vēsture, nobraukuma saskaņa), īpaši, ja tie satur daudz vērtīgas informācijas. Bez liekvārdības un mākslīgi paplašinātiem teikumiem: īss fakts ir labāks par izdomātu teikumu."
-    : "Garums: **1 rindkopa, ja pietiek**; griesti 2–3 / ≈800 rakstzīmes. 350–800 ir griesti, ne kvota. Neizdomā otru virsrakstu, lai aizpildītu formu."
+    : "Garums: ja datu ir maz - **1 rindkopa**; ja šis avots dod daudz faktu - vairākas rindkopas. Griesti 2–3 / ≈800 attiecas TIKAI uz trūcīgiem datiem bez operatora teksta. Ja ir OPERATORA IELĪMĒTAIS TEKSTS vai garš esošais melnraksts - griesti NEATTIECAS, neapgraizi."
 } Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
 Ja šis avots tikai apstiprina jau uzrakstīto: viens īss teikums.

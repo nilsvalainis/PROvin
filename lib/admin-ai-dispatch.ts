@@ -34,6 +34,7 @@ import {
   type AiRequestBudget,
 } from "@/lib/ai-request-budget";
 import type { AiTextStream } from "@/lib/ai-text-stream";
+import { commentLengthLimitsWaived } from "@/lib/ai-comment-length-budget";
 
 export { isGeminiAdminTier };
 
@@ -153,7 +154,9 @@ async function withSelfCorrection(
   const critical = allIssues.filter(
     (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );
-  const cheap = allIssues.filter((i) => CHEAP_CORRECTION_RETRY_CODES.has(i.code));
+  const cheap = commentLengthLimitsWaived(opts.userPrompt)
+    ? []
+    : allIssues.filter((i) => CHEAP_CORRECTION_RETRY_CODES.has(i.code));
 
   if (critical.length === 0 && cheap.length === 0) return raw;
   if (!aiBudgetAllowsRetry(withBudget.budget)) {

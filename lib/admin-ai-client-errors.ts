@@ -25,7 +25,6 @@ const ERROR_MESSAGES_LV: Record<string, string> = {
   empty_order_context: "Trūkst avotu datu — ievadi sludinājuma saiti vai aizpildi avotu laukus",
   empty_mileage_data: "Trūkst nobraukuma datu — aizpildi CSDD vai avotu tabulas",
   empty_incident_data: "Trūkst negadījumu datu — aizpildi avotu tabulas",
-  missing_expert_sections: "Vispirms aizpildi pārdevēja, ieteikumu vai cenas sadaļu",
   missing_seller_input: "Ievadi papildus nosaukumu vai sludinājuma aprakstu",
   listing_scrape_failed: "Neizdevās nolasīt ss.lv sludinājumu — pārbaudi saiti",
   ai_empty_content:
