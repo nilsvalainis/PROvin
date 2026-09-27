@@ -45,6 +45,7 @@ import type { HistoryVendorPdfParseResult, HistoryVendorPdfTarget } from "@/lib/
 import { mergeLtabIncidentRows, mergeVendorServiceHistory } from "@/lib/history-vendor-pdf-import";
 import { mergeDamageDetailRows } from "@/lib/vendor-damage-hydrate";
 import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
+import { applyTraficomReportToBlock, looksLikeTraficomReport } from "@/lib/traficom-report-parse";
 import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
@@ -214,6 +215,19 @@ export async function runPrepareDraftPipeline(input: {
           label: pdf.fileName,
           status: "ok",
           detail: `finnik · ${applied.summary}`,
+        });
+        continue;
+      }
+    }
+    if (looksLikeTraficomReport(`${pdf.fileName}\n${quick.text}`)) {
+      const applied = applyTraficomReportToBlock(blocks.traficom_fi, quick.text);
+      if (applied) {
+        blocks = { ...blocks, traficom_fi: applied.block };
+        steps.push({
+          id: stepId,
+          label: pdf.fileName,
+          status: "ok",
+          detail: `traficom_fi · ${applied.summary}`,
         });
         continue;
       }

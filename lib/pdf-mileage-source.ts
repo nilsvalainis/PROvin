@@ -15,6 +15,7 @@ export type MileagePdfSourceKey =
   | "finnik"
   | "ee"
   | "carinfo"
+  | "traficom_fi"
   | "ltab"
   | "intl"
   | "asv"
@@ -131,6 +132,14 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
   ) {
     return "carinfo";
   }
+  if (
+    t === normLabel(SOURCE_BLOCK_LABELS.traficom_fi) ||
+    sq.includes("traficom") ||
+    sq.includes("somijasregistri") ||
+    sq.includes("somijasregistrs")
+  ) {
+    return "traficom_fi";
+  }
 
   if (
     t === normLabel(SOURCE_BLOCK_LABELS.citi_avoti) ||
@@ -166,6 +175,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   finnik: { full: SOURCE_BLOCK_LABELS.finnik, abbrev: "NL" },
   ee: { full: "Igaunijas reģistri", abbrev: "EE" },
   carinfo: { full: SOURCE_BLOCK_LABELS.carinfo, abbrev: "SE" },
+  traficom_fi: { full: SOURCE_BLOCK_LABELS.traficom_fi, abbrev: "FI" },
   ltab: { full: "LTAB", abbrev: "LTAB" },
   intl: { full: CC_VIN_PDF_SOURCE_LABEL, abbrev: "INTL" },
   asv: { full: ASV_PDF_SOURCE_LABEL, abbrev: "ASV" },
@@ -186,6 +196,7 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   finnik: "#C2410C",
   ee: "#0E7490",
   carinfo: "#0F766E",
+  traficom_fi: "#2563EB",
   ltab: "#DC2626",
   intl: "#7C3AED",
   asv: "#1D4ED8",
@@ -204,6 +215,7 @@ export const PDF_SOURCE_WASH: Record<MileagePdfSourceKey, string> = {
   finnik: "#FFF4ED",
   ee: "#E8EEF8",
   carinfo: "#FFF3E8",
+  traficom_fi: "#EAF1FE",
   ltab: "#F8EBEB",
   intl: "#EEEAF6",
   asv: "#E8EEF8",
@@ -221,6 +233,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "finnik",
   "ee",
   "carinfo",
+  "traficom_fi",
   "ltab",
   "intl",
   "asv",

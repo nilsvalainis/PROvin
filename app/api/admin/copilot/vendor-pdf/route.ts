@@ -16,6 +16,7 @@ import { parseSourcePdfBlobRefs } from "@/lib/admin-source-pdf-blob-constants";
 import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
 import { runCcVinPdfAgent, runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { applyFinnikReportToBlock } from "@/lib/finnik-report-parse";
+import { applyTraficomReportToBlock } from "@/lib/traficom-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
@@ -78,15 +79,16 @@ export async function POST(req: Request) {
   const isLtab = targetRaw === "ltab";
   const isCcVin = targetRaw === "cc_vin";
   const isFinnik = targetRaw === "finnik";
+  const isTraficomFi = targetRaw === "traficom_fi";
   // `auto_records` blokā gaidām oficiālā dīlera / rūpnīcas izdruku (BMW portāls, auto-records.com).
-  const target: VendorReportVendor | null = isLtab || isCcVin || isFinnik
+  const target: VendorReportVendor | null = isLtab || isCcVin || isFinnik || isTraficomFi
     ? null
     : targetRaw === "autodna" || targetRaw === "carvertical"
       ? targetRaw
       : targetRaw === "auto_records" || targetRaw === "dealer"
         ? "dealer"
         : null;
-  if (!isLtab && !isCcVin && !isFinnik && !target) {
+  if (!isLtab && !isCcVin && !isFinnik && !isTraficomFi && !target) {
     return NextResponse.json({ error: "invalid_target" }, { status: 400 });
   }
 
@@ -122,7 +124,7 @@ export async function POST(req: Request) {
   // nepieejamība nav iemesls atteikt augšupielādi — tā kļūst par kļūdu tikai tad, ja lokālais
   // parseris no šī PDF neizvelk nevienu ierakstu.
   let aiBlocked: { error: string; detail?: string } | null = null;
-  if (!isLtab && !isCcVin && !isFinnik) {
+  if (!isLtab && !isCcVin && !isFinnik && !isTraficomFi) {
     if (!getAnthropicApiKeyFromEnv()) {
       aiBlocked = { error: "missing_ai_key", detail: "Serverī nav ANTHROPIC_API_KEY" };
     } else {
@@ -181,6 +183,27 @@ export async function POST(req: Request) {
         skipped: [],
         patchedSourceBlocks: { finnik: applied.block },
         changedKeys: ["finnik"] satisfies CopilotSourceKey[],
+      });
+    }
+
+    if (isTraficomFi) {
+      const extracted = await extractPdfTextDetailed(buffer, { fileName });
+      const applied = applyTraficomReportToBlock(sourceBlocks.traficom_fi, extracted.text ?? "");
+      if (!applied) {
+        return NextResponse.json(
+          { error: "extraction_failed", detail: "PDF nav Traficom / Somijas reģistra atskaite vai teksta slānis ir tukšs." },
+          { status: 422 },
+        );
+      }
+      return NextResponse.json({
+        ok: true,
+        vendor: "traficom_fi",
+        summary: applied.summary,
+        notes: [],
+        applied: [applied.summary],
+        skipped: [],
+        patchedSourceBlocks: { traficom_fi: applied.block },
+        changedKeys: ["traficom_fi"] satisfies CopilotSourceKey[],
       });
     }
 

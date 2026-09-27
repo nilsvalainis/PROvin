@@ -163,6 +163,7 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   extraSource("mnt_ee", SOURCE_BLOCK_LABELS.mnt_ee, "mnt_ee"),
   extraSource("lkf_ee", SOURCE_BLOCK_LABELS.lkf_ee, "lkf_ee"),
   extraSource("carinfo", SOURCE_BLOCK_LABELS.carinfo, "carinfo"),
+  extraSource("traficom_fi", SOURCE_BLOCK_LABELS.traficom_fi, "traficom_fi"),
   extraSource("asv", SOURCE_BLOCK_LABELS.asv, "asv"),
   extraSource("citi_avoti", SOURCE_BLOCK_LABELS.citi_avoti, "citi_avoti"),
   {

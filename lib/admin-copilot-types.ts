@@ -17,11 +17,19 @@ export const COPILOT_SOURCE_KEYS = [
   "mnt_ee",
   "lkf_ee",
   "carinfo",
+  "traficom_fi",
 ] as const;
 
 export type CopilotSourceKey = (typeof COPILOT_SOURCE_KEYS)[number];
 
-export const VIN_REGISTRY_COPILOT_SOURCES = ["tjekbil", "finnik", "mnt_ee", "lkf_ee", "carinfo"] as const;
+export const VIN_REGISTRY_COPILOT_SOURCES = [
+  "tjekbil",
+  "finnik",
+  "mnt_ee",
+  "lkf_ee",
+  "carinfo",
+  "traficom_fi",
+] as const;
 export type VinRegistryCopilotSource = (typeof VIN_REGISTRY_COPILOT_SOURCES)[number];
 
 export function isVinRegistryCopilotSource(v: string): v is VinRegistryCopilotSource {

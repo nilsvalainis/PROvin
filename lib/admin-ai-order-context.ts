@@ -143,7 +143,7 @@ function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
       parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
     }
   }
-  for (const key of ["tjekbil", "finnik", "mnt_ee", "lkf_ee", "carinfo"] as const) {
+  for (const key of ["tjekbil", "finnik", "mnt_ee", "lkf_ee", "carinfo", "traficom_fi"] as const) {
     const inc = (blocks[key].incidents ?? []).filter(vinRegistryIncidentRowHasData);
     if (inc.length === 0) continue;
     parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
@@ -249,6 +249,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     { key: "mnt_ee", text: vinRegistryBlockToPlainText(blocks.mnt_ee) },
     { key: "lkf_ee", text: vinRegistryBlockToPlainText(blocks.lkf_ee) },
     { key: "carinfo", text: vinRegistryBlockToPlainText(blocks.carinfo) },
+    { key: "traficom_fi", text: vinRegistryBlockToPlainText(blocks.traficom_fi) },
     { key: "ltab", text: ltabBlockToPlainText(blocks.ltab) },
     { key: "tirgus", text: tirgusFormToPlainText(blocks.tirgus) },
     { key: "citi_avoti", text: citiAvotiToPlainText(blocks.citi_avoti) },

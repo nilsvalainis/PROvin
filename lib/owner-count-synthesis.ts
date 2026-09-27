@@ -12,7 +12,7 @@ import {
 import type { AsvBlockState } from "@/lib/asv-report";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 
-export type OwnerCountryId = "latvia" | "sweden" | "denmark" | "estonia" | "germany" | "other";
+export type OwnerCountryId = "latvia" | "sweden" | "denmark" | "estonia" | "finland" | "germany" | "other";
 
 export type OwnerCountCandidate = {
   country: OwnerCountryId;
@@ -36,6 +36,7 @@ const COUNTRY_LOCATIVE: Record<OwnerCountryId, string> = {
   sweden: "Zviedrijā",
   denmark: "Dānijā",
   estonia: "Igaunijā",
+  finland: "Somijā",
   germany: "Vācijā",
   other: "ārvalstīs",
 };
@@ -45,11 +46,12 @@ const COUNTRY_ISO: Record<OwnerCountryId, string> = {
   sweden: "SE",
   denmark: "DK",
   estonia: "EE",
+  finland: "FI",
   germany: "DE",
   other: "",
 };
 
-const DISPLAY_ORDER: OwnerCountryId[] = ["latvia", "sweden", "denmark", "estonia", "germany", "other"];
+const DISPLAY_ORDER: OwnerCountryId[] = ["latvia", "sweden", "denmark", "estonia", "finland", "germany", "other"];
 
 const TITLE = {
   autodna: SOURCE_BLOCK_LABELS.autodna,
@@ -58,6 +60,7 @@ const TITLE = {
   tjekbil: SOURCE_BLOCK_LABELS.tjekbil,
   mnt: SOURCE_BLOCK_LABELS.mnt_ee,
   lkf: SOURCE_BLOCK_LABELS.lkf_ee,
+  traficomFi: SOURCE_BLOCK_LABELS.traficom_fi,
   citi: SOURCE_BLOCK_LABELS.citi_avoti,
 } as const;
 
@@ -73,6 +76,7 @@ export function extractExplicitOwnerCount(text: string): number | null {
   const patterns = [
     /dānijas\s+īpašnieku\s+skaits[:\s]+(\d{1,2})/i,
     /īpašnieku\s+skaits\s+dānijā[:\s]+(\d{1,2})/i,
+    /īpašnieku\s+skaits\s+somijā[:\s]+(\d{1,2})/i,
     /(?:aplēstais\s+)?īpašnieku\s+skaits[:\s]+(\d{1,2})/i,
     /(\d{1,2})\s*īpašnieki(?:\s|\(|$)/i,
     /number of owners[:\s]+(\d{1,2})/i,
@@ -126,12 +130,14 @@ export function inferOwnerCountry(text: string, sourceHint?: string): OwnerCount
   if (hint === TITLE.carinfo || /zviedrijas\s+re[gģ]istr/i.test(hint)) return "sweden";
   if (hint === TITLE.tjekbil || /dānijas\s+re[gģ]istr|tjekbil/i.test(hint)) return "denmark";
   if (hint === TITLE.mnt || hint === TITLE.lkf || /mnt\.ee|lkf\.ee/i.test(hint)) return "estonia";
+  if (hint === TITLE.traficomFi || /somijas\s+re[gģ]istr|traficom/i.test(hint)) return "finland";
 
   const blob = ownerCountFocusText(text).toLowerCase();
   if (!blob) return "other";
   if (/zviedr|sweden|sverige/.test(blob)) return "sweden";
   if (/dānij|denmark|danmark/.test(blob)) return "denmark";
   if (/igaun|estonia|eesti/.test(blob)) return "estonia";
+  if (/somij|finland|suomi/.test(blob)) return "finland";
   if (/vācij|vacij|germany|deutschland/.test(blob)) return "germany";
   return "other";
 }
@@ -156,7 +162,7 @@ function choosePerCountry(candidates: OwnerCountCandidate[]): Partial<Record<Own
     chosen[id] = group[0];
   }
   /** Ja ir konkrētas ārvalsts reģistrs, vendor „ārvalstīs” kopsumma ir tas pats stāsts — nerāda otru skaitli. */
-  if (chosen.sweden || chosen.denmark || chosen.estonia || chosen.germany) {
+  if (chosen.sweden || chosen.denmark || chosen.estonia || chosen.finland || chosen.germany) {
     delete chosen.other;
   }
   return chosen;
@@ -261,6 +267,10 @@ function collectFromVendorPdf(
       pushCandidate(out, "estonia", extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 1);
       continue;
     }
+    if (title === TITLE.traficomFi) {
+      pushCandidate(out, "finland", extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 0);
+      continue;
+    }
     if (title === TITLE.autodna || title === TITLE.carvertical || title === TITLE.citi) {
       const text = [b.ownersSummary, b.comments].filter(Boolean).join("\n");
       const count = extractExplicitOwnerCount(text);
@@ -324,13 +334,17 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
     pushCandidate(candidates, "latvia", extractExplicitOwnerCount(blocks.csdd.ownerCountLatvia), "CSDD", 0);
   }
 
-  const registry: Array<{ key: "carinfo" | "tjekbil" | "mnt_ee" | "lkf_ee"; country: OwnerCountryId; priority: number }> =
-    [
-      { key: "carinfo", country: "sweden", priority: 0 },
-      { key: "tjekbil", country: "denmark", priority: 0 },
-      { key: "mnt_ee", country: "estonia", priority: 0 },
-      { key: "lkf_ee", country: "estonia", priority: 1 },
-    ];
+  const registry: Array<{
+    key: "carinfo" | "tjekbil" | "mnt_ee" | "lkf_ee" | "traficom_fi";
+    country: OwnerCountryId;
+    priority: number;
+  }> = [
+    { key: "carinfo", country: "sweden", priority: 0 },
+    { key: "tjekbil", country: "denmark", priority: 0 },
+    { key: "mnt_ee", country: "estonia", priority: 0 },
+    { key: "lkf_ee", country: "estonia", priority: 1 },
+    { key: "traficom_fi", country: "finland", priority: 0 },
+  ];
   for (const r of registry) {
     const b = blocks[r.key];
     pushCandidate(

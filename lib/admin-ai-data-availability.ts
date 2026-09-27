@@ -69,6 +69,7 @@ export function orderHasSourceDataForAi(sourceBlocks: WorkspaceSourceBlocks): bo
     vinRegistryBlockHasContent(blocks.mnt_ee),
     vinRegistryBlockHasContent(blocks.lkf_ee),
     vinRegistryBlockHasContent(blocks.carinfo),
+    vinRegistryBlockHasContent(blocks.traficom_fi),
     ltabBlockHasContent(blocks.ltab),
     tirgusFormHasContent(blocks.tirgus),
     citiAvotiHasContent(blocks.citi_avoti),

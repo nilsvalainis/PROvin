@@ -745,6 +745,29 @@ describe("Vēstures kopsavilkums", () => {
     expect(events.some((e) => /Noņemts no uzskaites/.test(e.title))).toBe(true);
   });
 
+  it("puts Somijas reģistra bojājuma noņemšanu PDF hronoloģijā kā incidentu", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.traficom_fi,
+          mileageRows: [],
+          incidentRows: [],
+          comments: "",
+          vehicleHistoryTimeline: [
+            { date: "08.11.2021", country: "Somija", description: "Pirmā reģistrācija Somijā" },
+            { date: "12.12.2024", country: "Somija", description: "Noņemts no reģistra bojājuma dēļ" },
+          ],
+        },
+      ],
+    });
+    const first = events.find((e) => e.kind === "first_registration");
+    expect(first?.country).toBe("Somija");
+    const damage = events.find((e) => e.kind === "incident");
+    expect(damage?.title).toMatch(/bojājuma dēļ/);
+    expect(damage?.country).toBe("Somija");
+    expect(damage?.sources).toContain(SOURCE_BLOCK_LABELS.traficom_fi);
+  });
+
   it("prints the timeline before the mileage section", () => {
     const csdd = emptyCsddFields();
     csdd.firstRegistration = "12.05.2016";

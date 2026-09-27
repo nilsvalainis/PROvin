@@ -615,7 +615,13 @@ ASV FOCUS:
 - Lite pret Full: ja productUsed ir lite, neizdomā title zīmolus, izsoļu rindas vai ķīlas, kuru nav. Seguma robežas saki godīgi.
 - Salvage / rebuilt / flood / lemon ir pirkuma kritiski; viens īss km krustojums tikai tad, ja šis avots pretējs citiem.`;
   }
-  if (blockLabel === L.tjekbil || blockLabel === L.mnt_ee || blockLabel === L.lkf_ee || blockLabel === L.carinfo) {
+  if (
+    blockLabel === L.tjekbil ||
+    blockLabel === L.mnt_ee ||
+    blockLabel === L.lkf_ee ||
+    blockLabel === L.carinfo ||
+    blockLabel === L.traficom_fi
+  ) {
     const scope =
       blockLabel === L.tjekbil
         ? "Danish DMR / Færdselsstyrelsen registry data (odometer, inspections, usage, leasing, Bilbogen). Danish owner count: leasing and later private registration are two owners; consecutive lease contracts count as one leasing chapter; first registration abroad is not a Danish owner; never insurance/OCTA switches."
@@ -623,7 +629,9 @@ ASV FOCUS:
           ? "Estonian Transpordiamet registry data (odometer readings, usage history, restrictions, arrests/pledges)"
           : blockLabel === L.lkf_ee
             ? "Estonian LKF motor third-party liability claim records (claim dates, amounts if published, total-loss marks)"
-            : "car.info aggregated multi-country registry data (per-country odometer rows, ownership, usage)";
+            : blockLabel === L.traficom_fi
+              ? "Finnish Traficom Transport Register data: owner/holder history, notification of transfer, use history (private / sales storage / taxi / rental), decommissioning history, inspection period, tax and restriction status. No odometer field exists in this registry — never invent one. Finnish owner count: count distinct owner-role entries plus the current owner, not operator/holder rows; consecutive lease-company chapters for the same lessee count once."
+              : "car.info aggregated multi-country registry data (per-country odometer rows, ownership, usage)";
     return `
 
 PUBLIC FOREIGN REGISTRY FOCUS (${blockLabel}):

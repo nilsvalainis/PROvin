@@ -50,6 +50,7 @@ import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { buildCarinfoVinCheckUrl, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
+import { applyTraficomReportToBlock, looksLikeTraficomReport } from "@/lib/traficom-report-parse";
 import { parseCarinfoPastedText } from "@/lib/vin-sources/carinfo-parse";
 import {
   looksLikeVinRegistryTimelinePaste,
@@ -65,7 +66,7 @@ const areaCls =
 const labelCls = "mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]";
 
 type Props = {
-  blockKey: VinRegistryBlockKey | "finnik";
+  blockKey: VinRegistryBlockKey | "finnik" | "traficom_fi";
   value: VinRegistryBlockState;
   readOnly: boolean;
   disabled?: boolean;
@@ -204,7 +205,7 @@ export function AdminVinRegistrySourceBlock({
       }, 200);
       return;
     }
-    if (blockKey === "finnik") return;
+    if (blockKey === "finnik" || blockKey === "traficom_fi") return;
     setBusy(true);
     try {
       const data = await requestVinRegistryFetch(blockKey, cleanVin);
@@ -238,6 +239,26 @@ export function AdminVinRegistrySourceBlock({
       onChange({ ...block, rawUnprocessedData: clipped });
       setError(null);
       setStatus("RAW saglabāts. Teksts neizskatās pēc Finnik / RDW atskaites.");
+      return;
+    }
+    onChange({
+      ...applied.block,
+      rawUnprocessedData: clipped,
+      comments: block.comments,
+      photos: block.photos ?? [],
+      photoGroups: block.photoGroups ?? [],
+    });
+    setError(null);
+    setStatus(applied.summary);
+  };
+
+  const applyTraficomFiPaste = (raw: string) => {
+    const clipped = raw.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN);
+    const applied = applyTraficomReportToBlock({ ...block, rawUnprocessedData: clipped }, clipped);
+    if (!applied) {
+      onChange({ ...block, rawUnprocessedData: clipped });
+      setError(null);
+      setStatus("RAW saglabāts. Teksts neizskatās pēc Traficom / Somijas reģistra atskaites.");
       return;
     }
     onChange({
@@ -365,10 +386,13 @@ export function AdminVinRegistrySourceBlock({
   const inner = (
     <div className="flex min-h-0 flex-col overflow-hidden p-2">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {!readOnly && blockKey === "finnik" && getSourceBlocks && applyPatchedBlocks ? (
+        {!readOnly &&
+        (blockKey === "finnik" || blockKey === "traficom_fi") &&
+        getSourceBlocks &&
+        applyPatchedBlocks ? (
           <div className="mb-2">
             <AdminHistoryVendorPdfUpload
-              target="finnik"
+              target={blockKey}
               sessionId={sessionId}
               disabled={disabled}
               readOnly={readOnly}
@@ -377,11 +401,13 @@ export function AdminVinRegistrySourceBlock({
               onParseActiveChange={(active) => setBusy(active)}
             />
             <p className="mt-1 text-[10px] text-slate-500">
-              PDF bez VIN. Numurs ir reģistrācijas zīme. Pasūtījuma VIN sasaisti pats. Tas pats parseris nolasa ielīmētu tekstu RAW laukā.
+              {blockKey === "traficom_fi"
+                ? "Traficom PDF vai ielīmēts teksts RAW laukā. Īpašnieki, noņemšana bojājuma dēļ, apdrošināšana un lietošanas veids nonāk hronoloģijā. Nobraukuma Somijas reģistrā nav."
+                : "PDF bez VIN. Numurs ir reģistrācijas zīme. Pasūtījuma VIN sasaisti pats. Tas pats parseris nolasa ielīmētu tekstu RAW laukā."}
             </p>
           </div>
         ) : null}
-        {!readOnly && blockKey !== "finnik" ? (
+        {!readOnly && blockKey !== "finnik" && blockKey !== "traficom_fi" ? (
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -758,7 +784,9 @@ export function AdminVinRegistrySourceBlock({
           "Īpašnieku skaits",
           blockKey === "finnik"
             ? "Ķēde pa datumiem, piem. 04.12.2020-13.07.2026 Līzinga uzņēmums"
-            : "Piem.: Īpašnieku skaits Dānijā: 2.",
+            : blockKey === "traficom_fi"
+              ? "Piem.: Īpašnieku skaits Somijā: 2."
+              : "Piem.: Īpašnieku skaits Dānijā: 2.",
           2,
         )}
         {textField(
@@ -780,9 +808,11 @@ export function AdminVinRegistrySourceBlock({
                 ? "RAW - ielīmē car.info lapas tekstu"
                 : blockKey === "finnik"
                   ? "RAW - ielīmē Finnik / RDW tekstu"
-                  : blockKey === "tjekbil"
-                    ? "RAW - ielīmē hronoloģijas šablonu (DATUMS, KM, VALSTS, NOTIKUMS)"
-                    : "RAW dati (avota valodā)"}
+                  : blockKey === "traficom_fi"
+                    ? "RAW - ielīmē Traficom (Somija) tekstu"
+                    : blockKey === "tjekbil"
+                      ? "RAW - ielīmē hronoloģijas šablonu (DATUMS, KM, VALSTS, NOTIKUMS)"
+                      : "RAW dati (avota valodā)"}
             </label>
             {!readOnly ? (
               <AdminFieldResetButton
@@ -807,7 +837,9 @@ export function AdminVinRegistrySourceBlock({
                   ? "Pēc car.info ielīmē šeit visu lapas tekstu (Cmd+V). Nobraukums, īpašnieki un RED FLAG aizpildās paši."
                   : blockKey === "finnik"
                     ? "Ielīmē Finnik / RDW atskaites tekstu. Oficiālajā nobraukumā nonāk tikai Kilometerstand gerapporteerd."
-                    : `${VIN_REGISTRY_TIMELINE_PASTE_HEADER}
+                    : blockKey === "traficom_fi"
+                      ? "Ielīmē Traficom (Somija) atskaites tekstu. Somijas reģistrs nepublicē nobraukumu. Hronoloģijā nonāk īpašnieki, statuss, apdrošināšana un noņemšana bojājuma dēļ."
+                      : `${VIN_REGISTRY_TIMELINE_PASTE_HEADER}
 18.12.2013	17	Vācija	Pirmā reģistrācija
 18.12.2017	29000	Dānija	Tehniskā apskate: izieta ar pirmo reizi
 
@@ -835,6 +867,11 @@ Neviena periodiskā apskate nav izgāzta.`
                   applyFinnikPaste(text);
                   return;
                 }
+                if (blockKey === "traficom_fi" && looksLikeTraficomReport(text)) {
+                  e.preventDefault();
+                  applyTraficomFiPaste(text);
+                  return;
+                }
                 if (looksLikeVinRegistryTimelinePaste(text)) {
                   e.preventDefault();
                   applyTimelinePaste(text);
@@ -845,6 +882,7 @@ Neviena periodiskā apskate nav izgāzta.`
                 if (!text.trim()) return;
                 if (blockKey === "carinfo") applyCarinfoPaste(text);
                 else if (blockKey === "finnik" && looksLikeFinnikReport(text)) applyFinnikPaste(text);
+                else if (blockKey === "traficom_fi" && looksLikeTraficomReport(text)) applyTraficomFiPaste(text);
                 else if (looksLikeVinRegistryTimelinePaste(text)) applyTimelinePaste(text);
               }}
             />

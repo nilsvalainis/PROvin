@@ -73,6 +73,7 @@ const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   mnt_ee: "MNT",
   lkf_ee: "LKF",
   carinfo: "SE",
+  traficom_fi: "FI",
 };
 const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
@@ -87,6 +88,7 @@ const SOURCE_TOGGLE_FULL_LABELS: Record<CopilotSourceKey, string> = {
   mnt_ee: SOURCE_BLOCK_LABELS.mnt_ee,
   lkf_ee: SOURCE_BLOCK_LABELS.lkf_ee,
   carinfo: SOURCE_BLOCK_LABELS.carinfo,
+  traficom_fi: SOURCE_BLOCK_LABELS.traficom_fi,
 };
 
 const PHOTO_MIME_RE = /^image\/(jpeg|png|gif|webp)$/i;

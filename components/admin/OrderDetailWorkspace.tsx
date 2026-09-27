@@ -1562,6 +1562,7 @@ export function OrderDetailWorkspace({
         | "mnt_ee"
         | "lkf_ee"
         | "carinfo"
+        | "traficom_fi"
         | "ltab"
         | "tirgus"
         | "citi_avoti",
@@ -2947,6 +2948,7 @@ export function OrderDetailWorkspace({
       mnt_ee: "empty" as const,
       lkf_ee: "empty" as const,
       carinfo: "empty" as const,
+      traficom_fi: "empty" as const,
       ltab: "empty" as const,
       citi_avoti: "empty" as const,
       listingSection: "empty" as const,
@@ -2965,6 +2967,7 @@ export function OrderDetailWorkspace({
         mnt_ee: vinRegistryTrafficLevel(b.mnt_ee),
         lkf_ee: vinRegistryTrafficLevel(b.lkf_ee),
         carinfo: vinRegistryTrafficLevel(b.carinfo),
+        traficom_fi: vinRegistryTrafficLevel(b.traficom_fi),
         ltab: ltabTrafficLevel(b.ltab),
         citi_avoti: citiAvotiTrafficLevel(b.citi_avoti),
         listingSection: listingSectionTrafficLevel(b.tirgus, b.listing_analysis),
@@ -3002,6 +3005,7 @@ export function OrderDetailWorkspace({
       traffic.finnik,
       worstTrafficLevel(traffic.mnt_ee, traffic.lkf_ee),
       traffic.carinfo,
+      traffic.traficom_fi,
       traffic.listingSection,
       expertTraffic,
     ];
@@ -3021,6 +3025,7 @@ export function OrderDetailWorkspace({
         { label: "NL reģ.", Icon: Landmark, row: 2 as const },
         { label: "Igaunija", Icon: Flag, row: 2 as const },
         { label: "car.info", Icon: Globe, row: 2 as const },
+        { label: "Somija", Icon: Landmark, row: 2 as const },
         { label: "Sludinājums", Icon: Newspaper, row: 2 as const },
         { label: "Kopsavilkums", Icon: ListChecks, row: 2 as const },
       ] as const,
@@ -4773,6 +4778,29 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 11 ? (
+          <div id="admin-order-block-traficom-fi" className="min-w-0">
+            <AdminVinRegistrySourceBlock
+              blockKey="traficom_fi"
+              value={blocksDisplaySafe.traficom_fi}
+              readOnly={false}
+              onChange={(next) => updateSourceBlock("traficom_fi", next)}
+              trafficFillLevel={traffic.traficom_fi}
+              sessionId={payload.sessionId}
+              vin={vinBar}
+              aiComment={aiCommentSlot("traficom_fi")}
+              pdfInclude={pdfVisibility.traficom_fi}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ traficom_fi: next })}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(next) =>
+                void commitGenericSourcePhotoGroups("traficom_fi", next)
+              }
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
+            />
+          </div>
+        ) : null}
+
+        {wizardStep === 12 ? (
           <section id="admin-order-section-sludinajums" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
@@ -4858,7 +4886,7 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 12 ? (
+        {wizardStep === 13 ? (
           <section id="admin-order-section-kopsavilkums" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">

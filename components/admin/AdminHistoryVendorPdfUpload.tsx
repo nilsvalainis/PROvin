@@ -17,7 +17,14 @@ import {
   uploadSourcePdfToBlob,
 } from "@/lib/admin-source-pdf-blob-client";
 
-export type VendorPdfUploadTarget = "autodna" | "carvertical" | "auto_records" | "cc_vin" | "ltab" | "finnik";
+export type VendorPdfUploadTarget =
+  | "autodna"
+  | "carvertical"
+  | "auto_records"
+  | "cc_vin"
+  | "ltab"
+  | "finnik"
+  | "traficom_fi";
 
 const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   autodna: {
@@ -43,6 +50,10 @@ const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   finnik: {
     title: "Augšupielādēt Finnik / RDW PDF",
     hint: "Velc PDF šeit vai klikšķini · tas pats parseris, kas ielīmētam tekstam. Oficiālajā nobraukumā tikai ziņotie km.",
+  },
+  traficom_fi: {
+    title: "Augšupielādēt Traficom (Somija) PDF",
+    hint: "Velc PDF šeit vai klikšķini · tas pats parseris, kas ielīmētam tekstam. Somijas reģistrs nepublicē nobraukumu.",
   },
 };
 

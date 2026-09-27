@@ -75,6 +75,24 @@ describe("toPdfManualVendorBlocks — reģistru avoti", () => {
       },
     ]);
   });
+
+  it("iekļauj Somijas reģistra hronoloģiju PDF bez nobraukuma", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.traficom_fi.timeline = [
+      { date: "12.12.2024", odometer: "", country: "Somija", event: "Noņemts no reģistra bojājuma dēļ" },
+    ];
+    blocks.traficom_fi.incidents = [
+      { date: "12.12.2024", amount: "", country: "Somija", note: "Noņemts no reģistra bojājuma dēļ" },
+    ];
+    const vendors = toPdfManualVendorBlocks(blocks);
+    const fi = vendors.find((v) => v.title === SOURCE_BLOCK_LABELS.traficom_fi);
+    expect(fi).toBeDefined();
+    expect(fi?.mileageRows).toEqual([]);
+    expect(fi?.vehicleHistoryTimeline).toEqual([
+      { date: "12.12.2024", country: "Somija", description: "Noņemts no reģistra bojājuma dēļ" },
+    ]);
+    expect(fi?.incidentRows[0]?.csngDate).toBe("12.12.2024");
+  });
 });
 
 describe("mergePdfVisibility — reģistru avoti", () => {
@@ -84,6 +102,7 @@ describe("mergePdfVisibility — reģistru avoti", () => {
     expect(vis.mnt_ee).toBe(true);
     expect(vis.lkf_ee).toBe(true);
     expect(vis.carinfo).toBe(true);
+    expect(vis.traficom_fi).toBe(true);
     expect(vis.autodna).toBe(false);
   });
 });

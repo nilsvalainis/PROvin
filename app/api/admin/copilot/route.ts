@@ -43,6 +43,7 @@ import { ingestSourcePdfFile } from "@/lib/pdf-source-ingest";
 import { csddParseHasData } from "@/lib/source-pdf-ai-extract";
 import { detectVendorFromReport, runCcVinPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
+import { applyTraficomReportToBlock, looksLikeTraficomReport } from "@/lib/traficom-report-parse";
 import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
 import { looksLikeCcVinReport } from "@/lib/cc-vin-report-parse";
 import { buildCarinfoCopilotActions, looksLikeCarinfoDump } from "@/lib/admin-copilot-vin-registry";
@@ -468,6 +469,16 @@ export async function POST(req: Request) {
         }
       }
 
+      if (allowedSet.has("traficom_fi") && looksLikeTraficomReport(`${pdf.fileName}\n${pdfText}`)) {
+        const applied = applyTraficomReportToBlock(workingBlocks.traficom_fi, pdfText);
+        if (applied) {
+          workingBlocks = { ...workingBlocks, traficom_fi: applied.block };
+          vendorAgentNotes.push(applied.summary);
+          vendorHandledFiles.add(pdf.fileName);
+          continue;
+        }
+      }
+
       const detected = detectVendorFromReport(pdfText, pdf.fileName);
       if (detected && allowedSet.has(vendorSourceKey(detected))) {
         try {
@@ -560,6 +571,14 @@ export async function POST(req: Request) {
         finnikPasteNote = applied.summary;
       }
     }
+    let traficomFiPasteNote = "";
+    if (allowedSet.has("traficom_fi") && looksLikeTraficomReport(message)) {
+      const applied = applyTraficomReportToBlock(workingBlocks.traficom_fi, message);
+      if (applied) {
+        workingBlocks = { ...workingBlocks, traficom_fi: applied.block };
+        traficomFiPasteNote = applied.summary;
+      }
+    }
     const carinfoPasteActions =
       allowedSet.has("carinfo") && looksLikeCarinfoDump(message) ? buildCarinfoCopilotActions(message) : [];
     const skipGenericCopilot =
@@ -570,7 +589,8 @@ export async function POST(req: Request) {
         csddImportNotes.some((n) => n.includes("aizpildīti"))) ||
         (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0) ||
         (carinfoPasteActions.length > 0 && remainingPdfs.length === 0) ||
-        (finnikPasteNote.length > 0 && remainingPdfs.length === 0));
+        (finnikPasteNote.length > 0 && remainingPdfs.length === 0) ||
+        (traficomFiPasteNote.length > 0 && remainingPdfs.length === 0));
 
     /** Copilotam jāredz tas pats audits, ko redz FLASH MAX: kopsavilkumi, sludinājums, operatora piezīmes. */
     let auditContextText = "";
@@ -589,6 +609,8 @@ export async function POST(req: Request) {
           reply:
             finnikPasteNote
               ? `${finnikPasteNote} Pārbaudi NĪDERLANDES REĢISTRI bloku.`
+              : traficomFiPasteNote
+              ? `${traficomFiPasteNote} Pārbaudi SOMIJAS REĢISTRI bloku.`
               : carinfoPasteActions.length > 0
               ? "car.info teksts ielasīts: nobraukums, īpašnieki, statusi un RED FLAG. Pārbaudi ZVIEDRIJAS REĢISTRI bloku."
               : [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
