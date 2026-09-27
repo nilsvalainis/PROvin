@@ -1,14 +1,16 @@
 /**
  * Traficom (Somijas Transport Register) PDF un ielīmēta teksta parseris.
- * Viens ceļš PDF augšupielādei un Copilot ielīmētam tekstam. Somijas reģistrs
- * nepublicē nobraukumu — šis avots pievieno tikai īpašnieku ķēdi, lietošanas
- * veidu un statusa/piezīmju faktus, nekad nobraukuma rindas.
+ * Viens ceļš PDF augšupielādei un Copilot ielīmētam tekstam. Nobraukums un
+ * negadījumi tiek lasīti, ja izrakstā ir datums + km / bojājums; ja nav, tabulas
+ * paliek tukšas (neizdomājam rindas).
  */
 import {
   emptyVinRegistryBlock,
+  sortVinRegistryMileage,
   sortVinRegistryTimeline,
   type VinRegistryBlockState,
   type VinRegistryIncidentRow,
+  type VinRegistryMileageRow,
   type VinRegistryTimelineRow,
 } from "@/lib/admin-source-blocks";
 import { ADMIN_MILEAGE_PASTE_RAW_MAX_LEN } from "@/lib/admin-raw-field-limits";
@@ -22,6 +24,7 @@ export type TraficomParsedReport = {
   ownersSummary: string;
   statusRecords: string;
   autoNotes: string;
+  mileage: VinRegistryMileageRow[];
   timeline: VinRegistryTimelineRow[];
   incidents: VinRegistryIncidentRow[];
   aiContextRaw: string;
@@ -225,6 +228,96 @@ function parseInsuranceHistory(lines: string[]): InsuranceRow[] {
   return rows;
 }
 
+function parseKmToken(raw: string): string {
+  const m = /(\d{1,3}(?:[\s.,]\d{3})+|\d{4,7})\s*(?:km)\b/i.exec(raw);
+  if (!m) return "";
+  const digits = m[1]!.replace(/[^\d]/g, "");
+  if (digits.length < 3 || digits.length > 7) return "";
+  const n = Number(digits);
+  if (!Number.isFinite(n) || n < 1) return "";
+  return String(n);
+}
+
+function originFromMileageEvent(event: string): string {
+  const t = event.toLowerCase();
+  if (/inspect|apskate|katsastus|syn\b/i.test(t)) return "Apskate";
+  if (/odometer|mileage|mittari|kilometr/i.test(t)) return "Reģistrs";
+  return "Reģistrs";
+}
+
+/** Nobraukums: datums + km, ja izrakstā publicēts (apskate, odometra rinda). */
+function parseMileageHistory(lines: string[]): VinRegistryMileageRow[] {
+  const body = sectionLines(
+    lines,
+    /^(Inspection information|Inspection history|Odometer|Mileage|Kilometre reading|Odometer reading)\b/i,
+    /^(Safety equipment|Vehicle consumption|Body details|Owners|Engine details|Insurance history|Use history|Decommissioning history|Basic information)\b/i,
+  );
+  const joined = [...body, ...lines.filter((l) => /\bkm\b/i.test(l) && /\d{1,2}\.\d{1,2}\.\d{4}/.test(l))];
+  const rows: VinRegistryMileageRow[] = [];
+  const seen = new Set<string>();
+  const rowRe =
+    /(\d{1,2}\.\d{1,2}\.\d{4})[^\n]{0,80}?(\d{1,3}(?:[\s.,]\d{3})+|\d{4,7})\s*km\b|\b(\d{1,3}(?:[\s.,]\d{3})+|\d{4,7})\s*km\b[^\n]{0,80}?(\d{1,2}\.\d{1,2}\.\d{4})/gi;
+  for (const chunk of joined) {
+    let m: RegExpExecArray | null;
+    const re = new RegExp(rowRe.source, "gi");
+    while ((m = re.exec(chunk))) {
+      const dateRaw = m[1] || m[4] || "";
+      const kmRaw = m[2] || m[3] || "";
+      const km = parseKmToken(`${kmRaw} km`);
+      if (!dateRaw || !km) continue;
+      const date = dateFi(dateRaw);
+      const key = `${date}|${km}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push({
+        date,
+        odometer: km,
+        country: FI,
+        origin: originFromMileageEvent(chunk),
+      });
+    }
+  }
+  return rows;
+}
+
+const INCIDENT_NOTE_LV: Array<{ re: RegExp; lv: string }> = [
+  { re: /collision|crash/i, lv: "Sadursme" },
+  { re: /accident|liikennevahinko/i, lv: "Ceļu satiksmes negadījums" },
+  { re: /damage|bojāj|vahinko/i, lv: "Bojājums" },
+];
+
+function incidentNoteLv(raw: string): string {
+  const known = INCIDENT_NOTE_LV.find((r) => r.re.test(raw));
+  if (known) return known.lv;
+  const cleaned = raw.replace(/\s+/g, " ").trim();
+  return cleaned.slice(0, 180);
+}
+
+function parseAccidentHistory(lines: string[]): VinRegistryIncidentRow[] {
+  const body = sectionLines(
+    lines,
+    /^(Accident history|Damage history|Accident information|Claims? history|Collision)\b/i,
+    /^(Insurance history|Use history|Decommissioning history|Engine details|Inspection information|Owners|Basic information)\b/i,
+  );
+  const rows: VinRegistryIncidentRow[] = [];
+  const rowRe =
+    /(\d{1,2}\.\d{1,2}\.\d{4})\s+([\s\S]{3,160}?)(?=(?:\d{1,2}\.\d{1,2}\.\d{4})|$)/g;
+  const joined = body.join(" ");
+  let m: RegExpExecArray | null;
+  while ((m = rowRe.exec(joined))) {
+    const noteRaw = (m[2] ?? "").trim();
+    if (!noteRaw || /^(date|amount|description|type)$/i.test(noteRaw)) continue;
+    const amountM = /(\d{1,3}(?:[ .,]\d{3})*(?:[.,]\d{2})?)\s*€/.exec(noteRaw);
+    rows.push({
+      date: dateFi(m[1] ?? ""),
+      amount: amountM ? amountM[0].replace(/\s+/g, " ") : "",
+      country: FI,
+      note: incidentNoteLv(noteRaw.replace(/\d{1,3}(?:[ .,]\d{3})*(?:[.,]\d{2})?\s*€/, "").trim()),
+    });
+  }
+  return rows;
+}
+
 const RESTRICTION_LV: Array<{ re: RegExp; lv: string; redFlag: boolean }> = [
   {
     re: /periodic inspection not performed\/approved/i,
@@ -261,6 +354,8 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
   const useHistory = parseUseHistory(lines);
   const decommission = parseDecommissioningHistory(lines);
   const insuranceHistory = parseInsuranceHistory(lines);
+  const mileage = parseMileageHistory(lines);
+  const accidentIncidents = parseAccidentHistory(lines);
 
   // Īpašnieku skaits: unikāli nosaukumi ar owner (ne operator) lomu + spēkā esošais īpašnieks.
   const ownerNames = new Set<string>();
@@ -331,14 +426,23 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
     .filter(Boolean)
     .join("\n");
 
+  const kmByDate = new Map(mileage.map((r) => [r.date, r.odometer]));
+
   const timeline: VinRegistryTimelineRow[] = [];
   if (dateOfEntryIntoService) {
-    timeline.push({ date: dateFi(dateOfEntryIntoService), odometer: "", country: FI, event: "Nodošana ekspluatācijā" });
+    const d = dateFi(dateOfEntryIntoService);
+    timeline.push({
+      date: d,
+      odometer: kmByDate.get(d) ?? "",
+      country: FI,
+      event: "Nodošana ekspluatācijā",
+    });
   }
   if (firstRegistrationInFinland) {
+    const d = dateFi(firstRegistrationInFinland);
     timeline.push({
-      date: dateFi(firstRegistrationInFinland),
-      odometer: "",
+      date: d,
+      odometer: kmByDate.get(d) ?? "",
       country: FI,
       event: "Pirmā reģistrācija Somijā",
     });
@@ -388,16 +492,31 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
     });
   }
 
-  const incidents: VinRegistryIncidentRow[] = [];
+  for (const row of mileage) {
+    if (!row.date) continue;
+    timeline.push({
+      date: row.date,
+      odometer: row.odometer,
+      country: FI,
+      event: row.origin === "Apskate" ? "Tehniskā apskate" : "Nobraukuma ieraksts",
+    });
+  }
+
+  const incidents: VinRegistryIncidentRow[] = [...accidentIncidents];
+  const incidentKeys = new Set(incidents.map((r) => `${r.date}|${r.note}`));
   for (const row of decommission) {
     const reason = decommissionReasonLv(row.reason);
     if (!row.start || !/bojāj/i.test(reason)) continue;
-    incidents.push({
+    const next = {
       date: dateFi(row.start),
       amount: "",
       country: FI,
       note: `Noņemts no reģistra ${reason}`,
-    });
+    };
+    const key = `${next.date}|${next.note}`;
+    if (incidentKeys.has(key)) continue;
+    incidentKeys.add(key);
+    incidents.push(next);
   }
 
   const context: string[] = ["Somijas oficiālais reģistrs (Traficom)"];
@@ -413,6 +532,7 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
     ownersSummary,
     statusRecords,
     autoNotes,
+    mileage,
     timeline,
     incidents,
     aiContextRaw: context.join("\n").slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
@@ -421,7 +541,9 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
 
 export function traficomParseSummary(parsed: TraficomParsedReport): string {
   const plate = parsed.plate ? ` ${parsed.plate}` : "";
-  return `Somijas reģistrs${plate}: ${parsed.timeline.length} laikposma notikumi.`;
+  const km = parsed.mileage.length > 0 ? `, ${parsed.mileage.length} nobraukuma rindas` : "";
+  const hits = parsed.incidents.length > 0 ? `, ${parsed.incidents.length} negadījumi` : "";
+  return `Somijas reģistrs${plate}: ${parsed.timeline.length} laikposma notikumi${km}${hits}.`;
 }
 
 /** Strukturētos laukus atjauno. AI kontekstu aizpilda tikai ja tas ir tukšs. */
@@ -435,6 +557,7 @@ export function applyTraficomReportToBlock(
   const block: VinRegistryBlockState = {
     ...base,
     ...(parsed.timeline.length > 0 ? { timeline: sortVinRegistryTimeline(parsed.timeline) } : {}),
+    ...(parsed.mileage.length > 0 ? { mileage: sortVinRegistryMileage(parsed.mileage) } : {}),
     ...(parsed.incidents.length > 0 ? { incidents: parsed.incidents } : {}),
     ...(parsed.ownersSummary ? { ownersSummary: parsed.ownersSummary } : {}),
     ...(parsed.statusRecords ? { statusRecords: parsed.statusRecords } : {}),

@@ -148,8 +148,16 @@ export function AdminVinRegistrySourceBlock({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  const mileage = block.mileage.length > 0 ? block.mileage : [emptyVinRegistryMileageRow()];
-  const incidents = block.incidents.length > 0 ? block.incidents : [emptyVinRegistryIncidentRow()];
+  const emptyMileageRow = (): VinRegistryMileageRow =>
+    blockKey === "traficom_fi"
+      ? { ...emptyVinRegistryMileageRow(), country: "Somija" }
+      : emptyVinRegistryMileageRow();
+  const emptyIncidentRow = (): VinRegistryIncidentRow =>
+    blockKey === "traficom_fi"
+      ? { ...emptyVinRegistryIncidentRow(), country: "Somija" }
+      : emptyVinRegistryIncidentRow();
+  const mileage = block.mileage.length > 0 ? block.mileage : [emptyMileageRow()];
+  const incidents = block.incidents.length > 0 ? block.incidents : [emptyIncidentRow()];
   const timeline = block.timeline.length > 0 ? block.timeline : [emptyVinRegistryTimelineRow()];
   const label = SOURCE_BLOCK_LABELS[blockKey];
 
@@ -163,11 +171,11 @@ export function AdminVinRegistrySourceBlock({
   };
 
   const removeMileageRow = (index: number) => {
-    onChange({ ...block, mileage: dropOrResetRow(mileage, index, emptyVinRegistryMileageRow) });
+    onChange({ ...block, mileage: dropOrResetRow(mileage, index, emptyMileageRow) });
   };
 
   const removeIncidentRow = (index: number) => {
-    onChange({ ...block, incidents: dropOrResetRow(incidents, index, emptyVinRegistryIncidentRow) });
+    onChange({ ...block, incidents: dropOrResetRow(incidents, index, emptyIncidentRow) });
   };
 
   const setTimelineRow = (index: number, patch: Partial<VinRegistryTimelineRow>) => {
@@ -402,7 +410,7 @@ export function AdminVinRegistrySourceBlock({
             />
             <p className="mt-1 text-[10px] text-slate-500">
               {blockKey === "traficom_fi"
-                ? "Traficom PDF vai ielīmēts teksts RAW laukā. Īpašnieki, noņemšana bojājuma dēļ, apdrošināšana un lietošanas veids nonāk hronoloģijā. Nobraukuma Somijas reģistrā nav."
+                ? "Traficom PDF vai ielīmēts teksts RAW laukā. Ja izrakstā ir nobraukuma vai negadījumu datumi, tie nonāk tabulās. Citādi tabulas paliek tukšas, lai var ievadīt manuāli."
                 : "PDF bez VIN. Numurs ir reģistrācijas zīme. Pasūtījuma VIN sasaisti pats. Tas pats parseris nolasa ielīmētu tekstu RAW laukā."}
             </p>
           </div>
@@ -552,7 +560,7 @@ export function AdminVinRegistrySourceBlock({
             <button
               type="button"
               className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-              onClick={() => onChange({ ...block, mileage: [...mileage, emptyVinRegistryMileageRow()] })}
+              onClick={() => onChange({ ...block, mileage: [...mileage, emptyMileageRow()] })}
             >
               + Rinda
             </button>
@@ -772,7 +780,7 @@ export function AdminVinRegistrySourceBlock({
             <button
               type="button"
               className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
-              onClick={() => onChange({ ...block, incidents: [...incidents, emptyVinRegistryIncidentRow()] })}
+              onClick={() => onChange({ ...block, incidents: [...incidents, emptyIncidentRow()] })}
             >
               + Rinda
             </button>
@@ -838,7 +846,7 @@ export function AdminVinRegistrySourceBlock({
                   : blockKey === "finnik"
                     ? "Ielīmē Finnik / RDW atskaites tekstu. Oficiālajā nobraukumā nonāk tikai Kilometerstand gerapporteerd."
                     : blockKey === "traficom_fi"
-                      ? "Ielīmē Traficom (Somija) atskaites tekstu. Somijas reģistrs nepublicē nobraukumu. Hronoloģijā nonāk īpašnieki, statuss, apdrošināšana un noņemšana bojājuma dēļ."
+                      ? "Ielīmē Traficom (Somija) atskaites tekstu. Nobraukuma un negadījumu datumi nonāk tabulās, ja izrakstā ir. Hronoloģijā arī īpašnieki, statuss, apdrošināšana un noņemšana."
                       : `${VIN_REGISTRY_TIMELINE_PASTE_HEADER}
 18.12.2013	17	Vācija	Pirmā reģistrācija
 18.12.2017	29000	Dānija	Tehniskā apskate: izieta ar pirmo reizi

@@ -630,7 +630,7 @@ ASV FOCUS:
           : blockLabel === L.lkf_ee
             ? "Estonian LKF motor third-party liability claim records (claim dates, amounts if published, total-loss marks)"
             : blockLabel === L.traficom_fi
-              ? "Finnish Traficom Transport Register data: owner/holder history, notification of transfer, use history (private / sales storage / taxi / rental), decommissioning history, inspection period, tax and restriction status. No odometer field exists in this registry — never invent one. Finnish owner count: count distinct owner-role entries plus the current owner, not operator/holder rows; consecutive lease-company chapters for the same lessee count once."
+              ? "Finnish Traficom Transport Register data: owner/holder history, notification of transfer, use history (private / sales storage / taxi / rental), decommissioning history, inspection period, tax and restriction status. Odometer and accident dates when the extract publishes them (date + km / damage). Never invent km or crash dates that are not in this dump. Finnish owner count: count distinct owner-role entries plus the current owner, not operator/holder rows; consecutive lease-company chapters for the same lessee count once."
               : "car.info aggregated multi-country registry data (per-country odometer rows, ownership, usage)";
     return `
 

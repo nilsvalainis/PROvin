@@ -53,7 +53,7 @@ const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   },
   traficom_fi: {
     title: "Augšupielādēt Traficom (Somija) PDF",
-    hint: "Velc PDF šeit vai klikšķini · tas pats parseris, kas ielīmētam tekstam. Somijas reģistrs nepublicē nobraukumu.",
+    hint: "Velc PDF šeit vai klikšķini · tas pats parseris, kas ielīmētam tekstam. Nobraukuma un negadījumu datumi, ja izrakstā ir.",
   },
 };
 

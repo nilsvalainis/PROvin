@@ -114,10 +114,29 @@ describe("parseTraficomReport", () => {
     expect(parsed!.ownersSummary).toContain("Īpašnieku skaits Somijā: 3.");
   });
 
-  it("never invents a mileage row (Somijas reģistrs nepublicē km)", () => {
+  it("leaves mileage empty when the extract has no km dates", () => {
     const parsed = parseTraficomReport(SAMPLE);
     expect(parsed).not.toBeNull();
-    expect((parsed as unknown as { mileage?: unknown[] }).mileage).toBeUndefined();
+    expect(parsed!.mileage).toEqual([]);
+  });
+
+  it("fills mileage and accident dates when the extract publishes them", () => {
+    const withKm = `${SAMPLE}
+
+Inspection history
+8.11.2023 85420 km Periodic inspection
+12.3.2022 41200 km Odometer reading
+
+Accident history
+4.6.2022 Collision 2 450,00 €
+`;
+    const parsed = parseTraficomReport(withKm);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.mileage.map((r) => `${r.date} ${r.odometer}`)).toEqual(
+      expect.arrayContaining(["08.11.2023 85420", "12.03.2022 41200"]),
+    );
+    expect(parsed!.mileage.every((r) => r.country === "Somija")).toBe(true);
+    expect(parsed!.incidents.some((r) => r.date === "04.06.2022" && /Sadursme/i.test(r.note))).toBe(true);
   });
 
   it("flags decommissioning-due-to-damage and driving prohibition as notes", () => {
