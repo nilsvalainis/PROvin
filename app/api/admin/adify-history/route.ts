@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { fetchAdifyListingHistory } from "@/lib/adify-listing-history";
+import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
@@ -24,6 +24,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_url" }, { status: 400 });
   }
 
-  const snapshot = await fetchAdifyListingHistory(url);
+  const snapshot = await fetchListingPriceHistory(url);
   return NextResponse.json(snapshot);
 }

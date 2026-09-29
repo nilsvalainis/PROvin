@@ -18,6 +18,7 @@ import {
   ADIFY_HISTORY_PAGE_URL,
   type AdifyListingHistorySnapshot,
 } from "@/lib/adify-listing-history";
+import { tirgusDatiHistoryPageLookupUrl } from "@/lib/tirgusdati-listing-history";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
 import {
   emptyTirgusFields,
@@ -158,7 +159,7 @@ export function AdminTirgusSourceBlock({
             ? "Nederīga sludinājuma saite"
             : data.error === "unauthorized"
               ? "Nav admin sesijas"
-              : "Neizdevās ielādēt Adify vēsturi",
+              : "Neizdevās ielādēt sludinājuma vēsturi",
         );
         if (scrape?.ok) {
           onChange(
@@ -186,7 +187,7 @@ export function AdminTirgusSourceBlock({
       });
       if (data.found || scrape?.ok) onChange(next);
     } catch {
-      setError("Neizdevās savienoties ar Adify");
+      setError("Neizdevās savienoties ar vēstures avotiem");
     } finally {
       setBusy(false);
     }
@@ -224,7 +225,7 @@ export function AdminTirgusSourceBlock({
             onClick={() => void loadAdify()}
             className={fetchBtn}
           >
-            {busy ? "Ielasu…" : "Ielasīt no Adify"}
+            {busy ? "Ielasu…" : "Ielasīt vēsturi"}
           </button>
           <a
             href={ADIFY_HISTORY_PAGE_URL}
@@ -232,7 +233,17 @@ export function AdminTirgusSourceBlock({
             rel="noopener noreferrer"
             className="text-[10px] font-semibold text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
           >
-            adify.lv/history
+            adify.lv
+          </a>
+          <a
+            href={
+              urlDraft.trim() ? tirgusDatiHistoryPageLookupUrl(urlDraft.trim()) : "https://tirgusdati.lv/vesture"
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-semibold text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+          >
+            tirgusdati.lv
           </a>
         </div>
         {error ? (

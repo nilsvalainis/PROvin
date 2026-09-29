@@ -46,6 +46,8 @@ export type AdifyListingHistorySnapshot = {
   newestDate: string;
   priceChangeEur: number;
   listingUrl: string | null;
+  /** No kura avota nākuši dati (ja atrasts). Trūkst vecākos saglabātos ierakstos. */
+  source?: "adify" | "tirgusdati";
 };
 
 const MAX_HISTORY_ROWS = 80;
@@ -461,7 +463,8 @@ export async function fetchAdifyListingHistory(
         message: "Adify lapas formāts mainījies",
       };
     }
-    return normalizeAdifyHistoryItems(items, now);
+    const snap = normalizeAdifyHistoryItems(items, now);
+    return snap.found ? { ...snap, source: "adify" } : snap;
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
     return {

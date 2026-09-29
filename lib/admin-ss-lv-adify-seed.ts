@@ -1,6 +1,6 @@
 import "server-only";
 
-import { fetchAdifyListingHistory } from "@/lib/adify-listing-history";
+import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import {
   applySsLvAdifyAutofill,
   shouldAutofillSsLvListing,
@@ -29,7 +29,7 @@ function emptyWorkspaceBody(): OrderDraftWorkspaceBody {
   };
 }
 
-/** Pēc apmaksas — ja sludinājums ir ss.lv, aizpilda tirgus/sludinājuma vēsturi no Adify. */
+/** Pēc apmaksas — ja sludinājums ir ss.lv, aizpilda tirgus vēsturi no Adify vai tirgusdati.lv. */
 export async function seedSsLvAdifyOnPaidOrder(
   sessionId: string,
   listingUrl: string | null | undefined,
@@ -48,7 +48,7 @@ export async function seedSsLvAdifyOnPaidOrder(
   }
 
   const [snapshot, scrape] = await Promise.all([
-    fetchAdifyListingHistory(url),
+    fetchListingPriceHistory(url),
     fetchListingMarketSnapshot(url).catch(() => null),
   ]);
   const nextTirgus = applySsLvAdifyAutofill(blocks.tirgus, url, snapshot, scrape);

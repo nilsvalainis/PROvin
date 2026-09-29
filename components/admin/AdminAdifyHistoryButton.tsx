@@ -12,6 +12,10 @@ import {
   formatAdifySignedEur,
   type AdifyListingHistorySnapshot,
 } from "@/lib/adify-listing-history";
+import {
+  tirgusDatiHistoryPageLookupUrl,
+  tirgusDatiSupportsListingUrl,
+} from "@/lib/tirgusdati-listing-history";
 
 const adifyPillClass = `${adminActionPillBase} bg-teal-800 hover:bg-teal-900 focus-visible:ring-teal-700`;
 
@@ -50,7 +54,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
             ? "Nederīga sludinājuma saite"
             : data.error === "unauthorized"
               ? "Nav admin sesijas"
-              : "Neizdevās ielādēt Adify vēsturi",
+              : "Neizdevās ielādēt sludinājuma vēsturi",
         );
         return;
       }
@@ -60,7 +64,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
       }
       setSnapshot(data);
     } catch {
-      setError("Neizdevās savienoties ar Adify");
+      setError("Neizdevās savienoties ar vēstures avotiem");
     } finally {
       setBusy(false);
     }
@@ -85,6 +89,8 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
   const first = chrono[0];
   const last = chrono[chrono.length - 1];
   const manualHistoryUrl = url ? adifyHistoryPageLookupUrl(url) : null;
+  const manualTirgusDatiUrl = url && tirgusDatiSupportsListingUrl(url) ? tirgusDatiHistoryPageLookupUrl(url) : null;
+  const sourceLabel = snapshot?.source === "tirgusdati" ? "Tirgus Dati" : "Adify";
 
   const dialog =
     open && typeof document !== "undefined" ? (
@@ -102,7 +108,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 id={titleId} className="text-sm font-semibold text-[var(--color-apple-text)]">
-                Sludinājuma vēsture (Adify)
+                Sludinājuma vēsture {snapshot ? `(${sourceLabel})` : ""}
               </h2>
               <p className="mt-0.5 break-all text-[11px] text-[var(--color-provin-muted)]">{url}</p>
             </div>
@@ -116,23 +122,38 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
           </div>
 
           {busy ? (
-            <p className="py-8 text-center text-sm text-[var(--color-provin-muted)]">Ielasu Adify…</p>
+            <p className="py-8 text-center text-sm text-[var(--color-provin-muted)]">
+              Ielasu Adify / Tirgus Dati…
+            </p>
           ) : error ? (
             <div className="py-4 text-center">
               <p className="text-sm font-medium text-red-700" role="alert">
                 {error}
               </p>
-              {manualHistoryUrl ? (
+              {manualHistoryUrl || manualTirgusDatiUrl ? (
                 <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">
                   Serveris bloķēts (Cloudflare). Atver pašā pārlūkā:{" "}
-                  <a
-                    href={manualHistoryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-900"
-                  >
-                    adify.lv vēsture šim sludinājumam
-                  </a>
+                  {manualHistoryUrl ? (
+                    <a
+                      href={manualHistoryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-900"
+                    >
+                      adify.lv
+                    </a>
+                  ) : null}
+                  {manualHistoryUrl && manualTirgusDatiUrl ? " · " : null}
+                  {manualTirgusDatiUrl ? (
+                    <a
+                      href={manualTirgusDatiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-900"
+                    >
+                      tirgusdati.lv
+                    </a>
+                  ) : null}
                 </p>
               ) : null}
             </div>
@@ -203,16 +224,29 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
             </div>
           ) : null}
 
-          {manualHistoryUrl ? (
+          {manualHistoryUrl || manualTirgusDatiUrl ? (
             <p className="mt-3 text-right text-[10px] text-slate-500">
-              <a
-                href={manualHistoryUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline-offset-2 hover:underline"
-              >
-                adify.lv/history
-              </a>
+              {manualHistoryUrl ? (
+                <a
+                  href={manualHistoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-2 hover:underline"
+                >
+                  adify.lv/history
+                </a>
+              ) : null}
+              {manualHistoryUrl && manualTirgusDatiUrl ? " · " : null}
+              {manualTirgusDatiUrl ? (
+                <a
+                  href={manualTirgusDatiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-2 hover:underline"
+                >
+                  tirgusdati.lv
+                </a>
+              ) : null}
             </p>
           ) : null}
         </div>
@@ -226,7 +260,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
         disabled={!url}
         onClick={openDialog}
         className={adifyPillClass}
-        title="Adify — sludinājuma cenu vēsture un pārdošanas ilgums"
+        title="Adify (ar tirgusdati.lv fallback) — sludinājuma cenu vēsture un pārdošanas ilgums"
       >
         Adify
       </button>
