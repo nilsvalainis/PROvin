@@ -237,15 +237,39 @@ function extractAdifySeries(json: unknown): RawAdifyItem[] {
   return [];
 }
 
-function adifyBrowserHeaders(): Record<string, string> {
+function adifyBrowserHeaders(site: "none" | "same-origin" = "none"): Record<string, string> {
   return {
     Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "lv-LV,lv;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
     "User-Agent": ADIFY_HISTORY_PAGE_UA,
     "Cache-Control": "no-cache",
     Pragma: "no-cache",
     "Upgrade-Insecure-Requests": "1",
+    DNT: "1",
+    // Cloudflare bot-heuristikas bieži prasa šos Chrome "client hint" galvenes.
+    "sec-ch-ua": '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"macOS"',
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": site,
+    "sec-fetch-user": "?1",
   };
+}
+
+/** Diagnostika Vercel serveru logos, ja Adify bloķē (403 utt). Netiek rādīta lietotājam. */
+function logAdifyBlocked(res: Response, snippet: string): void {
+  try {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[adify] HTTP ${res.status} cf-ray=${res.headers.get("cf-ray") ?? "?"} server=${
+        res.headers.get("server") ?? "?"
+      } body="${snippet.slice(0, 200).replace(/\s+/g, " ")}"`,
+    );
+  } catch {
+    /* logging must never throw */
+  }
 }
 
 function cookieHeaderFromResponse(res: Response): string {
@@ -269,31 +293,43 @@ async function fetchAdifyHistoryPage(
   listingUrl: string,
   signal: AbortSignal,
 ): Promise<Response> {
-  const headers = adifyBrowserHeaders();
   let cookie = "";
   try {
     const home = await fetch("https://adify.lv/", {
       method: "GET",
-      headers,
+      // Pirmais pieprasījums = tā, kā pārlūkā ierakstīta adrese: sec-fetch-site "none".
+      headers: adifyBrowserHeaders("none"),
       signal,
       redirect: "follow",
       cache: "no-store",
     });
+    if (!home.ok) {
+      logAdifyBlocked(home, await home.text().catch(() => ""));
+    }
     cookie = cookieHeaderFromResponse(home);
   } catch {
     cookie = "";
   }
-  return fetch(adifyHistoryPageLookupUrl(listingUrl), {
+  const res = await fetch(adifyHistoryPageLookupUrl(listingUrl), {
     method: "GET",
     signal,
     headers: {
-      ...headers,
+      // Otrais pieprasījums nāk no tās pašas izcelsmes (sekojot saitei mājaslapā).
+      ...adifyBrowserHeaders("same-origin"),
       Referer: "https://adify.lv/",
       ...(cookie ? { Cookie: cookie } : {}),
     },
     redirect: "follow",
     cache: "no-store",
   });
+  if (!res.ok) {
+    const snippet = await res
+      .clone()
+      .text()
+      .catch(() => "");
+    logAdifyBlocked(res, snippet);
+  }
+  return res;
 }
 
 export function normalizeAdifyHistoryItems(

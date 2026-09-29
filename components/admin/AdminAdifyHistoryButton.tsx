@@ -4,8 +4,8 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { adminActionPillBase } from "@/components/admin/adminActionPill";
 import {
-  ADIFY_HISTORY_PAGE_URL,
   adifyChronologicalPriceRows,
+  adifyHistoryPageLookupUrl,
   formatAdifyDeltaLabel,
   formatAdifyDurationLabel,
   formatAdifyPriceLabel,
@@ -84,6 +84,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
   const chrono = snapshot ? adifyChronologicalPriceRows(snapshot.rows) : [];
   const first = chrono[0];
   const last = chrono[chrono.length - 1];
+  const manualHistoryUrl = url ? adifyHistoryPageLookupUrl(url) : null;
 
   const dialog =
     open && typeof document !== "undefined" ? (
@@ -117,9 +118,24 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
           {busy ? (
             <p className="py-8 text-center text-sm text-[var(--color-provin-muted)]">Ielasu Adify…</p>
           ) : error ? (
-            <p className="py-6 text-center text-sm font-medium text-red-700" role="alert">
-              {error}
-            </p>
+            <div className="py-4 text-center">
+              <p className="text-sm font-medium text-red-700" role="alert">
+                {error}
+              </p>
+              {manualHistoryUrl ? (
+                <p className="mt-3 text-[12px] text-[var(--color-provin-muted)]">
+                  Serveris bloķēts (Cloudflare). Atver pašā pārlūkā:{" "}
+                  <a
+                    href={manualHistoryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-900"
+                  >
+                    adify.lv vēsture šim sludinājumam
+                  </a>
+                </p>
+              ) : null}
+            </div>
           ) : snapshot ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <section className="min-w-0 rounded-xl border border-slate-200/90 bg-slate-50/60 p-3">
@@ -187,16 +203,18 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
             </div>
           ) : null}
 
-          <p className="mt-3 text-right text-[10px] text-slate-500">
-            <a
-              href={ADIFY_HISTORY_PAGE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline-offset-2 hover:underline"
-            >
-              adify.lv/history
-            </a>
-          </p>
+          {manualHistoryUrl ? (
+            <p className="mt-3 text-right text-[10px] text-slate-500">
+              <a
+                href={manualHistoryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline-offset-2 hover:underline"
+              >
+                adify.lv/history
+              </a>
+            </p>
+          ) : null}
         </div>
       </div>
     ) : null;
