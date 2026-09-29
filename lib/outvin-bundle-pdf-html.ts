@@ -65,7 +65,7 @@ function europeanTable(rows: OutvinDataBundle["europeanRegisters"]): string {
   return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><thead><tr><th>Datums</th><th>Valsts</th><th>Veids</th><th>Dati</th></tr></thead><tbody>${tr}</tbody></table>`;
 }
 
-/** Aprīkojums no Outvin bundle (zem servisa vēstures dīlera PDF). */
+/** Aprīkojums no Outvin bundle (zem komentāra dīlera PDF). */
 export function buildOutvinBundleEquipmentPdfHtml(
   bundle: OutvinDataBundle | undefined | null,
   toggles?: OutvinPdfSectionToggles,

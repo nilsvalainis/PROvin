@@ -48,13 +48,17 @@ describe("isMainAnalysisSourceBlock", () => {
 });
 
 describe("outvinDealerReportToPlainText", () => {
-  it("includes vehicle info and checks", () => {
+  it("includes vehicle info and equipment, not accident/stolen checks", () => {
     const report = emptyOutvinDealerReport();
     report.vehicleInfo.vehicleType = "937";
     report.accidentCheck = "Nav ierakstu.";
+    report.stolenCheck = "Nav ierakstu.";
+    report.equipment = [{ code: "S403A", description: "Panorāmas jumts" }];
     const plain = outvinDealerReportToPlainText(report);
     expect(plain).toContain("Transportlīdzekļa tips: 937");
-    expect(plain).toContain("Negadījumu pārbaude");
+    expect(plain).toContain("S403A");
+    expect(plain).not.toContain("Negadījumu pārbaude");
+    expect(plain).not.toContain("Nozagts transportlīdzeklis");
   });
 });
 

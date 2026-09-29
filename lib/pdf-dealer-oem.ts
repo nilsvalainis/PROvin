@@ -696,11 +696,6 @@ export function buildOemDealerDocumentHtml(args: {
     specRows.push({ label: humanizeSpecLabel(row.label), value: row.value.trim() });
   }
 
-  const checksRows = [
-    { label: "Accident check", value: bundle.accidentCheck },
-    { label: "Stolen check", value: bundle.stolenCheck },
-  ].filter((r) => r.value.trim());
-
   const hasAdminServiceWorks = (args.autoRecords.serviceWorks ?? []).some(autoRecordsServiceWorkRowHasData);
   const serviceBody =
     visits.length > 0
@@ -712,13 +707,12 @@ export function buildOemDealerDocumentHtml(args: {
   const vehicleHeading = vin || "Vehicle";
   const vehicleBlock = section(vehicleHeading, vehicleSpecsHtml(specRows));
   const serviceBlock = section("Service history", serviceBody);
-  const checksBlock = section("Checks", vehicleSpecsHtml(checksRows));
   const equipmentBlock = section("Equipment", equipmentGrid(equipmentDeduped));
 
-  const hasBody = Boolean(vehicleBlock || serviceBlock || checksBlock || equipmentBlock);
-  // Fixed order: vehicle → service → checks → equipment (equipment always last).
+  const hasBody = Boolean(vehicleBlock || serviceBlock || equipmentBlock);
+  // Fixed order: vehicle → service → equipment (equipment last).
   const inner = hasBody
-    ? `${vehicleBlock}${serviceBlock}${checksBlock}${equipmentBlock}`
+    ? `${vehicleBlock}${serviceBlock}${equipmentBlock}`
     : `<p class="oem-empty">No dealer network records for this VIN.</p>`;
 
   const logoHtml = logoUri

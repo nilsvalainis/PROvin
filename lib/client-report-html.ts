@@ -1616,12 +1616,12 @@ function buildAutoRecordsAvotuSubsection(
   if (sparkHtml && !coverHtml.includes("pdf-dealer-cover-curve")) bodyParts.push(sparkHtml);
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceWorks) bodyParts.push(serviceWorksTable);
-  // Aprīkojums vienmēr zem servisa / remontu vēstures (dīlera PDF kanons).
-  if (hasEquipment) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${equipmentHtml}</div>`);
   if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
   if (hasOilInterval) bodyParts.push(oilIntervalBox);
   if (hasPhotos) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
+  // Aprīkojums zem komentāra (dīlera PDF kanons).
+  if (hasEquipment) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${equipmentHtml}</div>`);
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
 }
 

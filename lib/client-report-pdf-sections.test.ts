@@ -2204,7 +2204,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(html).not.toContain("\u2013");
   });
 
-  it("dealer PDF places Aprīkojums below Servisa un remontu vēsture", () => {
+  it("dealer PDF places Aprīkojums below the dealer comment", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,
       outvinReport: {
@@ -2214,6 +2214,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
           vinCode: "WBY31AW04NFN09888",
           model: "i4",
         },
+        accidentCheck: "Nav ierakstu.",
+        stolenCheck: "Nav ierakstu.",
         equipment: [{ code: "S403A", description: "Panorāmas stikla jumts" }],
       },
       serviceWorks: [
@@ -2224,6 +2226,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
           works: "Eļļas maiņa",
         },
       ],
+      comments: "<p>Dīlera komentārs klientam.</p>",
     };
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload({
@@ -2235,12 +2238,14 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const serviceIdx = doc.indexOf("Servisa un remontu vēsture");
+    const commentIdx = doc.indexOf("Dīlera komentārs klientam");
     const equipIdx = doc.indexOf("Aprīkojums");
-    expect(serviceIdx).toBeGreaterThan(-1);
-    expect(equipIdx).toBeGreaterThan(serviceIdx);
+    expect(commentIdx).toBeGreaterThan(-1);
+    expect(equipIdx).toBeGreaterThan(commentIdx);
     expect(doc).toContain("S403A");
     expect(doc).toContain("Panorāmas stikla jumts");
+    expect(doc).not.toContain("Negadījumu pārbaude");
+    expect(doc).not.toContain("Zagto transportlīdzekļu datubāze");
   });
 
   it("APPROVED BY IRISS prints technical risks before inspection and summary", () => {

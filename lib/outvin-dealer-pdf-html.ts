@@ -20,13 +20,6 @@ function pdfSubLabel(title: string): string {
   return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
 }
 
-function pdfPlainBlock(text: string): string {
-  const t = text.trim();
-  if (!t) return "";
-  const body = escapeHtml(t).replace(/\r?\n/g, "<br />");
-  return `<div class="pdf-outvin-plain">${body}</div>`;
-}
-
 function vehicleInfoTable(vi: OutvinVehicleInfo): string {
   const rows: { k: string; v: string }[] = [];
   for (const { key, labelLv, labelEn } of OUTVIN_VEHICLE_INFO_ROWS) {
@@ -37,7 +30,7 @@ function vehicleInfoTable(vi: OutvinVehicleInfo): string {
   return buildPdfKvPairHtml(rows);
 }
 
-/** Aprīkojuma bloks (kods + apraksts) - dīlera PDF liek zem servisa vēstures. */
+/** Aprīkojuma bloks (kods + apraksts) - dīlera PDF liek zem komentāra. */
 export function buildOutvinDealerEquipmentPdfHtml(report: OutvinDealerReport | undefined | null): string {
   if (!report) return "";
   const equip = report.equipment.filter(outvinEquipmentLineHasData);
@@ -68,18 +61,6 @@ export function buildOutvinDealerReportPdfInnerHtml(
   if (vehicleTable) {
     parts.push(pdfSubLabel("Transportlīdzekļa informācija"));
     parts.push(vehicleTable);
-  }
-
-  const accident = report.accidentCheck.trim();
-  if (accident) {
-    parts.push(pdfSubLabel("Negadījumu pārbaude"));
-    parts.push(pdfPlainBlock(accident));
-  }
-
-  const stolen = report.stolenCheck.trim();
-  if (stolen) {
-    parts.push(pdfSubLabel("Zagto transportlīdzekļu datubāze"));
-    parts.push(pdfPlainBlock(stolen));
   }
 
   if (!opts?.omitEquipment) {

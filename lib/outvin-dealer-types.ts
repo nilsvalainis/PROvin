@@ -172,10 +172,6 @@ export function outvinDealerReportToPlainText(r: OutvinDealerReport): string {
       if (v) lines.push(`${labelLv || labelEn}: ${v}`);
     }
   }
-  const accident = r.accidentCheck.trim();
-  if (accident) lines.push(`Negadījumu pārbaude: ${accident}`);
-  const stolen = r.stolenCheck.trim();
-  if (stolen) lines.push(`Nozagts transportlīdzeklis: ${stolen}`);
   const equipment = r.equipment.filter(outvinEquipmentLineHasData);
   if (equipment.length > 0) {
     lines.push("Komplektācija / aprīkojums:");
@@ -192,8 +188,6 @@ export function outvinDealerReportHasContent(r: OutvinDealerReport | undefined |
   if (!r) return false;
   return (
     outvinVehicleInfoHasData(r.vehicleInfo) ||
-    r.accidentCheck.trim().length > 0 ||
-    r.stolenCheck.trim().length > 0 ||
     r.equipment.some(outvinEquipmentLineHasData)
   );
 }

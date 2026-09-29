@@ -76,41 +76,6 @@ export function AdminOutvinDealerReportFields({ report, onChange, readOnly, disa
         ))}
       </div>
 
-      <p className={subHead}>
-        <AdminProvinLucide icon={SUBHEADING_LUCIDE.incidents} />
-        Negadījumu pārbaude
-      </p>
-      {readOnly ? (
-        <p className="whitespace-pre-wrap text-[11px] text-[var(--color-provin-muted)]">
-          {report.accidentCheck.trim() || "—"}
-        </p>
-      ) : (
-        <textarea
-          className="mb-1 w-full min-h-[48px] resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug"
-          rows={2}
-          value={report.accidentCheck}
-          disabled={disabled}
-          onChange={(e) => onChange({ ...report, accidentCheck: e.target.value })}
-          aria-label="Negadījumu pārbaude"
-        />
-      )}
-
-      <p className={subHead}>Nozagts transportlīdzeklis (reģistrs)</p>
-      {readOnly ? (
-        <p className="whitespace-pre-wrap text-[11px] text-[var(--color-provin-muted)]">
-          {report.stolenCheck.trim() || "—"}
-        </p>
-      ) : (
-        <textarea
-          className="mb-1 w-full min-h-[40px] resize-y rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] leading-snug"
-          rows={2}
-          value={report.stolenCheck}
-          disabled={disabled}
-          onChange={(e) => onChange({ ...report, stolenCheck: e.target.value })}
-          aria-label="Nozagts transportlīdzeklis"
-        />
-      )}
-
       <p className={subHead}>Komplektācija</p>
       {displayEquip.length === 0 && readOnly ? (
         <p className="text-[11px] text-slate-400">—</p>
