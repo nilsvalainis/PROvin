@@ -257,6 +257,36 @@ describe("provin-aggregate-case-rules", () => {
     const packs = selectAggregateCasePacks(fp);
     expect(packs.some((p) => p.id === "mercedes_om651")).toBe(true);
     expect(packs.some((p) => p.id === "mercedes_om642")).toBe(false);
+    const om = packs.find((p) => p.id === "mercedes_om651");
+    expect(om?.body).toMatch(/ķēdes gāzu sadale \*\*pārnesumkārbas pusē\*\*/i);
+    expect(om?.body).toMatch(/OM651\.913/);
+    expect(om?.body).toMatch(/722\.6/);
+    expect(om?.body).toMatch(/EGR dzesētāj/i);
+    expect(om?.body).toMatch(/elektroplāksne/i);
+    expect(om?.body).not.toMatch(/7G\/9G plūdenums/);
+  });
+
+  it("selects OM651 pack for OM651.913 and keeps 722.6 distinct from 7G", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Mercedes-Benz C 200",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.03.2011",
+        engineDisplacementCm3: "2143",
+        enginePowerKw: "100",
+        emissionStandard: "Euro 5",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: null });
+    fp.engineCode = "OM651.913";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "mercedes_om651")).toBe(true);
+    expect(packs.some((p) => p.id === "mercedes_om642")).toBe(false);
+    expect(packs.some((p) => p.id === "mercedes_om654")).toBe(false);
+    const om = packs.find((p) => p.id === "mercedes_om651");
+    expect(om?.body).toMatch(/100 kW/);
+    expect(om?.body).toMatch(/722\.6 \/ 5G-Tronic/);
+    expect(om?.body).toMatch(/7G DMF stāstu šeit NEDRĪKST/i);
   });
 
   it("selects EA888 early pack for 2010 TFSI and excludes gen3", () => {

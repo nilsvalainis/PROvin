@@ -189,12 +189,15 @@ describe("PROVIN AI prompt invariants", () => {
     );
   });
 
-  it("technical risks flagship rules demand detail and equipment-absent analysis", () => {
+  it("technical risks flagship rules demand detail and only-applicable units", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/8–12 rindkopas/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Active Steering/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/M57/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Kas-NAV-dargs/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/near-term-investment/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/OM651\.913/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/TIKAI AKTUĀLAIS/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/uz-so-motoru-neattiecas/);
   });
 
   it("technical risks research rules require European forum search when packs are thin", () => {

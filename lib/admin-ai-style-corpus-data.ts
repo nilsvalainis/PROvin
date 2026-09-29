@@ -27,7 +27,7 @@ export const PROVIN_STYLE_CORPUS_SAMPLES: readonly StyleCorpusSample[] = [
   },
   {
     field: "technical_risks",
-    text: "Kas NAV dārgs risks\nŠīs paaudzes slavenā aizmugurējās ķēdes kaite uz šo motoru neattiecas. Aprīkojuma sarakstā nav aktīvās stūres un hidraulisko stabilizatoru.\n\nTuvākais izmaksu punkts\nRūpnīcas aizmugures pneimatika šajā vecumā ir galvenais rēķins: spilveni un kompresors. Sviras un bukses paliek ierasta uzturēšanas izmaksa, ne pirkuma risks, ja pēdējā apskate tās nav aizrādījusi.",
+    text: "Pneimatika\nUniversāļa rūpnīcas aizmugures pneimatika šajā vecumā ir galvenais rēķins: spilveni un kompresors. Sviras un bukses paliek ierasta uzturēšanas izmaksa, ja pēdējā apskate tās nav aizrādījusi.\n\nKārba\nHidrotransformators paliek ierasta uzturēšanas izmaksa; trūkstošu eļļas maiņu formulē kā nepierādītu.",
   },
   {
     field: "technical_risks",

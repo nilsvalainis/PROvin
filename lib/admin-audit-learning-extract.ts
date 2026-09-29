@@ -14,7 +14,7 @@ import { sanitizeOtherAuditSnippet } from "@/lib/admin-ai-other-audit-style";
 
 export const LEARNING_SNIPPET_MAX_LEN = 360;
 export const LEARNING_TECH_SNIPPET_MAX_LEN = 900;
-export const LEARNING_SNIPPETS_PER_DRAFT_MAX = 8;
+export const LEARNING_SNIPPETS_PER_DRAFT_MAX = 10;
 
 export function redactLearningText(text: string): string {
   return text
@@ -42,8 +42,12 @@ export function distillLesson(plain: string, tag: string, max = LEARNING_SNIPPET
       .split(/\n\s*\n/)
       .map((p) => p.replace(/\s+/g, " ").trim())
       .filter((p) => p.length > 80);
-    const scored = paras.filter((p) => /€|EUR|risks|ķēd|kārba|turbo|EGR|DPF|piekar|zobsiksn/i.test(p));
-    const pick = (scored.length > 0 ? scored : paras).slice(0, 2).join(" ");
+    const scored = paras.filter((p) =>
+      /€|EUR|risks|ķēd|kārba|turbo|EGR|DPF|piekar|zobsiksn|elektroplāksn|dzesētāj|iesmidzin|hidrotransform|722\.|OM\d|N47|N57|M57|EA888|zobsiksn/i.test(
+        p,
+      ),
+    );
+    const pick = (scored.length > 0 ? scored : paras).slice(0, 4).join(" ");
     if (pick.length < 70) return null;
     return clipLearningSnippet(`[${tag}] ${pick}`, LEARNING_TECH_SNIPPET_MAX_LEN);
   }

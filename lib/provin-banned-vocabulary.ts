@@ -147,8 +147,14 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   {
     label: "kas nav dārgs risks (šablona ievads)",
     pattern: /kas\s+nav\s+dārgs\s+risk/i,
-    replacement: "ja kaut kas neattiecas - pasaki faktu bez šīs ievada frāzes",
+    replacement: "raksti tikai aktuālo mezglu; bez nolieguma ievada",
     code: "vocabulary_kas_nav_dargs_risks",
+  },
+  {
+    label: "uz šo motoru/agregātu neattiecas (nolieguma eseja)",
+    pattern: /uz šo (?:motoru|agregātu|konstrukciju) neattiecas/i,
+    replacement: "raksti tikai šim auto aktuālos mezglus; citu kodu kaites nemini",
+    code: "vocabulary_neattiecas_denial",
   },
   {
     label: "bufer(is/a/i) (bampera vietā)",

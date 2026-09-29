@@ -95,6 +95,7 @@ const PACK_BODY_HEADER = `INTERNĀ KALIBRĀCIJA — šīs pakas € summas ir TI
 Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteikumi klātienes apskatei**, avotu komentāri):
 - Šī paka ir **prior / vadlīnija**, ne fakts. PIRMS jebkuras pakas rindkopas: salīdzini ar ŠĪ auto **dzinēja kodu + kW + cm³ + gadu**. Ja paka un šī auto dati CONFLICTĒ (piem. paka saka „viens turbo / nav bloka plaisas”, bet šim auto ~158 kW / biturbo kods) — IGNORĒ neatbilstošo pakas daļu, **meklē** šo kodu/kW un raksti pēc pārbaudes. Nekad neapgalvo „šai konstrukcijai nav X”, kamēr kW/kods to neapstiprina.
 - Šī paka der TIKAI ja šī auto **dzinēja kods / tilpums / kW josla / kārba** sakrīt. Tā pati marka ar citu kodu = IGNORĒ šo paku un meklē šim kodam.
+- Klientam raksti **TIKAI aktuālos mezglus**. Citu kodu kaites NEMINI, pat lai tās noliegtu. Dārgo ekstraprīkojumu nosauc tikai ja tas ŠAJĀ auto datos ir.
 - Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / ierasta uzturēšanas izmaksa / tikai pārbaudāms klātienē).
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
 - **1. Tehnisko risku analīze** — DETALIZĒTI (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija — BEZ € skaitļiem klientam. Blīvums ≠ īsums. TA nosegts nodilums nav šīs sadaļas saturs.
@@ -309,16 +310,18 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **OM642 (3.0 V6, ~2987 cm³) ≠ OM651/OM654.** Piezo OM651 un OM654 rokera stāstus šeit NEDRĪKST kopēt.
 
-**7G-Tronic + divmasu:** bieži **galvenais finansiālais risks** pie liela nobraukuma — vibrācija tukšgaitā, raustīšanās. Ja 7G jau „nogurusi”, bieži izdevīgāk meklēt veselīgu lietotu kārbu + kodēšanu nekā tikai DMF. **9G-Tronic (vēlākie, bieži 2014+ bez 4Matic):** labāks profils, ja eļļas intervāli ievēroti; neraksti 7G DMF stāstu uz 9G bez datiem.
+**Kārba:** lasi kodu. **722.9 / 7G-Tronic** pie 200k+ bieži ir galvenais pirkuma risks: vibrācija tukšgaitā, raustīšanās, mehatronika; divmasu spararats šajā pāri bieži iet komplektā. Ja 7G jau nogurusi, bieži izdevīgāk meklēt veselīgu lietotu kārbu + kodēšanu nekā tikai spararatu. Eļļa+filtrs ik 60-80 tūkst. km (iekšēji ~250-450 €); servisā nav = nepierādīts. **9G-Tronic (vēlākie, bieži 2014+ bez 4Matic):** cits stāsts; 7G kaites uz 9G NEkopē.
 
-**Ieplūde / EGR / eļļas dzesētājs:** kvēpi un noplūdes pie liela km — pārbaudāms, ne automātiski „bloks beidzies”.
+**Ieplūde / EGR dzesētājs / eļļas dzesētājs:** kvēpi ieplūdē un EGR dzesētāja hermētiskums (šķidrums ieplūdē, līmeņa zudums) pie 200-350 tūkst. km. Eļļas dzesētāja korpusa svītras - šī V6 raksturs, ne „bloks beidzies”.
 
-**Klātienē:** vibrācijas tukšgaitā; 7G/9G plūdenums; AdBlue/DPF kļūdas; eļļas noplūdes pie kartera/dzesētāja; W206 vs A-klases „Renault” mītu neizplatīt bez šasijas faktiem.`,
+**Turbo eļļas caurulītes / sprauslas:** vizuāli un pēc slodzes; iesmidzinātāji (sprauslas) otrajā pusē, ne pirmais rēķins bez dūmiem/kļūdām.
+
+**Klātienē:** vibrācijas tukšgaitā; 7G palaišana un 2-3; eļļa pie dzesētāja; dzesēšanas līmenis pret ieplūdi; AdBlue/DPF kļūdas ja Euro 6 datos ir.`,
   },
   {
     id: "mercedes_om651",
     minScore: 14,
-    title: "Mercedes-Benz — OM651 2.1 dīzelis (ķēde, piezo, EGR)",
+    title: "Mercedes-Benz — OM651 2.1 dīzelis (ķēde aizmugurē, 722.6/7G, EGR)",
     score: (fp, hay) => {
       if (/OM654/.test(hay) || /^OM654/.test(fp.engineCode || "")) return 0;
       if (/OM642/.test(hay) || /^OM642/.test(fp.engineCode || "")) return 0;
@@ -343,15 +346,29 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     },
     body: `${PACK_BODY_HEADER}
 
-**OM651 (~2143 cm³, tipiski ~100–150 kW) ≠ OM642 V6 ≠ OM654.** OM654 rokera/NANOSLIDE un OM642 7G/DMF stāstus šeit NEDRĪKST kopēt bez datiem.
+**OM651 (~2143 cm³) ≠ OM642 V6 ≠ OM654.** OM654 rokera/NANOSLIDE un OM642 7G+divmasu stāstus šeit NEDRĪKST kopēt. Aizliegts sākt ar „izplatītākais Mercedes dīzelis / Dzinējs OM651 un tā specifika” eseju. Pirmā rindkopa = šī eksemplāra aktuālais mezgls.
 
-**Ķēde / izciļņi / eļļas disciplīna:** agrīnās partijās ķēdes stiepšanās un izciļņu nodilums — auksta starta klaboņa. Eļļas intervāls un pareizā specifikācija maina spriedumu; long-life bez pierādījumiem pilsētā = risks.
+**Konstrukcija (iekšēji):** četrcilindru, ķēdes gāzu sadale **pārnesumkārbas pusē** (aizmugurē). Zobrati dzen augstspiediena sūkni un balansēšanas vārpstas; izciļņvārpstas dzen **īsa vienrindas rullīšu ķēde**. Tas NAV BMW N47 „motors ārā / ķēde lūzt pie 150k” naratīvs. Ķēde+spriegotājs bieži maināmi no augšas, ja sliedes veselas; sliežu maiņai motors parasti ārā. Klientam: ķēde aizmugurē, piekļuve šaurāka nekā priekšējai ķēdei, bet pie ritmiskas eļļas oriģinālā ķēde pie **300 tūkst. km ir bieži sastopama**, ne resursa gals.
 
-**Piezo iesmidzinātāji:** dārga pozīcija, ja jāmaina; neraksti kā jau bojātus bez dūmu/kļūdu/datu.
+**Jaudas josla (kalibrē pret ŠĪ auto kW):**
+- **~100 kW (OM651.913, 136 ZS, viena VGT turbīna, ~320 Nm):** maigākā termiskā slodze. 125-150 kW / 170-204 ZS (bieži divpakāpju turbo) stāstu NEDRĪKST kopēt.
+- **~125 kW (220 CDI):** joprojām parasti viens turbo; ķēde/EGR/eļļas dzesētājs paliek, bet nav „viss OM651 ir vienāds”.
+- **~150 kW / 204 ZS:** lielāka termika; turbo/EGR slodze augstāka. Neraksti 100 kW auto kā 204 ZS versiju.
 
-**EGR dzesētājs / DPF:** pilsētas profilā biežāk; šosejā - pārbaudes punkts.
+**Km josla:** pie **250–350 tūkst. km** ar dokumentētu eļļu ķēde reti ir primārais pirkuma bloķētājs. Aktuālie mezgli (varbūtība × ietekme, BEZ € klientam): **kārbas eļļa/elektroplāksne, ja ir 722.6**; **EGR dzesētājs**; **eļļas dzesētāja korpuss**; dzesēšanas sūknis/termostats. Agrīnais spriegotājs (īpaši ~2008-2012, atsevišķas 2014 partijas) - auksta starta klaboņa no **aizmugures**. Eļļas intervālu tabula paliek laukā „Eļļas maiņas intervāli”; šeit maksimums viens teikums, ja ritms ir pirkuma arguments.
 
-**Klātienē:** auksts starts (ķēde/izciļņi); eļļas noplūdes; AdBlue ja ir; 7G/9G plūdenums; dīlera Veiktie darbi uzvar „jāmaina”.`,
+**Kārba (LASI ŠĪ auto kodu; 722.6 ≠ 7G ≠ 9G):**
+- **722.6 / 5G-Tronic:** bieži pāris 100 kW versijai. Nav divmasu spararata. „Leģendāra līdz 500 tūkst.” tikai ar eļļu+filtru ik **60–80 tūkst. km** (iekšēji ~200–400 €). Servisā nav fiksēts = nepierādīts, ne „nav darīts”. Pie 300k+ klasika: **elektroplāksne ar ātruma sensoriem** (iekšēji ~400–900 €), vilcināšanās palaišanā, raustīšanās 2-3, avārijas režīms; hidrotransformatora bloķēšanās (shudder). Testa brauciens ir primārā pārbaude. 7G DMF stāstu šeit NEDRĪKST.
+- **722.9 / 7G-Tronic:** cits stāsts (mehatronika, eļļa); nedrīkst uzlikt 722.6 elektroplāksni. Divmasu tikai ja šai šasijai tas ir (bieži OM642, ne šis 4 cilindru 722.6).
+- **9G-Tronic:** vēlākie; neraksti 722.6/7G kaites.
+
+**Iesmidzinātāji (sprauslas):** agrīnās (~2008-2011) partijas - Delphi pjezo (kampaņas maiņas pret Bosch biežas). Vēlāk - Bosch solenoīds. Tips jānoskaidro pēc detaļas/dokumentiem, ne jāpasniedz kā „resurss beidzas”. Vara blīvgredzeni: dīzeļdegviela eļļā. Nav maiņas ieraksta ≠ bojāti.
+
+**EGR dzesētājs / eļļas dzesētājs / ūdens sūknis:** EGR dzesētāja hermētiskums (šķidrums ieplūdē, līmeņa zudums bez ārējās peļķes) šajā vecumā ir konkrētāks par vispārīgu „dzesēšanas sūkni”. Eļļas dzesētāja korpusa svītras - šī motora raksturs pie liela km. Ūdens sūknis/termostats - vecums+km, svītrojuma caurums. DPF: šosejas profils palīdz; pilsēta - kvēpi. **AdBlue/SCR tikai ja Euro 6 / BlueTEC datos**; 100 kW Euro 5 parasti bez AdBlue - neizdomā.
+
+**Ieplūdes kolektors:** vārstu mehānisms ir. BMW-līmeņa „vārsts motorā” nav noklusējuma slavenā kaite; nosauc tikai kā ieplūdes stāvokli, ne primāro bloķētāju.
+
+**Klātienē:** auksts starts no motora **aizmugures** (ķēde/spriegotājs); dzesēšanas līmenis un ieplūdes puse (EGR dzesētājs); eļļas svītras pie dzesētāja; 722.6 palaišana un 2-3 pārnesums VAI 7G plūdenums (pēc kārbas koda); XENTRY kļūdas; dīlera Veiktie darbi uzvar „jāmaina”.`,
   },
   {
     id: "mercedes_diesel",
@@ -410,7 +427,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **E61 Touring:** visiem rūpnīcā **aizmugures pneimatika (EHC)** — tas nav Dynamic Drive. Spilveni + korodējis kompresors = tipiskais aktuālais rēķins (**spilveni 400–800 €**, kompresors **250–500 €**, komplekss **800–1600 €**). E60 sedans bez EHC šo rindkopu neliek kā galveno.
 
-**Kas bieži NAV šim eksemplāram (pārbaudīt SA/aprīkojumu; nenoliegt bez pamata):** Active Steering (dārgā stūres reika), Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja to nav — tas ir **TCO arguments**, ne trūkums. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
+**Ekstraprīkojums (tikai ja ŠĪ auto datos IR):** Active Steering, Dynamic Drive / Adaptive Drive, Soft Close, Logic 7, xDrive. Ja SA/dīleris to rāda, tas ir uzturēšanas risks. Ja sarakstā nav - par to klientam NERAKSTI. Lifestyle Edition = āda/komforts, ne šasijas elektronika.
 
 **M57 mehānika pie 250–350 tūkst. km (ierasta uzturēšanas izmaksa, ne bloķētājs):** eļļas filtra korpusa blīve, vāka blīve, vakuumsūknis, turbīnas līnijas (**180–350 €** tipiskā blīve — INTERNĀ KALIBRĀCIJA, nekopē klientam); **ventilatora viskozā hidromufte** (**100–220 €**); ūdens sūknis/termostats/plastmasas caurules (**250–500 €**); kloķvārpstas svārstību slāpētājs (skriemelis) — ja jau mainīts, tas datos izskatās labi. Ieplūdes kolektors 2008. gada M57T2 visticamāk vēl ir oriģinālais — profilakse **200–450 €**; servisā nepierādīts ≠ nav izdarīts. EGR dzesētājs **250–550 €**. Turbīna/iesmidzinātāji statistiski otrajā pusē; **zema dūmainība TA** (piem. 0,10 pret 1,5) ir labs DPF/turbo rādījums datos.
 
@@ -482,11 +499,13 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     },
     body: `${PACK_BODY_HEADER}
 
-**N47 (2.0d) ≠ N57 (3.0) ≠ M57.** N57 eļļas sūkņa katastrofas naratīvu uz N47 NEkopē 1:1; N47 ķēde stiepjas agri (~100–150k), bet **laicīga apkope** maina spriedumu. Labi uzturēts N47 ar dokumentētu ķēdi bieži labāks par nogurušu M47 „bez ķēdes problēmas”.
+**N47 (2.0d) ≠ N57 (3.0) ≠ M57.** Ķēde **aizmugurē** (pārnesumkārbas pusē). Tipiski stiepjas agri (~100-150 tūkst. km); laicīga ķēdes+spriegotāja+sliežu maiņa maina spriedumu. N57 eļļas sūkņa katastrofas naratīvu uz N47 NEkopē 1:1.
 
-**B47 (vēlākie 2.0d):** uzlabojumi pret N47, bet ķēdes/eļļas disciplīna joprojām jākalibrē pret km - neraksti, ka B47 ir „bez riska”.
+**Km josla:** pie ~120-180 tūkst. bez ķēdes dokumentiem tas bieži ir **galvenais pirkuma risks** (iekšēji ķēdes komplekts ~900-1800 €). Pie ~250 tūkst. ar fiksētu ķēdi motors paliek ierasta uzturēšanas izmaksa (EGR, DPF, turbo).
 
-**Klātienē:** auksta klaboņa; eļļas spiedība; ķēdes rēķini; turbo/EGR/DPF pilsētā.`,
+**B47 (vēlākie 2.0d):** uzlabojumi pret N47, bet eļļas disciplīna joprojām jākalibrē pret km.
+
+**Klātienē:** auksta metāliska klaboņa no aizmugures; eļļas spiedība; ķēdes rēķini; turbo/EGR/DPF pilsētā.`,
   },
   {
     id: "bmw_diesel_chains",
@@ -533,9 +552,9 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     },
     body: `${PACK_BODY_HEADER}
 
-**N20/N26:** **ūdens sūknis/termiskā pārvaldība** un ķēdes/eļļas disciplīna — vidējs/liels risks; kontrolēt dzesēšanas vēsturi. B48 stāstu šeit NEkopē.
+**N20/N26 (~2.0 benzīns, ~2011-2017):** aktuālie mezgli - **elektriskais ūdens sūknis / termostats** (pārkaršana), **sadales ķēde** (auksta starta klaboņa), vāka blīve, augstspiediena sūknis. Eļļas intervāls pilsētā ~10 tūkst. km. B48 stāstu šeit NEkopē.
 
-**Klātienē:** temperatūras stabilitāte; noplūdes; eļļas emulsija; kļūdu kodi pēc auksta starta.`,
+**Klātienē:** temperatūras stabilitāte pēc slodzes; dzesēšanas līmenis; eļļas emulsija; kļūdu kodi pēc auksta starta; ķēdes troksnis.`,
   },
   {
     id: "bmw_petrol_b48",

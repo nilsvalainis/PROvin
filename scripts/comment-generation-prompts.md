@@ -189,7 +189,7 @@ Aptinums: `PROVIN_FIELD_AGENT_SYSTEM`. Pilnais teksts: `lib/admin-ai-prompts.ts`
 ```
 Sagatavo tehniski izcilu, detalizētu tehnisko risku analīzi. Īss vispārīgs teksts šeit ir kļūda.
 Identificē agregātu iekšēji; izvadē pirmā sadaļa = risks, ne markas tūre.
-Kalibrē pret km un vecumu. Kas NAV risks. Web, ja paka nesedz.
+Kalibrē pret km un vecumu. Tikai aktuālie mezgli, bez nolieguma esejas. Web, ja paka nesedz.
 Garums: 4–10 sadaļas. BEZ EUR. BEZ * / **.
 Neraksti klātienes checklistu un gala verdiktu.
 ```

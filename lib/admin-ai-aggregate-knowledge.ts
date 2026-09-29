@@ -29,6 +29,7 @@ import {
   upsertAuditAggregateLearning,
   type AuditAggregateLearningEntry,
 } from "@/lib/admin-audit-learnings-store";
+import { engineFamilyLearningKeys } from "@/lib/admin-audit-learning-keys";
 import {
   buildPromotionCandidates,
   clipPromotionMarkdown,
@@ -48,10 +49,11 @@ export const AI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (stat
 - Kombinē zemāk esošās ražotāju/agregātu pakas ar AKTĪVĀ pasūtījuma datiem un (ja ir) vēsturisko auditu fragmentiem.
 - Katru agregāta risku klasificē: **galvenais pirkuma risks** / **ierasta uzturēšanas izmaksa** / **pārbaudāms klātienē, nav pirkuma šķērslis**.
 - **1. Tehnisko risku analīze** — detalizēta agregātu forenzika (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla; 8–12 tikai ja katra sadaļa ir cits mezgls); **2. Ieteikumi** — pircēja soļi (redzēt/dzirdēt/izmērīt/vaicāt), ne risku spogulis; **3. Kopsavilkums** — 1–2 rindkopas bez garas tehniskās dublikācijas un BEZ cenu/EUR summām; **avotu/nobraukuma/negadījumu komentāri** — arī lieto šīs zināšanas, kur relevantas.
+- Klientam raksti **TIKAI šim auto aktuālos mezglus**. Citu kodu vai paaudžu kaites NEMINI, pat lai tās noliegtu. Dārgo ekstraprīkojumu nosauc tikai ja tas ŠAJĀ auto datos ir.
 - Mācījumi no citām atskaitēm — tikai paraugi un forenzikas loģika; **nekopē** klienta VIN, km, datumus, EUR, pasūtījuma ID.
 - Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.
 - Kad zināms dzinēja kods (piem. OM654), prioritāri lieto ENGINE|kods mācījumus un sakrītošo paku — ne vispārīgu markas eseju.
-- Pēc katras bagātīgas atskaites PROVIN saglabā anonimizētus mācījumus (arī pa dzinēja kodu) un atsvaidzina promotion kandidātus — uzskati tos par institucionālo atmiņu nākamajiem līdzīgiem agregātiem.`;
+- Pēc katras bagātīgas atskaites PROVIN saglabā anonimizētus mācījumus (arī pa dzinēja kodu un OM/M/N ģimeni) un atsvaidzina promotion kandidātus — uzskati tos par institucionālo atmiņu nākamajiem līdzīgiem agregātiem.`;
 
 /** Tokenu budžets ✨ kontekstā (dārgais modelis). */
 const AGGREGATE_CTX_MAX_PACKS = 3;
@@ -63,10 +65,7 @@ const AGGREGATE_CTX_MAX_LEARNING_KEYS_WITH_ENGINE = 5;
 const AGGREGATE_CTX_MAX_SNIPPETS_WITH_ENGINE = 6;
 const AGGREGATE_CTX_MAX_CHARS_WITH_ENGINE = 10_500;
 
-export function engineLearningKey(engineCode: string): string {
-  const code = engineCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  return code ? `ENGINE|${code}` : "";
-}
+export { engineFamilyLearningKeys, engineLearningKey } from "@/lib/admin-audit-learning-keys";
 
 /** Pēc veiksmīgas atskaites saglabāšanas — papildina mācījumu indeksu (fire-and-forget). */
 export async function recordAuditAggregateLearningFromDraft(draft: OrderDraftState): Promise<void> {
@@ -85,8 +84,8 @@ export async function recordAuditAggregateLearningFromDraft(draft: OrderDraftSta
   };
   await upsertAuditAggregateLearning(entry);
 
-  const engKey = engineLearningKey(fp.engineCode);
-  if (engKey && engKey !== key) {
+  for (const engKey of engineFamilyLearningKeys(fp.engineCode)) {
+    if (engKey === key) continue;
     await upsertAuditAggregateLearning({
       key: engKey,
       label: `ENGINE ${fp.engineCode}`,
@@ -222,7 +221,6 @@ export async function promoteAuditKnowledgeCandidates(opts?: {
 
 async function rankLearningKeysForFingerprint(fp: VehicleReportFingerprint): Promise<string[]> {
   const primary = fingerprintLearningKey(fp);
-  const engKey = engineLearningKey(fp.engineCode);
   const allKeys = await listAllAuditLearningKeys();
   if (allKeys.length === 0) return [];
 
@@ -231,7 +229,9 @@ async function rankLearningKeysForFingerprint(fp: VehicleReportFingerprint): Pro
     : AGGREGATE_CTX_MAX_LEARNING_KEYS;
 
   const out: string[] = [];
-  if (engKey && allKeys.includes(engKey)) out.push(engKey);
+  for (const engKey of engineFamilyLearningKeys(fp.engineCode)) {
+    if (allKeys.includes(engKey) && !out.includes(engKey)) out.push(engKey);
+  }
   if (allKeys.includes(primary) && !out.includes(primary)) out.push(primary);
   const make = fp.makeTokens[0] ?? "";
   const engine = fp.engineCode;

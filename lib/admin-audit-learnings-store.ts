@@ -15,7 +15,8 @@ export type { AuditAggregateLearningEntry };
 
 const LEARNINGS_FILENAME = "provin_audit_aggregate_learnings.json";
 const MAX_SNIPPETS_PER_KEY = 12;
-const SNIPPET_MAX_LEN = 420;
+/** Tehnikas rindkopas jāsaglabā pilnākas, citādi paliek tikai enciklopēdijas ievads. */
+const SNIPPET_MAX_LEN = 900;
 
 type LearningsDoc = {
   version: 1;
