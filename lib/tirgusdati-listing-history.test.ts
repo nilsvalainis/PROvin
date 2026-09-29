@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   extractTirgusDatiHistoryFromHtml,
+  fetchTirgusDatiListingHistory,
   looksLikeTirgusDatiCloudflareChallenge,
   tirgusDatiHistoryPageLookupUrl,
   tirgusDatiSupportsListingUrl,
@@ -113,5 +114,66 @@ describe("extractTirgusDatiHistoryFromHtml", () => {
 
   it("returns an empty item list when there is no history table", () => {
     expect(extractTirgusDatiHistoryFromHtml(NOT_FOUND_HTML)).toEqual({ items: [], listingUrl: null });
+  });
+});
+
+describe("fetchTirgusDatiListingHistory", () => {
+  const NOW = new Date(2026, 8, 20);
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reads the page through the relay when the datacenter IP gets HTTP 403", async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      const url = String(input);
+      if (url.startsWith("https://r.jina.ai/")) {
+        return { ok: true, status: 200, text: async () => FOUND_HTML };
+      }
+      return { ok: false, status: 403, text: async () => "" };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(true);
+    expect(snap.source).toBe("tirgusdati");
+    expect(snap.rows).toHaveLength(5);
+  });
+
+  it("skips the relay when the direct request already works", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 200, text: async () => FOUND_HTML }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the direct failure message when the relay is blocked too", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 403, text: async () => "" })),
+    );
+
+    const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(false);
+    expect(snap.message).toBe("Tirgus Dati neatbildēja (HTTP 403)");
+  });
+
+  it("uses the relay when Cloudflare answers with the interstitial", async () => {
+    const fetchMock = vi.fn(async (input: unknown) =>
+      String(input).startsWith("https://r.jina.ai/")
+        ? { ok: true, status: 200, text: async () => FOUND_HTML }
+        : { ok: true, status: 200, text: async () => "<html>Just a moment...</html>" },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(true);
+    expect(snap.rows).toHaveLength(5);
   });
 });

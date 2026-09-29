@@ -6,6 +6,7 @@
  */
 
 import { type AdifyListingHistorySnapshot, normalizeAdifyHistoryItems } from "@/lib/adify-listing-history";
+import { fetchListingHistoryHtmlViaRelay } from "@/lib/listing-history-relay";
 
 export const TIRGUSDATI_HISTORY_PAGE_URL = "https://tirgusdati.lv/vesture";
 
@@ -127,6 +128,32 @@ function emptySnapshot(message: string): AdifyListingHistorySnapshot {
   };
 }
 
+/** Tiešā ielase, un ja Cloudflare noraida datacentra IP, tā pati lapa caur releju. */
+async function loadTirgusDatiHistoryHtml(
+  listingUrl: string,
+): Promise<{ html: string | null; message: string }> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 10_000);
+  let message = "Neizdevās ielādēt Tirgus Dati vēsturi";
+  try {
+    const res = await fetchTirgusDatiHistoryPage(listingUrl, ctrl.signal);
+    const html = res.ok ? await res.text() : "";
+    if (res.ok && !looksLikeTirgusDatiCloudflareChallenge(html)) return { html, message: "" };
+    message = res.ok
+      ? "Tirgus Dati bloķēja pieprasījumu (Cloudflare)"
+      : `Tirgus Dati neatbildēja (HTTP ${res.status})`;
+  } catch (e) {
+    const aborted = e instanceof Error && e.name === "AbortError";
+    message = aborted ? "Tirgus Dati pieprasījums noildza" : "Neizdevās ielādēt Tirgus Dati vēsturi";
+  } finally {
+    clearTimeout(t);
+  }
+
+  const relayed = await fetchListingHistoryHtmlViaRelay(tirgusDatiHistoryPageLookupUrl(listingUrl));
+  if (relayed && !looksLikeTirgusDatiCloudflareChallenge(relayed)) return { html: relayed, message: "" };
+  return { html: null, message };
+}
+
 export async function fetchTirgusDatiListingHistory(
   listingUrl: string,
   now: Date = new Date(),
@@ -135,29 +162,17 @@ export async function fetchTirgusDatiListingHistory(
     return emptySnapshot("Tirgus Dati atbalsta tikai ss.com un city24.lv sludinājumus");
   }
 
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 15_000);
-  try {
-    const res = await fetchTirgusDatiHistoryPage(listingUrl, ctrl.signal);
-    if (!res.ok) return emptySnapshot(`Tirgus Dati neatbildēja (HTTP ${res.status})`);
-    const html = await res.text();
-    if (looksLikeTirgusDatiCloudflareChallenge(html)) {
-      return emptySnapshot("Tirgus Dati bloķēja pieprasījumu (Cloudflare)");
-    }
-    const { items, listingUrl: resolvedUrl } = extractTirgusDatiHistoryFromHtml(html);
-    if (items.length === 0) return emptySnapshot("Šim sludinājumam Tirgus Dati vēl nav vēstures");
-    const snap = normalizeAdifyHistoryItems(items, now);
-    if (!snap.found) return snap;
-    return {
-      ...snap,
-      listingUrl: snap.listingUrl ?? resolvedUrl,
-      source: "tirgusdati",
-      message: `Atrasta sludinājuma vēsture (Tirgus Dati, ${snap.rows.length} ieraksti)`,
-    };
-  } catch (e) {
-    const aborted = e instanceof Error && e.name === "AbortError";
-    return emptySnapshot(aborted ? "Tirgus Dati pieprasījums noildza" : "Neizdevās ielādēt Tirgus Dati vēsturi");
-  } finally {
-    clearTimeout(t);
-  }
+  const { html, message } = await loadTirgusDatiHistoryHtml(listingUrl);
+  if (!html) return emptySnapshot(message);
+
+  const { items, listingUrl: resolvedUrl } = extractTirgusDatiHistoryFromHtml(html);
+  if (items.length === 0) return emptySnapshot("Šim sludinājumam Tirgus Dati vēl nav vēstures");
+  const snap = normalizeAdifyHistoryItems(items, now);
+  if (!snap.found) return snap;
+  return {
+    ...snap,
+    listingUrl: snap.listingUrl ?? resolvedUrl,
+    source: "tirgusdati",
+    message: `Atrasta sludinājuma vēsture (Tirgus Dati, ${snap.rows.length} ieraksti)`,
+  };
 }

@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   adifyChronologicalPriceRows,
   adifyDurationDays,
   adifyHistoryPageLookupUrl,
   applyAdifyHistoryToTirgus,
   extractAdifyHistorySsrPayload,
+  fetchAdifyListingHistory,
   formatAdifyDurationLabel,
   formatAdifySignedEur,
   normalizeAdifyHistoryItems,
@@ -140,6 +141,58 @@ describe("extractAdifyHistorySsrPayload", () => {
       items: null,
       retryAfter: null,
     });
+  });
+});
+
+describe("fetchAdifyListingHistory", () => {
+  const NOW = new Date(2026, 7, 13);
+  const SSR_HTML = `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+    props: {
+      pageProps: {
+        items: [
+          { price: 23950, mileage: 233000, year: 2015, created: "2026-08-13T15:33:01" },
+          { price: 24500, mileage: 233000, year: 2015, created: "2026-07-30T14:57:02" },
+        ],
+        retryAfter: null,
+        url: Q7_URL,
+      },
+    },
+  })}</script></html>`;
+
+  const blocked = () => ({
+    ok: false,
+    status: 403,
+    headers: { get: () => null, getSetCookie: () => [] },
+    clone: () => ({ text: async () => "" }),
+    text: async () => "",
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reads the SSR page through the relay when the datacenter IP gets HTTP 403", async () => {
+    const fetchMock = vi.fn(async (input: unknown) =>
+      String(input).startsWith("https://r.jina.ai/")
+        ? { ok: true, status: 200, text: async () => SSR_HTML }
+        : blocked(),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(true);
+    expect(snap.source).toBe("adify");
+    expect(snap.priceChangeEur).toBe(-550);
+  });
+
+  it("keeps the HTTP 403 message when the relay is blocked too", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => blocked()));
+
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(false);
+    expect(snap.message).toBe("Adify neatbildēja (HTTP 403)");
   });
 });
 

@@ -91,7 +91,10 @@ async function postListingHistory(body: { url: string; html?: string }): Promise
   return data;
 }
 
-/** Serveris (Vercel) + ja 403, Tampermonkey ielase no operatora IP. */
+/**
+ * Serveris ielasa pats (tiešā saite vai relejs). Tampermonkey paliek kā pēdējais
+ * mēģinājums no operatora IP, ja arī relejs ir bloķēts.
+ */
 export async function loadListingPriceHistorySnapshot(listingUrl: string): Promise<AdifyListingHistorySnapshot> {
   const url = listingUrl.trim();
   const server = await postListingHistory({ url });
@@ -109,11 +112,5 @@ export async function loadListingPriceHistorySnapshot(listingUrl: string): Promi
     if (parsed.found) return parsed;
   }
 
-  if (!userscriptCanFetchListingHistory()) {
-    return {
-      ...server,
-      message: `${server.message}. Serveris ir bloķēts. Atjaunini PROVIN Tampermonkey skriptu uz 1.8+, lai ielasītu vēsturi no pārlūka.`,
-    };
-  }
   return server;
 }

@@ -4,6 +4,8 @@
  * Vēsture tiek lasīta no Next.js SSR lapas `/history?url=` (`__NEXT_DATA__`).
  */
 
+import { fetchListingHistoryHtmlViaRelay } from "@/lib/listing-history-relay";
+
 export const ADIFY_HISTORY_PAGE_URL = "https://adify.lv/history";
 export const ADIFY_HISTORY_API_BASE = "https://api.adify.lv/api/v1";
 
@@ -421,6 +423,22 @@ export function applyAdifyHistoryToTirgus<
   };
 }
 
+/** `snapshot` != null nozīmē galīgu atbildi (vēsture vai apstiprināts „nav datu”). */
+function adifySnapshotFromHistoryHtml(
+  html: string,
+  now: Date,
+): { snapshot: AdifyListingHistorySnapshot | null; message: string } {
+  const { items, retryAfter } = extractAdifyHistorySsrPayload(html);
+  if (retryAfter != null) {
+    return { snapshot: null, message: `Adify ierobežo pieprasījumus (mēģini pēc ${retryAfter} s)` };
+  }
+  if (items == null) {
+    return { snapshot: null, message: "Adify lapas formāts mainījies" };
+  }
+  const snap = normalizeAdifyHistoryItems(items, now);
+  return { snapshot: snap.found ? { ...snap, source: "adify" } : snap, message: snap.message };
+}
+
 export async function fetchAdifyListingHistory(
   listingUrl: string,
   now: Date = new Date(),
@@ -440,38 +458,29 @@ export async function fetchAdifyListingHistory(
   }
 
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 18_000);
+  const t = setTimeout(() => ctrl.abort(), 12_000);
+  let message = "Neizdevās ielādēt Adify vēsturi";
   try {
     const res = await fetchAdifyHistoryPage(listingUrl, ctrl.signal);
-    if (!res.ok) {
-      return {
-        ...normalizeAdifyHistoryItems([], now),
-        message: `Adify neatbildēja (HTTP ${res.status})`,
-      };
+    if (res.ok) {
+      const parsed = adifySnapshotFromHistoryHtml(await res.text(), now);
+      if (parsed.snapshot) return parsed.snapshot;
+      message = parsed.message;
+    } else {
+      message = `Adify neatbildēja (HTTP ${res.status})`;
     }
-    const html = await res.text();
-    const { items, retryAfter } = extractAdifyHistorySsrPayload(html);
-    if (retryAfter != null) {
-      return {
-        ...normalizeAdifyHistoryItems([], now),
-        message: `Adify ierobežo pieprasījumus (mēģini pēc ${retryAfter} s)`,
-      };
-    }
-    if (items == null) {
-      return {
-        ...normalizeAdifyHistoryItems([], now),
-        message: "Adify lapas formāts mainījies",
-      };
-    }
-    const snap = normalizeAdifyHistoryItems(items, now);
-    return snap.found ? { ...snap, source: "adify" } : snap;
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
-    return {
-      ...normalizeAdifyHistoryItems([], now),
-      message: aborted ? "Adify pieprasījums noildza" : "Neizdevās ielādēt Adify vēsturi",
-    };
+    message = aborted ? "Adify pieprasījums noildza" : "Neizdevās ielādēt Adify vēsturi";
   } finally {
     clearTimeout(t);
   }
+
+  // Cloudflare noraida Vercel IP; tā pati lapa caur releju.
+  const relayed = await fetchListingHistoryHtmlViaRelay(adifyHistoryPageLookupUrl(listingUrl));
+  if (relayed) {
+    const parsed = adifySnapshotFromHistoryHtml(relayed, now);
+    if (parsed.snapshot) return parsed.snapshot;
+  }
+  return { ...normalizeAdifyHistoryItems([], now), message };
 }

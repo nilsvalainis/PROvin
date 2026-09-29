@@ -18,6 +18,8 @@ import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// `after` uzdevumi (dīlera dati, sludinājuma vēsture caur releju) turpina pēc atbildes.
+export const maxDuration = 120;
 
 function fulfillDedupeKey(sessionId: string): string {
   return `fulfill:${sessionId}`;
@@ -191,14 +193,18 @@ async function fulfillPaidCheckoutSession(
         console.error("[stripe webhook] consultation draft seed:", err);
       });
     } else {
-      void seedSsLvAdifyOnPaidOrder(session.id, order.listingUrl).then((r) => {
-        if (r.ok) {
-          console.info("[stripe webhook] ss.lv Adify listing seeded", { sessionId: session.id });
-        } else if (r.reason !== "skip" && r.reason !== "no_listing_url") {
-          console.warn("[stripe webhook] ss.lv Adify listing seed:", r.reason);
+      // `after`, nevis `void`: ielase caur releju var ilgt sekundes pēc atbildes Stripe.
+      after(async () => {
+        try {
+          const r = await seedSsLvAdifyOnPaidOrder(session.id, order.listingUrl);
+          if (r.ok) {
+            console.info("[stripe webhook] ss.lv Adify listing seeded", { sessionId: session.id });
+          } else if (r.reason !== "skip" && r.reason !== "no_listing_url") {
+            console.warn("[stripe webhook] ss.lv Adify listing seed:", r.reason);
+          }
+        } catch (err) {
+          console.error("[stripe webhook] ss.lv Adify listing seed:", err);
         }
-      }).catch((err) => {
-        console.error("[stripe webhook] ss.lv Adify listing seed:", err);
       });
     }
   } catch (e) {

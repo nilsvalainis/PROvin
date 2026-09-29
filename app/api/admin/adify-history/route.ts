@@ -9,7 +9,8 @@ import {
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+// Tiešā ielase + relejs (Cloudflare bloķē datacentra IP) var prasīt vairāk par 30 s.
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   const ok = await getAdminSession();
