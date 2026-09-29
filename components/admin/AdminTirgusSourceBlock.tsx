@@ -13,11 +13,8 @@ import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeade
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
 import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
-import {
-  applyAdifyHistoryToTirgus,
-  ADIFY_HISTORY_PAGE_URL,
-  type AdifyListingHistorySnapshot,
-} from "@/lib/adify-listing-history";
+import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
+import { applyAdifyHistoryToTirgus, ADIFY_HISTORY_PAGE_URL } from "@/lib/adify-listing-history";
 import { tirgusDatiHistoryPageLookupUrl } from "@/lib/tirgusdati-listing-history";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
 import {
@@ -142,25 +139,10 @@ export function AdminTirgusSourceBlock({
             .catch(() => null)
         : Promise.resolve(null);
 
-      const res = await fetch("/api/admin/adify-history", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const data = (await res.json().catch(() => ({}))) as AdifyListingHistorySnapshot & {
-        error?: string;
-      };
-      const scrape = await scrapePromise;
+      const [data, scrape] = await Promise.all([loadListingPriceHistorySnapshot(url), scrapePromise]);
 
-      if (!res.ok) {
-        setError(
-          data.error === "invalid_url"
-            ? "Nederīga sludinājuma saite"
-            : data.error === "unauthorized"
-              ? "Nav admin sesijas"
-              : "Neizdevās ielādēt sludinājuma vēsturi",
-        );
+      if (!data.found) {
+        setError(data.message || "Meklētais objekts netika atrasts");
         if (scrape?.ok) {
           onChange(
             applyListingOdometerToTirgus(val, {
@@ -173,19 +155,14 @@ export function AdminTirgusSourceBlock({
         return;
       }
 
-      let next = val;
-      if (data.found) {
-        next = applyAdifyHistoryToTirgus(val, data);
-        setStatus(data.message);
-      } else {
-        setError(data.message || "Meklētais objekts netika atrasts");
-      }
+      let next = applyAdifyHistoryToTirgus(val, data);
+      setStatus(data.message);
       next = applyListingOdometerToTirgus(next, {
         listingUrl: url,
         scrapeKm: scrape?.ok ? scrape.currentKm : null,
         scrapePostedDate: scrape?.ok ? scrape.postedDateRaw : null,
       });
-      if (data.found || scrape?.ok) onChange(next);
+      onChange(next);
     } catch {
       setError("Neizdevās savienoties ar vēstures avotiem");
     } finally {

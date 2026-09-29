@@ -275,7 +275,7 @@ import {
   shouldAutofillSsLvListing,
 } from "@/lib/admin-ss-lv-adify-autofill";
 import { isSsLvListingUrl } from "@/lib/listing-odometer";
-import type { AdifyListingHistorySnapshot } from "@/lib/adify-listing-history";
+import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
@@ -2243,13 +2243,8 @@ export function OrderDetailWorkspace({
     adifyAutofillAttemptedRef.current = true;
     void (async () => {
       try {
-        const [adifyRes, scrapeRes] = await Promise.all([
-          fetch("/api/admin/adify-history", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url }),
-          }),
+        const [snapshot, scrapeRes] = await Promise.all([
+          loadListingPriceHistorySnapshot(url),
           fetch("/api/admin/scrape-listing", {
             method: "POST",
             credentials: "include",
@@ -2257,14 +2252,13 @@ export function OrderDetailWorkspace({
             body: JSON.stringify({ url }),
           }).catch(() => null),
         ]);
-        const snapshot = (await adifyRes.json().catch(() => null)) as AdifyListingHistorySnapshot | null;
         const scrape = scrapeRes?.ok
           ? ((await scrapeRes.json().catch(() => null)) as ListingAiSnapshot | null)
           : null;
         const latest = wsPersistRef.current.sourceBlocks.tirgus;
         const tirgusShouldFill = shouldAutofillSsLvListing(url, latest);
         const next = tirgusShouldFill
-          ? applySsLvAdifyAutofill(latest, url, adifyRes.ok && snapshot?.found ? snapshot : null, scrape)
+          ? applySsLvAdifyAutofill(latest, url, snapshot.found ? snapshot : null, scrape)
           : null;
 
         // SLUDINĀJUMA APRAKSTS (IEKOPĒŠANAI): tikai, ja operators to vēl nav ielīmējis ar roku -

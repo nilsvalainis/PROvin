@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.7.4
-// @description  Admin MENU VIN auto-fill. car.info + checkcar.vin. AutoDNA arī atver CarVertical.
+// @version      1.8.0
+// @description  Admin MENU VIN auto-fill. car.info + checkcar.vin. AutoDNA arī atver CarVertical. Sludinājuma vēsture no tirgusdati.lv caur pārlūku.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -30,13 +30,16 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_setClipboard
+// @grant        GM_xmlhttpRequest
+// @connect      tirgusdati.lv
+// @connect      adify.lv
 // @run-at       document-idle
 // ==/UserScript==
 
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.7.4";
+  const SCRIPT_VERSION = "1.8.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -117,6 +120,67 @@
       },
       true,
     );
+
+    document.addEventListener("provin-listing-history-request", function (ev) {
+      const detail = ev && ev.detail ? ev.detail : {};
+      const requestId = String(detail.requestId || "");
+      const fetchUrl = String(detail.fetchUrl || "").trim();
+      function reply(payload) {
+        document.dispatchEvent(
+          new CustomEvent("provin-listing-history-result", {
+            detail: Object.assign({ requestId: requestId }, payload),
+          }),
+        );
+      }
+      if (!requestId || !fetchUrl) {
+        reply({ ok: false, error: "bad_request" });
+        return;
+      }
+      let parsed;
+      try {
+        parsed = new URL(fetchUrl);
+      } catch {
+        reply({ ok: false, error: "bad_url" });
+        return;
+      }
+      const h = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+      if (h !== "tirgusdati.lv" && h !== "adify.lv") {
+        reply({ ok: false, error: "host_not_allowed" });
+        return;
+      }
+      const xhr =
+        typeof GM_xmlhttpRequest === "function"
+          ? GM_xmlhttpRequest
+          : typeof GM !== "undefined" && GM && typeof GM.xmlHttpRequest === "function"
+            ? GM.xmlHttpRequest.bind(GM)
+            : null;
+      if (!xhr) {
+        reply({ ok: false, error: "no_gm_xhr" });
+        return;
+      }
+      xhr({
+        method: "GET",
+        url: fetchUrl,
+        timeout: 18000,
+        headers: {
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "lv-LV,lv;q=0.9,en;q=0.7",
+        },
+        onload: function (res) {
+          reply({
+            ok: res.status >= 200 && res.status < 300,
+            status: res.status,
+            html: String(res.responseText || ""),
+          });
+        },
+        onerror: function () {
+          reply({ ok: false, error: "network" });
+        },
+        ontimeout: function () {
+          reply({ ok: false, error: "timeout" });
+        },
+      });
+    });
     return;
   }
 

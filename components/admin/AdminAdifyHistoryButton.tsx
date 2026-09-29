@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { adminActionPillBase } from "@/components/admin/adminActionPill";
+import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
 import {
   adifyChronologicalPriceRows,
   adifyHistoryPageLookupUrl,
@@ -39,25 +40,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
     setError(null);
     setSnapshot(null);
     try {
-      const res = await fetch("/api/admin/adify-history", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const data = (await res.json().catch(() => ({}))) as AdifyListingHistorySnapshot & {
-        error?: string;
-      };
-      if (!res.ok) {
-        setError(
-          data.error === "invalid_url"
-            ? "Nederīga sludinājuma saite"
-            : data.error === "unauthorized"
-              ? "Nav admin sesijas"
-              : "Neizdevās ielādēt sludinājuma vēsturi",
-        );
-        return;
-      }
+      const data = await loadListingPriceHistorySnapshot(url);
       if (!data.found) {
         setError(data.message || "Meklētais objekts netika atrasts");
         return;
