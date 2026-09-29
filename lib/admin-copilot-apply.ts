@@ -1340,6 +1340,26 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
     lines.push("auto_records Eļļas maiņas intervāli:");
     lines.push(b.auto_records.oilChangeIntervalNotes.trim().slice(0, 2000));
   }
+  const dealerReport = b.auto_records.outvinReport ?? emptyOutvinDealerReport();
+  const dealerInfoBits = OUTVIN_VEHICLE_INFO_ROWS.map(({ key, labelLv }) => {
+    const v = dealerReport.vehicleInfo[key].trim();
+    return v ? `  - ${labelLv}: ${v}` : "";
+  }).filter(Boolean);
+  if (dealerInfoBits.length > 0) {
+    lines.push("auto_records Transporta informācija:");
+    lines.push(...dealerInfoBits.slice(0, 24));
+  }
+  const dealerEquip = (dealerReport.equipment ?? []).filter(outvinEquipmentLineHasData);
+  if (dealerEquip.length === 0) {
+    lines.push(
+      "auto_records Komplektācija (Kods + Apraksts): (empty) — ja operators ielīmē VW PR / LastVIN / BMW SA sarakstu, aizpildi šo tabulu ar set_dealer_vehicle_info.equipment",
+    );
+  } else {
+    lines.push(`auto_records Komplektācija (${dealerEquip.length} pozīcijas):`);
+    for (const line of dealerEquip.slice(0, 40)) {
+      lines.push(`  - ${line.code} | ${line.description}`);
+    }
+  }
   pushClippedNote(lines, "auto_records comments", b.auto_records.comments);
   pushClippedNote(lines, "auto_records RAW", b.auto_records.rawUnprocessedData ?? "");
 

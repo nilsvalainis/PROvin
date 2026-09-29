@@ -48,6 +48,11 @@ import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
 import { looksLikeCcVinReport } from "@/lib/cc-vin-report-parse";
 import { buildCarinfoCopilotActions, looksLikeCarinfoDump } from "@/lib/admin-copilot-vin-registry";
 import {
+  factoryEquipmentPasteHasVehicleHeader,
+  looksLikeFactoryEquipmentPaste,
+  mergeFactoryEquipmentIntoCopilotActions,
+} from "@/lib/factory-equipment-paste-parse";
+import {
   parseSourcePdfBlobRefs,
   type SourcePdfBlobRef,
 } from "@/lib/admin-source-pdf-blob-constants";
@@ -581,6 +586,10 @@ export async function POST(req: Request) {
     }
     const carinfoPasteActions =
       allowedSet.has("carinfo") && looksLikeCarinfoDump(message) ? buildCarinfoCopilotActions(message) : [];
+    const equipmentPasteOnly =
+      allowedSet.has("auto_records") &&
+      looksLikeFactoryEquipmentPaste(message) &&
+      !factoryEquipmentPasteHasVehicleHeader(message);
     const skipGenericCopilot =
       photos.length === 0 &&
       ((allowedSet.has("csdd") &&
@@ -590,7 +599,8 @@ export async function POST(req: Request) {
         (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0) ||
         (carinfoPasteActions.length > 0 && remainingPdfs.length === 0) ||
         (finnikPasteNote.length > 0 && remainingPdfs.length === 0) ||
-        (traficomFiPasteNote.length > 0 && remainingPdfs.length === 0));
+        (traficomFiPasteNote.length > 0 && remainingPdfs.length === 0) ||
+        (equipmentPasteOnly && remainingPdfs.length === 0));
 
     /** Copilotam jāredz tas pats audits, ko redz FLASH MAX: kopsavilkumi, sludinājums, operatora piezīmes. */
     let auditContextText = "";
@@ -613,6 +623,8 @@ export async function POST(req: Request) {
               ? `${traficomFiPasteNote} Pārbaudi SOMIJAS REĢISTRI bloku.`
               : carinfoPasteActions.length > 0
               ? "car.info teksts ielasīts: nobraukums, īpašnieki, statusi un RED FLAG. Pārbaudi ZVIEDRIJAS REĢISTRI bloku."
+              : equipmentPasteOnly
+              ? "Komplektācijas saraksts ielasīts oficiālā dīlera tabulā (Kods + Apraksts). Pārbaudi OFICIĀLĀ DĪLERA DATI."
               : [...vendorAgentNotes, ...csddImportNotes].filter(Boolean).join("\n") ||
                 "PDF apstrādāts — pārbaudi avota laukus, ja kaut kas trūkst.",
           actions: carinfoPasteActions,
@@ -629,7 +641,10 @@ export async function POST(req: Request) {
         });
 
     const blocked = ai.actions.filter((a) => !allowedSet.has(a.source));
-    const allowedActions = ai.actions.filter((a) => allowedSet.has(a.source));
+    const allowedActions = mergeFactoryEquipmentIntoCopilotActions(
+      ai.actions.filter((a) => allowedSet.has(a.source)),
+      message,
+    ).filter((a) => allowedSet.has(a.source));
 
     const autoResult = applyCopilotActions(workingBlocks, allowedActions, {
       onlyAuto: true,

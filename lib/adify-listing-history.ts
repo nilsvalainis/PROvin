@@ -231,8 +231,69 @@ function extractAdifySeries(json: unknown): RawAdifyItem[] {
   if (!Array.isArray(json) || json.length === 0) return [];
   const first = json[0];
   if (Array.isArray(first)) return first.filter(isRawItem);
-  if (isRawItem(first) && "price" in first) return json.filter(isRawItem);
+  if (isRawItem(first) && ("price" in first || "created" in first || "mileage" in first)) {
+    return json.filter(isRawItem);
+  }
   return [];
+}
+
+function adifyBrowserHeaders(): Record<string, string> {
+  return {
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "lv-LV,lv;q=0.9,en-US;q=0.8,en;q=0.7",
+    "User-Agent": ADIFY_HISTORY_PAGE_UA,
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+    "Upgrade-Insecure-Requests": "1",
+  };
+}
+
+function cookieHeaderFromResponse(res: Response): string {
+  const list = typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [];
+  if (list.length > 0) {
+    return list
+      .map((c) => c.split(";")[0]?.trim() ?? "")
+      .filter(Boolean)
+      .join("; ");
+  }
+  const raw = res.headers.get("set-cookie");
+  if (!raw) return "";
+  return raw
+    .split(/,(?=[^ ;]+=)/)
+    .map((c) => c.split(";")[0]?.trim() ?? "")
+    .filter(Boolean)
+    .join("; ");
+}
+
+async function fetchAdifyHistoryPage(
+  listingUrl: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  const headers = adifyBrowserHeaders();
+  let cookie = "";
+  try {
+    const home = await fetch("https://adify.lv/", {
+      method: "GET",
+      headers,
+      signal,
+      redirect: "follow",
+      cache: "no-store",
+    });
+    cookie = cookieHeaderFromResponse(home);
+  } catch {
+    cookie = "";
+  }
+  return fetch(adifyHistoryPageLookupUrl(listingUrl), {
+    method: "GET",
+    signal,
+    headers: {
+      ...headers,
+      Referer: "https://adify.lv/",
+      ...(cookie ? { Cookie: cookie } : {}),
+    },
+    redirect: "follow",
+    cache: "no-store",
+  });
 }
 
 export function normalizeAdifyHistoryItems(
@@ -343,16 +404,7 @@ export async function fetchAdifyListingHistory(
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 18_000);
   try {
-    const res = await fetch(adifyHistoryPageLookupUrl(listingUrl), {
-      method: "GET",
-      signal: ctrl.signal,
-      headers: {
-        Accept: "text/html,application/xhtml+xml",
-        "Accept-Language": "lv-LV,lv;q=0.9,en;q=0.8",
-        "User-Agent": ADIFY_HISTORY_PAGE_UA,
-      },
-      redirect: "follow",
-    });
+    const res = await fetchAdifyHistoryPage(listingUrl, ctrl.signal);
     if (!res.ok) {
       return {
         ...normalizeAdifyHistoryItems([], now),

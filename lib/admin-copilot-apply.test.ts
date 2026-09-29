@@ -25,6 +25,31 @@ describe("applyCopilotActions", () => {
     expect(row?.lossAmount).toMatch(/5\s*000|5000/);
   });
 
+  it("fills OFICIĀLĀ DĪLERA DATI Komplektācija from equipment-only action", () => {
+    const blocks = createDefaultSourceBlocks();
+    const result = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "set_dealer_vehicle_info",
+          source: "auto_records",
+          vehicleInfo: {},
+          equipment: [
+            { code: "0D1", description: "Kabīnes durvis" },
+            { code: "G0C", description: "5 pakāpju manuālā pārnesumkārba" },
+          ],
+          override: true,
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: true },
+    );
+    expect(result.changedKeys).toContain("auto_records");
+    const eq = result.sourceBlocks.auto_records.outvinReport?.equipment ?? [];
+    expect(eq.find((r) => r.code === "0D1")?.description).toBe("Kabīnes durvis");
+    expect(eq.find((r) => r.code === "G0C")?.description).toMatch(/manuāl/i);
+  });
+
   it("fills car.info registry tables from Copilot actions", () => {
     const blocks = createDefaultSourceBlocks();
     const result = applyCopilotActions(
@@ -224,6 +249,12 @@ describe("buildCopilotBlocksSummary", () => {
     expect(s).toContain("Vācija");
     expect(s).toContain("COUNTRY HINT");
   });
+
+  it("shows the empty Komplektācija table so Copilot can fill it", () => {
+    const s = buildCopilotBlocksSummary(createDefaultSourceBlocks());
+    expect(s).toContain("auto_records Komplektācija");
+    expect(s).toContain("set_dealer_vehicle_info.equipment");
+  });
 });
 
 describe("enrichCopilotActionCountries / apply country cross-fill", () => {
@@ -333,6 +364,38 @@ describe("parseCopilotAiPayload", () => {
       expect(r.actions[1].source).toBe("auto_records");
     }
     expect(r.actions[2]?.type).toBe("append_raw");
+  });
+
+  it("parses Komplektācija equipment without vehicleInfo", () => {
+    const r = parseCopilotAiPayload(
+      JSON.stringify({
+        reply: "Komplektācija ielasīta.",
+        clarificationNeeded: "",
+        actions: [
+          {
+            type: "set_dealer_vehicle_info",
+            source: "auto_records",
+            vehicleInfo: {},
+            equipment: [
+              { code: "0402", description: "Panorama glass roof" },
+              { code: "S494", description: "Seat heating driver/passenger" },
+            ],
+            override: true,
+            confidence: "high",
+          },
+        ],
+      }),
+    );
+    expect(r.actions).toHaveLength(1);
+    const action = r.actions[0];
+    expect(action?.type).toBe("set_dealer_vehicle_info");
+    if (action?.type === "set_dealer_vehicle_info") {
+      expect(action.equipment).toEqual([
+        { code: "0402", description: "Panorama glass roof" },
+        { code: "S494", description: "Seat heating driver/passenger" },
+      ]);
+      expect(action.override).toBe(true);
+    }
   });
 
   it("accepts cc_vin as a Copilot source", () => {

@@ -63,11 +63,16 @@ Actions:
    NEVER emit here: technical inspections („Veikta tehniskā apskate”, periodiska/papildus TA, emission checks), odometer-only records, registrations, damage records, or CarVertical „Ieteicamais apkopes plāns” / „Nākamā ieteicamā apkope” (recommended, not performed).
 3b) set_service_history — the FALLBACK free-text field „Servisa vēsture” (ALWAYS source=auto_records). Use it ONLY when the service data has no per-visit date+works structure (e.g. a narrative dealer note). If you can produce upsert_service_work rows, do NOT also emit set_service_history for the same data.
    Format: one plain fact line per entry, newest first — DD.MM.YYYY | <odometer> km | <category>: <work items>. No commentary, no markdown.
-4) set_dealer_vehicle_info — OFICIĀLĀ DĪLERA DATI transporta informācija (ALWAYS source=auto_records), field "vehicleInfo": { model, modelSeries, vinCode, vehicleType, transmission, steeringSide, engineCode, engineNumber, body, drive, power, integrationLevel, currentILevel, developmentCode, modelCode, productionDate, firstRegistration, warrantyStartDate, countryRegion, color, colorCode, interior, interiorCode }.
+4) set_dealer_vehicle_info — OFICIĀLĀ DĪLERA DATI (ALWAYS source=auto_records).
+   a) Field "vehicleInfo": { model, modelSeries, vinCode, vehicleType, transmission, steeringSide, engineCode, engineNumber, body, drive, power, integrationLevel, currentILevel, developmentCode, modelCode, productionDate, firstRegistration, warrantyStartDate, countryRegion, color, colorCode, interior, interiorCode }.
    Field set mirrors an official dealer / factory printout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE → engineCode, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY → interior, UPHOLSTERY CODE → interiorCode).
    Fill it from an official dealer printout when attached; otherwise from CarVertical „Transportlīdzekļa specifikācija” + PR/equipment code list and AutoDNA „Transportlīdzekļa tehniskie dati”. An official dealer / factory printout is the PRIMARY source for these fields — its values replace AutoDNA / CarVertical values.
    Prefer the LONGEST / most specific designation WITH its factory code: „Havana Black Metallic (LY8X)” over „Melns”; „Valcona leather (N5D)” over „Leather package”; transmission with gear count + code. Omit fields the PDFs do not show. Dates in these fields: DD.MM.YYYY.
-5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical/cc_vin → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW; tjekbil/mnt_ee/lkf_ee/carinfo → RAW; finnik/traficom_fi → AI konteksts (ne kataloga cenu, BPM, tirgus statistiku). Use for: equipment lists, type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history actions. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
+   b) Field "equipment": the admin table „Komplektācija” (columns Kods + Apraksts) under OFICIĀLĀ DĪLERA DATI. CURRENT TABLES show this section even when empty. When the operator pastes a factory/VIN-decoder dump, you MUST fill equipment — never leave Komplektācija empty and never dump the list only into append_raw.
+   Recognise at least: VW „Funkciju saraksts” (code on its own line, then EN, then LV — store code + Latvian description); LastVIN Mercedes „Code / Description”; BMW OEMNAVIGATIONS „Optional Equipment (Ex Works)” glued codes (0205Automatic transmission → code 0205); BMW S-codes (S402 Panorama glass roof, SA105).
+   Each item is { code, description }. Prefer Latvian description when both EN and LV are present. Set override=true for a full factory list. You may emit equipment without vehicleInfo when the paste is only an option list.
+   A local parser also reads these pastes — still emit set_dealer_vehicle_info if you extract vehicleInfo; do not contradict codes the paste shows.
+5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical/cc_vin → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW; tjekbil/mnt_ee/lkf_ee/carinfo → RAW; finnik/traficom_fi → AI konteksts (ne kataloga cenu, BPM, tirgus statistiku). Use for: type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history/Komplektācija actions. Factory PR/SA/LastVIN option lists belong in set_dealer_vehicle_info.equipment, NOT append_raw. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
 6) set_registry_fields — ONLY tjekbil | finnik | mnt_ee | lkf_ee | carinfo | traficom_fi. Short Latvian facts, one line per fact. No icons, no “RED FLAG”, no English leftovers, no em dashes. ownersSummary: owner count + owner-change dates. statusRecords: in traffic, colour, engine, export. autoNotes: the noteworthy facts in plain Latvian (export, 0 km classified vs registry km, stolen, commercial use, km rollback). Never invent facts the dump does not support.
 
 DELETING (7-10). The operator is in charge. When the operator asks you to remove, delete, clear, or undo something ("izdzēs", "noņem", "dzēs nost", "iztīri lauku", "atceļ šo rindu", "šī rinda ir kļūdaina"), you MUST emit the matching delete action. Do NOT refuse, do NOT answer that you cannot delete, and do NOT silently ignore the request. Deletions are never applied automatically: the operator sees them listed and presses confirm, so proposing a deletion is safe.
@@ -158,6 +163,17 @@ const ACTION_ITEM_SCHEMA: AiJsonSchema = {
         OUTVIN_VEHICLE_INFO_ROWS.map(({ key }) => [key, { type: JsonType.STRING } as AiJsonSchema]),
       ),
     },
+    equipment: {
+      type: JsonType.ARRAY,
+      items: {
+        type: JsonType.OBJECT,
+        properties: {
+          code: { type: JsonType.STRING },
+          description: { type: JsonType.STRING },
+        },
+      },
+    },
+    override: { type: JsonType.BOOLEAN },
     confidence: { type: JsonType.STRING, enum: ["high", "medium", "low"] },
     note: { type: JsonType.STRING },
   },

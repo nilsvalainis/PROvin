@@ -16,7 +16,12 @@ import {
   AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
 } from "@/lib/auto-records-service-works";
-import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
+import {
+  OUTVIN_VEHICLE_INFO_ROWS,
+  outvinEquipmentLineHasData,
+  type OutvinEquipmentLine,
+  type OutvinVehicleInfo,
+} from "@/lib/outvin-dealer-types";
 import { ltabCertificateHasContent, parseLtabCertificateRaw } from "@/lib/ltab-report-extract";
 
 function asRecord(v: unknown): Record<string, unknown> | null {
@@ -41,6 +46,26 @@ function parseDealerVehicleInfo(raw: unknown): Partial<OutvinVehicleInfo> {
   for (const { key } of OUTVIN_VEHICLE_INFO_ROWS) {
     const value = asString(o[key], 160);
     if (value && !/^[-—–]$/.test(value)) out[key] = value;
+  }
+  return out;
+}
+
+function parseDealerEquipment(raw: unknown): OutvinEquipmentLine[] {
+  if (!Array.isArray(raw)) return [];
+  const out: OutvinEquipmentLine[] = [];
+  const seen = new Set<string>();
+  for (const item of raw.slice(0, 400)) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const line: OutvinEquipmentLine = {
+      code: asString(o.code, 24),
+      description: asString(o.description, 400),
+    };
+    if (!outvinEquipmentLineHasData(line)) continue;
+    const key = line.code.trim().toUpperCase() || line.description.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(line);
   }
   return out;
 }
@@ -105,11 +130,15 @@ function parseAction(raw: unknown): CopilotAction | null {
   }
   if (type === "set_dealer_vehicle_info") {
     const vehicleInfo = parseDealerVehicleInfo(o.vehicleInfo);
-    if (Object.keys(vehicleInfo).length === 0) return null;
+    const equipment = parseDealerEquipment(o.equipment);
+    if (Object.keys(vehicleInfo).length === 0 && equipment.length === 0) return null;
+    const override = o.override === true;
     return {
       type: "set_dealer_vehicle_info",
       source: "auto_records",
       vehicleInfo,
+      ...(equipment.length > 0 ? { equipment } : {}),
+      ...(override ? { override: true } : {}),
       confidence,
       ...(note ? { note } : {}),
     };
