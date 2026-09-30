@@ -16,7 +16,7 @@ const samples = [
   "provin-mini-piemers",
   "provin-audits-piemers",
   "provin-dilera-dati-piemers",
-  "provin-audits-bmw-525-e61",
+  "provin-audits-bmw-525-e61-v2",
 ];
 const TARGET_WIDTH = 1400;
 const RENDER_DPI = 220;

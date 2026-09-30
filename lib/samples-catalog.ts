@@ -10,7 +10,7 @@ export type SampleReportEntry = {
   checkoutPlan: "audits";
 };
 
-const BMW_525_E61_SAMPLE_HREF = "/samples/provin-audits-bmw-525-e61.pdf";
+const BMW_525_E61_SAMPLE_HREF = "/samples/provin-audits-bmw-525-e61-v2.pdf";
 
 /** Publiskie atskaites paraugi (`public/samples/…`). */
 export const SAMPLE_REPORTS: readonly SampleReportEntry[] = [

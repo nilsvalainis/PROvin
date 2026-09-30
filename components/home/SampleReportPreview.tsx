@@ -4,6 +4,7 @@ import { Expand } from "lucide-react";
 import { useEffect, useId, useState, type MouseEvent } from "react";
 import { SampleReportLightbox } from "@/components/home/SampleReportLightbox";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { sampleMobilePage1Src, samplePdfHref } from "@/lib/sample-public-assets";
 
 type Props = {
   href?: string;
@@ -19,19 +20,6 @@ type Props = {
 
 /** lg breakpoint - desktop keeps the original scrollable iframe preview. */
 const DESKTOP_MQ = "(min-width: 1024px)";
-
-/** Bust CDN/browser cache when page-1 rasters are regenerated. */
-const MOBILE_PAGE1_ASSET_VERSION = "8";
-
-/**
- * iOS Safari PDF iframes always crop/zoom - full page only via static image.
- * Assets from scripts/render-soft-page1.mjs (Poppler + shadow lift).
- */
-function mobilePreviewImageSrc(pdfHref: string): string | null {
-  const path = pdfHref.split("#")[0] ?? "";
-  if (!path.endsWith(".pdf")) return null;
-  return `${path.replace(/\.pdf$/i, "-page1.png")}?v=${MOBILE_PAGE1_ASSET_VERSION}`;
-}
 
 /** Defaults to desktop so web never flashes the mobile static image. */
 function useIsDesktopPreview() {
@@ -76,8 +64,9 @@ export function SampleReportPreview({
     setOpen(true);
   };
 
-  const desktopPaneSrc = href ? `${href}#toolbar=0&navpanes=0&scrollbar=1` : null;
-  const mobileImageSrc = href ? mobilePreviewImageSrc(href) : null;
+  const pdfHref = href ? samplePdfHref(href) : null;
+  const desktopPaneSrc = pdfHref ? `${pdfHref}#toolbar=0&navpanes=0&scrollbar=1` : null;
+  const mobileImageSrc = href ? sampleMobilePage1Src(href) : null;
   const desktopPaneClass = compact
     ? "relative h-[min(22rem,48vh)] w-full bg-zinc-950 sm:h-[min(24rem,50vh)] lg:h-[26rem]"
     : "relative h-[min(28rem,55vh)] w-full bg-zinc-950 sm:h-[min(32rem,58vh)] lg:h-[36rem]";
@@ -95,9 +84,9 @@ export function SampleReportPreview({
           >
             {previewLabel}
           </p>
-          {href ? (
+          {pdfHref ? (
             <a
-              href={href}
+              href={pdfHref}
               target="_blank"
               rel="noopener noreferrer"
               onClick={onEnlargeClick}
@@ -147,10 +136,10 @@ export function SampleReportPreview({
         )}
       </div>
 
-      {href ? (
+      {pdfHref ? (
         <SampleReportLightbox
           open={open}
-          href={href}
+          href={pdfHref}
           title={title}
           closeLabel={closeLabel}
           openPdfLabel={openPdfLabel}

@@ -8,7 +8,7 @@ describe("samples catalog", () => {
   it("lists Ford Galaxy and BMW 525 audit PDFs side by side", () => {
     expect(SAMPLE_REPORTS.map((item) => item.id)).toEqual(["fordGalaxy", "bmw525e61"]);
     expect(SAMPLE_REPORTS[0]?.href).toBe(TP5_AUDITS_SAMPLE_REPORT_HREF);
-    expect(SAMPLE_REPORTS[1]?.href).toBe("/samples/provin-audits-bmw-525-e61.pdf");
+    expect(SAMPLE_REPORTS[1]?.href).toBe("/samples/provin-audits-bmw-525-e61-v2.pdf");
     expect(sampleReportAnchorId("fordGalaxy")).toBe("paraugs-fordGalaxy");
     expect(sampleReportAnchorId("bmw525e61")).toBe("paraugs-bmw525e61");
     for (const item of SAMPLE_REPORTS) {
