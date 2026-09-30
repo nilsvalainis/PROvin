@@ -27,12 +27,11 @@ export function SamplesCatalog() {
   return (
     <section
       id="paraugi"
-      className="scroll-mt-16 bg-transparent px-4 pb-10 pt-2 sm:px-6 sm:pb-14 sm:pt-4 lg:pb-12"
+      className="scroll-mt-16 bg-transparent px-4 pb-10 pt-6 sm:px-6 sm:pb-14 sm:pt-8 lg:pb-12"
       aria-labelledby="samples-catalog-heading"
     >
       <div className={homeContentMaxClass}>
-        <div className="border-t border-white/20" aria-hidden />
-        <header className="mb-8 mt-8 max-w-3xl sm:mb-10 sm:mt-10">
+        <header className="mb-8 max-w-3xl sm:mb-10">
           <h2
             id="samples-catalog-heading"
             className="text-balance text-lg font-bold uppercase tracking-[0.14em] text-zinc-100 sm:text-xl"

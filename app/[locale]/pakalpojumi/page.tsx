@@ -24,8 +24,8 @@ export default async function PakalpojumiPage() {
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <HomeFeatureBreakdown showHeading />
         <SamplesCatalog />
+        <HomeFeatureBreakdown showHeading />
 
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
           <section className="demo-design-dir__section bg-transparent pb-0">

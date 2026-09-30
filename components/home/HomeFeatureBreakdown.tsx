@@ -104,7 +104,7 @@ export function HomeFeatureBreakdown({
   const tSamples = useTranslations("Samples");
   const uiCopy = getTp5UiCopy(locale);
   const packages = getCatalogFeatureBreakdownPackages(locale);
-  const [activeId, setActiveId] = useState<CatalogNavId>(packages[0]?.id ?? "audits");
+  const [activeId, setActiveId] = useState<CatalogNavId>("samples");
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -126,7 +126,7 @@ export function HomeFeatureBreakdown({
       .map((pkg) => document.getElementById(catalogPackageAnchorId(pkg.id)))
       .filter((el): el is HTMLElement => Boolean(el));
     const samplesEl = document.getElementById(SAMPLES_SECTION_ID);
-    const elements = samplesEl ? [...packageEls, samplesEl] : packageEls;
+    const elements = samplesEl ? [samplesEl, ...packageEls] : packageEls;
     if (elements.length === 0) return;
 
     const observer = new IntersectionObserver(
@@ -159,7 +159,7 @@ export function HomeFeatureBreakdown({
   return (
     <section
       id={sectionId}
-      className="scroll-mt-16 bg-transparent px-4 pb-2 pt-6 sm:px-6 sm:pb-4 sm:pt-8 lg:pb-6"
+      className="scroll-mt-16 bg-transparent px-4 pb-2 pt-2 sm:px-6 sm:pb-4 sm:pt-4 lg:pb-6"
       aria-labelledby="home-feature-breakdown-heading"
     >
       <div className={homeContentMaxClass}>
@@ -176,18 +176,33 @@ export function HomeFeatureBreakdown({
           className="mb-10 hidden -mx-6 overflow-visible border-b border-white/[0.1] bg-transparent px-6 pb-2 pt-4 lg:block"
         >
           <ul className="flex items-stretch justify-center">
-            {packages.map((pkg, index) => {
+            <li className="flex min-w-0 items-stretch">
+              <a
+                href={`#${SAMPLES_SECTION_ID}`}
+                aria-current={samplesActive ? "true" : undefined}
+                data-active={samplesActive ? "true" : undefined}
+                className={`${tp5Styles.tierTabBtn} -mb-px px-2`}
+                onClick={() => setActiveId("samples")}
+              >
+                <span
+                  className={`${tp5Styles.tierTabLabel} ${tp5Styles.tierTabLabelCompact} ${
+                    samplesActive ? tp5Styles.tierTabLabelActive : tp5Styles.tierTabLabelInactive
+                  }`}
+                >
+                  {tSamples("navLabel")}
+                </span>
+              </a>
+            </li>
+            {packages.map((pkg) => {
               const active = activeId === pkg.id;
               return (
                 <li key={`nav-d-${pkg.id}`} className="flex min-w-0 items-stretch">
-                  {index > 0 ? (
-                    <span
-                      className="mx-1.5 flex select-none items-center self-center px-3 text-[0.65rem] font-light leading-none text-white/25"
-                      aria-hidden
-                    >
-                      |
-                    </span>
-                  ) : null}
+                  <span
+                    className="mx-1.5 flex select-none items-center self-center px-3 text-[0.65rem] font-light leading-none text-white/25"
+                    aria-hidden
+                  >
+                    |
+                  </span>
                   <a
                     href={`#${catalogPackageAnchorId(pkg.id)}`}
                     aria-current={active ? "true" : undefined}
@@ -211,29 +226,6 @@ export function HomeFeatureBreakdown({
                 </li>
               );
             })}
-            <li className="flex min-w-0 items-stretch">
-              <span
-                className="mx-1.5 flex select-none items-center self-center px-3 text-[0.65rem] font-light leading-none text-white/25"
-                aria-hidden
-              >
-                |
-              </span>
-              <a
-                href={`#${SAMPLES_SECTION_ID}`}
-                aria-current={samplesActive ? "true" : undefined}
-                data-active={samplesActive ? "true" : undefined}
-                className={`${tp5Styles.tierTabBtn} -mb-px px-2`}
-                onClick={() => setActiveId("samples")}
-              >
-                <span
-                  className={`${tp5Styles.tierTabLabel} ${tp5Styles.tierTabLabelCompact} ${
-                    samplesActive ? tp5Styles.tierTabLabelActive : tp5Styles.tierTabLabelInactive
-                  }`}
-                >
-                  {tSamples("navLabel")}
-                </span>
-              </a>
-            </li>
           </ul>
         </nav>
 
