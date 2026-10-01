@@ -68,12 +68,28 @@ describe("PDF design system", () => {
     const html = doc();
     expect(html).toContain("--pdf-radius-outer:12px");
     expect(html).toContain("--pdf-radius-inner:8px");
-    expect(html).toContain("--pdf-gap-section:24px");
+    expect(html).toContain("--pdf-gap-section:32px");
+    expect(html).toContain("--pdf-gap-block:20px");
+    expect(html).toContain("--pdf-gap-heading:22px");
     expect(html).toContain("--pdf-fs-sec:13px");
     expect(html).toContain("--pdf-comment-bg:#F6FAFF");
     expect(html).not.toContain("background:#F3F8FF");
     expect(html).toContain(".pdf-summary-tile--alert{background:#fff;}");
     expect(html).toContain(".pdf-ltab-loss-history{\n        border-color:var(--pdf-line);background:#fff;");
+  });
+
+  it("keeps breathing room before the next heading and between cards", () => {
+    const html = doc();
+    expect(html).toMatch(
+      /\.pdf-source-section-body > \* \+ \*\{[\s\S]*margin-top:var\(--pdf-gap-block\)/,
+    );
+    expect(html).toMatch(
+      /\.pdf-source-section-body > \* \+ \.pdf-subhead[\s\S]*margin-top:var\(--pdf-gap-heading\)/,
+    );
+    expect(html).toContain(".pdf-report-comment-note-body br + strong");
+    expect(html).toMatch(
+      /\.pdf-report-comment-note-body br \+ strong[\s\S]*margin-top:12px/,
+    );
   });
 
   it("keeps the digital PDF palette unless print-ink is requested", () => {

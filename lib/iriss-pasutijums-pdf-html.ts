@@ -178,10 +178,10 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
     .ipdf-header {
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 14px;
+      gap: 16px;
       align-items: center;
-      padding-bottom: 14px;
-      margin-bottom: 18px;
+      padding-bottom: 16px;
+      margin-bottom: 22px;
       border-bottom: 1px solid #0f172a;
     }
     .ipdf-hero-model {
@@ -202,7 +202,7 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
       object-fit: contain;
       mix-blend-mode: multiply;
     }
-    .ipdf-sec-head { display: block; margin: 0 0 8px; }
+    .ipdf-sec-head { display: block; margin: 0 0 12px; }
     .ipdf-sec-title {
       margin: 0;
       display: block;
@@ -222,13 +222,13 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
       background: transparent;
       border-radius: 0;
       padding: 0 0 7px;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
       color: #64748b;
       font-weight: 700;
       border-bottom: 1px solid #e2e8f0;
     }
     .ipdf-blk {
-      margin-bottom: 18px;
+      margin-bottom: 22px;
       page-break-inside: avoid;
     }
     .ipdf-blk-body {
@@ -247,8 +247,8 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
       background: transparent;
       padding: 0;
     }
-    .ipdf-blk--media .ipdf-sec-head { margin-bottom: 9px; }
-    .ipdf-blk .ipdf-sec-head { margin-bottom: 8px; margin-top: 0; }
+    .ipdf-blk--media .ipdf-sec-head { margin-bottom: 12px; }
+    .ipdf-blk .ipdf-sec-head { margin-bottom: 12px; margin-top: 0; }
     .ipdf-blk-body > table.ipdf-kv { border: none; box-shadow: none; background: transparent; }
     .ipdf-blk-body > table.ipdf-kv th { background: #f8fafc; }
     .ipdf-grid4 {

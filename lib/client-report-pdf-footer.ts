@@ -66,7 +66,7 @@ ${meta ? `<p class="pdf-doc-footer__meta">${escapeHtml(meta)}</p>` : ""}
 export function pdfDocFooterCss(): string {
   return `
       .pdf-doc-footer{
-        margin-top:28px;padding:0;background:#fff;border:0;
+        margin-top:36px;padding:0;background:#fff;border:0;
         break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
       }
       .pdf-doc-footer__head{

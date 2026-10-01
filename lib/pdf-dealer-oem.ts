@@ -581,10 +581,10 @@ const OEM_CSS = `
   h1{
     margin:4px 0 0;font-size:16px;font-weight:650;letter-spacing:-0.02em;color:#0f172a;
   }
-  .oem-sec{margin:0 0 14px;padding:0 0 2px;break-inside:avoid-page;}
-  .oem-sec + .oem-sec{border-top:1px solid #e2e8f0;padding-top:12px;}
+  .oem-sec{margin:0 0 20px;padding:0 0 2px;break-inside:avoid-page;}
+  .oem-sec + .oem-sec{border-top:1px solid #e2e8f0;padding-top:16px;}
   h2{
-    margin:0 0 8px;font-size:9px;font-weight:650;letter-spacing:0.12em;
+    margin:0 0 10px;font-size:9px;font-weight:650;letter-spacing:0.12em;
     text-transform:uppercase;color:#94a3b8;
   }
   .oem-specs{

@@ -159,7 +159,7 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): s
 
 /** Sadaļas CSS - mērogs un krāsas seko PDF dizaina marķieriem. */
 export const CC_VIN_PDF_CSS = `
-      .pdf-ccvin-flags{list-style:none;margin:0 0 8px;padding:0;display:block}
+      .pdf-ccvin-flags{list-style:none;margin:0 0 12px;padding:0;display:block}
       .pdf-ccvin-flag{
         display:flex;align-items:baseline;gap:8px;padding:6px 0;
         border-bottom:1px solid var(--pdf-line-soft);font-size:var(--pdf-fs-table);

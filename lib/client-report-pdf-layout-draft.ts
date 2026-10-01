@@ -46,11 +46,11 @@ export function provincLogoSvg(): string {
 export function pdfLayoutDraftExtraCss(): string {
   return `
       .pdf-v1-hero{
-        margin:0 0 12px;padding:0;
+        margin:0 0 var(--pdf-gap-section);padding:0;
         background:#fff;
         border:0;
       }
-      @media print{.pdf-v1-hero{margin:0 0 10px}}
+      @media print{.pdf-v1-hero{margin:0 0 18px}}
       .pdf-v1-hero-inner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
       .pdf-v1-logo{width:220px;max-width:46vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
@@ -114,9 +114,9 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;}
       .pdf-about-grid{display:block}
       .pdf-about-group{min-width:0}
-      .pdf-about-group + .pdf-about-group{margin-top:12px}
+      .pdf-about-group + .pdf-about-group{margin-top:16px}
       .pdf-about-group-title{
-        margin:0 0 4px;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
+        margin:0 0 8px;font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
         letter-spacing:0.06em;text-transform:uppercase;line-height:1.3;
       }
       .pdf-v1-kv--about{font-size:var(--pdf-fs-base)}
@@ -124,7 +124,7 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv--about td:first-child{width:30%}
       .pdf-about-notes{margin-top:14px}
       .pdf-source-mirror-panel{margin-top:0}
-      .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f2}
+      .pdf-source-mirror-panel + .pdf-source-mirror-panel{margin-top:14px;padding-top:12px;border-top:1px solid #f0f0f2}
   `;
 }
 

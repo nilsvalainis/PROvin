@@ -2043,8 +2043,9 @@ function clientReportPrintCss(): string {
         --pdf-shadow:0 1px 3px rgba(15,23,42,.06);
         --pdf-pad-outer:16px 18px;
         --pdf-pad-inner:12px 14px;
-        --pdf-gap-section:24px;
-        --pdf-gap-block:12px;
+        --pdf-gap-section:32px;
+        --pdf-gap-block:20px;
+        --pdf-gap-heading:22px;
         --pdf-fs-sec:13px;
         --pdf-fs-base:11.5px;
         --pdf-fs-table:10.5px;
@@ -2088,15 +2089,16 @@ function clientReportPrintCss(): string {
         width:100%;
       }
       .provin-report-doc .pdf-unified-mileage-zone__body > * + *,
-      .provin-report-doc .pdf-unified-incidents-zone__body > * + *{
-        margin-top:10px;
+      .provin-report-doc .pdf-unified-incidents-zone__body > * + *,
+      .provin-report-doc .pdf-source-section-body > * + *{
+        margin-top:var(--pdf-gap-block);
       }
       .provin-report-doc .pdf-source-count-note--mileage + .pdf-report-comment-note{
-        margin-top:6px;
+        margin-top:12px;
       }
-      .provin-report-doc .pdf-report-comment-note{margin-top:10px;}
+      .provin-report-doc .pdf-report-comment-note{margin-top:var(--pdf-gap-block);}
       .sheet{background:#fff;padding:0;}
-      .pdf-sec-head{display:flex;align-items:center;gap:10px;margin:0 0 12px;}
+      .pdf-sec-head{display:flex;align-items:center;gap:10px;margin:0 0 14px;}
       .pdf-sec-head--nobar{margin-top:0;}
       .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE_HEX};width:16px;height:16px;flex-shrink:0;}
       h2.pdf-sec{
@@ -2104,14 +2106,13 @@ function clientReportPrintCss(): string {
         padding:0;border:0;text-transform:uppercase;
       }
       h2.pdf-sec--nobar{border-left:none;padding-left:0;}
-      h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:0.6rem 0 0.35rem;color:#000;text-transform:uppercase;letter-spacing:0.05em;}
+      h3.pdf-sub{font-size:0.75rem;font-weight:700;margin:var(--pdf-gap-heading) 0 8px;color:#000;text-transform:uppercase;letter-spacing:0.05em;}
       h3.pdf-sub:first-child{margin-top:0;}
-      .pdf-subhead{display:flex;align-items:center;gap:8px;margin:0 0 0.4rem;}
       .pdf-subhead-ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
       .pdf-subhead-ico .pdf-ico{width:14px;height:14px;}
       h3.pdf-sub.pdf-sub--with-ico{margin:0;border-left:none;padding:0;}
       .pdf-sec-head--brand{
-        align-items:center;gap:10px;margin:0 0 14px;padding-bottom:10px;
+        align-items:center;gap:10px;margin:0 0 16px;padding-bottom:10px;
         border-bottom:1px solid var(--pdf-line);
       }
       .pdf-life-list{margin:0;padding:0;list-style:none;}
@@ -2291,7 +2292,7 @@ function clientReportPrintCss(): string {
       .pdf-summary-tile--wide .pdf-summary-tile__note{
         margin-top:6px;font-size:var(--pdf-fs-base);color:#3f4750;
       }
-      .pdf-sources-checked-label{margin:14px 0 6px;}
+      .pdf-sources-checked-label{margin:18px 0 8px;}
       .pdf-sources-checked-grid{margin:0;padding:0;list-style:none;}
       .pdf-sources-checked-item{
         display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--pdf-line-soft);
@@ -2327,19 +2328,23 @@ function clientReportPrintCss(): string {
       .pdf-ltab-izzi-footer{margin:10px 0 0;font-size:9px;line-height:1.4;color:#94a3b8;}
       /* Viens apakšvirsrakstu stils visās sadaļās (CSDD, dīleris, LTAB, sludinājums, foto). */
       .pdf-subhead{
-        display:flex;align-items:center;gap:7px;margin:16px 0 7px;
+        display:flex;align-items:center;gap:7px;margin:var(--pdf-gap-heading) 0 8px;
         font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;
         letter-spacing:0.07em;text-transform:uppercase;line-height:1.3;
       }
-      .pdf-subhead:first-child:not(.pdf-subhead--boxed){margin-top:0;}
+      .pdf-source-section-body > .pdf-subhead:first-child:not(.pdf-subhead--boxed),
+      .pdf-outvin-dealer-stack > .pdf-subhead:first-child:not(.pdf-subhead--boxed){margin-top:0;}
+      .pdf-source-section-body > * + .pdf-subhead,
+      .pdf-outvin-dealer-stack > * + .pdf-subhead,
+      .pdf-listing-analysis-stack > * + .pdf-subhead{margin-top:var(--pdf-gap-heading);}
       .pdf-subhead--flush{margin-top:0;}
       .pdf-subhead__ico{flex-shrink:0;line-height:0;color:#94a3b8;}
       .pdf-subhead__ico .pdf-ico{width:13px;height:13px;}
       .pdf-listing-analysis-stack{width:100%;}
       .pdf-listing-analysis-chunk{
-        margin:0 0 8px;padding:8px 0;background:#fff;border-bottom:1px solid #f1f5f9;
+        margin:0 0 16px;padding:8px 0;background:#fff;border-bottom:1px solid #f1f5f9;
       }
-      .pdf-listing-analysis-stack > .pdf-report-comment-note{margin:0 0 10px;}
+      .pdf-listing-analysis-stack > .pdf-report-comment-note{margin:0 0 var(--pdf-gap-block);}
       .pdf-listing-analysis-stack > .pdf-subhead + .pdf-report-comment-note{margin-top:0;}
       .pdf-listing-photo-grid{
         display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 8px;
@@ -2381,7 +2386,7 @@ function clientReportPrintCss(): string {
         padding:5px 8px;font-size:9px;font-weight:600;color:#64748b;letter-spacing:0.02em;
       }
       .pdf-dealer-cover{
-        margin:0 0 14px;padding:16px 16px 14px;border-radius:12px;overflow:hidden;
+        margin:0;padding:16px 16px 14px;border-radius:12px;overflow:hidden;
         background:linear-gradient(180deg,#E8F1FC 0%,#fff 72%);border:1px solid var(--pdf-line);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2456,11 +2461,16 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note,
       .pdf-incident-internal-note,
       .pdf-mileage-comment-note{
-        margin:12px 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-comment-line);
+        margin:var(--pdf-gap-block) 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-comment-line);
         border-left:3px solid var(--pdf-comment-edge);border-radius:10px;background:var(--pdf-comment-bg);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-report-comment-note .pdf-subhead{margin:0 0 5px;}
+      .pdf-report-comment-note .pdf-subhead{margin:0 0 8px;}
+      .pdf-report-comment-note-body br + strong,
+      .pdf-incident-internal-note-body br + strong,
+      .pdf-mileage-comment-note-body br + strong{
+        display:inline-block;margin-top:12px;
+      }
       .pdf-report-comment-note-body,
       .pdf-incident-internal-note-body,
       .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.55;color:#0f172a;font-family:Inter,sans-serif!important;}
@@ -2603,7 +2613,7 @@ ${sourceDotColorCss()}
       .pdf-mileage-history-table td.pdf-mileage-cell-flag{
         text-align:right!important;vertical-align:middle!important;
       }
-      .pdf-service-works-zone{margin:12px 0 0;}
+      .pdf-service-works-zone{margin:0;}
       .pdf-svc-span{
         display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;
         margin:0 0 12px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--pdf-line);
@@ -2614,7 +2624,7 @@ ${sourceDotColorCss()}
       .pdf-svc-span__pt i{display:block;margin-top:2px;font-style:normal;font-size:var(--pdf-fs-label);color:#64748b;}
       .pdf-svc-span__pt--end{text-align:right;}
       .pdf-svc-year{
-        margin:12px 0 8px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
+        margin:var(--pdf-gap-heading) 0 10px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
         font-size:13px;font-weight:700;color:${PDF_BRAND_BLUE_HEX};letter-spacing:0.04em;
         font-variant-numeric:tabular-nums;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -2782,7 +2792,7 @@ ${sourceDotColorCss()}
       }
       .pdf-ltab-loss-history .pdf-subhead--boxed{color:#86868b;}
       /* Specifiskāks par .pdf-subhead:first-child - citādi virsraksts pielīp pie kartītes malas. */
-      .pdf-subhead.pdf-subhead--boxed{margin:14px 12px 6px;}
+      .pdf-subhead.pdf-subhead--boxed{margin:18px 12px 8px;}
       .pdf-listing-price-history-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);font-weight:600;color:#0f172a;}
       .pdf-listing-price-history-table td{padding:7px 12px;border-bottom:1px solid var(--pdf-line-soft);width:33.33%;font-variant-numeric:tabular-nums;}
       .pdf-listing-price-history-table tr:last-child td{border-bottom:none;}
@@ -2872,7 +2882,7 @@ ${sourceDotColorCss()}
         font-family:Inter,sans-serif!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-listing-analysis-chunk .mirror-pre.pdf-manual-comment-body{margin-top:6px;}
+      .pdf-listing-analysis-chunk .mirror-pre.pdf-manual-comment-body{margin-top:10px;}
       .provin-report-doc .pdf-iriss-approved{
         border:1px solid var(--pdf-line)!important;background:#fff!important;
         box-shadow:var(--pdf-shadow)!important;
@@ -2926,12 +2936,12 @@ ${sourceDotColorCss()}
       .mirror-table--csdd-mh{font-size:var(--pdf-fs-table)!important;margin:2px 0 4px!important;}
       .mirror-table--csdd-mh td,.mirror-table--csdd-mh th{padding:3px 4px!important;line-height:1.25!important;border-bottom:1px solid #f1f5f9!important;}
       .mirror-table--csdd-mh thead th{font-size:var(--pdf-fs-table)!important;}
-      .pdf-csdd-ta-section{margin-top:14px;}
+      .pdf-csdd-ta-section{margin-top:var(--pdf-gap-heading);}
       .pdf-csdd-ta-table-wrap{display:flex;flex-direction:column;gap:10px;}
-      .pdf-csdd-ta-year-block{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;}
+      .pdf-csdd-ta-year-block{break-inside:avoid;page-break-inside:avoid;margin:0 0 16px;}
       /* Gads pie apskatēm - tā pati zilā skaitļa valoda kā laikposmā. */
       .pdf-csdd-ta-year-heading{
-        margin:0 0 5px;font-size:13px;font-weight:700;letter-spacing:0.06em;color:${PDF_BRAND_BLUE_HEX};
+        margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.06em;color:${PDF_BRAND_BLUE_HEX};
         font-variant-numeric:tabular-nums;
       }
       .pdf-csdd-ta-year-frame{
@@ -2979,14 +2989,15 @@ ${sourceDotColorCss()}
         padding-left:4px!important;
       }
       .pdf-csdd-owner-timeline{
-        margin:14px 0 0;padding:var(--pdf-pad-inner);border-radius:var(--pdf-radius-inner);
+        margin:var(--pdf-gap-heading) 0 0;padding:var(--pdf-pad-inner);border-radius:var(--pdf-radius-inner);
         background:#FCFDFF;border:1px solid var(--pdf-line);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-cv-subsection-title{
-        margin:0 0 6px;font-size:var(--pdf-fs-label);font-weight:600;letter-spacing:0.07em;
+        margin:var(--pdf-gap-heading) 0 8px;font-size:var(--pdf-fs-label);font-weight:600;letter-spacing:0.07em;
         text-transform:uppercase;color:#86868b;
       }
+      .pdf-cv-subsection-title:first-child{margin-top:0;}
       .pdf-csdd-owner-count{margin:0 0 6px;font-size:var(--pdf-fs-table);color:#1d1d1f;}
       .pdf-csdd-owner-events{display:flex;flex-direction:column;gap:3px;}
       .pdf-csdd-owner-event{display:flex;gap:8px;font-size:var(--pdf-fs-table);line-height:1.35;}
