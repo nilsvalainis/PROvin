@@ -2,6 +2,7 @@ import "server-only";
 
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { generateSourceCommentWithAi } from "@/lib/admin-ai-source-comment";
+import { aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import {
   isSafeOrderDraftSessionId,
   patchOrderDraft,
@@ -134,7 +135,9 @@ async function generateDealerNotes(sessionId: string, vin: string): Promise<bool
     auto_records: {
       ...current.auto_records,
       // Operatora teksts vienmēr uzvar: rakstām tikai, ja lauks joprojām tukšs.
-      comments: current.auto_records.comments.trim() || generatedComments,
+      comments:
+        current.auto_records.comments.trim() ||
+        aiExpertSourceCommentToRichHtml(generatedComments),
     },
   }));
 }

@@ -3,6 +3,8 @@ import {
   applyProvinReportCopyVocabulary,
   normalizeExpertSourcePdfComment,
   normalizeProvinExpertAiComment,
+  splitDealerCommentRoleHeadings,
+  toExpertHeadingBodyPlain,
 } from "@/lib/source-summary-comment-format";
 
 describe("applyProvinReportCopyVocabulary", () => {
@@ -116,5 +118,45 @@ describe("normalizeExpertSourcePdfComment", () => {
     const paras = Array.from({ length: 12 }, (_, i) => `Rindkopa ${i + 1}.`);
     const out = normalizeExpertSourcePdfComment(paras.join("\n\n"));
     expect(out.split(/\n\n+/).length).toBe(8);
+  });
+});
+
+const MASHED_DEALER_COMMENT =
+  "Agregātu un aprīkojuma identifikācija Pēc VIN koda identificēts Mercedes-Benz C-klases (W204) modelis ar dīzeļdzinēju un automātisko pārnesumkārbu. Dīlera dati apstiprina automašīnas izcelsmi Vācijas tirgū, kur veikta arī lielākā daļa fiksēto apkopes darbu. Servisa un remontu vēsture Digitālajā servisa žurnālā fiksētas regulāras dzinēja eļļas un filtru maiņas Mercedes-Benz autorizētajā servisā Magdeburgā periodā no 2013. līdz 2017. gadam. Papildus standarta apkopēm 73 744 km atzīmē fiksēta degvielas filtra un bremžu šķidruma maiņa, bet pie 123 927 km - priekšējo bremžu kluču nomaiņa. Pēdējais ieraksts 2024. gada februārī (240 627 km) veikts specializētā transmisiju servisā Frankfurtē, kur veikta automātiskās pārnesumkārbas eļļas un filtra maiņa, kā arī eļļas maiņa aizmugurējā tiltā. Nobraukuma un datu saskaņa Dīlera fiksētie nobraukuma punkti veido lineāru un pārskatāmu vēsturi, kas sakrīt ar citu avotu sniegto informāciju. Septiņu gadu pārrāvums oficiālajos ierakstos starp 2017. un 2024. gadu norāda uz apkopēm ārpus autorizētā tīkla, taču pēdējais fiksētais rādītājs Frankfurtē loģiski turpina iepriekšējo gadu tendenci. Eļļas maiņas intervāli Dzinēja eļļas maiņas periodā no 2013. līdz 2017. gadam veiktas ar vidējo intervālu 24 000-25 000 km vai reizi 10-12 mēnešos, kas atbilst ražotāja Long-life standartam.";
+
+describe("splitDealerCommentRoleHeadings", () => {
+  it("splits Gemini mashed dealer roles into heading-then-paragraph blocks", () => {
+    const out = splitDealerCommentRoleHeadings(MASHED_DEALER_COMMENT);
+    const blocks = out.split(/\n\n+/);
+    expect(blocks).toHaveLength(4);
+    expect(blocks[0]).toMatch(/^Agregātu un aprīkojuma identifikācija\nPēc VIN/);
+    expect(blocks[1]).toMatch(/^Servisa un remontu vēsture\nDigitālajā/);
+    expect(blocks[2]).toMatch(/^Nobraukuma un datu saskaņa\nDīlera fiksētie/);
+    expect(blocks[3]).toMatch(/^Eļļas maiņas intervāli\nDzinēja eļļas/);
+  });
+
+  it("does not restack an already spaced dealer comment", () => {
+    const spaced = [
+      "Agregātu un aprīkojuma identifikācija",
+      "Pēc VIN koda identificēts Mercedes-Benz C-klases (W204) modelis.",
+      "",
+      "Servisa un remontu vēsture",
+      "Digitālajā servisa žurnālā fiksētas regulāras eļļas maiņas.",
+    ].join("\n");
+    const out = toExpertHeadingBodyPlain(spaced);
+    expect(out).toBe(
+      [
+        "Agregātu un aprīkojuma identifikācija",
+        "Pēc VIN koda identificēts Mercedes-Benz C-klases (W204) modelis.",
+        "",
+        "Servisa un remontu vēsture",
+        "Digitālajā servisa žurnālā fiksētas regulāras eļļas maiņas.",
+      ].join("\n"),
+    );
+  });
+
+  it("leaves a CSDD comment without dealer role titles unchanged", () => {
+    const csdd = "Pirmā reģistrācija Latvijā\nCSDD datos automašīna Latvijā reģistrēta 2016. gadā.";
+    expect(toExpertHeadingBodyPlain(csdd)).toBe(csdd);
   });
 });

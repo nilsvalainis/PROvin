@@ -176,7 +176,7 @@ Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē šajā
 Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.
 ${
   isDealerComments
-    ? "Garums: nav fiksētu griestu šai sadaļai — izskaidro VISUS iegūtos datus (agregātu identifikācija, servisa/remontu vēsture, nobraukuma saskaņa), īpaši, ja tie satur daudz vērtīgas informācijas. Bez liekvārdības un mākslīgi paplašinātiem teikumiem: īss fakts ir labāks par izdomātu teikumu."
+    ? "Garums: nav fiksētu griestu šai sadaļai - izskaidro VISUS iegūtos datus (agregātu identifikācija, servisa/remontu vēsture, nobraukuma saskaņa), īpaši, ja tie satur daudz vērtīgas informācijas. Bez liekvārdības un mākslīgi paplašinātiem teikumiem: īss fakts ir labāks par izdomātu teikumu. Katrai lomai virsraksts savā rindā, tad tukša rinda, tad rindkopa; nākamo virsrakstu nekad nelīmē pie iepriekšējā teikuma."
     : "Garums: ja datu ir maz - **1 rindkopa**; ja šis avots dod daudz faktu - vairākas rindkopas. Griesti 2–3 / ≈800 attiecas TIKAI uz trūcīgiem datiem bez operatora teksta. Ja ir OPERATORA IELĪMĒTAIS TEKSTS vai garš esošais melnraksts - griesti NEATTIECAS, neapgraizi."
 } Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.

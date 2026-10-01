@@ -25,6 +25,7 @@ import {
   AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_TEST_DRIVE_GEARBOX_DMF_RULES,
   AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
+  AI_DEALER_COMMENT_CONSTRUCTION_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_DOCUMENTED_SERVICE_WORK_RULES,
   AI_THIS_CAR_ONLY_LOGIC_RULES,
@@ -301,6 +302,17 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildStyleCorpusAiContext/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/code\.startsWith\("vocabulary_"\)/);
     expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/listNewestOrderDraftSessionIds/);
+  });
+
+  it("dealer comments require a heading per role with a blank line", () => {
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/HARD LINE BREAKS/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/blank line/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/<strong>Virsraksts<\/strong>/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/\$\{AI_DEALER_COMMENT_CONSTRUCTION_RULES\}/);
+    expect(readRepo("lib/dealer-data-job.ts")).toMatch(/aiExpertSourceCommentToRichHtml/);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(
+      /nākamo virsrakstu nekad nelīmē/,
+    );
   });
 
   it("oil-change interval math lives only in the dealer field", () => {

@@ -319,4 +319,15 @@ describe("aiExpertSourceCommentToRichHtml", () => {
     expect(html).not.toContain("*");
     expect(html).toContain("Šī automašīna ir koptāka");
   });
+
+  it("turns a mashed dealer comment into four strong heading roles", () => {
+    const html = aiExpertSourceCommentToRichHtml(
+      "Agregātu un aprīkojuma identifikācija Pēc VIN koda identificēts Mercedes-Benz C-klases (W204) modelis. Servisa un remontu vēsture Digitālajā servisa žurnālā fiksētas eļļas maiņas. Nobraukuma un datu saskaņa Dīlera punkti sakrīt ar CSDD. Eļļas maiņas intervāli Vidējais intervāls ir 24 000-25 000 km.",
+    );
+    expect(html).toContain("<strong>Agregātu un aprīkojuma identifikācija</strong><br />Pēc VIN");
+    expect(html).toContain("<strong>Servisa un remontu vēsture</strong><br />Digitālajā");
+    expect(html).toContain("<strong>Nobraukuma un datu saskaņa</strong><br />Dīlera punkti");
+    expect(html).toContain("<strong>Eļļas maiņas intervāli</strong><br />Vidējais intervāls");
+    expect(html.match(/<br \/><br \/>/g)?.length).toBe(3);
+  });
 });

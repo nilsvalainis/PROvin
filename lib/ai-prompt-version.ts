@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-10-01.1 - Dīlera „Komentārs”: katrai lomai virsraksts savā rindā
+ *   un tukša rinda pirms nākamās; pēc apmaksas saglabā <strong>+<br> HTML,
+ *   nevis Gemini salīmēto vienu čupu.
  * - 2026-09-29.2 - Tehniskie riski: tikai aktuālie mezgli, bez nolieguma
  *   esejas; OM/M/N ģimenes mācību atslēgas; garāki tehnikas snippeti.
  * - 2026-09-29.1 - OM651 paka: ķēde aizmugurē, 100 kW ≠ 204 ZS, 722.6
@@ -150,4 +153,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-09-29.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-01.1";

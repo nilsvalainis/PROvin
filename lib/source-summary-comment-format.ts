@@ -267,6 +267,7 @@ export const AI_DEALER_COMMENT_CONSTRUCTION_RULES = `DĪLERA / AUTO RECORDS „K
   3) Nobraukuma / datu saskaņa: one short cross-check sentence on whether the dealer's km points line up with CSDD/AutoDNA/CarVertical. This is a one-line confirmation, not a mileage-forensics essay — that belongs to the mileage comment / summary.
 - A 4th role, „Eļļas maiņas intervāli”, is used ONLY when the calling instructions explicitly ask this field to fold in the oil-interval math (automatic post-ingest generation replacing the separate field). Do not add it otherwise; outside that explicit instruction the OIL-INTERVAL EXCLUSION rule below still applies.
 - Each role gets its own „<strong>Virsraksts</strong><br>” heading (3-6 words, no trailing period) followed by the paragraph. Use the SAME heading-then-paragraph shape for every role present; never leave one role as a bare paragraph with only inline **bold** while the others use headings.
+- HARD LINE BREAKS (mandatory): each role heading MUST sit on its own line, then a blank line, then that role's paragraph. NEVER glue the next heading onto the previous sentence (forbidden: "tiltā. Servisa un remontu vēsture Digitālajā"). If you emit HTML, put "<br /><br />" between roles. If you emit plain text, emit heading, blank line, paragraph, blank line, next heading.
 - LENGTH DISCIPLINE: no fixed character or role-count ceiling for this field — explain every distinct fact-cluster the dealer data actually contains. A long, valuable service/repair history (many dated events) deserves a fully explained paragraph, not a compressed one-liner; split into multiple sentences or, if genuinely distinct, an extra role rather than dropping facts. If the source data is thin, write less — do not stretch a one-fact source into padded paragraphs just to look complete. A short, honest fact is always better than an invented sentence.
 - Sentence job inside each paragraph: state every concrete fact (date, km, work, code) this order's data actually has for that role; add a short "why it matters for THIS car" clause only when it genuinely adds something (confirms/contradicts another source, fills a gap) — never a filler sentence like "šī informācija ir vērtīga pircējam" that restates the fact without adding content, and never omit a documented repair/service just to stay short.
 - <br> vs <br /> — pick one style for the whole field and keep it consistent within this field.`;
@@ -445,6 +446,51 @@ function firstRealSentenceEnd(text: string): number {
   return -1;
 }
 
+/** Dīlera „Komentārs” lomu virsraksti - garākie pirmie, lai neiegrieztu īsāku formu. */
+export const DEALER_COMMENT_ROLE_HEADINGS = [
+  "Agregātu un aprīkojuma identifikācija",
+  "Agregātu / aprīkojuma identifikācija",
+  "Agregātu identifikācija",
+  "Servisa un remontu vēsture",
+  "Servisa / remontu vēsture",
+  "Nobraukuma un datu saskaņa",
+  "Nobraukuma / datu saskaņa",
+  "Eļļas maiņas intervāli",
+] as const;
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Gemini Flash bieži salīmē nākamo lomu virsrakstu pie iepriekšējā teikuma.
+ * Iesprauž tukšu rindu pirms zināma virsraksta un pašu virsrakstu savā rindā.
+ */
+export function splitDealerCommentRoleHeadings(raw: string): string {
+  let t = (raw ?? "").replace(/\r\n/g, "\n");
+  if (!t.trim()) return t;
+  t = t.replace(/<\/?strong>/gi, "");
+  t = t.replace(/<br\s*\/?>/gi, "\n");
+  const headings = [...DEALER_COMMENT_ROLE_HEADINGS].sort((a, b) => b.length - a.length);
+  for (const heading of headings) {
+    const re = new RegExp(`${escapeRegExp(heading)}[ \\t]*`, "gi");
+    t = t.replace(re, (match, offset: number, full: string) => {
+      const before = offset > 0 ? full[offset - 1]! : "";
+      const after = full[offset + match.length] ?? "";
+      let prefix = "";
+      if (offset > 0) {
+        const prev2 = full.slice(Math.max(0, offset - 2), offset);
+        if (prev2 === "\n\n") prefix = "";
+        else if (before === "\n") prefix = "\n";
+        else prefix = "\n\n";
+      }
+      const suffix = after === "\n" || after === "" ? "" : "\n";
+      return `${prefix}${heading}${suffix}`;
+    });
+  }
+  return t.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function looksLikeHeadingLine(line: string): boolean {
   const t = line.trim();
   if (!t || t.length > 90) return false;
@@ -508,7 +554,7 @@ function convertExpertBlockToHeadingBody(block: string): string {
  * Veco „**Ievads.** teksts” formu pārveido; nenoslēgtus Gemini `** ` prefiksus noņem.
  */
 export function toExpertHeadingBodyPlain(raw: string): string {
-  const t = (raw ?? "").replace(/\r\n/g, "\n").trim();
+  const t = splitDealerCommentRoleHeadings(raw);
   if (!t) return t;
   const blocks = t
     .split(/\n\n+/)
