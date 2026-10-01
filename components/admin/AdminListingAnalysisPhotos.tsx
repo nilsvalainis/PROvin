@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -48,6 +48,8 @@ type Props = {
   sectionTitle?: string;
   /** Bez grupu virsrakstiem — viena foto josla (negadījumu kopsavilkums). */
   simple?: boolean;
+  /** PDF ķeksis pie virsraksta (kopsavilkuma negadījuma foto). */
+  headerActions?: ReactNode;
   /** Slēpt CheckCar.vin ūdenszīmi pirms augšupielādes (noklusējums: izslēgts). */
   hidePhotoWatermarks?: boolean;
   onHidePhotoWatermarksChange?: (next: boolean) => void;
@@ -280,6 +282,7 @@ export function AdminListingAnalysisPhotos({
   emptyGroup = emptyListingAnalysisPhotoGroup,
   sectionTitle = "Fotogrāfijas (PDF režģis)",
   simple = false,
+  headerActions,
   hidePhotoWatermarks,
   onHidePhotoWatermarksChange,
 }: Props) {
@@ -749,9 +752,12 @@ export function AdminListingAnalysisPhotos({
       }}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
-          {sectionTitle} · {photoCount}/{maxPhotos}
-        </p>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+            {sectionTitle} · {photoCount}/{maxPhotos}
+          </p>
+          {headerActions}
+        </div>
         {!disabled ? (
           <div className="flex flex-wrap items-center gap-2">
             <AdminPhotoWatermarkToggle

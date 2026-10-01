@@ -33,7 +33,34 @@ export type PdfVisibilitySettings = {
   citi_avoti: boolean;
   sludinajums: boolean;
   iriss: boolean;
+  /** APPROVED BY IRISS: 1. Tehnisko risku analīze. */
+  irissTechnicalRisks: boolean;
+  /** APPROVED BY IRISS: 2. Ieteikumi klātienes apskatei. */
+  irissInspection: boolean;
+  /** APPROVED BY IRISS: 3. Kopsavilkums. */
+  irissSummary: boolean;
+  /** NOBRAUKUMA VĒSTURES KOMENTĀRS zem nobraukuma grafika. */
+  mileageComment: boolean;
+  /** NEGADĪJUMU VĒSTURES KOPSAVILKUMS zem negadījumu kartītēm. */
+  incidentsSummary: boolean;
+  /** Negadījuma fotogrāfijas PDF. */
+  incidentPhotos: boolean;
 };
+
+const IRISS_SUBSECTIONS_ON = {
+  irissTechnicalRisks: true,
+  irissInspection: true,
+  irissSummary: true,
+  mileageComment: true,
+  incidentsSummary: true,
+  incidentPhotos: true,
+} as const;
+
+const IRISS_BLOCK_OFF = {
+  irissTechnicalRisks: false,
+  irissInspection: false,
+  irissSummary: false,
+} as const;
 
 /** Tikai OFICIĀLĀ DĪLERA DATI. Netiek merģēts caur `mergePdfVisibility` (tas piespiedu kārtā ieslēdz hubu). */
 export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
@@ -63,6 +90,10 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   citi_avoti: false,
   sludinajums: false,
   iriss: false,
+  ...IRISS_BLOCK_OFF,
+  mileageComment: false,
+  incidentsSummary: false,
+  incidentPhotos: false,
 };
 
 /** Tikai ASV vēsture - atsevišķs produkts / PROVIN BUSINESS US atskaite. */
@@ -93,6 +124,10 @@ export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   citi_avoti: false,
   sludinajums: false,
   iriss: false,
+  ...IRISS_BLOCK_OFF,
+  mileageComment: true,
+  incidentsSummary: true,
+  incidentPhotos: true,
 };
 
 /**
@@ -126,6 +161,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   citi_avoti: true,
   sludinajums: true,
   iriss: true,
+  ...IRISS_SUBSECTIONS_ON,
 };
 
 export function isMiniPdfVisibilityOrder(args: {
@@ -199,6 +235,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   citi_avoti: true,
   sludinajums: true,
   iriss: true,
+  ...IRISS_SUBSECTIONS_ON,
 };
 
 function isBool(v: unknown): v is boolean {
@@ -242,5 +279,21 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     citi_avoti: isBool(o.citi_avoti) ? o.citi_avoti : d.citi_avoti,
     sludinajums: isBool(o.sludinajums) ? o.sludinajums : d.sludinajums,
     iriss: isBool(o.iriss) ? o.iriss : d.iriss,
+    irissTechnicalRisks: inheritIrissSubsection(o, "irissTechnicalRisks", d.irissTechnicalRisks),
+    irissInspection: inheritIrissSubsection(o, "irissInspection", d.irissInspection),
+    irissSummary: inheritIrissSubsection(o, "irissSummary", d.irissSummary),
+    mileageComment: isBool(o.mileageComment) ? o.mileageComment : d.mileageComment,
+    incidentsSummary: isBool(o.incidentsSummary) ? o.incidentsSummary : d.incidentsSummary,
+    incidentPhotos: isBool(o.incidentPhotos) ? o.incidentPhotos : d.incidentPhotos,
   };
+}
+
+function inheritIrissSubsection(
+  o: Record<string, unknown>,
+  key: "irissTechnicalRisks" | "irissInspection" | "irissSummary",
+  fallback: boolean,
+): boolean {
+  if (isBool(o[key])) return o[key];
+  if (isBool(o.iriss)) return o.iriss;
+  return fallback;
 }

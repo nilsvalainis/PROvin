@@ -1972,10 +1972,9 @@ function buildAvotuDatiSectionHtml(
 
 /** Galvenais eksperta kopsavilkums - pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
-  if (!vis.iriss) return "";
-  const techHtml = (p.tehniskoRiskuAnalize ?? "").trim();
-  const irissHtml = (p.iriss ?? "").trim();
-  const planHtml = (p.apskatesPlāns ?? "").trim();
+  const techHtml = vis.irissTechnicalRisks ? (p.tehniskoRiskuAnalize ?? "").trim() : "";
+  const irissHtml = vis.irissSummary ? (p.iriss ?? "").trim() : "";
+  const planHtml = vis.irissInspection ? (p.apskatesPlāns ?? "").trim() : "";
   if (!irissHtml && !planHtml && !techHtml) return "";
   const inner: string[] = [];
   if (techHtml) {
@@ -3169,10 +3168,22 @@ export function buildClientReportDocumentHtml(args: {
       omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
       omitListingMileage: !vis.sludinajums,
     };
-    const unifiedMileageHtml = buildUnifiedMileageTableHtml(p, mileageOpts);
+    const unifiedMileageHtml = buildUnifiedMileageTableHtml(
+      vis.mileageComment ? p : { ...p, mileageComment: "" },
+      mileageOpts,
+    );
     if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
 
-    const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(p, vis, incidentPhotoDataUrls);
+    const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(
+      {
+        ...p,
+        internalComment: vis.incidentsSummary ? p.internalComment : "",
+        incidentPhotoGroups: vis.incidentPhotos ? p.incidentPhotoGroups : [],
+        incidentPhotos: vis.incidentPhotos ? p.incidentPhotos : [],
+      },
+      vis,
+      vis.incidentPhotos ? incidentPhotoDataUrls : undefined,
+    );
     if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
   }
 

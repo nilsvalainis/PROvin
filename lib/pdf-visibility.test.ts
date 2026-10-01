@@ -45,6 +45,21 @@ describe("mergePdfVisibility", () => {
     expect(vis.sludinajums).toBe(true);
   });
 
+  it("inherits IRISS subsection flags from the old master iriss checkbox", () => {
+    const hidden = mergePdfVisibility({ iriss: false });
+    expect(hidden.irissTechnicalRisks).toBe(false);
+    expect(hidden.irissInspection).toBe(false);
+    expect(hidden.irissSummary).toBe(false);
+    expect(hidden.mileageComment).toBe(true);
+    expect(hidden.incidentsSummary).toBe(true);
+    expect(hidden.incidentPhotos).toBe(true);
+
+    const mixed = mergePdfVisibility({ iriss: true, irissTechnicalRisks: false });
+    expect(mixed.irissTechnicalRisks).toBe(false);
+    expect(mixed.irissInspection).toBe(true);
+    expect(mixed.irissSummary).toBe(true);
+  });
+
   it("hides payment fields by default for B2B partner VIN orders", () => {
     const vis = defaultPdfVisibilityForOrder({
       checkoutLine: "business",

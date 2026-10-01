@@ -2269,6 +2269,71 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("Tech risks body");
   });
 
+  it("omits individual APPROVED BY IRISS subsections when their PDF toggle is off", () => {
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        tehniskoRiskuAnalize: "<p>Tech risks body</p>",
+        apskatesPlāns: "<p>Inspection body</p>",
+        iriss: "<p>Summary body</p>",
+        pdfVisibility: mergePdfVisibility({
+          irissTechnicalRisks: false,
+          irissInspection: true,
+          irissSummary: false,
+        }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).not.toContain("1. Tehnisko risku analīze");
+    expect(doc).not.toContain("Tech risks body");
+    expect(doc).toContain("2. Ieteikumi klātienes apskatei");
+    expect(doc).toContain("Inspection body");
+    expect(doc).not.toContain("3. Kopsavilkums");
+    expect(doc).not.toContain("Summary body");
+  });
+
+  it("omits mileage and incidents summary comments when their PDF toggles are off", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory.push({ date: "2020-06-01", odometer: "120000", country: "LV" });
+    const photoId = "inc_ph_aabbccddeeff001122334455";
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        csddForm: csdd,
+        mileageComment: "Nobraukuma komentārs slēpts",
+        internalComment: "Negadījumu kopsavilkums slēpts",
+        incidentPhotos: [{ id: photoId }],
+        incidentPhotoGroups: [{ id: "inc_phg_aabbccddeeff001122334455", title: "", photos: [{ id: photoId }] }],
+        manualVendorBlocks: [
+          {
+            title: "AutoDNA",
+            mileageRows: [],
+            incidentRows: [{ csngDate: "2021-06-01", lossAmount: "1200", incidentNo: "LV" }],
+            comments: "",
+            pdfChecklist: { incidents: false, mileageHistory: false, mileageLine: false },
+          },
+        ],
+        pdfVisibility: mergePdfVisibility({
+          mileageComment: false,
+          incidentsSummary: false,
+          incidentPhotos: false,
+        }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      incidentPhotoDataUrls: new Map([[photoId, "data:image/jpeg;base64,/9j/4AAQ"]]),
+    });
+    expect(doc).toContain("NOBRAUKUMA VĒSTURE");
+    expect(doc).not.toContain("Nobraukuma komentārs slēpts");
+    expect(doc).toContain("NEGADĪJUMU VĒSTURE");
+    expect(doc).not.toContain("NEGADĪJUMU VĒSTURES KOPSAVILKUMS");
+    expect(doc).not.toContain("Negadījumu kopsavilkums slēpts");
+    expect(doc).not.toContain('class="pdf-incident-photos"');
+  });
+
   it("prints car.info owners, status and notes in the source PDF section", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload({

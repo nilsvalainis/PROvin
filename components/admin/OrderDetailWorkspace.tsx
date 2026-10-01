@@ -372,11 +372,14 @@ const wizardFooterBtnBase =
 const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] border border-slate-800 bg-slate-900 text-white shadow-sm hover:bg-black`;
 const wizardFooterOem = `${wizardFooterBtnBase} min-w-[8.75rem] border border-slate-400 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100`;
 
-function adminCommentFieldLabel(icon: LucideIcon, title: string) {
+function adminCommentFieldLabel(icon: LucideIcon, title: string, extra?: ReactNode) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <AdminProvinLucide icon={icon} />
-      <span className="text-[10px] font-medium uppercase tracking-wide text-slate-600">{title}</span>
+    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      <span className="inline-flex items-center gap-1.5">
+        <AdminProvinLucide icon={icon} />
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-600">{title}</span>
+      </span>
+      {extra}
     </span>
   );
 }
@@ -4929,10 +4932,6 @@ export function OrderDetailWorkspace({
                   <span>Kopsavilkums</span>
                 </h2>
               </div>
-              <AdminPdfIncludeToggle
-                checked={pdfVisibility.iriss}
-                onChange={(next) => onPdfVisibilityChange({ iriss: next })}
-              />
             </div>
             <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] dark:shadow-[0_2px_22px_rgba(0,0,0,0.4)]">
               <ListingAnalysisMainBlockTitleRow
@@ -4949,7 +4948,14 @@ export function OrderDetailWorkspace({
                     value={internalCommentDraft}
                     onChange={onInternalCommentChange}
                     aria-label={ADMIN_INCIDENTS_SUMMARY_LABEL}
-                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.internalNote, ADMIN_INCIDENTS_SUMMARY_LABEL)}
+                    label={adminCommentFieldLabel(
+                      IRISS_CHROME_LUCIDE.internalNote,
+                      ADMIN_INCIDENTS_SUMMARY_LABEL,
+                      <AdminPdfIncludeToggle
+                        checked={pdfVisibility.incidentsSummary}
+                        onChange={(next) => onPdfVisibilityChange({ incidentsSummary: next })}
+                      />,
+                    )}
                     actions={
                       <AdminAiGenerateWithPrefill
                         label="Sagatavot atbildi"
@@ -4970,7 +4976,14 @@ export function OrderDetailWorkspace({
                     value={mileageCommentDraft}
                     onChange={onMileageCommentChange}
                     aria-label={ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}
-                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.internalNote, ADMIN_MILEAGE_HISTORY_COMMENT_LABEL)}
+                    label={adminCommentFieldLabel(
+                      IRISS_CHROME_LUCIDE.internalNote,
+                      ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
+                      <AdminPdfIncludeToggle
+                        checked={pdfVisibility.mileageComment}
+                        onChange={(next) => onPdfVisibilityChange({ mileageComment: next })}
+                      />,
+                    )}
                     actions={
                       <AdminAiGenerateWithPrefill
                         label="Sagatavot atbildi"
@@ -5003,6 +5016,12 @@ export function OrderDetailWorkspace({
                   emptyGroup={emptyIncidentPhotoGroup}
                   sectionTitle="Negadījuma fotogrāfijas"
                   simple
+                  headerActions={
+                    <AdminPdfIncludeToggle
+                      checked={pdfVisibility.incidentPhotos}
+                      onChange={(next) => onPdfVisibilityChange({ incidentPhotos: next })}
+                    />
+                  }
                 />
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiTechnicalRisksErr} />
@@ -5010,7 +5029,14 @@ export function OrderDetailWorkspace({
                     value={ws.tehniskoRiskuAnalize ?? ""}
                     onChange={(next) => updateWs({ tehniskoRiskuAnalize: next })}
                     aria-label={ADMIN_TECHNICAL_RISKS_LABEL}
-                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.technicalRisks, `1. ${ADMIN_TECHNICAL_RISKS_LABEL}`)}
+                    label={adminCommentFieldLabel(
+                      IRISS_CHROME_LUCIDE.technicalRisks,
+                      `1. ${ADMIN_TECHNICAL_RISKS_LABEL}`,
+                      <AdminPdfIncludeToggle
+                        checked={pdfVisibility.irissTechnicalRisks}
+                        onChange={(next) => onPdfVisibilityChange({ irissTechnicalRisks: next })}
+                      />,
+                    )}
                     actions={
                       <AdminAiGenerateWithPrefill
                         label="Ģenerēt analīzi"
@@ -5030,7 +5056,14 @@ export function OrderDetailWorkspace({
                     value={ws.apskatesPlāns ?? ""}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
                     aria-label="Ieteikumi klātienes apskatei"
-                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.inspection, "2. Ieteikumi klātienes apskatei")}
+                    label={adminCommentFieldLabel(
+                      IRISS_CHROME_LUCIDE.inspection,
+                      "2. Ieteikumi klātienes apskatei",
+                      <AdminPdfIncludeToggle
+                        checked={pdfVisibility.irissInspection}
+                        onChange={(next) => onPdfVisibilityChange({ irissInspection: next })}
+                      />,
+                    )}
                     actions={
                       <AdminAiGenerateWithPrefill
                         label="Ģenerēt ieteikumus"
@@ -5050,7 +5083,14 @@ export function OrderDetailWorkspace({
                     value={ws.iriss ?? ""}
                     onChange={setIrissSummary}
                     aria-label="Galvenais kopsavilkums klientam"
-                    label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.summary, "3. Kopsavilkums")}
+                    label={adminCommentFieldLabel(
+                      IRISS_CHROME_LUCIDE.summary,
+                      "3. Kopsavilkums",
+                      <AdminPdfIncludeToggle
+                        checked={pdfVisibility.irissSummary}
+                        onChange={(next) => onPdfVisibilityChange({ irissSummary: next })}
+                      />,
+                    )}
                     actions={
                       <AdminAiGenerateWithPrefill
                         label="Sagatavot atbildi"
