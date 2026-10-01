@@ -2079,6 +2079,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain(src);
     expect(doc.indexOf('class="pdf-report-summary')).toBeLessThan(doc.indexOf('class="pdf-cover-photo"'));
     expect(doc).not.toContain('class="pdf-listing-photo-grid"');
+    expect(doc).toMatch(/\.pdf-cover-photo\{[^}]*background:#fff/);
+    expect(doc).toMatch(/\.pdf-cover-photo__img\{[^}]*background:#fff/);
   });
 
   it("a single source photo prints full width, not a two-column pair", () => {

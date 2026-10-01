@@ -2367,10 +2367,14 @@ function clientReportPrintCss(): string {
         width:100%;height:auto;max-height:220px;object-fit:contain;
         border-radius:6px;border:1px solid #e2e8f0;display:block;background:#f8fafc;
       }
-      .pdf-cover-photo{margin:0 0 14px;break-inside:avoid;}
+      .pdf-cover-photo{
+        margin:0 0 14px;break-inside:avoid;background:#fff;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
       .pdf-cover-photo__img{
         display:block;width:100%;max-height:360px;object-fit:contain;object-position:center top;
-        border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc;
+        border-radius:10px;border:1px solid #e2e8f0;background:#fff;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-incident-photos{margin:10px 0 0;}
       .pdf-listing-photo-grid--full .pdf-listing-photo-img{
