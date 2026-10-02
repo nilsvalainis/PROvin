@@ -13,6 +13,8 @@ import {
   CSDD_PREVIOUS_INSPECTION_TITLE,
   CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE,
   citiAvotiHasContent,
+  citiAvotiSectionHasContent,
+  citiAvotiSectionLabel,
   csddFormHasContent,
   LISTING_ANALYSIS_SUBSECTIONS,
   SOURCE_BLOCK_LABELS,
@@ -32,6 +34,7 @@ import {
   tirgusPriceHistoryHasRows,
   type AutoRecordsBlockState,
   type CitiAvotiBlockState,
+  type CitiAvotiSectionState,
   type ClientManualLtabBlockPdf,
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
@@ -354,7 +357,6 @@ function escapeHtml(s: string): string {
 const PDF_PROVIN_SOURCES_TITLE_SUFFIX = " atskaites ģenerēšanā izmantotie avoti";
 const PDF_PROVIN_SOURCES_L1 = "Maksas vēstures atskaites";
 const PDF_PROVIN_SOURCES_L2 = "Publiskas Eiropas datubāzes";
-const PDF_PROVIN_SOURCES_L3 = "Citi avoti";
 const PDF_PROVIN_SOURCES_L_TOTAL = "Kopā";
 const PDF_SOURCES_CHECKED_TITLE = "Kas tika pārbaudīts";
 
@@ -426,15 +428,30 @@ function payloadSludinajumsHasData(p: ClientReportPayload, vis: PdfVisibilitySet
   return hasTirgus || hasListing;
 }
 
-function countCitiAvotiFilledParts(b: CitiAvotiBlockState): number {
-  let c = 0;
-  for (const section of b.sections) {
-    if (section.serviceHistory.some(autoRecordsRowHasData)) c++;
-    if (section.incidents.some(ltabRowHasData)) c++;
-    if (section.comments.trim()) c++;
-    if (section.rawUnprocessedData?.trim()) c++;
+function citiAvotiSectionRecordCount(section: CitiAvotiSectionState): number {
+  return (
+    (section.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
+    (section.incidents ?? []).filter(ltabRowHasData).length
+  );
+}
+
+/** Katra aizpildītā „Citi avoti” sekcija kā atsevišķs avots ar virsrakstu. */
+function collectCitiAvotiPdfSources(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+): { label: string; count: number }[] {
+  if (!vis.citi_avoti || !p.citiAvoti) return [];
+  const sections = p.citiAvoti.sections ?? [];
+  const total = sections.length;
+  const out: { label: string; count: number }[] = [];
+  for (const [i, section] of sections.entries()) {
+    if (!citiAvotiSectionHasContent(section)) continue;
+    out.push({
+      label: citiAvotiSectionLabel(section, i, total),
+      count: citiAvotiSectionRecordCount(section),
+    });
   }
-  return c;
+  return out;
 }
 
 /** Tikai payload datu apkopošana PDF drukai - bez AI izsaukumiem un bez DB tiešās piekļuves. */
@@ -462,7 +479,7 @@ function computeProvinPdfSourcesUsedCounts(
 
   let n3 = 0;
   if (vis.citi_avoti && p.citiAvoti && citiAvotiHasContent(p.citiAvoti)) {
-    n3 = countCitiAvotiFilledParts(p.citiAvoti);
+    n3 = collectCitiAvotiPdfSources(p, vis).length;
   }
 
   return { n1, n2, n3 };
@@ -510,7 +527,7 @@ function collectPdfCheckedSources(
     out.push({ label: L.ltab, count: (p.manualLtabBlock?.rows ?? []).filter(ltabRowHasData).length });
   }
   if (vis.citi_avoti && p.citiAvoti && citiAvotiHasContent(p.citiAvoti)) {
-    out.push({ label: L.citi_avoti, count: countCitiAvotiFilledParts(p.citiAvoti) });
+    out.push(...collectCitiAvotiPdfSources(p, vis));
   }
   return out;
 }
@@ -520,18 +537,21 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
   const nTotal = n1 + n2 + n3;
   if (nTotal === 0) return "";
 
+  const citiSources = collectCitiAvotiPdfSources(p, vis);
   const cards = [
     { n: n1, label: PDF_PROVIN_SOURCES_L1 },
     { n: n2, label: PDF_PROVIN_SOURCES_L2 },
-    { n: n3, label: PDF_PROVIN_SOURCES_L3 },
   ].filter((c) => c.n > 0);
 
   const head = `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap" aria-hidden="true">${sectionIconPdfHtml("database")}</span><h2 id="pdf-provin-sources-h" class="pdf-sec pdf-sec--nobar pdf-sec--provin-sources">${pdfProvinWordmarkHtml()}${escapeHtml(PDF_PROVIN_SOURCES_TITLE_SUFFIX)}</h2></div>`;
   const categoryRows = cards
     .map((c) => `<tr><td>${escapeHtml(c.label)}</td><td>${escapeHtml(String(c.n))}</td></tr>`)
     .join("");
+  const citiRows = citiSources
+    .map((s) => `<tr><td>${escapeHtml(s.label)}</td><td>1</td></tr>`)
+    .join("");
   const totalRow = `<tr class="pdf-provin-sources-total"><td><strong>${escapeHtml(PDF_PROVIN_SOURCES_L_TOTAL)}</strong></td><td><strong>${escapeHtml(String(nTotal))}</strong></td></tr>`;
-  const body = `${categoryRows}${totalRow}`;
+  const body = `${categoryRows}${citiRows}${totalRow}`;
 
   const checked = collectPdfCheckedSources(p, vis);
   const grid =
