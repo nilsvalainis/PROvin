@@ -1992,13 +1992,12 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(wrap).toContain("Maksas vēstures atskaites");
     expect(wrap).toMatch(/Maksas vēstures atskaites<\/td><td>6<\/td>/);
     expect(wrap).toMatch(/Publiskas Eiropas datubāzes<\/td><td>3<\/td>/);
-    expect(wrap).toMatch(/CITI AVOTI<\/td><td>1<\/td>/);
-    expect(wrap).not.toMatch(/Citi avoti<\/td><td>3<\/td>/);
-    expect(wrap).toMatch(/Kopā<\/strong><\/td><td><strong>10<\/strong>/);
+    expect(wrap).toMatch(/Citi avoti<\/td><td>3<\/td>/);
+    expect(wrap).toMatch(/Kopā<\/strong><\/td><td><strong>12<\/strong>/);
     expect(wrap).not.toMatch(/Kopā<\/strong><\/td><td><strong>9<\/strong>/);
   });
 
-  it("lists each Citi avoti section by its title, not as one Citi avoti row", () => {
+  it("lists each Citi avoti section by title only under Kas tika pārbaudīts", () => {
     const vis = mergePdfVisibility({
       citi_avoti: true,
       csdd: false,
@@ -2036,12 +2035,13 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     const wrap = doc.match(/<section class="pdf-provin-sources-wrap[\s\S]*?<\/section>/)?.[0] ?? "";
+    const table = wrap.match(/<table class="pdf-v1-kv"[\s\S]*?<\/table>/)?.[0] ?? "";
+    expect(table).toMatch(/Citi avoti<\/td><td>4<\/td>/);
+    expect(table).not.toContain("CarFax");
+    expect(table).not.toContain("CEBIA");
+    expect(table).toMatch(/Kopā<\/strong><\/td><td><strong>4<\/strong>/);
     expect(wrap).toContain("CarFax");
     expect(wrap).toContain("CEBIA");
-    expect(wrap).not.toMatch(/Citi avoti<\/td>/);
-    expect((wrap.match(/CarFax/g) ?? []).length).toBeGreaterThanOrEqual(2);
-    expect((wrap.match(/CEBIA/g) ?? []).length).toBeGreaterThanOrEqual(2);
-    expect(wrap).toMatch(/Kopā<\/strong><\/td><td><strong>2<\/strong>/);
     expect(wrap).toContain("pdf-sources-checked-name");
   });
 

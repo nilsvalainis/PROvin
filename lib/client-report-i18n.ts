@@ -80,6 +80,7 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   },
   "Maksas vēstures atskaites": { en: "Paid history reports", ru: "Платные отчёты об истории" },
   "Publiskas Eiropas datubāzes": { en: "Public European databases", ru: "Публичные европейские базы данных" },
+  "Citi avoti": { en: "Other sources", ru: "Другие источники" },
   "Kas tika pārbaudīts": { en: "What was checked", ru: "Что было проверено" },
   Kopā: { en: "Total", ru: "Всего" },
 
@@ -223,6 +224,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   " atskaites ģenerēšanā izmantotie avoti": " für diesen Bericht verwendete Quellen",
   "Maksas vēstures atskaites": "Kostenpflichtige Historienberichte",
   "Publiskas Eiropas datubāzes": "Öffentliche europäische Datenbanken",
+  "Citi avoti": "Weitere Quellen",
   "Kas tika pārbaudīts": "Was geprüft wurde",
   Kopā: "Gesamt",
   Datums: "Datum",
