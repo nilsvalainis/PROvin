@@ -12,8 +12,12 @@
 import type { ProvinAuditPdfProductBrand } from "@/lib/audit-report-pdf-filename";
 import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
 
-/** BUSINESS PDF virsraksts (augša un kājene). */
-export const PDF_BUSINESS_DOC_TITLE = "PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS";
+/** BUSINESS PDF lielais virsraksts (augša). */
+export const PDF_BUSINESS_DOC_TITLE = "Business";
+/** BUSINESS PDF apakšrinda zem virsraksta. */
+export const PDF_BUSINESS_DOC_SUBTITLE = "Datu atskaite";
+/** BUSINESS PDF kājene un operatora pogas. */
+export const PDF_BUSINESS_DOC_LABEL = "Business Datu atskaite";
 
 export const REPORT_PDF_STANDARDS = {
   firstPageExpertBlockTitle: "Ieteikumi klātienes apskatei · Kopsavilkums",
@@ -117,7 +121,7 @@ export type ClientReportLegalFooterBlocks = {
 export function formatPdfDocFooterProductLabel(brand: ProvinAuditPdfProductBrand): string {
   if (brand === "PROVIN_MINI") return "PROVIN MINI";
   if (brand === "PROVIN_DILERIS") return OFFICIAL_DEALER_SECTION_TITLE;
-  if (brand === "PROVIN_BUSINESS") return PDF_BUSINESS_DOC_TITLE;
+  if (brand === "PROVIN_BUSINESS") return PDF_BUSINESS_DOC_LABEL;
   return "PROVIN AUDITS";
 }
 

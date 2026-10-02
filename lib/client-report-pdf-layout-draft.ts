@@ -55,6 +55,20 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-logo{width:220px;max-width:46vw;height:auto;flex-shrink:0;display:block}
       .pdf-v1-hero-text{flex:1;min-width:160px}
       .pdf-v1-doc-title{margin:0;font-size:0.75rem;font-weight:700;color:#000;letter-spacing:0.06em;line-height:1.3;text-transform:uppercase}
+      .pdf-v1-hero--business .pdf-v1-hero-inner{
+        align-items:flex-end;justify-content:space-between;gap:18px;
+      }
+      .pdf-v1-hero--business .pdf-v1-logo{width:168px;max-width:42vw}
+      .pdf-v1-hero-brand{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+      .pdf-v1-hero--business .pdf-v1-hero-text{flex:0 1 auto;text-align:right}
+      .pdf-v1-hero--business .pdf-v1-doc-title{
+        font-size:32px;font-weight:800;letter-spacing:-0.03em;text-transform:none;line-height:1;
+      }
+      .pdf-v1-doc-sub{
+        margin:4px 0 0;font-size:11px;font-weight:650;letter-spacing:0.12em;
+        text-transform:uppercase;color:${PDF_BRAND_BLUE_HEX};line-height:1.3;
+      }
+      .pdf-v1-hero--business .pdf-v1-meta{margin:8px 0 0}
       .pdf-v1-meta{margin:6px 0 0;font-size:0.576rem;color:#6e6e73;line-height:1.4}
       .pdf-v1-meta .pdf-vin{
         background:transparent;padding:0;color:#424245;font-size:0.9em;

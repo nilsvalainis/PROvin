@@ -5150,7 +5150,7 @@ export function OrderDetailWorkspace({
           />
           <AdminPdfLangSplitButton
             label="Ģenerēt BUSINESS PDF"
-            title="Tā pati atskaite ar virsrakstu PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS."
+            title="Tā pati atskaite ar virsrakstu Business Datu atskaite."
             busyLabel={pdfFamilyBusy("business")}
             disabled={pdfJob !== null}
             toneClass="border border-violet-800/40 bg-violet-600 text-white shadow-sm hover:bg-violet-700"

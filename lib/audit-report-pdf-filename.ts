@@ -67,7 +67,7 @@ export function buildOemDealerPdfFilename(vin: string | null | undefined): strin
   return `OEM_DILERA_DATI_${slug}.pdf`;
 }
 
-/** PROVIN BUSINESS vēstures audits (tā pati atskaite, cits virsraksts). */
+/** PROVIN BUSINESS datu atskaite (tā pati atskaite, cits virsraksts). */
 export function buildProvinBusinessPdfFilename(vin: string | null | undefined): string {
   return buildProvinAuditPdfFilename(vin, { brand: "PROVIN_BUSINESS" });
 }

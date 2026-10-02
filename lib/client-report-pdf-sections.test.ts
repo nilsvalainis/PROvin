@@ -1905,12 +1905,15 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(doc).toContain("PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS");
+    expect(doc).toContain("pdf-v1-hero--business");
+    expect(doc).toContain(">Business<");
+    expect(doc).toContain("Datu atskaite");
+    expect(doc).toContain("Business Datu atskaite");
     expect(doc).not.toContain(">TRANSPORTLĪDZEKĻA AUDITS<");
     expect(doc).not.toContain(">PROVIN AUDITS<");
+    expect(doc).not.toContain("PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS");
     expect(doc).toContain("APPROVED BY IRISS");
     expect(doc).toContain("Pilns kopsavilkums partnerim.");
-    expect((doc.match(/PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
   it("citi avoti subheads use manual label only, without CITI AVOTI prefix", () => {

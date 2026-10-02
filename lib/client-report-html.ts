@@ -133,7 +133,10 @@ import {
   type SectionIconId,
 } from "@/lib/section-icons";
 import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
-import { PDF_BUSINESS_DOC_TITLE } from "@/lib/report-pdf-standards";
+import {
+  PDF_BUSINESS_DOC_SUBTITLE,
+  PDF_BUSINESS_DOC_TITLE,
+} from "@/lib/report-pdf-standards";
 import {
   clientReportPrintInkCss,
   PROVIN_REPORT_PRINT_INK_CLASS,
@@ -3096,29 +3099,37 @@ export function buildClientReportDocumentHtml(args: {
 
   const lines: string[] = [];
   lines.push('<div class="sheet">');
-  lines.push('<header class="pdf-v1-hero">');
-  lines.push('<div class="pdf-v1-hero-inner">');
-  lines.push(provincLogoSvg());
-  lines.push('<div class="pdf-v1-hero-text">');
-  lines.push(
-    `<h1 class="pdf-v1-doc-title">${escapeHtml(
-      dealerOnly
-        ? OFFICIAL_DEALER_SECTION_TITLE
-        : asvOnly
-          ? ASV_PDF_TITLE
-          : businessBrand
-            ? PDF_BUSINESS_DOC_TITLE
-            : PDF_MAIN_TITLE,
-    )}</h1>`,
-  );
   {
     const vin = p.vin?.trim();
     const vinHtml = vin
       ? ` · VIN <span class="pdf-vin">${escapeHtml(vin)}</span>`
       : "";
-    lines.push(`<p class="pdf-v1-meta">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))}${vinHtml}</p>`);
+    const generatedMeta = `<p class="pdf-v1-meta">Ģenerēts: ${escapeHtml(dateFmt.format(new Date()))}${vinHtml}</p>`;
+    if (businessBrand) {
+      lines.push('<header class="pdf-v1-hero pdf-v1-hero--business">');
+      lines.push('<div class="pdf-v1-hero-inner">');
+      lines.push('<div class="pdf-v1-hero-brand">');
+      lines.push(provincLogoSvg());
+      lines.push(generatedMeta);
+      lines.push("</div>");
+      lines.push('<div class="pdf-v1-hero-text">');
+      lines.push(`<h1 class="pdf-v1-doc-title">${escapeHtml(PDF_BUSINESS_DOC_TITLE)}</h1>`);
+      lines.push(`<p class="pdf-v1-doc-sub">${escapeHtml(PDF_BUSINESS_DOC_SUBTITLE)}</p>`);
+      lines.push("</div></div></header>");
+    } else {
+      lines.push('<header class="pdf-v1-hero">');
+      lines.push('<div class="pdf-v1-hero-inner">');
+      lines.push(provincLogoSvg());
+      lines.push('<div class="pdf-v1-hero-text">');
+      lines.push(
+        `<h1 class="pdf-v1-doc-title">${escapeHtml(
+          dealerOnly ? OFFICIAL_DEALER_SECTION_TITLE : asvOnly ? ASV_PDF_TITLE : PDF_MAIN_TITLE,
+        )}</h1>`,
+      );
+      lines.push(generatedMeta);
+      lines.push("</div></div></header>");
+    }
   }
-  lines.push("</div></div></header>");
 
   // Viena kartīšu valoda kopsavilkumā: manuālās (admin) → automātiskie brīdinājumi → informatīvās.
   const summaryBannerTiles = vis.alerts
