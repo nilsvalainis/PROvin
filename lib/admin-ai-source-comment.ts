@@ -16,7 +16,7 @@ import {
   type AiSourceCommentTargetField,
 } from "@/lib/admin-source-comment-blocks";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
-import { stripSourceFieldExpansions } from "@/lib/source-summary-comment-format";
+import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
 export type AiSourceCommentInput = {
@@ -177,7 +177,7 @@ Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu 
 ${
   isDealerComments
     ? "Garums: nav fiksētu griestu šai sadaļai - izskaidro VISUS iegūtos datus (agregātu identifikācija, servisa/remontu vēsture, nobraukuma saskaņa), īpaši, ja tie satur daudz vērtīgas informācijas. Bez liekvārdības un mākslīgi paplašinātiem teikumiem: īss fakts ir labāks par izdomātu teikumu. Katrai lomai virsraksts savā rindā, tad tukša rinda, tad rindkopa; nākamo virsrakstu nekad nelīmē pie iepriekšējā teikuma."
-    : "Garums: ja datu ir maz - **1 rindkopa**; ja šis avots dod daudz faktu - vairākas rindkopas. Griesti 2–3 / ≈800 attiecas TIKAI uz trūcīgiem datiem bez operatora teksta. Ja ir OPERATORA IELĪMĒTAIS TEKSTS vai garš esošais melnraksts - griesti NEATTIECAS, neapgraizi."
+    : "Garums: ja datu ir maz - **1 rindkopa**; ja šis avots dod daudz faktu - vairākas rindkopas, nesaīsini un neapgraizi. 2–3 / ≈800 attiecas TIKAI uz trūcīgiem datiem bez operatora teksta. Ja ir OPERATORA IELĪMĒTAIS TEKSTS vai garš esošais melnraksts - griesti NEATTIECAS."
 } Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
 Ja šis avots tikai apstiprina jau uzrakstīto: viens īss teikums.
@@ -206,7 +206,7 @@ Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā ga
     temperature: 0.25,
   });
   if (isOilInterval || isServiceHistory) return generated;
-  return stripSourceFieldExpansions(generated);
+  return keepSourceCommentAfterExpansionStrip(generated);
 }
 
 export { isAiSourceCommentBlockKey } from "@/lib/admin-source-comment-blocks";

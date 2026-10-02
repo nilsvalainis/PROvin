@@ -55,6 +55,7 @@ import {
   countCsddOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
+import { CSDD_COMMENT_TEMPLATES, applyCsddCommentTemplate } from "@/lib/admin-csdd-comment-presets";
 import { AlertTriangle } from "lucide-react";
 
 const inp =
@@ -584,6 +585,29 @@ export function AdminCsddSourceBlock({
             hidePhotoWatermarks={value.hidePhotoWatermarks === true}
             onHidePhotoWatermarksChange={(next) => onChange({ ...value, hidePhotoWatermarks: next })}
           />
+        ) : null}
+        {!readOnly && !disabled ? (
+          <div className="mb-1.5 flex flex-wrap items-center gap-1">
+            <span className="text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
+              Šabloni
+            </span>
+            {CSDD_COMMENT_TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:border-[var(--color-provin-accent)]/40 hover:bg-slate-50"
+                title={template.text}
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    comments: applyCsddCommentTemplate(value.comments, template.text),
+                  })
+                }
+              >
+                {template.label}
+              </button>
+            ))}
+          </div>
         ) : null}
         <AdminSourceCommentField
           value={value.comments}

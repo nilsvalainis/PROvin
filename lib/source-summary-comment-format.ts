@@ -579,6 +579,27 @@ export function normalizeProvinExpertAiComment(raw: string | undefined | null): 
   return formatExpertParagraphs(t).join("\n\n");
 }
 
+/**
+ * Pēcapstrāde nedrīkst iztukšot jau samaksātu atbildi (piem. tikai `*` / Markdown).
+ * Ja normalizācija izmet visu, paliek vārdu krājuma versija.
+ */
+export function finalizeProvinExpertAiComment(raw: string | undefined | null): string {
+  const source = (raw ?? "").trim();
+  if (!source) return "";
+  const normalized = normalizeProvinExpertAiComment(source);
+  return normalized.trim() || applyProvinReportCopyVocabulary(source);
+}
+
+/**
+ * Avotu drošības tīkls nedrīkst atdot tukšu lauku, ja Gemini uzrakstīja tikai
+ * „Datu specifika” / mērītāja eseju. Labāk atstāt samaksāto tekstu.
+ */
+export function keepSourceCommentAfterExpansionStrip(generated: string): string {
+  const source = generated.trim();
+  if (!source) return "";
+  return stripSourceFieldExpansions(source).trim() || source;
+}
+
 /** Gatavo PROVIN audita atskaišu komentāru paraugi — few-shot stils ✨ ģeneratoram. */
 export const PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES = `FEW-SHOT STYLE EXAMPLES (match this heading-then-paragraph structure, restrained tone — and this LENGTH: these are complete comments, not excerpts). NEVER copy *, ** into the output.
 

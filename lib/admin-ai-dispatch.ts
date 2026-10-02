@@ -90,6 +90,22 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
 /** Lētais Gemini Flash piegājiens. Nav vērts atkārtot ar Opus/Sonnet. */
 const CHEAP_CORRECTION_RETRY_CODES = new Set(["too_long"]);
 
+/**
+ * Flash „saīsini” nogrieza faktus un rindkopas. too_long paliek eval karogs,
+ * bet šiem laukiem NAV otrā ģenerācija. Garums seko informācijai.
+ */
+const CHEAP_LENGTH_SKIP_FIELDS = new Set([
+  "source",
+  "source_dealer",
+  "mileage",
+  "incidents",
+  "technical_risks",
+  "inspection",
+  "summary",
+  "oil",
+  "seller",
+]);
+
 function buildSelfCorrectionPrompt(
   originalPrompt: string,
   priorText: string,
@@ -154,9 +170,10 @@ async function withSelfCorrection(
   const critical = allIssues.filter(
     (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );
-  const cheap = commentLengthLimitsWaived(opts.userPrompt)
-    ? []
-    : allIssues.filter((i) => CHEAP_CORRECTION_RETRY_CODES.has(i.code));
+  const cheap =
+    commentLengthLimitsWaived(opts.userPrompt) || CHEAP_LENGTH_SKIP_FIELDS.has(field)
+      ? []
+      : allIssues.filter((i) => CHEAP_CORRECTION_RETRY_CODES.has(i.code));
 
   if (critical.length === 0 && cheap.length === 0) return raw;
   if (!aiBudgetAllowsRetry(withBudget.budget)) {

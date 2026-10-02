@@ -7,8 +7,8 @@ import {
   GEMINI_MODEL_PRO,
   geminiErrorMessage,
   geminiFailoverModels,
-  isGeminiTransientError,
   isTransientHttpStatus,
+  shouldGeminiModelFailover,
 } from "@/lib/gemini-model-failover";
 import type { GeminiAdminModelTier } from "@/lib/gemini-admin-model-tier";
 import { recordAiUsage } from "@/lib/ai-usage-meter";
@@ -29,7 +29,7 @@ import type { AiTextStream } from "@/lib/ai-text-stream";
 import { geminiThinkingExtra, geminiWantsThinking } from "@/lib/gemini-thinking-config";
 import {
   applyProvinReportCopyVocabulary,
-  normalizeProvinExpertAiComment,
+  finalizeProvinExpertAiComment,
 } from "@/lib/source-summary-comment-format";
 
 export {
@@ -172,12 +172,7 @@ export async function runGeminiWithModelFailover<T>(opts: {
       return result;
     } catch (e) {
       if (isAiIncompleteCommentError(e)) throw e;
-      if (
-        !isGeminiTransientError(e) ||
-        /timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED|aborted|ai_incomplete_comment/i.test(
-          geminiErrorMessage(e),
-        )
-      ) {
+      if (!shouldGeminiModelFailover(e) || i === models.length - 1) {
         throw new Error(formatGeminiSdkError(e));
       }
       lastTransient = e;
@@ -185,6 +180,7 @@ export async function runGeminiWithModelFailover<T>(opts: {
         label: opts.logLabel ?? "gemini",
         promptVersion: PROVIN_AI_PROMPT_VERSION,
         model,
+        empty: isAiEmptyGeneratedTextError(e),
         message: geminiErrorMessage(e).slice(0, 240),
       });
     }
@@ -407,17 +403,23 @@ async function geminiGenerateTextOnce(
   try {
     return await geminiStreamGenerateText(key, opts, geminiWantsThinking(opts.model));
   } catch (e) {
+    const firstIncomplete = isAiIncompleteCommentError(e) ? e : null;
     if (
-      (isAiIncompleteCommentError(e) || isAiEmptyGeneratedTextError(e)) &&
+      (firstIncomplete || isAiEmptyGeneratedTextError(e)) &&
       geminiWantsThinking(opts.model) &&
       aiBudgetAllowsRetry(opts.budget)
     ) {
       console.warn(`${LOG_PREFIX} text_truncated_retry_no_thinking`, {
         model: opts.model,
         promptVersion: PROVIN_AI_PROMPT_VERSION,
-        chars: isAiIncompleteCommentError(e) ? e.partialText.length : 0,
+        chars: firstIncomplete?.partialText.length ?? 0,
       });
-      return await geminiStreamGenerateText(key, opts, false);
+      try {
+        return await geminiStreamGenerateText(key, opts, false);
+      } catch (retryErr) {
+        if (firstIncomplete?.partialText) throw firstIncomplete;
+        throw retryErr;
+      }
     }
     if (isAiIncompleteCommentError(e)) throw e;
     if (geminiWantsThinking(opts.model) && isGeminiThinkingUnsupported(e)) {
@@ -455,11 +457,11 @@ export async function geminiGenerateExpertText(opts: GeminiTextOptions & {
 }): Promise<string> {
   try {
     const raw = await geminiGenerateText(opts);
-    return throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(raw));
+    return throwIfBlankGeneratedComment(finalizeProvinExpertAiComment(raw));
   } catch (e) {
     if (isAiIncompleteCommentError(e)) {
       throw new AiIncompleteCommentError(
-        throwIfBlankGeneratedComment(normalizeProvinExpertAiComment(e.partialText)),
+        throwIfBlankGeneratedComment(finalizeProvinExpertAiComment(e.partialText)),
         e.reason,
       );
     }

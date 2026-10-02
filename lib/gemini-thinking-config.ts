@@ -11,8 +11,14 @@ function isGemini25Model(model: string): boolean {
   return /gemini-2\.5/i.test(model);
 }
 
+/**
+ * Gemini 3 Flash `thinkingLevel: "low"` atkal apēda `maxOutputTokens` un
+ * atgrieza tukšu lauku. 3. paaudzei sūtām tikai `minimal` (zemāk), tāpēc
+ * atsevišķs „ar/bez domāšanas” piegājiens tai nav vajadzīgs. 2.5 vēl dala
+ * budžetu ar redzamo tekstu, tāpēc tukšu atbildi tur joprojām atkārto ar 0.
+ */
 export function geminiWantsThinking(model: string): boolean {
-  return isGemini3Model(model) || isGemini25Model(model);
+  return isGemini25Model(model);
 }
 
 export type GeminiThinkingExtra =
@@ -31,7 +37,7 @@ export type GeminiThinkingExtra =
  */
 export function geminiThinkingExtra(model: string, enabled: boolean): GeminiThinkingExtra {
   if (isGemini3Model(model)) {
-    return { thinkingConfig: { thinkingLevel: enabled ? "low" : "minimal" } };
+    return { thinkingConfig: { thinkingLevel: "minimal" } };
   }
   if (isGemini25Model(model)) {
     return { thinkingConfig: { thinkingBudget: enabled ? 512 : 0 } };

@@ -38,7 +38,7 @@ export type CommentLengthBudget = {
 };
 
 export const COMMENT_LENGTH_BUDGET: Record<CommentLengthBudgetField, CommentLengthBudget> = {
-  source: { targetChars: "līdz 800", targetParas: "1 (griesti 2-3)", maxChars: 1400 },
+  source: { targetChars: "seko faktiem", targetParas: "1, ja pietiek; vairākas, ja dati to prasa", maxChars: 4000 },
   /** OFICIĀLĀ DĪLERA DATI „Komentārs”: bez fiksētiem griestiem, tikai tehniskais drošības maksimums. */
   source_dealer: { targetChars: "600-plašs, bez fiksētiem griestiem", targetParas: "tik lomu, cik dati satur", maxChars: 6000 },
   incidents: { targetChars: "500-1200", targetParas: "2-4", maxChars: 1800 },
@@ -108,7 +108,7 @@ export function buildCommentLengthBudgetBrief(sourceBlocks: WorkspaceSourceBlock
   const lines = [
     "### Komentāru garuma budžets (deterministisks)",
     `- Datu blīvums: ${DENSITY_LV[d.density]} (${d.sourceCount} avoti ar datiem, ${d.mileageRowCount} nobraukuma rindas)`,
-    `- Avota komentārs: 1 rindkopa, ja pietiek; griesti ${COMMENT_LENGTH_BUDGET.source.targetParas} / ${COMMENT_LENGTH_BUDGET.source.maxChars} rakstzīmes. ${COMMENT_LENGTH_BUDGET.source.targetChars} ir GRIESTI, ne kvota. Neizdomā otru virsrakstu, lai aizpildītu formu. IZŅĒMUMS: OFICIĀLĀ DĪLERA DATI „Komentārs” laukam šie griesti NEATTIECAS — tam nav fiksēta rakstzīmju vai rindkopu griesta, izskaidro visus iegūtos datus.`,
+    `- Avota komentārs: garums seko faktiem. 1 rindkopa, ja pietiek; ja šis avots dod daudz faktu - vairākas rindkopas. Tehniskais griests ${COMMENT_LENGTH_BUDGET.source.maxChars} rakstzīmes (runaway, ne kvota). Nesaīsini bagātīgu avotu līdz 1 rindkopai. IZŅĒMUMS: OFICIĀLĀ DĪLERA DATI „Komentārs” - bez fiksēta griesta, izskaidro visus iegūtos datus.`,
     `- Nobraukums: mērķis ${COMMENT_LENGTH_BUDGET.mileage.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.mileage.maxChars}.`,
     `- Negadījumi: mērķis ${COMMENT_LENGTH_BUDGET.incidents.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.incidents.maxChars}.`,
     `- 1. Tehnisko risku analīze: flagship, griesti ${COMMENT_LENGTH_BUDGET.technical_risks.maxChars} (NEĪSINĀT līdz avota komentāra garumam).`,

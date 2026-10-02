@@ -3,6 +3,11 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-10-02.2 - Gemini 3 Flash vairs nesāk ar thinkingLevel „low” (apēda
+ *   izeju, tukšs lauks). Tukša samaksāta atbilde pāriet uz 2.5 Flash;
+ *   stripSourceFieldExpansions vairs neiztukšo jau uzrakstīto komentāru.
+ * - 2026-10-02.1 - Avotu komentāri: Flash too_long vairs nesaīsina ✨ izeju
+ *   (nogrieza rindkopas). Garums seko faktiem; tehniskais griests 4000.
  * - 2026-10-01.1 - Dīlera „Komentārs”: katrai lomai virsraksts savā rindā
  *   un tukša rinda pirms nākamās; pēc apmaksas saglabā <strong>+<br> HTML,
  *   nevis Gemini salīmēto vienu čupu.
@@ -153,4 +158,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-01.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-02.2";

@@ -330,4 +330,9 @@ describe("aiExpertSourceCommentToRichHtml", () => {
     expect(html).toContain("<strong>Eļļas maiņas intervāli</strong><br />Vidējais intervāls");
     expect(html.match(/<br \/><br \/>/g)?.length).toBe(3);
   });
+
+  it("does not turn a paid leftover into an empty field", () => {
+    expect(aiExpertSourceCommentToRichHtml("***").trim()).not.toBe("");
+    expect(aiExpertSourceCommentToRichHtml("").trim()).toBe("");
+  });
 });

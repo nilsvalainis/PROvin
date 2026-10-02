@@ -113,6 +113,14 @@ describe("too_long vs operator paste", () => {
     const issues = evaluateExpertCommentQuality(long, { field: "generic" });
     expect(issues.some((i) => i.code === "too_long")).toBe(true);
   });
+
+  it("does not flag a typical multi-paragraph source comment as too_long", () => {
+    const typical = "CSDD datos fiksēta pirmā reģistrācija Latvijā 2016. gadā un vairākas tehniskās apskates. ".repeat(25);
+    expect(typical.length).toBeGreaterThan(1400);
+    expect(typical.length).toBeLessThan(4000);
+    const issues = evaluateExpertCommentQuality(typical, { field: "source" });
+    expect(issues.some((i) => i.code === "too_long")).toBe(false);
+  });
 });
 
 describe("stripSummaryDualismOpener", () => {

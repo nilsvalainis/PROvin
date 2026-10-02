@@ -1,3 +1,5 @@
+import { isAiEmptyGeneratedTextError, isAiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
+
 export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
 /** Primārais lētais līmenis — Pro inteliģence Flash cenā (preview; 404 → 2.5 Flash). */
 export const GEMINI_MODEL_FLASH = "gemini-3-flash-preview";
@@ -41,4 +43,19 @@ export function isGeminiTransientError(e: unknown): boolean {
 
 export function isTransientHttpStatus(status: number): boolean {
   return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+export function isGeminiTimeoutError(e: unknown): boolean {
+  return /timeout|ETIMEDOUT|timed\s*out|DEADLINE_EXCEEDED|aborted/i.test(geminiErrorMessage(e));
+}
+
+/**
+ * Tukša samaksāta atbilde pēc tā paša modeļa thinking retry - nākamais lētākais
+ * modelis, ne tukšs lauks. Timeout un daļējs teksts paliek pie pirmā modeļa.
+ */
+export function shouldGeminiModelFailover(e: unknown): boolean {
+  if (isAiIncompleteCommentError(e)) return false;
+  if (isAiEmptyGeneratedTextError(e)) return true;
+  if (isGeminiTimeoutError(e)) return false;
+  return isGeminiTransientError(e);
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyProvinReportCopyVocabulary,
+  finalizeProvinExpertAiComment,
   normalizeExpertSourcePdfComment,
   normalizeProvinExpertAiComment,
   splitDealerCommentRoleHeadings,
@@ -158,5 +159,12 @@ describe("splitDealerCommentRoleHeadings", () => {
   it("leaves a CSDD comment without dealer role titles unchanged", () => {
     const csdd = "Pirmā reģistrācija Latvijā\nCSDD datos automašīna Latvijā reģistrēta 2016. gadā.";
     expect(toExpertHeadingBodyPlain(csdd)).toBe(csdd);
+  });
+});
+
+describe("finalizeProvinExpertAiComment", () => {
+  it("keeps paid text when paragraph normalize would empty markdown-only output", () => {
+    expect(finalizeProvinExpertAiComment("***")).toBe("***");
+    expect(finalizeProvinExpertAiComment("  ")).toBe("");
   });
 });

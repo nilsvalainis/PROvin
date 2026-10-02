@@ -111,11 +111,12 @@ export function shouldSyncRichCommentEditorFromParent(opts: {
 /** Dziļās avotu analīzes ✨ — virsraksts kā <strong>, bez redzamiem * simboliem. */
 export function aiExpertSourceCommentToRichHtml(text: string): string {
   const t = normalizeAiExpertParagraphText(text);
-  return t
+  const html = t
     .split(/\n\n+/)
     .filter(Boolean)
     .map(expertBlockToRichHtml)
     .join("<br /><br />");
+  return html || plainTextToMinimalRichHtml(text);
 }
 
 function parseCssDeclarations(styleRaw: string): Record<string, string> {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  keepSourceCommentAfterExpansionStrip,
   splitIntoSentences,
   stripSourceFieldExpansions,
   stripUnauthorizedEuroAmounts,
@@ -75,5 +76,12 @@ describe("stripSourceFieldExpansions", () => {
     expect(out).not.toMatch(/Datu specifika/i);
     expect(out).not.toMatch(/neizslēdz/i);
     expect(out).not.toMatch(/mērītāj/i);
+  });
+
+  it("does not hand the operator an empty field when the whole comment was an expansion", () => {
+    const onlyExpansion =
+      "Ierakstu trūkums datubāzē neizslēdz iespējamus nelielus bojājumus, kas varētu būt novērsti bez apdrošinātāju starpniecības.";
+    expect(stripSourceFieldExpansions(onlyExpansion)).toBe("");
+    expect(keepSourceCommentAfterExpansionStrip(onlyExpansion)).toBe(onlyExpansion);
   });
 });

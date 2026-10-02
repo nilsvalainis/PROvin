@@ -368,8 +368,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-flash-max.ts")).toMatch(/id: "sources_comparison"/);
     expect(readRepo("lib/admin-flash-max.ts")).toMatch(/sources_comparison[\s\S]*?return "flash"/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/CHEAP_CORRECTION_RETRY_CODES/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/CHEAP_LENGTH_SKIP_FIELDS/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/too_long/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/commentLengthLimitsWaived/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/"source"/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/COMMENT_LENGTH_BUDGET/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/commentLengthLimitsWaived/);
   });
@@ -395,7 +397,12 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_SOURCE_FIELDS_FACTS_ONLY_RULES).toMatch(/Datu specifika/);
     expect(AI_SOURCE_FIELDS_FACTS_ONLY_RULES).toMatch(/neizslēdz/);
     expect(HYBRID_COMMENT_RULES).toMatch(/SOURCE FIELDS = FACTS ONLY|Do not interpret/);
-    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/stripSourceFieldExpansions/);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(
+      /keepSourceCommentAfterExpansionStrip/,
+    );
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(
+      /stripSourceFieldExpansions\(source\)\.trim\(\) \|\| source/,
+    );
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/source_field_expansion/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/inspection:[\s\S]*?14_000/);
   });
@@ -666,12 +673,19 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prep).toMatch(/modelTier/);
   });
 
-  it("Gemini 3 uses low thinking with 400 fallback", () => {
+  it("Gemini 3 uses minimal thinking so comments are not billed empty", () => {
     const thinking = readRepo("lib/gemini-thinking-config.ts");
-    expect(thinking).toMatch(/thinkingLevel: enabled \? "low" : "minimal"/);
+    expect(thinking).toMatch(/thinkingLevel: "minimal"/);
+    expect(thinking).not.toMatch(/thinkingLevel: enabled \? "low"/);
     expect(thinking).toMatch(/thinkingBudget: enabled \? 512 : 0/);
+    expect(thinking).toMatch(/return isGemini25Model\(model\)/);
     expect(readRepo("lib/admin-gemini.ts")).toMatch(/isGeminiThinkingUnsupported/);
     expect(readRepo("lib/admin-gemini.ts")).toMatch(/thoughtsTokenCount/);
+    expect(readRepo("lib/admin-gemini.ts")).toMatch(/shouldGeminiModelFailover/);
+    expect(readRepo("lib/gemini-model-failover.ts")).toMatch(/isAiEmptyGeneratedTextError/);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(
+      /keepSourceCommentAfterExpansionStrip/,
+    );
   });
 
   /**

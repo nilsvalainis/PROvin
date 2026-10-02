@@ -32,9 +32,14 @@ describe("geminiThinkingExtra", () => {
     }
   });
 
-  it("gives Gemini 3 a thinking level, never a budget", () => {
-    expect(thinkingConfig(GEMINI_MODEL_FLASH, true)).toEqual({ thinkingLevel: "low" });
+  it("gives Gemini 3 a capped thinking level, never a budget or unlimited default", () => {
+    expect(thinkingConfig(GEMINI_MODEL_FLASH, true)).toEqual({ thinkingLevel: "minimal" });
     expect(thinkingConfig(GEMINI_MODEL_FLASH, false)).toEqual({ thinkingLevel: "minimal" });
+  });
+
+  it("does not retry Gemini 3 with a second thinking pass (low ate the output)", () => {
+    expect(geminiWantsThinking(GEMINI_MODEL_FLASH)).toBe(false);
+    expect(geminiWantsThinking(GEMINI_MODEL_FLASH_25)).toBe(true);
   });
 
   it("gives Gemini 2.5 a budget, never a level", () => {
