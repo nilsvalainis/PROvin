@@ -199,6 +199,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/OM651\.913/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/TIKAI AKTUĀLAIS/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/uz-so-motoru-neattiecas/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/I have analyzed/);
+    expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/Internal Analysis/);
   });
 
   it("technical risks research rules require European forum search when packs are thin", () => {
@@ -381,6 +383,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/ai-comment-breadth.ts")).toMatch(/Komentāra platums \(FLASH MAX\)/);
     expect(readRepo("lib/admin-flash-max.ts")).toMatch(/defaultFlashMaxBreadths/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/parseCommentBreadthFromPrompt/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/planning_leak/);
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(/stripLeakedAiPlanningPreamble/);
   });
 
   it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {

@@ -140,3 +140,13 @@ describe("stripSummaryDualismOpener", () => {
     expect(out).toMatch(/Rekomendācija/);
   });
 });
+
+describe("planning leak", () => {
+  it("flags an English Internal Analysis preamble", () => {
+    const issues = evaluateExpertCommentQuality(
+      "I have analyzed the data.\n\nInternal Analysis & Plan:\nRisk Prioritization #1.\n\nSadales ķēde\nĶēde ir risks.",
+      { field: "technical_risks" },
+    );
+    expect(issues.some((i) => i.code === "planning_leak")).toBe(true);
+  });
+});

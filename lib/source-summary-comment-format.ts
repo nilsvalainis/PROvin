@@ -580,11 +580,67 @@ export function normalizeProvinExpertAiComment(raw: string | undefined | null): 
 }
 
 /**
+ * Gemini dažkārt izejā ieliek angļu iekšējo plānu (identifikācija, meklējumi,
+ * self-correction), nevis tikai klienta latviešu komentāru. Thought daļas
+ * filtrs to neredz, jo tas ir parasts teksts.
+ */
+export const AI_PLANNING_LEAK_RE =
+  /I have analyzed|Internal Analysis|Risk Prioritization|Structure of the Output|Web Search\s*[&+]?\s*Knowledge|This plan ensures|I will now generate|Aggregate Identification\s*:|Final Review\s*:|Search results confirm/i;
+
+const PLANNING_HEADING_LINE_RE =
+  /^(?:Internal Analysis|Risk Prioritization|Structure of the Output|Web Search|Final Review|Aggregate Identification|#\d+\s)/i;
+
+function hasLatvianClientProse(text: string): boolean {
+  return (
+    /[āčēģīķļņšūžĀČĒĢĪĶĻŅŠŪŽ]/.test(text) &&
+    /automašīn|jāpārbaud|nobraukum|tehnisk|dzinēj|eļļas|koroz|piekare|apskate|sliekš|riteņu ark/i.test(
+      text,
+    )
+  );
+}
+
+function looksLikeLatvianClientHeading(line: string): boolean {
+  const t = line.trim();
+  if (t.length < 4 || t.length > 90) return false;
+  if (AI_PLANNING_LEAK_RE.test(t) || PLANNING_HEADING_LINE_RE.test(t)) return false;
+  return /[āčēģīķļņšūžĀČĒĢĪĶĻŅŠŪŽ]/.test(t);
+}
+
+export function looksLikeLeakedAiPlanning(raw: string | undefined | null): boolean {
+  return AI_PLANNING_LEAK_RE.test(raw ?? "");
+}
+
+/** Noņem angļu plāna preambulu; ja latviešu komentāra nav, atstāj samaksāto tekstu. */
+export function stripLeakedAiPlanningPreamble(raw: string | undefined | null): string {
+  const source = (raw ?? "").trim();
+  if (!source || !looksLikeLeakedAiPlanning(source)) return source;
+
+  const lines = source.split("\n");
+  let offset = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (looksLikeLatvianClientHeading(line) && hasLatvianClientProse(lines.slice(i + 1).join("\n"))) {
+      return source.slice(offset).trim();
+    }
+    offset += line.length + 1;
+  }
+
+  const glued = /[.!?]([A-ZĀČĒĢĪĶĻŅŠŪŽ][^\n]{6,80})\n/.exec(source);
+  if (glued?.[1] && looksLikeLatvianClientHeading(glued[1])) {
+    const start = glued.index + 1;
+    const cut = source.slice(start).trim();
+    if (hasLatvianClientProse(cut)) return cut;
+  }
+
+  return source;
+}
+
+/**
  * Pēcapstrāde nedrīkst iztukšot jau samaksātu atbildi (piem. tikai `*` / Markdown).
  * Ja normalizācija izmet visu, paliek vārdu krājuma versija.
  */
 export function finalizeProvinExpertAiComment(raw: string | undefined | null): string {
-  const source = (raw ?? "").trim();
+  const source = stripLeakedAiPlanningPreamble(raw ?? "");
   if (!source) return "";
   const normalized = normalizeProvinExpertAiComment(source);
   return normalized.trim() || applyProvinReportCopyVocabulary(source);
@@ -744,7 +800,7 @@ export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LAT
 - Spēcīgs iznākums (mērķis): seniora tehniskā instruktāža konkrētam paaudze+motors+kārba+piedziņa+virsbūve salikumam. Klients pēc šīs sadaļas saprot (1) kuri mezgli šim eksemplāram ir aktuāli pēc datiem (bez € skaitļiem), (2) kas ir paaudzes kaprīze ilgtermiņā, (3) vai dati rāda koptu auto vai tukšu vēsturi. Neraksti, kas šim modelim „neattiecas”.
 - GARUMS: noklusējuma 350–800 / 2–4 rindkopas ŠEIT NEATTIECAS. Kvota ir NOSACĪTA: tik sadaļu, cik ir atšķirīga agregāta materiāla. Tipiski **4–10 rindkopas**; **8–12 rindkopas** tikai tad, ja katra sadaļa ir cits mezgls. Īsāka analīze NAV kļūda. Aizliegts aizpildīt garumu ar TA nosegtiem nodiluma mezgliem (sviras, bukses, lodbalsti, bremzes).
 - OBLIGĀTĀ IZKLĀSTA SEKVENCE (izvadē bez numuriem — virsraksts savā rindā, tad rindkopa; NEKAD *, **; BEZ Kas-NAV-dargs-risks / Tuvakais-rekins šablona virsrakstiem):
-  0) Identifikācija ir **iekšēja**, ne izvades ievads. Nosaki paaudzi+motoru+kārbu+piedziņu no datiem (kods; ja koda nav - **kW + cm³ + gads + degviela** tajā pašā markā), BET NERAKSTI pirmo rindkopu „kas tas ir par auto”, „Dzinēja konstrukcija un resurss”, „Agregātu identifikācija” vai markas/motora/kārbas tūri - tas jau ir citās atskaites sadaļās. Dzinēja/kārbas fakti minami tikai tad, kad tie **izskaidro risku**.
+  0) Identifikācija ir **iekšēja**, ne izvades ievads. Nosaki paaudzi+motoru+kārbu+piedziņu no datiem (kods; ja koda nav - **kW + cm³ + gads + degviela** tajā pašā markā), BET NERAKSTI pirmo rindkopu „kas tas ir par auto”, „Dzinēja konstrukcija un resurss”, „Agregātu identifikācija” vai markas/motora/kārbas tūri - tas jau ir citās atskaites sadaļās. Dzinēja/kārbas fakti minami tikai tad, kad tie **izskaidro risku**. Iekšējais plāns (angļu „I have analyzed”, Internal Analysis, Risk Prioritization, Web Search & Knowledge, Final Review, #1/#2 saraksts) NEKAD nav izeja.
   1) Pirmā rindkopa = konkrēts **riska fakts** par šo eksemplāru. Km/vecuma kalibrāciju ievij šajā rindkopā. Volvo: T11/~158 kW biturbo sāc ar bloka plaisas/dzesēšanu; T5/T8/T14 viena turbo - ar papildsiksnas spriegotāju - ne ar „aprīkota ar… / veiksmīgākā konstrukcija”.
   2) Galvenie aktuālie mezgli šajā posmā (varbūtība × ietekme, BEZ EUR skaitļiem) — maksimāli 1–2 pozīcijas — ja tie vēl nav 1. rindkopā. Nosauc mezglu, ne near-term-investment šablonu. Dārgo ekstraprīkojumu (E60/E61: Active Steering, Dynamic Drive, Soft Close, Logic 7, xDrive; MB: Airmatic / ABC) nosauc **tikai ja SA / dīleris / operators to rāda šim auto**. Ja nav datos - par to NERAKSTI.
   3–N) Katrs atšķirīgais relevantais sistēmas bloks atsevišķā rindkopā: motora mehānika (ķēde/zobsiksna un tās **puse/piekļuve**, eļļas noplūdes, dzesēšana); ieplūde/EGR/DPF/AdBlue/turbo/iesmidzinātāji (sprauslas); kārba („mūža eļļa”, mehatronika, DCT tips); elektronika kā **vecuma** kaprīze; virsbūvei specifiskā piekare (rūpnīcas pneumatika ≠ dārgais Adaptive/Dynamic Drive, ja tas nav sarakstā).
@@ -764,7 +820,7 @@ export const AI_TECHNICAL_RISKS_RESEARCH_RULES = `WEB RESEARCH (obligāti „1. 
 - Vaicājumi (Eiropa vispirms): „{dzinēja kods} typical problems / timing belt OR chain”; „{marka} {šasija/paaudze} {dzinēja kods} known issues”; „{motors} intake manifold OR injectors OR thermostat”; „{modelis} {gads} Motor-Talk OR forum weaknesses”; šīs paaudzes dārgais ekstraprīkojums (air suspension, active steering, DCT, Airmatic u.tml.).
 - Avoti: Eiropas īpašnieku forumi un klubu wiki (DE/UK/FR/IT/NL/Nordics - Motor-Talk, BimmerForums UK, club fora), neatkarīgo servisu raksti. ASV/Reddit - sekundāri (citas jūdzes, cits aprīkojums).
 - Sintezē: slimība + tipiskais km/vecuma posms, **bez** orientējošām EUR joslām klientam. **Neizdomā** citātus, kampaņu numurus, procentus, „foruma statistiku”. Ja avoti konfliktē — pasaki un ņem pircējam konservatīvāko lasījumu.
-- Meklējumu neizgāž komentārā. Ieraksti flagship struktūrā, kalibrētu pret ŠĪ auto km, vecumu, servisu un aprīkojumu.
+- Meklējumu neizgāž komentārā. Ieraksti flagship struktūrā, kalibrētu pret ŠĪ auto km, vecumu, servisu un aprīkojumu. IZEJA = tikai latviešu klienta komentārs. Aizliegts angļu plāns, „I have analyzed”, Internal Analysis, Web Search & Knowledge, Final Review.
 - Ja meklēšana nedod ticamu materiālu: vispārīgais modeļa līmenis + skaidri „zināšanu ir maz”; neaizpildi ar vispārīgu dīzeļa/EGR tekstu.`;
 
 /** Compact structure samples for the flagship field only — not full length, not this-order facts. */

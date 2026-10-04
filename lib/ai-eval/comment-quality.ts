@@ -5,6 +5,7 @@
 import { findBannedVocabularyHits } from "@/lib/provin-banned-vocabulary";
 import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
 import { COMMENT_LENGTH_BUDGET, commentQualityMaxChars } from "@/lib/ai-comment-length-budget";
+import { looksLikeLeakedAiPlanning } from "@/lib/source-summary-comment-format";
 
 export type CommentQualityIssue = {
   code: string;
@@ -157,6 +158,14 @@ export function evaluateExpertCommentQuality(
   if (!t) {
     issues.push({ code: "empty", message: "Komentārs ir tukšs" });
     return issues;
+  }
+
+  if (looksLikeLeakedAiPlanning(t)) {
+    issues.push({
+      code: "planning_leak",
+      message:
+        "Izejā ir angļu iekšējais plāns (Internal Analysis / Web Search / I have analyzed) - atstāj tikai latviešu klienta komentāru",
+    });
   }
 
   if (AUTOMIBILIS_RE.test(t)) {

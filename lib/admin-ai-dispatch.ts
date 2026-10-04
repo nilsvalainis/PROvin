@@ -86,6 +86,7 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "paint_gauge_missing",
   "paint_gauge_incomplete",
   "source_field_expansion",
+  "planning_leak",
 ]);
 
 /** Lētais Gemini Flash piegājiens. Nav vērts atkārtot ar Opus/Sonnet. */
@@ -123,7 +124,8 @@ ${violations}
 Iepriekšējā atbilde (konteksts, NEATKĀRTO burtiski):
 ${priorText}
 
-Uzrakstī PILNU teksta versiju no jauna, novēršot minētās kļūdas un saglabājot visu tehnisko precizitāti un pārējo saturu.`;
+Uzrakstī PILNU teksta versiju no jauna, novēršot minētās kļūdas un saglabājot visu tehnisko precizitāti un pārējo saturu.
+Tikai klienta komentārs latviešu valodā. Bez angļu plāna, bez Internal Analysis, bez meklējumu žurnāla.`;
 }
 
 function buildCheapLengthCorrectionPrompt(

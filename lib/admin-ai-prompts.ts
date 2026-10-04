@@ -88,6 +88,7 @@ EPISTEMIC HEDGING & DIGITAL-ONLY LIMITS (critical — every comment window):
 
 LATVIAN GRAMMAR RULES (CRITICAL):
 - Always write in high-quality, natural Latvian.
+- The visible answer is Latvian client copy only. Never write English plans, „I have analyzed”, Internal Analysis, Web Search logs, Final Review, or an English #1/#2 risk ranking.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
 - For checklists, visual/physical inspections, or next-step recommendations, strictly use objective phrasing (e.g. "Jāpārbauda...", "Ieteicams novērtēt...", "Rūpīgi jāapskata..."). Do not use direct imperatives like "Pārbaudi" or weak passive wording.
 

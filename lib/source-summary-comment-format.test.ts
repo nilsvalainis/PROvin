@@ -5,6 +5,7 @@ import {
   normalizeExpertSourcePdfComment,
   normalizeProvinExpertAiComment,
   splitDealerCommentRoleHeadings,
+  stripLeakedAiPlanningPreamble,
   toExpertHeadingBodyPlain,
 } from "@/lib/source-summary-comment-format";
 
@@ -166,5 +167,26 @@ describe("finalizeProvinExpertAiComment", () => {
   it("keeps paid text when paragraph normalize would empty markdown-only output", () => {
     expect(finalizeProvinExpertAiComment("***")).toBe("***");
     expect(finalizeProvinExpertAiComment("  ")).toBe("");
+  });
+
+  it("drops an English planning preamble glued to the Latvian flagship comment", () => {
+    const leaked = [
+      "I have analyzed the provided data for the BMW 120D XDRIVE (F20) and will now generate the technical risk analysis.",
+      "",
+      "Internal Analysis & Plan:",
+      "",
+      "Aggregate Identification: Engine N47 D20 C. Risk Prioritization #1 Critical Risk: timing chain.",
+      "Web Search & Knowledge Integration: Search results confirm the chain is at the rear.",
+      "Final Review: Check for banned words. This plan ensures a comprehensive analysis that meets all the specified requirements.Sadales ķēdes resurss",
+      "",
+      "Šī automašīna ir aprīkota ar N47 sērijas dīzeļdzinēju, kura galvenais riska punkts ir sadales ķēde. Pie nobraukuma virs 200 000 km, ja nav dokumentu par maiņu, šis mezgls ir galvenais pirkuma risks.",
+    ].join("\n");
+    const cut = stripLeakedAiPlanningPreamble(leaked);
+    expect(cut).toMatch(/^Sadales ķēdes resurss/);
+    expect(cut).not.toMatch(/I have analyzed|Internal Analysis|This plan ensures/);
+    const finalized = finalizeProvinExpertAiComment(leaked);
+    expect(finalized).toMatch(/^Sadales ķēdes resurss/);
+    expect(finalized).toMatch(/N47/);
+    expect(finalized).not.toMatch(/I have analyzed/);
   });
 });
