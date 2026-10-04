@@ -310,8 +310,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/<strong>Virsraksts<\/strong>/);
     expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/\$\{AI_DEALER_COMMENT_CONSTRUCTION_RULES\}/);
     expect(readRepo("lib/dealer-data-job.ts")).toMatch(/aiExpertSourceCommentToRichHtml/);
-    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(
+    expect(readRepo("lib/ai-comment-breadth.ts")).toMatch(
       /nākamo virsrakstu nekad nelīmē/,
+    );
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(
+      /sourceCommentLengthLineForBreadth/,
     );
   });
 
@@ -374,6 +377,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/"source"/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/COMMENT_LENGTH_BUDGET/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/commentLengthLimitsWaived/);
+    expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/buildCommentBreadthBrief/);
+    expect(readRepo("lib/ai-comment-breadth.ts")).toMatch(/Komentāra platums \(FLASH MAX\)/);
+    expect(readRepo("lib/admin-flash-max.ts")).toMatch(/defaultFlashMaxBreadths/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/parseCommentBreadthFromPrompt/);
   });
 
   it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {

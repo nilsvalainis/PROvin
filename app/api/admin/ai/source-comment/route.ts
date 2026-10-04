@@ -13,6 +13,7 @@ import {
 } from "@/lib/admin-ai-source-comment";
 import { mergeSourceBlocksFromBody } from "@/lib/admin-ai-api-body";
 import { parseAiModelTier } from "@/lib/ai-admin-model-tier";
+import { parseCommentBreadth } from "@/lib/ai-comment-breadth";
 import {
   isAiSourceCommentTargetField,
   sourceBlockCommentsPlainForAi,
@@ -42,6 +43,7 @@ type BodyShape = {
   citiAvotiSectionIndex?: unknown;
   targetField?: unknown;
   modelTier?: unknown;
+  commentBreadth?: unknown;
 };
 
 function str(v: unknown): string {
@@ -121,6 +123,7 @@ export async function POST(req: Request) {
       operatorNotes: str(b.operatorNotes),
       existingDraftPlain,
       modelTier: parseAiModelTier(b.modelTier),
+      commentBreadth: parseCommentBreadth(b.commentBreadth),
     }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";

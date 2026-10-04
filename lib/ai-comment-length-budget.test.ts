@@ -81,4 +81,15 @@ describe("comment length budget", () => {
     expect(d.mileageRowCount).toBe(4);
     expect(d.density).not.toBe("low");
   });
+
+  it("does not lift compact FLASH MAX source comments on high density", () => {
+    const prompt = [
+      "### Komentāra platums (FLASH MAX): KOMPAKTS",
+      "### Komentāru garuma budžets (deterministisks)",
+      "- Datu blīvums: AUGSTS (5 avoti",
+    ].join("\n");
+    expect(commentQualityMaxChars("source", prompt)).toBe(900);
+    const withBreadth = buildCommentLengthBudgetBrief(createDefaultSourceBlocks(), { breadth: "compact" });
+    expect(withBreadth).toMatch(/Komentāra platums \(FLASH MAX\): KOMPAKTS/);
+  });
 });

@@ -7,6 +7,7 @@ import {
   FLASH_MAX_JOBS,
   FLASH_MAX_OPERATOR_NOTES_MAX_LEN,
   clipFlashMaxOperatorNotes,
+  defaultFlashMaxJobBreadth,
   defaultFlashMaxSelection,
   emptyFlashMaxSelection,
   expandFlashMaxMenuJobs,
@@ -17,6 +18,11 @@ import {
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { AI_ADMIN_TIER_BUTTON_ORDER } from "@/lib/ai-admin-field-defaults";
 import { aiAdminModelTierLabel, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import {
+  COMMENT_BREADTH_LEVELS,
+  COMMENT_BREADTH_SHORT,
+  type CommentBreadth,
+} from "@/lib/ai-comment-breadth";
 
 type Props = {
   disabled?: boolean;
@@ -46,16 +52,20 @@ function JobRow({
   job,
   checked,
   tier,
+  breadth,
   disabled,
   onToggle,
   onTier,
+  onBreadth,
 }: {
   job: FlashMaxJob;
   checked: boolean;
   tier: AiAdminModelTier;
+  breadth: CommentBreadth;
   disabled: boolean;
   onToggle: (id: string, next: boolean) => void;
   onTier: (id: string, next: AiAdminModelTier) => void;
+  onBreadth: (id: string, next: CommentBreadth) => void;
 }) {
   const boxId = useId();
   return (
@@ -74,6 +84,20 @@ function JobRow({
       <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-[var(--color-apple-text)]">
         {job.label}
       </span>
+      <select
+        aria-label={`${job.label} platums`}
+        disabled={disabled}
+        value={breadth}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => onBreadth(job.id, e.target.value as CommentBreadth)}
+        className="h-5 w-[3.4rem] shrink-0 rounded border border-slate-200 bg-white px-0.5 text-[9px] font-semibold text-slate-700 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
+      >
+        {COMMENT_BREADTH_LEVELS.map((opt) => (
+          <option key={opt} value={opt}>
+            {COMMENT_BREADTH_SHORT[opt]}
+          </option>
+        ))}
+      </select>
       <select
         aria-label={`${job.label} aģents`}
         disabled={disabled}
@@ -140,6 +164,10 @@ export function AdminFlashMaxButton({
     setSelection((prev) => ({ ...prev, tiers: { ...prev.tiers, [id]: next } }));
   };
 
+  const setBreadth = (id: string, next: CommentBreadth) => {
+    setSelection((prev) => ({ ...prev, breadths: { ...prev.breadths, [id]: next } }));
+  };
+
   const confirm = () => {
     if (busy || selectedCount === 0) return;
     setOpen(false);
@@ -175,7 +203,7 @@ export function AdminFlashMaxButton({
         <div
           role="dialog"
           aria-labelledby={titleId}
-          className={`absolute top-full z-50 mt-1 w-[min(24rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(15,23,42,0.14)] ${
+          className={`absolute top-full z-50 mt-1 w-[min(28rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_12px_40px_rgba(15,23,42,0.14)] ${
             menuAlign === "end" ? "right-0" : "left-0"
           }`}
         >
@@ -185,8 +213,8 @@ export function AdminFlashMaxButton({
                 FLASH MAX
               </p>
               <p className="text-[9px] leading-snug text-slate-500">
-                CSDD, AutoDNA, CarVertical, LTAB: Sonnet. Pārējie avoti: Gemini Flash. Kopsavilkums paliek kā ✨
-                pogās.
+                Platums: Komp / Vid / Plašs. Kopsavilkums (1./2./3.) pēc noklusējuma plašs, pārējie
+                kompakti. Aģentu izvēle paliek kā ✨ pogās.
               </p>
             </div>
             <div className="flex flex-wrap gap-1">
@@ -216,9 +244,11 @@ export function AdminFlashMaxButton({
                 job={job}
                 checked={selection.selectedIds.includes(job.id)}
                 tier={selection.tiers[job.id] ?? "gemini-flash"}
+                breadth={selection.breadths[job.id] ?? defaultFlashMaxJobBreadth(job.id)}
                 disabled={!!busy}
                 onToggle={toggle}
                 onTier={setTier}
+                onBreadth={setBreadth}
               />
             ))}
             <p className="pt-1.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
@@ -233,9 +263,11 @@ export function AdminFlashMaxButton({
                 job={job}
                 checked={selection.selectedIds.includes(job.id)}
                 tier={selection.tiers[job.id] ?? "gemini-flash"}
+                breadth={selection.breadths[job.id] ?? defaultFlashMaxJobBreadth(job.id)}
                 disabled={!!busy}
                 onToggle={toggle}
                 onTier={setTier}
+                onBreadth={setBreadth}
               />
             ))}
           </div>

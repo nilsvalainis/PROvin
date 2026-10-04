@@ -258,6 +258,7 @@ export async function POST(req: Request) {
   let blobRefs: SourcePdfBlobRef[] = [];
   let applyMode: "auto" | "preview" = "auto";
   let auditContextRaw: unknown = null;
+  let citiAvotiSectionIndex: number | undefined;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -270,6 +271,8 @@ export async function POST(req: Request) {
       const mode = str(form.get("applyMode")).trim();
       if (mode === "preview") applyMode = "preview";
       auditContextRaw = form.get("auditContext");
+      const citiIdxRaw = Number(str(form.get("citiAvotiSectionIndex")));
+      if (Number.isInteger(citiIdxRaw) && citiIdxRaw >= 0) citiAvotiSectionIndex = citiIdxRaw;
 
       const candidates: File[] = [];
       for (const key of ["files", "file"]) {
@@ -407,6 +410,8 @@ export async function POST(req: Request) {
       allowedSources = parseAllowedSources(b.allowedSources);
       auditContextRaw = b.auditContext ?? null;
       if (str(b.applyMode).trim() === "preview") applyMode = "preview";
+      const citiIdxJson = Number(str(b.citiAvotiSectionIndex));
+      if (Number.isInteger(citiIdxJson) && citiIdxJson >= 0) citiAvotiSectionIndex = citiIdxJson;
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
@@ -493,7 +498,10 @@ export async function POST(req: Request) {
             buffer: pdf.buffer,
             sourceBlocks: workingBlocks,
           });
-          const result = applyCopilotActions(workingBlocks, agent.actions, { onlyAuto: false });
+          const result = applyCopilotActions(workingBlocks, agent.actions, {
+            onlyAuto: false,
+            citiAvotiSectionIndex,
+          });
           workingBlocks = result.sourceBlocks;
           if (detected === "autodna" || detected === "carvertical") {
             const filled = fillVendorAiContextIfEmpty(workingBlocks[detected], pdfText);
@@ -649,6 +657,7 @@ export async function POST(req: Request) {
     const autoResult = applyCopilotActions(workingBlocks, allowedActions, {
       onlyAuto: true,
       clarificationNeeded: ai.clarificationNeeded,
+      citiAvotiSectionIndex,
     });
     workingBlocks = autoResult.sourceBlocks;
 
@@ -783,9 +792,12 @@ export async function PUT(req: Request) {
   const allowedActions = actions.filter((a) => allowedSet.has(a.source));
   const blocked = actions.filter((a) => !allowedSet.has(a.source));
   // Apstiprinājuma ceļš ir vienīgais, kas drīkst dzēst.
+  const citiIdxPut = Number(str(b.citiAvotiSectionIndex));
   const result = applyCopilotActions(sourceBlocks, allowedActions, {
     onlyAuto: false,
     allowDestructive: true,
+    citiAvotiSectionIndex:
+      Number.isInteger(citiIdxPut) && citiIdxPut >= 0 ? citiIdxPut : undefined,
   });
   return NextResponse.json({
     ok: true,

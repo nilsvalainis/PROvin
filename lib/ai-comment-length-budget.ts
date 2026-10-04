@@ -12,6 +12,12 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
+import {
+  buildCommentBreadthBrief,
+  commentBreadthMaxChars,
+  parseCommentBreadthFromPrompt,
+  type CommentBreadth,
+} from "@/lib/ai-comment-breadth";
 
 export type CommentLengthBudgetField =
   | "source"
@@ -103,9 +109,13 @@ const DENSITY_LV: Record<CommentDataDensity, string> = {
 };
 
 /** Kompakts prompta bloks visiem ✨ laukiem. */
-export function buildCommentLengthBudgetBrief(sourceBlocks: WorkspaceSourceBlocks): string {
+export function buildCommentLengthBudgetBrief(
+  sourceBlocks: WorkspaceSourceBlocks,
+  opts?: { breadth?: CommentBreadth | null },
+): string {
   const d = analyzeCommentDataDensity(sourceBlocks);
   const lines = [
+    ...(opts?.breadth ? [buildCommentBreadthBrief(opts.breadth), ""] : []),
     "### Komentāru garuma budžets (deterministisks)",
     `- Datu blīvums: ${DENSITY_LV[d.density]} (${d.sourceCount} avoti ar datiem, ${d.mileageRowCount} nobraukuma rindas)`,
     `- Avota komentārs: garums seko faktiem. 1 rindkopa, ja pietiek; ja šis avots dod daudz faktu - vairākas rindkopas. Tehniskais griests ${COMMENT_LENGTH_BUDGET.source.maxChars} rakstzīmes (runaway, ne kvota). Nesaīsini bagātīgu avotu līdz 1 rindkopai. IZŅĒMUMS: OFICIĀLĀ DĪLERA DATI „Komentārs” - bez fiksēta griesta, izskaidro visus iegūtos datus.`,
@@ -169,8 +179,10 @@ export function commentQualityMaxChars(
   if (commentLengthLimitsWaived(prompt)) return null;
   const key = field as CommentLengthBudgetField;
   const base = COMMENT_LENGTH_BUDGET[key]?.maxChars ?? COMMENT_LENGTH_BUDGET.generic.maxChars;
-  if (prompt && /Datu blīvums:\s*AUGSTS/i.test(prompt)) {
-    return Math.max(base, Math.min(12_000, Math.ceil(base * 3)));
+  const breadth = parseCommentBreadthFromPrompt(prompt);
+  const capped = breadth ? commentBreadthMaxChars(field, breadth, base) : base;
+  if (prompt && /Datu blīvums:\s*AUGSTS/i.test(prompt) && breadth !== "compact") {
+    return Math.max(capped, Math.min(12_000, Math.ceil(capped * 3)));
   }
-  return base;
+  return capped;
 }

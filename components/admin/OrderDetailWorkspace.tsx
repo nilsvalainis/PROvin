@@ -261,6 +261,7 @@ import {
 import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
 import {
   expandFlashMaxRunJobs,
+  flashMaxJobBreadth,
   flashMaxJobTier,
   flashMaxSelectedJobs,
   formatFlashMaxNotice,
@@ -1844,6 +1845,7 @@ export function OrderDetailWorkspace({
             ...(operatorNotes ? { operatorNotes } : {}),
           }),
           modelTier: flashMaxJobTier(job, selection),
+          commentBreadth: flashMaxJobBreadth(job, selection, job.runId),
           ...(job.kind === "source"
             ? {
                 blockKey: job.blockKey,
@@ -4679,6 +4681,8 @@ export function OrderDetailWorkspace({
               onPhotoGroupsStructuralCommit={(sectionIndex, next) =>
                 void commitGenericSourcePhotoGroups("citi_avoti", next, sectionIndex)
               }
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
             />
           </div>
         ) : null}

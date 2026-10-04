@@ -4,6 +4,7 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { strFromBody } from "@/lib/admin-ai-operator-notes";
 import { parseAiModelTier } from "@/lib/ai-admin-model-tier";
+import { parseCommentBreadth } from "@/lib/ai-comment-breadth";
 import type { AiOrderContextInput } from "@/lib/admin-ai-order-context";
 
 export function parseAiOrderContextFromBody(
@@ -28,6 +29,7 @@ export function parseAiOrderContextFromBody(
     operatorNotes: strFromBody(b.operatorNotes),
     existingDraftPlain: strFromBody(b.existingDraftPlain),
     modelTier: parseAiModelTier(b.modelTier),
+    commentBreadth: parseCommentBreadth(b.commentBreadth),
   };
 }
 

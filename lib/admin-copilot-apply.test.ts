@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyCopilotActions, buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
-import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, emptyCitiAvotiSection } from "@/lib/admin-source-blocks";
 import type { CopilotAction } from "@/lib/admin-copilot-types";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 
@@ -189,6 +189,43 @@ describe("applyCopilotActions", () => {
     const result = applyCopilotActions(blocks, actions, { onlyAuto: true });
     expect(result.applied).toHaveLength(1);
     expect(result.sourceBlocks.autodna.aiContextRaw).toContain("Type code: 8V");
+  });
+
+  it("writes CITI AVOTI Copilot rows onto the titled section, not the first one", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.citi_avoti = {
+      sections: [
+        { ...emptyCitiAvotiSection(), label: "Pirmais" },
+        { ...emptyCitiAvotiSection(), label: "Otrais" },
+      ],
+    };
+    const result = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "upsert_mileage",
+          source: "citi_avoti",
+          date: "01.02.2024",
+          odometer: "123456",
+          country: "LV",
+          confidence: "high",
+        },
+        {
+          type: "append_raw",
+          source: "citi_avoti",
+          text: "RAW otrais avots",
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: true, citiAvotiSectionIndex: 1 },
+    );
+    expect(result.changedKeys).toContain("citi_avoti");
+    const first = result.sourceBlocks.citi_avoti.sections[0]!;
+    const second = result.sourceBlocks.citi_avoti.sections[1]!;
+    expect(first.serviceHistory.some((r) => (r.odometer ?? "").includes("123456"))).toBe(false);
+    expect(second.serviceHistory.some((r) => (r.odometer ?? "").includes("123456"))).toBe(true);
+    expect(first.rawUnprocessedData ?? "").not.toMatch(/RAW otrais/);
+    expect(second.rawUnprocessedData ?? "").toMatch(/RAW otrais/);
   });
 
   it("writes CheckCar.vin mileage and accidents onto cc_vin", () => {

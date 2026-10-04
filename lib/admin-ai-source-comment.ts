@@ -18,6 +18,7 @@ import {
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import { sourceCommentLengthLineForBreadth, type CommentBreadth } from "@/lib/ai-comment-breadth";
 
 export type AiSourceCommentInput = {
   sessionId: string;
@@ -39,6 +40,7 @@ export type AiSourceCommentInput = {
   citiAvotiSectionIndex?: number;
   targetField?: AiSourceCommentTargetField;
   modelTier?: AiAdminModelTier;
+  commentBreadth?: CommentBreadth | null;
   /**
    * Tikai automātiskajai API ielasei (auto_records/oneauto, targetField "comments"):
    * fold eļļas maiņas intervālu matemātiku vienā papildu rindkopā šajā pašā laukā,
@@ -70,6 +72,7 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
     customerName: input.customerName?.trim() || null,
     notes: input.notes?.trim() || null,
     sourceBlocks: input.sourceBlocks,
+    commentBreadth: input.commentBreadth,
     irissSummary: input.iriss ?? undefined,
     inspectionPlan: input.apskatesPlāns ?? undefined,
     technicalRiskAnalysis: input.tehniskoRiskuAnalize ?? undefined,
@@ -175,9 +178,7 @@ Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
 Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē šajā auditā? To pasaki pirmajā rindkopā un apstājies pie fakta.
 Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.
 ${
-  isDealerComments
-    ? "Garums: nav fiksētu griestu šai sadaļai - izskaidro VISUS iegūtos datus (agregātu identifikācija, servisa/remontu vēsture, nobraukuma saskaņa), īpaši, ja tie satur daudz vērtīgas informācijas. Bez liekvārdības un mākslīgi paplašinātiem teikumiem: īss fakts ir labāks par izdomātu teikumu. Katrai lomai virsraksts savā rindā, tad tukša rinda, tad rindkopa; nākamo virsrakstu nekad nelīmē pie iepriekšējā teikuma."
-    : "Garums: ja datu ir maz - **1 rindkopa**; ja šis avots dod daudz faktu - vairākas rindkopas, nesaīsini un neapgraizi. 2–3 / ≈800 attiecas TIKAI uz trūcīgiem datiem bez operatora teksta. Ja ir OPERATORA IELĪMĒTAIS TEKSTS vai garš esošais melnraksts - griesti NEATTIECAS."
+  sourceCommentLengthLineForBreadth(input.commentBreadth ?? null, isDealerComments)
 } Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
 Ja šis avots tikai apstiprina jau uzrakstīto: viens īss teikums.

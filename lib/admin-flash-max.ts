@@ -26,6 +26,9 @@ import {
 } from "@/lib/admin-workspace-field-labels";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import { defaultFlashMaxJobBreadth, type CommentBreadth } from "@/lib/ai-comment-breadth";
+
+export { defaultFlashMaxJobBreadth };
 
 export const FLASH_MAX_DEFAULT_TIER: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.source_comment;
 
@@ -212,6 +215,8 @@ export function clipFlashMaxOperatorNotes(raw: unknown): string {
 export type FlashMaxSelection = {
   selectedIds: string[];
   tiers: Record<string, AiAdminModelTier>;
+  /** Komentāra platums katram FLASH MAX darbam. */
+  breadths: Record<string, CommentBreadth>;
   /** Operatora komanda visiem izvēlētajiem aģentiem (OPERATORA KOMANDAS). */
   operatorNotes?: string;
 };
@@ -220,10 +225,15 @@ export function defaultFlashMaxTiers(): Record<string, AiAdminModelTier> {
   return Object.fromEntries(FLASH_MAX_JOBS.map((job) => [job.id, flashMaxJobModelTier(job)]));
 }
 
+export function defaultFlashMaxBreadths(): Record<string, CommentBreadth> {
+  return Object.fromEntries(FLASH_MAX_JOBS.map((job) => [job.id, defaultFlashMaxJobBreadth(job.id)]));
+}
+
 export function defaultFlashMaxSelection(): FlashMaxSelection {
   return {
     selectedIds: [...FLASH_MAX_DAILY_JOB_IDS],
     tiers: defaultFlashMaxTiers(),
+    breadths: defaultFlashMaxBreadths(),
   };
 }
 
@@ -231,11 +241,25 @@ export function summaryOnlyFlashMaxSelection(): FlashMaxSelection {
   return {
     selectedIds: [...FLASH_MAX_SUMMARY_ONLY_JOB_IDS],
     tiers: defaultFlashMaxTiers(),
+    breadths: defaultFlashMaxBreadths(),
   };
 }
 
 export function emptyFlashMaxSelection(): FlashMaxSelection {
-  return { selectedIds: [], tiers: defaultFlashMaxTiers() };
+  return { selectedIds: [], tiers: defaultFlashMaxTiers(), breadths: defaultFlashMaxBreadths() };
+}
+
+export function flashMaxJobBreadth(
+  job: FlashMaxJob,
+  selection: FlashMaxSelection,
+  runId?: string,
+): CommentBreadth {
+  const id = runId ?? job.id;
+  return (
+    selection.breadths[id] ??
+    selection.breadths[job.id] ??
+    defaultFlashMaxJobBreadth(id)
+  );
 }
 
 export function flashMaxSelectedJobs(selection: FlashMaxSelection): FlashMaxJob[] {

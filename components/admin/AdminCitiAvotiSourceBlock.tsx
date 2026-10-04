@@ -24,6 +24,9 @@ import {
   looksLikeMileageHistoryOdometerPaste,
   parseMileageHistoryOdometerPaste,
 } from "@/lib/mileage-history-odometer-paste-parse";
+import { AdminCitiAvotiCopilotUpload } from "@/components/admin/AdminCitiAvotiCopilotUpload";
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
+import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -42,6 +45,11 @@ type Props = {
   onPhotoGroupsStructuralCommit?: (
     sectionIndex: number,
     next: import("@/lib/source-block-photo-types").SourceBlockPhotoGroup[],
+  ) => void;
+  getSourceBlocks?: () => WorkspaceSourceBlocks;
+  applyPatchedBlocks?: (
+    patched: Partial<WorkspaceSourceBlocks>,
+    changedKeys: CopilotSourceKey[],
   ) => void;
 };
 
@@ -69,6 +77,8 @@ export function AdminCitiAvotiSourceBlock({
   aiComment,
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
+  getSourceBlocks,
+  applyPatchedBlocks,
 }: Props) {
   const sections = (value.sections ?? []).length > 0 ? value.sections! : [emptyCitiAvotiSection()];
   const total = sections.length;
@@ -129,27 +139,28 @@ export function AdminCitiAvotiSourceBlock({
         <div className={`min-h-0 flex-1 space-y-3 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
           {sections.map((section, index) => {
             const heading = citiAvotiSectionLabel(section, index, total);
+            const titled = Boolean(section.label?.trim());
             return (
               <div
                 key={index}
-                className="rounded-lg border border-slate-200/90 bg-white/60 p-2 shadow-sm"
+                className="overflow-hidden rounded-lg border border-slate-300 bg-white/70 shadow-sm"
               >
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-l-4 border-[var(--color-provin-accent)] bg-slate-100 px-2 py-1.5">
                   <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-slate-800">
                       {heading}
                     </span>
                     {!readOnly && !disabled ? (
                       <input
                         type="text"
-                        className={`${inp} max-w-[220px]`}
+                        className={`${inp} max-w-[220px] bg-white`}
                         placeholder="Avota nosaukums (neobligāti)"
                         value={section.label ?? ""}
                         onChange={(e) => updateSection(index, { label: e.target.value.slice(0, 120) })}
                         aria-label={`Citi avoti — avota nosaukums ${index + 1}`}
                       />
                     ) : section.label?.trim() ? (
-                      <span className="text-[10px] text-[var(--color-provin-muted)]">({section.label.trim()})</span>
+                      <span className="text-[10px] font-medium text-slate-600">({section.label.trim()})</span>
                     ) : null}
                   </div>
                   {!readOnly && !disabled && sections.length > 1 ? (
@@ -162,6 +173,17 @@ export function AdminCitiAvotiSourceBlock({
                     </button>
                   ) : null}
                 </div>
+                <div className="p-2">
+                {titled && getSourceBlocks && applyPatchedBlocks && !readOnly ? (
+                  <AdminCitiAvotiCopilotUpload
+                    sessionId={sessionId}
+                    sectionIndex={index}
+                    sectionLabel={section.label!.trim()}
+                    disabled={disabled}
+                    getSourceBlocks={getSourceBlocks}
+                    applyPatchedBlocks={applyPatchedBlocks}
+                  />
+                ) : null}
 
                 <label
                   className="mb-0.5 block text-[10px] font-medium text-[var(--color-provin-muted)]"
@@ -177,7 +199,7 @@ export function AdminCitiAvotiSourceBlock({
                     {(section.rawUnprocessedData ?? "").trim() ? (
                       section.rawUnprocessedData
                     ) : (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-slate-400">-</span>
                     )}
                   </div>
                 ) : (
@@ -229,6 +251,7 @@ export function AdminCitiAvotiSourceBlock({
                       : undefined
                   }
                 />
+                </div>
               </div>
             );
           })}

@@ -4,6 +4,7 @@
 import {
   emptyLtabRow,
   emptyAutoRecordsServiceRow,
+  emptyCitiAvotiSection,
   emptyVendorAvotuBlock,
   emptyVinRegistryIncidentRow,
   emptyVinRegistryMileageRow,
@@ -19,6 +20,7 @@ import {
   type LtabBlockState,
   type AutoRecordsBlockState,
   type CitiAvotiBlockState,
+  type CitiAvotiSectionState,
   type VinRegistryBlockState,
   type VinRegistryIncidentRow,
   type VinRegistryMileageRow,
@@ -440,23 +442,38 @@ function applyMileageToAutoRecords(b: AutoRecordsBlockState, row: AutoRecordsSer
   };
 }
 
-function applyIncidentToCiti(b: CitiAvotiBlockState, row: LtabIncidentRow): CitiAvotiBlockState {
+function resolveCitiSectionIndex(index?: number): number {
+  if (typeof index === "number" && Number.isInteger(index) && index >= 0) return index;
+  return 0;
+}
+
+function citiSectionsForWrite(
+  b: CitiAvotiBlockState,
+  index?: number,
+): { sections: CitiAvotiSectionState[]; index: number } {
   const sections = [...(b.sections ?? [])];
-  if (sections.length === 0) {
-    sections.push({ ...emptyVendorAvotuBlock(), incidents: [row] });
-    return { sections };
-  }
-  sections[0] = applyIncidentToVendor(sections[0]!, row);
+  const i = resolveCitiSectionIndex(index);
+  while (sections.length <= i) sections.push(emptyCitiAvotiSection());
+  return { sections, index: i };
+}
+
+function applyIncidentToCiti(
+  b: CitiAvotiBlockState,
+  row: LtabIncidentRow,
+  sectionIndex?: number,
+): CitiAvotiBlockState {
+  const { sections, index } = citiSectionsForWrite(b, sectionIndex);
+  sections[index] = applyIncidentToVendor(sections[index]!, row);
   return { sections };
 }
 
-function applyMileageToCiti(b: CitiAvotiBlockState, row: AutoRecordsServiceRow): CitiAvotiBlockState {
-  const sections = [...(b.sections ?? [])];
-  if (sections.length === 0) {
-    sections.push({ ...emptyVendorAvotuBlock(), serviceHistory: [row] });
-    return { sections };
-  }
-  sections[0] = applyMileageToVendor(sections[0]!, row);
+function applyMileageToCiti(
+  b: CitiAvotiBlockState,
+  row: AutoRecordsServiceRow,
+  sectionIndex?: number,
+): CitiAvotiBlockState {
+  const { sections, index } = citiSectionsForWrite(b, sectionIndex);
+  sections[index] = applyMileageToVendor(sections[index]!, row);
   return { sections };
 }
 
@@ -621,6 +638,7 @@ function mergeDealerEquipment(
 function applyAppendRaw(
   blocks: WorkspaceSourceBlocks,
   action: CopilotAppendRawAction,
+  citiAvotiSectionIndex?: number,
 ): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
   const text = action.text.trim();
   if (!text) return { blocks, ok: false, reason: "empty_raw_text" };
@@ -684,19 +702,12 @@ function applyAppendRaw(
     };
   }
   if (action.source === "citi_avoti") {
-    const sections = [...(blocks.citi_avoti.sections ?? [])];
-    if (sections.length === 0) {
-      sections.push({
-        ...emptyVendorAvotuBlock(),
-        rawUnprocessedData: text.slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
-      });
-    } else {
-      const s0 = sections[0]!;
-      sections[0] = {
-        ...s0,
-        rawUnprocessedData: appendText(s0.rawUnprocessedData ?? "", text, ADMIN_RAW_UNPROCESSED_MAX_LEN),
-      };
-    }
+    const { sections, index } = citiSectionsForWrite(blocks.citi_avoti, citiAvotiSectionIndex);
+    const cur = sections[index]!;
+    sections[index] = {
+      ...cur,
+      rawUnprocessedData: appendText(cur.rawUnprocessedData ?? "", text, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    };
     return { ok: true, blocks: { ...blocks, citi_avoti: { sections } } };
   }
   if (isVinRegistryCopilotSource(action.source)) {
@@ -850,6 +861,7 @@ function deleteServiceWorkRows(
 function applyDeleteIncident(
   blocks: WorkspaceSourceBlocks,
   action: CopilotDeleteIncidentAction,
+  citiAvotiSectionIndex?: number,
 ): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
   const target = { date: action.date, lossAmount: action.lossAmount };
   if (action.source === "auto_records") {
@@ -872,12 +884,11 @@ function applyDeleteIncident(
     return { blocks: { ...blocks, cc_vin: { ...blocks.cc_vin, damages: rows } }, ok: true };
   }
   if (action.source === "citi_avoti") {
-    const sections = [...(blocks.citi_avoti.sections ?? [])];
-    const s0 = sections[0];
-    if (!s0) return { blocks, ok: false, reason: "delete_no_match" };
-    const { rows, removed } = deleteIncidentRows(s0.incidents ?? [], target);
+    const { sections, index } = citiSectionsForWrite(blocks.citi_avoti, citiAvotiSectionIndex);
+    const cur = sections[index]!;
+    const { rows, removed } = deleteIncidentRows(cur.incidents ?? [], target);
     if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
-    sections[0] = { ...s0, incidents: rows };
+    sections[index] = { ...cur, incidents: rows };
     return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
   }
   if (action.source === "autodna" || action.source === "carvertical") {
@@ -892,6 +903,7 @@ function applyDeleteIncident(
 function applyDeleteMileage(
   blocks: WorkspaceSourceBlocks,
   action: CopilotDeleteMileageAction,
+  citiAvotiSectionIndex?: number,
 ): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
   const target = { date: action.date, odometer: action.odometer };
   if (action.source === "ltab") return { blocks, ok: false, reason: "ltab_has_no_mileage" };
@@ -912,12 +924,11 @@ function applyDeleteMileage(
     return { blocks: { ...blocks, cc_vin: { ...blocks.cc_vin, mileage: rows } }, ok: true };
   }
   if (action.source === "citi_avoti") {
-    const sections = [...(blocks.citi_avoti.sections ?? [])];
-    const s0 = sections[0];
-    if (!s0) return { blocks, ok: false, reason: "delete_no_match" };
-    const { rows, removed } = deleteMileageRows(s0.serviceHistory ?? [], target);
+    const { sections, index } = citiSectionsForWrite(blocks.citi_avoti, citiAvotiSectionIndex);
+    const cur = sections[index]!;
+    const { rows, removed } = deleteMileageRows(cur.serviceHistory ?? [], target);
     if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
-    sections[0] = { ...s0, serviceHistory: rows };
+    sections[index] = { ...cur, serviceHistory: rows };
     return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
   }
   if (action.source === "autodna" || action.source === "carvertical") {
@@ -961,17 +972,16 @@ function clearStringField<T extends object>(block: T, field: string): T | null {
 function applyClearField(
   blocks: WorkspaceSourceBlocks,
   action: CopilotClearFieldAction,
+  citiAvotiSectionIndex?: number,
 ): { blocks: WorkspaceSourceBlocks; ok: boolean; reason?: string } {
   if (!CLEARABLE_FIELDS_BY_SOURCE[action.source].includes(action.field)) {
     return { blocks, ok: false, reason: "field_not_clearable" };
   }
   if (action.source === "citi_avoti") {
-    const sections = [...(blocks.citi_avoti.sections ?? [])];
-    const s0 = sections[0];
-    if (!s0) return { blocks, ok: false, reason: "field_already_empty" };
-    const updated = clearStringField(s0, action.field);
+    const { sections, index } = citiSectionsForWrite(blocks.citi_avoti, citiAvotiSectionIndex);
+    const updated = clearStringField(sections[index]!, action.field);
     if (!updated) return { blocks, ok: false, reason: "field_already_empty" };
-    sections[0] = updated;
+    sections[index] = updated;
     return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
   }
   const cur = isVinRegistryCopilotSource(action.source)
@@ -990,7 +1000,12 @@ function applyClearField(
 export function applyCopilotActions(
   blocks: WorkspaceSourceBlocks,
   actions: CopilotAction[],
-  opts?: { onlyAuto?: boolean; clarificationNeeded?: string; allowDestructive?: boolean },
+  opts?: {
+    onlyAuto?: boolean;
+    clarificationNeeded?: string;
+    allowDestructive?: boolean;
+    citiAvotiSectionIndex?: number;
+  },
 ): CopilotApplyResult {
   let next = mergeSourceBlocksWithDefaults(blocks);
   const applied: CopilotAction[] = [];
@@ -1037,7 +1052,7 @@ export function applyCopilotActions(
       if (action.source === "ltab") {
         next = { ...next, ltab: applyIncidentToLtab(next.ltab, row) };
       } else if (action.source === "citi_avoti") {
-        next = { ...next, citi_avoti: applyIncidentToCiti(next.citi_avoti, row) };
+        next = { ...next, citi_avoti: applyIncidentToCiti(next.citi_avoti, row, opts?.citiAvotiSectionIndex) };
       } else if (action.source === "autodna") {
         next = { ...next, autodna: applyIncidentToVendor(next.autodna, row) };
       } else if (action.source === "carvertical") {
@@ -1077,7 +1092,7 @@ export function applyCopilotActions(
       if (action.source === "auto_records") {
         next = { ...next, auto_records: applyMileageToAutoRecords(next.auto_records, row) };
       } else if (action.source === "citi_avoti") {
-        next = { ...next, citi_avoti: applyMileageToCiti(next.citi_avoti, row) };
+        next = { ...next, citi_avoti: applyMileageToCiti(next.citi_avoti, row, opts?.citiAvotiSectionIndex) };
       } else if (action.source === "autodna") {
         next = { ...next, autodna: applyMileageToVendor(next.autodna, row) };
       } else if (action.source === "carvertical") {
@@ -1188,7 +1203,7 @@ export function applyCopilotActions(
     }
 
     if (action.type === "append_raw") {
-      const result = applyAppendRaw(next, action);
+      const result = applyAppendRaw(next, action, opts?.citiAvotiSectionIndex);
       if (!result.ok) {
         skipped.push({ action, reason: result.reason ?? "append_raw_failed" });
         continue;
@@ -1200,7 +1215,7 @@ export function applyCopilotActions(
     }
 
     if (action.type === "delete_incident") {
-      const result = applyDeleteIncident(next, action);
+      const result = applyDeleteIncident(next, action, opts?.citiAvotiSectionIndex);
       if (!result.ok) {
         skipped.push({ action, reason: result.reason ?? "delete_no_match" });
         continue;
@@ -1212,7 +1227,7 @@ export function applyCopilotActions(
     }
 
     if (action.type === "delete_mileage") {
-      const result = applyDeleteMileage(next, action);
+      const result = applyDeleteMileage(next, action, opts?.citiAvotiSectionIndex);
       if (!result.ok) {
         skipped.push({ action, reason: result.reason ?? "delete_no_match" });
         continue;
@@ -1239,7 +1254,7 @@ export function applyCopilotActions(
     }
 
     if (action.type === "clear_field") {
-      const result = applyClearField(next, action);
+      const result = applyClearField(next, action, opts?.citiAvotiSectionIndex);
       if (!result.ok) {
         skipped.push({ action, reason: result.reason ?? "field_already_empty" });
         continue;

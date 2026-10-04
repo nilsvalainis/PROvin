@@ -35,6 +35,7 @@ import {
 } from "@/lib/ai-request-budget";
 import type { AiTextStream } from "@/lib/ai-text-stream";
 import { commentLengthLimitsWaived } from "@/lib/ai-comment-length-budget";
+import { parseCommentBreadthFromPrompt } from "@/lib/ai-comment-breadth";
 
 export { isGeminiAdminTier };
 
@@ -171,7 +172,8 @@ async function withSelfCorrection(
     (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
   );
   const cheap =
-    commentLengthLimitsWaived(opts.userPrompt) || CHEAP_LENGTH_SKIP_FIELDS.has(field)
+    commentLengthLimitsWaived(opts.userPrompt) ||
+    (CHEAP_LENGTH_SKIP_FIELDS.has(field) && parseCommentBreadthFromPrompt(opts.userPrompt) !== "compact")
       ? []
       : allIssues.filter((i) => CHEAP_CORRECTION_RETRY_CODES.has(i.code));
 

@@ -6,9 +6,11 @@ import {
   FLASH_MAX_OPERATOR_NOTES_MAX_LEN,
   clipFlashMaxOperatorNotes,
   FLASH_MAX_SUMMARY_ONLY_JOB_IDS,
+  defaultFlashMaxJobBreadth,
   defaultFlashMaxSelection,
   expandFlashMaxMenuJobs,
   expandFlashMaxRunJobs,
+  flashMaxJobBreadth,
   flashMaxJobModelTier,
   flashMaxSelectedJobs,
   formatFlashMaxNotice,
@@ -83,6 +85,7 @@ describe("FLASH MAX jobs", () => {
     const picked = flashMaxSelectedJobs({
       selectedIds: ["csdd", "ltab", "summary"],
       tiers: defaultFlashMaxSelection().tiers,
+      breadths: defaultFlashMaxSelection().breadths,
     });
     expect(picked.map((j) => j.id)).toEqual(["csdd", "summary", "ltab"]);
     expect(summaryOnlyFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_SUMMARY_ONLY_JOB_IDS]);
@@ -150,5 +153,19 @@ describe("FLASH MAX jobs", () => {
         { id: "summary", label: "3. Kopsavilkums", status: "error", detail: "timeout" },
       ]),
     ).toMatch(/sagatavoti 1/);
+  });
+
+  it("defaults summary trio to wide and other jobs to compact", () => {
+    const sel = defaultFlashMaxSelection();
+    expect(defaultFlashMaxJobBreadth("csdd")).toBe("compact");
+    expect(defaultFlashMaxJobBreadth("summary")).toBe("wide");
+    expect(defaultFlashMaxJobBreadth("technical_risks")).toBe("wide");
+    expect(defaultFlashMaxJobBreadth("inspection")).toBe("wide");
+    expect(sel.breadths.csdd).toBe("compact");
+    expect(sel.breadths.summary).toBe("wide");
+    const summaryJob = FLASH_MAX_JOBS.find((j) => j.id === "summary")!;
+    expect(flashMaxJobBreadth(summaryJob, { ...sel, breadths: { ...sel.breadths, summary: "compact" } })).toBe(
+      "compact",
+    );
   });
 });

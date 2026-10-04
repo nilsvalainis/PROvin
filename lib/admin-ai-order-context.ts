@@ -49,6 +49,7 @@ import { buildTechnicalInspectionCoverageBrief } from "@/lib/admin-ai-ta-coverag
 import { buildWinterSaltRustBrief } from "@/lib/admin-ai-winter-salt-rust";
 import { buildMileageForensicsBrief } from "@/lib/admin-ai-mileage-forensics";
 import { buildCommentLengthBudgetBrief } from "@/lib/ai-comment-length-budget";
+import type { CommentBreadth } from "@/lib/ai-comment-breadth";
 
 export type AiOrderContextInput = {
   sessionId: string;
@@ -74,6 +75,8 @@ export type AiOrderContextInput = {
   existingDraftPlain?: string;
   /** Pro (noklusējums) vai Flash — admin ✨ pogas izvēle. */
   modelTier?: AiAdminModelTier;
+  /** FLASH MAX platuma izvēle šim laukam. */
+  commentBreadth?: CommentBreadth | null;
   /** Dzīvais teksta priekšskatījums admin UI (SSE); nav gala teksts. */
   stream?: AiTextStream;
 };
@@ -336,7 +339,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
   const mileageForensics = buildMileageForensicsBrief(unifiedMileagePayload(blocks));
   if (mileageForensics) parts.push(mileageForensics);
 
-  parts.push(buildCommentLengthBudgetBrief(blocks));
+  parts.push(buildCommentLengthBudgetBrief(blocks, { breadth: input.commentBreadth }));
 
   return parts.filter(Boolean).join("\n\n");
 }
