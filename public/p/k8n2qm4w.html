@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Auto2000 × PROVIN BUSINESS poga</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Mulish:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue2: #60a5fa;
+      --eyebrow: #93c5fd;
+      --mute: #94a3b8;
+      --hair: rgb(255 255 255 / 0.1);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      color: #f5f8fc;
+      background: #070707;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+
+    .chrome {
+      position: sticky; top: 0; z-index: 40;
+      border-bottom: 1px solid var(--hair);
+      background: rgb(7 7 7 / 0.94);
+      backdrop-filter: blur(10px);
+    }
+    .chrome-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0.85rem 1.25rem 1rem;
+    }
+    .chrome b {
+      display: block; font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--eyebrow);
+    }
+    .chrome h1 { margin: 0.2rem 0 0; font-size: 1.05rem; letter-spacing: -0.02em; }
+    .chrome p { margin: 0.35rem 0 0; font-size: 0.78rem; line-height: 1.45; color: var(--mute); max-width: 76ch; }
+    .picks { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; align-items: center; }
+    .picks-label {
+      font-size: 0.55rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgb(148 163 184 / 0.55); margin: 0.15rem 0.2rem 0.15rem 0.35rem;
+    }
+    .pick {
+      appearance: none; border: 1px solid var(--hair); background: rgb(255 255 255 / 0.04);
+      color: #d4d4d8; border-radius: 999px; padding: 0.38rem 0.75rem; cursor: pointer;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .pick:hover { color: #fff; background: rgb(255 255 255 / 0.08); }
+    .pick[aria-pressed="true"] { color: #fff; border-color: rgb(96 165 250 / 0.55); background: rgb(37 99 235 / 0.28); }
+    .pick em { font-style: normal; color: #fbbf24; margin-right: 0.25rem; }
+
+    .stage { max-width: 1280px; margin: 0 auto; padding: 1.25rem 1.25rem 7.5rem; }
+    .meta {
+      display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; margin-bottom: 1.1rem;
+    }
+    .meta h2 { margin: 0; font-size: 0.95rem; }
+    .meta p { margin: 0.35rem 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--mute); max-width: 54ch; }
+    .meta code, .snippet code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; color: #e2e8f0; }
+    .snippet { display: none; }
+    .chosen-chip {
+      display: none; margin-top: 0.65rem; padding: 0.45rem 0.7rem; border-radius: 10px;
+      border: 1px solid rgb(110 231 183 / 0.28); background: rgb(16 185 129 / 0.1);
+      font-size: 0.78rem; font-weight: 650; color: #6ee7b7;
+    }
+    .chosen-chip.is-on { display: inline-block; }
+
+    .dock {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      border-top: 1px solid var(--hair); background: rgb(7 7 7 / 0.96);
+      backdrop-filter: blur(12px); padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom));
+    }
+    .dock-inner {
+      max-width: 1280px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center;
+    }
+    .dock p { margin: 0; flex: 1; min-width: 12rem; font-size: 0.8rem; color: var(--mute); }
+    .dock p b { color: #fff; }
+    .btn-pick, .btn-wa, .btn-copy {
+      appearance: none; cursor: pointer; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+      min-height: 2.5rem; padding: 0.5rem 1rem;
+    }
+    .btn-pick {
+      border: 1px solid rgb(255 255 255 / 0.12);
+      background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%); color: #fff;
+    }
+    .btn-pick[disabled] { opacity: 0.55; cursor: default; }
+    .btn-wa, .btn-copy {
+      border: 1px solid var(--hair); background: rgb(255 255 255 / 0.06); color: #e4e4e7; text-decoration: none;
+      display: none; align-items: center;
+    }
+    .btn-wa.is-on, .btn-copy.is-on { display: inline-flex; }
+
+    .boards {
+      display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 1.5rem; align-items: start;
+    }
+    .board-label {
+      margin: 0 0 0.55rem; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #fbbf24;
+    }
+
+    /* Auto2000 replica */
+    .a2k {
+      font-family: Mulish, sans-serif;
+      background: #000;
+      color: #fff;
+      border: 1px solid #1c1c1c;
+      overflow: hidden;
+    }
+    .a2k-nav {
+      display: flex; align-items: center; gap: 1.25rem;
+      padding: 0.7rem 1.4rem; background: #000; border-bottom: 1px solid #151515;
+    }
+    .a2k-nav img { height: 42px; width: auto; }
+    .a2k-menu { display: flex; gap: 0.15rem; flex-wrap: wrap; }
+    .a2k-menu span {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+      color: #fff; padding: 0.55rem 0.7rem;
+    }
+    .a2k-phone { margin-left: auto; font-size: 0.82rem; font-weight: 800; white-space: nowrap; }
+    .a2k-phone small { display: block; font-size: 0.62rem; font-weight: 600; color: #707070; }
+    .a2k-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0; }
+    .a2k-photo { position: relative; background: #111; min-height: 420px; }
+    .a2k-photo img { width: 100%; height: 100%; object-fit: cover; min-height: 420px; }
+    .a2k-side { padding: 1.6rem 1.7rem 2rem; }
+    .car-title { margin: 0; color: #7a7a7a; font-size: 1.35rem; font-weight: 800; line-height: 1.25; }
+    .car-desc { margin: 0.45rem 0 0; color: #a7a8a8; font-size: 0.92rem; }
+    .car-desc i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #434343; margin: 0 0.4rem; vertical-align: middle; }
+    .spacer { height: 1px; background: #ccc; margin: 0.85rem 0; }
+    .price { margin: 0.7rem 0 0.85rem; font-size: 2rem; font-weight: 800; color: #ccc; }
+    .info-holder { background: #222732; border-radius: 20px; padding: 0.85rem 1rem; }
+    .spec { display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.6rem; }
+    .spec span { margin: 0.38rem 0; font-size: 0.88rem; color: #fff; }
+    .spec .t { font-weight: 700; color: #abacb1; }
+    .a2k-desc { padding: 1.4rem 1.7rem 1.8rem; border-top: 1px solid #151515; }
+    .a2k-desc h3 { margin: 0 0 0.6rem; font-size: 1.05rem; }
+    .a2k-desc p { margin: 0; color: #ddd; font-size: 0.92rem; line-height: 1.65; }
+
+    .slot { min-height: 0; }
+    .slot:not(:empty) { margin: 0.85rem 0; }
+
+    /* Offer tile: brand + action + price, one click */
+    .offer {
+      display: flex; width: 100%; color: #fff !important; font-family: Mulish, sans-serif;
+    }
+    .offer .brand {
+      display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #fff;
+    }
+    .offer .brand i { font-style: normal; color: #2563EB; }
+    .offer .act { display: block; font-weight: 800; line-height: 1.15; }
+    .offer .eur { font-weight: 800; white-space: nowrap; letter-spacing: -0.02em; }
+
+    .offer-split {
+      align-items: center; gap: 0.75rem; padding: 0.7rem 0.75rem 0.7rem 0.95rem;
+      border-radius: 14px; border: 1px solid #343b4a; background: #161b26;
+    }
+    .offer-split .copy { flex: 1; min-width: 0; }
+    .offer-split .brand { color: #fff; margin-bottom: 0.18rem; }
+    .offer-split .act { font-size: 0.98rem; color: #fff; }
+    .offer-split .pay {
+      display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+      min-width: 5.6rem; padding: 0.45rem 0.7rem; border-radius: 10px;
+      background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
+    }
+    .offer-split .pay .eur { font-size: 1.02rem; color: #fff; }
+    .offer-split .pay em { font-style: normal; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(255 255 255 / 0.72); }
+
+    .offer-stack {
+      flex-direction: column; align-items: stretch; gap: 0.15rem; padding: 0.8rem 1rem;
+      border-radius: 14px; border: 1px solid rgb(255 255 255 / 0.12);
+      background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
+      text-align: center;
+    }
+    .offer-stack .brand { color: #fff; }
+    .offer-stack .act { font-size: 1.05rem; margin: 0.12rem 0 0.2rem; }
+    .offer-stack .eur { font-size: 1.15rem; }
+
+    .offer-row {
+      align-items: center; justify-content: space-between; gap: 0.7rem; padding: 0.65rem 0.85rem;
+      border-radius: 10px; background: #434343;
+    }
+    .offer-row .brand { color: #fff; margin-bottom: 0.12rem; }
+    .offer-row .act { font-size: 0.92rem; }
+    .offer-row .eur { font-size: 1.15rem; color: #ccc; }
+
+    .offer-ticket {
+      flex-direction: column; padding: 0; overflow: hidden;
+      border-radius: 14px; border: 1px solid #343b4a; background: #1a1f2b;
+    }
+    .offer-ticket .top { padding: 0.7rem 0.9rem 0.55rem; }
+    .offer-ticket .brand { color: #fff; }
+    .offer-ticket .act { font-size: 1.02rem; margin-top: 0.2rem; }
+    .offer-ticket .bar {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem;
+      padding: 0.5rem 0.9rem 0.6rem; background: #12161f; border-top: 1px dashed #343b4a;
+    }
+    .offer-ticket .bar span { font-size: 0.68rem; font-weight: 700; color: #99a1b2; }
+    .offer-ticket .eur { font-size: 1.05rem; color: #fff; }
+
+    .offer-line {
+      flex-direction: column; align-items: flex-start; gap: 0.2rem; padding: 0.15rem 0;
+    }
+    .offer-line .brand { color: #fff; }
+    .offer-line .act { font-size: 0.95rem; }
+    .offer-line .eur { font-size: 0.95rem; color: #ccc; }
+
+    /* Premium tiles: B2B glass / hairline / liquid */
+    .px { font-family: Inter, Mulish, sans-serif; }
+    .px .brand { font-weight: 700; letter-spacing: 0.14em; }
+    .px .act { letter-spacing: -0.02em; }
+    .px .eur { font-variant-numeric: tabular-nums; }
+
+    .px-glass {
+      flex-direction: column; align-items: stretch; gap: 0.35rem; padding: 1rem 1.05rem 0.95rem;
+      border-radius: 18px; border: 1px solid rgb(255 255 255 / 0.1);
+      background: linear-gradient(145deg, rgb(255 255 255 / 0.07) 0%, rgb(255 255 255 / 0.02) 48%, rgb(8 10 14 / 0.55) 100%);
+      box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.04);
+      backdrop-filter: blur(12px);
+    }
+    .px-glass .brand { color: #fff; }
+    .px-glass .row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+    .px-glass .act { font-size: 1.02rem; font-weight: 700; color: #f4f4f5; }
+    .px-glass .eur { font-size: 1.2rem; color: #fff; }
+
+    .px-liquid {
+      flex-direction: column; gap: 0.7rem; padding: 0.9rem;
+      border-radius: 20px; border: 1px solid rgb(255 255 255 / 0.1);
+      background: linear-gradient(145deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.015));
+      box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.65);
+    }
+    .px-liquid .brand { color: #fff; }
+    .px-liquid .act { font-size: 1.05rem; font-weight: 700; margin-top: 0.12rem; }
+    .px-cta {
+      position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between;
+      min-height: 46px; padding: 0.55rem 0.95rem; border-radius: 999px;
+      border: 1px solid rgb(255 255 255 / 0.12);
+      background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
+      box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.65);
+    }
+    .px-cta::after {
+      content: ""; position: absolute; inset: -40% -60%;
+      background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.14) 48%, transparent 58%);
+      animation: pxShimmer 5.5s ease-in-out infinite; pointer-events: none;
+    }
+    .px-cta span { position: relative; z-index: 1; font-size: 0.72rem; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
+    .px-cta .eur { font-size: 0.92rem; letter-spacing: -0.02em; text-transform: none; }
+    @keyframes pxShimmer { 0%, 100% { transform: translateX(-30%); } 50% { transform: translateX(30%); } }
+
+    .px-rail {
+      flex-direction: column; align-items: flex-start; gap: 0.2rem; padding: 0.35rem 0 0.35rem 0.9rem;
+      border-radius: 0; border: 0; border-left: 2px solid #60a5fa; background: transparent;
+    }
+    .px-rail .brand { color: #fff; }
+    .px-rail .act { font-size: 1.02rem; }
+    .px-rail .eur { margin-top: 0.2rem; font-size: 1.05rem; color: #e4e4e7; }
+
+    .px-mono {
+      flex-direction: column; gap: 0.55rem; padding: 0.85rem 0.95rem;
+      border-radius: 16px; border: 1px solid rgb(255 255 255 / 0.08); background: rgb(8 10 14 / 0.72);
+    }
+    .px-mono .brand { color: #fff; }
+    .px-mono .line {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
+      padding-top: 0.55rem; border-top: 1px solid rgb(255 255 255 / 0.08);
+    }
+    .px-mono .act { font-size: 0.92rem; font-weight: 600; color: #e4e4e7; }
+    .px-mono .eur { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.98rem; font-weight: 700; letter-spacing: 0.02em; }
+
+    .px-scan { position: relative; overflow: hidden; }
+    .px-scan .scan {
+      position: absolute; top: 0; left: 0; right: 0; height: 1px; overflow: hidden;
+    }
+    .px-scan .scan::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgb(37 99 235 / 0.2) 20%, rgb(96 165 250 / 0.55) 50%, rgb(37 99 235 / 0.2) 80%, transparent);
+    }
+    .px-scan .scan::after {
+      content: ""; position: absolute; top: 0; width: 2.2rem; height: 1px;
+      background: linear-gradient(90deg, transparent, #93c5fd, transparent);
+      box-shadow: 0 0 8px 1px rgb(96 165 250 / 0.7);
+      animation: pxSweep 4.8s linear infinite;
+    }
+    @keyframes pxSweep { from { left: -10%; } to { left: 110%; } }
+
+    .px-plate {
+      flex-direction: column; gap: 0.45rem; padding: 0.95rem 1rem;
+      border-radius: 14px; border: 1px solid rgb(255 255 255 / 0.06);
+      background:
+        radial-gradient(120% 80% at 100% 0%, rgb(37 99 235 / 0.16), transparent 46%),
+        #0c0e14;
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+    }
+    .px-plate .brand { color: #fff; }
+    .px-plate .act { font-size: 1.08rem; font-weight: 700; }
+    .px-plate .foot { display: flex; align-items: baseline; justify-content: space-between; }
+    .px-plate .hint { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #71717a; }
+    .px-plate .eur { font-size: 1.15rem; }
+
+    .px-capsule {
+      align-items: center; gap: 0.55rem; padding: 0.45rem 0.45rem 0.45rem 1rem;
+      border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.12);
+      background: rgb(255 255 255 / 0.04); backdrop-filter: blur(10px);
+    }
+    .px-capsule .copy { flex: 1; min-width: 0; }
+    .px-capsule .brand { color: #fff; }
+    .px-capsule .act { font-size: 0.86rem; font-weight: 700; }
+    .px-capsule .pay {
+      display: flex; align-items: center; justify-content: center; min-width: 5.4rem;
+      padding: 0.55rem 0.75rem; border-radius: 999px;
+      background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%);
+    }
+    .px-capsule .eur { font-size: 0.88rem; color: #fff; }
+
+    .px-quiet {
+      flex-direction: column; gap: 0.28rem; padding: 0.7rem 0;
+      border-radius: 0; border: 0; border-top: 1px solid rgb(255 255 255 / 0.12); border-bottom: 1px solid rgb(255 255 255 / 0.12);
+      background: transparent;
+    }
+    .px-quiet .brand { color: #fff; }
+    .px-quiet .row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; width: 100%; }
+    .px-quiet .act { font-size: 1rem; font-weight: 650; }
+    .px-quiet .eur { font-size: 1.05rem; color: #e4e4e7; }
+
+    .px-dossier {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      padding: 0.85rem 0.95rem; border-radius: 16px;
+      border: 1px solid rgb(255 255 255 / 0.08);
+      background: rgb(12 14 20 / 0.9);
+    }
+    .px-dossier .brand { color: #fff; }
+    .px-dossier .act { font-size: 0.95rem; font-weight: 700; }
+    .px-dossier .eur { font-size: 1.12rem; }
+
+    /* Phone */
+    .phone-shell { position: sticky; top: 7.5rem; }
+    .phone {
+      width: 390px; height: 760px; overflow: hidden; background: #000;
+      border: 10px solid #111; border-radius: 36px; box-shadow: 0 24px 60px rgb(0 0 0 / 0.55);
+    }
+    .phone .a2k { height: 100%; overflow: auto; border: 0; }
+    .phone .a2k-nav { padding: 0.55rem 0.9rem; }
+    .phone .a2k-nav img { height: 32px; }
+    .phone .a2k-menu, .phone .a2k-phone { display: none; }
+    .phone .burger { width: 1.15rem; height: 0.85rem; display: flex; flex-direction: column; justify-content: space-between; }
+    .phone .burger i { display: block; height: 2px; background: #fff; }
+    .phone .a2k-grid { display: block; }
+    .phone .a2k-photo, .phone .a2k-photo img { min-height: 210px; height: 210px; }
+    .phone .a2k-side { padding: 1rem 1.05rem 1.2rem; }
+    .phone .car-title { font-size: 1.15rem; }
+    .phone .price { font-size: 1.7rem; }
+    .phone .a2k-desc { display: none; }
+
+    @media (max-width: 1100px) {
+      .boards { grid-template-columns: 1fr; }
+      .phone-shell { position: static; }
+      .meta { grid-template-columns: 1fr; }
+      .a2k-grid { grid-template-columns: 1fr; }
+      .a2k-menu, .a2k-phone { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="chrome">
+    <div class="chrome-inner">
+      <b>Privāta saite Auto2000 × PROVIN.LV</b>
+      <h1>Izvēlieties, kā poga izskatīsies sludinājumā</h1>
+      <p>Pāršķirstiet variantus datorā un telefonā. Katrā ir PROVIN BUSINESS, Pārbaudīt vēsturi un 69,99 €. Kad kāds der, nospiediet Izvēlos šo apakšā.</p>
+      <div class="chosen-chip" id="chosen-chip"></div>
+      <div class="picks" id="picks"></div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <div class="meta">
+      <div>
+        <h2 id="v-title">Sadalītā kartīte zem cenas</h2>
+        <p id="v-note"></p>
+      </div>
+      <pre class="snippet" id="v-code"></pre>
+    </div>
+
+    <div class="boards">
+      <section>
+        <p class="board-label">Dators</p>
+        <article class="a2k" data-listing="desk">
+          <div class="a2k-nav">
+            <img src="https://auto2000.lv/assets/frontend/images/logo.png" alt="auto2000.lv" />
+            <div class="a2k-menu">
+              <span>Pasūti auto</span><span>Pārdot auto</span><span>Līzings</span><span>Kontakti</span>
+            </div>
+            <div class="a2k-phone">2000 22 47<small>Zemītes iela 11, Tukums</small></div>
+          </div>
+          <div class="a2k-grid">
+            <div class="a2k-photo">
+              <img src="https://auto2000.lv/uploads/products/medium/E4caWZqmucaLGznQCmTkULwPwusmne.jpg" alt="Volkswagen Touran" />
+            </div>
+            <div class="a2k-side">
+              <h2 class="car-title">Volkswagen - Volkswagen / Touran 1.5 TSI ACT Highline BlueMotion Tech</h2>
+              <div class="car-desc">2018 <i></i> 120 999 Km <i></i> Minivens</div>
+              <div class="spacer"></div>
+              <div class="price">18 500 €</div>
+              <div class="slot" data-slot="price"></div>
+              <div class="info-holder">
+                <div class="spec">
+                  <span class="t">Auto marka</span><span>Volkswagen</span>
+                  <span class="t">Modelis</span><span>Touran 1.5 TSI ACT Highline</span>
+                  <span class="t">Izlaiduma gads</span><span>2018</span>
+                  <span class="t">Krāsa</span><span>Melna</span>
+                  <span class="t">Nobraukums</span><span>120999 Km</span>
+                  <span class="t">Degviela</span><span>Benzīns</span>
+                  <span class="t">Ātrumkārba</span><span>Automātiskā</span>
+                  <span class="t">Dzinējs</span><span>1.50</span>
+                  <span class="t">VIN</span><span>WVGZZZ1TZLW018204</span>
+                </div>
+              </div>
+              <div class="slot" data-slot="vin"></div>
+            </div>
+          </div>
+          <div class="a2k-desc">
+            <h3>Apraksts</h3>
+            <p>Drīzumā Touran 1.5 TSI ACT Highline BlueMotion Tech. Automašīna labā tehniskā un vizuālā stāvoklī. Oriģināls un pierādāms nobraukums. Bez nobraukuma pa Latviju.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="phone-shell">
+        <p class="board-label">Telefons</p>
+        <div class="phone">
+          <article class="a2k" data-listing="phone">
+            <div class="a2k-nav">
+              <div class="burger" aria-hidden="true"><i></i><i></i><i></i></div>
+              <img src="https://auto2000.lv/assets/frontend/images/logo.png" alt="auto2000.lv" />
+            </div>
+            <div class="a2k-grid">
+              <div class="a2k-photo">
+                <img src="https://auto2000.lv/uploads/products/medium/E4caWZqmucaLGznQCmTkULwPwusmne.jpg" alt="Volkswagen Touran" />
+              </div>
+              <div class="a2k-side">
+                <h2 class="car-title">Volkswagen / Touran 1.5 TSI ACT Highline BlueMotion Tech</h2>
+                <div class="car-desc">2018 <i></i> 120 999 Km <i></i> Minivens</div>
+                <div class="spacer"></div>
+                <div class="price">18 500 €</div>
+                <div class="slot" data-slot="price"></div>
+                <div class="info-holder">
+                  <div class="spec">
+                    <span class="t">Auto marka</span><span>Volkswagen</span>
+                    <span class="t">Krāsa</span><span>Melna</span>
+                    <span class="t">Nobraukums</span><span>120999 Km</span>
+                    <span class="t">VIN</span><span>WVGZZZ1TZLW018204</span>
+                  </div>
+                </div>
+                <div class="slot" data-slot="vin"></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="dock">
+    <div class="dock-inner">
+      <p id="dock-status">Skatāt: <b id="dock-view">Sadalītā kartīte zem cenas</b></p>
+      <button type="button" class="btn-pick" id="btn-pick">Izvēlos šo</button>
+      <a class="btn-wa" id="btn-wa" target="_blank" rel="noopener" href="#">Nosūtīt PROVIN WhatsApp</a>
+      <button type="button" class="btn-copy" id="btn-copy">Kopēt izvēli</button>
+    </div>
+  </div>
+
+  <script>
+    const brand = 'PRO<i>VIN</i> BUSINESS';
+    const split = '<a class="offer offer-split" href="#"><span class="copy"><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span></span><span class="pay"><span class="eur">69,99 €</span><em>apmaksa</em></span></a>';
+    const stack = '<a class="offer offer-stack" href="#"><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span><span class="eur">69,99 €</span></a>';
+    const row = '<a class="offer offer-row" href="#"><span><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span></span><span class="eur">69,99 €</span></a>';
+    const ticket = '<a class="offer offer-ticket" href="#"><span class="top"><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span></span><span class="bar"><span>Datu atskaite</span><span class="eur">69,99 €</span></span></a>';
+
+    const variants = [
+      {
+        id: "split",
+        rec: true,
+        label: "Sadalītā kartīte zem cenas",
+        note: "Kreisajā pusē kas tas ir un ko dara. Labajā zilajā laukā cena. Viens klikšķis, trīs fakti. Auto 18 500 € paliek lielākā summa.",
+        slot: "price",
+        code: "kreisajā: PROVIN BUSINESS + Pārbaudīt vēsturi\nlabajā: 69,99 €",
+        html: split
+      },
+      {
+        id: "stack",
+        label: "Zilā kaudze zem cenas",
+        note: "Visa kartīte zila kā PROVIN poga. Trīs rindas viena zem otras: zīmols, darbība, cena.",
+        slot: "price",
+        code: "PROVIN BUSINESS\nPārbaudīt vēsturi\n69,99 €",
+        html: stack
+      },
+      {
+        id: "row",
+        label: "Pelēkā rinda zem cenas",
+        note: "Auto2000 pelēkais fons. Teksts kreisajā, 69,99 € labajā. Mazāk izlec pret viņu lapu.",
+        slot: "price",
+        code: "kreisajā zīmols + darbība, labajā 69,99 €, fons #434343",
+        html: row
+      },
+      {
+        id: "ticket",
+        label: "Biļete zem VIN",
+        note: "Zem datu tabulas, blakus VIN. Augšā zīmols un darbība, apakšā pārtrauktā līnija un cena. Auto cena paliek viena.",
+        slot: "vin",
+        code: "pēc .info-holder: PROVIN BUSINESS, Pārbaudīt vēsturi, 69,99 €",
+        html: ticket
+      },
+      {
+        id: "split-vin",
+        label: "Sadalītā kartīte zem VIN",
+        note: "Tas pats ieteikums, bet pēc VIN. Ja zem 18 500 € šķiet par tuvu auto cenai.",
+        slot: "vin",
+        code: "tā pati sadalītā kartīte pēc VIN rindas",
+        html: split
+      },
+      {
+        id: "p01",
+        group: "premium",
+        label: "P01 Stikls",
+        note: "B2B stikla kartīte. Hairline, viegla ēna, zīmols kā eyebrow, cena labajā. Kā apmaksas lapa, tikai saspiesta.",
+        slot: "price",
+        code: "glass spatial card: PROVIN BUSINESS, Pārbaudīt vēsturi, 69,99 €",
+        html: '<a class="offer px px-glass" href="#"><span class="brand">' + brand + '</span><span class="row"><span class="act">Pārbaudīt vēsturi</span><span class="eur">69,99 €</span></span></a>'
+      },
+      {
+        id: "p02",
+        group: "premium",
+        label: "P02 Stikls + šķidrais CTA",
+        note: "Augšā zīmols un darbība. Apakšā zilā PROVIN poga ar cenu. Viss ir viens klikšķis.",
+        slot: "price",
+        code: "stikls + liquid CTA: Pārbaudīt vēsturi | 69,99 €",
+        html: '<a class="offer px px-liquid" href="#"><span><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span></span><span class="px-cta"><span>Datu atskaite</span><span class="eur">69,99 €</span></span></a>'
+      },
+      {
+        id: "p03",
+        group: "premium",
+        label: "P03 Zilā sliede",
+        note: "Bez kastes. Tikai 2 px zila līnija kreisajā malā, kā redakcionāla atzīme. Ļoti kluss premium.",
+        slot: "price",
+        code: "border-left 2px #60a5fa, bez fona",
+        html: '<a class="offer px px-rail" href="#"><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span><span class="eur">69,99 €</span></a>'
+      },
+      {
+        id: "p04",
+        group: "premium",
+        label: "P04 Rēķina rinda",
+        note: "Cena monospace, kā rēķinā. Hairline starp darbību un summu. Skaidrs, ka tā nav auto cena.",
+        slot: "price",
+        code: "JetBrains Mono 69,99 €, hairline",
+        html: '<a class="offer px px-mono" href="#"><span class="brand">' + brand + '</span><span class="line"><span class="act">Pārbaudīt vēsturi</span><span class="eur">69,99 €</span></span></a>'
+      },
+      {
+        id: "p05",
+        group: "premium",
+        label: "P05 Skenēšana",
+        note: "Tā pati stikla kartīte ar diagnostikas līniju augšā, kā B2B hero. Sajūta: dati tiek nolasīti.",
+        slot: "price",
+        code: "glass + scan line",
+        html: '<a class="offer px px-glass px-scan" href="#"><span class="scan"></span><span class="brand">' + brand + '</span><span class="row"><span class="act">Pārbaudīt vēsturi</span><span class="eur">69,99 €</span></span></a>'
+      },
+      {
+        id: "p06",
+        group: "premium",
+        label: "P06 Metāla plāksne",
+        note: "Tumšs metāls ar zilu atspīdumu stūrī. Apakšā Datu atskaite un 69,99 €. Zem VIN, pie koda.",
+        slot: "vin",
+        code: "radial blue + inset highlight, pēc VIN",
+        html: '<a class="offer px px-plate" href="#"><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span><span class="foot"><span class="hint">Datu atskaite</span><span class="eur">69,99 €</span></span></a>'
+      },
+      {
+        id: "p08",
+        group: "premium",
+        label: "P08 Kapsula",
+        note: "Pilnīgi noapaļota rinda. Kreisajā zīmols un darbība, labajā zilā cena. Telefona joslai tuvu.",
+        slot: "price",
+        code: "pill: teksts | 69,99 €",
+        html: '<a class="offer px px-capsule" href="#"><span class="copy"><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span></span><span class="pay"><span class="eur">69,99 €</span></span></a>'
+      },
+      {
+        id: "p09",
+        group: "premium",
+        label: "P09 Tikai līnijas",
+        note: "Nav kastes vispār. Divas hairline līnijas, kā izvēlne. Premium caur tukšumu, ne krāsu.",
+        slot: "price",
+        code: "border-top/bottom hairline, caurspīdīgs",
+        html: '<a class="offer px px-quiet" href="#"><span class="brand">' + brand + '</span><span class="row"><span class="act">Pārbaudīt vēsturi</span><span class="eur">69,99 €</span></span></a>'
+      },
+      {
+        id: "p10",
+        group: "premium",
+        label: "P10 Dossier",
+        note: "Zīmols un darbība kreisajā, cena labajā. Zem VIN, pie koda.",
+        slot: "vin",
+        code: "PROVIN BUSINESS / Pārbaudīt vēsturi | 69,99 €",
+        html: '<a class="offer px px-dossier" href="#"><span><span class="brand">' + brand + '</span><span class="act">Pārbaudīt vēsturi</span></span><span class="eur">69,99 €</span></a>'
+      }
+    ];
+
+    const picks = document.getElementById("picks");
+    let lastGroup = "base";
+    variants.forEach((v, i) => {
+      const group = v.group || "base";
+      if (group !== lastGroup) {
+        const lab = document.createElement("span");
+        lab.className = "picks-label";
+        lab.textContent = "Premium";
+        picks.appendChild(lab);
+        lastGroup = group;
+      }
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "pick";
+      b.dataset.id = v.id;
+      b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+      b.innerHTML = (v.rec ? "<em>Ieteikums</em> " : "") + v.label;
+      b.addEventListener("click", () => apply(v.id));
+      picks.appendChild(b);
+    });
+
+    let currentId = "split";
+    let chosenId = null;
+    const waBase = "https://wa.me/37129502039?text=";
+
+    function choiceText(v) {
+      return "Auto2000 pogas izvēle: " + v.label + " (" + v.id + "). PROVIN BUSINESS, Pārbaudīt vēsturi, 69,99 €.";
+    }
+
+    function setChosen(id, pushUrl) {
+      const v = variants.find((x) => x.id === id);
+      if (!v) return;
+      chosenId = id;
+      const chip = document.getElementById("chosen-chip");
+      chip.textContent = "Izvēlēts: " + v.label;
+      chip.classList.add("is-on");
+      const wa = document.getElementById("btn-wa");
+      wa.href = waBase + encodeURIComponent(choiceText(v));
+      wa.classList.add("is-on");
+      document.getElementById("btn-copy").classList.add("is-on");
+      document.getElementById("btn-pick").textContent = "Izvēlēts";
+      document.getElementById("btn-pick").disabled = currentId === chosenId;
+      if (pushUrl) {
+        const url = new URL(location.href);
+        url.searchParams.set("izvele", id);
+        history.replaceState(null, "", url);
+      }
+    }
+
+    function apply(id) {
+      const v = variants.find((x) => x.id === id);
+      if (!v) return;
+      currentId = id;
+      document.getElementById("v-title").textContent = v.label;
+      document.getElementById("v-note").textContent = v.note;
+      document.getElementById("dock-view").textContent = v.label;
+      picks.querySelectorAll(".pick").forEach((p) => p.setAttribute("aria-pressed", p.dataset.id === id ? "true" : "false"));
+      document.querySelectorAll("[data-slot]").forEach((el) => {
+        el.innerHTML = el.getAttribute("data-slot") === v.slot ? v.html : "";
+      });
+      document.getElementById("btn-pick").disabled = chosenId === id;
+      document.getElementById("btn-pick").textContent = chosenId === id ? "Izvēlēts" : "Izvēlos šo";
+    }
+
+    document.getElementById("btn-pick").addEventListener("click", () => setChosen(currentId, true));
+    document.getElementById("btn-copy").addEventListener("click", async () => {
+      const v = variants.find((x) => x.id === chosenId);
+      if (!v) return;
+      const text = choiceText(v) + " " + location.href;
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById("btn-copy").textContent = "Nokopēts";
+        setTimeout(() => { document.getElementById("btn-copy").textContent = "Kopēt izvēli"; }, 1600);
+      } catch (_) {}
+    });
+
+    const fromUrl = new URLSearchParams(location.search).get("izvele");
+    const start = variants.some((x) => x.id === fromUrl) ? fromUrl : "split";
+    apply(start);
+    if (fromUrl && fromUrl === start) setChosen(start, false);
+  </script>
+</body>
+</html>
