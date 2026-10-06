@@ -83,6 +83,7 @@ ABSOLUTE RULES
 - color: prefer the FULL factory name with the paint code from the equipment list (e.g. "LY8X/Havana Black Metallic" → "Havana Black Metallic (LY8X)") over a plain word like "black"; put a separate factory code into colorCode.
 - interior: same rule - prefer the upholstery designation with code (e.g. "N5D Valcona leather" → "Valcona leather (N5D)") over generic "Leather package"; separate code → interiorCode.
 - Official dealer / factory printouts (vendor "dealer") keep the printed English field list. AutoDNA / CarVertical must never overwrite a field that an API (Outvin / OneAuto / auto-records) already filled.
+- CarVertical „Funkciju saraksts” (manufacturer option list) is parsed in code: store nothing in this JSON for that table. Never copy „Vienkāršo ar MI” Latvian translations.
 
 8) OFFICIAL DEALER / FACTORY PRINTOUTS (vendor "dealer")
 - Field list layout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY, UPHOLSTERY CODE) → vehicleInfo, one value per label, copied exactly.

@@ -2,8 +2,52 @@ import { describe, expect, it } from "vitest";
 import {
   looksLikeFactoryEquipmentPaste,
   mergeFactoryEquipmentIntoCopilotActions,
+  parseCarverticalFunctionList,
   parseFactoryEquipmentPaste,
 } from "@/lib/factory-equipment-paste-parse";
+
+describe("parseCarverticalFunctionList", () => {
+  it("reads CarVertical Funkciju saraksts in original English and skips MI Latvian", () => {
+    const text = `Funkciju saraksts
+Informācija saņemta no ražotāja
+Vienkāršo ar MI
+513L
+Belgium
+9134
+Rock crystal white metallic paint MB 9134
+BS1
+Brake callipers with Mercedes-Benz lettering
+Bremžu suports ar Mercedes-Benz uzrakstu
+CA1
+Agility Control suspension
+CL3
+leather steering wheel
+L
+Left-hand drive
+181
+FUEL FILTER WITH WATER SEPARATOR
+M014
+DISPLACEMENT 1.4 LITER
+Odometra rādījumu ieraksti
+10.2025. 254 827 km`;
+    const rows = parseCarverticalFunctionList(text);
+    expect(rows.find((r) => r.code === "513L")?.description).toBe("Belgium");
+    expect(rows.find((r) => r.code === "9134")?.description).toMatch(/Rock crystal white/i);
+    expect(rows.find((r) => r.code === "BS1")?.description).toBe(
+      "Brake callipers with Mercedes-Benz lettering",
+    );
+    expect(rows.find((r) => r.code === "BS1")?.description).not.toMatch(/Bremžu/i);
+    expect(rows.find((r) => r.code === "CA1")?.description).toBe("Agility Control suspension");
+    expect(rows.find((r) => r.code === "L")?.description).toBe("Left-hand drive");
+    expect(rows.find((r) => r.code === "181")?.description).toMatch(/FUEL FILTER/i);
+    expect(rows.find((r) => r.code === "M014")?.description).toMatch(/DISPLACEMENT/i);
+    expect(rows.every((r) => !/[āēīūčģķļņšž]/i.test(r.description))).toBe(true);
+  });
+
+  it("returns no CarVertical equipment when Funkciju saraksts is missing", () => {
+    expect(parseCarverticalFunctionList("Odometra rādījumu ieraksti\n10.2025. 254 827 km")).toEqual([]);
+  });
+});
 
 describe("parseFactoryEquipmentPaste", () => {
   it("reads VW PR codes with English then Latvian lines", () => {

@@ -17,6 +17,7 @@ import { parseCarverticalTimelineFromText } from "@/lib/carvertical-pdf-parse";
 import { matchLeadingCountryNameLv, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
 import { sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
+import { parseCarverticalFunctionList } from "@/lib/factory-equipment-paste-parse";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
@@ -329,6 +330,7 @@ export function extractCarverticalReport(rawText: string): VendorReportExtract {
     ...(interior ? { interior } : {}),
     ...(transmission ? { transmission } : {}),
   });
+  out.equipment = parseCarverticalFunctionList(text);
   return out;
 }
 

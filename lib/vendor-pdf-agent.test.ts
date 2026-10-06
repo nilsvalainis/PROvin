@@ -350,6 +350,30 @@ describe("CarVertical deterministiskā ekstrakcija", () => {
     expect(extract.vehicleInfo.transmission).toContain("G1G");
   });
 
+  it("bez Funkciju saraksta komplektāciju neaizpilda", () => {
+    expect(extract.equipment).toEqual([]);
+  });
+
+  it("Funkciju sarakstu liek komplektācijā oriģinālajā valodā", () => {
+    const withList = extractCarverticalReport(`${CARVERTICAL_TEXT}
+Funkciju saraksts
+Informācija saņemta no ražotāja
+BS1
+Brake callipers with Mercedes-Benz lettering
+Bremžu suports ar Mercedes-Benz uzrakstu
+CA1
+Agility Control suspension
+EJ9
+COMAND Online
+`);
+    expect(withList.equipment.find((r) => r.code === "BS1")?.description).toBe(
+      "Brake callipers with Mercedes-Benz lettering",
+    );
+    expect(withList.equipment.map((r) => r.description).join(" ")).not.toMatch(/Bremžu/i);
+    expect(withList.equipment.find((r) => r.code === "CA1")?.description).toBe("Agility Control suspension");
+    expect(withList.equipment.find((r) => r.code === "EJ9")?.description).toBe("COMAND Online");
+  });
+
   it("valstu „Laikposms” bez notikuma virsraksta nepaliek par iekārtas kodu karti", () => {
     expect(extract.vehicleHistoryTimeline).toEqual([]);
   });
@@ -444,6 +468,7 @@ describe("merge + darbības", () => {
     extract.mileage = [{ date: "01.10.2025", odometer: "254827", country: "Latvija" }];
     extract.incidents = [{ csngDate: "01.02.2019", lossAmount: "8 501 - 9 000 €", incidentNo: "Vācija" }];
     extract.vehicleInfo = { color: "Havana Black Metallic (LY8X)" };
+    extract.equipment = [{ code: "BS1", description: "Brake callipers with Mercedes-Benz lettering" }];
 
     const actions = buildVendorCopilotActions(extract, "carvertical");
     expect(actions.map((a) => a.type)).toEqual([
@@ -451,6 +476,8 @@ describe("merge + darbības", () => {
       "upsert_incident",
       "set_dealer_vehicle_info",
     ]);
+    const dealer = actions.find((a) => a.type === "set_dealer_vehicle_info");
+    expect(dealer?.type === "set_dealer_vehicle_info" && dealer.equipment?.[0]?.code).toBe("BS1");
     expect(actions.every((a) => a.confidence === "high")).toBe(true);
   });
 
@@ -593,6 +620,53 @@ describe("dīlera lauku piemērošana", () => {
     const info = second.sourceBlocks.auto_records.outvinReport?.vehicleInfo;
     expect(info?.color).toBe("Havana Black Metallic (LY8X)");
     expect(info?.engineCode).toBe("CVUA");
+  });
+
+  it("CarVertical komplektāciju aizpilda, bet API sarakstu nepārraksta", () => {
+    const blocks = createDefaultSourceBlocks();
+    const filled = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "set_dealer_vehicle_info",
+          source: "auto_records",
+          vehicleInfo: {},
+          equipment: [
+            { code: "BS1", description: "Brake callipers with Mercedes-Benz lettering" },
+            { code: "CA1", description: "Agility Control suspension" },
+          ],
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: false },
+    );
+    expect(filled.sourceBlocks.auto_records.outvinReport?.equipment.map((r) => r.code)).toEqual(["BS1", "CA1"]);
+
+    const withApi = createDefaultSourceBlocks();
+    withApi.auto_records.outvin = {
+      ...emptyOutvinDataBundle("WDF447"),
+      equipment: [{ code: "PR3L", description: "Panoramic roof" }],
+    };
+    withApi.auto_records.outvinReport = {
+      ...emptyOutvinDealerReport(),
+      equipment: [{ code: "PR3L", description: "Panoramic roof" }],
+    };
+    const skipped = applyCopilotActions(
+      withApi,
+      [
+        {
+          type: "set_dealer_vehicle_info",
+          source: "auto_records",
+          vehicleInfo: {},
+          equipment: [{ code: "BS1", description: "Brake callipers with Mercedes-Benz lettering" }],
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: false },
+    );
+    expect(skipped.sourceBlocks.auto_records.outvinReport?.equipment).toEqual([
+      { code: "PR3L", description: "Panoramic roof" },
+    ]);
   });
 
   it("AutoDNA nepārraksta API lauku un latviešu vērtību liek angliski", () => {

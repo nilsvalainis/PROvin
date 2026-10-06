@@ -80,6 +80,74 @@ function pickDescription(candidates: string[]): string {
   return (lv || cleaned[cleaned.length - 1] || cleaned[0] || "").slice(0, DESC_MAX);
 }
 
+function looksTranslatedScript(s: string): boolean {
+  return looksLatvian(s) || /[\u0400-\u04FF]/.test(s);
+}
+
+/** CarVertical „Funkciju saraksts”: kods + oriģinālā (parasti EN) rinda, bez MI tulkojuma. */
+function isCvFeatureCode(line: string): boolean {
+  const t = line.trim().toUpperCase();
+  if (!t || STOP_CODES.has(t)) return false;
+  if (/^\d{1,2}$/.test(t)) return false;
+  if (/^[A-Z]$/.test(t)) return true;
+  return /^[0-9A-Z]{2,5}$/.test(t);
+}
+
+function pickOriginalDescription(candidates: string[]): string {
+  const cleaned = candidates
+    .map((c) => c.replace(/\s+/g, " ").trim())
+    .filter((c) => c && !isNoiseLine(c) && !isCvFeatureCode(c) && !/^[-–—]+$/.test(c));
+  const original = cleaned.find((c) => !looksTranslatedScript(c));
+  return (original ?? "").slice(0, DESC_MAX);
+}
+
+const CV_FUNCTION_STOP_RE =
+  /^(odometra\s+r[āa]d[īi]j|boj[āa]jumu\s+ieraksti|transportl[īi]dzek[ļl]a\s+specifik|ieteicamais\s+apkopes|datu\s+avoti|nov[ēe]rt[ēe]jums|tirgus\s+v[ēe]rt|juridisk[āa]|fiks[ēe]ts\s+nov[ēe]rt)/i;
+
+/**
+ * CarVertical PDF sadaļa „Funkciju saraksts” / „Informācija saņemta no ražotāja”.
+ * Tukšs, ja sadaļas nav. AI/MI latviešu tulkojumus izlaiž.
+ */
+export function parseCarverticalFunctionList(text: string): OutvinEquipmentLine[] {
+  const lines = normalizeLines(text);
+  const start = lines.findIndex((l) => /funkciju\s+saraksts/i.test(l));
+  if (start < 0) return [];
+
+  const slice: string[] = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (CV_FUNCTION_STOP_RE.test(line)) break;
+    if (isNoiseLine(line) && !isCvFeatureCode(line)) continue;
+    slice.push(line);
+  }
+
+  const out: OutvinEquipmentLine[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < slice.length; i++) {
+    const line = slice[i]!;
+    const sameLine = line.match(/^([0-9A-Z]{2,5}|[A-Z])\s+(.{3,})$/i);
+    if (sameLine && isCvFeatureCode(sameLine[1]!) && !isCvFeatureCode(sameLine[2]!.trim())) {
+      const desc = pickOriginalDescription([sameLine[2]!]);
+      if (desc) pushLine(out, seen, sameLine[1]!, desc);
+      continue;
+    }
+    if (!isCvFeatureCode(line)) continue;
+    if (/^[A-Z]$/.test(line.trim()) && (slice[i + 1] ?? "").trim().length < 8) continue;
+    const following: string[] = [];
+    let j = i + 1;
+    while (j < slice.length && following.length < 3) {
+      const next = slice[j]!;
+      if (isCvFeatureCode(next)) break;
+      following.push(next);
+      j += 1;
+    }
+    const desc = pickOriginalDescription(following);
+    if (!desc) continue;
+    pushLine(out, seen, line, desc);
+  }
+  return uniqueByCode(out);
+}
+
 /** VW: kods savā rindā, tad EN, tad LV. */
 function parseVwPrList(lines: string[]): OutvinEquipmentLine[] {
   const out: OutvinEquipmentLine[] = [];

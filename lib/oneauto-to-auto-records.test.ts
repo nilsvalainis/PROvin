@@ -181,6 +181,27 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
     expect(next.outvinReport?.vehicleInfo.transmission).toBe("8-speed automatic (G1G)");
   });
 
+  it("OneAuto komplektācija pārraksta CarVertical sarakstu", () => {
+    const base = emptyAutoRecordsBlock();
+    base.outvinReport = {
+      vehicleInfo: emptyOutvinVehicleInfo(),
+      accidentCheck: "",
+      stolenCheck: "",
+      equipment: [{ code: "BS1", description: "Brake callipers with Mercedes-Benz lettering" }],
+    };
+    const next = applyOneautoToAutoRecords(base, {
+      display: {
+        equipment: [{ label: "Panoramic roof", value: "PR3L" }],
+        powertrain: [],
+        serviceTimeline: [],
+      },
+      ingest: emptyOneautoIngest(),
+      vehicleOverride: false,
+    });
+    expect(next.outvinReport?.equipment).toEqual([{ code: "PR3L", description: "Panoramic roof" }]);
+    expect(next.outvin?.equipment).toEqual([{ code: "PR3L", description: "Panoramic roof" }]);
+  });
+
   it("hidratējot veco oneauto bloku, iztukšo to pēc pārneses", () => {
     const oa = emptyOneautoBlock();
     oa.display = {

@@ -338,21 +338,6 @@ function mergeVehicleField(current: string, incoming: string, override: boolean)
   return next.slice(0, 500);
 }
 
-function mergeEquipment(
-  existing: OutvinEquipmentLine[],
-  incoming: OutvinEquipmentLine[],
-  replace: boolean,
-): OutvinEquipmentLine[] {
-  const current = existing.filter(outvinEquipmentLineHasData);
-  if (incoming.length === 0) return current;
-  if (replace) return incoming;
-  const seen = new Set(current.map((l) => l.code.trim().toUpperCase() || l.description.trim().toLowerCase()));
-  const added = incoming.filter(
-    (l) => !seen.has(l.code.trim().toUpperCase() || l.description.trim().toLowerCase()),
-  );
-  return added.length > 0 ? [...current, ...added] : current;
-}
-
 function mileageKey(r: AutoRecordsServiceRow): string {
   return `${formatAutoRecordsDateForOutput(r.date) || r.date.trim()}|${normalizeAutoRecordsOdometer(r.odometer)}`;
 }
@@ -445,17 +430,20 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
     vehicleInfo.vinCode = input.ingest.lastFetchedVin.trim().slice(0, 24);
   }
 
-  const apiMapped = OUTVIN_VEHICLE_INFO_ROWS.some(({ key }) => (mappedInfo[key] ?? "").trim());
+  const incomingEquip = oneautoDisplayToEquipment(input.display);
+  const apiMapped =
+    OUTVIN_VEHICLE_INFO_ROWS.some(({ key }) => (mappedInfo[key] ?? "").trim()) || incomingEquip.length > 0;
   const apiBase = current.outvin ?? (apiMapped ? emptyOutvinDataBundle(vehicleInfo.vinCode) : undefined);
   const nextOutvin = apiBase
-    ? { ...apiBase, vehicleInfo: overlayNonemptyVehicleInfo(apiBase.vehicleInfo, mappedInfo) }
+    ? {
+        ...apiBase,
+        vehicleInfo: overlayNonemptyVehicleInfo(apiBase.vehicleInfo, mappedInfo),
+        ...(incomingEquip.length > 0 ? { equipment: incomingEquip } : {}),
+      }
     : undefined;
 
-  const equipment = mergeEquipment(
-    report.equipment,
-    oneautoDisplayToEquipment(input.display),
-    override && input.ingest.selectedProducts.includes("oe_build_sheet"),
-  );
+  const equipment =
+    incomingEquip.length > 0 ? incomingEquip : report.equipment.filter(outvinEquipmentLineHasData);
 
   let serviceWorks = current.serviceWorks ?? [];
   for (const row of oneautoDisplayToServiceWorks(input.display)) {

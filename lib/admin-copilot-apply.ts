@@ -598,10 +598,13 @@ function applyDealerVehicleInfo(
   let equipment = report.equipment;
   const incomingEquipment = (action.equipment ?? []).filter(outvinEquipmentLineHasData);
   if (incomingEquipment.length > 0) {
-    const merged = mergeDealerEquipment(report.equipment, incomingEquipment, action.override === true);
-    if (merged !== report.equipment) {
-      equipment = merged;
-      changed = true;
+    const apiEquip = (b.outvin?.equipment ?? []).filter(outvinEquipmentLineHasData);
+    if (action.override || apiEquip.length === 0) {
+      const merged = mergeDealerEquipment(report.equipment, incomingEquipment, action.override === true);
+      if (merged !== report.equipment) {
+        equipment = merged;
+        changed = true;
+      }
     }
   }
 
