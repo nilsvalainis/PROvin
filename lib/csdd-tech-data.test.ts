@@ -11,6 +11,21 @@ import {
 import { applyCsddTechDataToBlock, csddVinMatchesOrder } from "@/lib/csdd-tech-data-apply";
 import { emptyCsddFields } from "@/lib/admin-source-blocks";
 
+/**
+ * Reālas CSDD servisa atbildes, nolasītas caur VPN 2026-10-06 (CSDD pašu paraugs NG8493).
+ * Baiti glabāti kā base64, jo serviss atdod windows-1257, nevis UTF-8.
+ */
+const REAL_RESPONSE_B64 =
+  "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iV0lORE9XUy0xMjU3IiA/Pgo8VExfREFUST4KPFJOPk5HODQ5MzwvUk4+CjxWSU4+VE1CSkg5TlA5TjcwNDM1ODE8L1ZJTj4KPE1BUktBPtBLT0RBPC9NQVJLQT4KPE1PREVMSVM+U1VQRVJCPC9NT0RFTElTPgo8R0FEUz4yMDIyPC9HQURTPgo8REVHVklFTEE+RO56Ze9kZWd2aWVsYTwvREVHVklFTEE+CjxKQVVEQT4xMTA8L0pBVURBPgo8RUxFS1RST19KQVVEQT48L0VMRUtUUk9fSkFVREE+CjxFTEVLVFJPX0pBVURBMj48L0VMRUtUUk9fSkFVREEyPgo8VElMUFVNUz4xOTY4PC9USUxQVU1TPgo8UkVHMT4yMjA4MjAyMjwvUkVHMT4KPEtSQVNBPlBlbOdrYTwvS1JBU0E+CjxUTF9WRUlEUz5WaWVnbGFpcyBwbGHwbGlldG9qdW1hPC9UTF9WRUlEUz4KPENPQ19LQVRFR09SSUpBPk0xPC9DT0NfS0FURUdPUklKQT4KPENPQ19USVBTPjNUPC9DT0NfVElQUz4KPENPQ19URUhOX0FQU1RfTlVNPmU4KjIwMDcvNDYqMDMxNyoyMDwvQ09DX1RFSE5fQVBTVF9OVU0+CjxDT0NfVkFSSUFOVFM+QUNEVFNCWDAxPC9DT0NfVkFSSUFOVFM+CjxDT0NfVkVSU0lKQT5ORkQ3RkQ3R0MwMDQ0QklTVEMxQjFCPC9DT0NfVkVSU0lKQT4KPFBJTE5BX01BU0E+MjIzNjwvUElMTkFfTUFTQT4KPFBBU01BU0E+MTYxMjwvUEFTTUFTQT4KPFBPTF9CRUlHQVM+MjMwODIwMjc8L1BPTF9CRUlHQVM+CjxUQV9MSURaPjE0MDkyMDI4PC9UQV9MSURaPgo8L1RMX0RBVEk+Cg==";
+
+const REAL_NOT_FOUND_B64 =
+  "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iV0lORE9XUy0xMjU3IiA/Pgo8VExfREFUST4KPEVSUk9SPk5BViBBVFJBU1RTPC9FUlJPUj4KPC9UTF9EQVRJPgo=";
+
+function bytesFromBase64(b64: string): ArrayBuffer {
+  const bin = Buffer.from(b64, "base64");
+  return bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength) as ArrayBuffer;
+}
+
 /** CSDD palīdzības dienesta dotais paraugs (līguma 1. pielikums). */
 const SAMPLE_XML = `<TL_DATI>
 <RN>NG8493</RN>
@@ -75,6 +90,8 @@ describe("parseCsddTechDataXml", () => {
       year: "2022",
       fuel: "Dīzeļdegviela",
       powerKw: "110",
+      electricPowerKw: "",
+      electricPowerKw2: "",
       displacementCm3: "1968",
       firstRegistrationIso: "2022-08-22",
       color: "Pelēka",
@@ -100,6 +117,46 @@ describe("parseCsddTechDataXml", () => {
   it("reports a register answer without RN and VIN as not found", () => {
     const res = parseCsddTechDataXml("<TL_DATI><RN></RN><VIN></VIN></TL_DATI>");
     expect(res).toEqual({ found: false, message: "CSDD reģistrā šāds numurs netika atrasts" });
+  });
+
+  it("reads the ERROR element the register returns with HTTP 200", () => {
+    const res = parseCsddTechDataXml("<TL_DATI>\n<ERROR>NAV ATRASTS</ERROR>\n</TL_DATI>");
+    expect(res).toEqual({ found: false, message: "CSDD reģistrā šāds numurs netika atrasts" });
+    expect(parseCsddTechDataXml("<TL_DATI><ERROR>PARSNIEDZ LIMITU</ERROR></TL_DATI>").message).toBe(
+      "CSDD reģistrs atbildēja: PARSNIEDZ LIMITU",
+    );
+  });
+});
+
+describe("reāla CSDD atbilde (VPN, 2026-10-06)", () => {
+  it("decodes windows-1257 and parses the live payload", () => {
+    const xml = decodeCsddXmlBody(bytesFromBase64(REAL_RESPONSE_B64), "text/xml; charset=windows-1257");
+    expect(xml).toContain("<MARKA>ŠKODA</MARKA>");
+    expect(xml).toContain("Dīzeļdegviela");
+    expect(xml).toContain("Pelēka");
+    expect(xml).toContain("Vieglais plašlietojuma");
+
+    const res = parseCsddTechDataXml(xml);
+    expect(res.found).toBe(true);
+    if (!res.found) return;
+    expect(res.data.make).toBe("ŠKODA");
+    expect(res.data.color).toBe("Pelēka");
+    expect(res.data.vehicleKind).toBe("Vieglais plašlietojuma");
+    expect(res.data.inspectionValidUntilIso).toBe("2028-09-14");
+    expect(res.data.insuranceEndIso).toBe("2027-08-23");
+  });
+
+  it("falls back to the XML prolog charset when the header has none", () => {
+    const xml = decodeCsddXmlBody(bytesFromBase64(REAL_RESPONSE_B64), "text/xml");
+    expect(xml).toContain("<MARKA>ŠKODA</MARKA>");
+  });
+
+  it("treats the live NAV ATRASTS answer as not found", () => {
+    const xml = decodeCsddXmlBody(bytesFromBase64(REAL_NOT_FOUND_B64), "text/xml; charset=windows-1257");
+    expect(parseCsddTechDataXml(xml)).toEqual({
+      found: false,
+      message: "CSDD reģistrā šāds numurs netika atrasts",
+    });
   });
 });
 

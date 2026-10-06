@@ -23,6 +23,8 @@ export function csddTechDataAiContextBlock(data: CsddTechData): string {
     if (value.trim()) lines.push(`${label}: ${value.trim()}`);
   };
   push("Krāsa", data.color);
+  push("Elektromotora jauda (kW)", data.electricPowerKw);
+  push("Otrā elektromotora jauda (kW)", data.electricPowerKw2);
   push("Transportlīdzekļa veids", data.vehicleKind);
   push("Kategorija", data.cocCategory);
   push("Tips", data.cocType);

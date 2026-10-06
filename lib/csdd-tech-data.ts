@@ -18,6 +18,10 @@ export type CsddTechData = {
   fuel: string;
   /** Motora jauda kW (`JAUDA`). */
   powerKw: string;
+  /** Elektromotora jauda kW (`ELEKTRO_JAUDA`); hibrīdiem un elektromobiļiem. */
+  electricPowerKw: string;
+  /** Otrā elektromotora jauda kW (`ELEKTRO_JAUDA2`). */
+  electricPowerKw2: string;
   /** Motora tilpums cm³ (`TILPUMS`). */
   displacementCm3: string;
   /** Pirmā reģistrācija ISO (`REG1`, avotā DDMMYYYY). */
@@ -50,6 +54,8 @@ export function emptyCsddTechData(): CsddTechData {
     year: "",
     fuel: "",
     powerKw: "",
+    electricPowerKw: "",
+    electricPowerKw2: "",
     displacementCm3: "",
     firstRegistrationIso: "",
     color: "",
@@ -111,6 +117,17 @@ export function parseCsddTechDataXml(xmlRaw: string): CsddTechDataResult {
     return { found: false, message: "CSDD atbildē nav transportlīdzekļa datu" };
   }
 
+  // Nezināmam numuram reģistrs atbild ar HTTP 200 un <ERROR>NAV ATRASTS</ERROR>.
+  const error = csddXmlTagValue(xml, "ERROR");
+  if (error) {
+    return {
+      found: false,
+      message: /nav\s+atrasts/i.test(error)
+        ? "CSDD reģistrā šāds numurs netika atrasts"
+        : `CSDD reģistrs atbildēja: ${error}`,
+    };
+  }
+
   const data: CsddTechData = {
     registrationNumber: csddXmlTagValue(xml, "RN"),
     vin: csddXmlTagValue(xml, "VIN").toUpperCase(),
@@ -119,6 +136,8 @@ export function parseCsddTechDataXml(xmlRaw: string): CsddTechDataResult {
     year: digitsOnly(csddXmlTagValue(xml, "GADS")),
     fuel: csddXmlTagValue(xml, "DEGVIELA"),
     powerKw: digitsOnly(csddXmlTagValue(xml, "JAUDA")),
+    electricPowerKw: digitsOnly(csddXmlTagValue(xml, "ELEKTRO_JAUDA")),
+    electricPowerKw2: digitsOnly(csddXmlTagValue(xml, "ELEKTRO_JAUDA2")),
     displacementCm3: digitsOnly(csddXmlTagValue(xml, "TILPUMS")),
     firstRegistrationIso: csddApiDateToIso(csddXmlTagValue(xml, "REG1")),
     color: csddXmlTagValue(xml, "KRASA"),
@@ -147,9 +166,12 @@ export function parseCsddTechDataXml(xmlRaw: string): CsddTechDataResult {
  * Tad `ŠKODA` un `Pelēka` bez pareizā dekodētāja sabojātos, tāpēc kodējumu ņemam no `Content-Type`.
  */
 export function decodeCsddXmlBody(buf: ArrayBuffer, contentType: string | null): string {
-  const declared = contentType?.match(/charset=([\w-]+)/i)?.[1]?.toLowerCase() ?? "";
-  const candidates = declared ? [declared, "utf-8"] : ["utf-8"];
-  for (const charset of candidates) {
+  const fromHeader = contentType?.match(/charset=([\w-]+)/i)?.[1]?.toLowerCase() ?? "";
+  // Ja galvenē kodējuma nav, to deklarē pati XML prologa rinda (`encoding="WINDOWS-1257"`).
+  const prolog = new TextDecoder("latin1", { fatal: false }).decode(buf).slice(0, 200);
+  const fromProlog = prolog.match(/encoding=["']([\w-]+)["']/i)?.[1]?.toLowerCase() ?? "";
+
+  for (const charset of [fromHeader, fromProlog, "utf-8"].filter(Boolean)) {
     try {
       return new TextDecoder(charset, { fatal: false }).decode(buf);
     } catch {
