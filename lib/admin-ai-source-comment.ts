@@ -152,15 +152,14 @@ Sagatavo lauku „Eļļas maiņas intervāli” klienta PDF.
 Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas intervālus no VISIEM iegūtajiem datiem (dīlera servisa tabula, AutoDNA/CarVertical/RAW servisa teksti, nobraukuma līkne, motorstundu / pilsētas–šosejas profils, ražotāja intervāls no konteksta vai agregātu pakas).
 PIRMĀ teikuma formāts (obligāti, lai PDF krāsotu pret OEM):
 Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods], fiksēts vai Longlife/CBS maksimums)
-Piemēram N47 Longlife: 30 000 km / 24 mēn. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
+Piemēram N47 Longlife: 30 000 km / 24 mēn. Mainīgs CBS: 10 000 līdz 25 000 km / 12 mēn. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
 Jāatbild tālāk:
 - cik bieži eļļa ir mainīta (datumi un/vai km starp secīgām eļļas maiņām);
-- kāds ir bijis faktiskais intervāls pret ražotāja doto;
-- cik lielas ir nobīdes (pārsniegts / īsāks / atbilst);
-- ja pilsētas profils — praktiskie griesti ~10 000 km paliek KOMENTĀRĀ, ne OEM rindā; ja blīvi šosejas dati — 15 000-20 000 km var būt pieņemami.
-PDF krāsas (zaļa ≤ OEM, oranža līdz 1,30×, sarkana virs 1,30×, pelēka = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus.
-Ja eļļas maiņu ierakstu nav vai to ir par maz — tā arī saki; NEIZDOMĀ apkopes.
-Ja oficiālajā dīlerī ir robs pret ražotāja intervālu: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera — jālūdz pārdevēja rēķins/apliecinājums. To pašu robu NESAUC par pirkuma risku.
+- kā dīlera soļi izskatās pret ražotāja intervālu (īsāks, atbilst, dīlera datos garāks);
+- ja pilsētas profils - praktiskie griesti ~10 000 km paliek KOMENTĀRĀ, ne OEM rindā; ja blīvi šosejas dati - 15 000-20 000 km var būt pieņemami.
+PDF krāsas (zaļa = dīlera solis iekļaujas OEM, sarkana = dīlera datos garāks, pelēka = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus. Sarkans NAV apgalvojums, ka eļļa nav mainīta.
+Ja eļļas maiņu ierakstu nav vai to ir par maz - tā arī saki; NEIZDOMĀ apkopes.
+Ja oficiālajā dīlerī ir robs pret ražotāja intervālu vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera - jālūdz pārdevēja rēķins/apliecinājums. To pašu NESAUC par pirkuma risku un NEAPGALVO, ka intervāls ir pārkāpts.
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
 Garums: 2–4 īsas rindkopas. Virsraksts savā rindā, tad rindkopa. Bez *, **.`,
         {

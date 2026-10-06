@@ -83,8 +83,8 @@ describe("buildOilChangeIntervalSeries", () => {
   });
 
   it("colours observed steps against this engine OEM, and keeps gaps grey", () => {
-    const bmw = { km: 30_000, months: 24 };
-    const toyota = { km: 15_000, months: 12 };
+    const bmw = { km: 30_000, kmMin: null, months: 24 };
+    const toyota = { km: 15_000, kmMin: null, months: 12 };
     const longLife = buildOilChangeIntervalSeries(
       [
         row("03.04.2016", "31400", "Eļļas maiņa"),
@@ -127,12 +127,12 @@ describe("buildOilChangeIntervalSeries", () => {
     ]);
     expect(series.ringIntervalKm).toBeNull();
     expect(series.ringStepCount).toBe(0);
-    expect(series.ringNote).toContain("Gredzena vidējo nevar rēķināt");
+    expect(series.ringNote).toContain("Vidējo intervālu nevar rēķināt");
   });
 });
 
 describe("buildOilChangeIntervalPdfHtml", () => {
-  it("renders a km ring, a separate period chip, and split table columns", () => {
+  it("renders coverage, a separate period column, and a claim caution", () => {
     const html = buildOilChangeIntervalPdfHtml(
       buildOilChangeIntervalSeries([
         row("03.04.2016", "31400", "Eļļas maiņa"),
@@ -145,30 +145,36 @@ describe("buildOilChangeIntervalPdfHtml", () => {
     expect(html).toContain("vidējais intervāls");
     expect(html).toContain("vidējais laiks");
     expect(html).toContain("pdf-oil-int__kpis");
-    expect(html).toContain("pdf-oil-int__ring");
+    expect(html).toContain("pdf-oil-int__cov");
+    expect(html).toContain("pdf-oil-int__caution");
+    expect(html).toContain("nav pierādījums, ka eļļa nav mainīta");
     expect(html).toContain("<th>Intervāls</th><th>Periods</th>");
     expect(html).toContain("31 400 km");
     expect(html).toContain("29 800 km");
     expect(html).toContain("23 mēn.");
     expect(html).toContain("Datu iztrūkums");
     expect(html).toContain("Sākums");
+    expect(html).not.toContain("pdf-oil-int__ring");
     expect(html).not.toContain("29 800 km, 23");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
   });
 
-  it("prints the OEM caption used for colours", () => {
+  it("prints the OEM caption used for colours and does not call a longer dealer step a proven miss", () => {
     const html = buildOilChangeIntervalPdfHtml(
       buildOilChangeIntervalSeries(
         [
           row("03.04.2016", "31400", "Eļļas maiņa"),
           row("12.03.2018", "61200", "Eļļas maiņa"),
         ],
-        { km: 30_000, months: 24 },
+        { km: 30_000, kmMin: null, months: 24 },
       ),
     );
-    expect(html).toContain("pret 30 000 km / 24 mēn.");
-    expect(html).toContain("pdf-oil-int__bar--ok");
+    expect(html).toContain("Ražotāja intervāls: 30 000 km / 24 mēn.");
+    expect(html).toContain("pdf-oil-int__seg--ok");
+    expect(html).toContain("dīlera datos atbilst intervālam");
+    expect(html).toContain("dīlera datos virs intervāla");
+    expect(html).not.toMatch(/intervāls tiešām ir pārsniegts/i);
     expect(html).toContain("vidējais laiks");
     expect(html).toContain("fiksētas maiņas");
   });

@@ -1782,8 +1782,10 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
     });
     expect(doc).toContain("pdf-oil-int__table");
-    expect(doc).toContain("pdf-oil-int__ring");
+    expect(doc).toContain("pdf-oil-int__cov");
     expect(doc).toContain("pdf-oil-int__kpis");
+    expect(doc).toContain("pdf-oil-int__caution");
+    expect(doc).not.toContain("pdf-oil-int__ring");
     expect(doc).toContain("fiksētas maiņas");
     expect(doc).toContain("vidējais intervāls");
     expect(doc).toContain("vidējais laiks");

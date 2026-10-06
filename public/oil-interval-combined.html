@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN · eļļas intervāli, kopējais dizains</title>
+<style>
+  :root{
+    --green:#0E4F42;
+    --green-top:#1A6B57;
+    --red:#6B2030;
+    --red-top:#8A3342;
+    --over-text:#5A1A26;
+    --neutral:#7A828C;
+    --ok-wash:#E8EEEC;
+    --ink:#0f172a;
+    --mute:#64748b;
+    --line:#E9EDF3;
+    --soft:#F1F5F9;
+    --hatch:repeating-linear-gradient(-55deg,#F3F4F6 0 3px,#C5CBD3 3px 4px);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:#d7dee8;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+    font-variant-numeric:tabular-nums;
+  }
+  .chrome{position:sticky;top:0;z-index:30;background:#0f172a;color:#e2e8f0;padding:12px 16px 14px;}
+  .chrome h1{margin:0;font-size:15px;font-weight:700;color:#fff;}
+  .chrome p{margin:6px 0 0;font-size:12px;line-height:1.45;color:#94a3b8;max-width:78rem;}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tabs a{
+    display:inline-block;border:1px solid #334155;background:#1e293b;color:#e2e8f0;text-decoration:none;
+    border-radius:999px;padding:5px 10px;font:650 10.5px/1.2 Inter,sans-serif;
+  }
+  .tabs a[aria-current="true"]{background:#0061D2;border-color:#0061D2;color:#fff;}
+  .hint{margin:8px 0 0;font-size:11px;color:#cbd5e1;}
+  .stage{padding:24px 12px 72px;}
+  .sheet{
+    display:none;width:210mm;margin:0 auto 22px;background:#fff;
+    padding:13mm 12mm 14mm;box-shadow:0 16px 44px rgb(15 23 42 / .12);
+  }
+  .sheet.is-on{display:block;}
+
+  .kicker{margin:0 0 8px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6e6e73;}
+  .sec{margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px;}
+  .kpi{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#F8FAFC;}
+  .kpi b{display:block;font-size:13px;}
+  .kpi span{display:block;margin-top:2px;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--mute);}
+
+  .hatch{background:var(--hatch);}
+  .cov{display:flex;height:20px;border-radius:99px;overflow:hidden;background:#EEF1F4;margin:0 0 8px;box-shadow:inset 0 0 0 1px rgb(15 23 42 / .08);}
+  .cov i{display:block;height:100%;}
+  .cov .g{background:linear-gradient(180deg,var(--green-top) 0%,var(--green) 100%);}
+  .cov .r{background:linear-gradient(180deg,var(--red-top) 0%,var(--red) 100%);}
+  .cov .n{background:var(--neutral);}
+  .covkey{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:11px;color:#334155;margin:0 0 12px;}
+  .covkey span{display:inline-flex;align-items:center;gap:6px;}
+  .sw{display:inline-block;width:16px;height:8px;border-radius:99px;}
+  .sw.g{background:var(--green);} .sw.r{background:var(--red);} .sw.n{background:var(--neutral);}
+  .sw.h{background:var(--hatch);}
+  .summary{font-size:15px;font-weight:700;letter-spacing:-0.01em;margin:0 0 14px;}
+  .summary small{display:block;margin-top:3px;font-size:11px;font-weight:500;letter-spacing:0;color:#475569;}
+
+  .ref{display:flex;gap:8px;align-items:flex-start;margin:0 0 6px;font-size:10.5px;line-height:1.45;color:#334155;}
+  .ref b{font-weight:700;color:var(--ink);}
+  .refmark{flex:none;margin-top:2px;width:16px;height:12px;position:relative;}
+  .refmark .band{position:absolute;left:0;right:0;top:2px;bottom:2px;background:var(--ok-wash);border-radius:3px;}
+  .refmark .tick{position:absolute;right:0;top:-1px;bottom:-1px;width:2px;background:#0f172a;opacity:.55;}
+  .refmark.single .tick{left:50%;right:auto;margin-left:-1px;}
+
+  table.t{width:100%;border-collapse:collapse;font-size:11px;}
+  table.t th{text-align:left;font-size:9px;letter-spacing:0.05em;text-transform:uppercase;color:var(--mute);padding:6px 10px 6px 0;border-bottom:1px solid var(--line);}
+  table.t td{padding:8px 10px 8px 0;border-bottom:1px solid var(--soft);vertical-align:middle;}
+  table.t tr:last-child td{border-bottom:none;}
+  .odo{font-weight:500;color:#334155;}
+  .miss{color:#94a3b8;}
+  .dim{color:#94a3b8;}
+  .over{color:var(--over-text);font-weight:700;}
+  .gaptag{display:block;margin-top:2px;font-size:8.5px;font-weight:650;letter-spacing:0.04em;text-transform:uppercase;color:#94a3b8;}
+
+  .bw{position:relative;display:flex;align-items:center;height:14px;width:100%;}
+  .bw .band{position:absolute;top:1px;bottom:1px;background:var(--ok-wash);border-radius:4px;}
+  .bw .tk{position:absolute;top:-2px;bottom:-2px;width:1.5px;background:#0f172a;opacity:.5;z-index:3;}
+  .bw .b{position:relative;z-index:2;display:block;height:8px;}
+  .bw .b.g{background:linear-gradient(180deg,var(--green-top) 0%,var(--green) 100%);}
+  .bw .b.r{background:linear-gradient(180deg,var(--red-top) 0%,var(--red) 100%);}
+  .bw .b.n{background:var(--neutral);}
+  .bw .b:first-of-type{border-radius:99px 0 0 99px;}
+  .bw .b:last-of-type{border-radius:0 99px 99px 0;}
+  .bw .b:only-of-type{border-radius:99px;}
+  .bw .b.dot{width:8px!important;border-radius:99px;}
+  .bw .b.h{background:var(--hatch);}
+  .start{font-weight:700;}
+  .note{margin:12px 0 0;padding:10px 12px;border-radius:8px;border:1px solid var(--soft);background:#F8FAFC;font-size:10.5px;line-height:1.45;color:#334155;}
+  .caution{margin:12px 0 0;padding:10px 12px;border-radius:8px;border:1px solid #E4D9DB;background:#F7F3F3;font-size:10.5px;line-height:1.45;color:#334155;}
+</style>
+</head>
+<body>
+  <div class="chrome">
+    <h1>Eļļas intervāli: apvienotais dizains (08 augša + 09 grafika)</h1>
+    <p>
+      Zaļš = dīlera solis iekļaujas ražotāja intervālā. Sarkans = dīlera datos solis ir garāks (km vai laiks). Tas nav apgalvojums, ka eļļa nav mainīta: apkope varēja būt ārpus dīlera. Svītrots = nav dīlera datu.
+      Mainīgam intervālam ievērots ir viss līdz augšējai robežai. Soļi ar datu iztrūkumu (virs 30 000 km, virs 24 mēn. vai izlecējs pret pārējiem) vērtējumā nepiedalās.
+      Procenti, KPI un tabula tiek rēķināti no tiem pašiem datiem lapas skriptā.
+    </p>
+    <div class="tabs" id="tabs"></div>
+    <p class="hint" id="hint"></p>
+  </div>
+  <div class="stage" id="stage"></div>
+<script>
+const GAP_KM = 30000, GAP_M = 24, OUT_RATIO = 1.8, OUT_MIN = 20000, SC = 30000;
+
+function fmt(n){ return n == null ? "" : String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+function ms(d){ const [dd,mm,yy] = d.split(".").map(Number); return new Date(yy, mm-1, dd).getTime(); }
+function monthsBetween(a, b){ const days = (b - a) / 864e5; return days < 20 ? null : Math.round(days / 30.437); }
+function median(xs){ const s = [...xs].sort((a,b)=>a-b); const m = Math.floor(s.length/2); return s.length % 2 ? s[m] : Math.round((s[m-1]+s[m])/2); }
+function avg(xs){ return xs.length ? Math.round(xs.reduce((a,b)=>a+b,0)/xs.length) : null; }
+
+/* Tā pati loģika kā lib/oil-change-intervals.ts: soļi, datu iztrūkums, izlecējs. */
+function build(raw, oem){
+  const rows = []; let pk = null, pt = 0;
+  raw.forEach((r, i) => {
+    const t = ms(r.d); let delta = null, m = null;
+    if (i > 0) {
+      if (r.km != null && pk != null && r.km > pk) delta = r.km - pk;
+      m = monthsBetween(pt, t);
+    }
+    rows.push({ ...r, t, delta, m, first: i === 0 });
+    if (r.km != null) pk = r.km;
+    pt = t;
+  });
+  const hard = (d, m) => (d != null && d > GAP_KM) || (m != null && m > GAP_M);
+  const pool = rows.filter((r) => !r.first && r.delta != null && !hard(r.delta, r.m)).map((r) => r.delta);
+  rows.forEach((r) => {
+    if (r.first) { r.st = "start"; return; }
+    let gap = hard(r.delta, r.m);
+    if (!gap && r.delta != null && pool.length >= 2) {
+      if (r.delta >= OUT_MIN && r.delta >= median(pool) * OUT_RATIO) gap = true;
+    }
+    if (gap) { r.st = "gap"; return; }
+    if (!oem) { r.st = "known"; return; }
+    r.kmOver = r.delta != null && r.delta > oem.max;
+    r.mOver = !!(oem.months && r.m != null && r.m > oem.months);
+    r.st = r.kmOver || r.mOver ? "over" : "ok";
+  });
+  return rows;
+}
+
+function stats(rows, oem){
+  const steps = rows.filter((r) => !r.first);
+  const obs = steps.filter((r) => r.st !== "gap");
+  const withKm = rows.filter((r) => r.km != null);
+  const total = withKm[withKm.length - 1].km - withKm[0].km;
+  const okKm = obs.filter((r) => r.st === "ok" || r.st === "known").reduce((a, r) => a + (r.delta || 0), 0);
+  const overKm = obs.filter((r) => r.st === "over").reduce((a, r) => a + (r.delta || 0), 0);
+  const gapKm = total - okKm - overKm;
+  /* Procenti summējas līdz 100: iztrūkums un ievērots noapaļoti, pārsniegts ir atlikums. */
+  const pGap = Math.round(gapKm / total * 100);
+  const pOk = Math.round(okKm / total * 100);
+  const pOver = oem ? Math.max(0, 100 - pGap - pOk) : 0;
+  return {
+    steps, obs, total, okKm, overKm, gapKm, pGap, pOk, pOver,
+    pCover: 100 - pGap,
+    nGap: steps.length - obs.length,
+    nOver: obs.filter((r) => r.st === "over").length,
+    avgKm: avg(obs.filter((r) => r.delta != null).map((r) => r.delta)),
+    avgM: avg(obs.filter((r) => r.m != null).map((r) => r.m)),
+    k0: withKm[0].km, k1: withKm[withKm.length - 1].km,
+  };
+}
+
+function refLine(oem){
+  if (!oem) return `<div class="ref"><span class="refmark single"><i class="tick" style="display:none"></i></span><span><b>Ražotāja intervāls nav droši zināms.</b> Ievērošanu nevērtējam, joslas rāda tikai, cik kilometru dīlera dati apliecina.</span></div>`;
+  const months = oem.months ? ` / ${oem.months} mēn.` : "";
+  if (oem.min < oem.max) {
+    return `<div class="ref"><span class="refmark"><i class="band"></i><i class="tick"></i></span><span><b>Ražotāja intervāls mainīgs: ${fmt(oem.min)} līdz ${fmt(oem.max)} km${months}.</b> Gaišā zona ir pieļaujamās robežas, melnā atzīme ir augšējā robeža.</span></div>`;
+  }
+  return `<div class="ref"><span class="refmark single"><i class="tick"></i></span><span><b>Ražotāja intervāls: ${fmt(oem.max)} km${months}.</b> Melnā atzīme joslā ir šis intervāls.</span></div>`;
+}
+
+function bar(r, oem){
+  const tick = oem ? `<i class="tk" style="left:${oem.max / SC * 100}%"></i>` : "";
+  const band = oem && oem.min < oem.max ? `<i class="band" style="left:${oem.min / SC * 100}%;width:${(oem.max - oem.min) / SC * 100}%"></i>` : "";
+  if (r.st === "start") return `<div class="bw"><span class="b n dot" style="background:#CBD5E1"></span></div>`;
+  if (r.st === "gap") return `<div class="bw">${tick}<span class="b h" style="width:100%"></span></div>`;
+  const cls = r.st === "over" ? "r" : r.st === "ok" ? "g" : "n";
+  if (r.delta == null) return `<div class="bw">${tick}<span class="b ${cls} dot"></span></div>`;
+  const w = Math.min(r.delta, SC) / SC * 100;
+  if (oem && r.kmOver) {
+    const tp = oem.max / SC * 100;
+    return `<div class="bw">${band}${tick}<span class="b g" style="width:${tp}%"></span><span class="b r" style="width:${w - tp}%"></span></div>`;
+  }
+  return `<div class="bw">${band}${tick}<span class="b ${cls}" style="width:${w}%"></span></div>`;
+}
+
+function render(raw, oem){
+  const rows = build(raw, oem), s = stats(rows, oem);
+  const kpis = `<div class="kpis">
+    <div class="kpi"><b>${rows.length}</b><span>fiksētas maiņas</span></div>
+    <div class="kpi"><b>${fmt(s.avgKm)} km</b><span>vidējais intervāls</span></div>
+    <div class="kpi"><b>${s.avgM} mēn.</b><span>vidējais laiks</span></div>
+  </div>`;
+  const seg = oem
+    ? `<i class="g" style="width:${s.okKm / s.total * 100}%"></i><i class="r" style="width:${s.overKm / s.total * 100}%"></i>`
+    : `<i class="n" style="width:${s.okKm / s.total * 100}%"></i>`;
+  const key = oem
+    ? `<span><i class="sw g"></i><b>${s.pOk}%</b> dīlera datos atbilst intervālam</span><span><i class="sw r"></i><b>${s.pOver}%</b> dīlera datos virs intervāla</span><span><i class="sw h"></i><b>${s.pGap}%</b> nav dīlera datu</span>`
+    : `<span><i class="sw n"></i><b>${s.pCover}%</b> nobraukuma ar dīlera datiem</span><span><i class="sw h"></i><b>${s.pGap}%</b> nav datu</span>`;
+  const cover = `<div class="cov">${seg}<i class="hatch" style="width:${s.gapKm / s.total * 100}%"></i></div>
+    <div class="covkey">${key}</div>
+    <p class="summary">Dīlera dati apliecina ${s.pCover}% nobraukuma<small>${fmt(s.k0)} km līdz ${fmt(s.k1)} km.</small></p>`;
+  const body = rows.map((r) => {
+    const odo = r.km == null ? `<span class="miss">nav fiksēts</span>` : `<span class="odo">${fmt(r.km)} km</span>`;
+    let delta = "", per = "";
+    if (r.st === "start") delta = `<span class="start">Sākums</span>`;
+    else if (r.st === "gap") {
+      delta = (r.delta != null ? `<span class="dim"><b>${fmt(r.delta)} km</b></span>` : "") + `<span class="gaptag">Datu iztrūkums</span>`;
+      per = r.m != null ? `<span class="dim">${r.m} mēn.</span>` : "";
+    } else {
+      delta = r.delta != null ? `<b class="${r.kmOver ? "over" : ""}">${fmt(r.delta)} km</b>` : "";
+      per = r.m != null ? `<span class="${r.mOver ? "over" : ""}">${r.m} mēn.</span>` : "";
+    }
+    return `<tr><td>${r.d}</td><td>${odo}</td><td>${delta}</td><td>${per}</td><td>${bar(r, oem)}</td></tr>`;
+  }).join("");
+  const obsCount = s.obs.length;
+  const caution = `<p class="caution">PROVIN neredz apkopes ārpus dīlera. Ja solis dīlera datos ir garāks par ražotāja intervālu vai dati iztrūkst, tas nav pierādījums, ka eļļa nav mainīta. Apkope varēja būt citā servisā.</p>`;
+  const note = `<p class="note">Vidējie rādītāji rēķināti tikai no ${obsCount} soļiem, kur dīlera eļļas maiņas seko cita citai. ${s.nGap} ${s.nGap === 1 ? "solis nav iekļauts" : "soļi nav iekļauti"}, jo starp tiem ir datu iztrūkums.</p>`;
+  return `<p class="kicker">Oficiālā dīlera dati</p><h2 class="sec">Eļļas maiņas intervāli</h2>
+    ${kpis}${cover}${refLine(oem)}
+    <table class="t"><thead><tr><th>Datums</th><th>Nobraukums</th><th>Intervāls</th><th>Periods</th><th style="width:32%">Pret ražotāja intervālu</th></tr></thead><tbody>${body}</tbody></table>
+    ${caution}${note}`;
+}
+
+const DATA_A = [
+  { d:"14.08.2009", km:19565 },  { d:"31.10.2011", km:51064 },  { d:"27.07.2012", km:60755 },
+  { d:"23.10.2013", km:null },   { d:"14.10.2015", km:141077 }, { d:"30.08.2016", km:157927 },
+  { d:"03.07.2017", km:167921 }, { d:"23.05.2018", km:180614 }, { d:"20.05.2020", km:208192 },
+  { d:"05.07.2021", km:221482 }, { d:"01.04.2026", km:301123 },
+];
+const DATA_B = [
+  { d:"05.03.2017", km:31200 },  { d:"11.02.2018", km:44600 },  { d:"20.01.2019", km:58900 },
+  { d:"14.06.2020", km:79800 },  { d:"02.05.2021", km:99600 },  { d:"18.04.2022", km:128300 },
+  { d:"03.11.2025", km:190400 }, { d:"12.03.2026", km:201800 },
+];
+
+const VARIANTS = [
+  {
+    id: "k1",
+    name: "A Fiksēts 15 000 km / 12 mēn.",
+    hint: "Reālā 11 maiņu rinda. Sarkani ir dīlera soļi, kas datos ir garāki par OEM (16 850 km, 14 mēn., 15 mēn.). Tas nav apgalvojums, ka eļļa nav mainīta.",
+    html: () => render(DATA_A, { min: 15000, max: 15000, months: 12 }),
+  },
+  {
+    id: "k2",
+    name: "B Mainīgs 10 000 līdz 25 000 km / 12 mēn.",
+    hint: "Piemērs ražotājam ar mainīgu intervālu (apkopes indikators). Ievērots viss līdz 25 000 km. 28 700 km un 17 mēn. ir sarkani kā dīlera dati virs augšējās robežas, ne kā pierādīta izlaista maiņa.",
+    html: () => render(DATA_B, { min: 10000, max: 25000, months: 12 }),
+  },
+  {
+    id: "k3",
+    name: "C Ražotāja intervāls nav zināms",
+    hint: "Ja aģents raksta 'nav droši zināms': nav zaļa/sarkana, nav melnās atzīmes. Tikai cik nobraukuma dīlera dati apliecina un kur ir caurumi.",
+    html: () => render(DATA_A, null),
+  },
+];
+
+const tabs = document.getElementById("tabs");
+const stage = document.getElementById("stage");
+VARIANTS.forEach((v, i) => {
+  const a = document.createElement("a");
+  a.href = "#" + v.id; a.textContent = v.name; a.id = "tab-" + v.id;
+  tabs.appendChild(a);
+  const art = document.createElement("article");
+  art.className = "sheet" + (i === 0 ? " is-on" : "");
+  art.id = v.id; art.innerHTML = v.html();
+  stage.appendChild(art);
+});
+function show(id) {
+  const v = VARIANTS.find((x) => x.id === id) || VARIANTS[0];
+  document.querySelectorAll(".sheet").forEach((el) => el.classList.toggle("is-on", el.id === v.id));
+  document.querySelectorAll(".tabs a").forEach((el) => el.setAttribute("aria-current", el.id === "tab-" + v.id ? "true" : "false"));
+  document.getElementById("hint").textContent = v.name + ". " + v.hint;
+}
+window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1) || "k1");
+</script>
+</body>
+</html>

@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-10-06.3 - Eļļas PDF: zaļš/sarkans pret OEM bez oranža; sarkans
+ *   nav apgalvojums, ka eļļa nav mainīta (apkope varēja būt ārpus dīlera).
+ *   Mainīgs intervāls: „X līdz Y km”. Pilsētas 10 000 km paliek komentārs.
  * - 2026-10-06.2 - Eļļas lauks: pirmā rinda „Ražotāja intervāls: X km / Y mēn.”
  *   no motora koda/markas; PDF krāso zaļu/oranžu/sarkanu pret šo skaitli,
  *   pelēks paliek datu iztrūkumam. Pilsētas 10 000 km ir komentārs, ne OEM.
@@ -168,4 +171,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-06.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-06.3";
