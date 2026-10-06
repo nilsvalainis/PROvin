@@ -13,6 +13,7 @@ import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedSsLvAdifyOnPaidOrder } from "@/lib/admin-ss-lv-adify-seed";
 import { seedCsddTechDataOnPaidOrder } from "@/lib/admin-csdd-tech-seed";
+import { seedDenmarkRegistryOnPaidOrder } from "@/lib/admin-denmark-registry-seed";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
@@ -217,6 +218,17 @@ async function fulfillPaidCheckoutSession(
           }
         } catch (err) {
           console.error("[stripe webhook] CSDD tech data seed:", err);
+        }
+
+        try {
+          const r = await seedDenmarkRegistryOnPaidOrder(session.id, order.vin);
+          if (r.ok) {
+            console.info("[stripe webhook] Denmark registry seeded", { sessionId: session.id, reason: r.reason });
+          } else if (r.reason !== "skip" && r.reason !== "no_vin") {
+            console.warn("[stripe webhook] Denmark registry seed:", r.reason);
+          }
+        } catch (err) {
+          console.error("[stripe webhook] Denmark registry seed:", err);
         }
       });
     }

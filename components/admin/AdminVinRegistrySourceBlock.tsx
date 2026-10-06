@@ -449,6 +449,7 @@ export function AdminVinRegistrySourceBlock({
             {block.fetchedAt ? (
               <span className="text-[10px] text-slate-400">
                 Pēdējā ielāde: {new Date(block.fetchedAt).toLocaleString("lv-LV")}
+                {!status && block.fetchMessage?.trim() ? ` · ${block.fetchMessage.trim()}` : ""}
               </span>
             ) : null}
           </div>
