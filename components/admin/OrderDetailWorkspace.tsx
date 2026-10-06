@@ -23,6 +23,7 @@ import {
   AdminEstoniaVinRegistryPair,
   AdminVinRegistrySourceBlock,
 } from "@/components/admin/AdminVinRegistrySourceBlock";
+import { AdminVinScanPanel } from "@/components/admin/AdminVinScanPanel";
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
@@ -4537,6 +4538,7 @@ export function OrderDetailWorkspace({
 
       {/* Apakšējā atstarpe telefonā: fiksētais doks nedrīkst aizsegt pēdējo bloku. */}
       <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 max-md:pb-32 ${ADMIN_CONTENT_MAX}`}>
+        <AdminVinScanPanel vin={vinBar} />
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.8.0
-// @description  Admin MENU VIN auto-fill. car.info + checkcar.vin. AutoDNA arī atver CarVertical. Sludinājuma vēsture no tirgusdati.lv caur pārlūku.
+// @version      1.9.0
+// @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. car.info + checkcar.vin. AutoDNA arī atver CarVertical. Sludinājuma vēsture no tirgusdati.lv caur pārlūku.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -26,6 +26,21 @@
 // @match        https://www.checkcar.vin/*
 // @match        https://tirgusdati.lv/*
 // @match        https://www.tirgusdati.lv/*
+// @match        https://stat.vin/*
+// @match        https://www.stat.vin/*
+// @match        https://bid.cars/*
+// @match        https://www.bid.cars/*
+// @match        https://vininspect.com/*
+// @match        https://www.vininspect.com/*
+// @match        https://auchistory.com/*
+// @match        https://www.auchistory.com/*
+// @match        https://www.carfax.eu/*
+// @match        https://carfax.eu/*
+// @match        https://en.cebia.com/*
+// @match        https://www.cebia.com/*
+// @match        https://cebia.com/*
+// @match        https://www.auto.vin/*
+// @match        https://auto.vin/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -39,7 +54,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.8.0";
+  const SCRIPT_VERSION = "1.9.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -53,6 +68,8 @@
   const GM_PENDING_URL = "provin_pending_url";
   const GM_CC_PROBE = "provin_cc_photo_probe";
   const GM_CC_RESULT = "provin_cc_photo_result";
+  const GM_SCAN_JOB = "provin_scan_job";
+  const GM_SCAN_RESULT = "provin_scan_result";
 
   /* ---------- Admin: saglabāt hand-off pirms jaunas cilnes ---------- */
   if (path.includes("/admin")) {
@@ -181,6 +198,29 @@
         },
       });
     });
+
+    document.addEventListener("provin-vin-scan-browser", function (ev) {
+      const detail = ev && ev.detail ? ev.detail : {};
+      const vin = String(detail.vin || "")
+        .replace(/[\s-]/g, "")
+        .toUpperCase();
+      const sources = Array.isArray(detail.sources) ? detail.sources.map((id) => String(id)) : [];
+      if (!vin || sources.length === 0) return;
+      stopVinScanPoll();
+      try {
+        GM_setValue(GM_PENDING_VIN, vin);
+        GM_deleteValue(GM_SCAN_RESULT);
+        GM_setValue(
+          GM_SCAN_JOB,
+          JSON.stringify({ vin: vin, sources: sources, index: 0, startedAt: Date.now() }),
+        );
+      } catch (e) {
+        console.warn("PROVIN admin: skenēšanas rinda", e);
+        return;
+      }
+      pollVinScan();
+    });
+    pollVinScan();
     return;
   }
 
@@ -393,7 +433,369 @@
     }
   }
 
+  function readScanJob() {
+    try {
+      const raw = GM_getValue(GM_SCAN_JOB, "");
+      if (!raw) return null;
+      const job = JSON.parse(String(raw));
+      if (!job || !Array.isArray(job.sources) || !job.vin) return null;
+      return job;
+    } catch {
+      return null;
+    }
+  }
+
+  function scanUrl(id, vin) {
+    const v = encodeURIComponent(vin);
+    const urls = {
+      stat_vin: "https://stat.vin/cars/" + v,
+      bid_cars: "https://bid.cars/en/search?q=" + v,
+      vininspect: "https://vininspect.com/vin/" + v,
+      auchistory: "https://auchistory.com/",
+      carfax_eu: "https://www.carfax.eu/preview-page?vin=" + v,
+      cebia: "https://en.cebia.com/",
+      autodna_preview: "https://www.autodna.lv/vin/" + v,
+      carvertical_preview: "https://www.carvertical.com/lv/user/reports",
+      auto_vin: "https://www.auto.vin/en/checkout?vin=" + v,
+      checkcar_vin: "https://checkcar.vin/report/check/" + v,
+    };
+    return urls[id] || "";
+  }
+
+  function scanIdForHost(name) {
+    if (name === "stat.vin" || name.endsWith(".stat.vin")) return "stat_vin";
+    if (name.endsWith("bid.cars")) return "bid_cars";
+    if (name.endsWith("vininspect.com")) return "vininspect";
+    if (name.endsWith("auchistory.com")) return "auchistory";
+    if (name.endsWith("carfax.eu")) return "carfax_eu";
+    if (name === "cebia.com" || name.endsWith(".cebia.com")) return "cebia";
+    if (name.endsWith("autodna.lv") || name.endsWith("autodna.com")) return "autodna_preview";
+    if (name.endsWith("carvertical.com")) return "carvertical_preview";
+    if (name === "auto.vin" || name.endsWith(".auto.vin")) return "auto_vin";
+    if (name.endsWith("checkcar.vin")) return "checkcar_vin";
+    return "";
+  }
+
+  function activeScanOnThisHost() {
+    const job = readScanJob();
+    if (!job) return false;
+    return job.sources[job.index] === scanIdForHost(host);
+  }
+
+  function isScanChallenge(text) {
+    return /just a moment|security verification|checking your browser|verify you are human|attention required|cf-browser-verification/i.test(
+      text,
+    );
+  }
+
+  function scanBlocker(text) {
+    if (isScanChallenge(text)) return "cloudflare";
+    if (/recaptcha|hcaptcha|i['’]m not a robot|\bcaptcha\b/i.test(text)) return "captcha";
+    return "";
+  }
+
+  function classifyBrowserProbe(id, text, vin) {
+    if (isScanChallenge(text)) return null;
+    const hasVin = text.toUpperCase().indexOf(vin) !== -1;
+    if (id === "stat_vin") {
+      if (!hasVin) {
+        if (/not found|page not found|no vehicle|nothing found/i.test(text)) return { status: "none", summary: "Nav izsoles ieraksta" };
+        return null;
+      }
+      if (/auction|sold|sale date|odometer|mileage|lot|bid/i.test(text)) return { status: "found", summary: "Ir izsoles ieraksts" };
+      return null;
+    }
+    if (id === "bid_cars") {
+      if (/no results|0 vehicles|nothing found|no cars found/i.test(text)) return { status: "none", summary: "Nav izsoles arhīvā" };
+      if (hasVin && /lot|bid|sold|auction|mileage/i.test(text)) return { status: "found", summary: "Ir izsoles ieraksts" };
+      return null;
+    }
+    if (id === "vininspect") {
+      if (/no records|couldn.t find|didn.t find|0 records/i.test(text)) return { status: "none", summary: "Nav vēstures ieraksta" };
+      if (hasVin && /records found|vehicle history|we found \d+|full history/i.test(text)) {
+        return { status: "found", summary: "Ir vēstures priekšskatījums" };
+      }
+      return null;
+    }
+    if (id === "auchistory") {
+      if (/no (auction )?records|vehicle not found|nothing found/i.test(text)) return { status: "none", summary: "Nav izsoles vēstures" };
+      if (hasVin && /damage|auction|sold for|\bbid\b/i.test(text)) return { status: "found", summary: "Ir izsoles vēsture" };
+      return null;
+    }
+    if (id === "carfax_eu") {
+      const found = /we found\s+(\d+)\s+record/i.exec(text);
+      if (found) return { status: "found", summary: found[1] + " ieraksti CARFAX priekšskatījumā" };
+      if (/no records found|couldn.t find any records|we didn.t find any/i.test(text)) {
+        return { status: "none", summary: "CARFAX priekšskatījumā ierakstu nav" };
+      }
+      return null;
+    }
+    if (id === "cebia") {
+      if (hasVin && /basic verification|z[aá]kladn[ií] ov[eě][rř]en[ií]|smart code/i.test(text)) {
+        return { status: "found", summary: "Cebia priekšskatījums ir atvērts" };
+      }
+      return null;
+    }
+    if (id === "autodna_preview") {
+      if (/nav atrast|dati nav pieejami|no data found|no records found|brak danych|nie znaleziono/i.test(text)) {
+        return { status: "none", summary: "AutoDNA priekšskatījumā datu nav" };
+      }
+      const count = /(\d+)\s*(ierakst|rekord|records?)/i.exec(text);
+      if (count) return { status: "found", summary: count[1] + " ieraksti AutoDNA priekšskatījumā. Pirkums paliek operatoram" };
+      if (/pieejam[aā] inform[aā]cija|available data/i.test(text)) {
+        return { status: "found", summary: "AutoDNA rāda priekšskatījumu. Pirkums paliek operatoram" };
+      }
+      return null;
+    }
+    if (id === "carvertical_preview") {
+      if (/inform[aā]cija nav atrasta|no information found|couldn.t find any/i.test(text)) {
+        return { status: "none", summary: "CarVertical priekšskatījumā datu nav" };
+      }
+      if (hasVin && /m[eē]s atrad[aā]m|we found|found information|atrad[aā]m datus/i.test(text)) {
+        return { status: "found", summary: "CarVertical rāda priekšskatījumu. Pirkums paliek operatoram" };
+      }
+      return null;
+    }
+    if (id === "auto_vin") {
+      if (/we correctly identified your vehicle/i.test(text)) {
+        const name = /identified your vehicle\s+([^\n.]{3,80})/i.exec(text);
+        const vehicle = name && name[1] ? name[1].trim() : "";
+        return {
+          status: "manual",
+          summary: vehicle
+            ? "Auto atpazīts: " + vehicle + ". Servisa ieraksti redzami pēc pirkuma"
+            : "Auto atpazīts. Servisa ieraksti redzami pēc pirkuma",
+        };
+      }
+      if (/couldn.t identify|unable to identify|invalid vin/i.test(text)) {
+        return { status: "none", summary: "auto.vin šo VIN neatpazina" };
+      }
+      return null;
+    }
+    return null;
+  }
+
+  function showProvinBadge(message) {
+    let badge = document.getElementById("provin-cc-photo-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "provin-cc-photo-badge";
+      badge.style.cssText =
+        "position:fixed;z-index:2147483647;right:16px;bottom:16px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:12px;font:600 14px/1.3 system-ui,sans-serif";
+      document.body.appendChild(badge);
+    }
+    badge.textContent = message;
+  }
+
+  function publishScan(payload) {
+    if (window.__provinScanPublished) return;
+    window.__provinScanPublished = true;
+    try {
+      GM_setValue(GM_SCAN_RESULT, JSON.stringify(Object.assign({ detail: "", at: Date.now() }, payload)));
+    } catch (e) {
+      console.warn("PROVIN skenēšana", e);
+    }
+    showProvinBadge(payload.summary || payload.status || "");
+  }
+
+  function advanceVinScan(job, result) {
+    try {
+      document.dispatchEvent(new CustomEvent("provin-vin-scan-result", { detail: result }));
+    } catch {
+      /* admin lapa nav šī cilne */
+    }
+    const next = Number(job.index || 0) + 1;
+    if (next >= job.sources.length) {
+      try {
+        GM_deleteValue(GM_SCAN_JOB);
+        GM_deleteValue(GM_SCAN_RESULT);
+      } catch {
+        /* ignore */
+      }
+      window.__provinScanPoll = false;
+      return;
+    }
+    const updated = { vin: job.vin, sources: job.sources, index: next, startedAt: Date.now() };
+    try {
+      GM_deleteValue(GM_SCAN_RESULT);
+      GM_setValue(GM_SCAN_JOB, JSON.stringify(updated));
+    } catch {
+      /* ignore */
+    }
+    const url = scanUrl(job.sources[next], job.vin);
+    if (url) window.open(url, "provin-vin-scan");
+  }
+
+  function stopVinScanPoll() {
+    if (window.__provinScanTimer) window.clearInterval(window.__provinScanTimer);
+    window.__provinScanTimer = 0;
+    window.__provinScanPoll = false;
+  }
+
+  function pollVinScan() {
+    if (window.__provinScanPoll) return;
+    const existing = readScanJob();
+    if (!existing) return;
+    if (Date.now() - Number(existing.startedAt || 0) > 180000) {
+      try {
+        GM_deleteValue(GM_SCAN_JOB);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    window.__provinScanPoll = true;
+    const timer = window.setInterval(() => {
+      window.__provinScanTimer = timer;
+      const job = readScanJob();
+      if (!job) {
+        window.clearInterval(timer);
+        window.__provinScanPoll = false;
+        return;
+      }
+      let raw = "";
+      try {
+        raw = String(GM_getValue(GM_SCAN_RESULT, "") || "");
+      } catch {
+        raw = "";
+      }
+      if (raw) {
+        let data = null;
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          data = null;
+        }
+        if (data && data.id !== job.sources[job.index]) {
+          try {
+            GM_deleteValue(GM_SCAN_RESULT);
+          } catch {
+            /* ignore */
+          }
+        } else if (data && data.id === job.sources[job.index] && String(data.vin || "").toUpperCase() === String(job.vin).toUpperCase()) {
+          window.clearInterval(timer);
+          window.__provinScanPoll = false;
+          advanceVinScan(job, data);
+          const follow = readScanJob();
+          if (follow) pollVinScan();
+          return;
+        }
+      }
+      if (Date.now() - Number(job.startedAt || 0) > 80000) {
+        window.clearInterval(timer);
+        window.__provinScanPoll = false;
+        advanceVinScan(job, {
+          id: job.sources[job.index],
+          vin: job.vin,
+          status: "unknown",
+          summary: "Avots neatbildēja laikā",
+          detail: "",
+          at: Date.now(),
+        });
+        const follow = readScanJob();
+        if (follow) pollVinScan();
+      }
+    }, 500);
+  }
+
+  function findScanVinInput() {
+    const nodes = document.querySelectorAll("input, textarea");
+    for (const el of nodes) {
+      if (!isVisible(el) || el.disabled) continue;
+      if (el.type === "password" || el.type === "hidden" || el.type === "email" || el.type === "checkbox") continue;
+      const blob = (
+        (el.name || "") +
+        " " +
+        (el.id || "") +
+        " " +
+        (el.getAttribute("placeholder") || "") +
+        " " +
+        (el.getAttribute("aria-label") || "")
+      ).toLowerCase();
+      if (blob.includes("vin") || blob.includes("chassis")) return el;
+    }
+    return null;
+  }
+
+  function clickSafeCheck() {
+    const pay = /pirkt|buy|apmaks|checkout|pay\b|zamów|koupit|order|subscribe|pasūtīt/i;
+    const want = /pārbaudi|pārbaudīt|check|verify|search|meklēt|sākt/i;
+    const buttons = Array.from(document.querySelectorAll("button, [role='button'], input[type='submit']"));
+    const hit = buttons.find((b) => {
+      if (!isVisible(b) || b.disabled) return false;
+      const t = ((b.textContent || b.value || "") + "").trim();
+      if (!t || pay.test(t)) return false;
+      return want.test(t);
+    });
+    if (hit) {
+      hit.click();
+      return true;
+    }
+    return false;
+  }
+
+  function watchBrowserProbe() {
+    const job = readScanJob();
+    if (!job) return;
+    const id = job.sources[job.index];
+    const probeVin = String(job.vin || "")
+      .replace(/[\s-]/g, "")
+      .toUpperCase();
+    if (!id || probeVin.length < 11) return;
+    if (id === "checkcar_vin") {
+      if (!vinFromCheckcarPath()) {
+        location.assign("https://checkcar.vin/report/check/" + encodeURIComponent(probeVin));
+        return;
+      }
+      watchCheckcarPhotos(probeVin);
+      return;
+    }
+    let ticks = 0;
+    let filled = false;
+    let clicked = false;
+    const timer = window.setInterval(() => {
+      ticks += 1;
+      const text = document.body ? document.body.innerText || "" : "";
+      const blocker = scanBlocker(text);
+      const input = findScanVinInput();
+      if (input) {
+        const current = String(input.value || "")
+          .replace(/[\s-]/g, "")
+          .toUpperCase();
+        if (current !== probeVin) setNativeValue(input, probeVin);
+        filled = true;
+      }
+      const mayClick = blocker !== "captcha" && (id === "autodna_preview" || id === "carvertical_preview" || id === "vininspect" || id === "bid_cars");
+      if (mayClick && filled && !clicked && ticks >= 3) {
+        clicked = clickSafeCheck();
+      }
+      if (blocker === "captcha") showProvinBadge("Apstipriniet captcha");
+      else if (blocker === "cloudflare") showProvinBadge("Apstipriniet Cloudflare");
+      const result = classifyBrowserProbe(id, text, probeVin);
+      if (result) {
+        window.clearInterval(timer);
+        publishScan({ id: id, vin: probeVin, status: result.status, summary: result.summary, detail: "" });
+        return;
+      }
+      if (ticks > 140) {
+        window.clearInterval(timer);
+        const timedOut = blocker === "captcha"
+          ? { status: "manual", summary: "VIN aizpildīts. Captcha jāapstiprina šajā cilnē" }
+          : blocker === "cloudflare"
+            ? { status: "unknown", summary: "Cloudflare apturēja lapu" }
+            : { status: "unknown", summary: "Avots neatbildēja laikā" };
+        publishScan({ id: id, vin: probeVin, status: timedOut.status, summary: timedOut.summary, detail: "" });
+      }
+    }, 500);
+  }
+
   const vin = peekPendingVin();
+
+  if (activeScanOnThisHost()) {
+    watchBrowserProbe();
+    return;
+  }
+
   if (!vin) return;
 
   function fieldAlreadyHasVin(el) {
@@ -674,6 +1076,16 @@
       GM_deleteValue(GM_CC_PROBE);
     } catch (e) {
       console.warn("PROVIN checkcar", e);
+    }
+    const scanJob = readScanJob();
+    if (scanJob && scanJob.sources[scanJob.index] === "checkcar_vin") {
+      publishScan({
+        id: "checkcar_vin",
+        vin: probeVin,
+        status: error ? "unknown" : count > 0 ? "found" : "none",
+        summary: error ? error : count > 0 ? count + " foto" : "Atskaitē nav foto",
+        detail: "",
+      });
     }
     let badge = document.getElementById("provin-cc-photo-badge");
     if (!badge) {
