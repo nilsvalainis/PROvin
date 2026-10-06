@@ -19,6 +19,11 @@ export type RecaptchaV3Task = {
    * Noklusējums `standard` (~1 $/k). M1 lieto kā rezervi, ja vietne noraida standarta žetonu.
    */
   variant?: "standard" | "m1";
+  /**
+   * Anti-Captcha / 2Captcha / CapMonster `minScore` rinda (0.3 / 0.7 / 0.9). Noklusējums 0.9:
+   * mnt.ee noraida zema score žetonus. CapSolver šo parametru nelieto.
+   */
+  minScore?: 0.3 | 0.7 | 0.9;
 };
 
 export type RecaptchaV2Task = {
@@ -54,8 +59,51 @@ export type CaptchaSolveOk = {
 export type CaptchaSolveErr = { ok: false; reason: string };
 export type CaptchaSolveResult = CaptchaSolveOk | CaptchaSolveErr;
 
-const CREATE_URL = "https://api.capsolver.com/createTask";
-const RESULT_URL = "https://api.capsolver.com/getTaskResult";
+/**
+ * Risinātāji ar vienādu createTask / getTaskResult protokolu (Anti-Captcha API saime).
+ * CapSolver ir primārais (Cloudflare, v2, v3). Pārējie: tikai reCAPTCHA v3 rezerve mnt.ee,
+ * jo tiem ir `minScore` 0.9 rinda (reāli strādnieki ar augstu score).
+ */
+export type CaptchaProviderId = "capsolver" | "anticaptcha" | "2captcha" | "capmonster";
+
+export type CaptchaProvider = {
+  id: CaptchaProviderId;
+  /** Admin UI: `CapSolver`, `Anti-Captcha`, `2Captcha`, `CapMonster`. */
+  label: string;
+  apiKey: string;
+  createUrl: string;
+  resultUrl: string;
+};
+
+const PROVIDER_META: Record<CaptchaProviderId, { label: string; base: string; envKey: string }> = {
+  capsolver: { label: "CapSolver", base: "https://api.capsolver.com", envKey: "CAPSOLVER_API_KEY" },
+  anticaptcha: { label: "Anti-Captcha", base: "https://api.anti-captcha.com", envKey: "ANTICAPTCHA_API_KEY" },
+  "2captcha": { label: "2Captcha", base: "https://api.2captcha.com", envKey: "TWOCAPTCHA_API_KEY" },
+  capmonster: { label: "CapMonster", base: "https://api.capmonster.cloud", envKey: "CAPMONSTER_API_KEY" },
+};
+
+/** Secība, kādā mnt.ee mēģina rezerves risinātājus (ja atslēga ir iestatīta). */
+const RECAPTCHA_V3_FALLBACK_ORDER: CaptchaProviderId[] = ["anticaptcha", "2captcha", "capmonster"];
+
+export function captchaProvider(id: CaptchaProviderId, apiKey?: string): CaptchaProvider {
+  const meta = PROVIDER_META[id];
+  return {
+    id,
+    label: meta.label,
+    apiKey: (apiKey ?? process.env[meta.envKey] ?? "").trim(),
+    createUrl: `${meta.base}/createTask`,
+    resultUrl: `${meta.base}/getTaskResult`,
+  };
+}
+
+/** mnt.ee V3 rezerves ar `minScore` 0.9: tikai tie, kam env ir atslēga. */
+export function recaptchaV3FallbackProviders(
+  env: Record<string, string | undefined> = process.env,
+): CaptchaProvider[] {
+  return RECAPTCHA_V3_FALLBACK_ORDER.map((id) => captchaProvider(id, env[PROVIDER_META[id].envKey])).filter(
+    (p) => p.apiKey.length > 8,
+  );
+}
 
 export function getCaptchaSolverApiKey(): string {
   return (process.env.CAPSOLVER_API_KEY ?? "").trim();
@@ -183,7 +231,24 @@ export function prefixCaptchaSourceReason(reason: string, sourceLabel?: string):
   return `${label}: ${reason}`;
 }
 
-export function captchaCreateTaskBody(apiKey: string, task: CaptchaTask): Record<string, unknown> {
+export function captchaCreateTaskBody(
+  apiKey: string,
+  task: CaptchaTask,
+  providerId: CaptchaProviderId = "capsolver",
+): Record<string, unknown> {
+  if (task.kind === "recaptcha_v3" && providerId !== "capsolver") {
+    // Anti-Captcha protokols: `Proxyless` ar mazo l, bez M1, ar minScore rindu. Proxy V3 nav.
+    return {
+      clientKey: apiKey,
+      task: {
+        type: "RecaptchaV3TaskProxyless",
+        websiteURL: task.websiteURL,
+        websiteKey: task.websiteKey,
+        pageAction: task.pageAction,
+        minScore: task.minScore ?? 0.9,
+      },
+    };
+  }
   if (task.kind === "recaptcha_v3") {
     const proxy = proxyForCapsolverTask(task.proxy);
     const base = task.variant === "m1" ? "ReCaptchaV3M1Task" : "ReCaptchaV3Task";
@@ -226,29 +291,31 @@ export function captchaCreateTaskBody(apiKey: string, task: CaptchaTask): Record
   return { clientKey: apiKey, task: cfTask };
 }
 
-export function parseCaptchaCreateTask(raw: unknown): { taskId: string } | { reason: string } {
-  if (!raw || typeof raw !== "object") return { reason: "CapSolver createTask: tukša atbilde" };
+export function parseCaptchaCreateTask(raw: unknown, label = "CapSolver"): { taskId: string } | { reason: string } {
+  if (!raw || typeof raw !== "object") return { reason: `${label} createTask: tukša atbilde` };
   const o = raw as Record<string, unknown>;
   const errorId = Number(o.errorId ?? 0);
-  const taskId = typeof o.taskId === "string" ? o.taskId.trim() : "";
+  // Anti-Captcha / 2Captcha taskId ir skaitlis, CapSolver - virkne.
+  const taskId =
+    typeof o.taskId === "string" ? o.taskId.trim() : typeof o.taskId === "number" ? String(o.taskId) : "";
   if (errorId !== 0 || !taskId) {
     const desc = String(o.errorDescription || o.errorCode || "createTask neizdevās").slice(0, 200);
-    return { reason: `CapSolver: ${desc}` };
+    return { reason: `${label}: ${desc}` };
   }
   return { taskId };
 }
 
-export function parseCaptchaTaskResult(raw: unknown): CaptchaSolveResult | { pending: true } {
-  if (!raw || typeof raw !== "object") return { ok: false, reason: "CapSolver getTaskResult: tukša atbilde" };
+export function parseCaptchaTaskResult(raw: unknown, label = "CapSolver"): CaptchaSolveResult | { pending: true } {
+  if (!raw || typeof raw !== "object") return { ok: false, reason: `${label} getTaskResult: tukša atbilde` };
   const o = raw as Record<string, unknown>;
   const errorId = Number(o.errorId ?? 0);
   if (errorId !== 0) {
     const desc = String(o.errorDescription || o.errorCode || "uzdevums neizdevās").slice(0, 200);
-    return { ok: false, reason: `CapSolver: ${desc}` };
+    return { ok: false, reason: `${label}: ${desc}` };
   }
   const status = String(o.status ?? "");
   if (status === "idle" || status === "processing") return { pending: true };
-  if (status !== "ready") return { ok: false, reason: `CapSolver: statuss ${status || "nezināms"}` };
+  if (status !== "ready") return { ok: false, reason: `${label}: statuss ${status || "nezināms"}` };
   const solution = o.solution && typeof o.solution === "object" ? (o.solution as Record<string, unknown>) : {};
   const cookiesRaw =
     solution.cookies && typeof solution.cookies === "object" ? (solution.cookies as Record<string, unknown>) : {};
@@ -261,11 +328,13 @@ export function parseCaptchaTaskResult(raw: unknown): CaptchaSolveResult | { pen
     if (v) cookies[k] = v;
   }
   const token = String(solution.gRecaptchaResponse ?? solution.token ?? cookies.cf_clearance ?? "").trim();
-  if (!token) return { ok: false, reason: "CapSolver: žetons tukšs" };
+  if (!token) return { ok: false, reason: `${label}: žetons tukšs` };
   return { ok: true, token, cookies, userAgent: String(solution.userAgent ?? "").trim() };
 }
 
 type SolveDeps = {
+  /** Noklusējums CapSolver (CAPSOLVER_API_KEY). mnt.ee V3 rezerve: Anti-Captcha / 2Captcha / CapMonster. */
+  provider?: CaptchaProvider;
   apiKey?: string;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
@@ -296,10 +365,21 @@ export function defaultCaptchaSolveTimeoutMs(task: CaptchaTask): number {
   return taskUsesCustomProxy(task) ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS;
 }
 
-/** CapSolver `task.type` (ProxyLess vs proxied) diagnostikai. */
-export function captchaTaskTypeName(task: CaptchaTask): string {
-  const recaptchaTask = captchaCreateTaskBody("k", task).task as Record<string, unknown>;
+/** Risinātāja `task.type` (ProxyLess vs proxied) diagnostikai. */
+export function captchaTaskTypeName(task: CaptchaTask, providerId: CaptchaProviderId = "capsolver"): string {
+  const recaptchaTask = captchaCreateTaskBody("k", task, providerId).task as Record<string, unknown>;
   return String(recaptchaTask.type ?? task.kind);
+}
+
+/**
+ * Admin ziņai: CapSolver tikai tips (`ReCaptchaV3TaskProxyLess`), citiem arī risinātājs un rinda
+ * (`Anti-Captcha RecaptchaV3TaskProxyless 0.9`).
+ */
+export function captchaTaskDisplayName(task: CaptchaTask, provider?: CaptchaProvider): string {
+  const type = captchaTaskTypeName(task, provider?.id);
+  if (!provider || provider.id === "capsolver") return type;
+  const score = task.kind === "recaptcha_v3" ? ` ${task.minScore ?? 0.9}` : "";
+  return `${provider.label} ${type}${score}`;
 }
 
 export function formatCaptchaPollTimeoutReason(info: {
@@ -308,13 +388,14 @@ export function formatCaptchaPollTimeoutReason(info: {
   lastStatus?: string;
   attempt: number;
   maxAttempts: number;
+  providerLabel?: string;
 }): string {
   const bits = [info.taskType];
   const id = info.taskId?.trim();
   if (id) bits.push(`uzdevums ${id.slice(0, 8)}`);
   bits.push(`statuss ${info.lastStatus?.trim() || "nav"}`);
   if (info.maxAttempts > 1) bits.push(`mēģinājums ${info.attempt}/${info.maxAttempts}`);
-  return `CapSolver: žetons neatnāca laikā (${bits.join(", ")})`;
+  return `${info.providerLabel ?? "CapSolver"}: žetons neatnāca laikā (${bits.join(", ")})`;
 }
 
 function remainingMs(deadline: number, now: () => number): number {
@@ -340,8 +421,9 @@ async function capsolverPostJson(
   url: string,
   payload: unknown,
   timeoutMs: number,
+  providerLabel = "CapSolver",
 ): Promise<{ json: unknown; httpStatus: number } | { networkReason: string }> {
-  const endpoint = url.includes("createTask") ? "createTask" : "getTaskResult";
+  const endpoint = `${providerLabel} ${url.includes("createTask") ? "createTask" : "getTaskResult"}`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), Math.max(1_000, timeoutMs));
   try {
@@ -355,13 +437,13 @@ async function capsolverPostJson(
     const httpStatus = typeof (res as Response).status === "number" ? (res as Response).status : 200;
     const json: unknown = await res.json().catch(() => null);
     if (json == null) {
-      return { networkReason: `CapSolver ${endpoint}: tukša atbilde (HTTP ${httpStatus})` };
+      return { networkReason: `${endpoint}: tukša atbilde (HTTP ${httpStatus})` };
     }
     return { json, httpStatus };
   } catch (e) {
-    if (isAbortLike(e)) return { networkReason: `CapSolver ${endpoint}: tīkla noildze` };
+    if (isAbortLike(e)) return { networkReason: `${endpoint}: tīkla noildze` };
     const msg = e instanceof Error ? e.message.slice(0, 160) : "kļūda";
-    return { networkReason: `CapSolver ${endpoint}: tīkls (${msg})` };
+    return { networkReason: `${endpoint}: tīkls (${msg})` };
   } finally {
     clearTimeout(timer);
   }
@@ -373,18 +455,21 @@ function labeledSolveResult(result: CaptchaSolveResult, sourceLabel?: string): C
 }
 
 export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Promise<CaptchaSolveResult> {
-  const apiKey = (deps.apiKey ?? getCaptchaSolverApiKey()).trim();
+  const provider = deps.provider ?? captchaProvider("capsolver", deps.apiKey ?? getCaptchaSolverApiKey());
+  const apiKey = (deps.apiKey ?? provider.apiKey).trim();
   const label = deps.sourceLabel;
+  const providerLabel = provider.label;
   if (apiKey.length < 8) {
-    return labeledSolveResult({ ok: false, reason: "Nav CAPSOLVER_API_KEY" }, label);
+    const envKey = PROVIDER_META[provider.id].envKey;
+    return labeledSolveResult({ ok: false, reason: `Nav ${envKey}` }, label);
   }
   const fetchImpl = deps.fetchImpl ?? fetch;
   const sleep = deps.sleep ?? defaultSleep;
   const now = deps.now ?? Date.now;
   const timeoutMs = deps.timeoutMs ?? defaultCaptchaSolveTimeoutMs(task);
-  const proxied = taskUsesCustomProxy(task);
-  const taskType = captchaTaskTypeName(task);
-  const payload = captchaCreateTaskBody(apiKey, task);
+  const proxied = taskUsesCustomProxy(task) && provider.id === "capsolver";
+  const taskType = captchaTaskTypeName(task, provider.id);
+  const payload = captchaCreateTaskBody(apiKey, task, provider.id);
   const maxAttempts = 2;
 
   let lastReason = formatCaptchaPollTimeoutReason({
@@ -392,21 +477,28 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
     lastStatus: "nav",
     attempt: 1,
     maxAttempts: proxied ? 1 : maxAttempts,
+    providerLabel,
   });
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const deadline = now() + timeoutMs;
-    const createdPost = await capsolverPostJson(fetchImpl, CREATE_URL, payload, remainingMs(deadline, now));
+    const createdPost = await capsolverPostJson(
+      fetchImpl,
+      provider.createUrl,
+      payload,
+      remainingMs(deadline, now),
+      providerLabel,
+    );
     if ("networkReason" in createdPost) {
       return labeledSolveResult({ ok: false, reason: createdPost.networkReason }, label);
     }
 
-    const immediate = parseCaptchaTaskResult(createdPost.json);
+    const immediate = parseCaptchaTaskResult(createdPost.json, providerLabel);
     if (!("pending" in immediate) && immediate.ok) {
       return labeledSolveResult(immediate, label);
     }
 
-    const created = parseCaptchaCreateTask(createdPost.json);
+    const created = parseCaptchaCreateTask(createdPost.json, providerLabel);
     if ("reason" in created) {
       const reason = appendHttpIfNeeded(created.reason, createdPost.httpStatus);
       lastReason = reason;
@@ -423,18 +515,20 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
     while (now() < deadline) {
       const pollPost = await capsolverPostJson(
         fetchImpl,
-        RESULT_URL,
-        { clientKey: apiKey, taskId: created.taskId },
+        provider.resultUrl,
+        // Anti-Captcha / 2Captcha gaida skaitlisku taskId; CapSolver virkni.
+        { clientKey: apiKey, taskId: provider.id === "capsolver" ? created.taskId : numericIfPossible(created.taskId) },
         remainingMs(deadline, now),
+        providerLabel,
       );
       if ("networkReason" in pollPost) {
-        lastStatus = pollPost.networkReason.replace(/^CapSolver getTaskResult:\s*/i, "");
+        lastStatus = pollPost.networkReason.replace(/^.*?getTaskResult:\s*/i, "");
         if (now() >= deadline) break;
         await sleep(1500);
         continue;
       }
       lastStatus = pollStatusLabel(pollPost.json);
-      const parsed = parseCaptchaTaskResult(pollPost.json);
+      const parsed = parseCaptchaTaskResult(pollPost.json, providerLabel);
       if ("pending" in parsed) {
         await sleep(1500);
         continue;
@@ -455,6 +549,7 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
       lastStatus,
       attempt,
       maxAttempts: proxied ? 1 : maxAttempts,
+      providerLabel,
     });
     if (!proxied && attempt < maxAttempts) {
       console.warn("[capsolver] ProxyLess poll noildze, atkārtoju createTask", lastReason);
@@ -466,4 +561,8 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
   }
   console.warn("[capsolver]", lastReason);
   return labeledSolveResult({ ok: false, reason: lastReason }, label);
+}
+
+function numericIfPossible(id: string): string | number {
+  return /^\d+$/.test(id) ? Number(id) : id;
 }

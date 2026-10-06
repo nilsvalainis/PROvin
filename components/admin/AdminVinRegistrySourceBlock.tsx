@@ -441,8 +441,8 @@ export function AdminVinRegistrySourceBlock({
             ) : null}
             {blockKey === "mnt_ee" ? (
               <span className="text-[10px] text-slate-400">
-                reCAPTCHA v3 ProxyLess, pēc noraidījuma viens M1 mēģinājums. HTTP no Vercel; īsts Cloudflare Challenge
-                caur FIXIE_URL.
+                reCAPTCHA v3: CapSolver ProxyLess, M1, tad Anti-Captcha / 2Captcha / CapMonster minScore 0.9 (ja
+                atslēga). HTTP no Vercel; īsts Cloudflare Challenge caur FIXIE_URL.
               </span>
             ) : null}
             {blockKey === "lkf_ee" ? (

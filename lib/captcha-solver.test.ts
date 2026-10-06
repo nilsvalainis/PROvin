@@ -4,6 +4,8 @@ import {
   CAPSOLVER_PROXIED_TIMEOUT_MS,
   CAPSOLVER_PROXYLESS_TIMEOUT_MS,
   captchaCreateTaskBody,
+  captchaProvider,
+  captchaTaskDisplayName,
   captchaTaskTypeName,
   capsolverProxyFromUrl,
   defaultCaptchaSolveTimeoutMs,
@@ -17,6 +19,7 @@ import {
   parseCaptchaCreateTask,
   parseCaptchaTaskResult,
   prefixCaptchaSourceReason,
+  recaptchaV3FallbackProviders,
   solveCaptcha,
   vinStickyHttpProxyUrl,
 } from "@/lib/captcha-solver";
@@ -339,6 +342,73 @@ describe("solveCaptcha", () => {
     if (!result.ok) expect(result.reason).toBe("mnt.ee: CapSolver: Failed to solve the captcha: 1001");
   });
 
+  it("Anti-Captcha risinātājs: savi URL, skaitlisks taskId un savs kļūdu prefikss", async () => {
+    const calls: { url: string; body: Record<string, unknown> }[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+      calls.push({ url, body });
+      if (url.includes("getTaskResult")) {
+        return {
+          json: async () => ({ errorId: 0, status: "ready", solution: { gRecaptchaResponse: "tok-anti" } }),
+        } as Response;
+      }
+      return { json: async () => ({ errorId: 0, taskId: 987654321 }) } as Response;
+    }) as typeof fetch;
+    const result = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+        minScore: 0.9,
+      },
+      {
+        provider: captchaProvider("anticaptcha", "anticaptcha-key-123"),
+        fetchImpl,
+        sleep: async () => undefined,
+        timeoutMs: 5_000,
+        sourceLabel: "mnt.ee",
+      },
+    );
+    expect(result).toMatchObject({ ok: true, token: "tok-anti" });
+    expect(calls[0]?.url).toBe("https://api.anti-captcha.com/createTask");
+    expect(calls[0]?.body).toMatchObject({
+      clientKey: "anticaptcha-key-123",
+      task: { type: "RecaptchaV3TaskProxyless", minScore: 0.9, pageAction: "soiduk_otsing" },
+    });
+    expect(calls[1]?.url).toBe("https://api.anti-captcha.com/getTaskResult");
+    expect(calls[1]?.body).toEqual({ clientKey: "anticaptcha-key-123", taskId: 987654321 });
+
+    const failing = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+      },
+      {
+        provider: captchaProvider("2captcha", "twocaptcha-key-123"),
+        fetchImpl: jsonFetch(() => ({ errorId: 1, errorCode: "ERROR_ZERO_BALANCE" })),
+        sleep: async () => undefined,
+        timeoutMs: 5_000,
+        sourceLabel: "mnt.ee",
+      },
+    );
+    expect(failing).toEqual({ ok: false, reason: "mnt.ee: 2Captcha: ERROR_ZERO_BALANCE" });
+
+    const noKey = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "k",
+        pageAction: "soiduk_otsing",
+      },
+      { provider: captchaProvider("capmonster", ""), fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+    );
+    expect(noKey).toEqual({ ok: false, reason: "Nav CAPMONSTER_API_KEY" });
+  });
+
   it("ņem žetonu no createTask ready, bez getTaskResult", async () => {
     let polls = 0;
     const fetchImpl = jsonFetch((url) => {
@@ -568,6 +638,51 @@ describe("mnt.ee ProxyLess vs CAPSOLVER_FORCE_PROXY", () => {
     } finally {
       restoreEnv();
     }
+  });
+
+  it("rezerves risinātāji tikai ar atslēgu env, Anti-Captcha protokola secībā", () => {
+    expect(recaptchaV3FallbackProviders({})).toEqual([]);
+    const providers = recaptchaV3FallbackProviders({
+      TWOCAPTCHA_API_KEY: "twocaptcha-key-123",
+      ANTICAPTCHA_API_KEY: "anticaptcha-key-123",
+      CAPMONSTER_API_KEY: "short",
+    });
+    expect(providers.map((p) => p.id)).toEqual(["anticaptcha", "2captcha"]);
+    expect(providers[0]).toMatchObject({
+      label: "Anti-Captcha",
+      createUrl: "https://api.anti-captcha.com/createTask",
+      resultUrl: "https://api.anti-captcha.com/getTaskResult",
+    });
+    expect(providers[1]?.createUrl).toBe("https://api.2captcha.com/createTask");
+  });
+
+  it("citam risinātājam V3 uzdevums ir RecaptchaV3TaskProxyless ar minScore, bez M1 un proxy", () => {
+    const task = {
+      kind: "recaptcha_v3" as const,
+      websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+      websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+      pageAction: "soiduk_otsing",
+      variant: "m1" as const,
+      proxy: FIXIE_URL,
+    };
+    const body = captchaCreateTaskBody("anti-key", task, "anticaptcha");
+    expect(body).toEqual({
+      clientKey: "anti-key",
+      task: {
+        type: "RecaptchaV3TaskProxyless",
+        websiteURL: task.websiteURL,
+        websiteKey: task.websiteKey,
+        pageAction: "soiduk_otsing",
+        minScore: 0.9,
+      },
+    });
+    expect(captchaCreateTaskBody("k", { ...task, minScore: 0.7 }, "2captcha").task).toMatchObject({ minScore: 0.7 });
+    expect(captchaTaskTypeName(task, "2captcha")).toBe("RecaptchaV3TaskProxyless");
+    expect(captchaTaskDisplayName(task, captchaProvider("anticaptcha", "anti-key"))).toBe(
+      "Anti-Captcha RecaptchaV3TaskProxyless 0.9",
+    );
+    expect(captchaTaskDisplayName({ ...task, proxy: undefined, variant: "standard" })).toBe("ReCaptchaV3TaskProxyLess");
+    expect(captchaTaskDisplayName(task, captchaProvider("capsolver", "cap-key"))).toBe("ReCaptchaV3M1Task");
   });
 
   it("M1 rezerve pēc noklusējuma ieslēgta, CAPSOLVER_MNT_V3_M1=0 izslēdz", () => {

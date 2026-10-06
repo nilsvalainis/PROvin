@@ -8,21 +8,25 @@ import "server-only";
  * uzskatīt par challenge (skat. isCloudflareChallengeHtml). Īsts challenge joprojām iet caur
  * CapSolver AntiCloudflareTask + Fixie, un kļūda tiek apzīmēta kā „mnt.ee Cloudflare: …”.
  *
- * Ja mnt.ee noraida standarta V3 žetonu („reCAPTCHA valideerimise viga”), vienu reizi mēģina
- * CapSolver M1 žetonu tajā pašā JSF sesijā. CAPSOLVER_FORCE_PROXY=1 = vecais ceļš caur Fixie.
+ * mnt.ee noraida zema score V3 žetonus („reCAPTCHA valideerimise viga”): 2026-10-07 produkcijā
+ * noraidīti gan CapSolver standarta, gan M1 ProxyLess žetoni. Tāpēc ķēde tajā pašā JSF sesijā:
+ * CapSolver standarta, CapSolver M1, tad Anti-Captcha / 2Captcha / CapMonster `minScore` 0.9
+ * (reāli strādnieki ar augstu score), ja env ir to atslēga. CAPSOLVER_FORCE_PROXY=1 = vecais ceļš caur Fixie.
  */
 
 import {
   CAPSOLVER_PROXIED_TIMEOUT_MS,
   CAPSOLVER_PROXYLESS_TIMEOUT_MS,
-  captchaTaskTypeName,
+  captchaTaskDisplayName,
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
   isMntRecaptchaM1FallbackEnabled,
   mntFormHttpProxyUrl,
   mntRecaptchaV3Proxy,
   prefixCaptchaSourceReason,
+  recaptchaV3FallbackProviders,
   solveCaptcha,
+  type CaptchaProvider,
   type RecaptchaV3Task,
 } from "@/lib/captcha-solver";
 import { MNT_CAPTCHA_REJECTED_MESSAGE, mntCaptchaRejectedMessage, parseMntExtract } from "@/lib/vin-sources/estonia-parse";
@@ -129,6 +133,23 @@ type SubmitOutcome =
   | { kind: "result"; result: VinSourceFetchResult }
   | { kind: "captcha_rejected"; taskType: string; nextViewState: string; raw: string };
 
+/** Viens žetona mēģinājums: CapSolver (standard / m1) vai cits risinātājs ar minScore 0.9. */
+export type MntCaptchaStep = { provider?: CaptchaProvider; variant: RecaptchaV3Task["variant"] };
+
+/**
+ * mnt.ee žetonu ķēde: CapSolver standarta, CapSolver M1 (ja ieslēgts), tad katrs rezerves
+ * risinātājs ar atslēgu env (Anti-Captcha, 2Captcha, CapMonster) minScore 0.9 rindā.
+ */
+export function mntCaptchaSteps(input: {
+  m1Enabled: boolean;
+  fallbackProviders: CaptchaProvider[];
+}): MntCaptchaStep[] {
+  const steps: MntCaptchaStep[] = [{ variant: "standard" }];
+  if (input.m1Enabled) steps.push({ variant: "m1" });
+  for (const provider of input.fallbackProviders) steps.push({ provider, variant: "standard" });
+  return steps;
+}
+
 async function solveAndSubmit(input: {
   vin: string;
   regMark: string;
@@ -136,22 +157,25 @@ async function solveAndSubmit(input: {
   viewState: string;
   page: VinHttpResult;
   session: Session;
-  variant: RecaptchaV3Task["variant"];
-  /** Atlikušais budžets CapSolver žetonam; nepārsniedz noklusējuma ProxyLess / proxied laiku. */
+  step: MntCaptchaStep;
+  /** Atlikušais budžets žetonam; nepārsniedz noklusējuma ProxyLess / proxied laiku. */
   solveTimeoutMs: number;
 }): Promise<SubmitOutcome> {
-  const { vin, page } = input;
-  const capProxy = mntRecaptchaV3Proxy();
+  const { vin, page, step } = input;
+  const isCapsolver = !step.provider || step.provider.id === "capsolver";
+  const capProxy = isCapsolver ? mntRecaptchaV3Proxy() : undefined;
   const task: RecaptchaV3Task = {
     kind: "recaptcha_v3",
     websiteURL: MNT_URL,
     websiteKey: MNT_SITE_KEY,
     pageAction: MNT_ACTION,
     proxy: capProxy,
-    variant: input.variant,
+    variant: step.variant,
+    minScore: 0.9,
   };
-  const taskType = captchaTaskTypeName(task);
+  const taskType = captchaTaskDisplayName(task, step.provider);
   const solved = await solveCaptcha(task, {
+    provider: step.provider,
     timeoutMs: Math.min(capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS, input.solveTimeoutMs),
     sourceLabel: "mnt.ee",
   });
@@ -239,10 +263,13 @@ export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSource
   const rejected: string[] = [];
   let currentViewState = viewState;
   let lastRaw = page.text;
-  const variants: RecaptchaV3Task["variant"][] = isMntRecaptchaM1FallbackEnabled() ? ["standard", "m1"] : ["standard"];
-  for (const variant of variants) {
+  const steps = mntCaptchaSteps({
+    m1Enabled: isMntRecaptchaM1FallbackEnabled(),
+    fallbackProviders: recaptchaV3FallbackProviders(),
+  });
+  for (const [index, step] of steps.entries()) {
     const remaining = deadline - Date.now();
-    if (variant !== "standard" && remaining < MNT_MIN_RETRY_BUDGET_MS) break;
+    if (index > 0 && remaining < MNT_MIN_RETRY_BUDGET_MS) break;
     const outcome = await solveAndSubmit({
       vin,
       regMark,
@@ -250,7 +277,7 @@ export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSource
       viewState: currentViewState,
       page,
       session,
-      variant,
+      step,
       solveTimeoutMs: Math.max(15_000, remaining - FETCH_TIMEOUT_MS),
     });
     if (outcome.kind === "result") return outcome.result;
