@@ -47,6 +47,7 @@ import { buildAggregateKnowledgeAiContext } from "@/lib/admin-ai-aggregate-knowl
 import { buildStyleCorpusAiContext } from "@/lib/admin-ai-style-corpus";
 import { buildTechnicalInspectionCoverageBrief } from "@/lib/admin-ai-ta-coverage";
 import { buildWinterSaltRustBrief } from "@/lib/admin-ai-winter-salt-rust";
+import { buildDealerIncidentLinkBrief } from "@/lib/admin-ai-dealer-incident-link";
 import { buildMileageForensicsBrief } from "@/lib/admin-ai-mileage-forensics";
 import { buildCommentLengthBudgetBrief } from "@/lib/ai-comment-length-budget";
 import type { CommentBreadth } from "@/lib/ai-comment-breadth";
@@ -335,6 +336,9 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
   });
   if (winterSalt) parts.push(winterSalt);
+
+  const dealerIncidents = buildDealerIncidentLinkBrief(blocks);
+  if (dealerIncidents) parts.push(dealerIncidents);
 
   const mileageForensics = buildMileageForensicsBrief(unifiedMileagePayload(blocks));
   if (mileageForensics) parts.push(mileageForensics);

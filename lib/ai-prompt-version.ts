@@ -3,6 +3,8 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-10-06.1 - Dīlera komentārs un negadījumu kopsavilkums lasa viens otru:
+ *   stikla / virsbūves remonts pie līdzīga datuma tiek sasaistīts ar negadījuma ierakstu.
  * - 2026-10-04.2 - Tehnisko risku izeja: noņem Gemini angļu iekšējo plānu
  *   (Internal Analysis / Web Search / I have analyzed), kas iekrita laukā.
  * - 2026-10-04.1 - FLASH MAX komentāra platums (Kompakts / Vidējs / Plašs).
@@ -163,4 +165,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-04.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-06.1";

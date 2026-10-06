@@ -600,6 +600,7 @@ LTAB / OCTA FOCUS:
 DEALER / AUTO RECORDS FOCUS:
 - Type code, engine code, equipment, accident/stolen checks, and „Servisa vēsture” (service/repair journal: date + odometer + work done) — not only the km table.
 - When Servisa vēsture / RAW facts are present in context, weave those maintenance facts into the buyer comment; do not invent services.
+- READ THE INCIDENT TABLES. If glass / body / panel / bumper / paint work sits near a claim date (see „Dīlera remonta un negadījumu sasaiste”), join them in the service/repair role. Do not write the dealer job as if no accident history exists.
 - Explain fleet/taxi/commercial type-code signals; one brief km/date cross-check vs CSDD/AutoDNA/CarVertical — leave engine-hour narrative to the mileage comment.
 - OIL-INTERVAL EXCLUSION (mandatory, this field duplicates it most often): this „Komentārs” field may mention THAT oil changes happened (e.g. "regulāras eļļas maiņas fiksētas"), but must NOT compute or list the km/month gaps between individual oil-change events, and must NOT repeat the same events already covered there — that math and that list belong exclusively to „Eļļas maiņas intervāli”. If you find yourself writing a second "No X km līdz Y km" gap sentence here, delete it.
 ${AI_DEALER_COMMENT_CONSTRUCTION_RULES}
@@ -782,6 +783,7 @@ ${SOURCE_BLOCK_COMMENT_AI_RULES}
 
 Rezultāts:
 - Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS) UN jau ģenerētajiem komentāriem / Fotogrāfiju analīzi — skat. CROSS-FIELD PORTFOLIO
+- READ OFICIĀLĀ DĪLERA DATI (SERVISA UN REMONTU VĒSTURE). Stikla maiņa, virsbūves / elementu remonts vai pārkrāsošana pie līdzīga datuma ir TĀ PAŠA notikuma papildinājums, ne atsevišķs stāsts. Ja promptā ir „Dīlera remonta un negadījumu sasaiste”, seko tam.
 - Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz būtiskām summām
 - Katru EUR summu interpretē pēc konteksta (auto vecums incidenta brīdī, klase, aprīkojums, remonta tirgus, bojājumu zonas) — nevis automātiski kā „smagu” vai „vieglu” tikai pēc skaitļa
 - Ja avots nosauc konkrētu zonu (piem. aizmugurējais bamperis), raksti par to — ne „piemēram, bampera pārkrāsošanu” kā brīvu hipotēzi

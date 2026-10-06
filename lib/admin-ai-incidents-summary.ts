@@ -8,11 +8,13 @@ import {
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { orderHasIncidentDataForAi } from "@/lib/admin-ai-data-availability";
+import { orderHasDealerBodyOrGlassWork } from "@/lib/admin-ai-dealer-incident-link";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { ADMIN_INCIDENTS_SUMMARY_LABEL } from "@/lib/admin-workspace-field-labels";
 
 export async function generateIncidentsSummaryWithAi(input: AiOrderContextInput): Promise<string> {
   const hasIncidents = orderHasIncidentDataForAi(input.sourceBlocks);
+  const hasDealerBodyWork = orderHasDealerBodyOrGlassWork(input.sourceBlocks);
 
   const orderContext = await buildFullAiOrderContextText({
     ...input,
@@ -20,8 +22,16 @@ export async function generateIncidentsSummaryWithAi(input: AiOrderContextInput)
   });
 
   const noIncidentHint = hasIncidents
-    ? ""
-    : `
+    ? hasDealerBodyWork
+      ? `
+
+SVARĪGI: Lasi OFICIĀLĀ DĪLERA DATU stikla / virsbūves / elementu remontus. Ja „Dīlera remonta un negadījumu sasaiste” atzīmē SASAISTĪTS, raksti vienu notikumu (datums + avots + dīlera darbs), ne divus nesaistītus stāstus.`
+      : ""
+    : hasDealerBodyWork
+      ? `
+
+SVARĪGI: Apdrošināšanas / negadījumu tabulās nav fiksētu izmaksu, BET oficiālā dīlera datos IR stikla / virsbūves / elementu remonts. Min dīlera faktu (datums, km, darbs) un skaidri saki, ka atbilstoša negadījuma ieraksta nav. Neizdomā avāriju vai summu.`
+      : `
 
 SVARĪGI: Avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu ierakstu. Sagatavo īsu, profesionālu kopsavilkumu, kurā:
 - Salīdzini avotus (piemin konkrētos avotus, kas tika pārbaudīti)
@@ -36,7 +46,7 @@ ${orderContext}
 ${noIncidentHint}
 
 Sagatavo kopsavilkumu laukam „${ADMIN_INCIDENTS_SUMMARY_LABEL}”.
-${hasIncidents ? "Analizē fiksētos negadījumu ierakstus visos avotos un to nozīmi pircējam. NEATKĀRTO jau uzrakstītos avotu komentārus gandrīz tādā pašā garumā — sintezē īsi un min tikai būtiskās pretrunas." : "Šis ir „nav konstatēts” scenārijs — skaidri un mierīgi, bez dramatizēšanas."}
+${hasIncidents ? "Analizē fiksētos negadījumu ierakstus visos avotos un to nozīmi pircējam. NEATKĀRTO jau uzrakstītos avotu komentārus gandrīz tādā pašā garumā - sintezē īsi un min tikai būtiskās pretrunas. OFICIĀLĀ DĪLERA DATU stikla / virsbūves remontu pie līdzīga datuma iekļauj kā tā paša notikuma papildinājumu." : hasDealerBodyWork ? "Nav apdrošināšanas ieraksta, bet ir dīlera virsbūves / stikla fakts - to pasaki, bez izdomātas avārijas." : "Šis ir „nav konstatēts” scenārijs - skaidri un mierīgi, bez dramatizēšanas."}
 Garums: **2–4 rindkopas**. Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; summas interpretē kontekstā, nevis kā pierādītu smagumu.`,
     {
       operatorNotes: input.operatorNotes,

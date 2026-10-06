@@ -25,6 +25,7 @@ import {
   AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_TEST_DRIVE_GEARBOX_DMF_RULES,
   AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
+  AI_CROSS_FIELD_PORTFOLIO_RULES,
   AI_DEALER_COMMENT_CONSTRUCTION_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_DOCUMENTED_SERVICE_WORK_RULES,
@@ -58,6 +59,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/age at incident/i);
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/premium/i);
     expect(AI_DAMAGE_CLAIM_CONTEXT_RULES).toMatch(/NEVER treat an insurance payout/i);
+    expect(AI_CROSS_FIELD_PORTFOLIO_RULES).toMatch(/DEALER ↔ INCIDENTS|Dīlera remonta un negadījumu sasaiste/);
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildDealerIncidentLinkBrief/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/READ THE INCIDENT TABLES/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/READ OFICIĀLĀ DĪLERA DATI/);
   });
 
   it("hybrid rules keep anti-repetition + claim context", () => {

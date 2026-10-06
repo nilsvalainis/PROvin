@@ -22,6 +22,7 @@ import { ccVinBlockHasContent } from "@/lib/cc-vin-report";
 import { asvBlockHasContent } from "@/lib/asv-report";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
+import { orderHasDealerBodyOrGlassWork } from "@/lib/admin-ai-dealer-incident-link";
 
 function hasAnyIncidentTableRows(blocks: WorkspaceSourceBlocks): boolean {
   for (const key of ["autodna", "carvertical"] as const) {
@@ -51,7 +52,7 @@ export function orderHasIncidentDataForAi(sourceBlocks: WorkspaceSourceBlocks): 
   ) {
     return true;
   }
-  return hasAnyIncidentTableRows(blocks);
+  return hasAnyIncidentTableRows(blocks) || orderHasDealerBodyOrGlassWork(blocks);
 }
 
 /** Vai pasūtījumā ir avotu dati AI avotu salīdzinājumam. */

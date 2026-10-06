@@ -178,8 +178,17 @@ Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
 Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē šajā auditā? To pasaki pirmajā rindkopā un apstājies pie fakta.
 Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.
 ${
+  isDealerComments
+    ? "IZŅĒMUMS - negadījumu sasaiste: ja kontekstā ir „Dīlera remonta un negadījumu sasaiste”, stikla / virsbūves / elementu remontu SASAISTI ar negadījumu tabulas datumu un avotu. Tas ir šī dīlera faktu konteksts, ne sveša avota eseja.\n"
+    : ""
+}
+${
   sourceCommentLengthLineForBreadth(input.commentBreadth ?? null, isDealerComments)
-} Salīdzinājums ar citiem avotiem — maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”.
+} ${
+  isDealerComments
+    ? "Salīdzinājums ar citiem avotiem: stikla / virsbūves sasaiste ar negadījumu tabulu NAV 1 teikuma griestos. Pārējiem avotiem maksimums viens teikums, ja pretruna maina secinājumu."
+    : "Salīdzinājums ar citiem avotiem - maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”."
+}
 Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
 Ja šis avots tikai apstiprina jau uzrakstīto: viens īss teikums.
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; raksti, ko dati uzrāda, nevis ko tie „pierāda” vai „neizslēdz”.
