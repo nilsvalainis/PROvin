@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  CAPSOLVER_PROXIED_TIMEOUT_MS,
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
   solveCaptcha,
@@ -108,13 +109,16 @@ export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSource
   }
 
   const capProxy = getCaptchaSolverProxy();
-  const solved = await solveCaptcha({
-    kind: "recaptcha_v3",
-    websiteURL: MNT_URL,
-    websiteKey: MNT_SITE_KEY,
-    pageAction: MNT_ACTION,
-    proxy: capProxy || undefined,
-  });
+  const solved = await solveCaptcha(
+    {
+      kind: "recaptcha_v3",
+      websiteURL: MNT_URL,
+      websiteKey: MNT_SITE_KEY,
+      pageAction: MNT_ACTION,
+      proxy: capProxy || undefined,
+    },
+    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000 },
+  );
   if (!solved.ok) return fail(vin, solved.reason, page.text);
 
   session = {
