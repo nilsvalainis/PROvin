@@ -69,7 +69,7 @@ export async function fetchLkfHttp(vin: string): Promise<VinSourceFetchResult> {
       websiteKey: LKF_SITE_KEY,
       proxy: capProxy || undefined,
     },
-    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000 },
+    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000, sourceLabel: "lkf.ee" },
   );
   if (!solved.ok) return fail(vin, solved.reason, page.text);
 

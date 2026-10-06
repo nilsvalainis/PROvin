@@ -4,8 +4,8 @@ import "server-only";
  * Igaunijas avoti:
  *  - eteenindus.mnt.ee („Sõiduki taustakontroll”) - Transpordiamet;
  *  - lkf.ee („Kahjukontroll”) - Liikluskindlustuse Fond OCTA.
- * Primāri HTTP + CapSolver (reCAPTCHA v3 / v2) caur sticky proxy (FIXIE_URL).
- * Redzams pārlūks paliek kā rezerve lokāli.
+ * Primāri HTTP + CapSolver: mnt.ee reCAPTCHA v3 ProxyLess (HTTP no Vercel; CF caur FIXIE_URL);
+ * lkf.ee reCAPTCHA v2 caur sticky proxy (FIXIE_URL). Redzams pārlūks paliek kā rezerve lokāli.
  */
 import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { parseLkfExtract, parseMntExtract } from "@/lib/vin-sources/estonia-parse";

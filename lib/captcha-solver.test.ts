@@ -8,8 +8,12 @@ import {
   defaultCaptchaSolveTimeoutMs,
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
+  isCapsolverForceProxy,
+  mntFormHttpProxyUrl,
+  mntRecaptchaV3Proxy,
   parseCaptchaCreateTask,
   parseCaptchaTaskResult,
+  prefixCaptchaSourceReason,
   solveCaptcha,
   vinStickyHttpProxyUrl,
 } from "@/lib/captcha-solver";
@@ -295,5 +299,86 @@ describe("solveCaptcha", () => {
     expect(creates).toBe(2);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toContain("custom proxy connect failed");
+  });
+
+  it("pievieno avota prefiksu CapSolver kļūdai", async () => {
+    const fetchImpl = jsonFetch(() => ({ errorId: 1, errorDescription: "Failed to solve the captcha: 1001" }));
+    const result = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+      },
+      { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000, sourceLabel: "mnt.ee" },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("mnt.ee: CapSolver: Failed to solve the captcha: 1001");
+  });
+
+  it("lkf.ee prefiksu nedubulto, ja jau ir", () => {
+    expect(prefixCaptchaSourceReason("lkf.ee: CapSolver: timeout", "lkf.ee")).toBe("lkf.ee: CapSolver: timeout");
+    expect(prefixCaptchaSourceReason("CapSolver: žetons neatnāca laikā", "lkf.ee")).toBe(
+      "lkf.ee: CapSolver: žetons neatnāca laikā",
+    );
+  });
+});
+
+describe("mnt.ee ProxyLess vs CAPSOLVER_FORCE_PROXY", () => {
+  const prev = {
+    FIXIE_URL: process.env.FIXIE_URL,
+    CAPSOLVER_PROXY: process.env.CAPSOLVER_PROXY,
+    CAPSOLVER_FORCE_PROXY: process.env.CAPSOLVER_FORCE_PROXY,
+  };
+
+  function restoreEnv() {
+    for (const [key, value] of Object.entries(prev)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+
+  it("ar FIXIE_URL bez FORCE_PROXY neatdod V3 proxy un HTTP paliek tiešs", () => {
+    process.env.FIXIE_URL = FIXIE_URL;
+    delete process.env.CAPSOLVER_PROXY;
+    delete process.env.CAPSOLVER_FORCE_PROXY;
+    try {
+      expect(isCapsolverForceProxy()).toBe(false);
+      expect(mntRecaptchaV3Proxy()).toBeUndefined();
+      expect(mntFormHttpProxyUrl()).toBeUndefined();
+      expect(vinStickyHttpProxyUrl()).toBe(FIXIE_URL);
+      const body = captchaCreateTaskBody("key-1", {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+        proxy: mntRecaptchaV3Proxy(),
+      });
+      expect(body.task).toMatchObject({ type: "ReCaptchaV3TaskProxyLess" });
+      expect((body.task as { proxy?: string }).proxy).toBeUndefined();
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  it("CAPSOLVER_FORCE_PROXY=1 atjauno Fixie V3 un HTTP proxy", () => {
+    process.env.FIXIE_URL = FIXIE_URL;
+    delete process.env.CAPSOLVER_PROXY;
+    process.env.CAPSOLVER_FORCE_PROXY = "1";
+    try {
+      expect(isCapsolverForceProxy()).toBe(true);
+      expect(mntRecaptchaV3Proxy()).toBe(FIXIE_URL);
+      expect(mntFormHttpProxyUrl()).toBe(FIXIE_URL);
+      const body = captchaCreateTaskBody("key-1", {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+        proxy: mntRecaptchaV3Proxy(),
+      });
+      expect(body.task).toMatchObject({ type: "ReCaptchaV3Task", proxy: FIXIE_URL });
+    } finally {
+      restoreEnv();
+    }
   });
 });

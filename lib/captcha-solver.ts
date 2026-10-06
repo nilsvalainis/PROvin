@@ -1,7 +1,10 @@
 /**
  * CapSolver (https://docs.capsolver.com) - reCAPTCHA, Turnstile un Cloudflare Challenge.
- * Atslēga: CAPSOLVER_API_KEY. Cloudflare Challenge un reCAPTCHA IP saite prasa
- * sticky proxy (CAPSOLVER_PROXY vai FIXIE_URL) - tokens jāsūta no tā paša IP.
+ * Atslēga: CAPSOLVER_API_KEY.
+ * Cloudflare Challenge un lkf.ee reCAPTCHA v2: sticky proxy (CAPSOLVER_PROXY vai FIXIE_URL),
+ * tokens jāsūta no tā paša IP.
+ * mnt.ee reCAPTCHA v3: pēc noklusējuma ProxyLess (Fixie datacenter neder V3); HTTP no Vercel.
+ * CAPSOLVER_FORCE_PROXY=1 atjauno veco mnt.ee ceļu (V3 + HTTP caur Fixie).
  */
 export type RecaptchaV3Task = {
   kind: "recaptcha_v3";
@@ -136,6 +139,35 @@ export function vinStickyHttpProxyUrl(): string | undefined {
   return httpProxyUrlFromCapsolver(getCaptchaSolverProxy()) || undefined;
 }
 
+/** `1` / `true` / `yes` - mnt.ee atkal sūta V3 un formu caur Fixie (vecais ceļš). */
+export function isCapsolverForceProxy(raw = process.env.CAPSOLVER_FORCE_PROXY): boolean {
+  return /^(1|true|yes)$/i.test((raw ?? "").trim());
+}
+
+/**
+ * mnt.ee HTTP GET/POST: pēc noklusējuma tieši no Vercel. Cloudflare Challenge joprojām
+ * pārslēdz sesiju uz Fixie. CAPSOLVER_FORCE_PROXY=1 sāk ar sticky proxy.
+ */
+export function mntFormHttpProxyUrl(): string | undefined {
+  return isCapsolverForceProxy() ? vinStickyHttpProxyUrl() : undefined;
+}
+
+/**
+ * mnt.ee reCAPTCHA v3: pēc noklusējuma bez proxy (ReCaptchaV3TaskProxyLess).
+ * CAPSOLVER_FORCE_PROXY=1 atjauno ReCaptchaV3Task ar Fixie.
+ */
+export function mntRecaptchaV3Proxy(): string | undefined {
+  return isCapsolverForceProxy() ? getCaptchaSolverProxy() || undefined : undefined;
+}
+
+/** Piem. `mnt.ee: CapSolver: žetons neatnāca laikā`. */
+export function prefixCaptchaSourceReason(reason: string, sourceLabel?: string): string {
+  const label = sourceLabel?.trim();
+  if (!label) return reason;
+  if (reason === label || reason.startsWith(`${label} `) || reason.startsWith(`${label}:`)) return reason;
+  return `${label}: ${reason}`;
+}
+
 export function captchaCreateTaskBody(apiKey: string, task: CaptchaTask): Record<string, unknown> {
   if (task.kind === "recaptcha_v3") {
     const proxy = proxyForCapsolverTask(task.proxy);
@@ -222,6 +254,8 @@ type SolveDeps = {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   timeoutMs?: number;
+  /** Admin UI: `mnt.ee` / `lkf.ee` / `car.info`. */
+  sourceLabel?: string;
 };
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -240,9 +274,17 @@ export function defaultCaptchaSolveTimeoutMs(task: CaptchaTask): number {
   return taskUsesCustomProxy(task) ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS;
 }
 
+function labeledSolveResult(result: CaptchaSolveResult, sourceLabel?: string): CaptchaSolveResult {
+  if (result.ok) return result;
+  return { ok: false, reason: prefixCaptchaSourceReason(result.reason, sourceLabel) };
+}
+
 export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Promise<CaptchaSolveResult> {
   const apiKey = (deps.apiKey ?? getCaptchaSolverApiKey()).trim();
-  if (apiKey.length < 8) return { ok: false, reason: "Nav CAPSOLVER_API_KEY" };
+  const label = deps.sourceLabel;
+  if (apiKey.length < 8) {
+    return labeledSolveResult({ ok: false, reason: "Nav CAPSOLVER_API_KEY" }, label);
+  }
   const fetchImpl = deps.fetchImpl ?? fetch;
   const sleep = deps.sleep ?? defaultSleep;
   const timeoutMs = deps.timeoutMs ?? defaultCaptchaSolveTimeoutMs(task);
@@ -265,7 +307,7 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
         await sleep(2500);
         continue;
       }
-      return { ok: false, reason: created.reason };
+      return labeledSolveResult({ ok: false, reason: created.reason }, label);
     }
 
     await sleep(2000);
@@ -287,11 +329,11 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
         await sleep(2500);
         break;
       }
-      return parsed;
+      return labeledSolveResult(parsed, label);
     }
     if (Date.now() >= deadline) {
-      return { ok: false, reason: "CapSolver: žetons neatnāca laikā" };
+      return labeledSolveResult({ ok: false, reason: "CapSolver: žetons neatnāca laikā" }, label);
     }
   }
-  return { ok: false, reason: lastReason };
+  return labeledSolveResult({ ok: false, reason: lastReason }, label);
 }
