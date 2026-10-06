@@ -736,7 +736,8 @@ OUTPUT RULES:
 - THIS is the only field that may run the oil-interval calculation in full.
 - Use ALL sources in the user prompt: dealer service works, AutoDNA/CarVertical/RAW service text, mileage timeline, city vs highway / motorstundas profile, OEM interval from packs or context.
 - Be short and precise: successive oil changes, km and/or months between them, actual vs manufacturer interval, size of deviations.
-- City / short-trip: ~10 000 km ceiling. Dense highway: 15 000-20 000 km can be acceptable. Shorten OEM 25 000-30 000 km long-life when profile or recorded gaps demand it.
+- FIRST sentence of the oil field: „Ražotāja intervāls: X XXX km / Y mēn.” for THIS engine code (CBS/Longlife = official maximum). If unknown: „Ražotāja intervāls: nav droši zināms”. Do not default 15 000 km. PDF paints green/orange/red from that line; do not write colour words.
+- City / short-trip stays in later paragraphs (~10 000 km ceiling. Dense highway: 15 000-20 000 km can be acceptable). It does not replace the manufacturer figure as the colour OEM.
 - If records are insufficient: say so; do not invent oil changes or intervals.
 - A gap vs the manufacturer interval is a fact in the official record. Independent service may exist. Ask the seller for proof; do not call the gap itself a risk.
 - No EUR. No full mileage essay. No copy of the „Servisa vēsture” journal line-by-line.

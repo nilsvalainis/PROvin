@@ -78,6 +78,11 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
+import {
+  buildOilChangeIntervalPdfHtml,
+  buildOilChangeIntervalSeries,
+} from "@/lib/oil-change-intervals";
+import { parseOemOilIntervalFromText } from "@/lib/oem-oil-interval";
 import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
 import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
 import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
@@ -1642,15 +1647,20 @@ function buildAutoRecordsAvotuSubsection(
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
     : "";
   const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
+  const oem = parseOemOilIntervalFromText(
+    `${oilChangeIntervalNotes}\n${b.comments ?? ""}\n${b.serviceHistoryNotes ?? ""}`,
+  );
+  const oilSeries = buildOilChangeIntervalSeries(b.serviceWorks ?? [], oem);
+  const oilTableHtml = buildOilChangeIntervalPdfHtml(oilSeries);
   const oilIntervalBox = oilChangeIntervalNotes
-    ? pdfReportCommentBox(oilChangeIntervalNotes, PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL)
+    ? pdfReportCommentBox(oilChangeIntervalNotes, oilTableHtml ? "" : PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL)
     : "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
   const hasOutvin = outvinInner.length > 0;
   const hasEquipment = equipmentHtml.length > 0;
   const hasServiceHistory = serviceHistoryBox.length > 0;
-  const hasOilInterval = oilIntervalBox.length > 0;
+  const hasOilInterval = oilTableHtml.length > 0 || oilIntervalBox.length > 0;
   const photosInner = buildSourcePhotoGroupsPdfHtml(
     b.photoGroups,
     b.photos,
@@ -1692,7 +1702,8 @@ function buildAutoRecordsAvotuSubsection(
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceWorks) bodyParts.push(serviceWorksTable);
   if (hasServiceHistory) bodyParts.push(serviceHistoryBox);
-  if (hasOilInterval) bodyParts.push(oilIntervalBox);
+  if (oilTableHtml) bodyParts.push(oilTableHtml);
+  if (hasOilInterval && oilIntervalBox) bodyParts.push(oilIntervalBox);
   if (hasPhotos) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   // Aprīkojums zem komentāra (dīlera PDF kanons).
@@ -2490,6 +2501,72 @@ function clientReportPrintCss(): string {
         font-size:var(--pdf-fs-table);line-height:1.35;
       }
       .pdf-dealer-eq b{margin-right:6px;font-weight:750;color:${PDF_BRAND_BLUE_HEX};}
+      .pdf-dealer-vehicle-kv{margin:0 0 8px;}
+      .pdf-dealer-vehicle-kv .pdf-v1-kv td{padding:8px 0;}
+      .pdf-dealer-vehicle-kv .pdf-v1-kv td:first-child{width:34%;padding-right:18px;}
+      .pdf-oil-int{margin:0 0 var(--pdf-gap-block);}
+      .pdf-oil-int__kpis{
+        display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 10px;
+      }
+      .pdf-oil-int__kpi{
+        padding:8px 10px;border:1px solid var(--pdf-line);border-radius:8px;background:#F8FAFC;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-oil-int__kpi b{display:block;font-size:13px;font-weight:750;letter-spacing:-0.02em;color:#0f172a;}
+      .pdf-oil-int__kpi span{display:block;margin-top:2px;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;}
+      .pdf-oil-int__kpi--ok{border-color:#A7F3D0;background:#ECFDF5;}
+      .pdf-oil-int__kpi--warn{border-color:#FDE68A;background:#FFFBEB;}
+      .pdf-oil-int__kpi--stretch{border-color:#FECACA;background:#FEF2F2;}
+      .pdf-oil-int__head{
+        display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:start;margin:0 0 10px;
+      }
+      .pdf-oil-int__ring-col{text-align:center;}
+      .pdf-oil-int__ring{display:block;width:120px;height:120px;margin:0 auto;}
+      .pdf-oil-int__ring-cap{margin:4px 0 0;font-size:9px;font-weight:650;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;}
+      .pdf-oil-int__oem{margin:4px 0 0;font-size:8.5px;font-weight:650;color:#64748b;line-height:1.3;}
+      .pdf-oil-int__period{
+        margin:10px 0 0;padding:8px 10px;border:1px solid var(--pdf-line);border-radius:8px;background:#F8FAFC;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-oil-int__period--ok{border-color:#A7F3D0;background:#ECFDF5;}
+      .pdf-oil-int__period--warn{border-color:#FDE68A;background:#FFFBEB;}
+      .pdf-oil-int__period--stretch{border-color:#FECACA;background:#FEF2F2;}
+      .pdf-oil-int__period-val--ok{color:#047857;font-weight:650;}
+      .pdf-oil-int__period-val--warn{color:#B45309;font-weight:650;}
+      .pdf-oil-int__period-val--stretch{color:#B91C1C;font-weight:650;}
+      .pdf-oil-int__period-val--gap{color:#94A3B8;}
+      .pdf-oil-int__period b{display:block;font-size:13px;font-weight:750;letter-spacing:-0.02em;color:#0f172a;}
+      .pdf-oil-int__period span{display:block;margin-top:2px;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;}
+      .pdf-oil-int__table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);}
+      .pdf-oil-int__table th{
+        padding:6px 8px 6px 0;text-align:left;font-size:9px;font-weight:700;letter-spacing:0.05em;
+        text-transform:uppercase;color:#64748b;border-bottom:1px solid var(--pdf-line);
+      }
+      .pdf-oil-int__table td{padding:7px 8px 7px 0;border-bottom:1px solid var(--pdf-line-soft);vertical-align:middle;}
+      .pdf-oil-int__table tr:last-child td{border-bottom:none;}
+      .pdf-oil-int__table th:nth-child(3),
+      .pdf-oil-int__table td:nth-child(3){font-weight:650;color:#0f172a;}
+      .pdf-oil-int__table th:nth-child(4),
+      .pdf-oil-int__table td:nth-child(4){color:#475569;font-weight:500;}
+      .pdf-oil-int__table th:nth-child(5),
+      .pdf-oil-int__table td:nth-child(5){width:18%;padding-right:0;}
+      .pdf-oil-int__gap-tag{margin-top:2px;font-size:8.5px;font-weight:650;letter-spacing:0.04em;text-transform:uppercase;color:#94a3b8;}
+      .pdf-oil-int__row--gap td{color:#64748b;}
+      .pdf-oil-int__note{
+        margin:0;padding:10px 12px;border:1px solid var(--pdf-line-soft);border-radius:8px;background:#F8FAFC;
+        font-size:10px;line-height:1.45;color:#334155;
+      }
+      .pdf-oil-int__bar{
+        display:block;height:6px;border-radius:99px;min-width:8px;
+        background:${PDF_BRAND_BLUE_HEX};
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-oil-int__bar--start{background:#CBD5E1;width:12%!important;}
+      .pdf-oil-int__bar--ok{background:#059669;}
+      .pdf-oil-int__bar--warn{background:#D97706;}
+      .pdf-oil-int__bar--stretch{background:#DC2626;}
+      .pdf-oil-int__bar--gap{background:#CBD5E1;}
+      .pdf-oil-int__bar--neutral{background:${PDF_BRAND_BLUE_HEX};}
       .pdf-listing-history-frame{
         border:1px solid var(--pdf-line);
         border-radius:var(--pdf-radius-inner);

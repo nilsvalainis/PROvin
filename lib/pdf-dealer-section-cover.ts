@@ -78,6 +78,12 @@ export function resolveDealerCoverVehicle(
   return null;
 }
 
+/** Tikai 17 zīmju VIN kods, bez vārda „VIN”. */
+export function formatDealerCoverVin(raw: string): string {
+  const compact = raw.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  return compact.length === 17 ? compact : "";
+}
+
 export function buildDealerSectionCoverHtml(args: {
   vehicle?: OutvinVehicleInfo | null;
   makeModel?: string;
@@ -85,18 +91,25 @@ export function buildDealerSectionCoverHtml(args: {
 }): string {
   const vi = args.vehicle;
   const model = (vi?.model.trim() || args.makeModel?.trim() || "").trim();
-  const vin = vi?.vinCode.trim() ?? "";
-  const colorCode = (vi?.colorCode.trim() || vi?.color.trim() || "").trim();
+  const vin = formatDealerCoverVin(vi?.vinCode ?? "");
   const power = vi?.power.trim() ?? "";
   const span = buildDealerServiceSpanHtml(args.serviceWorks, { cover: true });
   const curve = buildDealerCoverBlendCurveHtml(args.serviceWorks);
-  if (!model && !vin && !colorCode && !power && !span) return "";
+  if (!model && !vin && !power && !span) return "";
 
-  const meta = [vin ? `VIN ${vin}` : "", colorCode, power].filter(Boolean).join(" · ");
+  const metaParts = [vin, power].filter(Boolean);
   const title = model
     ? `<h3 class="pdf-dealer-cover__model">${escapeHtml(model)}</h3>`
     : "";
-  const metaHtml = meta ? `<p class="pdf-dealer-cover__meta">${escapeHtml(meta)}</p>` : "";
+  const metaHtml = metaParts.length
+    ? `<p class="pdf-dealer-cover__meta">${metaParts
+        .map((part) =>
+          part === vin
+            ? `<span class="pdf-vin">${escapeHtml(part)}</span>`
+            : escapeHtml(part),
+        )
+        .join(" · ")}</p>`
+    : "";
   return `<div class="pdf-dealer-cover">
     ${title}
     ${metaHtml}

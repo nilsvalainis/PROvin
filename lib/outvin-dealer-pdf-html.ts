@@ -1,4 +1,4 @@
-import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
+import { buildPdfKvStackHtml } from "@/lib/pdf-fact-card";
 import {
   OUTVIN_VEHICLE_INFO_ROWS,
   outvinDealerReportHasContent,
@@ -27,7 +27,9 @@ function vehicleInfoTable(vi: OutvinVehicleInfo): string {
     if (!v) continue;
     rows.push({ k: labelLv || labelEn, v: capitalizeFactValue(v) });
   }
-  return buildPdfKvPairHtml(rows);
+  const table = buildPdfKvStackHtml(rows);
+  if (!table) return "";
+  return `<div class="pdf-dealer-vehicle-kv">${table}</div>`;
 }
 
 /** Aprīkojuma bloks (kods + apraksts) - dīlera PDF liek zem komentāra. */

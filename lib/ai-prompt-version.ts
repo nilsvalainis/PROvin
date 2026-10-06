@@ -3,6 +3,9 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-10-06.2 - Eļļas lauks: pirmā rinda „Ražotāja intervāls: X km / Y mēn.”
+ *   no motora koda/markas; PDF krāso zaļu/oranžu/sarkanu pret šo skaitli,
+ *   pelēks paliek datu iztrūkumam. Pilsētas 10 000 km ir komentārs, ne OEM.
  * - 2026-10-06.1 - Dīlera komentārs un negadījumu kopsavilkums lasa viens otru:
  *   stikla / virsbūves remonts pie līdzīga datuma tiek sasaistīts ar negadījuma ierakstu.
  * - 2026-10-04.2 - Tehnisko risku izeja: noņem Gemini angļu iekšējo plānu
@@ -165,4 +168,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-06.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-06.2";

@@ -336,7 +336,10 @@ describe("PROVIN AI prompt invariants", () => {
     );
     expect(prompts).toMatch(/aiAutoRecordsOilIntervalSystemPrompt/);
     expect(prompts).toMatch(/ACTIVE FIELD: OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli/);
+    expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/Ražotāja intervāls/);
+    expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/1\.30/);
     expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/oilChangeIntervalNotes/);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/Dzinēja kods/);
   });
 
   it("winter salt rust is mandatory in risks and inspection when the exposure brief says so", () => {

@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin-source-comment-blocks";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
+import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { sourceCommentLengthLineForBreadth, type CommentBreadth } from "@/lib/ai-comment-breadth";
 
@@ -64,6 +65,21 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
     input.citiAvotiSectionIndex,
   );
   const isOilInterval = isOfficialDealerBlock(input.blockKey) && targetField === "oilChangeIntervalNotes";
+  const oilFingerprint = isOilInterval
+    ? extractVehicleReportFingerprint(input.sourceBlocks, { vin: input.vin })
+    : null;
+  const oilIdentityBlock = oilFingerprint
+    ? [
+        oilFingerprint.engineCode && `Dzinēja kods: ${oilFingerprint.engineCode}`,
+        oilFingerprint.makeModel && `Marka / modelis: ${oilFingerprint.makeModel}`,
+        oilFingerprint.year != null && `Gads: ${oilFingerprint.year}`,
+        oilFingerprint.fuelType && `Degviela: ${oilFingerprint.fuelType}`,
+        oilFingerprint.engineDisplacementCm3 && `Tilpums: ${oilFingerprint.engineDisplacementCm3} cm³`,
+        oilFingerprint.enginePowerKw && `Jauda: ${oilFingerprint.enginePowerKw} kW`,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
 
   const portfolioContext = await buildFullAiOrderContextText({
     sessionId: input.sessionId,
@@ -115,7 +131,7 @@ ${previousComments}
   const isDealerComments = isOfficialDealerBlock(input.blockKey) && targetField === "comments";
   const includeOilIntervalRole = isDealerComments && Boolean(input.includeOilIntervalSummary);
   const oilRoleHint = includeOilIntervalRole
-    ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla (km/mēnešu starpība starp maiņām, faktiskais pret ražotāja intervālu). Izmanto VISUS iegūtos datus (dīlera tabula, AutoDNA/CarVertical/RAW, nobraukuma/motorstundu profils, OEM intervāls). Ja datu nav vai ir pārāk maz — tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
+    ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Izmanto VISUS iegūtos datus (dīlera tabula, AutoDNA/CarVertical/RAW, nobraukuma/motorstundu profils, OEM intervāls). Ja datu nav vai ir pārāk maz — tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
     : "";
 
   const userPrompt = isOilInterval
@@ -129,13 +145,20 @@ ${portfolioContext}
 ${chainingSection}=== Oficiālā dīlera dati ===
 ${focusDataText || "(dīlera tabulā nav atsevišķu rindu — rēķini no pārējiem avotiem)"}
 
+=== Identifikācija šim motoram (OEM intervālam) ===
+${oilIdentityBlock || "(dzinēja kods / marka šajos datos nav fiksēti)"}
+
 Sagatavo lauku „Eļļas maiņas intervāli” klienta PDF.
 Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas intervālus no VISIEM iegūtajiem datiem (dīlera servisa tabula, AutoDNA/CarVertical/RAW servisa teksti, nobraukuma līkne, motorstundu / pilsētas–šosejas profils, ražotāja intervāls no konteksta vai agregātu pakas).
-Jāatbild:
+PIRMĀ teikuma formāts (obligāti, lai PDF krāsotu pret OEM):
+Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods], fiksēts vai Longlife/CBS maksimums)
+Piemēram N47 Longlife: 30 000 km / 24 mēn. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
+Jāatbild tālāk:
 - cik bieži eļļa ir mainīta (datumi un/vai km starp secīgām eļļas maiņām);
 - kāds ir bijis faktiskais intervāls pret ražotāja doto;
 - cik lielas ir nobīdes (pārsniegts / īsāks / atbilst);
-- ja pilsētas profils — praktiskais griesti ~10 000 km; ja blīvi šosejas dati — 15 000-20 000 km var būt pieņemami; 25 000-30 000 km „long-life” saīsini, ja profils to prasa.
+- ja pilsētas profils — praktiskie griesti ~10 000 km paliek KOMENTĀRĀ, ne OEM rindā; ja blīvi šosejas dati — 15 000-20 000 km var būt pieņemami.
+PDF krāsas (zaļa ≤ OEM, oranža līdz 1,30×, sarkana virs 1,30×, pelēka = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus.
 Ja eļļas maiņu ierakstu nav vai to ir par maz — tā arī saki; NEIZDOMĀ apkopes.
 Ja oficiālajā dīlerī ir robs pret ražotāja intervālu: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera — jālūdz pārdevēja rēķins/apliecinājums. To pašu robu NESAUC par pirkuma risku.
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.

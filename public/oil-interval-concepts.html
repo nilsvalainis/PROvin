@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>PROVIN · eļļas maiņas intervāli, 10 koncepti</title>
+<style>
+  :root{
+    --blue:#0061D2; --ink:#0f172a; --mute:#64748b; --label:#86868b;
+    --line:#E9EDF3; --soft:#F1F5F9; --warn:#F59E0B; --stretch:#F97316;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:#d7dee8;color:var(--ink);
+    font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+    font-variant-numeric:tabular-nums;
+  }
+  .chrome{position:sticky;top:0;z-index:30;background:#0f172a;color:#e2e8f0;padding:12px 16px 14px;}
+  .chrome h1{margin:0;font-size:15px;font-weight:700;color:#fff;}
+  .chrome p{margin:6px 0 0;font-size:12px;line-height:1.45;color:#94a3b8;max-width:72rem;}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tabs a{
+    display:inline-block;border:1px solid #334155;background:#1e293b;color:#e2e8f0;text-decoration:none;
+    border-radius:999px;padding:5px 10px;font:650 10.5px/1.2 Inter,sans-serif;
+  }
+  .tabs a[aria-current="true"]{background:#0061D2;border-color:#0061D2;color:#fff;}
+  .hint{margin:8px 0 0;font-size:11px;color:#64748b;}
+  .stage{padding:24px 12px 72px;}
+  .sheet{
+    display:none;width:210mm;margin:0 auto 22px;background:#fff;
+    padding:13mm 12mm 14mm;box-shadow:0 16px 44px rgb(15 23 42 / .12);
+  }
+  .sheet.is-on{display:block;}
+  .kicker{margin:0 0 10px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6e6e73;}
+  .sec{margin:0 0 14px;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px;}
+  .kpi{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#F8FAFC;}
+  .kpi b{display:block;font-size:13px;}
+  .kpi span{display:block;margin-top:2px;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--mute);}
+  table.data{width:100%;border-collapse:collapse;font-size:11px;}
+  table.data th{text-align:left;font-size:9px;letter-spacing:0.05em;text-transform:uppercase;color:var(--mute);padding:6px 8px 6px 0;border-bottom:1px solid var(--line);}
+  table.data td{padding:7px 8px 7px 0;border-bottom:1px solid var(--soft);vertical-align:middle;}
+  .bar{display:block;height:6px;border-radius:99px;background:var(--blue);}
+  .bar.w{background:var(--warn);}
+  .bar.s{background:var(--stretch);}
+  .bar.m{background:#CBD5E1;}
+  .note{margin:10px 0 0;padding:10px 12px;border-radius:8px;border:1px solid var(--soft);background:#F8FAFC;font-size:10.5px;line-height:1.45;color:#334155;}
+  .year{margin:12px 0 6px;padding:5px 10px;border-radius:8px;background:#E8F1FC;font-size:12px;font-weight:700;color:var(--blue);}
+  .chip{display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:10px;font-weight:650;}
+  .ok{color:#047857;} .caution{color:#B45309;} .long{color:#C2410C;}
+  svg.chart{display:block;width:100%;height:auto;}
+  .ring-col{text-align:center;}
+  .ring-cap{margin:4px 0 0;font-size:9px;font-weight:650;letter-spacing:0.04em;text-transform:uppercase;color:var(--mute);}
+  .period-chip{margin:10px 0 0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#F8FAFC;text-align:center;}
+  .period-chip b{display:block;font-size:13px;}
+  .period-chip span{display:block;margin-top:2px;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--mute);}
+  .gap-tag{margin-top:2px;font-size:8.5px;font-weight:650;letter-spacing:0.04em;text-transform:uppercase;color:#94a3b8;}
+  .bar.g{background:#CBD5E1;}
+</style>
+</head>
+<body>
+  <div class="chrome">
+    <h1>Eļļas maiņas intervāli: 10 grafika / tabulas koncepti</h1>
+    <p>
+      Tikai dzinēja eļļa no dīlera servisa rindām. Intervāls (km) un periods (mēneši) ir atsevišķi.
+      Gredzens skaita tikai soļus ar nepārtrauktiem dīlera datiem. Virs 30 000 km vai 24 mēnešiem, vai izlecējs pret mediānu, solis ir datu iztrūkums, ne reāls intervāls.
+    </p>
+    <div class="tabs" id="tabs"></div>
+    <p class="hint" id="hint"></p>
+  </div>
+  <div class="stage" id="stage"></div>
+<script>
+const ROWS = [
+  { d:"03.04.2016", km:"31 400 km", gap:"Sākums", m:"", w:12, t:"m", kind:"start" },
+  { d:"12.03.2018", km:"61 200 km", gap:"29 800 km", m:"23 mēn.", w:99, t:"s", kind:"observed" },
+  { d:"22.01.2020", km:"89 400 km", gap:"28 200 km", m:"22 mēn.", w:94, t:"s", kind:"observed" },
+  { d:"18.11.2022", km:"128 500 km", gap:"39 100 km", m:"34 mēn.", w:100, t:"g", kind:"gap" },
+  { d:"12.03.2024", km:"142 220 km", gap:"13 720 km", m:"16 mēn.", w:46, t:"", kind:"observed" },
+];
+const kpis = `<div class="kpis">
+  <div class="kpi"><b>5</b><span>fiksētas maiņas</span></div>
+  <div class="kpi"><b>27 705 km</b><span>vidējais intervāls</span></div>
+  <div class="kpi"><b>24 mēn.</b><span>vidējais laiks</span></div>
+</div>`;
+const analysis = `<p class="note">Fiksētas 5 dzinēja eļļas maiņas. Vidējais solis ir garāks par tipisko 15 000 km. Pēdējā maiņa 2024. gadā ir īsāka. Ja pēc pēdējās maiņas ir pagājuši vairāk par 24 mēnešiem vai 30 000 km, apkopi varēja veikt ārpus dīlera. Pārbaudiet dokumentus klātienē.</p>`;
+
+function barsTable() {
+  return `<table class="data"><thead><tr><th>Datums</th><th>Nobraukums</th><th>Intervāls</th><th></th></tr></thead><tbody>${
+    ROWS.map((r) => `<tr><td>${r.d}</td><td>${r.km}</td><td>${r.gap}${r.m ? ", " + r.m : ""}</td><td><span class="bar ${r.t}" style="width:${r.w}%"></span></td></tr>`).join("")
+  }</tbody></table>`;
+}
+
+const VARIANTS = [
+  {
+    id: "c01",
+    name: "01 KPI + joslas",
+    hint: "Trīs skaitļi augšā, tabula ar Δ km joslu. Palicis kā variants; ražošanas kanons ir 06.",
+    html: () => `<p class="kicker">Oficiālā dīlera dati</p><h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}${barsTable()}${analysis}`,
+  },
+  {
+    id: "c02",
+    name: "02 Laika līnija",
+    hint: "Katrs gads kā bloks. Intervāls ir čips, ne kolonna. Labāk, ja datumu ir daudz.",
+    html: () => `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}
+      ${["2016","2018","2020","2022","2024"].map((y,i) => {
+        const r = ROWS[i];
+        return `<div class="year">${y}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 2px 8px"><div><b>${r.d}</b> · ${r.km}</div><span class="chip">${r.gap}</span></div>`;
+      }).join("")}${analysis}`,
+  },
+  {
+    id: "c03",
+    name: "03 Stabiņu grafiks",
+    hint: "Intervāli kā stabiņi pret 15 000 km līniju. Klients uzreiz redz, kuri soļi ir gari.",
+    html: () => {
+      const gaps = [0, 298, 282, 391, 137];
+      const max = 400;
+      const bars = gaps.map((g, i) => {
+        const h = Math.max(8, Math.round((g / max) * 110));
+        const cls = g > 240 ? "s" : g > 160 ? "w" : "";
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="height:120px;width:100%;display:flex;align-items:flex-end;background:linear-gradient(#fff,#fff),repeating-linear-gradient(180deg,transparent 0 59px,#e2e8f0 59px 60px);background-size:100% 60px">
+            <div class="bar ${cls}" style="width:70%;height:${h}px;margin:0 auto"></div>
+          </div>
+          <span style="font-size:9px;color:#64748b">${ROWS[i].d.slice(6)}</span>
+        </div>`;
+      }).join("");
+      return `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}<div style="display:flex;gap:10px;align-items:flex-end;margin:0 0 8px">${bars}</div><p style="margin:0 0 8px;font-size:10px;color:#64748b">Punktētā atskaite vizuāli: 15 000 km. Nav apgalvojums, ka šim motoram tas ir OEM.</p>${analysis}`;
+    },
+  },
+  {
+    id: "c04",
+    name: "04 Siltuma josla",
+    hint: "Viena horizontāla josla no pirmās līdz pēdējai maiņai. Krāsa rāda soļa garumu. Ļoti kompakti.",
+    html: () => {
+      const segs = ROWS.slice(1).map((r) => `<div class="bar ${r.t}" style="flex:${r.w};height:14px;border-radius:0" title="${r.gap}"></div>`).join("");
+      return `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}
+        <div style="display:flex;height:14px;border-radius:99px;overflow:hidden;margin:0 0 8px">${segs}</div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b"><span>03.04.2016</span><span>12.03.2024</span></div>
+        ${barsTable()}${analysis}`;
+    },
+  },
+  {
+    id: "c05",
+    name: "05 Kartītes",
+    hint: "Katra maiņa kā karte. Labāk planšetē / interaktīvā atskaitē, PDF aizņem vairāk vietas.",
+    html: () => `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}
+      <div style="display:grid;gap:8px">${ROWS.map((r) => `<div style="padding:10px 12px;border:1px solid var(--line);border-radius:10px;display:grid;grid-template-columns:1fr auto;gap:6px">
+        <div><b>${r.d}</b><div style="font-size:11px;color:#64748b">${r.km}</div></div>
+        <div style="text-align:right;font-weight:700">${r.gap}<div style="font-size:10px;font-weight:600;color:#64748b">${r.m || "Sērijas sākums"}</div></div>
+        <div style="grid-column:1/-1"><span class="bar ${r.t}" style="width:${r.w}%"></span></div>
+      </div>`).join("")}</div>${analysis}`,
+  },
+  {
+    id: "c06",
+    name: "06 Gredzena KPI",
+    hint: "Ražošanas kanons. Augšā trīs kartītes, tad gredzens. Vidējais km/laiks tikai no dīlera soļiem. 39 100 km solis ir datu iztrūkums un gredzenā nav.",
+    html: () => {
+      const ringKm = Math.round((29800 + 28200 + 13720) / 3);
+      const ringMonths = Math.round((23 + 22 + 16) / 3);
+      const circ = 2 * Math.PI * 44;
+      const dash = ((ringKm / 30000) * circ).toFixed(1);
+      const ringKpis = `<div class="kpis">
+        <div class="kpi"><b>5</b><span>fiksētas maiņas</span></div>
+        <div class="kpi"><b>${ringKm.toLocaleString("lv-LV")} km</b><span>vidējais intervāls</span></div>
+        <div class="kpi"><b>${ringMonths} mēn.</b><span>vidējais laiks</span></div>
+      </div>`;
+      const table = `<table class="data"><thead><tr><th>Datums</th><th>Nobraukums</th><th>Intervāls</th><th>Periods</th><th></th></tr></thead><tbody>${
+        ROWS.map((r) => `<tr>
+          <td>${r.d}</td>
+          <td>${r.km}</td>
+          <td>${r.gap}${r.kind === "gap" ? '<div class="gap-tag">Datu iztrūkums</div>' : ""}</td>
+          <td>${r.m}</td>
+          <td><span class="bar ${r.t}" style="width:${r.w}%"></span></td>
+        </tr>`).join("")
+      }</tbody></table>`;
+      const note = `<p class="note">Vidējais rēķināts no 3 soļiem, kur dīlera eļļas maiņas seko cita citai. 1 solis nav iekļauts, jo starp tiem ir datu iztrūkums. Apkope varēja būt ārpus dīlera.</p>`;
+      return `<p class="kicker">Oficiālā dīlera dati</p><h2 class="sec">Eļļas maiņas intervāli</h2>${ringKpis}
+        <div style="display:grid;grid-template-columns:132px 1fr;gap:14px;align-items:start;margin:0 0 10px">
+          <div class="ring-col">
+            <svg class="chart" viewBox="0 0 120 120" aria-label="Vidējais eļļas intervāls" style="width:120px;height:120px;margin:0 auto">
+              <circle cx="60" cy="60" r="44" fill="none" stroke="#E2E8F0" stroke-width="10"/>
+              <circle cx="60" cy="60" r="44" fill="none" stroke="#059669" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="${dash} ${circ.toFixed(1)}" transform="rotate(-90 60 60)"/>
+              <text x="60" y="56" text-anchor="middle" font-size="13" font-weight="750">${ringKm.toLocaleString("lv-LV")}</text>
+              <text x="60" y="72" text-anchor="middle" font-size="8" fill="#64748b">km</text>
+            </svg>
+            <div class="ring-cap">intervāls no 3 soļiem</div>
+          </div>
+          ${table}
+        </div>${note}`;
+    },
+  },
+  {
+    id: "c07",
+    name: "07 Divas asis",
+    hint: "Km un mēneši blakus. Palīdz, kad auto stāvējis (maz km, daudz mēnešu) vai braucis šoseju.",
+    html: () => `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}
+      <table class="data"><thead><tr><th>Datums</th><th>km</th><th>Δ km</th><th>Δ mēn.</th></tr></thead><tbody>
+        ${ROWS.map((r) => `<tr><td>${r.d}</td><td>${r.km}</td><td>${r.gap}</td><td>${r.m || "-"}</td></tr>`).join("")}
+      </tbody></table>${analysis}`,
+  },
+  {
+    id: "c08",
+    name: "08 Sliedes vizītes",
+    hint: "Tā pati valoda kā dīlera servisa vizītēm. Eļļa ir apakškopa no servisa vēstures.",
+    html: () => `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}
+      ${ROWS.map((r) => `<div style="display:grid;grid-template-columns:86px 16px 1fr;gap:0 10px">
+        <div style="padding:10px 0;font-size:11.5px;font-weight:650;text-align:right">${r.d}</div>
+        <div style="position:relative;justify-self:center;width:2px;background:#D7E4F5">
+          <i style="position:absolute;left:50%;top:14px;width:8px;height:8px;margin-left:-4px;border-radius:99px;background:#fff;border:2px solid #93C5FD"></i>
+        </div>
+        <div style="margin:6px 0;padding:10px 12px;border:1px solid #E9EDF3;border-radius:10px">
+          <div style="display:flex;justify-content:space-between;gap:8px"><b>${r.km}</b><span class="chip">${r.gap}</span></div>
+          <div style="margin-top:6px"><span class="bar ${r.t}" style="width:${r.w}%"></span></div>
+        </div>
+      </div>`).join("")}${analysis}`,
+  },
+  {
+    id: "c09",
+    name: "09 Semafors",
+    hint: "Īss / tipisks / garš ar krāsu vārdiem. Skaidrs pircējam, bet nedrīkst kļūt par „auto ir sliktā stāvoklī”.",
+    html: () => `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}
+      <table class="data"><thead><tr><th>Datums</th><th>Intervāls</th><th>Nolasījums</th></tr></thead><tbody>
+        ${ROWS.map((r) => {
+          const lab = r.t === "s" ? '<span class="long">Garš</span>' : r.t === "w" ? '<span class="caution">Virsslieksnis</span>' : r.t === "m" ? "Sākums" : '<span class="ok">Tipisks</span>';
+          return `<tr><td>${r.d}</td><td>${r.gap}${r.m ? ", " + r.m : ""}</td><td>${lab}</td></tr>`;
+        }).join("")}
+      </tbody></table>${analysis}`,
+  },
+  {
+    id: "c10",
+    name: "10 Interaktīvs PDF+",
+    hint: "Nākotnes virziens: rindu izvēršana, OEM slīdnis, pilsēta pret šoseju. Šodien PDF paliek 06, šis ir mērķis tīmekļa atskaitei.",
+    html: () => `<h2 class="sec">Eļļas maiņas intervāli</h2>${kpis}${barsTable()}
+      <div style="margin:10px 0;padding:10px 12px;border:1px dashed #93C5FD;border-radius:8px;font-size:10.5px;color:#334155">
+        Interaktīvi (tīmeklī, ne drukā): peles pārklājums rāda vietu, OEM slīdnis 10 000-30 000 km, pilsētas / šosejas slēdzis pārzīmē dzelteno zonu.
+      </div>${analysis}`,
+  },
+];
+
+const tabs = document.getElementById("tabs");
+const stage = document.getElementById("stage");
+VARIANTS.forEach((v, i) => {
+  const a = document.createElement("a");
+  a.href = "#" + v.id;
+  a.textContent = v.name;
+  a.id = "tab-" + v.id;
+  tabs.appendChild(a);
+  const art = document.createElement("article");
+  art.className = "sheet" + (i === 0 ? " is-on" : "");
+  art.id = v.id;
+  art.innerHTML = v.html();
+  stage.appendChild(art);
+});
+function show(id) {
+  const v = VARIANTS.find((x) => x.id === id) || VARIANTS[0];
+  document.querySelectorAll(".sheet").forEach((el) => el.classList.toggle("is-on", el.id === v.id));
+  document.querySelectorAll(".tabs a").forEach((el) => el.setAttribute("aria-current", el.id === "tab-" + v.id ? "true" : "false"));
+  document.getElementById("hint").textContent = v.name + ". " + v.hint;
+}
+window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1) || "c06");
+</script>
+</body>
+</html>

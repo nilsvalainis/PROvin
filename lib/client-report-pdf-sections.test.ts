@@ -1752,6 +1752,48 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("18 000-22 000 km");
   });
 
+  it("builds an oil-interval table from dealer service works", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        {
+          date: "03.04.2016",
+          odometer: "31400",
+          location: "BMW Bonn",
+          works: "Eļļas maiņa",
+        },
+        {
+          date: "12.03.2018",
+          odometer: "61200",
+          location: "BMW Bonn",
+          works: "Regulārā apkope: eļļas maiņa",
+        },
+      ],
+      comments: "",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("pdf-oil-int__table");
+    expect(doc).toContain("pdf-oil-int__ring");
+    expect(doc).toContain("pdf-oil-int__kpis");
+    expect(doc).toContain("fiksētas maiņas");
+    expect(doc).toContain("vidējais intervāls");
+    expect(doc).toContain("vidējais laiks");
+    expect(doc).toContain("29 800 km");
+    expect(doc).toContain("23 mēn.");
+    expect(doc).toContain("<th>Intervāls</th><th>Periods</th>");
+    expect(doc).toContain("Sākums");
+    expect(doc).not.toContain("29 800 km, 23");
+  });
+
   it("renders Auto Records service works table in client PDF", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,
@@ -2259,13 +2301,14 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(3);
   });
 
-  it("outvin vehicle info uses two-column pdf-v1-kv-pair", () => {
+  it("outvin vehicle info uses a single-column kv table", () => {
     const report = emptyOutvinDealerReport();
     report.vehicleInfo.vinCode = "WVWZZZ";
     report.vehicleInfo.model = "Golf";
     const html = buildOutvinDealerReportPdfInnerHtml(report);
-    expect(html).toContain("pdf-v1-kv-pair");
+    expect(html).toContain("pdf-dealer-vehicle-kv");
     expect(html).toContain("pdf-v1-kv");
+    expect(html).not.toContain("pdf-v1-kv-pair");
     expect(html).not.toContain("mirror-table--outvin-vehicle");
     expect(html).not.toContain("pdf-outvin-equipment-grid");
   });
