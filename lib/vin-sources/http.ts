@@ -2,7 +2,7 @@ import "server-only";
 
 import { ProxyAgent } from "undici";
 
-import { mergeCookieHeader } from "@/lib/vin-sources/html-extract";
+import { cookieHeaderFromSetCookieLines, mergeCookieHeader, splitCombinedSetCookieHeader } from "@/lib/vin-sources/html-extract";
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -17,10 +17,10 @@ export type VinHttpResult = {
 
 function cookieFrom(res: Response): string {
   const rows = typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [];
-  const parts = rows.map((row) => row.split(";")[0]?.trim() ?? "").filter(Boolean);
-  if (parts.length > 0) return parts.join("; ");
+  if (rows.length > 0) return cookieHeaderFromSetCookieLines(rows);
   const single = res.headers.get("set-cookie");
-  return single ? single.split(";")[0]!.trim() : "";
+  if (!single) return "";
+  return cookieHeaderFromSetCookieLines(splitCombinedSetCookieHeader(single));
 }
 
 export async function vinHttpFetch(

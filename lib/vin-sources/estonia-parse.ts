@@ -13,6 +13,12 @@ import {
 
 export const MNT_NOT_FOUND = /Sisestatud andmetega sõidukit registris ei ole/i;
 export const MNT_CAPTCHA_ERROR = /reCAPTCHA valideerimise viga/i;
+export const LKF_NOT_IN_REGISTRY =
+  /andmeid ei ole liikluskindlustuse registris|registris (puuduvad|ei ole) andm|ei leitud.{0,40}registrist/i;
+export const LKF_CAPTCHA_ERROR = /captcha|reCAPTCHA|kinnitusväljakutse aegus/i;
+export const LKF_NO_CLAIMS =
+  /(kahju|juhtum)\w*\s+(ei ole|puuduvad)|ei ole osalenud|puuduvad andmed|kindlustusjuhtumeid ei ole|kahjujuhtumeid ei ole|juhtumeid ei leitud|ei ole liikluskindlustuse juhtum|sõidukiga ei ole toimunud/i;
+const LKF_SEARCH_FORM = /Sõiduki registrimärk või VIN-kood|history_traffic_accidents_form|edit-vehicle/i;
 const COUNTRY_LV = "Igaunija";
 
 type PageTable = ExtractedPage["tables"][number];
@@ -145,7 +151,13 @@ export function parseMntExtract(vin: string, data: ExtractedPage): VinSourceFetc
 }
 
 export function parseLkfExtract(vin: string, data: ExtractedPage): VinSourceFetchResult {
-  if (/andmeid ei ole liikluskindlustuse registris/i.test(data.text)) {
+  if (LKF_CAPTCHA_ERROR.test(data.text) && /vale|incorrect|failed|neõige|viga|aegus|not correct|nav pareiz/i.test(data.text)) {
+    return {
+      ...emptyVinSourceResult("lkf_ee", vin, "reCAPTCHA neizdevās"),
+      raw: data.text,
+    };
+  }
+  if (LKF_NOT_IN_REGISTRY.test(data.text)) {
     return {
       ...emptyVinSourceResult("lkf_ee", vin, "VIN nav Igaunijas OCTA reģistrā - visticamāk nav bijis reģistrēts Igaunijā"),
       raw: data.text,
@@ -177,9 +189,8 @@ export function parseLkfExtract(vin: string, data: ExtractedPage): VinSourceFetc
     notes.push("Atlīdzības summas publiski netiek rādītas.");
   }
 
-  const noClaims =
-    incidents.length === 0 &&
-    /(kahju|juhtum)\w*\s+(ei ole|puuduvad)|ei ole osalenud|puuduvad andmed/i.test(data.text);
+  const noClaims = incidents.length === 0 && LKF_NO_CLAIMS.test(data.text);
+  const stillSearchForm = incidents.length === 0 && !noClaims && LKF_SEARCH_FORM.test(data.text);
 
   return {
     source: "lkf_ee",
@@ -190,7 +201,9 @@ export function parseLkfExtract(vin: string, data: ExtractedPage): VinSourceFetc
         ? `Atrasti ${incidents.length} OCTA atlīdzības gadījumi`
         : noClaims
           ? "OCTA atlīdzības gadījumi nav atrasti"
-          : "Atbilde nav automātiski klasificēta - pārbaudi RAW tekstu",
+          : stillSearchForm
+            ? "lkf.ee atbilde palika meklēšanas forma - pārbaudi RAW tekstu"
+            : "Atbilde nav automātiski klasificēta - pārbaudi RAW tekstu",
     mileage: [],
     incidents,
     timeline: [],
