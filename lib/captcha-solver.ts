@@ -59,7 +59,8 @@ export function hasCaptchaSolverKey(): boolean {
   return getCaptchaSolverApiKey().length > 8;
 }
 
-export const CAPSOLVER_PROXYLESS_TIMEOUT_MS = 45_000;
+/** ProxyLess reCAPTCHA (mnt.ee v3): CapSolver parasti gatavs ~4 s, bet Vercel poll var kavēties. */
+export const CAPSOLVER_PROXYLESS_TIMEOUT_MS = 90_000;
 /** Proxied reCAPTCHA (Fixie) bieži pārsniedz 45 s poll; CapSolver docs: URL forma DNS hostiem. */
 export const CAPSOLVER_PROXIED_TIMEOUT_MS = 120_000;
 
@@ -254,6 +255,8 @@ type SolveDeps = {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   timeoutMs?: number;
+  /** Testiem: fiksēts pulkstenis, lai poll noildze nebūtu reāls 90 s. */
+  now?: () => number;
   /** Admin UI: `mnt.ee` / `lkf.ee` / `car.info`. */
   sourceLabel?: string;
 };
@@ -270,8 +273,83 @@ function isProxyConnectFailure(reason: string): boolean {
   return /custom proxy connect failed/i.test(reason);
 }
 
+function isAbortLike(e: unknown): boolean {
+  return e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError");
+}
+
 export function defaultCaptchaSolveTimeoutMs(task: CaptchaTask): number {
   return taskUsesCustomProxy(task) ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS;
+}
+
+/** CapSolver `task.type` (ProxyLess vs proxied) diagnostikai. */
+export function captchaTaskTypeName(task: CaptchaTask): string {
+  const recaptchaTask = captchaCreateTaskBody("k", task).task as Record<string, unknown>;
+  return String(recaptchaTask.type ?? task.kind);
+}
+
+export function formatCaptchaPollTimeoutReason(info: {
+  taskType: string;
+  taskId?: string;
+  lastStatus?: string;
+  attempt: number;
+  maxAttempts: number;
+}): string {
+  const bits = [info.taskType];
+  const id = info.taskId?.trim();
+  if (id) bits.push(`uzdevums ${id.slice(0, 8)}`);
+  bits.push(`statuss ${info.lastStatus?.trim() || "nav"}`);
+  if (info.maxAttempts > 1) bits.push(`mēģinājums ${info.attempt}/${info.maxAttempts}`);
+  return `CapSolver: žetons neatnāca laikā (${bits.join(", ")})`;
+}
+
+function remainingMs(deadline: number, now: () => number): number {
+  return Math.max(1_000, deadline - now());
+}
+
+function pollStatusLabel(raw: unknown): string {
+  if (!raw || typeof raw !== "object") return "tukša_atbilde";
+  const o = raw as Record<string, unknown>;
+  if (Number(o.errorId ?? 0) !== 0) {
+    return String(o.errorDescription || o.errorCode || "kļūda").slice(0, 80);
+  }
+  return String(o.status ?? "").trim() || "nav";
+}
+
+function appendHttpIfNeeded(reason: string, httpStatus: number): string {
+  if (httpStatus >= 400 && !/HTTP \d+/.test(reason)) return `${reason} (HTTP ${httpStatus})`;
+  return reason;
+}
+
+async function capsolverPostJson(
+  fetchImpl: typeof fetch,
+  url: string,
+  payload: unknown,
+  timeoutMs: number,
+): Promise<{ json: unknown; httpStatus: number } | { networkReason: string }> {
+  const endpoint = url.includes("createTask") ? "createTask" : "getTaskResult";
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), Math.max(1_000, timeoutMs));
+  try {
+    const res = await fetchImpl(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+      signal: ctrl.signal,
+    });
+    const httpStatus = typeof (res as Response).status === "number" ? (res as Response).status : 200;
+    const json: unknown = await res.json().catch(() => null);
+    if (json == null) {
+      return { networkReason: `CapSolver ${endpoint}: tukša atbilde (HTTP ${httpStatus})` };
+    }
+    return { json, httpStatus };
+  } catch (e) {
+    if (isAbortLike(e)) return { networkReason: `CapSolver ${endpoint}: tīkla noildze` };
+    const msg = e instanceof Error ? e.message.slice(0, 160) : "kļūda";
+    return { networkReason: `CapSolver ${endpoint}: tīkls (${msg})` };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function labeledSolveResult(result: CaptchaSolveResult, sourceLabel?: string): CaptchaSolveResult {
@@ -287,53 +365,90 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
   }
   const fetchImpl = deps.fetchImpl ?? fetch;
   const sleep = deps.sleep ?? defaultSleep;
+  const now = deps.now ?? Date.now;
   const timeoutMs = deps.timeoutMs ?? defaultCaptchaSolveTimeoutMs(task);
-  const maxCreateAttempts = taskUsesCustomProxy(task) ? 2 : 1;
+  const proxied = taskUsesCustomProxy(task);
+  const taskType = captchaTaskTypeName(task);
+  const payload = captchaCreateTaskBody(apiKey, task);
+  const maxAttempts = 2;
 
-  let lastReason = "CapSolver: žetons neatnāca laikā";
-  for (let attempt = 1; attempt <= maxCreateAttempts; attempt += 1) {
-    const deadline = Date.now() + timeoutMs;
-    const createdRes = await fetchImpl(CREATE_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(captchaCreateTaskBody(apiKey, task)),
-      cache: "no-store",
-    });
-    const createdJson: unknown = await createdRes.json().catch(() => null);
-    const created = parseCaptchaCreateTask(createdJson);
+  let lastReason = formatCaptchaPollTimeoutReason({
+    taskType,
+    lastStatus: "nav",
+    attempt: 1,
+    maxAttempts: proxied ? 1 : maxAttempts,
+  });
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const deadline = now() + timeoutMs;
+    const createdPost = await capsolverPostJson(fetchImpl, CREATE_URL, payload, remainingMs(deadline, now));
+    if ("networkReason" in createdPost) {
+      return labeledSolveResult({ ok: false, reason: createdPost.networkReason }, label);
+    }
+
+    const immediate = parseCaptchaTaskResult(createdPost.json);
+    if (!("pending" in immediate) && immediate.ok) {
+      return labeledSolveResult(immediate, label);
+    }
+
+    const created = parseCaptchaCreateTask(createdPost.json);
     if ("reason" in created) {
-      lastReason = created.reason;
-      if (attempt < maxCreateAttempts && isProxyConnectFailure(created.reason)) {
+      const reason = appendHttpIfNeeded(created.reason, createdPost.httpStatus);
+      lastReason = reason;
+      if (attempt < maxAttempts && proxied && isProxyConnectFailure(reason)) {
         await sleep(2500);
         continue;
       }
-      return labeledSolveResult({ ok: false, reason: created.reason }, label);
+      return labeledSolveResult({ ok: false, reason }, label);
     }
 
+    let lastStatus = pollStatusLabel(createdPost.json);
     await sleep(2000);
-    while (Date.now() < deadline) {
-      const pollRes = await fetchImpl(RESULT_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ clientKey: apiKey, taskId: created.taskId }),
-        cache: "no-store",
-      });
-      const pollJson: unknown = await pollRes.json().catch(() => null);
-      const parsed = parseCaptchaTaskResult(pollJson);
+    let retryCreateForProxy = false;
+    while (now() < deadline) {
+      const pollPost = await capsolverPostJson(
+        fetchImpl,
+        RESULT_URL,
+        { clientKey: apiKey, taskId: created.taskId },
+        remainingMs(deadline, now),
+      );
+      if ("networkReason" in pollPost) {
+        lastStatus = pollPost.networkReason.replace(/^CapSolver getTaskResult:\s*/i, "");
+        if (now() >= deadline) break;
+        await sleep(1500);
+        continue;
+      }
+      lastStatus = pollStatusLabel(pollPost.json);
+      const parsed = parseCaptchaTaskResult(pollPost.json);
       if ("pending" in parsed) {
         await sleep(1500);
         continue;
       }
-      if (!parsed.ok && attempt < maxCreateAttempts && isProxyConnectFailure(parsed.reason)) {
+      if (!parsed.ok && attempt < maxAttempts && proxied && isProxyConnectFailure(parsed.reason)) {
         lastReason = parsed.reason;
+        retryCreateForProxy = true;
         await sleep(2500);
         break;
       }
       return labeledSolveResult(parsed, label);
     }
-    if (Date.now() >= deadline) {
-      return labeledSolveResult({ ok: false, reason: "CapSolver: žetons neatnāca laikā" }, label);
+    if (retryCreateForProxy) continue;
+
+    lastReason = formatCaptchaPollTimeoutReason({
+      taskType,
+      taskId: created.taskId,
+      lastStatus,
+      attempt,
+      maxAttempts: proxied ? 1 : maxAttempts,
+    });
+    if (!proxied && attempt < maxAttempts) {
+      console.warn("[capsolver] ProxyLess poll noildze, atkārtoju createTask", lastReason);
+      await sleep(1500);
+      continue;
     }
+    console.warn("[capsolver]", lastReason);
+    return labeledSolveResult({ ok: false, reason: lastReason }, label);
   }
+  console.warn("[capsolver]", lastReason);
   return labeledSolveResult({ ok: false, reason: lastReason }, label);
 }

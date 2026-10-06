@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   CAPSOLVER_PROXIED_TIMEOUT_MS,
+  CAPSOLVER_PROXYLESS_TIMEOUT_MS,
   getCaptchaSolverProxy,
   solveCaptcha,
   vinStickyHttpProxyUrl,
@@ -69,7 +70,7 @@ export async function fetchLkfHttp(vin: string): Promise<VinSourceFetchResult> {
       websiteKey: LKF_SITE_KEY,
       proxy: capProxy || undefined,
     },
-    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000, sourceLabel: "lkf.ee" },
+    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS, sourceLabel: "lkf.ee" },
   );
   if (!solved.ok) return fail(vin, solved.reason, page.text);
 

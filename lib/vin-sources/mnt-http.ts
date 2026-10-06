@@ -7,6 +7,7 @@ import "server-only";
 
 import {
   CAPSOLVER_PROXIED_TIMEOUT_MS,
+  CAPSOLVER_PROXYLESS_TIMEOUT_MS,
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
   mntFormHttpProxyUrl,
@@ -124,7 +125,10 @@ export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSource
       pageAction: MNT_ACTION,
       proxy: capProxy,
     },
-    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000, sourceLabel: "mnt.ee" },
+    {
+      timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS,
+      sourceLabel: "mnt.ee",
+    },
   );
   if (!solved.ok) return fail(vin, solved.reason, page.text);
 
