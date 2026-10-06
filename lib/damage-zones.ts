@@ -69,13 +69,41 @@ const DAMAGE_GROUP_GLUE_RE = new RegExp(
 
 const DAMAGE_LABEL_MAX_LEN = 90;
 
+/** `BuferisAizmugure`, `detaļasĀrējais` - PDF bieži salīmē nākamo birku bez atstarpes. */
+const DAMAGE_CAMEL_GLUE_RE = new RegExp(
+  `([${LV_WORD}0-9]*[a-zāčēģīķļņšūž0-9])(?=[A-ZĀČĒĢĪĶĻŅŠŪŽ])`,
+  "g",
+);
+
+const PART_HINT_RE =
+  /\/|bufer|durv|luktur|apgaismoj|sp[āa]rns|kapot|p[āa]rsegs|bag[āa]ž|stikl|rest|slieksn|arka|panel|motora/i;
+
+const CATEGORY_CHUNK_RE =
+  /\s+(?=(?:Ārēj[āa]s\s+virsb|Ārējais|Virsbūves\s+[āa]rēj|Virsbūves\s+konstrukcij|Transportlīdzekļu|Balstiekārtas|Piekares|Dzesēšanas)\b)/i;
+
+export function unglueDamageLabelText(raw: string): string {
+  return raw.replace(DAMAGE_CAMEL_GLUE_RE, "$1 ");
+}
+
+export function normalizeDamageLabel(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const CANONICAL_ZONE_NORM = new Set(Object.values(ZONE_LABEL).map((l) => normalizeDamageLabel(l)));
+
 export function clipVendorDamageField(raw: string): string {
   let t = reattachLatvianPdfDiacritics(raw).replace(/\s+/g, " ").trim();
   if (!t) return "";
   const cut = t.search(DAMAGE_META_CUT_RE);
   if (cut >= 0) t = t.slice(0, cut);
   t = t.replace(/\b[A-HJ-NPR-Z0-9]{17}\b/g, " ");
-  return t.replace(/\s+/g, " ").replace(/[;·,./:\s-]+$/g, "").trim();
+  t = unglueDamageLabelText(t.replace(/\s+/g, " ").replace(/[;·,./:\s-]+$/g, "").trim());
+  return t.replace(/\s+/g, " ").trim();
 }
 
 function isDamageLabelNoise(s: string): boolean {
@@ -112,23 +140,48 @@ export function classifyDamageSegment(seg: string): DamageZoneId[] {
   return [];
 }
 
+function uniqueDamageLabels(parts: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const t = p.replace(/^[-–—•]\s*/, "").trim();
+    if (t.length < 2 || ZONE_LIST_HEADING_RE.test(t) || GROUP_LIST_HEADING_RE.test(t)) continue;
+    const k = t.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
+}
+
+function splitCategoryChunks(seg: string): string[] {
+  return seg
+    .split(CATEGORY_CHUNK_RE)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 1);
+}
+
+function peelLeadingZoneWord(seg: string): string[] {
+  const t = seg.replace(/\s+/g, " ").trim();
+  if (!t) return [];
+  const words = t.split(" ");
+  if (words.length < 2) return [t];
+  for (let n = Math.min(4, words.length - 1); n >= 1; n--) {
+    const head = words.slice(0, n).join(" ");
+    const tail = words.slice(n).join(" ");
+    if (!isCanonicalDamageZoneLabel(head)) continue;
+    if (tail.startsWith("/")) return [t];
+    return [head, ...splitCategoryChunks(tail)];
+  }
+  return splitCategoryChunks(t);
+}
+
 /** Avota birkas (CarVertical `Zona / Detaļa`, AutoDNA `- zona`) — jebkuras nākamās daļas, ne tikai šī VIN. */
 export function splitDamageSegments(raw: string): string[] {
   const t = clipVendorDamageField(raw);
   if (!t || t === "—") return [];
-  const parts = t
-    .split(DAMAGE_AREA_SPLIT_RE)
-    .map((s) => s.replace(/^[-–—•]\s*/, "").trim())
-    .filter((s) => s.length > 1 && !ZONE_LIST_HEADING_RE.test(s) && !GROUP_LIST_HEADING_RE.test(s));
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const p of parts) {
-    const k = p.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(p);
-  }
-  return out;
+  const parts = t.split(DAMAGE_AREA_SPLIT_RE).flatMap((s) => peelLeadingZoneWord(s));
+  return uniqueDamageLabels(parts);
 }
 
 export function parseDamageZoneHits(raw: string): DamageZoneHit[] {
@@ -160,6 +213,55 @@ export function damageZoneDisplayLabels(raw: string): string[] {
 
 export function damageGroupDisplayLabels(raw: string): string[] {
   return splitLooseLabels(raw);
+}
+
+export function damageZoneCanonicalLabels(ids: DamageZoneId[]): string[] {
+  return ids.map((id) => ZONE_LABEL[id]);
+}
+
+export function isCanonicalDamageZoneLabel(label: string): boolean {
+  return CANONICAL_ZONE_NORM.has(normalizeDamageLabel(label));
+}
+
+export function isDamageGroupLikeLabel(label: string): boolean {
+  const t = label.trim();
+  if (!t || /\//.test(t)) return false;
+  const n = normalizeDamageLabel(t);
+  const groupish = /(?:virsbuv.*(?:arej|konstrukcij)|arej.*virsbuv|apgaismoj|balstiekart|piekar|dzesesan)/.test(n);
+  if (!groupish) return false;
+  if (classifyDamageSegment(t).length > 0 && !/apgaismoj|virsbuv|balstiekart|piekar/i.test(t)) return false;
+  return true;
+}
+
+export function isVendorPartLabel(label: string): boolean {
+  const t = label.trim();
+  if (!t || isCanonicalDamageZoneLabel(t) || isDamageGroupLikeLabel(t)) return false;
+  if (PART_HINT_RE.test(t)) return true;
+  if (classifyDamageSegment(t).length > 0 && !/\//.test(t)) return false;
+  return true;
+}
+
+function damageGroupSynonymKey(label: string): string {
+  const n = normalizeDamageLabel(label);
+  if (/(?:virsbuv.*arej|arej.*virsbuv)/.test(n)) return "body_outer";
+  if (/virsbuv.*konstrukcij/.test(n)) return "body_struct";
+  if (/apgaismoj/.test(n)) return "lighting";
+  if (/(?:balstiekart|piekar)/.test(n)) return "suspension";
+  return n;
+}
+
+export function mergeSynonymDamageGroupLabels(labels: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of labels) {
+    const t = raw.trim();
+    if (!t) continue;
+    const k = damageGroupSynonymKey(t);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
 }
 
 function splitLooseLabels(raw: string): string[] {

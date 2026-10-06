@@ -145,7 +145,7 @@ import {
   PROVIN_REPORT_PRINT_INK_CLASS,
 } from "@/lib/client-report-print-ink-css";
 import { buildSourceMileageSparkHtml, buildUnifiedMileageChartWrapHtml } from "@/lib/unified-mileage-chart";
-import { buildDamageZoneSilhouetteSvg } from "@/lib/damage-zones";
+import { buildDamageZoneSilhouetteSvg, damageZoneCanonicalLabels } from "@/lib/damage-zones";
 import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
@@ -1188,11 +1188,31 @@ function incidentCountBadgeHtml(n: number): string {
   return `<span class="pdf-incident-count">${escapeHtml(formatUnifiedIncidentCountLabel(n))}</span>`;
 }
 
+function incidentChipListHtml(labels: string[], extraClass = ""): string {
+  if (labels.length === 0) return "";
+  const cls = extraClass ? `pdf-incident-chips ${extraClass}` : "pdf-incident-chips";
+  return `<ul class="${cls}">${labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`;
+}
+
+function incidentDamageRowHtml(label: string, body: string): string {
+  if (!body) return "";
+  return `<div class="pdf-incident-dmg__row"><p class="pdf-incident-dmg__lab">${escapeHtml(label)}</p>${body}</div>`;
+}
+
 function buildIncidentDamageChipsHtml(dmg: UnifiedIncidentDamage | null): string {
   if (!dmg) return "";
-  const labels = [...dmg.zoneLabels, ...dmg.groupLabels];
-  if (labels.length === 0) return "";
-  return `<ul class="pdf-incident-chips">${labels.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`;
+  const zones = damageZoneCanonicalLabels(dmg.zoneIds);
+  const parts = dmg.partLabels;
+  const groups = dmg.groupLabels;
+  if (zones.length === 0 && parts.length === 0 && groups.length === 0) return "";
+  const rows = [
+    incidentDamageRowHtml("Zonas", incidentChipListHtml(zones)),
+    incidentDamageRowHtml("Detaļas", incidentChipListHtml(parts, "pdf-incident-chips--parts")),
+    incidentDamageRowHtml("Grupas", incidentChipListHtml(groups)),
+  ]
+    .filter(Boolean)
+    .join("");
+  return rows ? `<div class="pdf-incident-dmg">${rows}</div>` : "";
 }
 
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number | string): string {
@@ -1201,7 +1221,13 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number |
   const countryLabel = c.country.trim() || "-";
   const flag = pdfCountryFlagEmoji(countryLabel);
   const dmg = c.damage;
-  const withDmg = Boolean(dmg && (dmg.zoneIds.length > 0 || dmg.zoneLabels.length > 0 || dmg.groupLabels.length > 0));
+  const withDmg = Boolean(
+    dmg &&
+      (dmg.zoneIds.length > 0 ||
+        dmg.zoneLabels.length > 0 ||
+        dmg.partLabels.length > 0 ||
+        dmg.groupLabels.length > 0),
+  );
   const svg = buildDamageZoneSilhouetteSvg(dmg?.zoneIds ?? [], `c${index}`, undefined, dmg?.zoneLabels ?? []);
   const chips = buildIncidentDamageChipsHtml(dmg);
   const country = `<span class="pdf-life-country"><span class="pdf-country-flag" aria-hidden="true">${flag}</span><span>${escapeHtml(countryLabel)}</span></span>`;
@@ -2865,12 +2891,19 @@ ${sourceDotColorCss()}
         font-size:15px!important;font-weight:800!important;color:#B91C1C!important;
       }
       .pdf-inc-amount .pdf-warn-tri-ico{width:17px!important;height:17px!important;}
-      .pdf-incident-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;padding:0;list-style:none;}
+      .pdf-incident-dmg{margin:6px 0 0;display:flex;flex-direction:column;gap:7px;}
+      .pdf-incident-dmg__lab{
+        margin:0 0 4px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+        color:#64748B;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-incident-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none;}
       .pdf-incident-chips li{
         margin:0;padding:3px 8px;border-radius:999px;border:1px solid #E2E8F0;background:#F8FAFC;
-        color:#475569;font-size:11px;font-weight:600;line-height:1.3;
+        color:#475569;font-size:11px;font-weight:600;line-height:1.35;max-width:100%;
+        white-space:normal;overflow-wrap:anywhere;word-break:break-word;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-incident-chips--parts li{border-radius:6px;}
       .pdf-incident-card__srcs{margin:8px 0 0;padding:0;border:none;}
       .pdf-dmg-sil{display:block;width:120px;height:auto;max-width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .pdf-listing-price-history-foot{

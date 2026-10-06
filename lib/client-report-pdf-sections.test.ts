@@ -1626,7 +1626,7 @@ describe("unified PDF sections single block", () => {
               date: "01.06.2024",
               country: "Šveice",
               lossAmount: "5001 € - 10 000 €",
-              damagedSides: "Kreisā puse Priekšpuse",
+              damagedSides: "Kreisā puse / Buferis Priekšpuse",
               damageGroups: "Ārējās virsbūves detaļas",
             },
           ],
@@ -1642,10 +1642,15 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-inc-amount");
     expect(html).toContain("pdf-dmg-sil");
     expect(html).toContain("pdf-incident-chips");
+    expect(html).toContain("pdf-incident-dmg__lab");
+    expect(html).toContain(">Zonas<");
+    expect(html).toContain(">Detaļas<");
+    expect(html).toContain(">Grupas<");
     expect(html).not.toContain("Bojājumu zonas");
     expect(html).not.toContain("Bojājumu grupas");
-    expect(html).toContain("Kreisā puse");
+    expect(html).toContain("Kreisais sāns");
     expect(html).toContain("Priekšpuse");
+    expect(html).toContain("Kreisā puse / Buferis");
     expect(html).toContain("Ārējās virsbūves detaļas");
     expect(html).not.toContain("pdf-cv-damage-sub");
     expect(html).not.toContain("pdf-cv-damage-chart");
@@ -1677,6 +1682,9 @@ Bojājumu zona
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("pdf-dmg-sil");
     expect(html).toContain("pdf-incident-chips");
+    expect(html).toContain(">Zonas<");
+    expect(html).toContain(">Grupas<");
+    expect(html).not.toContain(">Detaļas<");
     expect(html).not.toContain("Bojājumu zonas");
     expect(html).toContain("Priekšpuse");
   });

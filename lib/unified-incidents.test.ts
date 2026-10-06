@@ -163,6 +163,7 @@ describe("aggregateUnifiedIncidents", () => {
       ],
     );
     expect(agg.clusters[0]?.damage?.zoneIds.sort()).toEqual(["front", "front_left", "front_right"]);
+    expect(agg.clusters[0]?.damage?.partLabels).toEqual([]);
     expect(agg.clusters[0]?.damage?.groupLabels).toEqual(["Virsbūves ārējās daļas"]);
   });
 
@@ -189,10 +190,51 @@ describe("aggregateUnifiedIncidents", () => {
         },
       ],
     );
-    expect(agg.clusters[0]?.damage?.groupLabels).toEqual([
-      "Virsbūves ārējās daļas",
-      "Ārējās virsbūves detaļas",
-    ]);
+    expect(agg.clusters[0]?.damage?.groupLabels).toEqual(["Virsbūves ārējās daļas"]);
+  });
+
+  it("apkopo AutoDNA zonas un CarVertical detaļas vienā C slāņu kartē", () => {
+    const agg = aggregateUnifiedIncidents(
+      [
+        row({
+          date: "01.11.2011",
+          lossAmount: "4 500 - 4 750 €",
+          country: "Vācija",
+          sourceLabel: "AutoDNA",
+          sortableTime: Date.UTC(2011, 10, 1),
+          sourceOrder: 0,
+        }),
+        row({
+          date: "01.11.2011",
+          lossAmount: "4 500 - 5 000 €",
+          country: "Vācija",
+          sourceLabel: "CarVertical",
+          sortableTime: Date.UTC(2011, 10, 1),
+          sourceOrder: 1,
+        }),
+      ],
+      [
+        {
+          date: "01.11.2011",
+          country: "Vācija",
+          lossAmount: "4 500 - 4 750 €",
+          damagedSides: "Aizmugure Kreisā sāna",
+          damageGroups: "Virsbūves ārējās daļas Transportlīdzekļu apgaismojums",
+        },
+        {
+          date: "01.11.2011",
+          country: "Vācija",
+          lossAmount: "4 500 - 5 000 €",
+          damagedSides: "Kreisā aizmugurējā daļa / BuferisAizmugure Buferis",
+          damageGroups: "Ārējās virsbūves detaļas Ārējais apgaismojums",
+        },
+      ],
+    );
+    const dmg = agg.clusters[0]?.damage;
+    expect(dmg?.zoneIds.sort()).toEqual(["left", "rear", "rear_left"]);
+    expect(dmg?.partLabels).toEqual(expect.arrayContaining(["Kreisā aizmugurējā daļa / Buferis", "Buferis"]));
+    expect(dmg?.partLabels.join(" ")).not.toMatch(/BuferisAizmugure/);
+    expect(dmg?.groupLabels).toEqual(["Virsbūves ārējās daļas", "Transportlīdzekļu apgaismojums"]);
   });
 });
 

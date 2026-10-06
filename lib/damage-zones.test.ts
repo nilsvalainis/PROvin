@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildDamageZoneSilhouetteSvg,
   damageGroupDisplayLabels,
+  damageZoneCanonicalLabels,
   damageZoneDisplayLabels,
+  isVendorPartLabel,
+  mergeSynonymDamageGroupLabels,
   parseDamageZoneHits,
   resolveDamageMarks,
 } from "@/lib/damage-zones";
@@ -56,6 +59,23 @@ describe("parseDamageZoneHits", () => {
     const hits = parseDamageZoneHits("Ārējais apgaismojums");
     expect(hits).toEqual([]);
     expect(damageZoneDisplayLabels("Ārējais apgaismojums")).toEqual(["Ārējais apgaismojums"]);
+  });
+
+  it("sašķeļ salīmētas CarVertical un AutoDNA birkas", () => {
+    const labels = damageZoneDisplayLabels(
+      "Kreisā aizmugurējā daļa / BuferisAizmugure Buferis Ārējās virsbūves detaļasĀrējais apgaismojums",
+    );
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        "Kreisā aizmugurējā daļa / Buferis",
+        "Aizmugure",
+        "Buferis",
+        "Ārējās virsbūves detaļas",
+        "Ārējais apgaismojums",
+      ]),
+    );
+    expect(labels.join(" ")).not.toMatch(/BuferisAizmugure/);
+    expect(labels.join(" ")).not.toMatch(/detaļasĀrējais/i);
   });
 });
 
@@ -144,5 +164,25 @@ describe("damageGroupDisplayLabels", () => {
     expect(labels.join(" ")).not.toMatch(/līdzīg/i);
     expect(labels.join(" ")).not.toMatch(/NEGADĪJUMU/i);
     expect(labels.join(" ")).not.toMatch(/saskaņot/i);
+  });
+});
+
+describe("incident damage layers", () => {
+  it("atpazīst kanoniskās zonas un avota detaļas", () => {
+    expect(damageZoneCanonicalLabels(["rear", "rear_left"])).toEqual(["Aizmugure", "Kreisā sāna aizmugure"]);
+    expect(isVendorPartLabel("Aizmugure")).toBe(false);
+    expect(isVendorPartLabel("Kreisā aizmugurējā daļa / Buferis")).toBe(true);
+    expect(isVendorPartLabel("Kreisā sāna priekšpuse")).toBe(false);
+  });
+
+  it("saplūdina AutoDNA un CarVertical grupu sinonīmus", () => {
+    expect(
+      mergeSynonymDamageGroupLabels([
+        "Virsbūves ārējās daļas",
+        "Ārējās virsbūves detaļas",
+        "Transportlīdzekļu apgaismojums",
+        "Ārējais apgaismojums",
+      ]),
+    ).toEqual(["Virsbūves ārējās daļas", "Transportlīdzekļu apgaismojums"]);
   });
 });

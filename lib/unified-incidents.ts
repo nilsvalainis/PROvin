@@ -12,6 +12,9 @@ import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   damageGroupDisplayLabels,
   damageZoneDisplayLabels,
+  isDamageGroupLikeLabel,
+  isVendorPartLabel,
+  mergeSynonymDamageGroupLabels,
   parseDamageZoneHits,
   type DamageZoneId,
 } from "@/lib/damage-zones";
@@ -54,6 +57,7 @@ export type UnifiedIncidentCluster = {
 export type UnifiedIncidentDamage = {
   zoneIds: DamageZoneId[];
   zoneLabels: string[];
+  partLabels: string[];
   groupLabels: string[];
 };
 
@@ -392,10 +396,11 @@ function mergeClusterDamage(details: UnifiedIncidentDamageInput[]): UnifiedIncid
   if (details.length === 0) return null;
   const zoneIds: DamageZoneId[] = [];
   const zoneLabels: string[] = [];
+  const partLabels: string[] = [];
   const zoneIdSeen = new Set<DamageZoneId>();
   const zoneLabelSeen = new Set<string>();
-  const groupLabels: string[] = [];
-  const groupSeen = new Set<string>();
+  const partSeen = new Set<string>();
+  const groupRaw: string[] = [];
   for (const d of details) {
     const hits = parseDamageZoneHits(d.damagedSides);
     for (const h of hits) {
@@ -404,20 +409,27 @@ function mergeClusterDamage(details: UnifiedIncidentDamageInput[]): UnifiedIncid
       zoneIds.push(h.id);
     }
     for (const label of damageZoneDisplayLabels(d.damagedSides)) {
+      if (isDamageGroupLikeLabel(label)) {
+        groupRaw.push(label);
+        continue;
+      }
       const k = label.toLowerCase();
-      if (zoneLabelSeen.has(k)) continue;
-      zoneLabelSeen.add(k);
-      zoneLabels.push(label);
+      if (!zoneLabelSeen.has(k)) {
+        zoneLabelSeen.add(k);
+        zoneLabels.push(label);
+      }
+      if (isVendorPartLabel(label) && !partSeen.has(k)) {
+        partSeen.add(k);
+        partLabels.push(label);
+      }
     }
-    for (const g of damageGroupDisplayLabels(d.damageGroups)) {
-      const k = g.toLowerCase();
-      if (groupSeen.has(k)) continue;
-      groupSeen.add(k);
-      groupLabels.push(g);
-    }
+    groupRaw.push(...damageGroupDisplayLabels(d.damageGroups));
   }
-  if (zoneIds.length === 0 && zoneLabels.length === 0 && groupLabels.length === 0) return null;
-  return { zoneIds, zoneLabels, groupLabels };
+  const groupLabels = mergeSynonymDamageGroupLabels(groupRaw);
+  if (zoneIds.length === 0 && zoneLabels.length === 0 && partLabels.length === 0 && groupLabels.length === 0) {
+    return null;
+  }
+  return { zoneIds, zoneLabels, partLabels, groupLabels };
 }
 
 export function formatUnifiedIncidentCountLabel(n: number): string {
