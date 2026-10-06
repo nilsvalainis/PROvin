@@ -1,18 +1,23 @@
 import "server-only";
 
 /**
- * car.info — starptautisks agregators. Publiski un bez maksas rāda tikai daļu datu,
- * un lapa ir aiz bot aizsardzības. Servera (Vercel) vidē Playwright nav pieejams —
- * operators atver VIN saiti un ielīmē lapas tekstu adminā (parseCarinfoPastedText).
+ * car.info - starptautisks agregators (Zviedrija un citi Nordics).
+ * Primāri HTTP super-search + CapSolver Cloudflare. Redzams pārlūks paliek kā rezerve lokāli.
  */
 import { CARINFO_HOME_URL } from "@/lib/admin-vin-urls";
-import { createVinSourceContext, extractPageData, sleep } from "@/lib/vin-sources/browser";
+import {
+  createVinSourceContext,
+  extractPageData,
+  isVinSourcesBrowserAllowed,
+  sleep,
+} from "@/lib/vin-sources/browser";
+import { fetchCarinfoHttp } from "@/lib/vin-sources/carinfo-http";
 import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
 import { emptyVinSourceResult, type VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 const LOCALES = ["en-se", "en-dk", "en-de"] as const;
 
-export async function fetchCarInfo(vin: string): Promise<VinSourceFetchResult> {
+async function fetchCarInfoBrowser(vin: string): Promise<VinSourceFetchResult> {
   const { context, page } = await createVinSourceContext("carinfo");
   try {
     let loaded: { text: string; tables: { headers: string[]; rows: string[][] }[]; pairs: { label: string; value: string }[] } | null =
@@ -65,5 +70,18 @@ export async function fetchCarInfo(vin: string): Promise<VinSourceFetchResult> {
     };
   } finally {
     await context.close().catch(() => undefined);
+  }
+}
+
+export async function fetchCarInfo(vin: string): Promise<VinSourceFetchResult> {
+  try {
+    const http = await fetchCarinfoHttp(vin);
+    if (http.found) return http;
+    if (!/Cloudflare|CapSolver|neizdevās/i.test(http.message)) return http;
+    if (isVinSourcesBrowserAllowed()) return fetchCarInfoBrowser(vin);
+    return http;
+  } catch {
+    if (isVinSourcesBrowserAllowed()) return fetchCarInfoBrowser(vin);
+    return emptyVinSourceResult("carinfo", vin, "car.info HTTP ielase neizdevās");
   }
 }

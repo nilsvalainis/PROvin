@@ -1,21 +1,29 @@
 import "server-only";
 
+import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { isVinSourcesBrowserAllowed, VIN_SOURCES_BROWSER_UNAVAILABLE } from "@/lib/vin-sources/browser";
 import { fetchCarInfo } from "@/lib/vin-sources/carinfo";
 import { fetchLkf, fetchMnt } from "@/lib/vin-sources/estonia";
 import { fetchTjekbil } from "@/lib/vin-sources/tjekbil";
 import { emptyVinSourceResult, type VinSourceFetchResult, type VinSourceId } from "@/lib/vin-sources/types";
 
-/** Vai avotam vajadzīgs redzams pārlūks (reCAPTCHA / bot aizsardzība). */
+/** Vai avotam vajadzīgs redzams pārlūks, jo HTTP + CapSolver nav pieejams. */
+export function vinSourceNeedsBrowser(source: VinSourceId): boolean {
+  if (source === "tjekbil" || source === "carinfo") return false;
+  if (source === "mnt_ee" || source === "lkf_ee") return !hasCaptchaSolverKey();
+  return true;
+}
+
+/** @deprecated izmanto vinSourceNeedsBrowser */
 export const VIN_SOURCE_NEEDS_BROWSER: Record<VinSourceId, boolean> = {
   tjekbil: false,
   mnt_ee: true,
   lkf_ee: true,
-  carinfo: true,
+  carinfo: false,
 };
 
 export async function fetchVinSource(source: VinSourceId, vin: string, regMark = ""): Promise<VinSourceFetchResult> {
-  if (VIN_SOURCE_NEEDS_BROWSER[source] && !isVinSourcesBrowserAllowed()) {
+  if (vinSourceNeedsBrowser(source) && !isVinSourcesBrowserAllowed()) {
     return emptyVinSourceResult(source, vin, VIN_SOURCES_BROWSER_UNAVAILABLE);
   }
   switch (source) {

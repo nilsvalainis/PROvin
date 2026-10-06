@@ -195,24 +195,6 @@ export function AdminVinRegistrySourceBlock({
       setError("Pasūtījumā nav VIN — ievadi to pārskata sadaļā.");
       return;
     }
-    if (blockKey === "carinfo") {
-      const href = buildCarinfoVinCheckUrl(cleanVin);
-      if (href) {
-        const a = document.createElement("a");
-        a.href = href;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.dataset.provinHandoffVin = normalizeVinForServiceUrls(cleanVin);
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
-      setStatus("car.info atvērts. Pēc Read more teksts ir starpliktuvē — ielīmē RAW laukā (Cmd+V).");
-      window.setTimeout(() => {
-        document.getElementById(`${blockKey}-rawUnprocessedData`)?.focus();
-      }, 200);
-      return;
-    }
     if (blockKey === "finnik" || blockKey === "traficom_fi") return;
     setBusy(true);
     try {
@@ -423,11 +405,7 @@ export function AdminVinRegistrySourceBlock({
               onClick={() => void loadByVin()}
               className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
             >
-              {blockKey === "carinfo"
-                ? "Atvērt car.info"
-                : busy
-                  ? "Ielasu…"
-                  : "Ielasīt pēc VIN"}
+              {busy ? "Ielasu…" : "Ielasīt pēc VIN"}
             </button>
             {blockKey === "carinfo" && vin.trim() ? (
               <a
@@ -440,10 +418,20 @@ export function AdminVinRegistrySourceBlock({
                 MENU saite →
               </a>
             ) : null}
-            <span className="font-mono text-[10px] text-slate-500">{vin.trim() || "— nav VIN —"}</span>
+            <span className="font-mono text-[10px] text-slate-500">{vin.trim() || "- nav VIN -"}</span>
             {blockKey === "tjekbil" ? (
               <span className="text-[10px] text-slate-400">
-                tjekbil.dk (DMR + Færdselsstyrelsen apskates). Nummerplade.net — ja API atslēga ir iestatīta serverī.
+                tjekbil.dk (DMR + Færdselsstyrelsen apskates). Nummerplade.net - ja API atslēga ir iestatīta serverī.
+              </span>
+            ) : null}
+            {blockKey === "mnt_ee" || blockKey === "lkf_ee" ? (
+              <span className="text-[10px] text-slate-400">
+                HTTP ar CapSolver, ja CAPSOLVER_API_KEY ir iestatīta. Citādi lokāls pārlūks.
+              </span>
+            ) : null}
+            {blockKey === "carinfo" ? (
+              <span className="text-[10px] text-slate-400">
+                HTTP super-search. Cloudflare Challenge: CapSolver + CAPSOLVER_PROXY vai FIXIE_URL. RAW ielīmēšana paliek.
               </span>
             ) : null}
             {block.fetchedAt ? (

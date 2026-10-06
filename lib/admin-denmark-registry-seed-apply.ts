@@ -12,11 +12,14 @@ import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
 export const DENMARK_AUTO_SEED_PREFIX = "Automātiski pēc apmaksas";
 
 /** Vai bloks ir tukšs un reģistra zvans vispār var kaut ko dot. */
-export function denmarkSeedNeeded(block: VinRegistryBlockState | null | undefined): boolean {
+export function registrySeedNeeded(block: VinRegistryBlockState | null | undefined): boolean {
   if (!block) return true;
   if (vinRegistryBlockHasContent(block)) return false;
-  // Jau pārbaudīts automātiski (nav atrasts): otrs zvans tajā pašā pasūtījumā neko nemainīs.
   return !String(block.fetchMessage ?? "").startsWith(DENMARK_AUTO_SEED_PREFIX);
+}
+
+export function denmarkSeedNeeded(block: VinRegistryBlockState | null | undefined): boolean {
+  return registrySeedNeeded(block);
 }
 
 /**
@@ -24,7 +27,7 @@ export function denmarkSeedNeeded(block: VinRegistryBlockState | null | undefine
  * Atrasts: pilns bloks no avota, saglabājot operatora komentārus, AI kontekstu un foto.
  * Nav atrasts: tikai `fetchedAt` + `fetchMessage`, lai pārbaude ir redzama.
  */
-export function applyDenmarkSeedResult(
+export function applyRegistrySeedResult(
   current: VinRegistryBlockState,
   result: VinSourceFetchResult,
 ): VinRegistryBlockState | null {
@@ -42,4 +45,11 @@ export function applyDenmarkSeedResult(
     photoGroups: current.photoGroups ?? [],
     fetchMessage: message,
   };
+}
+
+export function applyDenmarkSeedResult(
+  current: VinRegistryBlockState,
+  result: VinSourceFetchResult,
+): VinRegistryBlockState | null {
+  return applyRegistrySeedResult(current, result);
 }

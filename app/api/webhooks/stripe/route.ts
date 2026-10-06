@@ -14,6 +14,8 @@ import { getStripe } from "@/lib/stripe";
 import { seedSsLvAdifyOnPaidOrder } from "@/lib/admin-ss-lv-adify-seed";
 import { seedCsddTechDataOnPaidOrder } from "@/lib/admin-csdd-tech-seed";
 import { seedDenmarkRegistryOnPaidOrder } from "@/lib/admin-denmark-registry-seed";
+import { seedEstoniaRegistryOnPaidOrder } from "@/lib/admin-estonia-registry-seed";
+import { seedSwedenRegistryOnPaidOrder } from "@/lib/admin-sweden-registry-seed";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
@@ -21,7 +23,7 @@ import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // `after` uzdevumi (dīlera dati, sludinājuma vēsture caur releju) turpina pēc atbildes.
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 function fulfillDedupeKey(sessionId: string): string {
   return `fulfill:${sessionId}`;
@@ -229,6 +231,30 @@ async function fulfillPaidCheckoutSession(
           }
         } catch (err) {
           console.error("[stripe webhook] Denmark registry seed:", err);
+        }
+
+        try {
+          const r = await seedEstoniaRegistryOnPaidOrder(session.id, order.vin);
+          if (r.ok) {
+            console.info("[stripe webhook] Estonia registry seeded", { sessionId: session.id, reason: r.reason });
+          } else if (r.reason !== "skip" && r.reason !== "no_vin" && r.reason !== "no_solver") {
+            console.warn("[stripe webhook] Estonia registry seed:", r.reason);
+          } else if (r.reason === "no_solver") {
+            console.warn("[stripe webhook] Estonia registry seed skipped: nav CAPSOLVER_API_KEY");
+          }
+        } catch (err) {
+          console.error("[stripe webhook] Estonia registry seed:", err);
+        }
+
+        try {
+          const r = await seedSwedenRegistryOnPaidOrder(session.id, order.vin);
+          if (r.ok) {
+            console.info("[stripe webhook] Sweden registry seeded", { sessionId: session.id, reason: r.reason });
+          } else if (r.reason !== "skip" && r.reason !== "no_vin") {
+            console.warn("[stripe webhook] Sweden registry seed:", r.reason);
+          }
+        } catch (err) {
+          console.error("[stripe webhook] Sweden registry seed:", err);
         }
       });
     }
