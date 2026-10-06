@@ -11,6 +11,7 @@ import {
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
   isCapsolverForceProxy,
+  isMntRecaptchaM1FallbackEnabled,
   mntFormHttpProxyUrl,
   mntRecaptchaV3Proxy,
   parseCaptchaCreateTask,
@@ -40,6 +41,25 @@ describe("captchaCreateTaskBody", () => {
     expect(body.task).toMatchObject({
       type: "ReCaptchaV3TaskProxyLess",
       pageAction: "soiduk_otsing",
+    });
+  });
+
+  it("reCAPTCHA v3 variant m1 dod ReCaptchaV3M1Task / ProxyLess", () => {
+    const base = {
+      kind: "recaptcha_v3" as const,
+      websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+      websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+      pageAction: "soiduk_otsing",
+    };
+    expect(captchaCreateTaskBody("key-1", { ...base, variant: "m1" }).task).toMatchObject({
+      type: "ReCaptchaV3M1TaskProxyLess",
+      pageAction: "soiduk_otsing",
+    });
+    expect(captchaTaskTypeName({ ...base, variant: "m1" })).toBe("ReCaptchaV3M1TaskProxyLess");
+    expect(captchaTaskTypeName({ ...base, variant: "standard" })).toBe("ReCaptchaV3TaskProxyLess");
+    expect(captchaCreateTaskBody("key-1", { ...base, variant: "m1", proxy: FIXIE_URL }).task).toMatchObject({
+      type: "ReCaptchaV3M1Task",
+      proxy: FIXIE_URL,
     });
   });
 
@@ -353,7 +373,7 @@ describe("solveCaptcha", () => {
         json: async () => {
           throw new Error("no json");
         },
-      }) as Response) as typeof fetch;
+      }) as unknown as Response) as typeof fetch;
     const result = await solveCaptcha(
       {
         kind: "recaptcha_v3",
@@ -548,5 +568,14 @@ describe("mnt.ee ProxyLess vs CAPSOLVER_FORCE_PROXY", () => {
     } finally {
       restoreEnv();
     }
+  });
+
+  it("M1 rezerve pēc noklusējuma ieslēgta, CAPSOLVER_MNT_V3_M1=0 izslēdz", () => {
+    expect(isMntRecaptchaM1FallbackEnabled(undefined)).toBe(true);
+    expect(isMntRecaptchaM1FallbackEnabled("")).toBe(true);
+    expect(isMntRecaptchaM1FallbackEnabled("1")).toBe(true);
+    expect(isMntRecaptchaM1FallbackEnabled("0")).toBe(false);
+    expect(isMntRecaptchaM1FallbackEnabled("false")).toBe(false);
+    expect(isMntRecaptchaM1FallbackEnabled(" off ")).toBe(false);
   });
 });

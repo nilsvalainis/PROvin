@@ -83,6 +83,12 @@ export function extractPartialUpdateHtml(xml: string): string {
   return form ?? chunks[0] ?? xml;
 }
 
+/** JSF partial-response `<update id="…javax.faces.ViewState…"><![CDATA[state]]></update>`. */
+export function extractPartialViewState(xml: string): string {
+  const m = /<update\s+id="[^"]*javax\.faces\.ViewState[^"]*"[^>]*>\s*<!\[CDATA\[([\s\S]*?)\]\]>/i.exec(xml);
+  return m?.[1]?.trim() ?? "";
+}
+
 /** Drupal 10 AJAX (application/vnd.drupal-ajax): insert.com.data HTML. */
 export function extractDrupalAjaxHtml(body: string): string {
   const trimmed = body.replace(/^\)\]\}'?,?\s*/, "").trim();
@@ -165,10 +171,21 @@ export function parseMntAjaxSource(html: string): string {
   return loose?.[1] ?? "";
 }
 
+/**
+ * Cloudflare Challenge lapa (Just a moment / managed challenge), ne parasta lapa aiz Cloudflare.
+ *
+ * Svarīgi: Cloudflare Bot Management katrā parastā HTTP 200 lapā iešuj JS detekcijas bāku
+ * `/cdn-cgi/challenge-platform/scripts/jsd/main.js` ar `window.__CF$cv$params` (tā ir arī
+ * eteenindus.mnt.ee formā). Tas NAV challenge. Ja to uzskata par challenge, kods velti sauc
+ * CapSolver AntiCloudflareTask caur Fixie („proxy timeout”) un pārslēdz sesiju uz proxy.
+ */
 export function isCloudflareChallengeHtml(html: string, status = 200): boolean {
   if (/<title>\s*just a moment/i.test(html)) return true;
-  if (/cdn-cgi\/challenge|cf-chl-bypass|challenge-platform/i.test(html)) return true;
-  if ((status === 403 || status === 503) && /cloudflare|just a moment/i.test(html)) return true;
+  if (/cf-chl-bypass|_cf_chl_opt|cf_chl_rc_|challenge-error-text|id="challenge-form"/i.test(html)) return true;
+  if (/cdn-cgi\/challenge-platform\/h\/[a-z]\/(?:orchestrate|flow|pat)|cdn-cgi\/challenge-platform\/[^"'\s]*chl_page/i.test(html)) {
+    return true;
+  }
+  if ((status === 403 || status === 503) && /cloudflare|just a moment|challenge-platform/i.test(html)) return true;
   return false;
 }
 

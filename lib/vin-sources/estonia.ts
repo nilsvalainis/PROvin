@@ -4,11 +4,12 @@ import "server-only";
  * Igaunijas avoti:
  *  - eteenindus.mnt.ee („Sõiduki taustakontroll”) - Transpordiamet;
  *  - lkf.ee („Kahjukontroll”) - Liikluskindlustuse Fond OCTA.
- * Primāri HTTP + CapSolver: mnt.ee reCAPTCHA v3 ProxyLess (HTTP no Vercel; CF caur FIXIE_URL);
- * lkf.ee reCAPTCHA v2 caur sticky proxy (FIXIE_URL). Redzams pārlūks paliek kā rezerve lokāli.
+ * Primāri HTTP + CapSolver: mnt.ee reCAPTCHA v3 ProxyLess, pēc noraidījuma viens M1 mēģinājums
+ * (HTTP no Vercel; īsts Cloudflare Challenge caur FIXIE_URL); lkf.ee reCAPTCHA v2 caur sticky
+ * proxy (FIXIE_URL). Redzams pārlūks paliek kā rezerve lokāli.
  */
 import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
-import { parseLkfExtract, parseMntExtract } from "@/lib/vin-sources/estonia-parse";
+import { MNT_CAPTCHA_REJECTED_MESSAGE, parseLkfExtract, parseMntExtract } from "@/lib/vin-sources/estonia-parse";
 import {
   createVinSourceContext,
   extractPageData,
@@ -55,7 +56,7 @@ export async function fetchMnt(vin: string, regMark = ""): Promise<VinSourceFetc
     try {
       const http = await fetchMntHttp(vin, regMark);
       if (http.found || !isVinSourcesBrowserAllowed()) return http;
-      if (!/reCAPTCHA neizdevās/i.test(http.message)) return http;
+      if (!http.message.startsWith(MNT_CAPTCHA_REJECTED_MESSAGE)) return http;
     } catch (e) {
       if (!isVinSourcesBrowserAllowed()) {
         const detail = e instanceof Error ? e.message.slice(0, 180) : "kļūda";

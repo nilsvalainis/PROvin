@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { parseLkfExtract, parseMntExtract } from "@/lib/vin-sources/estonia-parse";
+import {
+  MNT_CAPTCHA_REJECTED_MESSAGE,
+  mntCaptchaRejectedMessage,
+  parseLkfExtract,
+  parseMntExtract,
+} from "@/lib/vin-sources/estonia-parse";
 import {
   cookieHeaderFromSetCookieLines,
   extractDrupalAjaxHtml,
@@ -9,10 +14,72 @@ import {
   extractInputValue,
   extractPageFromHtml,
   extractPartialUpdateHtml,
+  extractPartialViewState,
+  isCloudflareChallengeHtml,
   mergeCookieHeader,
   parseMntAjaxSource,
   splitCombinedSetCookieHeader,
 } from "@/lib/vin-sources/html-extract";
+
+/** Reāla eteenindus.mnt.ee HTTP 200 formas lapa (2026-10-06): Cloudflare Bot Management JS bāka katrā lapā. */
+const MNT_OK_PAGE_WITH_CF_BEACON = `<!DOCTYPE html><html><head><title>Sõiduki taustakontroll</title></head><body>
+<form id="soidukOtsingForm" name="soidukOtsingForm" method="post" action="/public/soidukTaustakontroll.jsf">
+<input id="soidukOtsingForm:recaptchaResponse" type="hidden" name="soidukOtsingForm:recaptchaResponse" />
+<script id="soidukOtsingForm:j_idt157" type="text/javascript">otsiAction = function() {PrimeFaces.ab({s:"soidukOtsingForm:j_idt157",f:"soidukOtsingForm",u:"soidukOtsingForm",pa:arguments[0]});}</script>
+<input type="hidden" name="javax.faces.ViewState" id="j_id1:javax.faces.ViewState:6" value="-6414174971008989319:2754969209214899528" autocomplete="off" />
+</form>
+<a href="/cdn-cgi/l/email-protection#e28b8c848d"><span class="__cf_email__" data-cfemail="caa3a4aca58a">[email&#160;protected]</span></a>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4677c512d38cc31',t:'MTc5MTMxOTI3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;document.body.appendChild(a);c()}})();</script>
+</body></html>`;
+
+const CF_MANAGED_CHALLENGE_PAGE = `<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title></head><body class="no-js">
+<div class="main-wrapper" role="main"><div id="challenge-error-text">Enable JavaScript and cookies to continue</div></div>
+<script>window._cf_chl_opt={cvId: '3',cZone: "eteenindus.mnt.ee",cType: 'managed',cRay: 'a4677c512d38cc31'};
+var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1?ray=a4677c512d38cc31';</script>
+</body></html>`;
+
+describe("isCloudflareChallengeHtml", () => {
+  it("mnt.ee parasto HTTP 200 lapu ar Cloudflare JS bāku neuzskata par challenge", () => {
+    expect(isCloudflareChallengeHtml(MNT_OK_PAGE_WITH_CF_BEACON, 200)).toBe(false);
+    expect(parseMntAjaxSource(MNT_OK_PAGE_WITH_CF_BEACON)).toBe("soidukOtsingForm:j_idt157");
+    expect(extractInputValue(MNT_OK_PAGE_WITH_CF_BEACON, "javax.faces.ViewState")).toBe(
+      "-6414174971008989319:2754969209214899528",
+    );
+  });
+
+  it("īstu managed challenge atpazīst arī bez title un ar HTTP 200", () => {
+    expect(isCloudflareChallengeHtml(CF_MANAGED_CHALLENGE_PAGE, 403)).toBe(true);
+    const noTitle = CF_MANAGED_CHALLENGE_PAGE.replace("<title>Just a moment...</title>", "");
+    expect(isCloudflareChallengeHtml(noTitle, 200)).toBe(true);
+    expect(isCloudflareChallengeHtml("<html><title>Just a moment...</title></html>", 503)).toBe(true);
+  });
+
+  it("HTTP 403 ar cloudflare tekstu ir challenge, HTTP 200 ar to pašu bāku nav", () => {
+    const beaconOnly = `<script>a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';</script>`;
+    expect(isCloudflareChallengeHtml(beaconOnly, 403)).toBe(true);
+    expect(isCloudflareChallengeHtml(beaconOnly, 200)).toBe(false);
+  });
+});
+
+describe("mnt.ee partial response", () => {
+  it("ņem jauno ViewState no JSF partial-response update", () => {
+    const xml = `<?xml version='1.0' encoding='UTF-8'?>
+<partial-response id="j_id1"><changes><update id="soidukOtsingForm"><![CDATA[<form id="soidukOtsingForm"><div id="soidukOtsingForm:messages">reCAPTCHA valideerimise viga</div></form>]]></update><update id="j_id1:javax.faces.ViewState:0"><![CDATA[-6414174971008989319:2754969209214899528]]></update></changes></partial-response>`;
+    expect(extractPartialViewState(xml)).toBe("-6414174971008989319:2754969209214899528");
+    expect(extractPartialViewState("<partial-response/>")).toBe("");
+    expect(parseMntExtract("1FTEX15NXSKB79831", extractPageFromHtml(extractPartialUpdateHtml(xml))).message).toBe(
+      MNT_CAPTCHA_REJECTED_MESSAGE,
+    );
+  });
+
+  it("noraidīto žetonu ziņa saglabā reCAPTCHA neizdevās prefiksu pārlūka rezervei", () => {
+    const msg = mntCaptchaRejectedMessage(["ReCaptchaV3TaskProxyLess", "ReCaptchaV3M1TaskProxyLess"]);
+    expect(msg).toBe("reCAPTCHA neizdevās (mnt.ee noraidīja ReCaptchaV3TaskProxyLess, ReCaptchaV3M1TaskProxyLess žetonu)");
+    expect(/reCAPTCHA neizdevās/i.test(msg)).toBe(true);
+    expect(mntCaptchaRejectedMessage([])).toBe(MNT_CAPTCHA_REJECTED_MESSAGE);
+  });
+});
 
 describe("html extract", () => {
   it("nolasa tabulu un ViewState", () => {

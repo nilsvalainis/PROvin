@@ -4,6 +4,7 @@
  * Cloudflare Challenge un lkf.ee reCAPTCHA v2: sticky proxy (CAPSOLVER_PROXY vai FIXIE_URL),
  * tokens jāsūta no tā paša IP.
  * mnt.ee reCAPTCHA v3: pēc noklusējuma ProxyLess (Fixie datacenter neder V3); HTTP no Vercel.
+ * Ja mnt.ee noraida standarta žetonu, viens mēģinājums ar M1 (CAPSOLVER_MNT_V3_M1=0 izslēdz).
  * CAPSOLVER_FORCE_PROXY=1 atjauno veco mnt.ee ceļu (V3 + HTTP caur Fixie).
  */
 export type RecaptchaV3Task = {
@@ -13,6 +14,11 @@ export type RecaptchaV3Task = {
   pageAction: string;
   /** CapSolver proxy (URL `http://user:pass@host:port` vai colon forma). Ja ir, lieto ReCaptchaV3Task (ne ProxyLess). */
   proxy?: string;
+  /**
+   * `m1` = CapSolver augstā score versija (ReCaptchaV3M1Task / ReCaptchaV3M1TaskProxyLess, ~3 $/k).
+   * Noklusējums `standard` (~1 $/k). M1 lieto kā rezervi, ja vietne noraida standarta žetonu.
+   */
+  variant?: "standard" | "m1";
 };
 
 export type RecaptchaV2Task = {
@@ -161,6 +167,14 @@ export function mntRecaptchaV3Proxy(): string | undefined {
   return isCapsolverForceProxy() ? getCaptchaSolverProxy() || undefined : undefined;
 }
 
+/**
+ * mnt.ee: ja vietne noraida standarta V3 žetonu („reCAPTCHA valideerimise viga”), vienu reizi
+ * mēģina CapSolver M1 (augstā score) žetonu. Noklusējums ieslēgts; `CAPSOLVER_MNT_V3_M1=0` izslēdz.
+ */
+export function isMntRecaptchaM1FallbackEnabled(raw = process.env.CAPSOLVER_MNT_V3_M1): boolean {
+  return !/^(0|false|no|off)$/i.test((raw ?? "").trim());
+}
+
 /** Piem. `mnt.ee: CapSolver: žetons neatnāca laikā`. */
 export function prefixCaptchaSourceReason(reason: string, sourceLabel?: string): string {
   const label = sourceLabel?.trim();
@@ -172,8 +186,9 @@ export function prefixCaptchaSourceReason(reason: string, sourceLabel?: string):
 export function captchaCreateTaskBody(apiKey: string, task: CaptchaTask): Record<string, unknown> {
   if (task.kind === "recaptcha_v3") {
     const proxy = proxyForCapsolverTask(task.proxy);
+    const base = task.variant === "m1" ? "ReCaptchaV3M1Task" : "ReCaptchaV3Task";
     const recaptchaTask: Record<string, unknown> = {
-      type: proxy ? "ReCaptchaV3Task" : "ReCaptchaV3TaskProxyLess",
+      type: proxy ? base : `${base}ProxyLess`,
       websiteURL: task.websiteURL,
       websiteKey: task.websiteKey,
       pageAction: task.pageAction,
