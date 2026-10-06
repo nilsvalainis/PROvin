@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.9.0
+// @version      1.9.1
 // @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. car.info + checkcar.vin. AutoDNA arī atver CarVertical. Sludinājuma vēsture no tirgusdati.lv caur pārlūku.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -54,7 +54,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.9.0";
+  const SCRIPT_VERSION = "1.9.1";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -499,7 +499,9 @@
     const hasVin = text.toUpperCase().indexOf(vin) !== -1;
     if (id === "stat_vin") {
       if (!hasVin) {
-        if (/not found|page not found|no vehicle|nothing found/i.test(text)) return { status: "none", summary: "Nav izsoles ieraksta" };
+        if (/not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found/i.test(text)) {
+          return { status: "none", summary: "Nav izsoles ieraksta" };
+        }
         return null;
       }
       if (/auction|sold|sale date|odometer|mileage|lot|bid/i.test(text)) return { status: "found", summary: "Ir izsoles ieraksts" };
@@ -573,6 +575,16 @@
       return null;
     }
     return null;
+  }
+
+  function scanTextExcerpt(text, vin) {
+    const flat = String(text || "")
+      .replace(/\s+/g, " ")
+      .trim();
+    const at = flat.toUpperCase().indexOf(vin);
+    const start = at > 200 ? at - 200 : 0;
+    const piece = flat.slice(start, start + 600);
+    return (location.host + location.pathname + " | " + piece).slice(0, 700);
   }
 
   function showProvinBadge(message) {
@@ -753,10 +765,17 @@
     let ticks = 0;
     let filled = false;
     let clicked = false;
+    let lastText = "";
+    let stableTicks = 0;
     const timer = window.setInterval(() => {
       ticks += 1;
       const text = document.body ? document.body.innerText || "" : "";
       const blocker = scanBlocker(text);
+      if (text === lastText) stableTicks += 1;
+      else {
+        lastText = text;
+        stableTicks = 0;
+      }
       const input = findScanVinInput();
       if (input) {
         const current = String(input.value || "")
@@ -775,6 +794,12 @@
       if (result) {
         window.clearInterval(timer);
         publishScan({ id: id, vin: probeVin, status: result.status, summary: result.summary, detail: "" });
+        return;
+      }
+      /* Lapa ir ielādēta un 8 s nemainās, bet neviens šablons nesakrīt: atdod fragmentu, nevis gaida 70 s. */
+      if (!blocker && ticks >= 24 && stableTicks >= 16 && text.trim().length > 40) {
+        window.clearInterval(timer);
+        publishScan({ id: id, vin: probeVin, status: "unknown", summary: "Lapa nav atpazīta", detail: scanTextExcerpt(text, probeVin) });
         return;
       }
       if (ticks > 140) {

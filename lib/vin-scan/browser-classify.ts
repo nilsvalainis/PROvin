@@ -98,7 +98,9 @@ export function classifyBrowserProbe(id: VinScanBrowserId, text: string, vin: st
 
 function classifyAuction(text: string, vin: string, noneSummary: string, foundSummary: string): BrowserProbeRead | null {
   if (!hasVin(text, vin)) {
-    if (/not found|page not found|no vehicle|nothing found/i.test(text)) return { status: "none", summary: noneSummary };
+    if (/not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found/i.test(text)) {
+      return { status: "none", summary: noneSummary };
+    }
     return null;
   }
   if (/auction|sold|sale date|odometer|mileage|lot|bid/i.test(text)) return { status: "found", summary: foundSummary };

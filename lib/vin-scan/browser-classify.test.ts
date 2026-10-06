@@ -32,6 +32,13 @@ describe("classifyBrowserProbe", () => {
   it("izsoles un CARFAX priekšskatījums", () => {
     expect(classifyBrowserProbe("stat_vin", `Lot sold ${VIN} odometer 120000`, VIN)?.status).toBe("found");
     expect(classifyBrowserProbe("stat_vin", "Page not found", VIN)?.status).toBe("none");
+    expect(
+      classifyBrowserProbe("stat_vin", "Search… No results. Popular cars: No similar cars were found at the auction. 2021 BMW 330I Lot: 45129191", VIN)
+        ?.status,
+    ).toBe("none");
+    expect(classifyBrowserProbe("stat_vin", `RAM 2500 2026 VIN: ${VIN} Sale History (13) Auction Date Final Bid Copart`, VIN)?.status).toBe(
+      "found",
+    );
     expect(classifyBrowserProbe("carfax_eu", "Success! We found 4 records for this car", VIN)).toMatchObject({
       status: "found",
       summary: "4 ieraksti CARFAX priekšskatījumā",
