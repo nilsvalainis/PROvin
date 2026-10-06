@@ -2,9 +2,10 @@
  * CSDD web servisa tehniskie dati -> CSDD avota bloks.
  *
  * Reģistrs ir precīzāks par ielīmētu tekstu, bet operatora jau ievadītais ir svarīgāks par automātu:
- * aizpildām tikai tukšos laukus. Lauki, kuriem blokā vēl nav vietas (krāsa, TL veids, OCTA termiņš,
+ * aizpildām tikai tukšos laukus. Lauki, kuriem blokā vēl nav vietas (krāsa, OCTA termiņš,
  * COC tipa apstiprinājums, variants un versija), nonāk AI kontekstā, jo tie ir vajadzīgi
- * komplektācijas atšifrēšanai un apdrošināšanas termiņam.
+ * komplektācijas atšifrēšanai un apdrošināšanas termiņam. TL veids un COC kategorija tiek
+ * rakstīti arī formā (`vehicleType`), lai vinjetes brīdinājums redzētu N1.
  */
 
 import type { CsddFormFields } from "@/lib/admin-source-blocks";
@@ -15,6 +16,14 @@ const AI_CONTEXT_HEADING = "CSDD reģistra tehniskie dati (API)";
 
 function isBlank(v: string | undefined): boolean {
   return !String(v ?? "").trim();
+}
+
+/** Formas lauks: „Kravas furgons (N1)”, ja reģistrā ir gan TL veids, gan COC kategorija. */
+export function formatCsddVehicleTypeDisplay(kind: string, cocCategory: string): string {
+  const k = kind.trim();
+  const c = cocCategory.trim();
+  if (k && c && !k.toLowerCase().includes(c.toLowerCase())) return `${k} (${c})`;
+  return k || c;
 }
 
 function pickLookupNr1(raw: string): string {
@@ -69,6 +78,7 @@ const SEEDABLE_KEYS = [
   "engineDisplacementCm3",
   "enginePowerKw",
   "fuelType",
+  "vehicleType",
   "grossMassKg",
   "curbMassKg",
 ] as const satisfies readonly (keyof CsddFormFields)[];
@@ -104,6 +114,7 @@ export function applyCsddTechDataToBlock(
   fill("engineDisplacementCm3", data.displacementCm3);
   fill("enginePowerKw", data.powerKw);
   fill("fuelType", data.fuel);
+  fill("vehicleType", formatCsddVehicleTypeDisplay(data.vehicleKind, data.cocCategory));
   fill("grossMassKg", data.grossMassKg);
   fill("curbMassKg", data.curbMassKg);
 

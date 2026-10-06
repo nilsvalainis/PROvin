@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 import {
+  assessLvVignette,
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
@@ -77,7 +78,8 @@ export type ProvinAlertBannerKind =
   | "tirgus_high_supply"
   | "incidents"
   | "particulate"
-  | "inspection";
+  | "inspection"
+  | "vignette";
 
 /** Starptautiskās vēstures brīdinājums — `ccvin:` + stabils slugs no reģistra nosaukuma. */
 export type ProvinCcVinBannerKind = `ccvin:${string}`;
@@ -136,6 +138,7 @@ export const PROVIN_ALERT_BANNER_KINDS = [
   "incidents",
   "particulate",
   "inspection",
+  "vignette",
 ] as const satisfies readonly ProvinAlertBannerKind[];
 
 export const PROVIN_INFO_BANNER_KINDS = [
@@ -310,6 +313,8 @@ export const PROVIN_ALERT_TEXT = {
     "Uzmanību! Pēdējā apskatē fiksēts paaugstināts atgāzu cieto daļiņu līmenis, kas var norādīt uz izplūdes sistēmas defektiem.",
   inspection:
     "Brīdinājums: Transportlīdzeklim nav derīgas tehniskās apskates vai tās termiņš drīzumā beidzas.",
+  vignette:
+    "Brīdinājums: kravas transportlīdzeklim ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete.",
 } as const;
 
 /** Kopsavilkuma kartītes teksti. */
@@ -336,6 +341,11 @@ export const PROVIN_ALERT_CARD_DEFAULTS: Record<ProvinAlertBannerKind, ProvinBan
     label: "Tehniskā apskate",
     value: "Termiņš beidzas",
     note: "Nav derīgas apskates vai tās termiņš tuvojas beigām",
+  },
+  vignette: {
+    label: "Vinjete",
+    value: "Jāiegādājas",
+    note: "Kravas auto, pilna masa virs 3000 kg. Uz nodevas autoceļiem Latvijā vajadzīga vinjete.",
   },
 };
 
@@ -578,6 +588,21 @@ export function computeProvinAlertBanners(args: {
     const f = getNextInspectionDateUiFlag(next, ref);
     if (f !== "none") {
       out.push({ kind: "inspection", text: PROVIN_ALERT_TEXT.inspection, severity: flagToSeverity(f) });
+    }
+  }
+
+  if (args.csddForm) {
+    const vignette = assessLvVignette({
+      vehicleType: args.csddForm.vehicleType,
+      grossMassKg: args.csddForm.grossMassKg,
+      seatCount: args.csddForm.seatCount,
+    });
+    if (vignette.applies) {
+      out.push({
+        kind: "vignette",
+        text: vignette.bannerText || PROVIN_ALERT_TEXT.vignette,
+        severity: "yellow",
+      });
     }
   }
 

@@ -38,6 +38,8 @@ export type RegistryStructuredFields = {
   plateNumber: string | null;
   status: string | null;
   particulateMatter: string | null;
+  vehicleType: string | null;
+  seatCount: string | null;
 };
 
 function firstMatch(csdd: string, re: RegExp): string | null {
@@ -104,6 +106,8 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
     plateNumber: null,
     status: null,
     particulateMatter: null,
+    vehicleType: null,
+    seatCount: null,
   };
   for (const raw of csdd.split(/\r?\n/)) {
     const line = raw.trim();
@@ -116,7 +120,7 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
       val = tabs.slice(1).join("\t").trim();
     } else {
       const spaceKv = line.match(
-        /^(Marka\s+Modelis|Reģistrācijas\s+numurs|Statuss|Pilna\s+masa\s*\(kg\)|Pašmasa\s*\(kg\)|Degviela|VIN|Izlaiduma\s+gads|Iepriekšējās\s+reģistrācijas\s+valsts)\s+(.+)$/i,
+        /^(Marka\s+Modelis|Reģistrācijas\s+numurs|Statuss|Pilna\s+masa\s*\(kg\)|Pašmasa\s*\(kg\)|Degviela|VIN|Izlaiduma\s+gads|Iepriekšējās\s+reģistrācijas\s+valsts|Transportlīdzekļa\s+veids|Sēdvietu\s+skaits)\s+(.+)$/i,
       );
       if (spaceKv?.[1] && spaceKv[2]) {
         key = spaceKv[1].trim();
@@ -257,6 +261,24 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
       nk.includes("particulate")
     ) {
       out.particulateMatter = val;
+      continue;
+    }
+    if (
+      nk === "transportlidzekla_veids" ||
+      nk === "tl_veids" ||
+      nk === "vehicle_kind" ||
+      (nk.includes("transportlidzekla") && nk.includes("veids") && !nk.includes("registr"))
+    ) {
+      out.vehicleType = val;
+      continue;
+    }
+    if (
+      nk === "sedvietu_skaits" ||
+      nk === "sedvietas" ||
+      nk === "seat_count" ||
+      nk.includes("sedvietu_skait")
+    ) {
+      out.seatCount = val;
       continue;
     }
   }

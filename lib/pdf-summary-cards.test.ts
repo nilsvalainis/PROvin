@@ -244,6 +244,23 @@ describe("aprēķināto brīdinājumu labošana", () => {
     expect(banners.filter((b) => b.kind === "incidents")).toHaveLength(1);
     expect(banners.some((b) => b.kind === "ccvin:fiksetie_bojajumi")).toBe(false);
   });
+
+  it("adds a yellow vignette banner for N1 cargo over 3000 kg", () => {
+    const csdd = emptyCsddFields();
+    csdd.vehicleType = "Kravas transporta furgons (N1)";
+    csdd.grossMassKg = "3200";
+    csdd.seatCount = "8";
+    const banners = computeProvinAlertBanners({
+      unifiedMileageRows: [],
+      csddForm: csdd,
+      manualLtabBlock: null,
+      manualVendorBlocks: [],
+    });
+    const v = banners.find((b) => b.kind === "vignette");
+    expect(v?.severity).toBe("yellow");
+    expect(v?.text).toMatch(/vinjete/i);
+    expect(v?.text).toMatch(/Papildu sēdvietas/);
+  });
 });
 
 describe("kopsavilkuma bāzes plāksnītes", () => {

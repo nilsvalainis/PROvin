@@ -173,3 +173,21 @@ describe("e.csdd.lv TCPDF → CSDD forma", () => {
     expect(form.rawUnprocessedData).toContain("Reģistrācijas numursON8848");
   });
 });
+
+describe("CSDD veids + sēdvietas + vinjete", () => {
+  it("parses vehicle type and seats from glued e.csdd labels", () => {
+    const raw = `
+Reģistrācijas numursAB1234
+Marka ModelisMERCEDES-BENZ SPRINTER
+Transportlīdzekļa veidsKravas transporta furgons
+Sēdvietu skaits8
+Pilna masa (kg)3200
+Pašmasa (kg)2100
+`;
+    const parsed = parseCsddPaste(raw);
+    const form = applyCsddPasteToForm(emptyCsddFields(), raw, parsed);
+    expect(form.vehicleType).toMatch(/Kravas transporta furgons/i);
+    expect(form.seatCount).toBe("8");
+    expect(form.grossMassKg).toBe("3200");
+  });
+});

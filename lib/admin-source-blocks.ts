@@ -354,8 +354,12 @@ export type CsddFormFields = {
   enginePowerKw: string;
   fuelType: string;
   emissionStandard: string;
+  /** CSDD `TL_VEIDS` / paste „Transportlīdzekļa veids”, bieži ar COC kategoriju iekavās (N1, M1). */
+  vehicleType: string;
   grossMassKg: string;
   curbMassKg: string;
+  /** CSDD „Sēdvietu skaits”, ja reģistrā vai izdrukā ir zināms. */
+  seatCount: string;
   roadTaxEur: string;
   registrationStatus: string;
   opacityCoefficient: string;
@@ -393,6 +397,7 @@ export const CSDD_FORM_STRUCTURED_FIELDS: {
   label: string;
 }[] = [
   { key: "makeModel", label: "Marka, modelis:" },
+  { key: "vehicleType", label: "Transportlīdzekļa veids:" },
   { key: "registrationNumber", label: "Reģistrācijas numurs:" },
   { key: "firstRegistration", label: "Pirmā reģistrācija:" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
@@ -402,6 +407,7 @@ export const CSDD_FORM_STRUCTURED_FIELDS: {
   { key: "fuelType", label: "Degvielas veids:" },
   { key: "emissionStandard", label: "Emisiju standarts:" },
   { key: "grossMassKg", label: "Pilna masa (kg):" },
+  { key: "seatCount", label: "Sēdvietu skaits:" },
   { key: "curbMassKg", label: "Pašmasa (kg):" },
   { key: "roadTaxEur", label: "Ekspluatācijas nodoklis (EUR):" },
   { key: "registrationStatus", label: "Reģistrācijas statuss:" },
@@ -576,8 +582,10 @@ export function emptyCsddFields(): CsddFormFields {
     enginePowerKw: "",
     fuelType: "",
     emissionStandard: "",
+    vehicleType: "",
     grossMassKg: "",
     curbMassKg: "",
+    seatCount: "",
     roadTaxEur: "",
     registrationStatus: "",
     opacityCoefficient: "",
@@ -2209,8 +2217,10 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     enginePowerKw: clipCsddField(raw.enginePowerKw, 40),
     fuelType: clipCsddField(raw.fuelType, 80),
     emissionStandard: clipCsddField(raw.emissionStandard, 40),
+    vehicleType: clipCsddField(raw.vehicleType, 160),
     grossMassKg: clipCsddField(raw.grossMassKg, 40),
     curbMassKg: clipCsddField(raw.curbMassKg, 40),
+    seatCount: clipCsddField(raw.seatCount, 16),
     roadTaxEur: clipCsddField(raw.roadTaxEur, 80),
     registrationStatus: clipCsddField(raw.registrationStatus, 120),
     opacityCoefficient: clipCsddField(raw.opacityCoefficient, 40),

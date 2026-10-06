@@ -176,6 +176,8 @@ import {
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
 import {
+  assessLvVignette,
+  getLvVignetteFieldUiFlag,
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
@@ -1308,6 +1310,11 @@ export function buildCsddAvotuZoneHtml(
   const hasComments = commentTrim.length > 0;
   const kvRows: { k: string; v: string; vHtml: string }[] = [];
   const alertRows: string[] = [];
+  const vignette = assessLvVignette({
+    vehicleType: form.vehicleType,
+    grossMassKg: form.grossMassKg,
+    seatCount: form.seatCount,
+  });
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
     // Īpašnieku skaits paliek laika joslā, ne kv tabulā.
     if (key === "ownerCountLatvia") continue;
@@ -1316,11 +1323,21 @@ export function buildCsddAvotuZoneHtml(
     let flag: CsddFieldUiFlag = "none";
     if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
     else if (key === "nextInspectionDate") flag = getNextInspectionDateUiFlag(v);
+    else if (key === "vehicleType" || key === "grossMassKg" || key === "seatCount") {
+      flag = getLvVignetteFieldUiFlag(vignette, key, v);
+    }
     const display = key === "nextInspectionDate" || key === "prevInspectionDate" || key === "firstRegistration"
       ? v
       : capitalizeFactValue(v);
     const valueHtml = escapeCsddPdfFieldValue(key, display);
-    if (flag !== "none" && (key === "particulateMatter" || key === "nextInspectionDate")) {
+    if (
+      flag !== "none" &&
+      (key === "particulateMatter" ||
+        key === "nextInspectionDate" ||
+        key === "vehicleType" ||
+        key === "grossMassKg" ||
+        key === "seatCount")
+    ) {
       alertRows.push(buildCsddPdfAlertRowHtml(escapeHtml(label), valueHtml, flag));
     } else {
       kvRows.push({ k: label, v: display, vHtml: valueHtml });

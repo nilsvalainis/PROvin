@@ -35,6 +35,8 @@ import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-char
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
+  assessLvVignette,
+  getLvVignetteFieldUiFlag,
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
   type CsddFieldUiFlag,
@@ -282,7 +284,15 @@ export function AdminCsddSourceBlock({
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {CSDD_FORM_STRUCTURED_FIELDS.map(({ key, label }) => {
           const strVal = value[key] as string;
-          const isFlagField = key === "particulateMatter" || key === "nextInspectionDate";
+          const vignette = assessLvVignette({
+            vehicleType: value.vehicleType,
+            grossMassKg: value.grossMassKg,
+            seatCount: value.seatCount,
+          });
+          const isVignetteField =
+            key === "vehicleType" || key === "grossMassKg" || key === "seatCount";
+          const isFlagField =
+            key === "particulateMatter" || key === "nextInspectionDate" || isVignetteField;
           let flag: CsddFieldUiFlag = "none";
           let flagTitle = "";
           if (key === "particulateMatter") {
@@ -295,6 +305,11 @@ export function AdminCsddSourceBlock({
               flagTitle =
                 "Brīdinājums: apskates datums nokavēts vai līdz tam mazāk par 30 dienām.";
             else if (flag === "yellow") flagTitle = "Brīdinājums: līdz apskatei mazāk par 90 dienām.";
+          } else if (isVignetteField) {
+            flag = getLvVignetteFieldUiFlag(vignette, key, strVal);
+            if (flag === "yellow") {
+              flagTitle = key === "seatCount" ? vignette.seatWarningTitle : vignette.warningTitle;
+            }
           }
           const showFlag = isFlagField && flag !== "none";
 

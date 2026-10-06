@@ -31,6 +31,8 @@ describe("csddFieldsFromStructuredAiPayload", () => {
           degvielasVeids: "Dīzeļdegviela",
           pilnaMasaKg: 2360,
           pasmasaKg: 1810,
+          transportlidzeklaVeids: "Vieglais plašlietojuma (M1)",
+          sedvietuSkaits: 5,
           ipasnickuSkaitsLatvija: 3,
         },
         nobraukumaVesture: [
@@ -56,8 +58,10 @@ describe("csddFieldsFromStructuredAiPayload", () => {
     expect(fields.registrationNumber).toBe("KG982");
     expect(fields.makeModel).toBe("MERCEDES BENZ E220");
     expect(fields.fuelType).toBe("Dīzeļdegviela");
+    expect(fields.vehicleType).toBe("Vieglais plašlietojuma (M1)");
     expect(fields.grossMassKg).toBe("2360");
     expect(fields.curbMassKg).toBe("1810");
+    expect(fields.seatCount).toBe("5");
     expect(fields.ownerCountLatvia).toBe("3");
     expect(fields.mileageHistory.filter((r) => r.odometer.trim())).toHaveLength(2);
     expect(fields.mileageHistory[0]?.odometer).toBe("274726");

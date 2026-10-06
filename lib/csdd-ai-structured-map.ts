@@ -51,6 +51,12 @@ export const CSDD_AI_RESPONSE_SCHEMA: AiJsonSchema = {
         degvielasVeids: { type: JsonType.STRING },
         pilnaMasaKg: { type: JsonType.INTEGER },
         pasmasaKg: { type: JsonType.INTEGER },
+        transportlidzeklaVeids: {
+          type: JsonType.STRING,
+          description:
+            "CSDD Transportlīdzekļa veids, piem. Kravas furgons vai Vieglais plašlietojuma. Ja PDF rāda arī kategoriju N1/M1, pievieno iekavās.",
+        },
+        sedvietuSkaits: { type: JsonType.INTEGER, description: "Sēdvietu skaits no CSDD, ja norādīts" },
         ipasnickuSkaitsLatvija: { type: JsonType.INTEGER },
         ieprieksejasRegistracijasValsts: { type: JsonType.STRING },
         motoraTilpumsCm3: { type: JsonType.STRING },
@@ -150,7 +156,8 @@ CRITICAL RULES:
 - Include inspection with rating 1 or 2 even when many defects — do not skip older years.
 - Dates: DD.MM.YYYY. valsts for mileage: LV or Latvija.
 - Newer diesels may show "Atgāzu cietās daļiņas (cm-3)" instead of "Dūmainības koeficients (m-1)" — copy the numeric value.
-- TCPDF text layer often glues labels to values ("Apskates datums19.05.2026", "8.2.2.3.2Cieto") — still extract correctly.`;
+- TCPDF text layer often glues labels to values ("Apskates datums19.05.2026", "8.2.2.3.2Cieto") — still extract correctly.
+- transportlidzeklaVeids: from "Transportlīdzekļa veids". sedvietuSkaits: from "Sēdvietu skaits" when present.`;
 
 /** Otrais izsaukums, ja pilnajā shēmā TA palika tukša (garš PDF). */
 export const CSDD_TA_AI_RESPONSE_SCHEMA: AiJsonSchema = {
@@ -406,6 +413,7 @@ export function csddFieldsFromStructuredAiPayload(
   const gross = asInt(pam.pilnaMasaKg);
   const curb = asInt(pam.pasmasaKg);
   const owners = asInt(pam.ipasnickuSkaitsLatvija);
+  const seats = asInt(pam.sedvietuSkaits);
 
   return {
     ...emptyCsddFields(),
@@ -416,8 +424,10 @@ export function csddFieldsFromStructuredAiPayload(
     nextInspectionDate: nextInspectionIso,
     prevInspectionDate: prevInspectionIso || (ta[0] ? dateToIsoInput(ta[0].date) : ""),
     fuelType: asString(pam.degvielasVeids, 80),
+    vehicleType: asString(pam.transportlidzeklaVeids, 160),
     grossMassKg: gross != null ? String(gross) : "",
     curbMassKg: curb != null ? String(curb) : "",
+    seatCount: seats != null ? String(seats) : "",
     ownerCountLatvia: owners != null ? String(owners) : "",
     previousRegistrationCountry:
       asString(pam.ieprieksejasRegistracijasValsts, 80) ||

@@ -50,3 +50,96 @@ export function getNextInspectionDateUiFlag(isoDate: string, referenceDate: Date
   if (diff < 90) return "yellow";
   return "none";
 }
+
+/**
+ * Latvijas vinjete (Autoceļu lietošanas nodevas likums 3. panta pirmā daļa,
+ * redakcija no 01.03.2026): nodevu maksā par **kravas** transportlīdzekļiem,
+ * kuru pilna masa ir **lielāka par 3000 kg**, uz 1. pielikuma autoceļu posmiem.
+ *
+ * Satiksmes ministrija: vinjete NAV jāmaksā M1 (piem. 7 sēdvietu ģimenes auto)
+ * pat ja masa > 3000 kg, un NAV jāmaksā kravas auto ar pilnu masu līdz 3000 kg.
+ * Sēdvietu skaits likumā **nav** kritērijs. PROVIN to ņem vērā kā pircēja slazdu:
+ * N1 furgons ar 6-9 sēdvietām izskatās pēc pasažieru auto, bet vinjete paliek.
+ */
+export const LV_VIGNETTE_GROSS_MASS_KG = 3000;
+export const LV_VIGNETTE_EXTRA_SEATS_OVER = 3;
+
+export type LvVignetteFieldKey = "vehicleType" | "grossMassKg" | "seatCount";
+
+export type LvVignetteAssessment = {
+  applies: boolean;
+  isCargoLike: boolean;
+  grossMassKg: number | null;
+  seatCount: number | null;
+  extraSeats: boolean;
+  warningTitle: string;
+  seatWarningTitle: string;
+  bannerText: string;
+};
+
+const LV_VIGNETTE_TITLE =
+  "Brīdinājums: kravas transportam ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete.";
+const LV_VIGNETTE_SEAT_TITLE =
+  "Brīdinājums: sēdvietu skaits virs 3 neatceļ vinjetes pienākumu, ja auto ir reģistrēts kā kravas transportlīdzeklis (N1).";
+const LV_VIGNETTE_BANNER =
+  "Brīdinājums: kravas transportlīdzeklim ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete.";
+const LV_VIGNETTE_BANNER_SEATS =
+  "Brīdinājums: kravas transportlīdzeklim ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete. Papildu sēdvietas neatceļ šo pienākumu.";
+
+export function parseCsddMassKg(raw: string): number | null {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function parseCsddSeatCount(raw: string): number | null {
+  const m = raw.trim().match(/\d+/);
+  if (!m) return null;
+  const n = parseInt(m[0], 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Kravas / N1 (un N2/N3) no CSDD veida lauka. M1 un vieglais bez „kravas” nav vinjetes subjekts. */
+export function isCsddCargoLikeVehicleType(raw: string): boolean {
+  const t = raw.trim();
+  if (!t) return false;
+  if (/\bN[123]\b/i.test(t)) return true;
+  if (/kravas\s+transporta\s+(furgon|kast)/i.test(t)) return true;
+  if (/kravas\s+(furgon|kast|vispārēj)/i.test(t)) return true;
+  if (/\bkravas\b/i.test(t)) return true;
+  return false;
+}
+
+export function assessLvVignette(args: {
+  vehicleType: string;
+  grossMassKg: string;
+  seatCount: string;
+}): LvVignetteAssessment {
+  const isCargoLike = isCsddCargoLikeVehicleType(args.vehicleType);
+  const grossMassKg = parseCsddMassKg(args.grossMassKg);
+  const seatCount = parseCsddSeatCount(args.seatCount);
+  const extraSeats = seatCount != null && seatCount > LV_VIGNETTE_EXTRA_SEATS_OVER;
+  const applies = isCargoLike && grossMassKg != null && grossMassKg > LV_VIGNETTE_GROSS_MASS_KG;
+  return {
+    applies,
+    isCargoLike,
+    grossMassKg,
+    seatCount,
+    extraSeats,
+    warningTitle: applies ? LV_VIGNETTE_TITLE : "",
+    seatWarningTitle: applies ? (extraSeats ? LV_VIGNETTE_SEAT_TITLE : LV_VIGNETTE_TITLE) : "",
+    bannerText: applies ? (extraSeats ? LV_VIGNETTE_BANNER_SEATS : LV_VIGNETTE_BANNER) : "",
+  };
+}
+
+export function getLvVignetteFieldUiFlag(
+  assessment: LvVignetteAssessment,
+  field: LvVignetteFieldKey,
+  fieldValue: string,
+): CsddFieldUiFlag {
+  if (!assessment.applies) return "none";
+  if (!fieldValue.trim()) return "none";
+  if (field === "vehicleType" || field === "grossMassKg" || field === "seatCount") return "yellow";
+  return "none";
+}

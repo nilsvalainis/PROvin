@@ -219,6 +219,7 @@ describe("applyCsddTechDataToBlock", () => {
       engineDisplacementCm3: "1968",
       enginePowerKw: "110",
       fuelType: "Dīzeļdegviela",
+      vehicleType: "Vieglais plašlietojuma (M1)",
       grossMassKg: "2236",
       curbMassKg: "1612",
     });

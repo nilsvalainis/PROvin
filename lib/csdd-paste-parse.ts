@@ -210,6 +210,21 @@ export function parseCsddTechnicalFields(
 
   const previousRegistrationCountry = parsePreviousRegistrationCountry(raw);
 
+  let vehicleType = (st.vehicleType ?? "").trim();
+  if (!vehicleType) {
+    const m = raw.match(/Transportlīdzekļa\s+veids\s*:?\s*([^\n]+)/i);
+    if (m?.[1]) vehicleType = m[1].replace(/\s+/g, " ").trim();
+  }
+
+  let seatCount = (st.seatCount ?? "").trim();
+  if (!seatCount) {
+    const m = raw.match(/Sēdvietu\s+skaits\s*:?\s*(\d+)/i);
+    if (m?.[1]) seatCount = m[1];
+  } else {
+    const n = seatCount.match(/\d+/);
+    if (n) seatCount = n[0];
+  }
+
   return {
     makeModel,
     registrationNumber,
@@ -218,8 +233,10 @@ export function parseCsddTechnicalFields(
     enginePowerKw,
     fuelType,
     emissionStandard,
+    vehicleType,
     grossMassKg,
     curbMassKg,
+    seatCount,
     roadTaxEur,
     registrationStatus,
     opacityCoefficient,
@@ -615,6 +632,14 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
     ta.some((r) => (r.defects?.length ?? 0) > 0)
   ) {
     patch.technicalInspectionHistory = ta;
+  }
+
+  const tech = parseCsddTechnicalFields(raw);
+  if (!csdd.vehicleType.trim() && tech.vehicleType.trim()) {
+    patch.vehicleType = tech.vehicleType;
+  }
+  if (!csdd.seatCount.trim() && tech.seatCount.trim()) {
+    patch.seatCount = tech.seatCount;
   }
 
   if (
