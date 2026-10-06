@@ -16,9 +16,6 @@ import { seedCsddTechDataOnPaidOrder } from "@/lib/admin-csdd-tech-seed";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
-import { isOutvinApiVin } from "@/lib/order-field-validation";
-import { isPlaceholderVin } from "@/lib/partner-link-auto2000";
-import { getPartnerLinkSite, isPartnerLinkFulfillment } from "@/lib/partner-link-sites";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -133,20 +130,6 @@ async function fulfillPaidCheckoutSession(
     const fulfillment = session.metadata?.fulfillment?.trim() ?? "";
     const partnerId = session.metadata?.partner_id?.trim() ?? "";
     const packQtyRaw = Number.parseInt(session.metadata?.pack_qty ?? "", 10);
-
-    if (isPartnerLinkFulfillment(fulfillment)) {
-      const site = getPartnerLinkSite(session.metadata?.referral_partner);
-      const vinOk = Boolean(order.vin && isOutvinApiVin(order.vin) && !isPlaceholderVin(order.vin));
-      if (!site || session.amount_total !== site.priceCents || checkoutLine !== "business" || !vinOk) {
-        console.error("[stripe webhook] partner link session mismatch", {
-          sessionId: session.id,
-          referral: session.metadata?.referral_partner ?? null,
-          amountTotal: session.amount_total,
-          checkoutLine,
-          vin: order.vin,
-        });
-      }
-    }
 
     if (
       fulfillment === "b2b_pack" &&

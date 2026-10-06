@@ -12,8 +12,7 @@ import {
 import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { applyCsddTechDataToBlock, csddTechSeedNeeded } from "@/lib/csdd-tech-data-apply";
 import { fetchCsddTechData } from "@/lib/csdd-tech-data";
-import { isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
-import { isPlaceholderVin } from "@/lib/partner-link-auto2000";
+import { isPlaceholderVin, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 
 function emptyWorkspaceBody(): OrderDraftWorkspaceBody {

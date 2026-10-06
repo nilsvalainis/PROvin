@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canonicalizeListingUrl,
+  isPlaceholderVin,
   isValidPlateNumber,
   isValidVin,
   isValidVinOrPlate,
@@ -27,6 +28,13 @@ describe("order field validation — VIN vai numurzīme", () => {
     /** 7–10 zīmes — par garu numurzīmei, par īsu VIN. */
     expect(isValidVinOrPlate("ABCD123")).toBe(false);
     expect(isValidVinOrPlate("")).toBe(false);
+  });
+
+  it("rejects placeholder VIN codes", () => {
+    expect(isPlaceholderVin("")).toBe(true);
+    expect(isPlaceholderVin("AAAAAAAAAAAAAAAAA")).toBe(true);
+    expect(isPlaceholderVin("WAU00000000000000")).toBe(true);
+    expect(isPlaceholderVin("1HGCM82633A004352")).toBe(false);
   });
 
   it("validateOrderFields: plate ok, listing url optional", () => {

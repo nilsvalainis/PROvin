@@ -19,6 +19,15 @@ export function isOutvinApiVin(v: string): boolean {
   return /^[A-HJ-NPR-Z0-9]{17}$/.test(normalizeVin(v));
 }
 
+/** Acīmredzami fiktīvs VIN (visi vienādi burti, gara nullu rinda). */
+export function isPlaceholderVin(vin: string): boolean {
+  const v = normalizeVin(vin);
+  if (!v) return true;
+  if (/^(.)\1+$/.test(v)) return true;
+  if (/0{8,}/.test(v)) return true;
+  return /^[A-Z0-9]{3}0+$/.test(v);
+}
+
 export function normalizePlateNumber(s: string): string {
   return s.trim().toUpperCase().replace(/[\s-]/g, "");
 }
