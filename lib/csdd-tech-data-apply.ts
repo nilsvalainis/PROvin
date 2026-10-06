@@ -46,6 +46,25 @@ function appendAiContext(existing: string, block: string): string {
   return `${prev}\n\n${block}`;
 }
 
+/** Lauki, ko reģistra atbilde var aizpildīt; ja visi jau ir, zvans tikai tērētu līguma kvotu. */
+const SEEDABLE_KEYS = [
+  "makeModel",
+  "registrationNumber",
+  "firstRegistration",
+  "nextInspectionDate",
+  "engineDisplacementCm3",
+  "enginePowerKw",
+  "fuelType",
+  "grossMassKg",
+  "curbMassKg",
+] as const satisfies readonly (keyof CsddFormFields)[];
+
+/** Vai reģistra ielase vispār var kaut ko pievienot šim blokam. */
+export function csddTechSeedNeeded(csdd: CsddFormFields): boolean {
+  if (SEEDABLE_KEYS.some((key) => isBlank(csdd[key] as string | undefined))) return true;
+  return !String(csdd.aiContextRaw ?? "").includes(AI_CONTEXT_HEADING);
+}
+
 /**
  * Atgriež jaunu bloka stāvokli vai `null`, ja CSDD dati neko nepapildina.
  * `makeModel` saliek no markas un modeļa; masas un jauda ir cipari bez vienībām, kā laukos jau pieņemts.

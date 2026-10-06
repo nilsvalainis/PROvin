@@ -8,7 +8,11 @@ import {
   fetchCsddTechData,
   parseCsddTechDataXml,
 } from "@/lib/csdd-tech-data";
-import { applyCsddTechDataToBlock, csddVinMatchesOrder } from "@/lib/csdd-tech-data-apply";
+import {
+  applyCsddTechDataToBlock,
+  csddTechSeedNeeded,
+  csddVinMatchesOrder,
+} from "@/lib/csdd-tech-data-apply";
 import { emptyCsddFields } from "@/lib/admin-source-blocks";
 
 /**
@@ -239,6 +243,28 @@ describe("applyCsddTechDataToBlock", () => {
     const first = applyCsddTechDataToBlock({ ...emptyCsddFields(), aiContextRaw: "Operatora piezīme" }, data);
     expect(first?.aiContextRaw.startsWith("Operatora piezīme")).toBe(true);
     expect(applyCsddTechDataToBlock(first!, data)).toBeNull();
+  });
+});
+
+describe("csddTechSeedNeeded", () => {
+  const data = (() => {
+    const res = parseCsddTechDataXml(SAMPLE_XML);
+    if (!res.found) throw new Error("fixture must parse");
+    return res.data;
+  })();
+
+  it("is true for an untouched block", () => {
+    expect(csddTechSeedNeeded(emptyCsddFields())).toBe(true);
+  });
+
+  it("is true when the operator filled only part of the block", () => {
+    expect(csddTechSeedNeeded({ ...emptyCsddFields(), makeModel: "Škoda Superb" })).toBe(true);
+  });
+
+  it("is false once the register already filled the block, so the quota is not spent twice", () => {
+    const filled = applyCsddTechDataToBlock(emptyCsddFields(), data);
+    expect(filled).not.toBeNull();
+    expect(csddTechSeedNeeded(filled!)).toBe(false);
   });
 });
 
