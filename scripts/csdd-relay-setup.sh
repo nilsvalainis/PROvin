@@ -61,12 +61,17 @@ for v in CSDD_VPN_USER CSDD_VPN_PASSWORD CSDD_WS_USER CSDD_WS_PASSWORD CSDD_RELA
 done
 
 echo "== Releja kods"
-# Pārkopē šo failu blakus esošo releju; CI vietā pietiek ar scp vai git pull.
-if [[ -f "$(dirname "$0")/csdd-relay-server.mjs" ]]; then
-  install -m 0644 "$(dirname "$0")/csdd-relay-server.mjs" "$APP_DIR/csdd-relay-server.mjs"
-else
+src_dir=$(cd "$(dirname "$0")" && pwd)
+src="$src_dir/csdd-relay-server.mjs"
+dst="$APP_DIR/csdd-relay-server.mjs"
+if [[ ! -f "$src" ]]; then
   echo "Blakus nav csdd-relay-server.mjs. Iekopē to $APP_DIR/." >&2
   exit 1
+fi
+if [[ "$src" == "$dst" ]]; then
+  echo "Releja kods jau ir $APP_DIR"
+else
+  install -m 0644 "$src" "$dst"
 fi
 
 echo "== VPN serviss (openconnect, AnyConnect protokols)"
@@ -78,7 +83,8 @@ Wants=network-online.target
 
 [Service]
 EnvironmentFile=$ENV_FILE
-ExecStart=/bin/sh -c 'printf "%s\\n" "\$CSDD_VPN_PASSWORD" | /usr/sbin/openconnect --protocol=anyconnect --user="\$CSDD_VPN_USER" --passwd-on-stdin --non-inter $VPN_HOST'
+# systemd `%s` ir lietotāja vārds; `%%s` paliek printf `%s`, lai parole iet stdin, ne `/usr/bin/bash`.
+ExecStart=/bin/sh -c 'printf "%%s\\n" "\$CSDD_VPN_PASSWORD" | /usr/sbin/openconnect --protocol=anyconnect --user="\$CSDD_VPN_USER" --passwd-on-stdin --non-inter $VPN_HOST'
 Restart=always
 RestartSec=10
 
@@ -122,15 +128,9 @@ head -c 300 /tmp/csdd-test.xml; echo
 
 cat <<'EOF'
 
-Tālāk, lai PROVIN to sasniedz no Vercel, izvēlies vienu:
-
-  1) Cloudflare Tunnel (bez atvērtiem portiem un bez sertifikātu uzturēšanas):
-       cloudflared tunnel login
-       cloudflared tunnel create provin-csdd
-       cloudflared tunnel route dns provin-csdd csdd-relay.provin.lv
-       cloudflared tunnel run --url http://127.0.0.1:8787 provin-csdd
-
-  2) Caddy ar publisku domēnu un Let's Encrypt sertifikātu.
+Tālāk, lai PROVIN to sasniedz no Vercel: Caddy + Let's Encrypt uz csdd-relay.provin.lv.
+dns.lv: A ieraksts `csdd-relay` -> servera IPv4 (papildus AAAA, ja ir).
+Cloudflare Tunnel neder, ja provin.lv paliek dns.lv.
 
 Pēc tam Vercel vidē jāiestata:
   CSDD_RELAY_URL=https://csdd-relay.provin.lv

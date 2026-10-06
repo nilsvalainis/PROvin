@@ -9,11 +9,25 @@
 
 import type { CsddFormFields } from "@/lib/admin-source-blocks";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
+import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 
 const AI_CONTEXT_HEADING = "CSDD reģistra tehniskie dati (API)";
 
 function isBlank(v: string | undefined): boolean {
   return !String(v ?? "").trim();
+}
+
+function pickLookupNr1(raw: string): string {
+  if (isValidPlateNumber(raw)) return normalizePlateNumber(raw);
+  if (isValidVin(raw)) return normalizeVin(raw);
+  return "";
+}
+
+/**
+ * Manuālajai pogai un seed: vispirms CSDD bloka reģistrācijas numurs, tad pasūtījuma VIN vai numurzīme.
+ */
+export function csddTechLookupNr1(registrationNumber: string, orderVinOrPlate: string): string {
+  return pickLookupNr1(registrationNumber) || pickLookupNr1(orderVinOrPlate);
 }
 
 /** Cilvēkam lasāms bloks AI kontekstam; bez tā `COC_*` dati pazustu. */

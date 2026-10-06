@@ -29,6 +29,7 @@ import {
 } from "@/components/admin/AdminCsddInspectionHistoryTable";
 import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { AdminCsddPdfUpload } from "@/components/admin/AdminCsddPdfUpload";
+import { AdminCsddTechFetchButton } from "@/components/admin/AdminCsddTechFetchButton";
 import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-charts";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -98,6 +99,8 @@ type Props = {
   pdfIncludeMileageTable: boolean;
   onPdfIncludeMileageTableChange: (next: boolean) => void;
   sessionId: string;
+  /** Pasūtījuma VIN vai numurzīme, ja CSDD bloka reģistrācijas numurs vēl tukšs. */
+  orderVin?: string;
   /** localStorage atslēgai — noklusējums `csdd`. */
   collapseBlockId?: string;
   aiComment?: AdminAiSourceCommentSlot;
@@ -118,6 +121,7 @@ export function AdminCsddSourceBlock({
   pdfIncludeMileageTable,
   onPdfIncludeMileageTableChange,
   sessionId,
+  orderVin = "",
   collapseBlockId = "csdd",
   aiComment,
   photosPersistenceEnabled = false,
@@ -205,6 +209,14 @@ export function AdminCsddSourceBlock({
       }
     >
       <div className={trafficFillLevel ? "space-y-2 p-2" : "space-y-2 p-2"}>
+      {!readOnly ? (
+        <AdminCsddTechFetchButton
+          value={value}
+          orderVin={orderVin}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      ) : null}
       {!readOnly ? (
         <AdminCsddPdfUpload
           disabled={disabled}

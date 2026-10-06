@@ -10,6 +10,7 @@ import {
 } from "@/lib/csdd-tech-data";
 import {
   applyCsddTechDataToBlock,
+  csddTechLookupNr1,
   csddTechSeedNeeded,
   csddVinMatchesOrder,
 } from "@/lib/csdd-tech-data-apply";
@@ -265,6 +266,23 @@ describe("csddTechSeedNeeded", () => {
     const filled = applyCsddTechDataToBlock(emptyCsddFields(), data);
     expect(filled).not.toBeNull();
     expect(csddTechSeedNeeded(filled!)).toBe(false);
+  });
+});
+
+describe("csddTechLookupNr1", () => {
+  it("prefers the plate already in the CSDD block", () => {
+    expect(csddTechLookupNr1("NG8493", "TMBJH9NP9N7043581")).toBe("NG8493");
+    expect(csddTechLookupNr1("ng-8493", "")).toBe("NG8493");
+  });
+
+  it("falls back to the order VIN or plate", () => {
+    expect(csddTechLookupNr1("", "TMBJH9NP9N7043581")).toBe("TMBJH9NP9N7043581");
+    expect(csddTechLookupNr1("  ", "ng8493")).toBe("NG8493");
+  });
+
+  it("returns empty when neither is a VIN or plate", () => {
+    expect(csddTechLookupNr1("", "")).toBe("");
+    expect(csddTechLookupNr1("ab", "xy")).toBe("");
   });
 });
 
