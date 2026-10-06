@@ -17,7 +17,7 @@ export function stripHtmlToText(html: string): string {
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|tr|li|h1|h2|h3|td|th)>/gi, "\n")
     .replace(/<[^>]+>/g, " ");
-  return clean(without.replace(/\n{3,}/g, "\n\n")).slice(0, 20000);
+  return clean(without.replace(/\n{3,}/g, "\n\n")).slice(0, 60000);
 }
 
 function decodeEntities(s: string): string {
@@ -83,6 +83,67 @@ export function extractPartialUpdateHtml(xml: string): string {
   return form ?? chunks[0] ?? xml;
 }
 
+/** Drupal 10 AJAX (application/vnd.drupal-ajax): insert.com.data HTML. */
+export function extractDrupalAjaxHtml(body: string): string {
+  const trimmed = body.replace(/^\)\]\}'?,?\s*/, "").trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("<")) return trimmed;
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    const commands = Array.isArray(parsed)
+      ? parsed
+      : parsed && typeof parsed === "object" && Array.isArray((parsed as { commands?: unknown }).commands)
+        ? ((parsed as { commands: unknown[] }).commands ?? [])
+        : [];
+    if (!Array.isArray(commands) || commands.length === 0) return "";
+    const preferred: string[] = [];
+    const rest: string[] = [];
+    for (const cmd of commands) {
+      if (!cmd || typeof cmd !== "object") continue;
+      const o = cmd as Record<string, unknown>;
+      const data = typeof o.data === "string" ? o.data : "";
+      const text = typeof o.text === "string" ? o.text : "";
+      const selector = String(o.selector ?? "");
+      if (/api-query-output/i.test(selector) && data) preferred.push(data);
+      else if (data) rest.push(data);
+      if (text) rest.push(text);
+    }
+    return (preferred.length > 0 ? preferred : rest).join("\n").trim();
+  } catch {
+    return "";
+  }
+}
+
+export function extractInnerHtmlById(html: string, id: string): string {
+  const re = new RegExp(`<([a-z0-9]+)([^>]*\\sid="${escapeRe(id)}"[^>]*)>`, "i");
+  const m = re.exec(html);
+  if (!m) return "";
+  const tag = m[1]!;
+  if (/\/>$/.test(m[0])) return "";
+  const rest = html.slice(m.index + m[0].length);
+  const close = new RegExp(`</${tag}>`, "i").exec(rest);
+  if (!close) return rest.trim();
+  return rest.slice(0, close.index).trim();
+}
+
+export function extractDrupalAjaxPageState(html: string): Record<string, string> {
+  const m = /data-drupal-selector="drupal-settings-json">([^<]+)/i.exec(html);
+  if (!m?.[1]) return {};
+  try {
+    const json = JSON.parse(m[1]) as {
+      ajaxPageState?: { theme?: string; theme_token?: string | null; libraries?: string };
+    };
+    const s = json.ajaxPageState ?? {};
+    const out: Record<string, string> = {};
+    if (s.theme) out["ajax_page_state[theme]"] = s.theme;
+    if (s.theme_token) out["ajax_page_state[theme_token]"] = s.theme_token;
+    if (s.libraries) out["ajax_page_state[libraries]"] = s.libraries;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -97,8 +158,11 @@ export function extractInputValue(html: string, name: string): string {
 }
 
 export function parseMntAjaxSource(html: string): string {
-  const m = /otsiAction = function\(\) \{PrimeFaces\.ab\(\{s:"([^"]+)"/.exec(html);
-  return m?.[1] ?? "";
+  const decoded = html.replace(/&quot;/g, '"');
+  const otsi = /otsiAction\s*=\s*function\(\)\s*\{[\s\S]{0,400}?PrimeFaces\.ab\(\{s:"([^"]+)"/.exec(decoded);
+  if (otsi?.[1]) return otsi[1];
+  const loose = /otsiAction[\s\S]{0,400}?s:"(soidukOtsingForm:[^"]+)"/.exec(decoded);
+  return loose?.[1] ?? "";
 }
 
 export function isCloudflareChallengeHtml(html: string, status = 200): boolean {
@@ -131,4 +195,22 @@ export function mergeCookieHeader(previous: string, incoming: string): string {
   eat(previous);
   eat(incoming);
   return [...map.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
+}
+
+/** Vairāki Set-Cookie (t.sk. `Expires=Tue, 19 Jan` komats) → Cookie header. */
+export function cookieHeaderFromSetCookieLines(lines: string[]): string {
+  let header = "";
+  for (const line of lines) {
+    const nameValue = line.split(";")[0]?.trim() ?? "";
+    if (!nameValue.includes("=")) continue;
+    header = mergeCookieHeader(header, nameValue);
+  }
+  return header;
+}
+
+export function splitCombinedSetCookieHeader(header: string): string[] {
+  return header
+    .split(/,(?=\s*[A-Za-z0-9_-]+=)/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }

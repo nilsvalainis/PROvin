@@ -4,7 +4,8 @@ import "server-only";
  * Igaunijas avoti:
  *  - eteenindus.mnt.ee („Sõiduki taustakontroll”) - Transpordiamet;
  *  - lkf.ee („Kahjukontroll”) - Liikluskindlustuse Fond OCTA.
- * Primāri HTTP + CapSolver (reCAPTCHA v3 / v2). Redzams pārlūks paliek kā rezerve lokāli.
+ * Primāri HTTP + CapSolver (reCAPTCHA v3 / v2) caur sticky proxy (FIXIE_URL).
+ * Redzams pārlūks paliek kā rezerve lokāli.
  */
 import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { parseLkfExtract, parseMntExtract } from "@/lib/vin-sources/estonia-parse";
@@ -53,9 +54,13 @@ export async function fetchMnt(vin: string, regMark = ""): Promise<VinSourceFetc
   if (hasCaptchaSolverKey()) {
     try {
       const http = await fetchMntHttp(vin, regMark);
-      if (!/reCAPTCHA neizdevās/i.test(http.message) || http.found) return http;
-    } catch {
-      /* pārlūka rezerve, ja atļauta */
+      if (http.found || !isVinSourcesBrowserAllowed()) return http;
+      if (!/reCAPTCHA neizdevās/i.test(http.message)) return http;
+    } catch (e) {
+      if (!isVinSourcesBrowserAllowed()) {
+        const detail = e instanceof Error ? e.message.slice(0, 180) : "kļūda";
+        return emptyVinSourceResult("mnt_ee", vin, `mnt.ee HTTP ielase neizdevās (${detail})`);
+      }
     }
   }
   if (isVinSourcesBrowserAllowed()) return fetchMntBrowser(vin, regMark);
@@ -147,9 +152,13 @@ export async function fetchLkf(vin: string, captchaTimeoutMs = 240000): Promise<
   if (hasCaptchaSolverKey()) {
     try {
       const http = await fetchLkfHttp(vin);
-      if (!/reCAPTCHA|CapSolver/i.test(http.message) || http.found) return http;
-    } catch {
-      /* pārlūka rezerve */
+      if (http.found || !isVinSourcesBrowserAllowed()) return http;
+      if (!/reCAPTCHA|CapSolver/i.test(http.message)) return http;
+    } catch (e) {
+      if (!isVinSourcesBrowserAllowed()) {
+        const detail = e instanceof Error ? e.message.slice(0, 180) : "kļūda";
+        return emptyVinSourceResult("lkf_ee", vin, `lkf.ee HTTP ielase neizdevās (${detail})`);
+      }
     }
   }
   if (isVinSourcesBrowserAllowed()) return fetchLkfBrowser(vin, captchaTimeoutMs);

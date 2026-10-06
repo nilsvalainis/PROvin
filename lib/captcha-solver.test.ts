@@ -6,6 +6,7 @@ import {
   httpProxyUrlFromCapsolver,
   parseCaptchaCreateTask,
   parseCaptchaTaskResult,
+  vinStickyHttpProxyUrl,
 } from "@/lib/captcha-solver";
 
 describe("captchaCreateTaskBody", () => {
@@ -30,6 +31,34 @@ describe("captchaCreateTaskBody", () => {
       websiteKey: "6LdtedISAAAAABWNkw4vodbhMcB1SZ-ykU6A04fL",
     });
     expect(body.task).toMatchObject({ type: "ReCaptchaV2TaskProxyLess" });
+  });
+
+  it("reCAPTCHA v3 ar Fixie proxy lieto ReCaptchaV3Task", () => {
+    const body = captchaCreateTaskBody("key-1", {
+      kind: "recaptcha_v3",
+      websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+      websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+      pageAction: "soiduk_otsing",
+      proxy: "group.usefixie.com:80:fixie:secret",
+    });
+    expect(body.task).toMatchObject({
+      type: "ReCaptchaV3Task",
+      proxy: "group.usefixie.com:80:fixie:secret",
+      pageAction: "soiduk_otsing",
+    });
+  });
+
+  it("reCAPTCHA v2 ar proxy lieto ReCaptchaV2Task", () => {
+    const body = captchaCreateTaskBody("key-1", {
+      kind: "recaptcha_v2",
+      websiteURL: "https://lkf.ee/et/kahjukontroll",
+      websiteKey: "6LdtedISAAAAABWNkw4vodbhMcB1SZ-ykU6A04fL",
+      proxy: "group.usefixie.com:80:fixie:secret",
+    });
+    expect(body.task).toMatchObject({
+      type: "ReCaptchaV2Task",
+      proxy: "group.usefixie.com:80:fixie:secret",
+    });
   });
 
   it("veido Cloudflare Challenge uzdevumu ar proxy", () => {
@@ -69,6 +98,21 @@ describe("capsolverProxyFromUrl", () => {
       "http://fixie:secret@group.usefixie.com:80",
     );
   });
+
+  it("FIXIE_URL bez CAPSOLVER_PROXY dod sticky HTTP proxy", () => {
+    const prevFixie = process.env.FIXIE_URL;
+    const prevCap = process.env.CAPSOLVER_PROXY;
+    process.env.FIXIE_URL = "http://fixie:secret@group.usefixie.com:80";
+    delete process.env.CAPSOLVER_PROXY;
+    try {
+      expect(vinStickyHttpProxyUrl()).toBe("http://fixie:secret@group.usefixie.com:80");
+    } finally {
+      if (prevFixie === undefined) delete process.env.FIXIE_URL;
+      else process.env.FIXIE_URL = prevFixie;
+      if (prevCap === undefined) delete process.env.CAPSOLVER_PROXY;
+      else process.env.CAPSOLVER_PROXY = prevCap;
+    }
+  });
 });
 
 describe("parseCaptchaCreateTask", () => {
@@ -92,6 +136,21 @@ describe("parseCaptchaTaskResult", () => {
       ok: true,
       token: "tok-9",
       cookies: {},
+      userAgent: "",
+    });
+  });
+
+  it("ņem recaptcha-ca-t sīkdatni no v3 solution", () => {
+    expect(
+      parseCaptchaTaskResult({
+        errorId: 0,
+        status: "ready",
+        solution: { gRecaptchaResponse: "tok-v3", "recaptcha-ca-t": "ca-t-1" },
+      }),
+    ).toEqual({
+      ok: true,
+      token: "tok-v3",
+      cookies: { "recaptcha-ca-t": "ca-t-1" },
       userAgent: "",
     });
   });

@@ -1,18 +1,23 @@
 /**
  * CapSolver (https://docs.capsolver.com) - reCAPTCHA, Turnstile un Cloudflare Challenge.
- * Atslēga: CAPSOLVER_API_KEY. Cloudflare Challenge prasa proxy (CAPSOLVER_PROXY vai FIXIE_URL).
+ * Atslēga: CAPSOLVER_API_KEY. Cloudflare Challenge un reCAPTCHA IP saite prasa
+ * sticky proxy (CAPSOLVER_PROXY vai FIXIE_URL) - tokens jāsūta no tā paša IP.
  */
 export type RecaptchaV3Task = {
   kind: "recaptcha_v3";
   websiteURL: string;
   websiteKey: string;
   pageAction: string;
+  /** CapSolver formāts host:port:user:pass. Ja ir, lieto ReCaptchaV3Task (ne ProxyLess). */
+  proxy?: string;
 };
 
 export type RecaptchaV2Task = {
   kind: "recaptcha_v2";
   websiteURL: string;
   websiteKey: string;
+  /** CapSolver formāts host:port:user:pass. Ja ir, lieto ReCaptchaV2Task (ne ProxyLess). */
+  proxy?: string;
 };
 
 export type TurnstileTask = {
@@ -92,27 +97,32 @@ export function httpProxyUrlFromCapsolver(proxy: string): string | null {
   return null;
 }
 
+/** HTTP fetch caur to pašu sticky proxy, ar kuru CapSolver risina captcha (FIXIE_URL). */
+export function vinStickyHttpProxyUrl(): string | undefined {
+  return httpProxyUrlFromCapsolver(getCaptchaSolverProxy()) || undefined;
+}
+
 export function captchaCreateTaskBody(apiKey: string, task: CaptchaTask): Record<string, unknown> {
   if (task.kind === "recaptcha_v3") {
-    return {
-      clientKey: apiKey,
-      task: {
-        type: "ReCaptchaV3TaskProxyLess",
-        websiteURL: task.websiteURL,
-        websiteKey: task.websiteKey,
-        pageAction: task.pageAction,
-      },
+    const proxy = task.proxy?.trim() ?? "";
+    const recaptchaTask: Record<string, unknown> = {
+      type: proxy ? "ReCaptchaV3Task" : "ReCaptchaV3TaskProxyLess",
+      websiteURL: task.websiteURL,
+      websiteKey: task.websiteKey,
+      pageAction: task.pageAction,
     };
+    if (proxy) recaptchaTask.proxy = proxy;
+    return { clientKey: apiKey, task: recaptchaTask };
   }
   if (task.kind === "recaptcha_v2") {
-    return {
-      clientKey: apiKey,
-      task: {
-        type: "ReCaptchaV2TaskProxyLess",
-        websiteURL: task.websiteURL,
-        websiteKey: task.websiteKey,
-      },
+    const proxy = task.proxy?.trim() ?? "";
+    const recaptchaTask: Record<string, unknown> = {
+      type: proxy ? "ReCaptchaV2Task" : "ReCaptchaV2TaskProxyLess",
+      websiteURL: task.websiteURL,
+      websiteKey: task.websiteKey,
     };
+    if (proxy) recaptchaTask.proxy = proxy;
+    return { clientKey: apiKey, task: recaptchaTask };
   }
   if (task.kind === "turnstile") {
     return {
@@ -163,6 +173,10 @@ export function parseCaptchaTaskResult(raw: unknown): CaptchaSolveResult | { pen
   const cookies: Record<string, string> = {};
   for (const [k, v] of Object.entries(cookiesRaw)) {
     if (typeof v === "string" && v.trim()) cookies[k] = v.trim();
+  }
+  for (const k of ["recaptcha-ca-t", "recaptcha-ca-e"] as const) {
+    const v = String(solution[k] ?? "").trim();
+    if (v) cookies[k] = v;
   }
   const token = String(solution.gRecaptchaResponse ?? solution.token ?? cookies.cf_clearance ?? "").trim();
   if (!token) return { ok: false, reason: "CapSolver: žetons tukšs" };

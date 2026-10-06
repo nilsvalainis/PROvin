@@ -426,7 +426,8 @@ export function AdminVinRegistrySourceBlock({
             ) : null}
             {blockKey === "mnt_ee" || blockKey === "lkf_ee" ? (
               <span className="text-[10px] text-slate-400">
-                HTTP ar CapSolver, ja CAPSOLVER_API_KEY ir iestatīta. Citādi lokāls pārlūks.
+                HTTP ar CapSolver, ja CAPSOLVER_API_KEY ir iestatīta. Sticky proxy: CAPSOLVER_PROXY vai FIXIE_URL. Citādi
+                lokāls pārlūks.
               </span>
             ) : null}
             {blockKey === "carinfo" ? (

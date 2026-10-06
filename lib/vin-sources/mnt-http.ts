@@ -1,41 +1,127 @@
 import "server-only";
 
-import { solveCaptcha } from "@/lib/captcha-solver";
+import {
+  getCaptchaSolverProxy,
+  httpProxyUrlFromCapsolver,
+  solveCaptcha,
+  vinStickyHttpProxyUrl,
+} from "@/lib/captcha-solver";
 import { parseMntExtract } from "@/lib/vin-sources/estonia-parse";
 import {
+  cookiesRecordToHeader,
   extractInputValue,
   extractPageFromHtml,
   extractPartialUpdateHtml,
+  isCloudflareChallengeHtml,
+  mergeCookieHeader,
   parseMntAjaxSource,
 } from "@/lib/vin-sources/html-extract";
-import { vinHttpFetch } from "@/lib/vin-sources/http";
+import { VIN_HTTP_UA, vinHttpFetch, type VinHttpResult } from "@/lib/vin-sources/http";
 import { emptyVinSourceResult, type VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 const MNT_URL = "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf";
 const MNT_SITE_KEY = "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa";
 const MNT_ACTION = "soiduk_otsing";
+const FETCH_TIMEOUT_MS = 45_000;
+
+function fail(vin: string, message: string, raw = ""): VinSourceFetchResult {
+  return { ...emptyVinSourceResult("mnt_ee", vin, message), raw: raw.slice(0, 20_000) };
+}
+
+type Session = { cookie: string; ua: string; proxyUrl?: string };
+
+async function getPage(session: Session): Promise<VinHttpResult> {
+  return vinHttpFetch(MNT_URL, {
+    cookie: session.cookie,
+    proxyUrl: session.proxyUrl,
+    timeoutMs: FETCH_TIMEOUT_MS,
+    headers: {
+      referer: "https://eteenindus.mnt.ee/",
+      "user-agent": session.ua,
+    },
+  });
+}
+
+async function bypassCloudflare(challenged: VinHttpResult, session: Session): Promise<Session | { reason: string }> {
+  const proxy = getCaptchaSolverProxy();
+  if (!proxy) return { reason: "mnt.ee Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
+  const solved = await solveCaptcha(
+    {
+      kind: "cloudflare_challenge",
+      websiteURL: MNT_URL,
+      proxy,
+      html: challenged.text.slice(0, 80_000),
+      userAgent: session.ua,
+    },
+    { timeoutMs: 90_000 },
+  );
+  if (!solved.ok) return { reason: solved.reason };
+  const fromCookies = cookiesRecordToHeader(solved.cookies);
+  const clearance = fromCookies || (solved.token ? `cf_clearance=${solved.token}` : "");
+  if (!clearance) return { reason: "CapSolver: cf_clearance tukšs" };
+  return {
+    cookie: mergeCookieHeader(session.cookie, clearance),
+    ua: solved.userAgent || session.ua,
+    proxyUrl: httpProxyUrlFromCapsolver(proxy) ?? session.proxyUrl,
+  };
+}
+
+async function loadMntForm(session: Session): Promise<{ res: VinHttpResult; session: Session } | { reason: string }> {
+  let res = await getPage(session);
+  if (!isCloudflareChallengeHtml(res.text, res.status)) return { res, session };
+  const next = await bypassCloudflare(res, session);
+  if ("reason" in next) return next;
+  res = await getPage(next);
+  if (isCloudflareChallengeHtml(res.text, res.status)) {
+    return { reason: "mnt.ee Cloudflare netika apietas" };
+  }
+  return { res, session: next };
+}
 
 export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSourceFetchResult> {
-  const page = await vinHttpFetch(MNT_URL, {
-    headers: { referer: "https://eteenindus.mnt.ee/" },
-  });
+  const proxyUrl = vinStickyHttpProxyUrl();
+  let session: Session = { cookie: "", ua: VIN_HTTP_UA, proxyUrl };
+
+  let loaded: { res: VinHttpResult; session: Session };
+  try {
+    const passed = await loadMntForm(session);
+    if ("reason" in passed) return fail(vin, passed.reason);
+    loaded = passed;
+  } catch (e) {
+    const detail = e instanceof Error ? e.message.slice(0, 180) : "kļūda";
+    return fail(vin, `mnt.ee HTTP ielase neizdevās (${detail})`);
+  }
+
+  const page = loaded.res;
+  session = loaded.session;
   if (page.status >= 400 || !page.text) {
-    return emptyVinSourceResult("mnt_ee", vin, `mnt.ee atbildēja ar HTTP ${page.status}`);
+    return fail(vin, `mnt.ee atbildēja ar HTTP ${page.status}`, page.text);
+  }
+  if (isCloudflareChallengeHtml(page.text, page.status)) {
+    return fail(vin, "mnt.ee Cloudflare Challenge netika apietas", page.text);
   }
 
   const viewState = extractInputValue(page.text, "javax.faces.ViewState");
   const ajaxSource = parseMntAjaxSource(page.text);
   if (!viewState || !ajaxSource) {
-    return emptyVinSourceResult("mnt_ee", vin, "mnt.ee forma nav nolasāma");
+    return fail(vin, "mnt.ee forma nav nolasāma", page.text);
   }
 
+  const capProxy = getCaptchaSolverProxy();
   const solved = await solveCaptcha({
     kind: "recaptcha_v3",
     websiteURL: MNT_URL,
     websiteKey: MNT_SITE_KEY,
     pageAction: MNT_ACTION,
+    proxy: capProxy || undefined,
   });
-  if (!solved.ok) return emptyVinSourceResult("mnt_ee", vin, solved.reason);
+  if (!solved.ok) return fail(vin, solved.reason, page.text);
+
+  session = {
+    ...session,
+    cookie: mergeCookieHeader(page.cookie, cookiesRecordToHeader(solved.cookies)),
+    ua: solved.userAgent || session.ua,
+  };
 
   const body = new URLSearchParams({
     "javax.faces.partial.ajax": "true",
@@ -50,20 +136,29 @@ export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSource
     "javax.faces.ViewState": viewState,
   });
 
-  const ajax = await vinHttpFetch(MNT_URL, {
-    method: "POST",
-    cookie: page.cookie,
-    headers: {
-      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "faces-request": "partial/ajax",
-      origin: "https://eteenindus.mnt.ee",
-      referer: MNT_URL,
-      "x-requested-with": "XMLHttpRequest",
-    },
-    body: body.toString(),
-  });
+  let ajax: VinHttpResult;
+  try {
+    ajax = await vinHttpFetch(MNT_URL, {
+      method: "POST",
+      cookie: session.cookie,
+      proxyUrl: session.proxyUrl,
+      timeoutMs: FETCH_TIMEOUT_MS,
+      headers: {
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "faces-request": "partial/ajax",
+        origin: "https://eteenindus.mnt.ee",
+        referer: MNT_URL,
+        "x-requested-with": "XMLHttpRequest",
+        "user-agent": session.ua,
+      },
+      body: body.toString(),
+    });
+  } catch (e) {
+    const detail = e instanceof Error ? e.message.slice(0, 180) : "kļūda";
+    return fail(vin, `mnt.ee AJAX ielase neizdevās (${detail})`, page.text);
+  }
   if (ajax.status >= 400) {
-    return emptyVinSourceResult("mnt_ee", vin, `mnt.ee AJAX atbildēja ar HTTP ${ajax.status}`);
+    return fail(vin, `mnt.ee AJAX atbildēja ar HTTP ${ajax.status}`, ajax.text);
   }
 
   const html = extractPartialUpdateHtml(ajax.text);
