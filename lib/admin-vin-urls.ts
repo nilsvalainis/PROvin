@@ -8,6 +8,12 @@ export function normalizeVinForServiceUrls(raw: string): string {
   return raw.replace(/[\s-]/g, "").toUpperCase();
 }
 
+/**
+ * Admin pārlūka AbortSignal VIN reģistriem (`requestVinRegistryFetch`).
+ * ≥ 2× CapSolver ProxyLess 90 s + forma/AJAX, zem `/api/admin/vin-sources/fetch` maxDuration 300 s.
+ */
+export const VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS = 280_000;
+
 export const AUTODNA_LV_HOME_URL = "https://www.autodna.lv";
 /** CarVertical — ielogotā „Manas atskaites” lapa (ne mājaslapa, ne carvertical.lv). */
 export const CARVERTICAL_REPORTS_URL = "https://www.carvertical.com/lv/user/reports";

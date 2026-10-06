@@ -47,7 +47,11 @@ import {
   countVinRegistryOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
-import { buildCarinfoVinCheckUrl, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
+import {
+  buildCarinfoVinCheckUrl,
+  normalizeVinForServiceUrls,
+  VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS,
+} from "@/lib/admin-vin-urls";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
 import { applyTraficomReportToBlock, looksLikeTraficomReport } from "@/lib/traficom-report-parse";
@@ -92,12 +96,23 @@ export async function requestVinRegistryFetch(
   | { ok: true; found: boolean; message: string; block: VinRegistryBlockState }
   | { ok: false; error: string; browserRequired?: boolean; openUrl?: string | null }
 > {
-  const res = await fetch("/api/admin/vin-sources/fetch", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ vin, source, regMark }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/admin/vin-sources/fetch", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vin, source, regMark }),
+      signal: AbortSignal.timeout(VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS),
+    });
+  } catch (e) {
+    const timedOut = e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError");
+    if (timedOut) {
+      const sec = Math.round(VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS / 1000);
+      return { ok: false, error: `Reģistra ielase noildza pārlūkā (${sec} s)` };
+    }
+    throw e;
+  }
   const data = (await res.json().catch(() => ({}))) as {
     ok?: boolean;
     found?: boolean;

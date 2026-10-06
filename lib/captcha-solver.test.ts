@@ -4,8 +4,10 @@ import {
   CAPSOLVER_PROXIED_TIMEOUT_MS,
   CAPSOLVER_PROXYLESS_TIMEOUT_MS,
   captchaCreateTaskBody,
+  captchaTaskTypeName,
   capsolverProxyFromUrl,
   defaultCaptchaSolveTimeoutMs,
+  formatCaptchaPollTimeoutReason,
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
   isCapsolverForceProxy,
@@ -163,7 +165,7 @@ describe("defaultCaptchaSolveTimeoutMs", () => {
     expect(CAPSOLVER_PROXIED_TIMEOUT_MS).toBe(120_000);
   });
 
-  it("ProxyLess paliek 45 s", () => {
+  it("ProxyLess gaida 90 s", () => {
     expect(
       defaultCaptchaSolveTimeoutMs({
         kind: "recaptcha_v2",
@@ -171,6 +173,7 @@ describe("defaultCaptchaSolveTimeoutMs", () => {
         websiteKey: "k",
       }),
     ).toBe(CAPSOLVER_PROXYLESS_TIMEOUT_MS);
+    expect(CAPSOLVER_PROXYLESS_TIMEOUT_MS).toBe(90_000);
   });
 });
 
@@ -314,6 +317,171 @@ describe("solveCaptcha", () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("mnt.ee: CapSolver: Failed to solve the captcha: 1001");
+  });
+
+  it("ņem žetonu no createTask ready, bez getTaskResult", async () => {
+    let polls = 0;
+    const fetchImpl = jsonFetch((url) => {
+      if (url.includes("getTaskResult")) {
+        polls += 1;
+        return { errorId: 0, status: "processing" };
+      }
+      return {
+        errorId: 0,
+        status: "ready",
+        taskId: "t-ready",
+        solution: { gRecaptchaResponse: "tok-now" },
+      };
+    });
+    const result = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+      },
+      { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+    );
+    expect(polls).toBe(0);
+    expect(result).toMatchObject({ ok: true, token: "tok-now" });
+  });
+
+  it("createTask tukšu HTTP 502 neslēpj aiz poll noildzes", async () => {
+    const fetchImpl = (async () =>
+      ({
+        status: 502,
+        json: async () => {
+          throw new Error("no json");
+        },
+      }) as Response) as typeof fetch;
+    const result = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+      },
+      { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000, sourceLabel: "mnt.ee" },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toContain("mnt.ee: CapSolver createTask: tukša atbilde (HTTP 502)");
+      expect(result.reason).not.toContain("žetons neatnāca laikā");
+    }
+  });
+
+  it("ProxyLess pēc pending noildzes atkārto createTask vienu reizi", async () => {
+    let creates = 0;
+    let t = 0;
+    const fetchImpl = jsonFetch((url) => {
+      if (url.includes("createTask")) {
+        creates += 1;
+        return { errorId: 0, taskId: `t-${creates}` };
+      }
+      if (creates === 1) return { errorId: 0, status: "processing" };
+      return { errorId: 0, status: "ready", solution: { gRecaptchaResponse: "tok-retry" } };
+    });
+    const result = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+      },
+      {
+        apiKey: "12345678key",
+        fetchImpl,
+        timeoutMs: 4_000,
+        now: () => t,
+        sleep: async (ms) => {
+          t += ms;
+        },
+      },
+    );
+    expect(creates).toBe(2);
+    expect(result).toMatchObject({ ok: true, token: "tok-retry" });
+  });
+
+  it("ProxyLess otrā mēģinājuma noildzē rāda taskId un statusu", async () => {
+    let creates = 0;
+    let t = 0;
+    const fetchImpl = jsonFetch((url) => {
+      if (url.includes("createTask")) {
+        creates += 1;
+        return { errorId: 0, taskId: "abcdef01-rest-of-id" };
+      }
+      return { errorId: 0, status: "processing" };
+    });
+    const result = await solveCaptcha(
+      {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+      },
+      {
+        apiKey: "12345678key",
+        fetchImpl,
+        timeoutMs: 4_000,
+        sourceLabel: "mnt.ee",
+        now: () => t,
+        sleep: async (ms) => {
+          t += ms;
+        },
+      },
+    );
+    expect(creates).toBe(2);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe(
+        "mnt.ee: CapSolver: žetons neatnāca laikā (ReCaptchaV3TaskProxyLess, uzdevums abcdef01, statuss processing, mēģinājums 2/2)",
+      );
+    }
+  });
+
+  it("proxied pending noildzi neatkarī createTask", async () => {
+    let creates = 0;
+    let t = 0;
+    const fetchImpl = jsonFetch((url) => {
+      if (url.includes("createTask")) {
+        creates += 1;
+        return { errorId: 0, taskId: "proxied-1" };
+      }
+      return { errorId: 0, status: "idle" };
+    });
+    const result = await solveCaptcha(proxiedV2, {
+      apiKey: "12345678key",
+      fetchImpl,
+      timeoutMs: 4_000,
+      now: () => t,
+      sleep: async (ms) => {
+        t += ms;
+      },
+    });
+    expect(creates).toBe(1);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toContain("ReCaptchaV2Task");
+      expect(result.reason).toContain("statuss idle");
+      expect(result.reason).not.toContain("mēģinājums");
+    }
+  });
+
+  it("formatē noildzes iemeslu ar ProxyLess tipu", () => {
+    expect(captchaTaskTypeName({ kind: "recaptcha_v2", websiteURL: "https://lkf.ee/", websiteKey: "k" })).toBe(
+      "ReCaptchaV2TaskProxyLess",
+    );
+    expect(
+      formatCaptchaPollTimeoutReason({
+        taskType: "ReCaptchaV3TaskProxyLess",
+        taskId: "37223a89-06ed-442c-a0b8",
+        lastStatus: "processing",
+        attempt: 2,
+        maxAttempts: 2,
+      }),
+    ).toBe(
+      "CapSolver: žetons neatnāca laikā (ReCaptchaV3TaskProxyLess, uzdevums 37223a89, statuss processing, mēģinājums 2/2)",
+    );
   });
 
   it("lkf.ee prefiksu nedubulto, ja jau ir", () => {

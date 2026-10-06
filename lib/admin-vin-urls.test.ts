@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SOURCE_BLOCK_EXTERNAL_URL } from "@/lib/admin-source-blocks";
+import { CAPSOLVER_PROXYLESS_TIMEOUT_MS } from "@/lib/captcha-solver";
 import {
   ADMIN_ORDER_ROW_NAV_IGNORE_SELECTOR,
   AUTODNA_LV_HOME_URL,
@@ -19,6 +20,7 @@ import {
   buildVinAutofillHref,
   normalizeVinForServiceUrls,
   resolveSourceBlockExternalOpen,
+  VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS,
 } from "@/lib/admin-vin-urls";
 
 describe("admin VIN service URLs", () => {
@@ -100,5 +102,11 @@ describe("admin VIN service URLs", () => {
     expect(SOURCE_BLOCK_EXTERNAL_URL.carvertical).toBe(CARVERTICAL_REPORTS_URL);
     expect(SOURCE_BLOCK_EXTERNAL_URL.carvertical).not.toContain("carvertical.lv");
     expect(SOURCE_BLOCK_EXTERNAL_URL.cc_vin).toBe(CHECKCAR_VIN_HOME_URL);
+  });
+
+  it("admin VIN fetch abort is at least two ProxyLess polls and under route maxDuration", () => {
+    expect(VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS).toBeGreaterThanOrEqual(CAPSOLVER_PROXYLESS_TIMEOUT_MS * 2);
+    expect(VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS).toBeGreaterThanOrEqual(90_000);
+    expect(VIN_REGISTRY_CLIENT_FETCH_TIMEOUT_MS).toBeLessThanOrEqual(300_000);
   });
 });
