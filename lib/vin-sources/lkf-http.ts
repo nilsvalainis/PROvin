@@ -1,6 +1,11 @@
 import "server-only";
 
-import { getCaptchaSolverProxy, solveCaptcha, vinStickyHttpProxyUrl } from "@/lib/captcha-solver";
+import {
+  CAPSOLVER_PROXIED_TIMEOUT_MS,
+  getCaptchaSolverProxy,
+  solveCaptcha,
+  vinStickyHttpProxyUrl,
+} from "@/lib/captcha-solver";
 import { parseLkfExtract } from "@/lib/vin-sources/estonia-parse";
 import {
   cookiesRecordToHeader,
@@ -57,12 +62,15 @@ export async function fetchLkfHttp(vin: string): Promise<VinSourceFetchResult> {
   }
 
   const capProxy = getCaptchaSolverProxy();
-  const solved = await solveCaptcha({
-    kind: "recaptcha_v2",
-    websiteURL: LKF_URL,
-    websiteKey: LKF_SITE_KEY,
-    proxy: capProxy || undefined,
-  });
+  const solved = await solveCaptcha(
+    {
+      kind: "recaptcha_v2",
+      websiteURL: LKF_URL,
+      websiteKey: LKF_SITE_KEY,
+      proxy: capProxy || undefined,
+    },
+    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000 },
+  );
   if (!solved.ok) return fail(vin, solved.reason, page.text);
 
   const cookie = mergeCookieHeader(page.cookie, cookiesRecordToHeader(solved.cookies));
