@@ -14,6 +14,9 @@ import {
   assessLvVignette,
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
+  LV_VIGNETTE_CARD_LABEL,
+  LV_VIGNETTE_CARD_VALUE,
+  LV_VIGNETTE_PUBLIC_NOTE,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
 import { aggregateLossAmountFlags } from "@/lib/loss-amount-ui";
@@ -313,8 +316,7 @@ export const PROVIN_ALERT_TEXT = {
     "Uzmanību! Pēdējā apskatē fiksēts paaugstināts atgāzu cieto daļiņu līmenis, kas var norādīt uz izplūdes sistēmas defektiem.",
   inspection:
     "Brīdinājums: Transportlīdzeklim nav derīgas tehniskās apskates vai tās termiņš drīzumā beidzas.",
-  vignette:
-    "Brīdinājums: kravas transportlīdzeklim ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete.",
+  vignette: LV_VIGNETTE_PUBLIC_NOTE,
 } as const;
 
 /** Kopsavilkuma kartītes teksti. */
@@ -343,9 +345,9 @@ export const PROVIN_ALERT_CARD_DEFAULTS: Record<ProvinAlertBannerKind, ProvinBan
     note: "Nav derīgas apskates vai tās termiņš tuvojas beigām",
   },
   vignette: {
-    label: "Vinjete",
-    value: "Jāiegādājas",
-    note: "Kravas auto, pilna masa virs 3000 kg. Uz nodevas autoceļiem Latvijā vajadzīga vinjete.",
+    label: LV_VIGNETTE_CARD_LABEL,
+    value: LV_VIGNETTE_CARD_VALUE,
+    note: LV_VIGNETTE_PUBLIC_NOTE,
   },
 };
 

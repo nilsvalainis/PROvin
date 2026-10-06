@@ -38,8 +38,9 @@ describe("assessLvVignette", () => {
     );
     expect(getLvVignetteFieldUiFlag(threeSeats, "grossMassKg", "3200")).toBe("yellow");
     expect(getLvVignetteFieldUiFlag(threeSeats, "seatCount", "3")).toBe("yellow");
-    expect(threeSeats.bannerText).toMatch(/vinjete/i);
-    expect(threeSeats.bannerText).not.toMatch(/Papildu sēdvietas/);
+    expect(threeSeats.bannerText).toBe(
+      "Pārvietojoties pa Latvijas galvenajiem autoceļiem, var būt nepieciešama vinjete.",
+    );
 
     const unknownSeats = assessLvVignette({
       vehicleType: "Kravas transporta kaste",
@@ -59,7 +60,9 @@ describe("assessLvVignette", () => {
     expect(extra.applies).toBe(true);
     expect(extra.extraSeats).toBe(true);
     expect(extra.seatWarningTitle).toMatch(/sēdvietu skaits virs 3/i);
-    expect(extra.bannerText).toMatch(/Papildu sēdvietas/);
+    expect(extra.bannerText).toBe(
+      "Pārvietojoties pa Latvijas galvenajiem autoceļiem, var būt nepieciešama vinjete.",
+    );
   });
 
   it("does not warn at 3000 kg, for M1 people-movers, or for light cargo", () => {

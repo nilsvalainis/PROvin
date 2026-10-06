@@ -77,14 +77,15 @@ export type LvVignetteAssessment = {
   bannerText: string;
 };
 
+export const LV_VIGNETTE_CARD_LABEL = "Vinjete";
+export const LV_VIGNETTE_CARD_VALUE = "Pilna masa virs 3000 kg";
+export const LV_VIGNETTE_PUBLIC_NOTE =
+  "Pārvietojoties pa Latvijas galvenajiem autoceļiem, var būt nepieciešama vinjete.";
+
 const LV_VIGNETTE_TITLE =
   "Brīdinājums: kravas transportam ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete.";
 const LV_VIGNETTE_SEAT_TITLE =
   "Brīdinājums: sēdvietu skaits virs 3 neatceļ vinjetes pienākumu, ja auto ir reģistrēts kā kravas transportlīdzeklis (N1).";
-const LV_VIGNETTE_BANNER =
-  "Brīdinājums: kravas transportlīdzeklim ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete.";
-const LV_VIGNETTE_BANNER_SEATS =
-  "Brīdinājums: kravas transportlīdzeklim ar pilnu masu virs 3000 kg uz nodevas autoceļiem Latvijā vajadzīga vinjete. Papildu sēdvietas neatceļ šo pienākumu.";
 
 export function parseCsddMassKg(raw: string): number | null {
   const digits = raw.replace(/[^\d]/g, "");
@@ -129,7 +130,7 @@ export function assessLvVignette(args: {
     extraSeats,
     warningTitle: applies ? LV_VIGNETTE_TITLE : "",
     seatWarningTitle: applies ? (extraSeats ? LV_VIGNETTE_SEAT_TITLE : LV_VIGNETTE_TITLE) : "",
-    bannerText: applies ? (extraSeats ? LV_VIGNETTE_BANNER_SEATS : LV_VIGNETTE_BANNER) : "",
+    bannerText: applies ? LV_VIGNETTE_PUBLIC_NOTE : "",
   };
 }
 

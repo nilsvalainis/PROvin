@@ -258,8 +258,18 @@ describe("aprēķināto brīdinājumu labošana", () => {
     });
     const v = banners.find((b) => b.kind === "vignette");
     expect(v?.severity).toBe("yellow");
-    expect(v?.text).toMatch(/vinjete/i);
-    expect(v?.text).toMatch(/Papildu sēdvietas/);
+    expect(v?.text).toBe(
+      "Pārvietojoties pa Latvijas galvenajiem autoceļiem, var būt nepieciešama vinjete.",
+    );
+    const tiles = buildPdfSummaryBannerTiles({ alertBanners: banners });
+    expect(tiles.find((t) => t.id === "alert-vignette")).toEqual({
+      id: "alert-vignette",
+      label: "Vinjete",
+      value: "Pilna masa virs 3000 kg",
+      note: "Pārvietojoties pa Latvijas galvenajiem autoceļiem, var būt nepieciešama vinjete.",
+      tone: "warn",
+      wide: false,
+    });
   });
 });
 
