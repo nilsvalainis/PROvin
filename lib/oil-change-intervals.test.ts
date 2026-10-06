@@ -147,7 +147,16 @@ describe("buildOilChangeIntervalPdfHtml", () => {
     expect(html).toContain("pdf-oil-int__kpis");
     expect(html).toContain("pdf-oil-int__cov");
     expect(html).toContain("pdf-oil-int__caution");
-    expect(html).toContain("nav pierādījums, ka eļļa nav mainīta");
+    expect(html).toContain("Svarīga piezīme par apkopes datu interpretāciju");
+    expect(html).toContain("PROVIN datubāzēs");
+    expect(html).toContain("Neatkarīgie autoservisi neiesūta");
+    expect(html).toContain("nepierāda, ka apkope nav veikta");
+    expect(html).not.toContain("CarVertical");
+    expect(html).not.toContain("AutoDNA");
+    expect(html).not.toContain("apdrošinātājiem");
+    expect(html).toContain("oficiālu datu neesamību");
+    expect(html).toContain("Fiziskās servisa grāmatiņas");
+    expect(html).toContain("Pirmsipirkuma diagnostiku");
     expect(html).toContain("<th>Intervāls</th><th>Periods</th>");
     expect(html).toContain("31 400 km");
     expect(html).toContain("29 800 km");

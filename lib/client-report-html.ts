@@ -2561,6 +2561,12 @@ function clientReportPrintCss(): string {
         font-size:10px;line-height:1.45;color:#334155;
       }
       .pdf-oil-int__caution{border-color:#E4D9DB;background:#F7F3F3;}
+      .pdf-oil-int__caution-title{margin:0 0 8px;font-size:11px;font-weight:750;color:#0f172a;letter-spacing:-0.01em;}
+      .pdf-oil-int__caution p{margin:0 0 7px;}
+      .pdf-oil-int__caution p:last-of-type{margin-bottom:4px;}
+      .pdf-oil-int__caution ul{margin:0;padding:0 0 0 16px;}
+      .pdf-oil-int__caution li{margin:0 0 3px;}
+      .pdf-oil-int__caution li:last-child{margin:0;}
       .pdf-oil-int__bw{position:relative;display:flex;align-items:center;height:14px;width:100%;}
       .pdf-oil-int__band{position:absolute;top:1px;bottom:1px;background:${PDF_OIL_OK_WASH_HEX};border-radius:4px;}
       .pdf-oil-int__tk{position:absolute;top:-2px;bottom:-2px;width:1.5px;background:#0f172a;opacity:.5;z-index:3;}

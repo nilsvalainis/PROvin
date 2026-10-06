@@ -32,8 +32,44 @@ export const PDF_OIL_NEUTRAL_HEX = "#7A828C";
 export const PDF_OIL_HATCH_CSS =
   "repeating-linear-gradient(-55deg,#F3F4F6 0 3px,#C5CBD3 3px 4px)";
 
-export const OIL_CLAIM_CAUTION =
-  "PROVIN neredz apkopes ārpus dīlera. Ja solis dīlera datos ir garāks par ražotāja intervālu vai dati iztrūkst, tas nav pierādījums, ka eļļa nav mainīta. Apkope varēja būt citā servisā.";
+export const OIL_CLAIM_CAUTION_TITLE = "Svarīga piezīme par apkopes datu interpretāciju";
+
+export function oilClaimCautionHtml(): string {
+  const p = (html: string) => `<p>${html}</p>`;
+  const b = (label: string, body: string) =>
+    p(`<b>${escapeHtml(label)}</b> ${escapeHtml(body)}`);
+  return `<aside class="pdf-oil-int__caution">
+    <p class="pdf-oil-int__caution-title">${escapeHtml(OIL_CLAIM_CAUTION_TITLE)}</p>
+    ${p(
+      escapeHtml(
+        "Dati par transportlīdzekļa tehniskajām apkopēm PROVIN datubāzēs tiek apkopoti galvenokārt no autorizētajiem dīleru centriem un atsevišķiem liela mēroga servisu tīkliem.",
+      ),
+    )}
+    ${p(escapeHtml("Lūdzam ņemt vērā:"))}
+    ${b(
+      "Ierakstu robežas.",
+      "Neatkarīgie autoservisi neiesūta datus starptautiskajās vai dīleru reģistru sistēmās.",
+    )}
+    ${b(
+      "Neiztrūkstošas apkopes.",
+      "Ja atskaitē novērojams ilgāks laika vai nobraukuma intervāls starp dīlera apkopēm nekā paredzējis ražotājs (vai ieraksti atsevišķos periodos iztrūkst), tas nepierāda, ka apkope nav veikta.",
+    )}
+    ${b(
+      "Secinājums.",
+      "Ieraksta trūkums atskaitē norāda tikai uz oficiālu datu neesamību konkrētajā datubāzē, nevis uz faktisko servisa kavējumu.",
+    )}
+    ${p(escapeHtml("Rekomendācija pilnīgai pārbaudei."))}
+    ${p(
+      escapeHtml(
+        "Lai gūtu objektīvu priekšstatu par spēkrata faktisko tehnisko stāvokli un apkopes vēsturi, elektronisko atskaiti ieteicams kombinēt ar:",
+      ),
+    )}
+    <ul>
+      <li>${escapeHtml("Fiziskās servisa grāmatiņas ierakstiem un izrakstiem/čakiem no servisiem.")}</li>
+      <li>${escapeHtml("Pirmsipirkuma diagnostiku neatkarīgā, uzticamā autoservisā.")}</li>
+    </ul>
+  </aside>`;
+}
 
 /** Joslas skala PDF (tā pati kā konceptā). */
 export const OIL_BAR_SCALE_KM = 30_000;
@@ -456,7 +492,7 @@ export function buildOilChangeIntervalPdfHtml(series: OilChangeIntervalSeries): 
       <thead><tr><th>Datums</th><th>Nobraukums</th><th>Intervāls</th><th>Periods</th><th>Pret ražotāja intervālu</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p class="pdf-oil-int__caution">${escapeHtml(OIL_CLAIM_CAUTION)}</p>
+    ${oilClaimCautionHtml()}
     <p class="pdf-oil-int__note">${escapeHtml(series.ringNote)}</p>
   </div>`;
 }

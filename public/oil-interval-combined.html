@@ -96,6 +96,10 @@
   .start{font-weight:700;}
   .note{margin:12px 0 0;padding:10px 12px;border-radius:8px;border:1px solid var(--soft);background:#F8FAFC;font-size:10.5px;line-height:1.45;color:#334155;}
   .caution{margin:12px 0 0;padding:10px 12px;border-radius:8px;border:1px solid #E4D9DB;background:#F7F3F3;font-size:10.5px;line-height:1.45;color:#334155;}
+  .caution .tit{margin:0 0 8px;font-size:11px;font-weight:750;color:#0f172a;}
+  .caution p{margin:0 0 7px;}
+  .caution ul{margin:0;padding:0 0 0 16px;}
+  .caution li{margin:0 0 3px;}
 </style>
 </head>
 <body>
@@ -226,7 +230,20 @@ function render(raw, oem){
     return `<tr><td>${r.d}</td><td>${odo}</td><td>${delta}</td><td>${per}</td><td>${bar(r, oem)}</td></tr>`;
   }).join("");
   const obsCount = s.obs.length;
-  const caution = `<p class="caution">PROVIN neredz apkopes ārpus dīlera. Ja solis dīlera datos ir garāks par ražotāja intervālu vai dati iztrūkst, tas nav pierādījums, ka eļļa nav mainīta. Apkope varēja būt citā servisā.</p>`;
+  const caution = `<aside class="caution">
+    <p class="tit">Svarīga piezīme par apkopes datu interpretāciju</p>
+    <p>Dati par transportlīdzekļa tehniskajām apkopēm PROVIN datubāzēs tiek apkopoti galvenokārt no autorizētajiem dīleru centriem un atsevišķiem liela mēroga servisu tīkliem.</p>
+    <p>Lūdzam ņemt vērā:</p>
+    <p><b>Ierakstu robežas.</b> Neatkarīgie autoservisi neiesūta datus starptautiskajās vai dīleru reģistru sistēmās.</p>
+    <p><b>Neiztrūkstošas apkopes.</b> Ja atskaitē novērojams ilgāks laika vai nobraukuma intervāls starp dīlera apkopēm nekā paredzējis ražotājs (vai ieraksti atsevišķos periodos iztrūkst), tas nepierāda, ka apkope nav veikta.</p>
+    <p><b>Secinājums.</b> Ieraksta trūkums atskaitē norāda tikai uz oficiālu datu neesamību konkrētajā datubāzē, nevis uz faktisko servisa kavējumu.</p>
+    <p>Rekomendācija pilnīgai pārbaudei.</p>
+    <p>Lai gūtu objektīvu priekšstatu par spēkrata faktisko tehnisko stāvokli un apkopes vēsturi, elektronisko atskaiti ieteicams kombinēt ar:</p>
+    <ul>
+      <li>Fiziskās servisa grāmatiņas ierakstiem un izrakstiem/čakiem no servisiem.</li>
+      <li>Pirmsipirkuma diagnostiku neatkarīgā, uzticamā autoservisā.</li>
+    </ul>
+  </aside>`;
   const note = `<p class="note">Vidējie rādītāji rēķināti tikai no ${obsCount} soļiem, kur dīlera eļļas maiņas seko cita citai. ${s.nGap} ${s.nGap === 1 ? "solis nav iekļauts" : "soļi nav iekļauti"}, jo starp tiem ir datu iztrūkums.</p>`;
   return `<p class="kicker">Oficiālā dīlera dati</p><h2 class="sec">Eļļas maiņas intervāli</h2>
     ${kpis}${cover}${refLine(oem)}
