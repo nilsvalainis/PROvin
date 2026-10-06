@@ -86,7 +86,7 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
     expect(vehicleInfo.color).toBe("Mineral-weiss metallic");
     expect(vehicleInfo.colorCode).toBe("A96");
     expect(vehicleInfo.interior).toBe("Leather");
-    expect(vehicleInfo.power).toBe("135 kW (184 ZS)");
+    expect(vehicleInfo.power).toBe("135 kW (184 hp)");
     expect(leftovers.some((r) => r.label === "Modeļa gads" && r.value === "2013")).toBe(true);
     expect(leftovers.some((r) => /date last updated/i.test(r.label))).toBe(true);
     expect(leftovers.some((r) => /colour|interior|manufacturer|derivative/i.test(r.label))).toBe(false);
@@ -129,7 +129,7 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
     expect(info?.color).toBe("Mineral-weiss metallic");
     expect(info?.colorCode).toBe("A96");
     expect(info?.interior).toBe("Leather");
-    expect(info?.power).toBe("135 kW (184 ZS)");
+    expect(info?.power).toBe("135 kW (184 hp)");
     expect(info?.engineCode).toBe("N47D20C");
     expect(info?.transmission).toBe("automatic");
     expect(info?.fuel).toBe("Diesel");
@@ -140,7 +140,7 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
     expect(next.aiContextRaw).not.toMatch(/Mineral-weiss|Leather|BMW X1/i);
   });
 
-  it("nepazaudē jau aizpildītu ātrumkārbu, ja API nav precīzāka", () => {
+  it("API ātrumkārba pārraksta AutoDNA latviešu vērtību angliski", () => {
     const base = emptyAutoRecordsBlock();
     base.outvinReport = {
       vehicleInfo: { ...emptyOutvinVehicleInfo(), transmission: "Automātiskā" },
@@ -157,7 +157,28 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
       ingest: emptyOneautoIngest(),
       vehicleOverride: false,
     });
-    expect(next.outvinReport?.vehicleInfo.transmission).toBe("Automātiskā");
+    expect(next.outvinReport?.vehicleInfo.transmission).toBe("automatic");
+    expect(next.outvin?.vehicleInfo.transmission).toBe("automatic");
+  });
+
+  it("nepazemina rūpnīcas kodu ar vispārīgu API vērtību", () => {
+    const base = emptyAutoRecordsBlock();
+    base.outvinReport = {
+      vehicleInfo: { ...emptyOutvinVehicleInfo(), transmission: "8-speed automatic (G1G)" },
+      accidentCheck: "",
+      stolenCheck: "",
+      equipment: [],
+    };
+    const next = applyOneautoToAutoRecords(base, {
+      display: {
+        equipment: [],
+        powertrain: [{ label: "transmission", value: "auto" }],
+        serviceTimeline: [],
+      },
+      ingest: emptyOneautoIngest(),
+      vehicleOverride: false,
+    });
+    expect(next.outvinReport?.vehicleInfo.transmission).toBe("8-speed automatic (G1G)");
   });
 
   it("hidratējot veco oneauto bloku, iztukšo to pēc pārneses", () => {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { OutvinCapabilitySlotUi, OutvinDataBundle } from "@/lib/outvin-data-bundle";
-import { getAutoRecordsOutvinBundle, syncAutoRecordsWithOutvinBundle } from "@/lib/outvin-admin-sync";
+import { emptyOutvinDataBundle, type OutvinCapabilitySlotUi, type OutvinDataBundle } from "@/lib/outvin-data-bundle";
+import { syncAutoRecordsWithOutvinBundle } from "@/lib/outvin-admin-sync";
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import { normalizeVin, isOutvinApiVin } from "@/lib/order-field-validation";
 import { AdminOutvinStructuredSections } from "@/components/admin/AdminOutvinStructuredSections";
@@ -37,7 +37,9 @@ export function AdminOutvinDataSourcesCard({
 }: Props) {
   const vin = normalizeVin(orderVin ?? "");
   const vinReady = isOutvinApiVin(vin);
-  const bundle = getAutoRecordsOutvinBundle(block, vin);
+  const bundle = block.outvin
+    ? { ...block.outvin, vin: block.outvin.vin?.trim() || vin }
+    : emptyOutvinDataBundle(vin);
 
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [precheckBusy, setPrecheckBusy] = useState(false);
@@ -260,7 +262,7 @@ export function AdminOutvinDataSourcesCard({
       ) : null}
 
       <AdminOutvinStructuredSections
-        bundle={bundle.purchases.length > 0 || bundle.precheckAt ? bundle : getAutoRecordsOutvinBundle(block, vin)}
+        bundle={bundle}
         readOnly={readOnly}
         disabled={disabled}
         onBundleChange={(next) => applyBundle(next)}

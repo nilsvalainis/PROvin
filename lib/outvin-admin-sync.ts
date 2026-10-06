@@ -7,6 +7,7 @@ import {
   parseOutvinDataBundleRaw,
   type OutvinDataBundle,
 } from "@/lib/outvin-data-bundle";
+import { overlayNonemptyVehicleInfo, sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import { mileageRowsFromOutvinBundle, outvinBundleToDealerReport } from "@/lib/outvin-purchase-map";
 import { outvinDealerReportHasContent } from "@/lib/outvin-dealer-types";
 
@@ -30,7 +31,17 @@ export function syncAutoRecordsWithOutvinBundle(
       ? mergeOutvinServiceRows([existing, mileageFromOutvin])
       : block.serviceHistory;
 
-  const report = outvinBundleToDealerReport(bundle);
+  const fromApi = outvinBundleToDealerReport(bundle);
+  const existingReport = block.outvinReport;
+  const report = {
+    vehicleInfo: overlayNonemptyVehicleInfo(
+      existingReport?.vehicleInfo ?? fromApi.vehicleInfo,
+      sanitizeDealerVehicleInfo(fromApi.vehicleInfo),
+    ),
+    equipment: fromApi.equipment.length > 0 ? fromApi.equipment : (existingReport?.equipment ?? []),
+    accidentCheck: fromApi.accidentCheck.trim() || existingReport?.accidentCheck || "",
+    stolenCheck: fromApi.stolenCheck.trim() || existingReport?.stolenCheck || "",
+  };
   const next: AutoRecordsBlockState = {
     ...block,
     outvin: bundle,

@@ -18,6 +18,8 @@ import {
   resolveExtractCountries,
 } from "@/lib/vendor-pdf-agent-merge";
 import { emptyVendorReportExtract } from "@/lib/vendor-report-extract";
+import { emptyOutvinDataBundle } from "@/lib/outvin-data-bundle";
+import { emptyOutvinDealerReport, emptyOutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { formatVendorServiceHistoryText } from "@/lib/vendor-service-history";
 import { collectWorkspaceCountryTimeline } from "@/lib/workspace-country-timeline";
 
@@ -397,6 +399,23 @@ describe("AI payload → extract", () => {
     expect(extract.vehicleInfo).toEqual({ color: "Havana Black Metallic (LY8X)" });
   });
 
+  it("AutoDNA specifikāciju tulko angliski", () => {
+    const extract = parseVendorPdfAgentPayload(
+      JSON.stringify({
+        vendor: "autodna",
+        mileage: [],
+        incidents: [],
+        countryTimeline: [],
+        vehicleInfo: { color: "Melns", transmission: "Automātiskā ātrumkārba" },
+      }),
+      "autodna",
+    );
+    expect(extract.vehicleInfo).toEqual({
+      color: "black",
+      transmission: "automatic transmission",
+    });
+  });
+
   it("nederīgu JSON neapstrādā klusi", () => {
     expect(() => parseVendorPdfAgentPayload("nav json", "carvertical")).toThrow("ai_invalid_json");
   });
@@ -574,6 +593,63 @@ describe("dīlera lauku piemērošana", () => {
     const info = second.sourceBlocks.auto_records.outvinReport?.vehicleInfo;
     expect(info?.color).toBe("Havana Black Metallic (LY8X)");
     expect(info?.engineCode).toBe("CVUA");
+  });
+
+  it("AutoDNA nepārraksta API lauku un latviešu vērtību liek angliski", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.auto_records.outvin = {
+      ...emptyOutvinDataBundle("WAUZZZ4GXGN052397"),
+      vehicleInfo: {
+        ...emptyOutvinVehicleInfo(),
+        color: "Havana Black Metallic (LY8X)",
+        transmission: "8-speed automatic (G1G)",
+      },
+    };
+    blocks.auto_records.outvinReport = {
+      ...emptyOutvinDealerReport(),
+      vehicleInfo: {
+        ...emptyOutvinVehicleInfo(),
+        color: "black",
+        transmission: "automatic",
+      },
+    };
+    const next = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "set_dealer_vehicle_info",
+          source: "auto_records",
+          vehicleInfo: {
+            color: "Melns",
+            transmission: "Automātiskā ātrumkārba",
+            engineCode: "CVUA",
+          },
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: false },
+    );
+    const info = next.sourceBlocks.auto_records.outvinReport?.vehicleInfo;
+    expect(info?.color).toBe("Havana Black Metallic (LY8X)");
+    expect(info?.transmission).toBe("8-speed automatic (G1G)");
+    expect(info?.engineCode).toBe("CVUA");
+  });
+
+  it("latviešu AutoDNA krāsu ieraksta angliski, ja API lauks tukšs", () => {
+    const blocks = createDefaultSourceBlocks();
+    const next = applyCopilotActions(
+      blocks,
+      [
+        {
+          type: "set_dealer_vehicle_info",
+          source: "auto_records",
+          vehicleInfo: { color: "Melns" },
+          confidence: "high",
+        },
+      ],
+      { onlyAuto: false },
+    );
+    expect(next.sourceBlocks.auto_records.outvinReport?.vehicleInfo.color).toBe("black");
   });
 
   it("parsē AI `set_dealer_vehicle_info` darbību", () => {

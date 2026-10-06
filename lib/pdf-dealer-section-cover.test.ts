@@ -8,7 +8,7 @@ describe("PDF dīlera sadaļas vāks", () => {
     vehicle.model = "BMW X1 (E84) xDrive 20 d";
     vehicle.vinCode = "WBAVL12090VX12345";
     vehicle.colorCode = "A96";
-    vehicle.power = "135 kW (184 ZS)";
+    vehicle.power = "135 kW (184 hp)";
     const html = buildDealerSectionCoverHtml({
       vehicle,
       serviceWorks: [
@@ -31,7 +31,7 @@ describe("PDF dīlera sadaļas vāks", () => {
     expect(html).toContain("BMW X1 (E84) xDrive 20 d");
     expect(html).toContain("VIN WBAVL12090VX12345");
     expect(html).toContain("A96");
-    expect(html).toContain("135 kW (184 ZS)");
+    expect(html).toContain("135 kW (184 hp)");
     expect(html).toContain("31 400 km");
     expect(html).toContain("142 220 km");
     expect(html).toContain("2 vizītes");

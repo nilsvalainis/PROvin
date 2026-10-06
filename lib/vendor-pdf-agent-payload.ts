@@ -16,6 +16,7 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
+import { sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import { OUTVIN_VEHICLE_INFO_ROWS, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { serviceWorkTermsLv } from "@/lib/service-work-term-lv";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
@@ -75,11 +76,13 @@ ABSOLUTE RULES
 
 7) VEHICLE SPECIFICATION → dealer fields (vehicleInfo)
 - Read AutoDNA „Transportlīdzekļa tehniskie dati”, CarVertical „Transportlīdzekļa specifikācija” + the PR/equipment code list, or the dealer printout field list.
-- Fields (leave "" when the PDF does not show it): model, modelSeries, vinCode, vehicleType, transmission, steeringSide, engineCode (ENGINE), engineNumber, body, drive, power, integrationLevel, currentILevel, developmentCode, modelCode, productionDate, firstRegistration, warrantyStartDate, countryRegion, color (COLOUR), colorCode, interior (UPHOLSTERY), interiorCode.
+- Fields (leave "" when the PDF does not show it, or when the value cannot be written in English): model, modelSeries, vinCode, vehicleType, transmission, steeringSide, engineCode (ENGINE), engineNumber, body, drive, power, integrationLevel, currentILevel, developmentCode, modelCode, productionDate, firstRegistration, warrantyStartDate, countryRegion, color (COLOUR), colorCode, interior (UPHOLSTERY), interiorCode.
 - vinCode: the 17-character VIN. Dates in these fields: DD.MM.YYYY.
-- transmission: the most complete designation available, with code - e.g. „8-speed automatic transmission for four-wheel drive (G1G)”, „Automātiskā ātrumkārba (PPE)”, „AUT”.
-- color: prefer the FULL factory name with the paint code from the equipment list (e.g. „LY8X/Havana Black Metallic” → „Havana Black Metallic (LY8X)”) over a plain word like „Melns”; put a separate factory code into colorCode.
-- interior: same rule - prefer the upholstery designation with code (e.g. „N5D Valcona leather” → „Valcona leather (N5D)”) over generic „Leather package”; separate code → interiorCode.
+- LANGUAGE: every vehicleInfo value MUST be English. Translate Latvian/German labels (Melns → black, Automātiskā ātrumkārba → automatic transmission, LHD (automašīna ar stūri kreisajā pusē) → LHD). Factory names already in English stay as printed (Havana Black Metallic). If you cannot translate a value, store a short ASCII code only or leave "".
+- transmission: the most complete ENGLISH designation available, with code - e.g. "8-speed automatic transmission for four-wheel drive (G1G)", "automatic (PPE)", "AUT". Never store "Automātiskā ātrumkārba".
+- color: prefer the FULL factory name with the paint code from the equipment list (e.g. "LY8X/Havana Black Metallic" → "Havana Black Metallic (LY8X)") over a plain word like "black"; put a separate factory code into colorCode.
+- interior: same rule - prefer the upholstery designation with code (e.g. "N5D Valcona leather" → "Valcona leather (N5D)") over generic "Leather package"; separate code → interiorCode.
+- Official dealer / factory printouts (vendor "dealer") keep the printed English field list. AutoDNA / CarVertical must never overwrite a field that an API (Outvin / OneAuto / auto-records) already filled.
 
 8) OFFICIAL DEALER / FACTORY PRINTOUTS (vendor "dealer")
 - Field list layout (BMW portal: MODEL SERIES, VIN, VEHICLE TYPE, TRANSMISSION, STEERING, ENGINE, ENGINE NUMBER, BODY, DRIVE, POWER, INTEGRATION LEVEL, CURRENT I LEVEL, DEVELOPMENT CODE, MODEL CODE, PRODUCTION DATE, FIRST REGISTRATION, WARRANTY START DATE, COUNTRY/REGION, COLOUR, COLOUR CODE, UPHOLSTERY, UPHOLSTERY CODE) → vehicleInfo, one value per label, copied exactly.
@@ -294,6 +297,6 @@ export function parseVendorPdfAgentPayload(
   out.incidents = incidents;
   out.serviceHistory = mergeVendorServiceEntries(serviceHistory, []);
   out.countryTimeline = countryTimeline;
-  out.vehicleInfo = vehicleInfo;
+  out.vehicleInfo = vendor === "dealer" ? vehicleInfo : sanitizeDealerVehicleInfo(vehicleInfo);
   return out;
 }

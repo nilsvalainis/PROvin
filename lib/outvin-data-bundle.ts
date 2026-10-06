@@ -1,9 +1,11 @@
 /**
  * Outvin strukturētie dati — saglabājas `auto_records.outvin` pasūtījuma melnrakstā.
  */
+import { overlayNonemptyVehicleInfo, sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import {
   emptyOutvinVehicleInfo,
   outvinDealerReportHasContent,
+  outvinEquipmentLineHasData,
   parseOutvinVehicleInfoRaw,
   type OutvinDealerReport,
   type OutvinEquipmentLine,
@@ -175,13 +177,17 @@ export function migrateOutvinReportToBundle(
   report: OutvinDealerReport | undefined,
   base: OutvinDataBundle,
 ): OutvinDataBundle {
-  if (!report || !outvinDealerReportHasContent(report)) return base;
+  const apiInfo = sanitizeDealerVehicleInfo(base.vehicleInfo);
+  if (!report || !outvinDealerReportHasContent(report)) {
+    return { ...base, vehicleInfo: overlayNonemptyVehicleInfo(base.vehicleInfo, apiInfo) };
+  }
+  const apiEquip = base.equipment.filter(outvinEquipmentLineHasData);
   return {
     ...base,
-    vehicleInfo: report.vehicleInfo,
-    equipment: report.equipment,
-    accidentCheck: report.accidentCheck,
-    stolenCheck: report.stolenCheck,
+    vehicleInfo: overlayNonemptyVehicleInfo(report.vehicleInfo, apiInfo),
+    equipment: apiEquip.length > 0 ? base.equipment : report.equipment,
+    accidentCheck: base.accidentCheck.trim() || report.accidentCheck,
+    stolenCheck: base.stolenCheck.trim() || report.stolenCheck,
   };
 }
 

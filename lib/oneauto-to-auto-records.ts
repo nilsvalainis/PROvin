@@ -14,7 +14,9 @@ import {
   mergeAutoRecordsServiceWorkRow,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
+import { overlayNonemptyVehicleInfo, sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import { countryFromDealerName } from "@/lib/dealer-report-extract";
+import { emptyOutvinDataBundle, type OutvinDataBundle } from "@/lib/outvin-data-bundle";
 import {
   ONEAUTO_DEFAULT_PRODUCT_IDS,
   ONEAUTO_PRODUCT_IDS,
@@ -236,7 +238,7 @@ function formatPowerKwBhp(kw: string, bhp: string): string {
   const kwN = kw.replace(/[^\d.,]/g, "").replace(",", ".");
   const bhpN = bhp.replace(/[^\d.,]/g, "").replace(",", ".");
   const kwPart = kwN ? `${kwN.replace(/\.0$/, "")} kW` : "";
-  const bhpPart = bhpN ? `${bhpN.replace(/\.0$/, "")} ZS` : "";
+  const bhpPart = bhpN ? `${bhpN.replace(/\.0$/, "")} hp` : "";
   if (kwPart && bhpPart) return `${kwPart} (${bhpPart})`;
   return kwPart || bhpPart;
 }
@@ -332,8 +334,8 @@ function mergeVehicleField(current: string, incoming: string, override: boolean)
   if (!cur) return next.slice(0, 500);
   if (cur === next) return current;
   if (override) return next.slice(0, 500);
-  if (hasSpecCode(next) && !hasSpecCode(cur)) return next.slice(0, 500);
-  return current;
+  if (hasSpecCode(cur) && !hasSpecCode(next)) return current;
+  return next.slice(0, 500);
 }
 
 function mergeEquipment(
@@ -404,6 +406,7 @@ function appendOemLeftovers(current: string, leftovers: OneautoKvRow[]): string 
 }
 
 export type AutoRecordsOneautoTarget = {
+  outvin?: OutvinDataBundle;
   outvinReport?: OutvinDealerReport;
   serviceWorks?: AutoRecordsServiceWorkRow[];
   serviceHistory?: AutoRecordsServiceRow[];
@@ -431,15 +434,22 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
   const override = input.vehicleOverride === true;
   const report = current.outvinReport ?? emptyOutvinDealerReport();
   const mapped = oneautoPowertrainToVehicleInfo(input.display.powertrain);
+  const mappedInfo = sanitizeDealerVehicleInfo(mapped.vehicleInfo);
   const vehicleInfo: OutvinVehicleInfo = { ...emptyOutvinVehicleInfo(), ...report.vehicleInfo };
   for (const { key } of OUTVIN_VEHICLE_INFO_ROWS) {
-    const incoming = (mapped.vehicleInfo[key] ?? "").trim();
+    const incoming = (mappedInfo[key] ?? "").trim();
     if (!incoming) continue;
     vehicleInfo[key] = mergeVehicleField(vehicleInfo[key], incoming, override);
   }
   if (!vehicleInfo.vinCode.trim() && input.ingest.lastFetchedVin.trim()) {
     vehicleInfo.vinCode = input.ingest.lastFetchedVin.trim().slice(0, 24);
   }
+
+  const apiMapped = OUTVIN_VEHICLE_INFO_ROWS.some(({ key }) => (mappedInfo[key] ?? "").trim());
+  const apiBase = current.outvin ?? (apiMapped ? emptyOutvinDataBundle(vehicleInfo.vinCode) : undefined);
+  const nextOutvin = apiBase
+    ? { ...apiBase, vehicleInfo: overlayNonemptyVehicleInfo(apiBase.vehicleInfo, mappedInfo) }
+    : undefined;
 
   const equipment = mergeEquipment(
     report.equipment,
@@ -475,6 +485,7 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
 
   return {
     ...current,
+    ...(nextOutvin ? { outvin: nextOutvin } : {}),
     outvinReport: { ...report, vehicleInfo, equipment },
     serviceWorks,
     serviceHistory,

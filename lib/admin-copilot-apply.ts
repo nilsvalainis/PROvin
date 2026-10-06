@@ -46,6 +46,7 @@ import {
   ltabCertificateToIncidentRows,
   type LtabCertificate,
 } from "@/lib/ltab-report-extract";
+import { sanitizeDealerVehicleInfo, toDealerVehicleInfoEnglish } from "@/lib/dealer-vehicle-info-en";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
   emptyOutvinDealerReport,
@@ -559,11 +560,9 @@ function hasSpecCode(value: string): boolean {
 }
 
 /**
- * Tukšos dīlera laukus aizpilda; aizpildītu pārraksta tikai tad, ja jaunajā ir precīzs kods,
- * bet esošajā nav (piem. „Melns” → „Havana Black Metallic (LY8X)”).
- *
- * `action.override` (oficiālā dīlera / rūpnīcas izdruka) pārraksta visus laukus — tā ir
- * primārā specifikācija arī tad, ja lauki jau nāca no AutoDNA vai CarVertical.
+ * Tukšos dīlera laukus aizpilda no AutoDNA / CarVertical (tikai angliski).
+ * API (Outvin `outvin.vehicleInfo`) aizpildītu lauku pārraksta tikai oficiālā dīlera izdruka (`override`).
+ * Starp AutoDNA un CarVertical paliek specifiskāks kods, ja API šo lauku nav aizpildījis.
  */
 function applyDealerVehicleInfo(
   b: AutoRecordsBlockState,
@@ -571,12 +570,25 @@ function applyDealerVehicleInfo(
 ): AutoRecordsBlockState {
   const report = b.outvinReport ?? emptyOutvinDealerReport();
   const vehicleInfo: OutvinVehicleInfo = { ...report.vehicleInfo };
+  const apiInfo = b.outvin?.vehicleInfo;
+  const incomingInfo = action.override ? action.vehicleInfo : sanitizeDealerVehicleInfo(action.vehicleInfo);
   let changed = false;
 
   for (const { key } of OUTVIN_VEHICLE_INFO_ROWS) {
-    const incoming = (action.vehicleInfo[key] ?? "").trim();
-    if (!incoming) continue;
     const current = vehicleInfo[key].trim();
+    if (!action.override) {
+      const apiVal = (apiInfo?.[key] ?? "").trim();
+      if (apiVal) {
+        const apiEn = toDealerVehicleInfoEnglish(key, apiVal) || apiVal;
+        if (current !== apiEn) {
+          vehicleInfo[key] = apiEn.slice(0, 500);
+          changed = true;
+        }
+        continue;
+      }
+    }
+    const incoming = (incomingInfo[key] ?? "").trim();
+    if (!incoming) continue;
     if (current === incoming) continue;
     if (!action.override && current && !(hasSpecCode(incoming) && !hasSpecCode(current))) continue;
     vehicleInfo[key] = incoming.slice(0, 500);

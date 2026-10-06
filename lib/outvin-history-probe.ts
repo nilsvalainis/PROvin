@@ -22,6 +22,7 @@ import {
   type OutvinPurchaseResult,
   type OutvinPurchaseTypeResult,
 } from "@/lib/outvin-purchase-map";
+import { overlayNonemptyVehicleInfo, sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import { mapOutvinVehicleJsonToInfo } from "@/lib/outvin-dealer-map";
 import { applyOutvinPrecheckMetadata, buildOutvinCapabilitySlots } from "@/lib/outvin-precheck";
 import {
@@ -80,7 +81,10 @@ export async function ensureOutvinVehicleOrderForVin(
     const vehicleInfo = mapOutvinVehicleJsonToInfo(r.body, normalized);
     nextBundle = {
       ...nextBundle,
-      vehicleInfo: { ...nextBundle.vehicleInfo, ...vehicleInfo },
+      vehicleInfo: overlayNonemptyVehicleInfo(
+        nextBundle.vehicleInfo,
+        sanitizeDealerVehicleInfo(vehicleInfo),
+      ),
     };
   }
 

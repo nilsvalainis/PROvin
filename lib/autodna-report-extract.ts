@@ -14,6 +14,7 @@ import {
 import type { CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
+import { sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
@@ -312,6 +313,7 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
     ...(vin ? { vinCode: vin } : {}),
     ...(color ? { color } : {}),
   };
+  out.vehicleInfo = sanitizeDealerVehicleInfo(out.vehicleInfo);
   return out;
 }
 

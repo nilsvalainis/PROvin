@@ -16,6 +16,7 @@ import type { CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import { parseCarverticalTimelineFromText } from "@/lib/carvertical-pdf-parse";
 import { matchLeadingCountryNameLv, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
+import { sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import type { OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
@@ -321,13 +322,13 @@ export function extractCarverticalReport(rawText: string): VendorReportExtract {
     parseDatedCountryEventRows(lines, datedCountries),
   );
   out.notes = notes;
-  out.vehicleInfo = {
+  out.vehicleInfo = sanitizeDealerVehicleInfo({
     ...spec.vehicleInfo,
     ...(vin ? { vinCode: vin } : {}),
     ...(color ? { color } : {}),
     ...(interior ? { interior } : {}),
     ...(transmission ? { transmission } : {}),
-  };
+  });
   return out;
 }
 

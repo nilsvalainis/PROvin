@@ -4,6 +4,7 @@ import {
   buildOutvinDealerReport,
   mapOutvinVehicleJsonToInfo,
 } from "@/lib/outvin-dealer-map";
+import { overlayNonemptyVehicleInfo, sanitizeDealerVehicleInfo } from "@/lib/dealer-vehicle-info-en";
 import { extractEventsFromPayload } from "@/lib/outvin-history-map";
 import { getOutvinCatalogSlotByType } from "@/lib/outvin-source-catalog";
 import { outvinVehicleInfoHasData, type OutvinDealerReport } from "@/lib/outvin-dealer-types";
@@ -258,13 +259,9 @@ export function applyOutvinPurchaseToBundle(
     vin: bundle.vin,
   });
 
-  const vehicleFromPayload = mapOutvinVehicleJsonToInfo(payload, bundle.vin);
-  const vehicleInfo = { ...bundle.vehicleInfo };
-  for (const key of Object.keys(vehicleInfo) as (keyof typeof vehicleInfo)[]) {
-    if (!vehicleInfo[key].trim() && vehicleFromPayload[key].trim()) {
-      vehicleInfo[key] = vehicleFromPayload[key];
-    }
-  }
+  const vehicleFromPayload = sanitizeDealerVehicleInfo(mapOutvinVehicleJsonToInfo(payload, bundle.vin));
+  const fromReport = report.vehicleInfo.vinCode.trim() ? report.vehicleInfo : bundle.vehicleInfo;
+  const vehicleInfo = overlayNonemptyVehicleInfo(fromReport, vehicleFromPayload);
 
   return {
     ...bundle,
@@ -273,7 +270,7 @@ export function applyOutvinPurchaseToBundle(
       dealerServiceLog.length > 0 ? dealerServiceLog : [emptyOutvinDealerServiceRow()],
     usCarfax,
     europeanRegisters,
-    vehicleInfo: report.vehicleInfo.vinCode.trim() ? report.vehicleInfo : vehicleInfo,
+    vehicleInfo,
     equipment: report.equipment.length > 0 ? report.equipment : bundle.equipment,
     accidentCheck: report.accidentCheck.trim() ? report.accidentCheck : bundle.accidentCheck,
     stolenCheck: report.stolenCheck.trim() ? report.stolenCheck : bundle.stolenCheck,
