@@ -424,10 +424,14 @@ export function AdminVinRegistrySourceBlock({
                 tjekbil.dk (DMR + Færdselsstyrelsen apskates). Nummerplade.net - ja API atslēga ir iestatīta serverī.
               </span>
             ) : null}
-            {blockKey === "mnt_ee" || blockKey === "lkf_ee" ? (
+            {blockKey === "mnt_ee" ? (
               <span className="text-[10px] text-slate-400">
-                HTTP ar CapSolver, ja CAPSOLVER_API_KEY ir iestatīta. Sticky proxy: CAPSOLVER_PROXY vai FIXIE_URL. Citādi
-                lokāls pārlūks.
+                reCAPTCHA v3 ProxyLess. HTTP no Vercel; Cloudflare Challenge joprojām caur FIXIE_URL.
+              </span>
+            ) : null}
+            {blockKey === "lkf_ee" ? (
+              <span className="text-[10px] text-slate-400">
+                reCAPTCHA v2 ar sticky proxy (CAPSOLVER_PROXY vai FIXIE_URL). Citādi lokāls pārlūks.
               </span>
             ) : null}
             {blockKey === "carinfo" ? (

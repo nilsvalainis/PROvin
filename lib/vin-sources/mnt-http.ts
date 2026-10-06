@@ -1,11 +1,18 @@
 import "server-only";
 
+/**
+ * eteenindus.mnt.ee HTTP: reCAPTCHA v3 ProxyLess, forma no Vercel IP.
+ * Cloudflare Challenge joprojām CapSolver + Fixie. CAPSOLVER_FORCE_PROXY=1 = vecais ceļš.
+ */
+
 import {
   CAPSOLVER_PROXIED_TIMEOUT_MS,
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
+  mntFormHttpProxyUrl,
+  mntRecaptchaV3Proxy,
+  prefixCaptchaSourceReason,
   solveCaptcha,
-  vinStickyHttpProxyUrl,
 } from "@/lib/captcha-solver";
 import { parseMntExtract } from "@/lib/vin-sources/estonia-parse";
 import {
@@ -54,12 +61,12 @@ async function bypassCloudflare(challenged: VinHttpResult, session: Session): Pr
       html: challenged.text.slice(0, 80_000),
       userAgent: session.ua,
     },
-    { timeoutMs: 90_000 },
+    { timeoutMs: 90_000, sourceLabel: "mnt.ee" },
   );
   if (!solved.ok) return { reason: solved.reason };
   const fromCookies = cookiesRecordToHeader(solved.cookies);
   const clearance = fromCookies || (solved.token ? `cf_clearance=${solved.token}` : "");
-  if (!clearance) return { reason: "CapSolver: cf_clearance tukšs" };
+  if (!clearance) return { reason: prefixCaptchaSourceReason("CapSolver: cf_clearance tukšs", "mnt.ee") };
   return {
     cookie: mergeCookieHeader(session.cookie, clearance),
     ua: solved.userAgent || session.ua,
@@ -80,7 +87,7 @@ async function loadMntForm(session: Session): Promise<{ res: VinHttpResult; sess
 }
 
 export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSourceFetchResult> {
-  const proxyUrl = vinStickyHttpProxyUrl();
+  const proxyUrl = mntFormHttpProxyUrl();
   let session: Session = { cookie: "", ua: VIN_HTTP_UA, proxyUrl };
 
   let loaded: { res: VinHttpResult; session: Session };
@@ -108,16 +115,16 @@ export async function fetchMntHttp(vin: string, regMark = ""): Promise<VinSource
     return fail(vin, "mnt.ee forma nav nolasāma", page.text);
   }
 
-  const capProxy = getCaptchaSolverProxy();
+  const capProxy = mntRecaptchaV3Proxy();
   const solved = await solveCaptcha(
     {
       kind: "recaptcha_v3",
       websiteURL: MNT_URL,
       websiteKey: MNT_SITE_KEY,
       pageAction: MNT_ACTION,
-      proxy: capProxy || undefined,
+      proxy: capProxy,
     },
-    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000 },
+    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : 60_000, sourceLabel: "mnt.ee" },
   );
   if (!solved.ok) return fail(vin, solved.reason, page.text);
 
