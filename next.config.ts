@@ -29,10 +29,7 @@ const nextConfig: NextConfig = {
    * Googlebot u.c. nesaņem straumētus metadatus `<body>`: canonical/title paliek `<head>`.
    * Ja šo lauku uzstāda, tas aizvieto Next noklusējumu, tāpēc saraksts ir pilns.
    */
-  /**
-   * Googlebot (īpaši smartphone UA) uz sākumlapas/partneriem saņēma title/canonical `<body>`.
-   * `/.*/` = metadati vienmēr `<head>` (Next straumēšana tos citādi izlaiž).
-   */
+  /** Googlebot smartphone UA: title/canonical bija `<body>`. Match-all keeps metadata in `<head>`. */
   htmlLimitedBots: /.*/,
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
