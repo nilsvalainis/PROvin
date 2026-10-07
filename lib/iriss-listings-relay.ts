@@ -142,7 +142,7 @@ function autobidVehiclesFromNuxt(nuxtPages: string[], orderId: string, orderBran
         vatNote: v.vatNote,
         auctionId: v.auctionId,
         auctionStartAt: v.auctionStartAt,
-        auctionEndAt: "",
+        auctionEndAt: v.auctionEndAt,
         auctionStage: v.auctionStage,
       });
     }

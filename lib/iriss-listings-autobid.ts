@@ -13,6 +13,8 @@ export type AutobidVehicle = {
   detailUrl: string;
   auctionStage: string;
   auctionStartAt: string;
+  /** Saraksta `__NUXT_DATA__` 2026-10-07 šo lauku nedod (tikai `auctionStartDate`). Ja parādās, nolasām. */
+  auctionEndAt: string;
   priceStart: number | null;
   priceMinimal: number | null;
   priceCurrent: number | null;
@@ -204,6 +206,7 @@ export function mapAutobidVehicle(raw: Rec): AutobidVehicle | null {
     detailUrl: autobidDetailUrl(slug, externalId),
     auctionStage: str(raw.stage),
     auctionStartAt: str(raw.auctionStartDate),
+    auctionEndAt: str(raw.auctionEndDate) || str(raw.endDate) || str(raw.auctionEndTime) || str(raw.auctionEnd),
     priceStart: price(p.start),
     priceMinimal: price(p.minimal),
     priceCurrent: price(p.current),

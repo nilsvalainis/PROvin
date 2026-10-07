@@ -4,6 +4,7 @@ import {
   autobidPageUrl,
   extractNuxtDataJson,
   hydrateNuxtData,
+  mapAutobidVehicle,
   parseAutobidSearchPage,
 } from "@/lib/iriss-listings-autobid";
 
@@ -110,6 +111,7 @@ describe("parseAutobidSearchPage", () => {
     expect(v.priceMinimal).toBe(22800);
     expect(v.priceCurrent).toBeNull();
     expect(v.auctionStartAt).toBe("2026-10-08T08:00:00+00:00");
+    expect(v.auctionEndAt).toBe("");
     expect(v.auctionStage).toBe("BEFORE_AUCTION");
     expect(v.detailUrl).toBe("https://autobid.de/en/item/volvo-xc60-b5-awd-3587391");
     expect(v.firstRegistration).toBe("07.2024");
@@ -141,6 +143,27 @@ describe("parseAutobidSearchPage", () => {
     const html = `<script id="__NUXT_DATA__" type="application/json">${JSON.stringify(flat)}</script>`;
     const page = parseAutobidSearchPage(html);
     expect(page).toEqual({ vehicles: [], pageCount: 0, pageNumber: 0 });
+  });
+});
+
+describe("mapAutobidVehicle end time", () => {
+  it("reads auctionEndDate when present and stays empty on the public list shape", () => {
+    const withEnd = mapAutobidVehicle({
+      id: "1",
+      name: "BMW X3",
+      auctionEndDate: "2026-10-08T18:00:00+00:00",
+      price: { start: 1000 },
+    });
+    expect(withEnd?.auctionEndAt).toBe("2026-10-08T18:00:00+00:00");
+    const listShape = mapAutobidVehicle({
+      id: "2",
+      name: "BMW X3",
+      auctionStartDate: "2026-10-07T17:00:00+00:00",
+      price: { start: 1000, minimal: 800, current: 0 },
+      stage: "IN_AUCTION",
+    });
+    expect(listShape?.auctionEndAt).toBe("");
+    expect(listShape?.auctionStartAt).toBe("2026-10-07T17:00:00+00:00");
   });
 });
 
