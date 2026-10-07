@@ -73,7 +73,7 @@ export type IrissListingVehicle = {
   vatNote: string;
   auctionId: string;
   auctionStartAt: string;
-  /** Openlane BatchEndDate / Auto1 beigu laiks; tukšs, ja platforma nedod. */
+  /** Openlane BatchEndDate / Auto1 beigu laiks. Autobid saraksts 2026-10-07 beigu laiku nedod. */
   auctionEndAt: string;
   auctionStage: string;
   firstSeenAt: string;

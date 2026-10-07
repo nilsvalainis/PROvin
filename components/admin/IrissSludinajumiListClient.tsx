@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import {
+  auctionCountdown,
+  LISTING_SORTS,
+  listingCardPrices,
+  parseListingSort,
+  sortListingVehicles,
+  type AuctionCountdownTone,
+  type ListingSort,
+} from "@/lib/iriss-listings-list-view";
 import type {
   IrissListingPlatform,
   IrissListingPriceChange,
@@ -121,8 +130,19 @@ type Props = {
   latest: IrissListingsLatestView | null;
 };
 
+function countdownClass(tone: AuctionCountdownTone): string {
+  if (tone === "urgent") return "text-red-600";
+  if (tone === "soon") return "text-orange-600";
+  if (tone === "ended") return "text-slate-500";
+  if (tone === "unknown") return "text-slate-400";
+  return "text-[var(--color-apple-text)]";
+}
+
 export function IrissSludinajumiListClient({ latest }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const sort = parseListingSort(searchParams.get("sort"));
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
@@ -133,8 +153,19 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
-    setNowMs(Date.now());
-  }, [latest?.generatedAt]);
+    const tick = () => setNowMs(Date.now());
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  function setSort(next: ListingSort) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "newest") params.delete("sort");
+    else params.set("sort", next);
+    const q = params.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }
 
   const vehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
 
@@ -166,19 +197,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
     });
   }, [vehicles, tab, query, nowMs]);
 
-  /** Grupas pēc pasūtījuma; auto ar vairākiem pasūtījumiem parādās katrā grupā. */
-  const groups = useMemo(() => {
-    const map = new Map<string, { orderId: string; label: string; vehicles: IrissListingVehicle[] }>();
-    for (const v of visible) {
-      v.orderIds.forEach((orderId, idx) => {
-        const label = v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? "Pasūtījums";
-        const g = map.get(orderId) ?? { orderId, label, vehicles: [] };
-        g.vehicles.push(v);
-        map.set(orderId, g);
-      });
-    }
-    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, "lv"));
-  }, [visible]);
+  const sorted = useMemo(() => sortListingVehicles(visible, sort, nowMs), [visible, sort, nowMs]);
 
   const problemSources = useMemo(() => (latest?.sources ?? []).filter((s) => s.status !== "ok"), [latest?.sources]);
 
@@ -324,6 +343,21 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           placeholder="Meklēt: marka, modelis, gads, vieta"
           className="min-h-10 min-w-[220px] flex-1 rounded-full border border-[#E5E7EB] bg-white px-4 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 focus:border-slate-400"
         />
+        <label className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] text-[var(--color-provin-muted)] shadow-sm">
+          <span className="font-medium">Kārtošana</span>
+          <select
+            aria-label="Kārtošana"
+            value={sort}
+            onChange={(e) => setSort(parseListingSort(e.target.value))}
+            className="bg-transparent text-[13px] font-semibold text-[var(--color-apple-text)] outline-none"
+          >
+            {LISTING_SORTS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </section>
 
       {visible.length === 0 ? (
@@ -339,30 +373,15 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         </section>
       ) : null}
 
-      <div className="space-y-4">
-        {groups.map((g) => (
-          <section key={g.orderId} className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 px-1">
-              <Link
-                href={`/admin/iriss/pasutijumi/${encodeURIComponent(g.orderId)}`}
-                className="text-[13px] font-semibold text-[var(--color-apple-text)] hover:underline"
-              >
-                {g.label}
-              </Link>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{g.vehicles.length}</span>
-            </div>
-            <div className="space-y-2">
-              {g.vehicles.map((v) => (
-                <VehicleCard
-                  key={`${g.orderId}:${v.id}`}
-                  v={v}
-                  nowMs={nowMs}
-                  imageHidden={Boolean(hiddenImages[v.id])}
-                  onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
-                />
-              ))}
-            </div>
-          </section>
+      <div className="space-y-2">
+        {sorted.map((v) => (
+          <VehicleCard
+            key={v.id}
+            v={v}
+            nowMs={nowMs}
+            imageHidden={Boolean(hiddenImages[v.id])}
+            onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
+          />
         ))}
       </div>
     </div>
@@ -383,6 +402,12 @@ function VehicleCard({
   const fresh = isNew(v, nowMs);
   const changes = recentPriceChanges(v, nowMs);
   const gone = v.change === "gone";
+  const prices = listingCardPrices(v);
+  const countdown = auctionCountdown(v.auctionEndAt, nowMs);
+  const orders = v.orderIds.map((orderId, idx) => ({
+    orderId,
+    label: v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? orderId,
+  }));
   const specs = [
     v.year,
     fmtKm(v.mileageKm),
@@ -398,7 +423,8 @@ function VehicleCard({
         gone ? "border-[#E5E7EB] opacity-70" : fresh ? "border-emerald-200" : changes.length > 0 ? "border-sky-200" : "border-[#E5E7EB]"
       }`}
     >
-      <div className="flex min-w-0 gap-3">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="flex min-w-0 flex-1 gap-3">
         <div className="shrink-0">
           {v.imageUrl && !imageHidden ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -450,36 +476,18 @@ function VehicleCard({
 
           <p className="truncate text-[12px] text-[var(--color-provin-muted)]">{specs.join(" · ")}</p>
 
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[12px]">
-            {v.priceStart !== null ? (
-              <span>
-                <span className="text-[var(--color-provin-muted)]">Sākuma</span>{" "}
-                <span className="font-semibold text-[var(--color-apple-text)]">{fmtEur(v.priceStart)}</span>
-              </span>
-            ) : null}
-            {v.priceMinimal !== null ? (
-              <span>
-                <span className="text-[var(--color-provin-muted)]">Min.</span>{" "}
-                <span className="font-semibold text-[var(--color-apple-text)]">{fmtEur(v.priceMinimal)}</span>
-              </span>
-            ) : null}
-            {v.priceCurrent !== null ? (
-              <span>
-                <span className="text-[var(--color-provin-muted)]">Pašreizējā</span>{" "}
-                <span className="font-semibold text-[var(--color-apple-text)]">{fmtEur(v.priceCurrent)}</span>
-              </span>
-            ) : null}
-            {v.priceBuyNow !== null ? (
-              <span>
-                <span className="text-[var(--color-provin-muted)]">Pirkt tūlīt</span>{" "}
-                <span className="font-semibold text-[var(--color-apple-text)]">{fmtEur(v.priceBuyNow)}</span>
-              </span>
-            ) : null}
-            {v.priceStart === null && v.priceMinimal === null && v.priceCurrent === null && v.priceBuyNow === null ? (
-              <span className="text-[var(--color-provin-muted)]">Cena nav norādīta</span>
-            ) : null}
-            {v.vatNote ? <span className="text-[11px] text-slate-500">{v.vatNote}</span> : null}
-          </div>
+          {orders.length > 0 ? (
+            <p className="truncate text-[11px] text-slate-500">
+              {orders.map((o, idx) => (
+                <span key={o.orderId}>
+                  {idx > 0 ? ", " : null}
+                  <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(o.orderId)}`} className="font-medium text-[var(--color-apple-text)] hover:underline">
+                    {o.label}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          ) : null}
 
           {changes.length > 0 ? (
             <p className="text-[11px] text-sky-900">
@@ -491,10 +499,33 @@ function VehicleCard({
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
             {v.auctionStartAt ? <span>Izsole: {fmtDateTime(v.auctionStartAt)}</span> : null}
-            {v.auctionEndAt ? <span>Beidzas: {fmtDateTime(v.auctionEndAt)}</span> : null}
             {v.auctionStage ? <span>{stageLabel(v.auctionStage)}</span> : null}
+            {v.vatNote ? <span>{v.vatNote}</span> : null}
             <span>Pirmo reizi: {fmtDate(v.firstSeenAt)}</span>
             {gone ? <span>Pēdējo reizi: {fmtDate(v.lastSeenAt)}</span> : null}
+          </div>
+        </div>
+        </div>
+
+        <div className="flex shrink-0 flex-row items-end justify-between gap-3 border-t border-[#E5E7EB] pt-2 sm:w-48 sm:flex-col sm:items-end sm:justify-start sm:border-t-0 sm:pt-0">
+          <p
+            className={
+              countdown.tone === "unknown"
+                ? "max-w-[9rem] text-right text-[12px] font-medium leading-snug text-slate-400"
+                : `text-[15px] font-bold tabular-nums leading-none sm:text-[17px] ${countdownClass(countdown.tone)}`
+            }
+          >
+            {countdown.text}
+          </p>
+          <div className="flex flex-col items-end gap-1.5">
+            {prices.map((p) => (
+              <p key={p.label} className="text-right leading-none">
+                <span className="block text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--color-provin-muted)]">{p.label}</span>
+                <span className="mt-0.5 block text-[18px] font-bold tabular-nums text-[var(--color-apple-text)] sm:text-[20px]">
+                  {p.amount === null ? "-" : fmtEur(p.amount)}
+                </span>
+              </p>
+            ))}
           </div>
         </div>
       </div>

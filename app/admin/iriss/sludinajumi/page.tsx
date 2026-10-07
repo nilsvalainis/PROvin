@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { IrissSludinajumiListClient } from "@/components/admin/IrissSludinajumiListClient";
 import { getIrissListingsStorageState, readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
 
@@ -27,7 +28,11 @@ export default async function IrissSludinajumiPage() {
         </section>
       ) : null}
 
-      {storage.enabled ? <IrissSludinajumiListClient latest={latest} /> : null}
+      {storage.enabled ? (
+        <Suspense fallback={null}>
+          <IrissSludinajumiListClient latest={latest} />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
