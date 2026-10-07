@@ -35,6 +35,7 @@ import {
   readIrissListStatusFilter,
   type IrissListStatusFilterState,
 } from "@/components/admin/IrissPasutijumiStatusFilter";
+import { dispatchIrissListStatusFilter } from "@/lib/iriss-pasutijumi-status-filter";
 import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 
 type SortMode = IrissOrderSortMode;
@@ -221,6 +222,8 @@ const IrissRowCard = memo(function IrissRowCard({
   const longPressTimerRef = useRef<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusBtnRef = useRef<HTMLButtonElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
   const chips = buildListingPlatformChips(
     {
       listingLinkMobile: row.listingLinkMobile,
@@ -308,9 +311,22 @@ const IrissRowCard = memo(function IrissRowCard({
 
   useEffect(() => {
     if (!statusMenuOpen) return;
-    const close = () => setStatusMenuOpen(false);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
+    const onDoc = (e: Event) => {
+      const t = e.target;
+      if (!(t instanceof Node)) {
+        setStatusMenuOpen(false);
+        return;
+      }
+      if (statusBtnRef.current?.contains(t) || statusMenuRef.current?.contains(t)) return;
+      setStatusMenuOpen(false);
+    };
+    const timer = window.setTimeout(() => {
+      document.addEventListener("pointerdown", onDoc, true);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("pointerdown", onDoc, true);
+    };
   }, [statusMenuOpen]);
 
   const chipsRow =
@@ -359,9 +375,11 @@ const IrissRowCard = memo(function IrissRowCard({
       <span className={`absolute inset-y-0 left-0 z-10 w-[3px] ${statusBarClass(row)}`} aria-hidden />
       <div className="relative z-10 shrink-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <button
+          ref={statusBtnRef}
           type="button"
           disabled={statusBusy}
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             setStatusMenuOpen((v) => !v);
           }}
@@ -372,30 +390,6 @@ const IrissRowCard = memo(function IrissRowCard({
           {STATUS_LABEL[curStatus]}
           <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
         </button>
-        {statusMenuOpen ? (
-          <div
-            role="menu"
-            className="absolute left-0 top-full z-20 mt-1 min-w-[7.5rem] overflow-hidden rounded-md border border-slate-200 bg-white py-0.5 shadow-lg"
-          >
-            {(["active", "completed", "inactive"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                role="menuitem"
-                disabled={statusBusy}
-                onClick={() => {
-                  setStatusMenuOpen(false);
-                  onSetStatus(row.id, s);
-                }}
-                className={`flex w-full px-2.5 py-1.5 text-left text-[11px] font-semibold ${
-                  curStatus === s ? "bg-slate-100 text-black" : "text-black/80 hover:bg-slate-50"
-                }`}
-              >
-                {STATUS_LABEL[s]}
-              </button>
-            ))}
-          </div>
-        ) : null}
       </div>
       <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-start gap-2.5">
         {brandLogoSrc ? (
@@ -485,8 +479,43 @@ const IrissRowCard = memo(function IrissRowCard({
     </div>
   );
 
+  const statusMenu = statusMenuOpen ? (
+    <div
+      ref={statusMenuRef}
+      role="menu"
+      className="absolute left-3 top-[2.55rem] z-50 min-w-[7.5rem] overflow-hidden rounded-md border border-slate-200 bg-white py-0.5 shadow-lg"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {(["active", "completed", "inactive"] as const).map((s) => (
+        <button
+          key={s}
+          type="button"
+          role="menuitem"
+          disabled={statusBusy}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setStatusMenuOpen(false);
+            onSetStatus(row.id, s);
+          }}
+          className={`flex w-full px-2.5 py-1.5 text-left text-[11px] font-semibold ${
+            curStatus === s ? "bg-slate-100 text-black" : "text-black/80 hover:bg-slate-50"
+          }`}
+        >
+          {STATUS_LABEL[s]}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
   const cardInner = (
-    <div className="group relative overflow-x-clip overflow-y-visible rounded-lg border border-[#E5E7EB] bg-white shadow-none transition hover:border-slate-300">
+    <div
+      className={`group relative overflow-visible rounded-lg border border-[#E5E7EB] bg-white shadow-none transition hover:border-slate-300 ${
+        statusMenuOpen ? "z-40" : ""
+      }`}
+    >
+      <div className="relative overflow-x-clip rounded-lg">
       {narrowSwipeViewport ? (
         <div className="absolute inset-y-0 right-0 z-0 flex bg-[#E5E7EB]" style={{ width: SWIPE_ACTION_WIDTH }}>
           <button
@@ -567,17 +596,24 @@ const IrissRowCard = memo(function IrissRowCard({
           {frontInner}
         </div>
       )}
+      </div>
+      {statusMenu}
     </div>
   );
 
   if (dragReorderEnabled) {
     return (
-      <Reorder.Item value={row.id} dragListener={false} dragControls={reorderDragControls} className="list-none">
+      <Reorder.Item
+        value={row.id}
+        dragListener={false}
+        dragControls={reorderDragControls}
+        className={`list-none ${statusMenuOpen ? "relative z-40" : ""}`}
+      >
         {cardInner}
       </Reorder.Item>
     );
   }
-  return <div className="list-none">{cardInner}</div>;
+  return <div className={`list-none ${statusMenuOpen ? "relative z-40" : ""}`}>{cardInner}</div>;
 });
 
 export function IrissPasutijumiListClient({
@@ -826,6 +862,12 @@ export function IrissPasutijumiListClient({
 
   const onSetStatus = useCallback(
     (id: string, status: IrissPasutijumsListStatus) => {
+      setStatusFilter((prev) => {
+        if (prev[status]) return prev;
+        const next = { ...prev, [status]: true };
+        dispatchIrissListStatusFilter(next);
+        return next;
+      });
       void patchRow(id, (record) => ({ ...record, listStatus: status }));
     },
     [patchRow],
