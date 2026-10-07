@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type {
   IrissListingPlatform,
+  IrissListingPriceChange,
   IrissListingSourceRun,
   IrissListingVehicle,
   IrissListingsLatestView,
@@ -109,9 +110,10 @@ function stageLabel(stage: string): string {
   return stage ? stage.toLowerCase().replace(/_/g, " ") : "";
 }
 
-function priceFieldLabel(field: "start" | "minimal" | "current"): string {
+function priceFieldLabel(field: IrissListingPriceChange["field"]): string {
   if (field === "start") return "sākuma";
   if (field === "minimal") return "min.";
+  if (field === "buy_now") return "pirkt tūlīt";
   return "pašreizējā";
 }
 
@@ -466,7 +468,13 @@ function VehicleCard({
                 <span className="font-semibold text-[var(--color-apple-text)]">{fmtEur(v.priceCurrent)}</span>
               </span>
             ) : null}
-            {v.priceStart === null && v.priceMinimal === null && v.priceCurrent === null ? (
+            {v.priceBuyNow !== null ? (
+              <span>
+                <span className="text-[var(--color-provin-muted)]">Pirkt tūlīt</span>{" "}
+                <span className="font-semibold text-[var(--color-apple-text)]">{fmtEur(v.priceBuyNow)}</span>
+              </span>
+            ) : null}
+            {v.priceStart === null && v.priceMinimal === null && v.priceCurrent === null && v.priceBuyNow === null ? (
               <span className="text-[var(--color-provin-muted)]">Cena nav norādīta</span>
             ) : null}
             {v.vatNote ? <span className="text-[11px] text-slate-500">{v.vatNote}</span> : null}
@@ -482,6 +490,7 @@ function VehicleCard({
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
             {v.auctionStartAt ? <span>Izsole: {fmtDateTime(v.auctionStartAt)}</span> : null}
+            {v.auctionEndAt ? <span>Beidzas: {fmtDateTime(v.auctionEndAt)}</span> : null}
             {v.auctionStage ? <span>{stageLabel(v.auctionStage)}</span> : null}
             <span>Pirmo reizi: {fmtDate(v.firstSeenAt)}</span>
             {gone ? <span>Pēdējo reizi: {fmtDate(v.lastSeenAt)}</span> : null}

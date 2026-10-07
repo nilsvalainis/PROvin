@@ -53,6 +53,7 @@ export function formatIrissListingsForAi(vehicles: IrissListingVehicle[]): strin
     if (v.priceStart !== null) priceParts.push(`sākuma ${formatEur(v.priceStart)}`);
     if (v.priceMinimal !== null) priceParts.push(`min. ${formatEur(v.priceMinimal)}`);
     if (v.priceCurrent !== null) priceParts.push(`pašreizējā ${formatEur(v.priceCurrent)}`);
+    if (v.priceBuyNow !== null) priceParts.push(`pirkt tūlīt ${formatEur(v.priceBuyNow)}`);
     const price = priceParts.length > 0 ? priceParts.join(", ") : "cena nav";
     const km = v.mileageKm !== null ? `${Math.round(v.mileageKm).toLocaleString("lv-LV").replace(/\u00a0/g, " ")} km` : "km nav";
     lines.push(

@@ -91,7 +91,7 @@ function isPlatform(v: string): v is IrissListingPlatform {
 
 const SOURCE_STATUSES = new Set(["ok", "login_required", "blocked_by_waf", "parse_failed", "fetch_failed", "relay_not_configured", "skipped"]);
 const CHANGES = new Set(["new", "price_changed", "unchanged", "gone"]);
-const PRICE_FIELDS = new Set(["start", "minimal", "current"]);
+const PRICE_FIELDS = new Set(["start", "minimal", "current", "buy_now"]);
 
 function normalizePriceChange(v: unknown): IrissListingPriceChange | null {
   if (!isObj(v)) return null;
@@ -132,9 +132,11 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     priceStart: numOrNull(v.priceStart),
     priceMinimal: numOrNull(v.priceMinimal),
     priceCurrent: numOrNull(v.priceCurrent),
+    priceBuyNow: numOrNull(v.priceBuyNow),
     vatNote: str(v.vatNote),
     auctionId: str(v.auctionId),
     auctionStartAt: str(v.auctionStartAt),
+    auctionEndAt: str(v.auctionEndAt),
     auctionStage: str(v.auctionStage),
     firstSeenAt: str(v.firstSeenAt),
     lastSeenAt: str(v.lastSeenAt),

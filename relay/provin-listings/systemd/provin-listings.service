@@ -1,0 +1,31 @@
+[Unit]
+Description=PROVIN IRISS LIST browser relay (Openlane / Auto1 / Autobid), 127.0.0.1:8789
+After=network.target provin-listings-xvfb.service
+Requires=provin-listings-xvfb.service
+
+[Service]
+Type=simple
+User=provin-listings
+Group=provin-listings
+WorkingDirectory=/opt/provin-listings
+EnvironmentFile=/etc/provin-listings.env
+Environment=DISPLAY=:99
+Environment=HOME=/var/lib/provin-listings
+Environment=PLAYWRIGHT_BROWSERS_PATH=/var/lib/provin-listings/ms-playwright
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/provin-listings/server.mjs
+Restart=always
+RestartSec=5
+# Paroles nedrīkst nonākt žurnālā: serviss tās nekad nedrukā; žurnālā ir tikai statusi.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=provin-listings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/provin-listings
+MemoryMax=1200M
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

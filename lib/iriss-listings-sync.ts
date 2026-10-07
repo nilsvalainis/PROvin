@@ -8,6 +8,7 @@ import {
 } from "@/lib/iriss-listings-aggregate-store";
 import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-fetch";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
+import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
 import { buildIrissListingSources, irissListingVehicleId, type IrissListingSource } from "@/lib/iriss-listings-sources";
 import type {
   IrissListingSourceRun,
@@ -33,8 +34,9 @@ function envInt(name: string, fallback: number, min: number, max: number): numbe
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function isRelayConfigured(): boolean {
-  return Boolean(process.env.IRISS_LISTINGS_RELAY_URL?.trim() && process.env.IRISS_LISTINGS_RELAY_TOKEN?.trim());
+/** Autobid pēc noklusējuma lasa Vercel publiski; `IRISS_LISTINGS_AUTOBID_VIA_RELAY=1` lasa caur releju ar ielogotu profilu. */
+function autobidViaRelay(): boolean {
+  return /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_AUTOBID_VIA_RELAY ?? "");
 }
 
 type SourceFetch = {
@@ -47,6 +49,29 @@ type SourceFetch = {
 };
 
 async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
+  const relay = readIrissRelayConfig();
+  const useRelay = src.platform !== "autobid" || autobidViaRelay();
+
+  if (useRelay) {
+    if (!relay) {
+      if (src.platform === "autobid") {
+        /** Relejs pieprasīts, bet nav konfigurēts: Autobid tomēr nolasām publiski. */
+      } else {
+        return {
+          status: "relay_not_configured",
+          note: "Lasīšana caur releju vēl nav pieslēgta (IRISS_LISTINGS_RELAY_URL / _TOKEN).",
+          vehicles: [],
+          rawPages: [],
+          pagesFetched: 0,
+          pageCount: 0,
+        };
+      }
+    } else {
+      const r = await fetchViaIrissRelay(relay, src, { maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25) });
+      return { status: r.status, note: r.note, vehicles: r.vehicles, rawPages: r.rawPages, pagesFetched: r.pagesFetched, pageCount: r.pageCount };
+    }
+  }
+
   if (src.platform === "autobid") {
     const r = await fetchAutobidSource(src.sourceUrl, {
       maxPages: envInt("IRISS_LISTINGS_AUTOBID_MAX_PAGES", 5, 1, 25),
@@ -82,24 +107,17 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
         priceStart: v.priceStart,
         priceMinimal: v.priceMinimal,
         priceCurrent: v.priceCurrent,
+        priceBuyNow: null,
         vatNote: v.vatNote,
         auctionId: v.auctionId,
         auctionStartAt: v.auctionStartAt,
+        auctionEndAt: "",
         auctionStage: v.auctionStage,
       })),
     };
   }
-  /** Openlane / Auto1: Cloudflare un dīlera login. Lasa Hetzner relejs ar ielogotu pārlūka profilu (Fāze 1). */
-  return {
-    status: "relay_not_configured",
-    note: isRelayConfigured()
-      ? "Releja lasītājs šai platformai vēl nav ieviests."
-      : "Lasīšana caur releju vēl nav pieslēgta (IRISS_LISTINGS_RELAY_URL / _TOKEN).",
-    vehicles: [],
-    rawPages: [],
-    pagesFetched: 0,
-    pageCount: 0,
-  };
+  /** Nesasniedzams: visas pārējās platformas iet caur releju augstāk. */
+  return { status: "fetch_failed", note: "Platformai nav lasītāja.", vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
 }
 
 function summarize(
@@ -158,6 +176,7 @@ export async function runIrissListingsDailySync(): Promise<IrissListingsSyncResu
     if (outOfTime) {
       r = { status: "skipped", note: "Laika budžets beidzās; avots tiks lasīts nākamajā reizē.", vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
     } else {
+      /** Pauze starp tiešajiem Autobid lasījumiem; releja lasījumi ir rindā ar savām pauzēm serverī. */
       if (readCount > 0 && src.platform === "autobid") await sleep(randomPauseMs(1_500, 4_000));
       r = await fetchSource(src);
       if (src.platform === "autobid") readCount += 1;

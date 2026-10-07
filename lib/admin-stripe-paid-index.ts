@@ -84,7 +84,7 @@ async function readIndexFromBlob(blob: { token: string; prefix: string }): Promi
     const res = await get(indexBlobPath(blob.prefix), {
       access: "private",
       token: blob.token,
-      useCache: true,
+      useCache: false,
     });
     if (!res || res.statusCode !== 200 || !res.stream) return null;
     const raw = JSON.parse(await new Response(res.stream).text()) as unknown;
@@ -154,6 +154,25 @@ export async function upsertStripePaidIndexRow(row: AdminOrderRow): Promise<void
   const next = existing.filter((r) => r.id !== row.id);
   next.push(row);
   await writeStripePaidIndex(next);
+}
+
+/** Jauns webhook upsert, kas ienāca Stripe skenēšanas laikā, paliek indeksā. */
+const KEEP_INDEX_ONLY_ROWS_MAX_AGE_SEC = 2 * 60 * 60;
+
+export function mergePaidIndexAfterStripeRefresh(
+  fromStripe: AdminOrderRow[],
+  fromIndex: AdminOrderRow[],
+  nowUnix = Math.floor(Date.now() / 1000),
+): AdminOrderRow[] {
+  const byId = new Map<string, AdminOrderRow>();
+  for (const row of fromStripe) byId.set(row.id, row);
+  for (const row of fromIndex) {
+    if (byId.has(row.id)) continue;
+    if (nowUnix - row.created <= KEEP_INDEX_ONLY_ROWS_MAX_AGE_SEC) {
+      byId.set(row.id, row);
+    }
+  }
+  return [...byId.values()].sort((a, b) => b.created - a.created);
 }
 
 export function stripePaidIndexAgeMs(doc: StripePaidIndexDoc | null): number {

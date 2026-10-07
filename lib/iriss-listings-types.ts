@@ -33,7 +33,7 @@ export type IrissListingSourceRun = {
   fetchedAt: string;
 };
 
-export type IrissListingPriceField = "start" | "minimal" | "current";
+export type IrissListingPriceField = "start" | "minimal" | "current" | "buy_now";
 
 export type IrissListingPriceChange = {
   at: string;
@@ -68,9 +68,13 @@ export type IrissListingVehicle = {
   priceStart: number | null;
   priceMinimal: number | null;
   priceCurrent: number | null;
+  /** Openlane BuyNowPrice / Auto1 fiksētā cena; Autobid nav. */
+  priceBuyNow: number | null;
   vatNote: string;
   auctionId: string;
   auctionStartAt: string;
+  /** Openlane BatchEndDate / Auto1 beigu laiks; tukšs, ja platforma nedod. */
+  auctionEndAt: string;
   auctionStage: string;
   firstSeenAt: string;
   lastSeenAt: string;
