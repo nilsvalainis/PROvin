@@ -4643,8 +4643,6 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
-              pdfIncludeOil={pdfVisibility.autoRecordsOilInterval !== false}
-              onPdfIncludeOilChange={(next) => onPdfVisibilityChange({ autoRecordsOilInterval: next })}
               aiComment={aiCommentSlot("auto_records")}
               aiServiceHistory={aiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
               aiOilChangeInterval={aiCommentSlot("auto_records", undefined, "oilChangeIntervalNotes")}
