@@ -47,6 +47,7 @@ type GenerateOpts = {
   modelTier?: AiAdminModelTier | null;
   systemInstruction: string;
   userPrompt: string;
+  /** Claude only. Gemini rejects temperature / topP / topK. */
   temperature?: number;
   maxLen?: number;
   maxTokens?: number;
@@ -229,7 +230,6 @@ async function generateExpertTextOnce(opts: GenerateOpts): Promise<string> {
       model: resolveGeminiAdminModel(opts.modelTier === "gemini-flash" ? "flash" : "pro"),
       systemInstruction: opts.systemInstruction,
       userPrompt: opts.userPrompt,
-      temperature: opts.temperature,
       maxLen: opts.maxLen,
       budget: opts.budget,
       stream: opts.stream,
@@ -258,7 +258,6 @@ async function generateTextWithVocabularyOnce(opts: GenerateOpts): Promise<strin
       model: resolveGeminiAdminModel(opts.modelTier === "gemini-flash" ? "flash" : "pro"),
       systemInstruction: opts.systemInstruction,
       userPrompt: opts.userPrompt,
-      temperature: opts.temperature,
       budget: opts.budget,
       stream: opts.stream,
     });
@@ -284,7 +283,6 @@ async function generateTextWithWebSearchOnce(opts: GenerateOpts): Promise<string
       model: resolveGeminiAdminModel(opts.modelTier === "gemini-flash" ? "flash" : "pro"),
       systemInstruction: opts.systemInstruction,
       userPrompt: opts.userPrompt,
-      temperature: opts.temperature,
       maxOutputTokens: opts.maxTokens,
       budget: opts.budget,
       stream: opts.stream,
@@ -312,7 +310,6 @@ export async function adminGenerateJsonText(opts: GenerateOpts): Promise<string>
       model: resolveGeminiAdminModel(opts.modelTier === "gemini-flash" ? "flash" : "pro"),
       systemInstruction: opts.systemInstruction,
       userPrompt: opts.userPrompt,
-      temperature: opts.temperature,
     });
   }
   return aiGenerateJsonText({

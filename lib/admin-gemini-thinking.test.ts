@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { geminiThinkingExtra, geminiWantsThinking } from "@/lib/gemini-thinking-config";
+import {
+  geminiThinkingExtra,
+  geminiThinkingLevelForBudget,
+  geminiWantsThinking,
+} from "@/lib/gemini-thinking-config";
 import {
   GEMINI_MODEL_FLASH,
   GEMINI_MODEL_FLASH_25,
@@ -14,7 +18,6 @@ function thinkingConfig(model: string, enabled: boolean): ThinkingConfig | undef
 }
 
 describe("geminiThinkingExtra", () => {
-  /** Abi lauki kopā = 400 „You can only set only one of thinking budget and thinking level”. */
   it("never sends thinking level and thinking budget together", () => {
     for (const model of [
       GEMINI_MODEL_FLASH,
@@ -25,9 +28,8 @@ describe("geminiThinkingExtra", () => {
       for (const enabled of [true, false]) {
         const cfg = thinkingConfig(model, enabled);
         if (!cfg) continue;
-        expect(
-          [cfg.thinkingLevel, cfg.thinkingBudget].filter((v) => v !== undefined),
-        ).toHaveLength(1);
+        expect(cfg.thinkingBudget).toBeUndefined();
+        expect(cfg.thinkingLevel).toEqual(expect.any(String));
       }
     }
   });
@@ -37,15 +39,28 @@ describe("geminiThinkingExtra", () => {
     expect(thinkingConfig(GEMINI_MODEL_FLASH, false)).toEqual({ thinkingLevel: "minimal" });
   });
 
-  it("does not retry Gemini 3 with a second thinking pass (low ate the output)", () => {
+  it("does not retry when enabled and disabled configs are the same", () => {
     expect(geminiWantsThinking(GEMINI_MODEL_FLASH)).toBe(false);
-    expect(geminiWantsThinking(GEMINI_MODEL_FLASH_25)).toBe(true);
+    expect(geminiWantsThinking(GEMINI_MODEL_FLASH_25)).toBe(false);
+    expect(geminiWantsThinking(GEMINI_MODEL_PRO)).toBe(false);
   });
 
-  it("gives Gemini 2.5 a budget, never a level", () => {
-    expect(thinkingConfig(GEMINI_MODEL_FLASH_25, true)).toEqual({ thinkingBudget: 512 });
-    expect(thinkingConfig(GEMINI_MODEL_FLASH_25, false)).toEqual({ thinkingBudget: 0 });
-    expect(thinkingConfig(GEMINI_MODEL_PRO, true)).toEqual({ thinkingBudget: 512 });
+  it("maps Gemini 2.5 former budgets onto thinkingLevel low (no minimal on 2.5)", () => {
+    expect(thinkingConfig(GEMINI_MODEL_FLASH_25, true)).toEqual({ thinkingLevel: "low" });
+    expect(thinkingConfig(GEMINI_MODEL_FLASH_25, false)).toEqual({ thinkingLevel: "low" });
+    expect(thinkingConfig(GEMINI_MODEL_PRO, true)).toEqual({ thinkingLevel: "low" });
+    expect(thinkingConfig(GEMINI_MODEL_PRO, false)).toEqual({ thinkingLevel: "low" });
+  });
+
+  it("maps former thinking budgets onto supported levels", () => {
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_FLASH, 0)).toBe("minimal");
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_FLASH, 512)).toBe("minimal");
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_FLASH, 24576)).toBe("minimal");
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_FLASH_25, 0)).toBe("low");
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_FLASH_25, 512)).toBe("low");
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_PRO, 512)).toBe("low");
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_FLASH_25, 4096)).toBe("medium");
+    expect(geminiThinkingLevelForBudget(GEMINI_MODEL_PRO, 24576)).toBe("high");
   });
 
   /**

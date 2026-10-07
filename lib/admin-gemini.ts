@@ -202,7 +202,6 @@ async function geminiGenerateJsonFromPartsOnce(
     model: string;
     systemInstruction: string;
     parts: GeminiUserPart[];
-    temperature?: number;
     responseSchema?: GeminiJsonSchema;
   },
 ): Promise<string> {
@@ -216,7 +215,6 @@ async function geminiGenerateJsonFromPartsOnce(
       {
         contents: [{ role: "user", parts: opts.parts }],
         generationConfig: {
-          temperature: opts.temperature ?? 0.2,
           maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
           responseMimeType: "application/json",
           ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
@@ -246,7 +244,6 @@ export async function geminiGenerateJsonText(opts: {
   model: string;
   systemInstruction: string;
   userPrompt: string;
-  temperature?: number;
   /** Papildus daļas (piem. inline PDF) pirms `userPrompt` teksta. */
   extraParts?: GeminiUserPart[];
 }): Promise<string> {
@@ -255,7 +252,6 @@ export async function geminiGenerateJsonText(opts: {
     model: opts.model,
     systemInstruction: opts.systemInstruction,
     parts,
-    temperature: opts.temperature,
   });
 }
 
@@ -266,7 +262,6 @@ export async function geminiGenerateJsonFromParts(opts: {
   model: string;
   systemInstruction: string;
   parts: GeminiUserPart[];
-  temperature?: number;
   responseSchema?: GeminiJsonSchema;
 }): Promise<string> {
   const key = getGeminiApiKeyFromEnv();
@@ -285,12 +280,8 @@ export async function geminiGenerateJsonWithSchema(opts: {
   systemInstruction: string;
   parts: GeminiUserPart[];
   responseSchema: GeminiJsonSchema;
-  temperature?: number;
 }): Promise<string> {
-  return geminiGenerateJsonFromParts({
-    ...opts,
-    temperature: opts.temperature ?? 0,
-  });
+  return geminiGenerateJsonFromParts(opts);
 }
 
 type GeminiContentPart = { text?: string; thought?: boolean };
@@ -330,7 +321,6 @@ async function geminiStreamGenerateText(
     model: string;
     systemInstruction: string;
     userPrompt: string;
-    temperature?: number;
     budget?: AiRequestBudget;
     stream?: AiTextStream;
   },
@@ -348,7 +338,6 @@ async function geminiStreamGenerateText(
       {
         contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
         generationConfig: {
-          temperature: opts.temperature ?? 0.35,
           maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
           ...geminiThinkingExtra(opts.model, withThinking),
         } as never,
@@ -395,7 +384,6 @@ async function geminiGenerateTextOnce(
     model: string;
     systemInstruction: string;
     userPrompt: string;
-    temperature?: number;
     budget?: AiRequestBudget;
     stream?: AiTextStream;
   },
@@ -433,7 +421,6 @@ export type GeminiTextOptions = {
   model: string;
   systemInstruction: string;
   userPrompt: string;
-  temperature?: number;
   budget?: AiRequestBudget;
   stream?: AiTextStream;
 };
@@ -603,7 +590,6 @@ async function geminiGenerateTextWithGoogleSearchOnce(
     model: string;
     systemInstruction: string;
     userPrompt: string;
-    temperature?: number;
     maxOutputTokens?: number;
     budget?: AiRequestBudget;
     stream?: AiTextStream;
@@ -636,7 +622,6 @@ async function geminiGenerateTextWithGoogleSearchOnce(
             contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
             tools,
             generationConfig: {
-              temperature: opts.temperature ?? 0.35,
               maxOutputTokens,
               ...geminiThinkingExtra(opts.model, withThinking),
             },
