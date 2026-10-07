@@ -9,6 +9,8 @@ describe("seo redirects", () => {
     expect(resolveLegacyAliasRedirect("/en/about")).toBe("/en/par-mums");
     expect(resolveLegacyAliasRedirect("/de/samples")).toBe("/de/pakalpojumi");
     expect(resolveLegacyAliasRedirect("/ru/paraugi")).toBe("/ru/pakalpojumi");
+    expect(resolveLegacyAliasRedirect("/en/blog")).toBe("/en/blogs");
+    expect(resolveLegacyAliasRedirect("/de/services")).toBe("/de/pakalpojumi");
     expect(resolveLegacyAliasRedirect("/lv/pakalpojumi")).toBeNull();
   });
 

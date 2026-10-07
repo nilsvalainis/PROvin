@@ -23,6 +23,10 @@ export const LEGACY_PATH_ALIASES: Record<string, string> = {
   "/about": "/par-mums",
   "/samples": "/pakalpojumi",
   "/paraugi": "/pakalpojumi",
+  "/blog": "/blogs",
+  "/services": "/pakalpojumi",
+  "/terms": "/lietosanas-noteikumi",
+  "/privacy": "/privatuma-politika",
 };
 
 export const SEO_LOCALE_HEADER = "x-provin-locale";

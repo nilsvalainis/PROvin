@@ -29,7 +29,11 @@ const nextConfig: NextConfig = {
    * Googlebot u.c. nesaņem straumētus metadatus `<body>`: canonical/title paliek `<head>`.
    * Ja šo lauku uzstāda, tas aizvieto Next noklusējumu, tāpēc saraksts ir pilns.
    */
-  htmlLimitedBots: /Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|Bingbot|bingbot|BingPreview|Slurp|DuckDuckBot|Baiduspider|YandexBot|Yandex|facebookexternalhit|LinkedInBot|Twitterbot|Applebot|Chrome-Lighthouse|GPTBot/i,
+  /**
+   * Googlebot (īpaši smartphone UA) uz sākumlapas/partneriem saņēma title/canonical `<body>`.
+   * `/.*/` = metadati vienmēr `<head>` (Next straumēšana tos citādi izlaiž).
+   */
+  htmlLimitedBots: /.*/,
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
     "pdf-parse",
@@ -86,9 +90,25 @@ const nextConfig: NextConfig = {
       { source: "/:locale(lv|en|de|ru)/paraugi", destination: "/:locale/pakalpojumi", permanent: true },
       { source: "/:locale(lv|en|de|ru)/opengraph-image", destination: "/og.png", permanent: true },
       { source: "/opengraph-image", destination: "/og.png", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/twitter-image", destination: "/og.png", permanent: true },
+      { source: "/twitter-image", destination: "/og.png", permanent: true },
       {
         source: "/samples/provin-audits-bmw-525-e61.pdf",
         destination: "/samples/provin-audits-bmw-525-e61-v2.pdf",
+        permanent: true,
+      },
+      { source: "/kontakti", destination: "/lv#kontakti", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/kontakti", destination: "/:locale#kontakti", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/atsauksmes", destination: "/:locale#atsauksmes", permanent: true },
+      { source: "/blog", destination: "/lv/blogs", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/blog", destination: "/:locale/blogs", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/services", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/terms", destination: "/:locale/lietosanas-noteikumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/privacy", destination: "/:locale/privatuma-politika", permanent: true },
+      {
+        source: "/samples/:file",
+        has: [{ type: "query", key: "v" }],
+        destination: "/samples/:file",
         permanent: true,
       },
     ];
@@ -144,6 +164,7 @@ const nextConfig: NextConfig = {
             key: "Cache-Control",
             value: "public, max-age=86400, stale-while-revalidate=604800",
           },
+          { key: "X-Robots-Tag", value: "noindex, follow" },
         ],
       },
     ];

@@ -44,7 +44,7 @@ export function IrissYoutubePreview({ videoId, startSeconds, playLabel }: Props)
       {/* eslint-disable-next-line @next/next/no-img-element -- external YouTube CDN; avoids next/image remotePatterns. */}
       <img
         src={thumbSrc}
-        alt=""
+        alt={playLabel}
         className="h-full w-full object-cover brightness-[0.45] grayscale transition duration-300 group-hover:scale-[1.02] group-hover:brightness-100 group-hover:grayscale-0 group-focus-visible:brightness-100 group-focus-visible:grayscale-0"
         loading="lazy"
         decoding="async"

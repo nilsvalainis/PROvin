@@ -19,7 +19,10 @@ export async function BlogIndex({ locale }: Props) {
     <section id="blogs" className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
       <div className="demo-design-dir__shell relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
         <header className="mx-auto max-w-[min(42.5rem,calc(100vw-2rem))] text-center">
-          <h1 className={`${homeEditorialSectionTitleClass} text-provin-accent`}>{t("sermonTitle")}</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-provin-accent">
+            {t("sermonTitle")}
+          </p>
+          <h1 className={`${homeEditorialSectionTitleClass} mt-3 text-white/[0.96]`}>{t("indexH1")}</h1>
           <div className="mx-auto mt-3 w-full max-w-[min(100%,28rem)]">
             <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
           </div>
