@@ -56,22 +56,20 @@ function FeatureIconGlyph({ icon }: { icon: Tp5DesktopHeroFeatureIcon }) {
       return (
         <Image
           src="/brand/carvertical-logo.png"
-          alt=""
+          alt="carVertical"
           width={24}
           height={24}
           className={`${BRAND_LOGO_CLASS} ${styles.brandLogoIdleCarVertical}`}
-          aria-hidden
         />
       );
     case "autodna":
       return (
         <Image
           src="/brand/autodna-logo.png"
-          alt=""
+          alt="autoDNA"
           width={24}
           height={24}
           className={`${BRAND_LOGO_CLASS} ${styles.brandLogoIdleAutoDna}`}
-          aria-hidden
         />
       );
     case "dealer-data":

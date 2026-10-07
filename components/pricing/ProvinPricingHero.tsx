@@ -137,11 +137,11 @@ export function ProvinPricingHero({
       <div className={styles.heroInnerMobile}>
         {cancelled ? <p className={styles.cancelNote}>{uiCopy.cancelNote}</p> : null}
 
-        {/* Mobile: no visible H1 — desktop hero keeps the full title. */}
-        <h1 id={mobileTitleId} className="sr-only">
+        {/* One H1 in HTML. Mobile UI has no visible title; desktop shows this same string. */}
+        <p id={mobileTitleId} className="sr-only">
           {mobileHeroCopy.titlePrefix}
           {mobileHeroCopy.titleAccent}
-        </h1>
+        </p>
 
         <div className={styles.stage}>
           <Tp5MobilePricingCard

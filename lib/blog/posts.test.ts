@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { getAllBlogSlugs, getBlogPost, listBlogPosts } from "@/lib/blog/posts";
+import { getAllBlogSlugs, getBlogPost, isBlogLocaleIndexable, listBlogPosts } from "@/lib/blog/posts";
 
 describe("blog posts", () => {
   beforeEach(() => {
@@ -25,5 +25,9 @@ describe("blog posts", () => {
     const scam = await getBlogPost("krapsanas-shemas-mobile-de-48000");
     expect(scam?.lv.title).toMatch(/48 000/);
     expect(scam?.coverImage).toBeUndefined();
+    expect(isBlogLocaleIndexable(buying!, "lv")).toBe(true);
+    expect(isBlogLocaleIndexable(buying!, "en")).toBe(false);
+    expect(isBlogLocaleIndexable(buying!, "de")).toBe(false);
+    expect(isBlogLocaleIndexable(buying!, "ru")).toBe(false);
   });
 });

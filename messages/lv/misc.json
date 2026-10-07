@@ -13,6 +13,7 @@
   "Blogs": {
     "comingSoon": "DRĪZUMĀ",
     "sermonTitle": "SPREDIĶIS BEZ ALTĀRA",
+    "indexH1": "Blogs: lietota auto pirkšana un VIN pārbaude",
     "readMore": "Lasīt ierakstu",
     "backToList": "← Visi ieraksti",
     "lvOnlyNote": "Pilnais teksts pieejams latviešu valodā.",
@@ -32,7 +33,18 @@
     "blogs": "Blogs",
     "provinSelect": "Konsultācija",
     "kasSlapjasAizProvin": "Par PROVIN",
+    "buj": "BUJ",
     "b2b": "Partneriem",
     "b2bLoginAria": "Partneriem, ielogošanās"
+  },
+  "Breadcrumbs": {
+    "navAria": "Atpakaļceļš",
+    "home": "Sākums",
+    "services": "Pakalpojumi",
+    "faq": "BUJ",
+    "about": "Par PROVIN",
+    "blogs": "Blogs",
+    "vinCheck": "VIN koda pārbaude",
+    "partner": "Partneriem"
   }
 }

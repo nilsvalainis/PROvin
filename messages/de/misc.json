@@ -13,6 +13,7 @@
   "Blogs": {
     "comingSoon": "DEMNÄCHST",
     "sermonTitle": "PREDIGT OHNE ALTAR",
+    "indexH1": "Blog: Gebrauchtwagenkauf und VIN-Check",
     "readMore": "Beitrag lesen",
     "backToList": "← Alle Beiträge",
     "lvOnlyNote": "Der vollständige Text ist auf Lettisch verfügbar.",
@@ -32,7 +33,18 @@
     "blogs": "Blog",
     "provinSelect": "Beratung",
     "kasSlapjasAizProvin": "Über PROVIN",
+    "buj": "FAQ",
     "b2b": "Für Händler",
     "b2bLoginAria": "Für Händler: anmelden"
+  },
+  "Breadcrumbs": {
+    "navAria": "Brotkrumen",
+    "home": "Start",
+    "services": "Leistungen",
+    "faq": "FAQ",
+    "about": "Über PROVIN",
+    "blogs": "Blog",
+    "vinCheck": "VIN-Check",
+    "partner": "Für Händler"
   }
 }

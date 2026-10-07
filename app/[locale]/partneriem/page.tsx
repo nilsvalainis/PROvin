@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { B2bPartnerPreview } from "@/components/b2b/B2bPartnerPreview";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
@@ -7,16 +8,28 @@ import { Footer } from "@/components/Footer";
 import { routing } from "@/i18n/routing";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import { readB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
+import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "PROVIN partneriem",
-  robots: { index: false, follow: false },
-  appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
-};
+type Props = { params: Promise<{ locale: string }> };
 
-export default async function PartneriemPage({ params }: { params: Promise<{ locale: string }> }) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Meta" });
+  return {
+    ...buildPublicPageMetadata({
+      locale,
+      path: "/partneriem",
+      title: t("partnerTitle"),
+      description: t("partnerDescription"),
+      ogImageAlt: t("ogImageAlt"),
+    }),
+    appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
+  };
+}
+
+export default async function PartneriemPage({ params }: Props) {
   const session = await readB2bPartnerServerSession();
   if (session) {
     const partner = await resolveActiveB2bPartner();

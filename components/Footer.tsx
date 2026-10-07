@@ -72,6 +72,26 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
               <p className="home-footer-ink mt-3 max-w-[36rem] text-[12px] font-normal leading-[1.55] text-white/45 sm:text-[13px] sm:leading-[1.5]">
                 {t("body")}
               </p>
+              <nav aria-label={t("navAria")} className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
+                <Link href="/" className={legalLinkClass}>
+                  {t("navHome")}
+                </Link>
+                <Link href="/pakalpojumi" className={legalLinkClass}>
+                  {t("navServices")}
+                </Link>
+                <Link href="/vin-koda-parbaude" className={legalLinkClass}>
+                  {t("navVinCheck")}
+                </Link>
+                <Link href="/biezi-jautajumi" className={legalLinkClass}>
+                  {t("navFaq")}
+                </Link>
+                <Link href="/par-mums" className={legalLinkClass}>
+                  {t("navAbout")}
+                </Link>
+                <Link href="/blogs" className={legalLinkClass}>
+                  {t("navBlog")}
+                </Link>
+              </nav>
             </div>
 
             <div className="min-w-0 border-t border-white/[0.08] pt-6 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">

@@ -11,9 +11,9 @@ const QUOTE_MAX_CHARS = 240;
 
 /** Fiksēts 6 rindu bloka augstums, lai slide maiņa nelēkā. */
 const QUOTE_BODY_CLASS =
-  "line-clamp-6 min-h-[9.72rem] text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:min-h-[11.088rem] sm:text-[1.4rem] sm:leading-[1.32] lg:min-h-[11.484rem] lg:text-left lg:text-[1.45rem]";
+  "line-clamp-6 min-h-[10.5rem] text-pretty text-[1.2rem] font-medium leading-[1.35] tracking-tight text-white/[0.94] sm:min-h-[11.5rem] sm:text-[1.4rem] sm:leading-[1.32] lg:min-h-[12rem] lg:text-left lg:text-[1.45rem]";
 
-const QUOTE_FOOTER_CLASS = "mt-4 flex min-h-[5.25rem] flex-col gap-1.5 sm:mt-5";
+const QUOTE_FOOTER_CLASS = "mt-4 flex min-h-[5.75rem] flex-col gap-1.5 sm:mt-5";
 
 function StarRow({ count = 5 }: { count?: number }) {
   return (

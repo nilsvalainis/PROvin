@@ -5,6 +5,8 @@ export const routing = defineRouting({
   locales: APP_LOCALES,
   defaultLocale: DEFAULT_LOCALE,
   localeDetection: false,
+  /** HTML `hreflang` nāk no metadatiem; Link header citādi rāda ceļus bez `/lv`. */
+  alternateLinks: false,
   /**
    * Viens `lv`: `as-needed` un `never` dev vidē deva 307 cilpu uz `/` (next-intl + viena lokalizācija).
    * `always` — `/` → `/lv` vienu reizi, tad lapa ielādējas (URL ar `/lv` prefiksu).

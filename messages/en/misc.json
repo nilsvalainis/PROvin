@@ -13,6 +13,7 @@
   "Blogs": {
     "comingSoon": "COMING SOON",
     "sermonTitle": "SERMON WITHOUT AN ALTAR",
+    "indexH1": "Blog: buying a used car and VIN checks",
     "readMore": "Read post",
     "backToList": "← All posts",
     "lvOnlyNote": "Full story is available in Latvian.",
@@ -32,7 +33,18 @@
     "blogs": "Blog",
     "provinSelect": "Consultation",
     "kasSlapjasAizProvin": "About PROVIN",
+    "buj": "FAQ",
     "b2b": "For dealers",
     "b2bLoginAria": "For dealers, sign in"
+  },
+  "Breadcrumbs": {
+    "navAria": "Breadcrumb",
+    "home": "Home",
+    "services": "Services",
+    "faq": "FAQ",
+    "about": "About PROVIN",
+    "blogs": "Blog",
+    "vinCheck": "VIN check",
+    "partner": "For dealers"
   }
 }

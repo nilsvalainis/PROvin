@@ -22,6 +22,7 @@ export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMe
     riskAuditGuide,
     samples,
     partner,
+    vinCheck,
   ] = await Promise.all([
     import(`../../messages/${locale}/meta.json`),
     import(`../../messages/${locale}/header.json`),
@@ -39,6 +40,7 @@ export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMe
     import(`../../messages/${locale}/riskAuditGuide.json`),
     import(`../../messages/${locale}/samples.json`),
     import(`../../messages/${locale}/partner.json`),
+    import(`../../messages/${locale}/vinCheck.json`),
   ]);
 
   return {
@@ -58,6 +60,7 @@ export async function loadAppMessages(locale: AppLocale): Promise<AbstractIntlMe
     ...riskAuditGuide.default,
     ...samples.default,
     ...partner.default,
+    ...vinCheck.default,
   } as AbstractIntlMessages;
 }
 

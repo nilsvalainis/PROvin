@@ -44,7 +44,7 @@ export function SamplesCatalog() {
         </header>
 
         <div className="grid grid-cols-1 gap-10 sm:gap-12 lg:grid-cols-2 lg:gap-8">
-          {SAMPLE_REPORTS.map((item) => {
+          {SAMPLE_REPORTS.map((item, index) => {
             const title = t(`items.${item.id}.title`);
             const checkoutHref = homeHeroCheckoutHref(item.checkoutPlan);
             return (
@@ -69,6 +69,7 @@ export function SamplesCatalog() {
                     openPdfLabel={t("openPdfLabel")}
                     comingSoonLabel={t("openPdfLabel")}
                     compact
+                    priority={index === 0}
                   />
                 </div>
                 <SampleOrderCta href={checkoutHref} label={orderCta} className="mt-5" />

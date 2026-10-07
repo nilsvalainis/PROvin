@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import { Footer } from "@/components/Footer";
 import { IrissSection } from "@/components/IrissSection";
+import { PageBreadcrumbs } from "@/components/seo/PageBreadcrumbs";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -16,14 +17,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     path: "/par-mums",
     title: t("aboutTitle"),
     description: t("aboutDescription"),
+    ogImageAlt: t("ogImageAlt"),
   });
 }
 
 /** Par PROVIN — hero-stila chrome (header no layout) + kājene. Bez kājenes paliek tikai Blogs. */
-export default async function ParMumsPage() {
+export default async function ParMumsPage({ params }: Props) {
+  const { locale } = await params;
+  const tCrumb = await getTranslations("Breadcrumbs");
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
+        <PageBreadcrumbs
+          locale={locale}
+          items={[
+            { name: tCrumb("home"), path: "/" },
+            { name: tCrumb("about"), path: "/par-mums" },
+          ]}
+        />
         <section className="demo-design-dir__section bg-transparent pb-12 pt-6 sm:pb-16 sm:pt-8 md:pb-20">
           <div className="demo-design-dir__shell">
             <IrissSection editorialColumn />

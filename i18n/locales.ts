@@ -71,6 +71,15 @@ export function parsePrefixedPath(pathname: string): { locale: AppLocale | null;
   return { locale: match[1], rest };
 }
 
+/** Ceļš bez `/{lv|en|de|ru}` prefiksa; `/lv` un `/en` kļūst `/`. */
+export function stripLocalePrefix(pathname: string): string {
+  const raw = (pathname.split("?")[0] ?? pathname).trim() || "/";
+  const noSlash = raw.endsWith("/") && raw.length > 1 ? raw.slice(0, -1) : raw;
+  const { locale, rest } = parsePrefixedPath(noSlash);
+  if (!locale) return noSlash || "/";
+  return rest === "/" ? "/" : rest;
+}
+
 export function b2bDateLocale(locale: string): string {
   if (locale === "en") return "en-GB";
   if (locale === "de") return "de-DE";

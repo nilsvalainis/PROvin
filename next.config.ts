@@ -25,6 +25,12 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const nextConfig: NextConfig = {
+  /**
+   * Googlebot u.c. nesaņem straumētus metadatus `<body>`: canonical/title paliek `<head>`.
+   * Ja šo lauku uzstāda, tas aizvieto Next noklusējumu, tāpēc saraksts ir pilns.
+   */
+  /** Googlebot smartphone UA: title/canonical bija `<body>`. Match-all keeps metadata in `<head>`. */
+  htmlLimitedBots: /.*/,
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
     "pdf-parse",
@@ -57,8 +63,45 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false },
+      {
+        source: "/",
+        has: [{ type: "host", value: "provin.lv" }],
+        destination: "https://www.provin.lv/lv",
+        permanent: true,
+      },
+      { source: "/", destination: "/lv", permanent: true },
+      { source: "/faq", destination: "/lv/biezi-jautajumi", permanent: true },
+      { source: "/about", destination: "/lv/par-mums", permanent: true },
+      { source: "/samples", destination: "/lv/pakalpojumi", permanent: true },
       { source: "/paraugi", destination: "/lv/pakalpojumi", permanent: true },
-      { source: "/:locale(lv|en)/paraugi", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/pakalpojumi", destination: "/lv/pakalpojumi", permanent: true },
+      { source: "/par-mums", destination: "/lv/par-mums", permanent: true },
+      { source: "/blogs", destination: "/lv/blogs", permanent: true },
+      { source: "/biezi-jautajumi", destination: "/lv/biezi-jautajumi", permanent: true },
+      { source: "/vin-koda-parbaude", destination: "/lv/vin-koda-parbaude", permanent: true },
+      { source: "/lietosanas-noteikumi", destination: "/lv/lietosanas-noteikumi", permanent: true },
+      { source: "/privatuma-politika", destination: "/lv/privatuma-politika", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/faq", destination: "/:locale/biezi-jautajumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/about", destination: "/:locale/par-mums", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/samples", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/paraugi", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/opengraph-image", destination: "/og.png", permanent: true },
+      { source: "/opengraph-image", destination: "/og.png", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/twitter-image", destination: "/og.png", permanent: true },
+      { source: "/twitter-image", destination: "/og.png", permanent: true },
+      {
+        source: "/samples/provin-audits-bmw-525-e61.pdf",
+        destination: "/samples/provin-audits-bmw-525-e61-v2.pdf",
+        permanent: true,
+      },
+      { source: "/kontakti", destination: "/lv#kontakti", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/kontakti", destination: "/:locale#kontakti", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/atsauksmes", destination: "/:locale#atsauksmes", permanent: true },
+      { source: "/blog", destination: "/lv/blogs", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/blog", destination: "/:locale/blogs", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/services", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/terms", destination: "/:locale/lietosanas-noteikumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/privacy", destination: "/:locale/privatuma-politika", permanent: true },
     ];
   },
   /** Stripe Dashboard bieža kļūda: `/api/webhook/stripe` — kods ir `/api/webhooks/stripe`. */
@@ -88,6 +131,32 @@ const nextConfig: NextConfig = {
       {
         source: "/en",
         headers: [...securityHeaders, ...marketingCache],
+      },
+      {
+        source: "/de",
+        headers: [...securityHeaders, ...marketingCache],
+      },
+      {
+        source: "/ru",
+        headers: [...securityHeaders, ...marketingCache],
+      },
+      {
+        source: "/icon",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/apple-icon",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/samples/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+          { key: "X-Robots-Tag", value: "noindex, follow" },
+        ],
       },
     ];
   },

@@ -67,22 +67,20 @@ function FeatureBadgeIcon({ icon }: { icon: HomeFeatureBreakdownIcon }) {
       return (
         <Image
           src="/brand/carvertical-logo.png"
-          alt=""
+          alt="carVertical"
           width={18}
           height={18}
           className={BRAND_LOGO_CLASS}
-          aria-hidden
         />
       );
     case "autodna":
       return (
         <Image
           src="/brand/autodna-logo.png"
-          alt=""
+          alt="autoDNA"
           width={18}
           height={18}
           className={BRAND_LOGO_CLASS}
-          aria-hidden
         />
       );
     default:

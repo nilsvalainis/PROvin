@@ -1,3 +1,4 @@
+import { stripLocalePrefix } from "@/i18n/locales";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 import { PROVIN_SELECT_FORM_HASH, PROVIN_SELECT_SECTION_ID } from "@/lib/provin-select-section";
@@ -14,6 +15,7 @@ export type SiteRailLabelKey =
   | "sakums"
   | "pakalpojumi"
   | "blogs"
+  | "buj"
   | "provinSelect"
   | "kasSlapjasAizProvin"
   | "b2b";
@@ -25,12 +27,7 @@ export type SiteRailSection = {
 
 export function normalizeSitePath(pathname: string | null | undefined): string {
   if (pathname == null) return "";
-  let p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  /* `localePrefix: "always"` — pathname ir `/lv/…`, `/en/…` → salīdzināšanai bez prefiksa */
-  if (p === "/lv" || p === "/en") p = "/";
-  else if (p.startsWith("/lv/")) p = p.slice(3);
-  else if (p.startsWith("/en/")) p = p.slice(3);
-  return p;
+  return stripLocalePrefix(pathname);
 }
 
 function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSection[]): number {
@@ -41,12 +38,13 @@ function railIndex(labelKey: SiteRailLabelKey, sections: readonly SiteRailSectio
  * Mobilā / sliežu izvēlne: `href` bez `/lv` — `next-intl` `Link` pats prefiksē (`applyPathnamePrefix`).
  */
 export function buildSiteRailSections(_normalizedPath: string): readonly SiteRailSection[] {
-  /* Secība: Sākums → Pakalpojumi → Par PROVIN → Blogs → Konsultācija (ja publiska) → B2B. */
+  /* Secība: Sākums → Pakalpojumi → Par PROVIN → Blogs → BUJ → Konsultācija (ja publiska) → B2B. */
   const out: SiteRailSection[] = [
     { href: "/", labelKey: "sakums" },
     { href: "/pakalpojumi", labelKey: "pakalpojumi" },
     { href: "/par-mums", labelKey: "kasSlapjasAizProvin" },
     { href: "/blogs", labelKey: "blogs" },
+    { href: "/biezi-jautajumi", labelKey: "buj" },
   ];
   if (isProvinSelectPublic()) out.push({ href: `/#${PROVIN_SELECT_SECTION_ID}`, labelKey: "provinSelect" });
   out.push({ href: "/partneriem", labelKey: "b2b" });
@@ -88,9 +86,9 @@ export function siteRailRouteActiveIndex(pathname: string | null | undefined): n
   if (p === "/pakalpojumi" || p === "/paraugi") return railIndex("pakalpojumi", sections);
   if (p === "/par-mums") return railIndex("kasSlapjasAizProvin", sections);
   if (p === "/blogs" || p.startsWith("/blogs/")) return railIndex("blogs", sections);
+  if (p === "/biezi-jautajumi") return railIndex("buj", sections);
+  if (p === "/vin-koda-parbaude") return railIndex("sakums", sections);
   if (p === "/partneriem" || p.startsWith("/partneriem/")) return railIndex("b2b", sections);
-  /* FAQ page remains reachable but is no longer a menu item. */
-  if (p === "/biezi-jautajumi") return railIndex("sakums", sections);
   return null;
 }
 

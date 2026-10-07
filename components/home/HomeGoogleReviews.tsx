@@ -1,7 +1,11 @@
-import { getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { FaqClient, type FaqItem } from "@/components/FaqClient";
 import { HomeGoogleReviewsFeatured } from "@/components/home/HomeGoogleReviewsFeatured";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { Link } from "@/i18n/navigation";
 import { getGoogleReviewsProfileUrl } from "@/lib/google-reviews-data";
+import { faqPageHref } from "@/lib/paths";
+import { buildFaqPageJsonLd } from "@/lib/seo-json-ld";
 
 /**
  * Atsauksmes + pilns BUJ — tā pati asimetrija kā hero (7 / 5).
@@ -10,24 +14,13 @@ import { getGoogleReviewsProfileUrl } from "@/lib/google-reviews-data";
 export async function HomeGoogleReviews() {
   const t = await getTranslations("GoogleReviews");
   const tFaq = await getTranslations("Faq");
+  const locale = await getLocale();
   const messages = await getMessages();
   const profileUrl = getGoogleReviewsProfileUrl();
 
   const raw = (messages as { Faq?: { items?: FaqItem[] } }).Faq?.items;
   const allItems = Array.isArray(raw) ? raw : [];
-
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: allItems.map((item) => ({
-      "@type": "Question",
-      name: item.q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.a,
-      },
-    })),
-  };
+  const faqJsonLd = allItems.length > 0 ? buildFaqPageJsonLd(locale, "", allItems) : null;
 
   return (
     <section
@@ -61,23 +54,26 @@ export async function HomeGoogleReviews() {
             aria-labelledby="home-faq-heading"
           >
             <div className="w-full max-w-[27.5rem] lg:ml-auto">
-              <header className="mb-4 border-b border-white/[0.08] pb-3">
+              <header className="mb-4 flex items-baseline justify-between gap-3 border-b border-white/[0.08] pb-3">
                 <h2
                   id="home-faq-heading"
                   className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45"
                 >
                   {tFaq("homeEyebrow")}
                 </h2>
+                <Link
+                  href={faqPageHref()}
+                  className="text-[11px] font-semibold uppercase tracking-[0.16em] text-provin-accent no-underline transition hover:text-white"
+                >
+                  {tFaq("homeSeeAll")}
+                </Link>
               </header>
               <FaqClient title={tFaq("title")} items={allItems} tone="dark" embedded compact />
             </div>
           </div>
         </div>
 
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-        />
+        {faqJsonLd ? <JsonLd data={faqJsonLd} /> : null}
       </div>
     </section>
   );

@@ -10,6 +10,8 @@ describe("legacy standalone product routes", () => {
     expect(normalizePathWithoutLocale("/lv/provin-audits")).toBe("/provin-audits");
     expect(normalizePathWithoutLocale("/en/provin-select")).toBe("/provin-select");
     expect(normalizePathWithoutLocale("/lv")).toBe("/");
+    expect(normalizePathWithoutLocale("/de/provin-audits")).toBe("/provin-audits");
+    expect(normalizePathWithoutLocale("/ru")).toBe("/");
   });
 
   it("blocks hidden standalone routes by default", () => {
@@ -51,6 +53,8 @@ describe("legacy standalone product routes", () => {
       "/lv/partneriem/konts/rekviziti",
       "/lv/partneriem/konts/profils",
       "/lv/paldies",
+      "/lv/vin-koda-parbaude",
+      "/lv/biezi-jautajumi",
       "/lv/lietosanas-noteikumi",
       "/lv/privatuma-politika",
       "/admin",

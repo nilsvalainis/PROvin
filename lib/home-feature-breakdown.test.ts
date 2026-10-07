@@ -72,7 +72,7 @@ describe("pakalpojumi catalog", () => {
     expect(keys).toContain("b2b");
     expect(keys.indexOf("kasSlapjasAizProvin")).toBeGreaterThan(keys.indexOf("pakalpojumi"));
     expect(keys.indexOf("b2b")).toBeGreaterThan(keys.indexOf("blogs"));
-    expect(keys).not.toContain("buj");
+    expect(keys).toContain("buj");
     expect(keys).not.toContain("kontakti");
     expect(sections.find((s) => s.labelKey === "pakalpojumi")?.href).toBe("/pakalpojumi");
     expect(sections.find((s) => s.labelKey === "kasSlapjasAizProvin")?.href).toBe("/par-mums");
@@ -83,6 +83,8 @@ describe("pakalpojumi catalog", () => {
     expect(siteRailActiveFromHash("paraugs-fordGalaxy")).toBe(keys.indexOf("pakalpojumi"));
     expect(siteRailRouteActiveIndex("/par-mums")).toBe(keys.indexOf("kasSlapjasAizProvin"));
     expect(siteRailRouteActiveIndex("/blogs")).toBe(keys.indexOf("blogs"));
+    expect(siteRailRouteActiveIndex("/biezi-jautajumi")).toBe(keys.indexOf("buj"));
+    expect(siteRailRouteActiveIndex("/de/biezi-jautajumi")).toBe(keys.indexOf("buj"));
     expect(siteRailRouteActiveIndex("/partneriem")).toBe(keys.indexOf("b2b"));
     expect(siteRailRouteActiveIndex("/partneriem/konts")).toBe(keys.indexOf("b2b"));
     expect(siteRailRouteActiveIndex("/partneriem/konts/pasutijumi")).toBe(keys.indexOf("b2b"));

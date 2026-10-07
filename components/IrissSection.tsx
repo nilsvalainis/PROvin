@@ -20,11 +20,19 @@ export async function IrissSection({ editorialColumn = false }: { editorialColum
     <div className="about-provin-section mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
       {/* Hero-stila virsraksts — centrēts */}
       <header className="mx-auto max-w-[min(100%,46rem)] text-center">
-        <h2
-          className={`${tp5Styles.heroTitle} font-extrabold tracking-[-0.025em] text-white lg:text-[3rem] lg:leading-[1.1] xl:text-[3.75rem]`}
-        >
-          {renderProvinText(t("title"), homeDarkProvinWordmarkOptions)}
-        </h2>
+        {editorialColumn ? (
+          <h1
+            className={`${tp5Styles.heroTitle} font-extrabold tracking-[-0.025em] text-white lg:text-[3rem] lg:leading-[1.1] xl:text-[3.75rem]`}
+          >
+            {renderProvinText(t("title"), homeDarkProvinWordmarkOptions)}
+          </h1>
+        ) : (
+          <h2
+            className={`${tp5Styles.heroTitle} font-extrabold tracking-[-0.025em] text-white lg:text-[3rem] lg:leading-[1.1] xl:text-[3.75rem]`}
+          >
+            {renderProvinText(t("title"), homeDarkProvinWordmarkOptions)}
+          </h2>
+        )}
         <div className="mx-auto mt-4 w-full max-w-[min(100%,28rem)]">
           <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
         </div>

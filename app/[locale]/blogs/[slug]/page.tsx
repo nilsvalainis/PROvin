@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { BlogPostView } from "@/components/blog/BlogPostView";
-import { getAllBlogSlugs, getBlogPost, resolveBlogLocale } from "@/lib/blog/posts";
-import { publicPageAlternates, publicPageUrl } from "@/lib/seo-public-metadata";
+import { getAllBlogSlugs, getBlogPost, isBlogLocaleIndexable, resolveBlogLocale } from "@/lib/blog/posts";
+import { PUBLIC_LOCALES } from "@/i18n/locales";
+import { routing } from "@/i18n/routing";
+import { DEFAULT_OG_IMAGE_PATH } from "@/lib/seo-public-paths";
+import { publicPageUrl } from "@/lib/seo-public-metadata";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -23,7 +26,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return {};
   const { content } = resolveBlogLocale(post, locale);
   const description = content.socialExcerpt ?? content.excerpt;
-  const url = publicPageUrl(locale, `/blogs/${post.slug}`);
+  const indexable = isBlogLocaleIndexable(post, locale);
+  const canonicalLocale = indexable ? locale : routing.defaultLocale;
+  const url = publicPageUrl(canonicalLocale, `/blogs/${post.slug}`);
+  const languages: Record<string, string> = {};
+  for (const loc of PUBLIC_LOCALES) {
+    if (isBlogLocaleIndexable(post, loc)) languages[loc] = publicPageUrl(loc, `/blogs/${post.slug}`);
+  }
+  languages["x-default"] = publicPageUrl(routing.defaultLocale, `/blogs/${post.slug}`);
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const ogImages = post.coverImage
     ? [
@@ -34,25 +44,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: post.coverImage.alt,
         },
       ]
-    : undefined;
+    : [{ url: `${base}${DEFAULT_OG_IMAGE_PATH}`, width: 1200, height: 630, alt: content.title }];
   return {
-    title: content.title,
+    title: { absolute: `${content.title} | PROVIN` },
     description,
-    keywords: [...post.tags, "auto vēstures pārbaude", "PROVIN"],
-    alternates: publicPageAlternates(locale, `/blogs/${post.slug}`),
+    keywords: [...post.tags, "auto vēstures pārbaude", "VIN koda pārbaude", "PROVIN"],
+    alternates: { canonical: url, languages },
+    robots: { index: indexable, follow: true },
     openGraph: {
       title: content.title,
       description,
       type: "article",
       publishedTime: `${post.publishedAt}T12:00:00.000Z`,
       url,
-      ...(ogImages ? { images: ogImages } : {}),
+      images: ogImages,
     },
     twitter: {
-      card: ogImages ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: content.title,
       description,
-      ...(ogImages ? { images: [ogImages[0]!.url] } : {}),
+      images: [ogImages[0]!.url],
     },
   };
 }
