@@ -26,7 +26,10 @@ import {
   type AiRequestBudget,
 } from "@/lib/ai-request-budget";
 import type { AiTextStream } from "@/lib/ai-text-stream";
-import { geminiThinkingExtra, geminiWantsThinking } from "@/lib/gemini-thinking-config";
+import {
+  geminiGenerationConfigPayload,
+  geminiWantsThinking,
+} from "@/lib/gemini-thinking-config";
 import {
   applyProvinReportCopyVocabulary,
   finalizeProvinExpertAiComment,
@@ -214,12 +217,11 @@ async function geminiGenerateJsonFromPartsOnce(
     const result = await model.generateContent(
       {
         contents: [{ role: "user", parts: opts.parts }],
-        generationConfig: {
+        generationConfig: geminiGenerationConfigPayload(opts.model, withThinking, {
           maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
           responseMimeType: "application/json",
           ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
-          ...geminiThinkingExtra(opts.model, withThinking),
-        } as never,
+        }) as never,
       },
       { timeout: TEXT_REQUEST_TIMEOUT_MS },
     );
@@ -337,10 +339,9 @@ async function geminiStreamGenerateText(
     const streaming = await model.generateContentStream(
       {
         contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
-        generationConfig: {
+        generationConfig: geminiGenerationConfigPayload(opts.model, withThinking, {
           maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
-          ...geminiThinkingExtra(opts.model, withThinking),
-        } as never,
+        }) as never,
       },
       { timeout: aiAttemptTimeoutMs(opts.budget, TEXT_REQUEST_TIMEOUT_MS) },
     );
@@ -621,10 +622,9 @@ async function geminiGenerateTextWithGoogleSearchOnce(
             systemInstruction: { parts: [{ text: opts.systemInstruction }] },
             contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
             tools,
-            generationConfig: {
+            generationConfig: geminiGenerationConfigPayload(opts.model, withThinking, {
               maxOutputTokens,
-              ...geminiThinkingExtra(opts.model, withThinking),
-            },
+            }),
           },
         });
         if (result.text) return result.text;
