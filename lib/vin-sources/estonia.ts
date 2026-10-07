@@ -4,9 +4,10 @@ import "server-only";
  * Igaunijas avoti:
  *  - eteenindus.mnt.ee („Sõiduki taustakontroll”) - Transpordiamet;
  *  - lkf.ee („Kahjukontroll”) - Liikluskindlustuse Fond OCTA.
- * Primāri HTTP + CapSolver: mnt.ee reCAPTCHA v3 ProxyLess, pēc noraidījuma viens M1 mēģinājums
- * (HTTP no Vercel; īsts Cloudflare Challenge caur FIXIE_URL); lkf.ee reCAPTCHA v2 caur sticky
- * proxy (FIXIE_URL). Redzams pārlūks paliek kā rezerve lokāli.
+ * mnt.ee: ja ir MNT_RELAY_URL + MNT_RELAY_TOKEN, vispirms Hetzner pārlūka relejs (skat. mnt-relay.ts).
+ * Releja found/not_found ir galīgā atbilde; 401/400/502/503 neturpina 240 s CapSolver ķēdi
+ * (admin route maxDuration 300 s). Bez releja env paliek vecais HTTP + CapSolver ceļš.
+ * lkf.ee: reCAPTCHA v2 caur sticky proxy (FIXIE_URL). Redzams pārlūks paliek kā rezerve lokāli.
  */
 import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { MNT_CAPTCHA_REJECTED_MESSAGE, parseLkfExtract, parseMntExtract } from "@/lib/vin-sources/estonia-parse";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/vin-sources/browser";
 import { fetchLkfHttp } from "@/lib/vin-sources/lkf-http";
 import { fetchMntHttp } from "@/lib/vin-sources/mnt-http";
+import { fetchMntRelay, isMntRelayConfigured } from "@/lib/vin-sources/mnt-relay";
 import { emptyVinSourceResult, type VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 const MNT_URL = "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf";
@@ -52,6 +54,20 @@ async function fetchMntBrowser(vin: string, regMark = ""): Promise<VinSourceFetc
 }
 
 export async function fetchMnt(vin: string, regMark = ""): Promise<VinSourceFetchResult> {
+  if (isMntRelayConfigured()) {
+    const relay = await fetchMntRelay(vin, regMark);
+    if (relay.kind === "result") return relay.result;
+    if (isVinSourcesBrowserAllowed()) {
+      const browser = await fetchMntBrowser(vin, regMark);
+      return browser.found ? browser : { ...browser, message: `${browser.message} (${relay.reason})` };
+    }
+    return emptyVinSourceResult("mnt_ee", vin, relay.reason);
+  }
+  return fetchMntLegacy(vin, regMark);
+}
+
+/** Vecais HTTP + CapSolver ceļš. Tikai ja relejs nav konfigurēts. */
+async function fetchMntLegacy(vin: string, regMark = ""): Promise<VinSourceFetchResult> {
   if (hasCaptchaSolverKey()) {
     try {
       const http = await fetchMntHttp(vin, regMark);

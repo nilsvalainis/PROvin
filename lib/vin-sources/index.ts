@@ -4,13 +4,15 @@ import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { isVinSourcesBrowserAllowed, VIN_SOURCES_BROWSER_UNAVAILABLE } from "@/lib/vin-sources/browser";
 import { fetchCarInfo } from "@/lib/vin-sources/carinfo";
 import { fetchLkf, fetchMnt } from "@/lib/vin-sources/estonia";
+import { isMntRelayConfigured } from "@/lib/vin-sources/mnt-relay";
 import { fetchTjekbil } from "@/lib/vin-sources/tjekbil";
 import { emptyVinSourceResult, type VinSourceFetchResult, type VinSourceId } from "@/lib/vin-sources/types";
 
-/** Vai avotam vajadzīgs redzams pārlūks, jo HTTP + CapSolver nav pieejams. */
+/** Vai avotam vajadzīgs redzams pārlūks, jo HTTP + CapSolver / mnt relejs nav pieejams. */
 export function vinSourceNeedsBrowser(source: VinSourceId): boolean {
   if (source === "tjekbil" || source === "carinfo") return false;
-  if (source === "mnt_ee" || source === "lkf_ee") return !hasCaptchaSolverKey();
+  if (source === "mnt_ee") return !hasCaptchaSolverKey() && !isMntRelayConfigured();
+  if (source === "lkf_ee") return !hasCaptchaSolverKey();
   return true;
 }
 
