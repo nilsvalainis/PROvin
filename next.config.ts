@@ -102,12 +102,6 @@ const nextConfig: NextConfig = {
       { source: "/:locale(lv|en|de|ru)/services", destination: "/:locale/pakalpojumi", permanent: true },
       { source: "/:locale(lv|en|de|ru)/terms", destination: "/:locale/lietosanas-noteikumi", permanent: true },
       { source: "/:locale(lv|en|de|ru)/privacy", destination: "/:locale/privatuma-politika", permanent: true },
-      {
-        source: "/samples/:file",
-        has: [{ type: "query", key: "v" }],
-        destination: "/samples/:file",
-        permanent: true,
-      },
     ];
   },
   /** Stripe Dashboard bieža kļūda: `/api/webhook/stripe` — kods ir `/api/webhooks/stripe`. */

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isApexHostname, isSearchCrawler, resolveLegacyAliasRedirect, wwwOrigin } from "@/lib/seo-redirects";
+import {
+  isApexHostname,
+  isSearchCrawler,
+  resolveCaseNormalizedRedirect,
+  resolveLegacyAliasRedirect,
+  wwwOrigin,
+} from "@/lib/seo-redirects";
 import { INDEXABLE_PUBLIC_PATHS, LEGACY_PATH_ALIASES } from "@/lib/seo-public-paths";
 import { stripLocalePrefix } from "@/i18n/locales";
 
@@ -20,6 +26,13 @@ describe("seo redirects", () => {
     const dest = wwwOrigin(new URL("http://provin.lv/pakalpojumi"));
     expect(dest.origin).toBe("https://www.provin.lv");
     expect(dest.pathname).toBe("/pakalpojumi");
+  });
+
+  it("folds mixed-case public slugs to the canonical lowercase path", () => {
+    expect(resolveCaseNormalizedRedirect("/lv/Pakalpojumi")).toBe("/lv/pakalpojumi");
+    expect(resolveCaseNormalizedRedirect("/en/Biezi-Jautajumi/")).toBe("/en/biezi-jautajumi");
+    expect(resolveCaseNormalizedRedirect("/lv/pakalpojumi")).toBeNull();
+    expect(resolveCaseNormalizedRedirect("/lv/Unknown-Page")).toBeNull();
   });
 
   it("keeps FAQ and VIN landing in the indexable path list", () => {

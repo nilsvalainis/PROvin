@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { DEFAULT_LOCALE, isPartneriemPath, parsePrefixedPath, stripLocalePrefix } from "@/i18n/locales";
-import { LEGACY_PATH_ALIASES } from "@/lib/seo-public-paths";
+import { INDEXABLE_PUBLIC_PATHS, LEGACY_PATH_ALIASES } from "@/lib/seo-public-paths";
 
 const APEX_HOSTS = new Set(["provin.lv"]);
 
@@ -58,6 +58,30 @@ export function toPermanentGetRedirect(request: NextRequest, response: NextRespo
 
 export function redirect308(url: URL | string): NextResponse {
   return NextResponse.redirect(typeof url === "string" ? url : url, 308);
+}
+
+/** Paused product / experiment / theme hops: browsers must not cache these. */
+export function redirect307(url: URL | string): NextResponse {
+  return NextResponse.redirect(typeof url === "string" ? url : url, 307);
+}
+
+/** `/lv/Pakalpojumi` → `/lv/pakalpojumi` when the lowercased slug is a known public path. */
+export function resolveCaseNormalizedRedirect(pathname: string): string | null {
+  const raw = (pathname.split("?")[0] ?? pathname).trim() || "/";
+  const noSlash = raw.endsWith("/") && raw.length > 1 ? raw.slice(0, -1) : raw;
+  const lower = noSlash.toLowerCase();
+  if (lower === noSlash) return null;
+  const { locale, rest } = parsePrefixedPath(lower);
+  if (!locale) return null;
+  const restNorm = rest === "/" ? "" : rest;
+  const known = new Set<string>([
+    "",
+    ...INDEXABLE_PUBLIC_PATHS.map((p) => p.path),
+    ...Object.keys(LEGACY_PATH_ALIASES),
+    ...Object.values(LEGACY_PATH_ALIASES),
+  ]);
+  if (!known.has(restNorm)) return null;
+  return lower;
 }
 
 const SEARCH_CRAWLER_UA =

@@ -16,7 +16,9 @@ import {
 import {
   isApexHostname,
   isSearchCrawler,
+  redirect307,
   redirect308,
+  resolveCaseNormalizedRedirect,
   resolveLegacyAliasRedirect,
   toPermanentGetRedirect,
   wwwOrigin,
@@ -99,6 +101,13 @@ export default function middleware(request: NextRequest) {
     return redirect308(redirectUrl);
   }
 
+  const caseNormalized = resolveCaseNormalizedRedirect(pathname);
+  if (caseNormalized) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = caseNormalized;
+    return redirect308(redirectUrl);
+  }
+
   if (
     shouldBlockLegacyStandaloneProductPath(pathname) ||
     shouldBlockClosedExperimentPath(pathname)
@@ -106,13 +115,13 @@ export default function middleware(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/${DEFAULT_LOCALE}`;
     redirectUrl.search = "";
-    return redirect308(redirectUrl);
+    return redirect307(redirectUrl);
   }
 
   if (searchParams.has("theme")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.searchParams.delete("theme");
-    const res = redirect308(redirectUrl);
+    const res = redirect307(redirectUrl);
     res.cookies.set(SITE_THEME_COOKIE_KEY, "dark", {
       path: "/",
       sameSite: "lax",

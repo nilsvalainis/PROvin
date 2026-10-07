@@ -1,19 +1,18 @@
-/** Bust CDN/browser cache when public sample PDFs or page-1 rasters change. */
+/** Kept for operators who bump sample rasters; public PDF/PNG URLs stay query-free. */
 export const SAMPLE_PUBLIC_ASSET_VERSION = "9";
 
 function sampleAssetPath(href: string): string {
   return (href.split("#")[0] ?? "").split("?")[0] ?? "";
 }
 
-/** Publiskā PDF saite bez `?v=` (viena kanoniskā adrese). */
+/** Publiskā PDF saite bez `?v=` (viena kanoniskā adrese, arī iframe). */
 export function samplePdfHref(href: string): string {
   return sampleAssetPath(href);
 }
 
-/** Iframe/lightbox: versija tikai keša atjaunošanai, nav indeksējama adrese. */
+/** Alias: viewer un lejupielāde lieto to pašu tīro ceļu. */
 export function samplePdfViewerHref(href: string): string {
-  const path = sampleAssetPath(href);
-  return `${path}?v=${SAMPLE_PUBLIC_ASSET_VERSION}`;
+  return samplePdfHref(href);
 }
 
 /**

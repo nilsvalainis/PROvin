@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  SAMPLE_PUBLIC_ASSET_VERSION,
-  sampleMobilePage1Src,
-  samplePdfHref,
-  samplePdfViewerHref,
-} from "@/lib/sample-public-assets";
+import { sampleMobilePage1Src, samplePdfHref, samplePdfViewerHref } from "@/lib/sample-public-assets";
 
 describe("sample public assets", () => {
   it("uses one canonical PDF URL without a cache-bust query", () => {
@@ -14,11 +9,8 @@ describe("sample public assets", () => {
     expect(
       samplePdfHref("/samples/provin-audits-bmw-525-e61-v2.pdf#toolbar=0&navpanes=0"),
     ).toBe("/samples/provin-audits-bmw-525-e61-v2.pdf");
-  });
-
-  it("keeps a versioned viewer URL only for iframes", () => {
-    expect(samplePdfViewerHref("/samples/provin-audits-bmw-525-e61-v2.pdf")).toBe(
-      `/samples/provin-audits-bmw-525-e61-v2.pdf?v=${SAMPLE_PUBLIC_ASSET_VERSION}`,
+    expect(samplePdfViewerHref("/samples/provin-mini-piemers.pdf?v=9")).toBe(
+      "/samples/provin-mini-piemers.pdf",
     );
   });
 
