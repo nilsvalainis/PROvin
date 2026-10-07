@@ -5,9 +5,18 @@
  * Ja reģistrā VIN nav, blokā paliek tikai ielases laiks un atbilde, lai operators redz,
  * ka Dānija jau ir pārbaudīta, un „Ielasīt pēc VIN” nav jāspiež vēlreiz.
  */
-import { vinRegistryBlockHasContent, type VinRegistryBlockState } from "@/lib/admin-source-blocks";
+import {
+  vinRegistryBlockHasContent,
+  type VinRegistryBlockState,
+  type WorkspaceSourceBlocks,
+} from "@/lib/admin-source-blocks";
 import { vinSourceResultToBlock } from "@/lib/vin-sources/to-block";
 import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
+
+export const NORDIC_REGISTRY_SEED_KEYS = ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const;
+export type NordicRegistrySeedKey = (typeof NORDIC_REGISTRY_SEED_KEYS)[number];
+
+export type NordicRegistryFetchBundle = Partial<Record<NordicRegistrySeedKey, VinSourceFetchResult | null>>;
 
 export const DENMARK_AUTO_SEED_PREFIX = "Automātiski pēc apmaksas";
 
@@ -52,4 +61,22 @@ export function applyDenmarkSeedResult(
   result: VinSourceFetchResult,
 ): VinRegistryBlockState | null {
   return applyRegistrySeedResult(current, result);
+}
+
+/** Vienā piegājienā uzliek Dānijas / Igaunijas / Zviedrijas ielases rezultātus; tukšus atstāj neskartus. */
+export function applyNordicRegistryFetches(
+  blocks: WorkspaceSourceBlocks,
+  results: NordicRegistryFetchBundle,
+): { blocks: WorkspaceSourceBlocks; applied: NordicRegistrySeedKey[] } {
+  let next = blocks;
+  const applied: NordicRegistrySeedKey[] = [];
+  for (const key of NORDIC_REGISTRY_SEED_KEYS) {
+    const result = results[key];
+    if (!result) continue;
+    const patched = applyRegistrySeedResult(next[key], result);
+    if (!patched) continue;
+    next = { ...next, [key]: patched };
+    applied.push(key);
+  }
+  return { blocks: next, applied };
 }

@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyDenmarkSeedResult,
+  applyNordicRegistryFetches,
   DENMARK_AUTO_SEED_PREFIX,
   denmarkSeedNeeded,
 } from "@/lib/admin-denmark-registry-seed-apply";
-import { emptyVinRegistryBlock } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, emptyVinRegistryBlock } from "@/lib/admin-source-blocks";
 import { emptyVinSourceResult, type VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 const VIN = "VF12RFL1H49621453";
@@ -62,5 +63,27 @@ describe("applyDenmarkSeedResult", () => {
   it("bloks ar operatora datiem netiek pārrakstīts", () => {
     const current = { ...emptyVinRegistryBlock(), statusRecords: "Taksometrs" };
     expect(applyDenmarkSeedResult(current, foundResult())).toBeNull();
+  });
+});
+
+describe("applyNordicRegistryFetches", () => {
+  it("aizpilda tukšos Dānijas, Igaunijas un Zviedrijas blokus, operatora datus neaiztiek", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.carinfo = { ...emptyVinRegistryBlock(), ownersSummary: "Jau ir" };
+    const { applied, blocks: next } = applyNordicRegistryFetches(blocks, {
+      tjekbil: foundResult(),
+      mnt_ee: emptyVinSourceResult("mnt_ee", VIN, "VIN nav Igaunijas reģistrā"),
+      lkf_ee: {
+        ...emptyVinSourceResult("lkf_ee", VIN, "OCTA: 1 polise"),
+        found: true,
+        notes: ["OCTA derīga"],
+      },
+      carinfo: foundResult(),
+    });
+    expect(applied).toEqual(["tjekbil", "mnt_ee", "lkf_ee"]);
+    expect(next.tjekbil.mileage[0]?.odometer).toBe("385537");
+    expect(next.mnt_ee.fetchMessage).toContain("VIN nav Igaunijas");
+    expect(next.lkf_ee.autoNotes).toContain("OCTA");
+    expect(next.carinfo.ownersSummary).toBe("Jau ir");
   });
 });

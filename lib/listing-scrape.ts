@@ -1,5 +1,6 @@
 /**
- * Publiska sludinājuma lapa (ss.lv) — servera pusē nolasīti kopsavilkuma dati PDF atskaitei.
+ * Publiska sludinājuma lapa — servera pusē nolasīti kopsavilkuma dati.
+ * ss.lv: strukturēta tabula. Citi portāli: virsraksts, apraksts, km/cena/datums no HTML.
  */
 
 export type ListingPriceRow = {
@@ -33,10 +34,17 @@ export type ListingAiSnapshot = ListingMarketSnapshot & {
   photoCount: number | null;
 };
 
-const ALLOWED_HOSTS = new Set(["ss.lv", "www.ss.lv", "m.ss.lv"]);
+const SSLV_HOSTS = new Set(["ss.lv", "www.ss.lv", "m.ss.lv"]);
 
 export function isAllowedListingScrapeHost(hostname: string): boolean {
-  return ALLOWED_HOSTS.has(hostname.toLowerCase());
+  const host = hostname.toLowerCase();
+  if (SSLV_HOSTS.has(host)) return true;
+  return host.includes(".") && !host.startsWith("localhost");
+}
+
+function isSsLvHost(hostname: string): boolean {
+  const host = hostname.replace(/^www\./i, "").toLowerCase();
+  return host === "ss.lv" || host.endsWith(".ss.lv");
 }
 
 function stripTags(html: string): string {
@@ -301,6 +309,125 @@ export function parseSsLvListingAiHtml(html: string, url: string, now: Date = ne
   };
 }
 
+function metaContent(html: string, attr: "property" | "name", key: string): string | null {
+  const re = new RegExp(
+    `<meta[^>]+${attr}=["']${key}["'][^>]+content=["']([^"']+)["']`,
+    "i",
+  );
+  const m = html.match(re);
+  if (m?.[1]?.trim()) return stripTags(m[1]).trim();
+  const re2 = new RegExp(
+    `<meta[^>]+content=["']([^"']+)["'][^>]+${attr}=["']${key}["']`,
+    "i",
+  );
+  const m2 = html.match(re2);
+  return m2?.[1]?.trim() ? stripTags(m2[1]).trim() : null;
+}
+
+function toLvDate(raw: string): string | null {
+  const iso = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  const lv = raw.trim().match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (lv) {
+    const d = lv[1].padStart(2, "0");
+    const mo = lv[2].padStart(2, "0");
+    return `${d}.${mo}.${lv[3]}`;
+  }
+  return parseLvDmy(raw) ? raw.trim() : null;
+}
+
+function extractGenericKm(text: string): string | null {
+  const labeled = text.match(
+    /(?:nobraukums|odometrs|rida|l[aä]bis[oõ]it|mileage|kilometerstand|kilometra[iž]|przebieg)[^\d]{0,48}(\d[\d\s.,]{2,})/i,
+  );
+  const raw = labeled?.[1] ?? text.match(/\b(\d{2,3}(?:[\s.]\d{3})+)\s*km\b/i)?.[1];
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 3) return null;
+  const n = Number.parseInt(digits, 10);
+  if (!Number.isFinite(n) || n < 100) return null;
+  return `${groupKm(n)} km`;
+}
+
+function extractGenericPrice(text: string, html: string): string | null {
+  const og = metaContent(html, "property", "product:price:amount") ?? metaContent(html, "property", "og:price:amount");
+  if (og && /\d/.test(og)) {
+    const n = Number.parseFloat(og.replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(n) && n > 100) return `${groupKm(Math.round(n))} €`;
+  }
+  const m = text.match(/(\d{1,3}(?:[\s.]\d{3})*(?:[.,]\d{2})?)\s*(?:€|eur)(?=$|[^\w])/i);
+  if (!m?.[1]) return null;
+  return `${m[1].replace(/\./g, " ").replace(/\s+/g, " ").trim()} €`;
+}
+
+function extractGenericPosted(text: string, html: string): string | null {
+  const patterns = [
+    /(?:izvietots|publicēts|pievienots|lisatud|paskelbta|published|inserted|erstellt|online seit)[:\s]+(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p) || html.match(p);
+    if (m?.[1]) return toLvDate(m[1]);
+  }
+  return null;
+}
+
+function extractGenericOptions(html: string): { label: string; value: string }[] {
+  const out: { label: string; value: string }[] = [];
+  const seen = new Set<string>();
+  const pairRe =
+    /<(?:dt|th)[^>]*>([\s\S]*?)<\/(?:dt|th)>\s*<(?:dd|td)[^>]*>([\s\S]*?)<\/(?:dd|td)>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = pairRe.exec(html)) !== null && out.length < 24) {
+    const label = stripTags(m[1]).replace(/:\s*$/, "").trim();
+    const value = stripTags(m[2]).trim();
+    if (label.length < 2 || label.length > 48 || value.length < 1 || value.length > 80) continue;
+    const k = label.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ label, value });
+  }
+  return out;
+}
+
+/** autoplius / auto24 / mobile.de u.c. - virsraksts, apraksts, km, cena, datums. */
+export function parseGenericListingHtml(html: string, url: string, now: Date = new Date()): ListingAiSnapshot {
+  let host = "";
+  try {
+    host = new URL(url).hostname.replace(/^www\./i, "").toLowerCase();
+  } catch {
+    host = "";
+  }
+  const text = stripTags(html);
+  const pageTitle =
+    metaContent(html, "property", "og:title") ??
+    extractSsLvPageTitle(html);
+  const description =
+    metaContent(html, "property", "og:description") ??
+    metaContent(html, "name", "description");
+  const currentKm = extractGenericKm(text);
+  const currentPriceEur = extractGenericPrice(text, html);
+  const posted = extractGenericPosted(text, html);
+  const postedDt = posted ? parseLvDmy(posted) : null;
+  const daysListed = postedDt ? daysBetween(postedDt, now) : null;
+  const ok = Boolean(pageTitle || description || currentKm || currentPriceEur || posted);
+  return {
+    ok,
+    url,
+    host,
+    fetchedAt: now.toISOString(),
+    daysListed,
+    postedDateRaw: posted,
+    currentKm,
+    currentPriceEur,
+    priceChanges: [],
+    pageTitle: pageTitle || null,
+    description: description && description.length >= 12 ? description : null,
+    options: extractGenericOptions(html),
+    photoCount: null,
+    note: ok ? undefined : "Sludinājuma lapā netika atpazīti strukturēti dati.",
+  };
+}
+
 /** Teksts AI promptam no servera nolasīta ss.lv sludinājuma. */
 export function formatListingAiSnapshotForAi(snapshot: ListingAiSnapshot): string {
   if (!snapshot.ok) {
@@ -368,7 +495,30 @@ export function formatListingSnapshotForPasteField(snapshot: ListingAiSnapshot):
   return lines.join("\n").trim();
 }
 
-async function fetchSsLvListingHtml(listingUrl: string): Promise<
+async function fetchListingHtmlViaJina(targetUrl: string): Promise<string | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 22_000);
+  try {
+    const res = await fetch(`https://r.jina.ai/${targetUrl}`, {
+      redirect: "follow",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "text/html,application/xhtml+xml",
+        "x-respond-with": "html",
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    return html.trim() ? html : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function fetchListingPageHtml(listingUrl: string): Promise<
   | { ok: true; html: string; url: string; host: string }
   | { ok: false; snapshot: ListingAiSnapshot }
 > {
@@ -383,6 +533,7 @@ async function fetchSsLvListingHtml(listingUrl: string): Promise<
   }
 
   const url = u.toString();
+  const host = u.hostname.replace(/^www\./i, "").toLowerCase();
 
   if (u.protocol !== "http:" && u.protocol !== "https:") {
     return {
@@ -395,9 +546,9 @@ async function fetchSsLvListingHtml(listingUrl: string): Promise<
     return {
       ok: false,
       snapshot: failedListingSnapshot({
-        host: u.hostname,
+        host,
         url,
-        note: `Automātiska izguve šobrīd tikai ss.lv (saņemts: ${u.hostname}).`,
+        note: `Automātiska izguve šim saimniekam nav atļauta (${u.hostname}).`,
       }),
     };
   }
@@ -416,38 +567,42 @@ async function fetchSsLvListingHtml(listingUrl: string): Promise<
       },
       cache: "no-store",
     });
-    if (!res.ok) {
-      return {
-        ok: false,
-        snapshot: failedListingSnapshot({ host: "ss.lv", url, note: `HTTP ${res.status}` }),
-      };
+    if (res.ok) {
+      const html = await res.text();
+      if (html.length > 2_500_000) {
+        return {
+          ok: false,
+          snapshot: failedListingSnapshot({ host, url, note: "Lapa pārāk liela." }),
+        };
+      }
+      if (!/just a moment|cf-browser-verification|attention required/i.test(html)) {
+        return { ok: true, html, url, host };
+      }
     }
-    const html = await res.text();
-    if (html.length > 2_500_000) {
-      return {
-        ok: false,
-        snapshot: failedListingSnapshot({ host: "ss.lv", url, note: "Lapa pārāk liela." }),
-      };
-    }
-    return { ok: true, html, url, host: "ss.lv" };
   } catch {
-    return {
-      ok: false,
-      snapshot: failedListingSnapshot({
-        host: "ss.lv",
-        url,
-        note: "Neizdevās ielādēt sludinājumu (tīkls vai timeout).",
-      }),
-    };
+    /* tiešais zvans bieži krīt ar 403; tālāk relejs */
   } finally {
     clearTimeout(t);
   }
+
+  const relayed = await fetchListingHtmlViaJina(url);
+  if (relayed) return { ok: true, html: relayed, url, host };
+
+  return {
+    ok: false,
+    snapshot: failedListingSnapshot({
+      host,
+      url,
+      note: "Neizdevās ielādēt sludinājumu (tīkls, Cloudflare vai timeout).",
+    }),
+  };
 }
 
 export async function fetchListingAiSnapshot(listingUrl: string): Promise<ListingAiSnapshot> {
-  const fetched = await fetchSsLvListingHtml(listingUrl);
+  const fetched = await fetchListingPageHtml(listingUrl);
   if (!fetched.ok) return fetched.snapshot;
-  return parseSsLvListingAiHtml(fetched.html, fetched.url);
+  if (isSsLvHost(fetched.host)) return parseSsLvListingAiHtml(fetched.html, fetched.url);
+  return parseGenericListingHtml(fetched.html, fetched.url);
 }
 
 function toMarketSnapshot(snapshot: ListingAiSnapshot): ListingMarketSnapshot {
@@ -476,7 +631,5 @@ function toMarketSnapshot(snapshot: ListingAiSnapshot): ListingMarketSnapshot {
 }
 
 export async function fetchListingMarketSnapshot(listingUrl: string): Promise<ListingMarketSnapshot> {
-  const fetched = await fetchSsLvListingHtml(listingUrl);
-  if (!fetched.ok) return toMarketSnapshot(fetched.snapshot);
-  return parseSsLvListingHtml(fetched.html);
+  return toMarketSnapshot(await fetchListingAiSnapshot(listingUrl));
 }

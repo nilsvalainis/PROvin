@@ -11,18 +11,14 @@ import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-stor
 import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
-import { seedSsLvAdifyOnPaidOrder } from "@/lib/admin-ss-lv-adify-seed";
-import { seedCsddTechDataOnPaidOrder } from "@/lib/admin-csdd-tech-seed";
-import { seedDenmarkRegistryOnPaidOrder } from "@/lib/admin-denmark-registry-seed";
-import { seedEstoniaRegistryOnPaidOrder } from "@/lib/admin-estonia-registry-seed";
-import { seedSwedenRegistryOnPaidOrder } from "@/lib/admin-sweden-registry-seed";
+import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// `after` uzdevumi (dīlera dati, sludinājuma vēsture caur releju) turpina pēc atbildes.
+// `after` uzdevumi (dīlera dati, sludinājums, CSDD, DK/EE/SE reģistri) turpina pēc atbildes.
 export const maxDuration = 300;
 
 function fulfillDedupeKey(sessionId: string): string {
@@ -197,64 +193,20 @@ async function fulfillPaidCheckoutSession(
         console.error("[stripe webhook] consultation draft seed:", err);
       });
     } else {
-      // `after`, nevis `void`: ielase caur releju var ilgt sekundes pēc atbildes Stripe.
-      // Abas ielases raksta vienā melnrakstā, tāpēc tās iet pēc kārtas, ne paralēli.
+      // `after`, nevis `void`: ielase (relejs, CapSolver, mnt.ee) var ilgt pēc atbildes Stripe.
+      // Visi avoti vienā piegājienā (paralēli zvani, viena saglabāšana), lai iekļautos 300 s.
       after(async () => {
         try {
-          const r = await seedSsLvAdifyOnPaidOrder(session.id, order.listingUrl);
-          if (r.ok) {
-            console.info("[stripe webhook] ss.lv Adify listing seeded", { sessionId: session.id });
-          } else if (r.reason !== "skip" && r.reason !== "no_listing_url") {
-            console.warn("[stripe webhook] ss.lv Adify listing seed:", r.reason);
-          }
-        } catch (err) {
-          console.error("[stripe webhook] ss.lv Adify listing seed:", err);
-        }
-
-        try {
-          const r = await seedCsddTechDataOnPaidOrder(session.id, order.vin);
-          if (r.ok) {
-            console.info("[stripe webhook] CSDD tech data seeded", { sessionId: session.id });
-          } else if (r.reason !== "skip" && r.reason !== "no_vin") {
-            console.warn("[stripe webhook] CSDD tech data seed:", r.reason);
-          }
-        } catch (err) {
-          console.error("[stripe webhook] CSDD tech data seed:", err);
-        }
-
-        try {
-          const r = await seedDenmarkRegistryOnPaidOrder(session.id, order.vin);
-          if (r.ok) {
-            console.info("[stripe webhook] Denmark registry seeded", { sessionId: session.id, reason: r.reason });
-          } else if (r.reason !== "skip" && r.reason !== "no_vin") {
-            console.warn("[stripe webhook] Denmark registry seed:", r.reason);
-          }
-        } catch (err) {
-          console.error("[stripe webhook] Denmark registry seed:", err);
-        }
-
-        try {
-          const r = await seedEstoniaRegistryOnPaidOrder(session.id, order.vin);
-          if (r.ok) {
-            console.info("[stripe webhook] Estonia registry seeded", { sessionId: session.id, reason: r.reason });
-          } else if (r.reason !== "skip" && r.reason !== "no_vin" && r.reason !== "no_solver") {
-            console.warn("[stripe webhook] Estonia registry seed:", r.reason);
-          } else if (r.reason === "no_solver") {
+          const r = await seedPaidOrderAutoSources(session.id, {
+            vin: order.vin,
+            listingUrl: order.listingUrl,
+          });
+          console.info("[stripe webhook] paid order auto sources", { sessionId: session.id, ...r });
+          if (r.mnt_ee === "no_solver" || r.lkf_ee === "no_solver") {
             console.warn("[stripe webhook] Estonia registry seed skipped: nav CAPSOLVER_API_KEY");
           }
         } catch (err) {
-          console.error("[stripe webhook] Estonia registry seed:", err);
-        }
-
-        try {
-          const r = await seedSwedenRegistryOnPaidOrder(session.id, order.vin);
-          if (r.ok) {
-            console.info("[stripe webhook] Sweden registry seeded", { sessionId: session.id, reason: r.reason });
-          } else if (r.reason !== "skip" && r.reason !== "no_vin") {
-            console.warn("[stripe webhook] Sweden registry seed:", r.reason);
-          }
-        } catch (err) {
-          console.error("[stripe webhook] Sweden registry seed:", err);
+          console.error("[stripe webhook] paid order auto sources:", err);
         }
       });
     }

@@ -211,7 +211,7 @@ export function AdminVinScanPanel({ vin }: { vin: string }) {
         </button>
       </div>
       {!valid ? (
-        <p className="px-2.5 pb-2 text-[10px] text-[var(--color-provin-muted)]">Ievadi VIN pasūtījumā.</p>
+        <p className="px-2.5 pb-2 text-[10px] text-[var(--color-provin-muted)]">Ievadi VIN.</p>
       ) : null}
       {error ? <p className="px-2.5 pb-2 text-[10px] text-rose-600 dark:text-rose-300">{error}</p> : null}
       <ul className="grid grid-cols-2 gap-1 px-2 pb-2 sm:grid-cols-4">

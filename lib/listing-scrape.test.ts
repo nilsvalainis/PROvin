@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSsLvListingHtml } from "@/lib/listing-scrape";
+import { parseGenericListingHtml, parseSsLvListingHtml } from "@/lib/listing-scrape";
 
 function ssLvListingHtml(opts: { kmLabel: string; kmValue: string; posted: string }): string {
   return `<html><head><title>Audi Q7 - Sludinājumi</title></head><body>
@@ -29,5 +29,26 @@ describe("parseSsLvListingHtml", () => {
       new Date(2026, 7, 13),
     );
     expect(snap.currentKm).toBe("167 000 km");
+  });
+});
+
+describe("parseGenericListingHtml", () => {
+  it("reads title, km and posted date from autoplius-like HTML", () => {
+    const html = `<html><head>
+      <meta property="og:title" content="Audi Q7 3.0 TDI" />
+      <meta property="og:description" content="Pardodams Audi Q7, labs stavoklis, servisa vesture." />
+    </head><body>
+      <p>Rida: 167 000 km</p>
+      <p>Paskelbta: 02.02.2026</p>
+      <p>Kaina 23 950 €</p>
+      <dt>Gads</dt><dd>2015</dd>
+    </body></html>`;
+    const snap = parseGenericListingHtml(html, "https://autoplius.lt/skelbimai/audi-q7-123", new Date(2026, 7, 13));
+    expect(snap.ok).toBe(true);
+    expect(snap.pageTitle).toBe("Audi Q7 3.0 TDI");
+    expect(snap.currentKm).toBe("167 000 km");
+    expect(snap.postedDateRaw).toBe("02.02.2026");
+    expect(snap.currentPriceEur).toContain("23 950");
+    expect(snap.options.some((o) => o.label === "Gads" && o.value === "2015")).toBe(true);
   });
 });

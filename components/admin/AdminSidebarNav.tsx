@@ -57,6 +57,7 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
   const blogsActive = Boolean(pathname?.startsWith("/admin/blogs"));
   const peeksActive = Boolean(pathname?.startsWith("/admin/atras-vertesanas"));
   const zinasanasActive = Boolean(pathname?.startsWith("/admin/agregatu-zinasanas"));
+  const vinScanActive = Boolean(pathname?.startsWith("/admin/vin-scan"));
   const sakumsActive =
     !consultationsActive &&
     !rekiniActive &&
@@ -65,6 +66,7 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
     !blogsActive &&
     !peeksActive &&
     !zinasanasActive &&
+    !vinScanActive &&
     (pathname === "/admin/dashboard" ||
       pathname === "/admin/dashboard/" ||
       Boolean(pathname?.startsWith("/admin/orders/")));
@@ -76,6 +78,9 @@ export function AdminSidebarNav({ baseUrl, orientation = "vertical" }: Props) {
       </Link>
       <Link href="/admin/atras-vertesanas" className={navItemClass(peeksActive)}>
         Ātrie vērtējumi
+      </Link>
+      <Link href="/admin/vin-scan" className={navItemClass(vinScanActive)}>
+        VIN SCAN
       </Link>
       <Link href="/admin/konsultacijas" className={navItemClass(consultationsActive)}>
         Konsultācijas

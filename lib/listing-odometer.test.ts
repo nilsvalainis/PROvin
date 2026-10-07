@@ -75,6 +75,17 @@ describe("applyListingOdometerToTirgus — SS.LV", () => {
     expect(next.listingMileageOdometer).toBe("167 000");
     expect(next.listingMileageCountry).toBe(LISTING_ODOMETER_COUNTRY_LV);
   });
+
+  it("for autoplius fills Lithuania from the listing host", () => {
+    const next = applyListingOdometerToTirgus(emptyTirgusFields(), {
+      listingUrl: "https://autoplius.lt/skelbimai/audi-q7-123",
+      scrapeKm: "167000",
+      scrapePostedDate: "02.02.2026",
+    });
+    expect(next.listingCreated).toBe("02.02.2026");
+    expect(next.listingMileageOdometer).toBe("167 000");
+    expect(next.listingMileageCountry).toBe("Lietuva");
+  });
 });
 
 describe("resolveListingMileageChartRow", () => {

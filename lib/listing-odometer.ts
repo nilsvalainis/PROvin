@@ -5,6 +5,7 @@
 
 import type { TirgusPriceHistoryRow } from "@/lib/adify-listing-history";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
+import { listingCountryFromUrl } from "@/lib/listing-host";
 import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 
 export const LISTING_ODOMETER_COUNTRY_LV = "Latvija";
@@ -67,19 +68,19 @@ export function applyListingOdometerToTirgus(
     (fromAdify != null ? groupKmDigits(fromAdify) : "") ||
     prev.listingMileageOdometer.trim();
 
-  const firstPub =
-    prev.listingCreated.trim() ||
-    String(input.scrapePostedDate ?? "").trim() ||
-    prev.listingMileageDate.trim();
-
-  const listingCreated = prev.listingCreated.trim() || (ss ? String(input.scrapePostedDate ?? "").trim() : prev.listingCreated);
+  const scrapePosted = String(input.scrapePostedDate ?? "").trim();
+  const firstPub = prev.listingCreated.trim() || scrapePosted || prev.listingMileageDate.trim();
+  const listingCreated = prev.listingCreated.trim() || scrapePosted;
+  const countryFromUrl = listingCountryFromUrl(input.listingUrl);
 
   return {
     ...prev,
     listingCreated,
     listingMileageOdometer: km,
     listingMileageDate: ss ? firstPub : prev.listingMileageDate.trim() || firstPub,
-    listingMileageCountry: ss ? LISTING_ODOMETER_COUNTRY_LV : prev.listingMileageCountry,
+    listingMileageCountry: ss
+      ? LISTING_ODOMETER_COUNTRY_LV
+      : prev.listingMileageCountry.trim() || countryFromUrl,
   };
 }
 

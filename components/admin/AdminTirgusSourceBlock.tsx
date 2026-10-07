@@ -128,16 +128,14 @@ export function AdminTirgusSourceBlock({
     setError(null);
     setStatus(null);
     try {
-      const scrapePromise = isSsLvListingUrl(url)
-        ? fetch("/api/admin/scrape-listing", {
+      const scrapePromise = fetch("/api/admin/scrape-listing", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
           })
             .then(async (res) => (res.ok ? ((await res.json()) as ListingMarketSnapshot) : null))
-            .catch(() => null)
-        : Promise.resolve(null);
+            .catch(() => null);
 
       const [data, scrape] = await Promise.all([loadListingPriceHistorySnapshot(url), scrapePromise]);
 
@@ -190,7 +188,7 @@ export function AdminTirgusSourceBlock({
           <input
             type="url"
             className={`${inp} min-w-[12rem] flex-1`}
-            placeholder="Iekopē sludinājuma saiti (ss.lv)"
+            placeholder="Iekopē sludinājuma saiti (ss.lv, auto24, autoplius…)"
             value={urlDraft}
             disabled={disabled || busy}
             onChange={(e) => setUrlDraft(e.target.value)}

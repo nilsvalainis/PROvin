@@ -8,6 +8,7 @@ import { readB2bCreditWallet, withB2bCreditLock, writeB2bCreditWallet } from "@/
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { buildPartnerOrderNotes, isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import { findRecentPartnerVinOrder } from "@/lib/b2b-partner-vin-dedup";
+import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import {
@@ -19,6 +20,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 function isPartnerPlan(value: string): value is B2bPartnerPlanId {
   return value === "business" || value === "dealer";
@@ -132,18 +134,28 @@ export async function POST(req: Request) {
     },
   });
 
-  if (planRaw === "dealer") {
-    const queued = await enqueueDealerDataJob({ sessionId: created.orderId, vin }).catch(() => false);
-    if (queued) {
-      after(async () => {
-        try {
-          await runDealerDataJob({ sessionId: created.orderId, vin, trigger: "webhook" });
-        } catch (err) {
-          console.error("[partner/orders] dealer data job:", err);
-        }
+  const dealerQueued =
+    planRaw === "dealer"
+      ? await enqueueDealerDataJob({ sessionId: created.orderId, vin }).catch(() => false)
+      : false;
+
+  after(async () => {
+    try {
+      const r = await seedPaidOrderAutoSources(created.orderId, {
+        vin,
+        listingUrl: listingRaw || null,
       });
+      console.info("[partner/orders] paid order auto sources", { orderId: created.orderId, ...r });
+    } catch (err) {
+      console.error("[partner/orders] auto sources:", err);
     }
-  }
+    if (!dealerQueued) return;
+    try {
+      await runDealerDataJob({ sessionId: created.orderId, vin, trigger: "webhook" });
+    } catch (err) {
+      console.error("[partner/orders] dealer data job:", err);
+    }
+  });
 
   return NextResponse.json({
     ok: true,

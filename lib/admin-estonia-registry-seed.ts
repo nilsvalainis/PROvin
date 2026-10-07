@@ -45,16 +45,12 @@ export async function seedEstoniaRegistryOnPaidOrder(
   const needLkf = registrySeedNeeded(blocks.lkf_ee);
   if (!needMnt && !needLkf) return { ok: false, reason: "skip" };
 
-  let mnt = blocks.mnt_ee;
-  let lkf = blocks.lkf_ee;
-  if (needMnt) {
-    const result = await fetchVinSource("mnt_ee", vin);
-    mnt = applyRegistrySeedResult(mnt, result) ?? mnt;
-  }
-  if (needLkf) {
-    const result = await fetchVinSource("lkf_ee", vin);
-    lkf = applyRegistrySeedResult(lkf, result) ?? lkf;
-  }
+  const [mntResult, lkfResult] = await Promise.all([
+    needMnt ? fetchVinSource("mnt_ee", vin) : Promise.resolve(null),
+    needLkf ? fetchVinSource("lkf_ee", vin) : Promise.resolve(null),
+  ]);
+  const mnt = mntResult ? (applyRegistrySeedResult(blocks.mnt_ee, mntResult) ?? blocks.mnt_ee) : blocks.mnt_ee;
+  const lkf = lkfResult ? (applyRegistrySeedResult(blocks.lkf_ee, lkfResult) ?? blocks.lkf_ee) : blocks.lkf_ee;
 
   const incoming = persistBodyToOrderDraftWorkspace(
     {

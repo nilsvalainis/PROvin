@@ -1,12 +1,13 @@
 /**
- * SS.LV / m.ss.lv — Adify vēsture + sludinājuma odometrs sludinājumu sadaļā.
+ * Sludinājuma vēsture + odometrs tirgus blokā (ss.lv un citi portāli).
  */
 import {
   applyAdifyHistoryToTirgus,
   type AdifyListingHistorySnapshot,
 } from "@/lib/adify-listing-history";
 import { tirgusPriceHistoryHasRows, type TirgusFormFields } from "@/lib/admin-source-blocks";
-import { applyListingOdometerToTirgus, isSsLvListingUrl } from "@/lib/listing-odometer";
+import { isListingAutofillUrl } from "@/lib/listing-host";
+import { applyListingOdometerToTirgus } from "@/lib/listing-odometer";
 
 export type SsLvListingScrapeBits = {
   ok?: boolean;
@@ -14,14 +15,22 @@ export type SsLvListingScrapeBits = {
   postedDateRaw?: string | null;
 };
 
+export function shouldAutofillListing(
+  listingUrl: string | null | undefined,
+  tirgus: TirgusFormFields,
+): boolean {
+  if (!isListingAutofillUrl(listingUrl)) return false;
+  if (tirgusPriceHistoryHasRows(tirgus.priceHistory)) return false;
+  if (tirgus.listingCreated.trim()) return false;
+  return true;
+}
+
+/** @deprecated izmanto shouldAutofillListing */
 export function shouldAutofillSsLvListing(
   listingUrl: string | null | undefined,
   tirgus: TirgusFormFields,
 ): boolean {
-  if (!isSsLvListingUrl(listingUrl)) return false;
-  if (tirgusPriceHistoryHasRows(tirgus.priceHistory)) return false;
-  if (tirgus.listingCreated.trim()) return false;
-  return true;
+  return shouldAutofillListing(listingUrl, tirgus);
 }
 
 export function applySsLvAdifyAutofill(

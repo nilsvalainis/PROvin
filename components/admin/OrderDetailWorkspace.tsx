@@ -23,7 +23,6 @@ import {
   AdminEstoniaVinRegistryPair,
   AdminVinRegistrySourceBlock,
 } from "@/components/admin/AdminVinRegistrySourceBlock";
-import { AdminVinScanPanel } from "@/components/admin/AdminVinScanPanel";
 import {
   SOURCE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
@@ -276,7 +275,7 @@ import {
   applySsLvAdifyAutofill,
   shouldAutofillSsLvListing,
 } from "@/lib/admin-ss-lv-adify-autofill";
-import { isSsLvListingUrl } from "@/lib/listing-odometer";
+import { isListingAutofillUrl } from "@/lib/listing-host";
 import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
@@ -2245,7 +2244,7 @@ export function OrderDetailWorkspace({
     const url = payload.listingUrl?.trim() ?? "";
     const tirgus = wsPersistRef.current.sourceBlocks.tirgus;
     const listingPasteEmpty = !wsPersistRef.current.sourceBlocks.listing_analysis.listingPasteRaw.trim();
-    if (!shouldAutofillSsLvListing(url, tirgus) && !(listingPasteEmpty && isSsLvListingUrl(url))) return;
+    if (!shouldAutofillSsLvListing(url, tirgus) && !(listingPasteEmpty && isListingAutofillUrl(url))) return;
     adifyAutofillAttemptedRef.current = true;
     void (async () => {
       try {
@@ -4538,7 +4537,6 @@ export function OrderDetailWorkspace({
 
       {/* Apakšējā atstarpe telefonā: fiksētais doks nedrīkst aizsegt pēdējo bloku. */}
       <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 max-md:pb-32 ${ADMIN_CONTENT_MAX}`}>
-        <AdminVinScanPanel vin={vinBar} />
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}
@@ -4645,6 +4643,8 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
+              pdfIncludeOil={pdfVisibility.autoRecordsOilInterval !== false}
+              onPdfIncludeOilChange={(next) => onPdfVisibilityChange({ autoRecordsOilInterval: next })}
               aiComment={aiCommentSlot("auto_records")}
               aiServiceHistory={aiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
               aiOilChangeInterval={aiCommentSlot("auto_records", undefined, "oilChangeIntervalNotes")}

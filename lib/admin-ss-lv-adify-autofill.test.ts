@@ -1,21 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAdifyHistoryItems } from "@/lib/adify-listing-history";
-import { applySsLvAdifyAutofill, shouldAutofillSsLvListing } from "@/lib/admin-ss-lv-adify-autofill";
+import { applySsLvAdifyAutofill, shouldAutofillListing } from "@/lib/admin-ss-lv-adify-autofill";
 import { emptyTirgusFields } from "@/lib/admin-source-blocks";
 
 const SSLV = "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html";
 const MOBILE = "https://m.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html";
 
-describe("shouldAutofillSsLvListing", () => {
-  it("accepts ss.lv and m.ss.lv when tirgus is empty", () => {
-    expect(shouldAutofillSsLvListing(SSLV, emptyTirgusFields())).toBe(true);
-    expect(shouldAutofillSsLvListing(MOBILE, emptyTirgusFields())).toBe(true);
-    expect(shouldAutofillSsLvListing("https://autoplius.lt/x", emptyTirgusFields())).toBe(false);
+describe("shouldAutofillListing", () => {
+  it("accepts ss.lv, m.ss.lv and other listing paths when tirgus is empty", () => {
+    expect(shouldAutofillListing(SSLV, emptyTirgusFields())).toBe(true);
+    expect(shouldAutofillListing(MOBILE, emptyTirgusFields())).toBe(true);
+    expect(shouldAutofillListing("https://autoplius.lt/skelbimai/audi-q7-123", emptyTirgusFields())).toBe(true);
+    expect(shouldAutofillListing("https://autoplius.lt", emptyTirgusFields())).toBe(false);
   });
 
   it("does not overwrite an already filled listing", () => {
     const filled = { ...emptyTirgusFields(), listingCreated: "16.07.2026" };
-    expect(shouldAutofillSsLvListing(SSLV, filled)).toBe(false);
+    expect(shouldAutofillListing(SSLV, filled)).toBe(false);
   });
 });
 

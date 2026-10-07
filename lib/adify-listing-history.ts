@@ -443,11 +443,11 @@ export async function fetchAdifyListingHistory(
   listingUrl: string,
   now: Date = new Date(),
 ): Promise<AdifyListingHistorySnapshot> {
-  const ref = parseAdifyHistoryUrl(listingUrl);
-  if (!ref) {
+  const url = listingUrl.trim();
+  if (!url) {
     return {
       found: false,
-      message: "Neatpazīta sludinājuma saite (ss.lv / ss.com)",
+      message: "Nav sludinājuma saites",
       rows: [],
       durationDays: 0,
       oldestDate: "",
