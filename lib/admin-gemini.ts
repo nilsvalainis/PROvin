@@ -26,7 +26,10 @@ import {
   type AiRequestBudget,
 } from "@/lib/ai-request-budget";
 import type { AiTextStream } from "@/lib/ai-text-stream";
-import { geminiThinkingExtra, geminiWantsThinking } from "@/lib/gemini-thinking-config";
+import {
+  geminiGenerationConfigPayload,
+  geminiWantsThinking,
+} from "@/lib/gemini-thinking-config";
 import {
   applyProvinReportCopyVocabulary,
   finalizeProvinExpertAiComment,
@@ -202,7 +205,6 @@ async function geminiGenerateJsonFromPartsOnce(
     model: string;
     systemInstruction: string;
     parts: GeminiUserPart[];
-    temperature?: number;
     responseSchema?: GeminiJsonSchema;
   },
 ): Promise<string> {
@@ -215,13 +217,11 @@ async function geminiGenerateJsonFromPartsOnce(
     const result = await model.generateContent(
       {
         contents: [{ role: "user", parts: opts.parts }],
-        generationConfig: {
-          temperature: opts.temperature ?? 0.2,
+        generationConfig: geminiGenerationConfigPayload(opts.model, withThinking, {
           maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
           responseMimeType: "application/json",
           ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
-          ...geminiThinkingExtra(opts.model, withThinking),
-        } as never,
+        }) as never,
       },
       { timeout: TEXT_REQUEST_TIMEOUT_MS },
     );
@@ -246,7 +246,6 @@ export async function geminiGenerateJsonText(opts: {
   model: string;
   systemInstruction: string;
   userPrompt: string;
-  temperature?: number;
   /** Papildus daļas (piem. inline PDF) pirms `userPrompt` teksta. */
   extraParts?: GeminiUserPart[];
 }): Promise<string> {
@@ -255,7 +254,6 @@ export async function geminiGenerateJsonText(opts: {
     model: opts.model,
     systemInstruction: opts.systemInstruction,
     parts,
-    temperature: opts.temperature,
   });
 }
 
@@ -266,7 +264,6 @@ export async function geminiGenerateJsonFromParts(opts: {
   model: string;
   systemInstruction: string;
   parts: GeminiUserPart[];
-  temperature?: number;
   responseSchema?: GeminiJsonSchema;
 }): Promise<string> {
   const key = getGeminiApiKeyFromEnv();
@@ -285,12 +282,8 @@ export async function geminiGenerateJsonWithSchema(opts: {
   systemInstruction: string;
   parts: GeminiUserPart[];
   responseSchema: GeminiJsonSchema;
-  temperature?: number;
 }): Promise<string> {
-  return geminiGenerateJsonFromParts({
-    ...opts,
-    temperature: opts.temperature ?? 0,
-  });
+  return geminiGenerateJsonFromParts(opts);
 }
 
 type GeminiContentPart = { text?: string; thought?: boolean };
@@ -330,7 +323,6 @@ async function geminiStreamGenerateText(
     model: string;
     systemInstruction: string;
     userPrompt: string;
-    temperature?: number;
     budget?: AiRequestBudget;
     stream?: AiTextStream;
   },
@@ -347,11 +339,9 @@ async function geminiStreamGenerateText(
     const streaming = await model.generateContentStream(
       {
         contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
-        generationConfig: {
-          temperature: opts.temperature ?? 0.35,
+        generationConfig: geminiGenerationConfigPayload(opts.model, withThinking, {
           maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
-          ...geminiThinkingExtra(opts.model, withThinking),
-        } as never,
+        }) as never,
       },
       { timeout: aiAttemptTimeoutMs(opts.budget, TEXT_REQUEST_TIMEOUT_MS) },
     );
@@ -395,7 +385,6 @@ async function geminiGenerateTextOnce(
     model: string;
     systemInstruction: string;
     userPrompt: string;
-    temperature?: number;
     budget?: AiRequestBudget;
     stream?: AiTextStream;
   },
@@ -433,7 +422,6 @@ export type GeminiTextOptions = {
   model: string;
   systemInstruction: string;
   userPrompt: string;
-  temperature?: number;
   budget?: AiRequestBudget;
   stream?: AiTextStream;
 };
@@ -603,7 +591,6 @@ async function geminiGenerateTextWithGoogleSearchOnce(
     model: string;
     systemInstruction: string;
     userPrompt: string;
-    temperature?: number;
     maxOutputTokens?: number;
     budget?: AiRequestBudget;
     stream?: AiTextStream;
@@ -635,11 +622,9 @@ async function geminiGenerateTextWithGoogleSearchOnce(
             systemInstruction: { parts: [{ text: opts.systemInstruction }] },
             contents: [{ role: "user", parts: [{ text: opts.userPrompt }] }],
             tools,
-            generationConfig: {
-              temperature: opts.temperature ?? 0.35,
+            generationConfig: geminiGenerationConfigPayload(opts.model, withThinking, {
               maxOutputTokens,
-              ...geminiThinkingExtra(opts.model, withThinking),
-            },
+            }),
           },
         });
         if (result.text) return result.text;

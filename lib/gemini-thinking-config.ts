@@ -1,7 +1,25 @@
 /**
- * Gemini domāšanas konfigurācija. Atsevišķi no `admin-gemini.ts` (server-only),
- * lai to varētu pārbaudīt ar testiem.
+ * Gemini generateContent thinking. Field names match the JS SDK / v1beta REST
+ * camelCase: `generationConfig.thinkingConfig.{thinkingLevel|thinkingBudget}`.
+ *
+ * generateContent docs (https://ai.google.dev/gemini-api/docs/generate-content/thinking):
+ * - Gemini 3: `thinkingLevel` (`minimal` | `low` | `medium` | `high`).
+ *   `thinkingBudget` is deprecated there and will 400 on upcoming models.
+ * - Gemini 2.5: does **not** support `thinkingLevel` (400 INVALID_ARGUMENT).
+ *   Use `thinkingBudget` (Flash: 0 disables thinking; Pro cannot fully disable).
+ * - Gemini 2.0 Flash: no thinking config.
+ *
+ * Never send both fields. Never send temperature / topP / topK (Gemini 3.6+
+ * ignores them; upcoming models error). Do not silently retarget 2.5 calls
+ * onto a Gemini 3 model id.
  */
+
+export type GeminiThinkingLevel = "minimal" | "low" | "medium" | "high";
+
+/** 2.5 `thinkingBudget` when thinking is on: a small cap, not high. */
+export const GEMINI_25_THINKING_BUDGET_ENABLED = 512;
+/** 2.5 Flash: 0 disables thinking. 2.5 Pro cannot fully disable; 0 is the retry pass. */
+export const GEMINI_25_THINKING_BUDGET_DISABLED = 0;
 
 function isGemini3Model(model: string): boolean {
   return /gemini-3/i.test(model);
@@ -12,35 +30,56 @@ function isGemini25Model(model: string): boolean {
 }
 
 /**
- * Gemini 3 Flash `thinkingLevel: "low"` atkal apēda `maxOutputTokens` un
- * atgrieza tukšu lauku. 3. paaudzei sūtām tikai `minimal` (zemāk), tāpēc
- * atsevišķs „ar/bez domāšanas” piegājiens tai nav vajadzīgs. 2.5 vēl dala
- * budžetu ar redzamo tekstu, tāpēc tukšu atbildi tur joprojām atkārto ar 0.
+ * True when a same-model retry with thinking off is a different payload.
+ * Gemini 3 is always `minimal`. 2.5 retries with budget 0 (Flash thinking off).
  */
 export function geminiWantsThinking(model: string): boolean {
   return isGemini25Model(model);
 }
 
 export type GeminiThinkingExtra =
-  | { thinkingConfig: { thinkingLevel: "minimal" | "low" } }
+  | { thinkingConfig: { thinkingLevel: GeminiThinkingLevel } }
   | { thinkingConfig: { thinkingBudget: number } }
   | Record<string, never>;
 
 /**
- * Gemini 3 pieņem `thinkingLevel`, Gemini 2.5 — `thinkingBudget`. Abi kopā = 400
- * („You can only set only one of thinking budget and thinking level”), pēc kā
- * atkāpšanās uz konfigurāciju bez `thinkingConfig` atdod modelim NEIEROBEŽOTU
- * domāšanu: tā apēd `maxOutputTokens`, atbilde beidzas ar MAX_TOKENS bez
- * redzamā teksta, un operators saņem tukšu lauku par pilnu cenu. Tāpēc te
- * vienmēr tiek sūtīts tieši viens lauks, un „bez domāšanas” ir skaidri
- * nosaukts minimums, nevis noklusējums.
+ * Always send exactly one thinking field on thinking models. Omitting the
+ * config lets 2.5 run unbounded thinking, which eats `maxOutputTokens`.
  */
 export function geminiThinkingExtra(model: string, enabled: boolean): GeminiThinkingExtra {
   if (isGemini3Model(model)) {
     return { thinkingConfig: { thinkingLevel: "minimal" } };
   }
   if (isGemini25Model(model)) {
-    return { thinkingConfig: { thinkingBudget: enabled ? 512 : 0 } };
+    return {
+      thinkingConfig: {
+        thinkingBudget: enabled ? GEMINI_25_THINKING_BUDGET_ENABLED : GEMINI_25_THINKING_BUDGET_DISABLED,
+      },
+    };
   }
   return {};
+}
+
+export type GeminiGenerationConfigPayload = {
+  maxOutputTokens: number;
+  responseMimeType?: string;
+  responseSchema?: unknown;
+  thinkingConfig?: { thinkingLevel: GeminiThinkingLevel } | { thinkingBudget: number };
+};
+
+/**
+ * Wire `generationConfig` for generateContent / streamGenerateContent.
+ * Sampling fields (temperature, topP, topK) are intentionally absent.
+ */
+export function geminiGenerationConfigPayload(
+  model: string,
+  enabled: boolean,
+  extra: { maxOutputTokens: number; responseMimeType?: string; responseSchema?: unknown },
+): GeminiGenerationConfigPayload {
+  return {
+    maxOutputTokens: extra.maxOutputTokens,
+    ...(extra.responseMimeType ? { responseMimeType: extra.responseMimeType } : {}),
+    ...(extra.responseSchema ? { responseSchema: extra.responseSchema } : {}),
+    ...geminiThinkingExtra(model, enabled),
+  };
 }

@@ -137,7 +137,6 @@ async function translateDealerServiceWorksLv(pending: string[]): Promise<string>
       systemInstruction: DEALER_SERVICE_WORKS_LV_SYSTEM,
       parts: [{ text: userText }],
       responseSchema: DEALER_SERVICE_WORKS_LV_SCHEMA as unknown as GeminiJsonSchema,
-      temperature: 0,
     });
   } catch (e) {
     console.warn(`${LOG_PREFIX} works_lv_gemini_failed`, {

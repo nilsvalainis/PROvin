@@ -696,7 +696,7 @@ describe("PROVIN AI prompt invariants", () => {
     const thinking = readRepo("lib/gemini-thinking-config.ts");
     expect(thinking).toMatch(/thinkingLevel: "minimal"/);
     expect(thinking).not.toMatch(/thinkingLevel: enabled \? "low"/);
-    expect(thinking).toMatch(/thinkingBudget: enabled \? 512 : 0/);
+    expect(thinking).toMatch(/thinkingBudget: enabled \? GEMINI_25_THINKING_BUDGET_ENABLED : GEMINI_25_THINKING_BUDGET_DISABLED/);
     expect(thinking).toMatch(/return isGemini25Model\(model\)/);
     expect(readRepo("lib/admin-gemini.ts")).toMatch(/isGeminiThinkingUnsupported/);
     expect(readRepo("lib/admin-gemini.ts")).toMatch(/thoughtsTokenCount/);
@@ -708,16 +708,22 @@ describe("PROVIN AI prompt invariants", () => {
   });
 
   /**
-   * `thinkingLevel` + `thinkingBudget` vienā pieprasījumā = 400 INVALID_ARGUMENT,
-   * un atkāpšanās uz konfigurāciju bez ierobežojuma atdeva tukšu lauku par pilnu
-   * cenu. Katram modelim drīkst būt tieši viens no laukiem.
+   * generateContent: Gemini 3 uses thinkingLevel; 2.5 uses thinkingBudget.
+   * Both in one request = 400. Sampling params are omitted on every model.
    */
-  it("never sends Gemini a thinking level and a thinking budget together", () => {
+  it("sends one Gemini thinking field per family and omits sampling params", () => {
     const thinking = readRepo("lib/gemini-thinking-config.ts");
     for (const branch of thinking.split("return { thinkingConfig:").slice(1)) {
       const cfg = branch.slice(0, branch.indexOf("}"));
       expect(/thinkingLevel/.test(cfg) && /thinkingBudget/.test(cfg)).toBe(false);
     }
+    expect(thinking).toMatch(/thinkingLevel: "minimal"/);
+    expect(thinking).toMatch(/thinkingBudget:/);
+    const gemini = readRepo("lib/admin-gemini.ts");
+    expect(gemini).not.toMatch(/\btemperature\s*:/);
+    expect(gemini).not.toMatch(/\btopP\s*:/);
+    expect(gemini).not.toMatch(/\btopK\s*:/);
+    expect(gemini).toMatch(/geminiGenerationConfigPayload/);
   });
 
   /** Tukša atbilde (tokeni apmaksāti) jāatkārto ar apcirptu domāšanu, ne jāparāda kā tukšs lauks. */
@@ -770,7 +776,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(gemini).toMatch(/generateContentStream/);
     expect(gemini).toMatch(/partial_text_salvaged/);
     expect(gemini).toMatch(/maxOutputTokens/);
-    expect(gemini).toMatch(/geminiThinkingExtra/);
+    expect(gemini).toMatch(/geminiGenerationConfigPayload/);
     expect(gemini).toMatch(/streamGenerateContent/);
     expect(gemini).toMatch(/AiIncompleteCommentError/);
     expect(readRepo("lib/admin-ai-route-response.ts")).toMatch(/ai_empty_content/);
