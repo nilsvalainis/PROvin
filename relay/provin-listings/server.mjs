@@ -16,7 +16,7 @@
  *   LISTINGS_MANUAL_LOGIN_MINUTES noklusējums 15
  *   OPENLANE_USER / OPENLANE_PASS, AUTOBID_USER / AUTOBID_PASS   auto-login; Auto1 tikai manuāli
  *   OPENLANE_ALLOW_PUBLIC_FALLBACK=1  lasīt Openlane arī bez login (daļējas cenas)
- *   DISPLAY                     Xvfb displejs (systemd), piem. :99
+ *   DISPLAY                     Xvfb displejs (systemd): :98, jo :99 jau lieto provin-mnt
  *
  * API (viss zem /listings, prefiksu Caddy nenoņem):
  *   GET  /listings/health                 bez auth: sesiju stāvoklis, rinda, dienas skaitītāji
