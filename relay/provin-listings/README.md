@@ -67,7 +67,7 @@ noVNC klausās tikai uz localhost, piekļuve tikai caur SSH tuneli.
 # uz servera
 systemctl start provin-listings-novnc
 curl -s -X POST -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8789/listings/login/auto1
-# -> {"ok":true,"platform":"auto1","display":":99","minutes":15}
+# -> {"ok":true,"platform":"auto1","display":":98","minutes":15}
 
 # uz Mac (otrs terminālis)
 ssh -N -L 6089:127.0.0.1:6089 root@37.27.149.106
