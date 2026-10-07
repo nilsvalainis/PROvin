@@ -177,6 +177,36 @@ describe("fetchViaIrissRelay", () => {
     expect(r.status).toBe("fetch_failed");
     expect(r.note).toContain("ECONNREFUSED");
   });
+
+  it("shows err.cause.code instead of a bare fetch failed", async () => {
+    const err = new TypeError("fetch failed");
+    (err as TypeError & { cause?: unknown }).cause = Object.assign(new Error("connect ECONNRESET"), { code: "ECONNRESET" });
+    const reset = await fetchViaIrissRelay(cfg, openlaneSrc, {
+      fetchImpl: async () => {
+        throw err;
+      },
+    });
+    expect(reset.note).toContain("ECONNRESET");
+    expect(reset.note).not.toMatch(/fetch failed/i);
+
+    const timeout = new TypeError("fetch failed");
+    (timeout as TypeError & { cause?: unknown }).cause = Object.assign(new Error("Connect Timeout Error"), { code: "UND_ERR_CONNECT_TIMEOUT" });
+    const timed = await fetchViaIrissRelay(cfg, openlaneSrc, {
+      fetchImpl: async () => {
+        throw timeout;
+      },
+    });
+    expect(timed.note).toContain("UND_ERR_CONNECT_TIMEOUT");
+
+    const cert = new TypeError("fetch failed");
+    (cert as TypeError & { cause?: unknown }).cause = { code: "CERT_HAS_EXPIRED" };
+    const expired = await fetchViaIrissRelay(cfg, openlaneSrc, {
+      fetchImpl: async () => {
+        throw cert;
+      },
+    });
+    expect(expired.note).toContain("CERT_HAS_EXPIRED");
+  });
 });
 
 describe("relay health merge", () => {
