@@ -91,6 +91,14 @@ describe("fetchAutobidSource", () => {
     expect(r.status).toBe("fetch_failed");
     expect(r.note).toContain("ECONNRESET");
   });
+
+  it("unwraps fetch failed to the cause code", async () => {
+    const err = new TypeError("fetch failed");
+    (err as TypeError & { cause?: unknown }).cause = Object.assign(new Error("getaddrinfo"), { code: "ENOTFOUND" });
+    const r = await fetchAutobidSource(SRC, { ...opts, fetchImpl: fetchMock(() => err).impl });
+    expect(r.note).toContain("ENOTFOUND");
+    expect(r.note).not.toMatch(/fetch failed/i);
+  });
 });
 
 describe("randomPauseMs", () => {

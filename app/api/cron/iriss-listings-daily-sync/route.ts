@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { runIrissListingsDailySync } from "@/lib/iriss-listings-sync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** 300 s ir Vercel griesti. 92 avoti ar 4 s virknes pauzi ir 364 s, tāpēc sync lasa paralēli (3) un partijās. */
 export const maxDuration = 300;
 
 function isAuthorized(req: Request): { ok: true } | { ok: false; status: number; error: string } {
@@ -27,7 +29,7 @@ export async function GET(req: Request) {
   } catch (e) {
     console.error("[cron/iriss-listings-daily-sync] failed", e);
     return NextResponse.json(
-      { error: "sync_failed", detail: e instanceof Error ? e.message : String(e) },
+      { error: "sync_failed", detail: formatFetchError(e, "sync_failed") },
       { status: 500 },
     );
   }

@@ -7,6 +7,7 @@
  */
 
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
+import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { irissListingVehicleId } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceStatus } from "@/lib/iriss-listings-types";
@@ -238,7 +239,7 @@ export async function fetchViaIrissRelay(
     return mapRelayFetchResponse(body, src);
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
-    const note = aborted ? `Relejs neatbildēja ${Math.round(cfg.timeoutMs / 1000)} s laikā.` : `Releja savienojums neizdevās: ${e instanceof Error ? e.message : "nezināma kļūda"}`;
+    const note = aborted ? `Relejs neatbildēja ${Math.round(cfg.timeoutMs / 1000)} s laikā.` : `Releja savienojums neizdevās: ${formatFetchError(e, "fetch failed")}`;
     return { status: "fetch_failed", note, vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0, elapsedMs: 0 };
   } finally {
     clearTimeout(timer);
@@ -274,7 +275,7 @@ export async function fetchIrissRelayHealth(cfg: IrissRelayConfig, opts: { fetch
     return mapRelayHealth(await res.json(), checkedAt);
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
-    return { reachable: false, note: aborted ? "Relejs neatbild (health timeout)." : `Relejs nav sasniedzams: ${e instanceof Error ? e.message : "kļūda"}`, checkedAt, platforms: {} };
+    return { reachable: false, note: aborted ? "Relejs neatbild (health timeout)." : `Relejs nav sasniedzams: ${formatFetchError(e, "fetch failed")}`, checkedAt, platforms: {} };
   } finally {
     clearTimeout(timer);
   }

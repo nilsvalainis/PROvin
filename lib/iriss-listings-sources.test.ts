@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
-import { buildIrissListingSources } from "@/lib/iriss-listings-sources";
+import { buildIrissListingSources, groupIrissListingSources } from "@/lib/iriss-listings-sources";
 import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 function row(id: string, listStatus: IrissPasutijumsListStatus, links: Partial<Record<"autobid" | "openline" | "auto1" | "mobile", string>> = {}, other: string[] = []) {
@@ -48,5 +48,23 @@ describe("buildIrissListingSources", () => {
     ]);
     expect(sources.map((s) => s.platform)).toEqual(["autobid", "auto1"]);
     expect(sources[0]!.id).toHaveLength(20);
+  });
+
+  it("reads one search URL once and keeps every order on that URL", () => {
+    const same = "https://autobid.de/en/search-results?b=2&a=1";
+    const reordered = "https://autobid.de/en/search-results/?a=1&b=2";
+    const other = "https://autobid.de/en/search-results?a=9";
+    const sources = buildIrissListingSources([
+      row("a", "active", { autobid: same, openline: "https://www.openlane.eu/en/findcar" }),
+      row("b", "active", { autobid: reordered }),
+      row("c", "active", { autobid: other }),
+    ]);
+    const groups = groupIrissListingSources(sources);
+    const autobid = groups.filter((g) => g.platform === "autobid");
+    expect(autobid).toHaveLength(2);
+    const shared = autobid.find((g) => g.orders.length === 2)!;
+    expect(shared.orders.map((o) => o.orderId).sort()).toEqual(["a", "b"]);
+    expect(autobid.find((g) => g.orders.length === 1)!.orders[0]!.orderId).toBe("c");
+    expect(groups.find((g) => g.platform === "openline")!.orders).toHaveLength(1);
   });
 });

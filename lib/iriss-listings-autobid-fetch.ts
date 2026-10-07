@@ -1,6 +1,7 @@
 import "server-only";
 
 import { autobidPageUrl, parseAutobidSearchPage, type AutobidVehicle } from "@/lib/iriss-listings-autobid";
+import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import type { IrissListingSourceStatus } from "@/lib/iriss-listings-types";
 
 const BROWSER_UA =
@@ -58,7 +59,7 @@ async function fetchPageHtml(
     return { ok: true, statusCode: res.status, html };
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
-    return { ok: false, note: aborted ? `Noildze ${Math.round(timeoutMs / 1000)} s` : e instanceof Error ? e.message.slice(0, 200) : "fetch_failed" };
+    return { ok: false, note: aborted ? `Noildze ${Math.round(timeoutMs / 1000)} s` : formatFetchError(e, "fetch_failed") };
   } finally {
     clearTimeout(t);
   }
