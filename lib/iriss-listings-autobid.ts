@@ -224,6 +224,11 @@ export function mapAutobidVehicle(raw: Rec): AutobidVehicle | null {
 export function parseAutobidSearchPage(html: string): AutobidSearchPage | null {
   const json = extractNuxtDataJson(html);
   if (!json) return null;
+  return parseAutobidNuxtJson(json);
+}
+
+/** Tas pats, bet no jau izgriezta `__NUXT_DATA__` JSON teksta (releja `raw.nuxtPages[]`). */
+export function parseAutobidNuxtJson(json: string): AutobidSearchPage | null {
   let flat: unknown;
   try {
     flat = JSON.parse(json);

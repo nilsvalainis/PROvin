@@ -35,10 +35,11 @@ export type ReconcileOutput = {
   goneCount: number;
 };
 
-const PRICE_FIELDS: Array<{ field: IrissListingPriceField; key: "priceStart" | "priceMinimal" | "priceCurrent" }> = [
+const PRICE_FIELDS: Array<{ field: IrissListingPriceField; key: "priceStart" | "priceMinimal" | "priceCurrent" | "priceBuyNow" }> = [
   { field: "start", key: "priceStart" },
   { field: "minimal", key: "priceMinimal" },
   { field: "current", key: "priceCurrent" },
+  { field: "buy_now", key: "priceBuyNow" },
 ];
 
 export function sourceKey(platform: IrissListingPlatform, orderId: string): string {

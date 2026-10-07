@@ -1,0 +1,17 @@
+{
+  "name": "provin-listings-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROVIN IRISS LIST pārlūka relejs: Openlane, Auto1, Autobid ar pastāvīgiem Chrome profiliem (Hetzner, xvfb).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check lib/browser.mjs && node --check lib/state.mjs && node --check lib/login.mjs && node --check lib/items.mjs && node --check lib/platforms/openlane.mjs && node --check lib/platforms/auto1.mjs && node --check lib/platforms/autobid.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

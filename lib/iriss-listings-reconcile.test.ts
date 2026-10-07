@@ -28,9 +28,11 @@ function fetched(partial: Partial<IrissFetchedVehicle> & { id: string }): IrissF
     priceStart: 20000,
     priceMinimal: 15000,
     priceCurrent: null,
+    priceBuyNow: null,
     vatNote: "",
     auctionId: "1",
     auctionStartAt: "2026-10-10T08:00:00+00:00",
+    auctionEndAt: "",
     auctionStage: "BEFORE_AUCTION",
     ...partial,
   };
