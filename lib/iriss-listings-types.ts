@@ -1,28 +1,83 @@
-export type IrissListingSourcePlatform = "mobile" | "autobid" | "openline" | "auto1" | "other";
+/**
+ * IRISS LIST (Sludinājumi) v2: viens ieraksts = viens konkrēts auto izsolē, nevis meklēšanas lapa.
+ * Avoti nāk tikai no aktīvajiem IRISS pasūtījumiem. Mobile.de šajā fāzē nav.
+ */
 
-export type IrissListingSyncStatus = "ok" | "login_required" | "parse_failed" | "fetch_failed" | "blocked_by_waf";
+export type IrissListingPlatform = "autobid" | "openline" | "auto1";
 
-export type IrissListingPrice = {
-  value: string;
-  currency: string;
-};
+export const IRISS_LISTING_PLATFORMS: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1"];
 
-export type IrissListingAggregateItem = {
+/** Viena meklēšanas URL nolasīšanas iznākums. */
+export type IrissListingSourceStatus =
+  | "ok"
+  | "login_required"
+  | "blocked_by_waf"
+  | "parse_failed"
+  | "fetch_failed"
+  /** Openlane / Auto1: lasīšana notiek caur Hetzner releju (Fāze 1), kas vēl nav konfigurēts. */
+  | "relay_not_configured"
+  /** Laika budžets beidzās, avots šajā reizē netika lasīts. */
+  | "skipped";
+
+export type IrissListingSourceRun = {
   id: string;
-  aggregatedAt: string;
-  sourcePlatform: IrissListingSourcePlatform;
-  sourceUrl: string;
-  sourceDomain: string;
   orderId: string;
   orderBrandModel: string;
+  platform: IrissListingPlatform;
+  sourceUrl: string;
+  status: IrissListingSourceStatus;
+  note: string;
+  vehicleCount: number;
+  pagesFetched: number;
+  pageCount: number;
+  fetchedAt: string;
+};
+
+export type IrissListingPriceField = "start" | "minimal" | "current";
+
+export type IrissListingPriceChange = {
+  at: string;
+  field: IrissListingPriceField;
+  from: number | null;
+  to: number | null;
+};
+
+export type IrissListingVehicleChange = "new" | "price_changed" | "unchanged" | "gone";
+
+export type IrissListingVehicle = {
+  /** sha1(platform|externalId), stabils starp nolasījumiem. */
+  id: string;
+  platform: IrissListingPlatform;
+  externalId: string;
+  detailUrl: string;
+  /** Viens auto var atbilst vairāku pasūtījumu meklējumiem. */
+  orderIds: string[];
+  orderBrandModels: string[];
   title: string;
+  manufacturer: string;
   year: string;
+  firstRegistration: string;
+  mileageKm: number | null;
+  fuel: string;
+  transmission: string;
+  powerKw: string;
+  location: string;
+  countryCode: string;
   imageUrl: string;
-  pricePrimary: IrissListingPrice | null;
-  priceSecondary: IrissListingPrice | null;
-  rawSnapshotRef: string;
-  status: IrissListingSyncStatus;
-  statusNote: string;
+  currency: string;
+  priceStart: number | null;
+  priceMinimal: number | null;
+  priceCurrent: number | null;
+  vatNote: string;
+  auctionId: string;
+  auctionStartAt: string;
+  auctionStage: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  /** Cik veiksmīgos nolasījumos pēc kārtas auto vairs nav sarakstā. Pazudis tikai no 2. */
+  missingRuns: number;
+  change: IrissListingVehicleChange;
+  priceHistory: IrissListingPriceChange[];
 };
 
 export type IrissListingSyncRunSummary = {
@@ -35,20 +90,30 @@ export type IrissListingSyncRunSummary = {
   blockedByWafCount: number;
   parseFailedCount: number;
   fetchFailedCount: number;
+  relayNotConfiguredCount: number;
+  skippedCount: number;
+  vehicleCount: number;
+  newCount: number;
+  priceChangedCount: number;
+  goneCount: number;
 };
 
 export type IrissListingsLatestView = {
-  version: 1;
+  version: 2;
   generatedAt: string;
   summary: IrissListingSyncRunSummary;
-  items: IrissListingAggregateItem[];
+  sources: IrissListingSourceRun[];
+  vehicles: IrissListingVehicle[];
 };
 
-export type IrissListingsSnapshot = {
+export type IrissListingsSnapshot = IrissListingsLatestView;
+
+/** Neapstrādātie `__NUXT_DATA__` u.c. izejas dati vienai palaišanai: ātrai labošanai, ja vietne maina struktūru. */
+export type IrissListingsRawBundle = {
   version: 1;
+  runId: string;
   generatedAt: string;
-  summary: IrissListingSyncRunSummary;
-  items: IrissListingAggregateItem[];
+  sources: Array<{ platform: IrissListingPlatform; sourceUrl: string; pages: string[] }>;
 };
 
 export type IrissListingsStorageState =
@@ -56,16 +121,24 @@ export type IrissListingsStorageState =
   | { enabled: true; persistence: "filesystem"; path: string }
   | { enabled: true; persistence: "vercel_blob" };
 
-export type IrissSessionHealthStatus = "ok" | "expiring_soon" | "login_required" | "blocked_by_waf";
+export type IrissPlatformHealthStatus =
+  | "ok"
+  | "stale"
+  | "login_required"
+  | "blocked_by_waf"
+  | "relay_not_configured"
+  | "no_sources"
+  | "failed"
+  | "not_run";
 
-export type IrissSessionHealthItem = {
-  platform: Exclude<IrissListingSourcePlatform, "other">;
-  status: IrissSessionHealthStatus;
+export type IrissPlatformHealthItem = {
+  platform: IrissListingPlatform;
+  status: IrissPlatformHealthStatus;
   note: string;
   checkedAt: string;
 };
 
-export type IrissSessionHealthReport = {
+export type IrissPlatformHealthReport = {
   checkedAt: string;
-  items: IrissSessionHealthItem[];
+  items: IrissPlatformHealthItem[];
 };

@@ -1,217 +1,209 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
-import { ensurePlatformSession } from "@/lib/iriss-listings-session-auth";
-import { readIrissListingsLatestView, writeIrissListingsRun } from "@/lib/iriss-listings-aggregate-store";
-import { detectPlatformFromUrl, scrapeIrissListing } from "@/lib/iriss-listings-adapters";
-import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import {
+  isIrissListingsRawStoreEnabled,
+  readIrissListingsLatestView,
+  writeIrissListingsRawBundle,
+  writeIrissListingsRun,
+} from "@/lib/iriss-listings-aggregate-store";
+import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-fetch";
+import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
+import { buildIrissListingSources, irissListingVehicleId, type IrissListingSource } from "@/lib/iriss-listings-sources";
 import type {
-  IrissListingAggregateItem,
-  IrissListingSourcePlatform,
+  IrissListingSourceRun,
+  IrissListingSourceStatus,
   IrissListingSyncRunSummary,
-  IrissListingSyncStatus,
+  IrissListingsLatestView,
+  IrissListingsRawBundle,
 } from "@/lib/iriss-listings-types";
+import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 
-type ListingSource = {
-  orderId: string;
-  orderBrandModel: string;
-  sourcePlatform: IrissListingSourcePlatform;
-  sourceUrl: string;
+export type IrissListingsSyncResult = {
+  ok: boolean;
+  warnings: string[];
+  summary: IrissListingSyncRunSummary;
+  view: IrissListingsLatestView;
 };
 
-function asCleanUrl(value: string): string {
-  const v = value.trim();
-  if (!v) return "";
-  try {
-    const u = new URL(v);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return "";
-    return u.toString();
-  } catch {
-    return "";
-  }
+function envInt(name: string, fallback: number, min: number, max: number): number {
+  const n = Number.parseInt(process.env[name] ?? "", 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
-function buildSourcesFromOrder(row: Awaited<ReturnType<typeof listIrissPasutijumi>>[number]): ListingSource[] {
-  const out: ListingSource[] = [];
-  const push = (sourcePlatform: IrissListingSourcePlatform, raw: string) => {
-    const sourceUrl = asCleanUrl(raw);
-    if (!sourceUrl) return;
-    out.push({
-      orderId: row.id,
-      orderBrandModel: row.brandModel,
-      sourcePlatform,
-      sourceUrl,
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function isRelayConfigured(): boolean {
+  return Boolean(process.env.IRISS_LISTINGS_RELAY_URL?.trim() && process.env.IRISS_LISTINGS_RELAY_TOKEN?.trim());
+}
+
+type SourceFetch = {
+  status: IrissListingSourceStatus;
+  note: string;
+  vehicles: IrissFetchedVehicle[];
+  rawPages: string[];
+  pagesFetched: number;
+  pageCount: number;
+};
+
+async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
+  if (src.platform === "autobid") {
+    const r = await fetchAutobidSource(src.sourceUrl, {
+      maxPages: envInt("IRISS_LISTINGS_AUTOBID_MAX_PAGES", 5, 1, 25),
+      timeoutMs: envInt("IRISS_LISTINGS_FETCH_TIMEOUT_MS", 18_000, 8_000, 60_000),
+      pauseMinMs: 700,
+      pauseMaxMs: 1_800,
     });
+    return {
+      status: r.status,
+      note: r.note,
+      pagesFetched: r.pagesFetched,
+      pageCount: r.pageCount,
+      rawPages: r.rawPages,
+      vehicles: r.vehicles.map((v) => ({
+        id: irissListingVehicleId("autobid", v.externalId),
+        platform: "autobid",
+        externalId: v.externalId,
+        detailUrl: v.detailUrl,
+        orderId: src.orderId,
+        orderBrandModel: src.orderBrandModel,
+        title: v.title,
+        manufacturer: v.manufacturer,
+        year: v.year,
+        firstRegistration: v.firstRegistration,
+        mileageKm: v.mileageKm,
+        fuel: v.fuel,
+        transmission: v.transmission,
+        powerKw: v.powerKw,
+        location: v.location,
+        countryCode: v.countryCode,
+        imageUrl: v.imageUrl,
+        currency: "EUR",
+        priceStart: v.priceStart,
+        priceMinimal: v.priceMinimal,
+        priceCurrent: v.priceCurrent,
+        vatNote: v.vatNote,
+        auctionId: v.auctionId,
+        auctionStartAt: v.auctionStartAt,
+        auctionStage: v.auctionStage,
+      })),
+    };
+  }
+  /** Openlane / Auto1: Cloudflare un dīlera login. Lasa Hetzner relejs ar ielogotu pārlūka profilu (Fāze 1). */
+  return {
+    status: "relay_not_configured",
+    note: isRelayConfigured()
+      ? "Releja lasītājs šai platformai vēl nav ieviests."
+      : "Lasīšana caur releju vēl nav pieslēgta (IRISS_LISTINGS_RELAY_URL / _TOKEN).",
+    vehicles: [],
+    rawPages: [],
+    pagesFetched: 0,
+    pageCount: 0,
   };
-  push("mobile", row.listingLinkMobile);
-  push("autobid", row.listingLinkAutobid);
-  push("openline", row.listingLinkOpenline);
-  push("auto1", row.listingLinkAuto1);
-  for (const other of row.listingLinksOther) {
-    const sourceUrl = asCleanUrl(other);
-    if (!sourceUrl) continue;
-    out.push({
-      orderId: row.id,
-      orderBrandModel: row.brandModel,
-      sourcePlatform: detectPlatformFromUrl(sourceUrl),
-      sourceUrl,
-    });
-  }
-  return out;
 }
 
-function dedupeSources(sources: ListingSource[]): ListingSource[] {
-  const seen = new Set<string>();
-  const out: ListingSource[] = [];
-  for (const src of sources) {
-    const key = `${src.orderId}|${src.sourceUrl}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(src);
-  }
-  return out;
-}
-
-function summarize(statuses: IrissListingSyncStatus[], startedAt: string, finishedAt: string, runId: string): IrissListingSyncRunSummary {
-  const n = (s: IrissListingSyncStatus) => statuses.filter((x) => x === s).length;
+function summarize(
+  sources: IrissListingSourceRun[],
+  rec: { vehicleCount: number; newCount: number; priceChangedCount: number; goneCount: number },
+  startedAt: string,
+  finishedAt: string,
+  runId: string,
+): IrissListingSyncRunSummary {
+  const n = (s: IrissListingSourceStatus) => sources.filter((x) => x.status === s).length;
   return {
     startedAt,
     finishedAt,
     runId,
-    totalSources: statuses.length,
+    totalSources: sources.length,
     okCount: n("ok"),
     loginRequiredCount: n("login_required"),
     blockedByWafCount: n("blocked_by_waf"),
     parseFailedCount: n("parse_failed"),
     fetchFailedCount: n("fetch_failed"),
+    relayNotConfiguredCount: n("relay_not_configured"),
+    skippedCount: n("skipped"),
+    ...rec,
   };
 }
 
-function makeItemId(src: ListingSource): string {
-  return createHash("sha1").update(src.orderId).update("|").update(src.sourceUrl).digest("hex").slice(0, 20);
-}
-
-function mergeWithPreviousSnapshot(
-  next: IrissListingAggregateItem,
-  prev: IrissListingAggregateItem | null,
-): IrissListingAggregateItem {
-  if (!prev) return next;
-  const usePrevText = next.status !== "ok" || (!next.title && !next.year);
-  const usePrevImage = !next.imageUrl;
-  const usePrevPrice = !next.pricePrimary && !next.priceSecondary;
-  const merged: IrissListingAggregateItem = {
-    ...next,
-    title: usePrevText ? next.title || prev.title : next.title,
-    year: usePrevText ? next.year || prev.year : next.year,
-    imageUrl: usePrevImage ? prev.imageUrl : next.imageUrl,
-    pricePrimary: usePrevPrice ? prev.pricePrimary : next.pricePrimary,
-    priceSecondary: usePrevPrice ? prev.priceSecondary : next.priceSecondary,
-  };
-  if (next.status !== "ok" && prev.status === "ok") {
-    merged.statusNote = merged.statusNote
-      ? `${merged.statusNote} Rādām pēdējo veiksmīgo snapshot.`
-      : "Rādām pēdējo veiksmīgo snapshot.";
-  }
-  return merged;
-}
-
-export async function runIrissListingsDailySync(): Promise<{
-  ok: boolean;
-  warnings: string[];
-  summary: IrissListingSyncRunSummary;
-  items: IrissListingAggregateItem[];
-}> {
-  return runIrissListingsDailySyncWithOptions({ ensureSessionsBeforeScrape: false });
-}
-
-export async function runIrissListingsDailySyncWithOptions(opts: {
-  ensureSessionsBeforeScrape: boolean;
-}): Promise<{
-  ok: boolean;
-  warnings: string[];
-  summary: IrissListingSyncRunSummary;
-  items: IrissListingAggregateItem[];
-}> {
-  const startedAt = new Date().toISOString();
+/**
+ * Dienas nolasīšana: aktīvo IRISS pasūtījumu izsoļu meklējumi -> konkrēti auto -> salīdzinājums ar iepriekšējo dienu.
+ * Avotus lasa pēc kārtas ar nejaušām pauzēm. Laika budžets: `IRISS_LISTINGS_TIME_BUDGET_MS` (noklusējums 240 s pie 300 s funkcijas).
+ */
+export async function runIrissListingsDailySync(): Promise<IrissListingsSyncResult> {
+  const startedMs = Date.now();
+  const startedAt = new Date(startedMs).toISOString();
   const runId = `run-${startedAt.replace(/[:.]/g, "-")}`;
   const warnings: string[] = [];
+  const timeBudgetMs = envInt("IRISS_LISTINGS_TIME_BUDGET_MS", 240_000, 30_000, 280_000);
+
   const previous = await readIrissListingsLatestView();
-  const previousById = new Map((previous?.items ?? []).map((item) => [item.id, item]));
   const rows = await listIrissPasutijumi();
-  const allSources = dedupeSources(rows.flatMap(buildSourcesFromOrder));
-  const maxSources = Math.max(1, Number.parseInt(process.env.IRISS_LISTINGS_MAX_SOURCES_PER_RUN ?? "800", 10) || 800);
+  const activeOrderIds = new Set(rows.filter((r) => r.listStatus === "active").map((r) => r.id));
+  const allSources = buildIrissListingSources(rows);
+  const maxSources = envInt("IRISS_LISTINGS_MAX_SOURCES_PER_RUN", 200, 1, 2000);
   const sources = allSources.slice(0, maxSources);
-  if (allSources.length > sources.length) {
-    warnings.push(`Avotu skaits ierobežots: ${sources.length}/${allSources.length}.`);
-  }
+  if (allSources.length > sources.length) warnings.push(`Avotu skaits ierobežots: ${sources.length}/${allSources.length}.`);
 
-  if (opts.ensureSessionsBeforeScrape) {
-    const probeByPlatform = new Map<string, string>();
-    for (const src of sources) {
-      if (src.sourcePlatform === "other") continue;
-      if (!probeByPlatform.has(src.sourcePlatform)) {
-        probeByPlatform.set(src.sourcePlatform, src.sourceUrl);
-      }
-    }
-    for (const [platform, probeUrl] of probeByPlatform) {
-      const ensured = await ensurePlatformSession(
-        platform as "mobile" | "autobid" | "openline" | "auto1",
-        probeUrl,
-      );
-      if (!ensured.ok) warnings.push(`${platform}: ${ensured.note}`);
-    }
-  }
+  const sourceRuns: IrissListingSourceRun[] = [];
+  const fetched: IrissFetchedVehicle[] = [];
+  const okSourceKeys = new Set<string>();
+  const raw: IrissListingsRawBundle = { version: 1, runId, generatedAt: startedAt, sources: [] };
 
-  const items: IrissListingAggregateItem[] = [];
-  for (const [idx, src] of sources.entries()) {
-    const scraped = await scrapeIrissListing({
-      url: src.sourceUrl,
-      platformHint: src.sourcePlatform,
-    });
-    const aggregatedAt = new Date(Date.now() - idx).toISOString();
-    const itemId = makeItemId(src);
-    const nextItem: IrissListingAggregateItem = {
-      id: itemId,
-      aggregatedAt,
-      sourcePlatform: src.sourcePlatform,
-      sourceUrl: src.sourceUrl,
-      sourceDomain: scraped.sourceDomain,
+  let readCount = 0;
+  for (const src of sources) {
+    const fetchedAt = new Date().toISOString();
+    const outOfTime = Date.now() - startedMs > timeBudgetMs;
+    let r: SourceFetch;
+    if (outOfTime) {
+      r = { status: "skipped", note: "Laika budžets beidzās; avots tiks lasīts nākamajā reizē.", vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
+    } else {
+      if (readCount > 0 && src.platform === "autobid") await sleep(randomPauseMs(1_500, 4_000));
+      r = await fetchSource(src);
+      if (src.platform === "autobid") readCount += 1;
+    }
+    sourceRuns.push({
+      id: src.id,
       orderId: src.orderId,
       orderBrandModel: src.orderBrandModel,
-      title: scraped.title,
-      year: scraped.year,
-      imageUrl: scraped.imageUrl,
-      pricePrimary: scraped.pricePrimary,
-      priceSecondary: scraped.priceSecondary,
-      rawSnapshotRef: `${runId}:${scraped.rawSnapshotRef}`,
-      status: scraped.status,
-      statusNote: scraped.statusNote,
-    };
-    items.push(mergeWithPreviousSnapshot(nextItem, previousById.get(itemId) ?? null));
+      platform: src.platform,
+      sourceUrl: src.sourceUrl,
+      status: r.status,
+      note: r.note,
+      vehicleCount: r.vehicles.length,
+      pagesFetched: r.pagesFetched,
+      pageCount: r.pageCount,
+      fetchedAt,
+    });
+    if (r.status === "ok") okSourceKeys.add(sourceKey(src.platform, src.orderId));
+    fetched.push(...r.vehicles);
+    if (r.rawPages.length > 0) raw.sources.push({ platform: src.platform, sourceUrl: src.sourceUrl, pages: r.rawPages });
   }
 
   const finishedAt = new Date().toISOString();
+  const rec = reconcileVehicles({
+    previous: previous?.vehicles ?? [],
+    fetched,
+    okSourceKeys,
+    activeOrderIds,
+    now: finishedAt,
+    goneAfterMissingRuns: 2,
+  });
   const summary = summarize(
-    items.map((i) => i.status),
+    sourceRuns,
+    { vehicleCount: rec.vehicles.length, newCount: rec.newCount, priceChangedCount: rec.priceChangedCount, goneCount: rec.goneCount },
     startedAt,
     finishedAt,
     runId,
   );
+  const view: IrissListingsLatestView = { version: 2, generatedAt: finishedAt, summary, sources: sourceRuns, vehicles: rec.vehicles };
 
-  const write = await writeIrissListingsRun({
-    generatedAt: finishedAt,
-    runId,
-    summary,
-    items,
-  });
-  if (!write.ok) {
-    warnings.push(`Saglabāšana neizdevās: ${write.error}`);
+  const write = await writeIrissListingsRun(view);
+  if (!write.ok) warnings.push(`Saglabāšana neizdevās: ${write.error}`);
+  if (write.ok && isIrissListingsRawStoreEnabled()) {
+    const rawWrite = await writeIrissListingsRawBundle(raw);
+    if (!rawWrite.ok) warnings.push(`Raw datu saglabāšana neizdevās: ${rawWrite.error}`);
   }
 
-  return {
-    ok: write.ok,
-    warnings,
-    summary,
-    items,
-  };
+  return { ok: write.ok, warnings, summary, view };
 }

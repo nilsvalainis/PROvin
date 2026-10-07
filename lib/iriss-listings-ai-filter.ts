@@ -1,71 +1,62 @@
-import type { IrissListingAggregateItem, IrissListingSourcePlatform } from "@/lib/iriss-listings-types";
+import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 
-const PLATFORM_LABEL: Record<IrissListingSourcePlatform, string> = {
-  mobile: "Mobile.de (Vācija)",
+const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "Autobid.de (Vācijas izsoles)",
   openline: "OpenLane (Eiropas izsoles)",
   auto1: "AUTO1.com (wholesale EU)",
-  other: "Cits avots",
 };
 
-export function irissListingPlatformLabel(platform: IrissListingSourcePlatform): string {
+export function irissListingPlatformLabel(platform: IrissListingPlatform): string {
   return PLATFORM_LABEL[platform] ?? platform;
 }
 
-/** Salīdzinājuma sludinājumi no IRISS agregāta — pēc markas/modeļa/gada pavediena. */
-export function pickIrissListingComps(
-  items: IrissListingAggregateItem[],
-  searchHints: string,
-  max = 28,
-): IrissListingAggregateItem[] {
-  const ok = items.filter((i) => i.status === "ok");
+function formatEur(n: number | null): string {
+  if (n === null) return "";
+  return `${Math.round(n).toLocaleString("lv-LV").replace(/\u00a0/g, " ")} EUR`;
+}
+
+/** Salīdzinājuma auto no IRISS izsoļu agregāta pēc markas / modeļa / gada pavediena. */
+export function pickIrissListingComps(vehicles: IrissListingVehicle[], searchHints: string, max = 28): IrissListingVehicle[] {
+  const live = vehicles.filter((v) => v.change !== "gone");
   const hint = searchHints.trim().toLowerCase();
   const tokens = hint
     .split(/[\s,./|]+/)
     .map((t) => t.trim())
     .filter((t) => t.length >= 2 && !/^\d{4}$/.test(t));
 
-  if (tokens.length === 0) {
-    return ok.slice(0, max);
-  }
+  if (tokens.length === 0) return live.slice(0, max);
 
-  const scored = ok
+  const scored = live
     .map((item) => {
-      const hay = `${item.title} ${item.orderBrandModel} ${item.year}`.toLowerCase();
+      const hay = `${item.title} ${item.manufacturer} ${item.orderBrandModels.join(" ")} ${item.year}`.toLowerCase();
       let score = 0;
-      for (const t of tokens) {
-        if (hay.includes(t)) score += 1;
-      }
+      for (const t of tokens) if (hay.includes(t)) score += 1;
       return { item, score };
     })
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score || b.item.aggregatedAt.localeCompare(a.item.aggregatedAt));
+    .sort((a, b) => b.score - a.score || b.item.lastSeenAt.localeCompare(a.item.lastSeenAt));
 
-  if (scored.length >= 3) {
-    return scored.slice(0, max).map((s) => s.item);
-  }
-  return ok.slice(0, max);
+  if (scored.length >= 3) return scored.slice(0, max).map((s) => s.item);
+  return live.slice(0, max);
 }
 
-export function formatIrissListingsForAi(items: IrissListingAggregateItem[]): string {
-  if (items.length === 0) {
-    return "### Eiropas izsoļu / wholesale portāli (IRISS)\nNav pieejamu salīdzinājuma ierakstu (sinhronizācija izslēgta vai tukša).";
+export function formatIrissListingsForAi(vehicles: IrissListingVehicle[]): string {
+  if (vehicles.length === 0) {
+    return "### Eiropas izsoļu portāli (IRISS)\nNav pieejamu salīdzinājuma ierakstu (sinhronizācija izslēgta vai tukša).";
   }
   const lines: string[] = [
-    "### Eiropas izsoļu un wholesale portāli (IRISS — Mobile.de, Autobid, OpenLane, AUTO1)",
-    `Salīdzinājuma ieraksti (${items.length}):`,
+    "### Eiropas izsoļu portāli (IRISS: Autobid, OpenLane, AUTO1)",
+    `Salīdzinājuma auto (${vehicles.length}). Izsoles cenas ir sākuma / minimālās, ne gala pārdošanas cenas:`,
   ];
-  for (const item of items) {
+  for (const v of vehicles) {
     const priceParts: string[] = [];
-    if (item.pricePrimary?.value) {
-      priceParts.push(`${item.pricePrimary.value} ${item.pricePrimary.currency}`.trim());
-    }
-    if (item.priceSecondary?.value) {
-      priceParts.push(`sek. ${item.priceSecondary.value} ${item.priceSecondary.currency}`.trim());
-    }
+    if (v.priceStart !== null) priceParts.push(`sākuma ${formatEur(v.priceStart)}`);
+    if (v.priceMinimal !== null) priceParts.push(`min. ${formatEur(v.priceMinimal)}`);
+    if (v.priceCurrent !== null) priceParts.push(`pašreizējā ${formatEur(v.priceCurrent)}`);
     const price = priceParts.length > 0 ? priceParts.join(", ") : "cena nav";
+    const km = v.mileageKm !== null ? `${Math.round(v.mileageKm).toLocaleString("lv-LV").replace(/\u00a0/g, " ")} km` : "km nav";
     lines.push(
-      `- [${irissListingPlatformLabel(item.sourcePlatform)}] ${item.title.trim() || item.orderBrandModel.trim() || "—"} | gads: ${item.year.trim() || "—"} | ${price} | ${item.sourceUrl.trim()}`,
+      `- [${irissListingPlatformLabel(v.platform)}] ${v.title.trim() || v.orderBrandModels[0] || "-"} | gads: ${v.year.trim() || "-"} | ${km} | ${price} | ${v.detailUrl.trim()}`,
     );
   }
   return lines.join("\n");

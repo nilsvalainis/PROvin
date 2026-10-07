@@ -133,9 +133,9 @@ export async function buildMarketAnalysisAiContext(opts: {
 
   try {
     const latest = await readIrissListingsLatestView();
-    if (latest?.items?.length) {
+    if (latest?.vehicles?.length) {
       const hints = extractMarketSearchHints(blocks, listingSnapshot);
-      const comps = pickIrissListingComps(latest.items, hints);
+      const comps = pickIrissListingComps(latest.vehicles, hints);
       parts.push(formatIrissListingsForAi(comps));
       if (latest.summary) {
         parts.push(
