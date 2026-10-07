@@ -102,12 +102,19 @@ export type IrissListingSyncRunSummary = {
   goneCount: number;
 };
 
+/** Unikālie meklējumi, kas šajā UTC dienā jau nolasīti. Nākamā palaišana turpina, nevis sāk no sākuma. */
+export type IrissListingsSyncCursor = {
+  day: string;
+  doneKeys: string[];
+};
+
 export type IrissListingsLatestView = {
   version: 2;
   generatedAt: string;
   summary: IrissListingSyncRunSummary;
   sources: IrissListingSourceRun[];
   vehicles: IrissListingVehicle[];
+  cursor?: IrissListingsSyncCursor;
 };
 
 export type IrissListingsSnapshot = IrissListingsLatestView;

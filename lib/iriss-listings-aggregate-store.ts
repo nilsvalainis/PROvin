@@ -12,6 +12,7 @@ import {
   type IrissListingSyncRunSummary,
   type IrissListingVehicle,
   type IrissListingsLatestView,
+  type IrissListingsSyncCursor,
   type IrissListingsRawBundle,
   type IrissListingsSnapshot,
   type IrissListingsStorageState,
@@ -209,7 +210,15 @@ function normalizeLatest(raw: unknown): IrissListingsLatestView | null {
   const sources = Array.isArray(raw.sources)
     ? raw.sources.map(normalizeSource).filter((x): x is IrissListingSourceRun => x !== null)
     : [];
-  return { version: 2, generatedAt, summary, sources, vehicles };
+  const cursor = normalizeCursor(raw.cursor);
+  return { version: 2, generatedAt, summary, sources, vehicles, ...(cursor ? { cursor } : {}) };
+}
+
+function normalizeCursor(v: unknown): IrissListingsSyncCursor | undefined {
+  if (!isObj(v)) return undefined;
+  const day = str(v.day);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return undefined;
+  return { day, doneKeys: strArr(v.doneKeys).slice(0, 5000) };
 }
 
 async function readBlobJson(pathname: string, token: string): Promise<unknown | null> {

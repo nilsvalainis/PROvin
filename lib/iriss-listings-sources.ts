@@ -11,6 +11,45 @@ export type IrissListingSource = {
   sourceUrl: string;
 };
 
+/** Tas pats meklējums neatkarīgi no parametru secības un beigu slīpsvītras. */
+export function normalizeListingUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    u.hash = "";
+    u.hostname = u.hostname.toLowerCase();
+    if (u.pathname.length > 1) u.pathname = u.pathname.replace(/\/+$/, "");
+    const pairs = [...u.searchParams.entries()].sort((a, b) => (a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0])));
+    u.search = "";
+    for (const [k, v] of pairs) u.searchParams.append(k, v);
+    return u.toString();
+  } catch {
+    return raw.trim();
+  }
+}
+
+export type IrissListingSourceGroup = {
+  key: string;
+  platform: IrissListingPlatform;
+  /** Pirmā pasūtījuma URL, ar ko faktiski lasām. */
+  sourceUrl: string;
+  orders: IrissListingSource[];
+};
+
+/** Viens unikāls meklēšanas URL = viena nolasīšana, rezultāts visiem pasūtījumiem grupā. */
+export function groupIrissListingSources(sources: IrissListingSource[]): IrissListingSourceGroup[] {
+  const map = new Map<string, IrissListingSourceGroup>();
+  for (const src of sources) {
+    const key = `${src.platform}|${normalizeListingUrl(src.sourceUrl)}`;
+    const hit = map.get(key);
+    if (hit) {
+      hit.orders.push(src);
+      continue;
+    }
+    map.set(key, { key, platform: src.platform, sourceUrl: src.sourceUrl, orders: [src] });
+  }
+  return [...map.values()];
+}
+
 export function irissListingSourceId(orderId: string, sourceUrl: string): string {
   return createHash("sha1").update(orderId).update("|").update(sourceUrl).digest("hex").slice(0, 20);
 }

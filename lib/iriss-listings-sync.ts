@@ -7,9 +7,20 @@ import {
   writeIrissListingsRun,
 } from "@/lib/iriss-listings-aggregate-store";
 import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-fetch";
+import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
-import { buildIrissListingSources, irissListingVehicleId, type IrissListingSource } from "@/lib/iriss-listings-sources";
+import { buildIrissListingSources, groupIrissListingSources, irissListingVehicleId, type IrissListingSource, type IrissListingSourceGroup } from "@/lib/iriss-listings-sources";
+import {
+  canStartListingJob,
+  DIRECT_FETCH_HEADROOM_MS,
+  fanOutFetchedVehicles,
+  IRISS_LISTINGS_ROUTE_MAX_DURATION_MS,
+  mergeListingSourceRuns,
+  RELAY_FETCH_HEADROOM_MS,
+  runBounded,
+  selectListingSyncQueue,
+} from "@/lib/iriss-listings-sync-plan";
 import type {
   IrissListingSourceRun,
   IrissListingSourceStatus,
@@ -144,16 +155,24 @@ function summarize(
   };
 }
 
+function isDirectAutobid(group: IrissListingSourceGroup, autobidRelay: boolean): boolean {
+  return group.platform === "autobid" && !autobidRelay;
+}
+
 /**
  * Dienas nolasīšana: aktīvo IRISS pasūtījumu izsoļu meklējumi -> konkrēti auto -> salīdzinājums ar iepriekšējo dienu.
- * Avotus lasa pēc kārtas ar nejaušām pauzēm. Laika budžets: `IRISS_LISTINGS_TIME_BUDGET_MS` (noklusējums 240 s pie 300 s funkcijas).
+ * Vienāds meklēšanas URL tiek lasīts vienreiz un piesaistīts visiem pasūtījumiem.
+ * `restart` (poga „Nolasīt tagad”) sāk dienas ciklu no jauna; cron turpina kursora atlikušos.
+ * Laika budžets: `IRISS_LISTINGS_TIME_BUDGET_MS` (noklusējums 240 s pie maršruta 300 s).
  */
-export async function runIrissListingsDailySync(): Promise<IrissListingsSyncResult> {
+export async function runIrissListingsDailySync(opts: { restart?: boolean } = {}): Promise<IrissListingsSyncResult> {
   const startedMs = Date.now();
   const startedAt = new Date(startedMs).toISOString();
+  const today = startedAt.slice(0, 10);
   const runId = `run-${startedAt.replace(/[:.]/g, "-")}`;
   const warnings: string[] = [];
   const timeBudgetMs = envInt("IRISS_LISTINGS_TIME_BUDGET_MS", 240_000, 30_000, 280_000);
+  const concurrency = envInt("IRISS_LISTINGS_FETCH_CONCURRENCY", 3, 1, 3);
 
   const previous = await readIrissListingsLatestView();
   const rows = await listIrissPasutijumi();
@@ -163,43 +182,87 @@ export async function runIrissListingsDailySync(): Promise<IrissListingsSyncResu
   const sources = allSources.slice(0, maxSources);
   if (allSources.length > sources.length) warnings.push(`Avotu skaits ierobežots: ${sources.length}/${allSources.length}.`);
 
-  const sourceRuns: IrissListingSourceRun[] = [];
+  const groups = groupIrissListingSources(sources);
+  const picked = selectListingSyncQueue(groups, previous?.cursor, today, opts.restart === true);
+  const sameDay = previous?.cursor?.day === today;
+
+  if (picked.alreadyDone && previous) {
+    warnings.push(`Šodienas nolasīšana jau pabeigta (${groups.length} unikālie meklējumi).`);
+    return { ok: true, warnings, summary: previous.summary, view: previous };
+  }
+
+  const relayOn = Boolean(readIrissRelayConfig());
+  const autobidRelay = autobidViaRelay() && relayOn;
+  /** Tiešie Autobid vispirms (ātri, paralēli). Relejs aizņem Chrome pa vienam, tāpēc pēc tam. */
+  const ordered = [
+    ...picked.queue.filter((g) => isDirectAutobid(g, autobidRelay)),
+    ...picked.queue.filter((g) => !isDirectAutobid(g, autobidRelay)),
+  ];
+
+  const results = new Map<string, { at: string; fetch: SourceFetch }>();
+  const { started } = await runBounded(
+    ordered,
+    concurrency,
+    (g) => {
+      const headroom = !isDirectAutobid(g, autobidRelay) && relayOn ? RELAY_FETCH_HEADROOM_MS : DIRECT_FETCH_HEADROOM_MS;
+      return canStartListingJob(Date.now() - startedMs, timeBudgetMs, headroom);
+    },
+    async (g) => {
+      const direct = isDirectAutobid(g, autobidRelay);
+      if (direct && concurrency > 1) await sleep(randomPauseMs(400, 900));
+      else if (direct && results.size > 0) await sleep(randomPauseMs(1_500, 4_000));
+      const lead = g.orders[0]!;
+      let fetchResult: SourceFetch;
+      try {
+        fetchResult = await fetchSource(lead);
+      } catch (e) {
+        fetchResult = { status: "fetch_failed", note: formatFetchError(e, "fetch failed"), vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
+      }
+      results.set(g.key, { at: new Date().toISOString(), fetch: fetchResult });
+    },
+  );
+
   const fetched: IrissFetchedVehicle[] = [];
   const okSourceKeys = new Set<string>();
+  const currentRuns: IrissListingSourceRun[] = [];
+  const completedKeys: string[] = [];
   const raw: IrissListingsRawBundle = { version: 1, runId, generatedAt: startedAt, sources: [] };
 
-  let readCount = 0;
-  for (const src of sources) {
-    const fetchedAt = new Date().toISOString();
-    const outOfTime = Date.now() - startedMs > timeBudgetMs;
-    let r: SourceFetch;
-    if (outOfTime) {
-      r = { status: "skipped", note: "Laika budžets beidzās; avots tiks lasīts nākamajā reizē.", vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
-    } else {
-      /** Pauze starp tiešajiem Autobid lasījumiem; releja lasījumi ir rindā ar savām pauzēm serverī. */
-      if (readCount > 0 && src.platform === "autobid") await sleep(randomPauseMs(1_500, 4_000));
-      r = await fetchSource(src);
-      if (src.platform === "autobid") readCount += 1;
+  for (const g of ordered) {
+    const hit = results.get(g.key);
+    if (!hit) continue;
+    completedKeys.push(g.key);
+    const shared = g.orders.length > 1 ? `Kopīgs meklējums (${g.orders.length} pasūtījumi), lasīts vienreiz.` : "";
+    const note = [hit.fetch.note, shared].filter(Boolean).join(" ");
+    for (const src of g.orders) {
+      currentRuns.push({
+        id: src.id,
+        orderId: src.orderId,
+        orderBrandModel: src.orderBrandModel,
+        platform: src.platform,
+        sourceUrl: src.sourceUrl,
+        status: hit.fetch.status,
+        note,
+        vehicleCount: hit.fetch.vehicles.length,
+        pagesFetched: hit.fetch.pagesFetched,
+        pageCount: hit.fetch.pageCount,
+        fetchedAt: hit.at,
+      });
+      if (hit.fetch.status === "ok") okSourceKeys.add(sourceKey(src.platform, src.orderId));
     }
-    sourceRuns.push({
-      id: src.id,
-      orderId: src.orderId,
-      orderBrandModel: src.orderBrandModel,
-      platform: src.platform,
-      sourceUrl: src.sourceUrl,
-      status: r.status,
-      note: r.note,
-      vehicleCount: r.vehicles.length,
-      pagesFetched: r.pagesFetched,
-      pageCount: r.pageCount,
-      fetchedAt,
-    });
-    if (r.status === "ok") okSourceKeys.add(sourceKey(src.platform, src.orderId));
-    fetched.push(...r.vehicles);
-    if (r.rawPages.length > 0) raw.sources.push({ platform: src.platform, sourceUrl: src.sourceUrl, pages: r.rawPages });
+    if (hit.fetch.status === "ok") fetched.push(...fanOutFetchedVehicles(hit.fetch.vehicles, g.orders));
+    if (hit.fetch.rawPages.length > 0) raw.sources.push({ platform: g.platform, sourceUrl: g.sourceUrl, pages: hit.fetch.rawPages });
+  }
+
+  const deferred = ordered.length - started;
+  if (deferred > 0) {
+    warnings.push(
+      `Laika budžets ${Math.round(timeBudgetMs / 1000)} s (maršruts ${Math.round(IRISS_LISTINGS_ROUTE_MAX_DURATION_MS / 1000)} s): šajā partijā ${started}/${ordered.length} unikālie meklējumi. Atlikušie turpinās nākamajā palaišanā.`,
+    );
   }
 
   const finishedAt = new Date().toISOString();
+  const mergedRuns = mergeListingSourceRuns(sources, sameDay ? (previous?.sources ?? []) : [], currentRuns, finishedAt);
   const rec = reconcileVehicles({
     previous: previous?.vehicles ?? [],
     fetched,
@@ -209,17 +272,25 @@ export async function runIrissListingsDailySync(): Promise<IrissListingsSyncResu
     goneAfterMissingRuns: 2,
   });
   const summary = summarize(
-    sourceRuns,
+    mergedRuns,
     { vehicleCount: rec.vehicles.length, newCount: rec.newCount, priceChangedCount: rec.priceChangedCount, goneCount: rec.goneCount },
     startedAt,
     finishedAt,
     runId,
   );
-  const view: IrissListingsLatestView = { version: 2, generatedAt: finishedAt, summary, sources: sourceRuns, vehicles: rec.vehicles };
+  const doneKeys = [...new Set([...picked.carriedDone, ...completedKeys])].sort((a, b) => a.localeCompare(b));
+  const view: IrissListingsLatestView = {
+    version: 2,
+    generatedAt: finishedAt,
+    summary,
+    sources: mergedRuns,
+    vehicles: rec.vehicles,
+    cursor: { day: today, doneKeys },
+  };
 
   const write = await writeIrissListingsRun(view);
   if (!write.ok) warnings.push(`Saglabāšana neizdevās: ${write.error}`);
-  if (write.ok && isIrissListingsRawStoreEnabled()) {
+  if (write.ok && isIrissListingsRawStoreEnabled() && raw.sources.length > 0) {
     const rawWrite = await writeIrissListingsRawBundle(raw);
     if (!rawWrite.ok) warnings.push(`Raw datu saglabāšana neizdevās: ${rawWrite.error}`);
   }
