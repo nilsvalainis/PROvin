@@ -14,7 +14,7 @@ type CacheEntry<T> = { at: number; value: T };
 
 const PAID_LIST_TTL_MS = Math.max(
   15_000,
-  Number.parseInt(process.env.ADMIN_STRIPE_PAID_LIST_CACHE_TTL_MS ?? "300000", 10) || 300_000,
+  Number.parseInt(process.env.ADMIN_STRIPE_PAID_LIST_CACHE_TTL_MS ?? "15000", 10) || 15_000,
 );
 const DETAIL_TTL_MS = Math.max(
   30_000,

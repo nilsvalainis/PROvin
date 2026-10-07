@@ -56,9 +56,11 @@ async function fulfillPaidCheckoutSession(
       return;
     }
 
-    void upsertPaidCheckoutSessionFromStripe(session).catch((err) => {
+    try {
+      await upsertPaidCheckoutSessionFromStripe(session);
+    } catch (err) {
       console.warn("[stripe webhook] paid index upsert failed:", err);
-    });
+    }
 
     const order = getOrderFieldsFromSession(session);
     const email = session.customer_details?.email ?? session.customer_email ?? null;

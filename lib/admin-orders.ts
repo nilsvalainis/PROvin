@@ -14,6 +14,7 @@ import {
   getCachedPaidCheckoutSessions,
 } from "@/lib/admin-stripe-cache";
 import {
+  mergePaidIndexAfterStripeRefresh,
   readStripePaidIndex,
   shouldRefreshStripePaidIndexInBackground,
   shouldRefreshStripePaidIndexSync,
@@ -171,8 +172,10 @@ async function fetchPaidCheckoutSessionsUncached(): Promise<AdminOrderRow[]> {
 
 async function refreshStripePaidIndexFromStripe(): Promise<AdminOrderRow[]> {
   const rows = await fetchPaidCheckoutSessionsUncached();
-  await writeStripePaidIndex(rows);
-  return rows;
+  const current = (await readStripePaidIndex())?.rows ?? [];
+  const merged = mergePaidIndexAfterStripeRefresh(rows, current);
+  await writeStripePaidIndex(merged);
+  return merged;
 }
 
 async function resolvePaidCheckoutSessions(): Promise<AdminOrderRow[]> {
@@ -203,6 +206,14 @@ export async function listPaidCheckoutSessions(): Promise<AdminOrderRow[]> {
 export async function upsertPaidCheckoutSessionFromStripe(session: Stripe.Checkout.Session): Promise<void> {
   const row = sessionToAdminOrderRow(session);
   if (row) await upsertStripePaidIndexRow(row);
+}
+
+async function ensurePaidIndexHasSession(session: Stripe.Checkout.Session): Promise<void> {
+  const row = sessionToAdminOrderRow(session);
+  if (!row) return;
+  const index = await readStripePaidIndex();
+  if (index?.rows.some((r) => r.id === row.id)) return;
+  await upsertStripePaidIndexRow(row);
 }
 
 /**
@@ -325,6 +336,9 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
   const checkoutLine = getCheckoutLineFromSession(session);
   const select =
     checkoutLine === "provin_select" ? getProvinSelectFieldsFromSession(session) : null;
+  void ensurePaidIndexHasSession(session).catch((err) => {
+    console.warn("[admin-orders] paid index ensure failed", { sessionId: session.id, err });
+  });
   return {
     id: session.id,
     created: session.created,
