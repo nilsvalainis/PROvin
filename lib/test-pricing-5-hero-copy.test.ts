@@ -4,11 +4,11 @@ import { getTp5HeroCopy } from "@/lib/test-pricing-5-hero-copy";
 describe("getTp5HeroCopy", () => {
   it("keeps the audit title on MINI and AUDITS", () => {
     expect(getTp5HeroCopy("lv", "audits").titlePrefix + getTp5HeroCopy("lv").titleAccent).toBe(
-      "Auto vēstures un sludinājuma audits",
+      "VIN pārbaude un auto vēstures audits",
     );
     expect(getTp5HeroCopy("lv", "mini").titleAccent).toBe("audits");
     expect(getTp5HeroCopy("en", "audits").titlePrefix + getTp5HeroCopy("en", "audits").titleAccent).toBe(
-      "Vehicle history and listing audit",
+      "VIN check and car history audit",
     );
   });
 

@@ -59,3 +59,10 @@ export function toPermanentGetRedirect(request: NextRequest, response: NextRespo
 export function redirect308(url: URL | string): NextResponse {
   return NextResponse.redirect(typeof url === "string" ? url : url, 308);
 }
+
+const SEARCH_CRAWLER_UA =
+  /Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|Bingbot|bingbot|BingPreview|Slurp|DuckDuckBot|Baiduspider|Yandex|facebookexternalhit|LinkedInBot|Twitterbot|Applebot/i;
+
+export function isSearchCrawler(userAgent: string | null | undefined): boolean {
+  return SEARCH_CRAWLER_UA.test(userAgent ?? "");
+}

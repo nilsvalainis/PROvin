@@ -4,7 +4,8 @@ import { Expand } from "lucide-react";
 import { useEffect, useId, useState, type MouseEvent } from "react";
 import { SampleReportLightbox } from "@/components/home/SampleReportLightbox";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
-import { sampleMobilePage1Src, samplePdfHref } from "@/lib/sample-public-assets";
+import Image from "next/image";
+import { sampleMobilePage1Src, samplePdfHref, samplePdfViewerHref } from "@/lib/sample-public-assets";
 
 type Props = {
   href?: string;
@@ -16,6 +17,8 @@ type Props = {
   comingSoonLabel: string;
   /** Slightly shorter preview (samples grid). */
   compact?: boolean;
+  /** First visible sample on /pakalpojumi: LCP. */
+  priority?: boolean;
 };
 
 /** lg breakpoint - desktop keeps the original scrollable iframe preview. */
@@ -49,6 +52,7 @@ export function SampleReportPreview({
   openPdfLabel,
   comingSoonLabel,
   compact = false,
+  priority = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const isDesktop = useIsDesktopPreview();
@@ -65,7 +69,8 @@ export function SampleReportPreview({
   };
 
   const pdfHref = href ? samplePdfHref(href) : null;
-  const desktopPaneSrc = pdfHref ? `${pdfHref}#toolbar=0&navpanes=0&scrollbar=1` : null;
+  const viewerHref = href ? samplePdfViewerHref(href) : null;
+  const desktopPaneSrc = viewerHref ? `${viewerHref}#toolbar=0&navpanes=0&scrollbar=1` : null;
   const mobileImageSrc = href ? sampleMobilePage1Src(href) : null;
   const desktopPaneClass = compact
     ? "relative h-[min(22rem,48vh)] w-full bg-zinc-950 sm:h-[min(24rem,50vh)] lg:h-[26rem]"
@@ -118,14 +123,15 @@ export function SampleReportPreview({
         ) : (
           <div className={mobilePaneClass}>
             {mobileImageSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element -- full-page PDF snapshot; avoid next/image crop
-              <img
+              <Image
                 src={mobileImageSrc}
-                alt=""
-                className="max-h-full max-w-full object-contain"
+                alt={title}
+                width={900}
+                height={1270}
+                className="h-auto max-h-full w-auto max-w-full object-contain"
+                sizes="(max-width: 1023px) 100vw, 40vw"
+                priority={priority}
                 draggable={false}
-                loading="eager"
-                decoding="async"
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-zinc-950 px-6 text-center">

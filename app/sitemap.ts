@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { listBlogPosts } from "@/lib/blog/posts";
+import { isBlogLocaleIndexable, listBlogPosts } from "@/lib/blog/posts";
 import { PUBLIC_LOCALES } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 import { INDEXABLE_PUBLIC_PATHS } from "@/lib/seo-public-paths";
@@ -15,7 +15,6 @@ function languagesForPath(base: string, path: string): Record<string, string> {
 /** `localePrefix: "always"` — kanoniskie URL ar `/${locale}` (piem. `/lv/pasutit`). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getPublicSiteOrigin().replace(/\/$/, "");
-  const lastModified = new Date();
   let posts: Awaited<ReturnType<typeof listBlogPosts>> = [];
   try {
     posts = await listBlogPosts();
@@ -30,20 +29,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const { path, changeFrequency, priority } of INDEXABLE_PUBLIC_PATHS) {
       entries.push({
         url: `${base}${prefix}${path}`,
-        lastModified,
         changeFrequency,
         priority,
         alternates: { languages: languagesForPath(base, path) },
       });
     }
     for (const post of posts) {
+      if (!isBlogLocaleIndexable(post, locale)) continue;
       const postPath = `/blogs/${post.slug}`;
+      const languages: Record<string, string> = {};
+      for (const loc of PUBLIC_LOCALES) {
+        if (isBlogLocaleIndexable(post, loc)) languages[loc] = `${base}/${loc}${postPath}`;
+      }
+      languages["x-default"] = `${base}/${routing.defaultLocale}${postPath}`;
       entries.push({
         url: `${base}${prefix}${postPath}`,
         lastModified: new Date(`${post.publishedAt}T12:00:00.000Z`),
         changeFrequency: "monthly",
         priority: 0.65,
-        alternates: { languages: languagesForPath(base, postPath) },
+        alternates: { languages },
       });
     }
   }

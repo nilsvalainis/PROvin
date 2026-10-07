@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isApexHostname, resolveLegacyAliasRedirect, wwwOrigin } from "@/lib/seo-redirects";
+import { isApexHostname, isSearchCrawler, resolveLegacyAliasRedirect, wwwOrigin } from "@/lib/seo-redirects";
 import { INDEXABLE_PUBLIC_PATHS, LEGACY_PATH_ALIASES } from "@/lib/seo-public-paths";
 import { stripLocalePrefix } from "@/i18n/locales";
 
@@ -26,6 +26,13 @@ describe("seo redirects", () => {
     expect(paths).toContain("/vin-koda-parbaude");
     expect(paths).toContain("/partneriem");
     expect(LEGACY_PATH_ALIASES["/faq"]).toBe("/biezi-jautajumi");
+  });
+});
+
+describe("isSearchCrawler", () => {
+  it("recognizes Googlebot and leaves normal browsers alone", () => {
+    expect(isSearchCrawler("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")).toBe(true);
+    expect(isSearchCrawler("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0")).toBe(false);
   });
 });
 

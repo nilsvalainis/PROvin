@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { HomeFeatureBreakdown } from "@/components/home/HomeFeatureBreakdown";
 import { SamplesCatalog } from "@/components/home/SamplesCatalog";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { RelatedBlogLinks } from "@/components/seo/RelatedBlogLinks";
 import { PageBreadcrumbs } from "@/components/seo/PageBreadcrumbs";
 import { buildServiceOffersJsonLd } from "@/lib/seo-json-ld";
 import { homeContentMaxClass } from "@/lib/home-layout";
@@ -72,6 +73,7 @@ export default async function PakalpojumiPage({ params }: Props) {
           </div>
         </header>
         <SamplesCatalog />
+        <RelatedBlogLinks />
         <HomeFeatureBreakdown showHeading />
 
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">

@@ -16,6 +16,7 @@ import {
 } from "./lib/legacy-standalone-product-routes";
 import {
   isApexHostname,
+  isSearchCrawler,
   redirect308,
   resolveLegacyAliasRedirect,
   toPermanentGetRedirect,
@@ -132,26 +133,33 @@ export default function middleware(request: NextRequest) {
   const prefixed = parsePrefixedPath(pathname);
   const requestLocale = prefixed.locale ?? DEFAULT_LOCALE;
   const localizedRequest = requestWithLocaleHeader(request, requestLocale);
+  const crawler = isSearchCrawler(request.headers.get("user-agent"));
 
   if (isPartneriemPath(pathname) || (prefixed.locale && isPartneriemPath(prefixed.rest))) {
     const urlLocale = prefixed.locale;
     const rest = urlLocale ? prefixed.rest : pathname;
     const nextLocale = resolveB2bEntryLocale({
       urlLocale,
-      cookie: b2bCookieValue(request),
-      country: requestCountry(request),
-      preferStoredLocale: !urlLocale,
+      cookie: crawler ? null : b2bCookieValue(request),
+      country: crawler ? "LV" : requestCountry(request),
+      preferStoredLocale: !urlLocale && !crawler,
     });
     if (!urlLocale || nextLocale !== urlLocale) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = `/${nextLocale}${rest === "/" ? "" : rest}`;
+      if (crawler) return redirect308(redirectUrl);
       return withB2bLocaleCookie(NextResponse.redirect(redirectUrl), nextLocale);
     }
     const intlRes = intlMiddleware(requestWithLocaleHeader(request, urlLocale));
-    return withB2bLocaleCookie(intlRes, urlLocale);
+    return crawler ? intlRes : withB2bLocaleCookie(intlRes, urlLocale);
   }
 
-  return toPermanentGetRedirect(localizedRequest, intlMiddleware(localizedRequest));
+  const intlRes = toPermanentGetRedirect(localizedRequest, intlMiddleware(localizedRequest));
+  const isHomePath = pathname === "/" || pathname === "/lv" || pathname === "/en" || pathname === "/de" || pathname === "/ru";
+  if (isHomePath && searchParams.has("plan")) {
+    intlRes.headers.set("X-Robots-Tag", "noindex, follow");
+  }
+  return intlRes;
 }
 
 export const config = {

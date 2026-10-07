@@ -25,6 +25,11 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const nextConfig: NextConfig = {
+  /**
+   * Googlebot u.c. nesaņem straumētus metadatus `<body>`: canonical/title paliek `<head>`.
+   * Ja šo lauku uzstāda, tas aizvieto Next noklusējumu, tāpēc saraksts ir pilns.
+   */
+  htmlLimitedBots: /Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|Bingbot|bingbot|BingPreview|Slurp|DuckDuckBot|Baiduspider|YandexBot|Yandex|facebookexternalhit|LinkedInBot|Twitterbot|Applebot|Chrome-Lighthouse|GPTBot/i,
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
     "pdf-parse",
@@ -81,6 +86,11 @@ const nextConfig: NextConfig = {
       { source: "/:locale(lv|en|de|ru)/paraugi", destination: "/:locale/pakalpojumi", permanent: true },
       { source: "/:locale(lv|en|de|ru)/opengraph-image", destination: "/og.png", permanent: true },
       { source: "/opengraph-image", destination: "/og.png", permanent: true },
+      {
+        source: "/samples/provin-audits-bmw-525-e61.pdf",
+        destination: "/samples/provin-audits-bmw-525-e61-v2.pdf",
+        permanent: true,
+      },
     ];
   },
   /** Stripe Dashboard bieža kļūda: `/api/webhook/stripe` — kods ir `/api/webhooks/stripe`. */
@@ -126,6 +136,15 @@ const nextConfig: NextConfig = {
       {
         source: "/apple-icon",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/samples/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
       },
     ];
   },

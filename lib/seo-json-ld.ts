@@ -179,13 +179,17 @@ export function buildBlogPostingJsonLd(args: {
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     url,
     keywords: args.tags.join(", "),
-    author: { "@id": organizationId() },
+    author: {
+      "@type": "Organization",
+      "@id": organizationId(),
+      name: getCompanyPublicBrand(),
+    },
     publisher: {
       "@type": "Organization",
       "@id": organizationId(),
       name: getCompanyPublicBrand(),
       logo: { "@type": "ImageObject", url: `${origin}/icon`, width: 512, height: 512 },
     },
-    ...(args.image ? { image: [args.image] } : {}),
+    image: args.image ? [args.image] : [`${origin}${DEFAULT_OG_IMAGE_PATH}`],
   };
 }

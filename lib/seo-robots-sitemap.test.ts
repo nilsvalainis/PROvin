@@ -7,7 +7,8 @@ describe("robots.txt", () => {
     const doc = robots();
     expect(doc.sitemap).toMatch(/\/sitemap\.xml$/);
     const disallow = doc.rules[0]?.disallow ?? [];
-    expect(disallow).toEqual(expect.arrayContaining(["/_next/static/media/", "/admin"]));
+    expect(disallow).toEqual(expect.arrayContaining(["/_next/static/media/", "/admin", "/p/"]));
+    expect(disallow).not.toContain("/p");
     expect(disallow).not.toContain("/icon");
     expect(disallow).not.toContain("/_next/");
     expect(disallow).not.toContain("/_next/static/");

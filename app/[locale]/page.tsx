@@ -5,9 +5,9 @@ import { Footer } from "@/components/Footer";
 import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
 import { HomeRiskAuditGuideSection } from "@/components/home/HomeRiskAuditGuideSection";
 import { HomeVinSeoSection } from "@/components/home/HomeVinSeoSection";
+import { RelatedBlogLinks } from "@/components/seo/RelatedBlogLinks";
 import HomePricingHero from "@/components/home/HomePricingHero";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { parseHeroPlanParam } from "@/lib/home-hero-plan";
 import { buildServiceOffersJsonLd } from "@/lib/seo-json-ld";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
@@ -15,15 +15,12 @@ import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
 type Props = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const sp = await searchParams;
   const t = await getTranslations({ locale, namespace: "Meta" });
-  const planRaw = typeof sp.plan === "string" ? sp.plan : Array.isArray(sp.plan) ? sp.plan[0] : undefined;
-  const meta = buildPublicPageMetadata({
+  return buildPublicPageMetadata({
     locale,
     path: "",
     title: t("title"),
@@ -33,10 +30,6 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     ogImageAlt: t("ogImageAlt"),
     keywords: t.raw("keywords") as string[],
   });
-  if (parseHeroPlanParam(planRaw)) {
-    return { ...meta, robots: { index: false, follow: true } };
-  }
-  return meta;
 }
 
 export default async function HomePage({ params }: Props) {
@@ -58,6 +51,7 @@ export default async function HomePage({ params }: Props) {
 
         <div id="site-content" className="min-w-0 scroll-mt-14 bg-transparent pb-0 text-white home-body-ink">
           <HomeVinSeoSection />
+          <RelatedBlogLinks />
           <Suspense fallback={null}>
             <HomeRiskAuditGuideSection />
           </Suspense>

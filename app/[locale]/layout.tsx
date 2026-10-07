@@ -26,8 +26,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   /** iPhone / Android ar izcirtumu — lai `env(safe-area-inset-*)` strādā */
   viewportFit: "cover",
-  /** Kopā ar hero laukiem ≥16px — mazāk nejaušs pinch-zoom pie fokusa; pilnvarotā pinch joprojām iespējams dažās ierīcēs. */
-  maximumScale: 1,
 };
 
 export function generateStaticParams() {
@@ -43,6 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     metadataBase: new URL(getPublicSiteOrigin()),
     title: {
       default: t("title"),
+      template: "%s",
     },
     description: t("description"),
     keywords: Array.isArray(keywords) ? keywords : undefined,
