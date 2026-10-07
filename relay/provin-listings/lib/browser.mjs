@@ -7,8 +7,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
+import { envToken } from "./policy.mjs";
+
 const PROFILES_DIR = process.env.LISTINGS_PROFILES_DIR || "/var/lib/provin-listings/profiles";
-const CHROME_CHANNEL = (process.env.LISTINGS_CHROME_CHANNEL ?? "chrome").trim();
+const CHROME_CHANNEL = envToken(process.env.LISTINGS_CHROME_CHANNEL, "chrome");
 const CHROME_EXECUTABLE = (process.env.LISTINGS_CHROME_EXECUTABLE ?? "").trim();
 const USER_AGENT = (process.env.LISTINGS_USER_AGENT ?? "").trim();
 const LOCALE = (process.env.LISTINGS_LOCALE ?? "en-GB").trim();

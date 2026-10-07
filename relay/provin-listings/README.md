@@ -107,7 +107,7 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
   un atbildi (`{Count, Auctions[]}`), nākamās lapas prasa no lapas iekšpuses ar to pašu body un citu `Paging.PageNumber`.
   HTML netiek parsēts. `priceMinimal` = `RequestedSalesPrice` (tikai ja `CanBeShown`), `priceCurrent` = `CurrentPrice`,
   `priceBuyNow` = `BuyNowPrice`. Bez login daļa cenu nav redzama; `OPENLANE_ALLOW_PUBLIC_FALLBACK=1` tomēr lasa.
-  Auto-login caur `OPENLANE_LOGIN_URL` (id.openlane.eu OAuth, atzīmē "remember me").
+  Auto-login ir findcar popups (`#loginButton2`, `input[name=Email]` ar username, `#loginButton4`, tad parole). `/en/login` ir 404. Sekme: `ChassisNumber` nav null.
 - **Auto1.** Bez auto-login (sesija ilga). Pārtver SPA JSON atbildes no auto1 domēniem un izvelk auto masīvus pēc lauku
   nosaukumiem. Pamanītie API URL nonāk `health.platforms.auto1.discoveredApis`; pēc pirmās ielogošanās precizē
   `AUTO1_LIST_API_RE` un `raw` apskati, ja mapējums nepilnīgs.

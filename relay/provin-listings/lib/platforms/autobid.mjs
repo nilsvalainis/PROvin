@@ -34,9 +34,9 @@ async function login(page) {
     password: process.env.AUTOBID_PASS,
     isLoggedIn,
     platformLabel: "Autobid",
-    userSelector: process.env.AUTOBID_USER_SELECTOR,
-    passSelector: process.env.AUTOBID_PASS_SELECTOR,
-    submitSelector: process.env.AUTOBID_SUBMIT_SELECTOR,
+    userSelector: process.env.AUTOBID_USER_SELECTOR || 'input[name="login"]',
+    passSelector: process.env.AUTOBID_PASS_SELECTOR || 'input[name="password"]',
+    submitSelector: process.env.AUTOBID_SUBMIT_SELECTOR || 'button:has-text("Login"), input[type="submit"]',
   });
 }
 

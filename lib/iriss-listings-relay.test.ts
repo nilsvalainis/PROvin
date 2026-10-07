@@ -252,6 +252,9 @@ describe("relay health merge", () => {
     const ol = mergeRelayHealth(platformHealthFromView("openline", view, at), relay, { autobidViaRelay: false });
     expect(ol.status).toBe("login_required");
     expect(ol.note).toContain("jāielogojas no jauna");
+    const withErr = mapRelayHealth({ platforms: { openlane: { session: "login_required", lastError: "Openlane: login kļūda Timeout" } } }, at);
+    const olErr = mergeRelayHealth(platformHealthFromView("openline", view, at), withErr, { autobidViaRelay: false });
+    expect(olErr.note).toContain("Timeout");
     const a1 = mergeRelayHealth(platformHealthFromView("auto1", view, at), relay, { autobidViaRelay: false });
     expect(a1.status).toBe("not_run");
     const ab = mergeRelayHealth(platformHealthFromView("autobid", view, at), relay, { autobidViaRelay: false });
