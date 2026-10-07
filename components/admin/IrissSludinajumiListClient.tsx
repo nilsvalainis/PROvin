@@ -406,6 +406,7 @@ function VehicleCard({
               src={v.imageUrl}
               alt={v.title || "Auto foto"}
               loading="lazy"
+              referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
               className="h-20 w-28 rounded-lg border border-slate-200/90 bg-slate-50 object-cover"
               onError={onImageError}
             />

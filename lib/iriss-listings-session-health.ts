@@ -66,7 +66,8 @@ export function mergeRelayHealth(
     return { ...item, status: p.session === "login_required" ? "login_required" : "not_run", note: p.session === "login_required" ? "Relejs: sesija beigusies, jāielogojas no jauna." : "Relejs pieslēgts, nolasīšana vēl nav veikta." };
   }
   if (p.session === "login_required" && item.status !== "no_sources") {
-    return { ...item, status: "login_required", note: "Relejs: sesija beigusies, jāielogojas no jauna." };
+    const detail = p.lastError ? ` ${p.lastError}` : "";
+    return { ...item, status: "login_required", note: `Relejs: sesija beigusies, jāielogojas no jauna.${detail}`.trim() };
   }
   if (p.session === "ok" && item.status === "login_required") {
     return { ...item, status: "ok", note: `Relejs: sesija atjaunota. ${item.note}`.trim() };

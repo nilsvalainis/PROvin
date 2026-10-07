@@ -23,6 +23,38 @@ async function firstVisible(page, selector, timeoutMs) {
   }
 }
 
+/** OneTrust banneris aizsedz lauku un locator.click beidzas ar timeout. */
+export async function dismissCookieBanner(page) {
+  const banner = page.locator("#onetrust-banner-sdk");
+  const visible = await banner.isVisible().catch(() => false);
+  if (!visible) {
+    try {
+      await banner.waitFor({ state: "visible", timeout: 2_500 });
+    } catch {
+      return;
+    }
+  }
+  const reject = page.locator("#onetrust-reject-all-handler");
+  const accept = page.locator("#onetrust-accept-btn-handler");
+  const btn = (await reject.isVisible().catch(() => false)) ? reject : accept;
+  if (!(await btn.isVisible().catch(() => false))) return;
+  await btn.click({ timeout: 5_000 }).catch(() => undefined);
+  await banner.waitFor({ state: "hidden", timeout: 4_000 }).catch(() => undefined);
+  await randomPause(200, 500);
+}
+
+export async function tickRemember(page) {
+  const named = page.getByRole("checkbox", { name: /remember|stay signed|angemeldet|bleiben|onthoud|ingelogd/i }).first();
+  const css = page.locator(REMEMBER_SELECTOR).first();
+  const box = (await named.count().catch(() => 0)) > 0 ? named : css;
+  if ((await box.count().catch(() => 0)) === 0) return;
+  try {
+    if (!(await box.isChecked())) await box.check({ force: true, timeout: 2_000 });
+  } catch {
+    /* nav kritiski */
+  }
+}
+
 /**
  * @returns {Promise<{ok: boolean, status: "ok"|"login_required"|"error", note: string}>}
  */
@@ -31,6 +63,7 @@ export async function autoLogin(page, { loginUrl, username, password, isLoggedIn
   try {
     await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: 45_000 });
     await randomPause(900, 1_800);
+    await dismissCookieBanner(page);
 
     const challenge = await hasCaptchaOrChallenge(page);
     if (challenge) return { ok: false, status: "login_required", note: `${platformLabel}: login lapā ${challenge}; jāielogojas manuāli.` };
@@ -60,14 +93,7 @@ export async function autoLogin(page, { loginUrl, username, password, isLoggedIn
     await passField.fill(password);
     await randomPause(300, 800);
 
-    const remember = page.locator(REMEMBER_SELECTOR).first();
-    if ((await remember.count()) > 0) {
-      try {
-        if (!(await remember.isChecked())) await remember.check({ force: true, timeout: 2_000 });
-      } catch {
-        /* nav kritiski */
-      }
-    }
+    await tickRemember(page);
 
     const submit = await firstVisible(page, submitSelector || SUBMIT_SELECTOR, 5_000);
     if (submit) await submit.click();

@@ -28,6 +28,7 @@
 import { createServer } from "node:http";
 
 import { browserQueue, hasCaptchaOrChallenge, openProfile, profileExists, randomPause } from "./lib/browser.mjs";
+import { shouldReadPublic } from "./lib/policy.mjs";
 import { auto1 } from "./lib/platforms/auto1.mjs";
 import { autobid } from "./lib/platforms/autobid.mjs";
 import { openlane } from "./lib/platforms/openlane.mjs";
@@ -129,7 +130,7 @@ async function ensureSession(platform, page) {
       state.setSession(platform, "ok");
       return { status: "ok", note: r.note };
     }
-    state.setSession(platform, r.status === "login_required" ? "login_required" : "unknown", r.note);
+    state.setSession(platform, "login_required", r.note);
     return { status: r.status, note: r.note };
   } catch (e) {
     const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
@@ -145,16 +146,19 @@ async function runFetch({ platform, sourceUrl, orderId, maxPages }) {
   try {
     const session = await ensureSession(platform, page);
     /** Autobid publiskie dati ir bāze (tos lasa arī Vercel), Openlane pēc izvēles; Auto1 bez login nav nekā. */
-    const allowPublic = platform === "autobid" || (platform === "openlane" && OPENLANE_PUBLIC_FALLBACK);
-    const publicFallback = allowPublic && session.status === "login_required";
+    const publicFallback = shouldReadPublic(platform, session.status, OPENLANE_PUBLIC_FALLBACK);
     if (session.status !== "ok" && !publicFallback) {
       state.setFetch(platform, session.status, session.note);
       return { ok: false, status: session.status, note: session.note, items: [], raw: null, pagesFetched: 0, pageCount: 0, orderId, elapsedMs: Date.now() - started };
     }
     await randomPause(800, 1_800);
     const r = await p.fetchSource(page, sourceUrl, { maxPages, log, state });
-    if (publicFallback && r.status === "ok") r.note = `${session.note} ${r.note}`.trim();
-    state.setFetch(platform, r.status, r.status === "ok" ? "" : r.note);
+    if (publicFallback && r.status === "ok") {
+      r.note = `${session.note} ${r.note}`.trim();
+      state.setFetch(platform, "ok", session.note);
+    } else {
+      state.setFetch(platform, r.status, r.status === "ok" ? "" : r.note);
+    }
     return { ok: r.status === "ok", ...r, orderId, elapsedMs: Date.now() - started };
   } finally {
     await close();
