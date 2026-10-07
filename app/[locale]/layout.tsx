@@ -13,7 +13,8 @@ import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import { getCompanyPublicBrand } from "@/lib/company";
 import { PUBLIC_LOCALES } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
-import { openGraphLocale, publicPageAlternates, publicPageUrl } from "@/lib/seo-public-metadata";
+import { DEFAULT_OG_IMAGE_PATH } from "@/lib/seo-public-paths";
+import { openGraphLocale, openGraphLocaleAlternates } from "@/lib/seo-public-metadata";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import "./design-direction-theme.css";
 
@@ -36,39 +37,28 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
-  const canonical = publicPageUrl(locale);
-  const ogImage = `/${locale}/opengraph-image`;
-  const keywords = [
-    "pārbaudīt vin kodu",
-    "auto vēstures pārbaude",
-    "vin koda pārbaude",
-    "pārbaudīt automašīnu",
-    "auto atskaites",
-    "auto pārbaude",
-  ];
+  const keywords = t.raw("keywords") as string[];
 
   return {
     metadataBase: new URL(getPublicSiteOrigin()),
     title: {
       default: t("title"),
-      template: "%s | PROVIN",
     },
     description: t("description"),
-    keywords,
-    alternates: publicPageAlternates(locale),
+    keywords: Array.isArray(keywords) ? keywords : undefined,
     openGraph: {
       title: t("ogTitle"),
       description: t("ogDescription"),
-      url: canonical,
       siteName: getCompanyPublicBrand(),
       locale: openGraphLocale(locale),
+      alternateLocale: openGraphLocaleAlternates(locale),
       type: "website",
       images: [
         {
-          url: ogImage,
+          url: DEFAULT_OG_IMAGE_PATH,
           width: 1200,
           height: 630,
-          alt: "vin-koda-parbaude-atskaite",
+          alt: t("ogImageAlt"),
         },
       ],
     },
@@ -76,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: t("ogTitle"),
       description: t("ogDescription"),
-      images: [ogImage],
+      images: [DEFAULT_OG_IMAGE_PATH],
     },
     robots: { index: true, follow: true },
     icons: {

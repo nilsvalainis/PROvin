@@ -8,6 +8,8 @@ describe("seo-public-metadata", () => {
     expect(alt.languages).toMatchObject({
       lv: publicPageUrl("lv", "/pakalpojumi"),
       en: publicPageUrl("en", "/pakalpojumi"),
+      de: publicPageUrl("de", "/pakalpojumi"),
+      ru: publicPageUrl("ru", "/pakalpojumi"),
       "x-default": publicPageUrl("lv", "/pakalpojumi"),
     });
   });
@@ -27,5 +29,9 @@ describe("seo-public-metadata", () => {
     });
     expect(meta.alternates?.canonical).toBe(publicPageUrl("lv", "/biezi-jautajumi"));
     expect(String(meta.alternates?.canonical)).not.toMatch(/\/lv$/);
+    expect(meta.title).toEqual({ absolute: "BUJ" });
+    expect(meta.openGraph?.images).toEqual([
+      expect.objectContaining({ url: "/og.png", width: 1200, height: 630 }),
+    ]);
   });
 });

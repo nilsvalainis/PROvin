@@ -4,6 +4,7 @@ import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
 import {
   B2B_LOCALE_COOKIE,
+  DEFAULT_LOCALE,
   isPartneriemPath,
   parsePrefixedPath,
   resolveB2bEntryLocale,
@@ -13,6 +14,14 @@ import {
   shouldBlockClosedExperimentPath,
   shouldBlockLegacyStandaloneProductPath,
 } from "./lib/legacy-standalone-product-routes";
+import {
+  isApexHostname,
+  redirect308,
+  resolveLegacyAliasRedirect,
+  toPermanentGetRedirect,
+  wwwOrigin,
+} from "./lib/seo-redirects";
+import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
@@ -39,17 +48,55 @@ function withB2bLocaleCookie(res: NextResponse, locale: AppLocale): NextResponse
   return res;
 }
 
+function requestWithLocaleHeader(request: NextRequest, locale: string): NextRequest {
+  const headers = new Headers(request.headers);
+  headers.set(SEO_LOCALE_HEADER, locale);
+  return new NextRequest(request, { headers });
+}
+
 export default function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+
+  if (isApexHostname(request.headers.get("host"))) {
+    const dest = wwwOrigin(request.nextUrl);
+    const legacy = resolveLegacyAliasRedirect(dest.pathname);
+    if (legacy) {
+      dest.pathname = legacy;
+    } else {
+      const { locale } = parsePrefixedPath(dest.pathname);
+      const skipPrefix =
+        dest.pathname === "/sitemap.xml" ||
+        dest.pathname === "/robots.txt" ||
+        dest.pathname === "/icon" ||
+        dest.pathname === "/apple-icon" ||
+        dest.pathname === "/favicon.ico" ||
+        dest.pathname === "/og.png" ||
+        dest.pathname.startsWith("/admin") ||
+        dest.pathname.startsWith("/api") ||
+        isPartneriemPath(dest.pathname);
+      if (!locale && !skipPrefix) {
+        dest.pathname = dest.pathname === "/" ? `/${DEFAULT_LOCALE}` : `/${DEFAULT_LOCALE}${dest.pathname}`;
+      }
+    }
+    return redirect308(dest);
+  }
 
   if (
     pathname === "/sitemap.xml" ||
     pathname === "/robots.txt" ||
     pathname === "/icon" ||
     pathname === "/apple-icon" ||
-    pathname === "/favicon.ico"
+    pathname === "/favicon.ico" ||
+    pathname === "/og.png"
   ) {
     return NextResponse.next();
+  }
+
+  const legacy = resolveLegacyAliasRedirect(pathname);
+  if (legacy) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = legacy;
+    return redirect308(redirectUrl);
   }
 
   if (
@@ -57,15 +104,15 @@ export default function middleware(request: NextRequest) {
     shouldBlockClosedExperimentPath(pathname)
   ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/lv";
+    redirectUrl.pathname = `/${DEFAULT_LOCALE}`;
     redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
+    return redirect308(redirectUrl);
   }
 
   if (searchParams.has("theme")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.searchParams.delete("theme");
-    const res = NextResponse.redirect(redirectUrl);
+    const res = redirect308(redirectUrl);
     res.cookies.set(SITE_THEME_COOKIE_KEY, "dark", {
       path: "/",
       sameSite: "lax",
@@ -83,6 +130,8 @@ export default function middleware(request: NextRequest) {
   }
 
   const prefixed = parsePrefixedPath(pathname);
+  const requestLocale = prefixed.locale ?? DEFAULT_LOCALE;
+  const localizedRequest = requestWithLocaleHeader(request, requestLocale);
 
   if (isPartneriemPath(pathname) || (prefixed.locale && isPartneriemPath(prefixed.rest))) {
     const urlLocale = prefixed.locale;
@@ -98,11 +147,11 @@ export default function middleware(request: NextRequest) {
       redirectUrl.pathname = `/${nextLocale}${rest === "/" ? "" : rest}`;
       return withB2bLocaleCookie(NextResponse.redirect(redirectUrl), nextLocale);
     }
-    const intlRes = intlMiddleware(request);
+    const intlRes = intlMiddleware(requestWithLocaleHeader(request, urlLocale));
     return withB2bLocaleCookie(intlRes, urlLocale);
   }
 
-  return intlMiddleware(request);
+  return toPermanentGetRedirect(localizedRequest, intlMiddleware(localizedRequest));
 }
 
 export const config = {

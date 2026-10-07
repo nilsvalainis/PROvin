@@ -1,3 +1,4 @@
+import { stripLocalePrefix } from "@/i18n/locales";
 import { isAzvinPublicPath } from "@/lib/azvin-public-path";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
 
@@ -13,11 +14,7 @@ const HIDDEN_STANDALONE_PATHS = [
 ] as const;
 
 export function normalizePathWithoutLocale(pathname: string): string {
-  let p = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  if (p === "/lv" || p === "/en") return "/";
-  if (p.startsWith("/lv/")) p = p.slice(3);
-  else if (p.startsWith("/en/")) p = p.slice(3);
-  return p || "/";
+  return stripLocalePrefix(pathname);
 }
 
 export function isLegacyStandaloneProductPath(pathname: string): boolean {

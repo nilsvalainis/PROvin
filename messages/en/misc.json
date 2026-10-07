@@ -32,7 +32,18 @@
     "blogs": "Blog",
     "provinSelect": "Consultation",
     "kasSlapjasAizProvin": "About PROVIN",
+    "buj": "FAQ",
     "b2b": "For dealers",
     "b2bLoginAria": "For dealers, sign in"
+  },
+  "Breadcrumbs": {
+    "navAria": "Breadcrumb",
+    "home": "Home",
+    "services": "Services",
+    "faq": "FAQ",
+    "about": "About PROVIN",
+    "blogs": "Blog",
+    "vinCheck": "VIN check",
+    "partner": "For dealers"
   }
 }

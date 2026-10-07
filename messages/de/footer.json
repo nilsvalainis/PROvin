@@ -18,6 +18,13 @@
     "companyRegNo": "Registernummer",
     "companyLegalAddress": "Anschrift",
     "companyIncompleteDev": "Für Entwickler: NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO und NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS setzen (.env oder Hosting).",
-    "disclaimer": "PROVIN.LV erbringt eine Beratungsleistung: eine Bewertung der verfügbaren Informationen zum Fahrzeug und Empfehlungen. Es handelt sich um eine digitale Datenzusammenfassung, nicht um eine technische Diagnose des Fahrzeugs, und sie kann eine vollständige Prüfung vor Ort in keiner Weise ersetzen. Der Bericht ist kein Auszug einer Behörde, kein unabhängiges technisches Gutachten und kein Rechtsurteil. Die endgültige Entscheidung über den Kauf trifft der Kunde."
+    "disclaimer": "PROVIN.LV erbringt eine Beratungsleistung: eine Bewertung der verfügbaren Informationen zum Fahrzeug und Empfehlungen. Es handelt sich um eine digitale Datenzusammenfassung, nicht um eine technische Diagnose des Fahrzeugs, und sie kann eine vollständige Prüfung vor Ort in keiner Weise ersetzen. Der Bericht ist kein Auszug einer Behörde, kein unabhängiges technisches Gutachten und kein Rechtsurteil. Die endgültige Entscheidung über den Kauf trifft der Kunde.",
+    "navAria": "Bereiche der Website",
+    "navHome": "Start",
+    "navServices": "Leistungen",
+    "navVinCheck": "VIN-Check",
+    "navFaq": "FAQ",
+    "navAbout": "Über PROVIN",
+    "navBlog": "Blog"
   }
 }

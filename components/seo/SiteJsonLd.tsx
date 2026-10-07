@@ -1,52 +1,12 @@
-import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
-import { getPublicSiteOrigin } from "@/lib/site-url";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildSiteGraphJsonLd } from "@/lib/seo-json-ld";
 
 type Props = {
   locale: string;
   description: string;
 };
 
-/**
- * Globālais JSON-LD: WebSite + Organization (Google sapratnei par zīmolu un vietni).
- */
+/** Globālais JSON-LD: WebSite + Organization / LocalBusiness. */
 export function SiteJsonLd({ locale, description }: Props) {
-  const base = getPublicSiteOrigin().replace(/\/$/, "");
-  const url = `${base}/${locale}`;
-  const brand = getCompanyPublicBrand();
-  const legal = getCompanyLegal();
-  const graph = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": `${url}#website`,
-        url,
-        name: brand,
-        description,
-        inLanguage:
-          locale === "en"
-            ? "en-GB"
-            : locale === "de"
-              ? "de-DE"
-              : locale === "ru"
-                ? "ru-RU"
-                : "lv-LV",
-        publisher: { "@id": `${url}#organization` },
-      },
-      {
-        "@type": "Organization",
-        "@id": `${url}#organization`,
-        name: brand,
-        legalName: legal.legalName,
-        /** Saskan ar kājeni / Stripe — viena rindiņa kā `getCompanyLegal().legalAddress` */
-        address: legal.legalAddress,
-        url,
-        description,
-        logo: { "@type": "ImageObject", url: `${base}/icon`, width: 512, height: 512 },
-      },
-    ],
-  };
-  return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }} />
-  );
+  return <JsonLd data={buildSiteGraphJsonLd(locale, description)} />;
 }

@@ -32,7 +32,18 @@
     "blogs": "Blogs",
     "provinSelect": "Konsultācija",
     "kasSlapjasAizProvin": "Par PROVIN",
+    "buj": "BUJ",
     "b2b": "Partneriem",
     "b2bLoginAria": "Partneriem, ielogošanās"
+  },
+  "Breadcrumbs": {
+    "navAria": "Atpakaļceļš",
+    "home": "Sākums",
+    "services": "Pakalpojumi",
+    "faq": "BUJ",
+    "about": "Par PROVIN",
+    "blogs": "Blogs",
+    "vinCheck": "VIN koda pārbaude",
+    "partner": "Partneriem"
   }
 }

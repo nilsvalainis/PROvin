@@ -16,6 +16,7 @@ type FaqClientProps = {
   embedded?: boolean;
   /** Blīvāks accordion (sākumlapa). */
   compact?: boolean;
+  headingAs?: "h1" | "h2";
 };
 
 /** BUJ tekstam viena krāsa — bez PROVIN wordmark krāsu izmaiņām. */
@@ -33,7 +34,9 @@ export function FaqClient({
   tone = "dark",
   embedded = false,
   compact = false,
+  headingAs = "h2",
 }: FaqClientProps) {
+  const Heading = headingAs;
   if (tone === "silver") {
     return (
       <section
@@ -43,9 +46,9 @@ export function FaqClient({
       >
         <div className={homeFaqMaxClass}>
           <div className="text-center">
-            <h2 id="faq-heading" className={homeSectionTitleSilverClass}>
+            <Heading id="faq-heading" className={homeSectionTitleSilverClass}>
               {title}
-            </h2>
+            </Heading>
           </div>
 
           <div className="divide-y divide-[#050505]/12">
@@ -87,9 +90,9 @@ export function FaqClient({
       >
         <div className={homeFaqMaxClass}>
           <div className="text-center">
-            <h2 id="faq-heading" className={homeSectionTitleClass}>
+            <Heading id="faq-heading" className={homeSectionTitleClass}>
               {title}
-            </h2>
+            </Heading>
           </div>
 
           <div className="divide-y divide-[#ececec]">
@@ -180,9 +183,9 @@ export function FaqClient({
       <div className="demo-design-dir__shell">
         <div className={homeFaqMaxClass}>
           <div className="text-center">
-            <h2 id="faq-heading" className={homeSectionTitleClass}>
+            <Heading id="faq-heading" className={homeSectionTitleClass}>
               {title}
-            </h2>
+            </Heading>
           </div>
           <div className="flex flex-col gap-3">{faqItems}</div>
         </div>

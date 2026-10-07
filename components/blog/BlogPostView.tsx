@@ -8,6 +8,8 @@ import { Link } from "@/i18n/navigation";
 import type { BlogPost } from "@/lib/blog/types";
 import { b2bDateLocale } from "@/i18n/locales";
 import { resolveBlogLocale } from "@/lib/blog/posts";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildBlogPostingJsonLd } from "@/lib/seo-json-ld";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
 type Props = {
@@ -20,33 +22,19 @@ export async function BlogPostView({ post, locale }: Props) {
   const { content, usingFallback } = resolveBlogLocale(post, locale);
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const cover = post.coverImage;
-  const articleLd = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: content.title,
+  const articleLd = buildBlogPostingJsonLd({
+    locale,
+    slug: post.slug,
+    title: content.title,
     description: content.socialExcerpt ?? content.excerpt,
-    datePublished: `${post.publishedAt}T12:00:00.000Z`,
-    inLanguage: locale === "en" ? "en" : locale === "de" ? "de" : locale === "ru" ? "ru" : "lv",
-    mainEntityOfPage: `${base}/${locale}/blogs/${post.slug}`,
-    keywords: post.tags.join(", "),
-    ...(cover
-      ? {
-          image: [`${base}${cover.src}`],
-        }
-      : {}),
-    publisher: {
-      "@type": "Organization",
-      name: "PROVIN.LV",
-      url: base,
-    },
-  };
+    publishedAt: post.publishedAt,
+    tags: post.tags,
+    image: cover ? `${base}${cover.src}` : undefined,
+  });
 
   return (
     <article className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
-      />
+      <JsonLd data={articleLd} />
       <BlogViewTracker slug={post.slug} />
       <div className="demo-design-dir__shell relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
         <p className="mx-auto max-w-[min(42.5rem,calc(100vw-2rem))]">

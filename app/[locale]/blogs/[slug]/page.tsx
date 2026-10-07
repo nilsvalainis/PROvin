@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { BlogPostView } from "@/components/blog/BlogPostView";
 import { getAllBlogSlugs, getBlogPost, resolveBlogLocale } from "@/lib/blog/posts";
+import { DEFAULT_OG_IMAGE_PATH } from "@/lib/seo-public-paths";
 import { publicPageAlternates, publicPageUrl } from "@/lib/seo-public-metadata";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -34,11 +35,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: post.coverImage.alt,
         },
       ]
-    : undefined;
+    : [{ url: `${base}${DEFAULT_OG_IMAGE_PATH}`, width: 1200, height: 630, alt: content.title }];
   return {
-    title: content.title,
+    title: { absolute: `${content.title} | PROVIN` },
     description,
-    keywords: [...post.tags, "auto vēstures pārbaude", "PROVIN"],
+    keywords: [...post.tags, "auto vēstures pārbaude", "VIN koda pārbaude", "PROVIN"],
     alternates: publicPageAlternates(locale, `/blogs/${post.slug}`),
     openGraph: {
       title: content.title,
@@ -46,13 +47,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: `${post.publishedAt}T12:00:00.000Z`,
       url,
-      ...(ogImages ? { images: ogImages } : {}),
+      images: ogImages,
     },
     twitter: {
-      card: ogImages ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: content.title,
       description,
-      ...(ogImages ? { images: [ogImages[0]!.url] } : {}),
+      images: [ogImages[0]!.url],
     },
   };
 }

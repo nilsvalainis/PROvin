@@ -32,7 +32,18 @@
     "blogs": "Блог",
     "provinSelect": "Консультация",
     "kasSlapjasAizProvin": "О PROVIN",
+    "buj": "FAQ",
     "b2b": "Для дилеров",
     "b2bLoginAria": "Для дилеров: войти"
+  },
+  "Breadcrumbs": {
+    "navAria": "Навигационная цепочка",
+    "home": "Главная",
+    "services": "Услуги",
+    "faq": "FAQ",
+    "about": "О PROVIN",
+    "blogs": "Блог",
+    "vinCheck": "Проверка VIN",
+    "partner": "Для дилеров"
   }
 }

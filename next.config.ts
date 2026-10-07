@@ -57,8 +57,30 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false },
+      {
+        source: "/",
+        has: [{ type: "host", value: "provin.lv" }],
+        destination: "https://www.provin.lv/lv",
+        permanent: true,
+      },
+      { source: "/", destination: "/lv", permanent: true },
+      { source: "/faq", destination: "/lv/biezi-jautajumi", permanent: true },
+      { source: "/about", destination: "/lv/par-mums", permanent: true },
+      { source: "/samples", destination: "/lv/pakalpojumi", permanent: true },
       { source: "/paraugi", destination: "/lv/pakalpojumi", permanent: true },
-      { source: "/:locale(lv|en)/paraugi", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/pakalpojumi", destination: "/lv/pakalpojumi", permanent: true },
+      { source: "/par-mums", destination: "/lv/par-mums", permanent: true },
+      { source: "/blogs", destination: "/lv/blogs", permanent: true },
+      { source: "/biezi-jautajumi", destination: "/lv/biezi-jautajumi", permanent: true },
+      { source: "/vin-koda-parbaude", destination: "/lv/vin-koda-parbaude", permanent: true },
+      { source: "/lietosanas-noteikumi", destination: "/lv/lietosanas-noteikumi", permanent: true },
+      { source: "/privatuma-politika", destination: "/lv/privatuma-politika", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/faq", destination: "/:locale/biezi-jautajumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/about", destination: "/:locale/par-mums", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/samples", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/paraugi", destination: "/:locale/pakalpojumi", permanent: true },
+      { source: "/:locale(lv|en|de|ru)/opengraph-image", destination: "/og.png", permanent: true },
+      { source: "/opengraph-image", destination: "/og.png", permanent: true },
     ];
   },
   /** Stripe Dashboard bieža kļūda: `/api/webhook/stripe` — kods ir `/api/webhooks/stripe`. */
@@ -88,6 +110,22 @@ const nextConfig: NextConfig = {
       {
         source: "/en",
         headers: [...securityHeaders, ...marketingCache],
+      },
+      {
+        source: "/de",
+        headers: [...securityHeaders, ...marketingCache],
+      },
+      {
+        source: "/ru",
+        headers: [...securityHeaders, ...marketingCache],
+      },
+      {
+        source: "/icon",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/apple-icon",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
     ];
   },

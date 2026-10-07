@@ -1,0 +1,20 @@
+{
+  "VinCheck": {
+    "metaTitle": "VIN koda pārbaude Latvijā | kā pārbaudīt auto vēsturi | PROVIN",
+    "metaDescription": "VIN koda pārbaude pirms lietota auto pirkuma: kas ir VIN, ko rāda auto vēstures atskaite un kāpēc vajag sludinājuma auditu, ne tikai datu izdruku.",
+    "h1": "VIN koda pārbaude pirms auto pirkuma",
+    "lead": "VIN ir 17 zīmju rūpnīcas identifikators. Pēc tā var savilkt reģistrus, servisa vēsturi un sludinājuma pretrunas. PROVIN to nedara kā sausu izdruku: salīdzinām avotus un pasakām, ko tas nozīmē konkrētajam auto.",
+    "whatTitle": "Kas ir VIN koda pārbaude?",
+    "whatBody": "VIN koda pārbaude ir auto vēstures pārbaude pēc identifikācijas numura: nobraukums, negadījumi, zādzības, reģistru ieraksti un, ja pieejams, oficiālā dīlera servisa vēsture. Tas nav tas pats, kas viena datubāzes PDF. Avoti pārklājas tikai daļēji, un sludinājuma bildes bieži pasaka vairāk nekā rinda tabulā.",
+    "whyTitle": "Kāpēc nepietiek ar vienu auto atskaiti?",
+    "whyBody": "Standarta auto atskaite rāda to, kas ir ievadīts sistēmā. Pārdevējs to zina un bieži izvēlas auto, kur digitālā pēda ir plāna. Tāpēc PROVIN blakus VIN pārbaudei lasa sludinājumu un konkrētā modeļa vājās vietas. Ja sludinājuma saite ir pieejama, pievieno to pasūtījumam.",
+    "howTitle": "Kā notiek pārbaude pie PROVIN",
+    "howBody": "Ievadi VIN vai valsts numuru sākumlapā, izvēlies MINI vai AUDITS un pievieno sludinājumu, ja tas ir. MINI der auto, kas jau brauc Latvijā. AUDITS ir dziļāka pārbaude importam: starptautiskās datubāzes, dīleru sistēmas un izsoļu arhīvi, kad tie ir pieejami. Rezultāts parasti 24-72h, ar īsu sarunu pēc atskaites.",
+    "ctaServices": "Skatīt pakalpojumus un cenas",
+    "ctaOrder": "Pasūtīt VIN pārbaudi",
+    "ctaFaq": "Biežāk uzdotie jautājumi",
+    "homeTitle": "VIN koda pārbaude un auto vēstures pārbaude",
+    "homeBody": "Ja meklē, kur izdarīt VIN koda pārbaudi vai auto vēstures pārbaudi pirms pirkuma, sākums ir VIN un sludinājuma saite. Tālāk izskaidrojam, ko pārbaude ietver un kuru paketi izvēlēties.",
+    "homeCta": "Kā notiek VIN koda pārbaude"
+  }
+}

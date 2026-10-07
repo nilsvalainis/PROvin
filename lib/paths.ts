@@ -33,6 +33,16 @@ export function parMumsHref(): string {
   return "/par-mums";
 }
 
+/** VIN koda pārbaudes skaidrojums — `Link`-drošs ceļš. */
+export function vinCheckHref(): string {
+  return "/vin-koda-parbaude";
+}
+
+/** BUJ lapa — `Link`-drošs ceļš. */
+export function faqPageHref(): string {
+  return "/biezi-jautajumi";
+}
+
 /** @deprecated Prefer `parMumsHref()` — sadaļa tagad ir atsevišķa lapa. */
 export function irissAnchorHref(): string {
   return "/par-mums";

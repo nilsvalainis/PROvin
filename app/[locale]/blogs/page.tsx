@@ -18,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     path: "/blogs",
     title: t("blogsTitle"),
     description: t("blogsDescription"),
+    ogImageAlt: t("ogImageAlt"),
   });
 }
 

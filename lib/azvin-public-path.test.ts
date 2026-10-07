@@ -7,6 +7,8 @@ describe("AZ.VIN unlisted public path", () => {
     expect(isAzvinPublicPath("/view/n7k4xw9q")).toBe(true);
     expect(isAzvinPublicPath("/lv/view/n7k4xw9q")).toBe(true);
     expect(isAzvinPublicPath("/en/view/n7k4xw9q/")).toBe(true);
+    expect(isAzvinPublicPath("/de/view/n7k4xw9q")).toBe(true);
+    expect(isAzvinPublicPath("/ru/view/n7k4xw9q")).toBe(true);
   });
 
   it("does not match the closed demo URL or live PROVIN routes", () => {

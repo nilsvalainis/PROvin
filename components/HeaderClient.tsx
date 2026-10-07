@@ -30,6 +30,7 @@ export function HeaderClient() {
   const isParMums = normalizedPath === "/par-mums";
   const isBlogs = normalizedPath === "/blogs" || normalizedPath.startsWith("/blogs/");
   const isFaqPage = normalizedPath === "/biezi-jautajumi";
+  const isVinCheck = normalizedPath === "/vin-koda-parbaude";
   const isPartneriem = normalizedPath === "/partneriem" || normalizedPath.startsWith("/partneriem/");
   const isLegalPage =
     normalizedPath === "/lietosanas-noteikumi" || normalizedPath === "/privatuma-politika";
@@ -39,6 +40,7 @@ export function HeaderClient() {
     isHome ||
     normalizedPath === "/pasutit" ||
     isFaqPage ||
+    isVinCheck ||
     isPakalpojumi ||
     isParMums ||
     isBlogs;
@@ -55,6 +57,7 @@ export function HeaderClient() {
     isParMums ||
     isBlogs ||
     isFaqPage ||
+    isVinCheck ||
     isPartneriem ||
     isLegalPage ||
     isThanks;
