@@ -2,6 +2,8 @@
 # PROVIN IRISS LIST relejs: uzstādīšana uz Hetzner (Ubuntu/Debian). Palaist kā root.
 # Neaiztiek CSDD (8787), mnt.ee (8788) servisus un Caddy. Caddy maršrutu pievieno atsevišķi (skat. README).
 set -euo pipefail
+# npm no /root dod EACCES, ja skriptu palaiž no root mājas mapes.
+cd /
 
 APP_DIR="${APP_DIR:-/opt/provin-listings}"
 DATA_DIR="${DATA_DIR:-/var/lib/provin-listings}"
@@ -62,7 +64,7 @@ install -m 644 "$SRC_DIR/systemd/provin-listings-novnc.service" /etc/systemd/sys
 systemctl daemon-reload
 systemctl enable --now provin-listings-xvfb.service
 systemctl enable --now provin-listings.service
-systemctl enable provin-listings-novnc.service
+# noVNC nestartē līdz ar boot: tikai ielogošanās laikā (systemctl start provin-listings-novnc).
 
 echo
 echo "Gatavs. Pārbaude:"

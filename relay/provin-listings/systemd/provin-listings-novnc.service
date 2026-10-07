@@ -7,10 +7,10 @@ Requires=provin-listings-xvfb.service
 Type=simple
 User=provin-listings
 Group=provin-listings
-Environment=DISPLAY=:99
+Environment=DISPLAY=:98
 # x11vnc tikai uz localhost (5999), novnc/websockify tikai uz localhost (6089).
 # Ieslēdz tikai uz ielogošanās laiku: systemctl start provin-listings-novnc; pēc tam stop.
-ExecStart=/bin/sh -c '/usr/bin/x11vnc -display :99 -localhost -rfbport 5999 -nopw -forever -shared -quiet & exec /usr/bin/websockify --web=/usr/share/novnc 127.0.0.1:6089 127.0.0.1:5999'
+ExecStart=/bin/sh -c '/usr/bin/x11vnc -display :98 -localhost -rfbport 5999 -nopw -forever -shared -quiet & exec /usr/bin/websockify --web=/usr/share/novnc 127.0.0.1:6089 127.0.0.1:5999'
 Restart=on-failure
 RestartSec=3
 KillMode=control-group
