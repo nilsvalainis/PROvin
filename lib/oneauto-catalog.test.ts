@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ONEAUTO_DEFAULT_PRODUCT_IDS,
   ONEAUTO_PRODUCTS,
+  ONEAUTO_SERVICE_TIMELINE_MAX,
   buildOneautoDisplay,
   formatOneautoCostEur,
   oneautoPayloadIsPending,
@@ -232,5 +233,19 @@ describe("OneAuto katalogs", () => {
     expect(display.serviceTimeline[0]?.date).toBe("12.03.2024");
     expect(display.serviceTimeline[0]?.works).toMatch(/Warranty/);
     expect(display.powertrain.some((r) => r.value === "EB2ADTS")).toBe(true);
+  });
+
+  it("nesagriež garu OE servisa vēsturi pie 80 ierakstiem", () => {
+    const events = Array.from({ length: 90 }, (_, i) => ({
+      date_of_service_event: `2024-01-${String((i % 28) + 1).padStart(2, "0")}`,
+      mileage_observed: 1000 + i * 250,
+      service_actions: [i % 9 === 0 ? "Engine oil change" : "Inspection"],
+    }));
+    const display = buildOneautoDisplay({
+      oe_service_history: { result: { service_events: events } },
+    });
+    expect(ONEAUTO_SERVICE_TIMELINE_MAX).toBeGreaterThanOrEqual(90);
+    expect(display.serviceTimeline).toHaveLength(90);
+    expect(display.serviceTimeline.some((ev) => /Engine oil/i.test(ev.works))).toBe(true);
   });
 });

@@ -23,6 +23,31 @@ describe("isEngineOilChangeWork", () => {
     expect(isEngineOilChangeWork("Haldex eļļas maiņa")).toBe(false);
     expect(isEngineOilChangeWork("Eļļas maiņa un kārbas eļļas maiņa")).toBe(true);
   });
+
+  it("recognises dealer product names, viscosity grades, and oil filters", () => {
+    expect(isEngineOilChangeWork("Dzinēja eļļa.")).toBe(true);
+    expect(isEngineOilChangeWork("BMW MOTORÖL 0W30 LONGL.")).toBe(true);
+    expect(isEngineOilChangeWork("BMW dzinēja eļļa LL04 5W30 (83212405948)")).toBe(true);
+    expect(isEngineOilChangeWork("Motoreļļa SAE 5W-30 Longlife-04 (83210398509)")).toBe(true);
+    expect(isEngineOilChangeWork("Motoroil 0W-20")).toBe(true);
+    expect(isEngineOilChangeWork("0W20")).toBe(true);
+    expect(isEngineOilChangeWork("5W-30")).toBe(true);
+    expect(isEngineOilChangeWork("Eļļas filtra elementu komplekts (11428507683)")).toBe(true);
+    expect(isEngineOilChangeWork("Oil filter")).toBe(true);
+    expect(isEngineOilChangeWork("BMW TwinPower Turbo LL-19FE 0W-30 (83215A65BF8)")).toBe(true);
+    expect(isEngineOilChangeWork("Motoreļļa 0W-30 1000ml (99990000167)")).toBe(true);
+  });
+
+  it("does not treat generic visits or other fluids as engine oil", () => {
+    expect(isEngineOilChangeWork("Serviss")).toBe(false);
+    expect(isEngineOilChangeWork("Regulārā apkope")).toBe(false);
+    expect(isEngineOilChangeWork("75W-90")).toBe(false);
+    expect(isEngineOilChangeWork("Getriebeöl")).toBe(false);
+    expect(isEngineOilChangeWork("ATF Dexron")).toBe(false);
+    expect(isEngineOilChangeWork("Bremžu šķidrums DOT4 LV")).toBe(false);
+    expect(isEngineOilChangeWork("Zema viskozitāte (83130443026)")).toBe(false);
+    expect(isEngineOilChangeWork("Degvielas filtra kasetne")).toBe(false);
+  });
 });
 
 describe("classifyOilIntervalKind", () => {
@@ -129,6 +154,63 @@ describe("buildOilChangeIntervalSeries", () => {
     expect(series.ringStepCount).toBe(0);
     expect(series.ringNote).toContain("Vidējo intervālu nevar rēķināt");
   });
+
+  it("counts BMW MOTORÖL / dzinēja eļļa visits and collapses same-day duplicates", () => {
+    const series = buildOilChangeIntervalSeries([
+      row("19.11.2014", "27721", "Motoreļļa SAE 5W-30 Longlife-04 (83210398509)"),
+      row("20.08.2015", "57325", "BMW dzinēja eļļa LL04 5W30 (83212405948)\nEļļas filtra elementu komplekts"),
+      row("03.03.2017", "95176", "Dzinēja eļļa.\nBMW MOTORÖL 0W30 LONGL."),
+      row("20.04.2018", "120526", "Dzinēja eļļa.\nDegvielas filtrs."),
+      row("20.04.2018", "121015", "BMW MOTORÖL 0W30 LONGL.\nEļļas filtra elementu komplekts"),
+      row("17.07.2019", "132396", "Serviss"),
+      row("05.12.2023", "212247", "Serviss"),
+    ]);
+    expect(series.changeCount).toBe(4);
+    expect(series.points.map((p) => p.odometer)).toEqual(["27721", "57325", "95176", "121015"]);
+    expect(series.points[1]?.intervalKm).toBe(29604);
+    expect(series.points[2]?.intervalKm).toBe(37851);
+    expect(series.points[3]?.intervalKm).toBe(25839);
+  });
+
+  it("reads every BMW dealer engine-oil visit, not only Motoreļļa wording", () => {
+    const series = buildOilChangeIntervalSeries([
+      row("31.03.2026", "214259", "Serviss"),
+      row("27.03.2026", "214257", "Dzinēja eļļa."),
+      row("27.03.2026", "214257", "Gaisa filtra elements."),
+      row("23.10.2025", "187900", "Dzinēja eļļa."),
+      row("20.10.2025", "187207", "Serviss"),
+      row("24.04.2025", "158979", "Dzinēja eļļa."),
+      row("11.04.2025", "158985", "Eļļas filtra elementu komplekts (11428593186)"),
+      row("11.04.2025", "158985", "BMW TwinPower Turbo LL-19FE 0W-30 (83215A65BF8)"),
+      row("09.04.2025", "156726", "Serviss"),
+      row("02.12.2024", "130568", "Dzinēja eļļa."),
+      row("02.12.2024", "130568", "BMW TwinPower Turbo LL-19FE 0W-30 (83215A65BF8)"),
+      row("25.07.2024", "104678", "Eļļas filtra elementu komplekts (11428593186)"),
+      row("25.07.2024", "104678", "BMW TwinPower Turbo LL-19FE 0W-30 (83215A65BF8)"),
+      row("25.07.2024", "104672", "Dzinēja eļļa."),
+      row("04.03.2024", "77924", "Dzinēja eļļa."),
+      row("04.03.2024", "77924", "Eļļas filtra elementu komplekts (11428593186)"),
+      row("01.03.2024", "77110", "Serviss"),
+      row("16.10.2023", "54338", "Dzinēja eļļa."),
+      row("16.10.2023", "54338", "Motoreļļa 0W-30 1000ml (99990000167)"),
+      row("26.05.2023", "26335", "Dzinēja eļļa."),
+      row("24.11.2022", "11", "Vējstiklu mazgāšanas antifrīzs"),
+    ]);
+    expect(series.changeCount).toBe(9);
+    expect(series.points.map((p) => `${p.date} ${p.odometer.replace(/\s/g, "")}`)).toEqual([
+      "26.05.2023 26335",
+      "16.10.2023 54338",
+      "04.03.2024 77924",
+      "25.07.2024 104678",
+      "02.12.2024 130568",
+      "11.04.2025 158985",
+      "24.04.2025 158979",
+      "23.10.2025 187900",
+      "27.03.2026 214257",
+    ]);
+    expect(series.points[0]?.kind).toBe("start");
+    expect(series.ringNote).not.toContain("Fiksēta viena eļļas maiņa");
+  });
 });
 
 describe("buildOilChangeIntervalPdfHtml", () => {
@@ -151,6 +233,9 @@ describe("buildOilChangeIntervalPdfHtml", () => {
     expect(html).toContain("PROVIN datubāzēs");
     expect(html).toContain("Neatkarīgie autoservisi neiesūta");
     expect(html).toContain("nepierāda, ka apkope nav veikta");
+    expect(html).toContain("Vispārīgi apmeklējumi");
+    expect(html).toContain("apkope");
+    expect(html).toContain("serviss");
     expect(html).not.toContain("CarVertical");
     expect(html).not.toContain("AutoDNA");
     expect(html).not.toContain("apdrošinātājiem");
