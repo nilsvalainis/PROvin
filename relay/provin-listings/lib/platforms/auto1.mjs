@@ -2,19 +2,26 @@
  * Auto1 merchant saraksts ir SPA aiz login. Sesija turas ilgi, tāpēc tikai pastāvīgs profils,
  * bez auto-login: ja izlogots -> login_required (Nils ielogojas caur noVNC).
  *
- * Datus ņem no SPA iekšējiem XHR/JSON (ne DOM): pārtver visas JSON atbildes no auto1 domēniem,
- * kurās ir masīvs ar auto objektiem, un mapē pēc lauku nosaukumiem. Pamanītie API URL tiek
- * saglabāti state (health.platforms.auto1.discoveredApis), lai mapējumu var precizēt pēc pirmās
- * ielogošanās. `AUTO1_LIST_API_RE` ļauj fiksēt konkrēto endpointu, kad tas ir zināms.
+ * Datus ņem no SPA XHR `GET /v1/car-search/cars/search/<searchId>`
+ * (`{totalHits, hits[], aggregations, serverTime}`). Cenas ir centos. `firstRegistrationDate`,
+ * `auctionStartDatetime` un `auctionEndDatetime` ir ms. Detaļu saite lieto `stockNumber`
+ * (`/en/app/merchant/car/BW03512`), ne skaitlisko `id`. VIN sarakstā nav.
+ * `img-pa.auto1.com` strādā ar provin.lv Referer, tāpēc admin lapā no-referrer nav vajadzīgs.
  */
 import { hasCaptchaOrChallenge, pageText, randomPause } from "../browser.mjs";
-import { isoDate, makeItem, num, price, str, yearOf } from "../items.mjs";
+import { isoDate, makeItem, num, str } from "../items.mjs";
 
 const PROBE_URL = process.env.AUTO1_PROBE_URL || "https://www.auto1.com/en/app/merchant/cars?channel=24h&page=1";
 const LOGGED_OUT_URL_RE = /\/merchant\/signin|\/login\b|\/signin\b/i;
-const LIST_API_RE = process.env.AUTO1_LIST_API_RE ? new RegExp(process.env.AUTO1_LIST_API_RE, "i") : null;
+const DEFAULT_LIST_API_RE = "/v1/car-search/cars/search/";
 const API_HOST_RE = /auto1(?:\.com|\.cloud|\.eu|-group\.com)/i;
-const DETAIL_TEMPLATE = process.env.AUTO1_DETAIL_URL_TEMPLATE || "https://www.auto1.com/en/app/merchant/car/{id}";
+const DETAIL_TEMPLATE = process.env.AUTO1_DETAIL_URL_TEMPLATE || "https://www.auto1.com/en/app/merchant/car/{stockNumber}";
+
+export function auto1ListApiRe(pattern = process.env.AUTO1_LIST_API_RE) {
+  return new RegExp(pattern || DEFAULT_LIST_API_RE, "i");
+}
+
+const LIST_API_RE = auto1ListApiRe();
 
 export const auto1 = {
   id: "auto1",
@@ -32,13 +39,6 @@ async function isLoggedIn(page) {
   const text = await pageText(page, 6_000);
   if (/\bSign in\b.{0,80}\bPassword\b/i.test(text) || /\bAnmelden\b.{0,80}\bPasswort\b/i.test(text)) return false;
   return true;
-}
-
-function pick(obj, patterns) {
-  for (const [k, v] of Object.entries(obj)) {
-    if (patterns.some((re) => re.test(k)) && v !== null && v !== undefined && v !== "") return v;
-  }
-  return undefined;
 }
 
 function looksLikeCar(o) {
@@ -61,50 +61,90 @@ export function findCarArrays(json, depth = 0, out = []) {
   return out;
 }
 
-export function mapAuto1Car(car) {
-  const id = str(pick(car, [/^(id|uuid|stockNumber|stock_number|vehicleId|carId|externalId)$/i]));
-  const make = str(pick(car, [/^(manufacturer|make|brand)(Name)?$/i]) ?? "");
-  const makeName = typeof make === "object" ? str(make?.name) : str(make);
-  const model = pick(car, [/^(model|modelName|mainType|subType)$/i]);
-  const modelName = typeof model === "object" ? str(model?.name) : str(model);
-  const title = str(pick(car, [/^(title|name|fullName|displayName|headline)$/i])) || [makeName, modelName, str(pick(car, [/^(subType|variant|engine|trim)$/i]))].filter(Boolean).join(" ");
-  const reg = pick(car, [/^(firstRegistration|firstRegistrationDate|registrationDate|registration|builtYear|buildYear|year)$/i]);
-  const priceObj = pick(car, [/^(price|prices|pricing)$/i]);
-  const flat = { ...car, ...(priceObj && typeof priceObj === "object" ? priceObj : {}) };
-  const currentPrice = price(pick(flat, [/^(currentPrice|currentBid|highestBid|bid|price|amount|netPrice|grossPrice|minimumBid)$/i]));
-  const startPrice = price(pick(flat, [/^(startPrice|startingPrice|minPrice|minimumPrice)$/i]));
-  const buyNow = price(pick(flat, [/^(buyNowPrice|buyNow|fixedPrice|instantPrice)$/i]));
-  const image = pick(car, [/^(image|imageUrl|thumbnail|thumbnailUrl|mainImage|coverImage|images|pictures)$/i]);
-  const imageUrl = Array.isArray(image) ? str(image[0]?.url ?? image[0]?.src ?? image[0]) : typeof image === "object" && image ? str(image.url ?? image.src) : str(image);
-  const location = pick(car, [/^(location|branch|branchName|city|pickupLocation|locationName)$/i]);
-  const start = pick(car, [/^(auctionStart|auctionStartDate|startDate|startTime|startsAt)$/i]);
-  const end = pick(car, [/^(auctionEnd|auctionEndDate|endDate|endTime|endsAt|expiresAt)$/i]);
-  const country = pick(car, [/^(country|countryCode|originCountry|locationCountry)$/i]);
-  return makeItem("auto1", {
-    externalId: id,
-    auctionId: str(pick(car, [/^(auctionId|auction|batchId)$/i])),
-    detailUrl: str(pick(car, [/^(url|link|detailUrl|href|permalink)$/i])) || DETAIL_TEMPLATE.replace("{id}", encodeURIComponent(id)),
-    title,
-    manufacturer: makeName,
-    year: yearOf(reg),
-    firstRegistration: str(reg).slice(0, 10),
-    mileageKm: num(pick(car, [/^(mileage|km|kilometers|odometer|mileageKm)$/i])),
-    fuel: str(pick(car, [/^(fuel|fuelType)$/i])),
-    transmission: str(pick(car, [/^(gearType|gearbox|transmission|transmissionType)$/i])),
-    powerKw: str(pick(car, [/^(powerKw|kw|power)$/i])),
-    location: typeof location === "object" && location ? str(location.name ?? location.city) : str(location),
-    countryCode: typeof country === "object" && country ? str(country.code ?? country.isoCode) : str(country),
-    imageUrl,
-    currency: str(pick(flat, [/^currency$/i])) || "EUR",
-    priceStart: startPrice,
-    priceCurrent: currentPrice,
-    priceMinimal: null,
-    priceBuyNow: buyNow,
-    vatNote: str(pick(flat, [/^(vatType|taxType|vat|vatDeductible)$/i])),
-    auctionStartAt: isoDate(start),
-    auctionEndAt: isoDate(end),
-    auctionStage: str(pick(car, [/^(status|state|stage|auctionStatus)$/i])),
+/** Auto1 cenas ir centos. 0 un tukšs nav cena. */
+export function eurosFromCents(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : num(v);
+  if (n === null || !(n > 0)) return null;
+  return Math.round(n / 100);
+}
+
+function registrationFromMs(v) {
+  const iso = isoDate(v);
+  if (!iso || Number.isNaN(Date.parse(iso))) return { year: "", firstRegistration: "" };
+  return { year: iso.slice(0, 4), firstRegistration: iso.slice(0, 10) };
+}
+
+function auto1Title(car) {
+  const make = str(car.manufacturerName);
+  const model = str(car.modelDescription) || [str(car.mainType), str(car.subType)].filter(Boolean).join(" ");
+  return [make, model].filter(Boolean).join(" ");
+}
+
+function auto1Image(car) {
+  const main = str(car.mainImageFullUrl);
+  if (main) return main;
+  const images = Array.isArray(car.images) ? car.images : [];
+  const first = images.find((img) => img && str(img.fullUrl));
+  return first ? str(first.fullUrl) : "";
+}
+
+function auto1Location(car) {
+  const loc = car.currentLocation;
+  if (!loc || typeof loc !== "object") return "";
+  return [str(loc.city), str(loc.country)].filter(Boolean).join(", ");
+}
+
+function auto1DetailUrl(car) {
+  const stock = str(car.stockNumber);
+  const id = str(car.id);
+  const key = stock || id;
+  return DETAIL_TEMPLATE.replaceAll("{stockNumber}", encodeURIComponent(key)).replaceAll("{id}", encodeURIComponent(key));
+}
+
+/** `auctionType` (24D1, 24D2, 24D3) vai laiki. `auctionSecLeft` tikai ja datumu nav. */
+export function auto1Stage(car, nowMs = Date.now()) {
+  const type = str(car.auctionType);
+  if (type) return type;
+  const start = Date.parse(isoDate(car.auctionStartDatetime));
+  const end = Date.parse(isoDate(car.auctionEndDatetime));
+  if (Number.isFinite(start) && nowMs < start) return "BEFORE_AUCTION";
+  if (Number.isFinite(end) && nowMs > end) return "AFTER_AUCTION";
+  if (Number.isFinite(start) || Number.isFinite(end)) return "IN_AUCTION";
+  const sec = num(car.auctionSecLeft);
+  if (sec === null) return "";
+  return sec > 0 ? "IN_AUCTION" : "AFTER_AUCTION";
+}
+
+export function mapAuto1Car(car, nowMs = Date.now()) {
+  const reg = registrationFromMs(car.firstRegistrationDate);
+  const stock = str(car.stockNumber);
+  const item = makeItem("auto1", {
+    externalId: str(car.id),
+    auctionId: str(car.auctionIdentifier),
+    detailUrl: auto1DetailUrl(car),
+    title: auto1Title(car),
+    manufacturer: str(car.manufacturerName),
+    year: reg.year,
+    firstRegistration: reg.firstRegistration,
+    mileageKm: num(car.km),
+    fuel: str(car.fuel),
+    transmission: str(car.transmission),
+    powerKw: str(car.kw),
+    location: auto1Location(car),
+    countryCode: str(car.countryCode),
+    imageUrl: auto1Image(car),
+    currency: "EUR",
+    priceStart: eurosFromCents(car.auctionStartPrice),
+    priceCurrent: eurosFromCents(car.lastTopBidValue),
+    priceMinimal: eurosFromCents(car.minimumBid),
+    priceBuyNow: eurosFromCents(car.buyNowPrice),
+    vatNote: "",
+    auctionStartAt: isoDate(car.auctionStartDatetime),
+    auctionEndAt: isoDate(car.auctionEndDatetime),
+    auctionStage: auto1Stage(car, nowMs),
   });
+  return { ...item, stockNumber: stock, expectedPrice: eurosFromCents(car.expectedPriceDisplay) };
 }
 
 async function fetchSource(page, sourceUrl, { maxPages, log, state }) {

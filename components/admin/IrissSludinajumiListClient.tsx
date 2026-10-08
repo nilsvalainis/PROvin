@@ -369,6 +369,16 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   );
 }
 
+/** Auto1 sarakstā VIN nav. Identifikators ir stockNumber detaļu saitē (`/car/BW03512`). */
+function auto1StockLabel(v: IrissListingVehicle): string {
+  if (v.platform !== "auto1" || !v.detailUrl) return "";
+  try {
+    return decodeURIComponent(new URL(v.detailUrl).pathname.split("/").filter(Boolean).pop() ?? "");
+  } catch {
+    return "";
+  }
+}
+
 function VehicleCard({
   v,
   nowMs,
@@ -383,14 +393,11 @@ function VehicleCard({
   const fresh = isNew(v, nowMs);
   const changes = recentPriceChanges(v, nowMs);
   const gone = v.change === "gone";
-  const specs = [
-    v.year,
-    fmtKm(v.mileageKm),
-    v.fuel,
-    v.transmission,
-    v.powerKw ? `${v.powerKw} kW` : "",
-    [v.location, v.countryCode].filter(Boolean).join(", "),
-  ].filter(Boolean);
+  const place =
+    v.location && v.countryCode && (v.location === v.countryCode || v.location.endsWith(`, ${v.countryCode}`) || v.location.endsWith(` ${v.countryCode}`))
+      ? v.location
+      : [v.location, v.countryCode].filter(Boolean).join(", ");
+  const specs = [auto1StockLabel(v), v.year, fmtKm(v.mileageKm), v.fuel, v.transmission, v.powerKw ? `${v.powerKw} kW` : "", place].filter(Boolean);
 
   return (
     <article
