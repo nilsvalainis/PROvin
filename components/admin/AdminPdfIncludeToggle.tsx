@@ -5,10 +5,12 @@ export function AdminPdfIncludeToggle({
   checked,
   onChange,
   id,
+  label = "Rādīt laukus",
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   id?: string;
+  label?: string;
 }) {
   return (
     <label className="inline-flex cursor-pointer select-none items-center gap-1.5 text-[10px] font-medium text-[var(--color-provin-muted)] opacity-60 transition-opacity hover:opacity-100">
@@ -19,7 +21,7 @@ export function AdminPdfIncludeToggle({
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
-      <span>Rādīt laukus</span>
+      <span>{label}</span>
     </label>
   );
 }

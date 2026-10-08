@@ -3475,6 +3475,7 @@ export function OrderDetailWorkspace({
       makeModel: blocks.csdd.makeModel,
       autoRecords: blocks.auto_records,
       oneauto: blocks.oneauto,
+      includeEquipment: pdfVisibility.autoRecordsEquipment !== false,
     });
     const w = window.open("", "_blank");
     if (!w) {
@@ -4643,6 +4644,10 @@ export function OrderDetailWorkspace({
               sessionId={payload.sessionId}
               pdfInclude={pdfVisibility.auto_records}
               onPdfIncludeChange={(next) => onPdfVisibilityChange({ auto_records: next })}
+              pdfIncludeOil={pdfVisibility.autoRecordsOilInterval !== false}
+              onPdfIncludeOilChange={(next) => onPdfVisibilityChange({ autoRecordsOilInterval: next })}
+              pdfIncludeEquipment={pdfVisibility.autoRecordsEquipment !== false}
+              onPdfIncludeEquipmentChange={(next) => onPdfVisibilityChange({ autoRecordsEquipment: next })}
               aiComment={aiCommentSlot("auto_records")}
               aiServiceHistory={aiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
               aiOilChangeInterval={aiCommentSlot("auto_records", undefined, "oilChangeIntervalNotes")}

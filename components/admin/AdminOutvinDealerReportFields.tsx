@@ -7,6 +7,8 @@ import {
   emptyOutvinEquipmentLine,
   outvinEquipmentLineHasData,
 } from "@/lib/outvin-dealer-types";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
+import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 
@@ -21,9 +23,20 @@ type Props = {
   onChange: (next: OutvinDealerReport) => void;
   readOnly?: boolean;
   disabled?: boolean;
+  pdfIncludeEquipment?: boolean;
+  onPdfIncludeEquipmentChange?: (next: boolean) => void;
+  onClearEquipment?: () => void;
 };
 
-export function AdminOutvinDealerReportFields({ report, onChange, readOnly, disabled }: Props) {
+export function AdminOutvinDealerReportFields({
+  report,
+  onChange,
+  readOnly,
+  disabled,
+  pdfIncludeEquipment = true,
+  onPdfIncludeEquipmentChange,
+  onClearEquipment,
+}: Props) {
   const patchVehicle = (key: keyof OutvinVehicleInfo, value: string) => {
     onChange({
       ...report,
@@ -76,7 +89,32 @@ export function AdminOutvinDealerReportFields({ report, onChange, readOnly, disa
         ))}
       </div>
 
-      <p className={subHead}>Komplektācija</p>
+      <div className="mb-1 mt-3 flex items-center justify-between gap-2 first:mt-1">
+        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+          Komplektācija
+        </p>
+        <span className="flex shrink-0 items-center gap-1.5">
+          {onPdfIncludeEquipmentChange ? (
+            <AdminPdfIncludeToggle
+              id="auto-records-equipment-pdf"
+              checked={pdfIncludeEquipment}
+              onChange={onPdfIncludeEquipmentChange}
+              label="Rādīt PDF"
+            />
+          ) : null}
+          {!readOnly ? (
+            <AdminFieldResetButton
+              disabled={
+                disabled ||
+                !report.equipment.some(outvinEquipmentLineHasData)
+              }
+              title="Nodzēst komplektāciju"
+              aria-label="Nodzēst komplektāciju"
+              onClick={() => (onClearEquipment ? onClearEquipment() : setEquipment([]))}
+            />
+          ) : null}
+        </span>
+      </div>
       {displayEquip.length === 0 && readOnly ? (
         <p className="text-[11px] text-slate-400">—</p>
       ) : (

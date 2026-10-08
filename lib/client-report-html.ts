@@ -1657,9 +1657,11 @@ function buildAutoRecordsAvotuSubsection(
     : "";
   const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport, { omitEquipment: true });
   const outvinInner = bundleInner.trim() || legacyInner.trim();
-  const equipmentHtml =
-    buildOutvinBundleEquipmentPdfHtml(bundle).trim() ||
-    buildOutvinDealerEquipmentPdfHtml(b.outvinReport).trim();
+  const showEquipment = vis.autoRecordsEquipment !== false;
+  const equipmentHtml = showEquipment
+    ? buildOutvinBundleEquipmentPdfHtml(bundle).trim() ||
+      buildOutvinDealerEquipmentPdfHtml(b.outvinReport).trim()
+    : "";
   const coverHtml = buildDealerSectionCoverHtml({
     vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
     makeModel,
@@ -3279,11 +3281,16 @@ export function buildClientReportDocumentHtml(args: {
   const dealerOnly = isDealerOnlyReport(p);
   const asvOnly = isAsvOnlyReport(p);
   const businessBrand = isBusinessBrandReport(p);
+  const savedVis = mergePdfVisibility(p.pdfVisibility);
   const vis = dealerOnly
-    ? DEALER_ONLY_PDF_VISIBILITY
+    ? {
+        ...DEALER_ONLY_PDF_VISIBILITY,
+        autoRecordsOilInterval: savedVis.autoRecordsOilInterval,
+        autoRecordsEquipment: savedVis.autoRecordsEquipment,
+      }
     : asvOnly
       ? ASV_ONLY_PDF_VISIBILITY
-      : mergePdfVisibility(p.pdfVisibility);
+      : savedVis;
 
   const money =
     p.amountTotal == null

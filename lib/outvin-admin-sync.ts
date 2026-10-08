@@ -54,3 +54,14 @@ export function syncAutoRecordsWithOutvinBundle(
 export function parseAutoRecordsOutvinField(raw: unknown, vin = ""): OutvinDataBundle | undefined {
   return parseOutvinDataBundleRaw(raw, vin);
 }
+
+/** Nodzēš komplektāciju gan dīlera formā, gan Outvin bundle. */
+export function clearAutoRecordsEquipment(block: AutoRecordsBlockState): AutoRecordsBlockState {
+  return {
+    ...block,
+    outvinReport: block.outvinReport
+      ? { ...block.outvinReport, equipment: [] }
+      : block.outvinReport,
+    outvin: block.outvin ? { ...block.outvin, equipment: [] } : block.outvin,
+  };
+}

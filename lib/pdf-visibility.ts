@@ -47,6 +47,8 @@ export type PdfVisibilitySettings = {
   incidentPhotos: boolean;
   /** OFICIĀLĀ DĪLERA DATI: eļļas maiņas intervālu tabula un komentārs. Noklusējums: rādīt. */
   autoRecordsOilInterval: boolean;
+  /** OFICIĀLĀ DĪLERA DATI: aprīkojums / komplektācija. Noklusējums: rādīt. */
+  autoRecordsEquipment: boolean;
 };
 
 const IRISS_SUBSECTIONS_ON = {
@@ -97,6 +99,7 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   incidentsSummary: false,
   incidentPhotos: false,
   autoRecordsOilInterval: true,
+  autoRecordsEquipment: true,
 };
 
 /** Tikai ASV vēsture - atsevišķs produkts / PROVIN BUSINESS US atskaite. */
@@ -132,6 +135,7 @@ export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   incidentsSummary: true,
   incidentPhotos: true,
   autoRecordsOilInterval: true,
+  autoRecordsEquipment: true,
 };
 
 /**
@@ -167,6 +171,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   iriss: true,
   ...IRISS_SUBSECTIONS_ON,
   autoRecordsOilInterval: true,
+  autoRecordsEquipment: true,
 };
 
 export function isMiniPdfVisibilityOrder(args: {
@@ -242,6 +247,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   iriss: true,
   ...IRISS_SUBSECTIONS_ON,
   autoRecordsOilInterval: true,
+  autoRecordsEquipment: true,
 };
 
 function isBool(v: unknown): v is boolean {
@@ -294,6 +300,9 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     autoRecordsOilInterval: isBool(o.autoRecordsOilInterval)
       ? o.autoRecordsOilInterval
       : d.autoRecordsOilInterval,
+    autoRecordsEquipment: isBool(o.autoRecordsEquipment)
+      ? o.autoRecordsEquipment
+      : d.autoRecordsEquipment,
   };
 }
 
