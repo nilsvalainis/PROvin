@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
 import {
   LISTING_SORT_STORAGE_KEY,
   LISTING_SORTS,
@@ -14,14 +15,15 @@ import {
   vehicleInPriceRange,
   vehicleInSources,
 } from "@/lib/iriss-listings-list-view";
-import type {
-  IrissListingPlatform,
-  IrissListingPriceChange,
-  IrissListingSourceRun,
-  IrissListingVehicle,
-  IrissListingsLatestView,
-  IrissPlatformHealthItem,
-  IrissPlatformHealthReport,
+import {
+  IRISS_LISTING_PLATFORMS,
+  type IrissListingPlatform,
+  type IrissListingPriceChange,
+  type IrissListingSourceRun,
+  type IrissListingVehicle,
+  type IrissListingsLatestView,
+  type IrissPlatformHealthItem,
+  type IrissPlatformHealthReport,
 } from "@/lib/iriss-listings-types";
 
 const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
@@ -320,13 +322,15 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         </div>
         {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          {(health?.items ?? []).map((item) => (
-            <span
-              key={item.platform}
-              title={item.note}
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${healthClass(item.status)}`}
-            >
-              {PLATFORM_LABEL_LONG[item.platform]}: {healthLabel(item.status)}
+          {(health?.items ?? IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
+            <span key={item.platform} className="inline-flex items-center gap-1">
+              <span
+                title={item.note}
+                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${healthClass(item.status)}`}
+              >
+                {PLATFORM_LABEL_LONG[item.platform]}: {healthLabel(item.status)}
+              </span>
+              <IrissListingsLoginButton platform={item.platform} onDone={() => void loadHealth()} />
             </span>
           ))}
           {problemSources.length > 0 ? (

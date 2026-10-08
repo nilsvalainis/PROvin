@@ -70,4 +70,4 @@ echo
 echo "Gatavs. Pārbaude:"
 echo "  systemctl status provin-listings --no-pager"
 echo "  curl -s http://127.0.0.1:8789/listings/health | head -c 600"
-echo "Manuālai ielogošanai: systemctl start provin-listings-novnc, tad SSH tunelis (skat. README)."
+echo "Ielogošanās: /admin/iriss/sludinajumi poga Ielogoties (relejs pats paceļ noVNC). SSH tunelis paliek kā rezerve."

@@ -152,4 +152,6 @@ export type IrissPlatformHealthItem = {
 export type IrissPlatformHealthReport = {
   checkedAt: string;
   items: IrissPlatformHealthItem[];
+  relayReachable: boolean;
+  loginOpen: { platform: IrissListingPlatform; startedAt: string } | null;
 };

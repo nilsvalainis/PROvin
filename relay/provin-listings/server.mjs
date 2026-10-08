@@ -22,12 +22,23 @@
  *   GET  /listings/health                 bez auth: sesiju stāvoklis, rinda, dienas skaitītāji
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
  *   POST /listings/session/check          {platform}
- *   POST /listings/login/:platform        atver redzamu Chrome ar profilu manuālai ielogošanai (noVNC)
- *   POST /listings/login/:platform/close  aizver manuālo login
+ *   POST /listings/login/:platform        atver redzamu Chrome + īslaicīgs noVNC tokens adminam
+ *   POST /listings/login/:platform/close  aizver manuālo login un pārbauda sesiju
+ *   GET  /listings/vnc/:token/...         noVNC (tokens ceļā, bez Bearer; tikai kamēr login atvērts)
  */
 import { createServer } from "node:http";
 
 import { browserQueue, hasCaptchaOrChallenge, openProfile, profileExists, randomPause } from "./lib/browser.mjs";
+import {
+  createVncToken,
+  ensureNovnc,
+  parseVncRequestPath,
+  proxyVncHttp,
+  proxyVncUpgrade,
+  stopNovncIfStarted,
+  tokensEqual,
+  vncViewerPath,
+} from "./lib/novnc.mjs";
 import { shouldReadPublic } from "./lib/policy.mjs";
 import { auto1 } from "./lib/platforms/auto1.mjs";
 import { autobid } from "./lib/platforms/autobid.mjs";
@@ -53,7 +64,7 @@ const platforms = { openlane, auto1, autobid };
 const state = new RelayState(STATE_FILE);
 await state.load();
 
-const manual = { platform: "", startedAt: "", close: null };
+const manual = { platform: "", startedAt: "", vncToken: "", vncReady: false, close: null, finished: null };
 
 function log(msg) {
   console.log(`[listings-relay] ${new Date().toISOString()} ${msg}`);
@@ -165,21 +176,64 @@ async function runFetch({ platform, sourceUrl, orderId, maxPages }) {
   }
 }
 
+function resetManual() {
+  manual.platform = "";
+  manual.startedAt = "";
+  manual.vncToken = "";
+  manual.vncReady = false;
+  manual.close = null;
+  manual.finished = null;
+}
+
+function loginView(extra = {}) {
+  return {
+    ok: true,
+    platform: manual.platform,
+    display: process.env.DISPLAY ?? "",
+    minutes: MANUAL_LOGIN_MINUTES,
+    startedAt: manual.startedAt,
+    vncToken: manual.vncToken,
+    vncPath: manual.vncToken ? vncViewerPath(manual.vncToken) : "",
+    vncReady: manual.vncReady,
+    ...extra,
+  };
+}
+
 async function startManualLogin(platform) {
-  if (manual.close) return { ok: false, error: `manuālais login jau atvērts (${manual.platform})` };
+  if (manual.close) {
+    if (manual.platform === platform && manual.vncToken) return loginView({ reused: true });
+    return { ok: false, error: `manuālais login jau atvērts (${manual.platform})` };
+  }
   const p = platforms[platform];
+  const vnc = await ensureNovnc();
+  const vncToken = createVncToken();
   manual.platform = platform;
   manual.startedAt = new Date().toISOString();
+  manual.vncToken = vncToken;
+  manual.vncReady = vnc.ok;
   let resolveDone;
   const done = new Promise((resolve) => {
     resolveDone = resolve;
   });
+  let resolveFinished;
+  const finished = new Promise((resolve) => {
+    resolveFinished = resolve;
+  });
   manual.close = () => resolveDone("closed");
+  manual.finished = finished;
   void browserQueue.run(`manual-login:${platform}`, async () => {
-    const { page, close } = await openProfile(platform, { headless: false });
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      resolveFinished(result);
+    };
+    let page = null;
+    let close = async () => undefined;
     try {
+      ({ page, close } = await openProfile(platform, { headless: false }));
       await page.goto(p.loginUrl, { waitUntil: "domcontentloaded", timeout: 45_000 }).catch(() => undefined);
-      log(`${platform}: manuālais login atvērts uz DISPLAY=${process.env.DISPLAY ?? "?"}, ${MANUAL_LOGIN_MINUTES} min`);
+      log(`${platform}: manuālais login atvērts uz DISPLAY=${process.env.DISPLAY ?? "?"}, ${MANUAL_LOGIN_MINUTES} min, vnc=${vnc.ok}`);
       const timer = setTimeout(() => resolveDone("timeout"), MANUAL_LOGIN_MINUTES * 60_000);
       const why = await done;
       clearTimeout(timer);
@@ -187,19 +241,55 @@ async function startManualLogin(platform) {
       state.setSession(platform, loggedIn ? "ok" : "login_required", loggedIn ? "" : `manuālais login beidzās (${why}) bez aktīvas sesijas`);
       state.setLogin(platform, `manual:${why}:${loggedIn ? "ok" : "not_logged_in"}`);
       log(`${platform}: manuālais login aizvērts (${why}), loggedIn=${loggedIn}`);
+      finish({ loggedIn, why });
+    } catch (e) {
+      const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 160) : "nezināma";
+      state.setSession(platform, "unknown", note);
+      finish({ loggedIn: false, why: "error", note });
     } finally {
       await close();
-      manual.platform = "";
-      manual.startedAt = "";
-      manual.close = null;
+      resetManual();
+      stopNovncIfStarted();
+      finish({ loggedIn: false, why: "closed" });
     }
   });
-  return { ok: true, platform, display: process.env.DISPLAY ?? "", minutes: MANUAL_LOGIN_MINUTES, startedAt: manual.startedAt };
+  return loginView({
+    vncReady: vnc.ok,
+    ...(vnc.ok ? {} : { vncError: vnc.error || "noVNC nav pieejams" }),
+  });
+}
+
+async function closeManualLogin(platform) {
+  if (!manual.close || manual.platform !== platform) return { ok: false, error: "nav atvērta manuālā login" };
+  const finished = manual.finished;
+  manual.close();
+  const result = await Promise.race([
+    finished,
+    new Promise((resolve) => {
+      setTimeout(() => resolve({ loggedIn: false, why: "wait_timeout" }), 90_000);
+    }),
+  ]);
+  return {
+    ok: true,
+    platform,
+    loggedIn: Boolean(result?.loggedIn),
+    why: result?.why ?? "closed",
+    session: result?.loggedIn ? "ok" : "login_required",
+    note: result?.note ?? "",
+  };
 }
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${HOST}:${PORT}`);
   const path = stripPrefix(url.pathname);
+
+  const vncReq = parseVncRequestPath(path) || parseVncRequestPath(url.pathname);
+  if (vncReq && (req.method === "GET" || req.method === "HEAD")) {
+    if (!manual.vncToken || !tokensEqual(vncReq.token, manual.vncToken)) {
+      return sendJson(res, 401, { ok: false, error: "nederīgs vai beidzies noVNC tokens" });
+    }
+    return proxyVncHttp(req, res, vncReq.rest, url.search);
+  }
 
   if (path === "/health" && req.method === "GET") {
     const profiles = Object.fromEntries(await Promise.all(PLATFORMS.map(async (p) => [p, await profileExists(p)])));
@@ -210,7 +300,9 @@ const server = createServer(async (req, res) => {
         profiles,
         credentials: Object.fromEntries(PLATFORMS.map((p) => [p, platforms[p].hasCredentials()])),
         queue: { length: browserQueue.queueLength, current: browserQueue.current },
-        manualLogin: manual.close ? { platform: manual.platform, startedAt: manual.startedAt } : null,
+        manualLogin: manual.close
+          ? { platform: manual.platform, startedAt: manual.startedAt, vncReady: manual.vncReady }
+          : null,
         display: process.env.DISPLAY ?? "",
       }),
     );
@@ -230,11 +322,10 @@ const server = createServer(async (req, res) => {
   if (loginMatch) {
     const platform = loginMatch[1];
     if (loginMatch[2]) {
-      if (!manual.close || manual.platform !== platform) return sendJson(res, 404, { ok: false, error: "nav atvērta manuālā login" });
-      manual.close();
-      return sendJson(res, 200, { ok: true });
+      const closed = await closeManualLogin(platform);
+      return sendJson(res, closed.ok ? 200 : 404, closed);
     }
-    if (browserQueue.queueLength > 0) return sendJson(res, 503, { ok: false, error: "pārlūks aizņemts, mēģini pēc brīža" });
+    if (browserQueue.queueLength > 0 && !manual.close) return sendJson(res, 503, { ok: false, error: "pārlūks aizņemts, mēģini pēc brīža" });
     return sendJson(res, 200, await startManualLogin(platform));
   }
 
@@ -281,6 +372,21 @@ const server = createServer(async (req, res) => {
 
 server.requestTimeout = 0;
 server.headersTimeout = 65_000;
+server.on("upgrade", (req, socket, head) => {
+  const url = new URL(req.url ?? "/", `http://${HOST}:${PORT}`);
+  const path = stripPrefix(url.pathname);
+  const vncReq = parseVncRequestPath(path) || parseVncRequestPath(url.pathname);
+  if (!vncReq || !manual.vncToken || !tokensEqual(vncReq.token, manual.vncToken)) {
+    try {
+      socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
+    } catch {
+      /* ignore */
+    }
+    socket.destroy();
+    return;
+  }
+  proxyVncUpgrade(req, socket, head, vncReq.rest, url.search);
+});
 server.listen(PORT, HOST, () => {
   log(`klausās http://${HOST}:${PORT}, profili ${process.env.LISTINGS_PROFILES_DIR || "/var/lib/provin-listings/profiles"}, DISPLAY=${process.env.DISPLAY ?? "nav"}`);
 });

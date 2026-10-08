@@ -4,12 +4,19 @@ vi.mock("server-only", () => ({}));
 
 import { platformHealthFromView, mergeRelayHealth } from "@/lib/iriss-listings-session-health";
 import {
+  buildIrissRelayVncUrl,
+  checkIrissRelaySession,
+  closeIrissRelayLogin,
   fetchIrissRelayHealth,
   fetchViaIrissRelay,
+  listingPlatformFromRelay,
   mapRelayFetchResponse,
   mapRelayHealth,
+  mapRelayLoginClose,
+  mapRelayLoginStart,
   readIrissRelayConfig,
   relayPlatformFor,
+  startIrissRelayLogin,
   type IrissRelayConfig,
 } from "@/lib/iriss-listings-relay";
 import type { IrissListingsLatestView } from "@/lib/iriss-listings-types";
@@ -62,6 +69,8 @@ describe("iriss relay config", () => {
     expect(relayPlatformFor("openline")).toBe("openlane");
     expect(relayPlatformFor("auto1")).toBe("auto1");
     expect(relayPlatformFor("autobid")).toBe("autobid");
+    expect(listingPlatformFromRelay("openlane")).toBe("openline");
+    expect(listingPlatformFromRelay("auto1")).toBe("auto1");
   });
 });
 
@@ -245,6 +254,9 @@ describe("relay health merge", () => {
     expect(h.platforms.auto1?.session).toBe("ok");
     expect(h.platforms.autobid?.session).toBe("unknown");
     expect(mapRelayHealth(null, at).reachable).toBe(false);
+    expect(mapRelayHealth(null, at).manualLogin).toBeNull();
+    const withLogin = mapRelayHealth({ platforms: { openlane: { session: "ok" } }, manualLogin: { platform: "auto1", startedAt: at, vncReady: true } }, at);
+    expect(withLogin.manualLogin).toEqual({ platform: "auto1", startedAt: at, vncReady: true });
   });
 
   it("live login_required from relay overrides an ok morning run", () => {
@@ -262,7 +274,7 @@ describe("relay health merge", () => {
   });
 
   it("unreachable relay is failed; no relay leaves view health untouched", () => {
-    const down = mergeRelayHealth(platformHealthFromView("openline", view, at), { reachable: false, note: "Relejs nav sasniedzams.", checkedAt: at, platforms: {} }, { autobidViaRelay: false });
+    const down = mergeRelayHealth(platformHealthFromView("openline", view, at), { reachable: false, note: "Relejs nav sasniedzams.", checkedAt: at, platforms: {}, manualLogin: null }, { autobidViaRelay: false });
     expect(down.status).toBe("failed");
     expect(mergeRelayHealth(platformHealthFromView("openline", view, at), null, { autobidViaRelay: false }).status).toBe("ok");
   });
@@ -281,5 +293,57 @@ describe("relay health merge", () => {
     const ok = await fetchIrissRelayHealth(cfg, { fetchImpl: async () => jsonResponse(200, { platforms: { openlane: { session: "ok" } } }) });
     expect(ok.reachable).toBe(true);
     expect(ok.platforms.openlane?.session).toBe("ok");
+  });
+});
+
+describe("relay login client", () => {
+  const token = "ab".repeat(32);
+
+  it("builds a token-in-path noVNC url without the relay bearer", () => {
+    const url = buildIrissRelayVncUrl("https://csdd-relay.provin.lv/listings/", token);
+    expect(url).toContain(`/listings/vnc/${token}/vnc.html`);
+    expect(url).toContain("autoconnect=true");
+    expect(url).toContain("path=listings%2Fvnc%2F");
+    expect(url).not.toContain("t0ken");
+    expect(buildIrissRelayVncUrl("https://x/listings", "short")).toBe("");
+  });
+
+  it("maps start / close / session-check bodies", () => {
+    const start = mapRelayLoginStart(
+      { ok: true, platform: "auto1", vncToken: token, vncReady: true, minutes: 15, startedAt: "2026-10-08T08:00:00.000Z" },
+      cfg.baseUrl,
+    );
+    expect(start.ok).toBe(true);
+    expect(start.vncUrl).toContain(token);
+    expect(start.vncReady).toBe(true);
+    expect(mapRelayLoginStart({ ok: false, error: "pārlūks aizņemts" }, cfg.baseUrl).note).toContain("aizņemts");
+    expect(mapRelayLoginClose({ ok: true, platform: "auto1", loggedIn: true, session: "ok", why: "closed" })).toMatchObject({
+      ok: true,
+      loggedIn: true,
+      session: "ok",
+    });
+    expect(mapRelayLoginClose({ ok: false, error: "nav atvērta manuālā login" }).ok).toBe(false);
+  });
+
+  it("posts start/close/check to the right paths with Bearer", async () => {
+    const seen: string[] = [];
+    const fetchImpl = async (url: string, init?: RequestInit) => {
+      seen.push(`${init?.method} ${url}`);
+      expect((init?.headers as Record<string, string>).authorization).toBe("Bearer t0ken-t0ken-t0ken-t0ken");
+      if (url.endsWith("/login/auto1")) return jsonResponse(200, { ok: true, platform: "auto1", vncToken: token, vncReady: true, minutes: 15 });
+      if (url.endsWith("/login/auto1/close")) return jsonResponse(200, { ok: true, platform: "auto1", loggedIn: true, session: "ok" });
+      if (url.endsWith("/session/check")) return jsonResponse(200, { ok: true, status: "ok", note: "session_ok" });
+      return jsonResponse(404, { error: "nope" });
+    };
+    const started = await startIrissRelayLogin(cfg, "auto1", { fetchImpl });
+    expect(started.ok).toBe(true);
+    expect(started.vncUrl).toContain("/vnc/");
+    expect((await closeIrissRelayLogin(cfg, "auto1", { fetchImpl })).loggedIn).toBe(true);
+    expect((await checkIrissRelaySession(cfg, "auto1", { fetchImpl })).ok).toBe(true);
+    expect(seen).toEqual([
+      "POST https://csdd-relay.provin.lv/listings/login/auto1",
+      "POST https://csdd-relay.provin.lv/listings/login/auto1/close",
+      "POST https://csdd-relay.provin.lv/listings/session/check",
+    ]);
   });
 });

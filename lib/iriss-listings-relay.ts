@@ -37,6 +37,36 @@ export type IrissRelayHealth = {
   note: string;
   checkedAt: string;
   platforms: Partial<Record<IrissRelayPlatform, { session: IrissRelaySessionState; sessionCheckedAt: string; lastFetchAt: string; lastFetchStatus: string; lastError: string }>>;
+  manualLogin: { platform: IrissRelayPlatform; startedAt: string; vncReady: boolean } | null;
+};
+
+export type IrissRelayLoginStart = {
+  ok: boolean;
+  platform: IrissRelayPlatform | "";
+  vncToken: string;
+  vncUrl: string;
+  vncPath: string;
+  vncReady: boolean;
+  vncError: string;
+  minutes: number;
+  startedAt: string;
+  reused: boolean;
+  note: string;
+};
+
+export type IrissRelayLoginClose = {
+  ok: boolean;
+  platform: IrissRelayPlatform | "";
+  loggedIn: boolean;
+  session: IrissRelaySessionState | "unknown";
+  why: string;
+  note: string;
+};
+
+export type IrissRelaySessionCheck = {
+  ok: boolean;
+  status: IrissListingSourceStatus;
+  note: string;
 };
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -49,6 +79,10 @@ const numOrNull = (v: unknown): number | null => (typeof v === "number" && Numbe
 /** Vercel platformas nosaukums "openline" (vēsturisks) -> releja "openlane". */
 export function relayPlatformFor(platform: IrissListingPlatform): IrissRelayPlatform {
   return platform === "openline" ? "openlane" : platform;
+}
+
+export function listingPlatformFromRelay(platform: IrissRelayPlatform): IrissListingPlatform {
+  return platform === "openlane" ? "openline" : platform;
 }
 
 export function readIrissRelayConfig(env: Record<string, string | undefined> = process.env): IrissRelayConfig | null {
@@ -246,8 +280,18 @@ export async function fetchViaIrissRelay(
   }
 }
 
+function mapManualLogin(body: Rec): IrissRelayHealth["manualLogin"] {
+  const raw = isObj(body.manualLogin) ? body.manualLogin : null;
+  if (!raw) return null;
+  const platform = str(raw.platform);
+  if (platform !== "openlane" && platform !== "auto1" && platform !== "autobid") return null;
+  return { platform, startedAt: str(raw.startedAt), vncReady: raw.vncReady === true };
+}
+
 export function mapRelayHealth(body: unknown, checkedAt: string): IrissRelayHealth {
-  if (!isObj(body) || !isObj(body.platforms)) return { reachable: false, note: "Relejs atgrieza nederīgu health JSON.", checkedAt, platforms: {} };
+  if (!isObj(body) || !isObj(body.platforms)) {
+    return { reachable: false, note: "Relejs atgrieza nederīgu health JSON.", checkedAt, platforms: {}, manualLogin: null };
+  }
   const platforms: IrissRelayHealth["platforms"] = {};
   for (const p of ["openlane", "auto1", "autobid"] as const) {
     const s = body.platforms[p];
@@ -261,7 +305,148 @@ export function mapRelayHealth(body: unknown, checkedAt: string): IrissRelayHeal
       lastError: str(s.lastError),
     };
   }
-  return { reachable: true, note: "", checkedAt, platforms };
+  return { reachable: true, note: "", checkedAt, platforms, manualLogin: mapManualLogin(body) };
+}
+
+function vncTokenLooksValid(token: string): boolean {
+  return /^[a-f0-9]{64}$/i.test(token);
+}
+
+/** noVNC skatītāja URL (tokens ceļā; Bearer tokens šeit nav). */
+export function buildIrissRelayVncUrl(relayBaseUrl: string, vncToken: string): string {
+  const base = relayBaseUrl.trim().replace(/\/+$/, "");
+  const token = vncToken.trim().toLowerCase();
+  if (!base || !vncTokenLooksValid(token)) return "";
+  const path = `listings/vnc/${token}/`;
+  return `${base}/vnc/${token}/vnc.html?autoconnect=true&reconnect=true&resize=scale&path=${encodeURIComponent(path)}`;
+}
+
+export function mapRelayLoginStart(body: unknown, relayBaseUrl: string): IrissRelayLoginStart {
+  const empty: IrissRelayLoginStart = {
+    ok: false,
+    platform: "",
+    vncToken: "",
+    vncUrl: "",
+    vncPath: "",
+    vncReady: false,
+    vncError: "",
+    minutes: 0,
+    startedAt: "",
+    reused: false,
+    note: "Relejs neatgrieza login atbildi.",
+  };
+  if (!isObj(body)) return empty;
+  const platform = str(body.platform);
+  const vncToken = str(body.vncToken).toLowerCase();
+  const ok = body.ok === true && (platform === "openlane" || platform === "auto1" || platform === "autobid");
+  const vncError = str(body.vncError) || str(body.error);
+  return {
+    ok,
+    platform: ok ? platform : "",
+    vncToken: vncTokenLooksValid(vncToken) ? vncToken : "",
+    vncUrl: buildIrissRelayVncUrl(relayBaseUrl, vncToken),
+    vncPath: str(body.vncPath),
+    vncReady: body.vncReady === true,
+    vncError,
+    minutes: numOrNull(body.minutes) ?? 0,
+    startedAt: str(body.startedAt),
+    reused: body.reused === true,
+    note: vncError || (ok ? "" : str(body.error) || empty.note),
+  };
+}
+
+export function mapRelayLoginClose(body: unknown): IrissRelayLoginClose {
+  if (!isObj(body)) return { ok: false, platform: "", loggedIn: false, session: "unknown", why: "", note: "Relejs neatgrieza close atbildi." };
+  const platform = str(body.platform);
+  const sessionRaw = str(body.session);
+  return {
+    ok: body.ok === true,
+    platform: platform === "openlane" || platform === "auto1" || platform === "autobid" ? platform : "",
+    loggedIn: body.loggedIn === true,
+    session: sessionRaw === "ok" || sessionRaw === "login_required" ? sessionRaw : "unknown",
+    why: str(body.why),
+    note: str(body.note) || str(body.error),
+  };
+}
+
+export function mapRelaySessionCheck(body: unknown): IrissRelaySessionCheck {
+  if (!isObj(body)) return { ok: false, status: "fetch_failed", note: "Relejs neatgrieza sesijas pārbaudi." };
+  return { ok: body.ok === true || str(body.status) === "ok", status: mapRelayStatus(body.status), note: str(body.note) || str(body.error) };
+}
+
+async function relayJson(
+  cfg: IrissRelayConfig,
+  path: string,
+  body: Rec,
+  opts: { fetchImpl?: FetchLike; timeoutMs?: number },
+): Promise<{ status: number; body: unknown; note: string }> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 45_000);
+  try {
+    const res = await fetchImpl(`${cfg.baseUrl}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${cfg.token}` },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    const text = await res.text();
+    let parsed: unknown = {};
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch {
+      return { status: res.status, body: {}, note: "Relejs atgrieza nederīgu JSON." };
+    }
+    const rec = isObj(parsed) ? parsed : {};
+    return { status: res.status, body: parsed, note: str(rec.error) || str(rec.note) };
+  } catch (e) {
+    const aborted = e instanceof Error && e.name === "AbortError";
+    return {
+      status: 0,
+      body: {},
+      note: aborted ? `Relejs neatbildēja ${Math.round((opts.timeoutMs ?? 45_000) / 1000)} s laikā.` : `Releja savienojums neizdevās: ${formatFetchError(e, "fetch failed")}`,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function startIrissRelayLogin(
+  cfg: IrissRelayConfig,
+  platform: IrissRelayPlatform,
+  opts: { fetchImpl?: FetchLike; timeoutMs?: number } = {},
+): Promise<IrissRelayLoginStart> {
+  const r = await relayJson(cfg, `/login/${platform}`, {}, { ...opts, timeoutMs: opts.timeoutMs ?? 45_000 });
+  if (r.status === 0) return { ...mapRelayLoginStart({}, cfg.baseUrl), note: r.note };
+  const mapped = mapRelayLoginStart(r.body, cfg.baseUrl);
+  if (r.status >= 400 && !mapped.note) mapped.note = r.note || `Relejs atbildēja HTTP ${r.status}.`;
+  if (r.status >= 400) mapped.ok = false;
+  return mapped;
+}
+
+export async function closeIrissRelayLogin(
+  cfg: IrissRelayConfig,
+  platform: IrissRelayPlatform,
+  opts: { fetchImpl?: FetchLike; timeoutMs?: number } = {},
+): Promise<IrissRelayLoginClose> {
+  const r = await relayJson(cfg, `/login/${platform}/close`, {}, { ...opts, timeoutMs: opts.timeoutMs ?? 90_000 });
+  if (r.status === 0) return { ok: false, platform, loggedIn: false, session: "unknown", why: "", note: r.note };
+  const mapped = mapRelayLoginClose(r.body);
+  if (r.status >= 400) return { ...mapped, ok: false, note: mapped.note || r.note || `Relejs atbildēja HTTP ${r.status}.` };
+  return mapped;
+}
+
+export async function checkIrissRelaySession(
+  cfg: IrissRelayConfig,
+  platform: IrissRelayPlatform,
+  opts: { fetchImpl?: FetchLike; timeoutMs?: number } = {},
+): Promise<IrissRelaySessionCheck> {
+  const r = await relayJson(cfg, "/session/check", { platform }, { ...opts, timeoutMs: opts.timeoutMs ?? 90_000 });
+  if (r.status === 0) return { ok: false, status: "fetch_failed", note: r.note };
+  const mapped = mapRelaySessionCheck(r.body);
+  if (r.status >= 400) return { ok: false, status: r.status === 503 ? "fetch_failed" : mapped.status, note: mapped.note || r.note || `Relejs atbildēja HTTP ${r.status}.` };
+  return mapped;
 }
 
 export async function fetchIrissRelayHealth(cfg: IrissRelayConfig, opts: { fetchImpl?: FetchLike; timeoutMs?: number } = {}): Promise<IrissRelayHealth> {
@@ -271,11 +456,11 @@ export async function fetchIrissRelayHealth(cfg: IrissRelayConfig, opts: { fetch
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 8_000);
   try {
     const res = await fetchImpl(`${cfg.baseUrl}/health`, { method: "GET", signal: controller.signal, cache: "no-store" });
-    if (!res.ok) return { reachable: false, note: `Releja health HTTP ${res.status}.`, checkedAt, platforms: {} };
+    if (!res.ok) return { reachable: false, note: `Releja health HTTP ${res.status}.`, checkedAt, platforms: {}, manualLogin: null };
     return mapRelayHealth(await res.json(), checkedAt);
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
-    return { reachable: false, note: aborted ? "Relejs neatbild (health timeout)." : `Relejs nav sasniedzams: ${formatFetchError(e, "fetch failed")}`, checkedAt, platforms: {} };
+    return { reachable: false, note: aborted ? "Relejs neatbild (health timeout)." : `Relejs nav sasniedzams: ${formatFetchError(e, "fetch failed")}`, checkedAt, platforms: {}, manualLogin: null };
   } finally {
     clearTimeout(timer);
   }
