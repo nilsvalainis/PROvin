@@ -46,7 +46,10 @@ import { buildHistoricalReportsAiContext } from "@/lib/admin-ai-historical-conte
 import { buildAggregateKnowledgeAiContext } from "@/lib/admin-ai-aggregate-knowledge";
 import { buildStyleCorpusAiContext } from "@/lib/admin-ai-style-corpus";
 import { buildTechnicalInspectionCoverageBrief } from "@/lib/admin-ai-ta-coverage";
-import { buildWinterSaltRustBrief } from "@/lib/admin-ai-winter-salt-rust";
+import {
+  buildSouthernEuropeVisualCautionBrief,
+  buildWinterSaltRustBrief,
+} from "@/lib/admin-ai-winter-salt-rust";
 import { buildDealerIncidentLinkBrief } from "@/lib/admin-ai-dealer-incident-link";
 import { buildMileageForensicsBrief } from "@/lib/admin-ai-mileage-forensics";
 import { buildCommentLengthBudgetBrief } from "@/lib/ai-comment-length-budget";
@@ -336,6 +339,13 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
   });
   if (winterSalt) parts.push(winterSalt);
+
+  const southernVisual = buildSouthernEuropeVisualCautionBrief({
+    csdd: blocks.csdd,
+    sourceBlocks: blocks,
+    extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
+  });
+  if (southernVisual) parts.push(southernVisual);
 
   const dealerIncidents = buildDealerIncidentLinkBrief(blocks);
   if (dealerIncidents) parts.push(dealerIncidents);

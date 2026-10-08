@@ -165,6 +165,14 @@ const TERM_LV: TermRule[] = [
   { re: /^(water\s+pump|wasserpumpe)$/i, lv: "Ūdens sūknis" },
   { re: /^(thermostat)$/i, lv: "Termostats" },
   { re: /^(v[- ]?belt|drive\s+belt|keilrippenriemen|keilriemen)$/i, lv: "Piedziņas siksna" },
+  {
+    re: /^(harmonic\s+balancer|crankshaft\s+(pulley(\s+damper)?|damper)|crankshaft\s+vibration\s+damper|torsional\s+vibration\s+damper|vibration\s+damper)$/i,
+    lv: "Kloķvārpstas skriemelis (demferis)",
+  },
+  {
+    re: /^((kurbelwellen[- ]?)?schwingungsd[äa]mpfer|riemenscheibe(\s+mit\s+schwingungsd[äa]mpfer)?)$/i,
+    lv: "Kloķvārpstas skriemelis (demferis)",
+  },
   { re: /^(timing\s+chain|steuerkette)$/i, lv: "Sadales ķēde" },
   { re: /^(timing\s+belt|zahnriemen)$/i, lv: "Zobsiksna" },
   { re: /^(clutch|kupplung)$/i, lv: "Sajūgs" },

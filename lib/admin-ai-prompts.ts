@@ -27,6 +27,7 @@ import {
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
+  AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_SUNROOF_DRAINAGE_INSPECTION_RULES,
   AI_TEST_DRIVE_GEARBOX_DMF_RULES,
@@ -159,6 +160,8 @@ ${AI_WRAP_FILM_RULES}
 
 ${AI_WINTER_SALT_RUST_RULES}
 
+${AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES}
+
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 
 ${AI_SUNROOF_DRAINAGE_INSPECTION_RULES}
@@ -177,8 +180,8 @@ ${AI_EV_BEV_FORENSICS_RULES}
 
 REGIONAL MARKET & TECHNICAL CONTEXT (apply from origin/country/market signals in data — do not guess origin):
 - GERMANY / CENTRAL EUROPE: highway use — often clean undercarriage but stone chips (bumper, hood, windshield); continuous mechanical wear — service history matters.
-- LATVIA / LITHUANIA / ESTONIA: winter salt rust/corrosion, suspension wear from poor roads; fleet/company ownership — VAT fraud checks, weak maintenance records.
-- SOUTHERN EUROPE (IT/ES/FR): low rust, healthier suspension; sun-faded paint/seals/dashboard, parking dents; service history often sparse — warn the buyer.
+- LATVIA / LITHUANIA / ESTONIA and the wider rust belt when data shows long use (Sweden, Finland, Norway, Denmark, Austria, Poland, southern Germany Bavaria/Baden-Württemberg/Alps, eastern Germany): winter salt rust/corrosion as raised probability, not proven rust. Name only evidenced countries. Generic Germany is not this list.
+- SOUTHERN EUROPE: Italy/France - greater visual caution (repainted panels, cosmetic damage, thinner service history); rust usually lower. Spain: sun-fade / parking dents unless data says otherwise. Never invent a country.
 - USA / CANADA IMPORTS: require original salvage photos (Copart/IAAI) when applicable; conversion risks (signals, fog lights, radio/nav); structural repair quality.
 
 LEGAL & ADMINISTRATIVE (Latvian buyer framework — when import/registration data present):
@@ -256,6 +259,8 @@ ${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 ${AI_WRAP_FILM_RULES}
 
 ${AI_WINTER_SALT_RUST_RULES}
+
+${AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES}
 
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 
@@ -422,10 +427,11 @@ FORMĀTS (obligāti):
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
 - **Virsbūves stāvoklis un krāsas biezums** — KATRAM auto viena sadaļa (virsraksts + viena rindkopa, ne trīs): digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā; mērītājs klātienē; ārēji ap 100 līdz 150 µm, visiem paneļiem līdzīgi; starpība 50 līdz 150 µm var norādīt uz kosmētisku pārkrāsošanu; iekšējās ailes parasti aptuveni uz pusi mazāk = rūpnīca, ne remonts. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.
-- **Nobraukums / neatbilstības / vakuums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
+- **Nobraukums / neatbilstības / datu trūkums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
-- **Ziemas sāls / rūsa** — ja kontekstā ir bloks ar Statuss: OBLIGĀTI, viena sadaļa ar vietām no brīfa (arkas zem oderēm, sliekšņu apakšas, apakšdaļa). Bagāžnieka vāka malu ap numura zīmes apgaismojumu nosauc TIKAI ja brīfs saka „Bagāžnieka vāks: tērauds”. Daudziem modeļiem vāks ir plastmasa vai stiklašķiedra - rūsa tur neaug. Svaiga TA un cinkojums to neatceļ. Neizdomā, ka rūsa jau ir.
+- **Ziemas sāls / rūsa** — ja kontekstā ir bloks ar Statuss: OBLIGĀTI, viena sadaļa ar vietām no brīfa (arkas zem oderēm, sliekšņu apakšas, apakšdaļa). Bagāžnieka vāka malu ap numura zīmes apgaismojumu nosauc TIKAI ja brīfs saka „Bagāžnieka vāks: tērauds”. Daudziem modeļiem vāks ir plastmasa vai stiklašķiedra - rūsa tur neaug. Svaiga TA un cinkojums to neatceļ. Neizdomā, ka rūsa jau ir. Nosauc tikai brīfa valstis (var būt arī Zviedrija, Somija, Dānija, Austrija, Polija, Vācijas lejasdaļa, Austrumvācija).
+- **Itālija / Francija** — ja kontekstā ir bloks ar VIZUĀLA PIESARDZĪBA: īsa piezīme par pārkrāsotiem paneļiem, kosmētiku un plānāku servisa vēsturi; rūsa parasti zemāka. Ja bloka NAV, šīs valstis NENOSAUK.
 - **Jumta lūka / panorāmas lūka** — ja aprīkojumā, sludinājumā vai identifikācijas datos ir lūka: OBLIGĀTI atsevišķa rindkopa par grīdas paklājiem (paceļot), mitrumu / smaku / pelējumu un iespējami cietām jumta lūkas drenāžām. VW grupā, īpaši Volkswagen, tā ir tipiska problēma. Ja lūkas datos nav - šo rindkopu NERAKSTI. Skat. SUNROOF / PANORAMIC ROOF DRAINAGE.
 - **Dīlera / Outvin / serviss** — visām markām: lasi Veiktos darbus un Komentārus. Ja zobsiksna, ķēde, ūdenssūknis vai kārbas eļļa jau fiksēta, NEIEKĻAUJ to kā „jāmaina”. Ķēde pret zobsiksnu tikai pēc šī motora koda. Ja oficiālajā ierakstā >30 000 km vai >24 mēn. bez apkopes — pieņem, ka darbs var būt bijis ārpus dīlera; jālūdz pārdevējam uzrādīt dokumenti, ne jāapgalvo, ka apkope nav bijusi.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.

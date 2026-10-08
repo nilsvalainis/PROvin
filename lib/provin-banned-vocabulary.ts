@@ -168,6 +168,18 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "izlaid šo vispārīgo teikumu; ja jāpiemin, raksti konkrētu faktu par ŠO kārbu/agregātu",
     code: "vocabulary_muza_ellas_apgalvojums",
   },
+  {
+    label: "vakuums",
+    pattern: /datu\s+vakuum|informācijas\s+vakuum|\bvakuums(?!ūkn)/i,
+    replacement: "trūkums / datu neesamība",
+    code: "vocabulary_vakuums",
+  },
+  {
+    label: "svārstību slāpētājs",
+    pattern: /(?:vibrācij[au]|svārstību)\s+slāpētāj/i,
+    replacement: "kloķvārpstas skriemelis (demferis)",
+    code: "vocabulary_vibraciju_slapetajs",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */

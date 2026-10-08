@@ -51,6 +51,12 @@ describe("servisa terminu tulkojums latviski", () => {
     expect(serviceWorkTermLv("MOTOROEL 5W-30 LL04")).toBe("Motoreļļa 5W-30 LL04");
   });
 
+  it("tulko kloķvārpstas skriemeli (demferi)", () => {
+    expect(serviceWorkTermLv("Harmonic balancer")).toBe("Kloķvārpstas skriemelis (demferis)");
+    expect(serviceWorkTermLv("Crankshaft pulley damper")).toBe("Kloķvārpstas skriemelis (demferis)");
+    expect(serviceWorkTermLv("Schwingungsdämpfer")).toBe("Kloķvārpstas skriemelis (demferis)");
+  });
+
   it("latviešu tekstu neaiztiek", () => {
     expect(serviceWorkTermLv("Salona gaisa filtra maiņa")).toBe("Salona gaisa filtra maiņa");
   });

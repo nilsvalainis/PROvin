@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { emptyCsddFields } from "@/lib/admin-source-blocks";
+import { emptyCsddFields, emptyVinRegistryBlock, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import {
   analyzeWinterSaltRust,
+  buildSouthernEuropeVisualCautionBrief,
   buildWinterSaltRustBrief,
   inferTailgateRustMaterial,
   winterSaltRustRequiredInPrompt,
@@ -107,6 +108,47 @@ describe("analyzeWinterSaltRust", () => {
     expect(brief).toMatch(/Bagāžnieka vāks: plastmasa/);
     expect(brief).toMatch(/NENOSAUKT bagāžnieka vāka malu/);
     expect(winterSaltTailgateMaterialFromPrompt(brief)).toBe("non_steel");
+  });
+
+  it("requires rust advice after long use in Sweden via car.info, not generic Germany", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "AUDI Q7";
+    csdd.firstRegistration = "2016-03-12";
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd,
+      carinfo: { ...emptyVinRegistryBlock(), ownersSummary: "2 īpašnieki, Zviedrijas reģistrs" },
+    });
+    const c = analyzeWinterSaltRust({ csdd, sourceBlocks: blocks, nowMs: NOW });
+    expect(c.required).toBe(true);
+    expect(c.evidencedCountries).toContain("Zviedrija");
+    expect(c.evidencedCountries.join(" ")).not.toMatch(/Vācija(?!s)/);
+    expect(buildWinterSaltRustBrief({ csdd, sourceBlocks: blocks, nowMs: NOW })).toMatch(/Zviedrija/);
+  });
+
+  it("treats Bavaria as rust belt and leaves generic Germany out", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "AUDI Q7";
+    csdd.firstRegistration = "2016-03-12";
+    const c = analyzeWinterSaltRust({
+      csdd,
+      extraHaystack: "Dīleris: München, Bayern",
+      nowMs: NOW,
+    });
+    expect(c.required).toBe(true);
+    expect(c.evidencedCountries).toContain("Vācijas lejasdaļa");
+    expect(c.evidencedCountries).not.toContain("Vācija");
+  });
+
+  it("adds Italy/France visual caution without inventing rust-belt countries", () => {
+    const csdd = emptyCsddFields();
+    csdd.makeModel = "FIAT 500X";
+    csdd.previousRegistrationCountry = "Itālija";
+    const brief = buildSouthernEuropeVisualCautionBrief({ csdd });
+    expect(brief).toMatch(/VIZUĀLA PIESARDZĪBA/);
+    expect(brief).toMatch(/Itālija/);
+    expect(brief).not.toMatch(/Francija/);
+    expect(buildWinterSaltRustBrief({ csdd, nowMs: NOW })).toBe("");
+    expect(buildSouthernEuropeVisualCautionBrief({ csdd: emptyCsddFields() })).toBe("");
   });
 
   it("omits the canned tailgate sentence when the lid material is unknown", () => {
