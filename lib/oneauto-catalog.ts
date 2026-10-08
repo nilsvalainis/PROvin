@@ -143,14 +143,19 @@ export function normalizeOneautoServiceEvent(ev: OneautoServiceEvent): OneautoSe
   };
 }
 
+/** Aprīkojuma rindas paliek kompaktas; servisa vēsture drīkst būt gara (eļļas tabula). */
+export const ONEAUTO_EQUIPMENT_MAX = 80;
+export const ONEAUTO_POWERTRAIN_MAX = 40;
+export const ONEAUTO_SERVICE_TIMELINE_MAX = 300;
+
 export function normalizeOneautoDisplay(d: OneautoDisplaySections): OneautoDisplaySections {
   return {
-    equipment: filledOneautoKvRows(d.equipment.map(normalizeOneautoKvRow)).slice(0, 80),
+    equipment: filledOneautoKvRows(d.equipment.map(normalizeOneautoKvRow)).slice(0, ONEAUTO_EQUIPMENT_MAX),
     serviceTimeline: filledOneautoServiceEvents(d.serviceTimeline.map(normalizeOneautoServiceEvent)).slice(
       0,
-      80,
+      ONEAUTO_SERVICE_TIMELINE_MAX,
     ),
-    powertrain: filledOneautoKvRows(d.powertrain.map(normalizeOneautoKvRow)).slice(0, 40),
+    powertrain: filledOneautoKvRows(d.powertrain.map(normalizeOneautoKvRow)).slice(0, ONEAUTO_POWERTRAIN_MAX),
   };
 }
 
@@ -172,7 +177,7 @@ function parseKvRows(raw: unknown, max: number): OneautoKvRow[] {
 function parseServiceRows(raw: unknown): OneautoServiceEvent[] {
   if (!Array.isArray(raw)) return [];
   const out: OneautoServiceEvent[] = [];
-  for (const item of raw.slice(0, 80)) {
+  for (const item of raw.slice(0, ONEAUTO_SERVICE_TIMELINE_MAX)) {
     if (!item || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
     const ev = normalizeOneautoServiceEvent({
@@ -525,9 +530,9 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   walkService(history, serviceTimeline);
 
   return normalizeOneautoDisplay({
-    equipment: equipment.slice(0, 80),
-    serviceTimeline: serviceTimeline.slice(0, 80),
-    powertrain: powertrain.slice(0, 40),
+    equipment: equipment.slice(0, ONEAUTO_EQUIPMENT_MAX),
+    serviceTimeline: serviceTimeline.slice(0, ONEAUTO_SERVICE_TIMELINE_MAX),
+    powertrain: powertrain.slice(0, ONEAUTO_POWERTRAIN_MAX),
   });
 }
 

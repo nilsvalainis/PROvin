@@ -13,7 +13,10 @@
  */
 
 import {
+  autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
+  mergeAutoRecordsServiceWorksByOdometer,
+  normalizeAutoRecordsServiceWorkRow,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
@@ -55,6 +58,10 @@ export function oilClaimCautionHtml(): string {
       "Ja atskaitē novērojams ilgāks laika vai nobraukuma intervāls starp dīlera apkopēm nekā paredzējis ražotājs (vai ieraksti atsevišķos periodos iztrūkst), tas nepierāda, ka apkope nav veikta.",
     )}
     ${b(
+      "Vispārīgi apmeklējumi.",
+      "Dažiem ražotājiem eļļas maiņa dīlera žurnālā paliek zem virsraksta „apkope”, „serviss” vai „service”, bez eļļas, filtra vai viskozitātes nosaukuma. Tādus ierakstus tabulā neskaitām kā fiksētu eļļas maiņu. Tas nav apgalvojums, ka eļļa nav mainīta.",
+    )}
+    ${b(
       "Secinājums.",
       "Ieraksta trūkums atskaitē norāda tikai uz oficiālu datu neesamību konkrētajā datubāzē, nevis uz faktisko servisa kavējumu.",
     )}
@@ -74,10 +81,21 @@ export function oilClaimCautionHtml(): string {
 /** Joslas skala PDF (tā pati kā konceptā). */
 export const OIL_BAR_SCALE_KM = 30_000;
 
-const ENGINE_OIL_RE =
-  /(?:motor)?e[lļ]{1,2}as\s+mai[nņ]|motore[lļ]|engine\s+oil(?:\s+change)?|\boil\s+change\b|ölwechsel/i;
-const GEARBOX_OIL_CHUNK_RE =
-  /(?:automātisk[aā]s?|pārnesumu|k[aā]rbas?|dsg|cvt|haldex|aizmugurēj[aā]\s+tilt[aā]|diferenci[aā]l[aā]|transfer(?:\s+case)?|getriebe|transmission|axle|atf)\s+(?:e[lļ]{1,2}as|oil|öl)\s+(?:mai[nņ]a|change|wechsel)/gi;
+/** Dzinēja eļļas viskozitāte (0W-20, 5W30, 10W-40). 75W-90 u.c. ir kārba / tilts. */
+const ENGINE_VISCOSITY_RE = /\b(?:0|5|10|15|20)w(?:16|20|30|40|50|60)\b/;
+
+/**
+ * Kārba / Haldex / tilts / ATF, ko izņem pirms dzinēja signāla meklēšanas.
+ * Pēc fold: bez garumzīmēm, ö->o, „oel”->„ol”.
+ */
+const NON_ENGINE_OIL_CHUNK_RE =
+  /(?:automatiskas?|parnesum(?:u|karbas?)?|karbas?|dsg|dct|cvt|haldex|aizmugurej\w*\s+tilt\w*|diferencial\w*|transfer(?:\s+case)?|getriebe|transmission|axle|atf|dexron|mercon|hidraulisk\w*|stures|power\s+steering)(?:\s+(?:ellas?|oil|ol))*(?:\s+(?:maina|change|wechsel|filtr\w*))?|getriebeol\w*|haldexol\w*|achsol\w*|hinterachs\w*\s+ol\w*/g;
+
+const ENGINE_OIL_NAME_RE =
+  /(?:motor)?ellas?\s+maina|motorell|motorol|motoroil|motor\s+(?:oil|ol)|dzineja\s+ellas?|engine\s+oil|oil\s+change|olwechsel|oilwechsel|ol\s+service|oil\s+service|lube\s+(?:service|oil)|oil\s+and\s+filter/;
+
+const ENGINE_OIL_FILTER_RE =
+  /(?:motor)?ellas?\s+filtr|oil\s+filter|olfilter|motorolfilter/;
 
 /** Virs šī km soļa dīlera datos pieņemam iztrūkumu, ne reālu intervālu. */
 export const OIL_DEALER_GAP_KM = 30_000;
@@ -165,12 +183,34 @@ function avg(xs: number[]): number | null {
   return xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null;
 }
 
-/** Vai rinda fiksē dzinēja eļļas maiņu (ne kārbu / tiltu atsevišķi). */
+/** Salīdzināšanai: NFKD, bez diakritikas, vācu oe->o, viskozitāte 5w-30 -> 5w30. */
+export function foldOilWorkText(raw: string): string {
+  const folded = raw
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replace(/ß/g, "ss")
+    .toLowerCase()
+    .replace(/oel/g, "ol")
+    .replace(/\s+/g, " ")
+    .trim();
+  return folded.replace(/\b(\d{1,2})\s*[-]?\s*w\s*[-]?\s*(\d{2,3})\b/g, "$1w$2");
+}
+
+function engineOilSignalInFolded(folded: string): boolean {
+  if (!folded) return false;
+  if (ENGINE_OIL_NAME_RE.test(folded)) return true;
+  if (ENGINE_OIL_FILTER_RE.test(folded)) return true;
+  if (ENGINE_VISCOSITY_RE.test(folded)) return true;
+  return false;
+}
+
+/** Vai rinda fiksē dzinēja eļļas maiņu (ne kārbu / tiltu / ATF atsevišķi). */
 export function isEngineOilChangeWork(works: string): boolean {
-  const t = works.replace(/\s+/g, " ").trim();
-  if (!t) return false;
-  const withoutGear = t.replace(GEARBOX_OIL_CHUNK_RE, " ").replace(/\s+/g, " ").trim();
-  return ENGINE_OIL_RE.test(withoutGear);
+  const folded = foldOilWorkText(works);
+  if (!folded) return false;
+  NON_ENGINE_OIL_CHUNK_RE.lastIndex = 0;
+  const withoutGear = folded.replace(NON_ENGINE_OIL_CHUNK_RE, " ").replace(/\s+/g, " ").trim();
+  return engineOilSignalInFolded(withoutGear);
 }
 
 function parseRowMs(date: string): number {
@@ -180,7 +220,12 @@ function parseRowMs(date: string): number {
 export function collectEngineOilChangeRows(
   rows: readonly AutoRecordsServiceWorkRow[],
 ): AutoRecordsServiceWorkRow[] {
-  const oil = rows.filter((r) => isEngineOilChangeWork(r.works));
+  const visits = mergeAutoRecordsServiceWorksByOdometer(
+    (rows ?? [])
+      .map(normalizeAutoRecordsServiceWorkRow)
+      .filter(autoRecordsServiceWorkRowIsPrintable),
+  );
+  const oil = visits.filter((r) => isEngineOilChangeWork(r.works));
   const sorted = [...oil].sort((a, b) => {
     const ta = parseRowMs(a.date);
     const tb = parseRowMs(b.date);
@@ -196,9 +241,20 @@ export function collectEngineOilChangeRows(
   const out: AutoRecordsServiceWorkRow[] = [];
   const seen = new Set<string>();
   for (const row of sorted) {
-    const key = `${row.date.trim()}|${row.odometer.replace(/\D/g, "")}`;
+    const day = row.date.trim();
+    const km = row.odometer.replace(/\D/g, "");
+    const key = `${day}|${km}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    if (day) {
+      const sameDay = out.findIndex((r) => r.date.trim() === day);
+      if (sameDay >= 0) {
+        const prevKm = parseKm(out[sameDay]!.odometer) ?? 0;
+        const nextKm = parseKm(row.odometer) ?? 0;
+        if (nextKm >= prevKm) out[sameDay] = row;
+        continue;
+      }
+    }
     out.push(row);
   }
   return out;
