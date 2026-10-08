@@ -5,6 +5,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { applyAuto1CentsMigration } from "@/lib/iriss-listings-auto1-cents";
+import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
+import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
@@ -112,17 +114,26 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
   if (!id || !externalId || !isPlatform(platform) || !CHANGES.has(change)) return null;
   const orderIds = strArr(v.orderIds);
   if (orderIds.length === 0) return null;
+  const firstRegistration = str(v.firstRegistration);
+  const stockNumber = str(v.stockNumber);
+  const auctionId = str(v.auctionId);
   return {
     id,
     platform,
     externalId,
-    detailUrl: str(v.detailUrl),
+    detailUrl: resolveListingDetailUrl({
+      platform,
+      detailUrl: str(v.detailUrl),
+      stockNumber,
+      auctionId,
+      externalId,
+    }),
     orderIds,
     orderBrandModels: strArr(v.orderBrandModels),
     title: str(v.title),
     manufacturer: str(v.manufacturer),
-    year: str(v.year),
-    firstRegistration: str(v.firstRegistration),
+    year: str(v.year) || listingYearDigits({ year: "", firstRegistration }),
+    firstRegistration,
     mileageKm: numOrNull(v.mileageKm),
     fuel: str(v.fuel),
     transmission: str(v.transmission),
@@ -138,14 +149,14 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     bidCount: numOrNull(v.bidCount),
     auctionType: str(v.auctionType),
     damageRaw: str(v.damageRaw),
-    stockNumber: str(v.stockNumber),
+    stockNumber,
     currency: str(v.currency) || "EUR",
     priceStart: numOrNull(v.priceStart),
     priceMinimal: numOrNull(v.priceMinimal),
     priceCurrent: numOrNull(v.priceCurrent),
     priceBuyNow: numOrNull(v.priceBuyNow),
     vatNote: str(v.vatNote),
-    auctionId: str(v.auctionId),
+    auctionId,
     auctionStartAt: str(v.auctionStartAt),
     auctionEndAt: str(v.auctionEndAt),
     auctionStage: str(v.auctionStage),

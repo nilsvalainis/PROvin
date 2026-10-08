@@ -1,18 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
+import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
 import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { classifyListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
+import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import {
   LISTING_SORTS,
   type ListingSort,
+  listingYearLabel,
   parseListingSort,
   parseListingSources,
   parsePriceBound,
@@ -20,6 +22,16 @@ import {
   vehicleInPriceRange,
   vehicleInSources,
 } from "@/lib/iriss-listings-list-view";
+import {
+  listingBudgetForVehicle,
+  listingLinkedOrders,
+  listingOrdersById,
+  listingVehicleOrderIds,
+  parseListingOrderFilter,
+  serializeListingOrderFilter,
+  vehicleMatchesOrderFilter,
+  type IrissListingOrderBrief,
+} from "@/lib/iriss-listings-orders";
 import {
   defaultIrissListPrefs,
   irissListBrowserStorage,
@@ -148,12 +160,28 @@ function extrasOf(v: IrissListingVehicle, prefs: IrissListPrefs): number {
   return listingExtrasI(listingCostsFor(prefs, v.id));
 }
 
-function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs): number | null {
-  if (prefs.budget == null) return null;
+function linkedOrdersOf(
+  v: Pick<IrissListingVehicle, "id" | "orderIds">,
+  prefs: IrissListPrefs,
+  byId: ReadonlyMap<string, IrissListingOrderBrief>,
+): IrissListingOrderBrief[] {
+  return listingLinkedOrders(listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), byId);
+}
+
+function budgetOf(
+  v: Pick<IrissListingVehicle, "id" | "orderIds">,
+  prefs: IrissListPrefs,
+  byId: ReadonlyMap<string, IrissListingOrderBrief>,
+): number | null {
+  return listingBudgetForVehicle(prefs.budget, linkedOrdersOf(v, prefs, byId));
+}
+
+function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, budget: number | null): number | null {
+  if (budget == null) return null;
   const bid = listingBidPrice(v);
   if (bid == null) return null;
   const tax = taxOf(v, prefs);
-  return listingMaxBid(tax.kind, tax.rate ?? 0, prefs.budget, extrasOf(v, prefs)) - bid;
+  return listingMaxBid(tax.kind, tax.rate ?? 0, budget, extrasOf(v, prefs)) - bid;
 }
 
 function daysInAuction(v: IrissListingVehicle, nowMs: number | null): string {
@@ -194,6 +222,7 @@ function CountryFlag({ code }: { code: string }) {
 
 type Props = {
   latest: IrissListingsLatestView | null;
+  orders: IrissListingOrderBrief[];
 };
 
 const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> = [
@@ -202,7 +231,7 @@ const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> =
   { id: "auto1", label: "Auto1" },
 ];
 
-export function IrissSludinajumiListClient({ latest }: Props) {
+export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -226,6 +255,8 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
   const priceMax = parsePriceBound(searchParams.get("max"));
+  const orderFilter = parseListingOrderFilter(searchParams.get("ord"));
+  const orderById = useMemo(() => listingOrdersById(orders), [orders]);
 
   useEffect(() => {
     const storage = irissListBrowserStorage();
@@ -282,12 +313,22 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       params.set("max", String(prefs.priceMax));
       changed = true;
     }
+    if (!searchParams.get("ord") && prefs.orderFilter) {
+      params.set("ord", prefs.orderFilter);
+      changed = true;
+    }
     if (!changed) return;
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-  }, [mounted, pathname, prefs.priceMax, prefs.priceMin, prefs.sort, prefs.sources, prefsReady, router, searchParams]);
+  }, [mounted, pathname, prefs.orderFilter, prefs.priceMax, prefs.priceMin, prefs.sort, prefs.sources, prefsReady, router, searchParams]);
 
-  function writeListQuery(next: { sort?: ListingSort; sources?: IrissListingPlatform[]; min?: string | null; max?: string | null }) {
+  function writeListQuery(next: {
+    sort?: ListingSort;
+    sources?: IrissListingPlatform[];
+    min?: string | null;
+    max?: string | null;
+    ord?: string | null;
+  }) {
     const params = new URLSearchParams(searchParams.toString());
     const sortNext = next.sort ?? sort;
     if (sortNext === "ending") params.delete("sort");
@@ -300,6 +341,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         : {}),
       ...(next.min !== undefined ? { priceMin: parsePriceBound(next.min) } : {}),
       ...(next.max !== undefined ? { priceMax: parsePriceBound(next.max) } : {}),
+      ...(next.ord !== undefined ? { orderFilter: next.ord ?? "" } : {}),
     }));
     if (next.sources) {
       if (next.sources.length === 0 || next.sources.length === SOURCE_CHIPS.length) params.delete("src");
@@ -314,6 +356,11 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       const n = parsePriceBound(next.max);
       if (n === null) params.delete("max");
       else params.set("max", String(n));
+    }
+    if (next.ord !== undefined) {
+      const s = (next.ord ?? "").trim();
+      if (!s) params.delete("ord");
+      else params.set("ord", s);
     }
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
@@ -359,16 +406,18 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       if (hideTech && listingHasHardTechDamage(v.damageRaw)) return false;
       if (!vehicleInSources(v.platform, sources)) return false;
       if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
+      const linked = linkedOrdersOf(v, prefs, orderById);
+      if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
       if (!q) return true;
-      const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
+      const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs.fav, prefs.hidden, hideTech]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs.fav, prefs.hidden, prefs.orderOv, hideTech, orderById, orderFilter]);
 
   const sorted = useMemo(() => {
-    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs) }));
+    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById)) }));
     return sortListingVehicles(withRoom, sort, nowMs ?? Number.POSITIVE_INFINITY).sort((a, b) => Number(prefs.fav.includes(b.id)) - Number(prefs.fav.includes(a.id)));
-  }, [visible, sort, nowMs, prefs]);
+  }, [visible, sort, nowMs, prefs, orderById]);
 
   const drawerVehicle = useMemo(() => vehicles.find((v) => v.id === drawerId) ?? null, [vehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
@@ -432,10 +481,24 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   ];
 
   const I = listingExtrasI(prefs.costs);
-  const maxNet = prefs.budget != null ? listingMaxBid("net", 0, prefs.budget, I) : null;
-  const maxMargin = prefs.budget != null ? listingMaxBid("margin", 0, prefs.budget, I) : null;
-  const maxGross19 = prefs.budget != null ? listingMaxBid("gross", 19, prefs.budget, I) : null;
-  const maxGross21 = prefs.budget != null ? listingMaxBid("gross", 21, prefs.budget, I) : null;
+  const budgetOverride = prefs.budget;
+  const maxNet = budgetOverride != null ? listingMaxBid("net", 0, budgetOverride, I) : null;
+  const maxMargin = budgetOverride != null ? listingMaxBid("margin", 0, budgetOverride, I) : null;
+  const maxGross19 = budgetOverride != null ? listingMaxBid("gross", 19, budgetOverride, I) : null;
+  const maxGross21 = budgetOverride != null ? listingMaxBid("gross", 21, budgetOverride, I) : null;
+  const orderFilterOptions = useMemo(() => {
+    const byClient = new Map<string, IrissListingOrderBrief[]>();
+    for (const o of orders) {
+      if (o.listStatus !== "active" && !vehicles.some((v) => listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv).includes(o.id))) {
+        continue;
+      }
+      const name = o.clientName || "Bez vārda";
+      const list = byClient.get(name) ?? [];
+      list.push(o);
+      byClient.set(name, list);
+    }
+    return [...byClient.entries()].sort((a, b) => a[0].localeCompare(b[0], "lv"));
+  }, [orders, vehicles, prefs.orderOv]);
 
   function setGlobalCost(part: keyof ListingCostParts, value: number) {
     setPrefs((p) => ({ ...p, costs: { ...p.costs, [part]: value } }));
@@ -446,19 +509,19 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       <section className="sticky top-0 z-20 rounded-xl border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-[12px] shadow-sm sm:rounded-2xl sm:px-4 sm:py-2.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-4 sm:gap-y-2">
           <label className="inline-flex min-h-11 items-center gap-2 font-semibold text-orange-900 sm:min-h-0">
-            <span className="sm:hidden">Budžets</span>
+            <span className="sm:hidden">Pārrakstīt €</span>
             <span className="hidden sm:inline">Klienta budžets €</span>
             <input
               type="number"
               inputMode="numeric"
               min={0}
               value={prefs.budget ?? ""}
-              placeholder="nav"
+              placeholder="pārrakstīt"
               onChange={(e) => {
                 const n = Number(e.target.value);
                 setPrefs((p) => ({ ...p, budget: Number.isFinite(n) && n > 0 ? n : null }));
               }}
-              className={`h-11 w-[7.5rem] rounded-lg border bg-white px-2 text-base font-bold tabular-nums outline-none sm:h-auto sm:w-[130px] sm:py-1 sm:text-[14px] ${prefs.budget == null ? "border-amber-400 shadow-[0_0_0_3px_#fde68a]" : "border-orange-300"}`}
+              className={`h-11 w-[7.5rem] rounded-lg border bg-white px-2 text-base font-bold tabular-nums outline-none sm:h-auto sm:w-[130px] sm:py-1 sm:text-[14px] ${budgetOverride != null ? "border-orange-300" : "border-orange-200"}`}
             />
           </label>
           <span className="tabular-nums">I = <b>{fmtEur(I)}</b></span>
@@ -469,8 +532,8 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           >
             {showCosts ? "Slēpt I" : "Izmaksas"}
           </button>
-          {prefs.budget == null ? (
-            <span className="hidden font-semibold text-amber-900 sm:inline">Ievadi budžetu, lai redzētu gala cenu un maks. solījumu.</span>
+          {budgetOverride == null ? (
+            <span className="hidden text-[11px] font-medium text-orange-950/80 sm:inline">Budžets no pasūtījuma. Šis lauks pārraksta visus.</span>
           ) : (
             <span className="-mx-2.5 flex w-[calc(100%+1.25rem)] snap-x snap-mandatory gap-3 overflow-x-auto px-2.5 pb-0.5 tabular-nums [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
               <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "net", rate: null, raw: "NETO", rateFrom: "" }} /> maks. <b>{fmtEur(maxNet)}</b></span>
@@ -656,6 +719,27 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           onBlur={(e) => writeListQuery({ max: e.target.value.trim() })}
           className="h-11 w-[5.5rem] shrink-0 rounded-full border border-[#E5E7EB] bg-white px-3 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 sm:h-8 sm:w-28 sm:text-[12px]"
         />
+        <label className="inline-flex h-11 min-w-0 max-w-[70vw] items-center gap-1 rounded-full border border-[#E5E7EB] bg-white px-2.5 text-[12px] text-[var(--color-provin-muted)] shadow-sm sm:h-8 sm:max-w-none sm:gap-2 sm:px-3">
+          <span className="hidden font-medium sm:inline">Klients</span>
+          <select
+            aria-label="Klients un pasūtījums"
+            value={serializeListingOrderFilter(orderFilter)}
+            onChange={(e) => writeListQuery({ ord: e.target.value || null })}
+            className="max-w-[58vw] bg-transparent text-base font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[280px] sm:text-[13px]"
+          >
+            <option value="">Visi klienti</option>
+            {orderFilterOptions.map(([name, list]) => (
+              <optgroup key={name} label={name}>
+                <option value={serializeListingOrderFilter({ kind: "client", name })}>Visi · {name}</option>
+                {list.map((o) => (
+                  <option key={o.id} value={serializeListingOrderFilter({ kind: "order", id: o.id })}>
+                    {o.brandModel || "Pasūtījums"} {o.productionYears ? `· ${o.productionYears}` : ""} {o.budget != null ? `· ${fmtEur(o.budget)}` : "· Budžets nav"}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
       </section>
 
       <section className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -703,6 +787,8 @@ export function IrissSludinajumiListClient({ latest }: Props) {
             nowMs={nowMs}
             prefs={prefs}
             onPrefs={setPrefs}
+            linked={linkedOrdersOf(v, prefs, orderById)}
+            budget={budgetOf(v, prefs, orderById)}
             onOpen={() => setDrawerId(v.id)}
             imageHidden={Boolean(hiddenImages[v.id])}
             onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
@@ -713,7 +799,15 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       {drawerVehicle ? (
         <>
           <button type="button" className="fixed inset-0 z-40 hidden bg-slate-900/20 sm:block" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
-          <IrissListDrawer v={drawerVehicle} prefs={prefs} onClose={() => setDrawerId(null)} onPrefs={setPrefs} />
+          <IrissListDrawer
+            v={drawerVehicle}
+            prefs={prefs}
+            orders={orders}
+            linked={linkedOrdersOf(drawerVehicle, prefs, orderById)}
+            budget={budgetOf(drawerVehicle, prefs, orderById)}
+            onClose={() => setDrawerId(null)}
+            onPrefs={setPrefs}
+          />
         </>
       ) : null}
     </div>
@@ -725,6 +819,8 @@ function VehicleCard({
   nowMs,
   prefs,
   onPrefs,
+  linked,
+  budget,
   onOpen,
   imageHidden,
   onImageError,
@@ -733,6 +829,8 @@ function VehicleCard({
   nowMs: number | null;
   prefs: IrissListPrefs;
   onPrefs: (next: IrissListPrefs) => void;
+  linked: IrissListingOrderBrief[];
+  budget: number | null;
   onOpen: () => void;
   imageHidden: boolean;
   onImageError: () => void;
@@ -744,7 +842,7 @@ function VehicleCard({
   const extras = extrasOf(v, prefs);
   const bid = listingBidPrice(v);
   const real = bid == null ? null : listingRealCost(tax.kind, tax.rate ?? 0, bid, extras);
-  const mb = prefs.budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, prefs.budget, extras) : null;
+  const mb = budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, budget, extras) : null;
   const room = mb != null && bid != null ? mb - bid : null;
   const dmg = classifyListingDamage(v.damageRaw);
   const fav = prefs.fav.includes(v.id);
@@ -752,8 +850,10 @@ function VehicleCard({
   const customCost = Boolean(prefs.costOv[v.id]);
   const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
   const cd = countdown(v.auctionEndAt, nowMs);
-  const specs = [v.year, fmtKm(v.mileageKm), v.fuel, v.transmission, v.powerKw ? `${v.powerKw} kW` : "", v.location].filter(Boolean);
-  const left = real && prefs.budget != null ? prefs.budget - real.total : null;
+  const yearLabel = listingYearLabel(v);
+  const sourceHref = resolveListingDetailUrl(v);
+  const specs = [yearLabel, fmtKm(v.mileageKm), v.fuel, v.transmission, v.powerKw ? `${v.powerKw} kW` : "", v.location].filter(Boolean);
+  const left = real && budget != null ? budget - real.total : null;
   const border =
     gone ? "border-[#E5E7EB] opacity-70" : fav ? "border-amber-200" : fresh ? "border-emerald-200" : changes.length > 0 ? "border-sky-200" : "border-[#E5E7EB]";
   const accent = v.platform === "autobid" ? "border-l-violet-500" : v.platform === "openline" ? "border-l-indigo-600" : "border-l-amber-500";
@@ -764,7 +864,7 @@ function VehicleCard({
     onPrefs({ ...prefs, [list]: next });
   }
 
-  const mobileSpecs = [v.year, fmtKm(v.mileageKm), v.transmission].filter(Boolean);
+  const mobileSpecs = [yearLabel, fmtKm(v.mileageKm), v.transmission].filter(Boolean);
 
   return (
     <article
@@ -780,17 +880,31 @@ function VehicleCard({
       className={`flex cursor-pointer flex-col gap-2 rounded-xl border border-l-[5px] bg-white p-2 shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_132px] touch-manipulation hover:border-slate-300 sm:flex-row sm:flex-nowrap sm:items-start sm:gap-3 sm:rounded-2xl sm:p-3.5 sm:[content-visibility:visible] ${border} ${accent} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
     >
       <div className="flex min-w-0 gap-2 sm:contents">
-        <div className="shrink-0">
+        <div className="shrink-0" onClick={(e) => sourceHref && e.stopPropagation()}>
           {v.imageUrl && !imageHidden ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={v.imageUrl}
-              alt={v.title || "Auto foto"}
-              loading="lazy"
-              referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
-              className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
-              onError={onImageError}
-            />
+            sourceHref ? (
+              <a href={sourceHref} target="_blank" rel="noopener noreferrer" title={`Atvērt ${PLATFORM_LABEL[v.platform]}`} onClick={(e) => e.stopPropagation()}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={v.imageUrl}
+                  alt={v.title || "Auto foto"}
+                  loading="lazy"
+                  referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
+                  className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
+                  onError={onImageError}
+                />
+              </a>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={v.imageUrl}
+                alt={v.title || "Auto foto"}
+                loading="lazy"
+                referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
+                className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
+                onError={onImageError}
+              />
+            )
           ) : (
             <div className="flex h-16 w-[4.5rem] items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-400 sm:h-[88px] sm:w-32 sm:rounded-lg sm:text-[10px]">
               Nav foto
@@ -800,9 +914,22 @@ function VehicleCard({
 
         <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
           <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-            <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}>
-              {PLATFORM_LABEL[v.platform]}
-            </span>
+            {sourceHref ? (
+              <a
+                href={sourceHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}
+                onClick={(e) => e.stopPropagation()}
+                className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}
+              >
+                {PLATFORM_LABEL[v.platform]}
+              </a>
+            ) : (
+              <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}>
+                {PLATFORM_LABEL[v.platform]}
+              </span>
+            )}
             <CountryFlag code={v.countryCode} />
             <span className="hidden sm:inline">{daysInAuction(v, nowMs) ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{daysInAuction(v, nowMs)}</span> : null}</span>
             {v.bidCount != null ? <span className="hidden rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 sm:inline-flex">{v.bidCount} solījumi</span> : null}
@@ -811,8 +938,11 @@ function VehicleCard({
             {!gone && fresh ? <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800 sm:px-2 sm:text-[10px]">JAUNS</span> : null}
             {customCost ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex" title="Izmaksas šim auto mainītas">I {fmtEur(extras)}</span> : null}
           </div>
-          <div className="truncate text-[13px] font-semibold leading-tight text-[var(--color-apple-text)] sm:text-[15px]" title={v.title}>
-            {v.title || v.orderBrandModels[0] || "-"}
+          <div className="flex min-w-0 items-baseline gap-1.5">
+            <div className="truncate text-[13px] font-semibold leading-tight text-[var(--color-apple-text)] sm:text-[15px]" title={v.title}>
+              {v.title || v.orderBrandModels[0] || "-"}
+            </div>
+            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500 sm:text-[12px]">{yearLabel}</span>
           </div>
           <p className="truncate text-[11px] text-[var(--color-provin-muted)] sm:text-[12px] sm:hidden">{mobileSpecs.join(" · ")}</p>
           <p className="hidden truncate text-[12px] text-[var(--color-provin-muted)] sm:block">{specs.join(" · ")}</p>
@@ -830,18 +960,9 @@ function VehicleCard({
             ))}
             {dmg.cats.length > 2 ? <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:hidden">+{dmg.cats.length - 2}</span> : null}
           </div>
-          {v.orderIds.length > 0 ? (
-            <p className="hidden truncate text-[11px] text-slate-500 sm:block" onClick={(e) => e.stopPropagation()}>
-              {v.orderIds.map((orderId, idx) => (
-                <span key={orderId}>
-                  {idx > 0 ? ", " : null}
-                  <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(orderId)}`} className="font-medium text-[var(--color-apple-text)] hover:underline">
-                    {v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? orderId}
-                  </Link>
-                </span>
-              ))}
-            </p>
-          ) : null}
+          <div onClick={(e) => e.stopPropagation()}>
+            <IrissListingOrderChips orders={linked} />
+          </div>
           <input
             className={`mt-1 hidden w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none sm:block ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}
             placeholder="✎ Pierakstīt piezīmi"
@@ -875,10 +996,26 @@ function VehicleCard({
 
         <div className="grid gap-0.5 sm:min-w-[175px] sm:border-l sm:border-dashed sm:border-[#E5E7EB] sm:pl-3">
           {bid == null || !real ? (
-            <div className="text-[11px] tabular-nums text-slate-500">{prefs.budget != null ? <>Budžets <b className="text-[var(--color-apple-text)]">{fmtEur(prefs.budget)}</b> · </> : null}Cenas nav</div>
+            <div className="text-[11px] tabular-nums text-slate-500">
+              {budget != null ? (
+                <>
+                  Budžets <b className="text-[var(--color-apple-text)]">{fmtEur(budget)}</b>
+                </>
+              ) : (
+                <span className="font-semibold text-amber-900">Budžets nav</span>
+              )}
+              {bid == null ? " · Cenas nav" : ""}
+            </div>
           ) : (
             <>
-              {prefs.budget != null ? <div className="hidden justify-between text-[11px] tabular-nums sm:flex"><span>Budžets</span><b>{fmtEur(prefs.budget)}</b></div> : null}
+              {budget != null ? (
+                <div className="hidden justify-between text-[11px] tabular-nums sm:flex">
+                  <span>Budžets</span>
+                  <b>{fmtEur(budget)}</b>
+                </div>
+              ) : (
+                <div className="text-[11px] font-semibold text-amber-900">Budžets nav</div>
+              )}
               <div className="flex justify-between text-[11px] tabular-nums"><span>Gala</span><b>{fmtEur(real.total)}</b></div>
               <div className="text-[10px] leading-snug text-slate-500">{listingVatShareLine(real, fmtEur)}</div>
               {left != null ? (

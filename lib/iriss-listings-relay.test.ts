@@ -200,7 +200,19 @@ describe("mapRelayFetchResponse", () => {
       auctionEndAt: "2026-10-08T16:00:00.000Z",
       salesVatType: 1053,
       orderId: "o3",
+      detailUrl: "https://www.auto1.com/en/app/merchant/car/BW03512",
     });
+  });
+
+  it("fills Openlane detail URL and year from first registration when the relay omitted them", () => {
+    const v = mapRelayItem(
+      { externalId: "A1", auctionId: "A1", firstRegistration: "2021-03-01", title: "Volvo XC60" },
+      "openline",
+      "o1",
+      "Volvo XC60",
+    );
+    expect(v?.detailUrl).toBe("https://www.openlane.eu/en/car/A1");
+    expect(v?.year).toBe("2021");
   });
 });
 

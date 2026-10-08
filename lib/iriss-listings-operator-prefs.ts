@@ -12,6 +12,7 @@ import {
   parsePriceBound,
   type ListingSort,
 } from "@/lib/iriss-listings-list-view";
+import { parseListingOrderFilter, serializeListingOrderFilter } from "@/lib/iriss-listings-orders";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 
 export const IRISS_LIST_PREFS_KEY = "provin-iriss-list-v4";
@@ -58,6 +59,10 @@ export type IrissListPrefs = {
   hideTech: boolean;
   tab: IrissListTab;
   listScope: IrissListScope;
+  /** Auto id -> pasūtījumu id (pārraksta meklēšanas URL piesaisti). */
+  orderOv: Record<string, string[]>;
+  /** `o:<id>` / `c:<vārds>` / tukšs = visi. */
+  orderFilter: string;
 };
 
 export type IrissListStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -79,6 +84,8 @@ export function defaultIrissListPrefs(): IrissListPrefs {
     hideTech: false,
     tab: "all",
     listScope: "all",
+    orderOv: {},
+    orderFilter: "",
   };
 }
 
@@ -208,6 +215,24 @@ function parseUiSources(v: unknown): IrissListingPlatform[] {
   return [];
 }
 
+function parseOrderOv(v: unknown, maxIds = 20, maxEntries = 2000): Record<string, string[]> {
+  if (!isPlainObject(v)) return {};
+  const out: Record<string, string[]> = {};
+  for (const [k, val] of Object.entries(v)) {
+    if (!k) continue;
+    const ids = idList(val, maxIds);
+    if (ids.length === 0) continue;
+    out[k.slice(0, 160)] = ids;
+    if (Object.keys(out).length >= maxEntries) break;
+  }
+  return out;
+}
+
+function parseOrderFilter(v: unknown): string {
+  if (typeof v !== "string") return "";
+  return serializeListingOrderFilter(parseListingOrderFilter(v));
+}
+
 /** Vecais formāts vai > ~100 KB: jādzēš un jāpārnes tikai iestatījumi. */
 export function isLegacyOrBloatedIrissListPrefs(raw: string | null | undefined): boolean {
   if (!raw) return false;
@@ -254,6 +279,8 @@ export function parseIrissListPrefs(raw: string | null): IrissListPrefs {
       hideTech: o.hideTech === true,
       tab: parseTab(o.tab),
       listScope: parseScope(o.listScope),
+      orderOv: parseOrderOv(o.orderOv),
+      orderFilter: parseOrderFilter(o.orderFilter),
     };
   } catch {
     return base;
@@ -275,7 +302,7 @@ export function serializeIrissListPrefs(prefs: IrissListPrefs): string {
   slim = { ...slim, notes: {} };
   json = JSON.stringify(slim);
   if (storageStringBytes(json) <= IRISS_LIST_PREFS_MAX_BYTES) return json;
-  slim = { ...slim, taxOv: {}, costOv: {} };
+  slim = { ...slim, taxOv: {}, costOv: {}, orderOv: {} };
   return JSON.stringify(slim);
 }
 

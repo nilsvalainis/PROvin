@@ -63,6 +63,8 @@ describe("iriss list prefs", () => {
       }),
     );
     expect(parsed.fav).toEqual(["car-1"]);
+    expect(parsed.orderOv).toEqual({});
+    expect(parsed.orderFilter).toBe("");
     expect(parsed.sort).toBe("price-asc");
     expect(parsed.sources).toEqual(["auto1"]);
     expect(parsed.hideTech).toBe(true);
@@ -162,5 +164,19 @@ describe("iriss list prefs", () => {
       },
     };
     expect(() => persistIrissListPrefs(storage, defaultIrissListPrefs())).not.toThrow();
+  });
+
+  it("keeps a small order reassignment map and client filter", () => {
+    const parsed = parseIrissListPrefs(
+      JSON.stringify({
+        orderOv: { "car-1": ["order-9", "order-9", ""] },
+        orderFilter: "c:Anna Bērziņa",
+      }),
+    );
+    expect(parsed.orderOv).toEqual({ "car-1": ["order-9"] });
+    expect(parsed.orderFilter).toBe("c:Anna Bērziņa");
+    const json = serializeIrissListPrefs(parsed);
+    expect(json).toContain("order-9");
+    expect(JSON.parse(json).vehicles).toBeUndefined();
   });
 });

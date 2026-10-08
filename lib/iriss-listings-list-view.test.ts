@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   listingPriceChangeAbs,
   listingSortPrice,
+  listingYear,
+  listingYearLabel,
   parseListingSort,
   parseListingSources,
   parsePriceBound,
@@ -99,6 +101,9 @@ describe("listing sort", () => {
     expect(ids("km-desc", rows)).toEqual(["high", "low", "zero", "none"]);
     expect(ids("year-desc", rows)).toEqual(["low", "high", "none", "zero"]);
     expect(ids("year-asc", rows)).toEqual(["high", "low", "none", "zero"]);
+    expect(listingYear(car({ id: "reg", year: "", firstRegistration: "07.2018" }))).toBe(2018);
+    expect(listingYearLabel(car({ id: "miss" }))).toBe("gads ?");
+    expect(listingYearLabel(car({ id: "y", year: "2020" }))).toBe("2020");
   });
 
   it("sorts first seen newest first and the largest price change first", () => {
