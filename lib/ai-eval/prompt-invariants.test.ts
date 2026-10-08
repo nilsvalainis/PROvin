@@ -643,6 +643,17 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-vehicle-reports-ai.ts")).not.toMatch(/CLAUDE_MODEL_OPUS/);
   });
 
+  it("E60 expensive-option traps are not injected onto BMW 3-series", () => {
+    const ident = readRepo("lib/admin-ai-aggregate-identification.ts");
+    expect(ident).toMatch(/isBmw3SeriesChassis/);
+    expect(ident).toMatch(/E60\/E61 dārgo slazdu katalogu/);
+    expect(ident).not.toMatch(/Šie dārgie vecuma slazdi sarakstā NAV minēti/);
+    const packs = readRepo("lib/provin-aggregate-case-rules.ts");
+    expect(packs).toMatch(/if \(series3\) return 0/);
+    expect(packs).toMatch(/PX61\|PX51/);
+    expect(packs).not.toMatch(/\|\| \/\^PX\/\.test\(fp\.typeCode/);
+  });
+
   it("banned client-facing vocabulary (saime, Baltija, injektori, kancelejisms) is absent from prompt sources", () => {
     const filesToScan = [
       "lib/source-summary-comment-format.ts",
