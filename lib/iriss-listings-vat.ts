@@ -43,14 +43,41 @@ function countryVat(code: string | undefined): number | null {
   return n ?? null;
 }
 
+function noteSuggestsMargin(note: string): boolean {
+  return /tax on difference|differenzbesteuer|§\s*25a|\bmargin\b|марж/i.test(note);
+}
+
+/** EN VAT excluded / DE zzgl. MwSt / RU Без НДС. Pārbaudīt pirms included, jo "без НДС" nav "с НДС". */
+function noteSuggestsExcluded(note: string): boolean {
+  return /vat excluded|excl(?:uded|\.|\s)|zzgl\.?\s*mwst|ohne\s*(?:mwst|ust)|без\s*ндс|\bnet\b|\bnetto\b|reclaimable|ausweisbar/i.test(note);
+}
+
+function noteSuggestsIncluded(note: string): boolean {
+  if (noteSuggestsExcluded(note)) return false;
+  return /vat included|including\s+\d|incl(?:uded|\.|\s)|inkl\.?\s*mwst|mit\s*mwst|с\s*ндс/i.test(note);
+}
+
+function rateFromNoteOrCountry(note: string, country?: string, vatRate?: number | null): { rate: number | null; rateFrom: string } {
+  if (vatRate != null && Number.isFinite(vatRate) && vatRate > 0) return { rate: vatRate, rateFrom: "vatRate" };
+  const m = note.match(/(\d{1,2}(?:[.,]\d+)?)\s*%/);
+  if (m) return { rate: Number(m[1].replace(",", ".")), rateFrom: "teksts" };
+  const cr = countryVat(country);
+  if (cr != null) return { rate: cr, rateFrom: country ? `valsts ${country}` : "" };
+  return { rate: null, rateFrom: "" };
+}
+
 function autobidFromNote(note: string): ListingTax {
   const raw = `taxInformation: „${note}”`;
-  if (/tax on difference|differenzbesteuer|§\s*25a|\bmargin\b/i.test(note)) return { kind: "margin", rate: null, raw, rateFrom: "" };
+  if (noteSuggestsMargin(note)) return { kind: "margin", rate: null, raw, rateFrom: "" };
   const m = note.match(/(\d{1,2}(?:[.,]\d+)?)\s*%/);
-  if (m && /includ|incl|inkl|mwst|vat/i.test(note)) {
+  if (m && (noteSuggestsIncluded(note) || /includ|incl|inkl|mwst|vat/i.test(note))) {
     return { kind: "gross", rate: Number(m[1].replace(",", ".")), raw, rateFrom: "taxInformation teksts" };
   }
-  if (/\bnet\b|\bnetto\b|reclaimable|ausweisbar|vat excluded/i.test(note)) return { kind: "net", rate: null, raw, rateFrom: "" };
+  if (noteSuggestsExcluded(note)) return { kind: "net", rate: null, raw, rateFrom: "" };
+  if (noteSuggestsIncluded(note)) {
+    const pct = m ? Number(m[1].replace(",", ".")) : null;
+    if (pct != null) return { kind: "gross", rate: pct, raw, rateFrom: "taxInformation teksts" };
+  }
   return { kind: "unknown", rate: null, raw, rateFrom: "" };
 }
 
@@ -78,10 +105,29 @@ export function detectListingTax(input: ListingTaxInput): ListingTax {
     return { kind: "unknown", rate: null, raw: raw || "Auto1 PVN lauks nav", rateFrom: "" };
   }
   if (input.platform === "openline") {
-    if (input.isMargin === true || /^margin$/i.test(note)) return { kind: "margin", rate: null, raw: input.isMargin === true ? "IsMargin: true" : note, rateFrom: "" };
-    if (input.isMargin === false || /vat excluded|excl/i.test(note)) return { kind: "net", rate: null, raw: input.isMargin === false ? "IsMargin: false" : note || "VAT excluded", rateFrom: "" };
+    const raw = [
+      input.isMargin === true ? "IsMargin: true" : input.isMargin === false ? "IsMargin: false" : "",
+      note,
+      input.countryCode ? `countryCode: ${input.countryCode}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    if (input.isMargin === true || noteSuggestsMargin(note)) {
+      return { kind: "margin", rate: null, raw: raw || "IsMargin: true", rateFrom: "" };
+    }
+    if (noteSuggestsIncluded(note)) {
+      const { rate, rateFrom } = rateFromNoteOrCountry(note, input.countryCode, input.vatRate);
+      if (rate == null) {
+        if (input.isMargin === false) return { kind: "gross", rate: null, raw: raw || note, rateFrom: "" };
+        return { kind: "unknown", rate: null, raw: raw || note, rateFrom: "" };
+      }
+      return { kind: "gross", rate, raw: raw || note, rateFrom };
+    }
+    if (noteSuggestsExcluded(note) || input.isMargin === false) {
+      return { kind: "net", rate: null, raw: raw || note || "VAT excluded", rateFrom: "" };
+    }
     if (note) return autobidFromNote(note);
-    return { kind: "unknown", rate: null, raw: "IsMargin nav", rateFrom: "" };
+    return { kind: "unknown", rate: null, raw: raw || "IsMargin nav", rateFrom: "" };
   }
   return autobidFromNote(note);
 }

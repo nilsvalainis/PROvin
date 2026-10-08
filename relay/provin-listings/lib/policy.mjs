@@ -20,12 +20,3 @@ export function shouldReadPublic(platform, sessionStatus, openlanePublicFallback
   return allow && (sessionStatus === "login_required" || sessionStatus === "error");
 }
 
-/**
- * Openlane findcarv6/search: ielogotam auto ChassisNumber nav null.
- * null = meklēšanā nav auto, nevar spriest.
- */
-export function searchShowsOpenlaneLogin(json) {
-  const auctions = Array.isArray(json?.Auctions) ? json.Auctions : [];
-  if (auctions.length === 0) return null;
-  return auctions.some((a) => a && a.ChassisNumber != null && String(a.ChassisNumber).trim() !== "");
-}

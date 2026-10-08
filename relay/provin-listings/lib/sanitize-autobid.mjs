@@ -1,6 +1,11 @@
 /**
  * Autobid `__NUXT_DATA__` ar ielogotu profilu satur JWT / Bearer un konta laukus.
  * Tos nedrīkst sūtīt uz Vercel (raw.nuxtPages[]), žurnālu vai Blob.
+ *
+ * devalue masīvs deduplicē slotus: viena virkne var būt gan nickname, gan items[].name.
+ * Tukšot izmesta atslēgas apakškoku nozīmē tukšot kopīgos slotus. Tāpēc vispirms
+ * pārraujam atsauces (izmestā atslēga rāda uz jaunu "" slotu), tad atstājam to, kas
+ * sasniedzams no saknes, un tukšojam tikai nesasniedzamos.
  */
 const SECRET_KEYS = new Set([
   "token",
@@ -53,6 +58,8 @@ const ACCOUNT_KEYS = new Set([
 
 const ACCOUNT_OBJECT_KEYS = new Set(["user", "account", "profile", "customer", "auth", "session", "me", "currentuser"]);
 
+const WRAPPERS = new Set(["Reactive", "ShallowReactive", "Ref", "ShallowRef", "EmptyRef", "EmptyShallowRef", "NuxtError"]);
+
 const JWT_RE = /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g;
 const BEARER_RE = /Bearer\s+[A-Za-z0-9._~+/=-]+/gi;
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -72,78 +79,70 @@ function scrubString(s) {
   return s.replace(JWT_RE, "").replace(BEARER_RE, "").replace(EMAIL_RE, "").trim();
 }
 
-/** Izmesta atslēga: tukšo visu apakškoku, neieej ar drop noteikumiem (tā izdzīvo email.to). */
-function emptySubtree(v, flat, depth) {
-  if (depth > 40 || v == null) return;
-  if (typeof v === "number") {
-    emptySlot(flat, v, depth);
+function isDroppedKey(k) {
+  const kn = keyNorm(k);
+  return SECRET_KEYS.has(kn) || ACCOUNT_KEYS.has(kn) || ACCOUNT_OBJECT_KEYS.has(kn);
+}
+
+function isSlotRef(n, len) {
+  return typeof n === "number" && Number.isInteger(n) && n >= 0 && n < len;
+}
+
+function eachChildRef(value, visit) {
+  if (Array.isArray(value)) {
+    if (value.length >= 1 && typeof value[0] === "string") {
+      const tag = value[0];
+      if (WRAPPERS.has(tag)) {
+        if (tag.startsWith("Empty") && typeof value[1] === "string") return;
+        visit(value[1]);
+        return;
+      }
+      if (tag === "Date" || tag === "BigInt") return;
+      if (tag === "Set" || tag === "Map") {
+        for (let i = 1; i < value.length; i++) visit(value[i]);
+        return;
+      }
+    }
+    for (const x of value) visit(x);
     return;
   }
-  if (typeof v === "string") return;
-  if (Array.isArray(v)) {
-    for (let i = 0; i < v.length; i++) {
-      const x = v[i];
-      if (typeof x === "string") v[i] = "";
-      else if (typeof x === "number") emptySlot(flat, x, depth + 1);
-      else emptySubtree(x, flat, depth + 1);
-    }
-    return;
-  }
-  if (typeof v === "object") {
-    for (const k of Object.keys(v)) {
-      const val = v[k];
-      if (typeof val === "string") v[k] = "";
-      else if (typeof val === "number") emptySlot(flat, val, depth + 1);
-      else emptySubtree(val, flat, depth + 1);
-    }
+  if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) visit(v, k, value);
   }
 }
 
-function emptySlot(flat, ref, depth) {
-  if (typeof ref !== "number" || ref < 0 || ref >= flat.length) return;
-  const v = flat[ref];
-  if (typeof v === "string") {
-    flat[ref] = "";
-    return;
-  }
-  if (typeof v === "number") {
-    emptySlot(flat, v, depth + 1);
-    return;
-  }
-  if (v && typeof v === "object") emptySubtree(v, flat, depth + 1);
-}
-
-function redactSlot(flat, ref) {
-  if (typeof ref !== "number" || ref < 0 || ref >= flat.length) return;
-  const v = flat[ref];
-  if (typeof v === "string") {
-    if (isAutobidSecretString(v)) flat[ref] = "";
-    return;
-  }
-  if (v && typeof v === "object") redactDeep(v, flat, 0);
-}
-
-function redactDeep(node, flat, depth) {
-  if (depth > 40 || node == null || typeof node !== "object") return;
-  if (Array.isArray(node)) {
-    for (const x of node) {
-      if (typeof x === "number") redactSlot(flat, x);
-      else redactDeep(x, flat, depth + 1);
+/** Pārrauj izmestās atslēgas, saglabā sasniedzamos slotus, tukšo pārējos. */
+function cutUnreachableAccountSlots(flat) {
+  let emptyIdx = -1;
+  const emptyRef = () => {
+    if (emptyIdx < 0) {
+      emptyIdx = flat.length;
+      flat.push("");
     }
-    return;
-  }
-  for (const [k, v] of Object.entries(node)) {
-    const kn = keyNorm(k);
-    const drop = SECRET_KEYS.has(kn) || ACCOUNT_KEYS.has(kn) || ACCOUNT_OBJECT_KEYS.has(kn);
-    if (typeof v === "number") {
-      if (drop) emptySlot(flat, v, 0);
-    } else if (typeof v === "string") {
-      if (drop || isAutobidSecretString(v)) node[k] = "";
-    } else if (drop) {
-      emptySubtree(v, flat, depth + 1);
-    } else {
-      redactDeep(v, flat, depth + 1);
-    }
+    return emptyIdx;
+  };
+  const reachable = new Set();
+  const walk = (ref, depth) => {
+    if (depth > 80 || !isSlotRef(ref, flat.length) || reachable.has(ref)) return;
+    reachable.add(ref);
+    const value = flat[ref];
+    eachChildRef(value, (child, key, rec) => {
+      if (key != null && rec && isDroppedKey(key)) {
+        rec[key] = emptyRef();
+        reachable.add(emptyRef());
+        return;
+      }
+      walk(child, depth + 1);
+    });
+  };
+  walk(0, 0);
+  for (let i = 0; i < flat.length; i++) {
+    if (reachable.has(i)) continue;
+    const v = flat[i];
+    if (typeof v === "string") flat[i] = "";
+    else if (Array.isArray(v)) flat[i] = [];
+    else if (v && typeof v === "object") flat[i] = {};
+    else flat[i] = "";
   }
 }
 
@@ -178,16 +177,7 @@ export function sanitizeAutobidNuxtJson(json) {
   } catch {
     return scrubString(json);
   }
-  if (Array.isArray(data)) {
-    for (const slot of data) {
-      if (slot && typeof slot === "object" && !Array.isArray(slot)) {
-        for (const [k, v] of Object.entries(slot)) {
-          const kn = keyNorm(k);
-          if (SECRET_KEYS.has(kn) || ACCOUNT_KEYS.has(kn) || ACCOUNT_OBJECT_KEYS.has(kn)) emptySlot(data, v, 0);
-        }
-      }
-    }
-  }
+  if (Array.isArray(data)) cutUnreachableAccountSlots(data);
   walkAllStrings(data, 0);
   return JSON.stringify(data);
 }
