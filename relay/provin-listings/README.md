@@ -105,6 +105,7 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
   identifikators ir `stockNumber` (`/car/BW03512`), jo VIN sarakstā nav. `salesVatType` (1053/1054) netiek tulkots.
 - **Autobid.** Tas pats `__NUXT_DATA__` ceļš, ko Vercel lasa publiski, bet ar ielogotu profilu. Relejs atdod
   `raw.nuxtPages[]` (viens JSON teksts uz lapu, `currentPage=N`), Vercel parsē ar esošo parsētāju. `items[]` tukšs.
+  Pirms atbildes no NUXT tiek izgriezti JWT / Bearer un konta lauki (e-pasts, vārds, user/auth objekti).
 
 ## Vercel env
 

@@ -6,6 +6,7 @@
  */
 import { hasCaptchaOrChallenge, pageText, randomPause } from "../browser.mjs";
 import { autoLogin } from "../login.mjs";
+import { sanitizeAutobidNuxtJson } from "../sanitize-autobid.mjs";
 
 const LOGIN_URL = process.env.AUTOBID_LOGIN_URL || "https://autobid.de/en/login";
 const PROBE_URL = process.env.AUTOBID_PROBE_URL || "https://autobid.de/en/search-results";
@@ -85,7 +86,7 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
         if (p === 1) return fail("error", "Lapā nav __NUXT_DATA__.");
         break;
       }
-      rawPages.push(nuxt.slice(0, 1_500_000));
+      rawPages.push(sanitizeAutobidNuxtJson(nuxt.slice(0, 1_500_000)));
       pageCount = Math.max(pageCount, pageCountFromNuxt(nuxt));
     }
     const loggedIn = await isLoggedIn(page);

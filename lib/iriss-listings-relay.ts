@@ -7,6 +7,7 @@
  */
 
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
+import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { irissListingVehicleId } from "@/lib/iriss-listings-sources";
@@ -208,7 +209,7 @@ export function mapRelayFetchResponse(
   const pageCount = numOrNull(body.pageCount) ?? 0;
 
   if (src.platform === "autobid" && raw && Array.isArray(raw.nuxtPages)) {
-    const nuxtPages = raw.nuxtPages.filter((x): x is string => typeof x === "string" && x.length > 0);
+    const nuxtPages = sanitizeAutobidNuxtPages(raw.nuxtPages.filter((x): x is string => typeof x === "string" && x.length > 0));
     const parsed = autobidVehiclesFromNuxt(nuxtPages, src.orderId, src.orderBrandModel);
     vehicles = parsed.vehicles;
     rawPages = nuxtPages;
