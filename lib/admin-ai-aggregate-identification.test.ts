@@ -42,8 +42,9 @@ describe("buildAggregateIdentificationBrief", () => {
     expect(brief).toMatch(/1–2 kandidātus/);
     expect(brief).toMatch(/Aprīkojuma SA saraksts: nav/);
     expect(brief).toMatch(/BMW 3\. sērija/);
+    expect(brief).toMatch(/NEKOPĒ/);
     expect(brief).not.toMatch(/NAV minēti/);
-    expect(brief).not.toMatch(/Active Steering, Dynamic Drive, Soft Close/);
+    expect(brief).not.toMatch(/Šie dārgie vecuma slazdi sarakstā NAV minēti/);
   });
 
   it("lists dealer equipment and flags expensive age options when present", () => {
