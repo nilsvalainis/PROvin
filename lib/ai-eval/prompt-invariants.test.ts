@@ -23,6 +23,7 @@ import {
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
+  AI_SUNROOF_DRAINAGE_INSPECTION_RULES,
   AI_TEST_DRIVE_GEARBOX_DMF_RULES,
   AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
   AI_CROSS_FIELD_PORTFOLIO_RULES,
@@ -424,6 +425,22 @@ describe("PROVIN AI prompt invariants", () => {
     );
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/source_field_expansion/);
     expect(readRepo("lib/ai-comment-length-budget.ts")).toMatch(/inspection:[\s\S]*?14_000/);
+  });
+
+  it("sunroof drainage is mandatory in inspection when equipment or listing shows a sunroof", () => {
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/SUNROOF \/ PANORAMIC ROOF DRAINAGE/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/grīdas paklāji/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/drenāžas/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/Do NOT invent a sunroof/);
+    expect(AI_SUNROOF_DRAINAGE_INSPECTION_RULES).toMatch(/Volkswagen/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_SUNROOF_DRAINAGE_INSPECTION_RULES\}/,
+    );
+    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?Jumta lūka/);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/jumta lūkas drenāž/);
+    expect(readRepo("lib/admin-ai-aggregate-identification.ts")).toMatch(/sunroofInspectionFlagLine/);
+    expect(readRepo("lib/sunroof-equipment.ts")).toMatch(/textIndicatesSunroof/);
   });
 
   it("test-drive prompts name S-Tronic takeoff, DMF listen, and V6 leak check before and after load", () => {

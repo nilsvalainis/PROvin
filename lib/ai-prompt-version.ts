@@ -170,5 +170,9 @@
  *   (stripUnauthorizedEuroAmounts) pievienots tehnisko risku, apskates un
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
+ * - 2026-10-08.1 - Klātienes ieteikumi: ja datos ir jumta lūka / panorāmas
+ *   lūka, obligāta pārbaude par drenāžu, mitrumu un slapjiem paklājiem.
+ *   VW grupā, īpaši Volkswagen, tas ir tipiski. Bez lūkas datos tēmu
+ *   neizdomā.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-06.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-08.1";

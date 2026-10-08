@@ -28,6 +28,7 @@ import {
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
+  AI_SUNROOF_DRAINAGE_INSPECTION_RULES,
   AI_TEST_DRIVE_GEARBOX_DMF_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
   AI_DOCUMENTED_SERVICE_WORK_RULES,
@@ -160,6 +161,8 @@ ${AI_WINTER_SALT_RUST_RULES}
 
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 
+${AI_SUNROOF_DRAINAGE_INSPECTION_RULES}
+
 ${AI_TEST_DRIVE_GEARBOX_DMF_RULES}
 
 ${AI_OIL_CHANGE_INTERVAL_RULES}
@@ -255,6 +258,8 @@ ${AI_WRAP_FILM_RULES}
 ${AI_WINTER_SALT_RUST_RULES}
 
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
+
+${AI_SUNROOF_DRAINAGE_INSPECTION_RULES}
 
 ${AI_TEST_DRIVE_GEARBOX_DMF_RULES}
 
@@ -421,6 +426,7 @@ Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sada�
 - **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
 - **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
 - **Ziemas sāls / rūsa** — ja kontekstā ir bloks ar Statuss: OBLIGĀTI, viena sadaļa ar vietām no brīfa (arkas zem oderēm, sliekšņu apakšas, apakšdaļa). Bagāžnieka vāka malu ap numura zīmes apgaismojumu nosauc TIKAI ja brīfs saka „Bagāžnieka vāks: tērauds”. Daudziem modeļiem vāks ir plastmasa vai stiklašķiedra - rūsa tur neaug. Svaiga TA un cinkojums to neatceļ. Neizdomā, ka rūsa jau ir.
+- **Jumta lūka / panorāmas lūka** — ja aprīkojumā, sludinājumā vai identifikācijas datos ir lūka: OBLIGĀTI atsevišķa rindkopa par grīdas paklājiem (paceļot), mitrumu / smaku / pelējumu un iespējami cietām jumta lūkas drenāžām. VW grupā, īpaši Volkswagen, tā ir tipiska problēma. Ja lūkas datos nav - šo rindkopu NERAKSTI. Skat. SUNROOF / PANORAMIC ROOF DRAINAGE.
 - **Dīlera / Outvin / serviss** — visām markām: lasi Veiktos darbus un Komentārus. Ja zobsiksna, ķēde, ūdenssūknis vai kārbas eļļa jau fiksēta, NEIEKĻAUJ to kā „jāmaina”. Ķēde pret zobsiksnu tikai pēc šī motora koda. Ja oficiālajā ierakstā >30 000 km vai >24 mēn. bez apkopes — pieņem, ka darbs var būt bijis ārpus dīlera; jālūdz pārdevējam uzrādīt dokumenti, ne jāapgalvo, ka apkope nav bijusi.
 - **Pārdevējs / sludinājums / cena** — ko pārbaudīt pret solīto stāvokli.
 - **Vēsturiskie auditi + agregātu pakas** — tipiskās šī agregāta klātienes pārbaudes; pielāgo AKTĪVAJAM auto.

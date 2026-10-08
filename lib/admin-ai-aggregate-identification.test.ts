@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { emptyCsddFields, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import {
+  emptyCsddFields,
+  emptyListingAnalysisBlock,
+  mergeSourceBlocksWithDefaults,
+} from "@/lib/admin-source-blocks";
 import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-identification";
+import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 
 describe("buildAggregateIdentificationBrief", () => {
   it("collects the parameters needed to derive engine, gearbox and mileage band", () => {
@@ -88,6 +93,49 @@ describe("buildAggregateIdentificationBrief", () => {
   it("returns empty text when no vehicle parameters are known", () => {
     expect(buildAggregateIdentificationBrief({ sourceBlocks: mergeSourceBlocksWithDefaults({}) })).toBe(
       "",
+    );
+  });
+
+  it("flags a panoramic roof from dealer equipment for inspection drainage", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "VW Tiguan" },
+      auto_records: {
+        outvinReport: {
+          ...emptyOutvinDealerReport(),
+          vehicleInfo: { ...emptyOutvinDealerReport().vehicleInfo, model: "VW Tiguan" },
+          equipment: [{ code: "S403A", description: "Panoramadach" }],
+        },
+      },
+    });
+    const brief = buildAggregateIdentificationBrief({ sourceBlocks: blocks, nowYear: 2026 });
+    expect(brief).toMatch(/LŪKA \/ PANORĀMAS LŪKA/);
+    expect(brief).toMatch(/Panoramadach/);
+    expect(brief).toMatch(/grīdas paklāji/);
+    expect(brief).toMatch(/īpaši Volkswagen|VW grupā/);
+  });
+
+  it("flags a sunroof mentioned only in the listing and ignores roof rails", () => {
+    const withListing = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "BMW 320d" },
+      listing_analysis: {
+        ...emptyListingAnalysisBlock(),
+        listingPasteRaw: "Auto ar panorāmas lūku, kopts.",
+      },
+    });
+    const brief = buildAggregateIdentificationBrief({ sourceBlocks: withListing, nowYear: 2026 });
+    expect(brief).toMatch(/LŪKA \/ PANORĀMAS LŪKA/);
+    expect(brief).toMatch(/sludinājuma apraksts/);
+    expect(brief).not.toMatch(/Volkswagen/);
+
+    const railsOnly = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "BMW 320d" },
+      listing_analysis: {
+        ...emptyListingAnalysisBlock(),
+        listingPasteRaw: "Jumta relingi, panorāmas kamera.",
+      },
+    });
+    expect(buildAggregateIdentificationBrief({ sourceBlocks: railsOnly, nowYear: 2026 })).not.toMatch(
+      /LŪKA \/ PANORĀMAS LŪKA/,
     );
   });
 });
