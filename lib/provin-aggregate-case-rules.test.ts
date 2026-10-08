@@ -46,6 +46,8 @@ describe("provin-aggregate-case-rules", () => {
     expect(m57?.body).toMatch(/ķēde dzinēja priekšpusē/i);
     expect(m57?.body).toMatch(/Active Steering/);
     expect(m57?.body).toMatch(/hidromufte/);
+    expect(m57?.body).toMatch(/skriemelis \(demferis\)/);
+    expect(m57?.body).not.toMatch(/svārstību slāpētāj/);
   });
 
   it("does not select M57 pack for F10-era N57 530d", () => {

@@ -24,6 +24,8 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
 - HUMAN DASHES (anti-AI tell, absolute): NEVER Unicode em dash "—" or en dash "–" in ANY client-facing text (website, B2B, emails, reports). Prefer comma, colon, or a new sentence. If a dash is needed, only the short ASCII hyphen "-". Ranges: 2007-2015, 300-400 €, 1-2, 24-72h. NEVER start a paragraph or standalone sentence with "- " or "– ".
 - EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labs rādījums datos”, „tas datos izskatās labi”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection. Never pad a fact with kancelejisks „signāls/faktors” wording.
+- Missing records: „trūkums”, „datu neesamība”, „iztrūkstoši dati”, „avotos nav fiksēts” - never a vacuum metaphor for gaps. Workshop term „vakuumsūknis” is allowed.
+- Crankshaft pulley / harmonic balancer: always „kloķvārpstas skriemelis (demferis)”.
 - ${buildBannedVocabularyPromptRules()}`;
 
 /** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
@@ -136,15 +138,27 @@ export const AI_WRAP_FILM_RULES = `WRAP / FILM / APLĪMĒŠANA (mandatory — ev
  * ir obligāts klimata risks, ne tikai tad, ja TA to jau ir fiksējusi.
  */
 export const AI_WINTER_SALT_RUST_RULES = `WINTER SALT RUST (mandatory — every agent, every field):
-- Trigger: the prompt block „Ziemas sāls / rūsas ekspozīcija” says Statuss: OBLIGĀTI. That block is computed from THIS car’s actual use in Latvija / Lietuva / Igaunija (mileage country, CSDD TA, Latvian registration events, Estonian registries, listing text). Do not second-guess a missing block into an essay. If the block is absent, do not invent rust, do not name Lietuva or Igaunija „just in case”, and do not write that future Latvian winters will now create this risk.
-- Name ONLY the countries listed in the brief as evidenced for THIS car. Never list Latvija, Lietuva and Igaunija as a set when the data shows none of them, or only one of them.
+- Trigger: the prompt block „Ziemas sāls / rūsas ekspozīcija” says Statuss: OBLIGĀTI. That block is computed from THIS car’s actual long use in the rust belt: Latvija, Lietuva, Igaunija, Zviedrija, Somija, Norvēģija, Dānija, Austrija, Polija, and (only when data names the region) Vācijas lejasdaļa (Bavārija, Bādene-Virtemberga, Alpi) or Austrumvācija. Generic „Vācija” alone is NOT this trigger. Do not second-guess a missing block into an essay. If the block is absent, do not invent rust, do not name countries „just in case”.
+- Name ONLY the countries listed in the brief as evidenced for THIS car. Never list Latvija, Lietuva and Igaunija as a set when the data shows none of them, or only one of them. Do not name Lietuva or Igaunija „just in case”. Never invent a country absent from data.
 - If triggered, BOTH „1. Tehnisko risku analīze” AND „2. Ieteikumi klātienes apskatei” MUST cover it. Anti-repetition does not waive this. One calibrated paragraph in risks; one inspection section that NAMES the spots.
 - Typical spots to name by default (do not write only „jāpārbauda rūsa”): riteņu arkas (also under plastic liners); sliekšņu apakšējās malas where stones hit from the wheels; underbody / inner sills.
 - TAILGATE / bagāžnieka vāks is NOT a universal rust spot. Many hatchbacks and SUVs have a plastic, fiberglass, SMC, thermoplastic, composite or aluminium lid - steel rust does not grow there. Name „bagāžnieka vāka mala ap numura zīmes apgaismojumu” ONLY when the brief says „Bagāžnieka vāks: tērauds”. If the brief says plastmasa / stiklašķiedra / kompozīts / alumīnijs, or „materiāls nav droši zināms”, do NOT use that canned tailgate sentence. Rear metal that may still rust: hinge plates, lock recess, number-plate frame on metal - not the lid itself.
-- What the buyer needs to understand: this is a climate risk from winter salt, NOT a proven defect on THIS car. Galvanized Audi / VW bodies do NOT cancel the check. A fresh or clean TA does NOT cancel it — inspection lights and a lift do not see rust under arch liners.
+- What the buyer needs to understand: this is a raised-probability climate risk from winter salt, NOT a proven defect on THIS car. Phrase as varbūtība / paaugstināts rūsas risks, never as already-found rust. Galvanized Audi / VW bodies do NOT cancel the check. A fresh or clean TA does NOT cancel it - inspection lights and a lift do not see rust under arch liners.
 - PROSE: short factual sentences. Forbidden padding: „rada paaugstinātu risku”, „lai gan X ir laba pretkorozijas apstrāde…”, long climate essays. State years/countries from the brief, name the spots, note that a fresh TA does not see rust under liners — then stop.
 - Do not invent that rust is already present. Do not write repair EUR. Do not treat rust as TA-covered everyday wear (sviras / bukses).
 - Other fields mention rust only if THIS source uniquely recorded it, or in one summary sentence if the exposure brief is OBLIGĀTI.`;
+
+/**
+ * Itālija / Francija - vizuāla piesardzība, ne rūsas josla.
+ * Tikai ja datos ir šīs valstis.
+ */
+export const AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES = `ITALY / FRANCE VISUAL CAUTION (only when the prompt block „Itālija / Francija: vizuālā piesardzība” says VIZUĀLA PIESARDZĪBA):
+- Trigger from THIS car’s data only (registration, mileage country, dealer region, listing). Never invent Itālija or Francija.
+- Greater visual caution: more repainted panels, more/larger cosmetic damage, thinner service history. Rust is usually lower than in the Nordics / rust belt.
+- Do not treat southern EU as a perfect body. Paint-gauge, panel gaps and underbody still belong in „2. Ieteikumi”.
+- Technical risks: at most one sentence. Inspection: one short note. Do not copy the winter-salt typical-spot paragraph unless the rust-belt brief is also OBLIGĀTI.
+- Spain stays the warm-climate sun-fade / parking-dent profile unless THIS car’s data says otherwise.
+- Phrase as probability, not proven damage. No repair EUR.`;
 
 /**
  * Obligāta virsbūves mērīšana klātienē — katram auto, visiem aģentiem.
@@ -439,6 +453,12 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/uzrāda\s+divējād\w*\s+ain\w*/gi, "datos redzama šāda aina"],
     [/Pozitīvā\s+puse\s+ir/gi, "Datos"],
     [/pozitīvā\s+puse\s+ir/gi, "datos"],
+    [/kloķvārpstas\s+(?:vibrācij[au]|svārstību)\s+slāpētāj\w*(?:\s*\(\s*skriemelis\s*\))?/gi, "kloķvārpstas skriemelis (demferis)"],
+    [/(?:vibrācij[au]|svārstību)\s+slāpētāj\w*/gi, "kloķvārpstas skriemelis (demferis)"],
+    [/datu\s+vakuum\w*/gi, "datu neesamība"],
+    [/informācijas\s+vakuum\w*/gi, "datu neesamība"],
+    [/\bVakuums(?!ūkn)/g, "Trūkums"],
+    [/\bvakuums(?!ūkn)/g, "trūkums"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
   return out;
@@ -945,6 +965,7 @@ ${AI_SOURCE_FIELDS_FACTS_ONLY_RULES}
 ${AI_SOURCES_COMPARISON_OVERVIEW_RULES}
 ${AI_WRAP_FILM_RULES}
 ${AI_WINTER_SALT_RUST_RULES}
+${AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES}
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 ${AI_DOCUMENTED_SERVICE_WORK_RULES}

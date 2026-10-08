@@ -22,6 +22,7 @@ import {
   AI_UNKNOWN_IS_NOT_A_RISK_RULES,
   AI_WRAP_FILM_RULES,
   AI_WINTER_SALT_RUST_RULES,
+  AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES,
   AI_PAINT_GAUGE_INSPECTION_RULES,
   AI_SUNROOF_DRAINAGE_INSPECTION_RULES,
   AI_TEST_DRIVE_GEARBOX_DMF_RULES,
@@ -345,6 +346,9 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("winter salt rust is mandatory in risks and inspection when the exposure brief says so", () => {
     expect(AI_WINTER_SALT_RUST_RULES).toMatch(/WINTER SALT RUST/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Zviedrija|Sweden/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Vācijas lejasdaļa|Bavārija/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/raised-probability|varbūtība/);
     expect(AI_WINTER_SALT_RUST_RULES).toMatch(/riteņu arkas/);
     expect(AI_WINTER_SALT_RUST_RULES).toMatch(/sliekš/);
     expect(AI_WINTER_SALT_RUST_RULES).toMatch(/numura zīmes/);
@@ -365,6 +369,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winterSaltRustRequiredInPrompt/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/winterSaltTailgateMaterialFromPrompt/);
     expect(readRepo("lib/admin-ai-winter-salt-rust.ts")).toMatch(/inferTailgateRustMaterial/);
+    expect(readRepo("lib/admin-ai-winter-salt-rust.ts")).toMatch(/buildSouthernEuropeVisualCautionBrief/);
+    expect(AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES).toMatch(/ITALY \/ FRANCE/);
+    expect(AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES).toMatch(/repainted panels|pārkrāsoti/);
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildSouthernEuropeVisualCautionBrief/);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/VIZUĀLA PIESARDZĪBA/);
   });
 
   it("mileage forensics briefs and case overview feed FLASH MAX comments", () => {
@@ -494,7 +503,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_THIS_CAR_ONLY_LOGIC_RULES).toMatch(/EVERY manufacturer|every make/i);
     expect(AI_DOCUMENTED_SERVICE_WORK_RULES).toMatch(/EVERY manufacturer/);
     expect(AI_OPERATOR_NOTES_EXECUTION_RULES).toMatch(/SOURCE TARGETING/);
-    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Do not name Lietuva or Igaunija|Never list Latvija/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Do not name Lietuva or Igaunija/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Never list Latvija/);
     expect(readRepo("lib/admin-ai-seller.ts")).toMatch(/sudzibas\.lv/);
     expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/AI_SELLER_ANALYSIS_SYSTEM[\s\S]*?sudzibas\.lv/);
     expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(

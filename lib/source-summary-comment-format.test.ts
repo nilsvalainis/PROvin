@@ -41,6 +41,17 @@ describe("applyProvinReportCopyVocabulary", () => {
       "datos redzama šāda aina",
     );
   });
+
+  it("replaces vacuum-metaphor and crankshaft damper wording, keeps vakuumsūknis", () => {
+    expect(applyProvinReportCopyVocabulary("datos ir vakuums")).toBe("datos ir trūkums");
+    expect(applyProvinReportCopyVocabulary("datu vakuums pēdējos gados")).toBe(
+      "datu neesamība pēdējos gados",
+    );
+    expect(applyProvinReportCopyVocabulary("vakuumsūknis ir mainīts")).toBe("vakuumsūknis ir mainīts");
+    expect(applyProvinReportCopyVocabulary("kloķvārpstas svārstību slāpētājs (skriemelis)")).toBe(
+      "kloķvārpstas skriemelis (demferis)",
+    );
+  });
 });
 
 describe("normalizeProvinExpertAiComment", () => {

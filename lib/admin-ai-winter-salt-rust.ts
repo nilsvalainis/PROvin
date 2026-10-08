@@ -9,20 +9,45 @@ import {
   emptyCsddFields,
   vinRegistryBlockHasContent,
   type CsddFormFields,
+  type VinRegistryBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 
 const MS_DAY = 86_400_000;
 const MS_YEAR = 365.25 * MS_DAY;
 
-/** Latvija / Lietuva / Igaunija — ziemas sāls klimats. */
-const WINTER_SALT_COUNTRY_RE =
-  /latvij|lietuv|igaun|estonia|lithuania|\blatvia\b/i;
+type RustBeltSpec = {
+  name: string;
+  re: RegExp;
+  registryKeys?: Array<keyof WorkspaceSourceBlocks>;
+};
+
+/** Ziemas sāls / rūsas josla - tikai valstis, kas datos fiksētas. */
+const RUST_BELT: RustBeltSpec[] = [
+  { name: "Latvija", re: /latvij|\blatvia\b/i },
+  { name: "Lietuva", re: /lietuv|lithuania/i },
+  { name: "Igaunija", re: /igaun|estonia/i, registryKeys: ["mnt_ee", "lkf_ee"] },
+  { name: "Zviedrija", re: /zviedrij|sweden|\bsverige\b/i, registryKeys: ["carinfo"] },
+  { name: "Somija", re: /somij|finland|\bsuomi\b/i, registryKeys: ["finnik", "traficom_fi"] },
+  { name: "Norvēģija", re: /norvēģ|norveg|norway|\bnorge\b/i },
+  { name: "Dānija", re: /dānij|danij|denmark|danmark/i, registryKeys: ["tjekbil"] },
+  { name: "Austrija", re: /austri|austria|österreich|osterreich/i },
+  { name: "Polija", re: /polij|poland|\bpolska\b/i },
+];
+
+/** Vācija nav visa rūsas josla - tikai lejasdaļa / Alpi un bijusī DDR. */
+const SOUTH_GERMANY_RE =
+  /bayern|bavaria|baden[- ]?w[uü]rtt|württemberg|wurttemberg|münchen|muenchen|munich|stuttgart|alpen|alpine|\balps\b|vācijas lejas|lejasdaļ/i;
+const EAST_GERMANY_RE =
+  /ostdeutschland|ost[- ]deutschland|\bddr\b|sachsen-anhalt|\bsachsen\b|thüringen|thuringen|brandenburg|mecklenburg|leipzig|dresden|drezden|magdeburg|erfurt|rostock|chemnitz|austrumvācij|neue bundesl/i;
+
+const ITALY_RE = /itālij|italij|\bitaly\b|\bitalia\b/i;
+const FRANCE_RE = /francij|\bfrance\b|frankreich/i;
 
 const YEARS_IN_REGION_TEXT_RE =
-  /(\d{1,2})\s*gad(?:us|i|u)\s+(?:Latvij|Lietuv|Igaun)/i;
+  /(\d{1,2})\s*gad(?:us|i|u)\s+(?:Latvij|Lietuv|Igaun|Zviedrij|Somij|Norvēģ|Dānij|Austrij|Polij)/i;
 const REGION_YEARS_FLIP_RE =
-  /(?:Latvij|Lietuv|Igaun)[āaēe].{0,24}(\d{1,2})\s*gad/i;
+  /(?:Latvij|Lietuv|Igaun|Zviedrij|Somij|Norvēģ|Dānij|Austrij|Polij)[āaēe].{0,24}(\d{1,2})\s*gad/i;
 
 /**
  * SUV / krosovers / universālis — arkām un sliekšņiem sāls sasniedz ātrāk.
@@ -122,7 +147,18 @@ function isWinterSaltCountry(raw: string | undefined): boolean {
   const t = (raw ?? "").trim();
   if (!t) return false;
   if (t === CSDD_MILEAGE_COUNTRY_LV) return true;
-  return WINTER_SALT_COUNTRY_RE.test(t);
+  if (RUST_BELT.some((c) => c.re.test(t))) return true;
+  return SOUTH_GERMANY_RE.test(t) || EAST_GERMANY_RE.test(t);
+}
+
+function registryBlock(
+  sourceBlocks: WorkspaceSourceBlocks | null | undefined,
+  key: keyof WorkspaceSourceBlocks,
+): VinRegistryBlockState | undefined {
+  const value = sourceBlocks?.[key];
+  if (!value || typeof value !== "object") return undefined;
+  if (!("mileage" in value) && !("ownersSummary" in value)) return undefined;
+  return value as VinRegistryBlockState;
 }
 
 function collectHaystack(input: {
@@ -131,6 +167,7 @@ function collectHaystack(input: {
   extraHaystack?: string;
 }): string {
   const listing = input.sourceBlocks?.listing_analysis;
+  const vi = input.sourceBlocks?.auto_records?.outvinReport?.vehicleInfo;
   return [
     input.csdd.makeModel,
     input.csdd.comments,
@@ -139,6 +176,8 @@ function collectHaystack(input: {
     listing?.listingSalesContext,
     listing?.photoAnalysis,
     listing?.sellerPortrait,
+    vi?.countryRegion,
+    input.sourceBlocks?.auto_records?.comments,
     input.extraHaystack,
   ]
     .filter((s): s is string => Boolean(s?.trim()))
@@ -167,7 +206,18 @@ function parseYearHint(raw: string): number | null {
   return null;
 }
 
-function earliestWinterSaltMs(csdd: CsddFormFields): number | null {
+function pushRegistryDates(b: VinRegistryBlockState | undefined, times: number[]): void {
+  if (!b || !vinRegistryBlockHasContent(b)) return;
+  for (const row of [...(b.mileage ?? []), ...(b.timeline ?? []), ...(b.incidents ?? [])]) {
+    const ms = dateMs(row.date);
+    if (ms > 0) times.push(ms);
+  }
+}
+
+function earliestWinterSaltMs(
+  csdd: CsddFormFields,
+  sourceBlocks?: WorkspaceSourceBlocks | null,
+): number | null {
   const times: number[] = [];
   for (const row of csdd.ownerRegistrationEvents ?? []) {
     const ms = dateMs(row.date);
@@ -187,6 +237,13 @@ function earliestWinterSaltMs(csdd: CsddFormFields): number | null {
   const importedFromElsewhere = Boolean(csdd.previousRegistrationCountry.trim()) &&
     !isWinterSaltCountry(csdd.previousRegistrationCountry);
   if (firstReg > 0 && !importedFromElsewhere) times.push(firstReg);
+  if (sourceBlocks) {
+    for (const spec of RUST_BELT) {
+      for (const key of spec.registryKeys ?? []) {
+        pushRegistryDates(registryBlock(sourceBlocks, key), times);
+      }
+    }
+  }
   if (times.length === 0) return null;
   return Math.min(...times);
 }
@@ -206,24 +263,24 @@ function evidencedWinterSaltCountries(input: {
     (csdd.technicalInspectionHistory ?? []).some((r) => r.date.trim()) ||
     (csdd.ownerRegistrationEvents ?? []).some((r) => r.date.trim() || r.label.trim()) ||
     (csdd.mileageHistory ?? []).some((row) => /latvij/i.test(row.country) || row.country.trim() === CSDD_MILEAGE_COUNTRY_LV);
-  if (hasLvRegistry || /latvij/i.test(hay) || isWinterSaltCountry(csdd.previousRegistrationCountry) && /latvij/i.test(csdd.previousRegistrationCountry)) {
+  if (hasLvRegistry || /latvij/i.test(hay) || (isWinterSaltCountry(csdd.previousRegistrationCountry) && /latvij/i.test(csdd.previousRegistrationCountry))) {
     add("Latvija");
   }
-  if (
-    (csdd.mileageHistory ?? []).some((row) => /lietuv|lithuania/i.test(row.country)) ||
-    /lietuv|lithuania/i.test(hay) ||
-    /lietuv|lithuania/i.test(csdd.previousRegistrationCountry)
-  ) {
-    add("Lietuva");
+  for (const spec of RUST_BELT) {
+    if (spec.name === "Latvija") continue;
+    const registryHit = (spec.registryKeys ?? []).some((key) =>
+      vinRegistryBlockHasContent(registryBlock(input.sourceBlocks, key)),
+    );
+    const mileageHit = (csdd.mileageHistory ?? []).some((row) => spec.re.test(row.country));
+    if (registryHit || mileageHit || spec.re.test(hay) || spec.re.test(csdd.previousRegistrationCountry)) {
+      add(spec.name);
+    }
   }
-  if (
-    vinRegistryBlockHasContent(input.sourceBlocks?.mnt_ee) ||
-    vinRegistryBlockHasContent(input.sourceBlocks?.lkf_ee) ||
-    (csdd.mileageHistory ?? []).some((row) => /igaun|estonia/i.test(row.country)) ||
-    /igaun|estonia/i.test(hay) ||
-    /igaun|estonia/i.test(csdd.previousRegistrationCountry)
-  ) {
-    add("Igaunija");
+  if (SOUTH_GERMANY_RE.test(hay) || SOUTH_GERMANY_RE.test(csdd.previousRegistrationCountry)) {
+    add("Vācijas lejasdaļa");
+  }
+  if (EAST_GERMANY_RE.test(hay) || EAST_GERMANY_RE.test(csdd.previousRegistrationCountry)) {
+    add("Austrumvācija");
   }
   return out;
 }
@@ -265,10 +322,16 @@ export function analyzeWinterSaltRust(input: {
       ? Math.max(0, new Date(nowMs).getUTCFullYear() - firstRegYear)
       : yearsBetween(dateMs(csdd.firstRegistration), nowMs);
 
-  const fromDates = yearsBetween(earliestWinterSaltMs(csdd) ?? Number.NEGATIVE_INFINITY, nowMs);
+  const fromDates = yearsBetween(
+    earliestWinterSaltMs(csdd, input.sourceBlocks) ?? Number.NEGATIVE_INFINITY,
+    nowMs,
+  );
   const fromText = parseYearsFromText(hay);
-  const yearsInRegion =
+  let yearsInRegion =
     fromDates != null && fromText != null ? Math.max(fromDates, fromText) : (fromDates ?? fromText);
+  if (yearsInRegion == null && region && vehicleAgeYears != null) {
+    yearsInRegion = vehicleAgeYears;
+  }
 
   const yearsOk = yearsInRegion != null && yearsInRegion >= 3;
   const suvWithUse = isSuvCrossoverWagon && yearsInRegion != null && yearsInRegion >= 1;
@@ -305,7 +368,7 @@ export function buildWinterSaltRustBrief(input: {
   if (c.makeModel) lines.push(`- Marka/modelis: ${c.makeModel}`);
   if (c.yearsInRegion != null) {
     lines.push(
-      `- Gadi ziemas sāls reģionā (${c.evidencedCountries.join(", ") || "LV/LT/EE"}): ~${c.yearsInRegion}`,
+      `- Gadi ziemas sāls / rūsas joslā (${c.evidencedCountries.join(", ") || "fiksētās valstis"}): ~${c.yearsInRegion}`,
     );
   }
   if (c.evidencedCountries.length > 0) {
@@ -331,9 +394,49 @@ export function buildWinterSaltRustBrief(input: {
     );
   }
   lines.push(
-    "- OBLIGĀTI „1. Tehnisko risku analīze”: viena rindkopa — tipisks klimata risks no ziemas sāls, NE pierādīts defekts. Cinkota virsbūve (Audi u.c.) to NEATCEĻ. Svaiga vai tīra TA to NEATCEĻ — TA neredz rūsu zem arku oderēm un sliekšņu apakšā.",
+    "- OBLIGĀTI „1. Tehnisko risku analīze”: viena rindkopa - paaugstināta rūsas varbūtība pēc ziemas sāls, NE pierādīts defekts. Cinkota virsbūve (Audi u.c.) to NEATCEĻ. Svaiga vai tīra TA to NEATCEĻ - TA neredz rūsu zem arku oderēm un sliekšņu apakšā.",
     `- OBLIGĀTI „2. Ieteikumi klātienes apskatei”: nosauc vietas vārdā — ${c.typicalSpots.join("; ")}.`,
     "- Anti-atkārtošanās šo tēmu NEATSAUC. Neizdomā, ka rūsa jau ir fiksēta — saki, ka tā jāmeklē šajās vietās.",
   );
   return lines.join("\n");
+}
+
+function evidencedItalyFranceCountries(input: {
+  csdd: CsddFormFields;
+  hay: string;
+}): string[] {
+  const out: string[] = [];
+  const blob = `${input.hay}\n${input.csdd.previousRegistrationCountry}\n${(input.csdd.mileageHistory ?? []).map((r) => r.country).join("\n")}`;
+  if (ITALY_RE.test(blob)) out.push("Itālija");
+  if (FRANCE_RE.test(blob)) out.push("Francija");
+  return out;
+}
+
+export function southernEuropeVisualCautionInPrompt(prompt: string): boolean {
+  return /Itālija \/ Francija: vizuālā piesardzība[\s\S]{0,800}Statuss: VIZUĀLA PIESARDZĪBA/i.test(
+    prompt ?? "",
+  );
+}
+
+/** Kompakts prompta bloks - tukšs, ja IT/FR datos nav. */
+export function buildSouthernEuropeVisualCautionBrief(input: {
+  csdd?: CsddFormFields | null;
+  sourceBlocks?: WorkspaceSourceBlocks | null;
+  extraHaystack?: string;
+}): string {
+  const csdd = input.csdd ?? emptyCsddFields();
+  const hay = collectHaystack({
+    csdd,
+    sourceBlocks: input.sourceBlocks,
+    extraHaystack: input.extraHaystack,
+  });
+  const countries = evidencedItalyFranceCountries({ csdd, hay });
+  if (countries.length === 0) return "";
+  return [
+    "### Itālija / Francija: vizuālā piesardzība (deterministisks - NEIZDOMĀ pretējo)",
+    "- Statuss: VIZUĀLA PIESARDZĪBA",
+    `- Ekspluatācija fiksēta: ${countries.join(", ")}. Citas valstis NENOSAUK.`,
+    "- Klientam: biežāk pārkrāsoti paneļi un kosmētiski defekti, plānāka servisa vēsture. Rūsa parasti zemāka nekā ziemeļos. Neizdomā, ka defekti jau ir.",
+    "- OBLIGĀTI „2. Ieteikumi”: īsa piezīme par vizuālo piesardzību un krāsas mērītāju. „1. Tehnisko risku analīze”: maksimums viens teikums. Ziemas sāls rūsas šablonu NERAKSTI, ja rūsas joslas brīfa NAV.",
+  ].join("\n");
 }
