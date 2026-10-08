@@ -7,18 +7,32 @@
  * Sesija beidzas ik pēc pāris stundām. /en/login ir 404: login ir findcar popups
  * (cookie -> #loginButton2 -> input[name=Email] username -> #loginButton4 ->
  * input[name=Password] -> submit #loginButton3; fallback: [class*="Modal-module_modal"]
- * button:has-text("Login")). Captcha / 2FA -> login_required. Sekme: ChassisNumber != null.
+ * button:has-text("Login")). Captcha / 2FA -> login_required.
+ * Sekme: #loginButton2 nav, vai GET /en/myaccount/homev6/CurrentUserDetails atgriež lietotāju.
+ * ChassisNumber meklēšanā paliek null arī ielogotam, tāpēc tas NAV login pārbaude.
+ * Konta valoda var būt RU; piespiežam /en/ ceļu, lai virsraksti būtu EN.
  */
 import { hasCaptchaOrChallenge, looksLikeTwoFactor, pageText, randomPause } from "../browser.mjs";
-import { isoDate, makeItem, num, price, str, yearOf } from "../items.mjs";
+import { num } from "../items.mjs";
 import { dismissCookieBanner, tickRemember } from "../login.mjs";
-import { searchShowsOpenlaneLogin } from "../policy.mjs";
+import {
+  CURRENT_USER_PATH,
+  LOGGED_OUT_HOST_RE,
+  PROBE_URL,
+  SEARCH_API_RE,
+  mapOpenlaneAuction,
+  openlaneEnglishUrl,
+  openlaneSessionLooksLoggedIn,
+} from "./openlane-logic.mjs";
 
-const PROBE_URL = process.env.OPENLANE_PROBE_URL || "https://www.openlane.eu/en/findcar";
-const SEARCH_API_RE = /\/findcarv6\/search/i;
-const LOGGED_IN_RE = new RegExp(process.env.OPENLANE_LOGGED_IN_TEXT || "(log ?out|sign out|my account|my openlane|mijn account|abmelden)", "i");
-const LOGGED_OUT_HOST_RE = /id\.openlane\.eu|\/login\b|\/signin\b/i;
-const DETAIL_TEMPLATE = process.env.OPENLANE_DETAIL_URL_TEMPLATE || "https://www.openlane.eu/en/car/{auctionId}";
+export {
+  coerceOpenlaneMargin,
+  mapOpenlaneAuction,
+  openlaneCurrentUserShowsLogin,
+  openlaneEnglishUrl,
+  openlaneSessionLooksLoggedIn,
+  pickOpenlaneVatNote,
+} from "./openlane-logic.mjs";
 
 export const openlane = {
   id: "openlane",
@@ -31,36 +45,46 @@ export const openlane = {
   fetchSource,
 };
 
-async function probeOpenlaneSession(page) {
-  let result = null;
-  const onResponse = async (res) => {
-    if (result !== null) return;
-    if (!SEARCH_API_RE.test(res.url()) || res.request().method() !== "POST") return;
-    try {
-      const shown = searchShowsOpenlaneLogin(await res.json());
-      if (shown !== null) result = shown;
-    } catch {
-      /* atbilde nav JSON */
-    }
-  };
-  page.on("response", onResponse);
-  try {
-    await page.goto(PROBE_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
-    const deadline = Date.now() + 15_000;
-    while (result === null && Date.now() < deadline) await randomPause(250, 450);
-    return result;
-  } finally {
-    page.off("response", onResponse);
+async function ensureEnglishPath(page) {
+  const url = page.url();
+  const en = openlaneEnglishUrl(/openlane\.eu/i.test(url) ? url : PROBE_URL);
+  if (en && en !== url) {
+    await page.goto(en, { waitUntil: "domcontentloaded", timeout: 45_000 }).catch(() => undefined);
   }
+}
+
+async function readCurrentUser(page) {
+  return page
+    .evaluate(async (path) => {
+      try {
+        const r = await fetch(path, { credentials: "include", headers: { accept: "application/json" } });
+        if (!r.ok) return { ok: false };
+        const text = await r.text();
+        try {
+          return { ok: true, json: JSON.parse(text) };
+        } catch {
+          return { ok: false };
+        }
+      } catch {
+        return { ok: false };
+      }
+    }, CURRENT_USER_PATH)
+    .catch(() => ({ ok: false }));
 }
 
 async function isLoggedIn(page) {
   if (LOGGED_OUT_HOST_RE.test(page.url())) return false;
-  const chassis = await probeOpenlaneSession(page);
-  if (chassis === true) return true;
-  if (chassis === false) return false;
-  const text = await pageText(page, 8_000);
-  return LOGGED_IN_RE.test(text);
+  await ensureEnglishPath(page);
+  if (LOGGED_OUT_HOST_RE.test(page.url())) return false;
+  const user = await readCurrentUser(page);
+  const loginCount = await page.locator("#loginButton2").count().catch(() => 0);
+  const text = await pageText(page, 6_000);
+  return openlaneSessionLooksLoggedIn({
+    url: page.url(),
+    loginButtonPresent: loginCount > 0,
+    currentUserJson: user?.ok ? user.json : null,
+    pageText: text,
+  });
 }
 
 async function login(page) {
@@ -68,7 +92,7 @@ async function login(page) {
   const password = process.env.OPENLANE_PASS || "";
   if (!username || !password) return { ok: false, status: "login_required", note: "Openlane: nav lietotāja / paroles env." };
   try {
-    await page.goto(PROBE_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    await page.goto(openlaneEnglishUrl(PROBE_URL), { waitUntil: "domcontentloaded", timeout: 45_000 });
     await randomPause(800, 1_600);
     await dismissCookieBanner(page);
     const challenge = await hasCaptchaOrChallenge(page);
@@ -103,71 +127,11 @@ async function login(page) {
     const text = await pageText(page, 6_000);
     if (looksLikeTwoFactor(text)) return { ok: false, status: "login_required", note: "Openlane: prasa e-pasta / 2FA kodu; jāielogojas manuāli." };
 
-    const chassis = await probeOpenlaneSession(page);
-    if (chassis === true) return { ok: true, status: "ok", note: "auto_login_ok" };
-    return { ok: false, status: "login_required", note: "Openlane: pēc login ChassisNumber ir null." };
+    if (await isLoggedIn(page)) return { ok: true, status: "ok", note: "auto_login_ok" };
+    return { ok: false, status: "login_required", note: "Openlane: pēc login sesija nav redzama (#loginButton2 vai CurrentUserDetails)." };
   } catch (e) {
     return { ok: false, status: "error", note: `Openlane: login kļūda ${e instanceof Error ? e.message.split("\n")[0].slice(0, 160) : "nezināma"}` };
   }
-}
-
-function detailUrlFor(auction, anchors) {
-  const auctionId = str(auction.AuctionId);
-  const carId = str(auction.CarId);
-  const hit = anchors.find((h) => (auctionId && new RegExp(`[/=-]${auctionId}(?:[/?#]|$)`).test(h)) || (carId && new RegExp(`[/=-]${carId}(?:[/?#]|$)`).test(h)));
-  if (hit) return hit;
-  return DETAIL_TEMPLATE.replace("{auctionId}", encodeURIComponent(auctionId)).replace("{carId}", encodeURIComponent(carId));
-}
-
-function stageFor(auction, nowMs) {
-  const start = Date.parse(isoDate(auction.BatchStartDate));
-  const end = Date.parse(isoDate(auction.BatchEndDate));
-  if (Number.isFinite(start) && nowMs < start) return "BEFORE_AUCTION";
-  if (Number.isFinite(end) && nowMs > end) return "AFTER_AUCTION";
-  if (Number.isFinite(start) || Number.isFinite(end)) return "IN_AUCTION";
-  return str(auction.AuctionType || auction.SaleType);
-}
-
-export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
-  const requested = auction.RequestedSalesPrice;
-  const requestedShown = auction.RequestedSalesPriceCanBeShown ?? auction.CanBeShown ?? true;
-  const title = str(auction.CarNameEn || auction.CarName || auction.Title);
-  const item = makeItem("openlane", {
-    externalId: str(auction.AuctionId) || str(auction.CarId),
-    auctionId: str(auction.AuctionId),
-    detailUrl: detailUrlFor(auction, anchors),
-    title,
-    manufacturer: str(auction.Make || auction.MakeName) || title.split(" ")[0],
-    year: yearOf(auction.FirstRegistrationDate || auction.RegistrationDate || auction.Year || auction.BuildYear),
-    firstRegistration: isoDate(auction.FirstRegistrationDate || auction.RegistrationDate).slice(0, 10),
-    mileageKm: num(auction.Mileage),
-    fuel: str(auction.FuelType || auction.Fuel),
-    transmission: str(auction.Transmission || auction.TransmissionType || auction.Gearbox),
-    powerKw: str(auction.PowerKw || auction.KW || auction.Power),
-    location: str(auction.LocationName || auction.City || auction.Location),
-    countryCode: str(auction.CountryCode || auction.OriginCountry || auction.Country),
-    imageUrl: str(auction.ThumbnailUrl || auction.ImageUrl),
-    currency: str(auction.Currency) || "EUR",
-    priceStart: price(auction.StartPrice),
-    priceCurrent: price(auction.CurrentPrice ?? auction.MaximumBid),
-    priceMinimal: requestedShown ? price(requested) : null,
-    priceBuyNow: price(auction.BuyNowPrice),
-    vatNote:
-      auction.IsMargin === true
-        ? "Margin"
-        : auction.IsMargin === false
-          ? "VAT excluded"
-          : str(auction.VatType || auction.VatRegime || (auction.VatDeductible === true ? "VAT deductible" : "")),
-    auctionStartAt: isoDate(auction.BatchStartDate),
-    auctionEndAt: isoDate(auction.BatchEndDate),
-    auctionStage: stageFor(auction, nowMs),
-  });
-  return {
-    ...item,
-    isMargin: auction.IsMargin === true ? true : auction.IsMargin === false ? false : null,
-    bidCount: num(auction.BidCount ?? auction.NumberOfBids),
-    damageRaw: str(auction.DamageDescription || auction.DamageText || auction.Comments || ""),
-  };
 }
 
 function withPage(bodyText, pageNumber) {
@@ -203,7 +167,7 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
   };
   page.on("response", onResponse);
   try {
-    await page.goto(sourceUrl, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    await page.goto(openlaneEnglishUrl(sourceUrl), { waitUntil: "domcontentloaded", timeout: 45_000 });
     const challenge = await hasCaptchaOrChallenge(page);
     if (challenge === "cloudflare_challenge") {
       await randomPause(6_000, 9_000);

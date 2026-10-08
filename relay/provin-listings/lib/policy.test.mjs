@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { envToken, searchShowsOpenlaneLogin, shouldReadPublic } from "./policy.mjs";
+import { envToken, shouldReadPublic } from "./policy.mjs";
 
 test("envToken drops an inline systemd comment", () => {
   assert.equal(envToken("chrome          # sistēmas Google Chrome", "chromium"), "chrome");
@@ -19,9 +19,3 @@ test("public fallback also runs when auto-login returns error", () => {
   assert.equal(shouldReadPublic("auto1", "login_required", true), false);
 });
 
-test("Openlane login is ChassisNumber, not a null placeholder", () => {
-  assert.equal(searchShowsOpenlaneLogin({ Auctions: [{ ChassisNumber: null }, { ChassisNumber: "WVWZZZ3CZWE000001" }] }), true);
-  assert.equal(searchShowsOpenlaneLogin({ Auctions: [{ ChassisNumber: null }, { ChassisNumber: "" }] }), false);
-  assert.equal(searchShowsOpenlaneLogin({ Auctions: [] }), null);
-  assert.equal(searchShowsOpenlaneLogin(null), null);
-});
