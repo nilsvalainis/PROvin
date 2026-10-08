@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LISTING_COSTS, listingExtrasI, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine } from "@/lib/iriss-listings-cost";
 
 const I = listingExtrasI(DEFAULT_LISTING_COSTS);
 const B = 18_000;
@@ -37,5 +37,17 @@ describe("listing extras and v4 control numbers", () => {
 
   it("unknown uses the net formula", () => {
     expect(listingRealCost("unknown", 0, P, I).total).toBe(listingRealCost("net", 0, P, I).total);
+  });
+
+  it("VAT share line uses I for margin and the full base for net/gross", () => {
+    const eur = (n: number) => `${Math.round(n)} €`;
+    const margin = listingRealCost("margin", 0, P, I);
+    const net = listingRealCost("net", 0, P, I);
+    const gross = listingRealCost("gross", 19, P, I);
+    expect(listingVatShareLine(margin, eur)).toBe(`t.sk. PVN 21% no izmaksām: ${eur(margin.vat)}`);
+    expect(listingVatShareLine(net, eur)).toBe(`t.sk. PVN 21% no visas summas: ${eur(net.vat)}`);
+    expect(listingVatShareLine(gross, eur)).toBe(`t.sk. PVN 21% no visas summas: ${eur(gross.vat)}`);
+    expect(round2(margin.vat)).toBe(round2(I * 0.21));
+    expect(round2(net.vat)).toBe(round2((P + I) * 0.21));
   });
 });

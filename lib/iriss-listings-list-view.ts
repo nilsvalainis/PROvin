@@ -3,6 +3,7 @@
  * Noklusējums: beigu laiks, tuvākās vēl notiekošās izsoles vispirms. Bez vērtības vienmēr beigās.
  */
 
+import { listingPriceChangeAbsReal } from "@/lib/iriss-listings-auto1-cents";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 
 export type ListingSort =
@@ -81,13 +82,7 @@ export function listingMileage(v: Pick<Sortable, "mileageKm">): number | null {
 
 /** Lielākā absolūtā starpība vēsturē. Nav salīdzināmas izmaiņas: null. */
 export function listingPriceChangeAbs(v: Pick<Sortable, "priceHistory">): number | null {
-  let best: number | null = null;
-  for (const c of v.priceHistory) {
-    if (c.from === null || c.to === null) continue;
-    const d = Math.abs(c.to - c.from);
-    if (best === null || d > best) best = d;
-  }
-  return best;
+  return listingPriceChangeAbsReal(v.priceHistory);
 }
 
 /** null ir lielāks par jebkuru skaitli, tāpēc tukšie paliek beigās arī dilstošā secībā. */

@@ -5,7 +5,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
-import { listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, type ListingCostParts } from "@/lib/iriss-listings-cost";
+import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
+import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
+import { listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { classifyListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
@@ -27,11 +29,10 @@ import {
   type IrissListPrefs,
   type IrissListTab,
 } from "@/lib/iriss-listings-operator-prefs";
-import { listingTaxLabel, listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
+import { listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
-  type IrissListingPriceChange,
   type IrissListingSourceRun,
   type IrissListingVehicle,
   type IrissListingsLatestView,
@@ -128,7 +129,7 @@ function isNew(v: IrissListingVehicle, nowMs: number | null): boolean {
 
 function recentPriceChanges(v: IrissListingVehicle, nowMs: number | null): IrissListingVehicle["priceHistory"] {
   if (nowMs == null) return [];
-  return v.priceHistory.filter((c) => hoursSince(c.at, nowMs) <= RECENT_WINDOW_HOURS);
+  return v.priceHistory.filter((c) => isRealListingPriceChange(c) && hoursSince(c.at, nowMs) <= RECENT_WINDOW_HOURS);
 }
 
 function stageLabel(stage: string): string {
@@ -137,13 +138,6 @@ function stageLabel(stage: string): string {
   if (s === "IN_AUCTION" || s === "RUNNING") return "izsole notiek";
   if (s === "AFTER_AUCTION" || s === "FINISHED") return "izsole beigusies";
   return stage ? stage.toLowerCase().replace(/_/g, " ") : "";
-}
-
-function priceFieldLabel(field: IrissListingPriceChange["field"]): string {
-  if (field === "start") return "sākuma";
-  if (field === "minimal") return "min.";
-  if (field === "buy_now") return "pirkt tūlīt";
-  return "pašreizējā";
 }
 
 function taxOf(v: IrissListingVehicle, prefs: IrissListPrefs): ListingTax {
@@ -184,20 +178,8 @@ function countdown(endIso: string, nowMs: number | null): { t: string; k: string
   return { t: d ? `${d} d ${clock}` : clock, k: ms < 36e5 ? "text-red-600" : ms < 86_400_000 ? "text-orange-600" : "text-[var(--color-apple-text)]" };
 }
 
-function TaxBadge({ tax }: { tax: ListingTax }) {
-  const cls =
-    tax.kind === "net"
-      ? "text-blue-800 bg-blue-50 border-blue-200"
-      : tax.kind === "margin"
-        ? "text-purple-800 bg-purple-50 border-purple-200"
-        : tax.kind === "gross"
-          ? "text-orange-800 bg-orange-50 border-orange-200"
-          : "text-amber-800 bg-yellow-100 border-yellow-400 border-dashed";
-  return (
-    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-extrabold ${cls}`} title={tax.raw}>
-      {listingTaxLabel(tax)}
-    </span>
-  );
+function TaxBadge({ tax, size = "sm" }: { tax: ListingTax; size?: "sm" | "md" }) {
+  return <IrissListTaxBadge tax={tax} size={size} />;
 }
 
 function CountryFlag({ code }: { code: string }) {
@@ -768,6 +750,7 @@ function VehicleCard({
   const fav = prefs.fav.includes(v.id);
   const hidden = prefs.hidden.includes(v.id);
   const customCost = Boolean(prefs.costOv[v.id]);
+  const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
   const cd = countdown(v.auctionEndAt, nowMs);
   const specs = [v.year, fmtKm(v.mileageKm), v.fuel, v.transmission, v.powerKw ? `${v.powerKw} kW` : "", v.location].filter(Boolean);
   const left = real && prefs.budget != null ? prefs.budget - real.total : null;
@@ -823,7 +806,7 @@ function VehicleCard({
             <CountryFlag code={v.countryCode} />
             <span className="hidden sm:inline">{daysInAuction(v, nowMs) ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{daysInAuction(v, nowMs)}</span> : null}</span>
             {v.bidCount != null ? <span className="hidden rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 sm:inline-flex">{v.bidCount} solījumi</span> : null}
-            {v.auctionType ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex">{v.auctionType}</span> : null}
+            {auctionTypeLabel ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex">{auctionTypeLabel}</span> : null}
             {gone ? <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600 sm:px-2 sm:text-[10px]">PAZUDIS</span> : null}
             {!gone && fresh ? <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800 sm:px-2 sm:text-[10px]">JAUNS</span> : null}
             {customCost ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex" title="Izmaksas šim auto mainītas">I {fmtEur(extras)}</span> : null}
@@ -883,35 +866,31 @@ function VehicleCard({
           <div className="hidden text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:block">Pašreizējā cena</div>
           <div className="flex flex-wrap items-center gap-1 sm:justify-end">
             <span className="text-[18px] font-extrabold tabular-nums leading-none sm:text-[22px]">{bid == null ? "-" : fmtEur(bid)}</span>
-            <TaxBadge tax={tax} />
+            <TaxBadge tax={tax} size="md" />
           </div>
           {v.priceBuyNow != null && v.priceBuyNow !== bid ? <div className="hidden text-[11px] text-slate-500 sm:block">pirkt uzreiz {fmtEur(v.priceBuyNow)}</div> : null}
-          {changes.length > 0 ? (
-            <p className="hidden text-[11px] text-sky-900 sm:block">
-              {changes.map((c) => `${priceFieldLabel(c.field)}: ${c.from === null ? "-" : fmtEur(c.from)} -> ${c.to === null ? "-" : fmtEur(c.to)}`).join("; ")}
-            </p>
-          ) : null}
           <div className={`text-[11px] font-extrabold tabular-nums sm:text-[12px] ${cd.k}`}>{cd.t}</div>
           {v.auctionStage ? <div className="hidden text-[11px] text-slate-500 sm:block">{stageLabel(v.auctionStage)}</div> : null}
         </div>
 
         <div className="grid gap-0.5 sm:min-w-[175px] sm:border-l sm:border-dashed sm:border-[#E5E7EB] sm:pl-3">
-          {prefs.budget == null ? (
-            <div className="text-[11px] font-bold text-amber-900">Budžets nav</div>
-          ) : bid == null || !real ? (
-            <div className="text-[11px] tabular-nums"><span className="text-slate-500">Budžets </span><b>{fmtEur(prefs.budget)}</b><div className="text-slate-500">Cenas nav</div></div>
+          {bid == null || !real ? (
+            <div className="text-[11px] tabular-nums text-slate-500">{prefs.budget != null ? <>Budžets <b className="text-[var(--color-apple-text)]">{fmtEur(prefs.budget)}</b> · </> : null}Cenas nav</div>
           ) : (
             <>
-              <div className="hidden justify-between text-[11px] tabular-nums sm:flex"><span>Budžets</span><b>{fmtEur(prefs.budget)}</b></div>
+              {prefs.budget != null ? <div className="hidden justify-between text-[11px] tabular-nums sm:flex"><span>Budžets</span><b>{fmtEur(prefs.budget)}</b></div> : null}
               <div className="flex justify-between text-[11px] tabular-nums"><span>Gala</span><b>{fmtEur(real.total)}</b></div>
-              <div>
-                {left != null && left >= 0 ? (
-                  <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-extrabold text-emerald-800 sm:text-[11px]">+{fmtEur(left)}</span>
-                ) : (
-                  <span className="rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-extrabold text-red-800 sm:text-[11px]">-{fmtEur(-(left ?? 0))}</span>
-                )}
-              </div>
-              <div className="flex justify-between text-[11px] tabular-nums text-slate-500"><span>Maks.</span><b className="text-[var(--color-apple-text)]">{fmtEur(mb)}</b></div>
+              <div className="text-[10px] leading-snug text-slate-500">{listingVatShareLine(real, fmtEur)}</div>
+              {left != null ? (
+                <div>
+                  {left >= 0 ? (
+                    <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-extrabold text-emerald-800 sm:text-[11px]">+{fmtEur(left)}</span>
+                  ) : (
+                    <span className="rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-extrabold text-red-800 sm:text-[11px]">-{fmtEur(-left)}</span>
+                  )}
+                </div>
+              ) : null}
+              {mb != null ? <div className="flex justify-between text-[11px] tabular-nums text-slate-500"><span>Maks.</span><b className="text-[var(--color-apple-text)]">{fmtEur(mb)}</b></div> : null}
               {room != null ? (
                 <div className="hidden justify-between text-[11px] tabular-nums text-slate-500 sm:flex">
                   <span>{room >= 0 ? "var solīt vēl" : "virs maks."}</span>
