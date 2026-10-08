@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
 import { listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { classifyListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
-  LISTING_SORT_STORAGE_KEY,
   LISTING_SORTS,
   type ListingSort,
   parseListingSort,
@@ -19,7 +18,15 @@ import {
   vehicleInPriceRange,
   vehicleInSources,
 } from "@/lib/iriss-listings-list-view";
-import { defaultIrissListPrefs, IRISS_LIST_PREFS_KEY, listingCostsFor, parseIrissListPrefs, type IrissListPrefs } from "@/lib/iriss-listings-operator-prefs";
+import {
+  defaultIrissListPrefs,
+  irissListBrowserStorage,
+  listingCostsFor,
+  migrateIrissListPrefs,
+  persistIrissListPrefs,
+  type IrissListPrefs,
+  type IrissListTab,
+} from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxLabel, listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
 import {
   IRISS_LISTING_PLATFORMS,
@@ -47,7 +54,7 @@ const PLATFORM_LABEL_LONG: Record<IrissListingPlatform, string> = {
 /** „Jauns” un „cena mainīta” rāda pēc laika loga, ne tikai pēdējās palaišanas, lai atkārtots „Nolasīt tagad” tos neizdzēš. */
 const RECENT_WINDOW_HOURS = 36;
 
-type Tab = "new" | "price" | "all" | "gone";
+type Tab = IrissListTab;
 
 function platformBadgeClass(platform: IrissListingPlatform): string {
   if (platform === "autobid") return "bg-violet-50 text-violet-800 border-violet-200/80";
@@ -98,7 +105,14 @@ function fmtKm(n: number | null): string {
 function fmtDateTime(iso: string): string {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return iso || "";
-  return new Intl.DateTimeFormat("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(t));
+  return new Intl.DateTimeFormat("lv-LV", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Riga",
+  }).format(new Date(t));
 }
 
 function hoursSince(iso: string, nowMs: number): number {
@@ -107,11 +121,13 @@ function hoursSince(iso: string, nowMs: number): number {
   return (nowMs - t) / 36e5;
 }
 
-function isNew(v: IrissListingVehicle, nowMs: number): boolean {
+function isNew(v: IrissListingVehicle, nowMs: number | null): boolean {
+  if (nowMs == null) return false;
   return v.change !== "gone" && hoursSince(v.firstSeenAt, nowMs) <= RECENT_WINDOW_HOURS;
 }
 
-function recentPriceChanges(v: IrissListingVehicle, nowMs: number): IrissListingVehicle["priceHistory"] {
+function recentPriceChanges(v: IrissListingVehicle, nowMs: number | null): IrissListingVehicle["priceHistory"] {
+  if (nowMs == null) return [];
   return v.priceHistory.filter((c) => hoursSince(c.at, nowMs) <= RECENT_WINDOW_HOURS);
 }
 
@@ -146,14 +162,16 @@ function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs): number | null {
   return listingMaxBid(tax.kind, tax.rate ?? 0, prefs.budget, extrasOf(v, prefs)) - bid;
 }
 
-function daysInAuction(v: IrissListingVehicle, nowMs: number): string {
+function daysInAuction(v: IrissListingVehicle, nowMs: number | null): string {
+  if (nowMs == null) return "";
   const t = Date.parse(v.auctionStartAt || v.firstSeenAt);
   if (!Number.isFinite(t)) return "";
   const d = (nowMs - t) / 86_400_000;
   return d < 1 ? `${Math.max(1, Math.round(d * 24))} h izsolē` : `${Math.floor(d)} d izsolē`;
 }
 
-function countdown(endIso: string, nowMs: number): { t: string; k: string } {
+function countdown(endIso: string, nowMs: number | null): { t: string; k: string } {
+  if (nowMs == null) return { t: "\u00a0", k: "text-slate-400" };
   if (!endIso.trim()) return { t: "Beigu laiks nav zināms", k: "text-slate-400" };
   const end = Date.parse(endIso);
   if (!Number.isFinite(end)) return { t: "Beigu laiks nav zināms", k: "text-slate-400" };
@@ -210,33 +228,41 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [health, setHealth] = useState<IrissPlatformHealthReport | null>(null);
-  const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [showSources, setShowSources] = useState(false);
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [mounted, setMounted] = useState(false);
+  const [nowMs, setNowMs] = useState<number | null>(null);
   const [prefs, setPrefs] = useState<IrissListPrefs>(defaultIrissListPrefs);
   const [prefsReady, setPrefsReady] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
-  const [listScope, setListScope] = useState<"all" | "fav" | "hidden">("all");
-  const [hideTech, setHideTech] = useState(false);
   const [showCosts, setShowCosts] = useState(false);
+  const restoredQueryRef = useRef(false);
+  const tab = prefs.tab;
+  const listScope = prefs.listScope;
+  const hideTech = prefs.hideTech;
   const sort = parseListingSort(searchParams.get("sort")) ?? "ending";
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
   const priceMax = parsePriceBound(searchParams.get("max"));
 
   useEffect(() => {
-    setNowMs(Date.now());
-  }, [latest?.generatedAt]);
-
-  useEffect(() => {
-    setPrefs(parseIrissListPrefs(window.localStorage.getItem(IRISS_LIST_PREFS_KEY)));
+    const storage = irissListBrowserStorage();
+    setPrefs(storage ? migrateIrissListPrefs(storage) : defaultIrissListPrefs());
     setPrefsReady(true);
+    setMounted(true);
+    setNowMs(Date.now());
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+    setNowMs(Date.now());
+  }, [latest?.generatedAt, mounted]);
+
+  useEffect(() => {
     if (!prefsReady) return;
-    window.localStorage.setItem(IRISS_LIST_PREFS_KEY, JSON.stringify(prefs));
+    const storage = irissListBrowserStorage();
+    if (!storage) return;
+    persistIrissListPrefs(storage, prefs);
   }, [prefs, prefsReady]);
 
   useEffect(() => {
@@ -254,24 +280,45 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   }, [drawerId]);
 
   useEffect(() => {
-    if (searchParams.get("sort")) {
-      window.localStorage.setItem(LISTING_SORT_STORAGE_KEY, sort);
-      return;
-    }
-    const stored = parseListingSort(window.localStorage.getItem(LISTING_SORT_STORAGE_KEY));
-    if (!stored || stored === "ending") return;
+    if (!prefsReady || !mounted || restoredQueryRef.current) return;
+    restoredQueryRef.current = true;
     const params = new URLSearchParams(searchParams.toString());
-    params.set("sort", stored);
+    let changed = false;
+    if (!searchParams.get("sort") && prefs.sort && prefs.sort !== "ending") {
+      params.set("sort", prefs.sort);
+      changed = true;
+    }
+    if (!searchParams.get("src") && prefs.sources.length > 0) {
+      params.set("src", prefs.sources.join(","));
+      changed = true;
+    }
+    if (!searchParams.get("min") && prefs.priceMin != null) {
+      params.set("min", String(prefs.priceMin));
+      changed = true;
+    }
+    if (!searchParams.get("max") && prefs.priceMax != null) {
+      params.set("max", String(prefs.priceMax));
+      changed = true;
+    }
+    if (!changed) return;
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-  }, [pathname, router, searchParams, sort]);
+  }, [mounted, pathname, prefs.priceMax, prefs.priceMin, prefs.sort, prefs.sources, prefsReady, router, searchParams]);
 
   function writeListQuery(next: { sort?: ListingSort; sources?: IrissListingPlatform[]; min?: string | null; max?: string | null }) {
     const params = new URLSearchParams(searchParams.toString());
     const sortNext = next.sort ?? sort;
     if (sortNext === "ending") params.delete("sort");
     else params.set("sort", sortNext);
-    window.localStorage.setItem(LISTING_SORT_STORAGE_KEY, sortNext);
+    setPrefs((p) => ({
+      ...p,
+      sort: sortNext === "ending" ? null : sortNext,
+      ...(next.sources
+        ? { sources: next.sources.length === 0 || next.sources.length === SOURCE_CHIPS.length ? [] : next.sources }
+        : {}),
+      ...(next.min !== undefined ? { priceMin: parsePriceBound(next.min) } : {}),
+      ...(next.max !== undefined ? { priceMax: parsePriceBound(next.max) } : {}),
+    }));
     if (next.sources) {
       if (next.sources.length === 0 || next.sources.length === SOURCE_CHIPS.length) params.delete("src");
       else params.set("src", next.sources.join(","));
@@ -338,7 +385,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
 
   const sorted = useMemo(() => {
     const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs) }));
-    return sortListingVehicles(withRoom, sort, nowMs).sort((a, b) => Number(prefs.fav.includes(b.id)) - Number(prefs.fav.includes(a.id)));
+    return sortListingVehicles(withRoom, sort, nowMs ?? Number.POSITIVE_INFINITY).sort((a, b) => Number(prefs.fav.includes(b.id)) - Number(prefs.fav.includes(a.id)));
   }, [visible, sort, nowMs, prefs]);
 
   const drawerVehicle = useMemo(() => vehicles.find((v) => v.id === drawerId) ?? null, [vehicles, drawerId]);
@@ -475,13 +522,17 @@ export function IrissSludinajumiListClient({ latest }: Props) {
               <span className="sm:hidden">Nolasīts </span>
               <span className="hidden sm:inline">Pēdējā nolasīšana: </span>
               <span className="font-semibold text-[var(--color-apple-text)]">
-                {latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}
+                {mounted && latest?.summary.finishedAt
+                  ? fmtDateTime(latest.summary.finishedAt)
+                  : latest?.summary.finishedAt
+                    ? "\u00a0"
+                    : "nav veikta"}
               </span>
             </span>
             <span className="hidden sm:inline">Avoti OK: {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0}</span>
             <span className="hidden sm:inline">Auto: {counts.all}</span>
-            <span className="hidden sm:inline">Jauni: {counts.fresh}</span>
-            <span className="hidden sm:inline">Cenu izmaiņas: {counts.price}</span>
+            <span className="hidden sm:inline">Jauni: {mounted ? counts.fresh : "\u00a0"}</span>
+            <span className="hidden sm:inline">Cenu izmaiņas: {mounted ? counts.price : "\u00a0"}</span>
           </div>
           <button
             type="button"
@@ -494,7 +545,10 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         </div>
         {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
         <div className="-mx-2.5 mt-2 flex snap-x gap-1.5 overflow-x-auto px-2.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-          {(health?.items ?? IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
+          {(mounted && health?.items
+            ? health.items
+            : IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))
+          ).map((item) => (
             <span key={item.platform} className="inline-flex shrink-0 snap-start items-center gap-1">
               <span
                 title={item.note}
@@ -540,13 +594,15 @@ export function IrissSludinajumiListClient({ latest }: Props) {
             <button
               key={t.id}
               type="button"
-              onClick={() => setTab(t.id)}
+              onClick={() => setPrefs((p) => ({ ...p, tab: t.id }))}
               className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition sm:min-h-8 ${
                 tab === t.id ? "bg-[var(--color-apple-text)] text-white" : "border border-[#E5E7EB] bg-white text-[var(--color-provin-muted)] sm:border-0"
               }`}
             >
               {t.id === "price" ? <><span className="sm:hidden">Cenas</span><span className="hidden sm:inline">{t.label}</span></> : t.label}
-              <span className={`rounded-full px-1.5 text-[10px] ${tab === t.id ? "bg-white/20" : "bg-slate-100"}`}>{t.count}</span>
+              <span className={`rounded-full px-1.5 text-[10px] ${tab === t.id ? "bg-white/20" : "bg-slate-100"}`}>
+                {t.id === "new" || t.id === "price" ? (mounted ? t.count : "\u00a0") : t.count}
+              </span>
             </button>
           ))}
         </div>
@@ -629,7 +685,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           <button
             key={id}
             type="button"
-            onClick={() => setListScope(id)}
+            onClick={() => setPrefs((p) => ({ ...p, listScope: id }))}
             className={`inline-flex h-11 shrink-0 items-center rounded-full border px-3 text-[12px] font-semibold sm:h-8 ${
               listScope === id ? "border-[var(--color-apple-text)] bg-[var(--color-apple-text)] text-white" : "border-[#E5E7EB] bg-white text-[var(--color-provin-muted)]"
             }`}
@@ -638,7 +694,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           </button>
         ))}
         <label className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] font-semibold text-[var(--color-apple-text)] sm:h-8">
-          <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setHideTech(e.target.checked)} />
+          <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setPrefs((p) => ({ ...p, hideTech: e.target.checked }))} />
           <span className="sm:hidden">Bez motora/kārbas ({techCount})</span>
           <span className="hidden sm:inline">Slēpt ar motora/kārbas bojājumiem ({techCount})</span>
         </label>
@@ -692,7 +748,7 @@ function VehicleCard({
   onImageError,
 }: {
   v: IrissListingVehicle;
-  nowMs: number;
+  nowMs: number | null;
   prefs: IrissListPrefs;
   onPrefs: (next: IrissListPrefs) => void;
   onOpen: () => void;

@@ -13,6 +13,10 @@ function eur(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "-";
   return `${Math.round(n).toLocaleString("lv-LV")} €`;
 }
+function dt(iso: string): string {
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? new Date(t).toLocaleString("lv-LV", { timeZone: "Europe/Riga" }) : "-";
+}
 function eur2(n: number): string {
   return `${n.toLocaleString("lv-LV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 }
@@ -196,7 +200,7 @@ export function IrissListDrawer({
         </div>
         <div className="rounded-xl border border-[#E5E7EB] p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Izsole</div>
-          <div className="text-[13px] font-bold">{v.auctionEndAt ? new Date(v.auctionEndAt).toLocaleString("lv-LV") : "Beigu laiks nav zināms"}</div>
+          <div className="text-[13px] font-bold">{v.auctionEndAt ? dt(v.auctionEndAt) : "Beigu laiks nav zināms"}</div>
           {v.bidCount != null ? <div className="text-[11px] text-slate-500">{v.bidCount} solījumi</div> : null}
         </div>
       </div>
@@ -270,13 +274,13 @@ export function IrissListDrawer({
           {v.priceHistory.length === 0 ? (
             <tr>
               <td colSpan={4} className="py-2 text-slate-500">
-                Izmaiņu nav. Pirmo reizi {new Date(v.firstSeenAt).toLocaleString("lv-LV")}
+                Izmaiņu nav. Pirmo reizi {dt(v.firstSeenAt)}
               </td>
             </tr>
           ) : (
             v.priceHistory.map((h, i) => (
               <tr key={`${h.at}-${i}`} className="border-t border-slate-100">
-                <td className="py-1">{new Date(h.at).toLocaleString("lv-LV")}</td>
+                <td className="py-1">{dt(h.at)}</td>
                 <td>{h.field === "buy_now" ? "Pirkt uzreiz" : h.field === "start" ? "Sākuma" : h.field === "minimal" ? "Minimālā" : "Pašreizējā"}</td>
                 <td className="text-right tabular-nums">{eur(h.from)}</td>
                 <td className={`text-right tabular-nums font-semibold ${h.from != null && h.to != null && h.to > h.from ? "text-red-600" : "text-emerald-700"}`}>{eur(h.to)}</td>
