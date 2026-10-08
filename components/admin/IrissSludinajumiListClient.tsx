@@ -778,7 +778,11 @@ function VehicleCard({
           <p className="truncate text-[11px] text-[var(--color-provin-muted)] sm:text-[12px] sm:hidden">{mobileSpecs.join(" · ")}</p>
           <p className="hidden truncate text-[12px] text-[var(--color-provin-muted)] sm:block">{specs.join(" · ")}</p>
           <div className="flex flex-wrap gap-1">
-            {dmg.status === "nodata" ? <span className="hidden rounded-md border border-[#E5E7EB] bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 sm:inline">Nav datu</span> : null}
+            {dmg.status === "nodata" ? (
+              <span className="hidden rounded-md border border-[#E5E7EB] bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 sm:inline">
+                {v.platform === "auto1" ? "bojājumi detaļās" : "Nav datu"}
+              </span>
+            ) : null}
             {dmg.status === "none" ? <span className="hidden rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 sm:inline">Tehn. bojājumi nav norādīti</span> : null}
             {dmg.cats.map((c, i) => (
               <span key={c.name} className={`rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:text-[10px] ${i >= 2 ? "hidden sm:inline" : ""}`}>

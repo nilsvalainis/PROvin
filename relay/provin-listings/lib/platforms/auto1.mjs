@@ -102,10 +102,8 @@ function auto1DetailUrl(car) {
   return DETAIL_TEMPLATE.replaceAll("{stockNumber}", encodeURIComponent(key)).replaceAll("{id}", encodeURIComponent(key));
 }
 
-/** `auctionType` (24D1, 24D2, 24D3) vai laiki. `auctionSecLeft` tikai ja datumu nav. */
+/** Laika stadija. `auctionType` (24D1 u.c.) paliek atsevišķā laukā, nav auctionStage. */
 export function auto1Stage(car, nowMs = Date.now()) {
-  const type = str(car.auctionType);
-  if (type) return type;
   const start = Date.parse(isoDate(car.auctionStartDatetime));
   const end = Date.parse(isoDate(car.auctionEndDatetime));
   if (Number.isFinite(start) && nowMs < start) return "BEFORE_AUCTION";
@@ -128,8 +126,8 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
     year: reg.year,
     firstRegistration: reg.firstRegistration,
     mileageKm: num(car.km),
-    fuel: str(car.fuel),
-    transmission: str(car.transmission),
+    fuel: str(car.fuelType ?? car.fuel),
+    transmission: str(car.gearType ?? car.transmission),
     powerKw: str(car.kw),
     location: auto1Location(car),
     countryCode: str(car.countryCode),

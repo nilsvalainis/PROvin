@@ -59,7 +59,30 @@ function uniqSorted(values: string[]): string[] {
   return [...new Set(values.filter((v) => v.trim()))].sort((a, b) => a.localeCompare(b));
 }
 
+function centsToEuroRatio(from: number, to: number): boolean {
+  if (!(from > 0) || !(to > 0)) return false;
+  const r = to / from;
+  return r >= 0.0095 && r <= 0.0105;
+}
+
+/** Vecais Auto1 relejs glabāja centos; jaunais dod eiro. Nav īsta cenas maiņa. */
+function isAuto1CentsRescale(prev: IrissListingVehicle, next: IrissFetchedVehicle): boolean {
+  if (prev.platform !== "auto1") return false;
+  const oldShape = prev.salesVatType == null && !String(prev.stockNumber ?? "").trim();
+  if (oldShape) return true;
+  const pairs: Array<{ from: number; to: number }> = [];
+  for (const { key } of PRICE_FIELDS) {
+    const from = prev[key];
+    const to = next[key];
+    if (from === to) continue;
+    if (typeof from !== "number" || typeof to !== "number") continue;
+    pairs.push({ from, to });
+  }
+  return pairs.length > 0 && pairs.every((p) => centsToEuroRatio(p.from, p.to));
+}
+
 function priceChanges(prev: IrissListingVehicle, next: IrissFetchedVehicle, at: string): IrissListingPriceChange[] {
+  if (isAuto1CentsRescale(prev, next)) return [];
   const out: IrissListingPriceChange[] = [];
   for (const { field, key } of PRICE_FIELDS) {
     const from = prev[key];
@@ -129,7 +152,8 @@ export function reconcileVehicles(input: ReconcileInput): ReconcileOutput {
       });
       continue;
     }
-    const changes = priceChanges(prev, base, now);
+    const rescale = isAuto1CentsRescale(prev, base);
+    const changes = rescale ? [] : priceChanges(prev, base, now);
     if (changes.length > 0) priceChangedCount += 1;
     out.push({
       ...fields,
@@ -139,7 +163,7 @@ export function reconcileVehicles(input: ReconcileInput): ReconcileOutput {
       lastSeenAt: now,
       missingRuns: 0,
       change: changes.length > 0 ? "price_changed" : "unchanged",
-      priceHistory: [...prev.priceHistory, ...changes].slice(-maxHistory),
+      priceHistory: rescale ? [] : [...(prev.priceHistory ?? []), ...changes].slice(-maxHistory),
     });
   }
 

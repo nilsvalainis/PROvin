@@ -110,4 +110,74 @@ describe("reconcileVehicles", () => {
     const r = run([], [fetched({ id: "late", auctionStartAt: "2026-10-12T08:00:00+00:00" }), fetched({ id: "early", auctionStartAt: "2026-10-09T08:00:00+00:00" })], T1);
     expect(r.vehicles.map((v) => v.id)).toEqual(["early", "late"]);
   });
+
+  it("Auto1 old cents snapshot does not record a fake price change", () => {
+    const f = fetched({
+      id: "a",
+      platform: "auto1",
+      priceStart: null,
+      priceMinimal: 651300,
+      priceCurrent: null,
+      priceBuyNow: null,
+      salesVatType: null,
+      stockNumber: "",
+    });
+    const { orderId, orderBrandModel, ...rest } = f;
+    const prev: IrissListingVehicle = {
+      ...rest,
+      orderIds: [orderId],
+      orderBrandModels: [orderBrandModel],
+      firstSeenAt: T1,
+      lastSeenAt: T1,
+      missingRuns: 0,
+      change: "unchanged",
+      priceHistory: [{ at: T1, field: "minimal", from: null, to: 651300 }],
+      salesVatType: null,
+      stockNumber: "",
+    };
+    const r = run(
+      [prev],
+      [fetched({ id: "a", platform: "auto1", priceStart: null, priceMinimal: 6513, priceCurrent: null, priceBuyNow: null, salesVatType: 1053, stockNumber: "BW03512" })],
+      T2,
+    );
+    expect(r.priceChangedCount).toBe(0);
+    expect(r.vehicles[0]!.change).toBe("unchanged");
+    expect(r.vehicles[0]!.priceMinimal).toBe(6513);
+    expect(r.vehicles[0]!.priceHistory).toEqual([]);
+    expect(JSON.stringify(r.vehicles[0]!.priceHistory)).not.toMatch(/651300/);
+  });
+
+  it("Auto1 euro price drop is still a price change", () => {
+    const f = fetched({
+      id: "a",
+      platform: "auto1",
+      priceStart: null,
+      priceMinimal: 6513,
+      priceCurrent: null,
+      priceBuyNow: null,
+      salesVatType: 1053,
+      stockNumber: "BW03512",
+    });
+    const { orderId, orderBrandModel, ...rest } = f;
+    const prev: IrissListingVehicle = {
+      ...rest,
+      orderIds: [orderId],
+      orderBrandModels: [orderBrandModel],
+      firstSeenAt: T1,
+      lastSeenAt: T1,
+      missingRuns: 0,
+      change: "unchanged",
+      priceHistory: [],
+      salesVatType: 1053,
+      stockNumber: "BW03512",
+    };
+    const r = run(
+      [prev],
+      [fetched({ id: "a", platform: "auto1", priceStart: null, priceMinimal: 6400, priceCurrent: null, priceBuyNow: null, salesVatType: 1053, stockNumber: "BW03512" })],
+      T2,
+    );
+    expect(r.priceChangedCount).toBe(1);
+    expect(r.vehicles[0]!.change).toBe("price_changed");
+    expect(r.vehicles[0]!.priceHistory).toEqual([{ at: T2, field: "minimal", from: 6513, to: 6400 }]);
+  });
 });
