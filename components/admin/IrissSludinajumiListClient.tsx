@@ -1,8 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import {
+  LISTING_SORT_STORAGE_KEY,
+  LISTING_SORTS,
+  type ListingSort,
+  parseListingSort,
+  parseListingSources,
+  parsePriceBound,
+  sortListingVehicles,
+  vehicleInPriceRange,
+  vehicleInSources,
+} from "@/lib/iriss-listings-list-view";
 import type {
   IrissListingPlatform,
   IrissListingPriceChange,
@@ -121,8 +132,16 @@ type Props = {
   latest: IrissListingsLatestView | null;
 };
 
+const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> = [
+  { id: "autobid", label: "Autobid" },
+  { id: "openline", label: "Openlane" },
+  { id: "auto1", label: "Auto1" },
+];
+
 export function IrissSludinajumiListClient({ latest }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
@@ -131,10 +150,58 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const [query, setQuery] = useState("");
   const [showSources, setShowSources] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const sort = parseListingSort(searchParams.get("sort")) ?? "ending";
+  const sources = parseListingSources(searchParams.get("src"));
+  const priceMin = parsePriceBound(searchParams.get("min"));
+  const priceMax = parsePriceBound(searchParams.get("max"));
 
   useEffect(() => {
     setNowMs(Date.now());
   }, [latest?.generatedAt]);
+
+  useEffect(() => {
+    if (searchParams.get("sort")) {
+      window.localStorage.setItem(LISTING_SORT_STORAGE_KEY, sort);
+      return;
+    }
+    const stored = parseListingSort(window.localStorage.getItem(LISTING_SORT_STORAGE_KEY));
+    if (!stored || stored === "ending") return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("sort", stored);
+    const q = params.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams, sort]);
+
+  function writeListQuery(next: { sort?: ListingSort; sources?: IrissListingPlatform[]; min?: string | null; max?: string | null }) {
+    const params = new URLSearchParams(searchParams.toString());
+    const sortNext = next.sort ?? sort;
+    if (sortNext === "ending") params.delete("sort");
+    else params.set("sort", sortNext);
+    window.localStorage.setItem(LISTING_SORT_STORAGE_KEY, sortNext);
+    if (next.sources) {
+      if (next.sources.length === 0 || next.sources.length === SOURCE_CHIPS.length) params.delete("src");
+      else params.set("src", next.sources.join(","));
+    }
+    if (next.min !== undefined) {
+      const n = parsePriceBound(next.min);
+      if (n === null) params.delete("min");
+      else params.set("min", String(n));
+    }
+    if (next.max !== undefined) {
+      const n = parsePriceBound(next.max);
+      if (n === null) params.delete("max");
+      else params.set("max", String(n));
+    }
+    const q = params.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }
+
+  function toggleSource(id: IrissListingPlatform) {
+    const current = sources.length === 0 ? SOURCE_CHIPS.map((s) => s.id) : sources;
+    const has = current.includes(id);
+    const next = has ? current.filter((s) => s !== id) : [...current, id];
+    writeListQuery({ sources: next.length === SOURCE_CHIPS.length ? [] : next });
+  }
 
   const vehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
 
@@ -160,25 +227,15 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         if (tab === "new" && !isNew(v, nowMs)) return false;
         if (tab === "price" && recentPriceChanges(v, nowMs).length === 0) return false;
       }
+      if (!vehicleInSources(v.platform, sources)) return false;
+      if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
       if (!q) return true;
       const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax]);
 
-  /** Grupas pēc pasūtījuma; auto ar vairākiem pasūtījumiem parādās katrā grupā. */
-  const groups = useMemo(() => {
-    const map = new Map<string, { orderId: string; label: string; vehicles: IrissListingVehicle[] }>();
-    for (const v of visible) {
-      v.orderIds.forEach((orderId, idx) => {
-        const label = v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? "Pasūtījums";
-        const g = map.get(orderId) ?? { orderId, label, vehicles: [] };
-        g.vehicles.push(v);
-        map.set(orderId, g);
-      });
-    }
-    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, "lv"));
-  }, [visible]);
+  const sorted = useMemo(() => sortListingVehicles(visible, sort, nowMs), [visible, sort, nowMs]);
 
   const problemSources = useMemo(() => (latest?.sources ?? []).filter((s) => s.status !== "ok"), [latest?.sources]);
 
@@ -324,6 +381,67 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           placeholder="Meklēt: marka, modelis, gads, vieta"
           className="min-h-10 min-w-[220px] flex-1 rounded-full border border-[#E5E7EB] bg-white px-4 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 focus:border-slate-400"
         />
+        <label className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] text-[var(--color-provin-muted)] shadow-sm">
+          <span className="font-medium">Kārtot pēc</span>
+          <select
+            aria-label="Kārtot pēc"
+            value={sort}
+            onChange={(e) => {
+              const next = parseListingSort(e.target.value);
+              if (next) writeListQuery({ sort: next });
+            }}
+            className="bg-transparent text-[13px] font-semibold text-[var(--color-apple-text)] outline-none"
+          >
+            {LISTING_SORTS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </section>
+
+      <section className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-1">
+          {SOURCE_CHIPS.map((s) => {
+            const on = sources.length === 0 || sources.includes(s.id);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => toggleSource(s.id)}
+                className={`inline-flex min-h-8 items-center rounded-full border px-3 text-[12px] font-semibold ${
+                  on ? "border-[var(--color-apple-text)] bg-[var(--color-apple-text)] text-white" : "border-[#E5E7EB] bg-white text-[var(--color-provin-muted)]"
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+        <input
+          type="number"
+          min={0}
+          inputMode="numeric"
+          aria-label="Cena no"
+          placeholder="Cena no"
+          defaultValue={searchParams.get("min") ?? ""}
+          key={`min-${searchParams.get("min") ?? ""}`}
+          onBlur={(e) => writeListQuery({ min: e.target.value.trim() })}
+          className="min-h-8 w-28 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400"
+        />
+        <input
+          type="number"
+          min={0}
+          inputMode="numeric"
+          aria-label="Cena līdz"
+          placeholder="Cena līdz"
+          defaultValue={searchParams.get("max") ?? ""}
+          key={`max-${searchParams.get("max") ?? ""}`}
+          onBlur={(e) => writeListQuery({ max: e.target.value.trim() })}
+          className="min-h-8 w-28 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400"
+        />
       </section>
 
       {visible.length === 0 ? (
@@ -334,35 +452,20 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           <p className="mt-1.5 text-[12px] text-[var(--color-provin-muted)]">
             {vehicles.length === 0
               ? "Spied „Nolasīt tagad”, lai ievāktu datus uzreiz, vai sagaidi ikdienas nolasīšanu. Lasa tikai aktīvo pasūtījumu izsoļu saites."
-              : "Izvēlies citu cilni vai notīri meklēšanu."}
+              : "Izvēlies citu cilni, avotu vai notīri meklēšanu un cenas diapazonu."}
           </p>
         </section>
       ) : null}
 
-      <div className="space-y-4">
-        {groups.map((g) => (
-          <section key={g.orderId} className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 px-1">
-              <Link
-                href={`/admin/iriss/pasutijumi/${encodeURIComponent(g.orderId)}`}
-                className="text-[13px] font-semibold text-[var(--color-apple-text)] hover:underline"
-              >
-                {g.label}
-              </Link>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{g.vehicles.length}</span>
-            </div>
-            <div className="space-y-2">
-              {g.vehicles.map((v) => (
-                <VehicleCard
-                  key={`${g.orderId}:${v.id}`}
-                  v={v}
-                  nowMs={nowMs}
-                  imageHidden={Boolean(hiddenImages[v.id])}
-                  onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
-                />
-              ))}
-            </div>
-          </section>
+      <div className="space-y-2">
+        {sorted.map((v) => (
+          <VehicleCard
+            key={v.id}
+            v={v}
+            nowMs={nowMs}
+            imageHidden={Boolean(hiddenImages[v.id])}
+            onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
+          />
         ))}
       </div>
     </div>
@@ -456,6 +559,19 @@ function VehicleCard({
           </div>
 
           <p className="truncate text-[12px] text-[var(--color-provin-muted)]">{specs.join(" · ")}</p>
+
+          {v.orderIds.length > 0 ? (
+            <p className="truncate text-[11px] text-slate-500">
+              {v.orderIds.map((orderId, idx) => (
+                <span key={orderId}>
+                  {idx > 0 ? ", " : null}
+                  <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(orderId)}`} className="font-medium text-[var(--color-apple-text)] hover:underline">
+                    {v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? orderId}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          ) : null}
 
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[12px]">
             {v.priceStart !== null ? (
