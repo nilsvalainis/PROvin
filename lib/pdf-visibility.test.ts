@@ -60,6 +60,16 @@ describe("mergePdfVisibility", () => {
     expect(mixed.irissSummary).toBe(true);
   });
 
+  it("shows dealer oil-interval PDF by default and keeps an explicit hide", () => {
+    expect(mergePdfVisibility(undefined).autoRecordsOilInterval).toBe(true);
+    expect(mergePdfVisibility({}).autoRecordsOilInterval).toBe(true);
+    expect(mergePdfVisibility({ autoRecordsOilInterval: false }).autoRecordsOilInterval).toBe(false);
+    expect(DEALER_ONLY_PDF_VISIBILITY.autoRecordsOilInterval).toBe(true);
+    const mini = defaultPdfVisibilityForOrder({ checkoutLine: "mini", amountTotalCents: 3999 });
+    expect(mini.auto_records).toBe(false);
+    expect(mini.autoRecordsOilInterval).toBe(true);
+  });
+
   it("hides payment fields by default for B2B partner VIN orders", () => {
     const vis = defaultPdfVisibilityForOrder({
       checkoutLine: "business",
