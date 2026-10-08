@@ -503,7 +503,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_THIS_CAR_ONLY_LOGIC_RULES).toMatch(/EVERY manufacturer|every make/i);
     expect(AI_DOCUMENTED_SERVICE_WORK_RULES).toMatch(/EVERY manufacturer/);
     expect(AI_OPERATOR_NOTES_EXECUTION_RULES).toMatch(/SOURCE TARGETING/);
-    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Do not name Lietuva or Igaunija|Never list Latvija/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Do not name Lietuva or Igaunija/);
+    expect(AI_WINTER_SALT_RUST_RULES).toMatch(/Never list Latvija/);
     expect(readRepo("lib/admin-ai-seller.ts")).toMatch(/sudzibas\.lv/);
     expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/AI_SELLER_ANALYSIS_SYSTEM[\s\S]*?sudzibas\.lv/);
     expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(

@@ -145,8 +145,8 @@ describe("analyzeWinterSaltRust", () => {
     csdd.previousRegistrationCountry = "Itālija";
     const brief = buildSouthernEuropeVisualCautionBrief({ csdd });
     expect(brief).toMatch(/VIZUĀLA PIESARDZĪBA/);
-    expect(brief).toMatch(/Itālija/);
-    expect(brief).not.toMatch(/Francija/);
+    expect(brief).toMatch(/Ekspluatācija fiksēta: Itālija\./);
+    expect(brief).not.toMatch(/Ekspluatācija fiksēta: Itālija, Francija/);
     expect(buildWinterSaltRustBrief({ csdd, nowMs: NOW })).toBe("");
     expect(buildSouthernEuropeVisualCautionBrief({ csdd: emptyCsddFields() })).toBe("");
   });
