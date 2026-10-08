@@ -43,6 +43,7 @@ import { shouldReadPublic } from "./lib/policy.mjs";
 import { auto1 } from "./lib/platforms/auto1.mjs";
 import { autobid } from "./lib/platforms/autobid.mjs";
 import { openlane } from "./lib/platforms/openlane.mjs";
+import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
@@ -357,6 +358,7 @@ const server = createServer(async (req, res) => {
     log(`${platform} fetch ${orderId} ${sourceUrl.slice(0, 100)} (rinda ${browserQueue.queueLength})`);
     try {
       const out = await browserQueue.run(`fetch:${platform}`, () => runFetch({ platform, sourceUrl, orderId, maxPages }));
+      if (out.raw) out.raw = sanitizeAutobidRelayRaw(out.raw);
       log(`${platform} ${out.status} ${out.items.length} auto ${out.elapsedMs} ms ${out.note ?? ""}`);
       return sendJson(res, 200, out);
     } catch (e) {

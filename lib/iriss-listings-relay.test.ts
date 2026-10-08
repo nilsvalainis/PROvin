@@ -153,6 +153,22 @@ describe("mapRelayFetchResponse", () => {
     const bad = mapRelayFetchResponse({ status: "ok", items: [], raw: { kind: "autobid-nuxt", nuxtPages: ["not json"] } }, src);
     expect(bad.status).toBe("parse_failed");
   });
+
+  it("strips Autobid Bearer and account fields from stored raw pages", () => {
+    const jwt =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0IiwibmFtZSI6IkpvaG4ifQ.sflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    const dirty = JSON.parse(nuxtPage()) as unknown[];
+    const authIdx = dirty.length;
+    dirty.push({ token: authIdx + 1, email: authIdx + 2 });
+    dirty.push(jwt, "operator@example.com");
+    (dirty[1] as Record<string, unknown>).auth = authIdx;
+    const src = { platform: "autobid" as const, sourceUrl: "https://autobid.de/en/search-results?x=1", orderId: "o2", orderBrandModel: "Volvo XC60" };
+    const r = mapRelayFetchResponse({ status: "ok", items: [], raw: { kind: "autobid-nuxt", nuxtPages: [JSON.stringify(dirty)], loggedIn: true } }, src);
+    expect(r.status).toBe("ok");
+    expect(r.vehicles).toHaveLength(1);
+    expect(r.rawPages.join("")).not.toContain(jwt);
+    expect(r.rawPages.join("")).not.toContain("operator@example.com");
+  });
 });
 
 describe("fetchViaIrissRelay", () => {
