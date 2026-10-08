@@ -5,6 +5,33 @@ import { isAutobidSecretString, sanitizeAutobidNuxtJson } from "@/lib/iriss-list
 const JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0IiwibmFtZSI6IkpvaG4ifQ.sflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
 const BEARER = `Bearer ${JWT}`;
 
+/** Dzīvais $svue-query cache: nickname, contactPerson.surname, addressBook.items.*.email.to. */
+function fixtureSvueQueryAccount(): unknown[] {
+  return [
+    ["ShallowReactive", 1],
+    { state: 2 },
+    { "$svue-query": 3 },
+    { queries: 4 },
+    [5],
+    { state: 6 },
+    { data: 7 },
+    { nickname: 8, extendedData: 9 },
+    "op-nick",
+    { contactPerson: 10, addressBook: 11 },
+    { surname: 12 },
+    { items: 13 },
+    "Kalniņš",
+    [14],
+    { email: 15 },
+    { to: 16 },
+    "leak@example.com",
+    { id: 18, name: 19, taxInformation: 20 },
+    1001,
+    "Audi A6",
+    "Including 19% VAT",
+  ];
+}
+
 function fixtureWithSecrets(): unknown[] {
   return [
     ["ShallowReactive", 1],
@@ -58,5 +85,15 @@ describe("sanitizeAutobidNuxtJson", () => {
       vatNote: "Including 19% VAT",
       priceStart: 32500,
     });
+  });
+
+  it("empties $svue-query nickname, surname and nested email.to", () => {
+    const out = sanitizeAutobidNuxtJson(JSON.stringify(fixtureSvueQueryAccount()));
+    expect(out).not.toContain("leak@example.com");
+    expect(out).not.toContain("op-nick");
+    expect(out).not.toContain("Kalniņš");
+    expect(out).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(out).toContain("Audi A6");
+    expect(out).toContain("Including 19% VAT");
   });
 });
