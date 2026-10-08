@@ -111,6 +111,17 @@ describe("listing sort", () => {
     expect(ids("seen", rows)).toEqual(["new", "mid", "old", "blank"]);
     expect(listingPriceChangeAbs(rows[1]!)).toBeNull();
     expect(ids("price-change", rows)).toEqual(["mid", "old", "blank", "new"]);
+    expect(parseListingSort("make")).toBe("make");
+    expect(parseListingSort("room")).toBe("room");
+  });
+
+  it("sorts remaining bid room descending, nulls last", () => {
+    const rows = [
+      car({ id: "none" }),
+      { ...car({ id: "small" }), _room: 200 },
+      { ...car({ id: "big" }), _room: 4000 },
+    ];
+    expect(ids("room", rows)).toEqual(["big", "small", "none"]);
   });
 });
 

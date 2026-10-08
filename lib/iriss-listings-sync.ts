@@ -114,6 +114,7 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
         location: v.location,
         countryCode: v.countryCode,
         imageUrl: v.imageUrl,
+        imageUrls: v.imageUrls,
         currency: "EUR",
         priceStart: v.priceStart,
         priceMinimal: v.priceMinimal,

@@ -139,12 +139,25 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
     priceCurrent: eurosFromCents(car.lastTopBidValue),
     priceMinimal: eurosFromCents(car.minimumBid),
     priceBuyNow: eurosFromCents(car.buyNowPrice),
-    vatNote: "",
+    vatNote: car.salesVatType != null ? `salesVatType ${car.salesVatType}` : "",
     auctionStartAt: isoDate(car.auctionStartDatetime),
     auctionEndAt: isoDate(car.auctionEndDatetime),
     auctionStage: auto1Stage(car, nowMs),
   });
-  return { ...item, stockNumber: stock, expectedPrice: eurosFromCents(car.expectedPriceDisplay) };
+  const finance = car.meta && typeof car.meta === "object" ? car.meta.finance : car.finance;
+  const imageUrls = (Array.isArray(car.images) ? car.images : []).map((img) => str(img?.fullUrl ?? img?.url ?? img)).filter(Boolean);
+  return {
+    ...item,
+    stockNumber: stock,
+    expectedPrice: eurosFromCents(car.expectedPriceDisplay),
+    salesVatType: num(car.salesVatType),
+    taxDeduction: typeof car.taxDeduction === "boolean" ? car.taxDeduction : null,
+    vatRate: num(car.vatRate ?? (finance && typeof finance === "object" ? finance.vatRate : null)),
+    imageUrls: imageUrls.length ? imageUrls.slice(0, 40) : undefined,
+    bidCount: num(car.bidCount ?? car.numberOfBids),
+    auctionType: str(car.auctionType),
+    damageRaw: str(car.damageDescription ?? car.damageText ?? car.conditionComment ?? ""),
+  };
 }
 
 async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
