@@ -56,3 +56,10 @@ export function listingBidPrice(v: { priceCurrent: number | null; priceStart: nu
   if (v.priceBuyNow != null) return v.priceBuyNow;
   return null;
 }
+
+/** MARŽA: 21% no I. NETO / AR PVN: 21% no visas bāzes (solījums pēc ārvalstu PVN + I). */
+export function listingVatShareLine(real: ListingRealCost, formatEur: (n: number) => string): string {
+  const x = formatEur(real.vat);
+  if (real.kind === "margin") return `t.sk. PVN 21% no izmaksām: ${x}`;
+  return `t.sk. PVN 21% no visas summas: ${x}`;
+}

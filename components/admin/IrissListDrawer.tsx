@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { classifyListingDamage, highlightListingDamage } from "@/lib/iriss-listings-damage";
-import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
+import { listingAuctionTypeLabel, realListingPriceHistory } from "@/lib/iriss-listings-auto1-cents";
+import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { listingOfferLeaks, listingOfferText } from "@/lib/iriss-listings-offer";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
@@ -47,6 +49,8 @@ export function IrissListDrawer({
   const lv = prefs.damageLv[v.id] ?? "";
   const real = bid0 == null ? null : listingRealCost(tax.kind, tax.rate ?? 0, bid, extras);
   const mb = prefs.budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, prefs.budget, extras) : null;
+  const priceHistory = realListingPriceHistory(v.priceHistory);
+  const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
   const flag = countryFlagLabel(v.countryCode);
   const photos = [v.imageUrl, ...(v.imageUrls ?? [])].filter(Boolean).filter((u, i, a) => a.indexOf(u) === i);
 
@@ -175,33 +179,35 @@ export function IrissListDrawer({
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pašreizējā cena</div>
-          <div className="text-[22px] font-extrabold tabular-nums">{eur(listingBidPrice(v))}</div>
-          <span className="text-[10px] font-extrabold" title={tax.raw}>
-            {listingTaxLabel(tax)}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-[22px] font-extrabold tabular-nums">{eur(listingBidPrice(v))}</div>
+            <IrissListTaxBadge tax={tax} size="md" />
+          </div>
           {v.priceBuyNow != null ? <div className="text-[11px] text-slate-500">pirkt uzreiz {eur(v.priceBuyNow)}</div> : null}
         </div>
         <div className="rounded-xl border border-[#E5E7EB] p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pie šīs cenas</div>
-          {prefs.budget == null ? (
-            <p className="text-[12px] font-semibold text-amber-800">Budžets nav norādīts</p>
-          ) : real ? (
-            <>
-              <div className="text-[12px]">Budžets <b className="tabular-nums">{eur(prefs.budget)}</b></div>
-              <div className="text-[12px]">Gala <b className="tabular-nums">{eur2(real.total)}</b></div>
-              <div className={`text-[11px] font-extrabold ${real.total <= prefs.budget ? "text-emerald-700" : "text-red-700"}`}>
-                {real.total <= prefs.budget ? `+${eur(prefs.budget - real.total)} zem budžeta` : `-${eur(real.total - prefs.budget)} pārsniegts`}
-              </div>
-              <div className="text-[11px] text-slate-500">Maks. solījums {eur(mb)}</div>
-            </>
-          ) : (
+          {!real ? (
             <p className="text-[12px] text-slate-500">Cenas nav</p>
+          ) : (
+            <>
+              {prefs.budget != null ? <div className="text-[12px]">Budžets <b className="tabular-nums">{eur(prefs.budget)}</b></div> : null}
+              <div className="text-[12px]">Gala <b className="tabular-nums">{eur2(real.total)}</b></div>
+              <div className="text-[11px] text-slate-500">{listingVatShareLine(real, eur)}</div>
+              {prefs.budget != null ? (
+                <div className={`text-[11px] font-extrabold ${real.total <= prefs.budget ? "text-emerald-700" : "text-red-700"}`}>
+                  {real.total <= prefs.budget ? `+${eur(prefs.budget - real.total)} zem budžeta` : `-${eur(real.total - prefs.budget)} pārsniegts`}
+                </div>
+              ) : null}
+              {mb != null ? <div className="text-[11px] text-slate-500">Maks. solījums {eur(mb)}</div> : null}
+            </>
           )}
         </div>
         <div className="rounded-xl border border-[#E5E7EB] p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Izsole</div>
           <div className="text-[13px] font-bold">{v.auctionEndAt ? dt(v.auctionEndAt) : "Beigu laiks nav zināms"}</div>
           {v.bidCount != null ? <div className="text-[11px] text-slate-500">{v.bidCount} solījumi</div> : null}
+          {auctionTypeLabel ? <div className="text-[11px] font-semibold text-amber-900">{auctionTypeLabel}</div> : null}
         </div>
       </div>
 
@@ -271,14 +277,14 @@ export function IrissListDrawer({
           </tr>
         </thead>
         <tbody>
-          {v.priceHistory.length === 0 ? (
+          {priceHistory.length === 0 ? (
             <tr>
               <td colSpan={4} className="py-2 text-slate-500">
                 Izmaiņu nav. Pirmo reizi {dt(v.firstSeenAt)}
               </td>
             </tr>
           ) : (
-            v.priceHistory.map((h, i) => (
+            priceHistory.map((h, i) => (
               <tr key={`${h.at}-${i}`} className="border-t border-slate-100">
                 <td className="py-1">{dt(h.at)}</td>
                 <td>{h.field === "buy_now" ? "Pirkt uzreiz" : h.field === "start" ? "Sākuma" : h.field === "minimal" ? "Minimālā" : "Pašreizējā"}</td>

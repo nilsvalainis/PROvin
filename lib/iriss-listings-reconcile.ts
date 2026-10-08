@@ -1,3 +1,4 @@
+import { isAuto1CentsRescale, isCentsEuroPair, sanitizeAuto1CentsVehicle } from "@/lib/iriss-listings-auto1-cents";
 import type {
   IrissListingPlatform,
   IrissListingPriceChange,
@@ -59,28 +60,6 @@ function uniqSorted(values: string[]): string[] {
   return [...new Set(values.filter((v) => v.trim()))].sort((a, b) => a.localeCompare(b));
 }
 
-function centsToEuroRatio(from: number, to: number): boolean {
-  if (!(from > 0) || !(to > 0)) return false;
-  const r = to / from;
-  return r >= 0.0095 && r <= 0.0105;
-}
-
-/** Vecais Auto1 relejs glabāja centos; jaunais dod eiro. Nav īsta cenas maiņa. */
-function isAuto1CentsRescale(prev: IrissListingVehicle, next: IrissFetchedVehicle): boolean {
-  if (prev.platform !== "auto1") return false;
-  const oldShape = prev.salesVatType == null && !String(prev.stockNumber ?? "").trim();
-  if (oldShape) return true;
-  const pairs: Array<{ from: number; to: number }> = [];
-  for (const { key } of PRICE_FIELDS) {
-    const from = prev[key];
-    const to = next[key];
-    if (from === to) continue;
-    if (typeof from !== "number" || typeof to !== "number") continue;
-    pairs.push({ from, to });
-  }
-  return pairs.length > 0 && pairs.every((p) => centsToEuroRatio(p.from, p.to));
-}
-
 function priceChanges(prev: IrissListingVehicle, next: IrissFetchedVehicle, at: string): IrissListingPriceChange[] {
   if (isAuto1CentsRescale(prev, next)) return [];
   const out: IrissListingPriceChange[] = [];
@@ -88,8 +67,9 @@ function priceChanges(prev: IrissListingVehicle, next: IrissFetchedVehicle, at: 
     const from = prev[key];
     const to = next[key];
     if (from === to) continue;
-    /** Pirmo reizi parādījusies `current` cena (bija null) ir solījums, ne cenas maiņa. */
-    if (field === "current" && from === null) continue;
+    /** Pirmo reizi parādījusies cena (bija null) nav maiņa. */
+    if (from === null) continue;
+    if (typeof from === "number" && typeof to === "number" && (isCentsEuroPair(from, to) || isCentsEuroPair(to, from))) continue;
     out.push({ at, field, from, to });
   }
   return out;
@@ -137,8 +117,8 @@ export function reconcileVehicles(input: ReconcileInput): ReconcileOutput {
 
   for (const { base, orderIds, orderBrandModels } of fetchedById.values()) {
     const fields = stripSourceFields(base);
-    const prev = prevById.get(base.id) ?? null;
-    if (!prev) {
+    const prevRaw = prevById.get(base.id) ?? null;
+    if (!prevRaw) {
       newCount += 1;
       out.push({
         ...fields,
@@ -152,7 +132,8 @@ export function reconcileVehicles(input: ReconcileInput): ReconcileOutput {
       });
       continue;
     }
-    const rescale = isAuto1CentsRescale(prev, base);
+    const rescale = isAuto1CentsRescale(prevRaw, base);
+    const prev = sanitizeAuto1CentsVehicle(prevRaw).vehicle;
     const changes = rescale ? [] : priceChanges(prev, base, now);
     if (changes.length > 0) priceChangedCount += 1;
     out.push({
@@ -174,15 +155,17 @@ export function reconcileVehicles(input: ReconcileInput): ReconcileOutput {
     const readOk = stillActiveOrders.some((id) => input.okSourceKeys.has(sourceKey(prev.platform, id)));
     if (!readOk) {
       /** Avots šoreiz neizdevās: nav pamata skaitīt kā pazudušu. */
-      out.push({ ...prev, orderIds: stillActiveOrders, change: prev.change === "gone" ? "gone" : "unchanged" });
+      const cleaned = sanitizeAuto1CentsVehicle(prev).vehicle;
+      out.push({ ...cleaned, orderIds: stillActiveOrders, change: prev.change === "gone" ? "gone" : "unchanged" });
       continue;
     }
     const missingRuns = prev.missingRuns + 1;
     const gone = missingRuns >= goneAfter;
     if (gone && daysBetween(prev.lastSeenAt, now) > dropAfterDays) continue;
     if (missingRuns === goneAfter) goneCount += 1;
+    const cleaned = sanitizeAuto1CentsVehicle(prev).vehicle;
     out.push({
-      ...prev,
+      ...cleaned,
       orderIds: stillActiveOrders,
       missingRuns,
       change: gone ? "gone" : "unchanged",

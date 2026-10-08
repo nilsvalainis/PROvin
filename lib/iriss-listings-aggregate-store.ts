@@ -4,6 +4,7 @@ import { get, put } from "@vercel/blob";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { applyAuto1CentsMigration } from "@/lib/iriss-listings-auto1-cents";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
@@ -207,7 +208,7 @@ function normalizeSummary(v: unknown): IrissListingSyncRunSummary | null {
 }
 
 /** Vecā (v1) `latest.json` ar meklēšanas lapu ierakstiem tiek ignorēta: sākam no tīra v2 stāvokļa. */
-function normalizeLatest(raw: unknown): IrissListingsLatestView | null {
+function normalizeLatest(raw: unknown): { view: IrissListingsLatestView; persistCents: boolean } | null {
   if (!isObj(raw)) return null;
   if (raw.version !== 2) return null;
   const generatedAt = str(raw.generatedAt);
@@ -216,11 +217,15 @@ function normalizeLatest(raw: unknown): IrissListingsLatestView | null {
   const vehicles = Array.isArray(raw.vehicles)
     ? raw.vehicles.map(normalizeVehicle).filter((x): x is IrissListingVehicle => x !== null)
     : [];
+  const migrated = applyAuto1CentsMigration(vehicles);
   const sources = Array.isArray(raw.sources)
     ? raw.sources.map(normalizeSource).filter((x): x is IrissListingSourceRun => x !== null)
     : [];
   const cursor = normalizeCursor(raw.cursor);
-  return { version: 2, generatedAt, summary, sources, vehicles, ...(cursor ? { cursor } : {}) };
+  return {
+    view: { version: 2, generatedAt, summary, sources, vehicles: migrated.vehicles, ...(cursor ? { cursor } : {}) },
+    persistCents: migrated.changed,
+  };
 }
 
 function normalizeCursor(v: unknown): IrissListingsSyncCursor | undefined {
@@ -268,15 +273,29 @@ export function getIrissListingsStorageState(): IrissListingsStorageState {
   return { enabled: true, persistence: "filesystem", path: r.dir };
 }
 
+async function persistLatestIfNeeded(r: Exclude<ResolvedStorage, { kind: "disabled" }>, parsed: { view: IrissListingsLatestView; persistCents: boolean }): Promise<IrissListingsLatestView> {
+  if (!parsed.persistCents) return parsed.view;
+  try {
+    await writeJson(r, LATEST_FILENAME, JSON.stringify(parsed.view, null, 2));
+  } catch {
+    /* LIST rāda tīro skatu arī ja Blob rakstīšana šoreiz neizdodas */
+  }
+  return parsed.view;
+}
+
 export async function readIrissListingsLatestView(): Promise<IrissListingsLatestView | null> {
   const r = resolveStorage();
   if (r.kind === "disabled") return null;
   if (r.kind === "blob") {
-    return normalizeLatest(await readBlobJson(`${r.prefix}${LATEST_FILENAME}`, r.token));
+    const parsed = normalizeLatest(await readBlobJson(`${r.prefix}${LATEST_FILENAME}`, r.token));
+    if (!parsed) return null;
+    return persistLatestIfNeeded(r, parsed);
   }
   try {
     const txt = await fs.readFile(path.join(r.dir, LATEST_FILENAME), "utf8");
-    return normalizeLatest(JSON.parse(txt) as unknown);
+    const parsed = normalizeLatest(JSON.parse(txt) as unknown);
+    if (!parsed) return null;
+    return persistLatestIfNeeded(r, parsed);
   } catch {
     return null;
   }
@@ -286,9 +305,11 @@ export async function writeIrissListingsRun(view: IrissListingsLatestView): Prom
   try {
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
-    const snapshot: IrissListingsSnapshot = view;
-    await writeJson(r, LATEST_FILENAME, JSON.stringify(view, null, 2));
-    await writeJson(r, `${SNAPSHOTS_DIRNAME}/${view.summary.runId}.json`, JSON.stringify(snapshot));
+    const vehicles = applyAuto1CentsMigration(view.vehicles).vehicles;
+    const clean: IrissListingsLatestView = { ...view, vehicles };
+    const snapshot: IrissListingsSnapshot = clean;
+    await writeJson(r, LATEST_FILENAME, JSON.stringify(clean, null, 2));
+    await writeJson(r, `${SNAPSHOTS_DIRNAME}/${clean.summary.runId}.json`, JSON.stringify(snapshot));
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

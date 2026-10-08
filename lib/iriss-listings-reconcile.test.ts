@@ -147,6 +147,57 @@ describe("reconcileVehicles", () => {
     expect(JSON.stringify(r.vehicles[0]!.priceHistory)).not.toMatch(/651300/);
   });
 
+  it("Auto1 leftover current/buyNow cents vs new euro start/min does not fake a change", () => {
+    const f = fetched({
+      id: "a",
+      platform: "auto1",
+      priceStart: null,
+      priceMinimal: null,
+      priceCurrent: 899_700,
+      priceBuyNow: 1_200_000,
+      salesVatType: 1053,
+      stockNumber: "BW03512",
+    });
+    const { orderId, orderBrandModel, ...rest } = f;
+    const prev: IrissListingVehicle = {
+      ...rest,
+      orderIds: [orderId],
+      orderBrandModels: [orderBrandModel],
+      firstSeenAt: T1,
+      lastSeenAt: T1,
+      missingRuns: 0,
+      change: "unchanged",
+      priceHistory: [
+        { at: T1, field: "current", from: null, to: 899_700 },
+        { at: T1, field: "buy_now", from: null, to: 1_200_000 },
+      ],
+    };
+    const r = run(
+      [prev],
+      [
+        fetched({
+          id: "a",
+          platform: "auto1",
+          priceStart: 8997,
+          priceMinimal: 8997,
+          priceCurrent: null,
+          priceBuyNow: 12000,
+          salesVatType: 1053,
+          stockNumber: "BW03512",
+        }),
+      ],
+      T2,
+    );
+    expect(r.priceChangedCount).toBe(0);
+    expect(r.vehicles[0]!.change).toBe("unchanged");
+    expect(r.vehicles[0]!.priceStart).toBe(8997);
+    expect(r.vehicles[0]!.priceMinimal).toBe(8997);
+    expect(r.vehicles[0]!.priceCurrent).toBeNull();
+    expect(r.vehicles[0]!.priceBuyNow).toBe(12000);
+    expect(r.vehicles[0]!.priceHistory).toEqual([]);
+    expect(JSON.stringify(r.vehicles[0])).not.toMatch(/899700|1200000/);
+  });
+
   it("Auto1 euro price drop is still a price change", () => {
     const f = fetched({
       id: "a",
