@@ -64,6 +64,16 @@ export type IrissListingVehicle = {
   location: string;
   countryCode: string;
   imageUrl: string;
+  /** Papildu bildes no avota (Auto1 images[], Autobid imageGroups). */
+  imageUrls?: string[];
+  isMargin?: boolean | null;
+  salesVatType?: number | null;
+  taxDeduction?: boolean | null;
+  vatRate?: number | null;
+  bidCount?: number | null;
+  auctionType?: string;
+  damageRaw?: string;
+  stockNumber?: string;
   currency: string;
   priceStart: number | null;
   priceMinimal: number | null;

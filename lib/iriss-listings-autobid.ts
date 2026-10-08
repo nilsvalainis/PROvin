@@ -18,6 +18,7 @@ export type AutobidVehicle = {
   priceCurrent: number | null;
   vatNote: string;
   imageUrl: string;
+  imageUrls: string[];
   firstRegistration: string;
   year: string;
   mileageKm: number | null;
@@ -160,18 +161,24 @@ function equipmentValue(equipments: unknown, key: string): string {
   return str(e.value) || str(e.rawValue);
 }
 
-function pickImage(imageGroups: unknown): string {
-  if (!isRec(imageGroups)) return "";
+function pickImages(imageGroups: unknown): string[] {
+  if (!isRec(imageGroups)) return [];
+  const out: string[] = [];
   for (const group of Object.values(imageGroups)) {
     if (!Array.isArray(group)) continue;
     for (const img of group) {
       if (!isRec(img) || !isRec(img.links)) continue;
       const links = img.links as Rec;
       const url = str(links.m) || str(links.l) || str(links.s) || str(links.hd) || str(links.xs);
-      if (url) return url;
+      if (url && !out.includes(url)) out.push(url);
+      if (out.length >= 40) return out;
     }
   }
-  return "";
+  return out;
+}
+
+function pickImage(imageGroups: unknown): string {
+  return pickImages(imageGroups)[0] ?? "";
 }
 
 function yearFromRegistration(reg: string): string {
@@ -209,6 +216,7 @@ export function mapAutobidVehicle(raw: Rec): AutobidVehicle | null {
     priceCurrent: price(p.current),
     vatNote: str(raw.taxInformation),
     imageUrl: pickImage(raw.imageGroups),
+    imageUrls: pickImages(raw.imageGroups),
     firstRegistration,
     year: yearFromRegistration(firstRegistration),
     mileageKm: num(equipmentValue(raw.equipments, EQ_MILEAGE)),

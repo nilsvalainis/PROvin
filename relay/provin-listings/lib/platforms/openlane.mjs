@@ -129,7 +129,7 @@ export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
   const requested = auction.RequestedSalesPrice;
   const requestedShown = auction.RequestedSalesPriceCanBeShown ?? auction.CanBeShown ?? true;
   const title = str(auction.CarNameEn || auction.CarName || auction.Title);
-  return makeItem("openlane", {
+  const item = makeItem("openlane", {
     externalId: str(auction.AuctionId) || str(auction.CarId),
     auctionId: str(auction.AuctionId),
     detailUrl: detailUrlFor(auction, anchors),
@@ -149,11 +149,22 @@ export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
     priceCurrent: price(auction.CurrentPrice ?? auction.MaximumBid),
     priceMinimal: requestedShown ? price(requested) : null,
     priceBuyNow: price(auction.BuyNowPrice),
-    vatNote: str(auction.VatType || auction.VatRegime || (auction.VatDeductible === true ? "VAT deductible" : "")),
+    vatNote:
+      auction.IsMargin === true
+        ? "Margin"
+        : auction.IsMargin === false
+          ? "VAT excluded"
+          : str(auction.VatType || auction.VatRegime || (auction.VatDeductible === true ? "VAT deductible" : "")),
     auctionStartAt: isoDate(auction.BatchStartDate),
     auctionEndAt: isoDate(auction.BatchEndDate),
     auctionStage: stageFor(auction, nowMs),
   });
+  return {
+    ...item,
+    isMargin: auction.IsMargin === true ? true : auction.IsMargin === false ? false : null,
+    bidCount: num(auction.BidCount ?? auction.NumberOfBids),
+    damageRaw: str(auction.DamageDescription || auction.DamageText || auction.Comments || ""),
+  };
 }
 
 function withPage(bodyText, pageNumber) {

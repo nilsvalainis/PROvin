@@ -7,24 +7,28 @@ import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-list
 
 export type ListingSort =
   | "ending"
+  | "seen"
+  | "make"
+  | "room"
   | "price-asc"
   | "price-desc"
   | "km-asc"
   | "km-desc"
   | "year-desc"
   | "year-asc"
-  | "seen"
   | "price-change";
 
 export const LISTING_SORTS: ReadonlyArray<{ id: ListingSort; label: string }> = [
-  { id: "ending", label: "Beigu laiks (tuvākās vispirms)" },
+  { id: "ending", label: "Beigu laiks" },
+  { id: "seen", label: "Jaunākie" },
+  { id: "make", label: "Marka" },
+  { id: "room", label: "Var solīt vēl" },
   { id: "price-asc", label: "Cena augoši" },
   { id: "price-desc", label: "Cena dilstoši" },
   { id: "km-asc", label: "Nobraukums augoši" },
   { id: "km-desc", label: "Nobraukums dilstoši" },
   { id: "year-desc", label: "Gads: jaunākie" },
   { id: "year-asc", label: "Gads: vecākie" },
-  { id: "seen", label: "Pirmo reizi redzēts" },
   { id: "price-change", label: "Lielākā cenas izmaiņa" },
 ];
 
@@ -40,6 +44,8 @@ export function parseListingSort(raw: string | null | undefined): ListingSort | 
 type Sortable = Pick<
   IrissListingVehicle,
   | "id"
+  | "title"
+  | "manufacturer"
   | "year"
   | "mileageKm"
   | "firstSeenAt"
@@ -48,7 +54,7 @@ type Sortable = Pick<
   | "priceCurrent"
   | "priceBuyNow"
   | "priceHistory"
->;
+> & { _room?: number | null };
 
 function timeMs(iso: string): number | null {
   if (!iso.trim()) return null;
@@ -113,6 +119,8 @@ function compare(a: Sortable, b: Sortable, sort: ListingSort, nowMs: number): nu
   if (sort === "km-asc" || sort === "km-desc") return compareNullable(listingMileage(a), listingMileage(b), sort === "km-asc" ? "asc" : "desc");
   if (sort === "year-asc" || sort === "year-desc") return compareNullable(listingYear(a), listingYear(b), sort === "year-asc" ? "asc" : "desc");
   if (sort === "seen") return compareNullable(timeMs(a.firstSeenAt), timeMs(b.firstSeenAt), "desc");
+  if (sort === "make") return (a.manufacturer || a.title).localeCompare(b.manufacturer || b.title, "lv") || a.title.localeCompare(b.title, "lv");
+  if (sort === "room") return compareNullable(a._room ?? null, b._room ?? null, "desc");
   return compareNullable(listingPriceChangeAbs(a), listingPriceChangeAbs(b), "desc");
 }
 
