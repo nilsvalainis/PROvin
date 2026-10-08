@@ -98,7 +98,14 @@ function fmtKm(n: number | null): string {
 function fmtDateTime(iso: string): string {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return iso || "";
-  return new Intl.DateTimeFormat("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(t));
+  return new Intl.DateTimeFormat("lv-LV", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Riga",
+  }).format(new Date(t));
 }
 
 function hoursSince(iso: string, nowMs: number): number {
