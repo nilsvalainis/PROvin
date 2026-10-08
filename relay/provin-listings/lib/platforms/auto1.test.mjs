@@ -97,6 +97,12 @@ test("title falls back to mainType and subType, image prefers mainImageFullUrl, 
   assert.equal(item.priceCurrent, 5123);
 });
 
+test("year falls back to builtYear when firstRegistrationDate is missing", () => {
+  const item = mapAuto1Car(hit({ firstRegistrationDate: null, builtYear: 2012 }));
+  assert.equal(item.year, "2012");
+  assert.equal(item.firstRegistration, "");
+});
+
 test("stage uses auction times or seconds when auctionType is empty", () => {
   const during = hit({ auctionType: "" });
   assert.equal(auto1Stage(during, START_MS + 1000), "IN_AUCTION");

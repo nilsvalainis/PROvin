@@ -506,6 +506,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       dealServiceStartDeposit: Boolean(o.dealServiceStartDeposit),
       dealEkki: Boolean(o.dealEkki),
       equipmentRequired: sanitizeDraftTextForStorage(typeof o.equipmentRequired === "string" ? o.equipmentRequired : "", 800),
+      notes: sanitizeDraftTextForStorage(typeof o.notes === "string" ? o.notes : "", 280),
       listingLinkMobile: sanitizeDraftTextForStorage(typeof o.listingLinkMobile === "string" ? o.listingLinkMobile : "", 2048),
       listingLinkAutobid: sanitizeDraftTextForStorage(typeof o.listingLinkAutobid === "string" ? o.listingLinkAutobid : "", 2048),
       listingLinkOpenline: sanitizeDraftTextForStorage(typeof o.listingLinkOpenline === "string" ? o.listingLinkOpenline : "", 2048),

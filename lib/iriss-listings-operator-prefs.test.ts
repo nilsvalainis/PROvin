@@ -10,5 +10,8 @@ describe("iriss list prefs", () => {
     expect(listingCostsFor(parsed, "a").transport).toBe(900);
     expect(listingCostsFor(parsed, "a").fee).toBe(600);
     expect(parseIrissListPrefs("nope").budget).toBeNull();
+    const withOrder = parseIrissListPrefs(JSON.stringify({ orderOv: { car1: "ord-1", car2: "" } }));
+    expect(withOrder.orderOv).toEqual({ car1: "ord-1" });
+    expect(defaultIrissListPrefs().orderOv).toEqual({});
   });
 });

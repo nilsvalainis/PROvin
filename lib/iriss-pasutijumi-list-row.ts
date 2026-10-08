@@ -39,6 +39,7 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     dealServiceStartDeposit: Boolean(rec.dealServiceStartDeposit),
     dealEkki: Boolean(rec.dealEkki),
     equipmentRequired: rec.equipmentRequired.trim(),
+    notes: rec.notes.trim().slice(0, 280),
     listingLinkMobile: rec.listingLinkMobile,
     listingLinkAutobid: rec.listingLinkAutobid,
     listingLinkOpenline: rec.listingLinkOpenline,
@@ -111,6 +112,7 @@ export function irissListRowMatchesQuery(row: IrissPasutijumsListRow, query: str
     row.clientLastName,
     formatIrissListSpecSummary(row),
     row.equipmentRequired ?? "",
+    row.notes ?? "",
   ]
     .join(" ")
     .toLowerCase();

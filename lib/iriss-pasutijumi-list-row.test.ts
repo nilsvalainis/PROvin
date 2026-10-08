@@ -33,7 +33,9 @@ describe("IRISS saraksta rinda", () => {
     rec.seatCount = "5";
     rec.equipmentRequired = "ACC";
     rec.dealEkki = true;
+    rec.notes = "Melns, āda, bez stūmēja";
     const row = irissPasutijumsToListRow(rec);
+    expect(row.notes).toBe("Melns, āda, bez stūmēja");
     expect(row.clientFirstName).toBe("Anna");
     expect(row.clientLastName).toBe("Bērziņa");
     expect(row.orderDate).toBe("2026-04-22");

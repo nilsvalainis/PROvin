@@ -19,7 +19,18 @@ import {
   vehicleInPriceRange,
   vehicleInSources,
 } from "@/lib/iriss-listings-list-view";
+import {
+  listingBudgetFor,
+  listingClientLabel,
+  listingDisplayYear,
+  listingOrderNr,
+  listingOrderRefs,
+  listingSourceUrl,
+  parseListingOrderFilter,
+  vehicleInOrderFilter,
+} from "@/lib/iriss-listings-order-link";
 import { defaultIrissListPrefs, IRISS_LIST_PREFS_KEY, listingCostsFor, parseIrissListPrefs, type IrissListPrefs } from "@/lib/iriss-listings-operator-prefs";
+import type { IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 import { listingTaxLabel, listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
 import {
   IRISS_LISTING_PLATFORMS,
@@ -138,12 +149,13 @@ function extrasOf(v: IrissListingVehicle, prefs: IrissListPrefs): number {
   return listingExtrasI(listingCostsFor(prefs, v.id));
 }
 
-function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs): number | null {
-  if (prefs.budget == null) return null;
+function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, ordersById: Record<string, IrissPasutijumsListRow>): number | null {
+  const budget = listingBudgetFor(v, prefs, ordersById);
+  if (budget.amount == null) return null;
   const bid = listingBidPrice(v);
   if (bid == null) return null;
   const tax = taxOf(v, prefs);
-  return listingMaxBid(tax.kind, tax.rate ?? 0, prefs.budget, extrasOf(v, prefs)) - bid;
+  return listingMaxBid(tax.kind, tax.rate ?? 0, budget.amount, extrasOf(v, prefs)) - bid;
 }
 
 function daysInAuction(v: IrissListingVehicle, nowMs: number): string {
@@ -194,6 +206,7 @@ function CountryFlag({ code }: { code: string }) {
 
 type Props = {
   latest: IrissListingsLatestView | null;
+  orders: IrissPasutijumsListRow[];
 };
 
 const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> = [
@@ -202,7 +215,7 @@ const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> =
   { id: "auto1", label: "Auto1" },
 ];
 
-export function IrissSludinajumiListClient({ latest }: Props) {
+export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -224,6 +237,8 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
   const priceMax = parsePriceBound(searchParams.get("max"));
+  const orderFilter = parseListingOrderFilter(searchParams.get("ord"));
+  const ordersById = useMemo(() => Object.fromEntries(orders.map((o) => [o.id, o])), [orders]);
 
   useEffect(() => {
     setNowMs(Date.now());
@@ -266,7 +281,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   }, [pathname, router, searchParams, sort]);
 
-  function writeListQuery(next: { sort?: ListingSort; sources?: IrissListingPlatform[]; min?: string | null; max?: string | null }) {
+  function writeListQuery(next: { sort?: ListingSort; sources?: IrissListingPlatform[]; min?: string | null; max?: string | null; ord?: string | null }) {
     const params = new URLSearchParams(searchParams.toString());
     const sortNext = next.sort ?? sort;
     if (sortNext === "ending") params.delete("sort");
@@ -285,6 +300,11 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       const n = parsePriceBound(next.max);
       if (n === null) params.delete("max");
       else params.set("max", String(n));
+    }
+    if (next.ord !== undefined) {
+      const id = parseListingOrderFilter(next.ord);
+      if (!id) params.delete("ord");
+      else params.set("ord", id);
     }
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
@@ -330,16 +350,44 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       if (hideTech && listingHasHardTechDamage(v.damageRaw)) return false;
       if (!vehicleInSources(v.platform, sources)) return false;
       if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
+      if (!vehicleInOrderFilter(v, orderFilter, prefs)) return false;
       if (!q) return true;
-      const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
+      const refs = listingOrderRefs(v, prefs, ordersById);
+      const orderHay = refs.map((r) => `${r.clientName} ${r.brandModel} ${r.notes} ${r.id} ${listingOrderNr(r.id)}`).join(" ");
+      const hay = `${v.title} ${v.manufacturer} ${listingDisplayYear(v)} ${v.location} ${v.orderBrandModels.join(" ")} ${orderHay} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs.fav, prefs.hidden, hideTech]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, orderFilter, ordersById]);
 
   const sorted = useMemo(() => {
-    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs) }));
+    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, ordersById) }));
     return sortListingVehicles(withRoom, sort, nowMs).sort((a, b) => Number(prefs.fav.includes(b.id)) - Number(prefs.fav.includes(a.id)));
-  }, [visible, sort, nowMs, prefs]);
+  }, [visible, sort, nowMs, prefs, ordersById]);
+
+  const orderFilterOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Array<{ id: string; label: string }> = [];
+    const push = (id: string, label: string) => {
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      out.push({ id, label });
+    };
+    const ranked = [...orders].sort((a, b) => Number((a.listStatus ?? "active") !== "active") - Number((b.listStatus ?? "active") !== "active"));
+    for (const o of ranked) {
+      const name = listingClientLabel(o);
+      push(o.id, `${name || "Klients ?"} · ${o.brandModel.trim() || listingOrderNr(o.id)}`);
+    }
+    for (const v of vehicles) {
+      for (let i = 0; i < v.orderIds.length; i += 1) {
+        const id = v.orderIds[i]!;
+        push(id, v.orderBrandModels[i]?.trim() || listingOrderNr(id));
+      }
+    }
+    for (const id of Object.values(prefs.orderOv)) {
+      push(id, listingOrderNr(id));
+    }
+    return out;
+  }, [orders, vehicles, prefs.orderOv]);
 
   const drawerVehicle = useMemo(() => vehicles.find((v) => v.id === drawerId) ?? null, [vehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
@@ -424,7 +472,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
               inputMode="numeric"
               min={0}
               value={prefs.budget ?? ""}
-              placeholder="nav"
+              placeholder="ignorēšana"
               onChange={(e) => {
                 const n = Number(e.target.value);
                 setPrefs((p) => ({ ...p, budget: Number.isFinite(n) && n > 0 ? n : null }));
@@ -441,7 +489,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
             {showCosts ? "Slēpt I" : "Izmaksas"}
           </button>
           {prefs.budget == null ? (
-            <span className="hidden font-semibold text-amber-900 sm:inline">Ievadi budžetu, lai redzētu gala cenu un maks. solījumu.</span>
+            <span className="hidden font-semibold text-amber-900 sm:inline">Gala cena un maks. solījums katrā rindā pēc pasūtījuma budžeta. Šis lauks ir ignorēšana.</span>
           ) : (
             <span className="-mx-2.5 flex w-[calc(100%+1.25rem)] snap-x snap-mandatory gap-3 overflow-x-auto px-2.5 pb-0.5 tabular-nums [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
               <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "net", rate: null, raw: "NETO", rateFrom: "" }} /> maks. <b>{fmtEur(maxNet)}</b></span>
@@ -618,6 +666,22 @@ export function IrissSludinajumiListClient({ latest }: Props) {
           onBlur={(e) => writeListQuery({ max: e.target.value.trim() })}
           className="h-11 w-[5.5rem] shrink-0 rounded-full border border-[#E5E7EB] bg-white px-3 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 sm:h-8 sm:w-28 sm:text-[12px]"
         />
+        <label className="inline-flex h-11 min-w-0 items-center gap-1 rounded-full border border-[#E5E7EB] bg-white px-2.5 text-[12px] text-[var(--color-provin-muted)] shadow-sm sm:h-8 sm:gap-2 sm:px-3">
+          <span className="hidden font-medium sm:inline">Klients/pasūtījums</span>
+          <select
+            aria-label="Klients/pasūtījums"
+            value={orderFilter ?? ""}
+            onChange={(e) => writeListQuery({ ord: e.target.value })}
+            className="max-w-[52vw] bg-transparent text-base font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[280px] sm:text-[13px]"
+          >
+            <option value="">Visi</option>
+            {orderFilterOptions.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </section>
 
       <section className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -664,6 +728,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
             v={v}
             nowMs={nowMs}
             prefs={prefs}
+            ordersById={ordersById}
             onPrefs={setPrefs}
             onOpen={() => setDrawerId(v.id)}
             imageHidden={Boolean(hiddenImages[v.id])}
@@ -675,9 +740,39 @@ export function IrissSludinajumiListClient({ latest }: Props) {
       {drawerVehicle ? (
         <>
           <button type="button" className="fixed inset-0 z-40 hidden bg-slate-900/20 sm:block" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
-          <IrissListDrawer v={drawerVehicle} prefs={prefs} onClose={() => setDrawerId(null)} onPrefs={setPrefs} />
+          <IrissListDrawer v={drawerVehicle} prefs={prefs} orders={orders} ordersById={ordersById} onClose={() => setDrawerId(null)} onPrefs={setPrefs} />
         </>
       ) : null}
+    </div>
+  );
+}
+
+function ListingOrderMeta({
+  v,
+  prefs,
+  ordersById,
+}: {
+  v: IrissListingVehicle;
+  prefs: IrissListPrefs;
+  ordersById: Record<string, IrissPasutijumsListRow>;
+}) {
+  const refs = listingOrderRefs(v, prefs, ordersById);
+  if (refs.length === 0) {
+    return <p className="truncate text-[11px] text-slate-500">Pasūtījums nav piesaistīts</p>;
+  }
+  return (
+    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+      {refs.map((r) => (
+        <p key={r.id} className="truncate text-[11px] text-slate-600">
+          <span className="font-semibold text-[var(--color-apple-text)]">{r.clientName || "Klients ?"}</span>
+          {" · "}
+          <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(r.id)}`} className="font-medium text-[var(--color-provin-accent)] hover:underline">
+            {listingOrderNr(r.id)}
+          </Link>
+          {r.budget != null ? <span className="tabular-nums"> · {fmtEur(r.budget)}</span> : null}
+          {r.brief ? <span className="text-slate-500"> · {r.brief}</span> : null}
+        </p>
+      ))}
     </div>
   );
 }
@@ -686,6 +781,7 @@ function VehicleCard({
   v,
   nowMs,
   prefs,
+  ordersById,
   onPrefs,
   onOpen,
   imageHidden,
@@ -694,6 +790,7 @@ function VehicleCard({
   v: IrissListingVehicle;
   nowMs: number;
   prefs: IrissListPrefs;
+  ordersById: Record<string, IrissPasutijumsListRow>;
   onPrefs: (next: IrissListPrefs) => void;
   onOpen: () => void;
   imageHidden: boolean;
@@ -706,15 +803,18 @@ function VehicleCard({
   const extras = extrasOf(v, prefs);
   const bid = listingBidPrice(v);
   const real = bid == null ? null : listingRealCost(tax.kind, tax.rate ?? 0, bid, extras);
-  const mb = prefs.budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, prefs.budget, extras) : null;
+  const budget = listingBudgetFor(v, prefs, ordersById);
+  const mb = budget.amount != null ? listingMaxBid(tax.kind, tax.rate ?? 0, budget.amount, extras) : null;
   const room = mb != null && bid != null ? mb - bid : null;
   const dmg = classifyListingDamage(v.damageRaw);
   const fav = prefs.fav.includes(v.id);
   const hidden = prefs.hidden.includes(v.id);
   const customCost = Boolean(prefs.costOv[v.id]);
   const cd = countdown(v.auctionEndAt, nowMs);
-  const specs = [v.year, fmtKm(v.mileageKm), v.fuel, v.transmission, v.powerKw ? `${v.powerKw} kW` : "", v.location].filter(Boolean);
-  const left = real && prefs.budget != null ? prefs.budget - real.total : null;
+  const year = listingDisplayYear(v);
+  const specs = [fmtKm(v.mileageKm), v.fuel, v.transmission, v.powerKw ? `${v.powerKw} kW` : "", v.location].filter(Boolean);
+  const left = real && budget.amount != null ? budget.amount - real.total : null;
+  const sourceHref = listingSourceUrl(v);
   const border =
     gone ? "border-[#E5E7EB] opacity-70" : fav ? "border-amber-200" : fresh ? "border-emerald-200" : changes.length > 0 ? "border-sky-200" : "border-[#E5E7EB]";
   const accent = v.platform === "autobid" ? "border-l-violet-500" : v.platform === "openline" ? "border-l-indigo-600" : "border-l-amber-500";
@@ -725,7 +825,7 @@ function VehicleCard({
     onPrefs({ ...prefs, [list]: next });
   }
 
-  const mobileSpecs = [v.year, fmtKm(v.mileageKm), v.transmission].filter(Boolean);
+  const mobileSpecs = [fmtKm(v.mileageKm), v.transmission].filter(Boolean);
 
   return (
     <article
@@ -741,29 +841,50 @@ function VehicleCard({
       className={`flex cursor-pointer flex-col gap-2 rounded-xl border border-l-[5px] bg-white p-2 shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_132px] touch-manipulation hover:border-slate-300 sm:flex-row sm:flex-nowrap sm:items-start sm:gap-3 sm:rounded-2xl sm:p-3.5 sm:[content-visibility:visible] ${border} ${accent} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
     >
       <div className="flex min-w-0 gap-2 sm:contents">
-        <div className="shrink-0">
-          {v.imageUrl && !imageHidden ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={v.imageUrl}
-              alt={v.title || "Auto foto"}
-              loading="lazy"
-              referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
-              className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
-              onError={onImageError}
-            />
+        {(() => {
+          const thumb =
+            v.imageUrl && !imageHidden ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={v.imageUrl}
+                alt={v.title || "Auto foto"}
+                loading="lazy"
+                referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
+                className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
+                onError={onImageError}
+              />
+            ) : (
+              <div className="flex h-16 w-[4.5rem] items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-400 sm:h-[88px] sm:w-32 sm:rounded-lg sm:text-[10px]">
+                Nav foto
+              </div>
+            );
+          return sourceHref && v.imageUrl && !imageHidden ? (
+            <a href={sourceHref} target="_blank" rel="noopener noreferrer" className="shrink-0" title="Atvērt avotā" onClick={(e) => e.stopPropagation()}>
+              {thumb}
+            </a>
           ) : (
-            <div className="flex h-16 w-[4.5rem] items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-400 sm:h-[88px] sm:w-32 sm:rounded-lg sm:text-[10px]">
-              Nav foto
-            </div>
-          )}
-        </div>
+            <div className="shrink-0">{thumb}</div>
+          );
+        })()}
 
         <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
           <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-            <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}>
-              {PLATFORM_LABEL[v.platform]}
-            </span>
+            {sourceHref ? (
+              <a
+                href={sourceHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Atvērt avotā"
+                onClick={(e) => e.stopPropagation()}
+                className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold hover:underline sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}
+              >
+                {PLATFORM_LABEL[v.platform]}
+              </a>
+            ) : (
+              <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}>
+                {PLATFORM_LABEL[v.platform]}
+              </span>
+            )}
             <CountryFlag code={v.countryCode} />
             <span className="hidden sm:inline">{daysInAuction(v, nowMs) ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{daysInAuction(v, nowMs)}</span> : null}</span>
             {v.bidCount != null ? <span className="hidden rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 sm:inline-flex">{v.bidCount} solījumi</span> : null}
@@ -772,8 +893,11 @@ function VehicleCard({
             {!gone && fresh ? <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800 sm:px-2 sm:text-[10px]">JAUNS</span> : null}
             {customCost ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex" title="Izmaksas šim auto mainītas">I {fmtEur(extras)}</span> : null}
           </div>
-          <div className="truncate text-[13px] font-semibold leading-tight text-[var(--color-apple-text)] sm:text-[15px]" title={v.title}>
-            {v.title || v.orderBrandModels[0] || "-"}
+          <div className="flex min-w-0 items-baseline gap-1.5">
+            <div className="truncate text-[13px] font-semibold leading-tight text-[var(--color-apple-text)] sm:text-[15px]" title={v.title}>
+              {v.title || v.orderBrandModels[0] || "-"}
+            </div>
+            <span className="shrink-0 text-[12px] font-bold tabular-nums text-[var(--color-apple-text)] sm:text-[13px]">{year}</span>
           </div>
           <p className="truncate text-[11px] text-[var(--color-provin-muted)] sm:text-[12px] sm:hidden">{mobileSpecs.join(" · ")}</p>
           <p className="hidden truncate text-[12px] text-[var(--color-provin-muted)] sm:block">{specs.join(" · ")}</p>
@@ -791,18 +915,7 @@ function VehicleCard({
             ))}
             {dmg.cats.length > 2 ? <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:hidden">+{dmg.cats.length - 2}</span> : null}
           </div>
-          {v.orderIds.length > 0 ? (
-            <p className="hidden truncate text-[11px] text-slate-500 sm:block" onClick={(e) => e.stopPropagation()}>
-              {v.orderIds.map((orderId, idx) => (
-                <span key={orderId}>
-                  {idx > 0 ? ", " : null}
-                  <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(orderId)}`} className="font-medium text-[var(--color-apple-text)] hover:underline">
-                    {v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? orderId}
-                  </Link>
-                </span>
-              ))}
-            </p>
-          ) : null}
+          <ListingOrderMeta v={v} prefs={prefs} ordersById={ordersById} />
           <input
             className={`mt-1 hidden w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none sm:block ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}
             placeholder="✎ Pierakstīt piezīmi"
@@ -840,13 +953,13 @@ function VehicleCard({
         </div>
 
         <div className="grid gap-0.5 sm:min-w-[175px] sm:border-l sm:border-dashed sm:border-[#E5E7EB] sm:pl-3">
-          {prefs.budget == null ? (
+          {budget.amount == null ? (
             <div className="text-[11px] font-bold text-amber-900">Budžets nav</div>
           ) : bid == null || !real ? (
-            <div className="text-[11px] tabular-nums"><span className="text-slate-500">Budžets </span><b>{fmtEur(prefs.budget)}</b><div className="text-slate-500">Cenas nav</div></div>
+            <div className="text-[11px] tabular-nums"><span className="text-slate-500">Budžets </span><b>{fmtEur(budget.amount)}</b><div className="text-slate-500">Cenas nav</div></div>
           ) : (
             <>
-              <div className="hidden justify-between text-[11px] tabular-nums sm:flex"><span>Budžets</span><b>{fmtEur(prefs.budget)}</b></div>
+              <div className="hidden justify-between text-[11px] tabular-nums sm:flex"><span>Budžets</span><b>{fmtEur(budget.amount)}</b></div>
               <div className="flex justify-between text-[11px] tabular-nums"><span>Gala</span><b>{fmtEur(real.total)}</b></div>
               <div>
                 {left != null && left >= 0 ? (

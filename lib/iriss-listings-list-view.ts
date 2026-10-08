@@ -3,6 +3,7 @@
  * Noklusējums: beigu laiks, tuvākās vēl notiekošās izsoles vispirms. Bez vērtības vienmēr beigās.
  */
 
+import { listingYearDigits } from "@/lib/iriss-listings-order-link";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 
 export type ListingSort =
@@ -47,6 +48,7 @@ type Sortable = Pick<
   | "title"
   | "manufacturer"
   | "year"
+  | "firstRegistration"
   | "mileageKm"
   | "firstSeenAt"
   | "auctionEndAt"
@@ -70,8 +72,8 @@ export function listingSortPrice(v: Pick<Sortable, "priceCurrent" | "priceStart"
   return null;
 }
 
-export function listingYear(v: Pick<Sortable, "year">): number | null {
-  const y = Number.parseInt(v.year, 10);
+export function listingYear(v: Pick<Sortable, "year" | "firstRegistration">): number | null {
+  const y = Number.parseInt(listingYearDigits(v), 10);
   return Number.isFinite(y) ? y : null;
 }
 

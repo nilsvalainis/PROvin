@@ -210,6 +210,7 @@ export type IrissPasutijumsListRow = {
   dealServiceStartDeposit: boolean;
   dealEkki: boolean;
   equipmentRequired: string;
+  notes: string;
   listingLinkMobile: string;
   listingLinkAutobid: string;
   listingLinkOpenline: string;

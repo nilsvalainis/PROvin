@@ -9,6 +9,7 @@
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
 import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
+import { listingSourceUrl, listingYearDigits } from "@/lib/iriss-listings-order-link";
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { irissListingVehicleId } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceStatus } from "@/lib/iriss-listings-types";
@@ -115,12 +116,12 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     id: irissListingVehicleId(platform, externalId),
     platform,
     externalId,
-    detailUrl: str(item.detailUrl),
+    detailUrl: str(item.detailUrl) || listingSourceUrl({ platform, detailUrl: "", stockNumber: str(item.stockNumber), externalId }),
     orderId,
     orderBrandModel,
     title: str(item.title),
     manufacturer: str(item.manufacturer),
-    year: str(item.year),
+    year: str(item.year) || listingYearDigits({ year: "", firstRegistration: str(item.firstRegistration) }),
     firstRegistration: str(item.firstRegistration),
     mileageKm: numOrNull(item.mileageKm),
     fuel: str(item.fuel),

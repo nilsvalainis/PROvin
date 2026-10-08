@@ -9,7 +9,7 @@
  * `img-pa.auto1.com` strādā ar provin.lv Referer, tāpēc admin lapā no-referrer nav vajadzīgs.
  */
 import { hasCaptchaOrChallenge, pageText, randomPause } from "../browser.mjs";
-import { isoDate, makeItem, num, str } from "../items.mjs";
+import { isoDate, makeItem, num, str, yearOf } from "../items.mjs";
 
 const PROBE_URL = process.env.AUTO1_PROBE_URL || "https://www.auto1.com/en/app/merchant/cars?channel=24h&page=1";
 const LOGGED_OUT_URL_RE = /\/merchant\/signin|\/login\b|\/signin\b/i;
@@ -123,7 +123,7 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
     detailUrl: auto1DetailUrl(car),
     title: auto1Title(car),
     manufacturer: str(car.manufacturerName),
-    year: reg.year,
+    year: reg.year || yearOf(car.builtYear || car.buildYear || car.year),
     firstRegistration: reg.firstRegistration,
     mileageKm: num(car.km),
     fuel: str(car.fuelType ?? car.fuel),

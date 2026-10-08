@@ -1,13 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { classifyListingDamage, highlightListingDamage } from "@/lib/iriss-listings-damage";
 import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { listingOfferLeaks, listingOfferText } from "@/lib/iriss-listings-offer";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
+import {
+  listingBudgetFor,
+  listingClientLabel,
+  listingDisplayYear,
+  listingOrderNr,
+  listingOrderRefs,
+  listingSourceUrl,
+} from "@/lib/iriss-listings-order-link";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
+import type { IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 
 function eur(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "-";
@@ -20,11 +30,15 @@ function eur2(n: number): string {
 export function IrissListDrawer({
   v,
   prefs,
+  orders,
+  ordersById,
   onClose,
   onPrefs,
 }: {
   v: IrissListingVehicle;
   prefs: IrissListPrefs;
+  orders: IrissPasutijumsListRow[];
+  ordersById: Record<string, IrissPasutijumsListRow>;
   onClose: () => void;
   onPrefs: (next: IrissListPrefs) => void;
 }) {
@@ -42,9 +56,13 @@ export function IrissListDrawer({
   const dmg = classifyListingDamage(v.damageRaw);
   const lv = prefs.damageLv[v.id] ?? "";
   const real = bid0 == null ? null : listingRealCost(tax.kind, tax.rate ?? 0, bid, extras);
-  const mb = prefs.budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, prefs.budget, extras) : null;
+  const budget = listingBudgetFor(v, prefs, ordersById);
+  const mb = budget.amount != null ? listingMaxBid(tax.kind, tax.rate ?? 0, budget.amount, extras) : null;
   const flag = countryFlagLabel(v.countryCode);
   const photos = [v.imageUrl, ...(v.imageUrls ?? [])].filter(Boolean).filter((u, i, a) => a.indexOf(u) === i);
+  const sourceHref = listingSourceUrl(v);
+  const year = listingDisplayYear(v);
+  const orderRefs = listingOrderRefs(v, prefs, ordersById);
 
   useEffect(() => {
     setBid(listingBidPrice(v) ?? 0);
@@ -129,7 +147,13 @@ export function IrissListDrawer({
   return (
     <aside className="fixed inset-0 z-50 flex w-full flex-col overflow-auto overscroll-contain border-[#E5E7EB] bg-white px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] shadow-[-10px_0_30px_rgb(0_0_0_/_0.1)] touch-manipulation sm:inset-y-0 sm:right-0 sm:left-auto sm:max-w-[600px] sm:border-l sm:p-4">
       <div className="sticky top-0 z-10 -mx-3 mb-1 flex items-center gap-1.5 border-b border-[#E5E7EB] bg-white px-3 py-1.5 sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:px-0 sm:py-0">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{v.platform}</span>
+        {sourceHref ? (
+          <a href={sourceHref} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold uppercase tracking-wide text-slate-500 hover:underline">
+            {v.platform}
+          </a>
+        ) : (
+          <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{v.platform}</span>
+        )}
         {flag ? <span title={flag.title}>{flag.flag}</span> : null}
         <span className="grow" />
         <button
@@ -154,8 +178,8 @@ export function IrissListDrawer({
         >
           {prefs.hidden.includes(v.id) ? "↺" : "✕"}
         </button>
-        {v.detailUrl ? (
-          <a href={v.detailUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
+        {sourceHref ? (
+          <a href={sourceHref} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
             Avots
           </a>
         ) : null}
@@ -163,10 +187,58 @@ export function IrissListDrawer({
           ✕
         </button>
       </div>
-      <h2 className="mt-1 text-[16px] font-semibold leading-tight text-[var(--color-apple-text)] sm:mt-2 sm:text-[18px]">{v.title}</h2>
+      <h2 className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[16px] font-semibold leading-tight text-[var(--color-apple-text)] sm:mt-2 sm:text-[18px]">
+        <span>{v.title}</span>
+        <span className="text-[14px] font-bold tabular-nums">{year}</span>
+      </h2>
       <p className="text-[12px] text-slate-500">
-        {[v.year, v.mileageKm != null ? `${v.mileageKm.toLocaleString("lv-LV")} km` : "", v.fuel, v.transmission, v.location].filter(Boolean).join(" · ")}
+        {[v.mileageKm != null ? `${v.mileageKm.toLocaleString("lv-LV")} km` : "", v.fuel, v.transmission, v.location].filter(Boolean).join(" · ")}
       </p>
+
+      <div className="mt-3 rounded-xl border border-[#E5E7EB] p-2.5">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Klients / pasūtījums</div>
+        {orderRefs.length === 0 ? (
+          <p className="mt-1 text-[12px] text-slate-500">Pasūtījums nav piesaistīts</p>
+        ) : (
+          <ul className="mt-1 space-y-1.5">
+            {orderRefs.map((r) => (
+              <li key={r.id} className="text-[12px]">
+                <div className="font-semibold text-[var(--color-apple-text)]">{r.clientName || "Klients ?"}</div>
+                <div>
+                  <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(r.id)}`} className="font-medium text-[var(--color-provin-accent)] hover:underline">
+                    {listingOrderNr(r.id)}
+                  </Link>
+                  {r.budget != null ? <span className="tabular-nums"> · {eur(r.budget)}</span> : <span className="text-slate-500"> · budžets nav</span>}
+                </div>
+                {r.brief ? <div className="text-[11px] text-slate-500">{r.brief}</div> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        <label className="mt-2 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          Piesaistīt citam pasūtījumam
+          <select
+            value={prefs.orderOv[v.id] ?? ""}
+            onChange={(e) => {
+              const orderOv = { ...prefs.orderOv };
+              if (!e.target.value) delete orderOv[v.id];
+              else orderOv[v.id] = e.target.value;
+              onPrefs({ ...prefs, orderOv });
+            }}
+            className="mt-1 h-11 w-full rounded-lg border border-[#E5E7EB] px-2 text-base font-normal normal-case tracking-normal sm:h-auto sm:py-1 sm:text-[13px]"
+          >
+            <option value="">Avota pasūtījumi</option>
+            {prefs.orderOv[v.id] && !orders.some((o) => o.id === prefs.orderOv[v.id]) ? (
+              <option value={prefs.orderOv[v.id]}>{listingOrderNr(prefs.orderOv[v.id]!)}</option>
+            ) : null}
+            {orders.map((o) => (
+              <option key={o.id} value={o.id}>
+                {listingClientLabel(o) || "Klients ?"} · {o.brandModel.trim() || listingOrderNr(o.id)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-2.5">
@@ -179,14 +251,14 @@ export function IrissListDrawer({
         </div>
         <div className="rounded-xl border border-[#E5E7EB] p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pie šīs cenas</div>
-          {prefs.budget == null ? (
-            <p className="text-[12px] font-semibold text-amber-800">Budžets nav norādīts</p>
+          {budget.amount == null ? (
+            <p className="text-[12px] font-semibold text-amber-800">Budžets nav</p>
           ) : real ? (
             <>
-              <div className="text-[12px]">Budžets <b className="tabular-nums">{eur(prefs.budget)}</b></div>
+              <div className="text-[12px]">Budžets <b className="tabular-nums">{eur(budget.amount)}</b></div>
               <div className="text-[12px]">Gala <b className="tabular-nums">{eur2(real.total)}</b></div>
-              <div className={`text-[11px] font-extrabold ${real.total <= prefs.budget ? "text-emerald-700" : "text-red-700"}`}>
-                {real.total <= prefs.budget ? `+${eur(prefs.budget - real.total)} zem budžeta` : `-${eur(real.total - prefs.budget)} pārsniegts`}
+              <div className={`text-[11px] font-extrabold ${real.total <= budget.amount ? "text-emerald-700" : "text-red-700"}`}>
+                {real.total <= budget.amount ? `+${eur(budget.amount - real.total)} zem budžeta` : `-${eur(real.total - budget.amount)} pārsniegts`}
               </div>
               <div className="text-[11px] text-slate-500">Maks. solījums {eur(mb)}</div>
             </>
@@ -251,8 +323,15 @@ export function IrissListDrawer({
       )}
 
       {photos[0] ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
+        sourceHref ? (
+          <a href={sourceHref} target="_blank" rel="noopener noreferrer" title="Atvērt avotā">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
+          </a>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
+        )
       ) : null}
 
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cenu vēsture</h3>

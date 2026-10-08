@@ -1,12 +1,22 @@
 import { Suspense } from "react";
 import { IrissSludinajumiListClient } from "@/components/admin/IrissSludinajumiListClient";
 import { getIrissListingsStorageState, readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
+import { isIrissPasutijumiStoreEnabled, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import type { IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 
 export const dynamic = "force-dynamic";
 
 export default async function IrissSludinajumiPage() {
   const storage = getIrissListingsStorageState();
   const latest = storage.enabled ? await readIrissListingsLatestView() : null;
+  let orders: IrissPasutijumsListRow[] = [];
+  if (isIrissPasutijumiStoreEnabled()) {
+    try {
+      orders = await listIrissPasutijumi();
+    } catch {
+      orders = [];
+    }
+  }
 
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
@@ -30,7 +40,7 @@ export default async function IrissSludinajumiPage() {
 
       {storage.enabled ? (
         <Suspense fallback={null}>
-          <IrissSludinajumiListClient latest={latest} />
+          <IrissSludinajumiListClient latest={latest} orders={orders} />
         </Suspense>
       ) : null}
     </div>

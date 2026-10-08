@@ -186,6 +186,7 @@ describe("mapRelayFetchResponse", () => {
         auctionEndAt: "2026-10-08T16:00:00.000Z",
         salesVatType: 1053,
         title: "BMW 320d",
+        firstRegistration: "2010-01-01",
       },
       "auto1",
       "o3",
@@ -200,6 +201,8 @@ describe("mapRelayFetchResponse", () => {
       auctionEndAt: "2026-10-08T16:00:00.000Z",
       salesVatType: 1053,
       orderId: "o3",
+      detailUrl: "https://www.auto1.com/en/app/merchant/car/BW03512",
+      year: "2010",
     });
   });
 });

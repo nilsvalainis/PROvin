@@ -13,10 +13,12 @@ export type IrissListPrefs = {
   taxOv: Record<string, ListingTaxOverride>;
   costOv: Record<string, Partial<ListingCostParts>>;
   damageLv: Record<string, string>;
+  /** Manuāla auto piesaiste citam pasūtījumam (vehicleId -> orderId). */
+  orderOv: Record<string, string>;
 };
 
 export function defaultIrissListPrefs(): IrissListPrefs {
-  return { budget: null, costs: { ...DEFAULT_LISTING_COSTS }, fav: [], hidden: [], notes: {}, taxOv: {}, costOv: {}, damageLv: {} };
+  return { budget: null, costs: { ...DEFAULT_LISTING_COSTS }, fav: [], hidden: [], notes: {}, taxOv: {}, costOv: {}, damageLv: {}, orderOv: {} };
 }
 
 export function parseIrissListPrefs(raw: string | null): IrissListPrefs {
@@ -39,6 +41,10 @@ export function parseIrissListPrefs(raw: string | null): IrissListPrefs {
       taxOv: o.taxOv && typeof o.taxOv === "object" ? (o.taxOv as IrissListPrefs["taxOv"]) : {},
       costOv: o.costOv && typeof o.costOv === "object" ? (o.costOv as IrissListPrefs["costOv"]) : {},
       damageLv: o.damageLv && typeof o.damageLv === "object" ? Object.fromEntries(Object.entries(o.damageLv).filter((e): e is [string, string] => typeof e[1] === "string")) : {},
+      orderOv:
+        o.orderOv && typeof o.orderOv === "object"
+          ? Object.fromEntries(Object.entries(o.orderOv).filter((e): e is [string, string] => typeof e[1] === "string" && e[1].trim().length > 0))
+          : {},
     };
   } catch {
     return base;

@@ -99,6 +99,12 @@ describe("listing sort", () => {
     expect(ids("km-desc", rows)).toEqual(["high", "low", "zero", "none"]);
     expect(ids("year-desc", rows)).toEqual(["low", "high", "none", "zero"]);
     expect(ids("year-asc", rows)).toEqual(["high", "low", "none", "zero"]);
+    const fromReg = [
+      car({ id: "none" }),
+      car({ id: "reg", year: "", firstRegistration: "01.03.2015" }),
+      car({ id: "y", year: "2020" }),
+    ];
+    expect(ids("year-asc", fromReg)).toEqual(["reg", "y", "none"]);
   });
 
   it("sorts first seen newest first and the largest price change first", () => {
