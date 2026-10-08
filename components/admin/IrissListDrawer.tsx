@@ -7,6 +7,7 @@ import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { listingAuctionTypeLabel, realListingPriceHistory } from "@/lib/iriss-listings-auto1-cents";
 import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
+import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingYearLabel } from "@/lib/iriss-listings-list-view";
 import { listingOfferLeaks, listingOfferText } from "@/lib/iriss-listings-offer";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
@@ -61,6 +62,7 @@ export function IrissListDrawer({
   const mb = budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, budget, extras) : null;
   const sourceHref = resolveListingDetailUrl(v);
   const yearLabel = listingYearLabel(v);
+  const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
   const reassigned = Boolean(prefs.orderOv[v.id]?.length);
   const assignValue = linked.length === 1 ? linked[0]!.id : "";
   const assignChoices = orders.filter((o) => o.listStatus === "active" || linked.some((l) => l.id === o.id));
@@ -187,10 +189,12 @@ export function IrissListDrawer({
         </button>
       </div>
       <h2 className="mt-1 text-[16px] font-semibold leading-tight text-[var(--color-apple-text)] sm:mt-2 sm:text-[18px]">
-        {v.title} <span className="font-semibold text-slate-500">{yearLabel}</span>
+        {v.title}{" "}
+        <span className="font-semibold text-slate-500">{yearLabel}</span>
+        {powerKwLabel ? <span className="font-semibold tabular-nums"> {powerKwLabel}</span> : null}
       </h2>
       <p className="text-[12px] text-slate-500">
-        {[v.mileageKm != null ? `${v.mileageKm.toLocaleString("lv-LV")} km` : "", v.fuel, v.transmission, v.location].filter(Boolean).join(" · ")}
+        {[v.mileageKm != null ? `${v.mileageKm.toLocaleString("lv-LV")} km` : "", v.fuel, v.transmission, powerKwLabel, v.location].filter(Boolean).join(" · ")}
       </p>
 
       <div className="mt-3 rounded-xl border border-[#E5E7EB] p-2.5">

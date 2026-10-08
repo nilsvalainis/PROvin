@@ -19,6 +19,7 @@ import {
   formatIrissListDate,
   formatIrissListSpecSummary,
   irissListRowMatchesQuery,
+  irissListRowPowerKwLabel,
   irissPasutijumsToListRow,
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
@@ -237,6 +238,7 @@ const IrissRowCard = memo(function IrissRowCard({
   const brandFallback = irissBrandFallbackLabel(row.brandModel);
   const brandLogoSrc = irissBrandLogoSrc(row.brandModel);
   const specSummary = formatIrissListSpecSummary(row);
+  const powerKwLabel = irissListRowPowerKwLabel(row);
   const equipmentRequired = (row.equipmentRequired ?? "").trim();
   const isPinned = Boolean(row.pinnedAt);
   const statusBusy = actionBusy === row.id;
@@ -411,6 +413,11 @@ const IrissRowCard = memo(function IrissRowCard({
             <span className="truncate text-[16px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[17px]">
               {row.brandModel}
             </span>
+            {powerKwLabel ? (
+              <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)] sm:text-[14px]">
+                {powerKwLabel}
+              </span>
+            ) : null}
             {isPinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-black" aria-hidden /> : null}
           </span>
           <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 text-[12px] leading-snug text-[var(--color-provin-muted)]">
@@ -689,6 +696,7 @@ export function IrissPasutijumiListClient({
         nonPreferredColors: r.nonPreferredColors ?? "",
         interiorFinish: r.interiorFinish ?? "",
         equipmentRequired: r.equipmentRequired ?? "",
+        powerKwLabel: r.powerKwLabel || irissListRowPowerKwLabel(r),
       })),
     );
   }, [rows]);

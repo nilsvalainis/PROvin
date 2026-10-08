@@ -5,7 +5,7 @@
  * budžetu un ļauj operatoram pārrakstīt piesaisti konkrētam auto.
  */
 
-import { formatIrissClientName, formatIrissListSpecSummary } from "@/lib/iriss-pasutijumi-list-row";
+import { formatIrissClientName, formatIrissListSpecSummary, irissListRowPowerKwLabel } from "@/lib/iriss-pasutijumi-list-row";
 import type { IrissPasutijumsListRow, IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 export type IrissListingOrderBrief = {
@@ -13,6 +13,7 @@ export type IrissListingOrderBrief = {
   clientName: string;
   brandModel: string;
   productionYears: string;
+  powerKwLabel: string;
   brief: string;
   budgetRaw: string;
   budget: number | null;
@@ -57,6 +58,7 @@ export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListin
     clientName: dashOrEmpty(formatIrissClientName(row)) || "Klients nav",
     brandModel: dashOrEmpty(row.brandModel),
     productionYears: dashOrEmpty(row.productionYears),
+    powerKwLabel: irissListRowPowerKwLabel(row),
     brief: [spec, extra].filter(Boolean).join(" · "),
     budgetRaw: row.totalBudget.trim(),
     budget: parseIrissOrderBudget(row.totalBudget),

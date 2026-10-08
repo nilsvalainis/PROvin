@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
+import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
   emptyIrissPasutijums,
@@ -506,6 +507,16 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       dealServiceStartDeposit: Boolean(o.dealServiceStartDeposit),
       dealEkki: Boolean(o.dealEkki),
       equipmentRequired: sanitizeDraftTextForStorage(typeof o.equipmentRequired === "string" ? o.equipmentRequired : "", 800),
+      powerKwLabel: sanitizeDraftTextForStorage(
+        typeof o.powerKwLabel === "string" && o.powerKwLabel.trim()
+          ? o.powerKwLabel
+          : formatIrissOrderPowerKwLabel({
+              engineType: typeof o.engineType === "string" ? o.engineType : "",
+              equipmentRequired: typeof o.equipmentRequired === "string" ? o.equipmentRequired : "",
+              brandModel: typeof o.brandModel === "string" ? o.brandModel : "",
+            }),
+        24,
+      ),
       listingLinkMobile: sanitizeDraftTextForStorage(typeof o.listingLinkMobile === "string" ? o.listingLinkMobile : "", 2048),
       listingLinkAutobid: sanitizeDraftTextForStorage(typeof o.listingLinkAutobid === "string" ? o.listingLinkAutobid : "", 2048),
       listingLinkOpenline: sanitizeDraftTextForStorage(typeof o.listingLinkOpenline === "string" ? o.listingLinkOpenline : "", 2048),

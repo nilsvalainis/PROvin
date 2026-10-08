@@ -40,13 +40,14 @@ describe("order briefs and linking", () => {
       brandModel: "VW Golf",
       productionYears: "2018-2021",
       totalBudget: "14 000",
-      engineType: "1.5 TSI",
+      engineType: "1.5 TSI 110 kW",
       transmission: "Automāts",
       equipmentRequired: "ACC",
     });
     expect(b.clientName).toBe("Anna Bērziņa");
     expect(b.brandModel).toBe("VW Golf");
     expect(b.productionYears).toBe("2018-2021");
+    expect(b.powerKwLabel).toBe("110 kW");
     expect(b.budget).toBe(14000);
     expect(b.brief).toContain("2018-2021");
     expect(b.brief).toContain("ACC");

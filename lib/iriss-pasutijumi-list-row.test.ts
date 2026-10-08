@@ -5,6 +5,7 @@ import {
   formatIrissListDate,
   formatIrissListSpecSummary,
   irissListRowMatchesQuery,
+  irissListRowPowerKwLabel,
   irissPasutijumsToListRow,
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
@@ -52,6 +53,25 @@ describe("IRISS saraksta rinda", () => {
     expect(irissListRowMatchesQuery(row, "golf")).toBe(true);
     expect(irissListRowMatchesQuery(row, "20000000")).toBe(true);
     expect(irissListRowMatchesQuery(row, "acc")).toBe(true);
+    expect(row.powerKwLabel).toBe("");
+    expect(irissListRowPowerKwLabel(row)).toBe("");
+  });
+
+  it("parses kW from engine type or equipment, converting hp", () => {
+    const rec = emptyIrissPasutijums("kw1", "2026-04-22T10:00:00.000Z");
+    rec.brandModel = "VW Golf";
+    rec.engineType = "2.0 TDI 140 kW";
+    expect(irissPasutijumsToListRow(rec).powerKwLabel).toBe("140 kW");
+    rec.engineType = "dīzelis";
+    rec.equipmentRequired = "min 163 hp, ACC";
+    expect(irissPasutijumsToListRow(rec).powerKwLabel).toBe("120 kW");
+    rec.equipmentRequired = "ACC";
+    rec.equipmentDesired = "150 PS";
+    expect(irissPasutijumsToListRow(rec).powerKwLabel).toBe("110 kW");
+    rec.equipmentDesired = "";
+    rec.notes = "Jauda 110 kW pietiek";
+    expect(irissPasutijumsToListRow(rec).powerKwLabel).toBe("110 kW");
+    expect(irissListRowMatchesQuery(irissPasutijumsToListRow(rec), "110 kW")).toBe(true);
   });
 
   it("resolves local brand logos without a CDN", () => {
