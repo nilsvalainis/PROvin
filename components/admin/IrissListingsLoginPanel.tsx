@@ -47,7 +47,7 @@ export function IrissListingsLoginButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-6 items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/8"
+        className="inline-flex h-11 shrink-0 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/8 sm:h-6 sm:px-2 sm:py-0.5 sm:text-[10px]"
       >
         Ielogoties
       </button>
@@ -168,7 +168,7 @@ function IrissListingsLoginDialog({
             type="button"
             onClick={() => void cancel()}
             disabled={busy === "close"}
-            className="rounded-full px-2 text-[12px] font-medium text-slate-500 hover:bg-slate-50"
+            className="inline-flex h-11 items-center rounded-full px-3 text-[12px] font-medium text-slate-500 hover:bg-slate-50 sm:h-8"
           >
             Aizvērt
           </button>
@@ -201,7 +201,7 @@ function IrissListingsLoginDialog({
               type="button"
               onClick={() => void finish()}
               disabled={Boolean(busy)}
-              className="inline-flex min-h-10 items-center rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent)] px-4 text-[12px] font-semibold text-white shadow-sm disabled:opacity-55"
+              className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent)] px-4 text-[12px] font-semibold text-white shadow-sm disabled:opacity-55 sm:min-h-10"
             >
               {busy === "close" ? "Pārbauda..." : "Gatavs"}
             </button>
@@ -209,7 +209,7 @@ function IrissListingsLoginDialog({
               type="button"
               onClick={() => void cancel()}
               disabled={busy === "close"}
-              className="inline-flex min-h-10 items-center rounded-full border border-slate-200 bg-white px-4 text-[12px] font-semibold text-slate-700 shadow-sm disabled:opacity-55"
+              className="inline-flex min-h-11 items-center rounded-full border border-slate-200 bg-white px-4 text-[12px] font-semibold text-slate-700 shadow-sm disabled:opacity-55 sm:min-h-10"
             >
               Atcelt
             </button>

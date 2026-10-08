@@ -219,6 +219,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [listScope, setListScope] = useState<"all" | "fav" | "hidden">("all");
   const [hideTech, setHideTech] = useState(false);
+  const [showCosts, setShowCosts] = useState(false);
   const sort = parseListingSort(searchParams.get("sort")) ?? "ending";
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
@@ -243,8 +244,13 @@ export function IrissSludinajumiListClient({ latest }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setDrawerId(null);
     };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [drawerId]);
 
   useEffect(() => {
@@ -407,75 +413,89 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   }
 
   return (
-    <div className="mt-3 space-y-3">
-      <section className="sticky top-0 z-20 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-[12px] shadow-sm">
-        <label className="inline-flex items-center gap-2 font-semibold text-orange-900">
-          Klienta budžets €
-          <input
-            type="number"
-            min={0}
-            value={prefs.budget ?? ""}
-            placeholder="nav norādīts"
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              setPrefs((p) => ({ ...p, budget: Number.isFinite(n) && n > 0 ? n : null }));
-            }}
-            className={`w-[130px] rounded-lg border bg-white px-2 py-1 text-[14px] font-bold tabular-nums outline-none ${prefs.budget == null ? "border-amber-400 shadow-[0_0_0_3px_#fde68a]" : "border-orange-300"}`}
-          />
-        </label>
-        {prefs.budget == null ? (
-          <span className="font-semibold text-amber-900">Ievadi budžetu, lai redzētu gala cenu un maks. solījumu.</span>
-        ) : (
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 tabular-nums">
-            <span>I = <b>{fmtEur(I)}</b></span>
-            <span><TaxBadge tax={{ kind: "net", rate: null, raw: "NETO", rateFrom: "" }} /> maks. <b>{fmtEur(maxNet)}</b></span>
-            <span><TaxBadge tax={{ kind: "margin", rate: null, raw: "MARŽA", rateFrom: "" }} /> maks. <b>{fmtEur(maxMargin)}</b></span>
-            <span><TaxBadge tax={{ kind: "gross", rate: 19, raw: "AR PVN 19 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross19)}</b></span>
-            <span><TaxBadge tax={{ kind: "gross", rate: 21, raw: "AR PVN 21 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross21)}</b></span>
-          </span>
-        )}
-        <div className="flex flex-wrap gap-2">
-          {([
-            ["fee", "Izsoles komisija"],
-            ["transport", "Transports"],
-            ["commission", "Komisija"],
-            ["unplanned", "Neplānotie"],
-          ] as const).map(([k, l]) => (
-            <label key={k} className="grid text-[10px] font-semibold text-slate-500">
-              {l}
-              <input type="number" value={prefs.costs[k]} onChange={(e) => setGlobalCost(k, Number(e.target.value) || 0)} className="w-[88px] rounded-md border border-[#E5E7EB] bg-white px-1.5 py-0.5 text-[12px] font-normal text-[var(--color-apple-text)]" />
-            </label>
-          ))}
+    <div className="mt-2 space-y-2 touch-manipulation sm:mt-3 sm:space-y-3">
+      <section className="sticky top-0 z-20 rounded-xl border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-[12px] shadow-sm sm:rounded-2xl sm:px-4 sm:py-2.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-4 sm:gap-y-2">
+          <label className="inline-flex min-h-11 items-center gap-2 font-semibold text-orange-900 sm:min-h-0">
+            <span className="sm:hidden">Budžets</span>
+            <span className="hidden sm:inline">Klienta budžets €</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={prefs.budget ?? ""}
+              placeholder="nav"
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                setPrefs((p) => ({ ...p, budget: Number.isFinite(n) && n > 0 ? n : null }));
+              }}
+              className={`h-11 w-[7.5rem] rounded-lg border bg-white px-2 text-base font-bold tabular-nums outline-none sm:h-auto sm:w-[130px] sm:py-1 sm:text-[14px] ${prefs.budget == null ? "border-amber-400 shadow-[0_0_0_3px_#fde68a]" : "border-orange-300"}`}
+            />
+          </label>
+          <span className="tabular-nums">I = <b>{fmtEur(I)}</b></span>
+          <button
+            type="button"
+            onClick={() => setShowCosts((x) => !x)}
+            className="inline-flex min-h-11 items-center rounded-full border border-orange-200 bg-white px-3 text-[12px] font-semibold text-orange-950 sm:min-h-8"
+          >
+            {showCosts ? "Slēpt I" : "Izmaksas"}
+          </button>
+          {prefs.budget == null ? (
+            <span className="hidden font-semibold text-amber-900 sm:inline">Ievadi budžetu, lai redzētu gala cenu un maks. solījumu.</span>
+          ) : (
+            <span className="-mx-2.5 flex w-[calc(100%+1.25rem)] snap-x snap-mandatory gap-3 overflow-x-auto px-2.5 pb-0.5 tabular-nums [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "net", rate: null, raw: "NETO", rateFrom: "" }} /> maks. <b>{fmtEur(maxNet)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "margin", rate: null, raw: "MARŽA", rateFrom: "" }} /> maks. <b>{fmtEur(maxMargin)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "gross", rate: 19, raw: "AR PVN 19 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross19)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "gross", rate: 21, raw: "AR PVN 21 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross21)}</b></span>
+            </span>
+          )}
         </div>
+        {showCosts ? (
+          <div className="mt-1.5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            {([
+              ["fee", "Izsoles komisija"],
+              ["transport", "Transports"],
+              ["commission", "Komisija"],
+              ["unplanned", "Neplānotie"],
+            ] as const).map(([k, l]) => (
+              <label key={k} className="grid text-[10px] font-semibold text-slate-500">
+                {l}
+                <input type="number" inputMode="numeric" value={prefs.costs[k]} onChange={(e) => setGlobalCost(k, Number(e.target.value) || 0)} className="h-11 w-full rounded-md border border-[#E5E7EB] bg-white px-2 text-base font-normal text-[var(--color-apple-text)] sm:h-8 sm:w-[88px] sm:px-1.5 sm:text-[12px]" />
+              </label>
+            ))}
+          </div>
+        ) : null}
       </section>
 
-      <section className="rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3 shadow-sm">
+      <section className="rounded-xl border border-[#E5E7EB] bg-white px-2.5 py-2 shadow-sm sm:rounded-2xl sm:px-4 sm:py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--color-provin-muted)] sm:text-[13px]">
+          <div className="min-w-0 flex-1 truncate text-[11px] text-[var(--color-provin-muted)] sm:flex sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1 sm:text-[13px] sm:whitespace-normal">
             <span>
-              Pēdējā nolasīšana:{" "}
+              <span className="sm:hidden">Nolasīts </span>
+              <span className="hidden sm:inline">Pēdējā nolasīšana: </span>
               <span className="font-semibold text-[var(--color-apple-text)]">
                 {latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}
               </span>
             </span>
-            <span>Avoti OK: {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0}</span>
-            <span>Auto: {counts.all}</span>
-            <span>Jauni: {counts.fresh}</span>
-            <span>Cenu izmaiņas: {counts.price}</span>
+            <span className="hidden sm:inline">Avoti OK: {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0}</span>
+            <span className="hidden sm:inline">Auto: {counts.all}</span>
+            <span className="hidden sm:inline">Jauni: {counts.fresh}</span>
+            <span className="hidden sm:inline">Cenu izmaiņas: {counts.price}</span>
           </div>
           <button
             type="button"
             onClick={() => void syncNow()}
             disabled={syncBusy}
-            className="inline-flex min-h-10 items-center rounded-full border border-[var(--color-provin-accent)] bg-white px-3.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-55"
+            className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-[var(--color-provin-accent)] bg-white px-3.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-55 sm:min-h-10"
           >
-            {syncBusy ? "Nolasa..." : "Nolasīt tagad"}
+            {syncBusy ? "Nolasa..." : "Nolasīt"}
           </button>
         </div>
         {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <div className="-mx-2.5 mt-2 flex snap-x gap-1.5 overflow-x-auto px-2.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
           {(health?.items ?? IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
-            <span key={item.platform} className="inline-flex items-center gap-1">
+            <span key={item.platform} className="inline-flex shrink-0 snap-start items-center gap-1">
               <span
                 title={item.note}
                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${healthClass(item.status)}`}
@@ -489,7 +509,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
             <button
               type="button"
               onClick={() => setShowSources((v) => !v)}
-              className="ml-auto text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline"
+              className="ml-auto inline-flex h-11 shrink-0 items-center text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline sm:h-auto"
             >
               {showSources ? "Slēpt avotu problēmas" : `Avotu problēmas (${problemSources.length})`}
             </button>
@@ -514,112 +534,113 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         ) : null}
       </section>
 
-      <section className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap gap-1 rounded-full border border-[#E5E7EB] bg-white p-1 shadow-sm">
+      <section className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="-mx-1 flex gap-1 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:rounded-full sm:border sm:border-[#E5E7EB] sm:bg-white sm:p-1 sm:shadow-sm sm:px-1 [&::-webkit-scrollbar]:hidden">
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition ${
-                tab === t.id ? "bg-[var(--color-apple-text)] text-white" : "text-[var(--color-provin-muted)] hover:bg-slate-50"
+              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition sm:min-h-8 ${
+                tab === t.id ? "bg-[var(--color-apple-text)] text-white" : "border border-[#E5E7EB] bg-white text-[var(--color-provin-muted)] sm:border-0"
               }`}
             >
-              {t.label}
+              {t.id === "price" ? <><span className="sm:hidden">Cenas</span><span className="hidden sm:inline">{t.label}</span></> : t.label}
               <span className={`rounded-full px-1.5 text-[10px] ${tab === t.id ? "bg-white/20" : "bg-slate-100"}`}>{t.count}</span>
             </button>
           ))}
         </div>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Meklēt: marka, modelis, gads, vieta"
-          className="min-h-10 min-w-[220px] flex-1 rounded-full border border-[#E5E7EB] bg-white px-4 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 focus:border-slate-400"
-        />
-        <label className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] text-[var(--color-provin-muted)] shadow-sm">
-          <span className="font-medium">Kārtot pēc</span>
-          <select
-            aria-label="Kārtot pēc"
-            value={sort}
-            onChange={(e) => {
-              const next = parseListingSort(e.target.value);
-              if (next) writeListQuery({ sort: next });
-            }}
-            className="bg-transparent text-[13px] font-semibold text-[var(--color-apple-text)] outline-none"
-          >
-            {LISTING_SORTS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="flex gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Meklēt"
+            className="h-11 min-w-0 flex-1 rounded-full border border-[#E5E7EB] bg-white px-4 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 focus:border-slate-400 sm:h-10 sm:min-w-[220px] sm:text-[13px]"
+          />
+          <label className="inline-flex h-11 min-w-0 items-center gap-1 rounded-full border border-[#E5E7EB] bg-white px-2.5 text-[12px] text-[var(--color-provin-muted)] shadow-sm sm:h-10 sm:gap-2 sm:px-3">
+            <span className="hidden font-medium sm:inline">Kārtot pēc</span>
+            <select
+              aria-label="Kārtot pēc"
+              value={sort}
+              onChange={(e) => {
+                const next = parseListingSort(e.target.value);
+                if (next) writeListQuery({ sort: next });
+              }}
+              className="max-w-[42vw] bg-transparent text-base font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-none sm:text-[13px]"
+            >
+              {LISTING_SORTS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </section>
 
-      <section className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap gap-1">
-          {SOURCE_CHIPS.map((s) => {
-            const on = sources.length === 0 || sources.includes(s.id);
-            return (
-              <button
-                key={s.id}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggleSource(s.id)}
-                className={`inline-flex min-h-8 items-center rounded-full border px-3 text-[12px] font-semibold ${
-                  on ? "border-[var(--color-apple-text)] bg-[var(--color-apple-text)] text-white" : "border-[#E5E7EB] bg-white text-[var(--color-provin-muted)]"
-                }`}
-              >
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
+      <section className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+        {SOURCE_CHIPS.map((s) => {
+          const on = sources.length === 0 || sources.includes(s.id);
+          return (
+            <button
+              key={s.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => toggleSource(s.id)}
+              className={`inline-flex h-11 shrink-0 items-center rounded-full border px-3 text-[12px] font-semibold sm:h-8 ${
+                on ? "border-[var(--color-apple-text)] bg-[var(--color-apple-text)] text-white" : "border-[#E5E7EB] bg-white text-[var(--color-provin-muted)]"
+              }`}
+            >
+              {s.label}
+            </button>
+          );
+        })}
         <input
           type="number"
           min={0}
           inputMode="numeric"
           aria-label="Cena no"
-          placeholder="Cena no"
+          placeholder="No €"
           defaultValue={searchParams.get("min") ?? ""}
           key={`min-${searchParams.get("min") ?? ""}`}
           onBlur={(e) => writeListQuery({ min: e.target.value.trim() })}
-          className="min-h-8 w-28 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400"
+          className="h-11 w-[5.5rem] shrink-0 rounded-full border border-[#E5E7EB] bg-white px-3 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 sm:h-8 sm:w-28 sm:text-[12px]"
         />
         <input
           type="number"
           min={0}
           inputMode="numeric"
           aria-label="Cena līdz"
-          placeholder="Cena līdz"
+          placeholder="Līdz €"
           defaultValue={searchParams.get("max") ?? ""}
           key={`max-${searchParams.get("max") ?? ""}`}
           onBlur={(e) => writeListQuery({ max: e.target.value.trim() })}
-          className="min-h-8 w-28 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400"
+          className="h-11 w-[5.5rem] shrink-0 rounded-full border border-[#E5E7EB] bg-white px-3 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 sm:h-8 sm:w-28 sm:text-[12px]"
         />
       </section>
 
-      <section className="flex flex-wrap items-center gap-2">
+      <section className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
         {([
           ["all", `Visi ${counts.all - hiddenCount}`],
-          ["fav", `★ Favorīti ${favCount}`],
+          ["fav", `★ ${favCount}`],
           ["hidden", `Paslēptie ${hiddenCount}`],
         ] as const).map(([id, label]) => (
           <button
             key={id}
             type="button"
             onClick={() => setListScope(id)}
-            className={`inline-flex min-h-8 items-center rounded-full border px-3 text-[12px] font-semibold ${
+            className={`inline-flex h-11 shrink-0 items-center rounded-full border px-3 text-[12px] font-semibold sm:h-8 ${
               listScope === id ? "border-[var(--color-apple-text)] bg-[var(--color-apple-text)] text-white" : "border-[#E5E7EB] bg-white text-[var(--color-provin-muted)]"
             }`}
           >
-            {label}
+            {id === "fav" ? <><span className="sm:hidden">{label}</span><span className="hidden sm:inline">★ Favorīti {favCount}</span></> : label}
           </button>
         ))}
-        <label className="inline-flex min-h-8 items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] font-semibold text-[var(--color-apple-text)]">
-          <input type="checkbox" checked={hideTech} onChange={(e) => setHideTech(e.target.checked)} />
-          Slēpt ar motora/kārbas bojājumiem ({techCount})
+        <label className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] font-semibold text-[var(--color-apple-text)] sm:h-8">
+          <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setHideTech(e.target.checked)} />
+          <span className="sm:hidden">Bez motora/kārbas ({techCount})</span>
+          <span className="hidden sm:inline">Slēpt ar motora/kārbas bojājumiem ({techCount})</span>
         </label>
       </section>
 
@@ -636,7 +657,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
         </section>
       ) : null}
 
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         {sorted.map((v) => (
           <VehicleCard
             key={v.id}
@@ -653,7 +674,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
 
       {drawerVehicle ? (
         <>
-          <button type="button" className="fixed inset-0 z-40 bg-slate-900/20" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
+          <button type="button" className="fixed inset-0 z-40 hidden bg-slate-900/20 sm:block" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
           <IrissListDrawer v={drawerVehicle} prefs={prefs} onClose={() => setDrawerId(null)} onPrefs={setPrefs} />
         </>
       ) : null}
@@ -704,6 +725,8 @@ function VehicleCard({
     onPrefs({ ...prefs, [list]: next });
   }
 
+  const mobileSpecs = [v.year, fmtKm(v.mileageKm), v.transmission].filter(Boolean);
+
   return (
     <article
       role="button"
@@ -715,127 +738,136 @@ function VehicleCard({
           onOpen();
         }
       }}
-      className={`flex cursor-pointer flex-wrap items-start gap-3 rounded-2xl border border-l-[5px] bg-white p-3 shadow-sm transition hover:border-slate-300 sm:flex-nowrap sm:p-3.5 ${border} ${accent} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
+      className={`flex cursor-pointer flex-col gap-2 rounded-xl border border-l-[5px] bg-white p-2 shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_132px] touch-manipulation hover:border-slate-300 sm:flex-row sm:flex-nowrap sm:items-start sm:gap-3 sm:rounded-2xl sm:p-3.5 sm:[content-visibility:visible] ${border} ${accent} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
     >
-      <div className="shrink-0">
-        {v.imageUrl && !imageHidden ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={v.imageUrl}
-            alt={v.title || "Auto foto"}
-            loading="lazy"
-            referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
-            className="h-[88px] w-32 rounded-lg border border-slate-200/90 bg-slate-50 object-cover"
-            onError={onImageError}
-          />
-        ) : (
-          <div className="flex h-[88px] w-32 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-            Nav foto
-          </div>
-        )}
-      </div>
+      <div className="flex min-w-0 gap-2 sm:contents">
+        <div className="shrink-0">
+          {v.imageUrl && !imageHidden ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={v.imageUrl}
+              alt={v.title || "Auto foto"}
+              loading="lazy"
+              referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
+              className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
+              onError={onImageError}
+            />
+          ) : (
+            <div className="flex h-16 w-[4.5rem] items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-400 sm:h-[88px] sm:w-32 sm:rounded-lg sm:text-[10px]">
+              Nav foto
+            </div>
+          )}
+        </div>
 
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${platformBadgeClass(v.platform)}`}>
-            {PLATFORM_LABEL[v.platform]}
-          </span>
-          <CountryFlag code={v.countryCode} />
-          {daysInAuction(v, nowMs) ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{daysInAuction(v, nowMs)}</span> : null}
-          {v.bidCount != null ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{v.bidCount} solījumi</span> : null}
-          {v.auctionType ? <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900">{v.auctionType}</span> : null}
-          {gone ? <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">PAZUDIS</span> : null}
-          {!gone && fresh ? <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">JAUNS</span> : null}
-          {customCost ? <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900" title="Izmaksas šim auto mainītas">I {fmtEur(extras)}</span> : null}
-        </div>
-        <div className="truncate text-[14px] font-semibold text-[var(--color-apple-text)] sm:text-[15px]" title={v.title}>
-          {v.title || v.orderBrandModels[0] || "-"}
-        </div>
-        <p className="truncate text-[12px] text-[var(--color-provin-muted)]">{specs.join(" · ")}</p>
-        <div className="flex flex-wrap gap-1">
-          {dmg.status === "nodata" ? <span className="rounded-md border border-[#E5E7EB] bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">Nav datu</span> : null}
-          {dmg.status === "none" ? <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">Tehn. bojājumi nav norādīti</span> : null}
-          {dmg.cats.map((c) => (
-            <span key={c.name} className="rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-              ⚠ {c.name}
+        <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+            <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}>
+              {PLATFORM_LABEL[v.platform]}
             </span>
-          ))}
-        </div>
-        {v.orderIds.length > 0 ? (
-          <p className="truncate text-[11px] text-slate-500" onClick={(e) => e.stopPropagation()}>
-            {v.orderIds.map((orderId, idx) => (
-              <span key={orderId}>
-                {idx > 0 ? ", " : null}
-                <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(orderId)}`} className="font-medium text-[var(--color-apple-text)] hover:underline">
-                  {v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? orderId}
-                </Link>
+            <CountryFlag code={v.countryCode} />
+            <span className="hidden sm:inline">{daysInAuction(v, nowMs) ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{daysInAuction(v, nowMs)}</span> : null}</span>
+            {v.bidCount != null ? <span className="hidden rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 sm:inline-flex">{v.bidCount} solījumi</span> : null}
+            {v.auctionType ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex">{v.auctionType}</span> : null}
+            {gone ? <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600 sm:px-2 sm:text-[10px]">PAZUDIS</span> : null}
+            {!gone && fresh ? <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800 sm:px-2 sm:text-[10px]">JAUNS</span> : null}
+            {customCost ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex" title="Izmaksas šim auto mainītas">I {fmtEur(extras)}</span> : null}
+          </div>
+          <div className="truncate text-[13px] font-semibold leading-tight text-[var(--color-apple-text)] sm:text-[15px]" title={v.title}>
+            {v.title || v.orderBrandModels[0] || "-"}
+          </div>
+          <p className="truncate text-[11px] text-[var(--color-provin-muted)] sm:text-[12px] sm:hidden">{mobileSpecs.join(" · ")}</p>
+          <p className="hidden truncate text-[12px] text-[var(--color-provin-muted)] sm:block">{specs.join(" · ")}</p>
+          <div className="flex flex-wrap gap-1">
+            {dmg.status === "nodata" ? <span className="hidden rounded-md border border-[#E5E7EB] bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 sm:inline">Nav datu</span> : null}
+            {dmg.status === "none" ? <span className="hidden rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 sm:inline">Tehn. bojājumi nav norādīti</span> : null}
+            {dmg.cats.map((c, i) => (
+              <span key={c.name} className={`rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:text-[10px] ${i >= 2 ? "hidden sm:inline" : ""}`}>
+                ⚠ {c.name}
               </span>
             ))}
-          </p>
-        ) : null}
-        <input
-          className={`mt-1 w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}
-          placeholder="✎ Pierakstīt piezīmi"
-          value={prefs.notes[v.id] ?? ""}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onPrefs({ ...prefs, notes: { ...prefs.notes, [v.id]: e.target.value } })}
-        />
-      </div>
-
-      <div className="grid min-w-[165px] justify-items-end gap-0.5 text-right">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pašreizējā cena</div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[22px] font-extrabold tabular-nums leading-none">{bid == null ? "-" : fmtEur(bid)}</span>
-          <TaxBadge tax={tax} />
+            {dmg.cats.length > 2 ? <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:hidden">+{dmg.cats.length - 2}</span> : null}
+          </div>
+          {v.orderIds.length > 0 ? (
+            <p className="hidden truncate text-[11px] text-slate-500 sm:block" onClick={(e) => e.stopPropagation()}>
+              {v.orderIds.map((orderId, idx) => (
+                <span key={orderId}>
+                  {idx > 0 ? ", " : null}
+                  <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(orderId)}`} className="font-medium text-[var(--color-apple-text)] hover:underline">
+                    {v.orderBrandModels[idx] ?? v.orderBrandModels[0] ?? orderId}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          ) : null}
+          <input
+            className={`mt-1 hidden w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none sm:block ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}
+            placeholder="✎ Pierakstīt piezīmi"
+            value={prefs.notes[v.id] ?? ""}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => onPrefs({ ...prefs, notes: { ...prefs.notes, [v.id]: e.target.value } })}
+          />
         </div>
-        {v.priceBuyNow != null && v.priceBuyNow !== bid ? <div className="text-[11px] text-slate-500">pirkt uzreiz {fmtEur(v.priceBuyNow)}</div> : null}
-        {changes.length > 0 ? (
-          <p className="text-[11px] text-sky-900">
-            {changes.map((c) => `${priceFieldLabel(c.field)}: ${c.from === null ? "-" : fmtEur(c.from)} -> ${c.to === null ? "-" : fmtEur(c.to)}`).join("; ")}
-          </p>
-        ) : null}
-        <div className={`text-[12px] font-extrabold tabular-nums ${cd.k}`}>{cd.t}</div>
-        {v.auctionStage ? <div className="text-[11px] text-slate-500">{stageLabel(v.auctionStage)}</div> : null}
+
+        <div className="flex shrink-0 flex-col gap-1 sm:hidden" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          <button type="button" title={fav ? "Noņemt no favorītiem" : "Favorīts"} onClick={() => toggle("fav")} className={`grid h-11 w-11 place-items-center rounded-lg border text-lg ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}>
+            {fav ? "★" : "☆"}
+          </button>
+          <button type="button" title={hidden ? "Rādīt atkal" : "Nav interesanti"} onClick={() => toggle("hidden")} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white text-lg">
+            {hidden ? "↺" : "✕"}
+          </button>
+        </div>
       </div>
 
-      <div className="grid min-w-[175px] gap-0.5 border-t border-dashed border-[#E5E7EB] pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-        {prefs.budget == null ? (
-          <>
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Klienta budžets</div>
-            <div className="text-[12px] font-bold text-amber-900">Budžets nav norādīts</div>
-          </>
-        ) : bid == null || !real ? (
-          <>
-            <div className="flex justify-between text-[11px] tabular-nums"><span>Budžets</span><b>{fmtEur(prefs.budget)}</b></div>
-            <div className="text-[11px] text-slate-500">Cenas nav, gala cenu nevar izrēķināt.</div>
-          </>
-        ) : (
-          <>
-            <div className="flex justify-between text-[11px] tabular-nums"><span>Budžets</span><b>{fmtEur(prefs.budget)}</b></div>
-            <div className="flex justify-between text-[11px] tabular-nums"><span>Gala cena</span><b>{fmtEur(real.total)}</b></div>
-            <div>
-              {left != null && left >= 0 ? (
-                <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-extrabold text-emerald-800">+{fmtEur(left)} zem budžeta</span>
-              ) : (
-                <span className="rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-extrabold text-red-800">-{fmtEur(-(left ?? 0))} pārsniegts</span>
-              )}
-            </div>
-            <div className="flex justify-between text-[11px] tabular-nums text-slate-500"><span>Maks. solījums</span><b className="text-[var(--color-apple-text)]">{fmtEur(mb)}</b></div>
-            {room != null ? (
-              <div className="flex justify-between text-[11px] tabular-nums text-slate-500">
-                <span>{room >= 0 ? "var solīt vēl" : "virs maks."}</span>
-                <span>{fmtEur(Math.abs(room))}</span>
+      <div className="grid grid-cols-2 gap-2 border-t border-dashed border-[#E5E7EB] pt-1.5 sm:contents">
+        <div className="grid gap-0.5 sm:min-w-[165px] sm:justify-items-end sm:text-right">
+          <div className="hidden text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:block">Pašreizējā cena</div>
+          <div className="flex flex-wrap items-center gap-1 sm:justify-end">
+            <span className="text-[18px] font-extrabold tabular-nums leading-none sm:text-[22px]">{bid == null ? "-" : fmtEur(bid)}</span>
+            <TaxBadge tax={tax} />
+          </div>
+          {v.priceBuyNow != null && v.priceBuyNow !== bid ? <div className="hidden text-[11px] text-slate-500 sm:block">pirkt uzreiz {fmtEur(v.priceBuyNow)}</div> : null}
+          {changes.length > 0 ? (
+            <p className="hidden text-[11px] text-sky-900 sm:block">
+              {changes.map((c) => `${priceFieldLabel(c.field)}: ${c.from === null ? "-" : fmtEur(c.from)} -> ${c.to === null ? "-" : fmtEur(c.to)}`).join("; ")}
+            </p>
+          ) : null}
+          <div className={`text-[11px] font-extrabold tabular-nums sm:text-[12px] ${cd.k}`}>{cd.t}</div>
+          {v.auctionStage ? <div className="hidden text-[11px] text-slate-500 sm:block">{stageLabel(v.auctionStage)}</div> : null}
+        </div>
+
+        <div className="grid gap-0.5 sm:min-w-[175px] sm:border-l sm:border-dashed sm:border-[#E5E7EB] sm:pl-3">
+          {prefs.budget == null ? (
+            <div className="text-[11px] font-bold text-amber-900">Budžets nav</div>
+          ) : bid == null || !real ? (
+            <div className="text-[11px] tabular-nums"><span className="text-slate-500">Budžets </span><b>{fmtEur(prefs.budget)}</b><div className="text-slate-500">Cenas nav</div></div>
+          ) : (
+            <>
+              <div className="hidden justify-between text-[11px] tabular-nums sm:flex"><span>Budžets</span><b>{fmtEur(prefs.budget)}</b></div>
+              <div className="flex justify-between text-[11px] tabular-nums"><span>Gala</span><b>{fmtEur(real.total)}</b></div>
+              <div>
+                {left != null && left >= 0 ? (
+                  <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-extrabold text-emerald-800 sm:text-[11px]">+{fmtEur(left)}</span>
+                ) : (
+                  <span className="rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-extrabold text-red-800 sm:text-[11px]">-{fmtEur(-(left ?? 0))}</span>
+                )}
               </div>
-            ) : null}
-          </>
-        )}
+              <div className="flex justify-between text-[11px] tabular-nums text-slate-500"><span>Maks.</span><b className="text-[var(--color-apple-text)]">{fmtEur(mb)}</b></div>
+              {room != null ? (
+                <div className="hidden justify-between text-[11px] tabular-nums text-slate-500 sm:flex">
+                  <span>{room >= 0 ? "var solīt vēl" : "virs maks."}</span>
+                  <span>{fmtEur(Math.abs(room))}</span>
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
-        <button type="button" title={fav ? "Noņemt no favorītiem" : "Favorīts"} onClick={() => toggle("fav")} className={`grid h-[30px] w-[30px] place-items-center rounded-lg border ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}>
+      <div className="hidden flex-col gap-1.5 sm:flex" onClick={(e) => e.stopPropagation()}>
+        <button type="button" title={fav ? "Noņemt no favorītiem" : "Favorīts"} onClick={() => toggle("fav")} className={`grid h-11 w-11 place-items-center rounded-lg border ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}>
           {fav ? "★" : "☆"}
         </button>
-        <button type="button" title={hidden ? "Rādīt atkal" : "Nav interesanti"} onClick={() => toggle("hidden")} className="grid h-[30px] w-[30px] place-items-center rounded-lg border border-[#E5E7EB] bg-white">
+        <button type="button" title={hidden ? "Rādīt atkal" : "Nav interesanti"} onClick={() => toggle("hidden")} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white">
           {hidden ? "↺" : "✕"}
         </button>
       </div>

@@ -127,14 +127,14 @@ export function IrissListDrawer({
   }
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[600px] flex-col overflow-auto border-l border-[#E5E7EB] bg-white p-4 shadow-[-10px_0_30px_rgb(0_0_0_/_0.1)]">
-      <div className="flex items-center gap-2">
+    <aside className="fixed inset-0 z-50 flex w-full flex-col overflow-auto overscroll-contain border-[#E5E7EB] bg-white px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] shadow-[-10px_0_30px_rgb(0_0_0_/_0.1)] touch-manipulation sm:inset-y-0 sm:right-0 sm:left-auto sm:max-w-[600px] sm:border-l sm:p-4">
+      <div className="sticky top-0 z-10 -mx-3 mb-1 flex items-center gap-1.5 border-b border-[#E5E7EB] bg-white px-3 py-1.5 sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:px-0 sm:py-0">
         <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{v.platform}</span>
         {flag ? <span title={flag.title}>{flag.flag}</span> : null}
         <span className="grow" />
         <button
           type="button"
-          className={`grid h-8 w-8 place-items-center rounded-lg border ${prefs.fav.includes(v.id) ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB]"}`}
+          className={`grid h-11 w-11 place-items-center rounded-lg border text-lg ${prefs.fav.includes(v.id) ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB]"}`}
           title={prefs.fav.includes(v.id) ? "Noņemt no favorītiem" : "Favorīts"}
           onClick={() => {
             const fav = prefs.fav.includes(v.id) ? prefs.fav.filter((x) => x !== v.id) : [...prefs.fav, v.id];
@@ -145,7 +145,7 @@ export function IrissListDrawer({
         </button>
         <button
           type="button"
-          className="grid h-8 w-8 place-items-center rounded-lg border border-[#E5E7EB]"
+          className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] text-lg"
           title={prefs.hidden.includes(v.id) ? "Rādīt atkal" : "Nav interesanti"}
           onClick={() => {
             const hidden = prefs.hidden.includes(v.id) ? prefs.hidden.filter((x) => x !== v.id) : [...prefs.hidden, v.id];
@@ -155,20 +155,20 @@ export function IrissListDrawer({
           {prefs.hidden.includes(v.id) ? "↺" : "✕"}
         </button>
         {v.detailUrl ? (
-          <a href={v.detailUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-[#E5E7EB] px-3 py-1 text-[12px] font-semibold">
-            Atvērt avotu
+          <a href={v.detailUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
+            Avots
           </a>
         ) : null}
-        <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg border border-[#E5E7EB]" aria-label="Aizvērt">
+        <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] text-lg" aria-label="Aizvērt">
           ✕
         </button>
       </div>
-      <h2 className="mt-2 text-[18px] font-semibold text-[var(--color-apple-text)]">{v.title}</h2>
+      <h2 className="mt-1 text-[16px] font-semibold leading-tight text-[var(--color-apple-text)] sm:mt-2 sm:text-[18px]">{v.title}</h2>
       <p className="text-[12px] text-slate-500">
         {[v.year, v.mileageKm != null ? `${v.mileageKm.toLocaleString("lv-LV")} km` : "", v.fuel, v.transmission, v.location].filter(Boolean).join(" · ")}
       </p>
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pašreizējā cena</div>
           <div className="text-[22px] font-extrabold tabular-nums">{eur(listingBidPrice(v))}</div>
@@ -201,21 +201,21 @@ export function IrissListDrawer({
         </div>
       </div>
 
-      <button type="button" onClick={() => setOfferOpen((x) => !x)} className="mt-3 self-start rounded-full bg-[var(--color-provin-accent)] px-3 py-1.5 text-[12px] font-semibold text-white">
+      <button type="button" onClick={() => setOfferOpen((x) => !x)} className="mt-3 inline-flex h-11 items-center self-stretch justify-center rounded-full bg-[var(--color-provin-accent)] px-3 text-[13px] font-semibold text-white sm:h-auto sm:self-start sm:py-1.5 sm:text-[12px]">
         Sagatavot piedāvājumu
       </button>
       {offerOpen ? (
         <div className="mt-2 rounded-xl border border-[#E5E7EB] p-3">
-          <textarea value={offerTxt} onChange={(e) => setOfferTxt(e.target.value)} className="min-h-[160px] w-full rounded-lg border border-[#E5E7EB] p-2 text-[13px]" />
+          <textarea value={offerTxt} onChange={(e) => setOfferTxt(e.target.value)} className="min-h-[140px] w-full rounded-lg border border-[#E5E7EB] p-2 text-base sm:min-h-[160px] sm:text-[13px]" />
           <p className="mt-1 text-[11px]">{leaks.length ? `Tekstā ir: ${leaks.join(", ")}.` : "Teksts tīrs: bez cenām, ID, platformas, saitēm un bojājumiem."}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" className="rounded-full border px-3 py-1 text-[12px] font-semibold" onClick={() => void navigator.clipboard?.writeText(offerTxt)}>
+          <div className="mt-2 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+            <button type="button" className="inline-flex h-11 items-center justify-center rounded-full border px-3 text-[12px] font-semibold" onClick={() => void navigator.clipboard?.writeText(offerTxt)}>
               Kopēt
             </button>
-            <button type="button" className="rounded-full border px-3 py-1 text-[12px] font-semibold" onClick={() => void downloadZip()}>
-              Bildes ZIP
+            <button type="button" className="inline-flex h-11 items-center justify-center rounded-full border px-3 text-[12px] font-semibold" onClick={() => void downloadZip()}>
+              ZIP
             </button>
-            <button type="button" className="rounded-full bg-emerald-600 px-3 py-1 text-[12px] font-semibold text-white" onClick={shareWa}>
+            <button type="button" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 px-3 text-[12px] font-semibold text-white" onClick={shareWa}>
               WhatsApp
             </button>
           </div>
@@ -225,7 +225,7 @@ export function IrissListDrawer({
 
       <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
         Piezīme
-        <textarea value={prefs.notes[v.id] ?? ""} onChange={(e) => setNote(e.target.value)} placeholder="Piezīme (tikai adminam)" className="mt-1 min-h-[64px] w-full rounded-lg border border-[#E5E7EB] p-2 text-[13px] font-normal normal-case tracking-normal" />
+        <textarea value={prefs.notes[v.id] ?? ""} onChange={(e) => setNote(e.target.value)} placeholder="Piezīme (tikai adminam)" className="mt-1 min-h-[64px] w-full rounded-lg border border-[#E5E7EB] p-2 text-base font-normal normal-case tracking-normal sm:text-[13px]" />
       </label>
 
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Tehniskais stāvoklis</h3>
@@ -243,7 +243,7 @@ export function IrissListDrawer({
             ))}
           </div>
           <p className="mt-1 text-[13px]"><b>LV:</b> {lv || "tulkojums vēl nav ģenerēts"}</p>
-          <button type="button" className="mt-1 rounded-full border px-3 py-1 text-[12px] font-semibold" onClick={() => void translate()}>
+          <button type="button" className="mt-1 inline-flex h-11 items-center rounded-full border px-3 text-[12px] font-semibold" onClick={() => void translate()}>
             Ģenerēt LV tulkojumu
           </button>
           {lvMsg ? <p className="text-[11px] text-slate-500">{lvMsg}</p> : null}
@@ -256,7 +256,8 @@ export function IrissListDrawer({
       ) : null}
 
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cenu vēsture</h3>
-      <table className="w-full text-[12px]">
+      <div className="-mx-1 overflow-x-auto">
+      <table className="w-full min-w-[320px] text-[12px]">
         <thead>
           <tr className="text-left text-[10px] uppercase text-slate-500">
             <th className="py-1">Laiks</th>
@@ -284,6 +285,7 @@ export function IrissListDrawer({
           )}
         </tbody>
       </table>
+      </div>
 
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">PVN režīms</h3>
       <div className="flex gap-2">
@@ -294,7 +296,7 @@ export function IrissListDrawer({
             if (!k) setTax(null);
             else setTax({ kind: k, rate: k === "gross" ? (ov?.rate ?? detected.rate ?? 19) : null });
           }}
-          className="rounded-lg border border-[#E5E7EB] px-2 py-1 text-[13px]"
+          className="h-11 min-w-0 flex-1 rounded-lg border border-[#E5E7EB] px-2 text-base sm:h-auto sm:py-1 sm:text-[13px]"
         >
           <option value="">Automātiski: {listingTaxLabel(detected)}</option>
           <option value="net">NETO</option>
@@ -302,7 +304,7 @@ export function IrissListDrawer({
           <option value="gross">AR PVN x %</option>
         </select>
         {ov?.kind === "gross" ? (
-          <input type="number" value={ov.rate ?? ""} onChange={(e) => setTax({ kind: "gross", rate: Number(e.target.value) || null })} className="w-24 rounded-lg border px-2 py-1 text-[13px]" placeholder="%" />
+          <input type="number" inputMode="numeric" value={ov.rate ?? ""} onChange={(e) => setTax({ kind: "gross", rate: Number(e.target.value) || null })} className="h-11 w-20 rounded-lg border px-2 text-base sm:h-auto sm:w-24 sm:py-1 sm:text-[13px]" placeholder="%" />
         ) : null}
       </div>
       <p className="mt-1 text-[11px] text-slate-500">Avota lauks: {detected.raw}</p>
@@ -317,7 +319,7 @@ export function IrissListDrawer({
         ] as const).map(([k, l]) => (
           <label key={k} className="text-[10px] font-semibold text-slate-500">
             {l}
-            <input type="number" value={costs[k]} onChange={(e) => setCost(k, Number(e.target.value) || 0)} className="mt-0.5 w-full rounded-lg border px-2 py-1 text-[13px] font-normal" />
+            <input type="number" inputMode="numeric" value={costs[k]} onChange={(e) => setCost(k, Number(e.target.value) || 0)} className="mt-0.5 h-11 w-full rounded-lg border px-2 text-base font-normal sm:h-auto sm:py-1 sm:text-[13px]" />
           </label>
         ))}
       </div>
@@ -326,7 +328,7 @@ export function IrissListDrawer({
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Kalkulators</h3>
       <div className="flex items-center gap-2">
         <span className="text-[12px] text-slate-500">Ja nosolām par</span>
-        <input type="range" min={Math.round((bid0 ?? 5000) * 0.7)} max={Math.round((bid0 ?? 5000) * 1.4)} step={100} value={bid} onChange={(e) => setBid(Number(e.target.value))} className="grow" />
+        <input type="range" min={Math.round((bid0 ?? 5000) * 0.7)} max={Math.round((bid0 ?? 5000) * 1.4)} step={100} value={bid} onChange={(e) => setBid(Number(e.target.value))} className="h-11 grow accent-[var(--color-provin-accent)]" />
         <b className="w-20 text-right tabular-nums">{eur(bid)}</b>
       </div>
       {real ? (
