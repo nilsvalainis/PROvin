@@ -267,14 +267,14 @@ export function IrissListDrawer({
           </tr>
         </thead>
         <tbody>
-          {v.priceHistory.length === 0 ? (
+          {(v.priceHistory ?? []).length === 0 ? (
             <tr>
               <td colSpan={4} className="py-2 text-slate-500">
                 Izmaiņu nav. Pirmo reizi {new Date(v.firstSeenAt).toLocaleString("lv-LV")}
               </td>
             </tr>
           ) : (
-            v.priceHistory.map((h, i) => (
+            (v.priceHistory ?? []).map((h, i) => (
               <tr key={`${h.at}-${i}`} className="border-t border-slate-100">
                 <td className="py-1">{new Date(h.at).toLocaleString("lv-LV")}</td>
                 <td>{h.field === "buy_now" ? "Pirkt uzreiz" : h.field === "start" ? "Sākuma" : h.field === "minimal" ? "Minimālā" : "Pašreizējā"}</td>

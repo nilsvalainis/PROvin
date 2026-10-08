@@ -36,14 +36,24 @@ export const HARD_TECH_CATS: readonly ListingTechCat[] = ["Motors", "Ātrumkārb
 
 const NEG = /(?:^|[\s,(])(kein\w*|ohne|no|not|sans|pas de|geen|nessun\w*|senza)\s+(?:\S+\s+){0,2}$/i;
 
-const TECH_RE: Array<[ListingTechCat, RegExp[]]> = TECH.map(([cat, terms]) => [
-  cat,
-  terms.map((t) => {
-    const prefix = t.endsWith("*");
-    const w = t.replace(/\*$/, "").replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
-    return new RegExp(`(?<!\\p{L})${w}${prefix ? "\\p{L}*" : "(?!\\p{L})"}`, "giu");
-  }),
-]);
+/**
+ * Bez lookbehind: Safari `(?<!\p{L})` ar Unicode īpašībām čunka ielādē met
+ * "Invalid regular expression" un Next rāda Application error.
+ * `(^|\P{L})` ir viena kodpunkta atoms ar `u`, strādā Safari 11.1+.
+ */
+function compileTerm(t: string): RegExp {
+  const prefix = t.endsWith("*");
+  const w = t.replace(/\*$/, "").replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+  const body = prefix ? `${w}\\p{L}*` : `${w}(?!\\p{L})`;
+  try {
+    return new RegExp(`(^|\\P{L})(${body})`, "giu");
+  } catch {
+    const latin = prefix ? `${w}[A-Za-zÀ-ž]*` : `${w}(?![A-Za-zÀ-ž])`;
+    return new RegExp(`(^|[^A-Za-zÀ-ž])(${latin})`, "gi");
+  }
+}
+
+const TECH_RE: Array<[ListingTechCat, RegExp[]]> = TECH.map(([cat, terms]) => [cat, terms.map(compileTerm)]);
 
 export type ListingDamageHit = { name: ListingTechCat; words: string[] };
 
@@ -61,11 +71,15 @@ export function classifyListingDamage(text: string | null | undefined): ListingD
     for (const re of res) {
       re.lastIndex = 0;
       for (let m = re.exec(text); m; m = re.exec(text)) {
-        const sentence = text.slice(0, m.index).split(/[.;!?\n]/).pop() ?? "";
+        const lead = m[1] ?? "";
+        const word = m[2] ?? m[0].slice(lead.length);
+        const s = m.index + lead.length;
+        const e = s + word.length;
+        const sentence = text.slice(0, s).split(/[.;!?\n]/).pop() ?? "";
         if (NEG.test(sentence)) continue;
-        spans.push({ s: m.index, e: m.index + m[0].length, cat });
+        spans.push({ s, e, cat });
         if (!cats.has(cat)) cats.set(cat, new Set());
-        cats.get(cat)!.add(m[0]);
+        cats.get(cat)!.add(word);
       }
     }
   }

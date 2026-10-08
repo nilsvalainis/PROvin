@@ -82,7 +82,7 @@ export function listingMileage(v: Pick<Sortable, "mileageKm">): number | null {
 /** Lielākā absolūtā starpība vēsturē. Nav salīdzināmas izmaiņas: null. */
 export function listingPriceChangeAbs(v: Pick<Sortable, "priceHistory">): number | null {
   let best: number | null = null;
-  for (const c of v.priceHistory) {
+  for (const c of v.priceHistory ?? []) {
     if (c.from === null || c.to === null) continue;
     const d = Math.abs(c.to - c.from);
     if (best === null || d > best) best = d;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
+import { classifyListingDamage, highlightListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 
 describe("classifyListingDamage", () => {
   it("empty is nodata; cosmetic without tech words is none", () => {
@@ -14,5 +14,16 @@ describe("classifyListingDamage", () => {
     expect(listingHasHardTechDamage(en.cats.length ? "Not driveable. Engine noise, gearbox slipping." : "")).toBe(true);
     expect(en.cats.map((c) => c.name)).toEqual(expect.arrayContaining(["Motors", "Ātrumkārba", "Nav braucams"]));
     expect(listingHasHardTechDamage("Leichte Kratzer.")).toBe(false);
+  });
+
+  it("does not treat letters inside another word as a hit, and spans skip the leading separator", () => {
+    expect(classifyListingDamage("automotive inspection").status).toBe("none");
+    const hit = classifyListingDamage(" Sichtbar: Motorschaden vorn.");
+    expect(hit.cats.map((c) => c.name)).toContain("Motors");
+    expect(hit.spans[0]).toMatchObject({ s: 11, e: 23 });
+    expect(" Sichtbar: Motorschaden vorn.".slice(hit.spans[0]!.s, hit.spans[0]!.e)).toBe("Motorschaden");
+    const html = highlightListingDamage(" Sichtbar: Motorschaden vorn.", hit.spans);
+    expect(html).toContain("<mark");
+    expect(html).not.toContain("> Motorschaden");
   });
 });
