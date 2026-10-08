@@ -202,7 +202,8 @@ import {
   type PdfVisibilitySettings,
 } from "@/lib/pdf-visibility";
 import { type OneautoBlockState } from "@/lib/oneauto-block";
-import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
+import { OFFICIAL_DEALER_SECTION_TITLE, oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
+import { outvinDealerServiceRowHasData } from "@/lib/outvin-data-bundle";
 import { oneautoBlockHasFoldableContent, resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
 import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import {
@@ -1545,6 +1546,24 @@ const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 const PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL = "Fotogrāfiju pielikums";
 
 /** OFICIĀLĀ DĪLERA DATI - servisa vizītes (datums, km, vieta, darbi). */
+/** Eļļas tabula: LV servisa rindas + OneAuto oriģināls + Outvin žurnāls. */
+function dealerOilIntervalSourceRows(b: AutoRecordsBlockState): AutoRecordsServiceWorkRow[] {
+  const original = oneautoDisplayToServiceWorks({
+    equipment: [],
+    powertrain: [],
+    serviceTimeline: b.oneautoIngest?.serviceTimelineOriginal ?? [],
+  });
+  const log = getAutoRecordsOutvinBundle(b)
+    .dealerServiceLog.filter(outvinDealerServiceRowHasData)
+    .map((r) => ({
+      date: r.date,
+      odometer: r.odometer,
+      location: r.country,
+      works: r.serviceNotes,
+    }));
+  return [...(b.serviceWorks ?? []), ...original, ...log];
+}
+
 function buildAutoRecordsServiceWorksTableHtml(
   rows: AutoRecordsServiceWorkRow[],
   omitSpan = false,
@@ -1653,14 +1672,19 @@ function buildAutoRecordsAvotuSubsection(
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
     : "";
   const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
-  const oem = parseOemOilIntervalFromText(
-    `${oilChangeIntervalNotes}\n${b.comments ?? ""}\n${b.serviceHistoryNotes ?? ""}`,
-  );
-  const oilSeries = buildOilChangeIntervalSeries(b.serviceWorks ?? [], oem);
-  const oilTableHtml = buildOilChangeIntervalPdfHtml(oilSeries);
-  const oilIntervalBox = oilChangeIntervalNotes
-    ? pdfReportCommentBox(oilChangeIntervalNotes, oilTableHtml ? "" : PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL)
+  const showOilInterval = vis.autoRecordsOilInterval !== false;
+  const oem = showOilInterval
+    ? parseOemOilIntervalFromText(
+        `${oilChangeIntervalNotes}\n${b.comments ?? ""}\n${b.serviceHistoryNotes ?? ""}`,
+      )
+    : null;
+  const oilTableHtml = showOilInterval
+    ? buildOilChangeIntervalPdfHtml(buildOilChangeIntervalSeries(dealerOilIntervalSourceRows(b), oem))
     : "";
+  const oilIntervalBox =
+    showOilInterval && oilChangeIntervalNotes
+      ? pdfReportCommentBox(oilChangeIntervalNotes, oilTableHtml ? "" : PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL)
+      : "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
   const hasOutvin = outvinInner.length > 0;
