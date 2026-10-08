@@ -55,7 +55,7 @@
     },
     {
       "path": "/api/cron/iriss-listings-daily-sync",
-      "schedule": "0 4,6,8,10 * * *"
+      "schedule": "0 6,7,10,11,14,15 * * *"
     },
     {
       "path": "/api/cron/dealer-data-sweep",

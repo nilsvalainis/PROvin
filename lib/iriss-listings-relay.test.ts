@@ -130,6 +130,25 @@ describe("mapRelayFetchResponse", () => {
     expect(r.elapsedMs).toBe(4321);
   });
 
+  it("fills Openlane fuel/transmission from the title when the relay sent empty/zero", () => {
+    const r = mapRelayFetchResponse(
+      {
+        status: "ok",
+        items: [
+          {
+            externalId: "A9",
+            title: "Volvo XC40 1.5 T2 129hp - Petrol - Automatic",
+            fuel: "",
+            transmission: "0",
+            auctionId: "A9",
+          },
+        ],
+      },
+      openlaneSrc,
+    );
+    expect(r.vehicles[0]).toMatchObject({ fuel: "Petrol", transmission: "Automatic" });
+  });
+
   it("login_required / blocked / error map to source statuses with relay note", () => {
     expect(mapRelayFetchResponse({ status: "login_required", note: "Openlane: sesija beigusies" }, openlaneSrc)).toMatchObject({ status: "login_required", note: "Openlane: sesija beigusies", vehicles: [] });
     expect(mapRelayFetchResponse({ status: "blocked", note: "Cloudflare" }, openlaneSrc).status).toBe("blocked_by_waf");

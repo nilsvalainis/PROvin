@@ -7,6 +7,7 @@ import path from "node:path";
 import { applyAuto1CentsMigration } from "@/lib/iriss-listings-auto1-cents";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { listingYearDigits } from "@/lib/iriss-listings-list-view";
+import { isIrissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
@@ -233,8 +234,17 @@ function normalizeLatest(raw: unknown): { view: IrissListingsLatestView; persist
     ? raw.sources.map(normalizeSource).filter((x): x is IrissListingSourceRun => x !== null)
     : [];
   const cursor = normalizeCursor(raw.cursor);
+  const lastAutomaticSlot = isIrissListingsAutomaticSlot(str(raw.lastAutomaticSlot)) ? str(raw.lastAutomaticSlot) : "";
   return {
-    view: { version: 2, generatedAt, summary, sources, vehicles: migrated.vehicles, ...(cursor ? { cursor } : {}) },
+    view: {
+      version: 2,
+      generatedAt,
+      summary,
+      sources,
+      vehicles: migrated.vehicles,
+      ...(cursor ? { cursor } : {}),
+      ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
+    },
     persistCents: migrated.changed,
   };
 }

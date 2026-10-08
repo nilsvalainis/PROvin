@@ -6,6 +6,8 @@
  * Tukšot izmesta atslēgas apakškoku nozīmē tukšot kopīgos slotus. Tāpēc vispirms
  * pārraujam atsauces (izmestā atslēga rāda uz jaunu "" slotu), tad atstājam to, kas
  * sasniedzams no saknes, un tukšojam tikai nesasniedzamos.
+ *
+ * Konta atslēgas: `user_nickname`, `user_id`, `bidder_*` - prefikss/pasvītra nav šķērslis.
  */
 const SECRET_KEYS = new Set([
   "token",
@@ -65,7 +67,17 @@ const BEARER_RE = /Bearer\s+[A-Za-z0-9._~+/=-]+/gi;
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
 function keyNorm(k) {
-  return String(k).toLowerCase().replace(/[\s-]/g, "");
+  return String(k).toLowerCase().replace(/[\s._-]+/g, "");
+}
+
+function keyHitsBlocked(kn, blocked) {
+  if (blocked.has(kn)) return true;
+  for (const raw of blocked) {
+    const b = keyNorm(raw);
+    if (b.length < 4) continue;
+    if (kn === b || kn.endsWith(b) || kn.startsWith(b)) return true;
+  }
+  return false;
 }
 
 export function isAutobidSecretString(s) {
@@ -81,7 +93,9 @@ function scrubString(s) {
 
 function isDroppedKey(k) {
   const kn = keyNorm(k);
-  return SECRET_KEYS.has(kn) || ACCOUNT_KEYS.has(kn) || ACCOUNT_OBJECT_KEYS.has(kn);
+  if (!kn) return false;
+  if (kn.startsWith("bidder")) return true;
+  return keyHitsBlocked(kn, SECRET_KEYS) || keyHitsBlocked(kn, ACCOUNT_KEYS) || keyHitsBlocked(kn, ACCOUNT_OBJECT_KEYS);
 }
 
 function isSlotRef(n, len) {
