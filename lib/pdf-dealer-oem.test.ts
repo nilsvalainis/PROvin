@@ -307,6 +307,35 @@ describe("OEM dealer PDF", () => {
     expect(html).not.toContain("oem-vin");
   });
 
+  it("omits Equipment when includeEquipment is false", () => {
+    const vin = "YV1PZ68TCL1106362";
+    const oneauto = emptyOneautoBlock();
+    oneauto.lastFetchedVin = vin;
+    oneauto.results = {
+      oe_build_sheet: {
+        ok: true,
+        payload: {
+          success: true,
+          result: {
+            manufacturer: "Volvo",
+            oem_vehicle_desc: "XC60",
+            options: [{ factory_code: "000053", factory_desc: "Metallic paint" }],
+          },
+        },
+      },
+    };
+    const html = buildOemDealerDocumentHtml({
+      vin,
+      makeModel: "",
+      autoRecords: emptyAutoRecordsBlock(),
+      oneauto,
+      includeEquipment: false,
+    });
+    expect(html).not.toContain(">Equipment<");
+    expect(html).not.toContain("Metallic paint");
+    expect(html).not.toContain('class="oem-eq"');
+  });
+
   it("keeps factory options out of Vehicle and only in compact Equipment", () => {
     const oneauto = emptyOneautoBlock();
     oneauto.results = {

@@ -83,6 +83,7 @@ import {
   countAutoRecordsOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
+import { clearAutoRecordsEquipment } from "@/lib/outvin-admin-sync";
 
 const DEALER_ARIA = "Oficiālā dīlera dati";
 
@@ -116,6 +117,10 @@ type Props = {
   ) => void;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
+  pdfIncludeOil?: boolean;
+  onPdfIncludeOilChange?: (next: boolean) => void;
+  pdfIncludeEquipment?: boolean;
+  onPdfIncludeEquipmentChange?: (next: boolean) => void;
   aiComment?: AdminAiSourceCommentSlot;
   aiServiceHistory?: AdminAiSourceCommentSlot;
   aiOilChangeInterval?: AdminAiSourceCommentSlot;
@@ -145,6 +150,10 @@ export function AdminAutoRecordsSourceBlock({
   applyPatchedBlocks,
   pdfInclude,
   onPdfIncludeChange,
+  pdfIncludeOil = true,
+  onPdfIncludeOilChange,
+  pdfIncludeEquipment = true,
+  onPdfIncludeEquipmentChange,
   aiComment,
   aiServiceHistory,
   aiOilChangeInterval,
@@ -368,6 +377,9 @@ export function AdminAutoRecordsSourceBlock({
             readOnly={readOnly}
             disabled={disabled}
             onChange={(next) => onChange({ ...value, outvinReport: next })}
+            pdfIncludeEquipment={pdfIncludeEquipment}
+            onPdfIncludeEquipmentChange={onPdfIncludeEquipmentChange}
+            onClearEquipment={() => onChange(clearAutoRecordsEquipment(value))}
           />
 
           <p className="mb-1.5 mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
@@ -718,6 +730,16 @@ export function AdminAutoRecordsSourceBlock({
             disabled={disabled}
             compact
             ai={aiOilChangeInterval}
+            headerExtra={
+              onPdfIncludeOilChange ? (
+                <AdminPdfIncludeToggle
+                  id="auto-records-oil-pdf"
+                  checked={pdfIncludeOil}
+                  onChange={onPdfIncludeOilChange}
+                  label="Rādīt PDF"
+                />
+              ) : undefined
+            }
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
             aria-label={`${DEALER_ARIA} — Eļļas maiņas intervāli`}
           />

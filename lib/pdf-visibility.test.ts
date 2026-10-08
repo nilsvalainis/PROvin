@@ -70,6 +70,13 @@ describe("mergePdfVisibility", () => {
     expect(mini.autoRecordsOilInterval).toBe(true);
   });
 
+  it("shows dealer equipment PDF by default and keeps an explicit hide", () => {
+    expect(mergePdfVisibility(undefined).autoRecordsEquipment).toBe(true);
+    expect(mergePdfVisibility({}).autoRecordsEquipment).toBe(true);
+    expect(mergePdfVisibility({ autoRecordsEquipment: false }).autoRecordsEquipment).toBe(false);
+    expect(DEALER_ONLY_PDF_VISIBILITY.autoRecordsEquipment).toBe(true);
+  });
+
   it("hides payment fields by default for B2B partner VIN orders", () => {
     const vis = defaultPdfVisibilityForOrder({
       checkoutLine: "business",

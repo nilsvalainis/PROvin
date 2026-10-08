@@ -648,6 +648,7 @@ export function buildOemDealerDocumentHtml(args: {
   autoRecords: AutoRecordsBlockState;
   /** Live OneAuto block (before fold). After fold, payloads are read from autoRecords.oneautoIngest. */
   oneauto?: OneautoBlockState | null;
+  includeEquipment?: boolean;
 }): string {
   const makeModel = (args.makeModel ?? "").trim();
   const bundle = getAutoRecordsOutvinBundle(args.autoRecords, args.vin ?? "");
@@ -707,7 +708,8 @@ export function buildOemDealerDocumentHtml(args: {
   const vehicleHeading = vin || "Vehicle";
   const vehicleBlock = section(vehicleHeading, vehicleSpecsHtml(specRows));
   const serviceBlock = section("Service history", serviceBody);
-  const equipmentBlock = section("Equipment", equipmentGrid(equipmentDeduped));
+  const equipmentBlock =
+    args.includeEquipment === false ? "" : section("Equipment", equipmentGrid(equipmentDeduped));
 
   const hasBody = Boolean(vehicleBlock || serviceBlock || equipmentBlock);
   // Fixed order: vehicle → service → equipment (equipment last).
