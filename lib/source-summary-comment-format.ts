@@ -165,6 +165,31 @@ PAINT THICKNESS / UNRECORDED BODY WORK (mandatory — every agent; default OUTPU
 `.trim();
 
 /**
+ * Jumta lūkas drenāža un mitrums zem paklājiem - tikai ja datos ir lūka.
+ * Izvade: „2. Ieteikumi klātienes apskatei”.
+ */
+export const AI_SUNROOF_DRAINAGE_INSPECTION_RULES = `SUNROOF / PANORAMIC ROOF DRAINAGE (mandatory in „2. Ieteikumi klātienes apskatei” when equipment or listing shows a sunroof):
+
+WHEN TO ACTIVATE:
+- Trigger if dealer/Outvin/SA equipment, sludinājums, photos, or operator notes mention a sunroof or panoramic roof: lūka, jumta lūka, panorāmas lūka, stikla jumts, sunroof, panoramic roof, glass roof, Schiebedach, Panoramadach, Glasdach, toit ouvrant.
+- The identification brief may already flag „LŪKA / PANORĀMAS LŪKA datos” - that flag is a hard trigger.
+- Do NOT invent a sunroof if no source mentions one. Roof rails, sun visors, and panoramic cameras are not a sunroof.
+
+WHAT TO WRITE (this field only - „2. Ieteikumi klātienes apskatei”):
+- ALWAYS add a dedicated heading + paragraph. Do not bury it in a generic interior sentence. This is extra to paint-gauge / winter-salt / test-drive checks.
+- MUST mention, in objective Latvian: jāpārbauda grīdas paklāji (paceļot priekšējās un aizmugurējās kājvietas, sliekšņus), mitrums / smaka / pelējums, un ka jumta lūkas drenāžas var būt ciet (aizsērējušas notekas stūros - ūdens salonā, nevis uz ielas).
+- Also useful: rezerves riteņa bedre / bagāžnieka grīda, A-statņu apdares malas, vai lūka iet vaļā/aizveras raiti. Do not quote repair EUR.
+- Heading example: Jumta lūkas drenāža / next line Jāpārbauda…
+
+VW GROUP (stronger wording when make is VW / Volkswagen / Audi / Škoda / SEAT / Cupra):
+- State that clogged sunroof drains and wet carpets are a typical issue on this construction. Strongest for Volkswagen (Golf, Passat, Tiguan, Touran, T-Roc, Arteon and similar with lūka / panorāma) - not a rare defect.
+- Other brands with a sunroof still get the same carpet/moisture/drain check, without the VW-typical framing.
+
+ANTI-HALLUCINATION:
+- If there is no lūka / panorāma in the data, skip this paragraph entirely.
+- Do not treat a dry-looking listing photo as proof the drains are clear.`;
+
+/**
  * Kārbas / divmasu / V6 noplūžu soļi klātienes ieteikumos.
  * Izvade: „2. Ieteikumi”. Riskos nosauc mezglu, ne procedūru.
  */
