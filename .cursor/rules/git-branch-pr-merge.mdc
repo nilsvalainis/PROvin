@@ -1,0 +1,21 @@
+---
+description: Jauns zars no origin/main, squash-merge uz main, Vercel production, releja piezīme.
+alwaysApply: true
+---
+
+# Git zari, PR un Vercel
+
+- **Katrs darbs** = jauns zars no `origin/main`. Nekad nepušot zarā, kura PR jau sapludināts (commits paliek ārpus `main`).
+- Neturpināt darbu uz `feat/...`, ja tā PR ir MERGED. `git fetch origin` + `git checkout -B feat/<darbs> origin/main`.
+- Ja kļūdaini iepušots sapludinātā zarā: cherry-pick uz jaunu zaru no `origin/main`, nevis jauns push uz veco zaru.
+
+Kad testi un `tsc` ir zaļi:
+
+1. `git push -u origin HEAD`
+2. Atver PR uz `main` (`gh pr create --base main`)
+3. Pats squash-sapludini: `gh pr merge <nr> --squash --delete-branch`
+4. Pārbaudi, ka **Vercel production** deploy ir success (GitHub checks / Vercel), ne tikai preview.
+
+Ja mainīts `relay/` vai `provin-listings`: atskaites **beigās** raksti tieši `VAJAG RELEJA DEPLOY` (to izdara Grok Bot). Citādi šo rindu NERAKSTI.
+
+Atskaitē **vienmēr**: PR nr., sapludinātais commit (squash SHA uz `main`), Vercel production statuss.
