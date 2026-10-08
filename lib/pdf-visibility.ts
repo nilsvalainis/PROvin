@@ -45,6 +45,8 @@ export type PdfVisibilitySettings = {
   incidentsSummary: boolean;
   /** Negadījuma fotogrāfijas PDF. */
   incidentPhotos: boolean;
+  /** OFICIĀLĀ DĪLERA DATI: eļļas maiņas intervālu tabula un komentārs. Noklusējums: rādīt. */
+  autoRecordsOilInterval: boolean;
 };
 
 const IRISS_SUBSECTIONS_ON = {
@@ -94,6 +96,7 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   mileageComment: false,
   incidentsSummary: false,
   incidentPhotos: false,
+  autoRecordsOilInterval: true,
 };
 
 /** Tikai ASV vēsture - atsevišķs produkts / PROVIN BUSINESS US atskaite. */
@@ -128,6 +131,7 @@ export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   mileageComment: true,
   incidentsSummary: true,
   incidentPhotos: true,
+  autoRecordsOilInterval: true,
 };
 
 /**
@@ -162,6 +166,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   sludinajums: true,
   iriss: true,
   ...IRISS_SUBSECTIONS_ON,
+  autoRecordsOilInterval: true,
 };
 
 export function isMiniPdfVisibilityOrder(args: {
@@ -236,6 +241,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   sludinajums: true,
   iriss: true,
   ...IRISS_SUBSECTIONS_ON,
+  autoRecordsOilInterval: true,
 };
 
 function isBool(v: unknown): v is boolean {
@@ -285,6 +291,9 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     mileageComment: isBool(o.mileageComment) ? o.mileageComment : d.mileageComment,
     incidentsSummary: isBool(o.incidentsSummary) ? o.incidentsSummary : d.incidentsSummary,
     incidentPhotos: isBool(o.incidentPhotos) ? o.incidentPhotos : d.incidentPhotos,
+    autoRecordsOilInterval: isBool(o.autoRecordsOilInterval)
+      ? o.autoRecordsOilInterval
+      : d.autoRecordsOilInterval,
   };
 }
 
