@@ -220,12 +220,10 @@ function parseRowMs(date: string): number {
 export function collectEngineOilChangeRows(
   rows: readonly AutoRecordsServiceWorkRow[],
 ): AutoRecordsServiceWorkRow[] {
-  const visits = mergeAutoRecordsServiceWorksByOdometer(
-    (rows ?? [])
-      .map(normalizeAutoRecordsServiceWorkRow)
-      .filter(autoRecordsServiceWorkRowIsPrintable),
-  );
-  const oil = visits.filter((r) => isEngineOilChangeWork(r.works));
+  const oilRaw = (rows ?? [])
+    .map(normalizeAutoRecordsServiceWorkRow)
+    .filter((r) => autoRecordsServiceWorkRowIsPrintable(r) && isEngineOilChangeWork(r.works));
+  const oil = mergeAutoRecordsServiceWorksByOdometer(oilRaw);
   const sorted = [...oil].sort((a, b) => {
     const ta = parseRowMs(a.date);
     const tb = parseRowMs(b.date);

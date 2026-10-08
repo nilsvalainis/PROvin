@@ -1797,6 +1797,78 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("29 800 km, 23");
   });
 
+  it("counts Dzinēja eļļa from dealer works and original OneAuto timeline", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        { date: "31.03.2026", odometer: "214259", location: "Forchheim", works: "Serviss" },
+        { date: "27.03.2026", odometer: "214257", location: "Forchheim", works: "Dzinēja eļļa." },
+        { date: "16.10.2023", odometer: "54338", location: "Forchheim", works: "Motoreļļa 0W-30 1000ml" },
+      ],
+      oneautoIngest: {
+        ...createDefaultSourceBlocks().auto_records.oneautoIngest,
+        serviceTimelineOriginal: [
+          {
+            date: "26.05.2023",
+            odometer: "26335",
+            place: "H. Wormser",
+            works: "Engine oil.\nMicrofilter",
+          },
+        ],
+      },
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain(">3</b><span>fiksētas maiņas");
+    expect(doc).toContain("26.05.2023");
+    expect(doc).toContain("27.03.2026");
+    expect(doc).toContain("16.10.2023");
+  });
+
+  it("hides Auto Records oil-interval PDF when the operator turns the section off", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        {
+          date: "03.04.2016",
+          odometer: "31400",
+          location: "BMW Bonn",
+          works: "Eļļas maiņa",
+        },
+        {
+          date: "12.03.2018",
+          odometer: "61200",
+          location: "BMW Bonn",
+          works: "Regulārā apkope: eļļas maiņa",
+        },
+      ],
+      oilChangeIntervalNotes: "Ražotāja intervāls: 15 000 km / 12 mēn. Fiksētas 2 maiņas.",
+      comments: "Dīlera komentārs paliek PDF.",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true, autoRecordsOilInterval: false }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).not.toContain('<table class="pdf-oil-int__table"');
+    expect(doc).not.toContain("fiksētas maiņas");
+    expect(doc).not.toContain("Ražotāja intervāls: 15 000 km / 12 mēn");
+    expect(doc).toContain("Dīlera komentārs paliek PDF.");
+  });
+
   it("renders Auto Records service works table in client PDF", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,
