@@ -48,6 +48,7 @@ type Sortable = Pick<
   | "title"
   | "manufacturer"
   | "year"
+  | "firstRegistration"
   | "mileageKm"
   | "firstSeenAt"
   | "auctionEndAt"
@@ -71,8 +72,22 @@ export function listingSortPrice(v: Pick<Sortable, "priceCurrent" | "priceStart"
   return null;
 }
 
-export function listingYear(v: Pick<Sortable, "year">): number | null {
-  const y = Number.parseInt(v.year, 10);
+/** Gads no `year` vai pirmās reģistrācijas. Tukšs, ja nav (19|20)xx. */
+export function listingYearDigits(v: { year?: string; firstRegistration?: string }): string {
+  const fromYear = String(v.year ?? "").match(/(?:19|20)\d{2}/);
+  if (fromYear) return fromYear[0];
+  const fromReg = String(v.firstRegistration ?? "").match(/(?:19|20)\d{2}/);
+  return fromReg?.[0] ?? "";
+}
+
+export function listingYearLabel(v: { year?: string; firstRegistration?: string }): string {
+  return listingYearDigits(v) || "gads ?";
+}
+
+export function listingYear(v: Pick<Sortable, "year" | "firstRegistration">): number | null {
+  const digits = listingYearDigits(v);
+  if (!digits) return null;
+  const y = Number.parseInt(digits, 10);
   return Number.isFinite(y) ? y : null;
 }
 

@@ -8,7 +8,9 @@
 
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
 import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize";
+import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
+import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { irissListingVehicleId } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceStatus } from "@/lib/iriss-listings-types";
@@ -111,17 +113,27 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
   if (!isObj(item)) return null;
   const externalId = str(item.externalId);
   if (!externalId) return null;
+  const firstRegistration = str(item.firstRegistration);
+  const year = str(item.year) || listingYearDigits({ year: "", firstRegistration });
+  const stockNumber = str(item.stockNumber);
+  const auctionId = str(item.auctionId);
   return {
     id: irissListingVehicleId(platform, externalId),
     platform,
     externalId,
-    detailUrl: str(item.detailUrl),
+    detailUrl: resolveListingDetailUrl({
+      platform,
+      detailUrl: str(item.detailUrl),
+      stockNumber,
+      auctionId,
+      externalId,
+    }),
     orderId,
     orderBrandModel,
     title: str(item.title),
     manufacturer: str(item.manufacturer),
-    year: str(item.year),
-    firstRegistration: str(item.firstRegistration),
+    year,
+    firstRegistration,
     mileageKm: numOrNull(item.mileageKm),
     fuel: str(item.fuel),
     transmission: str(item.transmission),
@@ -137,14 +149,14 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     bidCount: numOrNull(item.bidCount),
     auctionType: str(item.auctionType),
     damageRaw: str(item.damageRaw),
-    stockNumber: str(item.stockNumber),
+    stockNumber,
     currency: str(item.currency) || "EUR",
     priceStart: numOrNull(item.priceStart),
     priceMinimal: numOrNull(item.priceMinimal),
     priceCurrent: numOrNull(item.priceCurrent),
     priceBuyNow: numOrNull(item.priceBuyNow),
     vatNote: str(item.vatNote),
-    auctionId: str(item.auctionId),
+    auctionId,
     auctionStartAt: str(item.auctionStartAt),
     auctionEndAt: str(item.auctionEndAt),
     auctionStage: str(item.auctionStage),
