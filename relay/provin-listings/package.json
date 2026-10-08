@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check lib/browser.mjs && node --check lib/state.mjs && node --check lib/login.mjs && node --check lib/policy.mjs && node --check lib/items.mjs && node --check lib/platforms/openlane.mjs && node --check lib/platforms/auto1.mjs && node --check lib/platforms/autobid.mjs && node --test lib/policy.test.mjs"
+    "check": "node --check server.mjs && node --check lib/browser.mjs && node --check lib/state.mjs && node --check lib/login.mjs && node --check lib/policy.mjs && node --check lib/items.mjs && node --check lib/platforms/openlane.mjs && node --check lib/platforms/auto1.mjs && node --check lib/platforms/autobid.mjs && node --test lib/policy.test.mjs lib/platforms/auto1.test.mjs"
   },
   "dependencies": {
     "playwright": "^1.59.1"

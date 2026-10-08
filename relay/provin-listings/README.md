@@ -108,9 +108,9 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
   HTML netiek parsēts. `priceMinimal` = `RequestedSalesPrice` (tikai ja `CanBeShown`), `priceCurrent` = `CurrentPrice`,
   `priceBuyNow` = `BuyNowPrice`. Bez login daļa cenu nav redzama; `OPENLANE_ALLOW_PUBLIC_FALLBACK=1` tomēr lasa.
   Auto-login ir findcar popups (`#loginButton2`, `input[name=Email]` ar username, `#loginButton4`, tad parole). `/en/login` ir 404. Sekme: `ChassisNumber` nav null.
-- **Auto1.** Bez auto-login (sesija ilga). Pārtver SPA JSON atbildes no auto1 domēniem un izvelk auto masīvus pēc lauku
-  nosaukumiem. Pamanītie API URL nonāk `health.platforms.auto1.discoveredApis`; pēc pirmās ielogošanās precizē
-  `AUTO1_LIST_API_RE` un `raw` apskati, ja mapējums nepilnīgs.
+- **Auto1.** Bez auto-login (sesija ilga). Saraksts ir `GET /v1/car-search/cars/search/<searchId>` (`hits[]`).
+  Marka ir `manufacturerName` (ne kods `manufacturer`). Cenas ir centos. Datumi ir ms. Detaļu saite un kartītes
+  identifikators ir `stockNumber` (`/car/BW03512`), jo VIN sarakstā nav. `salesVatType` (1053/1054) netiek tulkots.
 - **Autobid.** Tas pats `__NUXT_DATA__` ceļš, ko Vercel lasa publiski, bet ar ielogotu profilu. Relejs atdod
   `raw.nuxtPages[]` (viens JSON teksts uz lapu, `currentPage=N`), Vercel parsē ar esošo parsētāju. `items[]` tukšs.
 
