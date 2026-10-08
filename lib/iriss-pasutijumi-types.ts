@@ -210,6 +210,11 @@ export type IrissPasutijumsListRow = {
   dealServiceStartDeposit: boolean;
   dealEkki: boolean;
   equipmentRequired: string;
+  /**
+   * Gatava etiķete sarakstam (`120 kW`), rēķināta no dzinēja/aprīkojuma teksta.
+   * Tukšs, ja jauda nav nolasāma.
+   */
+  powerKwLabel: string;
   listingLinkMobile: string;
   listingLinkAutobid: string;
   listingLinkOpenline: string;

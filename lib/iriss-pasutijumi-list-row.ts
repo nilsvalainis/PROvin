@@ -1,3 +1,4 @@
+import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissPasutijumsListRow, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const DEAL_LIST_LABEL: Record<(typeof IRISS_DEAL_DETAIL_OPTIONS)[number]["key"], string> = {
@@ -39,6 +40,7 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     dealServiceStartDeposit: Boolean(rec.dealServiceStartDeposit),
     dealEkki: Boolean(rec.dealEkki),
     equipmentRequired: rec.equipmentRequired.trim(),
+    powerKwLabel: formatIrissOrderPowerKwLabel(rec),
     listingLinkMobile: rec.listingLinkMobile,
     listingLinkAutobid: rec.listingLinkAutobid,
     listingLinkOpenline: rec.listingLinkOpenline,
@@ -68,6 +70,13 @@ export function formatIrissListSpecSummary(row: IrissPasutijumsListRow): string 
     if (row[opt.key as keyof IrissPasutijumsListRow]) parts.push(DEAL_LIST_LABEL[opt.key]);
   }
   return parts.join(" · ");
+}
+
+/** Saraksta rinda: saglabātā etiķete vai atkārtots parsējums no pieejamajiem laukiem. */
+export function irissListRowPowerKwLabel(row: Pick<IrissPasutijumsListRow, "engineType" | "equipmentRequired" | "brandModel"> & { powerKwLabel?: string }): string {
+  const stored = (row.powerKwLabel ?? "").trim();
+  if (stored) return stored;
+  return formatIrissOrderPowerKwLabel(row);
 }
 
 export function formatIrissClientName(row: Pick<IrissPasutijumsListRow, "clientFirstName" | "clientLastName">): string {
@@ -110,6 +119,7 @@ export function irissListRowMatchesQuery(row: IrissPasutijumsListRow, query: str
     row.clientFirstName,
     row.clientLastName,
     formatIrissListSpecSummary(row),
+    irissListRowPowerKwLabel(row),
     row.equipmentRequired ?? "",
   ]
     .join(" ")

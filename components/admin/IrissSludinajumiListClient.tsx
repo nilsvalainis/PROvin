@@ -41,6 +41,7 @@ import {
   type IrissListPrefs,
   type IrissListTab,
 } from "@/lib/iriss-listings-operator-prefs";
+import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
 import {
   IRISS_LISTING_PLATFORMS,
@@ -852,7 +853,8 @@ function VehicleCard({
   const cd = countdown(v.auctionEndAt, nowMs);
   const yearLabel = listingYearLabel(v);
   const sourceHref = resolveListingDetailUrl(v);
-  const specs = [yearLabel, fmtKm(v.mileageKm), v.fuel, v.transmission, v.powerKw ? `${v.powerKw} kW` : "", v.location].filter(Boolean);
+  const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
+  const specs = [yearLabel, fmtKm(v.mileageKm), v.fuel, v.transmission, powerKwLabel, v.location].filter(Boolean);
   const left = real && budget != null ? budget - real.total : null;
   const border =
     gone ? "border-[#E5E7EB] opacity-70" : fav ? "border-amber-200" : fresh ? "border-emerald-200" : changes.length > 0 ? "border-sky-200" : "border-[#E5E7EB]";
@@ -864,7 +866,7 @@ function VehicleCard({
     onPrefs({ ...prefs, [list]: next });
   }
 
-  const mobileSpecs = [yearLabel, fmtKm(v.mileageKm), v.transmission].filter(Boolean);
+  const mobileSpecs = [yearLabel, fmtKm(v.mileageKm), v.transmission, powerKwLabel].filter(Boolean);
 
   return (
     <article
@@ -943,6 +945,9 @@ function VehicleCard({
               {v.title || v.orderBrandModels[0] || "-"}
             </div>
             <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500 sm:text-[12px]">{yearLabel}</span>
+            {powerKwLabel ? (
+              <span className="shrink-0 text-[11px] font-semibold tabular-nums text-[var(--color-apple-text)] sm:text-[12px]">{powerKwLabel}</span>
+            ) : null}
           </div>
           <p className="truncate text-[11px] text-[var(--color-provin-muted)] sm:text-[12px] sm:hidden">{mobileSpecs.join(" · ")}</p>
           <p className="hidden truncate text-[12px] text-[var(--color-provin-muted)] sm:block">{specs.join(" · ")}</p>

@@ -37,6 +37,7 @@ export function IrissListingOrderChips({
             {" "}
             {o.brandModel || "marka ?"}
             {o.productionYears ? ` · ${o.productionYears}` : ""}
+            {o.powerKwLabel ? ` · ${o.powerKwLabel}` : ""}
             {" · "}
             {fmtBudget(o.budget, o.budgetRaw)}
           </span>
