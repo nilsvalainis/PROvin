@@ -88,6 +88,7 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "paint_gauge_incomplete",
   "source_field_expansion",
   "planning_leak",
+  "sentence_padding",
 ]);
 
 /** Lētais Gemini Flash piegājiens. Nav vērts atkārtot ar Opus/Sonnet. */

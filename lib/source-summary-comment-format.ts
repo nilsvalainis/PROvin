@@ -75,7 +75,7 @@ export const AI_NO_ESTIMATED_REPAIR_EUR_RULES = `NO ESTIMATED REPAIR EUR (mandat
 - Do NOT write approximate repair, parts, labour, oil-change, or service EUR bands. Forbidden examples: „orientējoši 400-800 €”, „remonta izmaksas 250-500 €”, „vietējais neatkarīgais serviss … €”, pack/forum price ranges.
 - Aggregate packs, historical audits, and web search may contain EUR for YOUR private calibration ONLY (severity/probability ranking) — those numbers are INTERNAL, never client-visible. NEVER copy those numbers into client-facing text under any field, including „1. Tehnisko risku analīze”, inspection, and „3. Kopsavilkums” where a runtime safety filter also strips any surviving €/EUR figure before the client sees it.
 - Allowed EUR only as recorded facts in THIS order: insurance / zaudējumu apjoms amounts in incidents or the source that printed them; listing / auction / market prices only when ACTIVE FIELD is „Cenas vērtējums” or Tirgus.
-- Everywhere else describe cost qualitatively: „dārgāks mezgls”, „nesamērīgi dārgs ekstraprīkojums”, „ierasta uzturēšanas izmaksa” — no € / EUR digits, no eiro sums. Never near-term-investment or financially-most-significant padding.
+- Everywhere else describe cost qualitatively by naming the part („dārgāks mezgls”, „nesamērīgi dārgs ekstraprīkojums”, „jāpārbauda klātienē”) - no € / EUR digits, no eiro sums. Do not bolt a cost or risk label onto the fact. Never near-term-investment or financially-most-significant padding.
 - „1. Tehnisko risku analīze” and inspection comments: ZERO estimated EUR. Rank by probability × impact in words, not in euros.
 - Operator notes OVERRIDE only if „Papildu piezīmes AI” explicitly asks for sums.`;
 
@@ -186,7 +186,8 @@ export const AI_OIL_CHANGE_INTERVAL_RULES = `OIL CHANGE INTERVALS (mandatory —
 - In the oil field the FIRST sentence must be: „Ražotāja intervāls: 15 000 km / 12 mēn.” (or this car’s numbers, plus code in parentheses; variable: „10 000 līdz 25 000 km”). PDF colours are computed from that line: green if the dealer-to-dealer step is at or under OEM (variable: under the upper bound), red if the recorded dealer step is longer in km or months. Red is not a claim the oil was skipped: independent service may sit between dealer visits. Grey is only a data gap. Do not write the words zaļš/sarkans in the comment; the table paints them. Never claim an interval was exceeded unless the dealer record itself proves a single oil fill ran that long.
 - City / short-trip commentary (practical ~10 000 km ceiling, highway 15 000-20 000 km) stays in the PARAGRAPHS. It does not replace the manufacturer figure and must not be used as the colour OEM.
 - Use ALL obtained data: dealer service-works table, AutoDNA / CarVertical / RAW service narratives, mileage timeline, driving profile / motorstundas (city vs highway), and OEM interval from context or aggregate packs. Do not invent oil changes that are not in the data.
-- A large gap between official-dealer oil rows is a FACT about the digital record, not proof the oil was not changed. Independent / non-dealer service is common. Write: the official record has a gap; the work may have been done elsewhere; the buyer should ask the seller for invoices or stamps. Do NOT call that gap a purchase risk by itself.
+- ENGINE-OIL ROWS (oil field + the PDF table): count a dealer visit as a documented engine-oil change when the works name engine oil, even without the word „maiņa”: „dzinēja eļļa”, „motoreļļa”, MOTORÖL / Motoröl / motoroil / engine oil / oil change / Ölwechsel, an engine viscosity alone (0W-20, 5W-30, 0W30, 5W40), or the engine oil filter kit. Do NOT count gearbox / Haldex / axle / ATF / 75W-90 / Dexron, brake fluid, washer fluid, or a visit that only says „serviss”, „apkope”, „service”, „inspektion”. Those generic labels may hide an oil change at some makers; they are not a numbered oil event and they are not proof the oil was skipped.
+- A large gap between official-dealer oil rows is a FACT about the digital record, not proof the oil was not changed. Independent / non-dealer service is common. Generic dealer visits without an oil product name are the same kind of unknown. Write: the official record has a gap; the work may have been done elsewhere or recorded only as a service visit; the buyer should ask the seller for invoices or stamps. Do NOT call that gap a purchase risk by itself.
 - SERVICE GAP THRESHOLD (oil field + tech risks / dealer comments when relevant): if the official record shows no service for more than **30 000 km** OR more than **24 months**, do NOT invent that service was skipped. Assume the work may have been done outside the official dealer and never entered this database. Say that plainly; the buyer must verify in person and ask the seller for documents („dokumenti”, never the documentary-proofs calque).
 - If oil-change records are thin or absent: say the interval cannot be calculated and what is missing — never invent a schedule.
 - Other ACTIVE FIELDS (tech risks, mileage, inspection, summary, per-source comments, incidents): at most ONE sentence if oil policy is a purchase risk. Do NOT reprint the interval table or re-run the math. Anti-repetition does not delete this one-sentence risk when it matters.
@@ -214,13 +215,16 @@ export const AI_THIS_CAR_ONLY_LOGIC_RULES = `THIS CAR ONLY (mandatory — every 
 
 /** Sarunvalodas termini — labie vārdi; sliktie ir BANNED VOCABULARY. */
 export const AI_PLAIN_LANGUAGE_TERMS = `PLAIN LATVIAN WORKSHOP TERMS (mandatory — every agent, especially Flash):
-Write parts the way a Latvian workshop and a buyer actually say them, not as calqued textbook compounds. Preferred: divmasu spararats, ieplūdes kolektors, hidrotransformators, turbīna, sadales ķēde, zobsiksna, iesmidzinātājs (sprausla), eļļas vāks, EGR, DPF, savienojumu / šļūteņu stāvoklis. A flex joint or hose is stāvoklis, never a translated integrity word. Prefer „dokumenti” over the documentary-proofs calque. If a term sounds translated, replace it with the short workshop word. Banned calques are listed in BANNED VOCABULARY and must never appear.`;
+Write parts the way a Latvian workshop and a buyer actually say them, not as calqued textbook compounds or textbook definitions. Preferred: divmasu spararats, ieplūdes kolektors, hidrotransformators, turbīna, sadales ķēde, zobsiksna, iesmidzinātājs (sprausla), eļļas vāks, EGR, DPF, AdBlue, savienojumu / šļūteņu stāvoklis. A flex joint or hose is stāvoklis, never a translated integrity word. Prefer „dokumenti” over the documentary-proofs calque. If a term sounds translated or defines a simple part in a long clause, replace it with the short workshop word. Banned calques are listed in BANNED VOCABULARY and must never appear.`;
 
 /**
  * Īsi fakti, bez AI-šablona paplašinājumiem (attiecas uz visu klientu tekstu, ne tikai rūsu).
  */
 export const AI_PLAIN_FACT_PROSE_RULES = `PLAIN FACT PROSE (mandatory — every agent, every field):
-- Prefer short factual Latvian. After the fact, stop. Do not pad with „rada paaugstinātu risku”, „īpaša uzmanība jāpievērš…”, „lai gan X…”, „uzrada-divejadu-ainu”, „pozitiva-puse-ir…”, „tehniski veiksmīgs agregātu salikums”.
+- Prefer short factual Latvian. After the fact, STOP. Do not pad with „rada paaugstinātu risku”, „īpaša uzmanība jāpievērš…”, „lai gan X…”, „uzrada-divejadu-ainu”, „pozitiva-puse-ir…”, „tehniski veiksmīgs agregātu salikums”.
+- Do not bolt a second clause that only labels or moralizes the fact (risk, cost, everyday-visibility, „this is the main purchase issue”). The fact is enough. This is a class of tails, not a phrase list: any „, tāpēc šis ir…”, „, kas ir … izmaksa”, „, kuras nav viegli…” style appendix is filler.
+- Workshop word, not a textbook definition of the same part in the same sentence. Name zobsiksna, sadales ķēde, AdBlue the way a workshop says them.
+- A recommendation is „ieteicams …”. Never appeal to unnamed specialists / experts / unanimous advice.
 - Ask the seller for „dokumenti”, never the documentary-proofs calque.
 - Open with what the data shows. Never open with a marketing dualism (good side / bad side), a dual-history verdict, on-one-hand / on-the-other framing, or a brand praise paragraph before the facts.
 - Do not invent severity or atmosphere around a clean fact.`;
@@ -230,7 +234,7 @@ export const AI_PLAIN_FACT_PROSE_RULES = `PLAIN FACT PROSE (mandatory — every 
  */
 export const AI_NO_AI_COST_FRAMING_RULES = `NO AI COST FRAMING (mandatory — every agent):
 - Do NOT write near-term-investment/risk/bill padding, financially-most-significant framing, future-risk padding, or the Kas-NAV-dargs-risks template opener.
-- State the component and what THIS car’s data shows. If a famous fault or expensive option is not on THIS car, omit it. Do not write a denial paragraph (uz-so-motoru-neattiecas, saraksta-nav-ekstraprikojums).
+- State the component and what THIS car’s data shows, then stop. Do not append a risk/cost label after the fact. If a famous fault or expensive option is not on THIS car, omit it. Do not write a denial paragraph (uz-so-motoru-neattiecas, saraksta-nav-ekstraprikojums).
 - No EUR repair bands. Canonical: AI_NO_ESTIMATED_REPAIR_EUR_RULES.`;
 
 /**
@@ -268,7 +272,7 @@ export const AI_DEALER_COMMENT_CONSTRUCTION_RULES = `DĪLERA / AUTO RECORDS „K
   1) Agregātu / aprīkojuma identifikācija: what THIS source uniquely confirms about the exact car (engine code, gearbox code, factory equipment, color code, type/fleet code) — the identification facts other sources usually cannot give.
   2) Servisa / remontu vēsture: concrete dated service or repair events (date + km + work). Never compute or list oil-change km/month gaps here; that math lives only in „Eļļas maiņas intervāli” (see AI_OIL_CHANGE_INTERVAL_RULES) — mention THAT service happened, not the gap arithmetic.
   3) Nobraukuma / datu saskaņa: one short cross-check sentence on whether the dealer's km points line up with CSDD/AutoDNA/CarVertical. This is a one-line confirmation, not a mileage-forensics essay — that belongs to the mileage comment / summary.
-- A 4th role, „Eļļas maiņas intervāli”, is used ONLY when the calling instructions explicitly ask this field to fold in the oil-interval math (automatic post-ingest generation replacing the separate field). Do not add it otherwise; outside that explicit instruction the OIL-INTERVAL EXCLUSION rule below still applies.
+- Never add a 4th role „Eļļas maiņas intervāli” in this field. That math is a separate admin/PDF field generated on its own (post-payment and ✨). OIL-INTERVAL EXCLUSION below still applies.
 - Each role gets its own „<strong>Virsraksts</strong><br>” heading (3-6 words, no trailing period) followed by the paragraph. Use the SAME heading-then-paragraph shape for every role present; never leave one role as a bare paragraph with only inline **bold** while the others use headings.
 - HARD LINE BREAKS (mandatory): each role heading MUST sit on its own line, then a blank line, then that role's paragraph. NEVER glue the next heading onto the previous sentence (forbidden: "tiltā. Servisa un remontu vēsture Digitālajā"). If you emit HTML, put "<br /><br />" between roles. If you emit plain text, emit heading, blank line, paragraph, blank line, next heading.
 - LENGTH DISCIPLINE: no fixed character or role-count ceiling for this field — explain every distinct fact-cluster the dealer data actually contains. A long, valuable service/repair history (many dated events) deserves a fully explained paragraph, not a compressed one-liner; split into multiple sentences or, if genuinely distinct, an extra role rather than dropping facts. If the source data is thin, write less — do not stretch a one-fact source into padded paragraphs just to look complete. A short, honest fact is always better than an invented sentence.
@@ -382,6 +386,14 @@ export function stripUnauthorizedEuroAmounts(text: string): string {
     .join("\n\n");
 }
 
+function replaceKeepingCapital(text: string, re: RegExp, replacement: string): string {
+  return text.replace(re, (match) =>
+    /^[A-ZĀČĒĢĪĶĻŅŠŪŽ]/.test(match)
+      ? replacement.charAt(0)!.toUpperCase() + replacement.slice(1)
+      : replacement,
+  );
+}
+
 export function applyProvinReportCopyVocabulary(text: string): string {
   let out = applyProvinHumanDashes(text);
   const replacements: Array<[RegExp, string]> = [
@@ -414,9 +426,75 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/uzrāda\s+divējād\w*\s+ain\w*/gi, "datos redzama šāda aina"],
     [/Pozitīvā\s+puse\s+ir/gi, "Datos"],
     [/pozitīvā\s+puse\s+ir/gi, "datos"],
+    [/selektīv(?:ās|ā|o)\s+katalītisk(?:ās|ā|o)\s+redukcij\w*(?:\s*\(\s*SCR\s*\))?(?:\s+sistēm\w*)?/gi, "AdBlue"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
+  out = replaceKeepingCapital(
+    out,
+    /gāzu\s+sadales\s+mehānismu\s+piedzen\s+galvenā\s+ķēde/gi,
+    "sadales ķēde",
+  );
+  out = replaceKeepingCapital(
+    out,
+    /gāzu\s+sadales\s+mehānismu\s+piedzen\s+galvenā(?:\s+(?:zob)?siksna)?/gi,
+    "zobsiksna",
+  );
+  out = replaceKeepingCapital(
+    out,
+    /(?:speciālisti|eksperti)\s+(?:viennozīmīgi\s+)?iesaka|viennozīmīgi\s+iesaka/gi,
+    "ieteicams",
+  );
   return out;
+}
+
+/**
+ * Lieki teikuma astes pēc fakta: riska/izmaksas/redzamības birka,
+ * ne atsevišķs fakts. Princips, ne slēgts frāžu saraksts.
+ */
+const AI_SENTENCE_PADDING_TAIL_RES: readonly RegExp[] = [
+  /,\s*(?:tāpēc|tādēļ)\s+(?:šis|tas)\s+ir\s+(?:galvenais\s+)?(?:finansiāl\w*(?:\s+un\s+tehnisk\w*)?\s+)?(?:pirkuma\s+)?risks/gi,
+  /,\s*(?:tāpēc|tādēļ)\s+(?:šis|tas)\s+(?:kļūst\s+par\s+)?galveno\s+(?:finansiālo\s+un\s+tehnisko\s+)?pirkuma\s+risku/gi,
+  /,\s*(?:kas|kuras|kuri)\s+ir\s+(?:ierasta\s+)?uzturēšanas\s+izmaksa/gi,
+  /,\s*(?:kas|kuras|kuri)\s+nav\s+viegli\s+(?:pamanām|ievērojam|konstatējam)\w*(?:\s+ikdienā)?/gi,
+  /,\s*(?:kas|kuras|kuri)\s+ir\s+(?:galvenais\s+)?(?:finansiāl\w*|tehnisk\w*|pirkuma)\s+risks/gi,
+  /,\s*kas\s+(?:prasa\s+detalizētu\s+izvērtējumu|ir\s+svarīgi\s+noskaidrot)/gi,
+  /(?:,\s*)?(?:šis|tas)\s+(?:mezgls\s+)?ir\s+(?:galvenais\s+)?(?:finansiāl\w*(?:\s+un\s+tehnisk\w*)?\s+)?pirkuma\s+risks/gi,
+];
+
+const AI_SENTENCE_PADDING_DETECT_RE =
+  /,\s*(?:tāpēc|tādēļ)\s+(?:šis|tas)\s+ir\s+(?:galvenais\s+)?(?:finansiāl\w*(?:\s+un\s+tehnisk\w*)?\s+)?(?:pirkuma\s+)?risks|(?:,\s*)?(?:šis|tas)\s+(?:mezgls\s+)?ir\s+(?:galvenais\s+)?(?:finansiāl\w*(?:\s+un\s+tehnisk\w*)?\s+)?pirkuma\s+risks|,\s*(?:kas|kuras|kuri)\s+ir\s+(?:ierasta\s+)?uzturēšanas\s+izmaksa|,\s*(?:kas|kuras|kuri)\s+nav\s+viegli\s+(?:pamanām|ievērojam|konstatējam)\w*|,\s*kas\s+(?:prasa\s+detalizētu\s+izvērtējumu|ir\s+svarīgi\s+noskaidrot)/i;
+
+const AI_SENTENCE_LABEL_ONLY_RE =
+  /^\s*(?:šis|tas)\s+ir\s+(?:galvenais\s+)?(?:finansiāl|tehnisk|pirkuma)/i;
+
+export function looksLikeAiSentencePadding(text: string): boolean {
+  return AI_SENTENCE_PADDING_DETECT_RE.test(text ?? "");
+}
+
+export function stripAiSentenceExpansions(text: string): string {
+  if (!text) return text;
+  let out = text;
+  for (const re of AI_SENTENCE_PADDING_TAIL_RES) {
+    out = out.replace(re, "");
+  }
+  out = out
+    .replace(/,\s*,/g, ",")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/,\s*\./g, ".")
+    .replace(/ {2,}/g, " ");
+  return out
+    .split(/\n\n+/)
+    .map((para) => {
+      const lines = para.split("\n").map((line) =>
+        splitIntoSentences(line)
+          .filter((s) => !AI_SENTENCE_LABEL_ONLY_RE.test(s.trim()))
+          .join("")
+          .trim(),
+      );
+      return lines.filter(Boolean).join("\n");
+    })
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function stripClientMarkdownMarkers(text: string): string {
@@ -578,7 +656,7 @@ function formatExpertParagraphs(t: string): string[] {
  * Nogriezts teksts pēc ģenerēšanas nozīmē, ka apmaksātais saturs tiek izmests.
  */
 export function normalizeProvinExpertAiComment(raw: string | undefined | null): string {
-  const t = applyProvinReportCopyVocabulary((raw ?? "").trim());
+  const t = stripAiSentenceExpansions(applyProvinReportCopyVocabulary((raw ?? "").trim()));
   if (!t) return t;
   return formatExpertParagraphs(t).join("\n\n");
 }
@@ -647,7 +725,10 @@ export function finalizeProvinExpertAiComment(raw: string | undefined | null): s
   const source = stripLeakedAiPlanningPreamble(raw ?? "");
   if (!source) return "";
   const normalized = normalizeProvinExpertAiComment(source);
-  return normalized.trim() || applyProvinReportCopyVocabulary(source);
+  return (
+    normalized.trim() ||
+    stripAiSentenceExpansions(applyProvinReportCopyVocabulary(source))
+  );
 }
 
 /**
@@ -779,7 +860,7 @@ export const AI_POWERTRAIN_IDENTIFICATION_RULES = `AGREGĀTU IDENTIFIKĀCIJA (ma
 export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCIJA (mandatory — katrs tehniskais risks jāvērtē pret ŠO auto posmu):
 - Vispirms nofiksē **aptuveno pašreizējo nobraukumu** (jaunākais ticamais odometra rādījums avotos vai sludinājumā) un **vidējo km/gadā**. Ja odometra dati ir pretrunīgi, strādā ar diapazonu un to nosauc — neizliecies, ka km ir precīzi zināmi.
 - Katru agregāta risku sadali pēc posma: (1) **jau iztērēts resurss** — darbi, kas šim agregātam tipiski notiek līdz šim km un vecumam, tāpēc tiem jābūt pierādītiem servisa vēsturē; (2) **tuvākais logs** — kas tipiski gaidāms nākamajos ~20 000–40 000 km vai 1–2 gados (tas ir pircēja reālais izdevums); (3) **tālāks resurss** — piemin īsi vai nepiemin vispār.
-- **Nepārspīlē:** risku, kas šim agregātam tipiski parādās, piemēram, pie 250 000 km, nedrīkst pasniegt kā aktuālu draudu pie 90 000 km — tad tā ir tikai perspektīvas piezīme. Nekrauj kopā visus teorētiski iespējamos bojājumus; **galvenais pirkuma risks var būt tikai 1–2** pozīcijas, pārējais ir ierasta uzturēšanas izmaksa vai kaut kas, ko vienkārši jāpārbauda klātienē (nav pirkuma šķērslis).
+- **Nepārspīlē:** risku, kas šim agregātam tipiski parādās, piemēram, pie 250 000 km, nedrīkst pasniegt kā aktuālu draudu pie 90 000 km - tad tā ir tikai perspektīvas piezīme. Nekrauj kopā visus teorētiski iespējamos bojājumus; aktuālie mezgli var būt **tikai 1–2** pozīcijas, pārējiem nosauc daļu un ko dati rāda, tad apstājies (nav pirkuma šķērslis). Bez birkas pēc fakta.
 - **Vecums nav tas pats, kas nobraukums:** gumijas, plastmasas, dzesēšanas sistēmas, zobsiksnas un šļūteņu resurss iet pēc laika — vecs auto ar mazu nobraukumu var būt sliktākā stāvoklī nekā jaunāks auto ar lielu šosejas nobraukumu. Sasaisti ar motorstundu / pilsētas–šosejas loģiku, kad dati to atļauj.
 - **Pierādījumi maina risku:** ja servisa vēsturē ir attiecīgais darbs (ķēde, divsajūga eļļa, zobsiksna, ūdens sūknis, iesmidzinātāji), risks krīt — pasaki, ka darbs datos jau fiksēts. Ierakstu trūkums nav pierādījums, ka darbs nav veikts — formulē kā **nepierādītu**, kas jānoskaidro pie pārdevēja.
 - Izmaksas vērtē **varbūtības × ietekmes** griezumā: pirmais nāk tas, kam ir gan reāla varbūtība šajā posmā, gan būtiska naudas ietekme. NERAKSTI orientējošas EUR joslas — tikai kvalitatīvi (dārgs / vidējs / pārbaudes punkts).
@@ -845,7 +926,7 @@ Paraugs B — zināms finansiāls bloķētājs pie vidēja nobraukuma:
 Sadales ķēde ir aizmugurē un iejaukšanās ir dārga; šajā posmā tas jau ir varbūtība × liela naudas ietekme - ne „perspektīva pie 400 tūkst.”. Servisā ķēdes darbs nepierādīts.
 
 Pārējais
-Turbo, DPF, kārba paliek ierasta uzturēšanas izmaksa, ne pirmais rēķins."
+Turbo, DPF un kārba šajā posmā paliek otrajā plānā."
 
 Paraugs C — paka šo konstrukciju nesedz:
 "Meklēšana šim kodam

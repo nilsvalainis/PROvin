@@ -141,6 +141,16 @@ describe("stripSummaryDualismOpener", () => {
   });
 });
 
+describe("sentence padding", () => {
+  it("flags a leftover risk-label tail after the fact", () => {
+    const issues = evaluateExpertCommentQuality(
+      "N47 ķēde atrodas aizmugurē, tāpēc šis ir galvenais finansiālais un tehniskais pirkuma risks.",
+      { field: "generic" },
+    );
+    expect(issues.some((i) => i.code === "sentence_padding")).toBe(true);
+  });
+});
+
 describe("planning leak", () => {
   it("flags an English Internal Analysis preamble", () => {
     const issues = evaluateExpertCommentQuality(

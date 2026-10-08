@@ -3,6 +3,10 @@
  * affects client-facing copy. Logged with every admin AI call.
  *
  * CHANGELOG:
+ * - 2026-10-08.1 - Klienta komentāri: pēc fakta apstājas. Bez teikuma astes
+ *   (riska/izmaksas/redzamības birka), bez mācību-grāmatas definīcijas,
+ *   „ieteicams” vietā speciālistu aicinājuma. Drošības tīkls
+ *   stripAiSentenceExpansions + sentence_padding self-correction.
  * - 2026-10-06.3 - Eļļas PDF: zaļš/sarkans pret OEM bez oranža; sarkans
  *   nav apgalvojums, ka eļļa nav mainīta (apkope varēja būt ārpus dīlera).
  *   Mainīgs intervāls: „X līdz Y km”. Pilsētas 10 000 km paliek komentārs.
@@ -171,4 +175,4 @@
  *   kopsavilkuma laukiem. VW 3.0 V6 TDI protokols papildināts (kW varianti,
  *   pārnesumkārbas, Quattro piedziņas komponentes).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-06.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-08.1";

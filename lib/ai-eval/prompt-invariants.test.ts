@@ -11,6 +11,7 @@ import {
   AI_MILEAGE_BAND_RISK_RULES,
   AI_NO_ESTIMATED_REPAIR_EUR_RULES,
   AI_OPERATOR_NOTES_EXECUTION_RULES,
+  AI_PLAIN_FACT_PROSE_RULES,
   AI_PLAIN_LANGUAGE_TERMS,
   AI_POWERTRAIN_IDENTIFICATION_RULES,
   AI_SOURCES_COMPARISON_OVERVIEW_RULES,
@@ -53,6 +54,16 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/NEVER "automobīlis"/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/HUMAN DASHES|ASCII hyphen/i);
     expect(PROVIN_REPORT_COPY_VOCABULARY).toMatch(/em dash/i);
+  });
+
+  it("plain fact prose forbids sentence tails and textbook padding", () => {
+    expect(AI_PLAIN_FACT_PROSE_RULES).toMatch(/After the fact, STOP/);
+    expect(AI_PLAIN_FACT_PROSE_RULES).toMatch(/workshop word/i);
+    expect(AI_PLAIN_FACT_PROSE_RULES).toMatch(/ieteicams/);
+    expect(AI_PLAIN_LANGUAGE_TERMS).toMatch(/AdBlue/);
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(/stripAiSentenceExpansions/);
+    expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/sentence_padding/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/sentence_padding/);
   });
 
   it("damage claim rules require contextual EUR interpretation", () => {

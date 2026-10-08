@@ -96,7 +96,7 @@ Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteiku
 - Šī paka ir **prior / vadlīnija**, ne fakts. PIRMS jebkuras pakas rindkopas: salīdzini ar ŠĪ auto **dzinēja kodu + kW + cm³ + gadu**. Ja paka un šī auto dati CONFLICTĒ (piem. paka saka „viens turbo / nav bloka plaisas”, bet šim auto ~158 kW / biturbo kods) — IGNORĒ neatbilstošo pakas daļu, **meklē** šo kodu/kW un raksti pēc pārbaudes. Nekad neapgalvo „šai konstrukcijai nav X”, kamēr kW/kods to neapstiprina.
 - Šī paka der TIKAI ja šī auto **dzinēja kods / tilpums / kW josla / kārba** sakrīt. Tā pati marka ar citu kodu = IGNORĒ šo paku un meklē šim kodam.
 - Klientam raksti **TIKAI aktuālos mezglus**. Citu kodu kaites NEMINI, pat lai tās noliegtu. Dārgo ekstraprīkojumu nosauc tikai ja tas ŠAJĀ auto datos ir.
-- Pārvērt riskus par **konkrētu spriedumu šim auto** (galvenais pirkuma risks / ierasta uzturēšanas izmaksa / tikai pārbaudāms klātienē).
+- Pārvērt riskus par **konkrētu spriedumu šim auto**. Iekšēji vari sarindot; izvadē nosauc mezglu un faktu, tad apstājies, bez birkas pēc fakta.
 - Saisti katru svarīgu agregātu ar **konkrētu klātienes darbību** — ne vispārīgu „jāpārbauda auto”.
 - **1. Tehnisko risku analīze** — DETALIZĒTI (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla): katrs relevantais mezgls, kas NAV risks, nobraukuma kalibrācija — BEZ € skaitļiem klientam. Blīvums ≠ īsums. TA nosegts nodilums nav šīs sadaļas saturs.
 - EUR skaitļi klientam drīkst parādīties tikai cenas vērtējumā/tirgus laukā. **3. Kopsavilkumā** un **1. sadaļā** cenas un EUR summas neraksta — pat ne no šīs pakas.

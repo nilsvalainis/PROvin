@@ -5,7 +5,10 @@
 import { findBannedVocabularyHits } from "@/lib/provin-banned-vocabulary";
 import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
 import { COMMENT_LENGTH_BUDGET, commentQualityMaxChars } from "@/lib/ai-comment-length-budget";
-import { looksLikeLeakedAiPlanning } from "@/lib/source-summary-comment-format";
+import {
+  looksLikeAiSentencePadding,
+  looksLikeLeakedAiPlanning,
+} from "@/lib/source-summary-comment-format";
 
 export type CommentQualityIssue = {
   code: string;
@@ -179,6 +182,14 @@ export function evaluateExpertCommentQuality(
     issues.push({
       code: hit.code,
       message: `Nedrīkst lietot „${hit.label}” — izmanto: ${hit.replacement}`,
+    });
+  }
+
+  if (looksLikeAiSentencePadding(t)) {
+    issues.push({
+      code: "sentence_padding",
+      message:
+        "Pēc fakta apstājies: bez birkas (riska / izmaksas / „nav viegli pamanāms”) un bez mācību-grāmatas paplašinājuma",
     });
   }
 

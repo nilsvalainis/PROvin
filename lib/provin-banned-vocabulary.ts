@@ -39,7 +39,7 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   {
     label: "vidējs uzturēšanas risks",
     pattern: /vidējs uzturēšanas risks/i,
-    replacement: "ierasta uzturēšanas izmaksa",
+    replacement: "nosauc mezglu, bez uzturēšanas birkas",
     code: "vocabulary_videjs_risks",
   },
   {
@@ -69,7 +69,7 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   {
     label: "uzturēšanas punkts",
     pattern: /uzturēšanas\s+punkts/i,
-    replacement: "ierasta uzturēšanas izmaksa / konkrētais mezgls bez AI-šablona",
+    replacement: "nosauc mezglu, bez uzturēšanas birkas",
     code: "vocabulary_uzturesanas_punkts",
   },
   {
@@ -167,6 +167,24 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     pattern: /m[uū]ža\s+e[ļl]{2}[uūas]*[^.]*?nenodrošina/i,
     replacement: "izlaid šo vispārīgo teikumu; ja jāpiemin, raksti konkrētu faktu par ŠO kārbu/agregātu",
     code: "vocabulary_muza_ellas_apgalvojums",
+  },
+  {
+    label: "speciālisti / eksperti (viennozīmīgi) iesaka",
+    pattern: /(?:speciālisti|eksperti)\s+(?:viennozīmīgi\s+)?iesaka|viennozīmīgi\s+iesaka/i,
+    replacement: "ieteicams",
+    code: "vocabulary_specialisti_iesaka",
+  },
+  {
+    label: "selektīvā katalītiskā redukcija",
+    pattern: /selektīv\w*\s+katalītisk\w*\s+redukcij/i,
+    replacement: "AdBlue",
+    code: "vocabulary_scr_textbook",
+  },
+  {
+    label: "gāzu sadales mehānismu…",
+    pattern: /gāzu\s+sadales\s+mehānism/i,
+    replacement: "zobsiksna vai sadales ķēde",
+    code: "vocabulary_gazu_sadales",
   },
 ] as const;
 

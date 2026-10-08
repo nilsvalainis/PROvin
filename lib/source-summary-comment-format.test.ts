@@ -6,6 +6,7 @@ import {
   normalizeProvinExpertAiComment,
   splitDealerCommentRoleHeadings,
   stripLeakedAiPlanningPreamble,
+  stripAiSentenceExpansions,
   toExpertHeadingBodyPlain,
 } from "@/lib/source-summary-comment-format";
 
@@ -40,6 +41,27 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("uzrāda divējādu ainu")).toBe(
       "datos redzama šāda aina",
     );
+  });
+
+  it("shortens textbook part names and specialist padding", () => {
+    expect(
+      applyProvinReportCopyVocabulary(
+        "Gāzu sadales mehānismu piedzen galvenā zobsiksna.",
+      ),
+    ).toBe("Zobsiksna.");
+    expect(
+      applyProvinReportCopyVocabulary(
+        "Gāzu sadales mehānismu piedzen galvenā ķēde.",
+      ),
+    ).toBe("Sadales ķēde.");
+    expect(
+      applyProvinReportCopyVocabulary(
+        "Selektīvās katalītiskās redukcijas (SCR) sistēma prasa šķidrumu.",
+      ),
+    ).toBe("AdBlue prasa šķidrumu.");
+    expect(
+      applyProvinReportCopyVocabulary("Speciālisti viennozīmīgi iesaka nomainīt siksnu."),
+    ).toBe("Ieteicams nomainīt siksnu.");
   });
 });
 
@@ -188,5 +210,34 @@ describe("finalizeProvinExpertAiComment", () => {
     expect(finalized).toMatch(/^Sadales ķēdes resurss/);
     expect(finalized).toMatch(/N47/);
     expect(finalized).not.toMatch(/I have analyzed/);
+    expect(finalized).not.toMatch(/galvenais pirkuma risks/);
+  });
+});
+
+describe("stripAiSentenceExpansions", () => {
+  it("cuts risk, cost and everyday-visibility tails after the fact", () => {
+    expect(
+      stripAiSentenceExpansions(
+        "N47 ķēde atrodas aizmugurē, tāpēc šis ir galvenais finansiālais un tehniskais pirkuma risks.",
+      ),
+    ).toBe("N47 ķēde atrodas aizmugurē.");
+    expect(
+      stripAiSentenceExpansions(
+        "Eļļas noplūdes no vārstu vāka, kas ir ierasta uzturēšanas izmaksa.",
+      ),
+    ).toBe("Eļļas noplūdes no vārstu vāka.");
+    expect(
+      stripAiSentenceExpansions(
+        "Fiksētas nelielas sulošanās, kuras nav viegli pamanāmas ikdienā.",
+      ),
+    ).toBe("Fiksētas nelielas sulošanās.");
+  });
+
+  it("leaves a standalone classification sentence that is not a comma tail", () => {
+    expect(
+      stripAiSentenceExpansions(
+        "Hidrotransformators paliek ierasta uzturēšanas izmaksa šajā posmā.",
+      ),
+    ).toBe("Hidrotransformators paliek ierasta uzturēšanas izmaksa šajā posmā.");
   });
 });

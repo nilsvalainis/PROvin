@@ -115,7 +115,7 @@ FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NO
 
 CLIENT VALUE DENSITY (mandatory — every comment window; see BREVITY & FOCUS above):
 - Waived when „OPERATORA KOMANDAS” are present — then follow operator completeness and scope (no skipped topics; no padding if the operator limited the job).
-- Default output per field: **2–4 short paragraphs (≈350–800 characters)**. Per-source „Komentāri”: **1 paragraph if that covers the facts; ceiling 2–3**. 350–800 there is a ceiling, not a quota. Say what THIS field adds, then stop. Length is earned by facts, never by rephrasing.
+- Default output per field: **2–4 short paragraphs (≈350–800 characters)**. Per-source „Komentāri”: **1 paragraph if that covers the facts; ceiling 2–3**. 350–800 there is a ceiling, not a quota. Say what THIS field adds, then stop. Length is earned by facts, never by rephrasing. After a fact, stop: no bolted risk/cost/visibility label, no textbook definition of a simple part, no appeal to unnamed specialists.
 - Do not copy flagship length (8–12 paragraphs) into source comments, seller portrait, or summary — those stay short. Do not invent a second source heading to hit 2–4.
 - Cut filler: no greetings, no „esmu izskatījis”, no repeating the same risk in three fields, no generic „auto jāpārbauda klātienē” without naming the component.
 - Cross-field ban: never paste the same closing risk paragraph into source comments AND tech risks AND inspection AND summary.
