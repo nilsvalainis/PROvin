@@ -31,6 +31,33 @@ function fixtureWithSecrets() {
   ];
 }
 
+/** Dzīvais $svue-query cache: nickname, contactPerson.surname, addressBook.items.*.email.to. */
+function fixtureSvueQueryAccount() {
+  return [
+    ["ShallowReactive", 1],
+    { state: 2 },
+    { "$svue-query": 3 },
+    { queries: 4 },
+    [5],
+    { state: 6 },
+    { data: 7 },
+    { nickname: 8, extendedData: 9 },
+    "op-nick",
+    { contactPerson: 10, addressBook: 11 },
+    { surname: 12 },
+    { items: 13 },
+    "Kalniņš",
+    [14],
+    { email: 15 },
+    { to: 16 },
+    "leak@example.com",
+    { id: 18, name: 19, taxInformation: 20 },
+    1001,
+    "Audi A6",
+    "Including 19% VAT",
+  ];
+}
+
 test("JWT and Bearer strings are secrets", () => {
   assert.equal(isAutobidSecretString(JWT), true);
   assert.equal(isAutobidSecretString(BEARER), true);
@@ -56,6 +83,16 @@ test("invalid JSON still has JWT/Bearer stripped", () => {
   const out = sanitizeAutobidNuxtJson(raw);
   assert.equal(out.includes(JWT), false);
   assert.equal(/Bearer\s/i.test(out), false);
+});
+
+test("sanitizeAutobidNuxtJson empties $svue-query nickname, surname and nested email.to", () => {
+  const dumped = sanitizeAutobidNuxtJson(JSON.stringify(fixtureSvueQueryAccount()));
+  assert.equal(dumped.includes("leak@example.com"), false);
+  assert.equal(dumped.includes("op-nick"), false);
+  assert.equal(dumped.includes("Kalniņš"), false);
+  assert.equal(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(dumped), false);
+  assert.equal(dumped.includes("Audi A6"), true);
+  assert.equal(dumped.includes("Including 19% VAT"), true);
 });
 
 test("sanitizeAutobidRelayRaw maps nuxtPages only", () => {

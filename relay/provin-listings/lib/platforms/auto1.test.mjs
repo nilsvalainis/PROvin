@@ -80,7 +80,7 @@ test("hits[0] maps cents, ms dates, stockNumber and image fullUrl", () => {
   assert.equal(item.auctionEndAt, "2026-10-08T16:00:00.000Z");
   assert.equal(item.auctionId, "auc-1");
   assert.equal(item.auctionStage, "24D2");
-  assert.equal(item.vatNote, "");
+  assert.equal(item.vatNote, "salesVatType 1053");
   assert.equal(item.detailUrl, "https://www.auto1.com/en/app/merchant/car/BW03512");
 });
 

@@ -5,8 +5,9 @@
  * un mainītu Paging.PageNumber. Tā nav jāmin query / FacetRequest formāts.
  *
  * Sesija beidzas ik pēc pāris stundām. /en/login ir 404: login ir findcar popups
- * (#loginButton2 -> input[name=Email] ar OPENLANE_USER kā username -> #loginButton4 -> parole,
- * bieži id.openlane.eu). Captcha / 2FA -> login_required. Sekme: ChassisNumber nav null.
+ * (cookie -> #loginButton2 -> input[name=Email] username -> #loginButton4 ->
+ * input[name=Password] -> submit #loginButton3; fallback: [class*="Modal-module_modal"]
+ * button:has-text("Login")). Captcha / 2FA -> login_required. Sekme: ChassisNumber != null.
  */
 import { hasCaptchaOrChallenge, looksLikeTwoFactor, pageText, randomPause } from "../browser.mjs";
 import { isoDate, makeItem, num, price, str, yearOf } from "../items.mjs";
@@ -82,15 +83,17 @@ async function login(page) {
     await randomPause(300, 700);
     await page.locator("#loginButton4").click({ timeout: 10_000 });
 
-    const pass = page.locator('input[type="password"]').first();
+    const pass = page.locator('input[name="Password"]').first();
     await pass.waitFor({ state: "visible", timeout: 25_000 });
     await dismissCookieBanner(page);
     await pass.click();
     await pass.fill(password);
     await randomPause(300, 700);
     await tickRemember(page);
-    const submit = page.locator('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Sign in"), button:has-text("Log in"), button:has-text("Next")').first();
-    if (await submit.isVisible({ timeout: 4_000 }).catch(() => false)) await submit.click();
+    const submit3 = page.locator("#loginButton3");
+    const modalLogin = page.locator('[class*="Modal-module_modal"] button:has-text("Login")');
+    if (await submit3.isVisible({ timeout: 4_000 }).catch(() => false)) await submit3.click();
+    else if (await modalLogin.first().isVisible({ timeout: 2_000 }).catch(() => false)) await modalLogin.first().click();
     else await pass.press("Enter");
 
     await page.waitForLoadState("domcontentloaded").catch(() => undefined);
