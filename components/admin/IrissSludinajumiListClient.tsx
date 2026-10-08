@@ -98,7 +98,14 @@ function fmtKm(n: number | null): string {
 function fmtDateTime(iso: string): string {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return iso || "";
-  return new Intl.DateTimeFormat("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(t));
+  return new Intl.DateTimeFormat("lv-LV", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Riga",
+  }).format(new Date(t));
 }
 
 function hoursSince(iso: string, nowMs: number): number {
@@ -112,7 +119,7 @@ function isNew(v: IrissListingVehicle, nowMs: number): boolean {
 }
 
 function recentPriceChanges(v: IrissListingVehicle, nowMs: number): IrissListingVehicle["priceHistory"] {
-  return v.priceHistory.filter((c) => hoursSince(c.at, nowMs) <= RECENT_WINDOW_HOURS);
+  return (v.priceHistory ?? []).filter((c) => hoursSince(c.at, nowMs) <= RECENT_WINDOW_HOURS);
 }
 
 function stageLabel(stage: string): string {
@@ -213,7 +220,8 @@ export function IrissSludinajumiListClient({ latest }: Props) {
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [showSources, setShowSources] = useState(false);
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  const generatedMs = Date.parse(latest?.generatedAt ?? "");
+  const [nowMs, setNowMs] = useState(() => (Number.isFinite(generatedMs) ? generatedMs : 0));
   const [prefs, setPrefs] = useState<IrissListPrefs>(defaultIrissListPrefs);
   const [prefsReady, setPrefsReady] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
@@ -475,7 +483,7 @@ export function IrissSludinajumiListClient({ latest }: Props) {
               <span className="sm:hidden">Nolasīts </span>
               <span className="hidden sm:inline">Pēdējā nolasīšana: </span>
               <span className="font-semibold text-[var(--color-apple-text)]">
-                {latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}
+                {latest?.summary?.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}
               </span>
             </span>
             <span className="hidden sm:inline">Avoti OK: {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0}</span>

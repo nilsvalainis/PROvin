@@ -26,19 +26,19 @@ const NAMES_LV: Record<string, string> = {
   CH: "Šveice",
 };
 
-export function countryFlagEmoji(code: string): string {
-  const c = code.trim().toUpperCase();
+export function countryFlagEmoji(code: string | null | undefined): string {
+  const c = String(code ?? "").trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(c)) return "";
   return String.fromCodePoint(...[...c].map((ch) => 127397 + ch.charCodeAt(0)));
 }
 
-export function countryNameLv(code: string): string {
-  const c = code.trim().toUpperCase();
+export function countryNameLv(code: string | null | undefined): string {
+  const c = String(code ?? "").trim().toUpperCase();
   return NAMES_LV[c] || c;
 }
 
-export function countryFlagLabel(code: string): { flag: string; name: string; title: string } | null {
-  const c = code.trim().toUpperCase();
+export function countryFlagLabel(code: string | null | undefined): { flag: string; name: string; title: string } | null {
+  const c = String(code ?? "").trim().toUpperCase();
   const flag = countryFlagEmoji(c);
   if (!flag) return null;
   const name = countryNameLv(c);

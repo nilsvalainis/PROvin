@@ -8,6 +8,7 @@ describe("countryFlag", () => {
     expect(countryFlagLabel("nl")?.title).toBe("Nīderlande (NL)");
     expect(countryFlagLabel("DE")?.flag).not.toBe("DE");
     expect(countryFlagLabel("")).toBeNull();
+    expect(countryFlagLabel(undefined)).toBeNull();
     expect(countryFlagLabel("DEU")).toBeNull();
   });
 });
