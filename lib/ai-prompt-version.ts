@@ -174,5 +174,7 @@
  *   lūka, obligāta pārbaude par drenāžu, mitrumu un slapjiem paklājiem.
  *   VW grupā, īpaši Volkswagen, tas ir tipiski. Bez lūkas datos tēmu
  *   neizdomā.
+ * - 2026-10-08.2 - BMW E60/E61 dārgo slazdu saraksts (Active Steering u.c.)
+ *   vairs netiek likts uz 3. sēriju (E90/F30 u.c.). E60 paka tikai E60/E61.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-08.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-08.2";

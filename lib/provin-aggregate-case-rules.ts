@@ -398,9 +398,14 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
     title: "BMW — M57 (E60/E61 525d/530d): ķēde priekšā, ne N57",
     score: (fp, hay) => {
       if (/N47|N57|B47/.test(hay) || /^(N47|N57|B47)/.test(fp.engineCode || "")) return 0;
+      const series3 =
+        /\bE90\b|\bE91\b|\bE92\b|\bE93\b|\bF30\b|\bF31\b|\bF34\b|\bF80\b|\bG20\b|\bG21\b|\bG80\b/.test(hay) ||
+        /\b3(?:18|20|23|25|28|30|35|40)\s*[IDH]?\b/.test(hay) ||
+        /BMW\s*3[.\s-]*S[EĒ]RIJ/.test(hay);
+      if (series3) return 0;
       const m57hit = /M57/.test(hay) || /^M57/.test(fp.engineCode || "");
       const chassisHit =
-        /\bE60\b|\bE61\b|PX61|PX51/.test(hay) || /^PX/.test(fp.typeCode || "");
+        /\bE60\b|\bE61\b|PX61|PX51/.test(hay) || /^(PX61|PX51)/.test(fp.typeCode || "");
       const preF10DieselSix =
         fp.year != null &&
         fp.year <= 2010 &&

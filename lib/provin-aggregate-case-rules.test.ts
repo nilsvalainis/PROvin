@@ -67,6 +67,38 @@ describe("provin-aggregate-case-rules", () => {
     expect(packs.some((p) => p.id === "bmw_n47")).toBe(false);
   });
 
+  it("does not apply E60/E61 pack to a BMW 3-series even with M57 or PX type code", () => {
+    const e90M57 = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "BMW 330d",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.06.2007",
+        engineDisplacementCm3: "2993",
+        enginePowerKw: "170",
+      },
+    });
+    const fpE90 = extractVehicleReportFingerprint(e90M57, { vin: null });
+    fpE90.engineCode = "M57";
+    fpE90.typeCode = "PX";
+    const e90Packs = selectAggregateCasePacks(fpE90);
+    expect(e90Packs.some((p) => p.id === "bmw_m57_e60_e61")).toBe(false);
+
+    const e90N47 = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "BMW 320d",
+        fuelType: "Dīzeļdegviela",
+        firstRegistration: "01.05.2008",
+        engineDisplacementCm3: "1995",
+        enginePowerKw: "130",
+      },
+    });
+    const fp320 = extractVehicleReportFingerprint(e90N47, { vin: null });
+    fp320.engineCode = "";
+    fp320.typeCode = "PX12";
+    const packs320 = selectAggregateCasePacks(fp320);
+    expect(packs320.some((p) => p.id === "bmw_m57_e60_e61")).toBe(false);
+  });
+
   it("selects BMW N47 pack by kW+cm3 without engine code", () => {
     const blocks = mergeSourceBlocksWithDefaults({
       csdd: {

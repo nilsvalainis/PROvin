@@ -72,6 +72,25 @@ const EXPENSIVE_AGE_OPTION_RE =
 
 const EQUIPMENT_LINE_CAP = 24;
 
+/** BMW 3. sērija (E9x / F3x / G20) - nav E60 hidraulisko slazdu katalogs. */
+export function isBmw3SeriesChassis(makeModel: string, developmentCode = ""): boolean {
+  const t = `${makeModel} ${developmentCode}`.toUpperCase();
+  if (/E90|E91|E92|E93|F30|F31|F34|F80|G20|G21|G80/.test(t)) return true;
+  if (/\b3(?:18|20|23|25|28|30|35|40)\s*[IDH]?\b/.test(t)) return true;
+  return /BMW\s*3[.\s-]*S[EĒ]RIJ/.test(t);
+}
+
+function chassisExpensiveOptionHint(makeModel: string, developmentCode: string): string {
+  if (isBmw3SeriesChassis(makeModel, developmentCode)) {
+    return "- Šasija: BMW 3. sērija. E60/E61 dārgo slazdu katalogu (Active Steering, Dynamic Drive, Soft Close, rūpnīcas pneimatika) NEKOPĒ. Raksti šīs paaudzes motora realitāti. Ja E90 N52 - eļļas noplūdes, elektriskais ūdens sūknis, VANOS; ja N47 - ķēde.";
+  }
+  const t = `${makeModel} ${developmentCode}`.toUpperCase();
+  if (/\bE60\b|\bE61\b/.test(t)) {
+    return "- Šasija: BMW 5. sērija E60/E61. Active Steering / Dynamic Drive / Soft Close / Logic 7 / E61 aizmugures pneimatika IR šīs paaudzes slazdi TIKAI ja SA / dīleris tos rāda. Ja sarakstā nav - par to NERAKSTI.";
+  }
+  return "- Ekstraprīkojumu kā dārgu slazdu nosauc tikai tad, ja šī šasija to piedāvāja UN dati to rāda. Nekopē E60 katalogu uz citu sēriju.";
+}
+
 function collectEquipmentLines(blocks: WorkspaceSourceBlocks, vin?: string | null): OutvinEquipmentLine[] {
   const seen = new Set<string>();
   const out: OutvinEquipmentLine[] = [];
@@ -125,10 +144,16 @@ function formatDriveHint(raw: string): string {
   return t;
 }
 
-function formatEquipmentBrief(lines: OutvinEquipmentLine[]): string[] {
+function formatEquipmentBrief(
+  lines: OutvinEquipmentLine[],
+  makeModel: string,
+  developmentCode: string,
+): string[] {
+  const chassisHint = chassisExpensiveOptionHint(makeModel, developmentCode);
   if (lines.length === 0) {
     return [
-      "- Aprīkojuma SA saraksts: nav / nepilnīgs — dārgā ekstraprīkojuma neesamību nedrīkst apgalvot; vispirms meklē šīs paaudzes tipiskos slazdus un pārbaudi pret dīlera datiem.",
+      "- Aprīkojuma SA saraksts: nav / nepilnīgs - dārgā ekstraprīkojuma neesamību nedrīkst apgalvot; vispirms nosaki šasiju, tad meklē TĀS slazdus.",
+      chassisHint,
     ];
   }
   const shown = lines.slice(0, EQUIPMENT_LINE_CAP);
@@ -142,11 +167,8 @@ function formatEquipmentBrief(lines: OutvinEquipmentLine[]): string[] {
     out.push(
       `- Dārgas vecuma pozīcijas sarakstā: ${hits.map((l) => l.description || l.code).join("; ")}`,
     );
-  } else if (lines.length >= 6) {
-    out.push(
-      "- Šie dārgie vecuma slazdi sarakstā NAV minēti (pārbaudīt, ja saraksts var būt nepilnīgs): Active Steering, Dynamic Drive, Soft Close, Logic 7, Airmatic, Magnetic Ride, Night Vision.",
-    );
   }
+  out.push(chassisHint);
   return out;
 }
 
@@ -198,7 +220,7 @@ export function buildAggregateIdentificationBrief(input: AggregateIdentification
   else if (fp.transmission === "manual") lines.push("- Ātrumkārba pēc avotiem: mehāniskā");
   const equipment = collectEquipmentLines(blocks, input.vin);
   if (equipment.length > 0 || lines.length > 0) {
-    lines.push(...formatEquipmentBrief(equipment));
+    lines.push(...formatEquipmentBrief(equipment, fp.makeModel, development));
   }
   const sunroofEvidence = collectSunroofEvidence(blocks, equipment);
   if (sunroofEvidence) {

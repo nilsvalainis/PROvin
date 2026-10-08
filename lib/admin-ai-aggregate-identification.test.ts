@@ -4,7 +4,10 @@ import {
   emptyListingAnalysisBlock,
   mergeSourceBlocksWithDefaults,
 } from "@/lib/admin-source-blocks";
-import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-identification";
+import {
+  buildAggregateIdentificationBrief,
+  isBmw3SeriesChassis,
+} from "@/lib/admin-ai-aggregate-identification";
 import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 
 describe("buildAggregateIdentificationBrief", () => {
@@ -38,6 +41,9 @@ describe("buildAggregateIdentificationBrief", () => {
     expect(brief).toMatch(/~24 500 km\/gadā/);
     expect(brief).toMatch(/1–2 kandidātus/);
     expect(brief).toMatch(/Aprīkojuma SA saraksts: nav/);
+    expect(brief).toMatch(/BMW 3\. sērija/);
+    expect(brief).not.toMatch(/NAV minēti/);
+    expect(brief).not.toMatch(/Active Steering, Dynamic Drive, Soft Close/);
   });
 
   it("lists dealer equipment and flags expensive age options when present", () => {
@@ -88,6 +94,47 @@ describe("buildAggregateIdentificationBrief", () => {
     expect(brief).toMatch(/Virsbūve \(dīleris\): TOU/);
     expect(brief).toMatch(/0217 — Active steering/);
     expect(brief).toMatch(/Dārgas vecuma pozīcijas sarakstā: Active steering/);
+    expect(brief).toMatch(/E60\/E61/);
+    expect(brief).not.toMatch(/NAV minēti/);
+  });
+
+  it("does not praise missing E60 options on an E90 with a long SA list", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: { ...emptyCsddFields(), makeModel: "BMW 320i" },
+      auto_records: {
+        outvinReport: {
+          ...emptyOutvinDealerReport(),
+          vehicleInfo: {
+            ...emptyOutvinDealerReport().vehicleInfo,
+            model: "BMW 320i",
+            developmentCode: "E90",
+            engineCode: "N52",
+          },
+          equipment: [
+            { code: "0205", description: "Automatic transmission" },
+            { code: "0255", description: "Sports leather steering wheel" },
+            { code: "0403", description: "Glass roof" },
+            { code: "0521", description: "Rain sensor" },
+            { code: "0431", description: "Interior mirror" },
+            { code: "0320", description: "Deleted model designation" },
+            { code: "0493", description: "Storage compartment" },
+          ],
+        },
+      },
+    });
+    const brief = buildAggregateIdentificationBrief({ sourceBlocks: blocks, nowYear: 2026 });
+    expect(brief).toMatch(/BMW 3\. sērija/);
+    expect(brief).toMatch(/Ja E90 N52/);
+    expect(brief).toMatch(/NEKOPĒ/);
+    expect(brief).not.toMatch(/NAV minēti/);
+    expect(brief).not.toMatch(/Soft Close, Logic 7, Airmatic/);
+  });
+
+  it("recognises BMW 3-series chassis codes and type badges", () => {
+    expect(isBmw3SeriesChassis("BMW 320i", "E90")).toBe(true);
+    expect(isBmw3SeriesChassis("BMW 320D", "")).toBe(true);
+    expect(isBmw3SeriesChassis("BMW 330d", "E91")).toBe(true);
+    expect(isBmw3SeriesChassis("BMW 525d", "E61")).toBe(false);
   });
 
   it("returns empty text when no vehicle parameters are known", () => {
