@@ -11,6 +11,7 @@ import {
   fetchViaIrissRelay,
   listingPlatformFromRelay,
   mapRelayFetchResponse,
+  mapRelayItem,
   mapRelayHealth,
   mapRelayLoginClose,
   mapRelayLoginStart,
@@ -168,6 +169,38 @@ describe("mapRelayFetchResponse", () => {
     expect(r.vehicles).toHaveLength(1);
     expect(r.rawPages.join("")).not.toContain(jwt);
     expect(r.rawPages.join("")).not.toContain("operator@example.com");
+  });
+
+  it("keeps Auto1 euro prices, photos, end time and salesVatType", () => {
+    const v = mapRelayItem(
+      {
+        platform: "auto1",
+        externalId: "987654",
+        stockNumber: "BW03512",
+        imageUrls: ["https://img-pa.auto1.com/img/a.jpg", "https://img-pa.auto1.com/img/b.jpg"],
+        imageUrl: "https://img-pa.auto1.com/img/a.jpg",
+        priceMinimal: 6513,
+        priceStart: 4000,
+        priceCurrent: null,
+        priceBuyNow: 8900,
+        auctionEndAt: "2026-10-08T16:00:00.000Z",
+        salesVatType: 1053,
+        title: "BMW 320d",
+      },
+      "auto1",
+      "o3",
+      "BMW 320d",
+    );
+    expect(v).toMatchObject({
+      platform: "auto1",
+      externalId: "987654",
+      stockNumber: "BW03512",
+      imageUrls: ["https://img-pa.auto1.com/img/a.jpg", "https://img-pa.auto1.com/img/b.jpg"],
+      priceMinimal: 6513,
+      auctionEndAt: "2026-10-08T16:00:00.000Z",
+      salesVatType: 1053,
+      orderId: "o3",
+    });
   });
 });
 

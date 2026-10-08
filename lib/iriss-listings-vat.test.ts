@@ -14,6 +14,13 @@ describe("detectListingTax", () => {
     expect(t.kind).toBe("margin");
   });
 
+  it("Auto1 1054 + BE without vatRate -> AR PVN 21 %", () => {
+    const t = detectListingTax({ platform: "auto1", salesVatType: 1054, taxDeduction: true, vatRate: null, countryCode: "BE" });
+    expect(t.kind).toBe("gross");
+    expect(t.rate).toBe(21);
+    expect(listingTaxLabel(t)).toBe("AR PVN 21 %");
+  });
+
   it("Openlane IsMargin true / false", () => {
     expect(detectListingTax({ platform: "openline", isMargin: true }).kind).toBe("margin");
     expect(detectListingTax({ platform: "openline", isMargin: false }).kind).toBe("net");
