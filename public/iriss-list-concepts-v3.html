@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>IRISS LIST v3 - noslīpētie varianti</title>
+  <style>
+    :root {
+      --ink: #111827; --sub: #4b5563; --mute: #6b7280; --hair: #e5e7eb; --bg: #f8f8f9; --card: #fff; --accent: #ea580c;
+      --ab: #7c3aed; --ab-bg: #f5f3ff; --ab-bd: #ddd6fe;
+      --ol: #4338ca; --ol-bg: #eef2ff; --ol-bd: #c7d2fe;
+      --a1: #d97706; --a1-bg: #fffbeb; --a1-bd: #fde68a;
+      --up: #dc2626; --down: #059669; --star: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    button, select, input, textarea { font: inherit; color: inherit; }
+    a { color: var(--accent); }
+    .nav { position: sticky; top: 0; z-index: 60; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 8px 16px; background: rgb(255 255 255 / .96); border-bottom: 1px solid var(--hair); backdrop-filter: blur(6px); }
+    .nav b { margin-right: 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+    .nav a { font-size: 12px; font-weight: 600; color: var(--mute); text-decoration: none; padding: 4px 9px; border-radius: 999px; }
+    .nav a:hover { background: #f3f4f6; color: var(--ink); }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+    .intro { padding: 20px 0 8px; }
+    .intro h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+    .intro p { margin: 6px 0 0; color: var(--sub); max-width: 940px; }
+    .settings { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: end; margin-top: 12px; padding: 12px 14px; }
+    .settings label { display: grid; gap: 2px; font-size: 11px; color: var(--mute); font-weight: 600; }
+    .settings input { width: 120px; border: 1px solid var(--hair); border-radius: 8px; padding: 5px 8px; font-size: 13px; background: #fff; }
+    .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-top: 10px; }
+    .rules .box { padding: 10px 12px; font-size: 12px; }
+    section.v { padding: 26px 0 30px; border-top: 1px solid var(--hair); scroll-margin-top: 48px; }
+    .cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 12px; }
+    .cap .n { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--accent); }
+    .cap h2 { margin: 0; font-size: 18px; }
+    .cap .badge { font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 2px 8px; border-radius: 999px; background: #fff7ed; color: var(--accent); border: 1px solid #fed7aa; }
+    .cap p { flex-basis: 100%; margin: 0; color: var(--sub); font-size: 13px; }
+    .box { background: var(--card); border: 1px solid var(--hair); border-radius: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / .04); }
+    .muted { color: var(--mute); } .small { font-size: 12px; } .tiny { font-size: 11px; } .num { font-variant-numeric: tabular-nums; }
+    .row { display: flex; gap: 10px; align-items: center; } .wrapf { flex-wrap: wrap; } .grow { flex: 1; min-width: 0; }
+    .trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stack > * + * { margin-top: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; border: 1px solid; font-size: 10px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+    .src-autobid { color: var(--ab); background: var(--ab-bg); border-color: var(--ab-bd); }
+    .src-openlane { color: var(--ol); background: var(--ol-bg); border-color: var(--ol-bd); }
+    .src-auto1 { color: var(--a1); background: var(--a1-bg); border-color: var(--a1-bd); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .bg-autobid { background: var(--ab); } .bg-openlane { background: var(--ol); } .bg-auto1 { background: var(--a1); }
+    .grey { color: #374151; background: #f3f4f6; border-color: #e5e7eb; }
+    .new { color: #065f46; background: #ecfdf5; border-color: #a7f3d0; }
+    .warn { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+    .bad { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+    .lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+
+    /* cenas */
+    .pnow { font-size: 22px; font-weight: 800; letter-spacing: -.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .pnow.lg { font-size: 26px; }
+    .pbuy { font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; }
+    .tx { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 5px; font-size: 10px; font-weight: 800; letter-spacing: .04em; vertical-align: middle; border: 1px solid; white-space: nowrap; }
+    .tx-net { color: #1e40af; background: #eff6ff; border-color: #bfdbfe; }
+    .tx-margin { color: #6b21a8; background: #faf5ff; border-color: #e9d5ff; }
+    .tx-gross { color: #9a3412; background: #fff7ed; border-color: #fed7aa; }
+    .tx-unknown { color: #92400e; background: #fffbeb; border-color: #fcd34d; border-style: dashed; }
+    .delta { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+    .delta.up { color: var(--up); background: #fef2f2; } .delta.down { color: var(--down); background: #ecfdf5; }
+    .cd { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .cd.urgent { color: #dc2626; } .cd.soon { color: #ea580c; } .cd.calm { color: var(--ink); } .cd.ended, .cd.unknown { color: #94a3b8; font-weight: 600; }
+
+    .btn { border: 1px solid var(--hair); background: #fff; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn:hover { border-color: #cbd5e1; } .btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    select.btn { padding-right: 8px; }
+    .ibtn { border: 1px solid var(--hair); background: #fff; border-radius: 8px; width: 30px; height: 30px; display: inline-grid; place-items: center; cursor: pointer; font-size: 15px; flex-shrink: 0; }
+    .ibtn.fav { color: var(--star); border-color: #fcd34d; background: #fffbeb; }
+    .photo { position: relative; flex-shrink: 0; border-radius: 10px; overflow: hidden; display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+    .photo .nav-l, .photo .nav-r { position: absolute; top: 50%; transform: translateY(-50%); border: 0; background: rgb(17 24 39 / .55); color: #fff; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 1; }
+    .photo .nav-l { left: 4px; } .photo .nav-r { right: 4px; }
+    .photo .cnt { position: absolute; right: 5px; bottom: 5px; background: rgb(17 24 39 / .7); padding: 1px 6px; border-radius: 6px; font-size: 10px; }
+    .photo .dmg { position: absolute; left: 5px; bottom: 5px; background: #dc2626; padding: 1px 6px; border-radius: 6px; font-size: 10px; }
+    .thumbs { display: flex; gap: 4px; margin-top: 5px; }
+    .thumbs span { width: 34px; height: 23px; border-radius: 5px; cursor: pointer; opacity: .55; }
+    .thumbs span.on { opacity: 1; outline: 2px solid var(--accent); }
+
+    .card { display: flex; gap: 12px; border: 1px solid var(--hair); border-left: 5px solid; border-radius: 14px; background: #fff; padding: 10px 12px; }
+    .card.click { cursor: pointer; } .card.click:hover { border-color: #cbd5e1; }
+    .card.fav { box-shadow: 0 0 0 2px #fde68a; }
+    .card.hidden { opacity: .45; }
+    .col-r { text-align: right; display: grid; gap: 3px; align-content: start; }
+    .noteline { width: 100%; border: 1px dashed #d1d5db; border-radius: 7px; padding: 3px 8px; font-size: 12px; background: #fcfcfd; margin-top: 6px; }
+    .noteline:focus { outline: none; border-style: solid; border-color: #fdba74; background: #fff; }
+    .noteline.has { border-style: solid; border-color: #fde68a; background: #fffbeb; }
+    textarea.note { width: 100%; min-height: 64px; border: 1px solid var(--hair); border-radius: 8px; padding: 6px 8px; font-size: 13px; resize: vertical; }
+    .acc { margin-top: 8px; border-top: 1px dashed var(--hair); padding-top: 8px; }
+    table.h { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .h th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); padding: 4px 6px; border-bottom: 1px solid var(--hair); }
+    .h td { padding: 5px 6px; border-bottom: 1px solid #f3f4f6; }
+    .h td.r, .h th.r { text-align: right; }
+    .cost { font-size: 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
+    .cost .t { font-weight: 800; border-top: 1px solid var(--hair); padding-top: 3px; }
+    .cost .ind { padding-left: 10px; color: var(--mute); }
+    .ck { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+    .ck.ok { background: #ecfdf5; color: #065f46; } .ck.no { background: #fef2f2; color: #991b1b; } .ck.na { background: #f1f5f9; color: var(--mute); }
+    .score { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+    .kv { display: grid; grid-template-columns: 150px 1fr; gap: 4px 12px; font-size: 13px; }
+    .kv dt { color: var(--mute); } .kv dd { margin: 0; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+    .budhead { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; padding: 12px 14px; margin-bottom: 10px; }
+    .scale { position: relative; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #d1fae5 0%, #d1fae5 var(--mb), #fee2e2 var(--mb), #fee2e2 100%); margin: 16px 0 4px; }
+    .scale .mk { position: absolute; top: -4px; width: 3px; height: 18px; border-radius: 2px; background: var(--ink); }
+    .scale .mx { position: absolute; top: -14px; transform: translateX(-50%); font-size: 10px; font-weight: 700; color: var(--down); white-space: nowrap; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(560px, 1fr)); gap: 10px; }
+    .tbl-head { display: grid; grid-template-columns: 84px minmax(0, 1fr) 150px 110px 130px 120px 72px; gap: 12px; padding: 0 12px 4px 17px; }
+    .tbl-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 150px 110px 130px 120px 72px; gap: 12px; align-items: center; }
+    @media (max-width: 1000px) { .grid2 { grid-template-columns: 1fr; } .tbl-head { display: none; } .tbl-row { grid-template-columns: 84px 1fr; } .card { flex-wrap: wrap; } .col-r { text-align: left; } }
+
+    .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(580px, 100%); background: #fff; border-left: 1px solid var(--hair); box-shadow: -10px 0 30px rgb(0 0 0 / .1); z-index: 80; overflow: auto; padding: 16px 18px 40px; transform: translateX(100%); transition: transform .2s; }
+    .drawer.open { transform: none; }
+    .drawer h4 { margin: 18px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); }
+    .pricebox { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .pricebox > div { border: 1px solid var(--hair); border-radius: 12px; padding: 8px 10px; }
+    .pricebox > div.main { border-color: #fdba74; background: #fff7ed; }
+    .empty { padding: 18px; text-align: center; color: var(--mute); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <b>IRISS LIST v3</b>
+    <a href="#nodoklis">PVN aprēķins</a><a href="#vA">A 09 + atvilktne</a><a href="#vB">B 09 kartītes</a><a href="#vC">C 08 kompakts</a><a href="#vD">D 04 rezerve</a>
+  </nav>
+
+  <div class="wrap">
+    <div class="intro" id="nodoklis">
+      <h1>IRISS LIST v3: noslīpētie varianti</h1>
+      <p>Pie katras cenas ir PVN režīms: <span class="tx tx-net">NETO</span> <span class="tx tx-margin">MARŽA</span> <span class="tx tx-gross">AR PVN 19 %</span> <span class="tx tx-unknown">PVN ?</span>. Reālā cena un maksimālais solījums tiek rēķināti katram auto pēc tā režīma. Pašreizējā cena ir galvenā, „pirkt uzreiz” ir mazāka. Piezīmi var ierakstīt jebkurā variantā, un tā ir kopīga visiem. Klikšķis uz auto atver sānu atvilktni ar visu saturu. Dati ir izdomāti.</p>
+      <div class="box settings">
+        <label>Izsoles maksa € (bez PVN)<input type="number" id="sFee" value="600" /></label>
+        <label>Transports € (bez PVN)<input type="number" id="sTr" value="800" /></label>
+        <label>PROVIN komisija € (ar PVN)<input type="number" id="sCom" value="2000" /></label>
+        <label>PVN %<input type="number" id="sVat" value="21" /></label>
+        <label>Klienta budžets €<input type="number" id="sBud" value="18000" /></label>
+      </div>
+      <div class="rules" id="rules"></div>
+    </div>
+
+    <section class="v" id="vA"><div class="cap"><span class="n">A</span><h2>09 Maksimālais solījums + atvilktne no 08</h2><span class="badge">GALVENAIS KANDIDĀTS</span><p>Augšā budžets un maksimālais solījums katram PVN režīmam. Katrā rindā: atbilstības punkti, pašreizējā cena ar PVN birku, „var solīt vēl” pret šī auto maksimālo solījumu un piezīmes rinda. Klikšķis uz rindas atver atvilktni ar bildēm, cenu vēsturi, izmaksām, kalkulatoru, avota datiem un piezīmi.</p></div><div id="rA"></div></section>
+
+    <section class="v" id="vB"><div class="cap"><span class="n">B</span><h2>09 kartītes ar solījuma skalu + atvilktne</h2><p>Tas pats saturs kā A, divās kolonnās. Skala rāda, kur atrodas pašreizējā cena pret maksimālo solījumu: zaļā zona ir budžetā, sarkanā ir pāri. Klikšķis atver to pašu atvilktni.</p></div><div id="rB"></div></section>
+
+    <section class="v" id="vC"><div class="cap"><span class="n">C</span><h2>08 Kompakta josla + atvilktne (noslīpēta)</h2><p>Blīvākais skats, viena rinda katram auto, kolonnas ar virsrakstiem. Pašreizējā cena ir izcelta, „pirkt uzreiz” ir zem tās mazā burtā. Piezīme zem nosaukuma.</p></div><div id="rC"></div></section>
+
+    <section class="v" id="vD"><div class="cap"><span class="n">D</span><h2>04 Bilde ar karuseli, kompaktāk</h2><span class="badge" style="background:#f3f4f6;color:#374151;border-color:#e5e7eb">REZERVES PLĀNS</span><p>Bilde 200 px ar bultām un sīktēliem, dati divās kolonnās, cenu vēsture akordeonā. Aizņem apmēram par trešdaļu mazāk vietas nekā v2 04.</p></div><div class="stack" id="rD"></div></section>
+  </div>
+
+  <div class="drawer" id="drawer"></div>
+
+<script>
+const NOW0 = Date.now(), H = 3600e3, D = 24 * H;
+const SRC = { autobid: "Autobid", openlane: "Openlane", auto1: "Auto1" };
+const VAR = { autobid: "ab", openlane: "ol", auto1: "a1" };
+const cars = [
+  { id: "c1", src: "openlane", title: "Audi A6 Avant 3.0 TDI S line quattro", year: 2015, km: 172080, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Mechelen, BE",
+    start: 9000, min: 11500, cur: 12700, buy: 13300, est: null, aStart: NOW0 - 2.1 * D, end: NOW0 + 47 * 60e3, firstSeen: NOW0 - 1.9 * D, lastSeen: NOW0 - 20 * 60e3,
+    vin: "WAUZZZ4G6FN012345", tax: { kind: "net", raw: "Excl. VAT (BTW atskaitāms)" }, bids: 14, dmg: 2, imgs: 9, type: "",
+    hist: [[-44, "Pašreizējā", 11200, 11800], [-26, "Pašreizējā", 11800, 12300], [-3, "Pašreizējā", 12300, 12700]] },
+  { id: "c2", src: "openlane", title: "Audi A6 Allroad 3.0 TDI Business Plus", year: 2014, km: 364233, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Gent, BE",
+    start: 4000, min: null, cur: 5000, buy: null, est: null, aStart: NOW0 - 1.3 * D, end: NOW0 + 7.5 * H, firstSeen: NOW0 - 1.2 * D, lastSeen: NOW0 - 20 * 60e3,
+    vin: "WAUZZZ4G3EN998877", tax: { kind: "margin", raw: "Margin scheme" }, bids: 6, dmg: 7, imgs: 14, type: "", hist: [[-9, "Pašreizējā", 4900, 5000]] },
+  { id: "c3", src: "autobid", title: "Audi A6 Avant 3,0 TDI quattro Tiptronic S-line", year: 2014, km: 256600, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Hamburg, DE",
+    start: 8900, min: 6900, cur: null, buy: null, est: null, aStart: NOW0 - 6.2 * D, end: null, firstSeen: NOW0 - 6 * D, lastSeen: NOW0 - 30 * 60e3,
+    vin: "", tax: { kind: "margin", raw: "§25a Differenzbesteuerung" }, bids: null, dmg: 0, imgs: 22, type: "",
+    hist: [[-140, "Sākuma", 9900, 9400], [-90, "Sākuma", 9400, 8900], [-40, "Minimālā", 7400, 6900]] },
+  { id: "c4", src: "autobid", title: "Audi A6 Avant 3.0 TDI quattro", year: 2013, km: 231000, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Tuttlingen, DE",
+    start: 9900, min: 7000, cur: null, buy: null, est: null, aStart: NOW0 - 0.6 * D, end: null, firstSeen: NOW0 - 0.6 * D, lastSeen: NOW0 - 30 * 60e3,
+    vin: "", tax: { kind: "gross", rate: 19, raw: "inkl. 19 % MwSt., ausweisbar" }, bids: null, dmg: 1, imgs: 18, type: "", hist: [] },
+  { id: "c5", src: "auto1", title: "Audi A6 Avant 3.0 TDI quattro S tronic", year: 2016, km: 141500, fuel: "Dīzelis", gear: "Automāts", kw: 200, place: "Berlin, DE",
+    start: 9500, min: 10200, cur: 11850, buy: 14900, est: 13400, aStart: NOW0 - 3.4 * D, end: NOW0 + 26 * H, firstSeen: NOW0 - 3.3 * D, lastSeen: NOW0 - 15 * 60e3,
+    vin: "", stock: "BW03512", tax: { kind: "unknown", raw: "salesVatType 1053 (nav atšifrēts)" }, bids: null, dmg: 3, imgs: 31, type: "24D2",
+    hist: [[-70, "Pašreizējā", 10200, 10900], [-20, "Pašreizējā", 10900, 11850], [-8, "Pirkt uzreiz", 15400, 14900]] },
+  { id: "c6", src: "auto1", title: "Audi A6 Limousine 3.0 TDI competition", year: 2017, km: 98200, fuel: "Dīzelis", gear: "Automāts", kw: 240, place: "Milano, IT",
+    start: 15000, min: null, cur: null, buy: 16900, est: 17500, aStart: NOW0 - 0.3 * D, end: NOW0 + 3.2 * D, firstSeen: NOW0 - 0.2 * D, lastSeen: NOW0 - 15 * 60e3,
+    vin: "", stock: "KZ88120", tax: { kind: "net", raw: "salesVatType 1054 (neto)" }, bids: null, dmg: 0, imgs: 27, type: "24D1", hist: [[-3, "Pirkt uzreiz", 17900, 16900]] },
+  { id: "c7", src: "openlane", title: "Audi A6 Avant 2.0 TDI ultra", year: 2016, km: 188400, fuel: "Dīzelis", gear: "Manuālā", kw: 140, place: "Lyon, FR",
+    start: 6500, min: 8000, cur: 8150, buy: null, est: null, aStart: NOW0 - 9 * D, end: NOW0 - 5 * H, firstSeen: NOW0 - 8.7 * D, lastSeen: NOW0 - 5 * H,
+    vin: "WAUZZZ4G1GN445566", tax: { kind: "gross", rate: 20, raw: "TTC, TVA 20 % récupérable" }, bids: 21, dmg: 4, imgs: 11, type: "", hist: [[-180, "Pašreizējā", 6500, 7000], [-30, "Pašreizējā", 7400, 8150]] },
+];
+cars.forEach((c) => { c.hist = c.hist.map(([h, f, from, to]) => ({ t: NOW0 + h * H, f, from, to })); });
+
+const LS = "provin-iriss-concepts-v3";
+const st = Object.assign({ fav: ["c1", "c5"], hidden: ["c2"], notes: { c1: "Zvanīt pārdevējam par servisa grāmatu." } }, JSON.parse(localStorage.getItem(LS) || "{}"));
+const save = () => localStorage.setItem(LS, JSON.stringify({ fav: st.fav, hidden: st.hidden, notes: st.notes }));
+const isFav = (c) => st.fav.includes(c.id), isHidden = (c) => st.hidden.includes(c.id);
+const ui = { img: {}, open: new Set(), tabA: "all", sortA: "score", drawer: null, bid: {} };
+
+function cfg() {
+  const n = (id, d) => { const v = Number(document.getElementById(id).value); return Number.isFinite(v) ? v : d; };
+  return { fee: n("sFee", 600), tr: n("sTr", 800), com: n("sCom", 2000), vat: n("sVat", 21) / 100, bud: n("sBud", 18000) };
+}
+const eur = (n) => (n == null || !Number.isFinite(n) ? "-" : Math.round(n).toLocaleString("lv-LV") + " €");
+const kmf = (n) => (n == null ? "-" : Math.round(n).toLocaleString("lv-LV") + " km");
+const pctTxt = (v) => Math.round(v * 100) + " %";
+const primary = (c) => (c.cur != null ? { l: "Pašreizējā", v: c.cur } : { l: "Sākuma", v: c.start });
+const minorPrices = (c) => [c.buy != null ? ["Pirkt uzreiz", c.buy] : null, c.est != null ? ["Auto1 novērtējums", c.est] : null, c.min != null ? ["Minimālā", c.min] : null].filter(Boolean);
+const basePrice = (c) => c.cur ?? c.start ?? c.buy ?? null;
+
+/* PVN */
+const TX = {
+  net: { cls: "tx-net", short: "NETO", long: "Neto cena, bez PVN" },
+  margin: { cls: "tx-margin", short: "MARŽA", long: "Peļņas daļas režīms, PVN atsevišķi nav" },
+  gross: { cls: "tx-gross", short: "AR PVN", long: "Cena ar ārvalstu PVN" },
+  unknown: { cls: "tx-unknown", short: "PVN ?", long: "PVN režīms nav zināms, rēķinām kā neto (sliktākais gadījums)" },
+};
+const txShort = (c) => (c.tax.kind === "gross" ? `AR PVN ${c.tax.rate} %` : TX[c.tax.kind].short);
+const txBadge = (c) => `<span class="tx ${TX[c.tax.kind].cls}" title="${TX[c.tax.kind].long}. Avotā: ${c.tax.raw}">${txShort(c)}</span>`;
+
+function real(c, price = basePrice(c)) {
+  if (price == null) return null;
+  const k = cfg(), exp = k.fee + k.tr, kind = c.tax.kind;
+  const base = kind === "gross" ? price / (1 + c.tax.rate / 100) : price;
+  const vatBase = kind === "margin" ? exp : base + exp;
+  const vat = vatBase * k.vat, total = (kind === "margin" ? base : 0) + vatBase + vat + k.com;
+  return { price, base, fee: k.fee, tr: k.tr, com: k.com, vatBase, vat, total, left: k.bud - total, kind };
+}
+function maxBidFor(kind, rate = 0) {
+  const k = cfg(), exp = k.fee + k.tr, room = k.bud - k.com;
+  if (kind === "margin") return room - exp * (1 + k.vat);
+  const net = room / (1 + k.vat) - exp;
+  return kind === "gross" ? net * (1 + rate / 100) : net;
+}
+const maxBid = (c) => maxBidFor(c.tax.kind, c.tax.rate);
+const roomOf = (c) => { const p = basePrice(c); return p == null ? null : maxBid(c) - p; };
+
+/* laiks un vēsture */
+const daysIn = (c) => (Date.now() - (c.aStart ?? c.firstSeen)) / D;
+const daysTxt = (c) => { const d = daysIn(c); return d < 1 ? `${Math.max(1, Math.round(d * 24))} h izsolē` : `${Math.floor(d)} d izsolē`; };
+const changes = (c) => c.hist.filter((h) => h.from != null && h.to != null && h.to !== h.from);
+const ups = (c) => changes(c).filter((h) => h.to > h.from).length, downs = (c) => changes(c).filter((h) => h.to < h.from).length;
+function mainDelta(c) {
+  const hs = changes(c).filter((h) => h.f === primary(c).l);
+  if (!hs.length) return null;
+  const from = hs[0].from, to = hs[hs.length - 1].to;
+  return { d: to - from, p: ((to - from) / from) * 100 };
+}
+function deltaHtml(d, p) {
+  if (d == null || d === 0) return "";
+  return `<span class="delta ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${eur(Math.abs(d))}${p != null ? ` (${p > 0 ? "+" : ""}${p.toFixed(1)} %)` : ""}</span>`;
+}
+const arrows = (c) => `<span class="tiny muted">${ups(c) ? `<span style="color:var(--up)">▲${ups(c)}</span> ` : ""}${downs(c) ? `<span style="color:var(--down)">▼${downs(c)}</span>` : ""}${!ups(c) && !downs(c) ? "nav izmaiņu" : ""}</span>`;
+const chip = (s) => `<span class="chip src-${s}"><span class="dot bg-${s}"></span>${SRC[s].toUpperCase()}</span>`;
+const dt = (t) => new Date(t).toLocaleString("lv-LV", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const pad = (n) => String(n).padStart(2, "0");
+function cd(end) {
+  if (end == null) return { t: "Beigu laiks nav zināms", k: "unknown" };
+  const ms = end - Date.now();
+  if (ms <= 0) return { t: "Beigusies", k: "ended" };
+  const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), c = `${pad(Math.floor((s % 86400) / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  return { t: d ? `${d} d ${c}` : c, k: ms < H ? "urgent" : ms < D ? "soon" : "calm" };
+}
+const cdSpan = (c) => `<span class="cd" data-end="${c.end ?? ""}"></span>`;
+function tick() { document.querySelectorAll(".cd[data-end]").forEach((el) => { const r = cd(el.dataset.end ? Number(el.dataset.end) : null); el.textContent = r.t; el.className = "cd " + r.k; }); }
+const specs = (c) => [c.year, kmf(c.km), c.fuel, c.gear, c.kw + " kW", c.place].join(" · ");
+const idTxt = (c) => (c.vin ? "VIN " + c.vin : c.stock ? "Auto1 " + c.stock : "VIN sarakstā nav");
+function cmpNull(a, b, dir) { if (a == null && b == null) return 0; if (a == null) return 1; if (b == null) return -1; return dir * (a - b); }
+
+/* bloki */
+function photo(c, w, h, opts = {}) {
+  const i = ui.img[c.id] ?? 0, hue = (i * 37) % 360;
+  return `<div class="photo" style="width:${w}px;height:${h}px;background:linear-gradient(${120 + hue}deg,#cbd5e1,var(--${VAR[c.src]}))">
+    foto ${i + 1}
+    ${opts.nav !== false ? `<button class="nav-l" data-img="${c.id}" data-d="-1">‹</button><button class="nav-r" data-img="${c.id}" data-d="1">›</button>` : ""}
+    <span class="cnt">${i + 1}/${c.imgs}</span>${c.dmg ? `<span class="dmg">${c.dmg} bojāj.</span>` : ""}</div>
+    ${opts.thumbs ? `<div class="thumbs">${Array.from({ length: Math.min(opts.thumbs, c.imgs) }, (_, k) => `<span class="${k === i ? "on" : ""}" data-imgset="${c.id}" data-k="${k}" style="background:linear-gradient(${120 + ((k * 37) % 360)}deg,#cbd5e1,var(--${VAR[c.src]}))"></span>`).join("")}${c.imgs > opts.thumbs ? `<span class="tiny muted" style="opacity:1;width:auto;cursor:default">+${c.imgs - opts.thumbs}</span>` : ""}</div>` : ""}`;
+}
+const favBtn = (c) => `<button class="ibtn ${isFav(c) ? "fav" : ""}" data-fav="${c.id}" title="${isFav(c) ? "Noņemt no favorītiem" : "Nopietni izskatāms (favorīts)"}">${isFav(c) ? "★" : "☆"}</button>`;
+const hideBtn = (c) => `<button class="ibtn" data-hide="${c.id}" title="${isHidden(c) ? "Rādīt atkal" : "Nav interesanti"}">${isHidden(c) ? "↺" : "✕"}</button>`;
+const noteLine = (c) => `<input class="noteline ${st.notes[c.id] ? "has" : ""}" data-note="${c.id}" value="${(st.notes[c.id] ?? "").replace(/"/g, "&quot;")}" placeholder="✎ Pierakstīt piezīmi" />`;
+const noteBox = (c) => `<textarea class="note" data-note="${c.id}" placeholder="Piezīme (redzama tikai adminam)">${st.notes[c.id] ?? ""}</textarea>`;
+const newChip = (c) => (Date.now() - c.firstSeen < 36 * H ? `<span class="chip new">JAUNS</span>` : "");
+const dmgChip = (c) => (c.dmg ? `<span class="chip bad">${c.dmg} bojājumi</span>` : `<span class="chip new">bez bojājumiem</span>`);
+const bidsChip = (c) => (c.bids != null ? `<span class="chip grey">${c.bids} solījumi</span>` : "");
+const typeChip = (c) => (c.type ? `<span class="chip warn">${c.type}</span>` : "");
+
+function priceBlock(c, size = "", right = true) {
+  const j = right ? "flex-end" : "flex-start";
+  const p = primary(c), md = mainDelta(c), minor = minorPrices(c)[0];
+  return `<div class="lbl">${p.l} cena</div>
+    <div class="row" style="gap:6px;justify-content:${j}"><span class="pnow ${size}">${eur(p.v)}</span>${txBadge(c)}</div>
+    <div class="row" style="gap:6px;justify-content:${j}">${md ? deltaHtml(md.d, md.p) : ""}${arrows(c)}</div>
+    ${minor ? `<div class="pbuy">${minor[0].toLowerCase()} ${eur(minor[1])}</div>` : ""}`;
+}
+function histTable(c) {
+  const sorted = [...c.hist].sort((a, b) => a.t - b.t);
+  const rows = [{ t: c.firstSeen, from: null, to: sorted[0]?.from ?? basePrice(c), first: true }, ...sorted];
+  return `<table class="h"><tr><th>Laiks</th><th>Lauks</th><th class="r">No</th><th class="r">Uz</th><th class="r">Izmaiņa</th></tr>${rows.map((h) => {
+    const d = h.from != null && h.to != null ? h.to - h.from : null;
+    return `<tr><td>${dt(h.t)}</td><td>${h.first ? '<span class="muted">Pirmo reizi redzēts</span>' : h.f}</td><td class="r num">${h.first ? "" : eur(h.from)}</td><td class="r num"><b>${h.to == null ? "noņemta" : eur(h.to)}</b></td><td class="r">${d != null ? deltaHtml(d, (d / h.from) * 100) : ""}</td></tr>`;
+  }).join("")}<tr><td>${dt(c.lastSeen)}</td><td class="muted">Pēdējo reizi redzēts</td><td></td><td></td><td></td></tr></table>`;
+}
+function spark(c, w = 300, h = 70) {
+  const hs = changes(c).filter((x) => x.f === primary(c).l);
+  if (!hs.length) return `<div class="small muted">Pašreizējai cenai izmaiņu nav.</div>`;
+  const pts = [{ t: c.firstSeen, v: hs[0].from }, ...hs.map((x) => ({ t: x.t, v: x.to })), { t: Date.now(), v: hs[hs.length - 1].to }];
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t, v0 = Math.min(...pts.map((p) => p.v)), v1 = Math.max(...pts.map((p) => p.v));
+  const X = (t) => 6 + ((t - t0) / (t1 - t0 || 1)) * (w - 12), Y = (v) => h - 10 - ((v - v0) / (v1 - v0 || 1)) * (h - 24);
+  let d = `M${X(pts[0].t)},${Y(pts[0].v)}`;
+  for (let i = 1; i < pts.length; i++) d += ` H${X(pts[i].t)} V${Y(pts[i].v)}`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="var(--${VAR[c.src]})" stroke-width="2"/>${pts.slice(1, -1).map((p, i) => `<circle cx="${X(p.t)}" cy="${Y(p.v)}" r="4" fill="${p.v > pts[i].v ? "var(--up)" : "var(--down)"}"/>`).join("")}<text x="6" y="12" font-size="10" fill="#6b7280">${eur(v1)}</text><text x="6" y="${h - 1}" font-size="10" fill="#6b7280">${eur(v0)}</text></svg>`;
+}
+function costTable(c, price) {
+  const r = real(c, price ?? basePrice(c));
+  if (!r) return `<div class="small muted">Cenas nav, reālo cenu nevar izrēķināt.</div>`;
+  const k = cfg(), v = pctTxt(k.vat);
+  const lines = [[`Solījums ${txBadge(c)}`, eur(r.price)]];
+  if (r.kind === "gross") lines.push([`<span class="ind">bez ārvalstu PVN ${c.tax.rate} %</span>`, eur(r.base)]);
+  lines.push(["Izsoles maksa", eur(r.fee)], ["Transports", eur(r.tr)]);
+  lines.push([`PVN ${v} no ${r.kind === "margin" ? "izdevumiem" : "visas summas"} (${eur(r.vatBase)})`, eur(r.vat)]);
+  lines.push(["PROVIN komisija (ar PVN)", eur(r.com)]);
+  return `<div class="cost num">${lines.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join("")}
+    <span class="t">Reālā cena klientam</span><span class="t">${eur(r.total)}</span><span>Budžets</span><span>${eur(k.bud)}</span>
+    <span>${r.left >= 0 ? "Atlikums" : "Pārsniegts"}</span><span style="font-weight:800;color:${r.left >= 0 ? "var(--down)" : "var(--up)"}">${eur(Math.abs(r.left))}</span></div>
+    ${r.kind === "unknown" ? `<div class="tiny" style="margin-top:6px;color:#92400e">PVN režīms nav zināms (${c.tax.raw}). Rēķināts kā neto, tas ir dārgākais variants.</div>` : ""}`;
+}
+function match(c) {
+  const r = real(c), k = cfg();
+  const checks = [
+    ["Reālā cena ≤ budžets", r ? r.total <= k.bud : null, r ? eur(r.total) : "cenas nav"],
+    ["Gads 2013-2017", c.year >= 2013 && c.year <= 2017, String(c.year)],
+    ["Līdz 200 000 km", c.km <= 200000, kmf(c.km)],
+    ["Automāts", c.gear === "Automāts", c.gear],
+    ["Bojājumi ≤ 3", c.dmg <= 3, String(c.dmg)],
+    ["Izsole aktīva", c.end == null ? null : c.end > Date.now(), c.end == null ? "nav zināms" : c.end > Date.now() ? "notiek" : "beigusies"],
+  ];
+  const known = checks.filter((x) => x[1] !== null);
+  return { checks, score: Math.round((known.filter((x) => x[1]).length / (known.length || 1)) * 100) };
+}
+const scoreBall = (m) => { const col = m.score >= 80 ? ["#ecfdf5", "#065f46"] : m.score >= 60 ? ["#fffbeb", "#92400e"] : ["#fef2f2", "#991b1b"]; return `<div class="score" style="background:${col[0]};color:${col[1]}" title="Pasūtījuma atbilstība">${m.score}</div>`; };
+const checksHtml = (m) => m.checks.map(([l, ok, v]) => `<span class="ck ${ok === null ? "na" : ok ? "ok" : "no"}">${ok === null ? "?" : ok ? "✓" : "✕"} ${l}: ${v}</span>`).join("");
+function checksShort(m) {
+  const bad = m.checks.filter((x) => x[1] !== true);
+  const okN = m.checks.length - bad.length;
+  return `<span class="ck ok">✓ ${okN}/${m.checks.length}</span>${bad.map(([l, ok, v]) => `<span class="ck ${ok === null ? "na" : "no"}">${ok === null ? "?" : "✕"} ${l.replace(" ≤ budžets", "")}: ${v}</span>`).join("")}`;
+}
+function roomBlock(c) {
+  const room = roomOf(c), mb = maxBid(c), r = real(c);
+  return `<div class="lbl">${room == null ? "Cenas nav" : room >= 0 ? "Var solīt vēl" : "Pārsniegts par"}</div>
+    <div class="pnow" style="font-size:19px;color:${room == null ? "var(--mute)" : room >= 0 ? "var(--down)" : "var(--up)"}">${room == null ? "-" : eur(Math.abs(room))}</div>
+    <div class="tiny muted">maks. solījums ${eur(mb)}</div><div class="tiny muted">reālā cena ${eur(r?.total)}</div>`;
+}
+function tabsHtml() {
+  const favs = cars.filter(isFav).length, hid = cars.filter(isHidden).length, vis = cars.length - hid;
+  return `<button class="btn ${ui.tabA === "all" ? "on" : ""}" data-tab="all">Visi ${vis}</button><button class="btn ${ui.tabA === "fav" ? "on" : ""}" data-tab="fav">★ Favorīti ${favs}</button><button class="btn ${ui.tabA === "hidden" ? "on" : ""}" data-tab="hidden">Paslēptie ${hid}</button>`;
+}
+function listFor() {
+  const base = ui.tabA === "fav" ? cars.filter(isFav) : ui.tabA === "hidden" ? cars.filter(isHidden) : cars.filter((c) => !isHidden(c));
+  const key = {
+    score: (a, b) => match(b).score - match(a).score || cmpNull(roomOf(a), roomOf(b), -1),
+    room: (a, b) => cmpNull(roomOf(a), roomOf(b), -1),
+    end: (a, b) => cmpNull(a.end != null && a.end > Date.now() ? a.end : null, b.end != null && b.end > Date.now() ? b.end : null, 1),
+    days: (a, b) => daysIn(b) - daysIn(a),
+  }[ui.sortA];
+  return [...base].sort((a, b) => (isFav(b) - isFav(a)) || key(a, b));
+}
+const toolbar = () => `<div class="toolbar">${tabsHtml()}<span class="grow"></span><span class="small muted">Kārtot pēc</span><select class="btn" data-sort><option value="score" ${ui.sortA === "score" ? "selected" : ""}>Atbilstība</option><option value="room" ${ui.sortA === "room" ? "selected" : ""}>Var solīt vēl</option><option value="end" ${ui.sortA === "end" ? "selected" : ""}>Beigu laiks</option><option value="days" ${ui.sortA === "days" ? "selected" : ""}>Dienas izsolē</option></select></div>`;
+const emptyList = () => `<div class="empty box">Šajā cilnē nav auto.</div>`;
+
+/* noteikumi augšā */
+function rulesHtml() {
+  const k = cfg(), v = (1 + k.vat).toFixed(2).replace(".", ","), demo = 10000;
+  const ex = (kind, rate) => real({ tax: { kind, rate } }, demo).total;
+  return `<div class="box"><span class="tx tx-net">NETO</span> <b>(solījums + ${eur(k.fee)} + ${eur(k.tr)}) × ${v} + ${eur(k.com)}</b><div class="muted" style="margin-top:4px">PVN uz visu summu. Solījums 10 000 € = <b>${eur(ex("net"))}</b> · maks. solījums ${eur(maxBidFor("net"))}</div></div>
+    <div class="box"><span class="tx tx-margin">MARŽA</span> <b>solījums + (${eur(k.fee)} + ${eur(k.tr)}) × ${v} + ${eur(k.com)}</b><div class="muted" style="margin-top:4px">PVN tikai izdevumiem. Solījums 10 000 € = <b>${eur(ex("margin"))}</b> · maks. solījums ${eur(maxBidFor("margin"))}</div></div>
+    <div class="box"><span class="tx tx-gross">AR PVN 19 %</span> <b>solījums ÷ 1,19, tālāk kā neto</b><div class="muted" style="margin-top:4px">Pieņēmums: ārvalstu PVN atskaita (B2B). Solījums 10 000 € = <b>${eur(ex("gross", 19))}</b> · maks. solījums ${eur(maxBidFor("gross", 19))}</div></div>
+    <div class="box"><span class="tx tx-unknown">PVN ?</span> <b>rēķinām kā neto</b><div class="muted" style="margin-top:4px">Ja avots režīmu nesaka vai kods nav atšifrēts, rādām dārgāko variantu un dzeltenu birku.</div></div>`;
+}
+
+/* A */
+function rA() {
+  const k = cfg(), list = listFor();
+  return `<div class="box budhead"><div><div class="lbl">Klienta budžets</div><div class="pnow">${eur(k.bud)}</div></div>
+      <div><div class="lbl">Maks. solījums <span class="tx tx-net">NETO</span></div><div class="pnow" style="color:var(--accent)">${eur(maxBidFor("net"))}</div></div>
+      <div><div class="lbl">Maks. solījums <span class="tx tx-margin">MARŽA</span></div><div class="pnow" style="color:var(--accent)">${eur(maxBidFor("margin"))}</div></div>
+      <div><div class="lbl">Maks. solījums <span class="tx tx-gross">AR PVN 19 %</span></div><div class="pnow" style="color:var(--accent)">${eur(maxBidFor("gross", 19))}</div></div>
+      <div class="small muted grow" style="min-width:220px">Pasūtījums: Audi A6 Avant, 2013-2017, līdz 200 000 km, automāts. Komisija ${eur(k.com)} ar PVN.</div></div>
+    ${toolbar()}<div class="stack">${list.length ? list.map((c) => {
+      const m = match(c);
+      return `<div class="card click ${isFav(c) ? "fav" : ""} ${isHidden(c) ? "hidden" : ""}" style="border-left-color:var(--${VAR[c.src]});align-items:center" data-drawer="${c.id}">
+        ${photo(c, 116, 80)}${scoreBall(m)}
+        <div class="grow"><div class="row wrapf" style="gap:5px">${chip(c.src)}<span class="chip grey">${daysTxt(c)}</span>${dmgChip(c)}${bidsChip(c)}${typeChip(c)}${newChip(c)}</div>
+          <div style="font-weight:700;margin-top:4px" class="trunc">${c.title}</div><div class="tiny muted trunc">${specs(c)}</div>
+          <div class="row wrapf" style="gap:4px;margin-top:5px">${checksShort(m)}</div>${noteLine(c)}</div>
+        <div class="col-r" style="min-width:170px">${priceBlock(c)}<div class="small">${cdSpan(c)}</div></div>
+        <div class="col-r" style="min-width:140px">${roomBlock(c)}</div>
+        <div class="row" style="flex-direction:column;gap:6px">${favBtn(c)}${hideBtn(c)}</div></div>`;
+    }).join("") : emptyList()}</div>`;
+}
+
+/* B */
+function scaleHtml(c) {
+  const p = basePrice(c), mb = maxBid(c);
+  if (p == null) return `<div class="tiny muted" style="margin-top:10px">Cenas nav.</div>`;
+  const hi = Math.max(p, mb) * 1.15, mbPct = (mb / hi) * 100, pPct = (p / hi) * 100;
+  return `<div class="scale" style="--mb:${mbPct}%"><span class="mx" style="left:${mbPct}%">maks. ${eur(mb)}</span><span class="mk" style="left:calc(${pPct}% - 1px)" title="${primary(c).l} ${eur(p)}"></span></div>
+    <div class="row tiny" style="justify-content:space-between"><span class="muted">0 €</span><span style="font-weight:700;color:${p <= mb ? "var(--down)" : "var(--up)"}">${p <= mb ? "var solīt vēl " + eur(mb - p) : "pāri par " + eur(p - mb)}</span></div>`;
+}
+function rB() {
+  const list = listFor();
+  return `${toolbar()}<div class="grid2">${list.length ? list.map((c) => {
+    const m = match(c), r = real(c);
+    return `<div class="card click ${isFav(c) ? "fav" : ""} ${isHidden(c) ? "hidden" : ""}" style="border-left-color:var(--${VAR[c.src]});flex-direction:column;gap:8px" data-drawer="${c.id}">
+      <div class="row" style="align-items:flex-start">${photo(c, 150, 104)}
+        <div class="grow"><div class="row wrapf" style="gap:5px">${chip(c.src)}<span class="chip grey">${daysTxt(c)}</span>${dmgChip(c)}${newChip(c)}</div>
+          <div style="font-weight:700;margin-top:4px" class="trunc">${c.title}</div><div class="tiny muted">${c.year} · ${kmf(c.km)} · ${c.gear} · ${c.place}</div>
+          <div class="row" style="margin-top:8px;align-items:flex-end;gap:14px"><div>${priceBlock(c, "", false)}</div><div class="grow"></div>${scoreBall(m)}</div></div>
+        <div class="row" style="flex-direction:column;gap:6px">${favBtn(c)}${hideBtn(c)}</div></div>
+      <div>${scaleHtml(c)}</div>
+      <div class="row small" style="gap:14px"><span>Reālā cena <b class="num">${eur(r?.total)}</b></span><span class="muted">${c.bids != null ? c.bids + " solījumi · " : ""}${cdSpan(c)}</span></div>
+      ${noteLine(c)}</div>`;
+  }).join("") : emptyList()}</div>`;
+}
+
+/* C */
+function rC() {
+  const list = listFor();
+  return `${toolbar()}<div class="tbl-head lbl"><span></span><span>Auto</span><span style="text-align:right">Pašreizējā cena</span><span style="text-align:right">Izmaiņa</span><span style="text-align:right">Reālā / var solīt</span><span style="text-align:right">Beigas</span><span></span></div>
+    <div class="stack">${list.length ? list.map((c) => {
+      const room = roomOf(c), r = real(c), md = mainDelta(c), p = primary(c), minor = minorPrices(c)[0];
+      return `<div class="card click tbl-row ${isFav(c) ? "fav" : ""} ${isHidden(c) ? "hidden" : ""}" style="border-left-color:var(--${VAR[c.src]});padding:7px 12px" data-drawer="${c.id}">
+        ${photo(c, 84, 58, { nav: false })}
+        <div style="min-width:0"><div class="row" style="gap:5px">${chip(c.src)}<b class="small trunc">${c.title}</b></div>
+          <div class="tiny muted trunc">${c.year} · ${kmf(c.km)} · ${daysTxt(c)} · ${c.dmg} bojāj.${c.bids != null ? " · " + c.bids + " solījumi" : ""}</div>${noteLine(c).replace('margin-top:6px', '').replace('class="noteline', 'style="margin-top:3px;padding:2px 7px;font-size:11px" class="noteline')}</div>
+        <div style="text-align:right"><div class="row" style="gap:5px;justify-content:flex-end"><span class="pnow" style="font-size:18px">${eur(p.v)}</span>${txBadge(c)}</div><div class="pbuy">${p.l === "Sākuma" ? "sākuma cena" : ""}${minor ? (p.l === "Sākuma" ? " · " : "") + minor[0].toLowerCase() + " " + eur(minor[1]) : ""}</div></div>
+        <div style="text-align:right">${md ? deltaHtml(md.d, md.p) : '<span class="tiny muted">-</span>'}<div>${arrows(c)}</div></div>
+        <div style="text-align:right"><b class="num small">${eur(r?.total)}</b><div class="tiny" style="font-weight:700;color:${room == null ? "var(--mute)" : room >= 0 ? "var(--down)" : "var(--up)"}">${room == null ? "-" : (room >= 0 ? "+" : "-") + eur(Math.abs(room))}</div></div>
+        <div style="text-align:right" class="small">${cdSpan(c)}</div>
+        <div class="row" style="gap:4px;justify-content:flex-end">${favBtn(c)}${hideBtn(c)}</div></div>`;
+    }).join("") : emptyList()}</div>`;
+}
+
+/* D */
+function rD() {
+  return listFor().map((c) => {
+    const oh = ui.open.has(c.id), m = match(c);
+    return `<div class="card ${isFav(c) ? "fav" : ""} ${isHidden(c) ? "hidden" : ""}" style="border-left-color:var(--${VAR[c.src]})">
+      <div>${photo(c, 200, 134, { thumbs: 5 })}</div>
+      <div class="grow"><div class="row wrapf" style="gap:5px">${chip(c.src)}<span class="chip grey">${daysTxt(c)}</span>${dmgChip(c)}${bidsChip(c)}${typeChip(c)}${newChip(c)}</div>
+        <div style="font-weight:700;margin-top:5px" class="trunc">${c.title}</div><div class="tiny muted trunc">${specs(c)}</div>
+        <dl class="kv" style="grid-template-columns:auto 1fr auto 1fr;font-size:12px;margin-top:6px;gap:2px 10px"><dt>Bildes</dt><dd>${c.imgs}</dd><dt>ID</dt><dd class="trunc">${idTxt(c)}</dd><dt>PVN avotā</dt><dd class="trunc">${c.tax.raw}</dd><dt>Atbilstība</dt><dd><b>${m.score}</b> / 100</dd></dl>
+        <div class="row wrapf" style="gap:6px;margin-top:6px"><button class="btn ${oh ? "on" : ""}" data-open="${c.id}">Cenu vēsture (${c.hist.length}) ${oh ? "▴" : "▾"}</button><button class="btn" data-drawer="${c.id}">Viss par auto ›</button></div>
+        ${oh ? `<div class="acc">${histTable(c)}</div>` : ""}${noteLine(c)}</div>
+      <div class="col-r" style="min-width:190px"><div class="row" style="justify-content:flex-end;gap:6px">${favBtn(c)}${hideBtn(c)}</div>${priceBlock(c)}<div class="small">${cdSpan(c)}</div><div style="margin-top:4px">${roomBlock(c)}</div></div></div>`;
+  }).join("") || emptyList();
+}
+
+/* atvilktne */
+function drawerHtml(c) {
+  const m = match(c), p = primary(c), md = mainDelta(c), r = real(c), room = roomOf(c);
+  const bp = basePrice(c) ?? 5000, bid = ui.bid[c.id] ?? basePrice(c) ?? 0;
+  return `<div class="row">${chip(c.src)}<span class="chip grey">${daysTxt(c)}</span>${newChip(c)}<span class="grow"></span>${favBtn(c)}${hideBtn(c)}<a class="btn" href="#" onclick="return false">Atvērt ${SRC[c.src]} ↗</a><button class="ibtn" data-closedrawer title="Aizvērt (Esc)">✕</button></div>
+    <h3 style="margin:10px 0 2px;font-size:18px">${c.title}</h3><div class="small muted">${specs(c)} · ${idTxt(c)}</div>
+    <div class="pricebox">
+      <div class="main"><div class="lbl">${p.l} cena</div><div class="row" style="gap:6px"><span class="pnow lg">${eur(p.v)}</span>${txBadge(c)}</div><div class="row" style="gap:6px;margin-top:2px">${md ? deltaHtml(md.d, md.p) : ""}${arrows(c)}</div>${minorPrices(c).map(([l, v]) => `<div class="pbuy">${l.toLowerCase()} ${eur(v)}</div>`).join("")}</div>
+      <div><div class="lbl">Reālā cena</div><div class="pnow" style="font-size:19px">${eur(r?.total)}</div><div class="tiny" style="font-weight:700;color:${room == null ? "var(--mute)" : room >= 0 ? "var(--down)" : "var(--up)"}">${room == null ? "" : room >= 0 ? "var solīt vēl " + eur(room) : "pāri par " + eur(-room)}</div><div class="tiny muted">maks. solījums ${eur(maxBid(c))}</div></div>
+      <div><div class="lbl">Izsole</div><div style="font-size:15px">${cdSpan(c)}</div><div class="tiny muted">${c.bids != null ? c.bids + " solījumi" : "solījumu skaits nav"}</div><div class="tiny muted">${c.end ? "beidzas " + dt(c.end) : ""}</div></div>
+    </div>
+    <h4>Piezīme</h4>${noteBox(c)}
+    <h4>Bildes (${c.imgs})</h4>${photo(c, 540, 280, { thumbs: 10 })}
+    <div class="row wrapf" style="gap:5px;margin-top:8px">${dmgChip(c)}${bidsChip(c)}${typeChip(c)}</div>
+    <h4>Cenu vēsture</h4>${spark(c, 540, 80)}${histTable(c)}
+    <h4>Izmaksas un kalkulators</h4>
+    <div class="row" style="margin-bottom:8px"><span class="small muted">Ja nosolām par</span><input type="range" min="${Math.round(bp * 0.7)}" max="${Math.round(bp * 1.4)}" step="100" value="${bid}" data-bid="${c.id}" class="grow" /><b class="num" id="dBidV" style="min-width:80px;text-align:right">${eur(bid)}</b></div>
+    <div id="dCost">${costTable(c, bid)}</div>
+    <h4>Pasūtījuma atbilstība</h4><div class="row" style="align-items:flex-start">${scoreBall(m)}<div class="row wrapf" style="gap:5px">${checksHtml(m)}</div></div>
+    <h4>Dati no avota</h4><dl class="kv"><dt>Avots</dt><dd>${SRC[c.src]}</dd><dt>Identifikators</dt><dd>${idTxt(c)}</dd><dt>PVN režīms</dt><dd>${txBadge(c)} ${c.tax.raw}</dd><dt>Bojājumu atskaite</dt><dd>${c.dmg ? c.dmg + " bojājumi" : "nav"}</dd><dt>Solījumu skaits</dt><dd>${c.bids ?? "nav datos"}</dd><dt>Izsoles tips</dt><dd>${c.type || "-"}</dd><dt>Izsoles sākums</dt><dd>${dt(c.aStart)}</dd><dt>Beigu laiks</dt><dd>${c.end ? dt(c.end) : "nav zināms"}</dd><dt>Pirmo reizi redzēts</dt><dd>${dt(c.firstSeen)}</dd><dt>Pēdējo reizi redzēts</dt><dd>${dt(c.lastSeen)}</dd></dl>`;
+}
+function openDrawer(id) {
+  ui.drawer = id;
+  document.getElementById("drawer").innerHTML = drawerHtml(cars.find((x) => x.id === id));
+  document.getElementById("drawer").classList.add("open");
+  tick();
+}
+const closeDrawer = () => { ui.drawer = null; document.getElementById("drawer").classList.remove("open"); };
+
+function renderAll() {
+  document.getElementById("rules").innerHTML = rulesHtml();
+  for (const [id, fn] of Object.entries({ rA, rB, rC, rD })) document.getElementById(id).innerHTML = fn();
+  if (ui.drawer) openDrawer(ui.drawer);
+  tick();
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.matches("input, textarea, select")) return;
+  const t = e.target.closest("[data-fav],[data-hide],[data-img],[data-imgset],[data-open],[data-tab],[data-drawer],[data-closedrawer]");
+  if (!t) return;
+  const d = t.dataset;
+  if (d.fav) { st.fav = st.fav.includes(d.fav) ? st.fav.filter((x) => x !== d.fav) : [...st.fav, d.fav]; save(); }
+  else if (d.hide) { st.hidden = st.hidden.includes(d.hide) ? st.hidden.filter((x) => x !== d.hide) : [...st.hidden, d.hide]; save(); }
+  else if (d.img) { const c = cars.find((x) => x.id === d.img); ui.img[c.id] = ((ui.img[c.id] ?? 0) + Number(d.d) + c.imgs) % c.imgs; }
+  else if (d.imgset) ui.img[d.imgset] = Number(d.k);
+  else if (d.open) ui.open.has(d.open) ? ui.open.delete(d.open) : ui.open.add(d.open);
+  else if (d.tab) ui.tabA = d.tab;
+  else if (d.drawer) { openDrawer(d.drawer); return; }
+  else if (t.hasAttribute("data-closedrawer")) { closeDrawer(); return; }
+  renderAll();
+});
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.note) {
+    st.notes[t.dataset.note] = t.value; save();
+    document.querySelectorAll(`[data-note="${t.dataset.note}"]`).forEach((el) => { if (el !== t) el.value = t.value; if (el.classList.contains("noteline")) el.classList.toggle("has", !!t.value); });
+    return;
+  }
+  if (t.dataset.bid) {
+    const c = cars.find((x) => x.id === t.dataset.bid);
+    ui.bid[c.id] = Number(t.value);
+    document.getElementById("dBidV").textContent = eur(ui.bid[c.id]);
+    document.getElementById("dCost").innerHTML = costTable(c, ui.bid[c.id]);
+    return;
+  }
+  if (t.closest(".settings")) renderAll();
+});
+document.addEventListener("change", (e) => { if (e.target.dataset.sort != null) { ui.sortA = e.target.value; renderAll(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+
+renderAll();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

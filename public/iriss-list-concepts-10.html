@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>IRISS LIST - 10 interfeisa varianti</title>
+  <style>
+    :root {
+      --ink: #111827; --sub: #4b5563; --mute: #6b7280; --hair: #e5e7eb; --bg: #f8f8f9; --card: #fff;
+      --accent: #ea580c;
+      --ab: #7c3aed; --ab-bg: #f5f3ff; --ab-bd: #ddd6fe;
+      --ol: #4338ca; --ol-bg: #eef2ff; --ol-bd: #c7d2fe;
+      --a1: #d97706; --a1-bg: #fffbeb; --a1-bd: #fde68a;
+      --up: #dc2626; --down: #059669;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    button, select, input { font: inherit; }
+    .nav { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 8px 16px; background: rgb(255 255 255 / .96); border-bottom: 1px solid var(--hair); backdrop-filter: blur(6px); }
+    .nav b { margin-right: 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+    .nav a { font-size: 12px; font-weight: 600; color: var(--mute); text-decoration: none; padding: 4px 9px; border-radius: 999px; }
+    .nav a:hover { background: #f3f4f6; color: var(--ink); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+    .intro { padding: 22px 0 6px; }
+    .intro h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+    .intro p { margin: 6px 0 0; color: var(--sub); max-width: 820px; }
+    section.v { padding: 26px 0 30px; border-top: 1px solid var(--hair); scroll-margin-top: 48px; }
+    .cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 12px; }
+    .cap .n { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--accent); }
+    .cap h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
+    .cap p { flex-basis: 100%; margin: 0; color: var(--sub); font-size: 13px; }
+    .box { background: var(--card); border: 1px solid var(--hair); border-radius: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / .04); }
+    .muted { color: var(--mute); }
+    .small { font-size: 12px; }
+    .tiny { font-size: 11px; }
+    .num { font-variant-numeric: tabular-nums; }
+    .row { display: flex; gap: 12px; align-items: center; }
+    .grow { flex: 1; min-width: 0; }
+    .trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .photo { flex-shrink: 0; border-radius: 10px; background: linear-gradient(135deg, #cbd5e1, #94a3b8); display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; border: 1px solid; font-size: 10px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+    .src-autobid { color: var(--ab); background: var(--ab-bg); border-color: var(--ab-bd); }
+    .src-openlane { color: var(--ol); background: var(--ol-bg); border-color: var(--ol-bd); }
+    .src-auto1 { color: var(--a1); background: var(--a1-bg); border-color: var(--a1-bd); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .bg-autobid { background: var(--ab); } .bg-openlane { background: var(--ol); } .bg-auto1 { background: var(--a1); }
+    .bd-autobid { border-color: var(--ab) !important; } .bd-openlane { border-color: var(--ol) !important; } .bd-auto1 { border-color: var(--a1) !important; }
+    .new { color: #065f46; background: #ecfdf5; border-color: #a7f3d0; }
+    .chg { color: #0c4a6e; background: #f0f9ff; border-color: #bae6fd; }
+    .price-big { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+    .lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+    .delta { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; }
+    .delta.up { color: var(--up); background: #fef2f2; } .delta.down { color: var(--down); background: #ecfdf5; }
+    .cd { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .cd.urgent { color: #dc2626; } .cd.soon { color: #ea580c; } .cd.calm { color: var(--ink); } .cd.ended, .cd.unknown { color: #94a3b8; font-weight: 600; }
+    .btn { border: 1px solid var(--hair); background: #fff; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 600; color: var(--ink); cursor: pointer; }
+    .btn:hover { border-color: #cbd5e1; }
+    .btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+    .stack > * + * { margin-top: 8px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    @media (max-width: 860px) { .grid3 { grid-template-columns: 1fr; } }
+
+    /* 1 */
+    .v1 { display: flex; border: 1px solid var(--hair); border-left-width: 5px; border-radius: 14px; background: #fff; padding: 12px; gap: 12px; }
+    .v1 .prices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; text-align: right; min-width: 230px; }
+    /* 2 */
+    table.t2 { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .t2 th { text-align: left; font-size: 11px; font-weight: 700; color: var(--mute); padding: 8px 10px; border-bottom: 1px solid var(--hair); cursor: pointer; user-select: none; white-space: nowrap; }
+    .t2 th:hover { color: var(--ink); }
+    .t2 td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+    .t2 tr.main:hover td { background: #fafafa; cursor: pointer; }
+    .t2 td.r, .t2 th.r { text-align: right; }
+    .t2 tr.more td { background: #fafafa; white-space: normal; }
+    /* 3 */
+    .col3 h3 { margin: 0 0 8px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .mini { border: 1px solid var(--hair); border-radius: 12px; background: #fff; padding: 10px; }
+    /* 4 */
+    .ladder { position: relative; height: 34px; margin: 6px 0 2px; }
+    .ladder .bar { position: absolute; top: 15px; left: 0; right: 0; height: 4px; border-radius: 4px; background: #e5e7eb; }
+    .ladder .fill { position: absolute; top: 15px; left: 0; height: 4px; border-radius: 4px; }
+    .ladder .pt { position: absolute; top: 0; transform: translateX(-50%); text-align: center; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .ladder .pt i { display: block; width: 12px; height: 12px; border-radius: 50%; margin: 10px auto 0; border: 2px solid #fff; box-shadow: 0 0 0 1px #cbd5e1; background: #94a3b8; }
+    .ladder .pt span { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); }
+    /* 5 */
+    .hist { border-left: 2px solid var(--hair); margin-left: 4px; padding-left: 10px; }
+    .hist div { position: relative; font-size: 12px; padding: 2px 0; }
+    .hist div::before { content: ""; position: absolute; left: -15px; top: 8px; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
+    /* 6 */
+    .gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    .g6 { position: relative; border-radius: 14px; overflow: hidden; background: #fff; border: 1px solid var(--hair); }
+    .g6 .photo { width: 100%; height: 150px; border-radius: 0; font-size: 13px; }
+    .g6 .ov { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; }
+    .g6 .pr { position: absolute; top: 112px; left: 8px; background: rgb(17 24 39 / .82); color: #fff; padding: 4px 9px; border-radius: 8px; font-weight: 800; }
+    /* 7 */
+    .lane h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); display: flex; gap: 8px; align-items: center; }
+    .lane h3 .c { background: #f1f5f9; color: var(--ink); border-radius: 999px; padding: 0 7px; font-size: 11px; }
+    /* 8 */
+    .cmp { display: grid; grid-template-columns: 150px repeat(3, minmax(0, 1fr)); font-size: 13px; }
+    .cmp div { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; }
+    .cmp .h { font-weight: 700; color: var(--mute); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .best { background: #ecfdf5; font-weight: 700; color: #065f46; }
+    /* 9 */
+    .score { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 15px; flex-shrink: 0; }
+    .ck { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; padding: 2px 7px; border-radius: 6px; }
+    .ck.ok { background: #ecfdf5; color: #065f46; } .ck.no { background: #fef2f2; color: #991b1b; } .ck.na { background: #f1f5f9; color: var(--mute); }
+    /* 10 */
+    .split { display: grid; grid-template-columns: 380px 1fr; min-height: 470px; }
+    @media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+    .split .list { border-right: 1px solid var(--hair); max-height: 560px; overflow: auto; }
+    .split .item { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; gap: 10px; border-left: 3px solid transparent; }
+    .split .item.sel { background: #fff7ed; }
+    .split .det { padding: 16px; }
+    .kv { display: grid; grid-template-columns: 150px 1fr; gap: 4px 12px; font-size: 13px; }
+    .kv dt { color: var(--mute); } .kv dd { margin: 0; }
+    .future { border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px; background: #fafafa; }
+
+    table.data { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+    .data th, .data td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--hair); }
+    .data th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--mute); }
+    .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 5px; }
+    .tag.y { background: #ecfdf5; color: #065f46; } .tag.m { background: #fffbeb; color: #92400e; } .tag.p { background: #eef2ff; color: #3730a3; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <b>IRISS LIST</b>
+    <a href="#v1">1 Avota josla</a><a href="#v2">2 Tabula</a><a href="#v3">3 Avotu kolonnas</a><a href="#v4">4 Cenu kāpnes</a><a href="#v5">5 Cenu vēsture</a>
+    <a href="#v6">6 Galerija</a><a href="#v7">7 Laika līnija</a><a href="#v8">8 Salīdzināt</a><a href="#v9">9 Atbilstība</a><a href="#v10">10 Detaļu panelis</a><a href="#data">Papildu dati</a>
+  </nav>
+
+  <div class="wrap">
+    <div class="intro">
+      <h1>IRISS LIST: 10 interfeisa varianti</h1>
+      <p>Visi varianti rāda vienus un tos pašus 7 paraugauto. Avots ir redzams ar krāsu (Autobid violets, Openlane zils, Auto1 oranžs), abas cenas ir lielas, un cenu izmaiņa ir ar bultu un summu. Atskaite skaita katru sekundi. Paraugdati ir izdomāti, foto ir aizvietotāji. Variantus var kombinēt: piemēram, 1 kā noklusējums, 2 kā alternatīvs skats un 10 kā atvēršana.</p>
+    </div>
+
+    <section class="v" id="v1"><div class="cap"><span class="n">01</span><h2>Avota josla</h2><p>Esošās kartītes evolūcija. Kreisā mala avota krāsā, avots kā pirmais vārds virsrakstā. Labajā pusē divas lielas cenas un izmaiņa pie tām.</p></div><div class="stack" id="r1"></div></section>
+
+    <section class="v" id="v2"><div class="cap"><span class="n">02</span><h2>Blīvā tabula</h2><p>Visvairāk auto vienā ekrānā. Klikšķis uz kolonnas virsraksta kārto (null vienmēr apakšā), klikšķis uz rindas atver cenu vēsturi un papildu laukus.</p></div><div class="box" style="overflow:auto"><table class="t2" id="r2"></table></div></section>
+
+    <section class="v" id="v3"><div class="cap"><span class="n">03</span><h2>Avotu kolonnas</h2><p>Trīs kolonnas: katram avotam savs saraksts ar skaitu un sesijas statusu galvā. Uzreiz redzams, kurā izsolē kas notiek un kurš avots ir izlogots.</p></div><div class="grid3 col3" id="r3"></div></section>
+
+    <section class="v" id="v4"><div class="cap"><span class="n">04</span><h2>Cenu kāpnes</h2><p>Visas zināmās cenas uz vienas ass: sākuma, minimālā, pašreizējā, pirkt tūlīt. Redzams, cik tālu solījums ir no minimuma un no pirkt tūlīt.</p></div><div class="stack" id="r4"></div></section>
+
+    <section class="v" id="v5"><div class="cap"><span class="n">05</span><h2>Cenu vēsture</h2><p>Mazs grafiks katram auto no mūsu nolasījumu vēstures un saraksts ar katru izmaiņu (laiks, lauks, no, uz). Filtrs „Tikai ar izmaiņām”.</p></div><div class="toolbar"><button class="btn" id="f5">Tikai ar izmaiņām</button></div><div class="stack" id="r5"></div></section>
+
+    <section class="v" id="v6"><div class="cap"><span class="n">06</span><h2>Foto galerija</h2><p>Liela bilde, virs tās avots un atskaite, uz bildes pašreizējā cena. Zem bildes otrā cena un izmaiņa. Ātrai vizuālai atlasei.</p></div><div class="gal" id="r6"></div></section>
+
+    <section class="v" id="v7"><div class="cap"><span class="n">07</span><h2>Izsoles laika līnija</h2><p>Grupas pēc beigu laika: nākamā stunda, šodien, rīt, vēlāk, beigušās, nav zināms. Labi rīta pārskatam, ko skatīties pirmo.</p></div><div class="lane" id="r7"></div></section>
+
+    <section class="v" id="v8"><div class="cap"><span class="n">08</span><h2>Salīdzināšana</h2><p>Atzīmē līdz 3 auto, un apakšā atveras salīdzinājums. Labākā vērtība katrā rindā ir iezīmēta zaļa (zemākā cena, mazākais nobraukums, jaunākais gads).</p></div><div class="stack" id="r8"></div><div class="box" id="r8c" style="margin-top:12px;padding:6px 0"></div></section>
+
+    <section class="v" id="v9"><div class="cap"><span class="n">09</span><h2>Pasūtījuma atbilstība</h2><p>Katru auto salīdzina ar IRISS pasūtījuma prasībām (budžets, gadi, nobraukums, kārba). Punkti 0-100 un ķeksīši, kas der un kas nē. Kārtots pēc atbilstības.</p></div><div class="muted small" style="margin-bottom:8px">Pasūtījums: Audi A6 C7 Bi-TURBO Sline · budžets līdz 14 000 € · 2013-2017 · līdz 200 000 km · automāts</div><div class="stack" id="r9"></div></section>
+
+    <section class="v" id="v10"><div class="cap"><span class="n">10</span><h2>Saraksts un detaļu panelis</h2><p>Kreisajā pusē kompakts saraksts, labajā viss par izvēlēto auto: cenas, vēsture, izsole, pasūtījumi un bloks ar papildu datiem, ko varam ielasīt nākamajā solī.</p></div><div class="box split" id="r10"></div></section>
+
+    <section class="v" id="data"><div class="cap"><span class="n">+</span><h2>Ko vēl varam ielasīt</h2><p><span class="tag y">ir datos</span> jau nāk mūsu nolasījumā, tikai nerādām. <span class="tag m">jāpārbauda</span> visticamāk ir avota JSON vai detaļu lapā, jāapskata raw. <span class="tag p">mūsu aprēķins</span> varam rēķināt paši no jau esošiem datiem.</p></div>
+      <div class="box" style="overflow:auto">
+        <table class="data">
+          <tr><th>Avots</th><th>Lauks</th><th>Kur</th><th>Statuss</th><th>Ko dod LIST</th></tr>
+          <tr><td><span class="chip src-openlane">OPENLANE</span></td><td>VIN (ChassisNumber)</td><td>findcarv6/search, ielogotam</td><td><span class="tag y">ir datos</span></td><td>Poga „Pārbaudīt vēsturi” uz PROVIN pasūtījumu ar VIN. Viens auto vairākās izsolēs.</td></tr>
+          <tr><td><span class="chip src-openlane">OPENLANE</span></td><td>RequestedSalesPrice, BuyNowPrice, BatchStart/EndDate</td><td>search JSON</td><td><span class="tag y">ir datos</span></td><td>Jau lietojam: minimums, pirkt tūlīt, atskaite.</td></tr>
+          <tr><td><span class="chip src-openlane">OPENLANE</span></td><td>Bojājumu atskaite, solījumu skaits, PVN režīms</td><td>search JSON vai /car/{id}</td><td><span class="tag m">jāpārbauda</span></td><td>Bojājumu ikona kartītē, „X solījumi”, PVN birka.</td></tr>
+          <tr><td><span class="chip src-auto1">AUTO1</span></td><td>expectedPriceDisplay</td><td>car-search hits[]</td><td><span class="tag y">ir datos</span></td><td>Trešā cena „Auto1 novērtējums”, salīdzinot ar solījumu.</td></tr>
+          <tr><td><span class="chip src-auto1">AUTO1</span></td><td>images[] (visas bildes), auctionType 24D1/2/3, auctionSecLeft</td><td>car-search hits[]</td><td><span class="tag y">ir datos</span></td><td>Bilžu karuselis, izsoles tips kā birka, precīza atskaite pēc servera laika.</td></tr>
+          <tr><td><span class="chip src-auto1">AUTO1</span></td><td>salesVatType 1053/1054</td><td>car-search hits[]</td><td><span class="tag m">jāpārbauda</span></td><td>PVN birka, kad zināsim kodu nozīmi.</td></tr>
+          <tr><td><span class="chip src-auto1">AUTO1</span></td><td>Bojājumi, aprīkojums, servisa grāmata</td><td>detaļu lapa /car/{stockNumber}</td><td><span class="tag m">jāpārbauda</span></td><td>Bojājumu skaits un „servisa grāmata ir” birka.</td></tr>
+          <tr><td><span class="chip src-autobid">AUTOBID</span></td><td>imageGroups (vairākas bildes), PVN piezīme (§25a)</td><td>__NUXT_DATA__ saraksts</td><td><span class="tag y">ir datos</span></td><td>Karuselis un skaidra PVN birka (šobrīd teksts sīkā rindā).</td></tr>
+          <tr><td><span class="chip src-autobid">AUTOBID</span></td><td>Beigu laiks</td><td>saraksts un detaļa 2026-10-07</td><td><span class="tag m">nav datos</span></td><td>Paliek „Beigu laiks nav zināms”. Var rādīt sākumu un „izsole notiek”.</td></tr>
+          <tr><td><span class="chip src-autobid">AUTOBID</span></td><td>Bojājumu bildes, aprīkojums</td><td>detaļu lapa</td><td><span class="tag m">jāpārbauda</span></td><td>Lasīt tikai izvēlētajam auto (pēc klikšķa), ne visam sarakstam.</td></tr>
+          <tr><td>Visi</td><td>Dienas sarakstā, cenas izmaiņa % un €, pirmā / pēdējā reize</td><td>mūsu priceHistory, firstSeenAt</td><td><span class="tag p">mūsu aprēķins</span></td><td>„3 dienas izsolē”, „-6 %”, kārtošana pēc lielākās izmaiņas.</td></tr>
+          <tr><td>Visi</td><td>Atbilstība pasūtījumam</td><td>IRISS pasūtījuma lauki</td><td><span class="tag p">mūsu aprēķins</span></td><td>Variants 9: punkti un ķeksīši.</td></tr>
+          <tr><td>Visi</td><td>Cena par 10 000 km, € pret pasūtījuma budžetu</td><td>cena + km</td><td><span class="tag p">mūsu aprēķins</span></td><td>Ātra vērtības sajūta starp līdzīgiem auto.</td></tr>
+          <tr><td>Visi</td><td>Atzīmēt (zvaigzne), piezīme, „nav interesanti”</td><td>admin Blob, pie auto id</td><td><span class="tag p">jauns</span></td><td>Sekošanas saraksts un paslēpti auto nākamajā nolasījumā.</td></tr>
+        </table>
+      </div>
+      <p class="small muted" style="margin-top:10px">Ieteikums: vispirms VIN no Openlane (tieša saikne ar PROVIN pārbaudi), Auto1 novērtējums kā trešā cena, bilžu karuselis no jau esošajiem datiem, atzīmēšana un piezīmes. Detaļu lapas lasīt tikai pēc klikšķa, lai nepalielinātu releja slodzi.</p>
+    </section>
+  </div>
+
+<script>
+const NOW0 = Date.now();
+const H = 3600e3, D = 24 * H;
+const iso = (ms) => new Date(ms).toISOString();
+const SRC = { autobid: "Autobid", openlane: "Openlane", auto1: "Auto1" };
+
+const cars = [
+  { id: "c1", src: "openlane", title: "Audi A6 Avant 3.0 TDI S line quattro", year: 2015, km: 172080, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Mechelen, BE",
+    start: 9000, min: 11500, cur: 12700, buy: 13300, est: null, end: NOW0 + 47 * 60e3, firstSeen: NOW0 - 1.2 * D, vin: "WAUZZZ4G6FN012345", vat: "PVN atskaitāms", bids: 14,
+    hist: [{ t: NOW0 - 26 * H, f: "Pašreizējā", from: 11800, to: 12300 }, { t: NOW0 - 3 * H, f: "Pašreizējā", from: 12300, to: 12700 }] },
+  { id: "c2", src: "openlane", title: "Audi A6 Allroad 3.0 TDI Business Plus", year: 2014, km: 364233, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Gent, BE",
+    start: 4000, min: null, cur: 5000, buy: null, est: null, end: NOW0 + 7.5 * H, firstSeen: NOW0 - 1.1 * D, vin: "WAUZZZ4G3EN998877", vat: "Marža", bids: 6,
+    hist: [{ t: NOW0 - 9 * H, f: "Pašreizējā", from: 4900, to: 5000 }] },
+  { id: "c3", src: "autobid", title: "Audi A6 Avant 3,0 TDI quattro Tiptronic S-line", year: 2014, km: 256600, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Hamburg, DE",
+    start: 8900, min: 6900, cur: null, buy: null, est: null, end: null, firstSeen: NOW0 - 0.8 * D, vin: "", vat: "§25a", bids: null, hist: [] },
+  { id: "c4", src: "autobid", title: "Audi A6 Avant 3.0 TDI quattro", year: 2013, km: 231000, fuel: "Dīzelis", gear: "Automāts", kw: 230, place: "Tuttlingen, DE",
+    start: 9900, min: 7000, cur: null, buy: null, est: null, end: null, firstSeen: NOW0 - 0.7 * D, vin: "", vat: "§25a", bids: null,
+    hist: [{ t: NOW0 - 12 * H, f: "Sākuma", from: 10500, to: 9900 }] },
+  { id: "c5", src: "auto1", title: "Audi A6 Avant 3.0 TDI quattro S tronic", year: 2016, km: 141500, fuel: "Dīzelis", gear: "Automāts", kw: 200, place: "Berlin, DE",
+    start: 9500, min: 10200, cur: 11850, buy: null, est: 13400, end: NOW0 + 26 * H, firstSeen: NOW0 - 2.3 * D, vin: "", stock: "BW03512", vat: "PVN kods 1053", bids: null,
+    hist: [{ t: NOW0 - 50 * H, f: "Pašreizējā", from: 10200, to: 10900 }, { t: NOW0 - 20 * H, f: "Pašreizējā", from: 10900, to: 11850 }] },
+  { id: "c6", src: "auto1", title: "Audi A6 Limousine 3.0 TDI competition", year: 2017, km: 98200, fuel: "Dīzelis", gear: "Automāts", kw: 240, place: "Milano, IT",
+    start: 15000, min: null, cur: null, buy: 21900, est: 20500, end: NOW0 + 3.2 * D, firstSeen: NOW0 - 0.2 * D, vin: "", stock: "KZ88120", vat: "PVN kods 1054", bids: null, hist: [] },
+  { id: "c7", src: "openlane", title: "Audi A6 Avant 2.0 TDI ultra", year: 2016, km: 188400, fuel: "Dīzelis", gear: "Manuālā", kw: 140, place: "Lyon, FR",
+    start: 6500, min: 8000, cur: 8150, buy: null, est: null, end: NOW0 - 5 * H, firstSeen: NOW0 - 3 * D, vin: "WAUZZZ4G1GN445566", vat: "PVN atskaitāms", bids: 21,
+    hist: [{ t: NOW0 - 30 * H, f: "Pašreizējā", from: 7400, to: 8150 }] },
+];
+
+const eur = (n) => (n == null ? "-" : Math.round(n).toLocaleString("lv-LV") + " €");
+const kmf = (n) => (n == null ? "-" : Math.round(n).toLocaleString("lv-LV") + " km");
+const primary = (c) => (c.cur != null ? { l: "Pašreizējā", v: c.cur } : { l: "Sākuma", v: c.start });
+const secondary = (c) => (c.buy != null ? { l: "Pirkt tūlīt", v: c.buy } : c.est != null ? { l: "Auto1 novērtējums", v: c.est } : { l: "Minimālā", v: c.min });
+const sortPrice = (c) => c.cur ?? c.start ?? c.buy ?? null;
+const lastDelta = (c) => { const h = c.hist[c.hist.length - 1]; return h ? h.to - h.from : null; };
+const totalDelta = (c) => (c.hist.length ? c.hist[c.hist.length - 1].to - c.hist[0].from : null);
+const pct = (c) => { const d = totalDelta(c); return d == null ? null : (d / c.hist[0].from) * 100; };
+const chip = (s) => `<span class="chip src-${s}"><span class="dot bg-${s}"></span>${SRC[s].toUpperCase()}</span>`;
+const photo = (c, w, h) => `<div class="photo bg-${c.src}" style="width:${w}px;height:${h}px;background:linear-gradient(135deg,#cbd5e1,var(--${c.src === "autobid" ? "ab" : c.src === "openlane" ? "ol" : "a1"}))">${SRC[c.src].toUpperCase()}</div>`;
+function deltaHtml(d, withPct, c) {
+  if (d == null || d === 0) return "";
+  const p = withPct && c ? pct(c) : null;
+  return `<span class="delta ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${eur(Math.abs(d))}${p != null ? ` (${p > 0 ? "+" : ""}${p.toFixed(1)} %)` : ""}</span>`;
+}
+const pad = (n) => String(n).padStart(2, "0");
+function cd(end) {
+  if (end == null) return { t: "Beigu laiks nav zināms", k: "unknown" };
+  const ms = end - Date.now();
+  if (ms <= 0) return { t: "Beigusies", k: "ended" };
+  const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), clock = `${pad(Math.floor((s % 86400) / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  return { t: d ? `${d} d ${clock}` : clock, k: ms < H ? "urgent" : ms < D ? "soon" : "calm" };
+}
+const cdSpan = (c) => `<span class="cd" data-end="${c.end ?? ""}"></span>`;
+function tick() {
+  document.querySelectorAll(".cd[data-end]").forEach((el) => {
+    const e = el.dataset.end ? Number(el.dataset.end) : null;
+    const r = cd(e);
+    el.textContent = r.t;
+    el.className = "cd " + r.k;
+  });
+}
+const newBadge = (c) => (Date.now() - c.firstSeen < 36 * H ? `<span class="chip new">JAUNS</span>` : "");
+const chgBadge = (c) => (c.hist.length ? `<span class="chip chg">CENA MAINĪTA</span>` : "");
+const specs = (c) => [c.year, kmf(c.km), c.fuel, c.gear, c.kw + " kW", c.place].join(" · ");
+function cmpNull(a, b, dir) { if (a == null && b == null) return 0; if (a == null) return 1; if (b == null) return -1; return dir * (a - b); }
+
+/* 1 */
+document.getElementById("r1").innerHTML = cars.map((c) => {
+  const p = primary(c), s = secondary(c);
+  return `<div class="v1 bd-${c.src}">
+    ${photo(c, 120, 84)}
+    <div class="grow">
+      <div class="row" style="gap:6px;flex-wrap:wrap">${chip(c.src)}${newBadge(c)}${chgBadge(c)}<span class="tiny muted">${c.vat}</span></div>
+      <div style="font-weight:700;margin-top:4px" class="trunc">${c.title}</div>
+      <div class="small muted trunc">${specs(c)}</div>
+      <div class="tiny muted" style="margin-top:4px">Pirmo reizi: pirms ${Math.round((Date.now() - c.firstSeen) / H)} h${c.bids != null ? ` · ${c.bids} solījumi` : ""}</div>
+    </div>
+    <div class="prices num">
+      <div><div class="lbl">${p.l}</div><div class="price-big">${eur(p.v)}</div><div>${deltaHtml(lastDelta(c))}</div></div>
+      <div><div class="lbl">${s.l}</div><div class="price-big" style="color:var(--sub)">${eur(s.v)}</div></div>
+      <div style="grid-column:1/3">${cdSpan(c)}</div>
+    </div>
+  </div>`;
+}).join("");
+
+/* 2 */
+const cols2 = [
+  { k: "src", l: "Avots", v: (c) => SRC[c.src], txt: true, r: (c) => chip(c.src) },
+  { k: "title", l: "Auto", v: (c) => c.title, txt: true, r: (c) => `<b>${c.title}</b>` },
+  { k: "year", l: "Gads", v: (c) => c.year, cls: "r" },
+  { k: "km", l: "Nobraukums", v: (c) => c.km, r: (c) => kmf(c.km), cls: "r" },
+  { k: "p1", l: "Pašreizējā / sākuma", v: sortPrice, r: (c) => `<b>${eur(primary(c).v)}</b>`, cls: "r" },
+  { k: "p2", l: "Pirkt tūlīt / novērt.", v: (c) => secondary(c).v, r: (c) => eur(secondary(c).v), cls: "r" },
+  { k: "d", l: "Izmaiņa", v: totalDelta, r: (c) => deltaHtml(totalDelta(c), true, c) || '<span class="muted">-</span>', cls: "r" },
+  { k: "end", l: "Beidzas", v: (c) => (c.end != null && c.end > Date.now() ? c.end : null), r: cdSpan, cls: "r" },
+];
+let s2 = { k: "end", dir: 1 }, open2 = null;
+function render2() {
+  const col = cols2.find((x) => x.k === s2.k);
+  const rows = [...cars].sort((a, b) => (col.txt ? s2.dir * String(col.v(a)).localeCompare(String(col.v(b)), "lv") : cmpNull(col.v(a), col.v(b), s2.dir)));
+  document.getElementById("r2").innerHTML =
+    `<tr>${cols2.map((x) => `<th class="${x.cls || ""}" data-k="${x.k}">${x.l}${s2.k === x.k ? (s2.dir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>` +
+    rows.map((c) => `<tr class="main" data-id="${c.id}">${cols2.map((x) => `<td class="${x.cls || ""}">${x.r ? x.r(c) : x.v(c)}</td>`).join("")}</tr>` +
+      (open2 === c.id ? `<tr class="more"><td colspan="${cols2.length}"><div class="small">${specs(c)}</div><div class="small" style="margin-top:4px">Minimālā ${eur(c.min)} · Sākuma ${eur(c.start)} · ${c.vat}${c.vin ? ` · VIN ${c.vin}` : ""}${c.stock ? ` · ${c.stock}` : ""}</div><div class="small muted" style="margin-top:4px">${c.hist.length ? c.hist.map((h) => `${new Date(h.t).toLocaleString("lv-LV", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} ${h.f}: ${eur(h.from)} -> ${eur(h.to)}`).join(" · ") : "Cenu izmaiņu nav."}</div></td></tr>` : "")
+    ).join("");
+  tick();
+}
+document.getElementById("r2").addEventListener("click", (e) => {
+  const th = e.target.closest("th");
+  if (th) { s2 = { k: th.dataset.k, dir: s2.k === th.dataset.k ? -s2.dir : 1 }; render2(); return; }
+  const tr = e.target.closest("tr.main");
+  if (tr) { open2 = open2 === tr.dataset.id ? null : tr.dataset.id; render2(); }
+});
+render2();
+
+/* 3 */
+const sess = { autobid: ["OK", "new"], openlane: ["Jāielogojas", "chg"], auto1: ["OK", "new"] };
+document.getElementById("r3").innerHTML = Object.keys(SRC).map((s) => {
+  const list = cars.filter((c) => c.src === s).sort((a, b) => cmpNull(a.end, b.end, 1));
+  return `<div><h3><span class="dot bg-${s}"></span>${SRC[s]} <span class="muted small">${list.length}</span> <span class="chip ${s === "openlane" ? "" : "new"}" style="${s === "openlane" ? "color:#92400e;background:#fffbeb;border-color:#fde68a" : ""};margin-left:auto">${sess[s][0]}</span></h3>
+    <div class="stack">${list.map((c) => `<div class="mini" style="border-top:3px solid var(--${s === "autobid" ? "ab" : s === "openlane" ? "ol" : "a1"})">
+      <div class="small" style="font-weight:700">${c.title}</div>
+      <div class="tiny muted">${c.year} · ${kmf(c.km)}</div>
+      <div class="row" style="margin-top:6px;justify-content:space-between"><div><div class="lbl">${primary(c).l}</div><b class="num">${eur(primary(c).v)}</b> ${deltaHtml(lastDelta(c))}</div><div style="text-align:right"><div class="lbl">${secondary(c).l}</div><span class="num">${eur(secondary(c).v)}</span></div></div>
+      <div class="tiny" style="margin-top:4px">${cdSpan(c)}</div></div>`).join("")}</div></div>`;
+}).join("");
+
+/* 4 */
+document.getElementById("r4").innerHTML = cars.map((c) => {
+  const pts = [["Sākuma", c.start, "#94a3b8"], ["Min.", c.min, "#0ea5e9"], ["Pašreiz.", c.cur, "var(--accent)"], ["Novērt.", c.est, "#a855f7"], ["Pirkt", c.buy, "#059669"]].filter((p) => p[1] != null);
+  const lo = Math.min(...pts.map((p) => p[1])) * 0.92, hi = Math.max(...pts.map((p) => p[1])) * 1.05;
+  const x = (v) => ((v - lo) / (hi - lo)) * 100;
+  const fillTo = c.cur ?? c.start;
+  const gap = c.cur != null && c.min != null ? c.cur - c.min : null;
+  return `<div class="box" style="padding:12px 14px"><div class="row">${chip(c.src)}<b class="grow trunc">${c.title}</b>${cdSpan(c)}</div>
+    <div class="ladder"><div class="bar"></div><div class="fill bg-${c.src}" style="width:${x(fillTo)}%"></div>
+      ${pts.map((p) => `<div class="pt" style="left:${x(p[1])}%"><span style="color:${p[2]}">${p[0]} ${eur(p[1])}</span><i style="background:${p[2]}"></i></div>`).join("")}</div>
+    <div class="tiny muted" style="margin-top:14px">${gap == null ? "Solījuma vai minimuma nav." : gap >= 0 ? `Solījums ir ${eur(gap)} virs minimuma.` : `Līdz minimumam trūkst ${eur(-gap)}.`}${c.buy != null && c.cur != null ? ` Līdz pirkt tūlīt: ${eur(c.buy - c.cur)}.` : ""}</div></div>`;
+}).join("");
+
+/* 5 */
+let only5 = false;
+function spark(c) {
+  if (!c.hist.length) return `<div class="tiny muted" style="width:150px">Izmaiņu nav</div>`;
+  const pts = [{ t: c.hist[0].t - 6 * H, v: c.hist[0].from }, ...c.hist.map((h) => ({ t: h.t, v: h.to })), { t: Date.now(), v: c.hist[c.hist.length - 1].to }];
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t, v0 = Math.min(...pts.map((p) => p.v)), v1 = Math.max(...pts.map((p) => p.v));
+  const X = (t) => 4 + ((t - t0) / (t1 - t0 || 1)) * 142, Y = (v) => 40 - ((v - v0) / (v1 - v0 || 1)) * 32;
+  let d = `M${X(pts[0].t)},${Y(pts[0].v)}`;
+  for (let i = 1; i < pts.length; i++) d += ` H${X(pts[i].t)} V${Y(pts[i].v)}`;
+  const up = totalDelta(c) > 0;
+  return `<svg width="150" height="46" viewBox="0 0 150 46"><path d="${d}" fill="none" stroke="${up ? "#dc2626" : "#059669"}" stroke-width="2"/>${pts.slice(1, -1).map((p) => `<circle cx="${X(p.t)}" cy="${Y(p.v)}" r="3" fill="${up ? "#dc2626" : "#059669"}"/>`).join("")}</svg>`;
+}
+function render5() {
+  const list = cars.filter((c) => !only5 || c.hist.length).sort((a, b) => cmpNull(Math.abs(totalDelta(a) ?? NaN) || null, Math.abs(totalDelta(b) ?? NaN) || null, -1));
+  document.getElementById("r5").innerHTML = list.map((c) => `<div class="box row" style="padding:12px 14px;align-items:flex-start">
+    ${chip(c.src)}
+    <div class="grow"><b>${c.title}</b><div class="small muted">${c.year} · ${kmf(c.km)}</div>
+      <div class="hist" style="margin-top:6px">${c.hist.map((h) => `<div>${new Date(h.t).toLocaleString("lv-LV", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · ${h.f}: <span class="num">${eur(h.from)}</span> -> <b class="num">${eur(h.to)}</b> ${deltaHtml(h.to - h.from)}</div>`).join("") || '<div class="muted">Kopš pirmās reizes cena nav mainījusies.</div>'}</div></div>
+    ${spark(c)}
+    <div style="text-align:right;min-width:130px"><div class="lbl">${primary(c).l}</div><div class="price-big num">${eur(primary(c).v)}</div>${deltaHtml(totalDelta(c), true, c)}</div></div>`).join("");
+}
+document.getElementById("f5").addEventListener("click", (e) => { only5 = !only5; e.currentTarget.classList.toggle("on", only5); render5(); });
+render5();
+
+/* 6 */
+document.getElementById("r6").innerHTML = cars.map((c) => `<div class="g6">
+  <div class="photo" style="background:linear-gradient(135deg,#e2e8f0,var(--${c.src === "autobid" ? "ab" : c.src === "openlane" ? "ol" : "a1"}))">foto</div>
+  <div class="ov">${chip(c.src)}<span style="background:rgb(255 255 255 / .92);padding:2px 7px;border-radius:7px;font-size:11px">${cdSpan(c)}</span></div>
+  <div class="pr num">${eur(primary(c).v)}</div>
+  <div style="padding:10px 12px"><div class="small trunc" style="font-weight:700">${c.title}</div><div class="tiny muted">${c.year} · ${kmf(c.km)} · ${c.place}</div>
+  <div class="row" style="justify-content:space-between;margin-top:6px"><span class="tiny">${secondary(c).l}: <b class="num">${eur(secondary(c).v)}</b></span>${deltaHtml(lastDelta(c))}</div></div></div>`).join("");
+
+/* 7 */
+function bucket(c) { if (c.end == null) return 5; const ms = c.end - Date.now(); if (ms <= 0) return 4; if (ms < H) return 0; const e = new Date(c.end), n = new Date(); const day = (x) => Math.floor((x.getTime() - x.getTimezoneOffset() * 6e4) / D); const dd = day(e) - day(n); return dd === 0 ? 1 : dd === 1 ? 2 : 3; }
+const B7 = ["Nākamā stunda", "Šodien", "Rīt", "Vēlāk", "Beigušās", "Beigu laiks nav zināms"];
+document.getElementById("r7").innerHTML = B7.map((label, i) => {
+  const list = cars.filter((c) => bucket(c) === i).sort((a, b) => cmpNull(a.end, b.end, 1));
+  if (!list.length) return "";
+  return `<h3>${label}<span class="c">${list.length}</span></h3><div class="stack">${list.map((c) => `<div class="box row" style="padding:9px 12px">
+    <div style="width:110px">${cdSpan(c)}</div>${chip(c.src)}<span class="grow trunc small"><b>${c.title}</b> <span class="muted">${c.year} · ${kmf(c.km)}</span></span>
+    <span class="num" style="min-width:110px;text-align:right"><b>${eur(primary(c).v)}</b></span><span class="num muted small" style="min-width:100px;text-align:right">${eur(secondary(c).v)}</span><span style="min-width:80px;text-align:right">${deltaHtml(lastDelta(c))}</span></div>`).join("")}</div>`;
+}).join("");
+
+/* 8 */
+const pick8 = new Set(["c1", "c5"]);
+function render8() {
+  document.getElementById("r8").innerHTML = cars.map((c) => `<label class="box row" style="padding:9px 12px;cursor:pointer;${pick8.has(c.id) ? "border-color:var(--accent);background:#fff7ed" : ""}">
+    <input type="checkbox" data-id="${c.id}" ${pick8.has(c.id) ? "checked" : ""} ${!pick8.has(c.id) && pick8.size >= 3 ? "disabled" : ""}/>
+    ${chip(c.src)}<span class="grow trunc small"><b>${c.title}</b></span><span class="num"><b>${eur(primary(c).v)}</b></span>${cdSpan(c)}</label>`).join("");
+  const sel = cars.filter((c) => pick8.has(c.id));
+  const rows = [
+    ["Avots", (c) => chip(c.src)], ["Cena (pašreizējā / sākuma)", (c) => sortPrice(c), "min", eur], ["Otrā cena", (c) => secondary(c).v, null, eur],
+    ["Gads", (c) => c.year, "max"], ["Nobraukums", (c) => c.km, "min", kmf], ["Jauda", (c) => c.kw, "max", (v) => v + " kW"], ["Kārba", (c) => c.gear],
+    ["Cenas izmaiņa", (c) => totalDelta(c), null, (v) => (v == null ? "-" : (v > 0 ? "+" : "") + eur(v))], ["Beidzas", (c) => cdSpan(c)], ["PVN", (c) => c.vat], ["Vieta", (c) => c.place],
+  ];
+  const el = document.getElementById("r8c");
+  if (sel.length < 2) { el.innerHTML = `<div class="small muted" style="padding:10px 14px">Atzīmē vismaz 2 auto.</div>`; tick(); return; }
+  el.innerHTML = `<div class="cmp" style="grid-template-columns:170px repeat(${sel.length},minmax(0,1fr))"><div class="h"></div>${sel.map((c) => `<div><b class="small">${c.title}</b></div>`).join("")}
+    ${rows.map(([l, f, best, fmt]) => {
+      const vals = sel.map(f);
+      const nums = vals.filter((v) => typeof v === "number");
+      const target = best === "min" ? Math.min(...nums) : best === "max" ? Math.max(...nums) : null;
+      return `<div class="h">${l}</div>${vals.map((v) => `<div class="num ${best && v === target && nums.length > 1 ? "best" : ""}">${fmt ? fmt(v) : v ?? "-"}</div>`).join("")}`;
+    }).join("")}</div>`;
+  tick();
+}
+document.getElementById("r8").addEventListener("change", (e) => { const id = e.target.dataset.id; if (!id) return; e.target.checked ? pick8.add(id) : pick8.delete(id); render8(); });
+render8();
+
+/* 9 */
+const order = { budget: 14000, y0: 2013, y1: 2017, kmMax: 200000, gear: "Automāts" };
+function match(c) {
+  const p = sortPrice(c);
+  const checks = [
+    ["Budžets", p == null ? null : p <= order.budget, p == null ? "cenas nav" : eur(p)],
+    ["Gads", c.year >= order.y0 && c.year <= order.y1, String(c.year)],
+    ["Nobraukums", c.km <= order.kmMax, kmf(c.km)],
+    ["Kārba", c.gear === order.gear, c.gear],
+    ["Izsole aktīva", c.end == null ? null : c.end > Date.now(), c.end == null ? "nav zināms" : c.end > Date.now() ? "notiek" : "beigusies"],
+  ];
+  const known = checks.filter((x) => x[1] !== null);
+  const score = Math.round((known.filter((x) => x[1]).length / (known.length || 1)) * 100);
+  return { checks, score };
+}
+document.getElementById("r9").innerHTML = cars.map((c) => ({ c, m: match(c) })).sort((a, b) => b.m.score - a.m.score).map(({ c, m }) => {
+  const col = m.score >= 80 ? ["#ecfdf5", "#065f46"] : m.score >= 60 ? ["#fffbeb", "#92400e"] : ["#fef2f2", "#991b1b"];
+  return `<div class="box row" style="padding:12px 14px">
+    <div class="score" style="background:${col[0]};color:${col[1]}">${m.score}</div>
+    <div class="grow"><div class="row" style="gap:6px">${chip(c.src)}<b class="trunc">${c.title}</b></div>
+      <div class="row" style="gap:5px;flex-wrap:wrap;margin-top:6px">${m.checks.map(([l, ok, v]) => `<span class="ck ${ok === null ? "na" : ok ? "ok" : "no"}">${ok === null ? "?" : ok ? "✓" : "✕"} ${l}: ${v}</span>`).join("")}</div></div>
+    <div style="text-align:right;min-width:140px"><div class="lbl">${primary(c).l}</div><div class="price-big num">${eur(primary(c).v)}</div><div class="tiny muted">${secondary(c).l} ${eur(secondary(c).v)}</div></div></div>`;
+}).join("");
+
+/* 10 */
+let sel10 = "c1";
+function render10() {
+  const c = cars.find((x) => x.id === sel10);
+  const list = [...cars].sort((a, b) => cmpNull(a.end != null && a.end > Date.now() ? a.end : null, b.end != null && b.end > Date.now() ? b.end : null, 1));
+  document.getElementById("r10").innerHTML = `<div class="list">${list.map((x) => `<div class="item ${x.id === sel10 ? "sel" : ""} bd-${x.src}" data-id="${x.id}" style="border-left-color:var(--${x.src === "autobid" ? "ab" : x.src === "openlane" ? "ol" : "a1"})">
+      ${photo(x, 62, 44)}<div class="grow"><div class="small trunc" style="font-weight:700">${x.title}</div><div class="tiny muted">${SRC[x.src]} · ${x.year} · ${kmf(x.km)}</div></div>
+      <div style="text-align:right"><b class="small num">${eur(primary(x).v)}</b><div class="tiny">${cdSpan(x)}</div></div></div>`).join("")}</div>
+    <div class="det">
+      <div class="row" style="gap:6px">${chip(c.src)}${newBadge(c)}${chgBadge(c)}<span class="grow"></span><a class="btn" href="#" onclick="return false">Atvērt ${SRC[c.src]} ↗</a></div>
+      <h3 style="margin:8px 0 2px;font-size:18px">${c.title}</h3><div class="small muted">${specs(c)}</div>
+      <div class="row" style="gap:10px;margin-top:12px;align-items:stretch">${[primary(c), secondary(c), { l: "Minimālā", v: c.min }].map((p, i) => `<div class="box" style="padding:10px 12px;flex:1"><div class="lbl">${p.l}</div><div class="price-big num" style="${i ? "color:var(--sub)" : ""}">${eur(p.v)}</div>${i === 0 ? deltaHtml(totalDelta(c), true, c) : ""}</div>`).join("")}
+        <div class="box" style="padding:10px 12px;flex:1"><div class="lbl">Izsole</div><div style="font-size:17px">${cdSpan(c)}</div><div class="tiny muted">${c.bids != null ? c.bids + " solījumi" : "solījumu skaits nav"}</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 160px;gap:14px;margin-top:14px;align-items:start"><div><div class="lbl" style="margin-bottom:4px">Cenu vēsture</div><div class="hist">${c.hist.map((h) => `<div>${new Date(h.t).toLocaleString("lv-LV", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · ${h.f}: ${eur(h.from)} -> <b>${eur(h.to)}</b></div>`).join("") || '<div class="muted">Izmaiņu nav.</div>'}</div></div>${spark(c)}</div>
+      <dl class="kv" style="margin-top:14px"><dt>PVN</dt><dd>${c.vat}</dd><dt>Identifikators</dt><dd>${c.vin ? "VIN " + c.vin : c.stock ? "Auto1 " + c.stock : "-"}</dd><dt>Pirmo reizi</dt><dd>pirms ${Math.round((Date.now() - c.firstSeen) / H)} h</dd><dt>Pasūtījums</dt><dd><a href="#" onclick="return false">Audi A6 C7 Bi-TURBO Sline</a></dd></dl>
+      <div class="row" style="gap:6px;margin-top:12px;flex-wrap:wrap">${c.vin ? '<button class="btn on">Pārbaudīt vēsturi pēc VIN</button>' : ""}<button class="btn">☆ Atzīmēt</button><button class="btn">Piezīme</button><button class="btn">Nav interesanti</button></div>
+      <div class="future" style="margin-top:14px"><div class="lbl" style="margin-bottom:4px">Papildu dati (nākamais solis, pēc klikšķa)</div><div class="small muted">Bilžu karusels · bojājumu atskaite · aprīkojums · servisa grāmata${c.src === "auto1" ? " · Auto1 novērtējums " + eur(c.est) : ""}</div></div>
+    </div>`;
+  tick();
+}
+document.getElementById("r10").addEventListener("click", (e) => { const it = e.target.closest(".item"); if (it) { sel10 = it.dataset.id; render10(); } });
+render10();
+
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
