@@ -11,6 +11,7 @@ import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize"
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { listingYearDigits } from "@/lib/iriss-listings-list-view";
+import { fillOpenlaneFuelTransmission } from "@/lib/iriss-listings-openlane-spec";
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { irissListingVehicleId } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceStatus } from "@/lib/iriss-listings-types";
@@ -117,6 +118,14 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
   const year = str(item.year) || listingYearDigits({ year: "", firstRegistration });
   const stockNumber = str(item.stockNumber);
   const auctionId = str(item.auctionId);
+  const title = str(item.title);
+  let fuel = str(item.fuel);
+  let transmission = str(item.transmission);
+  if (platform === "openline") {
+    const filled = fillOpenlaneFuelTransmission({ fuel, transmission, title, raw: item });
+    fuel = filled.fuel;
+    transmission = filled.transmission;
+  }
   return {
     id: irissListingVehicleId(platform, externalId),
     platform,
@@ -130,13 +139,13 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     }),
     orderId,
     orderBrandModel,
-    title: str(item.title),
+    title,
     manufacturer: str(item.manufacturer),
     year,
     firstRegistration,
     mileageKm: numOrNull(item.mileageKm),
-    fuel: str(item.fuel),
-    transmission: str(item.transmission),
+    fuel,
+    transmission,
     powerKw: str(item.powerKw),
     location: str(item.location),
     countryCode: str(item.countryCode),

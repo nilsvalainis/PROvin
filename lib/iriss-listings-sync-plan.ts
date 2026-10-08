@@ -2,7 +2,8 @@
  * Viena palaišana ietilpst maršrutā `maxDuration = 300` s (skat. sync-now un daily-sync route).
  * 92 avoti ar virknes pauzi 4 s ir (92-1)*4 s = 364 s, vēl pirms HTTP. Tāpēc:
  * tiešie Autobid lasījumi iet ar paralēlismu 2-3, un kas neietilpst budžetā, paliek kursorā
- * līdz nākamajai palaišanai tajā pašā UTC dienā (cron 04, 06, 08, 10).
+ * līdz nākamajai palaišanai tajā pašā UTC dienā. Automātiskais cron (09/13/17 Rīgā)
+ * un poga „Nolasīt” sāk ciklu no jauna (`restart`).
  */
 
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";

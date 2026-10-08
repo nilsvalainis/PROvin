@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
+import { irissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
 import { runIrissListingsDailySync } from "@/lib/iriss-listings-sync";
 
 export const runtime = "nodejs";
@@ -23,9 +24,16 @@ function isAuthorized(req: Request): { ok: true } | { ok: false; status: number;
 export async function GET(req: Request) {
   const gate = isAuthorized(req);
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const slot = irissListingsAutomaticSlot(new Date());
+  if (!slot) {
+    return NextResponse.json({ ok: true, skipped: "not_target_hour" });
+  }
   try {
-    const out = await runIrissListingsDailySync();
-    return NextResponse.json({ ok: out.ok, warnings: out.warnings, summary: out.summary }, { status: out.ok ? 200 : 500 });
+    const out = await runIrissListingsDailySync({ automaticSlot: slot });
+    return NextResponse.json(
+      { ok: out.ok, skipped: out.skipped, warnings: out.warnings, summary: out.summary, slot },
+      { status: out.ok ? 200 : 500 },
+    );
   } catch (e) {
     console.error("[cron/iriss-listings-daily-sync] failed", e);
     return NextResponse.json(

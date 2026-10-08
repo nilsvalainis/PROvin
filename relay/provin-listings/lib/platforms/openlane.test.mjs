@@ -7,6 +7,7 @@ import {
   openlaneCurrentUserShowsLogin,
   openlaneEnglishUrl,
   openlaneSessionLooksLoggedIn,
+  parseOpenlaneTitleFuelTransmission,
   pickOpenlaneVatNote,
 } from "./openlane-logic.mjs";
 
@@ -97,4 +98,32 @@ test("mapOpenlaneAuction keeps RU/EN VAT labels and IsMargin", () => {
   assert.equal(coerceOpenlaneMargin(0), false);
   assert.equal(coerceOpenlaneMargin(1), true);
   assert.equal(pickOpenlaneVatNote({ VatType: "inkl. MwSt" }), "inkl. MwSt");
+});
+
+test("mapOpenlaneAuction fills fuel/transmission from title when FuelTypeId is 0", () => {
+  const fromTitle = mapOpenlaneAuction({
+    AuctionId: "A5",
+    CarNameEn: "Volvo XC40 1.5 T2 129hp - Petrol - Automatic",
+    FuelTypeId: 0,
+    TransmissionTypeId: 0,
+    FuelType: 0,
+    Fuel: "",
+    Transmission: 0,
+  });
+  assert.equal(fromTitle.fuel, "Petrol");
+  assert.equal(fromTitle.transmission, "Automatic");
+  assert.deepEqual(parseOpenlaneTitleFuelTransmission("BMW 320d xDrive - Diesel - Manual"), {
+    fuel: "Diesel",
+    transmission: "Manual",
+  });
+
+  const named = mapOpenlaneAuction({
+    AuctionId: "A6",
+    CarNameEn: "Volvo XC40 1.5 T2 - Petrol - Automatic",
+    FuelType: "Diesel",
+    TransmissionType: { Name: "Manual" },
+    FuelTypeId: 0,
+  });
+  assert.equal(named.fuel, "Diesel");
+  assert.equal(named.transmission, "Manual");
 });

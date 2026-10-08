@@ -81,6 +81,106 @@ export function pickOpenlaneVatNote(auction) {
   return "";
 }
 
+const FUEL_KEYS = ["FuelType", "Fuel", "FuelTypeName", "FuelName", "FuelTypeText", "FuelDescription", "EnergyType", "Energy", "FuelTypeLabel"];
+const GEAR_KEYS = ["Transmission", "TransmissionType", "Gearbox", "GearboxType", "TransmissionName", "GearType", "GearboxName", "TransmissionLabel"];
+const FUEL_RULES = [
+  { re: /^(mild[-\s]?hybrid|mhev)$/i, value: "Mild-Hybrid" },
+  { re: /^(plug[-\s]?in([-\s]?hybrid)?|phev)$/i, value: "Plug-in Hybrid" },
+  { re: /^(hybrid|hev|petrol\/electric|diesel\/electric)$/i, value: "Hybrid" },
+  { re: /^(petrol|gasoline|benzine?|benzin|essence|bleifrei)$/i, value: "Petrol" },
+  { re: /^(diesel|dizel|gasoil)$/i, value: "Diesel" },
+  { re: /^(electric|elektro|ev|bev)$/i, value: "Electric" },
+  { re: /^(lpg|autogas|gpl)$/i, value: "LPG" },
+  { re: /^(cng|methane)$/i, value: "CNG" },
+  { re: /^(hydrogen|h2)$/i, value: "Hydrogen" },
+];
+const GEAR_RULES = [
+  { re: /^(automatic|automatik|automats|auto|dsg|dct|cvt|tiptronic)$/i, value: "Automatic" },
+  { re: /^(manual|manuell|mechanic|schaltgetriebe)$/i, value: "Manual" },
+];
+
+function foldKey(s) {
+  return s.normalize("NFD").replace(/\p{M}/gu, "");
+}
+
+function labeledFromUnknown(v, depth = 0) {
+  if (depth > 3 || v == null) return "";
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (!s || s === "0") return "";
+    return s;
+  }
+  if (typeof v === "number") return "";
+  if (typeof v === "object" && !Array.isArray(v)) {
+    for (const k of ["Name", "name", "Text", "text", "Label", "label", "Value", "value", "Description", "description"]) {
+      const s = labeledFromUnknown(v[k], depth + 1);
+      if (s) return s;
+    }
+  }
+  return "";
+}
+
+function firstLabeled(auction, keys) {
+  if (!auction || typeof auction !== "object") return "";
+  for (const k of keys) {
+    const s = labeledFromUnknown(auction[k]);
+    if (s) return s;
+  }
+  return "";
+}
+
+function matchSpecRule(raw, rules) {
+  const s = String(raw || "").trim();
+  if (!s || s === "0") return "";
+  const folded = foldKey(s);
+  for (const rule of rules) {
+    if (rule.re.test(s) || rule.re.test(folded)) return rule.value;
+  }
+  return "";
+}
+
+export function normalizeOpenlaneFuel(raw) {
+  return matchSpecRule(raw, FUEL_RULES);
+}
+
+export function normalizeOpenlaneTransmission(raw) {
+  return matchSpecRule(raw, GEAR_RULES);
+}
+
+/** Virsraksta beigu ` - Fuel - Gearbox` segmenti. */
+export function parseOpenlaneTitleFuelTransmission(title) {
+  const segs = String(title || "")
+    .split(/\s+-\s+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  let fuel = "";
+  let transmission = "";
+  for (let i = segs.length - 1; i >= 0; i--) {
+    const seg = segs[i];
+    if (!transmission) {
+      const g = normalizeOpenlaneTransmission(seg);
+      if (g) {
+        transmission = g;
+        continue;
+      }
+    }
+    if (!fuel) {
+      const f = normalizeOpenlaneFuel(seg);
+      if (f) fuel = f;
+    }
+    if (fuel && transmission) break;
+  }
+  return { fuel, transmission };
+}
+
+export function pickOpenlaneFuelTransmission(auction, title) {
+  const fromTitle = parseOpenlaneTitleFuelTransmission(title);
+  return {
+    fuel: normalizeOpenlaneFuel(firstLabeled(auction, FUEL_KEYS)) || fromTitle.fuel,
+    transmission: normalizeOpenlaneTransmission(firstLabeled(auction, GEAR_KEYS)) || fromTitle.transmission,
+  };
+}
+
 function detailUrlFor(auction, anchors) {
   const auctionId = str(auction.AuctionId);
   const carId = str(auction.CarId);
@@ -104,6 +204,7 @@ export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
   const title = str(auction.CarNameEn || auction.CarName || auction.Title);
   const isMargin = coerceOpenlaneMargin(auction.IsMargin ?? auction.isMargin);
   const vatNote = pickOpenlaneVatNote(auction);
+  const spec = pickOpenlaneFuelTransmission(auction, title);
   const item = makeItem("openlane", {
     externalId: str(auction.AuctionId) || str(auction.CarId),
     auctionId: str(auction.AuctionId),
@@ -113,8 +214,8 @@ export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
     year: yearOf(auction.FirstRegistrationDate || auction.RegistrationDate || auction.Year || auction.BuildYear),
     firstRegistration: isoDate(auction.FirstRegistrationDate || auction.RegistrationDate).slice(0, 10),
     mileageKm: num(auction.Mileage),
-    fuel: str(auction.FuelType || auction.Fuel),
-    transmission: str(auction.Transmission || auction.TransmissionType || auction.Gearbox),
+    fuel: spec.fuel,
+    transmission: spec.transmission,
     powerKw: str(auction.PowerKw || auction.KW || auction.Power),
     location: str(auction.LocationName || auction.City || auction.Location),
     countryCode: str(auction.CountryCode || auction.OriginCountry || auction.Country),

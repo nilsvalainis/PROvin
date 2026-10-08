@@ -160,6 +160,71 @@ test("shared slots keep items[].name and taxInformation while account data is go
   assert.equal(out[16], "Including 19% VAT");
 });
 
+/** Kopīgs slots + 18 bid ieraksti ar user_nickname / user_id / bidder_code. */
+function fixtureSharedSlotWithBidHistory() {
+  const flat = [];
+  const alloc = (v) => {
+    const i = flat.length;
+    flat.push(v);
+    return i;
+  };
+  const root = alloc(null);
+  const state = alloc(null);
+  const bag = alloc(null);
+  const user = alloc(null);
+  const nick = alloc("op-nick");
+  const carName = alloc("Audi A6");
+  const email = alloc("leak@example.com");
+  const queries = alloc(null);
+  const qlist = alloc(null);
+  const qwrap = alloc(null);
+  const qstate = alloc(null);
+  const data = alloc(null);
+  const pageCount = alloc(1);
+  const items = alloc(null);
+  const car = alloc(null);
+  const carId = alloc(1001);
+  const vat = alloc("Including 19% VAT");
+  const price = alloc(null);
+  const start = alloc(15000);
+  const zero = alloc(0);
+  const bids = alloc(null);
+  const bidRefs = [];
+  for (let i = 0; i < 18; i++) {
+    const n = alloc(`bidder-nick-${i}`);
+    const u = alloc(`uid-${i}`);
+    bidRefs.push(alloc({ user_nickname: n, user_id: u, amount: start, bidder_code: u }));
+  }
+  flat[root] = ["ShallowReactive", state];
+  flat[state] = { state: bag };
+  flat[bag] = { user, "$svue-query": queries };
+  flat[user] = { nickname: nick, displayName: carName, email };
+  flat[queries] = { queries: qlist };
+  flat[qlist] = [qwrap];
+  flat[qwrap] = { state: qstate };
+  flat[qstate] = { data };
+  flat[data] = { itemPageCount: pageCount, items, bidHistory: bids };
+  flat[items] = [car];
+  const auctionId = alloc(9001);
+  flat[car] = { id: carId, auctionId, name: carName, taxInformation: vat, price };
+  flat[price] = { start, minimal: zero, current: zero };
+  flat[bids] = bidRefs;
+  return flat;
+}
+
+test("user_nickname / user_id / bidder_* in bid history are cut; shared car name and price stay", () => {
+  const dumped = sanitizeAutobidNuxtJson(JSON.stringify(fixtureSharedSlotWithBidHistory()));
+  assert.equal(dumped.includes("leak@example.com"), false);
+  assert.equal(dumped.includes("op-nick"), false);
+  for (let i = 0; i < 18; i++) {
+    assert.equal(dumped.includes(`bidder-nick-${i}`), false);
+    assert.equal(dumped.includes(`uid-${i}`), false);
+  }
+  assert.equal(dumped.includes("Audi A6"), true);
+  assert.equal(dumped.includes("Including 19% VAT"), true);
+  assert.equal(dumped.includes("15000"), true);
+});
+
 test("sanitizeAutobidRelayRaw maps nuxtPages only", () => {
   const raw = sanitizeAutobidRelayRaw({ kind: "autobid-nuxt", loggedIn: true, nuxtPages: [JSON.stringify(fixtureWithSecrets())] });
   assert.equal(JSON.stringify(raw).includes(JWT), false);

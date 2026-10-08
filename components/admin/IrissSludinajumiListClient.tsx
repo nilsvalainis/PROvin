@@ -32,6 +32,7 @@ import {
   vehicleMatchesOrderFilter,
   type IrissListingOrderBrief,
 } from "@/lib/iriss-listings-orders";
+import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
 import {
   defaultIrissListPrefs,
   irissListBrowserStorage,
@@ -573,6 +574,12 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
                   : latest?.summary.finishedAt
                     ? "\u00a0"
                     : "nav veikta"}
+              </span>
+            </span>
+            <span>
+              Nākamā automātiskā nolasīšana:{" "}
+              <span className="font-semibold text-[var(--color-apple-text)]">
+                {mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}
               </span>
             </span>
             <span className="hidden sm:inline">Avoti OK: {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0}</span>

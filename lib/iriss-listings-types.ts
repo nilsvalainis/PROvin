@@ -125,6 +125,8 @@ export type IrissListingsLatestView = {
   sources: IrissListingSourceRun[];
   vehicles: IrissListingVehicle[];
   cursor?: IrissListingsSyncCursor;
+  /** Pēdējais automātiskais slots `YYYY-MM-DDTHH` Europe/Riga (09/13/17). Dubultpalaišanas aizsardzība. */
+  lastAutomaticSlot?: string;
 };
 
 export type IrissListingsSnapshot = IrissListingsLatestView;

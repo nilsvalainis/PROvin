@@ -10,6 +10,7 @@ import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
+import { isIrissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
 import { buildIrissListingSources, groupIrissListingSources, irissListingVehicleId, type IrissListingSource, type IrissListingSourceGroup } from "@/lib/iriss-listings-sources";
 import {
   canStartListingJob,
@@ -32,6 +33,7 @@ import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 
 export type IrissListingsSyncResult = {
   ok: boolean;
+  skipped?: "already_ran_this_hour";
   warnings: string[];
   summary: IrissListingSyncRunSummary;
   view: IrissListingsLatestView;
@@ -161,12 +163,12 @@ function isDirectAutobid(group: IrissListingSourceGroup, autobidRelay: boolean):
 }
 
 /**
- * Dienas nolasīšana: aktīvo IRISS pasūtījumu izsoļu meklējumi -> konkrēti auto -> salīdzinājums ar iepriekšējo dienu.
+ * Nolasīšana: aktīvo IRISS pasūtījumu izsoļu meklējumi -> konkrēti auto -> reconcile ar iepriekšējo snapshot.
  * Vienāds meklēšanas URL tiek lasīts vienreiz un piesaistīts visiem pasūtījumiem.
- * `restart` (poga „Nolasīt tagad”) sāk dienas ciklu no jauna; cron turpina kursora atlikušos.
+ * `restart` (poga „Nolasīt”) un automātiskais slots (09/13/17 Rīgā) sāk ciklu no jauna.
  * Laika budžets: `IRISS_LISTINGS_TIME_BUDGET_MS` (noklusējums 240 s pie maršruta 300 s).
  */
-export async function runIrissListingsDailySync(opts: { restart?: boolean } = {}): Promise<IrissListingsSyncResult> {
+export async function runIrissListingsDailySync(opts: { restart?: boolean; automaticSlot?: string } = {}): Promise<IrissListingsSyncResult> {
   const startedMs = Date.now();
   const startedAt = new Date(startedMs).toISOString();
   const today = startedAt.slice(0, 10);
@@ -174,8 +176,17 @@ export async function runIrissListingsDailySync(opts: { restart?: boolean } = {}
   const warnings: string[] = [];
   const timeBudgetMs = envInt("IRISS_LISTINGS_TIME_BUDGET_MS", 240_000, 30_000, 280_000);
   const concurrency = envInt("IRISS_LISTINGS_FETCH_CONCURRENCY", 3, 1, 3);
+  const automaticSlot = isIrissListingsAutomaticSlot(opts.automaticSlot) ? opts.automaticSlot : "";
+  const restart = opts.restart === true || Boolean(automaticSlot);
 
   const previous = await readIrissListingsLatestView();
+  if (automaticSlot && previous?.lastAutomaticSlot === automaticSlot) {
+    warnings.push(`Automātiskā nolasīšana šajā stundā jau ir palaista (${automaticSlot}).`);
+    return { ok: true, skipped: "already_ran_this_hour", warnings, summary: previous.summary, view: previous };
+  }
+  if (automaticSlot && previous) {
+    await writeIrissListingsRun({ ...previous, lastAutomaticSlot: automaticSlot });
+  }
   const rows = await listIrissPasutijumi();
   const activeOrderIds = new Set(rows.filter((r) => r.listStatus === "active").map((r) => r.id));
   const allSources = buildIrissListingSources(rows);
@@ -184,7 +195,7 @@ export async function runIrissListingsDailySync(opts: { restart?: boolean } = {}
   if (allSources.length > sources.length) warnings.push(`Avotu skaits ierobežots: ${sources.length}/${allSources.length}.`);
 
   const groups = groupIrissListingSources(sources);
-  const picked = selectListingSyncQueue(groups, previous?.cursor, today, opts.restart === true);
+  const picked = selectListingSyncQueue(groups, previous?.cursor, today, restart);
   const sameDay = previous?.cursor?.day === today;
 
   if (picked.alreadyDone && previous) {
@@ -280,6 +291,7 @@ export async function runIrissListingsDailySync(opts: { restart?: boolean } = {}
     runId,
   );
   const doneKeys = [...new Set([...picked.carriedDone, ...completedKeys])].sort((a, b) => a.localeCompare(b));
+  const lastAutomaticSlot = automaticSlot || previous?.lastAutomaticSlot;
   const view: IrissListingsLatestView = {
     version: 2,
     generatedAt: finishedAt,
@@ -287,6 +299,7 @@ export async function runIrissListingsDailySync(opts: { restart?: boolean } = {}
     sources: mergedRuns,
     vehicles: rec.vehicles,
     cursor: { day: today, doneKeys },
+    ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
   };
 
   const write = await writeIrissListingsRun(view);

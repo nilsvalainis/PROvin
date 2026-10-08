@@ -82,6 +82,61 @@ function fixtureSharedSlots(): unknown[] {
   ];
 }
 
+/**
+ * Kopīgs slots: items[].name un user.displayName = "Audi A6"; price.start un bid.amount = 15000.
+ * 18 bid vēstures ieraksti ar user_nickname / user_id / bidder_code (prefikss + pasvītra).
+ */
+function fixtureSharedSlotWithBidHistory(): unknown[] {
+  const flat: unknown[] = [];
+  const alloc = (v: unknown): number => {
+    const i = flat.length;
+    flat.push(v);
+    return i;
+  };
+  const root = alloc(null);
+  const state = alloc(null);
+  const bag = alloc(null);
+  const user = alloc(null);
+  const nick = alloc("op-nick");
+  const carName = alloc("Audi A6");
+  const email = alloc("leak@example.com");
+  const queries = alloc(null);
+  const qlist = alloc(null);
+  const qwrap = alloc(null);
+  const qstate = alloc(null);
+  const data = alloc(null);
+  const pageCount = alloc(1);
+  const items = alloc(null);
+  const car = alloc(null);
+  const carId = alloc(1001);
+  const vat = alloc("Including 19% VAT");
+  const price = alloc(null);
+  const start = alloc(15000);
+  const zero = alloc(0);
+  const bids = alloc(null);
+  const bidRefs: number[] = [];
+  for (let i = 0; i < 18; i++) {
+    const n = alloc(`bidder-nick-${i}`);
+    const u = alloc(`uid-${i}`);
+    bidRefs.push(alloc({ user_nickname: n, user_id: u, amount: start, bidder_code: u }));
+  }
+  flat[root] = ["ShallowReactive", state];
+  flat[state] = { state: bag };
+  flat[bag] = { user, "$svue-query": queries };
+  flat[user] = { nickname: nick, displayName: carName, email };
+  flat[queries] = { queries: qlist };
+  flat[qlist] = [qwrap];
+  flat[qwrap] = { state: qstate };
+  flat[qstate] = { data };
+  flat[data] = { itemPageCount: pageCount, items, bidHistory: bids };
+  flat[items] = [car];
+  const auctionId = alloc(9001);
+  flat[car] = { id: carId, auctionId, name: carName, taxInformation: vat, price };
+  flat[price] = { start, minimal: zero, current: zero };
+  flat[bids] = bidRefs;
+  return flat;
+}
+
 function fixtureWithSecrets(): unknown[] {
   return [
     ["ShallowReactive", 1],
@@ -168,6 +223,27 @@ describe("sanitizeAutobidNuxtJson", () => {
       auctionStage: "IN_AUCTION",
       vatNote: "Including 19% VAT",
       mileageKm: 120000,
+    });
+  });
+
+  it("cuts user_nickname / user_id / bidder_* in bid history without blanking shared car name or price", () => {
+    const out = sanitizeAutobidNuxtJson(JSON.stringify(fixtureSharedSlotWithBidHistory()));
+    expect(out).not.toContain("leak@example.com");
+    expect(out).not.toContain("op-nick");
+    for (let i = 0; i < 18; i++) {
+      expect(out).not.toContain(`bidder-nick-${i}`);
+      expect(out).not.toContain(`uid-${i}`);
+    }
+    expect(out).toContain("Audi A6");
+    expect(out).toContain("Including 19% VAT");
+    expect(out).toContain("15000");
+    const page = parseAutobidNuxtJson(out);
+    expect(page?.vehicles).toHaveLength(1);
+    expect(page?.vehicles[0]).toMatchObject({
+      externalId: "1001",
+      title: "Audi A6",
+      vatNote: "Including 19% VAT",
+      priceStart: 15000,
     });
   });
 });
