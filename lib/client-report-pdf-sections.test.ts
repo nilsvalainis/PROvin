@@ -2443,6 +2443,36 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("Zagto transportlīdzekļu datubāze");
   });
 
+  it("hides dealer equipment when the operator turns the section off", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      outvinReport: {
+        ...emptyOutvinDealerReport(),
+        vehicleInfo: {
+          ...emptyOutvinDealerReport().vehicleInfo,
+          vinCode: "WBY31AW04NFN09888",
+          model: "i4",
+        },
+        equipment: [{ code: "S403A", description: "Panorāmas stikla jumts" }],
+      },
+      comments: "<p>Dīlera komentārs klientam.</p>",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true, autoRecordsEquipment: false }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).toContain("Dīlera komentārs klientam");
+    expect(doc).not.toContain("S403A");
+    expect(doc).not.toContain("Panorāmas stikla jumts");
+    expect(doc).not.toContain("Aprīkojums");
+  });
+
   it("APPROVED BY IRISS prints technical risks before inspection and summary", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload({
