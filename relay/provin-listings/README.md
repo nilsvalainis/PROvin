@@ -59,28 +59,19 @@ handle /listings/* {
 Prefikss `/listings` netiek noņemts, serviss to noņem pats. Tokens tiek pārbaudīts servisā (Bearer), Caddy
 papildu auth nevajag. `GET /listings/health` ir bez auth un neatklāj neko slepenu.
 
-## Pirmā ielogošanās (Auto1 obligāti, Openlane / Autobid ja prasa e-pasta kodu)
+## Ielogošanās no admin paneļa (parastais ceļš)
 
-noVNC klausās tikai uz localhost, piekļuve tikai caur SSH tuneli.
+Paroles un 2FA kodu īpašnieks ievada pats attālinātajā Chrome (releja profils). Tās netiek sūtītas
+uz Vercel un netiek saglabātas. Paliek tikai ielogotā sesija Chrome profilā uz Hetzner.
 
-```bash
-# uz servera
-systemctl start provin-listings-novnc
-curl -s -X POST -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8789/listings/login/auto1
-# -> {"ok":true,"platform":"auto1","display":":98","minutes":15}
+1. `/admin/iriss/sludinajumi` pie avota statusa spied **Ielogoties**.
+2. Atveras servera pārlūks. Ieraksti paroli un, ja prasa, e-pasta / 2FA kodu. Atzīmē „atcerēties”, ja ir.
+3. Kad esi iekšā, spied **Gatavs**. Relejs aizver pārlūku, pārbauda sesiju un nolasa 1 lapu.
 
-# uz Mac (otrs terminālis)
-ssh -N -L 6089:127.0.0.1:6089 root@37.27.149.106
-# pārlūkā: http://localhost:6089/vnc.html  -> Connect -> ielogojies Auto1 (e-pasta kods, 2FA, "atcerēties")
+Relejam jābūt izvietotam ar šo kodu (`rsync` + `systemctl restart provin-listings`). Caddy `/listings/*`
+jau der, arī noVNC WebSocket. Jaunu Vercel env nav.
 
-# kad gatavs
-curl -s -X POST -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8789/listings/login/auto1/close
-systemctl stop provin-listings-novnc
-curl -s http://127.0.0.1:8789/listings/health      # platforms.auto1.session = ok
-```
-
-Tas pats ar `openlane` un `autobid`. Kamēr manuālais login ir atvērts, nolasīšanas gaida rindā.
-Logs aizveras pats pēc `LISTINGS_MANUAL_LOGIN_MINUTES` (15 min).
+Vecais SSH + noVNC ceļš joprojām strādā, ja paneļa logs neatveras.
 
 ## API
 
@@ -88,11 +79,12 @@ Visi ceļi zem `/listings`. `POST` prasa `Authorization: Bearer <LISTINGS_RELAY_
 
 | Metode | Ceļš | Ko dara |
 | --- | --- | --- |
-| GET | `/listings/health` | bez auth: `platforms.{openlane,auto1,autobid}.session` (`ok` / `login_required` / `unknown`), pēdējā nolasīšana, kļūda, dienas skaitītāji, rinda, profili, vai ir paroles, `auto1.discoveredApis` |
+| GET | `/listings/health` | bez auth: `platforms.{openlane,auto1,autobid}.session` (`ok` / `login_required` / `unknown`), pēdējā nolasīšana, kļūda, dienas skaitītāji, rinda, profili, vai ir paroles, `auto1.discoveredApis`, `manualLogin` |
+| GET | `/listings/vnc/:token/...` | noVNC (īslaicīgs tokens ceļā, bez Bearer; tikai kamēr login atvērts) |
 | POST | `/listings/fetch` | `{platform, sourceUrl, orderId, maxPages?}` -> `{ok, status, note, items[], raw, pagesFetched, pageCount, orderId, elapsedMs}` |
 | POST | `/listings/session/check` | `{platform}` -> sesijas pārbaude + auto-login, ja ir paroles |
-| POST | `/listings/login/:platform` | atver redzamu Chrome ar profilu manuālai ielogošanai |
-| POST | `/listings/login/:platform/close` | aizver manuālo login un pārbauda sesiju |
+| POST | `/listings/login/:platform` | atver redzamu Chrome + atgriež `vncToken` adminam |
+| POST | `/listings/login/:platform/close` | aizver manuālo login un atgriež `{loggedIn, session}` |
 
 `status`: `ok` | `login_required` (sesija beigusies un auto-login nav / prasa captcha, e-pasta kodu, 2FA) |
 `blocked` (Cloudflare challenge, captcha, 403/429) | `error`. HTTP 401 nederīgs tokens, 429 dienas limits, 503 rinda pilna.

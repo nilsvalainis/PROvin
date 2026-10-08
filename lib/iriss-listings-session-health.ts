@@ -1,7 +1,7 @@
 import "server-only";
 
 import { readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
-import { fetchIrissRelayHealth, readIrissRelayConfig, relayPlatformFor, type IrissRelayHealth } from "@/lib/iriss-listings-relay";
+import { fetchIrissRelayHealth, listingPlatformFromRelay, readIrissRelayConfig, relayPlatformFor, type IrissRelayHealth } from "@/lib/iriss-listings-relay";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
@@ -80,8 +80,14 @@ export async function getIrissPlatformHealthReport(): Promise<IrissPlatformHealt
   const cfg = readIrissRelayConfig();
   const [latest, relay] = await Promise.all([readIrissListingsLatestView(), cfg ? fetchIrissRelayHealth(cfg) : Promise.resolve(null)]);
   const autobidViaRelay = /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_AUTOBID_VIA_RELAY ?? "");
+  const loginOpen =
+    relay?.reachable && relay.manualLogin
+      ? { platform: listingPlatformFromRelay(relay.manualLogin.platform), startedAt: relay.manualLogin.startedAt }
+      : null;
   return {
     checkedAt,
     items: IRISS_LISTING_PLATFORMS.map((platform) => mergeRelayHealth(platformHealthFromView(platform, latest, checkedAt), relay, { autobidViaRelay })),
+    relayReachable: Boolean(cfg && relay?.reachable),
+    loginOpen,
   };
 }
