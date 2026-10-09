@@ -9,6 +9,7 @@ import { computeListingVatHealth } from "@/lib/iriss-listings-vat";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import { isIrissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
+import { parseIrissListingsOperatorState, emptyIrissListingsOperatorState } from "@/lib/iriss-listings-operator-state";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
@@ -17,6 +18,7 @@ import {
   type IrissListingSyncRunSummary,
   type IrissListingVehicle,
   type IrissListingsLatestView,
+  type IrissListingsOperatorState,
   type IrissListingsSyncCursor,
   type IrissListingsRawBundle,
   type IrissListingsSnapshot,
@@ -26,6 +28,7 @@ import {
 const DEFAULT_RELATIVE_DIR = ".data/iriss-sludinajumi";
 const DEFAULT_BLOB_PREFIX = "iriss-sludinajumi/";
 const LATEST_FILENAME = "latest.json";
+const OPERATOR_FILENAME = "operator-state.json";
 const SNAPSHOTS_DIRNAME = "snapshots";
 const RAW_DIRNAME = "raw";
 
@@ -132,6 +135,7 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     }),
     orderIds,
     orderBrandModels: strArr(v.orderBrandModels),
+    sourceKeys: strArr(v.sourceKeys),
     title: str(v.title),
     manufacturer: str(v.manufacturer),
     year: str(v.year) || listingYearDigits({ year: "", firstRegistration }),
@@ -194,6 +198,7 @@ function normalizeSource(v: unknown): IrissListingSourceRun | null {
     pagesFetched: int(v.pagesFetched),
     pageCount: int(v.pageCount),
     fetchedAt: str(v.fetchedAt),
+    complete: v.complete === true,
   };
 }
 
@@ -356,4 +361,46 @@ export async function writeIrissListingsRawBundle(bundle: IrissListingsRawBundle
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
+}
+
+export async function readIrissListingsOperatorState(): Promise<IrissListingsOperatorState> {
+  const empty = emptyIrissListingsOperatorState();
+  const r = resolveStorage();
+  if (r.kind === "disabled") return empty;
+  try {
+    if (r.kind === "blob") {
+      return parseIrissListingsOperatorState(await readBlobJson(`${r.prefix}${OPERATOR_FILENAME}`, r.token));
+    }
+    const txt = await fs.readFile(path.join(r.dir, OPERATOR_FILENAME), "utf8");
+    return parseIrissListingsOperatorState(JSON.parse(txt) as unknown);
+  } catch {
+    return empty;
+  }
+}
+
+export async function writeIrissListingsOperatorState(
+  state: IrissListingsOperatorState,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+    const clean = parseIrissListingsOperatorState(state);
+    await writeJson(r, OPERATOR_FILENAME, JSON.stringify(clean, null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export async function replaceIrissListingsLatestVehicles(
+  vehicles: IrissListingVehicle[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const latest = await readIrissListingsLatestView();
+  if (!latest) return { ok: true };
+  return writeIrissListingsRun({
+    ...latest,
+    generatedAt: new Date().toISOString(),
+    vehicles,
+    summary: { ...latest.summary, vehicleCount: vehicles.length },
+  });
 }

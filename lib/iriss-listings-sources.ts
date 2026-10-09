@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
+import { listingSearchKey, normalizeListingUrl } from "@/lib/iriss-listings-url";
 import type { IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
+
+export { listingSearchKey, normalizeListingUrl };
 
 export type IrissListingSource = {
   id: string;
@@ -12,22 +15,6 @@ export type IrissListingSource = {
   sourceUrl: string;
 };
 
-/** Tas pats meklējums neatkarīgi no parametru secības un beigu slīpsvītras. */
-export function normalizeListingUrl(raw: string): string {
-  try {
-    const u = new URL(raw);
-    u.hash = "";
-    u.hostname = u.hostname.toLowerCase();
-    if (u.pathname.length > 1) u.pathname = u.pathname.replace(/\/+$/, "");
-    const pairs = [...u.searchParams.entries()].sort((a, b) => (a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0])));
-    u.search = "";
-    for (const [k, v] of pairs) u.searchParams.append(k, v);
-    return u.toString();
-  } catch {
-    return raw.trim();
-  }
-}
-
 export type IrissListingSourceGroup = {
   key: string;
   platform: IrissListingPlatform;
@@ -36,11 +23,19 @@ export type IrissListingSourceGroup = {
   orders: IrissListingSource[];
 };
 
+/** Aktīvo meklējumu pirksts: statuss + visās lasāmajās saitēs. Mobile.de neietilpst. */
+export function irissReadableListingFingerprint(row: SourceRow): string {
+  if (row.listStatus !== "active") return `${row.listStatus}|`;
+  const keys = buildIrissListingSources([row]).map((s) => listingSearchKey(s.platform, s.sourceUrl));
+  keys.sort((a, b) => a.localeCompare(b));
+  return `${row.listStatus}|${keys.join(";")}`;
+}
+
 /** Viens unikāls meklēšanas URL = viena nolasīšana, rezultāts visiem pasūtījumiem grupā. */
 export function groupIrissListingSources(sources: IrissListingSource[]): IrissListingSourceGroup[] {
   const map = new Map<string, IrissListingSourceGroup>();
   for (const src of sources) {
-    const key = `${src.platform}|${normalizeListingUrl(src.sourceUrl)}`;
+    const key = listingSearchKey(src.platform, src.sourceUrl);
     const hit = map.get(key);
     if (hit) {
       hit.orders.push(src);

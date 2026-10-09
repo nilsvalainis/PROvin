@@ -31,6 +31,11 @@ export type IrissListingSourceRun = {
   pagesFetched: number;
   pageCount: number;
   fetchedAt: string;
+  /**
+   * Pilnīgs nolasījums: visās lapās bez kļūdām un bez lapu limita nogriešanas.
+   * Tukšs / false = pazudušu auto pēc šī avota nedrīkst dzēst.
+   */
+  complete?: boolean;
 };
 
 export type IrissListingPriceField = "start" | "minimal" | "current" | "buy_now";
@@ -53,6 +58,8 @@ export type IrissListingVehicle = {
   /** Viens auto var atbilst vairāku pasūtījumu meklējumiem. */
   orderIds: string[];
   orderBrandModels: string[];
+  /** Meklēšanas piederība: `${platform}|${normalizedUrl}`. Nav VIN deduplikācija starp platformām. */
+  sourceKeys: string[];
   title: string;
   manufacturer: string;
   year: string;
@@ -91,7 +98,7 @@ export type IrissListingVehicle = {
   auctionStage: string;
   firstSeenAt: string;
   lastSeenAt: string;
-  /** Cik veiksmīgos nolasījumos pēc kārtas auto vairs nav sarakstā. Pazudis tikai no 2. */
+  /** Cik pilnīgos nolasījumos pēc kārtas auto vairs nav šajā meklējumā. Pēc 1 - izņem. */
   missingRuns: number;
   change: IrissListingVehicleChange;
   priceHistory: IrissListingPriceChange[];
@@ -128,7 +135,7 @@ export type IrissListingsLatestView = {
   sources: IrissListingSourceRun[];
   vehicles: IrissListingVehicle[];
   cursor?: IrissListingsSyncCursor;
-  /** Pēdējais automātiskais slots `YYYY-MM-DDTHH` Europe/Riga (09/13/17). Dubultpalaišanas aizsardzība slota sākumam. */
+  /** Pēdējais automātiskais slots `YYYY-MM-DDTHH` Europe/Riga (08/10/12/14/16/18/20). Dubultpalaišanas aizsardzība slota sākumam. */
   lastAutomaticSlot?: string;
   vatHealth?: import("@/lib/iriss-listings-vat").ListingVatHealthMap;
 };
@@ -176,4 +183,18 @@ export type IrissPlatformHealthReport = {
   items: IrissPlatformHealthItem[];
   relayReachable: boolean;
   loginOpen: { platform: IrissListingPlatform; startedAt: string } | null;
+};
+
+/** Noraidīts sludinājums (✕ Nav interesanti): paliek serverī, nākamajos importos vairs neparādās. */
+export type IrissListingsRejectedEntry = {
+  id: string;
+  rejectedAt: string;
+  vehicle: IrissListingVehicle | null;
+};
+
+/** Favorīti un noraidījumi Blob/FS, nevis tikai pārlūkā. */
+export type IrissListingsOperatorState = {
+  version: 1;
+  fav: string[];
+  rejected: IrissListingsRejectedEntry[];
 };

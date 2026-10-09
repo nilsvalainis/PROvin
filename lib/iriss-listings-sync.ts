@@ -3,12 +3,20 @@ import "server-only";
 import {
   isIrissListingsRawStoreEnabled,
   readIrissListingsLatestView,
+  readIrissListingsOperatorState,
   writeIrissListingsRawBundle,
   writeIrissListingsRun,
 } from "@/lib/iriss-listings-aggregate-store";
 import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-fetch";
+import { sendIrissNewListingsNotificationEmail } from "@/lib/email/send-transactional";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
-import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
+import {
+  activeListingSearchKeys,
+  listingSearchReadComplete,
+} from "@/lib/iriss-listings-membership";
+import { formatIrissNewListingsEmail, newMatchingListings } from "@/lib/iriss-listings-new-notify";
+import { operatorRejectedIds } from "@/lib/iriss-listings-operator-state";
+import { reconcileVehicles, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
 import { isIrissListingsAutomaticSlot, isIrissListingsContinuationWindow } from "@/lib/iriss-listings-schedule";
 import { buildIrissListingSources, groupIrissListingSources, irissListingVehicleId, type IrissListingSource, type IrissListingSourceGroup } from "@/lib/iriss-listings-sources";
@@ -64,6 +72,7 @@ type SourceFetch = {
   rawPages: string[];
   pagesFetched: number;
   pageCount: number;
+  complete: boolean;
 };
 
 async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
@@ -82,11 +91,27 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
           rawPages: [],
           pagesFetched: 0,
           pageCount: 0,
+          complete: false,
         };
       }
     } else {
-      const r = await fetchViaIrissRelay(relay, src, { maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25) });
-      return { status: r.status, note: r.note, vehicles: r.vehicles, rawPages: r.rawPages, pagesFetched: r.pagesFetched, pageCount: r.pageCount };
+      const maxPages = envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25);
+      const r = await fetchViaIrissRelay(relay, src, { maxPages });
+      return {
+        status: r.status,
+        note: r.note,
+        vehicles: r.vehicles,
+        rawPages: r.rawPages,
+        pagesFetched: r.pagesFetched,
+        pageCount: r.pageCount,
+        complete: listingSearchReadComplete({
+          status: r.status,
+          pagesFetched: r.pagesFetched,
+          pageCount: r.pageCount,
+          maxPages,
+          pageError: /\d+\. lapa/.test(r.note),
+        }),
+      };
     }
   }
 
@@ -102,6 +127,7 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
       note: r.note,
       pagesFetched: r.pagesFetched,
       pageCount: r.pageCount,
+      complete: r.complete,
       rawPages: r.rawPages,
       vehicles: r.vehicles.map((v) => ({
         id: irissListingVehicleId("autobid", v.externalId),
@@ -110,6 +136,7 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
         detailUrl: v.detailUrl,
         orderId: src.orderId,
         orderBrandModel: src.orderBrandModel,
+        sourceKey: "",
         title: v.title,
         manufacturer: v.manufacturer,
         year: v.year,
@@ -136,7 +163,7 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
     };
   }
   /** Nesasniedzams: visas pārējās platformas iet caur releju augstāk. */
-  return { status: "fetch_failed", note: "Platformai nav lasītāja.", vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
+  return { status: "fetch_failed", note: "Platformai nav lasītāja.", vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0, complete: false };
 }
 
 function summarize(
@@ -190,12 +217,12 @@ function emptySyncSummary(startedAt: string, runId: string): IrissListingSyncRun
 /**
  * Nolasīšana: aktīvo IRISS pasūtījumu izsoļu meklējumi -> konkrēti auto -> reconcile ar iepriekšējo snapshot.
  * Vienāds meklēšanas URL tiek lasīts vienreiz un piesaistīts visiem pasūtījumiem.
- * Slota sākums (09/13/17 Rīgā) un poga „Nolasīt” (`restart`) sāk ciklu no jauna.
+ * Slota sākums (08/10/12/14/16/18/20 Rīgā) un poga „Nolasīt” (`restart`) sāk ciklu no jauna.
  * Turpinājums (`restart: false` / cron pēc slota) iet no kursora, līdz visi unikālie meklējumi ir nolasīti.
  * Laika budžets: `IRISS_LISTINGS_TIME_BUDGET_MS` (noklusējums 240 s pie maršruta 300 s).
  */
 export async function runIrissListingsDailySync(
-  opts: { restart?: boolean; automaticSlot?: string; continuation?: boolean } = {},
+  opts: { restart?: boolean; automaticSlot?: string; continuation?: boolean; onlyOrderIds?: string[] } = {},
 ): Promise<IrissListingsSyncResult> {
   const startedMs = Date.now();
   const startedAt = new Date(startedMs).toISOString();
@@ -207,11 +234,17 @@ export async function runIrissListingsDailySync(
   const automaticSlot = isIrissListingsAutomaticSlot(opts.automaticSlot) ? opts.automaticSlot : "";
 
   const previous = await readIrissListingsLatestView();
+  const onlyOrderIds = new Set((opts.onlyOrderIds ?? []).filter(Boolean));
+  const orderScoped = onlyOrderIds.size > 0;
   const slotAlreadyStarted = Boolean(automaticSlot && previous?.lastAutomaticSlot === automaticSlot);
-  const restart = opts.continuation === true || slotAlreadyStarted ? false : opts.restart === true || Boolean(automaticSlot);
+  const restart = orderScoped
+    ? true
+    : opts.continuation === true || slotAlreadyStarted
+      ? false
+      : opts.restart === true || Boolean(automaticSlot);
 
-  if (opts.continuation === true && !isIrissListingsContinuationWindow(new Date(startedMs), previous?.lastAutomaticSlot)) {
-    warnings.push("Turpinājums ārpus slota loga (~60 min pēc 09/13/17).");
+  if (!orderScoped && opts.continuation === true && !isIrissListingsContinuationWindow(new Date(startedMs), previous?.lastAutomaticSlot)) {
+    warnings.push("Turpinājums ārpus slota loga (~60 min pēc 08/10/12/14/16/18/20).");
     const summary = previous?.summary ?? emptySyncSummary(startedAt, runId);
     const view = previous ?? { version: 2 as const, generatedAt: startedAt, summary, sources: [], vehicles: [] };
     return {
@@ -224,22 +257,26 @@ export async function runIrissListingsDailySync(
     };
   }
 
-  if (automaticSlot && !slotAlreadyStarted && previous) {
+  if (!orderScoped && automaticSlot && !slotAlreadyStarted && previous) {
     await writeIrissListingsRun({ ...previous, lastAutomaticSlot: automaticSlot });
   }
   const rows = await listIrissPasutijumi();
-  const activeOrderIds = new Set(rows.filter((r) => r.listStatus === "active").map((r) => r.id));
   const allSources = buildIrissListingSources(rows);
   const maxSources = envInt("IRISS_LISTINGS_MAX_SOURCES_PER_RUN", 200, 1, 2000);
   const sources = allSources.slice(0, maxSources);
   if (allSources.length > sources.length) warnings.push(`Avotu skaits ierobežots: ${sources.length}/${allSources.length}.`);
 
-  const groups = orderListingSyncGroups(groupIrissListingSources(sources), previous?.sources ?? []);
-  const picked = selectListingSyncQueue(groups, previous?.cursor, today, restart);
+  let groups = orderListingSyncGroups(groupIrissListingSources(sources), previous?.sources ?? []);
+  if (orderScoped) {
+    groups = groups.filter((g) => g.orders.some((o) => onlyOrderIds.has(o.orderId)));
+  }
+  const picked = orderScoped
+    ? { queue: groups, carriedDone: [] as string[], alreadyDone: false }
+    : selectListingSyncQueue(groups, previous?.cursor, today, restart);
   const sameDay = previous?.cursor?.day === today;
   const progressTotal = groups.length;
 
-  if (picked.alreadyDone && previous) {
+  if (!orderScoped && picked.alreadyDone && previous) {
     warnings.push(`Šodienas nolasīšana jau pabeigta (${groups.length} unikālie meklējumi).`);
     return {
       ok: true,
@@ -276,14 +313,14 @@ export async function runIrissListingsDailySync(
       try {
         fetchResult = await fetchSource(lead);
       } catch (e) {
-        fetchResult = { status: "fetch_failed", note: formatFetchError(e, "fetch failed"), vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
+        fetchResult = { status: "fetch_failed", note: formatFetchError(e, "fetch failed"), vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0, complete: false };
       }
       results.set(g.key, { at: new Date().toISOString(), fetch: fetchResult });
     },
   );
 
   const fetched: IrissFetchedVehicle[] = [];
-  const okSourceKeys = new Set<string>();
+  const okCompleteSourceKeys = new Set<string>();
   const currentRuns: IrissListingSourceRun[] = [];
   const completedKeys: string[] = [];
   const raw: IrissListingsRawBundle = { version: 1, runId, generatedAt: startedAt, sources: [] };
@@ -307,10 +344,14 @@ export async function runIrissListingsDailySync(
         pagesFetched: hit.fetch.pagesFetched,
         pageCount: hit.fetch.pageCount,
         fetchedAt: hit.at,
+        complete: hit.fetch.complete,
       });
-      if (hit.fetch.status === "ok") okSourceKeys.add(sourceKey(src.platform, src.orderId));
     }
-    if (hit.fetch.status === "ok") fetched.push(...fanOutFetchedVehicles(hit.fetch.vehicles, g.orders));
+    if (hit.fetch.status === "ok" && hit.fetch.complete) okCompleteSourceKeys.add(g.key);
+    if (hit.fetch.status === "ok") {
+      const tagged = hit.fetch.vehicles.map((v) => ({ ...v, sourceKey: g.key }));
+      fetched.push(...fanOutFetchedVehicles(tagged, g.orders));
+    }
     if (hit.fetch.rawPages.length > 0) raw.sources.push({ platform: g.platform, sourceUrl: g.sourceUrl, pages: hit.fetch.rawPages });
   }
 
@@ -322,14 +363,19 @@ export async function runIrissListingsDailySync(
   }
 
   const finishedAt = new Date().toISOString();
-  const mergedRuns = mergeListingSourceRuns(sources, sameDay && !restart ? (previous?.sources ?? []) : [], currentRuns, finishedAt);
+  const keepPreviousRuns = orderScoped || (sameDay && !restart);
+  const mergedRuns = mergeListingSourceRuns(sources, keepPreviousRuns ? (previous?.sources ?? []) : [], currentRuns, finishedAt);
+  const operator = await readIrissListingsOperatorState();
+  const rejectedIds = operatorRejectedIds(operator);
   const rec = reconcileVehicles({
     previous: previous?.vehicles ?? [],
     fetched,
-    okSourceKeys,
-    activeOrderIds,
+    okCompleteSourceKeys,
+    activeSourceKeys: activeListingSearchKeys(sources),
+    activeSources: sources,
+    rejectedIds,
     now: finishedAt,
-    goneAfterMissingRuns: 2,
+    nowMs: Date.parse(finishedAt),
   });
   const summary = summarize(
     mergedRuns,
@@ -338,8 +384,10 @@ export async function runIrissListingsDailySync(
     finishedAt,
     runId,
   );
-  const doneKeys = [...new Set([...picked.carriedDone, ...completedKeys])].sort((a, b) => a.localeCompare(b));
-  const lastAutomaticSlot = automaticSlot || previous?.lastAutomaticSlot;
+  const doneKeys = orderScoped
+    ? (previous?.cursor?.doneKeys ?? [])
+    : [...new Set([...picked.carriedDone, ...completedKeys])].sort((a, b) => a.localeCompare(b));
+  const lastAutomaticSlot = orderScoped ? previous?.lastAutomaticSlot : automaticSlot || previous?.lastAutomaticSlot;
   const vatHealth = computeListingVatHealth(rec.vehicles);
   const view: IrissListingsLatestView = {
     version: 2,
@@ -347,7 +395,7 @@ export async function runIrissListingsDailySync(
     summary,
     sources: mergedRuns,
     vehicles: rec.vehicles,
-    cursor: { day: today, doneKeys },
+    cursor: orderScoped ? previous?.cursor ?? { day: today, doneKeys } : { day: today, doneKeys },
     ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
     vatHealth,
   };
@@ -358,6 +406,18 @@ export async function runIrissListingsDailySync(
   if (write.ok && isIrissListingsRawStoreEnabled() && raw.sources.length > 0) {
     const rawWrite = await writeIrissListingsRawBundle(raw);
     if (!rawWrite.ok) warnings.push(`Raw datu saglabāšana neizdevās: ${rawWrite.error}`);
+  }
+  if (write.ok) {
+    const fresh = newMatchingListings(rec.vehicles, rejectedIds);
+    const mail = formatIrissNewListingsEmail({
+      vehicles: fresh,
+      orders: rows.map((r) => ({
+        id: r.id,
+        clientName: [r.clientFirstName, r.clientLastName].filter(Boolean).join(" ").trim(),
+        brandModel: r.brandModel.trim(),
+      })),
+    });
+    if (mail) await sendIrissNewListingsNotificationEmail(mail);
   }
 
   return { ok: write.ok, warnings, summary, view, progress: listingSyncProgress(progressTotal, doneKeys) };

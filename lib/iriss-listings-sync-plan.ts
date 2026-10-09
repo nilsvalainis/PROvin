@@ -2,13 +2,13 @@
  * Viena palaišana ietilpst maršrutā `maxDuration = 300` s (skat. sync-now un daily-sync route).
  * 92 avoti ar virknes pauzi 4 s ir (92-1)*4 s = 364 s, vēl pirms HTTP. Tāpēc:
  * tiešie Autobid lasījumi iet ar paralēlismu 2-3, un kas neietilpst budžetā, paliek kursorā
- * līdz nākamajai palaišanai tajā pašā UTC dienā. Automātiskā slota sākums (09/13/17 Rīgā)
+ * līdz nākamajai palaišanai tajā pašā UTC dienā. Automātiskā slota sākums (08/10/12/14/16/18/20 Rīgā)
  * un poga „Nolasīt” sāk ciklu no jauna (`restart`); turpinājums (`restart: false`) iet no kursora.
  * Rinda: vispirms nekad nenolasītie, tad vecākais veiksmīgais fetchedAt; platformas pārmaiņus.
  */
 
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import { normalizeListingUrl, type IrissListingSource } from "@/lib/iriss-listings-sources";
+import { listingSearchKey, type IrissListingSource } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceRun, IrissListingsSyncCursor } from "@/lib/iriss-listings-types";
 
 /** Vercel funkcijas griesti šiem diviem maršrutiem. Budžets (`IRISS_LISTINGS_TIME_BUDGET_MS`) ir zem tā. */
@@ -54,7 +54,7 @@ export function listingSyncProgress(total: number, doneKeys: readonly string[]):
 }
 
 export function listingSourceGroupKey(platform: IrissListingPlatform, sourceUrl: string): string {
-  return `${platform}|${normalizeListingUrl(sourceUrl)}`;
+  return listingSearchKey(platform, sourceUrl);
 }
 
 /** Vecākais veiksmīgais fetchedAt grupā; `null` = nekad nav bijis status ok. */
@@ -152,6 +152,7 @@ export function mergeListingSourceRuns(
       pagesFetched: 0,
       pageCount: 0,
       fetchedAt: now,
+      complete: false,
     };
   });
 }
