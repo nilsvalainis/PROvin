@@ -24,7 +24,7 @@ type FixtureRow = {
 
 type FixtureFile = {
   listRecords: FixtureRow[];
-  staleRecordSample?: { mapped: ListingTaxInput; expected: { kind: ListingTaxKind; basis: string } };
+  staleRecordSample?: { mapped: Omit<ListingTaxInput, "platform">; expected: { kind: ListingTaxKind; basis: string } };
   publicLabelCatalogue?: Array<{ taxInformation: string; expected: { kind: ListingTaxKind; rate: number | null; label: string } }>;
 };
 
@@ -168,7 +168,7 @@ describe("defaults and flags", () => {
   });
 
   it("manual override is marked and does not hide later detection in tooltip raw", () => {
-    const v = { platform: "autobid" as const, vatNote: "Exportfahrzeug", countryCode: "DE" };
+    const v = { platform: "autobid" as const, vatNote: "Exportfahrzeug", countryCode: "DE", lastSeenAt: "" };
     const t = listingTaxResolved(v, { kind: "gross", rate: 19 });
     expect(t.kind).toBe("gross");
     expect(t.rate).toBe(19);

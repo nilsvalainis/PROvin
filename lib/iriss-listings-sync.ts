@@ -340,6 +340,7 @@ export async function runIrissListingsDailySync(
   );
   const doneKeys = [...new Set([...picked.carriedDone, ...completedKeys])].sort((a, b) => a.localeCompare(b));
   const lastAutomaticSlot = automaticSlot || previous?.lastAutomaticSlot;
+  const vatHealth = computeListingVatHealth(rec.vehicles);
   const view: IrissListingsLatestView = {
     version: 2,
     generatedAt: finishedAt,
@@ -348,9 +349,9 @@ export async function runIrissListingsDailySync(
     vehicles: rec.vehicles,
     cursor: { day: today, doneKeys },
     ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
-    vatHealth: computeListingVatHealth(rec.vehicles),
+    vatHealth,
   };
-  logListingVatHealth(view.vatHealth);
+  logListingVatHealth(vatHealth);
 
   const write = await writeIrissListingsRun(view);
   if (!write.ok) warnings.push(`Saglabāšana neizdevās: ${write.error}`);
