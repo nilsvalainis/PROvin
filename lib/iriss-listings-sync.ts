@@ -32,6 +32,7 @@ import type {
   IrissListingsRawBundle,
   IrissListingsSyncProgress,
 } from "@/lib/iriss-listings-types";
+import { computeListingVatHealth, logListingVatHealth } from "@/lib/iriss-listings-vat";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 
 export type IrissListingsSyncResult = {
@@ -347,7 +348,9 @@ export async function runIrissListingsDailySync(
     vehicles: rec.vehicles,
     cursor: { day: today, doneKeys },
     ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
+    vatHealth: computeListingVatHealth(rec.vehicles),
   };
+  logListingVatHealth(view.vatHealth);
 
   const write = await writeIrissListingsRun(view);
   if (!write.ok) warnings.push(`Saglabāšana neizdevās: ${write.error}`);

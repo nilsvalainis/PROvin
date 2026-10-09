@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LISTING_COSTS, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 
 const I = listingExtrasI(DEFAULT_LISTING_COSTS);
 const B = 18_000;
@@ -28,15 +28,29 @@ describe("listing extras and v4 control numbers", () => {
     expect(round2(listingRealCost("gross", 19, mb, I).total)).toBe(18000);
   });
 
-  it("MARŽA 14 343,90 / 13 656,10; solot maks. -> 18 000", () => {
+  it("Margin 14 343,90 / 13 656,10; solot maks. -> 18 000", () => {
     expect(round2(listingRealCost("margin", 0, P, I).total)).toBe(14343.9);
     expect(round2(listingMaxBid("margin", 0, B, I))).toBe(13656.1);
     const mb = listingMaxBid("margin", 0, B, I);
     expect(round2(listingRealCost("margin", 0, mb, I).total)).toBe(18000);
   });
 
-  it("unknown uses the net formula", () => {
-    expect(listingRealCost("unknown", 0, P, I).total).toBe(listingRealCost("net", 0, P, I).total);
+  it("listingFinalPrice rounds to the euro and is the only display total", () => {
+    expect(listingFinalPrice({ kind: "margin", rate: null }, P, I)).toBe(14344);
+    expect(listingFinalPrice({ kind: "net", rate: null }, P, I)).toBe(16444);
+    expect(listingFinalPrice({ kind: "gross", rate: 19 }, P, I)).toBe(14512);
+    expect(listingFinalPrice({ kind: "gross", rate: null }, P, I)).toBe(16444);
+  });
+
+  it("ListingTaxKind has no unknown", () => {
+    const kinds: ListingTaxKind[] = ["net", "margin", "gross"];
+    expect(kinds.includes("unknown" as ListingTaxKind)).toBe(false);
+  });
+
+  it("Auto1 bid uses minimal before start; Openlane does not", () => {
+    expect(listingBidPrice({ platform: "auto1", priceCurrent: null, priceStart: 4000, priceMinimal: 4100, priceBuyNow: 5000 })).toBe(4100);
+    expect(listingBidPrice({ platform: "openline", priceCurrent: null, priceStart: null, priceMinimal: 12250, priceBuyNow: 13300 })).toBe(13300);
+    expect(listingBidPrice({ platform: "openline", priceCurrent: 10150, priceStart: null, priceMinimal: 12250, priceBuyNow: null })).toBe(10150);
   });
 
   it("VAT share line uses I for margin and the full base for net/gross", () => {

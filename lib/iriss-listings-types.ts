@@ -63,6 +63,9 @@ export type IrissListingVehicle = {
   powerKw: string;
   location: string;
   countryCode: string;
+  /** Auto1 pārdevēja valsts (`sourceCountry`); PVN likmei, ne atrašanās vietai. */
+  sourceCountry?: string;
+  owningCountry?: string;
   imageUrl: string;
   /** Papildu bildes no avota (Auto1 images[], Autobid imageGroups). */
   imageUrls?: string[];
@@ -127,6 +130,7 @@ export type IrissListingsLatestView = {
   cursor?: IrissListingsSyncCursor;
   /** Pēdējais automātiskais slots `YYYY-MM-DDTHH` Europe/Riga (09/13/17). Dubultpalaišanas aizsardzība slota sākumam. */
   lastAutomaticSlot?: string;
+  vatHealth?: import("@/lib/iriss-listings-vat").ListingVatHealthMap;
 };
 
 /** Unikālie meklējumi šajā ciklā: nolasīti / kopā. */

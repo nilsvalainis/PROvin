@@ -95,6 +95,7 @@ test("mapOpenlaneAuction keeps RU/EN VAT labels and IsMargin", () => {
 
   const enExcl = mapOpenlaneAuction({ AuctionId: "A4", CarName: "X", IsMargin: false, VatType: "VAT excluded" });
   assert.equal(enExcl.vatNote, "VAT excluded");
+  assert.equal(typeof enExcl.isMargin, "boolean");
   assert.equal(coerceOpenlaneMargin(0), false);
   assert.equal(coerceOpenlaneMargin(1), true);
   assert.equal(pickOpenlaneVatNote({ VatType: "inkl. MwSt" }), "inkl. MwSt");

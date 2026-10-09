@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { yearOf } from "../items.mjs";
-import { auto1ListApiRe, auto1Stage, findCarArrays, isAuto1EmptySearchJson, mapAuto1Car } from "./auto1.mjs";
+import { auto1ListApiRe, auto1SearchPageUrl, auto1Stage, findCarArrays, isAuto1EmptySearchJson, looksLikeAuto1EmptyResultsPage, mapAuto1Car } from "./auto1.mjs";
 
 /** yearOf(String(ms)) šeit atrod "1960", kalendāra gads ir 2010. */
 const REG_MS = 1262304196000;
@@ -39,6 +39,9 @@ function hit(over = {}) {
     auctionIdentifier: "auc-1",
     auctionType: "24D2",
     salesVatType: 1053,
+    taxDeduction: false,
+    sourceCountry: "DE",
+    owningCountry: "DE",
     ...over,
   };
 }
@@ -81,12 +84,50 @@ test("hits[0] maps cents, ms dates, stockNumber and image fullUrl", () => {
   assert.equal(item.auctionId, "auc-1");
   assert.equal(item.auctionStage, "IN_AUCTION");
   assert.equal(item.vatNote, "salesVatType 1053");
+  assert.equal(item.salesVatType, 1053);
+  assert.equal(item.taxDeduction, false);
+  assert.equal(item.sourceCountry, "DE");
+  assert.equal(item.owningCountry, "DE");
   assert.equal(item.detailUrl, "https://www.auto1.com/en/app/merchant/car/BW03512");
+});
+
+test("search page URL always sets page, even when the saved URL has none", () => {
+  assert.equal(
+    auto1SearchPageUrl("https://www.auto1.com/en/app/merchant/cars?channel=24h", 2),
+    "https://www.auto1.com/en/app/merchant/cars?channel=24h&page=2",
+  );
+  assert.equal(
+    auto1SearchPageUrl("https://www.auto1.com/en/app/merchant/cars?channel=24h&page=1", 3),
+    "https://www.auto1.com/en/app/merchant/cars?channel=24h&page=3",
+  );
+});
+
+test("empty results page text is ok with 0 cars (Volvo S60 / BMW X3 searches)", () => {
+  assert.equal(looksLikeAuto1EmptyResultsPage("No cars found for this search"), true);
+  assert.equal(looksLikeAuto1EmptyResultsPage("0 results"), true);
+  assert.equal(looksLikeAuto1EmptyResultsPage("BMW 320d in auction"), false);
 });
 
 test("live-shaped hit with mainImageFullUrl null uses images[].fullUrl", () => {
   const item = mapAuto1Car(hit({ mainImageFullUrl: null }));
   assert.equal(item.imageUrl, "https://img-pa.auto1.com/img/BW03512.jpg");
+});
+
+test("vatRate comes from finance, never meta.prices; seller country is not currentLocation", () => {
+  const margin = mapAuto1Car(
+    hit({
+      currentLocation: { city: "Berlin", country: "DE" },
+      countryCode: "BE",
+      sourceCountry: "BE",
+      owningCountry: "BE",
+      meta: { finance: { vatRate: null, sourceCountryCode: "BE" }, prices: { vatRate: 21 } },
+    }),
+  );
+  assert.equal(margin.vatRate, null);
+  assert.equal(margin.sourceCountry, "BE");
+  assert.equal(margin.countryCode, "BE");
+  const gross = mapAuto1Car(hit({ meta: { finance: { vatRate: 19 } } }));
+  assert.equal(gross.vatRate, 19);
 });
 
 test("empty search hits/totalHits is ok with 0 cars, not a missing-JSON error", () => {

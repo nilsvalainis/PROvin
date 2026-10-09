@@ -10,7 +10,7 @@ import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginP
 import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
-import { listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts } from "@/lib/iriss-listings-cost";
+import { listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { classifyListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
@@ -47,7 +47,14 @@ import {
   type IrissListTab,
 } from "@/lib/iriss-listings-operator-prefs";
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
-import { listingTaxCostArgs, listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
+import {
+  computeListingVatHealth,
+  formatListingVatHealthLine,
+  listingTaxChip,
+  listingTaxCostArgs,
+  listingTaxResolved,
+  type ListingTax,
+} from "@/lib/iriss-listings-vat";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
@@ -427,6 +434,8 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
     return sortListingVehicles(withRoom, sort, nowMs ?? Number.POSITIVE_INFINITY).sort((a, b) => Number(prefs.fav.includes(b.id)) - Number(prefs.fav.includes(a.id)));
   }, [visible, sort, nowMs, prefs, orderById]);
 
+  const vatHealth = useMemo(() => latest?.vatHealth ?? computeListingVatHealth(vehicles), [latest?.vatHealth, vehicles]);
+  const vatHealthLine = useMemo(() => formatListingVatHealthLine(vatHealth), [vatHealth]);
   const drawerVehicle = useMemo(() => vehicles.find((v) => v.id === drawerId) ?? null, [vehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
   const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
@@ -554,10 +563,10 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
             <span className="hidden text-[11px] font-medium text-orange-950/80 sm:inline">Budžets no pasūtījuma. Šis lauks pārraksta visus.</span>
           ) : (
             <span className="-mx-2.5 flex w-[calc(100%+1.25rem)] snap-x snap-mandatory gap-3 overflow-x-auto px-2.5 pb-0.5 tabular-nums [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "net", rate: null, raw: "NETO", rateFrom: "" }} /> maks. <b>{fmtEur(maxNet)}</b></span>
-              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "margin", rate: null, raw: "Margin", rateFrom: "" }} /> maks. <b>{fmtEur(maxMargin)}</b></span>
-              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "gross", rate: 19, raw: "AR PVN 19 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross19)}</b></span>
-              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "gross", rate: 21, raw: "AR PVN 21 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross21)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("net")} /> maks. <b>{fmtEur(maxNet)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("margin")} /> maks. <b>{fmtEur(maxMargin)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("gross", 19)} /> maks. <b>{fmtEur(maxGross19)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("gross", 21)} /> maks. <b>{fmtEur(maxGross21)}</b></span>
             </span>
           )}
         </div>
@@ -611,6 +620,29 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
           >
             {syncBusy ? (syncMsg && /\d+\/\d+/.test(syncMsg) ? syncMsg.replace(" meklējumi nolasīti", "") : "Nolasa...") : "Nolasīt"}
           </button>
+        </div>
+        <div className="-mx-2.5 mt-2 flex snap-x gap-1.5 overflow-x-auto px-2.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+          {(["auto1", "openline", "autobid"] as const).map((platform) => {
+            const h = vatHealth[platform];
+            const cls =
+              h.level === "red"
+                ? "border-red-300 bg-red-50 text-red-800"
+                : h.level === "amber"
+                  ? "border-amber-300 bg-amber-50 text-amber-900"
+                  : "border-slate-200 bg-slate-50 text-slate-600";
+            const warn = h.stale + h.missingFields + h.rateMissing + h.conflict + h.defaultUnrecognised;
+            const label =
+              platform === "auto1"
+                ? `Auto1 ${h.margin} Margin · ${h.gross} ar PVN · ${warn} ⚠`
+                : platform === "openline"
+                  ? `Openlane ${h.margin} · ${h.net} NETO · ${warn} ⚠`
+                  : `Autobid ${h.margin} · ${h.gross} · ${warn} ⚠`;
+            return (
+              <span key={platform} title={h.reason || vatHealthLine} className={`inline-flex shrink-0 snap-start items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${cls}`}>
+                {label}
+              </span>
+            );
+          })}
         </div>
         {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
         <div className="-mx-2.5 mt-2 flex snap-x gap-1.5 overflow-x-auto px-2.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -884,6 +916,7 @@ function VehicleCard({
   const bid = listingBidPrice(v);
   const taxArgs = listingTaxCostArgs(tax);
   const real = bid == null ? null : listingRealCost(taxArgs.kind, taxArgs.foreignVatPct, bid, extras);
+  const gala = bid == null ? null : listingFinalPrice(tax, bid, extras);
   const mb = budget != null ? listingMaxBid(taxArgs.kind, taxArgs.foreignVatPct, budget, extras) : null;
   const room = mb != null && bid != null ? mb - bid : null;
   const dmg = classifyListingDamage(v.damageRaw);
@@ -896,7 +929,7 @@ function VehicleCard({
   const sourceHref = resolveListingDetailUrl(v);
   const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
   const specs = [yearLabel, fmtKm(v.mileageKm), v.fuel, v.transmission, powerKwLabel, v.location].filter(Boolean);
-  const left = real && budget != null ? budget - real.total : null;
+  const left = gala != null && budget != null ? budget - gala : null;
   const border =
     gone ? "border-[#E5E7EB] opacity-70" : fav ? "border-amber-200" : fresh ? "border-emerald-200" : changes.length > 0 ? "border-sky-200" : "border-[#E5E7EB]";
   const accent = v.platform === "autobid" ? "border-l-violet-500" : v.platform === "openline" ? "border-l-indigo-600" : "border-l-amber-500";
@@ -1061,7 +1094,7 @@ function VehicleCard({
               ) : (
                 <div className="text-[11px] font-semibold text-amber-900">Budžets nav</div>
               )}
-              <div className="flex justify-between text-[11px] tabular-nums"><span>Gala</span><b>{fmtEur(real.total)}</b></div>
+              <div className="flex justify-between text-[11px] tabular-nums"><span>Gala</span><b>{fmtEur(gala ?? real.total)}</b></div>
               <div className="text-[10px] leading-snug text-slate-500">{listingVatShareLine(real, fmtEur)}</div>
               {left != null ? (
                 <div>

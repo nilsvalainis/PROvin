@@ -1,183 +1,222 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { listingExtrasI, listingRealCost } from "@/lib/iriss-listings-cost";
+import { listingExtrasI, listingFinalPrice, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import {
+  computeListingVatHealth,
   detectListingTax,
-  listingTaxCostArgs,
+  EU_VAT,
   listingTaxLabel,
   listingTaxResolved,
   type ListingTaxInput,
 } from "@/lib/iriss-listings-vat";
-import type { ListingTaxKind } from "@/lib/iriss-listings-cost";
+import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
 const I = listingExtrasI();
-const BID = 10_000;
+const FIX = path.join(process.cwd(), "lib/__fixtures__/iriss-vat");
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
-/** Spec fixtures drop in here: kind, label, and (optional) gala cena pret fiksētu solījumu. */
-type ListingVatFixture = {
-  name: string;
-  input: ListingTaxInput;
-  kind: ListingTaxKind;
-  rate?: number | null;
-  label: string;
-  /** Ja norādīts, gala cena pret BID=10 000 un noklusējuma I. */
-  total?: number;
+type FixtureRow = {
+  platform: "auto1" | "openline" | "autobid";
+  title?: string;
+  mapped: ListingTaxInput & { bid?: number | null };
+  expected: { kind: ListingTaxKind; rate: number | null; finalPrice?: number; label?: string };
 };
 
-function assertVat(f: ListingVatFixture) {
-  const t = detectListingTax(f.input);
-  expect(t.kind, f.name).toBe(f.kind);
-  if (f.rate !== undefined) expect(t.rate, f.name).toBe(f.rate);
-  expect(listingTaxLabel(t), f.name).toBe(f.label);
-  if (f.total != null) {
-    const args = listingTaxCostArgs(t);
-    expect(round2(listingRealCost(args.kind, args.foreignVatPct, BID, I).total), f.name).toBe(f.total);
-  }
+type FixtureFile = {
+  listRecords: FixtureRow[];
+  staleRecordSample?: { mapped: ListingTaxInput; expected: { kind: ListingTaxKind; basis: string } };
+  publicLabelCatalogue?: Array<{ taxInformation: string; expected: { kind: ListingTaxKind; rate: number | null; label: string } }>;
+};
+
+function loadFixture(name: string): FixtureFile {
+  return JSON.parse(readFileSync(path.join(FIX, name), "utf8")) as FixtureFile;
 }
 
-const CURRENT_FIXTURES: ListingVatFixture[] = [
-  {
-    name: "Auto1 1054 + DE",
-    input: { platform: "auto1", salesVatType: 1054, taxDeduction: true, countryCode: "DE" },
-    kind: "gross",
-    rate: 19,
-    label: "AR PVN 19 %",
-    total: 14511.97,
-  },
-  {
-    name: "Auto1 1053 margin",
-    input: { platform: "auto1", salesVatType: 1053, taxDeduction: false, countryCode: "DE" },
-    kind: "margin",
-    rate: null,
-    label: "Margin",
-    total: 14343.9,
-  },
-  {
-    name: "Auto1 1054 + BE without vatRate",
-    input: { platform: "auto1", salesVatType: 1054, taxDeduction: true, vatRate: null, countryCode: "BE" },
-    kind: "gross",
-    rate: 21,
-    label: "AR PVN 21 %",
-  },
-  {
-    name: "Auto1 missing VAT fields stays unknown (net price until spec)",
-    input: { platform: "auto1", countryCode: "DE" },
-    kind: "unknown",
-    rate: null,
-    label: "PVN ?",
-    total: 16443.9,
-  },
-  {
-    name: "Openlane IsMargin true",
-    input: { platform: "openline", isMargin: true },
-    kind: "margin",
-    label: "Margin",
-    total: 14343.9,
-  },
-  {
-    name: "Openlane IsMargin false",
-    input: { platform: "openline", isMargin: false },
-    kind: "net",
-    label: "NETO",
-    total: 16443.9,
-  },
-  {
-    name: "Openlane missing IsMargin and note stays unknown",
-    input: { platform: "openline", countryCode: "DE" },
-    kind: "unknown",
-    rate: null,
-    label: "PVN ?",
-    total: 16443.9,
-  },
-  {
-    name: "Autobid Including 19% VAT",
-    input: { platform: "autobid", vatNote: "Including 19% VAT" },
-    kind: "gross",
-    rate: 19,
-    label: "AR PVN 19 %",
-    total: 14511.97,
-  },
-  {
-    name: "Autobid Tax on difference",
-    input: { platform: "autobid", vatNote: "Tax on difference" },
-    kind: "margin",
-    label: "Margin",
-  },
-  {
-    name: "Autobid unknown note stays yellow / net price",
-    input: { platform: "autobid", vatNote: "Exportfahrzeug" },
-    kind: "unknown",
-    rate: null,
-    label: "PVN ?",
-    total: 16443.9,
-  },
-  {
-    name: "Autobid empty note stays unknown",
-    input: { platform: "autobid", vatNote: "" },
-    kind: "unknown",
-    rate: null,
-    label: "PVN ?",
-  },
-];
+function inputFromMapped(platform: FixtureRow["platform"], mapped: ListingTaxInput): ListingTaxInput {
+  return {
+    platform,
+    vatNote: mapped.vatNote,
+    salesVatType: mapped.salesVatType,
+    taxDeduction: mapped.taxDeduction,
+    isMargin: mapped.isMargin,
+    countryCode: mapped.countryCode,
+    sourceCountry: mapped.sourceCountry,
+    owningCountry: mapped.owningCountry,
+    vatRate: mapped.vatRate,
+  };
+}
 
-/** Real anonymised listings from the VAT spec. Empty until the spec lands. */
-const SPEC_FIXTURES: ListingVatFixture[] = [];
+describe("EU-27 VAT table", () => {
+  it("covers all EU-27 with current rates", () => {
+    expect(EU_VAT).toMatchObject({
+      AT: 20,
+      BE: 21,
+      BG: 20,
+      HR: 25,
+      CY: 19,
+      CZ: 21,
+      DK: 25,
+      EE: 24,
+      FI: 25.5,
+      FR: 20,
+      DE: 19,
+      GR: 24,
+      HU: 27,
+      IE: 23,
+      IT: 22,
+      LV: 21,
+      LT: 21,
+      LU: 17,
+      MT: 18,
+      NL: 21,
+      PL: 23,
+      PT: 23,
+      RO: 21,
+      SK: 23,
+      SI: 22,
+      ES: 21,
+      SE: 25,
+    });
+    expect(Object.keys(EU_VAT)).toHaveLength(27);
+  });
+});
 
-describe("detectListingTax", () => {
-  it.each(CURRENT_FIXTURES)("$name", (f) => {
-    assertVat(f);
+describe("fixture listRecords", () => {
+  it.each(["auto1.json", "openlane.json", "autobid.json"])("%s kind, rate, flag and final price", (file) => {
+    const data = loadFixture(file);
+    expect(data.listRecords.length).toBeGreaterThan(0);
+    for (const rec of data.listRecords) {
+      const t = detectListingTax(inputFromMapped(rec.platform, rec.mapped));
+      expect(t.kind, rec.title).toBe(rec.expected.kind);
+      expect(t.rate, rec.title).toBe(rec.expected.rate);
+      expect(t.flag, rec.title).toBeNull();
+      expect(listingTaxLabel(t)).not.toBe("PVN ?");
+      if (rec.mapped.bid != null && rec.expected.finalPrice != null) {
+        expect(listingFinalPrice(t, rec.mapped.bid, I), rec.title).toBe(rec.expected.finalPrice);
+      }
+    }
+  });
+});
+
+describe("Autobid publicLabelCatalogue", () => {
+  const data = loadFixture("autobid.json");
+
+  it("maps all 9 en/lv/de labels", () => {
+    expect(data.publicLabelCatalogue).toHaveLength(9);
+    for (const row of data.publicLabelCatalogue ?? []) {
+      const t = detectListingTax({ platform: "autobid", vatNote: row.taxInformation });
+      expect(t.kind, row.taxInformation).toBe(row.expected.kind);
+      expect(t.rate, row.taxInformation).toBe(row.expected.rate);
+      expect(listingTaxLabel(t), row.taxInformation).toBe(row.expected.label === "MARGIN" ? "Margin" : row.expected.label);
+      expect(t.flag).toBeNull();
+    }
   });
 
-  it("Openlane IsMargin true wins over С НДС", () => {
-    expect(listingTaxLabel(detectListingTax({ platform: "openline", isMargin: true, vatNote: "С НДС" }))).toBe("Margin");
+  it("empty taxInformation is silent margin; Exportfahrzeug is unrecognised margin", () => {
+    const silent = detectListingTax({ platform: "autobid", vatNote: "" });
+    expect(silent).toMatchObject({ kind: "margin", basis: "default_silent", flag: null });
+    expect(listingTaxLabel(silent)).toBe("Margin");
+    const unk = detectListingTax({ platform: "autobid", vatNote: "Exportfahrzeug" });
+    expect(unk).toMatchObject({ kind: "margin", basis: "default_unrecognised", flag: "unrecognised_text" });
+    expect(listingTaxLabel(unk)).toBe("Margin");
   });
 
-  it("Openlane RU and EN card labels", () => {
-    expect(detectListingTax({ platform: "openline", vatNote: "Маржа" }).kind).toBe("margin");
-    expect(detectListingTax({ platform: "openline", vatNote: "Без НДС" }).kind).toBe("net");
-    expect(listingTaxLabel(detectListingTax({ platform: "openline", vatNote: "Без НДС" }))).toBe("NETO");
-    const ruGross = detectListingTax({ platform: "openline", vatNote: "С НДС", countryCode: "DE" });
-    expect(ruGross.kind).toBe("gross");
-    expect(ruGross.rate).toBe(19);
-    expect(listingTaxLabel(ruGross)).toBe("AR PVN 19 %");
+  it("reads Latvian Iesk. 19% PVN and neto", () => {
+    const gross = detectListingTax({ platform: "autobid", vatNote: "Iesk. 19% PVN" });
+    expect(gross).toMatchObject({ kind: "gross", rate: 19, flag: null });
+    expect(listingTaxLabel(gross)).toBe("AR PVN 19 %");
+    const net = detectListingTax({ platform: "autobid", vatNote: "neto" });
+    expect(net).toMatchObject({ kind: "net", flag: null });
+    expect(listingTaxLabel(net)).toBe("NETO");
+  });
+});
 
-    expect(detectListingTax({ platform: "openline", vatNote: "margin" }).kind).toBe("margin");
-    expect(detectListingTax({ platform: "openline", vatNote: "VAT excluded" }).kind).toBe("net");
-    const enGross = detectListingTax({ platform: "openline", vatNote: "VAT included", countryCode: "BE" });
-    expect(enGross.kind).toBe("gross");
-    expect(enGross.rate).toBe(21);
-    expect(listingTaxLabel(enGross)).toBe("AR PVN 21 %");
-    const enPct = detectListingTax({ platform: "openline", vatNote: "VAT included 19%" });
-    expect(enPct.kind).toBe("gross");
-    expect(enPct.rate).toBe(19);
+describe("defaults and flags", () => {
+  it("Auto1 staleRecordSample is Margin with missing_fields, never PVN ?", () => {
+    const sample = loadFixture("auto1.json").staleRecordSample!;
+    const t = detectListingTax({ platform: "auto1", ...sample.mapped });
+    expect(t.kind).toBe("margin");
+    expect(t.flag).toBe("missing_fields");
+    expect(t.basis).toBe("default_missing_fields");
+    expect(listingTaxLabel(t)).toBe("Margin");
+    const stale = detectListingTax({ platform: "auto1", ...sample.mapped, lastSeenAt: "2026-10-01T12:00:00.000Z" });
+    expect(stale.flag).toBe("stale");
+    expect(listingTaxLabel(stale)).toBe("Margin");
   });
 
-  it("Openlane DE labels and IsMargin known never stays unknown", () => {
-    expect(detectListingTax({ platform: "openline", vatNote: "Differenzbesteuert" }).kind).toBe("margin");
-    expect(detectListingTax({ platform: "openline", vatNote: "zzgl. MwSt" }).kind).toBe("net");
-    const deInkl = detectListingTax({ platform: "openline", vatNote: "inkl. MwSt", countryCode: "DE" });
-    expect(deInkl.kind).toBe("gross");
-    expect(deInkl.rate).toBe(19);
-    expect(detectListingTax({ platform: "openline", isMargin: true, vatNote: "" }).kind).not.toBe("unknown");
-    expect(detectListingTax({ platform: "openline", isMargin: false, vatNote: "" }).kind).not.toBe("unknown");
+  it("Auto1 conflict 1054 + taxDeduction false uses taxDeduction", () => {
+    const t = detectListingTax({ platform: "auto1", salesVatType: 1054, taxDeduction: false, countryCode: "DE" });
+    expect(t).toMatchObject({ kind: "margin", flag: "conflict" });
   });
 
-  it("manual override keeps the source field in tooltip raw", () => {
+  it("Auto1 1054 + country XX is gross with rate_missing", () => {
+    const t = detectListingTax({ platform: "auto1", salesVatType: 1054, taxDeduction: true, countryCode: "XX" });
+    expect(t).toMatchObject({ kind: "gross", rate: null, flag: "rate_missing" });
+    expect(listingTaxLabel(t)).toBe("AR PVN ? %");
+    expect(listingFinalPrice(t, 10_000, I)).toBe(listingFinalPrice({ kind: "net", rate: null }, 10_000, I));
+  });
+
+  it("Openlane IsMargin null is margin with missing_fields", () => {
+    const t = detectListingTax({ platform: "openline", isMargin: null, vatNote: "VAT excluded" });
+    expect(t).toMatchObject({ kind: "margin", flag: "missing_fields", basis: "default_missing_fields" });
+    expect(listingTaxLabel(t)).toBe("Margin");
+  });
+
+  it("Openlane ignores vatNote when IsMargin is present", () => {
+    expect(detectListingTax({ platform: "openline", isMargin: true, vatNote: "С НДС" }).kind).toBe("margin");
+    expect(detectListingTax({ platform: "openline", isMargin: false, vatNote: "Margin" }).kind).toBe("net");
+  });
+
+  it("manual override is marked and does not hide later detection in tooltip raw", () => {
     const v = { platform: "autobid" as const, vatNote: "Exportfahrzeug", countryCode: "DE" };
     const t = listingTaxResolved(v, { kind: "gross", rate: 19 });
     expect(t.kind).toBe("gross");
     expect(t.rate).toBe(19);
+    expect(t.manual).toBe(true);
     expect(t.raw).toMatch(/Exportfahrzeug/);
-    const args = listingTaxCostArgs(t);
-    expect(args).toEqual({ kind: "gross", foreignVatPct: 19 });
   });
 });
 
-describe.skipIf(SPEC_FIXTURES.length === 0)("VAT spec fixtures", () => {
-  it.each(SPEC_FIXTURES)("spec: $name", (f) => {
-    assertVat(f);
+describe("vat health", () => {
+  it("red-flags stale and unrecognised; amber when one regime dominates", () => {
+    const base = {
+      id: "x",
+      platform: "auto1" as const,
+      externalId: "1",
+      detailUrl: "",
+      orderIds: ["o"],
+      orderBrandModels: ["x"],
+      title: "x",
+      manufacturer: "",
+      year: "",
+      firstRegistration: "",
+      mileageKm: null,
+      fuel: "",
+      transmission: "",
+      powerKw: "",
+      location: "",
+      countryCode: "DE",
+      imageUrl: "",
+      currency: "EUR",
+      priceStart: 1000,
+      priceMinimal: 1000,
+      priceCurrent: null,
+      priceBuyNow: null,
+      vatNote: "",
+      auctionId: "",
+      auctionStartAt: "",
+      auctionEndAt: "",
+      auctionStage: "",
+      firstSeenAt: "2026-10-01T00:00:00.000Z",
+      lastSeenAt: "2026-10-01T00:00:00.000Z",
+      missingRuns: 0,
+      change: "unchanged" as const,
+      priceHistory: [],
+      salesVatType: null,
+      taxDeduction: null,
+    } satisfies Partial<IrissListingVehicle> as IrissListingVehicle;
+    const health = computeListingVatHealth([base]);
+    expect(health.auto1.stale).toBe(1);
+    expect(health.auto1.level).toBe("red");
   });
 });

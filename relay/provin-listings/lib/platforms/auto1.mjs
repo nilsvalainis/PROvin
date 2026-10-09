@@ -49,7 +49,19 @@ function looksLikeCar(o) {
   return hasId && hasCarish && Object.keys(o).length >= 5;
 }
 
-/** Meklējums ar hits:[] / totalHits 0 ir derīgs tukšs rezultāts, ne kļūda. */
+/** Saved search URL without `page=` still has more pages; always set the param. */
+export function auto1SearchPageUrl(sourceUrl, page) {
+  const u = new URL(sourceUrl);
+  u.searchParams.set("page", String(page));
+  return u.toString();
+}
+
+/** Tukša meklējuma lapa (Volvo S60 / BMW X3 tips): JSON var nepienākt. */
+export function looksLikeAuto1EmptyResultsPage(text) {
+  const t = String(text || "");
+  return /no (?:cars|vehicles|results)(?:\s+\w+){0,4}\s+(?:found|match)|0\s+(?:cars|vehicles|results)|we (?:couldn.?t|could not) find|nav (?:auto|rezultāt)/i.test(t);
+}
+
 export function isAuto1EmptySearchJson(json) {
   if (!json || typeof json !== "object" || Array.isArray(json)) return false;
   const hits = json.hits;
@@ -153,6 +165,9 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
     auctionStage: auto1Stage(car, nowMs),
   });
   const finance = car.meta && typeof car.meta === "object" ? car.meta.finance : car.finance;
+  const financeVat = finance && typeof finance === "object" ? num(finance.vatRate) : null;
+  const sourceCountry = str(car.sourceCountry ?? (finance && typeof finance === "object" ? finance.sourceCountryCode : ""));
+  const owningCountry = str(car.owningCountry);
   const imageUrls = (Array.isArray(car.images) ? car.images : []).map((img) => str(img?.fullUrl ?? img?.url ?? img)).filter(Boolean);
   return {
     ...item,
@@ -160,7 +175,9 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
     expectedPrice: eurosFromCents(car.expectedPriceDisplay),
     salesVatType: num(car.salesVatType),
     taxDeduction: typeof car.taxDeduction === "boolean" ? car.taxDeduction : null,
-    vatRate: num(car.vatRate ?? (finance && typeof finance === "object" ? finance.vatRate : null)),
+    vatRate: financeVat,
+    sourceCountry,
+    owningCountry,
     imageUrls: imageUrls.length ? imageUrls.slice(0, 40) : undefined,
     bidCount: num(car.bidCount ?? car.numberOfBids),
     auctionType: str(car.auctionType),
@@ -202,7 +219,21 @@ async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
 
     const deadline = Date.now() + 25_000;
     while (candidates.length === 0 && Date.now() < deadline) await randomPause(500, 900);
-    if (candidates.length === 0) return fail("error", "Auto1 SPA JSON ar auto sarakstu netika pamanīts. Skat. health.platforms.auto1.discoveredApis un iestati AUTO1_LIST_API_RE.");
+    if (candidates.length === 0) {
+      const { pageText } = await import("../browser.mjs");
+      const text = await pageText(page, 4_000);
+      if (looksLikeAuto1EmptyResultsPage(text)) {
+        return {
+          status: "ok",
+          note: "Meklējums bez rezultātiem (0 auto).",
+          items: [],
+          raw: { kind: "auto1-xhr", pages: [] },
+          pagesFetched: 0,
+          pageCount: 0,
+        };
+      }
+      return fail("error", "Auto1 SPA JSON ar auto sarakstu netika pamanīts. Skat. health.platforms.auto1.discoveredApis un iestati AUTO1_LIST_API_RE.");
+    }
 
     const items = new Map();
     const rawPages = [];
@@ -215,14 +246,13 @@ async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
     };
     addFrom(candidates.sort((a, b) => b.cars.length - a.cars.length)[0]);
 
-    /** Lapošana: ja URL ir `page=N`, ielādē nākamās lapas un gaida jaunu JSON. */
-    const u = new URL(sourceUrl);
-    if (u.searchParams.has("page")) {
-      for (let p = 2; p <= maxPages; p += 1) {
+    const emptyFirst = items.size === 0 && candidates.some((c) => c.empty);
+    const pageCap = Math.min(Math.max(1, maxPages || 5), 5);
+    if (!emptyFirst) {
+      for (let p = 2; p <= pageCap; p += 1) {
         const before = candidates.length;
-        u.searchParams.set("page", String(p));
         await randomPause(1_500, 3_000);
-        await page.goto(u.toString(), { waitUntil: "domcontentloaded", timeout: 45_000 });
+        await page.goto(auto1SearchPageUrl(sourceUrl, p), { waitUntil: "domcontentloaded", timeout: 45_000 });
         const d2 = Date.now() + 15_000;
         while (candidates.length === before && Date.now() < d2) await randomPause(400, 800);
         if (candidates.length === before) break;
@@ -239,7 +269,9 @@ async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
         ? "Meklējums bez rezultātiem (0 auto)."
         : items.size === 0
           ? "JSON pamanīts, bet neviens auto netika mapēts; skat. raw."
-          : "",
+          : rawPages.length > 1
+            ? `Nolasītas ${rawPages.length} lapas.`
+            : "",
       items: [...items.values()],
       raw: { kind: "auto1-xhr", pages: rawPages },
       pagesFetched: rawPages.length,
