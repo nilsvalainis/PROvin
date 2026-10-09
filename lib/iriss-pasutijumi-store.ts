@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
+import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
   emptyIrissPasutijums,
@@ -65,11 +66,18 @@ function cloneRecord(record: IrissPasutijumsRecord): IrissPasutijumsRecord {
   return JSON.parse(JSON.stringify(record)) as IrissPasutijumsRecord;
 }
 
+function cloneListingLinks(row: Pick<
+  IrissPasutijumsListRow,
+  "listingLinkMobile" | "listingLinkAutobid" | "listingLinkOpenline" | "listingLinkAuto1" | "listingLinksOther"
+>) {
+  return parseIrissPasutijumsListingLinks(row);
+}
+
 function cloneRows(rows: IrissPasutijumsListRow[]): IrissPasutijumsListRow[] {
   return rows.map((row) => ({
     ...row,
     listStatus: row.listStatus ?? "active",
-    listingLinksOther: [...row.listingLinksOther],
+    ...cloneListingLinks(row),
   }));
 }
 
@@ -330,12 +338,8 @@ async function trimBlobBackups(token: string, prefix: string, id: string): Promi
   }
 }
 
-function normalizeOtherLinks(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [""];
-  const mapped = raw
-    .map((x) => sanitizeDraftTextForStorage(typeof x === "string" ? x : "", 2048))
-    .slice(0, 20);
-  return mapped.length > 0 ? mapped : [""];
+function sanitizeListingLinks(raw: unknown) {
+  return parseIrissPasutijumsListingLinks(raw, (s) => sanitizeDraftTextForStorage(s, 2048));
 }
 
 function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
@@ -447,11 +451,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     equipmentRequired: sanitizeDraftTextForStorage(str("equipmentRequired")),
     equipmentDesired: sanitizeDraftTextForStorage(str("equipmentDesired")),
     notes: sanitizeDraftTextForStorage(str("notes")),
-    listingLinkMobile: sanitizeDraftTextForStorage(str("listingLinkMobile"), 2048),
-    listingLinkAutobid: sanitizeDraftTextForStorage(str("listingLinkAutobid"), 2048),
-    listingLinkOpenline: sanitizeDraftTextForStorage(str("listingLinkOpenline"), 2048),
-    listingLinkAuto1: sanitizeDraftTextForStorage(str("listingLinkAuto1"), 2048),
-    listingLinksOther: normalizeOtherLinks(o.listingLinksOther),
+    ...sanitizeListingLinks(o),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: normalizeOffers(o.offers),
   };
@@ -520,11 +520,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
             }),
         24,
       ),
-      listingLinkMobile: sanitizeDraftTextForStorage(typeof o.listingLinkMobile === "string" ? o.listingLinkMobile : "", 2048),
-      listingLinkAutobid: sanitizeDraftTextForStorage(typeof o.listingLinkAutobid === "string" ? o.listingLinkAutobid : "", 2048),
-      listingLinkOpenline: sanitizeDraftTextForStorage(typeof o.listingLinkOpenline === "string" ? o.listingLinkOpenline : "", 2048),
-      listingLinkAuto1: sanitizeDraftTextForStorage(typeof o.listingLinkAuto1 === "string" ? o.listingLinkAuto1 : "", 2048),
-      listingLinksOther: normalizeOtherLinks(o.listingLinksOther),
+      ...sanitizeListingLinks(o),
     });
   }
   return rows;

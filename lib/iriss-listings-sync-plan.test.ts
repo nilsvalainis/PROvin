@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import type { IrissListingSource } from "@/lib/iriss-listings-sources";
+import { buildIrissListingSources, groupIrissListingSources, type IrissListingSource } from "@/lib/iriss-listings-sources";
 import type { IrissListingSourceRun } from "@/lib/iriss-listings-types";
 import {
   canStartListingJob,
@@ -104,6 +104,38 @@ describe("fanOutFetchedVehicles", () => {
     ]);
     expect(out.map((v) => v.orderId)).toEqual(["a", "b"]);
     expect(out.every((v) => v.id === "v1")).toBe(true);
+  });
+
+  it("dedupes identical URLs across orders when each source has multiple links", () => {
+    const shared = "https://autobid.de/en/search-results?q=shared";
+    const extraA = "https://autobid.de/en/search-results?q=a2";
+    const extraB = "https://www.auto1.com/en/app/merchant/cars?b=2";
+    const sources = buildIrissListingSources([
+      {
+        id: "a",
+        brandModel: "Golf",
+        listStatus: "active",
+        listingLinkAutobid: [shared, extraA],
+        listingLinkOpenline: "",
+        listingLinkAuto1: ["https://www.auto1.com/en/app/merchant/cars?a=1"],
+        listingLinksOther: [],
+      },
+      {
+        id: "b",
+        brandModel: "Passat",
+        listStatus: "active",
+        listingLinkAutobid: [shared],
+        listingLinkOpenline: "",
+        listingLinkAuto1: [extraB],
+        listingLinksOther: [],
+      },
+    ]);
+    const groups = groupIrissListingSources(sources);
+    expect(groups).toHaveLength(4);
+    const sharedGroup = groups.find((g) => g.orders.length === 2)!;
+    expect(sharedGroup.platform).toBe("autobid");
+    const vehicle = { id: "v1", orderId: "a", orderBrandModel: "Golf" } as IrissFetchedVehicle;
+    expect(fanOutFetchedVehicles([vehicle], sharedGroup.orders).map((v) => v.orderId).sort()).toEqual(["a", "b"]);
   });
 });
 

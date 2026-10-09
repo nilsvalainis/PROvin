@@ -108,8 +108,16 @@ async function listAllOrderIds(token) {
   return ids;
 }
 
+function linkList(raw) {
+  if (typeof raw === "string") return raw ? [raw] : [""];
+  if (Array.isArray(raw)) {
+    const mapped = raw.map((x) => (typeof x === "string" ? x : "")).slice(0, 20);
+    return mapped.length ? mapped : [""];
+  }
+  return [""];
+}
+
 function rowFromRecord(rec) {
-  const other = Array.isArray(rec.listingLinksOther) ? [...rec.listingLinksOther] : [""];
   return {
     id: rec.id,
     createdAt: typeof rec.createdAt === "string" ? rec.createdAt : "",
@@ -118,11 +126,11 @@ function rowFromRecord(rec) {
     brandModel: (typeof rec.brandModel === "string" ? rec.brandModel : "").trim() || "—",
     totalBudget: (typeof rec.totalBudget === "string" ? rec.totalBudget : "").trim() || "—",
     phone: (typeof rec.phone === "string" ? rec.phone : "").trim() || "—",
-    listingLinkMobile: typeof rec.listingLinkMobile === "string" ? rec.listingLinkMobile : "",
-    listingLinkAutobid: typeof rec.listingLinkAutobid === "string" ? rec.listingLinkAutobid : "",
-    listingLinkOpenline: typeof rec.listingLinkOpenline === "string" ? rec.listingLinkOpenline : "",
-    listingLinkAuto1: typeof rec.listingLinkAuto1 === "string" ? rec.listingLinkAuto1 : "",
-    listingLinksOther: other.length ? other : [""],
+    listingLinkMobile: linkList(rec.listingLinkMobile),
+    listingLinkAutobid: linkList(rec.listingLinkAutobid),
+    listingLinkOpenline: linkList(rec.listingLinkOpenline),
+    listingLinkAuto1: linkList(rec.listingLinkAuto1),
+    listingLinksOther: linkList(rec.listingLinksOther),
   };
 }
 

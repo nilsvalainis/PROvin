@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
+import { labelIrissListingLinkRows } from "@/lib/iriss-listing-link-lists";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
@@ -29,12 +31,13 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 function OrderPreviewBody({ order }: { order: IrissListingOrderBrief }) {
-  const links = [
-    order.listingLinkAutobid ? { label: "Autobid", href: order.listingLinkAutobid } : null,
-    order.listingLinkOpenline ? { label: "Openlane", href: order.listingLinkOpenline } : null,
-    order.listingLinkAuto1 ? { label: "Auto1", href: order.listingLinkAuto1 } : null,
-    ...order.listingLinksOther.map((href, i) => ({ label: `Cita ${i + 1}`, href })),
-  ].filter((x): x is { label: string; href: string } => Boolean(x));
+  const links = labelIrissListingLinkRows([
+    { label: "Mobile", hrefs: order.listingLinkMobile },
+    { label: "Autobid", hrefs: order.listingLinkAutobid },
+    { label: "Openlane", hrefs: order.listingLinkOpenline },
+    { label: "Auto1", hrefs: order.listingLinkAuto1 },
+    { label: "Cita", hrefs: order.listingLinksOther },
+  ]).filter((x) => isHttpUrlForOpen(x.href));
   const engine = [order.engineType, order.powerKwLabel].filter(Boolean).join(" · ");
   return (
     <article className="space-y-3 rounded-xl border border-[#E5E7EB] bg-white p-3">

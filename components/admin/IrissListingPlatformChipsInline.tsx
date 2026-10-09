@@ -10,7 +10,7 @@ import {
  * Lieto sarakstos, kur čipiem jābūt ārpus galvenā pasūtījuma `Link`.
  */
 export function IrissListingPlatformChipsInline({ links }: { links: IrissListingLinksInput }) {
-  const chips = buildListingPlatformChips(links, 5);
+  const chips = buildListingPlatformChips(links);
   if (chips.length === 0) return null;
   return (
     <div className="border-t border-slate-200/55 bg-white/65 px-3 py-2.5 backdrop-blur-xl sm:px-4 sm:py-2.5">

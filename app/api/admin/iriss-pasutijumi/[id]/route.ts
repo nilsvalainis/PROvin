@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import {
   IRISS_MAX_OFFER_ATTACHMENTS,
   normalizeIrissDzintarzemeTameDraft,
@@ -18,12 +19,6 @@ import {
 export const runtime = "nodejs";
 /** Vercel: garš JSON + Blob/FS — pagarināts laiks, lai pēc 100% augšupielādes nepazustu ar 504. */
 export const maxDuration = 120;
-
-function parseOtherFromBody(o: Record<string, unknown>): string[] {
-  const v = o.listingLinksOther;
-  if (!Array.isArray(v)) return [""];
-  return v.map((x) => (typeof x === "string" ? x : "")).slice(0, 20);
-}
 
 function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
   if (!Array.isArray(raw)) return [];
@@ -129,11 +124,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     equipmentRequired: str("equipmentRequired"),
     equipmentDesired: str("equipmentDesired"),
     notes: str("notes"),
-    listingLinkMobile: str("listingLinkMobile"),
-    listingLinkAutobid: str("listingLinkAutobid"),
-    listingLinkOpenline: str("listingLinkOpenline"),
-    listingLinkAuto1: str("listingLinkAuto1"),
-    listingLinksOther: parseOtherFromBody(o),
+    ...parseIrissPasutijumsListingLinks(o),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: parseOffersFromBody(o),
   };
