@@ -38,6 +38,17 @@ export function vinCheckHref(): string {
   return "/vin-koda-parbaude";
 }
 
+/** Bezmaksas VIN / sludinājuma novērtējuma sadaļa sākumlapā. */
+export const FREE_EVAL_SECTION_ID = "bezmaksas-novertejums" as const;
+
+/** Iepriekšējais `#riska-celvedis` enkurs - paliek kā dublikāts. */
+export const FREE_EVAL_SECTION_ID_LEGACY = "riska-celvedis" as const;
+
+/** Bezmaksas novērtējuma forma sākumlapā — `Link`-drošs ceļš. */
+export function freeEvalHref(): string {
+  return `/#${FREE_EVAL_SECTION_ID}`;
+}
+
 /** BUJ lapa — `Link`-drošs ceļš. */
 export function faqPageHref(): string {
   return "/biezi-jautajumi";

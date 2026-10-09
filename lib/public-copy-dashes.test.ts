@@ -27,11 +27,14 @@ const PUBLIC_COPY_FILES = [
   join(REPO_ROOT, "lib/email/html-templates.ts"),
 ];
 
+/** Owner-approved LV VIN copy: numeric range with an en dash (`24–72`). */
+const ALLOWED_PUBLIC_EN_DASH_RANGE = /24\u201372/g;
+
 describe("public copy has no Unicode dashes", () => {
   it("forbids em/en dashes in website and product copy files", () => {
     const hits: string[] = [];
     for (const path of PUBLIC_COPY_FILES) {
-      const text = readFileSync(path, "utf8");
+      const text = readFileSync(path, "utf8").replace(ALLOWED_PUBLIC_EN_DASH_RANGE, "24-72");
       if (UNICODE_DASH_RE.test(text)) hits.push(path.replace(`${REPO_ROOT}/`, ""));
     }
     expect(hits).toEqual([]);

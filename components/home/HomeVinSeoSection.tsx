@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { FreeEvalHashLink } from "@/components/home/FreeEvalHashLink";
 import { homeContentMaxClass } from "@/lib/home-layout";
 import { faqPageHref, pakalpojumiHref, vinCheckHref } from "@/lib/paths";
 
@@ -20,7 +21,13 @@ export async function HomeVinSeoSection() {
           {t("homeTitle")}
         </h2>
         <p className="mt-3 max-w-3xl text-pretty text-[0.875rem] font-medium leading-[1.6] text-zinc-300 sm:text-[0.9375rem]">
-          {t("homeBody")}
+          {t.rich("homeBody", {
+            freeEval: (chunks) => (
+              <FreeEvalHashLink className="text-provin-accent underline decoration-provin-accent/35 underline-offset-[3px] transition hover:text-white hover:decoration-provin-accent/70">
+                {chunks}
+              </FreeEvalHashLink>
+            ),
+          })}
         </p>
         <p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.16em]">
           <Link href={vinCheckHref()} className="text-provin-accent no-underline transition hover:text-white">
