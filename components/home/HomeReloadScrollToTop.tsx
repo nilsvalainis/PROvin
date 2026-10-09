@@ -3,6 +3,7 @@
 import { usePathname } from "@/i18n/navigation";
 import { useLenis } from "lenis/react";
 import { useEffect, useLayoutEffect } from "react";
+import { FREE_EVAL_SECTION_ID, FREE_EVAL_SECTION_ID_LEGACY } from "@/lib/paths";
 import { normalizeSitePath } from "@/lib/site-rail-sections";
 
 function isReloadNavigation(): boolean {
@@ -39,6 +40,7 @@ function shouldPreserveDeepLinkAnchorOnReload(): boolean {
   if (h === "kontakti") return true;
   if (h.startsWith("provin-select")) return true;
   if (h.startsWith("demo-")) return true;
+  if (h === FREE_EVAL_SECTION_ID || h === FREE_EVAL_SECTION_ID_LEGACY) return true;
   return false;
 }
 

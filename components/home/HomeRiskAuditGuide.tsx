@@ -15,6 +15,7 @@ import {
   isValidVinOrPlate,
   normalizeVin,
 } from "@/lib/order-field-validation";
+import { FREE_EVAL_SECTION_ID, FREE_EVAL_SECTION_ID_LEGACY } from "@/lib/paths";
 import { HEARD_ABOUT_OPTION_VALUES, isHeardAboutValue } from "@/lib/stripe-session";
 
 function safeTrack(event: string, data?: Record<string, string | number | boolean>) {
@@ -161,11 +162,15 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
   }
 
   return (
-    <section
-      id="riska-celvedis"
-      className="home-body-ink relative scroll-mt-14 bg-transparent"
-      aria-labelledby={`${baseId}-heading`}
+    <div
+      id={FREE_EVAL_SECTION_ID}
+      className="scroll-mt-[calc(4.75rem+env(safe-area-inset-top,0px))]"
     >
+      <section
+        id={FREE_EVAL_SECTION_ID_LEGACY}
+        className="home-body-ink relative scroll-mt-[calc(4.75rem+env(safe-area-inset-top,0px))] bg-transparent"
+        aria-labelledby={`${baseId}-heading`}
+      >
       <div
         className="pointer-events-none h-px w-full bg-gradient-to-r from-transparent via-white/[0.12] to-transparent"
         aria-hidden
@@ -384,6 +389,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
             </AnimatePresence>
         </div>
       </div>
-    </section>
+      </section>
+    </div>
   );
 }

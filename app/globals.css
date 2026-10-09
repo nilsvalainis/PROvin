@@ -84,6 +84,13 @@ html {
   }
 }
 
+/* Mobilais: Lenis nestrādā (coarse pointer). Enkuru saites ritina native + scroll-margin-top. */
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /* === BASE BACKGROUND === */
 body {
   background-color: var(--site-body-bg);
