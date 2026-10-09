@@ -8,6 +8,7 @@ import {
   openlaneEnglishUrl,
   openlaneSessionLooksLoggedIn,
   parseOpenlaneTitleFuelTransmission,
+  pickOpenlaneRegistration,
   pickOpenlaneVatNote,
 } from "./openlane-logic.mjs";
 
@@ -127,4 +128,41 @@ test("mapOpenlaneAuction fills fuel/transmission from title when FuelTypeId is 0
   });
   assert.equal(named.fuel, "Diesel");
   assert.equal(named.transmission, "Manual");
+});
+
+// Anonimizēts īsts findcarv6/search ieraksts (2026-10-09, Mitsubishi Pajero, EN).
+const REAL_AUCTION = {
+  AuctionId: 9000001,
+  CarId: 9000002,
+  CarNameEn: "Mitsubishi Pajero 3.2 DI-D InStyle - Diesel - Automatic - 190 hp - 110.608 km",
+  DateFirstRegistration: "2017-02-07T00:00:00",
+  EndDateExtendedPhase: "0001-01-01T00:00:00",
+  BatchStartDate: "2026-10-08T09:00:00",
+  BatchEndDate: "2026-10-12T09:40:00",
+  CarIdentification: { Make: "Mitsubishi", Model: "Pajero", Year: "", FuelGroup: "Diesel", GearboxGroup: "Automatic" },
+  CleanMake: "Mitsubishi",
+  CarCountryExtended: "nl",
+  CountryCodeDealer: "nl",
+  Kw: 140,
+  Hp: 190,
+  Mileage: 110608,
+  IsMargin: true,
+};
+
+test("year and first registration come from DateFirstRegistration (real sample)", () => {
+  const item = mapOpenlaneAuction(REAL_AUCTION, [], Date.parse("2026-10-09T09:00:00Z"));
+  assert.equal(item.year, "2017");
+  assert.equal(item.firstRegistration, "2017-02-07");
+  assert.equal(item.powerKw, "140");
+  assert.equal(item.countryCode, "NL");
+  assert.equal(item.manufacturer, "Mitsubishi");
+  assert.equal(item.mileageKm, 110608);
+});
+
+test("pickOpenlaneRegistration ignores 0001-01-01 and falls back", () => {
+  assert.deepEqual(pickOpenlaneRegistration({ DateFirstRegistration: "0001-01-01T00:00:00" }), { year: "", firstRegistration: "" });
+  assert.deepEqual(pickOpenlaneRegistration({ FirstRegistrationDate: "/Date(1546300800000)/" }), { year: "2019", firstRegistration: "2019-01-01" });
+  assert.equal(pickOpenlaneRegistration({ CarIdentification: { Year: "2015" } }).year, "2015");
+  assert.equal(pickOpenlaneRegistration({}, "Volvo V60 2018 D4 - Diesel").year, "2018");
+  assert.equal(pickOpenlaneRegistration({}, "Volvo V60 - 110.608 km").year, "");
 });
