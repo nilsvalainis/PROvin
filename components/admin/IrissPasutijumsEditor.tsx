@@ -9,6 +9,8 @@ import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishR
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import {
   defaultIrissDzintarzemeTameDraft,
   IRISS_DEAL_DETAIL_OPTIONS,
@@ -76,7 +78,7 @@ function parseRecordFromPatchResponse(data: unknown): IrissPasutijumsRecord | nu
   return r as IrissPasutijumsRecord;
 }
 
-type SaveResult = { ok: true } | { ok: false; error: string };
+type SaveResult = IrissOrderSaveResult;
 
 function formatPatchFailureMessage(
   status: number,
@@ -501,6 +503,8 @@ export function IrissPasutijumsEditor({
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
   const autoOpenOfferDone = useRef(false);
   const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
+  const recRef = useRef(rec);
+  recRef.current = rec;
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
   const imagesHydrating = useRef(irissRecordNeedsOfferImageHydration(initialRecord));
@@ -528,20 +532,24 @@ export function IrissPasutijumsEditor({
       const redirectToList = opts?.redirectToList === true;
       const silent = opts?.silent === true;
       const onUploadProgress = opts?.onUploadProgress;
-      const payload = opts?.payload ?? rec;
+      const payload = opts?.payload ?? recRef.current;
       const useXhr = Boolean(onUploadProgress) || !silent;
 
-      if (!silent) setBusy(true);
-      if (!silent) setSaveMsg(null);
       if (silent && autosaveInFlight.current) return { ok: false, error: "Saglabāšana jau notiek (race)." };
       if (imagesHydrating.current) return { ok: false, error: "Ielādē attēlus." };
+      if (!silent) {
+        setBusy(true);
+        setSaveMsg(null);
+      }
       if (silent) autosaveInFlight.current = true;
 
       const url = `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
 
       const finishOk = (record: IrissPasutijumsRecord | null): SaveResult => {
-        if (!silent && record) setRec(record);
         lastSavedSnapshot.current = JSON.stringify(record ?? payload);
+        if (!silent) {
+          setRec((current) => pickRecordAfterOrderSave(current, payload, record));
+        }
         if (redirectToList) {
           router.push("/admin/iriss/pasutijumi");
           router.refresh();
@@ -592,14 +600,12 @@ export function IrissPasutijumsEditor({
         if (silent) autosaveInFlight.current = false;
       }
     },
-    [rec, router],
+    [router],
   );
 
-  const saveCurrentPage = useCallback(() => {
-    void (async () => {
-      setPdfRetryBar(null);
-      await save();
-    })();
+  const saveCurrentPage = useCallback(async (): Promise<SaveResult> => {
+    setPdfRetryBar(null);
+    return save();
   }, [save]);
 
   useEffect(() => {
@@ -1329,6 +1335,7 @@ export function IrissPasutijumsEditor({
               </div>
             </div>
           </div>
+          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
         <section className={shellCard}>
@@ -1345,11 +1352,13 @@ export function IrissPasutijumsEditor({
               onChange={(e) => patch("equipmentDesired", e.target.value)}
             />
           </div>
+          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
         <section className={shellCard}>
           <BlockTitle>Piezīmes</BlockTitle>
           <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
+          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
         <section className={shellCard}>
@@ -1417,11 +1426,13 @@ export function IrissPasutijumsEditor({
               onChange={(e) => patch("orderDate", e.target.value)}
             />
           </div>
+          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
         <section className={shellCard}>
           <BlockTitle>Sludinājumu platformas (saites)</BlockTitle>
           <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
+          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
         <DzintarzemeTameSection
@@ -1430,6 +1441,7 @@ export function IrissPasutijumsEditor({
           draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
           orderBrandModel={rec.brandModel}
           onDraftChange={(next) => patchRecord({ dzintarzemeTameDraft: next })}
+          sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />}
         />
 
         <section className={`${shellCard} border-red-100/80 bg-red-50/20`}>

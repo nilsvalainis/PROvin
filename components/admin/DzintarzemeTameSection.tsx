@@ -81,12 +81,14 @@ export function DzintarzemeTameSection({
   draft,
   orderBrandModel,
   onDraftChange,
+  sectionSave,
 }: {
   orderId: string;
   shellCard: string;
   draft: IrissDzintarzemeTameDraft;
   orderBrandModel: string;
   onDraftChange: (next: IrissDzintarzemeTameDraft) => void;
+  sectionSave?: ReactNode;
 }) {
   const d = mergeDraft(draft);
   const set = useCallback((p: Partial<IrissDzintarzemeTameDraft>) => onDraftChange({ ...d, ...p }), [d, onDraftChange]);
@@ -463,6 +465,7 @@ export function DzintarzemeTameSection({
           Ģenerēt Dzintarzeme Auto tāmi
         </button>
       </div>
+      {sectionSave}
     </section>
   );
 }
