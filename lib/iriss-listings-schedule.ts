@@ -1,7 +1,8 @@
 /**
  * IRISS LIST automātiskā nolasīšana: 09:00, 13:00, 17:00 Europe/Riga.
  * Vercel Cron ir tikai UTC, tāpēc vercel.json palaiž visus ziemas un vasaras offseta
- * stundas (6, 7, 10, 11, 14, 15 UTC); handleris izlaiž stundas, kas Rīgā nav 9/13/17.
+ * stundas (6, 7, 10, 11, 14, 15 UTC) ik ~6 min; handleris 09/13/17 :00 sāk ciklu,
+ * pārējās palaišanas turpina kursoru ~60 min logā, ja cikls nav pabeigts.
  *
  * Viens cron ieraksts (ne seši): Pro 100 job/projektā; Hobby ļauj tikai 1x dienā, bet
  * dealer-data-sweep every 30 min jau prasa Pro. Precizitāte: Pro per-minute.
@@ -9,9 +10,11 @@
 
 export const IRISS_LISTINGS_TZ = "Europe/Riga";
 export const IRISS_LISTINGS_AUTOMATIC_HOURS = [9, 13, 17] as const;
-/** Ziema UTC+2 un vasara UTC+3: 09/13/17 Riga. vercel.json crons schedule. */
-export const IRISS_LISTINGS_CRON_UTC_SCHEDULE = "0 6,7,10,11,14,15 * * *";
+/** Ziema UTC+2 un vasara UTC+3: 09/13/17 Riga. vercel.json: slota :00 un turpinājums ik ~6 min. */
+export const IRISS_LISTINGS_CRON_UTC_SCHEDULE = "*/6 6,7,10,11,14,15 * * *";
 export const IRISS_LISTINGS_CRON_UTC_HOURS = [6, 7, 10, 11, 14, 15] as const;
+/** Turpinājuma logs pēc slota sākuma: tikai tad, ja kursors nav pabeigts. */
+export const IRISS_LISTINGS_CONTINUATION_WINDOW_MS = 60 * 60 * 1000;
 
 export type IrissListingsAutomaticHour = (typeof IRISS_LISTINGS_AUTOMATIC_HOURS)[number];
 
@@ -62,6 +65,39 @@ export function irissListingsAutomaticSlot(at: Date): string | null {
 
 export function isIrissListingsAutomaticSlot(raw: string | null | undefined): raw is string {
   return typeof raw === "string" && /^\d{4}-\d{2}-\d{2}T(?:09|13|17)$/.test(raw);
+}
+
+/** Slot `YYYY-MM-DDTHH` (Rīga sienas laiks) → UTC instants. */
+export function irissListingsSlotStartUtc(slot: string): Date | null {
+  if (!isIrissListingsAutomaticSlot(slot)) return null;
+  const year = Number(slot.slice(0, 4));
+  const month = Number(slot.slice(5, 7));
+  const day = Number(slot.slice(8, 10));
+  const hour = Number(slot.slice(11, 13));
+  for (const offsetH of [2, 3]) {
+    const utc = new Date(Date.UTC(year, month - 1, day, hour - offsetH, 0, 0));
+    const p = rigaDateTimeParts(utc);
+    if (p.year === slot.slice(0, 4) && p.month === slot.slice(5, 7) && p.day === slot.slice(8, 10) && p.hour === hour && p.minute === 0) {
+      return utc;
+    }
+  }
+  return null;
+}
+
+/** Cron turpinājums: 1-60 min pēc 09/13/17 Rīgā (ieskaitot nākamās stundas :00). */
+export function irissListingsClockInContinuationWindow(at: Date): boolean {
+  const p = rigaDateTimeParts(at);
+  if (isIrissListingsAutomaticHour(p.hour) && p.minute > 0) return true;
+  if ((p.hour === 10 || p.hour === 14 || p.hour === 18) && p.minute === 0) return true;
+  return false;
+}
+
+export function isIrissListingsContinuationWindow(at: Date, lastAutomaticSlot?: string | null): boolean {
+  if (!isIrissListingsAutomaticSlot(lastAutomaticSlot)) return false;
+  const start = irissListingsSlotStartUtc(lastAutomaticSlot);
+  if (!start) return false;
+  const elapsed = at.getTime() - start.getTime();
+  return elapsed > 0 && elapsed <= IRISS_LISTINGS_CONTINUATION_WINDOW_MS;
 }
 
 /** LIST header time, e.g. 13:00. If this hour already ran, shows the next slot. */

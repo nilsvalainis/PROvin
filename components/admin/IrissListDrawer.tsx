@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
+import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
 import { classifyListingDamage, highlightListingDamage } from "@/lib/iriss-listings-damage";
 import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { listingAuctionTypeLabel, realListingPriceHistory } from "@/lib/iriss-listings-auto1-cents";
@@ -11,6 +12,7 @@ import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingYearLabel } from "@/lib/iriss-listings-list-view";
 import { listingOfferLeaks, listingOfferText } from "@/lib/iriss-listings-offer";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
+import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
@@ -36,6 +38,8 @@ export function IrissListDrawer({
   budget,
   onClose,
   onPrefs,
+  onPreviewOrder,
+  mobile,
 }: {
   v: IrissListingVehicle;
   prefs: IrissListPrefs;
@@ -44,6 +48,8 @@ export function IrissListDrawer({
   budget: number | null;
   onClose: () => void;
   onPrefs: (next: IrissListPrefs) => void;
+  onPreviewOrder?: (order: IrissListingOrderBrief) => void;
+  mobile?: IrissMobilePlatform | null;
 }) {
   const detected = taxFromVehicle(v);
   const ov = prefs.taxOv[v.id];
@@ -180,10 +186,11 @@ export function IrissListDrawer({
           {prefs.hidden.includes(v.id) ? "↺" : "✕"}
         </button>
         {sourceHref ? (
-          <a href={sourceHref} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
+          <IrissListingSourceOpen v={v} mobile={mobile ?? null} className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
             Avots
-          </a>
+          </IrissListingSourceOpen>
         ) : null}
+        <IrissListingSourceExtras v={v} mobile={mobile ?? null} />
         <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] text-lg" aria-label="Aizvērt">
           ✕
         </button>
@@ -199,7 +206,7 @@ export function IrissListDrawer({
 
       <div className="mt-3 rounded-xl border border-[#E5E7EB] p-2.5">
         <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pasūtījums un klients</div>
-        <IrissListingOrderChips orders={linked} />
+        <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
         <label className="mt-2 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           Piesaistīt citam pasūtījumam
           <select
@@ -309,10 +316,10 @@ export function IrissListDrawer({
 
       {photos[0] ? (
         sourceHref ? (
-          <a href={sourceHref} target="_blank" rel="noopener noreferrer">
+          <IrissListingSourceOpen v={v} mobile={mobile ?? null}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
-          </a>
+          </IrissListingSourceOpen>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
@@ -364,7 +371,7 @@ export function IrissListDrawer({
         >
           <option value="">Automātiski: {listingTaxLabel(detected)}</option>
           <option value="net">NETO</option>
-          <option value="margin">MARŽA</option>
+          <option value="margin">Margin</option>
           <option value="gross">AR PVN x %</option>
         </select>
         {ov?.kind === "gross" ? (

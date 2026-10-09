@@ -8,7 +8,6 @@
  * (`/en/app/merchant/car/BW03512`), ne skaitlisko `id`. VIN sarakstā nav.
  * `img-pa.auto1.com` strādā ar provin.lv Referer, tāpēc admin lapā no-referrer nav vajadzīgs.
  */
-import { hasCaptchaOrChallenge, pageText, randomPause } from "../browser.mjs";
 import { isoDate, makeItem, num, str } from "../items.mjs";
 
 const PROBE_URL = process.env.AUTO1_PROBE_URL || "https://www.auto1.com/en/app/merchant/cars?channel=24h&page=1";
@@ -36,6 +35,7 @@ export const auto1 = {
 
 async function isLoggedIn(page) {
   if (LOGGED_OUT_URL_RE.test(page.url())) return false;
+  const { pageText } = await import("../browser.mjs");
   const text = await pageText(page, 6_000);
   if (/\bSign in\b.{0,80}\bPassword\b/i.test(text) || /\bAnmelden\b.{0,80}\bPasswort\b/i.test(text)) return false;
   return true;
@@ -47,6 +47,16 @@ function looksLikeCar(o) {
   const hasId = /\b(id|uuid|stocknumber|stock_number|vehicleid|carid)\b/.test(keys);
   const hasCarish = /(manufacturer|make|brand|model|title|mileage|km|price|registration|vin)/.test(keys);
   return hasId && hasCarish && Object.keys(o).length >= 5;
+}
+
+/** Meklējums ar hits:[] / totalHits 0 ir derīgs tukšs rezultāts, ne kļūda. */
+export function isAuto1EmptySearchJson(json) {
+  if (!json || typeof json !== "object" || Array.isArray(json)) return false;
+  const hits = json.hits;
+  const emptyHits = Array.isArray(hits) && hits.length === 0;
+  if (emptyHits) return true;
+  if (json.totalHits === 0 && (hits == null || emptyHits)) return true;
+  return false;
 }
 
 /** Atrod dziļāko masīvu ar auto objektiem jebkurā JSON. */
@@ -159,6 +169,7 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
 }
 
 async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
+  const { hasCaptchaOrChallenge, randomPause } = await import("../browser.mjs");
   const candidates = [];
   const onResponse = async (res) => {
     const url = res.url();
@@ -168,6 +179,11 @@ async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
     if (!/json/i.test(ct)) return;
     try {
       const json = await res.json();
+      if (isAuto1EmptySearchJson(json)) {
+        state?.addDiscoveredApi("auto1", url);
+        candidates.push({ url, json, cars: [], empty: true });
+        return;
+      }
       const arrays = findCarArrays(json);
       if (arrays.length === 0) return;
       state?.addDiscoveredApi("auto1", url);
@@ -216,9 +232,14 @@ async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
       }
     }
     log(`auto1 ${items.size} auto no ${candidates.length} JSON atbildēm`);
+    const emptySearch = items.size === 0 && candidates.some((c) => c.empty);
     return {
       status: "ok",
-      note: items.size === 0 ? "JSON pamanīts, bet neviens auto netika mapēts; skat. raw." : "",
+      note: emptySearch
+        ? "Meklējums bez rezultātiem (0 auto)."
+        : items.size === 0
+          ? "JSON pamanīts, bet neviens auto netika mapēts; skat. raw."
+          : "",
       items: [...items.values()],
       raw: { kind: "auto1-xhr", pages: rawPages },
       pagesFetched: rawPages.length,

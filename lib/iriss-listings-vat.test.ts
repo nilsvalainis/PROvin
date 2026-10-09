@@ -9,9 +9,10 @@ describe("detectListingTax", () => {
     expect(listingTaxLabel(t)).toBe("AR PVN 19 %");
   });
 
-  it("Auto1 1053 -> MARŽA", () => {
+  it("Auto1 1053 -> Margin", () => {
     const t = detectListingTax({ platform: "auto1", salesVatType: 1053, taxDeduction: false, countryCode: "DE" });
     expect(t.kind).toBe("margin");
+    expect(listingTaxLabel(t)).toBe("Margin");
   });
 
   it("Auto1 1054 + BE without vatRate -> AR PVN 21 %", () => {
@@ -25,7 +26,7 @@ describe("detectListingTax", () => {
     expect(detectListingTax({ platform: "openline", isMargin: true }).kind).toBe("margin");
     expect(detectListingTax({ platform: "openline", isMargin: false }).kind).toBe("net");
     expect(detectListingTax({ platform: "openline", vatNote: "Margin" }).kind).toBe("margin");
-    expect(listingTaxLabel(detectListingTax({ platform: "openline", isMargin: true, vatNote: "С НДС" }))).toBe("MARŽA");
+    expect(listingTaxLabel(detectListingTax({ platform: "openline", isMargin: true, vatNote: "С НДС" }))).toBe("Margin");
     expect(listingTaxLabel(detectListingTax({ platform: "openline", isMargin: false }))).toBe("NETO");
   });
 

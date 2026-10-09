@@ -4,13 +4,17 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
+import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
+import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
 import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
+import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { classifyListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
+import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import {
   LISTING_SORTS,
   type ListingSort,
@@ -248,7 +252,9 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const [prefs, setPrefs] = useState<IrissListPrefs>(defaultIrissListPrefs);
   const [prefsReady, setPrefsReady] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
+  const [previewOrders, setPreviewOrders] = useState<IrissListingOrderBrief[] | null>(null);
   const [showCosts, setShowCosts] = useState(false);
+  const mobile = useMobilePlatform();
   const restoredQueryRef = useRef(false);
   const tab = prefs.tab;
   const listScope = prefs.listScope;
@@ -411,7 +417,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
       const linked = linkedOrdersOf(v, prefs, orderById);
       if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
       if (!q) return true;
-      const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
+      const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
   }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs.fav, prefs.hidden, prefs.orderOv, hideTech, orderById, orderFilter]);
@@ -433,25 +439,35 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
     setSyncBusy(true);
     setSyncMsg(null);
     try {
-      const res = await fetch("/api/admin/iriss-listings/sync-now", { method: "POST", credentials: "include" });
-      const body = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        warnings?: string[];
-        summary?: { totalSources?: number; okCount?: number; vehicleCount?: number; newCount?: number; priceChangedCount?: number };
-      };
-      if (!res.ok) {
-        setSyncMsg(body.error ? `Nolasīšana neizdevās: ${body.error}` : "Nolasīšana neizdevās.");
-        return;
+      let restart = true;
+      let lastProgress = { done: 0, total: 0 };
+      let prevDone = -1;
+      for (let batch = 0; batch < 40; batch += 1) {
+        const res = await fetch("/api/admin/iriss-listings/sync-now", {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ restart }),
+        });
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          warnings?: string[];
+          skipped?: string;
+          progress?: { done?: number; total?: number };
+        };
+        if (!res.ok) {
+          setSyncMsg(body.error ? `Nolasīšana neizdevās: ${body.error}` : "Nolasīšana neizdevās.");
+          return;
+        }
+        const total = Math.max(0, body.progress?.total ?? 0);
+        const done = Math.max(0, body.progress?.done ?? 0);
+        lastProgress = { done, total };
+        if (total > 0) setSyncMsg(`${done}/${total} meklējumi nolasīti`);
+        restart = false;
+        if (body.skipped === "already_done" || total === 0 || done >= total || done === prevDone) break;
+        prevDone = done;
       }
-      const s = body.summary ?? {};
-      const bits = [
-        `Avoti OK: ${s.okCount ?? 0}/${s.totalSources ?? 0}`,
-        `auto: ${s.vehicleCount ?? 0}`,
-        `jauni: ${s.newCount ?? 0}`,
-        `cenu izmaiņas: ${s.priceChangedCount ?? 0}`,
-      ];
-      if (body.warnings?.length) bits.push(body.warnings.join(" "));
-      setSyncMsg(`Nolasīšana pabeigta. ${bits.join(", ")}.`);
+      setSyncMsg(lastProgress.total > 0 ? `${lastProgress.done}/${lastProgress.total} meklējumi nolasīti.` : "Nolasīšana pabeigta.");
       await loadHealth();
       router.refresh();
     } catch (e) {
@@ -539,7 +555,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
           ) : (
             <span className="-mx-2.5 flex w-[calc(100%+1.25rem)] snap-x snap-mandatory gap-3 overflow-x-auto px-2.5 pb-0.5 tabular-nums [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
               <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "net", rate: null, raw: "NETO", rateFrom: "" }} /> maks. <b>{fmtEur(maxNet)}</b></span>
-              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "margin", rate: null, raw: "MARŽA", rateFrom: "" }} /> maks. <b>{fmtEur(maxMargin)}</b></span>
+              <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "margin", rate: null, raw: "Margin", rateFrom: "" }} /> maks. <b>{fmtEur(maxMargin)}</b></span>
               <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "gross", rate: 19, raw: "AR PVN 19 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross19)}</b></span>
               <span className="snap-start shrink-0"><TaxBadge tax={{ kind: "gross", rate: 21, raw: "AR PVN 21 %", rateFrom: "" }} /> maks. <b>{fmtEur(maxGross21)}</b></span>
             </span>
@@ -593,7 +609,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
             disabled={syncBusy}
             className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-[var(--color-provin-accent)] bg-white px-3.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-55 sm:min-h-10"
           >
-            {syncBusy ? "Nolasa..." : "Nolasīt"}
+            {syncBusy ? (syncMsg && /\d+\/\d+/.test(syncMsg) ? syncMsg.replace(" meklējumi nolasīti", "") : "Nolasa...") : "Nolasīt"}
           </button>
         </div>
         {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
@@ -798,6 +814,11 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
             linked={linkedOrdersOf(v, prefs, orderById)}
             budget={budgetOf(v, prefs, orderById)}
             onOpen={() => setDrawerId(v.id)}
+            onPreviewOrder={(o) => {
+              const linked = linkedOrdersOf(v, prefs, orderById);
+              setPreviewOrders(linked.length > 0 ? linked : [o]);
+            }}
+            mobile={mobile}
             imageHidden={Boolean(hiddenImages[v.id])}
             onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
           />
@@ -815,8 +836,16 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
             budget={budgetOf(drawerVehicle, prefs, orderById)}
             onClose={() => setDrawerId(null)}
             onPrefs={setPrefs}
+            onPreviewOrder={(o) => {
+              const linked = linkedOrdersOf(drawerVehicle, prefs, orderById);
+              setPreviewOrders(linked.length > 0 ? linked : [o]);
+            }}
+            mobile={mobile}
           />
         </>
+      ) : null}
+      {previewOrders && previewOrders.length > 0 ? (
+        <IrissListingOrderPreview orders={previewOrders} onClose={() => setPreviewOrders(null)} />
       ) : null}
     </div>
   );
@@ -830,6 +859,8 @@ function VehicleCard({
   linked,
   budget,
   onOpen,
+  onPreviewOrder,
+  mobile,
   imageHidden,
   onImageError,
 }: {
@@ -840,6 +871,8 @@ function VehicleCard({
   linked: IrissListingOrderBrief[];
   budget: number | null;
   onOpen: () => void;
+  onPreviewOrder: (order: IrissListingOrderBrief) => void;
+  mobile: IrissMobilePlatform | null;
   imageHidden: boolean;
   onImageError: () => void;
 }) {
@@ -892,7 +925,7 @@ function VehicleCard({
         <div className="shrink-0" onClick={(e) => sourceHref && e.stopPropagation()}>
           {v.imageUrl && !imageHidden ? (
             sourceHref ? (
-              <a href={sourceHref} target="_blank" rel="noopener noreferrer" title={`Atvērt ${PLATFORM_LABEL[v.platform]}`} onClick={(e) => e.stopPropagation()}>
+              <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={v.imageUrl}
@@ -902,7 +935,7 @@ function VehicleCard({
                   className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
                   onError={onImageError}
                 />
-              </a>
+              </IrissListingSourceOpen>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -924,21 +957,20 @@ function VehicleCard({
         <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
           <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
             {sourceHref ? (
-              <a
-                href={sourceHref}
-                target="_blank"
-                rel="noopener noreferrer"
+              <IrissListingSourceOpen
+                v={v}
+                mobile={mobile}
                 title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}
-                onClick={(e) => e.stopPropagation()}
                 className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}
               >
                 {PLATFORM_LABEL[v.platform]}
-              </a>
+              </IrissListingSourceOpen>
             ) : (
               <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}>
                 {PLATFORM_LABEL[v.platform]}
               </span>
             )}
+            <IrissListingSourceExtras v={v} mobile={mobile} />
             <CountryFlag code={v.countryCode} />
             <span className="hidden sm:inline">{daysInAuction(v, nowMs) ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{daysInAuction(v, nowMs)}</span> : null}</span>
             {v.bidCount != null ? <span className="hidden rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 sm:inline-flex">{v.bidCount} solījumi</span> : null}
@@ -973,7 +1005,7 @@ function VehicleCard({
             {dmg.cats.length > 2 ? <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:hidden">+{dmg.cats.length - 2}</span> : null}
           </div>
           <div onClick={(e) => e.stopPropagation()}>
-            <IrissListingOrderChips orders={linked} />
+            <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
           </div>
           <input
             className={`mt-1 hidden w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none sm:block ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}

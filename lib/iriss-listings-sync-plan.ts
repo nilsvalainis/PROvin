@@ -2,13 +2,14 @@
  * Viena palaišana ietilpst maršrutā `maxDuration = 300` s (skat. sync-now un daily-sync route).
  * 92 avoti ar virknes pauzi 4 s ir (92-1)*4 s = 364 s, vēl pirms HTTP. Tāpēc:
  * tiešie Autobid lasījumi iet ar paralēlismu 2-3, un kas neietilpst budžetā, paliek kursorā
- * līdz nākamajai palaišanai tajā pašā UTC dienā. Automātiskais cron (09/13/17 Rīgā)
- * un poga „Nolasīt” sāk ciklu no jauna (`restart`).
+ * līdz nākamajai palaišanai tajā pašā UTC dienā. Automātiskā slota sākums (09/13/17 Rīgā)
+ * un poga „Nolasīt” sāk ciklu no jauna (`restart`); turpinājums (`restart: false`) iet no kursora.
+ * Rinda: vispirms nekad nenolasītie, tad vecākais veiksmīgais fetchedAt; platformas pārmaiņus.
  */
 
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import type { IrissListingSource } from "@/lib/iriss-listings-sources";
-import type { IrissListingSourceRun, IrissListingsSyncCursor } from "@/lib/iriss-listings-types";
+import { normalizeListingUrl, type IrissListingSource } from "@/lib/iriss-listings-sources";
+import type { IrissListingPlatform, IrissListingSourceRun, IrissListingsSyncCursor } from "@/lib/iriss-listings-types";
 
 /** Vercel funkcijas griesti šiem diviem maršrutiem. Budžets (`IRISS_LISTINGS_TIME_BUDGET_MS`) ir zem tā. */
 export const IRISS_LISTINGS_ROUTE_MAX_DURATION_MS = 300_000;
@@ -42,6 +43,79 @@ export function selectListingSyncQueue<T extends { key: string }>(
   const live = new Set(groups.map((g) => g.key));
   const carriedDone = (cursor?.doneKeys ?? []).filter((k) => live.has(k));
   return { queue, carriedDone, alreadyDone: groups.length > 0 && queue.length === 0 };
+}
+
+export type ListingSyncProgress = { done: number; total: number };
+
+export function listingSyncProgress(total: number, doneKeys: readonly string[]): ListingSyncProgress {
+  const n = Math.max(0, total);
+  const done = Math.min(n, new Set(doneKeys.filter(Boolean)).size);
+  return { done, total: n };
+}
+
+export function listingSourceGroupKey(platform: IrissListingPlatform, sourceUrl: string): string {
+  return `${platform}|${normalizeListingUrl(sourceUrl)}`;
+}
+
+/** Vecākais veiksmīgais fetchedAt grupā; `null` = nekad nav bijis status ok. */
+export function groupOldestOkFetchedAtMs(
+  group: { key: string; platform: IrissListingPlatform; sourceUrl: string },
+  previousRuns: readonly Pick<IrissListingSourceRun, "platform" | "sourceUrl" | "status" | "fetchedAt">[],
+): number | null {
+  let oldest: number | null = null;
+  for (const run of previousRuns) {
+    if (run.status !== "ok") continue;
+    if (listingSourceGroupKey(run.platform, run.sourceUrl) !== group.key) continue;
+    const t = Date.parse(run.fetchedAt);
+    if (!Number.isFinite(t)) continue;
+    if (oldest == null || t < oldest) oldest = t;
+  }
+  return oldest;
+}
+
+export function interleaveListingGroupsByPlatform<T extends { platform: IrissListingPlatform }>(groups: T[]): T[] {
+  const buckets = new Map<IrissListingPlatform, T[]>();
+  const platformOrder: IrissListingPlatform[] = [];
+  for (const g of groups) {
+    const hit = buckets.get(g.platform);
+    if (!hit) {
+      buckets.set(g.platform, [g]);
+      platformOrder.push(g.platform);
+      continue;
+    }
+    hit.push(g);
+  }
+  const out: T[] = [];
+  let more = true;
+  while (more) {
+    more = false;
+    for (const p of platformOrder) {
+      const q = buckets.get(p);
+      if (!q || q.length === 0) continue;
+      out.push(q.shift()!);
+      more = true;
+    }
+  }
+  return out;
+}
+
+/**
+ * Nekad nenolasītie vispirms, tad vecākais veiksmīgais fetchedAt.
+ * Katrā kohortā platformas (Autobid / Openlane / Auto1) pārmaiņus, lai viena releja rinda neapēd budžetu.
+ */
+export function orderListingSyncGroups<T extends { key: string; platform: IrissListingPlatform; sourceUrl: string }>(
+  groups: T[],
+  previousRuns: readonly Pick<IrissListingSourceRun, "platform" | "sourceUrl" | "status" | "fetchedAt">[],
+): T[] {
+  const never: T[] = [];
+  const seen: Array<{ g: T; at: number }> = [];
+  for (const g of groups) {
+    const at = groupOldestOkFetchedAtMs(g, previousRuns);
+    if (at == null) never.push(g);
+    else seen.push({ g, at });
+  }
+  seen.sort((a, b) => a.at - b.at || a.g.key.localeCompare(b.g.key));
+  return [...interleaveListingGroupsByPlatform(never), ...interleaveListingGroupsByPlatform(seen.map((x) => x.g))];
 }
 
 export function fanOutFetchedVehicles(

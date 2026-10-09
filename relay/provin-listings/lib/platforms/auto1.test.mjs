@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { yearOf } from "../items.mjs";
-import { auto1ListApiRe, auto1Stage, findCarArrays, mapAuto1Car } from "./auto1.mjs";
+import { auto1ListApiRe, auto1Stage, findCarArrays, isAuto1EmptySearchJson, mapAuto1Car } from "./auto1.mjs";
 
 /** yearOf(String(ms)) šeit atrod "1960", kalendāra gads ir 2010. */
 const REG_MS = 1262304196000;
@@ -82,6 +82,19 @@ test("hits[0] maps cents, ms dates, stockNumber and image fullUrl", () => {
   assert.equal(item.auctionStage, "IN_AUCTION");
   assert.equal(item.vatNote, "salesVatType 1053");
   assert.equal(item.detailUrl, "https://www.auto1.com/en/app/merchant/car/BW03512");
+});
+
+test("live-shaped hit with mainImageFullUrl null uses images[].fullUrl", () => {
+  const item = mapAuto1Car(hit({ mainImageFullUrl: null }));
+  assert.equal(item.imageUrl, "https://img-pa.auto1.com/img/BW03512.jpg");
+});
+
+test("empty search hits/totalHits is ok with 0 cars, not a missing-JSON error", () => {
+  assert.equal(isAuto1EmptySearchJson({ totalHits: 0, hits: [], aggregations: {}, serverTime: START_MS }), true);
+  assert.equal(isAuto1EmptySearchJson({ hits: [] }), true);
+  assert.equal(isAuto1EmptySearchJson({ totalHits: 0 }), true);
+  assert.equal(isAuto1EmptySearchJson({ totalHits: 1, hits: [hit()] }), false);
+  assert.equal(findCarArrays({ totalHits: 0, hits: [] }).length, 0);
 });
 
 test("title falls back to mainType and subType, image prefers mainImageFullUrl, bid is cents", () => {

@@ -1,3 +1,7 @@
+/**
+ * PVN režīma noteikšana visām LIST platformām (Auto1, Openlane, Autobid).
+ * Gala cena rēķinās no `kind` + `rate`. Detekcijas izmaiņas paliek šajā failā.
+ */
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 import type { ListingTaxKind } from "@/lib/iriss-listings-cost";
 
@@ -147,7 +151,7 @@ export function taxFromVehicle(v: Pick<IrissListingVehicle, "platform" | "vatNot
 export function listingTaxLabel(t: ListingTax): string {
   if (t.kind === "gross") return `AR PVN ${t.rate} %`;
   if (t.kind === "net") return "NETO";
-  if (t.kind === "margin") return "MARŽA";
+  if (t.kind === "margin") return "Margin";
   return "PVN ?";
 }
 

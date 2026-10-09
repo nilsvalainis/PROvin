@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
+import { isLegacyStaleAuto1Vehicle, reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
 const T1 = "2026-10-07T05:00:00.000Z";
@@ -196,6 +196,38 @@ describe("reconcileVehicles", () => {
     expect(r.vehicles[0]!.priceBuyNow).toBe(12000);
     expect(r.vehicles[0]!.priceHistory).toEqual([]);
     expect(JSON.stringify(r.vehicles[0])).not.toMatch(/899700|1200000/);
+  });
+
+  it("drops carried Auto1 records that lack photo, VAT fields and end time", () => {
+    const f = fetched({
+      id: "stale",
+      platform: "auto1",
+      imageUrl: "",
+      salesVatType: null,
+      taxDeduction: null,
+      auctionEndAt: "",
+    });
+    const { orderId, orderBrandModel, ...rest } = f;
+    const prev: IrissListingVehicle = {
+      ...rest,
+      orderIds: [orderId],
+      orderBrandModels: [orderBrandModel],
+      firstSeenAt: T1,
+      lastSeenAt: T1,
+      missingRuns: 0,
+      change: "unchanged",
+      priceHistory: [],
+    };
+    expect(isLegacyStaleAuto1Vehicle(prev)).toBe(true);
+    const r = run([prev], [], T2, []);
+    expect(r.vehicles).toHaveLength(0);
+    const kept = run(
+      [{ ...prev, imageUrl: "https://img-pa.auto1.com/x.jpg", salesVatType: 1053, taxDeduction: false, auctionEndAt: T2 }],
+      [],
+      T2,
+      [],
+    );
+    expect(kept.vehicles).toHaveLength(1);
   });
 
   it("Auto1 euro price drop is still a price change", () => {
