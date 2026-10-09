@@ -149,6 +149,8 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     powerKw: str(item.powerKw),
     location: str(item.location),
     countryCode: str(item.countryCode),
+    sourceCountry: str(item.sourceCountry) || undefined,
+    owningCountry: str(item.owningCountry) || undefined,
     imageUrl: str(item.imageUrl),
     imageUrls: Array.isArray(item.imageUrls) ? item.imageUrls.map(str).filter(Boolean).slice(0, 40) : undefined,
     isMargin: typeof item.isMargin === "boolean" ? item.isMargin : null,

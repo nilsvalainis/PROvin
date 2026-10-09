@@ -17,6 +17,18 @@ export type IrissListingOrderBrief = {
   brief: string;
   budgetRaw: string;
   budget: number | null;
+  preferredColors: string;
+  phone: string;
+  email: string;
+  engineType: string;
+  transmission: string;
+  equipmentRequired: string;
+  equipmentDesired: string;
+  notes: string;
+  listingLinkAutobid: string;
+  listingLinkOpenline: string;
+  listingLinkAuto1: string;
+  listingLinksOther: string[];
   listStatus: IrissPasutijumsListStatus;
 };
 
@@ -62,6 +74,18 @@ export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListin
     brief: [spec, extra].filter(Boolean).join(" · "),
     budgetRaw: row.totalBudget.trim(),
     budget: parseIrissOrderBudget(row.totalBudget),
+    preferredColors: dashOrEmpty(row.preferredColors),
+    phone: dashOrEmpty(row.phone),
+    email: dashOrEmpty(row.email),
+    engineType: dashOrEmpty(row.engineType),
+    transmission: dashOrEmpty(row.transmission),
+    equipmentRequired: dashOrEmpty(row.equipmentRequired),
+    equipmentDesired: dashOrEmpty(row.equipmentDesired),
+    notes: dashOrEmpty(row.notes),
+    listingLinkAutobid: row.listingLinkAutobid?.trim() ?? "",
+    listingLinkOpenline: row.listingLinkOpenline?.trim() ?? "",
+    listingLinkAuto1: row.listingLinkAuto1?.trim() ?? "",
+    listingLinksOther: Array.isArray(row.listingLinksOther) ? row.listingLinksOther.filter((u) => u.trim()) : [],
     listStatus: row.listStatus ?? "active",
   };
 }

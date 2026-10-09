@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { applyAuto1CentsMigration } from "@/lib/iriss-listings-auto1-cents";
+import { computeListingVatHealth } from "@/lib/iriss-listings-vat";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import { isIrissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
@@ -141,6 +142,8 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     powerKw: str(v.powerKw),
     location: str(v.location),
     countryCode: str(v.countryCode),
+    sourceCountry: str(v.sourceCountry) || undefined,
+    owningCountry: str(v.owningCountry) || undefined,
     imageUrl: str(v.imageUrl),
     imageUrls: Array.isArray(v.imageUrls) ? v.imageUrls.map(str).filter(Boolean).slice(0, 40) : undefined,
     isMargin: typeof v.isMargin === "boolean" ? v.isMargin : null,
@@ -244,6 +247,7 @@ function normalizeLatest(raw: unknown): { view: IrissListingsLatestView; persist
       vehicles: migrated.vehicles,
       ...(cursor ? { cursor } : {}),
       ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
+      vatHealth: computeListingVatHealth(migrated.vehicles),
     },
     persistCents: migrated.changed,
   };

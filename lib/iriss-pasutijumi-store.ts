@@ -507,6 +507,9 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       dealServiceStartDeposit: Boolean(o.dealServiceStartDeposit),
       dealEkki: Boolean(o.dealEkki),
       equipmentRequired: sanitizeDraftTextForStorage(typeof o.equipmentRequired === "string" ? o.equipmentRequired : "", 800),
+      equipmentDesired: sanitizeDraftTextForStorage(typeof o.equipmentDesired === "string" ? o.equipmentDesired : "", 800),
+      notes: sanitizeDraftTextForStorage(typeof o.notes === "string" ? o.notes : "", 4000),
+      email: sanitizeDraftTextForStorage(typeof o.email === "string" ? o.email : "", 320),
       powerKwLabel: sanitizeDraftTextForStorage(
         typeof o.powerKwLabel === "string" && o.powerKwLabel.trim()
           ? o.powerKwLabel

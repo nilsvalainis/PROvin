@@ -1,0 +1,1323 @@
+{
+ "source": "autobid",
+ "captured": "2026-10-09 ~10:30 Europe/Riga, relay /fetch (read-only), 35 order search URLs + public autobid.de search pages 1-6 in en/lv/de (420 cars)",
+ "rules": "taxInformation text (language depends on search URL /en /lv /de)",
+ "listRecords": [
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Mitsubishi Canter 3C13D 3,0D",
+   "raw": {
+    "taxInformation": "Including 19% VAT",
+    "price": {
+     "start": 7100,
+     "minimal": 5000,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Including 19% VAT",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 7100,
+    "priceMinimal": 5000,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 7100
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 11563
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0,
+    "basis": "rule",
+    "finalPrice": 11563
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Mitsubishi Space Star 1,2 CVT \"Diamant Edition+\"",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 7000,
+     "minimal": 5000,
+     "current": 5000
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 7000,
+    "priceMinimal": 5000,
+    "priceCurrent": 5000,
+    "priceBuyNow": null,
+    "bid": 5000
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 9344
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 9344
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Mitsubishi Space Star",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 6900,
+     "minimal": 4900,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 6900,
+    "priceMinimal": 4900,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 6900
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 11244
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 11244
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Mitsubishi Colt CZ3 1,3 \"Motion\"",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 100,
+     "minimal": 50,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 100,
+    "priceMinimal": 50,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 100
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 4444
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 4444
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Mitsubishi Eclipse Cross 1,5 T-MIVEC \"Top\"",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 10000,
+     "minimal": 7000,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10000,
+    "priceMinimal": 7000,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 10000
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 14344
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 14344
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Skoda Rapid 1,0 TSI",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 4400,
+     "minimal": 2400,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 4400,
+    "priceMinimal": 2400,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 4400
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 8744
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 8744
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Skoda Fabia Combi 1,0 \"Active\"",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 3900,
+     "minimal": 1900,
+     "current": 2100
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 3900,
+    "priceMinimal": 1900,
+    "priceCurrent": 2100,
+    "priceBuyNow": null,
+    "bid": 2100
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 6444
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 6444
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Skoda Yeti 1,2 TSI \"Cool Edition\"",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 6900,
+     "minimal": 4900,
+     "current": 6100
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 6900,
+    "priceMinimal": 4900,
+    "priceCurrent": 6100,
+    "priceBuyNow": null,
+    "bid": 6100
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 10444
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 10444
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Skoda Fabia Combi 1,0 TSI \"Red Grey\"",
+   "raw": {
+    "taxInformation": "Including 19% VAT",
+    "price": {
+     "start": 3500,
+     "minimal": 1500,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Including 19% VAT",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 3500,
+    "priceMinimal": 1500,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 3500
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 7903
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0,
+    "basis": "rule",
+    "finalPrice": 7903
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Skoda Octavia Combi RS 2,0 TSI",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 8500,
+     "minimal": 6500,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 8500,
+    "priceMinimal": 6500,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 8500
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12844
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12844
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Skoda Octavia Combi 1.5 TSI",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 12000,
+     "minimal": 8400,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 12000,
+    "priceMinimal": 8400,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 12000
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 16344
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 16344
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Skoda Octavia Combi 1,4 TSI \"Joy\"",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 4500,
+     "minimal": 2500,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 4500,
+    "priceMinimal": 2500,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 4500
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 8844
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 8844
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Mercedes-Benz A 220 d BlueEfficiency 7G-DCT \"Urban\"",
+   "raw": {
+    "taxInformation": "Tax on difference",
+    "price": {
+     "start": 13000,
+     "minimal": 9100,
+     "current": 9400
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Tax on difference",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 13000,
+    "priceMinimal": 9100,
+    "priceCurrent": 9400,
+    "priceBuyNow": null,
+    "bid": 9400
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13744
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13744
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "en",
+   "title": "Mercedes-Benz GLC 250 d Coupe 4Matic 9G-Tronic \"AMG Line\"",
+   "raw": {
+    "taxInformation": "Including 19% VAT",
+    "price": {
+     "start": 22900,
+     "minimal": 20900,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "en"
+   },
+   "mapped": {
+    "vatNote": "Including 19% VAT",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 22900,
+    "priceMinimal": 20900,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 22900
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 27629
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0,
+    "basis": "rule",
+    "finalPrice": 27629
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "BMW X3 xDrive20d Steptronic \"M Sportpaket\"",
+   "raw": {
+    "taxInformation": "Iesk. 19% PVN",
+    "price": {
+     "start": 12900,
+     "minimal": 9100,
+     "current": 9200
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Iesk. 19% PVN",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 12900,
+    "priceMinimal": 9100,
+    "priceCurrent": 9200,
+    "priceBuyNow": null,
+    "bid": 9200
+   },
+   "currentMain": {
+    "label": "PVN ?",
+    "kind": "unknown",
+    "rate": null,
+    "finalPrice": 15476
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0,
+    "basis": "rule",
+    "finalPrice": 13699
+   },
+   "currentCorrect": false,
+   "priceError": 1777
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "BMW X3 xDrive30d Steptronic \"X-line\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 10900,
+     "minimal": 7700,
+     "current": 7900
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10900,
+    "priceMinimal": 7700,
+    "priceCurrent": 7900,
+    "priceBuyNow": null,
+    "bid": 7900
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12244
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12244
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "BMW X3 xDrive30d Steptronic \"M Sport\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 21000,
+     "minimal": 14700,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 21000,
+    "priceMinimal": 14700,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 21000
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 25344
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 25344
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "BMW X3 xDrive30d Sport-Automatic \"M Sport\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 100,
+     "minimal": 50,
+     "current": 7150
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 100,
+    "priceMinimal": 50,
+    "priceCurrent": 7150,
+    "priceBuyNow": null,
+    "bid": 7150
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 11494
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 11494
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "BMW X3 xDrive 20 d Steptronic \"M Sport\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 100,
+     "minimal": 50,
+     "current": 1000
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 100,
+    "priceMinimal": 50,
+    "priceCurrent": 1000,
+    "priceBuyNow": null,
+    "bid": 1000
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 5344
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 5344
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Audi Q5 2,0 TDI quattro S-tronic",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 9300,
+     "minimal": 6300,
+     "current": 8300
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9300,
+    "priceMinimal": 6300,
+    "priceCurrent": 8300,
+    "priceBuyNow": null,
+    "bid": 8300
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12644
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12644
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Audi Q5 3,0 TDI quattro S-tronic",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 5000,
+     "minimal": 3000,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 5000,
+    "priceMinimal": 3000,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 5000
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 9344
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 9344
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Seat Ateca 2,0 TDI \"FR\"",
+   "raw": {
+    "taxInformation": "Iesk. 19% PVN",
+    "price": {
+     "start": 20000,
+     "minimal": 14000,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Iesk. 19% PVN",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 20000,
+    "priceMinimal": 14000,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 20000
+   },
+   "currentMain": {
+    "label": "PVN ?",
+    "kind": "unknown",
+    "rate": null,
+    "finalPrice": 28544
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0,
+    "basis": "rule",
+    "finalPrice": 24680
+   },
+   "currentCorrect": false,
+   "priceError": 3864
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Volvo XC60 D5 AWD Geartronic \"Momentum\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 6500,
+     "minimal": 4500,
+     "current": 4500
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 6500,
+    "priceMinimal": 4500,
+    "priceCurrent": 4500,
+    "priceBuyNow": null,
+    "bid": 4500
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 8844
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 8844
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Volvo XC60 2,4 D AWD Geartronic \"Summum\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 8500,
+     "minimal": 6000,
+     "current": 6400
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 8500,
+    "priceMinimal": 6000,
+    "priceCurrent": 6400,
+    "priceBuyNow": null,
+    "bid": 6400
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 10744
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 10744
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Volvo XC60 D5 AWD Geartronic \"Summum\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 15700,
+     "minimal": 11000,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 15700,
+    "priceMinimal": 11000,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 15700
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 20044
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 20044
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Volvo XC90 D5 Geartronic \"Momentum\"",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 9700,
+     "minimal": 6800,
+     "current": 6900
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9700,
+    "priceMinimal": 6800,
+    "priceCurrent": 6900,
+    "priceBuyNow": null,
+    "bid": 6900
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 11244
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 11244
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "autobid",
+   "searchLang": "lv",
+   "title": "Audi A6 3,0 TDI quattro Avant Tiptronic",
+   "raw": {
+    "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "price": {
+     "start": 10000,
+     "minimal": 8000,
+     "current": 0
+    },
+    "itemLocationCountry": "DE",
+    "pageLang": "lv"
+   },
+   "mapped": {
+    "vatNote": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+    "salesVatType": null,
+    "taxDeduction": null,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10000,
+    "priceMinimal": 8000,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 10000
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 14344
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 14344
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  }
+ ],
+ "publicLabelCatalogue": [
+  {
+   "lang": "de",
+   "taxInformation": "Differenzbesteuert",
+   "count": 49,
+   "sample": {
+    "title": "VW Golf 1,4 TSI \"Highline\"",
+    "countryCode": "DE",
+    "priceStart": 1800,
+    "priceMinimal": 100,
+    "priceCurrent": 2600
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null
+   }
+  },
+  {
+   "lang": "de",
+   "taxInformation": "Inklusive 19% Mwst",
+   "count": 66,
+   "sample": {
+    "title": "VW Golf 1,2 TSI BMT \"Lounge\"",
+    "countryCode": "DE",
+    "priceStart": 2500,
+    "priceMinimal": 100,
+    "priceCurrent": 2200
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0
+   }
+  },
+  {
+   "lang": "de",
+   "taxInformation": "Netto",
+   "count": 5,
+   "sample": {
+    "title": "VW T7 Kasten LR 2,0 TDI",
+    "countryCode": "DE",
+    "priceStart": 15500,
+    "priceMinimal": 12500,
+    "priceCurrent": 13400
+   },
+   "expected": {
+    "label": "NETO",
+    "kind": "net",
+    "rate": null
+   }
+  },
+  {
+   "lang": "en",
+   "taxInformation": "Including 19% VAT",
+   "count": 63,
+   "sample": {
+    "title": "VW Golf 1,2 TSI BMT \"Lounge\"",
+    "countryCode": "DE",
+    "priceStart": 2500,
+    "priceMinimal": 100,
+    "priceCurrent": 2200
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0
+   }
+  },
+  {
+   "lang": "en",
+   "taxInformation": "Net",
+   "count": 6,
+   "sample": {
+    "title": "VW T7 Multivan 1,4 eHybrid DSG \"Style\"",
+    "countryCode": "DE",
+    "priceStart": 36000,
+    "priceMinimal": 33000,
+    "priceCurrent": 33500
+   },
+   "expected": {
+    "label": "NETO",
+    "kind": "net",
+    "rate": null
+   }
+  },
+  {
+   "lang": "en",
+   "taxInformation": "Tax on difference",
+   "count": 51,
+   "sample": {
+    "title": "Seat Arosa 1,0 \"Stella\"",
+    "countryCode": "DE",
+    "priceStart": 100,
+    "priceMinimal": 50,
+    "priceCurrent": null
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null
+   }
+  },
+  {
+   "lang": "lv",
+   "taxInformation": "Diferencētā nodokļa aprēķins atbilstoši §25a",
+   "count": 79,
+   "sample": {
+    "title": "Audi A4 1,8",
+    "countryCode": "DE",
+    "priceStart": 500,
+    "priceMinimal": 50,
+    "priceCurrent": null
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null
+   }
+  },
+  {
+   "lang": "lv",
+   "taxInformation": "Iesk. 19% PVN",
+   "count": 95,
+   "sample": {
+    "title": "VW Golf 1,2 TSI BMT \"Lounge\"",
+    "countryCode": "DE",
+    "priceStart": 2500,
+    "priceMinimal": 100,
+    "priceCurrent": 2200
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19.0
+   }
+  },
+  {
+   "lang": "lv",
+   "taxInformation": "neto",
+   "count": 6,
+   "sample": {
+    "title": "VW T7 Multivan 1,4 eHybrid DSG \"Style\"",
+    "countryCode": "DE",
+    "priceStart": 36000,
+    "priceMinimal": 33000,
+    "priceCurrent": 33800
+   },
+   "expected": {
+    "label": "NETO",
+    "kind": "net",
+    "rate": null
+   }
+  }
+ ]
+}

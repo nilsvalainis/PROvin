@@ -47,6 +47,21 @@ export function sourceKey(platform: IrissListingPlatform, orderId: string): stri
   return `${platform}|${orderId}`;
 }
 
+function isBlank(v: string | null | undefined): boolean {
+  return !String(v ?? "").trim();
+}
+
+/**
+ * Vecā Auto1 formāta paliekas (pirms imageUrl / PVN / beigu laika): nav foto, nav salesVatType,
+ * nav taxDeduction un nav auctionEndAt. Nākamajā saglabāšanā izmetam, lai nolasītu tīri.
+ */
+export function isLegacyStaleAuto1Vehicle(
+  v: Pick<IrissListingVehicle, "platform" | "imageUrl" | "salesVatType" | "taxDeduction" | "auctionEndAt">,
+): boolean {
+  if (v.platform !== "auto1") return false;
+  return isBlank(v.imageUrl) && v.salesVatType == null && v.taxDeduction == null && isBlank(v.auctionEndAt);
+}
+
 type VehicleFields = Omit<IrissFetchedVehicle, "orderId" | "orderBrandModel">;
 
 function stripSourceFields(v: IrissFetchedVehicle): VehicleFields {
@@ -150,6 +165,7 @@ export function reconcileVehicles(input: ReconcileInput): ReconcileOutput {
 
   for (const prev of input.previous) {
     if (fetchedById.has(prev.id)) continue;
+    if (isLegacyStaleAuto1Vehicle(prev)) continue;
     const stillActiveOrders = prev.orderIds.filter((id) => input.activeOrderIds.has(id));
     if (stillActiveOrders.length === 0) continue;
     const readOk = stillActiveOrders.some((id) => input.okSourceKeys.has(sourceKey(prev.platform, id)));

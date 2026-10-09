@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listingDetailUrlBuilt, resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
+import { listingAppUrl, listingCopyId, listingDetailUrlBuilt, resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 
 describe("resolveListingDetailUrl", () => {
   it("keeps a real Auto1 / Openlane / Autobid detail URL", () => {
@@ -55,5 +55,30 @@ describe("resolveListingDetailUrl", () => {
     expect(resolveListingDetailUrl({ platform: "auto1" })).toBe("");
     expect(resolveListingDetailUrl({ platform: "openline", detailUrl: "ftp://x" })).toBe("");
     expect(resolveListingDetailUrl({ platform: "autobid", detailUrl: "not a url" })).toBe("");
+  });
+
+  it("uppercases a canonical Auto1 stockNumber and keeps other web URLs", () => {
+    expect(resolveListingDetailUrl({ platform: "auto1", stockNumber: "bw03512" })).toBe("https://www.auto1.com/en/app/merchant/car/BW03512");
+    expect(
+      resolveListingDetailUrl({
+        platform: "auto1",
+        detailUrl: "https://www.auto1.com/en/app/merchant/car/legacy-id",
+        stockNumber: "not-a-stock",
+      }),
+    ).toBe("https://www.auto1.com/en/app/merchant/car/legacy-id");
+  });
+
+  it("builds Openlane app URLs for numeric auctionId and leaves Auto1 empty", () => {
+    const openlane = { platform: "openline" as const, auctionId: "1234567", detailUrl: "https://www.openlane.eu/en/car/1234567" };
+    expect(listingAppUrl(openlane, "ios")).toBe("buyermobile://mybids/active/auctions/1234567");
+    expect(listingAppUrl(openlane, "android")).toBe(
+      "intent://mybids/active/auctions/1234567#Intent;scheme=buyermobile;package=com.carsontheweb;S.browser_fallback_url=https%3A%2F%2Fwww.openlane.eu%2Fen%2Fcar%2F1234567;end",
+    );
+    expect(listingAppUrl({ platform: "openline", auctionId: "A99" }, "ios")).toBe("");
+    expect(listingAppUrl({ platform: "auto1", stockNumber: "BW03512" }, "ios")).toBe("");
+    expect(listingAppUrl(openlane, null)).toBe("");
+    expect(listingCopyId({ platform: "auto1", stockNumber: "BW03512", externalId: "9" })).toBe("BW03512");
+    expect(listingCopyId({ platform: "openline", auctionId: "1234567" })).toBe("1234567");
+    expect(listingCopyId({ platform: "autobid", externalId: "3587391" })).toBe("3587391");
   });
 });

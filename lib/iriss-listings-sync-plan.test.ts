@@ -7,8 +7,11 @@ import {
   canStartListingJob,
   DIRECT_FETCH_HEADROOM_MS,
   fanOutFetchedVehicles,
+  interleaveListingGroupsByPlatform,
   IRISS_LISTINGS_ROUTE_MAX_DURATION_MS,
+  listingSyncProgress,
   mergeListingSourceRuns,
+  orderListingSyncGroups,
   RELAY_FETCH_HEADROOM_MS,
   runBounded,
   selectListingSyncQueue,
@@ -52,6 +55,43 @@ describe("selectListingSyncQueue", () => {
     const restart = selectListingSyncQueue(groups, { day: "2026-10-07", doneKeys: ["a"] }, "2026-10-07", true);
     expect(restart.queue).toHaveLength(3);
     expect(restart.alreadyDone).toBe(false);
+  });
+});
+
+describe("orderListingSyncGroups", () => {
+  const g = (platform: "autobid" | "openline" | "auto1", key: string) => ({
+    key,
+    platform,
+    sourceUrl: `https://example/${key}`,
+  });
+
+  it("puts never-read first, then oldest ok fetchedAt, and interleaves platforms", () => {
+    const groups = [
+      g("auto1", "auto1|https://example/a-old"),
+      g("auto1", "auto1|https://example/a-never"),
+      g("openline", "openline|https://example/o-never"),
+      g("auto1", "auto1|https://example/a-older"),
+      g("openline", "openline|https://example/o-old"),
+    ];
+    const runs = [
+      { platform: "auto1" as const, sourceUrl: "https://example/a-old", status: "ok" as const, fetchedAt: "2026-10-08T10:00:00.000Z" },
+      { platform: "auto1" as const, sourceUrl: "https://example/a-older", status: "ok" as const, fetchedAt: "2026-10-07T10:00:00.000Z" },
+      { platform: "openline" as const, sourceUrl: "https://example/o-old", status: "ok" as const, fetchedAt: "2026-10-08T09:00:00.000Z" },
+      { platform: "auto1" as const, sourceUrl: "https://example/a-never", status: "skipped" as const, fetchedAt: "2026-10-08T12:00:00.000Z" },
+    ];
+    const ordered = orderListingSyncGroups(groups, runs);
+    expect(ordered.map((x) => x.key)).toEqual([
+      "auto1|https://example/a-never",
+      "openline|https://example/o-never",
+      "auto1|https://example/a-older",
+      "openline|https://example/o-old",
+      "auto1|https://example/a-old",
+    ]);
+  });
+
+  it("interleaves by platform and reports progress", () => {
+    expect(interleaveListingGroupsByPlatform([g("auto1", "a1"), g("auto1", "a2"), g("openline", "o1")]).map((x) => x.key)).toEqual(["a1", "o1", "a2"]);
+    expect(listingSyncProgress(13, ["x", "y", "x"])).toEqual({ done: 2, total: 13 });
   });
 });
 

@@ -696,6 +696,9 @@ export function IrissPasutijumiListClient({
         nonPreferredColors: r.nonPreferredColors ?? "",
         interiorFinish: r.interiorFinish ?? "",
         equipmentRequired: r.equipmentRequired ?? "",
+        equipmentDesired: r.equipmentDesired ?? "",
+        notes: r.notes ?? "",
+        email: r.email ?? "",
         powerKwLabel: r.powerKwLabel || irissListRowPowerKwLabel(r),
       })),
     );

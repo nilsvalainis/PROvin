@@ -1,0 +1,2894 @@
+{
+ "source": "auto1",
+ "captured": "2026-10-09 ~10:30 Europe/Riga, relay /fetch (read-only), 35 order search URLs",
+ "rules": "taxDeduction/salesVatType -> regime; rate = meta.finance.vatRate || EU_VAT[sourceCountry||owningCountry||countryCode]",
+ "listRecords": [
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC90 2.4 D5 Kinetic",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 400800,
+    "minimumBid": 400800,
+    "lastTopBidValue": null,
+    "buyNowPrice": 438300,
+    "expectedPriceDisplay": 414100,
+    "searchPrice": 400800,
+    "mpPrice": 400800,
+    "priceWithoutDiscount": 400800,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 4008,
+    "priceMinimal": 4008,
+    "priceCurrent": null,
+    "priceBuyNow": 4383,
+    "bid": 4008
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 8352
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 8352
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC90 2.4 D5 Edition",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 512000,
+    "minimumBid": 512000,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 512000,
+    "mpPrice": 512000,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 5120,
+    "priceMinimal": 5120,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 5120
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 9464
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 9464
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC90 2.4 D5 Edition",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 450000,
+    "minimumBid": 450000,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 626900,
+    "searchPrice": 450000,
+    "mpPrice": 450000,
+    "priceWithoutDiscount": 450000,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 4500,
+    "priceMinimal": 4500,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 4500
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 8844
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 8844
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC90 2.4 D5 Edition",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 493700,
+    "minimumBid": 493700,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 573500,
+    "searchPrice": 493700,
+    "mpPrice": 493700,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 4937,
+    "priceMinimal": 4937,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 4937
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 9281
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 9281
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC90 2.4 D5 Summum",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 400300,
+    "minimumBid": 400300,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 400300,
+    "mpPrice": 400300,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 4003,
+    "priceMinimal": 4003,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 4003
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 8347
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 8347
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi A6 3.0 V6 TDI quattro",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 807900,
+    "minimumBid": 807900,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 807900,
+    "mpPrice": 807900,
+    "priceWithoutDiscount": 829600,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 8079,
+    "priceMinimal": 8079,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 8079
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12423
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12423
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi A6 3.0 V6 TDI quattro",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1129300,
+    "minimumBid": 1129300,
+    "lastTopBidValue": null,
+    "buyNowPrice": 1206700,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1129300,
+    "mpPrice": 1129300,
+    "priceWithoutDiscount": 1154400,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 11293,
+    "priceMinimal": 11293,
+    "priceCurrent": null,
+    "priceBuyNow": 12067,
+    "bid": 11293
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 15637
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 15637
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi A6 3.0 V6 TDI quattro",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 920300,
+    "minimumBid": 920300,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 1046300,
+    "searchPrice": 920300,
+    "mpPrice": 920300,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9203,
+    "priceMinimal": 9203,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 9203
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13547
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13547
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi A6 3.0 V6 TDI clean diesel quattro Competition",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1395400,
+    "minimumBid": 1395400,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 1306200,
+    "searchPrice": 1395400,
+    "mpPrice": 1395400,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 13954,
+    "priceMinimal": 13954,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 13954
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 18298
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 18298
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi A6 3.0 V6 TDI clean diesel quattro Competition",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "IT",
+    "sourceCountry": "IT",
+    "owningCountry": "IT",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1192500,
+    "minimumBid": 1192500,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1192500,
+    "mpPrice": 1192500,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "IT"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "IT",
+    "priceStart": 11925,
+    "priceMinimal": 11925,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 11925
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 16269
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 16269
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Momentum 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 899700,
+    "minimumBid": 899700,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 899700,
+    "mpPrice": 899700,
+    "priceWithoutDiscount": 927500,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 8997,
+    "priceMinimal": 8997,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 8997
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13341
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13341
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Ocean Race 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 838700,
+    "minimumBid": 838700,
+    "lastTopBidValue": null,
+    "buyNowPrice": 890600,
+    "expectedPriceDisplay": 985800,
+    "searchPrice": 838700,
+    "mpPrice": 838700,
+    "priceWithoutDiscount": 838700,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 8387,
+    "priceMinimal": 8387,
+    "priceCurrent": null,
+    "priceBuyNow": 8906,
+    "bid": 8387
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12731
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12731
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.4 D4 Edition PRO AWD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 553200,
+    "minimumBid": 553200,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 553200,
+    "mpPrice": 553200,
+    "priceWithoutDiscount": 625000,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 5532,
+    "priceMinimal": 5532,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 5532
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 9876
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 9876
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Summum 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 651300,
+    "minimumBid": 651300,
+    "lastTopBidValue": null,
+    "buyNowPrice": 712100,
+    "expectedPriceDisplay": null,
+    "searchPrice": 651300,
+    "mpPrice": 651300,
+    "priceWithoutDiscount": 699700,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 6513,
+    "priceMinimal": 6513,
+    "priceCurrent": null,
+    "priceBuyNow": 7121,
+    "bid": 6513
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 10857
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 10857
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Ocean Race 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 645100,
+    "minimumBid": 645100,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 645100,
+    "mpPrice": 645100,
+    "priceWithoutDiscount": 710000,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 6451,
+    "priceMinimal": 6451,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 6451
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 10795
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 10795
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Summum 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1020100,
+    "minimumBid": 1020100,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 1098400,
+    "searchPrice": 1020100,
+    "mpPrice": 1020100,
+    "priceWithoutDiscount": 1098800,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10201,
+    "priceMinimal": 10201,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 10201
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 14545
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 14545
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Ocean Race 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 751100,
+    "minimumBid": 751100,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 751100,
+    "mpPrice": 751100,
+    "priceWithoutDiscount": 799000,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 7511,
+    "priceMinimal": 7511,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 7511
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 11855
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 11855
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Momentum 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "NL",
+    "sourceCountry": "NL",
+    "owningCountry": "NL",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 808500,
+    "minimumBid": 808500,
+    "lastTopBidValue": null,
+    "buyNowPrice": 867500,
+    "expectedPriceDisplay": null,
+    "searchPrice": 691600,
+    "mpPrice": 808500,
+    "priceWithoutDiscount": 884600,
+    "currentLocationCountry": "NL"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "NL",
+    "priceStart": 8085,
+    "priceMinimal": 8085,
+    "priceCurrent": null,
+    "priceBuyNow": 8675,
+    "bid": 8085
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12429
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12429
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Kinetic 2WD",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 918900,
+    "minimumBid": 918900,
+    "lastTopBidValue": null,
+    "buyNowPrice": 973000,
+    "expectedPriceDisplay": 889700,
+    "searchPrice": 918900,
+    "mpPrice": 918900,
+    "priceWithoutDiscount": 950000,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9189,
+    "priceMinimal": 9189,
+    "priceCurrent": null,
+    "priceBuyNow": 9730,
+    "bid": 9189
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 13687
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "basis": "rule",
+    "finalPrice": 13687
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Business 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 858800,
+    "minimumBid": 858800,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 858800,
+    "mpPrice": 858800,
+    "priceWithoutDiscount": 951200,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 8588,
+    "priceMinimal": 8588,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 8588
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12932
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12932
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Kinetic 2WD",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": "BE",
+    "auctionStartPrice": 1112900,
+    "minimumBid": 1112900,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1112900,
+    "mpPrice": 1112900,
+    "priceWithoutDiscount": 1112900,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 11129,
+    "priceMinimal": 11129,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 11129
+   },
+   "currentMain": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "finalPrice": 15473
+   },
+   "expected": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "basis": "rule",
+    "finalPrice": 15473
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Momentum 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 798200,
+    "minimumBid": 798200,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 994200,
+    "searchPrice": 798200,
+    "mpPrice": 798200,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 7982,
+    "priceMinimal": 7982,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 7982
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12326
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12326
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Momentum 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 925400,
+    "minimumBid": 925400,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 925400,
+    "mpPrice": 925400,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9254,
+    "priceMinimal": 9254,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 9254
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13598
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13598
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Kinetic 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1190100,
+    "minimumBid": 1190100,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1190100,
+    "mpPrice": 1190100,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 11901,
+    "priceMinimal": 11901,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 11901
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 16245
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 16245
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.0 D3 Summum 2WD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": null,
+    "minimumBid": 946900,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 946900,
+    "mpPrice": 917800,
+    "priceWithoutDiscount": 917800,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": null,
+    "priceMinimal": 9469,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": null
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": null
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": null
+   },
+   "currentCorrect": true,
+   "priceError": null
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo XC60 2.4 D4 Edition PRO AWD",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": null,
+    "minimumBid": 705000,
+    "lastTopBidValue": 678300,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 784900,
+    "searchPrice": 705000,
+    "mpPrice": 678300,
+    "priceWithoutDiscount": 678300,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": null,
+    "priceMinimal": 7050,
+    "priceCurrent": 6783,
+    "priceBuyNow": null,
+    "bid": 6783
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 11127
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 11127
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi Q5 2.0 TDI quattro",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 498600,
+    "minimumBid": 498600,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 498600,
+    "mpPrice": 498600,
+    "priceWithoutDiscount": 541900,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 4986,
+    "priceMinimal": 4986,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 4986
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 9330
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 9330
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi Q5 2.0 TDI quattro",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1017900,
+    "minimumBid": 1017900,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1017900,
+    "mpPrice": 1017900,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10179,
+    "priceMinimal": 10179,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 10179
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 14523
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 14523
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi Q5 2.0 TDI",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 939600,
+    "minimumBid": 939600,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 939600,
+    "mpPrice": 939600,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 9396,
+    "priceMinimal": 9396,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 9396
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13740
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13740
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi Q5 2.0 TDI quattro",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 891900,
+    "minimumBid": 891900,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 891900,
+    "mpPrice": 891900,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 8919,
+    "priceMinimal": 8919,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 8919
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13263
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13263
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Audi Q5 2.0 TDI quattro",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 523100,
+    "minimumBid": 523100,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 523100,
+    "mpPrice": 523100,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 5231,
+    "priceMinimal": 5231,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 5231
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 9575
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 9575
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo V60 2.0 T4 R-Design",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1811900,
+    "minimumBid": 1811900,
+    "lastTopBidValue": null,
+    "buyNowPrice": 1884800,
+    "expectedPriceDisplay": 1926000,
+    "searchPrice": 1811900,
+    "mpPrice": 1811900,
+    "priceWithoutDiscount": 1811900,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 18119,
+    "priceMinimal": 18119,
+    "priceCurrent": null,
+    "priceBuyNow": 18848,
+    "bid": 18119
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 22767
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "basis": "rule",
+    "finalPrice": 22767
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo V60 2.0 T5 R-Design",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 2173100,
+    "minimumBid": 2173100,
+    "lastTopBidValue": null,
+    "buyNowPrice": 2252000,
+    "expectedPriceDisplay": 2696800,
+    "searchPrice": 2173100,
+    "mpPrice": 2173100,
+    "priceWithoutDiscount": 2206500,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 21731,
+    "priceMinimal": 21731,
+    "priceCurrent": null,
+    "priceBuyNow": 22520,
+    "bid": 21731
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 26075
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 26075
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo V60 2.0 B3 Mild-Hybrid Ultimate Dark",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": "BE",
+    "auctionStartPrice": 2674400,
+    "minimumBid": 2674400,
+    "lastTopBidValue": null,
+    "buyNowPrice": 2760900,
+    "expectedPriceDisplay": null,
+    "searchPrice": 2674400,
+    "mpPrice": 2674400,
+    "priceWithoutDiscount": 2762900,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 26744,
+    "priceMinimal": 26744,
+    "priceCurrent": null,
+    "priceBuyNow": 27609,
+    "bid": 26744
+   },
+   "currentMain": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "finalPrice": 31088
+   },
+   "expected": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "basis": "rule",
+    "finalPrice": 31088
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo V60 2.0 B3 Mild-Hybrid Momentum Core",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": "BE",
+    "auctionStartPrice": 1696200,
+    "minimumBid": 1696200,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 2120200,
+    "searchPrice": 1696200,
+    "mpPrice": 1696200,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 16962,
+    "priceMinimal": 16962,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 16962
+   },
+   "currentMain": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "finalPrice": 21306
+   },
+   "expected": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "basis": "rule",
+    "finalPrice": 21306
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo V60 2.0 T5 R-Design",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 2175700,
+    "minimumBid": 2175700,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 2131700,
+    "searchPrice": 2175700,
+    "mpPrice": 2175700,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 21757,
+    "priceMinimal": 21757,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 21757
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 26101
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 26101
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Volvo V60 2.0 T4 R-Design",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 2344300,
+    "minimumBid": 2344300,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 2344300,
+    "mpPrice": 2344300,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 23443,
+    "priceMinimal": 23443,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 23443
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 27787
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 27787
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Mitsubishi Pajero 3.2 DI-D Top",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 909200,
+    "minimumBid": 909200,
+    "lastTopBidValue": null,
+    "buyNowPrice": 963000,
+    "expectedPriceDisplay": 973200,
+    "searchPrice": 909200,
+    "mpPrice": 909200,
+    "priceWithoutDiscount": 909200,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 9092,
+    "priceMinimal": 9092,
+    "priceCurrent": null,
+    "priceBuyNow": 9630,
+    "bid": 9092
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13436
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13436
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "Mitsubishi Pajero 3.2 DI-D SUV-Star",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": null,
+    "minimumBid": 1216100,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1216100,
+    "mpPrice": 1216100,
+    "priceWithoutDiscount": 1216100,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": null,
+    "priceMinimal": 12161,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": null
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": null
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": null
+   },
+   "currentCorrect": true,
+   "priceError": null
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer Sport Line",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 936900,
+    "minimumBid": 936900,
+    "lastTopBidValue": null,
+    "buyNowPrice": 999800,
+    "expectedPriceDisplay": null,
+    "searchPrice": 936900,
+    "mpPrice": 936900,
+    "priceWithoutDiscount": 960000,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9369,
+    "priceMinimal": 9369,
+    "priceCurrent": null,
+    "priceBuyNow": 9998,
+    "bid": 9369
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 13870
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "basis": "rule",
+    "finalPrice": 13870
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer Sport Line",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 941800,
+    "minimumBid": 941800,
+    "lastTopBidValue": null,
+    "buyNowPrice": 1004900,
+    "expectedPriceDisplay": null,
+    "searchPrice": 941800,
+    "mpPrice": 941800,
+    "priceWithoutDiscount": 965000,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9418,
+    "priceMinimal": 9418,
+    "priceCurrent": null,
+    "priceBuyNow": 10049,
+    "bid": 9418
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 13920
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "basis": "rule",
+    "finalPrice": 13920
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer xDrive Sport Line",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1018800,
+    "minimumBid": 1018800,
+    "lastTopBidValue": null,
+    "buyNowPrice": 1075400,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1018800,
+    "mpPrice": 1018800,
+    "priceWithoutDiscount": 1067400,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10188,
+    "priceMinimal": 10188,
+    "priceCurrent": null,
+    "priceBuyNow": 10754,
+    "bid": 10188
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 14532
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 14532
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 218d Gran Tourer xDrive Advantage",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1075400,
+    "minimumBid": 1075400,
+    "lastTopBidValue": null,
+    "buyNowPrice": 1133300,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1075400,
+    "mpPrice": 1075400,
+    "priceWithoutDiscount": 1100000,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10754,
+    "priceMinimal": 10754,
+    "priceCurrent": null,
+    "priceBuyNow": 11333,
+    "bid": 10754
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 15098
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 15098
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 218d Gran Tourer Advantage",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 630500,
+    "minimumBid": 630500,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 630500,
+    "mpPrice": 630500,
+    "priceWithoutDiscount": 649900,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 6305,
+    "priceMinimal": 6305,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 6305
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 10649
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 10649
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 218d Gran Tourer Advantage",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 684400,
+    "minimumBid": 684400,
+    "lastTopBidValue": null,
+    "buyNowPrice": 731900,
+    "expectedPriceDisplay": null,
+    "searchPrice": 684400,
+    "mpPrice": 684400,
+    "priceWithoutDiscount": 702900,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 6844,
+    "priceMinimal": 6844,
+    "priceCurrent": null,
+    "priceBuyNow": 7319,
+    "bid": 6844
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 11188
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 11188
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer xDrive M Sport",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 2009900,
+    "minimumBid": 2009900,
+    "lastTopBidValue": null,
+    "buyNowPrice": 2086200,
+    "expectedPriceDisplay": 2337200,
+    "searchPrice": 2009900,
+    "mpPrice": 2009900,
+    "priceWithoutDiscount": 2101500,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 20099,
+    "priceMinimal": 20099,
+    "priceCurrent": null,
+    "priceBuyNow": 20862,
+    "bid": 20099
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 24443
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 24443
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer Advantage",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 575000,
+    "minimumBid": 575000,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 575000,
+    "mpPrice": 575000,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 5750,
+    "priceMinimal": 5750,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 5750
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 10094
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 10094
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer Luxury Line",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1005500,
+    "minimumBid": 1005500,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1005500,
+    "mpPrice": 1005500,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10055,
+    "priceMinimal": 10055,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 10055
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 14399
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 14399
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 218d Gran Tourer M Sport",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 732800,
+    "minimumBid": 732800,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 732800,
+    "mpPrice": 732800,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 7328,
+    "priceMinimal": 7328,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 7328
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 11672
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 11672
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 218d Gran Tourer xDrive Sport Line",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 898100,
+    "minimumBid": 898100,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 898100,
+    "mpPrice": 898100,
+    "priceWithoutDiscount": 898100,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 8981,
+    "priceMinimal": 8981,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 8981
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 13325
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 13325
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 218d Gran Tourer M Sport",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 975900,
+    "minimumBid": 975900,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 1202400,
+    "searchPrice": 975900,
+    "mpPrice": 975900,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 9759,
+    "priceMinimal": 9759,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 9759
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 14103
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 14103
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer M Sport",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1425500,
+    "minimumBid": 1425500,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 1425500,
+    "mpPrice": 1425500,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 14255,
+    "priceMinimal": 14255,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 14255
+   },
+   "currentMain": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "finalPrice": 18838
+   },
+   "expected": {
+    "label": "AR PVN 19 %",
+    "kind": "gross",
+    "rate": 19,
+    "basis": "rule",
+    "finalPrice": 18838
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer xDrive Sport Line",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 1078600,
+    "minimumBid": 1078600,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 1254300,
+    "searchPrice": 1078600,
+    "mpPrice": 1078600,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 10786,
+    "priceMinimal": 10786,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 10786
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 15130
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 15130
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 218d Gran Tourer Sport Line",
+   "raw": {
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "countryCode": "DE",
+    "sourceCountry": "DE",
+    "owningCountry": "DE",
+    "localReverseCharge": false,
+    "lrcCountry": null,
+    "auctionStartPrice": 821300,
+    "minimumBid": 821300,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": null,
+    "searchPrice": 821300,
+    "mpPrice": 821300,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "DE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1053",
+    "salesVatType": 1053,
+    "taxDeduction": false,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "DE",
+    "priceStart": 8213,
+    "priceMinimal": 8213,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 8213
+   },
+   "currentMain": {
+    "label": "MARŽA",
+    "kind": "margin",
+    "rate": null,
+    "finalPrice": 12557
+   },
+   "expected": {
+    "label": "MARGIN",
+    "kind": "margin",
+    "rate": null,
+    "basis": "rule",
+    "finalPrice": 12557
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  },
+  {
+   "platform": "auto1",
+   "searchLang": "en",
+   "title": "BMW 2er 220d Gran Tourer M Sport",
+   "raw": {
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "countryCode": "BE",
+    "sourceCountry": "BE",
+    "owningCountry": "BE",
+    "localReverseCharge": false,
+    "lrcCountry": "BE",
+    "auctionStartPrice": 1966600,
+    "minimumBid": 1966600,
+    "lastTopBidValue": null,
+    "buyNowPrice": null,
+    "expectedPriceDisplay": 2228600,
+    "searchPrice": 1966600,
+    "mpPrice": 1966600,
+    "priceWithoutDiscount": null,
+    "currentLocationCountry": "BE"
+   },
+   "mapped": {
+    "vatNote": "salesVatType 1054",
+    "salesVatType": 1054,
+    "taxDeduction": true,
+    "isMargin": null,
+    "vatRate": null,
+    "countryCode": "BE",
+    "priceStart": 19666,
+    "priceMinimal": 19666,
+    "priceCurrent": null,
+    "priceBuyNow": null,
+    "bid": 19666
+   },
+   "currentMain": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "finalPrice": 24010
+   },
+   "expected": {
+    "label": "AR PVN 21 %",
+    "kind": "gross",
+    "rate": 21,
+    "basis": "rule",
+    "finalPrice": 24010
+   },
+   "currentCorrect": true,
+   "priceError": 0
+  }
+ ],
+ "detailPageSamples_2026_10_08": [
+  {
+   "finance": {
+    "isVatDeductible": true,
+    "vatRate": 21,
+    "sourceCountryCode": "BE"
+   },
+   "prices": {
+    "isVatDeductible": true,
+    "vatRate": 21.0
+   },
+   "bidText": "Your bid includes 21% VAT for the car. Your bid also includes a net auction fee.",
+   "badge": "VAT deductible(21%)",
+   "salesVatType": 1054
+  },
+  {
+   "finance": {
+    "isVatDeductible": false,
+    "vatRate": null,
+    "sourceCountryCode": "BE"
+   },
+   "prices": {
+    "isVatDeductible": false,
+    "vatRate": 21.0
+   },
+   "bidText": "Your bid includes a net auction fee.",
+   "badge": "(no VAT badge)",
+   "salesVatType": 1053
+  },
+  {
+   "finance": {
+    "isVatDeductible": true,
+    "vatRate": 19,
+    "sourceCountryCode": "DE"
+   },
+   "prices": {
+    "isVatDeductible": true,
+    "vatRate": 19.0
+   },
+   "bidText": "Your bid includes 19% VAT for the car. Your bid also includes a net auction fee.",
+   "badge": "VAT deductible(19%)",
+   "salesVatType": 1054
+  },
+  {
+   "finance": {
+    "isVatDeductible": false,
+    "vatRate": null,
+    "sourceCountryCode": "BE"
+   },
+   "prices": {
+    "isVatDeductible": false,
+    "vatRate": 21.0
+   },
+   "bidText": null,
+   "badge": "(no VAT badge)",
+   "salesVatType": 1053
+  }
+ ],
+ "staleRecordSample": {
+  "note": "Record shape written by relay versions deployed before 2026-10-08 ~15:14 Riga (no VAT fields). Still in LIST for searches not re-read since. current main => PVN ? and prices as NETO.",
+  "mapped": {
+   "vatNote": "",
+   "salesVatType": null,
+   "taxDeduction": null,
+   "vatRate": null,
+   "isMargin": null,
+   "countryCode": "DE",
+   "priceStart": 6513,
+   "priceMinimal": 6513,
+   "priceCurrent": null,
+   "priceBuyNow": 6978
+  },
+  "currentMain": {
+   "label": "PVN ?",
+   "kind": "unknown"
+  },
+  "expected": {
+   "label": "MARGIN (default, flagged stale/missing)",
+   "kind": "margin",
+   "basis": "default_missing_fields"
+  }
+ }
+}

@@ -19,7 +19,7 @@ export const IRISS_LIST_PREFS_KEY = "provin-iriss-list-v4";
 export const IRISS_LIST_PREFS_MAX_BYTES = 100_000;
 export const IRISS_LIST_LEGACY_PREFS_KEYS = ["provin-iriss-list-v1", "provin-iriss-list-v2", "provin-iriss-list-v3"] as const;
 
-const TAX_KINDS = new Set<ListingTaxKind>(["net", "margin", "gross", "unknown"]);
+const TAX_KINDS = new Set<ListingTaxKind>(["net", "margin", "gross"]);
 const TABS = new Set(["new", "price", "all", "gone"]);
 const SCOPES = new Set(["all", "fav", "hidden"]);
 const BANNED_ROOT_KEYS = [

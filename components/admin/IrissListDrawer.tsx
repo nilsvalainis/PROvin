@@ -2,18 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
+import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
 import { classifyListingDamage, highlightListingDamage } from "@/lib/iriss-listings-damage";
 import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { listingAuctionTypeLabel, realListingPriceHistory } from "@/lib/iriss-listings-auto1-cents";
-import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingYearLabel } from "@/lib/iriss-listings-list-view";
 import { listingOfferLeaks, listingOfferText } from "@/lib/iriss-listings-offer";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
+import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
-import { listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
+import { listingTaxCostArgs, listingTaxFlagReason, listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
 function eur(n: number | null | undefined): string {
@@ -36,6 +38,8 @@ export function IrissListDrawer({
   budget,
   onClose,
   onPrefs,
+  onPreviewOrder,
+  mobile,
 }: {
   v: IrissListingVehicle;
   prefs: IrissListPrefs;
@@ -44,6 +48,8 @@ export function IrissListDrawer({
   budget: number | null;
   onClose: () => void;
   onPrefs: (next: IrissListPrefs) => void;
+  onPreviewOrder?: (order: IrissListingOrderBrief) => void;
+  mobile?: IrissMobilePlatform | null;
 }) {
   const detected = taxFromVehicle(v);
   const ov = prefs.taxOv[v.id];
@@ -58,8 +64,10 @@ export function IrissListDrawer({
   const [lvMsg, setLvMsg] = useState("");
   const dmg = classifyListingDamage(v.damageRaw);
   const lv = prefs.damageLv[v.id] ?? "";
-  const real = bid0 == null ? null : listingRealCost(tax.kind, tax.rate ?? 0, bid, extras);
-  const mb = budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, budget, extras) : null;
+  const taxArgs = listingTaxCostArgs(tax);
+  const real = bid0 == null ? null : listingRealCost(taxArgs.kind, taxArgs.foreignVatPct, bid, extras);
+  const gala = bid0 == null ? null : listingFinalPrice(tax, bid, extras);
+  const mb = budget != null ? listingMaxBid(taxArgs.kind, taxArgs.foreignVatPct, budget, extras) : null;
   const sourceHref = resolveListingDetailUrl(v);
   const yearLabel = listingYearLabel(v);
   const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
@@ -180,10 +188,11 @@ export function IrissListDrawer({
           {prefs.hidden.includes(v.id) ? "↺" : "✕"}
         </button>
         {sourceHref ? (
-          <a href={sourceHref} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
+          <IrissListingSourceOpen v={v} mobile={mobile ?? null} className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
             Avots
-          </a>
+          </IrissListingSourceOpen>
         ) : null}
+        <IrissListingSourceExtras v={v} mobile={mobile ?? null} />
         <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] text-lg" aria-label="Aizvērt">
           ✕
         </button>
@@ -199,7 +208,7 @@ export function IrissListDrawer({
 
       <div className="mt-3 rounded-xl border border-[#E5E7EB] p-2.5">
         <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pasūtījums un klients</div>
-        <IrissListingOrderChips orders={linked} />
+        <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
         <label className="mt-2 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           Piesaistīt citam pasūtījumam
           <select
@@ -239,11 +248,11 @@ export function IrissListDrawer({
           ) : (
             <>
               {budget != null ? <div className="text-[12px]">Budžets <b className="tabular-nums">{eur(budget)}</b></div> : <div className="text-[12px] font-semibold text-amber-900">Budžets nav</div>}
-              <div className="text-[12px]">Gala <b className="tabular-nums">{eur2(real.total)}</b></div>
+              <div className="text-[12px]">Gala <b className="tabular-nums">{eur(gala ?? real.total)}</b></div>
               <div className="text-[11px] text-slate-500">{listingVatShareLine(real, eur)}</div>
-              {budget != null ? (
-                <div className={`text-[11px] font-extrabold ${real.total <= budget ? "text-emerald-700" : "text-red-700"}`}>
-                  {real.total <= budget ? `+${eur(budget - real.total)} zem budžeta` : `-${eur(real.total - budget)} pārsniegts`}
+              {budget != null && gala != null ? (
+                <div className={`text-[11px] font-extrabold ${gala <= budget ? "text-emerald-700" : "text-red-700"}`}>
+                  {gala <= budget ? `+${eur(budget - gala)} zem budžeta` : `-${eur(gala - budget)} pārsniegts`}
                 </div>
               ) : null}
               {mb != null ? <div className="text-[11px] text-slate-500">Maks. solījums {eur(mb)}</div> : null}
@@ -309,10 +318,10 @@ export function IrissListDrawer({
 
       {photos[0] ? (
         sourceHref ? (
-          <a href={sourceHref} target="_blank" rel="noopener noreferrer">
+          <IrissListingSourceOpen v={v} mobile={mobile ?? null}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
-          </a>
+          </IrissListingSourceOpen>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
@@ -364,7 +373,7 @@ export function IrissListDrawer({
         >
           <option value="">Automātiski: {listingTaxLabel(detected)}</option>
           <option value="net">NETO</option>
-          <option value="margin">MARŽA</option>
+          <option value="margin">Margin</option>
           <option value="gross">AR PVN x %</option>
         </select>
         {ov?.kind === "gross" ? (
@@ -372,6 +381,8 @@ export function IrissListDrawer({
         ) : null}
       </div>
       <p className="mt-1 text-[11px] text-slate-500">Avota lauks: {detected.raw}</p>
+      {detected.flag ? <p className="mt-0.5 text-[11px] text-amber-800">⚠ {listingTaxFlagReason(detected)}</p> : null}
+      {tax.manual ? <p className="mt-0.5 text-[11px] text-slate-500">PVN režīms (manuāli)</p> : null}
 
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Izmaksas šim auto (neto)</h3>
       <div className="grid grid-cols-2 gap-2">
@@ -410,7 +421,7 @@ export function IrissListDrawer({
           <dt>PVN 21 % no {tax.kind === "margin" ? "izdevumiem" : "solījuma un I"}</dt>
           <dd>{eur2(real.vat)}</dd>
           <dt className="border-t pt-1 font-extrabold">Plānotā gala cena</dt>
-          <dd className="border-t pt-1 font-extrabold">{eur2(real.total)}</dd>
+          <dd className="border-t pt-1 font-extrabold">{eur(gala ?? listingFinalPrice(tax, bid, extras))}</dd>
         </dl>
       ) : null}
     </aside>

@@ -43,12 +43,20 @@ describe("order briefs and linking", () => {
       engineType: "1.5 TSI 110 kW",
       transmission: "Automāts",
       equipmentRequired: "ACC",
+      preferredColors: "Balta",
+      email: "anna@example.com",
+      equipmentDesired: "Kamera",
+      notes: "Tikai dīzelis",
     });
     expect(b.clientName).toBe("Anna Bērziņa");
     expect(b.brandModel).toBe("VW Golf");
     expect(b.productionYears).toBe("2018-2021");
     expect(b.powerKwLabel).toBe("110 kW");
     expect(b.budget).toBe(14000);
+    expect(b.preferredColors).toBe("Balta");
+    expect(b.email).toBe("anna@example.com");
+    expect(b.equipmentDesired).toBe("Kamera");
+    expect(b.notes).toBe("Tikai dīzelis");
     expect(b.brief).toContain("2018-2021");
     expect(b.brief).toContain("ACC");
     expect(listingOrderShortId(b.id)).toBe("aaaaaaaa");
