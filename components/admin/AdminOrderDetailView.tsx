@@ -16,6 +16,7 @@ import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell"
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
 import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHistoryPanel";
+import { AdminOrderVinHistoryPanel } from "@/components/admin/AdminOrderVinHistoryPanel";
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
 import { isMiniHighlightAdminOrder, paidProductLabel } from "@/lib/admin-customer-identity";
@@ -426,7 +427,8 @@ export function AdminOrderDetailView({
           </AdminCollapsibleShell>
         </section>
 
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-2">
+          <AdminOrderVinHistoryPanel sessionId={order.id} vin={mergedVin} listingUrl={mergedListing} />
           <AdminCustomerHistoryPanel
             sessionId={order.id}
             history={customerHistory}

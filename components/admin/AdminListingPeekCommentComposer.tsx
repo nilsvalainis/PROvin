@@ -123,6 +123,7 @@ export function AdminListingPeekCommentComposer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           listingUrl,
+          peekId,
           operatorNotes,
           existingDraftPlain: letter.trim() || undefined,
           modelTier,

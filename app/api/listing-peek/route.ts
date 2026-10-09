@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isSmtpConfigured, sendListingPeekLeadEmail } from "@/lib/email/send-transactional";
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
@@ -6,8 +6,11 @@ import { heardAboutDisplayLabel, isHeardAboutValue } from "@/lib/stripe-session"
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { createListingPeek, isListingPeekRateLimitExempt } from "@/lib/listing-peek-store";
+import { seedQuickEval } from "@/lib/quick-eval-service";
 
 export const runtime = "nodejs";
+/** Bezmaksas avotu ielase (CSDD, sludinājums, DK/EE/SE) notiek fonā pēc atbildes klientam. */
+export const maxDuration = 300;
 
 const BURST_WINDOW_MS = 15 * 60 * 1000;
 const BURST_MAX = 5;
@@ -86,6 +89,16 @@ export async function POST(req: Request) {
     }
     return rateLimitedJson(created.retryAfterSec, "contact_rate_limited");
   }
+
+  const peekId = created.entry.id;
+  after(async () => {
+    try {
+      const doc = await seedQuickEval(peekId);
+      console.info("[listing-peek] free sources", { peekId, parts: doc?.seed?.parts });
+    } catch (err) {
+      console.error("[listing-peek] free sources failed:", err);
+    }
+  });
 
   const adminTo = getAdminOrderNotifyEmail();
   if (adminTo && isSmtpConfigured()) {

@@ -12,6 +12,7 @@ import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/str
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
+import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
@@ -198,6 +199,13 @@ async function fulfillPaidCheckoutSession(
       // `after`, nevis `void`: ielase (relejs, CapSolver, mnt.ee) var ilgt pēc atbildes Stripe.
       // Visi avoti vienā piegājienā (paralēli zvani, viena saglabāšana), lai iekļautos 300 s.
       after(async () => {
+        // Ātrais vērtējums ar to pašu VIN + e-pastu → dati pāriet automātiski (pirms bezmaksas ielases).
+        try {
+          const qe = await autoImportQuickEvalForPaidOrder(session.id, { vin: order.vin, email });
+          if (qe) console.info("[stripe webhook] quick eval auto import", { sessionId: session.id, ...qe });
+        } catch (err) {
+          console.error("[stripe webhook] quick eval auto import:", err);
+        }
         try {
           const r = await seedPaidOrderAutoSources(session.id, {
             vin: order.vin,

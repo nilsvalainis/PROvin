@@ -7,11 +7,15 @@ import { AdminListingPeekCommentComposer } from "@/components/admin/AdminListing
 import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 import { AdminListingPeekPhoneField } from "@/components/admin/AdminListingPeekPhoneField";
 import { AdminListingPeekPhotos } from "@/components/admin/AdminListingPeekPhotos";
+import { AdminQuickEvalPanel } from "@/components/admin/AdminQuickEvalPanel";
 import {
   AdminListingPeekCardShell,
   AdminListingPeekSla,
 } from "@/components/admin/AdminListingPeekSla";
 import { isSmtpConfigured } from "@/lib/email/send-transactional";
+import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
+import { listPaidCheckoutSessions } from "@/lib/admin-orders";
+import { vehicleKey } from "@/lib/quick-eval-match";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
 import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
 import { canonicalizeListingUrl, isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
@@ -62,6 +66,25 @@ async function saveContact(formData: FormData) {
   redirect("/admin/atras-vertesanas?contact=saved");
 }
 
+/** VIN kā globāla atslēga: cik citos darbos (ātrie vērtējumi + pasūtījumi) šis VIN jau parādījies. */
+async function loadVinSeenCounts(
+  entries: Awaited<ReturnType<typeof listListingPeeks>>,
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const bump = (raw: string | null | undefined) => {
+    const k = vehicleKey(raw);
+    if (k.length >= 4) counts.set(k, (counts.get(k) ?? 0) + 1);
+  };
+  for (const e of entries) bump(e.vin);
+  const paid = (await listPaidCheckoutSessions().catch(() => [])).filter((r) => !r.isDemo);
+  const drafts = await readOrderDraftSummaries(paid.map((r) => r.id)).catch(() => new Map());
+  for (const r of paid) {
+    const keys = new Set([vehicleKey(r.vin), vehicleKey(drafts.get(r.id)?.vin)].filter((k) => k.length >= 4));
+    for (const k of keys) counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return counts;
+}
+
 async function ListingPeekConversionPanel() {
   const stats = await loadListingPeekConversionStats();
   return <AdminListingPeekConversionCard stats={stats} variant="compact" />;
@@ -82,6 +105,7 @@ export default async function AdminListingPeeksPage({
   searchParams?: Promise<{ mail?: string; contact?: string }>;
 }) {
   const entries = await listListingPeeks(200);
+  const vinSeen = await loadVinSeenCounts(entries).catch(() => new Map<string, number>());
   const smtpOk = isSmtpConfigured();
   const sp = searchParams ? await searchParams : undefined;
   const mail = sp?.mail;
@@ -157,6 +181,7 @@ export default async function AdminListingPeeksPage({
                     smtpOk={smtpOk}
                     setStatus={setStatus}
                     saveContact={saveContact}
+                    vinSeenElsewhere={(vinSeen.get(vehicleKey(e.vin)) ?? 1) - 1}
                     showSend
                   />
                 ))}
@@ -177,6 +202,7 @@ export default async function AdminListingPeeksPage({
                     smtpOk={smtpOk}
                     setStatus={setStatus}
                     saveContact={saveContact}
+                    vinSeenElsewhere={(vinSeen.get(vehicleKey(e.vin)) ?? 1) - 1}
                     showSend={false}
                     compact
                   />
@@ -197,6 +223,7 @@ function PeekCard({
   saveContact,
   showSend,
   compact = false,
+  vinSeenElsewhere = 0,
 }: {
   entry: Awaited<ReturnType<typeof listListingPeeks>>[number];
   smtpOk: boolean;
@@ -204,6 +231,7 @@ function PeekCard({
   saveContact: (formData: FormData) => Promise<void>;
   showSend: boolean;
   compact?: boolean;
+  vinSeenElsewhere?: number;
 }) {
   const isDone = e.status === "completed";
   const isRejected = e.status === "rejected";
@@ -252,7 +280,17 @@ function PeekCard({
               {listingUrl}
             </a>
             {e.vin ? (
-              <p className="font-mono text-[12px] tracking-wide text-[var(--color-apple-text)]">{e.vin}</p>
+              <p className="font-mono text-[12px] tracking-wide text-[var(--color-apple-text)]">
+                {e.vin}
+                {vinSeenElsewhere > 0 ? (
+                  <span
+                    className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-sans text-[10px] font-semibold tracking-normal text-amber-900"
+                    title="Atver „Dati”, lai redzētu kad, kam un kādi dati jau ir"
+                  >
+                    VIN jau pārbaudīts ({vinSeenElsewhere})
+                  </span>
+                ) : null}
+              </p>
             ) : null}
             {e.heardAbout ? (
               <p className="text-[12px] text-[var(--color-provin-muted)]">
@@ -287,6 +325,8 @@ function PeekCard({
       </div>
 
       <AdminListingPeekPhotos peekId={e.id} photos={e.photos ?? []} />
+
+      <AdminQuickEvalPanel peekId={e.id} />
 
       {/* Vērtēšana notiek stāvot pie auto, tāpēc lēmums ir īkšķa zonā. */}
       <form action={setStatus} className="mt-3 grid grid-cols-3 gap-2 md:hidden">
