@@ -1,30 +1,25 @@
 /**
  * CSDD web servisa tehniskie dati -> CSDD avota bloks.
  *
- * Reģistrs ir precīzāks par ielīmētu tekstu, bet operatora jau ievadītais ir svarīgāks par automātu:
- * aizpildām tikai tukšos laukus. Lauki, kuriem blokā vēl nav vietas (krāsa, OCTA termiņš,
- * COC tipa apstiprinājums, variants un versija), nonāk AI kontekstā, jo tie ir vajadzīgi
- * komplektācijas atšifrēšanai un apdrošināšanas termiņam. TL veids un COC kategorija tiek
- * rakstīti arī formā (`vehicleType`), lai vinjetes brīdinājums redzētu N1.
+ * Reģistrs ir prioritārs avots: katra ielase saglabā `registry` momentuzņēmumu un ieraksta
+ * visus API laukus formā, pārrakstot RAW/PDF vērtības (tās saglabājas `conflicts`, lai
+ * operators redzētu atšķirību). Lauki, kurus operators apzināti atbloķējis (`apiUnlocked`),
+ * netiek pārrakstīti. Pēc tam RAW un PDF API laukus vairs nemaina (`lib/csdd-field-lock.ts`).
  */
 
-import type { CsddFormFields } from "@/lib/admin-source-blocks";
+import type { CsddFieldConflict, CsddFormFields } from "@/lib/admin-source-blocks";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
+import {
+  CSDD_API_LOCKED_KEYS,
+  csddRegistryFieldValues,
+  csddValuesEquivalent,
+  formatCsddVehicleTypeDisplay,
+} from "@/lib/csdd-field-lock";
 import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 
+export { formatCsddVehicleTypeDisplay };
+
 const AI_CONTEXT_HEADING = "CSDD reģistra tehniskie dati (API)";
-
-function isBlank(v: string | undefined): boolean {
-  return !String(v ?? "").trim();
-}
-
-/** Formas lauks: „Kravas furgons (N1)”, ja reģistrā ir gan TL veids, gan COC kategorija. */
-export function formatCsddVehicleTypeDisplay(kind: string, cocCategory: string): string {
-  const k = kind.trim();
-  const c = cocCategory.trim();
-  if (k && c && !k.toLowerCase().includes(c.toLowerCase())) return `${k} (${c})`;
-  return k || c;
-}
 
 function pickLookupNr1(raw: string): string {
   if (isValidPlateNumber(raw)) return normalizePlateNumber(raw);
@@ -39,7 +34,7 @@ export function csddTechLookupNr1(registrationNumber: string, orderVinOrPlate: s
   return pickLookupNr1(registrationNumber) || pickLookupNr1(orderVinOrPlate);
 }
 
-/** Cilvēkam lasāms bloks AI kontekstam; bez tā `COC_*` dati pazustu. */
+/** Cilvēkam lasāms bloks AI kontekstam (dati ir arī formas laukos; šis ir AI kopija). */
 export function csddTechDataAiContextBlock(data: CsddTechData): string {
   const lines: string[] = [];
   const push = (label: string, value: string) => {
@@ -61,71 +56,85 @@ export function csddTechDataAiContextBlock(data: CsddTechData): string {
   return [AI_CONTEXT_HEADING, ...lines].join("\n");
 }
 
-function appendAiContext(existing: string, block: string): string {
-  if (!block) return existing;
+/** Ieliek vai aizstāj API bloku AI kontekstā (pārējais operatora teksts paliek). */
+function upsertAiContext(existing: string, block: string): string {
   const prev = String(existing ?? "").trim();
+  if (!block) return prev;
   if (!prev) return block;
-  if (prev.includes(AI_CONTEXT_HEADING)) return prev;
-  return `${prev}\n\n${block}`;
+  const idx = prev.indexOf(AI_CONTEXT_HEADING);
+  if (idx < 0) return `${prev}\n\n${block}`;
+  // API bloks beidzas pie pirmās tukšās rindas.
+  const rest = prev.slice(idx);
+  const endRel = rest.search(/\n\s*\n/);
+  const after = endRel >= 0 ? rest.slice(endRel).replace(/^\s+/, "") : "";
+  const before = prev.slice(0, idx).replace(/\s+$/, "");
+  return [before, block, after].filter(Boolean).join("\n\n");
 }
 
-/** Lauki, ko reģistra atbilde var aizpildīt; ja visi jau ir, zvans tikai tērētu līguma kvotu. */
-const SEEDABLE_KEYS = [
-  "makeModel",
-  "registrationNumber",
-  "firstRegistration",
-  "nextInspectionDate",
-  "engineDisplacementCm3",
-  "enginePowerKw",
-  "fuelType",
-  "vehicleType",
-  "grossMassKg",
-  "curbMassKg",
-] as const satisfies readonly (keyof CsddFormFields)[];
-
-/** Vai reģistra ielase vispār var kaut ko pievienot šim blokam. */
+/** Vai reģistra ielase vajadzīga automātiski (pēc apmaksas): tikai, ja vēl nav momentuzņēmuma. */
 export function csddTechSeedNeeded(csdd: CsddFormFields): boolean {
-  if (SEEDABLE_KEYS.some((key) => isBlank(csdd[key] as string | undefined))) return true;
-  return !String(csdd.aiContextRaw ?? "").includes(AI_CONTEXT_HEADING);
+  return !csdd.registry;
 }
 
 /**
- * Atgriež jaunu bloka stāvokli vai `null`, ja CSDD dati neko nepapildina.
- * `makeModel` saliek no markas un modeļa; masas un jauda ir cipari bez vienībām, kā laukos jau pieņemts.
+ * Atgriež jaunu bloka stāvokli ar reģistra datiem vai `null`, ja nekas nemainās
+ * (tie paši dati jau ielasīti un visi lauki sakrīt).
  */
 export function applyCsddTechDataToBlock(
   current: CsddFormFields,
   data: CsddTechData,
+  opts: { nr1?: string; now?: Date } = {},
 ): CsddFormFields | null {
+  const api = csddRegistryFieldValues(data);
+  const unlocked = new Set(current.apiUnlocked ?? []);
+  const conflicts: Record<string, CsddFieldConflict> = { ...(current.conflicts ?? {}) };
   const next: CsddFormFields = { ...current };
   let changed = false;
 
-  const fill = (key: keyof CsddFormFields, value: string) => {
-    if (!value.trim()) return;
-    if (!isBlank(next[key] as string | undefined)) return;
-    (next[key] as string) = value.trim();
+  for (const key of CSDD_API_LOCKED_KEYS) {
+    const apiVal = api[key];
+    if (!apiVal) continue;
+    const cur = String(current[key] ?? "").trim();
+    if (unlocked.has(key)) {
+      // Operatora izvēle paliek; ja tā atšķiras no API, rādām atšķirību.
+      if (cur && !csddValuesEquivalent(cur, apiVal, key)) continue;
+      if (!cur) {
+        next[key] = apiVal;
+        unlocked.delete(key);
+        changed = true;
+      }
+      continue;
+    }
+    if (cur === apiVal) continue;
+    if (cur && !csddValuesEquivalent(cur, apiVal, key) && !conflicts[key]) {
+      conflicts[key] = { value: cur, source: "raw" };
+    }
+    next[key] = apiVal;
     changed = true;
-  };
-
-  fill("makeModel", [data.make, data.model].filter(Boolean).join(" "));
-  fill("registrationNumber", data.registrationNumber);
-  fill("firstRegistration", data.firstRegistrationIso);
-  fill("nextInspectionDate", data.inspectionValidUntilIso);
-  fill("engineDisplacementCm3", data.displacementCm3);
-  fill("enginePowerKw", data.powerKw);
-  fill("fuelType", data.fuel);
-  fill("vehicleType", formatCsddVehicleTypeDisplay(data.vehicleKind, data.cocCategory));
-  fill("grossMassKg", data.grossMassKg);
-  fill("curbMassKg", data.curbMassKg);
+  }
 
   const aiBlock = csddTechDataAiContextBlock(data);
-  const nextAiContext = appendAiContext(next.aiContextRaw, aiBlock);
-  if (nextAiContext !== next.aiContextRaw) {
+  const nextAiContext = upsertAiContext(current.aiContextRaw, aiBlock);
+  if (nextAiContext !== String(current.aiContextRaw ?? "").trim()) {
     next.aiContextRaw = nextAiContext;
     changed = true;
   }
 
-  return changed ? next : null;
+  const sameData =
+    current.registry && JSON.stringify(current.registry.data) === JSON.stringify(data);
+  if (!sameData) changed = true;
+  if (!changed) return null;
+
+  next.registry = {
+    nr1: (opts.nr1 ?? data.vin ?? data.registrationNumber ?? "").trim().toUpperCase(),
+    fetchedAt: (opts.now ?? new Date()).toISOString(),
+    data: { ...data },
+  };
+  if (unlocked.size > 0) next.apiUnlocked = [...unlocked];
+  else delete next.apiUnlocked;
+  if (Object.keys(conflicts).length > 0) next.conflicts = conflicts;
+  else delete next.conflicts;
+  return next;
 }
 
 /**

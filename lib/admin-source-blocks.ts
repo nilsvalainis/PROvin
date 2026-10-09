@@ -368,6 +368,28 @@ export type CsddFormFields = {
   previousRegistrationCountry: string;
   /** Īpašnieku skaits Latvijā (skaitlis no reģistrācijas sadaļas). */
   ownerCountLatvia: string;
+  /** VIN no CSDD reģistra (API `VIN`) vai izdrukas; salīdzina ar pasūtījuma VIN. */
+  vin: string;
+  /** Izlaiduma gads (API `GADS` vai izdrukas „Izlaiduma gads”). */
+  modelYear: string;
+  /** Krāsa (API `KRASA`). */
+  color: string;
+  /** Elektromotora jauda kW (API `ELEKTRO_JAUDA`). */
+  electricPowerKw: string;
+  /** Otrā elektromotora jauda kW (API `ELEKTRO_JAUDA2`). */
+  electricPowerKw2: string;
+  /** COC kategorija (M1, N1 …; API `COC_KATEGORIJA`). */
+  cocCategory: string;
+  /** COC tips (API `COC_TIPS`). */
+  cocType: string;
+  /** Tipa apstiprinājuma numurs (API `COC_TEHN_APST_NUM`). */
+  cocApprovalNumber: string;
+  /** COC variants (API `COC_VARIANTS`). */
+  cocVariant: string;
+  /** COC versija (API `COC_VERSIJA`). */
+  cocVersion: string;
+  /** OCTA polise derīga līdz, ISO (API `POL_BEIGAS`). */
+  insuranceValidUntil: string;
   /** Tehnisko apskašu vēsture — parsēts no raw. */
   technicalInspectionHistory: CsddTechnicalInspectionRow[];
   /** Īpašnieku maiņu notikumi Latvijā. */
@@ -389,6 +411,51 @@ export type CsddFormFields = {
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
   hidePhotoWatermarks?: boolean;
+  /**
+   * Pēdējā CSDD reģistra (API) atbilde. Ja tā ir, API lauki ir prioritāri:
+   * RAW un PDF tos nepārraksta (sk. `lib/csdd-field-lock.ts`).
+   */
+  registry?: CsddRegistrySnapshot;
+  /** API lauki, kuros operators apzināti paturējis citu vērtību (manuāli vai „Pieņemt PDF vērtību”). */
+  apiUnlocked?: string[];
+  /** RAW/PDF vērtības, kas atšķiras no API (rāda konflikta ikonu). */
+  conflicts?: Record<string, CsddFieldConflict>;
+};
+
+/** CSDD API atbildes momentuzņēmums (tie paši lauki, ko atgriež `epak.tl_tehn_dati`). */
+export type CsddRegistrySnapshot = {
+  nr1: string;
+  fetchedAt: string;
+  data: {
+    registrationNumber: string;
+    vin: string;
+    make: string;
+    model: string;
+    year: string;
+    fuel: string;
+    powerKw: string;
+    electricPowerKw: string;
+    electricPowerKw2: string;
+    displacementCm3: string;
+    firstRegistrationIso: string;
+    color: string;
+    vehicleKind: string;
+    cocCategory: string;
+    cocType: string;
+    cocApprovalNumber: string;
+    cocVariant: string;
+    cocVersion: string;
+    grossMassKg: string;
+    curbMassKg: string;
+    insuranceEndIso: string;
+    inspectionValidUntilIso: string;
+  };
+};
+
+export type CsddFieldConflict = {
+  /** Vērtība, ko piedāvāja RAW / PDF (vai kas bija laukā pirms API ielases). */
+  value: string;
+  source: "raw" | "pdf" | "manual";
 };
 
 /** Tehniskie + apskates lauki (secība = Admin / PDF). */
@@ -399,12 +466,23 @@ export const CSDD_FORM_STRUCTURED_FIELDS: {
   { key: "makeModel", label: "Marka, modelis:" },
   { key: "vehicleType", label: "Transportlīdzekļa veids:" },
   { key: "registrationNumber", label: "Reģistrācijas numurs:" },
+  { key: "vin", label: "VIN:" },
+  { key: "modelYear", label: "Izlaiduma gads:" },
   { key: "firstRegistration", label: "Pirmā reģistrācija:" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
+  { key: "insuranceValidUntil", label: "OCTA polise derīga līdz:" },
+  { key: "color", label: "Krāsa:" },
   { key: "engineDisplacementCm3", label: "Motora tilpums (cm³):" },
   { key: "enginePowerKw", label: "Motora maksimālā jauda (kW):" },
+  { key: "electricPowerKw", label: "Elektromotora jauda (kW):" },
+  { key: "electricPowerKw2", label: "Otrā elektromotora jauda (kW):" },
   { key: "fuelType", label: "Degvielas veids:" },
+  { key: "cocCategory", label: "Kategorija (COC):" },
+  { key: "cocType", label: "Tips (COC):" },
+  { key: "cocApprovalNumber", label: "Tipa apstiprinājuma numurs:" },
+  { key: "cocVariant", label: "Variants (COC):" },
+  { key: "cocVersion", label: "Versija (COC):" },
   { key: "emissionStandard", label: "Emisiju standarts:" },
   { key: "grossMassKg", label: "Pilna masa (kg):" },
   { key: "seatCount", label: "Sēdvietu skaits:" },
@@ -592,6 +670,17 @@ export function emptyCsddFields(): CsddFormFields {
     particulateMatter: "",
     previousRegistrationCountry: "",
     ownerCountLatvia: "",
+    vin: "",
+    modelYear: "",
+    color: "",
+    electricPowerKw: "",
+    electricPowerKw2: "",
+    cocCategory: "",
+    cocType: "",
+    cocApprovalNumber: "",
+    cocVariant: "",
+    cocVersion: "",
+    insuranceValidUntil: "",
     technicalInspectionHistory: [],
     ownerRegistrationEvents: [],
     prevInspectionBlock: emptyCsddPreviousInspectionBlock(),
@@ -2227,6 +2316,17 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     particulateMatter: clipCsddField(raw.particulateMatter, 80),
     previousRegistrationCountry: clipCsddField(raw.previousRegistrationCountry, 120),
     ownerCountLatvia: clipCsddField(raw.ownerCountLatvia, 8),
+    vin: clipCsddField(raw.vin, 40),
+    modelYear: clipCsddField(raw.modelYear, 8),
+    color: clipCsddField(raw.color, 80),
+    electricPowerKw: clipCsddField(raw.electricPowerKw, 40),
+    electricPowerKw2: clipCsddField(raw.electricPowerKw2, 40),
+    cocCategory: clipCsddField(raw.cocCategory, 40),
+    cocType: clipCsddField(raw.cocType, 80),
+    cocApprovalNumber: clipCsddField(raw.cocApprovalNumber, 120),
+    cocVariant: clipCsddField(raw.cocVariant, 120),
+    cocVersion: clipCsddField(raw.cocVersion, 160),
+    insuranceValidUntil: clipCsddField(raw.insuranceValidUntil, 40),
     technicalInspectionHistory: parseCsddTechnicalInspectionStoredRaw(raw.technicalInspectionHistory),
     ownerRegistrationEvents: parseCsddOwnerEventsStoredRaw(raw.ownerRegistrationEvents),
     prevInspectionBlock: parseCsddPreviousInspectionStoredRaw(raw.prevInspectionBlock),
@@ -2236,7 +2336,73 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     aiContextRaw: clipCsddField(raw.aiContextRaw, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN),
     ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
     ...syncedSourceBlockPhotos(raw),
+    ...parseCsddRegistryLockStoredRaw(raw),
   };
+}
+
+const CSDD_REGISTRY_DATA_KEYS = [
+  "registrationNumber",
+  "vin",
+  "make",
+  "model",
+  "year",
+  "fuel",
+  "powerKw",
+  "electricPowerKw",
+  "electricPowerKw2",
+  "displacementCm3",
+  "firstRegistrationIso",
+  "color",
+  "vehicleKind",
+  "cocCategory",
+  "cocType",
+  "cocApprovalNumber",
+  "cocVariant",
+  "cocVersion",
+  "grossMassKg",
+  "curbMassKg",
+  "insuranceEndIso",
+  "inspectionValidUntilIso",
+] as const satisfies readonly (keyof CsddRegistrySnapshot["data"])[];
+
+/** `registry` / `apiUnlocked` / `conflicts` no saglabātā JSON (nezināmus laukus izmet). */
+function parseCsddRegistryLockStoredRaw(
+  raw: Record<string, unknown>,
+): Pick<CsddFormFields, "registry" | "apiUnlocked" | "conflicts"> {
+  const out: Pick<CsddFormFields, "registry" | "apiUnlocked" | "conflicts"> = {};
+  const reg = raw.registry;
+  if (reg && typeof reg === "object" && !Array.isArray(reg)) {
+    const r = reg as Record<string, unknown>;
+    const d = r.data && typeof r.data === "object" ? (r.data as Record<string, unknown>) : null;
+    if (d) {
+      const data = {} as CsddRegistrySnapshot["data"];
+      for (const k of CSDD_REGISTRY_DATA_KEYS) data[k] = clipCsddField(d[k], 200);
+      out.registry = {
+        nr1: clipCsddField(r.nr1, 40),
+        fetchedAt: clipCsddField(r.fetchedAt, 40),
+        data,
+      };
+    }
+  }
+  if (Array.isArray(raw.apiUnlocked)) {
+    out.apiUnlocked = raw.apiUnlocked
+      .filter((k): k is string => typeof k === "string")
+      .map((k) => k.slice(0, 60))
+      .slice(0, 40);
+  }
+  if (raw.conflicts && typeof raw.conflicts === "object" && !Array.isArray(raw.conflicts)) {
+    const conflicts: Record<string, CsddFieldConflict> = {};
+    for (const [k, v] of Object.entries(raw.conflicts as Record<string, unknown>).slice(0, 40)) {
+      if (!v || typeof v !== "object") continue;
+      const o = v as Record<string, unknown>;
+      const value = clipCsddField(o.value, 400);
+      if (!value.trim()) continue;
+      const source = o.source === "pdf" || o.source === "manual" ? o.source : "raw";
+      conflicts[k.slice(0, 60)] = { value, source };
+    }
+    if (Object.keys(conflicts).length > 0) out.conflicts = conflicts;
+  }
+  return out;
 }
 
 function parseCsddFieldsRaw(raw: Record<string, unknown>): CsddFormFields {

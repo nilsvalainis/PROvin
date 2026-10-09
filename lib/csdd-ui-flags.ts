@@ -51,6 +51,33 @@ export function getNextInspectionDateUiFlag(isoDate: string, referenceDate: Date
   return "none";
 }
 
+/** OCTA polise: beigusies → sarkans; beigsies 30 dienu laikā → dzeltens. */
+export function getInsuranceValidUntilUiFlag(isoDate: string, referenceDate: Date = new Date()): CsddFieldUiFlag {
+  const target = parseLocalDateIso(isoDate);
+  if (!target) return "none";
+  const diff = daysFromRefToTarget(target, startOfLocalDay(referenceDate));
+  if (diff < 0) return "red";
+  if (diff < 30) return "yellow";
+  return "none";
+}
+
+export function insuranceValidUntilFlagTitle(flag: CsddFieldUiFlag): string {
+  if (flag === "red") return "Brīdinājums: OCTA polise ir beigusies.";
+  if (flag === "yellow") return "Brīdinājums: OCTA polise beigsies mazāk nekā 30 dienās.";
+  return "";
+}
+
+/** CSDD VIN ≠ pasūtījuma VIN → sarkans (abi pilni 17 zīmju VIN). */
+export function getVinMismatchUiFlag(csddVin: string, orderVin: string): CsddFieldUiFlag {
+  const a = csddVin.trim().toUpperCase().replace(/[\s-]/g, "");
+  const b = orderVin.trim().toUpperCase().replace(/[\s-]/g, "");
+  if (a.length !== 17 || b.length !== 17) return "none";
+  return a === b ? "none" : "red";
+}
+
+export const VIN_MISMATCH_FLAG_TITLE =
+  "Brīdinājums: CSDD reģistra VIN nesakrīt ar pasūtījumā norādīto VIN.";
+
 /**
  * Latvijas vinjete (Autoceļu lietošanas nodevas likums 3. panta pirmā daļa,
  * redakcija no 01.03.2026): nodevu maksā par **kravas** transportlīdzekļiem,

@@ -225,12 +225,43 @@ describe("applyCsddTechDataToBlock", () => {
     });
   });
 
-  it("never overwrites what the operator already typed", () => {
+  it("overwrites RAW/PDF values with the register and keeps the old value as a conflict", () => {
     const current = { ...emptyCsddFields(), makeModel: "Škoda Superb Combi", enginePowerKw: "140" };
     const next = applyCsddTechDataToBlock(current, data);
-    expect(next?.makeModel).toBe("Škoda Superb Combi");
-    expect(next?.enginePowerKw).toBe("140");
+    expect(next?.makeModel).toBe("ŠKODA SUPERB");
+    expect(next?.enginePowerKw).toBe("110");
     expect(next?.fuelType).toBe("Dīzeļdegviela");
+    expect(next?.conflicts?.makeModel?.value).toBe("Škoda Superb Combi");
+    expect(next?.conflicts?.enginePowerKw?.value).toBe("140");
+    expect(next?.registry?.data.vin).toBe("TMBJH9NP9N7043581");
+  });
+
+  it("keeps a value the operator deliberately unlocked", () => {
+    const current = {
+      ...emptyCsddFields(),
+      enginePowerKw: "140",
+      apiUnlocked: ["enginePowerKw"],
+    };
+    const next = applyCsddTechDataToBlock(current, data);
+    expect(next?.enginePowerKw).toBe("140");
+    expect(next?.apiUnlocked).toEqual(["enginePowerKw"]);
+  });
+
+  it("fills the 11 register-only fields into the form", () => {
+    const next = applyCsddTechDataToBlock(emptyCsddFields(), data);
+    expect(next).toMatchObject({
+      vin: "TMBJH9NP9N7043581",
+      modelYear: "2022",
+      color: "Pelēka",
+      electricPowerKw: "",
+      electricPowerKw2: "",
+      cocCategory: "M1",
+      cocType: "3T",
+      cocApprovalNumber: "e8*2007/46*0317*20",
+      cocVariant: "ACDTSBX01",
+      cocVersion: "NFD7FD7GC0044BISTC1B1B",
+      insuranceValidUntil: "2023-08-23",
+    });
   });
 
   it("keeps COC variant, colour and OCTA date in the AI context", () => {

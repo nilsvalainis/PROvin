@@ -189,8 +189,10 @@ import {
 import {
   assessLvVignette,
   getLvVignetteFieldUiFlag,
+  getInsuranceValidUntilUiFlag,
   getNextInspectionDateUiFlag,
   getParticulateMatterUiFlag,
+  getVinMismatchUiFlag,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
 import { getLossAmountUiFlag } from "@/lib/loss-amount-ui";
@@ -944,7 +946,10 @@ function formatCsddNextInspectionCell(v: string): string {
 
 function escapeCsddPdfFieldValue(key: keyof CsddFormFields, v: string): string {
   const isDateKey =
-    key === "nextInspectionDate" || key === "prevInspectionDate" || key === "firstRegistration";
+    key === "nextInspectionDate" ||
+    key === "prevInspectionDate" ||
+    key === "firstRegistration" ||
+    key === "insuranceValidUntil";
   return isDateKey ? formatCsddNextInspectionCell(v) : escapeHtml(v);
 }
 
@@ -1307,6 +1312,7 @@ export function buildCsddAvotuZoneHtml(
   form: CsddFormFields,
   sparkHtml = "",
   photoDataUrls?: Map<string, string>,
+  opts: { orderVin?: string | null } = {},
 ): string {
   if (!csddFormHasContent(form) && !sparkHtml) return "";
 
@@ -1335,17 +1341,34 @@ export function buildCsddAvotuZoneHtml(
     let flag: CsddFieldUiFlag = "none";
     if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
     else if (key === "nextInspectionDate") flag = getNextInspectionDateUiFlag(v);
+    else if (key === "insuranceValidUntil") flag = getInsuranceValidUntilUiFlag(v);
+    else if (key === "vin") flag = getVinMismatchUiFlag(v, opts.orderVin ?? "");
     else if (key === "vehicleType" || key === "grossMassKg" || key === "seatCount") {
       flag = getLvVignetteFieldUiFlag(vignette, key, v);
     }
-    const display = key === "nextInspectionDate" || key === "prevInspectionDate" || key === "firstRegistration"
-      ? v
-      : capitalizeFactValue(v);
-    const valueHtml = escapeCsddPdfFieldValue(key, display);
+    const display =
+      key === "nextInspectionDate" ||
+      key === "prevInspectionDate" ||
+      key === "firstRegistration" ||
+      key === "insuranceValidUntil" ||
+      key === "vin" ||
+      key.startsWith("coc")
+        ? v
+        : capitalizeFactValue(v);
+    let valueHtml = escapeCsddPdfFieldValue(key, display);
+    if (key === "insuranceValidUntil" && flag === "red") {
+      valueHtml += ` <span class="pdf-csdd-alert-note">(polise beigusies)</span>`;
+    } else if (key === "vin" && flag === "red") {
+      valueHtml += ` <span class="pdf-csdd-alert-note">(nesakrīt ar pasūtījuma VIN ${escapeHtml(
+        String(opts.orderVin ?? "").trim().toUpperCase(),
+      )})</span>`;
+    }
     if (
       flag !== "none" &&
       (key === "particulateMatter" ||
         key === "nextInspectionDate" ||
+        key === "insuranceValidUntil" ||
+        key === "vin" ||
         key === "vehicleType" ||
         key === "grossMassKg" ||
         key === "seatCount")
@@ -1428,10 +1451,10 @@ function buildCsddAvotuSubsection(
   if (!hasStruct && !hasRaw && !sparkHtml) return "";
 
   if (hasStruct && form) {
-    const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls);
+    const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin });
     if (zone) return zone;
     if (hasRaw) return csddAvotuRawZoneHtml(p.csdd, sparkHtml);
-    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls);
+    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin });
     return "";
   }
 
@@ -3119,6 +3142,7 @@ ${sourceDotColorCss()}
       .pdf-csdd-alert--yellow{border-left:3px solid #FFC107;}
       .pdf-csdd-alert-label{width:38%;color:#86868b;font-weight:500;white-space:nowrap;}
       .pdf-csdd-alert-val{color:#0f172a;text-align:left;flex:1;min-width:0;}
+      .pdf-csdd-alert-note{color:#b42318;font-weight:600;}
       .mirror-table--csdd td.pdf-csdd-tech-compact{
         width:auto;max-width:none;white-space:normal;padding:5px 0 6px;
         font-size:var(--pdf-fs-table);line-height:1.35;color:#0f172a;text-align:left;
