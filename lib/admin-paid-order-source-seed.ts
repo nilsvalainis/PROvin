@@ -167,7 +167,7 @@ export async function seedPaidOrderAutoSources(
     } else if (!csddRes.found) {
       parts.csdd = csddRes.message || "not_found";
     } else {
-      const nextCsdd = applyCsddTechDataToBlock(blocks.csdd, csddRes.data);
+      const nextCsdd = applyCsddTechDataToBlock(blocks.csdd, csddRes.data, { nr1: csddNr });
       if (nextCsdd) {
         blocks = { ...blocks, csdd: nextCsdd };
         parts.csdd = "filled";

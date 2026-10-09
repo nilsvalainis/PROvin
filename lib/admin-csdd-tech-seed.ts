@@ -49,7 +49,7 @@ export async function seedCsddTechDataOnPaidOrder(
   const res = await fetchCsddTechData(nr1);
   if (!res.found) return { ok: false, reason: res.message };
 
-  const nextCsdd = applyCsddTechDataToBlock(blocks.csdd, res.data);
+  const nextCsdd = applyCsddTechDataToBlock(blocks.csdd, res.data, { nr1 });
   if (!nextCsdd) return { ok: false, reason: "skip" };
 
   const incoming = persistBodyToOrderDraftWorkspace(

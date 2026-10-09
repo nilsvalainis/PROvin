@@ -12,6 +12,7 @@ import {
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
 import { backfillCsddExtendedFromRaw, isLikelyStructuredCsddPaste } from "@/lib/csdd-paste-parse";
+import { CSDD_API_LOCKED_KEYS, protectCsddApiFields } from "@/lib/csdd-field-lock";
 
 function countMileageRows(f: CsddFormFields): number {
   return f.mileageHistory.filter((r) => r.odometer.trim()).length;
@@ -106,5 +107,12 @@ export function mergeCsddFieldsFillEmpty(
     pdfChecklist: existing.pdfChecklist ?? incoming.pdfChecklist,
   };
 
-  return backfillCsddExtendedFromRaw(next);
+  // API (reģistra) lauki paliek prioritāri; atšķirīga PDF vērtība → konflikta atzīme.
+  if (!existing.registry) return backfillCsddExtendedFromRaw(next);
+  const withIncoming: CsddFormFields = { ...next };
+  for (const key of CSDD_API_LOCKED_KEYS) {
+    const inc = String(incoming[key] ?? "").trim();
+    if (inc) withIncoming[key] = inc;
+  }
+  return backfillCsddExtendedFromRaw(protectCsddApiFields(existing, withIncoming, "pdf"));
 }

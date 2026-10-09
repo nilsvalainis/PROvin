@@ -30,7 +30,20 @@ import {
 import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { AdminCsddPdfUpload } from "@/components/admin/AdminCsddPdfUpload";
 import { AdminCsddTechFetchButton } from "@/components/admin/AdminCsddTechFetchButton";
-import { applyCsddPasteToForm, backfillCsddExtendedFromRaw, parseCsddPaste } from "@/lib/csdd-paste-parse";
+import {
+  applyCsddPasteToForm,
+  applyCsddPdfImportToForm,
+  backfillCsddExtendedFromRaw,
+  parseCsddPaste,
+} from "@/lib/csdd-paste-parse";
+import {
+  acceptCsddConflictValue,
+  csddApiValueFor,
+  csddFieldIsApiLocked,
+  isCsddApiLockedKey,
+  restoreCsddApiValue,
+  setCsddFieldManually,
+} from "@/lib/csdd-field-lock";
 import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-charts";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -38,7 +51,11 @@ import {
   assessLvVignette,
   getLvVignetteFieldUiFlag,
   getNextInspectionDateUiFlag,
+  getInsuranceValidUntilUiFlag,
   getParticulateMatterUiFlag,
+  getVinMismatchUiFlag,
+  insuranceValidUntilFlagTitle,
+  VIN_MISMATCH_FLAG_TITLE,
   type CsddFieldUiFlag,
 } from "@/lib/csdd-ui-flags";
 import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
@@ -59,7 +76,7 @@ import {
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { CSDD_COMMENT_TEMPLATES, applyCsddCommentTemplate } from "@/lib/admin-csdd-comment-presets";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Lock } from "lucide-react";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -88,7 +105,85 @@ const dateKeys = new Set<keyof CsddFormFields>([
   "firstRegistration",
   "nextInspectionDate",
   "prevInspectionDate",
+  "insuranceValidUntil",
 ]);
+
+const CONFLICT_SOURCE_LABEL = { pdf: "PDF", raw: "RAW", manual: "Iepriekš laukā" } as const;
+
+/** API bloķēta lauka žetons + konflikta rinda ar „Pieņemt PDF vērtību” / „Atjaunot API”. */
+function CsddApiFieldMeta({
+  value,
+  fieldKey,
+  readOnly,
+  disabled,
+  onChange,
+}: {
+  value: CsddFormFields;
+  fieldKey: keyof CsddFormFields;
+  readOnly: boolean;
+  disabled?: boolean;
+  onChange: (next: CsddFormFields) => void;
+}) {
+  if (!value.registry || !isCsddApiLockedKey(fieldKey)) return null;
+  const apiVal = csddApiValueFor(value, fieldKey);
+  if (!apiVal) return null;
+  const locked = csddFieldIsApiLocked(value, fieldKey);
+  const conflict = value.conflicts?.[fieldKey];
+  const current = String(value[fieldKey] ?? "").trim();
+  const btn =
+    "rounded border border-slate-300 bg-white px-1.5 py-0 text-[9px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50";
+  return (
+    <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[9px]">
+      {locked ? (
+        <span
+          className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1 py-0 font-medium text-emerald-800 ring-1 ring-emerald-200"
+          title="Vērtība no CSDD reģistra (API). RAW un PDF to nepārraksta."
+        >
+          <Lock className="h-2.5 w-2.5" aria-hidden /> CSDD API
+        </span>
+      ) : (
+        <span
+          className="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1 py-0 font-medium text-slate-600 ring-1 ring-slate-200"
+          title={`CSDD API vērtība: ${apiVal}`}
+        >
+          Manuāli mainīts{current !== apiVal ? ` · API: ${apiVal}` : ""}
+        </span>
+      )}
+      {conflict ? (
+        <span
+          className="inline-flex min-w-0 items-center gap-0.5 rounded bg-amber-50 px-1 py-0 text-amber-900 ring-1 ring-amber-200"
+          title={`${CONFLICT_SOURCE_LABEL[conflict.source]} vērtība atšķiras no CSDD API: ${conflict.value}`}
+          data-csdd-conflict={fieldKey}
+        >
+          <AlertTriangle className="h-2.5 w-2.5 shrink-0 text-[#FFC107]" aria-hidden />
+          <span className="truncate">
+            {CONFLICT_SOURCE_LABEL[conflict.source]}: {conflict.value}
+          </span>
+        </span>
+      ) : null}
+      {!readOnly && conflict ? (
+        <button
+          type="button"
+          className={btn}
+          disabled={disabled}
+          onClick={() => onChange(acceptCsddConflictValue(value, fieldKey))}
+        >
+          Pieņemt PDF vērtību
+        </button>
+      ) : null}
+      {!readOnly && !locked ? (
+        <button
+          type="button"
+          className={btn}
+          disabled={disabled}
+          onClick={() => onChange(restoreCsddApiValue(value, fieldKey))}
+        >
+          Atjaunot API
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 type Props = {
   value: CsddFormFields;
@@ -130,7 +225,7 @@ export function AdminCsddSourceBlock({
   onPhotoGroupsStructuralCommit,
 }: Props) {
   const setField = (key: keyof CsddFormFields, v: string) => {
-    onChange({ ...value, [key]: v });
+    onChange(setCsddFieldManually(value, key, v));
   };
 
   const handleRawInput = (raw: string) => {
@@ -147,6 +242,8 @@ export function AdminCsddSourceBlock({
     if (
       backfilled.previousRegistrationCountry !== value.previousRegistrationCountry ||
       backfilled.ownerCountLatvia !== value.ownerCountLatvia ||
+      backfilled.vin !== value.vin ||
+      backfilled.modelYear !== value.modelYear ||
       backfilled.ownerRegistrationEvents.length !== value.ownerRegistrationEvents.length ||
       backfilled.technicalInspectionHistory.length !== value.technicalInspectionHistory.length ||
       backfilled.technicalInspectionHistory.some(
@@ -224,15 +321,7 @@ export function AdminCsddSourceBlock({
           disabled={disabled}
           readOnly={readOnly}
           onImported={({ rawUnprocessedData, fields }) => {
-            const raw = rawUnprocessedData.trim() || value.rawUnprocessedData;
-            const parsed = raw.trim() ? parseCsddPaste(raw) : parseCsddPaste(value.rawUnprocessedData);
-            onChange(
-              applyCsddPasteToForm(
-                { ...value, ...fields, rawUnprocessedData: raw || value.rawUnprocessedData },
-                raw || value.rawUnprocessedData,
-                parsed,
-              ),
-            );
+            onChange(applyCsddPdfImportToForm(value, fields, rawUnprocessedData));
           }}
         />
       ) : null}
@@ -292,7 +381,11 @@ export function AdminCsddSourceBlock({
           const isVignetteField =
             key === "vehicleType" || key === "grossMassKg" || key === "seatCount";
           const isFlagField =
-            key === "particulateMatter" || key === "nextInspectionDate" || isVignetteField;
+            key === "particulateMatter" ||
+            key === "nextInspectionDate" ||
+            key === "insuranceValidUntil" ||
+            key === "vin" ||
+            isVignetteField;
           let flag: CsddFieldUiFlag = "none";
           let flagTitle = "";
           if (key === "particulateMatter") {
@@ -305,6 +398,12 @@ export function AdminCsddSourceBlock({
               flagTitle =
                 "Brīdinājums: apskates datums nokavēts vai līdz tam mazāk par 30 dienām.";
             else if (flag === "yellow") flagTitle = "Brīdinājums: līdz apskatei mazāk par 90 dienām.";
+          } else if (key === "insuranceValidUntil") {
+            flag = getInsuranceValidUntilUiFlag(strVal);
+            flagTitle = insuranceValidUntilFlagTitle(flag);
+          } else if (key === "vin") {
+            flag = getVinMismatchUiFlag(strVal, orderVin);
+            if (flag !== "none") flagTitle = `${VIN_MISMATCH_FLAG_TITLE} Pasūtījumā: ${orderVin.trim().toUpperCase()}`;
           } else if (isVignetteField) {
             flag = getLvVignetteFieldUiFlag(vignette, key, strVal);
             if (flag === "yellow") {
@@ -412,6 +511,13 @@ export function AdminCsddSourceBlock({
                   ) : null}
                 </>
               )}
+              <CsddApiFieldMeta
+                value={value}
+                fieldKey={key}
+                readOnly={readOnly}
+                disabled={disabled}
+                onChange={onChange}
+              />
             </div>
           );
         })}

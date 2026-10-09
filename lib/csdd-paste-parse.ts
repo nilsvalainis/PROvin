@@ -2,6 +2,7 @@
  * CSDD „Smart Paste” — tehniskie pamatdati + apskates datumi (augša) + apvienota nobraukuma tabula.
  */
 
+import { protectCsddApiFields } from "@/lib/csdd-field-lock";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   CSDD_MILEAGE_COUNTRY_LV,
@@ -134,6 +135,14 @@ export function parseCsddTechnicalFields(
   | "technicalInspectionWarnings"
   | "photos"
   | "photoGroups"
+  | "electricPowerKw"
+  | "electricPowerKw2"
+  | "cocCategory"
+  | "cocType"
+  | "cocApprovalNumber"
+  | "cocVariant"
+  | "cocVersion"
+  | "insuranceValidUntil"
 > {
   const st = extractRegistryStructuredFields(raw);
   const basics = parseLvRegistryBasics(raw);
@@ -225,9 +234,14 @@ export function parseCsddTechnicalFields(
     if (n) seatCount = n[0];
   }
 
+  const { vin, modelYear, color } = parseCsddIdentityFromRaw(raw);
+
   return {
     makeModel,
     registrationNumber,
+    vin,
+    modelYear,
+    color,
     firstRegistration,
     engineDisplacementCm3,
     enginePowerKw,
@@ -245,6 +259,26 @@ export function parseCsddTechnicalFields(
     comments: "",
     aiContextRaw: "",
   };
+}
+
+/**
+ * VIN, izlaiduma gads un krāsa no CSDD izdrukas / PDF teksta
+ * („VIN TMB…”, „VIN: TMB…”, „Izlaiduma gads 2022”, „Krāsa: Pelēka”).
+ */
+export function parseCsddIdentityFromRaw(raw: string): { vin: string; modelYear: string; color: string } {
+  let vin = "";
+  const vinM = raw.match(/(?:^|[\s\t])VIN(?:\s+kods)?\s*[:\t ]\s*([A-HJ-NPR-Z0-9]{17})(?![A-Z0-9])/im);
+  if (vinM?.[1]) vin = vinM[1].toUpperCase();
+
+  let modelYear = "";
+  const yM = raw.match(/Izlaiduma\s+gads\s*[:\t ]\s*((?:19|20)\d{2})\b/i);
+  if (yM?.[1]) modelYear = yM[1];
+
+  let color = "";
+  const cM = raw.match(/(?:^|\n)\s*Krāsa\s*[:\t ]\s*([A-Za-zĀČĒĢĪĶĻŅŠŪŽāčēģīķļņšūž][^\n\t]{0,40})/i);
+  if (cM?.[1]) color = cM[1].replace(/\s+/g, " ").trim();
+
+  return { vin, modelYear, color };
 }
 
 function isCsddSectionHeaderLine(line: string): boolean {
@@ -583,25 +617,40 @@ export function applyCsddPasteToForm(
     }
   }
 
-  return {
-    ...emptyCsddFields(),
-    ...tech,
+  // `tech` satur tukšus `comments` / `aiContextRaw` - tie pieder operatoram, ne parserim.
+  const { comments: _techComments, aiContextRaw: _techAi, ...techFields } = tech;
+  void _techComments;
+  void _techAi;
+  const parsedScalars: Partial<CsddFormFields> = {
+    ...techFields,
     firstRegistration,
     opacityCoefficient,
     ownerCountLatvia: ownerReg.ownerCount,
+    nextInspectionDate,
+    prevInspectionDate,
+  };
+
+  const base: CsddFormFields = { ...emptyCsddFields(), ...current };
+  const merged: CsddFormFields = {
+    ...base,
     ownerRegistrationEvents: ownerReg.events,
     technicalInspectionHistory,
     prevInspectionBlock,
     rawUnprocessedData: rawText,
-    nextInspectionDate,
-    prevInspectionDate,
     mileageHistory,
-    prevInspectionWarnings: current.prevInspectionWarnings,
-    technicalInspectionWarnings: current.technicalInspectionWarnings,
-    comments: current.comments,
+    prevInspectionWarnings: current.prevInspectionWarnings ?? [],
+    technicalInspectionWarnings: current.technicalInspectionWarnings ?? [],
+    comments: current.comments ?? "",
+    aiContextRaw: current.aiContextRaw ?? "",
     photos: current.photos ?? [],
     photoGroups: current.photoGroups ?? [],
   };
+  // Tukša RAW vērtība neiztukšo jau aizpildītu lauku (piem. no API vai iepriekšējā PDF).
+  for (const [key, value] of Object.entries(parsedScalars) as [keyof CsddFormFields, unknown][]) {
+    const v = typeof value === "string" ? value : "";
+    if (v.trim()) (merged[key] as string) = v;
+  }
+  return protectCsddApiFields(current, merged, "raw");
 }
 
 /** Aizpilda jaunos laukus no jau saglabātā raw (piem. pēc deploy vai migrācijas). */
@@ -641,6 +690,9 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
   if (!csdd.seatCount.trim() && tech.seatCount.trim()) {
     patch.seatCount = tech.seatCount;
   }
+  if (!String(csdd.vin ?? "").trim() && tech.vin.trim()) patch.vin = tech.vin;
+  if (!String(csdd.modelYear ?? "").trim() && tech.modelYear.trim()) patch.modelYear = tech.modelYear;
+  if (!String(csdd.color ?? "").trim() && tech.color.trim()) patch.color = tech.color;
 
   if (
     !previousInspectionBlockHasData(csdd.prevInspectionBlock) &&
@@ -658,4 +710,57 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
 
   if (Object.keys(patch).length === 0) return csdd;
   return { ...csdd, ...patch };
+}
+
+/** Operatora lauki, kurus PDF imports nekad nemaina. */
+const CSDD_OPERATOR_OWNED_KEYS = [
+  "comments",
+  "aiContextRaw",
+  "pdfChecklist",
+  "photos",
+  "photoGroups",
+  "hidePhotoWatermarks",
+  "prevInspectionWarnings",
+  "technicalInspectionWarnings",
+  "registry",
+  "apiUnlocked",
+  "conflicts",
+] as const satisfies readonly (keyof CsddFormFields)[];
+
+/**
+ * CSDD PDF imports formā: PDF lauki aizpilda formu (tukšie PDF lauki neko neiztukšo),
+ * operatora lauki paliek, un API bloķētie lauki paliek API vērtībās (atšķirība → `conflicts`, avots „pdf”).
+ */
+export function applyCsddPdfImportToForm(
+  current: CsddFormFields,
+  pdfFields: CsddFormFields,
+  pdfRaw: string,
+): CsddFormFields {
+  const raw = pdfRaw.trim() || current.rawUnprocessedData;
+  const unprotected: CsddFormFields = {
+    ...emptyCsddFields(),
+    ...current,
+    registry: undefined,
+    apiUnlocked: undefined,
+    conflicts: undefined,
+  };
+  for (const [key, value] of Object.entries(pdfFields ?? {}) as [keyof CsddFormFields, unknown][]) {
+    if ((CSDD_OPERATOR_OWNED_KEYS as readonly string[]).includes(key)) continue;
+    if (typeof value === "string") {
+      if (value.trim()) (unprotected[key] as string) = value;
+    } else if (Array.isArray(value)) {
+      if (value.length > 0) (unprotected as Record<string, unknown>)[key] = value;
+    } else if (value && typeof value === "object") {
+      (unprotected as Record<string, unknown>)[key] = value;
+    }
+  }
+  unprotected.rawUnprocessedData = raw;
+  const parsed = raw.trim() ? parseCsddPaste(raw) : parseCsddPaste(current.rawUnprocessedData);
+  const filled = applyCsddPasteToForm(unprotected, raw, parsed);
+  const withOperator: CsddFormFields = { ...filled };
+  for (const key of CSDD_OPERATOR_OWNED_KEYS) {
+    if (current[key] === undefined) delete (withOperator as Record<string, unknown>)[key];
+    else (withOperator as Record<string, unknown>)[key] = current[key];
+  }
+  return protectCsddApiFields(current, withOperator, "pdf");
 }

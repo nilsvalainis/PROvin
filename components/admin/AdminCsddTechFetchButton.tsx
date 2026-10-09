@@ -53,21 +53,24 @@ export function AdminCsddTechFetchButton({ value, orderVin = "", disabled, onCha
         setError(data.message || "CSDD reģistrā šāds numurs netika atrasts");
         return;
       }
-      const next = applyCsddTechDataToBlock(value, data.data);
+      const next = applyCsddTechDataToBlock(value, data.data, { nr1 });
       const mismatch = csddVinMatchesOrder(data.data.vin, orderVin);
       if (!next) {
         setStatus(
           mismatch === false
-            ? `${data.message}. Lauki jau aizpildīti. Reģistra VIN (${data.data.vin}) atšķiras no pasūtījuma.`
-            : `${data.message}. Lauki jau ir aizpildīti.`,
+            ? `${data.message}. Reģistra dati nav mainījušies. Reģistra VIN (${data.data.vin}) atšķiras no pasūtījuma.`
+            : `${data.message}. Reģistra dati nav mainījušies.`,
         );
         return;
       }
       onChange(next);
+      const conflictN = Object.keys(next.conflicts ?? {}).length;
+      const conflictNote =
+        conflictN > 0 ? ` ${conflictN} laukos RAW/PDF vērtība atšķiras no reģistra (skat. dzeltenās atzīmes).` : "";
       setStatus(
         mismatch === false
-          ? `${data.message}. Reģistra VIN (${data.data.vin}) atšķiras no pasūtījuma.`
-          : data.message,
+          ? `${data.message}. Reģistra VIN (${data.data.vin}) atšķiras no pasūtījuma.${conflictNote}`
+          : `${data.message}.${conflictNote}`,
       );
     } catch {
       setError("Neizdevās savienoties ar CSDD releju");
