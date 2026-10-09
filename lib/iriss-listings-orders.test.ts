@@ -62,6 +62,20 @@ describe("order briefs and linking", () => {
     expect(listingOrderShortId(b.id)).toBe("aaaaaaaa");
   });
 
+  it("exposes every listing URL including mobile.de that is not fetched", () => {
+    const b = order({
+      id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      listingLinkMobile: ["https://suchen.mobile.de/a", "https://suchen.mobile.de/b"],
+      listingLinkAutobid: ["https://autobid.de/1", "https://autobid.de/2"],
+      listingLinkOpenline: ["https://www.openlane.eu/1"],
+      listingLinkAuto1: ["https://www.auto1.com/1"],
+      listingLinksOther: ["https://example.com/citi", ""],
+    });
+    expect(b.listingLinkMobile).toEqual(["https://suchen.mobile.de/a", "https://suchen.mobile.de/b"]);
+    expect(b.listingLinkAutobid).toEqual(["https://autobid.de/1", "https://autobid.de/2"]);
+    expect(b.listingLinksOther).toEqual(["https://example.com/citi"]);
+  });
+
   it("keeps every order on a shared search URL and uses the lowest budget unless overridden", () => {
     const a = order({ id: "o1", clientFirstName: "A", brandModel: "Golf", totalBudget: "18000" });
     const b = order({ id: "o2", clientFirstName: "B", brandModel: "Golf", totalBudget: "12000" });

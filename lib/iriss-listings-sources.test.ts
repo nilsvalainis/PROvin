@@ -3,7 +3,12 @@ import { detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
 import { buildIrissListingSources, groupIrissListingSources } from "@/lib/iriss-listings-sources";
 import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
-function row(id: string, listStatus: IrissPasutijumsListStatus, links: Partial<Record<"autobid" | "openline" | "auto1" | "mobile", string>> = {}, other: string[] = []) {
+function row(
+  id: string,
+  listStatus: IrissPasutijumsListStatus,
+  links: Partial<Record<"autobid" | "openline" | "auto1" | "mobile", string | string[]>> = {},
+  other: string[] = [],
+) {
   return {
     id,
     brandModel: `Car ${id}`,
@@ -66,5 +71,31 @@ describe("buildIrissListingSources", () => {
     expect(shared.orders.map((o) => o.orderId).sort()).toEqual(["a", "b"]);
     expect(autobid.find((g) => g.orders.length === 1)!.orders[0]!.orderId).toBe("c");
     expect(groups.find((g) => g.platform === "openline")!.orders).toHaveLength(1);
+  });
+
+  it("reads every link of each source and still stores mobile.de without fetching it", () => {
+    const shared = "https://autobid.de/en/search-results?q=shared";
+    const extra = "https://autobid.de/en/search-results?q=extra";
+    const sources = buildIrissListingSources([
+      row(
+        "a",
+        "active",
+        {
+          mobile: ["https://suchen.mobile.de/a", "https://suchen.mobile.de/b"],
+          autobid: [shared, extra],
+          auto1: ["https://www.auto1.com/en/app/merchant/cars?c=1", "https://www.auto1.com/en/app/merchant/cars?c=2"],
+        },
+      ),
+      row("b", "active", { autobid: [shared] }),
+    ]);
+    expect(sources.some((s) => /mobile\.de/i.test(s.sourceUrl))).toBe(false);
+    expect(sources.filter((s) => s.platform === "autobid")).toHaveLength(3);
+    expect(sources.filter((s) => s.platform === "auto1")).toHaveLength(2);
+    const groups = groupIrissListingSources(sources);
+    const autobid = groups.filter((g) => g.platform === "autobid");
+    expect(autobid).toHaveLength(2);
+    const sharedGroup = autobid.find((g) => g.orders.length === 2)!;
+    expect(sharedGroup.orders.map((o) => o.orderId).sort()).toEqual(["a", "b"]);
+    expect(autobid.find((g) => g.orders.length === 1)!.orders[0]!.orderId).toBe("a");
   });
 });

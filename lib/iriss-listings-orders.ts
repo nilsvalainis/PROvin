@@ -5,6 +5,7 @@
  * budžetu un ļauj operatoram pārrakstīt piesaisti konkrētam auto.
  */
 
+import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { formatIrissClientName, formatIrissListSpecSummary, irissListRowPowerKwLabel } from "@/lib/iriss-pasutijumi-list-row";
 import type { IrissPasutijumsListRow, IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
@@ -25,9 +26,10 @@ export type IrissListingOrderBrief = {
   equipmentRequired: string;
   equipmentDesired: string;
   notes: string;
-  listingLinkAutobid: string;
-  listingLinkOpenline: string;
-  listingLinkAuto1: string;
+  listingLinkMobile: string[];
+  listingLinkAutobid: string[];
+  listingLinkOpenline: string[];
+  listingLinkAuto1: string[];
   listingLinksOther: string[];
   listStatus: IrissPasutijumsListStatus;
 };
@@ -82,10 +84,11 @@ export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListin
     equipmentRequired: dashOrEmpty(row.equipmentRequired),
     equipmentDesired: dashOrEmpty(row.equipmentDesired),
     notes: dashOrEmpty(row.notes),
-    listingLinkAutobid: row.listingLinkAutobid?.trim() ?? "",
-    listingLinkOpenline: row.listingLinkOpenline?.trim() ?? "",
-    listingLinkAuto1: row.listingLinkAuto1?.trim() ?? "",
-    listingLinksOther: Array.isArray(row.listingLinksOther) ? row.listingLinksOther.filter((u) => u.trim()) : [],
+    listingLinkMobile: filledIrissListingLinks(row.listingLinkMobile),
+    listingLinkAutobid: filledIrissListingLinks(row.listingLinkAutobid),
+    listingLinkOpenline: filledIrissListingLinks(row.listingLinkOpenline),
+    listingLinkAuto1: filledIrissListingLinks(row.listingLinkAuto1),
+    listingLinksOther: filledIrissListingLinks(row.listingLinksOther),
     listStatus: row.listStatus ?? "active",
   };
 }

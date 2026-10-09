@@ -168,11 +168,14 @@ export type IrissPasutijumsRecord = {
   equipmentRequired: string;
   equipmentDesired: string;
   notes: string;
-  /** Sludinājumu platformu saites (kopētas no PRO audita portfeļa plūsmas). */
-  listingLinkMobile: string;
-  listingLinkAutobid: string;
-  listingLinkOpenline: string;
-  listingLinkAuto1: string;
+  /**
+   * Sludinājumu platformu saites (masīvi; vecais JSON var būt viena virkne).
+   * Kārtība saglabājas. Tukša forma: `[""]`.
+   */
+  listingLinkMobile: string[];
+  listingLinkAutobid: string[];
+  listingLinkOpenline: string[];
+  listingLinkAuto1: string[];
   /** „Citi” — vairākas rindas; tukšās pirms saglabāšanas var apvienot. */
   listingLinksOther: string[];
   /** Dzintarzeme Auto izmaksu tāmes lauki (admin autosaglabāšana). */
@@ -218,10 +221,10 @@ export type IrissPasutijumsListRow = {
    * Tukšs, ja jauda nav nolasāma.
    */
   powerKwLabel: string;
-  listingLinkMobile: string;
-  listingLinkAutobid: string;
-  listingLinkOpenline: string;
-  listingLinkAuto1: string;
+  listingLinkMobile: string[];
+  listingLinkAutobid: string[];
+  listingLinkOpenline: string[];
+  listingLinkAuto1: string[];
   listingLinksOther: string[];
 };
 
@@ -271,10 +274,10 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     equipmentRequired: "",
     equipmentDesired: "",
     notes: "",
-    listingLinkMobile: "",
-    listingLinkAutobid: "",
-    listingLinkOpenline: "",
-    listingLinkAuto1: "",
+    listingLinkMobile: [""],
+    listingLinkAutobid: [""],
+    listingLinkOpenline: [""],
+    listingLinkAuto1: [""],
     listingLinksOther: [""],
     dzintarzemeTameDraft: defaultIrissDzintarzemeTameDraft(),
     offers: [],

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 
 /** Droša saite — atvērt tikai http(s). */
 export function isHttpUrlForOpen(s: string): boolean {
@@ -35,14 +36,19 @@ export const IR_LISTING_ALL_CHIP_STYLE: CSSProperties = {
   border: "1px solid #D1D1D6",
 };
 
-/** Lauki, pēc kuriem veidojas līdz `max` platformu čipu saitēm (kārtība: M, AB, OL, A1, tad Citi). */
+/** Lauki, pēc kuriem veidojas platformu čipu saites (kārtība: M, AB, OL, A1, tad Citi). Vecais formāts: virkne. */
+export type IrissListingLinkField = string | readonly string[] | null | undefined;
+
 export type IrissListingLinksInput = {
-  listingLinkMobile: string;
-  listingLinkAutobid: string;
-  listingLinkOpenline: string;
-  listingLinkAuto1: string;
-  listingLinksOther: readonly string[];
+  listingLinkMobile: IrissListingLinkField;
+  listingLinkAutobid: IrissListingLinkField;
+  listingLinkOpenline: IrissListingLinkField;
+  listingLinkAuto1: IrissListingLinkField;
+  listingLinksOther: IrissListingLinkField;
 };
+
+/** Pietiek visām rindām vienā avotā (skat. `IRISS_LISTING_LINKS_PER_SOURCE_MAX`). */
+export const IRISS_LISTING_PLATFORM_CHIPS_MAX = 40;
 
 export type ListingPlatformChipDisplay = {
   href: string;
@@ -51,7 +57,10 @@ export type ListingPlatformChipDisplay = {
   chipStyle: CSSProperties;
 };
 
-export function buildListingPlatformChips(src: IrissListingLinksInput, max = 5): ListingPlatformChipDisplay[] {
+export function buildListingPlatformChips(
+  src: IrissListingLinksInput,
+  max = IRISS_LISTING_PLATFORM_CHIPS_MAX,
+): ListingPlatformChipDisplay[] {
   const out: ListingPlatformChipDisplay[] = [];
   const push = (href: string, key: ListingPlatformChipKey) => {
     if (out.length >= max) return;
@@ -65,22 +74,17 @@ export function buildListingPlatformChips(src: IrissListingLinksInput, max = 5):
       chipStyle: IR_LISTING_PLATFORM_CHIP_STYLE[key],
     });
   };
-  push(src.listingLinkMobile, "mobile");
-  push(src.listingLinkAutobid, "autobid");
-  push(src.listingLinkOpenline, "openline");
-  push(src.listingLinkAuto1, "auto1");
-  for (const line of src.listingLinksOther) {
-    if (out.length >= max) break;
-    const t = line.trim();
-    if (!t || !isHttpUrlForOpen(t)) continue;
-    const c = LISTING_PLATFORM_CHIPS.citi;
-    out.push({
-      href: t,
-      letter: c.letter,
-      title: c.title,
-      chipStyle: IR_LISTING_PLATFORM_CHIP_STYLE.citi,
-    });
-  }
+  const pushAll = (raw: IrissListingLinkField, key: ListingPlatformChipKey) => {
+    for (const href of coerceIrissListingLinkList(raw)) {
+      if (out.length >= max) return;
+      push(href, key);
+    }
+  };
+  pushAll(src.listingLinkMobile, "mobile");
+  pushAll(src.listingLinkAutobid, "autobid");
+  pushAll(src.listingLinkOpenline, "openline");
+  pushAll(src.listingLinkAuto1, "auto1");
+  pushAll(src.listingLinksOther, "citi");
   return out;
 }
 

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 import type { IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
@@ -58,14 +59,17 @@ export function irissListingVehicleId(platform: IrissListingPlatform, externalId
   return createHash("sha1").update(platform).update("|").update(externalId).digest("hex").slice(0, 20);
 }
 
-type SourceRow = Pick<
-  IrissPasutijumsListRow,
-  "id" | "brandModel" | "listStatus" | "listingLinkAutobid" | "listingLinkOpenline" | "listingLinkAuto1" | "listingLinksOther"
->;
+type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus"> & {
+  listingLinkAutobid?: unknown;
+  listingLinkOpenline?: unknown;
+  listingLinkAuto1?: unknown;
+  listingLinksOther?: unknown;
+};
 
 /**
- * Avoti tikai no pasūtījumiem ar statusu „Aktīvs”. Mobile.de saite tiek izlaista (nākamā fāze).
- * „Citas saites” ņem tikai tad, ja hosts ir viena no trim izsolēm.
+ * Avoti tikai no pasūtījumiem ar statusu „Aktīvs”. Ņem visas Autobid / Openlane / Auto1
+ * (un „Citi”, ja hosts ir izsole) saites. Identisks URL starp pasūtījumiem paliek viena nolasīšana.
+ * Mobile.de saites šeit neiekļaujam (tās glabā un rāda formā / priekšskatījumā, bet nelasām).
  */
 export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[] {
   const out: IrissListingSource[] = [];
@@ -88,12 +92,15 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
       sourceUrl,
     });
   };
+  const pushAll = (row: SourceRow, platform: IrissListingPlatform, raw: unknown) => {
+    for (const url of filledIrissListingLinks(raw)) push(row, platform, url);
+  };
   for (const row of rows) {
     if (row.listStatus !== "active") continue;
-    push(row, "autobid", row.listingLinkAutobid);
-    push(row, "openline", row.listingLinkOpenline);
-    push(row, "auto1", row.listingLinkAuto1);
-    for (const other of row.listingLinksOther ?? []) {
+    pushAll(row, "autobid", row.listingLinkAutobid);
+    pushAll(row, "openline", row.listingLinkOpenline);
+    pushAll(row, "auto1", row.listingLinkAuto1);
+    for (const other of filledIrissListingLinks(row.listingLinksOther)) {
       const url = cleanHttpUrl(other);
       if (!url) continue;
       push(row, detectIrissListingPlatform(url), url);

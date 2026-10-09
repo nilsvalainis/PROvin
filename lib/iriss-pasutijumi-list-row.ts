@@ -1,4 +1,5 @@
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
+import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissPasutijumsListRow, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const DEAL_LIST_LABEL: Record<(typeof IRISS_DEAL_DETAIL_OPTIONS)[number]["key"], string> = {
@@ -44,11 +45,7 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     notes: rec.notes.trim(),
     email: rec.email.trim(),
     powerKwLabel: formatIrissOrderPowerKwLabel(rec),
-    listingLinkMobile: rec.listingLinkMobile,
-    listingLinkAutobid: rec.listingLinkAutobid,
-    listingLinkOpenline: rec.listingLinkOpenline,
-    listingLinkAuto1: rec.listingLinkAuto1,
-    listingLinksOther: rec.listingLinksOther,
+    ...parseIrissPasutijumsListingLinks(rec),
   };
 }
 

@@ -225,16 +225,13 @@ const IrissRowCard = memo(function IrissRowCard({
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const statusBtnRef = useRef<HTMLButtonElement>(null);
   const statusMenuRef = useRef<HTMLDivElement>(null);
-  const chips = buildListingPlatformChips(
-    {
-      listingLinkMobile: row.listingLinkMobile,
-      listingLinkAutobid: row.listingLinkAutobid,
-      listingLinkOpenline: row.listingLinkOpenline,
-      listingLinkAuto1: row.listingLinkAuto1,
-      listingLinksOther: row.listingLinksOther,
-    },
-    5,
-  );
+  const chips = buildListingPlatformChips({
+    listingLinkMobile: row.listingLinkMobile,
+    listingLinkAutobid: row.listingLinkAutobid,
+    listingLinkOpenline: row.listingLinkOpenline,
+    listingLinkAuto1: row.listingLinkAuto1,
+    listingLinksOther: row.listingLinksOther,
+  });
   const brandFallback = irissBrandFallbackLabel(row.brandModel);
   const brandLogoSrc = irissBrandLogoSrc(row.brandModel);
   const specSummary = formatIrissListSpecSummary(row);
