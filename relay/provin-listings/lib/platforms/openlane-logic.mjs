@@ -198,6 +198,30 @@ function stageFor(auction, nowMs) {
   return str(auction.AuctionType || auction.SaleType);
 }
 
+/** Openlane `0001-01-01T00:00:00` u.c. tukšie datumi -> "". */
+function realDate(v) {
+  const s = str(v);
+  const literal = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  const iso = literal ? literal[1] : isoDate(v);
+  const y = Number.parseInt(iso.slice(0, 4), 10);
+  return Number.isFinite(y) && y >= 1900 ? iso.slice(0, 10) : "";
+}
+
+/**
+ * findcarv6/search: pirmā reģistrācija ir `DateFirstRegistration` ("2017-02-07T00:00:00").
+ * `CarIdentification.Year` parasti ir "". Virsrakstā gada nav, bet atstājam fallback.
+ */
+export function pickOpenlaneRegistration(auction, title = "") {
+  const firstRegistration =
+    realDate(auction.DateFirstRegistration) || realDate(auction.FirstRegistrationDate) || realDate(auction.RegistrationDate);
+  const year =
+    yearOf(firstRegistration) ||
+    yearOf(auction.CarIdentification?.Year) ||
+    yearOf(auction.Year || auction.BuildYear) ||
+    (String(title).match(/\b((?:19|20)\d{2})\b(?!\.\d)/)?.[1] ?? "");
+  return { year, firstRegistration };
+}
+
 export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
   const requested = auction.RequestedSalesPrice;
   const requestedShown = auction.RequestedSalesPriceCanBeShown ?? auction.CanBeShown ?? true;
@@ -205,20 +229,21 @@ export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
   const isMargin = coerceOpenlaneMargin(auction.IsMargin ?? auction.isMargin);
   const vatNote = pickOpenlaneVatNote(auction);
   const spec = pickOpenlaneFuelTransmission(auction, title);
+  const reg = pickOpenlaneRegistration(auction, title);
   const item = makeItem("openlane", {
     externalId: str(auction.AuctionId) || str(auction.CarId),
     auctionId: str(auction.AuctionId),
     detailUrl: detailUrlFor(auction, anchors),
     title,
-    manufacturer: str(auction.Make || auction.MakeName) || title.split(" ")[0],
-    year: yearOf(auction.FirstRegistrationDate || auction.RegistrationDate || auction.Year || auction.BuildYear),
-    firstRegistration: isoDate(auction.FirstRegistrationDate || auction.RegistrationDate).slice(0, 10),
+    manufacturer: str(auction.Make || auction.MakeName || auction.CleanMake || auction.CarIdentification?.Make) || title.split(" ")[0],
+    year: reg.year,
+    firstRegistration: reg.firstRegistration,
     mileageKm: num(auction.Mileage),
     fuel: spec.fuel,
     transmission: spec.transmission,
-    powerKw: str(auction.PowerKw || auction.KW || auction.Power),
+    powerKw: str(auction.Kw || auction.PowerKw || auction.KW || auction.Power),
     location: str(auction.LocationName || auction.City || auction.Location),
-    countryCode: str(auction.CountryCode || auction.OriginCountry || auction.Country),
+    countryCode: str(auction.CountryCode || auction.OriginCountry || auction.Country || auction.CarCountryExtended || auction.CountryCodeDealer).toUpperCase(),
     imageUrl: str(auction.ThumbnailUrl || auction.ImageUrl),
     currency: str(auction.Currency) || "EUR",
     priceStart: price(auction.StartPrice),
